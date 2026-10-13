@@ -80,7 +80,11 @@ export interface NodeFnField {
   write(node: FnBearingNode, fn: NodeFn): void;
 }
 
-export function createNodeFnFields<TPose>(registry: SceneRegistry<TPose>): readonly NodeFnField[] {
+export function createNodeFnFields<TPose>(
+  registry: SceneRegistry<TPose>,
+  /** Called after a field is written onto a node it applies to. */
+  onWrite?: (field: NodeFnFieldName, node: FnBearingNode) => void,
+): readonly NodeFnField[] {
   return NODE_FN_FIELDS.map((spec) => {
     const table = registry[spec.field] as Readonly<Record<string, NodeFn>> | undefined;
     const reverse = new Map<NodeFn, string>();
@@ -93,7 +97,9 @@ export function createNodeFnFields<TPose>(registry: SceneRegistry<TPose>): reado
       fnOf: (key) => table?.[key],
       read: (node) => (applies(node) ? node[spec.field] : undefined),
       write: (node, fn) => {
-        if (applies(node)) node[spec.field] = fn;
+        if (!applies(node)) return;
+        node[spec.field] = fn;
+        onWrite?.(spec.field, node);
       },
     };
   });

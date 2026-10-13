@@ -31,7 +31,7 @@ function addNode(scene: Scene<Data, Layer>, label: string): NodeId {
 }
 
 /** An op that mutates through the scene's own public methods — the shape that
- *  re-enters `executeAndLog` and double-records when the engine drives it
+ *  re-enters the scene's recorder and double-records when the engine drives it
  *  without the scene's suppression. */
 function addNodeOp(scene: Scene<Data, Layer>, id: NodeId, label: string): Op {
   return {

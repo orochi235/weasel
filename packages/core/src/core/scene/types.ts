@@ -610,8 +610,8 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose> {
   /** Index of the "current state". Equals the count of applied entries;
    *  `0` means "nothing applied" (initial). */
   historyIndex(): number;
-  /** Jump to the given history index by calling undo/redo repeatedly.
-   *  Clamps to [0, total]. Returns true if any movement occurred. */
+  /** Jump to the given history index, clamped to [0, total]. Returns true
+   *  if any movement occurred. */
   jumpToHistoryIndex(index: number): boolean;
 
   // History persistence
@@ -656,8 +656,8 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose> {
    *  ids the snapshot does not hold leave the selection, and every pose
    *  override is cleared.
    *
-   *  Throws inside `batch` or `untracked`, which revert to a state this
-   *  replaces. Throws on an unsupported version or unknown registry/layer ids; on a
+   *  Throws inside any other edit — `batch`, `untracked`, `applyBatch`, an
+   *  undo — which would revert to a state this replaces. Throws on an unsupported version or unknown registry/layer ids; on a
    *  malformed snapshot the scene is left empty or partially populated (callers should treat a
    *  `loadState` throw as fatal and reload). Snapshots from `toJSON()` are
    *  always well-formed. */

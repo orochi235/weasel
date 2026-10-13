@@ -17,9 +17,9 @@ import type { LayoutMove, Node, NodeId, SceneArrivalHandler } from './types';
 /** What the window needs from the scene it serves. */
 export interface ArrivalWindowEnv<TData, TLayer extends string, TPose> {
   nodes: Map<NodeId, Node<TData, TLayer, TPose>>;
-  /** The pass over the scene's declared layouts, or `null` while it has none.
-   *  An installed handler takes its place. */
-  declared(): SceneArrivalHandler<TPose> | null;
+  /** The pass over the scene's declared layouts, which settles arrivals once
+   *  a container has declared one. An installed handler takes its place. */
+  layoutPass: SceneArrivalHandler<TPose>;
   /** Whether a bare scene call would record an edit of its own right now:
    *  no batch is open and no history engine is driving. */
   recordsBareEdits(): boolean;
@@ -29,6 +29,9 @@ export interface ArrivalWindowEnv<TData, TLayer extends string, TPose> {
 }
 
 export interface ArrivalWindow<TPose> {
+  /** A container was given a layout: from here on the scene has arrivals to
+   *  settle even with no handler installed. */
+  layoutDeclared(): void;
   /** Install the handler that settles arrivals. Returns its remover. */
   setHandler(handler: SceneArrivalHandler<TPose>): () => void;
   /** Hear the poses each live edit's settle wrote, after the edit lands. */
@@ -79,6 +82,7 @@ export function createArrivalWindow<TData, TLayer extends string, TPose>(
 ): ArrivalWindow<TPose> {
   const { nodes } = env;
   let installed: SceneArrivalHandler<TPose> | null = null;
+  let hasLayouts = false;
   let arrivals: Map<NodeId, NodeId[]> | null = null;
   let departures = new Map<NodeId, NodeId[]>();
   let changed = new Set<NodeId>();
@@ -86,9 +90,7 @@ export function createArrivalWindow<TData, TLayer extends string, TPose>(
   let reflowDue: LayoutMove<TPose>[] | null = null;
   const reflowListeners = createEmitter<[moves: readonly LayoutMove<TPose>[]]>();
 
-  function activeHandler(): SceneArrivalHandler<TPose> | null {
-    return installed ?? env.declared();
-  }
+  const activeHandler = (): SceneArrivalHandler<TPose> | null => installed ?? (hasLayouts ? env.layoutPass : null);
 
   function open(always = false): boolean {
     if (arrivals !== null || (!always && activeHandler() === null)) return false;
@@ -145,6 +147,7 @@ export function createArrivalWindow<TData, TLayer extends string, TPose>(
   }
 
   return {
+    layoutDeclared: () => { hasLayouts = true; },
     setHandler(handler) {
       installed = handler;
       return () => {

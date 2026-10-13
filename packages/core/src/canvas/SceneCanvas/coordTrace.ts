@@ -24,6 +24,10 @@ export const coordTrace: CoordTraceEntry[] = [];
 
 export const COORD_DEV: boolean = IS_DEV;
 
+if (COORD_DEV && typeof window !== 'undefined') {
+  (window as unknown as { __weaselCoordLog__: CoordTraceEntry[] }).__weaselCoordLog__ = coordTrace;
+}
+
 export function recordCoordTrace(entry: CoordTraceEntry): void {
   if (!COORD_DEV) return;
   coordTrace.push(entry);

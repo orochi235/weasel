@@ -92,7 +92,6 @@ export function StandardActionsRegistrar({
   selection: SelectionApi;
   scene: Scene<unknown, string, unknown>;
   adapter: BridgeAdapter;
-  actionDefaults?: SceneCanvasProps<unknown, string, unknown>['actionDefaults'];
   actions?: ActionsProp;
   /** Kit-standard action ids this canvas's presets and tools leave out. */
   excludeActions: readonly string[];

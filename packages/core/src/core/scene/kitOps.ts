@@ -52,6 +52,10 @@ export interface KitOpsEnv<TData, TLayer extends string, TPose> {
   /** Drop from the selection whatever a layer lock just put out of reach, and
    *  the ids in `gone`. */
   narrowSelection(gone?: ReadonlySet<NodeId>): void;
+  /** Drop the pose override of a node that is about to leave the scene: ids
+   *  are reusable, and one left behind would attach itself to whatever is
+   *  added under that id next. */
+  clearOverride(id: NodeId): void;
 }
 
 function setParallax(record: { parallax?: ParallaxOpts }, to: ParallaxOpts | undefined): void {
@@ -119,6 +123,7 @@ export function registerKitOps<TData, TLayer extends string, TPose>(
       invalidateDependents(p.id);
     },
     revert: (p) => {
+      env.clearOverride(p.id);
       detach(p.id);
       state.nodes.delete(p.id);
       dependents.remove(p.id);
@@ -131,6 +136,7 @@ export function registerKitOps<TData, TLayer extends string, TPose>(
   // Neither half invalidates dependents: removal's closure takes every live one.
   registerKitOp<RemoveSnapshot<TData, TLayer, TPose>>('kit:remove', {
     apply: (p) => {
+      for (const n of p.nodes) env.clearOverride(n.id);
       for (const d of p.detached) detach(d.id);
       for (const n of p.nodes) {
         state.nodes.delete(n.id);
@@ -275,14 +281,8 @@ export function registerKitOps<TData, TLayer extends string, TPose>(
   });
 
   registerKitOp<{ record: LayerRecord<TLayer>; index: number }>('kit:removeLayer', {
-    apply: (p) => {
-      state.layers.splice(p.index, 1);
-      rebuildLayerIndex();
-    },
-    revert: (p) => {
-      state.layers.splice(p.index, 0, { ...p.record } as LayerRecord<TLayer>);
-      rebuildLayerIndex();
-    },
+    apply: (p) => { state.layers.splice(p.index, 1); rebuildLayerIndex(); },
+    revert: (p) => { state.layers.splice(p.index, 0, { ...p.record } as LayerRecord<TLayer>); rebuildLayerIndex(); },
   });
 
   registerKitOp<{ layer: TLayer; from: string; to: string }>('kit:renameLayer', {
