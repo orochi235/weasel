@@ -1207,6 +1207,11 @@ only story runner in the repo.
     `Prefs/PrefsForm.drop.browser.test.tsx` take 3.1 to 3.6 s each alone and have 60 s, and
     `AssetEditor.steps.test.tsx`, a jsdom test that timed out at 5 s, takes 0.9 to 1.4 s alone and
     has 20 s.
+  - **`LabLightbox` failed once since, and not on a timeout.** In a fleet run of `422d2bace` on
+    teitou, "an expanded trial keeps its marks over it and takes new ones" threw `Cannot read
+    properties of null (reading 'getBoundingClientRect')` at `pane.getBoundingClientRect()`: the
+    pane the test had already looked up was gone when it drew. It passed alone at that commit, which
+    changes nothing under `packages/labkit`.
   - **Running `browser` after the other projects** (`sequence.groupOrder` in `vitest.config.ts`),
     measured 2026-10-12 over nine full runs at one commit, three on each node: none of six runs
     had a timeout, and one of three baseline runs did (`overlayAlignment`, on studio). That is
