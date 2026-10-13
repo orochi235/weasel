@@ -8,7 +8,14 @@ export type TileGripProps = HTMLAttributes<HTMLDivElement>;
 
 // `useDragHandle` needs a node id and windease's DragProvider, so the draggable
 // form is a separate component rather than a conditional hook.
-function Draggable({ nodeId, onPointerDown, ...rest }: TileGripProps & { nodeId: NodeId }) {
+function Draggable({
+  nodeId,
+  onPointerDown,
+  onPointerMove,
+  onPointerUp,
+  onPointerCancel,
+  ...rest
+}: TileGripProps & { nodeId: NodeId }) {
   const handle = useDragHandle(nodeId);
   return (
     <div
@@ -17,6 +24,20 @@ function Draggable({ nodeId, onPointerDown, ...rest }: TileGripProps & { nodeId:
       onPointerDown={(event) => {
         onPointerDown?.(event);
         if (!event.defaultPrevented) handle.onPointerDown(event);
+      }}
+      // The handle tracks the drop target from its own move events, and ignores
+      // the three below unless its press began a drag.
+      onPointerMove={(event) => {
+        onPointerMove?.(event);
+        handle.onPointerMove(event);
+      }}
+      onPointerUp={(event) => {
+        onPointerUp?.(event);
+        handle.onPointerUp(event);
+      }}
+      onPointerCancel={(event) => {
+        onPointerCancel?.(event);
+        handle.onPointerCancel(event);
       }}
     />
   );
