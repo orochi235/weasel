@@ -33,6 +33,8 @@ export interface PropertyFieldRowProps extends PropertyMetricProps {
   layout?: PropertyRowLayout;
   /** Take the full width of the enclosing grid — see `<PropertyRow span>`. */
   span?: boolean;
+  /** Take only the width the label and the control need — see `<PropertyRow hug>`. */
+  hug?: boolean;
   /** The row is auto — see `<PropertyRow auto>`. */
   auto?: boolean;
   /** Toggles `auto` from the row's label — see `<PropertyRow onAutoChange>`. */
@@ -71,6 +73,7 @@ export function PropertyField<T extends string = string>(props: PropertyFieldPro
     description,
     layout,
     span,
+    hug,
     density,
     align,
     auto,
@@ -96,6 +99,7 @@ export function PropertyField<T extends string = string>(props: PropertyFieldPro
     description,
     layout,
     span,
+    hug,
     density,
     align,
     auto,

@@ -34,6 +34,11 @@ export interface PropertyRowProps extends PropertyMetricProps {
    * full width.
    */
   span?: boolean;
+  /**
+   * Take only the width the label and the control need, and not the whole of
+   * the grid cell: the control then sits beside its label. `span` outranks it.
+   */
+  hug?: boolean;
   children: ReactNode;
   htmlFor?: string;
   /** The control is a group of several (a segmented toggle), not one element.
@@ -77,6 +82,7 @@ export function PropertyRow({
   variant = 'default',
   layout,
   span,
+  hug,
   children,
   htmlFor,
   group,
@@ -105,6 +111,7 @@ export function PropertyRow({
       variantClass,
       layoutClass,
       span && s.span,
+      hug && !span && s.hug,
       auto && (autoControl === 'dimmed' ? s.rowAutoInherited : s.rowAuto),
     ]
       .filter(Boolean)

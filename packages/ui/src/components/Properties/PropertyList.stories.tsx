@@ -35,7 +35,7 @@ export const Standalone: Story = {
           />
           <PropertyField kind="color" label="Fill" value={fill} onChange={setFill} />
           <PropertyField kind="color" label="Stroke" value={stroke} onChange={setStroke} />
-          <PropertyField kind="boolean" label="Visible" value={visible} onChange={setVisible} />
+          <PropertyField kind="boolean" label="Visible" hug value={visible} onChange={setVisible} />
         </PropertyList>
       </div>
     );
