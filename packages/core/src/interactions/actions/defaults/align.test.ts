@@ -67,10 +67,6 @@ describe('alignLeftAction descriptor', () => {
     expect(alignLeftAction.defaultBinding).toBeUndefined();
   });
 
-  it('has no defaultBinding', () => {
-    expect(alignLeftAction.defaultBinding).toBeUndefined();
-  });
-
   it('has an icon', () => {
     expect(alignLeftAction.icon).toBeDefined();
   });

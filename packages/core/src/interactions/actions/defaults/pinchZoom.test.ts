@@ -98,13 +98,6 @@ describe('pinchZoomAction descriptor', () => {
     expect(handle).toEqual({});
   });
 
-  it('start returns handle with onMove when view and multiTouch are present', () => {
-    const invoker = getOngoingInvoker(pinchZoomAction);
-    const viewApi = makeViewApi({ x: 0, y: 0, scale: { x: 1, y: 1 } });
-    const handle = invoker.start(makeCtx(viewApi, 100), undefined);
-    expect(typeof handle.onMove).toBe('function');
-  });
-
   it('onMove zooms in when spread increases (factor > 1)', () => {
     const invoker = getOngoingInvoker(pinchZoomAction);
     const viewApi = makeViewApi({ x: 0, y: 0, scale: { x: 1, y: 1 } });

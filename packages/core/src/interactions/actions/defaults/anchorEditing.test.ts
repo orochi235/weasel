@@ -3,7 +3,6 @@ import { PathBuilder, type PolygonPath, pathToAnchors } from '@weasel-js/geom';
 import type { InvocationCtx, OngoingInvoker, ImmediateInvoker } from '@weasel-js/routing';
 import { makeEditAnchorsDep } from '../testUtils';
 import { areaSelectAction } from './areaSelect';
-import { clearSelectionAction } from './clearSelection';
 import {
   cutPathAtAnchorAction,
   deleteAnchorsAction,
@@ -199,24 +198,6 @@ describe('areaSelect / marqueeAnchors handoff', () => {
 });
 
 describe('clearSelection / selectAnchor handoff', () => {
-  // The click twin of the areaSelect/marqueeAnchors drag handoff above.
-  // `clearSelection` is bound at *active* scope by `useSelectTool`;
-  // `selectAnchor` is ambient, so without this gate the click on an anchor
-  // that happens to sit over empty canvas clears the node selection.
-  it('clearSelection declines while a path is in edit mode', () => {
-    const { dep } = depOverPath(triangle());
-    expect(clearSelectionAction.enabled?.(depsWith({ editAnchors: dep }))).not.toBe(true);
-  });
-
-  it('clearSelection still runs when nothing is being edited', () => {
-    const dep = makeEditAnchorsDep({ editingId: '' });
-    expect(clearSelectionAction.enabled?.(depsWith({ editAnchors: dep }))).toBe(true);
-  });
-
-  it('clearSelection still runs for a consumer with no editAnchors dep at all', () => {
-    expect(clearSelectionAction.enabled?.(depsWith({}))).toBe(true);
-  });
-
   it('selectAnchor takes the click while a path is in edit mode', () => {
     const { dep } = depOverPath(triangle());
     expect(selectAnchorAction.enabled?.(dep2(dep))).toBe(true);

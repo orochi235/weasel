@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { applyBooleanOp, type BooleansAdapter } from './booleans';
-import { boundsOfPath, type Path } from '@weasel-js/geom';
+import { boundsOfPath, pointInPath, type Path } from '@weasel-js/geom';
 import { registerFontOutlines, loadFontOutlines } from '@weasel-js/font';
 import { _resetFontRegistryForTests, _resetFontOutlinesForTests } from '@weasel-js/font/test-seams';
 import { TextOutlinesError, type TextNodeSource } from '@weasel-js/text';
@@ -141,9 +141,9 @@ describe('applyBooleanOp — operation-specific behavior', () => {
     const result = applyBooleanOp(h.adapter, 'subtract');
     expect(result.kind).toBe('applied');
     expect(h.state.inserted).toHaveLength(1);
-    // Sanity check the result has content.
-    const path = (h.state.inserted[0] as any).path as { commands: Uint8Array };
-    expect(path.commands.length).toBeGreaterThan(0);
+    const path = h.state.inserted[0]!.path;
+    expect(pointInPath(path, 2, 2)).toBe(true);
+    expect(pointInPath(path, 12, 12)).toBe(false);
   });
 
   it('intersect of disjoint inputs: noop with reason empty-result', () => {

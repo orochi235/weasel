@@ -185,13 +185,10 @@ describe('viewportDragPanAction invoker', () => {
       deps: {},
       drag: { start: { x: 0, y: 0 }, current: { x: 0, y: 0 }, delta: { x: 0, y: 0 } },
     };
-    const mockSet = vi.fn();
-    // Should not throw; nothing happens.
     expect(() => {
       const handle = invoker.start(ctx);
       handle.onMove?.(ctx);
     }).not.toThrow();
-    expect(mockSet).not.toHaveBeenCalled();
   });
 });
 

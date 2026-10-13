@@ -449,14 +449,6 @@ describe('deleteAction over a real scene', () => {
     expect(scene.get(edge)).toBeUndefined();
   });
 
-  it('leaves history usable after deleting a node and its edge together', () => {
-    const { scene, a } = makeEdgeScene();
-    runDelete({ selection: makeSelection([a]), scene });
-    expect(scene.canUndo()).toBe(true);
-    scene.undo();
-    expect(scene.get(a)).toBeDefined();
-  });
-
   it('undo restores the edge the delete cascaded, not just the endpoint', () => {
     const { scene, a, edge } = makeEdgeScene();
     runDelete({ selection: makeSelection([a]), scene });
