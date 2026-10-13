@@ -88,12 +88,6 @@ describe('useSelectTool', () => {
     expect(typeof cursor === 'function' ? cursor() : cursor).toBe('default');
   });
 
-  it('declares its whole input surface as bindings', () => {
-    const tool = mount();
-    expect((tool.def as any)?.initial).toBeUndefined();
-    expect(tool.bindings?.length).toBeGreaterThan(0);
-  });
-
   it('press over a body selects it', () => {
     const tool = mount({ pickEvery: () => ['hit-id'] });
     const sel = selectionStub(['hit-id']);

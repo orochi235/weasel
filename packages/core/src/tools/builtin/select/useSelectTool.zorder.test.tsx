@@ -56,17 +56,7 @@ function harness(initial: Rect[]) {
 }
 
 describe('useSelectTool — default pickEvery z-order', () => {
-  it('press on overlapping rects selects the topmost (last in array)', () => {
-    // A and B fully overlap; B added second → painted on top.
-    const h = harness([
-      { id: 'A', x: 0, y: 0, width: 100, height: 100 },
-      { id: 'B', x: 0, y: 0, width: 100, height: 100 },
-    ]);
-    h.press(50, 50);
-    expect(h.selection()).toEqual([asNodeId('B')]);
-  });
-
-  it('three-rect stack: deepest in array wins on press', () => {
+  it('press on a stack of overlapping rects selects the topmost (last in array)', () => {
     const h = harness([
       { id: 'A', x: 0, y: 0, width: 100, height: 100 },
       { id: 'B', x: 0, y: 0, width: 100, height: 100 },

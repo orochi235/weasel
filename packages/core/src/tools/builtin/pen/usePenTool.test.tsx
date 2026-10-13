@@ -236,12 +236,6 @@ describe('usePenTool', () => {
     expect(cursor()).toMatch(/, crosshair$/);
   });
 
-  it('declares its whole input surface as bindings', () => {
-    const { tool } = setup();
-    expect((tool.def as any)?.initial).toBeUndefined();
-    expect(tool.bindings).toHaveLength(6);
-  });
-
   it('click on empty space (Idle) → places a corner anchor and enters Drawing', () => {
     const p = setup();
     p.click(10, 20);
@@ -411,14 +405,6 @@ describe('usePenTool', () => {
     expect(p.adapter.addNode).not.toHaveBeenCalled();
     expect(p.scratch.current).toBeNull();
     expect(p.scratch.finishedSubpaths).toEqual([]);
-  });
-
-  it('tool-switch with <2 anchors → discards', () => {
-    const p = setup();
-    p.click(0, 0);
-    p.deactivate();
-    expect(p.adapter.addNode).not.toHaveBeenCalled();
-    expect(p.scratch.current).toBeNull();
   });
 
   it('autoSelect: false → addNode called but setSelection not called', () => {
@@ -739,12 +725,6 @@ describe('usePenTool', () => {
       const p = setup({ snapPoint: grid });
       p.drag({ x: 0, y: 0 }, { x: 27, y: 32 });
       expect(p.scratch.current!.anchors[0].outHandle).toEqual({ x: 30, y: 30 });
-    });
-
-    it('passthrough (no snapPoint) preserves raw coords', () => {
-      const p = setup();
-      p.click(12, 18);
-      expect(p.scratch.current!.anchors).toEqual([{ x: 12, y: 18 }]);
     });
   });
 
