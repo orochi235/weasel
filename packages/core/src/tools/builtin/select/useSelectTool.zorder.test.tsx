@@ -6,35 +6,24 @@
  * order = top in paint order) is selected.
  */
 import { describe, it, expect } from 'vitest';
-import { useRef, useState } from 'react';
 import { renderHook, act } from '@testing-library/react';
-import { arrayAdapter } from 'core/adapters/arrayAdapter';
 import { useSelection } from 'core/selection/useSelection';
 import { useSelectTool } from './useSelectTool';
+import { rectListAdapter } from './testing/rectListAdapter';
 import { asNodeId } from 'core/scene/types';
 import type { Action } from '@weasel-js/routing';
 import type { ActionDeps } from '@weasel-js/routing';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number }
-interface Pose { x: number; y: number; width: number; height: number }
 
-/** Mounts the select tool over an array-adapter scene of the given rects, and
+/** Mounts the select tool over a bare adapter holding the given rects, and
  *  returns a `press(x, y)` that fires `select.pick` the way the dispatcher's
  *  eager pointerdown does. No `pickEvery` is supplied — the point is to
  *  exercise the default (rect AABB scan over `adapter.getNodes()`). */
 function harness(initial: Rect[]) {
   const { result } = renderHook(() => {
-    const [rects, setRects] = useState<Rect[]>(initial);
-    const rectsRef = useRef(rects);
-    rectsRef.current = rects;
     const sel = useSelection({ mode: 'single' });
-
-    const base = arrayAdapter<Rect, Pose>({
-      ref: rectsRef,
-      setItems: setRects,
-      toPose: (r) => ({ x: r.x, y: r.y, width: r.width, height: r.height }),
-    });
-    const adapter = { ...base, ...sel.adapterMethods };
+    const adapter = { ...rectListAdapter(initial), ...sel.adapterMethods };
     return { tool: useSelectTool(adapter, {}), sel };
   });
 

@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import { arrayAdapter } from 'core/adapters/arrayAdapter';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { poseDescriptorForNode, type PoseDescriptor } from './poseDescriptor';
 
@@ -54,45 +53,5 @@ describe('PoseDescriptor.forNode', () => {
       width: 40,
       height: 40,
     });
-  });
-});
-
-describe('arrayAdapter hit-tests through the node-specialized descriptor', () => {
-  function makeFixture() {
-    const items: Solid[] = [
-      { id: 'box', kind: 'box', pose: WIDE },
-      { id: 'ball', kind: 'ball', pose: WIDE },
-    ];
-    const ref = { current: items };
-    return arrayAdapter<Solid, RectPose>({
-      ref,
-      setItems: (updater) => {
-        ref.current = updater(ref.current);
-      },
-      toPose: (o) => o.pose,
-      fromPose: (o, pose) => ({ ...o, pose }),
-      poseDescriptor: SOLID_DESCRIPTOR as PoseDescriptor<RectPose>,
-    });
-  }
-
-  // A band above the shared pose: inside the ball's swept box, outside the
-  // box's own. Only a descriptor that saw the node can separate them.
-  const band = { x: 0, y: -14, width: 40, height: 5 };
-
-  it('marquee picks the ball and not the box', () => {
-    expect(makeFixture().hitTestArea!(band)).toEqual(['ball']);
-  });
-
-  it('lasso picks the ball and not the box', () => {
-    const hits = makeFixture().hitTestLasso!(
-      [
-        { x: band.x, y: band.y },
-        { x: band.x + band.width, y: band.y },
-        { x: band.x + band.width, y: band.y + band.height },
-        { x: band.x, y: band.y + band.height },
-      ],
-      'intersect',
-    );
-    expect(hits).toEqual(['ball']);
   });
 });
