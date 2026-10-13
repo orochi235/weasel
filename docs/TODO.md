@@ -1217,14 +1217,29 @@ only story runner in the repo.
 
 ## Release-gate & build hygiene
 
-- **(P1) A fleet run can report green for a tree that is not the commit it names.** `npm run
-  test:fleet` on `599685677` printed `tests 20901 passed 0 failed` on 2026-10-13, and its log lists
-  `scene.carry.test.ts`, which that commit deletes, and none of the three test files it adds. Two
-  tests that fail at that commit passed. The log shows the delta sent (`delta 27 file(s), 2
-  deleted`) and then `updated weasel on teitou at c7da2a61`, the base, before the tests ran. Other
-  sessions had runs on the fleet at the time, and a node holds one tree per repository. Not looked
-  into further. Until it is, a green run is only green if its log names a test file the commit
-  added.
+- **(P2) `onto` can start a suite in a tree another session synced; the fix belongs in
+  `~/src/onto`.** weasel now turns this into a red run: `scripts/fleet-tree.gate.ts` fails when the
+  tree is not the commit `npm run test:fleet` asked for, and the run has to be started again. On
+  2026-10-13 it went unnoticed instead, and a run of `599685677` reported 20901 passed from a tree
+  without that commit's changes. The cause, read from onto's source and not reproduced:
+  - A node keeps one tree per repository. Every weasel worktree on this machine syncs into the
+    tree named `weasel` (`mainCheckout` in `client.go`), and the tree lock (`lockTreeForJob` in
+    `agent.go`) is held only during a sync and during a job, never from a run's sync to the
+    start of its suite. `onto test` runs a setup job in between, which widens the gap.
+  - The stamp in `stamp.go` exists to close that gap and cannot between two sessions on one
+    machine. `syncRepoAt` writes the stamp the node returned into `~/.config/onto/stamps.json`,
+    keyed by node and tree, and `withTreeStamps` reads that file back when the job launches. A
+    second session's sync of the same tree overwrites the entry first, so the first session sends
+    the second's stamp, the node's `checkTreeStamps` finds it matches, and the suite starts in
+    the second session's tree.
+  - What would fix it: have the launch carry the stamp its own sync was answered with, passed in
+    memory from `syncRepoAt` to `startJob`, so the node's 412 and `resyncing` do their job.
+    `stamps.json` then only serves a job launched by a later command than the sync.
+  - Two smaller holes beside it: `rememberStamp` reads, edits, and rewrites the file under a
+    mutex that covers one process, so two sessions can drop each other's entries, and both
+    `withTreeStamps` and `checkTreeStamps` skip the check when no stamp is found.
+  - `updated weasel on <node> at <sha>` always prints the base the sync was given
+    (`syncResp.SHA` is `req.Ref`), so that line says nothing about which commit's files are there.
 
 - **(P2) Browser tests time out under fleet load, each inside a Playwright action.** Every one
   passes alone, and nobody has confirmed load is the cause:

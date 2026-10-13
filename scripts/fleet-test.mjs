@@ -15,11 +15,12 @@ import { execFileSync, spawn, spawnSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { armTree, changedFiles } from './lib/fleet-tree.mjs';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const BUSY_TRIES = 30;
 const BUSY_WAIT_S = 30;
-const git = (...args) => execFileSync('git', args, { cwd: ROOT, encoding: 'utf8' }).trim();
+const git = (...args) => execFileSync('git', args, { cwd: ROOT, encoding: 'utf8', maxBuffer: 1 << 28 }).trim();
 
 /** `onto` with its output passed straight through, and what it wrote to stderr kept to read after. */
 const ontoTest = (args) =>
@@ -62,6 +63,11 @@ let status = 1;
 try {
   console.log(`fleet-test: ${git('log', '-1', '--format=%h %s', commit)}${branch ? ` (${branch})` : ''}`);
   const base = git('merge-base', commit, 'origin/main');
+  // onto's own check that the tree is still the one it synced cannot tell two sessions on this
+  // machine apart, so the suite checks the tree itself: `scripts/fleet-tree.gate.ts`.
+  const files = changedFiles(git('diff', '--raw', '--no-renames', '--no-abbrev', '-z', base, commit));
+  armTree(tree, { commit, files });
+  console.log(`fleet-test: tree check armed for ${commit.slice(0, 9)}, ${Object.keys(files).length} changed path(s)`);
   // A node runs one job per tree, so a run started while another session's is on the chosen node is
   // refused. Wait for it rather than fail: the refusal comes before anything has run.
   for (let attempt = 1; ; attempt++) {
