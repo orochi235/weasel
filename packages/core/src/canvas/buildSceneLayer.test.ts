@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { buildSceneLayer, buildSceneLayers } from './buildSceneLayer';
-import { arrayAdapter } from 'core/adapters/arrayAdapter';
 import type { DrawCommand } from '@weasel-js/renderer';
 import { createScene } from 'core/scene/scene';
 import { sceneToAdapter } from './sceneAdapter';
@@ -62,29 +61,6 @@ describe('buildSceneLayer hierarchical path', () => {
     layer.draw(null, VIEW, DIMS);
     expect(seenPoses).toHaveLength(1);
     expect(seenPoses[0]).toEqual(TRANSFORMED_POSE);
-  });
-
-  it('falls back to flat output for non-scene adapter (no getLayers)', () => {
-    interface Rect { id: string; x: number; y: number; width: number; height: number }
-    type Pose = { x: number; y: number; width: number; height: number };
-    const rects: Rect[] = [{ id: 'a', x: 0, y: 0, width: 10, height: 10 }];
-    const rectsRef = { current: rects };
-    const adapter = arrayAdapter<Rect, Pose>({
-      ref: rectsRef,
-      setItems: () => {},
-      toPose: (r) => ({ x: r.x, y: r.y, width: r.width, height: r.height }),
-    });
-    const layer = buildSceneLayer(
-      { drawOne: (_obj, _p) => [{ kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, fill: { paint: { color: 'red' } } }] },
-      adapter as never,
-      () => null,
-      () => null,
-    );
-    // buildSceneLayer emits raw flat commands when the adapter has no
-    // getLayers; drawLayers wraps in viewToMat3 at orchestration.
-    const out = layer.draw(null, VIEW, DIMS) as DrawCommand[];
-    expect(out).toHaveLength(1);
-    expect(out[0].kind).toBe('path');
   });
 });
 
@@ -191,7 +167,7 @@ describe('buildSceneLayer postProcess', () => {
     expect(calls.map(countPaths)).toEqual([1, 1]);
   });
 
-  it('flat fallback path (cfg.objects) routes through the hook', () => {
+  it('cfg.objects routes through the hook', () => {
     const objects = [{ id: 'a' }, { id: 'b' }];
     const seen: DrawCommand[][] = [];
     const layer = buildSceneLayer(
