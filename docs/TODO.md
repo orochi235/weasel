@@ -1425,8 +1425,8 @@ only story runner in the repo.
 - **(P3) Most stores still keep their own listener set.** `createEmitter()` in `@weasel-js/registry`
   is the shared subscribe/notify primitive (a pass walks the listeners held when it began; a
   throwing listener is logged and the rest run). Still hand-rolled, each a `Set` and a loop:
-  - in packages that already depend on registry: the scene (four loops in `core/scene/scene.ts`),
-    and animator's `timeline/createTimeline.ts`.
+  - in packages that already depend on registry: animator's `timeline/createTimeline.ts` and
+    `observe.ts`.
   - in packages that do not, where each move adds the dependency: routing's `PointerContext` and
     `longPressState`, history and its journal, `select/store.ts`, storage's records, loupe's
     `canvasSource`, ui's `recentColors`, labkit's `panelHost`, `clockRegistry`, and

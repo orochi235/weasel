@@ -3,6 +3,7 @@
  * content, so it never reaches `toJSON`; it does ride on history entries.
  */
 import type { HistorySelection } from '@weasel-js/history';
+import { createEmitter } from '@weasel-js/registry';
 import type { NodeId } from './types';
 
 export interface SceneSelection {
@@ -23,13 +24,13 @@ export function createSceneSelection(
   reachable: (ids: readonly NodeId[]) => readonly NodeId[],
 ): SceneSelection {
   let ids: readonly NodeId[] = [];
-  const listeners = new Set<() => void>();
+  const changed = createEmitter();
 
   return {
     get: () => ids,
     set(next) {
       ids = reachable(next);
-      for (const listener of listeners) listener();
+      changed.emit();
     },
     narrow(gone) {
       // A new array only when one is dropped: readers compare the selection by identity.
@@ -39,10 +40,7 @@ export function createSceneSelection(
     replace(next) {
       ids = next;
     },
-    subscribe(listener) {
-      listeners.add(listener);
-      return () => { listeners.delete(listener); };
-    },
+    subscribe: changed.subscribe,
   };
 }
 

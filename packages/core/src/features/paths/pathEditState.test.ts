@@ -105,4 +105,16 @@ describe('createPathEditState', () => {
     current = undefined;
     expect(state.getEditingId()).toBe('');
   });
+
+  it('still tells the subscribers after one that throws', () => {
+    const logged = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const state = createPathEditState();
+    const heard = vi.fn();
+    state.subscribe(() => { throw new Error('boom'); });
+    state.subscribe(heard);
+    expect(() => state.setEditingId('a')).not.toThrow();
+    expect(heard).toHaveBeenCalledTimes(1);
+    expect(logged).toHaveBeenCalledTimes(1);
+    logged.mockRestore();
+  });
 });
