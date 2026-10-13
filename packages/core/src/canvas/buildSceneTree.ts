@@ -8,8 +8,7 @@ import { deriveParallaxView, planeMap, type ParallaxOpts } from 'core/viewport/p
 import { scenePlaneOf } from './pickWalk';
 import { clipCarrier, planeTransform } from './planeClips';
 
-/** The scene-tree reading surface `buildSceneTree` walks. A `SceneCanvasAdapter` satisfies
- *  this; flat (non-hierarchical) adapters don't. */
+/** The scene-tree reading surface `buildSceneTree` walks. A `SceneCanvasAdapter` is one. */
 export interface HierarchicalAdapter<TNode, TPose> {
   getLayers(): readonly { id: string; visible: boolean; parallax?: ParallaxOpts }[];
   getNode(id: string): TNode | undefined;

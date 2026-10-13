@@ -48,46 +48,14 @@ export interface SnapTarget<TPose = unknown> {
 }
 
 /**
- * Full scene adapter; the narrower adapters below are subsets of it.
+ * The contracts below are slices: each names what one reader asks of an
+ * adapter. The whole of it, as the kit builds it over a `Scene`, is
+ * `SceneCanvasAdapter` (`sceneToAdapter`).
  *
  * **Pose semantics:** `getPose` / `setPose` work in **local** coordinates —
  * relative to the node's direct parent (or world, for root-parented nodes).
- * `getWorldPose` is the composed reading.
+ * `getWorldPose`, where an adapter has it, is the composed reading.
  */
-export interface SceneAdapter<TNode extends { id: string }, TPose> {
-  // Pull (gesture-time queries)
-  getNodes(): TNode[];
-  getNode(id: string): TNode | undefined;
-  getSelection(): string[];
-  hitTest(worldX: number, worldY: number): string | null;
-  getPose(id: string): TPose;
-  /** The node's pose in world coordinates, with every ancestor's frame folded
-   *  in. Equal to `getPose` under the absolute-pose model. */
-  getWorldPose?(id: string): TPose;
-  getParent(id: string): string | null;
-
-  // Mutators (called by op apply methods)
-  setPose(id: string, pose: TPose): void;
-  setParent(id: string, parentId: string | null): void;
-  /** `index` is the node's z-position among its siblings. `createDeleteOp`
-   *  captures it and `invert()` forwards it, so an implementation that drops
-   *  it makes undo of a delete restore the node at the top instead of where
-   *  it was. Omit only for an unordered store. */
-  insertNode(node: TNode, index?: number): void;
-  removeNode(id: string): void;
-  setSelection(ids: string[]): void;
-
-  // Op submission (gesture commit point). Optional — when omitted, hooks
-  // fall back to a built-in dispatcher that applies each op against the
-  // adapter directly. Apps with custom history integration override this.
-  applyOps?(ops: Op[], label?: string): void;
-  /** Optional. The animation target of node `id`'s pose, the same one on
-   *  every call, so everything animating the node adds; `descriptor` supplies
-   *  its axes the first time. `tweenPose`, `springPose`, and `momentum` move
-   *  it where it is there, and write `setPose` each frame where it is not or
-   *  it answers `undefined`. */
-  poseTarget?(id: string, descriptor?: PoseDescriptor<TPose>): Target<TPose> | undefined;
-}
 
 /** Narrow adapter for move. Apps without container-snapping leave out `findSnapTarget`. */
 export interface MoveAdapter<TNode extends { id: string }, TPose> {
@@ -107,13 +75,19 @@ export interface MoveAdapter<TNode extends { id: string }, TPose> {
   setPose(id: string, pose: TPose): void;
   /** Optional. Used only by reparent ops; flat scenes that never reparent may omit. */
   setParent?(id: string, parentId: string | null): void;
-  /** Optional: see SceneAdapter.applyOps. */
+  /** Optional. The commit point of a gesture. When omitted, ops are applied
+   *  against the adapter one by one; an adapter with a history of its own
+   *  takes them here as one entry. */
   applyOps?(ops: Op[], label: string): void;
   /** Optional. Show each node at its pose without writing the document, so
    *  nothing is recorded; `null` withdraws a node's preview. What a behavior
    *  that keeps moving nodes after the gesture ends writes each frame. */
   previewPoses?(poses: ReadonlyMap<string, TPose | null>): void;
-  /** Optional: see SceneAdapter.poseTarget. */
+  /** Optional. The animation target of node `id`'s pose, the same one on
+   *  every call, so everything animating the node adds; `descriptor` supplies
+   *  its axes the first time. `tweenPose`, `springPose`, and `momentum` move
+   *  it where it is there, and write `setPose` each frame where it is not or
+   *  it answers `undefined`. */
   poseTarget?(id: string, descriptor?: PoseDescriptor<TPose>): Target<TPose> | undefined;
   findSnapTarget?(
     draggedId: string,
@@ -140,7 +114,7 @@ export interface ResizeAdapter<
   getNode(id: string): TNode | undefined;
   getPose(id: string): TPose;
   setPose(id: string, pose: TPose): void;
-  /** Optional: see SceneAdapter.applyOps. */
+  /** Optional: see MoveAdapter.applyOps. */
   applyOps?(ops: Op[], label: string): void;
 }
 
@@ -152,7 +126,7 @@ export interface RotateAdapter<
   getNode(id: string): TNode | undefined;
   getPose(id: string): TPose;
   setPose(id: string, pose: TPose): void;
-  /** Optional: see SceneAdapter.applyOps. */
+  /** Optional: see MoveAdapter.applyOps. */
   applyOps?(ops: Op[], label: string): void;
 }
 
@@ -196,8 +170,7 @@ export interface AreaSelectAdapter {
  *   - 'intersect' — the node's outline meets the polygon anywhere.
  *   - 'enclosed'  — the node's whole outline is inside the polygon.
  *
- * The outline is the drawn silhouette, rotation included. `arrayAdapter` asks
- * its `silhouette` option for it, since the painters sit above `core/`.
+ * The outline is the drawn silhouette, rotation included.
  */
 export type LassoHitMode = 'centers' | 'intersect' | 'enclosed';
 
@@ -236,22 +209,24 @@ export interface InsertAdapter<TNode extends { id: string }> {
    *  Optional — required only for copy, cut, and clone's ghost capture. */
   snapshotSelection?(ids: string[]): ClipboardSnapshot;
   getPasteOffset?(clipboard: ClipboardSnapshot): { dx: number; dy: number };
-  /** Mutator wired by `insertNode`-using ops (kit-side InsertOp). `index`
-   *  carries the z-position a delete captured, so undo restores paint order;
-   *  see `SceneAdapter.insertNode`. */
+  /** Mutator wired by `insertNode`-using ops (kit-side InsertOp). `index` is
+   *  the node's z-position among its siblings. `createDeleteOp` captures it
+   *  and `invert()` forwards it, so an implementation that drops it makes
+   *  undo of a delete restore the node at the top instead of where it was.
+   *  Omit only for an unordered store. */
   insertNode(node: TNode, index?: number): void;
   /** Mutator wired by `setSelection` ops batched alongside paste. */
   setSelection(ids: string[]): void;
-  /** Optional: see SceneAdapter.applyOps. */
+  /** Optional: see MoveAdapter.applyOps. */
   applyOps?(ops: Op[], label: string): void;
   /** Returns the current selection. Used by clone behaviors. */
   getSelection(): string[];
 }
 
 /**
- * Optional surface that lets `buildSceneTree` walk the adapter by layer.
- * Adapters that don't implement this fall back to flat rendering in Canvas's
- * scene layer.
+ * The layer list of an adapter whose nodes sit on layers. The scene slot
+ * paints one canvas layer per entry; a pick over a bare adapter reads it for
+ * parallax planes where it is there.
  */
 export interface LayerEnumerableAdapter<TLayer extends string = string> {
   getLayers?(): readonly { id: TLayer; visible: boolean; parallax?: ParallaxOpts }[];

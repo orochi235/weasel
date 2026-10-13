@@ -75,6 +75,7 @@ export type SceneCanvasAdapter<TData, TLayer extends string, TPose> =
   // provided by a scene-backed adapter.
   & {
       getParent(id: string): string | null;
+      getLayers: NonNullable<LayerEnumerableAdapter<TLayer>['getLayers']>;
       /** The node's pose with every ancestor's frame folded in. Equal to
        *  `getPose` unless the scene composes poses. */
       getWorldPose(id: string): TPose;

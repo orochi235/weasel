@@ -1,6 +1,6 @@
 /**
- * Whether a marquee or a lasso takes one node: the per-node decision shared by
- * `sceneToAdapter` (through `canvas/deps/hitTestArea`) and `arrayAdapter`.
+ * Whether a marquee or a lasso takes one node: the per-node decision the
+ * scene's area walk (`canvas/deps/hitTestArea`) makes.
  *
  * What a node draws is not knowable here — the painters sit above `core/` — so
  * the caller hands in the node's outline as a thunk, asked for only when the

@@ -262,7 +262,7 @@ not routed by the dispatcher — you own the pointer events.
   blocks.
 - `useGridCellHover(...)` — pointer→cell mapping (in `@weasel-js/guides`).
 - `usePointerStylus(...)` — pressure/tilt from `PointerEvent`.
-- `useSceneAdapter(...)`, `useArrayAdapter(...)` — adapter construction.
+- `useSceneAdapter(...)` — the scene's adapter, for what sits outside the canvas.
 - `useScene(...)` — the kit-owned scene tree. See
   [adapters.md](./adapters.md).
 

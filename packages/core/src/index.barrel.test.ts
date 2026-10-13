@@ -124,6 +124,17 @@ describe('registry-unification exports (DepRegistry + dispatcher)', () => {
   });
 });
 
+describe('adapter wirings on the barrel', () => {
+  // A flat item list is `useScene({ items })`, so the scene's adapter is the only wiring.
+  it('ships the scene adapter and no array adapter', () => {
+    const b = Barrel as Record<string, unknown>;
+    expect(typeof b.sceneToAdapter).toBe('function');
+    expect(typeof b.useSceneAdapter).toBe('function');
+    expect(b.arrayAdapter).toBeUndefined();
+    expect(b.useArrayAdapter).toBeUndefined();
+  });
+});
+
 describe('camera animation barrel surface', () => {
   it('exports the camera runner and its interpolator', () => {
     const b = Barrel as Record<string, unknown>;

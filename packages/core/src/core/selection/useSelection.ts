@@ -52,7 +52,7 @@ function paintOrderOf(store: SelectionStore): (() => Iterable<NodeId>) | undefin
  *
  * ```tsx
  * const selection = useSelection({ mode: 'multi' });
- * const adapter = { ...arrayAdapter({...}), ...selection.adapterMethods };
+ * const adapter = useSceneAdapter(scene, { selection: selection.adapterMethods });
  * ```
  *
  * Returns the same object for as long as `scene` is the same store, so it is

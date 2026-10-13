@@ -201,12 +201,6 @@ Priority tags:
   marked stroke gets one pair per half. Not compared with what the renderer draws for the one
   path.
 
-- **(P3) `arrayAdapter` selects a closed outline with no fill from inside it.** A marquee or lasso
-  in `intersect` mode drawn wholly inside an unfilled closed shape takes it. `regionTakes`
-  (`packages/core/src/core/geometry/regionHit.ts`) takes "is this filled" beside the outline and
-  the scene walk passes the painter's ink, but `arrayAdapter` has only its `silhouette` config and
-  nothing that says how an item is inked.
-
 - **(P3) svg import: `<tspan>` glyph positioning is not read.** `dx`, `rotate`, and list-valued
   per-glyph `x` / `y` are not applied; each warns, on `<text>` and `<tspan>` alike
   (`packages/svg/src/tspanLines.ts`). Kerned text exported as one `<tspan>` per glyph run imports
@@ -332,11 +326,27 @@ Priority tags:
   nine-element column-major matrix a GL uniform takes. Both are exported from `@weasel-js/geom`'s
   root, a capital letter apart.
 
-- **(P2) `arrayAdapter` as the default Canvas adapter — full unification.** `arrayAdapter`,
-  `useArrayAdapter`, and `sceneToAdapter` are three separate wirings, and `Canvas.tsx` takes
-  whichever a caller built as its `adapter` prop, with a no-op one when none is passed. What is
-  left is one adapter contract and one default wiring, with every scene a tree rooted at one
-  container, as `useScene`'s already is.
+- **(P2) Hand-written adapters may still be flat lists.** `sceneToAdapter` is the only adapter the
+  kit builds, and the scene slot paints only a tree. What is left is the tier below it: an adapter
+  written by hand against the narrow contracts, which may leave the tree out. Readers still carry
+  a second path for one that does — `adapterPickSource` (`canvas/pickWalk.ts`) walks `getNodes()`
+  when `getChildren` or `getNode` is missing, `OrderedAdapter`'s two methods are optional and
+  reorder ops do nothing without them, and the ops' `OrderedReader` (`core/ops/slot.ts`) treats a
+  missing `getChildren` as "no siblings". `useSelectTool.zorder.test.tsx` and
+  `useSelectTool.viewGates.test.tsx` pin the flat path. Needs a decision: require the tree of
+  every adapter and delete those paths, or keep the flat list as the least a hand-written adapter
+  can be. Two smaller ends: `<Canvas>`'s `adapter` prop is optional and typed as the whole
+  `CanvasAdapter` though it reads only `getPose` and `getWorldPose`; and `sceneAsHierarchy`
+  (`canvas/sceneViewRender.ts`) rebuilds four of `sceneToAdapter`'s reads because
+  `sceneAdapter.ts` imports React for `useSceneAdapter`, which a headless render cannot.
+
+- **(P3) A marquee and a lasso disagree on a node whose descriptor bounds reach past what it
+  draws.** Two nodes share the pose `{0, 0, 40, 10}`, and a descriptor's `forNode` gives one of
+  them a 40-square box. A marquee over the band above the pose takes that node; an `intersect`
+  lasso around the same band takes nothing (run against `sceneToAdapter`, 2026-10-13). Inferred
+  cause: `regionTakes` (`core/geometry/regionHit.ts`) answers a marquee from the bounds when the
+  outline is an axis-aligned rect, and the lasso tests the outline itself, which is the pose rect.
+  `sceneAdapter.regionOutline.test.ts` pins the marquee half only.
 
 - **(P3) A direct scene call made while a journal is open lands on the scene's own stack.**
   `scene.applyBatch` goes to the open journal; `scene.setPose` and its siblings, `scene.batch`, and
@@ -638,8 +648,7 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   SVG's `#000000` initial fill is a spec default, not drift. `resolveNodeFill`'s
   split between `kit:path` and `kit:shape` is documented and correct.
   `useBuiltinShapeTools`' nine hook calls are not a list, and are already
-  compiler-linked through the return type. `arrayAdapter` has no `setChildOrder`
-  because its root order *is* the item array's order. `sceneToAdapter`'s area walk
+  compiler-linked through the return type. `sceneToAdapter`'s area walk
   returns containers where the live marquee dep does not — one flag on the shared
   walk, because a bare-adapter consumer has no selection parent-folding to fold
   them back in.
@@ -1426,9 +1435,5 @@ only story runner in the repo.
   kind disagree on every node, and `SelectionPanel` has a third classifier; the command palette's
   summary prints the label, so making them one needs a decision on what it should say.
 
-- **(P3) `docs/concepts.md`'s "Adapter" section teaches per-action hooks.** It says every gesture
-  takes an adapter and that one struct is passed "to every hook", and calls `arrayAdapter` the
-  default for new apps; `docs/taxonomy.md`'s own "Adapter" entry lists the same per-action
-  interfaces. Both want rewriting around the scene `<SceneCanvas>` synthesizes an adapter from, once
-  "`arrayAdapter` as the default Canvas adapter" is settled. The examples rewritten 2026-10-13
-  ("Putting it together" in concepts, "Custom layers" in extending) have not been compiled.
+- **(P3) Two doc examples have not been compiled.** "Putting it together" in `docs/concepts.md`
+  and "Custom layers" in `docs/extending.md`, both rewritten 2026-10-13.

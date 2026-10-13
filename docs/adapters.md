@@ -1,144 +1,121 @@
 # Adapters
 
-An **adapter** is the bridge between weasel and your scene. The kit reads
-poses, hit-tests, and commits ops through this interface; the adapter
-translates those calls into your domain mutations.
+An **adapter** is the object the interaction layer reads a scene through and
+writes it back through: poses, hit-tests, selection, and the mutators ops
+apply. This page is for someone wiring a canvas, or handing a scene to
+something outside one. It says where the adapter comes from, what it answers,
+and when you would write one by hand.
 
-The kit ships several **narrow** adapter interfaces (one per gesture or
-action). TypeScript's structural typing means a single struct that has all
-the methods satisfies all of them at once. Most apps build one adapter per
-scene and pass it to every hook.
+## One wiring: the scene's adapter
 
-```ts
-import type {
-  MoveAdapter, ResizeAdapter, RotateAdapter,
-  InsertAdapter, AreaSelectAdapter,
-} from '@weasel-js/core';
+`<SceneCanvas scene={scene}>` builds its adapter from the scene, so most apps
+never hold one. To hand the same scene to something outside the canvas — a
+pose animation, a clipboard, a tool hook — build it yourself:
 
-// One value, satisfies them all.
-const adapter: MoveAdapter<Rect, Pose>
-  & ResizeAdapter<Rect, Pose>
-  & RotateAdapter<Rect, Pose>
-  & InsertAdapter<Rect>
-  & AreaSelectAdapter = makeAdapter();
-```
+```tsx
+import { useScene, useSceneAdapter, useSelection, tweenPose } from '@weasel-js/core';
 
-The narrow shapes live in `packages/core/src/core/adapters/types.ts`.
-
-Selection-driven operations — delete, duplicate, nudge, group, reorder,
-undo/redo — take no adapter. They're **actions**, and they read
-what they need from the **dep registry** by name (`scene`, `selection`,
-`history`, `applyOps`, …). See [Deps, not adapters](#deps-not-adapters).
-
-## `arrayAdapter` — the easy default
-
-`arrayAdapter<TNode, TPose>(config)` synthesizes a multi-faceted adapter
-from a `useState`-backed array. It satisfies `MoveAdapter`, `ResizeAdapter`,
-`InsertAdapter`, and `AreaSelectAdapter`.
-
-```ts
-import { arrayAdapter, useSelection } from '@weasel-js/core';
-
-const [rects, setRects] = useState<Rect[]>(INITIAL);
-const rectsRef = useRef(rects);
-rectsRef.current = rects;
+const scene = useScene({ items: RECTS });
 const selection = useSelection();
+const adapter = useSceneAdapter(scene, { selection: selection.adapterMethods });
 
-const adapter = {
-  ...arrayAdapter<Rect, Pose>({
-    ref: rectsRef,
-    setItems: setRects,
-    toPose: (r) => ({ x: r.x, y: r.y, width: r.width, height: r.height }),
-    // Optional. Defaults to shallow spread merge.
-    fromPose: (r, pose) => ({ ...r, ...pose }),
-    // Optional — needed for `commitInsert` to mint new objects.
-    createDefault: (b) => ({ id: nextId(), ...b, color: pickColor() }),
-    // Optional — needed for non-rect poses (path, polygon, …).
-    poseDescriptor: AUTO_POSE_DESCRIPTOR,
-  }),
-  ...selection.adapterMethods,
-};
+tweenPose(animator, adapter, { id: 'a', to: { x: 100, y: 0, width: 10, height: 10 }, ms: 250 });
 ```
 
-Spreading `selection.adapterMethods` wires `getSelection` / `setSelection`
-through the same `useSelection` instance the canvas uses.
+`useSceneAdapter(scene, options)` is the hook; `sceneToAdapter(scene, options)`
+is the same thing outside React. Both return a `SceneCanvasAdapter`, which is
+the whole contract in one type.
 
-Marquee and lasso take a node by its outline, the same test `sceneToAdapter`
-runs. A polygon pose is its own outline; any other pose is its rect, rotated
-by `rotation`. When the items are scene nodes drawn by the kit's painters,
-pass `silhouette: findShapeSilhouette` so they are tested as drawn.
+**A flat list is a scene.** `useScene({ items })` puts each item under the
+scene's root, in list order, on one layer named `default`, with the item as
+both its pose and its data. The adapter treats it as the tree it is:
+`getChildren(null)` is the list in z-order, and `setChildOrder(null, ids)`
+reorders it. There is no separate adapter for arrays.
 
-`arrayAdapter` does **not** supply `applyBatch`. Hooks fall back to a
-built-in dispatcher (`dispatchApplyBatch`) that applies each op against the
-adapter directly. Apps with custom history wire their own `applyBatch` by
-spreading on top.
+| Option | What it wires |
+|---|---|
+| `selection` | `useSelection()` or its `adapterMethods`. Left out, `getSelection` answers `[]` and `setSelection` does nothing. |
+| `commitInsert` | The factory an insert drag calls with its bounds. Return `{ pose, data, id? }`, or `null` to abort. |
+| `insertLayer` | The layer inserted nodes land on. Default `'default'`. |
+| `poseDescriptor` | How to read and rewrite this scene's poses. Default `AUTO_POSE_DESCRIPTOR`. |
+| `layouts` | Layout strategies for containers whose scene node declares none. |
 
-### `applyOps` and the `this`-binding pattern
+What the adapter answers:
 
-`arrayAdapter` defines `applyOps` as a method shorthand:
+- **Reads are what is shown.** `getNodes()` is render order with hidden layers
+  left out. `getPose(id)` is the effective pose, in the node's own frame;
+  `getWorldPose(id)` folds in every ancestor's.
+- **Writes are undoable.** `applyOps(ops, label)` is one history entry. Without
+  a label the ops are applied with no checkpoint, which is what a live marquee
+  wants.
+- **Marquee and lasso take a node by the outline it draws**, rotation included,
+  and return containers as well as leaves.
+- **`poseTarget(id)`** is the node's animation target, so moves on one node add.
 
-```ts
-applyOps(ops: Op[]) {
-  applyOpsTo(this, ops);
-}
-```
+## The contract, in slices
 
-That `this` is the **call-site receiver**, not the original `arrayAdapter`
-object. So when you spread additional methods on top:
+Each reader names only what it asks of an adapter, as a narrow interface in
+`packages/core/src/core/adapters/types.ts`. `SceneCanvasAdapter` satisfies all
+of them.
 
-```ts
-const adapter = {
-  ...arrayAdapter<Rect, Pose>({ ... }),
-  ...selection.adapterMethods,
-  insertNode: (obj) => setRects((rs) => [...rs, obj]),
-};
-```
-
-…and a hook calls `adapter.applyOps(ops)`, ops dispatch against the merged
-object — including your override of `insertNode` and the
-selection-backed `setSelection`. If you copy the method off
-(`const fn = adapter.applyOps`) you'll lose `this` and ops will dispatch
-against `undefined`.
-
-## When to write a custom adapter
-
-Reach for a custom adapter when:
-
-- Your scene isn't a flat array (tree of children, indexed by parent).
-- Your store is Redux/Zustand/MobX/CRDT — `arrayAdapter`'s `useState`
-  setter doesn't fit.
-- You want op-batched undo via `createHistory(adapter)` and need
-  `applyBatch` to push entries.
-- Pose extraction is expensive and you want memoization beyond the per-id
-  array scan `arrayAdapter` does.
-
-There's no base class: implement the methods the gestures and actions
-you use require, and compose the narrow types by intersection.
-
-## Adapter responsibilities by gesture
-
-Pointer-driven actions do their math through an adapter.
-
-| Action | Required adapter shape |
+| Reader | Slice |
 |---|---|
 | `move` | `MoveAdapter<TNode, TPose>` |
 | `resize` | `ResizeAdapter<TNode, TPose>` |
 | `rotate` | `RotateAdapter<TNode, TPose>` |
-| `insert`, `clone` | `InsertAdapter<TNode>` |
+| `insert`, `clone`, `useClipboardOps` | `InsertAdapter<TNode>` |
 | `areaSelect` | `AreaSelectAdapter` |
 | `lassoSelect` | `LassoSelectAdapter` |
-| `useTextEdit` | none — direct callbacks (see hook signature) |
+| `useSelectTool` | `SelectAdapter<TNode, TPose>` |
+| `tweenPose`, `springPose` | `PoseAnimationAdapter<TPose>` |
+| reorder ops | `OrderedAdapter` |
 
-`<SceneCanvas>` synthesizes all of these from your `Scene` via
-`sceneToAdapter`; you supply one explicitly only on the bare-adapter tier.
+`OrderedAdapter` is `getChildren(parentId)` and `setChildOrder(parentId, ids)`,
+with `null` naming the root. Array order **is** z-order: index 0 is the bottom.
+Hit-tests walk it in reverse and render layers walk it forward.
+
+`MoveAdapter.findSnapTarget?(draggedId, worldX, worldY)` returns
+`{ parentId, slotPose, metadata? }`, where the dragged node would re-parent to
+if released. The kit treats `metadata` as opaque; renderers consume it.
+
+## Writing one by hand
+
+Write an adapter when the kit does not own the store — a Redux or CRDT
+document, say. There is no base class. Implement the slice the reader takes and pass the
+object in:
+
+```ts
+const adapter: SelectAdapter<Rect, Pose> = {
+  getNode: (id) => rects.find((r) => r.id === id),
+  getNodes: () => rects,              // bottom first
+  getPose: (id) => poseOf(id),
+  setPose: (id, pose) => store.setPose(id, pose),
+  ...selection.adapterMethods,        // getSelection / setSelection
+};
+const select = useSelectTool(adapter, {});
+```
+
+What a reader does without an optional member:
+
+- No `getChildren`: a pick walks `getNodes()` in order, and nothing clips.
+- No `setChildOrder`: reorder ops do nothing.
+- No `applyOps`: ops are applied against the adapter one at a time, with no
+  history entry.
+- No `poseTarget`: a pose animation writes `setPose` every frame, and a second
+  move on a node cancels the first. `createWrittenPoseTarget({ read, write })`
+  builds a target over a store with one pose per node.
+
+A hand-written adapter cannot be passed to `<SceneCanvas>`, which takes a
+scene.
 
 ## Deps, not adapters
 
-Everything else an action needs arrives through the **dep registry**: a
-name → live-thunk map published by `useStandardActions` (and by
-`<SceneCanvas>`'s own registrars) and resolved fresh at each invocation. A
-descriptor declares what it reads in `requires`, and dev builds warn when an
-invoker touches a dep it didn't declare.
+Selection-driven operations — delete, duplicate, nudge, group, reorder,
+undo/redo — take no adapter. They are **actions**, and they read what they
+need from the **dep registry**: a name → live-thunk map published by
+`useStandardActions` (and by `<SceneCanvas>`'s own registrars) and resolved
+fresh at each invocation. A descriptor declares what it reads in `requires`,
+and dev builds warn when an invoker touches a dep it didn't declare.
 
 The schema is `DepSchema` in
 `packages/core/src/interactions/actions/depSchema.ts`. Core keys:
@@ -165,18 +142,3 @@ publishes it; absent, it is `AUTO_POSE_DESCRIPTOR`, which reads rect poses and
 So there is no `DeleteAdapter` / `NudgeAdapter` / `UndoRedoAdapter` to
 implement: `delete` declares `requires: ['scene', 'selection', 'applyOps']` and
 gets them.
-
-## Optional mixins
-
-- **`OrderedAdapter`** — `getChildren?(parentId): string[]`,
-  `setChildOrder?(parentId, ids)`. Convention: array order **is** z-order
-  (index 0 = bottom). Hit-tests iterate in reverse; render layers iterate
-  forward. Reorder ops and the `reorder.*` actions no-op if either method is
-  missing.
-
-## Snap targets
-
-`MoveAdapter.findSnapTarget?(draggedId, worldX, worldY): SnapTarget<TPose>
-| null` — optional. Returns `{ parentId, slotPose, metadata? }` describing
-where the dragged object would re-parent to if released. The kit treats
-`metadata` as opaque; renderers consume it.

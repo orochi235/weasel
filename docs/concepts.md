@@ -171,17 +171,18 @@ A view *inside* the main canvas is a `<CanvasView>` instead.
 
 ## Adapter
 
-Weasel never reads or writes your scene state directly. Every gesture takes
-an **adapter** — a small object the consumer implements that exposes the
-scene to the kit (`getNodes`, `getPose`, `setPose`, …) and accepts ops
-back. Hook-specific adapters (`MoveAdapter`, `ResizeAdapter`,
-`InsertAdapter`, `AreaSelectAdapter`, `RotateAdapter`) are narrow subsets of
-a hypothetical full `SceneAdapter`. TypeScript's structural typing means
-**one struct satisfies all of them at once** — most apps write a single
-adapter and pass it to every hook.
+An **adapter** is the object the interaction layer reads a scene through
+(`getNodes`, `getPose`, hit-tests, selection) and writes it back through (the
+mutators ops apply). `<SceneCanvas>` builds one from the scene you give it, so
+most apps never hold one; `useSceneAdapter(scene)` builds the same thing for
+whatever sits outside the canvas, such as a pose animation. A flat list of
+items is a scene too: `useScene({ items })`.
 
-`arrayAdapter` produces a multi-faceted adapter from a `useState` array
-scene; it's the default for new apps. See [adapters.md](./adapters.md).
+Each reader asks for a narrow slice of the contract (`MoveAdapter`,
+`ResizeAdapter`, `InsertAdapter`, `AreaSelectAdapter`, `RotateAdapter`), and
+the scene's adapter satisfies all of them. A store the kit does not own gets a
+hand-written adapter implementing the slices its readers take. See
+[adapters.md](./adapters.md).
 
 ## Pose
 
@@ -291,7 +292,7 @@ What is built on it:
 
 | Value | Its target | Moved by |
 |---|---|---|
-| A node's pose | `adapter.poseTarget(id)`: `scenePoseTarget(scene, id)` over a scene, `createWrittenPoseTarget` over an `arrayAdapter` | `tweenPose`, `springPose`, `animateOnSetPose`, reflow glides, momentum |
+| A node's pose | `adapter.poseTarget(id)`: `scenePoseTarget(scene, id)` over a scene, `createWrittenPoseTarget` over a store with no overrides | `tweenPose`, `springPose`, `animateOnSetPose`, reflow glides, momentum |
 | The camera | `ViewAnimationApi.viewTarget`; on a `<SceneCanvas>` ref, `camera.target` | `useViewAnimation`, `animateView`; add a shake on the same animator, which the ref hands out as `camera.animator` |
 | Vertex colors | `colorOverrides.target(id, channel, length)` | `tweenVertexColors`, `springVertexColors`, `staggerVertexColors` |
 | A rig's pose | `rig.target` | clips: a `SampledTrack<Pose>` given `target` and `weight` |
@@ -299,9 +300,9 @@ What is built on it:
 | Many like values | a row of `createTargetTable({ axes })` | any of the above primitives, on `table.target(row)` |
 
 A pose animation over a scene therefore writes the document once, at its start,
-and shows its travel through a pose override. An `arrayAdapter` has no overrides,
-so its array is written the pose on screen each frame while the target keeps the
-committed pose. The values are computed by blits
+and shows its travel through a pose override. A hand-written adapter's store has
+no overrides, so `createWrittenPoseTarget` writes it the pose on screen each frame
+while the target keeps the committed pose. The values are computed by blits
 (`@msb235/blits`), behind `packages/animator/src/engine/`; no blits type is
 public. blits clocks the voices and sums them; how a target's holds share it is
 folded here, in `engine/holds.ts`, since blits weighs a voice whole and a hold can

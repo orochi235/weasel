@@ -23,7 +23,7 @@ A container under `cascadeContainerPose` moves on its target too. Its descendant
 New API:
 
 - `createPoseTarget({ id, get, set, overrides, descriptor? })` makes the target for one node's pose, and `scenePoseTarget(scene, id, descriptor?)` returns the one a scene keeps per node. Animations given it as `target` add to everything else moving that node.
-- `SceneAdapter.poseTarget?(id, descriptor?)` is how an adapter hands that target to the helpers.
+- `MoveAdapter.poseTarget?(id, descriptor?)` is how an adapter hands that target to the helpers.
 - `PoseDescriptor.axes?(like)` says how a pose maps to numbers and which are angles. `RECT_POSE_DESCRIPTOR` maps `x`, `y`, `width`, `height`, and `rotation` as an angle, so a rotation tweens the short way round.
 - `interrupt: false` on a targeted `tween`, `spring`, `physics`, or `decay` takes a `cancelKey` without canceling the animations holding it.
 - `publish` on `createTarget`: called once a frame for all the targets sharing it. A target's `show` is now also called as an animation starts on it.
