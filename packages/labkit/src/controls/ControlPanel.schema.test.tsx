@@ -47,6 +47,7 @@ describe('<ControlPanel> schema', () => {
       [],
     );
     render(<ControlPanel schema={schema} config={{ a: 5, b: 5 }} setConfig={vi.fn()} />);
+    expect(screen.getAllByRole('slider')).toHaveLength(1);
     expect(screen.getByLabelText('B')).toHaveAttribute('role', 'spinbutton');
   });
 

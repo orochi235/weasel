@@ -86,14 +86,12 @@ describe('<ControlPanel> number', () => {
     expect(input.value).toBe('42');
   });
 
-  it('clamps to [min, max] on blur', () => {
+  it('clamps to [min, max] as it is typed', () => {
     const setConfig = vi.fn();
     const fields: ConfigField[] = [
       { key: 'n', label: 'N', type: 'number', default: 0, min: 0, max: 100 },
     ];
     render(<ControlPanel fields={fields} config={{ n: 50 }} setConfig={setConfig} />);
-    // The number row commits as you type, so the clamp applies on change
-    // rather than waiting for blur.
     fireEvent.change(screen.getByRole('spinbutton'), { target: { value: '999' } });
     expect(setConfig).toHaveBeenCalledWith('n', 100);
   });

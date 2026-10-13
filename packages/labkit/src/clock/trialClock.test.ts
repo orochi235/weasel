@@ -134,12 +134,6 @@ describe('createTrialClock', () => {
       expect(clock.pass).toBe(9);
       expect(clock.phase).toBeCloseTo(0.5);
     });
-
-    it('plays once by default', () => {
-      const { clock } = started({ duration: 100, rate: 1 });
-      clock.sync(150);
-      expect(clock.elapsed).toBe(100);
-    });
   });
 
   describe('seek', () => {

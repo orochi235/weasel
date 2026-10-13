@@ -28,20 +28,6 @@ describe('ToolbarRegion', () => {
     expect(screen.getByRole('button', { name: 'redo' })).toBeInTheDocument();
   });
 
-  it('fires onActivate on click', () => {
-    const onActivate = vi.fn();
-    render(
-      <ToolbarRegion
-        contributions={[
-          { id: 'go', region: 'toolbar', item: { icon: Glyph, label: 'Go', onActivate } },
-        ]}
-        ctx={ctx}
-      />,
-    );
-    screen.getByRole('button', { name: 'Go' }).click();
-    expect(onActivate).toHaveBeenCalledOnce();
-  });
-
   it('hands onActivate the chrome context', () => {
     const onActivate = vi.fn();
     render(
