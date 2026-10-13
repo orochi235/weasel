@@ -15,7 +15,8 @@ import type { Affordance } from 'affordances/types';
 import type { InsertAdapter } from 'core/adapters/types';
 import { sceneFromJSON } from 'core/scene/scene';
 import type { Node, NodeId, Scene, SerializedScene } from 'core/scene/types';
-import { useSelection, type SelectionApi, type UseSelectionOptions } from 'core/selection/useSelection';
+import { readOnlySelection } from 'core/selection/readOnlySelection';
+import { useSelection, type UseSelectionOptions } from 'core/selection/useSelection';
 import { useCanvasCamera } from './SceneCanvas/useCanvasCamera';
 import { normalizeView, type View } from 'core/viewport/view';
 import { never, useHoverTracking } from 'features/chrome-caps';
@@ -304,27 +305,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // adapter's `setSelection`, ops committed through either — reads this api,
   // so on an unselectable canvas every write path here is closed. The
   // consumer's own api is not wrapped and still writes.
-  const baseAdapterMethods = baseSelection.adapterMethods;
-  const readOnlyAdapterMethods = useMemo(() => ({
-    getSelection: () => baseAdapterMethods.getSelection(),
-    setSelection: () => {},
-  }), [baseAdapterMethods]);
-  const selection: SelectionApi = useMemo(() => {
-    if (selectable) return baseSelection;
-    const noopSet = () => {};
-    return {
-      get current() { return baseSelection.current; },
-      get: baseSelection.get,
-      contains: baseSelection.contains,
-      set: noopSet,
-      add: noopSet,
-      remove: noopSet,
-      toggle: noopSet,
-      clear: noopSet,
-      applyClick: noopSet,
-      adapterMethods: readOnlyAdapterMethods,
-    };
-  }, [baseSelection, selectable, readOnlyAdapterMethods]);
+  const selection = selectable ? baseSelection : readOnlySelection(baseSelection);
 
   // Publish the current selection (with optional per-id kind labels) into any surrounding
   // `<SelectionContextProvider>`. No-op when no provider is in scope.
