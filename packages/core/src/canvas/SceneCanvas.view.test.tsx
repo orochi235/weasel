@@ -11,6 +11,8 @@
 import { describe, it, expect, vi, beforeAll, afterEach } from 'vitest';
 import { render, act, cleanup } from '@testing-library/react';
 import { Profiler, StrictMode, useEffect } from 'react';
+import { clampView } from 'core/viewport/clampView';
+import { useOptionalViewInputs } from './viewInputs';
 import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import { SceneCanvas, type SceneCanvasProps } from './SceneCanvas';
 import { createScene } from 'core/scene/scene';
@@ -232,6 +234,125 @@ describe('SceneCanvas view', () => {
       contentVersion: () => 7,
     };
     expect(props.width).toBe(200);
+  });
+});
+
+describe('SceneCanvas view bounds', () => {
+  const BOUNDS = { x: 0, y: 0, width: 400, height: 300 };
+  const OUTSIDE: View = { x: 1000, y: -50, scale: { x: 1, y: 1 } };
+  const CLAMPED = clampView(OUTSIDE, BOUNDS, { width: 200, height: 150 });
+
+  it('the bounds move a view this far outside them', () => {
+    expect(CLAMPED).not.toEqual(OUTSIDE);
+  });
+
+  it('a controlled canvas reports an input write unclamped', async () => {
+    const depsRef = { current: null as DepRegistry | null };
+    const onViewChange = vi.fn();
+    render(
+      <SceneCanvas<D, L, P>
+        scene={newScene()}
+        width={200}
+        height={150}
+        view={{ x: 0, y: 0, scale: { x: 1, y: 1 } }}
+        viewBounds={BOUNDS}
+        onViewChange={onViewChange}
+      >
+        <DepGrabber out={depsRef} />
+      </SceneCanvas>,
+    );
+    await frame();
+    act(() => { depsRef.current!.get('view')!.set(OUTSIDE); });
+    expect(onViewChange).toHaveBeenCalledTimes(1);
+    expect(onViewChange).toHaveBeenCalledWith(OUTSIDE);
+  });
+
+  it('an uncontrolled canvas clamps an input write', async () => {
+    const apiRef = { current: null as SceneCanvasApi | null };
+    const depsRef = { current: null as DepRegistry | null };
+    const onViewChange = vi.fn();
+    render(
+      <SceneCanvas<D, L, P>
+        ref={apiRef}
+        scene={newScene()}
+        width={200}
+        height={150}
+        viewBounds={BOUNDS}
+        onViewChange={onViewChange}
+      >
+        <DepGrabber out={depsRef} />
+      </SceneCanvas>,
+    );
+    await frame();
+    act(() => { depsRef.current!.get('view')!.set(OUTSIDE); });
+    expect(onViewChange).toHaveBeenCalledTimes(1);
+    expect(onViewChange).toHaveBeenCalledWith(CLAMPED);
+    expect(apiRef.current!.getView()).toEqual(CLAMPED);
+  });
+});
+
+describe('SceneCanvas view read during the first commit', () => {
+  const INITIAL: View = { x: -60, y: 5, scale: { x: 4, y: 4 } };
+  // Five world units off a 10x10 node. A 10px pick tolerance reaches it at
+  // scale 1 and falls short at scale 4, so the pick says which view the select
+  // tool read.
+  const NEAR = { x: 15, y: 5 };
+
+  function mountAndRead(viewProps: Pick<SceneCanvasProps<D, L, P>, 'view' | 'defaultView'>) {
+    const scene = newScene();
+    const id = scene.add({
+      kind: 'leaf', data: { kind: 'rect' }, layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 },
+    });
+    const apiRef = { current: null as SceneCanvasApi | null };
+    const seen: { dep?: View; camera?: View; picked?: string[]; hook?: View } = {};
+    function ReadDuringFirstCommit() {
+      const registry = useDepRegistry();
+      const inputs = useOptionalViewInputs();
+      // A child's effects run ahead of the canvas's own.
+      useEffect(() => {
+        seen.dep = registry.get('view')?.get();
+        seen.camera = apiRef.current?.camera.target.read();
+        seen.picked = inputs?.pickEvery?.(NEAR.x, NEAR.y);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      }, []);
+      return null;
+    }
+    const search = window.location.search;
+    window.history.replaceState(null, '', '?test=1');
+    try {
+      render(
+        <SceneCanvas<D, L, P>
+          ref={apiRef}
+          scene={scene}
+          width={200}
+          height={150}
+          geometry={{ picking: 'pose', pickTolerancePx: 10 }}
+          {...viewProps}
+        >
+          <ReadDuringFirstCommit />
+        </SceneCanvas>,
+      );
+      seen.hook = window.__weaselTest?.getView();
+    } finally {
+      window.history.replaceState(null, '', search || window.location.pathname);
+    }
+    return { seen, id };
+  }
+
+  it('the pick probe reaches the node at the default view', () => {
+    const { seen, id } = mountAndRead({});
+    expect(seen.picked).toEqual([id]);
+  });
+
+  it.each([
+    ['defaultView', { defaultView: INITIAL }],
+    ['a controlled view', { view: INITIAL }],
+  ])('answers %s to the view dep, the camera, the select tool, and the test hook', (_name, viewProps) => {
+    const { seen } = mountAndRead(viewProps);
+    expect(seen.dep).toEqual(INITIAL);
+    expect(seen.camera).toEqual(INITIAL);
+    expect(seen.picked).toEqual([]);
+    expect(seen.hook).toEqual(INITIAL);
   });
 });
 
