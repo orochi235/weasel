@@ -2,6 +2,8 @@ import type { BaseSampler } from './bases/types';
 import { EFFECTS, type BadgeEffectSpec } from './effects';
 
 const SAMPLES = 600;
+/** CSS px. */
+const GRAZE = 0.05;
 
 interface Box { w: number; h: number }
 
@@ -40,17 +42,38 @@ function displacer(base: BaseSampler, effects: readonly BadgeEffectSpec[] | unde
   };
 }
 
+/** Whether `(x, y)` lies inside the closed polygon through `ring`. */
+function inside(ring: readonly { x: number; y: number }[], x: number, y: number): boolean {
+  let within = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const a = ring[i];
+    const b = ring[j];
+    if ((a.y > y) !== (b.y > y) && x < ((b.x - a.x) * (y - a.y)) / (b.y - a.y) + a.x) within = !within;
+  }
+  return within;
+}
+
 /**
  * How far, in CSS px, `bloat` and the effects move any point of `base`'s outline that they
- * move inward: the clearance content needs from `base` to stay inside the composed outline.
+ * move into `base`'s own inside: the clearance content needs from `base` to stay inside the
+ * composed outline. A point moved outward counts too when it lands inside, as one does that
+ * crosses a notch narrower than the distance it moves.
  */
-export function inwardReach(base: BaseSampler, effects: readonly BadgeEffectSpec[] | undefined, bloatCss: number): number {
+export function inwardReach(base: BaseSampler, effects: readonly BadgeEffectSpec[] | undefined, bloatCss: number, box: Box): number {
   const moved = displacer(base, effects, bloatCss, 0);
   if (!moved) return 0;
+  const sx = 100 / box.w;
+  const sy = 100 / box.h;
+  const samples = Array.from({ length: SAMPLES }, (_, i) => moved((i / SAMPLES) * base.totalCss));
+  const ring = samples.map((sample) => sample.pt);
   let reach = 0;
-  for (let i = 0; i < SAMPLES; i++) {
-    const { pt, dx, dy } = moved((i / SAMPLES) * base.totalCss);
-    if (dx * pt.nx + dy * pt.ny < 0) reach = Math.max(reach, Math.hypot(dx, dy));
+  for (const { pt, dx, dy } of samples) {
+    const far = Math.hypot(dx, dy);
+    if (far <= reach) continue;
+    // Tested a hair outward, so a point slid along its own edge does not read as inside.
+    const lx = pt.x + (dx + pt.nx * GRAZE) * sx;
+    const ly = pt.y + (dy + pt.ny * GRAZE) * sy;
+    if (dx * pt.nx + dy * pt.ny < 0 || inside(ring, lx, ly)) reach = far;
   }
   return reach;
 }

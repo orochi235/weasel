@@ -585,20 +585,13 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 ## Selection, actions & UI panels
 
-- **(P3) Scallops on a fitted badge base still run through the label.** A fitted base
-  (`puzzle`, `quatrefoil`, `octant-spline`, `octant-bspline`) now leaves room for what moves its
-  outline inward (`inwardReach`, `Badge/composeOutline.ts`), and bites and a negative `bloat` clear
-  the label in headless Chromium. `scallops` (`scallopRadius: 5`, `scallopSpacing: 12`) does not on
-  the last three: the outline crosses both ends of the label, as it did before. Not read to a
-  cause; a scallop moves its points outward, so `inwardReach` counts nothing for it, and on a
-  concave stretch outward is toward the label. Seen in the same screenshot and also not read: a
-  removable `pill` with a two-word label wraps it onto two lines in a flex row with room to spare.
-
 - **(P3) A removable badge's remove control can wrap onto a line by itself.** On a wrapped `pill` or
   `plain` `Badge`, when the line cannot hold the last word and the control together, the control
   breaks alone and takes its negative margin with it, so it sits left of the line's start. Measured
   in bare markup, not on a badge. A word joiner, a non-breaking space, and `white-space: nowrap` do
-  not stop Chromium breaking before an inline-block.
+  not stop Chromium breaking before an inline-block. Seen once in a screenshot and not read to a
+  cause: a removable `pill` with a two-word label wrapped onto two lines in a flex row with room
+  to spare. Both need a browser to work in.
 
 - **(P3) Disabled has no signal of its own, now that emphasis is an alpha.** Disabled is `opacity:
   0.4`–`0.5` on the whole control, and subtle text is 0.54–0.64 alpha, so a disabled control and a

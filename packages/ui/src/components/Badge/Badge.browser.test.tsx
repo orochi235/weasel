@@ -262,6 +262,32 @@ describe('a base holds its content inside its outline', () => {
       }
     }
   }
+
+  // Outward effects: on a base with notches, a point moved outward can cross one and land inside.
+  const OUTWARD = {
+    scallops: [{ type: 'scallops', params: { scallopRadius: 5, scallopSpacing: 12 } }],
+    spikes: [{ type: 'spikes' }],
+  } as const;
+  for (const base of (Object.keys(BASES) as BadgeBase[]).filter((key) => BASES[key].fitsContent)) {
+    for (const [name, effects] of Object.entries(OUTWARD)) {
+      test(`${base} under ${name}`, async () => {
+        const { container } = render(
+          <Surface mode="light">
+            <p><Badge base={base} effects={[...effects]}>a considerably longer label</Badge></p>
+          </Surface>,
+        );
+        const badge = container.querySelector<HTMLElement>('[data-status]')!;
+        const content = badge.lastElementChild!;
+        await waitFor(() => {
+          const path = badge.querySelector<SVGPathElement>('.badge-stroke');
+          if (!path) throw new Error('no outline yet');
+          const box = content.getBoundingClientRect();
+          const inside = outline(path).filter((p) => p.x > box.left + 0.25 && p.x < box.right - 0.25 && p.y > box.top + 0.25 && p.y < box.bottom - 0.25);
+          expect(inside.length, `${inside.length} outline points inside the content`).toBe(0);
+        });
+      });
+    }
+  }
 });
 
 // A composed badge has no CSS box to outline: its silhouette is an SVG path, and a root button
