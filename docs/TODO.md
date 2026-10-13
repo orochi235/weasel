@@ -1061,6 +1061,13 @@ only story runner in the repo.
 
 ## Demos & visual regression
 
+- **(P1) Undo does not take back a momentum flick on `main`.** Two tests fail since `599685677`
+  ("record every scene edit as the kit ops it caused"), in a fleet run of `ac40cf155` and alone:
+  `momentum.targets.test.tsx` "records the whole flick as one step once it comes to rest" and
+  `move.momentum.test.ts` "records the whole flick as one entry that one undo takes back". After
+  `scene.undo()` the node is still where the coast left it. Cause not looked into; reported to the
+  session that made the commit on 2026-10-13.
+
 - **(P2) Three visual baselines were captured on macOS and have not been compared on CI.**
   `insert-rect.png`, `gestures-drag-trace.png`, and `shape-tools-three-shapes.png` under
   `tests/visual/` were written locally on 2026-10-13. Baselines belong to `visual-update.yml` on
