@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { compileNurbs, evalNurbsAtS, extractAnchorPairs } from '../bases/OctantBSpline';
 import {
   anchorCount, readAnchors, splineEvaluator, splineMode, withAnchor, withAnchorCount, withInsertedAnchor, withoutAnchor,
 } from './splineAnchors';
@@ -126,5 +127,16 @@ describe('splineEvaluator', () => {
     const r = splineEvaluator('octant-bspline', bent);
     expect(r(0.5)).toBeGreaterThan(20);
     expect(r(0.5)).toBeLessThan(48);
+  });
+});
+
+describe('splineEvaluator at weight 0', () => {
+  it('draws the b-spline the way the badge base does, which holds every weight above zero', () => {
+    const params = { count: 4, w0: 0, w2: 0 };
+    const badge = compileNurbs(extractAnchorPairs(params));
+    const editor = splineEvaluator('octant-bspline', readAnchors(params));
+    for (const s of [0, 0.2, 0.5, 0.8, 1]) {
+      expect(editor(s)).toBeCloseTo(evalNurbsAtS(s, badge), 10);
+    }
   });
 });

@@ -127,8 +127,6 @@ Priority tags:
     text grip. Each swap changes how the lab looks or drags.
   - Its colors are literals (`rgba(255,255,255,…)`, `#7fb069`) in the stylesheets, not `--wzl-*`
     tokens.
-  - At weight 0 the spline editor's curve and the drawn badge disagree: the editor's
-    `readAnchors` allows weight 0 where the base's `extractAnchorPairs` floors it at 0.01.
   - In the workshop at a 1500px window, the Compose lab's "Type & padding" column and effects
     panel run past the right edge of the stage. Not compared against the lab before its text
     moved onto the type scale.

@@ -1,5 +1,5 @@
 import type { BadgeBase } from '../bases';
-import { compileNurbs, evalNurbsAtS } from '../bases/OctantBSpline';
+import { OCTANT_BSPLINE_MIN_WEIGHT, compileNurbs, evalNurbsAtS } from '../bases/OctantBSpline';
 import {
   OCTANT_SPLINE_DEFAULTS, OCTANT_SPLINE_MAX_ANCHORS, compileSpline, evalCompiled,
   type Anchor, type OctantSplineParams,
@@ -106,7 +106,7 @@ export function withInsertedAnchor(params: SplineParams, s: number, r: number): 
 /** r(s) as the named base draws it through `anchors`. */
 export function splineEvaluator(base: BadgeBase, anchors: SplineAnchor[]): (s: number) => number {
   if (base === 'octant-bspline') {
-    const nurbs = compileNurbs(anchors);
+    const nurbs = compileNurbs(anchors.map((a) => ({ ...a, w: Math.max(OCTANT_BSPLINE_MIN_WEIGHT, a.w) })));
     return (s) => evalNurbsAtS(s, nurbs);
   }
   const spline = compileSpline(anchors);
