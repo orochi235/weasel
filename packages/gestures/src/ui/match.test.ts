@@ -649,9 +649,7 @@ describe('parseTargetSpec', () => {
     expect(parseTargetSpec({} as unknown as TargetSpec)).toBeNull();
   });
 
-  it('every form matchTarget accepts round-trips through the parser', () => {
-    // The link the three enumerations rely on: an unparsed spec is a no-match
-    // everywhere, so a form the parser doesn't know can never match.
+  it('never matches a target spec the parser does not know', () => {
     expect(matchTarget(null, 'nonsense' as TargetSpec, 'empty', 'text')).toBe(false);
   });
 });
