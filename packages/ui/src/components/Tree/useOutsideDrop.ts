@@ -24,12 +24,12 @@ export interface UseOutsideDropOptions {
 }
 
 /** A drag begun outside a `Tree`: the mark for where it would land, and the answer to where a drop does. */
-export function useOutsideDrop({ at, latest, resolve, handle }: UseOutsideDropOptions): ResolvedDrop | null {
+export function useOutsideDrop({ at, latest: latestRef, resolve, handle }: UseOutsideDropOptions): ResolvedDrop | null {
   const hitAt = useCallback((x: number, y: number): ResolvedDrop | null => {
-    const box = latest.current.container()?.getBoundingClientRect();
+    const box = latestRef.current.container()?.getBoundingClientRect();
     if (!box || x < box.left || x > box.right || y < box.top || y > box.bottom) return null;
     return resolve([], x, y);
-  }, [latest, resolve]);
+  }, [latestRef, resolve]);
 
   const [marked, setMarked] = useState<ResolvedDrop | null>(null);
   const x = at?.x;

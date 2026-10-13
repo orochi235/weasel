@@ -48,7 +48,7 @@ const StoryBody = memo(function StoryBody({ story, config, setConfig, state, set
 
 /** A story rendered in the workshop document, inside a `TrialHost`, from the trial's own config and state. */
 export function StoryTrial({ story, setup, ctx, hostRef, onRendered, onError }: StoryTrialProps) {
-  const latest = useLatest(ctx);
+  const latestRef = useLatest(ctx);
   // Kept across a write to a key forge owns, so moving the playhead or a pin does not re-render the story.
   const [heldConfig, setHeldConfig] = useState(() => storyConfig(ctx.config));
   const config = storyConfig(ctx.config, heldConfig);
@@ -74,9 +74,9 @@ export function StoryTrial({ story, setup, ctx, hostRef, onRendered, onError }: 
   // Stable, as the frame's were: a story may list them as effect dependencies.
   // The pins belong to the trial; a story cannot see them, so it cannot set them either.
   const setConfig = useCallback((path: string, value: unknown) => {
-    if (!isForgePath(path)) latest.current.setConfig(path, value);
-  }, [latest]);
-  const setState = useCallback((next: unknown) => latest.current.setState(next), [latest]);
+    if (!isForgePath(path)) latestRef.current.setConfig(path, value);
+  }, [latestRef]);
+  const setState = useCallback((next: unknown) => latestRef.current.setState(next), [latestRef]);
 
   // The story's clock lives with its trial: the trial's transport reads it from the registry, the story from context.
   const trialId = useContext(TrialIdContext);
@@ -87,7 +87,7 @@ export function StoryTrial({ story, setup, ctx, hostRef, onRendered, onError }: 
   const persisted = typeof kept === 'number' && Number.isFinite(kept) ? kept : null;
   const clock = useStoryClock(story.timeline?.(config) ?? null, () => persisted);
   useClockLoop(clock, host);
-  usePersistedPlayhead(clock, persisted, (time) => latest.current.setConfig(PLAYHEAD_KEY, time));
+  usePersistedPlayhead(clock, persisted, (time) => latestRef.current.setConfig(PLAYHEAD_KEY, time));
   useEffect(() => (clock && clocks && trialId ? clocks.publish(trialId, clock) : undefined), [clock, clocks, trialId]);
 
   const decorators = setup.decorators ?? NO_DECORATORS;

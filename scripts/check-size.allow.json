@@ -24,15 +24,15 @@
   },
   "packages/core/src/canvas/Canvas.tsx": {
     "lines": 783,
-    "longestFunction": 467
+    "longestFunction": 466
   },
   "packages/core/src/canvas/CanvasView.tsx": {
     "lines": 412,
     "longestFunction": 267
   },
   "packages/core/src/canvas/SceneCanvas.tsx": {
-    "lines": 870,
-    "longestFunction": 717
+    "lines": 869,
+    "longestFunction": 716
   },
   "packages/core/src/canvas/SceneCanvas/GestureDispatcherMounter.tsx": {
     "longestFunction": 254
@@ -250,7 +250,7 @@
     "longestFunction": 237
   },
   "packages/labkit/src/surface/useTiledSurface.ts": {
-    "longestFunction": 260
+    "longestFunction": 258
   },
   "packages/labkit/src/trial/Trial.tsx": {
     "lines": 553,
@@ -266,7 +266,7 @@
     "lines": 439
   },
   "packages/renderer/src/WeaselRenderer.ts": {
-    "lines": 738
+    "lines": 731
   },
   "packages/renderer/src/drawBatch.ts": {
     "lines": 612

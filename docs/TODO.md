@@ -184,13 +184,13 @@ Priority tags:
   the canvas's world, not the panel's. Composing would mean a view's camera derived from the view
   under its aim, and a resolver that descends rather than picking one rect.
 
-- **(P3) Canvas hosts: the renderer writes inline `width` and `height` style on a `<canvas>` it
-  owns.** `WeaselRenderer`'s constructor and `resize` set `canvas.style.width`/`height`, so a
-  `<SceneViewCanvas className>` or `<DrawCanvas className>` that sizes the element (`width: 100%`)
-  loses to the inline style after the first paint. Ruled 2026-10-11: the renderer sets only the
-  canvas's backing-store size, and every host sizes its element by class. That leaves dropping both
-  style writes, checking every host for a layout that depends on them, and taking the caveat back
-  out of the `SceneViewCanvas` and `DrawCanvas` docstrings.
+- **(P3) A page that does not load core's stylesheet shows every canvas at its buffer size.** The
+  renderer sets only a canvas's drawing buffer, and `<Canvas>`, `<SceneViewCanvas>`, and
+  `<DrawCanvas>` size the element with a zero-specificity class from `@weasel-js/core/style.css`
+  (`surfaceBox`). Without that stylesheet the element is `dpr` times too large, so it is wrong
+  only on a high-density screen, and nothing warns. Core could adopt the one rule itself when a
+  canvas mounts, the way `applyTheme` adopts its sheet; that reaches a page with no stylesheet
+  and misses a canvas in a shadow root or a second document. Not chosen yet.
 
 ---
 
@@ -539,26 +539,23 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
-- **(P3) The side-scroller's music bed as engine voices.** The bed is hand-written PCM
-  (`platformer/sfx.ts`, `bed`). Its struck metal is expressible as `{ partials }`
-  and its chugs and bass as harmonic partials with a `decay`. The arrangement
-  is expressible too: a hit that lands late is a fractional `step`, the loop's
-  drift sharp and back is the player's `detune` as a function of the step, and
-  `patternVoicePeaks` says whether its busiest moment fits the music bus's
-  voice limit. What is left is the port itself, and one thing with no engine
-  equivalent: the four bars are peak-normalized together, which as voices
-  becomes a bus gain chosen by ear, or a compressor insert.
+- **(P3) The side-scroller's music bed is engine voices nobody has heard.** It plays from a
+  pattern player on the music bus (`platformer/bed.ts`). The old render was
+  peak-normalized as a whole, which voices have no equivalent of: `MUSIC_GAIN`
+  in `usePlatformerAudio.ts` is set so one pass has the old render's RMS, and
+  `platformerBed.browser.test.ts` holds it there, and each octave within 2 dB
+  of the old balance. What is left is a listening pass: the bus gain chosen by
+  ear, or a compressor insert in its place.
 
-- **(P3) Trope-aware generative scoring: unheard, and with no demo.** `createScore`
+- **(P3) Trope-aware generative scoring: unheard.** `createScore`
   plays a mood on three axes (valence, tension, urgency) as bars written by
   `scoreBar` from `scoreParams`, and names the cue in force through `state()`
   and `onBar`. Every number in the mapping was chosen from the description of
-  the four cues and checked only as structure, on a fake audio context: the
-  thresholds between modes and harmonies, the tempo range, the envelopes, the
-  layer levels, and where each cue sits on the axes. Whether dread reads as
-  dread is a listening pass nobody has done. It also wants a demo that shows
-  the cue and its parameters beside the sliders, so a consumer can see which
-  device is being applied.
+  the four cues and checked only as structure: the thresholds between modes
+  and harmonies, the tempo range, the envelopes, the layer levels, and where
+  each cue sits on the axes. Whether dread reads as dread is a listening pass
+  nobody has done; the `score` demo (`apps/site/demos/ScoreDemo.tsx`) plays
+  each cue with its parameters beside the sliders, which is where to do it.
 
 - **(P3) AudioWorklet voices** — immune to main-thread jank. Moving only the
   scheduler's timer into a worklet would change nothing: it already runs off
@@ -1121,8 +1118,9 @@ only story runner in the repo.
 ## Lint
 
 - **(P3) eslint-plugin-react-hooks v7 compiler rules still off.**
-  Every compiler rule with no reports is on, as is `set-state-in-effect`. Three are off, with the
-  rationale in `eslint.config.js`, counted on 2026-10-12:
+  Every compiler rule with no reports is on, as are `set-state-in-effect` and
+  `preserve-manual-memoization`. Two are off, with the rationale in `eslint.config.js`, counted on
+  2026-10-12:
   - `refs` — 408 reports in 83 files; reading a ref during render is how a
     canvas library reaches frame state, and there is no writes-only mode
     (`weasel/no-render-ref-write` covers writes).
@@ -1130,14 +1128,13 @@ only story runner in the repo.
     a prop or an outer variable from inside a probe component. The rest are
     `useVisibleRaf` loops re-requesting themselves, and writes to forwarded
     refs, DOM nodes, and mutable engine objects.
-  - `preserve-manual-memoization` — 16 reports in 9 files, of a `useMemo` or
-    `useCallback` whose listed dependencies differ from the ones the compiler
-    infers. Nothing here is compiled, but a mismatch is also where a stale
-    closure would hide, so each wants reading: `SceneCanvas.tsx` (4),
-    forge's `useStoryRegistry.ts` (3), `StoryTrial.tsx` (2), and `FrameView.tsx`,
-    labkit's `Trial.tsx` (2) and `useTiledSurface.ts`, core's
-    `GestureDispatcherMounter.tsx`, ui's `useOutsideDrop.ts`, and the
-    `ForceGraphDemo`.
+
+- **(P3) `preserve-manual-memoization` is off for two files under `canvas/SceneCanvas/`.** Neither
+  report is a stale closure. `GestureDispatcherMounter.tsx` memoizes `longPress` on
+  `longPressOpts?.duration` and `?.haptics` where the compiler infers `longPressOpts`: read the two
+  fields into locals first. `DevHuds.tsx` reads a `useLatest` ref named `pickers`, which the
+  compiler takes for a ref only under a name ending in `Ref`. Fix both and delete the override
+  block in `eslint.config.js`.
 
 ---
 

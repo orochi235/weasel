@@ -24,8 +24,10 @@ npm install @weasel-js/core react
 
 `react` is a peer dependency (>=18).
 
-The canvas's debug overlays (`cursorCoordsHud`, `pickHud`, `modalityHud`) are
-styled by core's stylesheet. Import it once if you turn any of them on:
+Import core's stylesheet once. It gives every canvas the kit renders its size
+on the page, and styles the canvas's debug overlays (`cursorCoordsHud`,
+`pickHud`, `modalityHud`). Without it a canvas is as large as its drawing
+buffer, which on a high-density screen is twice the size you asked for:
 
 ```ts
 import '@weasel-js/core/style.css';

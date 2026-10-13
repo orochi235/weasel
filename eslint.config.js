@@ -29,8 +29,6 @@ const CORE_ALIASES = (() => {
  *   - `immutability`: a `useVisibleRaf` callback re-requesting its own loop reads as
  *     use-before-declare, and assigning to a forwarded ref, a mutable engine object, or a DOM
  *     node reads as mutating a hook's value.
- *   - `preserve-manual-memoization`: reports where React Compiler would skip a component, and
- *     nothing here is compiled.
  */
 
 const languageOptions = {
@@ -237,6 +235,7 @@ export default [
       'react-hooks/void-use-memo': 'error',
       'react-hooks/unsupported-syntax': 'error',
       'react-hooks/incompatible-library': 'error',
+      'react-hooks/preserve-manual-memoization': 'error',
 
       '@typescript-eslint/no-explicit-any': 'error',
       '@typescript-eslint/no-unsafe-function-type': 'error',
@@ -262,6 +261,18 @@ export default [
         caughtErrorsIgnorePattern: '^_',
       }],
     },
+  },
+  {
+    /**
+     * The reports left. `longPress` lists `longPressOpts?.duration` and `?.haptics` where the
+     * compiler infers `longPressOpts`, and `pickers` is a latest-ref the compiler only takes for
+     * a ref under a name ending in `Ref`. Delete this block with the fixes.
+     */
+    files: [
+      'packages/core/src/canvas/SceneCanvas/GestureDispatcherMounter.tsx',
+      'packages/core/src/canvas/SceneCanvas/DevHuds.tsx',
+    ],
+    rules: { 'react-hooks/preserve-manual-memoization': 'off' },
   },
   {
     /**

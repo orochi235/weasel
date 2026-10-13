@@ -464,7 +464,7 @@ function TrialRuntime({
           }}
         />
       ) : null,
-    [instrument.layers, layerDescriptors, layerItems, snapshotIfNeeded],
+    [instrument.layers, layerDescriptors, layerItems, snapshotIfNeeded, setLayerOrder, setLayerVisibility],
   );
 
   const extraChrome = useMemo<TrialContribution[]>(() => {
