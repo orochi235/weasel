@@ -1,0 +1,24 @@
+.editor {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.canvas {
+  width: 100%;
+  aspect-ratio: 1;
+  background: #0a0806;
+  border-radius: var(--wzl-radius-sm);
+  cursor: default;
+  user-select: none;
+}
+
+.canvas[data-dragging] { cursor: grabbing; }
+
+.dot { cursor: grab; }
+
+.help {
+  font-size: var(--wzl-font-size-2xs);
+  opacity: 0.55;
+  margin: 0;
+}

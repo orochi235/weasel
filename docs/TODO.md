@@ -143,10 +143,19 @@ Priority tags:
   - `Canvas`'s `adapter` prop is typed as the Move, Resize, and Rotate adapters together, though
     Canvas reads only poses, nodes, layers, and children.
 
-- **(P3) `packages/ui/src/components/Badge/Badge.stories.tsx` is 2,200 lines, 750 of them one
-  function.** `ComposeLabView` and the `OctantSplineEditor` it uses cannot move to a second
-  stories file, because forge lists every named export of one as a story, and in a plain module
-  both break the 120-line function cap. Breaking `ComposeLabView` up comes first.
+- **(P3) What moving the Badge lab out of its stories file left.** The lab is
+  `packages/ui/src/components/Badge/lab/` now.
+  - It hand-rolls around kit components: `InlineRange` fits its range inputs, and
+    `useReorderDragList` with `DragGrip` fits the effect-card reorder, which uses HTML5 drag and a
+    text grip. Each swap changes how the lab looks or drags.
+  - Its colors are literals (`rgba(255,255,255,…)`, `#7fb069`) in the stylesheets, not `--wzl-*`
+    tokens.
+  - At weight 0 the spline editor's curve and the drawn badge disagree: the editor's
+    `readAnchors` allows weight 0 where the base's `extractAnchorPairs` floors it at 0.01.
+  - In the workshop at a 1500px window, the Compose lab's "Type & padding" column and effects
+    panel run past the right edge of the stage. Not compared against the lab before its text
+    moved onto the type scale.
+  - The simple stories (`StatusVariantMatrix`, `Sizes`, `EdgeCases`) still use inline styles.
 
 - **(P3) `DrawCanvas.tsx` and `SceneViewCanvas.tsx` each carry the same first-paint block**
   (`paintedRef` plus a layout effect). It belongs in `useCanvasSurface`.
