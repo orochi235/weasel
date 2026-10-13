@@ -318,44 +318,118 @@ describe('a removable badge with an action', () => {
     });
   }
 
+  /** Whole-pixel points one pixel inside each edge of `box`: hit testing is done on whole pixels. */
+  const inside = (box: DOMRect) => ({ l: Math.ceil(box.left) + 1, t: Math.ceil(box.top) + 1, r: Math.floor(box.right) - 2, b: Math.floor(box.bottom) - 2 });
+  const PADDINGS = [undefined, 10, '4px 14px 6px 12px'] as const;
+  for (const shape of ['pill', 'plain', 'square'] as const) {
+    for (const padding of PADDINGS) {
+      test(`${shape}, padding ${padding ?? 'unset'}: the label takes every edge of the box, the remove control only itself`, () => {
+        const { container } = render(
+          <Surface mode="light">
+            <p>
+              <Badge shape={shape} padding={padding} onRemove={() => {}}>label</Badge>{' '}
+              <Badge shape={shape} padding={padding} onClick={() => {}} onRemove={() => {}}>label</Badge>{' '}
+              <Badge shape={shape} padding={padding} href="#x" onRemove={() => {}}>label</Badge>
+            </p>
+          </Surface>,
+        );
+        const [removable, ...actionable] = [...container.querySelectorAll<HTMLElement>('[data-status]')];
+        for (const badge of actionable) {
+          const target = badge.querySelector('a, [role="button"]')!;
+          const removeEl = badge.querySelector('button')!;
+          const box = badge.getBoundingClientRect();
+          expect([box.width, box.height]).toEqual([removable.getBoundingClientRect().width, removable.getBoundingClientRect().height]);
+          const remove = removeEl.getBoundingClientRect();
+          const text = textBox(badge, 'label');
+          const midX = (text.left + text.right) / 2;
+          const midY = (text.top + text.bottom) / 2;
+          const removeX = (remove.left + remove.right) / 2;
+          const found = (x: number, y: number) => {
+            const el = document.elementFromPoint(x, y);
+            return el === removeEl || removeEl.contains(el) ? 'remove' : hits(el, target) ? 'label' : hits(el, badge) ? 'badge' : 'outside';
+          };
+          const { l, t, r, b } = inside(box);
+          expect(found(l, midY), 'left edge').toBe('label');
+          expect(found(midX, t), 'top edge').toBe('label');
+          expect(found(midX, b), 'bottom edge').toBe('label');
+          expect(found(Math.floor(remove.left) - 1, midY), 'gap').toBe('label');
+          if (box.right - remove.right >= 2) expect(found(r, midY), 'right of the remove control').toBe('label');
+          if (remove.top - box.top >= 2) expect(found(removeX, t), 'above the remove control').toBe('label');
+          if (box.bottom - remove.bottom >= 2) expect(found(removeX, b), 'below the remove control').toBe('label');
+          expect(found(removeX, (remove.top + remove.bottom) / 2), 'remove').toBe('remove');
+          for (const [x, y] of [[l - 3, midY], [r + 3, midY], [midX, t - 3], [midX, b + 3]]) {
+            expect(found(x, y), `outside at ${x},${y}`).toBe('outside');
+          }
+        }
+      });
+    }
+  }
+
   // An absolutely positioned box inside a wrapped inline spans from the first fragment's start to
   // the last one's end, which is not the badge, so pill and plain grow the label's own inline box.
-  for (const breakStyle of ['slice', 'clone'] as const) {
-    test(`a wrapped pill (${breakStyle}) takes clicks on its fragments and nowhere else`, () => {
-      const { container } = render(
-        <Surface mode="light">
-          <p style={{ width: 130 }}>
-            xx xx <Badge breakStyle={breakStyle} onRemove={() => {}}>alpha beta gamma delta</Badge>
-          </p>
-          <p style={{ width: 130 }}>
-            xx xx <Badge breakStyle={breakStyle} onClick={() => {}} onRemove={() => {}}>alpha beta gamma delta</Badge>
-          </p>
-        </Surface>,
-      );
-      const [removable, clickable] = [...container.querySelectorAll<HTMLElement>('[data-status]')];
-      const target = clickable.querySelector('[role="button"]')!;
-      const frags = [...clickable.getClientRects()];
-      expect(frags.length).toBeGreaterThan(1);
-      // The label's padding must not move anything.
-      const want = [...removable.getClientRects()];
-      const top = want[0].top - frags[0].top;
-      expect(frags.map((f) => [f.left, f.top + top, f.width, f.height])).toEqual(want.map((f) => [f.left, f.top, f.width, f.height]));
+  for (const shape of ['pill', 'plain'] as const) {
+    for (const breakStyle of ['slice', 'clone'] as const) {
+      for (const padding of [undefined, 10] as const) {
+        test(`a wrapped ${shape} (${breakStyle}, padding ${padding ?? 'unset'}) takes clicks on all of every fragment and nowhere else`, () => {
+          const { container } = render(
+            <Surface mode="light">
+              <p style={{ width: 150, lineHeight: '40px' }}>
+                xx xx <Badge shape={shape} padding={padding} breakStyle={breakStyle} onRemove={() => {}}>alpha beta gamma delta</Badge>
+              </p>
+              <p style={{ width: 150, lineHeight: '40px' }}>
+                xx xx <Badge shape={shape} padding={padding} breakStyle={breakStyle} onClick={() => {}} onRemove={() => {}}>alpha beta gamma delta</Badge>
+              </p>
+            </Surface>,
+          );
+          const [removable, clickable] = [...container.querySelectorAll<HTMLElement>('[data-status]')];
+          const target = clickable.querySelector('[role="button"]')!;
+          const remove = clickable.querySelector('button')!.getBoundingClientRect();
+          const frags = [...clickable.getClientRects()];
+          expect(frags.length).toBeGreaterThan(1);
+          const want = [...removable.getClientRects()];
+          const dy = want[0].top - frags[0].top;
+          expect(frags.map((f) => [f.left, f.top + dy, f.width, f.height])).toEqual(want.map((f) => [f.left, f.top, f.width, f.height]));
 
-      const [first, second] = frags;
-      const midY = (f: DOMRect) => (f.top + f.bottom) / 2;
-      expect(hits(document.elementFromPoint(first.left + 2, midY(first)), target), 'first fragment, left padding').toBe(true);
-      expect(hits(document.elementFromPoint(first.left + 20, first.top + 1.5), target), 'first fragment, top padding').toBe(true);
-      expect(hits(document.elementFromPoint(second.left + 20, second.top + 1.5), target), 'second fragment, top padding').toBe(true);
-      if (breakStyle === 'clone') {
-        expect(hits(document.elementFromPoint(second.left + 2, midY(second)), target), 'second fragment, left padding').toBe(true);
+          const onRemove = (x: number, y: number) => x >= remove.left - 1 && x <= remove.right + 1 && y >= remove.top - 1 && y <= remove.bottom + 1;
+          frags.forEach((f, i) => {
+            const { l, t, r, b } = inside(f);
+            const midY = Math.round((f.top + f.bottom) / 2);
+            for (const x of [l, Math.round(f.left + f.width / 3), Math.round(f.left + (2 * f.width) / 3), r]) {
+              for (const y of [t, midY, b]) {
+                if (onRemove(x, y)) continue;
+                expect(hits(document.elementFromPoint(x, y), target), `fragment ${i} at ${x - f.left},${y - f.top} of ${f.width}x${f.height}`).toBe(true);
+              }
+            }
+            for (const [x, y] of [[l - 3, midY], [r + 3, midY], [Math.round(f.left + f.width / 2), t - 3], [Math.round(f.left + f.width / 2), b + 3]]) {
+              // Another fragment of the same badge may lie that way; only the page beyond counts.
+              if (frags.some((o) => x >= o.left && x <= o.right && y >= o.top && y <= o.bottom)) continue;
+              expect(hits(document.elementFromPoint(x, y), clickable), `outside fragment ${i} at ${x - f.left},${y - f.top} of ${f.width}x${f.height}`).toBe(false);
+            }
+          });
+        });
       }
-      // Left of the first fragment, on its line: inside the badge's bounding box, outside the badge.
-      expect(first.left).toBeGreaterThan(second.left + 4);
-      expect(hits(document.elementFromPoint(second.left + 2, midY(first)), clickable), 'beside the first fragment').toBe(false);
-      const last = frags[frags.length - 1];
-      expect(hits(document.elementFromPoint(last.right + 4, midY(last)), clickable), 'after the last fragment').toBe(false);
-    });
+    }
   }
+
+  // A line too narrow for the label's last word and the control together still parts them.
+  test('the remove control stays on the line of the label\'s last word', () => {
+    const { container } = render(
+      <Surface mode="light">
+        {Array.from({ length: 40 }, (_, i) => (
+          <p key={i} style={{ width: 90 + i * 3 }}>
+            <Badge onClick={() => {}} onRemove={() => {}}>alpha beta gamma</Badge>
+          </p>
+        ))}
+      </Surface>,
+    );
+    for (const badge of container.querySelectorAll<HTMLElement>('[data-status]')) {
+      const lines = [...badge.querySelector('[role="button"]')!.getClientRects()].filter((r) => r.width > 0);
+      const last = lines[lines.length - 1];
+      const remove = badge.querySelector('button')!.getBoundingClientRect();
+      const middle = (remove.top + remove.bottom) / 2;
+      expect(middle > last.top && middle < last.bottom, `at width ${badge.parentElement!.style.width}`).toBe(true);
+    }
+  });
 
   test('a linked label keeps the badge\'s ink and takes no underline', () => {
     const { plain, link } = row('pill', 'sm');

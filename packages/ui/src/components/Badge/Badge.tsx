@@ -8,6 +8,7 @@ import { SHAPES, type BadgeShapeParams } from './shapes';
 import { BASES, type BadgeBase, type BadgeBaseParams } from './bases';
 import { EFFECTS, type EffectSpec } from './effects';
 import { composeOutline, offsetOutline } from './composeOutline';
+import { paddingStyle } from './paddingSides';
 import type { BadgeShape, BadgeStatus, BadgeVariant, BadgeSize } from './types';
 import { useSvgBox } from './useSvgBox';
 import { BadgeRemove, BadgeTarget } from './BadgeLabel';
@@ -187,17 +188,16 @@ export const Badge = forwardRef(function Badge(props: BadgeProps, ref: Ref<HTMLE
 
   const sampler = composeBase ? composeBase.build(composeBaseParams, box.w, box.h) : null;
 
-  const insetsSource = composeBase
+  const insets = composeBase
     ? (typeof composeBase.insets === 'function' ? composeBase.insets(composeBaseParams) : composeBase.insets) ?? { top: 0, right: 0, bottom: 0, left: 0 }
     : (typeof shapeModule.insets === 'function' ? shapeModule.insets(params) : shapeModule.insets);
-  const insets = insetsSource;
   const style: CSSProperties = {
     ...stanced.style,
     ['--badge-inset-top' as never]: `${insets.top}px`,
     ['--badge-inset-right' as never]: `${insets.right}px`,
     ['--badge-inset-bottom' as never]: `${insets.bottom}px`,
     ['--badge-inset-left' as never]: `${insets.left}px`,
-    ...(padding !== undefined && { padding: typeof padding === 'number' ? `${padding}px` : padding }),
+    ...paddingStyle(padding),
     ...(breakStyle !== undefined && {
       boxDecorationBreak: breakStyle,
       WebkitBoxDecorationBreak: breakStyle,
@@ -216,6 +216,7 @@ export const Badge = forwardRef(function Badge(props: BadgeProps, ref: Ref<HTMLE
     'data-tone': stanced['data-tone'],
     'data-variant': variant,
     'data-size': size,
+    'data-break': breakStyle,
     'data-focused': focused ? 'true' : undefined,
     onFocus: (e: FocusEvent<HTMLElement>) => { if (!split) setFocused(true); onFocus?.(e); },
     onBlur: (e: FocusEvent<HTMLElement>) => { if (!split) setFocused(false); onBlur?.(e); },

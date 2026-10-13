@@ -94,12 +94,13 @@
    variants (above) reuse it as the text color — re-assert the muted fg. */
 .badge[data-status='neutral']:not([data-variant='solid']) { --badge-fg: var(--_s-accent, var(--wzl-fg-muted)); }
 
+/* The `padding` prop arrives as the --badge-pad-<side> properties. */
 .badge {
-  padding:
-    calc(var(--badge-pad-y, 1px) + var(--badge-inset-top, 0px))
-    calc(var(--badge-pad-x, 6px) + var(--badge-inset-right, 0px))
-    calc(var(--badge-pad-y, 1px) + var(--badge-inset-bottom, 0px))
-    calc(var(--badge-pad-x, 6px) + var(--badge-inset-left, 0px));
+  --_pad-top: var(--badge-pad-top, calc(var(--badge-pad-y, 1px) + var(--badge-inset-top, 0px)));
+  --_pad-right: var(--badge-pad-right, calc(var(--badge-pad-x, 6px) + var(--badge-inset-right, 0px)));
+  --_pad-bottom: var(--badge-pad-bottom, calc(var(--badge-pad-y, 1px) + var(--badge-inset-bottom, 0px)));
+  --_pad-left: var(--badge-pad-left, calc(var(--badge-pad-x, 6px) + var(--badge-inset-left, 0px)));
+  padding: var(--_pad-top) var(--_pad-right) var(--_pad-bottom) var(--_pad-left);
 }
 
 .badge[data-shape='pill'] {
@@ -136,7 +137,10 @@
 .badge[data-shape='plain'] {
   display: inline;
   background: transparent;
-  padding: 0;
+  --_pad-top: var(--badge-pad-top, 0px);
+  --_pad-right: var(--badge-pad-right, 0px);
+  --_pad-bottom: var(--badge-pad-bottom, 0px);
+  --_pad-left: var(--badge-pad-left, 0px);
   letter-spacing: 0.04em;
   text-transform: none;
   color: var(--badge-fg);
@@ -181,23 +185,49 @@ a.badge {
 }
 /* Pill and plain are inline and can wrap, where an absolute box spans from the first fragment's
    start to the last one's end rather than covering the fragments. There the label's own inline
-   box grows into the padding, fragment by fragment. */
+   box grows over the root's padding and border, fragment by fragment, and each growth is
+   taken back by a margin so nothing moves. */
 .badge:is([data-shape='pill'], [data-shape='plain']) :is(.content, .target) {
   -webkit-box-decoration-break: inherit;
   box-decoration-break: inherit;
 }
-.badge:is([data-shape='pill'], [data-shape='plain']) .target {
-  --_hit-gap: var(--wzl-space-1);
-  padding-right: var(--_hit-gap);
-  margin-right: calc(-1 * var(--_hit-gap));
+.badge[data-shape='pill'] { --_edge: var(--badge-stroke-width, 1px); }
+.badge[data-shape='plain'] { --_edge: 0px; }
+.badge:is([data-shape='pill'], [data-shape='plain']) {
+  --_hit-left: calc(var(--_pad-left) + var(--_edge));
+  --_hit-right: calc(var(--_pad-right) + var(--_edge));
 }
-.badge[data-shape='pill'] .target {
-  --_hit-left: calc(var(--badge-pad-x, 6px) + var(--badge-inset-left, 0px) + var(--badge-stroke-width, 1px));
-  padding-block:
-    calc(var(--badge-pad-y, 1px) + var(--badge-inset-top, 0px) + var(--badge-stroke-width, 1px))
-    calc(var(--badge-pad-y, 1px) + var(--badge-inset-bottom, 0px) + var(--badge-stroke-width, 1px));
-  padding-left: var(--_hit-left);
+.badge:is([data-shape='pill'], [data-shape='plain']) .target {
+  padding: calc(var(--_pad-top) + var(--_edge)) 0 calc(var(--_pad-bottom) + var(--_edge)) var(--_hit-left);
   margin-left: calc(-1 * var(--_hit-left));
+}
+/* Chromium breaks a line before an inline-block whatever the text before it says, so the remove
+   control could wrap onto a line of its own. Instead the label ends in a tail, joined to its
+   last word, that holds room for the control and the badge's closing edge, and the control
+   backs up into it so that it and the edge add nothing to the line. On a label that acts, the
+   tail is also the click target from the label to the badge's end. */
+.badge:is([data-shape='pill'], [data-shape='plain']) .content > :not(.remove)::after {
+  content: '\2060';
+  padding-right: calc(var(--wzl-space-1) + var(--_remove-size) + var(--_hit-right));
+}
+.badge:is([data-shape='pill'], [data-shape='plain']) .remove {
+  margin-left: calc(-1 * (var(--_remove-size) + var(--_hit-right)));
+}
+.badge:is([data-shape='pill'], [data-shape='plain']) .content > .target::after {
+  padding-block: calc(var(--_pad-top) + var(--_edge)) calc(var(--_pad-bottom) + var(--_edge));
+}
+/* A cloned break closes every fragment of the badge, so the label closes over each one too. Its
+   last closing would reach past the badge's end, so there the tail gives the edge back, and
+   over a span of line widths as wide as that edge the control can still wrap alone. */
+.badge[data-break='clone']:is([data-shape='pill'], [data-shape='plain']) .target {
+  padding-right: var(--_hit-right);
+  margin-right: calc(-1 * var(--_hit-right));
+}
+.badge[data-break='clone']:is([data-shape='pill'], [data-shape='plain']) .content > .target::after {
+  margin-right: calc(-1 * var(--_hit-right));
+}
+.badge[data-break='clone']:is([data-shape='pill'], [data-shape='plain']) .target + .remove {
+  margin-left: calc(-1 * var(--_remove-size));
 }
 
 /* Mixed from what the edge is made of: a property that reads itself is a cycle, and resolves to nothing. */
@@ -212,9 +242,8 @@ a.badge:hover,
   .badge:has(.target:is(a, [role='button']):hover) { --badge-edge: var(--_s-accent, var(--badge-status-edge)); }
 }
 
+.badge { --_remove-size: 14px; --_remove-glyph: 10px; }
 .remove {
-  --_remove-size: 14px;
-  --_remove-glyph: 10px;
   /* Above the label's stretched hit area. */
   position: relative;
   display: inline-block;
@@ -246,11 +275,11 @@ a.badge:hover,
   width: var(--_remove-glyph);
   height: var(--_remove-glyph);
 }
-.badge[data-size='xs'] .remove { --_remove-size: 12px; --_remove-glyph: 8px; }
-.badge[data-size='md'] .remove { --_remove-size: 16px; --_remove-glyph: 12px; }
+.badge[data-size='xs'] { --_remove-size: 12px; --_remove-glyph: 8px; }
+.badge[data-size='md'] { --_remove-size: 16px; --_remove-glyph: 12px; }
 /* A plain badge is a bare run of text: its box is the font's own height, which is all the
    control has to fit in. */
-.badge[data-shape='plain'] .remove { --_remove-size: 1em; }
+.badge[data-shape='plain'] { --_remove-size: 1em; }
 
 /* BEGIN GENERATED stance rules: badge — `npm run gen:stances`, do not edit. */
 
