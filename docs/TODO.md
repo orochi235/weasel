@@ -189,10 +189,6 @@ Priority tags:
   through `core/geometry/targetFrame.ts`, and the text edit overlay is handed it as
   `TextEditScreenPose.frame`; a resize writes the box and keeps the transform. What still sees
   only the box and its rotation:
-  - `remapRotatedLeaf` (`core/geometry/poseDescriptor.ts`) drops the shear a non-uniform group
-    resize gives a turned leaf rather than writing it to the leaf's `transform`, and reads only
-    the leaf's rotation, so a leaf that already carries a skew is remapped as if it had none. The
-    chrome now follows whatever it writes.
   - `useSceneTextEdit` places the overlay, and tests a double-click, against the node's own pose
     (`effectivePose`), not its world pose, so text under a container whose pose is a frame is
     edited where it would sit without that container. It also scales by `view.scale.x` alone, so
