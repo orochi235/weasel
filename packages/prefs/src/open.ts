@@ -40,10 +40,19 @@ export function openPrefsSync<S extends PrefGroup>(
   schema: S,
   options: PrefsOptions & { storage: SyncStorageAdapter },
 ): PrefsStore<S> {
+  const { cache, stop } = openPrefsCacheSync(options);
+  return createPrefsStore(schema, cache, options.validators, stop, options.migrations?.length ?? 0);
+}
+
+/** The migrated cache `openPrefsSync` builds its store over, and what stops
+ *  its version watch. */
+export function openPrefsCacheSync(
+  options: PrefsOptions & { storage: SyncStorageAdapter },
+): { cache: OwnedRecordCache; stop: () => void } {
   const cache = openRecordsSync({ storage: options.storage, prefix: options.prefix });
   const stop = watch(cache, options);
   if (runPrefsMigrations(cache, options.migrations ?? [])) void cache.flush();
-  return createPrefsStore(schema, cache, options.validators, stop, options.migrations?.length ?? 0);
+  return { cache, stop };
 }
 
 /** Attached before migrations run, so a peer's version bump during the open's

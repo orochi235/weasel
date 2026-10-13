@@ -215,7 +215,7 @@
     "longestFunction": 129
   },
   "packages/labkit/src/controls/panelRows.tsx": {
-    "longestFunction": 262
+    "longestFunction": 256
   },
   "packages/labkit/src/lab/Lab.tsx": {
     "longestFunction": 205
@@ -384,7 +384,7 @@
     "longestFunction": 127
   },
   "packages/ui/src/components/SelectionPanel/renderLeaf.tsx": {
-    "longestFunction": 142
+    "longestFunction": 140
   },
   "packages/ui/src/components/Slider/SliderBody.tsx": {
     "longestFunction": 239

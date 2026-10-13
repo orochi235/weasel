@@ -67,7 +67,7 @@ export function MatrixCell({
   const write = (next: unknown): void => setConfig(path, next);
   const choices = useFieldChoices();
   const field = isBuiltinPref(leaf)
-    ? prefFieldProps(leaf, { value: shown, setValue: write, fields: choices, disabled })
+    ? prefFieldProps(leaf, { value: shown, setValue: write, fields: choices, disabled }, 'lab')
     : null;
   const label = hint ? `${name}, ${hint}` : name;
 

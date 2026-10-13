@@ -9,6 +9,7 @@ export type { PrefSelectHow } from './selection';
 export type { MarkHiddenProps } from './hidden';
 export { prefFieldProps, type PrefFieldState } from './prefField';
 export { PARAMS_SETTLES, withCommitPolicy, type ParamsSurface, type LiveControl } from './commitPolicy';
+export { PARAMS_CONTROLS, withRowControl, withSurfaceControl, type SurfaceControls } from './surfaceControls';
 export { PrefActionButton } from './PrefActionButton';
 export { PrefMixed } from './PrefMixed';
 export { PrefLabelLine, PrefRule, PrefWords, prefDrawsNoControl } from './PrefWords';

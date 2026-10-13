@@ -1,56 +1,86 @@
-import type { StorageAdapter, SyncStorageAdapter } from '@weasel-js/storage';
+import type { OwnedRecordCache, StorageAdapter, SyncStorageAdapter } from '@weasel-js/storage';
 import { useCallback, useSyncExternalStore } from 'react';
 import type { PrefGroup } from './groups';
-import { openPrefsSync, type PrefsOptions } from './open';
-import type { PrefsStore } from './store';
+import { openPrefsCacheSync, type PrefsOptions } from './open';
+import { createPrefsStore, type PrefsStore } from './store';
 
-/** The one store open on a prefix, and how many mounted components hold it. */
+/** The store open for one schema, and how many mounted components hold it. */
 interface Held {
-  schema: PrefGroup | null;
   store: PrefsStore<PrefGroup> | null;
   holders: number;
 }
 
-const held = new WeakMap<StorageAdapter, Map<string, Held>>();
+/** The one cache open on a prefix, and a store over it for each schema in use. */
+interface Shared {
+  open: { cache: OwnedRecordCache; stop: () => void } | null;
+  bySchema: Map<PrefGroup, Held>;
+}
 
-function heldAt(storage: StorageAdapter, prefix: string): Held {
-  let byPrefix = held.get(storage);
-  if (!byPrefix) held.set(storage, (byPrefix = new Map()));
+type SyncOptions = PrefsOptions & { storage: SyncStorageAdapter };
+
+const shared = new WeakMap<StorageAdapter, Map<string, Shared>>();
+
+function sharedAt(storage: StorageAdapter, prefix: string): Shared {
+  let byPrefix = shared.get(storage);
+  if (!byPrefix) shared.set(storage, (byPrefix = new Map()));
   let entry = byPrefix.get(prefix);
-  if (!entry) byPrefix.set(prefix, (entry = { schema: null, store: null, holders: 0 }));
+  if (!entry) byPrefix.set(prefix, (entry = { open: null, bySchema: new Map() }));
   return entry;
 }
 
-// `close` sends queued writes before its first await, and a sync adapter's
-// write lands in that call, so a store opened next reads them.
-function close(entry: Held): void {
-  void entry.store?.close();
-  entry.store = null;
+function heldAt(at: Shared, schema: PrefGroup): Held {
+  let entry = at.bySchema.get(schema);
+  if (!entry) at.bySchema.set(schema, (entry = { store: null, holders: 0 }));
+  return entry;
 }
 
-/** Close an entry nothing holds, a microtask on: after the remount StrictMode
- *  and fast refresh make in the same tick, which holds it again. */
-function closeUnheldSoon(storage: StorageAdapter, prefix: string, entry: Held): void {
+/** `cache` for one store among several: closing it sends queued writes and
+ *  leaves the cache open for the others. */
+const lent = (cache: OwnedRecordCache): OwnedRecordCache =>
+  Object.create(cache, {
+    close: {
+      value: async (): Promise<void> => {
+        await cache.flush();
+      },
+    },
+  }) as OwnedRecordCache;
+
+/** Close a store nothing holds, and the cache once no store is over it, a
+ *  microtask on: after the remount StrictMode and fast refresh make in the
+ *  same tick, which holds it again. */
+function closeUnheldSoon(storage: StorageAdapter, prefix: string, schema: PrefGroup, entry: Held): void {
   queueMicrotask(() => {
     if (entry.holders > 0) return;
-    close(entry);
-    const byPrefix = held.get(storage);
-    if (byPrefix?.get(prefix) === entry) byPrefix.delete(prefix);
+    void entry.store?.close();
+    entry.store = null;
+    const byPrefix = shared.get(storage);
+    const at = byPrefix?.get(prefix);
+    if (!at || !byPrefix) return;
+    if (at.bySchema.get(schema) === entry) at.bySchema.delete(schema);
+    if (at.bySchema.size > 0) return;
+    at.open?.stop();
+    // `close` sends queued writes before its first await, and a sync adapter's
+    // write lands in that call, so a cache opened next reads them.
+    void at.open?.cache.close();
+    byPrefix.delete(prefix);
   });
 }
 
-function acquire<S extends PrefGroup>(
-  schema: S,
-  options: PrefsOptions & { storage: SyncStorageAdapter },
-): PrefsStore<S> {
+function acquire<S extends PrefGroup>(schema: S, options: SyncOptions): PrefsStore<S> {
   const { storage, prefix } = options;
-  const entry = heldAt(storage, prefix);
-  if (entry.store && entry.schema !== schema) close(entry);
+  const at = sharedAt(storage, prefix);
+  const entry = heldAt(at, schema);
   if (!entry.store) {
-    entry.schema = schema;
-    entry.store = openPrefsSync(schema, options) as unknown as PrefsStore<PrefGroup>;
+    at.open ??= openPrefsCacheSync(options);
+    entry.store = createPrefsStore(
+      schema,
+      lent(at.open.cache),
+      options.validators,
+      undefined,
+      options.migrations?.length ?? 0,
+    ) as unknown as PrefsStore<PrefGroup>;
     // Opened by a render that may never mount.
-    if (entry.holders === 0) closeUnheldSoon(storage, prefix, entry);
+    if (entry.holders === 0) closeUnheldSoon(storage, prefix, schema, entry);
   }
   return entry.store as unknown as PrefsStore<S>;
 }
@@ -60,31 +90,28 @@ function acquire<S extends PrefGroup>(
  * the first render, so that render has values, and closed, with its queued
  * writes sent, when the component unmounts.
  *
- * One store is open per `storage` and `prefix` at a time. Components naming
- * the same pair share it, and it closes when the last of them unmounts; they
- * must pass the same `schema`.
+ * Components naming the same `storage`, `prefix`, and `schema` share one
+ * store, which closes when the last of them unmounts. Components naming the
+ * same `storage` and `prefix` with different schemas each get a store of
+ * their own over the same records, so a write through one is read by the
+ * others at once, and each hears it as a `local` change. They must pass the
+ * same `migrations`: the records are migrated once, when the first opens.
  *
  * `storage` and `schema` are compared by identity and `prefix` by value, so
- * keep the first two out of the render body. A change to `storage` or
- * `prefix` closes the store and returns the one for the new pair. A new
- * `schema` on the same pair closes the store and opens another in the same
- * render, which any other component still holding the old one does not hear
- * of. The `options` object itself may be new every render: `migrations` and
- * `validators` are read when a store opens, and a change to either alone
- * opens nothing.
+ * keep the first two out of the render body. A change to any of the three
+ * closes the store and returns the one for the new three. The `options`
+ * object itself may be new every render: `migrations` and `validators` are
+ * read when a store opens, and a change to either alone opens nothing.
  */
-export function usePrefsStore<S extends PrefGroup>(
-  schema: S,
-  options: PrefsOptions & { storage: SyncStorageAdapter },
-): PrefsStore<S> {
+export function usePrefsStore<S extends PrefGroup>(schema: S, options: SyncOptions): PrefsStore<S> {
   const { storage, prefix } = options;
   const hold = useCallback(() => {
-    const entry = heldAt(storage, prefix);
+    const entry = heldAt(sharedAt(storage, prefix), schema);
     entry.holders++;
     return () => {
-      if (--entry.holders === 0) closeUnheldSoon(storage, prefix, entry);
+      if (--entry.holders === 0) closeUnheldSoon(storage, prefix, schema, entry);
     };
-  }, [storage, prefix]);
+  }, [storage, prefix, schema]);
   // Read again once held, so a store closed between render and mount is
   // replaced before anything uses it.
   const current = () => acquire(schema, options);

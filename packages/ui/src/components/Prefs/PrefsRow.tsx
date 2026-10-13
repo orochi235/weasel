@@ -26,7 +26,7 @@ import { prefFieldProps } from './prefField';
 import type { PrefFieldChoice } from './schema';
 import { dropValuePath, type PrefDrop } from './drop';
 import { HiddenBadge, marksHidden } from './hidden';
-import { withCommitPolicy } from './commitPolicy';
+import { withRowControl } from './surfaceControls';
 import { selectionAttrs } from './selection';
 import s from './Prefs.module.css';
 
@@ -311,7 +311,7 @@ function renderBuiltin(
   if (field.kind === 'number') {
     return <PropertyControl {...field} name={pref.name} steppers={field.accepts === undefined} />;
   }
-  return <PropertyControl {...field} name={pref.name} />;
+  return <PropertyControl {...withRowControl(field, 'form')} name={pref.name} />;
 }
 
 /** Whether a leaf's row is a group and not a `<label>`: its control is several, or one a label may not wrap. */
@@ -329,6 +329,9 @@ function rowIsGroup(
 
 /** A leaf as one control's props, writing when a form writes. Null for a leaf that is not one control. */
 function leafField(ctx: PrefRenderContext, siblings: Record<string, unknown> | undefined): PropertyControlProps | null {
-  const field = prefFieldProps(ctx.pref, { value: ctx.value, mixed: ctx.mixed, siblings, setValue: ctx.setValue, fields: ctx.fields, disabled: ctx.disabled });
-  return field && withCommitPolicy(field, 'form');
+  return prefFieldProps(
+    ctx.pref,
+    { value: ctx.value, mixed: ctx.mixed, siblings, setValue: ctx.setValue, fields: ctx.fields, disabled: ctx.disabled },
+    'form',
+  );
 }
