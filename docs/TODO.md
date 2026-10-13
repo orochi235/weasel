@@ -448,10 +448,6 @@ Priority tags:
 
 ### Timelines and rigging
 
-- **(P3) A pose typed by an interface is not a `ClipValue`** — `ClipValue`'s object arm is an
-  index signature, which an interface such as `RectPose` does not satisfy, so
-  `{ t: 0, value: pose }` is a type error for a `pose: RectPose` and fine for the same object
-  written inline.
 - **(P3) A view with its own `toPose` shows no pose override, a skinned path included** — a
   scene slot's `toPose(node)` replaces the pose a node is painted at, so a drag in flight, a
   rig's bound nodes, and a skinned path all show there as the document has them. The path is

@@ -6,9 +6,11 @@ import type { Target } from '../target';
 import type { Interpolate } from '../types';
 import type { EventTrack, NestedTimeline, SampledTrack, TimelineEvent, TimelineTrack, Track } from './types';
 
-/** A value a clip can hold: what `JSON.stringify` writes and `JSON.parse` reads back. An
- *  object's `undefined` members are left out, as JSON leaves them. */
-export type ClipValue = number | string | boolean | null | ClipValue[] | { [key: string]: ClipValue | undefined };
+/** A value a clip can hold: what `JSON.stringify` writes and `JSON.parse` reads back. The
+ *  object arm is any object, so a pose typed by an interface is one; `toClip` is what refuses
+ *  a member JSON cannot round-trip. An object's `undefined` members are left out, as JSON
+ *  leaves them. */
+export type ClipValue = number | string | boolean | null | ClipValue[] | object;
 
 /** A keyframe as data. Its easing is a built-in's name or bezier control points. */
 export interface ClipKey {
