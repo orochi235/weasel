@@ -901,9 +901,11 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   `Prefs/commitPolicy.ts` says which controls write only a settled value in a form, a panel, and
   a lab, and `withCommitPolicy` applies it for all three. (1) labkit's `ControlPanel` debounces
   text by 150 ms in its own row (`useDebouncedText`), which the table has no word for: it reads
-  as "writes as it changes". (2) The panel's reason for settling text and color is that every
-  write is an undo step, yet a slider there writes per move; whether `scene.batch` coalesces
-  those into one undo step is unverified.
+  as "writes as it changes". (2) A slider dragged in a `SelectionPanel` leaves one undo step per
+  move. Measured in jsdom 2026-10-13: three `change` events on a `control: 'slider'` leaf took
+  three `scene.undo()` calls to unwind, because `commitLeaf` writes through `scene.batch`, whose
+  entries never coalesce. The slider is live there so the canvas follows the drag; one step per
+  drag needs the drag's writes to share an entry, which the scene has to offer.
 
 - **(P3) Collecting a run of `tab` groups, and what each other `as` draws, is written four times.**
   `Prefs/PrefsPane.tsx`, `Prefs/objectRows.tsx` (both `ObjectLeaf`s),
