@@ -29,7 +29,10 @@ function sweep(steps: number): { left: number; right: number }[] {
     // The last sample stops just short of the period, where the loop wraps.
     animation.currentTime = Math.min((i / steps) * period, period - 0.01);
     const box = fill.getBoundingClientRect();
-    return { left: (box.left - track.left) / track.width, right: (box.right - track.left) / track.width };
+    return {
+      left: (box.left - track.left) / track.width,
+      right: (box.right - track.left) / track.width,
+    };
   });
 }
 
