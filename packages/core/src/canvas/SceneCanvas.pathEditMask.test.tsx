@@ -88,6 +88,12 @@ function setup(props: Record<string, unknown> = {}) {
     remove: (id: NodeId) => act(() => { scene.remove(id); }),
     /** What hit-testing reads: `anchorStateFrom` takes its id from this dep. */
     depEditingId: () => (grabbed.deps.get('editAnchors') as { editingId: string }).editingId,
+    dep: () => grabbed.deps.get('editAnchors') as {
+      setEditingId(id: string | null): void;
+      setSelectedAnchors(next: Iterable<number>): void;
+      setMarquee(rect: { x: number; y: number; width: number; height: number } | null): void;
+    },
+    overlayLayer: () => layer('path-editing-overlay'),
     /** Draw commands the overlay paints in view zero, under the canvas's own chrome-caps gate. */
     overlayCommands: () => layer('path-editing-overlay').draw({ getIsVisible: isVisible }, VIEW, DIMS).length,
     /**
@@ -149,6 +155,23 @@ describe('a path being anchor-edited, with its node selected', () => {
     const before = t.worldCoords(A);
     t.drag([140, 100], [150, 90]);
     expect(anchorsMoved(before, t.worldCoords(A))).toBe(1);
+  });
+
+  // A proxy for the repaint: jsdom paints nothing, so this asserts the
+  // overlay announces the change, which `<Canvas>` turns into a redraw
+  // (`Canvas.redrawOn.test.tsx`).
+  it('has its overlay announce a change of edit target, anchor selection, or marquee', () => {
+    const t = setup();
+    const heard = vi.fn();
+    const off = t.overlayLayer().subscribe!(heard);
+    t.enter();
+    expect(heard).toHaveBeenCalled();
+    heard.mockClear();
+    act(() => t.dep().setSelectedAnchors([1]));
+    expect(heard).toHaveBeenCalledTimes(1);
+    act(() => t.dep().setMarquee({ x: 0, y: 0, width: 5, height: 5 }));
+    expect(heard).toHaveBeenCalledTimes(2);
+    off();
   });
 
   it('stops being one everywhere when the mode stops permitting anchor edits', () => {

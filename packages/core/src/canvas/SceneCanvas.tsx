@@ -6,7 +6,6 @@
  * A consumer needing custom tools can pass `tools={useTools(...)}` and SceneCanvas forwards it
  * as-is — the internal tool registry is ignored in that case.
  */
-import type { PolygonPath } from '@weasel-js/geom';
 import { getActiveModeFor } from '@weasel-js/modes';
 import { assignRef, useLatest } from '@weasel-js/react';
 import type { Action, ActionsProp, ActionsRegistry } from '@weasel-js/routing';
@@ -18,7 +17,6 @@ import { sceneFromJSON } from 'core/scene/scene';
 import type { Node, NodeId, Scene, SerializedScene } from 'core/scene/types';
 import { useSelection, type SelectionApi, type UseSelectionOptions } from 'core/selection/useSelection';
 import { clientToWorld as clientToWorldHelper } from 'core/viewport/clientToWorld';
-import { rectFromPlane } from 'core/viewport/parallax';
 import { useCanvasCamera } from './SceneCanvas/useCanvasCamera';
 import { normalizeView, type View } from 'core/viewport/view';
 import { never, useHoverTracking } from 'features/chrome-caps';
@@ -29,7 +27,7 @@ import {
   registerContentHandler,
   type IngestItem
 } from 'features/ingestion';
-import { createPathEditingOverlayLayer } from 'features/paths/pathEditingOverlayLayer';
+import { usePathEditOverlayLayer, usePathEditState } from 'features/paths/usePathEdit';
 import {
   createSelectionOverlayLayer,
   rotationBadgeOf,
@@ -81,10 +79,7 @@ import { usePreviewGhostLayer } from './SceneCanvas/usePreviewGhostLayer';
 import type { PickView } from './SceneCanvas/useSceneSelectTool';
 import { useSceneSelectTool } from './SceneCanvas/useSceneSelectTool';
 import type { CanvasExtensionApi, CanvasViewHandle, SceneCanvasApi } from './canvasExtension';
-import { resolveEditablePathOf } from './deps/editAnchors';
-import type { GesturePreviewSource } from './gestureBounds';
 import { makeGetNodeAtPoint } from './getNodeAtPoint';
-import { pathFromPlane } from './planeClips';
 import { useSceneAdapter } from './sceneAdapter';
 import { createSceneLayerGate, type ViewLayerPaint } from './sceneLayerPaint';
 import { composeAlphaFor, wireSceneSlotToScene } from './sceneSlotWiring';
@@ -105,11 +100,6 @@ function canvasDebug(debug: (DebugConfig & { slops?: boolean }) | false): DebugC
   const { slops: _slops, ...rest } = debug;
   return rest;
 }
-
-/** Stable empty `Set`: selection-overlay's `draw` reads `getSuppressedSelectionIds` every
- *  frame. */
-const EMPTY_ID_SET: ReadonlySet<string> = new Set();
-const EMPTY_ANCHOR_SELECTION: ReadonlySet<number> = new Set();
 
 /** Discriminate the polymorphic `tools` prop: `ToolsApi` has `setActive`
  *  / `active` / `registry`; the patch record shape has none of those. */
@@ -364,55 +354,23 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   }, [currentSelection, scene, describeKind]);
   usePublishSelection(currentSelection, selectionKinds);
 
-  // Path-editing edit-mode state. Stays empty until `enterPathEditAction` sets it, and clears
-  // on `exitPathEditAction`; the chrome and `editAnchorsAction` both gate on `editingId !== ''`.
-  const [pathEditingId, setPathEditingId] = useState<string>('');
-  const pathEditingIdRef = useLatest(pathEditingId);
-  const pathEditRef = useLatest(pathEdit);
-  // `anchorEditingAllowed` is declared below (it needs `getActiveModeRef`);
-  // hold it in a ref so `effectivePathEditingId` — used by consumers
-  // declared both above and below that point — can read it lazily.
-  const anchorEditingAllowedRef = useRef<(() => boolean) | undefined>(undefined);
-  /**
-   * The edit target, masked by whether the host still permits anchor editing. Every surface
-   * that cares reads this rather than the raw state, so leaving path-edit mode tears all of
-   * them down at once, by any route — a host's own mode machine can leave the mode without
-   * running `exitPathEditAction`.
-   *
-   * Masking rather than clearing on purpose: the mode can change without re-rendering this
-   * component, so there is no reliable moment to write state.
-   */
-  const effectivePathEditingId = useCallback((): string => {
-    if (pathEditRef.current) return pathEditRef.current.editingId() ?? '';
-    const allowed = anchorEditingAllowedRef.current;
-    if (allowed && !allowed()) return '';
-    return pathEditingIdRef.current;
-  }, [pathEditingIdRef, pathEditRef]);
-  // Anchor selection + in-flight marquee are per-frame inputs to the overlay's draw(), never
-  // to a React render, so they live in refs and request a repaint directly.
-  const selectedAnchorsRef = useRef<ReadonlySet<number>>(EMPTY_ANCHOR_SELECTION);
-  const anchorMarqueeRef = useRef<{ x: number; y: number; width: number; height: number } | null>(null);
-  const editAnchorsExternalState = useMemo(() => ({
-    getEditingId: () => effectivePathEditingId(),
-    setEditingId: (id: string | null) => (pathEditRef.current ? pathEditRef.current.setEditingId(id) : setPathEditingId(id ?? '')),
-    getSelectedAnchors: () => selectedAnchorsRef.current,
-    setSelectedAnchors: (next: ReadonlySet<number>) => {
-      selectedAnchorsRef.current = next;
-      canvasApiRef.current?.requestRedraw?.();
-    },
-    getMarquee: () => anchorMarqueeRef.current,
-    setMarquee: (rect: { x: number; y: number; width: number; height: number } | null) => {
-      anchorMarqueeRef.current = rect;
-      canvasApiRef.current?.requestRedraw?.();
-    },
-  }), [effectivePathEditingId, pathEditRef]);
+  // Anchor editing survives only as long as the active mode permits it.
+  // Deliberately undefined when no mode registry is wired: "no modality"
+  // means nothing revokes edit mode, whereas a predicate built from the
+  // fallback capability set would revoke it immediately (the default set
+  // is NORMAL's, which doesn't include `edits-anchors`).
+  const anchorEditingAllowed = useMemo(
+    () => (getActiveMode ? () => getActiveMode().allowedCapabilities.has('edits-anchors') : undefined),
+    [getActiveMode],
+  );
+  const pathEditState = usePathEditState({ host: pathEdit, isAllowed: anchorEditingAllowed });
 
   const selectToolWithDefaults = useMemo(() => ({
     // Shift-click belongs to the anchor selection while a path is being
     // anchor-edited; see `UseSelectToolOptions.extendClickLocked`.
-    extendClickLocked: () => effectivePathEditingId() !== '',
+    extendClickLocked: () => pathEditState.getEditingId() !== '',
     ...selectToolOpts,
-  }), [selectToolOpts, effectivePathEditingId]);
+  }), [selectToolOpts, pathEditState]);
 
   // The affordanceAt and classifyTarget thunks live in an effect closure and read the latest
   // selection through this.
@@ -487,8 +445,6 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     ...(viewLayerGate ? { layerIsPainted: viewLayerGate } : {}),
     selectTool: selectToolWithDefaults,
   });
-  // Read through a ref by the chrome layers, which are built once.
-  const planeOfNodeRef = useLatest(internalPlaneOfNode);
 
   // Resolved through the select tool's own single-hit picker, so `onClick`, `onDoubleClick`,
   // hover, and tool routing all name the node a click selects. A hit whose id
@@ -550,7 +506,6 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
 
   const tools = toolsTakeover ?? internalTools;
   const liveToolsRef = useLatest<ToolsApi | null>(tools);
-  const getActiveModeRef = useLatest(getActiveMode);
 
   // The presets' ambient bindings. They are not tools and sit outside `tools`,
   // so they apply under a takeover too.
@@ -710,7 +665,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     getFocused: getFocusedProp,
     getHover,
     resizable: selectToolOpts?.resize?.resizable,
-    editingAnchors: () => effectivePathEditingId() !== '',
+    editingAnchors: () => pathEditState.getEditingId() !== '',
     device: deviceProfile,
   });
 
@@ -731,28 +686,6 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     () => chromeCaps.ruleCtx(currentRuleInputs()),
     [chromeCaps, currentRuleInputs],
   );
-
-  // Anchor editing survives only as long as the active mode permits it.
-  // Deliberately undefined when no mode registry is wired: "no modality"
-  // means nothing revokes edit mode, whereas a predicate built from the
-  // fallback capability set would revoke it immediately (the default set
-  // is NORMAL's, which doesn't include `edits-anchors`).
-  const anchorEditingAllowed = useMemo(
-    () =>
-      getActiveMode
-        ? () => getActiveModeRef.current!().allowedCapabilities.has('edits-anchors')
-        : undefined,
-    [getActiveMode, getActiveModeRef],
-  );
-  useInsertionEffect(() => {
-    anchorEditingAllowedRef.current = anchorEditingAllowed;
-  });
-
-  // The chrome layer reads `editingId` via a ref, so an edit-mode change needs an explicit
-  // redraw.
-  useEffect(() => {
-    canvasApiRef.current?.requestRedraw?.();
-  }, [pathEditingId]);
 
   const sceneRef = useLatest(scene);
   const slopsOn = debug !== undefined && debug !== false && debug.slops === true;
@@ -775,64 +708,10 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     [],
   );
 
-  // The live (preview-aware) world polygon for `id`: whichever in-flight handle previews
-  // state for the id contributes its previewPose / previewData, so chrome and slops viz
-  // follow any in-flight gesture.
-  const livePathFor = (
-    id: string,
-    previews: readonly GesturePreviewSource[],
-    view: View,
-  ): PolygonPath | null => {
-    const node = sceneRef.current?.get(id as never);
-    if (!node) return null;
-    let pose = node.pose as unknown;
-    let data = node.data as unknown;
-    let touched = false;
-    for (const source of previews) {
-      const previewIds = source.previewIds?.();
-      if (!previewIds) continue;
-      let owns = false;
-      for (const pid of previewIds) {
-        if (pid === id) { owns = true; break; }
-      }
-      if (!owns) continue;
-      const p = source.previewPose?.(id);
-      if (p != null && !touched) { pose = p; touched = true; }
-      const d = source.previewData?.(id);
-      if (d != null) { data = d; touched = true; }
-    }
-    // In the drawing camera's world: a path on a parallax plane is stored in
-    // the plane's.
-    return pathFromPlane(
-      resolveEditablePathOf({ pose, data } as { pose: unknown; data: unknown }),
-      planeOfNodeRef.current(id, view),
-    );
-  };
-
-  const pathEditingOverlayLayer = useMemo(
-    () => createPathEditingOverlayLayer({
-      getEditingId: () => effectivePathEditingId() || null,
-      getPose: (id, previews, view) => livePathFor(id, previews, view) as never,
-      getSelectedAnchors: () => selectedAnchorsRef.current,
-      // Drawn by an action that ran in the edited path's plane.
-      getMarquee: (view) => {
-        const rect = anchorMarqueeRef.current;
-        const plane = rect ? planeOfNodeRef.current(effectivePathEditingId(), view) : null;
-        return rect && plane ? rectFromPlane(plane, rect) : rect;
-      },
-    }),
-    // Stable identity — closure reads live state through refs.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [],
-  );
-
-  // Suppress the standard selection overlay (outline + corner/rotate
-  // handles) on the node currently in path-edit mode — the per-anchor
-  // chrome takes over.
-  const getSuppressedSelectionIds = useCallback((): ReadonlySet<string> => {
-    const id = effectivePathEditingId();
-    return id ? new Set([id]) : EMPTY_ID_SET;
-  }, [effectivePathEditingId]);
+  const pathEditingOverlayLayer = usePathEditOverlayLayer(pathEditState, {
+    nodeOf: (id) => scene.get(id as NodeId),
+    planeOfNode: internalPlaneOfNode,
+  });
 
   const selectionOverlayLayer = useMemo(() => {
     const selCfg = mergedLayers.selectionOverlay as
@@ -842,9 +721,11 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     if (selCfg === null) return null;
     const cfg = (selCfg ?? {}) as SelectionOverlaySlotConfig<TPose>;
 
+    // The per-anchor chrome replaces the outline and handles of the node in
+    // path-edit mode.
     const callerSuppress = cfg.getSuppressedIds;
     const getSuppressedIds = (): ReadonlySet<string> => {
-      const own = getSuppressedSelectionIds();
+      const own = pathEditState.getEditingIds();
       const caller = callerSuppress?.();
       if (!caller || caller.size === 0) return own;
       if (own.size === 0) return caller;
@@ -863,7 +744,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
           }
         : {}),
     });
-  }, [mergedLayers.selectionOverlay, getSuppressedSelectionIds, descriptor]);
+  }, [mergedLayers.selectionOverlay, pathEditState, descriptor]);
 
   const wiredLayers = useMemo<LayersMap<Node<TData, TLayer, TPose>, TPose>>(() => ({
     ...mergedLayers,
@@ -1054,7 +935,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
               viewportPinchZoom={enabled.has('view') ? (viewport?.pinchZoom ?? true) : false}
               viewportRecenter={viewport?.recenter}
               viewAnimation={viewAnimation}
-              editAnchorsExternalState={editAnchorsExternalState}
+              editAnchorsExternalState={pathEditState}
               anchorEditingAllowed={anchorEditingAllowed}
               layouts={layouts as SceneCanvasProps<unknown, string, unknown>['layouts']}
               layoutDropTarget={layoutDropTarget}
