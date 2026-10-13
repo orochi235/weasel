@@ -4,11 +4,12 @@
  * registration lives in the node it was made in, and a lookup starts at a leaf
  * and walks up, so one canvas never answers for another.
  */
+import { createEmitter, type Emitter } from '@weasel-js/registry';
 
 /** What every node of one tree shares: a version and the listeners to it. */
 export interface ScopeTree {
   version: number;
-  readonly listeners: Set<() => void>;
+  readonly listeners: Emitter;
 }
 
 export class ScopeNode<N extends ScopeNode<N>> {
@@ -20,19 +21,13 @@ export class ScopeNode<N extends ScopeNode<N>> {
    *  true for a root or a yoke, which chrome reads through; false for a scope,
    *  which answers for itself even with a scope nested inside it. */
   constructor(readonly parent: N | null, readonly descends: boolean) {
-    this.tree = parent ? parent.tree : { version: 0, listeners: new Set() };
+    this.tree = parent ? parent.tree : { version: 0, listeners: createEmitter() };
   }
 
   /** Bump the tree's version and tell every listener in it. */
   changed(): void {
     this.tree.version++;
-    for (const listener of this.tree.listeners) {
-      try {
-        listener();
-      } catch (err) {
-        console.error('weasel input scope: subscriber threw', err);
-      }
-    }
+    this.tree.listeners.emit();
   }
 
   /** Join the parent's children, newest last; returns the leave. */

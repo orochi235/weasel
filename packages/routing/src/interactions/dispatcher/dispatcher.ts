@@ -23,6 +23,7 @@
  * `'unhandled'`, so the gesture falls through as if unmatched.
  */
 
+import { createEmitter } from '@weasel-js/registry';
 import type { Action } from '../actions/action';
 import type { InputEvent } from './matcher';
 import { buildDispatchRecord } from './buildDispatchRecord';
@@ -54,14 +55,14 @@ export function createDispatcher(opts?: {
 
   /** Subscribers fired after every state mutation. Layers that read from
    *  `getInFlightHandles()` use this to know when to re-render. */
-  const subscribers = new Set<() => void>();
+  const changed = createEmitter();
   /** Bumped before the callbacks run, so a subscriber that re-reads
    *  `getVersion()` synchronously inside its callback already sees the new
    *  value (what `useSyncExternalStore` does). */
   let version = 0;
   function notify(): void {
     version++;
-    for (const fn of subscribers) fn();
+    changed.emit();
   }
 
   const uiOngoing = createUiOngoing(inFlight, notify, opts?.getAction);
@@ -105,11 +106,6 @@ export function createDispatcher(opts?: {
     endAllGestures(run, reason);
   }
 
-  function subscribe(fn: () => void): () => void {
-    subscribers.add(fn);
-    return () => { subscribers.delete(fn); };
-  }
-
   // Wrap handleInput + cancelAll to notify once per invocation that found or
   // left a gesture in flight. Done at the boundary (not inside the match
   // loop) so a start, a pump, and an end each fire exactly one notify. An
@@ -141,7 +137,7 @@ export function createDispatcher(opts?: {
     inFlight: () => inFlight.handles,
     inFlightCursor: inFlight.cursor,
     getInFlightHandles: () => inFlight.handles.values(),
-    subscribe,
+    subscribe: changed.subscribe,
     getVersion: () => version,
     getActiveAction: inFlight.latest,
     beginUiOngoing: uiOngoing.begin,

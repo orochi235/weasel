@@ -59,10 +59,7 @@ export class DepNode extends ScopeNode<DepNode> {
       }
       return undefined;
     },
-    subscribe: (listener: () => void) => {
-      this.tree.listeners.add(listener);
-      return () => { this.tree.listeners.delete(listener); };
-    },
+    subscribe: (listener: () => void) => this.tree.listeners.subscribe(listener),
     changed: () => this.changed(),
   };
 

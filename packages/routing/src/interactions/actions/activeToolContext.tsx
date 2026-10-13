@@ -97,12 +97,7 @@ export class ToolNode extends ScopeNode<ToolNode> {
     return out;
   }
 
-  subscribe = (listener: () => void): (() => void) => {
-    this.tree.listeners.add(listener);
-    return () => {
-      this.tree.listeners.delete(listener);
-    };
-  };
+  subscribe = (listener: () => void): (() => void) => this.tree.listeners.subscribe(listener);
 }
 
 const ActiveToolContext = createContext<ToolNode | null>(null);

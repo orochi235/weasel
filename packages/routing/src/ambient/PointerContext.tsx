@@ -11,6 +11,7 @@
  * `<SceneCanvas>` publishes automatically, and defers to a provider already in
  * scope, so several surfaces under one provider share one pointer.
  */
+import { createEmitter } from '@weasel-js/registry';
 import {
   createContext, useContext, useState, useSyncExternalStore, type ReactNode,
 } from 'react';
@@ -43,7 +44,7 @@ function samePos(a: PointerWorldPos, b: PointerWorldPos): boolean {
 export function createPointerStore(): PointerContextValue {
   let current: PointerWorldPos = null;
   let version = 0;
-  const listeners = new Set<() => void>();
+  const changed = createEmitter();
   const get = (): PointerWorldPos => current;
   return {
     get,
@@ -51,12 +52,9 @@ export function createPointerStore(): PointerContextValue {
       if (samePos(current, next)) return;
       current = next;
       version++;
-      for (const fn of [...listeners]) fn();
+      changed.emit();
     },
-    subscribe(fn) {
-      listeners.add(fn);
-      return () => { listeners.delete(fn); };
-    },
+    subscribe: changed.subscribe,
     getVersion: () => version,
     getDropPoint: get,
   };
