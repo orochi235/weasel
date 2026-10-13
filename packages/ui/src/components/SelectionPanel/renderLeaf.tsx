@@ -11,6 +11,7 @@ import { MapEditor } from '../Prefs/MapEditor';
 import { PrefActionButton } from '../Prefs/PrefActionButton';
 import { PrefMixed } from '../Prefs/PrefMixed';
 import { aliasOfNothing, prefDrawsNoControl, PrefWords } from '../Prefs/PrefWords';
+import { withRowControl } from '../Prefs/surfaceControls';
 import { UnionPicker } from '../Prefs/UnionPicker';
 import { renderBarLeaf, type LeafSurface } from '../Bar/renderBarLeaf';
 import { PropertyControl } from '../Properties/PropertyField';
@@ -141,12 +142,10 @@ export function renderBuiltin(
   }
   switch (field.kind) {
     case 'boolean':
-      // A panel's flag is a switch unless it asks otherwise.
       return (
         <PropertyControl
-          {...field}
+          {...withRowControl(field, 'panel')}
           name={ariaLabel}
-          control={field.control ?? 'switch'}
           className={field.control === 'toggle' ? s.flagToggle : undefined}
         />
       );

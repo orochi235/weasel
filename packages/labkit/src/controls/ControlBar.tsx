@@ -1,8 +1,8 @@
 import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
-import { BarLayout, groupBarNodes, type PropertyControlProps, renderBarLeaf } from '@weasel-js/ui';
+import { BarLayout, groupBarNodes, renderBarLeaf } from '@weasel-js/ui';
 import type { ReactNode } from 'react';
 import { useFieldChoices } from './fieldChoices';
-import { extra, labField } from './fields';
+import { labField } from './fields';
 
 export interface ControlBarProps {
   group: PrefGroup;
@@ -74,11 +74,6 @@ function Cell({
   disabled: boolean;
   row: () => ReactNode;
 }) {
-  const made = labField(leaf, value, write, useFieldChoices(), disabled);
-  // `labField` names a row's control where the leaf names none; in a bar that choice is the bar's.
-  const field =
-    made !== null && extra<string>(leaf, 'control') === undefined
-      ? ({ ...made, control: undefined } as PropertyControlProps)
-      : made;
+  const field = labField(leaf, value, write, useFieldChoices(), disabled);
   return <>{renderBarLeaf({ leaf, path, name: leaf.name, field, disabled, row })}</>;
 }

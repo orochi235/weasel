@@ -24,6 +24,7 @@ import {
   prefDrawsNoControl,
   prefListIsText,
   prefListTexts,
+  withRowControl,
 } from '@weasel-js/ui';
 import { useMemo } from 'react';
 import { autoResolverOf, resolveAutoConfig } from '../config/autoConfig';
@@ -317,6 +318,6 @@ function LeafRow<TC extends Record<string, unknown>>({
     case 'enum':
       return <PropertyField {...field} {...row} span={field.control === 'toggle' && wide} />;
     default:
-      return <PropertyField {...field} {...row} />;
+      return <PropertyField {...withRowControl(field, 'lab')} {...row} />;
   }
 }

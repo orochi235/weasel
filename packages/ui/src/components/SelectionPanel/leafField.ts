@@ -1,4 +1,3 @@
-import { withCommitPolicy } from '../Prefs/commitPolicy';
 import { prefFieldProps, type PrefFieldState } from '../Prefs/prefField';
 import type { PropertyControlProps } from '../Properties/PropertyField';
 import type { PropertyPaintFieldProps } from '../Properties/fieldTypes';
@@ -28,9 +27,8 @@ export function leafField(ctx: PropertyRenderContext, nested: boolean): Property
       style: ctx.valueAt(siblingPath(ctx.path, 'fontStyle')).value,
     },
     fontFamily: ctx.valueAt(siblingPath(ctx.path, 'fontFamily')).value,
-  });
-  if (field?.kind === 'paint') return nested ? nestedPaint(ctx, field) : field;
-  return field && withCommitPolicy(field, 'panel');
+  }, 'panel');
+  return field?.kind === 'paint' && nested ? nestedPaint(ctx, field) : field;
 }
 
 /**
