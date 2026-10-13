@@ -452,14 +452,15 @@ Priority tags:
   `loop: true`.** `tick` in `packages/animator/src/timeline/createTimeline.ts` fires every
   skipped lap's events under `loop: n` but none under `loop: true`, where `booking.ts` says
   crossings fire "nothing of the laps in between". Which of the two is meant is undecided.
+- **(P2) Undoing a flick leaves the node where it came to rest** — `records the whole flick as
+  one step once it comes to rest` in
+  `packages/core/src/animation/behaviors/momentum.targets.test.tsx` fails on a branch cut from
+  `599685677` that changes neither momentum nor the scene's history: the flick is one history
+  entry, and after `scene.undo()` the pose's `x` is still the rest value, not 0. Not run at
+  `599685677` itself.
 
 ### Timelines and rigging
 
-- **(P3) A paused looping timeline seeked to its `duration` shows its start** — the next frame
-  wraps a playhead at `duration` to 0 and counts a lap, paused or not (`tick` in
-  `packages/animator/src/timeline/createTimeline.ts`). In the timeline demo, dragging **scrub**
-  to its right end shows t = 0: the readout says `3000 / 3000 ms`, then `0 / 3000 ms` a frame
-  later.
 - **(P3) A pose typed by an interface is not a `ClipValue`** — `ClipValue`'s object arm is an
   index signature, which an interface such as `RectPose` does not satisfy, so
   `{ t: 0, value: pose }` is a type error for a `pose: RectPose` and fine for the same object
@@ -468,14 +469,13 @@ Priority tags:
   a point does not renumber `data.skin`, whose arrays are indexed by point. The anchor edit
   actions (`interactions/actions/defaults/anchorEditing.ts`) would splice each joint's array, or
   the skin would be weighed again with `autoSkin`.
-- **(P3) A stroke of the weight tool bends the path when it ends, not while it is painted** —
-  the rig in view is bound from the document, and a stroke is written at its end. Showing it
-  live needs the bound rig to read the tool's in-flight weights.
 - **(P3) A skinned path is seen at rest by a view with its own `toPose` and by a node that
   derives from it** — an override's `path` is in the scene's frame, so `sceneDerivedPathOf`
   leaves it out for a `toPose` reader, and `DerivedDep.path` answers a derived path only.
-- **(P3) `useRigNode` drops a running animation when it binds again** — a change to the rig
-  node or anything under it makes a new rig with a new `target`.
+- **(P3) `useRigNode` drops a running animation when the skeleton's joints change** — adding,
+  removing, renaming, or reordering a joint makes a new `target` at the bind pose, since a pose
+  target's axes are its joints in order. Carrying an animation across needs the animator to
+  move what runs on one target to another with different axes.
 - **(P3) The bone and weight tools have no icon and are not `defaultTools` ids** — they are
   mounted as `tools={{ bone, weight }}`, as slice is.
 
@@ -501,14 +501,6 @@ Animations combine through targets, described in `docs/concepts.md` ("Animation 
   design left would move it and is not started: holds on a target table's rows could keep
   their values and weights as rows of the table's own arrays, which adds public API to the
   table whose shape is not ruled on.
-- **(P3) A spring or a coast on a target is ticked every frame, to ask whether it has come to
-  rest** — a tween on a target with no `onTick`, and a hold, are ticked only once they have
-  something to do (`due` on an animation's row, `packages/animator/src/engine/schedule.ts`);
-  a frame of 10,000 such tweens costs 0.28 ms (`node tests/perf/target-reads/run.mjs table
-  10000 idle`). A spring has no time it is known to rest by, so it still costs a call a frame
-  as an object, as anything with an `onTick` must. A bound on when a spring can first be at
-  rest, from its damping, would give it a `due`; retargeting and pushing it would move the
-  bound. The rest of a frame is blits' pull.
 - **(P2) Stopping and starting an animation costs more as more are running, and what is left
   of that is in blits** — `node tests/perf/target-reads/run.mjs churn 1000 10000` times the
   parts (orochi, plain Node 26, blits 0.10.0). With 100 restarted a frame: a cancel costs 5 µs

@@ -85,10 +85,11 @@ function commitPainted(env: WeightEnv, deps: ActionDeps): void {
     const data = scene.get(id)?.data;
     if (data !== undefined) ops.push(createSetDataOp({ id, from: data, to: { ...(data as object), skin }, label: 'Paint weights' }));
   }
+  if (ops.length > 0) {
+    if (deps.applyOps) deps.applyOps(ops, 'Paint weights');
+    else scene.applyBatch(ops, 'Paint weights', defaultCommitAdapter(scene, deps.selection?.adapterMethods));
+  }
   env.paint(null);
-  if (ops.length === 0) return;
-  if (deps.applyOps) deps.applyOps(ops, 'Paint weights');
-  else scene.applyBatch(ops, 'Paint weights', defaultCommitAdapter(scene, deps.selection?.adapterMethods));
 }
 
 /** The weight tool's actions: `weight.paint` and `weight.click`. */

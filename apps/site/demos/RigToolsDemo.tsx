@@ -64,7 +64,7 @@ export function RigToolsDemo() {
   const options = useMemo(() => ({ scene, rig: () => RIG, state }), [scene, state]);
   const tools = { bone: useBoneTool(options), weight: useWeightTool(options) };
 
-  const rig = useRigNode({ scene, node: RIG });
+  const rig = useRigNode({ scene, node: RIG, painting: state });
   useEffect(() => {
     rig.pose(Object.fromEntries(rig.skeleton.joints.slice(1).map((j) => [j.name, { rotation: -bend }])));
   }, [rig, bend]);
