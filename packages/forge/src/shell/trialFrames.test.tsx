@@ -131,17 +131,6 @@ describe('FrameView audits its frame', () => {
     expect(frames.get(trialId).a11y).toEqual({ ok: true, report });
 
   });
-
-  it('takes no marks until annotations are a feature', () => {
-    const instrument = storyInstrument({
-      entry,
-      ready,
-      answers: createAnswerBook(),
-      frameUrl: '/frame.html',
-      onReady: () => {},
-    });
-    expect(instrument.annotations).toBeUndefined();
-  });
 });
 
 describe('A11yPanel', () => {

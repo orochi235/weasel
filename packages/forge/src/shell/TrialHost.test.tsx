@@ -2,8 +2,9 @@ import { TrialIdContext } from '@weasel-js/labkit';
 import { act, render, waitFor } from '@testing-library/react';
 import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { runAxe } from '../frame/a11y';
 import type { FrameSetup } from '../frame/FrameController';
-import type { Globals } from '../protocol/messages';
+import type { A11yReport, Globals } from '../protocol/messages';
 import { StoryGlobalsContext } from './StoryGlobalsContext';
 import { createTrialFrames, TrialFramesContext } from './trialFrames';
 import { TrialHost } from './TrialHost';
@@ -95,11 +96,11 @@ describe('TrialHost', () => {
 
   it('audits with the page-level rules off, since the story is one box on a page of many', async () => {
     const frames = createTrialFrames();
-    render(
+    const { container } = render(
       <TrialFramesContext.Provider value={frames}>
         <TrialIdContext.Provider value="t2">
           <TrialHost layout="padded" setup={{}} config={{}}>
-            {() => <img src="cat.png" alt="" id="fg-t-decorative" />}
+            {() => <p>Outside any landmark</p>}
           </TrialHost>
         </TrialIdContext.Provider>
       </TrialFramesContext.Provider>,
@@ -107,9 +108,10 @@ describe('TrialHost', () => {
     const outcome = await frames.get('t2').audit!();
     expect(outcome.ok).toBe(true);
     if (!outcome.ok) return;
-    const ids = [...outcome.report.violations, ...outcome.report.incomplete].map((f) => f.id);
-    expect(ids).not.toContain('region');
-    expect(ids).not.toContain('page-has-heading-one');
+    // A proxy: jsdom gives axe's page rules nothing to flag, so this counts the rules that ran.
+    const rulesRun = (r: A11yReport) => r.violations.length + r.incomplete.length + r.passes + r.inapplicable;
+    const asPage = await runAxe(container.querySelector('.fg-story')!, { page: true });
+    expect(rulesRun(outcome.report)).toBeLessThan(rulesRun(asPage));
     await waitFor(() => expect(frames.get('t2').a11y).toEqual(outcome));
   }, 20_000);
 
