@@ -322,9 +322,10 @@ Priority tags:
   above it: a 96px heading, or body text zoomed past 4x. A distance field has no such limit and
   an emoji has no field, so it needs a second bake at the size it is drawn at, the way a vector
   image re-rasterizes in power-of-two steps (`maybeReraster` in
-  `packages/renderer/src/images/imageCache.ts`). Separately, `textToPath` refuses text holding an
-  emoji with `no-outlines`, as it did when the emoji was an escalated canvas glyph (read from
-  `textToPath.ts`, not run).
+  `packages/renderer/src/images/imageCache.ts`). The larger bakes want pages of their own: the
+  color pages empty together with the field pages when either set fills (`reclaim` in
+  `packages/font/src/dynamic/bakeQueue.ts`), and one 384px emoji takes the room of sixty at 48.
+  Whether the result is sharp can only be read in a browser.
 
 ---
 

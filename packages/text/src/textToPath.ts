@@ -73,9 +73,12 @@ export interface TextToPathOptions {
  * - `'synthetic-bold'` — the requested weight is faked from a lighter face.
  *   The renderer thickens the distance field for that, and a path has no
  *   field to thicken. Converting would silently lighten the text.
+ * - `'color-glyph'` — the text holds an emoji, which is a picture in its own
+ *   colors with no outline. Nothing a caller registers changes that.
  */
 export type TextOutlinesFailure =
   | 'no-outlines'
+  | 'color-glyph'
   | 'outlines-loading'
   | 'outlines-failed'
   | 'synthetic-bold';
@@ -229,6 +232,12 @@ function walkOutlines(
   const faceOf = runFaces(runs);
   for (const line of laid.lines) {
     for (const g of line.glyphs) {
+      // Asked before the quad: an emoji still waiting for its bake has none.
+      if (g.glyph?.color) {
+        const { fontFamily, fontWeight, fontStyle } = runs[g.run];
+        throw new TextOutlinesError('color-glyph', fontFamily, fontWeight, fontStyle,
+          'the text holds an emoji, which is drawn in its own colors and has no outline.');
+      }
       const d = glyphOutlineD(g, runs[g.run], 0);
       if (d === null) {
         // A code point the run's own face lacks escalates to a fallback face,
