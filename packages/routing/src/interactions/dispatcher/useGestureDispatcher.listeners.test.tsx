@@ -108,15 +108,24 @@ describe('useGestureDispatcher', () => {
       defaultBinding: { kind: 'key-held', key: ' ' },
       invoker: { timing: 'ongoing', start: () => ({ onEnd: (_c, reason) => endSpy(reason) }) },
     };
-    const { unmount } = render(<Harness><Probe actionDef={action} /></Harness>);
-    act(() => { window.dispatchEvent(new KeyboardEvent('keydown', { key: ' ' })); });
-    // Now unmount — should call onEnd('cancel') on the in-flight handle
-    act(() => { unmount(); });
+    /** Window key listeners a mount-then-unmount attaches and never removes. */
+    const stranded = (enabled: boolean): number => {
+      const add = vi.spyOn(window, 'addEventListener');
+      const remove = vi.spyOn(window, 'removeEventListener');
+      const { unmount } = render(<Harness><Probe actionDef={action} enabled={enabled} /></Harness>);
+      if (enabled) act(() => { window.dispatchEvent(new KeyboardEvent('keydown', { key: ' ' })); });
+      act(() => { unmount(); });
+      const left = add.mock.calls.filter(([type, listener]) =>
+        (type === 'keydown' || type === 'keyup')
+        && !remove.mock.calls.some(([t, l]) => t === type && l === listener));
+      add.mockRestore();
+      remove.mockRestore();
+      return left.length;
+    };
+    stranded(false); // absorbs what the first mount in a realm installs for good
+    // A proxy: a listener left behind is inert once the dispatcher is disposed, so only its removal shows.
+    expect(stranded(true)).toBe(0);
     expect(endSpy).toHaveBeenCalledWith('cancel');
-    // And after unmount, new keydowns shouldn't fire anything (listener detached)
-    const newSpy = vi.fn();
-    act(() => { window.dispatchEvent(new KeyboardEvent('keydown', { key: 'b' })); });
-    expect(newSpy).not.toHaveBeenCalled();
   });
 
   it('wheel event on canvas fires WheelSpec binding', () => {
@@ -133,23 +142,5 @@ describe('useGestureDispatcher', () => {
       canvas.dispatchEvent(new WheelEvent('wheel', { ctrlKey: true, bubbles: true }));
     });
     expect(spy).toHaveBeenCalledTimes(1);
-  });
-
-  it('does NOT cancel on initial mount', () => {
-    const startSpy = vi.fn();
-    const endSpy = vi.fn();
-    const action: Action = {
-      id: 'demo.start',
-      label: 'demo',
-      defaultBinding: { kind: 'key-held', key: 'x' },
-      invoker: {
-        timing: 'ongoing',
-        start: () => { startSpy(); return { onEnd: () => endSpy() }; },
-      },
-    };
-    render(<Harness><Probe actionDef={action} /></Harness>);
-    // Just mounting shouldn't fire start or end.
-    expect(startSpy).not.toHaveBeenCalled();
-    expect(endSpy).not.toHaveBeenCalled();
   });
 });

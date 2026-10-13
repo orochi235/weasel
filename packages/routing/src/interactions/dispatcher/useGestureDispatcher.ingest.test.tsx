@@ -91,8 +91,8 @@ describe('useGestureDispatcher — ingest channels', () => {
     expect(items).toHaveLength(1);
     expect(items[0].mime).toBe('image/png');
     expect(params.via).toBe('drop');
-    expect(typeof params.worldX).toBe('number');
-    expect(typeof params.worldY).toBe('number');
+    expect(params.worldX).toBe(12);
+    expect(params.worldY).toBe(34);
   });
 
   it('dragover adds the dropover class; dragleave and drop remove it', async () => {
