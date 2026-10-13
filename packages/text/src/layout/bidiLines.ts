@@ -141,6 +141,13 @@ export function orderLine(
     const level = r.levels[pos];
     if (typeof level === 'number' && level >= 0) levels[pos] = level;
   }
-  const kept = r.order.map((at) => at - start).filter((pos) => pos >= 0 && pos < count);
-  return { visual: restoreRemoved(kept, count, (pos) => levels[pos] % 2 === 1), levels };
+  // `opts.bidi` is a consumer's to supply, so its order is not trusted to be a
+  // permutation: a repeat keeps its first place, and anything that is not a
+  // position on the line is dropped.
+  const kept = new Set<number>();
+  for (const at of r.order) {
+    const pos = at - start;
+    if (Number.isInteger(pos) && pos >= 0 && pos < count) kept.add(pos);
+  }
+  return { visual: restoreRemoved([...kept], count, (pos) => levels[pos] % 2 === 1), levels };
 }
