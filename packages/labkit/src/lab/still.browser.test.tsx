@@ -6,7 +6,8 @@ import { cleanup, render } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
 import type { TrialClock } from '../clock/trialClock';
 import type { Instrument } from '../instrument/types';
-import { Lab, type LabProps } from './Lab';
+import { Lab } from './Lab';
+import type { LabProps } from './labProps';
 
 // That a still says it is ready only after its frame is drawn is the frame
 // loop's and the canvas's to answer, and jsdom's `postMessage` delivers an
