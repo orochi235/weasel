@@ -11,7 +11,7 @@
 import { describe, expect, it, vi, beforeAll } from 'vitest';
 import { render } from '@testing-library/react';
 import React from 'react';
-import { Canvas } from './Canvas';
+import { Canvas } from './testing/BareCanvas';
 import type { CanvasHelpers } from './useViewHelpers';
 import type { GestureSource } from './gestureBounds';
 

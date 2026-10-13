@@ -19,7 +19,6 @@ import { readOnlySelection } from 'core/selection/readOnlySelection';
 import { usePublishSceneSelection } from 'core/selection/usePublishSceneSelection';
 import { useSelection, type UseSelectionOptions } from 'core/selection/useSelection';
 import { useCanvasCamera } from './SceneCanvas/useCanvasCamera';
-import { normalizeView, type View } from 'core/viewport/view';
 import { never, useHoverTracking } from 'features/chrome-caps';
 import { useChromeCaps, type ViewRuleInputs } from 'features/chrome-caps/useChromeCaps';
 import { useCanvasIngestion } from 'features/ingestion/useCanvasIngestion';
@@ -31,7 +30,7 @@ import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import type { UseResizeOptions } from 'interactions/actions/resize/options';
 import { KIT_STANDARD_ACTION_IDS } from 'interactions/actions/useStandardActions';
 import type React from 'react';
-import { forwardRef, useCallback, useEffect, useInsertionEffect, useMemo, useRef, useState } from 'react';
+import { forwardRef, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { DeviceProfileProvider, useDeviceProfile } from '../core/device/useDeviceProfile';
 import { createNodeRouting } from '../core/scene/NodeRouting';
 import { dlog } from '../debug/flag';
@@ -167,9 +166,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   );
   const scene = bakedScene ?? (sceneInput as Scene<TData, TLayer, TPose>);
 
-  // Extract view-related props from rest so we can intercept them for the
-  // controlled/uncontrolled pattern Canvas exposes without breaking it.
-  const { view: viewProp, onViewChange: onViewChangeProp, defaultView, redrawOn: redrawOnProp, ...restProps } = rest;
+  const { view, onViewChange, defaultView, viewBounds, redrawOn: redrawOnProp, ...restProps } = rest;
   const getActiveMode = useMemo(() => (modes ? getActiveModeFor(modes) : undefined), [modes]);
   const redrawOn = useMemo(
     () => (modes ? [...(redrawOnProp ?? []), modes] : redrawOnProp),
@@ -217,45 +214,13 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     canvasApiRef.current?.requestRedraw?.();
   }), [scene]);
 
-  // The mirror every HUD, pick and pinch path reads synchronously. Seeded here
-  // because those reads start before the canvas's subscription lands.
-  const currentViewRef = useRef<View>(
-    normalizeView(viewProp ?? defaultView ?? { x: 0, y: 0, scale: { x: 1, y: 1 } }),
-  );
-  // Committed renders only, so an abandoned transition's view never reaches
-  // the `view` dep, picks or the camera animator.
-  useInsertionEffect(() => {
-    if (viewProp !== undefined) currentViewRef.current = normalizeView(viewProp);
+  const { viewState, viewAnimation, camera } = useCanvasCamera({
+    view, defaultView, onViewChange, viewBounds,
+    width: restProps.width,
+    height: restProps.height,
+    requestRedraw: () => { canvasApiRef.current?.requestRedraw(); },
   });
-
-  useEffect(() => {
-    const api = canvasApiRef.current;
-    if (!api) return;
-    currentViewRef.current = api.getView();
-    return api.subscribeView((v) => { currentViewRef.current = v; });
-  }, [canvasReady]);
-
-  // The dep registry's `view.set`. Uncontrolled it must not also call
-  // `onViewChangeProp` — the canvas reports the write through `notifyViewChange`.
-  const handleViewChange = useCallback((v: View) => {
-    const api = canvasApiRef.current;
-    if (viewProp === undefined && api) { api.setView(v); return; }
-    onViewChangeProp?.(normalizeView(v));
-  }, [viewProp, onViewChangeProp]);
-
-  const viewChannel = useMemo(
-    () => ({ get: () => currentViewRef.current, set: handleViewChange }),
-    [handleViewChange],
-  );
-  const { viewAnimation, camera } = useCanvasCamera(viewChannel);
-
-  // Never writes back to the canvas — `handleViewChange` would recurse. Every
-  // `Canvas.setView` lands here on both branches, so it is also the runner's
-  // one interrupt feed.
-  const notifyViewChange = useCallback((v: View) => {
-    viewAnimation.stopIfExternal();
-    onViewChangeProp?.(v);
-  }, [onViewChangeProp, viewAnimation]);
+  const { viewRef } = viewState;
 
   // `animatedZoom` is the SceneCanvas-level spelling of the zoom action's
   // `animate` option, the way `pinchZoom` is of the pinch tool's clamp.
@@ -368,7 +333,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     poseDescriptor: descriptor as PoseDescriptor<TPose>,
     geometry,
     // The pick tolerance is declared in screen pixels; this is what converts it.
-    getView: () => currentViewRef.current,
+    getView: () => viewRef.current,
     // Only when the consumer actually fades something. Without a prop the
     // composed function is just the override lookup, and the source resolves
     // that once per walk instead of once per candidate.
@@ -556,7 +521,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       const api = canvasApiRef.current;
       if (!api) return null;
       const target = surfaceViewRegistry?.resolver.at(null, clientX, clientY);
-      const view = target?.view ?? currentViewRef.current;
+      const view = target?.view ?? viewRef.current;
       const [x, y] = worldPointAt(api, target, clientX, clientY);
       // A view judges its own layers; the surface's gate is the picker's default.
       const reg = target?.id != null
@@ -604,9 +569,9 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   /** The surface's own view zero. */
   const currentRuleInputs = useCallback((): ViewRuleInputs => ({
     selection: committedSelectionRef.current,
-    view: currentViewRef.current,
+    view: viewRef.current,
     action: dispatcher.getActiveAction(),
-  }), [dispatcher, committedSelectionRef]);
+  }), [dispatcher, committedSelectionRef, viewRef]);
   const getIsVisibleForCanvas = useCallback(
     (): ((id: string) => boolean) => chromeCaps.isVisible(currentRuleInputs()),
     [chromeCaps, currentRuleInputs],
@@ -729,8 +694,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       contentVersion={scene.getVersion}
       layerVisibility={layerVisibility}
       layerOrder={layerOrder}
-      {...(viewProp !== undefined ? { view: viewProp } : { defaultView })}
-      onViewChange={notifyViewChange}
+      viewState={viewState}
       {...(redrawOn ? { redrawOn } : {})}
       {...restProps}
     />
@@ -746,7 +710,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
         getScene: () => sceneRef.current as never,
         getSelectionIds: () =>
           (selectionRef.current?.current as readonly string[] | undefined) ?? [],
-        getView: () => currentViewRef.current,
+        getView: () => viewRef.current,
         getActiveToolId: () => liveToolsRef.current?.active ?? null,
       });
       if (hook) {
@@ -755,7 +719,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       }
     }
     return undefined;
-  }, [sceneRef, selectionRef, liveToolsRef]);
+  }, [sceneRef, selectionRef, liveToolsRef, viewRef]);
 
   return (
     <ViewInputsProvider value={viewInputs}>
@@ -768,7 +732,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
           canvasRef={internalCanvasRef}
           canvasApiRef={canvasApiRef}
           detachedInput={restProps.paintInto ? restProps.inputElement ?? null : undefined}
-          viewRef={currentViewRef}
+          viewRef={viewRef}
           pickEvery={internalPickEvery}
           pickBest={internalPickBest}
         />
@@ -779,8 +743,8 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
           adapter={adapter as unknown as BridgeAdapter}
           actions={resolvedActions}
           excludeActions={standardActionsExclude}
-          currentViewRef={currentViewRef}
-          onViewChange={handleViewChange}
+          currentViewRef={viewRef}
+          onViewChange={viewState.setViewFromInput}
           resizeOptions={selectToolOpts?.resize as UseResizeOptions<unknown> | undefined}
           poseDescriptor={descriptor}
           geometryProjection={geometryProjection}
@@ -822,7 +786,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
           pickEvery={internalPickEvery}
           pickBest={internalPickBest}
           kindOfNode={kindOfNode}
-          viewRef={currentViewRef}
+          viewRef={viewRef}
           dispatcher={dispatcher}
           getIsVisibleForCanvas={getIsVisibleForCanvas}
           getRuleCtx={getRuleCtxForCanvas}

@@ -1,6 +1,6 @@
 import { describe, expect, it, beforeAll } from 'vitest';
 import { render } from '@testing-library/react';
-import { Canvas } from './Canvas';
+import { Canvas } from './testing/BareCanvas';
 import type { CanvasDebugSink } from '../debug/types';
 import { stubCanvasContext, waitForFrame } from './testing/stubCanvasContext';
 

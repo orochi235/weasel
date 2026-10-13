@@ -5,7 +5,7 @@
  */
 import { describe, it, expect, beforeAll, vi } from 'vitest';
 import { render, act } from '@testing-library/react';
-import { Canvas } from './Canvas';
+import { Canvas } from './testing/BareCanvas';
 import type { RenderLayer } from '../core/layers/render';
 import { makeGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
 

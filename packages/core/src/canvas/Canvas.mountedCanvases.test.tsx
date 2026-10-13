@@ -4,7 +4,7 @@
  */
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { render } from '@testing-library/react';
-import { Canvas } from './Canvas';
+import { Canvas } from './testing/BareCanvas';
 import { findMountedCanvas } from './mountedCanvases';
 import { makeGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
 

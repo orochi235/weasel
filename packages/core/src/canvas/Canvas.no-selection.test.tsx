@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { render } from '@testing-library/react';
-import { Canvas } from './Canvas';
+import { Canvas } from './testing/BareCanvas';
 
 // jsdom doesn't implement getContext or pointer capture; stub minimally.
 beforeAll(() => {

@@ -44,6 +44,7 @@ import type {
 } from '../deps';
 import type { SceneToAdapterOptions } from '../sceneAdapter';
 import type { SurfaceContribution } from '../surfaceContribution';
+import type { CameraProps } from '../useCanvasView';
 import type {
   Feature
 } from './features';
@@ -160,15 +161,14 @@ export interface SceneCanvasHit {
 export type SceneCanvasProps<TData, TLayer extends string, TPose> =
   Omit<
     CanvasProps<Node<TData, TLayer, TPose>, TPose>,
-    | 'adapter'
-    | 'boundsOf'
-    | 'selection' | 'tools'
+    | 'adapter' | 'boundsOf' | 'selection' | 'tools'
+    | 'viewState'       // SceneCanvas makes the camera from the view props below
     | 'layers'          // stripped so we can re-add as optional below
     | 'getIsVisible'    // SceneCanvas synthesizes this from chromeVisibility
     | 'contentVersion'  // SceneCanvas wires this to the scene's own version
     | 'layerVisibility' | 'layerOrder' // re-declared below: they gate picking here too
     | 'debug'           // re-declared below with SceneCanvas's own `slops`
-  >
+  > & CameraProps
   & {
     /** A `Scene` (typically from `useScene`) — or a `SerializedScene` JSON
      *  object, which SceneCanvas bakes into a Scene on first render. The

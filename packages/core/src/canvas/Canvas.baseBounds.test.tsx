@@ -1,7 +1,7 @@
 import { describe, expect, it, vi, beforeAll } from 'vitest';
 import { render, act } from '@testing-library/react';
 import React from 'react';
-import { Canvas } from './Canvas';
+import { Canvas } from './testing/BareCanvas';
 import type { RenderLayer } from 'core/layers/render';
 import type { CanvasDebugSink } from '../debug/types';
 import type { CanvasExtensionApi } from './canvasExtension';

@@ -1,7 +1,8 @@
 /**
  * A camera: held in a ref when uncontrolled, taken from the `view` option when
- * controlled, with one write path and one subscriber list over both. `<Canvas>`
- * keeps its own through this, and so does each `<CanvasView>`.
+ * controlled, with one write path and one subscriber list over both.
+ * `<SceneCanvas>` makes the one its `<Canvas>` looks through, and each
+ * `<CanvasView>` makes its own.
  */
 import { useCallback, useRef, type MutableRefObject } from 'react';
 import { useLatest } from '@weasel-js/react';
@@ -9,6 +10,25 @@ import type { Dims } from 'core/layers/render';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { clampView } from 'core/viewport/clampView';
 import { normalizeView, type View } from 'core/viewport/view';
+
+/** The view props a canvas takes for its camera. */
+export interface CameraProps {
+  /** Controlled viewport. When supplied, the canvas does not own the value —
+   *  the consumer must supply `onViewChange` and re-render with the new
+   *  view. See `View` JSDoc for the camera-position convention. */
+  view?: View;
+  /** Initial viewport for the uncontrolled path. Default `{x:0, y:0}`. */
+  defaultView?: View;
+  /** Fires whenever the viewport changes — in both controlled and
+   *  uncontrolled modes. */
+  onViewChange?: (next: View) => void;
+  /**
+   * Optional world-space rect that constrains pan: every write to the view passes through
+   * `clampView` first, keeping the visible rect inside `viewBounds`. An axis where the
+   * visible rect is larger than the bounds is centered. Has no effect on `scale`.
+   */
+  viewBounds?: { x: number; y: number; width: number; height: number };
+}
 
 /** Inputs to {@link useCanvasView}: the camera's view props and what a write
  *  needs from whatever the camera looks through. */
@@ -31,6 +51,9 @@ export interface CanvasViewState {
    *  `adoptControlled` when controlled. A camera derived by a thunk is not
    *  kept here: read `getView`. */
   viewRef: MutableRefObject<View>;
+  /** This render's controlled view, absent when the camera is uncontrolled or
+   *  derived. A new object every render, so compare its numbers. */
+  controlled: View | undefined;
   /** The imperative write. Controlled, it is forwarded to `onViewChange`
    *  instead of applied, and says so once per mount. */
   setView: (next: View | ((current: View) => View)) => void;
@@ -123,7 +146,7 @@ export function useCanvasView(opts: CanvasViewOptions): CanvasViewState {
   const clearSubscribers = useCallback(() => { viewSubsRef.current.clear(); }, []);
 
   return {
-    viewRef, setView, setViewFromInput, getView, subscribeView,
+    viewRef, controlled: controlledView, setView, setViewFromInput, getView, subscribeView,
     adoptControlled, announceControlled, clearSubscribers,
   };
 }

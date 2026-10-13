@@ -26,7 +26,7 @@ import type { ToolsApi } from '../tools/overlayBinding';
 import type { GestureSource } from './gestureBounds';
 import { useViewHelpers } from './useViewHelpers';
 import { useSurfaceInput } from './useSurfaceInput';
-import { useCanvasView } from './useCanvasView';
+import type { CanvasViewState } from './useCanvasView';
 import { useOptionalViewRegistry } from './viewRegistry';
 import { useCanvasSurface } from './useCanvasSurface';
 import type { CanvasHelpers, CanvasSurfaceHelpers } from './useViewHelpers';
@@ -184,21 +184,10 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
    *  it dispatches nothing to a tool. */
   tools?: import('../tools/overlayBinding').ToolsApi;
 
-  /** Controlled viewport. When supplied, Canvas does not own the value —
-   *  the consumer must supply `onViewChange` and re-render with the new
-   *  view. See `View` JSDoc for the camera-position convention. */
-  view?: View;
-  /** Initial viewport for the uncontrolled path. Default `{x:0, y:0}`. */
-  defaultView?: View;
-  /** Fires whenever the viewport changes — in both controlled and
-   *  uncontrolled modes. */
-  onViewChange?: (next: View) => void;
-  /**
-   * Optional world-space rect that constrains pan: every `setView` passes through `clampView`
-   * before commit, keeping the visible rect inside `viewBounds`. An axis where the visible
-   * rect is larger than the bounds is centered. Has no effect on `scale`.
-   */
-  viewBounds?: { x: number; y: number; width: number; height: number };
+  /** The camera this surface looks through, from `useCanvasView`. Whoever
+   *  made it holds the view props; the surface adopts and announces a
+   *  controlled view among its own effects, and repaints when one moves. */
+  viewState: CanvasViewState;
   /**
    * Mutable ref Canvas writes overlay-aware pose/bounds lookups to on every render. Custom
    * layers can read it from inside their `draw` closure to reflect in-flight gestures
@@ -344,10 +333,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     autoFocusOnPointerDown = true,
     helpersRef,
     tools,
-    view: viewProp,
-    defaultView,
-    onViewChange,
-    viewBounds,
+    viewState,
     debug: debugProp,
     debugSinkRef,
     shaders,
@@ -447,11 +433,9 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   }, [gateRef]);
 
   const {
-    viewRef, setView, getView, subscribeView,
+    viewRef, controlled: controlledView, setView, getView, subscribeView,
     adoptControlled, announceControlled, clearSubscribers,
-  } = useCanvasView({
-    view: viewProp, defaultView, onViewChange, viewBounds, dims: () => dimsRef.current, requestRedraw,
-  });
+  } = viewState;
 
   const hitTestExtras = useCallback((
     worldX: number,
@@ -710,7 +694,8 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   // commit as the DOM.
   useLayoutEffect(() => {
     requestRedraw();
-  }, [layersWithDebug, width, height, viewProp, debugSink, dprProp, flattenTolerance,
+  }, [layersWithDebug, width, height, debugSink, dprProp, flattenTolerance,
+      controlledView?.x, controlledView?.y, controlledView?.scale.x, controlledView?.scale.y,
       layerVisibility, layerOrder, layerGroups, shaderIdKey, syncPaint,
       viewChromeState, getIsVisible, paintTarget, paintRect?.x, paintRect?.y, requestRedraw]);
 

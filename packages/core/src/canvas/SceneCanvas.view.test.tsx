@@ -1,5 +1,5 @@
 /**
- * SceneCanvas's view lives on the canvas handle, not in React state: a pan
+ * SceneCanvas's view lives in a ref, not in React state: a pan
  * through `setView` costs no commit, the `view` dep's write path reaches the
  * canvas without looping back through it, and a `view` prop still takes over
  * completely.
@@ -130,21 +130,20 @@ describe('SceneCanvas view', () => {
     await frame();
     onViewChange.mockClear();
 
-    // `view.set` is `handleViewChange`, which writes to the canvas; the canvas
-    // announces the change back out through its own `onViewChange`. If those
-    // two were the same callback the write would recurse (RangeError) or, with
-    // the plan's belt-and-braces variant, report twice.
+    // `view.set` writes to the camera, and the camera reports the write through
+    // `onViewChange`. A report that fed back into the write would recurse
+    // (RangeError) or report twice.
     act(() => { depsRef.current!.get('view')!.set({ x: 12, y: 34, scale: { x: 2, y: 2 } }); });
     await frame();
 
     expect(onViewChange).toHaveBeenCalledTimes(1);
     expect(onViewChange).toHaveBeenCalledWith({ x: 12, y: 34, scale: { x: 2, y: 2 } });
     expect(apiRef.current!.getView()).toEqual({ x: 12, y: 34, scale: { x: 2, y: 2 } });
-    // And the mirror the HUDs / picking read agrees with the canvas.
+    // And what the HUDs and picking read agrees with the canvas.
     expect(depsRef.current!.get('view')!.get()).toEqual({ x: 12, y: 34, scale: { x: 2, y: 2 } });
   });
 
-  it('seeds the view mirror from defaultView before any subscription lands', () => {
+  it('answers defaultView to the view dep during the first commit', () => {
     const scene = newScene();
     const depsRef = { current: null as DepRegistry | null };
     const seen: View[] = [];
@@ -172,7 +171,7 @@ describe('SceneCanvas view', () => {
     expect(depsRef.current!.get('view')!.get()).toEqual({ x: -60, y: 5, scale: { x: 3, y: 3 } });
   });
 
-  it('keeps the mirror fed after StrictMode re-runs the subscription effect', async () => {
+  it('keeps the view dep on the canvas\'s view after StrictMode re-runs its effects', async () => {
     const scene = newScene();
     const apiRef = { current: null as SceneCanvasApi | null };
     const depsRef = { current: null as DepRegistry | null };
@@ -246,11 +245,13 @@ describe('SceneCanvas view bounds', () => {
     expect(CLAMPED).not.toEqual(OUTSIDE);
   });
 
-  it('a controlled canvas reports an input write unclamped', async () => {
+  it('a controlled canvas reports an input write clamped, and leaves the prop authoritative', async () => {
+    const apiRef = { current: null as SceneCanvasApi | null };
     const depsRef = { current: null as DepRegistry | null };
     const onViewChange = vi.fn();
     render(
       <SceneCanvas<D, L, P>
+        ref={apiRef}
         scene={newScene()}
         width={200}
         height={150}
@@ -264,7 +265,8 @@ describe('SceneCanvas view bounds', () => {
     await frame();
     act(() => { depsRef.current!.get('view')!.set(OUTSIDE); });
     expect(onViewChange).toHaveBeenCalledTimes(1);
-    expect(onViewChange).toHaveBeenCalledWith(OUTSIDE);
+    expect(onViewChange).toHaveBeenCalledWith(CLAMPED);
+    expect(apiRef.current!.getView()).toEqual({ x: 0, y: 0, scale: { x: 1, y: 1 } });
   });
 
   it('an uncontrolled canvas clamps an input write', async () => {
@@ -379,7 +381,7 @@ describe('SceneCanvas view zoom invariant', () => {
     expect(finitePositive(reported.scale.x) && finitePositive(reported.scale.y)).toBe(true);
   });
 
-  it('the view mirror never holds a NaN scale from a controlled prop', async () => {
+  it('the view dep never reads a NaN scale from a controlled prop', async () => {
     const depsRef = { current: null as DepRegistry | null };
     render(
       <SceneCanvas<D, L, P>

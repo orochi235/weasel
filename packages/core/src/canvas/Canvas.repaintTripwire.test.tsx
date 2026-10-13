@@ -12,7 +12,7 @@
 import { describe, it, expect, beforeAll, afterEach, vi } from 'vitest';
 import { render, act, cleanup } from '@testing-library/react';
 import { useMemo, useState } from 'react';
-import { Canvas } from './Canvas';
+import { Canvas } from './testing/BareCanvas';
 import type { SelectionApi } from '../core/selection/useSelection';
 import { asNodeId, type NodeId } from '../core/scene/types';
 import type { RenderLayer } from '../core/layers/render';

@@ -9,7 +9,7 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { render, act } from '@testing-library/react';
 import { createRef } from 'react';
-import { Canvas } from './Canvas';
+import { Canvas } from './testing/BareCanvas';
 import type { CanvasExtensionApi } from './canvasExtension';
 
 beforeAll(() => {

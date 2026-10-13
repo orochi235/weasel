@@ -8,7 +8,7 @@ import { act, cleanup } from '@testing-library/react';
 import { createRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
-import { Canvas } from './Canvas';
+import { Canvas } from './testing/BareCanvas';
 import type { CanvasExtensionApi } from './canvasExtension';
 import { ViewRegistryProvider, useOptionalViewRegistry, type ViewRegistry } from './viewRegistry';
 import { makeGLRecorder } from '@weasel-js/renderer/testing/glRecorder';

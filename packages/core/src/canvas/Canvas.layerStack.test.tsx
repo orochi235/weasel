@@ -4,7 +4,7 @@
  */
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { render, act } from '@testing-library/react';
-import { Canvas, type CanvasProps } from './Canvas';
+import { Canvas, type BareCanvasProps as CanvasProps } from './testing/BareCanvas';
 import type { CanvasDebugSink } from '../debug/types';
 import type { RenderLayer } from 'core/layers/render';
 import type { ToolsApi } from '../tools/overlayBinding';

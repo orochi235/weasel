@@ -11,7 +11,7 @@
 import { describe, it, expect, beforeAll, afterEach, vi } from 'vitest';
 import { render, cleanup } from '@testing-library/react';
 import { Profiler, StrictMode } from 'react';
-import { Canvas } from './Canvas';
+import { Canvas } from './testing/BareCanvas';
 import type { CanvasExtensionApi } from './canvasExtension';
 import type { RenderLayer } from '../core/layers/render';
 import { makeGLRecorder } from '@weasel-js/renderer/testing/glRecorder';

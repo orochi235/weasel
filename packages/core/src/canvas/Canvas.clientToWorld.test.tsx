@@ -6,7 +6,7 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { act, render, fireEvent } from '@testing-library/react';
 import { createRef } from 'react';
-import { Canvas } from './Canvas';
+import { Canvas } from './testing/BareCanvas';
 import type { CanvasExtensionApi } from './canvasExtension';
 import { ViewRegistryProvider, useOptionalViewRegistry, type ViewRegistry } from './viewRegistry';
 import type { RenderLayer } from 'core/layers/render';

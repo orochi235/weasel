@@ -12,7 +12,7 @@ import { describe, it, expect, beforeAll, afterEach, onTestFinished, vi } from '
 import { render, act, cleanup } from '@testing-library/react';
 import { Profiler, StrictMode, Suspense, startTransition, useLayoutEffect, useMemo, useState } from 'react';
 import type React from 'react';
-import { Canvas } from './Canvas';
+import { Canvas } from './testing/BareCanvas';
 import type { CanvasExtensionApi } from './canvasExtension';
 import type { RenderLayer } from '../core/layers/render';
 import type { View } from '../core/viewport/view';

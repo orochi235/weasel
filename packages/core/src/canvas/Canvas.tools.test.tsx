@@ -1,7 +1,7 @@
 import { describe, expect, it, beforeAll } from 'vitest';
 import { render } from '@testing-library/react';
 import { createRef } from 'react';
-import { Canvas } from './Canvas';
+import { Canvas } from './testing/BareCanvas';
 import { useTools } from '../tools/overlayBinding';
 import { WeaselProvider } from '../WeaselProvider';
 import type { RenderLayer } from 'core/layers/render';

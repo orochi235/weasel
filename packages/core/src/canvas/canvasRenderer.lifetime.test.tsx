@@ -11,7 +11,7 @@ import type { Scene } from 'core/scene/types';
 import { makeGLRecorder, type GLRecorder } from '@weasel-js/renderer/testing/glRecorder';
 import { SceneViewCanvas } from './SceneViewCanvas';
 import { DrawCanvas } from './DrawCanvas';
-import { Canvas } from './Canvas';
+import { Canvas } from './testing/BareCanvas';
 import { defaultDrawOne } from './defaultDrawOne';
 import { cachedCanvasRenderer, leaseCanvasRenderer } from './canvasRenderer';
 

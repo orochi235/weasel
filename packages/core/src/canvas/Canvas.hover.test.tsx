@@ -1,6 +1,6 @@
 import { describe, expect, it, vi, beforeAll } from 'vitest';
 import { render, fireEvent } from '@testing-library/react';
-import { Canvas } from './Canvas';
+import { Canvas } from './testing/BareCanvas';
 import type { RenderLayer } from 'core/layers/render';
 import { stubCanvasContext } from './testing/stubCanvasContext';
 

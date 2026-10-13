@@ -7,7 +7,7 @@
 
 import { describe, it, expect, vi, beforeAll, afterEach } from 'vitest';
 import { render } from '@testing-library/react';
-import { Canvas } from './Canvas';
+import { Canvas } from './testing/BareCanvas';
 import { WeaselRenderer } from '@weasel-js/renderer';
 import { registerProgram } from '@weasel-js/renderer';
 import { makeGLRecorder } from '@weasel-js/renderer/testing/glRecorder';

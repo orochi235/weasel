@@ -1,7 +1,7 @@
 import { describe, expect, it, vi, beforeAll } from 'vitest';
 import { render, fireEvent, createEvent } from '@testing-library/react';
 import { createRef } from 'react';
-import { Canvas } from './Canvas';
+import { Canvas } from './testing/BareCanvas';
 import { useSelection } from 'core/selection/useSelection';
 import { useSelectTool } from 'tools/builtin/select';
 import { useTools } from '../tools/overlayBinding';
