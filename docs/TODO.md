@@ -823,8 +823,7 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   tab does not toggle, in the panel or in `PrefsForm`: a react-aria tab keeps its pointer events,
   so the press arrives as the focus it causes, which carries no modifier.
 
-- **(P3) Loose ends beside a number's unit as data.** `PrefSchemaEditor` edits a number's
-  default, and its auto value, in the stored unit and not the one the leaf shows. The text tool's
+- **(P3) Loose ends beside a number's unit as data.** The text tool's
   percent unit (`useTextTool.ts`) is still code, for the rounding it does on the way back to the
   stored value, so the run properties do not export as a literal. Nothing reads a unit's `format`
   yet. A unit whose accepted suffix is all digits moves to the front of the list, as an object's
