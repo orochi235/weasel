@@ -24,6 +24,15 @@ npm install @weasel-js/core react
 
 `react` is a peer dependency (>=18).
 
+Import core's stylesheet once. It gives every canvas the kit renders its size
+on the page, and styles the canvas's debug overlays (`cursorCoordsHud`,
+`pickHud`, `modalityHud`). Without it a canvas is as large as its drawing
+buffer, which on a high-density screen is twice the size you asked for:
+
+```ts
+import '@weasel-js/core/style.css';
+```
+
 ## How it fits together
 
 `useScene` holds the scene: a tree of leaf and container nodes, each carrying your data and a pose. Every change to it is an **op**, which is what makes it undoable. `<SceneCanvas>` renders a scene and routes input to it.

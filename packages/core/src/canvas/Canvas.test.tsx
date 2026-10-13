@@ -38,7 +38,7 @@ describe('<Canvas>', () => {
       <Canvas width={10} height={10} layers={{}} className="x" style={{ display: 'block' }} />,
     );
     const canvas = container.querySelector('canvas')!;
-    expect(canvas.className).toBe('x');
+    expect(canvas.classList.contains('x')).toBe(true);
     expect(canvas.style.display).toBe('block');
   });
 

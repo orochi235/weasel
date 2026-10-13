@@ -18,6 +18,7 @@ import type { Ref } from 'react';
 import { assignRef } from '@weasel-js/react';
 import { useCanvasSurface } from './useCanvasSurface';
 import type { CanvasRendererLease } from './canvasRenderer';
+import { surfaceBox } from './surfaceBox';
 import { sceneViewFrame } from './sceneViewRender';
 import type { RenderSceneToCanvasArgs, SceneViewDrawOne, SceneViewLayers } from './sceneViewRender';
 import type { DrawCommand } from '@weasel-js/renderer';
@@ -65,8 +66,8 @@ export interface SceneViewCanvasProps<TData, TLayer extends string, TPose> {
    *  and paints its `colorOverrides`. Pass the main canvas's animator so both
    *  show the same colors. */
   animator?: Animator;
-  /** Optional CSS class for positioning the `<canvas>`. Its size is `width` ×
-   *  `height`, which the renderer writes as inline style. */
+  /** Optional CSS class for the `<canvas>`. Its size is `width` × `height`
+   *  unless a rule on this class sizes it. */
   className?: string;
   /** Forwarded ref to the underlying `<canvas>`. Consumers attach their own
    *  pointer listeners or call `toBlob` for snapshots through this. */
@@ -137,7 +138,7 @@ function SceneViewCanvasInner<TData, TLayer extends string, TPose>(
       ref={setCanvasRef}
       width={width}
       height={height}
-      className={className}
+      {...surfaceBox(width, height, className)}
     />
   );
 }
@@ -146,7 +147,7 @@ function SceneViewCanvasInner<TData, TLayer extends string, TPose>(
  * Pointer-inert read-only scene view. It attaches no event listeners;
  * consumers attach their own through `canvasRef`, a plain prop because
  * `forwardRef` erases the component's generics. `width` and `height` are CSS
- * pixels, which the renderer writes as inline style, so `className` can
- * position the canvas and cannot resize it.
+ * pixels and size the drawing buffer; a `className` rule that sizes the
+ * element stretches that buffer to fit.
  */
 export const SceneViewCanvas = SceneViewCanvasInner;

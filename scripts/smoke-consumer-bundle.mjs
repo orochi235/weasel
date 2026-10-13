@@ -383,7 +383,7 @@ await writeFile(
     // its bundled stylesheet and hud its data-URI font atlas.
     `import * as ui from '@weasel-js/ui';\n` +
     `import '@weasel-js/ui/style.css';\n` +
-    // Core's debug HUDs are CSS modules too.
+    // Core's canvas size and debug HUDs are CSS modules too.
     `import '@weasel-js/core/style.css';\n` +
     // The `./components/*` wildcard subpath. check:manifests cannot cover this:
     // a wildcard describes a family of paths, not a file it can look for in the

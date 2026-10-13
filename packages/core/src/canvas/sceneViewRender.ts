@@ -57,7 +57,7 @@ export interface RenderSceneToCanvasArgs<TData, TLayer extends string, TPose> {
   /** Camera view applied to scene and `extraCommands` alike. */
   view: View;
   /** CSS-pixel size. The drawing buffer is set to `width × dpr` and
-   *  `height × dpr`; CSS size to `width` / `height`. */
+   *  `height × dpr`; the element's CSS size is the caller's to set. */
   width: number;
   height: number;
   drawOne: SceneViewDrawOne<TData, TLayer, TPose>;

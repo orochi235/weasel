@@ -82,7 +82,8 @@ export interface MinimapCanvasProps<TData, TLayer extends string, TPose> {
   animator?: Animator;
   /** Visual tuning of the indicator stroke. */
   indicatorStyle?: IndicatorStyle;
-  /** CSS class for positioning the canvas. Its size is `width` × `height`. */
+  /** CSS class for the canvas. Its size is `width` × `height` unless a rule
+   *  on this class sizes it. */
   className?: string;
   /** Forwarded ref to the underlying `<canvas>`. */
   canvasRef?: Ref<HTMLCanvasElement>;

@@ -119,7 +119,8 @@ function now(): number {
 export interface WeaselRendererOptions {
   /** A WebGL2 context to draw with. Wins over `canvas`. */
   gl?: WebGL2RenderingContext;
-  /** A canvas to open a stencil-backed WebGL2 context on, when `gl` is absent. */
+  /** A canvas to open a stencil-backed WebGL2 context on, when `gl` is absent.
+   *  The renderer sets its drawing buffer and never its CSS size. */
   canvas?: HTMLCanvasElement;
   /** Drawing size in CSS pixels. */
   width: number;
@@ -274,10 +275,6 @@ export class WeaselRenderer {
     if (this.canvas) {
       this.canvas.width = Math.round(opts.width * opts.dpr);
       this.canvas.height = Math.round(opts.height * opts.dpr);
-      if (this.canvas.style) {
-        this.canvas.style.width = `${opts.width}px`;
-        this.canvas.style.height = `${opts.height}px`;
-      }
     }
     const lossTarget: Partial<EventTarget> | null = this.canvas ?? this.gl.canvas ?? null;
     if (lossTarget && typeof lossTarget.addEventListener === 'function') {
@@ -693,10 +690,6 @@ export class WeaselRenderer {
     if (this.canvas) {
       this.canvas.width = Math.round(dims.width * dims.dpr);
       this.canvas.height = Math.round(dims.height * dims.dpr);
-      if (this.canvas.style) {
-        this.canvas.style.width = `${dims.width}px`;
-        this.canvas.style.height = `${dims.height}px`;
-      }
     }
     this.applyTarget();
   }

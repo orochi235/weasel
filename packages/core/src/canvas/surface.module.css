@@ -1,0 +1,6 @@
+/* The CSS size of a canvas the kit renders: its `width` and `height` props.
+   Zero specificity, so a class the consumer passes resizes the element. */
+:where(.surface) {
+  width: var(--wzl-surface-width);
+  height: var(--wzl-surface-height);
+}

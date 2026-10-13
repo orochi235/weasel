@@ -288,7 +288,7 @@ describe('<SceneViewCanvas>', () => {
     expect(ref.mock.calls.map(([el]) => el?.tagName ?? null)).toEqual(['CANVAS']);
   });
 
-  it('applies the consumer className to the canvas (no inline width/height styles)', () => {
+  it('applies the consumer className to the canvas, with no inline width or height', () => {
     const scene = makeScene();
     const { container } = render(
       <SceneViewCanvas
@@ -302,9 +302,9 @@ describe('<SceneViewCanvas>', () => {
     );
     const canvas = container.querySelector('canvas')!;
     expect(canvas.classList.contains('my-thumb')).toBe(true);
-    // No inline style at all on the canvas — sizing is via width/height
-    // attributes (drawing buffer) and the className (CSS).
-    expect(canvas.getAttribute('style')).toBeNull();
+    expect([canvas.style.width, canvas.style.height]).toEqual(['', '']);
+    expect(canvas.style.getPropertyValue('--wzl-surface-width')).toBe('100px');
+    expect(canvas.style.getPropertyValue('--wzl-surface-height')).toBe('80px');
   });
 });
 

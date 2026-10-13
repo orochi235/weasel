@@ -5,14 +5,15 @@
  * It paints through the same surface hook as `<SceneViewCanvas>`
  * (`useCanvasSurface`), whose frame loop stops while the canvas is off screen
  * or the tab is hidden. Like `<SceneViewCanvas>` it attaches no event
- * listeners. Its size is `width` × `height`, which the renderer writes as
- * inline style, so `className` positions the element and cannot resize it.
+ * listeners. Its size is `width` × `height` unless a `className` rule sizes
+ * the element; the drawing buffer stays `width` × `height` either way.
  */
 import { useCallback, useEffect, useLayoutEffect, useRef } from 'react';
 import type { Ref } from 'react';
 import { assignRef } from '@weasel-js/react';
 import type { Paint } from '@weasel-js/paint';
 import { useCanvasSurface } from './useCanvasSurface';
+import { surfaceBox } from './surfaceBox';
 import type { CanvasRendererLease } from './canvasRenderer';
 import { viewToMat3 } from '@weasel-js/geom';
 import type { DrawCommand } from '@weasel-js/renderer';
@@ -94,5 +95,5 @@ export function DrawCanvas(props: DrawCanvasProps) {
   // paints its first frame in place again.
   useEffect(() => () => { paintedRef.current = false; }, []);
 
-  return <canvas ref={setRefs} width={width} height={height} className={className} />;
+  return <canvas ref={setRefs} width={width} height={height} {...surfaceBox(width, height, className)} />;
 }

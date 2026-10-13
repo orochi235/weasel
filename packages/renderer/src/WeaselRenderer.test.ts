@@ -61,6 +61,21 @@ describe('WeaselRenderer.resize', () => {
     expect(canvas.width).toBe(400);
     expect(canvas.height).toBe(300);
   });
+
+  it('leaves the canvas CSS size alone, at construction and on resize', () => {
+    const style = { width: '', height: '' };
+    const canvas = {
+      width: 0,
+      height: 0,
+      style,
+      getContext: () => recorder.gl,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+    } as unknown as HTMLCanvasElement;
+    const r = new WeaselRenderer({ canvas, width: 100, height: 100, dpr: 2 });
+    r.resize({ width: 200, height: 150, dpr: 2 });
+    expect(style).toEqual({ width: '', height: '' });
+  });
 });
 
 describe('WeaselRenderer context loss', () => {
