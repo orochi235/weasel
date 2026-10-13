@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { editAnchorsAction } from './editAnchors';
+import { editAnchorsAction } from './action';
 import type { InvocationCtx, AffordanceHit } from '@weasel-js/routing';
 import type { EditAnchorsDep } from '../depSchema';
 import { makeEditAnchorsDep, stubDeps } from '../testUtils';

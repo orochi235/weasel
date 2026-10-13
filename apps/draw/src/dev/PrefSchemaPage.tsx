@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { defaultNodeProperties } from '@weasel-js/core';
-import { PREF_SCHEMA_EDITOR_PREFS, PrefSchemaEditor, Select, type CustomKinds, type PrefSchemaEditorPrefs } from '@weasel-js/ui';
-import { openPrefsSync, type PrefGroup, type PrefSection } from '@weasel-js/prefs';
+import { PREF_SCHEMA_EDITOR_PREFS, PrefSchemaEditor, Select, type CustomKinds } from '@weasel-js/ui';
+import { type PrefGroup, type PrefSection } from '@weasel-js/prefs';
+import { usePrefsStore } from '@weasel-js/prefs/react';
 import { localStorageAdapter } from '@weasel-js/storage';
 import { DataControl, RegistryEnumControl } from '../PreferencesModal';
 import { PREFS } from '../prefs';
@@ -25,16 +26,14 @@ const KINDS: CustomKinds = {
 
 const RENDERERS = { 'registry-enum': RegistryEnumControl, data: DataControl };
 
-let editorPrefs: PrefSchemaEditorPrefs | undefined;
-/** The editor's own settings and pane sizes, opened on first use so a test's storage shim is in place. */
-const editorPrefsStore = (): PrefSchemaEditorPrefs =>
-  (editorPrefs ??= openPrefsSync(PREF_SCHEMA_EDITOR_PREFS, { storage: localStorageAdapter, prefix: 'weaseldraw.schema-editor/' }));
+const EDITOR_PREFS = { storage: localStorageAdapter, prefix: 'weaseldraw.schema-editor/' };
 
 /** Edit a schema the app ships, in a scratch copy, and export it. */
 export function PrefSchemaPage() {
   const [sourceId, setSourceId] = useState(SOURCES[0]!.id);
   const source = SOURCES.find((x) => x.id === sourceId)!;
   const [draft, setDraft] = useState(source.schema);
+  const editorPrefs = usePrefsStore(PREF_SCHEMA_EDITOR_PREFS, EDITOR_PREFS);
   return (
     <DevShell
       title="Prefs Schema"
@@ -49,7 +48,7 @@ export function PrefSchemaPage() {
       }
     >
       <PrefSchemaEditor key={sourceId} className={s.editor} schema={draft} onChange={setDraft}
-        original={source.schema} kinds={KINDS} renderers={RENDERERS} prefs={editorPrefsStore()} />
+        original={source.schema} kinds={KINDS} renderers={RENDERERS} prefs={editorPrefs} />
     </DevShell>
   );
 }

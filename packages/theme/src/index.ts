@@ -13,7 +13,7 @@ export type { ThemeDefinition, PinValue, PinObject } from './definition';
 export { parseTokenValue, serializeTokenValue } from './dtcg/value';
 export type { RawToken, FlatTokens, TokenValue } from './dtcg/types';
 export type { BakedTheme } from './engine/bake';
-export { colorAt, colorCount, colorCssAt, rampSteps, themeTones, type ColorContext, type ColorList, type GeneratedColors, type RampColors, type SerializableColorList } from './colorList';
+export { colorAt, colorCount, colorCssAt, rampSteps, themeTones, type ColorContext, type ColorList, type ColorListItem, type GeneratedColors, type RampColors, type SerializableColorList } from './colorList';
 export { colorSourceCss, colorSourceLiteral, TONE_REF, type ColorSourceContext } from './colorSource';
 export {
   resolveStanceSlots,

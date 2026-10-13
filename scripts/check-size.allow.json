@@ -91,14 +91,14 @@
   "packages/core/src/features/text/useSceneTextEdit.ts": {
     "longestFunction": 166
   },
-  "packages/core/src/interactions/actions/defaults/editAnchors.ts": {
-    "longestFunction": 133
-  },
   "packages/core/src/interactions/actions/defaults/viewportZoom.ts": {
     "longestFunction": 127
   },
   "packages/core/src/interactions/actions/depSchema.ts": {
     "lines": 580
+  },
+  "packages/core/src/interactions/actions/edit-anchors/action.ts": {
+    "longestFunction": 133
   },
   "packages/core/src/tools/builtin/pen/usePenTool.ts": {
     "lines": 684,
@@ -221,8 +221,8 @@
     "longestFunction": 262
   },
   "packages/labkit/src/lab/Lab.tsx": {
-    "lines": 628,
-    "longestFunction": 294
+    "lines": 627,
+    "longestFunction": 292
   },
   "packages/labkit/src/lab/Workspace.tsx": {
     "longestFunction": 159

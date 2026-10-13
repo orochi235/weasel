@@ -3,21 +3,21 @@ export { escapeAction } from './escape';
 export { duplicateAction } from './duplicate';
 export { nudgeUpAction, nudgeDownAction, nudgeLeftAction, nudgeRightAction } from './nudge';
 export { reorderForwardAction, reorderBackwardAction } from './reorder';
-export { flipAction } from './flip';
+export { flipAction } from '../flip/action';
 export {
   alignLeftAction, alignRightAction, alignTopAction, alignBottomAction,
   alignCenterXAction, alignCenterYAction,
-} from './align';
+} from '../align/action';
 export {
   distributeHorizontalAction, distributeVerticalAction,
-} from './distribute';
+} from '../distribute/action';
 export {
   pathfinderUnionAction, pathfinderSubtractAction, pathfinderIntersectAction,
   pathfinderExcludeAction, pathfinderDivideAction, pathfinderCropAction,
   pathfinderTrimAction, pathfinderMergeAction,
-} from './booleans';
-export { createOutlinesAction } from './createOutlines';
-export { outlineStrokeAction } from './outlineStroke';
+} from '../booleans/action';
+export { createOutlinesAction } from '../outlines/createOutlinesAction';
+export { outlineStrokeAction } from '../outlines/outlineStrokeAction';
 export { deleteAction } from './delete';
 export { groupAction, ungroupAction } from './group';
 export {
@@ -26,7 +26,7 @@ export {
   deleteAnchorsAction, cutPathAtAnchorAction, marqueeAnchorsAction, selectAnchorAction,
 } from './anchorEditing';
 export { undoAction, redoAction } from './undoRedo';
-export { clipboardCopyAction, clipboardCutAction, clipboardPasteAction, clipboardPasteEventAction } from './clipboard';
+export { clipboardCopyAction, clipboardCutAction, clipboardPasteAction, clipboardPasteEventAction } from '../clipboard/action';
 export { makeToolOffhandAction, buildToolOffhandBindings, TOOL_OFFHAND_ID, type ToolOffhandBindingSpec } from '@weasel-js/routing';
 export {
   makeToolActivateAction,
@@ -40,9 +40,9 @@ export { resizeAction } from '../resize/action';
 export { rotateAction } from '../rotate/action';
 export { areaSelectAction } from './areaSelect';
 export { insertAction } from '../insert/action';
-export { cloneAction } from './clone';
-export { editAnchorsAction } from './editAnchors';
-export { lassoSelectAction } from './lassoSelect';
+export { cloneAction } from '../clone/action';
+export { editAnchorsAction } from '../edit-anchors/action';
+export { lassoSelectAction } from '../lasso-select/action';
 export { pinchZoomAction } from './pinchZoom';
 export { viewportWheelPanAction } from './viewportWheelPan';
 export { viewportZoomAction, makeViewportZoomAction, type ViewportZoomOptions } from './viewportZoom';

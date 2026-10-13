@@ -26,7 +26,7 @@ import type { LassoHitMode, LassoSelectAdapter } from 'core/adapters/types';
 import type { Op } from 'core/ops/types';
 import { applyOpsTo } from 'core/applyOps';
 import type { GestureContext, LassoSelectBehavior, LassoSelectPose } from '../../gestures/types';
-import { LASSO_VERTICES } from '../lasso-select/behaviors/selectFromLasso';
+import { LASSO_VERTICES } from './behaviors/selectFromLasso';
 import { reduceBehaviorEnd, runBehaviorCancel, runBehaviorSettled } from '../gestureLifecycle';
 import { selectionFromHits } from '../hitSelection';
 

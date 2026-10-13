@@ -8,7 +8,7 @@ import type { ImmediateInvoker } from '@weasel-js/routing';
 import type { PathPaint } from 'canvas/nodeShapes/nodePaint';
 import { asNodeId, type NodeId } from 'core/scene/types';
 import { applyBooleanOp, type BooleansAdapter } from '../booleans/booleans';
-import { outlineStrokeAction } from '../defaults/outlineStroke';
+import { outlineStrokeAction } from './outlineStrokeAction';
 import { stubDeps } from '../testUtils';
 import type { CreateOutlinesAdapter } from './createOutlines';
 import { applyOutlineStroke } from './outlineStroke';

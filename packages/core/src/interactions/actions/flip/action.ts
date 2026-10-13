@@ -2,7 +2,7 @@ import type { NodeId, Scene } from 'core/scene/types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { shapeSources } from '../selectionSubtree';
 import { createElement } from 'react';
-import { FlipXIcon, FlipYIcon } from './icons/editIcons';
+import { FlipXIcon, FlipYIcon } from '../defaults/icons/editIcons';
 import type { Op } from 'core/ops/types';
 import { multiply, rotate, translate, type Mat3 } from '@weasel-js/geom';
 import { createTransformOp } from 'core/ops/transform';
@@ -13,7 +13,7 @@ import {
   flipPoseViaDescriptor,
   type FlipAxis,
   type FlipPivot,
-} from '../flip/helpers';
+} from './helpers';
 import { unionAABB } from 'core/geometry/unionBounds';
 import { visualBoundsViaDescriptor } from '../align/align';
 import { scenePoseFrame, type PoseFrame } from '../poseFrame';
@@ -22,7 +22,7 @@ import type { PointerContextValue } from '@weasel-js/routing/react';
 import type { RectPose } from 'core/scene/types';
 import type { Action } from '@weasel-js/routing';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
-import { requiresSelection } from './requiresSelection';
+import { requiresSelection } from '../defaults/requiresSelection';
 import type { SelectionApi } from 'core/selection/useSelection';
 import { geometryDataOp, type GeometryProjection } from '../geometryProjection';
 

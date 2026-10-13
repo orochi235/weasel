@@ -6,8 +6,8 @@
  * action composes. These run on `frameFixture`, where they differ.
  */
 import { describe, it, expect } from 'vitest';
-import { alignLeftAction } from './align';
-import { distributeHorizontalAction } from './distribute';
+import { alignLeftAction } from '../align/action';
+import { distributeHorizontalAction } from '../distribute/action';
 import {
   makeFrameFixture,
   expectSamePose,

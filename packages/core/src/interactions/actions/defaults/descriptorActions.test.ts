@@ -2,12 +2,12 @@ import { describe, it, expect } from 'vitest';
 import { createScene } from 'core/scene/scene';
 import type { NodeId, Scene } from 'core/scene/types';
 import type { ImmediateInvoker, InvocationCtx } from '@weasel-js/routing';
-import { flipAction } from './flip';
+import { flipAction } from '../flip/action';
 import { nudgeRightAction } from './nudge';
-import { alignLeftAction } from './align';
-import { distributeHorizontalAction } from './distribute';
+import { alignLeftAction } from '../align/action';
+import { distributeHorizontalAction } from '../distribute/action';
 import { duplicateAction } from './duplicate';
-import { cloneAction } from './clone';
+import { cloneAction } from '../clone/action';
 import { rotateAction } from '../rotate/action';
 import { circle, CIRCLE_POSE_DESCRIPTOR, type CirclePose } from 'core/geometry/circlePose.fixture';
 

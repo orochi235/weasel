@@ -6,7 +6,7 @@ import { describe, it, expect } from 'vitest';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type NodeId, type RectPose, type Scene } from 'core/scene/types';
 import type { InvocationCtx } from '@weasel-js/routing';
-import { cloneAction } from './clone';
+import { cloneAction } from './action';
 
 const G = asNodeId('g');
 const A = asNodeId('a');

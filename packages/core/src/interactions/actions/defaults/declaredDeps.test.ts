@@ -15,9 +15,9 @@ import type { ImmediateInvoker } from '@weasel-js/routing';
 import { asNodeId } from 'core/scene/types';
 import { createPoseOverrides } from 'core/scene/poseOverrides';
 import { reorderForwardAction, reorderBackwardAction } from './reorder';
-import { alignLeftAction, alignCenterYAction } from './align';
-import { distributeHorizontalAction, distributeVerticalAction } from './distribute';
-import { pathfinderUnionAction, pathfinderExcludeAction } from './booleans';
+import { alignLeftAction, alignCenterYAction } from '../align/action';
+import { distributeHorizontalAction, distributeVerticalAction } from '../distribute/action';
+import { pathfinderUnionAction, pathfinderExcludeAction } from '../booleans/action';
 
 const IDS = ['a', 'b', 'c'];
 

@@ -5,8 +5,8 @@ import type { DepRegistry } from '@weasel-js/routing/react';
 import { pathFromD } from '@weasel-js/geom';
 import { asNodeId } from 'core/scene/types';
 import type { PathPaint } from 'canvas/nodeShapes/nodePaint';
-import type { CreateOutlinesAdapter } from '../outlines/createOutlines';
-import { outlineStrokeAction } from './outlineStroke';
+import type { CreateOutlinesAdapter } from './createOutlines';
+import { outlineStrokeAction } from './outlineStrokeAction';
 
 const STROKED: PathPaint = { fill: null, stroke: { paint: { color: '#000' }, width: { px: 8 } } };
 

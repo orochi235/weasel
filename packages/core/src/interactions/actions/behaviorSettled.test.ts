@@ -12,7 +12,7 @@ import { moveAction } from './move/action';
 import { resizeAction } from './resize/action';
 import { rotateAction } from './rotate/action';
 import { insertAction } from './insert/action';
-import { lassoSelectAction } from './defaults/lassoSelect';
+import { lassoSelectAction } from './lasso-select/action';
 import type { InsertDep, LassoSelectDep } from './depSchema';
 import { runBehaviorSettled } from './gestureLifecycle';
 

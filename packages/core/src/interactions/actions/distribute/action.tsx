@@ -3,15 +3,15 @@ import type { Scene } from 'core/scene/types';
 import type { PoseDescriptor } from '../resize/geometry';
 import { poseDescriptorOf } from '../poseDescriptorDep';
 import { visualBoundsViaDescriptor } from '../align/align';
-import type { DistributeAxis, DistributeMode } from '../distribute/distribute';
-import { planDistribute } from '../distribute/plan';
+import type { DistributeAxis, DistributeMode } from './distribute';
+import { planDistribute } from './plan';
 import { scenePoseFrame } from '../poseFrame';
 import { translateEach } from '../selectionSubtree';
 import type { Action } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { ImmediateInvoker } from '@weasel-js/routing';
-import { DistributeHorizontalIcon, DistributeVerticalIcon } from './icons/distributeIcons';
+import { DistributeHorizontalIcon, DistributeVerticalIcon } from '../defaults/icons/distributeIcons';
 
 const ID_FOR: Record<DistributeAxis, string> = { x: 'distribute.horizontal', y: 'distribute.vertical' };
 const LABEL_FOR: Record<DistributeAxis, string> = { x: 'Distribute Horizontally', y: 'Distribute Vertically' };

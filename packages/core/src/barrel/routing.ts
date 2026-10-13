@@ -21,7 +21,7 @@ export { rotateAction } from '../interactions/actions/rotate/action';
 export { areaSelectAction } from '../interactions/actions/defaults/areaSelect';
 export { insertAction } from '../interactions/actions/insert/action';
 export { clearSelectionAction } from '../interactions/actions/defaults/clearSelection';
-export { cloneAction } from '../interactions/actions/defaults/clone';
+export { cloneAction } from '../interactions/actions/clone/action';
 export { inPlane, selectionLayer, insertLayer, editingLayer } from '../interactions/actions/planeInput';
 export type { EditedLayerOf } from '../interactions/actions/planeInput';
 export { viewportDragPanAction } from '../interactions/actions/defaults/viewportDragPan';
@@ -37,8 +37,8 @@ export {
   makeViewportWheelPanAction,
   type WheelPanOptions,
 } from '../interactions/actions/defaults/viewportWheelPan';
-export { editAnchorsAction } from '../interactions/actions/defaults/editAnchors';
-export { lassoSelectAction } from '../interactions/actions/defaults/lassoSelect';
+export { editAnchorsAction } from '../interactions/actions/edit-anchors/action';
+export { lassoSelectAction } from '../interactions/actions/lasso-select/action';
 export { sliceAction } from '../interactions/actions/defaults/slice';
 export {
   pinchZoomAction,
@@ -50,7 +50,7 @@ export {
   clipboardCutAction,
   clipboardPasteAction,
   clipboardPasteEventAction,
-} from '../interactions/actions/defaults/clipboard';
+} from '../interactions/actions/clipboard/action';
 export { enterTextEditAction } from '../interactions/actions/defaults/enterTextEdit';
 export type { SliceDep, ClipboardDep, TextEditDep } from '../interactions/actions/depSchema';
 export { useStandardActions, KIT_STANDARD_ACTION_IDS } from '../interactions/actions/useStandardActions';

@@ -4,8 +4,8 @@ import type { NodeId } from 'core/scene/types';
 import { loadTextOutlines, type TextNodeSource, type TextOutlinesError } from '@weasel-js/text';
 import {
   applyCreateOutlines, type CreateOutlinesAdapter, type CreateOutlinesResult,
-} from '../outlines/createOutlines';
-import { CreateOutlinesIcon } from './icons/outlineIcons';
+} from './createOutlines';
+import { CreateOutlinesIcon } from '../defaults/icons/outlineIcons';
 
 /** What an outline conversion answers when a text face had no outlines. */
 type OutlinesFailure = { kind: 'failed'; error: TextOutlinesError };

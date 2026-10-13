@@ -40,8 +40,13 @@ export interface PrefsStore<S extends PrefGroup> {
   subscribe(listener: (changes: PrefChange[]) => void): () => void;
   /** False while the store cannot persist: storage has not been read yet, or
    *  was written by a newer schema. Changes still apply for this session, and
-   *  ones made before a late read lands are persisted when it does. */
+   *  ones made before a late read lands are persisted when it does. False for
+   *  good once the store is closed. */
   readonly writable: boolean;
+  /** True once `close` was called. A write after that changes what this store
+   *  reads and reaches neither storage nor its subscribers, and the first one
+   *  warns. */
+  readonly closed: boolean;
   /** Try again now to read storage that could not be read at open, ahead of
    *  the store's own retries. Resolves whether storage has been read. */
   read(): Promise<boolean>;
@@ -82,6 +87,34 @@ const encodeInfinity = (leaf: PrefLeaf, value: unknown): unknown => {
   }
   return out ?? value;
 };
+
+/** Every record of `cache` but the version's, as a nested tree of unrepaired values. */
+function storedRecords(cache: OwnedRecordCache): Record<string, unknown> {
+  const tree: Record<string, unknown> = {};
+  const branches = new WeakSet<object>([tree]);
+  for (const [name, record] of cache.entries()) {
+    if (name === VERSION_RECORD) continue;
+    const value = recordValue(record);
+    const parts = name.split('.');
+    let cursor = tree;
+    for (const part of parts.slice(0, -1)) {
+      const next = cursor[part];
+      // A record's own value is never descended into: one named `a` and
+      // another `a.b` cannot both show, and the branch wins.
+      if (typeof next === 'object' && next !== null && branches.has(next)) {
+        cursor = next as Record<string, unknown>;
+      } else {
+        const branch: Record<string, unknown> = {};
+        branches.add(branch);
+        setOwnPrefValue(cursor, part, branch);
+        cursor = branch;
+      }
+    }
+    const last = parts[parts.length - 1]!;
+    if (!branches.has(cursor[last] as object)) setOwnPrefValue(cursor, last, value);
+  }
+  return tree;
+}
 
 /** A store over an open cache. `openPrefs` / `openPrefsSync` are the usual
  *  way in; they run migrations first. */
@@ -129,32 +162,6 @@ export function createPrefsStore<S extends PrefGroup>(
   const current = (): Snapshot => (snapshot ??= build());
 
   let storedTree: Record<string, unknown> | null = null;
-  const buildStored = (): Record<string, unknown> => {
-    const tree: Record<string, unknown> = {};
-    const branches = new WeakSet<object>([tree]);
-    for (const [name, record] of cache.entries()) {
-      if (name === VERSION_RECORD) continue;
-      const value = recordValue(record);
-      const parts = name.split('.');
-      let cursor = tree;
-      for (const part of parts.slice(0, -1)) {
-        const next = cursor[part];
-        // A record's own value is never descended into: one named `a` and
-        // another `a.b` cannot both show, and the branch wins.
-        if (typeof next === 'object' && next !== null && branches.has(next)) {
-          cursor = next as Record<string, unknown>;
-        } else {
-          const branch: Record<string, unknown> = {};
-          branches.add(branch);
-          setOwnPrefValue(cursor, part, branch);
-          cursor = branch;
-        }
-      }
-      const last = parts[parts.length - 1]!;
-      if (!branches.has(cursor[last] as object)) setOwnPrefValue(cursor, last, value);
-    }
-    return tree;
-  };
 
   let changed = createEmitter<[PrefChange[]]>();
   const stopCache = cache.subscribe((changes) => {
@@ -168,10 +175,19 @@ export function createPrefsStore<S extends PrefGroup>(
     changed.emit(out);
   });
 
+  let closed = false;
+  let warned = false;
+  const warnIfClosed = (path: string | undefined): void => {
+    if (!closed || warned) return;
+    warned = true;
+    console.warn(`[prefs] write to a closed store${path === undefined ? '' : ` at "${path}"`}; it will not persist`);
+  };
+
   return {
     schema,
     get: (path) => current().byPath.get(path) as never,
     set: (path, value) => {
+      warnIfClosed(path);
       const leaf = leaves.get(path);
       if (!leaf) {
         console.warn(`[prefs] no leaf at "${path}"; ignoring the write`);
@@ -182,6 +198,7 @@ export function createPrefsStore<S extends PrefGroup>(
       cache.set(path, stored === undefined ? undefined : stampRecord(stored, version));
     },
     reset: (path) => {
+      warnIfClosed(path);
       for (const p of leaves.keys()) {
         if (path === undefined || p === path || p.startsWith(`${path}.`)) cache.delete(p);
       }
@@ -189,15 +206,19 @@ export function createPrefsStore<S extends PrefGroup>(
     isSet: (path) => cache.has(path),
     values: () => current().tree,
     unset: () => current().unset,
-    stored: () => (storedTree ??= buildStored()),
+    stored: () => (storedTree ??= storedRecords(cache)),
     subscribe: (listener) => changed.subscribe(listener),
     get writable() {
-      return cache.writable;
+      return !closed && cache.writable;
+    },
+    get closed() {
+      return closed;
     },
     read: () => cache.read(),
     whenRead: () => cache.whenRead(),
     flush: () => cache.flush(),
     close: async () => {
+      closed = true;
       onClose?.();
       stopCache();
       changed = createEmitter();

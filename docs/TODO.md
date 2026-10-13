@@ -583,11 +583,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 - **(P3) A `Badge` drawn with `base` may show no focus indicator.** Read from `Badge.module.css`
   and not tested, clickable or not.
 
-- **(P3) An action's code has two homes.** `actions/defaults/<name>.ts` holds the action, and a
-  sibling `actions/<name>/` (flip, align, distribute, clone, clipboard, booleans, outlines,
-  edit-anchors, lasso-select) holds its options, geometry, and gesture adapter. One directory per
-  action would hold both, the way `actions/move/` does with its `action.ts`.
-
 - **(P3) Disabled has no signal of its own, now that emphasis is an alpha.** Disabled is `opacity:
   0.4`–`0.5` on the whole control, and subtle text is 0.54–0.64 alpha, so a disabled control and a
   subtle label can read alike. Ruled 2026-10-11: disabled gets a second cue besides fading. Which
@@ -752,12 +747,10 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   room scrolls, with no overflow menu. A group a standalone `Bar` opens from a button draws as
   labeled rows whatever its `as`, where a bar in a `PrefsForm` opens it in its own form.
 
-- **(P3) A closed `PrefsStore` takes writes and drops them.** Nothing on `PrefsStore` says it is
-  closed, and `set` on a closed one updates memory and never persists, with no warning. Two
-  mounted `usePrefsStore` callers naming one `storage` and `prefix` with different schemas hit
-  it: the later render takes the prefix and the other is left holding the closed store.
-  `apps/draw/src/dev/PrefSchemaPage.tsx` still opens through a module singleton and could move
-  to the hook.
+- **(P3) Two `usePrefsStore` callers with different schemas leave one holding a closed store.**
+  Two mounted callers naming one `storage` and `prefix` with different schemas: the later render
+  takes the prefix and the other keeps the store it closed. That store now says `closed` and
+  warns on its first write, but nothing reopens it or tells the component holding it.
 
 - **(P3) A rail of sections and pages: two things not decided.** A `PrefsForm` rail lists a page
   at any depth, and a section only when it sits directly on a page, the root's own included. (1) A
@@ -804,15 +797,12 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   bundled lookalike needs a face whose license allows it. And nobody has seen either theme:
   browser tests pin computed values only.
 
-- **(P2) A `ColorList` still holds CSS strings, not `ColorSource`s.** A `ColorList`
-  (`packages/theme/src/colorList.ts`) is literal strings, a ramp, a generator, or
-  `(i) => string`, read with `colorAt` / `colorCssAt`, so a theme's `tones` cannot name a palette
-  entry, and labkit's `Lab` and `nebula` and two site demos read lists as strings. Wanted: a list
-  whose items are `ColorSource`s, read through the same two functions. Two smaller gaps beside it:
-  a palette entry or a function source is written to CSS as the literal it resolves to in the
-  provider's selection, so with no `<ThemeProvider>` it does not follow a mode change the way a
-  theme ref does; and a custom `CurveLayer` has no resolver on its `LayerRenderCtx`, so one that
-  wants a color has to render a component that calls `useColorCss`, as `CurveFill` does.
+- **(P3) Two gaps beside a `ColorSource` written to CSS.** A palette entry or a function source
+  is written as the literal it resolves to in the provider's selection (`colorSourceCss`,
+  `packages/theme/src/colorSource.ts`), so with no `<ThemeProvider>` it does not follow a mode
+  change the way a theme ref does. And a custom `CurveLayer` has no resolver on its
+  `LayerRenderCtx`, so one that wants a color has to render a component that calls `useColorCss`,
+  as `CurveFill` does.
 
 - **(P3) labkit stored lab: a trial that fails to hydrate is left out with only a console warning.**
   `hydrateTrials` and `hydrateSnapshots` (`packages/labkit/src/state/hydrate.ts`) skip a trial or
@@ -824,13 +814,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   `annotate-lab` example, adding a trial narrows the first trial's stage, and its camera keeps the
   pan it had, so the part and its marks sit past the stage's edge, out of sight until the trial is
   panned back. Whether a stage that narrows should re-fit or keep its pan is not decided.
-
-- **(P3) labkit lab: the lab itself re-renders whenever any trial's record changes.** `Lab`
-  (`packages/labkit/src/lab/Lab.tsx`) subscribes to the store's `trials` for the workspace's ids,
-  the focused trial, and `LabContext`'s value, so a pan frame, a job item, a clock write, or a mark
-  save in one trial renders `Lab`, `Workspace`, and every reader of `useLabContext` (`LabHeader`,
-  `LabChrome`). Wanted: `Lab` selects the trial ids alone, and `LabProviders` is the one
-  subscriber that builds the full context value.
 
 - **(P3) Which control a leaf gets is decided again in each params surface.** `prefFieldProps` is
   the shared half; each caller then overrides it: `Prefs/PrefsRow.tsx`,

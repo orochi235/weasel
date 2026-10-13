@@ -8,8 +8,8 @@ import { registerFontOutlines } from '@weasel-js/font';
 import { _resetFontRegistryForTests, _resetFontOutlinesForTests } from '@weasel-js/font/test-seams';
 import { asNodeId } from 'core/scene/types';
 import type { TextNodeSource } from '@weasel-js/text';
-import type { CreateOutlinesAdapter } from '../outlines/createOutlines';
-import { createOutlinesAction, runCreateOutlines } from './createOutlines';
+import type { CreateOutlinesAdapter } from './createOutlines';
+import { createOutlinesAction, runCreateOutlines } from './createOutlinesAction';
 
 const INTER_TTF = resolve(import.meta.dirname, '../../../../../../assets/fonts/inter/inter.ttf');
 

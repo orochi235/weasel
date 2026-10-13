@@ -25,7 +25,7 @@ import { deleteAction } from './defaults/delete';
 import { duplicateAction } from './defaults/duplicate';
 import { groupAction, ungroupAction } from './defaults/group';
 import { undoAction, redoAction } from './defaults/undoRedo';
-import { flipAction } from './defaults/flip';
+import { flipAction } from './flip/action';
 import {
   nudgeUpAction, nudgeDownAction, nudgeLeftAction, nudgeRightAction,
 } from './defaults/nudge';
@@ -33,17 +33,17 @@ import { reorderForwardAction, reorderBackwardAction } from './defaults/reorder'
 import {
   alignLeftAction, alignRightAction, alignTopAction, alignBottomAction,
   alignCenterXAction, alignCenterYAction,
-} from './defaults/align';
+} from './align/action';
 import {
   distributeHorizontalAction, distributeVerticalAction,
-} from './defaults/distribute';
+} from './distribute/action';
 import {
   pathfinderUnionAction, pathfinderSubtractAction, pathfinderIntersectAction,
   pathfinderExcludeAction, pathfinderDivideAction, pathfinderCropAction,
   pathfinderTrimAction, pathfinderMergeAction,
-} from './defaults/booleans';
-import { createOutlinesAction } from './defaults/createOutlines';
-import { outlineStrokeAction } from './defaults/outlineStroke';
+} from './booleans/action';
+import { createOutlinesAction } from './outlines/createOutlinesAction';
+import { outlineStrokeAction } from './outlines/outlineStrokeAction';
 import { moveAction } from './move/action';
 import { resizeAction } from './resize/action';
 import { rotateAction } from './rotate/action';
@@ -51,8 +51,8 @@ import { areaSelectAction } from './defaults/areaSelect';
 import { insertAction } from './insert/action';
 import { insertRotateAction } from './insert/rotateAction';
 import { clearSelectionAction } from './defaults/clearSelection';
-import { cloneAction } from './defaults/clone';
-import { editAnchorsAction } from './defaults/editAnchors';
+import { cloneAction } from './clone/action';
+import { editAnchorsAction } from './edit-anchors/action';
 import { enterPathEditAction } from './defaults/enterPathEdit';
 import { exitPathEditAction } from './defaults/exitPathEdit';
 import { insertPathAnchorAction } from './defaults/insertPathAnchor';
@@ -66,7 +66,7 @@ import {
   marqueeAnchorsAction,
   selectAnchorAction,
 } from './defaults/anchorEditing';
-import { lassoSelectAction } from './defaults/lassoSelect';
+import { lassoSelectAction } from './lasso-select/action';
 import { pinchZoomAction } from './defaults/pinchZoom';
 import { viewportDragPanAction } from './defaults/viewportDragPan';
 import { enterTextEditAction } from './defaults/enterTextEdit';
@@ -77,7 +77,7 @@ import { setStrokeOpacityAction } from './defaults/setStrokeOpacity';
 import { ingestAction } from './defaults/ingest';
 import {
   clipboardCopyAction, clipboardCutAction, clipboardPasteAction, clipboardPasteEventAction,
-} from './defaults/clipboard';
+} from './clipboard/action';
 
 /** @experimental */
 export interface UseStandardActionsOptions {

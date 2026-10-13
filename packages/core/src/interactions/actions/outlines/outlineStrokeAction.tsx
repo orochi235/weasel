@@ -1,8 +1,8 @@
 import type { Action, ImmediateInvoker } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
-import { applyOutlineStroke, textIsStroked } from '../outlines/outlineStroke';
-import { withTextOutlines } from './createOutlines';
-import { OutlineStrokeIcon } from './icons/outlineIcons';
+import { applyOutlineStroke, textIsStroked } from './outlineStroke';
+import { withTextOutlines } from './createOutlinesAction';
+import { OutlineStrokeIcon } from '../defaults/icons/outlineIcons';
 
 /**
  * @experimental Static descriptor for Outline Stroke: replace each selected

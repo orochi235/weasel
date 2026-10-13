@@ -1,5 +1,5 @@
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
-import { resolveTheme } from '@weasel-js/theme';
+import { colorAt, resolveTheme } from '@weasel-js/theme';
 import { describe, expect, it } from 'vitest';
 import type { Instrument } from '../instrument/types';
 import { interstellarTheme } from '../theme/interstellar';
@@ -36,5 +36,13 @@ describe('<Lab nebula>', () => {
     );
     const sky = resolveTheme(interstellarTheme, { mode: 'dark' })['--wzl-swatch-sky'];
     expect(backdrop(container)).toContain(sky);
+  });
+
+  it('resolves a color source against the lab’s theme', async () => {
+    const { container } = await renderSettled(
+      <Lab instruments={[bare]} defaultInstrument="Bare" mode="dark" nebula={[{ ref: 'swatch', index: 2 }]} />,
+    );
+    const ctx = { theme: interstellarTheme, resolved: resolveTheme(interstellarTheme, { mode: 'dark' }) };
+    expect(backdrop(container)).toContain(`${colorAt({ ramp: 'swatch' }, 2, ctx)} 22%`);
   });
 });

@@ -78,6 +78,31 @@ describe('a ref to the tone list', () => {
   });
 });
 
+describe('a tone list of sources', () => {
+  const palette: Palette = { entries: [{ name: 'brand', color: { space: 'srgb', coords: [1, 0, 0] } }] };
+
+  it('lets a theme name a palette entry, a token, or a literal as a tone', () => {
+    const ctx = at('dark', { palette, tones: [{ ref: 'brand' }, { ref: 'accent' }, { space: 'srgb', coords: [0, 0, 1] }] });
+    expect(colorSourceCss({ ref: TONE_REF, index: 0 }, ctx)).toBe('#ff0000');
+    expect(colorSourceCss({ ref: TONE_REF, index: 1 }, ctx)).toBe('var(--wzl-accent)');
+    expect(hexOf({ ref: TONE_REF, index: 1 }, ctx)).toBe(tokenHex(dark, '--wzl-accent'));
+    expect(colorSourceCss({ ref: TONE_REF, index: 2 }, ctx)).toBe('#0000ff');
+  });
+
+  it('answers null for a tone that names itself, directly or through another tone', () => {
+    const ctx = at('dark', { tones: [{ ref: TONE_REF }, { ref: TONE_REF, index: 2 }, { ref: TONE_REF, index: 1 }, () => ({ ref: TONE_REF, index: 3 })] });
+    for (const index of [0, 1, 2, 3]) {
+      expect(colorSourceLiteral({ ref: TONE_REF, index }, ctx)).toBeNull();
+      expect(colorSourceCss({ ref: TONE_REF, index }, ctx)).toBeNull();
+    }
+  });
+
+  it('follows one tone to another', () => {
+    const ctx = at('dark', { tones: ['#111111', { ref: TONE_REF }] });
+    expect(colorSourceCss({ ref: TONE_REF, index: 1 }, ctx)).toBe('#111111');
+  });
+});
+
 describe('a ref spelled as a custom property', () => {
   it('is written as that property, which only the cascade can resolve', () => {
     expect(colorSourceCss({ ref: '--mine' }, dark)).toBe('var(--mine)');

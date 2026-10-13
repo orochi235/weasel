@@ -2,7 +2,7 @@
  * Tests for the `clipboard.copy` / `clipboard.cut` descriptors.
  */
 import { describe, it, expect, vi } from 'vitest';
-import { clipboardCopyAction, clipboardCutAction, clipboardPasteAction } from './clipboard';
+import { clipboardCopyAction, clipboardCutAction, clipboardPasteAction } from './action';
 import type { ClipboardDep } from '../depSchema';
 import type { ImmediateInvoker } from '@weasel-js/routing';
 import type { NodeId } from 'core/scene/types';
