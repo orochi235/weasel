@@ -1424,6 +1424,11 @@ only story runner in the repo.
   `scripts/check-spacing.ts` skips `apps/site/CommandPalette/`, which now contains only
   `useCommandPaletteShortcut.ts`. Drop the exemption and the comment above it.
 
+- **(P3) `useHostAnchor.browser.test.tsx` fails under load.** "follows a host that a collapsing sibling
+  moves" failed once in a fleet run of main at `d5a9d4943` (2026-10-12) with `expected 80 to be close to
+  +0`, and passed on the same commit in the run before it. The assertion reads the anchor before the
+  observer that moves it has fired; it wants to wait on the position rather than read it once.
+
 - **(P3) `SceneCanvasInner` is one 1,157-line function.** It is most of the 1,339-line
   `canvas/SceneCanvas.tsx`. `docs/audits/2026-10-12-SceneCanvas.md` lists what belongs to another
   owner; its dead-code pass landed 2026-10-12. Left open by that pass: `actionDefaults` is a public
