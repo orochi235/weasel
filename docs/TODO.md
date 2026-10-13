@@ -794,12 +794,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   section in view should unfold is open; it would move the rail under a reader who is scrolling.
   (2) A section's rail entry and a nested page's look the same until one is chosen.
 
-- **(P3) What `SelectionPanel`'s `selected` still does not reach.** A top-level section drawn
-  `as: 'bar'` or `as: 'fragment'`, or with no name, draws no heading, tab, or panel, and its key
-  marks and reports nothing, which is ruled to stay so (2026-10-11). Cmd or Ctrl on a press of a
-  tab does not toggle, in the panel or in `PrefsForm`: a react-aria tab keeps its pointer events,
-  so the press arrives as the focus it causes, which carries no modifier.
-
 - **(P3) Loose ends beside a number's unit as data.** The text tool's
   percent unit (`useTextTool.ts`) is still code, for the rounding it does on the way back to the
   stored value, so the run properties do not export as a literal. Nothing reads a unit's `format`

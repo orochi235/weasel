@@ -93,6 +93,16 @@ describe('a run of tabs', () => {
     expect(marked(container)).toEqual([]);
   });
 
+  it('reports a Cmd or Ctrl press of a tab as a toggle, and a plain press as a pick, once each', () => {
+    const onSelect = vi.fn();
+    render(<PrefsForm layout="rail" schema={TABS} onChange={() => {}} selected={['light']} onSelect={onSelect} />);
+    fireEvent.pointerDown(screen.getByRole('tab', { name: 'Dark' }), { metaKey: true, button: 0, pointerType: 'mouse' });
+    expect(onSelect.mock.calls).toEqual([['dark', { toggle: true }]]);
+    fireEvent.pointerDown(screen.getByRole('tab', { name: 'Light' }), { ctrlKey: true, button: 0, pointerType: 'mouse' });
+    expect(onSelect.mock.calls.at(-1)).toEqual(['light', { toggle: true }]);
+    expect(onSelect).toHaveBeenCalledTimes(2);
+  });
+
   it('marks a selected tab on its panel while it is open, and on the tab once the reader leaves it', () => {
     const { container } = render(<PrefsForm layout="rail" schema={TABS} onChange={() => {}} selected={['dark']} />);
     expect(marked(container).length).toBe(1);

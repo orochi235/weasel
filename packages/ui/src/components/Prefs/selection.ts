@@ -104,6 +104,7 @@ function drawnRange(root: Element | null, anchor: string | undefined, path: stri
 
 export interface SelectionRoot {
   ref: RefObject<HTMLDivElement | null>;
+  onPointerDownCapture?: (e: PointerEvent) => void;
   onPointerDown?: (e: PointerEvent) => void;
   onFocus?: (e: FocusEvent) => void;
   onClick?: (e: MouseEvent) => void;
@@ -131,6 +132,7 @@ export function useSelectedRow(
   const held = useRef<string | null>(null);
   // The focus that follows a press is the same pick, not a second one.
   const pressed = useRef<string | null>(null);
+  const captured = useRef(false);
   // Every render, because the element may arrive a render late: a rail opens the group that holds it first.
   useEffect(() => {
     if (!pending.current || shown === null || ref.current === null) return;
@@ -152,27 +154,35 @@ export function useSelectedRow(
     reported.current = path;
     onSelect(path, range ? { toggle, range } : { toggle });
   };
+  const press = (e: PointerEvent): void => {
+    const path = pathAt(e);
+    held.current = null;
+    pressed.current = path;
+    // A press that becomes a drag ends with no click, and its pointer may come up outside the form.
+    const doc = e.currentTarget.ownerDocument;
+    const release = (): void => {
+      pressed.current = null;
+      doc.removeEventListener('pointerup', release, true);
+      doc.removeEventListener('pointercancel', release, true);
+    };
+    doc.addEventListener('pointerup', release, true);
+    doc.addEventListener('pointercancel', release, true);
+    if (path === null) return;
+    // With Alt as well the press is the start of an alias drag, not a toggle.
+    if ((e.metaKey || e.ctrlKey) && !e.altKey) report(path, true);
+    else if (e.shiftKey && !e.altKey) report(path, false, drawnRange(ref.current, selected[0], path));
+    else if (!selected.includes(path)) report(path, false);
+    else if (selected.length > 1) held.current = path;
+  };
   return {
     ref,
+    // A react-aria tab keeps its pointer events, so its press is read on the way down or not at all.
+    onPointerDownCapture: (e) => {
+      captured.current = (e.target as Element).closest?.('[role="tab"]') != null;
+      if (captured.current) press(e);
+    },
     onPointerDown: (e) => {
-      const path = pathAt(e);
-      held.current = null;
-      pressed.current = path;
-      // A press that becomes a drag ends with no click, and its pointer may come up outside the form.
-      const doc = e.currentTarget.ownerDocument;
-      const release = (): void => {
-        pressed.current = null;
-        doc.removeEventListener('pointerup', release, true);
-        doc.removeEventListener('pointercancel', release, true);
-      };
-      doc.addEventListener('pointerup', release, true);
-      doc.addEventListener('pointercancel', release, true);
-      if (path === null) return;
-      // With Alt as well the press is the start of an alias drag, not a toggle.
-      if ((e.metaKey || e.ctrlKey) && !e.altKey) report(path, true);
-      else if (e.shiftKey && !e.altKey) report(path, false, drawnRange(ref.current, selected[0], path));
-      else if (!selected.includes(path)) report(path, false);
-      else if (selected.length > 1) held.current = path;
+      if (!captured.current) press(e);
     },
     onClick: (e) => {
       const path = held.current;
