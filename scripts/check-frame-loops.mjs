@@ -23,6 +23,7 @@ const ALLOWED = new Map([
   ['packages/core/src/canvas/testing/stubCanvasContext.ts', 'test helper, not a loop: waits for one frame so a test can read what the canvas painted'],
   ['packages/ui/src/components/Tree/Tree.tsx', 'not a loop: a keyboard move waits one frame for its re-render before giving up on moving focus'],
   ['packages/labkit/src/lab/still.ts', 'not a loop: a still waits a bounded number of frames after its fonts settle before announcing it painted'],
+  ['packages/forge/src/vite/watchProbe.ts', ['not a frame loop: the dev server rewrites a probe file in its Node process until the file watcher reports it or a deadline passes', 2]],
   ['packages/forge/src/frame/index/startIndex.tsx', 'not a loop: an index page waits for one painted frame after its fonts settle before announcing it rendered'],
 ]);
 
