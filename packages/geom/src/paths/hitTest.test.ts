@@ -74,15 +74,14 @@ describe('pointInPath', () => {
       .close()
       .build();
 
-    it('flattens curves and hits the interior', () => {
-      expect(pointInPath(arc, 20, 50)).toBe(true);
+    it('hits between the chord and the curve', () => {
+      // At y = 30 the chord is at x = 30 and the arc at x = 79.5.
+      expect(pointInPath(arc, 70, 30)).toBe(true);
     });
 
-    it('misses outside the curved boundary', () => {
-      // (90, 10) is outside the quadratic arc (the arc bulges toward the
-      // top-right; at y=10 the arc x is around 95+). Confirm with a point
-      // unambiguously outside.
-      expect(pointInPath(arc, 200, 50)).toBe(false);
+    it('misses between the curve and its control point', () => {
+      // At y = 10 the arc is at x = 53.2.
+      expect(pointInPath(arc, 90, 10)).toBe(false);
     });
   });
 });

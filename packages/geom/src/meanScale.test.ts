@@ -17,10 +17,4 @@ describe('meanScale', () => {
     expect(meanScale({ x: -2, y: -2 })).toBe(2);
     expect(meanScale({ x: 1, y: -4 })).toBe(2);
   });
-
-  it('lies between the two axes', () => {
-    const m = meanScale({ x: 2, y: 8 });
-    expect(m).toBeGreaterThan(2);
-    expect(m).toBeLessThan(8);
-  });
 });

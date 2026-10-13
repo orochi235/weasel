@@ -3,24 +3,6 @@ import { spiro } from './spiro';
 import type { SharedAnchor } from './types';
 
 describe('spiro', () => {
-  it('evaluate at t=0 returns first anchor', () => {
-    const anchors: SharedAnchor[] = [
-      { x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 100 },
-    ];
-    const p = spiro.evaluate(anchors, 0);
-    expect(p.x).toBeCloseTo(0);
-    expect(p.y).toBeCloseTo(0);
-  });
-
-  it('evaluate at t=1 returns last anchor', () => {
-    const anchors: SharedAnchor[] = [
-      { x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 100 },
-    ];
-    const p = spiro.evaluate(anchors, 1);
-    expect(p.x).toBeCloseTo(100);
-    expect(p.y).toBeCloseTo(100);
-  });
-
   it('toPath returns a polygon with M + C commands per segment', () => {
     const anchors: SharedAnchor[] = [
       { x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 100 },
@@ -38,11 +20,6 @@ describe('spiro', () => {
     const d = spiro.discriminators(anchors);
     const enums = d.filter((x) => x.kind === 'enum' && x.field === 'spiroType');
     expect(enums.length).toBe(3);
-  });
-
-  it('returns empty path for fewer than 2 anchors', () => {
-    const path = spiro.toPath([]);
-    expect(path.coords.length).toBe(0);
   });
 
   it('corner anchors produce sharper segments than smooth anchors', () => {

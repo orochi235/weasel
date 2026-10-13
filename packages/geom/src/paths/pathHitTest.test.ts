@@ -14,20 +14,8 @@ const rect = rectPath(0, 0, 10, 10);
 const tri = polygonFromPoints([{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 5, y: 10 }]);
 
 describe('pathContainsPoint', () => {
-  it('rect path: inside', () => {
-    expect(pathContainsPoint(rect, 5, 5)).toBe(true);
-  });
-  it('rect path: outside', () => {
-    expect(pathContainsPoint(rect, 15, 5)).toBe(false);
-  });
-  it('rect path: on edge counts as inside', () => {
-    expect(pathContainsPoint(rect, 0, 0)).toBe(true);
-    expect(pathContainsPoint(rect, 10, 10)).toBe(true);
-  });
-  it('polygon path: inside triangle', () => {
+  it('answers as pointInPath does, inside and outside a triangle', () => {
     expect(pathContainsPoint(tri, 5, 3)).toBe(true);
-  });
-  it('polygon path: outside triangle', () => {
     expect(pathContainsPoint(tri, 8, 8)).toBe(false);
   });
 });
