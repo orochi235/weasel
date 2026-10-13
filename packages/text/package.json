@@ -1,6 +1,6 @@
 {
   "name": "@weasel-js/text",
-  "version": "1.9.4",
+  "version": "1.10.0",
   "description": "Typography for weasel: styled runs, style resolution, kerned glyph layout, wrap and measurement. No scene graph, no React.",
   "license": "MIT",
   "type": "module",
@@ -20,9 +20,9 @@
     "./package.json": "./package.json"
   },
   "dependencies": {
-    "@weasel-js/geom": "1.9.4",
-    "@weasel-js/paint": "1.9.4",
-    "@weasel-js/registry": "1.9.4"
+    "@weasel-js/geom": "1.10.0",
+    "@weasel-js/paint": "1.10.0",
+    "@weasel-js/registry": "1.10.0"
   },
   "scripts": {
     "test": "vitest run",
@@ -51,9 +51,9 @@
     "provenance": true
   },
   "devDependencies": {
-    "@weasel-js/bidi": "1.9.4"
+    "@weasel-js/bidi": "1.10.0"
   },
   "peerDependencies": {
-    "@weasel-js/font": "1.9.4"
+    "@weasel-js/font": "1.10.0"
   }
 }

@@ -1,5 +1,223 @@
 # @weasel-js/svg
 
+## 1.10.0
+
+### Patch Changes
+
+- de319ce: Types a public signature names are exported now, so a consumer can write them down and the API reference links to them. All additions; nothing is renamed or removed.
+  
+  - core: `ViewLike`, `TargetTransform`, `WeightEnv`.
+  - diagram: `DiagramRouter`, `DiagramTextStyle`, `DiagramDerivePose`, `Forest`.
+  - font: `DynamicFace`.
+  - forge: `ArgCondition`, `ComponentHistory`, `StoryGlobals`, `StoryLayout`, `StoryViewport`, `TimelineSpan`; from `/frame`, `Channel`, `ToFrame`, `FromFrame`, `ConfigAnswers`, `FaultPhase`; from `/shell`, `StoryRegistryOptions`, `StoryChanges`, `IndexEntry`, `CssVarReport`, `TrialFrameCalls`, `Libraries`, `SchemaDescription`, `DescribedShape`, `DescribedEntry`, `SectionDescription`.
+  - guides: `SnapToGuidesInsertArgs`, `SnapToGuidesMoveArgs`, and `SnapToGuidesResizeArgs`, each from its own subpath.
+  - hud: `AttachHudOptions`, `SourceRect`, `LoupeBaseOptions`.
+  - labkit: `MarkPose`, `AnnotationStorage`, `PaintedMark`, `ControlPanelProps`, `ControlPack`, `LoupeBindings`; from `/state`, `InstrumentHooks`; from `/config`, `Branching`, `Fields`, `FieldValues`, `Variants`, `VariantValues`.
+  - paint: `InCommandUnits`, `WithPatternHandle`.
+  - quantity: `FractionOptions`.
+  - renderer: `ShaderStage`, `UniformArray`.
+  - routing: `ToolScopes`.
+  - svg: `SvgDraftPose`.
+  - text-dom: `OverlayRunBase`.
+  - theme: `DtcgDocument`; from `/engine`, `SemanticCommon`, `DtcgGroup`, `DtcgAxesExtension`, `DtcgLayer`.
+  - ui: `ButtonBase`, `ButtonRegular`, `ButtonIconOnly`, `ToggleBarCommonProps`, `ToastFn`, `Fold`, `DistributiveOmit`, `WalkCtx`, `OverlayPoint`, `DocumentCodec`, `OpenedDocument`, `SchemaRoot`, `AnyNode`, `CurveSamplePoint`.
+  
+  The names for types that had none of their own to export under (`StoryGlobals`, `TimelineSpan`, `CurveSamplePoint`, the `Diagram*` three, `ShaderStage`, `DtcgGroup`, `ToggleBarCommonProps`) were chosen by an agent.
+- 3a92afc: Breaking: the paint model's serialized shape changed in three ways, and its type names in two. Nothing reads the old shapes.
+  
+  **A fill is a record holding a paint, as a stroke is.** Every `fill` slot now takes a `Fill`, `{ paint?: Paint }`, where it took a bare paint: node data, draw commands (`CommandFill`), text styles and runs, and the affordance and overlay paint options. `fill: { color: '#abc' }` becomes `fill: { paint: { color: '#abc' } }`, beside `stroke: { paint: { color: '#000' }, width: 2 }`. `fill: null` still means no fill, and a fill with no `paint` paints nothing. `commandFill(fill, box)` resolves a node's fill for a draw command the way `commandStroke` resolves its stroke; resolving a bare paint is `commandPaint`.
+  
+  **A paint names its variant under `kind`, not `fill`.** `{ fill: 'linear-gradient', … }` becomes `{ kind: 'linear-gradient', … }`, the word the paint-kind registry already used. A solid still omits it. `asPaint` takes `{ kind: string }`.
+  
+  **Each built-in tile is its own paint kind.** `{ fill: 'pattern', pattern: { tile: 'hatch', color, lineWidth }, units }` becomes `{ kind: 'hatch', color, lineWidth, units }`, and likewise `crosshatch`, `dots`, and `chunks`. A tile a consumer rasterized itself is `{ kind: 'texture', texture: handle }`. `TilePatternSpec` is now a union keyed on `kind`, so a tile's own fields are checked instead of being optional on every tile. An SVG exported before this change carries its tiles in the old shape and loses them on import, with a warning.
+  
+  Follows from the fill record: `DEFAULT_SHAPE_FILL` is a `Fill`, `createPathLayer`'s `getFill` returns a `CommandFill`, `setFill` and `setFillOpacity` write the record, and the default node properties describe `data.fill` as an object with one `paint` field, as `data.stroke` is. A node whose `fill` is a string or a bare paint now paints no fill. `SelectionPanel` built from those default properties no longer offers "None" for a fill, since it offers none for a paint nested in a record; clearing one goes through the `setFill` action.
+  
+  A tile paint has a `color`, so `'color' in paint` no longer means solid. `isSolidPaint(paint)` answers that.
+  
+  Renames: `FillStyle` is `Paint`, and `GradientUnits` is `PaintUnits`. The paint types named as fills are named as paints: `GradientPaint`, `MeshGradientPaint`, `CommandPaint`, `PosedPaint`, and `SolidPaint`, with `isGradientPaint` and `isMeshGradientPaint`. `isPatternSpec` is gone; `isTilePaint` and `isPatternPaint` replace it.
+  
+  Adds API: `Fill`, `CommandFill`, `commandFill`, `PatternPaint`, `TilePaint`, `TexturePaint`, `TileKind`, `PatternPlacement`, `TILE_KINDS`, `isTileKind`, `isTilePaint`, `isPatternPaint`, `isSolidPaint`, `tileSpecOf`, `patternPlacementOf`, and `seedTile`. A paint kind can name a `family` (`PaintKindFamily`); kinds sharing one are a single segment in `PaintInput`'s kind bar, and the built-in tiles and `texture` share `patternFamily`.
+- 54174b6: Fixes: SVG import and export, the booleans, and the renderer's mesh cache disagreed with a path whose open subpaths no fill closes (`openFill: 'none'`, or `setDefaultOpenFill('none')`).
+  
+  - `parseSvg` stamps `openFill: 'close'` on a `<polyline>` or `<path>` with an open subpath, since SVG always closes one to fill it. Such a path now carries a field it did not, and keeps painting under a `'none'` default.
+  - `serializeSvg` writes open subpaths no fill closes with `fill="none"`. A path mixing closed and open subpaths is written as a `<g>` of two `<path>`s, the group carrying the node's opacity, rotation, and metadata, so it reads back as a group of two.
+  - `pathUnion`, `pathIntersect`, `pathSubtract`, `pathExclude`, `pathDivide`, and the slice cuts leave such an open subpath out of the region. This changes their result for a path that says `'none'`.
+  - A mesh the renderer cached under one default rule is rebuilt after `setDefaultOpenFill` changes it, so the default no longer has to be set before the first paint.
+  
+  Adds API: `splitByClosure(path)` and `hasOpenSubpath(path)` in `@weasel-js/geom`, re-exported from `@weasel-js/core`.
+- ce033b4: Fixes: a `<g clip-path>` unpacked into the scene unclipped. A scene container clips to what its painter draws, so `svgNodesToKitDrafts` now gives a clipped group's container the clip as an unpainted path, `data: { path, fill: null }`, and the clip's box as its pose where an unclipped one takes its children's. `unpackSvgFiles` inserts the container with that data, and `svgNodesFromKit` writes a container holding a path back as a group with that `clip`.
+  
+  Breaking: a container `SvgSceneDraft` now has a `data` field, `{}` when the group is not clipped. A caller building scene nodes from drafts adds each container with `draft.data` where it wrote `{}`.
+  
+  Carrying the clip as the container's own path, and boxing a clipped container by its clip, were an agent's judgment.
+- 655cd75: Adds: `parseSvg` applies the rules inside `@container`, which it skipped whole. A size query is answered against the root `<svg>`, sized by the same viewport `@media` sees, and holds for the root's descendants when the root declares `container-type: size` or `inline-size`, or the `container` shorthand; a named query needs the root to declare that name. `width`, `height`, `inline-size`, `block-size`, `aspect-ratio`, and `orientation` are read in either syntax, an `inline-size` container answers the inline axis alone, and a style query never holds. A document whose root is not a container parses as before.
+  
+  Making the root the one container, where a caller might have supplied boxes for others, was an agent's judgment.
+- 0190e91: Adds API: `parseSvg(svg, { keepHidden: true })` keeps the content SVG does not render, `display="none"` elements and leaves under `visibility="hidden"`, and marks each kept node `hidden`. `serializeSvg` writes a `hidden` node with `display="none"` and leaves it out of the `viewBox` it computes, and `svgNodesToKitDrafts` carries the flag onto the draft, for a caller to map onto whatever it hides a node with. Without the option a parse leaves hidden content out, as before, and `unpackSvgFiles` does not ask for it: a scene node has no hidden state of its own.
+  
+  The option, the flag's name, and writing a `visibility`-hidden leaf back as `display="none"` were an agent's judgment.
+- 076d8e2: Fixes: `svgLeafFromKit` wrote a path leaf whose pose carries a `transform` as though it had none, so a skewed or stretched path exported unskewed. The whole frame, the rotation included, is now baked into the path's geometry and its gradient, and the node carries no `rotation`. Its stroke width takes the uniform part of the stretch, the way `parseSvg` reads a stroke under a skewed element.
+- 706f602: Fixes: `serializeSvg`'s `pretty` option did nothing. It now puts each element on its own line, indented two spaces per level. A `<text>` element, and any element holding character data, stays on one line, since whitespace added inside it would be read back as content. This changes the output of every caller that already passed `pretty: true`; without the option the output is unchanged.
+- b0d5a6c: `serializeSvg` writes the start and end markers of a path under `openFill: 'none'` where the renderer draws them: one pair on each open subpath. A stroke with either marker is written one open subpath to a `<path>`, and the `<path>` holding the closed subpaths carries neither. Before, a path mixing closed and open subpaths got a pair on its closed half too, and several open subpaths shared one pair. A stroke with no start or end marker is written as before.
+- 0d7e206: Fixes: `parseSvg` gave text written as one `<tspan>` per line the default 1.2 line height whatever pitch the lines stated. The pitch, from each line's `dy` or the step between its `y` and the last, is now read as the node's `style.lineHeight`, a multiple of its font size, and sizes the box. Lines at the default pitch leave it unset, as before. Lines pitched unevenly take their mean, which keeps the block's height, with a warning; taking the mean was an agent's judgment.
+- Updated dependencies [dfc0dda]
+- Updated dependencies [cd8cbbd]
+- Updated dependencies [1f7548d]
+- Updated dependencies [a86d79f]
+- Updated dependencies [ad15c29]
+- Updated dependencies [90eae1c]
+- Updated dependencies [96a63de]
+- Updated dependencies [7140b5a]
+- Updated dependencies [8e00180]
+- Updated dependencies [fc267f3]
+- Updated dependencies [9f5cdb2]
+- Updated dependencies [b9fb732]
+- Updated dependencies [67f4d79]
+- Updated dependencies [d137eaf]
+- Updated dependencies [1837952]
+- Updated dependencies [99553f7]
+- Updated dependencies [5149cce]
+- Updated dependencies [2c6246d]
+- Updated dependencies [de60e10]
+- Updated dependencies [2892438]
+- Updated dependencies [b310df0]
+- Updated dependencies [2a5d8ef]
+- Updated dependencies [3994be7]
+- Updated dependencies [e80de55]
+- Updated dependencies [b3ba3d9]
+- Updated dependencies [126116b]
+- Updated dependencies [9296fb4]
+- Updated dependencies [0e46e02]
+- Updated dependencies [dee0a3b]
+- Updated dependencies [b1f7521]
+- Updated dependencies [e77f185]
+- Updated dependencies [d635e84]
+- Updated dependencies [dc1f09c]
+- Updated dependencies [2ed751e]
+- Updated dependencies [b3f1e4a]
+- Updated dependencies [329f658]
+- Updated dependencies [0449330]
+- Updated dependencies [4878967]
+- Updated dependencies [2a141ac]
+- Updated dependencies [7063584]
+- Updated dependencies [da0335e]
+- Updated dependencies [fb715f4]
+- Updated dependencies [3777548]
+- Updated dependencies [de319ce]
+- Updated dependencies [3a92afc]
+- Updated dependencies [87dd1ad]
+- Updated dependencies [3bacb3e]
+- Updated dependencies [6b03b7e]
+- Updated dependencies [b260415]
+- Updated dependencies [66d5455]
+- Updated dependencies [eb7f534]
+- Updated dependencies [7548e82]
+- Updated dependencies [eb3114f]
+- Updated dependencies [0a37db1]
+- Updated dependencies [a275f78]
+- Updated dependencies [605ace8]
+- Updated dependencies [0db7e81]
+- Updated dependencies [6bb8035]
+- Updated dependencies [5d82ef9]
+- Updated dependencies [bc15034]
+- Updated dependencies [1ce19c9]
+- Updated dependencies [7d94bbb]
+- Updated dependencies [1c9bc4e]
+- Updated dependencies [525800f]
+- Updated dependencies [dcf0554]
+- Updated dependencies [5c7d50f]
+- Updated dependencies [bb3e633]
+- Updated dependencies [be611ae]
+- Updated dependencies [ca09ae2]
+- Updated dependencies [33c90ed]
+- Updated dependencies [8d0498c]
+- Updated dependencies [b3d4383]
+- Updated dependencies [a6dff38]
+- Updated dependencies [27c1c86]
+- Updated dependencies [54b013c]
+- Updated dependencies [a8ef308]
+- Updated dependencies [5996856]
+- Updated dependencies [0d1c052]
+- Updated dependencies [71512af]
+- Updated dependencies [54174b6]
+- Updated dependencies [4edad85]
+- Updated dependencies [bb53d86]
+- Updated dependencies [18920a4]
+- Updated dependencies [9b8bd89]
+- Updated dependencies [efc1205]
+- Updated dependencies [b4227bc]
+- Updated dependencies [6139898]
+- Updated dependencies [335f192]
+- Updated dependencies [f3b977a]
+- Updated dependencies [df159bc]
+- Updated dependencies [7b9de2d]
+- Updated dependencies [485bb80]
+- Updated dependencies [21b6db7]
+- Updated dependencies [970f489]
+- Updated dependencies [af48ee3]
+- Updated dependencies [1c8c3fc]
+- Updated dependencies [4d4d81c]
+- Updated dependencies [ea54a64]
+- Updated dependencies [8524e05]
+- Updated dependencies [8ac6236]
+- Updated dependencies [eafd001]
+- Updated dependencies [1956417]
+- Updated dependencies [955defa]
+- Updated dependencies [27b827e]
+- Updated dependencies [74f364f]
+- Updated dependencies [01d6e4e]
+- Updated dependencies [32b3cc9]
+- Updated dependencies [70413dd]
+- Updated dependencies [fcf44fa]
+- Updated dependencies [a91e5cd]
+- Updated dependencies [91a479a]
+- Updated dependencies [7afbc13]
+- Updated dependencies [8f38287]
+- Updated dependencies [936679d]
+- Updated dependencies [813aea2]
+- Updated dependencies [42f24c8]
+- Updated dependencies [499af9b]
+- Updated dependencies [8cc746f]
+- Updated dependencies [a21947b]
+- Updated dependencies [de07db0]
+- Updated dependencies [4d3ff3f]
+- Updated dependencies [85cb886]
+- Updated dependencies [aed6320]
+- Updated dependencies [9d11828]
+- Updated dependencies [37463b5]
+- Updated dependencies [3558fbb]
+- Updated dependencies [bffba0a]
+- Updated dependencies [efc5cea]
+- Updated dependencies [32e243f]
+- Updated dependencies [233f856]
+- Updated dependencies [c9b9598]
+- Updated dependencies [2705878]
+- Updated dependencies [f59e769]
+- Updated dependencies [e69e97f]
+- Updated dependencies [9c19d5e]
+- Updated dependencies [0e1f269]
+- Updated dependencies [5b1a788]
+- Updated dependencies [d3b9057]
+- Updated dependencies [4fe6756]
+- Updated dependencies [9fa373d]
+- Updated dependencies [b76089a]
+- Updated dependencies [54242f0]
+- Updated dependencies [ad10f82]
+- Updated dependencies [4042637]
+- Updated dependencies [46fcc7e]
+- Updated dependencies [90f8ec4]
+- Updated dependencies [a297730]
+- Updated dependencies [38fd203]
+- Updated dependencies [9ad34e0]
+- Updated dependencies [1d34f51]
+- Updated dependencies [80b29f6]
+- Updated dependencies [6941e0c]
+- Updated dependencies [98ec291]
+- Updated dependencies [0d1c052]
+  - @weasel-js/core@1.10.0
+  - @weasel-js/geom@1.10.0
+
 ## 1.9.4
 
 ### Patch Changes

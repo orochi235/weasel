@@ -1,5 +1,27 @@
 # @weasel-js/loupe
 
+## 1.10.0
+
+### Patch Changes
+
+- 3bda2ef: A subscriber that throws no longer stops the subscribers after it, or throws into whatever caused the notify, in a canvas source's `subscribeFrame` and a HUD's `subscribeFocus` and `subscribeFrame`. Each now notifies through `createEmitter`, so the error goes to `console.error` as `weasel: a subscriber threw`. Both packages now depend on `@weasel-js/registry`.
+- Updated dependencies [a86d79f]
+- Updated dependencies [1837952]
+- Updated dependencies [126116b]
+- Updated dependencies [b260415]
+- Updated dependencies [54174b6]
+- Updated dependencies [4edad85]
+- Updated dependencies [335f192]
+- Updated dependencies [7b9de2d]
+- Updated dependencies [ea54a64]
+- Updated dependencies [955defa]
+- Updated dependencies [27b827e]
+- Updated dependencies [ee08fa5]
+- Updated dependencies [46fcc7e]
+- Updated dependencies [a297730]
+  - @weasel-js/geom@1.10.0
+  - @weasel-js/registry@1.10.0
+
 ## 1.9.4
 
 ### Patch Changes

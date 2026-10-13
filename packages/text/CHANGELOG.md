@@ -1,5 +1,99 @@
 # @weasel-js/text
 
+## 1.10.0
+
+### Patch Changes
+
+- a86d79f: geom: the anchor-set edits live here now (`editAnchorSet`, `translateAnchorBy`, `moveHandleTo`, `insertAnchorOnSegment`, `deleteAnchorsAt`, `openSubpathAt`, `segmentAt`, `anchorsInRect`, `anchorAt`, `anchorCount`, `locateAnchor`, `flatAnchorIndex`, with `AnchorSet`, `AnchorRect`, and `SegmentHit`), beside `pathInWorld`, `pathInPoseFrame`, `worldEditToStorage`, and `PathInWorldPose`. `nearestPathAnchor`, `reverseAnchors`, and `PathAnchorHit` are exported here; they were not exports of `@weasel-js/core` before.
+  
+  text: `textToPath`, `textToPathsByPaint`, `loadTextOutlines`, and `TextOutlinesError` live here now, with `TextOutlineSource`, `TextNodeSource`, `TextPaintPath`, `TextToPathOptions`, and `TextOutlinesFailure`. `SYNTHETIC_ITALIC_RADIANS`, the lean a faked italic takes, is exported here; it was not an export of `@weasel-js/core` before.
+  
+  `@weasel-js/core` still exports every name it did before.
+- 99553f7: Fixes: the canvas-2D text paths read a tab as one space, where `layoutRuns` runs it to the next stop. `measureText` and `layoutMarkdown` now measure and wrap a tab to its stop, `tabSize` spaces apart (default 8), so both end a line where the GL tier does. This changes behavior, on an agent's judgment: the alternative was to keep the canvas's own reading of a tab.
+  
+  - `layoutMarkdown` returns a tab as a `PositionedRun` of its own, as wide as its advance, so `createMarkdownRenderer` paints what follows at the stop and a rule runs across it. It takes `tabSize` as a seventh argument, and `MarkdownFontOptions` gains `tabSize`.
+  - Adds API: `MeasuredText.spans`, each line's text split at its tabs with the x every piece starts at (type `MeasuredSpan`). `fillText` still draws a tab as a space, so a painter that fills `lines[i]` whole misplaces what follows a tab; fill each span at its `x` instead.
+- d675fed: Fixes: emoji painted as flat silhouettes in the text's fill color, and an emoji of several code points painted as its parts (`👍🏽` a thumb and a swatch, `🇨🇦` two letters, a joined family three people). A grapheme cluster with emoji presentation is now one glyph, rasterized whole through a 2D canvas, kept in its own colors on RGBA pages of the dynamic atlas, and painted untinted. It takes only the opacity of the text's fill, and shares a draw with the text around it.
+  
+  Behavior change: this applies to every run, whatever tier serves its text, unless the fallback policy is `'none'` and the run is not on the canvas tier. A cluster's advance is now the platform's for the whole cluster, so text holding emoji measures and wraps differently than before. In `LaidOutLineBox.cells`, an emoji's closing code point holds the whole advance and `drawsInk`; the code points before it have no width and `drawsInk: false`.
+  
+  Adds API, `@weasel-js/font`: `resolveColorCluster(resolved, family, weight, style, cluster)`, `DynamicFace.requestCluster(text)`, `BmFontChar.color`, `syncColorPageTexture(sink, page)`, and `colorPageTextureId(page)`. `@weasel-js/text`: `LaidOutGroup.source` gains `'color'`.
+  
+  Breaking for an implementer of `GlyphTextureSink`: the interface gains `uploadRGBA` and `subImageRGBA`. Breaking for a reader of `LaidOutGroup.source` that treated everything but `'outline'` as a distance-field atlas: a `'color'` group's quads sample a color page.
+- d635e84: Fixes: a combining mark was never drawn from an atlas. A glyph with a rect and no advance, which is what a combining accent is, was given no quad, so `e` followed by U+0301 painted a bare `e`. It is drawn now, where its offsets put it.
+- 3777548: Fixes: a character the layout had no glyph for was drawn on top of the next one once text grew past the outline threshold. With the fallback policy set to `'none'`, a code point missing from the atlas gets an empty, zero-width slot; above `outlineMinSize` the painter still asked the outline face for it and drew what it found there. An empty slot now draws nothing at any size.
+- 3a92afc: Breaking: the paint model's serialized shape changed in three ways, and its type names in two. Nothing reads the old shapes.
+  
+  **A fill is a record holding a paint, as a stroke is.** Every `fill` slot now takes a `Fill`, `{ paint?: Paint }`, where it took a bare paint: node data, draw commands (`CommandFill`), text styles and runs, and the affordance and overlay paint options. `fill: { color: '#abc' }` becomes `fill: { paint: { color: '#abc' } }`, beside `stroke: { paint: { color: '#000' }, width: 2 }`. `fill: null` still means no fill, and a fill with no `paint` paints nothing. `commandFill(fill, box)` resolves a node's fill for a draw command the way `commandStroke` resolves its stroke; resolving a bare paint is `commandPaint`.
+  
+  **A paint names its variant under `kind`, not `fill`.** `{ fill: 'linear-gradient', … }` becomes `{ kind: 'linear-gradient', … }`, the word the paint-kind registry already used. A solid still omits it. `asPaint` takes `{ kind: string }`.
+  
+  **Each built-in tile is its own paint kind.** `{ fill: 'pattern', pattern: { tile: 'hatch', color, lineWidth }, units }` becomes `{ kind: 'hatch', color, lineWidth, units }`, and likewise `crosshatch`, `dots`, and `chunks`. A tile a consumer rasterized itself is `{ kind: 'texture', texture: handle }`. `TilePatternSpec` is now a union keyed on `kind`, so a tile's own fields are checked instead of being optional on every tile. An SVG exported before this change carries its tiles in the old shape and loses them on import, with a warning.
+  
+  Follows from the fill record: `DEFAULT_SHAPE_FILL` is a `Fill`, `createPathLayer`'s `getFill` returns a `CommandFill`, `setFill` and `setFillOpacity` write the record, and the default node properties describe `data.fill` as an object with one `paint` field, as `data.stroke` is. A node whose `fill` is a string or a bare paint now paints no fill. `SelectionPanel` built from those default properties no longer offers "None" for a fill, since it offers none for a paint nested in a record; clearing one goes through the `setFill` action.
+  
+  A tile paint has a `color`, so `'color' in paint` no longer means solid. `isSolidPaint(paint)` answers that.
+  
+  Renames: `FillStyle` is `Paint`, and `GradientUnits` is `PaintUnits`. The paint types named as fills are named as paints: `GradientPaint`, `MeshGradientPaint`, `CommandPaint`, `PosedPaint`, and `SolidPaint`, with `isGradientPaint` and `isMeshGradientPaint`. `isPatternSpec` is gone; `isTilePaint` and `isPatternPaint` replace it.
+  
+  Adds API: `Fill`, `CommandFill`, `commandFill`, `PatternPaint`, `TilePaint`, `TexturePaint`, `TileKind`, `PatternPlacement`, `TILE_KINDS`, `isTileKind`, `isTilePaint`, `isPatternPaint`, `isSolidPaint`, `tileSpecOf`, `patternPlacementOf`, and `seedTile`. A paint kind can name a `family` (`PaintKindFamily`); kinds sharing one are a single segment in `PaintInput`'s kind bar, and the built-in tiles and `texture` share `patternFamily`.
+- a428b54: Fixes: a family with outlines registered and no atlas dropped any character its face lacks, with no warning, so an em dash or an emoji in it took no room and drew nothing. `layoutRuns` now escalates that character to the dynamic canvas tier under the fallback policy, as a run set from an atlas already did, and names it in the usual one-time warning when nothing can draw it.
+- 27b827e: text: the run algebra lives here now: `styleAtRange`, `applyStyleToRange`, `patchRangeStyle`, `effectiveRangeStyle`, `rangeWeight`, `setFlagOverRange`, `nodeHasFlag`, and `unboldPatch`, with the `RangeStyle`, `RunStylePatch`, `StyleKey`, `FlagKey`, and `SetFlagResult` types. `runsCarryStyling` and `supersededKey` are exported beside them. None of them needed a scene. The `MIXED` sentinel and its `Mixed` type moved to `@weasel-js/registry`, and text exports them too. `@weasel-js/core` still exports every name it did before.
+- b76089a: text: `pointInTextPose`, `caretIndexAt`, `fitTextPose`, `renderLabel`, `defaultLabelTextRenderer`, and `isTextData` live here now, with the `PointInTextPoseOpts`, `FitTextPoseOptions`, and `LabelOptions` types. None of them needed a scene. `@weasel-js/core` still exports every one of them.
+- 54242f0: Breaking: `layoutRuns` no longer returns `groups` or `decorations`, and no longer takes `outlineMinSize`. It places glyphs and reads no paint; `paintRuns(laid, runs, { outlineMinSize })` derives what to draw for a layout and returns `{ groups, decorations }`.
+  
+  ```ts
+  const laid = layoutRuns(runs, opts);
+  const { groups, decorations } = paintRuns(laid, runs, { outlineMinSize });
+  ```
+  
+  `cachedPaintRuns` is the memoized form, beside `cachedLayoutRuns`. A layout's lines each carry `glyphs`, one `PlacedGlyph` per code point in visual order, which is what `paintRuns` and `textToPath` read. The `LaidOutGroup`, `LaidOutQuad`, `LaidOutOutlineGlyph`, and `LaidOutDecoration` shapes are unchanged, and groups still come in the order their first glyph appears.
+  
+  The layout cache no longer keys on a run's fill, stroke, or decorations, or on the outline threshold, so two runs arrays that differ only there share one layout. It also survives a dynamic glyph bake landing: `faceGeneration()` in `@weasel-js/font` advances when faces change and holds still for a bake, where `glyphGeneration()` advances for both.
+  
+  Paint identity is structural, and has one definition. `paintKey`, `strokeKey`, `fillHasInk`, and `strokeHasInk` are new in `@weasel-js/paint`. Two equal gradients built separately are one paint, so text runs filled with them share a group where each used to get its own. `textToPathsByPaint` now groups a zero-width or unpainted stroke with no stroke.
+  
+  `@weasel-js/font` gains `metricsOf(resolved)`, the advances, kerning, and baseline of whichever tier a face resolved to, and `glyphIn` / `resolveGlyph`, which find one code point's glyph in that tier and then in the dynamic tier. Layout's missing-glyph and no-metrics warnings moved there and read `weasel:` where they read `weasel layoutRuns:`; `_resetFontRegistryForTests` and `_resetFallbackForTests` clear them. `@weasel-js/text/test-seams` gains `_resetBidiWarningForTests`.
+  
+  Fixes:
+  
+  - A run whose fill holds no paint (`fill: {}`) drew black from an atlas or the canvas tier. It now draws nothing, as `fill: null` does.
+  - A run set in a canvas-tier family reported `drawsInk: true`, with no warning, for a code point its face could not rasterize. It now reports `false` and warns once, as an atlas run that escalates to the canvas tier does.
+  - A default-ignorable code point (a joiner, a variation selector, a zero-width space) that the canvas tier serves as no advance and no ink is a glyph, not a miss. An atlas run that escalated one warned that it had no glyph and dropped the letter spacing of the cluster it closed; it now does neither.
+  - A zero-advance glyph that escalated to the canvas tier was reported as missing until its bake landed.
+  - A family the registry had already warned "will not render at all" about got a second, no-metrics warning from layout.
+  - Text made only of Arabic-Indic digits or Arabic number signs triggered the "right-to-left characters but no `bidi` engine" warning, though it lays out the same with an engine. So did left-to-right text holding a byte order mark, an Arabic comma, or an ornate parenthesis.
+  
+  Adds to the `@weasel-js/core` barrel: `paintRuns`, `cachedPaintRuns`, and the types `LaidOutCell`, `PlacedGlyph`, `PaintRunsOpts`, and `PaintedRuns`.
+- Updated dependencies [a86d79f]
+- Updated dependencies [1837952]
+- Updated dependencies [5149cce]
+- Updated dependencies [126116b]
+- Updated dependencies [b1f7521]
+- Updated dependencies [d675fed]
+- Updated dependencies [18547a3]
+- Updated dependencies [06003a5]
+- Updated dependencies [de319ce]
+- Updated dependencies [3a92afc]
+- Updated dependencies [b260415]
+- Updated dependencies [54174b6]
+- Updated dependencies [4edad85]
+- Updated dependencies [335f192]
+- Updated dependencies [7b9de2d]
+- Updated dependencies [ea54a64]
+- Updated dependencies [955defa]
+- Updated dependencies [27b827e]
+- Updated dependencies [ee08fa5]
+- Updated dependencies [bbb538e]
+- Updated dependencies [54242f0]
+- Updated dependencies [6073365]
+- Updated dependencies [46fcc7e]
+- Updated dependencies [a297730]
+  - @weasel-js/geom@1.10.0
+  - @weasel-js/font@1.10.0
+  - @weasel-js/paint@1.10.0
+  - @weasel-js/registry@1.10.0
+
 ## 1.9.4
 
 ### Patch Changes

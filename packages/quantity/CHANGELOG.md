@@ -1,5 +1,43 @@
 # @weasel-js/quantity
 
+## 1.10.0
+
+### Patch Changes
+
+- de319ce: Types a public signature names are exported now, so a consumer can write them down and the API reference links to them. All additions; nothing is renamed or removed.
+  
+  - core: `ViewLike`, `TargetTransform`, `WeightEnv`.
+  - diagram: `DiagramRouter`, `DiagramTextStyle`, `DiagramDerivePose`, `Forest`.
+  - font: `DynamicFace`.
+  - forge: `ArgCondition`, `ComponentHistory`, `StoryGlobals`, `StoryLayout`, `StoryViewport`, `TimelineSpan`; from `/frame`, `Channel`, `ToFrame`, `FromFrame`, `ConfigAnswers`, `FaultPhase`; from `/shell`, `StoryRegistryOptions`, `StoryChanges`, `IndexEntry`, `CssVarReport`, `TrialFrameCalls`, `Libraries`, `SchemaDescription`, `DescribedShape`, `DescribedEntry`, `SectionDescription`.
+  - guides: `SnapToGuidesInsertArgs`, `SnapToGuidesMoveArgs`, and `SnapToGuidesResizeArgs`, each from its own subpath.
+  - hud: `AttachHudOptions`, `SourceRect`, `LoupeBaseOptions`.
+  - labkit: `MarkPose`, `AnnotationStorage`, `PaintedMark`, `ControlPanelProps`, `ControlPack`, `LoupeBindings`; from `/state`, `InstrumentHooks`; from `/config`, `Branching`, `Fields`, `FieldValues`, `Variants`, `VariantValues`.
+  - paint: `InCommandUnits`, `WithPatternHandle`.
+  - quantity: `FractionOptions`.
+  - renderer: `ShaderStage`, `UniformArray`.
+  - routing: `ToolScopes`.
+  - svg: `SvgDraftPose`.
+  - text-dom: `OverlayRunBase`.
+  - theme: `DtcgDocument`; from `/engine`, `SemanticCommon`, `DtcgGroup`, `DtcgAxesExtension`, `DtcgLayer`.
+  - ui: `ButtonBase`, `ButtonRegular`, `ButtonIconOnly`, `ToggleBarCommonProps`, `ToastFn`, `Fold`, `DistributiveOmit`, `WalkCtx`, `OverlayPoint`, `DocumentCodec`, `OpenedDocument`, `SchemaRoot`, `AnyNode`, `CurveSamplePoint`.
+  
+  The names for types that had none of their own to export under (`StoryGlobals`, `TimelineSpan`, `CurveSamplePoint`, the `Diagram*` three, `ShaderStage`, `DtcgGroup`, `ToggleBarCommonProps`) were chosen by an agent.
+- 21b6db7: Adds API: a plane's axes can carry different units. `resolveAxes(value, units)` in `@weasel-js/quantity` resolves one value for both axes, or `{ x, y }`, against one `UnitSystem` or one per axis (`PlaneUnits`), and `formatAxes` writes a base-unit point back out with each axis in its own display unit. `axisUnits`, `PerAxis`, `PlaneUnits`, and `PlaneValue` are exported beside them, and all are re-exported from `@weasel-js/core`.
+  
+  `gridSnapStrategy`, `pointToGridCell`, `createGridLayer`, `createCellHighlightLayer`, and `useGridCellHover` take a per-axis `spacing` and `unitSystem`, so a grid can be 1s wide and 5mV tall. A single value still means a square grid.
+- 1ee5335: Adds API: a range and a vector of quantities have a presentation of their own. `presentRange(from, to, fallback?)` gives `1/64–1/2` as text, spoken text (`1 over 64 to 1 over 2`), and HTML, and `presentVector(members, fallback?, { labels })` gives `x 3, y −4`. `rangeParts` and `vectorParts` return the same as one run of parts. Each member shows under its own display, else the fallback.
+  
+  In the HTML form a composite is a `<span data-composite="range">` or `"vector"` holding one `<data value>` per member, with a `separator` part between and a `label` part before a labeled member.
+  
+  Decided on an agent's judgment: a unit or percent sign both ends of a range share is written once, after the second (`2–5ft`, `25–50%`); the en dash is spaced when either end is negative (`−5 – −2`); and a composite has no MathML form.
+- 38fd203: Adds API: arithmetic across units. `resolveUnitExpr('50% + 2ft', { unitSystem, percentOf })` returns base units, and `parseUnitExpr` returns the expression as plain data (`UnitExpr`), so a stored one resolves again when the length its percentage is measured against changes. It reads `+ - * /`, parentheses, and adjacent terms as one compound value (`5ft 3in`). Both are re-exported from `@weasel-js/core`.
+  
+  Decided on an agent's judgment: a bare number beside `+` or `-` is base units and beside `*` or `/` a scalar; a measure over a measure is a scalar; a product of two measures, a scalar over a measure, and a unit with an offset (degC) anywhere inside arithmetic all throw; `%` resolves against `percentOf` unless the unit system defines a `%` unit of its own.
+- 9ad34e0: Adds API: a unit system nested in another. A `UnitScope` is a `UnitSystem` plus the `scale` one of its base units is worth in the scope around it, so a sub-assembly drawn in millimeters can sit in a scene measured in inches. `resolveScoped(value, scopes)` reads a value against the innermost scope and returns the outermost scope's base units, converting at each boundary; `toRoot` and `fromRoot` convert a bare measure each way; `formatScoped` writes a root measure in an inner unit; and `scopesOf(id, root, tree)` collects the chain for a node from a `parentOf` and a `scopeOf`. All are re-exported from `@weasel-js/core`.
+  
+  Decided on an agent's judgment: a value is resolved only against the innermost scope's units, so `ft` inside a metric scope throws; and a node's own scope covers its children, not the node, unless `scopesOf` is asked to be `inclusive`.
+
 ## 1.9.4
 
 ### Patch Changes

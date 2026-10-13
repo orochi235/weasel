@@ -1,5 +1,510 @@
 # @weasel-js/labkit
 
+## 1.10.0
+
+### Patch Changes
+
+- a695295: Fixes: a vertical bar inside a `PrefsForm` named the popover of an alias with no name of its own with the empty string. It is named for the leaf the alias shows, as a standalone `Bar` names it, and an alias that shows nothing is named `Alias` in both.
+  
+  Adds API: `prefAliasName(alias, target?)` in `@weasel-js/prefs`, what an alias is called wherever one is drawn: its own name, else its target's, else `Alias`. `prefAliasedLeaf`, the bars, and the row a form or a `ControlPanel` draws for an alias of nothing all name one through it.
+- 122a09c: An alias row answers for the leaf it shows as well as for itself. It is shown only while its own `showIf` and its target's both hold, and enabled only while both `enableIf`s hold, and the target's side counts every group or section above the target. Before, only the alias's own conditions were read. `applyPrefConditions` and `prefScopeAt` apply the rule, so `PrefsForm`, `SelectionPanel`, `Bar`, and labkit's `ControlPanel` and `ControlMatrix` all follow it; in labkit a function passed to `.showIf` or `.enableIf` on the target or a group above it counts too.
+  
+  Adds API: `applyPrefConditions` and `prefScopeAt` take `aliasOver`, the schema an alias's `of` names a leaf of when that is not the schema walked. `prefScopeAt` now answers for a `PrefSection` schema as well as a `PrefGroup`.
+- 96a63de: add `@weasel-js/animator`: the animator moved out of core. `useAnimator`, `createTarget`, `createTargetTable`, the timeline tracks and `sampleTrack`, the skeleton math (`resolveSkeleton`, `skeletonAxes`, `jointAxes`, `solveIk`, `mirrorPose`, `IDENTITY_JOINT`), the vertex-color helpers and `ColorOverrideRegistry`, `createSlew`, and every animator type (`Animator`, `AnimationHandle`, `TimelineHandle`, `Target`, and the rest) are exported from it and no longer from `@weasel-js/core`. Breaking: import those names from `@weasel-js/animator`. It needs geom, paint, react, and registry, and nothing of the scene.
+  
+  core keeps what moves a scene with it: `tweenPose`, `springPose`, `staggerSpringPose`, `createPoseTarget`, `momentum`, the `animate*` adapter wrappers, `useAnimatedReflow`, `bindRig`, and `useRig`, and still exports the easings from geom. The animator also exports `axesOf`, which gives the axes of a number, an array of numbers, or an object of numeric fields.
+  
+  `@weasel-js/ui`, `@weasel-js/diagram`, `@weasel-js/d3`, `@weasel-js/minimap`, and `@weasel-js/labkit` take the animator as a peer beside core. labkit leaves it out of its bundle, as it does core: the animator keeps its record of each target in module scope, so an app has to hold one copy.
+- 3678b72: Fixes: the tooltip of a `ControlPanel` row quoted what a number with a unit would read as auto in stored units, so a row showing `90` degrees said `auto 0.785398`. It is quoted through the unit's `format`, as the field shows it and with its suffix: `auto 45°`.
+- 497ddce: Adds API: an item of a `ColorList` may be a `ColorSource` as well as a CSS string, so a theme's `tones`, a `<ThemeProvider tones>`, and a `Lab`'s `nebula` can name a palette entry, a theme token, a ramp step, or another tone. `colorAt` and `colorCssAt` resolve such an item against the context's palette and then its theme, and take a `ColorSourceContext`; `colorCssAt` writes an item that names the theme as its custom property. A function list may return a source. `ColorListItem` is the new item type. A theme definition's `tones` takes literals and refs, not function sources.
+  
+  Both functions throw on a source item nothing answers, as they do on an empty list. A tone that names itself, directly or through another tone, resolves to nothing.
+- 18547a3: Adds API: `cssColorLiteral(css)` in `@weasel-js/paint` reads any color string `parseColor` reads as an `srgb` `ColorLiteral`, and throws as it does on one it cannot. `colorLiteralToCss(literal)` writes a literal as a CSS color: hex where `colorLiteralToHex` has one, else `color(<space> …)`.
+  
+  Adds API: `@weasel-js/theme` resolves a paint `ColorSource` under a theme. `colorSourceCss(source, ctx?)` writes one as a CSS color and `colorSourceLiteral(source, ctx?)` resolves one to a literal for a surface with no cascade; `useColorCss()` in `@weasel-js/theme/react` is the first against the provider in force. A `ColorRef` names, in order: an entry of the palette on the context; `tone` (`TONE_REF`) with an index into the tone list, wrapping; a theme token by its name without the `--wzl-` prefix (`{ ref: 'accent' }`); a ramp by name with the index of a step (`{ ref: 'swatch', index: 3 }`); or a custom property spelled out (`{ ref: '--my-color' }`), which need not be the theme's. A ref the theme answers is written to CSS as its custom property, so it follows a mode change without a re-render; a palette entry or a function is written as the literal it resolves to in the provider's selection.
+  
+  Adds API: `<ThemeProvider palette>` takes a paint `Palette` whose names a `ColorRef` in that subtree resolves before the theme's own, and `ThemeContextValue` carries it as `palette`. These rules for what a ref names were chosen on an agent's judgment.
+  
+  Breaking: a `tone` is `number | ColorSource`, no longer `number | string`. That is `StanceProps.tone` in `@weasel-js/ui`, so every stanced surface (`Badge`, `Button`, `Callout`, `Code`, `Dialog`, `LayerList` items, `MotifFrame`, `Powerline` segments, `PropertyGroup`, `PropertyPanel`, `Subpanel`), labkit's `ControlPanel`, `ControlMatrix`, and sidebar sections, and forge's `Library.tone`. An index is unchanged. A CSS string no longer typechecks: write a color as `cssColorLiteral('#2b6cb0')`, a theme token as `{ ref: 'accent' }`, and anything only CSS can say as a custom property of your own, `{ ref: '--my-tone' }`. A tone nothing answers now draws as no tone. `@weasel-js/ui` now depends on `@weasel-js/paint`.
+  
+  Breaking: the other colors `@weasel-js/ui` takes are `ColorSource` too, each written through `useColorCss`: `Plot2D`'s `grid.color` and `axes.color`, `CurveField`'s mark `color`, the `color` of a curve `fill` (`FillSettings`, on `CurveEditor` and `createFunctionLayer`), and the Badge effects' `outline.color`, `sunbeams.color`, `metal.accent`, and `aqua.accent`. Each one's default draws as before.
+  
+  Breaking: `@weasel-js/hud` names colors the same way. A window's `tone` (`WindowOptions.tone`, `setTone`) is `number | ColorSource`, and the draw contexts (`HudDrawCtx`, `HudContentCtx`) carry `color(source)`, a source resolved to a hex, in place of `toneAt(i)`; a widget that called `ctx.toneAt(2)` calls `ctx.color({ ref: 'tone', index: 2 })`. `AttachHudOptions.tones` is a `ColorSourceContext`, so its tone list is optional and it may carry a palette.
+- bc9f367: A test may read from the entry its field sits in. `{ from: 'item', path: 'mode' }` on a field of a list's or a map's item reads `mode` from the same entry, where a test without `from` reads the schema root. Inside a list within a list it is the nearest entry, an item's own `enableIf` may read its entry, and an empty path is the entry itself. `PrefsForm`, `SelectionPanel`, `Bar`, and the dialog a labkit `ControlPanel` row opens each hide and disable a field entry by entry.
+  
+  Adds API to `@weasel-js/prefs`:
+  
+  - `PrefTest` takes `from: 'item'`, and `PrefConditionReader` is the reader `prefConditionHolds` asks, told where each path is read from.
+  - `applyPrefConditions` and `prefScopeAt` have no entry to read, so inside an item they leave a condition that reads the entry holding. `applyPrefEntryConditions(item, path, holds)` answers those for one entry and returns the item as that entry draws it with the paths it disables. `prefJudge` takes a third argument, the `PrefEntry` to read.
+  - `checkPrefCondition` holds a path read from the entry to the item of `site.within`, and reports the new code `no-item` for one on a node that is in no list or map.
+  - `prefConditionPaths(condition, 'item')` lists the paths read from the entry, and without the argument lists only those read from the root, which is a change for a condition that has both. `mapPrefConditionPaths` tells its callback where each path is read from. `prefConditionReadsItem` says whether a condition reads the entry at all.
+  
+  Adds API to `@weasel-js/ui`: `PrefRenderContext` and `PropertyRenderContext` gain `entryAt`, which a custom renderer that draws its own entries calls for each; `PrefControl` takes `entryAt`; `entryApplier` makes one from a judge. `PrefConditionEditor` takes `entryOf`, the list or map whose entry the condition's node is drawn in, and then offers that entry's own fields first, each named as the entry's ("this Phase: mode"). `PrefSchemaEditor` offers "Enabled if" on a list's or a map's entry, with those fields to pick from, and no "Shown if" there. labkit's `conditionedLeaf` returns `entryAt` as well.
+  
+  Breaking for a caller of `prefShownReader`, whose returned reader and `read` argument are now `PrefConditionReader`s, and of `conditionedSections`, which returns `entryAt` beside what it returned.
+- a15b3f8: A `showIf` or an `enableIf` on a node of a surface's own schema may read a setting of `over`, the schema the surface is drawn over. A path no leaf of the surface's own schema holds is looked up in `over`, in `PrefsForm`, `PrefsDialog`, `Bar`, `ToolOptionsBar`, `SelectionPanel`, and labkit's `ControlPanel`: the condition compares the value as that leaf's control shows it, through its `encoding`, where before it compared the stored value. A path both schemas hold reads the surface's own leaf.
+  
+  Where the surface holds no value at such a path, it reads `over`'s leaf as it reads a leaf of its own. A `PrefsForm` and a `ControlPanel` take the leaf's default, where before the path read as unset. A `SelectionPanel` takes the default only of a leaf that is `absentIsDefault`, and a `Bar` reads `values` alone.
+  
+  Adds API in `@weasel-js/prefs`: `prefJudge`, `prefReader`, `prefShownReader`, `checkPrefCondition`, and `checkPrefConditions` each take `over` as a last argument, and `prefSchemaHolding(schema, path, over)` says which of the two answers for a path. With `over`, the checks report `no-leaf` only for a path neither schema holds, and hold a comparison to whichever leaf answers.
+  
+  `PrefConditionEditor` takes `over`: its pickers list that schema's prefs after the condition's own, each named for the schema it is in (`Settings: view.grid`), and a row that reads one is checked against it. `PrefSchemaEditor` hands a layout's conditions the dialog the layout is drawn over, so its `bad condition` badge and its condition rows know that dialog's settings. `conditionLeaves` takes `over` as a third argument and marks each such leaf `over: true`.
+  
+  labkit: `resolveConfigSchema` takes `over` as a third argument. Without it a schema whose condition reads a setting of another schema is refused, as any condition that reads no leaf is. `conditionedLeaf` takes `over` as a last argument, and `selectionJudge` in `@weasel-js/ui` as a fourth.
+- 95c01e4: A condition over a boolean or an enum leaf stored through an `encoding` now compares the value its control shows, in every surface. `{ path: 'data.style.fontStyle', is: true }` holds while the Italic toggle is on, where it used to compare `true` against the stored `'italic'` and never hold; a test with no operator held for any stored string, `'normal'` included. A field of an `object` or a `union` leaf is read against that object, as its control reads it.
+  
+  Breaking: `prefJudge` takes the schema first, `prefJudge(schema, read)`, and `read` still hands back stored values. Adds `prefShownReader(schema, read)`, the reader a judge compares through, and `prefShownValue(leaf, stored, siblings)`. `PrefsForm`, `SelectionPanel`, `Bar`, and labkit's `ControlPanel` all judge through `prefJudge`. `checkPrefCondition` now rules out a comparison against an encoded leaf's stored form: for an encoded boolean anything but `true`, `false`, or `null`, and for an encoded enum anything but one of its options or `null`. labkit's `isEntryShown` is given no resolved schema and still compares stored values.
+- 13dacf3: `ControlMatrix` now honors `showIf` and `enableIf`, as data or as a function, on a cell's leaf and on every group above it, through the same `isLeafVisible` and `isLeafEnabled` a `ControlPanel` asks. A cell whose `showIf` fails is drawn empty, and a setting no column shows has no row. A cell whose `enableIf` fails is dimmed and takes no input: its switch does not flip, its popover does not open, and Option-click does not unpin it. A leaf's static `hidden` flag still does not drop a row, since `rows` names it.
+- fb3aa02: A titled `ControlMatrix` sets its column headers on the panel title's baseline. They were centered on the title row, which left the smaller header text about 3px above the title's line.
+  
+  `PropertyPanel` lines its actions up with its title by `--wzl-prop-panel-actions-align`, a new hook: `center` as before when unset, `baseline` for actions that are text.
+- e22db54: `ControlMatrix` takes `over`, the schema its aliases point into and its conditions may read, as `ControlPanel` does. This adds a prop. A cell's `showIf` and `enableIf` read a setting of `over` at its default where the config holds nothing, and the popover an alias's cell opens edits the leaf of `over` at the alias's path. The cell's own summary still reads the alias's path.
+- a606e4f: A subscriber that throws no longer stops the subscribers after it, or throws into whatever caused the notify, in labkit's stores: a trial clock's `subscribe`, `onWake`, and `onFrame`, the transport hold, the clock, camera, and panel-host registries, the annotation store, and a tiled surface's scope. Each now notifies through `createEmitter`, so the error goes to `console.error` as `weasel: a subscriber threw`. A subscriber added during a notify now waits for the next one. `@weasel-js/labkit` now depends on `@weasel-js/registry`.
+- de319ce: Types a public signature names are exported now, so a consumer can write them down and the API reference links to them. All additions; nothing is renamed or removed.
+  
+  - core: `ViewLike`, `TargetTransform`, `WeightEnv`.
+  - diagram: `DiagramRouter`, `DiagramTextStyle`, `DiagramDerivePose`, `Forest`.
+  - font: `DynamicFace`.
+  - forge: `ArgCondition`, `ComponentHistory`, `StoryGlobals`, `StoryLayout`, `StoryViewport`, `TimelineSpan`; from `/frame`, `Channel`, `ToFrame`, `FromFrame`, `ConfigAnswers`, `FaultPhase`; from `/shell`, `StoryRegistryOptions`, `StoryChanges`, `IndexEntry`, `CssVarReport`, `TrialFrameCalls`, `Libraries`, `SchemaDescription`, `DescribedShape`, `DescribedEntry`, `SectionDescription`.
+  - guides: `SnapToGuidesInsertArgs`, `SnapToGuidesMoveArgs`, and `SnapToGuidesResizeArgs`, each from its own subpath.
+  - hud: `AttachHudOptions`, `SourceRect`, `LoupeBaseOptions`.
+  - labkit: `MarkPose`, `AnnotationStorage`, `PaintedMark`, `ControlPanelProps`, `ControlPack`, `LoupeBindings`; from `/state`, `InstrumentHooks`; from `/config`, `Branching`, `Fields`, `FieldValues`, `Variants`, `VariantValues`.
+  - paint: `InCommandUnits`, `WithPatternHandle`.
+  - quantity: `FractionOptions`.
+  - renderer: `ShaderStage`, `UniformArray`.
+  - routing: `ToolScopes`.
+  - svg: `SvgDraftPose`.
+  - text-dom: `OverlayRunBase`.
+  - theme: `DtcgDocument`; from `/engine`, `SemanticCommon`, `DtcgGroup`, `DtcgAxesExtension`, `DtcgLayer`.
+  - ui: `ButtonBase`, `ButtonRegular`, `ButtonIconOnly`, `ToggleBarCommonProps`, `ToastFn`, `Fold`, `DistributiveOmit`, `WalkCtx`, `OverlayPoint`, `DocumentCodec`, `OpenedDocument`, `SchemaRoot`, `AnyNode`, `CurveSamplePoint`.
+  
+  The names for types that had none of their own to export under (`StoryGlobals`, `TimelineSpan`, `CurveSamplePoint`, the `Diagram*` three, `ShaderStage`, `DtcgGroup`, `ToggleBarCommonProps`) were chosen by an agent.
+- 3a92afc: Breaking: the paint model's serialized shape changed in three ways, and its type names in two. Nothing reads the old shapes.
+  
+  **A fill is a record holding a paint, as a stroke is.** Every `fill` slot now takes a `Fill`, `{ paint?: Paint }`, where it took a bare paint: node data, draw commands (`CommandFill`), text styles and runs, and the affordance and overlay paint options. `fill: { color: '#abc' }` becomes `fill: { paint: { color: '#abc' } }`, beside `stroke: { paint: { color: '#000' }, width: 2 }`. `fill: null` still means no fill, and a fill with no `paint` paints nothing. `commandFill(fill, box)` resolves a node's fill for a draw command the way `commandStroke` resolves its stroke; resolving a bare paint is `commandPaint`.
+  
+  **A paint names its variant under `kind`, not `fill`.** `{ fill: 'linear-gradient', … }` becomes `{ kind: 'linear-gradient', … }`, the word the paint-kind registry already used. A solid still omits it. `asPaint` takes `{ kind: string }`.
+  
+  **Each built-in tile is its own paint kind.** `{ fill: 'pattern', pattern: { tile: 'hatch', color, lineWidth }, units }` becomes `{ kind: 'hatch', color, lineWidth, units }`, and likewise `crosshatch`, `dots`, and `chunks`. A tile a consumer rasterized itself is `{ kind: 'texture', texture: handle }`. `TilePatternSpec` is now a union keyed on `kind`, so a tile's own fields are checked instead of being optional on every tile. An SVG exported before this change carries its tiles in the old shape and loses them on import, with a warning.
+  
+  Follows from the fill record: `DEFAULT_SHAPE_FILL` is a `Fill`, `createPathLayer`'s `getFill` returns a `CommandFill`, `setFill` and `setFillOpacity` write the record, and the default node properties describe `data.fill` as an object with one `paint` field, as `data.stroke` is. A node whose `fill` is a string or a bare paint now paints no fill. `SelectionPanel` built from those default properties no longer offers "None" for a fill, since it offers none for a paint nested in a record; clearing one goes through the `setFill` action.
+  
+  A tile paint has a `color`, so `'color' in paint` no longer means solid. `isSolidPaint(paint)` answers that.
+  
+  Renames: `FillStyle` is `Paint`, and `GradientUnits` is `PaintUnits`. The paint types named as fills are named as paints: `GradientPaint`, `MeshGradientPaint`, `CommandPaint`, `PosedPaint`, and `SolidPaint`, with `isGradientPaint` and `isMeshGradientPaint`. `isPatternSpec` is gone; `isTilePaint` and `isPatternPaint` replace it.
+  
+  Adds API: `Fill`, `CommandFill`, `commandFill`, `PatternPaint`, `TilePaint`, `TexturePaint`, `TileKind`, `PatternPlacement`, `TILE_KINDS`, `isTileKind`, `isTilePaint`, `isPatternPaint`, `isSolidPaint`, `tileSpecOf`, `patternPlacementOf`, and `seedTile`. A paint kind can name a `family` (`PaintKindFamily`); kinds sharing one are a single segment in `PaintInput`'s kind bar, and the built-in tiles and `texture` share `patternFamily`.
+- 9c165dc: forge reads a `showIf` written as data where it read only the function form. A control or a group hidden at the defaults by a condition gets no row of variants on a story's index page, and `answerSchema` lists it among the hidden paths. The condition itself still crosses to the workshop in the node's annotations, where the controls panel evaluates it.
+  
+  Adds API: `isEntryShown(entry, config)` in `@weasel-js/labkit`, which answers a node of a schema that has not been resolved by its own `showIf`, as a condition or a function.
+- 54c36f9: A field inside a `PropertyGroup`, or any `MotifFrame` in the `rule`, `stereo`, or `tab` motif, is drawn on the plain surface. The frame's fill and a field's frame both defaulted to the sunken surface, so in light mode a text or number field in a group was the group's own color and could not be seen. That covers an `as: 'panel'` group, and a group with no `as`, in labkit's `ControlPanel`, which draws both as a `PropertyGroup`. The frame sets `--wzl-input-surface`, as a `PrefsForm` panel and a `SelectionPanel` section do.
+- 6273d6c: A `list`'s or a `map`'s `item` now has its conditions applied, in `PrefsForm`, `SelectionPanel`, `Bar`, and the dialog a labkit `ControlPanel` row opens. A field of an object item hides by its `showIf` and disables by its `enableIf` in every entry, and the item's own `enableIf` disables every entry's control. An item's own `showIf` is not asked.
+  
+  Adds API: `applyPrefConditions` walks an item, and names what it disables once for every entry, with `PREF_ENTRY` (`'*'`) as the entry's step: `'phases.*'` for the item, `'phases.*.hold'` for a field of it. `prefScopeAt` answers for a path inside an entry, whatever the entry's step. `PrefControl` takes `disabledAt`, for an owner that has applied the conditions itself. labkit adds `conditionedLeaf`, and the dialog a `ControlPanel` row opens for an object, a union, a list, or a map now hides and disables that leaf's fields by their conditions, which it did not do for any of them.
+- 479c3b2: `<JobProgress>`'s indeterminate bar sweeps across the track in one direction
+  and loops while it is outside it. The old keyframes kept the bar on the track
+  for the whole cycle, so each loop jumped it from the right end back to the
+  left, and it stopped in the middle and backed up at both ends on the way.
+  
+  With reduced motion the bar now rests as a short segment in the middle of the
+  track. It used to fill the track, which read as a finished job.
+- bd54ca0: Adds API: the `LabBaseProps` type, every prop `<Lab>` takes but `storageKey` and `storage`. `LabProps` is that plus the two, as before.
+- 1a5bf11: Fixes: a `Lab` rendered itself and its `Workspace` whenever any trial's record changed: a pan frame, a job item, a clock write, or a mark save. It now selects the trial ids alone, and only readers of `useLabContext` hear a record change.
+- 13069f4: Adds API: `.showIf` on a leaf and on a group takes a condition written as data (`.showIf({ path: 'mode', is: 'row' })`) as well as the function it took, and `.enableIf` is new and takes the same two forms. A condition stays data through `resolveConfigSchema`: it lands on the resolved leaf or `PrefGroup` as `showIf` or `enableIf`, so an export and a schema editor see it, and `resolveConfigSchema` throws on one that reads a path no leaf holds or compares against a value the leaf never holds, naming each node and what is wrong with its condition. A function still sits beside the tree, in `ResolvedConfig.showIf` and the new `ResolvedConfig.enableIf`. `isLeafVisible` answers both forms, and `isLeafEnabled` is its counterpart for `enableIf`. `ControlPanel` hides a row by either form of `showIf`; it does not draw a disabled row yet, so `enableIf` has no effect on screen.
+- b4f56fe: `ControlPanel` draws a row whose `enableIf` fails with its control disabled and its label dimmed, for a condition written as data and for one written as a function. A group's `enableIf` disables every row under it. It reaches a row's own control, a heading's control, the cells of a paired row and of a group drawn `as: 'bar'`, an action's button, the button of a row that opens a dialog, and a custom control, whose context now carries `disabled`.
+  
+  `isLeafVisible` and `isLeafEnabled` now answer for everything above a path as well as the node at it: a path under a hidden group is not visible, and one under a disabled group is not enabled. Both ask `prefScopeAt` in `@weasel-js/prefs` for the conditions the schema carries as data, and add the functions beside the tree. Behavior change for a caller that asked about a nested path on its own and expected only that node's condition.
+  
+  Adds API: `DialogRow` takes `disabled`, which disables its button and dims its label. `ControlMatrix` does not read `showIf` or `enableIf`.
+- 8041fa9: Fixes: `isEntryShown` compared a condition against stored values, where every other reader compares what the leaf's control shows, so a `showIf` over a leaf stored through an `encoding` answered differently on a walk of the schema's shape than in the panel.
+  
+  Breaking: `isEntryShown(entry, config, schema)` takes the resolved schema as a third argument, `resolveConfigSchema(schema).group`, which it reads each leaf's `encoding` from. Made on an agent's judgment: an optional argument would have kept the undecoded path alive beside the decoded one.
+- ed5b11c: Fixes: every trial in a lab re-rendered whenever any trial's record changed: a pan frame, a job item, a clock write, or a mark save in one trial rendered them all, chrome included. `Trial` and `TrialChrome` read `LabContext`, whose value carries `trials`. A trial now renders for its own record alone.
+  
+  Adds API, on an agent's judgment: `useLabCommands()`, with `LabCommands` and `LabCommandsContext`. It is the surrounding lab without `trials`, in a value that does not change when a record does, for a component that should not render then; read a trial through the store. `useLabContext()` and `LabContext` are unchanged and still carry `trials`. Under a bare `LabContext.Provider`, `useLabCommands()` reads that.
+  
+  `TrialChrome` no longer falls back to the first trial when `focusedTrialId` is null, which `LabContextValue` says it is only when there are no trials.
+- 7ae37a2: A labkit annotation target that lies partly or wholly outside what clips it — a stage it was panned out of, a scrolling pane — no longer draws its marks, or takes presses, over whatever is beside it. Marks are cut where the target is cut, and a target out of sight draws nothing and takes no input. Additive: a `SurfaceFrame` now carries `visible`, each tile's rect cut by its clipping ancestors, beside `rects`; a tenant painting into a shared buffer confines itself to `visible` and places its drawing against `rects`.
+- 53c86af: Fixes: marks drawn on a trial in another tab never appeared in this one, and this tab's next mark then saved over them. A trial built its mark store once from its record and never read the record again. When the record's marks change under it, by another tab's write, the trial now builds its store again from them.
+  
+  Decided on an agent's judgment, of the three ways the entry offered: the store is rebuilt, not merged mark by mark, so this tab's mark undo history ends there, as its state history already does on such a write, and a mark this tab drew within the quarter second before the write, not yet saved, is dropped with it. A write from another tab that changed no mark keeps the store and its history. An instrument that keeps its marks in its own `annotations.storage` is not touched.
+- 9201fd5: Fixes: a trial's config was written through two `setConfig`s that disagreed. A change made in the settings panel, or by a chrome contribution, ran the instrument's `onConfigChange` and took no undo snapshot, so an instrument declaring `undo: { snapshotOn: ['config.change'] }` got no undo entry for it; the instrument's own `ctx.setConfig` snapshotted and never ran `onConfigChange`. Both are now one write: it snapshots on `config.change` and `config.change:<path>`, writes, and runs `onConfigChange` against the stored record.
+  
+  Changes behavior, on an agent's judgment, in the two places the old paths differed. An instrument's own `ctx.setConfig` now runs its `onConfigChange`. And a run of writes to one path, each within 500 ms of the last, shares one undo entry, so a slider drag undoes in one step; this holds for `ctx.setConfig` too, which used to record an entry per write. `ctx.setConfig` also warns in development about a path its config does not hold, as the panel's did.
+- f5d0a02: Fixes: on a looping trial clock, End and a scrub to the far right of a transport landed at the start of the next pass, so the playhead showed at the left edge, and on a counted loop repeated End presses walked through the passes and ended the run. They now stand at the end of the pass the playhead is in, however often pressed, and playing on from there runs into the next pass.
+  
+  Adds API, on an agent's judgment: `TrialClock.seek(elapsed, 'end')` reads a time on the line between two passes as the end of the earlier one, `phase` 1, until the clock next moves; the default, `'start'`, is the start of the later one as before. `ClockPosition` gains an optional `passEnd`, so a clock left there reopens there.
+- 8f86cc0: A presented lab can be held still for a poster, and worked from its host page.
+  
+  Adds API: `<Lab still>` — or `?still` in the page's URL — presents the lab with every clock paused where it opens, and `still={1200}` or `?still=1200` holds them 1200 ms in. A still shows no play controls and reads and writes no storage, and the lab's root gains the class `lk-lab--still-ready` once that frame has been drawn, for a capture to wait on.
+  
+  Adds API: a presented lab answers `labkit:play`, `labkit:pause`, `labkit:seek`, and `labkit:query` messages posted to its window by the window around it or by its own page, and posts a `labkit:state` message back as it starts, on every change to its clock, and when asked. `<Lab messages>` names the lab, limits the origins it takes messages from, or turns the channel off; it is on by default. The types are `PresentationCommand`, `PresentationState`, and `PresentationMessageOptions`.
+  
+  Changes behavior: the speed and direction a pause comes back to, and whether anyone has worked the clock by hand, are kept per clock, where each `<TrialTransport>` kept its own. Two transports over one clock now agree, and a transport that remounts no longer replays a run its visitor had already stopped.
+- 92146b0: Adds API, on an agent's judgment: `ClockCapability.step`, the ms a frame at which labkit runs a clock forward with nothing shown. A still at a time (`<Lab still={1200}>`, `?still=1200`) of a clock that is not seekable used to warn and stay where the clock opens; with a `step` declared it is now played forward to that time, every `useClockFrame` reader hearing each step, before the still says it is ready. Without a `step` it stays where it opens, as before, and the warning names the option. A run that ends sooner stops at its end.
+- 1c9bc4e: Every overlay takes its `z-index` from the theme's layer ladder. Adds tokens: `--wzl-z-hud` (900), `--wzl-z-toast` (1100), `--wzl-z-popover` (1200), and `--wzl-z-drag` (10000). `Dialog`, `Toast`, `Tooltip`, `Callout`, core's debug HUDs, and labkit's drag ghost read a rung where each held a literal of the same value, and core's rungs carry that value as a fallback for a page with no theme.
+  
+  Breaking: `--wzl-z-modal` is 1000, where it was 30 and below every dialog. labkit's lightbox, its one reader, rises with it. `DragGhost` in `@weasel-js/ui` moves from `--wzl-z-overlay` (20) to `--wzl-z-drag`, so a row dragged out of a list inside a `Dialog` draws over the dialog; the ghost `useDragHandle` clones reads the same rung.
+- dbf7133: Fixes: a `ControlMatrix` cell over an alias summarized the alias's own path, which holds nothing, so it read as empty whatever the setting held. The cell now draws the leaf the alias points at, in `over` or the matrix's own schema: its value, or its default where the config holds none, as a switch, a swatch, or a summary, and a switch or swatch writes at that leaf's path. The row takes that leaf's name and description where `rows` gives no label.
+  
+  An alias's cell shows another setting, so it never draws as inherited, Option/Alt-click does not unpin it, and its popover has no Inherit button; Clear, for a color that may be unset, clears the leaf it shows.
+- bb3e633: minimap: a new package over core, holding the minimap in both its forms. `createMinimapContribution` and `createLinkedCursorContribution` are the ambient entries; `<MinimapCanvas>` is the detached canvas; `minimapCenterAction`, `minimapPanAction`, `centerRootOn`, `MINIMAP_CENTER`, and `MINIMAP_PAN` are the actions both run; `createIndicatorLayer`, `createLinkedCursorLayer`, `crosshairRects`, and `CROSSHAIR_HALO` are the chrome; `computeFitView`, `computeIndicatorCommand`, and `FALLBACK_FIT_VIEW` are the fit math. It depends on `@weasel-js/react` and `@weasel-js/routing`, with `@weasel-js/core` and `react` as peers.
+  
+  **Breaking for `@weasel-js/core`:** `MinimapCanvas`, `createMinimapContribution`, `createLinkedCursorContribution`, `minimapCenterAction`, `minimapPanAction`, `centerRootOn`, `MINIMAP_CENTER`, `MINIMAP_PAN`, `crosshairRects`, `CROSSHAIR_HALO`, `computeFitView`, `computeIndicatorCommand`, and `FALLBACK_FIT_VIEW`, with their types (`MinimapCanvasProps`, `MinimapContributionOptions`, `LinkedCursorOptions`, `CrosshairRect`, `ComputeFitViewOptions`, `IndicatorStyle`, `MinimapFit`), are no longer exports of `@weasel-js/core`. Import them from `@weasel-js/minimap`. `@weasel-js/labkit/weasel-canvas` still re-exports the ones it did.
+  
+  core: `accentColorOf` and `FALLBACK_ACCENT` are exported. `accentColorOf(el)` reads `--wzl-accent` off an element, where the theme cascade lands on a canvas.
+- a8ef308: The three drag ghosts mount in one place. `fixedSeat(from)` in `@weasel-js/gestures` answers where a `position: fixed` element following the pointer mounts (the nearest themed or `data-wzl-portal-host` ancestor of `from`, else the body) and the client point its corner lands on when that host contains its fixed descendants. `nearestPortalHost` moved there from ui, which still exports it.
+  
+  - core: the default `useDragHandle` ghost mounts in the source's host, where it mounted on the body, so it resolves the source's theme and draws in its font.
+  - ui: `<DragGhost>`'s `at.width` is optional; with none the ghost is as wide as what it holds.
+  - labkit: a palette drag's ghost is ui's `<DragGhost>`, so it takes the lab's theme. **Breaking:** `DragState` and `DragGhostProps` gain a required `from`, the element the drag began on, and the ghost loses its own border.
+- 94f353d: `SelectionPanel`, `Bar`, `ToolOptionsBar`, and labkit's `ControlPanel` take `over`, a `PrefGroup` or a `PrefSection`, as `PrefsForm` does: the schema their `alias` leaves point into, when that is not their own. An alias is drawn as the leaf of `over` at its path, and is hidden and disabled by that leaf's conditions and those of every group above it, as well as by its own. Its value is read and written at that path in what the surface already edits: `values` and `onChange` in a `Bar`, `config` and `setConfig` in a `ControlPanel`, and every selected node in a `SelectionPanel`, where a `PrefGroup`'s keys are steps of the node path and a `PrefSection`'s leaf keys are whole node paths. `ToolOptionsBar` hands `over` to its `Bar`, and `PrefSchemaEditor`'s preview of a properties layout hands its panel the schema the layout points into.
+  
+  Each surface reads `over`'s conditions as it reads its own schema's. A `ControlPanel` reads `config` and `over`'s defaults where `config` holds nothing, since a lab's config holds no value for another schema's leaves. A `Bar` reads `values` alone and a `SelectionPanel` reads the nodes, with a leaf's default only where it is `absentIsDefault`.
+  
+  Adds API: `prefAliasTargets(over, judge, options)` in `@weasel-js/prefs`, the schema a surface's aliases point into as that schema's conditions leave it. `shown(alias)` gives the leaf an alias is drawn as, under the alias's own name and description where it gives them, with the path its value lives at; `leafAt`, `disabledAt`, `hiddenAt`, and `entryAt` answer for what is inside that leaf. Every surface resolves an alias through it. labkit's `isLeafVisible` and `isLeafEnabled` take `over` as a last argument, and `ControlRow` takes it as a prop.
+  
+  Breaking: `effectiveSections`'s `shownOf` hands back `{ schema, targets? }`, a `PanelShown`, where it handed back the narrowed schema or null: `targets` is what that kind's aliases are drawn from. `conditionedSections` takes `over` as a sixth argument and hands back `targets` when given it, and `selectionJudge` judges a `PrefGroup` as well as a `PrefSection`.
+- 56da358: `@weasel-js/prefs` gains `pairRuns`, which turns a run of neighboring items into the rows they draw: each leaf a `pair` names joins the row of the leaf naming it, and a row left with one leaf is no pair. This adds API. `SelectionPanel`, a `Bar`, an object leaf's fields, and labkit's `ControlPanel` all walk it now, where each merged pairs itself and they disagreed about a pair with one leaf left.
+  
+  That changes what a lone paired leaf draws. It is a row of its own under its own name, where a `SelectionPanel` row and labkit's `ControlPanel` used to label it with the pair's label, and a lone `toggle` boolean is a switch, where an object leaf or a multi-kind selection that kept half a pair used to draw a flag bar of one segment. `effectiveSections` pairs again after it intersects the kinds selected.
+- 3aa3745: When an edit is written is said in one table. `@weasel-js/ui` gains `PARAMS_SETTLES`, `withCommitPolicy`, and the `ParamsSurface` type, which adds API: for a form, a panel, and a lab, whether a typed number, a slider, text, and a color write only the value an edit settles on. `PrefsForm`, `SelectionPanel`, `Bar`, and labkit's `ControlPanel` apply it, where the first two each withheld `onInput` by hand. No surface writes at a different time than it did.
+- dd58f1a: Adds API: `prefFieldProps(leaf, state, surface)` in `@weasel-js/ui` takes the surface a leaf is drawn on (`'form'`, `'panel'`, or `'lab'`) and returns the control that surface draws for what the leaf asked for, writing when that surface writes. `PARAMS_CONTROLS` is the table behind it: what a row draws for a boolean naming no control, whether a boolean's `toggle` is drawn, whether a slider with an end of its range missing is still a slider, and whether an enum's `radio` and `menu` draw as asked. `withSurfaceControl(field, surface)` applies it to a field already made, and `withRowControl(field, surface)` fills in a row's control for a boolean naming none.
+  
+  `PrefsForm`, `SelectionPanel`, and labkit's `ControlPanel` each decided these in their own code and now read the table. Nothing draws differently.
+- a071085: Adds API: `prefTabRuns(items, isTab)` in `@weasel-js/prefs` walks a group's children in order with each run of neighboring `tab` children folded into one step, the strip they share. `PrefsForm`'s panes, an object leaf's rows, `SelectionPanel`'s sections, and labkit's `ControlPanel` each collected that run in a loop of their own and now walk this one. Nothing draws differently.
+- 49c8377: labkit: `.section(label, { className })` puts a class on that section's frame in a `ControlPanel`, for a look one section alone takes.
+  
+  forge: the Globals section of a trial's Settings draws its text at `--wzl-font-size-2xs`, the size of the CSS Vars rows, where it was `--wzl-font-size-sm`.
+- 01bcb52: `sectionTree` warns once when a section's first row repeats its heading ("Pump" under "Pumping"), as `ControlPanel` does. The rail still draws that row under the heading: `PrefsForm` has nowhere to put a control in one. A schema both surfaces draw warns once, in the words of whichever met it first.
+- 5b97be1: `Dialog`, `Toast`, `Tooltip`, `Callout`, the menu and picker popovers, and labkit's drag ghost cast their shadow in `--wzl-shadow`, where each held its own black at 0.18 to 0.45. Visible: in dark mode those shadows are now the token's 0.6, and in light mode its 0.18. No person has looked at the result.
+  
+  Adds a token: `--wzl-scrim`, what a modal dims the page behind it with. It is black at 40%, the literal `Dialog` held, so a dialog's backdrop is unchanged.
+- a03ad7e: The lab's sidebar and aside lay their sections out as panes. Each section has its own box with a draggable seam between it and the next, its title bar stays put, and its body scrolls on its own; before, the whole pane scrolled as one. A folded section is as tall as its bar, the last open section takes the height the others leave, and a dragged height is kept with the lab (`lk-lab-sidebar-heights`, `lk-lab-aside-heights`). `SidebarPanes` is the component and is exported; `SidebarRegion` still lays a trial's sections out in one scrolling column.
+- f54a074: labkit: a sidebar section can set `fill`, which gives it the pane's spare height and holds its body to that height, so the body can scroll one part of itself under the rest. This adds to `SidebarSection`.
+  
+  forge: the CSS Vars section fills the aside. Its tabs and filter sit above the token list, which scrolls on its own; before, they were sticky inside the scrolling aside and the scrollbar ran past them.
+- c9b9598: labkit's stylesheets, core's debug HUDs, and forge's shell and story frame take every `gap`, `padding`, and `margin` that has a rung from the `--wzl-space-*` ladder, where each held the same px as a literal. Core, which draws on a page that may load no theme, keeps that px as the `var()` fallback, so nothing moves there.
+- 27e786b: A sidebar narrower than 200px stacks its paired rows. At 140px, the narrowest a drag makes a `Split`'s sidebar, two label-beside-value rows shared one line and a value ran out of its cell and under the next row's label; forge's Globals section showed it.
+  
+  Adds API: `--wzl-prop-columns`, the track list a `PropertyList`, a `PropertyGroup` body and a `Subpanel` lay their rows on. It defaults to `1fr 1fr`; a container that knows it is too narrow for two columns sets `minmax(0, 1fr)`.
+  
+  `Split`'s sidebar pane is now a size container named `lk-split-sidebar`, which is how it sets that. A pane that is a container is also a containing block for a `position: fixed` descendant and a stacking context of its own. The 200px threshold was chosen on an agent's judgment.
+- 3b81e93: `<TileGrip>` makes any `<Workspace reorderable>` tile draggable: a `div` a drag of its tile starts from, and a plain `div` where the tile cannot be moved. Since a trial's title bar became the drag surface, a tile that was not a `<Trial>` had nothing to be dragged by. The title bar is now a `TileGrip`, and no longer carries the `lk-trial__titlebar--draggable` class.
+- Updated dependencies [ad11b4a]
+- Updated dependencies [dfc0dda]
+- Updated dependencies [a695295]
+- Updated dependencies [122a09c]
+- Updated dependencies [bc7cd74]
+- Updated dependencies [7d16908]
+- Updated dependencies [cd8cbbd]
+- Updated dependencies [1f7548d]
+- Updated dependencies [a86d79f]
+- Updated dependencies [ad15c29]
+- Updated dependencies [90eae1c]
+- Updated dependencies [96a63de]
+- Updated dependencies [9b7c182]
+- Updated dependencies [b2a7e3b]
+- Updated dependencies [cb97ce2]
+- Updated dependencies [7140b5a]
+- Updated dependencies [7c9ee89]
+- Updated dependencies [2d6d670]
+- Updated dependencies [261c4b5]
+- Updated dependencies [cff989c]
+- Updated dependencies [b027078]
+- Updated dependencies [7a6189a]
+- Updated dependencies [d2930aa]
+- Updated dependencies [4270664]
+- Updated dependencies [f012f43]
+- Updated dependencies [409590e]
+- Updated dependencies [3b1dd4a]
+- Updated dependencies [8e00180]
+- Updated dependencies [89a2c50]
+- Updated dependencies [fc267f3]
+- Updated dependencies [4244046]
+- Updated dependencies [f148c2b]
+- Updated dependencies [88e3c8e]
+- Updated dependencies [9f5cdb2]
+- Updated dependencies [b9fb732]
+- Updated dependencies [67f4d79]
+- Updated dependencies [d137eaf]
+- Updated dependencies [1837952]
+- Updated dependencies [b6edc8f]
+- Updated dependencies [99553f7]
+- Updated dependencies [5149cce]
+- Updated dependencies [2c6246d]
+- Updated dependencies [de60e10]
+- Updated dependencies [2892438]
+- Updated dependencies [b310df0]
+- Updated dependencies [2a5d8ef]
+- Updated dependencies [b3dec78]
+- Updated dependencies [3994be7]
+- Updated dependencies [e80de55]
+- Updated dependencies [b3ba3d9]
+- Updated dependencies [126116b]
+- Updated dependencies [9296fb4]
+- Updated dependencies [6ba0496]
+- Updated dependencies [0e46e02]
+- Updated dependencies [dee0a3b]
+- Updated dependencies [b1f7521]
+- Updated dependencies [e77f185]
+- Updated dependencies [497ddce]
+- Updated dependencies [18547a3]
+- Updated dependencies [d635e84]
+- Updated dependencies [d1da605]
+- Updated dependencies [43edc97]
+- Updated dependencies [1f2cc09]
+- Updated dependencies [d9620a2]
+- Updated dependencies [bc9f367]
+- Updated dependencies [a15b3f8]
+- Updated dependencies [95c01e4]
+- Updated dependencies [dc1f09c]
+- Updated dependencies [fb3aa02]
+- Updated dependencies [2ed751e]
+- Updated dependencies [09755da]
+- Updated dependencies [b3f1e4a]
+- Updated dependencies [329f658]
+- Updated dependencies [c20b6ab]
+- Updated dependencies [97f0282]
+- Updated dependencies [0449330]
+- Updated dependencies [4878967]
+- Updated dependencies [b3d45d9]
+- Updated dependencies [6c703be]
+- Updated dependencies [2a141ac]
+- Updated dependencies [7063584]
+- Updated dependencies [4daaae4]
+- Updated dependencies [3bda2ef]
+- Updated dependencies [d7ba0dd]
+- Updated dependencies [da0335e]
+- Updated dependencies [7bac60f]
+- Updated dependencies [fb715f4]
+- Updated dependencies [3777548]
+- Updated dependencies [de319ce]
+- Updated dependencies [3a92afc]
+- Updated dependencies [1bd7fdc]
+- Updated dependencies [87dd1ad]
+- Updated dependencies [3bacb3e]
+- Updated dependencies [25b22ee]
+- Updated dependencies [54c36f9]
+- Updated dependencies [6620695]
+- Updated dependencies [6b03b7e]
+- Updated dependencies [6fe8b55]
+- Updated dependencies [b260415]
+- Updated dependencies [c6bf78b]
+- Updated dependencies [27f415e]
+- Updated dependencies [d27b4b9]
+- Updated dependencies [66d5455]
+- Updated dependencies [a03f0ce]
+- Updated dependencies [011a241]
+- Updated dependencies [d58d2e8]
+- Updated dependencies [eb7f534]
+- Updated dependencies [3adb0d9]
+- Updated dependencies [7548e82]
+- Updated dependencies [eb3114f]
+- Updated dependencies [0a37db1]
+- Updated dependencies [a275f78]
+- Updated dependencies [605ace8]
+- Updated dependencies [0db7e81]
+- Updated dependencies [6bb8035]
+- Updated dependencies [5d82ef9]
+- Updated dependencies [bc15034]
+- Updated dependencies [6273d6c]
+- Updated dependencies [38866bc]
+- Updated dependencies [d1c8cae]
+- Updated dependencies [1ce19c9]
+- Updated dependencies [7d94bbb]
+- Updated dependencies [b4f56fe]
+- Updated dependencies [1c9bc4e]
+- Updated dependencies [c71a532]
+- Updated dependencies [525800f]
+- Updated dependencies [72e250b]
+- Updated dependencies [dcf0554]
+- Updated dependencies [5c7d50f]
+- Updated dependencies [7f8ab55]
+- Updated dependencies [690d42a]
+- Updated dependencies [bb3e633]
+- Updated dependencies [5464500]
+- Updated dependencies [be611ae]
+- Updated dependencies [ca09ae2]
+- Updated dependencies [33c90ed]
+- Updated dependencies [8d0498c]
+- Updated dependencies [b3d4383]
+- Updated dependencies [2d47e7c]
+- Updated dependencies [95980c4]
+- Updated dependencies [a6dff38]
+- Updated dependencies [27c1c86]
+- Updated dependencies [54b013c]
+- Updated dependencies [a8ef308]
+- Updated dependencies [5996856]
+- Updated dependencies [0d1c052]
+- Updated dependencies [afe503b]
+- Updated dependencies [71512af]
+- Updated dependencies [54174b6]
+- Updated dependencies [4edad85]
+- Updated dependencies [e678d75]
+- Updated dependencies [bb53d86]
+- Updated dependencies [18920a4]
+- Updated dependencies [94f353d]
+- Updated dependencies [9b8bd89]
+- Updated dependencies [efc1205]
+- Updated dependencies [b4227bc]
+- Updated dependencies [56da358]
+- Updated dependencies [cb7fa49]
+- Updated dependencies [6139898]
+- Updated dependencies [3aa3745]
+- Updated dependencies [dd58f1a]
+- Updated dependencies [335f192]
+- Updated dependencies [f3b977a]
+- Updated dependencies [df159bc]
+- Updated dependencies [7b9de2d]
+- Updated dependencies [485bb80]
+- Updated dependencies [21b6db7]
+- Updated dependencies [970f489]
+- Updated dependencies [5ef28a0]
+- Updated dependencies [af48ee3]
+- Updated dependencies [bd93216]
+- Updated dependencies [1c8c3fc]
+- Updated dependencies [4d4d81c]
+- Updated dependencies [ea54a64]
+- Updated dependencies [8524e05]
+- Updated dependencies [8ac6236]
+- Updated dependencies [eafd001]
+- Updated dependencies [d5270d7]
+- Updated dependencies [c4209cb]
+- Updated dependencies [6ea5171]
+- Updated dependencies [a071085]
+- Updated dependencies [8390ab1]
+- Updated dependencies [452af5e]
+- Updated dependencies [505a75f]
+- Updated dependencies [143613a]
+- Updated dependencies [7ede999]
+- Updated dependencies [d7af897]
+- Updated dependencies [003fb7c]
+- Updated dependencies [517f414]
+- Updated dependencies [1956417]
+- Updated dependencies [0a70de6]
+- Updated dependencies [955defa]
+- Updated dependencies [1ee5335]
+- Updated dependencies [0601e7b]
+- Updated dependencies [f91ae11]
+- Updated dependencies [a97cc84]
+- Updated dependencies [b0fa3d3]
+- Updated dependencies [c18d8cf]
+- Updated dependencies [27b827e]
+- Updated dependencies [d02d059]
+- Updated dependencies [ee08fa5]
+- Updated dependencies [74f364f]
+- Updated dependencies [01d6e4e]
+- Updated dependencies [32b3cc9]
+- Updated dependencies [70413dd]
+- Updated dependencies [fcf44fa]
+- Updated dependencies [a91e5cd]
+- Updated dependencies [91a479a]
+- Updated dependencies [7afbc13]
+- Updated dependencies [8f38287]
+- Updated dependencies [936679d]
+- Updated dependencies [813aea2]
+- Updated dependencies [cba4e4a]
+- Updated dependencies [42f24c8]
+- Updated dependencies [499af9b]
+- Updated dependencies [8cc746f]
+- Updated dependencies [a21947b]
+- Updated dependencies [de07db0]
+- Updated dependencies [4d3ff3f]
+- Updated dependencies [85cb886]
+- Updated dependencies [aed6320]
+- Updated dependencies [7c1916b]
+- Updated dependencies [5f31735]
+- Updated dependencies [33acbca]
+- Updated dependencies [4afd125]
+- Updated dependencies [76935ca]
+- Updated dependencies [bf79e00]
+- Updated dependencies [a8a49df]
+- Updated dependencies [1cc3786]
+- Updated dependencies [b919648]
+- Updated dependencies [e540165]
+- Updated dependencies [addb115]
+- Updated dependencies [9d11828]
+- Updated dependencies [37463b5]
+- Updated dependencies [748384f]
+- Updated dependencies [629eafa]
+- Updated dependencies [a27de11]
+- Updated dependencies [9e5dfd3]
+- Updated dependencies [1289cde]
+- Updated dependencies [3558fbb]
+- Updated dependencies [fa0ecbe]
+- Updated dependencies [bffba0a]
+- Updated dependencies [5b97be1]
+- Updated dependencies [33f4eb3]
+- Updated dependencies [efc5cea]
+- Updated dependencies [32e243f]
+- Updated dependencies [233f856]
+- Updated dependencies [0d675cf]
+- Updated dependencies [c9b9598]
+- Updated dependencies [4b0a7d7]
+- Updated dependencies [27e786b]
+- Updated dependencies [2705878]
+- Updated dependencies [f59e769]
+- Updated dependencies [5c9d69f]
+- Updated dependencies [bbb538e]
+- Updated dependencies [e69e97f]
+- Updated dependencies [9c19d5e]
+- Updated dependencies [e75f00e]
+- Updated dependencies [0e1f269]
+- Updated dependencies [ce033b4]
+- Updated dependencies [655cd75]
+- Updated dependencies [0190e91]
+- Updated dependencies [076d8e2]
+- Updated dependencies [706f602]
+- Updated dependencies [b0d5a6c]
+- Updated dependencies [0d7e206]
+- Updated dependencies [538e243]
+- Updated dependencies [5b1a788]
+- Updated dependencies [d3b9057]
+- Updated dependencies [b8eba2f]
+- Updated dependencies [4fe6756]
+- Updated dependencies [9fa373d]
+- Updated dependencies [b76089a]
+- Updated dependencies [54242f0]
+- Updated dependencies [ad10f82]
+- Updated dependencies [222fd80]
+- Updated dependencies [6f84f8d]
+- Updated dependencies [4042637]
+- Updated dependencies [70cf20d]
+- Updated dependencies [c9aaa07]
+- Updated dependencies [f54802b]
+- Updated dependencies [e7066ff]
+- Updated dependencies [172b2cc]
+- Updated dependencies [215f133]
+- Updated dependencies [0719af9]
+- Updated dependencies [3d7acf1]
+- Updated dependencies [46fcc7e]
+- Updated dependencies [90f8ec4]
+- Updated dependencies [a297730]
+- Updated dependencies [38fd203]
+- Updated dependencies [9ad34e0]
+- Updated dependencies [54862e9]
+- Updated dependencies [1d34f51]
+- Updated dependencies [534c866]
+- Updated dependencies [80b29f6]
+- Updated dependencies [0cef6a3]
+- Updated dependencies [6941e0c]
+- Updated dependencies [98ec291]
+- Updated dependencies [ef3d83c]
+- Updated dependencies [0d1c052]
+  - @weasel-js/ui@1.10.0
+  - @weasel-js/core@1.10.0
+  - @weasel-js/prefs@1.10.0
+  - @weasel-js/theme@1.10.0
+  - @weasel-js/geom@1.10.0
+  - @weasel-js/animator@1.10.0
+  - @weasel-js/minimap@1.10.0
+  - @weasel-js/storage@1.10.0
+  - @weasel-js/loupe@1.10.0
+  - @weasel-js/quantity@1.10.0
+  - @weasel-js/svg@1.10.0
+  - @weasel-js/registry@1.10.0
+
 ## 1.9.4
 
 ### Patch Changes

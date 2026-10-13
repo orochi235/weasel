@@ -1,5 +1,23 @@
 # @weasel-js/history
 
+## 1.10.0
+
+### Patch Changes
+
+- b3f1e4a: history: `swapOp` builds an op that swaps one whole value for another and carries both as `args`, so a serialized history can rebuild the step. `@weasel-js/core` re-exports it with `SwapArgs` and `SwapOpOptions`. `PrefSchemaEditor`'s own swap is now a call to it.
+  
+  forge: the CSS Vars panel keeps an undo history of a trial's edits. Undo and Redo sit beside the filter, and Mod+Z / Shift+Mod+Z step from anywhere in the panel except the filter's text. Typing a value is one step, and so is a scale edit with every token it regenerates. The steps are kept with the trial, so they outlive a reload, held to the last 100. Saving scales into the theme forgets them. A trial's scale edits are kept with the trial now (`fg-css-vars-scales` was lab-wide), so a scale edited in one trial no longer shows in another.
+- 5996856: core: an undo entry now holds the scene's own ops whichever way the edit was made. `scene.applyBatch`, `scene.history.apply`, and a scene journal record the `kit:*` ops their ops caused, and beside them any op that wrote no scene state, such as a selection change. Undo and redo of such an entry restore what was written and no longer call the adapter the batch was applied with.
+  
+  Breaking:
+  
+  - `scene.carry` is removed. A pose an adapter writes beside the one it was asked for is an ordinary `scene.setPose`, and the entry holds it.
+  - `scene.applyBatch` inside `scene.batch` joins that batch's entry. It used to push an entry of its own ahead of the batch's.
+  - A journal opened on a history other than the scene's reverts in place. Its undo, redo, and cancel used to replay through the adapter and leave `setPose` and `update` entries on the scene's undo stack.
+  - `scene.serializeHistory()` returns a `SerializedSceneHistory`, which carries `form: 2`, and `scene.restoreHistory` drops a snapshot without it. A history persisted by an earlier version is not restored.
+  
+  history: an `Op` may define `caused()`, which names the ops its entry records in its place once it has applied. An entry's `touchedIds` now also reads `args.nodes[].id`.
+
 ## 1.9.4
 
 ### Patch Changes

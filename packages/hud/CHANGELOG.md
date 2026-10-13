@@ -1,5 +1,256 @@
 # @weasel-js/hud
 
+## 1.10.0
+
+### Patch Changes
+
+- 18547a3: Adds API: `cssColorLiteral(css)` in `@weasel-js/paint` reads any color string `parseColor` reads as an `srgb` `ColorLiteral`, and throws as it does on one it cannot. `colorLiteralToCss(literal)` writes a literal as a CSS color: hex where `colorLiteralToHex` has one, else `color(<space> …)`.
+  
+  Adds API: `@weasel-js/theme` resolves a paint `ColorSource` under a theme. `colorSourceCss(source, ctx?)` writes one as a CSS color and `colorSourceLiteral(source, ctx?)` resolves one to a literal for a surface with no cascade; `useColorCss()` in `@weasel-js/theme/react` is the first against the provider in force. A `ColorRef` names, in order: an entry of the palette on the context; `tone` (`TONE_REF`) with an index into the tone list, wrapping; a theme token by its name without the `--wzl-` prefix (`{ ref: 'accent' }`); a ramp by name with the index of a step (`{ ref: 'swatch', index: 3 }`); or a custom property spelled out (`{ ref: '--my-color' }`), which need not be the theme's. A ref the theme answers is written to CSS as its custom property, so it follows a mode change without a re-render; a palette entry or a function is written as the literal it resolves to in the provider's selection.
+  
+  Adds API: `<ThemeProvider palette>` takes a paint `Palette` whose names a `ColorRef` in that subtree resolves before the theme's own, and `ThemeContextValue` carries it as `palette`. These rules for what a ref names were chosen on an agent's judgment.
+  
+  Breaking: a `tone` is `number | ColorSource`, no longer `number | string`. That is `StanceProps.tone` in `@weasel-js/ui`, so every stanced surface (`Badge`, `Button`, `Callout`, `Code`, `Dialog`, `LayerList` items, `MotifFrame`, `Powerline` segments, `PropertyGroup`, `PropertyPanel`, `Subpanel`), labkit's `ControlPanel`, `ControlMatrix`, and sidebar sections, and forge's `Library.tone`. An index is unchanged. A CSS string no longer typechecks: write a color as `cssColorLiteral('#2b6cb0')`, a theme token as `{ ref: 'accent' }`, and anything only CSS can say as a custom property of your own, `{ ref: '--my-tone' }`. A tone nothing answers now draws as no tone. `@weasel-js/ui` now depends on `@weasel-js/paint`.
+  
+  Breaking: the other colors `@weasel-js/ui` takes are `ColorSource` too, each written through `useColorCss`: `Plot2D`'s `grid.color` and `axes.color`, `CurveField`'s mark `color`, the `color` of a curve `fill` (`FillSettings`, on `CurveEditor` and `createFunctionLayer`), and the Badge effects' `outline.color`, `sunbeams.color`, `metal.accent`, and `aqua.accent`. Each one's default draws as before.
+  
+  Breaking: `@weasel-js/hud` names colors the same way. A window's `tone` (`WindowOptions.tone`, `setTone`) is `number | ColorSource`, and the draw contexts (`HudDrawCtx`, `HudContentCtx`) carry `color(source)`, a source resolved to a hex, in place of `toneAt(i)`; a widget that called `ctx.toneAt(2)` calls `ctx.color({ ref: 'tone', index: 2 })`. `AttachHudOptions.tones` is a `ColorSourceContext`, so its tone list is optional and it may carry a palette.
+- 3bda2ef: A subscriber that throws no longer stops the subscribers after it, or throws into whatever caused the notify, in a canvas source's `subscribeFrame` and a HUD's `subscribeFocus` and `subscribeFrame`. Each now notifies through `createEmitter`, so the error goes to `console.error` as `weasel: a subscriber threw`. Both packages now depend on `@weasel-js/registry`.
+- de319ce: Types a public signature names are exported now, so a consumer can write them down and the API reference links to them. All additions; nothing is renamed or removed.
+  
+  - core: `ViewLike`, `TargetTransform`, `WeightEnv`.
+  - diagram: `DiagramRouter`, `DiagramTextStyle`, `DiagramDerivePose`, `Forest`.
+  - font: `DynamicFace`.
+  - forge: `ArgCondition`, `ComponentHistory`, `StoryGlobals`, `StoryLayout`, `StoryViewport`, `TimelineSpan`; from `/frame`, `Channel`, `ToFrame`, `FromFrame`, `ConfigAnswers`, `FaultPhase`; from `/shell`, `StoryRegistryOptions`, `StoryChanges`, `IndexEntry`, `CssVarReport`, `TrialFrameCalls`, `Libraries`, `SchemaDescription`, `DescribedShape`, `DescribedEntry`, `SectionDescription`.
+  - guides: `SnapToGuidesInsertArgs`, `SnapToGuidesMoveArgs`, and `SnapToGuidesResizeArgs`, each from its own subpath.
+  - hud: `AttachHudOptions`, `SourceRect`, `LoupeBaseOptions`.
+  - labkit: `MarkPose`, `AnnotationStorage`, `PaintedMark`, `ControlPanelProps`, `ControlPack`, `LoupeBindings`; from `/state`, `InstrumentHooks`; from `/config`, `Branching`, `Fields`, `FieldValues`, `Variants`, `VariantValues`.
+  - paint: `InCommandUnits`, `WithPatternHandle`.
+  - quantity: `FractionOptions`.
+  - renderer: `ShaderStage`, `UniformArray`.
+  - routing: `ToolScopes`.
+  - svg: `SvgDraftPose`.
+  - text-dom: `OverlayRunBase`.
+  - theme: `DtcgDocument`; from `/engine`, `SemanticCommon`, `DtcgGroup`, `DtcgAxesExtension`, `DtcgLayer`.
+  - ui: `ButtonBase`, `ButtonRegular`, `ButtonIconOnly`, `ToggleBarCommonProps`, `ToastFn`, `Fold`, `DistributiveOmit`, `WalkCtx`, `OverlayPoint`, `DocumentCodec`, `OpenedDocument`, `SchemaRoot`, `AnyNode`, `CurveSamplePoint`.
+  
+  The names for types that had none of their own to export under (`StoryGlobals`, `TimelineSpan`, `CurveSamplePoint`, the `Diagram*` three, `ShaderStage`, `DtcgGroup`, `ToggleBarCommonProps`) were chosen by an agent.
+- 3a92afc: Breaking: the paint model's serialized shape changed in three ways, and its type names in two. Nothing reads the old shapes.
+  
+  **A fill is a record holding a paint, as a stroke is.** Every `fill` slot now takes a `Fill`, `{ paint?: Paint }`, where it took a bare paint: node data, draw commands (`CommandFill`), text styles and runs, and the affordance and overlay paint options. `fill: { color: '#abc' }` becomes `fill: { paint: { color: '#abc' } }`, beside `stroke: { paint: { color: '#000' }, width: 2 }`. `fill: null` still means no fill, and a fill with no `paint` paints nothing. `commandFill(fill, box)` resolves a node's fill for a draw command the way `commandStroke` resolves its stroke; resolving a bare paint is `commandPaint`.
+  
+  **A paint names its variant under `kind`, not `fill`.** `{ fill: 'linear-gradient', … }` becomes `{ kind: 'linear-gradient', … }`, the word the paint-kind registry already used. A solid still omits it. `asPaint` takes `{ kind: string }`.
+  
+  **Each built-in tile is its own paint kind.** `{ fill: 'pattern', pattern: { tile: 'hatch', color, lineWidth }, units }` becomes `{ kind: 'hatch', color, lineWidth, units }`, and likewise `crosshatch`, `dots`, and `chunks`. A tile a consumer rasterized itself is `{ kind: 'texture', texture: handle }`. `TilePatternSpec` is now a union keyed on `kind`, so a tile's own fields are checked instead of being optional on every tile. An SVG exported before this change carries its tiles in the old shape and loses them on import, with a warning.
+  
+  Follows from the fill record: `DEFAULT_SHAPE_FILL` is a `Fill`, `createPathLayer`'s `getFill` returns a `CommandFill`, `setFill` and `setFillOpacity` write the record, and the default node properties describe `data.fill` as an object with one `paint` field, as `data.stroke` is. A node whose `fill` is a string or a bare paint now paints no fill. `SelectionPanel` built from those default properties no longer offers "None" for a fill, since it offers none for a paint nested in a record; clearing one goes through the `setFill` action.
+  
+  A tile paint has a `color`, so `'color' in paint` no longer means solid. `isSolidPaint(paint)` answers that.
+  
+  Renames: `FillStyle` is `Paint`, and `GradientUnits` is `PaintUnits`. The paint types named as fills are named as paints: `GradientPaint`, `MeshGradientPaint`, `CommandPaint`, `PosedPaint`, and `SolidPaint`, with `isGradientPaint` and `isMeshGradientPaint`. `isPatternSpec` is gone; `isTilePaint` and `isPatternPaint` replace it.
+  
+  Adds API: `Fill`, `CommandFill`, `commandFill`, `PatternPaint`, `TilePaint`, `TexturePaint`, `TileKind`, `PatternPlacement`, `TILE_KINDS`, `isTileKind`, `isTilePaint`, `isPatternPaint`, `isSolidPaint`, `tileSpecOf`, `patternPlacementOf`, and `seedTile`. A paint kind can name a `family` (`PaintKindFamily`); kinds sharing one are a single segment in `PaintInput`'s kind bar, and the built-in tiles and `texture` share `patternFamily`.
+- 70bd9b9: Adds API: the rect and image widgets take a `claims` option and a `setClaims(claims)` setter, so one that is decoration in one mode can consume presses in another without being swapped out. The default is still `[]`. A rect that claims `pointer` is a scrim: a press on it no longer reaches the widgets or the scene beneath.
+  
+  `Widget.claims` was already read at every hit-test, so a hand-written widget can declare it as a getter; its doc now says so and a test holds it.
+- f55435d: Fixes: a pixel-mode loupe whose aim held still kept showing the old picture, and `loupe.color` the old color, after an undo or a nudge changed what was under it. The lens now reads the framebuffer and the color again on the frame that lands after the content version or the camera moves. Its own redraw moves neither, so the new picture does not ask for another.
+  
+  Adds API: `createLoupe` takes `contentVersion`, the version of what the canvas paints; pass `CanvasExtensionApi.getPaintedVersion`. A lens given `views` reads it from there with no option. `LoupeHandle.refresh()` asks for a paint and re-reads on the frame that lands, for a change no version reports, such as a drag preview that has not committed. Without a version and without `refresh()`, an edit under a parked aim still shows only in vector mode.
+- 54b013c: Removes what was left of tools running their own gestures. A tool declares bindings to actions, and nothing called these any more.
+  
+  Breaking, for code that used them:
+  
+  - `ToolCtx` is gone from `@weasel-js/routing` and `@weasel-js/core`. An action reads its `InvocationCtx`.
+  - A function passed as `Tool.cursor` or `ToolDef.cursor` takes no argument: the type is `CursorSpec | (() => CursorSpec)`. A cursor that depends on the tool's state closes over that state. Before, the function was handed a context whose pointer position was always `0, 0` and whose modifiers were always up.
+  - `Tool.previewPose`, `Tool.previewBounds`, and `Tool.previewIds` are gone, and a canvas no longer asks its tools for a preview. An in-flight preview comes from the action's `OngoingHandle` (`previewIds`, `previewPose`, `previewData`), which is where the kit's actions publish theirs. `CanvasHelpers.getPreviewSources()` returns those handles alone.
+  - `Tool.initScratch` and `ToolDef.initScratch` are gone, and so is `ToolLifecycleCtx`. `onActivate` and `onDeactivate` take no argument; before, they were handed `{ scratch }`, the value `initScratch()` returned. A tool that keeps state between gestures holds it itself and closes over it, as the pen does.
+  - `Tool`, `ToolDef`, and `defineTool` lose their scratch type parameter. In `@weasel-js/core` none of them takes a type argument: `Tool<null>` becomes `Tool`, and `defineTool<null>({ … })` becomes `defineTool({ … })`. In `@weasel-js/routing` the one parameter left is the overlay type: `Tool<TOverlay>`, `ToolDef<TOverlay>`, `defineTool<TOverlay>`.
+  - `AnyToolOf<TOverlay>` is gone from `@weasel-js/routing`; `Tool<TOverlay>` is the same type.
+  - `ToolPresentation` takes no type parameter, and a function passed as `presentation.icon` takes no argument. The palette only ever called it with `undefined`.
+  
+  Adds API: `CanvasExtensionApi.clientToWorld(clientX, clientY)` converts a client point to the canvas's world the way the canvas itself does, through the `clientToWorld` prop when one was given. Fixes a `<Canvas>` given that prop disagreeing with itself: hover used the override, and the test for whether a registered layer covers a point inside a `<CanvasView>` did not.
+- Updated dependencies [dfc0dda]
+- Updated dependencies [7d16908]
+- Updated dependencies [cd8cbbd]
+- Updated dependencies [1f7548d]
+- Updated dependencies [a86d79f]
+- Updated dependencies [ad15c29]
+- Updated dependencies [90eae1c]
+- Updated dependencies [96a63de]
+- Updated dependencies [7140b5a]
+- Updated dependencies [8e00180]
+- Updated dependencies [fc267f3]
+- Updated dependencies [4244046]
+- Updated dependencies [88e3c8e]
+- Updated dependencies [9f5cdb2]
+- Updated dependencies [b9fb732]
+- Updated dependencies [67f4d79]
+- Updated dependencies [d137eaf]
+- Updated dependencies [1837952]
+- Updated dependencies [99553f7]
+- Updated dependencies [5149cce]
+- Updated dependencies [2c6246d]
+- Updated dependencies [de60e10]
+- Updated dependencies [2892438]
+- Updated dependencies [b310df0]
+- Updated dependencies [2a5d8ef]
+- Updated dependencies [3994be7]
+- Updated dependencies [e80de55]
+- Updated dependencies [b3ba3d9]
+- Updated dependencies [126116b]
+- Updated dependencies [9296fb4]
+- Updated dependencies [0e46e02]
+- Updated dependencies [dee0a3b]
+- Updated dependencies [b1f7521]
+- Updated dependencies [e77f185]
+- Updated dependencies [d675fed]
+- Updated dependencies [497ddce]
+- Updated dependencies [18547a3]
+- Updated dependencies [d635e84]
+- Updated dependencies [dc1f09c]
+- Updated dependencies [fb3aa02]
+- Updated dependencies [2ed751e]
+- Updated dependencies [b3f1e4a]
+- Updated dependencies [329f658]
+- Updated dependencies [0449330]
+- Updated dependencies [4878967]
+- Updated dependencies [b3d45d9]
+- Updated dependencies [2a141ac]
+- Updated dependencies [7063584]
+- Updated dependencies [06003a5]
+- Updated dependencies [3bda2ef]
+- Updated dependencies [da0335e]
+- Updated dependencies [fb715f4]
+- Updated dependencies [3777548]
+- Updated dependencies [de319ce]
+- Updated dependencies [3a92afc]
+- Updated dependencies [87dd1ad]
+- Updated dependencies [3bacb3e]
+- Updated dependencies [6b03b7e]
+- Updated dependencies [b260415]
+- Updated dependencies [c6bf78b]
+- Updated dependencies [66d5455]
+- Updated dependencies [a03f0ce]
+- Updated dependencies [eb7f534]
+- Updated dependencies [7548e82]
+- Updated dependencies [eb3114f]
+- Updated dependencies [0a37db1]
+- Updated dependencies [a275f78]
+- Updated dependencies [605ace8]
+- Updated dependencies [0db7e81]
+- Updated dependencies [6bb8035]
+- Updated dependencies [5d82ef9]
+- Updated dependencies [bc15034]
+- Updated dependencies [1ce19c9]
+- Updated dependencies [7d94bbb]
+- Updated dependencies [1c9bc4e]
+- Updated dependencies [525800f]
+- Updated dependencies [dcf0554]
+- Updated dependencies [5c7d50f]
+- Updated dependencies [bb3e633]
+- Updated dependencies [be611ae]
+- Updated dependencies [ca09ae2]
+- Updated dependencies [33c90ed]
+- Updated dependencies [8d0498c]
+- Updated dependencies [b3d4383]
+- Updated dependencies [a6dff38]
+- Updated dependencies [27c1c86]
+- Updated dependencies [54b013c]
+- Updated dependencies [a8ef308]
+- Updated dependencies [5996856]
+- Updated dependencies [0d1c052]
+- Updated dependencies [71512af]
+- Updated dependencies [54174b6]
+- Updated dependencies [4edad85]
+- Updated dependencies [bb53d86]
+- Updated dependencies [18920a4]
+- Updated dependencies [9b8bd89]
+- Updated dependencies [efc1205]
+- Updated dependencies [b4227bc]
+- Updated dependencies [6139898]
+- Updated dependencies [335f192]
+- Updated dependencies [f3b977a]
+- Updated dependencies [df159bc]
+- Updated dependencies [7b9de2d]
+- Updated dependencies [485bb80]
+- Updated dependencies [21b6db7]
+- Updated dependencies [970f489]
+- Updated dependencies [5ef28a0]
+- Updated dependencies [af48ee3]
+- Updated dependencies [1c8c3fc]
+- Updated dependencies [4d4d81c]
+- Updated dependencies [ea54a64]
+- Updated dependencies [8524e05]
+- Updated dependencies [8ac6236]
+- Updated dependencies [eafd001]
+- Updated dependencies [1956417]
+- Updated dependencies [955defa]
+- Updated dependencies [27b827e]
+- Updated dependencies [ee08fa5]
+- Updated dependencies [74f364f]
+- Updated dependencies [01d6e4e]
+- Updated dependencies [32b3cc9]
+- Updated dependencies [70413dd]
+- Updated dependencies [fcf44fa]
+- Updated dependencies [a91e5cd]
+- Updated dependencies [91a479a]
+- Updated dependencies [7afbc13]
+- Updated dependencies [8f38287]
+- Updated dependencies [936679d]
+- Updated dependencies [813aea2]
+- Updated dependencies [42f24c8]
+- Updated dependencies [499af9b]
+- Updated dependencies [8cc746f]
+- Updated dependencies [a21947b]
+- Updated dependencies [de07db0]
+- Updated dependencies [4d3ff3f]
+- Updated dependencies [85cb886]
+- Updated dependencies [aed6320]
+- Updated dependencies [9d11828]
+- Updated dependencies [37463b5]
+- Updated dependencies [3558fbb]
+- Updated dependencies [bffba0a]
+- Updated dependencies [5b97be1]
+- Updated dependencies [efc5cea]
+- Updated dependencies [32e243f]
+- Updated dependencies [233f856]
+- Updated dependencies [c9b9598]
+- Updated dependencies [2705878]
+- Updated dependencies [f59e769]
+- Updated dependencies [bbb538e]
+- Updated dependencies [e69e97f]
+- Updated dependencies [9c19d5e]
+- Updated dependencies [0e1f269]
+- Updated dependencies [5b1a788]
+- Updated dependencies [d3b9057]
+- Updated dependencies [4fe6756]
+- Updated dependencies [9fa373d]
+- Updated dependencies [b76089a]
+- Updated dependencies [54242f0]
+- Updated dependencies [ad10f82]
+- Updated dependencies [4042637]
+- Updated dependencies [c9aaa07]
+- Updated dependencies [0719af9]
+- Updated dependencies [6073365]
+- Updated dependencies [46fcc7e]
+- Updated dependencies [90f8ec4]
+- Updated dependencies [a297730]
+- Updated dependencies [38fd203]
+- Updated dependencies [9ad34e0]
+- Updated dependencies [1d34f51]
+- Updated dependencies [80b29f6]
+- Updated dependencies [6941e0c]
+- Updated dependencies [98ec291]
+- Updated dependencies [ef3d83c]
+- Updated dependencies [0d1c052]
+  - @weasel-js/core@1.10.0
+  - @weasel-js/theme@1.10.0
+  - @weasel-js/geom@1.10.0
+  - @weasel-js/font@1.10.0
+  - @weasel-js/paint@1.10.0
+  - @weasel-js/loupe@1.10.0
+  - @weasel-js/registry@1.10.0
+
 ## 1.9.4
 
 ### Patch Changes

@@ -1,5 +1,621 @@
 # @weasel-js/ui
 
+## 1.10.0
+
+### Patch Changes
+
+- ad11b4a: `AssetEditor`'s Actions list draws an action's shortcut as keycaps, a key to a cap, where it wrote the shortcut out as text.
+  
+  Adds `keySpecsFromLegend(legend)`: a shortcut already written out, as `formatShortcut` writes one (`⇧⌘Z`, `Ctrl+Shift+Z`, `Space`), as `KeySequence` keys.
+- a695295: Fixes: a vertical bar inside a `PrefsForm` named the popover of an alias with no name of its own with the empty string. It is named for the leaf the alias shows, as a standalone `Bar` names it, and an alias that shows nothing is named `Alias` in both.
+  
+  Adds API: `prefAliasName(alias, target?)` in `@weasel-js/prefs`, what an alias is called wherever one is drawn: its own name, else its target's, else `Alias`. `prefAliasedLeaf`, the bars, and the row a form or a `ControlPanel` draws for an alias of nothing all name one through it.
+- 122a09c: An alias row answers for the leaf it shows as well as for itself. It is shown only while its own `showIf` and its target's both hold, and enabled only while both `enableIf`s hold, and the target's side counts every group or section above the target. Before, only the alias's own conditions were read. `applyPrefConditions` and `prefScopeAt` apply the rule, so `PrefsForm`, `SelectionPanel`, `Bar`, and labkit's `ControlPanel` and `ControlMatrix` all follow it; in labkit a function passed to `.showIf` or `.enableIf` on the target or a group above it counts too.
+  
+  Adds API: `applyPrefConditions` and `prefScopeAt` take `aliasOver`, the schema an alias's `of` names a leaf of when that is not the schema walked. `prefScopeAt` now answers for a `PrefSection` schema as well as a `PrefGroup`.
+- bc7cd74: `PrefsForm` and `PrefsDialog` take `over`, a `PrefGroup` or a `PrefSection`: the schema their `alias` leaves point into, when that is not the form's own. It replaces the `leafAt` function, which never shipped. An alias row is drawn as the leaf of `over` at the alias's path, reads and writes `values` at that path, and is hidden and disabled by that leaf's conditions and those of every group above it, as well as by its own. Those conditions read `values`, and `over`'s defaults where `values` holds nothing. Before, an alias into another schema answered to its own conditions alone.
+  
+  Breaking: `filterPrefSubtree`'s fourth argument is the schema an alias's target is looked for in, where it was a function from a path to a leaf. A caller that passed `(path) => prefLeafAt(schema, path)` passes `schema`.
+  
+  Adds API: `applyPrefConditions` and `prefScopeAt` take `aliasHolds` beside `aliasOver`, the judge of that schema's conditions when its values are not the ones the walked schema's judge reads. `prefReader` reads a `PrefSection` schema as well as a `PrefGroup`.
+  
+  Fixes: an alias of an `object` leaf drew a field marked `hidden`, and a field whose `showIf` hid it in the leaf's own row, and left enabled a field an `enableIf` disabled there when the form left the leaf itself out. The alias row now shows the leaf as its own row would.
+  
+  Fixes: `Bar` drew an alias as `(alias: no pref at …)` whatever it pointed at. It now draws the control of the leaf the alias shows, over that leaf's value, in a cell and in a row of a group it opens.
+- 96a63de: add `@weasel-js/animator`: the animator moved out of core. `useAnimator`, `createTarget`, `createTargetTable`, the timeline tracks and `sampleTrack`, the skeleton math (`resolveSkeleton`, `skeletonAxes`, `jointAxes`, `solveIk`, `mirrorPose`, `IDENTITY_JOINT`), the vertex-color helpers and `ColorOverrideRegistry`, `createSlew`, and every animator type (`Animator`, `AnimationHandle`, `TimelineHandle`, `Target`, and the rest) are exported from it and no longer from `@weasel-js/core`. Breaking: import those names from `@weasel-js/animator`. It needs geom, paint, react, and registry, and nothing of the scene.
+  
+  core keeps what moves a scene with it: `tweenPose`, `springPose`, `staggerSpringPose`, `createPoseTarget`, `momentum`, the `animate*` adapter wrappers, `useAnimatedReflow`, `bindRig`, and `useRig`, and still exports the easings from geom. The animator also exports `axesOf`, which gives the axes of a number, an array of numbers, or an object of numeric fields.
+  
+  `@weasel-js/ui`, `@weasel-js/diagram`, `@weasel-js/d3`, `@weasel-js/minimap`, and `@weasel-js/labkit` take the animator as a peer beside core. labkit leaves it out of its bundle, as it does core: the animator keeps its record of each target in module scope, so an app has to hold one copy.
+- 9b7c182: `AssetEditor` lists the settings of a layout's dialog under the layout's structure tree. A setting dragged from the list lands in the layout as a pointer to it, and a group as a heading over a pointer to each setting it holds; a setting the layout already points at is drawn muted. The list is left out for a dialog and for a read-only layout. A host's `rowMark` is asked about a layout's pointer by the path of the setting it names, and about no other row of a layout.
+  
+  The asset list files a layout whose root is drawn `as: 'bar'` under Toolbars.
+  
+  Adds API on `AssetEditor`: `elsewhere`, assets another editor holds, listed after its own under the same headings, with `onElsewhere(id)` for a pick of one; `order`, asset ids in the order the list shows them under each heading, so two editors that list each other's assets show one order; `startOn`, the id of the asset shown when it mounts; and `preview(asset, over)`, which draws an asset's preview in place of the editor's own. The `ListedAsset` and `AssetHeading` types are exported, and `headingOf(asset)`, the heading the list files an asset under, for a host that lists another editor's.
+- b2a7e3b: `AssetEditor` edits a workspace: dialogs, and the layouts that point into them, in one undo history and one draft. Set `list` and its far pane lists the assets under `Dialogs` and `Panels`, to pick the one the tree, the attributes form, and the live preview show. A setting re-keyed, moved, or removed in a dialog takes its pointers with it in the same step, the Changes pane lists every asset's changes, and `onSubmit` is handed each changed asset with its literal. A read-only asset is shown locked and takes no edit. `workspaceCodec` keeps a workspace's draft. `PrefSchemaEditor` is the same editor over one schema, and no longer draws an empty pane at its far edge.
+  
+  `PrefsForm` and `PrefsDialog` take `over`, the schema their `alias` leaves point into, for a form drawn from a schema of aliases into another.
+- cb97ce2: `AssetEditor`'s asset list is set as the prefs dialog's list of pages is: each heading at the size of a page's name, its assets a step in under it and lighter, and the one shown filled in the accent. An asset marked `readOnly` carries a bolt in place of a padlock, named "Dynamic": its rows are worked out, and so not edited.
+  
+  Adds the `bolt` glyph and `BoltIcon`.
+  
+  A `Tree` with `guides` draws each branch's bracket from under the middle of the branch's mark, and stands each level a mark's width in from the one above. A row with no mark starts its name where a branch beside it starts its mark. Folded by its leading glyphs (`foldBy="leading"`), a tree leaves 6px between a glyph and its label, where it left 2px.
+- 7c9ee89: Fixes: a `Badge` on the `quatrefoil`, `octant-spline`, `octant-bspline`, or `puzzle` base kept its content inside the base's own outline, but not inside one that a negative `bloat` or an effect such as `bites` or `scallops` had pushed inward. The insets now keep the content clear of the base outline by as far as `bloat` and the effects move any part of it inward, rounded up to half a pixel, so such a badge is larger than it was. One with no `bloat` and no inward effect, or with only an outward one, is the size it was.
+- 2d6d670: Adds API: the types `BadgeProps` is made of, none of which could be imported before.
+  
+  - `BadgeOwnProps`, every prop a badge takes but `shape`, `shapeParams`, and the DOM attributes it passes through, and `BadgeDomProps`, those attributes.
+  - `BadgeShapeParams`, what `shapeParams` takes by shape, and the entry for each shape that takes any: `BadgeSquareShapeParams`, `BadgeStarburstShapeParams`, and the rest, each named `Badge<Shape>ShapeParams`.
+  - `BadgeBase`, the outlines a composed badge is built on, `BadgeBaseParams`, what `baseParams` takes by base, and each entry, named `Badge<Base>BaseParams`. `BadgePuzzleEdge` and `BadgeRibbonEnd` are the values two of them take.
+  - `BadgeEffect`, the effects a badge can layer, `BadgeEffectSpec`, one entry in `effects`, `BadgeEffectParams`, what an effect takes by type, and each entry, named `Badge<Effect>EffectParams`. `BadgeRangeMaskParams` is the `range` several of them share.
+  - `BadgeCorner`, the corner a bevel, sheen, rivet, or plaque is lit from.
+- 261c4b5: Fixes for a `Badge` with `onRemove`, and for one drawn with `base`.
+  
+  A removable badge with an action of its own (`onClick`, `href`, or `as="button"`/`as="a"`) took a click only on its label text. The whole badge now takes it, padding and the gap before the remove control included, and the remove control takes only itself. On `pill` and `plain`, which can wrap across lines, the padding to the right of the remove control is not part of the click target, and a `padding` prop does not move the target's edge on those two shapes.
+  
+  A badge drawn through the compose pipeline showed no focus indicator: one given `base`, and the built-in shapes that compose one, such as `square`, `hexagon`, `cloud`, and `ribbon`. It now draws a ring that follows the composed outline, effects and `bloat` included, as the other SVG shapes do.
+  
+  The remove control is centered on the label's capitals in every shape and size; on `pill` and `plain` it sat about a pixel low. On `plain` it is now one `em` across, 10 to 13px by size where it was 12 to 16px, so it fits inside the badge's box.
+  
+  For anyone styling the internals: the remove control no longer sets its own `font-size`, its glyph is absolutely positioned inside it, and in the shapes other than `pill` and `plain` the content wrapper of a removable badge with an action is no longer `position: relative`.
+- cff989c: Fixes: a `Badge` with `onRemove` and an action of its own (`onClick`, `href`, or `as="button"`/`as="a"`) rendered its remove `<button>` inside a root `<button>` or `<a>`, which HTML forbids and React warns about.
+  
+  Breaking for anyone reaching into the markup: the root of such a badge is now a `<span>`, not a `<button>` or `<a>`. It still takes `ref`, `className`, `style`, the `data-*` attributes, and any other DOM props, and still carries `data-focused`. The label inside it is the click target, a `role="button"` element that answers Enter and Space, or a real `<a>` for `href`, and the remove button sits beside it. `aria-label` and `tooltip` go to the label. A selector such as `button[data-status]` or a `ref` typed as `HTMLButtonElement` no longer matches a removable badge; a badge without `onRemove` renders as before.
+  
+  A removable badge with only a `tooltip` changes the same way: the label is the `role="img"` tooltip trigger, so the remove button is no longer inside an image role.
+  
+  In the shapes drawn with an SVG outline, the remove control is centered on the label instead of standing on its baseline, and a removable badge is no longer taller than a plain one of the same size.
+- b027078: Fixes: a removable `pill` or `plain` `Badge` padded through `style` kept the click target of its unpadded size. The label reaches into the badge's padding by the `--badge-pad-*` properties, which only the `padding` prop set. `padding`, `paddingTop`, `paddingRight`, `paddingBottom`, `paddingLeft`, `paddingBlock`, and a one-value `paddingInline` in `style` are now set as those properties too, and win over the `padding` prop. The badge's own padding is what it was. A two-value `paddingInline` still pads the root only.
+- 7a6189a: More fixes for `Badge`.
+  
+  On `pill` and `plain`, a removable badge with an action of its own now takes a click on its whole box except the remove control: the padding to the right of the control was left out, and a `padding` prop did not move the click target's edges. A badge wrapped across lines takes it on every fragment, with `breakStyle` `slice` or `clone`. The remove control also stays on the line of the label's last word instead of wrapping onto a line of its own, unless the line cannot hold that word and the control together; with `breakStyle="clone"` it can still wrap alone over a span of line widths as wide as the badge's right edge.
+  
+  The `padding` prop is now applied as four custom properties, `--badge-pad-top`, `--badge-pad-right`, `--badge-pad-bottom`, and `--badge-pad-left`, rather than as an inline `padding`. The padding it produces is the same. The root also carries `data-break` when `breakStyle` is set.
+  
+  A `plain` badge is legible in every variant. `variant="solid"` computed its ink for a fill that `plain` never paints, so the label was white on a light surface and near-black on a dark one. All three variants now use the status color, and the muted text color for the `neutral` status; `solid` still sets the label bold.
+  
+  The `quatrefoil`, `octant-spline`, `octant-bspline`, and `puzzle` bases keep their content inside their outline at any label length. Their outline dips inside the box by a share of the box, so with fixed insets it ran through a long label and the remove control. A badge whose content the base's declared insets already keep clear of the outline is the size it was. Otherwise each inset grows, never under what the base declares, to the smallest box that keeps the measured content clear, so a badge on one of these bases is wider with a long label than it was. `BaseModule` gains an optional `fitsContent` flag that turns this on for a base.
+- d2930aa: `BandEditor` names each band with its range: a band's `aria-label` is `Band 2, 20 to 60`, and `Band 2, 20 to 60, locked` when locked, where it was `Band 2`. Each end is spoken through its own display when its `from` is tagged, else through `display`, so a band between two fraction seams reads `1 over 64 to 1 over 12`.
+  
+  Breaking for a test that finds a band by the exact name `Band 2`.
+- 4270664: Adds behavior: `s` in a `BandEditor` splits the selected band at the middle of its drawn span, so on a log scale the two halves are equally wide. Splitting was the one edit with no key; clicking the ruler was the only way. The selection stays on the left half, and the new band's payload comes through `splitBand` as it does for a click. The key and the rule were chosen on an agent's judgment. Like `x` and `l`, a modified `s` and one typed into a field inside a band are left alone.
+- f012f43: `Bar` honors `showIf` and `enableIf`. A hidden leaf draws no cell, a hidden section no run and no dividers, and a hidden `page`, `tab`, or `panel` group no button. A disabled leaf's cell is disabled, an action's button and the fused segments of a run of flags included. A disabled group a bar opens from a button still opens, to rows that are disabled, since the popover is where their values are read. A condition reads `values` by dotted path, and a path under an entry reads inside that entry's value.
+- 409590e: A disabled cell of a `Bar` dims its name with its control: the label before a number or a text box, and the name after a switch or a checkbox. The control dimmed itself and the name stayed at full strength, so a disabled cell read as an enabled name beside a faded box.
+- 3b1dd4a: Adds API: `overflow` on `Bar` and `BarLayout`. `overflow="menu"` keeps the cells the bar's line has room for, in order from the first, and opens the rest from a button at the end of the line, one under another in the forms they have on it; `overflowLabel` names that button and its popover, `More` by default. The bar measures before its first paint and again when it or a cell changes size, and it never leaves a divider at the end of the line or the head of the menu. A bar set to `'menu'` takes all the room its host has along the line. The default, `'scroll'`, is the behavior a bar had: every cell stays on the line. Exports `BarOverflowMode`.
+- 4244046: Adds API: override hooks a theme can pin to draw its edges in relief, where the token set had no way to say it. `--wzl-bevel-raised` is the box shadow of a raised face (a primary or secondary `Button`, a `PropertyPanel`), `--wzl-bevel-pressed` that of a button held or kept down, and `--wzl-bevel-sunken` that of a field's frame, whose border and focus shadow take `--wzl-field-border` and `--wzl-field-focus-shadow`. A `Button`'s glass gives way to a flat face through `--wzl-button-surface`, `--wzl-button-pressed-surface`, `--wzl-button-primary-surface`, `--wzl-button-primary-pressed-surface`, `--wzl-button-primary-fg`, `--wzl-button-primary-bevel`, `--wzl-button-radius`, `--wzl-button-gloss`, and `--wzl-button-text-shadow`.
+  
+  Each is read with the look it replaces as its fallback, so nothing changes until one is set, and each is listed in `TOKEN_MANIFEST` with `hook: true`. A theme built with `defineTheme` pins them like any token; a container below it still overrides the pin. Which controls read a bevel was decided on an agent's judgment: the button, the field frame, and the panel, and no other control yet.
+- f148c2b: A theme's bevel hooks reach more controls. `--wzl-bevel-sunken` is the shadow of a checkbox, a radio, and a switch's track, kept under the focus ring while one holds focus. `--wzl-bevel-raised` is the shadow of a switch's thumb, and replaces the drop shadow of a menu or popover, a tooltip, and a `Dialog`. With neither hook set nothing changes, so only `win9xTheme` and `platinumTheme` draw differently. Which bevel each control takes was chosen without seeing either theme.
+- 88e3c8e: A theme's bevel hooks reach the rest of the controls. `--wzl-bevel-sunken` is the shadow of a slider's track, a native range's track, a segmented control's track, and each cell of a `flat` one. `--wzl-bevel-raised` is the shadow of a slider's thumb, the chosen segment of a segmented control, and the strip a `ToolPalette`, an `ActionBar`, a `ToolOptionsBar`, or a framed `Bar` draws; a tab takes it on every edge but the one its panel is on. `--wzl-bevel-pressed` is the shadow of a `ToolButton` or a bar's action button that stays down. A `minimal` segmented control draws none. With no hook set nothing changes, so only `win9xTheme` and `platinumTheme` draw differently. Which bevel each control takes was a judgment made from computed values and one headless screenshot of each theme. The hooks' descriptions in `@weasel-js/theme` now list every control that reads them.
+- b6edc8f: Fixes: a `Callout` following an `anchorRect` dispatched a `resize` event on `window` each time the rect changed, so every resize listener on the page ran once per pan frame. It now changes its hidden anchor's width by a sixteenth of a pixel on each move, which React Aria's own `ResizeObserver` on the anchor sees and nothing else does. Checked in headless Chromium only.
+- b3dec78: Adds API: `CharacterOptions` in `@weasel-js/ui`, the strip of character controls for a text edit in progress. It draws the options the text tool declares (`useTextTool.options`) from a `RangeStyle`, shows a control's mixed state where the range disagrees, and reports each edit as a `RunStylePatch`. `isCharacterChrome` is the matching `isEditorChrome` for `useTextEdit`: it claims the strip and any kit popover one of its controls opens, so using the strip does not end the edit.
+  
+  Adds API: `useTextEdit` and `useSceneTextEdit` return `effectiveStyle`, what a styling control shows during an edit — the node's style and paint, the range's styling over it, and the styling armed for the next character last. It is `null` outside an edit. A strip is wired with `<CharacterOptions style={edit.effectiveStyle} onPatch={edit.applyStyleToSelection} />`.
+- 3994be7: Adds: a No fill chip beside the character strip's Color field. On, it sends `{ fill: null }` through `CharacterOptions`' `onPatch`, so it unfills the selected range, or arms no fill for the next character at a caret. It is lit over a range whose fill is `null` and over an unfilled node's, which `effectiveRangeStyle` reports as no `fill` at all, and unlit over a mixed range.
+  
+  Adds API: `useTextTool.options` gains a `noFill` leaf, the one key of that group that is not a `StyledRun` field. A host drawing the group itself maps it to `fill: null`.
+  
+  Fixes: `CharacterOptions` threw on a range style whose `fill` was `null`.
+  
+  Two calls here were made on an agent's judgment and no browser has drawn the chip. Turning it off fills the range with the color the Color field shows beside it, which is that leaf's default (`#000000`) while the range is unfilled, where taking the run's fill off would do nothing over an unfilled node. And the chip is a leaf of the tool's options, drawn by the bar as the Bold and Italic toggles are, with the `paintNone` glyph.
+- 18547a3: Adds API: `cssColorLiteral(css)` in `@weasel-js/paint` reads any color string `parseColor` reads as an `srgb` `ColorLiteral`, and throws as it does on one it cannot. `colorLiteralToCss(literal)` writes a literal as a CSS color: hex where `colorLiteralToHex` has one, else `color(<space> …)`.
+  
+  Adds API: `@weasel-js/theme` resolves a paint `ColorSource` under a theme. `colorSourceCss(source, ctx?)` writes one as a CSS color and `colorSourceLiteral(source, ctx?)` resolves one to a literal for a surface with no cascade; `useColorCss()` in `@weasel-js/theme/react` is the first against the provider in force. A `ColorRef` names, in order: an entry of the palette on the context; `tone` (`TONE_REF`) with an index into the tone list, wrapping; a theme token by its name without the `--wzl-` prefix (`{ ref: 'accent' }`); a ramp by name with the index of a step (`{ ref: 'swatch', index: 3 }`); or a custom property spelled out (`{ ref: '--my-color' }`), which need not be the theme's. A ref the theme answers is written to CSS as its custom property, so it follows a mode change without a re-render; a palette entry or a function is written as the literal it resolves to in the provider's selection.
+  
+  Adds API: `<ThemeProvider palette>` takes a paint `Palette` whose names a `ColorRef` in that subtree resolves before the theme's own, and `ThemeContextValue` carries it as `palette`. These rules for what a ref names were chosen on an agent's judgment.
+  
+  Breaking: a `tone` is `number | ColorSource`, no longer `number | string`. That is `StanceProps.tone` in `@weasel-js/ui`, so every stanced surface (`Badge`, `Button`, `Callout`, `Code`, `Dialog`, `LayerList` items, `MotifFrame`, `Powerline` segments, `PropertyGroup`, `PropertyPanel`, `Subpanel`), labkit's `ControlPanel`, `ControlMatrix`, and sidebar sections, and forge's `Library.tone`. An index is unchanged. A CSS string no longer typechecks: write a color as `cssColorLiteral('#2b6cb0')`, a theme token as `{ ref: 'accent' }`, and anything only CSS can say as a custom property of your own, `{ ref: '--my-tone' }`. A tone nothing answers now draws as no tone. `@weasel-js/ui` now depends on `@weasel-js/paint`.
+  
+  Breaking: the other colors `@weasel-js/ui` takes are `ColorSource` too, each written through `useColorCss`: `Plot2D`'s `grid.color` and `axes.color`, `CurveField`'s mark `color`, the `color` of a curve `fill` (`FillSettings`, on `CurveEditor` and `createFunctionLayer`), and the Badge effects' `outline.color`, `sunbeams.color`, `metal.accent`, and `aqua.accent`. Each one's default draws as before.
+  
+  Breaking: `@weasel-js/hud` names colors the same way. A window's `tone` (`WindowOptions.tone`, `setTone`) is `number | ColorSource`, and the draw contexts (`HudDrawCtx`, `HudContentCtx`) carry `color(source)`, a source resolved to a hex, in place of `toneAt(i)`; a widget that called `ctx.toneAt(2)` calls `ctx.color({ ref: 'tone', index: 2 })`. `AttachHudOptions.tones` is a `ColorSourceContext`, so its tone list is optional and it may carry a palette.
+- d1da605: ui: `CommandPalette` and `CommandPaletteProps`. A dialog that lists every action registered with the surrounding `<ActionsProvider>`, filters by label, shows each one's shortcuts and why a disabled one is disabled, and runs the chosen one through the registry. It was the demo site's own component; the site and WeaselDraw now both import it. The host opens it: pass `open` and `onClose`.
+- 43edc97: `PrefConditionEditor` takes `exclude`, value paths its pref pickers leave out: the pref at each, and every pref beneath it. A row that already reads one keeps it. `PrefSchemaEditor` passes what the selected nodes hold themselves, so a pref can no longer be shown or enabled by its own value, nor a group or a section by a pref inside it.
+- 1f2cc09: `PrefConditionEditor` types a number in its pref's display unit. A row comparing a number pref that has a `unit` shows the value in that unit with its suffix, reads typed text in any unit the pref accepts, and writes the stored number, which is what a condition compares. The value is now drawn by the number control `PrefsForm` draws for the pref, so it is a spin button where it was a plain text box, and it stays within the pref's `min` and `max`.
+- d9620a2: `checkPrefCondition` reports an `in` of no values, which never holds, under the new code `never`. `PrefConditionEditor` says so on a row whose "is one of" has every option unchecked, and `PrefSchemaEditor` marks that node's row in the structure tree.
+- bc9f367: A test may read from the entry its field sits in. `{ from: 'item', path: 'mode' }` on a field of a list's or a map's item reads `mode` from the same entry, where a test without `from` reads the schema root. Inside a list within a list it is the nearest entry, an item's own `enableIf` may read its entry, and an empty path is the entry itself. `PrefsForm`, `SelectionPanel`, `Bar`, and the dialog a labkit `ControlPanel` row opens each hide and disable a field entry by entry.
+  
+  Adds API to `@weasel-js/prefs`:
+  
+  - `PrefTest` takes `from: 'item'`, and `PrefConditionReader` is the reader `prefConditionHolds` asks, told where each path is read from.
+  - `applyPrefConditions` and `prefScopeAt` have no entry to read, so inside an item they leave a condition that reads the entry holding. `applyPrefEntryConditions(item, path, holds)` answers those for one entry and returns the item as that entry draws it with the paths it disables. `prefJudge` takes a third argument, the `PrefEntry` to read.
+  - `checkPrefCondition` holds a path read from the entry to the item of `site.within`, and reports the new code `no-item` for one on a node that is in no list or map.
+  - `prefConditionPaths(condition, 'item')` lists the paths read from the entry, and without the argument lists only those read from the root, which is a change for a condition that has both. `mapPrefConditionPaths` tells its callback where each path is read from. `prefConditionReadsItem` says whether a condition reads the entry at all.
+  
+  Adds API to `@weasel-js/ui`: `PrefRenderContext` and `PropertyRenderContext` gain `entryAt`, which a custom renderer that draws its own entries calls for each; `PrefControl` takes `entryAt`; `entryApplier` makes one from a judge. `PrefConditionEditor` takes `entryOf`, the list or map whose entry the condition's node is drawn in, and then offers that entry's own fields first, each named as the entry's ("this Phase: mode"). `PrefSchemaEditor` offers "Enabled if" on a list's or a map's entry, with those fields to pick from, and no "Shown if" there. labkit's `conditionedLeaf` returns `entryAt` as well.
+  
+  Breaking for a caller of `prefShownReader`, whose returned reader and `read` argument are now `PrefConditionReader`s, and of `conditionedSections`, which returns `entryAt` beside what it returned.
+- a15b3f8: A `showIf` or an `enableIf` on a node of a surface's own schema may read a setting of `over`, the schema the surface is drawn over. A path no leaf of the surface's own schema holds is looked up in `over`, in `PrefsForm`, `PrefsDialog`, `Bar`, `ToolOptionsBar`, `SelectionPanel`, and labkit's `ControlPanel`: the condition compares the value as that leaf's control shows it, through its `encoding`, where before it compared the stored value. A path both schemas hold reads the surface's own leaf.
+  
+  Where the surface holds no value at such a path, it reads `over`'s leaf as it reads a leaf of its own. A `PrefsForm` and a `ControlPanel` take the leaf's default, where before the path read as unset. A `SelectionPanel` takes the default only of a leaf that is `absentIsDefault`, and a `Bar` reads `values` alone.
+  
+  Adds API in `@weasel-js/prefs`: `prefJudge`, `prefReader`, `prefShownReader`, `checkPrefCondition`, and `checkPrefConditions` each take `over` as a last argument, and `prefSchemaHolding(schema, path, over)` says which of the two answers for a path. With `over`, the checks report `no-leaf` only for a path neither schema holds, and hold a comparison to whichever leaf answers.
+  
+  `PrefConditionEditor` takes `over`: its pickers list that schema's prefs after the condition's own, each named for the schema it is in (`Settings: view.grid`), and a row that reads one is checked against it. `PrefSchemaEditor` hands a layout's conditions the dialog the layout is drawn over, so its `bad condition` badge and its condition rows know that dialog's settings. `conditionLeaves` takes `over` as a third argument and marks each such leaf `over: true`.
+  
+  labkit: `resolveConfigSchema` takes `over` as a third argument. Without it a schema whose condition reads a setting of another schema is refused, as any condition that reads no leaf is. `conditionedLeaf` takes `over` as a last argument, and `selectionJudge` in `@weasel-js/ui` as a fourth.
+- 95c01e4: A condition over a boolean or an enum leaf stored through an `encoding` now compares the value its control shows, in every surface. `{ path: 'data.style.fontStyle', is: true }` holds while the Italic toggle is on, where it used to compare `true` against the stored `'italic'` and never hold; a test with no operator held for any stored string, `'normal'` included. A field of an `object` or a `union` leaf is read against that object, as its control reads it.
+  
+  Breaking: `prefJudge` takes the schema first, `prefJudge(schema, read)`, and `read` still hands back stored values. Adds `prefShownReader(schema, read)`, the reader a judge compares through, and `prefShownValue(leaf, stored, siblings)`. `PrefsForm`, `SelectionPanel`, `Bar`, and labkit's `ControlPanel` all judge through `prefJudge`. `checkPrefCondition` now rules out a comparison against an encoded leaf's stored form: for an encoded boolean anything but `true`, `false`, or `null`, and for an encoded enum anything but one of its options or `null`. labkit's `isEntryShown` is given no resolved schema and still compares stored values.
+- fb3aa02: A titled `ControlMatrix` sets its column headers on the panel title's baseline. They were centered on the title row, which left the smaller header text about 3px above the title's line.
+  
+  `PropertyPanel` lines its actions up with its title by `--wzl-prop-panel-actions-align`, a new hook: `center` as before when unset, `baseline` for actions that are text.
+- b3f1e4a: history: `swapOp` builds an op that swaps one whole value for another and carries both as `args`, so a serialized history can rebuild the step. `@weasel-js/core` re-exports it with `SwapArgs` and `SwapOpOptions`. `PrefSchemaEditor`'s own swap is now a call to it.
+  
+  forge: the CSS Vars panel keeps an undo history of a trial's edits. Undo and Redo sit beside the filter, and Mod+Z / Shift+Mod+Z step from anywhere in the panel except the filter's text. Typing a value is one step, and so is a scale edit with every token it regenerates. The steps are kept with the trial, so they outlive a reload, held to the last 100. Saving scales into the theme forgets them. A trial's scale edits are kept with the trial now (`fg-css-vars-scales` was lab-wide), so a scale edited in one trial no longer shows in another.
+- c20b6ab: An alias that points at nothing in an `as: 'bar'` group of a `PrefsForm` draws `(alias: no pref at …)` in a cell when the bar runs across, as a `Bar` and a form's row already did. It used to draw no cell, so the wiring fault did not show.
+- 97f0282: Fixes: a `DataGrid` with `onReorder` could move a row by pointer only, and its handle was a bare cell with the press handler on the `<td>`. The handle is now a `<button>` filling that cell: it takes the drag, and Alt+ArrowUp or Alt+ArrowDown on it moves the row one place and keeps focus on it.
+  
+  Adds API: `rowLabel` on `DataGrid`, what a row is called. A handle is named `Reorder <label>`, and `Reorder row <n>` without it.
+  
+  A stylesheet that styled the handle through the cell (`td:first-child`) now reaches a cell with no padding and a button inside it.
+- b3d45d9: Fixes: in light mode the 1px edge of a `PrefsForm` panel, a `PrefsPane` panel, and a `SelectionPanel` section or object panel was the same gray as the box's sunken fill, a contrast of 1.0. Those boxes, and a `PrefsForm` subpanel's rule, take their edge from a new token.
+  
+  Adds a token: `--wzl-border-on-sunken`, the text color at 12% alpha, for the edge of a box filled with `--wzl-surface-sunken`.
+  
+  Fixes: a disabled action button in a `Bar` dimmed to 0.4 where every other disabled cell dims to 0.5. A disabled text area in a `Bar` kept a full-strength button that opened onto the disabled text area; the button is disabled and dimmed with it. The pin on a disabled `PropertyRow`'s label still pinned and unpinned the row, which labkit's `ControlPanel` showed as a working "Pin" on a disabled row; it does nothing now, leaves the tab order, and reports `aria-disabled`.
+  
+  Adds API: `BarPopover` takes `isDisabled`.
+- 6c703be: A disabled inline paint (`kind="paint"` with `control="inline"`, which is what `SelectionPanel` draws) is its editor made inert, where it was a swatch. The swatch is one line and the editor is two or more, so a row whose `enableIf` flipped changed height and moved every row under it: 27px for a solid paint, 117px for a gradient. The disabled editor is a `group` carrying the paint's name and `aria-disabled`, dimmed once, with its controls out of the focus order. A disabled paint in its default swatch form is unchanged.
+- 4daaae4: `PrefSchemaEditor` and `AssetEditor` show the Literal and the Changes as two tabs of one panel, in a shelf under the attributes and the preview that starts at 180px and drags taller or shorter from a handle on its top edge. The panel's Copy button copies the tab shown. The Settings and Actions lists move out from under the structure tree into the shelf, beside that panel.
+  
+  Breaking for a host that kept the editor's prefs: `PREF_SCHEMA_EDITOR_PREFS` drops `layout.settingsHeight` and `layout.actionsHeight` and gains `layout.shelfHeight`. The Literal and Changes are no longer regions of those names: the panel is the region `Export`, holding a tab and a tab panel for each.
+- d7ba0dd: A recent-colors store's subscriber that throws no longer stops the subscribers after it, or throws into `record` and `clear`. `createRecentColorsStore` now notifies through `createEmitter`, so the error goes to `console.error` as `weasel: a subscriber threw`. `@weasel-js/ui` now depends on `@weasel-js/registry`.
+- de319ce: Types a public signature names are exported now, so a consumer can write them down and the API reference links to them. All additions; nothing is renamed or removed.
+  
+  - core: `ViewLike`, `TargetTransform`, `WeightEnv`.
+  - diagram: `DiagramRouter`, `DiagramTextStyle`, `DiagramDerivePose`, `Forest`.
+  - font: `DynamicFace`.
+  - forge: `ArgCondition`, `ComponentHistory`, `StoryGlobals`, `StoryLayout`, `StoryViewport`, `TimelineSpan`; from `/frame`, `Channel`, `ToFrame`, `FromFrame`, `ConfigAnswers`, `FaultPhase`; from `/shell`, `StoryRegistryOptions`, `StoryChanges`, `IndexEntry`, `CssVarReport`, `TrialFrameCalls`, `Libraries`, `SchemaDescription`, `DescribedShape`, `DescribedEntry`, `SectionDescription`.
+  - guides: `SnapToGuidesInsertArgs`, `SnapToGuidesMoveArgs`, and `SnapToGuidesResizeArgs`, each from its own subpath.
+  - hud: `AttachHudOptions`, `SourceRect`, `LoupeBaseOptions`.
+  - labkit: `MarkPose`, `AnnotationStorage`, `PaintedMark`, `ControlPanelProps`, `ControlPack`, `LoupeBindings`; from `/state`, `InstrumentHooks`; from `/config`, `Branching`, `Fields`, `FieldValues`, `Variants`, `VariantValues`.
+  - paint: `InCommandUnits`, `WithPatternHandle`.
+  - quantity: `FractionOptions`.
+  - renderer: `ShaderStage`, `UniformArray`.
+  - routing: `ToolScopes`.
+  - svg: `SvgDraftPose`.
+  - text-dom: `OverlayRunBase`.
+  - theme: `DtcgDocument`; from `/engine`, `SemanticCommon`, `DtcgGroup`, `DtcgAxesExtension`, `DtcgLayer`.
+  - ui: `ButtonBase`, `ButtonRegular`, `ButtonIconOnly`, `ToggleBarCommonProps`, `ToastFn`, `Fold`, `DistributiveOmit`, `WalkCtx`, `OverlayPoint`, `DocumentCodec`, `OpenedDocument`, `SchemaRoot`, `AnyNode`, `CurveSamplePoint`.
+  
+  The names for types that had none of their own to export under (`StoryGlobals`, `TimelineSpan`, `CurveSamplePoint`, the `Diagram*` three, `ShaderStage`, `DtcgGroup`, `ToggleBarCommonProps`) were chosen by an agent.
+- 3a92afc: Breaking: the paint model's serialized shape changed in three ways, and its type names in two. Nothing reads the old shapes.
+  
+  **A fill is a record holding a paint, as a stroke is.** Every `fill` slot now takes a `Fill`, `{ paint?: Paint }`, where it took a bare paint: node data, draw commands (`CommandFill`), text styles and runs, and the affordance and overlay paint options. `fill: { color: '#abc' }` becomes `fill: { paint: { color: '#abc' } }`, beside `stroke: { paint: { color: '#000' }, width: 2 }`. `fill: null` still means no fill, and a fill with no `paint` paints nothing. `commandFill(fill, box)` resolves a node's fill for a draw command the way `commandStroke` resolves its stroke; resolving a bare paint is `commandPaint`.
+  
+  **A paint names its variant under `kind`, not `fill`.** `{ fill: 'linear-gradient', … }` becomes `{ kind: 'linear-gradient', … }`, the word the paint-kind registry already used. A solid still omits it. `asPaint` takes `{ kind: string }`.
+  
+  **Each built-in tile is its own paint kind.** `{ fill: 'pattern', pattern: { tile: 'hatch', color, lineWidth }, units }` becomes `{ kind: 'hatch', color, lineWidth, units }`, and likewise `crosshatch`, `dots`, and `chunks`. A tile a consumer rasterized itself is `{ kind: 'texture', texture: handle }`. `TilePatternSpec` is now a union keyed on `kind`, so a tile's own fields are checked instead of being optional on every tile. An SVG exported before this change carries its tiles in the old shape and loses them on import, with a warning.
+  
+  Follows from the fill record: `DEFAULT_SHAPE_FILL` is a `Fill`, `createPathLayer`'s `getFill` returns a `CommandFill`, `setFill` and `setFillOpacity` write the record, and the default node properties describe `data.fill` as an object with one `paint` field, as `data.stroke` is. A node whose `fill` is a string or a bare paint now paints no fill. `SelectionPanel` built from those default properties no longer offers "None" for a fill, since it offers none for a paint nested in a record; clearing one goes through the `setFill` action.
+  
+  A tile paint has a `color`, so `'color' in paint` no longer means solid. `isSolidPaint(paint)` answers that.
+  
+  Renames: `FillStyle` is `Paint`, and `GradientUnits` is `PaintUnits`. The paint types named as fills are named as paints: `GradientPaint`, `MeshGradientPaint`, `CommandPaint`, `PosedPaint`, and `SolidPaint`, with `isGradientPaint` and `isMeshGradientPaint`. `isPatternSpec` is gone; `isTilePaint` and `isPatternPaint` replace it.
+  
+  Adds API: `Fill`, `CommandFill`, `commandFill`, `PatternPaint`, `TilePaint`, `TexturePaint`, `TileKind`, `PatternPlacement`, `TILE_KINDS`, `isTileKind`, `isTilePaint`, `isPatternPaint`, `isSolidPaint`, `tileSpecOf`, `patternPlacementOf`, and `seedTile`. A paint kind can name a `family` (`PaintKindFamily`); kinds sharing one are a single segment in `PaintInput`'s kind bar, and the built-in tiles and `texture` share `patternFamily`.
+- 25b22ee: The rules either side of a `PropertyGroup` title show in light mode. A `MotifFrame` took its edge color from `--wzl-border` and its fill from `--wzl-surface-sunken`, which are the same gray in light mode, so the rules, and a `notch` or `stereo` frame's edge on a sunken ground, were drawn in the color behind them. The edge is now mixed from the frame's own surface, 12% of the way to the text color: light mode gains the rules, and dark mode looks as it did. A stance that names a border color still draws in it.
+- 54c36f9: A field inside a `PropertyGroup`, or any `MotifFrame` in the `rule`, `stereo`, or `tab` motif, is drawn on the plain surface. The frame's fill and a field's frame both defaulted to the sunken surface, so in light mode a text or number field in a group was the group's own color and could not be seen. That covers an `as: 'panel'` group, and a group with no `as`, in labkit's `ControlPanel`, which draws both as a `PropertyGroup`. The frame sets `--wzl-input-surface`, as a `PrefsForm` panel and a `SelectionPanel` section do.
+- 6620695: A `SelectionPanel` section drawn `as: 'bar'` marks the cell it fuses from a run of paired flags when `selected` names any flag in the run. It used to mark the cell only for the run's first flag, so a later one marked nothing. A flag a renderer draws is a cell of its own, and is marked as one.
+- 6fe8b55: Fixes: a `DragGhost` drew in the font of the themed ancestor it portals to, so a row dragged out of a `Tree`, an `ItemList`, or a `LayerList` under an element that sets its own face changed face in flight. The ghost now takes the font family of the element it is dragged `from`.
+- c6bf78b: Breaking, visually: the default theme draws a primary or secondary `Button` and the selected segment of a `ToggleBar`, `ButtonBar`, or `OptionsBar` flat. Primary and selected are a plain accent fill; secondary is the raised surface inside a 1px `--wzl-border-strong` line, and that line is a look chosen on an agent's judgment with no person having seen it.
+  
+  Adds a token: `--wzl-gloss`, 0 to 1, how much of the Aqua glass those controls wear. The default theme sets 0. A theme, or any ancestor, that sets it to 1 gets the ramp, specular gloss, rim, and drop shadow back as they were drawn before: at 1 every computed property matches the old glass but for a fully clear layer over the ramp. Values between cross-fade the two.
+- 27f415e: `GradientHandles` sizes its handles from `--wzl-handle-size-lg`, the token a `MeshHandles` corner uses, where it drew a literal 7px radius. At the default theme a gradient handle is 10px across, down from 14px. The size was chosen on an agent's judgment and has not been looked at in a browser.
+- d27b4b9: Changes behavior: unmounting `SceneGradientHandles` while a handle is held cancels the drag. It committed the paint under the pointer as an undo entry, then opened and canceled a second edit at the starting value. A drag cut short by an unmount now ends the way one cut short by `pointercancel` does. Decided on an agent's judgment; `useOngoingAction` itself still commits an edit left open at unmount, which is right for a slider left mid-edit.
+- a03f0ce: Adds tokens: `--wzl-handle-dot-size` (8px) and `--wzl-handle-dot-size-sm` (7px), the diameters of a round handle and of one that belongs to another point. `CurveEditor`'s plain anchor circle and its bezier control handles read them where each held a radius literal of the same size, and `handleSize` / `handleHalf` take the two names. The round ranks are their own tokens beside `--wzl-handle-size`, not that family restated as a diameter; that choice was made on an agent's judgment.
+- 011a241: Fixes, under `markHidden`: the rail entry of a page or section a `showIf` hides is dimmed and carries the `hidden` badge, a hidden cell of a bar carries the badge beside its control in `PrefsForm` and in a `SelectionPanel` section drawn `as: 'bar'`, and the badge wraps under a name it does not fit beside. In a `SelectionPanel` row the badge ran over the field: the name and the badge were one unbreakable word in a 64px label column.
+  
+  Adds API: `ListEditor` takes `entryDisabled`, a function from an entry's index to whether its text field takes no typing. A disabled entry can still be removed. `PrefsForm` and `SelectionPanel` pass it for a list of plain text entries, so an item `enableIf` that reads the entry (`{ from: 'item', path: '' }`) disables that entry alone, where it did nothing.
+- 6273d6c: A `list`'s or a `map`'s `item` now has its conditions applied, in `PrefsForm`, `SelectionPanel`, `Bar`, and the dialog a labkit `ControlPanel` row opens. A field of an object item hides by its `showIf` and disables by its `enableIf` in every entry, and the item's own `enableIf` disables every entry's control. An item's own `showIf` is not asked.
+  
+  Adds API: `applyPrefConditions` walks an item, and names what it disables once for every entry, with `PREF_ENTRY` (`'*'`) as the entry's step: `'phases.*'` for the item, `'phases.*.hold'` for a field of it. `prefScopeAt` answers for a path inside an entry, whatever the entry's step. `PrefControl` takes `disabledAt`, for an owner that has applied the conditions itself. labkit adds `conditionedLeaf`, and the dialog a `ControlPanel` row opens for an object, a union, a list, or a map now hides and disables that leaf's fields by their conditions, which it did not do for any of them.
+- 38866bc: A `showIf` on a list's or a map's `item` is now a bad condition: `checkPrefConditions` reports it with the new code `item-show` and says where the condition belongs, on the entry's fields or on the list. An item is drawn with each entry and was never hidden, so the condition did nothing before and was not mentioned. `enableIf` on an item is still read. A store warns of it when it opens, labkit's `resolveConfigSchema` throws on it, and `PrefSchemaEditor` marks the list's row.
+  
+  Adds API: `checkPrefCondition` takes a third argument, a `PrefConditionSite` saying where the condition's node sits: `within`, the list or map it is inside an entry of, and `itemShowIf`.
+- d1c8cae: Fixes: an `ItemList` row removed while focus was inside it, as a remove button in its `trailing` cell does, dropped focus to the page. Focus now moves to the row that took its place, else the row above. Focus that something else took in the same render stays where it was put.
+- 1ce19c9: Fixes: a tool hotkey fired while a `<select>` had focus, under the select's own type-ahead. The dispatcher now leaves a select its printable characters and its arrow, Home, End, and Page keys, and still takes Delete, Escape, and every modifier chord typed on one, so Cmd+Z works with focus resting on a select.
+  
+  Changes behavior: `BandEditor` and `Timeline` asked their own question about a key's target, which counted a `<select>` as a text field. They now ask the dispatcher's, so Delete on a select inside a band merges the band, and Delete on a select inside a `Timeline` deletes the selected key. `x` and `l` on a select in a band are still the select's. This rule for `<select>` was chosen on an agent's judgment.
+  
+  Adds API: `focusedControlOwnsKey(e)`, exported from `@weasel-js/gestures`, `@weasel-js/routing`, and `@weasel-js/core`: whether a key belongs to the control it was typed on. `isEditableTarget` and `activatesFocusedControl` now live in `@weasel-js/gestures` and are re-exported where they were.
+- b4f56fe: `ControlPanel` draws a row whose `enableIf` fails with its control disabled and its label dimmed, for a condition written as data and for one written as a function. A group's `enableIf` disables every row under it. It reaches a row's own control, a heading's control, the cells of a paired row and of a group drawn `as: 'bar'`, an action's button, the button of a row that opens a dialog, and a custom control, whose context now carries `disabled`.
+  
+  `isLeafVisible` and `isLeafEnabled` now answer for everything above a path as well as the node at it: a path under a hidden group is not visible, and one under a disabled group is not enabled. Both ask `prefScopeAt` in `@weasel-js/prefs` for the conditions the schema carries as data, and add the functions beside the tree. Behavior change for a caller that asked about a nested path on its own and expected only that node's condition.
+  
+  Adds API: `DialogRow` takes `disabled`, which disables its button and dims its label. `ControlMatrix` does not read `showIf` or `enableIf`.
+- 1c9bc4e: Every overlay takes its `z-index` from the theme's layer ladder. Adds tokens: `--wzl-z-hud` (900), `--wzl-z-toast` (1100), `--wzl-z-popover` (1200), and `--wzl-z-drag` (10000). `Dialog`, `Toast`, `Tooltip`, `Callout`, core's debug HUDs, and labkit's drag ghost read a rung where each held a literal of the same value, and core's rungs carry that value as a fallback for a page with no theme.
+  
+  Breaking: `--wzl-z-modal` is 1000, where it was 30 and below every dialog. labkit's lightbox, its one reader, rises with it. `DragGhost` in `@weasel-js/ui` moves from `--wzl-z-overlay` (20) to `--wzl-z-drag`, so a row dragged out of a list inside a `Dialog` draws over the dialog; the ghost `useDragHandle` clones reads the same rung.
+- c71a532: Fixes: in a `LayerList` with cards, the one-line rows under a card and the rows mixed in among cards were `role="row"` with no `treegrid` above them. The rows under a card are now a `treegrid` named for the card, and each run of consecutive rows among cards is a `treegrid` named for the card above the level, or by the list's own `label` at the top level. `aria-level` counts from 1 inside each. A list with no cards is one `treegrid`, as before.
+  
+  Adds API: `groupSelector` on `useReorderDragList`, a selector for children of the container that only wrap rows, so a list can group a run of rows without the drag counting the group as one row.
+- 72e250b: `ListEditor` sets an entry's remove button beside the entry's first row. It was centered on the whole entry, so beside a list of objects it sat halfway down each one, level with none of its rows.
+- 7f8ab55: Adds API: `PrefsForm`, `PrefsDialog`, and `SelectionPanel` take `markHidden`, which draws each node whose `showIf` fails where they otherwise leave it out. The node is dimmed and carries a `hidden` badge on its row or its heading, and it takes a press, a selection, and a drag as any other row does. A group, a page, or a headed section hidden whole carries one mark for everything in it. A node an `enableIf` disables is drawn disabled either way. It is for a surface that authors the schema it draws, and `PrefSchemaEditor`'s live preview now passes it, so a pref whose `showIf` fails at the schema's defaults can be picked and dragged in the preview again.
+  
+  Behind it, `applyPrefConditions` takes `{ keepHidden: true }`, which drops nothing and names the path of everything hidden in a new `hidden` set, as `disabled` names what is disabled. Breaking: its third argument is now that options object, so `keepEmpty` moves from a positional boolean to `{ keepEmpty: true }`. A renderer's context gains `hidden` and `hiddenAt` beside `disabled` and `disabledAt`.
+- 5464500: `PrefSchemaEditor`'s attributes pane edits an object attribute of a custom kind across several selected leaves that disagree on it. Each field shows its value where the leaves agree and as mixed where they do not, and an edit to one field is written into every leaf's own object, leaving its other fields as they were. Before, the attribute was listed as `mixed` with no control. A list, a map, or a union attribute that disagrees is still listed.
+- be611ae: Fixes: "is this tool allowed in this mode" had two answers. `ToolPalette` and a tool's activation key allowed a tool when any one of its capability tags was allowed and refused a tool with no tags, while the dispatcher required every tag and let an untagged tool through. A tool tagged `['navigation', 'creates-shapes']` in a mode without `creates-shapes` showed enabled, activated, and then had every binding dropped; an untagged tool was grayed out yet live once active.
+  
+  Changes behavior, on the dispatcher's rule: a tool or contribution is allowed when the mode allows every one of its tags, and one with no tags is allowed in every mode. So `eligibleForMode`, `eligibleTool`, and `eligibleContribution` now return `true` for an empty tag list and `false` for a list with one disallowed tag, and `ToolPalette` and the activation keys follow. Which rule wins was chosen on an agent's judgment: a tag names something the tool does, so one refused tag refuses the tool.
+  
+  Adds API: `capabilitiesAllowed(allowed, tags)` in `@weasel-js/modes`, the one predicate the palette, the activation keys, and the dispatcher all ask.
+- 2d47e7c: A leaf's `icon` is looked up in the kit's icon set in one place, where a form's field, a bar's label, an action button, an object leaf's field, and `PaintInput` each did it themselves. A name the set lacks still draws nothing, and that now includes a name `Object.prototype` holds, such as `toString`, which the old lookups took for a glyph.
+- 95980c4: Fixes: `SelectionPanel` could not clear a fill or a stroke's paint. A `paint` leaf that is a field of an object leaf (`data.fill.paint`, `data.stroke.paint` in the default node properties) now offers "None", which removes the `paint` field from its parent and keeps the parent's other fields. An object the node holds with no `paint` reads as None, where it used to show the leaf's default as unset; a node holding no object at all still shows the default.
+- a6dff38: Adds API, and breaks one read: a number leaf's `unit` may be data. `PrefLinearUnit` is `{ suffix?, scale, offset?, accepts?, precision? }`, where `stored = display * scale + offset`, the direction a `UnitEntry` runs toward its base, and `{ scale: 1 }` changes nothing. `PrefFunctionUnit` is the `toDisplay`/`fromDisplay` form, kept for a conversion that is not linear, and `PrefNumberUnit` is either. `resolvePrefUnit(unit)` gives `toDisplay`, `fromDisplay`, and `format` for both, and `isPrefLinearUnit` tells them apart.
+  
+  Breaking: `prefUnit` now returns the data form, so `prefUnit(...).toDisplay` and `rotationDegreesUnit.toDisplay` are gone, and reading `leaf.unit.toDisplay` no longer typechecks. Call `resolvePrefUnit(leaf.unit).toDisplay` instead. `prefDisplayBounds`, `prefFieldProps`, and with them `PrefsForm`, `SelectionPanel`, and labkit's `ControlPanel` already do.
+  
+  A data unit prints in `printSchema`'s literal in full, where a unit of functions prints as `KEEP_FROM_SOURCE`, and a draft keeps one set on a leaf the source schema does not hold. `PrefSchemaEditor` offers it on a number, and on a list's number entry, as a Unit attribute: suffix, scale, offset, places, and the suffixes it also takes. A unit of functions is still listed there as code.
+- 54b013c: Removes what was left of tools running their own gestures. A tool declares bindings to actions, and nothing called these any more.
+  
+  Breaking, for code that used them:
+  
+  - `ToolCtx` is gone from `@weasel-js/routing` and `@weasel-js/core`. An action reads its `InvocationCtx`.
+  - A function passed as `Tool.cursor` or `ToolDef.cursor` takes no argument: the type is `CursorSpec | (() => CursorSpec)`. A cursor that depends on the tool's state closes over that state. Before, the function was handed a context whose pointer position was always `0, 0` and whose modifiers were always up.
+  - `Tool.previewPose`, `Tool.previewBounds`, and `Tool.previewIds` are gone, and a canvas no longer asks its tools for a preview. An in-flight preview comes from the action's `OngoingHandle` (`previewIds`, `previewPose`, `previewData`), which is where the kit's actions publish theirs. `CanvasHelpers.getPreviewSources()` returns those handles alone.
+  - `Tool.initScratch` and `ToolDef.initScratch` are gone, and so is `ToolLifecycleCtx`. `onActivate` and `onDeactivate` take no argument; before, they were handed `{ scratch }`, the value `initScratch()` returned. A tool that keeps state between gestures holds it itself and closes over it, as the pen does.
+  - `Tool`, `ToolDef`, and `defineTool` lose their scratch type parameter. In `@weasel-js/core` none of them takes a type argument: `Tool<null>` becomes `Tool`, and `defineTool<null>({ … })` becomes `defineTool({ … })`. In `@weasel-js/routing` the one parameter left is the overlay type: `Tool<TOverlay>`, `ToolDef<TOverlay>`, `defineTool<TOverlay>`.
+  - `AnyToolOf<TOverlay>` is gone from `@weasel-js/routing`; `Tool<TOverlay>` is the same type.
+  - `ToolPresentation` takes no type parameter, and a function passed as `presentation.icon` takes no argument. The palette only ever called it with `undefined`.
+  
+  Adds API: `CanvasExtensionApi.clientToWorld(clientX, clientY)` converts a client point to the canvas's world the way the canvas itself does, through the `clientToWorld` prop when one was given. Fixes a `<Canvas>` given that prop disagreeing with itself: hover used the override, and the test for whether a registered layer covers a point inside a `<CanvasView>` did not.
+- a8ef308: The three drag ghosts mount in one place. `fixedSeat(from)` in `@weasel-js/gestures` answers where a `position: fixed` element following the pointer mounts (the nearest themed or `data-wzl-portal-host` ancestor of `from`, else the body) and the client point its corner lands on when that host contains its fixed descendants. `nearestPortalHost` moved there from ui, which still exports it.
+  
+  - core: the default `useDragHandle` ghost mounts in the source's host, where it mounted on the body, so it resolves the source's theme and draws in its font.
+  - ui: `<DragGhost>`'s `at.width` is optional; with none the ghost is as wide as what it holds.
+  - labkit: a palette drag's ghost is ui's `<DragGhost>`, so it takes the lab's theme. **Breaking:** `DragState` and `DragGhostProps` gain a required `from`, the element the drag began on, and the ghost loses its own border.
+- afe503b: `ToggleBar` draws from the stylesheet `ButtonBar` and `OptionsBar` share, where it kept its own copy of the segmented-control rules. Nothing it draws moves: its computed styles and boxes are the same in every variant, size, and mode. The three stay three components, since a segment is a radio, a toggle, or a momentary button; that call was made on an agent's judgment.
+  
+  Adds API: `ButtonBar` and `OptionsBar` take `variant="flat"`, the outlined cells `ToggleBar` already drew.
+- e678d75: The open tab of a run of `as: 'tab'` groups in a `PrefsForm` no longer wears the selection mark with nothing selected. The tab carries `data-pref-path`, and react-aria puts `data-selected` on whichever tab is open, which is what the mark was keyed on. A selected tab the reader has left is now marked through `data-pref-picked`, and a selected fragment's rows are marked by the shared `selection.css` rule, which gives them the row mark's rounded corners.
+- 94f353d: `SelectionPanel`, `Bar`, `ToolOptionsBar`, and labkit's `ControlPanel` take `over`, a `PrefGroup` or a `PrefSection`, as `PrefsForm` does: the schema their `alias` leaves point into, when that is not their own. An alias is drawn as the leaf of `over` at its path, and is hidden and disabled by that leaf's conditions and those of every group above it, as well as by its own. Its value is read and written at that path in what the surface already edits: `values` and `onChange` in a `Bar`, `config` and `setConfig` in a `ControlPanel`, and every selected node in a `SelectionPanel`, where a `PrefGroup`'s keys are steps of the node path and a `PrefSection`'s leaf keys are whole node paths. `ToolOptionsBar` hands `over` to its `Bar`, and `PrefSchemaEditor`'s preview of a properties layout hands its panel the schema the layout points into.
+  
+  Each surface reads `over`'s conditions as it reads its own schema's. A `ControlPanel` reads `config` and `over`'s defaults where `config` holds nothing, since a lab's config holds no value for another schema's leaves. A `Bar` reads `values` alone and a `SelectionPanel` reads the nodes, with a leaf's default only where it is `absentIsDefault`.
+  
+  Adds API: `prefAliasTargets(over, judge, options)` in `@weasel-js/prefs`, the schema a surface's aliases point into as that schema's conditions leave it. `shown(alias)` gives the leaf an alias is drawn as, under the alias's own name and description where it gives them, with the path its value lives at; `leafAt`, `disabledAt`, `hiddenAt`, and `entryAt` answer for what is inside that leaf. Every surface resolves an alias through it. labkit's `isLeafVisible` and `isLeafEnabled` take `over` as a last argument, and `ControlRow` takes it as a prop.
+  
+  Breaking: `effectiveSections`'s `shownOf` hands back `{ schema, targets? }`, a `PanelShown`, where it handed back the narrowed schema or null: `targets` is what that kind's aliases are drawn from. `conditionedSections` takes `over` as a sixth argument and hands back `targets` when given it, and `selectionJudge` judges a `PrefGroup` as well as a `PrefSection`.
+- 56da358: `@weasel-js/prefs` gains `pairRuns`, which turns a run of neighboring items into the rows they draw: each leaf a `pair` names joins the row of the leaf naming it, and a row left with one leaf is no pair. This adds API. `SelectionPanel`, a `Bar`, an object leaf's fields, and labkit's `ControlPanel` all walk it now, where each merged pairs itself and they disagreed about a pair with one leaf left.
+  
+  That changes what a lone paired leaf draws. It is a row of its own under its own name, where a `SelectionPanel` row and labkit's `ControlPanel` used to label it with the pair's label, and a lone `toggle` boolean is a switch, where an object leaf or a multi-kind selection that kept half a pair used to draw a flag bar of one segment. `effectiveSections` pairs again after it intersects the kinds selected.
+- cb7fa49: A field inside an `as: 'panel'` box is drawn on the plain surface, in `SelectionPanel` (a panel section, and a panel inside an object leaf) and in `PrefsForm`'s rail layout. The box and a field's frame both defaulted to the sunken surface, so in light mode, where a field has no border, a text or number field in a panel was the panel's own color and could not be seen.
+- 3aa3745: When an edit is written is said in one table. `@weasel-js/ui` gains `PARAMS_SETTLES`, `withCommitPolicy`, and the `ParamsSurface` type, which adds API: for a form, a panel, and a lab, whether a typed number, a slider, text, and a color write only the value an edit settles on. `PrefsForm`, `SelectionPanel`, `Bar`, and labkit's `ControlPanel` apply it, where the first two each withheld `onInput` by hand. No surface writes at a different time than it did.
+- dd58f1a: Adds API: `prefFieldProps(leaf, state, surface)` in `@weasel-js/ui` takes the surface a leaf is drawn on (`'form'`, `'panel'`, or `'lab'`) and returns the control that surface draws for what the leaf asked for, writing when that surface writes. `PARAMS_CONTROLS` is the table behind it: what a row draws for a boolean naming no control, whether a boolean's `toggle` is drawn, whether a slider with an end of its range missing is still a slider, and whether an enum's `radio` and `menu` draw as asked. `withSurfaceControl(field, surface)` applies it to a field already made, and `withRowControl(field, surface)` fills in a row's control for a boolean naming none.
+  
+  `PrefsForm`, `SelectionPanel`, and labkit's `ControlPanel` each decided these in their own code and now read the table. Nothing draws differently.
+- bd93216: Fixes: in `PrefSchemaEditor`, the ghost of a dragged pointer of a layout is drawn as the setting it names in the dialog, where it read `(alias: no pref at …)`.
+- d5270d7: Adds API: `PrefConditionEditor`, a control that edits one `PrefCondition` against a schema, for a `showIf` or an `enableIf`. Each test is a row: the pref it reads, picked from the schema's leaves by name with the path beside it; a comparison; and a value. A boolean offers "is on" and "is off"; an enum offers "is", "is not", and "is one of", over that leaf's own options; a number offers "is above", "is at least", "is below", "is at most", "is", and "is not", with a number field; any other kind offers "is set". Two rows or more combine under "All of" or "Any of". A `not`, a combinator nested inside the top one, and a test with several operators are each drawn as a row of text, which can be removed and is otherwise handed back unchanged. What `checkPrefCondition` finds wrong with a row is said under that row. With its last row removed the condition is `undefined`, never `{ all: [] }`.
+- a071085: Adds API: `prefTabRuns(items, isTab)` in `@weasel-js/prefs` walks a group's children in order with each run of neighboring `tab` children folded into one step, the strip they share. `PrefsForm`'s panes, an object leaf's rows, `SelectionPanel`'s sections, and labkit's `ControlPanel` each collected that run in a loop of their own and now walk this one. Nothing draws differently.
+- 8390ab1: `PrefsForm` with `rowsAcross={2}`: an object or list leaf, which spans both columns, sets its label in the first column and its control in the second, so its rows start where the second column's rows do and end where they end. Before, the label took about three fifths of the pane and the control was squeezed into the rest, under neither column and narrow enough to clip a number field's digits. The label sits on the line of the control's first row.
+- 452af5e: `PrefsForm` in the `list` layout: the root's own rows take the inset of the subpanels under them, so a loose row's label and control share their edges with the rows inside a group. Before, a loose row ran the form's full width and its control ended 8px past the ones below it. A list with no groups is unchanged. `PrefSchemaEditor`'s attributes pane is where it shows: Name, Key, and Kind line up with the kind's panel under them.
+- 7ede999: Adds API: a `PrefRenderer` may set `wide`, beside `group`, to ask `PrefsForm` for the row's whole width with its label above the control, in a row of the form and in a field of an object leaf. It is the row a `map` or a `union` already gets, and the control is stretched to it. `PrefSchemaEditor` asks for it for "Shown if" and "Enabled if", so a test's pref, comparison, and value share a line in a pane 520px wide, where in the control column they wrapped.
+- d7af897: `PrefsForm` honors `showIf` and `enableIf`, on a leaf, a group, and a field or a section of an `object` leaf. A node whose `showIf` fails draws nothing and takes no space, and a hidden group takes its rail entry, its tab, its heading, and its sub-page with it; a group left with nothing to draw goes too. A node whose `enableIf` fails draws with its control disabled and its label dimmed, and a group's disables everything under it: every built-in kind, a list's entries and its add and remove buttons, a map's keys, a union's select, and an action's button, in a row and in a bar. A condition reads the form's `values` by path from the schema root, and a leaf with nothing stored reads as its default.
+  
+  Adds API: `PrefRenderContext` gains `disabled`, so a custom renderer is told, and `disabledAt(path)` for the fields under a leaf. `PropertyRow` takes `disabled`, which marks the row `data-disabled` and dims its label; `PropertyField` sets it from its own `disabled`. `ListEditor`, `MapEditor`, `UnionPicker`, and `PrefControl` take `disabled`. `prefReader(schema, values)` in `@weasel-js/prefs` is the reader the form uses.
+  
+  An alias row is shown only while its own `showIf` and that of the leaf it shows both hold, and enabled only while both `enableIf`s hold, with every group above that leaf counted.
+- 003fb7c: `PrefsForm`'s `mixed` names a field inside an `object` or a `union` leaf by its own path (`appearance.stroke.width`), and that field draws in its mixed state where it used to draw its default. **Breaking for an owner that passes `mixed`:** while an object leaf's path, or any path under it, is in `mixed`, editing one of its fields calls `onChange` at the field's path (`onChange('appearance.stroke.width', 3)`) and no longer with the whole object, which an owner writing to every value used to drop each one's other fields. An object with nothing mixed under it still commits whole.
+  
+  A `list` or a `map` leaf at a mixed path draws the word `Mixed` in place of its editor, where it read as `None` and `Add` wrote a one-entry list over every value. A `union` leaf at a mixed path draws its choice as mixed and no variant's fields, where it read "Choose option…". `PrefMixed` is that word, exported, and `SelectionPanel` draws the same one.
+  
+  `PrefRenderContext` gains `mixedAt` and `setValueAt`, for a renderer that draws fields of its own.
+- 517f414: `PrefsForm` no longer rebuilds the tree it draws each time it is handed a new `values` object. Since conditions were applied, an owner passing `values` inline got a new tree on every render, and a drag over the form then drew no drop for one render and rendered again on every pointer move.
+- 0a70de6: Adds API: `disabled` on `PropertyControl` and `PropertyField`, for every kind. Each element of the control is disabled by its own `disabled` attribute or React Aria's `isDisabled`, and keeps showing its value: a checkbox, a switch, each segment of a toggle, a typed number and its steppers, a slider's track and its readout, a text field, a textarea, a select, a menu, each radio, a color swatch and its opacity track, a paint swatch, and the two font pickers. A disabled `control: 'inline'` paint draws as the swatch, since every part of the inline editor is a control. `UnitField`, `ColorField`, and `PaintField` take `disabled`, and `FontFamilySelect` and `FontWeightSelect` take `isDisabled`, as `Select` does. `prefFieldProps` takes `disabled` in its state and sets it on the control it returns, so a surface drawing a schema passes one flag.
+- 0601e7b: Adds API: `QuantityText`, which draws a quantity (`value`), a range of two (`range`), or a vector of several (`vector`, with `labels`) as the HTML form `@weasel-js/quantity` writes: a `<data value>` for each value, a `data-part` span for each named run, and a `data-composite` span around a range or a vector. `display` is the fallback for a value that carries none, and `separator` replaces the dash of a range or the comma of a vector. Its stylesheet sets the digits equal-width and dims a unit, a percent sign, and a label; that look was a judgment call. Where the spoken form differs from the text, as `2 feet` does from `2ft`, a screen reader gets the spoken form and the text is hidden from it.
+- f91ae11: With `twisty="folded"`, an open container's hidden twisty keeps its room, so the title no longer moves when the twisty takes keyboard focus and shows. The title of an open `PropertyPanel` or `Subpanel` moved 32px right, and one in a `tab` or `plaque` `PropertyGroup` 30px. An open container's title now sits where a folded one's does, beside the twisty's place, rather than at the leading edge.
+- a97cc84: A `PrefsForm` rail page draws its group's leaves and groups in schema order, as the columns and list layouts do. It used to draw every leaf first and the groups after, so `{ light: tab, note: leaf, dark: tab }` drew the row and then one `Light | Dark` strip. This changes what an existing rail form looks like wherever a leaf follows a group: the row now sits below that group, and two tabs with a row between them are two strips. Made on an agent's judgment; no one ruled on it.
+- b0fa3d3: Breaking: `PrefsForm` and `PrefsDialog` no longer take `subPages`. In the rail layout each nested group now decides for itself, from its own `as`. Unset or `'section'`, it is a section of the page that holds it. `as: 'page'` gives it a rail entry that opens a page of its own, holding its leaves, tabs, panels, and sections; a page with none of those opens the first page nested in it. A caller that passed `subPages` writes `as: 'page'` on each nested group that should keep a page of its own. Without it, those groups are sections of their parent's page.
+  
+  A page has a rail entry at any depth. A section has one only when it sits directly on a page, and choosing it scrolls that page to it; a section inside a section is drawn on the page under its parent with no entry, so a rail still stops one level under each page. A group that deserves an entry further down says `as: 'page'`. A page inside a section with no entry nests under the nearest entry above it.
+  
+  The root's own page is a page like any other. A top-level group that is `as: 'section'` sits on it beside the root's loose leaves and has a rail entry nested under the root's, which scrolls that page to it; before, it had none. The root has an entry whenever its page holds anything, a section alone included. A group that is `as: 'page'` inside a top-level section has an entry and a page of its own, where the root's page drew it as a section.
+  
+  One rail can hold both kinds, and marks both. The open page's entry is `aria-current="page"` and the entry of the section in view is `aria-current="location"`. `data-rail-mark="current"` is the strong mark, on the section in view, or on the open page while none of its sections is; under a current section the open page carries `data-rail-mark="open"`, a weaker one. `foldable` is unchanged.
+  
+  `PrefRailItem` has `page` in place of `section`: the path of the page the entry's group is drawn on, which is the entry's own path when choosing it opens a page. `prefRailItems` takes the root alone, and `depth` counts the entries above an entry, not the groups.
+  
+  A row or a section scrolled to inside a section, as a form does for `selected`, stops below that section's stuck heading; before, it stopped under it.
+  
+  `PrefSchemaEditor`'s live preview draws a nested group the way a form given the schema would, and opens a selected group's page when `as: 'page'` gives it one.
+- c18d8cf: A `PrefsForm` rail lists what an `as: 'fragment'` group holds as its parent's. A page inside a fragment gets a rail entry and a page of its own, where it used to be drawn as a section where the fragment sat, and a section inside a fragment that sits on a page gets the entry that scrolls to it. A group with no `as` inside a top-level fragment is still a section, since its depth is what decides. `prefRailItems` and `prefRailAbove` return these entries, which changes what they return for a schema with a page or section inside a fragment. Made on an agent's judgment: a fragment is read as a pure macro.
+- cba4e4a: Fixes: on a `TokenPanel` scale, dragging a step's thumb away and back in one drag read one unit off near where it started (17 or 15 for a step at 16) and stopped updating exactly there. The readout is now the amount under the pointer all the way through.
+  
+  Fixes: `Slider` kept calling the `onInput` and `onChange` it was given when a drag began, so a handler that closed over state saw the state from pointerdown for the whole drag. A drag now calls the handlers of the latest render.
+  
+  Adds API: `Slider`'s `keyStep(thumb, steps, index)` prop takes over the arrow and Page keys, for a track whose values are not what the user counts in. It returns where a thumb lands `steps` key presses away (1 for an arrow, 10 with shift or for a Page key, negative toward `min`); the result is still held to the track, the thumb's bounds, and `constraint`. Home and End are unchanged.
+  
+  Changes behavior: on a `TokenPanel` scale, shift with an arrow key, and Page Up and Page Down, now move a step by ten of the scale's smallest unit. They used to move it one hundredth of an octave along the track, which for a small step rounds to one unit, the same as a bare arrow key.
+- 7c1916b: `PrefSchemaEditor` edits `showIf` and `enableIf`. A pref, a group, and a section each get a "Shown if" and an "Enabled if" row in the attributes pane, drawn with `PrefConditionEditor` over the schema being edited; a label and a separator get "Shown if" alone. A leaf made from a type sets both where it is used, and a kind change carries them over. Each edit is a step Undo takes back, and the condition lands in the draft and in the exported literal. With several nodes selected the row sets one condition on all of them, and conditions that differ are listed as mixed with no control. A node whose condition reads a path no leaf holds a value at, or compares a leaf against a value its kind or options rule out (after the leaf it read was removed or changed kind, say) keeps the condition, and its row in the structure tree carries a "bad condition" mark whose tooltip says what is wrong; the same words show under the condition's row in the attributes pane.
+- 5f31735: `PrefSchemaEditor` keeps a condition reading the value it read. Renaming a key or moving a leaf or a group used to leave every `showIf` and `enableIf` that read it naming the old path; each one, on a leaf, a group, a section, or a list's entry, now follows the move, as an alias's `of` and a pair's `with` already did.
+- 33acbca: Fixes: `PrefSchemaEditor` edited a number's `default`, its `autoValue`, and what a new list or map entry starts as in the stored unit. A number with a `unit` now shows and takes all three in that unit, with its suffix, and stores them converted, as the leaf's own control does.
+- 4afd125: `PrefSchemaEditor`: a palette tool, an action, or an unplaced node let go over the structure tree lands on the row under the pointer. It landed on the row the tree had last marked, which is drawn a render after the pointer moves, so a release that came first went to the row before, or nowhere when no row was marked yet.
+- 76935ca: `PrefSchemaEditor`'s attributes pane no longer lists a read-only `default` for a pref that holds no value: a label, a separator, an action, or an alias. It read `Default: undefined`.
+- bf79e00: `PrefSchemaEditor`'s attributes pane starts level with the structure and preview panes. The notice row above it stays mounted while it has nothing to say, and the column's gap under that empty row held the pane 4px lower than its neighbors; the space now belongs to a notice that is showing.
+- a8a49df: `PrefSchemaEditor`, over a node property schema, follows a renamed or moved field of an `object` pref by its whole path. It took the field's own key for the path, so renaming `stroke`'s `width` left a condition on `stroke.width` behind and rewrote one that read a pref keyed `width`.
+- 1cc3786: `PrefSchemaEditor` no longer lets two prefs share one value path. Where sections nest, under a node property schema or inside an `object` pref, a pref's key is checked against every pref in whichever section, so Add pref, a key edit, and a drop from the palette refuse or number a key another section holds. Under a node property schema a copy of a pref that holds a value is now an alias of it, and a copied section holds an alias of each such pref inside it; a copy beside its original is an alias too, where it used to take a numbered key that names no property. A schema that arrives holding one value path twice has both rows marked `key taken` in the structure tree, and a value typed in the preview becomes the default of both.
+- b919648: `PrefSchemaEditor`'s Unplaced and Actions lists are padded by 4px, so the outline a drag draws inside the Unplaced list's edge no longer covers the first letter of its heading.
+- e540165: `PrefSchemaEditor` follows and checks the conditions inside a union's variants. A `showIf` or `enableIf` on a variant, or on a field inside one, now follows a pref that is renamed or moved, and a bad one marks the union's row in the structure tree. The fields inside a list's or a map's entry are checked the same way, where only the entry's own condition was.
+- addb115: `useScrollSpy` holds the section it was sent to until the container stops scrolling. It gave up 700 ms after the scroll began, so a smooth scroll that ran longer, on a slow machine or over a long pane, let a rail mark the sections it was passing. The 700 ms now counts from the last `scroll` event, and `scrollend` still ends the hold at once where the browser sends it.
+- 748384f: `SelectionPanel` leaves the gap under a row it draws across the section, a `label`, a `separator`, or a `block` leaf, that it leaves under every other row. There was none, so the row under it started flush against it, and in `PrefSchemaEditor`'s preview a selected label's outline ran into the label of the next row.
+- 629eafa: A `control: 'checkbox'` leaf in a `SelectionPanel` draws as a box whichever order the stylesheets load in. The panel's rule sharing a row among its controls tied on specificity with the checkbox's own `flex: none`, so where the panel's sheet came last the checkbox was stretched across the row, 210px wide in a 280px panel.
+- a27de11: `SelectionPanel` honors `showIf` and `enableIf`, on a leaf, a section, and a field of an `object` leaf. A condition reads the selected node at the paths the schema's leaves are keyed by (`data.locked`, `data.stroke.width`). A hidden row draws nothing, and a hidden section takes its heading or its tab with it. A disabled row draws its controls disabled and its label dimmed, down through object fields, a run of paired flags, lists, maps, unions, and actions, in a row and in a section drawn as a bar.
+  
+  With several nodes selected, a row is shown if its `showIf` holds for any selected node, and enabled only if its `enableIf` holds for all of them.
+  
+  Adds API: `PropertyRenderContext` gains `disabled`, so a custom renderer is told, and `disabledAt(path)`. `effectiveSections` takes a fourth argument that narrows each kind's schema before it is read. `conditionedSections(kinds, entries, nodes)` returns the sections with the conditions applied and the set of disabled paths, and `selectionJudge(schema, nodes)` is the rule above as a `PrefConditionJudge`.
+- 9e5dfd3: `SelectionPanel`'s `selected` and `onSelect` reach a paired row and a section. A row a `pair` draws for several leaves is marked when any of them is in `selected`, carries its first leaf's path, and reports that leaf on a press, inside an object leaf as well. A top-level section drawn under a heading, as a tab, or as a panel is named in `selected` by its own key, in the same list as leaf paths: it is marked, selecting it opens its tab, and a press on its heading, tab, or panel title reports the key. A nested section's key marks nothing.
+  
+  `PrefSchemaEditor`'s section preview selects both with its structure tree. Under a section root it now refuses a section key that a leaf holds and a leaf key that a section holds, numbers a moved or copied node that would take one, and badges both rows of a loaded schema that already has such a pair as `key taken`. This is a change for a schema that named a section and a leaf alike: the editor flags it, and renaming either clears the badge.
+- 1289cde: `SelectionPanel` takes `selected` and `onSelect`, the props `PrefsForm` has. This adds API. `selected` is the paths of the rows to mark: a leaf's key in the schema (`data.fill`), or a field of an object leaf under its leaf's (`data.stroke.width`). When the last one changes the panel scrolls it into view and opens the tab that holds it. `onSelect(path, how)` reports a press or a focus into a row, with `how.toggle` true when Cmd or Ctrl was held. A row several leaves share through `pair`, and a section's heading, tab, or panel, are not marked and report nothing.
+  
+  `PrefSchemaEditor` uses them for a section schema: its tree and its properties-panel preview now select each other, as they already did for a group schema.
+  
+  The rule that draws the mark moved out of `PrefsForm`'s stylesheet into one both components load.
+- 5b97be1: `Dialog`, `Toast`, `Tooltip`, `Callout`, the menu and picker popovers, and labkit's drag ghost cast their shadow in `--wzl-shadow`, where each held its own black at 0.18 to 0.45. Visible: in dark mode those shadows are now the token's 0.6, and in light mode its 0.18. No person has looked at the result.
+  
+  Adds a token: `--wzl-scrim`, what a modal dims the page behind it with. It is black at 40%, the literal `Dialog` held, so a dialog's backdrop is unchanged.
+- 33f4eb3: A press on a row with Shift held reports a range. `PrefSelectHow` gains `range`, which adds API: the rows the form or panel draws from the first selected path to the one pressed, in that order, with the pressed one last. `PrefsForm` and `SelectionPanel` both report it through `onSelect`, and it is absent when Cmd, Ctrl, or Alt is held too, when nothing is selected, or when the first selected path is not drawn, as on another rail page; the press is then a plain pick.
+  
+  `PrefSchemaEditor`'s live preview takes that range as its selection, where Shift used to do nothing there. The range runs over what the preview draws, so it never crosses a page, and the first selected node stays the end the next range runs from. Made on an agent's judgment.
+- 0d675cf: Adds API: a `Slider` thumb's `value` may be a tagged quantity (`Thumb<Tagged>`), as a `BandEditor` band's `from` may. The thumb is placed by its amount, its readout and `aria-valuetext` go through its own display where it carries one, over the slider's `display`, and `onInput`, `onChange`, `keyStep`, and `renderReadout` get it back with its unit and display around the new number. A bare number stays bare, and the two may sit on one track. A `bounds` function still reads bare amounts.
+  
+  `Thumb` takes the value's type as a parameter that defaults to `number`, so existing code reads as before.
+- 27e786b: A sidebar narrower than 200px stacks its paired rows. At 140px, the narrowest a drag makes a `Split`'s sidebar, two label-beside-value rows shared one line and a value ran out of its cell and under the next row's label; forge's Globals section showed it.
+  
+  Adds API: `--wzl-prop-columns`, the track list a `PropertyList`, a `PropertyGroup` body and a `Subpanel` lay their rows on. It defaults to `1fr 1fr`; a container that knows it is too narrow for two columns sets `minmax(0, 1fr)`.
+  
+  `Split`'s sidebar pane is now a size container named `lk-split-sidebar`, which is how it sets that. A pane that is a container is also a containing block for a `position: fixed` descendant and a stacking context of its own. The 200px threshold was chosen on an agent's judgment.
+- e75f00e: A section heading stuck to the top of a `PrefsForm` rail pane now rests against the pane's edge. It used to sit the pane's top padding below it, leaving a strip where rows scrolling under the heading showed, and a row scrolled to under it stopped a few pixels short of the heading. The heading's line height is now `--wzl-leading`.
+- 538e243: Fixes: Cmd or Ctrl on a press of a tab toggles it in the selection, and Shift extends to it, in `PrefsForm` and `SelectionPanel`. A react-aria tab keeps its pointer events, so the press reached `onSelect` only as the focus it caused, as a plain pick, and a press of a tab that already held focus reported nothing.
+- 6f84f8d: Changes behavior: a `Timeline` given no `transport` draws the time readout and the Graph switch alone. It drew Play, Loop, and Rate wired to nothing. `transport={false}` still hides the row. Decided on an agent's judgment: the readout and the switch work without a transport, so they stay.
+- c9aaa07: Adds API: `motifs.titlebar()`, a frame motif with a solid title strip across the top, the way a desktop window is titled. The strip is the frame's edge color, or its tone where it names one. A theme repaints it through new override hooks: `--wzl-titlebar-surface` (a color, a gradient, or stripes), `--wzl-titlebar-fg`, `--wzl-titlebar-align`, `--wzl-titlebar-weight`, `--wzl-titlebar-label-surface` and `--wzl-titlebar-label-pad` (a patch behind the title, so stripes do not run through the letters), and `--wzl-titlebar-border` and `--wzl-titlebar-inset` for the frame's edge, which also takes `--wzl-bevel-raised`.
+  
+  Adds API: `<DefaultMotif motif>`, which names the motif every `MotifFrame` and `PropertyGroup` below it draws in when given none. A motif stays a caller's choice, not a token, so this is how an app sets a theme's titled groups in that theme's frame. That a theme does not pick the motif itself was decided on an agent's judgment.
+- f54802b: A `Tooltip` reads a string child as inline markdown: a backticked span is drawn as `Code`, `**strong**`, `*emphasis*`, and `~~strikethrough~~` as their elements, and a link as its label, since a tooltip takes no interaction. It printed the punctuation. An element child is drawn as given, so `<Tooltip><>{text}</></Tooltip>` keeps a string literal. `PropertyHelp` describes its row to a screen reader with the marks taken off.
+  
+  Adds `InlineMarkdown`, the component that draws such a line anywhere, with `parseInline(text)` for its tokens and `inlineMarkdownText(text)` for the words alone. An underscore is never emphasis, and a `*` beside a space is left as written.
+- e7066ff: Breaking: `Tree` no longer takes `onExternalTarget`. It reported where a drag begun outside the tree would land from an effect, a render behind the pointer; `dropRef`'s `targetAt(point)` answers the same question for any point at the moment it is asked, and is now the one way to ask. Removed on an agent's judgment: nothing in the repo read the callback.
+- 172b2cc: Adds API: `Tree` takes a `dropRef`, filled with a `TreeDropHandle` whose `targetAt(point)` says where something dropped on the tree from outside it lands at a client point, or `null` where the tree takes nothing. It is the hit test behind the mark an `externalDrag` draws, run when asked, so it is right for a release in the same task as the last pointer move. `onExternalTarget` is written from an effect, a render behind the pointer, and read at such a release it named the previous row or none. `canDrop` is asked, with no ids, in the same call, so what it answers from has to be current then as well.
+  
+  `PrefSchemaEditor` asks it for a drop from the palette, the unplaced list, and the actions list, where it forced a render before reading the target.
+- 215f133: `Tree` draws a drag's ghost beside the pointer and a row's height under it, where it drew the dragged rows over the row the pointer was on and hid the branch a drop would land in. A ghost from `renderGhost` sits at the same place. The ghost also keeps the spaces between the parts of a row's label, which it collapsed.
+- 0719af9: Adds `--wzl-tree-leaf-indent` (default `0`), a declared override hook: how far in from its branches' glyphs a `Tree` with `guides` sets a row that folds nothing. The schema editor's structure tree sets it to 4px, so a pref's name stands in from the glyphs of the groups around it.
+- 3d7acf1: Fixes: removing the `Tree` row that holds focus, or folding its branch away from under it, dropped focus to the page, and the next arrow key went nowhere. Focus now moves to a row: the removed row's next sibling, else the row above it, which for an only child is its parent. Which row was decided on an agent's judgment. Focus that something else took in the same render stays where it was put.
+- 90f8ec4: Adds API: types that documented exports already named, and that a consumer could not import, are now exported. `@weasel-js/core`: `CameraProps`, `CanvasViewState`, `CanvasLayers`, `SceneSlotLayers`, and `OpsApplier`. `@weasel-js/animator`: `Naming`. `@weasel-js/gestures`: `Point`. `@weasel-js/ui`: `LiveControl`, `OnTokenChange`, and `OptionKey`, the `string | number` a `Select`, a `ComboBox`, and `useAsyncOptions` each declared privately as `Key`.
+  
+  Adds API: `strokeRegion` in `@weasel-js/core`, the region a stroke covers along a path, which `applyOutlineStroke`'s documentation pointed at and `StrokeRegionOptions` already described.
+- 54862e9: Fixes: `PrefSchemaEditor`'s unit attribute refuses an accepted suffix that starts with a numeral, as it refuses one another row holds. With `2` accepted, a typed `52` read as 5 of that unit, and a suffix of numerals alone moved to the front of the list, as an object's integer keys do.
+- Updated dependencies [dfc0dda]
+- Updated dependencies [a695295]
+- Updated dependencies [122a09c]
+- Updated dependencies [bc7cd74]
+- Updated dependencies [7d16908]
+- Updated dependencies [cd8cbbd]
+- Updated dependencies [1f7548d]
+- Updated dependencies [a86d79f]
+- Updated dependencies [ad15c29]
+- Updated dependencies [90eae1c]
+- Updated dependencies [96a63de]
+- Updated dependencies [7140b5a]
+- Updated dependencies [8e00180]
+- Updated dependencies [89a2c50]
+- Updated dependencies [fc267f3]
+- Updated dependencies [4244046]
+- Updated dependencies [88e3c8e]
+- Updated dependencies [9f5cdb2]
+- Updated dependencies [b9fb732]
+- Updated dependencies [67f4d79]
+- Updated dependencies [d137eaf]
+- Updated dependencies [1837952]
+- Updated dependencies [99553f7]
+- Updated dependencies [5149cce]
+- Updated dependencies [2c6246d]
+- Updated dependencies [de60e10]
+- Updated dependencies [2892438]
+- Updated dependencies [b310df0]
+- Updated dependencies [2a5d8ef]
+- Updated dependencies [3994be7]
+- Updated dependencies [e80de55]
+- Updated dependencies [b3ba3d9]
+- Updated dependencies [126116b]
+- Updated dependencies [9296fb4]
+- Updated dependencies [6ba0496]
+- Updated dependencies [0e46e02]
+- Updated dependencies [dee0a3b]
+- Updated dependencies [b1f7521]
+- Updated dependencies [e77f185]
+- Updated dependencies [d675fed]
+- Updated dependencies [497ddce]
+- Updated dependencies [18547a3]
+- Updated dependencies [d635e84]
+- Updated dependencies [d9620a2]
+- Updated dependencies [bc9f367]
+- Updated dependencies [a15b3f8]
+- Updated dependencies [95c01e4]
+- Updated dependencies [dc1f09c]
+- Updated dependencies [fb3aa02]
+- Updated dependencies [2ed751e]
+- Updated dependencies [b3f1e4a]
+- Updated dependencies [329f658]
+- Updated dependencies [0449330]
+- Updated dependencies [4878967]
+- Updated dependencies [b3d45d9]
+- Updated dependencies [2a141ac]
+- Updated dependencies [7063584]
+- Updated dependencies [06003a5]
+- Updated dependencies [da0335e]
+- Updated dependencies [7bac60f]
+- Updated dependencies [fb715f4]
+- Updated dependencies [3777548]
+- Updated dependencies [de319ce]
+- Updated dependencies [3a92afc]
+- Updated dependencies [1bd7fdc]
+- Updated dependencies [87dd1ad]
+- Updated dependencies [3bacb3e]
+- Updated dependencies [6b03b7e]
+- Updated dependencies [b260415]
+- Updated dependencies [c6bf78b]
+- Updated dependencies [66d5455]
+- Updated dependencies [a03f0ce]
+- Updated dependencies [d58d2e8]
+- Updated dependencies [eb7f534]
+- Updated dependencies [3adb0d9]
+- Updated dependencies [7548e82]
+- Updated dependencies [eb3114f]
+- Updated dependencies [0a37db1]
+- Updated dependencies [a275f78]
+- Updated dependencies [605ace8]
+- Updated dependencies [0db7e81]
+- Updated dependencies [6bb8035]
+- Updated dependencies [5d82ef9]
+- Updated dependencies [bc15034]
+- Updated dependencies [6273d6c]
+- Updated dependencies [38866bc]
+- Updated dependencies [1ce19c9]
+- Updated dependencies [7d94bbb]
+- Updated dependencies [1c9bc4e]
+- Updated dependencies [525800f]
+- Updated dependencies [dcf0554]
+- Updated dependencies [5c7d50f]
+- Updated dependencies [7f8ab55]
+- Updated dependencies [bb3e633]
+- Updated dependencies [be611ae]
+- Updated dependencies [ca09ae2]
+- Updated dependencies [33c90ed]
+- Updated dependencies [8d0498c]
+- Updated dependencies [c0f1190]
+- Updated dependencies [b3d4383]
+- Updated dependencies [a6dff38]
+- Updated dependencies [27c1c86]
+- Updated dependencies [54b013c]
+- Updated dependencies [a8ef308]
+- Updated dependencies [5996856]
+- Updated dependencies [0d1c052]
+- Updated dependencies [71512af]
+- Updated dependencies [54174b6]
+- Updated dependencies [4edad85]
+- Updated dependencies [bb53d86]
+- Updated dependencies [18920a4]
+- Updated dependencies [94f353d]
+- Updated dependencies [9b8bd89]
+- Updated dependencies [efc1205]
+- Updated dependencies [b4227bc]
+- Updated dependencies [56da358]
+- Updated dependencies [6139898]
+- Updated dependencies [335f192]
+- Updated dependencies [f3b977a]
+- Updated dependencies [df159bc]
+- Updated dependencies [7b9de2d]
+- Updated dependencies [485bb80]
+- Updated dependencies [21b6db7]
+- Updated dependencies [970f489]
+- Updated dependencies [5ef28a0]
+- Updated dependencies [af48ee3]
+- Updated dependencies [1c8c3fc]
+- Updated dependencies [4d4d81c]
+- Updated dependencies [ea54a64]
+- Updated dependencies [8524e05]
+- Updated dependencies [8ac6236]
+- Updated dependencies [eafd001]
+- Updated dependencies [c4209cb]
+- Updated dependencies [6ea5171]
+- Updated dependencies [a071085]
+- Updated dependencies [505a75f]
+- Updated dependencies [143613a]
+- Updated dependencies [d7af897]
+- Updated dependencies [1956417]
+- Updated dependencies [955defa]
+- Updated dependencies [1ee5335]
+- Updated dependencies [27b827e]
+- Updated dependencies [d02d059]
+- Updated dependencies [ee08fa5]
+- Updated dependencies [74f364f]
+- Updated dependencies [01d6e4e]
+- Updated dependencies [32b3cc9]
+- Updated dependencies [70413dd]
+- Updated dependencies [fcf44fa]
+- Updated dependencies [a91e5cd]
+- Updated dependencies [91a479a]
+- Updated dependencies [7afbc13]
+- Updated dependencies [8f38287]
+- Updated dependencies [936679d]
+- Updated dependencies [813aea2]
+- Updated dependencies [42f24c8]
+- Updated dependencies [499af9b]
+- Updated dependencies [8cc746f]
+- Updated dependencies [a21947b]
+- Updated dependencies [de07db0]
+- Updated dependencies [4d3ff3f]
+- Updated dependencies [85cb886]
+- Updated dependencies [aed6320]
+- Updated dependencies [9d11828]
+- Updated dependencies [37463b5]
+- Updated dependencies [3558fbb]
+- Updated dependencies [fa0ecbe]
+- Updated dependencies [bffba0a]
+- Updated dependencies [5b97be1]
+- Updated dependencies [efc5cea]
+- Updated dependencies [32e243f]
+- Updated dependencies [233f856]
+- Updated dependencies [c9b9598]
+- Updated dependencies [4b0a7d7]
+- Updated dependencies [2705878]
+- Updated dependencies [f59e769]
+- Updated dependencies [5c9d69f]
+- Updated dependencies [bbb538e]
+- Updated dependencies [e69e97f]
+- Updated dependencies [9c19d5e]
+- Updated dependencies [0e1f269]
+- Updated dependencies [ce033b4]
+- Updated dependencies [655cd75]
+- Updated dependencies [0190e91]
+- Updated dependencies [076d8e2]
+- Updated dependencies [706f602]
+- Updated dependencies [b0d5a6c]
+- Updated dependencies [0d7e206]
+- Updated dependencies [5b1a788]
+- Updated dependencies [d3b9057]
+- Updated dependencies [b8eba2f]
+- Updated dependencies [4fe6756]
+- Updated dependencies [9fa373d]
+- Updated dependencies [b76089a]
+- Updated dependencies [54242f0]
+- Updated dependencies [ad10f82]
+- Updated dependencies [222fd80]
+- Updated dependencies [4042637]
+- Updated dependencies [70cf20d]
+- Updated dependencies [c9aaa07]
+- Updated dependencies [0719af9]
+- Updated dependencies [6073365]
+- Updated dependencies [46fcc7e]
+- Updated dependencies [90f8ec4]
+- Updated dependencies [a297730]
+- Updated dependencies [38fd203]
+- Updated dependencies [9ad34e0]
+- Updated dependencies [1d34f51]
+- Updated dependencies [534c866]
+- Updated dependencies [80b29f6]
+- Updated dependencies [0cef6a3]
+- Updated dependencies [6941e0c]
+- Updated dependencies [98ec291]
+- Updated dependencies [ef3d83c]
+- Updated dependencies [0d1c052]
+  - @weasel-js/core@1.10.0
+  - @weasel-js/prefs@1.10.0
+  - @weasel-js/theme@1.10.0
+  - @weasel-js/geom@1.10.0
+  - @weasel-js/animator@1.10.0
+  - @weasel-js/font@1.10.0
+  - @weasel-js/paint@1.10.0
+  - @weasel-js/gestures@1.10.0
+  - @weasel-js/quantity@1.10.0
+  - @weasel-js/svg@1.10.0
+  - @weasel-js/react@1.10.0
+  - @weasel-js/modes@1.10.0
+  - @weasel-js/registry@1.10.0
+  - @weasel-js/select@1.10.0
+
 ## 1.9.4
 
 ### Patch Changes

@@ -1,5 +1,93 @@
 # @weasel-js/theme
 
+## 1.10.0
+
+### Patch Changes
+
+- 7d16908: Fixes: `generate` reported a palette whose every swatch is an anchor as `feasible` without measuring any gate. It measures the anchors against the hue floor, contrast, surface distance, and pairwise distance, as it does when at least one swatch is free.
+  
+  Breaking: a categorical ramp with every step pinned can now raise `infeasible-ramp` where it raised nothing before.
+- 4244046: Adds API: override hooks a theme can pin to draw its edges in relief, where the token set had no way to say it. `--wzl-bevel-raised` is the box shadow of a raised face (a primary or secondary `Button`, a `PropertyPanel`), `--wzl-bevel-pressed` that of a button held or kept down, and `--wzl-bevel-sunken` that of a field's frame, whose border and focus shadow take `--wzl-field-border` and `--wzl-field-focus-shadow`. A `Button`'s glass gives way to a flat face through `--wzl-button-surface`, `--wzl-button-pressed-surface`, `--wzl-button-primary-surface`, `--wzl-button-primary-pressed-surface`, `--wzl-button-primary-fg`, `--wzl-button-primary-bevel`, `--wzl-button-radius`, `--wzl-button-gloss`, and `--wzl-button-text-shadow`.
+  
+  Each is read with the look it replaces as its fallback, so nothing changes until one is set, and each is listed in `TOKEN_MANIFEST` with `hook: true`. A theme built with `defineTheme` pins them like any token; a container below it still overrides the pin. Which controls read a bevel was decided on an agent's judgment: the button, the field frame, and the panel, and no other control yet.
+- 88e3c8e: A theme's bevel hooks reach the rest of the controls. `--wzl-bevel-sunken` is the shadow of a slider's track, a native range's track, a segmented control's track, and each cell of a `flat` one. `--wzl-bevel-raised` is the shadow of a slider's thumb, the chosen segment of a segmented control, and the strip a `ToolPalette`, an `ActionBar`, a `ToolOptionsBar`, or a framed `Bar` draws; a tab takes it on every edge but the one its panel is on. `--wzl-bevel-pressed` is the shadow of a `ToolButton` or a bar's action button that stays down. A `minimal` segmented control draws none. With no hook set nothing changes, so only `win9xTheme` and `platinumTheme` draw differently. Which bevel each control takes was a judgment made from computed values and one headless screenshot of each theme. The hooks' descriptions in `@weasel-js/theme` now list every control that reads them.
+- 497ddce: Adds API: an item of a `ColorList` may be a `ColorSource` as well as a CSS string, so a theme's `tones`, a `<ThemeProvider tones>`, and a `Lab`'s `nebula` can name a palette entry, a theme token, a ramp step, or another tone. `colorAt` and `colorCssAt` resolve such an item against the context's palette and then its theme, and take a `ColorSourceContext`; `colorCssAt` writes an item that names the theme as its custom property. A function list may return a source. `ColorListItem` is the new item type. A theme definition's `tones` takes literals and refs, not function sources.
+  
+  Both functions throw on a source item nothing answers, as they do on an empty list. A tone that names itself, directly or through another tone, resolves to nothing.
+- 18547a3: Adds API: `cssColorLiteral(css)` in `@weasel-js/paint` reads any color string `parseColor` reads as an `srgb` `ColorLiteral`, and throws as it does on one it cannot. `colorLiteralToCss(literal)` writes a literal as a CSS color: hex where `colorLiteralToHex` has one, else `color(<space> …)`.
+  
+  Adds API: `@weasel-js/theme` resolves a paint `ColorSource` under a theme. `colorSourceCss(source, ctx?)` writes one as a CSS color and `colorSourceLiteral(source, ctx?)` resolves one to a literal for a surface with no cascade; `useColorCss()` in `@weasel-js/theme/react` is the first against the provider in force. A `ColorRef` names, in order: an entry of the palette on the context; `tone` (`TONE_REF`) with an index into the tone list, wrapping; a theme token by its name without the `--wzl-` prefix (`{ ref: 'accent' }`); a ramp by name with the index of a step (`{ ref: 'swatch', index: 3 }`); or a custom property spelled out (`{ ref: '--my-color' }`), which need not be the theme's. A ref the theme answers is written to CSS as its custom property, so it follows a mode change without a re-render; a palette entry or a function is written as the literal it resolves to in the provider's selection.
+  
+  Adds API: `<ThemeProvider palette>` takes a paint `Palette` whose names a `ColorRef` in that subtree resolves before the theme's own, and `ThemeContextValue` carries it as `palette`. These rules for what a ref names were chosen on an agent's judgment.
+  
+  Breaking: a `tone` is `number | ColorSource`, no longer `number | string`. That is `StanceProps.tone` in `@weasel-js/ui`, so every stanced surface (`Badge`, `Button`, `Callout`, `Code`, `Dialog`, `LayerList` items, `MotifFrame`, `Powerline` segments, `PropertyGroup`, `PropertyPanel`, `Subpanel`), labkit's `ControlPanel`, `ControlMatrix`, and sidebar sections, and forge's `Library.tone`. An index is unchanged. A CSS string no longer typechecks: write a color as `cssColorLiteral('#2b6cb0')`, a theme token as `{ ref: 'accent' }`, and anything only CSS can say as a custom property of your own, `{ ref: '--my-tone' }`. A tone nothing answers now draws as no tone. `@weasel-js/ui` now depends on `@weasel-js/paint`.
+  
+  Breaking: the other colors `@weasel-js/ui` takes are `ColorSource` too, each written through `useColorCss`: `Plot2D`'s `grid.color` and `axes.color`, `CurveField`'s mark `color`, the `color` of a curve `fill` (`FillSettings`, on `CurveEditor` and `createFunctionLayer`), and the Badge effects' `outline.color`, `sunbeams.color`, `metal.accent`, and `aqua.accent`. Each one's default draws as before.
+  
+  Breaking: `@weasel-js/hud` names colors the same way. A window's `tone` (`WindowOptions.tone`, `setTone`) is `number | ColorSource`, and the draw contexts (`HudDrawCtx`, `HudContentCtx`) carry `color(source)`, a source resolved to a hex, in place of `toneAt(i)`; a widget that called `ctx.toneAt(2)` calls `ctx.color({ ref: 'tone', index: 2 })`. `AttachHudOptions.tones` is a `ColorSourceContext`, so its tone list is optional and it may carry a palette.
+- fb3aa02: A titled `ControlMatrix` sets its column headers on the panel title's baseline. They were centered on the title row, which left the smaller header text about 3px above the title's line.
+  
+  `PropertyPanel` lines its actions up with its title by `--wzl-prop-panel-actions-align`, a new hook: `center` as before when unset, `baseline` for actions that are text.
+- b3d45d9: Fixes: in light mode the 1px edge of a `PrefsForm` panel, a `PrefsPane` panel, and a `SelectionPanel` section or object panel was the same gray as the box's sunken fill, a contrast of 1.0. Those boxes, and a `PrefsForm` subpanel's rule, take their edge from a new token.
+  
+  Adds a token: `--wzl-border-on-sunken`, the text color at 12% alpha, for the edge of a box filled with `--wzl-surface-sunken`.
+  
+  Fixes: a disabled action button in a `Bar` dimmed to 0.4 where every other disabled cell dims to 0.5. A disabled text area in a `Bar` kept a full-strength button that opened onto the disabled text area; the button is disabled and dimmed with it. The pin on a disabled `PropertyRow`'s label still pinned and unpinned the row, which labkit's `ControlPanel` showed as a working "Pin" on a disabled row; it does nothing now, leaves the tab order, and reports `aria-disabled`.
+  
+  Adds API: `BarPopover` takes `isDisabled`.
+- de319ce: Types a public signature names are exported now, so a consumer can write them down and the API reference links to them. All additions; nothing is renamed or removed.
+  
+  - core: `ViewLike`, `TargetTransform`, `WeightEnv`.
+  - diagram: `DiagramRouter`, `DiagramTextStyle`, `DiagramDerivePose`, `Forest`.
+  - font: `DynamicFace`.
+  - forge: `ArgCondition`, `ComponentHistory`, `StoryGlobals`, `StoryLayout`, `StoryViewport`, `TimelineSpan`; from `/frame`, `Channel`, `ToFrame`, `FromFrame`, `ConfigAnswers`, `FaultPhase`; from `/shell`, `StoryRegistryOptions`, `StoryChanges`, `IndexEntry`, `CssVarReport`, `TrialFrameCalls`, `Libraries`, `SchemaDescription`, `DescribedShape`, `DescribedEntry`, `SectionDescription`.
+  - guides: `SnapToGuidesInsertArgs`, `SnapToGuidesMoveArgs`, and `SnapToGuidesResizeArgs`, each from its own subpath.
+  - hud: `AttachHudOptions`, `SourceRect`, `LoupeBaseOptions`.
+  - labkit: `MarkPose`, `AnnotationStorage`, `PaintedMark`, `ControlPanelProps`, `ControlPack`, `LoupeBindings`; from `/state`, `InstrumentHooks`; from `/config`, `Branching`, `Fields`, `FieldValues`, `Variants`, `VariantValues`.
+  - paint: `InCommandUnits`, `WithPatternHandle`.
+  - quantity: `FractionOptions`.
+  - renderer: `ShaderStage`, `UniformArray`.
+  - routing: `ToolScopes`.
+  - svg: `SvgDraftPose`.
+  - text-dom: `OverlayRunBase`.
+  - theme: `DtcgDocument`; from `/engine`, `SemanticCommon`, `DtcgGroup`, `DtcgAxesExtension`, `DtcgLayer`.
+  - ui: `ButtonBase`, `ButtonRegular`, `ButtonIconOnly`, `ToggleBarCommonProps`, `ToastFn`, `Fold`, `DistributiveOmit`, `WalkCtx`, `OverlayPoint`, `DocumentCodec`, `OpenedDocument`, `SchemaRoot`, `AnyNode`, `CurveSamplePoint`.
+  
+  The names for types that had none of their own to export under (`StoryGlobals`, `TimelineSpan`, `CurveSamplePoint`, the `Diagram*` three, `ShaderStage`, `DtcgGroup`, `ToggleBarCommonProps`) were chosen by an agent.
+- c6bf78b: Breaking, visually: the default theme draws a primary or secondary `Button` and the selected segment of a `ToggleBar`, `ButtonBar`, or `OptionsBar` flat. Primary and selected are a plain accent fill; secondary is the raised surface inside a 1px `--wzl-border-strong` line, and that line is a look chosen on an agent's judgment with no person having seen it.
+  
+  Adds a token: `--wzl-gloss`, 0 to 1, how much of the Aqua glass those controls wear. The default theme sets 0. A theme, or any ancestor, that sets it to 1 gets the ramp, specular gloss, rim, and drop shadow back as they were drawn before: at 1 every computed property matches the old glass but for a fully clear layer over the ramp. Values between cross-fade the two.
+- a03f0ce: Adds tokens: `--wzl-handle-dot-size` (8px) and `--wzl-handle-dot-size-sm` (7px), the diameters of a round handle and of one that belongs to another point. `CurveEditor`'s plain anchor circle and its bezier control handles read them where each held a radius literal of the same size, and `handleSize` / `handleHalf` take the two names. The round ranks are their own tokens beside `--wzl-handle-size`, not that family restated as a diameter; that choice was made on an agent's judgment.
+- 1c9bc4e: Every overlay takes its `z-index` from the theme's layer ladder. Adds tokens: `--wzl-z-hud` (900), `--wzl-z-toast` (1100), `--wzl-z-popover` (1200), and `--wzl-z-drag` (10000). `Dialog`, `Toast`, `Tooltip`, `Callout`, core's debug HUDs, and labkit's drag ghost read a rung where each held a literal of the same value, and core's rungs carry that value as a fallback for a page with no theme.
+  
+  Breaking: `--wzl-z-modal` is 1000, where it was 30 and below every dialog. labkit's lightbox, its one reader, rises with it. `DragGhost` in `@weasel-js/ui` moves from `--wzl-z-overlay` (20) to `--wzl-z-drag`, so a row dragged out of a list inside a `Dialog` draws over the dialog; the ghost `useDragHandle` clones reads the same rung.
+- 5ef28a0: Adds API: `platinumTheme` and `classicMacTheme`, on a new entry `@weasel-js/theme/themes/platinum`. `platinumTheme` is Mac OS 8 and 9's Platinum appearance as a theme: light gray faces with a black outline and a soft two-tone edge, rounded buttons, white fields, and pinstriped window titles centered on a patch of the face, at 12, 13, or 15px type by density. It resolves at every mode and density the built-in theme does and opens in light mode.
+  
+  Which era a classic Mac OS theme follows was left open, and Platinum was chosen on an agent's judgment over System 7's one-bit look. It is built so the other can sit beside it: `classicMacTheme` holds what every era shares (the system faces and their sizes, square windows and fields, centered titles, flat control faces) and names no color, and `platinumTheme` extends it with colors and edges alone. A System 7 theme extends the same base.
+  
+  Also decided on an agent's judgment: the dark mode is invented, since the system never had one, and the system faces are named in the font stacks and not bundled. `Button`, the field frame, `PropertyPanel`, and the `titlebar` frame motif draw the edges; other controls take the colors, corners, and type and no edge yet. Its text is held to WCAG 4.5:1 on every surface in both modes, and its control edge to 3:1.
+- 5b97be1: `Dialog`, `Toast`, `Tooltip`, `Callout`, the menu and picker popovers, and labkit's drag ghost cast their shadow in `--wzl-shadow`, where each held its own black at 0.18 to 0.45. Visible: in dark mode those shadows are now the token's 0.6, and in light mode its 0.18. No person has looked at the result.
+  
+  Adds a token: `--wzl-scrim`, what a modal dims the page behind it with. It is black at 40%, the literal `Dialog` held, so a dialog's backdrop is unchanged.
+- c9aaa07: Adds API: `motifs.titlebar()`, a frame motif with a solid title strip across the top, the way a desktop window is titled. The strip is the frame's edge color, or its tone where it names one. A theme repaints it through new override hooks: `--wzl-titlebar-surface` (a color, a gradient, or stripes), `--wzl-titlebar-fg`, `--wzl-titlebar-align`, `--wzl-titlebar-weight`, `--wzl-titlebar-label-surface` and `--wzl-titlebar-label-pad` (a patch behind the title, so stripes do not run through the letters), and `--wzl-titlebar-border` and `--wzl-titlebar-inset` for the frame's edge, which also takes `--wzl-bevel-raised`.
+  
+  Adds API: `<DefaultMotif motif>`, which names the motif every `MotifFrame` and `PropertyGroup` below it draws in when given none. A motif stays a caller's choice, not a token, so this is how an app sets a theme's titled groups in that theme's frame. That a theme does not pick the motif itself was decided on an agent's judgment.
+- 0719af9: Adds `--wzl-tree-leaf-indent` (default `0`), a declared override hook: how far in from its branches' glyphs a `Tree` with `guides` sets a row that folds nothing. The schema editor's structure tree sets it to 4px, so a pref's name stands in from the glyphs of the groups around it.
+- ef3d83c: Adds API: `win9xTheme`, on a new entry `@weasel-js/theme/themes/win9x`. Windows 95 and 98 as a theme over the built-in one: gray faces in two-pixel bevels, square corners, a navy-to-blue title strip, and the system sans at 11, 12, or 14px by density, with control heights to match. It resolves at every mode and density the built-in theme does and opens in light mode.
+  
+  Decided on an agent's judgment: the dark mode is invented, since the system never had one; the system faces are named in the font stacks and not bundled, so most machines draw Tahoma; and transitions are set to 0ms. `Button`, the field frame, `PropertyPanel`, and the `titlebar` frame motif draw the bevels; other controls take the colors, corners, and type and no bevel yet.
+  
+  Its text is held to WCAG 4.5:1 on every surface in both modes, emphasis steps and the accent, status, and code colors included, and its control edge to 3:1.
+- Updated dependencies [b1f7521]
+- Updated dependencies [18547a3]
+- Updated dependencies [de319ce]
+- Updated dependencies [3a92afc]
+- Updated dependencies [27b827e]
+- Updated dependencies [ee08fa5]
+- Updated dependencies [54242f0]
+  - @weasel-js/paint@1.10.0
+  - @weasel-js/registry@1.10.0
+
 ## 1.9.4
 
 ### Patch Changes
