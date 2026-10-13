@@ -142,15 +142,6 @@ describe('domToRuns', () => {
     document.body.appendChild(parent);
   });
 
-  it('returns runs from a freshly-built span sequence', () => {
-    runsToDom([{ text: 'a ' }, { text: 'b', bold: true }, { text: ' c' }], parent);
-    expect(domToRuns(parent)).toEqual([
-      { text: 'a ' },
-      { text: 'b', bold: true },
-      { text: ' c' },
-    ]);
-  });
-
   it('reads a run\'s family from its attribute, not the face its CSS maps it to', () => {
     runsToDom([{ text: 'a', fontFamily: 'sans-serif' }], parent);
     const span = parent.children[0] as HTMLElement;
@@ -349,16 +340,6 @@ describe('domToRuns', () => {
     runsToDom([{ text: 'a' }], parent);
     expect(domToRuns(parent)).toEqual([{ text: 'a' }]);
   });
-
-  it('does not coalesce runs that differ only in the new keys', () => {
-    runsToDom([
-      { text: 'a', underline: true },
-      { text: 'b', strikethrough: true },
-      { text: 'c', letterSpacing: 1 },
-      { text: 'd', letterSpacing: 2 },
-    ], parent);
-    expect(domToRuns(parent)).toHaveLength(4);
-  });
 });
 
 describe('domRuns round-trip — decoration and tracking', () => {
@@ -366,15 +347,6 @@ describe('domRuns round-trip — decoration and tracking', () => {
   beforeEach(() => {
     parent = document.createElement('div');
     document.body.appendChild(parent);
-  });
-
-  it('round-trips the new style keys', () => {
-    const runs: StyledRun[] = [
-      { text: 'a', underline: true },
-      { text: 'b', strikethrough: true, letterSpacing: 2 },
-    ];
-    runsToDom(runs, parent);
-    expect(domToRuns(parent)).toEqual(runs);
   });
 
   it('round-trips textTransform as CSS text-transform, none included', () => {
@@ -398,18 +370,6 @@ describe('domRuns round-trip — decoration and tracking', () => {
       { text: 'b', bold: true, textTransform: 'lowercase' },
       { text: 'c' },
     ]);
-  });
-
-  it('round-trips letterSpacing: 0 as an explicit override', () => {
-    const runs: StyledRun[] = [{ text: 'a', letterSpacing: 0 }, { text: 'b', letterSpacing: 4 }];
-    runsToDom(runs, parent);
-    expect(domToRuns(parent)).toEqual(runs);
-  });
-
-  it('round-trips negative and fractional tracking', () => {
-    const runs: StyledRun[] = [{ text: 'a', letterSpacing: -1.25 }, { text: 'b', letterSpacing: 0.5 }];
-    runsToDom(runs, parent);
-    expect(domToRuns(parent)).toEqual(runs);
   });
 
   it('normalizes explicit false flags to absent keys', () => {
@@ -493,6 +453,12 @@ describe('domRuns round-trip — decoration and tracking', () => {
       [{ text: 'a\nb', underline: true, letterSpacing: -2 }],
       [{ text: 'a', overline: true }, { text: 'b', script: 'super' }],
       [{ text: 'a', baselineShift: 0, fontScale: 1 }],
+      [
+        { text: 'a', underline: true },
+        { text: 'b', strikethrough: true },
+        { text: 'c', letterSpacing: -1.25 },
+        { text: 'd', letterSpacing: 0.5 },
+      ],
       [
         { text: 'mixed ', bold: true, underline: true },
         { text: 'tail', italic: true, strikethrough: true, letterSpacing: 1.5 },
