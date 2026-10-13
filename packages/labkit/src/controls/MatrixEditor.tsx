@@ -6,11 +6,14 @@ import { isLeafEnabled } from '../config/visible';
 import type { ControlMatrixColumn } from './ControlMatrix';
 import { ControlRow } from './ControlRow';
 import { useFieldChoices } from './fieldChoices';
+import type { MatrixTarget } from './matrixTarget';
 
 /** The open popover: which cell, and the element it hangs off. */
 export interface OpenCell {
   path: string;
+  /** The schema's own leaf at `path`: an alias, where the cell shows another setting. */
   leaf: PrefLeaf;
+  cell: MatrixTarget;
   column: ControlMatrixColumn;
   first: boolean;
   label: string;

@@ -209,7 +209,7 @@
     "longestFunction": 199
   },
   "packages/labkit/src/controls/ControlMatrix.tsx": {
-    "longestFunction": 206
+    "longestFunction": 191
   },
   "packages/labkit/src/controls/ControlRow.tsx": {
     "longestFunction": 123

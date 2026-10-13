@@ -718,9 +718,10 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   layout seeds its one node from the layout's own leaves and writes only under `pose` and
   `data`, so a row aliased into a dialog's schema draws unset and an edit to it goes nowhere.
   (3) A lab resolves its instrument's config schema with no `over` (`useConfigSchema`), so that schema
-  cannot hold a condition on another's setting. labkit's `ControlMatrix` takes `over` for its
-  conditions and for the popover an alias's cell opens, but the cell itself summarizes the
-  alias's own path, which holds nothing.
+  cannot alias into another schema or hold a condition on its setting. Every surface reads `over`'s
+  values from the config it is handed, and a trial's config holds its instrument's alone: where a
+  lab keeps another schema's values (each trial's config, the lab's store, or the app's) is not
+  decided, and the instrument's `render` would need them too.
 
 - **(P3) What a bar does not do yet.** `ActionBar` is not built on `Bar`: its `icons` prop
   overrides an entry's icon with a `ReactNode`, which a leaf, being data, cannot carry, so it needs
