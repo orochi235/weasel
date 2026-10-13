@@ -6,9 +6,8 @@ import {
   type NodeId,
   useClipboardOps,
   useDepSource,
-  useScene,
   useSceneAdapter,
-  useSelection,
+  type SelectionApi,
   WEASEL_CLIPBOARD_MIME
 } from '@weasel-js/core';
 import {
@@ -19,7 +18,7 @@ import {
 } from 'react';
 import { CommandBar, type PaperSizeKey } from './CommandBar';
 import { importSvgFile, openSvgFile } from './openSvg';
-import { type WeaselDrawData, type WeaselDrawLayer, type WeaselDrawPose } from './drawDocument';
+import type { DrawScene } from './drawDocument';
 import { reportPasteOmissions } from './pasteOmissions';
 import { serializeReplacer } from './persistence';
 import { saveSvgFile } from './saveSvg';
@@ -28,8 +27,8 @@ import { clipboardSnapshotRootIds, selectionToClipboardSvgString } from './svgEx
 // ─── Right sidebar: LayerList + SelectionPanel ──────────────────────────────
 
 export interface ToolbarProps {
-  scene: ReturnType<typeof useScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>>;
-  selection: ReturnType<typeof useSelection>;
+  scene: DrawScene;
+  selection: SelectionApi;
   paperSize: PaperSizeKey;
   setPaperSize: (k: PaperSizeKey) => void;
   filename: string;

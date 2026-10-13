@@ -1,4 +1,4 @@
-import { useBooleansAdapter, useCreateOutlinesAdapter, useSelection } from '@weasel-js/core';
+import { type SelectionApi, useBooleansAdapter, useCreateOutlinesAdapter } from '@weasel-js/core';
 import { useMemo } from 'react';
 import { drawBooleansAdapter } from './booleansAdapter';
 import type { DrawScene } from './drawDocument';
@@ -13,7 +13,7 @@ export function BooleansAdapterPublisher({
   selection,
 }: {
   scene: DrawScene;
-  selection: ReturnType<typeof useSelection>;
+  selection: SelectionApi;
 }): null {
   const adapter = useMemo(
     () => drawBooleansAdapter(scene, selection.adapterMethods),
@@ -30,7 +30,7 @@ export function CreateOutlinesAdapterPublisher({
   selection,
 }: {
   scene: DrawScene;
-  selection: ReturnType<typeof useSelection>;
+  selection: SelectionApi;
 }): null {
   const adapter = useMemo(
     () => drawOutlinesAdapter(scene, selection.adapterMethods),

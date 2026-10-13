@@ -10,8 +10,7 @@ import {
   sampleGradientStops,
   toHex8,
   useOngoingAction,
-  useScene,
-  useSelection,
+  type SelectionApi,
   withAlpha01
 } from '@weasel-js/core';
 import {
@@ -33,7 +32,7 @@ import {
 import type { ActivePaint } from './ActiveSwatches';
 import { PAPER_OPTIONS, type PaperSizeKey } from './paperSizes';
 import { DEFAULT_FILENAME } from './docPersistence';
-import type { WeaselDrawData, WeaselDrawLayer, WeaselDrawPose } from './drawDocument';
+import type { DrawScene, WeaselDrawData } from './drawDocument';
 import { WD_RENDERERS } from './paintRenderers';
 import { type PanelChrome, usePanel } from './panels';
 import { useColorContext } from './tools/colorContext';
@@ -92,8 +91,8 @@ export function opaqueHex(color: string): string {
 }
 
 export interface RightSidebarProps {
-  scene: ReturnType<typeof useScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>>;
-  selection: ReturnType<typeof useSelection>;
+  scene: DrawScene;
+  selection: SelectionApi;
   filename: string;
   setFilename: (v: string) => void;
   backgroundColor: string;
