@@ -165,6 +165,13 @@ describe('SceneCanvas defaults', () => {
       expect(merged.selectionOverlay).toEqual({ handles: { size: DEFAULT_HANDLE_SIZE } });
     });
 
+    it('leaves a pre-built layer in either slot as it was given', () => {
+      const layer = { id: 'mine', label: 'Mine', draw: () => [] };
+      const merged = mergeLayersWithDefaults({ scene: { layer }, selectionOverlay: { layer } });
+      expect(merged.scene).toEqual({ layer });
+      expect(merged.selectionOverlay).toEqual({ layer });
+    });
+
     it('a scene slot without drawOne keeps the default painter', () => {
       const merged = mergeLayersWithDefaults({ scene: { cull: true } });
       expect(merged.scene).toMatchObject({ drawOne: defaultDrawOne, cull: true });

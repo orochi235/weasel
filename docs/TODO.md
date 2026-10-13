@@ -1535,13 +1535,6 @@ only story runner in the repo.
   kind disagree on every node, and `SelectionPanel` has a third classifier; the command palette's
   summary prints the label, so making them one needs a decision on what it should say.
 
-- **(P3) A pre-built layer in `<SceneCanvas layers>`'s `scene` or `selectionOverlay` slot is not
-  painted.** Read, not run. `mergeLayersWithDefaults` spreads a `{ layer }` entry over the slot's
-  defaults; `useSceneSlotLayers` then builds nothing for the scene slot, and
-  `useSelectionOverlayLayer` builds its own overlay from what is left and never reads `layer`.
-  `LayersMap` types `selectionOverlay` as accepting a `CustomLayerEntry`, so the second one
-  typechecks. Either honor the entry in both hooks or take it out of the type.
-
 - **(P3) `docs/concepts.md` and `docs/extending.md` teach API that is gone.** The "Putting it
   together" and `<Canvas>` examples in concepts, and "Custom layers" in extending, pass `adapter` and
   `selectionMode` to `<SceneCanvas>` and draw with a 2D `ctx.fillStyle`. The "Adapter" and "Gesture"

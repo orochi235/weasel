@@ -14,7 +14,7 @@ const DIMS = { width: 100, height: 100 };
 const BOX = { x: 1, y: 2, width: 10, height: 10 };
 
 function setup(over: {
-  slot?: null;
+  slot?: unknown;
   previewIds?: () => Iterable<string> | null;
 } = {}) {
   const scene = createScene<Record<string, never>, 'bg', Pose>({ systemLayers: [{ id: 'bg' }] });
@@ -56,6 +56,12 @@ describe('useSceneSlotLayers', () => {
     previewed = [ghosting.a];
     ghosting.paint();
     expect(ghosting.drawn).toEqual([ghosting.b]);
+  });
+
+  it('paints a pre-built layer as the whole slot, under the bare anchor', () => {
+    const layer = { id: 'mine', label: 'Mine', draw: () => [] };
+    const { result } = setup({ slot: { layer } as never });
+    expect(result.current.layers?.layers).toEqual([{ key: 'scene', layer }]);
   });
 
   it('builds nothing for a slot switched off', () => {

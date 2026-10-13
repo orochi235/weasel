@@ -40,7 +40,7 @@ import type { ReflowTransition } from '../layout/types';
 import { installTestHookIfRequested, releaseTestHook } from '../test-hook/install';
 import { useTools, type Contribution, type ToolsApi } from '../tools/overlayBinding';
 import { Canvas } from './Canvas';
-import { builtLayersOf, type CanvasLayers, type SelectionOverlaySlotConfig } from './layerSlots';
+import { builtLayersOf, type CanvasLayers } from './layerSlots';
 import { CanvasView, type CanvasViewProps } from './CanvasView';
 import { DevHuds } from './SceneCanvas/DevHuds';
 import { GestureDispatcherMounter } from './SceneCanvas/GestureDispatcherMounter';
@@ -598,7 +598,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   });
 
   const { layer: selectionOverlayLayer, rotationBadge } = useSelectionOverlayLayer<TPose>(
-    mergedLayers.selectionOverlay as SelectionOverlaySlotConfig<TPose> | null | undefined,
+    mergedLayers.selectionOverlay,
     pathEditState.getEditingIds, descriptor as PoseDescriptor<TPose>,
   );
 

@@ -1,16 +1,16 @@
 /**
  * The selection-overlay slot, built, and where it paints its rotate badge.
- * Both are `null` when the slot is switched off.
+ * Both are `null` when the slot is switched off, and a pre-built layer has no badge.
  */
 import { useMemo } from 'react';
 import type { RenderLayer } from 'core/layers/render';
 import { createSelectionOverlayLayer, rotationBadgeOf } from 'features/selection/overlay';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
-import type { SelectionOverlaySlotConfig } from '../layerSlots';
+import { isCustomEntry, type CustomLayerEntry, type SelectionOverlaySlotConfig } from '../layerSlots';
 
 export function useSelectionOverlayLayer<TPose>(
   /** The slot after `mergeLayersWithDefaults`. */
-  slot: SelectionOverlaySlotConfig<TPose> | null | undefined,
+  slot: SelectionOverlaySlotConfig<TPose> | CustomLayerEntry | null | undefined,
   /** Ids whose outline and handles other chrome replaces, on top of the
    *  slot's own `getSuppressedIds`: the node whose anchors are being edited. */
   getOwnSuppressedIds: () => ReadonlySet<string>,
@@ -20,7 +20,7 @@ export function useSelectionOverlayLayer<TPose>(
   layer: RenderLayer<unknown> | null;
   rotationBadge: ReturnType<typeof rotationBadgeOf>;
 } {
-  const badge = slot ? rotationBadgeOf(slot) : null;
+  const badge = slot && !isCustomEntry(slot) ? rotationBadgeOf(slot) : null;
   // Kept by value so the layers and hit-testers keyed on it don't rebuild
   // every render.
   const rotationBadge = useMemo(
@@ -30,6 +30,7 @@ export function useSelectionOverlayLayer<TPose>(
   );
   const layer = useMemo(() => {
     if (slot === null) return null;
+    if (isCustomEntry(slot)) return slot.layer;
     const cfg = slot ?? {};
     const callerSuppress = cfg.getSuppressedIds;
     const getSuppressedIds = (): ReadonlySet<string> => {
