@@ -19,7 +19,6 @@ const NOT_SHIPPED = /(\.(test|stories|fixture|bench)\.|\.d\.ts$|\/__tests__\/|\/
 // Helpers only test files import, whose names do not say so. Each must exist.
 const TEST_HELPERS = [
   'packages/core/src/interactions/actions/defaults/paintActionTestUtils.ts',
-  'packages/core/src/tools/builtin/testUtils.ts',
   'packages/forge/src/shell/labHarness.ts',
   'packages/storage/src/adapterContract.ts',
 ];
