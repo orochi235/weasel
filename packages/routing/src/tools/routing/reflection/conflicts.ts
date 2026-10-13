@@ -31,9 +31,6 @@ export interface Conflict {
  *    required against Alt required fire on different inputs, and Shift
  *    required outranks Shift optional. An optional modifier against a
  *    forbidden one is flagged, since both take the bare press.
- *  - A binding whose action declines via `enabled()` so a lower-priority
- *    one can take the gesture. Detecting that intent would mean evaluating
- *    the action.
  *  - Two `{ kindOf }` predicate targets, unless they are the same function.
  *    Predicates bucket by identity, so two separately written but
  *    equivalent ones go unflagged.
@@ -44,6 +41,10 @@ export interface Conflict {
  *  - Two bindings of one action with equal params that tie on one platform
  *    only: `mod` against `ctrl`, which are one key off a Mac and two on it.
  *    The same pair tying on both platforms is a plain duplicate and is flagged.
+ *
+ *  A binding whose action declines via `enabled()` so a lower-priority one
+ *  takes the gesture is flagged all the same: seeing that intent would mean
+ *  evaluating the action.
  *
  *  Two bindings on the same tool can share a tuple, so a conflict may name
  *  one tool twice.

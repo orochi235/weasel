@@ -97,12 +97,10 @@ Priority tags:
   AltGr: that Chrome and Firefox both report AltGraph for it, and that a plain Ctrl+Alt+letter, for
   which Firefox reports AltGraph too, is still read as a chord.
 
-- **(P3) What the pointer recognizer's extraction left.**
-  - Three `pointermove` hover channels listen on one canvas element and each tracks "is a button
-    down" its own way: the dispatcher's hover pump (`channels/hoverCursor.ts`), `useSurfaceInput`
-    in core's canvas, and `PointerPublisher` in `PointerProviderIfRoot.tsx`.
-  - The hover pump and `Canvas.tsx` each turn a resolved cursor into a `style.cursor` write plus a
-    painted-cursor write. One cursor sink beside `PaintedCursorState` would serve both.
+- **(P3) What the pointer recognizer's extraction left.** Three `pointermove` hover channels
+  listen on one canvas element and each tracks "is a button down" its own way: the dispatcher's
+  hover pump (`channels/hoverCursor.ts`), `useSurfaceInput` in core's canvas, and
+  `PointerPublisher` in `PointerProviderIfRoot.tsx`.
 
 - **(P3) What the text layout split left.**
   - `layoutEntries.ts` kerns each code point against the one before it, so a combining mark
@@ -112,15 +110,12 @@ Priority tags:
   - `tests/perf/bench/text-layout.bench.ts` times layout alone now, so `BASELINE.md`'s numbers,
     which included grouping, need re-recording.
 
-- **(P3) What removing the old tool design left.** `ToolCtx`, the cursor function's argument,
-  `Tool.previewPose` / `previewBounds` / `previewIds`, and tool-side preview sources are gone.
-  Still to go:
-  - A `<CanvasView>` converts client points with the bare rect helper (`clientToWorldHere` in
-    `CanvasView.tsx`), and so does `worldPointAt` for a point that resolves to a declared view. A
-    canvas's `clientToWorld` override reaches neither: it maps into the canvas's own world, and
-    these need a client-to-canvas-local conversion it does not provide.
-  - `Canvas`'s `adapter` prop is typed as the Move, Resize, and Rotate adapters together, though
-    Canvas reads only poses, nodes, layers, and children.
+- **(P3) What removing the old tool design left.** A `<CanvasView>` converts client points with
+  the bare rect helper (`clientToWorldHere` in `CanvasView.tsx`), and so does `worldPointAt` for a
+  point that resolves to a declared view. A canvas's `clientToWorld` override reaches neither: it
+  maps into the canvas's own world, and these need a client-to-canvas-local conversion it does not
+  provide. The view resolver (`features/viewports/viewResolver.ts`) picks the view under a client
+  point from the canvas's rect the same way.
 
 - **(P3) What moving the Badge lab out of its stories file left.** The lab is
   `packages/ui/src/components/Badge/lab/` now.
@@ -132,7 +127,6 @@ Priority tags:
   - In the workshop at a 1500px window, the Compose lab's "Type & padding" column and effects
     panel run past the right edge of the stage. Not compared against the lab before its text
     moved onto the type scale.
-  - The simple stories (`StatusVariantMatrix`, `Sizes`, `EdgeCases`) still use inline styles.
 
 ### Cursor package follow-ups
 
@@ -194,13 +188,6 @@ Priority tags:
     transform and do not compose a container's into its children.
   - `defaultNodeProperties` has no row for it, so `SelectionPanel` can neither show nor clear it.
 
-- **(P3) svg export: a path split for `openFill: 'none'` writes its stroke markers on both
-  halves.** A path that mixes closed and open subpaths under a fill that does not close the open
-  ones is written as a `<g>` of two `<path>`s (`packages/svg/src/openSubpathFill.ts`), each with
-  the node's whole stroke. SVG draws `marker-start` and `marker-end` once per `<path>`, so a
-  marked stroke gets one pair per half. Not compared with what the renderer draws for the one
-  path.
-
 - **(P3) svg import: `<tspan>` glyph positioning is not read.** `dx`, `rotate`, and list-valued
   per-glyph `x` / `y` are not applied; each warns, on `<text>` and `<tspan>` alike
   (`packages/svg/src/tspanLines.ts`). Kerned text exported as one `<tspan>` per glyph run imports
@@ -214,6 +201,14 @@ Priority tags:
   `hidden`, and `svgNodesToKitDrafts` carries the flag onto its drafts. `unpackSvgFiles` does not
   ask for it, because a scene node has no hidden state of its own to map it to: only a layer has
   `visible`. With a per-node one, `unpackSvgFiles` passes `keepHidden` and writes the flag.
+
+- **(P3) svg export: a marked stroke with several open subpaths draws one pair of end markers.**
+  The renderer puts a start and an end marker on each open subpath (`markerHeads`, `markerSites` in
+  `packages/stroke/src`). A path split for `openFill: 'none'` is written one open subpath to a
+  `<path>`, so it matches. A path with `fill: none`, or one whose fill closes its open subpaths,
+  stays one `<path>`, and SVG draws one pair for the whole of it; `marker-mid` differs too, since
+  SVG puts one on every vertex between the path's first and last, subpath joins included. Read in
+  the code, not rendered. The filled case means writing the fill and the strokes as separate paths.
 
 ### Pathfinder follow-ups (post-v1)
 
@@ -335,24 +330,32 @@ Priority tags:
   missing `getChildren` as "no siblings". `useSelectTool.zorder.test.tsx` and
   `useSelectTool.viewGates.test.tsx` pin the flat path. Needs a decision: require the tree of
   every adapter and delete those paths, or keep the flat list as the least a hand-written adapter
-  can be. Two smaller ends: `<Canvas>`'s `adapter` prop is optional and typed as the whole
-  `CanvasAdapter` though it reads only `getPose` and `getWorldPose`; and `sceneAsHierarchy`
+  can be. A smaller end: `sceneAsHierarchy`
   (`canvas/sceneViewRender.ts`) rebuilds four of `sceneToAdapter`'s reads because
   `sceneAdapter.ts` imports React for `useSceneAdapter`, which a headless render cannot.
 
 - **(P3) A marquee and a lasso disagree on a node whose descriptor bounds reach past what it
-  draws.** Two nodes share the pose `{0, 0, 40, 10}`, and a descriptor's `forNode` gives one of
-  them a 40-square box. A marquee over the band above the pose takes that node; an `intersect`
-  lasso around the same band takes nothing (run against `sceneToAdapter`, 2026-10-13). Inferred
-  cause: `regionTakes` (`core/geometry/regionHit.ts`) answers a marquee from the bounds when the
-  outline is an axis-aligned rect, and the lasso tests the outline itself, which is the pose rect.
-  `sceneAdapter.regionOutline.test.ts` pins the marquee half only.
+  draws.** Two nodes share the pose `{0, 0, 40, 10}`, and a descriptor's `forNode` gives one a
+  40-square box. A marquee over the band above the pose takes that node; an `intersect` lasso
+  around the same band takes nothing. The node matches the default painter, whose silhouette is the
+  pose rect, so its outline is the pose and not the descriptor's box. `regionTakes`
+  (`core/geometry/regionHit.ts`) answers a marquee `true` for any rect outline once the bounds
+  overlap, which holds only when the outline is the bounds; the lasso tests the outline. The
+  `enclosed` branch's `!inBox` reject assumes the same the other way. Undecided: the module's
+  contract says the outline decides, so the marquee shortcut should compare the drawn rect with the
+  region, but that flips `sceneAdapter.regionOutline.test.ts`'s "marquee picks the ball and not the
+  box", which then needs a painter for the ball to say anything about `forNode`.
 
 - **(P3) A direct scene call made while a journal is open lands on the scene's own stack.**
   `scene.applyBatch` goes to the open journal; `scene.setPose` and its siblings, `scene.batch`, and
   `scene.history.apply` do not, so a mode that mixes the two splits its edits across two stacks.
   Ruled 2026-10-12 to leave it for now. Routing them means `recorder.record` and the history facade
-  consulting the journal accessor. `scene.recordedForm.test.ts` pins today's split.
+  consulting the journal accessor. `scene.recordedForm.test.ts` pins today's split. Routing `scene.batch` also needs a new method
+  on `Journal`: `batch` records ops that have already applied (`engine.recordEntry`), and `Journal`
+  has only `applyBatch`, which would apply them again; a direct call that touches a laid-out
+  container runs as a batch. draw opens a journal in every mode
+  (`apps/draw/src/modality/machine.ts`), so the change moves where every direct call made during
+  a mode lands.
 
 - **(P3) Duplicate and Alt-drag clone: a copy that derives from nodes outside the copy still follows
   the originals.** `copySelection` (`interactions/actions/defaults/copySubtree.ts`) re-points a
@@ -510,7 +513,7 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 - **(P3) Delete `packages/labkit/src/undo/undoStack.ts` and its exports**
   (`emptyStack`, `pushSnapshot`, `undo`, `redo`, `clearUndo`, `UndoStack`) once
   sherpa's studio (`apps/studio/src/Studio.tsx`), the last user, moves its
-  document undo onto `createHistory`.
+  document undo onto `createHistory`. Still imported there at sherpa `7ad02eb` (2026-10-08).
 
 ## Audio
 
@@ -554,14 +557,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   breaks alone and takes its negative margin with it, so it sits left of the line's start. Measured
   in bare markup, not on a badge. A word joiner, a non-breaking space, and `white-space: nowrap` do
   not stop Chromium breaking before an inline-block.
-
-- **(P3) A `Badge` padded through `style` keeps its old click target.** The label of a removable
-  `pill` or `plain` badge reaches into the padding by `--badge-pad-*`, which only the `padding`
-  prop sets. Read from the code.
-
-- **(P3) A fitted badge base ignores effects and a negative `bloat`.** `useInsets` keeps the
-  content inside the base's sampled outline, but not inside one an effect or `bloat` has pushed
-  inward. Read from the code.
 
 - **(P3) Disabled has no signal of its own, now that emphasis is an alpha.** Disabled is `opacity:
   0.4`–`0.5` on the whole control, and subtle text is 0.54–0.64 alpha, so a disabled control and a
@@ -618,7 +613,7 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   (`packages/ui/src/overlays/portalHost.tsx`) to the provider once RAC exports it.
   The same switch lets a contained `ToastRegion` drop its own region for RAC's,
   which would make it an F6 landmark again. Still absent from RAC's index at the
-  installed 1.21.1 and at nightly `3.0.0-nightly-99e610236-261006`, last checked 2026-10-11.
+  installed 1.21.1 and at nightly `3.0.0-nightly-99e610236-261006`, last checked 2026-10-11. 1.22.1 is out and unchecked.
 
 - **(P3) Hover reports motion only, and nothing in the kit binds it yet.** `hover` is a gesture
   (`HoverSpec`; `docs/taxonomy.md`, "Gesture"): an immediate action bound to it runs on every
@@ -702,11 +697,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   cell on the line, would lose those cells as drop targets if it did. A group a standalone `Bar` opens from a button draws as
   labeled rows whatever its `as`, where a bar in a `PrefsForm` opens it in its own form.
 
-- **(P3) Two `usePrefsStore` callers with different schemas leave one holding a closed store.**
-  Two mounted callers naming one `storage` and `prefix` with different schemas: the later render
-  takes the prefix and the other keeps the store it closed. That store now says `closed` and
-  warns on its first write, but nothing reopens it or tells the component holding it.
-
 - **(P3) A rail of sections and pages: two things not decided.** A `PrefsForm` rail lists a page
   at any depth, and a section only when it sits directly on a page, the root's own included. (1) A
   foldable rail unfolds an entry only while the open page is it or under it, so a section holding
@@ -766,18 +756,16 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   pan it had, so the part and its marks sit past the stage's edge, out of sight until the trial is
   panned back. Whether a stage that narrows should re-fit or keep its pan is not decided.
 
-- **(P3) Which control a leaf gets is decided again in each params surface.** `prefFieldProps` is
-  the shared half; each caller then overrides it: `Prefs/PrefsRow.tsx`,
-  `SelectionPanel/renderLeaf.tsx` (`renderBuiltin`), labkit's `controls/fields.tsx` (`labField`) and
-  `controls/MatrixCell.tsx`, and `packages/labkit/examples/schema-lab/prefsToFields.ts`. The
-  answers differ: a boolean with no `control` is a checkbox in the form and labkit and a switch in
-  the panel; `control: 'toggle'` on a boolean is a checkbox in labkit; a `slider` number with no
-  bounds is a 0..100 slider in ui and a typed input in labkit (`isSliderLeaf` wants both bounds); an
-  enum's `radio` is segments in labkit and `menu` is a select; a stored value that is absent is
-  the default in the form, unset in the panel, and `?? default` in labkit, where `null` also reads
-  as absent. Home: a `surface` argument on `prefFieldProps` (`'form' | 'panel' | 'lab'`) carrying
-  these defaults in one table. labkit's "radio means segments" and "a slider needs bounds" are
-  the two to decide on purpose.
+- **(P3) What a leaf shows when its value is absent is decided in each params surface.** Which
+  control a leaf draws is one table now (`PARAMS_CONTROLS`, `Prefs/surfaceControls.ts`, through
+  `prefFieldProps`' `surface` argument). The value handed to it is not: a stored value that is
+  absent is the default in the form (`prefRenderContext`, `Prefs/PrefsRow.tsx`), unset in the
+  panel, and `?? default` in labkit (`controls/rows.tsx`, `panelRows.tsx`, `MatrixCell.tsx`,
+  `MatrixEditor.tsx`), where `null` also reads as absent. Two rows of the table are labkit's alone
+  and were carried over undecided: `enumAsAsked: false` (`radio` draws as segments, `menu` as a
+  select) and `openSlider: false` (a slider needs both bounds). Outside the table:
+  `Bar/BarField.tsx` draws an enum's `radio` as segments on every surface, and `MatrixEditor`
+  always lists an enum as radios.
 
 - **(P3) Two things the params commit table does not settle.** `PARAMS_SETTLES` in
   `Prefs/commitPolicy.ts` says which controls write only a settled value in a form, a panel, and
@@ -789,17 +777,14 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   entries never coalesce. The slider is live there so the canvas follows the drag; one step per
   drag needs the drag's writes to share an entry, which the scene has to offer.
 
-- **(P3) Collecting a run of `tab` groups, and what each other `as` draws, is written four times.**
-  `Prefs/PrefsPane.tsx`, `Prefs/objectRows.tsx` (both `ObjectLeaf`s),
-  `SelectionPanel/panelSections.tsx` (`placed`), and labkit's `controls/panelRows.tsx`.
-  `GroupTabs` is shared; the run logic is not, and it differs: `panel` is a bordered box in ui and a
-  plain `PropertyGroup` in labkit; `section` is a `Subpanel` in labkit and a heading elsewhere; a
-  group's `description` shows under a tab in `PrefsPane` and is dropped for tabs and sections in
-  labkit; `SelectionPanel`'s top level flattens nested sections (`flatten` in `model.ts`), so a
-  nested `tab` or `panel` loses its `as` while the object leaf beside it honors nesting; an empty
-  tab section neither joins nor ends the run in `objectRows`, a hidden one does not end it in
-  labkit, and `PrefsPane` has no emptiness check. Home: a pure "children as runs" helper in
-  `@weasel-js/prefs` (leaf, tab run, or group with its resolved `as`) that all four walk.
+- **(P3) What each group `as` draws differs across the params surfaces.** The run of neighboring
+  `tab` groups is collected once (`prefTabRuns`, `@weasel-js/prefs`); what is drawn is not: `panel`
+  is a bordered box in ui and a plain `PropertyGroup` in labkit; `section` is a `Subpanel` in
+  labkit and a heading elsewhere; a group's `description` shows under a tab in `PrefsPane` and is
+  dropped for tabs and sections in labkit; `SelectionPanel`'s top level flattens nested sections
+  (`flatten` in `model.ts`), so a nested `tab` or `panel` loses its `as` while the object leaf
+  beside it honors nesting; an empty tab section is left out of the run in `objectRows`, a hidden
+  one in labkit, and `PrefsPane` has no emptiness check.
 
 - **(P3) The schema lab's `prefsToFields` re-derives what `@weasel-js/prefs` owns.**
   `packages/labkit/examples/schema-lab/prefsToFields.ts` turns each leaf of a property schema into
@@ -859,7 +844,7 @@ only story runner in the repo.
 - **(P3) A story whose `render` takes no args has no controls.** forge reads a
   control for each prop of the meta's `component` (`packages/forge/src/vite/propTypes.ts`),
   and leaves them off a story whose `render` declares no parameter, since nothing
-  would read them. A grep of `render: () =>` finds about 210 such stories. A story
+  would read them. A grep of `render: () =>` finds 215 such stories in 76 files, most of them matrices or wrappers holding state. A story
   drawing one instance in a plain configuration is the kind to rewrite around
   `args`, the way `Tooltip`'s `Basic` is; a matrix or a hand-built composition
   stays as it is. Where a component's props are a union or generic, as
@@ -958,7 +943,13 @@ only story runner in the repo.
   a wrapped node as its unbroken lines. Exporting the laid-out lines needs fonts at serialize time,
   which `@weasel-js/svg` does not have. A justified node is written at its start edge with
   `data-weasel-align="justify"` for the same reason: once lines are exported, its wrapped lines
-  need per-word `x` placement too, since `text-anchor` has no justify.
+  need per-word `x` placement too, since `text-anchor` has no justify. A hard line break is one
+  line too, and that half needs no fonts: `textXml` (`serialize.ts`) writes a `\n` as a literal
+  newline under `xml:space="preserve"`, which SVG draws as a space (by the spec; not checked in a
+  browser), where the importer already reads a `<tspan x dy>` per line (`LineTracker`). Undecided:
+  browsers ignore an empty `<tspan dy>`, so a blank line either folds into the next line's `dy`
+  and reads back as an uneven pitch, or is lost; and a styled run spanning a break comes back as
+  two runs.
 
 - **(P3) The animation wrappers have no canvas seat.** `animateOnSetPose` and `animateLifecycle`
   wrap an adapter the caller holds. `<SceneCanvas>` builds its own and takes neither, so nothing a
@@ -1349,15 +1340,6 @@ only story runner in the repo.
   `dependencies`, so a consumer installs one copy and runs another. In the repo, aliases resolve
   both to one source, so no test can see it.
 
-- **(P3) core's tsconfig sends half its siblings to their built `dist`.** Both `paths` blocks are
-  generated from every package's `exports` (`npm run gen:tsconfig-paths`, held current by
-  `scripts/vite-aliases.test.ts`). Core's maps the ten siblings named in `CORE_FROM_SOURCE`
-  (`scripts/lib/tsconfigPaths.mjs`) to source, and leaves the others core imports (`animator`,
-  `cursor`, `font`, `paint`, `prefs`, `quantity`, `renderer`, `stroke`, `text`, and `text-dom`) to
-  resolve to `dist`, so `tsc -p packages/core` reads whatever was last built there. `tsup` reads
-  that file for core's declaration build: widen the list to every dependency, build core, and diff
-  its `dist/*.d.ts` to see that no sibling's types were inlined.
-
 - **(P3) Five leaf packages keep their own listener sets.** Every other store notifies through
   `createEmitter()` in `@weasel-js/registry` (a pass walks the listeners held when it began; a
   throwing listener is logged and the rest run). These still hold a `Set` and a loop, because each
@@ -1367,16 +1349,16 @@ only story runner in the repo.
   still reaches whatever caused the notify. Moving them means either that dependency or the
   emitter living somewhere all five can reach.
 
-- **(P3) `SceneCanvasInner` is one 699-line function.** It is most of the 854-line
-  `canvas/SceneCanvas.tsx`. `docs/audits/2026-10-12-SceneCanvas.md` lists what belongs to another
+- **(P3) `SceneCanvasInner` is one 388-line function.** It is most of the 510-line
+  `canvas/SceneCanvas.tsx`. What is left in it is the prop destructure and the JSX, most of that
+  the props of `StandardActionsRegistrar` and `GestureDispatcherMounter`; getting under the cap
+  means turning those mounters into hooks, the audit's section E, which also removes
+  `getActionRef` and `actionsRegistryRef`. `docs/audits/2026-10-12-SceneCanvas.md` lists what belongs to another
   owner; its dead-code pass and its sections on the built-in tool registry, the preset table, the
   chrome-caps rule context, path editing, selection, ingestion, the device profile, the camera, the
-  layer slots, and the redraw subscriptions have landed. `canvas/Canvas.tsx` is 783 lines, 467 of them `CanvasInner`,
+  layer slots, and the redraw subscriptions have landed. `canvas/Canvas.tsx` is 742 lines, 443 of them `CanvasInner`,
   after its scene-layer construction, its dev HUDs, and its camera moved to SceneCanvas. Left open by the preset table and the rule context, and described in the audit:
   `selectTool.rotate === false` is still decided in three places that do not agree, and making
   them one changes behavior three ways the audit lists, each needing a decision. Left open by the selection pass: the kind label published with the selection and the routing
   kind disagree on every node, and `SelectionPanel` has a third classifier; the command palette's
   summary prints the label, so making them one needs a decision on what it should say.
-
-- **(P3) Two doc examples have not been compiled.** "Putting it together" in `docs/concepts.md`
-  and "Custom layers" in `docs/extending.md`, both rewritten 2026-10-13.
