@@ -62,17 +62,24 @@ export const AnyOf: Story = {
   render: () => <Live start={{ any: [{ path: 'canvas.units', in: ['mm', 'in'] }, { path: 'canvas.showGrid', is: false }] }} />,
 };
 
-/** What the rows have no controls for is text: a `not`, a combinator inside the top one, and a range. Each can
- *  be removed, and is otherwise handed back as it was when a row beside it is edited. */
-export const ShownAsText: Story = {
+/** A group among the rows holds rows of its own under its own quantifier, and a group may hold another. A
+ *  number's row takes a second bound to make a range, and what is not set is a comparison like any other. */
+export const Groups: Story = {
   render: () => (
     <Live start={{ all: [
       { not: { path: 'canvas.author' } },
-      { any: [{ path: 'canvas.units', is: 'mm' }, { path: 'canvas.gridSize', above: 16 }] },
+      { any: [
+        { path: 'canvas.units', is: 'mm' },
+        { all: [{ path: 'canvas.showGrid', is: true }, { path: 'canvas.gridSize', above: 16 }] },
+      ] },
       { path: 'canvas.gridSize', atLeast: 2, below: 64 },
-      { path: 'canvas.showGrid' },
     ] }} />
   ),
+};
+
+/** A `not` around a group is its quantifier: none of its rows, or not all of them. */
+export const NoneOf: Story = {
+  render: () => <Live start={{ not: { any: [{ path: 'canvas.units', is: 'px' }, { path: 'canvas.showGrid', is: false }] } }} />,
 };
 
 /** A row reading a pref the schema does not hold, and one comparing an enum against a value it never holds:

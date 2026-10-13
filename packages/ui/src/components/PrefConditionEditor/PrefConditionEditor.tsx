@@ -2,18 +2,14 @@ import { useMemo } from 'react';
 import { checkPrefCondition, isPrefCondition, type PrefCondition, type PrefConditionSite, type PrefGroup, type PrefList, type PrefMap, type PrefSection } from '@weasel-js/prefs';
 import { Button } from '../Button';
 import { Code } from '../Code';
-import { Select, type SelectOption } from '../Select';
-import { ToggleBar } from '../ToggleBar';
-import { ConditionRow } from './ConditionRow';
-import { conditionLeaves, conditionParts, joinCondition, leafKey, testOf, type ConditionMode } from './conditionRows';
+import type { SelectOption } from '../Select';
+import { ConditionGroupRows } from './ConditionGroupRows';
+import type { ConditionScope } from './ConditionRow';
+import { rootCondition, rootGroup } from './conditionGroups';
+import { conditionLeaves, leafKey } from './conditionLeaves';
 import s from './PrefConditionEditor.module.css';
 
 const NO_PATHS: readonly string[] = [];
-
-const MODES: ReadonlyArray<{ value: ConditionMode; label: string }> = [
-  { value: 'all', label: 'All of' },
-  { value: 'any', label: 'Any of' },
-];
 
 /** Props for {@link PrefConditionEditor}. */
 export interface PrefConditionEditorProps {
@@ -50,12 +46,13 @@ export interface PrefConditionEditorProps {
  * An editor for one `PrefCondition` over a schema, as the `showIf` or `enableIf` of a pref, a group, or a section
  * holds it. Each test is a row: the pref it reads, picked from the schema's leaves; a comparison, from the ones
  * that leaf's kind offers; and a value, in the control that kind takes. A boolean is on or off; an enum is, is
- * not, or is one of its own options; a number is compared with a number; any other kind is set, which for a list or
- * a map is to say it has an entry. Two rows or more combine under all of or any of.
+ * not, is one of, or is none of its own options; a number is compared with a number, or with two as a range; any
+ * other kind is set or not, which for a list or a map is to say it has an entry.
  *
- * A `not`, a combinator inside the top one, and a test with several operators or one its leaf's kind does not
- * offer are each a row of text, which can be removed and is otherwise handed back as the object it was. Whatever
- * `checkPrefCondition` finds wrong with a row is said on that row. With no rows left the condition is `undefined`.
+ * Rows combine under a quantifier: all of, any of, none of, or not all of them. A group added among the rows
+ * holds rows of its own under its own quantifier, to any depth, and that is how an `all` inside an `any` and a
+ * `not` around either are drawn. Whatever `checkPrefCondition` finds wrong with a row is said on that row. With
+ * no rows left the condition is `undefined`.
  */
 export function PrefConditionEditor({ value, onChange, schema, over, exclude = NO_PATHS, entryOf, 'aria-label': ariaLabel, className }: PrefConditionEditorProps) {
   const leaves = useMemo(() => conditionLeaves(schema, entryOf, over), [schema, entryOf, over]);
@@ -87,25 +84,10 @@ export function PrefConditionEditor({ value, onChange, schema, over, exclude = N
     );
   }
 
-  const { mode, parts } = conditionParts(value);
-  const write = (next: readonly PrefCondition[], as: ConditionMode = mode) => onChange(joinCondition(as, next));
+  const scope: ConditionScope = { schema, over, site, leaves, prefOptions };
   return (
     <div className={classes} role="group" aria-label={ariaLabel}>
-      {parts.length > 1 && (
-        <ToggleBar ariaLabel="Which rows must hold" size="sm" items={MODES} value={mode}
-          onChange={(next) => { if (next !== null && next !== mode) write(parts, next); }} />
-      )}
-      {parts.map((part, i) => (
-        <ConditionRow key={i} n={i + 1} part={part} schema={schema} over={over} site={site} leaves={leaves} prefOptions={prefOptions}
-          onChange={(next) => write(parts.map((p, j) => (j === i ? next : p)))}
-          onRemove={() => write(parts.filter((_, j) => j !== i))} />
-      ))}
-      <Select aria-label="Add a condition" placeholder="Add a condition on…" selectedKey={null} options={prefOptions}
-        isDisabled={prefOptions.length === 0}
-        onSelectionChange={(key) => {
-          const found = leaves.find((l) => leafKey(l) === key);
-          if (found) write([...parts, testOf(found)]);
-        }} />
+      <ConditionGroupRows group={rootGroup(value)} scope={scope} onChange={(next) => onChange(rootCondition(next))} />
     </div>
   );
 }

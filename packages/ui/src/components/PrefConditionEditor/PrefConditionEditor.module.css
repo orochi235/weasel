@@ -1,46 +1,108 @@
-.editor {
+/* The editor and each group in it measure their own width: a row lays out by the room its group has. */
+.editor,
+.group {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--wzl-space-2);
   min-inline-size: 0;
-  justify-items: stretch;
+  container-type: inline-size;
 }
 
-/* The controls, then the button that removes the row; what is wrong with it runs under both. */
+.quantifier { flex: 0 1 8rem; min-inline-size: 0; }
+
+/* A group among the rows: its own rows, set in from a rule down their side. */
+.group {
+  padding-inline-start: var(--wzl-space-3);
+  border-inline-start: 2px solid var(--wzl-border);
+}
+
+/* The quantifier, then the button that removes the group. */
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wzl-space-2);
+}
+
+/*
+ * A row reads across: the pref, a comparison, the value compared against, and the button that removes it. The
+ * comparison and value columns are one width in every row, so a group's rows line up down each. A second
+ * comparison of the same pref takes the line under the first, after an `and` in the pref's column.
+ */
 .row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) 7.5rem 8rem auto;
   gap: var(--wzl-space-1) var(--wzl-space-2);
-  align-items: start;
+  align-items: center;
 }
 
-/* Wraps where the row is narrow: the pref on a line of its own, the comparison and its value under it. */
-.controls {
+.pref { grid-column: 1; min-inline-size: 0; }
+.comparison { grid-column: 2; min-inline-size: 0; }
+/* A comparison that takes no value beside it has the value's column too. */
+.comparisonAlone,
+.text { grid-column: 2 / 4; min-inline-size: 0; }
+.removeRow { grid-column: 4; }
+
+.value {
+  grid-column: 3;
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  gap: var(--wzl-space-2);
+  gap: var(--wzl-space-1);
   min-inline-size: 0;
 }
+.value > :first-child { flex: 1 1 auto; min-inline-size: 0; }
 
-.pref { flex: 2 1 12rem; min-inline-size: 0; }
-.comparison { flex: 1 1 7rem; min-inline-size: 0; }
-.value { flex: 1 1 6rem; min-inline-size: 0; }
+.and {
+  grid-column: 1;
+  justify-self: end;
+}
 
 .choices {
-  flex: 1 1 100%;
+  grid-column: 1 / -1;
   display: flex;
   flex-wrap: wrap;
   gap: var(--wzl-space-1) var(--wzl-space-3);
+  padding-inline-start: var(--wzl-space-3);
 }
 
-/* A path is what the code spells, beside the name a person reads. */
+/* Too narrow for a row to read across: the pref takes a line, and each comparison the line under it. */
+@container (max-width: 24rem) {
+  .row { grid-template-columns: minmax(0, 1fr) minmax(0, 8rem) auto; }
+  .pref { grid-column: 1 / 3; }
+  .removeRow { grid-column: 3; grid-row: 1; }
+  .comparison { grid-column: 1; }
+  .comparisonAlone,
+  .text { grid-column: 1 / 3; }
+  .value { grid-column: 2; }
+  .and { display: none; }
+}
+
+/* A path is what the code spells, beside the name a person reads: in the list a pref is picked from, and not on
+   the row, where the name is enough. */
 .path {
   font-family: var(--wzl-font-mono);
   font-size: var(--wzl-font-size-xs);
   color: var(--wzl-fg-muted);
 }
+.pref button .path { display: none; }
 
-.text { overflow-wrap: anywhere; align-self: center; }
+.text { overflow-wrap: anywhere; }
+
+.foot {
+  display: flex;
+  align-items: center;
+  gap: var(--wzl-space-2);
+}
+
+.add { flex: 1 1 auto; min-inline-size: 0; }
+.foot > button { flex: none; white-space: nowrap; }
+
+.and,
+.empty {
+  margin: 0;
+  font-size: var(--wzl-font-size-sm);
+  color: var(--wzl-fg-muted);
+}
 
 .problem {
   grid-column: 1 / -1;

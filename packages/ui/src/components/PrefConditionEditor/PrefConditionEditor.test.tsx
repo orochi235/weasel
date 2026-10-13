@@ -38,6 +38,12 @@ const offered = (within_: HTMLElement, button: RegExp): string[] => {
   fireEvent.keyDown(screen.getByRole('listbox'), { key: 'Escape' });
   return names;
 };
+/** The control that says which rows of a group must hold: the editor's own, or with `of`, that of the group at a row. */
+const quantifier = (of?: HTMLElement) => (of ? within(of).getAllByRole('button', { name: /Which rows of/ })[0]! : screen.getAllByRole('button', { name: /Which rows must hold/ })[0]!);
+const quantify = (label: string, of?: HTMLElement) => {
+  fireEvent.click(quantifier(of));
+  fireEvent.click(screen.getByRole('option', { name: label }));
+};
 const add = (option: RegExp) => pick(screen.getByRole('group', { name: 'Shown if' }), /Add a condition/, option);
 
 describe('PrefConditionEditor', () => {
@@ -59,26 +65,26 @@ describe('PrefConditionEditor', () => {
 
   it('combines a second row under all of, and under any of once that is picked', () => {
     const seen = open({ path: 'view.grid', is: true });
-    expect(screen.queryByRole('radio', { name: 'Any of' })).toBeNull();
+    expect(screen.queryByRole('button', { name: /Which rows must hold/ })).toBeNull();
     add(/Author/);
     expect(seen.value).toEqual({ all: [{ path: 'view.grid', is: true }, { path: 'view.author' }] });
-    fireEvent.click(screen.getByRole('radio', { name: 'Any of' }));
+    quantify('Any of');
     expect(seen.value).toEqual({ any: [{ path: 'view.grid', is: true }, { path: 'view.author' }] });
     fireEvent.click(screen.getByRole('button', { name: 'Remove condition 1' }));
     expect(seen.value).toEqual({ any: [{ path: 'view.author' }] });
   });
 
-  it('offers a boolean on and off, and anything else only whether it is set', () => {
+  it('offers a boolean on and off, and anything else whether it is set or not', () => {
     const seen = open({ all: [{ path: 'view.grid' }, { path: 'view.author' }] });
     expect(offered(row(1), /comparison/)).toEqual(['is on', 'is off']);
-    expect(offered(row(2), /comparison/)).toEqual(['is set']);
+    expect(offered(row(2), /comparison/)).toEqual(['is set', 'is not set']);
     pick(row(1), /comparison/, 'is off');
     expect(seen.value).toEqual({ all: [{ path: 'view.grid', is: false }, { path: 'view.author' }] });
   });
 
-  it('offers an enum is, is not, and is one of, over that leaf\'s own options', () => {
+  it('offers an enum is, is not, is one of, and is none of, over that leaf\'s own options', () => {
     const seen = open({ path: 'view.units', is: 'px' });
-    expect(offered(row(1), /comparison/)).toEqual(['is', 'is not', 'is one of']);
+    expect(offered(row(1), /comparison/)).toEqual(['is', 'is not', 'is one of', 'is none of']);
     expect(offered(row(1), /value/)).toEqual(['Pixels', 'Millimeters', 'Inches']);
     pick(row(1), /value/, 'Millimeters');
     expect(seen.value).toEqual({ path: 'view.units', is: 'mm' });
@@ -124,24 +130,91 @@ describe('PrefConditionEditor', () => {
     expect(seen.value).toEqual({ path: 'view.step', above: 0 });
   });
 
-  it('shows a not, a nested combinator, and a range as text, and hands each back as it was', () => {
-    const not: PrefCondition = { not: { path: 'view.grid' } };
-    const nested: PrefCondition = { any: [{ path: 'view.author' }, { path: 'view.step', below: 2 }] };
-    const range: PrefCondition = { path: 'view.step', atLeast: 1, below: 10 };
-    const seen = open({ all: [not, nested, range, { path: 'view.grid' }] });
-    expect(row(1)).toHaveTextContent('not (view.grid is set)');
-    expect(row(2)).toHaveTextContent('view.author is set or view.step is below 2');
-    expect(row(3)).toHaveTextContent('is at least 1 and is below 10');
-    expect(within(row(1)).queryByRole('button', { name: /pref|comparison/ })).toBeNull();
-    expect(within(row(2)).queryByRole('button', { name: /pref|comparison/ })).toBeNull();
-    pick(row(4), /comparison/, 'is off');
-    const parts = (seen.value as { all: PrefCondition[] }).all;
-    expect(parts[0]).toBe(not);
-    expect(parts[1]).toBe(nested);
-    expect(parts[2]).toBe(range);
-    expect(parts[3]).toEqual({ path: 'view.grid', is: false });
+  it('writes what is not set, and what is none of some options, as the not of a test', () => {
+    const seen = open({ all: [{ path: 'view.author' }, { path: 'view.units', in: ['mm'] }] });
+    pick(row(1), /comparison/, 'is not set');
+    pick(row(2), /comparison/, 'is none of');
+    expect(seen.value).toEqual({ all: [{ not: { path: 'view.author' } }, { not: { path: 'view.units', in: ['mm'] } }] });
+    fireEvent.click(within(row(2)).getByRole('checkbox', { name: 'Inches' }));
+    expect((seen.value as { all: PrefCondition[] }).all[1]).toEqual({ not: { path: 'view.units', in: ['mm', 'in'] } });
+    pick(row(1), /comparison/, 'is set');
+    expect((seen.value as { all: PrefCondition[] }).all[0]).toEqual({ path: 'view.author' });
   });
 
+  it('draws a range as two comparisons of one pref, and edits either without the other', () => {
+    const seen = open({ path: 'view.step', atLeast: 1, below: 10 });
+    expect(offered(row(1), /Condition 1 comparison 2/)).toEqual(['is below', 'is at most', 'is not']);
+    pick(row(1), /Condition 1 comparison 2/, 'is at most');
+    expect(seen.value).toEqual({ path: 'view.step', atLeast: 1, atMost: 10 });
+    const box = within(row(1)).getByRole('spinbutton', { name: 'Condition 1 value' });
+    fireEvent.change(box, { target: { value: '3' } });
+    fireEvent.blur(box);
+    expect(seen.value).toEqual({ path: 'view.step', atLeast: 3, atMost: 10 });
+    fireEvent.click(within(row(1)).getByRole('button', { name: 'Remove condition 1 comparison 2' }));
+    expect(seen.value).toEqual({ path: 'view.step', atLeast: 3 });
+  });
+
+  it('adds the bound a number\'s row lacks, and offers none once it has both', () => {
+    const seen = open({ path: 'view.step', atLeast: 4 });
+    fireEvent.click(within(row(1)).getByRole('button', { name: 'Add a bound to condition 1' }));
+    expect(seen.value).toEqual({ path: 'view.step', atLeast: 4, atMost: 4 });
+    expect(within(row(1)).queryByRole('button', { name: /Add a bound/ })).toBeNull();
+  });
+});
+
+describe('PrefConditionEditor groups', () => {
+  const author: PrefCondition = { path: 'view.author' };
+  const small: PrefCondition = { path: 'view.step', below: 2 };
+
+  it('draws a combinator among the rows as a group of its own rows, each with its controls', () => {
+    open({ all: [{ path: 'view.grid' }, { any: [author, small] }] });
+    expect(quantifier(row(2))).toHaveTextContent('Any of');
+    expect(within(screen.getByRole('group', { name: 'Condition 2.1' })).getByRole('button', { name: /pref/ })).toHaveTextContent('Author');
+    expect(within(screen.getByRole('group', { name: 'Condition 2.2' })).getByRole('spinbutton')).toHaveValue('2');
+  });
+
+  it('edits a row inside a group, and hands the rows beside the group back as they were', () => {
+    const grid: PrefCondition = { path: 'view.grid' };
+    const seen = open({ all: [grid, { any: [author, small] }] });
+    pick(screen.getByRole('group', { name: 'Condition 2.1' }), /comparison/, 'is not set');
+    const parts = (seen.value as { all: PrefCondition[] }).all;
+    expect(parts[0]).toBe(grid);
+    expect(parts[1]).toEqual({ any: [{ not: author }, small] });
+    expect((parts[1] as { any: PrefCondition[] }).any[1]).toBe(small);
+  });
+
+  it('adds a row to a group, changes its quantifier, and removes it whole', () => {
+    const seen = open({ all: [{ path: 'view.grid' }, { any: [author] }] });
+    pick(row(2), /Add a condition to condition 2/, /Zoom step/);
+    expect((seen.value as { all: PrefCondition[] }).all[1]).toEqual({ any: [author, { path: 'view.step', above: 0 }] });
+    quantify('None of', row(2));
+    expect((seen.value as { all: PrefCondition[] }).all[1]).toEqual({ not: { any: [author, { path: 'view.step', above: 0 }] } });
+    expect(quantifier(row(2))).toHaveTextContent('None of');
+    fireEvent.click(within(row(2)).getByRole('button', { name: 'Remove condition 2' }));
+    expect(seen.value).toEqual({ path: 'view.grid' });
+  });
+
+  it('adds a group at the quantifier its own is not, which holds whatever no rows come to until it has some', () => {
+    const seen = open({ all: [{ path: 'view.grid' }, author] });
+    fireEvent.click(screen.getByRole('button', { name: 'Add any of rows' }));
+    expect((seen.value as { all: PrefCondition[] }).all[2]).toEqual({ any: [] });
+    expect(row(3)).toHaveTextContent('No rows, which never holds.');
+    fireEvent.click(within(row(3)).getByRole('button', { name: 'Add all of rows to condition 3' }));
+    expect((seen.value as { all: PrefCondition[] }).all[2]).toEqual({ any: [{ all: [] }] });
+    expect(screen.getByRole('group', { name: 'Condition 3.1' })).toHaveTextContent('No rows, which always holds.');
+  });
+
+  it('draws the not of the whole condition as its quantifier, and a not no comparison says as none of one row', () => {
+    const seen = open({ not: { all: [{ path: 'view.grid' }, { not: { path: 'view.units', is: 'mm' } }] } });
+    expect(quantifier()).toHaveTextContent('Not all of');
+    expect(quantifier(row(2))).toHaveTextContent('None of');
+    expect(within(screen.getByRole('group', { name: 'Condition 2.1' })).getByRole('button', { name: /value/ })).toHaveTextContent('Millimeters');
+    quantify('Any of');
+    expect(seen.value).toEqual({ any: [{ path: 'view.grid' }, { not: { path: 'view.units', is: 'mm' } }] });
+  });
+});
+
+describe('PrefConditionEditor problems', () => {
   it('says what is wrong with a row on that row, and lets it be pointed at a pref the schema has', () => {
     const seen = open({ all: [{ path: 'view.grid' }, { path: 'view.gone', is: 'x' }, { path: 'view.units', is: 'cm' }] });
     expect(row(1)).not.toHaveTextContent(/no leaf|never holds/);

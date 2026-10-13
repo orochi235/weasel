@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import type { PrefCondition, PrefGroup, PrefLeaf } from '@weasel-js/prefs';
-import { conditionLeaves } from './conditionRows';
+import { conditionLeaves } from './conditionLeaves';
 import { PrefConditionEditor } from './PrefConditionEditor';
 
 afterEach(cleanup);
