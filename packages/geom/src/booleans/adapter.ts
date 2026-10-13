@@ -6,8 +6,9 @@
  *   Polygon      = Ring[]   (first ring outer, subsequent rings holes)
  *   Ring         = [x, y][] (closed — first vertex repeated as last)
  *
- * Bezier inputs are flattened. Open contours are implicitly closed because
- * boolean ops are defined on closed regions.
+ * Bezier inputs are flattened. A boolean works on what a fill covers: an open
+ * contour is closed where a fill closes it (`fillsOpenSubpaths`) and left out
+ * where one does not.
  *
  * The `[x,y][]` nested-array form here is the one place geom's flat-everywhere
  * rule is suspended — it is the third-party clipper's required API.
@@ -15,6 +16,7 @@
 import { PATH_M, PATH_L, PATH_C, PATH_Q, PATH_Z } from '../commands';
 import { elevateQuadraticToCubic } from '../curve';
 import { DEFAULT_FLATTEN_TOLERANCE, flattenCubic } from '../flatten';
+import { fillsOpenSubpaths } from '../openFill';
 import type { Path, PolygonPath } from '../path';
 
 /** A `[x, y]` 2-tuple. */
@@ -58,7 +60,9 @@ export function pathToMultiPolygon(
   let ci = 0;
   const { commands, coords } = path;
 
-  const finalizeCurrent = () => {
+  const fillsOpen = fillsOpenSubpaths(path);
+  const finalizeCurrent = (closed = fillsOpen) => {
+    if (!closed) current = null;
     if (!current || current.length === 0) return;
     // Close the ring by repeating the first vertex if not already closed.
     const first = current[0];
@@ -113,7 +117,7 @@ export function pathToMultiPolygon(
         break;
       }
       case PATH_Z: {
-        finalizeCurrent();
+        finalizeCurrent(true);
         cx = startX; cy = startY;
         break;
       }

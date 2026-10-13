@@ -218,40 +218,26 @@ Priority tags:
     the transform, so the result is drawn stretched; these have to change together.
   - `remapRotatedLeaf` (`core/geometry/poseDescriptor.ts`) drops the shear a non-uniform group
     resize gives a turned leaf rather than writing it to the leaf's `transform`.
-  - `useNodeOverlayFrame` (`core/viewport/`), which places DOM chrome over a node, the text
-    edit overlay and its carets included, applies the rotation alone. Needs a browser to verify.
+  - The text edit overlay and its carets are placed from the pose's `x`, `y`, `width`, and
+    `height` alone (`getScreenPose` in `features/text/useSceneTextEdit.ts`): neither the
+    rotation nor the `transform` reaches the DOM. Needs a browser to verify.
   - `composeRectPose` / `composeRigidPose` (`core/scene/composePose.ts`) keep a child's own
     transform and do not compose a container's into its children.
   - The debug overlay (`debug/createDebugOverlayLayer.ts`) outlines the rotated box.
   - `defaultNodeProperties` has no row for it, so `SelectionPanel` can neither show nor clear it.
 
-- **(P3) Under `openFill: 'none'`, SVG import and export and the booleans still close an open
-  subpath.** A path says whether a fill closes its open subpaths (`PolygonPath.openFill`, or
-  `setDefaultOpenFill` for a path that names none). SVG always closes one, so these disagree with a
-  path that says `'none'`: `packages/svg/src/lowerLeaf.ts` imports a filled `<polyline>` without
-  stamping `openFill: 'close'`, so it stops painting under a `'none'` default, and the SVG writer
-  emits an unfilled open subpath with its node's fill, which a browser then paints. The export half
-  has to split a path that mixes closed and open subpaths. The booleans close every open contour
-  whatever the path says (`packages/geom/src/booleans/contours.ts`, `implicitClose`). Also: a mesh
-  the renderer cached keeps the rule it was built under when the default changes
-  (`packages/renderer/src/cache/cache.ts` keys on the path), so the default has to be set before
-  the first paint.
+- **(P3) svg export: a path split for `openFill: 'none'` writes its stroke markers on both
+  halves.** A path that mixes closed and open subpaths under a fill that does not close the open
+  ones is written as a `<g>` of two `<path>`s (`packages/svg/src/openSubpathFill.ts`), each with
+  the node's whole stroke. SVG draws `marker-start` and `marker-end` once per `<path>`, so a
+  marked stroke gets one pair per half. Not compared with what the renderer draws for the one
+  path.
 
-- **(P3) A closed outline with no fill is selected from inside it.** A marquee or lasso in
-  `intersect` mode drawn wholly inside an unfilled closed shape takes it, though a click there
-  does not: `shapeCoversPoint` reads the painter's ink (`NodeInk.filled`) and `regionTakes`
-  (`packages/core/src/core/geometry/regionHit.ts`) is handed a path and tests its filled region.
-  `canvas/deps/hitTestArea.ts` passes the ink for open subpaths only (`asInked`), because a path
-  can say its open subpaths enclose nothing and cannot say that of a closed one. The same is true of
-  `containsInFrame` (`packages/core/src/canvas/SceneCanvas/poseGeometry.ts`), which calls
-  `pointInPath` on a path-shaped pose with no node in hand: wherever picking is not by shape, an
-  unfilled path is picked across what it encloses, open subpaths included. Both want the region and
-  frame tests to take "is this filled" beside the path.
-
-- **(P3) WeaselDraw: no browser has drawn an imported clipped group.** A `<g clip-path>` reaches
-  the scene as a container whose `data` is the clip, and the unit tests stop at that data. What is
-  left is a `*.browser.test` that opens one and reads a pixel inside the group's box and outside
-  the clip's outline.
+- **(P3) `arrayAdapter` selects a closed outline with no fill from inside it.** A marquee or lasso
+  in `intersect` mode drawn wholly inside an unfilled closed shape takes it. `regionTakes`
+  (`packages/core/src/core/geometry/regionHit.ts`) takes "is this filled" beside the outline and
+  the scene walk passes the painter's ink, but `arrayAdapter` has only its `silhouette` config and
+  nothing that says how an item is inked.
 
 - **(P3) svg import: `<tspan>` glyph positioning is not read.** `dx`, `rotate`, and list-valued
   per-glyph `x` / `y` are not applied; each warns, on `<text>` and `<tspan>` alike
@@ -269,11 +255,11 @@ Priority tags:
 
 ### Pathfinder follow-ups (post-v1)
 
-- **(P3) Create Outlines refuses synthetic-bold text.** `textToPath` answers `reason: 'synthetic-bold'`: emboldening it is a union with the glyphs' own outline stroke, but the width has to match what the renderer's distance-field shift (`SYNTH_BOLD_AMOUNT`) draws, and that mapping to em units is not worked out.
+- **(P3) Create Outlines refuses synthetic-bold text.** `textToPath` answers `reason: 'synthetic-bold'`: emboldening it is a union with the glyphs' own outline stroke, but the width has to match what the renderer's distance-field shift (`SYNTH_BOLD_AMOUNT`, `packages/renderer/src/draw/text.ts`) draws. Read from `glyphCoverage` and `glyphFieldScale` (`packages/font/src/textSdf.ts`) and not measured against pixels: the shift moves the edge out by `SYNTH_BOLD_AMOUNT` of the field's span, which is `distanceRange` texels in a baked atlas and `SDF_RADIUS` in a runtime canvas page, and a texel is `1 / info.size` em, so the outline grows by `SYNTH_BOLD_AMOUNT × span / info.size` em on each side and differs by which tier serves the glyph. What is left: `textToPath` (`packages/text`) has no stroke outliner to call, since `strokeToPath` is in `@weasel-js/stroke`, which text does not depend on; the union flattens every curve of the glyph; and the result has to be compared with the field in a browser.
 - **(P3) Non-destructive boolean groups.** Figma-style "boolean group" container node that recomputes geometry from children at render time. Requires a new layer/scene-node type plus renderer support.
 - **(P3) True curve booleans.** The booleans flatten beziers before clipping (`packages/geom/src/booleans/adapter.ts`), so the result is straight-line. Skia/PathKit-style curve-preserving booleans are substantially harder.
 - **(P3) Live preview of a Boolean operation.** Seeing the result before committing: on hovering a Pathfinder button, or holding an op key over a path. `previewBooleanOp` answers the pieces an operation would make, each with its source and paint, and mints and commits nothing. What is left is everything that shows them: no Pathfinder action has a gesture or a key to hold, an action has no way to say what it would do while its button is hovered, and nothing draws paths that are not nodes over the scene.
-- **(P3) A group's `data.label` is not drawn on the canvas.** Outline Stroke on draw's starter rect makes a group that takes the rect's data (`drawOutlinesAdapter`, `apps/draw/src/outlinesAdapter.ts`), so the layer list still reads "Welcome", but the word the rect wore on the canvas is gone: `defaultDrawOne` draws a leaf's label and nothing draws a container's.
+- **(P3) A group's `data.label` is not drawn on the canvas.** Outline Stroke on draw's starter rect makes a group that takes the rect's data (`drawOutlinesAdapter`, `apps/draw/src/outlinesAdapter.ts`), so the layer list still reads "Welcome", but the word the rect wore on the canvas is gone. `defaultDrawOne` does emit a container's label, but `buildSceneTree` (`packages/core/src/canvas/buildSceneTree.ts`) pushes a container's own commands before its children's, so the group's paths cover it. Drawing it on top needs the walk to paint a container a second time after its children, which `drawOne` has no way to ask for.
 
 ---
 

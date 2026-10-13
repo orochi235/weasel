@@ -423,3 +423,61 @@ describe('intersect reads an open subpath by whether it fills', () => {
     expect(hitTestLassoPolygon(veeScene(), arm, 'intersect')).toEqual(['vee']);
   });
 });
+
+/** A closed outline nothing fills is a line: a region drawn wholly inside it
+ *  touches no ink, as a click there does not. */
+describe('intersect reads a closed outline by whether it is filled', () => {
+  const square: PolygonPath = {
+    kind: 'polygon',
+    commands: Uint8Array.of(PATH_M, PATH_L, PATH_L, PATH_L, PATH_Z),
+    coords: Float32Array.of(0, 0, 100, 0, 100, 100, 0, 100),
+    fillRule: 'nonzero',
+  };
+  const stroke = { paint: { kind: 'solid', color: '#000000' }, width: 2 };
+  const box = { x: 0, y: 0, width: 100, height: 100 };
+  const sceneOf = (pose: unknown, data: unknown) => createScene<unknown, string, unknown>({
+    systemLayers: [{ id: 'default' }],
+    initial: [{ id: 'sq' as NodeId, kind: 'leaf' as const, layer: 'default', pose, data }],
+  });
+  const inside = { x: 40, y: 40, width: 20, height: 20 };
+  const insideLasso = [{ x: 40, y: 40 }, { x: 60, y: 40 }, { x: 50, y: 60 }];
+  const acrossEdge = { x: 90, y: 40, width: 20, height: 20 };
+
+  it('a marquee or lasso inside a filled square takes it', () => {
+    const fill = { paint: { kind: 'solid', color: '#ff0000' } };
+    const scene = sceneOf(box, { path: square, fill, stroke });
+    expect(hitTestArea(scene, inside)).toEqual(['sq']);
+    expect(hitTestLassoPolygon(scene, insideLasso, 'intersect')).toEqual(['sq']);
+  });
+
+  it('a marquee or lasso inside an unfilled square misses it', () => {
+    const scene = sceneOf(box, { path: square, fill: null, stroke });
+    expect(hitTestArea(scene, inside)).toEqual([]);
+    expect(hitTestLassoPolygon(scene, insideLasso, 'intersect')).toEqual([]);
+  });
+
+  it('a marquee across the outline of an unfilled square takes it', () => {
+    const scene = sceneOf(box, { path: square, fill: null, stroke });
+    expect(hitTestArea(scene, acrossEdge)).toEqual(['sq']);
+    expect(hitTestArea(scene, { x: -10, y: -10, width: 120, height: 120 })).toEqual(['sq']);
+  });
+
+  it('reads the ink of a path-shaped pose and of a painter with no silhouette', () => {
+    const drop = registerNodeShape({
+      id: 'test:hollow',
+      matches: (n) => (n.data as { hollow?: boolean } | null)?.hollow === true,
+      paint: () => [],
+      ink: () => ({ filled: false, outset: 1, inset: 1 }),
+    }, { priority: 'high' });
+    try {
+      for (const pose of [square, box]) {
+        const scene = sceneOf(pose, { hollow: true });
+        expect(hitTestArea(scene, inside)).toEqual([]);
+        expect(hitTestLassoPolygon(scene, insideLasso, 'intersect')).toEqual([]);
+        expect(hitTestArea(scene, acrossEdge)).toEqual(['sq']);
+      }
+    } finally {
+      drop();
+    }
+  });
+});

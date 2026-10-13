@@ -1,4 +1,4 @@
-import { boundsOfPath, type Path, pathToAnchors } from '@weasel-js/geom';
+import { boundsOfPath, hasOpenSubpath, type Path } from '@weasel-js/geom';
 import { splitPathByPolyline, snipPathByPolyline } from '@weasel-js/geom/booleans';
 import type { Op } from 'core/ops/types';
 import { createDeleteOp } from 'core/ops/delete';
@@ -125,6 +125,3 @@ function piecePose(source: unknown, b: SliceBounds): SliceBounds {
   delete rest['rotation'];
   return { ...rest, x: b.x, y: b.y, width: b.width, height: b.height };
 }
-
-const hasOpenSubpath = (path: Path): boolean =>
-  path.kind === 'polygon' && pathToAnchors(path).closed.some((closed) => !closed);

@@ -56,6 +56,8 @@ export {
   composePath,
   decomposePath,
   splitSubpaths,
+  splitByClosure,
+  hasOpenSubpath,
   unionBoundsPath,
   pathSignedArea,
   reversePath,
