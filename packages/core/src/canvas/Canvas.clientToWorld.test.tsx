@@ -73,7 +73,7 @@ describe('<Canvas clientToWorld>', () => {
 
   it('publishes the conversion on the ref handle and on the surface handle', () => {
     const { api, surface } = mount();
-    expect(api.clientToWorld!(LEFT + 40, TOP + 60)).toEqual([20, 30]);
+    expect(api.clientToWorld(LEFT + 40, TOP + 60)).toEqual([20, 30]);
     expect(surface.clientToWorld(LEFT + 40, TOP + 60)).toEqual([20, 30]);
   });
 });
@@ -91,6 +91,6 @@ describe('<Canvas> without a clientToWorld override', () => {
       left: LEFT, top: TOP, right: LEFT + 200, bottom: TOP + 200, width: 200, height: 200,
       x: LEFT, y: TOP, toJSON: () => ({}),
     });
-    expect(api.current!.clientToWorld!(LEFT + 40, TOP + 60)).toEqual([25, 37]);
+    expect(api.current!.clientToWorld(LEFT + 40, TOP + 60)).toEqual([25, 37]);
   });
 });

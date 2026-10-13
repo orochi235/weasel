@@ -3,7 +3,6 @@ import { createLongPressStore, type Dispatcher } from '@weasel-js/routing';
 import { useActionsRegistry, useDepRegistry, useDepSource, useGestureDispatcher } from '@weasel-js/routing/react';
 import type { Affordance } from 'affordances/types';
 import { EMPTY_CHROME_STATE } from 'core/selection/chromeState';
-import { clientToWorld as clientToWorldHelper } from 'core/viewport/clientToWorld';
 import type { View } from 'core/viewport/view';
 import type { RuleCtx } from 'features/chrome-caps';
 import type React from 'react';
@@ -14,7 +13,7 @@ import { anchorStateFrom, buildAffordanceAt, buildClassifyTarget, chromeAffordan
 import type { CanvasExtensionApi } from '../canvasExtension';
 import { pathFromPlane } from '../planeClips';
 import { useOptionalViewRegistry } from '../viewRegistry';
-import { recordCoordTrace } from './coordTrace';
+import { traceConversion } from './coordTrace';
 import type { SceneCanvasLongPress } from './props';
 
 export function GestureDispatcherMounter({
@@ -46,7 +45,7 @@ export function GestureDispatcherMounter({
   canvasRef: React.RefObject<HTMLElement | null>;
   /** Holds the full `CanvasExtensionApi` so the gesture dispatcher can call
    *  `requestRedraw()` between pointer events. */
-  canvasApiRef?: React.RefObject<CanvasExtensionApi | null>;
+  canvasApiRef: React.RefObject<CanvasExtensionApi | null>;
   tools: ToolsApi;
   /** Always-live entries the canvas installs beside `tools` — the selection's
    *  `move` / `transform` bindings. Ahead of the tools' ambient entries, so a
@@ -188,26 +187,14 @@ export function GestureDispatcherMounter({
     );
   }, [selectionRef, pickEvery, viewRef, pickBestRef, pickEveryRef, kindOfNodeRef]);
 
-  // The canvas rect is read on every call (not cached) so it stays correct
-  // after layout changes.
+  // Through the handle, so a `clientToWorld` override on the canvas applies.
   const clientToWorld = useCallback((clientX: number, clientY: number): { x: number; y: number } => {
-    const canvas = canvasRef.current;
-    const view = viewRef?.current;
-    if (!canvas || !view) {
-      recordCoordTrace({ ts: Date.now(), clientX, clientY, rect: null, view: null, world: { x: clientX, y: clientY }, fallback: true });
-      return { x: clientX, y: clientY };
-    }
-    const rect = canvas.getBoundingClientRect();
-    const [wx, wy] = clientToWorldHelper(clientX, clientY, rect, view);
-    const world = { x: wx, y: wy };
-    recordCoordTrace({
-      ts: Date.now(), clientX, clientY,
-      rect: { left: rect.left, top: rect.top, width: rect.width, height: rect.height },
-      view: { x: view.x, y: view.y, scaleX: view.scale.x, scaleY: view.scale.y },
-      world, fallback: false,
-    });
+    const api = canvasApiRef.current;
+    const [x, y] = api ? api.clientToWorld(clientX, clientY) : [clientX, clientY];
+    const world = { x, y };
+    traceConversion(clientX, clientY, api ? canvasRef.current : null, viewRef?.current, world);
     return world;
-  }, [canvasRef, viewRef]);
+  }, [canvasRef, canvasApiRef, viewRef]);
 
   const affordanceWithLayers = useMemo(() => {
     // Note this is NOT gated on `affordanceAt` being built: registered layers

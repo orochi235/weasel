@@ -16,7 +16,6 @@ import type { InsertAdapter } from 'core/adapters/types';
 import { sceneFromJSON } from 'core/scene/scene';
 import type { Node, NodeId, Scene, SerializedScene } from 'core/scene/types';
 import { useSelection, type SelectionApi, type UseSelectionOptions } from 'core/selection/useSelection';
-import { clientToWorld as clientToWorldHelper } from 'core/viewport/clientToWorld';
 import { useCanvasCamera } from './SceneCanvas/useCanvasCamera';
 import { normalizeView, type View } from 'core/viewport/view';
 import { never, useHoverTracking } from 'features/chrome-caps';
@@ -56,6 +55,7 @@ import { Canvas } from './Canvas';
 import { CanvasView, type CanvasViewProps } from './CanvasView';
 import { GestureDispatcherMounter } from './SceneCanvas/GestureDispatcherMounter';
 import { PointerProviderIfRoot, PointerPublisher } from './SceneCanvas/PointerProviderIfRoot';
+import { worldPointAt } from './SceneCanvas/worldPointAt';
 import { StandardActionsRegistrar } from './SceneCanvas/StandardActionsRegistrar';
 import { ToolKeybindingsMounter } from './SceneCanvas/ToolKeybindingsMounter';
 import { inferredNodeRouting } from './SceneCanvas/defaultNodeRouting';
@@ -623,12 +623,11 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     // Hover has no pointer to capture, so it resolves fresh — whichever view
     // is under the cursor right now owns the point.
     nodeAtClientPoint: (clientX, clientY) => {
-      const canvas = internalCanvasRef.current;
-      if (!canvas) return null;
+      const api = canvasApiRef.current;
+      if (!api) return null;
       const target = surfaceViewRegistry?.resolver.at(null, clientX, clientY);
-      const origin = target?.origin ?? canvas.getBoundingClientRect();
       const view = target?.view ?? currentViewRef.current;
-      const [x, y] = clientToWorldHelper(clientX, clientY, origin, view);
+      const [x, y] = worldPointAt(api, target, clientX, clientY);
       // A view judges its own layers; the surface's gate is the picker's default.
       const reg = target?.id != null
         ? surfaceViewRegistry?.list().find((r) => r.id === target.id)
@@ -912,7 +911,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
         <PointerProviderIfRoot>
           <>
             {canvas}
-            <PointerPublisher canvasRef={internalCanvasRef} />
+            <PointerPublisher canvasRef={internalCanvasRef} canvasApiRef={canvasApiRef} />
             <StandardActionsRegistrar
               selection={selection}
               scene={scene}

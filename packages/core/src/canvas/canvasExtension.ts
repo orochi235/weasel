@@ -78,11 +78,8 @@ export interface CanvasExtensionApi {
    * makes for hover and for its registered layers' hit-tests, so a point
    * converted here lands where the canvas says it does. Before the canvas
    * mounts there is nothing to measure and the point comes back unchanged.
-   *
-   * Every canvas component supplies it. It is declared optional only for
-   * hand-built handles that predate it.
    */
-  clientToWorld?(clientX: number, clientY: number): [number, number];
+  clientToWorld(clientX: number, clientY: number): [number, number];
   requestRedraw(): void;
   /**
    * Run `fn` after every paint, on the frame that painted — for chrome that

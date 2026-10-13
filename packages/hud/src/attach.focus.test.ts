@@ -15,6 +15,7 @@ function makeApi(element: HTMLElement): CanvasExtensionApi & { _layer?: RenderLa
     element,
     surface: null,
     getSurfaceRect: () => ({ x: 0, y: 0, width: 200, height: 200 }),
+    clientToWorld: (x: number, y: number): [number, number] => [x, y],
     requestRedraw: vi.fn(),
     subscribeFrame: vi.fn(() => () => {}),
     subscribeBeforePaint: vi.fn(() => () => {}),

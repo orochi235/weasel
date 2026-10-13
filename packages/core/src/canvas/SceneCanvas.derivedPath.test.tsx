@@ -57,6 +57,7 @@ vi.mock('./Canvas', async (importOriginal) => {
         element: elRef.current,
         surface: elRef.current,
         getSurfaceRect: () => ({ x: 0, y: 0, width: 0, height: 0 }),
+        clientToWorld: (x: number, y: number): [number, number] => [x, y],
         requestRedraw: () => {},
         subscribeFrame: () => () => {},
         subscribeBeforePaint: () => () => {},
