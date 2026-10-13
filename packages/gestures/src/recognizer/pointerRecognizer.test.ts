@@ -295,7 +295,7 @@ describe('two fingers', () => {
     h.down(1, 0, touch);
     h.down(2, 40, touch);
     expect(h.kinds()).toEqual(['press', 'multitouch']);
-    expect(h.events[1]).toEqual({ kind: 'multitouch', fingers: 2, centroid: { x: 20, y: 0 }, spread: 40, ...MODS });
+    expect(h.events[1]).toEqual({ kind: 'multitouch', fingers: 2, centroid: { x: 20, y: 0 }, spread: 40, angle: 0, ...MODS });
   });
 
   it('report the centroid in the space the host maps to', () => {
@@ -331,7 +331,18 @@ describe('two fingers', () => {
     h.down(2, 40, touch);
     h.recognizer.move(h.at(2, 80));
     expect(h.kinds().slice(2)).toEqual(['multitouch', 'pointermove']);
-    expect(h.events[2]).toEqual({ kind: 'multitouch', fingers: 2, centroid: { x: 40, y: 0 }, spread: 80, ...MODS });
+    expect(h.events[2]).toEqual({ kind: 'multitouch', fingers: 2, centroid: { x: 40, y: 0 }, spread: 80, angle: 0, ...MODS });
+  });
+
+  it('report the angle of the line from the first finger to the second, clockwise on screen', () => {
+    const h = harness({ inFlight: () => [2] });
+    h.down(1, 0, touch);
+    h.down(2, 40, touch);
+    expect(h.events[1]).toMatchObject({ angle: 0 });
+    h.recognizer.move(h.at(2, 0, 40));
+    expect(h.events[2]).toMatchObject({ kind: 'multitouch', angle: 90 });
+    h.recognizer.move(h.at(2, -40, 0));
+    expect(h.events[4]).toMatchObject({ kind: 'multitouch', angle: 180 });
   });
 
   it('place the move where the pump left the view, not where it was before', () => {

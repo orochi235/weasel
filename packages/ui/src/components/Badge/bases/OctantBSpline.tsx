@@ -40,6 +40,9 @@ const DEFAULTS: Required<OctantBSplineParams> = {
 
 interface Anchor { s: number; r: number; w: number }
 
+/** The least weight an anchor draws with: at zero a rational curve divides by zero at its ends. */
+export const OCTANT_BSPLINE_MIN_WEIGHT = 0.01;
+
 export function extractAnchorPairs(params: OctantBSplineParams = {}): Anchor[] {
   const cfg = { ...DEFAULTS, ...params };
   const count = Math.max(3, Math.min(Math.floor(cfg.count), OCTANT_BSPLINE_MAX_ANCHORS));
@@ -51,7 +54,7 @@ export function extractAnchorPairs(params: OctantBSplineParams = {}): Anchor[] {
     pairs.push({
       s: Math.max(0, Math.min(1, Number(cfg[sKeys[i]]))),
       r: Math.max(0, Number(cfg[rKeys[i]])),
-      w: Math.max(0.01, Number(cfg[wKeys[i]] ?? 1)),
+      w: Math.max(OCTANT_BSPLINE_MIN_WEIGHT, Number(cfg[wKeys[i]] ?? 1)),
     });
   }
   pairs.sort((a, b) => a.s - b.s);

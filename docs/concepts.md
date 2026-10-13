@@ -545,7 +545,8 @@ makes a move, resize or rotate commit without a history entry unless
 
 Built-in behaviors: `snap(strategy)`, `snapToContainer(...)`,
 `snapBackOrDelete(...)` for move; `clampMinSize` and `lockAspectWithModifier`
-for resize. A clone drag takes the move behaviors that only reshape the
+for resize; `snapRotationWithModifier` for rotate, which a rotate applies with
+Shift and 15 degree steps unless its binding is given a `behaviors` list. A clone drag takes the move behaviors that only reshape the
 translation (`snap(strategy)`), as `CloneBehavior`. Grid and guide snapping —
 `snapToGrid`, `snapToGuides`, `gridSnapStrategy`, the alignment behaviors —
 are in `@weasel-js/guides`. Marquee area-select is unconditional — it is

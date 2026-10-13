@@ -4,13 +4,19 @@ import { TAP_THRESHOLD_PX } from './thresholds';
 /** A position in whatever space the recognizer's `positionOf` reports. */
 export interface Point { x: number; y: number }
 
-/**
- * Centroid of every pointer and spread (distance between the first two).
- * Both are zero with fewer than 2 pointers.
- */
-export function multiTouchGeometry(positions: Iterable<Point>): { centroid: Point; spread: number } {
+export interface MultiTouchGeometry {
+  centroid: Point;
+  /** Distance between the first two pointers. */
+  spread: number;
+  /** Direction from the first pointer to the second, in degrees in (-180, 180],
+   *  growing clockwise on screen. */
+  angle: number;
+}
+
+/** Every pointer's centroid, and the first two's spread and angle. All zero with fewer than 2 pointers. */
+export function multiTouchGeometry(positions: Iterable<Point>): MultiTouchGeometry {
   const pts = [...positions];
-  if (pts.length < 2) return { centroid: { x: 0, y: 0 }, spread: 0 };
+  if (pts.length < 2) return { centroid: { x: 0, y: 0 }, spread: 0, angle: 0 };
   let sumX = 0;
   let sumY = 0;
   for (const p of pts) {
@@ -22,6 +28,7 @@ export function multiTouchGeometry(positions: Iterable<Point>): { centroid: Poin
   return {
     centroid: { x: sumX / pts.length, y: sumY / pts.length },
     spread: Math.sqrt(dx * dx + dy * dy),
+    angle: (Math.atan2(dy, dx) * 180) / Math.PI,
   };
 }
 

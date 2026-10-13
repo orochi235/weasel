@@ -10,6 +10,7 @@ import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { gestureReaders, type GestureReaders } from '../../gestures/shared/screenTolerance';
 import type { GestureContext, RotateBehavior } from '../../gestures/types';
 import { readGestureLifecycle, type GestureLifecycle } from '../gestureLifecycle';
+import { DEFAULT_ROTATE_BEHAVIORS } from './behaviors';
 import { moveGestureAdapter } from '../move/gestureAdapter';
 import { carryPose, invertPlane, planeOf } from '../planeInput';
 import { nodeDescriptors, poseDescriptorOf } from '../poseDescriptorDep';
@@ -127,7 +128,7 @@ export function beginRotate(
   const selection = ctx.deps.selection;
   const scene = ctx.deps.scene;
   const params = resolveParams(opts?.params);
-  const behaviors = (opts?.behaviors ?? []) as RotateBehavior<unknown>[];
+  const behaviors = (opts?.behaviors ?? DEFAULT_ROTATE_BEHAVIORS) as readonly RotateBehavior<unknown>[];
 
   if (!selection || !scene) return null;
 

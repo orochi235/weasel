@@ -1,5 +1,5 @@
 // src/tools/types.ts
-import type { Bounds, ModifierState } from '../vocabulary';
+import type { ModifierState } from '../vocabulary';
 import type { Contribution } from '../contributions/types';
 import type { CursorSpec } from '@weasel-js/cursor';
 import type { KernelOverlay } from '../index';
@@ -27,9 +27,6 @@ export interface ToolKeybinding {
 
 /** Modifier-key snapshot at event dispatch time. */
 export type ToolModifiers = ModifierState;
-
-/** Alias of the kit-wide `Bounds` type. */
-export type ToolBounds = Bounds;
 
 /**
  * The focus-declaring case of a `Contribution`: a mode the user switches

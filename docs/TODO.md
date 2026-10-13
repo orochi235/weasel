@@ -72,10 +72,10 @@ Priority tags:
 - **(P3) One dep still names a plane, not ten.** Read for what a camera-bearing host can
   implement, only `geometryProjection` obstructs (its own entry below). `view` is per-kernel by
   design, and `kernel3d` declares `camera3d`. `editAnchors` and `booleansAdapter` are 2D features a
-  3D kernel does not declare. `snap`, `lassoSelect`, `poseDescriptor`, `slice`, and `ingestion` are
-  satisfiable as typed, because every coordinate in them is a screen point under the identity
-  `clientToWorld` a 3D host passes. `pointer` has not been re-measured since it became the pointer
-  store (`PointerContextValue`).
+  3D kernel does not declare. `snap`, `lassoSelect`, `poseDescriptor`, `slice`, `ingestion`, and
+  `pointer` are satisfiable as typed, because every coordinate in them is a screen point under the
+  identity `clientToWorld` a 3D host passes. `pointer` was read, not run in a 3D host: its store
+  (`PointerContextValue`) holds one `{ worldX, worldY, viewId }` point and no camera.
 
 - **(P3) `geometryProjection` cannot hold a 3D transform.** `transform(node, m: Mat3)` names a
   plane in its signature, so a kernel with a camera has nothing to implement it with. Core builds
@@ -96,38 +96,24 @@ Priority tags:
   AltGr: that Chrome and Firefox both report AltGraph for it, and that a plain Ctrl+Alt+letter, for
   which Firefox reports AltGraph too, is still read as a chord.
 
-- **(P3) `createDispatcher` is still one closure.**
-  `packages/routing/src/interactions/dispatcher/dispatcher.ts` (about 900 lines) holds per-kind
-  context building, the walk, and UI-driven handles, which share its in-flight maps. The hook
-  beside it is down to listener wiring; pointer recognition is `packages/gestures/src/recognizer/`.
-
 - **(P3) What the pointer recognizer's extraction left.**
   - Three `pointermove` hover channels listen on one canvas element and each tracks "is a button
     down" its own way: the dispatcher's hover pump (`channels/hoverCursor.ts`), `useSurfaceInput`
     in core's canvas, and `PointerPublisher` in `PointerProviderIfRoot.tsx`.
   - The hover pump and `Canvas.tsx` each turn a resolved cursor into a `style.cursor` write plus a
     painted-cursor write. One cursor sink beside `PaintedCursorState` would serve both.
-  - A long-press timer fires on whichever view was routed last, not the view the press went down
-    in (`channels/pointer.ts`).
-  - `InvocationCtx.multiTouch.rotation` is hard-coded to 0 and read nowhere; making it real needs
-    an angle on `MultiTouchEvent`.
-  - `useGestureDispatcher.listeners.test.tsx`: "does NOT cancel on initial mount" cannot fail,
-    since nothing is ever in flight in it.
 
 - **(P3) What the text layout split left.**
-  - `packages/text/src/layout/paintRuns.ts`: a zero-advance atlas glyph gets no quad, against the
-    `LaidOutCell.drawsInk` doc ("a combining mark inks without advancing").
-  - `paintRuns.ts`, `glyphOutlineD`: a code point no tier could serve still gets outline geometry
-    above the outline threshold when the outline face has it, drawn on top of its neighbor.
-  - No renderer-level test drives `fill: {}` through an SDF-tier draw; the no-ink rule is pinned
-    at the text layer only.
+  - `layoutEntries.ts` kerns each code point against the one before it, so a combining mark
+    between two letters takes their pair's kerning away: `A`, U+0301, `B` sets the `B` where an
+    unkerned one goes. `layoutEntries.letterSpacing.test.ts` ("tracks a base and its combining mark
+    once") expects exactly that, so whether a mark should be skipped when kerning is not chosen yet.
   - `tests/perf/bench/text-layout.bench.ts` times layout alone now, so `BASELINE.md`'s numbers,
     which included grouping, need re-recording.
 
 - **(P3) What removing the old tool design left.** `ToolCtx`, the cursor function's argument,
   `Tool.previewPose` / `previewBounds` / `previewIds`, and tool-side preview sources are gone.
   Still to go:
-  - `ToolBounds` (`routing/src/tools/types.ts`) existed only for `previewBounds`.
   - A `<CanvasView>` converts client points with the bare rect helper (`clientToWorldHere` in
     `CanvasView.tsx`), and so does `worldPointAt` for a point that resolves to a declared view. A
     canvas's `clientToWorld` override reaches neither: it maps into the canvas's own world, and
@@ -142,19 +128,10 @@ Priority tags:
     text grip. Each swap changes how the lab looks or drags.
   - Its colors are literals (`rgba(255,255,255,…)`, `#7fb069`) in the stylesheets, not `--wzl-*`
     tokens.
-  - At weight 0 the spline editor's curve and the drawn badge disagree: the editor's
-    `readAnchors` allows weight 0 where the base's `extractAnchorPairs` floors it at 0.01.
   - In the workshop at a 1500px window, the Compose lab's "Type & padding" column and effects
     panel run past the right edge of the stage. Not compared against the lab before its text
     moved onto the type scale.
   - The simple stories (`StatusVariantMatrix`, `Sizes`, `EdgeCases`) still use inline styles.
-
-- **(P3) `DrawCanvas.tsx` and `SceneViewCanvas.tsx` each carry the same first-paint block**
-  (`paintedRef` plus a layout effect). It belongs in `useCanvasSurface`.
-
-- **(P3) Rotate has no angle snap.** Nothing under
-  `packages/core/src/interactions/actions/rotate/` quantizes the angle, with Shift or otherwise, and
-  core ships no rotate behavior that does.
 
 ### Cursor package follow-ups
 

@@ -274,10 +274,6 @@
   "packages/renderer/src/shaders/extractUniformNames.ts": {
     "longestFunction": 144
   },
-  "packages/routing/src/interactions/dispatcher/dispatcher.ts": {
-    "lines": 898,
-    "longestFunction": 812
-  },
   "packages/routing/src/interactions/dispatcher/useGestureDispatcher.tsx": {
     "longestFunction": 160
   },

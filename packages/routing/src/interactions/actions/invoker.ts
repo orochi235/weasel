@@ -133,6 +133,9 @@ export interface InvocationCtx {
     centroid: Point2;
     /** Distance between the two primary pointers, in CSS pixels. */
     spread: number;
+    /** Degrees the line between the two primary pointers has turned since
+     *  the gesture began, clockwise positive. It keeps counting past a half
+     *  turn. Zero where the events carry no `MultiTouchEvent.angle`. */
     rotation: number;
     /**
      * Pinch-zoom geometry, populated while a multitouch handle is in flight.

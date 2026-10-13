@@ -293,6 +293,12 @@ export interface MultiTouchEvent extends EventModifiers {
    */
   spread?: number;
   /**
+   * Direction from the first of the two primary pointers to the second, in
+   * degrees in (-180, 180], growing clockwise on screen. Present and absent
+   * alongside `centroid`.
+   */
+  angle?: number;
+  /**
    * Set on the event that ends the running multitouch gesture, whatever its
    * finger count: `'commit'` when a finger lifts, `'cancel'` when one of its
    * pointers is canceled. Such an event starts nothing.

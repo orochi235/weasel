@@ -40,6 +40,9 @@ export {
   rotationHandle,
   hitRotationHandle,
   DEFAULT_ROTATION_HANDLE_DISTANCE,
+  DEFAULT_ROTATE_BEHAVIORS,
+  DEFAULT_ROTATION_SNAP_STEP,
+  snapRotationWithModifier,
 } from '../interactions/actions/rotate';
 export type {
   UseRotateOptions,

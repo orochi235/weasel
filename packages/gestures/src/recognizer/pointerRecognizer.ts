@@ -10,7 +10,7 @@ import type { EventModifiers, InputEvent } from '../ui/inputEvent';
 import { pastDragThreshold } from '../ui/dragThreshold';
 import { composeClick, type ClickMemory, type ClickObserver, type ReleaseOutcome } from './click';
 import { createLongPressHold, type HeldPress, type RecognizerClock } from './longPressHold';
-import { createMultiTouchEpisode, multiTouchGeometry, type Point } from './multiTouch';
+import { createMultiTouchEpisode, multiTouchGeometry, type MultiTouchGeometry, type Point } from './multiTouch';
 import { longPressEvents, type PressFacts } from './pressFacts';
 import {
   modifiersOf, pointerDownEvent, pointerMoveEvent, pointerUpEvent, pressFactsOf,
@@ -85,7 +85,7 @@ interface Held {
 function multiTouchEvent(
   fingers: number,
   mods: EventModifiers,
-  more: { centroid: Point; spread: number } | { end: 'commit' | 'cancel' },
+  more: MultiTouchGeometry | { end: 'commit' | 'cancel' },
 ): InputEvent {
   return { kind: 'multitouch', fingers, ...modifiersOf(mods), ...more };
 }
@@ -98,9 +98,9 @@ function heldGeometry(
   held: ReadonlyMap<number, Held>,
   toSurface: (client: Point) => Point,
   extra: Point[],
-): { centroid: Point; spread: number } {
+): MultiTouchGeometry {
   const g = multiTouchGeometry([...positionsOf(held).values(), ...extra]);
-  return { centroid: toSurface(g.centroid), spread: g.spread };
+  return { ...g, centroid: toSurface(g.centroid) };
 }
 
 /** A hold that lasted: a long-press, or the contextmenu it falls back to. */

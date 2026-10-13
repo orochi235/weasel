@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { resetBakeBudget, registerFontOutlines, glyphOutline } from '@weasel-js/font';
+import { resetBakeBudget, registerFontOutlines, glyphOutline, setFontFallbackPolicy } from '@weasel-js/font';
 import {
   _resetFontRegistryForTests,
   _resetFallbackForTests,
@@ -96,6 +96,19 @@ describe('layoutRuns — outline tier', () => {
     expect(dash.x).toBeCloseTo(a.x + a.advance, 10);
     const quad = out.groups[1].quads[0];
     expect(quad.baselineY - quad.y0).toBeCloseTo(26 * (32 / 48), 10);
+  });
+
+  it('draws nothing in a slot the layout left empty, though the outline face has the glyph', async () => {
+    _resetFallbackForTests();
+    await registerFixture('inter', [{}]);
+    await registerOutlines('inter');
+    // The atlas has no em dash and nothing may stand in for it, so its slot is empty and zero wide.
+    setFontFallbackPolicy('none');
+
+    const out = layoutAndPaint([RUN_PLAIN('A\u2014B')], OPTS_OUT);
+    _resetFallbackForTests();
+    expect(out.lines[0].cells.map((c) => c.drawsInk)).toEqual([true, false, true]);
+    expect(out.groups.flatMap((g) => g.glyphs).map((g) => g.key.split('|').at(-1))).toEqual(['65', '66']);
   });
 
   it('stays on the SDF tier below the threshold', async () => {
