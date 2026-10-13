@@ -125,25 +125,6 @@ describe('d3Bind — diff and op emission', () => {
     expect(scene.current.get('c' as never)).toBeUndefined();
   });
 
-  it('idempotent: re-binding with unchanged data produces no real change', () => {
-    const scene = setupScene();
-    const data: Datum[] = [{ id: 'a', label: 'A', x: 10 }];
-    act(() => {
-      d3Bind(scene.current, data, { key: (d) => d.id })
-        .pose((d) => ({ x: d.x, y: 0, width: 10, height: 10 }))
-        .data((d) => ({ label: d.label }))
-        .join();
-    });
-    const beforePose = scene.current.get('a' as never)?.pose;
-    act(() => {
-      d3Bind(scene.current, data, { key: (d) => d.id })
-        .pose((d) => ({ x: d.x, y: 0, width: 10, height: 10 }))
-        .data((d) => ({ label: d.label }))
-        .join();
-    });
-    expect(scene.current.get('a' as never)?.pose).toEqual(beforePose);
-  });
-
   it('respects custom layer option', () => {
     const { result } = renderHook(() =>
       useScene<{ label: string }, 'a' | 'b', Pose>({

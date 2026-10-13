@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useScene, linear } from '@weasel-js/core';
 import { useAnimator } from '@weasel-js/animator';
@@ -15,6 +15,10 @@ interface Pose {
   width: number;
   height: number;
 }
+
+afterEach(() => {
+  vi.useRealTimers();
+});
 
 function makeClock() {
   let next = 1;
@@ -331,6 +335,7 @@ describe('d3Bind transition — custom .tween()', () => {
 
 describe('d3Bind transition — delay', () => {
   it('per-item delay function spreads spawn times', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
     const { scene, animator, clock } = setupSceneAndAnimator();
     act(() => {
       d3Bind(
@@ -366,8 +371,7 @@ describe('d3Bind transition — delay', () => {
     act(() => clock.advance(100));
     expect(scene.current.get('a' as never)?.pose.x).toBeCloseTo(100, 4);
     expect(scene.current.get('b' as never)?.pose.x).toBeCloseTo(0, 4);
-    // Wait for b's delay timer (setTimeout — handled by test environment).
-    await new Promise((r) => setTimeout(r, 1100));
+    act(() => vi.advanceTimersByTime(1000));
     act(() => clock.advance(100));
     // After delay + duration, b should also be at 100.
     expect(scene.current.get('b' as never)?.pose.x).toBeCloseTo(100, 4);
@@ -452,6 +456,7 @@ describe('d3Bind transition — chained .transition()', () => {
   });
 
   it('sequences per element, so a staggered chain stays staggered', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
     const s = setupSceneAndAnimator();
     seed(s, [
       { id: 'a', x: 0 },
@@ -479,7 +484,7 @@ describe('d3Bind transition — chained .transition()', () => {
     expect(x(s, 'a')).toBeCloseTo(300, 4);
     expect(x(s, 'b')).toBeCloseTo(0, 4);
     expect(onEnd).not.toHaveBeenCalled();
-    await new Promise((r) => setTimeout(r, 1100));
+    act(() => vi.advanceTimersByTime(1000));
     act(() => s.clock.advance(100));
     act(() => s.clock.advance(100));
     expect(x(s, 'b')).toBeCloseTo(300, 4);
