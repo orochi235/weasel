@@ -579,11 +579,11 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   that, a bordered box with square corners and a rule between neighbors. Which look wins, or
   whether both are variants every bar takes, is a visual call.
 
-- **(P3) Nothing in `@weasel-js/ui` shows a quantity's composites or styles its parts.**
-  `BandEditor` names each band with its range through `presentRange`, and that is the one caller:
-  nothing calls `presentVector`. No ui component renders a quantity's HTML form, so no stylesheet
-  styles its `data-part` or `data-composite` spans and `PropertyField` still draws its suffix from
-  its own `unit` prop.
+- **(P3) No control in `@weasel-js/ui` draws its numbers through `QuantityText`.** `QuantityText`
+  draws a quantity, a range, or a vector as the HTML form `@weasel-js/quantity` writes, and dims
+  a unit, a percent sign, and a label. No control uses it: `Slider`'s readouts, `BandEditor`'s
+  ticks and ends, and `Transport`'s rate draw `qty().text`, and `PropertyField` still draws its
+  suffix from its own `unit` prop. It draws no kind's MathML form.
 
 - **(P2) Redesign the stop color/opacity swatches under `GradientEditor`.** Each stop gets
   a `ColorField` with an alpha slider in a row beneath the track (`GradientEditor.tsx`). The
