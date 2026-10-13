@@ -1,23 +1,20 @@
 /**
- * Visual regression spec: insert demo.
- *
- * Captures the canvas and asserts pixel diff ≤ 2% vs the committed baseline.
- *
- * Interaction sequence:
- *   1. Initial mount — capture static scene.
- *
- * Notes: Canvas starts empty; initial mount = empty canvas is a valid (background-color) baseline. A scripted-drag insertion is deferred to a follow-up iteration of this spec.
+ * Visual regression spec: insert demo. Drags the rect tool across the empty
+ * canvas and captures the rectangle the insert action committed.
  */
-import { test } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 import { resolve } from 'node:path';
-import { captureCanvas, assertMatchesBaseline } from './diff.js';
+import { captureCanvas, readCanvasPixels, dragOnCanvas, assertMatchesBaseline } from './diff.js';
 
 const DEMO_ID = 'insert';
 const BASELINE_DIR = resolve(import.meta.dirname, 'baselines');
 
-// No per-demo tolerance override; default (2%) applies.
-
-test(`${DEMO_ID} — mounts an empty canvas`, async ({ page }) => {
-  const png = await captureCanvas(page, `/#${DEMO_ID}`);
-  assertMatchesBaseline(png, resolve(BASELINE_DIR, `${DEMO_ID}.png`));
+test(`${DEMO_ID} — a drag inserts a rectangle`, async ({ page }) => {
+  const empty = await captureCanvas(page, `/#${DEMO_ID}`);
+  const canvas = page.locator('canvas').first();
+  await dragOnCanvas(page, canvas, [[80, 60], [260, 200]]);
+  const png = await readCanvasPixels(canvas);
+  // An updated baseline is written unchecked, so say here that the drag drew.
+  expect(png.equals(empty), 'the drag should change the canvas').toBe(false);
+  assertMatchesBaseline(png, resolve(BASELINE_DIR, `${DEMO_ID}-rect.png`));
 });

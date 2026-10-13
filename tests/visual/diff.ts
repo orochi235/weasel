@@ -91,6 +91,25 @@ export async function waitForRepaint(page: Page): Promise<void> {
 }
 
 /**
+ * Press at the first point, move through the rest, release, and wait for the
+ * repaint. Points are CSS pixels from the canvas's top-left corner.
+ */
+export async function dragOnCanvas(
+  page: Page,
+  canvas: Locator,
+  points: ReadonlyArray<readonly [number, number]>,
+): Promise<void> {
+  const box = await canvas.boundingBox();
+  if (!box) throw new Error('dragOnCanvas: the canvas has no layout box');
+  const [[x0, y0], ...rest] = points;
+  await page.mouse.move(box.x + x0, box.y + y0);
+  await page.mouse.down();
+  for (const [x, y] of rest) await page.mouse.move(box.x + x, box.y + y, { steps: 4 });
+  await page.mouse.up();
+  await waitForRepaint(page);
+}
+
+/**
  * Where failed captures and diff images are written, for CI to upload as
  * artifacts. Gitignored; `test-results/` is also where Playwright puts traces.
  */
@@ -163,6 +182,6 @@ export function assertMatchesBaseline(
   }
   expect(
     diffRatio,
-    `Pixel diff ${(diffRatio * 100).toFixed(2)}% exceeds ${(maxDiffRatio * 100).toFixed(0)}% threshold`,
+    `Pixel diff ${(diffRatio * 100).toFixed(2)}% exceeds ${+(maxDiffRatio * 100).toFixed(2)}% threshold`,
   ).toBeLessThanOrEqual(maxDiffRatio);
 }
