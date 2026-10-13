@@ -31,6 +31,8 @@ import { paintModeOf } from './shaders/batchFill';
 const ARRAY_BUFFER = 0x8892;
 const ELEMENT_ARRAY_BUFFER = 0x8893;
 const STENCIL_TEST = 0x0B90;
+/** Float offset of `a_post` within a vertex. */
+const POST_OFFSET = 8;
 
 describe('renderer — consecutive solid-fill batching', () => {
   let recorder: ReturnType<typeof makeGLRecorder>;
@@ -897,12 +899,13 @@ describe('renderer — text in the batch', () => {
     expect(paintModeOf(vertex(buf, 4)[TEX_SLOT_OFFSET])).toBeGreaterThan(0);
   });
 
-  it('breaks the run where a faked bold meets text that is not', () => {
-    // The SDF threshold is a uniform, not a vertex attribute — see
-    // `StagedBatchState.synthBold`. This is the break that buys back, and the
-    // face here registers only weight 400, so asking for 700 fakes it.
+  it('keeps a faked bold in the run with text that is not, its threshold on the vertices', () => {
+    // The face here registers only weight 400, so asking for 700 fakes it.
     r.render([label('A'), label('B', { fontWeight: 700 })]);
-    expect(draws()).toEqual([6, 6]);
+    expect(draws()).toEqual([12]);
+    const buf = staged();
+    expect(vertex(buf, 0)[POST_OFFSET]).toBe(0);
+    expect(vertex(buf, 4)[POST_OFFSET]).toBeCloseTo(0.08, 6);
   });
 
   it('keeps one run across labels that agree about it', () => {

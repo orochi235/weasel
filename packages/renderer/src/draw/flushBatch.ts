@@ -52,7 +52,6 @@ export function flushBatch(ctx: DrawContext): void {
   setProjAndModel(ctx, prog, BATCH_MODEL);
   setColorUniform(ctx, prog, 1, 1, 1, 1);
   setAlphaUniform(ctx, prog, staged.alpha);
-  gl.uniform1f(prog.uniform('u_synthBold')!, staged.synthBold);
   setColorMatrixUniforms(ctx, prog, staged.colorMatrix);
   gl.activeTexture(gl.TEXTURE0);
   gl.bindTexture(gl.TEXTURE_2D, ctx.whiteTexture);

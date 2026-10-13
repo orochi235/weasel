@@ -1188,7 +1188,7 @@ only story runner in the repo.
 
   - **A run-breaker costs about 21 us a flush** (`flush-anatomy.spec.ts`), 16 of it bind and draw;
     no other call in `flushBatch` moves it by more than its noise, about 1.2 us. So what remains is
-    the draw count: synthetic bold and an eighth texture still break the run, and so does a color
+    the draw count: an eighth texture still breaks the run, and so does a color
     matrix around a gradient, or around an image when it does more than scale channels down. A solid or a glyph under a color matrix has its color
     mapped on the CPU (`draw/foldColor.ts`), which paints the same pixel as the shader in headless
     Chromium (`colorMatrixFold.browser.test.ts`) and has not been timed. The specs that break a run
@@ -1202,8 +1202,12 @@ only story runner in the repo.
     turned off the axes, and a rect clip with a slanted item crossing it (`DrawBatch.clipQuad` says
     why a slanted edge cannot be cut). The stencil itself costs about 4.9 us a push and pop, 7.9 at
     8 leaves (`clip-cost.spec.ts`).
-  - **Caching `u_synthBold`, `u_samplers`, and `u_fieldScale` was tried and reverted**, measured
-    through `finish`: it saved about 0.1 us a flush on color-matrix breaks and made a frame of
+  - **Synthetic bold no longer breaks a run**: the threshold shift rides a glyph's `a_post`, checked
+    by draw count (`drawBatch.test.ts`). `syntheticBold.browser.test.ts` is the pixel check and has
+    not been run; nothing has timed it, and `flush-anatomy.spec.ts` has not been run since it lost
+    its `u_synthBold` variant.
+  - **Caching `u_synthBold` (a uniform then), `u_samplers`, and `u_fieldScale` was tried and
+    reverted**, measured through `finish`: it saved about 0.1 us a flush on color-matrix breaks and made a frame of
     20,000 stroked rects 30% slower, with both renderers interleaved in one page. The cause was not
     found.
   - **Changing kind costs 1.35–4.9 us a boundary** (`transition-matrix.spec.ts`): text and gradient

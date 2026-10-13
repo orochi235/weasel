@@ -254,8 +254,8 @@ export class DrawBatch {
    * `rgba`.
    *
    * `mode` says which channels of that atlas carry the distance field, and
-   * rides the vertices packed into the slot. The synthetic-bold threshold does
-   * not: it is `u_synthBold`, and the caller breaks the run when it changes.
+   * rides the vertices packed into the slot. `synthBold` is the shift on the
+   * field's threshold, in `a_post`: a glyph has no use for an alpha factor there.
    *
    * A synthetic oblique is sheared here, before `m`; `tanItalic` is 0 for an
    * upright face. Corners wind as `pushQuad`'s do.
@@ -265,7 +265,7 @@ export class DrawBatch {
     baselineY: number, tanItalic: number, m: GlMat3,
     u0: number, v0: number, u1: number, v1: number,
     r: number, g: number, b: number, a: number,
-    slot: number, mode: number,
+    slot: number, mode: number, synthBold: number,
   ): boolean {
     this.reserve(4, 6);
     let i = this.nVerts * FLOATS_PER_VERTEX;
@@ -280,10 +280,10 @@ export class DrawBatch {
     const cx = ma * bx1 + mc * y1 + mtx, cy = mb * bx1 + md * y1 + mty;
     const dx = ma * bx0 + mc * y1 + mtx, dy = mb * bx0 + md * y1 + mty;
     const P = packSlot(slot, mode);
-    i = this.writeVertex(i, ax, ay, r, g, b, a, u0, v0, 1, P);
-    i = this.writeVertex(i, bx, by, r, g, b, a, u1, v0, 1, P);
-    i = this.writeVertex(i, cx, cy, r, g, b, a, u1, v1, 1, P);
-    this.writeVertex(i, dx, dy, r, g, b, a, u0, v1, 1, P);
+    i = this.writeVertex(i, ax, ay, r, g, b, a, u0, v0, synthBold, P);
+    i = this.writeVertex(i, bx, by, r, g, b, a, u1, v0, synthBold, P);
+    i = this.writeVertex(i, cx, cy, r, g, b, a, u1, v1, synthBold, P);
+    this.writeVertex(i, dx, dy, r, g, b, a, u0, v1, synthBold, P);
     this.pushQuadIndices();
     return this.clip === null || this.clipQuad(this.nVerts - 4, this.nIdx - 6, this.clip);
   }

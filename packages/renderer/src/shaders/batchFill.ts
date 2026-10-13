@@ -34,15 +34,18 @@
  * `PAINT_MODE_IMAGE` and the fragment divides its alpha back out.
  *
  * `a_post` is the alpha factor applied *after* the color matrix. An image quad
- * puts its opacity there. Solid geometry and glyphs leave it at 1 and fold
- * their own alpha into `a_vertexColor`, which is only sound under an identity
- * matrix; the caller owns that condition.
+ * puts its opacity there. Solid geometry leaves it at 1 and folds its own
+ * alpha into `a_vertexColor`, which is only sound under an identity matrix;
+ * the caller owns that condition. A glyph folds its alpha the same way and
+ * has no use for the factor, so its `a_post` is the synthetic-bold shift on
+ * the field's threshold instead: text faked bold shares a run with text that
+ * is not, with no wider vertex.
  *
  * Inputs:
  *   a_position     vec2   screen-space x,y of the corner
  *   a_vertexColor  vec4   straight-alpha color; (1,1,1,1) on an image vertex
  *   a_uv           vec2   texture coordinate 0..1; the white texel for solids
- *   a_post         float  alpha factor applied after the color matrix
+ *   a_post         float  alpha factor applied after the color matrix; a glyph's bold shift
  *   a_texSlot      float  slot + 8 * paint mode; slot 0 is the white texel
  *
  * Output: PREMULTIPLIED alpha. Blend: `gl.blendFunc(ONE, ONE_MINUS_SRC_ALPHA)`.
@@ -151,7 +154,6 @@ flat in float v_paintMode;
 uniform sampler2D u_samplers[${BATCH_TEXTURE_SLOTS}];
 uniform vec4 u_color;
 uniform float u_alpha;
-uniform float u_synthBold;
 uniform vec2 u_fieldScale[${BATCH_TEXTURE_SLOTS}];
 uniform mat4 u_colorMatrix;
 uniform vec4 u_colorBias;
@@ -190,19 +192,19 @@ void main() {
   texel.rgb = mix(texel.rgb, straightRgb(texel), step(${PAINT_MODE_IMAGE - 0.5}, v_paintMode));
   float isGlyph = step(0.5, v_paintMode) * step(v_paintMode, 2.5);
   // Unconditional, and multiplied out afterwards rather than branched around:
-  // see the file header.
-  float coverage = glyphCoverage(texel, v_paintMode, u_synthBold, v_uv, u_fieldScale[v_texSlot]);
+  // see the file header. A glyph's a_post is its synthetic-bold shift.
+  float coverage = glyphCoverage(texel, v_paintMode, v_post * isGlyph, v_uv, u_fieldScale[v_texSlot]);
   // A glyph's texel is a distance field, so it takes no part in the color; a
   // plain vertex multiplies its texel in as it always did.
   vec4 src = mix(texel, vec4(1.0), isGlyph) * u_color * v_vertexColor;
   vec4 mapped = clamp(u_colorMatrix * src + u_colorBias, 0.0, 1.0);
-  float a = mapped.a * u_alpha * mix(v_post, 1.0, isGrad) * mix(1.0, coverage, isGlyph);
+  float a = mapped.a * u_alpha * mix(v_post, 1.0, max(isGrad, isGlyph)) * mix(1.0, coverage, isGlyph);
   outColor = vec4(mapped.rgb * a, a);
 }
 `;
 
 export const BATCH_FILL_UNIFORMS = [
-  'u_proj', 'u_model', 'u_samplers', 'u_color', 'u_alpha', 'u_synthBold', 'u_fieldScale',
+  'u_proj', 'u_model', 'u_samplers', 'u_color', 'u_alpha', 'u_fieldScale',
   'u_colorMatrix', 'u_colorBias',
 ] as const;
 

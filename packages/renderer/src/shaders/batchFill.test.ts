@@ -126,6 +126,14 @@ describe('batch program — glyph coverage is unconditional', () => {
     );
   });
 
+  it('reads a glyph\'s bold shift from a_post, and keeps it out of the alpha', () => {
+    // A glyph's a_post is 0 or a small shift: read as the alpha factor it is on
+    // every other vertex, it would erase the text.
+    expect(BATCH_FRAG_SRC).not.toContain('u_synthBold');
+    expect(BATCH_FRAG_SRC).toMatch(/glyphCoverage\(texel,\s*v_paintMode,\s*v_post \* isGlyph,/);
+    expect(BATCH_FRAG_SRC).toMatch(/mix\(v_post,\s*1\.0,\s*max\(isGrad,\s*isGlyph\)\)/);
+  });
+
   it('keeps a glyph texel out of the color', () => {
     // The texel is a distance field there, not a color — multiplying it in
     // would paint every glyph in its own coverage as well as fading it.

@@ -22,15 +22,6 @@ export interface StagedBatchState {
   alpha: number;
   colorMatrix: Float32Array;
   clipDepth: number;
-  /**
-   * The SDF threshold shift `u_synthBold` draws this run under. A uniform
-   * rather than a vertex attribute, and so a thing that breaks a run: a
-   * per-vertex float only glyphs read would widen the buffer write for every
-   * rect and quad beside them. The break falls wherever faked-bold text meets
-   * text that is not, which is a fallback path: a registered bold face never
-   * sets this at all.
-   */
-  synthBold: number;
   /** Whether group alpha folded into the vertex colors. */
   foldsAlpha: boolean;
   /**
@@ -69,13 +60,9 @@ type BatchTexture =
 function stagedStateIsLive(
   ctx: DrawContext, staged: StagedBatchState,
   image?: ImageBitmap, sampling?: 'linear' | 'nearest',
-  synthBold = 0,
   folds = false,
 ): boolean {
   if (staged.clipDepth !== (ctx.clipStack.length === 0 ? ctx.clipDepth : runClipDepth(ctx))) return false;
-  // Solids and image quads ask with 0, which is what a run of them carries, so
-  // this only ever breaks between two kinds of glyph.
-  if (staged.synthBold !== synthBold) return false;
   if (!staged.foldsAlpha && staged.alpha !== ctx.state.alpha) return false;
   if (image !== undefined && slotForBitmap(staged, image, sampling!) < 0) return false;
   const colorMatrix = ctx.state.colorMatrix;
@@ -169,7 +156,7 @@ function canBatchMesh(ctx: DrawContext, mesh: Mesh): boolean {
  */
 export function stageSolid(ctx: DrawContext, vertices: number): StagedBatchState {
   if (ctx.batchState !== undefined
-      && !stagedStateIsLive(ctx, ctx.batchState, undefined, undefined, 0, colorFolding.enabled)) {
+      && !stagedStateIsLive(ctx, ctx.batchState, undefined, undefined, colorFolding.enabled)) {
     flushBatch(ctx);
   }
   if (ctx.drawBatch.wouldOverflow(vertices)) flushBatch(ctx);
@@ -190,7 +177,6 @@ function openRun(ctx: DrawContext, folds = false): StagedBatchState {
       alpha: foldsAlpha ? 1 : ctx.state.alpha,
       colorMatrix,
       clipDepth: runClipDepth(ctx),
-      synthBold: 0,
       foldsAlpha,
       textures: [],
     };
@@ -210,7 +196,7 @@ export function stageImage(
 ): { staged: StagedBatchState; slot: number; tint: Tint } {
   const tint = colorFolding.enabled ? textureTint(ctx.state.colorMatrix) : null;
   if (ctx.batchState !== undefined
-      && !stagedStateIsLive(ctx, ctx.batchState, image, sampling, 0, tint !== null)) {
+      && !stagedStateIsLive(ctx, ctx.batchState, image, sampling, tint !== null)) {
     flushBatch(ctx);
   }
   if (ctx.drawBatch.wouldOverflow(4)) flushBatch(ctx);
@@ -230,18 +216,15 @@ export function stageImage(
  * and a second face costs one more slot rather than a flush per word.
  */
 export function stageGlyphs(
-  ctx: DrawContext, atlasId: string, fieldScale: readonly [number, number], synthBold: number,
+  ctx: DrawContext, atlasId: string, fieldScale: readonly [number, number],
 ): { staged: StagedBatchState; slot: number } {
   if (ctx.batchState !== undefined
-      && (!stagedStateIsLive(ctx, ctx.batchState, undefined, undefined, synthBold, colorFolding.enabled)
+      && (!stagedStateIsLive(ctx, ctx.batchState, undefined, undefined, colorFolding.enabled)
           || slotForAtlas(ctx.batchState, atlasId) < 0)) {
     flushBatch(ctx);
   }
   if (ctx.drawBatch.wouldOverflow(4)) flushBatch(ctx);
   const staged = openRun(ctx, colorFolding.enabled);
-  // An empty run adopts the threshold; one that already has vertices agreed to
-  // it above, since a mismatch flushed.
-  staged.synthBold = synthBold;
   let slot = slotForAtlas(staged, atlasId);
   if (slot > staged.textures.length) {
     staged.textures.push({ kind: 'atlas', id: atlasId, fieldScale });
