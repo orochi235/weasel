@@ -603,12 +603,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   `fonts.css`, so `--wzl-font-ui`'s Oswald and `--wzl-font-numeric`'s Oswald Tabular fall back to
   system faces in every demo. Left as is for now by decision; draw loads `fonts.css`.
 
-- **(P3) `ToggleBar`'s `minimal` is not `ButtonBar`'s.** The three bars share one skin,
-  `components/segmentedControl.module.css`, and fork only at `minimal`: `ButtonBar` and
-  `OptionsBar` draw bare rounded segments with a gap, and `ToggleBar` adds `.minimalBoxed` over
-  that, a bordered box with square corners and a rule between neighbors. Which look wins, or
-  whether both are variants every bar takes, is a visual call.
-
 - **(P3) No control in `@weasel-js/ui` draws its numbers through `QuantityText`.** `QuantityText`
   draws a quantity, a range, or a vector as the HTML form `@weasel-js/quantity` writes, and dims
   a unit, a percent sign, and a label. No control uses it: `Slider`'s readouts, `BandEditor`'s

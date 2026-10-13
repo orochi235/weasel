@@ -234,29 +234,6 @@
   content: none;
 }
 
-/* ToggleBar's minimal: the same bare segments in one bordered box, with a
-   rule between neighbors, so a choice among them reads as one group. */
-.minimalBoxed {
-  border: 1px solid var(--wzl-border);
-  border-radius: var(--wzl-radius-sm);
-  gap: 0;
-}
-
-.minimalBoxed .segment {
-  padding: 0 var(--wzl-space-3);
-  border-radius: 0;
-}
-
-.minimalBoxed .segment ~ .segment {
-  border-left: 1px solid var(--wzl-border);
-}
-
-.minimalBoxed .segment:first-of-type,
-.minimalBoxed .segment:last-of-type,
-.minimalBoxed .segment:only-of-type {
-  border-radius: 0;
-}
-
 /* Flat variant — no track, no glass, no pill: each segment is its own
    outlined cell. For property panels, where a bar sits in a row beside
    inputs and the glass cylinder makes it the loudest thing on the surface. */

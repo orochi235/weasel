@@ -99,3 +99,22 @@ test('ButtonBar rounds its end caps when tooltips wrap the end segments', () => 
   expect(parseFloat(getComputedStyle(segs[0]).borderTopLeftRadius)).toBeGreaterThan(0);
   expect(parseFloat(getComputedStyle(segs[segs.length - 1]).borderTopRightRadius)).toBeGreaterThan(0);
 });
+
+test('a minimal ToggleBar draws its segments as a minimal OptionsBar does', () => {
+  render(
+    <>
+      <Bar bar="OptionsBar" segs={TEXT} variant="minimal" />
+      <ToggleBar ariaLabel="Toggle" variant="minimal" items={TEXT.map((t) => ({ value: t.label, label: t.label }))} value="Tree" onChange={() => {}} />
+    </>,
+  );
+  const look = (el: Element) => {
+    const cs = getComputedStyle(el);
+    return [cs.borderLeftWidth, cs.borderTopWidth, cs.borderTopLeftRadius, cs.paddingLeft, cs.columnGap, cs.color, cs.backgroundColor].join(' ');
+  };
+  const options = screen.getByRole('group', { name: 'Bar' });
+  const toggle = screen.getByRole('radiogroup', { name: 'Toggle' });
+  expect(look(toggle)).toBe(look(options));
+  const optionSegs = [...options.querySelectorAll('button')];
+  const toggleSegs = screen.getAllByRole('radio');
+  toggleSegs.forEach((seg, i) => expect(look(seg), LABELS[i]).toBe(look(optionSegs[i])));
+});
