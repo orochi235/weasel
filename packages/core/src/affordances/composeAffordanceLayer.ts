@@ -4,7 +4,7 @@ import type { ChromeState } from 'core/selection/chromeState';
 import type { View } from 'core/viewport/view';
 import { viewToTransform } from 'core/viewport/view';
 import { worldToScreen } from 'core/viewport/viewTransform';
-import { pxExtentIn } from 'core/geometry/targetFrame';
+import { isRigid, pxExtentIn, targetCorners } from 'core/geometry/targetFrame';
 import type { DebugSink } from '../debug/types';
 import type { CommandFill, CommandStroke } from '@weasel-js/paint';
 import { PATH_M, PATH_L, PATH_Z } from '@weasel-js/geom';
@@ -139,20 +139,25 @@ function recordRegionHitbox(
     // model ring shapes.
     const s = region.shape;
     const { rx, ry } = annulusSemiAxes(s, view, xf);
-    const c = localToWorld(xf, s.cx, s.cy);
-    debug.recordHitbox(affordanceId, 'handle', {
-      kind: 'rect',
-      x: c.x - rx,
-      y: c.y - ry,
-      width: 2 * rx,
-      height: 2 * ry,
-      ...(xf.identity ? {} : { rotation: angleOf(xf) }),
-    });
+    recordLocalRect(debug, affordanceId, xf, { x: s.cx - rx, y: s.cy - ry, width: 2 * rx, height: 2 * ry });
     return;
   }
-  // rect: axis-aligned in local frame; apply target rotation around the
-  // AABB pivot when present.
-  const r = region.shape;
+  recordLocalRect(debug, affordanceId, xf, region.shape);
+}
+
+/** A rect of the target's own frame as a debug hitbox: the unturned box plus
+ *  the rotation while the frame only turns it, and the quad it lands on once
+ *  the frame skews or stretches it. */
+function recordLocalRect(
+  debug: DebugSink,
+  affordanceId: string,
+  xf: TargetTransform,
+  r: { x: number; y: number; width: number; height: number },
+): void {
+  if (!isRigid(xf)) {
+    debug.recordHitbox(affordanceId, 'handle', { kind: 'polygon', points: targetCorners(r, xf) });
+    return;
+  }
   const w = localToWorld(xf, r.x + r.width / 2, r.y + r.height / 2);
   debug.recordHitbox(affordanceId, 'handle', {
     kind: 'rect',

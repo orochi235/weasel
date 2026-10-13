@@ -191,7 +191,6 @@ Priority tags:
     under non-uniform zoom the overlay is stretched wrong whatever the pose carries.
   - `composeRectPose` / `composeRigidPose` (`core/scene/composePose.ts`) keep a child's own
     transform and do not compose a container's into its children.
-  - The debug overlay (`debug/createDebugOverlayLayer.ts`) outlines the rotated box.
   - `defaultNodeProperties` has no row for it, so `SelectionPanel` can neither show nor clear it.
 
 - **(P3) svg export: a path split for `openFill: 'none'` writes its stroke markers on both

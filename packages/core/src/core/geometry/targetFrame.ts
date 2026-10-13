@@ -33,6 +33,13 @@ export function angleOf(xf: TargetTransform): number {
   return xf.identity ? 0 : Math.atan2(xf.toWorld[1], xf.toWorld[0]);
 }
 
+/** Whether the frame only turns the target: no skew, no stretch, no flip. */
+export function isRigid(xf: TargetTransform): boolean {
+  if (xf.identity) return true;
+  const [a, b, c, d] = xf.toWorld;
+  return Math.abs(a - d) < 1e-9 && Math.abs(b + c) < 1e-9 && Math.abs(a * a + b * b - 1) < 1e-9;
+}
+
 /** local point → world point. */
 export function localToWorld(xf: TargetTransform, lx: number, ly: number): { x: number; y: number } {
   if (xf.identity) return { x: lx, y: ly };

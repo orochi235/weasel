@@ -108,3 +108,23 @@ describe('a target whose transform is singular', () => {
     expect(hitAffordanceRegions([rotate], x, y, flatState, VIEW)).toBeNull();
   });
 });
+
+describe('the debug hitbox of a region on a skewed, turned target', () => {
+  it('is the quad the region lands on, not a turned rect', () => {
+    const shapes: Array<{ kind: string; points?: { x: number; y: number }[] }> = [];
+    const rotate = createRotationAffordance({ bandPx: 0 });
+    composeAffordanceLayer('chrome', 'Chrome', [rotate]).draw({
+      getChromeState: () => state,
+      getDebug: () => ({ recordHitbox: (_id: string, _role: string, shape: never) => { shapes.push(shape); } }),
+    } as never, VIEW, DIMS);
+    expect(shapes).toHaveLength(1);
+    expect(shapes[0].kind).toBe('polygon');
+    // The ring's outer ellipse has semi-axes of half the box times root two.
+    const rx = 50 * Math.SQRT2, ry = 30 * Math.SQRT2;
+    const want = [drawn(50 - rx, 30 - ry), drawn(50 + rx, 30 - ry), drawn(50 + rx, 30 + ry), drawn(50 - rx, 30 + ry)];
+    want.forEach((w, i) => {
+      expect(shapes[0].points![i].x).toBeCloseTo(w.x, 6);
+      expect(shapes[0].points![i].y).toBeCloseTo(w.y, 6);
+    });
+  });
+});
