@@ -7,10 +7,11 @@
  * listeners to the canvas element and writes world-space coords into the
  * surrounding context's `pointerRef`.
  */
-import { useEffect, type MutableRefObject, type ReactNode } from 'react';
+import { useEffect, type MutableRefObject, type ReactNode, type RefObject } from 'react';
 import { PointerContextProvider, usePointerContext } from '@weasel-js/routing/react';
-import { clientToWorld } from 'core/viewport/clientToWorld';
+import type { CanvasExtensionApi } from '../canvasExtension';
 import { useOptionalViewRegistry } from '../viewRegistry';
+import { worldPointAt } from './worldPointAt';
 
 /** Mount a `<PointerContextProvider>` only when none is already in scope. */
 export function PointerProviderIfRoot({ children }: { children: ReactNode }) {
@@ -30,8 +31,10 @@ export function PointerProviderIfRoot({ children }: { children: ReactNode }) {
  */
 export function PointerPublisher({
   canvasRef,
+  canvasApiRef,
 }: {
   canvasRef: MutableRefObject<HTMLElement | null>;
+  canvasApiRef: RefObject<CanvasExtensionApi | null>;
 }) {
   const ctx = usePointerContext();
   const registry = useOptionalViewRegistry();
@@ -43,13 +46,10 @@ export function PointerPublisher({
     // to, so paste-at-pointer lands in the panel the cursor is over. With no
     // views declared it answers the canvas's own camera and rect.
     const publish = (pointerId: number | null, clientX: number, clientY: number): void => {
+      const api = canvasApiRef.current;
+      if (!api) return;
       const target = registry?.resolver.at(pointerId, clientX, clientY);
-      const rect = el.getBoundingClientRect();
-      const [worldX, worldY] = clientToWorld(
-        clientX, clientY,
-        target?.origin ?? rect,
-        target?.view ?? { x: 0, y: 0, scale: { x: 1, y: 1 } },
-      );
+      const [worldX, worldY] = worldPointAt(api, target, clientX, clientY);
       ctx.set({ worldX, worldY, viewId: target?.id ?? null });
     };
     const onMove = (e: PointerEvent): void => publish(e.pointerId, e.clientX, e.clientY);
@@ -89,6 +89,6 @@ export function PointerPublisher({
     };
     // canvasRef + registry + ctx identity are all stable across the lifetime
     // of the surrounding provider; effect runs once per mount.
-  }, [ctx, canvasRef, registry]);
+  }, [ctx, canvasRef, canvasApiRef, registry]);
   return null;
 }

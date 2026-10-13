@@ -75,7 +75,6 @@ export function StandardActionsRegistrar({
   viewportRecenter,
   viewAnimation,
   editAnchorsExternalState,
-  anchorEditingAllowed,
   layouts,
   layoutDropTarget,
   reflowTransition,
@@ -144,10 +143,6 @@ export function StandardActionsRegistrar({
   /** Lifted edit-mode state so the `pathEditingOverlay` chrome (rendered
    *  outside this subtree) can read the same `editingId` the dep does. */
   editAnchorsExternalState: import('../deps/editAnchors').EditAnchorsStateRef;
-  /** Present only when a mode registry is wired (`modes`); see
-   *  `EditAnchorsDepOptions.anchorEditingAllowed` for why absence — not a
-   *  predicate over an empty capability set — is the safe default. */
-  anchorEditingAllowed?: () => boolean;
   /** Forwarded from `SceneCanvasProps` so the `layout` dep source can wire
    *  the per-container layout strategy lookup consumed by `moveAction`. */
   layouts?: SceneCanvasProps<unknown, string, unknown>['layouts'];
@@ -172,8 +167,8 @@ export function StandardActionsRegistrar({
    *  options (`unpack`). */
   ingestionSvg?: SvgIngestOptions;
   /** Clipboard-paste ctx (this canvas's adapter + the consumer's reviver)
-   *  for the kit weasel-JSON handler — built in SceneCanvasInner where the
-   *  typed adapter is in scope; absent when disabled. */
+   *  for the kit weasel-JSON handler, from `useCanvasIngestion`; absent
+   *  when disabled. */
   ingestionClipboard?: ClipboardIngestCtx;
   /** Populated with the live registry so `CanvasExtensionApi.ingest`
    *  (assembled in SceneCanvasInner, OUTSIDE the actions provider) can call
@@ -250,9 +245,7 @@ export function StandardActionsRegistrar({
   useIngestionDepSource(canvasRef, () => currentViewRef.current, ingestionResolveSrc, ingestionSvg, ingestionClipboard);
   useLassoSelectDepSource(scene, selection, poseDescriptor, alphaOf);
   useTextEditDepSource(scene);
-  useEditAnchorsDepSource(scene, selection, adapter, editAnchorsExternalState, {
-    anchorEditingAllowed,
-  });
+  useEditAnchorsDepSource(scene, selection, adapter, editAnchorsExternalState);
   useDispatcherDepSource(dispatcher);
   usePoseDescriptorDepSource(poseDescriptor);
 

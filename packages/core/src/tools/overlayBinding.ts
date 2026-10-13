@@ -35,7 +35,7 @@ export type Contribution = RoutingContribution<Overlay>;
 export type ContributionChrome = RoutingContributionChrome<Overlay>;
 /** Routing's `Tool`, with overlays typed as `RenderLayer`. */
 export type Tool = RoutingTool<Overlay>;
-/** The element type for a list of mixed tools. */
+/** The same type as `Tool`, kept for code that imports it by this name. */
 export type AnyTool = Tool;
 /** Routing's `ToolDef` (what `defineTool` takes), with overlays typed as `RenderLayer`. */
 export type ToolDef = RoutingToolDef<Overlay>;

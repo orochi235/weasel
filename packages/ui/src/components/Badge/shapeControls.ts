@@ -7,6 +7,26 @@ export type ShapeControl =
   | { key: string; kind: 'text'; default: string }
   | { key: string; kind: 'header'; label: string };
 
+export const QUATREFOIL_CONTROLS: ShapeControl[] = [
+  { key: '__spike__',       kind: 'header', label: 'Spike' },
+  { key: 'spikeR',          kind: 'range', min: 5,   max: 50,   step: 0.5,  default: 50 },
+  { key: 'spikeCurvature',  kind: 'range', min: 0.3, max: 4,    step: 0.05, default: 1 },
+  { key: 'spikeBend',       kind: 'range', min: -0.9, max: 0.9, step: 0.02, default: 0 },
+  { key: 'spikeTipErosion', kind: 'range', min: 0,   max: 1,    step: 0.02, default: 0 },
+  { key: '__valley__',      kind: 'header', label: 'Valley' },
+  { key: 'valleyR',         kind: 'range', min: 0,   max: 50,   step: 0.5,  default: 25 },
+  { key: 'valleyAt',        kind: 'range', min: 0.05, max: 0.95, step: 0.01, default: 0.5 },
+  { key: 'valleySmooth',    kind: 'range', min: 0,   max: 20,   step: 0.25, default: 3 },
+  { key: '__lobe__',        kind: 'header', label: 'Lobe' },
+  { key: 'lobeR',           kind: 'range', min: 5,   max: 75,   step: 0.5,  default: 42 },
+  { key: 'lobeCurvature',   kind: 'range', min: 0.3, max: 4,    step: 0.05, default: 1 },
+  { key: 'lobeBend',        kind: 'range', min: -0.9, max: 0.9, step: 0.02, default: 0 },
+  { key: 'lobeTipErosion',  kind: 'range', min: 0,   max: 1,    step: 0.02, default: 0 },
+  { key: '__advanced__',    kind: 'header', label: 'Advanced' },
+  { key: 'rotation',        kind: 'range', min: -45, max: 45,   step: 0.5,  default: 0 },
+  { key: 'samples',         kind: 'range', min: 48,  max: 360,  step: 4,    default: 192 },
+];
+
 export const SHAPE_CONTROLS: Partial<Record<BadgeShape, ShapeControl[]>> = {
   square: [
     { key: 'erosion', kind: 'range', min: 0, max: 1, step: 0.02, default: 0.16 },
@@ -80,25 +100,7 @@ export const SHAPE_CONTROLS: Partial<Record<BadgeShape, ShapeControl[]>> = {
     { key: 'topInset', kind: 'range', min: 0, max: 35, step: 1, default: 12 },
     { key: 'pointDepth', kind: 'range', min: 60, max: 110, step: 1, default: 100 },
   ],
-  quatrefoil: [
-    { key: '__spike__',       kind: 'header', label: 'Spike' },
-    { key: 'spikeR',          kind: 'range', min: 5,   max: 50,   step: 0.5,  default: 50 },
-    { key: 'spikeCurvature',  kind: 'range', min: 0.3, max: 4,    step: 0.05, default: 1 },
-    { key: 'spikeBend',       kind: 'range', min: -0.9, max: 0.9, step: 0.02, default: 0 },
-    { key: 'spikeTipErosion', kind: 'range', min: 0,   max: 1,    step: 0.02, default: 0 },
-    { key: '__valley__',      kind: 'header', label: 'Valley' },
-    { key: 'valleyR',         kind: 'range', min: 0,   max: 50,   step: 0.5,  default: 25 },
-    { key: 'valleyAt',        kind: 'range', min: 0.05, max: 0.95, step: 0.01, default: 0.5 },
-    { key: 'valleySmooth',    kind: 'range', min: 0,   max: 20,   step: 0.25, default: 3 },
-    { key: '__lobe__',        kind: 'header', label: 'Lobe' },
-    { key: 'lobeR',           kind: 'range', min: 5,   max: 75,   step: 0.5,  default: 42 },
-    { key: 'lobeCurvature',   kind: 'range', min: 0.3, max: 4,    step: 0.05, default: 1 },
-    { key: 'lobeBend',        kind: 'range', min: -0.9, max: 0.9, step: 0.02, default: 0 },
-    { key: 'lobeTipErosion',  kind: 'range', min: 0,   max: 1,    step: 0.02, default: 0 },
-    { key: '__advanced__',    kind: 'header', label: 'Advanced' },
-    { key: 'rotation',        kind: 'range', min: -45, max: 45,   step: 0.5,  default: 0 },
-    { key: 'samples',         kind: 'range', min: 48,  max: 360,  step: 4,    default: 192 },
-  ],
+  quatrefoil: QUATREFOIL_CONTROLS,
   plaque: [
     { key: 'bevelWidth', kind: 'range', min: 0, max: 20, step: 1, default: 6 },
     { key: 'lightFrom', kind: 'select', options: ['tl', 'tr', 'bl', 'br'], default: 'tl' },
@@ -120,12 +122,15 @@ export const SHAPE_CONTROLS: Partial<Record<BadgeShape, ShapeControl[]>> = {
   ],
 };
 
-export function defaultParamsFor(shape: BadgeShape): Record<string, number | string> {
-  const controls = SHAPE_CONTROLS[shape] ?? [];
+export function defaultsOf(controls: readonly ShapeControl[]): Record<string, number | string> {
   const init: Record<string, number | string> = {};
   for (const c of controls) {
     if (c.kind === 'header') continue;
     init[c.key] = c.default;
   }
   return init;
+}
+
+export function defaultParamsFor(shape: BadgeShape): Record<string, number | string> {
+  return defaultsOf(SHAPE_CONTROLS[shape] ?? []);
 }

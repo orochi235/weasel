@@ -75,7 +75,8 @@ function curveSegment(t: number, curvature: number, bend: number, erosion: numbe
   return Math.min(v, 1 - erosion);
 }
 
-export function quatrefoilVertices(params: QuatrefoilParams = {}): [number, number][] {
+/** The radius profile r(s) of one octant: s = 0 is the cardinal direction, s = 1 the diagonal. */
+export function quatrefoilRadius(params: QuatrefoilParams = {}): (s: number) => number {
   const cfg = { ...DEFAULTS, ...params };
   const spike = Math.max(5, Math.min(cfg.spikeR, 50));
   const lobe = Math.max(5, Math.min(cfg.lobeR, 50 * Math.SQRT2));
@@ -88,13 +89,7 @@ export function quatrefoilVertices(params: QuatrefoilParams = {}): [number, numb
   const lBend = Math.max(-0.95, Math.min(cfg.lobeBend, 0.95));
   const lErode = Math.max(0, Math.min(cfg.lobeTipErosion, 1));
   const smooth = Math.max(0, cfg.valleySmooth);
-  const rot = (cfg.rotation * Math.PI) / 180;
-  const N = Math.max(24, Math.floor(cfg.samples));
-  const cx = 50, cy = 50;
-  const verts: [number, number][] = [];
-  for (let i = 0; i < N; i++) {
-    const θ = (i / N) * 2 * Math.PI;
-    const s = Math.abs(Math.sin(2 * (θ - rot))); // 0..1 across each octant
+  return (s) => {
     // t1: spike-side parameter, 1 at cardinal (s=0), 0 at valley (s=vAt). Clamped to ≥ 0.
     const t1 = (vAt - s) / vAt;
     // t2: lobe-side parameter, 0 at valley (s=vAt), 1 at diagonal (s=1). Clamped to ≥ 0.
@@ -104,7 +99,20 @@ export function quatrefoilVertices(params: QuatrefoilParams = {}): [number, numb
     // Smooth corner at the valley: outside the smoothing band both rSpike and rLobe equal
     // `valley` on the inactive side, so smoothMax just picks the active one. Near the join
     // both are close to valley and smoothMax lifts the corner.
-    const r = smoothMax(rSpike, rLobe, smooth);
+    return smoothMax(rSpike, rLobe, smooth);
+  };
+}
+
+export function quatrefoilVertices(params: QuatrefoilParams = {}): [number, number][] {
+  const cfg = { ...DEFAULTS, ...params };
+  const radiusAt = quatrefoilRadius(cfg);
+  const rot = (cfg.rotation * Math.PI) / 180;
+  const N = Math.max(24, Math.floor(cfg.samples));
+  const cx = 50, cy = 50;
+  const verts: [number, number][] = [];
+  for (let i = 0; i < N; i++) {
+    const θ = (i / N) * 2 * Math.PI;
+    const r = radiusAt(Math.abs(Math.sin(2 * (θ - rot)))); // s runs 0..1 across each octant
     verts.push([cx + r * Math.cos(θ), cy + r * Math.sin(θ)]);
   }
   return verts;

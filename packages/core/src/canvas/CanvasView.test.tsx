@@ -357,7 +357,6 @@ describe('<CanvasView> draw contribution', () => {
       adapter: undefined,
       geometry: AUTO_POSE_DESCRIPTOR as never,
       boundsOf: undefined,
-      tools: undefined,
       selectionApi: { current: ['theirs' as NodeId] } as unknown as SelectionApi,
       chromeCaps: {
         ruleCtx: (i: { selection: readonly NodeId[] }) => i as never,
@@ -540,7 +539,6 @@ describe('<CanvasView> hit-testing', () => {
     adapter: undefined,
     geometry: AUTO_POSE_DESCRIPTOR,
     boundsOf: (id: string) => POSES[id] ?? null,
-    tools: undefined,
     pickBest: (wx: number, wy: number) => {
       for (const [id, b] of Object.entries(POSES)) {
         if (wx >= b.x && wx < b.x + b.width && wy >= b.y && wy < b.y + b.height) return id;
@@ -683,7 +681,6 @@ describe('<CanvasView> state a render abandons', () => {
     adapter: undefined,
     geometry: AUTO_POSE_DESCRIPTOR,
     boundsOf: () => null,
-    tools: undefined,
     selectionApi: SELECTIONS.get(p)!,
     chromeCaps: { ruleCtx: () => p.ruleCtx as never, isVisible: () => () => true },
   });

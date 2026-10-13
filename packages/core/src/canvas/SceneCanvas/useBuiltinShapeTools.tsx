@@ -16,7 +16,7 @@ import { usePolygonTool } from 'tools/builtin/polygon/usePolygonTool';
 import { useRectTool } from 'tools/builtin/rect/useRectTool';
 import { useStarTool } from 'tools/builtin/star/useStarTool';
 import { useTextTool } from 'tools/builtin/text/useTextTool';
-import type { AnyTool } from 'tools/overlayBinding';
+import type { Tool } from 'tools/overlayBinding';
 import type { InsertToolOptions } from 'tools/builtin/shared/insertToolOptions';
 import type { LassoHitMode } from 'core/adapters/types';
 import type { BuiltinShapeToolId } from 'core/shapeKinds';
@@ -54,7 +54,7 @@ export interface UseBuiltinShapeToolsArgs {
   options?: BuiltinToolOptions;
 }
 
-export type BuiltinShapeTools = Record<BuiltinShapeToolId, AnyTool>;
+export type BuiltinShapeTools = Record<BuiltinShapeToolId, Tool>;
 
 /** Synthesize the full shape-tool registry. Hooks always run;
  *  `useBuiltinTools` registers the ones asked for. */

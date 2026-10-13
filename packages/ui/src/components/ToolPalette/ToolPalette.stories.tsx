@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
 import { ToolPalette, type ToolPaletteProps } from './ToolPalette';
-import type { AnyTool, ToolsApi } from '@weasel-js/core';
+import type { Tool, ToolsApi } from '@weasel-js/core';
 import {
   SelectIcon,
   LassoIcon,
@@ -19,27 +19,27 @@ export default meta;
 
 type Story = StoryObj<typeof ToolPalette>;
 
-function fullList(): AnyTool[] {
+function fullList(): Tool[] {
   return [
-    { id: 'select', keybinding: { key: 'v' }, presentation: { label: 'Select', icon: <SelectIcon />, group: 'select' } } as AnyTool,
-    { id: 'lasso',  keybinding: { key: 'l' }, presentation: { label: 'Lasso',  icon: <LassoIcon />,  group: 'select' } } as AnyTool,
-    { id: 'rect',   keybinding: { key: 'r' }, presentation: { label: 'Rect',   icon: <RectIcon />,   group: 'shape'  } } as AnyTool,
-    { id: 'text',   keybinding: { key: 't' }, presentation: { label: 'Text',   icon: <TextIcon />,   group: 'type'   } } as AnyTool,
-    { id: 'pen',    keybinding: { key: 'p' }, presentation: { label: 'Pen',    icon: <PenIcon />,    group: 'draw'   } } as AnyTool,
-    { id: 'hand',   keybinding: { key: 'h' }, presentation: { label: 'Hand',   icon: <HandIcon />,   group: 'view'   } } as AnyTool,
+    { id: 'select', keybinding: { key: 'v' }, presentation: { label: 'Select', icon: <SelectIcon />, group: 'select' } } as Tool,
+    { id: 'lasso',  keybinding: { key: 'l' }, presentation: { label: 'Lasso',  icon: <LassoIcon />,  group: 'select' } } as Tool,
+    { id: 'rect',   keybinding: { key: 'r' }, presentation: { label: 'Rect',   icon: <RectIcon />,   group: 'shape'  } } as Tool,
+    { id: 'text',   keybinding: { key: 't' }, presentation: { label: 'Text',   icon: <TextIcon />,   group: 'type'   } } as Tool,
+    { id: 'pen',    keybinding: { key: 'p' }, presentation: { label: 'Pen',    icon: <PenIcon />,    group: 'draw'   } } as Tool,
+    { id: 'hand',   keybinding: { key: 'h' }, presentation: { label: 'Hand',   icon: <HandIcon />,   group: 'view'   } } as Tool,
   ];
 }
 
-function minimalList(): AnyTool[] {
+function minimalList(): Tool[] {
   return [
-    { id: 'select', keybinding: { key: 'v' }, presentation: { label: 'Select', icon: <SelectIcon /> } } as AnyTool,
-    { id: 'pen',    keybinding: { key: 'p' }, presentation: { label: 'Pen',    icon: <PenIcon /> } } as AnyTool,
-    { id: 'hand',   keybinding: { key: 'h' }, presentation: { label: 'Hand',   icon: <HandIcon /> } } as AnyTool,
+    { id: 'select', keybinding: { key: 'v' }, presentation: { label: 'Select', icon: <SelectIcon /> } } as Tool,
+    { id: 'pen',    keybinding: { key: 'p' }, presentation: { label: 'Pen',    icon: <PenIcon /> } } as Tool,
+    { id: 'hand',   keybinding: { key: 'h' }, presentation: { label: 'Hand',   icon: <HandIcon /> } } as Tool,
   ];
 }
 
-function makeFakeToolsApi(list: AnyTool[], active: string, setActive: (id: string) => void): ToolsApi {
-  const registry: Record<string, AnyTool> = Object.fromEntries(list.map((t) => [t.id, t]));
+function makeFakeToolsApi(list: Tool[], active: string, setActive: (id: string) => void): ToolsApi {
+  const registry: Record<string, Tool> = Object.fromEntries(list.map((t) => [t.id, t]));
   return {
     registry,
     active,

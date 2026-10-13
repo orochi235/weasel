@@ -7,7 +7,6 @@
  */
 import { createContext, useContext, type ReactNode } from 'react';
 import type { UseViewHelpersOpts } from './useViewHelpers';
-import type { ToolsApi } from '../tools/overlayBinding';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { View } from 'core/viewport/view';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
@@ -25,8 +24,6 @@ export type { ViewRuleInputs } from 'features/chrome-caps/useChromeCaps';
  */
 export interface SurfaceViewInputs
   extends Pick<UseViewHelpersOpts<unknown>, 'adapter' | 'geometry'> {
-  /** Read by nothing. Declared while `<SceneCanvas>` still supplies it. */
-  tools?: ToolsApi | undefined;
   /** A node's box for chrome, drawn under `view` — the camera of the view
    *  asking, since a node on a parallax plane lands somewhere else in each. */
   boundsOf: ((id: string, view?: View | null) => Bounds | null) | undefined;

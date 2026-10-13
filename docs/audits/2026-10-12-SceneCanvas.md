@@ -1,8 +1,10 @@
 > **Scaffolding for work in flight on branch `scene-splits`, 2026-10-12. Not built, and not verified:**
 > a read-only pass wrote this and ran nothing, so each claim is checked against the code before it is
 > acted on. Section B (built-in tool registry assembly) has landed and is deleted from here, and so have
-> C and D except for the items still listed under them, which were checked against the code and are
-> written as found. Every other section is unbuilt, and its line numbers predate all of that work.
+> A, C, and D except for the items still listed under them, which were checked against the code and are
+> written as found. F was checked and is written as found. J and N have landed and are deleted, and
+> H has landed except for the item still listed under it. Every other lettered section is unbuilt,
+> and its line numbers predate all of that work.
 > Delete this file when the SceneCanvas.tsx
 > work it lists has merged; `docs/TODO.md` holds what is left.
 
@@ -17,24 +19,26 @@ Two facts drive most of what follows.
 
 ## Things that do not belong
 
-### A. Path editing (per-feature knowledge inline, about 110 lines)
+### A. Left over from path editing
 
-Lines 410-451, 455-461, 919-933, 961-965, 970, 991-1048, 1092.
+The state landed: `features/paths/pathEditState.ts` holds the editing id, the selected anchors, and
+the marquee, and its `getEditingId` is the one rule (the node exists, is selected, and the mode
+permits anchor editing) the dep, the anchor overlay, the suppressed set, `editingAnchors`, and the
+shift-click lock all read. `SceneCanvas.pathEditMask.test.tsx` pins it.
 
-- **What it is:** the edit-target state (`pathEditingId`, `selectedAnchorsRef`, `anchorMarqueeRef`), the host/local switch (`pathEditRef`), the mode mask (`effectivePathEditingId`), the preview-aware path resolver (`livePathFor`), the overlay layer, selection-overlay suppression, and `extendClickLocked`.
-- **Owner:** `features/paths`, as one path-edit state object with a `subscribe`. The `editAnchors` dep, the overlay layer, the chrome-caps `editingAnchors` flag, the select tool's shift-click lock, and the suppressed-id set would all read it.
-- **Duplicate masking** (evidence): `effectivePathEditingId` (428-433) applies the mode mask, then hands the result to the dep as `getEditingId` (439), and the dep masks again:
-  ```
-  canvas/deps/editAnchors.ts:130-131
-  const permitted = allowedRef.current ? allowedRef.current() : true;
-  if (!node || !inSelection || !permitted) effectiveId = '';
-  ```
-- **The two masks disagree** (inference, not run). The dep also clears the id when the node is gone or deselected; `effectivePathEditingId` does not. Hit-testing reads the dep (`anchorStateFrom`). The overlay (1027), suppression (1046), `editingAnchors` (903), and `extendClickLocked` (459) read the canvas copy. Deselecting an edited node without `exitPathEdit` should leave anchors painted but ungrabbable.
-- **`anchorEditingAllowedRef` (418, 931-933) is an ordering workaround only** (evidence). The comment at 415-417 says the predicate "needs `getActiveModeRef`", but its only real input, `getActiveMode`, exists at 239.
-- **Redraw is hand-pumped** through `canvasApiRef` (444, 449, 963-965). `RenderLayer.subscribe` (`core/layers/render.ts:116`) exists for exactly this, so the overlay layer could own its repaint.
-- **`livePathFor` (994-1023)** is an inline function that re-implements "the editable path, in the asking camera's world, preview-aware". The same projection is spelled twice more for hit-testing (`GestureDispatcherMounter.tsx:134-137`, `CanvasView.tsx:306-309`), neither preview-aware.
-- **`useEditAnchorsDepSource` keeps a dead fallback** (evidence): its `localEditingId` state runs only when `externalState` is omitted, and its one non-test caller (`StandardActionsRegistrar.tsx:254`) always passes it.
-- **Safe to move when:** the state object is created above both the dep source and the layers (the layer memo at 1025-1040 is deliberately identity-stable), and `pathEdit` hosts still override the id.
+- **The anchor hit-test is still not preview-aware.** `liveEditablePath`
+  (`features/paths/editablePath.ts`) is what the overlay draws from. The two hit-test sites,
+  `GestureDispatcherMounter.tsx` and `CanvasView.tsx`, take the committed path from the dep and call
+  `pathFromPlane` on it through `anchorStateFrom`'s `toCamera(id, path)` callback. Routing them
+  through `liveEditablePath` means changing that callback's contract in both files at once, and
+  makes a hit-test during a gesture follow the preview, which is a behavior change.
+- **A masked id is kept, not cleared** (run, not inferred). Deselect a node mid-edit and its anchors
+  go away; select it again and it is being edited again, with no second `enterPathEdit`. That is the
+  rule the dep already had. Clearing instead needs a moment to write the id, and a host's id is not
+  the canvas's to clear.
+- **`useEditAnchorsDepSource` still takes its state as an optional argument.** It is not a public
+  export, but `usePenTool.test.tsx` and `editAnchors.test.tsx` call it without one, and it then makes
+  a state of its own.
 
 ### C. `selectTool.rotate === false` is still decided three times
 
@@ -73,44 +77,74 @@ The assembly landed: `features/chrome-caps/useChromeCaps.ts` builds the context,
 
 Lines 757, 762-768, 1099, 1263-1333.
 
-- **`getActionRef` (757) and `actionsRegistryRef` (1099)** carry the actions registry up from `StandardActionsRegistrar` (its lines 188-207). The registry is in scope here, so they are vestigial. `ingestImpl`'s "registry not mounted yet" branch (1122-1127) goes with them.
+- **`getActionRef` (757) and `actionsRegistryRef` (1099)** carry the actions registry up from `StandardActionsRegistrar` (its lines 188-207). The registry is in scope here, so they are vestigial. The "registry not mounted yet" branch of `ingest` goes with them: it is now in `features/ingestion/useCanvasIngestion.ts`, which takes the registry as a getter so this arc can re-point it.
 - **The registrar takes 37 props (1263-1299)**, mostly values this function computed only to hand down.
 - **`ToolKeybindingsMounter`** is misnamed: it also installs every contribution's actions, deps, and `attach` (`useContributionRoles`). It needs two `useKeybindings` calls because the takeover branch is decided above it.
 - **Mounter props that are constant gates** (evidence): `boundsOf` is read only in `if (!selectionRef || !boundsOf || !viewRef) return undefined` (`GestureDispatcherMounter.tsx:151`), and all three are always passed.
 - **Safe to convert to hooks when:** `PointerProviderIfRoot` moves into the wrapper (the registrar calls `usePointerContext()`), and the ordering the registrar relies on is kept. The registrar's own comment at 264-270 depends on child effects running before parent effects.
 
-### F. View state mirror (about 50 lines)
+### F. View state mirror
 
-Lines 299-348.
+Checked against the code after the `Canvas.tsx` pass merged. Not built: it cannot be done inside
+SceneCanvas's own files.
 
-- **`currentViewRef` is a third copy of the view**, beside `<Canvas>`'s `viewRef` and the prop. It has three writers: seed (301), insertion effect (306-308), and subscription (310-315).
-- **`handleViewChange` (319-323) re-implements the controlled/uncontrolled branch** that `useCanvasView.setView` already owns (evidence, `canvas/useCanvasView.ts:57-78`).
-- **Owner:** `useCanvasView`, lifted so `SceneCanvas` and `<Canvas>` share one channel. Readers of the mirror: `useSceneSelectTool.getView`, hover, the rule inputs, the test hook, the registrar, and the mounter.
-- **`resolvedViewportZoom` (339-348) and the three `enabled.has('view') ? … : false` props (1280-1282)** belong in `useViewportActions`, which should take `viewport` and the preset flag.
+- **`currentViewRef` is a third copy of the view**, beside the `viewRef` `<Canvas>` holds through
+  `useCanvasView` and the prop. It has three writers: the seed from `view` / `defaultView`, an
+  insertion effect that adopts a controlled `view`, and a `subscribeView` subscription that starts
+  once the handle is attached.
+- **Readers:** `useSceneSelectTool`'s `getView`, hover's picker view, the rule inputs, the camera
+  channel's `get`, the test hook, the registrar (`currentViewRef`, for ingestion and the view deps),
+  and the mounter's `viewRef`. Each wants the view in effect, synchronously, and the first three are
+  read during or before the first commit, when the handle is still null.
+- **`handleViewChange` re-implements the controlled/uncontrolled fork.** Uncontrolled it calls the
+  handle's `setView`, which clamps to `viewBounds`. Controlled it calls `onViewChange` itself and
+  skips the clamp. It is the `view.set` dep and the camera channel's `set`, so every pan, zoom, and
+  animation frame goes through it.
+- **Why the handle is not enough.** Its `setView` is the imperative write: controlled, it warns once
+  per mount and forwards. Input needs `useCanvasView`'s `setViewFromInput`, which forwards without
+  the warning, and the handle does not publish it. Its `getView` answers nothing before mount.
+- **Smallest change:** `<Canvas>` publishes the input write (on the handle, or by taking a view
+  state made by a `useCanvasView` call one level up, in `SceneCanvasInner`). `handleViewChange`
+  becomes that call and the mirror becomes that hook's `viewRef`. Either is an edit to `Canvas.tsx`,
+  and the first adds a member to the public `CanvasExtensionApi`.
+- **What would change:** a controlled `<SceneCanvas view viewBounds>` would hand `onViewChange` a
+  clamped view where it now hands the raw one.
+- **`resolvedViewportZoom` and the three `enabled.has('view') ? … : false` props** belong in
+  `useViewportActions`, which should take `viewport` and the preset flag.
 
 ### G. Redraw subscriptions
 
 Lines 269-297. The effects for `scene.subscribe` and `scene.overrides.subscribe` do by hand what `redrawOn` does. Both match `RedrawSource` (`subscribe(listener) → unsubscribe`, `core/layers/render.ts:44`), and 240-243 already appends `modes` that way. `animator.onTick` has a different shape and would need adapting.
 
-### H. Selection
+### H. Two kind classifiers that disagree
 
-Lines 350-408.
+The read-only wrapper landed as `core/selection/readOnlySelection.ts`, and the label published with
+the selection moved to `core/selection/usePublishSceneSelection.ts`. The label was not folded into
+the routing kind, because the two answer differently for every node tried
+(`SceneCanvas.selectionKinds.test.tsx`, run against the code) and the difference shows: the command
+palette's selection summary (`ui/CommandPalette/selectionSummary.ts`) prints the label.
 
-- **The read-only wrapper for `selectable={false}` (364-384)** belongs in `core/selection`. No such helper exists (evidence, grep).
-- **`selectionKinds` (389-407) is a second node-kind classifier** beside `kindClassifier` (470-476), with different answers. The routing default calls `{ path }` data `'path'` (`SceneCanvas/defaultNodeRouting.ts:37-41`); this one calls a pose with `.kind` `'path'` and a container `'group'`. Owner: the selection-context publisher.
+| Node | Published label | Routing kind (`inferredNodeRouting`) |
+|---|---|---|
+| leaf, `data.path`, plain box pose | none | `'path'` |
+| leaf, pose carrying a string `kind` | `'path'` | `'unknown'` |
+| leaf, `data.kind: 'rect'`, plain box pose | none | `'unknown'` |
+| leaf, `data.text` | none | `'text'` |
+| leaf, `data.image` | none | `'image'` |
+| leaf matching a consumer `routing` entry | none | the entry's name |
+| container | `'group'` | `'unknown'` |
+
+`describeKind` replaces the label for every node, containers included. A third classifier,
+`classifyKind` in `ui/SelectionPanel/model.ts`, answers `'group'` for a container and the routing
+entry otherwise. Making these one needs a decision on what the palette should print.
 
 ### I. Selection overlay prebuild
 
 Lines 1042-1079. `<Canvas>` builds the same layer with the same `poseById` handling (evidence, `Canvas.tsx:862-871`). The only addition here is merging `getSuppressedIds`, which the slot config already accepts (1058). Passing a merged config removes the `createSelectionOverlayLayer` import and the `descriptor` dependency.
 
-### J. Ingestion
-
-Lines 260-267, 1096-1134. Handler registration, the clipboard context, and `ingestImpl` belong in a `features/ingestion` hook. `ingestionClipboard` is built here only "where the typed adapter is in scope" (`StandardActionsRegistrar.tsx:176-178`), and is then cast untyped at 1111.
-
 ### K. Dead or vestigial (grep-verified)
 
 - **`chromeSizes` (219-222).** Its only use is `handleHitRadius: chromeSizes.handle` (456), and `useSceneSelectTool`'s `selectTool` argument has no such field (`useSceneSelectTool.ts:92-104`). The `targetSizesPx` import goes with it.
-- **`actionDefaults` (181, 1267).** It appears in the registrar's prop type (`StandardActionsRegistrar.tsx:95`) but not its destructure (57-91), and `props.ts:532` marks it "unused after legacy-bridge removal".
 - **`insertTool` (154, 515-516).** It becomes `adapter.commitInsert`, which has no non-test caller (grep `\.commitInsert`: one test, `mintId.test.ts:53`). The insert action uses the `insert` dep.
 - **`nodeResolver`'s `pose` and `data` (551).** The only readers of the hit take `id` and `kind` (`useHitObserver.ts:21`) or `id` (827). `getNodeAtPoint.ts` still documents a `<Canvas getNodeAtPoint>` prop that no longer exists.
 - **Duplicate refs:**
@@ -134,13 +168,9 @@ Lines 260-267, 1096-1134. Handler registration, the clipboard context, and `inge
 
 Adjacent, in `props.ts:164-168`: the `Omit` names `moveOptions`, `resizeOptions`, `rotateOptions`, `snap`, `handleHitRadius`, `selectionOptions`, and `onBackgroundClick`, none of which `CanvasProps` declares (evidence, grep of `Canvas.tsx`).
 
-### N. Device profile resolved twice
-
-`useDeviceProfile(device)` runs at 212, and `<DeviceProfileProvider value={device}>` (1256) calls it again (`core/device/useDeviceProfile.ts:126-129`). That is two sets of media-query listeners. The provider should take the resolved profile.
-
 ### Belongs here
 
-- The scene bake (224-234), though `isSerialized` belongs in `core/scene`.
+- The scene bake (224-234).
 - `kindClassifier` and `kindOfNode`.
 - `composedAlphaFor` and the layer gate.
 - The `useSceneAdapter`, `useSceneSelectTool`, and `useTools` calls.
@@ -157,15 +187,10 @@ Adjacent, in `props.ts:164-168`: the `Omit` names `moveOptions`, `resizeOptions`
 | `internalCanvasRef` | 247 | `mergedRef` | hover, `PointerPublisher`, registrar, mounter | Canvas → siblings (real) |
 | `canvasApiRef` | 250 | `mergedRef` | redraw effects, `handleViewChange`, path-edit setters, registrar, mounter, keybindings | Canvas → siblings (real) |
 | `canvasReady` | 253 | `mergedRef` | view subscription, 1331 | ref-attach timing |
-| `currentViewRef` | 301 | seed, insertion effect, subscription | select tool, hover, rule inputs, test hook, registrar, mounter | Canvas-owned view read above Canvas |
-| `pathEditingId` | 412 | `setEditingId` | `pathEditingIdRef`, 963 | — |
-| `pathEditingIdRef`, `pathEditRef` | 413-414 | render | `effectivePathEditingId` | dependency array |
-| `anchorEditingAllowedRef` | 418 | insertion effect 931 | `effectivePathEditingId` | declaration order only |
-| `selectedAnchorsRef`, `anchorMarqueeRef` | 436-437 | `editAnchors` dep | overlay layer | registrar child → layer |
+| `currentViewRef` | — | seed, insertion effect, subscription | select tool, hover, rule inputs, camera channel, test hook, registrar, mounter | Canvas-owned view read above Canvas |
 | `selectionRef` | 465 | render | mounter | dependency array |
 | `layerPaintRef` | 501 | render | `layerIsPainted` | dependency array |
-| `planeOfNodeRef` | 539 | render | `livePathFor`, marquee | once-built layer memo |
-| `liveToolsRef`, `getActiveModeRef` | 680-681 | render | rule ctx, 927, test hook | dependency array |
+| `liveToolsRef` | 680 | render | test hook | dependency array |
 | `onToolsCreatedRef` | 726 | render | effect 727 | dependency array |
 | `getNodeAtPointRef` | 732 | render | hit observers | dependency array |
 | `getNodeAtPointRefForHover` | 807 | render | hover | duplicate of 732 |
@@ -173,32 +198,27 @@ Adjacent, in `props.ts:164-168`: the `Omit` names `moveOptions`, `resizeOptions`
 | `dispatcherRef` | 762 | init | everything gesture-related | lazy init |
 | `committedSelectionRef` | — | render | `currentRuleInputs` | dependency array, and commit timing |
 | `chromeAffordancesRef` | 985 | mounter insertion effect | slops layer | child → parent, debug only |
-| `sceneRefForOverlay` | 970 | render | `livePathFor` | once-built layer memo |
-| `actionsRegistryRef` | 1099 | registrar effect | `ingestImpl` | provider boundary that is gone |
-| `ingestionClipboardOmitted` | 1107 | render | clipboard ctx | dependency array |
+| `actionsRegistryRef` | 1099 | registrar effect | `useCanvasIngestion`'s registry getter | provider boundary that is gone |
 | `addedViews` | 1137 | `addView` / `remove` | JSX | — |
 | `testHookSceneRef`, `testHookSelectionRef` | 1232-1233 | render | test hook | duplicates of 970 and 465 |
 
 ## Stale comments (checked against code)
 
 - **9-10:** "`Scene` stores absolute poses…". This describes the move action, and the scene composes local poses into world ones (`core/scene/composeFrame.ts:46`).
-- **209-211:** "Resolved once here and provided to the subtree". See N.
 - **214-218:** paint, hit-test, and slops "all resolve from this one object". `chromeSizes` feeds only a dead option.
 - **453-454:** "so useSceneSelectTool always receives a concrete radius". It has no such option.
-- **415-417:** `anchorEditingAllowed` "needs `getActiveModeRef`". It needs only `getActiveMode`.
 - **463-464:** thunks "live in an effect closure". They are `useMemo`s, and `affordanceAt` never reads the selection.
 - **754-756, 1096-1098, and `StandardActionsRegistrar.tsx:179-181`:** "OUTSIDE the actions provider". See E.
-- **967-969:** the path-editing overlay comment sits over unrelated declarations, 55 lines above the layer at 1025.
 - **1223-1225 and `props.ts:168`:** both discuss `onBackgroundClick`, and say opposite things about a prop that no longer exists.
 
 ## (a) Biggest simplifications, ranked
 
-1. Path-edit state, mask, live path, and overlay to `features/paths` (A).
+1. Landed: path-edit state, mask, live path, and overlay to `features/paths` (A).
 2. Landed: chrome-caps rule context to `features/chrome-caps`, and preset chrome and bindings to the preset table (C, D).
 3. Mounters become hooks, removing `getActionRef`, `actionsRegistryRef`, and the 37-prop call (E).
 4. One view channel shared with `<Canvas>` (F).
-5. Ingestion hook (J).
-6. Selection read-only wrapper and kinds to `core/selection` (H).
+5. Landed: ingestion hook (J).
+6. Landed: selection read-only view and kind labels to `core/selection` (H). The two kind classifiers stay two.
 7. Let `<Canvas>` build the selection overlay (I).
 8. Scene and overrides through `redrawOn` (G).
 9. Delete the dead items and pass-through destructures (K, M).
@@ -218,23 +238,16 @@ Adjacent, in `props.ts:164-168`: the `Omit` names `moveOptions`, `resizeOptions`
 
 - **View zero as a `CanvasView`.** I read `CanvasView.tsx` only at 245-405. If view zero could be one, most of E disappears, but that is a design question I could not settle by reading.
 - **Effect ordering.** I did not trace every dep registration to confirm that turning the registrar into a hook keeps the child-before-parent order its comment relies on.
-- **The deselect divergence in A** is reasoned from the two masks, not reproduced.
 - **Unread files.** `Canvas.tsx` was read by targeted grep, not line by line. Of the `SceneCanvas/` siblings I did not read `usePreviewGhostLayer`, `useDispatcherOverlayLayer`, `contributionFrameHooks`, `defaultNodeProperties`, `poseGeometry`, or any tests.
-- **Greps covered this repo only.** Readers outside it of `__weaselCoordLog__`, `NodeAtPointHit.pose` and `.data`, `insertTool`, or `actionDefaults` are unknown.
-## From the Canvas.tsx pass (branch `long-file-audit`), to act on after it merges
+- **Greps covered this repo only.** Readers outside it of `__weaselCoordLog__`, `NodeAtPointHit.pose` and `.data`, or `insertTool` are unknown.
+## From the Canvas.tsx pass
 
-Reported by the session doing `Canvas.tsx`; not verified here.
+Reported by the session that did `Canvas.tsx`, which has merged into this branch. The redundant
+`useLateContentRedraw` call and the mounter's second layer-claim conversion were checked and removed.
 
 - **Item I is reversed.** Canvas's selection-overlay config branch is unreachable from production, so
-  SceneCanvas keeps its prebuild and Canvas's copy is deleted there. Do not do I.
-- **Item F.** `useCanvasView` now takes a dims thunk and serves Canvas and CanvasView. Its
-  `setViewFromInput(next)` does the controlled/uncontrolled fork with the `viewBounds` clamp;
-  `handleViewChange` in SceneCanvas forks by hand and skips the clamp when controlled. Drop the
-  `currentViewRef` mirror onto the hook once that branch is on main.
-- `SceneCanvasInner`'s `useLateContentRedraw` call is redundant: Canvas does it through
-  `useCanvasSurface`.
-- `GestureDispatcherMounter.tsx` (~226) has a second copy of the layer-claim conversion;
-  `layerAffordance` in `canvas/affordanceAt.ts` is the shared one.
+  SceneCanvas keeps its prebuild and Canvas's copy is deleted there. Do not do I. Not verified here.
+- **Item F** needs a change in `Canvas.tsx`; see F.
 - `SceneCanvas/props.ts` may restate an old z-order. Verified there: `backgroundFill` sits beneath
   everything including the grid; `decorationLayer` sits above every slot and custom layer and beneath
   a tool's `'top'` overlays.
@@ -243,6 +256,3 @@ Reported by the session doing `Canvas.tsx`; not verified here.
 - Canvas findings 1, 2, 3, 4, and 8 (cursor resolution into routing; `buildSceneLayers`,
   `useSceneLayerList`, and the preview-id hide set into SceneCanvas; the three dev HUDs; slot types to
   `layerSlots.ts`) are that session's, on top of main after `scene-splits` merges.
-- **Pen overlay (item B) landed.** `penPreviewLayer.ts` takes the pen's state as `state` and nothing in
-  the preview path calls `initScratch`; `usePenTool` still defines it, for that session to delete with
-  the rest of the old tool design.

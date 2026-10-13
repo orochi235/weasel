@@ -13,6 +13,7 @@ function makeApi(): CanvasExtensionApi {
     element: null,
     surface: null,
     getSurfaceRect: () => ({ x: 0, y: 0, width: 0, height: 0 }),
+    clientToWorld: (x: number, y: number): [number, number] => [x, y],
     requestRedraw: vi.fn(),
     subscribeFrame: vi.fn(() => () => {}),
     subscribeBeforePaint: vi.fn(() => () => {}),

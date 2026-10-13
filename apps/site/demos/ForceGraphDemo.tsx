@@ -11,7 +11,7 @@ import {
 } from '@weasel-js/core';
 import type {
   Action,
-  AnyTool,
+  Tool,
   InvocationCtx,
   OngoingHandle,
   RenderLayer,
@@ -89,7 +89,7 @@ function usePinTool(
   nodesRef: { current: GraphNode[] },
   sim: Simulation<GraphNode>,
   onPin: () => void,
-): AnyTool {
+): Tool {
   const pinAction = useMemo<Action>(() => ({
     id: 'forceGraph.pin',
     label: 'Pin graph node',

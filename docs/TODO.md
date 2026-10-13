@@ -138,29 +138,30 @@ Priority tags:
   pass alone. Two fleet runs on one node would collide the same way. They need to run serially,
   or one of them needs a clipboard of its own.
 
-- **(P3) What removing the old tool design left.** `ToolCtx`, the cursor function's argument, and
-  `Tool.previewPose` / `previewBounds` / `previewIds` are gone. Still to go:
-  - `AnyTool` in `@weasel-js/core` is now the same type as `Tool`: it existed to hold tools of
-    mixed scratch types, and a tool no longer has one. Used across `canvas/SceneCanvas/` and
-    `ToolPalette` in `packages/ui`.
-  - `toolPreviewSources` and `canvas/toolPreview.ts`: no production caller. One test in
-    `SceneCanvas/usePreviewGhostLayer.test.tsx` plants a preview on a fake tool and imports it.
-  - `SurfaceViewInputs.tools` (`viewInputs.tsx`): read by nothing, still supplied by
-    `SceneCanvas.tsx`.
+- **(P3) What removing the old tool design left.** `ToolCtx`, the cursor function's argument,
+  `Tool.previewPose` / `previewBounds` / `previewIds`, and tool-side preview sources are gone.
+  Still to go:
   - `ToolBounds` (`routing/src/tools/types.ts`) existed only for `previewBounds`.
-  - `CanvasExtensionApi.clientToWorld` is optional only because test fakes of the handle omit
-    it (`SceneCanvas.derivedPath.test.tsx` and four in `packages/hud`). The dispatcher mounter,
-    `PointerProviderIfRoot.tsx`, and hover tracking in `SceneCanvas.tsx` still convert with the
-    bare rect helper and ignore a canvas's `clientToWorld` override; so do `CanvasView.tsx` and
-    `features/viewports/viewResolver.ts`, which need a client-to-canvas-local conversion the
-    override does not provide.
+  - A `<CanvasView>` converts client points with the bare rect helper (`clientToWorldHere` in
+    `CanvasView.tsx`), and so does `worldPointAt` for a point that resolves to a declared view. A
+    canvas's `clientToWorld` override reaches neither: it maps into the canvas's own world, and
+    these need a client-to-canvas-local conversion it does not provide.
   - `Canvas`'s `adapter` prop is typed as the Move, Resize, and Rotate adapters together, though
     Canvas reads only poses, nodes, layers, and children.
 
-- **(P3) `packages/ui/src/components/Badge/Badge.stories.tsx` is 2,200 lines, 750 of them one
-  function.** `ComposeLabView` and the `OctantSplineEditor` it uses cannot move to a second
-  stories file, because forge lists every named export of one as a story, and in a plain module
-  both break the 120-line function cap. Breaking `ComposeLabView` up comes first.
+- **(P3) What moving the Badge lab out of its stories file left.** The lab is
+  `packages/ui/src/components/Badge/lab/` now.
+  - It hand-rolls around kit components: `InlineRange` fits its range inputs, and
+    `useReorderDragList` with `DragGrip` fits the effect-card reorder, which uses HTML5 drag and a
+    text grip. Each swap changes how the lab looks or drags.
+  - Its colors are literals (`rgba(255,255,255,…)`, `#7fb069`) in the stylesheets, not `--wzl-*`
+    tokens.
+  - At weight 0 the spline editor's curve and the drawn badge disagree: the editor's
+    `readAnchors` allows weight 0 where the base's `extractAnchorPairs` floors it at 0.01.
+  - In the workshop at a 1500px window, the Compose lab's "Type & padding" column and effects
+    panel run past the right edge of the stage. Not compared against the lab before its text
+    moved onto the type scale.
+  - The simple stories (`StatusVariantMatrix`, `Sizes`, `EdgeCases`) still use inline styles.
 
 - **(P3) `DrawCanvas.tsx` and `SceneViewCanvas.tsx` each carry the same first-paint block**
   (`paintedRef` plus a layout effect). It belongs in `useCanvasSurface`.
@@ -1532,17 +1533,16 @@ only story runner in the repo.
   +0`, and passed on the same commit in the run before it. The assertion reads the anchor before the
   observer that moves it has fired; it wants to wait on the position rather than read it once.
 
-- **(P3) `SceneCanvasInner` is one 998-line function.** It is most of the 1,166-line
+- **(P3) `SceneCanvasInner` is one 788-line function.** It is most of the 944-line
   `canvas/SceneCanvas.tsx`. `docs/audits/2026-10-12-SceneCanvas.md` lists what belongs to another
-  owner; its dead-code pass and its sections on the built-in tool registry, the preset table, and
-  the chrome-caps rule context landed 2026-10-12. Left open by those last two, and described in the
-  audit: `selectTool.rotate === false` is still decided in three places that do not agree, and the
+  owner; its dead-code pass and its sections on the built-in tool registry, the preset table, the
+  chrome-caps rule context, path editing, selection, ingestion, and the device profile landed
+  2026-10-12. Left open by the preset table and the rule context, and described in the audit:
+  `selectTool.rotate === false` is still decided in three places that do not agree, and the
   `modifierHeld` condition can never match on a `<SceneCanvas>`, which always reports no modifier
-  held. Left open by the dead-code pass: `actionDefaults` is a public
-  prop nothing reads, kept only because `SceneCanvas.actions.test.tsx` passes it at 13 sites; and
-  `<DeviceProfileProvider>` resolves the profile a second time beside `SceneCanvasInner`'s own
-  `useDeviceProfile`, so the media-query listeners are doubled. The provider is public and its
-  `value` is a partial override, so taking a resolved profile needs a new prop.
+  held. Left open by the selection pass: the kind label published with the selection and the routing
+  kind disagree on every node, and `SelectionPanel` has a third classifier; the command palette's
+  summary prints the label, so making them one needs a decision on what it should say.
 
 - **(P3) `docs/concepts.md` and `docs/extending.md` teach API that is gone.** The "Putting it
   together" and `<Canvas>` examples in concepts, and "Custom layers" in extending, pass `adapter` and

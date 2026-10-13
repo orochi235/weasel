@@ -8,9 +8,10 @@
  * `matchMedia` globally.
  */
 import { describe, it, expect, vi, beforeAll, afterEach } from 'vitest';
-import { render } from '@testing-library/react';
+import { render, act } from '@testing-library/react';
 import { useDeviceProfile } from '../core/device/useDeviceProfile';
 import { COARSE_TARGET_SCALE } from '@weasel-js/routing';
+import { makeMatchMedia } from '../core/device/testing/matchMedia';
 import { SceneCanvas } from './SceneCanvas';
 import { useScene } from 'core/scene/useScene';
 import { asNodeId } from 'core/scene/types';
@@ -37,6 +38,7 @@ beforeAll(() => {
 
 afterEach(() => {
   vi.restoreAllMocks();
+  vi.unstubAllGlobals();
 });
 
 type D = { color: string };
@@ -84,5 +86,24 @@ describe('SceneCanvas device prop', () => {
     let seen = 0;
     render(<Harness onRead={(s) => { seen = s; }} />);
     expect(seen).toBe(1);
+  });
+
+  // Counting listeners on a `matchMedia` double is a proxy: what it stands for is one
+  // canvas watching the device once, however many things under it read the profile.
+  it('watches the device once for the whole canvas, readers included', () => {
+    const COARSE = '(pointer: coarse)';
+    const HOVER = '(hover: hover)';
+    const media = makeMatchMedia({ [COARSE]: false, [HOVER]: true });
+    vi.stubGlobal('matchMedia', media.mm);
+
+    let seen = 0;
+    const { unmount } = render(<Harness onRead={(s) => { seen = s; }} />);
+    expect([COARSE, HOVER].map(media.listenerCount)).toEqual([1, 1]);
+
+    act(() => media.fire(COARSE, true));
+    expect(seen).toBe(COARSE_TARGET_SCALE);
+
+    unmount();
+    expect([COARSE, HOVER].map(media.listenerCount)).toEqual([0, 0]);
   });
 });
