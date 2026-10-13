@@ -145,9 +145,6 @@ Priority tags:
     moved onto the type scale.
   - The simple stories (`StatusVariantMatrix`, `Sizes`, `EdgeCases`) still use inline styles.
 
-- **(P3) `DrawCanvas.tsx` and `SceneViewCanvas.tsx` each carry the same first-paint block**
-  (`paintedRef` plus a layout effect). It belongs in `useCanvasSurface`.
-
 ### Cursor package follow-ups
 
 - **(P3) Cursor rasterization is unmeasured in Safari.** Chrome and headed Firefox are measured

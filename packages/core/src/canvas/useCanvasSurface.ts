@@ -1,3 +1,4 @@
+import { useEffect, useLayoutEffect, useRef } from 'react';
 import type { ShaderProgramHandle } from '@weasel-js/renderer';
 import type { RedrawSource } from '../core/layers/render';
 import type { CanvasRendererLease } from './canvasRenderer';
@@ -16,6 +17,11 @@ export interface CanvasSurfaceOptions extends FrameLoopOptions {
   redrawOn?: readonly RedrawSource[];
   /** Custom programs the paint draws with; new source for one repaints. */
   shaders?: readonly ShaderProgramHandle[];
+  /** Mark the surface dirty on every committed render, and paint the first
+   *  one in place, in the caller's stack, so the first frame shown is the
+   *  content and not a blank canvas. For a surface whose paint reads its
+   *  props. */
+  paintOnCommit?: boolean;
 }
 
 /** A surface's frame loop and the renderer lease its paint draws through. */
@@ -43,5 +49,20 @@ export function useCanvasSurface(
   useLateContentRedraw(requestRedraw);
   useRedrawOnShaderSource(options.shaders, requestRedraw);
   useRedrawOn(options.redrawOn, requestRedraw);
+  usePaintOnCommit(options.paintOnCommit === true, () => paint(lease), requestRedraw);
   return { ...loop, lease };
+}
+
+function usePaintOnCommit(on: boolean, paintNow: () => boolean, requestRedraw: () => void): void {
+  const paintedRef = useRef(false);
+  // No dependency array: the paint reads whatever the render did.
+  useLayoutEffect(() => {
+    if (!on) return;
+    if (paintedRef.current) { requestRedraw(); return; }
+    paintedRef.current = paintNow();
+    if (!paintedRef.current) requestRedraw();
+  });
+  // The renderer is freed on unmount; a remount (StrictMode) paints its first
+  // frame in place again.
+  useEffect(() => () => { paintedRef.current = false; }, []);
 }

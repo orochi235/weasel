@@ -10,7 +10,6 @@
 import {
   useCallback,
   useEffect,
-  useLayoutEffect,
   useRef,
   useSyncExternalStore,
 } from 'react';
@@ -112,25 +111,12 @@ function SceneViewCanvasInner<TData, TLayer extends string, TPose>(
     });
     return lease.paint(canvas, commands, view, { width, height });
   };
-  const { lease, requestRedraw } = useCanvasSurface(paint, { target: localRef });
-
-  // Every render marks the surface dirty. No dependency array: the paint
-  // reads all of them. The mount paint is the exception: it runs here, in the
-  // caller's stack.
-  const paintedRef = useRef(false);
-  useLayoutEffect(() => {
-    if (paintedRef.current) { requestRedraw(); return; }
-    paintedRef.current = paint(lease);
-    if (!paintedRef.current) requestRedraw();
-  });
+  const { requestRedraw } = useCanvasSurface(paint, { target: localRef, paintOnCommit: true });
 
   // Override writes never bump the scene version, so the version subscription
   // above cannot see them.
   useEffect(() => scene.overrides.subscribe(requestRedraw), [scene, requestRedraw]);
   useEffect(() => animator?.onTick(requestRedraw), [animator, requestRedraw]);
-
-  // A remount (StrictMode) paints its first frame in place again.
-  useEffect(() => () => { paintedRef.current = false; }, []);
 
   return (
     <canvas

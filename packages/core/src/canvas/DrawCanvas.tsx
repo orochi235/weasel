@@ -8,7 +8,7 @@
  * listeners. Its size is `width` × `height`, which the renderer writes as
  * inline style, so `className` positions the element and cannot resize it.
  */
-import { useCallback, useEffect, useLayoutEffect, useRef } from 'react';
+import { useCallback, useRef } from 'react';
 import type { Ref } from 'react';
 import { assignRef } from '@weasel-js/react';
 import type { Paint } from '@weasel-js/paint';
@@ -79,20 +79,7 @@ export function DrawCanvas(props: DrawCanvasProps) {
     commands.push({ kind: 'group', transform: viewToMat3(view), children: [...content] });
     return lease.paint(el, commands, view, { width, height, dpr });
   };
-  const { lease, requestRedraw } = useCanvasSurface(paint, { target: canvasElRef, dpr, redrawOn });
-
-  // Every committed render marks the surface dirty; the first paints in place
-  // so the first frame shown is the content rather than a blank canvas.
-  const paintedRef = useRef(false);
-  useLayoutEffect(() => {
-    if (paintedRef.current) { requestRedraw(); return; }
-    paintedRef.current = paint(lease);
-    if (!paintedRef.current) requestRedraw();
-  });
-
-  // `useCanvasRenderer` frees the renderer on unmount; a remount (StrictMode)
-  // paints its first frame in place again.
-  useEffect(() => () => { paintedRef.current = false; }, []);
+  useCanvasSurface(paint, { target: canvasElRef, dpr, redrawOn, paintOnCommit: true });
 
   return <canvas ref={setRefs} width={width} height={height} className={className} />;
 }
