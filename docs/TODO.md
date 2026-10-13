@@ -124,7 +124,6 @@ Priority tags:
 - **(P3) What removing the old tool design left.** `ToolCtx`, the cursor function's argument,
   `Tool.previewPose` / `previewBounds` / `previewIds`, and tool-side preview sources are gone.
   Still to go:
-  - `ToolBounds` (`routing/src/tools/types.ts`) existed only for `previewBounds`.
   - A `<CanvasView>` converts client points with the bare rect helper (`clientToWorldHere` in
     `CanvasView.tsx`), and so does `worldPointAt` for a point that resolves to a declared view. A
     canvas's `clientToWorld` override reaches neither: it maps into the canvas's own world, and

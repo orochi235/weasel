@@ -140,7 +140,7 @@ export type { ModeShortcutHandlers } from './contributions/modeShortcuts';
 
 // ─── tools ────────────────────────────────────────────────────────────────
 export type {
-  Tool, AnyTool, ToolBounds, ToolModifiers, ToolKeybinding, ToolSlot,
+  Tool, AnyTool, ToolModifiers, ToolKeybinding, ToolSlot,
 } from './tools/types';
 export type { ToolDef } from './tools/routeTypes';
 export { defineTool } from './tools/defineTool';
