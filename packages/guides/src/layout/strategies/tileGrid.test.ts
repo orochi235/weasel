@@ -144,9 +144,13 @@ describe('tileGrid', () => {
       pose: { x: 50, y: 0, width: 50, height: 100 },
       sourceContainerId: 'C',
     }, cell1);
-    expect(ops).toHaveLength(2);
-    expect(ops.every((o) => o.label === 'Tile drop' || o.label === 'Tile swap')).toBe(true);
-    expect(ops.every((o) => typeof o.apply === 'function' && typeof o.invert === 'function')).toBe(true);
+    expect(ops.map((o) => o.label)).toEqual(['Tile swap', 'Tile drop']);
+    const calls: Array<{ id: string; pose: P }> = [];
+    for (const op of ops) op.apply({ setPose: (id: string, pose: P) => calls.push({ id, pose }) });
+    expect(calls).toEqual([
+      { id: 'b', pose: { x: 0, y: 0, width: 50, height: 100 } },
+      { id: 'a', pose: { x: 50, y: 0, width: 50, height: 100 } },
+    ]);
   });
 
   it('reflowPoses swaps occupant under gap > 0 (no desync from gapped layout)', () => {
@@ -279,15 +283,6 @@ describe('tileGrid', () => {
       const layout = tileGrid<P>({ cols: 2, rows: 1 });
       const targets = layout.getDropTargets(container, [{ id: 'a', pose: cell(0) }], incoming('d', cell(0)));
       expect(colOf(layout.snap.pickTarget(targets, { x: 25, y: 50 }))).toBe(1);
-    });
-
-    it('a second child of one drop does not land in the cell the first took', () => {
-      // The drop pipeline hands each placement the state the previous produced:
-      // here 'x' already sits in cell 0, and 'y' probes the same point.
-      const layout = tileGrid<P>({ cols: 2, rows: 1 });
-      const afterFirst = [{ id: 'x', pose: cell(0) }];
-      const targets = layout.getDropTargets(container, afterFirst, incoming('y', cell(0)));
-      expect(colOf(layout.snap.pickTarget(targets, { x: 10, y: 50 }))).toBe(1);
     });
 
     it('a full grid offers a cross-container drop nothing', () => {

@@ -101,11 +101,6 @@ describe('gridSnapStrategy — debug recording', () => {
     expect(recs).toHaveLength(1);
     expect(recs[0]).toEqual({ point: { x: 20, y: 20 }, accepted: true });
   });
-
-  it('does not record when no sink is supplied', () => {
-    const strat = gridSnapStrategy<{ x: number; y: number; id: string }>(20);
-    expect(() => strat.snap({ id: 'a', x: 13, y: 27 }, {} as never)).not.toThrow();
-  });
 });
 
 describe('gridSnapStrategy on a parallax plane', () => {

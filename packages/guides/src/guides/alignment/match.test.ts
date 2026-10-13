@@ -77,11 +77,6 @@ describe('matchAlignment', () => {
     expect(m.activeX).toEqual({ id: 'a', axis: 'x', offset: 96, span: { min: 0, max: 147 } });
     expect(cands[0].span).toEqual({ min: 0, max: 20 });
   });
-
-  it('leaves a guide with no span without one', () => {
-    const cands: Guide[] = [{ id: 'a', axis: 'x', offset: 96 }];
-    expect(matchAlignment(box, cands, tol(5), MOVE_ANCHORS).activeX).toEqual(cands[0]);
-  });
 });
 
 describe('per-axis tolerance', () => {

@@ -32,24 +32,13 @@ describe('snapToGrid', () => {
     expect(result).toEqual({ transform: { kind: 'translate', dx: 1, dy: 3 } });
   });
 
-  it('preserves the snapped grid for non-zero origins', () => {
-    interface FullPose { x: number; y: number; widthFt: number }
-    const o = new Map<string, FullPose>();
-    o.set('a', { x: 0, y: 0, widthFt: 4 });
-    const c: GestureContext<FullPose> = {
-      draggedIds: ['a'],
-      origin: o,
-      current: new Map(),
-      snap: null,
-      modifiers: { alt: false, shift: false, meta: false, ctrl: false },
-      pointer: { worldX: 0, worldY: 0, clientX: 0, clientY: 0 },
-      view: null,
-      adapter: {} as any,
-      scratch: {},
-    };
-    const b = snapToGrid<FullPose>({ spacing: 0.5 });
-    const result = b.onMove!(c, tt(0.3, 0.7));
-    expect(result).toEqual({ transform: { kind: 'translate', dx: 0.5, dy: 0.5 } });
+  it('snaps where the pose lands, not the delta, for an off-grid origin', () => {
+    const b = snapToGrid<Pose>({ spacing: 0.5 });
+    // 0.2 + 0.2 lands on 0.5; the delta alone would round to 0.
+    const result = b.onMove!(ctx({}, { x: 0.2, y: 0.2 }), tt(0.2, 0.2));
+    const t = result?.transform as { dx: number; dy: number };
+    expect(t.dx).toBeCloseTo(0.3);
+    expect(t.dy).toBeCloseTo(0.3);
   });
 
   it('bypassKey suppresses snapping when held', () => {
