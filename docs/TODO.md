@@ -340,14 +340,6 @@ Priority tags:
   left is one adapter contract and one default wiring, with every scene a tree rooted at one
   container, as `useScene`'s already is.
 
-- **(P3) `buildScene` in `packages/core/src/core/scene/scene.ts` is still over the function cap:
-  292 lines against 120.** The file is under its cap. What is left in the function is wiring: it
-  builds each module (`notifier.ts`, `editMode.ts`, `lockGuard.ts`, `nodeStore.ts`, `opTable.ts`,
-  `recorder.ts`, `outerOps.ts`, `historyFacade.ts`, `treeEdits.ts`, `fieldEdits.ts`, and the rest)
-  and hands each the others it reads, then assembles the `Scene` object and `loadState`. Splitting
-  it means grouping modules that are built together, such as the op table with its applied log
-  and recorder.
-
 - **(P3) A direct scene call made while a journal is open lands on the scene's own stack.**
   `scene.applyBatch` goes to the open journal; `scene.setPose` and its siblings, `scene.batch`, and
   `scene.history.apply` do not, so a mode that mixes the two splits its edits across two stacks.
@@ -993,11 +985,10 @@ only story runner in the repo.
   demos that exercise a package shown from its pages. Rendering TypeDoc's JSON output inside the
   site's own shell is the route that puts all four in one place.
 
-- **(P2) The API reference build still reports 8 warnings.** `docs/conventions.md` says
-  `npx typedoc` reports none. Each is a documented export naming a type its barrel does not export:
-  - `Bivariant` (`packages/core/src/core/scene/types.ts`) and `ScopedScene`
-    (`core/scene/unitScopes.ts`): each needs `export` on its declaration and a line in core's
-    scene barrel.
+- **(P2) The API reference build still reports warnings: 8 at the last run, 6 if exporting
+  `Bivariant` and `ScopedScene` from core cleared theirs, which no build has confirmed.**
+  `docs/conventions.md` says `npx typedoc` reports none. Each is a documented export naming a type
+  its barrel does not export:
   - `CONSTRUCTORS` in geom's `typedArrayJson.ts`: `NumberTypedArray` is
     `InstanceType<(typeof CONSTRUCTORS)[TypedArrayTag]>`, so the reference names a private
     constant. Writing the union out by hand lists the nine array types twice.
@@ -1017,16 +1008,15 @@ only story runner in the repo.
   `data-weasel-align="justify"` for the same reason: once lines are exported, its wrapped lines
   need per-word `x` placement too, since `text-anchor` has no justify.
 
-- **(P3) AnimationDemo: the demo builds and mutates its own adapter because the animation wrappers
-  have no canvas seat.** `apps/site/demos/AnimationDemo.tsx` spreads `sceneToAdapter(scene, {
-  selection })`, overrides `insertNode` / `removeNode` / `snapshotSelection` by hand, wraps the
-  result in `animateOnSetPose` and `animateLifecycle` through two `as never` casts, hands that to
-  `useSelectTool` / `useTools`, and then calls `adapter.setPose` / `adapter.insertNode` from button
-  handlers, so those writes skip the op pipeline and undo. `<SceneCanvas>` should take the
-  wrappers itself (an `animate={{ setPose, lifecycle }}` option, or a `SurfaceContribution` that
-  wraps the adapter the canvas already builds), so the demo keeps `features={['pick', 'move']}` and
-  its buttons call `scene.setPose` / `scene.add`. A button's `scene.setPose` never reaches the
-  canvas's adapter, so the seat has to say where a scene-level write gets animated.
+- **(P3) The animation wrappers have no canvas seat.** `animateOnSetPose` and `animateLifecycle`
+  wrap an adapter the caller holds. `<SceneCanvas>` builds its own and takes neither, so nothing a
+  tool writes is animated; `apps/site/demos/AnimationDemo.tsx` wraps `useSceneAdapter(scene)` and
+  its buttons write through that. Wrapping the canvas's adapter would animate every op applied
+  through it, a drag's release, a resize, and an undo among them (read from `applyOps` in
+  `canvas/sceneAdapter.ts`, which hands each op the adapter it was called on; not run), so the
+  seat has to say which of those glide. It would still miss a button's `scene.setPose`, which
+  reaches no adapter: animating that needs the scene to report the write, as `onReflow` reports
+  a settle.
 
 - **(P3) draw warns of two route conflicts every time it loads, and both are a binding that
   declines through `enabled()` so the next one fires.** `findScopedConflicts`
@@ -1113,13 +1103,6 @@ only story runner in the repo.
     a prop or an outer variable from inside a probe component. The rest are
     `useVisibleRaf` loops re-requesting themselves, and writes to forwarded
     refs, DOM nodes, and mutable engine objects.
-
-- **(P3) `preserve-manual-memoization` is off for two files under `canvas/SceneCanvas/`.** Neither
-  report is a stale closure. `GestureDispatcherMounter.tsx` memoizes `longPress` on
-  `longPressOpts?.duration` and `?.haptics` where the compiler infers `longPressOpts`: read the two
-  fields into locals first. `DevHuds.tsx` reads a `useLatest` ref named `pickers`, which the
-  compiler takes for a ref only under a name ending in `Ref`. Fix both and delete the override
-  block in `eslint.config.js`.
 
 ---
 
@@ -1445,15 +1428,14 @@ only story runner in the repo.
     `canvasSource`, ui's `recentColors`, labkit's `panelHost`, `clockRegistry`, and
     `cameraRegistry`, and several in forge.
 
-- **(P3) `SceneCanvasInner` is one 717-line function.** It is most of the 870-line
+- **(P3) `SceneCanvasInner` is one 699-line function.** It is most of the 854-line
   `canvas/SceneCanvas.tsx`. `docs/audits/2026-10-12-SceneCanvas.md` lists what belongs to another
   owner; its dead-code pass and its sections on the built-in tool registry, the preset table, the
-  chrome-caps rule context, path editing, selection, ingestion, the device profile, the camera, and
-  the layer slots landed 2026-10-12. `canvas/Canvas.tsx` is 783 lines, 467 of them `CanvasInner`,
+  chrome-caps rule context, path editing, selection, ingestion, the device profile, the camera, the
+  layer slots, and the redraw subscriptions have landed. `canvas/Canvas.tsx` is 783 lines, 467 of them `CanvasInner`,
   after its scene-layer construction, its dev HUDs, and its camera moved to SceneCanvas. Left open by the preset table and the rule context, and described in the audit:
-  `selectTool.rotate === false` is still decided in three places that do not agree, and the
-  `modifierHeld` condition can never match on a `<SceneCanvas>`, which always reports no modifier
-  held. Left open by the selection pass: the kind label published with the selection and the routing
+  `selectTool.rotate === false` is still decided in three places that do not agree, and making
+  them one changes behavior three ways the audit lists, each needing a decision. Left open by the selection pass: the kind label published with the selection and the routing
   kind disagree on every node, and `SelectionPanel` has a third classifier; the command palette's
   summary prints the label, so making them one needs a decision on what it should say.
 

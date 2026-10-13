@@ -8,11 +8,9 @@ import {
   momentum,
   SceneCanvas,
   WeaselProvider,
-  sceneToAdapter,
   useScene,
+  useSceneAdapter,
   useSelection,
-  useSelectTool,
-  useTools,
   useVelocityTracker,
 } from '@weasel-js/core';
 import { useAnimator } from '@weasel-js/animator';
@@ -90,42 +88,24 @@ export function AnimationCards({ animator }: { animator: Animator }) {
     else { animator.pause(); setPausedState(true); }
   };
 
-  const baseAdapter = useMemo(() => {
-    const base = sceneToAdapter(scene, { selection });
-    return {
-      ...base,
-      insertNode: (card: Card) => {
-        scene.add({
-          kind: 'leaf',
-          layer: 'default',
-          pose: card,
-          data: card,
-          id: asNodeId(card.id),
-        });
-      },
-      removeNode: (id: string) => {
-        scene.remove(asNodeId(id));
-      },
-      snapshotSelection: () => ({ items: [] }),
-    };
-  }, [scene, selection]);
-
+  // The scene's own adapter, wrapped so a pose written through it glides and
+  // a node inserted through it grows in. The canvas below builds its own, so
+  // what a drag writes is not animated.
+  const sceneAdapter = useSceneAdapter(scene);
   const adapter = useMemo(
     () =>
-      animateLifecycle<Card, Pose>(
-        animateOnSetPose<Card, Pose>(baseAdapter as never, animator, { ms: 250 }),
+      animateLifecycle(
+        animateOnSetPose(sceneAdapter, animator, { ms: 250 }),
         animator,
         {
-          enterFrom: (p: Pose) => ({ ...p, width: 0, height: 0 }),
-          exitTo: (p: Pose) => ({ ...p, width: 0, height: 0 }),
+          enterFrom: (p) => ({ ...p, width: 0, height: 0 }),
+          exitTo: (p) => ({ ...p, width: 0, height: 0 }),
           ms: 250,
         },
       ),
-    [baseAdapter, animator],
+    [sceneAdapter, animator],
   );
 
-  const select = useSelectTool<Card, Pose>(adapter as never, {});
-  // The move preset's bindings carry these; the select tool only picks.
   const selectToolOpts = useMemo(() => ({
     move: {
       behaviors: [
@@ -137,25 +117,20 @@ export function AnimationCards({ animator }: { animator: Animator }) {
       ],
     },
   }), [animator]);
-  const tools = useTools({ active: 'select', registry: { select } });
+
+  const insertCard = (card: Card) => {
+    adapter.insertNode({ id: asNodeId(card.id), kind: 'leaf', layer: 'default', pose: card, data: card, parent: null });
+  };
 
   const tweenTo = (id: string, x: number, y: number) => {
     const node = scene.get(asNodeId(id));
     if (!node) return;
-    const p = node.pose as Pose;
-    adapter.setPose(id, { x, y, width: p.width, height: p.height });
+    adapter.setPose(id, { ...node.pose, x, y });
   };
 
   const addCard = () => {
     const id = `n${nextId.current++}`;
-    adapter.insertNode({
-      id,
-      x: 200 + Math.random() * 100,
-      y: 250,
-      width: 60,
-      height: 60,
-      color: CARD_FILL,
-    } as Card);
+    insertCard({ id, x: 200 + Math.random() * 100, y: 250, width: 60, height: 60, color: CARD_FILL });
   };
 
   // --- Breathing handle: pulse alpha on the (single) selected card. ---
@@ -197,14 +172,7 @@ export function AnimationCards({ animator }: { animator: Animator }) {
       newIds.push(id);
       // Seed alpha at 0.3 so the stagger has somewhere to start from.
       effects.current.set(id, { scale: 1, alpha: 0.3 });
-      adapter.insertNode({
-        id,
-        x: 60 + i * 100,
-        y: 320,
-        width: 60,
-        height: 50,
-        color: CARD_FILL,
-      } as Card);
+      insertCard({ id, x: 60 + i * 100, y: 320, width: 60, height: 50, color: CARD_FILL });
     }
     animator.stagger(newIds, 50).tween<number>({
       from: 0.3,
@@ -240,13 +208,12 @@ export function AnimationCards({ animator }: { animator: Animator }) {
         </label>
         <span style={{ opacity: 0.7 }}>Tip: select one card to see the breathing pulse.</span>
       </div>
-      <SceneCanvas features={['outline', 'move']}
+      <SceneCanvas features={['pick', 'move']}
         width={W}
         height={H}
         className="ckd-canvas"
         scene={scene}
         selection={selection}
-        tools={tools}
         selectTool={selectToolOpts}
         redrawOn={redrawOn}
         layers={{

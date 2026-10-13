@@ -74,10 +74,11 @@ export {
   createPoseFeed, createPoseOverrides, definesFrame, derivedDepOf, derivedPose, documentPose, effectivePose,
   UNION_OF_CHILDREN, unionOfChildren, SceneArrivalRefused, reconcileSpecs, sceneUnitScopes,
 } from '../core/scene';
-export type { PoseSource, PosedNode } from '../core/scene';
+export type { PoseSource, PosedNode, ScopedScene } from '../core/scene';
 export type {
   AddLayerSpec,
   AddNodeSpec,
+  Bivariant,
   ClipFromPoseFn,
   DerivedDep,
   DerivePathFn,

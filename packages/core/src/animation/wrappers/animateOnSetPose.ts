@@ -1,7 +1,6 @@
-import { poseKey, tweenPose, springPose } from '../poseHelpers';
+import { poseKey, tweenPose, springPose, type PoseAnimationAdapter } from '../poseHelpers';
 import { instantPoseWrite } from './instantPose';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
-import type { SceneAdapter } from 'core/adapters/types';
 import type { Animator, EasingSpec, SpringPresetName } from '@weasel-js/animator';
 
 /** Options for `animateOnSetPose`. */
@@ -30,7 +29,8 @@ export interface AnimateOnSetPoseOptions<TPose> {
 
 /**
  * Wrap an adapter so every `setPose` animates to the new pose instead of
- * jumping to it.
+ * jumping to it. The result is the adapter it was given, with that one method
+ * replaced.
  *
  * Poses written from inside another animation's tick, and (optionally) poses
  * written for a node currently under a gesture, are passed straight through.
@@ -42,11 +42,11 @@ export interface AnimateOnSetPoseOptions<TPose> {
  * into the new one. Over an adapter with no `poseTarget`, a second write ends
  * the glide: the new pose is written at once and stands.
  */
-export function animateOnSetPose<TNode extends { id: string }, TPose>(
-  adapter: SceneAdapter<TNode, TPose>,
+export function animateOnSetPose<TPose, A extends PoseAnimationAdapter<TPose> = PoseAnimationAdapter<TPose>>(
+  adapter: A & PoseAnimationAdapter<TPose>,
   animator: Animator,
   opts: AnimateOnSetPoseOptions<TPose> = {},
-): SceneAdapter<TNode, TPose> {
+): A {
   const ms = opts.ms ?? 200;
   const skipPredicate = (id: string, from: TPose, to: TPose): boolean => {
     if (opts.shouldAnimate) return !opts.shouldAnimate(id, from, to);
@@ -77,7 +77,7 @@ export function animateOnSetPose<TNode extends { id: string }, TPose>(
         return;
       }
       if (opts.spring) {
-        springPose(animator, adapter as never, {
+        springPose(animator, adapter, {
           id,
           to: pose,
           preset: opts.spring.preset,
@@ -88,7 +88,7 @@ export function animateOnSetPose<TNode extends { id: string }, TPose>(
           opLabel: opts.opLabel,
         });
       } else {
-        tweenPose(animator, adapter as never, {
+        tweenPose(animator, adapter, {
           id,
           to: pose,
           ms,
@@ -98,5 +98,5 @@ export function animateOnSetPose<TNode extends { id: string }, TPose>(
         });
       }
     },
-  };
+  } as A;
 }

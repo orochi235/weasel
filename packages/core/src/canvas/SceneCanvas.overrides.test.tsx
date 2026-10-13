@@ -1,30 +1,66 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { act, render } from '@testing-library/react';
-import { createRef } from 'react';
 import { SceneCanvas } from './SceneCanvas';
 import { buildSceneViewCommands } from './sceneViewRender';
 import { createScene } from 'core/scene/scene';
-import type { SceneCanvasApi } from './canvasExtension';
+import { makeGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
+import { useAnimator, type Animator } from '@weasel-js/animator';
 
 type Layer = 'main';
 interface Data { label: string }
 const POSE = { x: 0, y: 0, width: 10, height: 10 };
 
 describe('SceneCanvas — override repaint', () => {
-  it('requests a redraw when an override is committed', async () => {
+  // Without a context that answers like WebGL2 every paint bails before it draws.
+  const recorder = makeGLRecorder();
+  beforeAll(() => {
+    const proto = HTMLCanvasElement.prototype as unknown as { getContext: (...args: unknown[]) => unknown };
+    proto.getContext = vi.fn((kind: unknown) => (kind === 'webgl2' ? recorder.gl : null));
+  });
+  const frame = () => new Promise<void>((r) => requestAnimationFrame(() => r()));
+  const paints = () => recorder.calls.filter((c) => c.name === 'clear').length;
+
+  it('paints again when an override is committed', async () => {
     const scene = createScene<Data, Layer>({ systemLayers: [{ id: 'main' }] });
     const id = scene.add({ kind: 'leaf', layer: 'main', pose: POSE, data: { label: 'a' } });
-    const ref = createRef<SceneCanvasApi>();
 
-    render(<SceneCanvas ref={ref} width={100} height={100} scene={scene} layers={{}} />);
+    render(<SceneCanvas width={100} height={100} scene={scene} layers={{}} />);
+    await frame();
+    await frame();
+    const before = paints();
+    expect(before).toBeGreaterThan(0);
+    await frame();
+    expect(paints()).toBe(before);
 
-    const requestRedraw = vi.spyOn(ref.current!, 'requestRedraw');
-    await act(async () => {
+    act(() => {
       scene.overrides.set(id, { pose: { x: 5, y: 5, width: 10, height: 10 } });
       scene.overrides.commit();
     });
+    await frame();
 
-    expect(requestRedraw).toHaveBeenCalled();
+    expect(paints()).toBeGreaterThan(before);
+  });
+
+  it('paints again on an animator frame', async () => {
+    const scene = createScene<Data, Layer>({ systemLayers: [{ id: 'main' }] });
+    let animator!: Animator;
+    function Host() {
+      animator = useAnimator();
+      return <SceneCanvas width={100} height={100} scene={scene} layers={{}} animator={animator} />;
+    }
+    render(<Host />);
+    await frame();
+    await frame();
+    const before = paints();
+    await frame();
+    expect(paints()).toBe(before);
+
+    act(() => { animator.tween<number>({ from: 0, to: 1, ms: 10_000, onTick: () => {} }); });
+    await frame();
+    await frame();
+
+    expect(paints()).toBeGreaterThan(before);
+    act(() => { animator.cancelAll(); });
   });
 });
 

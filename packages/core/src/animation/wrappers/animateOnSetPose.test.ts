@@ -46,7 +46,7 @@ describe('animateOnSetPose', () => {
     const initial = new Map<string, RectPose>([['a', { x: 0, y: 0, width: 10, height: 10 }]]);
     const { base, setPose } = makeAdapter(initial);
     const { result } = renderHook(() => useAnimator(clock));
-    const wrapped = animateOnSetPose(base as never, result.current, { ms: 100 });
+    const wrapped = animateOnSetPose(base, result.current, { ms: 100 });
     act(() => {
       wrapped.setPose('a', { x: 100, y: 0, width: 10, height: 10 });
     });
@@ -64,7 +64,7 @@ describe('animateOnSetPose', () => {
     const initial = new Map<string, RectPose>([['a', { x: 0, y: 0, width: 10, height: 10 }]]);
     const { base, applyOps } = makeAdapter(initial);
     const { result } = renderHook(() => useAnimator(clock));
-    const wrapped = animateOnSetPose(base as never, result.current, { ms: 50 });
+    const wrapped = animateOnSetPose(base, result.current, { ms: 50 });
     act(() => {
       wrapped.setPose('a', { x: 50, y: 0, width: 10, height: 10 });
     });
@@ -78,7 +78,7 @@ describe('animateOnSetPose', () => {
     const initial = new Map<string, RectPose>([['a', { x: 0, y: 0, width: 10, height: 10 }]]);
     const { base, setPose, applyOps } = makeAdapter(initial);
     const { result } = renderHook(() => useAnimator(clock));
-    const wrapped = animateOnSetPose(base as never, result.current, { ms: 100 });
+    const wrapped = animateOnSetPose(base, result.current, { ms: 100 });
     act(() => {
       wrapped.setPose('a', { x: 100, y: 0, width: 10, height: 10 });
     });
@@ -114,7 +114,7 @@ describe('animateOnSetPose', () => {
     const initial = new Map<string, RectPose>([['a', { x: 0, y: 0, width: 10, height: 10 }]]);
     const { base, setPose, applyOps } = makeAdapter(initial);
     const { result } = renderHook(() => useAnimator(clock));
-    const wrapped = animateOnSetPose(base as never, result.current, { ms: 100 });
+    const wrapped = animateOnSetPose(base, result.current, { ms: 100 });
 
     // Schedule a decay that calls wrapped.setPose from its onTick — same
     // pattern as momentum-driven movement.
@@ -151,7 +151,7 @@ describe('animateOnSetPose', () => {
     const initial = new Map<string, RectPose>([['a', { x: 0, y: 0, width: 10, height: 10 }]]);
     const { base, setPose, applyOps } = makeAdapter(initial);
     const { result } = renderHook(() => useAnimator(clock));
-    const wrapped = animateOnSetPose(base as never, result.current, {
+    const wrapped = animateOnSetPose(base, result.current, {
       ms: 100,
       shouldAnimate: () => false,
     });

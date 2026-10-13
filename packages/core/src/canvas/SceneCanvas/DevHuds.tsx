@@ -40,14 +40,14 @@ export function DevHuds(props: DevHudsProps) {
   );
   // The pick HUD installs its pointer listener again whenever a picker's
   // identity changes, so it gets two that never do.
-  const pickers = useLatest({ pickEvery: props.pickEvery, pickBest: props.pickBest });
+  const pickersRef = useLatest({ pickEvery: props.pickEvery, pickBest: props.pickBest });
   const pickEvery = useCallback(
-    (wx: number, wy: number): readonly string[] => pickers.current.pickEvery(wx, wy),
-    [pickers],
+    (wx: number, wy: number): readonly string[] => pickersRef.current.pickEvery(wx, wy),
+    [pickersRef],
   );
   const pickBest = useCallback(
-    (wx: number, wy: number): string | null => pickers.current.pickBest(wx, wy),
-    [pickers],
+    (wx: number, wy: number): string | null => pickersRef.current.pickBest(wx, wy),
+    [pickersRef],
   );
 
   // `useHostAnchor` resolves its host on mount and again only when the panel
