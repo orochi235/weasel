@@ -33,14 +33,14 @@ describe('a dep registry', () => {
     const deps = createDepRegistry();
     const late = vi.fn();
     let added = false;
-    deps.subscribe(() => {
+    deps.subscribe?.(() => {
       if (added) return;
       added = true;
-      deps.subscribe(late);
+      deps.subscribe?.(late);
     });
-    deps.changed();
+    deps.changed?.();
     expect(late).not.toHaveBeenCalled();
-    deps.changed();
+    deps.changed?.();
     expect(late).toHaveBeenCalledTimes(1);
   });
 });
