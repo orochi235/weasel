@@ -217,14 +217,13 @@ describe('GradientRampAtlas', () => {
     expect(calls.some((c) => c.name === 'bindTexture')).toBe(true);
   });
 
-  it('hitRate() returns a number in [0, 1]', () => {
+  it('hitRate() is the share of uploads that found their ramp already there', () => {
     const { gl } = makeGLRecorder();
     const atlas = new GradientRampAtlas(gl);
     atlas.upload(BLACK_WHITE);
     atlas.upload(BLACK_WHITE);
     atlas.upload(BLACK_WHITE);
-    expect(atlas.hitRate()).toBeGreaterThanOrEqual(0);
-    expect(atlas.hitRate()).toBeLessThanOrEqual(1);
+    expect(atlas.hitRate()).toBeCloseTo(2 / 3);
   });
 
   it('free() deletes the atlas texture and forgets its rows', () => {

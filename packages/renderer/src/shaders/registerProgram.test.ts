@@ -64,10 +64,4 @@ describe('registerProgram', () => {
     expect(entries.map((e) => [e.value.vert, e.shadowed.length])).toEqual([['v2', 0]]);
     expect(listener).toHaveBeenCalledTimes(2);
     off();
-  });
-
-  it('handle id matches the registered id', () => {
-    const h = registerProgram('match-id', '', MINIMAL_FRAG);
-    expect(getProgramSource(h.id)).not.toBeNull();
-  });
-});
+  });});

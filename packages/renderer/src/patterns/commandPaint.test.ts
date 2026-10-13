@@ -60,8 +60,8 @@ describe('commandStroke', () => {
   });
 });
 
-describe('PathDrawCommand paint', () => {
-  it('rejects what only a node painter can resolve', () => {
+describe('PathDrawCommand paint, checked by the typecheck and not by this run', () => {
+  it('has a type that rejects what only a node painter can resolve', () => {
     const cmds: PathDrawCommand[] = [
       // @ts-expect-error a tile spec is not a registered texture
       { kind: 'path', path: RECT, fill: { paint: { kind: 'hatch', color: '#000' } } },
@@ -71,6 +71,6 @@ describe('PathDrawCommand paint', () => {
       { kind: 'path', path: RECT, stroke: { paint: BOUNDS_GRADIENT, width: 1 } },
       { kind: 'path', path: RECT, fill: { paint: { ...BOUNDS_GRADIENT, units: 'world' } } },
     ];
-    expect(cmds).toHaveLength(4);
+    void cmds;
   });
 });

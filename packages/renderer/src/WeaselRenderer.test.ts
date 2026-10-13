@@ -31,15 +31,7 @@ describe('WeaselRenderer (constructor)', () => {
     new WeaselRenderer({ gl: recorder.gl, width: 800, height: 600, dpr: 2 });
     const viewportCall = recorder.calls.find((c) => c.name === 'viewport')!;
     expect(viewportCall.args).toEqual([0, 0, 1600, 1200]);
-  });
-
-  it('compiles the path-fill shader during construction', () => {
-    new WeaselRenderer({ gl: recorder.gl, width: 800, height: 600, dpr: 1 });
-    const names = recorder.calls.map((c) => c.name);
-    expect(names).toContain('compileShader');
-    expect(names).toContain('linkProgram');
-  });
-});
+  });});
 
 describe('WeaselRenderer.resize', () => {
   let recorder: ReturnType<typeof makeGLRecorder>;

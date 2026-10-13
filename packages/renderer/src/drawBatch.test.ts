@@ -337,11 +337,6 @@ describe('renderer — consecutive solid-fill batching', () => {
     expect(draws()).toHaveLength(4);
   });
 
-  it('keeps a run open across a label, which now stages into it', () => {
-    r.render([rect(0), { kind: 'text', x: 0, y: 0, runs: [], maxWidth: Infinity, align: 'left', style: {} } as unknown as DrawCommand, rect(20)]);
-    expect(draws()).toEqual([12]);
-  });
-
   it('merges across a group transform, placing corners itself', () => {
     const shifted = new Float32Array([1, 0, 0, 0, 1, 0, 30, 40, 1]);
     r.render([
@@ -880,6 +875,13 @@ describe('renderer — text in the batch', () => {
   it('merges a label into the run around it', () => {
     r.render([rect(0), label('A'), rect(20)]);
     expect(draws()).toEqual([18]); // 2 rects + 1 glyph, 6 indices each
+  });
+
+  it('merges a label into a run of images', () => {
+    const image = { width: 16, height: 16, close: () => {} } as unknown as ImageBitmap;
+    const img = (x: number) => ({ kind: 'image', image, x, y: 0, w: 16, h: 16 }) as DrawCommand;
+    r.render([img(0), label('A'), img(20)]);
+    expect(draws()).toEqual([18]);
   });
 
   it('gives a glyph the text color on its vertices', () => {
