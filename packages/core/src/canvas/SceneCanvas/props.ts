@@ -5,7 +5,7 @@ import type { ActionsProp } from '@weasel-js/routing';
 import { Yoke } from '@weasel-js/routing/react';
 import type { PasteOmission } from 'core/adapters/types';
 import type { Op } from 'core/ops/types';
-import type { Node, NodeId, Scene, SerializedScene } from 'core/scene/types';
+import type { Node, Scene, SerializedScene } from 'core/scene/types';
 import type { SelectionApi, UseSelectionOptions } from 'core/selection/useSelection';
 import type { BuiltinShapeToolId } from 'core/shapeKinds';
 import { KIT_SHAPE_KINDS } from 'core/shapeKinds';
@@ -516,20 +516,6 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      * defaults.
      */
     actions?: ActionsProp;
-
-    /**
-     * @experimental
-     * @deprecated unused after legacy-bridge removal; will be deleted
-     */
-    actionDefaults?: {
-      cloneNode?: (id: NodeId, offset: { dx: number; dy: number }) => { id: NodeId };
-      /** Per-clone offset for the duplicate default. Default {dx:8,dy:8}. */
-      duplicateOffset?: { dx: number; dy: number };
-      /** Base nudge step. Default 1. */
-      nudgeStep?: number;
-      /** Shifted nudge step. Default 10. */
-      nudgeShiftStep?: number;
-    };
 
     /**
      * @experimental

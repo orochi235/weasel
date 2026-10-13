@@ -139,7 +139,6 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     viewport,
     layers,
     actions,
-    actionDefaults: _actionDefaults,
     describeKind,
     animator,
     views: viewDescriptors,
