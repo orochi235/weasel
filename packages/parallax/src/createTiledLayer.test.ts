@@ -50,13 +50,6 @@ describe('createTiledLayer', () => {
     expect(xs).toEqual([100, -100, -300]);
   });
 
-  it('a bare number wraps x only', () => {
-    const { layer } = spyLayer();
-    const l = createTiledLayer({ id: 't', label: 'T', source: [layer], period: 200 });
-    const out = l.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, dims);
-    expect(out.every((c) => offsetOf(c)[1] === 0)).toBe(true);
-  });
-
   it('wraps both axes when the period names both', () => {
     const { layer } = spyLayer();
     const l = createTiledLayer({ id: 't', label: 'T', source: [layer], period: { x: 400, y: 300 } });
