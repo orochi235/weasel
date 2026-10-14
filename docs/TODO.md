@@ -157,6 +157,47 @@ Priority tags:
   ask for it, because a scene node has no hidden state of its own to map it to: only a layer has
   `visible`. With a per-node one, `unpackSvgFiles` passes `keepHidden` and writes the flag.
 
+### Path editing tricks
+
+- **(P2) Deleting an anchor flattens the curve around it.** `deleteAnchorsAt` keeps the
+  neighbors' handle directions but sets each handle to a third of the chord
+  (`fitCubicThroughDeletion`, `packages/geom/src/paths/cubicMath.ts`), so deleting one anchor of a
+  four-anchor circle leaves a flat-sided lobe. Fit the two handle lengths, directions fixed, to
+  samples of the span being replaced (Schneider's least-squares step, as `schneiderFit` does).
+- **(P2) Smart remove brush.** Brush along a path in edit mode to delete the anchors under the
+  brush, each gap refit to the shape it replaces. Needs the fitted delete above.
+- **(P2) Bend a segment by dragging it.** In path edit, a drag on a segment's interior reshapes
+  it so the curve passes through the pointer, the handles moving to suit. `segmentAt`
+  gives the hit's `t`.
+- **(P2) Dynamic corners.** Round, chamfer, or invert any corner anchor by dragging a widget at
+  it, and change the radius later. Needs a corner radius per anchor in the path data, expanded
+  into geometry when it renders and on export.
+- **(P2) Extend a path from its end.** Drag an open path's endpoint outward to grow it along its
+  end tangent, or along its end curvature.
+- **(P2) Measure, then transform by the measurement.** A measure tool reads distance and angle
+  between two points, and the readout can move or rotate the selection by exactly that amount.
+- **(P2) Star and polygon stay editable after drawing.** The point count is adjustable with the
+  wheel only while the star is being dragged out (`useStarTool.tsx`); after commit it is plain
+  geometry. Keep the parameters on the node and edit them in the inspector.
+- **(P2) Handle commands.** Retract handles, make an anchor's handles symmetric, and keep a handle's
+  angle while dragging its length.
+- **(P2) Shape builder.** Drag across overlapping regions to merge them, Alt-drag to delete them.
+  `previewBooleanOp` already answers the pieces; the tool draws and picks among them. Building it
+  also gives "Live preview of a Boolean operation" below its display.
+- **(P2) Transform again.** Cmd+D repeats the last move, rotate, scale, or duplicate-and-move on
+  the current selection.
+- **(P2) Reposition a shape while drawing it.** Hold Space during a shape drag to move the shape
+  instead of resizing it.
+- **(P2) Spacing hints.** Equal-spacing markers between siblings while moving, and Alt-hover
+  distance readouts between the selection and the shape under the pointer.
+- **(P2) Live symmetry.** Draw on one side of an axis and the mirrored half follows.
+- **(P2) Variable-width strokes.** A width profile along a stroke's length, edited by dragging
+  on the stroke. `strokeToPath` handles a fixed width only.
+- **(P2) Offset path, simplify, cut at intersections, average and join anchors.** Path
+  commands draw lacks: offset from `strokeToPath`, simplify with a live slider
+  from `schneiderFit`, cut every path at its crossings from `splitBySegment`, and average or join
+  two selected endpoints.
+
 ### Pathfinder follow-ups (post-v1)
 
 - **(P3) Create Outlines refuses synthetic-bold text.** `textToPath` answers `reason: 'synthetic-bold'`: emboldening it is a union with the glyphs' own outline stroke, but the width has to match what the renderer's distance-field shift (`SYNTH_BOLD_AMOUNT`, `packages/renderer/src/draw/text.ts`) draws. Read from `glyphCoverage` and `glyphFieldScale` (`packages/font/src/textSdf.ts`) and not measured against pixels: the shift moves the edge out by `SYNTH_BOLD_AMOUNT` of the field's span, which is `distanceRange` texels in a baked atlas and `SDF_RADIUS` in a runtime canvas page, and a texel is `1 / info.size` em, so the outline grows by `SYNTH_BOLD_AMOUNT × span / info.size` em on each side and differs by which tier serves the glyph. What is left: `textToPath` (`packages/text`) has no stroke outliner to call, since `strokeToPath` is in `@weasel-js/stroke`, which text does not depend on; the union flattens every curve of the glyph; and the result has to be compared with the field in a browser.
