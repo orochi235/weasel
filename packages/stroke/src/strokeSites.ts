@@ -11,6 +11,8 @@ export interface StrokeSite {
   subpath: number;
   /** How far along that subpath, as a fraction of its arc length. */
   t: number;
+  /** That subpath's arc length. */
+  length: number;
   x: number;
   y: number;
   /** The centerline's unit normal there, 90° counterclockwise of its heading. */
@@ -51,6 +53,7 @@ function siteOn(run: Run, subpath: number, seg: number, f: number): StrokeSite {
   return {
     subpath,
     t: total > 0 ? (cum[seg] + (cum[seg + 1] - cum[seg]) * f) / total : 0,
+    length: total,
     x: ax + dx * f,
     y: ay + dy * f,
     nx: -dy / len,

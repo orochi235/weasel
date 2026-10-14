@@ -189,8 +189,15 @@ Priority tags:
 - **(P2) Spacing hints.** Equal-spacing markers between siblings while moving, and Alt-hover
   distance readouts between the selection and the shape under the pointer.
 - **(P2) Live symmetry.** Draw on one side of an axis and the mirrored half follows.
-- **(P2) Variable-width strokes.** A width profile along a stroke's length, edited by dragging
-  on the stroke. `strokeToPath` handles a fixed width only.
+- **(P3) The width tool has no icon, and passes over rectangles.** `useWidthTool` shows the
+  unknown-tool glyph in draw's palette. It edits only nodes `resolveEditablePathOf` answers a
+  polygon for, so a drawn rectangle's stroke, which renders a `widthProfile` like any other, cannot
+  be shaped with it; that waits on "A rectangle has no anchors in path edit" above.
+- **(P3) A profiled stroke's SVG outline is drawn apart from its path.** `serializeSvg` writes the
+  outline as a second element (`packages/svg/src/widthProfileSvg.ts`), so a node `opacity` applies
+  to the fill and the outline separately and composites twice where they overlap, and a marker
+  written in `userSpaceOnUse` units, which `stroke-width="0"` does not hide, draws over the
+  outline's own head.
 
 ### Pathfinder follow-ups (post-v1)
 

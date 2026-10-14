@@ -8,6 +8,7 @@ describe('nearestStrokeSite', () => {
   it('finds the centerline point and its fraction of the length', () => {
     const site = nearestStrokeSite(L, 50, 7)!;
     expect(site.t).toBeCloseTo(0.25, 9);
+    expect(site.length).toBeCloseTo(200, 9);
     expect(site.x).toBeCloseTo(50, 9);
     expect(site.distance).toBeCloseTo(7, 9);
     expect(Math.abs(site.ny)).toBeCloseTo(1, 9);
