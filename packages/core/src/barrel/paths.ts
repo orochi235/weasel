@@ -73,6 +73,11 @@ export {
   splitPathBySegment,
   splitPathByPolyline,
   snipPathByPolyline,
+  snipPathsAtCrossings,
+  offsetPath,
+  simplifyPath,
+  averageAnchorsAt,
+  joinAnchorsAt,
   transformPath,
 } from '../features/paths';
 export type {
@@ -91,9 +96,28 @@ export type {
   PathStation,
   PointAlongPathOptions,
   SplitBySegmentOptions,
+  SnipAtCrossingsOptions,
+  OffsetPathOptions,
+  SimplifyPathOptions,
+  AverageAxis,
   PoseRotation,
   PoseLinear,
 } from '../features/paths';
+export {
+  SHAPE_COUNT_RANGE,
+  STAR_RATIO_RANGE,
+  clampShapeGenerator,
+  isShapeGenerator,
+  regenerateShape,
+  settleShapeGenerator,
+  shapeGeneratorOf,
+  shapeGeneratorPath,
+  withoutShapeGenerator,
+  type GeneratedShape,
+  type PolygonGenerator,
+  type ShapeGenerator,
+  type StarGenerator,
+} from '../features/paths/shapeGenerator';
 
 // ─── Curves: alternate path representations (Bezier, NURBS, Spiro) ──────────
 export {

@@ -18,8 +18,8 @@ import type { SelectionApi } from 'core/selection/useSelection';
 import type { PointOrigin, PolygonPath } from '@weasel-js/geom';
 import type { Skin } from '@weasel-js/animator';
 import { remapSkin } from '../../animation/rig/skinBinding';
-import { worldEditToStorage } from '@weasel-js/geom';
-import { classifyPathStorage, resolveEditablePathOf } from 'features/paths/editablePath';
+import { classifyPathStorage, resolveEditablePathOf, storeEditablePath } from 'features/paths/editablePath';
+import { withoutShapeGenerator } from 'features/paths/shapeGenerator';
 import { createPathEditState, isSelectedNode, type PathEditState } from 'features/paths/pathEditState';
 import { recordModeSwitch } from '@weasel-js/routing';
 import type { Op } from 'core/ops/types';
@@ -66,22 +66,15 @@ export function useEditAnchorsDepSource(
       const wp = worldPath as PolygonPath;
       const node = sc.get(id as NodeId);
       if (!node) return [];
-      const storage = classifyPathStorage(node as { pose: unknown; data: unknown });
-      if (!storage) return [];
+      const next = storeEditablePath(node as { pose: unknown; data: unknown }, wp);
+      if (!next) return [];
       const skin = (node.data as { skin?: Skin } | null)?.skin;
       const reskinned = skin && origins ? { skin: remapSkin(skin, origins) } : null;
-      if (storage.kind === 'pose') {
-        const reshape = createTransformOp({ id, from: node.pose, to: wp, label });
-        if (!reskinned) return [reshape];
-        return [reshape, createSetDataOp({ id, from: node.data, to: { ...(node.data as object), ...reskinned }, label })];
-      }
-      // The edited path arrives in world coords; invert it back to the unrotated stored
-      // shape so `pose.rotation` is preserved and edits round-trip.
-      const { pose: newPose, path: aligned } = worldEditToStorage(storage.pose, wp);
-      return [
-        createTransformOp({ id, from: node.pose, to: newPose, label }),
-        createSetDataOp({ id, from: node.data, to: { ...(node.data as object), path: aligned, ...reskinned }, label }),
-      ];
+      const reshape = createTransformOp({ id, from: node.pose, to: next.pose, label });
+      // A path edited by hand is no longer what its generator makes: it becomes plain geometry.
+      const data = next.data === node.data ? node.data : withoutShapeGenerator(next.data);
+      if (data === node.data && !reskinned) return [reshape];
+      return [reshape, createSetDataOp({ id, from: node.data, to: { ...(data as object), ...reskinned }, label })];
     };
     return {
       editingId: effectiveId,

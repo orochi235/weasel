@@ -5,7 +5,7 @@
  * stores it.
  *
  * `tool` and `params` ride on `meta.wd.attrs` under the local names `tool`, `params-sides`,
- * `params-points`, `params-ratio`.
+ * `params-points`, `params-ratio`, `params-rotation`.
  */
 
 import type { Fill, TextStyle } from '@weasel-js/core';
@@ -111,13 +111,14 @@ export function parsedToDoc(parsed: ParseResult): ParsedDocPatch {
 }
 
 /** The `wd:` attribute bag for an Obj: always `tool`, plus `params-sides` / `params-points` /
- *  `params-ratio` for polygon/star PathObjs with `params` set. */
+ *  `params-ratio` / `params-rotation` for polygon/star PathObjs with `params` set. */
 function encodeWdAttrs(o: Obj): Record<string, string> {
   const attrs: Record<string, string> = { tool: o.tool };
   if (o.tool !== 'text' && o.tool !== 'image' && o.params) {
     if ('sides' in o.params) attrs['params-sides'] = String(o.params.sides);
     if ('points' in o.params) attrs['params-points'] = String(o.params.points);
     if ('ratio' in o.params) attrs['params-ratio'] = String(o.params.ratio);
+    if (o.params.rotation !== undefined) attrs['params-rotation'] = String(o.params.rotation);
   }
   return attrs;
 }
@@ -139,14 +140,16 @@ function decodePathToolAndParams(
       ? (raw as PathToolKind)
       : (pathKind === 'rect' ? 'rect' : 'imported');
   let params: PathParams | undefined;
+  const rotation = attrs ? parseFloat(attrs['params-rotation']) : NaN;
+  const rotated = Number.isFinite(rotation) ? { rotation } : {};
   if (tool === 'polygon' && attrs) {
     const sides = parseFloat(attrs['params-sides']);
-    if (Number.isFinite(sides) && sides >= 3) params = { sides };
+    if (Number.isFinite(sides) && sides >= 3) params = { sides, ...rotated };
   } else if (tool === 'star' && attrs) {
     const points = parseFloat(attrs['params-points']);
     const ratio = parseFloat(attrs['params-ratio']);
     if (Number.isFinite(points) && points >= 3 && Number.isFinite(ratio)) {
-      params = { points, ratio };
+      params = { points, ratio, ...rotated };
     }
   }
   return { tool, params };

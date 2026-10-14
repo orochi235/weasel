@@ -84,7 +84,7 @@ function shapeDelta(
 }
 
 /** Every rotated id's stored pose under a turn by `delta`; none at zero. */
-function storedPreviews(
+export function storedPreviews(
   session: Pick<RotateSession, 'scene' | 'turn' | 'poseFrame' | 'view'>,
   delta: number,
 ): Map<NodeId, unknown> {

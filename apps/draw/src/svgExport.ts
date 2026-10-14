@@ -13,7 +13,9 @@ import {
   embedWeaselMetadataInSvg,
   fillInPoseFrame,
   pathInPoseFrame,
+  shapeGeneratorOf,
   unionAABB,
+  type ShapeGenerator,
 } from '@weasel-js/core';
 import {
   serializeSvg,
@@ -31,9 +33,16 @@ import {
   type WeaselDrawPaperSize,
 } from './svgInterop';
 import type { WeaselDrawData, WeaselDrawPose } from './drawDocument';
-import type { ImageObj, Obj, PathObj, TextObj } from './svgObj';
+import type { ImageObj, Obj, PathObj, PathParams, TextObj } from './svgObj';
 
 const WHITE = /^#?fff(fff)?(ff)?$/i;
+
+/** A polygon's or a star's generator as the `tool` and `params` the `wd:` namespace carries. */
+function toolOfGenerator(g: ShapeGenerator): { tool: 'polygon' | 'star'; params: PathParams } {
+  return g.kind === 'polygon'
+    ? { tool: 'polygon', params: { sides: g.sides, rotation: g.rotation } }
+    : { tool: 'star', params: { points: g.points, ratio: g.innerRadiusRatio, rotation: g.rotation } };
+}
 
 /** Lower a leaf node's `{data, pose}` to an `Obj`, or `null` for a leaf with
  *  no drawable data. */
@@ -63,9 +72,11 @@ function leafToObj(id: string, data: WeaselDrawData, pose: WeaselDrawPose): Obj 
   }
   if (data.path == null) return null;
   const path = pathInPoseFrame(data.path, pose);
+  const generator = shapeGeneratorOf(data);
   const o: PathObj = {
     id,
     tool: 'imported',
+    ...(generator ? toolOfGenerator(generator) : {}),
     x: pose.x, y: pose.y, width: pose.width, height: pose.height,
     path,
     // The path above is baked into page coordinates, and the serializer

@@ -47,6 +47,21 @@ function shapeEndpoints(
   return { start, current };
 }
 
+/** Move the drag's start point by the pointer's step from `from` to `to`, so
+ *  the shape travels with the pointer instead of resizing. The step is taken
+ *  between snapped points, keeping a grid-snapped start on the grid. */
+export function carryStart(
+  session: Pick<InsertSession, 'snap' | 'gestureCtx'>,
+  from: InsertPoint,
+  to: InsertPoint,
+): void {
+  const a = session.snap(from);
+  const b = session.snap(to);
+  const origin = session.gestureCtx.origin;
+  const start = origin.get(GESTURE_KEY) as InsertPoint;
+  origin.set(GESTURE_KEY, { x: start.x + b.x - a.x, y: start.y + b.y - a.y });
+}
+
 /** One pump event's pointer, modifiers, and trail, and the endpoints they
  *  shape to. Each behavior's `onMove` runs once per call. */
 export function nextFrame(

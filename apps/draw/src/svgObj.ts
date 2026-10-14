@@ -6,10 +6,12 @@ export type ToolKind =
 
 /** Non-bounds-derivable shape parameters. Bounds-derived params
  *  (ellipse rx/ry, polygon outer radius, line endpoints) are NOT
- *  stored — they're derived from x/y/width/height. */
+ *  stored — they're derived from x/y/width/height. `rotation` is the
+ *  first vertex's angle inside the node's own rotation; a file without it
+ *  imports as plain geometry. */
 export type PathParams =
-  | { sides: number }                  // tool === 'polygon'
-  | { points: number; ratio: number }; // tool === 'star'
+  | { sides: number; rotation?: number }                  // tool === 'polygon'
+  | { points: number; ratio: number; rotation?: number }; // tool === 'star'
 
 /** The tools whose objects are a `PathObj`. */
 export type PathToolKind = Exclude<ToolKind, 'text' | 'image'>;

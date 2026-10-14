@@ -40,9 +40,6 @@
   "packages/core/src/canvas/SceneCanvas/StandardActionsRegistrar.tsx": {
     "longestFunction": 187
   },
-  "packages/core/src/canvas/SceneCanvas/defaultNodeProperties.ts": {
-    "longestFunction": 125
-  },
   "packages/core/src/canvas/SceneCanvas/props.ts": {
     "lines": 668
   },
@@ -51,9 +48,6 @@
   },
   "packages/core/src/canvas/SceneCanvas/useSceneSelectTool.ts": {
     "longestFunction": 155
-  },
-  "packages/core/src/canvas/deps/insert.ts": {
-    "longestFunction": 138
   },
   "packages/core/src/canvas/pickWalk.ts": {
     "lines": 444
@@ -96,7 +90,7 @@
     "longestFunction": 455
   },
   "packages/core/src/tools/builtin/polygon/usePolygonTool.tsx": {
-    "longestFunction": 124
+    "longestFunction": 123
   },
   "packages/core/src/tools/builtin/select/useSelectTool.ts": {
     "longestFunction": 209

@@ -112,7 +112,7 @@ export const FEATURE_PRESETS: Readonly<Record<BaseFeature, FeaturePreset>> = {
   },
   edit: {
     actions: [
-      'escape', 'cancelGesture', 'selectAll', 'duplicate', 'delete',
+      'escape', 'cancelGesture', 'selectAll', 'duplicate', 'transformAgain', 'delete',
       'group', 'ungroup', 'undo', 'redo',
       'nudge.up', 'nudge.down', 'nudge.left', 'nudge.right',
       'clipboard.cut', 'clipboard.copy', 'clipboard.paste', 'clipboard.pasteEvent',
@@ -136,6 +136,8 @@ export const FEATURE_PRESETS: Readonly<Record<BaseFeature, FeaturePreset>> = {
       'editAnchors', 'enterPathEdit', 'exitPathEdit', 'insertPathAnchor', 'bendSegment',
       'nudgeAnchors.up', 'nudgeAnchors.down', 'nudgeAnchors.left', 'nudgeAnchors.right',
       'deleteAnchors', 'cutPathAtAnchor', 'marqueeAnchors', 'selectAnchor',
+      'retractHandles', 'makeHandlesSymmetric', 'averageAnchors', 'joinAnchors',
+      'simplifyPath', 'offsetPath', 'snipAtCrossings', 'joinPaths',
     ],
   },
   ingest: {
@@ -162,7 +164,7 @@ export const FEATURE_ACTION_IDS = Object.fromEntries(
  * them. A canvas registers each one whenever a tool it carries names it in a
  * binding — `insert` with any shape tool, `enterTextEdit` with the text tool.
  */
-export const TOOL_DRIVEN_ACTION_IDS: readonly string[] = ['insert', 'insert.adjustRotation', 'enterTextEdit'];
+export const TOOL_DRIVEN_ACTION_IDS: readonly string[] = ['insert', 'insert.adjustRotation', 'insert.reposition', 'enterTextEdit'];
 
 /**
  * The base presets a canvas runs with: `features` with every composite

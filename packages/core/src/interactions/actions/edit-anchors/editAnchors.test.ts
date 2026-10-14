@@ -109,7 +109,7 @@ describe('editAnchorsAction descriptor', () => {
 // Happy-path tests — anchors (REAL invoker)
 // ---------------------------------------------------------------------------
 
-import { PATH_M, PATH_L, PATH_C, PATH_Z, type PolygonPath } from '@weasel-js/geom';
+import { PATH_M, PATH_L, PATH_C, PATH_Z, pathToAnchors, type PolygonPath } from '@weasel-js/geom';
 
 /** M(0,0) L(10,0) L(5,10) Z — three anchors at (0,0), (10,0), (5,10). */
 function makeTriangle(): PolygonPath {
@@ -207,6 +207,36 @@ describe('editAnchorsAction — REAL invoker (anchors)', () => {
     const handle = invoker.start(ctx, undefined);
     expect(handle).toHaveProperty('onMove');
     expect(handle).toHaveProperty('onEnd');
+  });
+
+  it('Shift holds a dragged handle to its angle, changing only its length', () => {
+    const bezier = makeBezierPath();
+    let committed: PolygonPath | null = null;
+    const dep: EditAnchorsDep = makeEditAnchorsDep({
+      getStorageKind: () => 'pose',
+      getNodeShape: () => null,
+      getEditablePath: () => bezier,
+      applyEdit: (_id, path) => { committed = path as PolygonPath; },
+    });
+    const affordance: AffordanceHit = { kind: 'controlOut:0', targetIds: ['node-a'] };
+    const startCtx: InvocationCtx = {
+      world: { x: 5, y: -5 },
+      screen: { x: 5, y: -5 },
+      modifiers: { alt: false, ctrl: false, meta: false, shift: false },
+      deps: stubDeps({ selection: ['node-a'], editAnchors: dep }),
+      drag: { start: { x: 5, y: -5 }, current: { x: 5, y: -5 }, delta: { x: 0, y: 0 }, affordance },
+    };
+    const handle = invoker.start(startCtx, undefined);
+    handle.onMove!({
+      ...startCtx,
+      world: { x: 20, y: -10 },
+      modifiers: { ...startCtx.modifiers, shift: true },
+    });
+    handle.onEnd!(startCtx, 'commit');
+    // The handle ran from (0,0) toward (1,-1); (20,-10) projects onto that line at (15,-15).
+    const out = pathToAnchors(committed!).anchors[0][0].outHandle!;
+    expect(out.x).toBeCloseTo(15, 4);
+    expect(out.y).toBeCloseTo(-15, 4);
   });
 
   it('previewIds + previewPose surface the in-flight polygon; cleared after onEnd', () => {

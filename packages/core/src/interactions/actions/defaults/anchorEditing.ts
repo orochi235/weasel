@@ -54,7 +54,7 @@ function anchorClickSlop(deps: ActionDeps | undefined): number {
   return Math.max(extent.x, extent.y);
 }
 
-function depOf(deps: ActionDeps | undefined): EditAnchorsDep | null {
+export function depOf(deps: ActionDeps | undefined): EditAnchorsDep | null {
   const dep = deps?.editAnchors;
   if (!dep || !dep.editingId) return null;
   return dep;
@@ -72,7 +72,7 @@ function worldPathOf(dep: EditAnchorsDep): PolygonPath | null {
  * when the edit changed nothing, so callers can skip the commit rather
  * than push an empty undo step.
  */
-function commitAnchorEdit(
+export function commitAnchorEdit(
   dep: EditAnchorsDep,
   label: string,
   edit: (set: AnchorSet) => boolean | void,
@@ -86,7 +86,7 @@ function commitAnchorEdit(
 }
 
 /** Enabled only while a path is in edit mode with anchors selected. */
-function requiresAnchorSelection(deps?: ActionDeps): true | ActionDisabledReason {
+export function requiresAnchorSelection(deps?: ActionDeps): true | ActionDisabledReason {
   const dep = depOf(deps);
   if (!dep || dep.selectedAnchors.size === 0) return ActionDisabledReason.SelectionRequired;
   return true;

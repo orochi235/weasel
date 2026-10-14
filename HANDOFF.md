@@ -75,6 +75,10 @@ Passed its tests and was never looked at. Delete a line when someone has.
 - Pass 6, SVG: the `<tspan x dy>` lines and the split marker paths in a viewer.
 - Split values in `PrefsForm`: seen in headless Chromium in six stories, light and dark; the
   marks in a heading and in a bar cell were not.
+- Path editing, 2026-10-14: Retract and Symmetric in draw's bar, Shift on a handle drag, the
+  Simplify and Offset sliders' previews, Cut at Crossings, Join and Average, Cmd+D after a move,
+  rotate, resize, and a duplicate-and-move, Space during a shape drag, and a star's Points and
+  Inner rows in the inspector.
 - By ear: the music bed's level, and whether each cue in the `score` demo reads as its name.
 
 ## Weak evidence

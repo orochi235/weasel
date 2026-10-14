@@ -67,7 +67,7 @@ export interface RotateFrame {
 }
 
 function captureOrigins(
-  ctx: InvocationCtx,
+  view: unknown,
   scene: Scene<unknown, string, unknown>,
   ids: readonly NodeId[],
   descriptorOf: (id: NodeId) => PoseDescriptor<unknown>,
@@ -85,7 +85,7 @@ function captureOrigins(
     // The pivot is a world point, so every measurement the gesture orbits
     // is taken from the world pose, not the stored one — carried into the
     // plane the edit is measured in, where the pointer's angle is read.
-    const world = carryPose(g, poseFrame.world(id), invertPlane(planeOf(ctx.deps.view, node.layer)));
+    const world = carryPose(g, poseFrame.world(id), invertPlane(planeOf(view, node.layer)));
     const b = g.getBounds(world);
     origins.set(id, {
       world,
@@ -119,6 +119,35 @@ function buildGestureContext(
   };
 }
 
+/** What turning `ids` (already resolved to shape sources) is computed from,
+ *  with each one's pose as stored. Null when none of them can turn. */
+export function captureTurn(
+  scene: Scene<unknown, string, unknown>,
+  ids: readonly NodeId[],
+  view: unknown,
+  poseDescriptor: Parameters<typeof poseDescriptorOf>[0],
+  pivot: 'union' | 'each',
+): { turn: Turn; originPoses: Map<NodeId, unknown>; poseFrame: PoseFrame<unknown> } | null {
+  const descriptorOf = nodeDescriptors(scene, poseDescriptorOf(poseDescriptor));
+  // The pivot the pointer orbits is a world point, so every pose the
+  // gesture turns is a world pose. Each turned result is stored back in
+  // the node's own parent frame at preview and commit alike.
+  const poseFrame = scenePoseFrame(scene);
+  const { originPoses, origins, visual } = captureOrigins(view, scene, ids, descriptorOf, poseFrame);
+  if (originPoses.size === 0) return null;
+  const union = unionAABB(visual)!;
+  return {
+    turn: {
+      origins,
+      pivot: { x: union.x + union.width / 2, y: union.y + union.height / 2 },
+      useUnionPivot: ids.length > 1 && pivot !== 'each',
+      descriptorOf,
+    },
+    originPoses,
+    poseFrame,
+  };
+}
+
 /** Capture a rotate at press. Null when nothing selected can turn. Runs each
  *  behavior's `onStart`. */
 export function beginRotate(
@@ -136,16 +165,12 @@ export function beginRotate(
   const ids = shapeSources(scene, selection.get()) as NodeId[];
   if (ids.length === 0) return null;
 
-  const descriptorOf = nodeDescriptors(scene, poseDescriptorOf(ctx.deps.poseDescriptor));
-  // The pivot the pointer orbits is a world point, so every pose the
-  // gesture turns is a world pose. Each turned result is stored back in
-  // the node's own parent frame at preview and commit alike.
-  const poseFrame = scenePoseFrame(scene);
-  const { originPoses, origins, visual } = captureOrigins(ctx, scene, ids, descriptorOf, poseFrame);
-  if (originPoses.size === 0) return null;
-
-  const union = unionAABB(visual)!;
-  const pivot = { x: union.x + union.width / 2, y: union.y + union.height / 2 };
+  const captured = captureTurn(
+    scene, ids, ctx.deps.view, ctx.deps.poseDescriptor, params?.['pivot'] === 'each' ? 'each' : 'union',
+  );
+  if (!captured) return null;
+  const { turn, originPoses, poseFrame } = captured;
+  const { origins, pivot } = turn;
   const readers = gestureReaders(ctx.deps);
   const gestureCtx = buildGestureContext(ctx, scene, origins, readers, selection.adapterMethods);
   for (const b of behaviors) b.onStart?.(gestureCtx);
@@ -153,12 +178,7 @@ export function beginRotate(
   const session: RotateSession = {
     scene,
     ids,
-    turn: {
-      origins,
-      pivot,
-      useUnionPivot: ids.length > 1 && params?.['pivot'] !== 'each',
-      descriptorOf,
-    },
+    turn,
     poseFrame,
     view: ctx.deps.view,
     originPoses,

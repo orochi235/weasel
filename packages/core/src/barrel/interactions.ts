@@ -125,6 +125,8 @@ export {
 export { resolveSpatialReference } from '../interactions/actions/spatialReference';
 export type { SpatialReference, SpatialReferenceSources } from '../interactions/actions/spatialReference';
 export type { FlipAxis, FlipPivot } from '../interactions/actions/flip/helpers';
+export { lastTransform, recordTransform, forgetTransform } from '../interactions/actions/transform-again/memory';
+export type { RepeatableTransform } from '../interactions/actions/transform-again/memory';
 export type {
   AlignAdapter,
   AlignEdge,

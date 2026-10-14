@@ -743,7 +743,7 @@ function Editor() {
     ],
   });
 
-  // No per-action wiring: move, resize, rotate, `duplicate` (Cmd+D), and
+  // No per-action wiring: move, resize, rotate, `transformAgain` (Cmd+D), and
   // `delete` (Backspace/Delete) are registered by the features named here.
   return (
     <SceneCanvas

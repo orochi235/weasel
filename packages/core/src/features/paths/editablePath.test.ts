@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { polygonFromPoints, type PolygonPath } from '@weasel-js/geom';
 import type { GesturePreviewSource } from 'canvas/gestureBounds';
-import { liveEditablePath } from './editablePath';
+import { liveEditablePath, resolveEditablePathOf, storeEditablePath } from './editablePath';
 
 /** A triangle filling a 10x10 box, with its apex at `apexX` along the bottom edge. */
 const tri = (apexX = 10): PolygonPath =>
@@ -46,5 +46,22 @@ describe('liveEditablePath', () => {
     const plane = { scale: { x: 2, y: 2 }, offset: { x: 10, y: 0 } };
     // plane = world * 2 + 10, so world = (plane - 10) / 2.
     expect(coords(liveEditablePath('a', node, [], plane))).toEqual([-5, 0, 0, 0, 0, 5]);
+  });
+});
+
+describe('storeEditablePath', () => {
+  it('stores a world path back where the node keeps its polygon', () => {
+    expect(storeEditablePath({ pose: tri(), data: { tag: 1 } }, tri(4))).toEqual({ pose: tri(4), data: { tag: 1 } });
+    const node = { pose: { ...rect(100), rotation: Math.PI / 2 }, data: { path: tri(), tag: 1 } };
+    const world = resolveEditablePathOf(node)!;
+    const stored = storeEditablePath(node, world)!;
+    expect((stored.data as { tag: number }).tag).toBe(1);
+    expect((stored.pose as { rotation: number }).rotation).toBe(Math.PI / 2);
+    const back = coords(resolveEditablePathOf(stored));
+    coords(world).forEach((v, i) => expect(back[i]).toBeCloseTo(v, 4));
+  });
+
+  it('is null for a node with no polygon', () => {
+    expect(storeEditablePath({ pose: rect(0), data: {} }, tri())).toBeNull();
   });
 });
