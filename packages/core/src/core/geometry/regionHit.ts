@@ -114,7 +114,8 @@ export function poseOutline(pose: unknown, b: Bounds): Path {
  * - `enclosed` — the whole outline lies inside it.
  * - `centers` — the center of `b` lies inside it.
  *
- * A node without finite bounds is never taken.
+ * `b` only rejects: it encloses the outline and may reach past it, so a node
+ * is taken by the outline alone. A node without finite bounds is never taken.
  */
 export function regionTakes(
   region: SelectRegion,
@@ -146,15 +147,21 @@ export function regionTakes(
   );
   const silhouette = isSilhouettePose(pose);
   if (mode === 'enclosed') {
-    // A node sticking out of the region's box cannot be inside the region.
-    if (!inBox) return false;
+    // A silhouette pose's bounds are its outline's: sticking out of the
+    // region's box, it cannot be inside the region.
+    if (silhouette && !inBox) return false;
     return polygonContainsPath(region.verts, silhouette ? pose : outline());
   }
   // Swallowed whole by a marquee: no outline can change the answer.
   if (region.isRect && inBox) return true;
   const drawn = silhouette ? pose : outline();
   if (!filled()) return polygonIntersectsPath(region.verts, drawn, { filled: false });
-  // An axis-aligned rect overlapping a marquee's box already meets it.
-  if (drawn.kind === 'rect' && region.isRect) return true;
+  // Two axis-aligned rects meet exactly when their boxes overlap.
+  if (drawn.kind === 'rect' && region.isRect) {
+    return (
+      drawn.x < ab.x + ab.width && drawn.x + drawn.width > ab.x &&
+      drawn.y < ab.y + ab.height && drawn.y + drawn.height > ab.y
+    );
+  }
   return polygonIntersectsPath(region.verts, drawn);
 }

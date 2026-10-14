@@ -338,18 +338,6 @@ Priority tags:
   nine-element column-major matrix a GL uniform takes. Both are exported from `@weasel-js/geom`'s
   root, a capital letter apart.
 
-- **(P3) A marquee and a lasso disagree on a node whose descriptor bounds reach past what it
-  draws.** Two nodes share the pose `{0, 0, 40, 10}`, and a descriptor's `forNode` gives one a
-  40-square box. A marquee over the band above the pose takes that node; an `intersect` lasso
-  around the same band takes nothing. The node matches the default painter, whose silhouette is the
-  pose rect, so its outline is the pose and not the descriptor's box. `regionTakes`
-  (`core/geometry/regionHit.ts`) answers a marquee `true` for any rect outline once the bounds
-  overlap, which holds only when the outline is the bounds; the lasso tests the outline. The
-  `enclosed` branch's `!inBox` reject assumes the same the other way. Undecided: the module's
-  contract says the outline decides, so the marquee shortcut should compare the drawn rect with the
-  region, but that flips `sceneAdapter.regionOutline.test.ts`'s "marquee picks the ball and not the
-  box", which then needs a painter for the ball to say anything about `forNode`.
-
 - **(P3) A direct scene call made while a journal is open lands on the scene's own stack.**
   `scene.applyBatch` goes to the open journal; `scene.setPose` and its siblings, `scene.batch`, and
   `scene.history.apply` do not, so a mode that mixes the two splits its edits across two stacks.
