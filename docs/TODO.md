@@ -248,17 +248,18 @@ Priority tags:
   leaves use a labeled `select`, where the sibling stroke enums (`cap`, `join`, `align`, `dash`)
   are icon toggles. The marker glyphs have to be authored to this repo's icon standard.
 
-- **(P3) Renderer: geometry and paint space far from the origin are still single precision.** The
-  transform stack is in doubles and a large model translation is rebased before upload
-  (`setProjAndModel`, `u_origin`); that is proven by float32 arithmetic in
-  `draw.precision.test.ts`, not in a browser. Not measured, and still float32: a path's own
-  coordinates (`PolygonPath.coords`, `Mesh.vertices`), which at world x = 262,144 sit on a 1/32
-  world unit grid, 2 px at 64x, so a tessellated shape is quantized where a batched rect (doubles)
-  is not; `u_worldInv`, which places a `units: 'world'` gradient or pattern per fragment from a
-  world-sized translation; and the model a consumer's own vertex stage receives (`u_view` on a
-  shader command, `u_model` in a registered paint kind), which has no `u_origin` to rebase against.
-  The first needs a per-path origin in `@weasel-js/geom`'s tessellation, the second the same
-  rebase applied to the paint matrix.
+- **(P3) Renderer: geometry far from the origin is still single precision.** The transform stack
+  is in doubles, a large model translation is rebased before upload (`setProjAndModel`,
+  `u_origin`), and a gradient's or a pattern's paint space is rebased the same way (`bindGradient`
+  measures from the gradient's own start, `bindPattern` drops whole tiles). Both are proven by
+  float32 arithmetic (`draw.precision.test.ts`, `draw.paintPrecision.test.ts`), not in a browser;
+  `gradientStart.browser.test.ts` checks where a ramp lands and has not been run. Still float32:
+  a path's own coordinates (`PolygonPath.coords`, `Mesh.vertices`), which at world x = 262,144
+  sit on a 1/32 world unit grid, 2 px at 64x, so a tessellated shape is quantized where a batched
+  rect (doubles) is not; and what a consumer's own stage receives, which has no origin to rebase
+  against: the model (`u_view` on a shader command, `u_model` in a registered paint kind) and the
+  paint matrix a registered kind asks for (`PaintBindContext.spaceInverse`). The first needs a
+  per-path origin in `@weasel-js/geom`'s tessellation.
 
 ---
 
