@@ -1,4 +1,5 @@
 import { useEffect, useMemo } from 'react';
+import { useLatest } from '@weasel-js/core';
 import { DiagramView, type DiagramViewProps } from '../DiagramView';
 import { diagramScene } from '../fromData';
 import { checkPipeline, type EffectProblem } from './check';
@@ -44,7 +45,10 @@ export function EffectChart<TOptions = unknown>({
   pipeline, look, options, width, height, selected, onSelect, onProblems, className,
 }: EffectChartProps<TOptions>) {
   const problems = useMemo(() => checkPipeline(pipeline), [pipeline]);
-  useEffect(() => onProblems?.(problems), [onProblems, problems]);
+  const onProblemsRef = useLatest(onProblems);
+  useEffect(() => {
+    onProblemsRef.current?.(problems);
+  }, [onProblemsRef, problems]);
 
   const built = useMemo(() => {
     const drawn = ((look ?? nodeGraph) as EffectLook<TOptions>)(pipeline, options);
