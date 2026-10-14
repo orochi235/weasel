@@ -703,12 +703,11 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   `--btn-*` tunes and `--wzl-gloss` fades. Whether any of it wants a theme token, and under what
   name, is not decided.
 
-- **(P3) `<ToggleBar>` polish.** Visual still needs polish — literally, polish this. Measured in
-  Chromium 2026-10-13, three text segments, each variant at `md` and `sm`: every segment sits
-  inside its track at one height, none clips its label, and a focused segment draws a 2px
-  outline. One thing a reader of the props would not expect: under `minimal`, `size` does
-  nothing. Both sizes are 20px high at the `sm` font size, where `default` is 32px and 22px
-  and `flat` 28px and 20px.
+- **(P3) `<ToggleBar>` polish.** Visual still needs polish — literally, polish this, by eye in a
+  browser. Measured in Chromium 2026-10-13, three text segments, each variant at `md` and `sm`:
+  every segment sits inside its track at one height, none clips its label, and a focused segment
+  draws a 2px outline, so nothing measured is known to be off. Since then `minimal` takes its font
+  size from `size`, where both sizes drew at the `sm` font; nobody has looked at its `md`.
 
 - **(P3) A host cannot tell which assets a stored draft changed.** `AssetEditor` reports its
   changed assets through `onChangedAssets` only once it is mounted, so a host that shows one
