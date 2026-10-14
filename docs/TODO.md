@@ -202,11 +202,14 @@ Priority tags:
 - **(P3) Non-destructive boolean groups.** Figma-style "boolean group" container node that recomputes geometry from children at render time. Requires a new layer/scene-node type plus renderer support.
 - **(P3) True curve booleans.** The booleans flatten beziers before clipping (`packages/geom/src/booleans/adapter.ts`), so the result is straight-line. Skia/PathKit-style curve-preserving booleans are substantially harder.
 - **(P3) Live preview of a Boolean operation.** Seeing the result before committing: on hovering a Pathfinder button, or holding an op key over a path. `previewBooleanOp` answers the pieces an operation would make, each with its source and paint, and mints and commits nothing. What is left is everything that shows them: no Pathfinder action has a gesture or a key to hold, an action has no way to say what it would do while its button is hovered, and nothing draws paths that are not nodes over the scene.
+
 ---
 - **(P3) draw's SVG files do not carry layers.** A saved file keeps paper size, title, groups, and
   line height under the `wd:` namespace (`apps/draw/src/svgInterop.ts`) but no layer list and no
-  layer id on a shape, so layers are lost on reopen; export only leaves hidden layers out
-  (`svgExport.ts`). Whether a page has its own layers is undecided.
+  layer id on a shape; export only leaves hidden layers out (`svgExport.ts`). Nothing is lost yet:
+  draw has the one layer, `'default'` (`WeaselDrawLayer`, `drawDocument.ts`), and no way to add
+  another, and `openSvg.ts` puts every node on it. Whether a page has its own layers is undecided,
+  and the file format waits on that.
 
 ## Rendering & paint
 
