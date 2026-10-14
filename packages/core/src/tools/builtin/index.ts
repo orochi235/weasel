@@ -62,3 +62,15 @@ export { usePolygonTool, type UsePolygonToolOptions } from './polygon';
 export { useStarTool, type UseStarToolOptions } from './star';
 export { usePencilTool, type PencilPoint } from './pencil';
 export { useSliceTool, type UseSliceToolOptions, type SliceScratch } from './slice';
+export {
+  useMeasureTool,
+  useMeasurement,
+  createMeasureActions,
+  createMeasurementStore,
+  measureBetween,
+  MEASURE_ACTION_IDS,
+  type UseMeasureToolOptions,
+  type Measurement,
+  type MeasurementStore,
+  type MeasurePoint,
+} from './measure';

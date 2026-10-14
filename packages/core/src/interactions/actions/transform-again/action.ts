@@ -2,7 +2,7 @@ import type { Action, ActionDeps } from '@weasel-js/routing';
 import type { Op } from 'core/ops/types';
 import type { Scene } from 'core/scene/types';
 import { createElement } from 'react';
-import { defaultCommitAdapter } from '../defaultCommitAdapter';
+import { commitOps } from '../defaultCommitAdapter';
 import { DUPLICATE_OFFSET, duplicateSelection } from '../defaults/duplicate';
 import { TransformAgainIcon } from '../defaults/icons/editIcons';
 import { translateSelection } from '../defaults/nudge';
@@ -17,10 +17,9 @@ const LABEL = 'Transform Again';
 /** With nothing recorded yet, a repeat is a plain duplicate. */
 const FIRST: RepeatableTransform = { kind: 'duplicate', dx: DUPLICATE_OFFSET, dy: DUPLICATE_OFFSET };
 
-function commit(deps: ActionDeps, scene: Scene<unknown, string, unknown>, ops: Op[]): boolean {
+function commit(deps: ActionDeps, ops: Op[]): boolean {
   if (ops.length === 0) return false;
-  if (deps.applyOps) deps.applyOps(ops, LABEL);
-  else scene.applyBatch(ops, LABEL, defaultCommitAdapter(scene, deps.selection?.adapterMethods));
+  commitOps(deps, ops, LABEL);
   return true;
 }
 
@@ -38,11 +37,11 @@ function replay(deps: ActionDeps, scene: Scene<unknown, string, unknown>, t: Rep
         poseDescriptorOf(deps.poseDescriptor), LABEL,
       ) ? selected : null;
     case 'rotate':
-      return commit(deps, scene, rotateSelectionOps(
+      return commit(deps, rotateSelectionOps(
         scene, selected, deps.view, deps.poseDescriptor, t.angle, t.pivot, LABEL,
       )) ? selected : null;
     case 'scale':
-      return commit(deps, scene, resizeSelectionOps(scene, selected, t.anchor, t.to, deps, LABEL)) ? selected : null;
+      return commit(deps, resizeSelectionOps(scene, selected, t.anchor, t.to, deps, LABEL)) ? selected : null;
   }
 }
 

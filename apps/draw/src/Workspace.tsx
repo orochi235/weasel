@@ -1,5 +1,6 @@
 import {
   BUILTIN_TOOL_IDS,
+  createMeasurementStore,
   SceneCanvas,
   type SceneCanvasApi,
   type SelectionApi,
@@ -7,17 +8,19 @@ import {
   transformPath,
   useCanvasSize,
   type UseSceneTextEditReturn,
+  useMeasureTool,
   useSliceTool,
   type View,
   workspaceTintLayer
 } from '@weasel-js/core';
 import { unpackSvgFiles } from '@weasel-js/svg';
 import { SceneGradientHandles, ToastRegion } from '@weasel-js/ui';
-import { type ReactElement, type RefObject, useCallback, useMemo } from 'react';
+import { type ReactElement, type RefObject, useCallback, useMemo, useState } from 'react';
 import { BooleansAdapterPublisher, CreateOutlinesAdapterPublisher } from './adapterPublishers';
 import { PAPER_PRESETS } from './docPersistence';
 import type { DrawScene, WeaselDrawData, WeaselDrawLayer, WeaselDrawPose } from './drawDocument';
 import { useInsertPaint } from './insertPaint';
+import { MeasureHud } from './measure/MeasureHud';
 import { ModeBreadcrumb } from './modality/chrome/ModeBreadcrumb';
 import { useCanvasModes, useModeTargetLabel } from './modality/useCanvasModes';
 import type { UseModalityReturn } from './modality/useModality';
@@ -95,6 +98,8 @@ export function Workspace(props: WorkspaceProps): ReactElement {
   });
   const insertPaint = useInsertPaint();
   const sliceTool = useSliceTool();
+  const [measurement] = useState(createMeasurementStore);
+  const measureTool = useMeasureTool({ store: measurement });
   const { tool: opacityScrubTool, percent: opacityScrubPercent } = useOpacityScrub({
     scene: scene as unknown as Parameters<typeof useOpacityScrub>[0]['scene'],
     selection,
@@ -124,6 +129,7 @@ export function Workspace(props: WorkspaceProps): ReactElement {
       data-mode={modeId}
     >
       <OpacityHud percent={opacityScrubPercent} />
+      <MeasureHud store={measurement} />
       <ModeBreadcrumb
         mode={machine.registry.byId(modeId)}
         targetLabel={targetLabel}
@@ -143,7 +149,7 @@ export function Workspace(props: WorkspaceProps): ReactElement {
           scene={scene}
           selection={selection}
           defaultTools={BUILTIN_TOOL_IDS}
-          tools={{ slice: sliceTool, opacityScrub: opacityScrubTool }}
+          tools={{ slice: sliceTool, measure: measureTool, opacityScrub: opacityScrubTool }}
           ingestion={DRAW_INGESTION}
           insertPaint={insertPaint}
           // Pick on the drawn shape, not the bounding box: clicking the blank right half of a

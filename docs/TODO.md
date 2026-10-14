@@ -172,8 +172,6 @@ Priority tags:
   into geometry when it renders and on export.
 - **(P2) Extend a path from its end.** Drag an open path's endpoint outward to grow it along its
   end tangent, or along its end curvature.
-- **(P2) Measure, then transform by the measurement.** A measure tool reads distance and angle
-  between two points, and the readout can move or rotate the selection by exactly that amount.
 - **(P2) Shape builder.** Drag across overlapping regions to merge them, Alt-drag to delete them.
   `previewBooleanOp` already answers the pieces; the tool draws and picks among them. Building it
   also gives "Live preview of a Boolean operation" below its display.
