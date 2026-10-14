@@ -787,11 +787,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   through `--wzl-field-border`. The systems' own faces are named in the font stacks and not
   bundled; a bundled lookalike needs a face whose license allows it.
 
-- **(P3) labkit trial: "Add trial" leaves the first trial's part outside its own stage.** In the
-  `annotate-lab` example, adding a trial narrows the first trial's stage, and its camera keeps the
-  pan it had, so the part and its marks sit past the stage's edge, out of sight until the trial is
-  panned back. Whether a stage that narrows should re-fit or keep its pan is not decided.
-
 - **(P3) What a leaf shows when its value is absent is decided in each params surface.** Which
   control a leaf draws is one table now (`PARAMS_CONTROLS`, `Prefs/surfaceControls.ts`, through
   `prefFieldProps`' `surface` argument). The value handed to it is not: a stored value that is
