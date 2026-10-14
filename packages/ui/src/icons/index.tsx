@@ -13,7 +13,7 @@ export type { FillableIconName, IconName } from './paths';
 export {
   SelectIcon, LassoIcon, RectIcon, EllipseIcon, ImageIcon, EyedropperIcon,
   LineIcon, ArrowIcon, PolygonIcon, StarIcon, PencilIcon, TextIcon, PenIcon, HandIcon,
-  UnknownIcon,
+  SliceIcon, UnknownIcon,
 } from '@weasel-js/core';
 // The standard edit actions' glyphs live beside those actions in core, for the
 // same reason.

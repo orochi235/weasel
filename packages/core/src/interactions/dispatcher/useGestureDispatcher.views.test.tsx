@@ -40,7 +40,7 @@ function Probe({ root, panel }: { root: Dispatcher; panel: DispatcherViewTarget 
     resolver.current = createViewResolver({
       views: () => [{ id: 'panel', view: FLAT, rect: PANEL_RECT }],
       root: () => FLAT,
-      canvasOrigin: () => ({ left: 0, top: 0 }),
+      toLocal: (x, y) => ({ x, y }),
     });
   }
   useGestureDispatcher({
@@ -164,7 +164,7 @@ describe('useGestureDispatcher view routing', () => {
           resolver: createViewResolver({
             views: () => [{ id: 'panel', view: FLAT, rect: PANEL_RECT }],
             root: () => FLAT,
-            canvasOrigin: () => ({ left: 0, top: 0 }),
+            toLocal: (x, y) => ({ x, y }),
           }),
         },
       });
@@ -204,7 +204,7 @@ describe('useGestureDispatcher view routing', () => {
           resolver: createViewResolver({
             views: () => [{ id: 'panel', view: FLAT, rect: PANEL_RECT }],
             root: () => FLAT,
-            canvasOrigin: () => ({ left: 0, top: 0 }),
+            toLocal: (x, y) => ({ x, y }),
           }),
         },
       });

@@ -122,19 +122,12 @@ export type GroupTransform =
   | { kind: 'rotate';    pivot: { x: number; y: number }; angle: number };
 
 /**
- * Per-frame result a `MoveBehavior.onMove` can return.
- *
- * `pose` is the legacy channel: a primary-id-only override, routed through
- * a back-compat shim that derives a `translate` transform from the pose diff
- * against `origin.get(primaryId)`. Prefer `transform`.
- *
- * `snap` announces a visual snap target.
+ * Per-frame result a `MoveBehavior.onMove` can return. `snap` announces a
+ * visual snap target.
  */
 export interface BehaviorResult<TPose> {
   /** Replace the proposed transform. Applied uniformly to every id. */
   transform?: GroupTransform;
-  /** @deprecated Return `transform` instead. Legacy primary-only pose override; supported via internal shim. */
-  pose?: TPose;
   /** Preview poses for individual ids, each in its node's stored frame. For
    *  a dragged id the pose replaces the group transform this frame: a
    *  behavior that will commit its nodes where one translation cannot put
@@ -150,9 +143,6 @@ export interface BehaviorResult<TPose> {
   opaque?: Iterable<string>;
   snap?: SnapTarget<TPose> | null;
 }
-
-/** @deprecated Renamed to `BehaviorResult`. Kept as an alias for one release cycle. */
-export type BehaviorMoveResult<TPose> = BehaviorResult<TPose>;
 
 /** What a move behavior's `onEnd` is told. */
 export interface MoveEnd extends BehaviorEnd {

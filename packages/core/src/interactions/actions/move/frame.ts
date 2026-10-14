@@ -33,22 +33,12 @@ function foldBehaviors(
     gctx.current.set(id as string, draggedStoredPose(session, id, ori, dx, dy));
   }
   let transform: GroupTransform = { kind: 'translate', dx, dy };
-  const primary = session.ids[0] as NodeId | undefined;
   for (const b of session.behaviors) {
     const r: BehaviorResult<unknown> | void = b.onMove?.(gctx, transform);
     if (!r) continue;
     if (r.poses) for (const [id, pose] of r.poses) posed.set(id as NodeId, pose);
     if (r.opaque) for (const id of r.opaque) opaque.add(id as NodeId);
-    if (r.transform && r.transform.kind === 'translate') {
-      transform = r.transform;
-    } else if (r.pose !== undefined && primary !== undefined) {
-      const o = session.startPoses.get(primary);
-      if (o !== undefined) {
-        const from = session.projection.getBounds(o);
-        const to = session.projection.getBounds(r.pose);
-        transform = { kind: 'translate', dx: to.x - from.x, dy: to.y - from.y };
-      }
-    }
+    if (r.transform && r.transform.kind === 'translate') transform = r.transform;
     if (r.snap !== undefined) gctx.snap = r.snap;
   }
   if (transform.kind === 'translate') { dx = transform.dx; dy = transform.dy; }

@@ -5,8 +5,8 @@ import { act, render, type RenderOptions, type RenderResult } from '@testing-lib
  * Give a canvas the keyboard the way a user does: by pressing in it. Keys that
  * reach the page go to the canvas last pressed or scrolled, and to none before
  * that, so a test that fires a key at `window` presses first. The press is a
- * middle-button one, which activates the canvas's input scope and starts no
- * gesture, so nothing is picked, dragged, or clicked.
+ * middle-button one, released at once, which activates the canvas's input
+ * scope and starts no gesture, so nothing is picked, dragged, or clicked.
  *
  * `canvas` defaults to the first `<canvas>` in the document.
  */
@@ -15,6 +15,7 @@ export function giveKeys(canvas?: Element | null): void {
   if (!el) throw new Error('giveKeys: no canvas to press in');
   act(() => {
     el.dispatchEvent(new PointerEvent('pointerdown', { button: 1, bubbles: true }));
+    el.dispatchEvent(new PointerEvent('pointerup', { button: 1, bubbles: true }));
   });
 }
 

@@ -36,6 +36,7 @@ import { useOptionalViewInputs, type SurfaceViewInputs, type ViewRuleInputs } fr
 import { createSceneLayerGate, viewPaintedLayers } from './sceneLayerPaint';
 import {
   useOptionalViewRegistry,
+  surfaceLocal,
   IDENTITY_VIEW,
   UNMEASURED_DIMS,
   type ViewRegistration,
@@ -294,13 +295,9 @@ export function CanvasView(props: CanvasViewProps): null {
   /** A client point in this view's world. The rect moves with the outer
    *  camera, so it is read per call rather than closed over. */
   const clientToWorldHere = useCallback((cx: number, cy: number): { x: number; y: number } => {
-    const canvas = registry?.surface()?.origin() ?? { left: 0, top: 0 };
+    const local = surfaceLocal(registry?.surface() ?? null, cx, cy);
     const rect = rectNow();
-    const [x, y] = clientToWorld(
-      cx, cy,
-      { left: canvas.left + rect.x, top: canvas.top + rect.y },
-      camera(),
-    );
+    const [x, y] = clientToWorld(local.x, local.y, { left: rect.x, top: rect.y }, camera());
     return { x, y };
   }, [registry, rectNow, camera]);
 

@@ -51,3 +51,22 @@ describe('hover on a layer nobody can see', () => {
     input.remove();
   });
 });
+
+describe('hover while a pointer is held', () => {
+  it('stays off until the last of two pointers is released', () => {
+    const moveSpy = vi.fn();
+    const layer: RenderLayer<unknown> = {
+      id: 'tracker', label: 'tracker', space: 'screen', draw: () => [], onUncapturedMove: moveSpy,
+    };
+    const { container } = render(<Canvas width={100} height={100} layers={{ tracker: { layer } }} />);
+    const canvas = container.querySelector('canvas')!;
+    fireEvent.pointerDown(canvas, { pointerId: 1 });
+    fireEvent.pointerDown(canvas, { pointerId: 2 });
+    fireEvent.pointerUp(canvas, { pointerId: 1 });
+    fireEvent.pointerMove(canvas, { pointerId: 2, clientX: 10, clientY: 20 });
+    expect(moveSpy).not.toHaveBeenCalled();
+    fireEvent.pointerUp(canvas, { pointerId: 2 });
+    fireEvent.pointerMove(canvas, { pointerId: 2, clientX: 10, clientY: 20 });
+    expect(moveSpy).toHaveBeenCalledTimes(1);
+  });
+});

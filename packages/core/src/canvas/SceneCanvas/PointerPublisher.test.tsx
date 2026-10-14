@@ -33,24 +33,29 @@ function pointerMoveAt(el: Element, clientX: number, clientY: number) {
   fireEvent(el, move);
 }
 
+let probedCtx: PointerContextValue | null = null;
+function Probe() {
+  const c = usePointerContext();
+  useEffect(() => { probedCtx = c; });
+  return null;
+}
+function Harness() {
+  const scene = useScene<{ id: string }>({ items: [] });
+  return (
+    <SceneCanvas scene={scene} width={64} height={64} layers={{}}>
+      <Probe />
+    </SceneCanvas>
+  );
+}
+function mount(): HTMLCanvasElement {
+  probedCtx = null;
+  const { container } = render(<Harness />);
+  return container.querySelector('canvas')!;
+}
+
 describe('SceneCanvas — auto-wires PointerContext getDropPoint', () => {
   it("publishes the latest pointer position into the surrounding context after pointermove", () => {
-    let probedCtx: PointerContextValue | null = null;
-    function Probe() {
-      const c = usePointerContext();
-      useEffect(() => { probedCtx = c; });
-      return null;
-    }
-    function Harness() {
-      const scene = useScene<{ id: string }>({ items: [] });
-      return (
-        <SceneCanvas scene={scene} width={64} height={64} layers={{}}>
-          <Probe />
-        </SceneCanvas>
-      );
-    }
-    const { container } = render(<Harness />);
-    const canvas = container.querySelector('canvas')!;
+    const canvas = mount();
     expect(probedCtx).not.toBeNull();
     // Before any pointer event: the ref is null (canvas not hovered).
     expect(probedCtx!.getDropPoint()).toBeNull();
@@ -63,6 +68,25 @@ describe('SceneCanvas — auto-wires PointerContext getDropPoint', () => {
     expect(probedCtx!.getDropPoint()).toEqual({ worldX: 100, worldY: 200, viewId: null });
     // pointerleave clears.
     fireEvent.pointerLeave(canvas);
+    expect(probedCtx!.getDropPoint()).toBeNull();
+  });
+
+  it('keeps publishing off the canvas for a press that began on it', () => {
+    const canvas = mount();
+    fireEvent.pointerDown(canvas, { pointerId: 1, buttons: 1 });
+    fireEvent.pointerLeave(canvas, { pointerId: 1, buttons: 1 });
+    expect(probedCtx!.getDropPoint()).not.toBeNull();
+    const move = createEvent.pointerMove(document.body, { pointerId: 1, buttons: 1 });
+    Object.defineProperty(move, 'clientX', { value: 300 });
+    Object.defineProperty(move, 'clientY', { value: 9 });
+    fireEvent(document.body, move);
+    expect(probedCtx!.getDropPoint()).toEqual({ worldX: 300, worldY: 9, viewId: null });
+  });
+
+  it('reports nothing for a drag that began outside the canvas', () => {
+    mount();
+    fireEvent.pointerDown(document.body, { pointerId: 1, buttons: 1 });
+    fireEvent.pointerMove(document.body, { pointerId: 1, buttons: 1, clientX: 300, clientY: 9 });
     expect(probedCtx!.getDropPoint()).toBeNull();
   });
 });

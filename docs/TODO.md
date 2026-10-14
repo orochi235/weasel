@@ -26,11 +26,6 @@ Priority tags:
   `features`; the new word is not chosen yet. That leaves choosing it, then renaming the one path,
   its imports, and the section of the taxonomy.
 
-- **(P3) The slice tool has no icon.** `useSliceTool` declares a label and a key but no
-  `presentation.icon`, so `ToolPalette` draws its placeholder `?`, as the Slice demo shows. It
-  wants a knife glyph in `packages/core/src/icons`, proofed the way "Drawing icons" in
-  `CLAUDE.md` says.
-
 - **(P3) Nothing reads a mode's `entry.trigger`.** Draw enters path-edit, isolation, and text-edit
   from `SceneCanvas`'s `onDoubleClick` observer through a kind-to-mode table of its own
   (`apps/draw/src/modality/doubleClickEntry.ts`), not from the `'double-click-target'` the
@@ -75,18 +70,14 @@ Priority tags:
   `PropertyPanel`. Its own arc, and the first question is whether labkit should support a lab with
   no trials at all.
 
-- **(P3) One dep still names a plane, not ten.** Read for what a camera-bearing host can
-  implement, only `geometryProjection` obstructs (its own entry below). `view` is per-kernel by
-  design, and `kernel3d` declares `camera3d`. `editAnchors` and `booleansAdapter` are 2D features a
-  3D kernel does not declare. `snap`, `lassoSelect`, `poseDescriptor`, `slice`, `ingestion`, and
-  `pointer` are satisfiable as typed, because every coordinate in them is a screen point under the
-  identity `clientToWorld` a 3D host passes. `pointer` was read, not run in a 3D host: its store
-  (`PointerContextValue`) holds one `{ worldX, worldY, viewId }` point and no camera.
-
 - **(P3) `geometryProjection` cannot hold a 3D transform.** `transform(node, m: Mat3)` names a
-  plane in its signature, so a kernel with a camera has nothing to implement it with. Core builds
-  the `Mat3` at four call sites (move, nudge, flip, and resize commit) before the dep is consulted,
-  so widening the type alone does not free it.
+  plane in its signature, and core builds the `Mat3` at four call sites (move, nudge, flip, and
+  resize commit) before the dep is consulted, so widening the type alone does not free it. It is
+  the one dep a camera-bearing host cannot implement: `view` is per-kernel by design (`kernel3d`
+  declares `camera3d`), `editAnchors` and `booleansAdapter` are 2D features, and the rest take
+  screen points under the identity `clientToWorld` a 3D host passes. `pointer` was read, not run in
+  a 3D host: its store (`PointerContextValue`) holds one `{ worldX, worldY, viewId }` point and no
+  camera.
 
 - **(P3) Long-press: the native `contextmenu` a touch hold sends is unseen on a real device.**
   `useGestureDispatcher` treats a `contextmenu` that arrives while a touch or pen hold is in
@@ -102,25 +93,14 @@ Priority tags:
   AltGr: that Chrome and Firefox both report AltGraph for it, and that a plain Ctrl+Alt+letter, for
   which Firefox reports AltGraph too, is still read as a chord.
 
-- **(P3) What the pointer recognizer's extraction left.** Three `pointermove` hover channels
-  listen on one canvas element and each tracks "is a button down" its own way: the dispatcher's
-  hover pump (`channels/hoverCursor.ts`), `useSurfaceInput` in core's canvas, and
-  `PointerPublisher` in `PointerProviderIfRoot.tsx`.
+- **(P3) `BASELINE.md`'s text layout numbers include grouping.**
+  `tests/perf/bench/text-layout.bench.ts` times layout alone now, so they need re-recording.
 
-- **(P3) What the text layout split left.**
-  - `layoutEntries.ts` kerns each code point against the one before it, so a combining mark
-    between two letters takes their pair's kerning away: `A`, U+0301, `B` sets the `B` where an
-    unkerned one goes. `layoutEntries.letterSpacing.test.ts` ("tracks a base and its combining mark
-    once") expects exactly that, so whether a mark should be skipped when kerning is not chosen yet.
-  - `tests/perf/bench/text-layout.bench.ts` times layout alone now, so `BASELINE.md`'s numbers,
-    which included grouping, need re-recording.
-
-- **(P3) What removing the old tool design left.** A `<CanvasView>` converts client points with
-  the bare rect helper (`clientToWorldHere` in `CanvasView.tsx`), and so does `worldPointAt` for a
-  point that resolves to a declared view. A canvas's `clientToWorld` override reaches neither: it
-  maps into the canvas's own world, and these need a client-to-canvas-local conversion it does not
-  provide. The view resolver (`features/viewports/viewResolver.ts`) picks the view under a client
-  point from the canvas's rect the same way.
+- **(P3) The dispatcher's canvas-local point ignores a `clientToWorld` override.** `toCanvasLocal`
+  in `packages/routing/src/interactions/dispatcher/dispatchCore.ts` subtracts the element's rect,
+  so on a canvas under a CSS transform the painted cursor, a wheel or pinch's `local`, and the
+  long-press state's `local` are off. Core's `surfaceLocal` puts the override's world point back
+  through the camera; the dispatcher holds no camera to do the same with.
 
 - **(P3) What moving the Badge lab out of its stories file left.** The lab is
   `packages/ui/src/components/Badge/lab/` now.
@@ -145,11 +125,11 @@ Priority tags:
   under this driver, and why is the open question. A finding lands in `bake.ts`.
 
 ---
-- **(P3) A group transform is wired for a translate only.** `GroupTransform` and
-  `BehaviorResult.transform` exist (`packages/core/src/interactions/gestures/types.ts`), but the
-  resize and rotate behaviors still answer a `pose` (`ResizeMoveResult`, `RotateMoveResult`), not a
-  `scale` or `rotate` transform, and the `BehaviorResult.pose` shim they were to replace is still
-  there.
+- **(P3) Nothing produces `GroupTransform`'s `scale` and `rotate` arms.** A move behavior answers
+  a `translate`, and that is the only way it moves the drag. A resize behavior answers bounds
+  (`ResizeMoveResult.pose`) and a rotate behavior an angle or a pose (`RotateMoveResult`). A `scale`
+  about a pivot cannot say everything bounds can: a constraint that slides the box without resizing
+  it has no pivot. Left to rule: drop the two arms, or have resize and rotate answer a transform.
 
 ## Viewport
 

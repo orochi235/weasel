@@ -80,6 +80,17 @@ describe('a hover binding', () => {
     expect(run).not.toHaveBeenCalled();
   });
 
+  it('stands down for a held secondary button too, which opens no drag', () => {
+    const run = vi.fn();
+    const fire = mount([follow('readout', run)]);
+    fire('pointerdown', { clientX: 5, clientY: 5, button: 2, buttons: 2 });
+    fire('pointermove', { clientX: 40, clientY: 40, buttons: 2 });
+    expect(run).not.toHaveBeenCalled();
+    fire('pointerup', { clientX: 40, clientY: 40, button: 2 });
+    fire('pointermove', { clientX: 41, clientY: 40 });
+    expect(run).toHaveBeenCalledTimes(1);
+  });
+
   it('matches its target against what is under the pointer', () => {
     let body: 'empty' | 'unselected-body' = 'empty';
     const run = vi.fn();

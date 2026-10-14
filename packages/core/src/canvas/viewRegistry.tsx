@@ -23,9 +23,6 @@ import { createEmitter } from '@weasel-js/registry';
  * @internal Attached by the surface, read by `<CanvasView>`.
  */
 export interface SurfaceHandle {
-  /** Client-space origin of the canvas element. A rect fact: it knows nothing
-   *  of a `clientToWorld` override, so convert with {@link clientToWorld}. */
-  origin(): { left: number; top: number };
   /** A client point in the surface's own world — the conversion the surface
    *  itself makes, its `clientToWorld` override included. */
   clientToWorld(clientX: number, clientY: number): [number, number];
@@ -56,6 +53,24 @@ export interface SurfaceHandle {
    *  own frame. Registered layers paint over every view, so such a point is
    *  theirs even inside a view's rect. */
   claimsAbove(x: number, y: number): boolean;
+}
+
+/**
+ * A client point in the surface's CSS pixels, from its top-left: the surface's
+ * own world point put back through its camera, so a `clientToWorld` override
+ * reaches every view declared on it.
+ *
+ * @internal
+ */
+export function surfaceLocal(
+  surface: Pick<SurfaceHandle, 'clientToWorld' | 'view'> | null,
+  clientX: number,
+  clientY: number,
+): { x: number; y: number } {
+  if (!surface) return { x: clientX, y: clientY };
+  const [worldX, worldY] = surface.clientToWorld(clientX, clientY);
+  const view = surface.view();
+  return { x: (worldX - view.x) * view.scale.x, y: (worldY - view.y) * view.scale.y };
 }
 
 /**
@@ -135,7 +150,7 @@ export function ViewRegistryProvider({ children }: { children: ReactNode }) {
         return ordered().filter((r) => r.interactive).map((r) => r.layer.resolvable(view, dims));
       },
       root: () => surfaceRef.current?.view() ?? IDENTITY_VIEW,
-      canvasOrigin: () => surfaceRef.current?.origin() ?? { left: 0, top: 0 },
+      toLocal: (clientX, clientY) => surfaceLocal(surfaceRef.current, clientX, clientY),
       occluded: (x, y) => surfaceRef.current?.claimsAbove(x, y) ?? false,
     });
     return {
