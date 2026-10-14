@@ -10,12 +10,14 @@ import { asNodeId } from 'core/scene/types';
 import type { TextNodeSource } from '@weasel-js/text';
 import type { CreateOutlinesAdapter } from './createOutlines';
 import { createOutlinesAction, runCreateOutlines } from './createOutlinesAction';
+import { rootsTree } from 'core/adapters/testing/rootsTree';
 
 const INTER_TTF = resolve(import.meta.dirname, '../../../../../../assets/fonts/inter/inter.ttf');
 
 function makeAdapter(texts: Record<string, TextNodeSource>, ids = Object.keys(texts)) {
   const applyOps = vi.fn();
   const adapter: CreateOutlinesAdapter = {
+    ...rootsTree(),
     getSelection: () => ids.map(asNodeId),
     getTextSource: (id) => texts[id],
     createPathNode: () => ({ id: 'outlined' }),

@@ -71,32 +71,19 @@ export interface BooleansAdapter {
    */
   createPathNode(path: Path, producedBy: BooleanOp, sourceId: NodeId, paint?: PathPaint): { id: string };
   /**
-   * Optional: return the full object for an id, used by the delete ops so
-   * their `invert` (an insert) can restore the complete object on undo.
-   * If omitted, a `{ id }` stub is captured — undo will reinstate the id
-   * but consumers reading other fields (path, fill, etc.) will see them as
-   * undefined.
+   * The full object for an id. The delete ops capture it, so their `invert`
+   * (an insert) restores the complete object on undo.
    */
-  getNode?(id: NodeId): { id: string } | undefined | null;
+  getNode(id: NodeId): { id: string } | undefined | null;
   /**
-   * Optional: the reorder contract. With `getChildren` (and `getParent`, or
-   * every node reads as top-level) the kit reads each source's slot among its
-   * siblings, and with `setChildOrder` as well it moves each result into the
-   * slot of the topmost source in its own source's parent. Without them the result lands wherever
-   * `insertNode` defaults to. `defaultCommitAdapter` supplies all three.
+   * The tree. The kit reads each source's slot among its siblings through
+   * `getParent` and `getChildren`, and moves each result into the slot of
+   * the topmost source in its own source's parent through `setChildOrder`.
+   * `defaultCommitAdapter` supplies all three, and `getNode`.
    */
-  getParent?(id: string): string | null;
-  getChildren?(parentId: string | null): readonly string[];
-  setChildOrder?(parentId: string | null, ids: string[]): void;
-  /**
-   * Optional override for the slot the kit otherwise reads through
-   * `getParent` / `getChildren`: `id`'s parent and its index in that
-   * parent's child order.
-   *
-   * @deprecated Supply `getParent` and `getChildren` instead, and the kit
-   * derives this.
-   */
-  getZOrder?(id: NodeId): BooleanZOrder | undefined;
+  getParent(id: string): string | null;
+  getChildren(parentId: string | null): string[];
+  setChildOrder(parentId: string | null, ids: string[]): void;
   applyOps?(ops: Op[], label?: string): void;
   setSelection?(ids: NodeId[]): void;
   insertNode?(node: { id: string }): void;
@@ -214,11 +201,9 @@ export function applyBooleanOp(
   const plan = planBooleanOp(adapter, sel, op, opts);
   if ('kind' in plan) return plan;
   const { entries, pieces } = plan;
-  const zOrder = (id: NodeId): BooleanZOrder | undefined =>
-    adapter.getZOrder ? adapter.getZOrder(id) : locateChild(adapter, id) ?? undefined;
-
   // Every source's slot, read before the scene is mutated.
-  const slots = entries.map((e) => zOrder(e.id));
+  const slots: (BooleanZOrder | undefined)[] =
+    entries.map((e) => locateChild(adapter, e.id) ?? undefined);
   // A piece stands in for its own source: it is minted from that source, wears
   // the paint a stroke folded into that source left it, and takes its slot.
   const made = pieces.map((piece) => {
@@ -228,10 +213,9 @@ export function applyBooleanOp(
   const newNodes = made.map((m) => m.node);
   const ops: Op[] = [];
   // Capture the full node so the delete's `invert()` (an insert) restores
-  // every field on undo; a `{ id }` stub for an adapter with no `getNode`.
-  // The index is -1 when the adapter exposes no order.
+  // every field on undo. The index is -1 for a source its parent does not list.
   const captured = entries.map((e, i) => ({
-    node: adapter.getNode?.(e.id) ?? { id: e.id },
+    node: adapter.getNode(e.id) ?? { id: e.id },
     index: slots[i]?.index ?? -1,
   }));
   // Order by index DESC so reverse-then-invert (history's undo path)

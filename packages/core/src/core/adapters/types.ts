@@ -55,6 +55,11 @@ export interface SnapTarget<TPose = unknown> {
  * **Pose semantics:** `getPose` / `setPose` work in **local** coordinates —
  * relative to the node's direct parent (or world, for root-parented nodes).
  * `getWorldPose`, where an adapter has it, is the composed reading.
+ *
+ * **Every adapter carries the tree:** `getNode`, `getParent`, and
+ * `getChildren`. A list with no nesting is a tree whose nodes are all roots:
+ * `getParent` answers `null` and `getChildren(null)` answers every id,
+ * bottom first.
  */
 
 /** Narrow adapter for move. Apps without container-snapping leave out `findSnapTarget`. */
@@ -62,10 +67,8 @@ export interface MoveAdapter<TNode extends { id: string }, TPose> {
   getNode(id: string): TNode | undefined;
   getNodes(): TNode[];
   getPose(id: string): TPose;
-  /** Optional. Required only by hierarchy-aware paths: layout-pass drop
-   *  targeting (`getLayout` present), nested-hit collapse
-   *  (`pickTopMostHit`), and group-pose composition. Flat scenes may omit. */
-  getParent?(id: string): string | null;
+  /** The node's container, `null` for a root. */
+  getParent(id: string): string | null;
   /** Optional paint depth, read by `pickTopMostHit` to resolve two *siblings*
    *  whose bodies both cover the pointer. Without it the hit list's own order
    *  decides, which is right for a back-to-front walk and wrong for anything
@@ -73,7 +76,7 @@ export interface MoveAdapter<TNode extends { id: string }, TPose> {
   getZIndex?(id: string): number | null | undefined;
   compareZ?(a: string, b: string): number;
   setPose(id: string, pose: TPose): void;
-  /** Optional. Used only by reparent ops; flat scenes that never reparent may omit. */
+  /** Optional. Used only by reparent ops; an adapter that never reparents may omit. */
   setParent?(id: string, parentId: string | null): void;
   /** Optional. The commit point of a gesture. When omitted, ops are applied
    *  against the adapter one by one; an adapter with a history of its own
@@ -94,12 +97,12 @@ export interface MoveAdapter<TNode extends { id: string }, TPose> {
     worldX: number,
     worldY: number,
   ): SnapTarget<TPose> | null;
-  /** Optional: ordered children of `parentId`, `null` for the root siblings.
-   *  One contract with {@link OrderedAdapter.getChildren} — the two land on
-   *  the same adapter object, and an implementation that answers only node
-   *  ids returns `[]` for the root, which the ops read as "no siblings".
-   */
-  getChildren?(parentId: string | null): string[];
+  /** Ordered children of `parentId`, `null` for the root siblings, in
+   *  z-order: index 0 is the bottom. One contract with
+   *  {@link OrderedAdapter.getChildren} — the two land on the same adapter
+   *  object. Picking walks it, and the ops read a node's sibling slot from it.
+   *  A node with no children answers `[]`. */
+  getChildren(parentId: string | null): string[];
   /** Optional: layout strategy attached to a container, or null if the
    *  container uses absolute positioning. When present, a move uses it to
    *  compute drop targets, sibling reflow, and the commit op batch. */
@@ -194,6 +197,11 @@ export interface LassoSelectAdapter extends AreaSelectAdapter {
  * gesture or paste inputs, and wraps each in an `InsertOp`.
  */
 export interface InsertAdapter<TNode extends { id: string }> {
+  getNode(id: string): TNode | undefined;
+  getParent(id: string): string | null;
+  /** Ordered children of `parentId`, `null` for the root siblings. An insert
+   *  resolves its sibling slot against it. */
+  getChildren(parentId: string | null): string[];
   /** Materialize a new node from drag-rect bounds (drag-to-insert tools).
    *  Optional: `sceneToAdapter` only fills it in when `options.commitInsert`
    *  is supplied. */
@@ -237,8 +245,7 @@ export interface LayerEnumerableAdapter<TLayer extends string = string> {
 }
 
 /**
- * Optional adapter mixin for sibling z-order. Reorder ops no-op when either
- * method is absent.
+ * Sibling z-order: what the reorder ops read and write.
  *
  * **Convention:** array order IS z-order. Index 0 is the bottom of the
  * stack, the last index is the top. Hit-testing should iterate the returned
@@ -249,9 +256,9 @@ export interface OrderedAdapter {
   /** Ordered children of `parentId` (or root siblings if null), in z-order:
    *  index 0 is bottom, last index is top. The same contract
    *  {@link MoveAdapter.getChildren} declares — one method, two readers. */
-  getChildren?(parentId: string | null): string[];
+  getChildren(parentId: string | null): string[];
 
   /** Rewrite the order of `parentId`'s children. Length and contents must
    *  match the existing children — reorder only, no add/remove. */
-  setChildOrder?(parentId: string | null, ids: string[]): void;
+  setChildOrder(parentId: string | null, ids: string[]): void;
 }

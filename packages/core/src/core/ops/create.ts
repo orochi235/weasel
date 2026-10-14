@@ -4,10 +4,10 @@ import { registerOpFactory } from './registry';
 import { parentOf, resolveSlot, slotFromIndex, type OrderedReader, type SiblingSlot } from './slot';
 
 interface InsertAdapter<TNode> extends OrderedReader {
-  getNode?(id: string): TNode | undefined;
-  /** When `index` is supplied, insert at that position; adapters that ignore
-   *  the second arg (or don't expose it) fall back to their default
-   *  placement (typically append-to-end). */
+  getNode(id: string): TNode | undefined;
+  /** When `index` is supplied, insert at that position; an adapter that
+   *  ignores the second arg falls back to its default placement (typically
+   *  append-to-end). */
   insertNode(node: TNode, index?: number): void;
 }
 
@@ -44,13 +44,13 @@ export function createInsertOp<TNode extends { id: string }>(args: InsertArgs<TN
     apply(adapter) {
       const a = adapter as InsertAdapter<TNode>;
       const insertRoot = (): void => {
-        a.insertNode(node, resolveSlot(a.getChildren?.(parentOf(node)), slot));
+        a.insertNode(node, resolveSlot(a.getChildren(parentOf(node)), slot));
       };
       if (!cascaded || cascaded.length === 0) return insertRoot();
       for (const entry of cascaded) {
-        // A flat adapter's removeNode doesn't cascade, so its children
-        // were never gone — re-inserting them would duplicate them.
-        if (a.getNode?.(entry.node.id)) continue;
+        // An adapter whose removeNode doesn't cascade never lost the
+        // children — re-inserting them would duplicate them.
+        if (a.getNode(entry.node.id)) continue;
         if (entry.node.id === node.id) insertRoot();
         else a.insertNode(entry.node, entry.index);
       }

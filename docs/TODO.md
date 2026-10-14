@@ -338,17 +338,6 @@ Priority tags:
   nine-element column-major matrix a GL uniform takes. Both are exported from `@weasel-js/geom`'s
   root, a capital letter apart.
 
-- **(P2) Hand-written adapters may still be flat lists.** `sceneToAdapter` is the only adapter the
-  kit builds, and the scene slot paints only a tree. What is left is the tier below it: an adapter
-  written by hand against the narrow contracts, which may leave the tree out. Readers still carry
-  a second path for one that does — `adapterPickSource` (`canvas/pickWalk.ts`) walks `getNodes()`
-  when `getChildren` or `getNode` is missing, `OrderedAdapter`'s two methods are optional and
-  reorder ops do nothing without them, and the ops' `OrderedReader` (`core/ops/slot.ts`) treats a
-  missing `getChildren` as "no siblings". `useSelectTool.zorder.test.tsx` and
-  `useSelectTool.viewGates.test.tsx` pin the flat path. Needs a decision: require the tree of
-  every adapter and delete those paths, or keep the flat list as the least a hand-written adapter
-  can be.
-
 - **(P3) A marquee and a lasso disagree on a node whose descriptor bounds reach past what it
   draws.** Two nodes share the pose `{0, 0, 40, 10}`, and a descriptor's `forNode` gives one a
   40-square box. A marquee over the band above the pose takes that node; an `intersect` lasso

@@ -57,13 +57,12 @@ export interface CreateOutlinesAdapter {
    * the paths are laid flat in that slot instead.
    */
   createContainerNode?(sourceId: NodeId, spec: { parent: string | null; bounds: Rect }): { id: string };
-  /** Full node for `id`, so undo restores the text node whole. Without it the
-   *  delete captures an `{ id }` stub. */
-  getNode?(id: string): { id: string } | undefined | null;
-  /** Parent and sibling order — the reorder contract. With both, each path is
-   *  inserted at its text node's index; without, where `insertNode` defaults. */
-  getParent?(id: string): string | null;
-  getChildren?(parentId: string | null): readonly string[];
+  /** Full node for `id`, so undo restores the text node whole. */
+  getNode(id: string): { id: string } | undefined | null;
+  /** The tree: each path is inserted at its source node's index among its
+   *  parent's children. */
+  getParent(id: string): string | null;
+  getChildren(parentId: string | null): string[];
   applyOps?(ops: Op[], label?: string): void;
   setSelection?(ids: NodeId[]): void;
   insertNode?(node: { id: string }, index?: number): void;

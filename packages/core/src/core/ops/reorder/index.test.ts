@@ -51,14 +51,6 @@ describe('createReorderOp / forward', () => {
     expect(a.children.ROOT).toEqual(['a', 'b', 'c']);
   });
 
-  it('no-ops when getChildren is missing on adapter', () => {
-    const stub = {
-      getParent: () => null,
-      // no getChildren / setChildOrder
-    };
-    expect(() => createReorderOp({ ids: ['a'], direction: 'forward' }).apply(stub)).not.toThrow();
-  });
-
   it('skips ids not present in their reported parent\'s children', () => {
     const a = makeAdapter({
       parents: { a: null, b: null, ghost: null },

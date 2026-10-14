@@ -4,6 +4,7 @@ import { boundsOfPath, pathFromD, type Path } from '@weasel-js/geom';
 import type { PathPaint } from 'canvas/nodeShapes/nodePaint';
 import type { NodeId } from 'core/scene/types';
 import { applyBooleanOp, previewBooleanOp, type BooleansAdapter } from './booleans';
+import { rootsTree } from 'core/adapters/testing/rootsTree';
 
 const RED = { color: '#f00' };
 const rect = (x: number, y: number, width: number, height: number): Path => ({ kind: 'rect', x, y, width, height });
@@ -13,6 +14,7 @@ function harness(sources: { id: string; path: Path; paint?: PathPaint }[]) {
   const createPathNode = vi.fn((path: Path) => ({ id: 'made', path }));
   const applyOps = vi.fn();
   const adapter: BooleansAdapter = {
+    ...rootsTree(),
     getSelection: () => sources.map((s) => s.id as NodeId),
     getWorldPath: (id) => by.get(id)?.path,
     getPaint: (id) => by.get(id)?.paint,

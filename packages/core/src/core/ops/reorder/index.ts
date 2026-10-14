@@ -14,9 +14,9 @@ export { canBringForward, canSendBackward } from './algorithms';
 export { createSetChildOrderOp, type ChildOrder, type SetChildOrderArgs } from './setChildOrder';
 
 interface ReorderAdapter {
-  getParent?(id: string): string | null;
-  getChildren?(parentId: string | null): string[];
-  setChildOrder?(parentId: string | null, ids: string[]): void;
+  getParent(id: string): string | null;
+  getChildren(parentId: string | null): string[];
+  setChildOrder(parentId: string | null, ids: string[]): void;
 }
 
 type ReorderFn = (list: string[], ids: string[]) => string[];
@@ -77,11 +77,10 @@ function createPartitionedReorderOp(args: {
     label,
     apply(adapter) {
       const a = adapter as ReorderAdapter;
-      if (!a.getChildren || !a.setChildOrder) return false; // graceful no-op
       // Partition ids by current parent.
       const byParent = new Map<string | null, string[]>();
       for (const id of ids) {
-        const parent = a.getParent ? a.getParent(id) : null;
+        const parent = a.getParent(id);
         const list = byParent.get(parent) ?? [];
         list.push(id);
         byParent.set(parent, list);
@@ -177,12 +176,8 @@ export function createMoveToIndexOp(args: MoveToIndexArgs): Op {
     label: label ?? 'Move to index',
     apply(adapter) {
       const a = adapter as ReorderAdapter;
-      if (!a.getChildren || !a.setChildOrder) return;
       // Filter to ids whose current parent matches target parent.
-      const eligible = ids.filter((id) => {
-        const p = a.getParent ? a.getParent(id) : null;
-        return p === parentId;
-      });
+      const eligible = ids.filter((id) => a.getParent(id) === parentId);
       const current = a.getChildren(parentId);
       // Only overwrite `before` the first time we apply; redo (a second
       // apply) must not clobber the originally-captured order, otherwise

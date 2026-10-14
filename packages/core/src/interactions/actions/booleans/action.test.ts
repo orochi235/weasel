@@ -14,6 +14,7 @@ import { asNodeId } from 'core/scene/types';
 import { pathFromD, pointInPath, type Path } from '@weasel-js/geom';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import type { ImmediateInvoker } from '@weasel-js/routing';
+import { rootsTree } from 'core/adapters/testing/rootsTree';
 
 function runDescriptor(action: typeof pathfinderUnionAction, adapter: BooleansAdapter) {
   (action.invoker as ImmediateInvoker).run({ booleansAdapter: adapter });
@@ -84,6 +85,7 @@ describe('Pathfinder actions and strokes', () => {
     };
     const made: Path[] = [];
     const adapter: BooleansAdapter = {
+      ...rootsTree(),
       getSelection: () => [asNodeId('box'), asNodeId('line')],
       getWorldPath: (id) => paths[id],
       getPaint: (id) => (id === 'line'

@@ -1,6 +1,6 @@
-/** Sibling-order read seam. Optional everywhere: a flat adapter has none. */
+/** The sibling-order read: `parentId`'s children, bottom first. */
 export interface OrderedReader {
-  getChildren?(parentId: string | null): string[];
+  getChildren(parentId: string | null): string[];
 }
 
 /**
@@ -11,8 +11,8 @@ export interface OrderedReader {
  * so an ordinal captured before the mutation is replayed against a list that
  * has not been refilled yet and clamps to the end, while "put this back before
  * `e`" stays true however much else has already moved. The ordinal is the
- * fallback for the cases the anchor cannot cover — an adapter with no
- * `getChildren` seam, or an anchor that is itself gone by replay time.
+ * fallback for the case the anchor cannot cover: an anchor that is itself
+ * gone by replay time.
  */
 export interface SiblingSlot {
   /** Ordinal among the siblings. `-1` means "nowhere in particular". */
@@ -24,16 +24,15 @@ export interface SiblingSlot {
   before?: string | null;
 }
 
-/** Observe `id`'s slot among `parentId`'s children. `null` when the adapter
- *  has no ordering seam or `id` isn't there — callers keep whatever weaker
- *  slot they already had rather than overwriting it with a guess. */
+/** Observe `id`'s slot among `parentId`'s children. `null` when `id` isn't
+ *  there — callers keep whatever weaker slot they already had rather than
+ *  overwriting it with a guess. */
 export function captureSlot(
   a: OrderedReader,
   parentId: string | null,
   id: string,
 ): SiblingSlot | null {
-  const siblings = a.getChildren?.(parentId);
-  if (!siblings) return null;
+  const siblings = a.getChildren(parentId);
   const i = siblings.indexOf(id);
   if (i < 0) return null;
   return { index: i, before: i + 1 < siblings.length ? siblings[i + 1]! : null };
@@ -45,11 +44,11 @@ export function captureSlot(
  * adapter's default placement stand.
  */
 export function resolveSlot(
-  siblings: readonly string[] | undefined,
+  siblings: readonly string[],
   slot: SiblingSlot,
 ): number | undefined {
   if (slot.before === null) return undefined;
-  if (slot.before !== undefined && siblings) {
+  if (slot.before !== undefined) {
     const at = siblings.indexOf(slot.before);
     if (at >= 0) return at;
   }
@@ -58,8 +57,8 @@ export function resolveSlot(
 
 /** The reads that locate a live node: its parent, and that parent's children. */
 export interface ParentedReader {
-  getParent?(id: string): string | null;
-  getChildren?(parentId: string | null): readonly string[];
+  getParent(id: string): string | null;
+  getChildren(parentId: string | null): readonly string[];
 }
 
 /** A node's parent (`null` at the top level) and its ordinal among that
@@ -69,12 +68,10 @@ export interface ChildPosition {
   index: number;
 }
 
-/** Where `id` sits under its parent. An adapter with no `getParent` is flat,
- *  as the reorder ops read it. `null` when there is no `getChildren` or it
- *  does not list `id`. */
+/** Where `id` sits under its parent. `null` when the parent's children do
+ *  not list `id`. */
 export function locateChild(a: ParentedReader, id: string): ChildPosition | null {
-  if (!a.getChildren) return null;
-  const parentId = a.getParent ? a.getParent(id) : null;
+  const parentId = a.getParent(id);
   const index = a.getChildren(parentId).indexOf(id);
   return index < 0 ? null : { parentId, index };
 }
@@ -84,7 +81,7 @@ export function slotFromIndex(index: number | undefined): SiblingSlot {
   return { index: index ?? -1 };
 }
 
-/** The parent a node claims. Nodes in a flat adapter have none. */
+/** The parent a node claims; `null` for a root. */
 export function parentOf(node: object): string | null {
   return ((node as { parent?: unknown }).parent ?? null) as string | null;
 }

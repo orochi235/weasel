@@ -19,7 +19,7 @@ interface Rect { id: string; x: number; y: number; width: number; height: number
 /** Mounts the select tool over a bare adapter holding the given rects, and
  *  returns a `press(x, y)` that fires `select.pick` the way the dispatcher's
  *  eager pointerdown does. No `pickEvery` is supplied — the point is to
- *  exercise the default (rect AABB scan over `adapter.getNodes()`). */
+ *  exercise the default (rect AABB walk of the adapter's tree). */
 function harness(initial: Rect[]) {
   const { result } = renderHook(() => {
     const sel = useSelection({ mode: 'single' });

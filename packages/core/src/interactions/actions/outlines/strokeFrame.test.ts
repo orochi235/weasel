@@ -12,6 +12,7 @@ import { outlineStrokeAction } from './outlineStrokeAction';
 import { stubDeps } from '../testUtils';
 import type { CreateOutlinesAdapter } from './createOutlines';
 import { applyOutlineStroke } from './outlineStroke';
+import { rootsTree } from 'core/adapters/testing/rootsTree';
 
 const RED = { color: '#f00' };
 const ACROSS = pathFromD('M0 50 L100 50');
@@ -22,6 +23,7 @@ const WIDE: Mat3 = [4, 0, 0, 1, 0, 0];
 function outlines(path: Path, paint: PathPaint, frame?: Mat3) {
   const made: Path[] = [];
   const adapter: CreateOutlinesAdapter = {
+    ...rootsTree(),
     getSelection: () => [asNodeId('line')],
     getTextSource: () => undefined,
     getWorldPath: () => path,
@@ -73,6 +75,7 @@ describe('applyBooleanOp: the frame a counted stroke is drawn in', () => {
     const made: Path[] = [];
     const paths: Record<string, Path> = { box: BOX, line: linePath };
     const adapter: BooleansAdapter = {
+      ...rootsTree(),
       getSelection: () => ['box', 'line'] as NodeId[],
       getWorldPath: (id) => paths[id],
       getPaint: (id) => (id === 'line' ? { fill: null, stroke } : { fill: { paint: RED } }),

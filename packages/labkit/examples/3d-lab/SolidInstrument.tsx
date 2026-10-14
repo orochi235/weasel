@@ -312,6 +312,8 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
       getPose: (id: string) => scene.get(id as NodeId)!.pose,
       setPose: (id: string, pose: Pose3) => scene.setPose(id as NodeId, pose),
       getParent: (id: string) => scene.get(id as NodeId)?.parent ?? null,
+      getChildren: (parentId: string | null): string[] =>
+        (parentId === null ? [...scene.roots] : [...scene.childrenOf(parentId as NodeId)]),
       hitTestArea: (rect: { x: number; y: number; width: number; height: number }) =>
         areaSelect.hitTestArea(rect) as string[],
       getSelection: () => [...selectionRef.current] as string[],

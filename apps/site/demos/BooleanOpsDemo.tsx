@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useRef } from 'react';
 import {
   asNodeId,
+  defaultCommitAdapter,
   PATH_L,
   PATH_M,
   PATH_Z,
@@ -123,6 +124,7 @@ function InteractivePanel() {
   const adapterRef = useRef<BooleansAdapter | null>(null);
   if (adapterRef.current === null) {
     adapterRef.current = {
+      ...defaultCommitAdapter(sceneRef.current),
       getSelection: () => selectionRef.current.get(),
       getWorldPath: (id: NodeId) => sceneRef.current.get(id)?.data.path,
       compareZ: (a: NodeId, b: NodeId) => {

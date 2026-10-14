@@ -39,6 +39,8 @@ function harness(options: UseSelectToolOptions<Pose> = {}) {
   const adapter = {
     getNodes: () => items,
     getNode: (id: string) => items.find((n) => n.id === id),
+    getParent: () => null,
+    getChildren: (parentId: string | null) => (parentId === null ? items.map((n) => n.id) : []),
     getPose: (id: string) => items.find((n) => n.id === id)!.pose,
   };
   const { result } = renderHook(() => {

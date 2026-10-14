@@ -34,9 +34,9 @@ export function replaceWithPaths(
   const located = converted.map((c) => ({ ...c, at: locateChild(adapter, c.id) }));
   const order = [...located].sort((a, b) => (b.at?.index ?? -1) - (a.at?.index ?? -1));
   for (const { id, paths, at } of order) {
-    const node = adapter.getNode?.(id) ?? { id };
+    const node = adapter.getNode(id) ?? { id };
     const index = at?.index ?? -1;
-    const parent = at?.parentId ?? adapter.getParent?.(id) ?? null;
+    const parent = at?.parentId ?? adapter.getParent(id);
     const place = (created: { id: string }, i: number) =>
       createInsertOp(index >= 0 ? { node: created, index: index + i } : { node: created });
     ops.push(createDeleteOp({ node, index }));
