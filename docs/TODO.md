@@ -915,9 +915,8 @@ only story runner in the repo.
   that follows another token, a ramp, a contrast rule, or an alpha stays a
   per-trial override, and so does a scale step changed after its scale, because
   a value written over it would drop the derivation for every mode and density
-  the branch covers. A save also refuses a param that differs by `mode` while
-  the trial's mode is Auto, since the panel does not know which scheme the
-  frame resolved.
+  the branch covers. Not decided: whether such an edit should save at all, and
+  if so as a pin over the one step or as a change to what it follows.
 
 - **(P3, isolated stories only) Watch in a browser that a story whose `viewport` the index cannot
   read keeps its frame when first opened.** The stage for a computed size, or a CSF story's

@@ -1,14 +1,16 @@
-import { THEME_SOURCES } from '@weasel-js/theme';
+import { type AxisDefs, THEME_SOURCES } from '@weasel-js/theme';
 import { httpThemeApi, type ThemeApi } from '@weasel-js/theme/engine';
 import { useMemo, useState } from 'react';
 import type { Globals } from '../../protocol/messages';
 import type { CssOverrides } from './overrides';
-import { applyScaleEdits, type ScaleEdit, selectionFor } from './saveScales';
+import { applyScaleEdits, type ScaleEdit } from './saveScales';
 import { applyTokenEdits, writtenOut } from './saveTokens';
+import { useTrialSelection } from './useTrialSelection';
 import type { VarsHistory } from './varsHistory';
 
 export const THEME_NAME = 'weasel';
 export const TOKEN_PREFIX = '--wzl-';
+const NO_AXES: AxisDefs = {};
 
 type Notice = { readonly trialId: string | null; readonly tone: 'saved' | 'error'; readonly text: string };
 
@@ -46,10 +48,10 @@ export interface ThemeSave {
  * value the definition writes out. Every other override stays the trial's own.
  */
 export function useThemeSave({ trialId, globals, themeApi, scales, overrides, history }: ThemeSaveOptions): ThemeSave {
+  const definition = THEME_SOURCES[THEME_NAME];
+  const selection = useTrialSelection(definition?.axes ?? NO_AXES, globals);
   const tokens = useMemo(() => {
-    const definition = THEME_SOURCES[THEME_NAME];
     if (!definition) return {};
-    const selection = selectionFor(definition.axes ?? {}, globals);
     const generated = new Set(scales.flatMap((scale) => scale.tokens));
     return Object.fromEntries(
       Object.entries(overrides).flatMap(([name, value]) => {
@@ -58,7 +60,7 @@ export function useThemeSave({ trialId, globals, themeApi, scales, overrides, hi
         return writtenOut(definition, token, selection) ? [[token, value]] : [];
       }),
     );
-  }, [globals, scales, overrides]);
+  }, [definition, selection, scales, overrides]);
 
   const [saving, setSaving] = useState(false);
   const [held, setHeld] = useState<Notice | null>(null);
@@ -75,7 +77,6 @@ export function useThemeSave({ trialId, globals, themeApi, scales, overrides, hi
         setNotice({ tone: 'error', text: `${file} has changed since this page loaded. Reload to edit against it.` });
         return;
       }
-      const selection = selectionFor(stored.definition.axes ?? {}, globals);
       const scaled = applyScaleEdits(stored.definition, Object.fromEntries(scales.map((s) => [s.name, s.edit])), selection);
       const next = scaled.ok ? applyTokenEdits(scaled.definition, tokens, selection) : scaled;
       if (!next.ok) {
