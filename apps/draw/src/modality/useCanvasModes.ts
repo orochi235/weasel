@@ -1,5 +1,6 @@
 import {
   asNodeId,
+  hasEditablePath,
   type Contribution,
   type PathEditHost,
   type SceneCanvasHit,
@@ -7,7 +8,7 @@ import {
   useLatest,
 } from '@weasel-js/core';
 import { useCallback, useMemo } from 'react';
-import type { DrawScene, WeaselDrawData } from '../drawDocument';
+import type { DrawScene } from '../drawDocument';
 import { dispatchDoubleClickEntry } from './doubleClickEntry';
 import type { ModeMachine } from './machine';
 import { modePathEdit } from './pathEditHost';
@@ -37,10 +38,10 @@ export function useCanvasModes(machine: ModeMachine, scene: DrawScene, selection
     selection: () => entry.current.selection(),
   }), [machine, entry]);
 
-  const pathEdit = useMemo(() => modePathEdit(
-    machine,
-    (id) => (scene.get(asNodeId(id))?.data as WeaselDrawData | undefined)?.path?.kind === 'polygon',
-  ), [machine, scene]);
+  const pathEdit = useMemo(
+    () => modePathEdit(machine, (id) => hasEditablePath(scene.get(asNodeId(id)))),
+    [machine, scene],
+  );
 
   const onDoubleClick = useCallback((hit: SceneCanvasHit | null) => {
     dispatchDoubleClickEntry(hit, machine);

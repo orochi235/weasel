@@ -161,12 +161,6 @@ Priority tags:
 
 - **(P2) Smart remove brush.** Brush along a path in edit mode to delete the anchors under the
   brush, each gap refit to the shape it replaces the way `deleteAnchorsAt` refits one.
-- **(P2) A rectangle has no anchors in path edit.** Draw stores a drawn rectangle's `data.path`
-  as a `RectPath` (`kind: 'rect'`), and `classifyPathStorage`
-  (`packages/core/src/features/paths/editablePath.ts`) accepts only a polygon, so double-clicking
-  one enters draw's path-edit mode with no anchors to drag, insert, or bend. Undecided: whether
-  editing turns the rectangle into a polygon path on its first edit, and what then happens to
-  anything that reads it as a rectangle.
 - **(P2) Dynamic corners.** Round, chamfer, or invert any corner anchor by dragging a widget at
   it, and change the radius later. Needs a corner radius per anchor in the path data, expanded
   into geometry when it renders and on export.

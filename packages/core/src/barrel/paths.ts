@@ -14,6 +14,7 @@ export {
   polygonFromPoints,
   polylineFromPoints,
   rectPath,
+  asPolygonPath,
   ellipsePath,
   regularPolygonPath,
   starPath,
@@ -80,6 +81,7 @@ export {
   joinAnchorsAt,
   transformPath,
 } from '../features/paths';
+export { hasEditablePath } from '../features/paths/editablePath';
 export type {
   Path,
   PolygonPath,
