@@ -8,6 +8,7 @@
  *  (`recording`), so a button's shortcut is the binding that fires it. The buttons built here are the file ones. */
 import { ActionBar as KitActionBar, ButtonBar, MenuButton } from '@weasel-js/ui';
 import { PAPER_OPTIONS, type PaperSizeKey } from './paperSizes';
+import { PathCommands } from './ui/PathCommands';
 
 export type { PaperSizeKey };
 
@@ -57,6 +58,7 @@ export function CommandBar(p: CommandBarProps) {
       {KIT_GROUPS.map((group) => <KitActionBar key={group} group={group} />)}
       <KitActionBar group="view" />
       <KitActionBar group="pathfinder" />
+      <PathCommands />
       <KitActionBar group="anchors" />
       <KitActionBar group="text" />
       <KitActionBar group="compound" />
