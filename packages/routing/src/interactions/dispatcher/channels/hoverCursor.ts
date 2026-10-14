@@ -100,17 +100,19 @@ export function hoverCursorInput(
     setTimeout(() => { if (!core.disposed()) refresh(); }, 0);
   };
 
+  const hoverAt = (at: Hover): void => {
+    const w = toWorld(at.clientX, at.clientY);
+    const where = underPointer(target(), at, w);
+    const from = facts ? { from: whereOf(facts.where) } : {};
+    facts = { at, where };
+    dispatch({ kind: 'hover', x: w.x, y: w.y, clientX: at.clientX, clientY: at.clientY, ...where, ...from });
+  };
+
   return {
     moved(e) {
       last = hoverOf(e);
       // A held pointer's moves are its drag's; an unpressed one's are a hover.
-      if (pointersHeld() === 0) {
-        const w = toWorld(e.clientX, e.clientY);
-        const where = underPointer(target(), last, w);
-        const from = facts ? { from: whereOf(facts.where) } : {};
-        facts = { at: last, where };
-        dispatch({ kind: 'hover', x: w.x, y: w.y, clientX: e.clientX, clientY: e.clientY, ...where, ...from });
-      }
+      if (pointersHeld() === 0) hoverAt(last);
       refresh();
     },
     released(e) {
@@ -131,7 +133,12 @@ export function hoverCursorInput(
     },
     onKey(e) {
       if (!last) return;
+      const prev = last;
       last = { ...last, altKey: e.altKey, ctrlKey: e.ctrlKey, metaKey: e.metaKey, shiftKey: e.shiftKey };
+      const changed = prev.altKey !== last.altKey || prev.ctrlKey !== last.ctrlKey
+        || prev.metaKey !== last.metaKey || prev.shiftKey !== last.shiftKey;
+      // A modifier changing over a resting pointer is a hover with new modifiers.
+      if (changed && pointersHeld() === 0) hoverAt(last);
       refreshSoon();
     },
     clear: override.clear,

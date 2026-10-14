@@ -1,0 +1,118 @@
+import type { Action, GestureBinding, ModSpec, NodeId, Scene, SurfaceContribution } from '@weasel-js/core';
+import { createGuidesLayer, type GuidesLayerOpts } from './layer';
+import { measureDistances, type DistanceReadout } from './alignment/distance';
+import { worldBoundsOf, worldUnionOf } from './alignment/sceneBounds';
+
+type Modifier = 'alt' | 'ctrl' | 'meta' | 'shift';
+
+/** Options for `distanceReadout`. */
+export interface DistanceReadoutOptions extends Pick<GuidesLayerOpts, 'color' | 'gapLabels' | 'lineWidth' | 'ticks'> {
+  /** The key held to show the readout. Default `'alt'`. */
+  modifier?: Modifier;
+  /** Contribution id, and the prefix of its action's. Default `'distanceReadout'`. */
+  id?: string;
+}
+
+/** What `distanceReadout` returns: a surface contribution, plus a read of
+ *  what it is showing. */
+export interface DistanceReadoutContribution extends SurfaceContribution {
+  /** The distances on screen now; empty while hidden. */
+  read(): DistanceReadout;
+}
+
+const EMPTY: DistanceReadout = { gaps: [], leaders: [] };
+const MODIFIERS: readonly Modifier[] = ['alt', 'ctrl', 'meta', 'shift'];
+
+/** The ids and every node under them: what the pick under the pointer skips. */
+function subtreeOf(scene: Scene<unknown, string, unknown>, ids: readonly NodeId[]): Set<NodeId> {
+  const out = new Set<NodeId>();
+  const stack = [...ids];
+  while (stack.length > 0) {
+    const id = stack.pop()!;
+    if (out.has(id)) continue;
+    out.add(id);
+    stack.push(...scene.childrenOf(id));
+  }
+  return out;
+}
+
+/**
+ * Distance readouts on hover: while `modifier` is held over a shape, the
+ * distances from the selection's box to that shape's, on each axis where they
+ * separate, measured by `measureDistances` and drawn as labeled gaps. Pass it
+ * in `<SceneCanvas ambient>`. It runs on `hover` bindings, so it claims no
+ * input, and it reads the canvas's `selection`, `scene`, `nodeAtPoint`, and
+ * `poseDescriptor` deps. A press hides it.
+ */
+export function distanceReadout(opts: DistanceReadoutOptions = {}): DistanceReadoutContribution {
+  const id = opts.id ?? 'distanceReadout';
+  const modifier = opts.modifier ?? 'alt';
+  let shown: DistanceReadout = EMPTY;
+  let redraw: (() => void) | null = null;
+  const show = (next: DistanceReadout): void => {
+    if (next === shown || (next.gaps.length === 0 && shown.gaps.length === 0)) return;
+    shown = next;
+    redraw?.();
+  };
+
+  const action: Action = {
+    id: `${id}.measure`,
+    label: 'Measure distance to the shape under the pointer',
+    requires: ['selection', 'scene', 'nodeAtPoint', 'poseDescriptor'],
+    invoker: {
+      timing: 'immediate',
+      run: (deps, params) => {
+        const p = params as { show?: boolean; worldX?: number; worldY?: number } | undefined;
+        const { selection, scene, nodeAtPoint, poseDescriptor } = deps;
+        const ids = selection?.get() ?? [];
+        if (p?.show !== true || p.worldX === undefined || p.worldY === undefined
+          || scene === undefined || nodeAtPoint === undefined || ids.length === 0) {
+          show(EMPTY);
+          return;
+        }
+        const hit = nodeAtPoint({ x: p.worldX, y: p.worldY }, subtreeOf(scene, ids));
+        const from = worldUnionOf(scene, ids, { poseDescriptor });
+        const [to] = hit === null ? [] : worldBoundsOf(scene, [hit], { poseDescriptor });
+        show(from === null || to === undefined ? EMPTY : measureDistances(from, to));
+      },
+    },
+  };
+
+  const mods = (held: boolean): ModSpec => Object.fromEntries(
+    MODIFIERS.map((m) => [m, m === modifier ? held : 'optional']),
+  );
+  const bindings: GestureBinding[] = [
+    { spec: { kind: 'hover', mods: mods(true) }, actionId: action.id, opts: { params: { show: true } } },
+    { spec: { kind: 'hover', mods: mods(false) }, actionId: action.id, opts: { params: { show: false } } },
+    { spec: { kind: 'hover', motion: 'leave' }, actionId: action.id, opts: { params: { show: false } } },
+  ];
+
+  return {
+    id,
+    eligibility: { always: true },
+    actions: [action],
+    bindings,
+    overlay: createGuidesLayer({
+      id: `${id}.layer`,
+      label: 'Distance readout',
+      getGuides: () => shown.leaders,
+      getGaps: () => shown.gaps,
+      color: opts.color,
+      gapLabels: opts.gapLabels,
+      lineWidth: opts.lineWidth,
+      ticks: opts.ticks,
+    }),
+    attach: (api) => {
+      redraw = () => api.requestRedraw();
+      const el = api.element;
+      const hide = (): void => show(EMPTY);
+      el?.addEventListener('pointerdown', hide, true);
+      return () => {
+        el?.removeEventListener('pointerdown', hide, true);
+        redraw = null;
+        shown = EMPTY;
+      };
+    },
+    read: () => shown,
+  };
+}
