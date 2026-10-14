@@ -40,7 +40,7 @@ describe('PrefSchemaEditor previewing sections and pages', () => {
     render(<Live />);
     expect(page()).toBe('canvas');
     expect(within(preview()).getByText('Snap on')).toBeInTheDocument();
-    expect(entry('canvas.snapping')).not.toHaveAttribute('aria-current', 'page');
+    expect(entry('canvas.snapping')).toBeNull();
   });
 
   it('gives a nested group a page of its own once it is drawn as a page, and opens it', () => {

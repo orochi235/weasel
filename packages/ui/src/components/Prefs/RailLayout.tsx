@@ -1,7 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { isPrefLeaf, prefGroupIsPage, type PrefGroup } from '@weasel-js/prefs';
 import { ResizeHandle } from '../ResizeHandle';
-import { useScrollSpy } from '../../useScrollSpy';
 import { dropDrawnPath, withDrop } from './drop';
 import { useDropMotion } from './dropMotion';
 import { formAttrs, useDropFrame } from './dropTarget';
@@ -38,7 +37,7 @@ export function RailLayout(props: PrefsFormProps & {
   // A filter can take the open group out of the rail entirely, and a section
   // the schema never had can arrive from a consumer's stale state. Either way
   // the first surviving entry is what the reader should be looking at.
-  const opens = (path: string): boolean => items.some((i) => i.path === path && i.page === path);
+  const opens = (path: string): boolean => items.some((i) => i.path === path);
   // A page that went while it was open, its group now a section of the page above, leaves that page open.
   let above: string | null = requested;
   while (above !== null && above !== '' && !opens(above)) above = prefRailParent(above);
@@ -52,11 +51,6 @@ export function RailLayout(props: PrefsFormProps & {
   }
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
-  const sectionIds = useMemo(
-    () => items.filter((i) => i.page === open && i.path !== open).map((i) => i.path),
-    [items, open],
-  );
-  const spy = useScrollSpy({ rootRef: scrollRef, ids: sectionIds });
 
   const show = (path: string): void => {
     if (props.section === undefined) setUncontrolled(path);
@@ -68,36 +62,16 @@ export function RailLayout(props: PrefsFormProps & {
     scrollRef.current?.scrollTo?.({ top: 0 });
   };
   const setOpen = (path: string): void => {
-    awaited.current = null;
     show(path);
     toTop();
   };
   // The pane's scrolling box outlives the page in it, and a page opens at its top however it came to open.
   useLayoutEffect(toTop, [open]);
 
-  // A section's entry chosen on a page that is not open: scrolled to once its page has drawn.
-  const awaited = useRef<{ path: string; page: string } | null>(null);
-  const reach = (path: string): void => {
-    const home = items.find((i) => i.path === path)?.page ?? open;
-    if (home === open) {
-      spy.scrollTo(path);
-      return;
-    }
-    awaited.current = { path, page: home };
-    show(home);
-  };
-  const arrive = useRef(spy.scrollTo);
-  useEffect(() => { arrive.current = spy.scrollTo; });
-  useEffect(() => {
-    const section = awaited.current;
-    awaited.current = null;
-    if (section !== null && section.page === open) arrive.current(section.path);
-  }, [open]);
-
   // The page holding the selection: the deepest page it is or lies under, else the loose leaves.
   const selected = props.ctx.lead ?? null;
   const home = selected === null ? null : items
-    .filter((i) => i.page === i.path && pathWithin(i.path, selected))
+    .filter((i) => pathWithin(i.path, selected))
     .reduce((best, i) => (i.path.length > best.length ? i.path : best), '');
   const latest = useRef({ home, open, show });
   useEffect(() => { latest.current = { home, open, show }; });
@@ -127,9 +101,7 @@ export function RailLayout(props: PrefsFormProps & {
       <PrefsRail
         items={drawnItems}
         section={page}
-        current={spy.active}
         onOpen={setOpen}
-        onScrollTo={reach}
         ariaLabel={schema.name}
         header={filterField}
         showCounts={query.trim() !== ''}

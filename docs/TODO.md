@@ -632,13 +632,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   dotted path, where the form's pane reads a nested tree, so the two do not share a body yet.
   Nobody has looked at `ActionBar` in a browser since it became a `Bar` of `action` leaves.
 
-- **(P3) A rail of sections and pages: two things not decided.** A `PrefsForm` rail lists a page
-  at any depth, and a section only when it sits directly on a page, the root's own included. (1) A
-  foldable rail unfolds an entry only while the open page is it or under it, so a section holding
-  pages of its own keeps their entries shut while the reader scrolls through it. Whether the
-  section in view should unfold is open; it would move the rail under a reader who is scrolling.
-  (2) A section's rail entry and a nested page's look the same until one is chosen.
-
 - **(P3) A fragment has no box for a preview drag to land on.** Its element is
   `display: contents`, so `measure` in `Prefs/dropTarget.ts` reads an empty rect for it and a drag
   in `PrefSchemaEditor`'s preview lands only beside the rows inside it; the structure tree takes

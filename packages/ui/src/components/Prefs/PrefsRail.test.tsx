@@ -36,18 +36,17 @@ const SCHEMA: PrefGroup = {
 };
 
 describe('prefRailItems', () => {
-  it('lists a page, then the sections directly on it, and no section inside one of those', () => {
-    expect(prefRailItems(SCHEMA).map((i) => [i.path, i.depth, i.page])).toEqual([
-      ['canvas', 0, 'canvas'],
-      ['canvas.snapping', 1, 'canvas'],
-      ['io', 0, 'io'],
+  it('lists the pages and no section on them', () => {
+    expect(prefRailItems(SCHEMA).map((i) => [i.path, i.depth])).toEqual([
+      ['canvas', 0],
+      ['io', 0],
     ]);
   });
 
   it('names each entry after its group and counts the leaves beneath it', () => {
     const items = prefRailItems(SCHEMA);
     expect(items[0]).toMatchObject({ name: 'Canvas', matches: 3 });
-    expect(items[1]).toMatchObject({ name: 'Snapping', matches: 2, page: 'canvas' });
+    expect(items[1]).toMatchObject({ name: 'Import / Export', matches: 1 });
   });
 
   it('has no entry for loose root leaves when there are none', () => {
@@ -88,12 +87,13 @@ describe('PrefsForm rail layout', () => {
     expect(screen.queryByRole('textbox', { name: 'Author' })).not.toBeInTheDocument();
   });
 
-  it('draws a section nested in a section on the same page, with no entry of its own', () => {
+  it('draws its sections, and a section inside one, on the page with no entry of their own', () => {
     renderRail();
+    expect(screen.getByRole('region', { name: 'Snapping' })).toBeInTheDocument();
     expect(screen.getByRole('region', { name: 'Wrapping' })).toBeInTheDocument();
     expect(screen.getByRole('checkbox', { name: 'Wrap at edge' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Snapping/ })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Wrapping/ })).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Snapping/ })).toBeInTheDocument();
   });
 
   it('switches panes when a top-level entry is chosen', async () => {
@@ -158,9 +158,14 @@ describe('PrefsForm rail layout', () => {
 });
 
 describe('PrefsForm rail layout, foldable', () => {
+  const canvas = SCHEMA.children.canvas as PrefGroup;
+  // Snapping opens a page of its own, so Canvas has an entry to fold.
+  const PAGED: PrefGroup = { ...SCHEMA, children: { ...SCHEMA.children, canvas: { ...canvas, children: { ...canvas.children,
+    snapping: { ...(canvas.children.snapping as PrefGroup), as: 'page' },
+  } } } };
   const renderRail = (props: Partial<Parameters<typeof PrefsForm>[0]> = {}) =>
     render(
-      <PrefsForm schema={SCHEMA} onChange={() => {}} layout="rail" foldable defaultSection="io" {...props} />,
+      <PrefsForm schema={PAGED} onChange={() => {}} layout="rail" foldable defaultSection="io" {...props} />,
     );
   const snapping = () => document.querySelector('[data-pref-rail="canvas.snapping"]');
   const canvasEntry = () => document.querySelector<HTMLButtonElement>('[data-rail-fold="canvas"]')!;

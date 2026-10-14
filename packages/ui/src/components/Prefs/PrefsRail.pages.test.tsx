@@ -38,19 +38,17 @@ const marks = () => Object.fromEntries(
 );
 
 describe('prefRailItems over sections and pages', () => {
-  it('lists a page at any depth and a section only directly on a page, each filed on the page that draws it', () => {
-    expect(prefRailItems(SCHEMA).map((i) => [i.path, i.depth, i.page])).toEqual([
-      ['canvas', 0, 'canvas'],
-      ['canvas.snapping', 1, 'canvas'],
-      ['canvas.snapping.wrap', 2, 'canvas.snapping.wrap'],
-      ['canvas.snapping.fine.far', 2, 'canvas.snapping.fine.far'],
-      ['canvas.guides', 1, 'canvas.guides'],
-      ['canvas.guides.colors', 2, 'canvas.guides'],
-      ['io', 0, 'io'],
+  it('lists a page at any depth, a section in between included, and no section', () => {
+    expect(prefRailItems(SCHEMA).map((i) => [i.path, i.depth])).toEqual([
+      ['canvas', 0],
+      ['canvas.snapping.wrap', 1],
+      ['canvas.snapping.fine.far', 1],
+      ['canvas.guides', 1],
+      ['io', 0],
     ]);
   });
 
-  it('lists no section inside a section, however deep, and still lists what sits on a page inside one', () => {
+  it('lists what sits on a page inside sections, however deep, and no section on it', () => {
     const deep: PrefGroup = {
       name: 'Prefs',
       children: { a: { name: 'A', children: { b: { name: 'B', children: { c: { name: 'C', children: {
@@ -58,11 +56,9 @@ describe('prefRailItems over sections and pages', () => {
         p: { name: 'P', as: 'page', children: { q: { name: 'Q', children: { r: { name: 'R', children: { on: flag('On') } } } } } },
       } } } } } } },
     };
-    expect(prefRailItems(deep).map((i) => [i.path, i.depth, i.page])).toEqual([
-      ['a', 0, 'a'],
-      ['a.b', 1, 'a'],
-      ['a.b.c.p', 2, 'a.b.c.p'],
-      ['a.b.c.p.q', 3, 'a.b.c.p'],
+    expect(prefRailItems(deep).map((i) => [i.path, i.depth])).toEqual([
+      ['a', 0],
+      ['a.b.c.p', 1],
     ]);
   });
 
@@ -70,7 +66,7 @@ describe('prefRailItems over sections and pages', () => {
     const size: PrefGroup = { name: 'Size', children: { cap: num('Cap') } };
     const of = (as?: PrefGroupAs): PrefGroup => ({ name: 'Prefs', children: { cards: { name: 'Cards', children: { size: { ...size, as } } } } });
     expect(prefRailItems(of('page')).map((i) => [i.path, i.passes ?? false])).toEqual([['cards', true], ['cards.size', false]]);
-    expect(prefRailItems(of()).map((i) => [i.path, i.passes ?? false])).toEqual([['cards', false], ['cards.size', false]]);
+    expect(prefRailItems(of()).map((i) => [i.path, i.passes ?? false])).toEqual([['cards', false]]);
   });
 });
 
@@ -86,46 +82,39 @@ describe('PrefsForm rail layout over sections and pages', () => {
     expect(screen.queryByRole('checkbox', { name: 'Wrap at edge' })).not.toBeInTheDocument();
   });
 
-  it('scrolls the open page to a section, and opens a page of its own for a nested page', async () => {
+  it('opens a nested page from its entry, sections and all', async () => {
     const user = userEvent.setup();
     const onSectionChange = vi.fn();
     renderRail({ onSectionChange });
-    await user.click(entry('canvas.snapping'));
-    expect(onSectionChange).not.toHaveBeenCalled();
-    expect(entry('canvas.snapping')).toHaveAttribute('aria-current', 'location');
-    expect(entry('canvas')).toHaveAttribute('aria-current', 'page');
-
     await user.click(entry('canvas.guides'));
     expect(onSectionChange).toHaveBeenCalledWith('canvas.guides');
     expect(entry('canvas.guides')).toHaveAttribute('aria-current', 'page');
     expect(entry('canvas')).not.toHaveAttribute('aria-current');
     expect(screen.getByRole('checkbox', { name: 'Smart guides' })).toBeInTheDocument();
     expect(screen.getByRole('checkbox', { name: 'Tint' })).toBeInTheDocument();
+    expect(entry('canvas.guides.colors')).not.toBeInTheDocument();
     expect(screen.queryByRole('checkbox', { name: 'Show grid' })).not.toBeInTheDocument();
   });
 
-  it('opens a page nested in a section, and the page holding a section chosen from another page', async () => {
+  it('opens a page nested in a section', async () => {
     const user = userEvent.setup();
     renderRail();
     await user.click(entry('canvas.snapping.wrap'));
     expect(entry('canvas.snapping.wrap')).toHaveAttribute('aria-current', 'page');
     expect(screen.getByRole('checkbox', { name: 'Wrap at edge' })).toBeInTheDocument();
     expect(screen.queryByRole('checkbox', { name: 'Enabled' })).not.toBeInTheDocument();
-
-    await user.click(entry('canvas.guides.colors'));
-    expect(entry('canvas.guides')).toHaveAttribute('aria-current', 'page');
-    expect(entry('canvas.guides.colors')).toHaveAttribute('aria-current', 'location');
   });
 
   it('draws a section inside a section on its page, and nests a page inside it under the nearest entry above', async () => {
     const user = userEvent.setup();
     renderRail();
+    expect(entry('canvas.snapping')).not.toBeInTheDocument();
     expect(entry('canvas.snapping.fine')).not.toBeInTheDocument();
     expect(screen.getByRole('region', { name: 'Fine' })).toBeInTheDocument();
     expect(screen.getByRole('checkbox', { name: 'Half steps' })).toBeInTheDocument();
     expect(screen.queryByRole('checkbox', { name: 'Reach' })).not.toBeInTheDocument();
     const far = entry('canvas.snapping.fine.far');
-    expect(far.parentElement).toBe(entry('canvas.snapping.wrap').parentElement);
+    expect(far.parentElement).toBe(entry('canvas.guides').parentElement);
 
     await user.click(far);
     expect(far).toHaveAttribute('aria-current', 'page');
@@ -133,43 +122,23 @@ describe('PrefsForm rail layout over sections and pages', () => {
     expect(screen.queryByRole('checkbox', { name: 'Half steps' })).not.toBeInTheDocument();
   });
 
-  it('folds a page inside an unlisted section under the entry it nests in', async () => {
+  it('folds a page inside a section under the page that holds the section', async () => {
     const user = userEvent.setup();
     renderRail({ foldable: true, defaultSection: 'io' });
-    await user.click(entry('canvas'));
     expect(entry('canvas.snapping.fine.far')).not.toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Snapping', expanded: false }));
+    await user.click(entry('canvas'));
     expect(entry('canvas.snapping.fine.far')).toBeInTheDocument();
     await user.click(entry('canvas.snapping.fine.far'));
     expect(entry('canvas.snapping.fine.far')).toHaveAttribute('aria-current', 'page');
-    expect(screen.getByRole('button', { name: 'Snapping', expanded: true })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Canvas', expanded: true })).toBeInTheDocument();
   });
 
-  // Which section is in view before one is chosen is the browser's to say: `PrefsRail.marks.browser.test.tsx`.
-  it('marks a chosen section current and its page open, and a page with no sections current itself', async () => {
+  it('marks the open page, and nothing else', async () => {
     const user = userEvent.setup();
     renderRail();
-    await user.click(entry('canvas.snapping'));
-    expect(marks()).toEqual({ canvas: 'open', 'canvas.snapping': 'current' });
-    await user.click(entry('io'));
-    expect(marks()).toEqual({ io: 'current' });
-  });
-
-  it('folds over both kinds, the mark of a section folded away falling to the entry that holds it', async () => {
-    const user = userEvent.setup();
-    renderRail({ foldable: true, defaultSection: 'io' });
-    expect(entry('canvas.snapping')).not.toBeInTheDocument();
-    await user.click(entry('canvas'));
-    expect(entry('canvas.snapping')).toBeInTheDocument();
-    expect(entry('canvas.guides.colors')).not.toBeInTheDocument();
+    expect(marks()).toEqual({ canvas: 'current' });
     await user.click(entry('canvas.guides'));
-    await user.click(entry('canvas.guides.colors'));
-    expect(marks()).toEqual({ 'canvas.guides': 'open', 'canvas.guides.colors': 'current' });
-    await user.click(screen.getByRole('button', { name: 'Guides', expanded: true }));
-    expect(entry('canvas.guides.colors')).not.toBeInTheDocument();
     expect(marks()).toEqual({ 'canvas.guides': 'current' });
-    await user.click(entry('io'));
-    expect(entry('canvas.snapping')).not.toBeInTheDocument();
   });
 
   it('keeps a panel on its group\'s page, with no entry of its own', () => {

@@ -1,5 +1,5 @@
 import '@weasel-js/theme/tokens.css';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, render } from '@testing-library/react';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { afterEach, beforeAll, expect, it } from 'vitest';
 import { page } from 'vitest/browser';
@@ -40,15 +40,16 @@ it('opens a page its owner switched to at the top, not where the last page was s
   expect(now.scrollTop).toBe(0);
 });
 
-it('opens the page of a nested entry chosen from another page and scrolls to its section', async () => {
+// A scrollbar laid over a box takes no room, so only the padding keeps it off what the box holds.
+it('keeps the rail\'s filter field and the pane\'s rows clear of the right edge a scrollbar lies along', () => {
   const { container } = render(
     <div style={{ width: 820, height: 300, display: 'flex' }}>
-      <PrefsForm layout="rail" schema={SCHEMA} values={{}} onChange={() => {}} />
+      <PrefsForm layout="rail" schema={SCHEMA} values={{}} onChange={() => {}} filterable />
     </div>,
   );
-  fireEvent.click(screen.getByRole('button', { name: 'Deep' }));
+  const clear = (box: Element, inner: Element) => box.getBoundingClientRect().left + box.clientWidth - inner.getBoundingClientRect().right;
+  const rail = container.querySelector('nav')!;
+  expect(clear(rail, rail.querySelector('input')!)).toBeGreaterThanOrEqual(16);
   const pane = container.querySelector('[data-pref-into]')!;
-  expect(pane.getAttribute('data-pref-into')).toBe('c');
-  const section = pane.querySelector('[data-spy-section="c.deep"]')!;
-  await expect.poll(() => Math.abs(section.getBoundingClientRect().top - pane.getBoundingClientRect().top), { timeout: 3000 }).toBeLessThan(2);
+  expect(clear(pane, pane.querySelector('[data-pref-path]')!)).toBeGreaterThanOrEqual(16);
 });

@@ -23,11 +23,10 @@ const SCHEMA: PrefGroup = {
 };
 
 describe('a rail over a fragment', () => {
-  it('lists a page and a section inside it as its parent\'s', () => {
-    expect(prefRailItems(SCHEMA).map((i) => [i.path, i.page, i.depth])).toEqual([
-      ['view', 'view', 0],
-      ['view.glue.rulers', 'view', 1],
-      ['view.glue.export', 'view.glue.export', 1],
+  it('lists a page inside it as its parent\'s, and no section', () => {
+    expect(prefRailItems(SCHEMA).map((i) => [i.path, i.depth])).toEqual([
+      ['view', 0],
+      ['view.glue.export', 1],
     ]);
   });
 
@@ -36,11 +35,6 @@ describe('a rail over a fragment', () => {
     expect(screen.getAllByRole('checkbox').map((el) => el.getAttribute('aria-label'))).toEqual(['Grid', 'Snap', 'Units']);
     fireEvent.click(screen.getByRole('button', { name: 'Export' }));
     expect(screen.getAllByRole('checkbox').map((el) => el.getAttribute('aria-label'))).toEqual(['PDF']);
-  });
-
-  it('names the section for the rail entry that scrolls to it', () => {
-    const { container } = render(<PrefsForm layout="rail" schema={SCHEMA} values={{}} onChange={() => {}} />);
-    expect(container.querySelector('[data-spy-section="view.glue.rulers"]')).not.toBeNull();
   });
 
   it('passes a page holding only a fragment of pages on to the first of them', () => {
