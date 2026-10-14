@@ -10,6 +10,8 @@ import s from './EffectLab.stories.module.css';
 
 registerCanvasFont('sans-serif');
 
+const GROUND = { color: '#0e151b' } as const;
+
 export default meta({ title: 'diagram/EffectChart lab', layout: 'fullscreen' });
 
 interface LabConfig {
@@ -73,6 +75,7 @@ function LabView({ config }: { config: LabConfig }) {
               options={options}
               width={size.width}
               height={size.height}
+              background={GROUND}
               selected={picked}
               onSelect={setPicked}
               onProblems={setProblems}

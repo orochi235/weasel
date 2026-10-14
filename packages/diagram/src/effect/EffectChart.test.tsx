@@ -3,6 +3,7 @@ import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 interface SeenProps {
+  background?: unknown;
   onSelect?: (id: string | null) => void;
   portOptions?: { showsPort?: (port: { type?: string }) => boolean };
 }
@@ -33,6 +34,19 @@ describe('EffectChart picking', () => {
     view.onSelect!('g');
     view.onSelect!(null);
     expect(onSelect.mock.calls.map((c) => c[0])).toEqual(['blur', null, null]);
+  });
+});
+
+describe('EffectChart background', () => {
+  const pipeline = { stages: [{ id: 'a', title: 'A' }], wires: [] };
+
+  it('hands its background to the view, and none when unset', () => {
+    const ground = { color: '#0e151b' };
+    render(<EffectChart pipeline={pipeline} width={100} height={100} background={ground} />);
+    expect(seen[seen.length - 1]!.background).toBe(ground);
+    seen.length = 0;
+    render(<EffectChart pipeline={pipeline} width={100} height={100} />);
+    expect('background' in seen[seen.length - 1]!).toBe(false);
   });
 });
 

@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react';
-import { useLatest } from '@weasel-js/core';
+import { useLatest, type Paint } from '@weasel-js/core';
 import { DiagramView, type DiagramViewProps } from '../DiagramView';
 import { diagramScene } from '../fromData';
 import { checkPipeline, type EffectProblem } from './check';
@@ -17,6 +17,9 @@ export interface EffectChartProps<TOptions = unknown> {
   options?: TOptions;
   width: number;
   height: number;
+  /** What the canvas paints behind the chart. Unset, it is transparent; the
+   *  shipped looks are drawn for a dark ground. */
+  background?: Paint;
   /** A stage id, or null for none. */
   selected?: string | null;
   onSelect?: (stage: string | null) => void;
@@ -42,7 +45,7 @@ function keyOf(built: object): number {
  *  only in a registered font family, so call `registerCanvasFont('sans-serif')`
  *  once before mounting one. */
 export function EffectChart<TOptions = unknown>({
-  pipeline, look, options, width, height, selected, onSelect, onProblems, className,
+  pipeline, look, options, width, height, background, selected, onSelect, onProblems, className,
 }: EffectChartProps<TOptions>) {
   const problems = useMemo(() => checkPipeline(pipeline), [pipeline]);
   const onProblemsRef = useLatest(onProblems);
@@ -72,6 +75,7 @@ export function EffectChart<TOptions = unknown>({
       ports="show"
       portOptions={built.portOptions}
       anchor="start"
+      {...(background !== undefined ? { background } : {})}
       {...(selected !== undefined ? { selected } : {})}
       {...(onSelect ? { onSelect: (id: string | null) => onSelect(id !== null && stageIds.has(id) ? id : null) } : {})}
       {...(className !== undefined ? { className } : {})}
