@@ -31,6 +31,10 @@ export interface RenderContext<TS = unknown, TC = unknown> {
     /** Resolved active tool: this trial's slot, or the lab's. Null when neither
      *  holds one. */
     activeToolId: string | null;
+    /** Writes the slot `activeToolId` reads — the trial's own when the
+     *  instrument declares `tools`, else the lab's. For an instrument whose
+     *  own input changes tool, as a weasel scene's hotkeys do. */
+    setActiveTool: (id: string) => void;
     /** The canvas layers currently shown, in declaration order. labkit skips a
      *  hidden layer's `draw`, so this is the only way to know what was
      *  painted — a legend listing rows the view did not draw needs it. */
