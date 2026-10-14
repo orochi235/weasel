@@ -180,9 +180,10 @@ export const Disabled: Story = {
 };
 
 export const FullWidth: Story = {
-  render: () => (
+  args: { variant: 'primary', fullWidth: true, children: 'Submit' },
+  render: (args) => (
     <div style={{ width: 320 }}>
-      <Button variant="primary" fullWidth>Submit</Button>
+      <Button {...args} />
     </div>
   ),
 };

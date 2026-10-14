@@ -893,14 +893,13 @@ only story runner in the repo.
 - **(P3) A story whose `render` takes no args has no controls.** forge reads a
   control for each prop of the meta's `component` (`packages/forge/src/vite/propTypes.ts`),
   and leaves them off a story whose `render` declares no parameter, since nothing
-  would read them. A grep of `render: () =>` finds 215 such stories in 76 files, most of them matrices or wrappers holding state. A story
-  drawing one instance in a plain configuration is the kind to rewrite around
-  `args`, the way `Tooltip`'s `Basic` is; a matrix or a hand-built composition
-  stays as it is. Where a component's props are a union or generic, as
-  `ToggleBar`'s and `PropertyField`'s are, its stories pass a few named args and
-  the other controls do nothing. Where a story holds a value in state, as
-  `Timeline`'s playhead and `Jog`'s index are, the control only sets where it
-  starts.
+  would read them. `grep 'render: () =>'` lists them. The ones that drew one plain
+  instance of the meta's component are rewritten around `args`; what is left is
+  matrices, hand-built compositions, generic components (`DataGrid<Route>`), and
+  stories that mount a harness holding state (`<Live start=… />`, `<Strip only=… />`).
+  A harness is the open kind: it can take the story's args and pass them to the
+  one instance it draws, the way `ToggleBar`'s stories do, with a control that
+  only sets where held state starts, as `Timeline`'s playhead does.
 
 - **(P3) Marks are off in the workshop until annotations are a feature.** forge's
   instruments do not declare labkit's `annotations` capability, so trials show
