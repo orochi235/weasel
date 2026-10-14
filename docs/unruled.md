@@ -25,6 +25,20 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
   reads modifiers window-wide, a focused text field included.
 - 2026-10-07: `gestureViewReader` and `gesturePlaneReader` type their `view`; `FEATURE_ACTION_IDS`
   lost its `pick` and `transform` keys; callback types are bivariant.
+- 2026-10-13 (pass 6): One `heldPointers(element)` in `@weasel-js/gestures` answers for the
+  dispatcher's hover, `useSurfaceInput`, and `PointerPublisher`. A move with a secondary or middle
+  button held is no longer a `hover`, the `pointer` dep no longer reports a drag that began off the
+  canvas, and `PointerInput.heldCount` is gone.
+- 2026-10-13 (pass 6): `BehaviorResult.pose` and `BehaviorMoveResult` are gone; `transform` is the
+  only way a move behavior moves the drag.
+- 2026-10-13 (pass 6): A canvas's `clientToWorld` override reaches its views: `createViewResolver`
+  takes `toLocal`, `ViewTarget` carries `world`, and `SurfaceHandle.origin()` is gone.
+- 2026-10-13 (pass 6): `HoverSpec.motion: 'leave'`, written `hover(leave)` in a route. Crossing
+  between targets is a leave for a binding that targets the first, and a press is not a leave.
+- 2026-10-13 (pass 6): Wheel, pinch, and key zoom take `axis: 'both' | 'x' | 'y'`. A `view` prop
+  that moves when the runner has written no frame since it last moved cancels a glide.
+- 2026-10-13 (pass 6): A marquee and an enclosing lasso take a node by its drawn outline.
+- 2026-10-13 (pass 6): `useTextEdit` and `useSceneTextEdit` take `onStart(id)` and `onEnd(id)`.
 
 ## Scene, move, and history
 
@@ -41,6 +55,31 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
 - 2026-10-13: `TargetTransform` is `{ identity, toWorld, toLocal }` and `annulusSemiAxes` takes
   one, so chrome follows a pose's `transform`. A pre-built `{ layer }` in `<SceneCanvas layers>`
   paints.
+- 2026-10-13 (pass 6): Every adapter carries the tree: `getNode`, `getParent`, and `getChildren`
+  are required on `MoveAdapter`, `InsertAdapter`, `BooleansAdapter`, and `CreateOutlinesAdapter`,
+  `AlignAdapter` and `DistributeAdapter` need `getParent`, and `OrderedAdapter`'s methods are
+  required. `BooleansAdapter.getZOrder` is gone. An op applied to an object without the tree
+  methods throws where it used to skip.
+- 2026-10-13 (pass 6): A duplicate or clone re-points each `dependsOn` id that was copied and keeps
+  the rest on the originals.
+- 2026-10-13 (pass 6): `<SceneCanvas layouts>` and `sceneToAdapter({ layouts })` are gone, with
+  `useLayoutArrivals`, `layoutArrivalHandler`, `LayoutSource`, and `LayoutArrivalOptions`: a
+  container's layout is the one its node declares. `useLayoutDepSource` is `(scene, dropTarget?,
+  reflow?)`.
+- 2026-10-13 (pass 6): A container's `transform` composes into its children under
+  `composeRigidPose`, and a group resize writes a turned leaf's shear to its `transform`. The
+  default node properties show a pose's `transform` as a Skew switch that can only clear it.
+- 2026-10-13 (pass 6): A scene slot's `toPose` is handed the node at its effective pose, and a
+  dependency's `path` in a scene that composes frames answers a pose override's path.
+- 2026-10-13 (pass 6): Pages are rects in one world space over one scene, in core: `layoutPages`,
+  `pageAt`, `pageOfBounds`, `pagesBounds`, `adjacentPage`, `pagesLayer`, and `fitViewToPage`. An
+  object is on the page it overlaps most.
+- 2026-10-13 (pass 6): A slider drag in `SelectionPanel` is one undo step: moves are written
+  through `scene.untracked`, and letting go records one batch. `PropertyRenderContext` gains
+  `drafts`.
+- 2026-10-13 (pass 6): `overChildren`, `isOverChildren`, and `splitOverChildren` are new core
+  exports; a container's `data.label` draws over its children through them.
+- 2026-10-13 (pass 6): `SceneCanvasApi.ingest` works from first render.
 
 ## Rendering, canvas, and paint
 
@@ -49,20 +88,36 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
 - 2026-10-12: A `LayerGroup` with alpha fades as a group. The image cache has a 256MB budget. A
   full glyph atlas is emptied whole.
 - 2026-10-13: An image under a color matrix that only scales channels within 0 to 1 joins its
-  batch as a vertex tint. `WeaselRenderer` no longer writes inline `width`/`height` (the removal
-  was ruled on 2026-10-11): a kit canvas takes its size from a class in
-  `@weasel-js/core/style.css`, and a page without that stylesheet shows it at buffer size.
+  batch as a vertex tint.
 - 2026-10-07: `{ px }` dashes are screen pixels; `NodeInk.outsetPx`/`insetPx` and `ClipFromPoseFn`
   are exports.
 - 2026-10-11 (core split): core's `/renderer`, `/mesh`, and `/patterns-builtin` subpaths stay; the
   renderer's index exports `getProgramSource`, `strokeReachAt`, `boundsMissRect`, and the draw-kind
   registry; `stopsOf`, `fromStops`, `toSvg`, and `colorOf` sit on core's half of a paint kind.
+- 2026-10-13 (pass 6): A kit canvas adopts its size rule where it mounts, through a new
+  `SurfaceCanvas`; the rule is gone from `@weasel-js/core/style.css`, and a server-rendered canvas
+  has none before the first client commit.
+- 2026-10-13 (pass 6): A run holds 15 textures (`BATCH_TEXTURE_SLOTS` is 16) and up to 8 color
+  matrices (`BATCH_MATRIX_SLOTS`), each vertex naming its own. Synthetic bold rides a glyph's
+  vertex data and `u_synthBold` is gone. Solids and glyphs are always color-mapped on the CPU.
+  Gradients and color glyphs take a vertex tint under a matrix that only scales channels down.
+- 2026-10-13 (pass 6): `bindGradient` measures paint space from the gradient's own start or center,
+  and `u_gradP0` is gone; `bindPattern` drops whole tiles from the translation.
+- 2026-10-13 (pass 6): geom's six-number affine type is `Affine`, with no `Mat3` alias left.
 
 ## Text
 
 - 2026-10-11: `BidiResolver.baseLevel` is required; an omitted `direction` is `'auto'`.
 - 2026-10-13: An emoji paints as one glyph in its own colors, so text holding emoji measures and
   wraps differently. `GlyphTextureSink` gained required `uploadRGBA` and `subImageRGBA`.
+- 2026-10-13 (pass 6): With `direction` omitted or `auto`, `align: 'start'` and `'end'` light no
+  Align segment.
+- 2026-10-13 (pass 6): `textToPath` refuses text holding an emoji with a new `'color-glyph'`
+  reason.
+- 2026-10-13 (pass 6): A base kerns against the next base through a combining mark.
+- 2026-10-13 (pass 6): The text tool's percent unit is data,
+  `{ scale: 0.01, precision: 1, suffix: '%' }`, and a linear unit's `fromDisplay` stores a short
+  decimal exactly.
 
 ## SVG and paths
 
@@ -71,6 +126,13 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
 - 2026-10-13: Under `openFill: 'none'` an open subpath is no longer closed by import, export, or
   the booleans. A path mixing closed and open subpaths exports as a `<g>` of two paths.
   `serializeSvg`'s `pretty` indents. `splitByClosure` and `hasOpenSubpath` are new geom API.
+- 2026-10-13 (pass 6): A hard line break exports as a `<tspan x dy>` line pitched at the node's
+  font size times its line height, with a `data-weasel-lines` attribute for blank lines; `parseSvg`
+  merges a line into the previous run when their styles match.
+- 2026-10-13 (pass 6): A marked stroke with several subpaths exports as one `<path>` per subpath in
+  a `<g>`, with the fill once underneath; a closed subpath loses its start and end markers.
+- 2026-10-13 (pass 6): A `<tspan dx>` list is read as per-glyph letter spacing, so one tspan
+  becomes several runs.
 
 ## Animation
 
@@ -113,6 +175,11 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
   (`EditAnchorsDep.applyEdit` takes `origins`). `DerivedDep.path` answers a pose override's path
   ahead of a derived one. `animateOnSetPose` and `animateLifecycle` take the adapter methods they
   use, with changed type parameters.
+- 2026-10-13 (pass 6): `loop: n` skips laps as `loop: true` does: a frame that skips whole laps
+  fires the outgoing lap's tail and the lap it lands in, and `animator.watch` gets one `lap` event.
+- 2026-10-13 (pass 6): `ClipValue`'s object arm is `object`.
+- 2026-10-13 (pass 6): When a rig's joints change, the new seat takes over the placement and
+  committed pose of every joint still named; a renamed joint stops moving.
 
 ## ui, prefs, and theme
 
@@ -131,6 +198,27 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
   radio, switch, popover, tooltip, `Dialog`, tabs, sliders, the segmented control, and toolbars.
   `overflow="menu"` on `Bar`, and `QuantityText`, are new.
 - 2026-10-07: `@weasel-js/ui` depends on `@weasel-js/react`.
+- 2026-10-13 (pass 6): `GradientEditor` edits one selected stop in a single row under the track.
+  The per-stop row and its `Stop N at X%` labels are gone, the blend-space switch sits below the
+  row, and `selectedStop`, `onSelectedStopChange`, and `disabled` are new.
+- 2026-10-13 (pass 6): `ToggleBar`'s `minimal` is the bare rounded segments the other bars draw,
+  and `size` sets a minimal bar's font size on all three.
+- 2026-10-13 (pass 6): `ActionBar` is a `Bar` of `action` leaves: `icons` takes icon names, and its
+  `data-testid` attributes are gone. `PrefGroup` and `PrefSection` gain `overflow` (`'scroll'` or
+  `'menu'`), with `scroll` the default.
+- 2026-10-13 (pass 6): `PrefLeaf` gains `heading`: `PrefsForm` draws that leaf's control in its
+  group's heading and drops its row.
+- 2026-10-13 (pass 6): `QuantityText` gains `mute`, and `Slider`, `BandEditor`, and `Transport`
+  draw their numbers through it. `MenuButton` rows take `href` and `isCurrent`, and its trigger
+  takes `bare`.
+- 2026-10-13 (pass 6): `colorSourceCss` writes a source that only names a theme color as
+  `var(--wzl-...)`.
+- 2026-10-13 (pass 6): `docs/conventions.md` gains a "Shading" rule: a control's own shading stays
+  black or white at an alpha, with no token.
+- 2026-10-13 (pass 6): A condition reads a setting of `over` the way the surface reads its own
+  leaves.
+- 2026-10-13 (pass 6): New: `draftChangedAssets`, `entriesDisabled`, `entryDisabledAt`, and
+  `PARAMS_TEXT_WAIT_MS`.
 
 ## Diagram, audio, and labkit
 
@@ -139,6 +227,15 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
 - 2026-10-12: labkit's `isEntryShown` takes the resolved schema; `DragState` carries `from`; a
   remote mark write rebuilds the store. `createScore` is new in audio.
 - 2026-10-13: The platformer's bed is engine voices, and `voiceLimit` went from 24 to 48.
+- 2026-10-13 (pass 6): labkit's `dist` inlines no `@weasel-js` package. `LabSwitcher` is a bare
+  `MenuButton`, and a trial's viewport controls are kit `Button`s, so their `lk-` classes are gone.
+- 2026-10-13 (pass 6): A stored trial or snapshot that fails to load is listed in a strip above the
+  workspace with a Discard button. A trial's untouched view is placed again when its viewport
+  changes size.
+- 2026-10-13 (pass 6): labkit exports `summarizeLeaf`, and its builder gains `.overflow()`.
+- 2026-10-13 (pass 6): Audio renders note and noise voices as samples with no `AudioContext`:
+  `createNoteKernel`, `createNoiseKernel`, `renderNote`, `renderNoise`, `biquadCoefficients`, and
+  `biquadResponseDb`.
 
 ## draw
 
@@ -147,6 +244,9 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
   color. The grid is off by default.
 - 2026-10-13: `App.tsx` is split into `Editor`, `Workspace`, and hooks, and two dev pages were
   split with no entry asking for it.
+- 2026-10-13 (pass 6): The text edit owns `text-edit` mode: it is entered only when an edit opens,
+  the text tool and a new insert included. draw no longer strips `lineHeight` from the style it
+  exports.
 
 ## Build
 
@@ -159,3 +259,13 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
   code has one directory. New exports to make types nameable: `CameraProps`, `CanvasViewState`,
   `CanvasLayers`, `SceneSlotLayers`, `OpsApplier`, `strokeRegion`, animator's `Naming`, gestures'
   `Point`, and ui's `LiveControl`, `OnTokenChange`, and `OptionKey`.
+- 2026-10-13 (pass 6): The release job writes GitHub releases itself with
+  `scripts/github-releases.mjs` and cuts a body past 125,000 characters; `create-github-releases`
+  is off on the changesets action.
+- 2026-10-13 (pass 6): Every package has a page on the site (`#pkg/<name>`), fed by a vite plugin
+  from its README, `docs/guides/*.md`, TypeDoc's JSON, and its demos' imports. labkit's VitePress
+  site and the `/weasel/labkit/` deploy are gone. The site root no longer scrolls. The demo site
+  has a color mode control, defaulting to dark.
+- 2026-10-13 (pass 6): `watchProbe()` is a new export of `@weasel-js/forge/vite`, and the site,
+  draw, and theme-editor dev servers load it. An isolated story keeps its iframe through a viewport
+  change where `moveBefore` exists.
