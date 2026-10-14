@@ -26,13 +26,13 @@ Priority tags:
   `features`; the new word is not chosen yet. That leaves choosing it, then renaming the one path,
   its imports, and the section of the taxonomy.
 
-- **(P3) Nothing reads a mode's `entry.trigger`.** Draw enters path-edit, isolation, and text-edit
-  from `SceneCanvas`'s `onDoubleClick` observer through a kind-to-mode table of its own
+- **(P3) Nothing reads a mode's `entry.trigger`.** Draw enters path-edit and isolation from
+  `SceneCanvas`'s `onDoubleClick` observer through a kind-to-mode table of its own
   (`apps/draw/src/modality/doubleClickEntry.ts`), not from the `'double-click-target'` the
-  definitions in `packages/modes/src/presets/default.ts` declare. Binding it means a double-click
-  entry beside the kit's own `enterPathEdit` binding, and a definition does not say which hits it
-  takes (draw's table does), so it waits on the same ruling as "draw: two owners for "is a text
-  edit open"" under Demos, where the question is written out.
+  definitions in `packages/modes/src/presets/default.ts` declare. Text-edit is entered by the
+  edit itself (`useTextEditSession`), so its trigger is unread by design. Binding the other two
+  means a double-click entry beside the kit's own `enterPathEdit` binding, and a definition does
+  not say which hits it takes (draw's table does).
 
 - **(P3) External-content ingestion — follow-ups.** The pipeline is in
   `packages/core/src/features/ingestion/` (its README is the map). Left:
@@ -70,8 +70,8 @@ Priority tags:
   `PropertyPanel`. Its own arc, and the first question is whether labkit should support a lab with
   no trials at all.
 
-- **(P3) `geometryProjection` cannot hold a 3D transform.** `transform(node, m: Mat3)` names a
-  plane in its signature, and core builds the `Mat3` at four call sites (move, nudge, flip, and
+- **(P3) `geometryProjection` cannot hold a 3D transform.** `transform(node, m: Affine)` names a
+  plane in its signature, and core builds the `Affine` at four call sites (move, nudge, flip, and
   resize commit) before the dep is consulted, so widening the type alone does not free it. It is
   the one dep a camera-bearing host cannot implement: `view` is per-kernel by design (`kernel3d`
   declares `camera3d`), `editAnchors` and `booleansAdapter` are 2D features, and the rest take
