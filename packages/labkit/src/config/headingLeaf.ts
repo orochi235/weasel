@@ -1,8 +1,7 @@
-import { isBuiltinPref, isPrefLeaf, type PrefLeaf } from '@weasel-js/prefs';
-import { schemaNodeAtPath } from '../config/path';
-import { stutters, warnOfStutter, warnOnce } from '../config/stutter';
-import type { ControlRenderer, ResolvedConfig } from '../config/types';
-import { extra } from './fields';
+import { isPrefLeaf, prefFitsHeading, type PrefLeaf } from '@weasel-js/prefs';
+import { schemaNodeAtPath } from './path';
+import { stutters, warnOfStutter, warnOnce } from './stutter';
+import type { ControlRenderer, ResolvedConfig } from './types';
 
 /** The leaf heading a run of rows: the one marked `.heading()`, or a first row
  *  that repeats `heading`, which is warned about as the authoring mistake it
@@ -20,14 +19,13 @@ export function headingLeaf(
   };
   const marked = paths.find((p) => {
     const leaf = leafAt(p);
-    return leaf !== undefined && extra<boolean>(leaf, 'heading') === true;
+    return leaf?.heading === true;
   });
   const path = marked ?? paths[0];
   const leaf = path === undefined ? undefined : leafAt(path);
   if (path === undefined || leaf === undefined) return undefined;
   const compact =
-    (leaf.kind === 'boolean' || leaf.kind === 'enum') &&
-    isBuiltinPref(leaf) &&
+    prefFitsHeading(leaf) &&
     !(
       renderers?.[path] ??
       resolved.renderers[path] ??

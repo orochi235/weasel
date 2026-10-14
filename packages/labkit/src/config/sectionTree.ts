@@ -1,6 +1,6 @@
 import { isPrefLeaf, type PrefGroup } from '@weasel-js/prefs';
-import { schemaNodeAtPath, valueAtPath } from './path';
-import { stutters, warnOfStutter } from './stutter';
+import { headingLeaf } from './headingLeaf';
+import { valueAtPath } from './path';
 import type { ResolvedConfig } from './types';
 import { isLeafVisible } from './visible';
 
@@ -23,15 +23,24 @@ export interface SectionTree {
   pathAt: (railPath: string) => string;
 }
 
-/** Warn of each section whose first row repeats its heading. A rail has no room for a control in a heading, so
- *  the row is drawn under it either way, and one marked `.heading()` is left alone. */
-function warnOfRepeats(resolved: ResolvedConfig): void {
-  for (const section of resolved.sections) {
-    const leaves = section.paths.map((path) => schemaNodeAtPath(resolved.group, path));
-    const first = leaves[0];
-    const marked = leaves.some((leaf) => leaf && 'heading' in leaf && leaf.heading === true);
-    if (!first || !isPrefLeaf(first) || marked || !stutters(section.label, first.name)) continue;
-    warnOfStutter(resolved, section.label, section.paths[0] as string, first.name, false);
+/**
+ * Mark, among the leaves at `paths` in `children`, the one `heading` carries in its title row and no other, so a
+ * form draws in a heading what the panel does: the leaf marked `.heading()`, or a first row repeating the heading.
+ */
+function markHeading(
+  resolved: ResolvedConfig,
+  heading: string,
+  paths: readonly string[],
+  at: string,
+  children: PrefGroup['children'],
+): void {
+  const lifted = headingLeaf(resolved, heading, paths)?.path;
+  for (const path of paths) {
+    const key = at === '' ? path : path.slice(at.length + 1);
+    const child = children[key];
+    if (!child || !isPrefLeaf(child)) continue;
+    const marked = path === lifted;
+    if ((child.heading === true) !== marked) children[key] = { ...child, heading: marked };
   }
 }
 
@@ -77,6 +86,9 @@ function prune(
     children[key] = kept.group;
     values[key] = kept.values;
   }
+  const sectioned = new Set(resolved.sections.filter((s) => s.at === at).flatMap((s) => s.paths));
+  const loose = Object.keys(group.children).map((key) => `${at}.${key}`).filter((p) => !sectioned.has(p));
+  if (group.name !== '' && group.as !== 'fragment') markHeading(resolved, group.name, loose, at, children);
   const taken = new Set(Object.keys(children));
   for (const section of resolved.sections) {
     if (section.at !== at || at === '') continue;
@@ -92,6 +104,7 @@ function prune(
       sectionChildren[k] = children[k] as PrefGroup['children'][string];
       sectionValues[k] = values[k];
     }
+    markHeading(resolved, section.label, section.paths, at, sectionChildren);
     const reordered: PrefGroup['children'] = {};
     const revalued: Record<string, unknown> = {};
     for (const [k, child] of Object.entries(children)) {
@@ -128,7 +141,6 @@ export function sectionTree(
   config: Record<string, unknown>,
   showHidden = false,
 ): SectionTree {
-  warnOfRepeats(resolved);
   const children: PrefGroup['children'] = {};
   const values: Record<string, unknown> = {};
   const slugs = new Set<string>();
@@ -154,6 +166,7 @@ export function sectionTree(
       }
     }
     if (Object.keys(kept).length === 0) continue;
+    markHeading(resolved, section.label, section.paths, '', kept);
     const slug = slugOf(section.label, slugs);
     slugs.add(slug);
     children[slug] = { name: section.label, children: kept };

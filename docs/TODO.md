@@ -768,12 +768,12 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   export drops all four. A schema is sectioned rather than nested where `f.group` would move its
   config paths.
 
-- **(P3) `sectionTree` doesn't lift heading controls.** `ControlPanel` draws a `.heading()` leaf,
-  or a first row repeating its heading ("Pump" under "Pumping"), in the heading's title row. The
-  prefs rail `sectionTree` feeds to `PrefsForm` still draws that leaf as a row under a heading of
-  the same name, because `PrefsForm` has no slot for a control in a rail item or subsection
-  heading, and `PrefLeaf` no field saying a leaf is one: `heading` is a labkit extra. `sectionTree`
-  warns about the repeat, as the panel does.
+- **(P3) `SelectionPanel` draws a `heading` leaf as a row.** `PrefsForm` and labkit's
+  `ControlPanel` draw a leaf marked `heading` in the heading of the group holding it
+  (`prefHeadingKey`). `SelectionPanel`'s section title dims itself with `opacity`, which a control
+  inside it would inherit, so it needs a title row of its own before it can hold one. Nobody has
+  looked at the control in `PrefsForm`'s headings in a browser: the sticky section heading's
+  `scroll-margin-top` assumes one line of text.
 
 - **(P3) Nobody has looked at the desktop themes' bevels.** Under `win9xTheme` and
   `platinumTheme` (`@weasel-js/theme/themes/*`), every control in `@weasel-js/ui` that draws a

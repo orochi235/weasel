@@ -67,6 +67,7 @@ export type { PrefMap } from './map';
 export { prefVariantDefault, prefVariantOf, type PrefUnion } from './union';
 export { prefType } from './type';
 export { prefGroupIsPage } from './groups';
+export { prefFitsHeading, prefHeadingKey } from './heading';
 export type { PrefGroup, PrefGroupAs, PrefSection, PrefSectionAs } from './groups';
 export type { PrefAtPath, PrefPath, PrefValueAt, PrefValueOf } from './paths';
 export type { PrefsMigration } from './migrate';
