@@ -10,7 +10,7 @@ import { DrawBatch } from '../drawBatch';
 import type { ClipRect } from '../batchClip';
 import type { EffectTarget, EffectTargets } from '../effects/EffectTargets';
 import type { PaintScratch } from '../paintScratch';
-import type { StagedBatchState } from './batch';
+import type { StagedBatchState } from './batchRun';
 
 export interface DrawContext {
   gl: WebGL2RenderingContext;
@@ -37,7 +37,7 @@ export interface DrawContext {
   /** Staging for the batch. Draws are deferred into it, so a caller driving
    *  `dispatch` itself must `flushBatch` when the stream ends. */
   drawBatch: DrawBatch;
-  /** Group state the staged run was built under, and what it samples;
+  /** What the staged run draws under, and what it samples;
    *  `undefined` while nothing is staged. Written only by the push helpers
    *  and `flushBatch`. */
   batchState?: StagedBatchState;

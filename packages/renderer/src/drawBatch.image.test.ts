@@ -97,12 +97,12 @@ describe('renderer — consecutive image batching', () => {
   const imageQuadOf = (v: Float32Array, q: number) =>
     v.subarray(q * FLOATS_PER_QUAD, (q + 1) * FLOATS_PER_QUAD);
 
-  /** Every value written to `u_alpha` on the batch program. */
+  /** Every value written to `u_alpha` on the batch program, one per matrix a run draws under. */
   function alphaWrites(): number[] {
     const loc = r._batchFill().uniform('u_alpha');
     return recorder.calls
-      .filter((c) => c.name === 'uniform1f' && c.args[0] === loc)
-      .map((c) => c.args[1] as number);
+      .filter((c) => c.name === 'uniform1fv' && c.args[0] === loc)
+      .flatMap((c) => Array.from(c.args[1] as Float32Array));
   }
 
   it('merges a run of quads over one bitmap into a single draw', () => {

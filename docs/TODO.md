@@ -1188,33 +1188,40 @@ only story runner in the repo.
 
   - **A run-breaker costs about 21 us a flush** (`flush-anatomy.spec.ts`), 16 of it bind and draw;
     no other call in `flushBatch` moves it by more than its noise, about 1.2 us. So what remains is
-    the draw count: a sixteenth texture breaks the run, and so does a color
-    matrix around a gradient, or around an image when it does more than scale channels down. A solid or a glyph under a color matrix has its color
-    mapped on the CPU (`draw/foldColor.ts`), which paints the same pixel as the shader in headless
-    Chromium (`colorMatrixFold.browser.test.ts`) and has not been timed. The specs that break a run
-    with a matrix on solid rects (`flush-anatomy`, `clip-cost`, `flush-noise`) turn the mapping off
-    through `colorFolding`, and have not been run since that edit. An image under a matrix that only
-    scales channels, each by 0 to 1, now rides its vertices the same way (`textureTint`), checked
-    against the shader's pixel in `colorMatrixFold.browser.test.ts` and not timed;
-    `image-quad.spec.ts`'s `unmerged` frame broke its runs with such a matrix, so it now uses a bias,
-    and has not been run since.
+    the draw count, and what still ends a run is a sixteenth texture, a ninth color matrix, a clip
+    only the stencil expresses, and a paint that draws for itself (a pattern, a shader, per-vertex
+    colors).
+  - **None of what joined the run since has been seen in a browser or timed.** Each is pinned by
+    draw count through the GL recorder, and has a `*.browser.test.ts` beside it that has never run:
+    - Synthetic bold: the threshold shift rides a glyph's `a_post` (`syntheticBold.browser.test.ts`).
+    - Fifteen textures where a run held seven, fetched through a tree of four compares where the
+      chain took up to seven (`batchSlots.browser.test.ts`). Not timed: the tree per fragment
+      (`fill-rate.spec.ts`), and the wider `u_samplers` and `u_fieldScale` uploads per flush.
+    - A gradient or an image under any color matrix: each vertex names one of up to eight
+      (matrix, group alpha) pairs the run draws under, `u_colorMatrix[i]`, packed into `a_texSlot`
+      (`draw/batchMatrices.ts`, `colorMatrixFold.browser.test.ts`). A gradient under a matrix that
+      only scales channels down rides a vertex tint, as an image does. Not timed: the indexed
+      matrix per fragment, and three array uniforms a flush where the matrices changed.
+    - Earlier, and in the same state: a solid's or a glyph's color mapped on the CPU
+      (`draw/foldColor.ts`), and an image's tint.
+  - **The perf specs have not been run since those edits.** `flush-anatomy`, `clip-cost`,
+    `flush-noise`, and `image-quad`'s `unmerged` frame break a run with a color matrix, which only
+    works with `colorFolding` off: that seam now also holds a run to one matrix. `flush-anatomy`
+    lost its `u_synthBold` variant and its color-matrix variant drops the array uploads;
+    `layer-dispatch` expects 16 textures a draw.
   - **A clip only the stencil can express still flushes on entry and exit**: a polygon, a rect
     turned off the axes, and a rect clip with a slanted item crossing it (`DrawBatch.clipQuad` says
     why a slanted edge cannot be cut). The stencil itself costs about 4.9 us a push and pop, 7.9 at
-    8 leaves (`clip-cost.spec.ts`).
-  - **Synthetic bold no longer breaks a run**: the threshold shift rides a glyph's `a_post`, checked
-    by draw count (`drawBatch.test.ts`). `syntheticBold.browser.test.ts` is the pixel check and has
-    not been run; nothing has timed it, and `flush-anatomy.spec.ts` has not been run since it lost
-    its `u_synthBold` variant.
-  - **A run holds fifteen textures where it held seven** (`BATCH_TEXTURE_SLOTS`, the most units
-    WebGL2 guarantees), fetched through a tree of four compares where the chain took up to seven.
-    `batchSlots.browser.test.ts` compiles it and reads a pixel from each slot, and has not been run.
-    Not timed: what the tree and the wider `u_samplers` and `u_fieldScale` uploads cost a fragment
-    and a flush (`fill-rate.spec.ts`, `flush-anatomy.spec.ts`).
+    8 leaves (`clip-cost.spec.ts`). The stencil reference is state, so one draw cannot test two
+    depths; putting such a clip in the run means deciding coverage in the fragment shader, from
+    half-planes a vertex names. That has to agree with the stencil where an item that draws for
+    itself sits under the same clip, at pixel centers on an edge and per sample on a multisampled
+    target, and only a browser can say whether it does.
   - **Caching `u_synthBold` (a uniform then), `u_samplers`, and `u_fieldScale` was tried and
-    reverted**, measured through `finish`: it saved about 0.1 us a flush on color-matrix breaks and made a frame of
-    20,000 stroked rects 30% slower, with both renderers interleaved in one page. The cause was not
-    found.
+    reverted**, measured through `finish`: it saved about 0.1 us a flush on color-matrix breaks and
+    made a frame of 20,000 stroked rects 30% slower, with both renderers interleaved in one page.
+    The cause was not found. The run's color matrices are cached the same way now
+    (`uploadBatchMatrices`), where `setColorMatrixUniforms` cached the one before.
   - **Changing kind costs 1.35–4.9 us a boundary** (`transition-matrix.spec.ts`): text and gradient
     the least, shader (4.9) and vcolor (4.4) the most. Pairs whose kinds share a batch cost nothing
     extra; the rest add 8–16 us, with a run-to-run spread up to 9.7 us, so the spec ranks pairs but

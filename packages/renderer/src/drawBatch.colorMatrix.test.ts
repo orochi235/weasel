@@ -2,17 +2,20 @@
  * A group color matrix and the run.
  *
  * A solid's color is known on the CPU, so the matrix is applied there and the
- * rect stays in the run it would have broken. A textured quad's color is not,
- * so it still draws under the matrix as a uniform. The recorder shows the draw
- * count and the staged colors; `colorMatrixFold.browser.test.ts` shows that
- * the two routes paint the same pixel.
+ * rect stays in the run it would have broken. A texel's color is not, so a
+ * gradient or an image under a matrix no vertex tint expresses names that
+ * matrix by index, and the run draws under several at once. The recorder shows
+ * the draw count, the staged colors, and the matrices uploaded;
+ * `colorMatrixFold.browser.test.ts` shows that the routes paint the same pixel.
  */
 import { describe, it, expect, beforeEach } from 'vitest';
 import { makeGLRecorder } from './testing/glRecorder';
 import { WeaselRenderer } from './WeaselRenderer';
-import { FLOATS_PER_VERTEX } from './drawBatch';
+import { FLOATS_PER_VERTEX, TEX_SLOT_OFFSET } from './drawBatch';
 import type { DrawCommand } from './DrawCommand';
 import { colorFolding } from './draw';
+import { BATCH_MATRIX_SLOTS, matrixOf } from './shaders/batchFill';
+import { PATH_M as M, PATH_L as L, PATH_Z as Z } from '@weasel-js/geom';
 
 /** Offset of the color within a vertex: after the vec2 position. */
 const COLOR = 2;
@@ -24,6 +27,13 @@ const TINTED = ((): number[] => {
   cm[4] = 0.25;
   return cm;
 })();
+
+/** `TINTED` with a red lift of `bias`, for matrices no two of which are equal. */
+const lifted = (bias: number): number[] => {
+  const cm = [...TINTED];
+  cm[4] = bias;
+  return cm;
+};
 
 describe('renderer — a group color matrix and the run', () => {
   let recorder: ReturnType<typeof makeGLRecorder>;
@@ -40,43 +50,74 @@ describe('renderer — a group color matrix and the run', () => {
     kind: 'path', path: { kind: 'rect', x, y: 0, width: 10, height: 10 }, fill: { paint: { color } },
   });
   const img = (x: number): DrawCommand => ({ kind: 'image', image: atlas, x, y: 0, w: 16, h: 16 });
+  const gradient = (x: number, opacity?: number): DrawCommand => ({
+    kind: 'path',
+    path: { kind: 'rect', x, y: 0, width: 10, height: 10 },
+    fill: { paint: {
+      kind: 'linear-gradient', from: { x: 0, y: 0 }, to: { x: 10, y: 0 }, opacity,
+      stops: [{ offset: 0, color: '#000' }, { offset: 1, color: '#fff' }],
+    } },
+  } as DrawCommand);
   const group = (extra: object, children: DrawCommand[]): DrawCommand =>
     ({ kind: 'group', ...extra, children }) as DrawCommand;
 
   const draws = (): number[] =>
     recorder.calls.filter((c) => c.name === 'drawElements').map((c) => c.args[1] as number);
 
-  /** `u_colorBias.r` in force at each draw: 0.25 under `TINTED`, 0 under identity. */
-  const biasAtDraws = (): number[] => {
+  /**
+   * What the batch program held at each draw, one value per matrix the run
+   * draws under: `u_colorBias[i].r`, which is 0.25 under `TINTED` and 0 under
+   * identity, and `u_alpha[i]`. An upload the renderer skipped leaves the
+   * previous one in force, as it does on the GPU.
+   */
+  const uniformsAtDraws = (): { bias: number[]; alpha: number[] }[] => {
     const uBias = r._batchFill().uniform('u_colorBias');
-    const out: number[] = [];
-    let pending = 0;
+    const uAlpha = r._batchFill().uniform('u_alpha');
+    const out: { bias: number[]; alpha: number[] }[] = [];
+    let bias: number[] = [];
+    let alpha: number[] = [];
     for (const c of recorder.calls) {
-      if (c.name === 'uniform4f' && c.args[0] === uBias) pending = c.args[1] as number;
-      if (c.name === 'drawElements') out.push(pending);
+      if (c.name === 'uniform4fv' && c.args[0] === uBias) {
+        const data = c.args[1] as Float32Array;
+        bias = Array.from({ length: data.length / 4 }, (_, i) => data[4 * i]);
+      }
+      if (c.name === 'uniform1fv' && c.args[0] === uAlpha) {
+        alpha = Array.from(c.args[1] as Float32Array);
+      }
+      if (c.name === 'drawElements') out.push({ bias, alpha });
     }
     return out;
+  };
+  const biasAtDraws = (): number[][] => uniformsAtDraws().map((u) => u.bias);
+
+  /** The vertices of upload `n`, bounded by the length the call itself sent. */
+  const upload = (n = 0): Float32Array => {
+    const call = recorder.calls.filter(
+      (c) => c.name === 'bufferSubData' && c.args[0] === recorder.gl.ARRAY_BUFFER,
+    )[n];
+    return (call.args[2] as Float32Array).subarray(0, call.args[4] as number);
   };
 
-  /** The color of the first vertex of each quad in the first upload. */
-  const quadColors = (): number[][] => {
-    const upload = recorder.calls.find(
-      (c) => c.name === 'bufferSubData' && c.args[0] === recorder.gl.ARRAY_BUFFER,
-    )!;
-    const verts = upload.args[2] as Float32Array;
-    const floats = upload.args[4] as number;
-    const out: number[][] = [];
-    for (let i = 0; i < floats; i += 4 * FLOATS_PER_VERTEX) {
-      out.push(Array.from(verts.slice(i + COLOR, i + COLOR + 4)));
-    }
+  /** One value per quad of the first upload, read off its first vertex. */
+  const perQuad = <T>(read: (verts: Float32Array, at: number) => T): T[] => {
+    const verts = upload();
+    const out: T[] = [];
+    for (let i = 0; i < verts.length; i += 4 * FLOATS_PER_VERTEX) out.push(read(verts, i));
     return out;
   };
+  const quadColors = (): number[][] =>
+    perQuad((v, i) => Array.from(v.slice(i + COLOR, i + COLOR + 4)));
+  /** The after-the-matrix alpha factor. */
+  const quadPosts = (): number[] => perQuad((v, i) => v[i + 8]);
+  /** Which of the run's matrices each quad names. */
+  const quadMatrices = (): number[] => perQuad((v, i) => matrixOf(v[i + TEX_SLOT_OFFSET]));
 
   it('keeps a solid under a color matrix in the run, its color mapped on the CPU', () => {
     r.render([rect(0), group({ colorMatrix: TINTED }, [rect(20)]), rect(40)]);
     expect(draws()).toEqual([18]);
-    expect(biasAtDraws()).toEqual([0]);
+    expect(biasAtDraws()).toEqual([[0]]);
     expect(quadColors()).toEqual([[1, 0, 0, 1], [0.75, 0, 0, 1], [1, 0, 0, 1]]);
+    expect(quadMatrices()).toEqual([0, 0, 0]);
   });
 
   it('clamps a mapped color the way the shader does', () => {
@@ -95,13 +136,31 @@ describe('renderer — a group color matrix and the run', () => {
     expect(quadColors()).toEqual([[0.75, 0, 0, 0.5], [0.75, 0, 0, 0.25]]);
   });
 
-  it('still breaks for an image, whose color the CPU cannot map', () => {
+  it('keeps an image under a matrix the CPU cannot map in the run, naming the matrix', () => {
     r.render([img(0), group({ colorMatrix: TINTED }, [img(20)]), img(40)]);
-    expect(draws()).toEqual([6, 6, 6]);
-    // The group's run is still staged when the group pops. What breaks it is
-    // the image that follows, by which point the matrix is off the stack: the
-    // flush has to draw under the state the run was staged in, not the live one.
-    expect(biasAtDraws()).toEqual([0, 0.25, 0]);
+    expect(draws()).toEqual([18]);
+    // Identity joined first, then the group's; the third quad is back on the first.
+    expect(quadMatrices()).toEqual([0, 1, 0]);
+    expect(biasAtDraws()).toEqual([[0, 0.25]]);
+    // The shader maps it, so the vertex carries no tint.
+    expect(quadColors()).toEqual([[1, 1, 1, 1], [1, 1, 1, 1], [1, 1, 1, 1]]);
+  });
+
+  it('uploads each matrix column-major beside its bias', () => {
+    // Red and blue both read blue, and green is lifted by a half.
+    const swap = new Array<number>(20).fill(0);
+    swap[2] = 1; swap[6] = 1; swap[12] = 1; swap[18] = 1; swap[9] = 0.5;
+    r.render([group({ colorMatrix: swap }, [img(0)])]);
+    const uMatrix = r._batchFill().uniform('u_colorMatrix');
+    const sent = recorder.calls.find((c) => c.name === 'uniformMatrix4fv' && c.args[0] === uMatrix)!;
+    const m = Array.from(sent.args[2] as Float32Array);
+    expect(m).toHaveLength(16);
+    // Column 2 feeds rows 0 and 2; column 0 feeds none.
+    expect(m.slice(8, 12)).toEqual([1, 0, 1, 0]);
+    expect(m.slice(0, 4)).toEqual([0, 0, 0, 0]);
+    const uBias = r._batchFill().uniform('u_colorBias');
+    const bias = recorder.calls.find((c) => c.name === 'uniform4fv' && c.args[0] === uBias)!;
+    expect(Array.from(bias.args[1] as Float32Array)).toEqual([0, 0.5, 0, 0]);
   });
 
   /** Scales red by a half and green by a quarter, and halves alpha: no bias, nothing off the diagonal. */
@@ -111,23 +170,14 @@ describe('renderer — a group color matrix and the run', () => {
     return cm;
   })();
 
-  /** The after-the-matrix alpha factor of the first vertex of each quad in the first upload. */
-  const quadPosts = (): number[] => {
-    const upload = recorder.calls.find(
-      (c) => c.name === 'bufferSubData' && c.args[0] === recorder.gl.ARRAY_BUFFER,
-    )!;
-    const verts = upload.args[2] as Float32Array;
-    const out: number[] = [];
-    for (let i = 0; i < (upload.args[4] as number); i += 4 * FLOATS_PER_VERTEX) out.push(verts[i + 8]);
-    return out;
-  };
-
   it('keeps an image under a matrix that only scales channels down in the run, as a vertex tint', () => {
     r.render([img(0), group({ colorMatrix: SCALED, alpha: 0.5 }, [img(20)]), img(40)]);
     expect(draws()).toEqual([18]);
     expect(quadColors()).toEqual([[1, 1, 1, 1], [0.5, 0.25, 1, 1], [1, 1, 1, 1]]);
     // The matrix's alpha scale and the group's alpha both ride the vertex.
     expect(quadPosts()).toEqual([1, 0.25, 1]);
+    expect(quadMatrices()).toEqual([0, 0, 0]);
+    expect(biasAtDraws()).toEqual([[0]]);
   });
 
   it('tints packed sprites the same way', () => {
@@ -138,52 +188,103 @@ describe('renderer — a group color matrix and the run', () => {
     expect(quadPosts()[1]).toEqual(0.5);
   });
 
-  it('still breaks for an image under a scale past 1, which the shader clamps after the texel', () => {
+  it('leaves a scale past 1 to the shader, which clamps after the texel', () => {
     const bright = [...SCALED];
     bright[0] = 2;
     r.render([img(0), group({ colorMatrix: bright }, [img(20)]), img(40)]);
-    expect(draws()).toEqual([6, 6, 6]);
-    expect(quadColors()).toEqual([[1, 1, 1, 1]]);
+    expect(draws()).toEqual([18]);
+    expect(quadColors()).toEqual([[1, 1, 1, 1], [1, 1, 1, 1], [1, 1, 1, 1]]);
+    expect(quadMatrices()).toEqual([0, 1, 0]);
   });
 
-  it('keeps alpha a uniform, and a barrier, in a run drawn under a matrix', () => {
-    // `a = clamp(CM * src + bias).a * u_alpha`: with a real matrix between
-    // them, an alpha multiplied onto an image vertex is a different number.
+  it('carries group alpha on an image vertex under a matrix, so alpha breaks nothing', () => {
+    // `a = clamp(CM * src + bias).a * u_alpha[i] * a_post`: the factor after
+    // the matrix is the vertex's, so two alphas share one entry.
     r.render([group({ colorMatrix: TINTED }, [img(0), group({ alpha: 0.5 }, [img(20)])])]);
-    expect(draws()).toEqual([6, 6]);
-    const uAlpha = r._batchFill().uniform('u_alpha');
-    const sent = recorder.calls
-      .filter((c) => c.name === 'uniform1f' && c.args[0] === uAlpha)
-      .map((c) => c.args[1]);
-    expect(sent).toEqual([1, 0.5]);
+    expect(draws()).toEqual([12]);
+    expect(quadPosts()).toEqual([1, 0.5]);
+    expect(quadMatrices()).toEqual([0, 0]);
+    expect(uniformsAtDraws()).toEqual([{ bias: [0.25], alpha: [1] }]);
   });
 
-  it('lets a solid join a run an image opened under the same matrix, unmapped', () => {
+  it('maps a solid on the CPU in a run an image opened under the same matrix', () => {
     r.render([group({ colorMatrix: TINTED }, [img(0), rect(20)])]);
     expect(draws()).toEqual([12]);
-    expect(biasAtDraws()).toEqual([0.25]);
-    // The shader maps it, so the vertex carries the color as authored.
-    expect(quadColors()[1]).toEqual([1, 0, 0, 1]);
+    expect(biasAtDraws()).toEqual([[0.25, 0]]);
+    expect(quadMatrices()).toEqual([0, 1]);
+    expect(quadColors()[1]).toEqual([0.75, 0, 0, 1]);
   });
 
-  it('breaks once when an image follows a mapped solid in its group', () => {
-    r.render([rect(0), group({ colorMatrix: TINTED }, [rect(20), img(40)])]);
-    expect(draws()).toEqual([12, 6]);
-    expect(biasAtDraws()).toEqual([0, 0.25]);
+  it('keeps solids and images under two different matrices in one run', () => {
+    r.render([
+      rect(0),
+      group({ colorMatrix: TINTED }, [rect(20), img(40)]),
+      group({ colorMatrix: lifted(0.125) }, [img(60), rect(80)]),
+    ]);
+    expect(draws()).toEqual([30]);
+    expect(biasAtDraws()).toEqual([[0, 0.25, 0.125]]);
+    expect(quadMatrices()).toEqual([0, 0, 1, 2, 0]);
+    // The last rect is mapped by the second matrix: red 0.5 + 0.125.
+    expect(quadColors()[4]).toEqual([0.625, 0, 0, 1]);
   });
 
-  it('breaks a solid out of a run drawn under a different matrix', () => {
-    const other = [...TINTED];
-    other[4] = 0.125;
-    r.render([group({ colorMatrix: TINTED }, [img(0)]), group({ colorMatrix: other }, [rect(20)])]);
-    expect(draws()).toEqual([6, 6]);
-    expect(biasAtDraws()).toEqual([0.25, 0]);
-    // The second run is its own, so the rect is mapped by `other`: red 0.5 + 0.125.
-    const uploads = recorder.calls.filter(
+  describe('a gradient, whose texel the CPU cannot map either', () => {
+    it('joins the run under a matrix, naming it, with group alpha in its entry', () => {
+      r.render([rect(0), group({ colorMatrix: TINTED, alpha: 0.5 }, [gradient(20, 0.5)]), rect(40)]);
+      expect(draws()).toEqual([18]);
+      expect(quadMatrices()).toEqual([0, 1, 0]);
+      expect(uniformsAtDraws()).toEqual([{ bias: [0, 0.25], alpha: [1, 0.5] }]);
+      // Its own opacity goes through the matrix, so it stays on the vertex,
+      // and the group's alpha does not join it there.
+      expect(quadColors()[1]).toEqual([1, 1, 1, 0.5]);
+    });
+
+    it('gives a second group alpha under one matrix an entry of its own', () => {
+      // A radial gradient's a_post is its atlas row, so alpha after the matrix
+      // has no room on the vertex and is the entry's.
+      r.render([group({ colorMatrix: TINTED }, [gradient(0), group({ alpha: 0.5 }, [gradient(20)])])]);
+      expect(draws()).toEqual([12]);
+      expect(quadMatrices()).toEqual([0, 1]);
+      expect(uniformsAtDraws()).toEqual([{ bias: [0.25, 0.25], alpha: [1, 0.5] }]);
+    });
+
+    it('takes a matrix that only scales channels down as a vertex tint', () => {
+      r.render([rect(0), group({ colorMatrix: SCALED, alpha: 0.5 }, [gradient(20)])]);
+      expect(draws()).toEqual([12]);
+      expect(quadMatrices()).toEqual([0, 0]);
+      expect(quadColors()[1]).toEqual([0.5, 0.25, 1, 0.25]);
+      expect(biasAtDraws()).toEqual([[0]]);
+    });
+  });
+
+  it('breaks the run at one matrix more than it has entries for', () => {
+    // Each image under a matrix of its own; the run holds BATCH_MATRIX_SLOTS.
+    const under = (i: number): DrawCommand => group({ colorMatrix: lifted((i + 1) / 32) }, [img(i * 20)]);
+    r.render(Array.from({ length: BATCH_MATRIX_SLOTS + 1 }, (_, i) => under(i)));
+    expect(draws()).toEqual([BATCH_MATRIX_SLOTS * 6, 6]);
+    expect(quadMatrices()).toEqual(Array.from({ length: BATCH_MATRIX_SLOTS }, (_, i) => i));
+    // The second run starts its own list.
+    const second = upload(1);
+    expect(matrixOf(second[TEX_SLOT_OFFSET])).toBe(0);
+    expect(biasAtDraws()[1]).toEqual([(BATCH_MATRIX_SLOTS + 1) / 32]);
+  });
+
+  it('does not upload again for a run whose matrices the program already holds', () => {
+    // Two runs, broken by a clip only the stencil expresses, under one matrix.
+    const diamond = {
+      kind: 'polygon', commands: new Uint8Array([M, L, L, L, Z]),
+      coords: new Float32Array([5, 0, 10, 5, 5, 10, 0, 5]), fillRule: 'nonzero',
+    };
+    r.render([
+      group({ colorMatrix: TINTED }, [img(0)]),
+      group({ clip: diamond, colorMatrix: TINTED }, [img(0)]),
+    ]);
+    const runs = recorder.calls.filter(
       (c) => c.name === 'bufferSubData' && c.args[0] === recorder.gl.ARRAY_BUFFER,
     );
-    const second = uploads[1].args[2] as Float32Array;
-    expect(Array.from(second.slice(COLOR, COLOR + 4))).toEqual([0.625, 0, 0, 1]);
+    expect(runs).toHaveLength(2);
+    const uBias = r._batchFill().uniform('u_colorBias');
+    expect(recorder.calls.filter((c) => c.name === 'uniform4fv' && c.args[0] === uBias)).toHaveLength(1);
   });
 
   it('breaks on a matrix as it used to with folding off, which the perf specs rely on', () => {
@@ -194,6 +295,8 @@ describe('renderer — a group color matrix and the run', () => {
       colorFolding.enabled = true;
     }
     expect(draws()).toEqual([6, 6, 6]);
-    expect(biasAtDraws()).toEqual([0, 0.25, 0]);
+    expect(biasAtDraws()).toEqual([[0], [0.25], [0]]);
+    // Unmapped: the shader does it.
+    expect(Array.from(upload(1).slice(COLOR, COLOR + 4))).toEqual([1, 0, 0, 1]);
   });
 });

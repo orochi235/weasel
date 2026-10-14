@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import {
   BATCH_VERT_SRC, BATCH_FRAG_SRC, BATCH_FILL_UNIFORMS, BATCH_FILL_ATTRIBUTES,
-  BATCH_TEXTURE_SLOTS, WHITE_SLOT, PAINT_MODE_PLAIN, PAINT_MODE_RADIAL,
-  PAINT_MODE_CONIC,
+  BATCH_TEXTURE_SLOTS, BATCH_MATRIX_SLOTS, WHITE_SLOT, PAINT_MODE_PLAIN, PAINT_MODE_RADIAL,
+  PAINT_MODE_CONIC, PAINT_MODE_IMAGE, packSlot, withMatrix, paintModeOf, matrixOf,
 } from './batchFill';
 import { FLOATS_PER_VERTEX } from '../drawBatch';
 
@@ -81,6 +81,38 @@ describe('batch program — the sampler tree', () => {
     }
     expect(deepest).toBe(Math.log2(BATCH_TEXTURE_SLOTS));
     expect(WHITE_SLOT).toBe(0);
+  });
+});
+
+describe('batch program — slot, mode, and matrix share a float', () => {
+  it('unpacks in the vertex stage what packSlot and withMatrix packed', () => {
+    // The divisors as the shader source spells them, so a constant that moved
+    // on one side only fails here.
+    const slotMod = Number(/v_texSlot = packed % (\d+);/.exec(BATCH_VERT_SRC)![1]);
+    const mode = /v_paintMode = float\(\(packed \/ (\d+)\) % (\d+)\);/.exec(BATCH_VERT_SRC)!;
+    const matrixDiv = Number(/v_matrix = packed \/ (\d+);/.exec(BATCH_VERT_SRC)![1]);
+    for (let slot = 0; slot < BATCH_TEXTURE_SLOTS; slot++) {
+      for (let m = PAINT_MODE_PLAIN; m <= PAINT_MODE_IMAGE; m++) {
+        for (let matrix = 0; matrix < BATCH_MATRIX_SLOTS; matrix++) {
+          const packed = packSlot(withMatrix(slot, matrix), m);
+          expect(Math.fround(packed)).toBe(packed);
+          expect([
+            packed % slotMod,
+            Math.floor(packed / Number(mode[1])) % Number(mode[2]),
+            Math.floor(packed / matrixDiv),
+          ]).toEqual([slot, m, matrix]);
+          expect([paintModeOf(packed), matrixOf(packed)]).toEqual([m, matrix]);
+        }
+      }
+    }
+  });
+
+  it('maps each fragment by the matrix its vertex names', () => {
+    expect(BATCH_FRAG_SRC).toContain(`uniform mat4 u_colorMatrix[${BATCH_MATRIX_SLOTS}];`);
+    expect(BATCH_FRAG_SRC).toContain(`uniform vec4 u_colorBias[${BATCH_MATRIX_SLOTS}];`);
+    expect(BATCH_FRAG_SRC).toContain(`uniform float u_alpha[${BATCH_MATRIX_SLOTS}];`);
+    expect(BATCH_FRAG_SRC).toMatch(/u_colorMatrix\[v_matrix\] \* src \+ u_colorBias\[v_matrix\]/);
+    expect(BATCH_FRAG_SRC).toMatch(/mapped\.a \* u_alpha\[v_matrix\]/);
   });
 });
 

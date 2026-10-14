@@ -515,9 +515,9 @@ describe('renderer — consecutive solid-fill batching', () => {
     expect(verts[8 * FLOATS_PER_VERTEX + 5]).toBe(1);
     // Folded means the uniform must not apply it a second time.
     const uAlpha = r._batchFill().uniform('u_alpha');
-    const sent = recorder.calls.filter((c) => c.name === 'uniform1f' && c.args[0] === uAlpha);
+    const sent = recorder.calls.filter((c) => c.name === 'uniform1fv' && c.args[0] === uAlpha);
     expect(sent).toHaveLength(1);
-    expect(sent[0].args[1]).toBe(1);
+    expect(Array.from(sent[0].args[1] as Float32Array)).toEqual([1]);
   });
 
   it('draws a stencil-clipped run under the clip, and the next run without it', () => {

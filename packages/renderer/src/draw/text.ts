@@ -160,10 +160,11 @@ function drawTextDecorations(
     const [r, g, b, a] = isSolidPaint(paint) ? resolveColor(paint.color) : [0, 0, 0, 1];
     let cut: ClipRect | null | undefined;
     for (;;) {
-      const staged = stageSolid(ctx, 4);
+      const slot = stageSolid(ctx, 4);
+      const rgba = foldColor(ctx, r, g, b, a);
       if (ctx.drawBatch.pushRect(
         d.x0 + dx, d.y0 + dy, d.x1 - d.x0, d.y1 - d.y0, ctx.state.transform,
-        ...foldColor(ctx, staged, r, g, b, a),
+        rgba[0], rgba[1], rgba[2], rgba[3], slot,
       )) break;
       cut = enterUncut(ctx);
     }
@@ -227,14 +228,13 @@ function drawTextGroup(
 
   const batch = ctx.drawBatch;
   const m = ctx.state.transform;
-  let { staged, slot } = stageGlyphs(ctx, atlasId, fieldScale);
-  let rgba = foldColor(ctx, staged, color[0], color[1], color[2], color[3]);
+  let slot = stageGlyphs(ctx, atlasId, fieldScale);
+  const rgba = foldColor(ctx, color[0], color[1], color[2], color[3]);
 
   for (const q of group.quads) {
     if (batch.wouldOverflow(4)) {
       flushBatch(ctx);
-      ({ staged, slot } = stageGlyphs(ctx, atlasId, fieldScale));
-      rgba = foldColor(ctx, staged, color[0], color[1], color[2], color[3]);
+      slot = stageGlyphs(ctx, atlasId, fieldScale);
     }
     let cut: ClipRect | null | undefined;
     while (!batch.pushGlyph(
@@ -244,13 +244,11 @@ function drawTextGroup(
       slot, mode, bold,
     )) {
       cut = enterUncut(ctx);
-      ({ staged, slot } = stageGlyphs(ctx, atlasId, fieldScale));
-      rgba = foldColor(ctx, staged, color[0], color[1], color[2], color[3]);
+      slot = stageGlyphs(ctx, atlasId, fieldScale);
     }
     if (cut !== undefined) {
       leaveUncut(ctx, cut);
-      ({ staged, slot } = stageGlyphs(ctx, atlasId, fieldScale));
-      rgba = foldColor(ctx, staged, color[0], color[1], color[2], color[3]);
+      slot = stageGlyphs(ctx, atlasId, fieldScale);
     }
   }
 }

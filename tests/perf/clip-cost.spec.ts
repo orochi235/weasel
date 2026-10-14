@@ -5,7 +5,7 @@
  *
  *   - the **stencil**: `pushClip` and `popClip` each rasterize the clip path
  *     into the stencil buffer. Inherent to how clipping works here.
- *   - the **batch break**: `stagedStateIsLive` compares `clipDepth`, so a
+ *   - the **batch break**: `runTakes` compares `clipDepth`, so a
  *     clipped rect cannot share a draw with its unclipped neighbors.
  *
  * Separating them needs contents that would not have batched anyway. A

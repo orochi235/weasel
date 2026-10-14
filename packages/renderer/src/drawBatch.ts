@@ -19,7 +19,7 @@
 import type { Mesh } from '@weasel-js/geom/tessellate';
 import type { GlMat3 } from '@weasel-js/geom';
 import type { ShaderProgram } from './shaders/ShaderProgram';
-import { PAINT_MODE_IMAGE, PAINT_MODE_PLAIN, WHITE_SLOT, packSlot } from './shaders/batchFill';
+import { PAINT_MODE_IMAGE, packSlot } from './shaders/batchFill';
 import { clipConvexPolygon, type ClipRect } from './batchClip';
 
 /** Vertices per flush. Caps staging memory; a longer run flushes in chunks,
@@ -54,10 +54,6 @@ export interface GradientUV {
   ux: number; uy: number; u0: number;
   vx: number; vy: number; v0: number;
 }
-
-/** What `a_texSlot` carries on a vertex that is its own color: the white texel
- *  at the plain paint mode. */
-const PLAIN_WHITE = packSlot(WHITE_SLOT, PAINT_MODE_PLAIN);
 
 /**
  * Flushes between one ring slot's write and its next. Sized for a driver that
@@ -191,11 +187,11 @@ export class DrawBatch {
 
   /**
    * Append one rect's four corners through `m`, all carrying `rgba` (straight
-   * alpha).
+   * alpha) and `P` in `a_texSlot`: the white texel, and the run's matrix.
    */
   pushRect(
     x: number, y: number, w: number, h: number, m: GlMat3,
-    r: number, g: number, b: number, a: number,
+    r: number, g: number, b: number, a: number, P: number,
   ): boolean {
     this.reserve(4, 6);
     let i = this.nVerts * FLOATS_PER_VERTEX;
@@ -206,7 +202,6 @@ export class DrawBatch {
     const bx = ma * x1 + mc * y + mtx,  by = mb * x1 + md * y + mty;
     const cx = ma * x1 + mc * y1 + mtx, cy = mb * x1 + md * y1 + mty;
     const dx = ma * x + mc * y1 + mtx,  dy = mb * x + md * y1 + mty;
-    const P = PLAIN_WHITE;
     i = this.writeVertex(i, ax, ay, r, g, b, a, WHITE_U, WHITE_V, 1, P);
     i = this.writeVertex(i, bx, by, r, g, b, a, WHITE_U, WHITE_V, 1, P);
     i = this.writeVertex(i, cx, cy, r, g, b, a, WHITE_U, WHITE_V, 1, P);
@@ -219,7 +214,8 @@ export class DrawBatch {
    * Append one image quad: the destination rect `(x, y, w, h)` mapped through
    * `m`, sampling `(u0, v0)`-`(u1, v1)`, every corner carrying `post` as the
    * after-the-color-matrix alpha factor and `rgb` as the scale on its texel.
-   * `slot` is the texture unit the corners sample.
+   * `slot` is the texture unit the corners sample, and may carry the index of
+   * the run's matrix they are mapped by as well (`withMatrix`).
    *
    * Corners wind top-left, top-right, bottom-right, bottom-left — the same
    * winding `pushRect` uses, which is what lets a run of mixed rects and quads
@@ -364,13 +360,13 @@ export class DrawBatch {
   }
 
   /**
-   * Append a tessellated mesh through `m`, all vertices carrying `rgba`. The
-   * mesh's own indices are rebased onto the staged vertices, which is why the
-   * index buffer is uploaded per flush rather than written once.
+   * Append a tessellated mesh through `m`, all vertices carrying `rgba` and
+   * `P`, as `pushRect`'s do. The mesh's own indices are rebased onto the staged
+   * vertices, which is why the index buffer is uploaded per flush.
    */
   pushMesh(
     mesh: Mesh, m: GlMat3,
-    r: number, g: number, b: number, a: number,
+    r: number, g: number, b: number, a: number, P: number,
   ): boolean {
     const src = mesh.vertices;
     const srcIdx = mesh.indices;
@@ -386,7 +382,7 @@ export class DrawBatch {
       v[i++] = ma * x + mc * y + mtx;
       v[i++] = mb * x + md * y + mty;
       v[i++] = r; v[i++] = g; v[i++] = b; v[i++] = a;
-      v[i++] = WHITE_U; v[i++] = WHITE_V; v[i++] = 1; v[i++] = PLAIN_WHITE;
+      v[i++] = WHITE_U; v[i++] = WHITE_V; v[i++] = 1; v[i++] = P;
     }
     const base = this.nVerts;
     const out = this.idx;

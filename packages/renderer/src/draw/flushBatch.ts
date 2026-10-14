@@ -2,12 +2,8 @@ import { mat3 } from '@weasel-js/geom';
 import { BATCH_TEXTURE_SLOTS } from '../shaders/batchFill';
 import type { DrawContext } from './drawContext';
 import { drawTriangles } from './drawTriangles';
-import {
-  setColorUniform,
-  setAlphaUniform,
-  setColorMatrixUniforms,
-  setProjAndModel,
-} from './uniforms';
+import { setColorUniform, setProjAndModel } from './uniforms';
+import { uploadBatchMatrices } from './batchMatrices';
 import { applyClipTest } from './stencil';
 
 /** The rect batch transforms its own corners, so it draws at model identity. */
@@ -51,8 +47,7 @@ export function flushBatch(ctx: DrawContext): void {
   const indexCount = batch.uploadAndBind();
   setProjAndModel(ctx, prog, BATCH_MODEL);
   setColorUniform(ctx, prog, 1, 1, 1, 1);
-  setAlphaUniform(ctx, prog, staged.alpha);
-  setColorMatrixUniforms(ctx, prog, staged.colorMatrix);
+  uploadBatchMatrices(ctx, prog, staged.matrices);
   gl.activeTexture(gl.TEXTURE0);
   gl.bindTexture(gl.TEXTURE_2D, ctx.whiteTexture);
   for (let i = 0; i < staged.textures.length; i++) {
