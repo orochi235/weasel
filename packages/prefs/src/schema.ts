@@ -9,6 +9,7 @@ import type { PrefCondition } from './condition';
 import type { PrefSection } from './groups';
 import type { PrefLabel, PrefSeparator } from './label';
 import type { PrefList } from './list';
+import type { PrefLocus } from './locus';
 import type { PrefMap } from './map';
 import type { PrefUnion } from './union';
 import type { PrefNumberUnit } from './unit';
@@ -95,6 +96,11 @@ export interface PrefBase<K extends string, Value> {
    *  outermost. Each must be a plain `enum`: not `clearable`, with no
    *  `encoding`, and not split itself. */
   splitBy?: readonly string[];
+  /** What the leaf holds while nothing is stored for it, where that is a
+   *  split value: a default that differs by option. Split only by entries of
+   *  `splitBy`. `default` stays what a member it leaves out reads as, and
+   *  what the leaf's value type is read from. */
+  defaultLocus?: PrefLocus;
 }
 
 /** How a schema-driven UI should present a number pref. */

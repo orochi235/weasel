@@ -17,10 +17,14 @@ export type PrefPath<G, Prefix extends string = ''> =
         }[keyof C & string]
     : never;
 
-/** The leaf at `P`. */
+/** The leaf at `P`. `unknown` under a group whose keys are not literal, as a
+ *  schema built at run time has them: nothing says which leaf is there, so
+ *  its value reads as `unknown`. */
 export type PrefAtPath<G, P extends string> =
   G extends { children: infer C }
-    ? P extends `${infer H}.${infer Rest}`
+    ? string extends keyof C
+      ? unknown
+    : P extends `${infer H}.${infer Rest}`
       ? H extends keyof C
         ? C[H] extends { kind: string }
           ? never

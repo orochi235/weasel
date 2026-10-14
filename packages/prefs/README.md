@@ -93,6 +93,19 @@ const { values, set, loci, split, join, setAt } = usePrefsValues(store);
   loci={loci} onSplit={split} onJoin={join} onChangeAt={setAt} />
 ```
 
+A leaf's default may be split too. `defaultLocus` is what the leaf holds while
+nothing is stored for it, and `default` stays what a member it leaves out
+reads as:
+
+```ts
+'gap': { kind: 'number', default: 4, splitBy: ['look.mode'],
+         defaultLocus: { $by: 'look.mode', $of: { dark: 4, light: 6 } }, … }
+
+store.get('gap');                                    // 4, or 6 once the mode is light
+store.set('gap', 8, { at: { 'look.mode': 'light' } }); // holds { dark: 4, light: 8 }
+store.reset('gap');                                  // the split default again
+```
+
 A selector must be a plain `enum`: not `clearable`, with no `encoding`, and
 not split itself. The store warns of a `splitBy` that names anything else when
 it opens.

@@ -3,11 +3,12 @@
 
 import type { PrefGroup } from './groups';
 import { prefHoldsValue, prefLeaves } from './helpers';
+import { locusSelectors } from './locus';
 import type { PrefEnum, PrefLeaf } from './schema';
 
 /** One thing wrong with a leaf's `splitBy`. */
 export interface PrefSplitProblem {
-  code: 'valueless' | 'no-leaf' | 'not-enum' | 'encoded' | 'clearable' | 'split' | 'twice';
+  code: 'valueless' | 'no-leaf' | 'not-enum' | 'encoded' | 'clearable' | 'split' | 'twice' | 'default';
   /** The path of the leaf whose `splitBy` it is. */
   at: string;
   /** The entry of `splitBy` the problem is with, where it is with one. */
@@ -43,6 +44,10 @@ export function checkPrefSplits(schema: PrefGroup): PrefSplitProblem[] {
   const leaves = prefLeaves(schema);
   const out: PrefSplitProblem[] = [];
   for (const [at, leaf] of leaves) {
+    for (const path of locusSelectors(leaf.defaultLocus)) {
+      if (leaf.splitBy?.includes(path)) continue;
+      out.push({ code: 'default', at, path, problem: `its defaultLocus is split by "${path}", which its splitBy does not list` });
+    }
     if (!leaf.splitBy?.length) continue;
     if (!prefHoldsValue(leaf)) {
       out.push({ code: 'valueless', at, problem: `a ${leaf.kind} leaf holds no value to split` });

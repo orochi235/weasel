@@ -4,7 +4,7 @@
 import type { OwnedRecordCache } from '@weasel-js/storage';
 import { prefSectionLeaves } from './helpers';
 import type { PrefList } from './list';
-import { isPrefLocus, joinLocus, mapLocusMembers, splitLocus, writeMember, type PrefSelection } from './locus';
+import { isPrefLocus, joinLocus, mapLocusMembers, repairLocus, splitLocus, writeMember, type PrefSelection } from './locus';
 import type { PrefMap } from './map';
 import type { PrefLeaf, PrefObject } from './schema';
 import { selectionAt } from './snapshot';
@@ -54,9 +54,14 @@ export function prefWrites({ leaves, cache, selectors, version, selection, warnI
   split: (path: string, by: string) => void;
   join: (path: string, by: string) => void;
 } {
+  /** The leaf's split default as stored, where it has one it can hold. */
+  const unsetLocus = (leaf: PrefLeaf): unknown => {
+    if (leaf.defaultLocus === undefined || !leaf.splitBy?.length) return undefined;
+    return repairLocus(leaf.defaultLocus, leaf.splitBy, (by) => selectors.get(by), (member) => encodeInfinity(leaf, member));
+  };
   /** What the leaf holds in storage, unrepaired; its default, as stored, where it holds nothing. */
   const rawAt = (path: string, leaf: PrefLeaf): unknown =>
-    (cache.has(path) ? recordValue(cache.get(path)) : encodeInfinity(leaf, leaf.default));
+    (cache.has(path) ? recordValue(cache.get(path)) : unsetLocus(leaf) ?? encodeInfinity(leaf, leaf.default));
   const store = (path: string, stored: unknown): void => {
     // Unset is stored as nothing, which a stamp would turn into something.
     cache.set(path, stored === undefined ? undefined : stampRecord(stored, version));
@@ -83,7 +88,7 @@ export function prefWrites({ leaves, cache, selectors, version, selection, warnI
       return;
     }
     const stored = encodeInfinity(leaf, value);
-    const had = cache.has(path) ? recordValue(cache.get(path)) : undefined;
+    const had = cache.has(path) ? recordValue(cache.get(path)) : unsetLocus(leaf);
     const intoMember = stored !== undefined && leaf.splitBy?.length && isPrefLocus(had);
     const under = write?.at ? selectionAt(selectors, selection(), write.at) : selection();
     store(path, intoMember ? writeMember(had, under, stored) : stored);
@@ -97,7 +102,7 @@ export function prefWrites({ leaves, cache, selectors, version, selection, warnI
   };
   const join = (path: string, by: string): void => {
     const found = splitOf(path, by);
-    if (!found || !cache.has(path)) return;
+    if (!found) return;
     const had = rawAt(path, found.leaf);
     const next = joinLocus(had, by, selection(), encodeInfinity(found.leaf, found.leaf.default));
     if (next !== had) store(path, next);

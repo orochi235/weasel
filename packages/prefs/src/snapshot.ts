@@ -54,13 +54,21 @@ export function createSnapshots(source: SnapshotSource): { current: () => Snapsh
   let snapshot: Snapshot | null = null;
   let previous: { raw: Map<string, unknown>; held: Map<string, unknown> } | null = null;
 
+  const unsetLoci = new Map<string, unknown>();
+  /** What an unset leaf holds: its split default, repaired once, where it has one. */
+  const unsetHeld = (path: string, leaf: PrefLeaf): unknown => {
+    if (leaf.defaultLocus === undefined) return leaf.default;
+    if (!unsetLoci.has(path)) unsetLoci.set(path, readStored(source, leaf, leaf.defaultLocus));
+    return unsetLoci.get(path);
+  };
+
   const build = (): Snapshot => {
     const held = new Map<string, unknown>();
     const raw = new Map<string, unknown>();
     const unset = new Set<string>();
     for (const [path, leaf] of leaves) {
       if (!cache.has(path)) {
-        held.set(path, leaf.default);
+        held.set(path, unsetHeld(path, leaf));
         unset.add(path);
         continue;
       }
