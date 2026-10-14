@@ -29,20 +29,28 @@ const ring = (deg) => [AXIS + RX * Math.cos(rad(deg)), MID - RY * Math.sin(rad(d
 const TAIL = 132;
 const TIP = -158;
 const FRONT = MID + RY;
+// The axis where the ring crosses in front of it, cut along the ring's outline grown by `GAP`. Across the
+// axis's width the ring is its circle of curvature at the front vertex to within a hundred-thousandth, so each
+// cut is an arc about that circle's center: the upper end bulges toward the ring, and the stub below cups it.
+const CURVE = (RX * RX) / RY;
+const CURVE_Y = FRONT - CURVE;
+const AXIS_L = AXIS - STROKE / 2;
+const AXIS_R = AXIS + STROKE / 2;
+const ABOVE = CURVE - CUT;
+const BELOW = CURVE + CUT;
+const onArc = (r, x) => CURVE_Y + Math.sqrt(r * r - (x - AXIS) ** 2);
+
 function turn(flip, swap) {
   const xy = ([x, y]) => {
     const fx = flip ? 20 - x : x;
     return swap ? [n(y), n(fx)] : [n(fx), n(y)];
   };
   const at = (p) => xy(p).join(' ');
-  const dir = ([x, y]) => {
-    const fx = flip ? -x : x;
-    return swap ? [y, fx] : [fx, y];
-  };
   // Clockwise on screen as drawn, and each reflection reverses it.
-  const sweep = flip === swap ? 1 : 0;
+  const cw = flip === swap ? 1 : 0;
+  const ccw = 1 - cw;
   const [rx, ry] = swap ? [RY, RX] : [RX, RY];
-  const arc = (from, to) => `M${at(ring(from))}A${rx} ${ry} 0 ${from - to > 180 ? 1 : 0} ${sweep} ${at(ring(to))}`;
+  const arc = (from, to) => `M${at(ring(from))}A${rx} ${ry} 0 ${from - to > 180 ? 1 : 0} ${cw} ${at(ring(to))}`;
   // Everything in `body` left of `x1` and right of `x0`, cut dead straight: a nested viewport clips to
   // its own box. A butt cap would end the ring square to itself, which is 7 degrees off the axis here.
   const between = (x0, x1, body) => {
@@ -51,10 +59,15 @@ function turn(flip, swap) {
     const [x, y, w, h] = [Math.min(ax, bx), Math.min(ay, by), n(Math.abs(bx - ax)), n(Math.abs(by - ay))];
     return `<svg x="${x}" y="${y}" width="${w}" height="${h}" viewBox="${x} ${y} ${w} ${h}">${body}</svg>`;
   };
+  const cap = STROKE / 2;
+  // The axis is filled rather than stroked, so its cut ends can take the ring's shape; its far ends stay round.
+  const axis =
+    `M${at([AXIS_L, onArc(ABOVE, AXIS_L)])}L${at([AXIS_L, 2.8])}A${cap} ${cap} 0 0 ${cw} ${at([AXIS_R, 2.8])}` +
+    `L${at([AXIS_R, onArc(ABOVE, AXIS_R)])}A${n(ABOVE)} ${n(ABOVE)} 0 0 ${cw} ${at([AXIS_L, onArc(ABOVE, AXIS_L)])}Z` +
+    `M${at([AXIS_L, onArc(BELOW, AXIS_L)])}A${n(BELOW)} ${n(BELOW)} 0 0 ${ccw} ${at([AXIS_R, onArc(BELOW, AXIS_R)])}` +
+    `L${at([AXIS_R, 17.2])}A${cap} ${cap} 0 0 ${cw} ${at([AXIS_L, 17.2])}Z`;
   return (
-    // The ring's front is level where it crosses, so a butt end on the axis is the exact cut.
-    `<path d="M${at([AXIS, 2.8])}L${at([AXIS, FRONT - CUT])}M${at([AXIS, FRONT + CUT])}L${at([AXIS, 17.2])}" stroke-linecap="butt"/>` +
-    `<path d="M${at([AXIS, 2.8])}h0M${at([AXIS, 17.2])}h0"/>` +
+    `<path d="${axis}" fill="currentColor" stroke="none"/>` +
     // Each back arc is drawn on past the cut, and the viewport takes off what is behind the axis.
     between(0, AXIS - CUT, `<path d="${arc(TAIL, 90)}"/>`) +
     between(AXIS + CUT, 20, `<path d="${arc(90, 0)}"/>`) +

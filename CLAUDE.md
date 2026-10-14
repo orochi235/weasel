@@ -178,9 +178,12 @@ this head, and `turn` in `camera.mjs` uses it.
 
 **Where one stroke passes behind another, cut it along the front stroke's outline grown by a fixed
 gap.** The cut end is parallel to the stroke in front, not square to the stroke being cut: a butt
-cap is only that where the two cross at a right angle, and anywhere else it leaves a trapezoid.
-Draw the back stroke on past the cut inside a nested `<svg>` whose viewport ends at the cut line,
-as `turn` in `camera.mjs` does — a nested viewport clips to its box and needs no id. Round caps
+cap is only that where the two cross at a right angle *and* the stroke in front is straight there.
+Behind a straight stroke, draw the back stroke on past the cut inside a nested `<svg>` whose
+viewport ends at the cut line — it clips to its box and needs no id. Behind a curved one, fill the
+back stroke and end it on an arc about the front stroke's center of curvature, as `turn` in
+`camera.mjs` does for its axis. Even a 0.03-unit difference is a visible wrong shape when zoomed,
+so never call a cut close enough by its size. Round caps
 stopped short of the crossing are worse again: the gap pinches, and the strokes read as unrelated.
 
 **The small check is a separate check, and it is the pixel grid.** Proofing
