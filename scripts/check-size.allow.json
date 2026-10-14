@@ -88,9 +88,6 @@
   "packages/core/src/features/text/useSceneTextEdit.ts": {
     "longestFunction": 157
   },
-  "packages/core/src/interactions/actions/defaults/viewportZoom.ts": {
-    "longestFunction": 127
-  },
   "packages/core/src/interactions/actions/depSchema.ts": {
     "lines": 580
   },

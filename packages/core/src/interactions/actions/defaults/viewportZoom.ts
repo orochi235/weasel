@@ -1,4 +1,4 @@
-import type { Action } from '@weasel-js/routing';
+import type { Action, BoundGesture } from '@weasel-js/routing';
 import type { ViewApi } from '../depSchema';
 import { axisZoomFactor, zoomAt, type ZoomAxis } from 'core/viewport/zoomAt';
 import { wheelZoomFactor } from 'core/viewport/wheelHandler';
@@ -55,6 +55,51 @@ export interface ViewportZoomOptions {
   animate?: boolean | ViewportZoomAnimateOptions;
 }
 
+/** The gestures `viewport.zoom` answers: the configurable wheel trigger, then
+ *  the fixed pinch and key bindings. */
+function zoomBindings(wheel: ViewportZoomOptions['wheel']): BoundGesture[] {
+  // 'plain': bare wheel (omitting `mods` forbids any modifier — see the
+  // matcher's strict modifier check). 'mod': Cmd/Ctrl+wheel.
+  const wheelSpec =
+    wheel === 'plain'
+      ? { kind: 'wheel' as const }
+      : { kind: 'wheel' as const, mods: { mod: true } };
+  return [
+    {
+      spec: wheelSpec,
+      opts: { params: { kind: 'wheel' } },
+    },
+    // Trackpad pinch, which the browser delivers as ctrl+wheel. Distinct from
+    // the `mod` binding on mac (`mod` is metaKey there), so without its own
+    // binding nothing claims it and the page zooms instead. Elsewhere it
+    // duplicates `mod`, and `matchBest` picks a single winner.
+    {
+      spec: { kind: 'wheel' as const, mods: { ctrl: true } },
+      opts: { params: { kind: 'wheel' } },
+    },
+    // Safari's trackpad pinch, reported as a scale rather than a wheel. Safari
+    // may send the same pinch as ctrl+wheel too; the dispatcher swallows that
+    // copy while a claimed gesture is live.
+    {
+      spec: { kind: 'pinch' as const },
+      opts: { params: { kind: 'pinch' } },
+    },
+    // Cmd+= → zoom in (also accepts Cmd+Shift+= which is Cmd++ on many keyboards)
+    {
+      spec: { kind: 'key', key: '=', mods: { mod: true, shift: 'optional' } },
+      opts: { params: { kind: 'in' } },
+    },
+    {
+      spec: { kind: 'key', key: '-', mods: { mod: true } },
+      opts: { params: { kind: 'out' } },
+    },
+    {
+      spec: { kind: 'key', key: '0', mods: { mod: true } },
+      opts: { params: { kind: 'reset' } },
+    },
+  ];
+}
+
 /**
  * @experimental
  * Build a `viewport.zoom` Action descriptor with a configurable wheel trigger
@@ -67,12 +112,6 @@ export function makeViewportZoomAction(
 ): Action & { requires: string[] } {
   const clamp = { min: opts.min ?? DEFAULT_MIN_ZOOM, max: opts.max ?? DEFAULT_MAX_ZOOM };
   const axis = opts.axis ?? 'both';
-  // 'plain': bare wheel (omitting `mods` forbids any modifier — see the
-  // matcher's strict modifier check). 'mod': Cmd/Ctrl+wheel.
-  const wheelSpec =
-    opts.wheel === 'plain'
-      ? { kind: 'wheel' as const }
-      : { kind: 'wheel' as const, mods: { mod: true } };
 
   const rawAnimate: ViewportZoomAnimateOptions | null =
     opts.animate === true ? {} : (opts.animate || null);
@@ -83,40 +122,7 @@ export function makeViewportZoomAction(
     id: 'viewport.zoom',
     label: 'Zoom',
     group: 'viewport',
-    defaultBinding: [
-      {
-        spec: wheelSpec,
-        opts: { params: { kind: 'wheel' } },
-      },
-      // Trackpad pinch, which the browser delivers as ctrl+wheel. Distinct from
-      // the `mod` binding on mac (`mod` is metaKey there), so without its own
-      // binding nothing claims it and the page zooms instead. Elsewhere it
-      // duplicates `mod`, and `matchBest` picks a single winner.
-      {
-        spec: { kind: 'wheel' as const, mods: { ctrl: true } },
-        opts: { params: { kind: 'wheel' } },
-      },
-      // Safari's trackpad pinch, reported as a scale rather than a wheel. Safari
-      // may send the same pinch as ctrl+wheel too; the dispatcher swallows that
-      // copy while a claimed gesture is live.
-      {
-        spec: { kind: 'pinch' as const },
-        opts: { params: { kind: 'pinch' } },
-      },
-      // Cmd+= → zoom in (also accepts Cmd+Shift+= which is Cmd++ on many keyboards)
-      {
-        spec: { kind: 'key', key: '=', mods: { mod: true, shift: 'optional' } },
-        opts: { params: { kind: 'in' } },
-      },
-      {
-        spec: { kind: 'key', key: '-', mods: { mod: true } },
-        opts: { params: { kind: 'out' } },
-      },
-      {
-        spec: { kind: 'key', key: '0', mods: { mod: true } },
-        opts: { params: { kind: 'reset' } },
-      },
-    ],
+    defaultBinding: zoomBindings(opts.wheel),
     requires: ['view', 'debug'],
     invoker: {
       timing: 'immediate',
