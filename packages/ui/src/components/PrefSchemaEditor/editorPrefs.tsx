@@ -30,6 +30,8 @@ export const PREF_SCHEMA_EDITOR_PREFS = {
         previewWidth: { kind: 'number', name: 'previewWidth', description: '', default: 800, hidden: true },
         unplacedHeight: { kind: 'number', name: 'unplacedHeight', description: '', default: 180, hidden: true },
         shelfHeight: { kind: 'number', name: 'shelfHeight', description: '', default: 180, hidden: true },
+        shelfSettingsWidth: { kind: 'number', name: 'shelfSettingsWidth', description: '', default: 240, hidden: true },
+        shelfActionsWidth: { kind: 'number', name: 'shelfActionsWidth', description: '', default: 240, hidden: true },
       },
     },
   },

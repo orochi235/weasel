@@ -28,6 +28,17 @@ export function Shelf({ slot, children }: { slot(el: HTMLDivElement | null): voi
 
 type ListDrag = Pick<Parameters<typeof ActionList>[0], 'sought' | 'ghost' | 'onDrag' | 'onDrop'>;
 
+/** One of the shelf's lists at the width the reader drags it to, and the handle that drags it. */
+function ShelfList({ title, size, children }: { title: string; size: 'shelfSettingsWidth' | 'shelfActionsWidth'; children: ReactNode }) {
+  const width = useEditorSize(size);
+  return (
+    <>
+      <ListPane title={title} className={s.shelfPane} style={{ '--shelf-pane-w': `${width.value}px` } as CSSProperties}>{children}</ListPane>
+      <ResizeHandle {...width} min={120} max={800} ariaLabel={`Resize ${title.toLowerCase()}`} />
+    </>
+  );
+}
+
 /** The lists rows are dragged from into the structure tree, drawn into the shelf's `slot` once it is up. */
 export function ShelfLists({ slot, over, layout, actions, ...drag }: ListDrag & {
   slot: HTMLElement | null;
@@ -39,8 +50,8 @@ export function ShelfLists({ slot, over, layout, actions, ...drag }: ListDrag & 
   if (!slot) return null;
   return createPortal(
     <>
-      {over !== undefined && <ListPane title="Settings" className={s.shelfPane}><SettingsTree over={over} layout={layout} {...drag} /></ListPane>}
-      {actions !== undefined && actions.length > 0 && <ListPane title="Actions" className={s.shelfPane}><ActionList actions={actions} {...drag} /></ListPane>}
+      {over !== undefined && <ShelfList title="Settings" size="shelfSettingsWidth"><SettingsTree over={over} layout={layout} {...drag} /></ShelfList>}
+      {actions !== undefined && actions.length > 0 && <ShelfList title="Actions" size="shelfActionsWidth"><ActionList actions={actions} {...drag} /></ShelfList>}
     </>,
     slot,
   );
