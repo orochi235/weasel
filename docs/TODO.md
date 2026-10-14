@@ -1045,17 +1045,13 @@ only story runner in the repo.
 
 ## Lint
 
-- **(P3) eslint-plugin-react-hooks v7 compiler rules still off.**
-  Every compiler rule with no reports is on, as are `set-state-in-effect` and
-  `preserve-manual-memoization`. Two are off, with the rationale in `eslint.config.js`, counted on
-  2026-10-12:
-  - `refs` — 408 reports in 83 files; reading a ref during render is how a
-    canvas library reaches frame state, and there is no writes-only mode
-    (`weasel/no-render-ref-write` covers writes).
-  - `immutability` — 51 reports in 37 files, 26 of them in tests that assign to
-    a prop or an outer variable from inside a probe component. The rest are
-    `useVisibleRaf` loops re-requesting themselves, and writes to forwarded
-    refs, DOM nodes, and mutable engine objects.
+- **(P3) eslint-plugin-react-hooks v7's `immutability` rule is off.** It is the
+  last compiler rule that could come on: 51 reports in 37 files on 2026-10-12.
+  26 are tests assigning to a prop or an outer variable from inside a probe
+  component, which the test override in `eslint.config.js` that already turns
+  `react-hooks/globals` off would cover. The rest are `useVisibleRaf` loops
+  re-requesting themselves, and writes to forwarded refs, DOM nodes, and
+  mutable engine objects: each to be restructured or shown to be the point.
 
 ---
 
