@@ -19,8 +19,8 @@ export function entryApplier(judge: (entry: PrefEntry) => PrefConditionJudge, ke
   return (item, path, value) => applyPrefEntryConditions(item, path, judge({ item, value }), { keepHidden });
 }
 
-/** What a leaf's control is told about the conditions over it. */
-interface Conditions {
+/** What a leaf's control is told about the conditions over it: the part of a renderer's context the questions about a list's or a map's entries read. */
+export interface EntryConditions {
   disabled?: boolean;
   disabledAt?: (path: string) => boolean;
   hidden?: boolean;
@@ -34,8 +34,8 @@ interface Conditions {
  * step, so a question about this entry is asked there; one that reads the entry is answered for it here.
  */
 export function entryConditions(
-  ctx: Conditions & { path: string }, entryPath: string, item: PrefLeaf, value: unknown,
-): Conditions & { item: PrefLeaf } {
+  ctx: EntryConditions & { path: string }, entryPath: string, item: PrefLeaf, value: unknown,
+): EntryConditions & { item: PrefLeaf } {
   const { disabledAt, hiddenAt, entryAt } = ctx;
   const every = `${ctx.path}.${PREF_ENTRY}`;
   const asked = (at: string): string => (at === entryPath || at.startsWith(`${entryPath}.`) ? every + at.slice(entryPath.length) : at);
@@ -51,13 +51,13 @@ export function entryConditions(
 }
 
 /** Whether every entry of the list or map at `ctx.path` is disabled: the leaf is, or its item. */
-export function entriesDisabled(ctx: Conditions & { path: string }): boolean {
+export function entriesDisabled(ctx: EntryConditions & { path: string }): boolean {
   return ctx.disabled === true || ctx.disabledAt?.(`${ctx.path}.${PREF_ENTRY}`) === true;
 }
 
 /** Whether the entry at `index` of the list at `ctx.path` is disabled: the list is, or the item's conditions over that entry. */
 export function entryDisabledAt(
-  ctx: Conditions & { path: string }, item: PrefLeaf, entries: readonly unknown[],
+  ctx: EntryConditions & { path: string }, item: PrefLeaf, entries: readonly unknown[],
 ): (index: number) => boolean {
   return (index) => entryConditions(ctx, `${ctx.path}.${index}`, item, entries[index]).disabled === true;
 }
