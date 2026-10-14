@@ -97,6 +97,8 @@ export type {
   EdgeStyle,
   NodeStyle,
 } from './fromData';
+export { diagramMarkOf, markShape, registerMarkShape } from './marks';
+export type { DataMark, DiagramMark } from './marks';
 export { force, forceRelaxation } from './force';
 export type { ForceBody, ForceOptions, ForceRelaxation } from './force';
 export { EASED_LAYOUTS, easedProducer, forceProducer, useLiveLayout } from './live';

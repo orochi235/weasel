@@ -18,6 +18,7 @@ import type { DiagramAnchor } from './group';
 import type { DiagramLabel } from './label';
 import { layered } from './layered';
 import type { LayoutFn, LayoutOptions } from './layout';
+import { markSpecs, type DataMark, type DiagramMark } from './marks';
 import type { Outline } from './outline';
 import { tree } from './tree';
 import type { DiagramNode, PortSpec } from './types';
@@ -48,6 +49,9 @@ export interface DataNode {
   gap?: number;
   /** Default `DiagramSceneOptions.verticalAlign`. */
   verticalAlign?: BodySpec['verticalAlign'];
+  /** Drawn over the box besides its rows: shapes in a unit square stretched
+   *  over it, and text pinned to a point on it. */
+  marks?: readonly DataMark[];
 }
 
 /** One edge of a {@link DiagramData}, between two nodes or groups by id. */
@@ -122,8 +126,8 @@ export type DiagramTextStyle = { fontFamily: string; fontSize: number; fontWeigh
 
 /** The `data` of a scene node `diagramScene` makes: its diagram role, and what it paints. */
 export interface DiagramSceneData {
-  diagram?: DiagramNode | DiagramEdge | { label: DiagramLabel } | { anchor: DiagramAnchor };
-  fill?: { paint: { color: string } };
+  diagram?: DiagramNode | DiagramEdge | { label: DiagramLabel } | { anchor: DiagramAnchor } | { mark: DiagramMark };
+  fill?: { paint: { color: string; opacity?: number } };
   stroke?: Stroke;
   text?: string;
   style?: DiagramTextStyle;
@@ -318,6 +322,7 @@ export function diagramScene(data: DiagramData, opts: DiagramSceneOptions = {}):
     for (const [k, s] of built.specs.entries()) {
       specs.push({ ...s, ...(k === 0 ? {} : { id: `${n.id}/${k}` }) } as DiagramSpec);
     }
+    if (n.marks) specs.push(...markSpecs(n.id, n.marks, at, { style, textStyle: styleOf, measure }));
   }
   specs.push(...edgeSpecs(edges, { idOf: edgeIdOf, font, measure, fallback: EDGE, labelPlacement: LABEL_PLACEMENT, opts }));
   return specs;

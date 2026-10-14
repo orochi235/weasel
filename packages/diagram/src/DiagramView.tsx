@@ -22,6 +22,7 @@ import type { LayoutFn } from './layout';
 import { useLiveLayout, type LiveLayout, type UseLiveLayoutOptions } from './live';
 import { useMirroredSelection } from './mirrorSelection';
 import { portLayer, sceneParticipants } from './portLayer';
+import { registerMarkShape } from './marks';
 import { registerDiagramShape } from './shape';
 
 /** Where a moved node now stands. */
@@ -46,7 +47,7 @@ export interface DiagramViewProps {
    *  moved. Store each as the data node's `at` with `pinned: true`, or the
    *  next `diagramScene` lays it out again. */
   onMove?: (moves: readonly NodeMove[]) => void;
-  /** Set to make ports grabbable. Dragging one port onto another reports the
+  /** Ports are grabbable when this is set, unless `ports` says otherwise. Dragging one port onto another reports the
    *  edge it describes and draws nothing; add it to the data to keep it. */
   onConnect?: (edge: DataEdge) => void;
   /** Whether ports are drawn. `'connect'` draws them and lets one be dragged
@@ -120,7 +121,10 @@ function Inner({
   specs, width, height, selected, onSelect, onMove, onConnect, enableKeybindings, canConnect, portOptions, ports: portMode, live: liveOpts,
   minScale, maxScale, anchor, fitPadding, background, view, onViewChange, className, apiRef,
 }: DiagramViewProps & { apiRef: Ref<DiagramViewApi> }) {
-  useEffect(() => registerDiagramShape<RectPose>(), []);
+  useEffect(() => {
+    const disposers = [registerDiagramShape<RectPose>(), registerMarkShape<RectPose>()];
+    return () => disposers.forEach((dispose) => dispose());
+  }, []);
   const registry = useMemo(() => withDiagramRegistry<RectPose>(), []);
   const scene = useScene<DiagramSceneData, 'main', RectPose>({
     systemLayers: [{ id: 'main' }],
