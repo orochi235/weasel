@@ -30,9 +30,15 @@ describe('copySelection and a derived node', () => {
     expect(scene.get(edge)!.dependsOn).toEqual([a, b]);
   });
 
-  it('leaves the list alone when a dependency was not copied', () => {
+  it('points at the copy of each dependency copied with it, and at the original of the rest', () => {
     const { scene, a, b, edge } = makeScene();
     const copies = copy(scene, [edge, a]);
+    expect(copies.get('edge')!.dependsOn).toEqual([copies.get('a')!.id, b]);
+  });
+
+  it('keeps following the originals when none of them was copied', () => {
+    const { scene, a, b, edge } = makeScene();
+    const copies = copy(scene, [edge]);
     expect(copies.get('edge')!.dependsOn).toEqual([a, b]);
   });
 });

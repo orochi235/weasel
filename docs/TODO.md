@@ -349,14 +349,6 @@ Priority tags:
   (`apps/draw/src/modality/machine.ts`), so the change moves where every direct call made during
   a mode lands.
 
-- **(P3) Duplicate and Alt-drag clone: a copy that derives from nodes outside the copy still follows
-  the originals.** `copySelection` (`interactions/actions/defaults/copySubtree.ts`) re-points a
-  copied node's `dependsOn` id list at the copies only when every node in it was copied too. With
-  one or more left out, the copy keeps the original list, so duplicating an edge alone gives a
-  second edge drawn exactly over the first. A paste drops such a node instead (ruled 2026-10-11);
-  the call for a copy made inside the same scene, where the originals are still there to follow, is
-  whether it does the same, keeps the list, or re-points the ids it can.
-
 ### Derived geometry follow-ups
 
 - **(P3) The preview channel still carries pose twice.** `move` / `resize` / `rotate` publish each
