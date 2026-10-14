@@ -71,7 +71,14 @@ const BACK_TOP = startOf(3) + ARCS[3].length / 2;
 // The axis's cut ends: the ring's inner edge slid back along the axis by `GAP`, and its outer edge slid on.
 const AXIS_L = AXIS - HALF;
 const AXIS_R = AXIS + HALF;
-const ABOVE = { c: [AXIS, FRONT_C[1] - GAP], r: SIDE_R - HALF };
+// The upper end is bent 2.5 times as far as the ring's edge beneath it, its middle kept `GAP` clear. Bent
+// exactly as far, it measures parallel and reads flatter: the eye takes the ring's curvature from the long
+// run of its edge past the axis's corners, which the short end has no share of.
+const OPTICAL = 2.5;
+const UPPER_MID = FRONT - HALF - GAP;
+const UPPER_SAG = OPTICAL * (SIDE_R - HALF - Math.sqrt((SIDE_R - HALF) ** 2 - HALF * HALF));
+const UPPER_R = (HALF * HALF + UPPER_SAG * UPPER_SAG) / (2 * UPPER_SAG);
+const ABOVE = { c: [AXIS, UPPER_MID - UPPER_R], r: UPPER_R };
 const BELOW = { c: [AXIS, FRONT_C[1] + GAP], r: SIDE_R + HALF };
 const yOn = ({ c, r }, x) => c[1] + Math.sqrt(r * r - (x - c[0]) ** 2);
 
