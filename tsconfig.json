@@ -131,6 +131,7 @@
       "@weasel-js/theme": ["./packages/theme/src/index.ts"],
       "@weasel-js/theme/react": ["./packages/theme/src/react.tsx"],
       "@weasel-js/theme/engine": ["./packages/theme/src/engine.ts"],
+      "@weasel-js/theme/prefs": ["./packages/theme/src/prefs.ts"],
       "@weasel-js/theme/themes/win9x": ["./packages/theme/src/themes/win9x.ts"],
       "@weasel-js/theme/themes/platinum": ["./packages/theme/src/themes/platinum.ts"],
       "@weasel-js/theme/tokens.css": ["./packages/theme/src/generated/tokens.css"],

@@ -459,11 +459,12 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   with no script. It must not become a third way a theme token reaches CSS: the build-time
   emitter behind `tokens.css` and `applyTheme` are the two there are.
 
-- **(P2) A theme's tokens as a prefs schema.** `TOKEN_MANIFEST` lists every token with its type, so
-  a schema can be generated from it, each leaf `splitBy` the theme's `mode` and `density` as enum
-  leaves. The stored values become `pins` on a `ThemeDefinition`, a locus becoming theme's
-  `{ by, … }` form, and `resolveTheme` and `applyTheme` do the rest. A blend between two modes is
-  made of the colors the engine resolves each to, never of the rules.
+- **(P3) Nobody has seen a theme's prefs schema in a form.** `themePrefsSchema`
+  (`@weasel-js/theme/prefs`) is tested as data and through a store, and no page draws it in
+  `PrefsForm` yet: a page in the rail per token group, and most color rows split by mode.
+  `apps/theme-editor` edits definitions through its own panels and is the place it would go.
+  Nothing drives `applyTheme`'s `weights` from an animator either, which is the same gap as the
+  selector weights under "What the split rows in `PrefsForm` left".
 
 - **(P3) What the split rows in `PrefsForm` left.** The marks a split leaf draws in a group's
   heading and in a bar cell are tested in jsdom and were never seen. `list`, `map`, `union`,

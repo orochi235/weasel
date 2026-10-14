@@ -1,4 +1,5 @@
 import { fullSelection, type Selection } from './axes';
+import { blendTheme, type AxisWeights } from './blendTheme';
 import { resolveTheme, themeAxes } from './resolveTheme';
 import type { Theme } from './theme';
 import { holdRule, styleRootOf } from './themeSheet';
@@ -23,16 +24,20 @@ const holds = new WeakMap<HTMLElement, () => void>();
  * rule, which leaves the sheet once no element holds it; a release whose
  * element has since been given something else does nothing.
  *
+ * With `weights`, the rule holds the theme blended along the axes they name
+ * (see `blendTheme`), under the same attributes: applying again with the next
+ * weights is one step of a transition between two selections.
+ *
  * Two different themes may share a name. The second held at once has its rule
  * kept to its own elements by a `data-wzl-variant` attribute, matched inside
  * `:where()` so the rule's specificity is the first's.
  */
-export function applyTheme(el: HTMLElement, theme: Theme, selection: Selection = {}): () => void {
+export function applyTheme(el: HTMLElement, theme: Theme, selection: Selection = {}, options: { weights?: AxisWeights } = {}): () => void {
   if (typeof document === 'undefined') return () => {};
 
   const axes = themeAxes(theme);
   const sel = fullSelection(axes, selection);
-  const body = Object.entries(resolveTheme(theme, sel))
+  const body = Object.entries(options.weights ? blendTheme(theme, options.weights, sel) : resolveTheme(theme, sel))
     .map(([name, value]) => `${name}: ${value};`)
     .join(' ');
   const names = Object.keys(axes);

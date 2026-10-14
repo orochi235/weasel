@@ -11,6 +11,7 @@ export default defineConfig(
       index: 'src/index.ts',
       react: 'src/react.tsx',
       engine: 'src/engine.ts',
+      prefs: 'src/prefs.ts',
       'themes/win9x': 'src/themes/win9x.ts',
       'themes/platinum': 'src/themes/platinum.ts',
     },

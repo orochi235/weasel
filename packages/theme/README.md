@@ -76,6 +76,53 @@ beside it. The resolved record carries that CSS as is, because a canvas has no
 `currentColor`; flatten it with `resolveCurrentColor(value, resolved['--wzl-fg'])`,
 passing the color of the text it is drawn beside.
 
+## Between two modes
+
+`blendTheme(theme, weights, selection?)` is the theme partway between values
+of its axes, as `resolveTheme` returns one:
+
+```ts
+blendTheme(acme, { mode: { dark: 0.25, light: 0.75 } });
+```
+
+It resolves the theme at each weighted selection and mixes what each token
+resolved to: a color in OKLCH, a number with one unit linearly, and anything
+else the heaviest selection's. `applyTheme(el, theme, selection, { weights })`
+holds that blend where it would hold the selection, so calling it with the
+next weights is one frame of a crossfade.
+
+## As a prefs schema
+
+`@weasel-js/theme/prefs` turns a theme into a `@weasel-js/prefs` schema, and a
+store over that schema back into a theme:
+
+```ts
+import { openPrefsSync } from '@weasel-js/prefs';
+import { applyTheme, weaselTheme } from '@weasel-js/theme';
+import { themeFromPrefs, themePrefsSchema, themePrefsSelection } from '@weasel-js/theme/prefs';
+
+const store = openPrefsSync(themePrefsSchema(weaselTheme), { storage, prefix: 'theme.' });
+store.set('accent.accent-base', '#ff3366');
+store.set('surface.surface', '#fffdf8', { at: { 'axis.mode': 'light' } });
+
+applyTheme(document.documentElement, themeFromPrefs(store, weaselTheme), themePrefsSelection(store));
+```
+
+The schema holds an `enum` per axis under `axis` (`axis.mode`,
+`axis.density`) and a page per token group, each token at `<group>.<token>`
+with no `--wzl-`: a `color`, a `number` in the token's unit, or a `string` of
+CSS text for a value neither holds, such as a font stack or a `var()`. Override
+hooks are leaves too. Every leaf may be split by every axis, and its default
+is what the theme resolves to, already split along the axes the token differs
+by, so a store nothing was written to reads the theme as it is.
+
+`themePrefsPins(store)` is the `pins` those values amount to. Only a leaf with
+a value of its own is a pin, so a token left alone keeps its rule: pin
+`accent-base` and `--wzl-accent` still follows it. A store reads such an alias
+from the base theme, where it has not moved; `themePrefsValues(store, base)`
+gives the values and loci for a form with each unset leaf read from the pinned
+theme.
+
 ## Desktop themes
 
 Each is a pins-only theme over the built-in one, on its own entry so an app
