@@ -622,10 +622,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   ticks and ends, and `Transport`'s rate draw `qty().text`, and `PropertyField` still draws its
   suffix from its own `unit` prop. It draws no kind's MathML form.
 
-- **(P2) Redesign the stop color/opacity swatches under `GradientEditor`.** Each stop gets
-  a `ColorField` with an alpha slider in a row beneath the track (`GradientEditor.tsx`). The
-  owner wants that row redesigned; the shape it should take is still open.
-
 - **(P3) labkit's `LabSwitcher.less` menu is a fork of the weasel-ui popover skin.** It copies
   `MenuButton`'s menu and items, but with an opaque surface and a different shadow from
   `components/listbox.module.css`, which `MenuButton`, `Select`, `ComboBox`, `PaintField`, and
