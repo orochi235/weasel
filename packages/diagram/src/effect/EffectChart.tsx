@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useLatest, type Paint } from '@weasel-js/core';
 import { DiagramView, type DiagramViewProps } from '../DiagramView';
 import { diagramScene } from '../fromData';
@@ -9,6 +9,8 @@ import type { EffectPipeline } from './types';
 
 /** Props for `EffectChart`. */
 export interface EffectChartProps<TOptions = unknown> {
+  /** Compared by content, so it may be rebuilt on every render: the chart
+   *  lays out again only when what the pipeline says changes. */
   pipeline: EffectPipeline;
   /** How the pipeline is drawn. Default `nodeGraph`. */
   look?: EffectLook<TOptions>;
@@ -23,7 +25,8 @@ export interface EffectChartProps<TOptions = unknown> {
   /** A stage id, or null for none. */
   selected?: string | null;
   onSelect?: (stage: string | null) => void;
-  /** What `checkPipeline` found, each time the pipeline changes. */
+  /** What `checkPipeline` found. Called once on mount, and again each time
+   *  the pipeline's content changes. */
   onProblems?: (problems: readonly EffectProblem[]) => void;
   className?: string;
 }
@@ -41,12 +44,32 @@ function keyOf(built: object): number {
   return key;
 }
 
+function contentOf(value: unknown): string | null {
+  try {
+    return JSON.stringify(value) ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/** `value`, or the object an earlier render passed when this one serializes
+ *  to the same JSON. A value that cannot be serialized is compared by identity. */
+function useSameContent<T>(value: T): T {
+  const [kept, setKept] = useState(() => ({ value, content: contentOf(value) }));
+  if (kept.value === value) return value;
+  const content = contentOf(value);
+  if (content !== null && content === kept.content) return kept.value;
+  setKept({ value, content });
+  return value;
+}
+
 /** A chart of an effects pipeline: pan, zoom, and pick a stage. Text paints
  *  only in a registered font family, so call `registerCanvasFont('sans-serif')`
  *  once before mounting one. */
 export function EffectChart<TOptions = unknown>({
-  pipeline, look, options, width, height, background, selected, onSelect, onProblems, className,
+  pipeline: given, look, options, width, height, background, selected, onSelect, onProblems, className,
 }: EffectChartProps<TOptions>) {
+  const pipeline = useSameContent(given);
   const problems = useMemo(() => checkPipeline(pipeline), [pipeline]);
   const onProblemsRef = useLatest(onProblems);
   useEffect(() => {

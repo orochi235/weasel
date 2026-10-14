@@ -1,5 +1,6 @@
 import { cleanup } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
+import { useState } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 interface SeenProps {
@@ -8,19 +9,29 @@ interface SeenProps {
   portOptions?: { showsPort?: (port: { type?: string }) => boolean };
 }
 const seen: SeenProps[] = [];
-vi.mock('../DiagramView', () => ({
-  DiagramView: (props: SeenProps) => {
-    seen.push(props);
-    return null;
-  },
-}));
+const view = { mounts: 0 };
+vi.mock('../DiagramView', async () => {
+  const { useEffect } = await import('react');
+  return {
+    DiagramView: (props: SeenProps) => {
+      seen.push(props);
+      useEffect(() => {
+        view.mounts++;
+      }, []);
+      return null;
+    },
+  };
+});
 
+import type { EffectProblem } from './check';
 import { EffectChart } from './EffectChart';
+import { rack } from './rack';
 import type { EffectPipeline } from './types';
 
 afterEach(() => {
   cleanup();
   seen.length = 0;
+  view.mounts = 0;
 });
 
 describe('EffectChart picking', () => {
@@ -86,5 +97,57 @@ describe('EffectChart problems', () => {
     rerender(<EffectChart pipeline={bad} width={100} height={100} onProblems={onProblems} />);
     unmount();
     expect(cleanup).not.toHaveBeenCalled();
+  });
+});
+
+describe('EffectChart and a pipeline rebuilt each render', () => {
+  const make = (title = 'A'): EffectPipeline => ({
+    stages: [{ id: 'a', title, inputs: [{ id: 'in', type: 't' }] }],
+    wires: [{ from: { stage: 'ghost', port: 'out' }, to: { stage: 'a', port: 'in' } }],
+  });
+
+  it('keeps the view and stays quiet for a new pipeline object that says the same', () => {
+    const onProblems = vi.fn();
+    const { rerender } = render(<EffectChart pipeline={make()} width={100} height={100} selected={null} onProblems={onProblems} />);
+    rerender(<EffectChart pipeline={make()} width={100} height={100} selected="a" onProblems={onProblems} />);
+    expect(view.mounts).toBe(1);
+    expect(onProblems).toHaveBeenCalledTimes(1);
+  });
+
+  it('opens afresh, once, for a pipeline that says something else', () => {
+    const onProblems = vi.fn();
+    const { rerender } = render(<EffectChart pipeline={make()} width={100} height={100} onProblems={onProblems} />);
+    rerender(<EffectChart pipeline={make('B')} width={100} height={100} onProblems={onProblems} />);
+    expect(view.mounts).toBe(2);
+    expect(onProblems).toHaveBeenCalledTimes(2);
+  });
+
+  it('opens afresh for another look, and not for another selection', () => {
+    const pipeline = make();
+    const { rerender } = render(<EffectChart pipeline={pipeline} width={100} height={100} selected={null} />);
+    rerender(<EffectChart pipeline={pipeline} width={100} height={100} selected="a" />);
+    expect(view.mounts).toBe(1);
+    rerender(<EffectChart pipeline={pipeline} look={rack} width={100} height={100} selected="a" />);
+    expect(view.mounts).toBe(2);
+  });
+
+  it('settles under a parent that builds the pipeline inline and keeps the problems in state', () => {
+    let renders = 0;
+    function Parent() {
+      const [problems, setProblems] = useState<readonly EffectProblem[]>([]);
+      renders++;
+      return (
+        <EffectChart
+          pipeline={make()}
+          width={100}
+          height={100}
+          // Capped, so a loop ends the test instead of hanging it.
+          onProblems={(found) => { if (renders < 20) setProblems(found); }}
+          className={`n${problems.length}`}
+        />
+      );
+    }
+    render(<Parent />);
+    expect(renders).toBeLessThan(5);
   });
 });
