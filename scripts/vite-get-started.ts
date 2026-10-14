@@ -1,17 +1,12 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { marked, type Token, type TokensList } from 'marked';
 import type { PluginOption } from 'vite';
+import { blocksOf } from './lib/markdownBlocks.ts';
 
 /** The README sections the site's "Get started" page is made of, in order. */
 export const GET_STARTED_SECTIONS = ['Install', 'How it fits together'] as const;
 
 const README = 'packages/core/README.md';
-
-/** A run of prose as HTML, or one fenced code block left as text for the page to highlight. */
-export type GetStartedBlock =
-  | { readonly kind: 'html'; readonly html: string }
-  | { readonly kind: 'code'; readonly code: string; readonly language: string };
 
 /**
  * Virtual module exposing core's README sections named above, so the site's
@@ -68,29 +63,4 @@ export function sliceSections(markdown: string, headings: readonly string[]): st
       return lines.join('\n').trimEnd();
     })
     .join('\n\n');
-}
-
-/** Markdown as prose and code blocks, in document order. */
-export function blocksOf(markdown: string): GetStartedBlock[] {
-  const tokens = marked.lexer(markdown);
-  const blocks: GetStartedBlock[] = [];
-  let prose: Token[] = [];
-
-  const flush = () => {
-    // The parser reads link definitions off the list it is handed.
-    const html = marked.parser(Object.assign(prose, { links: tokens.links }) as TokensList).trim();
-    if (html) blocks.push({ kind: 'html', html });
-    prose = [];
-  };
-
-  for (const token of tokens) {
-    if (token.type !== 'code') {
-      prose.push(token);
-      continue;
-    }
-    flush();
-    blocks.push({ kind: 'code', code: token.text, language: token.lang ?? '' });
-  }
-  flush();
-  return blocks;
 }

@@ -29,6 +29,8 @@ export default {
   // Keep the order above; TypeDoc would otherwise alphabetize core into the middle.
   sortEntryPoints: false,
   out: 'dist-demo/api',
+  // Read by `scripts/build-reference.ts`, which splits it per package for the site's package pages.
+  json: 'dist-demo/reference/typedoc.json',
   name: 'weasel API',
   readme: 'README.md',
   plugin: ['./typedoc/plugin.mjs'],
