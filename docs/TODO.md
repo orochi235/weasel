@@ -696,13 +696,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   keyboard-operable gutters with it. It ships no band strategy of its own, and mapping domain
   values onto seams is still the consumer's.
 
-- **(P3) Shading drawn in black or white at an alpha.** Shading that belongs to one control's
-  artwork is still a literal: `Badge`'s bevel fills and text shadow, the default colors of its
-  `Metal` and `Sunbeams` effects, the `Slider` thumb's shadows, the segmented track's well, and
-  the glass ramp's gloss, rim, and drop shadows in `Button` and the selected segment, which
-  `--btn-*` tunes and `--wzl-gloss` fades. Whether any of it wants a theme token, and under what
-  name, is not decided.
-
 - **(P3) `<ToggleBar>` polish.** Visual still needs polish — literally, polish this, by eye in a
   browser. Measured in Chromium 2026-10-13, three text segments, each variant at `md` and `sm`:
   every segment sits inside its track at one height, none clips its label, and a focused segment
