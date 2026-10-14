@@ -61,7 +61,7 @@ export interface DiagramViewProps {
    *  preview draws with. */
   portOptions?: Pick<
     DiagramContributionOptions<RectPose>,
-    'fill' | 'stroke' | 'sizePx' | 'hitRadiusPx' | 'cursor' | 'shows' | 'snapRadius' | 'router'
+    'fill' | 'stroke' | 'shape' | 'sizePx' | 'hitRadiusPx' | 'cursor' | 'shows' | 'snapRadius' | 'router'
   >;
   /** How a layout run from {@link DiagramViewApi.layout} behaves: its forces,
    *  how many frames an eased layout takes, its easing. */
