@@ -339,10 +339,10 @@ void main() { outColor = texture(u_source, v_uv); }
   console.log(lines.join('\n'));
 
   expect(errors, `page errors:\n${errors.join('\n')}`).toEqual([]);
-  // The batch binds up to 8 textures a draw (`BATCH_TEXTURE_SLOTS`), so a
-  // composite of n layers is at least n / 8 draws; fewer means layers went missing.
+  // The batch binds up to 16 textures a draw (`BATCH_TEXTURE_SLOTS`), so a
+  // composite of n layers is at least n / 16 draws; fewer means layers went missing.
   for (const n of LAYERS) {
-    for (const m of CMDS) expect(draws(n, m, 'composite'), `${n}x${m} composite`).toBeGreaterThanOrEqual(Math.ceil(n / 8));
+    for (const m of CMDS) expect(draws(n, m, 'composite'), `${n}x${m} composite`).toBeGreaterThanOrEqual(Math.ceil(n / 16));
   }
 
   run.machine({ glRenderer, browser: `${browserName} ${browser.version()}` });
