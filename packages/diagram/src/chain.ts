@@ -19,17 +19,17 @@ import {
   type Slot,
 } from './layout';
 
-/** The nodes that stand on the line: the ids given, or the longest path. */
+/** The nodes that stand on the line: those of the ids given that are nodes,
+ *  or the longest path when none is. */
 function lineOf(graph: Graph, ids: readonly string[] | undefined): GraphNode[] {
-  if (ids !== undefined && ids.length > 0) {
-    const seen = new Set<string>();
-    return ids.flatMap((id) => {
-      const node = graph.node(id);
-      if (node === undefined || seen.has(id)) return [];
-      seen.add(id);
-      return [node];
-    });
-  }
+  const seen = new Set<string>();
+  const given = (ids ?? []).flatMap((id) => {
+    const node = graph.node(id);
+    if (node === undefined || seen.has(id)) return [];
+    seen.add(id);
+    return [node];
+  });
+  if (given.length > 0) return given;
   const back = backEdges(graph);
   const ranks = ranksOf(graph, back);
   let end: GraphNode | undefined;

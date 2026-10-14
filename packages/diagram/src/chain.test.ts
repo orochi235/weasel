@@ -46,6 +46,12 @@ describe('chain', () => {
     expect(new Set(['src', 'blur', 'mix', 'out'].map((id) => at(r, id).y)).size).toBe(1);
   });
 
+  it('takes the longest path when no id it is given is a node', () => {
+    const r = chain(graph, { direction: 'right', chain: ['ghost', 'phantom'] });
+    expect(new Set(['src', 'blur', 'mix', 'out'].map((id) => at(r, id).y)).size).toBe(1);
+    expect(at(r, 'osc').y).toBeGreaterThan(at(r, 'blur').y + 40);
+  });
+
   it('answers an empty graph with nothing', () => {
     expect(chain(graphOf([], [], {}), OPTS).size).toBe(0);
   });

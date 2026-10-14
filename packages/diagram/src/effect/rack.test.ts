@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { diagramScene } from '../fromData';
+import { PROBLEM_COLOR } from './draw';
+import { mainChain, skipDecisions } from './mainChain';
 import { rack } from './rack';
 import { ADJACENT, SKIP } from './skipFixture';
+import type { EffectPipeline, EffectStage } from './types';
 
 type Data = ReturnType<typeof rack>['data'];
 
@@ -45,6 +48,21 @@ describe('rack', () => {
     const [arc] = edge('src', 'mix');
     expect(arc).toMatchObject({ fromPort: '~skip-out', toPort: '~skip-in', label: 'high quality?: no' });
     expect(scene.edgeStyle!(arc!).dash).toEqual([5, 4]);
+  });
+
+  it('draws a collapsed skip in the warning color where a wire it replaces was flagged', () => {
+    const withQ = (q: Partial<EffectStage>) => ({ ...SKIP, stages: SKIP.stages.map((s) => (s.id === 'q' ? { ...s, ...q } : s)) });
+    const strokes = (p: EffectPipeline) => {
+      expect(skipDecisions(p, mainChain(p)).map((s) => s.decision.id)).toEqual(['q']);
+      const { data, scene } = rack(p);
+      return ['blur', 'mix'].map((to) => scene.edgeStyle!(data.edges.find((e) => e.from === 'src' && e.to === to)!).stroke);
+    };
+    const skipFlagged = withQ({ outputs: [{ id: 'yes', type: 'image' }, { id: 'no', type: 'mask' }] });
+    expect(strokes(skipFlagged).map((c) => c === PROBLEM_COLOR)).toEqual([false, true]);
+    const throughFlagged = withQ({ outputs: [{ id: 'yes', type: 'mask' }, { id: 'no', type: 'image' }] });
+    expect(strokes(throughFlagged).map((c) => c === PROBLEM_COLOR)).toEqual([true, false]);
+    const intoFlagged = withQ({ inputs: [{ id: 'in', type: 'mask' }] });
+    expect(strokes(intoFlagged).map((c) => c === PROBLEM_COLOR)).toEqual([true, true]);
   });
 
   it('keeps the decision as its symbol when told not to collapse', () => {
