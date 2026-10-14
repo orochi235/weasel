@@ -5,7 +5,7 @@ export {
   type ControlMatrixRow,
 } from './ControlMatrix';
 export { type ControlPack, ControlPanel, type ControlPanelProps } from './ControlPanel';
-export { type InDialogOptions, inDialog, summarizeValue } from './inDialog';
+export { type InDialogOptions, inDialog, summarizeLeaf, summarizeValue } from './inDialog';
 export type {
   CheckboxField,
   ColorField,

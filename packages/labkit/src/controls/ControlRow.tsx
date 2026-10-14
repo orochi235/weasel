@@ -35,7 +35,7 @@ import { aliasTargetsOf, conditionedLeaf } from '../config/visible';
 import type { ControlPack } from './controlPack';
 import { useFieldChoices } from './fieldChoices';
 import { extra, labField } from './fields';
-import { inDialog, summarizeValue } from './inDialog';
+import { inDialog, summarizeLeaf, summarizeValue } from './inDialog';
 import { DebouncedTextRow, UnwiredRow } from './rows';
 
 export interface ControlRowProps<TC extends Record<string, unknown>> {
@@ -63,7 +63,7 @@ export interface ControlRowProps<TC extends Record<string, unknown>> {
 /** An auto value as tooltip text. A number with a unit reads as its field shows it. Any other computed
  *  number is cut to 6 significant digits, so `0.1 + 0.2` reads `0.3`. */
 function summarizeAuto(value: unknown, leaf: PrefLeaf): string {
-  if (typeof value !== 'number') return summarizeValue(value);
+  if (typeof value !== 'number') return summarizeLeaf(leaf, value);
   const unit = leaf.kind === 'number' ? (leaf as PrefNumber).unit : undefined;
   return unit === undefined
     ? summarizeValue(Number(value.toPrecision(6)))
@@ -286,7 +286,7 @@ function LeafRow<TC extends Record<string, unknown>>({
     return (
       <DialogRow
         label={label}
-        summary={summarizeValue(value)}
+        summary={summarizeLeaf(leaf, value)}
         readout={autoReadout}
         layout={layout}
         description={description}

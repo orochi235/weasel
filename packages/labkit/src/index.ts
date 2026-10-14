@@ -262,7 +262,7 @@ export {
   type ControlMatrixRow,
 } from './controls/ControlMatrix';
 export { type ControlPack, ControlPanel, type ControlPanelProps } from './controls/ControlPanel';
-export { type InDialogOptions, inDialog, summarizeValue } from './controls/inDialog';
+export { type InDialogOptions, inDialog, summarizeLeaf, summarizeValue } from './controls/inDialog';
 export type {
   CheckboxField,
   ColorField,

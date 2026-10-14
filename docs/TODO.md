@@ -744,12 +744,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   section in view should unfold is open; it would move the rail under a reader who is scrolling.
   (2) A section's rail entry and a nested page's look the same until one is chosen.
 
-- **(P3) Loose ends beside a number's unit as data.** The text tool's
-  percent unit (`useTextTool.ts`) is still code, for the rounding it does on the way back to the
-  stored value, so the run properties do not export as a literal. A unit's `format` has one
-  reader, the auto value labkit's `ControlRow` quotes in a row's tooltip. A compound leaf's
-  one-line summary (`summarizeValue`) still writes the stored numbers of fields that have a unit.
-
 - **(P3) A fragment has no box for a preview drag to land on.** Its element is
   `display: contents`, so a drag in `PrefSchemaEditor`'s preview cannot land beside or into an
   `as: 'fragment'` group itself, only beside the rows inside it; the structure tree takes both.
