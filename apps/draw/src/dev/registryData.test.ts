@@ -146,14 +146,14 @@ describe('collectPropertiesTrait', () => {
     }
   });
 
-  it('flattens the rect kind\'s groups and object leaves into its exact 15 dotted leaf paths', () => {
+  it('flattens the rect kind\'s groups and object leaves into its exact 16 dotted leaf paths', () => {
     const entries = collectPropertiesTrait();
     const rect = entries.find((e) => e.id === 'rect');
     expect(rect).toBeDefined();
     // `data.stroke` is one object leaf, so what it exposes is its fields —
     // the leaf itself is the container, and the pane lists what is editable.
     expect(rect!.leafPaths).toEqual([
-      'pose.x', 'pose.y', 'pose.width', 'pose.height', 'pose.rotation',
+      'pose.x', 'pose.y', 'pose.width', 'pose.height', 'pose.rotation', 'pose.transform',
       'data.fill.paint',
       'data.stroke.width', 'data.stroke.paint', 'data.stroke.cap',
       'data.stroke.join', 'data.stroke.align', 'data.stroke.dash',
