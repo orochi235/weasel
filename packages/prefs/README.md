@@ -9,6 +9,22 @@ store.get('view.gridVisible');
 store.set('view.gridVisible', false);
 ```
 
+A schema is plain data, and `pref` writes it shorter:
+
+```ts
+const SCHEMA = pref.group('Prefs', {
+  view: pref.group('View', {
+    gridVisible: pref.boolean('Grid', true),
+    gridGap: pref.number('Grid gap', 8, { min: 2, max: 64, unit: { scale: 1, suffix: 'px' } }),
+    mode: pref.enum('Mode', 'dark', ['dark', 'light']),
+  }),
+});
+```
+
+Each builder returns what the literal would hold (`{ name, children }` for a
+group, `{ kind, name, description, default, … }` for a leaf), so paths and
+value types are read from it the same way, and the two can be mixed.
+
 One record per leaf. A leaf with no record follows its schema default. Reads
 repair stored values that no longer fit the schema without writing them back.
 `migrations[i]` takes stored records from version `i` to `i + 1`.
@@ -80,3 +96,29 @@ const { values, set, loci, split, join, setAt } = usePrefsValues(store);
 A selector must be a plain `enum`: not `clearable`, with no `encoding`, and
 not split itself. The store warns of a `splitBy` that names anything else when
 it opens.
+
+## As CSS custom properties
+
+`prefsCss(store)` writes the store's values as custom properties, and
+`prefsCssAttributes(store)` gives the attributes that pick its blocks:
+
+```css
+:where(:root) {
+  --look-mode: dark;
+  --gap: 4px;          /* a split value, at the member the selectors' defaults name */
+}
+
+:where(:root[data-look-mode='light']) {
+  --look-mode: light;
+  --gap: 6px;
+}
+```
+
+Every leaf is set on the root. A block follows for each choice of options a
+split value tells apart, and only those: a value that is one thing under
+`light` at every density gets one block for `light`. Every block is inside
+`:where()`, so a rule of the page's own wins, and blocks naming more selectors
+come later. A number is written in its display unit where the unit's suffix is
+a CSS unit, a boolean as `1` or `0`, an enum's option as an identifier, and a
+string quoted; a leaf of any other kind is left out unless the `value` option
+writes it. `root`, `property`, and `attribute` rename what it writes.

@@ -441,21 +441,22 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 ## Selection, actions & UI panels
 
-- **(P2) Write a prefs tree out as CSS custom properties.** A leaf's value can be split by another
-  setting (`packages/prefs/README.md`, "Split values"), and `store.values({ at })` reads the tree
-  under a stated choice of selectors, so an exporter has what it needs: one block per option a
-  value distinguishes, an unsplit leaf in a block every option shares, the property named for the
-  leaf's path, a number written through `@weasel-js/quantity` with its unit, and a color through
-  `colorSourceCss`. Every block sits in `:where()`, so a compound selector does not outrank a
-  simple one and a consumer's own rule wins. It must not become a third way a theme token reaches
-  CSS: the build-time emitter behind `tokens.css` and `applyTheme` are the two there are.
+- **(P3) Nothing puts `prefsCss` on a page.** `prefsCss(store)` writes the text and
+  `prefsCssAttributes(store)` the attributes (`packages/prefs/README.md`, "As CSS custom
+  properties"); a host adopts the one and sets the other by hand, and again on every change. The
+  kit adopts a rule in two places already, `holdRule` in `@weasel-js/theme` and core's own for a
+  canvas's size rule, which neither prefs nor a third copy should join: fold those into one
+  first, somewhere prefs can reach. Two more things it does not write: a color held as a
+  `ColorSource`, which the `value` option can hand to `colorSourceCss`, and a blend between two
+  options as `color-mix()` driven by a weight property, which would let a mode change crossfade
+  with no script. It must not become a third way a theme token reaches CSS: the build-time
+  emitter behind `tokens.css` and `applyTheme` are the two there are.
 
 - **(P2) A theme's tokens as a prefs schema.** `TOKEN_MANIFEST` lists every token with its type, so
   a schema can be generated from it, each leaf `splitBy` the theme's `mode` and `density` as enum
   leaves. The stored values become `pins` on a `ThemeDefinition`, a locus becoming theme's
   `{ by, … }` form, and `resolveTheme` and `applyTheme` do the rest. A blend between two modes is
-  made of the colors the engine resolves each to, never of the rules. Rests on the entry above
-  only for what is not a theme token.
+  made of the colors the engine resolves each to, never of the rules.
 
 - **(P3) What the split rows in `PrefsForm` left.** The marks a split leaf draws in a group's
   heading and in a bar cell are tested in jsdom and were never seen. `list`, `map`, `union`,

@@ -14,8 +14,8 @@ typechecked and run on the fleet afterward.
 
 Split values in prefs landed the same day (`packages/prefs/README.md`, "Split values"): a leaf's
 value held once per option of an enum leaf, folded by weight when read, and edited in `PrefsForm`.
-The two arcs after it are P2 entries in `docs/TODO.md`: a prefs tree written as CSS custom
-properties, and a theme's tokens as a prefs schema.
+`prefsCss` writes such a store as CSS custom properties, and `pref` builds a schema in short
+form. The arc after them is a P2 entry in `docs/TODO.md`: a theme's tokens as a prefs schema.
 
 ## Next
 
