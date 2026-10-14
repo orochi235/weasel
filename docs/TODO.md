@@ -798,16 +798,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   `Bar/BarField.tsx` draws an enum's `radio` as segments on every surface, and `MatrixEditor`
   always lists an enum as radios.
 
-- **(P3) Two things the params commit table does not settle.** `PARAMS_SETTLES` in
-  `Prefs/commitPolicy.ts` says which controls write only a settled value in a form, a panel, and
-  a lab, and `withCommitPolicy` applies it for all three. (1) labkit's `ControlPanel` debounces
-  text by 150 ms in its own row (`useDebouncedText`), which the table has no word for: it reads
-  as "writes as it changes". (2) A slider dragged in a `SelectionPanel` leaves one undo step per
-  move. Measured in jsdom 2026-10-13: three `change` events on a `control: 'slider'` leaf took
-  three `scene.undo()` calls to unwind, because `commitLeaf` writes through `scene.batch`, whose
-  entries never coalesce. The slider is live there so the canvas follows the drag; one step per
-  drag needs the drag's writes to share an entry, which the scene has to offer.
-
 - **(P3) What each group `as` draws differs across the params surfaces.** The run of neighboring
   `tab` groups is collected once (`prefTabRuns`, `@weasel-js/prefs`); what is drawn is not: `panel`
   is a bordered box in ui and a plain `PropertyGroup` in labkit; `section` is a `Subpanel` in

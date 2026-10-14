@@ -53,6 +53,14 @@ export interface PropertyRenderContext {
    */
   update: (fn: (prev: unknown, siblings?: Record<string, unknown>) => unknown) => void;
   /**
+   * `setValue` and `update` for the values a control passes through on the way
+   * to the one its edit settles on, as a slider's drag does: each is written to
+   * the nodes and kept out of undo, and the `setValue` or `update` that ends
+   * the edit records one step from where the nodes were before the first.
+   * Absent where the surface has no such write.
+   */
+  drafts?: Pick<PropertyRenderContext, 'setValue' | 'update'>;
+  /**
    * The aggregated value at another node path — what `value` and `mixed` are
    * for this leaf's own path, for any path.
    *

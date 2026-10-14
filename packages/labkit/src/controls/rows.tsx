@@ -7,7 +7,7 @@ import {
 } from '@weasel-js/ui';
 import type { ReactNode } from 'react';
 import { valueAtPath } from '../config/path';
-import { BareControl, extra, useDebouncedText } from './fields';
+import { BareControl, extra, textWaitMs, useDebouncedText } from './fields';
 
 /** A leaf this panel has no control for is named rather than dropped: a silent
  *  gap reads as "this control does not exist". */
@@ -43,11 +43,7 @@ export function DebouncedTextRow({
   auto?: boolean;
   onAutoChange?: (next: boolean) => void;
 }) {
-  const text = useDebouncedText(
-    field.value ?? '',
-    field.onChange,
-    extra<number>(leaf, 'debounceMs') ?? 150,
-  );
+  const text = useDebouncedText(field.value ?? '', field.onChange, textWaitMs(leaf));
   return <PropertyField {...field} {...row} value={text.local} onChange={text.type} />;
 }
 
