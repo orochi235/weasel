@@ -10,11 +10,12 @@ import type { AddNodeSpec, MarkerRef, RectPose, Stroke } from '@weasel-js/core';
 import { DEFAULT_GROUP_INSET, expandGroupEdges } from './cluster';
 import { groupSpecs, resolveGroups } from './dataGroups';
 import { buildBody, measureBody, sizeToBody, type BodySpec, type MeasureRowText, type Row, type RowTextStyle } from './body';
-import { EDGE_DERIVE_PATH, type DiagramEdge } from './edge';
+import { edgeSpecs } from './dataEdges';
+import type { DiagramEdge } from './edge';
 import { force } from './force';
 import type { Graph, GraphEdge, GraphGroup, GraphNode } from './graph';
 import type { DiagramAnchor } from './group';
-import { LABEL_DERIVE_POSE, type DiagramLabel } from './label';
+import type { DiagramLabel } from './label';
 import { layered } from './layered';
 import type { LayoutFn, LayoutOptions } from './layout';
 import type { Outline } from './outline';
@@ -318,54 +319,6 @@ export function diagramScene(data: DiagramData, opts: DiagramSceneOptions = {}):
       specs.push({ ...s, ...(k === 0 ? {} : { id: `${n.id}/${k}` }) } as DiagramSpec);
     }
   }
-
-  for (const e of edges) {
-    const id = edgeIdOf(e);
-    const style = opts.edgeStyle?.(e) ?? EDGE;
-    const markerStart = style.markerStart ?? null;
-    const markerEnd = style.markerEnd === undefined ? 'arrow' : style.markerEnd;
-    specs.push({
-      id: id as never,
-      kind: 'leaf',
-      layer: 'main',
-      pickable: false,
-      pose: { x: 0, y: 0, width: 0, height: 0 },
-      data: {
-        diagram: {
-          from: e.fromPort ? { port: e.fromPort } : {},
-          to: e.toPort ? { port: e.toPort } : {},
-          router: e.router ?? opts.router ?? 'bezier',
-          ...(e.waypoints ? { waypoints: e.waypoints } : {}),
-        },
-        stroke: {
-          paint: { color: style.stroke },
-          width: style.width ?? 1.5,
-          ...(style.dash ? { dash: style.dash } : {}),
-          ...(markerStart !== null ? { markerStart } : {}),
-          ...(markerEnd !== null ? { markerEnd } : {}),
-        },
-      },
-      dependsOn: [e.from as never, e.to as never],
-      derivePath: EDGE_DERIVE_PATH,
-    });
-    if (e.label) {
-      const labelStyle = { ...font, fontSize: font.fontSize - 2 };
-      specs.push({
-        id: `${id}/label` as never,
-        kind: 'leaf',
-        layer: 'main',
-        pickable: false,
-        pose: { x: 0, y: 0, width: measure(e.label, labelStyle).width, height: labelStyle.fontSize },
-        data: {
-          diagram: { label: e.labelPlacement ?? opts.labelPlacement ?? LABEL_PLACEMENT },
-          text: e.label,
-          style: labelStyle,
-          fill: { paint: { color: style.label ?? style.stroke } },
-        },
-        dependsOn: [id as never],
-        derivePose: LABEL_DERIVE_POSE as never,
-      });
-    }
-  }
+  specs.push(...edgeSpecs(edges, { idOf: edgeIdOf, font, measure, fallback: EDGE, labelPlacement: LABEL_PLACEMENT, opts }));
   return specs;
 }
