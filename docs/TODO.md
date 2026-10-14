@@ -709,13 +709,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   draws a 2px outline, so nothing measured is known to be off. Since then `minimal` takes its font
   size from `size`, where both sizes drew at the `sm` font; nobody has looked at its `md`.
 
-- **(P3) A host cannot tell which assets a stored draft changed.** `AssetEditor` reports its
-  changed assets through `onChangedAssets` only once it is mounted, so a host that shows one
-  editor at a time and lists the others' assets as `elsewhere` marks nothing for a source whose
-  draft has not been opened since the page loaded. The draft's text is the editor's own format.
-  Left: a public function that reads a stored draft (its storage, key, codec, and the original
-  workspace) and returns the ids of the assets it changes.
-
 - **(P3) A field's condition inside an object entry is written in code.** `PrefSchemaEditor`
   edits an entry's own `enableIf` and nothing inside an object entry: the structure tree shows a
   list or a map as one row (`slotOf` in `schemaTree.ts`), so a field of its item has no row to
