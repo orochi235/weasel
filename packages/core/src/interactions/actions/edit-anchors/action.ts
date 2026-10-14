@@ -11,6 +11,9 @@
  *     opposite one while the anchor is smooth. Alt breaks the mirror; Shift
  *     holds the handle to the angle it had at the press, changing only its
  *     length.
+ *   - **Under symmetry** (the `symmetry` dep), on a path that is its own
+ *     mirror image, each anchor or handle's mirror partner follows it, and an
+ *     anchor on the axis stays there.
  *
  * Selection lives on the `editAnchors` dep (flat anchor indices) rather
  * than in this handle's scratch, because the keyboard actions
@@ -32,11 +35,13 @@ import {
   anchorAt,
   editAnchorSetTracked,
   handleAlongItsAngle,
-  moveHandleTo,
-  translateAnchorBy,
+  moveHandleMirrored,
+  translateAnchorsMirrored,
+  type AnchorMirror,
   type AnchorSet,
   type PointOrigin,
 } from '@weasel-js/geom';
+import { anchorMirrors } from 'features/symmetry/anchorMirrors';
 import { pathToAnchors, type PolygonPath } from '@weasel-js/geom';
 import { inPlane, editingLayer } from '../planeInput';
 import { pathEditPreview } from './preview';
@@ -98,6 +103,9 @@ interface EditAnchorsScratch {
   handleOrigin: { x: number; y: number } | null;
   originPose: PolygonPath;
   currentPose: PolygonPath;
+  /** The symmetry mirrors `originPose` is its own image under, read at the
+   *  press: each one's partner follows what is dragged. */
+  mirrors: readonly AnchorMirror[];
   /** Where each point of `currentPose` came from in `originPose`. */
   origins?: readonly (PointOrigin | null)[];
 }
@@ -120,7 +128,7 @@ export const editAnchorsAction: Action & { requires: string[] } = inPlane({
     target: { kindOf: isAnchorOrControl },
   },
   eligible: { capability: 'edits-anchors' },
-  requires: ['selection', 'editAnchors'],
+  requires: ['selection', 'editAnchors', 'symmetry'],
   invoker: {
     timing: 'ongoing',
     start(ctx: InvocationCtx, _opts): OngoingHandle {
@@ -189,6 +197,7 @@ export const editAnchorsAction: Action & { requires: string[] } = inPlane({
           : anchorInfo.part === 'controlOut' ? origin.outHandle : null) ?? null,
         originPose: worldPath,
         currentPose: worldPath,
+        mirrors: anchorMirrors(decoded, ctx.deps.symmetry?.get() ?? null),
       };
 
       return {
@@ -198,9 +207,8 @@ export const editAnchorsAction: Action & { requires: string[] } = inPlane({
             if (scratch.dragging.length === 0) return;
             const dx = moveCtx.world.x - scratch.anchorOrigin.x;
             const dy = moveCtx.world.y - scratch.anchorOrigin.y;
-            track(scratch, editAnchorSetTracked(scratch.originPose, (set) => {
-              for (const flat of scratch.dragging) translateAnchorBy(set, flat, dx, dy);
-            }));
+            track(scratch, editAnchorSetTracked(scratch.originPose, (set) =>
+              translateAnchorsMirrored(set, scratch.dragging, dx, dy, scratch.mirrors)));
           } else {
             const side = scratch.part === 'controlIn' ? 'in' : 'out';
             // Modifiers are read live so the user can press or release them mid-drag.
@@ -208,13 +216,14 @@ export const editAnchorsAction: Action & { requires: string[] } = inPlane({
               ? handleAlongItsAngle(scratch.anchorOrigin, scratch.handleOrigin, moveCtx.world)
               : moveCtx.world;
             track(scratch, editAnchorSetTracked(scratch.originPose, (set) =>
-              moveHandleTo(
+              moveHandleMirrored(
                 set,
                 scratch.anchorIndex,
                 side,
                 to.x,
                 to.y,
                 moveCtx.modifiers.alt,
+                scratch.mirrors,
               ),
             ));
           }

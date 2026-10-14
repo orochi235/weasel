@@ -188,7 +188,10 @@ Priority tags:
   drafts, not proofed at high resolution.
 - **(P2) Spacing hints.** Equal-spacing markers between siblings while moving, and Alt-hover
   distance readouts between the selection and the shape under the pointer.
-- **(P2) Live symmetry.** Draw on one side of an axis and the mirrored half follows.
+- **(P2) Symmetry does not reach an extended path or a twin.** With symmetry on, extending an
+  open path from its end with the pen (`continuing` in `usePenTool`) writes through `editAnchors`
+  rather than the `insert` dep, so only the drawn side grows. And a twin is its own node: editing
+  the drawn half afterwards leaves its mirror as it was.
 - **(P2) Variable-width strokes.** A width profile along a stroke's length, edited by dragging
   on the stroke. `strokeToPath` handles a fixed width only.
 

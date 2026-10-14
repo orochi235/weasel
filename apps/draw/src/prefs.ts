@@ -122,6 +122,23 @@ export const PREFS = {
           description: 'Constrain move/resize gestures to grid intersections.',
           default: false,
         },
+        symmetry: {
+          kind: 'boolean',
+          name: 'Symmetry',
+          description: 'Mirror what you draw across the symmetry axis, and the anchors you drag on a path that is already its own mirror image. Drag the handle on the axis to move it.',
+          default: false,
+        },
+        symmetryAxis: {
+          kind: 'enum',
+          name: 'Symmetry axis',
+          description: 'Which way drawing mirrors while Symmetry is on: left and right, top and bottom, or into all four quarters.',
+          default: 'vertical',
+          options: [
+            { value: 'vertical', label: 'Vertical (left and right)' },
+            { value: 'horizontal', label: 'Horizontal (top and bottom)' },
+            { value: 'both', label: 'Both' },
+          ],
+        },
       },
     },
     text: {

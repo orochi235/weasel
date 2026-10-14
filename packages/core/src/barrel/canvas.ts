@@ -119,6 +119,9 @@ export type { WorkspaceTintLayerOptions } from '../features/modes/modeLayers';
 export { createChildrenLayer } from '../core/layers/children';
 export type { CreateChildrenLayerOpts } from '../core/layers/children';
 
+// ─── Live symmetry: the setting, its insert twinning, and the axis on canvas ─
+export * from '../features/symmetry';
+
 // ─── Debug overlay subsystem (URL-flagged tree-shakeable) ───────────────────
 export * from '../debug';
 

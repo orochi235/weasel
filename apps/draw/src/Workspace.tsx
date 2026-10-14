@@ -32,6 +32,7 @@ import { TextEditDepPublisher } from './TextEditDepPublisher';
 import { useColorContext } from './tools/colorContext';
 import { useEditorAmbient } from './useEditorAmbient';
 import { useGrid } from './useGrid';
+import { useSymmetry } from './useSymmetry';
 import { usePageFit } from './usePageFit';
 
 // OS-dropped and pasted SVG files unpack into real scene nodes rather than one embedded-image
@@ -72,6 +73,7 @@ export function Workspace(props: WorkspaceProps): ReactElement {
 
   const paperLayer = usePaperLayer(page, backgroundColor);
   const grid = useGrid(page, backgroundColor);
+  const symmetry = useSymmetry(page);
   // The mode tint covers the workspace around the page, not the page itself.
   // Bolder than the modes' own 0.12 so it reads through the stripes.
   const workspaceTint = useMemo(() => workspaceTintLayer({
@@ -88,6 +90,7 @@ export function Workspace(props: WorkspaceProps): ReactElement {
     selection,
     modeKeys: modes.keys,
     grid: grid.commands,
+    symmetry,
     view,
     setView: onViewChange,
     openPrefs: props.openPrefs,

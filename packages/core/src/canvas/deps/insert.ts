@@ -7,7 +7,7 @@
  * live preview and the reported gesture bounds use.
  */
 import { useRef } from 'react';
-import { useDepSource } from '@weasel-js/routing/react';
+import { useDepSource, useOptionalDepRegistry, type DepRegistry } from '@weasel-js/routing/react';
 import { useLatest } from '@weasel-js/react';
 import type { InsertDep, InsertExtras, InsertLive } from 'interactions/actions/depSchema';
 import type { Scene, NodeId } from 'core/scene/types';
@@ -25,6 +25,7 @@ import {
   type PolygonPath,
 } from '@weasel-js/geom';
 import { insertPreviewExtent } from '../insertPreviewExtent';
+import { mirrorInsertOps } from 'features/symmetry/mirrorInserts';
 import type { ShapeGenerator } from 'features/paths/shapeGenerator';
 import type { Stroke, Fill } from '@weasel-js/paint';
 import { cycleFill, solid, strokeOf } from '../../util/paint';
@@ -126,6 +127,23 @@ function boxKindData(
   }
 }
 
+type Build = NonNullable<InsertDep['build']>;
+
+/** `build`, with its ops twinned under the `symmetry` dep. Every tool's
+ *  insert passes through the insert dep, so this is where symmetry applies. */
+function withSymmetry(build: Build, registry: DepRegistry | null, mintId: () => string): Build {
+  return (bounds, extras) => {
+    const built = build(bounds, extras);
+    if (built === null) return null;
+    const ops = mirrorInsertOps(built.ops, registry?.get('symmetry')?.get() ?? null, {
+      mintId,
+      poseDescriptor: registry?.get('poseDescriptor'),
+      geometryProjection: registry?.get('geometryProjection'),
+    });
+    return { id: built.id, ops };
+  };
+}
+
 export function useInsertDepSource(
   scene: Scene<unknown, string, unknown>,
   adapter: OpsApplier,
@@ -137,6 +155,7 @@ export function useInsertDepSource(
   const factoriesRef = useLatest(factories);
   const paintRef = useLatest(paint);
   const insertSeqRef = useRef(0);
+  const registry = useOptionalDepRegistry();
   const liveRef = useRef<InsertLive>({ gesture: null });
   useDepSource('insertLive', () => liveRef.current);
 
@@ -224,11 +243,12 @@ export function useInsertDepSource(
           ops: [createInsertOp({ node: { id, kind: 'leaf', layer, pose, data } as unknown as { id: string }, label: `Insert ${kind}` })],
         };
     };
+    const mirrored = withSymmetry(build, registry, () => sc.mintId());
     return {
       layer: () => layer,
-      build,
+      build: mirrored,
       commit(bounds, extras): NodeId | null {
-        const built = build(bounds, extras);
+        const built = mirrored(bounds, extras);
         if (built === null) return null;
         ad.applyOps(built.ops, `Insert ${extras.kind}`);
         return built.id;
