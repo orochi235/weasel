@@ -1022,7 +1022,10 @@ only story runner in the repo.
     `LabLightbox`'s "an expanded trial keeps its marks over it". Also on studio, not a timeout:
     `ui/src/components/Prefs/PrefsRail.rootSection.browser.test.tsx` ("scrolls the root's page to a
     section from its entry") saw `tools` as the current section where it expected `files`. It
-    passed on teitou at a commit whose `ui` tree was the same.
+    passed on teitou at a commit whose `ui` tree was the same. Later the same day, branch
+    `soft-mode-history` (history and cursor code only) failed `glyphCoverage`'s "keeps both stems"
+    on teitou, then both `glyphCoverage` tests and `rasterSession` on studio, as did `main` at
+    `b1bcafb7d` on studio; both files pass alone on orochi at the branch head, in 12.7 s.
   - `forge/src/vite/plugin.test.ts` has its own entry under "Demos & visual regression".
 
 - **(P2) HUD vs DOM text: what the idle rerun left open.** `tests/perf/hud-vs-dom.spec.ts` prices
