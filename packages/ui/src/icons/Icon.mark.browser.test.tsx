@@ -50,3 +50,12 @@ test('the clearing follows the mark\'s outline, not its slot', async () => {
 test('a glyph that is one straight line survives being marked', async () => {
   expect(await alphaAt('markDot', 8, 10, 'remove')).toBe(255);
 });
+
+// The ring's back arcs are drawn on past the axis and clipped by nested viewports; one that failed to clip
+// would paint the ring straight across the band beside the axis.
+test('the turn ring stops short of its axis at the back, and the axis is whole there', async () => {
+  expect(await alphaAt(undefined, 8.2, 7.05, 'turnLeft')).toBe(255);
+  expect(await alphaAt(undefined, 9.4, 6.85, 'turnLeft')).toBe(0);
+  expect(await alphaAt(undefined, 12.1, 6.85, 'turnLeft')).toBe(0);
+  expect(await alphaAt(undefined, 10.75, 6.8, 'turnLeft')).toBe(255);
+});

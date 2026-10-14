@@ -172,10 +172,11 @@ A ring or an open arc is free to turn: before reshaping anything, slide its gap 
 head lands on the flattest stretch that is clear of other strokes.
 
 **Where one stroke passes behind another, cut it along the front stroke's outline grown by a fixed
-gap.** That is a flat end parallel to the stroke in front (`stroke-linecap="butt"` where the
-crossing is near square), with any end that is not a cut kept round by a zero-length dot. Round
-caps stopped short of the crossing leave a gap that is widest in the middle, and read as two
-strokes that happen to end near a third rather than one passing behind it.
+gap.** The cut end is parallel to the stroke in front, not square to the stroke being cut: a butt
+cap is only that where the two cross at a right angle, and anywhere else it leaves a trapezoid.
+Draw the back stroke on past the cut inside a nested `<svg>` whose viewport ends at the cut line,
+as `turn` in `camera.mjs` does — a nested viewport clips to its box and needs no id. Round caps
+stopped short of the crossing are worse again: the gap pinches, and the strokes read as unrelated.
 
 **The small check is a separate check, and it is the pixel grid.** Proofing
 large tells you nothing about chrome size. Rasterise at the size the chrome

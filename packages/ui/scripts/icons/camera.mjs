@@ -6,7 +6,7 @@ const rad = (deg) => (deg * Math.PI) / 180;
 // ── turn / pitch ─────────────────────────────────────────────────────────
 // A ring around an axis, drawn as it lies in space: it passes behind the axis at the back and in front of it
 // at the front. Whatever passes behind is cut away along the outline of what passes in front, grown by
-// `GAP`, so each cut end is flat and the clear band beside it is one width all the way across.
+// `GAP`, so each cut end is parallel to the stroke in front and the clear band beside it is one width.
 //
 // The head does not sit on the ring. Past the axis the ring's front leaves its ellipse and runs level to
 // the head, so the head has a straight shaft behind it and its barbs lie on the diagonals; a head left on
@@ -24,8 +24,6 @@ const STROKE = 1.5;
 const GAP = 1.25;
 const CUT = STROKE / 2 + GAP;
 const ring = (deg) => [AXIS + RX * Math.cos(rad(deg)), MID - RY * Math.sin(rad(deg))];
-// Where the ring's center line meets the edge of the band cleared around the axis.
-const BEHIND = (Math.acos(CUT / RX) * 180) / Math.PI;
 /** Where the ring's far-left arc starts. Any further round and it crowds the head's upper barb. */
 const TAIL = 150;
 const FRONT = MID + RY;
@@ -45,12 +43,22 @@ function turn(flip, swap) {
   const sweep = flip === swap ? 1 : 0;
   const [rx, ry] = swap ? [RY, RX] : [RX, RY];
   const arc = (from, to) => `M${at(ring(from))}A${rx} ${ry} 0 ${from - to > 180 ? 1 : 0} ${sweep} ${at(ring(to))}`;
-  const cut = ' stroke-linecap="butt"';
+  // Everything in `body` left of `x1` and right of `x0`, cut dead straight: a nested viewport clips to
+  // its own box. A butt cap would end the ring square to itself, which is 7 degrees off the axis here.
+  const between = (x0, x1, body) => {
+    const [ax, ay] = xy([x0, 0]);
+    const [bx, by] = xy([x1, 20]);
+    const [x, y, w, h] = [Math.min(ax, bx), Math.min(ay, by), n(Math.abs(bx - ax)), n(Math.abs(by - ay))];
+    return `<svg x="${x}" y="${y}" width="${w}" height="${h}" viewBox="${x} ${y} ${w} ${h}">${body}</svg>`;
+  };
   return (
-    `<path d="M${at([AXIS, 2.8])}L${at([AXIS, FRONT - CUT])}M${at([AXIS, FRONT + CUT])}L${at([AXIS, 17.2])}"${cut}/>` +
-    `<path d="${arc(TAIL, 180 - BEHIND)}${arc(BEHIND, -90)}L${at(TIP)}"${cut}/>` +
-    // The ends that are not cuts stay round.
-    `<path d="M${at([AXIS, 2.8])}h0M${at([AXIS, 17.2])}h0M${at(ring(TAIL))}h0"/>` +
+    // The ring's front is level where it crosses, so a butt end on the axis is the exact cut.
+    `<path d="M${at([AXIS, 2.8])}L${at([AXIS, FRONT - CUT])}M${at([AXIS, FRONT + CUT])}L${at([AXIS, 17.2])}" stroke-linecap="butt"/>` +
+    `<path d="M${at([AXIS, 2.8])}h0M${at([AXIS, 17.2])}h0"/>` +
+    // Each back arc is drawn on past the cut, and the viewport takes off what is behind the axis.
+    between(0, AXIS - CUT, `<path d="${arc(TAIL, 90)}"/>`) +
+    between(AXIS + CUT, 20, `<path d="${arc(90, 0)}"/>`) +
+    `<path d="${arc(0, -90)}L${at(TIP)}"/>` +
     `<path d="${chevron(xy(TIP), dir([-1, 0]), ...HEAD)}"/>`
   );
 }
