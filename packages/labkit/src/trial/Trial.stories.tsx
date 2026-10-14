@@ -62,6 +62,7 @@ function Harness() {
                 zoom: 1,
                 setZoom: () => {},
                 activeToolId: null,
+                setActiveTool: () => {},
                 visibleLayers: [],
                 pointer: createPointerStore(),
               },
