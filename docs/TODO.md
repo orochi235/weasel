@@ -441,6 +441,29 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 ## Selection, actions & UI panels
 
+- **(P2) Write a prefs tree out as CSS custom properties.** A leaf's value can be split by another
+  setting (`packages/prefs/README.md`, "Split values"), and `store.values({ at })` reads the tree
+  under a stated choice of selectors, so an exporter has what it needs: one block per option a
+  value distinguishes, an unsplit leaf in a block every option shares, the property named for the
+  leaf's path, a number written through `@weasel-js/quantity` with its unit, and a color through
+  `colorSourceCss`. Every block sits in `:where()`, so a compound selector does not outrank a
+  simple one and a consumer's own rule wins. It must not become a third way a theme token reaches
+  CSS: the build-time emitter behind `tokens.css` and `applyTheme` are the two there are.
+
+- **(P2) A theme's tokens as a prefs schema.** `TOKEN_MANIFEST` lists every token with its type, so
+  a schema can be generated from it, each leaf `splitBy` the theme's `mode` and `density` as enum
+  leaves. The stored values become `pins` on a `ThemeDefinition`, a locus becoming theme's
+  `{ by, … }` form, and `resolveTheme` and `applyTheme` do the rest. A blend between two modes is
+  made of the colors the engine resolves each to, never of the rules. Rests on the entry above
+  only for what is not a theme token.
+
+- **(P3) What the split rows in `PrefsForm` left.** The marks a split leaf draws in a group's
+  heading and in a bar cell are tested in jsdom and were never seen. `list`, `map`, `union`,
+  hidden, and alias rows open to their members through the same path as the kinds that have a
+  test, and have none of their own. A row that can be split is a group and no `<label>`, so an
+  app renderer's control on such a leaf has to name itself. Nothing animates a selector's weights
+  yet: `store.get(path, { weights })` is there for an animator target to drive.
+
 - **(P3) A removable badge's remove control can wrap onto a line by itself.** On a wrapped `pill` or
   `plain` `Badge`, when the line cannot hold the last word and the control together, the control
   breaks alone and takes its negative margin with it, so it sits left of the line's start. Measured
@@ -848,8 +871,12 @@ only story runner in the repo.
 - **(P3) `foldTwisty.browser.test.tsx` fails on one machine and passes on the fleet.** "sets the
   title of a panel with a hidden twisty where a panel that does not fold has it" measured the
   title 3px higher with the twisty (`top: 12` against `15`) on brainhouse on 2026-10-13, with and
-  without that day's changes, and passed in three fleet runs on teitou the same day. Not looked
-  into: which of the two machines draws the header the way a reader's browser does.
+  without that day's changes, and passed in three fleet runs on teitou the same day. Later that
+  day it failed the same way on orochi, run alone at `351efc55b`, and in one fleet run on teitou
+  at `77c2e4297`, after passing on studio at `351efc55b`. So it is not one machine, and one node
+  gives both answers. Not looked into: what differs between the runs (a face not yet loaded when
+  the header is measured is the first thing to rule out), and which answer a reader's browser
+  gives.
 
 - **(P2) Confirm on a fleet node that a new dependency in browser-tested code no longer fails the
   first run that meets it.** A node keeps its vite dep cache between runs, and a warm cache skips

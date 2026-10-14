@@ -12,6 +12,11 @@ run-breakers joined the batch, and every package has a page on the site). Its ca
 `docs/unruled.md` under "pass 6". The agents ran one test file at a time; the merge was
 typechecked and run on the fleet afterward.
 
+Split values in prefs landed the same day (`packages/prefs/README.md`, "Split values"): a leaf's
+value held once per option of an enum leaf, folded by weight when read, and edited in `PrefsForm`.
+The two arcs after it are P2 entries in `docs/TODO.md`: a prefs tree written as CSS custom
+properties, and a theme's tokens as a prefs schema.
+
 ## Next
 
 1. Run what has never run: a build of every package since the wildcard `paths` keys went and
@@ -68,6 +73,8 @@ Passed its tests and was never looked at. Delete a line when someone has.
 - Pass 6, site: every package page, the root that no longer scrolls on every existing page, the
   color mode control, the demos in light mode, and the plasma panel's hover.
 - Pass 6, SVG: the `<tspan x dy>` lines and the split marker paths in a viewer.
+- Split values in `PrefsForm`: seen in headless Chromium in six stories, light and dark; the
+  marks in a heading and in a bar cell were not.
 - By ear: the music bed's level, and whether each cue in the `score` demo reads as its name.
 
 ## Weak evidence
