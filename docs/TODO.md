@@ -834,7 +834,19 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 ### WeaselDraw app follow-ups (defer)
 
-- **(P3) Multi-page documents.**
+- **(P3) Multi-page documents.** A document's pages are rects in one world space over one scene,
+  so one view, history, and selection serve all of them, and an object is on the page it overlaps
+  most. Core has the geometry (`packages/core/src/core/pages/`): `layoutPages` places a page list,
+  `pageAt` and `pageOfBounds` say which page a point or an object is on, `pagesLayer` paints the
+  sheets, and `fitViewToPage` frames one. draw paints its one page through it. Left, in order:
+  1. draw's document holds a page list where it holds `paperSize` (`useDocumentState.ts`,
+     `docPersistence.ts`), and `usePageFit` fits the current page.
+  2. Adding, removing, reordering, and resizing a page are undoable. The page list sits outside
+     the scene, so they need a history entry of their own, and a removed page has to say what
+     happens to the objects on it.
+  3. A page navigator in draw, and `viewport.recenter` on the current page.
+  4. SVG save and export per page: `svgInterop.ts` keeps one paper size under `wd:`, and
+     `svgExport.ts` writes one `viewBox`.
 
 ---
 
