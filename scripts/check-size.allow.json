@@ -86,7 +86,7 @@
     "lines": 749
   },
   "packages/core/src/features/text/useSceneTextEdit.ts": {
-    "longestFunction": 166
+    "longestFunction": 157
   },
   "packages/core/src/interactions/actions/defaults/viewportZoom.ts": {
     "longestFunction": 127
@@ -298,7 +298,7 @@
     "lines": 474
   },
   "packages/text-dom/src/useTextEdit.ts": {
-    "lines": 749,
+    "lines": 716,
     "longestFunction": 381
   },
   "packages/text/src/layout/lineBreak/lineBreaks.ts": {
