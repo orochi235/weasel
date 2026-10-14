@@ -35,11 +35,14 @@ const actions = () => screen.getByRole('tree', { name: 'Actions' });
 const structure = () => screen.getByRole('tree', { name: 'Schema structure' });
 
 describe('PrefSchemaEditor actions', () => {
-  it('lists the actions it is given under their groups, each by label and key', () => {
+  it('lists the actions it is given under a group for their key’s path, each by label and the rest of its key', () => {
     render(<Live actions={ACTIONS} />);
-    expect(within(actions()).getByText('Edit')).toBeInTheDocument();
-    expect(within(actions()).getByText('edit.redo')).toBeInTheDocument();
-    expect(within(actions()).getByText('view.snap')).toBeInTheDocument();
+    const row = (id: string) => actions().querySelector(`[data-tree-id="${id}"] > :first-child`)!;
+    expect(row('edit')).toHaveTextContent('Edit edit');
+    expect(row('edit/editRedo')).toHaveTextContent('Redo redo');
+    expect(row('view/viewSnap')).toHaveTextContent('Snap snap');
+    // The group says the prefix once.
+    expect(within(actions()).queryByText('edit.redo')).toBeNull();
     // Its shortcut as keycaps, a key to a cap.
     expect(within(actions()).getByText('⌘')).toBeInTheDocument();
     expect(within(actions()).getByText('Z')).toBeInTheDocument();
@@ -58,7 +61,8 @@ describe('PrefSchemaEditor actions', () => {
         <Live />
       </ActionsProvider>,
     );
-    expect(within(actions()).getByText('file.save')).toBeInTheDocument();
+    expect(within(actions()).getByText('Save')).toBeInTheDocument();
+    expect(within(actions()).getByText('file')).toBeInTheDocument();
   });
 
   it('draws no list with no actions and no registry, and marks nothing', () => {
@@ -77,8 +81,8 @@ describe('PrefSchemaEditor actions', () => {
   it('filters the list with the structure’s filter', () => {
     render(<Live actions={ACTIONS} />);
     fireEvent.change(screen.getByRole('textbox', { name: 'Filter structure' }), { target: { value: 'snap' } });
-    expect(within(actions()).getByText('view.snap')).toBeInTheDocument();
-    expect(within(actions()).queryByText('edit.redo')).toBeNull();
+    expect(within(actions()).getByText('Snap')).toBeInTheDocument();
+    expect(within(actions()).queryByText('Redo')).toBeNull();
   });
 
   it('offers an action pref’s key as a choice among the list, with a key it does not hold kept', () => {

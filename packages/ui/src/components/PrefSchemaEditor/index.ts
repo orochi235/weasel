@@ -1,3 +1,4 @@
+export { actionCatalog } from './actionCatalog';
 export { AssetEditor, type AssetEditorProps } from './AssetEditor';
 export { PrefSchemaEditor, type PrefSchemaEditorProps } from './PrefSchemaEditor';
 export type { DocumentCodec, OpenedDocument } from './document';
@@ -11,5 +12,5 @@ export { diffSchemas, formatChanges, printSchema, type SchemaChange } from './sc
 export type { SchemaRoot } from './schemaTree';
 export type { PrefTypes } from './types';
 export type { SentAsset, SubmitAssets } from './useAssetChanges';
-export { headingOf, type Asset, type AssetHeading, type LayoutAsset, type ListedAsset, type SchemaAsset, type Workspace } from './workspace';
+export { headingOf, type ActionsAsset, type Asset, type AssetHeading, type LayoutAsset, type ListedAsset, type SchemaAsset, type ShownAsset, type Workspace } from './workspace';
 export { workspaceCodec } from './workspaceCodec';

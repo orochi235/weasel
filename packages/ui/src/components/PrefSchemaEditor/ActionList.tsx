@@ -1,43 +1,44 @@
-import { useMemo, useRef } from 'react';
-import type { PrefLeaf } from '@weasel-js/prefs';
+import { useMemo, useRef, useState } from 'react';
+import { isPrefLeaf } from '@weasel-js/prefs';
+import { Badge } from '../Badge';
 import { ShortcutKeys } from '../Keycaps';
 import { filterTree, Tree, treeBranchIds, type TreeNode } from '../Tree';
-import { actionLeaf, actionLeafKey, type EditorAction } from './editorActions';
+import { firedBy, keyTails } from './actionCatalog';
+import type { EditorAction } from './editorActions';
 import type { PaletteDrag } from './Palette';
 import s from './PrefSchemaEditor.module.css';
+import { childrenOf, joinPath, keyOf, nodeAt, type SchemaNode } from './schemaEdit';
 import { nodeLabel } from './structureRows';
+import type { ActionCatalog } from './useActionCatalog';
 
-/** What leads a group row's id. No action key is asked to start with it: a row is looked up among the actions. */
-const GROUP = 'group:';
-
-function toRows(actions: readonly EditorAction[]): TreeNode[] {
-  const row = (a: EditorAction): TreeNode => ({
-    id: a.key,
-    label: nodeLabel(a.label, a.key),
-    textValue: `${a.label} ${a.key}`,
-    ...(a.icon != null ? { leading: a.icon } : {}),
-    ...(a.shortcut ? { trailing: <ShortcutKeys legend={a.shortcut} /> } : {}),
+/** The rows for what `node` of a catalog holds: a group by its name, and a pref by its own and what its action brings. */
+function toRows(node: SchemaNode, path: string | null, tails: ReadonlyMap<string, string>, registered: ReadonlyMap<string, EditorAction>): TreeNode[] {
+  return Object.entries(childrenOf(node) ?? {}).map(([key, child]): TreeNode => {
+    const id = joinPath(path, key);
+    const fires = firedBy(child);
+    const action = fires === undefined ? undefined : registered.get(fires);
+    const tail = tails.get(id) ?? (isPrefLeaf(child) ? key : '');
+    const row = { id, label: nodeLabel(child.name, tail), textValue: `${child.name} ${fires ?? tail}`, ...(child.description ? { tooltip: child.description } : {}) };
+    if (!isPrefLeaf(child)) return { ...row, children: toRows(child, id, tails, registered) };
+    return {
+      ...row,
+      ...(action?.icon != null ? { leading: action.icon } : {}),
+      ...(fires !== undefined && !action
+        ? { trailing: <Badge size="xs" status="danger" variant="subtle">no action</Badge> }
+        : action?.shortcut ? { trailing: <ShortcutKeys legend={action.shortcut} /> } : {}),
+    };
   });
-  const loose: TreeNode[] = [];
-  const groups = new Map<string, TreeNode[]>();
-  for (const a of actions) {
-    if (a.group === undefined) loose.push(row(a));
-    else groups.set(a.group, [...(groups.get(a.group) ?? []), row(a)]);
-  }
-  return [
-    ...[...groups].map(([name, children]) => ({ id: `${GROUP}${name}`, label: name, textValue: name, children })),
-    ...loose,
-  ];
 }
 
 /**
- * The actions a host has, as a tree to drag them out of. One let go over the structure tree or the live preview
- * lands as a pref that fires it by key. An action stays listed however many prefs fire it: a toolbar and a menu
- * may both hold one.
+ * The host's actions as a tree: the catalog's groups, and a pref for each action. A row is selected to see its
+ * attributes, dragged within the tree to sort it where the catalog takes edits, and dragged out onto the structure
+ * tree or the live preview to land there as a copy of its pref. An action stays listed however many prefs fire it:
+ * a toolbar and a menu may both hold one.
  */
-export function ActionList({ actions, sought, ghost, onDrag, onDrop }: {
-  actions: readonly EditorAction[];
-  /** What the structure's filter holds, lowercased: only rows whose label or key has it are listed. Empty for all. */
+export function ActionList({ catalog, sought, ghost, onDrag, onDrop }: {
+  catalog: ActionCatalog;
+  /** What the structure's filter holds, lowercased: only rows whose name or key has it are listed. Empty for all. */
   sought: string;
   /** As `Tree`'s `ghost`. */
   ghost?: boolean;
@@ -45,20 +46,24 @@ export function ActionList({ actions, sought, ghost, onDrag, onDrop }: {
   onDrag(drag: PaletteDrag | null): void;
   onDrop(drag: PaletteDrag): void;
 }) {
-  const all = useMemo(() => toRows(actions), [actions]);
+  const { root, actions } = catalog;
+  const all = useMemo(() => toRows(root, null, keyTails(root), new Map(actions.map((a) => [a.key, a]))), [root, actions]);
   const rows = useMemo(
     () => (sought === '' ? all : filterTree(all, (n) => (n.textValue ?? '').toLowerCase().includes(sought))),
     [all, sought],
   );
-  const open = useMemo(() => treeBranchIds(all), [all]);
+  // What is folded, so that a group made or moved since starts open.
+  const [folded, setFolded] = useState<ReadonlySet<string>>(new Set());
+  const branches = useMemo(() => treeBranchIds(all), [all]);
   // One node per drag, so it is seen as holding the same thing from one pointer move to the next.
-  const held = useRef<{ id: string; node: PrefLeaf } | null>(null);
-  const dragOf = (id: string, point: { x: number; y: number }): PaletteDrag | null => {
-    const action = actions.find((a) => a.key === id);
-    if (!action) return null;
-    if (held.current?.id !== id) held.current = { id, node: actionLeaf(action) };
+  const held = useRef<{ id: string; node: SchemaNode } | null>(null);
+  const dragOf = (ids: readonly string[], point: { x: number; y: number }): PaletteDrag | null => {
+    const id = ids.find((at) => firedBy(nodeAt(root, at) ?? root) !== undefined);
+    if (id === undefined) return null;
+    // A copy: the catalog keeps its own.
+    if (held.current?.id !== id) held.current = { id, node: { ...nodeAt(root, id)! } };
     const node = held.current.node;
-    return { item: { id, label: action.label, icon: 'formLabel', key: actionLeafKey(action.key), make: () => node }, node, ...point };
+    return { item: { id, label: node.name, icon: 'formLabel', key: keyOf(id), make: () => node }, node, ...point };
   };
   return (
     <Tree
@@ -67,19 +72,24 @@ export function ActionList({ actions, sought, ghost, onDrag, onDrop }: {
       ghost={ghost}
       nodes={rows}
       empty={<p className={s.storedEmpty}>{all.length === 0 ? 'No actions are registered.' : 'Nothing matches.'}</p>}
-      defaultExpandedIds={open}
-      selectionMode="none"
-      // Rows leave this tree and never move within it.
-      onMove={() => {}}
-      canDrop={() => false}
+      expandedIds={sought !== '' ? treeBranchIds(rows) : [...branches].filter((id) => !folded.has(id))}
+      onExpandedChange={(open) => {
+        if (sought === '') setFolded(new Set([...branches].filter((id) => !open.has(id))));
+      }}
+      selectionMode="multiple"
+      selectedIds={catalog.selected}
+      onSelectionChange={catalog.pick}
+      onMove={(ids, t) => catalog.move(ids, { parentPath: t.parentId, index: t.index })}
+      // A place among the rows shown is not that place among all of them, and nothing from outside lands here.
+      canDrop={(ids) => catalog.editable && sought === '' && ids.length > 0}
       onDragOutside={(ids, point) => {
-        const drag = point && ids[0] !== undefined ? dragOf(ids[0], point) : null;
+        const drag = point ? dragOf(ids, point) : null;
         if (!drag) held.current = null;
         onDrag(drag);
         return drag !== null;
       }}
       onDropOutside={(ids, point) => {
-        const drag = ids[0] !== undefined ? dragOf(ids[0], point) : null;
+        const drag = dragOf(ids, point);
         held.current = null;
         if (drag) onDrop(drag);
         onDrag(null);

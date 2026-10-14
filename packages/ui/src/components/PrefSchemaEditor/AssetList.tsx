@@ -2,7 +2,7 @@ import type { ReactElement } from 'react';
 import { Header, ListBox, ListBoxItem, ListBoxSection } from 'react-aria-components';
 import { Icon } from '../../icons';
 import { PaneHeader } from './PaneHeader';
-import { headingOf, type Asset, type AssetHeading, type ListedAsset } from './workspace';
+import { headingOf, type AssetHeading, type ListedAsset, type ShownAsset } from './workspace';
 
 const NONE: readonly ListedAsset[] = [];
 import s from './AssetList.module.css';
@@ -22,7 +22,7 @@ function inOrder<T extends { id: string }>(rows: readonly T[], order: readonly s
  * pick of one is the host's.
  */
 export function AssetList({ assets, elsewhere = NONE, order, selected, changed, onSelect, onElsewhere }: {
-  assets: readonly Asset[];
+  assets: readonly ShownAsset[];
   elsewhere?: readonly ListedAsset[];
   order?: readonly string[];
   selected: string;
