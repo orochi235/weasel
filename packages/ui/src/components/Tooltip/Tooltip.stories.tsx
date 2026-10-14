@@ -46,15 +46,9 @@ export const Markdown: Story = {
 };
 
 export const LongContent: Story = {
-  render: () => (
-    <TooltipTrigger>
-      <Focusable>
-        <button type="button">Why is this disabled?</button>
-      </Focusable>
-      <Tooltip>
-        Boolean operations need at least two path objects selected. Select
-        another shape with Shift-click and try again.
-      </Tooltip>
-    </TooltipTrigger>
-  ),
+  args: {
+    children:
+      'Boolean operations need at least two path objects selected. Select another shape with Shift-click and try again.',
+  },
+  render: Basic.render,
 };

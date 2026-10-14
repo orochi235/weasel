@@ -131,7 +131,7 @@
     "longestFunction": 177
   },
   "packages/forge/src/shell/FrameView.tsx": {
-    "longestFunction": 229
+    "longestFunction": 225
   },
   "packages/forge/src/shell/TrialHost.tsx": {
     "longestFunction": 138

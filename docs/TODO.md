@@ -686,14 +686,13 @@ only story runner in the repo.
 - **(P3) A story whose `render` takes no args has no controls.** forge reads a
   control for each prop of the meta's `component` (`packages/forge/src/vite/propTypes.ts`),
   and leaves them off a story whose `render` declares no parameter, since nothing
-  would read them. A grep of `render: () =>` finds 215 such stories in 76 files, most of them matrices or wrappers holding state. A story
-  drawing one instance in a plain configuration is the kind to rewrite around
-  `args`, the way `Tooltip`'s `Basic` is; a matrix or a hand-built composition
-  stays as it is. Where a component's props are a union or generic, as
-  `ToggleBar`'s and `PropertyField`'s are, its stories pass a few named args and
-  the other controls do nothing. Where a story holds a value in state, as
-  `Timeline`'s playhead and `Jog`'s index are, the control only sets where it
-  starts.
+  would read them. `grep 'render: () =>'` lists them. The ones that drew one plain
+  instance of the meta's component are rewritten around `args`; what is left is
+  matrices, hand-built compositions, generic components (`DataGrid<Route>`), and
+  stories that mount a harness holding state (`<Live start=… />`, `<Strip only=… />`).
+  A harness is the open kind: it can take the story's args and pass them to the
+  one instance it draws, the way `ToggleBar`'s stories do, with a control that
+  only sets where held state starts, as `Timeline`'s playhead does.
 
 - **(P3) Marks are off in the workshop until annotations are a feature.** forge's
   instruments do not declare labkit's `annotations` capability, so trials show
@@ -708,22 +707,16 @@ only story runner in the repo.
   that follows another token, a ramp, a contrast rule, or an alpha stays a
   per-trial override, and so does a scale step changed after its scale, because
   a value written over it would drop the derivation for every mode and density
-  the branch covers. A save also refuses a param that differs by `mode` while
-  the trial's mode is Auto, since the panel does not know which scheme the
-  frame resolved.
+  the branch covers. Not decided: whether such an edit should save at all, and
+  if so as a pin over the one step or as a change to what it follows.
 
-- **(P3, isolated stories only) A forge story whose `viewport` the index cannot
-  read reloads its frame once when first opened.** The index reads a native
-  story's `viewport` when both sides are number literals (`viewportOf`,
-  `packages/forge/src/vite/indexFile.ts`), and the first instrument takes its
-  stage from that. Otherwise — a computed size, or a CSF story, whose viewport
-  comes from `parameters.viewport` and `globals.viewport` — the stage arrives
-  with the frame's `ready`, and labkit's `Trial`
-  (`packages/labkit/src/trial/Trial.tsx`) renders stage content inside `<Stage>`
-  and other content bare, so `FrameView` remounts and the iframe reloads. A
-  general fix keeps the frame through that remount (it is already placed by hand,
-  and `moveBefore` moves an iframe without reloading it), or has `Trial` keep
-  the body at one tree position whether or not there is a stage.
+- **(P3, isolated stories only) Watch in a browser that a story whose `viewport` the index cannot
+  read keeps its frame when first opened.** The stage for a computed size, or a CSF story's
+  `parameters.viewport`, arrives with the frame's `ready`, and labkit's `Trial` then remounts
+  `FrameView` inside a `<Stage>`. The frame now moves to the new view with `moveBefore`
+  (`useKeptFrame`, `packages/forge/src/shell/keptFrame.ts`), tested in jsdom as the same element on
+  the same port, which cannot show that the document did not reload. A browser without
+  `moveBefore` still reloads it once.
 
 - **(P3) windease lays out a node that was registered and never shown.** A
   strip gives a `mounted` node its room and a seam, while `Container` renders
@@ -733,18 +726,12 @@ only story runner in the repo.
   again (`createSplitStore`, `packages/labkit/src/primitives/Split.tsx`). The
   fix belongs in windease; the workaround goes when it lands.
 
-- **(P3) A dev server serves no edit while macOS file events are not arriving, and only forge's says so.**
-  This is what "a forge dev server started with `WAKE_EXTRA` served the modules it started with" was,
-  measured 2026-10-13 with `fseventsd` at 98% CPU and 2.6 GB: a write in a temp directory reached
-  neither `fs.watch` on that directory nor the `fsevents` module in 12 seconds, while a watch on the
-  file itself fired at once; a forge server on `WAKE_EXTRA` served none of three edits; and
-  `packages/forge/src/vite/replacedFile.test.ts` failed both its tests. wake, `WAKE_EXTRA`, and the
-  worktree are not part of it. That the earlier sighting had this cause is inferred from the matching
-  symptom, not measured. forge now writes a file at startup and warns when no event comes back
-  (`packages/forge/src/vite/watchProbe.ts`). Left: the site and draw servers give no such warning;
-  the forge tests that wait on a real watcher (`replacedFile.test.ts`, the `FOLLOWS` polls in
-  `plugin.test.ts`) fail in this state and read as a regression; and what holds `fseventsd` there is
-  not known.
+- **(P3) What holds `fseventsd` when macOS file events stop arriving is not known.** Measured
+  2026-10-13 with `fseventsd` at 98% CPU and 2.6 GB: a write in a temp directory reached neither
+  `fs.watch` on that directory nor the `fsevents` module in 12 seconds, while a watch on the file
+  itself fired at once, and a dev server served none of three edits. Every dev server in the repo
+  now warns when it starts in this state (`watchProbe`, `packages/forge/src/vite/watchProbe.ts`),
+  and the one test that needs a real watcher skips. The cause needs the machine in that state.
 
 - **(P2) Confirm in forge that a hot update is no longer followed by a full reload.** wake set a
   new stamp on every hot update and the page kept the one it loaded with, so about three seconds

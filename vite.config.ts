@@ -9,6 +9,7 @@ import { demoSources } from './scripts/vite-demo-sources.ts';
 import { changelogs } from './scripts/vite-changelogs.ts';
 import { getStarted } from './scripts/vite-get-started.ts';
 import { localWake } from './scripts/vite-wake.ts';
+import { watchProbe } from './packages/forge/src/vite/watchProbe.ts';
 import ports from './scripts/dev-ports.json' with { type: 'json' };
 
 /**
@@ -85,6 +86,7 @@ export default defineConfig({
     changelogs({ root: import.meta.dirname }),
     getStarted({ root: import.meta.dirname }),
     localWake({ fallback: [ports.siteBackup] }),
+    watchProbe(),
   ],
   define: weaselDefines(import.meta.dirname),
   // Pre-bundle demo-only deps at server start so they don't trigger lazy

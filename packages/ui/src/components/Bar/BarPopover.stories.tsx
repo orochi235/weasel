@@ -26,9 +26,10 @@ function Margins() {
 
 /** A value made of several fields, opened from the bar. */
 export const Rows: Story = {
-  render: () => (
+  args: { label: 'Margins' },
+  render: (args) => (
     <div className={s.strip}>
-      <BarPopover label="Margins">
+      <BarPopover {...args}>
         <Margins />
       </BarPopover>
     </div>
@@ -36,11 +37,6 @@ export const Rows: Story = {
 };
 
 export const WithIcon: Story = {
-  render: () => (
-    <div className={s.strip}>
-      <BarPopover label="Margins" icon={<Icon name="chevron" size={14} />}>
-        <Margins />
-      </BarPopover>
-    </div>
-  ),
+  args: { label: 'Margins', icon: <Icon name="chevron" size={14} /> },
+  render: Rows.render,
 };

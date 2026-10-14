@@ -1,7 +1,7 @@
 import { mkdtempSync, rmSync, watch as fsWatch, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import type { ViteDevServer } from 'vite';
+import type { Plugin, ViteDevServer } from 'vite';
 
 /** Starts a watch on a directory and returns what stops it. */
 export type WatchDir = (dir: string, onEvent: () => void) => () => void;
@@ -57,7 +57,7 @@ export function fileEventsArrive({ waitMs = WAIT_MS, watch = watchDir }: FileEve
 }
 
 const SILENT =
-  `[forge] a file written ${WAIT_MS / 1000} s ago has not been reported by the OS file watcher, so an edit will not reach the page ` +
+  `[watch] a file written ${WAIT_MS / 1000} s ago has not been reported by the OS file watcher, so an edit will not reach the page ` +
   'until file events arrive again. `server.watch: { usePolling: true }` serves edits without them. ' +
   'On macOS, look for `fseventsd` held at 100% CPU.';
 
@@ -66,4 +66,20 @@ export async function warnWhenWatchIsSilent(server: ViteDevServer, probe: () => 
   const { watch } = server.config.server;
   if (watch === null || watch?.usePolling) return;
   if (!(await probe())) server.config.logger.warn(SILENT);
+}
+
+export interface WatchProbeOptions {
+  /** Answers whether file events arrive. Default: {@link fileEventsArrive}. */
+  probe?: () => Promise<boolean>;
+}
+
+/** A plugin giving any dev server the warning forge's own gives when the OS reports no file changes. */
+export function watchProbe({ probe }: WatchProbeOptions = {}): Plugin {
+  return {
+    name: 'weasel-watch-probe',
+    apply: 'serve',
+    configureServer(server) {
+      void warnWhenWatchIsSilent(server, probe);
+    },
+  };
 }

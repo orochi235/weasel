@@ -22,6 +22,7 @@ import { useCssOverrides } from './cssVars/overrides';
 import { FramePoolContext, HELLO_TIMEOUT_MS, moveFrame } from './framePool';
 
 import { effectiveGlobals, GLOBALS_KEY, isGlobalsPath, storyConfig } from './globals';
+import { useKeptFrame } from './keptFrame';
 import { type Ready, readyKey } from './readyKey';
 import { type A11yOutcome, TrialFramesContext } from './trialFrames';
 import { StoryGlobalsContext } from './StoryGlobalsContext';
@@ -49,6 +50,8 @@ interface Fault {
 /** One handshake with one frame document; a reload replaces it. */
 interface Link {
   channel: Channel<FromFrame, ToFrame>;
+  /** Takes each message to the view that holds the frame now. */
+  deliver: (msg: FromFrame) => void;
   timer: ReturnType<typeof setTimeout>;
   /** The key of a `ready` whose `init` waits for an instrument built from it. */
   awaiting: string | null;
@@ -80,6 +83,28 @@ function mismatchMessage(mismatch: Mismatch): string {
   return mismatch.reason === 'version'
     ? `Frame speaks protocol ${String(mismatch.version)}; this workshop speaks ${PROTOCOL_VERSION}`
     : 'Frame sent a message that is not a forge envelope';
+}
+
+/** Sends the frame whichever of the trial's config, state and globals differ from what it holds; true when any did. */
+function sendInputs(current: Link, sent: NonNullable<Link['sent']>, ctx: FrameViewProps['ctx'], globals: Globals): boolean {
+  const before = current.inputs;
+  const config = storyConfig(ctx.config, sent.config);
+  if (config !== sent.config) {
+    sent.config = config;
+    current.channel.send({ type: 'config', config });
+    current.inputs += 1;
+  }
+  if (ctx.state !== sent.state) {
+    sent.state = ctx.state;
+    current.channel.send({ type: 'state', state: ctx.state });
+    current.inputs += 1;
+  }
+  if (globals !== sent.globals && stableStringify(globals) !== stableStringify(sent.globals)) {
+    sent.globals = globals;
+    current.channel.send({ type: 'globals', globals });
+    current.inputs += 1;
+  }
+  return current.inputs !== before;
 }
 
 export function FrameView(props: FrameViewProps) {
@@ -195,6 +220,7 @@ export function FrameView(props: FrameViewProps) {
     const disconnect = frames && trialId ? frames.connect(trialId, { send: channel.send, audit }) : () => {};
     const current: Link = {
       channel,
+      deliver: (msg) => receive(current, msg),
       timer,
       awaiting: null,
       sent: null,
@@ -205,7 +231,7 @@ export function FrameView(props: FrameViewProps) {
       queued: [],
     };
     link.current = current;
-    channel.on((msg) => receive(current, msg));
+    channel.on((msg) => current.deliver(msg));
     target.postMessage({ type: PORT_HANDOFF, id: latestRef.current.entry.id } satisfies PortHandoff, location.origin, [
       port2,
     ]);
@@ -213,13 +239,27 @@ export function FrameView(props: FrameViewProps) {
 
   const connectRef = useLatest(connect);
 
+  const handedOn = useKeptFrame<Link>({
+    key: trialId ? `${trialId} ${src}` : null,
+    slot: slotRef,
+    frame: iframeRef,
+    link,
+    onAdopt: (adopted) => {
+      adopted.deliver = (msg) => receive(adopted, msg);
+      setPending(!adopted.hasRendered);
+    },
+    onDrop: () => closeLink(link),
+  });
+
   // A trial out of view drops its frame, and with it any WebGL contexts the story held; the config and state
   // live in the trial, so a return brings up a new frame and `init` carries them back.
   useEffect(() => {
     const slot = slotRef.current;
     if (!inView || !slot) return;
-    const claimed = latestRef.current.pool?.claim() ?? null;
-    const frame = claimed ?? document.createElement('iframe');
+    // Already in the slot, loaded and linked, when it came from the view this one replaced.
+    const adopted = iframeRef.current;
+    const claimed = adopted ? null : (latestRef.current.pool?.claim() ?? null);
+    const frame = adopted ?? claimed ?? document.createElement('iframe');
     frame.className = 'fg-frame-view';
     frame.title = latestRef.current.title;
     frame.removeAttribute('tabindex');
@@ -227,7 +267,7 @@ export function FrameView(props: FrameViewProps) {
     iframeRef.current = frame;
     // Handshakes start on the document's hello, never on `load`: that fires before the hello, and a port handed
     // over then is one the frame, which keeps only its first, would still take in place of the right one.
-    const unheard = claimed
+    const unheard = adopted || claimed
       ? undefined
       : setTimeout(() => setFault({ phase: null, message: `Frame did not start: ${src}` }), HELLO_TIMEOUT_MS);
     const onMessage = (event: MessageEvent) => {
@@ -240,20 +280,21 @@ export function FrameView(props: FrameViewProps) {
     if (claimed) {
       moveFrame(slot, claimed);
       connectRef.current(claimed);
-    } else {
+    } else if (!adopted) {
       frame.src = src;
       slot.append(frame);
     }
     return () => {
       window.removeEventListener('message', onMessage);
       clearTimeout(unheard);
+      if (handedOn.current) return;
       closeLink(link);
       frame.remove();
       iframeRef.current = null;
       setPending(true);
       setFault(null);
     };
-  }, [inView, src, connectRef, latestRef]);
+  }, [inView, src, connectRef, latestRef, handedOn]);
 
   useEffect(() => {
     iframeRef.current?.toggleAttribute('data-pending', pending && !fault);
@@ -272,30 +313,10 @@ export function FrameView(props: FrameViewProps) {
       if (current.awaiting === descriptionKey) init(current);
       return;
     }
-    const sent = current.sent;
-    if (!sent) return;
-    let input = false;
-    const config = storyConfig(ctx.config, sent.config);
-    if (config !== sent.config) {
-      sent.config = config;
-      current.channel.send({ type: 'config', config });
-      current.inputs += 1;
-      input = true;
-    }
-    if (ctx.state !== sent.state) {
-      sent.state = ctx.state;
-      current.channel.send({ type: 'state', state: ctx.state });
-      current.inputs += 1;
-      input = true;
-    }
-    if (globals !== sent.globals && stableStringify(globals) !== stableStringify(sent.globals)) {
-      sent.globals = globals;
-      current.channel.send({ type: 'globals', globals });
-      current.inputs += 1;
-      input = true;
-    }
     // The frame retries its render on new input and faults again if it still throws.
-    if (input) setFault((shown) => (shown?.phase === 'render' ? null : shown));
+    if (current.sent && sendInputs(current, current.sent, ctx, globals)) {
+      setFault((shown) => (shown?.phase === 'render' ? null : shown));
+    }
   }, [ctx.config, ctx.state, globals, descriptionKey, init]);
 
   return (
