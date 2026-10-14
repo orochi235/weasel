@@ -320,9 +320,18 @@ Priority tags:
   consulting the journal accessor. `scene.recordedForm.test.ts` pins today's split. Routing `scene.batch` also needs a new method
   on `Journal`: `batch` records ops that have already applied (`engine.recordEntry`), and `Journal`
   has only `applyBatch`, which would apply them again; a direct call that touches a laid-out
-  container runs as a batch. draw opens a journal in every mode
+  container runs as a batch. draw opens a journal in every strict mode, and in every soft mode
+  unless the Modes > Undo inside a mode pref says the document's history
   (`apps/draw/src/modality/machine.ts`), so the change moves where every direct call made during
   a mode lands.
+
+- **(P2) A soft mode's edits drop out of undo once you leave the mode.** In draw with Modes > Undo
+  inside a mode at its default, the mode's own edits, leaving path edit suspends its journal, and
+  nothing of it reaches the scene's history. Back in normal mode, Undo skips those edits: after
+  drawing a path and dragging one of its anchors, Undo removes the path, and Redo brings it back
+  without the drag. Re-entering the mode resumes the journal only if no later entry touched the
+  node. Fixing it means deciding what leaving puts on the document's stack: the session as one
+  entry, which ends the resume-on-reentry cache, or a record a later resume can amend.
 
 ### Derived geometry follow-ups
 
