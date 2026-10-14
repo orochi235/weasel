@@ -30,6 +30,7 @@ import { SUPPORTED_LEAF_TAGS, IGNORED_TAGS, lowerLeaf } from './lowerLeaf';
 import { parseViewBoxAttr } from './viewBox';
 import { type ClipTable, collectClipPaths, clipFor } from './readClips';
 import { readPaint, readStroke, isNonScalingStroke } from './readPaint';
+import { isStrokeOutline, withWidthProfile } from './widthProfileSvg';
 import { parseImageElement, parseCroppedImage } from './readImage';
 import { parseTextElement } from './readText';
 import { ingestMarkers } from './readMarkers';
@@ -234,7 +235,7 @@ function parseChildren(
     // Skip namespaced children — they belong to `meta.elements`, not nodes.
     // (DOM gives SVG-native elements `http://www.w3.org/2000/svg`.)
     const ns = el.namespaceURI;
-    if (ns && ns !== 'http://www.w3.org/2000/svg') continue;
+    if ((ns && ns !== 'http://www.w3.org/2000/svg') || isStrokeOutline(el)) continue;
     const hidden = isHiddenElement(el, style);
     if (hidden && !keepHidden) continue;
     const node = parseElement(el, ctm, style, gradients, clips, onWarn, uriToPrefix, keepHidden);
@@ -351,7 +352,7 @@ function parseElement(
   }
   const leafStyle = deriveStyle(style, el);
   const fill = paintThroughMatrix(readPaint(leafStyle, 'fill', '#000000', gradients, onWarn), baked);
-  const ownStroke = readStroke(leafStyle, gradients, onWarn, isNonScalingStroke(el));
+  const ownStroke = withWidthProfile(el, readStroke(leafStyle, gradients, onWarn, isNonScalingStroke(el)));
   const stroke = ownStroke && strokeThroughMatrix(ownStroke, baked);
   if (stroke && typeof stroke.width === 'number' && isNonUniform(baked)) {
     onWarn(`<${tag}> stroke sits under a skew or non-uniform scale; its width takes the uniform part only`);

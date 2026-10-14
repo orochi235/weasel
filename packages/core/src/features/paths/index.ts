@@ -139,4 +139,7 @@ export {
   trianglesToPath,
 } from '@weasel-js/geom/booleans';
 export { strokeToPath, type StrokeToPathOptions } from '@weasel-js/stroke';
+export {
+  nearestStrokeSite, strokeSitesAt, type StrokeSite, type StrokeSiteOptions,
+} from '@weasel-js/stroke';
 export { offsetPath, type OffsetPathOptions } from '@weasel-js/stroke';

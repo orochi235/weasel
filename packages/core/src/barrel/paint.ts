@@ -22,6 +22,11 @@ export {
   resolveScreenLength,
   strokeDashStyleOf,
   STROKE_DASH_RATIOS,
+  normalizeWidthProfile,
+  removeWidthStop,
+  setWidthStop,
+  widestInProfile,
+  widthProfileAt,
 } from '@weasel-js/paint';
 export { resolveStrokeWidth } from '@weasel-js/stroke';
 export type {
@@ -54,6 +59,8 @@ export type {
   MarkerKey,
   MarkerRef,
   ScreenLength,
+  WidthProfile,
+  WidthStop,
 } from '@weasel-js/paint';
 export {
   TILE_KINDS,

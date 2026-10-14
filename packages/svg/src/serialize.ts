@@ -17,7 +17,8 @@ import { formatMatrix, trimNumber } from './transform';
 import { PaintServerRegistry, WEASEL_NS, WEASEL_NS_PREFIX } from './gradients';
 import { boxTransformAttr } from './placeBox';
 import { computeBounds, pathBounds } from './serializeBounds';
-import { paintAttrs, strokeAttrsFor, type Warn } from './strokeAttrs';
+import { paintAttrs, strokeAttrsFor, strokePaintAsFillAttrs, type Warn } from './strokeAttrs';
+import { hasWidthProfile, profiledStrokeAttrs, strokeOutlineXml, writesWidthProfile } from './widthProfileSvg';
 import { textXml } from './serializeText';
 import { prettyXml } from './prettyXml';
 
@@ -36,7 +37,7 @@ export function serializeSvg(nodes: SvgNode[], opts: SerializeOptions = {}): str
   const rootAttrs: string[] = [`xmlns="http://www.w3.org/2000/svg"`];
   // Only when something needs it, so a document of ordinary paints carries no
   // trace of it. The pre-pass above has seen every paint, so this answer is final.
-  if (registry.usesPrivateNamespace() && namespaces[WEASEL_NS_PREFIX] == null) {
+  if ((registry.usesPrivateNamespace() || writesWidthProfile(nodes)) && namespaces[WEASEL_NS_PREFIX] == null) {
     rootAttrs.push(`xmlns:${WEASEL_NS_PREFIX}="${WEASEL_NS}"`);
   }
   for (const [prefix, uri] of Object.entries(namespaces)) {
@@ -122,7 +123,10 @@ function nodeXml(
   node: SvgNode, registry: PaintServerRegistry, namespaces: Record<string, string>, warn: Warn,
 ): string {
   const xml = kindXml(node, registry, namespaces, warn);
-  return node.hidden ? xml.replace(/^<[\w:]+/, (open) => `${open} display="none"`) : xml;
+  if (!node.hidden) return xml;
+  // A profiled stroke's outline follows its path, and hides with it.
+  return xml.replace(/^<[\w:]+/, (open) => `${open} display="none"`)
+    .replace(/<path (?=[^>]*:role="stroke-outline")/, '<path display="none" ');
 }
 
 function kindXml(
@@ -212,26 +216,35 @@ function pathXml(
   if (node.path.kind === 'polygon' && node.path.fillRule === 'evenodd') {
     attrs.push(`fill-rule="evenodd"`);
   }
+  const profiled = hasWidthProfile(node.stroke);
   if (node.stroke) {
-    const strokeAttrs = strokeAttrsFor(node.stroke, registry, warn);
-    for (const a of strokeAttrs) attrs.push(a);
+    // A profile's outline is exact on either side of the edge, so SVG's
+    // missing alignment loses nothing.
+    const strokeAttrs = strokeAttrsFor(node.stroke, registry, profiled ? () => {} : warn);
+    for (const a of profiled ? profiledStrokeAttrs(node.stroke, strokeAttrs) : strokeAttrs) attrs.push(a);
   } else {
     attrs.push('stroke="none"');
   }
-  if (node.opacity != null && node.opacity !== 1) {
-    attrs.push(`opacity="${trimNumber(node.opacity)}"`);
-  }
-  if (node.rotation != null && node.rotation !== 0) {
-    const b = pathBounds(node.path);
-    const cx = b.minX + (b.maxX - b.minX) / 2;
-    const cy = b.minY + (b.maxY - b.minY) / 2;
-    const deg = (node.rotation * 180) / Math.PI;
-    attrs.push(`transform="rotate(${trimNumber(deg)} ${trimNumber(cx)} ${trimNumber(cy)})"`);
-  }
+  const opacity = node.opacity != null && node.opacity !== 1 ? `opacity="${trimNumber(node.opacity)}"` : null;
+  if (opacity) attrs.push(opacity);
+  const transform = rotationAttr(node);
+  if (transform) attrs.push(transform);
   const metaAttrs = metaAttrsXml(node.meta, namespaces);
   const metaEls = metaElementsXml(node.meta, namespaces);
-  if (metaEls) {
-    return `<path ${attrs.join(' ')}${metaAttrs}>${metaEls}</path>`;
-  }
-  return `<path ${attrs.join(' ')}${metaAttrs}/>`;
+  const xml = metaEls
+    ? `<path ${attrs.join(' ')}${metaAttrs}>${metaEls}</path>`
+    : `<path ${attrs.join(' ')}${metaAttrs}/>`;
+  if (!profiled) return xml;
+  const outlineFill = [...strokePaintAsFillAttrs(node.stroke!, registry), ...(opacity ? [opacity] : [])];
+  return xml + strokeOutlineXml(node.path, node.stroke!, outlineFill, transform);
+}
+
+/** `transform="rotate(...)"` about the center of `node`'s path, or null. */
+function rotationAttr(node: SvgPathNode): string | null {
+  if (node.rotation == null || node.rotation === 0) return null;
+  const b = pathBounds(node.path);
+  const cx = b.minX + (b.maxX - b.minX) / 2;
+  const cy = b.minY + (b.maxY - b.minY) / 2;
+  const deg = (node.rotation * 180) / Math.PI;
+  return `transform="rotate(${trimNumber(deg)} ${trimNumber(cx)} ${trimNumber(cy)})"`;
 }
