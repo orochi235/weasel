@@ -728,8 +728,11 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   (2) A section's rail entry and a nested page's look the same until one is chosen.
 
 - **(P3) A fragment has no box for a preview drag to land on.** Its element is
-  `display: contents`, so a drag in `PrefSchemaEditor`'s preview cannot land beside or into an
-  `as: 'fragment'` group itself, only beside the rows inside it; the structure tree takes both.
+  `display: contents`, so `measure` in `Prefs/dropTarget.ts` reads an empty rect for it and a drag
+  in `PrefSchemaEditor`'s preview lands only beside the rows inside it; the structure tree takes
+  both. Its box can be the union of its rows' rects, but two things then need a browser to
+  settle: a point on its first row means both "before that row" and "before the fragment", which
+  wants an edge zone to tell apart, and an empty fragment still has no rect at all.
 
 - **(P3) `PrefSchemaEditor` sees only a `ResolvedConfig`'s `group`.** A schema built with
   `f.section` keeps its sections, `showIf` rules, `.render` overrides, and `.dialog` rows beside
