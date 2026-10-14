@@ -123,3 +123,19 @@ describe('contentBox', () => {
     });
   }
 });
+
+describe('trapezoid', () => {
+  const box = { x: 10, y: 20, width: 40, height: 80 };
+
+  it('runs from a half-height left side to a full-height right side', () => {
+    const path = outlinePath('trapezoid', box);
+    expect(path.kind).toBe('polygon');
+    if (path.kind !== 'polygon') return;
+    expect([...path.coords]).toEqual([10, 40, 50, 20, 50, 100, 10, 80]);
+  });
+
+  it('keeps content inside the narrow side, and sizes a box to hold it', () => {
+    expect(contentBox('trapezoid', box)).toEqual({ x: 10, y: 40, width: 40, height: 40 });
+    expect(boxForContent('trapezoid', { width: 40, height: 40 })).toEqual({ width: 40, height: 80 });
+  });
+});
