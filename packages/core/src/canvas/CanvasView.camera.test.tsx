@@ -27,7 +27,6 @@ function Surface({ outer, redraw, onReady }: {
   useEffect(() => {
     onReady(registry);
     return registry.attachSurface({
-      origin: () => ({ left: 0, top: 0 }),
       view: outer,
       dims: () => ({ width: 300, height: 200 }),
       layers: () => [],

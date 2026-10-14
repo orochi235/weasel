@@ -17,8 +17,9 @@ its rect keeps reporting coordinates in the space it began in. It routes any
 `ResolvableView` (a camera plus the rect it paints into), which a viewport node
 supplies via `resolvable(outer, dims)`.
 
-Its `ViewTarget.origin` is the client-space origin of the resolved view, so
-`clientToWorld(x, y, target.origin, target.view)` lands in that view's world.
+Its `ViewTarget.world` is the point in the resolved view's world. The resolver
+reads the canvas through `toLocal`, a client point in the canvas's own pixels,
+so a canvas under a CSS transform routes and converts by its own rule.
 
 `<CanvasView>` wires all of this: it contributes a viewport node and a dispatch
 record, and `<SceneCanvas>` routes events between them. Reach for the module

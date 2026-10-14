@@ -100,12 +100,11 @@ Priority tags:
 - **(P3) `BASELINE.md`'s text layout numbers include grouping.**
   `tests/perf/bench/text-layout.bench.ts` times layout alone now, so they need re-recording.
 
-- **(P3) What removing the old tool design left.** A `<CanvasView>` converts client points with
-  the bare rect helper (`clientToWorldHere` in `CanvasView.tsx`), and so does `worldPointAt` for a
-  point that resolves to a declared view. A canvas's `clientToWorld` override reaches neither: it
-  maps into the canvas's own world, and these need a client-to-canvas-local conversion it does not
-  provide. The view resolver (`features/viewports/viewResolver.ts`) picks the view under a client
-  point from the canvas's rect the same way.
+- **(P3) The dispatcher's canvas-local point ignores a `clientToWorld` override.** `toCanvasLocal`
+  in `packages/routing/src/interactions/dispatcher/dispatchCore.ts` subtracts the element's rect,
+  so on a canvas under a CSS transform the painted cursor, a wheel or pinch's `local`, and the
+  long-press state's `local` are off. Core's `surfaceLocal` puts the override's world point back
+  through the camera; the dispatcher holds no camera to do the same with.
 
 - **(P3) What moving the Badge lab out of its stories file left.** The lab is
   `packages/ui/src/components/Badge/lab/` now.

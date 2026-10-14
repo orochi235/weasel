@@ -20,7 +20,7 @@ function resolver(views: ResolvableView[] = [viewAt('a', 0, 0), viewAt('b', 200,
     r: createViewResolver({
       views: () => live,
       root: () => ROOT,
-      canvasOrigin: () => CANVAS,
+      toLocal: (x, y) => ({ x: x - CANVAS.left, y: y - CANVAS.top }),
     }),
     setViews: (next: ResolvableView[]) => { live = next; },
   };
@@ -35,9 +35,21 @@ describe('view resolution', () => {
     expect(r.at(null, ...client(250, 50)).id).toBe('b');
   });
 
-  it('reports the view rect origin in client space', () => {
-    const { r } = resolver();
-    expect(r.at(null, ...client(250, 50)).origin).toEqual({ left: 300, top: 50 });
+  it('reports the point in the world of the view it resolved to', () => {
+    const { r } = resolver([viewAt('a', 0, 0), { ...viewAt('b', 200, 0), view: { x: 1000, y: 0, scale: { x: 2, y: 2 } } }]);
+    expect(r.at(null, ...client(250, 50)).world).toEqual({ x: 1025, y: 25 });
+  });
+
+  it('reads the canvas through `toLocal`, whatever maps a client point onto it', () => {
+    // A canvas drawn at double size: two client pixels to each of its own.
+    const r = createViewResolver({
+      views: () => [viewAt('a', 0, 0), viewAt('b', 200, 0)],
+      root: () => ROOT,
+      toLocal: (x, y) => ({ x: (x - CANVAS.left) / 2, y: (y - CANVAS.top) / 2 }),
+    });
+    const target = r.at(null, CANVAS.left + 500, CANVAS.top + 100);
+    expect(target.id).toBe('b');
+    expect(target.world).toEqual({ x: 50, y: 50 });
   });
 
   it('falls back to the root view outside every rect', () => {
@@ -45,7 +57,7 @@ describe('view resolution', () => {
     const target = r.at(null, ...client(150, 50));
     expect(target.id).toBeNull();
     expect(target.view).toBe(ROOT);
-    expect(target.origin).toEqual(CANVAS);
+    expect(target.world).toEqual({ x: 150, y: 50 });
   });
 
   it('picks the last overlapping view, matching paint order', () => {
@@ -80,7 +92,7 @@ describe('gesture stickiness', () => {
     const { r, setViews } = resolver();
     r.begin(1, ...client(50, 50));
     setViews([{ ...viewAt('a', 0, 0), rect: { x: 20, y: 20, w: 100, h: 100 } }]);
-    expect(r.at(1, ...client(50, 50)).origin).toEqual({ left: 120, top: 70 });
+    expect(r.at(1, ...client(50, 50)).world).toEqual({ x: 30, y: 30 });
   });
 
   it('releases the pin on end', () => {

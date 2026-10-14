@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { createViewportLayer, type ViewportLayer } from './viewportLayer';
 import { createViewResolver } from './viewResolver';
-import { clientToWorld } from 'core/viewport/clientToWorld';
 import type { RenderLayer } from 'core/layers/render';
 import type { View } from 'core/viewport/view';
 import type { GroupDrawCommand } from '@weasel-js/renderer';
@@ -29,7 +28,7 @@ function pip() {
 }
 
 /** Where a screen point lands when `layers` are routed the way `<CanvasView>`
- *  routes them: `resolvable` fed to a view resolver, then `clientToWorld`.
+ *  routes them: `resolvable` fed to a view resolver.
  *  The canvas sits off the client origin, so client and screen differ. */
 function route(
   layers: readonly ViewportLayer<unknown>[],
@@ -39,13 +38,12 @@ function route(
   const r = createViewResolver({
     views: () => layers.map((l) => l.resolvable(OUTER, dims)),
     root: () => OUTER,
-    canvasOrigin: () => CANVAS,
+    toLocal: (x, y) => ({ x: x - CANVAS.left, y: y - CANVAS.top }),
   });
   const clientX = CANVAS.left + screen.x;
   const clientY = CANVAS.top + screen.y;
   const t = r.at(null, clientX, clientY);
-  const [x, y] = clientToWorld(clientX, clientY, t.origin, t.view);
-  return { id: t.id, point: { x, y } };
+  return { id: t.id, point: t.world };
 }
 
 describe('routing through a viewport', () => {

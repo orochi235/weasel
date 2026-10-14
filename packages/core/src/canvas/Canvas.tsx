@@ -566,12 +566,6 @@ function CanvasInner<TPose>(
   const surfaceLayersRef = useLatest<readonly RenderLayer<unknown>[]>(layers);
   useEffect(() => {
     return viewRegistry?.attachSurface({
-      origin: () => {
-        const c = canvasRef.current;
-        if (!c) return { left: 0, top: 0 };
-        const r = c.getBoundingClientRect();
-        return { left: r.left, top: r.top };
-      },
       view: () => viewRef.current,
       dims: () => dimsRef.current,
       layers: () => surfaceLayersRef.current,
@@ -580,9 +574,10 @@ function CanvasInner<TPose>(
       hitTestExtras: hitTestExtrasIn,
       clientToWorld: toWorld,
       claimsAbove: (x, y) => {
-        const corner = canvasRef.current?.getBoundingClientRect();
-        const [worldX, worldY] = toWorld(x + (corner?.left ?? 0), y + (corner?.top ?? 0));
-        return hitTestExtrasIn(worldX, worldY, viewRef.current, dimsRef.current, helpersForLayersRef.current) !== null;
+        const view = viewRef.current;
+        const worldX = x / view.scale.x + view.x;
+        const worldY = y / view.scale.y + view.y;
+        return hitTestExtrasIn(worldX, worldY, view, dimsRef.current, helpersForLayersRef.current) !== null;
       },
     });
   }, [viewRegistry, canvasRef, requestRedraw, hitTestExtrasIn, dimsRef, surfaceLayersRef, viewRef, toWorld]);

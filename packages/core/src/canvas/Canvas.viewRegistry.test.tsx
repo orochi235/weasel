@@ -18,7 +18,6 @@ function Probe({ onRegistry }: { onRegistry: (r: ViewRegistry) => void }) {
 }
 
 const handle = (): SurfaceHandle => ({
-  origin: () => ({ left: 0, top: 0 }),
   view: () => ({ x: 0, y: 0, scale: { x: 1, y: 1 } }),
   dims: () => ({ width: 1, height: 1 }),
   layers: () => [],

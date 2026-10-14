@@ -1,12 +1,10 @@
-import { clientToWorld } from 'core/viewport/clientToWorld';
 import type { ViewTarget } from 'features/viewports/viewResolver';
 import type { CanvasExtensionApi } from '../canvasExtension';
 
 /**
  * A client point in the world of the view it resolved to. The canvas's own
- * view converts through the handle, which honors a `clientToWorld` override;
- * a declared view has a rect and a camera of its own, which the override
- * knows nothing about.
+ * view converts through the handle, and a declared view through the resolver,
+ * which reads the canvas by the same conversion.
  */
 export function worldPointAt(
   api: Pick<CanvasExtensionApi, 'clientToWorld'>,
@@ -15,5 +13,5 @@ export function worldPointAt(
   clientY: number,
 ): [number, number] {
   if (!target || target.id === null) return api.clientToWorld(clientX, clientY);
-  return clientToWorld(clientX, clientY, target.origin, target.view);
+  return [target.world.x, target.world.y];
 }

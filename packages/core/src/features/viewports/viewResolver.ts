@@ -18,15 +18,12 @@ export interface ResolvableView {
  *
  * The view an input event belongs to. `id` is `null` for the root view —
  * the whole canvas, when no viewport contains the point.
- *
- * `origin` is the client-space origin of that view's surface, ready to hand
- * to `clientToWorld` — which is the whole reason this type carries it rather
- * than leaving callers to add the canvas rect and the view rect themselves.
  */
 export interface ViewTarget {
   id: string | null;
   view: View;
-  origin: { left: number; top: number };
+  /** The point asked about, in that view's world. */
+  world: { x: number; y: number };
 }
 
 /**
@@ -66,8 +63,8 @@ export interface CreateViewResolverOpts {
   views: () => readonly ResolvableView[];
   /** The camera for points no view claims. */
   root: () => View;
-  /** Client-space origin of the canvas element. */
-  canvasOrigin: () => { left: number; top: number };
+  /** A client point in the canvas's own CSS pixels, from its top-left. */
+  toLocal: (clientX: number, clientY: number) => { x: number; y: number };
   /**
    * Whether something painted over every view claims a canvas-local point —
    * chrome on the surface's own frame. Such a point resolves to the root even
@@ -78,28 +75,28 @@ export interface CreateViewResolverOpts {
 
 /** @experimental Build a `ViewResolver` over `opts.views`, falling back to `opts.root`. */
 export function createViewResolver(opts: CreateViewResolverOpts): ViewResolver {
-  const { views, root, canvasOrigin, occluded } = opts;
+  const { views, root, toLocal, occluded } = opts;
   const pinned = new Map<number, string | null>();
 
-  function rootTarget(): ViewTarget {
-    return { id: null, view: root(), origin: canvasOrigin() };
+  type Local = { x: number; y: number };
+  /** `at`, a canvas point `from` its surface's top-left, through `view`. */
+  const worldOf = (at: Local, from: Local, view: View): Local => ({
+    x: (at.x - from.x) / view.scale.x + view.x,
+    y: (at.y - from.y) / view.scale.y + view.y,
+  });
+
+  function rootTarget(at: Local): ViewTarget {
+    const view = root();
+    return { id: null, view, world: worldOf(at, { x: 0, y: 0 }, view) };
   }
 
-  function target(v: ResolvableView): ViewTarget {
-    const c = canvasOrigin();
-    return {
-      id: v.id,
-      view: v.view,
-      origin: { left: c.left + v.rect.x, top: c.top + v.rect.y },
-    };
+  function target(v: ResolvableView, at: Local): ViewTarget {
+    return { id: v.id, view: v.view, world: worldOf(at, v.rect, v.view) };
   }
 
   /** Right and bottom edges are exclusive, so neighbouring views never both
    *  claim a pixel. */
-  function hit(clientX: number, clientY: number): ResolvableView | undefined {
-    const c = canvasOrigin();
-    const x = clientX - c.left;
-    const y = clientY - c.top;
+  function hit({ x, y }: Local): ResolvableView | undefined {
     const list = views();
     for (let i = list.length - 1; i >= 0; i--) {
       const { rect } = list[i]!;
@@ -110,26 +107,27 @@ export function createViewResolver(opts: CreateViewResolverOpts): ViewResolver {
     return undefined;
   }
 
-  function fresh(clientX: number, clientY: number): ViewTarget {
-    const v = hit(clientX, clientY);
-    return v ? target(v) : rootTarget();
+  function fresh(at: Local): ViewTarget {
+    const v = hit(at);
+    return v ? target(v, at) : rootTarget(at);
   }
 
   return {
     begin(pointerId, clientX, clientY) {
-      const t = fresh(clientX, clientY);
+      const t = fresh(toLocal(clientX, clientY));
       pinned.set(pointerId, t.id);
       return t;
     },
     at(pointerId, clientX, clientY) {
+      const at = toLocal(clientX, clientY);
       if (pointerId !== null && pinned.has(pointerId)) {
         const id = pinned.get(pointerId)!;
-        if (id === null) return rootTarget();
+        if (id === null) return rootTarget(at);
         const v = views().find((c) => c.id === id);
-        if (v) return target(v);
+        if (v) return target(v, at);
         pinned.delete(pointerId);
       }
-      return fresh(clientX, clientY);
+      return fresh(at);
     },
     end(pointerId) {
       pinned.delete(pointerId);
