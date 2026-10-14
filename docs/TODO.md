@@ -603,11 +603,11 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   `fonts.css`, so `--wzl-font-ui`'s Oswald and `--wzl-font-numeric`'s Oswald Tabular fall back to
   system faces in every demo. Left as is for now by decision; draw loads `fonts.css`.
 
-- **(P3) No control in `@weasel-js/ui` draws its numbers through `QuantityText`.** `QuantityText`
-  draws a quantity, a range, or a vector as the HTML form `@weasel-js/quantity` writes, and dims
-  a unit, a percent sign, and a label. No control uses it: `Slider`'s readouts, `BandEditor`'s
-  ticks and ends, and `Transport`'s rate draw `qty().text`, and `PropertyField` still draws its
-  suffix from its own `unit` prop. It draws no kind's MathML form.
+- **(P3) `PropertyField` draws its unit from its own `unit` prop, not through `QuantityText`.**
+  `Slider`'s readouts, `BandEditor`'s ticks and ends, and `Transport`'s rate draw through
+  `QuantityText`, which dims a unit, a percent sign, and a label. `PropertyField`'s suffix is still a
+  `ReactNode` it is handed beside an editable number, so it follows none of that. `QuantityText`
+  draws no kind's MathML form.
 
 - **(P2) Redesign the stop color/opacity swatches under `GradientEditor`.** Each stop gets
   a `ColorField` with an alpha slider in a row beneath the track (`GradientEditor.tsx`). The

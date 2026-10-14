@@ -780,6 +780,18 @@ describe('BandEditor quantities', () => {
     expect(labels).toEqual(['2,500%', 'half']);
   });
 
+  it('draws a tick and a range end as marked-up quantities, with nothing added for a reader', () => {
+    const { container } = setup({ ticks: [{ at: 25 }], display: percent(), onRangeChange: () => {} });
+    const tick = container.querySelector('[data-tick-at]')!;
+    expect(tick.querySelector('data')?.getAttribute('value')).toBe('25');
+    expect(tick.querySelector('[data-part="percentSign"]')?.textContent).toBe('%');
+    expect(tick.textContent).toBe('2,500%');
+    for (const end of container.querySelectorAll('[data-range-end]')) {
+      expect(end.querySelector('[data-part="percentSign"]')?.textContent, end.getAttribute('data-range-end')!).toBe('%');
+      expect(end.querySelector('[aria-hidden]')).toBeNull();
+    }
+  });
+
   it('keeps a tagged from tagged through an edit', () => {
     const onChange = vi.fn();
     const { container } = render(

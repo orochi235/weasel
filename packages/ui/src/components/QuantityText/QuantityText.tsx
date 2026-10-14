@@ -7,6 +7,8 @@ export type QuantityTextProps = {
   display?: Display;
   /** BCP 47 locale. Default `en-US`. */
   locale?: string;
+  /** Draw no copy for a screen reader: set where the control around this speaks the value itself. */
+  mute?: boolean;
   className?: string;
 } & (
     | { value: Quantity; range?: undefined; vector?: undefined }
@@ -50,7 +52,7 @@ function presented(props: QuantityTextProps): Presentation {
  */
 export function QuantityText(props: QuantityTextProps) {
   const { text, spoken, html } = presented(props);
-  const reads = spoken !== text;
+  const reads = !props.mute && spoken !== text;
   return (
     <span className={[s.quantity, props.className].filter(Boolean).join(' ')}>
       {/* The package escapes every run it writes, a consumer's labels and separators included. */}

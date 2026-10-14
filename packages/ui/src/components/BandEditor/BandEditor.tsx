@@ -13,8 +13,9 @@ import {
 } from 'react';
 import { openPointerSession, pastDragThreshold, type PointerSession } from '@weasel-js/core';
 import { focusedControlOwnsKey, isEditableTarget } from '@weasel-js/gestures';
-import { decimal, qty, type Display, type Quantity } from '@weasel-js/quantity';
+import { decimal, type Display, type Quantity } from '@weasel-js/quantity';
 import s from './BandEditor.module.css';
+import { QuantityText } from '../QuantityText';
 import { SNAP_RADIUS_PX, snapToNearest } from '../../snap';
 import { clamp01, resolveScale, type BandScale } from './scale';
 import { bandName, retagBands, untag } from './retag';
@@ -327,8 +328,8 @@ export function BandEditor<T, F extends Quantity = number>(props: BandEditorProp
         display={props.display}
         ends={
           props.onRangeChange && [
-            { edge: 'min', at: lo, label: qty(shown[0]?.from ?? lo, display).text },
-            { edge: 'max', at: hi, label: qty(hi, display).text },
+            { edge: 'min', at: lo, label: <QuantityText value={shown[0]?.from ?? lo} display={display} mute /> },
+            { edge: 'max', at: hi, label: <QuantityText value={hi} display={display} mute /> },
           ]
         }
         toUnit={toUnit}

@@ -6,7 +6,8 @@ import {
   type ReactNode,
   type RefObject,
 } from 'react';
-import { qty, type Display } from '@weasel-js/quantity';
+import type { Display } from '@weasel-js/quantity';
+import { QuantityText } from '../QuantityText';
 import s from './BandEditor.module.css';
 import type { RangeEdge } from './bands';
 import { pct } from './track';
@@ -69,7 +70,7 @@ export function Ruler({ trackRef, ticks, display, ends, toUnit, onPointerDown }:
           style={{ '--be-at': pct(toUnit(tick.at)) } as CSSProperties}
         >
           {(tick.label !== undefined || display !== undefined) && (
-            <span className={s.tickLabel}>{tick.label ?? qty(tick.at, display).text}</span>
+            <span className={s.tickLabel}>{tick.label ?? <QuantityText value={tick.at} display={display} mute />}</span>
           )}
         </span>
       ))}
