@@ -92,6 +92,14 @@ nodes already sit, and a node carrying `pinned: true` that nothing moves.
 `force` is the exception to the second half of that: it is an iterative
 relaxation seeded from the current positions, so re-running it keeps relaxing.
 
+`chain` stands one run of nodes on a straight line and hangs everything else
+beside the chain node it is nearest to, the way a rack of effects has its side
+inputs under it. The `chain` layout option lists the ids on the line, in order;
+unset, it is the longest path through the graph. `chainSide` is `'after'`
+(default) or `'before'`: which side of the line the rest hangs on. Each chain
+node owns a column as wide as the widest thing hung on it, so neighbors never
+share space. Groups are ignored.
+
 ### From data
 
 `diagramScene` turns plain `{ nodes, edges }` into a laid-out scene, and
@@ -107,6 +115,31 @@ does — `outline`, `rows`, `padding`, `gap`, `verticalAlign`, `ports` — plus 
 starting `at`, and a minimum `width`/`height`; `lines` is shorthand for one
 label row each. An edge can name `fromPort`/`toPort`, its own `router`,
 `waypoints` and `labelPlacement`.
+
+`outline` is `'rect'`, `'diamond'`, `'stadium'`, `'parallelogram'`,
+`'trapezoid'` (a demultiplexer: tall at the right, short at the left), or a
+`Path`. A `Path` is in world coordinates, so it does not follow its node when
+layout moves it.
+
+`marks` draws more over a box than its rows. A mark with `d` is SVG path data
+in a unit square, stretched over the node's box; it takes `fill`, `stroke`,
+`strokeWidth`, `dash` and `opacity`. A mark with `text` is pinned to a point on
+the box: `at` is that point as `{ u, v }` fractions of the box, `self` is which
+point of the text sits on it (default `at`), and `offset` nudges it in pixels.
+Marks move with their node:
+
+```tsx
+{ id: 'gain', marks: [
+  { d: 'M0 1 L1 0', stroke: '#c58bff' },
+  { text: 'gain', at: { u: 0.5, v: 1 }, self: { u: 0.5, v: 0 }, offset: { x: 0, y: 4 } },
+] }
+```
+
+`DiagramView` draws ports when `onConnect` is set, or when `ports` says so:
+`'connect'` draws them and lets one be dragged onto another, `'show'` draws
+them and nothing more, `'none'` hides them. `portOptions` styles them: `shape`
+is `'square'` (default) or `'circle'`, `fill` is one fill or a function of the
+port (its `type`, say), and `showsPort` picks which of a node's ports show.
 
 `groups` draws a box around some nodes, with an optional `label` inside it:
 
@@ -154,6 +187,102 @@ Labels paint only in a registered font family, and the default is
 sans-serif, so call `registerCanvasFont('sans-serif')` once or they render
 blank. `minScale` stops the initial fit from shrinking a wide diagram past
 readable; the rest is a pan away.
+
+### Effect charts
+
+`@weasel-js/diagram/effect` draws an effects pipeline: the stages a signal
+passes through, what each reads and writes, and where a decision sends it.
+
+```tsx
+import { EffectChart, rack } from '@weasel-js/diagram/effect';
+
+<EffectChart pipeline={pipeline} look={rack} width={900} height={420} />
+```
+
+A pipeline is plain data and says nothing about how it is drawn:
+
+| Field | Meaning |
+| --- | --- |
+| `stages` | `{ id, title, kind?, inputs?, outputs?, params?, split?, bypassed? }`. `kind` is `'stage'` (default), `'decision'`, `'source'` or `'sink'`; any other value draws as `'stage'`. `params` are `{ label, value }` pairs shown on the box. `bypassed` draws the stage dashed and dim. |
+| ports | `{ id, label?, type }`, in a stage's `inputs` and `outputs`. `type` names a value type; a wire joins ports of one type. |
+| `wires` | `{ from: { stage, port }, to: { stage, port }, label? }`, from an output to an input. |
+| `groups` | `{ id, label?, members }`: a box around stages and other groups. |
+| `types` | `{ [type]: { control?: boolean } }`. A `control` type carries a condition or a modulation rather than the signal, and its wires draw dashed. |
+| `split` | On a decision that compares a number: `{ input, at }`, the input it compares and the cut points in ascending order. N cuts need N + 1 outputs, lowest band first. |
+
+`EffectChart` takes the `pipeline`, a `look`, the look's `options`, a `width`
+and `height`, and `selected` / `onSelect` as `DiagramView` does, for stage ids.
+`onProblems` hears what `checkPipeline` found, each time the pipeline's
+problems change. Keep `options` steady between renders, or the chart lays out
+again on each one. Ports that carry a value type are drawn, colored by type.
+As with `DiagramView`, call `registerCanvasFont('sans-serif')` once or labels
+render blank.
+
+`checkPipeline(pipeline)` returns the problems without drawing anything, each
+`{ kind, message, stage?, port?, wire?, group? }`:
+
+| `kind` | When |
+| --- | --- |
+| `missing-stage`, `missing-port` | A wire names a stage or port that does not exist. |
+| `wrong-direction` | A wire starts at an input or ends at an output. |
+| `type-mismatch` | A wire joins ports of different types. |
+| `duplicate-stage`, `duplicate-port` | Two stages share an id, or two ports on one stage do. |
+| `missing-member` | A group names something that is neither a stage nor a group. |
+| `bad-split` | A `split` names an input the stage lacks, has no cuts or unordered ones, or does not have one more output than cuts. |
+
+The looks draw a flawed wire red.
+
+#### Looks
+
+A look is how a pipeline is drawn: a function from the pipeline and its
+options to `{ data, scene, color }`, which are `diagramScene`'s two arguments
+and a `color(type)` for the ports. `EFFECT_LOOKS` holds the two that ship.
+
+| Look | Draws | Options |
+| --- | --- | --- |
+| `nodeGraph` (default) | Every port a named row on its stage, a wire from port to port, flowing left to right. | `router` (default `'bezier'`), `nodeGap`, `rankGap`, `colors`, `showParams`, `branch` |
+| `rack` | The main signal on one straight line, and whatever feeds a stage from the side hung beside it. | `chain`, `side`, `nodeGap`, `rankGap`, `colors`, `showParams`, `branch`, `collapseSkips` |
+
+`colors` maps a value type to a color, over the palette; `showParams` (default
+true) shows each stage's `params`. `rack` runs along `chain`, a list of stage
+ids that defaults to the longest path over data wires (`mainChain(pipeline)`
+returns it); `side` is `'below'` (default) or `'above'`. With `collapseSkips`
+(default true), a decision that only chooses between going on and skipping
+ahead draws as an arc over what it skips, provided the stage before it, the
+stage it goes on to and the stage its skip lands on are all ordinary stages;
+otherwise it draws as its branch symbol.
+
+A decision stage draws as a branch symbol, chosen by `branch`:
+
+| `branch` | Symbol | Draws as `diamond` instead when |
+| --- | --- | --- |
+| `'auto'` (default) | `bar` for a decision with a sound `split`, else `diamond` | |
+| `'diamond'` | A flowchart diamond titled with the stage | |
+| `'bar'` | A tall bar in bands of equal height, the cut values as labels at the ticks | the stage has no `split`, or `checkPipeline` reports it as `bad-split` |
+| `'demux'` | A trapezoid with the exits spread down its right side | |
+| `'switch'` | A lever thrown between two contacts | the stage does not have exactly two outputs |
+
+`BRANCH_SYMBOLS`, `branchNode` and `symbolNameFor` expose the same lookup. The
+signal enters on the left; inputs of a `control` type enter at the top.
+
+To write a look, return `{ data, scene, color }`. `typeColors(pipeline,
+colors)` gives the `color` the shipped looks use, and `scene` takes any
+`diagramScene` option:
+
+```tsx
+const column: EffectLook = (pipeline) => ({
+  data: {
+    nodes: pipeline.stages.map((s) => ({ id: s.id, lines: [s.title] })),
+    edges: pipeline.wires.map((w) => ({ from: w.from.stage, to: w.to.stage })),
+  },
+  scene: { layout: 'layered', layoutOptions: { direction: 'down' } },
+  color: typeColors(pipeline),
+});
+```
+
+Try looks and options on the sample pipelines in the workshop's "diagram/EffectChart lab"
+story (`src/effect/lab/EffectLab.stories.tsx`; it is not part of the published
+package).
 
 ## Design notes
 

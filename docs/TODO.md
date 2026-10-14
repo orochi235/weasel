@@ -442,6 +442,37 @@ Priority tags:
   `scale` only converts values: `RIGID_POSE_COMPOSITION` does not scale a container's frame by it,
   so whether a scoped container's children are also stored in its units is undecided.
 
+### Diagram follow-ups
+
+- **(P2) EffectChart: show a run.** A second input beside the pipeline, keyed by stage id and
+  wire, never new fields on the pipeline; a look takes it as a third argument. Which branch was
+  taken (the `switch` symbol already has a lever to throw), the value or a preview on each wire
+  (a body `slot` row is the room for one), cost per stage. Live state follows from it: the run
+  changes every frame, only what it touches repaints, and the layout stays put.
+- **(P3) EffectChart: more looks.** One lane per value type, with a stage as tall as the lanes it
+  touches; and a compact look with one-line stages and no ports drawn, for pipelines too big for
+  the node graph. Branch symbols sketched and not built: hexagon, step glyph, comparator,
+  crossover, and a bare fork with the conditions on its wires.
+- **(P3) A custom `Path` outline does not follow its node.** `outlinePath` returns a consumer's
+  path unchanged, in world coordinates, so `diagramScene`'s layout moves the box and leaves the
+  outline behind. Marks solve the same problem with path data in a unit square
+  (`packages/diagram/src/marks.ts`); an outline could take the same form.
+- **(P3) EffectChart visual baselines are not captured.** `tests/visual/effect-chart.spec.ts`
+  names `effect-chart.png` and `effect-chart-rack.png`; the update-baselines workflow has to
+  write them.
+- **(P3) The `nodeGraph` look draws wires over stage boxes.** `diagramScene` emits edges after
+  nodes, and `layered` gives a wire that skips a column no waypoints, so it runs across whatever
+  stage stands in that column (`packages/diagram/src/effect/nodeGraph.ts`).
+- **(P3) `DiagramView` fits its view once, at mount.** `defaultView` only seeds the canvas's
+  view, so when `width` or `height` changes the canvas resizes and the view does not refit; a
+  diagram fitted for a wide box is clipped in a narrower one. The EffectChart lab shows it when
+  its frame is resized.
+- **(P3) Two wires can share an `edgeIdOf`.** Ids containing `.`, `->` or `:` build the same
+  edge id from different stages and ports. `diagramScene` keeps the first such edge, while the
+  looks keep one style per id, last one winning (`packages/diagram/src/effect/nodeGraph.ts`,
+  `rack.ts`, `packages/diagram/src/fromData.ts`). A stage port named `n`, `e`, `s` or `w` can
+  likewise share an id with a default compass port.
+
 ---
 
 ## Animation
