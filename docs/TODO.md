@@ -70,18 +70,14 @@ Priority tags:
   `PropertyPanel`. Its own arc, and the first question is whether labkit should support a lab with
   no trials at all.
 
-- **(P3) One dep still names a plane, not ten.** Read for what a camera-bearing host can
-  implement, only `geometryProjection` obstructs (its own entry below). `view` is per-kernel by
-  design, and `kernel3d` declares `camera3d`. `editAnchors` and `booleansAdapter` are 2D features a
-  3D kernel does not declare. `snap`, `lassoSelect`, `poseDescriptor`, `slice`, `ingestion`, and
-  `pointer` are satisfiable as typed, because every coordinate in them is a screen point under the
-  identity `clientToWorld` a 3D host passes. `pointer` was read, not run in a 3D host: its store
-  (`PointerContextValue`) holds one `{ worldX, worldY, viewId }` point and no camera.
-
 - **(P3) `geometryProjection` cannot hold a 3D transform.** `transform(node, m: Mat3)` names a
-  plane in its signature, so a kernel with a camera has nothing to implement it with. Core builds
-  the `Mat3` at four call sites (move, nudge, flip, and resize commit) before the dep is consulted,
-  so widening the type alone does not free it.
+  plane in its signature, and core builds the `Mat3` at four call sites (move, nudge, flip, and
+  resize commit) before the dep is consulted, so widening the type alone does not free it. It is
+  the one dep a camera-bearing host cannot implement: `view` is per-kernel by design (`kernel3d`
+  declares `camera3d`), `editAnchors` and `booleansAdapter` are 2D features, and the rest take
+  screen points under the identity `clientToWorld` a 3D host passes. `pointer` was read, not run in
+  a 3D host: its store (`PointerContextValue`) holds one `{ worldX, worldY, viewId }` point and no
+  camera.
 
 - **(P3) Long-press: the native `contextmenu` a touch hold sends is unseen on a real device.**
   `useGestureDispatcher` treats a `contextmenu` that arrives while a touch or pen hold is in
