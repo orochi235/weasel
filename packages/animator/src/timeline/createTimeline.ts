@@ -46,13 +46,13 @@ function tracksEnd(tracks: Track[], explicit?: number): number {
   return max;
 }
 
-/** Hands `take` the laps a playhead at or past `duration` has crossed, of those left: one
- *  at a time under a lap count, and all at once under an endless loop, where a far seek
- *  can skip a billion laps of a short duration. */
+/** Hands `take` the laps a playhead at or past `duration` has crossed, of those left, all at
+ *  once: a frame that skips whole laps fires the outgoing lap's tail and the lap it lands in,
+ *  and nothing of the laps in between. */
 function crossLaps(playhead: number, duration: number, loopsLeft: number, take: (laps: number) => void): void {
   if (duration <= 0 || playhead < duration) return;
-  if (loopsLeft === Infinity) { take(Math.floor(playhead / duration)); return; }
-  for (let at = playhead, left = loopsLeft; at >= duration && left > 0; at -= duration, left -= 1) take(1);
+  const laps = Math.min(Math.floor(playhead / duration), loopsLeft);
+  if (laps > 0) take(laps);
 }
 
 /**

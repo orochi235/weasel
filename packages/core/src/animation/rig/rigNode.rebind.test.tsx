@@ -49,6 +49,12 @@ function mounted() {
       const m = rigs[rigs.length - 1].world().get('lower')!;
       return Math.atan2(m[1], m[0]);
     },
+    /** Put a root joint ahead of the arm's, which moves every axis the arm had. */
+    rejoint: () => act(() => {
+      scene.update(node, {
+        data: { skeleton: { joints: [{ name: 'base', parent: null, bind: { x: 0, y: 0, rotation: 0, scaleX: 1, scaleY: 1 } }, ...ARM.joints] } },
+      });
+    }),
     reweigh: () => act(() => {
       scene.update(sleeve, { data: { ...scene.get(sleeve)!.data, skin: { upper: [1, 1, 0, 1], lower: [0, 0, 1, 0] } } });
     }),
@@ -93,12 +99,59 @@ describe('useRigNode binding again', () => {
   });
 
   it('makes a new target when the joints change', () => {
-    const { rigs, rig, scene, node } = mounted();
-    act(() => {
-      scene.update(node, {
-        data: { skeleton: { joints: [...ARM.joints, { name: 'hand', parent: 'lower', bind: { x: 50, y: 0, rotation: 0, scaleX: 1, scaleY: 1 } }] } },
-      });
-    });
+    const { rigs, rig, rejoint } = mounted();
+    rejoint();
     expect(rig().target).not.toBe(rigs[0].target);
+    expect(rig().target.axisCount).toBe(15);
+  });
+
+  it('goes on showing an animation that was running as the joints changed', () => {
+    const { rigs, rig, animator, step, turn, rejoint } = mounted();
+    act(() => { animator.tween({ target: rig().target, to: { lower: { rotation: 1 } }, ms: 100, easing: linear }); });
+    step(0);
+    step(50);
+    expect(turn()).toBeCloseTo(0.5, 6);
+
+    rejoint();
+    expect(turn()).toBeCloseTo(0.5, 6);
+    step(25);
+    expect(turn()).toBeCloseTo(0.75, 6);
+    step(25);
+    expect(turn()).toBeCloseTo(1, 6);
+    step(16);
+    expect(rigs[0].target.active).toBe(false);
+    expect(rig().target.read().lower?.rotation).toBeCloseTo(1, 6);
+    expect(rig().target.committed().lower?.rotation).toBeCloseTo(1, 6);
+  });
+
+  it('adds an animation started after the change to the one still running from before', () => {
+    const { rig, animator, step, turn, rejoint } = mounted();
+    act(() => { animator.tween({ target: rig().target, to: { lower: { rotation: 1 } }, ms: 100, easing: linear }); });
+    step(0);
+    step(50);
+    rejoint();
+    act(() => { animator.tween({ target: rig().target, to: { lower: { rotation: 2 } }, ms: 100, easing: linear }); });
+    step(0);
+    expect(turn()).toBeCloseTo(0.5, 6);
+    step(100);
+    expect(turn()).toBeCloseTo(2.5, 6);
+  });
+
+  it('keeps the pose it was given through a change of joints', () => {
+    const { rig, turn, rejoint } = mounted();
+    rig().pose({ lower: { rotation: 0.3 }, upper: { x: 4 } });
+    rejoint();
+    expect(rig().target.read()).toEqual({ lower: { rotation: 0.3 }, upper: { x: 4 } });
+    expect(turn()).toBeCloseTo(0.3, 6);
+  });
+
+  it('leaves out the pose of a joint the skeleton no longer has', () => {
+    const { rig, scene, node, sleeve } = mounted();
+    rig().pose({ lower: { rotation: 0.3 }, upper: { x: 4 } });
+    act(() => {
+      scene.update(sleeve, { data: { path: { kind: 'rect', x: 100, y: 95, width: 100, height: 10 } } });
+      scene.update(node, { data: { skeleton: { joints: [ARM.joints[0], { ...ARM.joints[1], name: 'fore' }] } } });
+    });
+    expect(rig().target.read()).toEqual({ upper: { x: 4 } });
   });
 });

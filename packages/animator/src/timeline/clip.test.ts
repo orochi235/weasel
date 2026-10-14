@@ -3,7 +3,7 @@ import { easeInOutSine, PATH_L, PATH_M, type PolygonPath } from '@weasel-js/geom
 import { skeletonAxes } from '../rig/skeletonAxes';
 import { IDENTITY_JOINT, type Pose, type Skeleton } from '../rig/types';
 import { createTarget, type Target } from '../target';
-import { bindClip, toClip, type Clip, type ClipBinder, type ClipSampledTrack } from './clip';
+import { bindClip, toClip, type Clip, type ClipBinder, type ClipKey, type ClipSampledTrack } from './clip';
 import { sampleTrack } from './sampleTrack';
 import type { EventTrack, NestedTimeline, SampledTrack, TimelineTrack, Track } from './types';
 
@@ -240,5 +240,17 @@ describe('a clip holding a path', () => {
     const back = bindClip(clip, binder({ target: () => numberTarget() as never }));
     (back.tracks[0] as SampledTrack<PolygonPath>).keys[0].value.coords[2] = 99;
     expect((clip.tracks[0] as ClipSampledTrack).keys[0].value).toMatchObject({ coords: { data: [0, 0, 10, 0] } });
+  });
+});
+
+describe('a clip value typed by an interface', () => {
+  interface BoxPose { x: number; y: number; width: number; height: number }
+
+  // The assignment is the check, and only the typecheck can fail it.
+  it('is a key value, as the same object written inline is', () => {
+    const pose: BoxPose = { x: 1, y: 2, width: 3, height: 4 };
+    const key: ClipKey = { t: 0, value: pose };
+    const clip: Clip = { version: 1, tracks: [{ kind: 'sampled', keys: [key] }] };
+    expect(toClip(bindClip(clip, {}))).toEqual(clip);
   });
 });

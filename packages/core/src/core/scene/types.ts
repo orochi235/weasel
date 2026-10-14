@@ -73,7 +73,8 @@ export interface DerivedDep<TPose, TData = unknown, TLayer extends string = stri
    *  the document stores — `effectivePose`, the same answer the renderer uses. */
   pose: TPose;
   /** The path a pose override shows it by, else the one it derives, else
-   *  `null`; a `toPose` lookup and the document reading skip the override. Read
+   *  `null`; the document reading skips the override, and a `toPose` lookup
+   *  carries it into the box its `toPose` answers. Read
    *  it to place something *along* a dependency: a label on a routed edge.
    *  Resolved on first read and memoized on the dependency. */
   readonly path: Path | null;
