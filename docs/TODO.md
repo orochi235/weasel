@@ -457,9 +457,6 @@ Priority tags:
   path unchanged, in world coordinates, so `diagramScene`'s layout moves the box and leaves the
   outline behind. Marks solve the same problem with path data in a unit square
   (`packages/diagram/src/marks.ts`); an outline could take the same form.
-- **(P3) EffectChart visual baselines are not captured.** `tests/visual/effect-chart.spec.ts`
-  names `effect-chart.png` and `effect-chart-rack.png`; the update-baselines workflow has to
-  write them.
 - **(P3) The `nodeGraph` look draws wires over stage boxes.** `diagramScene` emits edges after
   nodes, and `layered` gives a wire that skips a column no waypoints, so it runs across whatever
   stage stands in that column (`packages/diagram/src/effect/nodeGraph.ts`).
@@ -470,8 +467,12 @@ Priority tags:
 - **(P3) Two wires can share an `edgeIdOf`.** Ids containing `.`, `->` or `:` build the same
   edge id from different stages and ports. `diagramScene` keeps the first such edge, while the
   looks keep one style per id, last one winning (`packages/diagram/src/effect/nodeGraph.ts`,
-  `rack.ts`, `packages/diagram/src/fromData.ts`). A stage port named `n`, `e`, `s` or `w` can
-  likewise share an id with a default compass port.
+  `rack.ts`, `packages/diagram/src/fromData.ts`).
+- **(P3) A stage port named `n`, `e`, `s` or `w` shares an id with a default compass port.**
+  `bodyTrait` keeps the four compass ports unless a node declares its own `ports` (it drops `w`
+  or `e` only when a port row sits on that side), and the `nodeGraph` look's stages declare port
+  rows and no `ports`, so a stage port with one of those ids ends up beside a compass port of
+  the same id (`packages/diagram/src/body.ts`, `packages/diagram/src/effect/nodeGraph.ts`).
 
 ---
 
@@ -1005,6 +1006,10 @@ only story runner in the repo.
 ---
 
 ## Demos & visual regression
+
+- **(P3) EffectChart visual baselines are not captured.** `tests/visual/effect-chart.spec.ts`
+  names `effect-chart.png` and `effect-chart-rack.png`; the update-baselines workflow has to
+  write them.
 
 - **(P3) A dev server on orochi has missed a file write.** A site dev server there served a file
   as it was before an edit on 2026-10-12, and a `touch` did not wake it. Seen once and not
