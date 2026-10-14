@@ -114,6 +114,40 @@ function storedPose(
   );
 }
 
+/** Every write id's stored pose with the box taken from where the press found
+ *  it to `proposed`. A lone target is also pinned at the fixed corner and run
+ *  through `snap`, and comes back with its world pose. */
+export function posesInBox(
+  place: Pick<ResizeSession, 'scene' | 'poseFrame' | 'view' | 'geometryOf' | 'writeIds' | 'startWorlds' | 'box' | 'sharedBox'>,
+  proposed: Bounds,
+  snap: (g: PoseDescriptor<unknown>, world: unknown) => unknown = (_g, world) => world,
+): { previews: Map<NodeId, unknown>; lone?: { id: NodeId; g: PoseDescriptor<unknown>; world: unknown } } {
+  const { box } = place;
+  const previews = new Map<NodeId, unknown>();
+  const worldOf = (id: NodeId): unknown => {
+    const start = place.startWorlds.get(id);
+    if (start === undefined) return undefined;
+    return leafPose(place.geometryOf(id), start, box.bounds, proposed, place.sharedBox);
+  };
+
+  if (place.sharedBox) {
+    for (const id of place.writeIds) {
+      const next = worldOf(id);
+      if (next === undefined) continue;
+      previews.set(id, storedPose(place, id, next));
+    }
+    return { previews };
+  }
+
+  const id = place.writeIds[0];
+  const g = place.geometryOf(id);
+  const remapped = worldOf(id);
+  if (remapped === undefined) return { previews };
+  const world = snap(g, pinFixedCorner(g, remapped, box, proposed));
+  previews.set(id, storedPose(place, id, world));
+  return { previews, lone: { id, g, world } };
+}
+
 /** One move's previews: the box as the drag and the constraints leave it,
  *  and every write id's stored pose inside it. A lone target also gets the
  *  rotated-resize pin and the point snaps, which a shared box, resized in the
@@ -133,36 +167,9 @@ export function nextFrame(session: ResizeSession, readers: GestureReaders, moveC
     computeProposedBounds(box.bounds, box.anchor, at.x - session.startWorld.x, at.y - session.startWorld.y, boxFrame(box, box.bounds)),
   );
 
-  const previews = new Map<NodeId, unknown>();
-  const worldOf = (id: NodeId): unknown => {
-    const start = session.startWorlds.get(id);
-    if (start === undefined) return undefined;
-    return leafPose(session.geometryOf(id), start, box.bounds, proposed, session.sharedBox);
-  };
-
-  if (session.sharedBox) {
-    for (const id of session.writeIds) {
-      const next = worldOf(id);
-      if (next === undefined) continue;
-      previews.set(id, storedPose(session, id, next));
-    }
-    return { previews };
-  }
-
-  const id = session.writeIds[0];
-  const g = session.geometryOf(id);
-  const remapped = worldOf(id);
-  if (remapped === undefined) return { previews };
-  const world = snapPose(
-    session.pointSnap,
-    g,
-    pinFixedCorner(g, remapped, box, proposed),
-    box,
-    box.anchor,
-    gctx.modifiers,
-    gctx.plane ?? null,
-  );
-  previews.set(id, storedPose(session, id, world));
-  gctx.current = new Map<string, Bounds>([[id as string, boundsForRules(g, world)]]);
-  return { previews };
+  const { previews, lone } = posesInBox(session, proposed, (g, world) => snapPose(
+    session.pointSnap, g, world, box, box.anchor, gctx.modifiers, gctx.plane ?? null,
+  ));
+  if (lone) gctx.current = new Map<string, Bounds>([[lone.id as string, boundsForRules(lone.g, lone.world)]]);
+  return { previews, proposed };
 }

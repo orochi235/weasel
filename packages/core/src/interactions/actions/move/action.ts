@@ -7,6 +7,7 @@ import { inPlane, selectionLayer } from '../planeInput';
 import { beginMove, type MoveFrame, type ReparentOnDrop } from './session';
 import { nextFrame } from './frame';
 import { commitMove } from './commit';
+import { recordTransform } from '../transform-again/memory';
 export type { ReparentOnDrop };
 
 /**
@@ -43,6 +44,7 @@ export const moveAction: Action & { requires: string[] } = inPlane({
       const begun = beginMove(ctx, opts, () => frame);
       if (!begun) return {};
       const { session, readers } = begun;
+      const subject = [...(ctx.deps.selection?.get() ?? [])] as string[];
       const hold = session.scene.overrides.hold();
       // Where the last move put the pointer, once the drag has passed its
       // threshold; null until then.
@@ -71,6 +73,7 @@ export const moveAction: Action & { requires: string[] } = inPlane({
                 delta: frame.delta,
                 at: endCtx.drag ? endCtx.world : engaged,
               });
+              if (committed) recordTransform(session.scene, { kind: 'translate', ...frame.delta }, subject);
             } else runBehaviorCancel(session.behaviors, session.gestureCtx);
           } finally {
             // After the commit, so no frame can paint the pre-drag pose between

@@ -20,6 +20,7 @@ import { nodeDescriptors, poseDescriptorOf } from '../poseDescriptorDep';
 import { translatePoseViaDescriptor, type PoseDescriptor } from '../resize/geometry';
 import { scenePoseFrame, type PoseFrame } from '../poseFrame';
 import { carryPose, invertPlane, inPlane, planeOf, selectionLayer } from '../planeInput';
+import { recordTransform } from '../transform-again/memory';
 
 interface CloneScratch {
   /** The selected ids a copy starts from; each brings its subtree. */
@@ -155,8 +156,10 @@ export const cloneAction: Action & { requires: string[] } = inPlane({
           try {
             const { dx, dy } = scratch.currentDelta;
             // A zero-delta drag makes no clone, so its behaviors are canceled.
-            if (reason === 'commit' && (dx !== 0 || dy !== 0)) committed = commitClone(scratch, behaviors, selection);
-            else runBehaviorCancel(behaviors.list, behaviors.gctx);
+            if (reason === 'commit' && (dx !== 0 || dy !== 0)) {
+              committed = commitClone(scratch, behaviors, selection);
+              if (committed) recordTransform(scene, { kind: 'duplicate', dx, dy }, selection.get());
+            } else runBehaviorCancel(behaviors.list, behaviors.gctx);
           } finally {
             scratch.previews.clear();
             runBehaviorSettled(behaviors.list, behaviors.gctx, committed);

@@ -1,6 +1,7 @@
 export { selectAllAction } from './selectAll';
 export { escapeAction } from './escape';
 export { duplicateAction } from './duplicate';
+export { transformAgainAction } from '../transform-again/action';
 export { nudgeUpAction, nudgeDownAction, nudgeLeftAction, nudgeRightAction } from './nudge';
 export { reorderForwardAction, reorderBackwardAction } from './reorder';
 export { flipAction } from '../flip/action';

@@ -73,6 +73,21 @@ export function DuplicateIcon() {
 }
 
 /**
+ * Transform again: a step-and-repeat run of three squares, the last filled.
+ *
+ * @experimental
+ */
+export function TransformAgainIcon() {
+  return (
+    <svg {...SVG_BASE}>
+      <rect x="2" y="2" width="8" height="8" />
+      <rect x="6" y="6" width="8" height="8" />
+      <rect x="10" y="10" width="8" height="8" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+/**
  * Group: corner brackets framing two filled rects.
  *
  * @experimental

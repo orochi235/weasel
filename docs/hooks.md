@@ -81,7 +81,8 @@ via a tool's `bindings` or a `trigger` call.
 | `cancelGesture` | Escape (channel `*`, phase `engaged`) — aborts an in-flight gesture |
 | `selectAll` | Mod+A |
 | `delete` | Delete, Backspace (phase `initial`, so a mid-drag press is ignored) |
-| `duplicate` | Mod+D |
+| `transformAgain` | Mod+D — repeats the last move, rotate, resize, or duplicate; duplicates when there is none |
+| `duplicate` | Mod+Shift+D |
 | `group` / `ungroup` | Mod+G / Mod+Shift+G |
 | `undo` / `redo` | Mod+Z / Mod+Shift+Z |
 | `flip` | Shift+H (`axis: 'x'`), Shift+V (`axis: 'y'`) |

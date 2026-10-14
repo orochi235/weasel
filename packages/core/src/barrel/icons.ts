@@ -50,6 +50,7 @@ export {
   CopyIcon,
   PasteIcon,
   DuplicateIcon,
+  TransformAgainIcon,
   GroupIcon,
   UngroupIcon,
   BringForwardIcon,

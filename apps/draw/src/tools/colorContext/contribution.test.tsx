@@ -55,7 +55,7 @@ describe('color keys', () => {
     expect(t.color.toggleFocusedNone).toHaveBeenCalledOnce();
   });
 
-  it('leaves Cmd+D to duplicate', () => {
+  it('leaves Cmd+D to transform again', () => {
     const t = setup();
     t.key('d', { metaKey: true });
     expect(t.color.reset).not.toHaveBeenCalled();

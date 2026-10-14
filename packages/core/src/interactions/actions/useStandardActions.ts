@@ -23,6 +23,7 @@ import { cancelGestureAction } from './defaults/cancelGesture';
 import { selectAllAction } from './defaults/selectAll';
 import { deleteAction } from './defaults/delete';
 import { duplicateAction } from './defaults/duplicate';
+import { transformAgainAction } from './transform-again/action';
 import { groupAction, ungroupAction } from './defaults/group';
 import { undoAction, redoAction } from './defaults/undoRedo';
 import { flipAction } from './flip/action';
@@ -113,6 +114,7 @@ const KIT_STANDARD_DESCRIPTORS: Action[] = [
   cancelGestureAction,
   selectAllAction,
   duplicateAction,
+  transformAgainAction,
   deleteAction,
   groupAction,
   ungroupAction,

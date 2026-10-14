@@ -1,5 +1,5 @@
 import type { PoseLinear } from '@weasel-js/geom';
-import type { InvocationCtx } from '@weasel-js/routing';
+import type { ActionDeps, InvocationCtx } from '@weasel-js/routing';
 import type { Op } from 'core/ops/types';
 import type { NodeId, Scene } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
@@ -64,6 +64,66 @@ export interface ResizeSession {
 export interface ResizeFrame {
   /** Stored-frame pose of every write id the move reached. */
   readonly previews: Map<NodeId, unknown>;
+  /** The box the move resized `ResizeBox.bounds` to; absent before the first move. */
+  readonly proposed?: Bounds;
+}
+
+/** The part of a resize that a box alone decides: what it writes, the box
+ *  they share, and where each starts. */
+export type ResizePlace = Pick<
+  ResizeSession,
+  'scene' | 'writeIds' | 'sharedBox' | 'box' | 'startPoses' | 'startWorlds' | 'geometryOf' | 'poseFrame' | 'view'
+>;
+
+/** Capture what resizing `ids` from `anchor` acts on. Null when nothing it
+ *  would write exists. */
+export function captureResize(
+  scene: Scene<unknown, string, unknown>,
+  ids: readonly NodeId[],
+  anchor: ResizeAnchor,
+  deps: Pick<ActionDeps, 'poseDescriptor' | 'resizePolicy' | 'view'>,
+): {
+  place: ResizePlace;
+  ruleOrigin: Bounds;
+  policy: ActionDeps['resizePolicy'];
+  constraints: BoundsConstraint<Bounds>[];
+  pointSnap: PointSnapBehavior<Bounds>[];
+} | null {
+  const geometry = poseDescriptorOf(deps.poseDescriptor);
+  const policy = deps.resizePolicy;
+  const { constraints, pointSnap, expandIds } = resolvePolicy(policy);
+  const geometryOf = nodeDescriptors(scene, geometry);
+
+  const targets = captureTargets(scene, ids, expandIds);
+  if (!targets) return null;
+  const { writeIds, isGroupPath } = targets;
+
+  // The drag delta is world, so the anchor math runs on world poses — carried
+  // into the plane the edit is measured in — and each result is carried back
+  // to its node's plane and stored in the node's own parent frame.
+  const poseFrame = scenePoseFrame(scene);
+  const view = deps.view;
+  const starts = captureStarts(scene, writeIds, geometryOf, poseFrame, view);
+  if (starts.startPoses.size === 0) return null;
+
+  const { box, ruleOrigin } = captureBox(starts, writeIds, isGroupPath, anchor, geometry, geometryOf);
+  return {
+    place: {
+      scene,
+      writeIds,
+      sharedBox: isGroupPath || writeIds.length > 1,
+      box,
+      startPoses: starts.startPoses,
+      startWorlds: starts.startWorlds,
+      geometryOf,
+      poseFrame,
+      view,
+    },
+    ruleOrigin,
+    policy,
+    constraints,
+    pointSnap,
+  };
 }
 
 /** Capture a resize at press. Null when nothing is selected, the press is not
@@ -82,40 +142,17 @@ export function beginResize(
   const anchor = ctx.drag?.affordance?.anchor;
   if (!anchor) return null;
 
-  const geometry = poseDescriptorOf(ctx.deps.poseDescriptor);
-  const policy = ctx.deps.resizePolicy;
-  const { constraints, pointSnap, expandIds } = resolvePolicy(policy);
-  const geometryOf = nodeDescriptors(scene, geometry);
-
-  const targets = captureTargets(scene, ids, expandIds);
-  if (!targets) return null;
-  const { writeIds, isGroupPath } = targets;
-
-  // The drag delta is world, so the anchor math runs on world poses — carried
-  // into the plane the edit is measured in — and each result is carried back
-  // to its node's plane and stored in the node's own parent frame.
-  const poseFrame = scenePoseFrame(scene);
-  const view = ctx.deps.view;
-  const starts = captureStarts(scene, writeIds, geometryOf, poseFrame, view);
-  if (starts.startPoses.size === 0) return null;
-
-  const { box, ruleOrigin } = captureBox(starts, writeIds, isGroupPath, anchor, geometry, geometryOf);
+  const captured = captureResize(scene, ids, anchor, ctx.deps);
+  if (!captured) return null;
+  const { place, ruleOrigin, policy, constraints, pointSnap } = captured;
   const startWorld = { x: ctx.drag?.start.x ?? 0, y: ctx.drag?.start.y ?? 0 };
   const readers = gestureReaders(ctx.deps);
   const gestureCtx = buildGestureContext(ctx, ids, ruleOrigin, startWorld, readers);
   for (const b of constraints) b.onStart?.(gestureCtx);
 
   const session: ResizeSession = {
-    scene,
-    writeIds,
-    sharedBox: isGroupPath || writeIds.length > 1,
-    box,
-    startPoses: starts.startPoses,
-    startWorlds: starts.startWorlds,
+    ...place,
     startWorld,
-    geometryOf,
-    poseFrame,
-    view,
     constraints,
     pointSnap,
     gestureCtx,

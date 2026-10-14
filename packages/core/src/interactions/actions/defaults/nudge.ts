@@ -13,26 +13,29 @@ import { geometryDataOp, type GeometryProjection } from '../geometryProjection';
 import { scenePoseFrame } from '../poseFrame';
 import { moveSources, translateTargets } from '../selectionSubtree';
 import { NUDGE_KEY, NUDGE_LABEL, nudgeDelta, type NudgeDirection } from './nudgeSteps';
+import { recordTransform } from '../transform-again/memory';
 
 /**
  * Apply a translation of (dx, dy) to the selected nodes and the descendants
- * that do not ride on one of them, as one undo entry. Translates through the
- * `poseDescriptor` dep, so any pose shape moves.
+ * that do not ride on one of them, as one undo entry labeled `label`.
+ * Translates through the `poseDescriptor` dep, so any pose shape moves.
+ * Returns whether anything moved.
  */
-function nudgeSelection(
-  selection: SelectionApi,
+export function translateSelection(
+  selection: Pick<SelectionApi, 'get' | 'adapterMethods'>,
   scene: Scene<unknown, string, unknown>,
   dx: number,
   dy: number,
   applyOps: ((ops: Op[], label: string) => void) | undefined,
   geometryProjection: GeometryProjection | undefined,
   d: PoseDescriptor<unknown>,
-): void {
+  label = 'Nudge',
+): boolean {
   const descriptorOf = nodeDescriptors(scene, d);
   const ids = translateTargets(
     scene, scenePoseFrame(scene), moveSources(scene, selection.get()),
   );
-  if (ids.length === 0) return;
+  if (ids.length === 0) return false;
   // Pushed alongside each transform op so a wired geometryProjection moves
   // the node's data-held geometry too.
   const m: Affine = [1, 0, 0, 1, dx, dy];
@@ -45,20 +48,21 @@ function nudgeSelection(
       id: id as string,
       from: node.pose,
       to: translatePoseViaDescriptor(node.pose, dx, dy, descriptorOf(id)),
-      label: 'Nudge',
+      label,
     }));
     const dataOp = geometryDataOp(
       geometryProjection,
       { id: id as string, data: node.data, pose: node.pose },
       m,
-      'Nudge',
+      label,
     );
     if (dataOp) ops.push(dataOp);
   }
-  if (ops.length === 0) return;
+  if (ops.length === 0) return false;
 
-  if (applyOps) applyOps(ops, 'Nudge');
-  else scene.applyBatch(ops, 'Nudge', defaultCommitAdapter(scene, selection.adapterMethods));
+  if (applyOps) applyOps(ops, label);
+  else scene.applyBatch(ops, label, defaultCommitAdapter(scene, selection.adapterMethods));
+  return true;
 }
 
 /**
@@ -86,7 +90,9 @@ function makeNudgeAction(dir: NudgeDirection): Action & { requires: string[] } {
         const applyOps = deps.applyOps;
         const geometryProjection = deps.geometryProjection;
         if (!selection || !scene) return;
-        nudgeSelection(selection, scene, dx, dy, applyOps, geometryProjection, poseDescriptorOf(deps.poseDescriptor));
+        if (translateSelection(selection, scene, dx, dy, applyOps, geometryProjection, poseDescriptorOf(deps.poseDescriptor))) {
+          recordTransform(scene, { kind: 'translate', dx, dy }, selection.get());
+        }
       },
     },
     enabled: requiresSelection,

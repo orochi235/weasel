@@ -127,7 +127,7 @@ describe('SceneCanvas actions integration', () => {
     expect(captured).toBeDefined();
     expect(captured!.id).toBe('duplicate');
     expect(captured!.label).toBe('Duplicate');
-    expect(captured!.defaultBinding).toEqual({ kind: 'key', key: 'd', mods: { mod: true } });
+    expect(captured!.defaultBinding).toEqual({ kind: 'key', key: ['d', 'D'], mods: { mod: true, shift: true } });
     if (captured!.invoker!.timing === 'immediate') {
       (captured!.invoker as { run: (d: unknown) => void }).run({});
     }
@@ -289,7 +289,7 @@ describe('SceneCanvas actions integration', () => {
       </SceneCanvas>,
     );
     expect(captured!.label).toBe('Clone');
-    expect(captured!.defaultBinding).toEqual({ kind: 'key', key: 'd', mods: { mod: true } });
+    expect(captured!.defaultBinding).toEqual({ kind: 'key', key: ['d', 'D'], mods: { mod: true, shift: true } });
   });
 
   it('binding-only override keeps run + label', () => {
@@ -302,12 +302,12 @@ describe('SceneCanvas actions integration', () => {
     }
     render(
       <SceneCanvas features={['draw']} scene={scene} layers={{}} width={64} height={64}
-        actions={{ duplicate: { defaultBinding: { kind: 'key', key: 'D', mods: { mod: true, shift: true } } } }}>
+        actions={{ duplicate: { defaultBinding: { kind: 'key', key: 'j', mods: { mod: true } } } }}>
         <Capture />
       </SceneCanvas>,
     );
     expect(captured!.label).toBe('Duplicate');
-    expect(captured!.defaultBinding).toEqual({ kind: 'key', key: 'D', mods: { mod: true, shift: true } });
+    expect(captured!.defaultBinding).toEqual({ kind: 'key', key: 'j', mods: { mod: true } });
   });
 
   it('unmount removes the registered defaults and a re-mount registers them again', () => {

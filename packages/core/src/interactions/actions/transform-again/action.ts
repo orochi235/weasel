@@ -1,0 +1,78 @@
+import type { Action, ActionDeps } from '@weasel-js/routing';
+import type { Op } from 'core/ops/types';
+import type { Scene } from 'core/scene/types';
+import { createElement } from 'react';
+import { defaultCommitAdapter } from '../defaultCommitAdapter';
+import { DUPLICATE_OFFSET, duplicateSelection } from '../defaults/duplicate';
+import { TransformAgainIcon } from '../defaults/icons/editIcons';
+import { translateSelection } from '../defaults/nudge';
+import { requiresSelection } from '../defaults/requiresSelection';
+import { poseDescriptorOf } from '../poseDescriptorDep';
+import { resizeSelectionOps } from '../resize/replay';
+import { rotateSelectionOps } from '../rotate/replay';
+import { lastTransform, recordTransform, type RepeatableTransform } from './memory';
+
+const LABEL = 'Transform Again';
+
+/** With nothing recorded yet, a repeat is a plain duplicate. */
+const FIRST: RepeatableTransform = { kind: 'duplicate', dx: DUPLICATE_OFFSET, dy: DUPLICATE_OFFSET };
+
+function commit(deps: ActionDeps, scene: Scene<unknown, string, unknown>, ops: Op[]): boolean {
+  if (ops.length === 0) return false;
+  if (deps.applyOps) deps.applyOps(ops, LABEL);
+  else scene.applyBatch(ops, LABEL, defaultCommitAdapter(scene, deps.selection?.adapterMethods));
+  return true;
+}
+
+/** Apply `t` to the selection as one undo entry. Returns the ids selected
+ *  afterwards, or null when nothing changed. */
+function replay(deps: ActionDeps, scene: Scene<unknown, string, unknown>, t: RepeatableTransform): readonly string[] | null {
+  const selection = deps.selection!;
+  const selected = selection.get() as string[];
+  switch (t.kind) {
+    case 'duplicate':
+      return duplicateSelection(deps, t.dx, t.dy, LABEL);
+    case 'translate':
+      return translateSelection(
+        selection, scene, t.dx, t.dy, deps.applyOps, deps.geometryProjection,
+        poseDescriptorOf(deps.poseDescriptor), LABEL,
+      ) ? selected : null;
+    case 'rotate':
+      return commit(deps, scene, rotateSelectionOps(
+        scene, selected, deps.view, deps.poseDescriptor, t.angle, t.pivot, LABEL,
+      )) ? selected : null;
+    case 'scale':
+      return commit(deps, scene, resizeSelectionOps(scene, selected, t.anchor, t.to, deps, LABEL)) ? selected : null;
+  }
+}
+
+/**
+ * @experimental
+ * Repeat the last move, rotate, resize, nudge, duplicate, or Alt-drag clone on
+ * the current selection, as one undo entry. A repeated duplicate copies the
+ * selection — the last copies — again by the same offset, so pressing it over
+ * and over makes a step-and-repeat; moving the copies between a duplicate and
+ * its repeat changes that offset. With nothing to repeat it duplicates.
+ */
+export const transformAgainAction: Action & { requires: string[] } = {
+  id: 'transformAgain',
+  label: LABEL,
+  icon: createElement(TransformAgainIcon),
+  group: 'edit',
+  defaultBinding: { kind: 'key', key: 'd', mods: { mod: true } },
+  eligible: { capability: 'transforms-selection' },
+  requires: [
+    'scene', 'selection', 'applyOps', 'poseDescriptor', 'geometryProjection', 'resizePolicy', 'view',
+  ],
+  invoker: {
+    timing: 'immediate',
+    run: (deps) => {
+      const scene = deps.scene;
+      if (!scene || !deps.selection || deps.selection.get().length === 0) return;
+      const t = lastTransform(scene) ?? FIRST;
+      const subject = replay(deps, scene, t);
+      if (subject) recordTransform(scene, t, subject);
+    },
+  },
+  enabled: requiresSelection,
+};

@@ -112,7 +112,7 @@ export const FEATURE_PRESETS: Readonly<Record<BaseFeature, FeaturePreset>> = {
   },
   edit: {
     actions: [
-      'escape', 'cancelGesture', 'selectAll', 'duplicate', 'delete',
+      'escape', 'cancelGesture', 'selectAll', 'duplicate', 'transformAgain', 'delete',
       'group', 'ungroup', 'undo', 'redo',
       'nudge.up', 'nudge.down', 'nudge.left', 'nudge.right',
       'clipboard.cut', 'clipboard.copy', 'clipboard.paste', 'clipboard.pasteEvent',

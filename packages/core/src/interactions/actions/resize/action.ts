@@ -6,6 +6,8 @@ import { inPlane, selectionLayer } from '../planeInput';
 import { commitResize } from './commit';
 import { nextFrame } from './frame';
 import { beginResize, type ResizeFrame } from './session';
+import { unitsOfBox } from './replay';
+import { recordTransform } from '../transform-again/memory';
 
 /**
  * @experimental
@@ -29,6 +31,7 @@ export const resizeAction: Action & { requires: string[] } = inPlane({
       const begun = beginResize(ctx);
       if (!begun) return {};
       const { session, readers } = begun;
+      const subject = [...(ctx.deps.selection?.get() ?? [])] as string[];
       const hold = session.scene.overrides.hold();
       let frame: ResizeFrame = { previews: new Map() };
       session.lifecycle.start(session.writeIds as readonly string[]);
@@ -42,8 +45,13 @@ export const resizeAction: Action & { requires: string[] } = inPlane({
         onEnd(_endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
           let committed = false;
           try {
-            if (reason === 'commit') committed = commitResize(session, frame);
-            else runBehaviorCancel(session.constraints, session.gestureCtx);
+            if (reason === 'commit') {
+              committed = commitResize(session, frame);
+              if (committed && frame.proposed) {
+                const to = unitsOfBox(session.box.bounds, frame.proposed);
+                recordTransform(session.scene, { kind: 'scale', to, anchor: session.box.anchor }, subject);
+              }
+            } else runBehaviorCancel(session.constraints, session.gestureCtx);
           } finally {
             closeGesture({ hold, previews: frame.previews, behaviors: session.constraints, ctx: session.gestureCtx, lifecycle: session.lifecycle }, committed);
           }
