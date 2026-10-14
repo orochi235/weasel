@@ -2,7 +2,7 @@
  * A node's editable polygon. It lives in one of two places: the pose itself
  * (`pose.kind === 'polygon'`), or `data.path` with a rect pose, stored pose-local.
  */
-import { pathInWorld, type Path, type PolygonPath } from '@weasel-js/geom';
+import { pathInWorld, worldEditToStorage, type Path, type PolygonPath } from '@weasel-js/geom';
 import type { GesturePreviewSource } from 'canvas/gestureBounds';
 import { pathFromPlane } from 'canvas/planeClips';
 import { isRectPose } from 'core/geometry/autoPoseDescriptor';
@@ -48,6 +48,22 @@ export function resolveEditablePathOf(
   // data.path: translate to the pose origin AND bake `pose.rotation`, so anchors render on
   // the rotated contour the renderer draws.
   return pathInWorld(storage.data.path, storage.pose) as PolygonPath;
+}
+
+/**
+ * The pose and data that store `worldPath` where `node` stores its editable
+ * polygon — the inverse of {@link resolveEditablePathOf}, so a `data.path`
+ * node keeps its rotation. Null when `node` has no editable polygon.
+ */
+export function storeEditablePath(
+  node: EditableShape | undefined | null,
+  worldPath: PolygonPath,
+): EditableShape | null {
+  const storage = classifyPathStorage(node);
+  if (!storage) return null;
+  if (storage.kind === 'pose') return { pose: worldPath, data: node!.data };
+  const { pose, path } = worldEditToStorage(storage.pose, worldPath);
+  return { pose, data: { ...storage.data, path } };
 }
 
 /** `node` as the in-flight gestures in `previews` would leave it: a handle

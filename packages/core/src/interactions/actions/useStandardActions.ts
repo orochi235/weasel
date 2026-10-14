@@ -60,6 +60,10 @@ import { exitPathEditAction } from './defaults/exitPathEdit';
 import { insertPathAnchorAction } from './defaults/insertPathAnchor';
 import { bendSegmentAction } from './defaults/bendSegment';
 import { makeHandlesSymmetricAction, retractHandlesAction } from './defaults/anchorHandles';
+import { averageAnchorsAction, joinAnchorsAction } from './defaults/anchorJoin';
+import {
+  joinPathsAction, offsetPathAction, simplifyPathAction, snipAtCrossingsAction,
+} from './pathCommands';
 import {
   nudgeAnchorsUpAction,
   nudgeAnchorsDownAction,
@@ -166,6 +170,12 @@ const KIT_STANDARD_DESCRIPTORS: Action[] = [
   cutPathAtAnchorAction,
   retractHandlesAction,
   makeHandlesSymmetricAction,
+  averageAnchorsAction,
+  joinAnchorsAction,
+  simplifyPathAction,
+  offsetPathAction,
+  snipAtCrossingsAction,
+  joinPathsAction,
   marqueeAnchorsAction,
   selectAnchorAction,
   lassoSelectAction,

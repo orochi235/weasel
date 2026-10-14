@@ -73,6 +73,11 @@ export {
   splitPathBySegment,
   splitPathByPolyline,
   snipPathByPolyline,
+  snipPathsAtCrossings,
+  offsetPath,
+  simplifyPath,
+  averageAnchorsAt,
+  joinAnchorsAt,
   transformPath,
 } from '../features/paths';
 export type {
@@ -91,6 +96,10 @@ export type {
   PathStation,
   PointAlongPathOptions,
   SplitBySegmentOptions,
+  SnipAtCrossingsOptions,
+  OffsetPathOptions,
+  SimplifyPathOptions,
+  AverageAxis,
   PoseRotation,
   PoseLinear,
 } from '../features/paths';

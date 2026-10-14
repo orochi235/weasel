@@ -66,6 +66,8 @@ export {
   splitPathBySegment,
   splitPathByPolyline,
   snipPathByPolyline,
+  snipPathsAtCrossings,
+  type SnipAtCrossingsOptions,
   type SplitBySegmentOptions,
 } from '@weasel-js/geom/booleans';
 export {
@@ -106,6 +108,10 @@ export {
   type PointOrigin,
   type SegmentHit,
 } from '@weasel-js/geom';
+export {
+  averageAnchorsAt, closestOpenEnds, joinAnchorsAt, joinSubpathEnds, simplifyPath, subpathEndAt,
+  type AverageAxis, type SimplifyPathOptions, type SubpathEnd,
+} from '@weasel-js/geom';
 export { pathInPoseFrame, pathInWorld, worldEditToStorage, type PathInWorldPose } from '@weasel-js/geom';
 export { poseRotationOf, rotatePathAround, type PoseRotation } from '@weasel-js/geom';
 export {
@@ -133,3 +139,4 @@ export {
   trianglesToPath,
 } from '@weasel-js/geom/booleans';
 export { strokeToPath, type StrokeToPathOptions } from '@weasel-js/stroke';
+export { offsetPath, type OffsetPathOptions } from '@weasel-js/stroke';

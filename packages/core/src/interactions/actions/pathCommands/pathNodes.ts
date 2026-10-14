@@ -1,0 +1,103 @@
+/**
+ * What the path commands share: reading the selected path nodes, and writing
+ * new geometry back into a node or into a copy of one. A node's geometry is
+ * stored where it already lives (`storeEditablePath`); a skin, whose weights
+ * follow anchors the new geometry no longer has, is dropped, and so is a
+ * shape generator, which no longer makes it.
+ */
+import type { ActionDeps } from '@weasel-js/routing';
+import type { PolygonPath } from '@weasel-js/geom';
+import type { Node, NodeId, Scene } from 'core/scene/types';
+import type { Op } from 'core/ops/types';
+import { createTransformOp } from 'core/ops/transform';
+import { createSetDataOp } from 'core/ops/setData';
+import { createInsertOp } from 'core/ops/create';
+import { createDeleteOp } from 'core/ops/delete';
+import { resolveEditablePathOf, storeEditablePath } from 'features/paths/editablePath';
+import { withoutShapeGenerator } from 'features/paths/shapeGenerator';
+import { defaultCommitAdapter } from '../defaultCommitAdapter';
+
+type AnyScene = Scene<unknown, string, unknown>;
+export type AnyNode = Node<unknown, string, unknown>;
+
+/** A selected node with an editable polygon, and that polygon in world space. */
+export interface PathNode {
+  id: NodeId;
+  node: AnyNode;
+  path: PolygonPath;
+}
+
+/** The selected leaves that hold an editable polygon, in selection order. */
+export function selectedPathNodes(deps: ActionDeps | undefined): PathNode[] {
+  const scene = deps?.scene as AnyScene | undefined;
+  const ids = deps?.selection?.get() ?? [];
+  if (!scene) return [];
+  const out: PathNode[] = [];
+  for (const id of ids) {
+    const node = scene.get(id as NodeId);
+    if (!node || node.kind !== 'leaf') continue;
+    const path = resolveEditablePathOf(node);
+    if (path) out.push({ id: id as NodeId, node, path });
+  }
+  return out;
+}
+
+/** `node` storing `worldPath`, or null when it holds no editable polygon. */
+export function withPath(node: AnyNode, worldPath: PolygonPath): { pose: unknown; data: unknown } | null {
+  const stored = storeEditablePath(node, worldPath);
+  if (!stored) return null;
+  const data = withoutShapeGenerator(stored.data) as { skin?: unknown } | null;
+  if (data && typeof data === 'object' && 'skin' in data) {
+    const { skin: _orphaned, ...rest } = data;
+    void _orphaned;
+    return { pose: stored.pose, data: rest };
+  }
+  return { pose: stored.pose, data };
+}
+
+/** The ops that give `node` the geometry `worldPath`, labeled `label`. */
+export function reshapeOps(node: AnyNode, worldPath: PolygonPath, label: string): Op[] {
+  const next = withPath(node, worldPath);
+  if (!next) return [];
+  const ops: Op[] = [];
+  if (next.pose !== node.pose) ops.push(createTransformOp({ id: node.id, from: node.pose, to: next.pose, label }));
+  if (next.data !== node.data) ops.push(createSetDataOp({ id: node.id, from: node.data, to: next.data, label }));
+  return ops;
+}
+
+/** A copy of `node` under a fresh id, holding `worldPath`. */
+export function pathCopy(scene: AnyScene, node: AnyNode, worldPath: PolygonPath): AnyNode | null {
+  const next = withPath(node, worldPath);
+  if (!next) return null;
+  return { ...node, id: scene.mintId(), pose: next.pose, data: next.data } as AnyNode;
+}
+
+/** Where `id` sits among its siblings, back to front. */
+export function slotOf(scene: AnyScene, id: NodeId): number {
+  const parent = scene.get(id)?.parent ?? null;
+  const siblings = parent === null ? scene.roots : scene.childrenOf(parent);
+  return siblings.indexOf(id);
+}
+
+/** Insert `node` at `index` among its parent's children. */
+export function insertAt(node: AnyNode, index: number, label: string): Op {
+  return createInsertOp(index >= 0 ? { node, index, label } : { node, label });
+}
+
+/** Delete `node`, remembering its slot for undo. */
+export function deleteNode(scene: AnyScene, node: AnyNode, label: string): Op {
+  return createDeleteOp({ node, index: slotOf(scene, node.id), label });
+}
+
+/** Commit `ops` as one undo entry, through the consumer's `applyOps` when
+ *  there is one. */
+export function commitOps(deps: ActionDeps, ops: Op[], label: string): void {
+  if (ops.length === 0) return;
+  if (deps.applyOps) {
+    deps.applyOps(ops, label);
+    return;
+  }
+  const scene = deps.scene as AnyScene | undefined;
+  if (!scene) return;
+  scene.applyBatch(ops, label, defaultCommitAdapter(scene, deps.selection?.adapterMethods));
+}

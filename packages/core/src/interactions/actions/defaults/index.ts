@@ -27,6 +27,10 @@ export {
   deleteAnchorsAction, cutPathAtAnchorAction, marqueeAnchorsAction, selectAnchorAction,
 } from './anchorEditing';
 export { retractHandlesAction, makeHandlesSymmetricAction } from './anchorHandles';
+export { averageAnchorsAction, joinAnchorsAction } from './anchorJoin';
+export {
+  simplifyPathAction, offsetPathAction, snipAtCrossingsAction, joinPathsAction,
+} from '../pathCommands';
 export { undoAction, redoAction } from './undoRedo';
 export { clipboardCopyAction, clipboardCutAction, clipboardPasteAction, clipboardPasteEventAction } from '../clipboard/action';
 export { makeToolOffhandAction, buildToolOffhandBindings, TOOL_OFFHAND_ID, type ToolOffhandBindingSpec } from '@weasel-js/routing';
