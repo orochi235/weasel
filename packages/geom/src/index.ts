@@ -38,6 +38,11 @@ export { pathDistanceToPoint } from './paths/pathDistance';
 export { cubicPointAt, splitCubicAtT, type Point } from './paths/cubicMath';
 export { fitCubicThroughDeletion } from './paths/spanFit';
 export { schneiderFit, fitCubicWithTangents } from './paths/schneiderFit';
+export { simplifyPath, type SimplifyPathOptions } from './paths/simplifyPath';
+export {
+  averageAnchorsAt, closestOpenEnds, joinAnchorsAt, joinSubpathEnds, subpathEndAt,
+  type AverageAxis, type SubpathEnd,
+} from './paths/joinAnchors';
 export {
   pointInPath, strokeHitTest,
   pathContainsPoint, pathContainsRect, pathIntersectsRect,
