@@ -309,3 +309,19 @@ describe('persistence — legacy string paint migration', () => {
     expect(data.fill).toEqual({ paint: { color: '#7ab8d4' } });
   });
 });
+
+describe('persistence — dynamic corners', () => {
+  it("keeps a path's corner specs through the JSON hop", () => {
+    const path = {
+      kind: 'polygon',
+      commands: new Uint8Array([0, 1, 1, 1, 4]),
+      coords: new Float32Array([0, 0, 10, 0, 10, 10, 0, 10]),
+      fillRule: 'nonzero',
+      corners: [null, { style: 'chamfer', radius: 3 }],
+    };
+    const wire = JSON.stringify({ path }, serializeReplacer);
+    const revived = reviveTypedArrays(JSON.parse(wire) as { path: typeof path });
+    expect(revived.path.corners).toEqual([null, { style: 'chamfer', radius: 3 }]);
+    expect(revived.path.coords).toBeInstanceOf(Float32Array);
+  });
+});

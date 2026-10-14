@@ -1,7 +1,7 @@
 /**
  * Screen-space render layer for path-editing chrome — anchor squares,
- * tangent lines, and control-point dots for a polygon path that is the
- * current edit target. Marker sizes stay constant regardless of zoom.
+ * tangent lines, control-point dots, and corner widgets for a polygon path
+ * that is the current edit target. Marker sizes stay constant regardless of zoom.
  */
 
 import type { DrawCommand } from '@weasel-js/renderer';
@@ -9,6 +9,7 @@ import type { RenderLayer } from 'core/layers/render';
 import { type Path, type PolygonPath, type View, linePath, pathToAnchors, circlePath, rectMarkerPath, squarePath } from '@weasel-js/geom';
 import type { GesturePreviewSource } from 'canvas/gestureBounds';
 import { previewSourcesFrom, isVisibleFrom } from 'canvas/drawEnvelope';
+import { cornerWidgetCommands } from './cornerWidgets';
 
 /** Options for `createPathEditingOverlayLayer`. Everything is read per frame,
  *  so the layer follows a changing edit target without being rebuilt. */
@@ -100,7 +101,11 @@ export function createPathEditingOverlayLayer(
 
       const { anchors } = pathToAnchors(pose as PolygonPath);
       const selected = opts.getSelectedAnchors?.() ?? EMPTY_SELECTION;
-      const out: DrawCommand[] = [];
+      // Corner widgets sit under the anchors, which win where the two overlap.
+      const out: DrawCommand[] = cornerWidgetCommands(pose as PolygonPath, view, {
+        fill: style.anchorFill,
+        stroke: style.anchorStroke,
+      });
 
       // Flat anchor index, incremented in walk order so it lines up with
       // `enumerateAnchors` — the same numbering the affordances and the

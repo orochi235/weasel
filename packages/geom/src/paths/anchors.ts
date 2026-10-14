@@ -13,6 +13,7 @@ import { PATH_C, PATH_L, PATH_M, PATH_Q, PATH_Z, forEachSegment } from '../comma
 import { nearestOnCubic, nearestOnLine } from '../nearest';
 import type { Path, PolygonPath } from '../path';
 import { PathBuilder } from './builder';
+import { compactCorners, cornerSpecAt, withoutCorners, type CornerSpec } from './cornerSpec';
 
 /** One anchor of an editable path: its on-curve point plus the two control
  *  handles that shape the segments either side of it. Handles are in the same
@@ -22,6 +23,8 @@ export interface PenAnchor {
   y: number;
   inHandle?: { x: number; y: number };
   outHandle?: { x: number; y: number };
+  /** The dynamic corner cut at this anchor (`PolygonPath.corners`). */
+  corner?: CornerSpec;
 }
 
 /**
@@ -88,6 +91,15 @@ export function pathToAnchors(
     }
   });
   if (current) { anchors.push(current); closed.push(false); }
+  if (path.corners) {
+    let flat = 0;
+    for (const sub of anchors) {
+      for (const a of sub) {
+        const corner = cornerSpecAt(path, flat++);
+        if (corner) a.corner = { ...corner };
+      }
+    }
+  }
   return { anchors, closed };
 }
 
@@ -146,7 +158,9 @@ export function anchorsToPath(
     }
   }
   const built = b.build();
-  return like ? { ...like, commands: built.commands, coords: built.coords } : built;
+  const corners = compactCorners(anchors.flatMap((sub) => sub.map((a) => a.corner ?? null)));
+  const base = like ? { ...withoutCorners(like), commands: built.commands, coords: built.coords } : built;
+  return corners ? { ...base, corners } : base;
 }
 
 const SMOOTH_THRESHOLD = 0.001;

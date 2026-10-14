@@ -42,7 +42,7 @@ export const areaSelectAction: Action & { requires: string[] } = {
       const affordanceKind = ctx.drag?.affordance?.kind;
       if (
         typeof affordanceKind === 'string'
-        && /^(anchor|controlIn|controlOut):/.test(affordanceKind)
+        && /^(anchor|controlIn|controlOut|corner):/.test(affordanceKind)
       ) {
         return {};
       }

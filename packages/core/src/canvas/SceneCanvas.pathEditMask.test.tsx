@@ -96,7 +96,8 @@ function setup(props: Record<string, unknown> = {}) {
       setMarquee(rect: { x: number; y: number; width: number; height: number } | null): void;
     },
     overlayLayer: () => layer('path-editing-overlay'),
-    /** Draw commands the overlay paints in view zero, under the canvas's own chrome-caps gate. */
+    /** Draw commands the overlay paints in view zero, under the canvas's own chrome-caps gate:
+     *  a square and a corner widget per anchor of the square path. */
     overlayCommands: () => layer('path-editing-overlay').draw({ getIsVisible: isVisible }, VIEW, DIMS).length,
     /**
      * A proxy: whether the selection overlay would skip `id`. The envelope
@@ -144,7 +145,7 @@ describe('a path being anchor-edited, with its node selected', () => {
     const t = setup();
     t.enter();
     expect(t.depEditingId()).toBe(A);
-    expect(t.overlayCommands()).toBe(4);
+    expect(t.overlayCommands()).toBe(8);
     expect(t.outlineSuppressed(A)).toBe(true);
     expect(t.ruleSaysEditing()).toBe(true);
     t.shiftClick(200, 120);
@@ -180,7 +181,7 @@ describe('a path being anchor-edited, with its node selected', () => {
     const modes = createModeRegistry({ modes: DEFAULT_MODES, initial: 'path-edit' });
     const t = setup({ modes });
     t.enter();
-    expect(t.overlayCommands()).toBe(4);
+    expect(t.overlayCommands()).toBe(8);
     act(() => modes.setMode('normal'));
     expect(t.depEditingId()).toBe('');
     expect(t.overlayCommands()).toBe(0);
@@ -227,7 +228,7 @@ describe('a path whose node leaves the selection mid-edit, without exitPathEdit'
     const t = deselected();
     t.select([A]);
     expect(t.depEditingId()).toBe(A);
-    expect(t.overlayCommands()).toBe(4);
+    expect(t.overlayCommands()).toBe(8);
   });
 
   it('is dropped the same way when a host owns the id, which the host still holds', () => {

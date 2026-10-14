@@ -1,0 +1,112 @@
+import { describe, expect, it } from 'vitest';
+import type { AffordanceHit, ImmediateInvoker, InvocationCtx } from '@weasel-js/routing';
+import { cornerAt, cornerSpecAt, polygonFromPoints, withCorner, type PolygonPath } from '@weasel-js/geom';
+import type { EditAnchorsDep } from '../depSchema';
+import { makeEditAnchorsDep, stubDeps } from '../testUtils';
+import { cycleCornerStyleAction, editCornerAction } from './action';
+
+const square = (): PolygonPath =>
+  polygonFromPoints([{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 100 }, { x: 0, y: 100 }]);
+
+function dragCtx(dep: EditAnchorsDep, kind: string, world: { x: number; y: number }): InvocationCtx {
+  const affordance: AffordanceHit = { kind, targetIds: ['node-a'] };
+  return {
+    world,
+    screen: world,
+    modifiers: { alt: false, ctrl: false, meta: false, shift: false },
+    deps: stubDeps({ selection: ['node-a'], editAnchors: dep }),
+    drag: { start: world, current: world, delta: { x: 0, y: 0 }, affordance },
+  };
+}
+
+function editing(path: PolygonPath, selected: number[] = []) {
+  const edits: PolygonPath[] = [];
+  const dep = makeEditAnchorsDep({
+    getEditablePath: () => path,
+    applyEdit: (_id, p) => { edits.push(p as PolygonPath); },
+  });
+  dep.setSelectedAnchors(selected);
+  return { dep, edits };
+}
+
+function start(dep: EditAnchorsDep, kind: string, at: { x: number; y: number }) {
+  const invoker = editCornerAction.invoker;
+  if (invoker?.timing !== 'ongoing') throw new Error('expected ongoing');
+  const ctx = dragCtx(dep, kind, at);
+  return { handle: invoker.start(ctx, undefined), ctx };
+}
+
+describe('editCornerAction', () => {
+  it('matches only corner-widget affordances', () => {
+    const binding = editCornerAction.defaultBinding as { target: { kindOf: (h: unknown) => boolean } };
+    expect(binding.target.kindOf({ kind: 'corner:2' })).toBe(true);
+    expect(binding.target.kindOf({ kind: 'anchor:2' })).toBe(false);
+  });
+
+  it('turns a drag along the bisector into a round radius, committed once', () => {
+    const { dep, edits } = editing(square());
+    // Anchor 1 is (100, 0); its bisector points to (-1, 1) / sqrt 2.
+    const { handle, ctx } = start(dep, 'corner:1', { x: 90, y: 10 });
+    const s = Math.SQRT1_2 * 10;
+    handle.onMove!({ ...ctx, world: { x: 90 - s, y: 10 + s } });
+    expect(handle.previewIds!()).toEqual(['node-a']);
+    handle.onMove!({ ...ctx, world: { x: 90 - 2 * s, y: 10 + 2 * s } });
+    expect(edits).toHaveLength(0);
+    handle.onEnd!(ctx, 'commit');
+    expect(edits).toHaveLength(1);
+    const corner = cornerAt(edits[0], 1)!;
+    expect(corner.style).toBe('round');
+    // 20 along the bisector of a right angle cuts 20 / cos 45° along each edge.
+    expect(corner.radius).toBeCloseTo(20 / Math.SQRT1_2, 4);
+  });
+
+  it('clamps the radius to the room the edges leave', () => {
+    const { dep, edits } = editing(square());
+    const { handle, ctx } = start(dep, 'corner:1', { x: 90, y: 10 });
+    handle.onMove!({ ...ctx, world: { x: -500, y: 600 } });
+    handle.onEnd!(ctx, 'commit');
+    expect(cornerAt(edits[0], 1)!.radius).toBeCloseTo(100, 4);
+  });
+
+  it('gives every selected corner the radius when a selected widget is pressed', () => {
+    const { dep, edits } = editing(square(), [1, 2]);
+    const { handle, ctx } = start(dep, 'corner:1', { x: 90, y: 10 });
+    handle.onMove!({ ...ctx, world: { x: 80, y: 20 } });
+    handle.onEnd!(ctx, 'commit');
+    expect(cornerAt(edits[0], 1)!.radius).toBeCloseTo(cornerAt(edits[0], 2)!.radius, 6);
+    expect(cornerAt(edits[0], 0)).toBeNull();
+  });
+
+  it('commits nothing on cancel', () => {
+    const { dep, edits } = editing(square());
+    const { handle, ctx } = start(dep, 'corner:1', { x: 90, y: 10 });
+    handle.onMove!({ ...ctx, world: { x: 80, y: 20 } });
+    handle.onEnd!(ctx, 'cancel');
+    expect(edits).toHaveLength(0);
+  });
+});
+
+describe('cycleCornerStyleAction', () => {
+  const run = (dep: EditAnchorsDep) =>
+    (cycleCornerStyleAction.invoker as ImmediateInvoker).run(stubDeps({ editAnchors: dep }), undefined);
+
+  it('steps the selected corners to the next style and keeps their cut', () => {
+    const path = withCorner(square(), 1, { style: 'round', radius: 10 });
+    const { dep, edits } = editing(path, [1]);
+    run(dep);
+    const spec = cornerSpecAt(edits[0], 1)!;
+    expect(spec.style).toBe('chamfer');
+    expect(spec.radius).toBeCloseTo(10, 9);
+  });
+
+  it('gives a bare corner the style after round, for a drag to size', () => {
+    const { dep, edits } = editing(square(), [3]);
+    run(dep);
+    expect(cornerSpecAt(edits[0], 3)).toEqual({ style: 'chamfer', radius: 0 });
+  });
+
+  it('is disabled with no corner anchor selected', () => {
+    const { dep } = editing(square());
+    expect(cycleCornerStyleAction.enabled!(stubDeps({ editAnchors: dep }))).not.toBe(true);
+  });
+});

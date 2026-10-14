@@ -4,6 +4,7 @@ import type { PathDrawCommand } from '../DrawCommand';
 import type { GLMeshHandle } from '../cache/GLMeshCache';
 import type { ShaderProgram } from '../shaders/ShaderProgram';
 import { resolveStrokeWidth } from '@weasel-js/stroke';
+import { resolveCorners } from '@weasel-js/geom';
 import { strokeMesh } from '../cache/strokeMeshCache';
 import { resolveStrokeLengths, type StrokedPathCommand } from '../strokeLengths';
 import { metricKeepsRects, type StrokeSpaces } from '@weasel-js/stroke';
@@ -18,7 +19,9 @@ import { pushRect, pushRampRect, tryStageFill } from './batch';
 import { batchPaint } from './gradient';
 import { paintBindContext, bindPattern, bindGradient } from './paintBind';
 
-export function drawPath(ctx: DrawContext, cmd: PathDrawCommand): void {
+export function drawPath(ctx: DrawContext, given: PathDrawCommand): void {
+  const path = resolveCorners(given.path);
+  const cmd = path === given.path ? given : { ...given, path };
   // A fill or a stroke with no `paint` paints nothing, the way a node's
   // `fill: null` does. Commands arriving from a consumer painter or overlay
   // can carry one.

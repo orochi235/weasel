@@ -1,4 +1,5 @@
 import { forEachSegment, PATH_M, PATH_L, PATH_Z, PATH_C, PATH_Q } from '../commands';
+import { resolveCorners } from '../paths/corners';
 import { rectToContour } from '../box';
 import { DEFAULT_FLATTEN_TOLERANCE, flattenCubicWithArcLen, flattenQuadraticWithArcLen } from '../flatten';
 import type { Path, PolygonPath, RectPath } from '../path';
@@ -32,7 +33,7 @@ export interface ExtractOptions {
  *  anchor parameterization per point. A rect yields one closed contour. */
 export function extractPolylines(path: Path, opts: ExtractOptions = {}): Polyline[] {
   if (path.kind === 'rect') return [extractRect(path)];
-  return extractPolygon(path, opts);
+  return extractPolygon(resolveCorners(path), opts);
 }
 
 function extractRect(p: RectPath): Polyline {

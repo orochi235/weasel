@@ -103,6 +103,7 @@ curly quote, so both codepoints are listed.
 |---|---|
 | `move` | drag on `selected-body` |
 | `editAnchors` | drag whose press hit an anchor or control-handle affordance; it ties `move` on specificity, and `move` turns those presses down |
+| `editCorner` | drag whose press hit a corner widget (`corner:N`) inside a corner anchor of the edited path; sets that corner's radius, or every selected corner's when the anchor is selected |
 | `bendSegment` | drag whose press hit the edited path's `segment` affordance, between anchors; `move` turns those down too |
 | `marqueeAnchors` | drag on `empty` |
 | `enterPathEdit` | double-click on a body |
@@ -128,7 +129,7 @@ from the `resize`, `rotate` and `move` presets' selection contributions.
 `.top` / `.bottom` / `.centerX` / `.centerY`, `distribute.horizontal` /
 `.vertical`, `pathfinder.union` / `.subtract` / `.intersect` / `.exclude` /
 `.divide` / `.crop`, `setFill`, `setStroke`, `setFillOpacity`,
-`setStrokeOpacity` — all UI-driven.
+`setStrokeOpacity`, `cycleCornerStyle` (the selected corners' next style: round, chamfer, inverted) — all UI-driven.
 
 The `align.*` actions take a `to` param and `flip` a `pivot` param naming what
 the selection lines up against: `'union'` (the selection itself — align's

@@ -1,7 +1,8 @@
 /**
  * Serialize a weasel `Path` to an SVG `d=` attribute string. `RectPath`
  * lowers to `M h v h Z`; `PolygonPath` walks the (commands, coords)
- * arrays, emitting one SVG command per kit command.
+ * arrays, emitting one SVG command per kit command, with dynamic corners
+ * expanded into the geometry they draw.
  *
  * Output uses absolute commands only and a small amount of whitespace
  * compression (no leading zeros stripped beyond what `Number.toString`
@@ -10,12 +11,14 @@
 
 import {
   PATH_C, PATH_L, PATH_M, PATH_Q, PATH_Z,
+  resolveCorners,
   type Path,
 } from '@weasel-js/core';
 import { trimNumber } from './transform';
 
 /** Serialize a weasel `Path` to an SVG `d=` attribute string. */
-export function serializePathD(path: Path): string {
+export function serializePathD(given: Path): string {
+  const path = resolveCorners(given);
   if (path.kind === 'rect') {
     const { x, y, width, height } = path;
     return `M${trimNumber(x)} ${trimNumber(y)}h${trimNumber(width)}v${trimNumber(height)}h${trimNumber(-width)}Z`;

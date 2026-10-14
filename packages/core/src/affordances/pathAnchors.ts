@@ -5,6 +5,7 @@ import type { Affordance, AffordanceBinding, AffordanceRegion, CommonAffordanceS
 import type { ChromeState } from 'core/selection/chromeState';
 import type { PolygonPath } from '@weasel-js/geom';
 import { enumerateAnchors } from 'interactions/actions/edit-anchors/geometry';
+import { createPathCornerAffordance } from './pathCorners';
 
 /**
  * Live anchor-editing state. The thunk that returns it is called on every
@@ -32,20 +33,21 @@ export interface AnchorScratch extends CommonAffordanceScratch {
   targetId: string;
   /** Sequential anchor index in path walk order. */
   anchorIndex: number;
-  /** Which of the anchor's three grabbable points this is. */
-  part: 'anchor' | 'controlIn' | 'controlOut';
+  /** Which of the anchor's grabbable points this is: the anchor, a control,
+   *  or the widget that cuts its corner. */
+  part: 'anchor' | 'controlIn' | 'controlOut' | 'corner';
 }
 
 /** Chrome-caps id gating every returned affordance. */
 export const PATH_ANCHOR_CHROME_ID = 'path-edit.anchors';
 
 /**
- * Segment, anchor, and control affordances for the selected paths, bottom →
- * top.
+ * Segment, corner-widget, anchor, and control affordances for the selected
+ * paths, bottom → top.
  *
- * Three affordances rather than one, so that a control handle beats an anchor
- * regardless of which is nearer, the way controls draw on top, and both beat
- * the segment they sit on. Within each, nearest wins. A press on the edited
+ * Separate affordances rather than one, so that a control handle beats an
+ * anchor regardless of which is nearer, the way controls draw on top, and both
+ * beat the corner widgets and the segment they sit on. Within each, nearest wins. A press on the edited
  * path's outline is a `segment` hit, which the segment bend binds to and a
  * selection move turns down. They deliberately share one id: chrome-caps
  * gates anchor editing as a single piece of chrome.
@@ -145,22 +147,28 @@ export function createPathAnchorAffordances(
     },
   };
 
+  const edited = (state: ChromeState): { id: string; path: PolygonPath } | null => {
+    const editingId = getAnchorState()?.editingId ?? null;
+    if (editingId === null) return null;
+    return editablePaths(state).find(({ id }) => id === editingId) ?? null;
+  };
+  const corners = createPathCornerAffordance(PATH_ANCHOR_CHROME_ID, edited, hitRadius * 0.75, cursor);
+
   const segments: Affordance = {
     id: PATH_ANCHOR_CHROME_ID,
     regions(state) {
-      const editingId = getAnchorState()?.editingId ?? null;
-      if (editingId === null) return [];
-      const edited = editablePaths(state).find(({ id }) => id === editingId);
-      if (!edited) return [];
+      const target = edited(state);
+      if (!target) return [];
+      const editingId = target.id;
       return [{
         id: `${editingId}:segment`,
         targetId: null,
-        shape: { kind: 'outline', path: edited.path, hitRadiusPx: hitRadius },
+        shape: { kind: 'outline', path: target.path, hitRadiusPx: hitRadius },
         hitKind: 'segment',
         bind: (): AffordanceBinding => ({ initialScratch: { targetId: editingId } }),
       }];
     },
   };
 
-  return [segments, anchors, controls];
+  return [segments, corners, anchors, controls];
 }

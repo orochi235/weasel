@@ -25,6 +25,13 @@ export {
   ellipsePath, regularPolygonPath, starPath, linePath,
 } from './paths/builder';
 export { boundsOfPath } from './paths/bounds';
+export {
+  cornerFrameAt, cornerFrames, cornerRadiusOf, cornerTrimOf, resolveCorners, type CornerFrame,
+} from './paths/corners';
+export {
+  CORNER_STYLES, compactCorners, cornerAt, cornerSpecAt, hasCorners, nextCornerStyle, scaleCorners, withCorner,
+  withoutCorners, type CornerSpec, type CornerStyle,
+} from './paths/cornerSpec';
 export { unionBoundsPath } from './paths/unionBoundsPath';
 export { translatePath, scalePathToBounds } from './paths/transform';
 export { transformPath } from './paths/transformPath';

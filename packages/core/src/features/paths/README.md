@@ -96,6 +96,21 @@ structure matters. The two orders agree only because `pathToAnchors` and
 you touch either walker, `anchorEdits.test.ts` has the invariant test that
 catches the divergence.
 
+## Dynamic corners
+
+`PolygonPath.corners` holds an optional `CornerSpec` (`round`, `chamfer`, or
+`inverted`, and a radius) per flat anchor index. The command stream keeps the
+bare anchors, so editing still works on them; `resolveCorners`
+(`@weasel-js/geom`, `paths/corners.ts`) expands the specs into plain geometry,
+and the readers that draw, hit, bound, and export a path — tessellation,
+`extractPolylines`, `flatSubpaths`, `boundsOfPath`, the booleans' contour
+parser, the renderer's `drawPath`, and `serializePathD` — call it first. A
+spec rides on its anchor through the anchor model (`PenAnchor.corner`), so an
+insert or delete keeps each corner on its anchor. In path edit, each corner
+anchor gets a widget (`cornerWidgets.ts`), hit as `corner:N` and dragged by
+`editCornerAction`; `cycleCornerStyleAction` steps the selected corners'
+style.
+
 ## Generated shapes
 
 A drawn polygon or star keeps the parameters it was made from in

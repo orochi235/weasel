@@ -62,6 +62,12 @@ export const isControlHandle = hitPredicate((target) => {
   return k !== undefined && /^(controlIn|controlOut):\d+$/.test(k);
 });
 
+/** A dynamic-corner widget, set inside a corner anchor of the edited path. */
+export const isCornerWidget = hitPredicate((target) => {
+  const k = kindOf(target);
+  return k !== undefined && /^corner:\d+$/.test(k);
+});
+
 /** Any of the three anchor-editing affordances (anchor + both controls). */
 export const isAnchorOrControl = hitPredicate((target) =>
   isAnchor(target) || isControlHandle(target));
@@ -69,6 +75,7 @@ export const isAnchorOrControl = hitPredicate((target) =>
 /** The outline of the path being edited, between its anchors. */
 export const isSegment = hitPredicate((target) => kindOf(target) === 'segment');
 
-/** Anything path edit puts on the path: an anchor, a control, or a segment. */
+/** Anything path edit puts on the path: an anchor, a control, a corner
+ *  widget, or a segment. */
 export const isPathEditPart = hitPredicate((target) =>
-  isAnchorOrControl(target) || isSegment(target));
+  isAnchorOrControl(target) || isCornerWidget(target) || isSegment(target));

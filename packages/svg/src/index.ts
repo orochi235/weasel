@@ -16,6 +16,7 @@
 
 export { parseSvg } from './parse';
 export { serializeSvg } from './serialize';
+export { serializePathD } from './path-serializer';
 export { svgNeeds, warmSvg } from './warm';
 export { tilePreviewSvg, tilePreviewCssUrl } from './patterns';
 export { nativeSvgKind, nativeSvgSpace } from './gradients';

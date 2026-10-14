@@ -2,6 +2,7 @@ import type { Affine } from '../affine';
 import { transformCoords } from '../affine';
 import { PathBuilder } from './builder';
 import type { Path, PolygonPath } from '../path';
+import { scaleCorners } from './cornerSpec';
 
 /** Below this, a matrix's rotation and shear terms are rounding left by
  *  composing transforms (a half turn's sine is 1.2e-16), not a slant. */
@@ -45,5 +46,7 @@ export function transformPath(path: Path, m: Affine): Path {
 function transformPolygon(path: PolygonPath, m: Affine): PolygonPath {
   // transformCoords returns Float64Array; PolygonPath.coords is Float32Array.
   const mapped = transformCoords(path.coords, m);
-  return { ...path, coords: Float32Array.from(mapped) };
+  // A corner radius scales as a length does: by the map's mean scale.
+  const scaled = scaleCorners(path, Math.sqrt(Math.abs(m[0] * m[3] - m[1] * m[2])));
+  return { ...scaled, coords: Float32Array.from(mapped) };
 }

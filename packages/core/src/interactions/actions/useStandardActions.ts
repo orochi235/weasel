@@ -55,6 +55,7 @@ import { insertRepositionAction } from './insert/repositionAction';
 import { clearSelectionAction } from './defaults/clearSelection';
 import { cloneAction } from './clone/action';
 import { editAnchorsAction } from './edit-anchors/action';
+import { cycleCornerStyleAction, editCornerAction } from './edit-corners/action';
 import { enterPathEditAction } from './defaults/enterPathEdit';
 import { exitPathEditAction } from './defaults/exitPathEdit';
 import { insertPathAnchorAction } from './defaults/insertPathAnchor';
@@ -158,6 +159,7 @@ const KIT_STANDARD_DESCRIPTORS: Action[] = [
   insertRepositionAction,
   cloneAction,
   editAnchorsAction,
+  editCornerAction,
   enterPathEditAction,
   exitPathEditAction,
   insertPathAnchorAction,
@@ -170,6 +172,7 @@ const KIT_STANDARD_DESCRIPTORS: Action[] = [
   cutPathAtAnchorAction,
   retractHandlesAction,
   makeHandlesSymmetricAction,
+  cycleCornerStyleAction,
   averageAnchorsAction,
   joinAnchorsAction,
   simplifyPathAction,
