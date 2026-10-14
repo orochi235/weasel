@@ -967,9 +967,10 @@ only story runner in the repo.
     already on the page out of its context"), neither of which makes a Playwright action, and
     `frame.evaluate: Frame was detached` under `userEvent.keyboard` in
     `text-dom/src/overlayTyping.browser.test.tsx`. All three passed on the run before the first,
-    whose tree differed only in `PrefSchemaEditor`'s shelf. Three failures out of three on one node
-    make passing load less likely than something about teitou; a run of `a06b02902` on another
-    node would tell the two apart.
+    whose tree differed only in `PrefSchemaEditor`'s shelf. It is not teitou: a run of `a06b02902`
+    on studio failed `glyphCoverage` and `rasterSession` the same way, and `labkit`'s
+    `presentation.browser.test.tsx` ("entering refits the view…") in place of `overlayTyping`. Both
+    `core` files pass alone at that commit on orochi, in 7 s.
   - `forge/src/vite/plugin.test.ts` has its own entry under "Demos & visual regression".
 
 - **(P2) HUD vs DOM text: what the idle rerun left open.** `tests/perf/hud-vs-dom.spec.ts` prices
