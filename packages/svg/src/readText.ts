@@ -11,6 +11,7 @@ import { placeNode } from './placeBox';
 import { readLength } from './lengths';
 import { fontSizeOf } from './fontSize';
 import { DEFAULT_LINE_HEIGHT, joinLines, LineTracker, warnUnreadPositions } from './tspanLines';
+import { placeTspanRun } from './glyphShifts';
 import { mapFillPaint } from './fillPaint';
 import { fillThroughMatrix } from './paintThroughMatrix';
 import { scaleRuns, scaleStroke, scaleTextStyle } from './metricScale';
@@ -176,6 +177,7 @@ export function parseTextElement(
   // Walk children: text nodes become plain run text; <tspan> elements
   // become StyledRuns with their attribute overrides applied.
   const runLines: StyledRun[][] = [[]];
+  let lead = 0;
   const tracker = new LineTracker(el, onWarn);
   const push = (run: StyledRun): void => { runLines[runLines.length - 1].push(run); };
   for (let i = 0; i < el.childNodes.length; i++) {
@@ -195,7 +197,7 @@ export function parseTextElement(
       warnUnreadPositions(sp, onWarn);
       const afterText = runLines.some((line) => line.some((r) => r.text.trim() !== ''));
       if (tracker.startsLine(sp, afterText)) runLines.push([]);
-      push(readTspanRun(sp, gradients, leafStyle, onWarn));
+      lead += placeTspanRun(sp, readTspanRun(sp, gradients, leafStyle, onWarn), runLines, textStyle.letterSpacing, onWarn);
     }
   }
   if (!preservesSpace(el)) for (const line of runLines) collapseRunWhitespace(line);
@@ -216,7 +218,7 @@ export function parseTextElement(
   const opacity = ownValue(el, 'opacity');
   const node: SvgTextNode = {
     kind: 'text',
-    x: ax - anchorOffset(textStyle, width, plain),
+    x: ax + lead - anchorOffset(textStyle, width, plain),
     y: topY,
     width,
     height,

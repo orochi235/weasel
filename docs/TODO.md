@@ -181,11 +181,12 @@ Priority tags:
 
 ## Paths & booleans
 
-- **(P3) svg import: `<tspan>` glyph positioning is not read.** `dx`, `rotate`, and list-valued
-  per-glyph `x` / `y` are not applied; each warns, on `<text>` and `<tspan>` alike
-  (`packages/svg/src/tspanLines.ts`). Kerned text exported as one `<tspan>` per glyph run imports
-  with the glyphs run together: turning a positioned run into a letter spacing or a space needs the
-  advance of the glyphs before it, which a parse with no face loaded cannot measure.
+- **(P3) svg import: absolute and turned glyph positions are not read.** A `<tspan dx>` list is
+  read as letter spacing (`packages/svg/src/glyphShifts.ts`). `rotate`, list-valued per-glyph
+  `x` / `y`, and a `dx` on `<text>` itself are not applied; each warns
+  (`packages/svg/src/tspanLines.ts`). Kerned text exported with an `x` per glyph imports with the
+  glyphs run together: turning a position into a letter spacing or a space needs the advance of
+  the glyphs before it, which a parse with no face loaded cannot measure.
   `serializeSvg` writes no line height either, so a pitch read on import is dropped on export
   unless a caller carries it, as WeaselDraw does in `wd:line-height`.
 
