@@ -41,6 +41,7 @@ export {
   MergeIcon,
 } from '../interactions/actions/defaults/icons/booleanIcons';
 export { CreateOutlinesIcon, OutlineStrokeIcon } from '../interactions/actions/defaults/icons/outlineIcons';
+export { RetractHandlesIcon, SymmetricHandlesIcon } from '../interactions/actions/defaults/icons/anchorIcons';
 
 // ─── Default edit-action icons ──────────────────────────────────────────────
 // Shipped on the clipboard, duplicate, group, reorder and flip actions.

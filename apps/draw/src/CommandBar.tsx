@@ -1,7 +1,7 @@
 /** Top action bar for WeaselDraw — buttons that aren't tools.
  *
  *  Every editing command (history, clipboard, reorder, group, align,
- *  distribute, flip, booleans, create outlines) is a kit action, rendered by
+ *  distribute, flip, booleans, create outlines, anchor handles) is a kit action, rendered by
  *  the kit's `<ActionBar group=…/>` from the registry `<SceneCanvas>` fills,
  *  glyphs included. The app's own view toggles, Release compound path, and
  *  Preferences are actions too (`appCommands`), as are Record and Play
@@ -57,6 +57,7 @@ export function CommandBar(p: CommandBarProps) {
       {KIT_GROUPS.map((group) => <KitActionBar key={group} group={group} />)}
       <KitActionBar group="view" />
       <KitActionBar group="pathfinder" />
+      <KitActionBar group="anchors" />
       <KitActionBar group="text" />
       <KitActionBar group="compound" />
       <div className="wd-commandbar-spacer" />

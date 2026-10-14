@@ -57,6 +57,7 @@ import { enterPathEditAction } from './defaults/enterPathEdit';
 import { exitPathEditAction } from './defaults/exitPathEdit';
 import { insertPathAnchorAction } from './defaults/insertPathAnchor';
 import { bendSegmentAction } from './defaults/bendSegment';
+import { makeHandlesSymmetricAction, retractHandlesAction } from './defaults/anchorHandles';
 import {
   nudgeAnchorsUpAction,
   nudgeAnchorsDownAction,
@@ -159,6 +160,8 @@ const KIT_STANDARD_DESCRIPTORS: Action[] = [
   nudgeAnchorsRightAction,
   deleteAnchorsAction,
   cutPathAtAnchorAction,
+  retractHandlesAction,
+  makeHandlesSymmetricAction,
   marqueeAnchorsAction,
   selectAnchorAction,
   lassoSelectAction,
