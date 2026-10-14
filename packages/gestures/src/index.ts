@@ -1,10 +1,11 @@
 // Barrel for @weasel-js/gestures.
 //
-// Source is split into two subtrees:
-//   - `grammar/` — abstract logic (taxonomy, modifiers, route grammars,
+// Source is split into three subtrees:
+//   - `grammar/`    — abstract logic (taxonomy, modifiers, route grammars,
 //     modifier-key reflection). No event/UI types.
-//   - `ui/`      — UI-flavored types: GestureSpec union, normalized
+//   - `ui/`         — UI-flavored types: GestureSpec union, normalized
 //     InputEvent, the pure matcher, RoutePhase.
+//   - `recognizer/` — raw pointer input turned into the gestures above.
 
 // ─── grammar ──────────────────────────────────────────────────────────────
 
