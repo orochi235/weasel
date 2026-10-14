@@ -159,8 +159,6 @@ Priority tags:
 
 ### Path editing tricks
 
-- **(P2) Smart remove brush.** Brush along a path in edit mode to delete the anchors under the
-  brush, each gap refit to the shape it replaces the way `deleteAnchorsAt` refits one.
 - **(P2) A rectangle has no anchors in path edit.** Draw stores a drawn rectangle's `data.path`
   as a `RectPath` (`kind: 'rect'`), and `classifyPathStorage`
   (`packages/core/src/features/paths/editablePath.ts`) accepts only a polygon, so double-clicking

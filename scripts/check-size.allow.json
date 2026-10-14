@@ -44,7 +44,7 @@
     "lines": 668
   },
   "packages/core/src/canvas/SceneCanvas/useDispatcherOverlayLayer.ts": {
-    "longestFunction": 198
+    "longestFunction": 194
   },
   "packages/core/src/canvas/SceneCanvas/useSceneSelectTool.ts": {
     "longestFunction": 155
@@ -351,9 +351,6 @@
   },
   "packages/ui/src/components/PrefSchemaEditor/StructurePane.tsx": {
     "longestFunction": 189
-  },
-  "packages/ui/src/components/Prefs/RailLayout.tsx": {
-    "longestFunction": 131
   },
   "packages/ui/src/components/Prefs/prefField.tsx": {
     "longestFunction": 167

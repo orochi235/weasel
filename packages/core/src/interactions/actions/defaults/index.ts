@@ -26,6 +26,7 @@ export {
   nudgeAnchorsLeftAction, nudgeAnchorsRightAction,
   deleteAnchorsAction, cutPathAtAnchorAction, marqueeAnchorsAction, selectAnchorAction,
 } from './anchorEditing';
+export { brushDeleteAnchorsAction, BRUSH_DELETE_RADIUS_PX, type BrushDeleteAnchorsParams } from './brushDeleteAnchors';
 export { retractHandlesAction, makeHandlesSymmetricAction } from './anchorHandles';
 export { averageAnchorsAction, joinAnchorsAction } from './anchorJoin';
 export {

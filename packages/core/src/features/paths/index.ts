@@ -89,6 +89,7 @@ export {
   anchorAt,
   anchorCount,
   anchorsInRect,
+  anchorsUnderBrush,
   deleteAnchorsAt,
   editAnchorSet,
   editAnchorSetTracked,

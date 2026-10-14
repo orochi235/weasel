@@ -8,7 +8,7 @@
  *
  * Distinct from `usePreviewGhostLayer`, which paints displaced scene-node
  * silhouettes. This layer is for gestures whose visual feedback isn't a moved
- * scene node — a marquee rect, a lasso polyline, an insert preview.
+ * scene node — a marquee rect, a lasso polyline, an insert preview, a brush.
  */
 import { useEffect, useMemo, useReducer } from 'react';
 import { useLatest } from '@weasel-js/react';
@@ -31,6 +31,7 @@ import { getImageBitmap } from '@weasel-js/renderer';
 import { resolveOverlays } from 'interactions/actions/resolveOverlays';
 import { gestureOverlaysFrom, isVisibleFrom } from '../drawEnvelope';
 import { OVERLAY_ROLE_STROKES } from '../overlayRoleStrokes';
+import { brushOverlayCommands } from './brushOverlay';
 
 /** Style knobs for the dispatcher-overlay layer's marquee + lasso paints. */
 export interface DispatcherOverlayStyle {
@@ -56,6 +57,16 @@ const DEFAULT_STYLE: Required<Omit<DispatcherOverlayStyle, 'roles'>> = {
  *  equally provisional. */
 const PREVIEW_CONTENT_OPACITY = 0.85;
 
+
+function onScreen(
+  points: ReadonlyArray<{ x: number; y: number }>,
+  t: ReturnType<typeof viewToTransform>,
+): { x: number; y: number }[] {
+  return points.map((p) => {
+    const [sx, sy] = worldToScreen(p.x, p.y, t);
+    return { x: sx, y: sy };
+  });
+}
 
 export function useDispatcherOverlayLayer(args: {
   /** The surface's dispatcher, subscribed to only so a pump repaints. What
@@ -234,16 +245,12 @@ export function useDispatcherOverlayLayer(args: {
             const stroke =
               roles[ov.role] ??
               { paint: { color: cfg.stroke }, width: cfg.lineWidth, dash: cfg.dash };
-            const screenPts: { x: number; y: number }[] = [];
-            for (const pt of ov.points) {
-              const [sx, sy] = worldToScreen(pt.x, pt.y, t);
-              screenPts.push({ x: sx, y: sy });
-            }
-            out.push({
-              kind: 'path',
-              path: polylineFromPoints(screenPts),
-              stroke,
-            } satisfies PathDrawCommand);
+            out.push({ kind: 'path', path: polylineFromPoints(onScreen(ov.points, t)), stroke });
+            continue;
+          }
+
+          if (ov.kind === 'brush') {
+            out.push(...brushOverlayCommands(onScreen(ov.points, t), ov.radiusPx, cfg));
             continue;
           }
         }
