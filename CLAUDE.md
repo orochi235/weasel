@@ -164,7 +164,7 @@ circle rather than guessing a coordinate that looks close.
 and aimed along its tangent leans outward, and its inside barb closes up against the bending shaft;
 below a radius of about twice the head's length it reads as a hook or a flag, and aiming it along
 the chord instead only helps above radius 5. So end the curve early and carry the head on a
-straight run at least as long as the barbs trail back — `turnLeft` in `camera.mjs` is the pattern.
+straight run at least as long as the barbs trail back.
 Pick where the curve ends so that run points along an axis or a diagonal. On a diagonal run use
 `chevron`'s spread of 45, which lays both barbs on the pixel axes; at 36–42 they sit a few degrees
 off and blur at 16px. A head also needs a shaft showing behind its barbs, or it reads as a caret.
@@ -173,7 +173,8 @@ head lands on the flattest stretch that is clear of other strokes.
 Where there is no room for a straight run, hang the head on the shaft instead of on its tangent:
 walk one trail of arc back from the tip and put the two barb ends on the curve's normal there, the
 same distance either side. That holds down to a bend radius of about 1.2 head lengths; tighter,
-the inner barb fills the bend, and the head wants to be solid. `chevron` does not do this yet.
+the inner barb fills the bend, and the head wants to be solid. `chevronOn` in `base.mjs` draws
+this head, and `turn` in `camera.mjs` uses it.
 
 **Where one stroke passes behind another, cut it along the front stroke's outline grown by a fixed
 gap.** The cut end is parallel to the stroke in front, not square to the stroke being cut: a butt
