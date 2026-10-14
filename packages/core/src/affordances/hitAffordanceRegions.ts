@@ -4,7 +4,7 @@
  */
 
 import type { View } from 'core/viewport/view';
-import { scaleDelta, screenAngleOf, standoff } from '@weasel-js/geom';
+import { multiply, scale, scaleDelta, screenAngleOf, standoff, strokeHitTest } from '@weasel-js/geom';
 import type { ChromeState } from 'core/selection/chromeState';
 import {
   angleOf, IDENTITY_TARGET, localToWorld, normalToWorld, pxExtentIn, targetTransformOf, worldToLocal,
@@ -83,6 +83,7 @@ function regionDistance2(
   view: View,
 ): number {
   const s = region.shape;
+  if (s.kind === 'outline') return 0;
   const w = s.kind === 'point'
     ? pointRegionAnchor(s, xf, view)
     : s.kind === 'annulus'
@@ -211,6 +212,12 @@ function hitRegion(
   }
   const local = worldToLocal(xf, wx, wy);
   if (!local) return false;
+  if (region.shape.kind === 'outline') {
+    const s = region.shape;
+    return strokeHitTest(s.path, local.x, local.y, 0, {
+      slop: { px: s.hitRadiusPx, transform: multiply(scale(view.scale.x, view.scale.y), xf.toWorld) },
+    });
+  }
   if (region.shape.kind === 'annulus') {
     const s = region.shape;
     // Outside the inner-rect cutout?

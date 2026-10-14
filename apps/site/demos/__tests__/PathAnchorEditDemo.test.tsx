@@ -127,6 +127,26 @@ describe('PathAnchorEditDemo', () => {
     expect(kiteCoords()).toEqual(before);
   });
 
+  it('bends a segment dragged from just outside or just inside its edge', () => {
+    for (const side of [1, -1]) {
+      const { container, unmount } = render(<PathAnchorEditDemo />);
+      const canvas = container.querySelector('canvas')!;
+      doubleClick(canvas, 140, 140);
+      const before = kiteCoords();
+      // Midpoint of the first edge, (140,40) → (220,140), pressed 2px to one side.
+      const x = 180 + 2 * side * OUT.x, y = 90 + 2 * side * OUT.y;
+      drag(canvas, [x, y], [x + 30 * OUT.x, y + 30 * OUT.y]);
+      expect(fired().at(-1)).toBe('bendSegment');
+      // Every anchor stays put; the first segment became a curve.
+      const { commands, coords } = worldPath('kite');
+      expect(Array.from(commands).slice(0, 2)).toEqual([0, 2]);
+      const c = Array.from(coords);
+      expect([c[0], c[1], c[6], c[7]]).toEqual([...before.slice(0, 4)]);
+      unmount();
+      delete window.__weaselTest;
+    }
+  });
+
   it('shows the insert cursor only over a segment while Alt is down', () => {
     const { container } = render(<PathAnchorEditDemo />);
     const canvas = container.querySelector('canvas')!;

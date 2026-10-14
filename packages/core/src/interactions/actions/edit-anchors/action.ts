@@ -35,8 +35,8 @@ import {
   type PointOrigin,
 } from '@weasel-js/geom';
 import { pathToAnchors, type PolygonPath } from '@weasel-js/geom';
-import { worldEditToStorage } from '@weasel-js/geom';
 import { inPlane, editingLayer } from '../planeInput';
+import { pathEditPreview } from './preview';
 
 /**
  * Parse an anchor affordance kind — `'anchor:N'` | `'controlIn:N'` |
@@ -95,10 +95,6 @@ interface EditAnchorsScratch {
   currentPose: PolygonPath;
   /** Where each point of `currentPose` came from in `originPose`. */
   origins?: readonly (PointOrigin | null)[];
-  /** Where the polygon lives on the node — drives which preview-ghost
-   *  axes the handle populates (`previewPose` only for pose-as-polygon,
-   *  `previewPose` + `previewData` for data.path). */
-  storageKind: 'pose' | 'data';
 }
 
 function track(scratch: EditAnchorsScratch, next: ReturnType<typeof editAnchorSetTracked>): void {
@@ -145,8 +141,6 @@ export const editAnchorsAction: Action & { requires: string[] } = inPlane({
       // rotation) so the anchor world coords match what the user clicked.
       const worldPath = dep.getEditablePath(editingId) as PolygonPath | undefined;
       if (!worldPath || worldPath.kind !== 'polygon') return {};
-      const storageKind = dep.getStorageKind(editingId);
-      if (storageKind !== 'pose' && storageKind !== 'data') return {};
 
       // Decode once to validate the affordance index against the actual
       // geometry and to read the press origin. A stale affordance (the
@@ -157,6 +151,10 @@ export const editAnchorsAction: Action & { requires: string[] } = inPlane({
       if (!origin) return {};
       if (anchorInfo.part === 'controlIn' && !origin.inHandle) return {};
       if (anchorInfo.part === 'controlOut' && !origin.outHandle) return {};
+
+      let active = false;
+      const preview = pathEditPreview(dep, editingId, () => (active ? scratch.currentPose : null));
+      if (!preview) return {};
 
       // --- Press semantics: selection updates immediately, before any move.
       let dragging: readonly number[] = [anchorInfo.anchorIndex];
@@ -175,13 +173,6 @@ export const editAnchorsAction: Action & { requires: string[] } = inPlane({
           : [];
       }
 
-      // For data.path nodes, the original rect pose + data that previewPose /
-      // previewData derive from, captured at start.
-      const nodeShape = storageKind === 'data' ? dep.getNodeShape(editingId) : null;
-      const originRectPose =
-        nodeShape ? (nodeShape.pose as { x: number; y: number; width: number; height: number }) : undefined;
-      const originData = nodeShape ? (nodeShape.data as object) : undefined;
-
       const scratch: EditAnchorsScratch = {
         dep,
         id: editingId,
@@ -191,10 +182,7 @@ export const editAnchorsAction: Action & { requires: string[] } = inPlane({
         anchorOrigin: { x: origin.x, y: origin.y },
         originPose: worldPath,
         currentPose: worldPath,
-        storageKind,
       };
-
-      let active = false;
 
       return {
         kind: 'edit-anchors',
@@ -229,28 +217,9 @@ export const editAnchorsAction: Action & { requires: string[] } = inPlane({
           if (scratch.originPose === scratch.currentPose) return;
           scratch.dep.applyEdit(scratch.id, scratch.currentPose, 'Edit anchors', scratch.origins);
         },
-        previewIds: () => (active ? [scratch.id] : null),
-        previewPose: (id: string): unknown | null => {
-          if (!active || id !== scratch.id) return null;
-          if (scratch.storageKind === 'pose') {
-            // Pose IS the polygon — preview pose is the polygon itself.
-            return scratch.currentPose;
-          }
-          // data.path: invert the world edit the same way the commit does, so
-          // the preview ghost (which re-applies pose.rotation via the render
-          // wrap) matches the committed result — no double-rotation.
-          if (!originRectPose) return null;
-          return worldEditToStorage(originRectPose, scratch.currentPose).pose;
-        },
-        previewData: (id: string): unknown | null => {
-          if (!active || id !== scratch.id) return null;
-          if (scratch.storageKind !== 'data') return null;
-          if (!originData) return null;
-          // Stored path is the unrotated, origin-aligned contour; the render
-          // invariant `pathInWorld(stored, pose) === world` holds.
-          const { path } = worldEditToStorage(originRectPose!, scratch.currentPose);
-          return { ...originData, path };
-        },
+        previewIds: preview.previewIds,
+        previewPose: preview.previewPose,
+        previewData: preview.previewData,
       };
     },
   },

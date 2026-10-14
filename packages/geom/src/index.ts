@@ -81,6 +81,7 @@ export {
   locateAnchor, moveHandleTo, openSubpathAt, segmentAt, translateAnchorBy,
   type AnchorRect, type AnchorSet, type SegmentHit,
 } from './paths/anchorEdits';
+export { bendSegment, type BendGrip } from './paths/bendSegment';
 export { editAnchorSetTracked, remapPointValues, type PointOrigin } from './paths/anchorOrigins';
 export { nearestPathAnchor, reverseAnchors, type PathAnchorHit } from './paths/nearestAnchor';
 export { pathInPoseFrame, pathInWorld, worldEditToStorage, type PathInWorldPose } from './paths/pathInWorld';

@@ -91,9 +91,6 @@
   "packages/core/src/interactions/actions/depSchema.ts": {
     "lines": 580
   },
-  "packages/core/src/interactions/actions/edit-anchors/action.ts": {
-    "longestFunction": 131
-  },
   "packages/core/src/tools/builtin/pen/usePenTool.ts": {
     "lines": 683,
     "longestFunction": 455

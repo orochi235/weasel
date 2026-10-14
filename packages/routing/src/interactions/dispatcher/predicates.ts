@@ -65,3 +65,10 @@ export const isControlHandle = hitPredicate((target) => {
 /** Any of the three anchor-editing affordances (anchor + both controls). */
 export const isAnchorOrControl = hitPredicate((target) =>
   isAnchor(target) || isControlHandle(target));
+
+/** The outline of the path being edited, between its anchors. */
+export const isSegment = hitPredicate((target) => kindOf(target) === 'segment');
+
+/** Anything path edit puts on the path: an anchor, a control, or a segment. */
+export const isPathEditPart = hitPredicate((target) =>
+  isAnchorOrControl(target) || isSegment(target));

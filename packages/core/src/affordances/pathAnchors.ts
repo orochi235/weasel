@@ -1,4 +1,4 @@
-/** Path anchor + control-handle affordances. */
+/** Path anchor, control-handle, and segment affordances. */
 
 import type { CursorSpec } from '@weasel-js/cursor';
 import type { Affordance, AffordanceBinding, AffordanceRegion, CommonAffordanceScratch } from './types';
@@ -36,16 +36,19 @@ export interface AnchorScratch extends CommonAffordanceScratch {
   part: 'anchor' | 'controlIn' | 'controlOut';
 }
 
-/** Chrome-caps id gating both returned affordances. */
+/** Chrome-caps id gating every returned affordance. */
 export const PATH_ANCHOR_CHROME_ID = 'path-edit.anchors';
 
 /**
- * Anchor + control affordances for the selected paths, bottom → top.
+ * Segment, anchor, and control affordances for the selected paths, bottom →
+ * top.
  *
- * Returns **two** affordances rather than one so that a control handle beats
- * an anchor regardless of which is nearer, the way controls draw on top.
- * Within each of the two, nearest wins. They deliberately share one id:
- * chrome-caps gates anchor editing as a single piece of chrome.
+ * Three affordances rather than one, so that a control handle beats an anchor
+ * regardless of which is nearer, the way controls draw on top, and both beat
+ * the segment they sit on. Within each, nearest wins. A press on the edited
+ * path's outline is a `segment` hit, which the segment bend binds to and a
+ * selection move turns down. They deliberately share one id: chrome-caps
+ * gates anchor editing as a single piece of chrome.
  *
  * Order matters — spread this into an affordance list in the returned order.
  */
@@ -142,5 +145,22 @@ export function createPathAnchorAffordances(
     },
   };
 
-  return [anchors, controls];
+  const segments: Affordance = {
+    id: PATH_ANCHOR_CHROME_ID,
+    regions(state) {
+      const editingId = getAnchorState()?.editingId ?? null;
+      if (editingId === null) return [];
+      const edited = editablePaths(state).find(({ id }) => id === editingId);
+      if (!edited) return [];
+      return [{
+        id: `${editingId}:segment`,
+        targetId: null,
+        shape: { kind: 'outline', path: edited.path, hitRadiusPx: hitRadius },
+        hitKind: 'segment',
+        bind: (): AffordanceBinding => ({ initialScratch: { targetId: editingId } }),
+      }];
+    },
+  };
+
+  return [segments, anchors, controls];
 }

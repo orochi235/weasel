@@ -56,6 +56,7 @@ import { editAnchorsAction } from './edit-anchors/action';
 import { enterPathEditAction } from './defaults/enterPathEdit';
 import { exitPathEditAction } from './defaults/exitPathEdit';
 import { insertPathAnchorAction } from './defaults/insertPathAnchor';
+import { bendSegmentAction } from './defaults/bendSegment';
 import {
   nudgeAnchorsUpAction,
   nudgeAnchorsDownAction,
@@ -151,6 +152,7 @@ const KIT_STANDARD_DESCRIPTORS: Action[] = [
   enterPathEditAction,
   exitPathEditAction,
   insertPathAnchorAction,
+  bendSegmentAction,
   nudgeAnchorsUpAction,
   nudgeAnchorsDownAction,
   nudgeAnchorsLeftAction,
