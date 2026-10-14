@@ -149,7 +149,7 @@ function toAffordanceHit(hit: AffordanceRegionHit): AffordanceHit {
     ...(scratch.targetId !== undefined ? { targetIds: [scratch.targetId] } : {}),
     ...(scratch.anchor !== undefined ? { anchor: scratch.anchor } : {}),
     ...(scratch.fixedPoint !== undefined ? { fixedPoint: scratch.fixedPoint } : {}),
-    ...(hit.region.cursor !== undefined ? { cursor: hit.region.cursor } : {}),
+    ...(hit.cursor !== undefined ? { cursor: hit.cursor } : {}),
     ...(hit.binding.initialScratch !== undefined ? { payload: hit.binding.initialScratch } : {}),
   } as AffordanceHit;
 }

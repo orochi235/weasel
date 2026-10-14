@@ -20,7 +20,8 @@ export interface InFlightGestures {
   takeAll(): Array<[string, OngoingHandle]>;
   /** The ids of the entries that own a gesture in flight: the matcher's `engagedChannels`. */
   engagedOwners(): ReadonlySet<string>;
-  /** What the gesture begun last currently is, where its action says. See `Action.activeCursor`. */
+  /** What the gesture begun last currently is, where its handle or action says. See
+   *  `OngoingHandle.cursor` and `Action.activeCursor`. */
   cursor(): CursorSpec | null;
   /** The gesture begun last. */
   latest(): { kind: string | null; id: string | null };
@@ -70,8 +71,9 @@ export function createInFlightGestures(): InFlightGestures {
       // began, not the one they began first. Map iteration is insertion order
       // and each gestureId is set exactly once, so the last entry is the newest.
       let cursor: CursorSpec | null = null;
-      for (const action of actions.values()) {
-        const spec = action.activeCursor ?? action.cursor;
+      for (const [id, handle] of handles) {
+        const action = actions.get(id);
+        const spec = handle.cursor?.() ?? action?.activeCursor ?? action?.cursor;
         // The spec, not its CSS form: a painted glyph resolves to 'none', which
         // would tell the pump to hide the cursor and paint nothing.
         if (spec !== undefined && resolveCursor(spec)) cursor = spec;

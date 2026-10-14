@@ -307,6 +307,13 @@ export interface OngoingHandle {
    */
   kind?: string;
 
+  /**
+   * The cursor this gesture shows now, read after every move. Wins over the
+   * action's `activeCursor`, for a cursor that follows the gesture — the
+   * rotate glyph turning about its pivot. `undefined` defers to the action.
+   */
+  cursor?(): CursorSpec | undefined;
+
   onMove?(ctx: InvocationCtx): void;
   onEnd?(ctx: InvocationCtx, reason: 'commit' | 'cancel'): void;
 

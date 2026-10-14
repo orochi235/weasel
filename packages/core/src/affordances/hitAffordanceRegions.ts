@@ -11,6 +11,7 @@ import {
   type TargetTransform,
 } from 'core/geometry/targetFrame';
 import type { Affordance, AffordanceBinding, AffordanceRegion } from './types';
+import type { CursorSpec } from '@weasel-js/cursor';
 
 /** What the walk found: the region, plus the ids needed to describe it. */
 export interface AffordanceRegionHit {
@@ -18,8 +19,10 @@ export interface AffordanceRegionHit {
   affordanceId: string;
   /** `AffordanceRegion.id`. */
   regionId: string;
-  /** The region itself, so callers can read `hitKind` / `cursor`. */
+  /** The region itself, so callers can read `hitKind`. */
   region: AffordanceRegion;
+  /** The region's cursor at the hit point. */
+  cursor?: CursorSpec;
   /** Result of the region's `bind()`, called exactly once. */
   binding: AffordanceBinding;
 }
@@ -62,10 +65,13 @@ export function hitAffordanceRegions(
       if (best === null || d2 <= best.d2) best = { region, d2 };
     }
     if (best) {
+      const { cursor } = best.region;
+      const at = typeof cursor === 'function' ? cursor({ x: wx, y: wy }, view) : cursor;
       return {
         affordanceId: a.id,
         regionId: best.region.id,
         region: best.region,
+        ...(at !== undefined ? { cursor: at } : {}),
         binding: best.region.bind(),
       };
     }

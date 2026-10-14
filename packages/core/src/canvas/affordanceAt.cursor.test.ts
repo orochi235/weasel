@@ -56,7 +56,7 @@ describe('AffordanceHit.cursor comes from the region', () => {
     // declared on the region and the live path hardcoded 'grab' instead.
     const custom = createRotationAffordance({ bandPx: 24, cursor: 'crosshair' });
     const hit = hitAffordanceRegions([custom], 50, -10, makeState(), VIEW);
-    expect(hit?.region.cursor).toBe('crosshair');
+    expect(hit?.cursor).toBe('crosshair');
   });
 });
 
