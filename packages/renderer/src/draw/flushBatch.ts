@@ -81,7 +81,7 @@ export function flushBatch(ctx: DrawContext): void {
   applyClipTest(ctx, staged.clipDepth);
   drawTriangles(ctx, indexCount, ctx.gl.UNSIGNED_INT);
   // Everything else in the renderer binds its texture to unit 0 and some of it
-  // does so without an `activeTexture` of its own, so leaving unit 6 selected
+  // does so without an `activeTexture` of its own, so leaving a high unit selected
   // sends the next such bind to a unit nothing samples.
   gl.activeTexture(gl.TEXTURE0);
   // Not redundant: `drawShader` binds no VAO and points attributes at whatever

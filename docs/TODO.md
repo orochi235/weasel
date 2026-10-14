@@ -1188,7 +1188,7 @@ only story runner in the repo.
 
   - **A run-breaker costs about 21 us a flush** (`flush-anatomy.spec.ts`), 16 of it bind and draw;
     no other call in `flushBatch` moves it by more than its noise, about 1.2 us. So what remains is
-    the draw count: an eighth texture still breaks the run, and so does a color
+    the draw count: a sixteenth texture breaks the run, and so does a color
     matrix around a gradient, or around an image when it does more than scale channels down. A solid or a glyph under a color matrix has its color
     mapped on the CPU (`draw/foldColor.ts`), which paints the same pixel as the shader in headless
     Chromium (`colorMatrixFold.browser.test.ts`) and has not been timed. The specs that break a run
@@ -1206,6 +1206,11 @@ only story runner in the repo.
     by draw count (`drawBatch.test.ts`). `syntheticBold.browser.test.ts` is the pixel check and has
     not been run; nothing has timed it, and `flush-anatomy.spec.ts` has not been run since it lost
     its `u_synthBold` variant.
+  - **A run holds fifteen textures where it held seven** (`BATCH_TEXTURE_SLOTS`, the most units
+    WebGL2 guarantees), fetched through a tree of four compares where the chain took up to seven.
+    `batchSlots.browser.test.ts` compiles it and reads a pixel from each slot, and has not been run.
+    Not timed: what the tree and the wider `u_samplers` and `u_fieldScale` uploads cost a fragment
+    and a flush (`fill-rate.spec.ts`, `flush-anatomy.spec.ts`).
   - **Caching `u_synthBold` (a uniform then), `u_samplers`, and `u_fieldScale` was tried and
     reverted**, measured through `finish`: it saved about 0.1 us a flush on color-matrix breaks and made a frame of
     20,000 stroked rects 30% slower, with both renderers interleaved in one page. The cause was not

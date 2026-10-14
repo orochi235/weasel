@@ -142,6 +142,18 @@ describe('renderer — consecutive image batching', () => {
     expect(units).toEqual([0, 1, 2, 0]);
   });
 
+  it('keeps eight bitmaps in one run, which seven slots could not', () => {
+    const sheets = Array.from({ length: 8 }, () => bitmap());
+    r.render(sheets.map((image, i) => ({ ...img(i * 20), image })));
+    expect(draws()).toEqual([48]);
+    // Each quad names a slot of its own, past the white texel at 0.
+    const v = recorder.calls.find(
+      (c) => c.name === 'bufferSubData' && c.args[0] === recorder.gl.ARRAY_BUFFER,
+    )!.args[2] as Float32Array;
+    const slots = sheets.map((_, i) => v[i * FLOATS_PER_QUAD + SLOT] % BATCH_TEXTURE_SLOTS);
+    expect(slots).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
+  });
+
   it('breaks the run when every texture slot is taken', () => {
     // One more bitmap than the run has slots for. `BATCH_TEXTURE_SLOTS`
     // includes the white texel, so the run holds one fewer bitmap than that.

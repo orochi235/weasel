@@ -6,10 +6,11 @@
  * `u_samplers`, and slot 0 is always the 1x1 white texel, so a solid's
  * `texture() * a_vertexColor` is the vertex color exactly.
  *
- * **The chain is unrolled because GLSL ES 3.0 will not index a sampler array
- * with a variable** — the index must be a constant expression. The coordinate
- * it samples is a varying computed before the branch, which is what keeps the
- * implicit derivatives well defined.
+ * **The fetch is unrolled because GLSL ES 3.0 will not index a sampler array
+ * with a variable** — the index must be a constant expression. It is unrolled
+ * as a tree, so any slot is four compares away. The coordinate it samples is a
+ * varying computed before the branch, which is what keeps the implicit
+ * derivatives well defined.
  *
  * **The glyph math runs on every fragment, glyph or not**, because a
  * derivative in non-uniform control flow is undefined and it has to be taken
@@ -25,7 +26,7 @@
  * fetch from a varying is one the hardware schedules ahead, and one from a
  * computed coordinate is not.
  *
- * **Mode and slot share one attribute**, as `slot + 8 * mode`, because every
+ * **Mode and slot share one attribute**, as `slot + 16 * mode`, because every
  * extra float widens the buffer write for every rect and quad in the run, not
  * just for the glyphs that read it.
  *
@@ -46,7 +47,7 @@
  *   a_vertexColor  vec4   straight-alpha color; (1,1,1,1) on an image vertex
  *   a_uv           vec2   texture coordinate 0..1; the white texel for solids
  *   a_post         float  alpha factor applied after the color matrix; a glyph's bold shift
- *   a_texSlot      float  slot + 8 * paint mode; slot 0 is the white texel
+ *   a_texSlot      float  slot + 16 * paint mode; slot 0 is the white texel
  *
  * Output: PREMULTIPLIED alpha. Blend: `gl.blendFunc(ONE, ONE_MINUS_SRC_ALPHA)`.
  */
@@ -57,11 +58,11 @@ import { STRAIGHT_RGB_GLSL } from './straightRgb';
 /**
  * Texture units the batch program samples, slot 0 being the white texel.
  *
- * Fixed rather than queried: WebGL2 guarantees at least 16 fragment texture
- * units, so 8 is available everywhere. Every extra slot is another compare in
- * the fragment chain.
+ * Fixed rather than queried: 16 is the most fragment texture units WebGL2
+ * guarantees, so it is available everywhere and no more is. A power of two,
+ * which keeps `sampleTree` balanced.
  */
-export const BATCH_TEXTURE_SLOTS = 8;
+export const BATCH_TEXTURE_SLOTS = 16;
 
 /** Slot every solid vertex carries — the white texel, bound by `flushBatch`. */
 export const WHITE_SLOT = 0;
@@ -109,12 +110,17 @@ export const BATCH_ATTRIBUTE_LOCATIONS = {
 
 const L = BATCH_ATTRIBUTE_LOCATIONS;
 
-function sampleChain(slots: number): string {
-  const arms: string[] = [];
-  for (let i = 1; i < slots; i++) {
-    arms.push(`  if (slot == ${i}) return texture(u_samplers[${i}], uv);`);
-  }
-  return arms.join('\n');
+/** The fetch for slots `lo` to `hi`, halving the range at each compare. */
+function sampleTree(lo: number, hi: number, indent = '  '): string {
+  if (lo === hi) return `${indent}return texture(u_samplers[${lo}], uv);`;
+  const mid = (lo + hi + 1) >> 1;
+  return [
+    `${indent}if (slot < ${mid}) {`,
+    sampleTree(lo, mid - 1, `${indent}  `),
+    `${indent}} else {`,
+    sampleTree(mid, hi, `${indent}  `),
+    `${indent}}`,
+  ].join('\n');
 }
 
 export const BATCH_VERT_SRC = /* glsl */ `#version 300 es
@@ -137,7 +143,7 @@ void main() {
   v_vertexColor = a_vertexColor;
   v_uv = a_uv;
   v_post = a_post;
-  // slot + 8 * mode, unpacked — see the file header for why they share a float.
+  // slot + 16 * mode, unpacked — see the file header for why they share a float.
   int packed = int(a_texSlot + 0.5);
   v_texSlot = packed % ${BATCH_TEXTURE_SLOTS};
   v_paintMode = float(packed / ${BATCH_TEXTURE_SLOTS});
@@ -160,8 +166,9 @@ uniform vec4 u_colorBias;
 out vec4 outColor;
 
 vec4 sampleSlot(int slot, vec2 uv) {
-${sampleChain(BATCH_TEXTURE_SLOTS)}
-  return texture(u_samplers[0], uv);
+${sampleTree(0, BATCH_TEXTURE_SLOTS - 1)}
+  // Never reached: every slot returns above.
+  return vec4(0.0);
 }
 ${GLYPH_COVERAGE_GLSL}
 ${STRAIGHT_RGB_GLSL}

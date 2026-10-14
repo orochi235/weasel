@@ -51,19 +51,35 @@ describe('batch program — declaration lists match the sources', () => {
   });
 });
 
-describe('batch program — the sampler chain', () => {
-  it('unrolls one arm per slot past the white texel', () => {
-    // GLSL ES 3.0 will not index a sampler array with a variable, so the arms
-    // over constants are the only legal form — and there must be exactly
-    // enough of them, or the last slots silently fall through to white.
-    const arms = [...BATCH_FRAG_SRC.matchAll(/if \(slot == (\d+)\)/g)].map((m) => Number(m[1]));
-    expect(arms).toEqual(
-      Array.from({ length: BATCH_TEXTURE_SLOTS - 1 }, (_, i) => i + 1),
-    );
+describe('batch program — the sampler tree', () => {
+  /** `sampleSlot`'s body with each fetch replaced by the unit it reads, so the
+   *  branching can be run here. */
+  const body = BATCH_FRAG_SRC.slice(
+    BATCH_FRAG_SRC.indexOf('vec4 sampleSlot(int slot, vec2 uv) {') + 'vec4 sampleSlot(int slot, vec2 uv) {'.length,
+    BATCH_FRAG_SRC.indexOf('float median('),
+  );
+  const unitFor = new Function(
+    'slot', body.replace(/texture\(u_samplers\[(\d+)\], uv\)/g, '$1').replace(/\}\s*$/, ''),
+  ) as (slot: number) => number;
+
+  it('samples the unit each slot names', () => {
+    // GLSL ES 3.0 will not index a sampler array with a variable, so a fetch
+    // per constant is the only legal form, and a slot whose arm is missing or
+    // crossed samples somebody else's texture.
+    expect(BATCH_TEXTURE_SLOTS).toBe(16);
+    const fetches = [...body.matchAll(/texture\(u_samplers\[(\d+)\], uv\)/g)].map((m) => Number(m[1]));
+    expect(fetches.slice(0, BATCH_TEXTURE_SLOTS)).toEqual(Array.from({ length: BATCH_TEXTURE_SLOTS }, (_, i) => i));
+    for (let slot = 0; slot < BATCH_TEXTURE_SLOTS; slot++) expect(unitFor(slot)).toBe(slot);
   });
 
-  it('falls through to the white texel, which is the slot solids carry', () => {
-    expect(BATCH_FRAG_SRC).toMatch(/return texture\(u_samplers\[0\], uv\);/);
+  it('reaches any slot in four compares, the white texel included', () => {
+    let depth = 0;
+    let deepest = 0;
+    for (const ch of body) {
+      if (ch === '{') deepest = Math.max(deepest, ++depth);
+      else if (ch === '}') depth--;
+    }
+    expect(deepest).toBe(Math.log2(BATCH_TEXTURE_SLOTS));
     expect(WHITE_SLOT).toBe(0);
   });
 });
