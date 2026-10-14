@@ -7,7 +7,7 @@
  * consumer-supplied `compose`.
  */
 
-import { applyToPoint, multiply, poseFrameInverseOf, poseFrameOf, poseLinearOf, rotate, type Mat3 } from '@weasel-js/geom';
+import { applyToPoint, multiply, poseFrameInverseOf, poseFrameOf, poseLinearOf, rotate, type Affine } from '@weasel-js/geom';
 import type { RectPose } from 'core/scene/types';
 export type { RectPose };
 
@@ -52,7 +52,7 @@ export function decomposeRectPose<TPose extends RectPose>(parent: TPose, world: 
 
 /** `pose` with the linear part `linear` held as `rotation` and whatever is
  *  left over as `transform`, which is dropped when nothing is. */
-function withLinear<TPose extends RectPose>(pose: TPose, rotation: number, linear: Mat3): TPose {
+function withLinear<TPose extends RectPose>(pose: TPose, rotation: number, linear: Affine): TPose {
   const [a, b, c, d] = multiply(rotate(-rotation), linear);
   const plain = Math.abs(a - 1) < 1e-12 && Math.abs(b) < 1e-12 && Math.abs(c) < 1e-12 && Math.abs(d - 1) < 1e-12;
   const next: RectPose = { ...pose, rotation };
@@ -66,7 +66,7 @@ function centeredAt<TPose extends RectPose>(pose: TPose, cx: number, cy: number)
   return { ...pose, x: cx - pose.width / 2, y: cy - pose.height / 2 };
 }
 
-const NO_FRAME: Mat3 = [1, 0, 0, 1, 0, 0];
+const NO_FRAME: Affine = [1, 0, 0, 1, 0, 0];
 
 /** Turn `(x, y)` about `(cx, cy)` by `r` radians. */
 function turn(cx: number, cy: number, r: number, x: number, y: number): [number, number] {

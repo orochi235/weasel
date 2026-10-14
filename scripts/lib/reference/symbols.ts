@@ -28,7 +28,7 @@ export function readSymbol(child: Child, name: string, links: Links): ReferenceS
   };
 
   if (child.variant === 'reference') {
-    return { ...base, kind: 'alias', to: links.byId(child.target) ?? null };
+    return { ...base, kind: 'alias', to: links.byId((child as JSONOutput.ReferenceReflection).target) ?? null };
   }
   switch (child.kind) {
     case Kind.Function:

@@ -68,7 +68,7 @@ export function snapToContainer<TPose>(args: {
     return slots;
   };
   const snapped = (ctx: GestureContext<TPose>, snap: SnapTarget<TPose>): BehaviorResult<TPose> =>
-    ({ pose: snap.slotPose, poses: slotsFor(ctx, snap), snap });
+    ({ poses: slotsFor(ctx, snap), snap });
 
   return {
     onMove(ctx, _proposed) {

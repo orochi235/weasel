@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { applyToPoint, multiply, poseFrameOf, translate, type Mat3 } from '@weasel-js/geom';
+import { applyToPoint, multiply, poseFrameOf, translate, type Affine } from '@weasel-js/geom';
 import { composeRigidPose, decomposeRigidPose } from 'core/scene/composePose';
 import type { RectPose } from 'core/scene/types';
 
-const IDENTITY: Mat3 = [1, 0, 0, 1, 0, 0];
+const IDENTITY: Affine = [1, 0, 0, 1, 0, 0];
 
 /** Where a pose draws its box corners in the frame it is expressed in. */
-function corners(p: RectPose, outer: Mat3 = IDENTITY): [number, number][] {
+function corners(p: RectPose, outer: Affine = IDENTITY): [number, number][] {
   const m = multiply(outer, poseFrameOf(p) ?? IDENTITY);
   return ([[p.x, p.y], [p.x + p.width, p.y], [p.x + p.width, p.y + p.height], [p.x, p.y + p.height]] as const)
     .map(([x, y]) => applyToPoint(m, x, y));
@@ -14,7 +14,7 @@ function corners(p: RectPose, outer: Mat3 = IDENTITY): [number, number][] {
 
 /** The matrix a container's pose puts its children through: its own frame,
  *  over the offset of its unrotated box. */
-function childFrameOf(parent: RectPose): Mat3 {
+function childFrameOf(parent: RectPose): Affine {
   return multiply(poseFrameOf(parent) ?? IDENTITY, translate(parent.x, parent.y));
 }
 

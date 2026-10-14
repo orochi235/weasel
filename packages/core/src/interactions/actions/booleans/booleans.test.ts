@@ -117,6 +117,7 @@ describe('applyBooleanOp', () => {
   it('no-op when selection has only non-path nodes (getWorldPath returns undefined)', () => {
     const nodes = [{ id: 'g1' as NodeId, path: null as any }];
     const adapter: BooleansAdapter = {
+      ...rootsTree(nodes.map((n) => n.id)),
       getSelection: () => nodes.map((n) => n.id),
       getWorldPath: () => undefined,
       compareZ: () => 0,
