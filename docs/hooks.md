@@ -101,7 +101,8 @@ curly quote, so both codepoints are listed.
 | Action id | Default binding |
 |---|---|
 | `move` | drag on `selected-body` |
-| `editAnchors` | drag whose press hit an anchor or control-handle affordance — higher specificity than a bare `drag`, so it wins over `move` without any opt-out |
+| `editAnchors` | drag whose press hit an anchor or control-handle affordance; it ties `move` on specificity, and `move` turns those presses down |
+| `bendSegment` | drag whose press hit the edited path's `segment` affordance, between anchors; `move` turns those down too |
 | `marqueeAnchors` | drag on `empty` |
 | `enterPathEdit` | double-click on a body |
 | `selectAnchor` | click |

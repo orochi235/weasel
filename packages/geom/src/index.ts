@@ -35,8 +35,9 @@ export { pathSignedArea, reversePath } from './paths/winding';
 export { pathFromD } from './paths/pathFromD';
 export { pointAlongPath, type PathStation, type PointAlongPathOptions } from './paths/pathAt';
 export { pathDistanceToPoint } from './paths/pathDistance';
-export { cubicPointAt, splitCubicAtT, fitCubicThroughDeletion, type Point } from './paths/cubicMath';
-export { schneiderFit } from './paths/schneiderFit';
+export { cubicPointAt, splitCubicAtT, type Point } from './paths/cubicMath';
+export { fitCubicThroughDeletion } from './paths/spanFit';
+export { schneiderFit, fitCubicWithTangents } from './paths/schneiderFit';
 export {
   pointInPath, strokeHitTest,
   pathContainsPoint, pathContainsRect, pathIntersectsRect,
@@ -80,6 +81,7 @@ export {
   locateAnchor, moveHandleTo, openSubpathAt, segmentAt, translateAnchorBy,
   type AnchorRect, type AnchorSet, type SegmentHit,
 } from './paths/anchorEdits';
+export { bendSegment, type BendGrip } from './paths/bendSegment';
 export { editAnchorSetTracked, remapPointValues, type PointOrigin } from './paths/anchorOrigins';
 export { nearestPathAnchor, reverseAnchors, type PathAnchorHit } from './paths/nearestAnchor';
 export { pathInPoseFrame, pathInWorld, worldEditToStorage, type PathInWorldPose } from './paths/pathInWorld';

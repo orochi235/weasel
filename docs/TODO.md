@@ -159,16 +159,14 @@ Priority tags:
 
 ### Path editing tricks
 
-- **(P2) Deleting an anchor flattens the curve around it.** `deleteAnchorsAt` keeps the
-  neighbors' handle directions but sets each handle to a third of the chord
-  (`fitCubicThroughDeletion`, `packages/geom/src/paths/cubicMath.ts`), so deleting one anchor of a
-  four-anchor circle leaves a flat-sided lobe. Fit the two handle lengths, directions fixed, to
-  samples of the span being replaced (Schneider's least-squares step, as `schneiderFit` does).
 - **(P2) Smart remove brush.** Brush along a path in edit mode to delete the anchors under the
-  brush, each gap refit to the shape it replaces. Needs the fitted delete above.
-- **(P2) Bend a segment by dragging it.** In path edit, a drag on a segment's interior reshapes
-  it so the curve passes through the pointer, the handles moving to suit. `segmentAt`
-  gives the hit's `t`.
+  brush, each gap refit to the shape it replaces the way `deleteAnchorsAt` refits one.
+- **(P2) A rectangle has no anchors in path edit.** Draw stores a drawn rectangle's `data.path`
+  as a `RectPath` (`kind: 'rect'`), and `classifyPathStorage`
+  (`packages/core/src/features/paths/editablePath.ts`) accepts only a polygon, so double-clicking
+  one enters draw's path-edit mode with no anchors to drag, insert, or bend. Undecided: whether
+  editing turns the rectangle into a polygon path on its first edit, and what then happens to
+  anything that reads it as a rectangle.
 - **(P2) Dynamic corners.** Round, chamfer, or invert any corner anchor by dragging a widget at
   it, and change the radius later. Needs a corner radius per anchor in the path data, expanded
   into geometry when it renders and on export.

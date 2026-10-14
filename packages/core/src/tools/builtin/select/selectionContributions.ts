@@ -6,7 +6,7 @@
  * `resize` and `rotate` presets.
  */
 import type { BindingOpts, GestureBinding } from '@weasel-js/routing';
-import { isResizeHandle, isRotateHandle, isAnchorOrControl } from '@weasel-js/routing';
+import { isResizeHandle, isRotateHandle, isPathEditPart } from '@weasel-js/routing';
 import { hitPredicate } from '@weasel-js/gestures';
 import type { Contribution } from '../../overlayBinding';
 import type { UseMoveOptions } from '../../../interactions/actions/move/options';
@@ -68,19 +68,19 @@ export function selectionMoveBindings<TPose>(
     { spec: { kind: 'drag' as const, target: 'unselected-body' as const, mods: { alt: true } }, actionId: 'clone' },
     {
       // Body-drag → move, BUT defer when the pointerdown hit a path
-      // anchor / control affordance. Anchors lie on the curve so the
-      // body classifier still reports 'selected-body'; without this
+      // anchor, control, or segment affordance. Those lie on the curve so
+      // the body classifier still reports 'selected-body'; without this
       // opt-out, move's binding beats editAnchors's on every anchor drag.
       //
-      // `isAnchorOrControl` is the SAME predicate `editAnchorsAction`
-      // matches on. That is load-bearing: the two must agree on what
-      // counts as an anchor hit or move steals the drag — which is
-      // exactly the bug this opt-out exists to prevent.
+      // `isPathEditPart` covers exactly what `editAnchorsAction` and
+      // `bendSegmentAction` match on. That is load-bearing: they must agree
+      // on what counts as an anchor or segment hit or move steals the
+      // drag — which is exactly the bug this opt-out exists to prevent.
       spec: {
         kind: 'drag' as const,
         target: {
           kindOf: hitPredicate((afford, body) =>
-            body === 'selected-body' && !isAnchorOrControl(afford)),
+            body === 'selected-body' && !isPathEditPart(afford)),
         },
       },
       actionId: 'move',

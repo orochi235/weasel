@@ -7,7 +7,7 @@ import { worldToScreen } from 'core/viewport/viewTransform';
 import { isRigid, pxExtentIn, targetCorners } from 'core/geometry/targetFrame';
 import type { DebugSink } from '../debug/types';
 import type { CommandFill, CommandStroke } from '@weasel-js/paint';
-import { PATH_M, PATH_L, PATH_Z } from '@weasel-js/geom';
+import { boundsOfPath, PATH_M, PATH_L, PATH_Z } from '@weasel-js/geom';
 import {
   angleOf,
   annulusSemiAxes,
@@ -142,7 +142,8 @@ function recordRegionHitbox(
     recordLocalRect(debug, affordanceId, xf, { x: s.cx - rx, y: s.cy - ry, width: 2 * rx, height: 2 * ry });
     return;
   }
-  recordLocalRect(debug, affordanceId, xf, region.shape);
+  const box = region.shape.kind === 'outline' ? boundsOfPath(region.shape.path) : region.shape;
+  recordLocalRect(debug, affordanceId, xf, box);
 }
 
 /** A rect of the target's own frame as a debug hitbox: the unturned box plus
@@ -343,7 +344,7 @@ function worldOf(region: AffordanceRegion, xf: TargetTransform, view: View): Cus
   }
   // Rect: under rotation, width/height describe the AABB of the rotated rect. Affordances
   // needing exact rotated geometry can read `local` and reapply the rotation themselves.
-  const r = region.shape;
+  const r = region.shape.kind === 'outline' ? boundsOfPath(region.shape.path) : region.shape;
   const a = localToWorld(xf, r.x, r.y);
   const b = localToWorld(xf, r.x + r.width, r.y);
   const c = localToWorld(xf, r.x, r.y + r.height);

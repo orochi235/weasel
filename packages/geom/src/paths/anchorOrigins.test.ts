@@ -41,10 +41,15 @@ describe('editAnchorSetTracked', () => {
       .toEqual([0, 1, 2, 3, 1.5]);
   });
 
-  it('closes the gap a deleted point leaves, and gives a refitted handle its anchor', () => {
-    // Deleting corner 1 refits 0 → 2 as a curve: anchor 0, its new out handle, 2's new in
-    // handle, 2, 3, and the closing segment stays a line.
-    expect(carried(square(), (set) => deleteAnchorsAt(set, [1]))).toEqual([0, 0, 2, 2, 3]);
+  it('closes the gap a deleted point leaves', () => {
+    // Deleting corner 1 joins 0 → 2 with a line, since both sides of it were lines.
+    expect(carried(square(), (set) => deleteAnchorsAt(set, [1]))).toEqual([0, 2, 3]);
+  });
+
+  it('gives a refitted handle its anchor', () => {
+    // Deleting the anchor at (10, 0) refits 0 → (20, 0): anchor 0, its out handle (moved,
+    // still point 1), the far anchor's new in handle, then that anchor.
+    expect(carried(curveThenLine(), (set) => deleteAnchorsAt(set, [1]))).toEqual([0, 1, 4, 4]);
   });
 
   it('keeps a handle that survives a split, and gives a new anchor\'s handles its blend', () => {

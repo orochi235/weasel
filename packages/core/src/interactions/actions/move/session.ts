@@ -1,5 +1,5 @@
 import type { BindingOpts, InvocationCtx } from '@weasel-js/routing';
-import { DRAG_THRESHOLD_PX, isAnchorOrControl, resolveParams } from '@weasel-js/routing';
+import { DRAG_THRESHOLD_PX, isPathEditPart, resolveParams } from '@weasel-js/routing';
 import type { Op } from 'core/ops/types';
 import type { NodeId, Scene } from 'core/scene/types';
 import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
@@ -97,9 +97,10 @@ export function beginMove(
 
   if (!selection || !scene) return null;
   const pc = scene.composition;
-  // Anchors sit on the selected body, and this binding ties editAnchors' on
-  // specificity; with no mode registry to filter move out, declining is what lets it through.
-  if (isAnchorOrControl(ctx.drag?.affordance)) return null;
+  // Anchors and segments sit on the selected body, and this binding ties editAnchors' and
+  // bendSegment's on specificity; with no mode registry to filter move out, declining is what
+  // lets them through.
+  if (isPathEditPart(ctx.drag?.affordance)) return null;
 
   const params = resolveParams(opts?.params);
   const expandIds = params?.['expandIds'] as ((ids: string[]) => string[]) | undefined;

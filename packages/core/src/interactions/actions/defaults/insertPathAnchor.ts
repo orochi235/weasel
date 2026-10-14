@@ -13,43 +13,14 @@
  * would insert.
  */
 
-import type { Action, ActionDeps, ImmediateInvoker } from '@weasel-js/routing';
+import type { Action, ImmediateInvoker } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import type { CursorSpec } from '@weasel-js/cursor';
-import type { EditAnchorsDep } from '../depSchema';
-import { type PolygonPath, pathToAnchors } from '@weasel-js/geom';
-import {
-  editAnchorSetTracked,
-  insertAnchorOnSegment,
-  segmentAt,
-  type AnchorSet,
-  type SegmentHit,
-} from '@weasel-js/geom';
+import { editAnchorSetTracked, insertAnchorOnSegment } from '@weasel-js/geom';
 import { inPlane, editingLayer } from '../planeInput';
-
-/** Screen-px reach of a segment, and the radius around each anchor that
- *  stays the anchor's. Matches the path-anchor affordance's default hit
- *  radius, so the two regions meet without a gap. */
-const SEGMENT_HIT_PX = 8;
+import { segmentUnder } from './segmentUnder';
 
 const INSERT_CURSOR: CursorSpec = { glyph: 'penPlus', fallback: 'crosshair' };
-
-function segmentUnder(
-  deps: ActionDeps | undefined,
-  x: number,
-  y: number,
-): { dep: EditAnchorsDep; hit: SegmentHit } | null {
-  const dep = deps?.editAnchors;
-  if (!dep?.editingId) return null;
-  const path = dep.getEditablePath(dep.editingId) as PolygonPath | null | undefined;
-  if (!path || path.kind !== 'polygon') return null;
-  const scale = deps?.view?.get().scale;
-  const hit = segmentAt(pathToAnchors(path) as AnchorSet, x, y, {
-    tolerancePx: SEGMENT_HIT_PX,
-    ...(scale ? { scale } : {}),
-  });
-  return hit ? { dep, hit } : null;
-}
 
 export const insertPathAnchorAction: Action & { requires: string[] } = inPlane({
   id: 'insertPathAnchor',
@@ -66,8 +37,7 @@ export const insertPathAnchorAction: Action & { requires: string[] } = inPlane({
       if (typeof wx !== 'number' || typeof wy !== 'number') return;
       const under = segmentUnder(deps, wx, wy);
       if (!under) return;
-      const { dep, hit } = under;
-      const path = dep.getEditablePath(dep.editingId) as PolygonPath;
+      const { dep, path, hit } = under;
       let inserted = -1;
       const next = editAnchorSetTracked(path, (set) => {
         inserted = insertAnchorOnSegment(set, hit);

@@ -93,16 +93,49 @@ interface CubicFit {
 
 function fitOneCubic(samples: ReadonlyArray<Point>): CubicFit {
   const n = samples.length;
+  return fitWithTangents(
+    samples,
+    unit(sub(samples[1], samples[0])),
+    unit(sub(samples[n - 2], samples[n - 1])),
+    4,
+  );
+}
+
+/**
+ * The single cubic from the first sample to the last that best fits the
+ * samples between, with its control points held to the given unit tangents:
+ * `tStart` leaving the first sample, `tEnd` leaving the last one backward.
+ * Only the two handle lengths are solved for.
+ *
+ * `params` is the curve parameter each sample starts at, chord length when
+ * omitted; `passes` is how many times those are refined and the lengths
+ * solved again.
+ */
+export function fitCubicWithTangents(
+  samples: ReadonlyArray<Point>,
+  tStart: Point,
+  tEnd: Point,
+  opts: { params?: ReadonlyArray<number>; passes?: number } = {},
+): { cp1: Point; cp2: Point } {
+  const { cp1, cp2 } = fitWithTangents(samples, tStart, tEnd, opts.passes ?? 4, opts.params);
+  return { cp1, cp2 };
+}
+
+function fitWithTangents(
+  samples: ReadonlyArray<Point>,
+  tStart: Point,
+  tEnd: Point,
+  passes: number,
+  params?: ReadonlyArray<number>,
+): CubicFit {
+  const n = samples.length;
   const a = samples[0];
   const e = samples[n - 1];
-  const tStart = unit(sub(samples[1], a));
-  const tEnd = unit(sub(samples[n - 2], e));
-
-  const ts = chordLengthParam(samples);
+  const ts = params ? [...params] : chordLengthParam(samples);
   if (ts === null) return { cp1: { ...a }, cp2: { ...e }, end: e, ts: samples.map(() => 0) };
 
   let fit = solveLS(samples, ts, a, e, tStart, tEnd);
-  for (let pass = 0; pass < 4; pass++) {
+  for (let pass = 0; pass < passes; pass++) {
     reparameterize(samples, ts, a, e, fit);
     fit = solveLS(samples, ts, a, e, tStart, tEnd);
   }
