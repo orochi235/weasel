@@ -551,16 +551,20 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   nobody has done; the `score` demo (`apps/site/demos/ScoreDemo.tsx`) plays
   each cue with its parameters beside the sliders, which is where to do it.
 
-- **(P3) AudioWorklet voices** — immune to main-thread jank. Moving only the
-  scheduler's timer into a worklet would change nothing: it already runs off
-  the main thread, in a Worker, and what a stall delays is the callback that
-  makes a voice's nodes, which has to run on the main thread. Immunity means
-  synthesizing the voices inside a worklet processor from events posted ahead
-  of time: a second implementation of the oscillator, partial, noise, filter,
-  and envelope voices, plus a worklet module, cross-thread messaging, and a
-  bundling story. The engine's `onLate` option reports every event a stall made
-  late, and by how many ms. Revisit when it fires in a real app whose
-  `lookahead` has already been raised.
+- **(P3) AudioWorklet voices** — immune to main-thread jank. What a stall
+  delays is the callback that makes a voice's nodes, which has to run on the
+  main thread, so immunity means synthesizing the voices inside a worklet
+  processor from events posted ahead of time. The synthesis is built:
+  `createNoteKernel` and `createNoiseKernel` (`voiceKernel.ts`) render what
+  `playNote` and `playNoise` play, a block at a time, and
+  `voiceKernel.browser.test.ts` holds them to the node graph. What is left:
+  - a processor that mixes kernels onto a bus from posted events. A worklet
+    cannot import the package's bundle, so the kernel has to reach it as source
+    text, which needs a build step.
+  - the engine's side. A worklet voice's handle, pool slot, steal, pan, and
+    position have to behave as a node voice's do, and `createAudioEngine.ts` is
+    one 611-line function at its size ceiling, so this starts by splitting it.
+  - a browser test that blocks the main thread and hears no gap.
 
 ---
 

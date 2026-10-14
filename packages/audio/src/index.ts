@@ -38,6 +38,11 @@ export {
 export { SCORE_BAR_STEPS, scoreBar, scoreChord, type ScoreBarOptions } from './scoreBar';
 export { createScore, type Score, type ScoreOptions, type ScoreState } from './score';
 export { noiseSamples, partialPresets } from './synthVoice';
+export {
+  createNoteKernel, createNoiseKernel, renderNote, renderNoise,
+  type KernelNote, type KernelNoise, type VoiceKernel,
+} from './voiceKernel';
+export { biquadCoefficients, biquadResponseDb, type BiquadCoefficients } from './biquad';
 export type {
   AudioEngineOptions, PlayOptions, StreamOptions, VoiceHandle, VoiceDropReason,
   NoteOptions, SynthPatch, Waveform, Glide, Inharmonic, SynthPartial, VoiceFilter,
