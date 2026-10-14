@@ -613,12 +613,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   a `ColorField` with an alpha slider in a row beneath the track (`GradientEditor.tsx`). The
   owner wants that row redesigned; the shape it should take is still open.
 
-- **(P3) labkit's `LabSwitcher.less` menu is a fork of the weasel-ui popover skin.** It copies
-  `MenuButton`'s menu and items, but with an opaque surface and a different shadow from
-  `components/listbox.module.css`, which `MenuButton`, `Select`, `ComboBox`, `PaintField`, and
-  `Bar`'s popover share. Decide whether those differences are intended; if not, it wants the
-  shared skin — and its items are links, which `MenuButton` has no way to render yet.
-
 - **(P3) labkit and the apps hand-build what weasel-ui already draws.** Each differs a little
   from the ui component, so swapping changes pixels and needs a call on which look wins:
   labkit's `.lk-viewport-controls__button`, `.lk-toolbar-button`, and `.lk-titlebar-button`
