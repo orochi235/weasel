@@ -8,6 +8,7 @@
 // public surface.
 export { SceneCanvas, DEFAULT_HANDLE_SIZE } from '../canvas/SceneCanvas';
 export { defaultDrawOne, defaultPaintBounds } from '../canvas/defaultDrawOne';
+export { overChildren, isOverChildren, splitOverChildren } from '../canvas/overChildren';
 export type { PaintBoundsFn } from '../canvas/paintCull';
 export type { SceneCanvasProps, SceneCanvasHit, SceneCanvasLayers, SceneCanvasLongPress } from '../canvas/SceneCanvas';
 export type { PathEditHost } from '../canvas/SceneCanvas/pathEditHost';

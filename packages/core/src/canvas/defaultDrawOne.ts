@@ -12,6 +12,7 @@ import type { DrawCommand } from '@weasel-js/renderer';
 import { textCommandFromRuns } from '@weasel-js/renderer';
 import { findNodeShape, findShapeBounds, type NodePaintCtx } from './NodeShape';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
+import { overChildren } from './overChildren';
 
 function pixelScaleOf(view: View): number {
   const dpr = (typeof window !== 'undefined' && window.devicePixelRatio) || 1;
@@ -32,7 +33,7 @@ function viewOnlyCtx(view: View): NodePaintCtx {
 
 /** Paint one node the way the kit does by default: dispatch to the first
  *  registered node-shape painter that matches, then draw its `data.label` on
- *  top when it has one. Consumers replace or wrap this via `drawOne`. */
+ *  top when it has one: on top of a container's children too. Consumers replace or wrap this via `drawOne`. */
 export function defaultDrawOne<TData, TLayer extends string, TPose>(
   node: Node<TData, TLayer, TPose>,
   pose: TPose,
@@ -52,12 +53,14 @@ export function defaultDrawOne<TData, TLayer extends string, TPose>(
     // Copy rather than `push`. A painter's return value is not ours to grow:
     // one that memoizes its command list — which is the point of caching
     // `paint` — would gain another label command on every frame, forever.
-    return [...primary, textCommandFromRuns(
+    const label = textCommandFromRuns(
       p.x + 6,
       p.y + 14,
       [{ text: data.label, fill: { paint: { kind: 'solid', color: 'rgba(0,0,0,0.7)' } } }],
       { fontFamily: 'sans-serif', fontSize: 11 },
-    )];
+    );
+    // A container's children would cover a label drawn with the container.
+    return [...primary, node.kind === 'container' ? overChildren([label]) : label];
   }
 
   // Rotation and per-node alpha are applied OUTSIDE this function, by `wrapNodeOutput` in
