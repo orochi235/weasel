@@ -2,11 +2,8 @@ import { useState } from 'react';
 import { EffectChart, rack, type EffectLook, type EffectPipeline } from '@weasel-js/diagram/effect';
 
 const image = (id: string, label?: string) => ({ id, type: 'image', ...(label ? { label } : {}) });
-const wire = (from: string, to: string) => {
-  const [fs, fp] = from.split('.');
-  const [ts, tp] = to.split('.');
-  return { from: { stage: fs!, port: fp! }, to: { stage: ts!, port: tp! } };
-};
+
+const GROUND = { color: '#0e151b' } as const;
 
 /** A source blurred only at high quality, then composited under sunbeams
  *  through a mask, with an oscillator driving the blur radius. */
@@ -25,12 +22,18 @@ export const PIPELINE: EffectPipeline = {
     { id: 'cutout', title: 'Mask', outputs: [{ id: 'out', type: 'mask' }] },
   ],
   wires: [
-    wire('src.out', 'q.in'), wire('q.yes', 'blur.image'), wire('q.no', 'mix.base'), wire('blur.out', 'mix.base'),
-    wire('mix.out', 'out.in'), wire('osc.value', 'blur.radius'), wire('beams.out', 'mix.over'), wire('cutout.out', 'mix.mask'),
+    { from: { stage: 'src', port: 'out' }, to: { stage: 'q', port: 'in' } },
+    { from: { stage: 'q', port: 'yes' }, to: { stage: 'blur', port: 'image' } },
+    { from: { stage: 'q', port: 'no' }, to: { stage: 'mix', port: 'base' } },
+    { from: { stage: 'blur', port: 'out' }, to: { stage: 'mix', port: 'base' } },
+    { from: { stage: 'mix', port: 'out' }, to: { stage: 'out', port: 'in' } },
+    { from: { stage: 'osc', port: 'value' }, to: { stage: 'blur', port: 'radius' } },
+    { from: { stage: 'beams', port: 'out' }, to: { stage: 'mix', port: 'over' } },
+    { from: { stage: 'cutout', port: 'out' }, to: { stage: 'mix', port: 'mask' } },
   ],
 };
 
-function Demo({ look }: { look?: EffectLook }) {
+function Demo<TOptions>({ look }: { look?: EffectLook<TOptions> }) {
   const [picked, setPicked] = useState<string | null>(null);
   return (
     <div className="ckd-stack">
@@ -38,6 +41,7 @@ function Demo({ look }: { look?: EffectLook }) {
       <EffectChart
         pipeline={PIPELINE}
         {...(look ? { look } : {})}
+        background={GROUND}
         width={820}
         height={420}
         selected={picked}
@@ -53,5 +57,5 @@ export function EffectChartDemo() {
 }
 
 export function EffectChartRackDemo() {
-  return <Demo look={rack as EffectLook} />;
+  return <Demo look={rack} />;
 }
