@@ -218,7 +218,7 @@ provide the corresponding chrome; they compose freely.
 | `layers` | A sidebar list that hides and reorders those layers |
 | `annotations` | Drawing tools, an overlay on each region you name, a Marks panel, undo and export |
 | `dragDrop` | A palette to drag items from, and a drop pipeline that hands you world coordinates |
-| `undo` | Undo and redo buttons, snapshotting state on the events you name |
+| `undo` | Undo and redo buttons, snapshotting state on the events you name — or stepping a history of the instrument's own, handed over with `useTrialHistory` |
 | `job` | Starts async work, aborts it on unmount and on a key change, and renders progress and a cancel control |
 | `tools` | A tool palette and a tool slot on the trial |
 | `chrome` | Anything else, as contributions keyed to a region |
@@ -294,6 +294,65 @@ chrome included.
 The pieces are exported for a host that wants to assemble them itself:
 `createAnnotationStore`, `<AnnotationOverlay>`, `<AnnotationTargets>`,
 `<MarkList>`, `<ExportMenu>`, `ANNOTATION_TOOLS` and `capturePlan`.
+
+## A weasel scene in a trial
+
+An instrument whose subject is an editable scene — tools, selection, undo,
+modes — renders a `<TrialSceneCanvas>` and declares no `canvas` or `stage`. The
+trial then runs no camera of its own, so every pointer, wheel and key gesture
+over the canvas is the scene's, its pan and zoom included.
+
+```tsx
+import { createScene } from '@weasel-js/core';
+import {
+  type ConfigOf, defineInstrument, f, type RenderContext, type SceneTrialState,
+  TrialSceneCanvas, useTrialScene,
+} from '@weasel-js/labkit';
+
+const config = f.schema({ snap: f.boolean(true).label('Snap to grid') });
+
+function Body({ ctx }: { ctx: RenderContext<SceneTrialState, ConfigOf<typeof config>> }) {
+  const scene = useTrialScene(ctx, () => createScene({ systemLayers: [{ id: 'default' }], initial: NODES }));
+  const toolOptions = useMemo(() => ({ snapPoint: ctx.config.snap ? toGrid : undefined }), [ctx.config.snap]);
+  return (
+    <TrialSceneCanvas features={['draw']} defaultTools={['rect', 'pen']}
+      scene={scene} trial={ctx.trial} toolOptions={toolOptions} />
+  );
+}
+
+defineInstrument<SceneTrialState, ConfigOf<typeof config>>({
+  name: 'Scene',
+  config,
+  initialState: () => ({ scene: null }),
+  undo: {},
+  tools: { tools: [{ id: 'select', label: 'Select', icon: SelectIcon }, { id: 'rect', label: 'Rectangle', icon: RectIcon }] },
+  render: (ctx) => <Body ctx={ctx} />,
+});
+```
+
+- **The scene.** `useTrialScene` builds it once per trial, writes every edit
+  its history records into `state.scene`, and loads whatever arrives there from
+  outside — Reset, Clone, a snapshot, a reload — into the same `Scene`. `create`
+  is what a fresh or reset trial opens on.
+- **Undo.** Declaring `undo` gives the buttons; `<TrialSceneCanvas>` hands the
+  trial the scene's history, so the buttons and Mod+Z step `scene.undo()` and
+  `scene.redo()`, and the trial stops snapshotting `state`. Any history of an
+  instrument's own goes the same way: `useTrialHistory({ canUndo, canRedo,
+  undo, redo, subscribe })`.
+- **Tools.** A `tools` capability whose ids are the canvas's tool ids makes the
+  trial's palette the canvas's tool slot, in both directions: a pick there
+  activates the tool, and the canvas's own hotkeys move the palette.
+  `ctx.trial.setActiveTool(id)` switches tool from anywhere else.
+- **Config.** `ctx.config` is current on every render, so props built from it —
+  `selectTool`, `toolOptions`, `layers`, a mode registry — reach the canvas
+  live. A tool of your own reads it through thunked binding params, as
+  core's `usePolygonTool` does, so a change mid-gesture reaches it too.
+- **Modes.** Pass `modes={registry}` as to any `<SceneCanvas>`, holding the
+  registry in state so each trial has its own; `registry.setMode(id)` switches.
+
+The trial mounts the kit's providers isolated from its neighbors, so each
+trial's canvas keeps its own selection and tool, and needs no
+`<WeaselProvider>`.
 
 ## Chrome
 

@@ -235,7 +235,7 @@
   },
   "packages/labkit/src/trial/Trial.tsx": {
     "lines": 548,
-    "longestFunction": 425
+    "longestFunction": 423
   },
   "packages/labkit/src/trial/TrialChrome.tsx": {
     "longestFunction": 227
@@ -351,9 +351,6 @@
   },
   "packages/ui/src/components/PrefSchemaEditor/StructurePane.tsx": {
     "longestFunction": 189
-  },
-  "packages/ui/src/components/Prefs/RailLayout.tsx": {
-    "longestFunction": 131
   },
   "packages/ui/src/components/Prefs/prefField.tsx": {
     "longestFunction": 167
