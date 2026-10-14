@@ -533,23 +533,17 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 ## Audio
 
-- **(P3) The side-scroller's music bed is engine voices nobody has heard.** It plays from a
-  pattern player on the music bus (`platformer/bed.ts`). The old render was
-  peak-normalized as a whole, which voices have no equivalent of: `MUSIC_GAIN`
-  in `usePlatformerAudio.ts` is set so one pass has the old render's RMS, and
-  `platformerBed.browser.test.ts` holds it there, and each octave within 2 dB
-  of the old balance. What is left is a listening pass: the bus gain chosen by
-  ear, or a compressor insert in its place.
+- **(P3) Nobody has listened to the side-scroller's music bed.** `MUSIC_GAIN`
+  in `usePlatformerAudio.ts` is set by measurement, to the RMS of the render
+  the bed replaced, and `platformerBed.browser.test.ts` holds it there. What is
+  left is the bus gain chosen by ear, or `createCompressorEffect` on the music
+  bus in its place.
 
-- **(P3) Trope-aware generative scoring: unheard.** `createScore`
-  plays a mood on three axes (valence, tension, urgency) as bars written by
-  `scoreBar` from `scoreParams`, and names the cue in force through `state()`
-  and `onBar`. Every number in the mapping was chosen from the description of
-  the four cues and checked only as structure: the thresholds between modes
-  and harmonies, the tempo range, the envelopes, the layer levels, and where
-  each cue sits on the axes. Whether dread reads as dread is a listening pass
-  nobody has done; the `score` demo (`apps/site/demos/ScoreDemo.tsx`) plays
-  each cue with its parameters beside the sliders, which is where to do it.
+- **(P3) Nobody has listened to the generative score.** Every number
+  `scoreParams` maps a mood through was chosen from descriptions of the four
+  cues and is tested as structure only. Whether dread reads as dread is for
+  ears: the `score` demo (`apps/site/demos/ScoreDemo.tsx`) plays each cue with
+  its parameters beside the sliders.
 
 - **(P3) AudioWorklet voices** — immune to main-thread jank. What a stall
   delays is the callback that makes a voice's nodes, which has to run on the
