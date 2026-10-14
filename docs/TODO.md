@@ -97,13 +97,8 @@ Priority tags:
   AltGr: that Chrome and Firefox both report AltGraph for it, and that a plain Ctrl+Alt+letter, for
   which Firefox reports AltGraph too, is still read as a chord.
 
-- **(P3) What the text layout split left.**
-  - `layoutEntries.ts` kerns each code point against the one before it, so a combining mark
-    between two letters takes their pair's kerning away: `A`, U+0301, `B` sets the `B` where an
-    unkerned one goes. `layoutEntries.letterSpacing.test.ts` ("tracks a base and its combining mark
-    once") expects exactly that, so whether a mark should be skipped when kerning is not chosen yet.
-  - `tests/perf/bench/text-layout.bench.ts` times layout alone now, so `BASELINE.md`'s numbers,
-    which included grouping, need re-recording.
+- **(P3) `BASELINE.md`'s text layout numbers include grouping.**
+  `tests/perf/bench/text-layout.bench.ts` times layout alone now, so they need re-recording.
 
 - **(P3) What removing the old tool design left.** A `<CanvasView>` converts client points with
   the bare rect helper (`clientToWorldHere` in `CanvasView.tsx`), and so does `worldPointAt` for a

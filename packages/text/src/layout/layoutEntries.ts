@@ -16,6 +16,9 @@ import type { ResolvedRun } from '../runs/resolveRuns';
 import { isHardLineBreak } from './lineBreak/lineBreaks';
 import type { TabStop } from './tabStops';
 
+/** A mark that takes no width of its own, which kerning reads through. */
+const NONSPACING_MARK = /^[\p{Mn}\p{Me}]$/u;
+
 /** One code point of the runs, measured. Widths are world units. */
 export interface Entry {
   /** Index of its run in the runs measured. */
@@ -43,7 +46,9 @@ export interface Entry {
   advance: number;
   /** Its run's `letterSpacing` when it closes a grapheme cluster, else 0. */
   tracking: number;
-  /** The kerning gap between the entry before it and this one. */
+  /** The kerning gap between the entry before it and this one. A
+   *  nonspacing mark has none, and the entry after it kerns against the
+   *  mark's base. */
   kerningBefore: number;
   /** Set on a tab, whose `advance` is known only once its line is. */
   tab?: TabStop;
@@ -53,7 +58,8 @@ export interface Entry {
 
 /**
  * Measure every code point of `runs`, in order. Kerning pairs across run
- * boundaries, in the left glyph's face and at its size. A run whose face has
+ * boundaries, in the left glyph's face and at its size, and through a
+ * nonspacing mark. A run whose face has
  * no metrics contributes no entries but still takes up its source offsets.
  */
 export function measureRuns(runs: readonly ResolvedRun[], tabSize: number): Entry[] {
@@ -103,7 +109,8 @@ export function measureRuns(runs: readonly ResolvedRun[], tabSize: number): Entr
       at += ch.length;
       srcIndex = map ? runBase + map.length : srcEnd;
 
-      const kerningBefore = prev
+      const mark = NONSPACING_MARK.test(ch);
+      const kerningBefore = prev && !mark
         ? prev.metrics.kernOf(prev.cp, cp) * (prev.fontSize / prev.metrics.size)
         : 0;
       // A slot with nothing in it: no glyph, no width, and none of the
@@ -152,8 +159,9 @@ export function measureRuns(runs: readonly ResolvedRun[], tabSize: number): Entr
         }
       } else {
         const hit = resolveGlyph(resolved, run.fontFamily, run.fontWeight, run.fontStyle, cp);
-        prev = hit ? inked(hit, kerningBefore) : blank;
-        entries.push(prev);
+        const entry = hit ? inked(hit, kerningBefore) : blank;
+        entries.push(entry);
+        if (!mark) prev = entry;
       }
     }
   });
