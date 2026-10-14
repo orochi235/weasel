@@ -9,7 +9,7 @@ import { useLatest } from '@weasel-js/react';
 import type { Dims } from 'core/layers/render';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { clampView } from 'core/viewport/clampView';
-import { normalizeView, type View } from 'core/viewport/view';
+import { normalizeView, sameView, type View } from 'core/viewport/view';
 
 /** The view props a canvas takes for its camera. */
 export interface CameraProps {
@@ -133,9 +133,7 @@ export function useCanvasView(opts: CanvasViewOptions): CanvasViewState {
   // from the same render's insertion effect.
   const adoptControlled = (): void => {
     if (!controlledView) return;
-    const was = viewRef.current;
-    controlledMovedRef.current ||= was.x !== controlledView.x || was.y !== controlledView.y
-      || was.scale.x !== controlledView.scale.x || was.scale.y !== controlledView.scale.y;
+    controlledMovedRef.current ||= !sameView(viewRef.current, controlledView);
     viewRef.current = controlledView;
   };
   const announceControlled = useCallback(() => {

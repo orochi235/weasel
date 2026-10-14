@@ -133,31 +133,12 @@ Priority tags:
 
 ## Viewport
 
-- **(P3) A controlled consumer's own `setState` cannot interrupt a glide.** Every view write that
-  goes through the canvas cancels the camera runner. A consumer who owns `view` in state and writes
-  it directly does not go through the canvas: the prop change arrives asynchronously, after the
-  runner has lowered the flag that distinguishes its own frames, so it is indistinguishable from
-  one. Comparing the incoming prop against the last value written would work only for consumers who
-  store the view by reference — one who normalizes or clamps it would have every frame of their own
-  glide canceled. Wants a real design.
-
 - **(P3) Views do not nest.** A view paints and routes the surface's own stack, never another view,
   and a loupe magnifies the canvas's camera — aimed over a `<CanvasView>` panel it shows and edits
   the canvas's world, not the panel's. Composing would mean a view's camera derived from the view
   under its aim, and a resolver that descends rather than picking one rect.
 
-- **(P3) A page that does not load core's stylesheet shows every canvas at its buffer size.** The
-  renderer sets only a canvas's drawing buffer, and `<Canvas>`, `<SceneViewCanvas>`, and
-  `<DrawCanvas>` size the element with a zero-specificity class from `@weasel-js/core/style.css`
-  (`surfaceBox`). Without that stylesheet the element is `dpr` times too large, so it is wrong
-  only on a high-density screen, and nothing warns. Core could adopt the one rule itself when a
-  canvas mounts, the way `applyTheme` adopts its sheet; that reaches a page with no stylesheet
-  and misses a canvas in a shadow root or a second document. Not chosen yet.
-
 ---
-- **(P3) Wheel and keyboard zoom cannot be held to one axis.** `View.scale` is per axis and
-  `fitViewToBounds` has `stretch`, but `ViewportZoomOptions` (`viewportZoom.ts`) has no
-  `axis: 'both' | 'x' | 'y'`; only wheel pan and the hand tool take one.
 
 ## Paths & booleans
 
@@ -469,34 +450,32 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 ## Audio
 
-- **(P3) The side-scroller's music bed is engine voices nobody has heard.** It plays from a
-  pattern player on the music bus (`platformer/bed.ts`). The old render was
-  peak-normalized as a whole, which voices have no equivalent of: `MUSIC_GAIN`
-  in `usePlatformerAudio.ts` is set so one pass has the old render's RMS, and
-  `platformerBed.browser.test.ts` holds it there, and each octave within 2 dB
-  of the old balance. What is left is a listening pass: the bus gain chosen by
-  ear, or a compressor insert in its place.
+- **(P3) Nobody has listened to the side-scroller's music bed.** `MUSIC_GAIN`
+  in `usePlatformerAudio.ts` is set by measurement, to the RMS of the render
+  the bed replaced, and `platformerBed.browser.test.ts` holds it there. What is
+  left is the bus gain chosen by ear, or `createCompressorEffect` on the music
+  bus in its place.
 
-- **(P3) Trope-aware generative scoring: unheard.** `createScore`
-  plays a mood on three axes (valence, tension, urgency) as bars written by
-  `scoreBar` from `scoreParams`, and names the cue in force through `state()`
-  and `onBar`. Every number in the mapping was chosen from the description of
-  the four cues and checked only as structure: the thresholds between modes
-  and harmonies, the tempo range, the envelopes, the layer levels, and where
-  each cue sits on the axes. Whether dread reads as dread is a listening pass
-  nobody has done; the `score` demo (`apps/site/demos/ScoreDemo.tsx`) plays
-  each cue with its parameters beside the sliders, which is where to do it.
+- **(P3) Nobody has listened to the generative score.** Every number
+  `scoreParams` maps a mood through was chosen from descriptions of the four
+  cues and is tested as structure only. Whether dread reads as dread is for
+  ears: the `score` demo (`apps/site/demos/ScoreDemo.tsx`) plays each cue with
+  its parameters beside the sliders.
 
-- **(P3) AudioWorklet voices** — immune to main-thread jank. Moving only the
-  scheduler's timer into a worklet would change nothing: it already runs off
-  the main thread, in a Worker, and what a stall delays is the callback that
-  makes a voice's nodes, which has to run on the main thread. Immunity means
-  synthesizing the voices inside a worklet processor from events posted ahead
-  of time: a second implementation of the oscillator, partial, noise, filter,
-  and envelope voices, plus a worklet module, cross-thread messaging, and a
-  bundling story. The engine's `onLate` option reports every event a stall made
-  late, and by how many ms. Revisit when it fires in a real app whose
-  `lookahead` has already been raised.
+- **(P3) AudioWorklet voices** — immune to main-thread jank. What a stall
+  delays is the callback that makes a voice's nodes, which has to run on the
+  main thread, so immunity means synthesizing the voices inside a worklet
+  processor from events posted ahead of time. The synthesis is built:
+  `createNoteKernel` and `createNoiseKernel` (`voiceKernel.ts`) render what
+  `playNote` and `playNoise` play, a block at a time, and
+  `voiceKernel.browser.test.ts` holds them to the node graph. What is left:
+  - a processor that mixes kernels onto a bus from posted events. A worklet
+    cannot import the package's bundle, so the kernel has to reach it as source
+    text, which needs a build step.
+  - the engine's side. A worklet voice's handle, pool slot, steal, pan, and
+    position have to behave as a node voice's do, and `createAudioEngine.ts` is
+    one 611-line function at its size ceiling, so this starts by splitting it.
+  - a browser test that blocks the main thread and hears no gap.
 
 ---
 
@@ -920,17 +899,13 @@ only story runner in the repo.
 
 ## Lint
 
-- **(P3) eslint-plugin-react-hooks v7 compiler rules still off.**
-  Every compiler rule with no reports is on, as are `set-state-in-effect` and
-  `preserve-manual-memoization`. Two are off, with the rationale in `eslint.config.js`, counted on
-  2026-10-12:
-  - `refs` — 408 reports in 83 files; reading a ref during render is how a
-    canvas library reaches frame state, and there is no writes-only mode
-    (`weasel/no-render-ref-write` covers writes).
-  - `immutability` — 51 reports in 37 files, 26 of them in tests that assign to
-    a prop or an outer variable from inside a probe component. The rest are
-    `useVisibleRaf` loops re-requesting themselves, and writes to forwarded
-    refs, DOM nodes, and mutable engine objects.
+- **(P3) eslint-plugin-react-hooks v7's `immutability` rule is off.** It is the
+  last compiler rule that could come on: 51 reports in 37 files on 2026-10-12.
+  26 are tests assigning to a prop or an outer variable from inside a probe
+  component, which the test override in `eslint.config.js` that already turns
+  `react-hooks/globals` off would cover. The rest are `useVisibleRaf` loops
+  re-requesting themselves, and writes to forwarded refs, DOM nodes, and
+  mutable engine objects: each to be restructured or shown to be the point.
 
 ---
 

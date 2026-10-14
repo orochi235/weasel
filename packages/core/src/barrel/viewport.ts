@@ -67,9 +67,9 @@ export { adjacentPage, layoutPages, pageAt, pageOfBounds, pagesBounds } from '..
 export type { Page, PageLayoutOptions, PlacedPage } from '../core/pages/pages';
 export { pagesLayer, type PagesLayerOptions } from '../core/pages/pagesLayer';
 export { fitViewToPage } from '../core/pages/fitViewToPage';
-export { zoomAt } from '../core/viewport/zoomAt';
+export { zoomAt, axisZoomFactor } from '../core/viewport/zoomAt';
 export { DEFAULT_MIN_ZOOM, DEFAULT_MAX_ZOOM, ZOOM_FLOOR, normalizeZoom } from '../core/viewport/zoomBounds';
-export type { ZoomClampOpts } from '../core/viewport/zoomAt';
+export type { ZoomClampOpts, ZoomAxis } from '../core/viewport/zoomAt';
 export { clampView } from '../core/viewport/clampView';
 export type { ClampBounds, CanvasSize } from '../core/viewport/clampView';
 export { sceneNodeClientRect } from '../core/viewport/sceneNodeClientRect';

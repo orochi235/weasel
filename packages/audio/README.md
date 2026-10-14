@@ -76,6 +76,21 @@ engine.playNoise({
 });
 ```
 
+`renderNote` and `renderNoise` compute the same voices as samples, with no
+`AudioContext`: a `Float32Array` of the whole note through its release, to put
+in an `AudioBuffer` and `register`. `createNoteKernel` and `createNoiseKernel`
+are the block-at-a-time form, with `release()` and `retune()`, for rendering
+inside an `AudioWorkletProcessor`. A square or a sawtooth is band-limited and a
+harmonic past Nyquist is left out, so they do not alias; pan, position, and
+routing are not a kernel's.
+
+```ts
+const samples = renderNote({ pitch: 'C5', wave: partialPresets.bell, duration: 1500 }, ctx.sampleRate);
+const buffer = ctx.createBuffer(1, samples.length, ctx.sampleRate);
+buffer.getChannelData(0).set(samples);
+const bell = engine.register(buffer);
+```
+
 `createPatternPlayer` is a step sequencer on top. Events sit on steps — a note
 or a noise with a `length` in steps, or a buffer `sound` — and each step is
 booked through `engine.schedule` only when the lookahead window reaches it, so `setTempo` and

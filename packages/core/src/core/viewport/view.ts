@@ -41,6 +41,11 @@ export function viewZoom(view: View): number {
   return meanScale(view.scale);
 }
 
+/** Whether two views are the same camera, whatever objects hold them. */
+export function sameView(a: View, b: View): boolean {
+  return a.x === b.x && a.y === b.y && a.scale.x === b.scale.x && a.scale.y === b.scale.y;
+}
+
 /**
  * `view` inside the invariant {@link View} documents: a zero or non-finite
  * scale axis becomes `ZOOM_FLOOR`, a negative one keeps its sign, and a

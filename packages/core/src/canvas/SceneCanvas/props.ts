@@ -479,7 +479,8 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
     viewport?: {
       inertia?: boolean | InertiaConfig;
       /** Two-finger pinch zoom. `true`/omitted = on with the kit's 0.1–8
-       *  clamp; `false` disables. An object sets the scale clamp. */
+       *  clamp; `false` disables. An object sets the scale clamp and holds the
+       *  zoom to one axis (`axis`). */
       pinchZoom?: boolean | PinchZoomOptions;
       /** Glide Cmd+=/-/0 instead of jumping. `true` uses the kit defaults
        *  (250 ms, ease-out-cubic); a {@link ViewportZoomAnimateOptions} tunes
@@ -492,7 +493,8 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
       /** Wheel/keyboard zoom. `true`/omitted = default Cmd+wheel zoom with the
        *  kit's 0.1–8 clamp; `false` disables. Pass a {@link ViewportZoomOptions}
        *  object to bind zoom to plain wheel (`wheel: 'plain'`, pair with
-       *  `pan: false`) and/or set `min`/`max` scale clamps. */
+       *  `pan: false`), set `min`/`max` scale clamps, or hold the zoom to one
+       *  axis (`axis: 'x'`). */
       zoom?: boolean | ViewportZoomOptions;
       /** Callback invoked by Cmd-0 (`viewport.zoom` action's `reset` branch).
        *  When supplied, replaces the default reset-to-identity behavior —

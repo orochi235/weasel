@@ -1,0 +1,73 @@
+import { forwardRef, useCallback, type CSSProperties } from 'react';
+import { assignRef } from '@weasel-js/react';
+
+/** Where an element's styles come from. */
+type StyleRoot = Document | ShadowRoot;
+
+/** The CSS size of a canvas the kit renders: its `width` and `height` props.
+ *  Zero specificity, so a class the consumer passes resizes the element. */
+export const SURFACE_RULE =
+  ':where([data-wzl-surface]) { width: var(--wzl-surface-width); height: var(--wzl-surface-height); }';
+
+let adopted = new WeakSet<StyleRoot>();
+
+/**
+ * Hold {@link SURFACE_RULE} in the root `el`'s styles come from: its shadow
+ * root, else its document. Once per root, and never taken back out.
+ */
+export function adoptSurfaceRule(el: Element): void {
+  const doc = el.ownerDocument;
+  const node = el.getRootNode();
+  const root: StyleRoot = 'host' in node ? (node as ShadowRoot) : doc;
+  if (adopted.has(root)) return;
+  adopted.add(root);
+  const Sheet = doc.defaultView?.CSSStyleSheet;
+  if (Sheet && 'replaceSync' in Sheet.prototype && Array.isArray(root.adoptedStyleSheets)) {
+    // From the root's own window: a constructed sheet cannot be adopted across documents.
+    const sheet = new Sheet();
+    sheet.replaceSync(SURFACE_RULE);
+    root.adoptedStyleSheets = [...root.adoptedStyleSheets, sheet];
+    return;
+  }
+  const style = doc.createElement('style');
+  style.textContent = SURFACE_RULE;
+  ('host' in root ? root : root.head).appendChild(style);
+}
+
+/** Test seam: forgets which roots hold the rule. */
+export function __resetSurfaceRule(): void {
+  adopted = new WeakSet();
+}
+
+export interface SurfaceCanvasProps {
+  /** CSS pixels. The renderer sizes only the drawing buffer, so without the
+   *  rule this element holds it is as large as its buffer: `dpr` times too big. */
+  width: number;
+  height: number;
+  className?: string;
+  style?: CSSProperties;
+  tabIndex?: number;
+}
+
+/** The `<canvas>` a kit component paints into, `width` × `height` CSS pixels. */
+export const SurfaceCanvas = forwardRef<HTMLCanvasElement, SurfaceCanvasProps>(
+  function SurfaceCanvas({ width, height, className, style, tabIndex }, ref) {
+    // Stable while `ref` is, so a commit does not detach the element.
+    const setRef = useCallback((el: HTMLCanvasElement | null) => {
+      if (el) adoptSurfaceRule(el);
+      assignRef(ref, el);
+    }, [ref]);
+    const sized = { ...style, '--wzl-surface-width': `${width}px`, '--wzl-surface-height': `${height}px` };
+    return (
+      <canvas
+        ref={setRef}
+        width={width}
+        height={height}
+        tabIndex={tabIndex}
+        className={className}
+        style={sized as CSSProperties}
+        data-wzl-surface=""
+      />
+    );
+  },
+);

@@ -17,7 +17,7 @@ import type { Ref } from 'react';
 import { assignRef } from '@weasel-js/react';
 import { useCanvasSurface } from './useCanvasSurface';
 import type { CanvasRendererLease } from './canvasRenderer';
-import { surfaceBox } from './surfaceBox';
+import { SurfaceCanvas } from './SurfaceCanvas';
 import { sceneViewFrame } from './sceneViewRender';
 import type { RenderSceneToCanvasArgs, SceneViewDrawOne, SceneViewLayers } from './sceneViewRender';
 import type { DrawCommand } from '@weasel-js/renderer';
@@ -120,11 +120,11 @@ function SceneViewCanvasInner<TData, TLayer extends string, TPose>(
   useEffect(() => animator?.onTick(requestRedraw), [animator, requestRedraw]);
 
   return (
-    <canvas
+    <SurfaceCanvas
       ref={setCanvasRef}
       width={width}
       height={height}
-      {...surfaceBox(width, height, className)}
+      className={className}
     />
   );
 }

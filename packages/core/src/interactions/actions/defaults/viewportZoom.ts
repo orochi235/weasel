@@ -1,6 +1,6 @@
 import type { Action } from '@weasel-js/routing';
 import type { ViewApi } from '../depSchema';
-import { zoomAt } from 'core/viewport/zoomAt';
+import { axisZoomFactor, zoomAt, type ZoomAxis } from 'core/viewport/zoomAt';
 import { wheelZoomFactor } from 'core/viewport/wheelHandler';
 import { DEFAULT_MIN_ZOOM, DEFAULT_MAX_ZOOM } from 'core/viewport/zoomBounds';
 import { viewToTransform, type View } from 'core/viewport/view';
@@ -43,6 +43,9 @@ export interface ViewportZoomOptions {
   min?: number;
   /** Upper clamp on the resulting view scale, forwarded to `zoomAt`. Default 8. */
   max?: number;
+  /** Hold wheel, trackpad-pinch, and key zoom to one axis; the other keeps its
+   *  scale and its translation. Default `'both'`. Cmd+0 still resets both. */
+  axis?: ZoomAxis;
   /**
    * Glide the discrete steps (Cmd+=, Cmd+-, Cmd+0) instead of jumping.
    * `true` uses the kit defaults; an object tunes them. Wheel and pinch never
@@ -63,6 +66,7 @@ export function makeViewportZoomAction(
   opts: ViewportZoomOptions = {},
 ): Action & { requires: string[] } {
   const clamp = { min: opts.min ?? DEFAULT_MIN_ZOOM, max: opts.max ?? DEFAULT_MAX_ZOOM };
+  const axis = opts.axis ?? 'both';
   // 'plain': bare wheel (omitting `mods` forbids any modifier — see the
   // matcher's strict modifier check). 'mod': Cmd/Ctrl+wheel.
   const wheelSpec =
@@ -144,7 +148,7 @@ export function makeViewportZoomAction(
         });
         const scaleBy = (factor: number) => {
           if (!(factor > 0) || !Number.isFinite(factor)) return;
-          const next = zoomAt(current, focal(), factor, clamp);
+          const next = zoomAt(current, focal(), axisZoomFactor(factor, axis), clamp);
           view.set(next);
           record(current, next, focal());
         };
@@ -159,7 +163,8 @@ export function makeViewportZoomAction(
           case 'in':
           case 'out': {
             const from = stepFrom();
-            const target = zoomAt(from, keyAnchor(view), kind === 'in' ? KEY_STEP : 1 / KEY_STEP, clamp);
+            const step = axisZoomFactor(kind === 'in' ? KEY_STEP : 1 / KEY_STEP, axis);
+            const target = zoomAt(from, keyAnchor(view), step, clamp);
             stepTo(target);
             record(from, target, keyAnchor(view));
             break;
@@ -177,7 +182,7 @@ export function makeViewportZoomAction(
             // Unknown kind — no-op. Legacy bridge calls with params=undefined;
             // default to zoom-in as a sensible fallback.
             if (params === undefined) {
-              view.set(zoomAt(current, { x: 0, y: 0 }, KEY_STEP, clamp));
+              view.set(zoomAt(current, { x: 0, y: 0 }, axisZoomFactor(KEY_STEP, axis), clamp));
             }
             break;
         }

@@ -1,7 +1,7 @@
 import type { Action } from '@weasel-js/routing';
 import type { InvocationCtx, OngoingHandle } from '@weasel-js/routing';
 import type { ViewApi } from '../depSchema';
-import { zoomAt } from 'core/viewport/zoomAt';
+import { axisZoomFactor, zoomAt, type ZoomAxis } from 'core/viewport/zoomAt';
 import { viewToTransform } from 'core/viewport/view';
 import { screenToWorld } from 'core/viewport/viewTransform';
 import { DEFAULT_MIN_ZOOM, DEFAULT_MAX_ZOOM } from 'core/viewport/zoomBounds';
@@ -21,6 +21,9 @@ export interface PinchZoomOptions {
   min?: number;
   /** Upper clamp on the resulting view scale, forwarded to `zoomAt`. Default 8. */
   max?: number;
+  /** Hold the zoom to one axis. Default `'both'`. The two fingers still pan
+   *  on both. */
+  axis?: ZoomAxis;
 }
 
 /**
@@ -33,6 +36,7 @@ export function makePinchZoomAction(
   opts: PinchZoomOptions = {},
 ): Action & { requires: string[] } {
   const clamp = { min: opts.min ?? DEFAULT_MIN_ZOOM, max: opts.max ?? DEFAULT_MAX_ZOOM };
+  const axis = opts.axis ?? 'both';
   return {
     id: 'viewport.pinchZoom',
     label: 'Pinch Zoom',
@@ -72,7 +76,7 @@ export function makePinchZoomAction(
             // far they travelled — together those pin the world point under the
             // centroid as it moves. Anchoring on the new centroid instead drops
             // the translation half, so a two-finger drag zooms without panning.
-            const zoomed = zoomAt(current, prev, factor, clamp);
+            const zoomed = zoomAt(current, prev, axisZoomFactor(factor, axis), clamp);
             const next = {
               scale: zoomed.scale,
               x: zoomed.x - (centroid.x - prev.x) / zoomed.scale.x,

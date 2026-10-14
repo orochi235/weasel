@@ -34,6 +34,17 @@ describe('@weasel-js/audio public surface', () => {
     expect([hat.step, partial.ratio > 0]).toEqual([2, true]);
   });
 
+  it('exports the voice kernels and the filter math under them', () => {
+    const note: audio.KernelNote = { pitch: 440, duration: 10, envelope: { release: 30 } };
+    expect(audio.renderNote(note, 8000)).toHaveLength(320);
+    expect(audio.renderNoise({ noise: 'white', duration: 10, envelope: { release: 0 } }, 8000)).toHaveLength(80);
+    const voice: audio.VoiceKernel = audio.createNoteKernel(note, 8000);
+    expect(voice.render(new Float32Array(16))).toBe(true);
+    expect(typeof audio.createNoiseKernel).toBe('function');
+    const flat: audio.BiquadCoefficients = audio.biquadCoefficients('allpass', 1000, 8000);
+    expect(audio.biquadResponseDb(flat, 500, 8000)).toBeCloseTo(0, 6);
+  });
+
   it('exports the scoring layer, from a mood down to a bar of events', () => {
     const mood: audio.ScoreMood = audio.scoreCues[0].mood;
     const params: audio.ScoreParams = audio.scoreParams(mood);
