@@ -41,9 +41,9 @@ export interface AlignAdapter<TPose> {
   getSelection(): NodeId[];
   /** The pose as stored — local to the node's parent. */
   getPose(id: NodeId): TPose;
-  /** The parent chain, for a scene whose container poses define a frame.
-   *  Omit it (or leave `composition` unset) for an absolute-pose scene. */
-  getParent?(id: NodeId): NodeId | null;
+  /** The node's container, `null` for a root: the chain a pose is composed
+   *  through when container poses define a frame. */
+  getParent(id: NodeId): NodeId | null;
   applyOps?(ops: Op[], label?: string): void;
 }
 
@@ -105,7 +105,7 @@ export function useAlign<TPose>(
     const frame = poseFrame<TPose>(
       {
         getPose: (id) => a.getPose(id as NodeId),
-        getParent: (id) => (a.getParent?.(id as NodeId) ?? null) as string | null,
+        getParent: (id) => a.getParent(id as NodeId) as string | null,
       },
       o.composition ?? (IDENTITY_POSE_COMPOSITION as PoseComposition<TPose>),
     );

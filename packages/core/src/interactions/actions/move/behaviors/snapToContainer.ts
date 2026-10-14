@@ -114,7 +114,7 @@ export function snapToContainer<TPose>(args: {
       if (!snap) return;
       const ops: Op[] = [];
       const reparent = (id: string): void => {
-        const oldParent = ctx.adapter.getParent?.(id) ?? null;
+        const oldParent = ctx.adapter.getParent(id);
         if (oldParent !== snap.parentId) {
           ops.push(createReparentOp({
             id,

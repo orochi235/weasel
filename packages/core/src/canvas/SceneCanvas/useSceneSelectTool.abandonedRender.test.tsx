@@ -4,7 +4,7 @@ import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import { useScene } from 'core/scene/useScene';
 import { asNodeId } from 'core/scene/types';
 import type { View } from 'core/viewport/view';
-import { useSceneAdapter } from 'canvas/sceneAdapter';
+import { useSceneAdapter } from 'canvas/useSceneAdapter';
 import { useSceneSelectTool } from './useSceneSelectTool';
 
 type Pose = { x: number; y: number; width: number; height: number };

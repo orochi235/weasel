@@ -4,7 +4,7 @@
  * for geometry and paint.
  */
 
-import { identity, type Mat3 } from '@weasel-js/geom';
+import { identity, type Affine } from '@weasel-js/geom';
 import type { SvgMediaEnvironment } from './media';
 import type {
   Path, Paint, MarkerEntry, MarkerRef, PoseLinear, ScreenLength, Stroke, StrokeAlign, StyledRun, TextStyle,
@@ -42,10 +42,10 @@ export interface NamespacedElement {
 
 /**
  * 2x3 affine matrix in SVG's `matrix(a b c d e f)` order, mapping
- * `[x', y'] = [a*x + c*y + e, b*x + d*y + f]`. It is geom's `Mat3`, so the
+ * `[x', y'] = [a*x + c*y + e, b*x + d*y + f]`. It is geom's `Affine`, so the
  * two are interchangeable without a conversion.
  */
-export type Matrix = Mat3;
+export type Matrix = Affine;
 
 /** Core's type, re-exported. */
 export type { ScreenLength };

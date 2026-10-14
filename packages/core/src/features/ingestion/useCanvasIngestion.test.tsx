@@ -4,10 +4,12 @@ import type { ActionsRegistry } from '@weasel-js/routing';
 import type { InsertAdapter } from 'core/adapters/types';
 import { getContentHandlers } from './contentHandlers';
 import { useCanvasIngestion, type CanvasIngestionOptions } from './useCanvasIngestion';
+import { rootsTree } from 'core/adapters/testing/rootsTree';
 
 type Adapter = InsertAdapter<{ id: string }>;
 
 const pasting: Adapter = {
+  ...rootsTree(),
   insertNode: () => {}, setSelection: () => {}, getSelection: () => [], commitPaste: () => [],
 };
 const { commitPaste: _commitPaste, ...notPasting } = pasting;

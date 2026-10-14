@@ -4,9 +4,8 @@ import { captureSlot, resolveSlot, slotFromIndex, type OrderedReader, type Sibli
 
 interface ReparentAdapter extends OrderedReader {
   setParent(id: string, parentId: string | null): void;
-  /** Sibling-order write, paired with `getChildren`. Optional: an adapter
-   *  without both silently ignores slots and appends. */
-  setChildOrder?(parentId: string | null, ids: string[]): void;
+  /** Sibling-order write, paired with `getChildren`. */
+  setChildOrder(parentId: string | null, ids: string[]): void;
 }
 
 /** Arguments to {@link createReparentOp}: move node `id` from one parent to another. */
@@ -31,16 +30,14 @@ export interface ReparentArgs {
   coalesceKey?: string;
 }
 
-/** Move `id` to `slot` among `parentId`'s children. No-op when the adapter
- *  has no ordering seam, when `id` isn't there, or when it's already in
- *  place. */
+/** Move `id` to `slot` among `parentId`'s children. No-op when `id` isn't
+ *  there or is already in place. */
 function placeAt(
   a: ReparentAdapter,
   parentId: string | null,
   id: string,
   slot: SiblingSlot,
 ): void {
-  if (!a.getChildren || !a.setChildOrder) return;
   const current = a.getChildren(parentId);
   const from = current.indexOf(id);
   if (from < 0) return;

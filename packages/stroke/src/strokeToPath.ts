@@ -6,7 +6,7 @@
  * self-overlap resolved, so the outline and the drawn stroke cannot disagree.
  */
 import type { Stroke } from '@weasel-js/paint';
-import { invert, transformPath, type Mat3, type Path, type PolygonPath } from '@weasel-js/geom';
+import { invert, transformPath, type Affine, type Path, type PolygonPath } from '@weasel-js/geom';
 import { pathIntersect, pathSubtract, pathUnion, trianglesToPath } from '@weasel-js/geom/booleans';
 import { strokeInsets } from './markerInset';
 import { resolveStrokeWidth, tessellateStroke } from './tessellate/stroke';
@@ -26,7 +26,7 @@ export interface StrokeToPathOptions {
    * `{ px }` width under a view that scales each axis apart, the frame is the
    * screen: the inverse of the view's scale, with `scale` left at 1.
    */
-  frame?: Mat3;
+  frame?: Affine;
 }
 
 const EMPTY: PolygonPath = {

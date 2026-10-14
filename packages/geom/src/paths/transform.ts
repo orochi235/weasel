@@ -8,7 +8,7 @@
  * proportionally.
  */
 
-import { boxToBox } from '../mat3';
+import { boxToBox } from '../affine';
 import { forEachSegment, pathCommandCoordCount } from '../commands';
 import { boundsOfPath } from './bounds';
 import { transformPath } from './transformPath';

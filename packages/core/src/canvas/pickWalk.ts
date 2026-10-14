@@ -18,7 +18,7 @@
 
 import type { Path } from '@weasel-js/geom';
 import { findShapeSilhouette } from 'canvas/NodeShape';
-import { adapterDerivedPathOf, type DerivingAdapter } from './adapterDerivedPath';
+import { adapterDerivedPathOf } from './adapterDerivedPath';
 import type { ClipFromPoseFn, DerivedDep, Node, NodeId, Scene } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
 import { resolveDerivedPath, sceneDerivedPathOf, scenePaintedPoseOf, showsComputedPath } from './derivedPath';
@@ -376,19 +376,16 @@ interface PickAdapter<TPose> {
    *  Falls back to `getPose`, which is the same value under the
    *  absolute-pose model. */
   getWorldPose?(id: string): TPose;
-  getNodes(): readonly { id: string }[];
   getPose(id: string): TPose;
-  getNode?: (id: string) => unknown;
-  getChildren?: (parentId: string | null) => readonly string[];
+  getNode(id: string): unknown;
+  getChildren(parentId: string | null): readonly string[];
 }
 
 /**
  * A source over a bare `SelectAdapter`, for consumers with no `Scene`.
  *
- * A hierarchical adapter is walked depth-first, parents before children —
- * the same back-to-front order `renderOrderNodes` produces for a single
- * layer. A flat adapter falls back to `getNodes()`, which carries no
- * parentage, so nothing clips.
+ * The adapter's tree is walked depth-first, parents before children — the
+ * same back-to-front order `renderOrderNodes` produces for a single layer.
  *
  * `gates` come from whichever view is picking, never from the adapter.
  */
@@ -396,10 +393,6 @@ export function adapterPickSource<TPose>(
   adapter: PickAdapter<TPose>,
   gates: AdapterPickGates = {},
 ): PickSource<TPose> {
-  const hier = adapter as Required<Pick<PickAdapter<TPose>, 'getNode' | 'getChildren'>>;
-  const hierarchical =
-    typeof adapter.getChildren === 'function' && typeof adapter.getNode === 'function';
-
   // Rebuilt per walk: the tree may have changed between queries, and a walk
   // is the only thing that reads it.
   let parents = new Map<string, PickCandidate<TPose>>();
@@ -409,24 +402,18 @@ export function adapterPickSource<TPose>(
   const worldPose = (id: string): TPose =>
     (typeof adapter.getWorldPose === 'function' ? adapter.getWorldPose(id) : adapter.getPose(id));
 
-  const derived = typeof adapter.getNode === 'function' ? adapterDerivedPathOf(adapter as DerivingAdapter<TPose>) : null;
+  const derived = adapterDerivedPathOf(adapter);
   const nodeOf = (id: string): PickCandidate<TPose> => {
-    const raw = hier.getNode(id) as Partial<PickCandidate<TPose>>;
+    const raw = adapter.getNode(id) as Partial<PickCandidate<TPose>>;
     return { ...raw, id, pose: worldPose(id) } as PickCandidate<TPose>;
   };
 
   return {
     order() {
-      if (!hierarchical) {
-        parents = new Map();
-        return adapter.getNodes().map((n) => ({
-          ...(n as object), id: n.id, pose: worldPose(n.id),
-        })) as PickCandidate<TPose>[];
-      }
       const out: PickCandidate<TPose>[] = [];
       const next = new Map<string, PickCandidate<TPose>>();
       const visit = (parentId: string | null, parent: PickCandidate<TPose> | null): void => {
-        for (const childId of hier.getChildren(parentId)) {
+        for (const childId of adapter.getChildren(parentId)) {
           const node = nodeOf(childId);
           if (parent) next.set(childId, parent);
           out.push(node);
@@ -441,7 +428,7 @@ export function adapterPickSource<TPose>(
     ...(gates.layerIsPainted ? { layerIsPainted: gates.layerIsPainted } : {}),
     ...(gates.planeOf ? { planeOf: gates.planeOf } : {}),
     poseOf: (node) => worldPose(node.id),
-    ...(derived ? { derivedPathOf: (node: PickCandidate<TPose>) => derived(node.id) } : {}),
+    derivedPathOf: (node: PickCandidate<TPose>) => derived(node.id),
     parentsOf(node) {
       const chain: PickCandidate<TPose>[] = [];
       let cur = parents.get(node.id);

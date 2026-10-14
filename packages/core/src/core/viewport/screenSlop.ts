@@ -8,7 +8,7 @@
  * frame is a tilted ellipse, so the test is run against the geometry's screen
  * image instead (`strokeHitTest`'s `slop`).
  */
-import { multiply, scale as scaleMat, type Mat3 } from '@weasel-js/geom';
+import { multiply, scale as scaleMat, type Affine } from '@weasel-js/geom';
 import type { Scale2 } from '@weasel-js/geom';
 
 /** `px` screen pixels under a view whose per-axis scale is `scale`. */
@@ -28,8 +28,8 @@ export type PickSlop = number | ScreenSlop;
  */
 export function slopForStrokeHit(
   slop: PickSlop | undefined,
-  frame?: Mat3 | null,
-): { extra: number; opts: { slop?: { px: number; transform: Mat3 } } } {
+  frame?: Affine | null,
+): { extra: number; opts: { slop?: { px: number; transform: Affine } } } {
   if (slop === undefined) return { extra: 0, opts: {} };
   if (typeof slop === 'number') return { extra: slop, opts: {} };
   const s = scaleMat(slop.scale.x, slop.scale.y);

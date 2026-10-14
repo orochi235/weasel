@@ -7,12 +7,14 @@ import { asNodeId } from 'core/scene/types';
 import type { PathPaint } from 'canvas/nodeShapes/nodePaint';
 import type { CreateOutlinesAdapter } from './createOutlines';
 import { outlineStrokeAction } from './outlineStrokeAction';
+import { rootsTree } from 'core/adapters/testing/rootsTree';
 
 const STROKED: PathPaint = { fill: null, stroke: { paint: { color: '#000' }, width: { px: 8 } } };
 
 function makeAdapter(paints: Record<string, PathPaint>, ids = Object.keys(paints)) {
   const created: { height: number }[] = [];
   const adapter: CreateOutlinesAdapter = {
+    ...rootsTree(),
     getSelection: () => ids.map(asNodeId),
     getTextSource: () => undefined,
     getWorldPath: (id) => (paints[id] ? pathFromD('M0 0 L50 0') : undefined),

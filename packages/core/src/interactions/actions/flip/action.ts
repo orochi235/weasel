@@ -4,7 +4,7 @@ import { shapeSources } from '../selectionSubtree';
 import { createElement } from 'react';
 import { FlipXIcon, FlipYIcon } from '../defaults/icons/editIcons';
 import type { Op } from 'core/ops/types';
-import { multiply, rotate, translate, type Mat3 } from '@weasel-js/geom';
+import { multiply, rotate, translate, type Affine } from '@weasel-js/geom';
 import { createTransformOp } from 'core/ops/transform';
 import type { PoseDescriptor } from '../resize/geometry';
 import { poseDescriptorOf } from '../poseDescriptorDep';
@@ -41,7 +41,7 @@ function localMirror(
   frame: PoseFrame<unknown>,
   id: Parameters<PoseFrame<unknown>['local']>[0],
   pivotWorld: { x: number; y: number; width: number; height: number },
-): Mat3 {
+): Affine {
   const at = frame.local(id, {
     x: pivotWorld.x + pivotWorld.width / 2,
     y: pivotWorld.y + pivotWorld.height / 2,
@@ -50,7 +50,7 @@ function localMirror(
     rotation: 0,
   }) as RectPose;
   const theta = at.rotation ?? 0;
-  const mirror: Mat3 = axis === 'x' ? [-1, 0, 0, 1, 0, 0] : [1, 0, 0, -1, 0, 0];
+  const mirror: Affine = axis === 'x' ? [-1, 0, 0, 1, 0, 0] : [1, 0, 0, -1, 0, 0];
   const turned = multiply(multiply(rotate(theta), mirror), rotate(-theta));
   return multiply(translate(at.x, at.y), multiply(turned, translate(-at.x, -at.y)));
 }

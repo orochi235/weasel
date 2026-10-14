@@ -7,7 +7,7 @@
  * the four corners are baked into world coords.
  */
 
-import { applyToPoint, boxToBox } from '../mat3';
+import { applyToPoint, boxToBox } from '../affine';
 import type { Path, PolygonPath } from '../path';
 import { poseFrameInverseOf, poseFrameOf, type PoseLinear } from '../poseFrame';
 import { boundsOfPath } from './bounds';

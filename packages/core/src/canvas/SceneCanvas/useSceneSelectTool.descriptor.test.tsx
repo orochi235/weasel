@@ -5,7 +5,7 @@
 import { describe, it, expect } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useScene } from 'core/scene/useScene';
-import { useSceneAdapter } from 'canvas/sceneAdapter';
+import { useSceneAdapter } from 'canvas/useSceneAdapter';
 import { useSceneSelectTool } from './useSceneSelectTool';
 import { circle, CIRCLE_POSE_DESCRIPTOR, type CirclePose } from 'core/geometry/circlePose.fixture';
 

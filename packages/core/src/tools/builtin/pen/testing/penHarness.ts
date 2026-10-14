@@ -8,6 +8,7 @@ import type { ModifierState } from 'core/modifierState';
 import type { Op } from 'core/ops/types';
 import { createInsertOp } from 'core/ops/create';
 import type { InsertExtras } from 'interactions/actions/depSchema';
+import { rootsTree } from 'core/adapters/testing/rootsTree';
 
 // `setup` reads the pen's state off the preview layer's recorded calls, so a
 // test file calling it must mock 'features/paths/penPreviewLayer' with the real
@@ -77,6 +78,7 @@ function standInScene(paths: Record<string, PolygonPath>) {
   // this, the way the scene would.
   const inserted: Array<{ id: string; pose: Pose }> = [];
   const opTarget = {
+    ...rootsTree(),
     insertNode: (node: { id: string; pose: Pose }) => { inserted.push(node); },
     removeNode: (id: string) => { delete scene[id]; },
   };

@@ -11,7 +11,7 @@ import { describe, it, expect } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useScene } from 'core/scene/useScene';
 import type { UseSceneOptions } from 'core/scene/types';
-import { useSceneAdapter } from 'canvas/sceneAdapter';
+import { useSceneAdapter } from 'canvas/useSceneAdapter';
 import { asNodeId } from 'core/scene/types';
 import { useSceneSelectTool } from './useSceneSelectTool';
 import { rectPath, linePath } from '@weasel-js/geom';

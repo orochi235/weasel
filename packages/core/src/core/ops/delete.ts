@@ -5,9 +5,9 @@ import { captureSlot, parentOf, slotFromIndex, type OrderedReader, type SiblingS
 
 interface DeleteAdapter<TNode> extends OrderedReader {
   removeNode(id: string): void;
-  /** Subtree reads, used to snapshot the cascade before it runs. Optional
-   *  — a flat adapter has neither, and a delete there is a single node. */
-  getNode?(id: string): TNode | undefined;
+  /** With `getChildren`, the subtree reads that snapshot the cascade before
+   *  it runs. */
+  getNode(id: string): TNode | undefined;
   /** Every id `removeNode` would take with this one. A store whose removal
    *  cascades past the subtree — the kit's scene takes a deleted node's
    *  dependents too — must answer here, or those nodes are absent from the
@@ -27,7 +27,7 @@ export interface DeleteArgs<TNode extends { id: string }> {
   label?: string;
   /** Sibling ordinal the node occupies at the moment of delete. Sugar for
    *  `slot: { index }`, and only a seed: `apply` re-observes the node's full
-   *  slot through the adapter, where it can, and that supersedes this. */
+   *  slot through the adapter, and that supersedes this. */
   index?: number;
   /** Full slot, anchor included. Written by `apply`; supersedes `index`. */
   slot?: SiblingSlot;
@@ -39,16 +39,13 @@ export interface DeleteArgs<TNode extends { id: string }> {
   cascaded?: PlacedNode<TNode>[];
 }
 
-/** `id`'s ordinal among `parentId`'s children, or `-1` when unobservable. */
+/** `id`'s ordinal among `parentId`'s children, or `-1` when it is not one. */
 function indexIn(a: OrderedReader, parentId: string | null, id: string): number {
-  return a.getChildren?.(parentId)?.indexOf(id) ?? -1;
+  return a.getChildren(parentId).indexOf(id);
 }
 
 /**
  * Snapshot everything removing `rootId` takes with it, `rootId` included.
- *
- * Returns `null` when the adapter can't enumerate, which leaves any previously
- * captured snapshot in place rather than clobbering it with an empty one.
  *
  * A cascade unlinks several disjoint subtrees, so the captured set is walked
  * as a forest: a node whose parent is not also going is a detach root, and
@@ -61,24 +58,21 @@ function indexIn(a: OrderedReader, parentId: string | null, id: string): number 
 function captureCascade<TNode extends { id: string }>(
   a: DeleteAdapter<TNode>,
   rootId: string,
-): PlacedNode<TNode>[] | null {
-  const { getChildren, getNode } = a;
-  if (!getChildren || !getNode) return null;
-
+): PlacedNode<TNode>[] {
   const closure = a.getRemovalClosure?.([rootId]);
   const taken = new Map<string, TNode>();
   if (closure) {
     for (const id of closure) {
-      const node = getNode.call(a, id);
+      const node = a.getNode(id);
       if (node) taken.set(id, node);
     }
   } else {
     // No closure read: the cascade is the subtree, discovered here.
     const walk = (id: string): void => {
-      const node = getNode.call(a, id);
+      const node = a.getNode(id);
       if (!node) return;
       taken.set(id, node);
-      for (const kid of getChildren.call(a, id)) walk(kid);
+      for (const kid of a.getChildren(id)) walk(kid);
     };
     walk(rootId);
   }
@@ -91,7 +85,7 @@ function captureCascade<TNode extends { id: string }>(
   const out: PlacedNode<TNode>[] = [];
   const emitSubtree = (entry: PlacedNode<TNode>): void => {
     out.push(entry);
-    const kids = getChildren.call(a, entry.node.id);
+    const kids = a.getChildren(entry.node.id);
     for (let i = 0; i < kids.length; i++) {
       const child = taken.get(kids[i]!);
       if (child) emitSubtree({ node: child, index: i });
@@ -119,11 +113,8 @@ export function createDeleteOp<TNode extends { id: string }>(args: DeleteArgs<TN
         slot = observed;
         argsForSerial.slot = observed;
       }
-      const snapshot = captureCascade(a, node.id);
-      if (snapshot) {
-        captured = snapshot;
-        argsForSerial.cascaded = snapshot;
-      }
+      captured = captureCascade(a, node.id);
+      argsForSerial.cascaded = captured;
       a.removeNode(node.id);
     },
     invert() {

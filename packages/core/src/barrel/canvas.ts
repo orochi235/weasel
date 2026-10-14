@@ -48,7 +48,8 @@ export {
   retryImage,
 } from '@weasel-js/renderer';
 export type { ImageNodeData, ImageRasterSize, ImageStatus } from '@weasel-js/renderer';
-export { sceneToAdapter, useSceneAdapter } from '../canvas/sceneAdapter';
+export { sceneToAdapter } from '../canvas/sceneAdapter';
+export { useSceneAdapter } from '../canvas/useSceneAdapter';
 export type { SceneCanvasAdapter } from '../canvas/sceneAdapter';
 export {
   createNodeRouting,

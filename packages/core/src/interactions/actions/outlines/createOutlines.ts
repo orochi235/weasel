@@ -5,7 +5,7 @@
  * undoable batch; the replacement takes the text node's slot, so stacking
  * order is unchanged.
  */
-import type { Mat3, Path, Rect } from '@weasel-js/geom';
+import type { Affine, Path, Rect } from '@weasel-js/geom';
 import type { PathPaint } from 'canvas/nodeShapes/nodePaint';
 import type { Op } from 'core/ops/types';
 import type { NodeId } from 'core/scene/types';
@@ -38,7 +38,7 @@ export interface CreateOutlinesAdapter {
    * node drawn straight. Outline Stroke skews and stretches a world-width
    * stroke with it. Without it every stroke is outlined in world.
    */
-  getStrokeFrame?(id: NodeId): Mat3 | null | undefined;
+  getStrokeFrame?(id: NodeId): Affine | null | undefined;
   /**
    * Mint one path node of node `sourceId`'s outlines. `path` is in world
    * space. The node must wear `spec`'s fill and stroke — a text whose runs
@@ -57,13 +57,12 @@ export interface CreateOutlinesAdapter {
    * the paths are laid flat in that slot instead.
    */
   createContainerNode?(sourceId: NodeId, spec: { parent: string | null; bounds: Rect }): { id: string };
-  /** Full node for `id`, so undo restores the text node whole. Without it the
-   *  delete captures an `{ id }` stub. */
-  getNode?(id: string): { id: string } | undefined | null;
-  /** Parent and sibling order — the reorder contract. With both, each path is
-   *  inserted at its text node's index; without, where `insertNode` defaults. */
-  getParent?(id: string): string | null;
-  getChildren?(parentId: string | null): readonly string[];
+  /** Full node for `id`, so undo restores the text node whole. */
+  getNode(id: string): { id: string } | undefined | null;
+  /** The tree: each path is inserted at its source node's index among its
+   *  parent's children. */
+  getParent(id: string): string | null;
+  getChildren(parentId: string | null): string[];
   applyOps?(ops: Op[], label?: string): void;
   setSelection?(ids: NodeId[]): void;
   insertNode?(node: { id: string }, index?: number): void;

@@ -7,7 +7,7 @@ import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { render, renderHook } from '@testing-library/react';
 import { createScene } from 'core/scene/scene';
 import { useSceneSelectTool } from './SceneCanvas/useSceneSelectTool';
-import { useSceneAdapter } from 'canvas/sceneAdapter';
+import { useSceneAdapter } from 'canvas/useSceneAdapter';
 import { CanvasView } from './CanvasView';
 import { ViewInputsProvider } from './viewInputs';
 import { ViewRegistryProvider, useOptionalViewRegistry, type ViewRegistry } from './viewRegistry';

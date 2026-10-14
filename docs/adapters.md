@@ -38,7 +38,6 @@ reorders it. There is no separate adapter for arrays.
 | `commitInsert` | The factory an insert drag calls with its bounds. Return `{ pose, data, id? }`, or `null` to abort. |
 | `insertLayer` | The layer inserted nodes land on. Default `'default'`. |
 | `poseDescriptor` | How to read and rewrite this scene's poses. Default `AUTO_POSE_DESCRIPTOR`. |
-| `layouts` | Layout strategies for containers whose scene node declares none. |
 
 What the adapter answers:
 
@@ -82,12 +81,18 @@ if released. The kit treats `metadata` as opaque; renderers consume it.
 
 Write an adapter when the kit does not own the store — a Redux or CRDT
 document, say. There is no base class. Implement the slice the reader takes and pass the
-object in:
+object in.
+
+Every adapter carries the tree: `getNode`, `getParent`, and `getChildren`. A
+store with no nesting answers as a tree whose nodes are all roots, and a node
+with no children answers `[]`:
 
 ```ts
 const adapter: SelectAdapter<Rect, Pose> = {
   getNode: (id) => rects.find((r) => r.id === id),
   getNodes: () => rects,              // bottom first
+  getParent: () => null,
+  getChildren: (parentId) => (parentId === null ? rects.map((r) => r.id) : []),
   getPose: (id) => poseOf(id),
   setPose: (id, pose) => store.setPose(id, pose),
   ...selection.adapterMethods,        // getSelection / setSelection
@@ -97,8 +102,6 @@ const select = useSelectTool(adapter, {});
 
 What a reader does without an optional member:
 
-- No `getChildren`: a pick walks `getNodes()` in order, and nothing clips.
-- No `setChildOrder`: reorder ops do nothing.
 - No `applyOps`: ops are applied against the adapter one at a time, with no
   history entry.
 - No `poseTarget`: a pose animation writes `setPose` every frame, and a second

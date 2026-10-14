@@ -64,6 +64,7 @@ const minimalAdapter = {
   getNodes: () => [],
   getPose: (_id: string) => ({ x: 0, y: 0, width: 10, height: 10 }),
   getParent: (_id: string) => null,
+  getChildren: (_parentId: string | null) => [],
   setPose: vi.fn(),
   setParent: vi.fn(),
   // AreaSelectAdapter

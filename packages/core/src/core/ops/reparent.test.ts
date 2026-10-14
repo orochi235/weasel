@@ -6,6 +6,8 @@ describe('createReparentOp', () => {
     const calls: { id: string; parentId: string | null }[] = [];
     return {
       setParent: (id: string, parentId: string | null) => calls.push({ id, parentId }),
+      getChildren: (): string[] => [],
+      setChildOrder: () => {},
       calls,
     };
   }
@@ -106,13 +108,6 @@ describe('createReparentOp — sibling index', () => {
     const a = makeOrderedAdapter({ ROOT: ['x'], p: ['m', 'n'] });
     createReparentOp({ id: 'x', fromParentId: null, toParentId: 'p' }).apply(a as never);
     expect(a.order.p).toEqual(['m', 'n', 'x']);
-  });
-
-  it('ignores indices on an adapter with no ordering seam', () => {
-    const calls: { id: string; parentId: string | null }[] = [];
-    const a = { setParent: (id: string, parentId: string | null) => calls.push({ id, parentId }) };
-    createReparentOp({ id: 'a', fromParentId: null, toParentId: 'p', toIndex: 0 }).apply(a as never);
-    expect(calls).toEqual([{ id: 'a', parentId: 'p' }]);
   });
 });
 

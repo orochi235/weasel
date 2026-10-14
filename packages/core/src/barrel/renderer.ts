@@ -44,7 +44,7 @@ export { cullDrawCommands, type CullRect } from '@weasel-js/renderer';
 // The renderer's 3x3 matrix namespace, operating on `GlMat3` — 9 elements,
 // column-major, in doubles; `mat3.toUniform` is the float32 copy a GL uniform
 // upload wants. `mat3.toAffine` and `mat3.fromAffine` convert to and from
-// `@weasel-js/geom`'s 6-element `Mat3`,
+// `@weasel-js/geom`'s 6-element `Affine`,
 // which is what an `SvgGroupNode.transform` already is.
 export { mat3 } from '@weasel-js/renderer';
 

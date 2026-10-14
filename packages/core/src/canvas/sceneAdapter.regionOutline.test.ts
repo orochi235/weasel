@@ -8,6 +8,7 @@ import type { Node, NodeId } from 'core/scene/types';
 import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { PATH_L, PATH_M, PATH_Z } from '@weasel-js/geom';
+import { registerNodeShape } from './NodeShape';
 import { sceneToAdapter } from './sceneAdapter';
 
 /** Right triangle (0,0) → (100,0) → (0,100); its box's upper-right half is empty. */
@@ -84,7 +85,7 @@ describe('sceneToAdapter region hit-tests follow the drawn outline', () => {
 /**
  * Two shapes sharing one pose type: a `box` occupies its pose, a `ball` the
  * box its circumscribed circle sweeps. Only a descriptor that saw the node
- * can tell them apart.
+ * can tell them apart, and only a painter says what the ball draws there.
  */
 describe('sceneToAdapter region hit-tests read the node-specialized descriptor', () => {
   type Solid = { kind: 'box' | 'ball' };
@@ -118,8 +119,35 @@ describe('sceneToAdapter region hit-tests read the node-specialized descriptor',
 
   // Above the shared pose: inside the ball's swept box, outside the box's own.
   const band = { x: 0, y: -14, width: 40, height: 5 };
+  const bandLasso = [{ x: 0, y: -14 }, { x: 40, y: -14 }, { x: 40, y: -9 }, { x: 0, y: -9 }];
+
+  /** Paint the ball as the box its descriptor bounds it by. */
+  const paintBall = (): (() => void) => registerNodeShape<Solid, Bounds>({
+    id: 'test:ball',
+    matches: (node) => node.data?.kind === 'ball',
+    paint: () => [],
+    silhouette: (_node, pose) => ({ kind: 'rect', ...ballBounds(pose) }),
+  }, { priority: 'high' });
 
   it('marquee picks the ball and not the box', () => {
-    expect(solids().hitTestArea!(band)).toEqual(['ball']);
+    const dispose = paintBall();
+    try {
+      expect(solids().hitTestArea!(band)).toEqual(['ball']);
+      expect(solids().hitTestLasso!(bandLasso, 'intersect')).toEqual(['ball']);
+    } finally {
+      dispose();
+    }
+  });
+
+  it('a marquee takes nothing where bounds reach but nothing is drawn, as a lasso does', () => {
+    // No painter for the ball: it draws its pose rect, below the band.
+    expect(solids().hitTestLasso!(bandLasso, 'intersect')).toEqual([]);
+    expect(solids().hitTestArea!(band)).toEqual([]);
+  });
+
+  it('an enclosing lasso takes a node drawn inside it whose bounds poke out', () => {
+    // Around the pose rect both draw; the ball's swept box reaches y = -15 and 25.
+    const around = [{ x: -5, y: -5 }, { x: 45, y: -5 }, { x: 45, y: 15 }, { x: -5, y: 15 }];
+    expect(solids().hitTestLasso!(around, 'enclosed')).toEqual(['box', 'ball']);
   });
 });

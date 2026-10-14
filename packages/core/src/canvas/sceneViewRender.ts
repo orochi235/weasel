@@ -6,14 +6,13 @@
 
 import type { WeaselRenderer } from '@weasel-js/renderer';
 import { cachedCanvasRenderer, paintCanvas } from './canvasRenderer';
-import { composesFrames } from 'core/scene/composePose';
 import { viewToMat3 } from '@weasel-js/geom';
 import type { DrawCommand } from '@weasel-js/renderer';
 import type { View } from '../core/viewport/view';
 import type { Node, NodeId, Scene } from '../core/scene/types';
 import { wrapNodeOutput } from './wrapNodeOutput';
 import { buildSceneTree, type HierarchicalAdapter } from './buildSceneTree';
-import { effectivePose } from 'core/scene/effectivePose';
+import { sceneToAdapter } from './sceneAdapter';
 import { withDerivedPaths, sceneDerivedPathOf } from './derivedPath';
 import { withColorOverrides } from './colorOverrides';
 import type { ColorOverrideRegistry } from '@weasel-js/animator';
@@ -96,26 +95,23 @@ export function __getCachedRendererForTest(
 }
 
 /**
- * Present a `Scene` as the reading surface `buildSceneTree` walks. Built
- * inline rather than via `sceneToAdapter` so this module stays free of React
- * — `renderSceneToPixels` runs headless.
+ * Present a `Scene` as the reading surface `buildSceneTree` walks: the scene
+ * adapter's own reads, under this view's layer list.
  */
 function sceneAsHierarchy<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,
   layers: SceneViewLayers = {},
 ): HierarchicalAdapter<Node<TData, TLayer, TPose>, TPose> {
+  const { getNode, getChildren, getPose, composePose } = sceneToAdapter(scene);
   return {
     getLayers: () =>
       paintedSceneLayers(scene.layers, layers)
         .map((l) => ({ id: l.id, visible: l.visible, parallax: l.parallax })),
-    getNode: (id) => scene.get(id as NodeId),
-    getChildren: (parentId) => {
-      if (parentId === null) return scene.roots as readonly string[];
-      const node = scene.get(parentId as NodeId);
-      return node && node.kind === 'container' ? (node.children as readonly string[]) : [];
-    },
-    getPose: (id) => effectivePose(scene, scene.get(id as NodeId)!),
-  } as HierarchicalAdapter<Node<TData, TLayer, TPose>, TPose>;
+    getNode,
+    getChildren,
+    getPose,
+    ...(composePose ? { composePose } : {}),
+  };
 }
 
 /**
@@ -161,9 +157,7 @@ export function buildSceneViewCommands<TData, TLayer extends string, TPose>(
     );
   };
 
-  const hierarchy = composesFrames(scene.composition)
-    ? { ...sceneAsHierarchy(scene, layers), composePose: scene.composition.compose }
-    : sceneAsHierarchy(scene, layers);
+  const hierarchy = sceneAsHierarchy(scene, layers);
 
   const cullRect = cull ? { x: 0, y: 0, width: cull.width, height: cull.height } : undefined;
   const culled = cullRect && cull?.paintBounds ? paintMissesView(cull.paintBounds, view, cullRect) : undefined;

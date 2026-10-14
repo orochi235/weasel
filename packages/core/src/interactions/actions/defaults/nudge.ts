@@ -1,7 +1,7 @@
 import type { Scene } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { Op } from 'core/ops/types';
-import type { Mat3 } from '@weasel-js/geom';
+import type { Affine } from '@weasel-js/geom';
 import { createTransformOp } from 'core/ops/transform';
 import type { PoseDescriptor } from '../resize/geometry';
 import { translatePoseViaDescriptor } from '../resize/geometry';
@@ -35,7 +35,7 @@ function nudgeSelection(
   if (ids.length === 0) return;
   // Pushed alongside each transform op so a wired geometryProjection moves
   // the node's data-held geometry too.
-  const m: Mat3 = [1, 0, 0, 1, dx, dy];
+  const m: Affine = [1, 0, 0, 1, dx, dy];
 
   const ops: Op[] = [];
   for (const id of ids) {

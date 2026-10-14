@@ -16,11 +16,10 @@ export interface DerivingAdapter<TPose> {
   getPose(id: string): TPose;
   /** Where the node is drawn, when the adapter composes poses. */
   getWorldPose?(id: string): TPose;
-  getChildren?(parentId: string | null): readonly string[];
+  getChildren(parentId: string | null): readonly string[];
 }
 
 const scopes = new WeakMap<object, NodeMemoScope>();
-const NO_CHILDREN: readonly NodeId[] = [];
 
 /**
  * The path the node `id` computes from its dependencies, or `null` when it
@@ -39,7 +38,7 @@ export function adapterDerivedPathOf<TPose>(
   const poseOf = (id: string): TPose =>
     (typeof adapter.getWorldPose === 'function' ? adapter.getWorldPose(id) : adapter.getPose(id));
   const childrenOf = (id: NodeId): readonly NodeId[] =>
-    (adapter.getChildren?.(id) as readonly NodeId[] | undefined) ?? NO_CHILDREN;
+    adapter.getChildren(id) as readonly NodeId[];
   const depOf = (id: NodeId): DerivedDep<TPose> | undefined => {
     const node = adapter.getNode(id);
     if (node === undefined || node === null) return undefined;

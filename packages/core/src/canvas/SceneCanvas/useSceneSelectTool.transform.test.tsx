@@ -8,7 +8,7 @@ import { renderHook } from '@testing-library/react';
 import { poseFrameOf } from '@weasel-js/geom';
 import { useScene } from 'core/scene/useScene';
 import type { RectPose, UseSceneOptions } from 'core/scene/types';
-import { useSceneAdapter } from 'canvas/sceneAdapter';
+import { useSceneAdapter } from 'canvas/useSceneAdapter';
 import { asNodeId } from 'core/scene/types';
 import { useSceneSelectTool } from './useSceneSelectTool';
 

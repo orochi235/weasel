@@ -4,7 +4,7 @@
  * reaches hit-test, marquee, and bounds extraction alike.
  */
 import type { Bounds } from 'tools/builtin/select';
-import { applyToPoint, pointInPath, strokeHitTest, type Mat3 } from '@weasel-js/geom';
+import { applyToPoint, pointInPath, strokeHitTest, type Affine } from '@weasel-js/geom';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import { framedBounds } from 'core/geometry/poseDescriptor';
 import { AUTO_POSE_DESCRIPTOR, isPathLike } from 'core/geometry/autoPoseDescriptor';
@@ -86,7 +86,7 @@ function containsInFrame<TPose>(
   y: number,
   tolerance: number | PoseSlop | undefined,
   descriptor: PoseDescriptor<unknown>,
-  frame: Mat3 | null,
+  frame: Affine | null,
   stretched: boolean,
 ): boolean {
   const pathLike = isPathLike(pose);

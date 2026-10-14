@@ -59,16 +59,6 @@ describe('createChildrenLayer', () => {
     expect(seen).toEqual(['a', 'b', null]);
   });
 
-  it('adapter without getChildren: silent no-op', () => {
-    const drawChild = vi.fn(() => [] as DrawCommand[]);
-    const layer = createChildrenLayer({
-      adapter: {},
-      drawChild,
-    });
-    layer.draw(undefined, VIEW, DIMS);
-    expect(drawChild).not.toHaveBeenCalled();
-  });
-
   it('empty children list: no draws', () => {
     const drawChild = vi.fn(() => [] as DrawCommand[]);
     const layer = createChildrenLayer({

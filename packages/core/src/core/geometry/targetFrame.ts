@@ -3,7 +3,7 @@
  * target's bounds, with the helpers the outline, the handles, their hit
  * regions, and the resize and rotate actions all place themselves by.
  */
-import { applyToPoint, invert, poseFrameOf, type Mat3, type Scale2 } from '@weasel-js/geom';
+import { applyToPoint, invert, poseFrameOf, type Affine, type Scale2 } from '@weasel-js/geom';
 
 /** Local↔world maps for a chrome target. Local is the target's unrotated box
  *  frame; world is where the node is drawn. */
@@ -11,13 +11,13 @@ export interface TargetTransform {
   /** No rotation and no `transform`: local is world. */
   identity: boolean;
   /** Target box frame → world. */
-  toWorld: Mat3;
+  toWorld: Affine;
   /** World → target box frame. `null` when the target's `transform` is
    *  singular: it draws nothing, and no world point maps back. */
-  toLocal: Mat3 | null;
+  toLocal: Affine | null;
 }
 
-const IDENTITY: Mat3 = [1, 0, 0, 1, 0, 0];
+const IDENTITY: Affine = [1, 0, 0, 1, 0, 0];
 
 export const IDENTITY_TARGET: TargetTransform = { identity: true, toWorld: IDENTITY, toLocal: IDENTITY };
 

@@ -6,9 +6,6 @@ import type { LayoutStrategy, ReflowTransition } from '../../layout/types';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type RectPose } from 'core/scene/types';
 
-/** Only identity is under test, so any object stands in for a strategy. */
-const strategy = () => ({}) as unknown as LayoutStrategy<unknown>;
-
 const emptyScene = () =>
   createScene<null, 'l', RectPose>({ systemLayers: [{ id: 'l' }] });
 
@@ -19,60 +16,11 @@ function Capture({ onR }: { onR: (r: DepRegistry) => void }) {
 }
 
 describe('useLayoutDepSource', () => {
-  it('resolves a static map by container id', () => {
-    const ff = strategy();
-    let reg!: DepRegistry;
-    function Wire() {
-      useLayoutDepSource(emptyScene(), { C: ff });
-      return null;
-    }
-    render(
-      <DepRegistryProvider>
-        <Wire />
-        <Capture onR={(r) => { reg = r; }} />
-      </DepRegistryProvider>,
-    );
-    expect(reg.get('layout')?.getLayout('C')).toBe(ff);
-    expect(reg.get('layout')?.getLayout('missing')).toBeNull();
-  });
-
-  it('resolves a resolver function', () => {
-    const ff = strategy();
-    let reg!: DepRegistry;
-    function Wire() {
-      useLayoutDepSource(emptyScene(), (id) => (id === 'X' ? ff : null));
-      return null;
-    }
-    render(
-      <DepRegistryProvider>
-        <Wire />
-        <Capture onR={(r) => { reg = r; }} />
-      </DepRegistryProvider>,
-    );
-    expect(reg.get('layout')?.getLayout('X')).toBe(ff);
-    expect(reg.get('layout')?.getLayout('Y')).toBeNull();
-  });
-
-  it('returns null for every container when layouts is undefined', () => {
-    let reg!: DepRegistry;
-    function Wire() {
-      useLayoutDepSource(emptyScene(), undefined);
-      return null;
-    }
-    render(
-      <DepRegistryProvider>
-        <Wire />
-        <Capture onR={(r) => { reg = r; }} />
-      </DepRegistryProvider>,
-    );
-    expect(reg.get('layout')?.getLayout('C')).toBeNull();
-  });
-
   it('carries the drop-target mode, following the latest render', () => {
     let reg!: DepRegistry;
     const scene = emptyScene();
     function Wire({ mode }: { mode?: 'topmost' | 'region' }) {
-      useLayoutDepSource(scene, undefined, mode);
+      useLayoutDepSource(scene, mode);
       return null;
     }
     const tree = (mode?: 'topmost' | 'region') => (
@@ -89,7 +37,7 @@ describe('useLayoutDepSource', () => {
     expect(reg.get('layout')?.dropTarget).toBe('region');
   });
 
-  it('reads the layout a container declares before the prop', () => {
+  it('answers the layout a container declares, and null for one that declares none', () => {
     const declared: LayoutStrategy<RectPose> = {
       snap: { pickTarget: () => null },
       childPoses: () => new Map(),
@@ -103,7 +51,7 @@ describe('useLayoutDepSource', () => {
     });
     let reg!: DepRegistry;
     function Wire() {
-      useLayoutDepSource(scene, { C: strategy(), D: strategy() });
+      useLayoutDepSource(scene);
       return null;
     }
     render(
@@ -113,7 +61,7 @@ describe('useLayoutDepSource', () => {
       </DepRegistryProvider>,
     );
     expect(reg.get('layout')?.getLayout('C')).toBe(declared);
-    expect(reg.get('layout')?.getLayout('D')).not.toBeNull();
+    expect(reg.get('layout')?.getLayout('D')).toBeNull();
   });
 
   it("settles each child the scene reflows from where it was, through the transition", () => {
@@ -133,7 +81,7 @@ describe('useLayoutDepSource', () => {
       glide: vi.fn(), settle: vi.fn(), stop: vi.fn(), poseOf: () => undefined,
     };
     function Wire() {
-      useLayoutDepSource(scene, undefined, undefined, reflow);
+      useLayoutDepSource(scene, undefined, reflow);
       return null;
     }
     render(<DepRegistryProvider><Wire /></DepRegistryProvider>);

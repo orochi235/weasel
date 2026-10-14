@@ -42,6 +42,7 @@ function makeFullAdapter() {
     setText: (id: string, text: string) => { textCalls.push([id, text]); },
     setParent: (id: string, parentId: string | null) => { parentCalls.push([id, parentId]); },
     setSelection: (ids: string[]) => { selectionCalls.push([...ids]); },
+    getNode: (): Node | undefined => undefined,
     getParent: (id: string) => parents.get(id) ?? null,
     getChildren: (parentId: string | null) => (children.get(parentId) ?? []).slice(),
     setChildOrder: (parentId: string | null, ids: string[]) => {

@@ -13,6 +13,7 @@ import { outlineStrokeAction } from './outlineStrokeAction';
 import { stubDeps } from '../testUtils';
 import type { CreateOutlinesAdapter } from './createOutlines';
 import { applyOutlineStroke } from './outlineStroke';
+import { rootsTree } from 'core/adapters/testing/rootsTree';
 
 const INTER_TTF = resolve(import.meta.dirname, '../../../../../../assets/fonts/inter/inter.ttf');
 const RED = { color: '#f00' };
@@ -24,6 +25,7 @@ function harness(text: TextNodeSource) {
   const made: { path: Path; paint: PathPaint }[] = [];
   const applyOps = vi.fn();
   const adapter: CreateOutlinesAdapter = {
+    ...rootsTree(),
     getSelection: () => [asNodeId('label')],
     getTextSource: () => text,
     createPathNode: (path, _sourceId, { fill, stroke }) => {

@@ -17,6 +17,7 @@ import {
 } from 'interactions/actions/clipboard/wireFormat';
 import { __setSvgMeasureForTests, _resetSvgHandlerSeamsForTests } from './svgHandler';
 import { __setFileToDataUriForTests, _resetImageHandlerSeamsForTests } from './imageHandler';
+import { rootsTree } from 'core/adapters/testing/rootsTree';
 
 const NODES = [
   { id: 'a', parent: null, pose: { x: 1, y: 2 }, data: { fill: '#f00' } },
@@ -32,6 +33,7 @@ const matches = (item: IngestItem): boolean =>
 /** Stub `InsertAdapter` whose commitPaste mints `paste-N` ids. */
 function stubAdapter() {
   return {
+    ...rootsTree(),
     insertNode: vi.fn(),
     setSelection: vi.fn(),
     getSelection: () => [],

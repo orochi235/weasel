@@ -49,6 +49,7 @@ function setup(commit: 'batch' | 'applyBatch') {
     getNode: (id) => scene.get(asNodeId(id)) ?? undefined,
     getParent: (id) => scene.get(asNodeId(id))?.parent ?? null,
     getChildren: defaultCommitAdapter(scene).getChildren,
+    setChildOrder: defaultCommitAdapter(scene).setChildOrder,
     insertNode: (node, index?: number) => {
       const n = node as { id: string; kind: 'leaf'; layer: Layer; pose: Pose; data: Data };
       scene.add({

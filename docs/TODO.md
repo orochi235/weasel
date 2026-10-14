@@ -333,36 +333,6 @@ Priority tags:
 
 ## Scene, adapters & layout
 
-- **(P3) geom's `Mat3` and `mat3` are different matrices.** `Mat3` and the free functions beside
-  it (`identity`, `multiply`, `invert`) are the six-number affine; `mat3` and `GlMat3` are the
-  nine-element column-major matrix a GL uniform takes. Both are exported from `@weasel-js/geom`'s
-  root, a capital letter apart.
-
-- **(P2) Hand-written adapters may still be flat lists.** `sceneToAdapter` is the only adapter the
-  kit builds, and the scene slot paints only a tree. What is left is the tier below it: an adapter
-  written by hand against the narrow contracts, which may leave the tree out. Readers still carry
-  a second path for one that does — `adapterPickSource` (`canvas/pickWalk.ts`) walks `getNodes()`
-  when `getChildren` or `getNode` is missing, `OrderedAdapter`'s two methods are optional and
-  reorder ops do nothing without them, and the ops' `OrderedReader` (`core/ops/slot.ts`) treats a
-  missing `getChildren` as "no siblings". `useSelectTool.zorder.test.tsx` and
-  `useSelectTool.viewGates.test.tsx` pin the flat path. Needs a decision: require the tree of
-  every adapter and delete those paths, or keep the flat list as the least a hand-written adapter
-  can be. A smaller end: `sceneAsHierarchy`
-  (`canvas/sceneViewRender.ts`) rebuilds four of `sceneToAdapter`'s reads because
-  `sceneAdapter.ts` imports React for `useSceneAdapter`, which a headless render cannot.
-
-- **(P3) A marquee and a lasso disagree on a node whose descriptor bounds reach past what it
-  draws.** Two nodes share the pose `{0, 0, 40, 10}`, and a descriptor's `forNode` gives one a
-  40-square box. A marquee over the band above the pose takes that node; an `intersect` lasso
-  around the same band takes nothing. The node matches the default painter, whose silhouette is the
-  pose rect, so its outline is the pose and not the descriptor's box. `regionTakes`
-  (`core/geometry/regionHit.ts`) answers a marquee `true` for any rect outline once the bounds
-  overlap, which holds only when the outline is the bounds; the lasso tests the outline. The
-  `enclosed` branch's `!inBox` reject assumes the same the other way. Undecided: the module's
-  contract says the outline decides, so the marquee shortcut should compare the drawn rect with the
-  region, but that flips `sceneAdapter.regionOutline.test.ts`'s "marquee picks the ball and not the
-  box", which then needs a painter for the ball to say anything about `forNode`.
-
 - **(P3) A direct scene call made while a journal is open lands on the scene's own stack.**
   `scene.applyBatch` goes to the open journal; `scene.setPose` and its siblings, `scene.batch`, and
   `scene.history.apply` do not, so a mode that mixes the two splits its edits across two stacks.
@@ -373,14 +343,6 @@ Priority tags:
   container runs as a batch. draw opens a journal in every mode
   (`apps/draw/src/modality/machine.ts`), so the change moves where every direct call made during
   a mode lands.
-
-- **(P3) Duplicate and Alt-drag clone: a copy that derives from nodes outside the copy still follows
-  the originals.** `copySelection` (`interactions/actions/defaults/copySubtree.ts`) re-points a
-  copied node's `dependsOn` id list at the copies only when every node in it was copied too. With
-  one or more left out, the copy keeps the original list, so duplicating an edge alone gives a
-  second edge drawn exactly over the first. A paste drops such a node instead (ruled 2026-10-11);
-  the call for a copy made inside the same scene, where the originals are still there to follow, is
-  whether it does the same, keeps the list, or re-points the ids it can.
 
 ### Derived geometry follow-ups
 
@@ -395,11 +357,11 @@ Priority tags:
 
 ### `useScene` follow-ups
 
-- **(P3) Scene layout: what the first cut left.** A layout a container declares on its node
-  (`ContainerNode.layout`) is measured by `UseSceneOptions.layoutFrame` unless a canvas installs
-  its handler, so a scene whose canvas uses a custom pose descriptor states how a pose is measured
-  twice. And undecided: whether the `layouts` prop, now a second way to name a container's layout,
-  should be retired in favor of the node declaration.
+- **(P3) A scene and its canvas each say how a pose is measured.** A container's layout
+  (`ContainerNode.layout`) is measured by `UseSceneOptions.layoutFrame`, and everything a canvas
+  does by its `poseDescriptor` prop, so a scene whose poses are not rects states it twice. The
+  scene owns composition (`useScene({ composition })`); the descriptor could move there the same
+  way, with the layout frame read from it.
 - **(P3) A scene composes poses only when asked to.** Ruled 2026-10-11: the scene owns
   composition: a child's pose is relative to its container's frame, and moving a container writes
   one pose. The scene owns it now (`useScene({ composition })`, read everywhere as
