@@ -83,16 +83,16 @@ const bands: EffectPipeline = {
     { id: 'level', title: 'Luma', inputs: [img('in')], outputs: [num('value')] },
     { id: 'band', title: 'Brightness', kind: 'decision', inputs: [img('in'), num('x')],
       outputs: [img('low', 'low'), img('mid', 'mid'), img('high', 'high')], split: { input: 'x', at: [0.2, 0.8] } },
-    { id: 'lift', title: 'Lift', inputs: [img('in')], outputs: [img('out')] },
-    { id: 'keep', title: 'Pass', inputs: [img('in')], outputs: [img('out')] },
     { id: 'clip', title: 'Soft clip', inputs: [img('in')], outputs: [img('out')] },
+    { id: 'keep', title: 'Pass', inputs: [img('in')], outputs: [img('out')] },
+    { id: 'lift', title: 'Lift', inputs: [img('in')], outputs: [img('out')] },
     { id: 'join', title: 'Merge', inputs: [img('a'), img('b'), img('c')], outputs: [img('out')] },
     sink,
   ],
   wires: [
     w('src.out', 'level.in'), w('src.out', 'band.in'), w('level.value', 'band.x'),
-    w('band.low', 'lift.in'), w('band.mid', 'keep.in'), w('band.high', 'clip.in'),
-    w('lift.out', 'join.a'), w('keep.out', 'join.b'), w('clip.out', 'join.c'), w('join.out', 'out.in'),
+    w('band.high', 'clip.in'), w('band.mid', 'keep.in'), w('band.low', 'lift.in'),
+    w('clip.out', 'join.a'), w('keep.out', 'join.b'), w('lift.out', 'join.c'), w('join.out', 'out.in'),
   ],
 };
 

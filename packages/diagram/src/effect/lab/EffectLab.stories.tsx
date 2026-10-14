@@ -1,6 +1,6 @@
 import { registerCanvasFont } from '@weasel-js/font';
 import { f, meta, story } from '@weasel-js/forge';
-import { useMemo, useState } from 'react';
+import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { EffectProblem } from '../check';
 import type { EffectLook } from '../draw';
 import { EffectChart } from '../EffectChart';
@@ -24,8 +24,28 @@ interface LabConfig {
   collapseSkips: boolean;
 }
 
-const W = 1100;
-const H = 620;
+interface Size {
+  width: number;
+  height: number;
+}
+
+/** The element's box in whole pixels, or null until it has one. */
+function useBoxSize<T extends HTMLElement>() {
+  const ref = useRef<T>(null);
+  const [size, setSize] = useState<Size | null>(null);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const observer = new ResizeObserver(() => {
+      const width = Math.round(el.clientWidth);
+      const height = Math.round(el.clientHeight);
+      setSize((prev) => (prev?.width === width && prev.height === height ? prev : { width, height }));
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+  return [ref, size] as const;
+}
 
 function LabView({ config }: { config: LabConfig }) {
   const [problems, setProblems] = useState<readonly EffectProblem[]>([]);
@@ -40,20 +60,25 @@ function LabView({ config }: { config: LabConfig }) {
     side: config.side,
     collapseSkips: config.collapseSkips,
   }), [config.branch, config.showParams, config.nodeGap, config.rankGap, config.router, config.side, config.collapseSkips]);
+  const [boxRef, size] = useBoxSize<HTMLDivElement>();
   const look = EFFECT_LOOKS[config.look as keyof typeof EFFECT_LOOKS] as EffectLook<typeof options>;
   return (
     <div className={s.lab}>
-      <div className={s.chart}>
-        <EffectChart
-          pipeline={SAMPLES[config.sample]!}
-          look={look}
-          options={options}
-          width={W}
-          height={H}
-          selected={picked}
-          onSelect={setPicked}
-          onProblems={setProblems}
-        />
+      <div ref={boxRef} className={s.chart}>
+        {size !== null && size.width > 0 && size.height > 0 && (
+          <div className={s.canvas}>
+            <EffectChart
+              pipeline={SAMPLES[config.sample]!}
+              look={look}
+              options={options}
+              width={size.width}
+              height={size.height}
+              selected={picked}
+              onSelect={setPicked}
+              onProblems={setProblems}
+            />
+          </div>
+        )}
       </div>
       <div>
         <div className={s.status}>picked: {picked ?? 'none'}</div>

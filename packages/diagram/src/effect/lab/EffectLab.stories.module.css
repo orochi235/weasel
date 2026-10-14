@@ -1,6 +1,7 @@
 .lab {
   display: grid;
-  grid-template-rows: 1fr auto;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) auto;
   gap: 12px;
   height: 100%;
   padding: 16px;
@@ -11,6 +12,8 @@
 }
 
 .chart {
+  position: relative;
+  min-width: 0;
   min-height: 0;
   border: 1px solid #1f2d39;
   border-radius: 8px;
@@ -32,4 +35,9 @@
 
 .status {
   color: #8aa2b5;
+}
+
+.canvas {
+  position: absolute;
+  inset: 0;
 }
