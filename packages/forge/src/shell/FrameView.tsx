@@ -85,18 +85,19 @@ function mismatchMessage(mismatch: Mismatch): string {
     : 'Frame sent a message that is not a forge envelope';
 }
 
-/** Sends the frame whichever of the trial's config, state and globals differ from what it holds; true when any did. */
-function sendInputs(current: Link, sent: NonNullable<Link['sent']>, ctx: FrameViewProps['ctx'], globals: Globals): boolean {
+/** Sends the frame whichever of the trial's config, state and globals in `next` differ from what it holds; true when any did. */
+function sendInputs(current: Link, sent: NonNullable<Link['sent']>, next: NonNullable<Link['sent']>): boolean {
   const before = current.inputs;
-  const config = storyConfig(ctx.config, sent.config);
+  const { state, globals } = next;
+  const config = storyConfig(next.config, sent.config);
   if (config !== sent.config) {
     sent.config = config;
     current.channel.send({ type: 'config', config });
     current.inputs += 1;
   }
-  if (ctx.state !== sent.state) {
-    sent.state = ctx.state;
-    current.channel.send({ type: 'state', state: ctx.state });
+  if (state !== sent.state) {
+    sent.state = state;
+    current.channel.send({ type: 'state', state });
     current.inputs += 1;
   }
   if (globals !== sent.globals && stableStringify(globals) !== stableStringify(sent.globals)) {
@@ -287,7 +288,7 @@ export function FrameView(props: FrameViewProps) {
     return () => {
       window.removeEventListener('message', onMessage);
       clearTimeout(unheard);
-      if (handedOn.current) return;
+      if (handedOn()) return;
       closeLink(link);
       frame.remove();
       iframeRef.current = null;
@@ -314,7 +315,7 @@ export function FrameView(props: FrameViewProps) {
       return;
     }
     // The frame retries its render on new input and faults again if it still throws.
-    if (current.sent && sendInputs(current, current.sent, ctx, globals)) {
+    if (current.sent && sendInputs(current, current.sent, { config: ctx.config, state: ctx.state, globals })) {
       setFault((shown) => (shown?.phase === 'render' ? null : shown));
     }
   }, [ctx.config, ctx.state, globals, descriptionKey, init]);

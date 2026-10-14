@@ -209,7 +209,7 @@ export function useTextEdit(
 
   const cancelEdit = useCallback(() => {
     setEditingId(null);
-  }, []);
+  }, [setEditingId]);
 
   const commit = useCallback(() => {
     const id = editingId;
@@ -246,12 +246,12 @@ export function useTextEdit(
       if (setRuns && runsInPlay) setRuns(id, runs);
     }
     setEditingId(null);
-  }, [editingId, optsRef, holdNodeStyle]);
+  }, [editingId, optsRef, holdNodeStyle, setEditingId]);
 
   const startEdit = useCallback((id: string, opts?: StartEditOptions) => {
     initialCaretRef.current = opts?.caret ?? 'all';
     setEditingId(id);
-  }, []);
+  }, [setEditingId]);
 
   const isEditing = useCallback((id: string) => editingId === id, [editingId]);
 
