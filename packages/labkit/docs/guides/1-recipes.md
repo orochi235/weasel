@@ -1,4 +1,4 @@
-# Labkit — Recipes
+# Recipes
 
 Composition patterns for common lab shapes.
 

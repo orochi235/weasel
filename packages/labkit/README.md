@@ -441,7 +441,6 @@ npm run dev:annotate   # …on examples/annotate-lab (and dev:drag, dev:weasel, 
 npm test               # Vitest
 npm run lint           # Biome, plus the class-prefix and design-token checks
 npm run build          # dist/ for publish
-npm run docs:dev       # VitePress on docs/ (docs:build to render it)
 ```
 
 The forge workshop runs at the repo root: `npm run dev:forge` from there covers
@@ -449,8 +448,8 @@ every package's stories, labkit's included.
 
 ## Documentation
 
-- [Docs site](https://orochi235.github.io/weasel/labkit/)
-- [Recipes](https://orochi235.github.io/weasel/labkit/RECIPES) — composition patterns
-- [Agent guide](https://orochi235.github.io/weasel/labkit/AGENTS) — a map of the source
+- [Docs site](https://orochi235.github.io/weasel/#pkg/labkit)
+- [Recipes](https://orochi235.github.io/weasel/#pkg/labkit/guides/recipes) — composition patterns
+- [Agent guide](https://orochi235.github.io/weasel/#pkg/labkit/guides/agents) — a map of the source
 - [Component workshop](https://orochi235.github.io/weasel/docs/ui/forge/)
 - [Design spec](https://github.com/orochi235/weasel/blob/main/packages/labkit/docs/superpowers/specs/2026-04-26-labkit-design.md)

@@ -55,9 +55,6 @@ jobs:
       # reading every story in the repo.
       - run: npm run build:forge
       - run: mkdir -p dist-demo/docs/ui/forge && cp -R dist-forge/. dist-demo/docs/ui/forge/
-      # labkit's VitePress docs (base `/weasel/labkit/`) served under /labkit.
-      - run: npm run docs:build -w @weasel-js/labkit
-      - run: mkdir -p dist-demo/labkit && cp -R packages/labkit/docs/.vitepress/dist/. dist-demo/labkit/
       - uses: actions/configure-pages@v6
       - uses: actions/upload-pages-artifact@v5
         with:

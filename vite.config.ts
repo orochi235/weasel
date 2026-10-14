@@ -8,20 +8,22 @@ import { demoTimestamps } from './scripts/vite-demo-timestamps.ts';
 import { demoSources } from './scripts/vite-demo-sources.ts';
 import { changelogs } from './scripts/vite-changelogs.ts';
 import { getStarted } from './scripts/vite-get-started.ts';
+import { packageDocs } from './scripts/vite-package-docs.ts';
 import { localWake } from './scripts/vite-wake.ts';
 import { watchProbe } from './packages/forge/src/vite/watchProbe.ts';
 import ports from './scripts/dev-ports.json' with { type: 'json' };
 
 /**
- * Dev-only middleware: serve `dist-demo/api/*` at `/weasel/api/*`. The deployed
- * site (GitHub Pages) gets the typedoc output bundled into `dist-demo/`
- * via `npm run build:demo`, so the sidebar's "API reference →" link
- * (`./api/`) resolves correctly there. Vite's dev server doesn't serve
- * `dist-demo`, so without this plugin the same link 404s locally.
+ * Dev-only middleware: serve what `npm run build:api` writes into `dist-demo/`
+ * under the site's base, where the deployed site (GitHub Pages) has it: the
+ * TypeDoc site at `/weasel/api/*`, which the sidebar's "API reference →" link
+ * points at, and the per-package reference the package pages fetch at
+ * `/weasel/reference/*`. Vite's dev server doesn't serve `dist-demo`, so
+ * without this both 404 locally.
  *
- * Run `npm run build:api` once to generate `dist-demo/api/`. The
- * middleware reports a helpful message when the directory is missing
- * instead of falling through to vite's generic 404.
+ * Run `npm run build:api` once to generate them. A page asking for `api/`
+ * before then is told so; a fetch of `reference/` gets a 404 it can read, not
+ * vite's fallback to the app's own HTML.
  */
 function serveApiDocsInDev(): PluginOption {
   const apiRoot = resolve(import.meta.dirname, 'dist-demo/api');
@@ -39,6 +41,17 @@ function serveApiDocsInDev(): PluginOption {
     name: 'serve-api-docs-in-dev',
     apply: 'serve',
     configureServer(server) {
+      const referenceRoot = resolve(import.meta.dirname, 'dist-demo/reference');
+      server.middlewares.use('/weasel/reference', (req, res) => {
+        const file = join(referenceRoot, decodeURIComponent((req.url ?? '/').split('?')[0]));
+        if (!file.startsWith(referenceRoot) || !existsSync(file) || !statSync(file).isFile()) {
+          res.statusCode = 404;
+          res.end('not built: npm run build:api');
+          return;
+        }
+        res.setHeader('content-type', MIME['.json']);
+        createReadStream(file).pipe(res);
+      });
       // Under the site's `base`, where the page's `./api/` link points.
       server.middlewares.use('/weasel/api', (req, res, next) => {
         if (!existsSync(apiRoot)) {
@@ -85,6 +98,7 @@ export default defineConfig({
     demoSources({ root: import.meta.dirname }),
     changelogs({ root: import.meta.dirname }),
     getStarted({ root: import.meta.dirname }),
+    packageDocs({ root: import.meta.dirname }),
     localWake({ fallback: [ports.siteBackup] }),
     watchProbe(),
   ],
