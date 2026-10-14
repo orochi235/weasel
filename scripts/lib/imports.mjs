@@ -19,7 +19,15 @@ function stripComments(text) {
 
 /** Every specifier `source` imports at run time, as written, a `?query` included. */
 export function importSpecifiers(source) {
-  const text = stripComments(source).replace(TYPE_ONLY, '');
+  return specifiersIn(stripComments(source).replace(TYPE_ONLY, ''));
+}
+
+/** Every specifier `source` names in an import, the type-only ones included: what it is written against. */
+export function namedSpecifiers(source) {
+  return specifiersIn(stripComments(source));
+}
+
+function specifiersIn(text) {
   return [...text.matchAll(SPECIFIER)].map((match) => match[2]);
 }
 

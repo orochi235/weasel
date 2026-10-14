@@ -10,6 +10,7 @@ import { demoTimestamps } from './scripts/vite-demo-timestamps.ts';
 import { demoSources } from './scripts/vite-demo-sources.ts';
 import { changelogs } from './scripts/vite-changelogs.ts';
 import { getStarted } from './scripts/vite-get-started.ts';
+import { packageDocs } from './scripts/vite-package-docs.ts';
 import { browserCommands } from './scripts/vitest-browser-commands.ts';
 import { browserDeps } from './scripts/vitest-browser-deps.ts';
 
@@ -66,7 +67,7 @@ export default defineConfig({
       {
         ...shared,
         ...vm,
-        // The demo site reads three virtual modules that only exist because
+        // The demo site reads several virtual modules that only exist because
         // `vite.config.ts` wires their plugins. Vitest does not inherit that
         // config, so without these the site's own shell — `registry.ts`,
         // `Releases.tsx` — cannot be imported by a test at all, which is why
@@ -78,6 +79,7 @@ export default defineConfig({
           demoSources({ root: import.meta.dirname }),
           changelogs({ root: import.meta.dirname }),
           getStarted({ root: import.meta.dirname }),
+          packageDocs({ root: import.meta.dirname }),
         ],
         test: {
           name: 'site',
