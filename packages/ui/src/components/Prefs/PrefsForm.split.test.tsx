@@ -312,3 +312,24 @@ describe('a split value under what else shapes a row', () => {
     expect(onChangeAt).toHaveBeenCalledWith('odd', 7, { [MODE]: 'light' });
   });
 });
+
+describe('the control that opens a split row', () => {
+  it('points at the group it opens, and at nothing while the row is closed', () => {
+    const SCHEMA: PrefGroup = {
+      name: 'Test',
+      children: {
+        mode: { kind: 'enum', name: 'Mode', description: '', default: 'dark', options: [{ value: 'dark', label: 'Dark' }, { value: 'light', label: 'Light' }] },
+        gap: { kind: 'number', name: 'Gap', description: '', default: 4, splitBy: ['mode'] },
+      },
+    };
+    const loci = new Map([['gap', { $by: 'mode', $of: { dark: 4, light: 8 } }]]);
+    render(<PrefsForm schema={SCHEMA} values={{ mode: 'dark', gap: 4 }} onChange={() => {}} loci={loci} onChangeAt={() => {}} onJoin={() => {}} />);
+    const toggle = screen.getByRole('button', { name: /Gap/, expanded: false });
+    expect(toggle.getAttribute('aria-controls')).toBeNull();
+    fireEvent.click(toggle);
+    const open = screen.getByRole('button', { name: /Gap/, expanded: true });
+    const body = document.getElementById(open.getAttribute('aria-controls')!);
+    expect(body?.getAttribute('role')).toBe('group');
+    expect(body?.contains(screen.getByRole('button', { name: 'Join Mode' }))).toBe(true);
+  });
+});

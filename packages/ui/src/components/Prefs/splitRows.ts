@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useId, useMemo, useState } from 'react';
 import {
   prefLeafAt,
   prefLocusMember,
@@ -39,6 +39,8 @@ export interface SplitCtx extends Omit<PrefSplitProps, 'defaultSplitOpen'> {
   /** The paths of the rows open to their members. */
   opened: ReadonlySet<string>;
   setOpen: (path: string, open: boolean) => void;
+  /** The `id` of the element the row at `path` opens to, unique to this form. */
+  bodyId: (path: string) => string;
 }
 
 /** One selector a leaf's value is split by. */
@@ -78,6 +80,7 @@ export function useSplitRows(
 ): SplitCtx | undefined {
   const { loci, onSplit, onJoin, onChangeAt } = props;
   const [opened, setOpened] = useState<ReadonlySet<string>>(() => new Set(props.defaultSplitOpen));
+  const formId = useId();
   const setOpen = useCallback((path: string, open: boolean) => {
     setOpened((was) => {
       if (was.has(path) === open) return was;
@@ -90,8 +93,9 @@ export function useSplitRows(
   return useMemo(() => {
     if (loci === undefined && onSplit === undefined && onJoin === undefined) return undefined;
     const selectorAt = (path: string, aliased: boolean): PrefLeaf | undefined => prefLeafAt(aliased ? (over ?? schema) : schema, path);
-    return { loci, onSplit, onJoin, onChangeAt, selectorAt, opened, setOpen };
-  }, [loci, onSplit, onJoin, onChangeAt, schema, over, opened, setOpen]);
+    const bodyId = (path: string): string => `${formId}split-${path}`;
+    return { loci, onSplit, onJoin, onChangeAt, selectorAt, opened, setOpen, bodyId };
+  }, [loci, onSplit, onJoin, onChangeAt, schema, over, opened, setOpen, formId]);
 }
 
 /**

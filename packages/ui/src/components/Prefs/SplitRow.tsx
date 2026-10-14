@@ -20,6 +20,8 @@ export interface SplitRowState {
   open: boolean;
   /** What the control that opens the row is called, and the group it opens to. */
   name: string;
+  /** The `id` of the group the row opens to. */
+  bodyId: string;
 }
 
 /**
@@ -37,7 +39,7 @@ export function splitRowState(
   const members = shape.locus !== undefined && levels.length > 0 && split.onChangeAt !== undefined && !mixed;
   const opens = members || (split.onSplit !== undefined && free.length > 0) || (split.onJoin !== undefined && levels.length > 0);
   const name = levels.length > 0 ? splitName(pref.name, levels) : `Split ${pref.name}`;
-  return { shape, members, opens, open: opens && split.opened.has(own), name };
+  return { shape, members, opens, open: opens && split.opened.has(own), name, bodyId: split.bodyId(own) };
 }
 
 /** The option each selector of a split value is set to, as marks beside the leaf's name. */
@@ -69,7 +71,7 @@ export function SplitHead({ state, onToggle, lead = false }: {
   return (
     <span className={lead ? `${c.head} ${c.lead}` : c.head}>
       <SplitMarks levels={state.shape.levels} />
-      {state.opens && <Disclosure className={c.toggle} label={state.name} open={state.open} onToggle={onToggle} />}
+      {state.opens && <Disclosure className={c.toggle} label={state.name} open={state.open} onToggle={onToggle} controls={state.open ? state.bodyId : undefined} />}
     </span>
   );
 }
@@ -137,7 +139,7 @@ export function SplitBody({ ctx, state, split, parts }: {
       );
     });
   return (
-    <div role="group" aria-label={state.name} className={c.body}>
+    <div id={state.bodyId} role="group" aria-label={state.name} className={c.body}>
       {state.members && locus !== undefined && under(locus, 0, undefined)}
       <div className={c.actions}>
         {onSplit && free.map(({ by, name }) => (
