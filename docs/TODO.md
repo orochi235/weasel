@@ -637,7 +637,8 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   (`packages/ui/src/overlays/portalHost.tsx`) to the provider once RAC exports it.
   The same switch lets a contained `ToastRegion` drop its own region for RAC's,
   which would make it an F6 landmark again. Still absent from RAC's index at the
-  installed 1.21.1 and at nightly `3.0.0-nightly-99e610236-261006`, last checked 2026-10-11. 1.22.1 is out and unchecked.
+  installed 1.21.1, at 1.22.1 (the latest), and at nightly `3.0.0-nightly-99e610236-261006`, last
+  checked 2026-10-13.
 
 - **(P3) Hover reports motion only, and nothing in the kit binds it yet.** `hover` is a gesture
   (`HoverSpec`; `docs/taxonomy.md`, "Gesture"): an immediate action bound to it runs on every
