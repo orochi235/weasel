@@ -123,14 +123,33 @@ describe('a palette on the context', () => {
   };
   const ctx = at('dark', { palette });
 
-  it('answers a name before the theme does, and may name the theme in turn', () => {
+  it('answers a name before the theme does', () => {
     expect(colorSourceCss({ ref: 'surface' }, ctx)).toBe('#0000ff');
-    expect(colorSourceCss({ ref: 'brand' }, ctx)).toBe(tokenHex(dark, '--wzl-accent'));
+    expect(hexOf({ ref: 'brand' }, ctx)).toBe(tokenHex(dark, '--wzl-accent'));
   });
 
-  it('is what a function source resolves against', () => {
+  it("writes an entry that only names a theme color as that color's custom property", () => {
+    expect(colorSourceCss({ ref: 'brand' }, ctx)).toBe('var(--wzl-accent)');
+    const series = { name: 'series', colors: () => [{ ref: 'brand' }, { ref: 'swatch', index: 3 }] };
+    const chained = at('dark', { palette: { entries: [...palette.entries, series] } });
+    expect(colorSourceCss({ ref: 'series', index: 0 }, chained)).toBe('var(--wzl-accent)');
+    expect(colorSourceCss({ ref: 'series', index: 1 }, chained)).toBe('var(--wzl-swatch-amber)');
+    expect(colorSourceCss({ ref: 'series', index: 2 }, chained)).toBeNull();
+  });
+
+  it('writes a function that only names a color the same way', () => {
+    expect(colorSourceCss(() => ({ ref: 'brand' }), ctx)).toBe('var(--wzl-accent)');
+    expect(colorSourceCss(() => ({ ref: 'accent' }))).toBe('var(--wzl-accent)');
+  });
+
+  it('writes a function that reads a color to compute its own as the literal it resolves to', () => {
     const source: ColorSource = ({ resolve }) => resolve({ ref: 'brand' });
     expect(colorSourceCss(source, ctx)).toBe(tokenHex(dark, '--wzl-accent'));
+  });
+
+  it('answers null for entries that name each other', () => {
+    const entries = [{ name: 'a', color: { ref: 'b' } }, { name: 'b', color: { ref: 'a' } }];
+    expect(colorSourceCss({ ref: 'a' }, at('dark', { palette: { entries } }))).toBeNull();
   });
 });
 

@@ -1,4 +1,4 @@
-import { useSyncExternalStore, type ReactNode } from 'react';
+import { useMemo, useSyncExternalStore, type ReactNode } from 'react';
 import {
   asNodeId,
   type NodePropertiesEntry,
@@ -6,7 +6,7 @@ import {
   type Scene,
   type SelectionApi,
 } from '@weasel-js/core';
-import { commitLeaf } from './commitLeaf';
+import { leafWrites } from './commitLeaf';
 import type { PropertyRenderer } from './renderContext';
 import { absentValue, classifyKind, kindBreakdown, type AnyNode } from './model';
 import type { PrefGroup, PrefSection } from '@weasel-js/prefs';
@@ -101,6 +101,7 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
   } = props;
 
   useSyncExternalStore(scene.subscribe, scene.getVersion, scene.getVersion);
+  const writes = useMemo(() => leafWrites(scene), [scene]);
 
   const nodes = selection.current
     .map((id) => scene.get(asNodeId(id)))
@@ -130,7 +131,8 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
   const cells: PanelCellScope = {
     nodes,
     renderers,
-    commit: (leaf, next) => commitLeaf(scene, selection, leaf, next),
+    commit: (leaf, next) => writes.commit(selection, leaf, next),
+    draft: (leaf, next) => writes.draft(selection, leaf, next),
     selectionKey,
     fields,
     absentAt,

@@ -218,7 +218,7 @@
     "longestFunction": 256
   },
   "packages/labkit/src/lab/Lab.tsx": {
-    "longestFunction": 205
+    "longestFunction": 198
   },
   "packages/labkit/src/lab/Workspace.tsx": {
     "longestFunction": 159
@@ -240,10 +240,10 @@
     "longestFunction": 132
   },
   "packages/labkit/src/state/bindLabStore.ts": {
-    "longestFunction": 216
+    "longestFunction": 212
   },
   "packages/labkit/src/state/store.ts": {
-    "longestFunction": 237
+    "longestFunction": 230
   },
   "packages/labkit/src/surface/useTiledSurface.ts": {
     "longestFunction": 255
@@ -334,8 +334,8 @@
     "longestFunction": 174
   },
   "packages/ui/src/components/CurveEditor/LayeredCurveEditor.tsx": {
-    "lines": 474,
-    "longestFunction": 356
+    "lines": 464,
+    "longestFunction": 345
   },
   "packages/ui/src/components/CurveEditor/createFunctionLayer.tsx": {
     "lines": 414,

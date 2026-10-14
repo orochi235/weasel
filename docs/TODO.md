@@ -657,24 +657,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   through `--wzl-field-border`. The systems' own faces are named in the font stacks and not
   bundled; a bundled lookalike needs a face whose license allows it.
 
-- **(P3) Two gaps beside a `ColorSource` written to CSS.** A palette entry or a function source
-  is written as the literal it resolves to in the provider's selection (`colorSourceCss`,
-  `packages/theme/src/colorSource.ts`), so with no `<ThemeProvider>` it does not follow a mode
-  change the way a theme ref does. And a custom `CurveLayer` has no resolver on its
-  `LayerRenderCtx`, so one that wants a color has to render a component that calls `useColorCss`,
-  as `CurveFill` does.
-
-- **(P3) labkit stored lab: a trial that fails to hydrate is left out with only a console warning.**
-  `hydrateTrials` and `hydrateSnapshots` (`packages/labkit/src/state/hydrate.ts`) skip a trial or
-  a snapshot whose `deserialize` or `migrateConfig` throws, and its record stays in storage,
-  unwritten and undeleted. Nothing in the lab says a trial is missing, and nothing can discard its
-  record. The call to make is whether the lab draws a failed tile with a way to discard it.
-
-- **(P3) labkit trial: "Add trial" leaves the first trial's part outside its own stage.** In the
-  `annotate-lab` example, adding a trial narrows the first trial's stage, and its camera keeps the
-  pan it had, so the part and its marks sit past the stage's edge, out of sight until the trial is
-  panned back. Whether a stage that narrows should re-fit or keep its pan is not decided.
-
 - **(P3) What a leaf shows when its value is absent is decided in each params surface.** Which
   control a leaf draws is one table now (`PARAMS_CONTROLS`, `Prefs/surfaceControls.ts`, through
   `prefFieldProps`' `surface` argument). The value handed to it is not: a stored value that is
@@ -685,16 +667,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   select) and `openSlider: false` (a slider needs both bounds). Outside the table:
   `Bar/BarField.tsx` draws an enum's `radio` as segments on every surface, and `MatrixEditor`
   always lists an enum as radios.
-
-- **(P3) Two things the params commit table does not settle.** `PARAMS_SETTLES` in
-  `Prefs/commitPolicy.ts` says which controls write only a settled value in a form, a panel, and
-  a lab, and `withCommitPolicy` applies it for all three. (1) labkit's `ControlPanel` debounces
-  text by 150 ms in its own row (`useDebouncedText`), which the table has no word for: it reads
-  as "writes as it changes". (2) A slider dragged in a `SelectionPanel` leaves one undo step per
-  move. Measured in jsdom 2026-10-13: three `change` events on a `control: 'slider'` leaf took
-  three `scene.undo()` calls to unwind, because `commitLeaf` writes through `scene.batch`, whose
-  entries never coalesce. The slider is live there so the canvas follows the drag; one step per
-  drag needs the drag's writes to share an entry, which the scene has to offer.
 
 - **(P3) What each group `as` draws differs across the params surfaces.** The run of neighboring
   `tab` groups is collected once (`prefTabRuns`, `@weasel-js/prefs`); what is drawn is not: `panel`
@@ -714,15 +686,21 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   `PrefSection` with dotted keys into one or into a `ResolvedConfig`, so the example first needs a
   way for an instrument to declare its config as a pref schema.
 
-- **(P3) `PrefSchemaEditor`'s attributes pane lists a mixed list, map, or union attribute read-only.**
-  `aggregateAttributes` keeps an object attribute the selected nodes disagree on and marks its
-  mixed fields, each written into every node's own object. A list, a map, or a union that
-  disagrees is still dropped from the form and listed as `mixed`, as is an object with a field of
-  one of those kinds that disagrees: none has a control with a mixed state.
-
 ### WeaselDraw app follow-ups (defer)
 
-- **(P3) Multi-page documents.**
+- **(P3) Multi-page documents.** A document's pages are rects in one world space over one scene,
+  so one view, history, and selection serve all of them, and an object is on the page it overlaps
+  most. Core has the geometry (`packages/core/src/core/pages/`): `layoutPages` places a page list,
+  `pageAt` and `pageOfBounds` say which page a point or an object is on, `pagesLayer` paints the
+  sheets, and `fitViewToPage` frames one. draw paints its one page through it. Left, in order:
+  1. draw's document holds a page list where it holds `paperSize` (`useDocumentState.ts`,
+     `docPersistence.ts`), and `usePageFit` fits the current page.
+  2. Adding, removing, reordering, and resizing a page are undoable. The page list sits outside
+     the scene, so they need a history entry of their own, and a removed page has to say what
+     happens to the objects on it.
+  3. A page navigator in draw, and `viewport.recenter` on the current page.
+  4. SVG save and export per page: `svgInterop.ts` keeps one paper size under `wd:`, and
+     `svgExport.ts` writes one `viewBox`.
 
 ---
 
@@ -732,10 +710,19 @@ From `docs/specs/2026-05-03-weasel-den-design.md`. **Read `packages/den/README.m
 spec's pack shape was superseded by core's `Contribution` + `mergeContributions`, and its
 convenience layer shipped inside core. The items below are what survives that.
 
-- **(P3) Additional domain bundles.** `useWhiteboardPack` (sticky notes, freeform pen, text),
-  `usePresentationPack` (frame tools, slide nav). Each is its own arc, and each is a
-  `Contribution` bundle rather than a den pack. The diagram bundle shipped as
-  `@weasel-js/diagram`; don't propose another.
+- **(P3) A presentation bundle and a whiteboard bundle.** Each is a `Contribution` bundle, the way
+  `@weasel-js/diagram` is (`createDiagramContribution`), in a package of its own: neither is a den
+  pack.
+  - Presentation. A frame is a page: `layoutPages` places the slides, `fitViewToPage` frames one,
+    and `adjacentPage` steps the order (`packages/core/src/core/pages/`). Left: (1) next-slide and
+    previous-slide actions that animate the view to `adjacentPage` through `useViewAnimation`, and
+    the contribution binding them to the arrow and page keys; (2) a frame tool, a drag-rect
+    binding whose action adds a page, which waits on the undoable page list under "Multi-page
+    documents"; (3) a presenting state that holds the view on the current page.
+  - Whiteboard. The freeform pen is `usePencilTool` and text is `useTextTool`. Left: (1) a sticky
+    note, as an `insert` node factory minting a filled rect that carries text, bound by a
+    drag-rect tool the way `useRectTool` is; (2) the contribution bundling the three tools with
+    their whiteboard defaults.
 - **(P3) Move `useSelectTool` / `useTextTool` / `usePenTool` /
   `usePencilTool` out of core's builtin tools.** The den's one motivation nothing
   has absorbed: separating finished, stable tools' test surface from core's. It

@@ -9,6 +9,7 @@
  * other layers' states in the same render, and the in-flight gesture
  * keeps reading the latest state.
  */
+import type { ColorSource } from '@weasel-js/paint';
 import type { ReactNode } from 'react';
 import type { Point as PlotPoint, ModelRange } from '../Plot2D/geometry';
 
@@ -42,6 +43,9 @@ export interface LayerRenderCtx extends LayerCtx {
   /** True when this layer owns the currently-active gesture. Useful for
    *  surfacing "active anchor" visuals without threading the index. */
   readonly isActive: boolean;
+  /** A color source as a CSS color under the theme, tones, and palette in
+   *  force; `undefined` for no source and for one nothing answers. */
+  colorCss(source: ColorSource | null | undefined): string | undefined;
 }
 
 /** Layer-private payload returned from `hitTest`. The editor doesn't

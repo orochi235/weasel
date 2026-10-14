@@ -28,7 +28,7 @@ import {
   recordsOfDocument,
 } from './labRecords';
 import { createLabStore, type LabStore } from './store';
-import type { CreateLabStoreOptions, LabDocument, LabMode } from './types';
+import type { CreateLabStoreOptions, LabDocument, LabMode, UnreadableRecord } from './types';
 
 /** Options for `openLabStore`. `storageKey` names the lab, so two labs on one
  *  origin keep separate records. */
@@ -109,9 +109,14 @@ function mergeLate(store: LabStore, late: ReadLab, records: OwnedRecordCache): B
   const builtSaves = away.savedSnapshots.filter((s) => !storedSaves.has(s.id));
   // With no meta record, `doc` is the empty lab and its mode is nobody's choice.
   const held = records.writable && records.has(META_RECORD);
+  const unreadable: UnreadableRecord[] = [];
+  const failed = (record: UnreadableRecord): void => {
+    unreadable.push(record);
+  };
   store.setState({
-    trials: [...hydrateTrials(doc.trials, hooks.serializers, hooks), ...builtTrials],
-    savedSnapshots: [...hydrateSnapshots(doc.saves, hooks), ...builtSaves],
+    trials: [...hydrateTrials(doc.trials, hooks.serializers, hooks, failed), ...builtTrials],
+    savedSnapshots: [...hydrateSnapshots(doc.saves, hooks, failed), ...builtSaves],
+    unreadable,
     layout: { ...away.layout, ...doc.layout },
     undockedPanels: { ...away.undockedPanels, ...doc.undockedPanels },
     ...(held ? { mode: doc.mode } : {}),

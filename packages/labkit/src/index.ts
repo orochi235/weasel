@@ -326,6 +326,7 @@ export type {
   TrialInfo,
   TrialRecord,
   TrialStateHandle,
+  UnreadableRecord,
 } from './state/types';
 export type { UndockedPanel, UndockedPanels } from './state/undock';
 export { dockPanel, panelKey, undockPanel } from './state/undock';

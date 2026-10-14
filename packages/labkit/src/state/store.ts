@@ -11,7 +11,7 @@ import {
 import type { InstrumentList } from '../instrument/types';
 import { emptyDocument } from './document';
 import { newId } from './helpers';
-import { hydrateSnapshots, hydrateTrials, rehydrated } from './hydrate';
+import { hydrateSnapshots, hydrateTrials, rehydrated, withoutUnreadable } from './hydrate';
 import type {
   CreateLabStoreOptions,
   InstrumentHooks,
@@ -19,6 +19,7 @@ import type {
   LabStoreState,
   SavedSnapshot,
   TrialRecord,
+  UnreadableRecord,
 } from './types';
 import {
   dockingDepartedTrials,
@@ -64,6 +65,8 @@ export interface LabStoreActions {
    *  new or a different object are brought up to date against it in the same
    *  write; every other trial keeps its object. */
   setInstruments: (instruments: InstrumentList) => void;
+  /** Delete the record of a trial or snapshot that failed to load. */
+  discardUnreadable: (kind: UnreadableRecord['kind'], id: string) => void;
   /** The per-instrument hooks in force now. Read them at use; never keep them. */
   instrumentHooks: () => InstrumentHooks;
 }
@@ -76,22 +79,11 @@ export type LabStore = StoreApi<LabStoreState & LabStoreActions>;
  *  about storage; `openLabStore` reads a stored lab and binds one of these to
  *  it. */
 export function createLabStore(options: CreateLabStoreOptions = {}): LabStore {
-  let hooks: InstrumentHooks = options.instruments
-    ? hooksOf(options.instruments)
-    : {
-        serializers: options.serializers ?? {},
-        configDefaults: options.configDefaults ?? {},
-        configMigrations: options.configMigrations ?? {},
-        configSchemas: options.configSchemas ?? {},
-      };
-  const initial = options.initial ?? emptyDocument(options.initialMode ?? 'auto');
+  let hooks = initialHooks(options);
+  const loaded = loadedState(options, hooks);
 
   const init: StateCreator<LabStoreState & LabStoreActions> = (set, get) => ({
-    trials: hydrateTrials(initial.trials, hooks.serializers, hooks),
-    savedSnapshots: hydrateSnapshots(initial.saves, hooks),
-    mode: initial.mode,
-    layout: initial.layout,
-    undockedPanels: initial.undockedPanels,
+    ...loaded,
     activeToolId: null,
     instruments: options.instruments ?? null,
 
@@ -306,11 +298,48 @@ export function createLabStore(options: CreateLabStoreOptions = {}): LabStore {
       set({ instruments, trials, savedSnapshots });
     },
 
+    discardUnreadable: (kind, id) => {
+      set((s) => ({ unreadable: withoutUnreadable(s.unreadable, kind, id) }));
+    },
+
     instrumentHooks: () => hooks,
   });
   const store = createStore<LabStoreState & LabStoreActions>()(dockingDepartedTrials(init));
 
   return store;
+}
+
+function initialHooks(options: CreateLabStoreOptions): InstrumentHooks {
+  if (options.instruments) return hooksOf(options.instruments);
+  return {
+    serializers: options.serializers ?? {},
+    configDefaults: options.configDefaults ?? {},
+    configMigrations: options.configMigrations ?? {},
+    configSchemas: options.configSchemas ?? {},
+  };
+}
+
+/** The document a store opens on, hydrated, with what failed to load listed. */
+function loadedState(
+  options: CreateLabStoreOptions,
+  hooks: InstrumentHooks,
+): Pick<
+  LabStoreState,
+  'trials' | 'savedSnapshots' | 'unreadable' | 'mode' | 'layout' | 'undockedPanels'
+> {
+  const initial = options.initial ?? emptyDocument(options.initialMode ?? 'auto');
+  const unreadable: UnreadableRecord[] = [];
+  const failed = (record: UnreadableRecord): void => {
+    unreadable.push(record);
+  };
+  return {
+    trials: hydrateTrials(initial.trials, hooks.serializers, hooks, failed),
+    savedSnapshots: hydrateSnapshots(initial.saves, hooks, failed),
+    unreadable,
+    mode: initial.mode,
+    layout: initial.layout,
+    undockedPanels: initial.undockedPanels,
+  };
 }
 
 function hooksOf(instruments: InstrumentList): InstrumentHooks {
