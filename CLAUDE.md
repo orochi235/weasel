@@ -168,6 +168,14 @@ straight run at least as long as the barbs trail back — `turnLeft` in `camera.
 Pick where the curve ends so that run points along an axis or a diagonal. On a diagonal run use
 `chevron`'s spread of 45, which lays both barbs on the pixel axes; at 36–42 they sit a few degrees
 off and blur at 16px. A head also needs a shaft showing behind its barbs, or it reads as a caret.
+A ring or an open arc is free to turn: before reshaping anything, slide its gap round until the
+head lands on the flattest stretch that is clear of other strokes.
+
+**Where one stroke passes behind another, cut it along the front stroke's outline grown by a fixed
+gap.** That is a flat end parallel to the stroke in front (`stroke-linecap="butt"` where the
+crossing is near square), with any end that is not a cut kept round by a zero-length dot. Round
+caps stopped short of the crossing leave a gap that is widest in the middle, and read as two
+strokes that happen to end near a third rather than one passing behind it.
 
 **The small check is a separate check, and it is the pixel grid.** Proofing
 large tells you nothing about chrome size. Rasterise at the size the chrome

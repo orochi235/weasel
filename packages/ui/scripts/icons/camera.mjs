@@ -4,40 +4,54 @@ const n = (v) => Math.round(v * 100) / 100;
 const rad = (deg) => (deg * Math.PI) / 180;
 
 // ── turn / pitch ─────────────────────────────────────────────────────────
-// An axis, and a hook around it: out from behind the axis, around the far side, and straight back across the
-// front to a head. The hook is cut away around the axis, which runs unbroken. The head sits on the straight
-// run, not on the bend: a head on a curve leans, and its inside barb closes up against the shaft.
+// A ring around an axis, drawn as it lies in space: it passes behind the axis at the back and in front of it
+// at the front. Whatever passes behind is cut away along the outline of what passes in front, grown by
+// `GAP`, so each cut end is flat and the clear band beside it is one width all the way across.
+//
+// The head does not sit on the ring. Past the axis the ring's front leaves its ellipse and runs level to
+// the head, so the head has a straight shaft behind it and its barbs lie on the diagonals; a head left on
+// the bend leans, and closes up on the inside. The ring's far-left arc still closes the loop behind it.
 // `flip` mirrors the drawing left to right, and `swap` exchanges x and y, which lays the turn's vertical
 // axis on its side.
-// Right of center, which gives the head's run its length and puts the axis's ink on whole pixels at 16px.
+/** The axis, right of center: the head's run gets the room, and the axis's ink lands on whole pixels at 16px. */
 const AXIS = 10.75;
-/** The hook's ink ends this far short of the axis's ink. */
-const GAP = 1;
-const NEAR = AXIS + 0.75 + GAP + 0.75;
-// The back and front runs. Their ink lands on whole pixels at 16px.
-const BACK = 6.75;
-const FRONT = 13.25;
-const BEND = 13.6;
-const BEND_RX = 2.9;
-const TIP = 3.5;
+const MID = 10;
+const RX = 6;
+// Puts the ring's back and front runs on whole pixels at 16px, as `AXIS` does for the axis.
+const RY = 3.25;
+const STROKE = 1.5;
+/** Clear space between a cut end and the ink in front of it: a pixel at 16px. */
+const GAP = 1.25;
+const CUT = STROKE / 2 + GAP;
+const ring = (deg) => [AXIS + RX * Math.cos(rad(deg)), MID - RY * Math.sin(rad(deg))];
+// Where the ring's center line meets the edge of the band cleared around the axis.
+const BEHIND = (Math.acos(CUT / RX) * 180) / Math.PI;
+/** Where the ring's far-left arc starts. Any further round and it crowds the head's upper barb. */
+const TAIL = 150;
+const FRONT = MID + RY;
+const TIP = [3.9, FRONT];
+const HEAD = [3, 45];
 function turn(flip, swap) {
-  const at = ([x, y]) => {
+  const xy = ([x, y]) => {
     const fx = flip ? 20 - x : x;
-    return (swap ? [n(y), n(fx)] : [n(fx), n(y)]).join(' ');
+    return swap ? [n(y), n(fx)] : [n(fx), n(y)];
   };
+  const at = (p) => xy(p).join(' ');
   const dir = ([x, y]) => {
     const fx = flip ? -x : x;
     return swap ? [y, fx] : [fx, y];
   };
   // Clockwise on screen as drawn, and each reflection reverses it.
   const sweep = flip === swap ? 1 : 0;
-  const ry = (FRONT - BACK) / 2;
-  const [rx, rY] = swap ? [ry, BEND_RX] : [BEND_RX, ry];
+  const [rx, ry] = swap ? [RY, RX] : [RX, RY];
+  const arc = (from, to) => `M${at(ring(from))}A${rx} ${ry} 0 ${from - to > 180 ? 1 : 0} ${sweep} ${at(ring(to))}`;
+  const cut = ' stroke-linecap="butt"';
   return (
-    `<path d="M${at([AXIS, 2.8])}L${at([AXIS, 17.2])}"/>` +
-    `<path d="M${at([NEAR, BACK])}L${at([BEND, BACK])}A${rx} ${rY} 0 0 ${sweep} ${at([BEND, FRONT])}L${at([NEAR, FRONT])}` +
-    `M${at([2 * AXIS - NEAR, FRONT])}L${at([TIP, FRONT])}"/>` +
-    `<path d="${chevron(at([TIP, FRONT]).split(' ').map(Number), dir([-1, 0]), 3.2, 45)}"/>`
+    `<path d="M${at([AXIS, 2.8])}L${at([AXIS, FRONT - CUT])}M${at([AXIS, FRONT + CUT])}L${at([AXIS, 17.2])}"${cut}/>` +
+    `<path d="${arc(TAIL, 180 - BEHIND)}${arc(BEHIND, -90)}L${at(TIP)}"${cut}/>` +
+    // The ends that are not cuts stay round.
+    `<path d="M${at([AXIS, 2.8])}h0M${at([AXIS, 17.2])}h0M${at(ring(TAIL))}h0"/>` +
+    `<path d="${chevron(xy(TIP), dir([-1, 0]), ...HEAD)}"/>`
   );
 }
 
