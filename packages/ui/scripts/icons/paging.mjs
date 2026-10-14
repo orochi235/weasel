@@ -11,4 +11,7 @@ export const PAGING = {
   prev: `<path d="${chevron([7.8, 10], [-1, 0], L, SPREAD)}"/>`,
   next: `<path d="${chevron([12.2, 10], [1, 0], L, SPREAD)}"/>`,
   last: `<path d="${chevron([10.2, 10], [1, 0], L, SPREAD)}"/><path d="M14.4 5.1${BAR}"/>`,
+  // A page at a time: the chevron twice.
+  pagePrev: `<path d="${chevron([4.6, 10], [-1, 0], L, SPREAD)}"/><path d="${chevron([10.4, 10], [-1, 0], L, SPREAD)}"/>`,
+  pageNext: `<path d="${chevron([9.6, 10], [1, 0], L, SPREAD)}"/><path d="${chevron([15.4, 10], [1, 0], L, SPREAD)}"/>`,
 };

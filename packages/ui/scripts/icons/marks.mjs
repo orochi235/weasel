@@ -117,8 +117,8 @@ export const MARKS = {
   // Not one: a slashed O, the slash rising to the right.
   'mark-none': `<circle cx="${C}" cy="${C}" r="${NONE_R}"/><path d="M${C - REACH} ${C + REACH} ${C + REACH} ${C - REACH}"/>`,
 
-  // A can under its lid, tapering to its foot; the body is filled for the reason the lock's is.
-  'mark-delete': `<path d="M3.5 4.5h13"/><path d="M5 10h10l-1.5 6h-7Z" fill="currentColor"/>`,
+  // A can hung from its lid, with the lid's knob: open, since a filled one reads as a block.
+  'mark-delete': `<path d="M8.5 3h3M3.5 5.5h13"/><path d="M5.5 7.5 6.5 16h7l1-8.5"/>`,
 
   // Three rules, each shorter than the one above.
   'mark-sort': `<path d="M3.5 4.5h13M3.5 10h8.5M3.5 15.5h4"/>`,
@@ -139,8 +139,8 @@ export const MARKS = {
   // Playback: solid, where paging's chevrons are open.
   'mark-play': `<path d="M6.5 4.5 15.5 ${C} 6.5 15.5Z" fill="currentColor"/>`,
   // Two slabs in the square `mark-stop` fills.
-  'mark-pause': `<rect x="5.25" y="5" width="1.5" height="10" fill="currentColor"/><rect x="13.25" y="5" width="1.5" height="10" fill="currentColor"/>`,
-  'mark-stop': `<rect x="5" y="5" width="10" height="10" rx="1" fill="currentColor"/>`,
+  'mark-pause': `<rect x="6" y="6" width="1" height="8" fill="currentColor"/><rect x="13" y="6" width="1" height="8" fill="currentColor"/>`,
+  'mark-stop': `<rect x="6" y="6" width="8" height="8" rx="1" fill="currentColor"/>`,
   'mark-step-back': step(-1),
   'mark-step-forward': step(1),
 

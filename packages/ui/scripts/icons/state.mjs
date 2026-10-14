@@ -115,6 +115,18 @@ const STATE = {
   stop: `<rect x="5.6" y="5.6" width="8.8" height="8.8" rx="1.4"/>`,
   stepForward: `<path d="M6.4 5.4 13 10 6.4 14.6Z"/><path d="M15.2 5.4v9.2"/>`,
   stepBack: `<path d="M13.6 5.4 7 10 13.6 14.6Z"/><path d="M4.8 5.4v9.2"/>`,
+  rewind: `<path d="M9.6 5.6 3.4 10 9.6 14.4Z"/><path d="M16.6 5.6 10.4 10 16.6 14.4Z"/>`,
+  fastForward: `<path d="M3.4 5.6 9.6 10 3.4 14.4Z"/><path d="M10.4 5.6 16.6 10 10.4 14.4Z"/>`,
+  // The playhead, up against the end of what there is.
+  live: `<circle cx="8.2" cy="10" r="2.6" fill="currentColor"/><path d="M15.2 5.4v9.2"/>`,
+  record: `<circle cx="10" cy="10" r="5.8"/><circle cx="10" cy="10" r="2.5" fill="currentColor" stroke="none"/>`,
+  loop: `
+    <path d="M4.2 10.2V8.4a2.4 2.4 0 0 1 2.4-2.4h9"/>
+    <path d="${chevron([15.6, 6], [1, 0], 2.6, 40)}"/>
+    <path d="M15.8 9.8v1.8a2.4 2.4 0 0 1-2.4 2.4h-9"/>
+    <path d="${chevron([4.4, 14], [-1, 0], 2.6, 40)}"/>`,
+  // A dial and its needle.
+  speed: `<path d="M4 14.4a6.6 6.6 0 1 1 12 0"/><path d="M10 11.6 13.2 7.8"/><circle cx="10" cy="11.6" r="1.1" fill="currentColor" stroke="none"/>`,
 
   // view
   crosshair: `
@@ -240,7 +252,7 @@ const STATE = {
 };
 
 const SPLIT = {
-  playback: ['play', 'pause', 'stop', 'stepBack', 'stepForward'],
+  playback: ['play', 'pause', 'stop', 'stepBack', 'stepForward', 'rewind', 'fastForward', 'live', 'record', 'loop', 'speed'],
   status: [
     'lock', 'unlock', 'bolt', 'visible', 'hidden', 'pin', 'bookmark',
     'info', 'warning', 'error', 'busy', 'check',

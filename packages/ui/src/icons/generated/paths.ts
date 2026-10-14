@@ -10,7 +10,7 @@ export const ICON_PATHS = {
   clone: `<path d="M7 7.4V4.6A1.6 1.6 0 0 1 8.6 3h6.8A1.6 1.6 0 0 1 17 4.6v6.8a1.6 1.6 0 0 1-1.6 1.6H12.6" stroke-linecap="butt"/><rect x="3" y="7" width="10" height="10" rx="1.6"/><path d="M5.7 10.8h4.6M5.7 13.4h3" stroke-width="1"/>`,
   reset: `<path d="M7.28 4.88A5.8 5.8 0 1 0 12.72 4.88"/><path d="M13.81 7.57 12.72 4.88 15.56 4.28"/>`,
   close: `<path d="M4.5 4.5 15.5 15.5M15.5 4.5 4.5 15.5" stroke-width="1.75"/>`,
-  export: `<path d="M4 12.6v2.9A1.5 1.5 0 0 0 5.5 17h9a1.5 1.5 0 0 0 1.5-1.5v-2.9"/><path d="M10 3.2v8.5"/><path d="M11.7 9.35 10 11.7 8.3 9.35"/><path d="M6.8 14.7h6.4" stroke-width="1"/>`,
+  export: `<path d="M4 12.6v2.9A1.5 1.5 0 0 0 5.5 17h9a1.5 1.5 0 0 0 1.5-1.5v-2.9"/><path d="M6.8 14.7h6.4" stroke-width="1"/><path d="M10 3.2v8.5"/><path d="M11.7 9.35 10 11.7 8.3 9.35"/>`,
   zoomIn: `<circle cx="9" cy="9" r="5.4"/><path d="M12.82 12.82 16.9 16.9"/><path d="M9 6.7v4.6M6.7 9h4.6"/>`,
   zoomOut: `<circle cx="9" cy="9" r="5.4"/><path d="M12.82 12.82 16.9 16.9"/><path d="M6.7 9h4.6"/>`,
   fit: `<path d="M3.2 7.2V4.4A1.2 1.2 0 0 1 4.4 3.2h2.8M12.8 3.2h2.8A1.2 1.2 0 0 1 16.8 4.4v2.8M16.8 12.8v2.8a1.2 1.2 0 0 1-1.2 1.2h-2.8M7.2 16.8H4.4a1.2 1.2 0 0 1-1.2-1.2v-2.8"/><rect x="7.4" y="8.2" width="5.2" height="3.6" rx="0.8" stroke-width="1"/>`,
@@ -54,12 +54,64 @@ export const ICON_PATHS = {
   stop: `<rect x="5.6" y="5.6" width="8.8" height="8.8" rx="1.4"/>`,
   stepBack: `<path d="M13.6 5.4 7 10 13.6 14.6Z"/><path d="M4.8 5.4v9.2"/>`,
   stepForward: `<path d="M6.4 5.4 13 10 6.4 14.6Z"/><path d="M15.2 5.4v9.2"/>`,
+  rewind: `<path d="M9.6 5.6 3.4 10 9.6 14.4Z"/><path d="M16.6 5.6 10.4 10 16.6 14.4Z"/>`,
+  fastForward: `<path d="M3.4 5.6 9.6 10 3.4 14.4Z"/><path d="M10.4 5.6 16.6 10 10.4 14.4Z"/>`,
+  live: `<circle cx="8.2" cy="10" r="2.6" fill="currentColor"/><path d="M15.2 5.4v9.2"/>`,
+  record: `<circle cx="10" cy="10" r="5.8"/><circle cx="10" cy="10" r="2.5" fill="currentColor" stroke="none"/>`,
+  loop: `<path d="M4.2 10.2V8.4a2.4 2.4 0 0 1 2.4-2.4h9"/><path d="M13.61 4.33 15.6 6 13.61 7.67"/><path d="M15.8 9.8v1.8a2.4 2.4 0 0 1-2.4 2.4h-9"/><path d="M6.39 15.67 4.4 14 6.39 12.33"/>`,
+  speed: `<path d="M4 14.4a6.6 6.6 0 1 1 12 0"/><path d="M10 11.6 13.2 7.8"/><circle cx="10" cy="11.6" r="1.1" fill="currentColor" stroke="none"/>`,
 
   // Paging
   first: `<path d="M5.6 5.1v9.8"/><path d="M14.22 14.9 9.8 10 14.22 5.1"/>`,
   prev: `<path d="M12.22 14.9 7.8 10 12.22 5.1"/>`,
   next: `<path d="M7.78 5.1 12.2 10 7.78 14.9"/>`,
   last: `<path d="M5.78 5.1 10.2 10 5.78 14.9"/><path d="M14.4 5.1v9.8"/>`,
+  pagePrev: `<path d="M9.02 14.9 4.6 10 9.02 5.1"/><path d="M14.82 14.9 10.4 10 14.82 5.1"/>`,
+  pageNext: `<path d="M5.18 5.1 9.6 10 5.18 14.9"/><path d="M10.98 5.1 15.4 10 10.98 14.9"/>`,
+
+  // Arrows
+  arrowLeft: `<path d="M16.2 10L3.8 10"/><path d="M6.48 12.41 3.8 10 6.48 7.59"/>`,
+  arrowRight: `<path d="M3.8 10L16.2 10"/><path d="M13.52 7.59 16.2 10 13.52 12.41"/>`,
+  arrowUp: `<path d="M10 16.2L10 3.8"/><path d="M7.59 6.48 10 3.8 12.41 6.48"/>`,
+  arrowDown: `<path d="M10 3.8L10 16.2"/><path d="M12.41 13.52 10 16.2 7.59 13.52"/>`,
+
+  // Hierarchy
+  enter: `<path d="M9.4 3.8h5.2A1.6 1.6 0 0 1 16.2 5.4v9.2a1.6 1.6 0 0 1-1.6 1.6H9.4"/><path d="M3.6 10h8"/><path d="M9.38 8.14 11.6 10 9.38 11.86"/>`,
+  leave: `<path d="M10.6 3.8H5.4A1.6 1.6 0 0 0 3.8 5.4v9.2a1.6 1.6 0 0 0 1.6 1.6h5.2"/><path d="M8.4 10h8"/><path d="M14.18 8.14 16.4 10 14.18 11.86"/>`,
+
+  // Size
+  taller: `<path d="M5.2 10L14.8 10"/><path d="M10 7.2L10 3.4"/><path d="M8.33 5.39 10 3.4 11.67 5.39"/><path d="M10 12.8L10 16.6"/><path d="M11.67 14.61 10 16.6 8.33 14.61"/>`,
+  shorter: `<path d="M5.2 10L14.8 10"/><path d="M10 3.4L10 7.4"/><path d="M11.67 5.41 10 7.4 8.33 5.41"/><path d="M10 16.6L10 12.6"/><path d="M8.33 14.59 10 12.6 11.67 14.59"/>`,
+  wider: `<path d="M10 5.2L10 14.8"/><path d="M7.2 10L3.4 10"/><path d="M5.39 11.67 3.4 10 5.39 8.33"/><path d="M12.8 10L16.6 10"/><path d="M14.61 8.33 16.6 10 14.61 11.67"/>`,
+  narrower: `<path d="M10 5.2L10 14.8"/><path d="M3.4 10L7.4 10"/><path d="M5.41 8.33 7.4 10 5.41 11.67"/><path d="M16.6 10L12.6 10"/><path d="M14.59 11.67 12.6 10 14.59 8.33"/>`,
+  tallest: `<path d="M5.2 3.4L14.8 3.4"/><path d="M5.2 16.6L14.8 16.6"/><path d="M10 6L10 14"/><path d="M8.33 7.99 10 6 11.67 7.99"/><path d="M11.67 12.01 10 14 8.33 12.01"/>`,
+  shortest: `<path d="M5.2 8.5L14.8 8.5"/><path d="M5.2 11.5L14.8 11.5"/><path d="M10 2.8L10 5.8"/><path d="M11.67 3.81 10 5.8 8.33 3.81"/><path d="M10 17.2L10 14.2"/><path d="M8.33 16.19 10 14.2 11.67 16.19"/>`,
+
+  // Camera moves
+  dollyIn: `<path d="M7 3.8h6l3.6 12.4H3.4Z"/><path d="M10 13.6V7"/><path d="M8.26 9.07 10 7 11.74 9.07"/>`,
+  dollyOut: `<path d="M7 3.8h6l3.6 12.4H3.4Z"/><path d="M10 6.8V13.4"/><path d="M11.74 11.33 10 13.4 8.26 11.33"/>`,
+  turnLeft: `<path d="M10 3.2L10 10.5M10 15.5L10 16.8"/><path d="M4.28 8.5A6.6 3 0 0 1 7.5 7.22M12.5 7.22A6.6 3 0 1 1 6.7 12.6"/><path d="M8.26 14.8 6.7 12.6 9.14 11.45"/>`,
+  turnRight: `<path d="M10 3.2L10 10.5M10 15.5L10 16.8"/><path d="M15.72 8.5A6.6 3 0 0 0 12.5 7.22M7.5 7.22A6.6 3 0 1 0 13.3 12.6"/><path d="M10.86 11.45 13.3 12.6 11.74 14.8"/>`,
+  pitchUp: `<path d="M3.2 10L10.5 10M15.5 10L16.8 10"/><path d="M8.5 4.28A3 6.6 0 0 0 7.22 7.5M7.22 12.5A3 6.6 0 1 0 12.6 6.7"/><path d="M11.45 9.14 12.6 6.7 14.8 8.26"/>`,
+  pitchDown: `<path d="M3.2 10L10.5 10M15.5 10L16.8 10"/><path d="M8.5 15.72A3 6.6 0 0 1 7.22 12.5M7.22 7.5A3 6.6 0 1 1 12.6 13.3"/><path d="M14.8 11.74 12.6 13.3 11.45 10.86"/>`,
+  rise: `<path d="M4 16.4h12"/><path d="M10 13.6V3.6"/><path d="M7.86 5.98 10 3.6 12.14 5.98"/>`,
+  sink: `<path d="M4 16.4h12"/><path d="M10 3.6V13.2"/><path d="M12.14 10.82 10 13.2 7.86 10.82"/>`,
+  orbit: `<path d="M15 5.91A7.2 3.4 -24 1 1 7.5 7.45"/><path d="M4.85 6.92 7.5 7.45 6.52 9.97"/><circle cx="10" cy="10" r="1.9" fill="currentColor" stroke="none"/>`,
+  home: `<path d="M3.4 9.8 10 3.8l6.6 6"/><path d="M5.4 8.6v6.6a1 1 0 0 0 1 1h7.2a1 1 0 0 0 1-1V8.6"/><path d="M8.6 16.2v-4h2.8v4"/>`,
+
+  // App chrome
+  settings: `<path d="M11.4 4.78 11.13 2.89 8.87 2.89 8.6 4.78 6.18 6.18 4.4 5.47 3.28 7.42 4.78 8.6 4.78 11.4 3.28 12.58 4.4 14.53 6.18 13.82 8.6 15.22 8.87 17.11 11.13 17.11 11.4 15.22 13.82 13.82 15.6 14.53 16.72 12.58 15.22 11.4 15.22 8.6 16.72 7.42 15.6 5.47 13.82 6.18Z"/><circle cx="10" cy="10" r="2.2"/>`,
+  sidebar: `<rect x="3.2" y="4.2" width="13.6" height="11.6" rx="1.6"/><path d="M8.2 4.2v11.6"/><path d="M5.2 7.4h1M5.2 9.8h1" stroke-width="1"/>`,
+  legend: `<rect x="3.6" y="4.6" width="4" height="4" rx="0.8" fill="currentColor"/><rect x="3.6" y="11.4" width="4" height="4" rx="0.8"/><path d="M10.8 6.6h5.6M10.8 13.4h5.6"/>`,
+  keyboard: `<rect x="2.6" y="5.2" width="14.8" height="9.6" rx="1.6"/><path d="M5.6 8.4h0M8.5 8.4h0M11.5 8.4h0M14.4 8.4h0"/><path d="M7.2 11.8h5.6"/>`,
+  help: `<circle cx="10" cy="10" r="7"/><path d="M7.9 8.2a2.1 2.1 0 1 1 3.3 1.7c-.8.5-1.2 1-1.2 1.8"/><path d="M10 14h0"/>`,
+  menu: `<path d="M3.8 5.6h12.4M3.8 10h12.4M3.8 14.4h12.4"/>`,
+  external: `<path d="M8.6 4.4H5.8A1.6 1.6 0 0 0 4.2 6v8.2a1.6 1.6 0 0 0 1.6 1.6H14a1.6 1.6 0 0 0 1.6-1.6v-2.8"/><path d="M9.4 10.6 16.2 3.8"/><path d="M11.8 3.8 16.2 3.8 16.2 8.2"/>`,
+
+  // Files
+  import: `<path d="M4 12.6v2.9A1.5 1.5 0 0 0 5.5 17h9a1.5 1.5 0 0 0 1.5-1.5v-2.9"/><path d="M6.8 14.7h6.4" stroke-width="1"/><path d="M10 11.9V3.4"/><path d="M8.3 5.75 10 3.4 11.7 5.75"/>`,
+  save: `<path d="M4.4 5.6A1.2 1.2 0 0 1 5.6 4.4h7.2l2.8 2.8v7.2a1.2 1.2 0 0 1-1.2 1.2H5.6a1.2 1.2 0 0 1-1.2-1.2z"/><path d="M7.4 4.6v2.8h4"/><path d="M7 15.4v-4.2h6v4.2"/>`,
+  open: `<path d="M3.4 14.6V6a1.4 1.4 0 0 1 1.4-1.4h3l1.6 1.8h4.8A1.4 1.4 0 0 1 15.6 7.8v1.4"/><path d="M3.4 14.6 5.4 10a1.3 1.3 0 0 1 1.2-.8h9.2a.8.8 0 0 1 .74 1.1L14.9 14.8a1.3 1.3 0 0 1-1.2.8H4.2a.8.8 0 0 1-.8-1z"/>`,
 
   // State
   lock: `<rect x="4.6" y="9" width="10.8" height="8" rx="1.6"/><path d="M7.2 9V6.6a2.8 2.8 0 0 1 5.6 0V9"/>`,
@@ -204,7 +256,7 @@ export const ICON_PATHS = {
   markStar: `<path d="M10 4 8.3 8.15 3.82 8.49 7.24 11.4 6.18 15.76 10 13.4 13.82 15.76 12.76 11.4 16.18 8.49 11.7 8.15Z" fill="currentColor"/>`,
   markAll: `<path d="M10 3.5 10 16.5M15.63 6.75 4.37 13.25M4.37 6.75 15.63 13.25"/>`,
   markNone: `<circle cx="10" cy="10" r="5.5"/><path d="M3.5 16.5 16.5 3.5"/>`,
-  markDelete: `<path d="M3.5 4.5h13"/><path d="M5 10h10l-1.5 6h-7Z" fill="currentColor"/>`,
+  markDelete: `<path d="M8.5 3h3M3.5 5.5h13"/><path d="M5.5 7.5 6.5 16h7l1-8.5"/>`,
   markSort: `<path d="M3.5 4.5h13M3.5 10h8.5M3.5 15.5h4"/>`,
   markFilter: `<path d="M4.5 5h11L10 11.5Z" fill="currentColor"/><path d="M10 11.5v4.5"/>`,
   markUndo: `<path d="M8 6.5H12a4.5 4.5 0 0 1 0 9H6.5"/><path d="M2 6.5 8 2.5V10.5Z" fill="currentColor" stroke="none"/>`,
@@ -212,8 +264,8 @@ export const ICON_PATHS = {
   markExport: `<path d="M10 3.5v4"/><path d="M4.5 6.5h11L10 12.5Z" fill="currentColor" stroke="none"/><path d="M3.5 16h13"/>`,
   markSnapshot: `<path d="M4 5.5h2.5l1.5-2.5h4l1.5 2.5H16a2 2 0 0 1 2 2V15a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7.5a2 2 0 0 1 2-2zM13 11.25a3 3 0 1 1-6 0a3 3 0 1 1 6 0z" fill="currentColor" fill-rule="evenodd" stroke="none"/>`,
   markPlay: `<path d="M6.5 4.5 15.5 10 6.5 15.5Z" fill="currentColor"/>`,
-  markPause: `<rect x="5.25" y="5" width="1.5" height="10" fill="currentColor"/><rect x="13.25" y="5" width="1.5" height="10" fill="currentColor"/>`,
-  markStop: `<rect x="5" y="5" width="10" height="10" rx="1" fill="currentColor"/>`,
+  markPause: `<rect x="6" y="6" width="1" height="8" fill="currentColor"/><rect x="13" y="6" width="1" height="8" fill="currentColor"/>`,
+  markStop: `<rect x="6" y="6" width="8" height="8" rx="1" fill="currentColor"/>`,
   markStepBack: `<path d="M16 5 9.5 10 16 15Z" fill="currentColor"/><path d="M4 4.5v11"/>`,
   markStepForward: `<path d="M4 5 10.5 10 4 15Z" fill="currentColor"/><path d="M16 4.5v11"/>`,
   markFirst: `<path d="M15.5 4 9.5 10 15.5 16"/><path d="M3.5 4v12"/>`,

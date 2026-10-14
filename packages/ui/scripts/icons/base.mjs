@@ -56,8 +56,10 @@ const rEnd = onCircle(10, 10, 5.8, 62);
 const resetArc = `M${rStart[0]} ${rStart[1]}A5.8 5.8 0 1 0 ${rEnd[0]} ${rEnd[1]}`;
 const resetHead = chevron(rEnd, ccwTangent(62), 2.9, 40);
 
-// ── save ─────────────────────────────────────────────────────────────────
-const saveHead = chevron([10, 11.7], [0, 1], 2.9, 36);
+// ── export ───────────────────────────────────────────────────────────────
+const exportHead = chevron([10, 11.7], [0, 1], 2.9, 36);
+/** The tray `export` drops into and `import` lifts out of, with its fill line. */
+export const TRAY = `<path d="M4 12.6v2.9A1.5 1.5 0 0 0 5.5 17h9a1.5 1.5 0 0 0 1.5-1.5v-2.9"/><path d="M6.8 14.7h6.4" stroke-width="1"/>`;
 
 // ── pan ──────────────────────────────────────────────────────────────────
 // Shafts start at the hub rim so nothing crosses the center.
@@ -117,11 +119,10 @@ export const BASE = {
   // stops short of their 3..17 margin to read as the same size beside them.
   close: `<path d="M4.5 4.5 15.5 15.5M15.5 4.5 4.5 15.5" stroke-width="1.75"/>`,
 
-  save: `
-    <path d="M4 12.6v2.9A1.5 1.5 0 0 0 5.5 17h9a1.5 1.5 0 0 0 1.5-1.5v-2.9"/>
+  export: `
+    ${TRAY}
     <path d="M10 3.2v8.5"/>
-    <path d="${saveHead}"/>
-    <path d="M6.8 14.7h6.4" stroke-width="1"/>`,
+    <path d="${exportHead}"/>`,
 
   zoom: `
     <circle cx="9" cy="9" r="5.4"/>
@@ -155,4 +156,4 @@ export const BASE = {
     <circle cx="10" cy="10" r="${HUB}"/>`,
 };
 
-export const BASE_ORDER = ['clone', 'reset', 'close', 'save', 'zoom', 'zoom-out', 'fit', 'fit-contain', 'fit-fill', 'fit-stretch', 'pan'];
+export const BASE_ORDER = ['clone', 'reset', 'close', 'export', 'zoom', 'zoom-out', 'fit', 'fit-contain', 'fit-fill', 'fit-stretch', 'pan'];

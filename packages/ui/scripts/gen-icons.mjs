@@ -11,6 +11,11 @@
 
 import { writeFileSync } from 'node:fs';
 import { BASE } from './icons/base.mjs';
+import { ARROWS, HIERARCHY } from './icons/arrows.mjs';
+import { CAMERA } from './icons/camera.mjs';
+import { CHROME } from './icons/chrome.mjs';
+import { FILES } from './icons/files.mjs';
+import { SIZE } from './icons/size.mjs';
 import { ACTIONS } from './icons/actions.mjs';
 import { INSTRUMENT, PLAYBACK, STATUS } from './icons/state.mjs';
 import { PAGING } from './icons/paging.mjs';
@@ -27,9 +32,7 @@ import { STATUSES } from './icons/status.mjs';
 import { VARIANTS } from './icons/variants.mjs';
 import { MARKS } from './icons/marks.mjs';
 
-// `save` split: the tray-and-arrow reads as download, so it carries `export`,
-// and capturing a trial's state gets its own camera.
-const RENAME = { save: 'export', zoom: 'zoomIn' };
+const RENAME = { zoom: 'zoomIn' };
 
 // The group whose glyphs `<Icon mark>` takes.
 const MARK_GROUP = 'Marks';
@@ -41,6 +44,12 @@ const GROUPS = [
   ['Paragraph alignment', PARAGRAPH],
   ['Playback', PLAYBACK],
   ['Paging', PAGING],
+  ['Arrows', ARROWS],
+  ['Hierarchy', HIERARCHY],
+  ['Size', SIZE],
+  ['Camera moves', CAMERA],
+  ['App chrome', CHROME],
+  ['Files', FILES],
   ['State', STATUS],
   ['Badge status', STATUSES],
   ['Component variants', VARIANTS],
@@ -71,7 +80,7 @@ const clean = (body) =>
 
 // A name collision used to be skipped in silence, so a new glyph could vanish
 // into an existing one's key with the generator reporting success. Identical
-// bodies are the deliberate alias (`export` is `BASE.save`); different ones are
+// bodies are the deliberate alias (`export` is `BASE.export`); different ones are
 // someone's drawing being dropped.
 // A drawn glyph arrives as a string of markup; a plotted one arrives as
 // { d, width, inner, fill, rule, join } and is turned into markup here, so the definitions stay
