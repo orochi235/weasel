@@ -174,27 +174,23 @@ Priority tags:
   end tangent, or along its end curvature.
 - **(P2) Measure, then transform by the measurement.** A measure tool reads distance and angle
   between two points, and the readout can move or rotate the selection by exactly that amount.
-- **(P2) Star and polygon stay editable after drawing.** The point count is adjustable with the
-  wheel only while the star is being dragged out (`useStarTool.tsx`); after commit it is plain
-  geometry. Keep the parameters on the node and edit them in the inspector.
-- **(P2) Handle commands.** Retract handles, make an anchor's handles symmetric, and keep a handle's
-  angle while dragging its length.
 - **(P2) Shape builder.** Drag across overlapping regions to merge them, Alt-drag to delete them.
   `previewBooleanOp` already answers the pieces; the tool draws and picks among them. Building it
   also gives "Live preview of a Boolean operation" below its display.
-- **(P2) Transform again.** Cmd+D repeats the last move, rotate, scale, or duplicate-and-move on
-  the current selection.
-- **(P2) Reposition a shape while drawing it.** Hold Space during a shape drag to move the shape
-  instead of resizing it.
+- **(P3) A move under a rotated parent repeats in the parent's axes.** Nudge, duplicate, and
+  Transform Again (`interactions/actions/transform-again/`) offset a node along its parent's axes;
+  a drag and an Alt-drag clone measure on screen. So inside a group drawn turned, Cmd+D after a
+  drag steps in a different direction from the drag. Recording the move in world space and
+  mapping it through each node's parent on replay would make the two agree.
+- **(P3) The path commands have no icons.** `simplifyPath`, `offsetPath`, `snipAtCrossings`,
+  `joinPaths`, `joinAnchors`, and `averageAnchors` show as text in draw's bar.
+  `RetractHandlesIcon` and `SymmetricHandlesIcon` (`defaults/icons/anchorIcons.tsx`) are first
+  drafts, not proofed at high resolution.
 - **(P2) Spacing hints.** Equal-spacing markers between siblings while moving, and Alt-hover
   distance readouts between the selection and the shape under the pointer.
 - **(P2) Live symmetry.** Draw on one side of an axis and the mirrored half follows.
 - **(P2) Variable-width strokes.** A width profile along a stroke's length, edited by dragging
   on the stroke. `strokeToPath` handles a fixed width only.
-- **(P2) Offset path, simplify, cut at intersections, average and join anchors.** Path
-  commands draw lacks: offset from `strokeToPath`, simplify with a live slider
-  from `schneiderFit`, cut every path at its crossings from `splitBySegment`, and average or join
-  two selected endpoints.
 
 ### Pathfinder follow-ups (post-v1)
 

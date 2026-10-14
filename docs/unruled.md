@@ -39,6 +39,15 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
   that moves when the runner has written no frame since it last moved cancels a glide.
 - 2026-10-13 (pass 6): A marquee and an enclosing lasso take a node by its drawn outline.
 - 2026-10-13 (pass 6): `useTextEdit` and `useSceneTextEdit` take `onStart(id)` and `onEnd(id)`.
+- 2026-10-14: A held-key tool (Space for the hand, draw's `o` opacity scrub) engages only between
+  gestures; mid-drag, Space repositions the shape being drawn. A Space still held when the drag
+  ends does not engage the hand until pressed again. The pencil and text tools take no reposition.
+- 2026-10-14: Cmd+D is Transform Again and Duplicate moved to Cmd+Shift+D; with nothing recorded,
+  Transform Again duplicates. Nudges and Alt-drag clones are recorded. A resize repeats by
+  proportion with no aspect lock or snapping, a rotate about the new selection's center. The
+  memory is per scene and undo does not clear it.
+- 2026-10-14: Shift on a control handle drag keeps its angle; the handle shrinks onto its anchor
+  but does not flip through it. Retract and Symmetric have no default shortcut.
 
 ## Scene, move, and history
 
@@ -133,6 +142,16 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
   a `<g>`, with the fill once underneath; a closed subpath loses its start and end markers.
 - 2026-10-13 (pass 6): A `<tspan dx>` list is read as per-glyph letter spacing, so one tspan
   becomes several runs.
+- 2026-10-14: Make Symmetric splits the difference between the two handle directions and averages
+  their lengths; an open path's ends are skipped.
+- 2026-10-14: A star or polygon keeps `data.generator`; a path edit, or any of the path commands,
+  drops it, and a parameter edit on a path changed by another writer drops it too. Its rotation is
+  stored but not shown. An SVG saved without `wd:params-rotation` opens as plain geometry.
+- 2026-10-14: Offset puts a grown outline behind its source and a shrunk one in front, selects the
+  result, and draw's slider returns to 0 after each commit. Join (Cmd+J) on one path closes it or
+  joins its two nearest open ends; two paths join into the first selected; three are refused.
+  Simplify treats a turn over 40° as a corner and keeps a straight edge 4× its neighbors whole.
+  The path commands drop a node's `skin`. The cut command is `snipAtCrossings`, "Cut at Crossings".
 
 ## Animation
 
