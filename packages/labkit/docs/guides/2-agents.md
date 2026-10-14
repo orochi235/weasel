@@ -1,4 +1,4 @@
-# Labkit — Agent Guide
+# Agent guide
 
 A map of the library so agents can find what they need quickly.
 
@@ -234,7 +234,7 @@ visible from the code:
 - Building an instrument? `defineInstrument({...})` and pass it to `<Lab instruments={[...]} />`.
 - Adding a new layer type to canvas? Push a `CanvasLayer` into `instrument.canvas.layers`. See `src/canvas/AGENTS.md`.
 - Adding undoable actions beyond state changes? Call `ctx.emit('myEvent')` and list `'myEvent'` in `instrument.undo.snapshotOn`.
-- Letting users draw on the instrument? Declare `annotations.targets`; read the marks with `useAnnotations()`. See `docs/RECIPES.md`.
+- Letting users draw on the instrument? Declare `annotations.targets`; read the marks with `useAnnotations()`. See `docs/guides/1-recipes.md`.
 - Magnifying an instrument? Mount `<TrialLoupe>` from `@weasel-js/labkit/loupe` in its content — the canvas `render`, a stage's `overlay`, or around DOM content. See `src/loupe/AGENTS.md`.
 - Adding a button or a panel to the trial? A `TrialContribution` on `instrument.chrome` or `<Lab chrome>` — not a fork of the region components.
 
@@ -261,7 +261,7 @@ If a primitive doesn't fit your needs, copy its source into your project. Each c
 
 ## See also
 
-- `docs/RECIPES.md` — composition patterns
+- `docs/guides/1-recipes.md` — composition patterns
 - `src/canvas/AGENTS.md` — canvas internals
 - `src/layers/AGENTS.md` — layer list internals
 - `docs/superpowers/specs/2026-04-26-labkit-design.md` — full design spec
