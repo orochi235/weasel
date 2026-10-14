@@ -33,6 +33,7 @@ import { useColorContext } from './tools/colorContext';
 import { useEditorAmbient } from './useEditorAmbient';
 import { useGrid } from './useGrid';
 import { usePageFit } from './usePageFit';
+import { useSpacingHints } from './useSpacingHints';
 
 // OS-dropped and pasted SVG files unpack into real scene nodes rather than one embedded-image
 // node. `clipboard.reviver` revives typed-array node data carried by weasel-JSON clipboard
@@ -72,6 +73,7 @@ export function Workspace(props: WorkspaceProps): ReactElement {
 
   const paperLayer = usePaperLayer(page, backgroundColor);
   const grid = useGrid(page, backgroundColor);
+  const spacing = useSpacingHints(scene, selection);
   // The mode tint covers the workspace around the page, not the page itself.
   // Bolder than the modes' own 0.12 so it reads through the stripes.
   const workspaceTint = useMemo(() => workspaceTintLayer({
@@ -93,6 +95,17 @@ export function Workspace(props: WorkspaceProps): ReactElement {
     openPrefs: props.openPrefs,
     openPalette: props.openPalette,
   });
+  const ambientWithReadout = useMemo(
+    () => (spacing.readout ? [...ambient, spacing.readout] : ambient),
+    [ambient, spacing.readout],
+  );
+  const selectTool = useMemo(() => {
+    if (!grid.snap && !spacing.move) return undefined;
+    return {
+      ...(grid.snap ? { snap: grid.snap } : {}),
+      ...(spacing.move ? { move: { behaviors: [spacing.move] } } : {}),
+    };
+  }, [grid.snap, spacing.move]);
   const insertPaint = useInsertPaint();
   const sliceTool = useSliceTool();
   const { tool: opacityScrubTool, percent: opacityScrubPercent } = useOpacityScrub({
@@ -135,7 +148,7 @@ export function Workspace(props: WorkspaceProps): ReactElement {
         <SceneCanvas<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose> features={['draw']}
           claimKeys
           ref={props.onCanvas}
-          ambient={ambient}
+          ambient={ambientWithReadout}
           width={hostDims.width}
           height={hostDims.height}
           view={view}
@@ -154,12 +167,13 @@ export function Workspace(props: WorkspaceProps): ReactElement {
           pickHud
           modalityHud
           onToolsCreated={props.onToolsCreated}
-          selectTool={grid.snap ? { snap: grid.snap } : undefined}
+          selectTool={selectTool}
           toolOptions={grid.snapPoint ? { snapPoint: grid.snapPoint } : undefined}
           layers={{
             paper: { layer: paperLayer, before: 'grid' },
             ...(grid.layer ? { grid: { layer: grid.layer } } : {}),
             modeTint: { layer: workspaceTint, after: 'grid' },
+            ...(spacing.layer ? { spacingHints: { layer: spacing.layer } } : {}),
           }}
           decorationLayer={modality.decorationLayer}
           alphaFor={alphaFor}

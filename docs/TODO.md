@@ -186,8 +186,6 @@ Priority tags:
   `joinPaths`, `joinAnchors`, and `averageAnchors` show as text in draw's bar.
   `RetractHandlesIcon` and `SymmetricHandlesIcon` (`defaults/icons/anchorIcons.tsx`) are first
   drafts, not proofed at high resolution.
-- **(P2) Spacing hints.** Equal-spacing markers between siblings while moving, and Alt-hover
-  distance readouts between the selection and the shape under the pointer.
 - **(P2) Live symmetry.** Draw on one side of an axis and the mirrored half follows.
 - **(P2) Variable-width strokes.** A width profile along a stroke's length, edited by dragging
   on the stroke. `strokeToPath` handles a fixed width only.
