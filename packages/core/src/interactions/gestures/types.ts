@@ -49,6 +49,12 @@ export interface GestureContext<TPose, TNode extends { id: string } = { id: stri
    * the gesture's poses: an insert's points, a lasso's.
    */
   frames?: GestureFrames<TPose>;
+  /**
+   * The translation that carries one pose's bounds onto another's, measured by
+   * the canvas's pose descriptor. Set by move; a behavior that knows where a
+   * node should land returns it as its `transform`.
+   */
+  offset?: (from: TPose, to: TPose) => { dx: number; dy: number };
   adapter: MoveAdapter<TNode, TPose>;
   /**
    * Per-gesture mutable store. Keys should be namespaced by behavior name to avoid
