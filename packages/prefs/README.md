@@ -66,6 +66,17 @@ its heaviest alternative, the first option on a tie; `blends` in the open
 options says otherwise for a kind. `store.values({ at: { 'look.mode': 'light' } })`
 is the whole tree as it would read with the selectors set as given.
 
+`store.set(path, value, { at })` writes the member a stated choice names,
+whatever the selectors are set to, and `store.loci()` is what every split leaf
+holds, by path: one map until something changes. `usePrefsValues` returns
+both shaped for `PrefsForm`, with `split` and `join` beside them:
+
+```tsx
+const { values, set, loci, split, join, setAt } = usePrefsValues(store);
+<PrefsForm schema={schema} values={values} onChange={set}
+  loci={loci} onSplit={split} onJoin={join} onChangeAt={setAt} />
+```
+
 A selector must be a plain `enum`: not `clearable`, with no `encoding`, and
 not split itself. The store warns of a `splitBy` that names anything else when
 it opens.

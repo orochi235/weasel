@@ -5,7 +5,7 @@
 import type { OwnedRecordCache } from '@weasel-js/storage';
 import { blendPref, type PrefBlend } from './blend';
 import { assignPrefValueAtPath } from './helpers';
-import { isPrefLocus, locusSelectors, repairLocus, selectionWeights, weighLocus, type PrefSelection, type PrefWeights } from './locus';
+import { isPrefLocus, locusSelectors, repairLocus, selectionWeights, weighLocus, type PrefLocus, type PrefSelection, type PrefWeights } from './locus';
 import { type PrefValidator, repairPrefValue } from './repair';
 import type { PrefLeaf } from './schema';
 import { recordValue } from './stamp';
@@ -15,6 +15,8 @@ export interface Snapshot {
   byPath: Map<string, unknown>;
   /** Each leaf's stored value, repaired: a locus where it is split. */
   held: Map<string, unknown>;
+  /** What each split leaf holds, by its path. */
+  loci: ReadonlyMap<string, PrefLocus>;
   /** The option each selector is set to. */
   selection: PrefSelection;
   /** The leaves split by each selector, by the selector's path. */
@@ -74,15 +76,17 @@ export function createSnapshots(source: SnapshotSource): { current: () => Snapsh
     const weights = selectionWeights(selection);
     const byPath = new Map<string, unknown>();
     const splitBy = new Map<string, string[]>();
+    const loci = new Map<string, PrefLocus>();
     const tree: Record<string, unknown> = {};
     for (const [path, leaf] of leaves) {
       const value = held.get(path);
+      if (isPrefLocus(value)) loci.set(path, value);
       for (const selector of locusSelectors(value)) splitBy.set(selector, [...(splitBy.get(selector) ?? []), path]);
       const read = resolveHeld(source, leaf, value, weights);
       byPath.set(path, read);
       assignPrefValueAtPath(tree, path, read);
     }
-    return { byPath, held, selection, splitBy, tree, unset };
+    return { byPath, held, loci, selection, splitBy, tree, unset };
   };
 
   return {

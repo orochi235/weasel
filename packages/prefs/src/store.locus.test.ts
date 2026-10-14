@@ -105,6 +105,53 @@ describe('a split value in a store', () => {
   });
 });
 
+describe('a write at a stated selection', () => {
+  it('writes the member the selection names, whatever the selectors are set to', () => {
+    const { cache, store } = make([['gap', byMode(byDensity(4, 8), byDensity(5, 9))]]);
+    store.set('gap', 20, { at: { [MODE]: 'light', [DENSITY]: 'roomy' } });
+    expect(recordValue(cache.get('gap'))).toEqual(byMode(byDensity(4, 8), byDensity(5, 20)));
+    expect(store.get('gap')).toBe(4);
+    expect(store.get(MODE)).toBe('dark');
+  });
+
+  it('keeps the own value of a selector the selection leaves out, and ignores an option the selector lacks', () => {
+    const { cache, store } = make([['gap', byMode(byDensity(4, 8), 6)], [DENSITY, 'roomy']]);
+    store.set('gap', 11, { at: { [MODE]: 'dark' } });
+    expect(recordValue(cache.get('gap'))).toEqual(byMode(byDensity(4, 11), 6));
+    store.set('gap', 12, { at: { [MODE]: 'sepia' } });
+    expect(recordValue(cache.get('gap'))).toEqual(byMode(byDensity(4, 12), 6));
+  });
+
+  it('writes a member the locus held nothing for', () => {
+    const { cache, store } = make([['gap', { $by: MODE, $of: { dark: 4 } }]]);
+    store.set('gap', 9, { at: { [MODE]: 'light' } });
+    expect(recordValue(cache.get('gap'))).toEqual(byMode(4, 9));
+  });
+
+  it('replaces a value that is not split whole', () => {
+    const { cache, store } = make([['gap', 4]]);
+    store.set('gap', 9, { at: { [MODE]: 'light' } });
+    expect(recordValue(cache.get('gap'))).toBe(9);
+  });
+});
+
+describe('every locus at once', () => {
+  it('maps each split path to what it holds, and no other', () => {
+    const { store } = make([['gap', byMode(4, 8)], ['surface', '#111111']]);
+    expect([...store.loci()]).toEqual([['gap', byMode(4, 8)]]);
+    expect(store.loci().get('gap')).toBe(store.locus('gap'));
+  });
+
+  it('is the same map until something changes', () => {
+    const { store } = make([['gap', byMode(4, 8)]]);
+    const before = store.loci();
+    expect(store.loci()).toBe(before);
+    store.set('name', 'doc');
+    expect(store.loci()).not.toBe(before);
+    expect(store.loci().get('gap')).toBe(before.get('gap'));
+  });
+});
+
 describe('split and join', () => {
   it('splits a value by a selector, each option starting where it was, and reads the same', () => {
     const { cache, store } = make([['gap', 12]]);

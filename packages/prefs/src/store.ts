@@ -31,9 +31,10 @@ export interface PrefsStore<S extends PrefGroup> {
    * own value.
    */
   get<P extends PrefPath<S>>(path: P, read?: { weights?: PrefWeights }): PrefValueAt<S, P>;
-  /** On a split leaf, writes the member the selectors' own values name. A
-   *  {@link PrefLocus} given as the value replaces the whole of what is held. */
-  set<P extends PrefPath<S>>(path: P, value: PrefValueAt<S, P> | PrefLocus): void;
+  /** On a split leaf, writes the member the selectors' own values name, or
+   *  with `at` the one named with each selector there set to the option given.
+   *  A {@link PrefLocus} given as the value replaces the whole of what is held. */
+  set<P extends PrefPath<S>>(path: P, value: PrefValueAt<S, P> | PrefLocus, write?: { at?: PrefSelection }): void;
   /** Hold the leaf's value once per option of the selector at `by`, one of
    *  the leaf's `splitBy`, each option starting as the value it had. */
   split(path: PrefPath<S>, by: string): void;
@@ -42,6 +43,8 @@ export interface PrefsStore<S extends PrefGroup> {
   join(path: PrefPath<S>, by: string): void;
   /** What the leaf holds where its value is split, each member repaired. */
   locus(path: PrefPath<S>): PrefLocus | undefined;
+  /** What every split leaf holds, by its path. The same map until something changes. */
+  loci(): ReadonlyMap<string, PrefLocus>;
   /** Unset every leaf at or under `path`; with no path, all. */
   reset(path?: string): void;
   /** Whether the leaf has a value of its own rather than following its default. */
@@ -166,6 +169,7 @@ export function createPrefsStore<S extends PrefGroup>(
       const held = current().held.get(path);
       return isPrefLocus(held) ? held : undefined;
     },
+    loci: () => current().loci,
     reset: (path) => {
       warnIfClosed(path);
       for (const p of leaves.keys()) {

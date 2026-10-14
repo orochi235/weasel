@@ -7,6 +7,7 @@ import type { PrefList } from './list';
 import { isPrefLocus, joinLocus, mapLocusMembers, splitLocus, writeMember, type PrefSelection } from './locus';
 import type { PrefMap } from './map';
 import type { PrefLeaf, PrefObject } from './schema';
+import { selectionAt } from './snapshot';
 import { recordValue, stampRecord } from './stamp';
 import { prefVariantOf, type PrefUnion } from './union';
 
@@ -49,14 +50,14 @@ export interface PrefWritesSource {
 
 /** A store's `set`, `split`, and `join`. */
 export function prefWrites({ leaves, cache, selectors, version, selection, warnIfClosed }: PrefWritesSource): {
-  set: (path: string, value: unknown) => void;
+  set: (path: string, value: unknown, write?: { at?: PrefSelection }) => void;
   split: (path: string, by: string) => void;
   join: (path: string, by: string) => void;
 } {
   /** What the leaf holds in storage, unrepaired; its default, as stored, where it holds nothing. */
   const rawAt = (path: string, leaf: PrefLeaf): unknown =>
     (cache.has(path) ? recordValue(cache.get(path)) : encodeInfinity(leaf, leaf.default));
-  const write = (path: string, stored: unknown): void => {
+  const store = (path: string, stored: unknown): void => {
     // Unset is stored as nothing, which a stamp would turn into something.
     cache.set(path, stored === undefined ? undefined : stampRecord(stored, version));
   };
@@ -70,7 +71,7 @@ export function prefWrites({ leaves, cache, selectors, version, selection, warnI
     return undefined;
   };
 
-  const set = (path: string, value: unknown): void => {
+  const set = (path: string, value: unknown, write?: { at?: PrefSelection }): void => {
     warnIfClosed(path);
     const leaf = leaves.get(path);
     if (!leaf) {
@@ -78,27 +79,28 @@ export function prefWrites({ leaves, cache, selectors, version, selection, warnI
       return;
     }
     if (leaf.splitBy?.length && isPrefLocus(value)) {
-      write(path, mapLocusMembers(value, (member) => encodeInfinity(leaf, member)));
+      store(path, mapLocusMembers(value, (member) => encodeInfinity(leaf, member)));
       return;
     }
     const stored = encodeInfinity(leaf, value);
     const had = cache.has(path) ? recordValue(cache.get(path)) : undefined;
     const intoMember = stored !== undefined && leaf.splitBy?.length && isPrefLocus(had);
-    write(path, intoMember ? writeMember(had, selection(), stored) : stored);
+    const under = write?.at ? selectionAt(selectors, selection(), write.at) : selection();
+    store(path, intoMember ? writeMember(had, under, stored) : stored);
   };
   const split = (path: string, by: string): void => {
     const found = splitOf(path, by);
     if (!found) return;
     const had = rawAt(path, found.leaf);
     const next = splitLocus(had, by, found.options, found.leaf.splitBy!);
-    if (next !== had) write(path, next);
+    if (next !== had) store(path, next);
   };
   const join = (path: string, by: string): void => {
     const found = splitOf(path, by);
     if (!found || !cache.has(path)) return;
     const had = rawAt(path, found.leaf);
     const next = joinLocus(had, by, selection(), encodeInfinity(found.leaf, found.leaf.default));
-    if (next !== had) write(path, next);
+    if (next !== had) store(path, next);
   };
   return { set, split, join };
 }

@@ -57,7 +57,7 @@ export {
   type PrefScopeAtOptions,
 } from './scope';
 export { prefShownReader, prefShownValue } from './shown';
-export { isPrefLocus, type PrefLocus, type PrefSelection, type PrefWeighted, type PrefWeights } from './locus';
+export { isPrefLocus, locusSelectors as prefLocusSelectors, memberAt as prefLocusMember, type PrefLocus, type PrefSelection, type PrefWeighted, type PrefWeights } from './locus';
 export { PREF_BLENDS, type PrefBlend } from './blend';
 export { checkPrefSplits, type PrefSplitProblem } from './splitCheck';
 export { prefSchemaHolding } from './holding';
