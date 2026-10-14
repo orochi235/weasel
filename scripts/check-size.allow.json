@@ -23,28 +23,28 @@
     "longestFunction": 165
   },
   "packages/core/src/canvas/Canvas.tsx": {
-    "lines": 742,
-    "longestFunction": 443
+    "lines": 737,
+    "longestFunction": 438
   },
   "packages/core/src/canvas/CanvasView.tsx": {
-    "lines": 412,
-    "longestFunction": 267
+    "lines": 409,
+    "longestFunction": 263
   },
   "packages/core/src/canvas/SceneCanvas.tsx": {
-    "lines": 508,
-    "longestFunction": 386
+    "lines": 505,
+    "longestFunction": 383
   },
   "packages/core/src/canvas/SceneCanvas/GestureDispatcherMounter.tsx": {
     "longestFunction": 253
   },
   "packages/core/src/canvas/SceneCanvas/StandardActionsRegistrar.tsx": {
-    "longestFunction": 192
+    "longestFunction": 187
   },
   "packages/core/src/canvas/SceneCanvas/defaultNodeProperties.ts": {
     "longestFunction": 125
   },
   "packages/core/src/canvas/SceneCanvas/props.ts": {
-    "lines": 673
+    "lines": 668
   },
   "packages/core/src/canvas/SceneCanvas/useDispatcherOverlayLayer.ts": {
     "longestFunction": 198
@@ -56,10 +56,10 @@
     "longestFunction": 138
   },
   "packages/core/src/canvas/pickWalk.ts": {
-    "lines": 457
+    "lines": 444
   },
   "packages/core/src/canvas/sceneAdapter.ts": {
-    "longestFunction": 162
+    "longestFunction": 156
   },
   "packages/core/src/core/scene/kitOps.ts": {
     "longestFunction": 236
@@ -86,7 +86,7 @@
     "lines": 749
   },
   "packages/core/src/features/text/useSceneTextEdit.ts": {
-    "longestFunction": 157
+    "longestFunction": 148
   },
   "packages/core/src/interactions/actions/depSchema.ts": {
     "lines": 580
