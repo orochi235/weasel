@@ -121,7 +121,9 @@ several at once — the hand tool is palette-selectable and space-held:
 
 - `focus` — selectable as the focused entry; exclusive, one at a time.
 - `offhand: HotkeyTrigger` — also live while that key is held: a modifier,
-  `'space'`, or any other key (`'o'`), matched case-insensitively.
+  `'space'`, or any other key (`'o'`), matched case-insensitively. The key
+  engages it only between gestures; mid-gesture it belongs to the gesture's
+  own tool (Space repositions a shape being drawn).
 - `always` — live regardless of what is focused.
 - `claimed` — live only for input this entry's own affordances produced.
 - `capabilities` — modality filter, applied wherever it would otherwise be live.

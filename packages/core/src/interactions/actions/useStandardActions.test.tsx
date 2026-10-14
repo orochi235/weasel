@@ -67,7 +67,7 @@ const KIT_IDS = [
   'pathfinder.trim', 'pathfinder.merge',
   'createOutlines', 'outlineStroke',
   'move',
-  'resize', 'rotate', 'areaSelect', 'insert', 'insert.adjustRotation', 'clone',
+  'resize', 'rotate', 'areaSelect', 'insert', 'insert.adjustRotation', 'insert.reposition', 'clone',
   'editAnchors', 'enterPathEdit', 'exitPathEdit', 'insertPathAnchor', 'bendSegment',
   'nudgeAnchors.up', 'nudgeAnchors.down', 'nudgeAnchors.left', 'nudgeAnchors.right',
   'deleteAnchors', 'cutPathAtAnchor', 'retractHandles', 'makeHandlesSymmetric',

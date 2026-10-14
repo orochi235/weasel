@@ -2,6 +2,7 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import { defineTool } from '../../overlayBinding';
 import { PolygonIcon } from '../../../icons';
 import type { Tool } from '../../overlayBinding';
+import { INSERT_REPOSITION_BINDING } from 'interactions/actions/insert/repositionAction';
 import { insertBindingBehaviors, type InsertToolOptions } from '../shared/insertToolOptions';
 import type { Action } from '@weasel-js/routing';
 import { cursorFor } from '@weasel-js/cursor';
@@ -118,6 +119,7 @@ export function usePolygonTool<TNode extends { id: string } = { id: string }>(
               ...insertBindingBehaviors(behaviors),
             },
           },
+          INSERT_REPOSITION_BINDING,
           // Wheel-during-drag → adjust side count. Phase-gated to
           // `engaged` so wheel while the tool is idle still falls
           // through to ambient viewport.pan / viewport.zoom.

@@ -50,6 +50,7 @@ import { rotateAction } from './rotate/action';
 import { areaSelectAction } from './defaults/areaSelect';
 import { insertAction } from './insert/action';
 import { insertRotateAction } from './insert/rotateAction';
+import { insertRepositionAction } from './insert/repositionAction';
 import { clearSelectionAction } from './defaults/clearSelection';
 import { cloneAction } from './clone/action';
 import { editAnchorsAction } from './edit-anchors/action';
@@ -148,6 +149,7 @@ const KIT_STANDARD_DESCRIPTORS: Action[] = [
   areaSelectAction,
   insertAction,
   insertRotateAction,
+  insertRepositionAction,
   cloneAction,
   editAnchorsAction,
   enterPathEditAction,

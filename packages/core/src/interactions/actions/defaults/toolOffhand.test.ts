@@ -138,9 +138,10 @@ describe('heldKeySpec', () => {
     expect(held({ ctrlKey: true })).toBe(false);
   });
 
-  it('is the spec an offhand binding carries', () => {
+  it('is the spec an offhand binding carries, gated to between gestures', () => {
     const [binding] = buildToolOffhandBindings([{ toolId: 'eyedropper', key: 'Alt' }]);
-    expect((binding as { spec: unknown }).spec).toEqual(heldKeySpec('Alt'));
+    expect((binding as { spec: unknown }).spec)
+      .toEqual({ ...heldKeySpec('Alt'), phase: [{ channel: '*', phase: 'initial' }] });
   });
 });
 

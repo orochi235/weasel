@@ -41,6 +41,7 @@ export { resizeAction } from '../resize/action';
 export { rotateAction } from '../rotate/action';
 export { areaSelectAction } from './areaSelect';
 export { insertAction } from '../insert/action';
+export { insertRepositionAction, INSERT_REPOSITION_BINDING } from '../insert/repositionAction';
 export { cloneAction } from '../clone/action';
 export { editAnchorsAction } from '../edit-anchors/action';
 export { lassoSelectAction } from '../lasso-select/action';

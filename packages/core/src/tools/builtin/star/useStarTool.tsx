@@ -2,6 +2,7 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import { defineTool } from '../../overlayBinding';
 import { StarIcon } from '../../../icons';
 import type { Tool } from '../../overlayBinding';
+import { INSERT_REPOSITION_BINDING } from 'interactions/actions/insert/repositionAction';
 import { insertBindingBehaviors, type InsertToolOptions } from '../shared/insertToolOptions';
 import type { Action } from '@weasel-js/routing';
 import { useLatest } from '@weasel-js/react';
@@ -108,6 +109,7 @@ export function useStarTool<TNode extends { id: string } = { id: string }>(
               ...insertBindingBehaviors(behaviors),
             },
           },
+          INSERT_REPOSITION_BINDING,
           {
             spec: { kind: 'wheel', phase: 'engaged' },
             actionId: 'star.adjustPoints',
