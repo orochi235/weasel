@@ -41,6 +41,13 @@ function Register({ action }: { action: Action }) {
 const separators = (root: HTMLElement): number => root.querySelectorAll('[role="separator"]').length;
 
 describe('Bar', () => {
+  it("takes what its schema says of `overflow`, under the prop's own word", () => {
+    const { rerender } = render(<Bar schema={{ ...schema, overflow: 'menu' }} label="Text" />);
+    expect(screen.getByRole('toolbar')).toHaveAttribute('data-overflow', 'menu');
+    rerender(<Bar schema={{ ...schema, overflow: 'menu' }} overflow="scroll" label="Text" />);
+    expect(screen.getByRole('toolbar')).not.toHaveAttribute('data-overflow');
+  });
+
   it('draws leaves in their bar forms, in the order the group lists them', () => {
     const { container } = render(<Bar schema={schema} values={{ size: 12 }} label="Text" />);
     const bar = screen.getByRole('toolbar', { name: 'Text' });

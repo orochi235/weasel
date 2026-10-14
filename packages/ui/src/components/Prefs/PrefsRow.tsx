@@ -97,6 +97,8 @@ export interface WalkCtx {
   lead?: string | null;
   /** The drop the form is drawing. */
   drop?: PrefDrop | null;
+  /** The form takes drops, so a bar in it keeps every cell on its line to drop beside. */
+  droppable?: boolean;
   /** Paths of the leaves, fields, and groups a failed `enableIf` disables. */
   disabled?: ReadonlySet<string>;
   /** Paths of the leaves, fields, and groups a failed `showIf` hides, in a form that draws them marked. */

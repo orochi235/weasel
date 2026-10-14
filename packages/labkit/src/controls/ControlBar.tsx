@@ -33,6 +33,7 @@ export function ControlBar(props: ControlBarProps) {
   return (
     <BarLayout
       framed
+      overflow={group.overflow}
       label={group.name === '' ? undefined : group.name}
       nodes={groupBarNodes(group, path, open)}
       cells={(leaves) =>

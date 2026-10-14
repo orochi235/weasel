@@ -100,6 +100,8 @@ const KIND_ATTRS: Record<PrefKind, KindAttrs> = {
   alias: { of: { kind: 'field', name: 'Of', description: 'The pref this one shows: its control is drawn here too, over the one stored value.', default: '' } as PrefLeaf },
 };
 
+const BAR_OVERFLOW = choice('Overflow', 'Drawn as a bar: what happens to the cells its line has no room for. scroll keeps them all on it, and menu opens the ones past its end from a button there. Unset: scroll.', ['scroll', 'menu']);
+
 const GROUP_ATTRS: KindAttrs = {
   name: LEAF_BASE.name!,
   description: LEAF_BASE.description!,
@@ -224,7 +226,12 @@ export interface AttributeSchema {
 export function attributeSchema(
   node: SchemaNode, custom: CustomKinds = {}, actions?: ReadonlyArray<{ key: string; label: string }>,
 ): AttributeSchema {
-  if (!isPrefLeaf(node)) return { shared: { ...(isPrefSection(node) ? SECTION_ATTRS : GROUP_ATTRS) }, own: {}, auto: {}, entry: {}, readOnly: [] };
+  if (!isPrefLeaf(node)) {
+    const attrs = Object.entries(isPrefSection(node) ? SECTION_ATTRS : GROUP_ATTRS);
+    // Only a bar has a line to run out of, so only it is asked, after how it is drawn.
+    const shared = attrs.flatMap((attr): Array<[string, KindAttr]> => (attr[0] === 'as' && node.as === 'bar' ? [attr, ['overflow', BAR_OVERFLOW]] : [attr]));
+    return { shared: Object.fromEntries(shared), own: {}, auto: {}, entry: {}, readOnly: [] };
+  }
   const typed = node.type !== undefined;
   const def = defaultAttr(node);
   const item = entryOf(node);

@@ -2,6 +2,7 @@ import type {
   PrefAction,
   PrefCondition,
   PrefGroup,
+  PrefBarOverflow,
   PrefGroupAs,
   PrefLeaf,
   PrefNumberUnit,
@@ -219,6 +220,7 @@ export interface BranchAnnotations {
   name?: string;
   description?: string;
   as?: PrefGroupAs;
+  overflow?: PrefBarOverflow;
   showIf?: PrefCondition;
   enableIf?: PrefCondition;
 }

@@ -721,15 +721,11 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   trial's config, the lab's store, or the app's) is not decided, and the instrument's `render`
   would need them too.
 
-- **(P3) What a bar does not do yet.** `ActionBar` is not built on `Bar`: its `icons` prop
-  overrides an entry's icon with a `ReactNode`, which a leaf, being data, cannot carry, so it needs
-  that prop to become icon names or `Bar` to take icon overrides by path. `overflow="menu"`
-  opens the cells a line has no room for from a button at its end, on `Bar` and `BarLayout` only: a
-  bar in a `PrefsForm`, a `SelectionPanel`, an object row, or labkit's `ControlBar` has no way to ask
-  for it, and whether it becomes the default is not decided. A cell in the menu is mounted only
-  while the menu is open, so `PrefSchemaEditor`'s preview, which asks for no menu and keeps every
-  cell on the line, would lose those cells as drop targets if it did. A group a standalone `Bar` opens from a button draws as
-  labeled rows whatever its `as`, where a bar in a `PrefsForm` opens it in its own form.
+- **(P3) A standalone `Bar` opens a group as labeled rows whatever its `as`.** A bar in a
+  `PrefsForm` opens a `page`, `tab`, or `panel` group in the form's own drawing of it; `Bar` draws
+  `GroupRows`, a row per leaf under each nested group's name. `Bar` holds its values flat, keyed by
+  dotted path, where the form's pane reads a nested tree, so the two do not share a body yet.
+  Nobody has looked at `ActionBar` in a browser since it became a `Bar` of `action` leaves.
 
 - **(P3) A rail of sections and pages: two things not decided.** A `PrefsForm` rail lists a page
   at any depth, and a section only when it sits directly on a page, the root's own included. (1) A

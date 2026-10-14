@@ -116,7 +116,7 @@ export const WithIconAndLabelOverrides: Story = {
       ))}
       <ActionBar
         group="align"
-        icons={{ 'align.center': <Glyph char="○" /> }}
+        icons={{ 'align.center': 'fit' }}
         labels={{ 'align.center': 'Center on canvas' }}
       />
     </ActionsProvider>

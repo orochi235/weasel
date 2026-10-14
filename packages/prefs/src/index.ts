@@ -68,7 +68,7 @@ export { prefVariantDefault, prefVariantOf, type PrefUnion } from './union';
 export { prefType } from './type';
 export { prefGroupIsPage } from './groups';
 export { prefFitsHeading, prefHeadingKey } from './heading';
-export type { PrefGroup, PrefGroupAs, PrefSection, PrefSectionAs } from './groups';
+export type { PrefBarOverflow, PrefGroup, PrefGroupAs, PrefSection, PrefSectionAs } from './groups';
 export type { PrefAtPath, PrefPath, PrefValueAt, PrefValueOf } from './paths';
 export type { PrefsMigration } from './migrate';
 export { openPrefs, openPrefsSync, type PrefsOptions } from './open';

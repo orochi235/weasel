@@ -44,7 +44,8 @@ export interface BarProps {
   /** Draw the strip the bar sits on. Unset, the host's strip is under it. */
   framed?: boolean;
   /** What happens to cells the line has no room for: `'scroll'` keeps them all on it, and `'menu'` opens the
-   *  ones past its end from a button there, taking all the room the host has along the line. Default `'scroll'`. */
+   *  ones past its end from a button there, taking all the room the host has along the line. Default: what
+   *  `schema` says in its own `overflow`, else `'scroll'`. */
   overflow?: BarOverflowMode;
   /** What the button that opens the rest is called. Default `'More'`. */
   overflowLabel?: string;
@@ -72,7 +73,7 @@ export function Bar(props: BarProps) {
       orientation={orientation}
       label={label}
       framed={framed}
-      overflow={props.overflow}
+      overflow={props.overflow ?? schema.overflow}
       overflowLabel={props.overflowLabel}
       className={className}
       cells={(leaves) => barCells(leaves, draw)}

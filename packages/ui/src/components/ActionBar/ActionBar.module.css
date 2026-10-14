@@ -5,17 +5,12 @@
  * intentional; this is the generic version. */
 
 .bar {
-  display: flex;
-  flex-direction: row;
-  gap: 1px;
+  /* `Bar` lays the buttons out; this is the strip under them, and how close they sit. */
+  --bar-gap: 1px;
   background: var(--wzl-surface);
   border: 1px solid var(--wzl-border);
   border-radius: var(--wzl-radius-sm);
   padding: var(--wzl-space-1);
   box-shadow: var(--wzl-bevel-raised, none);
   user-select: none;
-}
-
-.bar.vertical {
-  flex-direction: column;
 }
