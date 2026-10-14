@@ -7,6 +7,7 @@ import {
   transformPath,
   useCanvasSize,
   type UseSceneTextEditReturn,
+  useShapeBuilderTool,
   useSliceTool,
   type View,
   workspaceTintLayer
@@ -95,6 +96,7 @@ export function Workspace(props: WorkspaceProps): ReactElement {
   });
   const insertPaint = useInsertPaint();
   const sliceTool = useSliceTool();
+  const shapeBuilderTool = useShapeBuilderTool();
   const { tool: opacityScrubTool, percent: opacityScrubPercent } = useOpacityScrub({
     scene: scene as unknown as Parameters<typeof useOpacityScrub>[0]['scene'],
     selection,
@@ -143,7 +145,7 @@ export function Workspace(props: WorkspaceProps): ReactElement {
           scene={scene}
           selection={selection}
           defaultTools={BUILTIN_TOOL_IDS}
-          tools={{ slice: sliceTool, opacityScrub: opacityScrubTool }}
+          tools={{ slice: sliceTool, shapeBuilder: shapeBuilderTool, opacityScrub: opacityScrubTool }}
           ingestion={DRAW_INGESTION}
           insertPaint={insertPaint}
           // Pick on the drawn shape, not the bounding box: clicking the blank right half of a

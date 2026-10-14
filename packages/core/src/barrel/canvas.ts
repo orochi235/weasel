@@ -80,6 +80,8 @@ export type { PreviewNode } from '../interactions/actions/resolvePreviews';
 // the scene, resolved to world geometry — every variant of it, with no
 // `DrawCommand` and no style, so a renderer that is not core's can read them
 // all. `OverlayRole` is the whole of what an action says about appearance.
+export { createPathOverlay, PATH_OVERLAY_ROLES } from '../canvas/pathOverlay';
+export type { PathOverlay, PathOverlayOptions, PathOverlayStyle, TransientPath } from '../canvas/pathOverlay';
 export { resolveOverlays } from '../interactions/actions/resolveOverlays';
 export type { ResolvedOverlay, OverlayVisibilityId } from '../interactions/actions/resolveOverlays';
 export { insertPreviewExtent } from '../canvas/insertPreviewExtent';

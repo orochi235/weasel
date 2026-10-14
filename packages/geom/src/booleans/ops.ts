@@ -11,7 +11,7 @@
  * the `@weasel-js/geom/booleans` subpath so the core stays `deps: {}`.
  */
 import polygonClipping from 'polygon-clipping';
-import { pathToMultiPolygon, multiPolygonToPath } from './adapter';
+import { pathToMultiPolygon, multiPolygonToPath, type MultiPolygon } from './adapter';
 import type { Path, PolygonPath } from '../path';
 
 /** Union of N paths. Commutative. Returns an empty path if all inputs are empty. */
@@ -61,23 +61,11 @@ export function pathCrop(...paths: Path[]): PolygonPath[] {
   return pathCropPieces(...paths).map((p) => p.path);
 }
 
-/**
- * Fracture N paths along every intersection into the maximal set of
- * non-overlapping regions. Returns one piece per region, naming every input
- * that covers it. For N=2 these are the three Illustrator "Divide" outputs
- * (A−B, B−A, A∩B).
- *
- * One region per non-empty subset of the inputs, so the 2^N − 1 subset count
- * limits this to small N; passing more than ~8 inputs is a misuse.
- */
-export function pathDividePieces(...paths: Path[]): BooleanPiece[] {
-  if (paths.length === 0) return [];
-  if (paths.length === 1) {
-    return [{ path: multiPolygonToPath(pathToMultiPolygon(paths[0])), sources: [0] }];
-  }
+function divideRegions(paths: Path[]): { region: MultiPolygon; sources: number[] }[] {
   const mps = paths.map((p) => pathToMultiPolygon(p));
   const n = mps.length;
-  const out: BooleanPiece[] = [];
+  if (n === 1) return [{ region: mps[0]!, sources: [0] }];
+  const out: { region: MultiPolygon; sources: number[] }[] = [];
 
   // Size-ascending, so the output is stable: exclusives first, then pairs,
   // then triples, …
@@ -104,10 +92,34 @@ export function pathDividePieces(...paths: Path[]): BooleanPiece[] {
       region = polygonClipping.difference(region, outsideUnion);
       if (region.length === 0) continue;
     }
-    out.push({ path: multiPolygonToPath(region), sources });
+    out.push({ region, sources });
   }
-
   return out;
+}
+
+/**
+ * Fracture N paths along every intersection into the maximal set of
+ * non-overlapping regions. Returns one piece per region, naming every input
+ * that covers it. For N=2 these are the three Illustrator "Divide" outputs
+ * (A−B, B−A, A∩B).
+ *
+ * One region per non-empty subset of the inputs, so the 2^N − 1 subset count
+ * limits this to small N; passing more than ~8 inputs is a misuse.
+ */
+export function pathDividePieces(...paths: Path[]): BooleanPiece[] {
+  if (paths.length === 0) return [];
+  return divideRegions(paths).map(({ region, sources }) => ({ path: multiPolygonToPath(region), sources }));
+}
+
+/**
+ * The faces the paths cut each other into: {@link pathDividePieces}, with a
+ * region that falls apart split into one piece per connected part. A face
+ * keeps its holes. Same order, a region's parts in the order clipping gives them.
+ */
+export function pathFacePieces(...paths: Path[]): BooleanPiece[] {
+  if (paths.length === 0) return [];
+  return divideRegions(paths).flatMap(({ region, sources }) =>
+    region.map((polygon) => ({ path: multiPolygonToPath([polygon]), sources: [...sources] })));
 }
 
 /**
