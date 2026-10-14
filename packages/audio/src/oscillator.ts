@@ -29,13 +29,17 @@ function polyBlep(t: number, dt: number): number {
 
 export const sineShape: WaveShape = (phase) => Math.sin(TAU * phase);
 
+/** The level an `OscillatorNode` plays a square or a sawtooth at. Its table is the Fourier sum
+ *  scaled so the overshoot beside each step peaks at 1, which leaves the flat at 1 / 1.17898. */
+const STEPPED_LEVEL = 1 / 1.17898;
+
 /** Each starts at zero, rising, as the `OscillatorNode` types do. */
 const BUILT_IN: Record<'sine' | 'square' | 'sawtooth' | 'triangle', WaveShape> = {
   sine: sineShape,
-  square: (phase, dt) => (phase < 0.5 ? 1 : -1) + polyBlep(phase, dt) - polyBlep((phase + 0.5) % 1, dt),
+  square: (phase, dt) => STEPPED_LEVEL * ((phase < 0.5 ? 1 : -1) + polyBlep(phase, dt) - polyBlep((phase + 0.5) % 1, dt)),
   sawtooth: (phase, dt) => {
     const t = (phase + 0.5) % 1;
-    return 2 * t - 1 - polyBlep(t, dt);
+    return STEPPED_LEVEL * (2 * t - 1 - polyBlep(t, dt));
   },
   triangle: (phase, dt) => {
     if (dt < TRIANGLE_SUMMED_FROM) return phase < 0.25 ? 4 * phase : phase < 0.75 ? 2 - 4 * phase : 4 * phase - 4;
