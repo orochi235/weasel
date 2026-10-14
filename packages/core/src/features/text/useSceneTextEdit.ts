@@ -1,7 +1,9 @@
 /**
  * `useSceneTextEdit` — scene-aware wrapper around `useTextEdit`: scene
  * lookups for text / style / runs / screen-pose, and
- * `scene.update(id, { data })` for commits.
+ * `scene.update(id, { data })` for commits. The overlay and a double-click
+ * both read the pose a node is painted at, so text inside a container whose
+ * pose is a frame is edited where it is drawn.
  *
  * Defaults assume the node's `data` carries `text` / `style` / `runs`
  * directly. For custom data shapes, override any of the optional projections.
@@ -11,7 +13,7 @@
 import { useCallback, useMemo, useRef, type MouseEvent } from 'react';
 import { useLatest } from '@weasel-js/react';
 import { asNodeId } from '../../core/scene/types';
-import { effectivePose } from '../../core/scene/effectivePose';
+import { scenePaintedPoseOf } from '../../canvas/derivedPath';
 import type { Scene } from '../../core/scene/types';
 import type { Stroke, Fill } from '@weasel-js/paint';
 import { resolveScreenLength } from '@weasel-js/paint';
@@ -76,10 +78,6 @@ export interface UseSceneTextEditOptions<TData> {
    * weasel canvas mounted inside `container` (the one a double-click landed
    * on, when there are several). With no canvas there, the node's world box
    * is passed through as screen pixels.
-   *
-   * The overlay takes a single scale factor, so a non-uniform view scale is
-   * represented by its `scale.x`; text under `scale.x !== scale.y` will not
-   * match the canvas.
    *
    * A thunk is re-read on every projection; a plain `View` is the value from
    * the render that supplied it.
@@ -189,19 +187,21 @@ export function useSceneTextEdit<
       const scene = sceneRef.current;
       const node = scene.get(asNodeId(id));
       if (!node) return null;
-      const pose = effectivePose(scene, node);
+      const pose = scenePaintedPoseOf(scene)(node);
       const style = read.style(node.data);
       const at = surface();
       const view = resolveView(optsRef.current.view) ?? at?.canvas.getView();
       const zoom = view ? view.scale.x : 1;
-      const originX = at?.box.x ?? 0;
-      const originY = at?.box.y ?? 0;
-      // Only the origin is projected. Width, height and font size stay in
-      // world units and reach the screen through the overlay's own
-      // `scale(zoom)` — see `TextEditScreenPose.zoom`.
+      const zoomY = view ? view.scale.y : 1;
+      // Only the box center is projected, since the overlay's frame is about
+      // it. Width, height and font size stay in world units and reach the
+      // screen through the overlay's own `scale(zoom)` — see
+      // `TextEditScreenPose.zoom`.
+      const cx = (at?.box.x ?? 0) + (pose.x + pose.width / 2 - (view?.x ?? 0)) * zoom;
+      const cy = (at?.box.y ?? 0) + (pose.y + pose.height / 2 - (view?.y ?? 0)) * zoomY;
       return {
-        x: originX + (view ? (pose.x - view.x) * view.scale.x : pose.x),
-        y: originY + (view ? (pose.y - view.y) * view.scale.y : pose.y),
+        x: cx - (pose.width * zoom) / 2,
+        y: cy - (pose.height * zoom) / 2,
         width: pose.width,
         height: pose.height,
         // Against `zoom`, the same factor the overlay scales back up by, so a
@@ -211,7 +211,7 @@ export function useSceneTextEdit<
           zoom,
         ),
         zoom,
-        frame: frameLinearOf(pose),
+        frame: frameLinearOf(pose, zoomY / zoom),
         verticalAlign: read.verticalAlign(node.data),
       };
     },
@@ -252,12 +252,13 @@ export function useSceneTextEdit<
     // Top-most-first hit test: renderOrder() is back-to-front, so iterate
     // in reverse and break on the first hit.
     const order = sceneRef.current.renderOrderNodes();
+    const paintedPoseOf = scenePaintedPoseOf(sceneRef.current);
     for (let i = order.length - 1; i >= 0; i--) {
       const node = order[i];
       if (sceneRef.current.isLocked(node.id)) continue;
       if (!read.isText(node.data)) continue;
       const text = read.text(node.data);
-      const at = effectivePose(sceneRef.current, node);
+      const at = paintedPoseOf(node);
       const p = worldToLocal(targetTransformOf(at), cx, cy);
       if (!p) continue;
       const pose = {
@@ -283,8 +284,12 @@ export function useSceneTextEdit<
   return { ...edit, onDoubleClick, isTextNode };
 }
 
-/** The linear part of the frame `pose` is drawn in, as the overlay takes it. */
-function frameLinearOf(pose: unknown): TextEditScreenPose['frame'] {
+/** The linear part of the frame `pose` is drawn in, as the overlay takes it.
+ *  `stretch` is the view's y scale over its x scale: the overlay scales both
+ *  axes by the x scale, so the frame carries what is left of y. */
+function frameLinearOf(pose: unknown, stretch: number): TextEditScreenPose['frame'] {
   const m = poseFrameOf(pose);
-  return m ? [m[0], m[1], m[2], m[3]] : undefined;
+  if (!m && stretch === 1) return undefined;
+  const [a, b, c, d] = m ?? [1, 0, 0, 1];
+  return [a, b * stretch, c, d * stretch];
 }

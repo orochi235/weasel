@@ -181,19 +181,6 @@ Priority tags:
 
 ## Paths & booleans
 
-- **(P3) a pose's `transform` is drawn, picked, outlined, and resized in its own frame, and these
-  do not read it yet.** A box pose may carry a `transform` (`PoseLinear`,
-  `packages/geom/src/poseFrame.ts`): the skew or per-axis scale its box and rotation cannot hold.
-  Ruled 2026-10-11: text and image nodes carry a full transform, and such text stays editable
-  text. The selection chrome, its hit regions, and a lone node's resize and rotate read the frame
-  through `core/geometry/targetFrame.ts`, and the text edit overlay is handed it as
-  `TextEditScreenPose.frame`; a resize writes the box and keeps the transform. What still sees
-  only the box and its rotation:
-  - `useSceneTextEdit` places the overlay, and tests a double-click, against the node's own pose
-    (`effectivePose`), not its world pose, so text under a container whose pose is a frame is
-    edited where it would sit without that container. It also scales by `view.scale.x` alone, so
-    under non-uniform zoom the overlay is stretched wrong whatever the pose carries.
-
 - **(P3) svg import: `<tspan>` glyph positioning is not read.** `dx`, `rotate`, and list-valued
   per-glyph `x` / `y` are not applied; each warns, on `<text>` and `<tspan>` alike
   (`packages/svg/src/tspanLines.ts`). Kerned text exported as one `<tspan>` per glyph run imports
