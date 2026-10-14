@@ -525,10 +525,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   `ReactNode` it is handed beside an editable number, so it follows none of that. `QuantityText`
   draws no kind's MathML form.
 
-- **(P2) Redesign the stop color/opacity swatches under `GradientEditor`.** Each stop gets
-  a `ColorField` with an alpha slider in a row beneath the track (`GradientEditor.tsx`). The
-  owner wants that row redesigned; the shape it should take is still open.
-
 - **(P3) labkit and the apps hand-build what weasel-ui already draws.** Each waits on something
   the ui component lacks, or on a look at the result in a browser:
   `.lk-titlebar-button` is 18px square and `Button`'s smallest size is `--wzl-control-h-sm`;

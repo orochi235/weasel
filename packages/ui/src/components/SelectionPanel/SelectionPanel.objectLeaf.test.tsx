@@ -495,7 +495,7 @@ describe('SelectionPanel — object leaf', () => {
       width: 4,
     }));
     expect(screen.getByRole('radio', { name: 'Linear' })).toBeChecked();
-    expect(screen.getByLabelText('Stop 1 at 0%')).toBeInTheDocument();
+    expect(screen.getByLabelText('Stop 1')).toBeInTheDocument();
     expect(container.querySelector('[data-mixed]')).toBeNull();
   });
 });
