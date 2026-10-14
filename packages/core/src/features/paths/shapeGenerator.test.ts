@@ -65,7 +65,7 @@ describe('regenerateShape', () => {
   it('refuses a node whose path no longer matches its generator', () => {
     const edited = star(5);
     const path = edited.data.path;
-    const coords = new Float64Array(path.coords);
+    const coords = new Float32Array(path.coords);
     coords[2] += 7;
     edited.data.path = { ...path, coords } as PolygonPath;
     expect(regenerateShape(edited, { kind: 'star', points: 6, innerRadiusRatio: 0.5, rotation: 0 })).toBeNull();
@@ -105,7 +105,7 @@ describe('settleShapeGenerator', () => {
 
   it('drops the generator of a shape whose path was edited', () => {
     const prev = star(5);
-    const coords = new Float64Array(prev.data.path.coords);
+    const coords = new Float32Array(prev.data.path.coords);
     coords[0] -= 3;
     prev.data.path = { ...prev.data.path, coords } as PolygonPath;
     const written = { pose: prev.pose, data: { ...prev.data, generator: { ...prev.data.generator, points: 6 } } };

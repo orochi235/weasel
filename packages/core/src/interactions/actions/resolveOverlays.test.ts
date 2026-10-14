@@ -93,8 +93,14 @@ describe('resolveOverlays — insertPreview', () => {
     ]);
     expect(resolved).toMatchObject({
       geometry: { kind: 'polygon', center: { x: 10, y: 10 }, radius: 14, sides: 5 },
-      bounds: { x: -4, y: -4, width: 28, height: 28 },
     });
+    // The pentagon's own box, first point on +x: not the square around its circle.
+    const { bounds } = resolved as { bounds: { x: number; y: number; width: number; height: number } };
+    const deg = Math.PI / 180;
+    expect(bounds.x).toBeCloseTo(10 - 14 * Math.cos(36 * deg), 4);
+    expect(bounds.width).toBeCloseTo(14 + 14 * Math.cos(36 * deg), 4);
+    expect(bounds.y).toBeCloseTo(10 - 14 * Math.sin(72 * deg), 4);
+    expect(bounds.height).toBeCloseTo(28 * Math.sin(72 * deg), 4);
   });
 
   it('drops a zero-area insert for a non-pencil shape', () => {

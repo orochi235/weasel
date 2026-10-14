@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import type { ImmediateInvoker, InvocationCtx, OngoingInvoker } from '@weasel-js/routing';
 import { createScene } from 'core/scene/scene';
-import type { RectPose, Scene } from 'core/scene/types';
+import { asNodeId, type RectPose, type Scene } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import { moveAction } from '../move/action';
 import { rotateAction } from '../rotate/action';
@@ -109,11 +109,11 @@ describe('transformAgain', () => {
 
   it('repeats a resize held at the far corner on another selection', () => {
     const rig = setup([box(10, 10), box(100, 100, 20, 20)]);
-    rig.selection.set([rig.ids[0]]);
+    rig.selection.set([asNodeId(rig.ids[0])]);
     const affordance = { kind: 'handle:top-left', targetIds: [rig.ids[0]], anchor: { x: 'max', y: 'max' } };
     drag(rig, resizeAction, { x: 10, y: 10 }, { x: 0, y: 0 }, { affordance });
     expect(rig.pose(rig.ids[0])).toMatchObject({ x: 0, y: 0, width: 20, height: 20 });
-    rig.selection.set([rig.ids[1]]);
+    rig.selection.set([asNodeId(rig.ids[1])]);
     rig.again();
     expect(rig.pose(rig.ids[1])).toMatchObject({ x: 80, y: 80, width: 40, height: 40 });
   });
