@@ -80,8 +80,9 @@ export interface PortAffordanceOptions<TPose> {
   showsPort?: (port: Port) => boolean;
   /** Screen-pixel hit radius. Default 8, the kit's `HANDLE_BASE_PX`. */
   hitRadiusPx?: number;
-  /** Screen-pixel side of the painted square. Default 7. Omit `paint` entirely
-   *  by passing 0 — a port the consumer draws itself is still hittable. */
+  /** Screen-pixel size of the painted mark: a square's side, or a circle's
+   *  diameter. Default 7. Omit `paint` entirely by passing 0 — a port the
+   *  consumer draws itself is still hittable. */
   sizePx?: number;
   /** One fill for every port, or a function of the port — its `type`, say. */
   fill?: CommandFill | ((port: Port) => CommandFill);

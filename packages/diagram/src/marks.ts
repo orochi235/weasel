@@ -32,6 +32,8 @@ export type DataMark =
 /** The trait on a drawn mark's `data`: path data in a unit square. */
 export interface DiagramMark { d: string }
 
+/** The mark a scene node carries, or null for a node that is not a drawn
+ *  mark: how `markShape` tells which nodes it paints. */
 export function diagramMarkOf(node: { data: unknown }): DiagramMark | null {
   const data = node.data;
   if (data === null || typeof data !== 'object') return null;

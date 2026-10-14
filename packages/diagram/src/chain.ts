@@ -79,6 +79,9 @@ function hangFrom(graph: Graph, line: readonly GraphNode[]): Hanging {
   return { owner, level };
 }
 
+/** The chain layout: the nodes `opts.chain` names (or the longest path) on
+ *  one line in order, and every other node hung beside the chain node it is
+ *  fewest edges from, on the `opts.chainSide` side. */
 export const chain: LayoutFn = (graph, opts = {}) => {
   const axes = axesFor(opts.direction);
   const nodeGap = opts.nodeGap ?? DEFAULT_NODE_GAP;

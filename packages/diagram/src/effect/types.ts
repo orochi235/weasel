@@ -8,6 +8,7 @@ export interface EffectPipeline {
   types?: Readonly<Record<string, EffectType>>;
 }
 
+/** One step of a pipeline: what it reads and writes, and what its box shows. */
 export interface EffectStage {
   id: string;
   title: string;
@@ -29,6 +30,7 @@ export interface EffectStage {
   data?: Readonly<Record<string, unknown>>;
 }
 
+/** One input or output of a stage, carrying a value of one type. */
 export interface EffectPort {
   /** Unique among the stage's inputs and outputs together. */
   id: string;
@@ -37,12 +39,15 @@ export interface EffectPort {
   type: string;
 }
 
+/** A connection from one stage's output to another stage's input. */
 export interface EffectWire {
   from: { stage: string; port: string };
   to: { stage: string; port: string };
+  /** Drawn on the wire. */
   label?: string;
 }
 
+/** A box drawn around some stages, and around other groups. */
 export interface EffectGroup {
   id: string;
   label?: string;
@@ -50,6 +55,7 @@ export interface EffectGroup {
   members: readonly string[];
 }
 
+/** What a value type means, as `EffectPipeline.types` records it. */
 export interface EffectType {
   /** A control value: a condition, a gate, a modulation source. Looks draw
    *  its wires apart from data wires. */

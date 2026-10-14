@@ -97,7 +97,8 @@ beside the chain node it is nearest to, counting edges in either direction. It
 is picked like the others, by name: `layout: 'chain'` in `diagramScene`,
 `layout('chain')` on a `DiagramView`, or `algorithm: 'chain'` in
 `createLayoutAction`. The `chain` layout option lists the ids on the line, in
-order; unset, it is the longest path through the graph. `chainSide` is
+order; unset, or naming no node of the graph, it is the longest path through
+the graph. `chainSide` is
 `'after'` (default) or `'before'`: which side of the line the rest hangs on.
 Each chain node owns a column as wide as the widest thing hung on it, so
 neighbors never share space. Groups are ignored.
@@ -128,7 +129,10 @@ in a unit square, stretched over the node's box; it takes `fill`, `stroke`,
 `strokeWidth`, `dash` and `opacity`. A mark with `text` is pinned to a point on
 the box: `at` is that point as `{ u, v }` fractions of the box, `self` is which
 point of the text sits on it (default `at`), and `offset` nudges it in pixels.
-Marks move with their node:
+Marks move with their node. `DiagramView` registers the painters for outlines
+and marks itself; a scene drawn on your own `SceneCanvas` calls
+`registerDiagramShape()` once for outlines and `registerMarkShape()` once for
+marks, each of which returns its disposer, or they do not paint:
 
 ```tsx
 { id: 'gain', marks: [
@@ -252,17 +256,17 @@ A stage:
 
 | Prop | Meaning |
 | --- | --- |
-| `pipeline` | The pipeline. |
+| `pipeline` | The pipeline. It is compared by content, so it may be rebuilt on every render. |
 | `look`, `options` | How it is drawn, and that look's options. Default look `nodeGraph`. |
 | `width`, `height` | The canvas size. |
 | `background` | What the canvas paints behind the chart. Unset, it is transparent; the shipped looks are drawn for a dark ground. |
-| `selected`, `onSelect` | As on `DiagramView`, for stage ids. |
-| `onProblems` | Hears what `checkPipeline` found, on mount and each time the `pipeline` object changes, whether or not the list differs. |
-| `className` | |
+| `selected`, `onSelect` | As on `DiagramView`, for stage ids. A pick of anything that is not a stage, such as a group box, is reported as `null`, and the canvas keeps its own highlight on it. |
+| `onProblems` | Hears what `checkPipeline` found, on mount and each time the pipeline's content changes, whether or not the list differs. |
+| `className` | A class for the canvas element. |
 
-Keep `pipeline`, `look` and `options` steady between renders: a new object for
-any of them lays the chart out again and opens it fitted afresh, and a new
-`pipeline` also runs `checkPipeline` again and calls `onProblems`. Ports that
+Keep `look` and `options` steady between renders: a new object for either lays
+the chart out again and opens it fitted afresh, as a pipeline whose content
+changes does. Ports that
 carry a value type are drawn, colored by type. As with `DiagramView`, call
 `registerCanvasFont('sans-serif')` once or labels render blank.
 
@@ -278,8 +282,9 @@ they can:
 | `type-mismatch` | A wire joins ports of different types. | The wire is drawn in the warning color. |
 | `duplicate-stage` | Two stages share an id. | The first is drawn. |
 | `duplicate-port` | Two ports on one stage share an id. | Both are listed; wires attach to the first. |
+| `duplicate-group` | A group's id repeats an earlier group's, or is a stage's. | Only the first group with the id is drawn, and a group with a stage's id is not. |
 | `missing-member` | A group names something that is neither a stage nor a group. | The name is ignored. |
-| `bad-split` | A `split` names an input the stage lacks, has no cuts or unordered ones, or does not have one more output than cuts. | A decision that would draw as a bar draws as a diamond. |
+| `bad-split` | A `split` names an input the stage lacks, has no cuts, has cuts out of order or one that is not a finite number, or does not have one more output than cuts. | A decision that would draw as a bar draws as a diamond. |
 
 #### Looks
 

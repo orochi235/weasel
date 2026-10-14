@@ -93,8 +93,8 @@ export interface DiagramData {
   nodes: readonly DataNode[];
   edges: readonly DataEdge[];
   /** A group may be a member of another. `layered`, `tree`, and `force` keep
-   *  each group's members together; `'none'` ignores groups but still draws
-   *  them. */
+   *  each group's members together; `chain` and `'none'` ignore groups but
+   *  still draw them. */
   groups?: readonly DataGroup[];
 }
 
@@ -204,7 +204,8 @@ function graphOf(nodes: GraphNode[], edges: GraphEdge[], groups: GraphGroup[] = 
 }
 
 /** Every spec carries an id — a node's own, `<id>/<k>` for its text,
- *  `<edge id>/label`, a group's own and `<group id>/label` — so a later call's
+ *  `<id>/mark:<i>` for its marks, `<edge id>/label`, a group's own and
+ *  `<group id>/label` — so a later call's
  *  specs can be reconciled against this one's. Throws on a repeated id among
  *  nodes and groups, which names two things as one. An edge whose
  *  end is not a node is dropped, and so is a repeat of an earlier edge with

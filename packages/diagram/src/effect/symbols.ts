@@ -10,8 +10,12 @@ import { splitProblem } from './check';
 import { isControl } from './draw';
 import type { EffectPipeline, EffectPort, EffectStage } from './types';
 
+/** Which symbol a decision draws as: one by name, or `'auto'` for a bar when
+ *  the stage has a sound `split` and a diamond otherwise. */
 export type BranchChoice = 'auto' | 'diamond' | 'bar' | 'demux' | 'switch';
+/** What a branch symbol draws: a data node without its id or style, which the look adds. */
 export type BranchNode = Pick<DataNode, 'outline' | 'lines' | 'rows' | 'ports' | 'marks' | 'width' | 'height' | 'padding'>;
+/** Draws one decision stage, with a port for each of its inputs and outputs. */
 export type BranchSymbol = (stage: EffectStage, pipeline: EffectPipeline) => BranchNode;
 
 type Side = 'left' | 'top' | 'right' | 'bottom';
@@ -123,6 +127,9 @@ const switchSymbol: BranchSymbol = (stage, pipeline) => {
   };
 };
 
+/** Each branch symbol by name. One called on a stage it cannot draw, a
+ *  `bar` with no sound split or a `switch` without exactly two exits, draws
+ *  the `diamond` instead. */
 export const BRANCH_SYMBOLS: Readonly<Record<Exclude<BranchChoice, 'auto'>, BranchSymbol>> = Object.freeze({
   diamond,
   bar,
@@ -138,6 +145,7 @@ export function symbolNameFor(stage: EffectStage, choice: BranchChoice = 'auto')
   return want;
 }
 
+/** The node a decision stage draws as, by the symbol `choice` comes to. */
 export function branchNode(stage: EffectStage, pipeline: EffectPipeline, choice: BranchChoice = 'auto'): BranchNode {
   return BRANCH_SYMBOLS[symbolNameFor(stage, choice)](stage, pipeline);
 }

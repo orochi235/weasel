@@ -24,10 +24,14 @@ export interface EffectChartProps<TOptions = unknown> {
   background?: Paint;
   /** A stage id, or null for none. */
   selected?: string | null;
+  /** Hears each pick: a stage's id, or `null` for empty canvas and for
+   *  anything that is not a stage, such as a group box. The canvas keeps its
+   *  own highlight on what was picked; only a change to `selected` moves it. */
   onSelect?: (stage: string | null) => void;
   /** What `checkPipeline` found. Called once on mount, and again each time
    *  the pipeline's content changes. */
   onProblems?: (problems: readonly EffectProblem[]) => void;
+  /** A class for the canvas element. */
   className?: string;
 }
 

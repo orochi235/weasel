@@ -468,6 +468,29 @@ Priority tags:
   edge id from different stages and ports. `diagramScene` keeps the first such edge, while the
   looks keep one style per id, last one winning (`sceneStyles` in
   `packages/diagram/src/effect/draw.ts`, `packages/diagram/src/fromData.ts`).
+- **(P3) The `rack` look overlaps side ports.** A stage's side ports are spread evenly along one
+  edge of a box sized by its text, however many there are, so a stage with many side inputs draws
+  them on top of one another (`spreadAt` in `packages/diagram/src/effect/rack.ts`).
+- **(P3) Branch symbols put control inputs on top whatever the rack's `side` is.** With the
+  default `side: 'below'`, the stage driving a decision hangs below it and its wire climbs to the
+  top edge (`inputs` in `packages/diagram/src/effect/symbols.ts`).
+- **(P3) A list of looks with different options needs a cast.** `EffectLook`'s options parameter
+  defaults to `unknown`, and `EffectLook<NodeGraphOptions>` is not assignable to it, so a list
+  holding `nodeGraph` and `rack` together is cast by hand (`packages/diagram/src/effect/draw.ts`;
+  the EffectChart lab story does it).
+- **(P3) `EffectChart` has no floor on its opening scale.** It opens every chart fitted whole and
+  passes no `minScale`, so a chart of hundreds of stages opens too small to read
+  (`packages/diagram/src/effect/EffectChart.tsx`; `DiagramView` already takes `minScale`).
+- **(P3) A branch symbol's drawn marks have fixed colors.** The `bar`'s bands and ticks and the
+  `switch`'s lever and contacts are color literals, so they stay bright on a bypassed decision
+  and a look cannot restyle them; only the titles follow the node style
+  (`packages/diagram/src/effect/symbols.ts`).
+- **(P3) Marks are only tested in jsdom.** No browser test moves a node that carries marks, so a
+  text mark following its node is unpinned, and so is a drawn mark's `opacity`
+  (`packages/diagram/src/marks.test.ts`).
+- **(P3) A mark whose path data does not parse fails when it is painted.** `diagramScene` passes
+  `d` through as given and `markShape` parses it on first paint, so a typo surfaces in the
+  renderer rather than where the data was built (`packages/diagram/src/marks.ts`).
 
 ---
 
@@ -1004,7 +1027,8 @@ only story runner in the repo.
 
 - **(P3) EffectChart visual baselines are not captured.** `tests/visual/effect-chart.spec.ts`
   names `effect-chart.png` and `effect-chart-rack.png`; the update-baselines workflow has to
-  write them.
+  write them. Its `maxDiffRatio` of 0.004 was copied from `diagram.spec.ts`; set it
+  from the first captured baselines.
 
 - **(P3) A dev server on orochi has missed a file write.** A site dev server there served a file
   as it was before an edit on 2026-10-12, and a `touch` did not wake it. Seen once and not
