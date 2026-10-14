@@ -63,6 +63,7 @@ export function ActionList({ actions, sought, ghost, onDrag, onDrop }: {
   return (
     <Tree
       aria-label="Actions"
+      hang
       ghost={ghost}
       nodes={rows}
       empty={<p className={s.storedEmpty}>{all.length === 0 ? 'No actions are registered.' : 'Nothing matches.'}</p>}

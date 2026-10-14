@@ -20,6 +20,24 @@
   --tree-gutter: calc(var(--tree-mark) + var(--wzl-space-3));
 }
 
+/* `hang`: the gutter is wide enough for a leaf's glyph, which hangs in it as a branch's mark does. */
+.tree[data-hang]:not([data-guides]) {
+  --tree-hung: var(--wzl-tree-leading-size, 16px);
+}
+
+.tree[data-hang][data-fold='twisty']:not([data-guides]) {
+  --tree-gutter: calc(max(var(--tree-mark), var(--tree-hung)) + var(--wzl-space-2));
+}
+
+.tree[data-hang][data-fold='twisty']:not([data-guides]) .twisty {
+  width: calc(var(--tree-gutter) - var(--wzl-space-2));
+}
+
+.tree[data-hang]:not([data-guides]) .item:not([aria-expanded]) > .row > .leading {
+  inline-size: var(--tree-hung);
+  margin-inline-start: calc(-1 * (var(--tree-hung) + var(--wzl-space-2)));
+}
+
 /* One gutter, so a child's mark sits under its parent's label. */
 .group {
   padding-inline-start: var(--wzl-tree-indent, var(--tree-gutter));

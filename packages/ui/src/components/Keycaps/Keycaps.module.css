@@ -100,6 +100,10 @@
   color: currentColor;
 }
 
+.shortcut .key {
+  font-weight: var(--wzl-font-weight-normal);
+}
+
 /* Optional + minimal: dotted border at full currentColor, legend at full
    currentColor. The dotted pattern alone carries the "optional" cue here
    — minimal's whole point is to defer color to the surrounding context,
