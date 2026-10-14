@@ -606,6 +606,18 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   export drops all four. A schema is sectioned rather than nested where `f.group` would move its
   config paths.
 
+- **(P3) `PrefSchemaEditor` has nowhere to keep an action catalog.** `AssetEditor` keeps one in
+  a workspace's `actions` asset, where its Actions list is sorted, grouped, and edited. The
+  one-schema editor builds its list from the host's actions on every draw, so its rows show their
+  attributes read-only and nothing sorts them. Giving it a catalog means a second asset in the
+  workspace `asWorkspace` makes, and `oneAssetCodec` and `sameSchema` read only the first: a
+  draft would drop the catalog and its steps.
+
+- **(P3) A step back over the action catalog does not restore the rows picked in it.**
+  `useAssetView.recorded` keeps each shown asset's selection with a step; the catalog's lives in
+  `useActionCatalog` and is not among them, so after an undo the Actions list keeps whichever of
+  its picked rows still exist.
+
 - **(P3) `SelectionPanel` draws a `heading` leaf as a row.** `PrefsForm` and labkit's
   `ControlPanel` draw a leaf marked `heading` in the heading of the group holding it
   (`prefHeadingKey`). `SelectionPanel`'s section title dims itself with `opacity`, which a control
