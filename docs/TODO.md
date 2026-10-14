@@ -623,11 +623,10 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   `Button` with a leading icon; the theme editor's swatch tabs against `ToggleBar`'s flat variant
   and its hex and number inputs against `Input` and `NumberField`.
 
-- **(P3) Nothing on the site sets the mode.** The chrome follows `data-wzl-mode` and whatever
-  theme is applied, but no reader can pick one: the demo shell draws the default theme in dark.
-  `useColorModePreference` and a `ColorModeControl` in the sidebar would do it. Look at the pages
-  in light mode first: demo scenes still draw in colors chosen for a dark page (`#d4c4a8` labels
-  in `ViewportDemo`, `AudioDemo`, and other demos), a few rules darken with `rgba(0, 0, 0, 0.2)`
+- **(P3) The site's demos are colored for a dark page.** The demo shell's sidebar has a
+  `ColorModeControl` now, dark until a reader picks. Nobody has looked at the pages in light
+  mode: demo scenes still draw in colors chosen for a dark page (`#d4c4a8` labels in
+  `ViewportDemo`, `AudioDemo`, and other demos), a few rules darken with `rgba(0, 0, 0, 0.2)`
   in either mode, and the front page pins its own theme to dark.
 
 - **(P3) Overlays still set React Aria's deprecated `UNSTABLE_portalContainer`.**

@@ -29,7 +29,8 @@ function formatRelativeOrIso(iso: string): string {
   if (days < 30) return `${Math.floor(days / 7)}w ago`;
   return new Date(iso).toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
 }
-import { CommandPalette, InlineMarkdown } from '@weasel-js/ui';
+import { ColorModeControl, CommandPalette, InlineMarkdown } from '@weasel-js/ui';
+import { useSiteColorMode } from './colorMode';
 import { useCommandPaletteShortcut } from './CommandPalette/useCommandPaletteShortcut';
 import logoUrl from './assets/weasel-logo.svg';
 
@@ -42,6 +43,7 @@ export function WeaselDemos() {
   const [activeId, setActiveId] = useState<string>(() => readHash());
   const [paletteOpen, setPaletteOpen] = useState(false);
   useCommandPaletteShortcut(paletteOpen, setPaletteOpen);
+  const colorMode = useSiteColorMode();
 
   // A page opened from inside the app is a history entry of its own, so Back
   // returns to the one before it.
@@ -87,6 +89,12 @@ export function WeaselDemos() {
           <p><a href="./docs/ui/forge/">Component workshop →</a></p>
           <p><a href="./draw/">WeaselDraw →</a></p>
           <p><a href="./draw/#/dev/toolkits">Toolkit builder →</a></p>
+          <ColorModeControl
+            className="ckd-sidebar-mode"
+            value={colorMode.preference}
+            onChange={colorMode.setPreference}
+            size="sm"
+          />
         </header>
         <nav className="ckd-nav">
           <section className="ckd-nav-section ckd-nav-whatsnew">
