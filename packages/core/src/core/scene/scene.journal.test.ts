@@ -60,4 +60,31 @@ describe('Scene — applyBatch under a journal opened on scene.history', () => {
     expect(x()).toBe(0);
     expect(scene.history.undoDepth()).toBe(0);
   });
+
+  it('undo and redo step the open journal, and the scene history once it closes', () => {
+    const { scene, move, x } = makeScene();
+    move(0, 2);
+    const journal = scene.history.beginJournal({ label: 'session' });
+    scene.setActiveJournalAccessor(() => (journal.isActive() ? journal : null));
+
+    move(2, 5);
+    move(5, 9);
+    expect(scene.canUndo()).toBe(true);
+    scene.undo();
+    expect(x()).toBe(5);
+    scene.history.undo();
+    expect(x()).toBe(2);
+    // The session is empty; the move before it is not the session's to take back.
+    expect(scene.canUndo()).toBe(false);
+    expect(scene.undo()).toBe(false);
+    expect(x()).toBe(2);
+    scene.redo();
+    expect(x()).toBe(5);
+    expect(scene.history.undoDepth()).toBe(1);
+
+    journal.suspend();
+    expect(scene.canUndo()).toBe(true);
+    scene.undo();
+    expect(x()).toBe(0);
+  });
 });

@@ -8,6 +8,9 @@ export interface CreateModeMachineOptions {
   history: History;
   initial?: string;
   cacheCapacity?: number;  // default 8
+  /** Whether a soft mode keeps its edits in a journal of its own, which undo steps while the mode
+   *  is open. Read on entry. Without one, each edit is an entry on `history`. Defaults to true. */
+  journalSoftModes?: () => boolean;
 }
 
 export interface EnterModeArgs {
@@ -20,13 +23,14 @@ export interface EnterModeArgs {
 
 export interface ModeMachine {
   readonly registry: ModeRegistry;
+  /** The open mode's journal, or null — also null in a soft mode that records to `history`. */
   getActiveJournal(): Journal | null;
   getActiveTargetId(): string | null;
   enterMode(id: string, args: EnterModeArgs): void;
   exitMode(): void;       // soft modes: suspend
   commitMode(): void;     // strict modes: commit
   cancelMode(): void;     // strict modes: cancel
-  discardMode(): void;    // soft modes: cancel (no resume)
+  discardMode(): void;    // soft modes: take back the session's edits (no resume)
   clearJournalCache(): void;
 }
 
@@ -38,18 +42,29 @@ export function createModeMachine(opts: CreateModeMachineOptions): ModeMachine {
 
   const cache: JournalCache = createJournalCache({ capacity: opts.cacheCapacity ?? 8 });
 
+  let active = false;
   let activeJournal: Journal | null = null;
   let activeTargetId: string | null = null;
+  /** In a soft mode with no journal: the id its first entry on `history` gets. */
+  let firstEntryId = 0;
 
   function enterMode(id: string, args: EnterModeArgs): void {
     if (id === 'normal') return;
-    if (activeJournal !== null) {
+    if (active) {
       throw new Error(
         `Cannot enter mode "${id}" while mode "${registry.current().id}" is active`,
       );
     }
     const def = registry.byId(id);
     const tid = args.targetId ?? null;
+
+    if (def.kind === 'soft' && opts.journalSoftModes?.() === false) {
+      firstEntryId = opts.history.currentEntryId();
+      active = true;
+      activeTargetId = tid;
+      registry.setMode(id);
+      return;
+    }
 
     // Soft mode + targetId → consult cache
     if (def.kind === 'soft' && tid !== null) {
@@ -65,6 +80,7 @@ export function createModeMachine(opts: CreateModeMachineOptions): ModeMachine {
           // fall through to begin a fresh journal below
         } else {
           opts.history.resumeJournal(cached);
+          active = true;
           activeJournal = cached;
           activeTargetId = tid;
           registry.setMode(id);
@@ -77,18 +93,21 @@ export function createModeMachine(opts: CreateModeMachineOptions): ModeMachine {
       targetId: tid ?? undefined,
       label: def.id,
     });
+    active = true;
     activeTargetId = tid;
     registry.setMode(id);
   }
 
   function reset(): void {
+    active = false;
     activeJournal = null;
     activeTargetId = null;
     registry.setMode('normal');
   }
 
   function exitMode(): void {
-    if (!activeJournal) return;
+    if (!active) return;
+    if (!activeJournal) return reset();
     const def = registry.current();
     activeJournal.suspend();
     if (def.kind === 'soft' && activeTargetId !== null) {
@@ -111,7 +130,17 @@ export function createModeMachine(opts: CreateModeMachineOptions): ModeMachine {
   }
 
   function discardMode(): void {
-    if (!activeJournal) return;
+    if (!active) return;
+    if (!activeJournal) {
+      let depth = opts.history.undoDepth();
+      while (depth > 0 && opts.history.entries().undo[depth - 1]!.id >= firstEntryId) {
+        opts.history.undo();
+        const after = opts.history.undoDepth();
+        if (after >= depth) break;
+        depth = after;
+      }
+      return reset();
+    }
     const def = registry.current();
     activeJournal.cancel();
     if (activeTargetId !== null) cache.remove(def.id, activeTargetId);

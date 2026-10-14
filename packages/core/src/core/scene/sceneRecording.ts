@@ -115,6 +115,7 @@ export function createSceneRecording(env: SceneRecordingEnv): SceneRecording {
     notify,
     refuseUntracked,
     runArrivalEdit: arrivals.runEdit,
+    activeJournal: outer.activeJournal,
   });
 
   return {

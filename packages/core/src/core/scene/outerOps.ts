@@ -38,6 +38,8 @@ export interface OuterOps {
   apply(engine: History, ops: Op[], label: string, adapter: unknown): void;
   setHistoryAdapter(fn: (() => unknown) | null): void;
   setActiveJournalAccessor(fn: (() => Journal | null) | null): void;
+  /** The journal edits go to now, or null for the scene's own history. */
+  activeJournal(): Journal | null;
 }
 
 /** A kit op under the key of the outer op that caused it, so two edits merge
@@ -96,5 +98,6 @@ export function createOuterOps(env: OuterOpsEnv): OuterOps {
     setActiveJournalAccessor(fn) {
       activeJournal = fn;
     },
+    activeJournal: () => activeJournal?.() ?? null,
   };
 }

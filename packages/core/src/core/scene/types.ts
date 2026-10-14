@@ -300,7 +300,9 @@ export interface UseSceneOptions<TData, TLayer extends string, TPose = RectPose>
   /** When supplied, `scene.applyBatch` consults this on every call. If it
    *  returns a non-null `Journal`, ops are routed to the journal's
    *  `applyBatch` instead of recording a new parent-history entry. The scene
-   *  state changes as normal; only the history tracking differs.
+   *  state changes as normal; only the history tracking differs. Undo and
+   *  redo (`scene.undo`, `scene.history.undo`, and their `can*`) step that
+   *  journal too, so they take back what went into it.
    *
    *  When the accessor isn't known at scene-construction time, wire it after
    *  construction via `scene.setActiveJournalAccessor(fn)`. */

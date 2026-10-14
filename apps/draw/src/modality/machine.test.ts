@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { createModeMachine } from './machine';
 import { DEFAULT_MODES } from '@weasel-js/modes';
+import { createHistory, type Op } from '@weasel-js/history';
 
 function fakeHistory() {
   const nextEntryId = 1;
@@ -264,5 +265,51 @@ describe('stale-journal discard', () => {
     m.enterMode('path-edit', { targetId: 'p' });
     expect(history.beginJournal).toHaveBeenCalledTimes(1);   // no fresh begin
     expect(history.resumeJournal).toHaveBeenCalledTimes(1);  // resumed
+  });
+});
+
+describe('soft modes with journalSoftModes off', () => {
+  function counter() {
+    const state = { n: 0 };
+    const add = (by: number): Op => ({ apply: () => { state.n += by; }, invert: () => add(-by) });
+    const history = createHistory(state);
+    return { state, history, bump: (by: number) => history.applyOps([add(by)], 'bump') };
+  }
+
+  it('records each edit on the history and opens no journal', () => {
+    const { state, history, bump } = counter();
+    const m = createModeMachine({ modes: DEFAULT_MODES, history, journalSoftModes: () => false });
+    bump(1);
+    m.enterMode('path-edit', { targetId: 'p' });
+    expect(m.getActiveJournal()).toBe(null);
+    expect(m.getActiveTargetId()).toBe('p');
+    bump(10);
+    bump(100);
+    expect(history.undoDepth()).toBe(3);
+    history.undo();
+    expect(state.n).toBe(11);
+    m.exitMode();
+    expect(m.registry.current().id).toBe('normal');
+    expect(history.undoDepth()).toBe(2);
+  });
+
+  it('discardMode takes back only the edits made since entering', () => {
+    const { state, history, bump } = counter();
+    const m = createModeMachine({ modes: DEFAULT_MODES, history, journalSoftModes: () => false });
+    bump(1);
+    m.enterMode('path-edit', { targetId: 'p' });
+    bump(10);
+    bump(100);
+    m.discardMode();
+    expect(state.n).toBe(1);
+    expect(history.undoDepth()).toBe(1);
+    expect(m.registry.current().id).toBe('normal');
+  });
+
+  it('still journals a strict mode', () => {
+    const { history } = counter();
+    const m = createModeMachine({ modes: DEFAULT_MODES, history, journalSoftModes: () => false });
+    m.enterMode('free-transform', { targetId: 'sel' });
+    expect(m.getActiveJournal()).not.toBe(null);
   });
 });
