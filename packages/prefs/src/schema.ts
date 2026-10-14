@@ -87,6 +87,14 @@ export interface PrefBase<K extends string, Value> {
    *  schema editor shows such a leaf as one closed thing and prints the name
    *  in place of its literal. */
   type?: string;
+  /** The `enum` leaves this one's value may be split by, each by the full
+   *  path its value is read at: the value may then be held once per option
+   *  of any of them (a {@link PrefLocus}), which the store folds into the one
+   *  value read. Whether it is split is the stored value's to say. The
+   *  order is the order a value split by several is stored in, the first
+   *  outermost. Each must be a plain `enum`: not `clearable`, with no
+   *  `encoding`, and not split itself. */
+  splitBy?: readonly string[];
 }
 
 /** How a schema-driven UI should present a number pref. */

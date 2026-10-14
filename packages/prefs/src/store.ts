@@ -1,15 +1,16 @@
 import { createEmitter } from '@weasel-js/registry';
 import type { OwnedRecordCache } from '@weasel-js/storage';
+import type { PrefBlend } from './blend';
 import { checkPrefConditions } from './conditionCheck';
-import { recordValue, stampRecord } from './stamp';
-import { assignPrefValueAtPath, prefHoldsValue, prefLeaves, prefSectionLeaves, setOwnPrefValue, VERSION_RECORD } from './helpers';
-import type { PrefList } from './list';
-import type { PrefMap } from './map';
+import { recordValue } from './stamp';
+import { assignPrefValueAtPath, prefHoldsValue, prefLeaves, setOwnPrefValue, VERSION_RECORD } from './helpers';
+import { isPrefLocus, selectionWeights, type PrefLocus, type PrefSelection, type PrefWeights } from './locus';
+import { createSnapshots, resolveHeld, selectionAt, weightsUnder, type SnapshotSource } from './snapshot';
+import { checkPrefSplits, prefSelectors } from './splitCheck';
 import type { PrefPath, PrefValueAt } from './paths';
-import { type PrefValidator, repairPrefValue } from './repair';
+import type { PrefValidator } from './repair';
 import type { PrefGroup } from './groups';
-import type { PrefLeaf, PrefObject } from './schema';
-import { prefVariantOf, type PrefUnion } from './union';
+import { prefWrites } from './storeWrites';
 
 /** One leaf changing, as a store subscriber hears it: the value readers now
  *  see, and whether this store or another writer made the change. */
@@ -22,21 +23,40 @@ export interface PrefChange {
 /** Values for one schema, held in memory and persisted behind. */
 export interface PrefsStore<S extends PrefGroup> {
   readonly schema: S;
-  /** The leaf's value, repaired against the schema; its default when unset. */
-  get<P extends PrefPath<S>>(path: P): PrefValueAt<S, P>;
-  set<P extends PrefPath<S>>(path: P, value: PrefValueAt<S, P>): void;
+  /**
+   * The leaf's value, repaired against the schema; its default when unset. A
+   * split value is folded: under the selectors' own values it is the member
+   * they name, and under `weights` it is the blend its kind makes of the
+   * members that weigh something. A selector `weights` leaves out keeps its
+   * own value.
+   */
+  get<P extends PrefPath<S>>(path: P, read?: { weights?: PrefWeights }): PrefValueAt<S, P>;
+  /** On a split leaf, writes the member the selectors' own values name. A
+   *  {@link PrefLocus} given as the value replaces the whole of what is held. */
+  set<P extends PrefPath<S>>(path: P, value: PrefValueAt<S, P> | PrefLocus): void;
+  /** Hold the leaf's value once per option of the selector at `by`, one of
+   *  the leaf's `splitBy`, each option starting as the value it had. */
+  split(path: PrefPath<S>, by: string): void;
+  /** Stop splitting the leaf's value by the selector at `by`, keeping the
+   *  member that selector's own value names. */
+  join(path: PrefPath<S>, by: string): void;
+  /** What the leaf holds where its value is split, each member repaired. */
+  locus(path: PrefPath<S>): PrefLocus | undefined;
   /** Unset every leaf at or under `path`; with no path, all. */
   reset(path?: string): void;
   /** Whether the leaf has a value of its own rather than following its default. */
   isSet(path: PrefPath<S>): boolean;
-  /** Every leaf's value as a nested tree. The same object until something changes. */
-  values(): Record<string, unknown>;
+  /** Every leaf's value as a nested tree. The same object until something
+   *  changes. With `at`, the tree as it would read with each selector named
+   *  there set to the option given, built for the call. */
+  values(read?: { at?: PrefSelection }): Record<string, unknown>;
   /** The leaves following their default. The same set until something changes. */
   unset(): ReadonlySet<string>;
   /** Every stored record as a nested tree, unrepaired, including records no
    *  leaf describes. The same object until something changes. */
   stored(): Record<string, unknown>;
-  /** `changes` is empty when only records no leaf describes changed. */
+  /** `changes` is empty when only records no leaf describes changed. A
+   *  selector changing is a change to every leaf split by it. */
   subscribe(listener: (changes: PrefChange[]) => void): () => void;
   /** False while the store cannot persist: storage has not been read yet, or
    *  was written by a newer schema. Changes still apply for this session, and
@@ -57,36 +77,6 @@ export interface PrefsStore<S extends PrefGroup> {
   flush(): Promise<boolean>;
   close(): Promise<void>;
 }
-
-interface Snapshot {
-  byPath: Map<string, unknown>;
-  tree: Record<string, unknown>;
-  unset: ReadonlySet<string>;
-}
-
-/** JSON storage cannot keep an infinity; `repairPrefValue` reads these back. */
-const encodeInfinity = (leaf: PrefLeaf, value: unknown): unknown => {
-  if (leaf.kind === 'number') return value === Infinity || value === -Infinity ? String(value) : value;
-  if (leaf.kind === 'list' && Array.isArray(value)) {
-    const { item } = leaf as PrefList;
-    return value.map((entry) => encodeInfinity(item, entry));
-  }
-  if (value === null || typeof value !== 'object' || Array.isArray(value)) return value;
-  const held = value as Record<string, unknown>;
-  if (leaf.kind === 'map') {
-    const { item } = leaf as PrefMap;
-    return Object.fromEntries(Object.entries(held).map(([key, entry]) => [key, encodeInfinity(item, entry)]));
-  }
-  const fields = leaf.kind === 'union' ? prefVariantOf(leaf as PrefUnion, held)?.[1] : leaf;
-  if (fields?.kind !== 'object') return value;
-  let out: Record<string, unknown> | undefined;
-  for (const [key, field] of prefSectionLeaves((fields as PrefObject).children)) {
-    if (!Object.hasOwn(held, key)) continue;
-    const encoded = encodeInfinity(field, held[key]);
-    if (encoded !== held[key]) (out ??= { ...held })[key] = encoded;
-  }
-  return out ?? value;
-};
 
 /** Every record of `cache` but the version's, as a nested tree of unrepaired values. */
 function storedRecords(cache: OwnedRecordCache): Record<string, unknown> {
@@ -125,41 +115,15 @@ export function createPrefsStore<S extends PrefGroup>(
   onClose?: () => void,
   /** The schema version a value set here is in, stamped on its record. */
   version = 0,
+  blends?: Readonly<Record<string, PrefBlend>>,
 ): PrefsStore<S> {
   const leaves = new Map([...prefLeaves(schema)].filter(([, leaf]) => prefHoldsValue(leaf)));
   for (const { field, at, problem } of checkPrefConditions(schema)) {
     console.warn(`[prefs] ${field} of ${at === '' ? 'the schema' : `"${at}"`}: ${problem}`);
   }
-  let snapshot: Snapshot | null = null;
-  let previous: { raw: Map<string, unknown>; byPath: Map<string, unknown> } | null = null;
-
-  const build = (): Snapshot => {
-    const byPath = new Map<string, unknown>();
-    const raw = new Map<string, unknown>();
-    const unset = new Set<string>();
-    const tree: Record<string, unknown> = {};
-    for (const [path, leaf] of leaves) {
-      const has = cache.has(path);
-      let value: unknown;
-      if (!has) {
-        value = leaf.default;
-        unset.add(path);
-      } else {
-        const record = cache.get(path);
-        const stored = recordValue(record);
-        raw.set(path, record);
-        value =
-          previous?.raw.has(path) && previous.raw.get(path) === record
-            ? previous.byPath.get(path)
-            : repairPrefValue(leaf, stored, validators);
-      }
-      byPath.set(path, value);
-      assignPrefValueAtPath(tree, path, value);
-    }
-    previous = { raw, byPath };
-    return { byPath, tree, unset };
-  };
-  const current = (): Snapshot => (snapshot ??= build());
+  for (const { at, problem } of checkPrefSplits(schema)) console.warn(`[prefs] splitBy of "${at}": ${problem}`);
+  const source: SnapshotSource = { leaves, cache, selectors: prefSelectors(leaves), validators, blends };
+  const { current, peek, drop } = createSnapshots(source);
 
   let storedTree: Record<string, unknown> | null = null;
 
@@ -169,10 +133,16 @@ export function createPrefsStore<S extends PrefGroup>(
     if (records.length === 0) return;
     storedTree = null;
     const mine = records.filter((c) => leaves.has(c.name));
-    if (mine.length > 0) snapshot = null;
+    const before = peek();
+    if (mine.length > 0) drop();
     const now = current();
-    const out = mine.map((c): PrefChange => ({ path: c.name, value: now.byPath.get(c.name), origin: c.origin }));
-    changed.emit(out);
+    const origins = new Map(mine.map((c) => [c.name, c.origin]));
+    for (const c of mine) {
+      for (const path of [...(before?.splitBy.get(c.name) ?? []), ...(now.splitBy.get(c.name) ?? [])]) {
+        if (!origins.has(path)) origins.set(path, c.origin);
+      }
+    }
+    changed.emit([...origins].map(([path, origin]): PrefChange => ({ path, value: now.byPath.get(path), origin })));
   });
 
   let closed = false;
@@ -182,20 +152,19 @@ export function createPrefsStore<S extends PrefGroup>(
     warned = true;
     console.warn(`[prefs] write to a closed store${path === undefined ? '' : ` at "${path}"`}; it will not persist`);
   };
-
   return {
     schema,
-    get: (path) => current().byPath.get(path) as never,
-    set: (path, value) => {
-      warnIfClosed(path);
+    ...prefWrites({ leaves, cache, selectors: source.selectors, version, selection: () => current().selection, warnIfClosed }),
+    get: (path, read) => {
+      const now = current();
+      if (!read?.weights) return now.byPath.get(path) as never;
       const leaf = leaves.get(path);
-      if (!leaf) {
-        console.warn(`[prefs] no leaf at "${path}"; ignoring the write`);
-        return;
-      }
-      const stored = encodeInfinity(leaf, value);
-      // Unset is stored as nothing, which a stamp would turn into something.
-      cache.set(path, stored === undefined ? undefined : stampRecord(stored, version));
+      const weights = weightsUnder(source.selectors, now.selection, read.weights);
+      return (leaf ? resolveHeld(source, leaf, now.held.get(path), weights) : undefined) as never;
+    },
+    locus: (path) => {
+      const held = current().held.get(path);
+      return isPrefLocus(held) ? held : undefined;
     },
     reset: (path) => {
       warnIfClosed(path);
@@ -204,7 +173,18 @@ export function createPrefsStore<S extends PrefGroup>(
       }
     },
     isSet: (path) => cache.has(path),
-    values: () => current().tree,
+    values: (read) => {
+      const now = current();
+      if (!read?.at) return now.tree;
+      const selection = selectionAt(source.selectors, now.selection, read.at);
+      const weights = selectionWeights(selection);
+      const tree: Record<string, unknown> = {};
+      for (const [path, leaf] of leaves) {
+        const set = source.selectors.has(path) ? selection[path] : resolveHeld(source, leaf, now.held.get(path), weights);
+        assignPrefValueAtPath(tree, path, set);
+      }
+      return tree;
+    },
     unset: () => current().unset,
     stored: () => (storedTree ??= storedRecords(cache)),
     subscribe: (listener) => changed.subscribe(listener),

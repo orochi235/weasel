@@ -57,6 +57,9 @@ export {
   type PrefScopeAtOptions,
 } from './scope';
 export { prefShownReader, prefShownValue } from './shown';
+export { isPrefLocus, type PrefLocus, type PrefSelection, type PrefWeighted, type PrefWeights } from './locus';
+export { PREF_BLENDS, type PrefBlend } from './blend';
+export { checkPrefSplits, type PrefSplitProblem } from './splitCheck';
 export { prefSchemaHolding } from './holding';
 export { prefAliasedLeaf, prefAliasName, prefAliasTarget, type PrefAlias } from './alias';
 export { prefAliasTargets, type PrefAliasTargets, type PrefAliasTargetsOptions } from './aliasTargets';

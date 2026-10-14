@@ -35,3 +35,37 @@ draws it there. Put an unlimited setting at the end of the range it is nearest:
 a 0–100% limit is off at 100, and a scale with no such end takes `endless`,
 which adds a stop one step past the range that stores `Infinity` and reads the
 leaf's `infinity` word.
+
+## Split values
+
+A leaf that lists `splitBy` may hold its value once per option of another
+leaf, where it would hold one. The other leaf, the selector, is an ordinary
+`enum` named by its path:
+
+```ts
+'look.mode': { kind: 'enum', default: 'dark', options: [dark, light], … }
+'gap':       { kind: 'number', default: 4, splitBy: ['look.mode'], … }
+
+store.split('gap', 'look.mode');   // holds { $by: 'look.mode', $of: { dark: 4, light: 4 } }
+store.set('gap', 8);               // writes the member the mode is set to
+store.set('look.mode', 'light');   // a change to every leaf split by it
+store.join('gap', 'look.mode');    // back to one value: the member the mode is set to
+```
+
+The stored value is a locus, `{ $by, $of }`, and a member may itself be split
+by a second selector. `store.get` reads the member the selectors are set to.
+`store.get(path, { weights })` reads the alternatives folded by weight, which
+is what a transition between two options shows on the way:
+
+```ts
+store.get('gap', { weights: { 'look.mode': { dark: 0.25, light: 0.75 } } });
+```
+
+A number blends linearly and a color blends in OKLCH. Every other kind takes
+its heaviest alternative, the first option on a tie; `blends` in the open
+options says otherwise for a kind. `store.values({ at: { 'look.mode': 'light' } })`
+is the whole tree as it would read with the selectors set as given.
+
+A selector must be a plain `enum`: not `clearable`, with no `encoding`, and
+not split itself. The store warns of a `splitBy` that names anything else when
+it opens.
