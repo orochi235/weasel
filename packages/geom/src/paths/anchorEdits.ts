@@ -26,7 +26,8 @@ import {
   type PenAnchor,
 } from './anchors';
 import { editAnchorSetTracked } from './anchorOrigins';
-import { cubicPointAt, fitCubicThroughDeletion, splitCubicAtT } from './cubicMath';
+import { cubicPointAt, splitCubicAtT } from './cubicMath';
+import { fitCubicThroughDeletion } from './spanFit';
 
 /** Subpath-major anchor model — the decoded form of a `PolygonPath`. */
 export interface AnchorSet {
@@ -236,8 +237,8 @@ function pointOnSegment(a: PenAnchor, b: PenAnchor, t: number): { x: number; y: 
 /**
  * Delete the anchors at `flatIndexes`. Where a deleted anchor had
  * neighbors on both sides — across the seam too, on a closed subpath — the
- * surviving segment is refitted through the gap (`fitCubicThroughDeletion`)
- * so the path keeps its shape instead of snapping to a straight line.
+ * surviving segment is refitted to the two it replaces (`fitCubicThroughDeletion`)
+ * so the path keeps its shape; a gap between two straight segments closes straight.
  *
  * Subpaths left with fewer than two anchors are dropped entirely. If that
  * would leave the path with no subpaths at all, the whole deletion is refused
@@ -273,8 +274,8 @@ export function deleteAnchorsAt(set: AnchorSet, flatIndexes: Iterable<number>): 
       const wraps = set.closed[s] && sub.length > 2;
       const prev = wraps ? sub[(i - 1 + sub.length) % sub.length] : sub[i - 1];
       const next = wraps ? sub[(i + 1) % sub.length] : sub[i + 1];
-      if (prev && next) {
-        const { c1, c2 } = fitCubicThroughDeletion(prev, next);
+      if (prev && next && !(isStraightSegment(prev, sub[i]) && isStraightSegment(sub[i], next))) {
+        const { c1, c2 } = fitCubicThroughDeletion(prev, sub[i], next);
         prev.outHandle = c1;
         next.inHandle = c2;
       }
