@@ -1,4 +1,5 @@
 import { createElement, useMemo, useState } from 'react';
+import { useLatest } from '@weasel-js/react';
 import { defineTool } from '../../overlayBinding';
 import type { Tool } from '../../overlayBinding';
 import type { RenderLayer } from 'core/layers/render';
@@ -17,6 +18,9 @@ export interface UseMeasureToolOptions {
   /** Where the tool keeps its measurement. Pass one to read it from outside
    *  the canvas — a readout, a panel. Default: a store of the tool's own. */
   store?: MeasurementStore;
+  /** The angle step, in radians, Shift holds a measurement to. Default 15°.
+   *  Read on every pointer move, so a change mid-drag applies at once. */
+  angleStep?: number;
   /** Override the default keybinding (`{ key: 'M' }`). Pass `null` to omit. */
   keybinding?: ToolKeybinding | null;
 }
@@ -59,7 +63,7 @@ function measureLayer(store: MeasurementStore): RenderLayer<unknown> {
 
 /**
  * Measure tool. A drag measures from press to release in world units — both
- * ends through the `snap` dep, Shift holding the angle to 15° steps — and the
+ * ends through the `snap` dep, Shift holding the angle to `angleStep` — and the
  * measurement stays on the canvas until the next drag, Escape, or a switch to
  * another tool. `measure.moveBy` moves the selection by the measured offset
  * and `measure.rotateBy` turns it about its center by the measured angle, each
@@ -71,6 +75,7 @@ export function useMeasureTool(options: UseMeasureToolOptions = {}): Tool {
   const store = options.store ?? ownStore;
   const actions = useMemo(() => createMeasureActions(store), [store]);
   const overlay = useMemo(() => measureLayer(store), [store]);
+  const angleStep = useLatest(options.angleStep);
 
   const { keybinding } = options;
   return useMemo(() => defineTool({
@@ -84,8 +89,12 @@ export function useMeasureTool(options: UseMeasureToolOptions = {}): Tool {
     overlay,
     onDeactivate: () => store.set(null),
     bindings: [
-      { spec: { kind: 'drag', mods: { shift: 'optional' } }, actionId: MEASURE_ACTION_IDS.measure },
+      {
+        spec: { kind: 'drag', mods: { shift: 'optional' } },
+        actionId: MEASURE_ACTION_IDS.measure,
+        opts: { params: () => (angleStep.current === undefined ? {} : { angleStep: angleStep.current }) },
+      },
       { spec: { kind: 'key', key: 'Escape' }, actionId: MEASURE_ACTION_IDS.clear },
     ],
-  }), [actions, overlay, keybinding, store]);
+  }), [actions, overlay, keybinding, store, angleStep]);
 }

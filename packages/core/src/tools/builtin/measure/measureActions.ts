@@ -1,7 +1,7 @@
-import type { Action, ActionDeps, InvocationCtx, OngoingHandle } from '@weasel-js/routing';
-import { ActionDisabledReason } from '@weasel-js/routing';
+import type { Action, ActionDeps, BindingOpts, InvocationCtx, OngoingHandle } from '@weasel-js/routing';
+import { ActionDisabledReason, resolveParams } from '@weasel-js/routing';
 import type { Scene } from 'core/scene/types';
-import { snapTo15Degrees } from 'interactions/actions/insert/geometry';
+import { SHIFT_ANGLE_STEP, snapToAngleStep } from 'interactions/actions/insert/geometry';
 import { translateSelection } from 'interactions/actions/defaults/nudge';
 import { requiresSelection } from 'interactions/actions/defaults/requiresSelection';
 import { commitOps } from 'interactions/actions/defaultCommitAdapter';
@@ -34,13 +34,16 @@ function measureDrag(store: MeasurementStore): Action {
     invoker: {
       timing: 'ongoing',
       // The dispatcher builds deps once, for `start`; later events carry none.
-      start(ctx: InvocationCtx): OngoingHandle {
+      start(ctx: InvocationCtx, opts?: BindingOpts): OngoingHandle {
         const snapDep = ctx.deps.snap;
         const snap = (p: MeasurePoint): MeasurePoint => (snapDep ? snapDep.point(p) : p);
         const start = snap(ctx.drag?.start ?? ctx.world);
         const endAt = (at: InvocationCtx): MeasurePoint => {
           const raw = at.drag?.current ?? at.world;
-          return snap(at.modifiers?.shift ? snapTo15Degrees(start, raw) : raw);
+          if (!at.modifiers?.shift) return snap(raw);
+          // Re-read each event, so a step changed mid-drag reaches it.
+          const step = resolveParams(opts?.params)?.['angleStep'];
+          return snap(snapToAngleStep(start, raw, typeof step === 'number' ? step : SHIFT_ANGLE_STEP));
         };
         store.set(measureBetween(start, start));
         return {
@@ -130,7 +133,8 @@ function clear(store: MeasurementStore): Action {
 /**
  * The measure tool's actions, all reading and writing `store`: the drag that
  * measures from press to pointer — through the `snap` dep at both ends, Shift
- * holding the angle to 15° steps — and the commands that move the selection by
+ * holding the angle to steps of the binding param `angleStep` (radians,
+ * default 15°) — and the commands that move the selection by
  * the measured offset or turn it about its center by the measured angle, each
  * one undo step that Transform Again can repeat.
  */

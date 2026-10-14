@@ -1,8 +1,9 @@
 import { ICON_SVG_BASE } from './_base';
 import type { IconProps } from './types';
 
-/** Ruler — a long bar with ticks hanging from its upper edge, the middle one
- *  longer. Used for `useMeasureTool`. */
+/** Ruler — a long bar with hairline ticks hanging from its upper edge, the
+ *  middle one longer. Used for `useMeasureTool`. The same drawing as the
+ *  `measure` glyph in `@weasel-js/ui`'s set, which core cannot import. */
 export default function MeasureIcon({ className, size = 20 }: IconProps) {
   return (
     <svg
@@ -10,9 +11,11 @@ export default function MeasureIcon({ className, size = 20 }: IconProps) {
       className={className}
       width={size}
       height={size}
+      strokeLinecap="round"
+      strokeLinejoin="round"
     >
-      <rect x="2.75" y="6.75" width="14.5" height="6.5" rx="1" />
-      <path d="M 6.5 7 V 9.5 M 10 7 V 11 M 13.5 7 V 9.5" strokeLinecap="round" />
+      <rect x="2.6" y="7.4" width="14.8" height="5.2" rx="1.2" />
+      <path d="M6 7.4v2.2M9.4 7.4v3M12.8 7.4v2.2" strokeWidth={1} />
     </svg>
   );
 }

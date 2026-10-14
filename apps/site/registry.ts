@@ -663,6 +663,16 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/SceneLabDemo.tsx',
   },
   {
+    id: 'lab-measure-tool',
+    title: 'Measure, then transform',
+    category: 'Tools',
+    description:
+      "`useMeasureTool` measures a drag in world units — both ends through the `snap` dep, Shift holding the angle to the tool's `angleStep` — and keeps the measurement on the canvas until the next drag, Escape, or a switch to another tool. The measurement lives in a `MeasurementStore`, which `<MeasureReadout>` watches: it reads the distance, offset, and angle, and draws the tool's `measure` group of actions, so Move by and Rotate by are `measure.moveBy` and `measure.rotateBy` from the actions registry, each one undo step on the selection. The trial opens with the green square selected and a measurement from its corner to the gray target's.",
+    hint: 'Press Move by and the green square lands on the gray one; undo with the button or <kbd>Mod+Z</kbd>, then press Rotate by. Drag on the canvas to measure again, hold <kbd>Shift</kbd> to step the angle, and change Shift angle step or Snap to grid in the control panel. Press <kbd>V</kbd> to select something else and <kbd>M</kbd> to measure again; <kbd>Escape</kbd> clears the measurement.',
+    load: () => import('./demos/MeasureLabDemo').then((m) => m.MeasureLabDemo),
+    path: 'apps/site/demos/MeasureLabDemo.tsx',
+  },
+  {
     id: 'bidi',
     title: 'Bidirectional text',
     package: 'bidi',

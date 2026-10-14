@@ -34,8 +34,9 @@ function setup(poses: RectPose[] = [{ x: 0, y: 0, width: 20, height: 10, rotatio
   });
   /** Drag the measure action the way the dispatcher does: deps on `start`
    *  only. Returns the handle so a test can stop before release. */
-  const measure = (from: Pt, to: Pt, opts: { shift?: boolean; release?: 'commit' | 'cancel' | null } = {}) => {
-    const handle = (action(MEASURE_ACTION_IDS.measure).invoker as OngoingInvoker).start(ctx(from, from));
+  const measure = (from: Pt, to: Pt, opts: { shift?: boolean; release?: 'commit' | 'cancel' | null; params?: () => Record<string, unknown> } = {}) => {
+    const handle = (action(MEASURE_ACTION_IDS.measure).invoker as OngoingInvoker)
+      .start(ctx(from, from), opts.params ? { params: opts.params } : undefined);
     const moved = { ...ctx(to, from, opts.shift), deps: {} as never };
     handle.onMove?.(moved);
     if (opts.release !== null) handle.onEnd?.(moved, opts.release ?? 'commit');
@@ -79,6 +80,12 @@ describe('measure drag', () => {
     rig.measure({ x: 0, y: 0 }, { x: 100, y: 5 }, { shift: true });
     expect(rig.store.get()!.angle).toBeCloseTo(0, 12);
     expect(rig.store.get()!.distance).toBeCloseTo(Math.hypot(100, 5), 9);
+  });
+
+  it('holds the angle to the binding\'s angleStep with Shift', () => {
+    const rig = setup();
+    rig.measure({ x: 0, y: 0 }, { x: 100, y: 70 }, { shift: true, params: () => ({ angleStep: Math.PI / 4 }) });
+    expect(rig.store.get()!.angle).toBeCloseTo(Math.PI / 4, 12);
   });
 
   it('drops the measurement when the drag is canceled', () => {

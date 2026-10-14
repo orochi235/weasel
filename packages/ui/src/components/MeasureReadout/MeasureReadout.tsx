@@ -1,8 +1,8 @@
 import { MEASURE_ACTION_IDS, type MeasurementStore, useMeasurement } from '@weasel-js/core';
 import { decimal, qty } from '@weasel-js/quantity';
-import { ActionBar } from '@weasel-js/ui';
 import type { ReactElement } from 'react';
-import s from './MeasureHud.module.css';
+import { ActionBar } from '../ActionBar';
+import s from './MeasureReadout.module.css';
 
 const LABELS = {
   [MEASURE_ACTION_IDS.moveBy]: 'Move by',
@@ -13,13 +13,22 @@ const LABELS = {
 const AT = decimal({ places: 2, grouping: false });
 const format = (n: number): string => qty(n, AT).text;
 
+/** Props for {@link MeasureReadout}. */
+export interface MeasureReadoutProps {
+  /** The measure tool's store — the one passed as `useMeasureTool({ store })`. */
+  store: MeasurementStore;
+  /** Additional class for the root, to place it. */
+  className?: string;
+}
+
 /**
- * The measure tool's readout, in the workspace while a measurement is held:
- * its distance, offset, and angle in world units, and the commands that move
- * or turn the selection by it. The angle reads in the canvas's own sense,
- * clockwise positive, so it is the angle "Rotate by" turns.
+ * The measure tool's readout: a chip pinned to the bottom of the nearest
+ * positioned ancestor while a measurement is held, with its distance, offset,
+ * and angle in world units, and the `measure` group's commands — Move by,
+ * Rotate by, Clear — drawn from the actions registry. The angle reads in the
+ * canvas's own sense, clockwise positive, so it is the angle "Rotate by" turns.
  */
-export function MeasureHud({ store }: { store: MeasurementStore }): ReactElement | null {
+export function MeasureReadout({ store, className }: MeasureReadoutProps): ReactElement | null {
   const m = useMeasurement(store);
   if (!m) return null;
   const cells: [string, string][] = [
@@ -29,7 +38,7 @@ export function MeasureHud({ store }: { store: MeasurementStore }): ReactElement
     ['Angle', `${format((m.angle * 180) / Math.PI)}°`],
   ];
   return (
-    <div className={s.hud} role="group" aria-label="Measurement">
+    <div className={[s.readout, className].filter(Boolean).join(' ')} role="group" aria-label="Measurement">
       <ActionBar group="measure" labels={LABELS} className={s.actions} />
       {cells.map(([name, value]) => (
         <span key={name} className={s.cell}>

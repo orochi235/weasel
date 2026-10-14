@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { isValidElement, useState } from 'react';
 import { renderHook, act } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
-import { reportRouteConflicts, type ActionsRegistry } from '@weasel-js/routing';
+import { reportRouteConflicts, resolveParams, type ActionsRegistry } from '@weasel-js/routing';
 import { useActionsRegistry } from '@weasel-js/routing/react';
 import type { DrawCommand } from '@weasel-js/renderer';
 import type { RenderLayer } from 'core/layers/render';
@@ -20,6 +20,18 @@ describe('useMeasureTool — the tool', () => {
     const icon = result.current.presentation?.icon;
     expect(isValidElement(icon) && icon.type).toBe(MeasureIcon);
     expect(result.current.keybinding).toEqual({ key: 'M' });
+  });
+
+  it('hands the drag the latest angle step, without minting a new tool', () => {
+    const { result, rerender } = renderHook(({ step }) => useMeasureTool({ angleStep: step }), {
+      initialProps: { step: Math.PI / 4 },
+    });
+    const tool = result.current;
+    const params = () => resolveParams(tool.bindings?.[0]?.opts?.params);
+    expect(params()).toEqual({ angleStep: Math.PI / 4 });
+    rerender({ step: Math.PI / 2 });
+    expect(result.current).toBe(tool);
+    expect(params()).toEqual({ angleStep: Math.PI / 2 });
   });
 
   it('reports no route conflicts', () => {

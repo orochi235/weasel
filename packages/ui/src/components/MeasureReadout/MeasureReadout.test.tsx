@@ -9,7 +9,7 @@ import {
   type Action,
   type MeasurementStore,
 } from '@weasel-js/core';
-import { MeasureHud } from './MeasureHud';
+import { MeasureReadout } from './MeasureReadout';
 
 function Register({ action }: { action: Action }) {
   useAction(action);
@@ -21,12 +21,12 @@ function mount(store: MeasurementStore) {
   return render(
     <ActionsProvider>
       {actions.map((a) => <Register key={a.id} action={a} />)}
-      <MeasureHud store={store} />
+      <MeasureReadout store={store} />
     </ActionsProvider>,
   );
 }
 
-describe('MeasureHud', () => {
+describe('MeasureReadout', () => {
   it('shows nothing until something is measured', () => {
     const { container } = mount(createMeasurementStore());
     expect(container.firstChild).toBeNull();
