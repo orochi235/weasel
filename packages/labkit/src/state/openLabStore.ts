@@ -110,7 +110,9 @@ function mergeLate(store: LabStore, late: ReadLab, records: OwnedRecordCache): B
   // With no meta record, `doc` is the empty lab and its mode is nobody's choice.
   const held = records.writable && records.has(META_RECORD);
   const unreadable: UnreadableRecord[] = [];
-  const failed = (record: UnreadableRecord): void => void unreadable.push(record);
+  const failed = (record: UnreadableRecord): void => {
+    unreadable.push(record);
+  };
   store.setState({
     trials: [...hydrateTrials(doc.trials, hooks.serializers, hooks, failed), ...builtTrials],
     savedSnapshots: [...hydrateSnapshots(doc.saves, hooks, failed), ...builtSaves],

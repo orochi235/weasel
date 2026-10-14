@@ -329,7 +329,9 @@ function loadedState(
 > {
   const initial = options.initial ?? emptyDocument(options.initialMode ?? 'auto');
   const unreadable: UnreadableRecord[] = [];
-  const failed = (record: UnreadableRecord): void => void unreadable.push(record);
+  const failed = (record: UnreadableRecord): void => {
+    unreadable.push(record);
+  };
   return {
     trials: hydrateTrials(initial.trials, hooks.serializers, hooks, failed),
     savedSnapshots: hydrateSnapshots(initial.saves, hooks, failed),

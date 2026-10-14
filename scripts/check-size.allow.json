@@ -240,7 +240,7 @@
     "longestFunction": 132
   },
   "packages/labkit/src/state/bindLabStore.ts": {
-    "longestFunction": 210
+    "longestFunction": 212
   },
   "packages/labkit/src/state/store.ts": {
     "longestFunction": 230

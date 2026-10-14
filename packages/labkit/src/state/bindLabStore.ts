@@ -154,7 +154,9 @@ export function bindLabStore(
     let trials = current.trials;
     let saves = current.savedSnapshots;
     let unreadable = current.unreadable;
-    const failed = (u: UnreadableRecord): void => void (unreadable = [...unreadable, u]);
+    const failed = (u: UnreadableRecord): void => {
+      unreadable = [...unreadable, u];
+    };
     const patch: Partial<Pick<typeof current, 'layout' | 'undockedPanels' | 'mode'>> = {};
 
     for (const { name, value } of remote) {
