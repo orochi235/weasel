@@ -1,42 +1,90 @@
-/** Writing a path whose open subpaths no fill closes: SVG always closes one. */
+/**
+ * Writing a path as SVG draws it. SVG closes every open subpath it fills, and
+ * places a stroke's markers by the whole `<path>` where the renderer places
+ * them by subpath.
+ */
 
-import { fillsOpenSubpaths, rotateAboutPoint, splitByClosure, splitSubpaths } from '@weasel-js/geom';
+import { fillsOpenSubpaths, rotateAboutPoint, splitByClosure, splitSubpaths, type PolygonPath } from '@weasel-js/geom';
 import { pathBounds } from './serializeBounds';
-import type { SvgGroupNode, SvgPathNode, SvgStroke } from './types';
+import type { SvgGroupNode, SvgPaint, SvgPathNode, SvgStroke } from './types';
 
 const capsEnds = (stroke: SvgStroke | undefined): boolean =>
   stroke?.markerStart !== undefined || stroke?.markerEnd !== undefined;
+
+const marked = (stroke: SvgStroke | undefined): boolean =>
+  capsEnds(stroke) || stroke?.markerMid !== undefined;
 
 function withoutEndMarkers(stroke: SvgStroke): SvgStroke {
   const { markerStart: _start, markerEnd: _end, ...rest } = stroke;
   return rest;
 }
 
+/** The stroke a part with no open subpath is written with: SVG caps the ends
+ *  of a closed `<path>`, and the renderer caps none. */
+const closedStroke = (stroke: SvgStroke | undefined): SvgStroke | undefined =>
+  stroke && capsEnds(stroke) ? withoutEndMarkers(stroke) : stroke;
+
+const isClosed = (part: PolygonPath): boolean => splitByClosure(part).open === null;
+
+function samePath(a: PolygonPath, b: PolygonPath): boolean {
+  if (a === b) return true;
+  return a.commands.length === b.commands.length && a.coords.length === b.coords.length
+    && a.commands.every((c, i) => c === b.commands[i]) && a.coords.every((v, i) => v === b.coords[i]);
+}
+
+/** One `<path>` of the result: a part of the node's path, and what paints it. */
+interface Piece {
+  path: PolygonPath;
+  fill: SvgPaint;
+  stroke: SvgStroke | undefined;
+}
+
 /**
- * `node` as SVG can draw it. Where a fill leaves the path's open subpaths
- * empty, they are written with no fill: alone, or beside the closed subpaths
- * in a group that takes the node's opacity, rotation, and metadata.
- *
- * SVG draws one start and one end marker per `<path>`, and the renderer one
- * pair per open subpath, so a stroke with either is written one open subpath
- * to a `<path>`, and the closed subpaths without them.
+ * The parts `path` is stroked in. A marked stroke goes one subpath to a part,
+ * since SVG draws one start and one end marker per `<path>` and a mid marker
+ * on every vertex between them, subpath joins included. An unmarked one stays
+ * whole unless its fill covers `closed` alone, which then takes its own part.
  */
-export function withOpenSubpathsUnfilled(node: SvgPathNode): SvgPathNode | SvgGroupNode {
-  const path = node.path;
-  if (path.kind !== 'polygon' || node.fill.kind === 'none' || fillsOpenSubpaths(path)) return node;
+function strokeParts(
+  path: PolygonPath, stroke: SvgStroke | undefined, filled: PolygonPath | null,
+  closed: PolygonPath | null, open: PolygonPath | null,
+): Piece[] {
+  const none: SvgPaint = { kind: 'none' };
+  const subs = marked(stroke) ? splitSubpaths(path) : [];
+  if (subs.length > 1) {
+    return subs.map((sub) => ({ path: sub, fill: none, stroke: isClosed(sub) ? closedStroke(stroke) : stroke }));
+  }
+  if (closed && open && filled === closed) {
+    return [{ path: closed, fill: none, stroke: closedStroke(stroke) }, { path: open, fill: none, stroke }];
+  }
+  return [{ path, fill: none, stroke: open ? stroke : closedStroke(stroke) }];
+}
+
+/**
+ * `node` as SVG can draw it: one `<path>`, or a group of them that takes the
+ * node's opacity, rotation, and metadata.
+ *
+ * A fill covers the whole path, or its closed subpaths alone where the fill
+ * leaves open ones empty, and is written once, under every stroke: with the
+ * part of the stroke that traces exactly what it fills, or with no stroke.
+ */
+export function pathAsSvgDraws(node: SvgPathNode): SvgPathNode | SvgGroupNode {
+  const { path, fill, stroke } = node;
+  if (path.kind !== 'polygon') return capsEnds(stroke) ? { ...node, stroke: closedStroke(stroke) } : node;
+  if (path.commands.length === 0) return node;
   const { closed, open } = splitByClosure(path);
-  if (!open) return node;
-  const { fill, stroke } = node;
-  const opens = capsEnds(stroke) ? splitSubpaths(open) : [open];
-  if (!closed && opens.length === 1) return { ...node, fill: { kind: 'none' } };
-  const piece = (part: typeof path, paint: SvgPathNode['fill'], line = stroke): SvgPathNode =>
-    ({ kind: 'path', path: part, fill: paint, ...(line ? { stroke: line } : {}) });
+  const filled = fill.kind === 'none' ? null : fillsOpenSubpaths(path) ? path : closed;
+  const parts = strokeParts(path, stroke, filled, closed, open);
+  const pieces = filled ? withFill(parts, filled, fill) : parts;
+  if (pieces.length === 1) {
+    const only = pieces[0];
+    if (only.fill === fill && only.stroke === stroke) return node;
+    const { stroke: _stroke, ...rest } = node;
+    return { ...rest, fill: only.fill, ...(only.stroke ? { stroke: only.stroke } : {}) };
+  }
   const group: SvgGroupNode = {
     kind: 'group',
-    children: [
-      ...(closed ? [piece(closed, fill, stroke && withoutEndMarkers(stroke))] : []),
-      ...opens.map((part) => piece(part, { kind: 'none' })),
-    ],
+    children: pieces.map((p): SvgPathNode => ({ kind: 'path', path: p.path, fill: p.fill, ...(p.stroke ? { stroke: p.stroke } : {}) })),
   };
   if (node.rotation != null && node.rotation !== 0) {
     const b = pathBounds(path);
@@ -46,4 +94,11 @@ export function withOpenSubpathsUnfilled(node: SvgPathNode): SvgPathNode | SvgGr
   if (node.hidden) group.hidden = true;
   if (node.meta) group.meta = node.meta;
   return group;
+}
+
+/** `parts` with `fill` on `filled`, first so it lies under every stroke. */
+function withFill(parts: Piece[], filled: PolygonPath, fill: SvgPaint): Piece[] {
+  const host = parts.findIndex((p) => samePath(p.path, filled));
+  if (host < 0) return [{ path: filled, fill, stroke: undefined }, ...parts];
+  return [{ ...parts[host], fill }, ...parts.filter((_, i) => i !== host)];
 }

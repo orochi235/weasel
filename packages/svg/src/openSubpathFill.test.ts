@@ -109,6 +109,9 @@ describe('svg export: a split path draws the markers the renderer draws', () => 
   it('keeps the open subpaths of an unmarked stroke in one path', () => {
     expect(paths(node(`${MIXED} M40 0L50 0`, { stroke: STROKE }, 'none'))).toHaveLength(2);
     expect(paths(node('M0 0L10 0 M20 0L30 0', { stroke: STROKE }, 'none'))).toHaveLength(1);
-    expect(paths(node(`${MIXED} M40 0L50 0`, { stroke: { ...STROKE, markerMid: 'square' } }, 'none'))).toHaveLength(2);
+  });
+
+  it('writes each subpath of a mid-marked stroke as its own path, since SVG marks a join', () => {
+    expect(paths(node(`${MIXED} M40 0L50 0`, { stroke: { ...STROKE, markerMid: 'square' } }, 'none'))).toHaveLength(3);
   });
 });

@@ -13,7 +13,7 @@ import type {
   ScreenLength,
 } from './types';
 import { serializePathD } from './path-serializer';
-import { withOpenSubpathsUnfilled } from './openSubpathFill';
+import { pathAsSvgDraws } from './openSubpathFill';
 import { formatMatrix, trimNumber } from './transform';
 import { PaintServerRegistry, WEASEL_NS, WEASEL_NS_PREFIX } from './gradients';
 import { anchorOffset, svgDirection } from './textAnchor';
@@ -133,7 +133,7 @@ function kindXml(
   if (node.kind === 'group') return groupXml(node, registry, namespaces, warn);
   if (node.kind === 'text') return textXml(node, registry, namespaces, warn);
   if (node.kind === 'image') return imageXml(node, namespaces);
-  const drawn = withOpenSubpathsUnfilled(node);
+  const drawn = pathAsSvgDraws(node);
   return drawn.kind === 'group' ? groupXml(drawn, registry, namespaces, warn) : pathXml(drawn, registry, namespaces, warn);
 }
 

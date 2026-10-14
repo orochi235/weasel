@@ -195,14 +195,6 @@ Priority tags:
   ask for it, because a scene node has no hidden state of its own to map it to: only a layer has
   `visible`. With a per-node one, `unpackSvgFiles` passes `keepHidden` and writes the flag.
 
-- **(P3) svg export: a marked stroke with several open subpaths draws one pair of end markers.**
-  The renderer puts a start and an end marker on each open subpath (`markerHeads`, `markerSites` in
-  `packages/stroke/src`). A path split for `openFill: 'none'` is written one open subpath to a
-  `<path>`, so it matches. A path with `fill: none`, or one whose fill closes its open subpaths,
-  stays one `<path>`, and SVG draws one pair for the whole of it; `marker-mid` differs too, since
-  SVG puts one on every vertex between the path's first and last, subpath joins included. Read in
-  the code, not rendered. The filled case means writing the fill and the strokes as separate paths.
-
 ### Pathfinder follow-ups (post-v1)
 
 - **(P3) Create Outlines refuses synthetic-bold text.** `textToPath` answers `reason: 'synthetic-bold'`: emboldening it is a union with the glyphs' own outline stroke, but the width has to match what the renderer's distance-field shift (`SYNTH_BOLD_AMOUNT`, `packages/renderer/src/draw/text.ts`) draws. Read from `glyphCoverage` and `glyphFieldScale` (`packages/font/src/textSdf.ts`) and not measured against pixels: the shift moves the edge out by `SYNTH_BOLD_AMOUNT` of the field's span, which is `distanceRange` texels in a baked atlas and `SDF_RADIUS` in a runtime canvas page, and a texel is `1 / info.size` em, so the outline grows by `SYNTH_BOLD_AMOUNT × span / info.size` em on each side and differs by which tier serves the glyph. What is left: `textToPath` (`packages/text`) has no stroke outliner to call, since `strokeToPath` is in `@weasel-js/stroke`, which text does not depend on; the union flattens every curve of the glyph; and the result has to be compared with the field in a browser.
