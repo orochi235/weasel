@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { mainChain, skipDecisions } from './mainChain';
-import { SKIP, w } from './skipFixture';
+import { ADJACENT, LANDS_ON_DECISION, SKIP, w } from './skipFixture';
 
 describe('mainChain', () => {
   it('is the longest path over data wires', () => {
@@ -30,6 +30,16 @@ describe('skipDecisions', () => {
     expect(skip!.through.wire.to.stage).toBe('blur');
     expect(skip!.skip.wire.to.stage).toBe('mix');
     expect(skip!.into.wire.from.stage).toBe('src');
+  });
+
+  it('leaves two adjacent skip-ahead decisions alone', () => {
+    expect(mainChain(ADJACENT)).toEqual(['src', 'q1', 'q2', 'mix', 'blur', 'out']);
+    expect(skipDecisions(ADJACENT, mainChain(ADJACENT))).toEqual([]);
+  });
+
+  it('leaves a decision whose skip lands on another decision alone', () => {
+    expect(mainChain(LANDS_ON_DECISION)).toEqual(['src', 'q', 'a', 'd', 'out']);
+    expect(skipDecisions(LANDS_ON_DECISION, mainChain(LANDS_ON_DECISION))).toEqual([]);
   });
 
   it('leaves a decision with a second input alone', () => {

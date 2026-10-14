@@ -6,7 +6,7 @@ import { edgeIdOf, type DataEdge, type DataNode, type EdgeStyle, type NodeStyle 
 import type { PortAnchor, PortSpec } from '../types';
 import { isControl, kindOf, portOn, stageStyle, typeColors, uniqueStages, wireStyle, type EffectLook } from './draw';
 import { mainChain, skipDecisions, type Skip } from './mainChain';
-import { drawableWires, exitLabel, stageRows, type DrawableWire } from './nodeGraph';
+import { drawableWires, exitLabel, stageRows } from './nodeGraph';
 import { branchNode, type BranchChoice } from './symbols';
 import type { EffectPipeline, EffectPort, EffectStage } from './types';
 
@@ -49,8 +49,8 @@ const spreadAt = (ports: readonly EffectPort[], v: number): PortSpec[] =>
   ports.map((p, i) => ({ id: p.id, type: p.type, at: { u: (i + 1) / (ports.length + 1), v } }));
 
 function rackWires(pipeline: EffectPipeline, skips: readonly Skip[]): RackWire[] {
-  const eaten = new Set<DrawableWire>(skips.flatMap((s) => [s.into, s.through, s.skip]));
-  const wires: RackWire[] = drawableWires(pipeline).filter((d) => !eaten.has(d)).map((d) => {
+  const eaten = new Set<number>(skips.flatMap((s) => [s.into.index, s.through.index, s.skip.index]));
+  const wires: RackWire[] = drawableWires(pipeline).filter((d) => !eaten.has(d.index)).map((d) => {
     const label = exitLabel(d);
     return { from: d.wire.from, to: d.wire.to, type: d.type, problem: d.problem, ...(label !== undefined ? { label } : {}) };
   });

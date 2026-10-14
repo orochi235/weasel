@@ -1,7 +1,33 @@
 import { describe, expect, it } from 'vitest';
 import { diagramScene } from '../fromData';
 import { rack } from './rack';
-import { SKIP } from './skipFixture';
+import { ADJACENT, SKIP } from './skipFixture';
+
+type Data = ReturnType<typeof rack>['data'];
+
+/** Every edge's ends are nodes, and name ports those nodes have. */
+function danglingEnds(data: Data): string[] {
+  const portIds = new Map(data.nodes.map((n) => [n.id, new Set([
+    ...(n.ports ?? []).map((p) => p.id),
+    ...(n.rows ?? []).flatMap((r) => (r.kind === 'ports' ? [...(r.left ?? []), ...(r.right ?? [])].map((p) => p.id) : [])),
+  ])]));
+  return data.edges.flatMap((e) => [
+    ...(portIds.get(e.from)?.has(e.fromPort ?? '') ? [] : [`${e.from}.${e.fromPort}`]),
+    ...(portIds.get(e.to)?.has(e.toPort ?? '') ? [] : [`${e.to}.${e.toPort}`]),
+  ]);
+}
+
+describe('rack ends', () => {
+  it('draws every edge between nodes and ports that exist, for a collapsed skip', () => {
+    expect(danglingEnds(rack(SKIP).data)).toEqual([]);
+  });
+
+  it('keeps two adjacent skip-ahead decisions as symbols with every edge attached', () => {
+    const { data } = rack(ADJACENT);
+    expect(data.nodes.map((n) => n.id)).toEqual(expect.arrayContaining(['q1', 'q2']));
+    expect(danglingEnds(data)).toEqual([]);
+  });
+});
 
 describe('rack', () => {
   const { data, scene } = rack(SKIP);

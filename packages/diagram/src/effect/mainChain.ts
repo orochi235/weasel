@@ -47,7 +47,8 @@ export interface Skip {
   skip: DrawableWire;
 }
 
-/** The decisions on `line` that only choose between going on and skipping ahead. */
+/** The decisions on `line` that only choose between going on and skipping ahead,
+ *  and sit between ordinary stages: one next to another decision stays a symbol. */
 export function skipDecisions(pipeline: EffectPipeline, line: readonly string[]): Skip[] {
   const wires = drawableWires(pipeline);
   const stages = new Map(uniqueStages(pipeline).map((s) => [s.id, s]));
@@ -61,6 +62,8 @@ export function skipDecisions(pipeline: EffectPipeline, line: readonly string[])
     if (entering.length !== 1 || leaving.length !== 2 || entering[0]!.wire.from.stage !== line[i - 1]) return;
     const through = leaving.find((d) => d.wire.to.stage === line[i + 1]);
     const skip = leaving.find((d) => d !== through && line.indexOf(d.wire.to.stage) > i + 1);
+    const ordinary = (s: EffectStage | undefined) => s !== undefined && kindOf(s) !== 'decision';
+    if (!ordinary(stages.get(line[i - 1]!)) || !ordinary(through?.toStage) || !ordinary(skip?.toStage)) return;
     if (through !== undefined && skip !== undefined) out.push({ decision, into: entering[0]!, through, skip });
   });
   return out;

@@ -22,3 +22,27 @@ export const SKIP: EffectPipeline = {
     w(['blur', 'out'], ['mix', 'in']), w(['mix', 'out'], ['out', 'in']), w(['osc', 'value'], ['blur', 'radius']),
   ],
 };
+
+const decision = (id: string): EffectStage => ({
+  id, title: id, kind: 'decision', inputs: [{ id: 'in', type: 'image' }],
+  outputs: [{ id: 'yes', type: 'image', label: 'yes' }, { id: 'no', type: 'image', label: 'no' }],
+});
+
+/** Two skip-ahead decisions in a row: src, q1, q2, mix, blur, out. */
+export const ADJACENT: EffectPipeline = {
+  stages: [io('src', { inputs: [] }), decision('q1'), decision('q2'), io('mix'), io('blur'), io('out', { outputs: [] })],
+  wires: [
+    w(['src', 'out'], ['q1', 'in']), w(['q1', 'yes'], ['q2', 'in']), w(['q1', 'no'], ['mix', 'in']),
+    w(['q2', 'yes'], ['mix', 'in']), w(['q2', 'no'], ['blur', 'in']),
+    w(['mix', 'out'], ['blur', 'in']), w(['blur', 'out'], ['out', 'in']),
+  ],
+};
+
+/** A skip-ahead decision whose skip exit lands on another decision: src, q, a, d, out. */
+export const LANDS_ON_DECISION: EffectPipeline = {
+  stages: [io('src', { inputs: [] }), decision('q'), io('a'), decision('d'), io('out', { outputs: [] })],
+  wires: [
+    w(['src', 'out'], ['q', 'in']), w(['q', 'yes'], ['a', 'in']), w(['q', 'no'], ['d', 'in']),
+    w(['a', 'out'], ['d', 'in']), w(['d', 'yes'], ['out', 'in']), w(['d', 'no'], ['out', 'in']),
+  ],
+};
