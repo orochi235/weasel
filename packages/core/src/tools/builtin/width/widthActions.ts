@@ -28,7 +28,9 @@ export interface WidthEnv {
   reachPx(): number;
 }
 
+/** Drag on a stroke to set its width there, adding a stop or moving the nearest one. */
 export const WIDTH_DRAG_ID = 'width.drag';
+/** Alt-click a width stop to remove it. */
 export const WIDTH_REMOVE_STOP_ID = 'width.removeStop';
 const LABEL = 'Stroke width';
 
