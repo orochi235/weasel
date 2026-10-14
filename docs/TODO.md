@@ -947,6 +947,14 @@ only story runner in the repo.
     failing runs were there. A 15 s `browser` timeout in a run made since would mean running beside
     the other projects was not the cause, and the `groupOrder` line should come out. Not measured:
     fewer workers for `browser`, and whether studio's own load is the cause.
+  - **One run on teitou at `8777d97f0`, 2026-10-13, failed three `browser` tests the commit does
+    not touch**, each the only failure in its file: 15 s timeouts in
+    `core/src/canvas/glyphCoverage.browser.test.ts` ("keeps both stems of a 7.2px H at every
+    sub-pixel offset") and `core/src/canvas/rasterSession.browser.test.ts` ("do not push a canvas
+    already on the page out of its context"), neither of which makes a Playwright action, and
+    `frame.evaluate: Frame was detached` under `userEvent.keyboard` in
+    `text-dom/src/overlayTyping.browser.test.tsx`. All three passed on the run before it, whose
+    tree differed only in `PrefSchemaEditor`'s shelf.
   - `forge/src/vite/plugin.test.ts` has its own entry under "Demos & visual regression".
 
 - **(P2) HUD vs DOM text: what the idle rerun left open.** `tests/perf/hud-vs-dom.spec.ts` prices
