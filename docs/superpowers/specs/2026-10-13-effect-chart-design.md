@@ -30,7 +30,7 @@ It is view-only: pan, zoom, pick a stage. No rewiring.
 | Pipeline | Plain data: stages, typed ports, wires, groups. Says nothing about appearance. |
 | Look | A function from a pipeline to what `diagramScene` takes. One per way of drawing a pipeline. |
 | `EffectChart` | A React component. Runs a look over a pipeline and shows the result in a `DiagramView`. |
-| Lab | A labkit lab: sample pipelines, a look picker, each look's settings. |
+| Lab | A workshop story: sample pipelines, a look picker, each look's settings. |
 
 Everything lives in `packages/diagram/src/effect/` and is exported from
 `@weasel-js/diagram/effect`.
@@ -129,12 +129,13 @@ through `onProblems`.
 type EffectLook<TOptions = unknown> = (
   pipeline: EffectPipeline,
   options?: TOptions,
-) => { data: DiagramData; scene: DiagramSceneOptions };
+) => { data: DiagramData; scene: DiagramSceneOptions; color: (type: string | undefined) => string };
 ```
 
 A look returns `diagramScene`'s two arguments, so everything `diagramScene`
 already does (sizing boxes to their text, layout, routing, groups) stays in one
-place. Node ids are stage ids and group ids are group ids, so a pick in the
+place. `color` is the look's color for a value type, which the chart paints
+ports with. Node ids are stage ids and group ids are group ids, so a pick in the
 chart names a stage.
 
 Two looks ship in the first build. They were picked because they read a
@@ -151,8 +152,9 @@ pipeline most differently.
 | Bypassed stage | Dashed outline, dimmed fill and text |
 | Group | A diagram group |
 
-Laid out with `layered`, flowing right. Options: direction, router, gaps,
-type colors, whether params show, the branch symbol.
+Laid out with `layered`, always flowing right: port rows sit on a box's left
+and right. Options: router, gaps, type colors, whether params show, the branch
+symbol.
 
 ### Branch symbols
 
@@ -173,9 +175,10 @@ exits, falls back to `diamond`.
 A hexagon, a step glyph, a comparator, a crossover and a bare fork with the
 conditions on its wires were sketched too and left out of the first build.
 
-Whether a body can draw the bar's ticks and bands or the switch's contact
-inside its outline was not checked. `Outline` takes any `Path`, which covers
-the trapezoid; marks inside a box may need a new kind of body row.
+A body draws nothing inside its outline but text, and a custom `Path` outline
+stays put when layout moves its node. So the bar's ticks and bands and the
+switch's contact are marks, and the trapezoid is a named outline; both are in
+"Additions to diagram".
 
 ### `rack`
 
@@ -199,14 +202,12 @@ Each is general diagram surface, usable without EffectChart.
 
 | Addition | Why | Where |
 |---|---|---|
-| Ports draw in a view-only `DiagramView` | Today the port layer is only registered when `onConnect` is set, so a chart nobody can rewire shows no ports | `DiagramView.tsx`: a `ports` prop, `'connect'` (today's behavior, the default), `'show'` or `'none'` |
+| Ports draw in a view-only `DiagramView` | Today the port layer is only registered when `onConnect` is set, so a chart nobody can rewire shows no ports | `DiagramView.tsx`: a `ports` prop, `'connect'`, `'show'` or `'none'`; unset, it is `'connect'` when `onConnect` is set and `'none'` otherwise, as today |
 | A port's fill can depend on the port | `PortAffordanceOptions.fill` is one fill for every port, so ports cannot take their type's color | `portAffordance.ts`: `fill` also accepts `(port: Port) => CommandFill` |
 | A port can be drawn round | The painted mark is always a square | `portAffordance.ts`: `shape?: 'square' \| 'circle'` |
+| `'trapezoid'` outline | The demux symbol; a custom `Path` outline is in world coordinates and does not follow its node | `outline.ts` |
+| Marks on a data node | A body draws only text inside its outline; the bar and the switch need ticks, bands and a contact | `marks.ts`: `DataNode.marks`, each a shape as SVG path data in a unit square stretched over the node's box, or text pinned to a point on it |
 | `chain` layout | `rack` needs a main chain pinned to one line with the rest hung off it; `layered` has no such notion | `chain.ts`, a `LayoutFn` taking the chain's ids in its options, added to `LAYOUTS` |
-
-Whether the affordance layer can paint a circle, and whether a `ports` row's
-label can carry a color, were not checked when this was written. Check both
-before planning the port work.
 
 ## `EffectChart`
 
@@ -232,7 +233,8 @@ out again from scratch; a change of selection does not.
 
 ## Lab
 
-A labkit lab in `packages/diagram/src/effect/lab/`, shown in the workshop.
+A story in `packages/diagram/src/effect/lab/`, shown in the workshop. It
+declares its settings as a config schema, and the workshop draws the controls.
 
 - **Sample pipelines:** a straight chain, a branch that merges, a stage with
   several side inputs, a decision that skips a stage, a three-band threshold
