@@ -8,7 +8,7 @@
  */
 import type { AddNodeSpec, MarkerRef, RectPose, Stroke } from '@weasel-js/core';
 import { DEFAULT_GROUP_INSET, expandGroupEdges } from './cluster';
-import { groupBoxes, groupSpecs, resolveGroups } from './dataGroups';
+import { groupBoxes, groupSpecs, resolveGroups, type ResolvedGroup } from './dataGroups';
 import { buildBody, measureBody, sizeToBody, type BodySpec, type MeasureRowText, type Row, type RowTextStyle } from './body';
 import { EDGE_DERIVE_PATH, type DiagramEdge } from './edge';
 import { force } from './force';
@@ -18,7 +18,7 @@ import { LABEL_DERIVE_POSE, type DiagramLabel } from './label';
 import { layered } from './layered';
 import { DEFAULT_NODE_GAP, type LayoutFn, type LayoutOptions } from './layout';
 import type { Outline } from './outline';
-import { layeredRoutes, type LayeredRoute } from './route';
+import { authoredOver, type LayeredRoute } from './route';
 import { tree } from './tree';
 import type { DiagramNode, PortSpec } from './types';
 import type { Vec2 } from '@weasel-js/core/math';
@@ -198,6 +198,30 @@ function graphOf(nodes: GraphNode[], edges: GraphEdge[], groups: GraphGroup[] = 
   };
 }
 
+/** Each edge's ports and waypoints under `layered`: the author's where given, else `layeredRoutes`'. */
+function routed(data: DiagramData, edges: readonly DataEdge[], graph: Graph, groups: readonly ResolvedGroup[],
+  placedAt: ReadonlyMap<string, Rect>, layoutOptions: LayoutOptions): Map<string, LayeredRoute> {
+  return authoredOver(edges.map((e) => ({ ...e, id: edgeIdOf(e) })), {
+    graph,
+    boxes: new Map([...placedAt, ...groupBoxes(groups, placedAt)]),
+    members: new Map(groups.map((g) => [g.group.id, g.members])),
+    compass: new Set([...data.nodes.filter((n) => n.ports === undefined).map((n) => n.id), ...groups.map((g) => g.group.id)]),
+    clearance: (layoutOptions.nodeGap ?? DEFAULT_NODE_GAP) / 2,
+    ...(layoutOptions.direction ? { direction: layoutOptions.direction } : {}),
+  });
+}
+
+type Rect = { x: number; y: number; width: number; height: number };
+
+/** Each node's box where layout put it, or where it started if layout left it. */
+function placed(data: DiagramData, seeds: readonly GraphNode[], moved: ReadonlyMap<string, Vec2>): Map<string, Rect> {
+  return new Map(data.nodes.map((n, i) => {
+    const seed = seeds[i]!.bounds;
+    const at = moved.get(n.id) ?? seed;
+    return [n.id, { x: at.x, y: at.y, width: seed.width, height: seed.height }];
+  }));
+}
+
 /** Every spec carries an id — a node's own, `<id>/<k>` for its text,
  *  `<edge id>/label`, a group's own and `<group id>/label` — so a later call's
  *  specs can be reconciled against this one's. Throws on a repeated id among
@@ -280,25 +304,10 @@ export function diagramScene(data: DiagramData, opts: DiagramSceneOptions = {}):
   const moved = layout === null ? new Map() : layout(graph, layoutOptions);
 
   const specs: DiagramSpec[] = [];
-  const placedAt = new Map(data.nodes.map((n, i) => {
-    const seed = seeds[i]!.bounds;
-    const at = moved.get(n.id) ?? seed;
-    return [n.id, { x: at.x, y: at.y, width: seed.width, height: seed.height }];
-  }));
-  const boxes = groupBoxes(groups, placedAt);
-  const routes = layout === layered
-    ? layeredRoutes({
-        graph,
-        edges: edges.map((e) => ({ id: edgeIdOf(e), from: e.from, to: e.to })),
-        boxes: new Map([...placedAt, ...boxes]),
-        members: new Map(groups.map((g) => [g.group.id, g.members])),
-        compass: new Set([...data.nodes.filter((n) => n.ports === undefined).map((n) => n.id), ...boxes.keys()]),
-        clearance: (layoutOptions.nodeGap ?? DEFAULT_NODE_GAP) / 2,
-        ...(layoutOptions.direction ? { direction: layoutOptions.direction } : {}),
-      })
-    : new Map<string, LayeredRoute>();
+  const placedAt = placed(data, seeds, moved);
+  const routes = layout === layered ? routed(data, edges, graph, groups, placedAt, layoutOptions) : null;
   // Behind every node, so a box never paints over what it holds.
-  specs.push(...groupSpecs(groups, boxes, (g) => ({
+  specs.push(...groupSpecs(groups, placedAt, (g) => ({
     style: opts.groupStyle?.(g) ?? GROUP,
     text: styleOf(titleStyle),
   })));
@@ -336,10 +345,7 @@ export function diagramScene(data: DiagramData, opts: DiagramSceneOptions = {}):
 
   for (const e of edges) {
     const id = edgeIdOf(e);
-    const route = routes.get(id);
-    const fromPort = e.fromPort ?? route?.fromPort;
-    const toPort = e.toPort ?? route?.toPort;
-    const waypoints = e.waypoints ?? route?.waypoints;
+    const { fromPort, toPort, waypoints } = routes?.get(id) ?? e;
     const style = opts.edgeStyle?.(e) ?? EDGE;
     const markerStart = style.markerStart ?? null;
     const markerEnd = style.markerEnd === undefined ? 'arrow' : style.markerEnd;

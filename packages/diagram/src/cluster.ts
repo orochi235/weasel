@@ -230,13 +230,8 @@ export function packClusters(
     const byRow = itemsByRow(span, span.children);
     const childAt = new Map<Span, number>(span.children.map((c) => [c, 0]));
     const { nodeAt, ends } = settle(byRow, childAt, () => 0, 0);
-    const content = Math.max(0, ...ends);
-    const inset = insets.get(span)!;
-    // A label only runs along world x, so only a vertical layout has to widen for it.
-    const floor = axes.cross === 'x' ? (span.group.minWidth ?? 0) - inset.crossLo - inset.crossHi : 0;
-    const block: Block = { width: Math.max(content, floor), nodeAt, childAt };
-    const slack = (block.width - content) / 2;
-    for (const [child, local] of childAt) childAt.set(child, local + slack);
+    const block: Block = { width: Math.max(0, ...ends), nodeAt, childAt };
+    const slack = widen(block, span.group, insets.get(span)!, axes);
     // A rank no nested column passes through is free to sit in the middle.
     byRow.forEach((items, r) => {
       const shift = items.some((item) => item.kind === 'group') ? slack : (block.width - ends[r]!) / 2;
@@ -264,6 +259,17 @@ export function packClusters(
   };
   for (const root of roots) place(root, start.get(root)!);
   return at;
+}
+
+/** Widen a block to its group's `minWidth`, centering what it holds, and
+ *  answer the room added on each side. A label only runs along world x, so
+ *  only a vertical layout widens for it. */
+function widen(block: Block, group: GraphGroup, inset: CanonicalInset, axes: LayoutAxes): number {
+  const floor = axes.cross === 'x' ? (group.minWidth ?? 0) - inset.crossLo - inset.crossHi : 0;
+  const slack = Math.max(0, floor - block.width) / 2;
+  block.width += 2 * slack;
+  for (const [child, local] of block.childAt) block.childAt.set(child, local + slack);
+  return slack;
 }
 
 /**

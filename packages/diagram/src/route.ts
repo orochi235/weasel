@@ -29,9 +29,10 @@ export interface RouteEdge {
 export interface LayeredRoute {
   fromPort?: string;
   toPort?: string;
-  waypoints?: Vec2[];
+  waypoints?: readonly Vec2[];
 }
 
+/** What {@link layeredRoutes} reads: the ranked graph, and where everything landed. */
 export interface LayeredRouteInput {
   /** The graph layout ranked, for which rank each node is in. */
   graph: Graph;
@@ -56,6 +57,8 @@ const FACES: Record<LayoutDirection, { out: string; in: string }> = {
   left: { out: 'w', in: 'e' },
 };
 
+/** Ports and waypoints for each edge of a laid-out `layered` diagram that
+ *  needs any, keyed by edge id. */
 export function layeredRoutes(input: LayeredRouteInput): Map<string, LayeredRoute> {
   const { graph, boxes, members, compass, clearance } = input;
   const direction = input.direction ?? 'down';
@@ -128,6 +131,22 @@ export function layeredRoutes(input: LayeredRouteInput): Map<string, LayeredRout
     }
   }
   return routes;
+}
+
+/** Each edge's ports and waypoints: the author's where given, else
+ *  {@link layeredRoutes}'. */
+export function authoredOver(
+  edges: readonly (RouteEdge & LayeredRoute)[],
+  input: Omit<LayeredRouteInput, 'edges'>,
+): Map<string, LayeredRoute> {
+  const routes = layeredRoutes({ ...input, edges });
+  return new Map(edges.map((e) => {
+    const r = routes.get(e.id);
+    const fromPort = e.fromPort ?? r?.fromPort;
+    const toPort = e.toPort ?? r?.toPort;
+    const waypoints = e.waypoints ?? r?.waypoints;
+    return [e.id, { ...(fromPort ? { fromPort } : {}), ...(toPort ? { toPort } : {}), ...(waypoints ? { waypoints } : {}) }];
+  }));
 }
 
 /** The point nearest `at` that lies in none of `spans`. Spans that only touch

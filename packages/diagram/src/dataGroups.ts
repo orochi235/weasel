@@ -93,14 +93,16 @@ export function groupBoxes(
 }
 
 /**
- * Each group's box, and its label when it has one, at `boxes`. In the order
- * given, so an outer box paints behind the boxes inside it.
+ * Each group's box, and its label when it has one, around where its members
+ * were placed. In the order given, so an outer box paints behind the boxes
+ * inside it.
  */
 export function groupSpecs(
   groups: readonly ResolvedGroup[],
-  boxes: ReadonlyMap<string, Rect>,
+  placedAt: ReadonlyMap<string, Rect>,
   styleOf: (group: DataGroup) => { style: NodeStyle; text: NonNullable<DiagramSceneData['style']> },
 ): DiagramSpec[] {
+  const boxes = groupBoxes(groups, placedAt);
   const specs: DiagramSpec[] = [];
   for (const g of groups) {
     const { style, text } = styleOf(g.group);
