@@ -51,7 +51,7 @@ describe('recent-color recording', () => {
 
   it('records a gradient stop recolor', () => {
     const store = setup(<GradientEditor value={LINEAR} onChange={() => {}} />);
-    pick('Stop 2 at 100%', '#00ff00');
+    pick('Stop 1', '#00ff00');
     expect(store.get()).toEqual(['#00ff00ff']);
   });
 

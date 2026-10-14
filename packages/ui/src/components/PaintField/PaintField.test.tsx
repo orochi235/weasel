@@ -44,7 +44,7 @@ describe('PaintField', () => {
   it('opens the whole paint editor, not a color input', () => {
     render(<PaintField value={GRADIENT} onChange={() => {}} aria-label="Fill" />);
     fireEvent.click(screen.getByRole('button', { name: /Fill/ }));
-    expect(screen.getByLabelText('Stop 1 at 0%')).toBeInTheDocument();
+    expect(screen.getByLabelText('Stop 1')).toBeInTheDocument();
     expect(screen.getByRole('radio', { name: 'Radial' })).toBeInTheDocument();
   });
 
@@ -52,7 +52,7 @@ describe('PaintField', () => {
     const onChange = vi.fn();
     render(<PaintField value={GRADIENT} onChange={onChange} aria-label="Fill" />);
     fireEvent.click(screen.getByRole('button', { name: /Fill/ }));
-    const swatch = screen.getByLabelText('Stop 1 at 0%');
+    const swatch = screen.getByLabelText('Stop 1');
     fireEvent.input(swatch, { target: { value: '#00ff00' } });
     fireEvent.blur(swatch);
 

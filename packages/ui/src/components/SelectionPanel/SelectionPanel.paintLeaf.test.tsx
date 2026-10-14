@@ -111,7 +111,7 @@ describe('SelectionPanel — paint leaf', () => {
       stops: [{ offset: 0, color: '#000000ff' }, { offset: 1, color: '#ffffffff' }],
     });
     expect(screen.getByRole('radio', { name: 'Linear' })).toBeChecked();
-    expect(screen.getByLabelText('Stop 1 at 0%')).toBeInTheDocument();
+    expect(screen.getByLabelText('Stop 1')).toBeInTheDocument();
     expect(container.querySelector('[data-mixed]')).toBeNull();
   });
 

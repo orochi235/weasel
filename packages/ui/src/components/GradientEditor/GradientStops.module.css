@@ -1,0 +1,54 @@
+/* The ramp is painted over this, so a stop with less than full opacity shows
+ * the checker through it rather than the panel. */
+.checker {
+  position: absolute;
+  inset: 0;
+  background: repeating-conic-gradient(var(--wzl-checker-a) 0% 25%, var(--wzl-checker-b) 0% 50%)
+    50% / var(--wzl-checker-size) var(--wzl-checker-size);
+}
+
+/* Wide enough that a handle's color reads at a glance. */
+.track {
+  --rp-thumb-size: 16px;
+}
+
+/* A handle's face fills the thumb inside its frame: the stop's color over the checker. */
+.stop {
+  position: absolute;
+  inset: 1px;
+  border-radius: calc(var(--wzl-radius-sm) - 2px);
+  background:
+    linear-gradient(var(--stop), var(--stop)),
+    repeating-conic-gradient(var(--wzl-checker-a) 0% 25%, var(--wzl-checker-b) 0% 50%)
+      50% / var(--wzl-checker-size) var(--wzl-checker-size);
+}
+
+.stop[data-selected] {
+  box-shadow:
+    0 0 0 2px var(--wzl-surface),
+    0 0 0 4px var(--wzl-accent);
+}
+
+/* The selected handle stays on top of a neighbor it overlaps. */
+.track [role='slider']:has([data-selected]) {
+  z-index: 1;
+}
+
+.editor {
+  display: flex;
+  align-items: center;
+  gap: var(--wzl-space-3);
+  min-inline-size: 0;
+}
+
+/* The opacity slider takes the slack; the swatch, the readouts, and the remove button keep their widths. */
+.color {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+}
+
+.position {
+  flex: 0 0 auto;
+  /* Holds `100%` and `33.3%`. */
+  --wzl-number-field-width: 6ch;
+}
