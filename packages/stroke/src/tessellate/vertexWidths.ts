@@ -1,4 +1,6 @@
 import type { Polyline } from '@weasel-js/geom/tessellate';
+import type { WidthProfile } from '@weasel-js/paint';
+import { applyWidthProfile } from './widthProfile';
 
 /** What one unit of a `vertexWidths` entry measures across the line at a
  *  point whose unit tangent, in the polyline's own space, is `(tx, ty)`. */
@@ -38,6 +40,20 @@ export function populatePolylineWidths(
     }
   }
   pl.widths = widths;
+}
+
+/** Fill `pl.widths` from whichever of `vertexWidths` and `profile` a stroke
+ *  sets, the profile's factor multiplying the per-vertex width. Leaves them
+ *  unset for a stroke of one width. */
+export function populateWidths(
+  pl: Polyline,
+  vertexWidths: number[] | null,
+  profile: WidthProfile | undefined,
+  width: number,
+  scale?: WidthScale,
+): void {
+  if (vertexWidths) populatePolylineWidths(pl, vertexWidths, width, scale);
+  if (profile && profile.length > 0) applyWidthProfile(pl, profile, width);
 }
 
 /** `scale` along the line's direction at point `i`: the bisector of the

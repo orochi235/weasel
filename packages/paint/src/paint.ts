@@ -5,6 +5,7 @@
 
 import type { PatternPaint } from './patternPaint';
 import type { ColorSpace } from './colorSpaces';
+import type { WidthProfile } from './widthProfile';
 
 /**
  * Color/texture strategy for fills (and, via `Stroke.paint`, strokes).
@@ -191,6 +192,12 @@ export interface Stroke {
    * when `vertexWidths` is absent.
    */
   varyingWidthJoinThreshold?: number;
+  /**
+   * The width along each subpath's length, as multiples of `width` at
+   * fractions of its arc length. Multiplies `vertexWidths` where both are
+   * set. SVG has no variable width, so an export writes the stroke's outline.
+   */
+  widthProfile?: WidthProfile;
 }
 
 /**

@@ -34,6 +34,15 @@ describe('stroke ribbon cache', () => {
     expect(strokeMesh(path, { ...base, dash: [2, 2] }, undefined)).not.toBe(first);
   });
 
+  it('misses when the width profile changes, and hits on an equal one', () => {
+    const path = rect();
+    const first = strokeMesh(path, { ...base, widthProfile: [{ t: 0, width: 1 }, { t: 1, width: 2 }] }, undefined);
+    expect(strokeMesh(path, { ...base, widthProfile: [{ t: 0, width: 1 }, { t: 1, width: 3 }] }, undefined))
+      .not.toBe(first);
+    expect(strokeMesh(path, { ...base, widthProfile: [{ t: 0, width: 1 }, { t: 1, width: 2 }] }, undefined))
+      .toBe(strokeMesh(path, { ...base, widthProfile: [{ t: 0, width: 1 }, { t: 1, width: 2 }] }, undefined));
+  });
+
   it('misses when varyingWidthJoinThreshold changes', () => {
     const path = rect();
     const widths = [1, 2, 3, 4];

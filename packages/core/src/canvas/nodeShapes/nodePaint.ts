@@ -1,4 +1,4 @@
-import type { Paint, Stroke, Fill } from '@weasel-js/paint';
+import { widestInProfile, type Paint, type Stroke, type Fill } from '@weasel-js/paint';
 import type { NodeInk, NodePaintCtx } from 'canvas/NodeShape';
 import { countPathAnchors } from '@weasel-js/geom';
 import { markerReach } from '@weasel-js/stroke';
@@ -62,7 +62,9 @@ export function inkReach(
   // A marker paints past the path's own end, and the kit's rule is that
   // visible chrome is hittable — so the reach has to cover it.
   const heads = markerReach(stroke);
-  const sides = (width: number, headReach: number) => {
+  const swell = widestInProfile(stroke.widthProfile);
+  const sides = (base: number, headReach: number) => {
+    const width = base * swell;
     switch (stroke.align ?? 'center') {
       case 'inner': return { outset: headReach, inset: width };
       case 'outer': return { outset: width + headReach, inset: 0 };

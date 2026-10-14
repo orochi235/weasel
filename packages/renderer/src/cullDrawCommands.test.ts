@@ -42,6 +42,13 @@ describe('cullDrawCommands', () => {
     expect(cullDrawCommands([thin], I, SCREEN)).toEqual([]);
   });
 
+  it('keeps a path whose width profile swells its stroke into the screen', () => {
+    const swollen: PathDrawCommand = {
+      ...rect(-100, 100), stroke: { width: 6, paint, widthProfile: [{ t: 0.5, width: 5 }] },
+    };
+    expect(cullDrawCommands([swollen], I, SCREEN)).toEqual([swollen]);
+  });
+
   it('resolves a { px } stroke against the accumulated scale', () => {
     // At 0.1x, 20px of stroke is 200 world units, reaching 800 out.
     const zoomedOut = mat3.scaled(I, 0.1, 0.1);

@@ -4,10 +4,10 @@
  * stroke — so this is the one place our rendering deliberately differs.
  *
  * Runs before dash splitting, so a dash pattern fits the visible line rather
- * than running off under the head. The anchor-param interpolation matches
- * `splitForDash`'s rule for a boundary landing mid-segment.
+ * than running off under the head.
  */
 
+import { anchorParamsBetween } from './anchorParams';
 import type { Polyline } from './polyline';
 
 const EPS = 1e-9;
@@ -38,15 +38,7 @@ function sampleAt(
   const px = pl.points[(i - 1) * 2], py = pl.points[(i - 1) * 2 + 1];
   const qx = pl.points[i * 2], qy = pl.points[i * 2 + 1];
 
-  let a: number, b: number, t: number;
-  if (A[i - 1] === A[i] && B[i - 1] === B[i]) {
-    a = A[i - 1]; b = B[i - 1];
-    t = T[i - 1] + (T[i] - T[i - 1]) * f;
-  } else if (f < 0.5) {
-    a = A[i - 1]; b = B[i - 1]; t = T[i - 1];
-  } else {
-    a = A[i]; b = B[i]; t = T[i];
-  }
+  const [a, b, t] = anchorParamsBetween(A[i - 1], B[i - 1], T[i - 1], A[i], B[i], T[i], f);
 
   const w = W ? W[i - 1] + (W[i] - W[i - 1]) * f : 0;
   return { x: px + (qx - px) * f, y: py + (qy - py) * f, a, b, t, w, next: i };

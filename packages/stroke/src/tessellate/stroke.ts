@@ -4,7 +4,7 @@ import { alignedStrokeRect, resolveScreenLength } from '@weasel-js/paint';
 import { type Mesh, extractPolylines, type Polyline } from '@weasel-js/geom/tessellate';
 import { splitForDash } from './dash';
 import { strokeFlattening } from './flattening';
-import { populatePolylineWidths, type WidthScale } from './vertexWidths';
+import { populateWidths, type WidthScale } from './vertexWidths';
 import { type InsetLength, trimInSpace } from './insets';
 import {
   type StrokeMetric, coordsOutOfMetric, rectIntoMetric, worldWidthInMetric, worldWidthInMetricAlongWorld,
@@ -103,7 +103,7 @@ export function tessellateStroke(
   // Per-point widths come first, in the space the points are in, so a trim
   // interpolates them rather than re-reading an anchor's.
   const vertexWidths = stroke.vertexWidths && stroke.vertexWidths.length > 0 ? stroke.vertexWidths : null;
-  const polylines = extractPolylines(workingPath, strokeFlattening(opts.flattenTolerance, width, vertexWidths ?? undefined));
+  const polylines = extractPolylines(workingPath, strokeFlattening(opts.flattenTolerance, width, vertexWidths ?? undefined, stroke.widthProfile));
   const scale: WidthScale | undefined = !metric ? undefined
     : rectInMetric ? (tx, ty) => worldWidthInMetric(metric, tx, ty)
       : (ux, uy) => worldWidthInMetricAlongWorld(metric, ux, uy);
@@ -118,7 +118,7 @@ export function tessellateStroke(
   // running off under a marker head.
   const ribbonSpace = metric ?? null;
   for (const pl of polylines) {
-    if (vertexWidths) populatePolylineWidths(pl, vertexWidths, width, scale);
+    populateWidths(pl, vertexWidths, stroke.widthProfile, width, scale);
     const trimmed = trimInSpace(pl, rectInMetric ? ribbonSpace : null, ribbonSpace, opts.startInset, opts.endInset);
     if (trimmed === null) continue;
     const subs = dash.length > 0 ? splitForDash(trimmed, dash) : [trimmed];

@@ -64,7 +64,7 @@ export function markerHeads(
   }
 
   const out: MarkerHead[] = [];
-  for (const pl of extractPolylines(path, strokeFlattening(flattenTolerance, strokeWidth, stroke.vertexWidths))) {
+  for (const pl of extractPolylines(path, strokeFlattening(flattenTolerance, strokeWidth, stroke.vertexWidths, stroke.widthProfile))) {
     for (const [space, want] of groups) {
       const inSpace = space ? { ...pl, points: pl.points.slice() } : pl;
       if (space) polylineIntoMetric(inSpace, space.metric);

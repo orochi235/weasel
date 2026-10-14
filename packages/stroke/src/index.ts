@@ -31,4 +31,6 @@ export type { MarkerHead } from './markerHeads';
 export { strokeToPath } from './strokeToPath';
 export type { StrokeToPathOptions } from './strokeToPath';
 export { offsetPath } from './offsetPath';
+export { nearestStrokeSite, strokeSitesAt } from './strokeSites';
+export type { StrokeSite, StrokeSiteOptions } from './strokeSites';
 export type { OffsetPathOptions } from './offsetPath';

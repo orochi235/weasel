@@ -1,148 +1,146 @@
-import type { Polyline } from '@weasel-js/geom/tessellate';
+import { anchorParamsBetween, type Polyline } from '@weasel-js/geom/tessellate';
+
+/** One "on" run being collected: points with their anchor params and, when
+ *  the source carries them, widths. */
+interface Run {
+  pts: number[];
+  a: number[];
+  b: number[];
+  t: number[];
+  w: number[] | null;
+}
+
+/** One point of the source walk, or a point between two of them. */
+interface At {
+  x: number; y: number;
+  a: number; b: number; t: number;
+  w: number;
+}
+
+function runFrom(p: At, widths: boolean): Run {
+  return { pts: [p.x, p.y], a: [p.a], b: [p.b], t: [p.t], w: widths ? [p.w] : null };
+}
+
+function extend(run: Run, p: At): void {
+  run.pts.push(p.x, p.y); run.a.push(p.a); run.b.push(p.b); run.t.push(p.t);
+  run.w?.push(p.w);
+}
+
+function toPolyline(run: Run, closed = false): Polyline {
+  const pl: Polyline = {
+    points: run.pts,
+    closed,
+    anchorA: new Uint32Array(run.a),
+    anchorB: new Uint32Array(run.b),
+    anchorT: new Float32Array(run.t),
+  };
+  if (run.w) pl.widths = new Float32Array(run.w);
+  return pl;
+}
 
 /**
  * Split a polyline into open sub-polylines for the "on" portions of a dash
  * pattern. Each output sub-polyline gets caps from the stroke's `cap` setting.
- * The "off" portions become invisible gaps. Anchor params are carried through:
- * sub-polyline endpoints inherit their source polyline-point's anchor params;
- * dash boundaries that land mid-segment (between two polyline points) snap
- * their anchor params to whichever endpoint they're closer to when the
- * segment crosses a path-anchor boundary, otherwise interpolate `t` linearly.
+ * The "off" portions become invisible gaps. Anchor params and per-point
+ * widths are carried through: a dash boundary landing mid-segment takes
+ * {@link anchorParamsBetween}'s params and the width interpolated there.
  */
 export function splitForDash(pl: Polyline, dash: number[]): Polyline[] {
   const out: Polyline[] = [];
-  const plA = pl.anchorA ?? new Uint32Array(pl.points.length / 2);
-  const plB = pl.anchorB ?? new Uint32Array(pl.points.length / 2);
-  const plT = pl.anchorT ?? new Float32Array(pl.points.length / 2);
+  const ptCount = pl.points.length / 2;
+  const plA = pl.anchorA ?? new Uint32Array(ptCount);
+  const plB = pl.anchorB ?? new Uint32Array(ptCount);
+  const plT = pl.anchorT ?? new Float32Array(ptCount);
+  const W = pl.widths;
+  const pointAt = (i: number): At => ({
+    x: pl.points[i * 2], y: pl.points[i * 2 + 1], a: plA[i], b: plB[i], t: plT[i], w: W ? W[i] : 0,
+  });
 
   let dashIdx = 0;
   let dashRemaining = dash[0];
   let onPhase = true;
-  let curPts: number[] | null = onPhase ? [pl.points[0], pl.points[1]] : null;
-  let curA: number[] | null = onPhase ? [plA[0]] : null;
-  let curB: number[] | null = onPhase ? [plB[0]] : null;
-  let curT: number[] | null = onPhase ? [plT[0]] : null;
+  let cur: Run | null = runFrom(pointAt(0), !!W);
 
-  const flushAndAdvance = () => {
-    if (curPts && curPts.length >= 4) {
-      out.push({
-        points: curPts,
-        closed: false,
-        anchorA: new Uint32Array(curA!),
-        anchorB: new Uint32Array(curB!),
-        anchorT: new Float32Array(curT!),
-      });
-    }
-    curPts = null; curA = null; curB = null; curT = null;
+  const flushAndAdvance = (at: At) => {
+    if (cur && cur.pts.length >= 4) out.push(toPolyline(cur));
     dashIdx = (dashIdx + 1) % dash.length;
     dashRemaining = dash[dashIdx];
     onPhase = !onPhase;
+    cur = onPhase ? runFrom(at, !!W) : null;
   };
 
   let prevX = pl.points[0], prevY = pl.points[1];
-  const ptCount = pl.points.length / 2;
   const segCount = pl.closed ? ptCount : ptCount - 1;
 
   for (let i = 0; i < segCount; i++) {
-    const nextIdx = (i + 1) % ptCount;
-    const cx = pl.points[nextIdx * 2], cy = pl.points[nextIdx * 2 + 1];
-    const startA = plA[i], startB = plB[i], startT = plT[i];
-    const endA = plA[nextIdx], endB = plB[nextIdx], endT = plT[nextIdx];
-    const segFullDx = cx - prevX, segFullDy = cy - prevY;
-    const segFullLen = Math.hypot(segFullDx, segFullDy);
-    let segDx = segFullDx, segDy = segFullDy;
+    const start = pointAt(i);
+    const end = pointAt((i + 1) % ptCount);
+    const segFullLen = Math.hypot(end.x - prevX, end.y - prevY);
     let segLen = segFullLen;
     let traveled = 0;
 
     while (segLen > 1e-9) {
       if (segLen <= dashRemaining) {
-        if (onPhase && curPts) {
-          curPts.push(cx, cy);
-          curA!.push(endA); curB!.push(endB); curT!.push(endT);
-        }
+        if (onPhase && cur) extend(cur, end);
         dashRemaining -= segLen;
-        prevX = cx; prevY = cy;
-        traveled = segFullLen;
+        prevX = end.x; prevY = end.y;
         segLen = 0;
-        if (dashRemaining <= 1e-9) {
-          flushAndAdvance();
-          if (onPhase) {
-            curPts = [prevX, prevY];
-            curA = [endA]; curB = [endB]; curT = [endT];
-          }
-        }
+        if (dashRemaining <= 1e-9) flushAndAdvance(end);
       } else {
-        const tConsume = dashRemaining / segLen;
-        const ix = prevX + segDx * tConsume;
-        const iy = prevY + segDy * tConsume;
         traveled += dashRemaining;
         const frac = traveled / segFullLen;
-        let mA: number, mB: number, mT: number;
-        if (startA === endA && startB === endB) {
-          mA = startA; mB = startB;
-          mT = startT + (endT - startT) * frac;
-        } else {
-          // Cross-anchor segment: pick the nearer endpoint's params.
-          if (frac < 0.5) { mA = startA; mB = startB; mT = startT; }
-          else            { mA = endA; mB = endB; mT = endT; }
-        }
-        if (onPhase && curPts) {
-          curPts.push(ix, iy);
-          curA!.push(mA); curB!.push(mB); curT!.push(mT);
-        }
-        prevX = ix; prevY = iy;
-        segDx = cx - prevX; segDy = cy - prevY;
-        segLen = Math.hypot(segDx, segDy);
-        flushAndAdvance();
-        if (onPhase) {
-          curPts = [prevX, prevY];
-          curA = [mA]; curB = [mB]; curT = [mT];
-        }
+        const [a, b, t] = anchorParamsBetween(start.a, start.b, start.t, end.a, end.b, end.t, frac);
+        const mid: At = {
+          x: start.x + (end.x - start.x) * frac, y: start.y + (end.y - start.y) * frac,
+          a, b, t, w: start.w + (end.w - start.w) * frac,
+        };
+        if (onPhase && cur) extend(cur, mid);
+        prevX = mid.x; prevY = mid.y;
+        segLen = Math.hypot(end.x - prevX, end.y - prevY);
+        flushAndAdvance(mid);
       }
     }
   }
 
-  if (curPts && curPts.length >= 4) {
-    const tail: Polyline = {
-      points: curPts,
-      closed: false,
-      anchorA: new Uint32Array(curA!),
-      anchorB: new Uint32Array(curB!),
-      anchorT: new Float32Array(curT!),
-    };
-    // A closed subpath's walk ends at the vertex it started from, so the run
-    // still open there and the run that started there are one dash. Pushed
-    // separately they are two butt-capped ribbons meeting at the seam — the
-    // visible artifact whenever the pattern doesn't divide the perimeter.
-    const tx = curPts[curPts.length - 2], ty = curPts[curPts.length - 1];
-    const meets = (x: number, y: number) => Math.hypot(tx - x, ty - y) <= 1e-9;
-    if (pl.closed && out.length > 0 && meets(out[0].points[0], out[0].points[1])) {
-      out[0] = joinAtSeam(tail, out[0]);
-    } else if (pl.closed && out.length === 0 && meets(curPts[0], curPts[1])) {
-      // Every gap fell outside the perimeter: the dash is the whole loop, and
-      // a loop stroked as an open run seams at its own start vertex too.
-      out.push({
-        points: curPts.slice(0, -2),
-        closed: true,
-        anchorA: tail.anchorA!.slice(0, -1),
-        anchorB: tail.anchorB!.slice(0, -1),
-        anchorT: tail.anchorT!.slice(0, -1),
-      });
-    } else {
-      out.push(tail);
-    }
-  }
+  const tail: Run | null = cur;
+  if (tail && tail.pts.length >= 4) closeOut(pl, tail, out);
   return out;
+}
+
+/**
+ * Push the run still open at the end of the walk. A closed subpath's walk ends
+ * at the vertex it started from, so the run still open there and the run that
+ * started there are one dash. Pushed separately they are two butt-capped
+ * ribbons meeting at the seam — the visible artifact whenever the pattern
+ * doesn't divide the perimeter.
+ */
+function closeOut(pl: Polyline, tail: Run, out: Polyline[]): void {
+  const tx = tail.pts[tail.pts.length - 2], ty = tail.pts[tail.pts.length - 1];
+  const meets = (x: number, y: number) => Math.hypot(tx - x, ty - y) <= 1e-9;
+  if (pl.closed && out.length > 0 && meets(out[0].points[0], out[0].points[1])) {
+    out[0] = joinAtSeam(toPolyline(tail), out[0]);
+  } else if (pl.closed && out.length === 0 && meets(tail.pts[0], tail.pts[1])) {
+    // Every gap fell outside the perimeter: the dash is the whole loop, and
+    // a loop stroked as an open run seams at its own start vertex too.
+    out.push(toPolyline({
+      pts: tail.pts.slice(0, -2), a: tail.a.slice(0, -1), b: tail.b.slice(0, -1), t: tail.t.slice(0, -1),
+      w: tail.w ? tail.w.slice(0, -1) : null,
+    }, true));
+  } else {
+    out.push(toPolyline(tail));
+  }
 }
 
 /** `tail` continued by `head`, which starts where `tail` ends — the shared
  *  vertex is carried once. */
 function joinAtSeam(tail: Polyline, head: Polyline): Polyline {
-  return {
+  const pl: Polyline = {
     points: [...tail.points, ...head.points.slice(2)],
     closed: false,
     anchorA: Uint32Array.from([...tail.anchorA!, ...head.anchorA!.subarray(1)]),
     anchorB: Uint32Array.from([...tail.anchorB!, ...head.anchorB!.subarray(1)]),
     anchorT: Float32Array.from([...tail.anchorT!, ...head.anchorT!.subarray(1)]),
   };
+  if (tail.widths && head.widths) pl.widths = Float32Array.from([...tail.widths, ...head.widths.subarray(1)]);
+  return pl;
 }

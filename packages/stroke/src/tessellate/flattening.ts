@@ -1,5 +1,6 @@
 import { DEFAULT_FLATTEN_TOLERANCE } from '@weasel-js/geom';
 import type { ExtractOptions } from '@weasel-js/geom/tessellate';
+import { widestInProfile, type WidthProfile } from '@weasel-js/paint';
 
 /** Most a thick stroke's centerline turns between flattened vertices: 10°. */
 const STROKE_MAX_TURN = Math.PI / 18;
@@ -15,9 +16,11 @@ export function strokeFlattening(
   flattenTolerance: number | undefined,
   width: number,
   vertexWidths?: readonly number[],
+  profile?: WidthProfile,
 ): ExtractOptions {
   const tolerance = flattenTolerance ?? DEFAULT_FLATTEN_TOLERANCE;
   let widest = width;
   if (vertexWidths) for (const w of vertexWidths) widest = Math.max(widest, w);
+  widest *= widestInProfile(profile);
   return widest / 2 > tolerance ? { flattenTolerance, maxTurn: STROKE_MAX_TURN } : { flattenTolerance };
 }

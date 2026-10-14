@@ -6,4 +6,5 @@
 export { tessellate, type TessellateOptions } from './tessellate';
 export { extractPolylines, type Polyline, type ExtractOptions } from './polyline';
 export { trimPolyline } from './trim';
+export { anchorParamsBetween } from './anchorParams';
 export type { Mesh } from './mesh';

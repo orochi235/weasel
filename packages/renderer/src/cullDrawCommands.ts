@@ -1,5 +1,5 @@
 import { type Path, mat3, type GlMat3 } from '@weasel-js/geom';
-import { resolveScreenLength, type Stroke } from '@weasel-js/paint';
+import { resolveScreenLength, widestInProfile, type Stroke } from '@weasel-js/paint';
 import { SPRITE_STRIDE, type DrawCommand } from './DrawCommand';
 import { resolveStrokeWidth } from '@weasel-js/stroke';
 import { markerReach } from '@weasel-js/stroke';
@@ -131,6 +131,7 @@ export function strokeReachAt(stroke: Stroke, scale: number, least = scale): num
   if (stroke.vertexWidths) {
     for (const v of stroke.vertexWidths) if (v > width) width = v;
   }
+  width *= widestInProfile(stroke.widthProfile);
   const spike = Math.max(stroke.miterLimit ?? DEFAULT_MITER_LIMIT, Math.SQRT2);
   const heads = markerReach(stroke);
   return Math.max(Math.abs(width) * spike, heads.world, resolveScreenLength({ px: heads.px }, at));
