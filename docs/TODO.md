@@ -816,12 +816,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   `PrefSection` with dotted keys into one or into a `ResolvedConfig`, so the example first needs a
   way for an instrument to declare its config as a pref schema.
 
-- **(P3) `PrefSchemaEditor`'s attributes pane lists a mixed list, map, or union attribute read-only.**
-  `aggregateAttributes` keeps an object attribute the selected nodes disagree on and marks its
-  mixed fields, each written into every node's own object. A list, a map, or a union that
-  disagrees is still dropped from the form and listed as `mixed`, as is an object with a field of
-  one of those kinds that disagrees: none has a control with a mixed state.
-
 ### WeaselDraw app follow-ups (defer)
 
 - **(P3) Multi-page documents.** A document's pages are rects in one world space over one scene,
