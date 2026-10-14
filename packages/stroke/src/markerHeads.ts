@@ -8,6 +8,7 @@ import { extractPolylines } from '@weasel-js/geom/tessellate';
 import { getMarker, type MarkerEntry } from './strokeMarkers';
 import { markerKeyOf, resolveMarkerSize } from './markerInset';
 import { markerSites, type MarkerSite } from './markerSites';
+import { strokeFlattening } from './tessellate/flattening';
 import {
   coordsOutOfMetric, polylineIntoMetric, type ScreenSpace, type StrokeSpaces,
 } from './tessellate/metric';
@@ -63,7 +64,7 @@ export function markerHeads(
   }
 
   const out: MarkerHead[] = [];
-  for (const pl of extractPolylines(path, { flattenTolerance })) {
+  for (const pl of extractPolylines(path, strokeFlattening(flattenTolerance, strokeWidth, stroke.vertexWidths))) {
     for (const [space, want] of groups) {
       const inSpace = space ? { ...pl, points: pl.points.slice() } : pl;
       if (space) polylineIntoMetric(inSpace, space.metric);

@@ -53,6 +53,25 @@ function distPointToSegment(px: number, py: number, ax: number, ay: number, bx: 
   return Math.abs((px - ax) * dy - (py - ay) * dx) / Math.sqrt(len2);
 }
 
+/** Total turn of a control polygon, in radians, skipping zero-length legs. It
+ *  bounds the turn of the curve it controls, so it bounds the corner a chord
+ *  standing in for that curve can leave. */
+function controlTurn(
+  x0: number, y0: number, x1: number, y1: number,
+  x2: number, y2: number, x3: number, y3: number,
+): number {
+  return legTurn(x1 - x0, y1 - y0, x2 - x1, y2 - y1)
+    + legTurn(x2 - x1, y2 - y1, x3 - x2, y3 - y2)
+    + (x2 === x1 && y2 === y1 ? legTurn(x1 - x0, y1 - y0, x3 - x2, y3 - y2) : 0);
+}
+
+/** Angle between two legs; zero when either has no length. */
+function legTurn(ax: number, ay: number, bx: number, by: number): number {
+  const la = Math.hypot(ax, ay), lb = Math.hypot(bx, by);
+  if (la === 0 || lb === 0) return 0;
+  return Math.acos(Math.max(-1, Math.min(1, (ax * bx + ay * by) / (la * lb))));
+}
+
 /**
  * Recursively subdivide a cubic bezier (P0..P3) and append `lineTo`-style
  * vertices to `out` (interleaved x,y). The starting endpoint is *not*
@@ -138,7 +157,8 @@ function flattenQuadraticRec(
  * Like `flattenCubic` but also appends to `arcOut`, for each new flattened
  * point, its *cumulative distance from the segment start* — not a normalized
  * fraction. The caller divides each by the segment's total flattened arc
- * length to yield t ∈ (0, 1].
+ * length to yield t ∈ (0, 1]. `maxTurn`, in radians, also bounds how far each
+ * piece's control polygon may turn.
  */
 export function flattenCubicWithArcLen(
   x0: number, y0: number,
@@ -148,13 +168,14 @@ export function flattenCubicWithArcLen(
   tolerance: number,
   out: number[],
   arcOut: number[],
+  maxTurn = Infinity,
 ): number {
   if (!finite8(x0, y0, x1, y1, x2, y2, x3, y3)) {
     out.push(x3, y3);
     arcOut.push(0);
     return 0;
   }
-  return flattenCubicArcRec(x0, y0, x1, y1, x2, y2, x3, y3, usableTolerance(tolerance), out, arcOut, 0, 0);
+  return flattenCubicArcRec(x0, y0, x1, y1, x2, y2, x3, y3, usableTolerance(tolerance), maxTurn, out, arcOut, 0, 0);
 }
 
 function flattenCubicArcRec(
@@ -163,6 +184,7 @@ function flattenCubicArcRec(
   x2: number, y2: number,
   x3: number, y3: number,
   tolerance: number,
+  maxTurn: number,
   out: number[],
   arcOut: number[],
   accum: number,
@@ -170,7 +192,9 @@ function flattenCubicArcRec(
 ): number {
   const d1 = distPointToSegment(x1, y1, x0, y0, x3, y3);
   const d2 = distPointToSegment(x2, y2, x0, y0, x3, y3);
-  if (Math.max(d1, d2) <= tolerance || depth >= MAX_FLATTEN_DEPTH) {
+  const flat = Math.max(d1, d2) <= tolerance
+    && (maxTurn === Infinity || controlTurn(x0, y0, x1, y1, x2, y2, x3, y3) <= maxTurn);
+  if (flat || depth >= MAX_FLATTEN_DEPTH) {
     const lastX = out.length >= 2 ? out[out.length - 2] : x0;
     const lastY = out.length >= 2 ? out[out.length - 1] : y0;
     const seg = Math.hypot(x3 - lastX, y3 - lastY);
@@ -185,8 +209,8 @@ function flattenCubicArcRec(
   const x012 = (x01 + x12) * 0.5, y012 = (y01 + y12) * 0.5;
   const x123 = (x12 + x23) * 0.5, y123 = (y12 + y23) * 0.5;
   const x0123 = (x012 + x123) * 0.5, y0123 = (y012 + y123) * 0.5;
-  accum = flattenCubicArcRec(x0, y0, x01, y01, x012, y012, x0123, y0123, tolerance, out, arcOut, accum, depth + 1);
-  accum = flattenCubicArcRec(x0123, y0123, x123, y123, x23, y23, x3, y3, tolerance, out, arcOut, accum, depth + 1);
+  accum = flattenCubicArcRec(x0, y0, x01, y01, x012, y012, x0123, y0123, tolerance, maxTurn, out, arcOut, accum, depth + 1);
+  accum = flattenCubicArcRec(x0123, y0123, x123, y123, x23, y23, x3, y3, tolerance, maxTurn, out, arcOut, accum, depth + 1);
   return accum;
 }
 
@@ -201,13 +225,14 @@ export function flattenQuadraticWithArcLen(
   tolerance: number,
   out: number[],
   arcOut: number[],
+  maxTurn = Infinity,
 ): number {
   if (!finite6(x0, y0, x1, y1, x2, y2)) {
     out.push(x2, y2);
     arcOut.push(0);
     return 0;
   }
-  return flattenQuadraticArcRec(x0, y0, x1, y1, x2, y2, usableTolerance(tolerance), out, arcOut, 0, 0);
+  return flattenQuadraticArcRec(x0, y0, x1, y1, x2, y2, usableTolerance(tolerance), maxTurn, out, arcOut, 0, 0);
 }
 
 function flattenQuadraticArcRec(
@@ -215,13 +240,16 @@ function flattenQuadraticArcRec(
   x1: number, y1: number,
   x2: number, y2: number,
   tolerance: number,
+  maxTurn: number,
   out: number[],
   arcOut: number[],
   accum: number,
   depth: number,
 ): number {
   const d = distPointToSegment(x1, y1, x0, y0, x2, y2);
-  if (d <= tolerance || depth >= MAX_FLATTEN_DEPTH) {
+  const flat = d <= tolerance
+    && (maxTurn === Infinity || controlTurn(x0, y0, x1, y1, x2, y2, x2, y2) <= maxTurn);
+  if (flat || depth >= MAX_FLATTEN_DEPTH) {
     const lastX = out.length >= 2 ? out[out.length - 2] : x0;
     const lastY = out.length >= 2 ? out[out.length - 1] : y0;
     const seg = Math.hypot(x2 - lastX, y2 - lastY);
@@ -233,8 +261,8 @@ function flattenQuadraticArcRec(
   const x01 = (x0 + x1) * 0.5, y01 = (y0 + y1) * 0.5;
   const x12 = (x1 + x2) * 0.5, y12 = (y1 + y2) * 0.5;
   const x012 = (x01 + x12) * 0.5, y012 = (y01 + y12) * 0.5;
-  accum = flattenQuadraticArcRec(x0, y0, x01, y01, x012, y012, tolerance, out, arcOut, accum, depth + 1);
-  accum = flattenQuadraticArcRec(x012, y012, x12, y12, x2, y2, tolerance, out, arcOut, accum, depth + 1);
+  accum = flattenQuadraticArcRec(x0, y0, x01, y01, x012, y012, tolerance, maxTurn, out, arcOut, accum, depth + 1);
+  accum = flattenQuadraticArcRec(x012, y012, x12, y12, x2, y2, tolerance, maxTurn, out, arcOut, accum, depth + 1);
   return accum;
 }
 

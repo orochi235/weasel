@@ -63,6 +63,24 @@ describe('flattenCubic', () => {
     flattenCubic(0, 0, 0, 10, 10, 10, 10, 0, 0.5, out);
     expect(out.length).toBe(16);
   });
+
+  // The closing curve of a shape whose thick stroke showed facets at this
+  // bend: its second control point sits on its end, and the distance test
+  // alone stepped round the bend 43° at a time.
+  it('turns at most twice maxTurn at any vertex through a tight bend', () => {
+    const out = [330.058868, 433.518829];
+    flattenCubicWithArcLen(
+      330.058868, 433.518829, 229.857391, 287.381653, 288.02124, 332.57312, 288.02124, 332.57312,
+      0.5, out, [], Math.PI / 18,
+    );
+    let worst = 0;
+    for (let i = 2; i + 2 < out.length; i += 2) {
+      const a = Math.atan2(out[i + 1] - out[i - 1], out[i] - out[i - 2]);
+      const b = Math.atan2(out[i + 3] - out[i + 1], out[i + 2] - out[i]);
+      worst = Math.max(worst, Math.abs(Math.atan2(Math.sin(b - a), Math.cos(b - a))));
+    }
+    expect(worst * 180 / Math.PI).toBeLessThanOrEqual(20);
+  });
 });
 
 describe('flattenQuadratic', () => {
