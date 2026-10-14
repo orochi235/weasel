@@ -84,6 +84,18 @@ describe('BehaviorResult.poses — a node the drag does not move', () => {
   });
 });
 
+describe('BehaviorResult.transform', () => {
+  it('is the one way a behavior moves the drag: a pose on the result is not read', () => {
+    const { dragged, ctx, start } = fixture();
+    const stray = { pose: box(40, 0) } as unknown as BehaviorResult<unknown>;
+    const handle = start(scripted(stray, { transform: { kind: 'translate', dx: 8, dy: 0 } }));
+    handle.onMove!(ctx(5));
+    expect(handle.previewPose!(dragged)).toEqual(box(5, 0));
+    handle.onMove!(ctx(5));
+    expect(handle.previewPose!(dragged)).toEqual(box(8, 0));
+  });
+});
+
 describe('BehaviorResult.opaque', () => {
   it('names the previews that paint at full opacity, from every behavior', () => {
     const { dragged, near, far, ctx, start } = fixture();

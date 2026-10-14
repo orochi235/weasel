@@ -299,8 +299,8 @@ Each action pins the proposed/result shape; pick the matching alias
 
 **Rules of thumb:**
 
-- `onMove` returns a partial result (`{ pose: refined }` for move) to
-  refine the proposed pose; `void` leaves it alone. Behaviors run in
+- `onMove` returns a partial result to refine what was proposed (for move,
+  `{ transform: { kind: 'translate', dx, dy } }`); `void` leaves it alone. Behaviors run in
   array order — later behaviors see your refinement.
 - A move behavior's result can also carry `poses`, a preview pose per id in
   that node's stored frame. For a dragged id it replaces the group transform

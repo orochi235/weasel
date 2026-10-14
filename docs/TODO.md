@@ -135,11 +135,11 @@ Priority tags:
   under this driver, and why is the open question. A finding lands in `bake.ts`.
 
 ---
-- **(P3) A group transform is wired for a translate only.** `GroupTransform` and
-  `BehaviorResult.transform` exist (`packages/core/src/interactions/gestures/types.ts`), but the
-  resize and rotate behaviors still answer a `pose` (`ResizeMoveResult`, `RotateMoveResult`), not a
-  `scale` or `rotate` transform, and the `BehaviorResult.pose` shim they were to replace is still
-  there.
+- **(P3) Nothing produces `GroupTransform`'s `scale` and `rotate` arms.** A move behavior answers
+  a `translate`, and that is the only way it moves the drag. A resize behavior answers bounds
+  (`ResizeMoveResult.pose`) and a rotate behavior an angle or a pose (`RotateMoveResult`). A `scale`
+  about a pivot cannot say everything bounds can: a constraint that slides the box without resizing
+  it has no pivot. Left to rule: drop the two arms, or have resize and rotate answer a transform.
 
 ## Viewport
 
