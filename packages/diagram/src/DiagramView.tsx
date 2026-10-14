@@ -21,7 +21,7 @@ import type { DataEdge, DiagramSceneData, DiagramSpec } from './fromData';
 import type { LayoutFn } from './layout';
 import { useLiveLayout, type LiveLayout, type UseLiveLayoutOptions } from './live';
 import { useMirroredSelection } from './mirrorSelection';
-import { sceneParticipants } from './portLayer';
+import { portLayer, sceneParticipants } from './portLayer';
 import { registerDiagramShape } from './shape';
 
 /** Where a moved node now stands. */
@@ -49,6 +49,10 @@ export interface DiagramViewProps {
   /** Set to make ports grabbable. Dragging one port onto another reports the
    *  edge it describes and draws nothing; add it to the data to keep it. */
   onConnect?: (edge: DataEdge) => void;
+  /** Whether ports are drawn. `'connect'` draws them and lets one be dragged
+   *  onto another; `'show'` only draws them. Default: `'connect'` when
+   *  `onConnect` is set, else `'none'`. */
+  ports?: 'connect' | 'show' | 'none';
   /** Whether the canvas's keyboard shortcuts — held Space to pan among them —
    *  run. They listen page-wide, so a view-only diagram beside other UI would
    *  claim keys meant for the page. Default: on when `onMove` or `onConnect`
@@ -113,7 +117,7 @@ export const DiagramView = forwardRef<DiagramViewApi, DiagramViewProps>(function
 });
 
 function Inner({
-  specs, width, height, selected, onSelect, onMove, onConnect, enableKeybindings, canConnect, portOptions, live: liveOpts,
+  specs, width, height, selected, onSelect, onMove, onConnect, enableKeybindings, canConnect, portOptions, ports: portMode, live: liveOpts,
   minScale, maxScale, anchor, fitPadding, background, view, onViewChange, className, apiRef,
 }: DiagramViewProps & { apiRef: Ref<DiagramViewApi> }) {
   useEffect(() => registerDiagramShape<RectPose>(), []);
@@ -177,8 +181,8 @@ function Inner({
   }), [live]);
 
   const onConnectRef = useLatest(onConnect);
-  const connecting = onConnect !== undefined;
-  const ports = useMemo(() => connecting
+  const mode = portMode ?? (onConnect !== undefined ? 'connect' : 'none');
+  const ports = useMemo(() => mode === 'connect'
     ? diagramPorts<RectPose>({
         ...portOptions,
         participants: source,
@@ -187,9 +191,16 @@ function Inner({
           from: from.nodeId, fromPort: from.id, to: to.nodeId, toPort: to.id,
         }),
       })
-    : null, [connecting, source, canConnect, portOptions, onConnectRef]);
+    : null, [mode, source, canConnect, portOptions, onConnectRef]);
+  // A registered layer with no `hitTest` is painted and claims no press.
+  const shown = useMemo(() => {
+    if (mode !== 'show') return null;
+    const { hitTest: _hitTest, ...paintOnly } = portLayer<RectPose>(source, portOptions);
+    return paintOnly;
+  }, [mode, source, portOptions]);
   const canvasRef = useRef<SceneCanvasApi | null>(null);
-  useEffect(() => (ports ? canvasRef.current?.registerLayer(ports.layer) : undefined), [ports]);
+  const layer = ports?.layer ?? shown;
+  useEffect(() => (layer ? canvasRef.current?.registerLayer(layer) : undefined), [layer]);
   const ambient = useMemo(() => (ports ? [...AMBIENT, ports.contribution] : AMBIENT), [ports]);
 
   const controlled = view !== undefined;
