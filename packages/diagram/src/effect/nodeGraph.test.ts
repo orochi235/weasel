@@ -90,6 +90,28 @@ describe('nodeGraph', () => {
     expect(() => diagramScene(twice.data, twice.scene)).not.toThrow();
   });
 
+  it('labels a decision exit that has no label with its port id', () => {
+    const bare = nodeGraph({
+      stages: [
+        { id: 'q', title: 'high?', kind: 'decision', outputs: [{ id: 'yes', type: 'image' }, { id: 'no', type: 'image' }] },
+        { id: 'a', title: 'A', inputs: [{ id: 'in', type: 'image' }] },
+        { id: 'b', title: 'B', inputs: [{ id: 'in', type: 'image' }] },
+      ],
+      wires: [w(['q', 'yes'], ['a', 'in']), w(['q', 'no'], ['b', 'in'], 'otherwise')],
+    });
+    expect(bare.data.edges.map((e) => e.label)).toEqual(['yes', 'otherwise']);
+  });
+
+  it('gives a stage only its own ports, whatever they are called', () => {
+    const compass = nodeGraph({
+      stages: [{ id: 'x', title: 'X', inputs: [{ id: 'w', type: 'image' }], outputs: [{ id: 'e', type: 'image' }, { id: 'n', type: 'image' }] }],
+      wires: [],
+    });
+    const spec = diagramScene(compass.data, compass.scene).find((s) => s.kind === 'container' && s.id === 'x')!;
+    const ports = (spec.data.diagram as { ports: readonly { id: string }[] }).ports;
+    expect(ports.map((p) => p.id).sort()).toEqual(['e', 'n', 'w']);
+  });
+
   it('draws a stage with no ports as a box with its title', () => {
     const bare = nodeGraph({ stages: [{ id: 'x', title: 'X' }], wires: [] });
     expect(bare.data.nodes[0]!.rows).toEqual([{ kind: 'label', text: 'X', style: { bold: true } }]);

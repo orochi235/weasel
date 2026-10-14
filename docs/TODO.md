@@ -468,11 +468,6 @@ Priority tags:
   edge id from different stages and ports. `diagramScene` keeps the first such edge, while the
   looks keep one style per id, last one winning (`packages/diagram/src/effect/nodeGraph.ts`,
   `rack.ts`, `packages/diagram/src/fromData.ts`).
-- **(P3) A stage port named `n`, `e`, `s` or `w` shares an id with a default compass port.**
-  `bodyTrait` keeps the four compass ports unless a node declares its own `ports` (it drops `w`
-  or `e` only when a port row sits on that side), and the `nodeGraph` look's stages declare port
-  rows and no `ports`, so a stage port with one of those ids ends up beside a compass port of
-  the same id (`packages/diagram/src/body.ts`, `packages/diagram/src/effect/nodeGraph.ts`).
 
 ---
 

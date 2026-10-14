@@ -55,10 +55,11 @@ export function stageRows(stage: EffectStage, showParams: boolean, withPorts: bo
   return rows;
 }
 
-/** What a decision's exit is called on its wire. */
+/** What a wire is called: its own label, or for a wire leaving a decision the
+ *  exit's label, which defaults to the exit's id. */
 export function exitLabel(d: DrawableWire): string | undefined {
   if (d.wire.label !== undefined) return d.wire.label;
-  return kindOf(d.fromStage) === 'decision' ? portOn(d.fromStage, d.wire.from.port)?.label : undefined;
+  return kindOf(d.fromStage) === 'decision' ? portOn(d.fromStage, d.wire.from.port)?.label ?? d.wire.from.port : undefined;
 }
 
 export const nodeGraph: EffectLook<NodeGraphOptions> = (pipeline, options = {}) => {
@@ -73,6 +74,8 @@ export const nodeGraph: EffectLook<NodeGraphOptions> = (pipeline, options = {}) 
       id: stage.id,
       outline: kind === 'stage' ? 'rect' : 'stadium',
       rows: stageRows(stage, options.showParams !== false, true),
+      // Only the row ports: a compass default would share an id with a stage port named n, e, s or w.
+      ports: [],
     };
   });
 

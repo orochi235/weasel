@@ -61,7 +61,7 @@ function rackWires(pipeline: EffectPipeline, skips: readonly Skip[]): RackWire[]
       to: { stage: s.skip.wire.to.stage, port: SKIP_IN },
       type: s.into.type,
       problem: false,
-      label: `${s.decision.title}: ${exitLabel(s.skip) ?? s.skip.wire.from.port}`,
+      label: `${s.decision.title}: ${exitLabel(s.skip)!}`,
       arc: true,
     });
   }

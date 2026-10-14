@@ -47,8 +47,15 @@ const diamond: BranchSymbol = (stage, pipeline) => {
 
 const BAND_TINTS = ['#c58bff', '#6fb3ff', '#5ad07f', '#f2c14e'];
 
+/** `bar` needs a sound split to band. */
+const canBar = (stage: EffectStage): stage is EffectStage & { split: NonNullable<EffectStage['split']> } =>
+  stage.split !== undefined && splitProblem(stage) === null;
+/** `switch` throws a lever between two contacts. */
+const canSwitch = (stage: EffectStage): boolean => (stage.outputs ?? []).length === 2;
+
 const bar: BranchSymbol = (stage, pipeline) => {
-  const cuts = stage.split!.at;
+  if (!canBar(stage)) return diamond(stage, pipeline);
+  const cuts = stage.split.at;
   const exits = stage.outputs ?? [];
   const n = exits.length;
   const marks: DataMark[] = [];
@@ -68,7 +75,7 @@ const bar: BranchSymbol = (stage, pipeline) => {
     width: 24,
     height: Math.max(72, 30 * n),
     ports: [
-      ...inputs(stage, pipeline, stage.split!.input),
+      ...inputs(stage, pipeline, stage.split.input),
       ...exits.map((p, i): PortSpec => ({ id: p.id, type: p.type, at: { u: 1, v: 1 - (i + 0.5) / n } })),
     ],
     marks,
@@ -93,6 +100,7 @@ const dot = (cx: number, cy: number, r: number): string =>
   `M${cx - r} ${cy} A${r} ${r} 0 1 0 ${cx + r} ${cy} A${r} ${r} 0 1 0 ${cx - r} ${cy} Z`;
 
 const switchSymbol: BranchSymbol = (stage, pipeline) => {
+  if (!canSwitch(stage)) return diamond(stage, pipeline);
   const exits = stage.outputs ?? [];
   return {
     outline: 'rect',
@@ -124,10 +132,9 @@ export const BRANCH_SYMBOLS: Readonly<Record<Exclude<BranchChoice, 'auto'>, Bran
 
 /** The symbol `choice` comes to for `stage`: `bar` needs a sound split, `switch` two exits. */
 export function symbolNameFor(stage: EffectStage, choice: BranchChoice = 'auto'): Exclude<BranchChoice, 'auto'> {
-  const splits = stage.split !== undefined && splitProblem(stage) === null;
-  const want = choice === 'auto' ? (splits ? 'bar' : 'diamond') : choice;
-  if (want === 'bar' && !splits) return 'diamond';
-  if (want === 'switch' && (stage.outputs ?? []).length !== 2) return 'diamond';
+  const want = choice === 'auto' ? (canBar(stage) ? 'bar' : 'diamond') : choice;
+  if (want === 'bar' && !canBar(stage)) return 'diamond';
+  if (want === 'switch' && !canSwitch(stage)) return 'diamond';
   return want;
 }
 

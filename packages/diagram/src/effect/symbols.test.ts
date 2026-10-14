@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { branchNode, symbolNameFor } from './symbols';
+import { BRANCH_SYMBOLS, branchNode, symbolNameFor } from './symbols';
 import type { EffectPipeline, EffectStage } from './types';
 
 const P: EffectPipeline = { stages: [], wires: [], types: { bool: { control: true } } };
@@ -38,6 +38,13 @@ describe('branch symbols', () => {
     expect(symbolNameFor(bands, 'switch')).toBe('diamond');
     expect(symbolNameFor({ ...bands, split: { input: 'x', at: [0.8, 0.2] } }, 'bar')).toBe('diamond');
     expect(symbolNameFor({ ...bands, split: { input: 'x', at: [0.5] } })).toBe('diamond');
+  });
+
+  it('draws a diamond when a symbol is called on a stage it cannot draw', () => {
+    expect(BRANCH_SYMBOLS.bar(yesNo, P).outline).toBe('diamond');
+    expect(BRANCH_SYMBOLS.bar({ ...bands, split: { input: 'x', at: [0.8, 0.2] } }, P).outline).toBe('diamond');
+    expect(BRANCH_SYMBOLS.switch(bands, P)).toEqual(BRANCH_SYMBOLS.diamond(bands, P));
+    expect(BRANCH_SYMBOLS.switch(yesNo, P).outline).toBe('rect');
   });
 
   it('puts a diamond\'s control input on top and its two exits right and bottom', () => {
