@@ -57,10 +57,8 @@ export function usePolygonTool<TNode extends { id: string } = { id: string }>(
         run: (_deps, params) => {
           const p = params as { deltaY?: number; delta?: number } | undefined;
           // `delta` comes from the ArrowUp/ArrowDown key bindings; `deltaY`
-          // is the dispatcher-injected wheel delta. Wheel "up" (deltaY > 0
-          // under Mac natural scrolling / page-scrolls-up gesture) adds a
-          // side; wheel "down" removes one. Matches the user's mental model:
-          // scroll up = more.
+          // from the wheel. Wheel up (deltaY > 0 under natural scrolling)
+          // adds a side.
           const step = p?.delta ?? (p?.deltaY !== undefined && p.deltaY !== 0
             ? (p.deltaY > 0 ? 1 : -1)
             : 0);

@@ -136,6 +136,38 @@ const FILL_LEAF: PrefLeaf = {
   },
 };
 
+/** A whole `Stroke`: paint and line geometry, one value. */
+const STROKE_LEAF: PrefLeaf = {
+  kind: 'object',
+  name: 'Stroke',
+  description: 'Stroke paint and line geometry.',
+  default: { paint: { kind: 'solid', color: '#000000ff' }, width: 1 },
+  block: true,
+  children: {
+    // Every row is `block`: under a heading already reading STROKE,
+    // a 64px label column spells the section name again and takes
+    // the width the controls need. Each field leads with its own
+    // glyph instead.
+    // Unpaired: the paint field is a whole paint editor — a kind bar
+    // over a per-kind body — and cannot share a row with a slider.
+    width: { kind: 'number', name: 'Width', description: 'Stroke width, world units.', absentIsDefault: true, default: 1, min: 0, max: 20, step: 0.5, control: 'slider', icon: 'strokeWidth', block: true },
+    paint: { kind: 'paint', name: 'Paint', description: 'Stroke paint.', default: { kind: 'solid', color: '#000000ff' }, alpha: true, block: true },
+    // Three options each: a segmented control shows every one at
+    // once where a select shows the current one and hides the rest
+    // behind a click.
+    cap: { kind: 'enum', name: 'Cap', description: 'How an open end is drawn.', absentIsDefault: true, default: 'butt', control: 'toggle', block: true, pair: { with: ['data.stroke.join', 'data.stroke.align'], label: 'Line' }, options: [{ value: 'butt', label: 'Butt', icon: 'capButt' }, { value: 'round', label: 'Round', icon: 'capRound' }, { value: 'square', label: 'Square', icon: 'capSquare' }] },
+    join: { kind: 'enum', name: 'Join', description: 'How a corner is drawn.', absentIsDefault: true, default: 'miter', control: 'toggle', block: true, options: [{ value: 'miter', label: 'Miter', icon: 'joinMiter' }, { value: 'round', label: 'Round', icon: 'joinRound' }, { value: 'bevel', label: 'Bevel', icon: 'joinBevel' }] },
+    align: { kind: 'enum', name: 'Align', description: 'Where the ribbon sits relative to the edge.', absentIsDefault: true, default: 'center', control: 'toggle', block: true, options: [{ value: 'inner', label: 'Inner', icon: 'alignInner' }, { value: 'center', label: 'Center', icon: 'alignCenter' }, { value: 'outer', label: 'Outer', icon: 'alignOuter' }] },
+    // Its own row: three bars already fill the one above, and the
+    // dash pattern is a property of the line rather than of how the
+    // ribbon meets the geometry.
+    dash: { kind: 'enum', name: 'Style', description: 'Solid, dashed or dotted. Dash lengths are multiples of the stroke width, so a style holds as the width changes.', default: 'solid', control: 'toggle', block: true, encoding: strokeDashEncoding, options: [{ value: 'solid', label: 'Solid', icon: 'dashSolid' }, { value: 'dashed', label: 'Dashed', icon: 'dashDashed' }, { value: 'dotted', label: 'Dotted', icon: 'dashDotted' }, { value: 'custom', label: 'Custom', icon: 'dashCustom', disabled: true }] },
+    markerStart: markerLeaf({ name: 'Start', description: 'Marker at the first vertex of each open subpath.', block: true, pair: { with: ['data.stroke.markerMid', 'data.stroke.markerEnd'], label: 'Markers' } }),
+    markerMid: markerLeaf({ name: 'Mid', description: 'Marker at every interior authored vertex.', block: true }),
+    markerEnd: markerLeaf({ name: 'End', description: 'Marker at the last vertex of each open subpath.', block: true }),
+  },
+};
+
 /** The pose box, its rotation, and the `transform` inside that. */
 const LAYOUT: PrefSection = {
   name: 'Layout',
@@ -184,36 +216,7 @@ function shapeSchema(opts: { text?: boolean; generators?: readonly string[] } = 
           // An object leaf: `data.stroke` is a whole `Stroke`, and its fields
           // belong to one value. Sibling leaves addressing into it would each
           // write one field of a value they can only half see.
-          'data.stroke': {
-            kind: 'object',
-            name: 'Stroke',
-            description: 'Stroke paint and line geometry.',
-            default: { paint: { kind: 'solid', color: '#000000ff' }, width: 1 },
-            block: true,
-            children: {
-              // Every row is `block`: under a heading already reading STROKE,
-              // a 64px label column spells the section name again and takes
-              // the width the controls need. Each field leads with its own
-              // glyph instead.
-              // Unpaired: the paint field is a whole paint editor — a kind bar
-              // over a per-kind body — and cannot share a row with a slider.
-              width: { kind: 'number', name: 'Width', description: 'Stroke width, world units.', absentIsDefault: true, default: 1, min: 0, max: 20, step: 0.5, control: 'slider', icon: 'strokeWidth', block: true },
-              paint: { kind: 'paint', name: 'Paint', description: 'Stroke paint.', default: { kind: 'solid', color: '#000000ff' }, alpha: true, block: true },
-              // Three options each: a segmented control shows every one at
-              // once where a select shows the current one and hides the rest
-              // behind a click.
-              cap: { kind: 'enum', name: 'Cap', description: 'How an open end is drawn.', absentIsDefault: true, default: 'butt', control: 'toggle', block: true, pair: { with: ['data.stroke.join', 'data.stroke.align'], label: 'Line' }, options: [{ value: 'butt', label: 'Butt', icon: 'capButt' }, { value: 'round', label: 'Round', icon: 'capRound' }, { value: 'square', label: 'Square', icon: 'capSquare' }] },
-              join: { kind: 'enum', name: 'Join', description: 'How a corner is drawn.', absentIsDefault: true, default: 'miter', control: 'toggle', block: true, options: [{ value: 'miter', label: 'Miter', icon: 'joinMiter' }, { value: 'round', label: 'Round', icon: 'joinRound' }, { value: 'bevel', label: 'Bevel', icon: 'joinBevel' }] },
-              align: { kind: 'enum', name: 'Align', description: 'Where the ribbon sits relative to the edge.', absentIsDefault: true, default: 'center', control: 'toggle', block: true, options: [{ value: 'inner', label: 'Inner', icon: 'alignInner' }, { value: 'center', label: 'Center', icon: 'alignCenter' }, { value: 'outer', label: 'Outer', icon: 'alignOuter' }] },
-              // Its own row: three bars already fill the one above, and the
-              // dash pattern is a property of the line rather than of how the
-              // ribbon meets the geometry.
-              dash: { kind: 'enum', name: 'Style', description: 'Solid, dashed or dotted. Dash lengths are multiples of the stroke width, so a style holds as the width changes.', default: 'solid', control: 'toggle', block: true, encoding: strokeDashEncoding, options: [{ value: 'solid', label: 'Solid', icon: 'dashSolid' }, { value: 'dashed', label: 'Dashed', icon: 'dashDashed' }, { value: 'dotted', label: 'Dotted', icon: 'dashDotted' }, { value: 'custom', label: 'Custom', icon: 'dashCustom', disabled: true }] },
-              markerStart: markerLeaf({ name: 'Start', description: 'Marker at the first vertex of each open subpath.', block: true, pair: { with: ['data.stroke.markerMid', 'data.stroke.markerEnd'], label: 'Markers' } }),
-              markerMid: markerLeaf({ name: 'Mid', description: 'Marker at every interior authored vertex.', block: true }),
-              markerEnd: markerLeaf({ name: 'End', description: 'Marker at the last vertex of each open subpath.', block: true }),
-            },
-          },
+          'data.stroke': STROKE_LEAF,
         },
       },
       ...(opts.text
@@ -287,21 +290,22 @@ const GENERATED_KINDS: Record<string, readonly string[] | undefined> = {
   path: ['polygon', 'star'],
 };
 
+function shapeEntry(name: string): NodePropertiesEntry {
+  const generators = GENERATED_KINDS[name];
+  return {
+    name,
+    schema: shapeSchema({ text: name === 'text', ...(generators ? { generators } : {}) }),
+    ...(generators ? { settle: settleShapeGenerator } : {}),
+  };
+}
+
 /**
  * Default properties-trait entries covering the kit's built-in shape
  * kinds (`KIT_SHAPE_KINDS`) — the sibling of `defaultNodeRouting`. Every
  * kind gets the standard box schema; `text` adds a Text group. In
  * lockstep with `KIT_SHAPE_KINDS` by construction (derived via `.map`).
  */
-export const defaultNodeProperties: readonly NodePropertiesEntry[] =
-  KIT_SHAPE_KINDS.map((name) => {
-    const generators = GENERATED_KINDS[name];
-    return {
-      name,
-      schema: shapeSchema({ text: name === 'text', ...(generators ? { generators } : {}) }),
-      ...(generators ? { settle: settleShapeGenerator } : {}),
-    };
-  });
+export const defaultNodeProperties: readonly NodePropertiesEntry[] = KIT_SHAPE_KINDS.map(shapeEntry);
 
 /**
  * Properties-trait entries for the *inferred* routing kinds
@@ -310,11 +314,4 @@ export const defaultNodeProperties: readonly NodePropertiesEntry[] =
  * In lockstep with `inferredNodeRouting` by construction.
  */
 export const inferredNodeProperties: readonly NodePropertiesEntry[] =
-  inferredNodeRouting.map((e) => {
-    const generators = GENERATED_KINDS[e.name];
-    return {
-      name: e.name,
-      schema: shapeSchema({ text: e.name === 'text', ...(generators ? { generators } : {}) }),
-      ...(generators ? { settle: settleShapeGenerator } : {}),
-    };
-  });
+  inferredNodeRouting.map((e) => shapeEntry(e.name));
