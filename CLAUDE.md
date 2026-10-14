@@ -160,6 +160,15 @@ ends at `(x+dx, y+dy)` — an arrowhead capping that arc puts its vertex
 *there*. Same for a handle meeting a circle's rim: solve for the point on the
 circle rather than guessing a coordinate that looks close.
 
+**An arrowhead goes on a straight run, on a compass direction.** A head set on the end of a curve
+and aimed along its tangent leans outward, and its inside barb closes up against the bending shaft;
+below a radius of about twice the head's length it reads as a hook or a flag, and aiming it along
+the chord instead only helps above radius 5. So end the curve early and carry the head on a
+straight run at least as long as the barbs trail back — `turnLeft` in `camera.mjs` is the pattern.
+Pick where the curve ends so that run points along an axis or a diagonal. On a diagonal run use
+`chevron`'s spread of 45, which lays both barbs on the pixel axes; at 36–42 they sit a few degrees
+off and blur at 16px. A head also needs a shaft showing behind its barbs, or it reads as a caret.
+
 **The small check is a separate check, and it is the pixel grid.** Proofing
 large tells you nothing about chrome size. Rasterise at the size the chrome
 actually renders — labkit's chrome regions draw glyphs at `size={16}` — magnify with
