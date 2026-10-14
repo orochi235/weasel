@@ -1,0 +1,35 @@
+.lab {
+  display: grid;
+  grid-template-rows: 1fr auto;
+  gap: 12px;
+  height: 100%;
+  padding: 16px;
+  box-sizing: border-box;
+  background: #0e151b;
+  color: #dbe7f2;
+  font: 13px/1.4 system-ui, sans-serif;
+}
+
+.chart {
+  min-height: 0;
+  border: 1px solid #1f2d39;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.problems {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  max-height: 120px;
+  overflow: auto;
+}
+
+.problems li {
+  padding: 2px 0;
+  color: #ff8a8a;
+}
+
+.status {
+  color: #8aa2b5;
+}
