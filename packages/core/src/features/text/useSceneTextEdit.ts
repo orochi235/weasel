@@ -191,27 +191,15 @@ export function useSceneTextEdit<
       const style = read.style(node.data);
       const at = surface();
       const view = resolveView(optsRef.current.view) ?? at?.canvas.getView();
-      const zoom = view ? view.scale.x : 1;
-      const zoomY = view ? view.scale.y : 1;
-      // Only the box center is projected, since the overlay's frame is about
-      // it. Width, height and font size stay in world units and reach the
-      // screen through the overlay's own `scale(zoom)` — see
-      // `TextEditScreenPose.zoom`.
-      const cx = (at?.box.x ?? 0) + (pose.x + pose.width / 2 - (view?.x ?? 0)) * zoom;
-      const cy = (at?.box.y ?? 0) + (pose.y + pose.height / 2 - (view?.y ?? 0)) * zoomY;
+      const box = screenBoxOf(pose, view, at?.box);
       return {
-        x: cx - (pose.width * zoom) / 2,
-        y: cy - (pose.height * zoom) / 2,
-        width: pose.width,
-        height: pose.height,
+        ...box,
         // Against `zoom`, the same factor the overlay scales back up by, so a
         // `{ px }` size arrives on screen at the pixel count it names.
         fontSize: resolveScreenLength(
           style?.fontSize ?? optsRef.current.defaultFontSize ?? 16,
-          zoom,
+          box.zoom,
         ),
-        zoom,
-        frame: frameLinearOf(pose, zoomY / zoom),
         verticalAlign: read.verticalAlign(node.data),
       };
     },
@@ -282,6 +270,32 @@ export function useSceneTextEdit<
   }, [read, sceneRef]);
 
   return { ...edit, onDoubleClick, isTextNode };
+}
+
+/**
+ * `pose`'s box as the overlay takes it, `origin` being the canvas's corner in
+ * container pixels. Only the box center is projected, since the overlay's
+ * frame is about it. Width and height stay in world units and reach the
+ * screen through the overlay's own `scale(zoom)` — see
+ * `TextEditScreenPose.zoom`.
+ */
+function screenBoxOf(
+  pose: RectPose,
+  view: View | undefined,
+  origin: { x: number; y: number } | undefined,
+): Pick<TextEditScreenPose, 'x' | 'y' | 'width' | 'height' | 'frame'> & { zoom: number } {
+  const zoom = view ? view.scale.x : 1;
+  const zoomY = view ? view.scale.y : 1;
+  const cx = (origin?.x ?? 0) + (pose.x + pose.width / 2 - (view?.x ?? 0)) * zoom;
+  const cy = (origin?.y ?? 0) + (pose.y + pose.height / 2 - (view?.y ?? 0)) * zoomY;
+  return {
+    x: cx - (pose.width * zoom) / 2,
+    y: cy - (pose.height * zoom) / 2,
+    width: pose.width,
+    height: pose.height,
+    zoom,
+    frame: frameLinearOf(pose, zoomY / zoom),
+  };
 }
 
 /** The linear part of the frame `pose` is drawn in, as the overlay takes it.

@@ -41,7 +41,7 @@
     "longestFunction": 216
   },
   "packages/core/src/canvas/SceneCanvas/defaultNodeProperties.ts": {
-    "longestFunction": 134
+    "longestFunction": 125
   },
   "packages/core/src/canvas/SceneCanvas/props.ts": {
     "lines": 673
@@ -86,7 +86,7 @@
     "lines": 749
   },
   "packages/core/src/features/text/useSceneTextEdit.ts": {
-    "longestFunction": 166
+    "longestFunction": 157
   },
   "packages/core/src/interactions/actions/defaults/viewportZoom.ts": {
     "longestFunction": 127
