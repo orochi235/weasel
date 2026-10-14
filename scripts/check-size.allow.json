@@ -218,7 +218,7 @@
     "longestFunction": 256
   },
   "packages/labkit/src/lab/Lab.tsx": {
-    "longestFunction": 205
+    "longestFunction": 198
   },
   "packages/labkit/src/lab/Workspace.tsx": {
     "longestFunction": 159
@@ -240,10 +240,10 @@
     "longestFunction": 132
   },
   "packages/labkit/src/state/bindLabStore.ts": {
-    "longestFunction": 216
+    "longestFunction": 210
   },
   "packages/labkit/src/state/store.ts": {
-    "longestFunction": 237
+    "longestFunction": 230
   },
   "packages/labkit/src/surface/useTiledSurface.ts": {
     "longestFunction": 255

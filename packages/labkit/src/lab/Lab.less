@@ -8,3 +8,27 @@ body:has(.lk-lab, .lk-shell) {
 .lk-lab {
   height: 100%;
 }
+
+// Stored records that failed to load: a strip over the lab body, one row each.
+.lk-unreadable {
+  flex: none;
+  margin: 0;
+  padding: var(--wzl-space-xs) var(--wzl-space-md);
+  list-style: none;
+  background: color-mix(in srgb, var(--wzl-warning) 15%, var(--wzl-surface-raised));
+  border-bottom: 1px solid var(--wzl-border);
+  color: var(--wzl-fg);
+  font-size: var(--wzl-font-size-sm);
+}
+
+.lk-unreadable__row {
+  display: flex;
+  align-items: center;
+  gap: var(--wzl-space-md);
+  padding: var(--wzl-space-xs) 0;
+}
+
+.lk-unreadable__what {
+  flex: 1;
+  min-width: 0;
+}

@@ -6,6 +6,7 @@ import type {
   SavedSnapshot,
   SerializedTrial,
   TrialRecord,
+  UnreadableRecord,
 } from './types';
 
 /** How a stored config is brought up to date on the way in. */
@@ -35,18 +36,24 @@ function filledConfig(hydration: ConfigHydration, instrumentName: string, moved:
 
 /** Rebuild stored trials: migrate each config, fill its gaps from its
  *  instrument's defaults, then run the deserializer against the result. A
- *  trial either step throws on is left out, with a warning. */
+ *  trial either step throws on is left out, with a warning, and reported to
+ *  `onUnreadable`. */
 export function hydrateTrials(
   trials: SerializedTrial[],
   serializers: InstrumentSerializers,
   hydration: ConfigHydration = {},
+  onUnreadable?: OnUnreadable,
 ): TrialRecord[] {
   return trials.flatMap((t) =>
-    hydrated('trial', t, () =>
-      deserializeTrials(
-        [{ ...t, config: hydratedConfig(hydration, t.instrumentName, t.config) }],
-        serializers,
-      ),
+    hydrated(
+      'trial',
+      t,
+      () =>
+        deserializeTrials(
+          [{ ...t, config: hydratedConfig(hydration, t.instrumentName, t.config) }],
+          serializers,
+        ),
+      onUnreadable && ((reason) => onUnreadable(unreadable('trial', t, t.title, reason))),
     ),
   );
 }
@@ -55,12 +62,40 @@ export function hydrateTrials(
 export function hydrateSnapshots(
   saves: SavedSnapshot[],
   hydration: ConfigHydration = {},
+  onUnreadable?: OnUnreadable,
 ): SavedSnapshot[] {
   return saves.flatMap((sn) =>
-    hydrated('snapshot', sn, () => [
-      { ...sn, config: hydratedConfig(hydration, sn.instrumentName, sn.config) },
-    ]),
+    hydrated(
+      'snapshot',
+      sn,
+      () => [{ ...sn, config: hydratedConfig(hydration, sn.instrumentName, sn.config) }],
+      onUnreadable && ((reason) => onUnreadable(unreadable('snapshot', sn, sn.name, reason))),
+    ),
   );
+}
+
+/** Told of each stored trial or snapshot a hydration leaves out. */
+export type OnUnreadable = (record: UnreadableRecord) => void;
+
+function unreadable(
+  kind: UnreadableRecord['kind'],
+  stored: { id: string; instrumentName: string },
+  label: unknown,
+  reason: string,
+): UnreadableRecord {
+  const { id, instrumentName } = stored;
+  return { kind, id, instrumentName, ...(typeof label === 'string' ? { label } : {}), reason };
+}
+
+/** `held` without the entry for one record: it loaded, was deleted, or is about to be listed again. */
+export function withoutUnreadable(
+  held: UnreadableRecord[],
+  kind: UnreadableRecord['kind'],
+  id: string,
+): UnreadableRecord[] {
+  return held.some((u) => u.kind === kind && u.id === id)
+    ? held.filter((u) => u.kind !== kind || u.id !== id)
+    : held;
 }
 
 /**
@@ -85,6 +120,7 @@ function hydrated<T>(
   what: string,
   stored: { id: string; instrumentName: string },
   build: () => T[],
+  onFailed?: (reason: string) => void,
 ): T[] {
   try {
     return build();
@@ -93,6 +129,7 @@ function hydrated<T>(
       `[labkit] ${what} "${stored.id}" (${stored.instrumentName}) failed to load; leaving its record alone`,
       error,
     );
+    onFailed?.(error instanceof Error ? error.message : String(error));
     return [];
   }
 }

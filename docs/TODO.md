@@ -787,12 +787,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   through `--wzl-field-border`. The systems' own faces are named in the font stacks and not
   bundled; a bundled lookalike needs a face whose license allows it.
 
-- **(P3) labkit stored lab: a trial that fails to hydrate is left out with only a console warning.**
-  `hydrateTrials` and `hydrateSnapshots` (`packages/labkit/src/state/hydrate.ts`) skip a trial or
-  a snapshot whose `deserialize` or `migrateConfig` throws, and its record stays in storage,
-  unwritten and undeleted. Nothing in the lab says a trial is missing, and nothing can discard its
-  record. The call to make is whether the lab draws a failed tile with a way to discard it.
-
 - **(P3) labkit trial: "Add trial" leaves the first trial's part outside its own stage.** In the
   `annotate-lab` example, adding a trial narrows the first trial's stage, and its camera keeps the
   pan it had, so the part and its marks sit past the stage's edge, out of sight until the trial is

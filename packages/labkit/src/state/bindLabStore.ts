@@ -1,7 +1,7 @@
 import type { OwnedRecordCache, RecordCache } from '@weasel-js/storage';
 import { CURRENT_DOCUMENT_VERSION } from './document';
 import { serializeTrials } from './helpers';
-import { hydrateSnapshots, hydrateTrials } from './hydrate';
+import { hydrateSnapshots, hydrateTrials, withoutUnreadable } from './hydrate';
 import {
   compareTrialOrder,
   LAYOUT_RECORD,
@@ -14,7 +14,7 @@ import {
   UNDOCK_RECORD,
 } from './labRecords';
 import type { LabStore } from './store';
-import type { SavedSnapshot, SerializedTrial, TrialRecord } from './types';
+import type { SavedSnapshot, SerializedTrial, TrialRecord, UnreadableRecord } from './types';
 
 export interface BindOptions {
   orders: Map<string, number>;
@@ -38,6 +38,32 @@ function persistedFieldsDiffer(a: TrialRecord, b: TrialRecord): boolean {
   return false;
 }
 
+function inOrder(trials: TrialRecord[], orderOf: ReadonlyMap<string, number>): boolean {
+  for (let i = 1; i < trials.length; i++) {
+    const a = trials[i - 1] as TrialRecord;
+    const b = trials[i] as TrialRecord;
+    const at = { trial: a, order: orderOf.get(a.id) ?? 0 };
+    const bt = { trial: b, order: orderOf.get(b.id) ?? 0 };
+    if (compareTrialOrder(at, bt) >= 0) return false;
+  }
+  return true;
+}
+
+/** Delete the records of what left `was` for `now`: each one was discarded. */
+function deleteDiscarded(
+  records: RecordCache,
+  now: UnreadableRecord[],
+  was: UnreadableRecord[],
+): boolean {
+  const gone = now === was ? [] : was.filter((u) => !now.includes(u));
+  for (const { kind, id } of gone) {
+    records.delete(kind === 'trial' ? trialRecord(id) : saveRecord(id));
+    if (kind !== 'trial') continue;
+    for (const [name] of records.entries(trialValuesPrefix(id))) records.delete(name);
+  }
+  return gone.length > 0;
+}
+
 /** Keep `store` and `records` in step, both ways. Returns the unbinding. */
 export function bindLabStore(
   store: LabStore,
@@ -58,20 +84,9 @@ export function bindLabStore(
     records.set(trialRecord(trial.id), { ...serialized, order: orderOf.get(trial.id) });
   };
 
-  const inStoredOrder = (trials: TrialRecord[]): boolean => {
-    for (let i = 1; i < trials.length; i++) {
-      const a = trials[i - 1] as TrialRecord;
-      const b = trials[i] as TrialRecord;
-      const at = { trial: a, order: orderOf.get(a.id) ?? 0 };
-      const bt = { trial: b, order: orderOf.get(b.id) ?? 0 };
-      if (compareTrialOrder(at, bt) >= 0) return false;
-    }
-    return true;
-  };
-
   const offStore = store.subscribe((state, prev) => {
     if (applyingRemote) return;
-    let wrote = false;
+    let wrote = deleteDiscarded(records, state.unreadable, prev.unreadable);
 
     if (state.trials !== prev.trials) {
       const before = new Map(prev.trials.map((t) => [t.id, t]));
@@ -85,7 +100,7 @@ export function bindLabStore(
       }
       const added = state.trials.filter((t) => !before.has(t.id));
       for (const t of added) orderOf.set(t.id, nextOrder());
-      if (inStoredOrder(state.trials)) {
+      if (inOrder(state.trials, orderOf)) {
         for (const t of state.trials) {
           const old = before.get(t.id);
           if (old && !persistedFieldsDiffer(old, t)) continue;
@@ -138,6 +153,8 @@ export function bindLabStore(
     const current = store.getState();
     let trials = current.trials;
     let saves = current.savedSnapshots;
+    let unreadable = current.unreadable;
+    const failed = (u: UnreadableRecord): void => void (unreadable = [...unreadable, u]);
     const patch: Partial<Pick<typeof current, 'layout' | 'undockedPanels' | 'mode'>> = {};
 
     for (const { name, value } of remote) {
@@ -146,6 +163,7 @@ export function bindLabStore(
       switch (parsed.kind) {
         case 'trial': {
           const id = parsed.id;
+          unreadable = withoutUnreadable(unreadable, 'trial', id);
           if (value === undefined || !value || typeof value !== 'object') {
             trials = trials.filter((t) => t.id !== id);
             orderOf.delete(id);
@@ -159,7 +177,7 @@ export function bindLabStore(
           // Hydrating starts an empty undo history: the old one describes a
           // state that no longer exists.
           const hooks = store.getState().instrumentHooks();
-          const [replacement] = hydrateTrials([{ ...rest, id }], hooks.serializers, hooks);
+          const [replacement] = hydrateTrials([{ ...rest, id }], hooks.serializers, hooks, failed);
           if (!replacement) {
             // Kept, the stale trial's next edit would write over a record this tab cannot read.
             trials = trials.filter((t) => t.id !== id);
@@ -172,6 +190,7 @@ export function bindLabStore(
         }
         case 'save': {
           const id = parsed.id;
+          unreadable = withoutUnreadable(unreadable, 'snapshot', id);
           if (value === undefined || !value || typeof value !== 'object') {
             saves = saves.filter((s) => s.id !== id);
             break;
@@ -179,6 +198,7 @@ export function bindLabStore(
           const [snapshot] = hydrateSnapshots(
             [{ ...(value as SavedSnapshot), id }],
             store.getState().instrumentHooks(),
+            failed,
           );
           if (!snapshot) break;
           saves = saves.some((s) => s.id === id)
@@ -219,7 +239,7 @@ export function bindLabStore(
     }
     applyingRemote = true;
     try {
-      store.setState({ ...patch, trials, savedSnapshots: saves });
+      store.setState({ ...patch, trials, savedSnapshots: saves, unreadable });
     } finally {
       applyingRemote = false;
     }

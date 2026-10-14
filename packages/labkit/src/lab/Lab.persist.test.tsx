@@ -4,6 +4,7 @@ import { createMemoryAdapter, type StorageAdapter } from '@weasel-js/storage';
 import { StrictMode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Instrument } from '../instrument/types';
+import { CURRENT_DOCUMENT_VERSION } from '../state/document';
 import { labPrefix } from '../state/labRecords';
 import { indexedDbAdapter, resetDefaultStorage } from '../state/labStorage';
 import { Lab } from './Lab';
@@ -135,6 +136,41 @@ describe('<Lab> with a storageKey', () => {
       expect(backing.get(`${labPrefix('one')}meta`)).toMatchObject({ mode: 'light' }),
     );
     expect([...backing.keys()].filter((key) => key.startsWith(labPrefix('two')))).toEqual([]);
+  });
+
+  it('lists a stored trial that fails to load, and deletes its record when it is discarded', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const P = labPrefix('bad');
+    const stored = { instrumentName: 'Stub', config: {}, view: null };
+    const backing = new Map<string, unknown>([
+      [`${P}meta`, { version: CURRENT_DOCUMENT_VERSION, mode: 'auto' }],
+      [`${P}trial:ok`, { ...stored, id: 'ok', state: {}, order: 0 }],
+      [`${P}trial:broken`, { ...stored, id: 'broken', state: { bad: true }, title: 'Mine', order: 1 }],
+    ]);
+    const picky: Instrument = {
+      ...stub,
+      deserialize: (data) => {
+        if ((data as { bad?: boolean }).bad) throw new Error('unreadable state');
+        return data as object;
+      },
+    };
+    render(
+      <Lab
+        instruments={[picky]}
+        defaultInstrument="Stub"
+        storageKey="bad"
+        storage={createMemoryAdapter(backing)}
+      />,
+    );
+    await screen.findByTestId('stub-content');
+    const list = screen.getByRole('list', { name: 'Stored records that failed to load' });
+    expect(list).toHaveTextContent('Trial "Mine" (Stub) failed to load and is left out: unreadable state');
+    expect(backing.has(`${P}trial:broken`)).toBe(true);
+
+    await act(async () => screen.getByRole('button', { name: 'Discard Trial "Mine" (Stub)' }).click());
+    expect(screen.queryByRole('list', { name: 'Stored records that failed to load' })).toBeNull();
+    await waitFor(() => expect(backing.has(`${P}trial:broken`)).toBe(false));
+    expect(backing.has(`${P}trial:ok`)).toBe(true);
   });
 
   it('closes the lab on unmount, sending what was queued', async () => {
