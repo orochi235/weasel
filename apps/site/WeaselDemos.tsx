@@ -1,17 +1,20 @@
 import { Suspense, lazy, useEffect, useRef, useState, type RefObject } from 'react';
 import { Tab, TabList, TabPanel, Tabs } from '@weasel-js/ui/components/Tabs';
-import { CATEGORIES, DEMOS, DEMOS_BY_ID, PACKAGES, placeOf, type DemoEntry, type DemoSourceTab } from './registry';
+import { DEMOS, DEMOS_BY_ID, placeOf, type DemoEntry, type DemoSourceTab } from './registry';
 import { sessionStore } from './chunkReload';
 import { PageBoundary } from './PageBoundary';
 import { TAGLINE } from './FrontPage/tagline';
 import { VersionPill } from './FrontPage/VersionPill';
 import { Wordmark } from './FrontPage/Wordmark';
 import { DEMOS_ID, FRONT_ID, GET_STARTED_ID, RELEASES_ID, WHATS_NEW_ID, goFront, routeOf } from './routes';
+import { isPackagePage } from './Packages/catalog';
+import { SiteNav } from './SiteNav';
 
-// All three are lazy so the entry bundle carries only the nav: `Releases`
+// These are lazy so the entry bundle carries only the nav: `Releases`
 // pulls in `virtual:changelogs` (every published changelog entry), and
 // `SourceView` pulls in `prism-react-renderer`. None is needed to show a demo.
 const SourceView = lazy(() => import('./SourceView'));
+const PackagePages = lazy(() => import('./Packages/Packages'));
 const WhatsNew = lazy(() => import('./WhatsNew').then((m) => ({ default: m.WhatsNew })));
 const Releases = lazy(() => import('./Releases').then((m) => ({ default: m.Releases })));
 const GetStarted = lazy(() => import('./FrontPage/GetStarted').then((m) => ({ default: m.GetStarted })));
@@ -35,7 +38,7 @@ import logoUrl from './assets/weasel-logo.svg';
 
 function readHash(): string {
   if (window.location.hash === `#${DEMOS_ID}`) return DEMOS[0].id;
-  return routeOf(window.location.hash, (id) => DEMOS_BY_ID.has(id));
+  return routeOf(window.location.hash, (id) => DEMOS_BY_ID.has(id) || isPackagePage(id));
 }
 
 export function WeaselDemos() {
@@ -64,6 +67,12 @@ export function WeaselDemos() {
     }
   }, [activeId]);
 
+  // The main pane is what scrolls, so a new page starts at its top, not where the last one was left.
+  const mainRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    if (mainRef.current) mainRef.current.scrollTop = 0;
+  }, [activeId]);
+
   const active = DEMOS_BY_ID.get(activeId) ?? null;
 
   if (activeId === FRONT_ID) return null;
@@ -88,85 +97,23 @@ export function WeaselDemos() {
           <p><a href="./draw/">WeaselDraw →</a></p>
           <p><a href="./draw/#/dev/toolkits">Toolkit builder →</a></p>
         </header>
-        <nav className="ckd-nav">
-          <section className="ckd-nav-section ckd-nav-whatsnew">
-            <ul>
-              <li>
-                <a
-                  href={`#${GET_STARTED_ID}`}
-                  className={activeId === GET_STARTED_ID ? 'active' : ''}
-                  onClick={(e) => { e.preventDefault(); open(GET_STARTED_ID); }}
-                >🚀 Get started</a>
-              </li>
-              <li>
-                <a
-                  href={`#${WHATS_NEW_ID}`}
-                  className={activeId === WHATS_NEW_ID ? 'active' : ''}
-                  onClick={(e) => { e.preventDefault(); open(WHATS_NEW_ID); }}
-                >✨ What's new</a>
-              </li>
-              <li>
-                <a
-                  href={`#${RELEASES_ID}`}
-                  className={activeId === RELEASES_ID ? 'active' : ''}
-                  onClick={(e) => { e.preventDefault(); open(RELEASES_ID); }}
-                >🏷️ Releases</a>
-              </li>
-            </ul>
-          </section>
-          {CATEGORIES.map((cat) => (
-            <section key={cat} className="ckd-nav-section">
-              <h2>{cat}</h2>
-              <DemoLinks demos={DEMOS.filter((d) => d.category === cat)} activeId={activeId} onPick={open} />
-            </section>
-          ))}
-          {PACKAGES.length > 0 && (
-            <section className="ckd-nav-section">
-              <h2>Packages</h2>
-              {PACKAGES.map((pkg) => (
-                <section key={pkg} className="ckd-nav-package">
-                  <h3>{pkg}</h3>
-                  <DemoLinks demos={DEMOS.filter((d) => d.package === pkg)} activeId={activeId} onPick={open} />
-                </section>
-              ))}
-            </section>
-          )}
-        </nav>
+        <SiteNav activeId={activeId} onPick={open} />
       </aside>
 
-      <main className="ckd-main">
+      <main className="ckd-main" ref={mainRef}>
         <PageBoundary key={activeId} reload={() => window.location.reload()} store={sessionStore()}>
           {active ? <DemoView entry={active} key={active.id} /> : null}
           <Suspense fallback={null}>
             {!active && activeId === GET_STARTED_ID ? <GetStarted /> : null}
             {!active && activeId === RELEASES_ID ? <Releases /> : null}
             {!active && activeId === WHATS_NEW_ID ? <WhatsNew onSelect={open} /> : null}
+            {!active && isPackagePage(activeId) ? <PackagePages id={activeId} /> : null}
           </Suspense>
         </PageBoundary>
       </main>
 
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
     </div>
-  );
-}
-
-function DemoLinks({ demos, activeId, onPick }: {
-  demos: DemoEntry[];
-  activeId: string;
-  onPick: (id: string) => void;
-}) {
-  return (
-    <ul>
-      {demos.map((d) => (
-        <li key={d.id}>
-          <a
-            href={`#${d.id}`}
-            className={d.id === activeId ? 'active' : ''}
-            onClick={(e) => { e.preventDefault(); onPick(d.id); }}
-          >{d.title}</a>
-        </li>
-      ))}
-    </ul>
   );
 }
 

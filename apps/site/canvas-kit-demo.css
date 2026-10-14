@@ -4,7 +4,8 @@
 
 * { box-sizing: border-box; }
 
-html, body, #root { height: 100%; margin: 0; }
+/* The page itself never scrolls; the sidebar and the main pane each scroll on their own. */
+html, body, #root { height: 100%; margin: 0; overflow: hidden; }
 
 body {
   background: var(--wzl-surface);
@@ -18,7 +19,8 @@ a:hover { text-decoration: underline; }
 .ckd-app {
   display: grid;
   grid-template-columns: 240px 1fr;
-  min-height: 100vh;
+  grid-template-rows: minmax(0, 1fr);
+  height: 100%;
 }
 
 /* ---------- Sidebar ---------- */
@@ -26,10 +28,6 @@ a:hover { text-decoration: underline; }
   background: var(--wzl-surface-raised);
   border-right: 1px solid var(--wzl-border-strong);
   padding: 20px var(--wzl-space-8) 32px;
-  position: sticky;
-  top: 0;
-  align-self: start;
-  height: 100vh;
   overflow-y: auto;
 }
 
@@ -88,6 +86,20 @@ a:hover { text-decoration: underline; }
   margin: 0 0 var(--wzl-space-2) var(--wzl-space-4);
 }
 
+/* A package's heading links to its page. More specific than the nav's link rule, which would draw it as a row. */
+.ckd-nav-section .ckd-nav-package h3 a {
+  display: inline;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+}
+
+.ckd-nav-section .ckd-nav-package h3 a:hover {
+  background: none;
+  color: var(--wzl-fg);
+  text-decoration: underline;
+}
+
 .ckd-nav-section ul {
   list-style: none;
   padding: 0;
@@ -121,6 +133,7 @@ a:hover { text-decoration: underline; }
 .ckd-main {
   padding: 28px 32px 48px;
   min-width: 0;
+  overflow-y: auto;
 }
 
 .ckd-demo {
@@ -599,17 +612,20 @@ a:hover { text-decoration: underline; }
 
 /* ---------- Responsive ---------- */
 @media (max-width: 880px) {
+  /* Stacked, the sidebar and the page are one column, and the app is the pane that scrolls. */
   .ckd-app {
     grid-template-columns: 1fr;
+    grid-template-rows: auto;
+    overflow-y: auto;
   }
   .ckd-sidebar {
-    position: static;
-    max-height: none;
+    overflow-y: visible;
     border-right: none;
     border-bottom: 1px solid var(--wzl-border-strong);
   }
   .ckd-main {
     padding: 20px var(--wzl-space-8) 32px;
+    overflow-y: visible;
   }
   .ckd-source {
     max-height: 50vh;

@@ -1,0 +1,240 @@
+.note {
+  composes: note from '../Packages.module.css';
+}
+
+.current {
+  composes: current from '../Packages.module.css';
+}
+
+.module,
+.symbolPage {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-md);
+  min-width: 0;
+}
+
+/* ---------- A module's exports ---------- */
+.entries {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wzl-space-2) var(--wzl-space-md);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--wzl-font-size-sm);
+}
+
+.entries code,
+.exportName,
+.symbolName,
+.moduleName {
+  font-family: var(--wzl-font-mono);
+}
+
+.moduleName {
+  margin: var(--wzl-space-sm) 0 0;
+  font-size: var(--wzl-font-size-lg);
+  overflow-wrap: anywhere;
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-2);
+}
+
+.groupTitle {
+  margin: var(--wzl-space-md) 0 0;
+  color: var(--wzl-fg-subtle);
+  font-size: var(--wzl-font-size-xs);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.exports {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.exports li {
+  display: grid;
+  grid-template-columns: minmax(0, 16rem) minmax(0, 1fr);
+  gap: var(--wzl-space-lg);
+  padding: var(--wzl-space-2) 0;
+  border-bottom: 1px solid var(--wzl-border);
+}
+
+.exportName {
+  font-size: var(--wzl-font-size-sm);
+  overflow-wrap: anywhere;
+}
+
+.struck {
+  text-decoration: line-through;
+}
+
+.exportAbout {
+  color: var(--wzl-fg-muted);
+  font-size: var(--wzl-font-size-sm);
+  line-height: 1.5;
+}
+
+/* ---------- One export ---------- */
+.back {
+  font-family: var(--wzl-font-mono);
+  font-size: var(--wzl-font-size-sm);
+}
+
+.symbol {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-sm);
+  min-width: 0;
+}
+
+.symbolHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--wzl-space-md);
+}
+
+.kind {
+  color: var(--wzl-fg-subtle);
+  font-size: var(--wzl-font-size-xs);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.symbolName {
+  margin: 0;
+  font-size: var(--wzl-font-size-lg);
+  overflow-wrap: anywhere;
+}
+
+.deprecated {
+  padding: var(--wzl-space-sm) var(--wzl-space-md);
+  border: 1px solid var(--wzl-border-strong);
+  border-radius: var(--wzl-radius-md);
+  background: var(--wzl-surface-sunken);
+  font-size: var(--wzl-font-size-sm);
+}
+
+.declaration {
+  overflow-x: auto;
+  margin: 0;
+  padding: var(--wzl-space-md) var(--wzl-space-lg);
+  border: 1px solid var(--wzl-border-strong);
+  border-radius: var(--wzl-radius-md);
+  background: var(--wzl-surface-sunken);
+  font-family: var(--wzl-font-mono);
+  font-size: var(--wzl-font-size-sm);
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.declaration code {
+  font-family: inherit;
+}
+
+.overload {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-sm);
+}
+
+.overload + .overload {
+  margin-top: var(--wzl-space-lg);
+  padding-top: var(--wzl-space-lg);
+  border-top: 1px solid var(--wzl-border);
+}
+
+.details {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+}
+
+.detail {
+  display: grid;
+  grid-template-columns: minmax(0, 18rem) minmax(0, 1fr);
+  gap: var(--wzl-space-lg);
+  padding: var(--wzl-space-3) 0;
+  border-bottom: 1px solid var(--wzl-border);
+  font-size: var(--wzl-font-size-sm);
+}
+
+.detail dt {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--wzl-space-sm);
+  overflow-wrap: anywhere;
+}
+
+.detail dt code {
+  font-family: var(--wzl-font-mono);
+}
+
+.detail dd {
+  margin: 0;
+  min-width: 0;
+}
+
+.detail p,
+.deprecated p {
+  margin: 0;
+}
+
+.detailType {
+  color: var(--wzl-fg-muted);
+}
+
+.returns {
+  color: var(--wzl-fg-subtle);
+  font-weight: 600;
+}
+
+.members {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-sm);
+}
+
+.memberList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-lg);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.member {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-2);
+  min-width: 0;
+}
+
+.inherited,
+.source {
+  margin: 0;
+  color: var(--wzl-fg-subtle);
+  font-size: var(--wzl-font-size-xs);
+}
+
+@media (max-width: 600px) {
+  .exports li,
+  .detail {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--wzl-space-2);
+  }
+}
