@@ -640,14 +640,14 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   installed 1.21.1, at 1.22.1 (the latest), and at nightly `3.0.0-nightly-99e610236-261006`, last
   checked 2026-10-13.
 
-- **(P3) Hover reports motion only, and nothing in the kit binds it yet.** `hover` is a gesture
-  (`HoverSpec`; `docs/taxonomy.md`, "Gesture"): an immediate action bound to it runs on every
-  unpressed pointer move. It does not say when the pointer leaves the surface or passes from one
-  target to another, so the loupe (`packages/labkit/src/loupe/useLoupe.ts`), which puts its lens
-  away on `pointerleave`, still hand-attaches both listeners, and `CustomShaderDemo` reads the
-  cursor from its own `onPointerMove`. Wants a leave signal (and a decision on whether crossing
-  between targets is one), then the loupe's aim and the demo's cursor-following panels moved onto
-  bindings. Only jsdom has run a hover binding.
+- **(P3) The loupe's aim is a pair of hand-attached listeners.** `hover` is a gesture
+  (`HoverSpec`; `docs/taxonomy.md`, "Gesture"), and with `motion: 'leave'` it says when the
+  pointer passes out of its target or off the surface. The loupe
+  (`packages/labkit/src/loupe/useLoupe.ts`) still attaches `pointermove` and `pointerleave`
+  itself: its lens follows a pressed pointer too, which a hover stands down for, and
+  `<LoupeGestures>` mounts its own dispatcher with the pointer channel off. Moving it needs a
+  gesture for a pointer's moves pressed or not, or a ruling that the lens holds still through a
+  drag. Only jsdom has run a hover binding.
 
 - **(P3) labkit's palette drag-drop runs its own pointer session.** A trial's
   pan, zoom, tap, and loupe route through weasel's dispatcher (`CameraInput`),

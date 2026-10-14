@@ -243,9 +243,20 @@ export interface ContextMenuEvent extends EventModifiers {
   bodyKind?: BodyKind;
 }
 
-/** A move of a pointer with no button pressed. Matched by `hover` specs. */
+/** What a hover found under the pointer. */
+export interface HoverWhere {
+  affordance?: unknown;
+  bodyTarget?: BodyTarget;
+  bodyKind?: BodyKind;
+}
+
+/** A move of a pointer with no button pressed, or its leaving the surface. Matched by `hover` specs. */
 export interface HoverEvent extends EventModifiers {
   kind: 'hover';
+  /** What the pointer was over at its last move, when it has made one since coming onto the surface. */
+  from?: HoverWhere;
+  /** The pointer has left the surface. Where it is and what it is over are its last move's. */
+  off?: boolean;
   /** World-space position of the pointer. */
   x: number;
   y: number;

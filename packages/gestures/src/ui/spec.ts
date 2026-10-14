@@ -191,6 +191,11 @@ export interface PointerDownSpec {
  * The pointer moving over the surface with no button pressed. Fires on every
  * such move; a held pointer's moves belong to its drag and fire nothing here.
  *
+ * With `motion: 'leave'` it fires instead when the pointer passes out of what
+ * the binding targets: onto something its `target` does not match, or off the
+ * surface. With no `target` that is the whole surface. Its params are the
+ * move's that took the pointer out, or the last move's before it left the surface.
+ *
  * A hover binding claims nothing. Every live binding that matches the move
  * runs, not only the best one, and the move still reaches the hover-cursor
  * pump. There is no press to own, so bind an immediate action, not an ongoing
@@ -199,6 +204,7 @@ export interface PointerDownSpec {
  */
 export interface HoverSpec {
   kind: 'hover';
+  motion?: 'move' | 'leave';
   target?: TargetSpec;
   mods?: ModSpec;
   phase?: PhaseSpec;

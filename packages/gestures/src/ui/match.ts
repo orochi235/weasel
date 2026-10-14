@@ -326,12 +326,19 @@ export function matchSpec(
     // Each happens at a point, so its target is what the event classified
     // there: for a long-press, the affordance its press landed on.
     case 'contextMenu':
-    case 'longPress':
-    case 'hover': {
-      if (e.kind !== 'contextmenu' && e.kind !== 'longpress' && e.kind !== 'hover') return false;
+    case 'longPress': {
+      if (e.kind !== 'contextmenu' && e.kind !== 'longpress') return false;
       if (e.kind !== spec.kind.toLowerCase()) return false;
       if (!matchModifiers(e, spec.mods, isMac)) return false;
       return matchTarget(e.affordance, spec.target, e.bodyTarget, e.bodyKind);
+    }
+
+    case 'hover': {
+      if (e.kind !== 'hover') return false;
+      if (!matchModifiers(e, spec.mods, isMac)) return false;
+      const on = !e.off && matchTarget(e.affordance, spec.target, e.bodyTarget, e.bodyKind);
+      if (spec.motion !== 'leave') return on;
+      return !on && e.from !== undefined && matchTarget(e.from.affordance, spec.target, e.from.bodyTarget, e.from.bodyKind);
     }
 
     case 'drag': {

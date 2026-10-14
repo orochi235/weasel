@@ -806,3 +806,32 @@ describe('doubleClick / contextMenu resolve kindOf against the affordance', () =
     expect(matchSpec(ctx, { kind: 'contextMenu', target: isBodyish }, false)).toBe(true);
   });
 });
+
+describe('HoverSpec', () => {
+  const noMods = { altKey: false, ctrlKey: false, metaKey: false, shiftKey: false };
+  const at = (bodyTarget: 'empty' | 'unselected-body', rest: Partial<Extract<InputEvent, { kind: 'hover' }>> = {}): InputEvent =>
+    ({ kind: 'hover', x: 0, y: 0, ...noMods, bodyTarget, ...rest });
+
+  it('matches a move over its target, and not the pointer leaving the surface', () => {
+    expect(matchSpec(at('empty'), { kind: 'hover' }, false)).toBe(true);
+    expect(matchSpec(at('empty', { off: true, from: { bodyTarget: 'empty' } }), { kind: 'hover' }, false)).toBe(false);
+    expect(matchSpec(at('empty'), { kind: 'hover', target: 'unselected-body' }, false)).toBe(false);
+  });
+
+  it('with motion leave and no target, matches only the pointer leaving the surface', () => {
+    const leave = { kind: 'hover', motion: 'leave' } as const;
+    expect(matchSpec(at('empty', { from: { bodyTarget: 'unselected-body' } }), leave, false)).toBe(false);
+    expect(matchSpec(at('empty', { off: true, from: { bodyTarget: 'empty' } }), leave, false)).toBe(true);
+    expect(matchSpec(at('empty', { off: true }), leave, false)).toBe(false);
+  });
+
+  it('with motion leave and a target, matches the pointer passing out of it', () => {
+    const leave = { kind: 'hover', motion: 'leave', target: 'unselected-body' } as const;
+    const onBody = { bodyTarget: 'unselected-body' } as const;
+    expect(matchSpec(at('empty', { from: onBody }), leave, false)).toBe(true);
+    expect(matchSpec(at('unselected-body', { from: onBody }), leave, false)).toBe(false);
+    expect(matchSpec(at('empty', { from: { bodyTarget: 'empty' } }), leave, false)).toBe(false);
+    expect(matchSpec(at('unselected-body', { off: true, from: onBody }), leave, false)).toBe(true);
+  });
+});
+

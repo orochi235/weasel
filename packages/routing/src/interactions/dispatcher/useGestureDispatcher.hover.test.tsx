@@ -106,3 +106,63 @@ describe('a hover binding', () => {
     error.mockRestore();
   });
 });
+
+describe('a hover binding for the pointer leaving', () => {
+  const leaving = (id: string, run: (params: Record<string, unknown>) => void, target?: 'unselected-body') =>
+    follow(id, run, { defaultBinding: target ? { kind: 'hover', motion: 'leave', target } : { kind: 'hover', motion: 'leave' } });
+
+  it('runs when the pointer leaves the surface, with where it last was, and not on a move', () => {
+    const run = vi.fn();
+    const fire = mount([leaving('putAway', run)]);
+    fire('pointermove', { clientX: 5, clientY: 7 });
+    fire('pointermove', { clientX: 9, clientY: 7 });
+    expect(run).not.toHaveBeenCalled();
+    fire('pointerleave');
+    expect(run).toHaveBeenCalledTimes(1);
+    expect(run.mock.calls[0][0]).toMatchObject({ clientX: 9, clientY: 7, bodyTarget: 'empty' });
+  });
+
+  it('has nothing to leave before the pointer has moved over the surface, or once it has left', () => {
+    const run = vi.fn();
+    const fire = mount([leaving('putAway', run)]);
+    fire('pointerleave');
+    expect(run).not.toHaveBeenCalled();
+    fire('pointermove', { clientX: 5, clientY: 5 });
+    fire('pointerleave');
+    fire('pointerleave');
+    expect(run).toHaveBeenCalledTimes(1);
+  });
+
+  it('with a target, runs when the pointer passes onto something the target does not match', () => {
+    let body: 'empty' | 'unselected-body' = 'unselected-body';
+    const run = vi.fn();
+    const fire = mount([leaving('offBody', run, 'unselected-body')], () => body);
+    fire('pointermove', { clientX: 5, clientY: 5 });
+    fire('pointermove', { clientX: 6, clientY: 5 });
+    expect(run).not.toHaveBeenCalled();
+    body = 'empty';
+    fire('pointermove', { clientX: 20, clientY: 5 });
+    expect(run).toHaveBeenCalledTimes(1);
+    expect(run.mock.calls[0][0]).toMatchObject({ clientX: 20, bodyTarget: 'empty' });
+    fire('pointermove', { clientX: 21, clientY: 5 });
+    fire('pointerleave');
+    expect(run).toHaveBeenCalledTimes(1);
+  });
+
+  it('with a target, runs when the pointer leaves the surface from it', () => {
+    const run = vi.fn();
+    const fire = mount([leaving('offBody', run, 'unselected-body')], () => 'unselected-body');
+    fire('pointermove', { clientX: 5, clientY: 5 });
+    fire('pointerleave');
+    expect(run).toHaveBeenCalledTimes(1);
+  });
+
+  it('leaves a binding without it alone when the pointer leaves the surface', () => {
+    const move = vi.fn();
+    const fire = mount([follow('readout', move)]);
+    fire('pointermove', { clientX: 5, clientY: 5 });
+    fire('pointerleave');
+    expect(move).toHaveBeenCalledTimes(1);
+  });
+});
+
