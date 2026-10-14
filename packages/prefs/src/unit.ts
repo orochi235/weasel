@@ -26,7 +26,8 @@ export interface PrefLinearUnit extends PrefUnitText {
   /** The stored value a display of 0 stands for. Absent is 0. */
   offset?: number;
   /** Decimal places the shown value is rounded to. Absent, the value shows unrounded and formats to two places.
-   *  What is typed is stored unrounded either way. */
+   *  What is typed is stored unrounded either way: a decimal typed at a decimal `scale` is stored as the
+   *  decimal the two multiply to, without the dust of multiplying them in binary. */
   precision?: number;
 }
 
@@ -56,6 +57,30 @@ export function isPrefLinearUnit(unit: PrefNumberUnit): unit is PrefLinearUnit {
 /** The name `formatUnit` is asked for a linear unit's one unit by. */
 const SHOWN = 'shown';
 
+/** The decimal places `n` is written with. Undefined for one written with an exponent, which is no short decimal. */
+function decimalPlaces(n: number): number | undefined {
+  const text = String(n);
+  if (text.includes('e')) return undefined;
+  const dot = text.indexOf('.');
+  return dot === -1 ? 0 : text.length - dot - 1;
+}
+
+/** Beyond this many places a number is not a decimal someone wrote, and the product is left as computed. */
+const DECIMAL_PLACES = 12;
+
+/**
+ * `shown * scale + offset` as the decimal it is, where all three are short decimals: 33.3 at a scale of 0.01
+ * is 0.333, where the product computed in binary is 0.33299999999999996. Nothing is rounded away: the places
+ * kept are every place the exact answer has.
+ */
+function storedOf(shown: number, scale: number, offset: number): number {
+  const raw = shown * scale + offset;
+  const [a, b, c] = [decimalPlaces(shown), decimalPlaces(scale), decimalPlaces(offset)];
+  if (a === undefined || b === undefined || c === undefined || !Number.isFinite(raw)) return raw;
+  const places = Math.max(a + b, c);
+  return places > DECIMAL_PLACES ? raw : Number(raw.toFixed(places));
+}
+
 /** How to convert and format with `unit`, whichever form it was written in. */
 export function resolvePrefUnit(unit: PrefNumberUnit): ResolvedPrefUnit {
   if (!isPrefLinearUnit(unit)) {
@@ -69,7 +94,7 @@ export function resolvePrefUnit(unit: PrefNumberUnit): ResolvedPrefUnit {
       const shown = (stored - offset) / scale;
       return round === undefined ? shown : Math.round(shown * round) / round;
     },
-    fromDisplay: (shown) => shown * scale + offset,
+    fromDisplay: (shown) => storedOf(shown, scale, offset),
     format: (stored) => `${formatUnit(stored, SHOWN, system, { precision: precision ?? 2, suffix: false })}${suffix ?? ''}`,
     ...(suffix === undefined ? {} : { suffix }),
     ...(accepts === undefined ? {} : { accepts }),

@@ -100,3 +100,27 @@ describe('a condition that reads the entry, in a list a control panel opens in a
     expect(gains.map((g) => (g as HTMLInputElement).disabled)).toEqual([false, true]);
   });
 });
+
+describe('a condition that reads the entry, in a list of plain text a control panel opens in a dialog', () => {
+  const tags = f.schema({
+    tags: f.list(
+      ['fixed', 'free'],
+      f.string('').enableIf({ from: 'item', path: '', isNot: 'fixed' }),
+    ),
+  });
+
+  it('disables one entry by that entry, leaves the next, and still lets it be removed', () => {
+    render(
+      <ControlPanel
+        schema={resolveConfigSchema(tags)}
+        config={tags.defaults() as Record<string, unknown>}
+        setConfig={() => {}}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Edit Tags' }));
+    const [first, second] = screen.getAllByRole('textbox');
+    expect(first).toBeDisabled();
+    expect(second).toBeEnabled();
+    expect(screen.getAllByRole('button', { name: /^Remove/ })[0]).toBeEnabled();
+  });
+});

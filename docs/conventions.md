@@ -218,6 +218,21 @@ and so does any ancestor that declares it. Each rule lays its flat fill over the
 ramp and fades the fill out as the gloss and shadows fade in, so a control that
 draws the ramp reads the token for every part of it.
 
+### Shading
+
+A shadow that lifts a surface off what is under it is a token: `--wzl-shadow`, which is
+darker than any surface in either mode, and the `--wzl-bevel-*` hooks a theme draws its
+relief with.
+
+Shading that is part of one control's own artwork is black or white at an alpha, written
+where it is drawn: `Badge`'s bevel fills and text shadow, the default colors of its `Metal`
+and `Sunbeams` effects, the `Slider` thumb's shadows, the segmented track's well, and the
+glass ramp's gloss, rim, and drop shadows in `Button` and the selected segment. It is light
+falling on a shape, not a color of the theme. A highlight is white and a shade is black
+whichever mode is in effect, and both composite over any fill, where a token would be a
+color that follows the mode and turns a highlight into a shade. A theme tunes how much of
+it shows, with `--wzl-gloss`, `--btn-*`, and the bevel hooks, and never what color it is.
+
 ### Layers
 
 Anything that draws over the page takes its `z-index` from the `--wzl-z-*`

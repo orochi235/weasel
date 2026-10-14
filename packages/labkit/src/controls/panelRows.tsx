@@ -25,7 +25,7 @@ import { ControlBar } from './ControlBar';
 import { ControlRow } from './ControlRow';
 import { type Rows, sectionRows } from './controlPack';
 import { BareControl, extra, isSliderLeaf, labField } from './fields';
-import { headingLeaf } from './headingControl';
+import { headingLeaf } from '../config/headingLeaf';
 import { ResetGroup } from './ResetGroup';
 import { PairedRow } from './rows';
 

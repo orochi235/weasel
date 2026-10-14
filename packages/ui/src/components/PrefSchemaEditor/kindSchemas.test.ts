@@ -43,6 +43,13 @@ describe('kindSchemas', () => {
     expect((section.as as unknown as { options: Array<{ value: string }> }).options.map((o) => o.value)).toEqual(['tab', 'panel', 'section', 'fragment', 'bar']);
   });
 
+  it('offers what a bar does with cells it has no room for, and offers it of nothing else', () => {
+    const bar = attributeSchema({ name: 'G', as: 'bar', children: {} }).shared;
+    expect((bar.overflow as unknown as { options: Array<{ value: string }> }).options.map((o) => o.value)).toEqual(['scroll', 'menu']);
+    expect(attributeSchema({ name: 'S', as: 'bar', members: {} }).shared.overflow).toBeDefined();
+    expect(attributeSchema({ name: 'G', as: 'panel', children: {} }).shared.overflow).toBeUndefined();
+  });
+
   it('uses a custom kind\'s attributes, and treats unknown attributes as read-only', () => {
     const leaf = { kind: 'registry-enum', name: 'R', description: '', default: 'a', source: 'tools', extra: 1 } as PrefLeaf;
     const { own, readOnly } = attributeSchema(leaf, { 'registry-enum': { source: { kind: 'string', name: 'Source', description: '', default: '' } } });

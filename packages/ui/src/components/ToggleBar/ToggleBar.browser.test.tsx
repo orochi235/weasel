@@ -48,3 +48,25 @@ test.each(['glass', 'flat', 'minimal'] as const)('a squeezed %s bar keeps its te
     expect(seg.clientWidth).toBeGreaterThan(0);
   }
 });
+
+// `size` is the bar's type scale under every variant: a variant that sets a font size of its own makes it a no-op.
+test.each(['glass', 'flat', 'minimal'] as const)('a %s bar is smaller at `sm` than at `md`', (variant) => {
+  const bar = (size: 'sm' | 'md') => (
+    <ToggleBar
+      ariaLabel={size}
+      size={size}
+      variant={variant === 'glass' ? undefined : variant}
+      items={[...ITEMS]}
+      value="tree"
+      onChange={() => {}}
+    />
+  );
+  render(<>{bar('md')}{bar('sm')}</>);
+  const [md, sm] = (['md', 'sm'] as const).map((size) => {
+    const group = screen.getByRole('radiogroup', { name: size });
+    const segment = group.querySelector('[role="radio"]')!;
+    return { height: group.getBoundingClientRect().height, font: parseFloat(getComputedStyle(segment).fontSize) };
+  });
+  expect(sm!.font).toBeLessThan(md!.font);
+  expect(sm!.height).toBeLessThan(md!.height);
+});

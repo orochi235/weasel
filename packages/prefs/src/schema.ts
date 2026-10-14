@@ -56,6 +56,11 @@ export interface PrefBase<K extends string, Value> {
    *  (weasel-ui `PrefsForm` honors this for leaves whose control brings
    *  its own chrome). */
   block?: boolean;
+  /** Draw the control in the heading of the group or section holding the
+   *  leaf, in place of a row of its own. Only a built-in `boolean` or `enum`
+   *  fits there (`prefFitsHeading`); any other leaf stays a row. Honored by
+   *  weasel-ui `PrefsForm` and labkit's `ControlPanel`. */
+  heading?: boolean;
   /** Glyph naming this leaf in a host UI's icon set (weasel-ui resolves it
    *  against `ICON_PATHS`). A plain string because this package ships no
    *  icon set and cannot depend on one. Read where a leaf's `name` has nowhere to go — a

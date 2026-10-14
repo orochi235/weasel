@@ -595,55 +595,29 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   keyboard-operable gutters with it. It ships no band strategy of its own, and mapping domain
   values onto seams is still the consumer's.
 
-- **(P3) Shading drawn in black or white at an alpha.** Shading that belongs to one control's
-  artwork is still a literal: `Badge`'s bevel fills and text shadow, the default colors of its
-  `Metal` and `Sunbeams` effects, the `Slider` thumb's shadows, the segmented track's well, and
-  the glass ramp's gloss, rim, and drop shadows in `Button` and the selected segment, which
-  `--btn-*` tunes and `--wzl-gloss` fades. Whether any of it wants a theme token, and under what
-  name, is not decided.
+- **(P3) `<ToggleBar>` polish.** Visual still needs polish — literally, polish this, by eye in a
+  browser. Measured in Chromium 2026-10-13, three text segments, each variant at `md` and `sm`:
+  every segment sits inside its track at one height, none clips its label, and a focused segment
+  draws a 2px outline, so nothing measured is known to be off. Since then `minimal` takes its font
+  size from `size`, where both sizes drew at the `sm` font; nobody has looked at its `md`.
 
-- **(P3) `<ToggleBar>` polish.** Visual still needs polish — literally, polish this. Measured in
-  Chromium 2026-10-13, three text segments, each variant at `md` and `sm`: every segment sits
-  inside its track at one height, none clips its label, and a focused segment draws a 2px
-  outline. One thing a reader of the props would not expect: under `minimal`, `size` does
-  nothing. Both sizes are 20px high at the `sm` font size, where `default` is 32px and 22px
-  and `flat` 28px and 20px.
+- **(P3) A field's condition inside an object entry is written in code.** `PrefSchemaEditor`
+  edits an entry's own `enableIf` and nothing inside an object entry: the structure tree shows a
+  list or a map as one row (`slotOf` in `schemaTree.ts`), so a field of its item has no row to
+  select and its `{ from: 'item' }` condition no editor.
 
-- **(P3) A host cannot tell which assets a stored draft changed.** `AssetEditor` reports its
-  changed assets through `onChangedAssets` only once it is mounted, so a host that shows one
-  editor at a time and lists the others' assets as `elsewhere` marks nothing for a source whose
-  draft has not been opened since the page loaded. The draft's text is the editor's own format.
-  Left: a public function that reads a stored draft (its storage, key, codec, and the original
-  workspace) and returns the ids of the assets it changes.
+- **(P3) A lab's config schema takes no `over`.** A lab resolves its instrument's config schema
+  with none (`useConfigSchema`), so that schema cannot alias into another schema or hold a
+  condition on its setting. Every surface reads `over`'s values from the config it is handed, and
+  a trial's config holds its instrument's alone: where a lab keeps another schema's values (each
+  trial's config, the lab's store, or the app's) is not decided, and the instrument's `render`
+  would need them too.
 
-- **(P3) Loose ends of the condition work.** `PrefSchemaEditor` edits an entry's own
-  `enableIf` and nothing inside an object entry, whose fields it draws no rows for, so a field's
-  `{ from: 'item' }` condition is written in code. labkit's `ControlRow` draws a list of plain
-  text entries as one `ListEditor` and passes it no `entryDisabled`, so an item `enableIf` that
-  reads the entry does nothing in a lab; `PrefsForm` and `SelectionPanel` pass it.
-
-- **(P3) What `over` does not reach yet.** Every surface takes the schema its aliases point
-  into, and its own conditions may read, as `over`. Left: (1) A condition that reads a setting
-  of `over` takes that leaf's default only where the surface takes its own leaves': a `Bar`
-  reads `values` alone and a `SelectionPanel` only an `absentIsDefault` leaf's. Whether `over`'s
-  default should stand in there is not decided. (2) `PrefSchemaEditor`'s preview of a properties
-  layout seeds its one node from the layout's own leaves and writes only under `pose` and
-  `data`, so a row aliased into a dialog's schema draws unset and an edit to it goes nowhere.
-  (3) A lab resolves its instrument's config schema with no `over` (`useConfigSchema`), so that schema
-  cannot alias into another schema or hold a condition on its setting. Every surface reads `over`'s
-  values from the config it is handed, and a trial's config holds its instrument's alone: where a
-  lab keeps another schema's values (each trial's config, the lab's store, or the app's) is not
-  decided, and the instrument's `render` would need them too.
-
-- **(P3) What a bar does not do yet.** `ActionBar` is not built on `Bar`: its `icons` prop
-  overrides an entry's icon with a `ReactNode`, which a leaf, being data, cannot carry, so it needs
-  that prop to become icon names or `Bar` to take icon overrides by path. `overflow="menu"`
-  opens the cells a line has no room for from a button at its end, on `Bar` and `BarLayout` only: a
-  bar in a `PrefsForm`, a `SelectionPanel`, an object row, or labkit's `ControlBar` has no way to ask
-  for it, and whether it becomes the default is not decided. A cell in the menu is mounted only
-  while the menu is open, so `PrefSchemaEditor`'s preview, which asks for no menu and keeps every
-  cell on the line, would lose those cells as drop targets if it did. A group a standalone `Bar` opens from a button draws as
-  labeled rows whatever its `as`, where a bar in a `PrefsForm` opens it in its own form.
+- **(P3) A standalone `Bar` opens a group as labeled rows whatever its `as`.** A bar in a
+  `PrefsForm` opens a `page`, `tab`, or `panel` group in the form's own drawing of it; `Bar` draws
+  `GroupRows`, a row per leaf under each nested group's name. `Bar` holds its values flat, keyed by
+  dotted path, where the form's pane reads a nested tree, so the two do not share a body yet.
+  Nobody has looked at `ActionBar` in a browser since it became a `Bar` of `action` leaves.
 
 - **(P3) A rail of sections and pages: two things not decided.** A `PrefsForm` rail lists a page
   at any depth, and a section only when it sits directly on a page, the root's own included. (1) A
@@ -652,15 +626,12 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   section in view should unfold is open; it would move the rail under a reader who is scrolling.
   (2) A section's rail entry and a nested page's look the same until one is chosen.
 
-- **(P3) Loose ends beside a number's unit as data.** The text tool's
-  percent unit (`useTextTool.ts`) is still code, for the rounding it does on the way back to the
-  stored value, so the run properties do not export as a literal. A unit's `format` has one
-  reader, the auto value labkit's `ControlRow` quotes in a row's tooltip. A compound leaf's
-  one-line summary (`summarizeValue`) still writes the stored numbers of fields that have a unit.
-
 - **(P3) A fragment has no box for a preview drag to land on.** Its element is
-  `display: contents`, so a drag in `PrefSchemaEditor`'s preview cannot land beside or into an
-  `as: 'fragment'` group itself, only beside the rows inside it; the structure tree takes both.
+  `display: contents`, so `measure` in `Prefs/dropTarget.ts` reads an empty rect for it and a drag
+  in `PrefSchemaEditor`'s preview lands only beside the rows inside it; the structure tree takes
+  both. Its box can be the union of its rows' rects, but two things then need a browser to
+  settle: a point on its first row means both "before that row" and "before the fragment", which
+  wants an edge zone to tell apart, and an empty fragment still has no rect at all.
 
 - **(P3) `PrefSchemaEditor` sees only a `ResolvedConfig`'s `group`.** A schema built with
   `f.section` keeps its sections, `showIf` rules, `.render` overrides, and `.dialog` rows beside
@@ -668,12 +639,12 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   export drops all four. A schema is sectioned rather than nested where `f.group` would move its
   config paths.
 
-- **(P3) `sectionTree` doesn't lift heading controls.** `ControlPanel` draws a `.heading()` leaf,
-  or a first row repeating its heading ("Pump" under "Pumping"), in the heading's title row. The
-  prefs rail `sectionTree` feeds to `PrefsForm` still draws that leaf as a row under a heading of
-  the same name, because `PrefsForm` has no slot for a control in a rail item or subsection
-  heading, and `PrefLeaf` no field saying a leaf is one: `heading` is a labkit extra. `sectionTree`
-  warns about the repeat, as the panel does.
+- **(P3) `SelectionPanel` draws a `heading` leaf as a row.** `PrefsForm` and labkit's
+  `ControlPanel` draw a leaf marked `heading` in the heading of the group holding it
+  (`prefHeadingKey`). `SelectionPanel`'s section title dims itself with `opacity`, which a control
+  inside it would inherit, so it needs a title row of its own before it can hold one. Nobody has
+  looked at the control in `PrefsForm`'s headings in a browser: the sticky section heading's
+  `scroll-margin-top` assumes one line of text.
 
 - **(P3) Nobody has looked at the desktop themes' bevels.** Under `win9xTheme` and
   `platinumTheme` (`@weasel-js/theme/themes/*`), every control in `@weasel-js/ui` that draws a

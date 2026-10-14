@@ -101,7 +101,7 @@ export function objectRows<Cell>(children: PrefObject['children'], parts: Object
     flush();
     if (drawn.kind === 'bar') {
       out.push(
-        <BarLayout key={`bar:${drawn.key}`} framed label={drawn.section.name === '' ? undefined : drawn.section.name}
+        <BarLayout key={`bar:${drawn.key}`} framed label={drawn.section.name === '' ? undefined : drawn.section.name} overflow={drawn.section.overflow}
           nodes={drawn.nodes} cells={() => []} row={() => null} attrs={parts.barAttrs} />,
       );
     } else if (drawn.kind === 'frame') {

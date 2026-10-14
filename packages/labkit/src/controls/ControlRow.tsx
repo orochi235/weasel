@@ -1,5 +1,4 @@
 import {
-  PREF_ENTRY,
   type PrefAction,
   type PrefAlias,
   type PrefAliasTargets,
@@ -14,6 +13,8 @@ import {
 } from '@weasel-js/prefs';
 import {
   DialogRow,
+  entriesDisabled,
+  entryDisabledAt,
   ListEditor,
   PrefActionButton,
   PrefControl,
@@ -34,7 +35,7 @@ import { aliasTargetsOf, conditionedLeaf } from '../config/visible';
 import type { ControlPack } from './controlPack';
 import { useFieldChoices } from './fieldChoices';
 import { extra, labField } from './fields';
-import { inDialog, summarizeValue } from './inDialog';
+import { inDialog, summarizeLeaf, summarizeValue } from './inDialog';
 import { DebouncedTextRow, UnwiredRow } from './rows';
 
 export interface ControlRowProps<TC extends Record<string, unknown>> {
@@ -62,7 +63,7 @@ export interface ControlRowProps<TC extends Record<string, unknown>> {
 /** An auto value as tooltip text. A number with a unit reads as its field shows it. Any other computed
  *  number is cut to 6 significant digits, so `0.1 + 0.2` reads `0.3`. */
 function summarizeAuto(value: unknown, leaf: PrefLeaf): string {
-  if (typeof value !== 'number') return summarizeValue(value);
+  if (typeof value !== 'number') return summarizeLeaf(leaf, value);
   const unit = leaf.kind === 'number' ? (leaf as PrefNumber).unit : undefined;
   return unit === undefined
     ? summarizeValue(Number(value.toPrecision(6)))
@@ -124,15 +125,18 @@ function CompoundControl({
   // Plain text entries keep the list's own fields, and the placeholder only they have.
   if (leaf.kind === 'list' && prefListIsText(leaf as PrefList, renderers?.string !== undefined)) {
     const list = leaf as PrefList;
+    const texts = prefListTexts(value);
+    const ctx = { path, disabledAt: inside.disabledAt, entryAt: inside.entryAt };
     return (
       <ListEditor
         aria-label={list.item.name || label}
-        value={prefListTexts(value)}
+        value={texts}
         onChange={onChange}
         minItems={list.minItems}
         maxItems={list.maxItems}
         placeholder={extra<string>(leaf, 'placeholder')}
-        disabled={inside.disabledAt(`${path}.${PREF_ENTRY}`)}
+        disabled={entriesDisabled(ctx)}
+        entryDisabled={entryDisabledAt(ctx, list.item, texts)}
       />
     );
   }
@@ -282,7 +286,7 @@ function LeafRow<TC extends Record<string, unknown>>({
     return (
       <DialogRow
         label={label}
-        summary={summarizeValue(value)}
+        summary={summarizeLeaf(leaf, value)}
         readout={autoReadout}
         layout={layout}
         description={description}

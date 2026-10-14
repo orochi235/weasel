@@ -217,6 +217,13 @@ export class GroupNode<S extends ConfigShape> implements ConfigBranch<S> {
     return this.with({ ...this.annotations, as: kind }, this.options);
   }
 
+  /** Drawn `as('bar')`: what happens to the cells its line has no room for.
+   *  `menu` opens them from a button at its end, where `scroll`, the default,
+   *  keeps them all on it. Carried on the resolved `PrefGroup`. */
+  overflow(mode: NonNullable<BranchAnnotations['overflow']>): GroupNode<S> {
+    return this.with({ ...this.annotations, overflow: mode }, this.options);
+  }
+
   /** Render this whole group under a named section heading. */
   section(label: string, opts: Omit<SectionOption, 'label'> = {}): GroupNode<S> {
     return this.with(this.annotations, { ...this.options, section: { label, ...opts } });

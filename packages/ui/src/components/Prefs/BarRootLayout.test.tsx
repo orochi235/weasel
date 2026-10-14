@@ -46,4 +46,22 @@ describe('a PrefsForm over a root drawn as a bar', () => {
       .toEqual(['grid', 'placeholder:0', 'size']);
     expect(container.querySelector('[data-pref-form]')!.hasAttribute('data-dropping')).toBe(true);
   });
+
+  it('opens what does not fit from a button where the group says `overflow: \'menu\'`, at the root and inside a page', () => {
+    const menu: PrefGroup = { ...SCHEMA, overflow: 'menu' };
+    const { unmount } = render(<PrefsForm schema={menu} onChange={() => {}} />);
+    expect(screen.getByRole('toolbar', { name: 'Tools' })).toHaveAttribute('data-overflow', 'menu');
+    unmount();
+    render(<PrefsForm layout="rail" schema={{ name: '', children: { page: { name: 'Page', children: { tools: menu } } } }} onChange={() => {}} />);
+    expect(screen.getByRole('toolbar', { name: 'Tools' })).toHaveAttribute('data-overflow', 'menu');
+  });
+
+  it('keeps every cell on the line where the group says nothing, and in a form that takes drops', () => {
+    const { unmount } = render(<PrefsForm schema={SCHEMA} onChange={() => {}} />);
+    expect(screen.getByRole('toolbar', { name: 'Tools' })).not.toHaveAttribute('data-overflow');
+    unmount();
+    // A cell in the menu is mounted only while it is open, and a drop needs every cell to land beside.
+    render(<PrefsForm schema={{ ...SCHEMA, overflow: 'menu' }} drop={null} onChange={() => {}} />);
+    expect(screen.getByRole('toolbar', { name: 'Tools' })).not.toHaveAttribute('data-overflow');
+  });
 });

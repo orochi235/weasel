@@ -10,7 +10,7 @@ import {
 import type { CSSProperties, DOMAttributes, MouseEvent, ReactElement, ReactNode } from 'react';
 import { auto as autoValue } from '../config/auto';
 import { useFieldChoices } from './fieldChoices';
-import { summarizeValue } from './inDialog';
+import { summarizeLeaf } from './inDialog';
 
 /** A color leaf whose default is empty: unset is a value of its own, not black. */
 export const clearable = (leaf: PrefLeaf): boolean => leaf.kind === 'color' && leaf.default === '';
@@ -26,7 +26,7 @@ function decimalsOf(step: number | undefined): number {
 }
 
 /** What a cell shows of a value it opens a popover to edit. */
-function summaryOf(field: PropertyControlProps | null, value: unknown): ReactNode {
+function summaryOf(field: PropertyControlProps | null, leaf: PrefLeaf, value: unknown): ReactNode {
   if (field?.kind === 'number') {
     return typeof field.value === 'number' ? field.value.toFixed(decimalsOf(field.step)) : '—';
   }
@@ -36,7 +36,7 @@ function summaryOf(field: PropertyControlProps | null, value: unknown): ReactNod
     return typeof option.glyph === 'string' ? option.glyph : option.label;
   }
   if (field?.kind === 'string') return field.value || '—';
-  return summarizeValue(value);
+  return summarizeLeaf(leaf, value);
 }
 
 export function MatrixCell({
@@ -155,7 +155,7 @@ export function MatrixCell({
           if (!unpinned(e)) onOpen(e.currentTarget);
         }}
       >
-        {summaryOf(field, shown)}
+        {summaryOf(field, leaf, shown)}
       </button>
     );
   }

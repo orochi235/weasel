@@ -199,9 +199,9 @@
   gap: var(--wzl-space-1);
 }
 
+/* No font size here: the bar's `size` sets it, as under every variant. */
 .variant_minimal .segment {
   padding: 0 var(--wzl-space-2);
-  font-size: var(--wzl-font-size-sm);
   font-weight: var(--wzl-font-weight-medium);
   line-height: 1.4;
   border-radius: var(--wzl-radius-sm);

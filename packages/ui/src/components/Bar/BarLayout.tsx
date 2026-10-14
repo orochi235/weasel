@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { isPrefLeaf, prefAliasName, type PrefAlias, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
+import { isPrefLeaf, prefAliasName, type PrefAlias, type PrefBarOverflow, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
 import { BarOverflow } from './BarOverflow';
 import { BarPopover } from './BarPopover';
 import { BAR_ITEM, BAR_MORE, useBarOverflow } from './useBarOverflow';
@@ -9,7 +9,7 @@ import s from './Bar.module.css';
 export type BarOrientation = 'horizontal' | 'vertical';
 
 /** What a bar does with cells its line has no room for. */
-export type BarOverflowMode = 'scroll' | 'menu';
+export type BarOverflowMode = PrefBarOverflow;
 
 /** A leaf in a bar, by the path its surface addresses it at. */
 export interface BarLeafNode {

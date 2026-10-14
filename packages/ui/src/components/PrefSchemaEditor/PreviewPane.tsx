@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type CSSProperties, type PointerEvent, type ReactNode, type RefObject } from 'react';
 import { asNodeId, createScene, type NodeRoutingEntry, type Scene } from '@weasel-js/core';
-import { isPrefSection, prefSectionLeaves, prefValueAtPath, type PrefGroup, type PrefSection } from '@weasel-js/prefs';
+import { isPrefSection, prefAliasTarget, prefLeafAt, prefSectionLeaves, prefValueAtPath, type PrefAlias, type PrefGroup, type PrefSection } from '@weasel-js/prefs';
 import { DragGhost } from '../DragGhost';
 import { PrefsDialog, PrefsForm, type PrefDrop, type PrefRenderer, type PrefSelectHow } from '../Prefs';
 import { ResizeHandle } from '../ResizeHandle';
@@ -150,11 +150,15 @@ const SELECTION = { current: [NODE] };
 
 type PreviewScene = Scene<unknown, 'default', unknown>;
 
-/** A scene of one node holding each leaf's default at the node path its key names. */
-function sceneOf(schema: PrefSection): PreviewScene {
+/**
+ * A scene of one node holding each leaf's default at the node path its key names, and for a pointer into `over`
+ * the default of the leaf it shows, at that leaf's path.
+ */
+function sceneOf(schema: PrefSection, over: SchemaRoot | undefined): PreviewScene {
   let node: { pose?: unknown; data?: unknown } = {};
   for (const [key, leaf] of prefSectionLeaves(schema.members)) {
-    if (leaf.default !== undefined) node = setAtPath(node, key.split('.'), leaf.default) as typeof node;
+    const shown = leaf.kind === 'alias' && over ? prefAliasTarget(leaf as PrefAlias, (at) => prefLeafAt(over, at)) : { path: key, leaf };
+    if (shown && shown.leaf.default !== undefined) node = setAtPath(node, shown.path.split('.'), shown.leaf.default) as typeof node;
   }
   const scene: PreviewScene = createScene({ systemLayers: [{ id: 'default' }] });
   scene.add({ id: NODE, kind: 'leaf', layer: 'default', pose: node.pose ?? {}, data: node.data ?? {} });
@@ -171,10 +175,10 @@ function SectionPreview({ schema, renderers, selected, onSelect, onDefaults, ove
 }) {
   // Each leaf's value as the node was seeded, which is no value for a key outside `pose` and `data`: only what an edit changed is a new default.
   const [scene, seeded] = useMemo(() => {
-    const made = sceneOf(schema);
+    const made = sceneOf(schema, over);
     const node = made.get(NODE);
     return [made, new Map(prefSectionLeaves(schema.members).map(([key]) => [key, JSON.stringify(prefValueAtPath(node, key))]))] as const;
-  }, [schema]);
+  }, [schema, over]);
   useEffect(() => scene.subscribe(() => {
     const node = scene.get(NODE);
     const edits = [...seeded].flatMap(([key, was]): DefaultEdit[] => {

@@ -3,6 +3,7 @@ import { applyPrefConditions, prefAliasTargets, prefJudge, prefReader, visiblePr
 import { Input } from '../Input';
 import { withDrop, type PrefDrop } from './drop';
 import { entryApplier } from './entry';
+import { groupHeading } from './groupHeading';
 import { useDropMotion } from './dropMotion';
 import { formAttrs, useDropFrame } from './dropTarget';
 import { HiddenBadge, marksHidden, type MarkHiddenProps } from './hidden';
@@ -197,7 +198,7 @@ export function PrefsForm(props: PrefsFormProps) {
   );
   const lead = shown.at(-1) ?? null;
   const selection = useSelectedRow(selected, lead, props.onSelect);
-  const ctx: WalkCtx = { values, onChange, renderers, auto, mixed: props.mixed, onAutoChange, canInherit, inheritHint, fields, targets, changed: props.changed, selected: shown, lead, disabled: applied?.disabled, hidden: markHidden ? applied?.hidden : undefined, entryAt };
+  const ctx: WalkCtx = { values, onChange, renderers, auto, mixed: props.mixed, onAutoChange, canInherit, inheritHint, fields, targets, changed: props.changed, selected: shown, lead, disabled: applied?.disabled, hidden: markHidden ? applied?.hidden : undefined, entryAt, droppable: props.drop !== undefined };
   const field = filterable ? (
     <div className={s.filter}>
       <Input
@@ -279,17 +280,18 @@ function GroupBody({ ctx, group, path, depth }: {
   depth: number;
 }) {
   const marked = marksHidden(ctx.hidden, path);
+  const head = groupHeading(ctx, group, path);
   return (
     <div className={depth === 0 ? s.panel : s.subpanel} {...selectionAttrs(path, ctx)}>
       {(group.name !== '' || group.description) && (
         <div className={s.groupHeader}>
-          {group.name !== '' && <h3 className={s.groupTitle}>{group.name}{marked && <HiddenBadge />}</h3>}
+          {group.name !== '' && <h3 className={[s.groupTitle, head.className].filter(Boolean).join(' ')}>{group.name}{marked && <HiddenBadge />}{head.control}</h3>}
           {group.description && <p className={s.groupDesc}>{group.description}</p>}
         </div>
       )}
       {group.name === '' && marked && <HiddenBadge lead />}
       <div className={s.rows}>
-        {paneChildren(ctx, Object.entries(group.children), path, depth + 1, (key, child, childPath) => (
+        {paneChildren(ctx, head.entries, path, depth + 1, (key, child, childPath) => (
           <GroupBody key={key} ctx={ctx} group={child} path={childPath} depth={depth + 1} />
         ))}
       </div>

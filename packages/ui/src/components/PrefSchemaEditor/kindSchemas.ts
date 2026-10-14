@@ -55,6 +55,7 @@ const LEAF_BASE: KindAttrs = {
   showIf: SHOW_IF,
   enableIf: ENABLE_IF,
   block: flag('Block', 'Full width with no label row, for a control with its own chrome.'),
+  heading: flag('In heading', 'Drawn in the heading of the group holding it, in place of a row. A boolean or an enum only.'),
   icon: symbol('Icon', 'Glyph name in the host\'s icon set.'),
   pair: { kind: 'pair', name: 'Pair', description: 'The fields that share this one\'s row in compact property UIs, and what the row reads.', default: undefined },
   short: strings('Short names', 'Shorter forms of the name, longest first.'),
@@ -99,6 +100,8 @@ const KIND_ATTRS: Record<PrefKind, KindAttrs> = {
   alias: { of: { kind: 'field', name: 'Of', description: 'The pref this one shows: its control is drawn here too, over the one stored value.', default: '' } as PrefLeaf },
 };
 
+const BAR_OVERFLOW = choice('Overflow', 'Drawn as a bar: what happens to the cells its line has no room for. scroll keeps them all on it, and menu opens the ones past its end from a button there. Unset: scroll.', ['scroll', 'menu']);
+
 const GROUP_ATTRS: KindAttrs = {
   name: LEAF_BASE.name!,
   description: LEAF_BASE.description!,
@@ -129,7 +132,7 @@ const REQUIRED = new Set(['name', 'description', 'default', 'options', 'tag', 'o
 const SLOTS = new Set(['children', 'members', 'variants', 'item']);
 
 /** The fields a leaf made from a type sets where it is used; the rest are its type's. */
-const USE_SITE = new Set(['name', 'description', 'default', 'hidden', 'showIf', 'enableIf', 'block', 'icon', 'pair', 'short', 'absentIsDefault', 'manual', 'unpinned', 'autoValue']);
+const USE_SITE = new Set(['name', 'description', 'default', 'hidden', 'showIf', 'enableIf', 'block', 'heading', 'icon', 'pair', 'short', 'absentIsDefault', 'manual', 'unpinned', 'autoValue']);
 
 function valueAttr(leaf: PrefLeaf, base: { name: string; description: string }): PrefLeaf | null {
   switch (leaf.kind) {
@@ -223,7 +226,12 @@ export interface AttributeSchema {
 export function attributeSchema(
   node: SchemaNode, custom: CustomKinds = {}, actions?: ReadonlyArray<{ key: string; label: string }>,
 ): AttributeSchema {
-  if (!isPrefLeaf(node)) return { shared: { ...(isPrefSection(node) ? SECTION_ATTRS : GROUP_ATTRS) }, own: {}, auto: {}, entry: {}, readOnly: [] };
+  if (!isPrefLeaf(node)) {
+    const attrs = Object.entries(isPrefSection(node) ? SECTION_ATTRS : GROUP_ATTRS);
+    // Only a bar has a line to run out of, so only it is asked, after how it is drawn.
+    const shared = attrs.flatMap((attr): Array<[string, KindAttr]> => (attr[0] === 'as' && node.as === 'bar' ? [attr, ['overflow', BAR_OVERFLOW]] : [attr]));
+    return { shared: Object.fromEntries(shared), own: {}, auto: {}, entry: {}, readOnly: [] };
+  }
   const typed = node.type !== undefined;
   const def = defaultAttr(node);
   const item = entryOf(node);
@@ -290,7 +298,7 @@ export function blankSection(): PrefSection {
   return { name: 'New section', description: '', members: {} };
 }
 
-const SHARED = ['name', 'description', 'hidden', 'showIf', 'enableIf', 'block', 'icon', 'pair', 'short', 'absentIsDefault', 'manual', 'unpinned'];
+const SHARED = ['name', 'description', 'hidden', 'showIf', 'enableIf', 'block', 'heading', 'icon', 'pair', 'short', 'absentIsDefault', 'manual', 'unpinned'];
 
 const PRIMITIVES = new Set(['string', 'number', 'boolean']);
 

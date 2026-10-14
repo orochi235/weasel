@@ -581,3 +581,21 @@
   align-items: flex-start;
   gap: var(--wzl-space-2);
 }
+
+/* A heading holding the control of a leaf marked `heading`: its name, then the control at the far end. */
+.headed {
+  display: flex;
+  align-items: center;
+  gap: var(--wzl-space-2);
+}
+
+/* The control is drawn as a row's is, whatever the heading does to its own words. */
+.headingControl {
+  display: inline-flex;
+  align-items: center;
+  margin-inline-start: auto;
+  font-size: var(--wzl-font-size-sm);
+  font-weight: var(--wzl-font-weight-normal);
+  letter-spacing: normal;
+  text-transform: none;
+}
