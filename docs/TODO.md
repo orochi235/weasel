@@ -193,11 +193,6 @@ Priority tags:
   unknown-tool glyph in draw's palette. It edits only nodes `resolveEditablePathOf` answers a
   polygon for, so a drawn rectangle's stroke, which renders a `widthProfile` like any other, cannot
   be shaped with it; that waits on "A rectangle has no anchors in path edit" above.
-- **(P3) A profiled stroke's SVG outline is drawn apart from its path.** `serializeSvg` writes the
-  outline as a second element (`packages/svg/src/widthProfileSvg.ts`), so a node `opacity` applies
-  to the fill and the outline separately and composites twice where they overlap, and a marker
-  written in `userSpaceOnUse` units, which `stroke-width="0"` does not hide, draws over the
-  outline's own head.
 
 ### Pathfinder follow-ups (post-v1)
 

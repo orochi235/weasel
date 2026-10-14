@@ -48,6 +48,38 @@ describe('a stroke with a width profile in SVG', () => {
     expect(paths[1]).toContain('display="none"');
   });
 
+  it('puts a node opacity once, on a group holding the path and its outline', () => {
+    const svg = serializeSvg([node({ opacity: 0.4 })]);
+    expect(svg.match(/opacity="0.4"/g)).toHaveLength(1);
+    expect(svg).toMatch(/<g opacity="0.4" wzl:role="stroke-group"><path [^>]*\/><path [^>]*stroke-outline"\/><\/g>/);
+    const { nodes } = parseSvg(svg);
+    expect(nodes).toHaveLength(1);
+    expect(nodes[0]).toMatchObject({ kind: 'path', opacity: 0.4 });
+    expect((nodes[0] as SvgPathNode).stroke?.widthProfile).toEqual(PROFILE);
+  });
+
+  it('draws a marker on the outline only, and reads it back onto the stroke', () => {
+    const stroke = { paint: { kind: 'solid' as const, color: '#000' }, width: 2, widthProfile: PROFILE };
+    const sized = serializeSvg([node({ stroke: { ...stroke, markerEnd: { key: 'arrow', size: 6 } } })]);
+    const plain = serializeSvg([node({ stroke: { ...stroke, markerEnd: 'arrow' } })]);
+    for (const out of [sized, plain]) {
+      const body = out.replace(/<defs>[\s\S]*<\/defs>/, '');
+      const paths = body.match(/<path [^>]*>/g)!;
+      expect(paths.filter((p) => / marker-end=/.test(p))).toHaveLength(0);
+      expect(paths[0]).toContain('wzl:marker-end="url(#');
+    }
+    const back = parseSvg(plain).nodes[0] as SvgPathNode;
+    expect(back.stroke?.markerEnd).toBe('arrow');
+  });
+
+  it('draws the marker head into the outline', () => {
+    const stroke = { paint: { kind: 'solid' as const, color: '#000' }, width: 2, widthProfile: PROFILE };
+    const outlineOf = (svg: string) => svg.match(/<path d="([^"]*)"[^>]*stroke-outline/)![1];
+    const bare = outlineOf(serializeSvg([node({ stroke })]));
+    const headed = outlineOf(serializeSvg([node({ stroke: { ...stroke, markerEnd: 'arrow' } })]));
+    expect(headed).not.toBe(bare);
+  });
+
   it('leaves a stroke of one width as SVG draws it', () => {
     const svg = serializeSvg([node({ stroke: { paint: { kind: 'solid', color: '#000' }, width: 2 } })]);
     expect(svg).not.toContain('stroke-outline');

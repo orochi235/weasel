@@ -30,7 +30,7 @@ import { SUPPORTED_LEAF_TAGS, IGNORED_TAGS, lowerLeaf } from './lowerLeaf';
 import { parseViewBoxAttr } from './viewBox';
 import { type ClipTable, collectClipPaths, clipFor } from './readClips';
 import { readPaint, readStroke, isNonScalingStroke } from './readPaint';
-import { isStrokeOutline, withWidthProfile } from './widthProfileSvg';
+import { isStrokeOutline, unwrapStrokeGroup, withWidthProfile } from './widthProfileSvg';
 import { parseImageElement, parseCroppedImage } from './readImage';
 import { parseTextElement } from './readText';
 import { ingestMarkers } from './readMarkers';
@@ -238,7 +238,7 @@ function parseChildren(
     if ((ns && ns !== 'http://www.w3.org/2000/svg') || isStrokeOutline(el)) continue;
     const hidden = isHiddenElement(el, style);
     if (hidden && !keepHidden) continue;
-    const node = parseElement(el, ctm, style, gradients, clips, onWarn, uriToPrefix, keepHidden);
+    const node = unwrapStrokeGroup(el, parseElement(el, ctm, style, gradients, clips, onWarn, uriToPrefix, keepHidden));
     if (!node) continue;
     const parsed = Array.isArray(node) ? node : [node];
     if (hidden) for (const n of parsed) n.hidden = true;

@@ -18,7 +18,9 @@ import { PaintServerRegistry, WEASEL_NS, WEASEL_NS_PREFIX } from './gradients';
 import { boxTransformAttr } from './placeBox';
 import { computeBounds, pathBounds } from './serializeBounds';
 import { paintAttrs, strokeAttrsFor, strokePaintAsFillAttrs, type Warn } from './strokeAttrs';
-import { hasWidthProfile, profiledStrokeAttrs, strokeOutlineXml, writesWidthProfile } from './widthProfileSvg';
+import {
+  hasWidthProfile, profiledStrokeAttrs, strokeGroupXml, strokeOutlineXml, writesWidthProfile,
+} from './widthProfileSvg';
 import { textXml } from './serializeText';
 import { prettyXml } from './prettyXml';
 
@@ -226,7 +228,7 @@ function pathXml(
     attrs.push('stroke="none"');
   }
   const opacity = node.opacity != null && node.opacity !== 1 ? `opacity="${trimNumber(node.opacity)}"` : null;
-  if (opacity) attrs.push(opacity);
+  if (opacity && !profiled) attrs.push(opacity);
   const transform = rotationAttr(node);
   if (transform) attrs.push(transform);
   const metaAttrs = metaAttrsXml(node.meta, namespaces);
@@ -235,8 +237,8 @@ function pathXml(
     ? `<path ${attrs.join(' ')}${metaAttrs}>${metaEls}</path>`
     : `<path ${attrs.join(' ')}${metaAttrs}/>`;
   if (!profiled) return xml;
-  const outlineFill = [...strokePaintAsFillAttrs(node.stroke!, registry), ...(opacity ? [opacity] : [])];
-  return xml + strokeOutlineXml(node.path, node.stroke!, outlineFill, transform);
+  const both = xml + strokeOutlineXml(node.path, node.stroke!, strokePaintAsFillAttrs(node.stroke!, registry), transform);
+  return opacity ? strokeGroupXml(opacity, both) : both;
 }
 
 /** `transform="rotate(...)"` about the center of `node`'s path, or null. */
