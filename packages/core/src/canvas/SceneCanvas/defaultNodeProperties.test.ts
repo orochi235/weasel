@@ -63,6 +63,27 @@ describe('defaultNodeProperties', () => {
   });
 });
 
+describe('pose.transform', () => {
+  const leaf = (name: string): PrefBoolean =>
+    (defaultNodeProperties.find((e) => e.name === name)!.schema.members.layout as PrefSection).members['pose.transform'] as PrefBoolean;
+
+  it('reads a skewed pose as on and an absent or identity transform as off', () => {
+    for (const e of [...defaultNodeProperties, ...inferredNodeProperties]) {
+      const { encoding } = (e.schema.members.layout as PrefSection).members['pose.transform'] as PrefBoolean;
+      expect(encoding!.read([1, 0, 0.5, 1], undefined)).toBe(true);
+      expect(encoding!.read([1, 0, 0, 1], undefined)).toBe(false);
+      expect(encoding!.read(undefined, undefined)).toBe(false);
+    }
+  });
+
+  it('clears the transform when turned off, and keeps the one held when on', () => {
+    const { encoding } = leaf('rect');
+    const pose = { x: 0, y: 0, width: 10, height: 10, transform: [1, 0, 0.5, 1] };
+    expect(encoding!.write(false, pose)).toBeUndefined();
+    expect(encoding!.write(true, pose)).toBe(pose.transform);
+  });
+});
+
 describe('leaves that read an absent value as their default', () => {
   const members = (name: string, section: string): PrefSection['members'] =>
     (defaultNodeProperties.find((e) => e.name === name)!.schema.members[section] as PrefSection).members;

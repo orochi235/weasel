@@ -181,31 +181,12 @@ Priority tags:
 
 ## Paths & booleans
 
-- **(P3) a pose's `transform` is drawn, picked, outlined, and resized in its own frame, and these
-  do not read it yet.** A box pose may carry a `transform` (`PoseLinear`,
-  `packages/geom/src/poseFrame.ts`): the skew or per-axis scale its box and rotation cannot hold.
-  Ruled 2026-10-11: text and image nodes carry a full transform, and such text stays editable
-  text. The selection chrome, its hit regions, and a lone node's resize and rotate read the frame
-  through `core/geometry/targetFrame.ts`, and the text edit overlay is handed it as
-  `TextEditScreenPose.frame`; a resize writes the box and keeps the transform. What still sees
-  only the box and its rotation:
-  - `remapRotatedLeaf` (`core/geometry/poseDescriptor.ts`) drops the shear a non-uniform group
-    resize gives a turned leaf rather than writing it to the leaf's `transform`, and reads only
-    the leaf's rotation, so a leaf that already carries a skew is remapped as if it had none. The
-    chrome now follows whatever it writes.
-  - `useSceneTextEdit` places the overlay, and tests a double-click, against the node's own pose
-    (`effectivePose`), not its world pose, so text under a container whose pose is a frame is
-    edited where it would sit without that container. It also scales by `view.scale.x` alone, so
-    under non-uniform zoom the overlay is stretched wrong whatever the pose carries.
-  - `composeRectPose` / `composeRigidPose` (`core/scene/composePose.ts`) keep a child's own
-    transform and do not compose a container's into its children.
-  - `defaultNodeProperties` has no row for it, so `SelectionPanel` can neither show nor clear it.
-
-- **(P3) svg import: `<tspan>` glyph positioning is not read.** `dx`, `rotate`, and list-valued
-  per-glyph `x` / `y` are not applied; each warns, on `<text>` and `<tspan>` alike
-  (`packages/svg/src/tspanLines.ts`). Kerned text exported as one `<tspan>` per glyph run imports
-  with the glyphs run together: turning a positioned run into a letter spacing or a space needs the
-  advance of the glyphs before it, which a parse with no face loaded cannot measure.
+- **(P3) svg import: absolute and turned glyph positions are not read.** A `<tspan dx>` list is
+  read as letter spacing (`packages/svg/src/glyphShifts.ts`). `rotate`, list-valued per-glyph
+  `x` / `y`, and a `dx` on `<text>` itself are not applied; each warns
+  (`packages/svg/src/tspanLines.ts`). Kerned text exported with an `x` per glyph imports with the
+  glyphs run together: turning a position into a letter spacing or a space needs the advance of
+  the glyphs before it, which a parse with no face loaded cannot measure.
   `serializeSvg` writes no line height either, so a pitch read on import is dropped on export
   unless a caller carries it, as WeaselDraw does in `wd:line-height`.
 
@@ -215,27 +196,20 @@ Priority tags:
   ask for it, because a scene node has no hidden state of its own to map it to: only a layer has
   `visible`. With a per-node one, `unpackSvgFiles` passes `keepHidden` and writes the flag.
 
-- **(P3) svg export: a marked stroke with several open subpaths draws one pair of end markers.**
-  The renderer puts a start and an end marker on each open subpath (`markerHeads`, `markerSites` in
-  `packages/stroke/src`). A path split for `openFill: 'none'` is written one open subpath to a
-  `<path>`, so it matches. A path with `fill: none`, or one whose fill closes its open subpaths,
-  stays one `<path>`, and SVG draws one pair for the whole of it; `marker-mid` differs too, since
-  SVG puts one on every vertex between the path's first and last, subpath joins included. Read in
-  the code, not rendered. The filled case means writing the fill and the strokes as separate paths.
-
 ### Pathfinder follow-ups (post-v1)
 
 - **(P3) Create Outlines refuses synthetic-bold text.** `textToPath` answers `reason: 'synthetic-bold'`: emboldening it is a union with the glyphs' own outline stroke, but the width has to match what the renderer's distance-field shift (`SYNTH_BOLD_AMOUNT`, `packages/renderer/src/draw/text.ts`) draws. Read from `glyphCoverage` and `glyphFieldScale` (`packages/font/src/textSdf.ts`) and not measured against pixels: the shift moves the edge out by `SYNTH_BOLD_AMOUNT` of the field's span, which is `distanceRange` texels in a baked atlas and `SDF_RADIUS` in a runtime canvas page, and a texel is `1 / info.size` em, so the outline grows by `SYNTH_BOLD_AMOUNT × span / info.size` em on each side and differs by which tier serves the glyph. What is left: `textToPath` (`packages/text`) has no stroke outliner to call, since `strokeToPath` is in `@weasel-js/stroke`, which text does not depend on; the union flattens every curve of the glyph; and the result has to be compared with the field in a browser.
 - **(P3) Non-destructive boolean groups.** Figma-style "boolean group" container node that recomputes geometry from children at render time. Requires a new layer/scene-node type plus renderer support.
 - **(P3) True curve booleans.** The booleans flatten beziers before clipping (`packages/geom/src/booleans/adapter.ts`), so the result is straight-line. Skia/PathKit-style curve-preserving booleans are substantially harder.
 - **(P3) Live preview of a Boolean operation.** Seeing the result before committing: on hovering a Pathfinder button, or holding an op key over a path. `previewBooleanOp` answers the pieces an operation would make, each with its source and paint, and mints and commits nothing. What is left is everything that shows them: no Pathfinder action has a gesture or a key to hold, an action has no way to say what it would do while its button is hovered, and nothing draws paths that are not nodes over the scene.
-- **(P3) A group's `data.label` is not drawn on the canvas.** Outline Stroke on draw's starter rect makes a group that takes the rect's data (`drawOutlinesAdapter`, `apps/draw/src/outlinesAdapter.ts`), so the layer list still reads "Welcome", but the word the rect wore on the canvas is gone. `defaultDrawOne` does emit a container's label, but `buildSceneTree` (`packages/core/src/canvas/buildSceneTree.ts`) pushes a container's own commands before its children's, so the group's paths cover it. Drawing it on top needs the walk to paint a container a second time after its children, which `drawOne` has no way to ask for.
 
 ---
 - **(P3) draw's SVG files do not carry layers.** A saved file keeps paper size, title, groups, and
   line height under the `wd:` namespace (`apps/draw/src/svgInterop.ts`) but no layer list and no
-  layer id on a shape, so layers are lost on reopen; export only leaves hidden layers out
-  (`svgExport.ts`). Whether a page has its own layers is undecided.
+  layer id on a shape; export only leaves hidden layers out (`svgExport.ts`). Nothing is lost yet:
+  draw has the one layer, `'default'` (`WeaselDrawLayer`, `drawDocument.ts`), and no way to add
+  another, and `openSvg.ts` puts every node on it. Whether a page has its own layers is undecided,
+  and the file format waits on that.
 
 ## Rendering & paint
 

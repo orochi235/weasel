@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { remapRotatedLeaf, RECT_POSE_DESCRIPTOR } from './geometry';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
+import { applyToPoint, poseFrameOf } from '@weasel-js/geom';
 
 const SRC: Bounds = { x: 0, y: 0, width: 100, height: 100 };
 const leaf = (over: Partial<Bounds & { rotation: number }> = {}) => ({
@@ -92,21 +93,57 @@ describe('remapRotatedLeaf', () => {
     expect(Number.isFinite(out.width)).toBe(true);
   });
 
-  it('composes exactly except in the perpendicular extent', () => {
-    // Dropping the shear loses information, but only in one quantity. The
-    // rotation and the width both follow the image of the local x-axis, and
-    // that image composes multiplicatively — so they are exact under any
-    // number of steps. The height follows the perpendicular, and the
-    // perpendicular of the mapped axis is not the image of the perpendicular:
-    // that gap IS the shear. It is the only thing that drifts.
+  it('draws the same corners through two steps as through one', () => {
     const p = leaf({ rotation: 0.4 });
     const mid: Bounds = { x: 0, y: 0, width: 150, height: 100 };
     const end: Bounds = { x: 0, y: 0, width: 300, height: 100 };
     const once = remapRotatedLeaf(p, SRC, end);
     const twice = remapRotatedLeaf(remapRotatedLeaf(p, SRC, mid), mid, end);
+    expect(maxError(corners(twice), corners(once))).toBeLessThan(1e-9);
+  });
+});
 
-    expect(twice.rotation).toBeCloseTo(once.rotation, 12);
-    expect(twice.width).toBeCloseTo(once.width, 12);
-    expect(twice.height).not.toBeCloseTo(once.height, 2);
+/** Where a pose draws its box corners. */
+function corners(p: Bounds): [number, number][] {
+  const m = poseFrameOf(p) ?? ([1, 0, 0, 1, 0, 0] as const);
+  return ([[p.x, p.y], [p.x + p.width, p.y], [p.x + p.width, p.y + p.height], [p.x, p.y + p.height]] as const)
+    .map(([x, y]) => applyToPoint(m, x, y));
+}
+
+/** `points` through the affine taking `src` onto `dst`. */
+function through(points: [number, number][], src: Bounds, dst: Bounds): [number, number][] {
+  return points.map(([x, y]) => [
+    dst.x + ((x - src.x) * dst.width) / src.width,
+    dst.y + ((y - src.y) * dst.height) / src.height,
+  ]);
+}
+
+function maxError(a: [number, number][], b: [number, number][]): number {
+  return Math.max(...a.map(([x, y], i) => Math.hypot(x - b[i][0], y - b[i][1])));
+}
+
+describe('remapRotatedLeaf writes the shear to the leaf transform', () => {
+  const DST: Bounds = { x: 5, y: -10, width: 300, height: 60 };
+
+  it('draws a turned leaf as the parallelogram a non-uniform resize makes of it', () => {
+    const p = leaf({ rotation: 0.6 });
+    const out = remapRotatedLeaf(p, SRC, DST);
+    expect(out.transform).toBeDefined();
+    expect(maxError(corners(out), through(corners(p), SRC, DST))).toBeLessThan(1e-9);
+  });
+
+  it('reads the skew a leaf already carries', () => {
+    const upright = { ...leaf(), transform: [1, 0.2, -0.5, 1.2] as const };
+    const turned = { ...upright, rotation: -0.9 };
+    for (const p of [upright, turned]) {
+      expect(maxError(corners(remapRotatedLeaf(p, SRC, DST)), through(corners(p), SRC, DST))).toBeLessThan(1e-9);
+    }
+  });
+
+  it('writes no transform where the box and rotation hold the result', () => {
+    const uniform: Bounds = { x: 0, y: 0, width: 300, height: 300 };
+    expect('transform' in remapRotatedLeaf(leaf({ rotation: 0.6 }), SRC, uniform)).toBe(false);
+    expect('transform' in remapRotatedLeaf(leaf(), SRC, DST)).toBe(false);
+    expect('transform' in remapRotatedLeaf(leaf({ rotation: Math.PI / 2 }), SRC, DST)).toBe(false);
   });
 });

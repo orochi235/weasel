@@ -7,6 +7,7 @@
  * consumer-supplied `compose`.
  */
 
+import { applyToPoint, multiply, poseFrameInverseOf, poseFrameOf, poseLinearOf, rotate, type Mat3 } from '@weasel-js/geom';
 import type { RectPose } from 'core/scene/types';
 export type { RectPose };
 
@@ -49,6 +50,24 @@ export function decomposeRectPose<TPose extends RectPose>(parent: TPose, world: 
   };
 }
 
+/** `pose` with the linear part `linear` held as `rotation` and whatever is
+ *  left over as `transform`, which is dropped when nothing is. */
+function withLinear<TPose extends RectPose>(pose: TPose, rotation: number, linear: Mat3): TPose {
+  const [a, b, c, d] = multiply(rotate(-rotation), linear);
+  const plain = Math.abs(a - 1) < 1e-12 && Math.abs(b) < 1e-12 && Math.abs(c) < 1e-12 && Math.abs(d - 1) < 1e-12;
+  const next: RectPose = { ...pose, rotation };
+  if (plain) delete next.transform;
+  else next.transform = [a, b, c, d];
+  return next as TPose;
+}
+
+/** `pose` moved so its box center is at `(cx, cy)`. */
+function centeredAt<TPose extends RectPose>(pose: TPose, cx: number, cy: number): TPose {
+  return { ...pose, x: cx - pose.width / 2, y: cy - pose.height / 2 };
+}
+
+const NO_FRAME: Mat3 = [1, 0, 0, 1, 0, 0];
+
 /** Turn `(x, y)` about `(cx, cy)` by `r` radians. */
 function turn(cx: number, cy: number, r: number, x: number, y: number): [number, number] {
   const c = Math.cos(r);
@@ -61,12 +80,18 @@ function turn(cx: number, cy: number, r: number, x: number, y: number): [number,
  * pose is offset into the parent's unrotated box, then the whole thing is
  * turned about the parent's center. Rotations add; the child keeps its size.
  *
- * Reduces to `composeRectPose` when the parent is upright. Exact for
- * translation and rotation; a parent carrying scale is outside what this can
- * express — see `PoseClosure`.
+ * Reduces to `composeRectPose` when the parent is upright. A parent's
+ * `transform` composes too, and what the child's box and rotation cannot hold
+ * of the result lands in the child's own `transform`.
  */
 export function composeRigidPose<TPose extends RectPose>(parent: TPose, child: TPose): TPose {
   const pr = parent.rotation ?? 0;
+  const frame = poseLinearOf(parent) && poseFrameOf(parent);
+  if (frame) {
+    const [cx, cy] = applyToPoint(frame, parent.x + child.x + child.width / 2, parent.y + child.y + child.height / 2);
+    const linear = multiply(frame, poseFrameOf(child) ?? NO_FRAME);
+    return withLinear(centeredAt(child, cx, cy), (child.rotation ?? 0) + pr, linear);
+  }
   const [wcx, wcy] = turn(
     parent.x + parent.width / 2,
     parent.y + parent.height / 2,
@@ -86,6 +111,13 @@ export function composeRigidPose<TPose extends RectPose>(parent: TPose, child: T
  *  subtracts the parent's offset. */
 export function decomposeRigidPose<TPose extends RectPose>(parent: TPose, world: TPose): TPose {
   const pr = parent.rotation ?? 0;
+  // A singular transform has no inverse: the container draws nothing, and the turn alone is undone.
+  const back = poseLinearOf(parent) && poseFrameInverseOf(parent);
+  if (back) {
+    const [ux, uy] = applyToPoint(back, world.x + world.width / 2, world.y + world.height / 2);
+    const linear = multiply(back, poseFrameOf(world) ?? NO_FRAME);
+    return withLinear(centeredAt(world, ux - parent.x, uy - parent.y), (world.rotation ?? 0) - pr, linear);
+  }
   const [ux, uy] = turn(
     parent.x + parent.width / 2,
     parent.y + parent.height / 2,
