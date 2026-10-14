@@ -9,8 +9,9 @@ import type { EffectPipeline } from './types';
 
 /** Props for `EffectChart`. */
 export interface EffectChartProps<TOptions = unknown> {
-  /** Compared by content, so it may be rebuilt on every render: the chart
-   *  lays out again only when what the pipeline says changes. */
+  /** Compared by its JSON, so it may be rebuilt on every render: the chart
+   *  lays out again only when that changes. A value JSON drops or flattens
+   *  in a stage's `data` (a function, a `Map`) is not seen changing. */
   pipeline: EffectPipeline;
   /** How the pipeline is drawn. Default `nodeGraph`. */
   look?: EffectLook<TOptions>;

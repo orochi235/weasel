@@ -153,13 +153,15 @@ port (its `type`, say), and `showsPort` picks which of a node's ports show.
 diagramScene({ nodes, edges, groups: [{ id: 'ingest', members: ['fetch', 'decode'], label: 'ingest' }] });
 ```
 
-`layered` and `tree` keep a group's members together. Each group gets a column
-on the cross axis that nothing else enters, in every rank from its first
-member's to its last, and rank gaps widen where a box needs the room. The box
-is an ordinary scene node that depends on its members and derives its pose from
-theirs (`groupDerivePose`), so dragging a member carries the box along. An edge
-whose `from` or `to` names a group meets the box, and ranks against the
-group's first stage. Groups are flat, and `force` ignores them. A scene built
+A group may be a member of another. `layered`, `tree` and `force` keep a
+group's members together; `chain` ignores groups but still draws them. Under
+`layered` and `tree` each group gets a column on the cross axis that nothing
+else enters, in every rank from its first member's to its last, and rank gaps
+widen where a box needs the room; `force` pulls a group's members toward each
+other and pushes groups apart. The box is an ordinary scene node that depends
+on its members and derives its pose from theirs (`groupDerivePose`), so
+dragging a member carries the box along. An edge whose `from` or `to` names a
+group meets the box, and ranks against the group's first stage. A scene built
 any other way joins in with a node whose trait carries `group` and whose
 `dependsOn` lists its members.
 
@@ -256,7 +258,7 @@ A stage:
 
 | Prop | Meaning |
 | --- | --- |
-| `pipeline` | The pipeline. It is compared by content, so it may be rebuilt on every render. |
+| `pipeline` | The pipeline. It is compared by its JSON, so it may be rebuilt on every render; a value JSON drops or flattens in a stage's `data`, such as a function or a `Map`, is not seen changing. |
 | `look`, `options` | How it is drawn, and that look's options. Default look `nodeGraph`. |
 | `width`, `height` | The canvas size. |
 | `background` | What the canvas paints behind the chart. Unset, it is transparent; the shipped looks are drawn for a dark ground. |
