@@ -589,13 +589,16 @@
   gap: var(--wzl-space-2);
 }
 
-/* The control is drawn as a row's is, whatever the heading does to its own words. */
+/* The control is drawn as a row's is, whatever the heading does to its own words. It is no label, so it turns
+   the label recipe off for itself and what it holds, and reads it back in place of the heading's inherited case. */
 .headingControl {
+  --wzl-params-label-case: none;
+  --wzl-params-label-tracking: normal;
   display: inline-flex;
   align-items: center;
   margin-inline-start: auto;
   font-size: var(--wzl-font-size-sm);
   font-weight: var(--wzl-font-weight-normal);
-  letter-spacing: normal;
-  text-transform: none;
+  letter-spacing: var(--wzl-params-label-tracking, var(--wzl-tracking-wide));
+  text-transform: var(--wzl-params-label-case, uppercase);
 }
