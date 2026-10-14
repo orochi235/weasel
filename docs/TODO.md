@@ -253,6 +253,13 @@ Priority tags:
   edge over the reading-order value. Giving them segments of their own takes two glyphs, which
   have to be drawn and proofed in a browser (`packages/ui/scripts/icons/text.mjs`).
 
+- **(P3) Icons: the size family and `orbit` collapse at 16px 1x.** `taller`, `shorter`, `wider`,
+  `narrower`, `tallest` and `shortest` carry two short arrows each, and at 16 device pixels the
+  heads close up into dots; `orbit`'s head does the same against its ring. All resolve at 2x.
+  They want heads on the pixel grid, or fewer of them (`packages/ui/scripts/icons/size.mjs`,
+  `camera.mjs`). The straight arrows drawn before the 45-degree rule in CLAUDE.md ("Drawing
+  icons") still use spreads of 36 to 42.
+
 - **(P3) Text: an emoji is a bitmap baked at one size.** A color glyph is rasterized at the canvas
   tier's `BAKE_SIZE` (48px) and mipmapped, so it is sharp at or below that on screen and blurs
   above it: a 96px heading, or body text zoomed past 4x. A distance field has no such limit and
