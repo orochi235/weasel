@@ -3,7 +3,7 @@ import { inferredNodeRouting } from './defaultNodeRouting';
 import { KIT_SHAPE_KINDS } from 'core/shapeKinds';
 import { listMarkers, markerGeneration } from '@weasel-js/stroke';
 import { dashForStrokeStyle, strokeDashStyleOf } from '@weasel-js/paint';
-import { resolveAlign, type TextAlign } from '@weasel-js/text';
+import { resolveAlign } from '@weasel-js/text';
 import type { NodePropertiesEntry } from 'core/scene/NodeProperties';
 import { ANGLE_RADIANS, decimal } from '@weasel-js/quantity';
 import { poseLinearOf } from '@weasel-js/geom';
@@ -67,14 +67,16 @@ const italicEncoding: PrefBooleanEncoding = {
 };
 
 /** `TextStyle.align` read as the edge that paints, or as `justify`. The model
- *  also holds the reading-order pair `start` / `end`, which the segments would
- *  otherwise leave unlit; they read through `direction`, and a click writes the
- *  edge. */
+ *  also holds the reading-order pair `start` / `end`, which name an edge only
+ *  under a stated `direction`. Under `auto` each paragraph takes its own from
+ *  its text, so no segment is lit. A click writes the edge. */
 const alignEncoding: PrefEnumEncoding = {
   read: (stored, style) => {
-    if (stored === undefined || stored === 'justify') return stored;
-    const direction = style?.direction === 'rtl' ? 'rtl' : 'ltr';
-    return resolveAlign(stored as TextAlign, direction);
+    if (stored === 'start' || stored === 'end') {
+      const direction = style?.direction;
+      return direction === 'ltr' || direction === 'rtl' ? resolveAlign(stored, direction) : undefined;
+    }
+    return stored as string | undefined;
   },
   write: (edge) => edge,
 };

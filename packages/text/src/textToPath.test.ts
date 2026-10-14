@@ -7,7 +7,9 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { registerFont, registerFontOutlines, loadFontOutlines, type OutlineFace } from '@weasel-js/font';
-import { _resetFontRegistryForTests, _resetFontOutlinesForTests } from '@weasel-js/font/test-seams';
+import {
+  _resetFontRegistryForTests, _resetFontOutlinesForTests, _resetDynamicFontsForTests, __setGlyphRasterizerForTests,
+} from '@weasel-js/font/test-seams';
 import { _resetLayoutCacheForTests } from '@weasel-js/text/test-seams';
 import { layoutTextPose, paintRuns, textPoseLayoutInput, type TextPose } from '@weasel-js/text';
 import { boundsOfPath, pointInPath, pathFromD, PATH_C, PATH_Q, type Path } from '@weasel-js/geom';
@@ -229,6 +231,26 @@ describe('textToPath failures', () => {
     try { textToPath(src, POSE); } catch (err) {
       expect((err as TextOutlinesError).reason).toBe('no-outlines');
       expect((err as TextOutlinesError).family).toBe('atlas-only');
+    }
+  });
+
+  it('refuses text holding an emoji, naming the color glyph as the reason', () => {
+    _resetDynamicFontsForTests();
+    __setGlyphRasterizerForTests({
+      faceMetrics: () => ({ ascent: 40, descent: 8 }),
+      rasterize: () => ({ width: 0, height: 0, alpha: new Uint8ClampedArray(0), left: 0, top: 0, advance: 22 }),
+      rasterizeColor: () => ({
+        width: 60, height: 60, rgba: new Uint8ClampedArray(60 * 60 * 4).fill(255), left: -6, top: 50, advance: 48,
+      }),
+    });
+    try {
+      let thrown: unknown;
+      try { textToPath(text('H\u{1F600}'), POSE); } catch (err) { thrown = err; }
+      expect(thrown).toBeInstanceOf(TextOutlinesError);
+      expect((thrown as TextOutlinesError).reason).toBe('color-glyph');
+      expect((thrown as TextOutlinesError).message).toContain('no outline');
+    } finally {
+      _resetDynamicFontsForTests();
     }
   });
 
