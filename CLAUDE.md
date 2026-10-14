@@ -186,7 +186,10 @@ viewport ends at the cut line — it clips to its box and needs no id. Behind a 
 front stroke out of circular arcs, whose stroked edges are arcs again, fill the back stroke, and
 end it on that edge arc slid by the gap: `turn` in `camera.mjs` builds its ring as a four-arc oval
 for this, since an ellipse's edges are no curve path data can follow. Keep such coordinates to four
-places. Never call a cut close enough by its size; he measures these zoomed in. Round caps
+places. Never call a cut close enough by its size; he measures these zoomed in. One optical
+exception: a short cut end facing a long curved edge reads flatter than the edge even when it
+measures parallel, because the eye takes the edge's curvature from its whole run, so `turn`'s upper
+axis end is bent 2.5 times as far as the ring beneath it, its middle kept at the gap. Round caps
 stopped short of the crossing are worse again: the gap pinches, and the strokes read as unrelated.
 
 **The small check is a separate check, and it is the pixel grid.** Proofing
