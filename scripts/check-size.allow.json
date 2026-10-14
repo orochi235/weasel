@@ -395,8 +395,5 @@
   },
   "packages/ui/src/components/Tree/useTreeDrag.ts": {
     "longestFunction": 143
-  },
-  "packages/ui/src/icons/paths.ts": {
-    "lines": 463
   }
 }

@@ -2,10 +2,12 @@ import { Icon, type IconProps } from './Icon';
 
 export { Icon, isFillable } from './Icon';
 export type { IconProps } from './Icon';
-export { ICON_GROUPS, MARK_ICONS } from './groups';
-export type { MarkIconName } from './groups';
-export { ICON_FILLS, ICON_PATHS } from './paths';
-export type { FillableIconName, IconName } from './paths';
+export { ICON_GROUPS, MARK_ICONS } from './generated/groups';
+export type { MarkIconName } from './generated/groups';
+export { ICON_FILLS } from './generated/fills';
+export type { FillableIconName } from './generated/fills';
+export { ICON_PATHS } from './generated/paths';
+export type { IconName } from './generated/paths';
 
 // Tool glyphs live in @weasel-js/core because core needs them for
 // `Tool.presentation.icon` defaults and cannot depend on this package.
@@ -73,6 +75,14 @@ export const StepBackIcon = (p: IconProps) => <Icon name="stepBack" {...p} />;
 export const StepForwardIcon = (p: IconProps) => <Icon name="stepForward" {...p} />;
 /** @deprecated Use {@link StepForwardIcon}; `step` alone stopped naming a direction. */
 export const StepIcon = StepForwardIcon;
+/** First: a left-pointing chevron against a bar. */
+export const FirstIcon = (p: IconProps) => <Icon name="first" {...p} />;
+/** Prev: a left-pointing chevron. */
+export const PrevIcon = (p: IconProps) => <Icon name="prev" {...p} />;
+/** Next: a right-pointing chevron. */
+export const NextIcon = (p: IconProps) => <Icon name="next" {...p} />;
+/** Last: a right-pointing chevron against a bar. */
+export const LastIcon = (p: IconProps) => <Icon name="last" {...p} />;
 /** Crosshair: a ring with four ticks on the axes. */
 export const CrosshairIcon = (p: IconProps) => <Icon name="crosshair" {...p} />;
 /** Fullscreen: two corner arrows pointing out diagonally. */

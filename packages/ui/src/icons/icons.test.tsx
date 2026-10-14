@@ -3,8 +3,9 @@ import { describe, expect, it } from 'vitest';
 import { Icon } from './Icon';
 import { CheckIcon, DeleteIcon, RedoIcon, UndoIcon } from './index';
 import { isFillable } from './Icon';
-import { ICON_GROUPS, MARK_ICONS } from './groups';
-import { ICON_FILLS, ICON_PATHS, type IconName } from './paths';
+import { ICON_GROUPS, MARK_ICONS } from './generated/groups';
+import { ICON_FILLS } from './generated/fills';
+import { ICON_PATHS, type IconName } from './generated/paths';
 
 const NAMES = Object.keys(ICON_PATHS) as IconName[];
 
@@ -104,10 +105,24 @@ describe('a marked glyph', () => {
     const { container } = render(<><Icon name="formPage" mark="markAdd" /><Icon name="formTab" mark="markAdd" /></>);
     const ids = [...container.querySelectorAll('svg')].map((svg) => {
       const id = svg.querySelector('mask')?.id;
-      expect(svg.querySelector('g')?.getAttribute('mask')).toBe(`url(#${id})`);
+      expect(svg.querySelector(':scope > g')?.getAttribute('mask')).toBe(`url(#${id})`);
       return id;
     });
     expect(new Set(ids).size).toBe(2);
+  });
+
+  it('cuts the mask from the mark itself, stroked wider by the band and filled', () => {
+    const { container } = render(<Icon name="formPage" mark="markReset" />);
+    const cut = container.querySelector('mask > g');
+    expect(cut?.getAttribute('transform')).toBe('translate(10.5 10.5) scale(0.5)');
+    expect(cut?.getAttribute('fill')).toBe('#000');
+    // 1.5 of stroke and 1.5 of band on each side of it, on the frame.
+    expect(Number(cut?.getAttribute('stroke-width')) * 0.5).toBeCloseTo(4.5);
+    const [arc, head] = [...(cut?.querySelectorAll('path') ?? [])];
+    expect(arc?.getAttribute('d')).toBe(ICON_PATHS.markReset.match(/d="([^"]+)"/)?.[1]);
+    // The head is drawn without a stroke, so the band is all of its stroke here.
+    expect(head?.getAttribute('stroke')).toBeNull();
+    expect(Number(head?.getAttribute('stroke-width')) * 0.5).toBeCloseTo(3);
   });
 
   it('keeps the shade\'s tint off the mark and the mask', () => {

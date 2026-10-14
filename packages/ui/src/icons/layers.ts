@@ -12,23 +12,29 @@ export const ICON_SLOTS = {
 
 const FRAME = 20;
 const STROKE = 1.5;
-/** The cleared circle's radius, as a share of the box: the scaled glyph's reach plus a unit of air at the mark slot's size. */
-const CLEARING = 0.55;
+/** The width of the band cleared around the second glyph, on the frame. */
+const GAP = 1.5;
 
 /**
  * The body of a glyph with a second one drawn into `box`: `over` scaled to fit and stroked at the frame's own
- * weight, and `base` cut away in a circle around it. `maskId` must be unique in the document.
+ * weight, and `base` cut away from `over`'s silhouette and a band of `GAP` around it. `maskId` must be unique in
+ * the document.
  */
 export function inset(base: string, over: string, box: IconBox, maskId: string): string {
   const k = box.size / FRAME;
-  const cx = box.x + box.size / 2;
-  const cy = box.y + box.size / 2;
+  const place = `transform="translate(${box.x} ${box.y}) scale(${k})"`;
+  // The silhouette is `over` again, every part filled and stroked wider by the band. A part drawn without a
+  // stroke gets one as wide as the band alone, and a hole drawn by fill rule closes up.
+  const silhouette = over
+    .replaceAll('stroke="none"', `stroke-width="${(2 * GAP) / k}"`)
+    .replaceAll(' fill-rule="evenodd"', '');
   // Sized in user space: a mask sized by its target's bounding box erases a glyph that is one straight line.
   // The fill opacities are restated because the root carries the shade's.
   return (
     `<mask id="${maskId}" maskUnits="userSpaceOnUse" x="0" y="0" width="${FRAME}" height="${FRAME}" stroke="none" fill-opacity="1">` +
-    `<rect width="${FRAME}" height="${FRAME}" fill="#fff"/><circle cx="${cx}" cy="${cy}" r="${box.size * CLEARING}" fill="#000"/></mask>` +
+    `<rect width="${FRAME}" height="${FRAME}" fill="#fff"/>` +
+    `<g ${place} color="#000" fill="#000" stroke="#000" stroke-width="${(STROKE + 2 * GAP) / k}">${silhouette}</g></mask>` +
     `<g mask="url(#${maskId})">${base}</g>` +
-    `<g transform="translate(${box.x} ${box.y}) scale(${k})" stroke-width="${STROKE / k}" fill-opacity="1">${over}</g>`
+    `<g ${place} stroke-width="${STROKE / k}" fill-opacity="1">${over}</g>`
   );
 }

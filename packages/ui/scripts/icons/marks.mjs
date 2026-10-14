@@ -10,8 +10,7 @@ import { onCircle } from './base.mjs';
 // of the glyph it sits on; a width written here would be scaled down with it.
 
 const C = 10;
-// Half the span of a straight mark, cap centers. 6.5 leaves the round caps
-// 2.75 inside the frame, the gap the knockout around a slot is sized for.
+// Half the span of a straight mark, cap centers.
 const REACH = 6.5;
 const round2 = (v) => Math.round(v * 100) / 100;
 
@@ -61,6 +60,32 @@ const NONE_R = 5.5;
 
 const star = `M${Array.from({ length: 10 }, (_, i) => pt(onCircle(C, C + 0.5, i % 2 ? 2.9 : 6.5, 90 + i * 36))).join(' ')}Z`;
 
+// `side` 1 draws the figure as written and -1 mirrors it across the frame's center line.
+const mx = (side, x) => (side === 1 ? x : 2 * C - x);
+
+// Undo and redo: a run out from a solid head, hooked back under itself.
+const hook = (side) => {
+  const x = (v) => mx(side, v);
+  return (
+    `<path d="M${x(8)} 6.5H${x(12)}a4.5 4.5 0 0 ${side === 1 ? 1 : 0} 0 9H${x(6.5)}"/>` +
+    `<path d="M${x(2)} 6.5 ${x(8)} 2.5V10.5Z" fill="currentColor" stroke="none"/>`
+  );
+};
+
+// A solid triangle running into a bar, `side` 1 pointing right.
+const step = (side) => {
+  const x = (v) => mx(side, v);
+  return `<path d="M${x(4)} 5 ${x(10.5)} ${C} ${x(4)} 15Z" fill="currentColor"/><path d="M${x(16)} 4.5v11"/>`;
+};
+
+// A chevron, `side` 1 pointing right; with `end`, it runs into a bar.
+const page = (side, end = false) => {
+  const x = (v) => mx(side, v);
+  return end
+    ? `<path d="M${x(4.5)} 4 ${x(10.5)} ${C} ${x(4.5)} 16"/><path d="M${x(16.5)} 4v12"/>`
+    : `<path d="M${x(7)} 3.5 ${x(13.5)} ${C} ${x(7)} 16.5"/>`;
+};
+
 export const MARKS = {
   'mark-add': `<path d="M${C} ${C - REACH}v${2 * REACH}M${C - REACH} ${C}h${2 * REACH}"/>`,
   'mark-remove': `<path d="M${C - REACH} ${C}h${2 * REACH}"/>`,
@@ -91,4 +116,36 @@ export const MARKS = {
 
   // Not one: a slashed O, the slash rising to the right.
   'mark-none': `<circle cx="${C}" cy="${C}" r="${NONE_R}"/><path d="M${C - REACH} ${C + REACH} ${C + REACH} ${C - REACH}"/>`,
+
+  // A can under its lid, tapering to its foot; the body is filled for the reason the lock's is.
+  'mark-delete': `<path d="M3.5 4.5h13"/><path d="M5 10h10l-1.5 6h-7Z" fill="currentColor"/>`,
+
+  // Three rules, each shorter than the one above.
+  'mark-sort': `<path d="M3.5 4.5h13M3.5 10h8.5M3.5 15.5h4"/>`,
+
+  // A funnel: a solid mouth and a stem.
+  'mark-filter': `<path d="M4.5 5h11L${C} 11.5Z" fill="currentColor"/><path d="M${C} 11.5v4.5"/>`,
+
+  'mark-undo': hook(1),
+  'mark-redo': hook(-1),
+
+  // An arrow down onto a tray.
+  'mark-export': `<path d="M${C} 3.5v4"/><path d="M4.5 6.5h11L${C} 12.5Z" fill="currentColor" stroke="none"/><path d="M3.5 16h13"/>`,
+
+  // A camera in silhouette, the lens knocked out of it. The lens winds the way the body does, so the slot's
+  // clearing, which fills by winding, has no hole in it.
+  'mark-snapshot': `<path d="M4 5.5h2.5l1.5-2.5h4l1.5 2.5H16a2 2 0 0 1 2 2V15a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7.5a2 2 0 0 1 2-2zM13 11.25a3 3 0 1 1-6 0a3 3 0 1 1 6 0z" fill="currentColor" fill-rule="evenodd" stroke="none"/>`,
+
+  // Playback: solid, where paging's chevrons are open.
+  'mark-play': `<path d="M6.5 4.5 15.5 ${C} 6.5 15.5Z" fill="currentColor"/>`,
+  // Two slabs in the square `mark-stop` fills.
+  'mark-pause': `<rect x="5.25" y="5" width="1.5" height="10" fill="currentColor"/><rect x="13.25" y="5" width="1.5" height="10" fill="currentColor"/>`,
+  'mark-stop': `<rect x="5" y="5" width="10" height="10" rx="1" fill="currentColor"/>`,
+  'mark-step-back': step(-1),
+  'mark-step-forward': step(1),
+
+  'mark-first': page(-1, true),
+  'mark-prev': page(-1),
+  'mark-next': page(1),
+  'mark-last': page(1, true),
 };

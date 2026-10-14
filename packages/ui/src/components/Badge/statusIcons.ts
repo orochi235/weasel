@@ -1,4 +1,4 @@
-import type { IconName } from '../../icons/paths';
+import type { IconName } from '../../icons/generated/paths';
 import type { BadgeStatus } from './types';
 
 /** The glyph for each status. `custom` has none: its color is the call site's. */
