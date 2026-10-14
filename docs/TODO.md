@@ -313,6 +313,11 @@ Priority tags:
 
 ## Scene, adapters & layout
 
+- **(P3) A diagram's edge labels can land on nodes.** A label sits at a fraction of its route, offset
+  to one side, with no check for the boxes around it, so the label on a short edge between ranks
+  overlaps the node or group box it leaves or enters. `layeredRoutes` keeps routes clear of nodes;
+  nothing does the same for labels. blits' playground timing view shows it (`anchors` preset).
+
 - **(P3) A direct scene call made while a journal is open lands on the scene's own stack.**
   `scene.applyBatch` goes to the open journal; `scene.setPose` and its siblings, `scene.batch`, and
   `scene.history.apply` do not, so a mode that mixes the two splits its edits across two stacks.
