@@ -7,6 +7,8 @@ import { resolveAlign } from '@weasel-js/text';
 import type { NodePropertiesEntry } from 'core/scene/NodeProperties';
 import { ANGLE_RADIANS, decimal } from '@weasel-js/quantity';
 import { poseLinearOf } from '@weasel-js/geom';
+import { settleShapeGenerator } from 'features/paths/shapeGenerator';
+import { SHAPE_GENERATOR_SECTIONS } from './shapeGeneratorProperties';
 
 /** Radians-stored / degrees-shown conversion for `pose.rotation` leaves.
  *  Display rounds to 0.1° so a canonical radian value doesn't render as
@@ -151,11 +153,12 @@ const LAYOUT: PrefSection = {
  *  Appearance (fill / stroke), optionally a Text group. Matches the kit's
  *  builtin-shape data template (`{ path, fill, stroke?, text? }`,
  *  `useBuiltinShapeTools`). */
-function shapeSchema(opts: { text?: boolean } = {}): PrefSection {
+function shapeSchema(opts: { text?: boolean; generators?: readonly string[] } = {}): PrefSection {
   return {
     name: 'Properties',
     members: {
       layout: LAYOUT,
+      ...Object.fromEntries((opts.generators ?? []).map((g) => [g, SHAPE_GENERATOR_SECTIONS[g]])),
       // What the node *is* outranks how it is painted: a text node's copy is
       // the first thing an editor reaches for.
       ...(opts.text
@@ -277,6 +280,13 @@ function shapeSchema(opts: { text?: boolean } = {}): PrefSection {
   };
 }
 
+/** The kinds whose nodes can hold a `data.generator`, and which kinds of it. */
+const GENERATED_KINDS: Record<string, readonly string[] | undefined> = {
+  polygon: ['polygon'],
+  star: ['star'],
+  path: ['polygon', 'star'],
+};
+
 /**
  * Default properties-trait entries covering the kit's built-in shape
  * kinds (`KIT_SHAPE_KINDS`) — the sibling of `defaultNodeRouting`. Every
@@ -284,10 +294,14 @@ function shapeSchema(opts: { text?: boolean } = {}): PrefSection {
  * lockstep with `KIT_SHAPE_KINDS` by construction (derived via `.map`).
  */
 export const defaultNodeProperties: readonly NodePropertiesEntry[] =
-  KIT_SHAPE_KINDS.map((name) => ({
-    name,
-    schema: shapeSchema({ text: name === 'text' }),
-  }));
+  KIT_SHAPE_KINDS.map((name) => {
+    const generators = GENERATED_KINDS[name];
+    return {
+      name,
+      schema: shapeSchema({ text: name === 'text', ...(generators ? { generators } : {}) }),
+      ...(generators ? { settle: settleShapeGenerator } : {}),
+    };
+  });
 
 /**
  * Properties-trait entries for the *inferred* routing kinds
@@ -296,7 +310,11 @@ export const defaultNodeProperties: readonly NodePropertiesEntry[] =
  * In lockstep with `inferredNodeRouting` by construction.
  */
 export const inferredNodeProperties: readonly NodePropertiesEntry[] =
-  inferredNodeRouting.map((e) => ({
-    name: e.name,
-    schema: shapeSchema({ text: e.name === 'text' }),
-  }));
+  inferredNodeRouting.map((e) => {
+    const generators = GENERATED_KINDS[e.name];
+    return {
+      name: e.name,
+      schema: shapeSchema({ text: e.name === 'text', ...(generators ? { generators } : {}) }),
+      ...(generators ? { settle: settleShapeGenerator } : {}),
+    };
+  });

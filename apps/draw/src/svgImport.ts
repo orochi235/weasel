@@ -1,6 +1,18 @@
-import { solid } from '@weasel-js/core';
+import { solid, type ShapeGenerator } from '@weasel-js/core';
 import type { WeaselDrawData, WeaselDrawPose } from './drawDocument';
-import type { Obj } from './svgObj';
+import type { Obj, PathObj } from './svgObj';
+
+/** The generator a polygon or star `Obj`'s `params` name. Params without a
+ *  rotation cannot place the shape again, so they import as plain geometry. */
+function generatorOfObj(o: PathObj): ShapeGenerator | null {
+  const p = o.params;
+  if (!p || p.rotation === undefined) return null;
+  if (o.tool === 'polygon' && 'sides' in p) return { kind: 'polygon', sides: p.sides, rotation: p.rotation };
+  if (o.tool === 'star' && 'points' in p) {
+    return { kind: 'star', points: p.points, innerRadiusRatio: p.ratio, rotation: p.rotation };
+  }
+  return null;
+}
 
 /** The scene leaf an imported `Obj` becomes: its box as the pose, and the
  *  `data` the kit painters read. */
@@ -21,5 +33,6 @@ export function leafOfObj(o: Obj): { pose: WeaselDrawPose; data: WeaselDrawData 
     };
   }
   if (o.tool === 'image') return { pose, data: { image: o.image } };
-  return { pose, data: { path: o.path, fill: o.fill, stroke: o.stroke } };
+  const generator = generatorOfObj(o);
+  return { pose, data: { path: o.path, fill: o.fill, stroke: o.stroke, ...(generator ? { generator } : {}) } };
 }

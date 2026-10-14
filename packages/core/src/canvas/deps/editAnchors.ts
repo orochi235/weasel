@@ -20,6 +20,7 @@ import type { Skin } from '@weasel-js/animator';
 import { remapSkin } from '../../animation/rig/skinBinding';
 import { worldEditToStorage } from '@weasel-js/geom';
 import { classifyPathStorage, resolveEditablePathOf } from 'features/paths/editablePath';
+import { withoutShapeGenerator } from 'features/paths/shapeGenerator';
 import { createPathEditState, isSelectedNode, type PathEditState } from 'features/paths/pathEditState';
 import { recordModeSwitch } from '@weasel-js/routing';
 import type { Op } from 'core/ops/types';
@@ -80,7 +81,8 @@ export function useEditAnchorsDepSource(
       const { pose: newPose, path: aligned } = worldEditToStorage(storage.pose, wp);
       return [
         createTransformOp({ id, from: node.pose, to: newPose, label }),
-        createSetDataOp({ id, from: node.data, to: { ...(node.data as object), path: aligned, ...reskinned }, label }),
+        // A path edited by hand is no longer what its generator makes: it becomes plain geometry.
+        createSetDataOp({ id, from: node.data, to: { ...withoutShapeGenerator(node.data as object), path: aligned, ...reskinned }, label }),
       ];
     };
     return {

@@ -94,6 +94,21 @@ export type {
   PoseRotation,
   PoseLinear,
 } from '../features/paths';
+export {
+  SHAPE_COUNT_RANGE,
+  STAR_RATIO_RANGE,
+  clampShapeGenerator,
+  isShapeGenerator,
+  regenerateShape,
+  settleShapeGenerator,
+  shapeGeneratorOf,
+  shapeGeneratorPath,
+  withoutShapeGenerator,
+  type GeneratedShape,
+  type PolygonGenerator,
+  type ShapeGenerator,
+  type StarGenerator,
+} from '../features/paths/shapeGenerator';
 
 // ─── Curves: alternate path representations (Bezier, NURBS, Spiro) ──────────
 export {

@@ -9,6 +9,7 @@
  */
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { OngoingOverlay } from '@weasel-js/routing';
+import { boundsOfPath, regularPolygonPath, starPath, type Path } from '@weasel-js/geom';
 
 type Point = { x: number; y: number };
 
@@ -66,16 +67,12 @@ export function insertPreviewExtent(ov: InsertPreviewLike): InsertPreviewExtent 
       }>;
       const center = e.center ?? { x: b.x + b.width / 2, y: b.y + b.height / 2 };
       const radius = e.radius ?? Math.min(b.width, b.height) / 2;
+      const sides = Math.max(3, Math.floor(e.sides ?? 6));
+      const rotation = e.rotation ?? 0;
       return {
         shape: ov.shape,
-        bounds: radialBox(center, radius),
-        geometry: {
-          kind: 'polygon',
-          center,
-          radius,
-          sides: Math.max(3, Math.floor(e.sides ?? 6)),
-          rotation: e.rotation ?? 0,
-        },
+        bounds: boxOf(regularPolygonPath(center, radius, sides, rotation)),
+        geometry: { kind: 'polygon', center, radius, sides, rotation },
       };
     }
     case 'star': {
@@ -85,17 +82,13 @@ export function insertPreviewExtent(ov: InsertPreviewLike): InsertPreviewExtent 
       }>;
       const center = e.center ?? { x: b.x + b.width / 2, y: b.y + b.height / 2 };
       const outerRadius = e.outerRadius ?? Math.min(b.width, b.height) / 2;
+      const innerRadius = outerRadius * (e.innerRadiusRatio ?? 0.5);
+      const points = Math.max(3, Math.floor(e.points ?? 5));
+      const rotation = e.rotation ?? 0;
       return {
         shape: ov.shape,
-        bounds: radialBox(center, outerRadius),
-        geometry: {
-          kind: 'star',
-          center,
-          outerRadius,
-          innerRadius: outerRadius * (e.innerRadiusRatio ?? 0.5),
-          points: Math.max(3, Math.floor(e.points ?? 5)),
-          rotation: e.rotation ?? 0,
-        },
+        bounds: boxOf(starPath(center, outerRadius, points, innerRadius, rotation)),
+        geometry: { kind: 'star', center, outerRadius, innerRadius, points, rotation },
       };
     }
     case 'pencil': {
@@ -112,9 +105,10 @@ export function insertPreviewExtent(ov: InsertPreviewLike): InsertPreviewExtent 
   }
 }
 
-/** A radial shape's extent is its circumscribed square, not the drag rect. */
-function radialBox(center: Point, radius: number): Bounds {
-  return { x: center.x - radius, y: center.y - radius, width: radius * 2, height: radius * 2 };
+/** A radial shape's extent is the box of the shape it makes, as the commit stores it. */
+function boxOf(path: Path): Bounds {
+  const { x, y, width, height } = boundsOfPath(path);
+  return { x, y, width, height };
 }
 
 function aabbOf(pts: ReadonlyArray<Point>): Bounds | null {

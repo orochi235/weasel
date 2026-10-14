@@ -25,6 +25,7 @@ import {
   type PolygonPath,
 } from '@weasel-js/geom';
 import { insertPreviewExtent } from '../insertPreviewExtent';
+import type { ShapeGenerator } from 'features/paths/shapeGenerator';
 import type { Stroke, Fill } from '@weasel-js/paint';
 import { cycleFill, solid, strokeOf } from '../../util/paint';
 
@@ -143,12 +144,19 @@ export function useInsertDepSource(
           case 'polygon':
             data = {
               path: regularPolygonPath(geom.center, geom.radius, geom.sides, geom.rotation),
+              generator: { kind: 'polygon', sides: geom.sides, rotation: geom.rotation } satisfies ShapeGenerator,
               ...painted(),
             };
             break;
           case 'star':
             data = {
               path: starPath(geom.center, geom.outerRadius, geom.points, geom.innerRadius, geom.rotation),
+              generator: {
+                kind: 'star',
+                points: geom.points,
+                innerRadiusRatio: geom.outerRadius === 0 ? 0.5 : geom.innerRadius / geom.outerRadius,
+                rotation: geom.rotation,
+              } satisfies ShapeGenerator,
               ...painted(),
             };
             break;

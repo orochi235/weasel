@@ -18,6 +18,15 @@ export interface NodePropertiesEntry {
   name: string;
   /** Property schema for this kind. */
   schema: PrefSection;
+  /**
+   * What a property write stores, given the node as the write left it and as
+   * it was: lets a kind keep fields derived from the one written in step
+   * with it, in the same undo step. Unset, the write is stored as made.
+   */
+  settle?(
+    next: { pose: unknown; data: unknown },
+    prev: { pose: unknown; data: unknown },
+  ): { pose: unknown; data: unknown };
 }
 
 /**
