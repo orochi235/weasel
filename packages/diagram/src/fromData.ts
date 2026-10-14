@@ -8,7 +8,7 @@
  */
 import type { AddNodeSpec, MarkerRef, RectPose, Stroke } from '@weasel-js/core';
 import { DEFAULT_GROUP_INSET, expandGroupEdges } from './cluster';
-import { groupSpecs, resolveGroups } from './dataGroups';
+import { groupBoxes, groupSpecs, resolveGroups } from './dataGroups';
 import { buildBody, measureBody, sizeToBody, type BodySpec, type MeasureRowText, type Row, type RowTextStyle } from './body';
 import { EDGE_DERIVE_PATH, type DiagramEdge } from './edge';
 import { force } from './force';
@@ -16,8 +16,9 @@ import type { Graph, GraphEdge, GraphGroup, GraphNode } from './graph';
 import type { DiagramAnchor } from './group';
 import { LABEL_DERIVE_POSE, type DiagramLabel } from './label';
 import { layered } from './layered';
-import type { LayoutFn, LayoutOptions } from './layout';
+import { DEFAULT_NODE_GAP, type LayoutFn, type LayoutOptions } from './layout';
 import type { Outline } from './outline';
+import { layeredRoutes, type LayeredRoute } from './route';
 import { tree } from './tree';
 import type { DiagramNode, PortSpec } from './types';
 import type { Vec2 } from '@weasel-js/core/math';
@@ -257,6 +258,7 @@ export function diagramScene(data: DiagramData, opts: DiagramSceneOptions = {}):
     id: g.group.id,
     members: g.members,
     inset: g.inset,
+    ...(g.minWidth !== undefined ? { minWidth: g.minWidth } : {}),
     ...(g.parent !== undefined ? { parent: g.parent } : {}),
   }));
   const seedOf = new Map(seeds.map((n) => [n.id, n]));
@@ -274,7 +276,8 @@ export function diagramScene(data: DiagramData, opts: DiagramSceneOptions = {}):
   const layout = typeof opts.layout === 'function' ? opts.layout
     : opts.layout === 'none' ? null
     : LAYOUTS[opts.layout ?? 'layered'];
-  const moved = layout === null ? new Map() : layout(graph, { order: 'barycenter', ...opts.layoutOptions });
+  const layoutOptions: LayoutOptions = { order: 'barycenter', ...opts.layoutOptions };
+  const moved = layout === null ? new Map() : layout(graph, layoutOptions);
 
   const specs: DiagramSpec[] = [];
   const placedAt = new Map(data.nodes.map((n, i) => {
@@ -282,8 +285,20 @@ export function diagramScene(data: DiagramData, opts: DiagramSceneOptions = {}):
     const at = moved.get(n.id) ?? seed;
     return [n.id, { x: at.x, y: at.y, width: seed.width, height: seed.height }];
   }));
+  const boxes = groupBoxes(groups, placedAt);
+  const routes = layout === layered
+    ? layeredRoutes({
+        graph,
+        edges: edges.map((e) => ({ id: edgeIdOf(e), from: e.from, to: e.to })),
+        boxes: new Map([...placedAt, ...boxes]),
+        members: new Map(groups.map((g) => [g.group.id, g.members])),
+        compass: new Set([...data.nodes.filter((n) => n.ports === undefined).map((n) => n.id), ...boxes.keys()]),
+        clearance: (layoutOptions.nodeGap ?? DEFAULT_NODE_GAP) / 2,
+        ...(layoutOptions.direction ? { direction: layoutOptions.direction } : {}),
+      })
+    : new Map<string, LayeredRoute>();
   // Behind every node, so a box never paints over what it holds.
-  specs.push(...groupSpecs(groups, placedAt, (g) => ({
+  specs.push(...groupSpecs(groups, boxes, (g) => ({
     style: opts.groupStyle?.(g) ?? GROUP,
     text: styleOf(titleStyle),
   })));
@@ -321,6 +336,10 @@ export function diagramScene(data: DiagramData, opts: DiagramSceneOptions = {}):
 
   for (const e of edges) {
     const id = edgeIdOf(e);
+    const route = routes.get(id);
+    const fromPort = e.fromPort ?? route?.fromPort;
+    const toPort = e.toPort ?? route?.toPort;
+    const waypoints = e.waypoints ?? route?.waypoints;
     const style = opts.edgeStyle?.(e) ?? EDGE;
     const markerStart = style.markerStart ?? null;
     const markerEnd = style.markerEnd === undefined ? 'arrow' : style.markerEnd;
@@ -332,10 +351,10 @@ export function diagramScene(data: DiagramData, opts: DiagramSceneOptions = {}):
       pose: { x: 0, y: 0, width: 0, height: 0 },
       data: {
         diagram: {
-          from: e.fromPort ? { port: e.fromPort } : {},
-          to: e.toPort ? { port: e.toPort } : {},
+          from: fromPort ? { port: fromPort } : {},
+          to: toPort ? { port: toPort } : {},
           router: e.router ?? opts.router ?? 'bezier',
-          ...(e.waypoints ? { waypoints: e.waypoints } : {}),
+          ...(waypoints ? { waypoints } : {}),
         },
         stroke: {
           paint: { color: style.stroke },

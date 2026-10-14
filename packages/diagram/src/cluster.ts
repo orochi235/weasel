@@ -230,11 +230,16 @@ export function packClusters(
     const byRow = itemsByRow(span, span.children);
     const childAt = new Map<Span, number>(span.children.map((c) => [c, 0]));
     const { nodeAt, ends } = settle(byRow, childAt, () => 0, 0);
-    const block: Block = { width: Math.max(0, ...ends), nodeAt, childAt };
+    const content = Math.max(0, ...ends);
+    const inset = insets.get(span)!;
+    // A label only runs along world x, so only a vertical layout has to widen for it.
+    const floor = axes.cross === 'x' ? (span.group.minWidth ?? 0) - inset.crossLo - inset.crossHi : 0;
+    const block: Block = { width: Math.max(content, floor), nodeAt, childAt };
+    const slack = (block.width - content) / 2;
+    for (const [child, local] of childAt) childAt.set(child, local + slack);
     // A rank no nested column passes through is free to sit in the middle.
     byRow.forEach((items, r) => {
-      if (items.some((item) => item.kind === 'group')) return;
-      const shift = (block.width - ends[r]!) / 2;
+      const shift = items.some((item) => item.kind === 'group') ? slack : (block.width - ends[r]!) / 2;
       for (const item of items) {
         if (item.kind === 'node') nodeAt.set(item.node.id, nodeAt.get(item.node.id)! + shift);
       }

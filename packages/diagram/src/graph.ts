@@ -44,6 +44,9 @@ export interface GraphGroup {
   members: readonly string[];
   /** Room the box keeps around what it holds, in world units. */
   inset: GroupInset;
+  /** The narrowest its box may be across the world x axis, which a layout
+   *  leaves room for. */
+  minWidth?: number;
   /** The group this one is directly inside. */
   parent?: string;
 }
@@ -99,7 +102,7 @@ export function buildGraph<TPose>(
   const nodes: GraphNode[] = [];
   const byId = new Map<string, GraphNode>();
   const candidates: GraphEdge[] = [];
-  const groupNodes: { id: string; members: readonly string[]; inset: GroupInset }[] = [];
+  const groupNodes: { id: string; members: readonly string[]; inset: GroupInset; minWidth?: number }[] = [];
 
   for (const { node, pose } of source()) {
     if (diagramEdgeOf(node) !== null) {
@@ -117,6 +120,7 @@ export function buildGraph<TPose>(
         id: node.id,
         members: Array.isArray(deps) ? deps : [],
         inset: insetOf(trait.group.inset),
+        ...(trait.group.minWidth !== undefined ? { minWidth: trait.group.minWidth } : {}),
       });
       continue;
     }
@@ -129,7 +133,7 @@ export function buildGraph<TPose>(
     byId.set(entry.id, entry);
   }
 
-  const insets = new Map(groupNodes.map((g) => [g.id, g.inset]));
+  const declared = new Map(groupNodes.map((g) => [g.id, g]));
   const live: GraphGroup[] = nestGroups(groupNodes, (id) => byId.has(id)).map((g) => {
     for (const id of g.direct) {
       const node = byId.get(id);
@@ -138,7 +142,8 @@ export function buildGraph<TPose>(
     return {
       id: g.id,
       members: g.members,
-      inset: insets.get(g.id)!,
+      inset: declared.get(g.id)!.inset,
+      ...(declared.get(g.id)!.minWidth !== undefined ? { minWidth: declared.get(g.id)!.minWidth } : {}),
       ...(g.parent !== undefined ? { parent: g.parent } : {}),
     };
   });
