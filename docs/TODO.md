@@ -714,18 +714,12 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   list or a map as one row (`slotOf` in `schemaTree.ts`), so a field of its item has no row to
   select and its `{ from: 'item' }` condition no editor.
 
-- **(P3) What `over` does not reach yet.** Every surface takes the schema its aliases point
-  into, and its own conditions may read, as `over`. Left: (1) A condition that reads a setting
-  of `over` takes that leaf's default only where the surface takes its own leaves': a `Bar`
-  reads `values` alone and a `SelectionPanel` only an `absentIsDefault` leaf's. Whether `over`'s
-  default should stand in there is not decided. (2) `PrefSchemaEditor`'s preview of a properties
-  layout seeds its one node from the layout's own leaves and writes only under `pose` and
-  `data`, so a row aliased into a dialog's schema draws unset and an edit to it goes nowhere.
-  (3) A lab resolves its instrument's config schema with no `over` (`useConfigSchema`), so that schema
-  cannot alias into another schema or hold a condition on its setting. Every surface reads `over`'s
-  values from the config it is handed, and a trial's config holds its instrument's alone: where a
-  lab keeps another schema's values (each trial's config, the lab's store, or the app's) is not
-  decided, and the instrument's `render` would need them too.
+- **(P3) A lab's config schema takes no `over`.** A lab resolves its instrument's config schema
+  with none (`useConfigSchema`), so that schema cannot alias into another schema or hold a
+  condition on its setting. Every surface reads `over`'s values from the config it is handed, and
+  a trial's config holds its instrument's alone: where a lab keeps another schema's values (each
+  trial's config, the lab's store, or the app's) is not decided, and the instrument's `render`
+  would need them too.
 
 - **(P3) What a bar does not do yet.** `ActionBar` is not built on `Bar`: its `icons` prop
   overrides an entry's icon with a `ReactNode`, which a leaf, being data, cannot carry, so it needs

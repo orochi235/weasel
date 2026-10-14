@@ -48,7 +48,9 @@ export interface SelectionPanelProps<TData, TLayer extends string, TPose> extend
    * its own. A `PrefGroup`'s keys are steps of the node path (`data`, then
    * `fill`); a `PrefSection`'s leaf keys are whole node paths. A condition
    * of a kind's own schema may read a setting of that one too: a path no
-   * leaf of the kind holds is read there.
+   * leaf of the kind holds is read there, as the panel reads a leaf of its
+   * own: a node holding nothing at the path reads as the leaf's default
+   * only where the leaf is `absentIsDefault`.
    */
   over?: PrefGroup | PrefSection;
   /** Kind → header label. Default: capitalized kind name. */
