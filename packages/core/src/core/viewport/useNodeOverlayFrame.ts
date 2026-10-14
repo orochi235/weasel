@@ -10,7 +10,7 @@
  * in its box by definition.
  */
 import { useCallback, useInsertionEffect, useRef, type RefObject } from 'react';
-import { applyToPoint, invert, multiply, poseFrameOf, type Mat3 } from '@weasel-js/geom';
+import { applyToPoint, invert, multiply, poseFrameOf, type Affine } from '@weasel-js/geom';
 import type { Node, RectPose, Scene } from '../scene/types';
 import { useCanvasSize } from './useCanvasSize';
 import type { View } from './view';
@@ -72,7 +72,7 @@ export function useNodeOverlayFrame<TData, TLayer extends string, TPose extends 
   const { width, height } = useCanvasSize(containerRef);
   const { view, compose } = options;
 
-  const project = useCallback((): Mat3 | null => {
+  const project = useCallback((): Affine | null => {
     const box = worldBoxOf(scene, nodeId, compose);
     if (!box) return null;
     const frame = poseFrameOf(box);
@@ -87,7 +87,7 @@ export function useNodeOverlayFrame<TData, TLayer extends string, TPose extends 
     return { x, y };
   }, [project]);
 
-  const lastInverse = useRef<Mat3 | null>(null);
+  const lastInverse = useRef<Affine | null>(null);
 
   const toLocal = useCallback((p: OverlayPoint): OverlayPoint => {
     const m = project();
@@ -131,7 +131,7 @@ function worldBoxOf<TData, TLayer extends string, TPose extends RectPose>(
 }
 
 /** World → overlay pixels: `screen = (world − view) × view.scale`. */
-function viewMatrix(view: View | undefined): Mat3 {
+function viewMatrix(view: View | undefined): Affine {
   if (!view) return [1, 0, 0, 1, 0, 0];
   const { x: sx, y: sy } = view.scale;
   return [sx, 0, 0, sy, -view.x * sx, -view.y * sy];

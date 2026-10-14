@@ -44,7 +44,7 @@ function axes(v: TilePeriod | TileBleed | undefined, fallback: number): Axes {
   return { x: v.x ?? fallback, y: v.y ?? fallback };
 }
 
-/** Column-major, the layout `Mat3` documents. */
+/** Column-major, the layout `GlMat3` documents. */
 function translate(tx: number, ty: number): Float64Array {
   return new Float64Array([1, 0, 0, 0, 1, 0, tx, ty, 1]);
 }

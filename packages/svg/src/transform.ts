@@ -9,7 +9,7 @@ import type { Matrix } from './types';
 import { IDENTITY_MATRIX } from './types';
 
 /** Compose two 2x3 affines, `a` then `b` applied to a column vector. The
- *  kernel's own composition — `Matrix` is `Mat3`, so nothing converts. */
+ *  kernel's own composition — `Matrix` is `Affine`, so nothing converts. */
 export { multiply };
 
 /** Apply a 2x3 affine to a 2D point. The `{x, y}` spelling the rest of this

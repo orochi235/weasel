@@ -12,7 +12,7 @@ import {
 } from '@weasel-js/font';
 import {
   PATH_L, PATH_M, PATH_Z, pathFromD, pathSignedArea, poseFrameOf, reversePath,
-  transformPath, type Mat3, type PathInWorldPose, type PolygonPath,
+  transformPath, type Affine, type PathInWorldPose, type PolygonPath,
 } from '@weasel-js/geom';
 import { lineDecorations } from './layout/decorationMetrics';
 import { layoutRuns } from './layout/layoutRuns';
@@ -243,7 +243,7 @@ function walkOutlines(
       const s = g.fontSize;
       const shear = g.resolved.synthetic.italic ? Math.tan(SYNTHETIC_ITALIC_RADIANS) : 0;
       // The renderer's placement (`mergeGlyphMeshes`): x = pen + (ex - ey·shear)·s.
-      const m: Mat3 = [s, 0, -shear * s, s, g.x + dx, g.baselineY + dy];
+      const m: Affine = [s, 0, -shear * s, s, g.x + dx, g.baselineY + dy];
       parts[paintOf[g.run]]!.push(transformPath(emGlyph(d), m) as PolygonPath);
     }
     for (const r of lineDecorations(line.glyphs, runs, faceOf, (run) => String(paintOf[run]))) {

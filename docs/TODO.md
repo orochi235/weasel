@@ -333,11 +333,6 @@ Priority tags:
 
 ## Scene, adapters & layout
 
-- **(P3) geom's `Mat3` and `mat3` are different matrices.** `Mat3` and the free functions beside
-  it (`identity`, `multiply`, `invert`) are the six-number affine; `mat3` and `GlMat3` are the
-  nine-element column-major matrix a GL uniform takes. Both are exported from `@weasel-js/geom`'s
-  root, a capital letter apart.
-
 - **(P3) A direct scene call made while a journal is open lands on the scene's own stack.**
   `scene.applyBatch` goes to the open journal; `scene.setPose` and its siblings, `scene.batch`, and
   `scene.history.apply` do not, so a mode that mixes the two splits its edits across two stacks.

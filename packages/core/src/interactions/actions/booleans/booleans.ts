@@ -3,7 +3,7 @@
  * selection into z-ordered paths, runs the chosen op, and dispatches a
  * single batch of `Op`s (delete sources + insert results + set selection).
  */
-import type { Mat3, Path } from '@weasel-js/geom';
+import type { Affine, Path } from '@weasel-js/geom';
 import { createInsertOp } from 'core/ops/create';
 import { createDeleteOp } from 'core/ops/delete';
 import { createSetSelectionOp } from 'core/ops/select';
@@ -54,7 +54,7 @@ export interface BooleansAdapter {
    * node drawn straight. A counted world-width stroke is skewed and stretched
    * with it. Without it every stroke is outlined in world.
    */
-  getStrokeFrame?(id: NodeId): Mat3 | null | undefined;
+  getStrokeFrame?(id: NodeId): Affine | null | undefined;
   compareZ(a: NodeId, b: NodeId): number;
   /**
    * Mint a new node from a boolean-op result `Path`. `producedBy` names the

@@ -5,7 +5,7 @@
 import { describe, it, expect } from 'vitest';
 import { cubicBounds, cubicEvalAt, elevateQuadraticToCubic } from './curve';
 import { flattenCubic } from './flatten';
-import { identity, invert, multiply, applyToPoint, rotateAboutPoint, boxToBox, type Mat3 } from './mat3';
+import { identity, invert, multiply, applyToPoint, rotateAboutPoint, boxToBox, type Affine } from './affine';
 import { approxEq } from './scalar';
 import { boundsOfCoords, boxContainsPoint } from './box';
 import { transformCoords } from './affine';
@@ -98,11 +98,11 @@ describe('elevateQuadraticToCubic', () => {
   });
 });
 
-describe('mat3', () => {
+describe('affine', () => {
   it('m · invert(m) is the identity', () => {
     const r = rng(6);
     for (let i = 0; i < RUNS; i++) {
-      const m: Mat3 = [
+      const m: Affine = [
         (r() - 0.5) * 20, (r() - 0.5) * 20,
         (r() - 0.5) * 20, (r() - 0.5) * 20,
         (r() - 0.5) * 2000, (r() - 0.5) * 2000,
@@ -144,7 +144,7 @@ describe('mat3', () => {
     const r = rng(9);
     for (let i = 0; i < RUNS; i++) {
       const c = () => (r() - 0.5) * 20;
-      const m: Mat3 = [c(), c(), c(), c(), c(), c()];
+      const m: Affine = [c(), c(), c(), c(), c(), c()];
       const coords = Array.from({ length: 10 }, () => (r() - 0.5) * 2000);
       const out = transformCoords(coords, m);
       for (let k = 0; k < coords.length; k += 2) {

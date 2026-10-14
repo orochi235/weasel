@@ -162,7 +162,7 @@ function baseDeps(scene: StubScene, id: string) {
     // asymmetric shape's contents mirror under flip-x (a bare-AABB pose flip
     // is identity).
     geometryProjection: {
-      transform: (node: { data: unknown }, m: import('@weasel-js/geom').Mat3) => {
+      transform: (node: { data: unknown }, m: import('@weasel-js/geom').Affine) => {
         const data = node.data as { path: Path } | undefined;
         if (!data || !data.path) return null;
         return { ...data, path: transformPath(data.path, m) };

@@ -6,7 +6,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { strokeHitTest } from './pathHitTest';
-import { multiply, rotate, scale, type Mat3 } from './mat3';
+import { multiply, rotate, scale, type Affine } from './affine';
 import type { Path } from './path';
 import { PATH_L, PATH_M } from './commands';
 
@@ -46,7 +46,7 @@ describe('strokeHitTest — screen slop', () => {
     const p = line(-5, -3, 7, 4);
     const r = 1.5;
     const px = 6;
-    const m: Mat3 = multiply(rotate(0.7), scale(3, 0.8));
+    const m: Affine = multiply(rotate(0.7), scale(3, 0.8));
     const lin = (x: number, y: number) => [m[0] * x + m[2] * y, m[1] * x + m[3] * y];
     // Screen distance from (x, y) to the band, sampled densely.
     const bruteDist = (x: number, y: number): number => {

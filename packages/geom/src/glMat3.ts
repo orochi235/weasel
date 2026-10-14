@@ -9,7 +9,7 @@
  *    tx,  ty,  1]
  */
 
-import { invert as invertAffine, type Mat3 as Affine } from './mat3';
+import { invert as invertAffine, type Affine } from './affine';
 
 /**
  * A 2D affine transform as a column-major 9-element array, laid out as above.
@@ -131,7 +131,7 @@ function minScaleOf(m: GlMat3): number {
 
 /** The renderer's 3x3 matrix operations, as one namespace. These work on the
  *  9-element form the GL uniform upload wants — distinct from the 6-element
- *  affine `Mat3`, though the logical element order is the same. */
+ *  `Affine`, though the logical element order is the same. */
 export const mat3 = {
   identity,
   toAffine,

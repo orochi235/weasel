@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { identity, translate, scale, rotate, multiply, invert, applyToPoint, boxToBox } from './mat3';
+import { identity, translate, scale, rotate, multiply, invert, applyToPoint, boxToBox } from './affine';
 import { approxEq } from './scalar';
 
 const closePt = (got: [number, number], ex: [number, number]) => {
@@ -7,7 +7,7 @@ const closePt = (got: [number, number], ex: [number, number]) => {
   expect(approxEq(got[1], ex[1])).toBe(true);
 };
 
-describe('mat3', () => {
+describe('affine', () => {
   it('identity maps a point to itself', () => {
     closePt(applyToPoint(identity(), 3, 7), [3, 7]);
   });
