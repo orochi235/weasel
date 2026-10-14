@@ -93,6 +93,12 @@ export interface UseSceneTextEditOptions<TData> {
   escape?: 'cancel' | 'commit';
   /** Forwarded to `useTextEdit`: how long an edit waits for its face. */
   fontHold?: number;
+  /** Forwarded to `useTextEdit`: called as an edit of the node `id` opens,
+   *  whichever way it was started. */
+  onStart?: (id: string) => void;
+  /** Forwarded to `useTextEdit`: called as the edit of `id` closes, after
+   *  any commit has been written to the scene. */
+  onEnd?: (id: string) => void;
 }
 
 function resolveView(view: View | (() => View) | undefined): View | undefined {
@@ -110,6 +116,22 @@ export interface UseSceneTextEditReturn extends UseTextEditReturn {
   /** The `isText` option asked of the node with this id: what
    *  `TextEditDep.isTextNode` wants, so both ways into an edit agree. */
   isTextNode: (id: string) => boolean;
+}
+
+/** How each field is read from a node's `data`: the option's projection, else the default shape. */
+function projectionsOf<TData extends DefaultTextData>(opts: { readonly current: UseSceneTextEditOptions<TData> }) {
+  return {
+    isText: (data: TData): boolean =>
+      opts.current.isText ? opts.current.isText(data) : isTextData(data),
+    text: (data: TData): string =>
+      opts.current.getText ? opts.current.getText(data) : (data.text ?? ''),
+    style: (data: TData): TextStyle | undefined =>
+      opts.current.getStyle ? opts.current.getStyle(data) : data.style,
+    runs: (data: TData): readonly StyledRun[] | undefined =>
+      opts.current.getRuns ? opts.current.getRuns(data) : data.runs,
+    verticalAlign: (data: TData): TextVerticalAlign | undefined =>
+      opts.current.getVerticalAlign ? opts.current.getVerticalAlign(data) : data.verticalAlign,
+  };
 }
 
 /** Wire double-click-to-edit text on a scene: mounts a DOM editing overlay
@@ -151,24 +173,15 @@ export function useSceneTextEdit<
     };
   };
 
-  const read = useMemo(() => ({
-    isText: (data: TData): boolean =>
-      optsRef.current.isText ? optsRef.current.isText(data) : isTextData(data),
-    text: (data: TData): string =>
-      optsRef.current.getText ? optsRef.current.getText(data) : (data.text ?? ''),
-    style: (data: TData): TextStyle | undefined =>
-      optsRef.current.getStyle ? optsRef.current.getStyle(data) : data.style,
-    runs: (data: TData): readonly StyledRun[] | undefined =>
-      optsRef.current.getRuns ? optsRef.current.getRuns(data) : data.runs,
-    verticalAlign: (data: TData): TextVerticalAlign | undefined =>
-      optsRef.current.getVerticalAlign ? optsRef.current.getVerticalAlign(data) : data.verticalAlign,
-  }), [optsRef]);
+  const read = useMemo(() => projectionsOf(optsRef), [optsRef]);
 
   const edit = useTextEdit({
     container,
     isEditorChrome: (el) => optsRef.current.isEditorChrome?.(el) ?? false,
     escape: options.escape,
     fontHold: options.fontHold,
+    onStart: (id) => optsRef.current.onStart?.(id),
+    onEnd: (id) => optsRef.current.onEnd?.(id),
     getText: (id) => {
       const node = sceneRef.current.get(asNodeId(id));
       return node ? read.text(node.data) : '';

@@ -780,18 +780,15 @@ only story runner in the repo.
   demos that exercise a package shown from its pages. Rendering TypeDoc's JSON output inside the
   site's own shell is the route that puts all four in one place.
 
-- **(P3) SVG export writes wrapped text as one line.** `data-weasel-wrap` round-trips
+- **(P3) SVG export writes wrapped text unwrapped.** `data-weasel-wrap` round-trips
   `TextStyle.wrap` for weasel's own reader, but SVG `<text>` never wraps, so any other reader draws
-  a wrapped node as its unbroken lines. Exporting the laid-out lines needs fonts at serialize time,
-  which `@weasel-js/svg` does not have. A justified node is written at its start edge with
+  a wrapped node as one line per hard break. Exporting the laid-out lines needs fonts at serialize
+  time, which `@weasel-js/svg` does not have. A justified node is written at its start edge with
   `data-weasel-align="justify"` for the same reason: once lines are exported, its wrapped lines
-  need per-word `x` placement too, since `text-anchor` has no justify. A hard line break is one
-  line too, and that half needs no fonts: `textXml` (`serialize.ts`) writes a `\n` as a literal
-  newline under `xml:space="preserve"`, which SVG draws as a space (by the spec; not checked in a
-  browser), where the importer already reads a `<tspan x dy>` per line (`LineTracker`). Undecided:
-  browsers ignore an empty `<tspan dy>`, so a blank line either folds into the next line's `dy`
-  and reads back as an uneven pitch, or is lost; and a styled run spanning a break comes back as
-  two runs.
+  need per-word `x` placement too, since `text-anchor` has no justify. The hard-break lines are
+  pitched at the node's font size times its line height (`linesXml` in `tspanLines.ts`), which is
+  where the layout puts them only when no run on the line is larger; a line holding a larger run
+  needs the same fonts. How a browser draws the `<tspan x dy>` lines has not been looked at in one.
 
 - **(P3) The animation wrappers have no canvas seat.** `animateOnSetPose` and `animateLifecycle`
   wrap an adapter the caller holds. `<SceneCanvas>` builds its own and takes neither, so nothing a
@@ -801,32 +798,17 @@ only story runner in the repo.
   `canvas/sceneAdapter.ts`, which hands each op the adapter it was called on; not run), so the
   seat has to say which of those glide. It would still miss a button's `scene.setPose`, which
   reaches no adapter: animating that needs the scene to report the write, as `onReflow` reports
-  a settle.
+  a settle. `<SceneCanvas reflowTransition>` is that shape for layout writes already: the scene
+  hands `useLayoutDepSource` each move with the pose it left, and the transition glides what is
+  shown from there through a pose override, writing nothing. A removal cannot follow it, since
+  the node is gone by the time a report arrives.
 
-- **(P3) draw: two owners for "is a text edit open".** The kit's `useSceneTextEdit` holds
-  `editingId`; the app's mode machine (`apps/draw/src/modality/machine.ts`) holds a `text-edit` mode
-  that says the same thing. Two effects with `prev` refs in `apps/draw/src/useTextEditSession.ts` reconcile
-  them in each direction, and their comments record two shipped bugs from the split. Text cannot take the
-  shape path editing has (`<SceneCanvas pathEdit>` reading the open path from the machine,
-  `modality/pathEditHost.ts`) as it stands, because the session is real state inside the hook (the
-  overlay, the caret, the pending commit): the hook needs an `onEnd` for the ends it decides itself
-  (click-away, the node going away), and its `onDoubleClick` has to hand the hit and the caret seed
-  to the machine instead of starting the edit. A double-click on a path is still acted on by both
-  the kit's `enterPathEdit` binding and the app's `onDoubleClick` observer; they reach the same
-  machine call and the second is a no-op. `apps/draw/src/App.browser.test.tsx` drives both modes
-  through the machine in a browser, and fails when either effect is removed.
-
-  The two states can also disagree outright: the text tool's `enterTextEdit` binding and a newly
-  inserted text node both start an edit through the `textEdit` dep, which never enters the mode,
-  so an edit is open while the machine says `normal` (read from `TextEditDepPublisher.tsx`, not
-  driven in a browser).
-
-  Not ruled, and it is one question with "Nothing reads a mode's `entry.trigger`" under Tools:
-  which side owns the open edit? Either `useSceneTextEdit` takes a host the way the canvas takes
-  `pathEdit` (`editingId()` and `setEditingId(id, { caret })`, so every way in enters the mode and
-  every end leaves it, and the kit binds `'double-click-target'` once for paths, groups, and text,
-  which needs a mode definition to say which hits it takes), or the hook stays the owner and
-  reports `onStart` / `onEnd`, with the mode following it and the trigger staying unread.
+- **(P3) draw: a double-click on a path is acted on twice.** The kit's `enterPathEdit` binding
+  and the app's `onDoubleClick` observer (`apps/draw/src/modality/doubleClickEntry.ts`) both take
+  it; they reach the same machine call and the second is a no-op. Text has one way in: the edit
+  owns its mode, which `useTextEditSession` enters and leaves from the hook's `onStart` and
+  `onEnd`, so `text-edit`'s `entry.trigger` stays unread ("Nothing reads a mode's
+  `entry.trigger`" under Tools).
 
 ---
 

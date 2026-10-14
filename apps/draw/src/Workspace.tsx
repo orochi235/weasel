@@ -117,9 +117,6 @@ export function Workspace(props: WorkspaceProps): ReactElement {
   const soleSelectedId = selectedIds.length === 1 ? selectedIds[0] : null;
 
   return (
-    // A double-click into text does two things from different places: `onDoubleClick` on
-    // SceneCanvas drives the modality machine into `text-edit`, while the kit's handler here
-    // starts the edit session that mounts the contenteditable overlay.
     <div
       className="wd-canvas-host"
       ref={hostRef}

@@ -155,9 +155,10 @@ function decodePathToolAndParams(
 /** Lower one WeaselDraw object to an SvgNode for serialization. */
 export function objToSvgNode(o: Obj): SvgNode {
   if (o.tool === 'text') {
-    // weasel-svg does not model `lineHeight` (it has no clean SVG-native
-    // attribute), so it rides in the namespaced meta bag as `wd:line-height`.
-    const { lineHeight, ...style } = o.style ?? {};
+    // weasel-svg states `lineHeight` only as the pitch between lines, so one
+    // line would lose it: it also rides in the meta bag as `wd:line-height`.
+    const style = o.style ?? {};
+    const lineHeight = style.lineHeight;
     const node = svgLeafFromKit({
       text: o.text,
       ...(Object.keys(style).length > 0 ? { style: style as TextStyle } : {}),

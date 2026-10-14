@@ -423,8 +423,8 @@ describe('text style round-trip via the bridge', () => {
     const node = objToSvgNode(text as never);
     expect(node.kind).toBe('text');
     if (node.kind !== 'text') throw new Error('expected text');
-    // lineHeight rides in meta, not style.
-    expect(node.style?.lineHeight).toBeUndefined();
+    // The style's copy pitches the exported lines; meta carries it for a single line.
+    expect(node.style?.lineHeight).toBe(1.4);
     expect(node.meta?.wd?.attrs?.['line-height']).toBe('1.4');
 
     const back = leavesOf([node], ids());
@@ -449,7 +449,7 @@ describe('text style round-trip via the bridge', () => {
 });
 
 describe('objToSvgNode — coverage gaps', () => {
-  it('passes the TextStyle through verbatim (no field stripping besides lineHeight)', () => {
+  it('passes the TextStyle through verbatim', () => {
     const text = {
       id: 'x', tool: 'text' as const,
       x: 0, y: 0, width: 100, height: 20, text: 'Hi',

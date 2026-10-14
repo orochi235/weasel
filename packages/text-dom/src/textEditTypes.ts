@@ -162,6 +162,14 @@ export interface UseTextEditOptions {
   /** What Escape does to the edit: `'cancel'` (the default) drops it,
    *  `'commit'` keeps the text as Enter would. */
   escape?: 'cancel' | 'commit';
+  /** Called as an edit of `id` opens, from the call that opens it. */
+  onStart?: (id: string) => void;
+  /**
+   * Called as the edit of `id` closes, however it does: a commit, a cancel,
+   * a click away, or another edit opening over it. A commit has been written
+   * by then. Not called when the hook unmounts with an edit open.
+   */
+  onEnd?: (id: string) => void;
   /**
    * How long, in ms, an edit opening waits for the overlay's face before
    * showing the text in the fallback. Defaults to {@link TEXT_EDIT_FONT_HOLD}.
