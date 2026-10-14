@@ -891,6 +891,13 @@ only story runner in the repo.
   is rebuilt, and a node's agent refuses a launch against a tree that lost its stamp only after
   `onto push <node>`.
 
+- **(P3) `Callout.reanchor.browser.test.tsx` heard a window `resize` it did not expect, once.** "a
+  callout follows an anchor rect that only moves, each time, without a resize event on the window"
+  failed in one fleet run on teitou at `80b0a8314`: its `resize` listener was called once. It
+  passed in the six fleet runs before that the same day and passes alone. The listener is on the
+  window every browser test shares, so a resize from anywhere fails it; what resized the window
+  was not found.
+
 - **(P2) Browser tests time out under fleet load, inside a Playwright action.** A click, a key, or
   a screenshot that takes a fraction of a second alone stalls for seconds in a full run on studio,
   teitou, or msb-uai, a different handful of tests each run, and the test hits its 15 s limit or
