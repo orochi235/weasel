@@ -4,8 +4,21 @@
  */
 export { checkPipeline } from './effect/check';
 export type { EffectProblem } from './effect/check';
-export { typeColors } from './effect/draw';
-export type { EffectLook, EffectLookResult, TypeColor } from './effect/draw';
+export {
+  PROBLEM_COLOR,
+  drawableWires,
+  exitLabel,
+  isControl,
+  kindOf,
+  portOn,
+  stageRows,
+  stageStyle,
+  typeColors,
+  uniqueGroups,
+  uniqueStages,
+  wireStyle,
+} from './effect/draw';
+export type { DrawableWire, EffectLook, EffectLookResult, TypeColor } from './effect/draw';
 export { EffectChart } from './effect/EffectChart';
 export type { EffectChartProps } from './effect/EffectChart';
 export { EFFECT_LOOKS } from './effect/looks';

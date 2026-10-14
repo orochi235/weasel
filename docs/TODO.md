@@ -466,8 +466,8 @@ Priority tags:
   its frame is resized.
 - **(P3) Two wires can share an `edgeIdOf`.** Ids containing `.`, `->` or `:` build the same
   edge id from different stages and ports. `diagramScene` keeps the first such edge, while the
-  looks keep one style per id, last one winning (`packages/diagram/src/effect/nodeGraph.ts`,
-  `rack.ts`, `packages/diagram/src/fromData.ts`).
+  looks keep one style per id, last one winning (`sceneStyles` in
+  `packages/diagram/src/effect/draw.ts`, `packages/diagram/src/fromData.ts`).
 
 ---
 

@@ -1,7 +1,6 @@
 /** Which stages a pipeline's main signal runs through, and which decisions on
  *  that run only choose between going on and skipping ahead. */
-import { isControl, kindOf, uniqueStages } from './draw';
-import { drawableWires, type DrawableWire } from './nodeGraph';
+import { drawableWires, isControl, kindOf, uniqueStages, type DrawableWire } from './draw';
 import type { EffectPipeline, EffectStage } from './types';
 
 /** Stage ids of the longest path over data wires, sources first. */

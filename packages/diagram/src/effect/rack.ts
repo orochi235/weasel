@@ -1,15 +1,13 @@
-/**
- * The rack look: the main signal on one straight line with its stages in
- * order, and whatever feeds a stage from the side hung beside it.
- */
-import { edgeIdOf, type DataEdge, type DataNode, type EdgeStyle, type NodeStyle } from '../fromData';
 import type { PortAnchor, PortSpec } from '../types';
-import { isControl, kindOf, portOn, stageStyle, typeColors, uniqueGroups, uniqueStages, wireStyle, type EffectLook } from './draw';
+import {
+  boxNode, drawableWires, exitLabel, isControl, kindOf, portOn, sceneStyles, typeColors, uniqueGroups, uniqueStages,
+  wireEdge, wireStyle, type EffectLook,
+} from './draw';
 import { mainChain, skipDecisions, type Skip } from './mainChain';
-import { drawableWires, exitLabel, stageRows } from './nodeGraph';
 import { branchNode, type BranchChoice } from './symbols';
 import type { EffectPipeline, EffectPort, EffectStage } from './types';
 
+/** Options for the `rack` look. */
 export interface RackOptions {
   /** The stage ids on the line, in order. Default the longest path over data wires. */
   chain?: readonly string[];
@@ -17,9 +15,12 @@ export interface RackOptions {
   side?: 'below' | 'above';
   nodeGap?: number;
   rankGap?: number;
+  /** A color per value type, over the palette's own. */
   colors?: Readonly<Record<string, string>>;
-  /** Default true. */
+  /** Whether a stage lists its `params`. Default true. A decision's symbol
+   *  does not show params either way. */
   showParams?: boolean;
+  /** Default `'auto'`. */
   branch?: BranchChoice;
   /** Draw a decision that only skips ahead as an arc over what it skips. Default true. */
   collapseSkips?: boolean;
@@ -105,6 +106,8 @@ function portsOf(stage: EffectStage, line: Line, wires: readonly RackWire[], nea
   return out;
 }
 
+/** The rack look: the main signal on one straight line with its stages in
+ *  order, and whatever feeds a stage from the side hung beside it. */
 export const rack: EffectLook<RackOptions> = (pipeline, options = {}) => {
   const color = typeColors(pipeline, options.colors);
   const below = options.side !== 'above';
@@ -120,38 +123,26 @@ export const rack: EffectLook<RackOptions> = (pipeline, options = {}) => {
   const line = lineOf(pipeline, chain, wires);
 
   const kept = stages.filter((s) => !gone.has(s.id));
-  const styles = new Map<string, NodeStyle>(kept.map((s) => [s.id, stageStyle(s)]));
-  const nodes = kept.map((stage): DataNode => {
-    const kind = kindOf(stage);
-    if (kind === 'decision') return { id: stage.id, ...branchNode(stage, pipeline, options.branch) };
-    return {
-      id: stage.id,
-      outline: kind === 'stage' ? 'rect' : 'stadium',
-      rows: stageRows(stage, options.showParams !== false, false),
-      ports: portsOf(stage, line, wires, near, far),
-    };
-  });
+  const nodes = kept.map((stage) => (kindOf(stage) === 'decision'
+    ? { id: stage.id, ...branchNode(stage, pipeline, options.branch) }
+    : boxNode(stage, { showParams: options.showParams !== false, rowPorts: false, ports: portsOf(stage, line, wires, near, far) })));
 
   const byId = new Map(kept.map((s) => [s.id, s]));
-  const edgeStyles = new Map<string, EdgeStyle>();
-  const edges = wires.map((wire): DataEdge => {
+  const edges = wires.map((wire) => {
     const to = byId.get(wire.to.stage);
     const sideInput = to !== undefined && kindOf(to) !== 'decision' && !wire.arc
       && wire.to.port !== line.mainIn.get(wire.to.stage) && line.at.has(wire.to.stage);
     const label = wire.label ?? (sideInput ? portOn(to, wire.to.port)?.label ?? wire.to.port : undefined);
-    const edge: DataEdge = {
-      from: wire.from.stage, fromPort: wire.from.port,
-      to: wire.to.stage, toPort: wire.to.port,
-      ...(label !== undefined ? { label } : {}),
+    return {
+      edge: wireEdge(wire.from, wire.to, label),
+      style: wireStyle(color(wire.type), wire.arc === true || isControl(pipeline, wire.type), wire.problem),
     };
-    edgeStyles.set(edgeIdOf(edge), wireStyle(color(wire.type), wire.arc === true || isControl(pipeline, wire.type), wire.problem));
-    return edge;
   });
 
   return {
     data: {
       nodes,
-      edges,
+      edges: edges.map((e) => e.edge),
       groups: uniqueGroups(pipeline).map((g) => ({ ...g, members: g.members.filter((m) => !gone.has(m)) })),
     },
     scene: {
@@ -164,8 +155,7 @@ export const rack: EffectLook<RackOptions> = (pipeline, options = {}) => {
         ...(options.rankGap !== undefined ? { rankGap: options.rankGap } : {}),
       },
       router: 'bezier',
-      nodeStyle: (n) => styles.get(n.id) ?? stageStyle({ id: n.id, title: '' }),
-      edgeStyle: (e) => edgeStyles.get(edgeIdOf(e)) ?? wireStyle(color(undefined), false, false),
+      ...sceneStyles(kept, edges),
     },
     color,
   };

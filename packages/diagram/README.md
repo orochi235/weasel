@@ -325,21 +325,52 @@ A decision stage draws as a branch symbol, chosen by `branch`:
 signal enters on the left; inputs of a `control` type enter at the top, and so
 does the input a `'bar'` tests, when the stage has more than one input.
 
-To write a look, return `{ data, scene, color }`. `typeColors(pipeline,
-colors)` gives the `color` the shipped looks use, and `scene` takes any
-`diagramScene` option:
+To write a look, return `{ data, scene, color }`; `scene` takes any
+`diagramScene` option. The shipped looks are built from these, which are
+exported for yours:
+
+| Helper | Gives |
+| --- | --- |
+| `uniqueStages(pipeline)`, `uniqueGroups(pipeline)` | The stages and the groups with any repeated id dropped, first one kept. `diagramScene` throws on a repeated id, so build nodes and groups from these. |
+| `drawableWires(pipeline)` | The wires whose two stages and two ports exist, each as `{ wire, index, type, problem, fromStage, toStage }`: `type` is the value type it carries, and `problem` is true when `checkPipeline` reported it. |
+| `typeColors(pipeline, colors)` | The `color(type)` the shipped looks use. |
+| `stageStyle(stage)` | A stage's node style: dashed and dim when it is bypassed. |
+| `wireStyle(color, control, problem)` | A wire's edge style: dashed for a control wire, and `PROBLEM_COLOR` for a flagged one. |
+| `isControl(pipeline, type)` | Whether `types` marks a value type as `control`. |
+| `kindOf(stage)` | The stage's `kind`, with any value the shipped looks do not know read as `'stage'`. |
+| `portOn(stage, id)` | The stage's port with that id. |
+| `stageRows(stage, showParams, withPorts)` | Body rows for a stage: its title, a row of its ports, its params. |
+| `exitLabel(wire)` | What to call one of `drawableWires`' wires: its own label, or for a wire leaving a decision the exit's label or id. |
+| `branchNode(stage, pipeline, branch)` | The node a decision draws as. |
 
 ```tsx
-import { typeColors, type EffectLook } from '@weasel-js/diagram/effect';
+import {
+  drawableWires, isControl, stageStyle, typeColors, uniqueGroups, uniqueStages, wireStyle,
+  type EffectLook,
+} from '@weasel-js/diagram/effect';
 
-const column: EffectLook = (pipeline) => ({
-  data: {
-    nodes: pipeline.stages.map((s) => ({ id: s.id, lines: [s.title] })),
-    edges: pipeline.wires.map((w) => ({ from: w.from.stage, to: w.to.stage })),
-  },
-  scene: { layout: 'layered', layoutOptions: { direction: 'down' } },
-  color: typeColors(pipeline),
-});
+const column: EffectLook = (pipeline) => {
+  const color = typeColors(pipeline);
+  const stages = new Map(uniqueStages(pipeline).map((s) => [s.id, s]));
+  const wires = drawableWires(pipeline);
+  return {
+    data: {
+      nodes: [...stages.values()].map((s) => ({ id: s.id, lines: [s.title] })),
+      edges: wires.map((d) => ({ from: d.wire.from.stage, to: d.wire.to.stage })),
+      groups: uniqueGroups(pipeline),
+    },
+    scene: {
+      layout: 'layered',
+      layoutOptions: { direction: 'down' },
+      nodeStyle: (n) => stageStyle(stages.get(n.id)!),
+      edgeStyle: (e) => {
+        const d = wires.find((d) => d.wire.from.stage === e.from && d.wire.to.stage === e.to)!;
+        return wireStyle(color(d.type), isControl(pipeline, d.type), d.problem);
+      },
+    },
+    color,
+  };
+};
 ```
 
 ## Design notes
