@@ -185,8 +185,23 @@ function autoAttrs(leaf: PrefLeaf): KindAttrs {
   return { ...AUTO_FLAGS, ...(value ? { autoValue: value } : {}) };
 }
 
+/** What an action pref's attributes are told of an action the host has registered. */
+export interface RegisteredAction {
+  key: string;
+  label: string;
+  group?: string;
+  shortcut?: string;
+}
+
+/** What the registry says of the action a pref fires, which the pref does not hold and no row edits. */
+function registeredFacts(action: RegisteredAction | undefined): Array<[string, unknown]> {
+  if (!action) return [];
+  const facts: Array<[string, unknown]> = [['registered as', action.label], ['registered group', action.group], ['shortcut', action.shortcut]];
+  return facts.filter(([, value]) => value !== undefined && value !== '');
+}
+
 /** The `action` attribute as a choice among the keys a host has, with the key the pref holds now if it is none of them. */
-function actionChoice(attr: PrefLeaf, actions: ReadonlyArray<{ key: string; label: string }>, held: string | undefined): PrefLeaf {
+function actionChoice(attr: PrefLeaf, actions: readonly RegisteredAction[], held: string | undefined): PrefLeaf {
   const options = actions.map((a) => ({ value: a.key, label: `${a.label} (${a.key})` }));
   if (held !== undefined && held !== '' && !actions.some((a) => a.key === held)) options.unshift({ value: held, label: `${held} (not registered)` });
   return { kind: 'enum', name: attr.name, description: attr.description, default: undefined, clearable: true, options } as PrefLeaf;
@@ -224,7 +239,7 @@ export interface AttributeSchema {
 
 /** Editable attributes, rendered with `PrefsForm` over the node itself as values. */
 export function attributeSchema(
-  node: SchemaNode, custom: CustomKinds = {}, actions?: ReadonlyArray<{ key: string; label: string }>,
+  node: SchemaNode, custom: CustomKinds = {}, actions?: readonly RegisteredAction[],
 ): AttributeSchema {
   if (!isPrefLeaf(node)) {
     const attrs = Object.entries(isPrefSection(node) ? SECTION_ATTRS : GROUP_ATTRS);
@@ -248,6 +263,7 @@ export function attributeSchema(
   // Every leaf carries a `default`, which says nothing of one that holds no value.
   const listed = (k: string): boolean => k !== 'kind' && !SLOTS.has(k) && !undrawn.has(k) && !(k === 'default' && !prefHoldsValue(node));
   const readOnly = typed ? [] : Object.entries(fields).filter(([k]) => listed(k) && !(k in shared) && !(k in own) && !(k in auto));
+  if (node.kind === 'action') readOnly.push(...registeredFacts(actions?.find((a) => a.key === (node as { action?: string }).action)));
   return { shared, own, auto, entry, readOnly };
 }
 

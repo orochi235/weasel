@@ -3,14 +3,14 @@ import { pathsIn, scopedPath } from './assetScope';
 import { foldsUnder, openAfterStep } from './folds';
 import { branchPaths, type SchemaRoot } from './schemaEdit';
 import { useEditorSelection, type EditorSelection } from './useEditorSelection';
-import { assetOf, type Asset, type Workspace } from './workspace';
+import { assetOf, isShown, shownAssets, type ShownAsset, type Workspace } from './workspace';
 import { changedAsset } from './workspaceChanges';
 
 const NONE: readonly string[] = [];
 
 /** Which of a workspace's assets the editor shows, and the reader's view of it: the rows selected and the rows open. */
 export interface AssetView {
-  asset: Asset;
+  asset: ShownAsset;
   expanded: ReadonlySet<string>;
   setExpanded: Dispatch<SetStateAction<Set<string>>>;
   selection: EditorSelection;
@@ -30,8 +30,12 @@ export interface AssetView {
  * one, and `draftKey` the name each asset's folded rows are kept beside; with none they are kept while the editor is up.
  */
 export function useAssetView(workspace: Workspace, opened: Workspace | undefined, draftKey: string | undefined, startOn?: string): AssetView {
-  const [assetId, setAssetId] = useState((startOn !== undefined && assetOf(workspace, startOn)?.id) || workspace.assets[0]!.id);
-  const asset = assetOf(workspace, assetId) ?? workspace.assets[0]!;
+  const shown = (id: string): ShownAsset | undefined => {
+    const found = assetOf(workspace, id);
+    return found && isShown(found) ? found : undefined;
+  };
+  const [assetId, setAssetId] = useState((startOn !== undefined && shown(startOn)?.id) || shownAssets(workspace)[0]!.id);
+  const asset = shown(assetId) ?? shownAssets(workspace)[0]!;
   const schema = asset.root;
   // Every row starts open but the ones the reader folded last time.
   const folds = useMemo(() => foldsUnder(draftKey), [draftKey]);
@@ -49,7 +53,7 @@ export function useAssetView(workspace: Workspace, opened: Workspace | undefined
   const selection = useEditorSelection(schema, setExpanded);
   const restored = useRef<readonly string[] | null>(null);
   const selectedIn = useRef(new Map<string, readonly string[]>());
-  const showing = (to: Asset, paths: readonly string[]) => {
+  const showing = (to: ShownAsset, paths: readonly string[]) => {
     selectedIn.current.set(asset.id, selection.paths);
     setAssetId(to.id);
     setExpanded(startOpen(to.id, to.root));
@@ -61,7 +65,7 @@ export function useAssetView(workspace: Workspace, opened: Workspace | undefined
     setExpanded,
     selection,
     show(id) {
-      const to = assetOf(workspace, id);
+      const to = shown(id);
       if (to && to.id !== asset.id) showing(to, NONE);
     },
     recorded: (paths) => [...new Map(selectedIn.current).set(asset.id, paths)]
@@ -70,7 +74,8 @@ export function useAssetView(workspace: Workspace, opened: Workspace | undefined
     stepped(before, after) {
       const kept = restored.current;
       restored.current = null;
-      const to = assetOf(after, changedAsset(before, after) ?? asset.id) ?? asset;
+      const changed = assetOf(after, changedAsset(before, after) ?? asset.id);
+      const to = changed && isShown(changed) ? changed : asset;
       // A step keeps every asset's selection from when it was made or left; the one it lands on takes its own.
       const paths = kept ? pathsIn(to.id, kept) : NONE;
       if (to.id !== asset.id) {

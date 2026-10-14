@@ -1,5 +1,5 @@
 import { isPrefLeaf, prefSectionLeaves, type PrefLeaf, type PrefObject } from '@weasel-js/prefs';
-import { attributeSchema, type AttributeSchema, type CustomKinds, type KindAttrs } from './kindSchemas';
+import { attributeSchema, type AttributeSchema, type CustomKinds, type KindAttrs, type RegisteredAction } from './kindSchemas';
 import { nodeAt, setAttribute, type SchemaNode, type SchemaRoot } from './schemaEdit';
 
 /** Whether two attribute values hold the same thing. Functions and class instances compare by identity. */
@@ -98,7 +98,7 @@ export interface AttributeAggregate {
  */
 export function aggregateAttributes(
   nodes: readonly SchemaNode[], custom: CustomKinds = {}, drawsMixed: (kind: string) => boolean = (k) => !WHOLE.has(k),
-  actions?: ReadonlyArray<{ key: string; label: string }>,
+  actions?: readonly RegisteredAction[],
 ): AttributeAggregate {
   const [first, ...rest] = nodes.map((n) => attributeSchema(n, custom, actions));
   const held = nodes.map((n) => n as unknown as Record<string, unknown>);
@@ -139,4 +139,15 @@ export function aggregateAttributes(
   const kinds = nodes.map((n) => (isPrefLeaf(n) ? n.kind : undefined));
   const kind = kinds.includes(undefined) ? undefined : kinds.every((k) => k === kinds[0]) ? kinds[0]! : null;
   return { schema, values, mixed, apart, kind };
+}
+
+/** What a node of the action catalog offers to edit: what a pref dragged out of it takes along. */
+const CATALOG_ATTRS: ReadonlySet<string> = new Set(['name', 'description', 'icon', 'label', 'control']);
+
+/** `all` as the action catalog shows it: the attributes a catalog's node offers, and the action its prefs fire listed with what is not edited. */
+export function catalogAttributes(all: AttributeAggregate): AttributeAggregate {
+  const offered = (part: KindAttrs): KindAttrs => Object.fromEntries(Object.entries(part).filter(([name]) => CATALOG_ATTRS.has(name)));
+  const fires = all.values.action;
+  const readOnly: Array<[string, unknown]> = [...(fires === undefined ? [] : [['action', fires] as [string, unknown]]), ...all.schema.readOnly];
+  return { ...all, schema: { shared: offered(all.schema.shared), own: offered(all.schema.own), auto: {}, entry: {}, readOnly } };
 }

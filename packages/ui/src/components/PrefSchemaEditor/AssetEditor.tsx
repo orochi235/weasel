@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react';
 import { historyKey, useLatest } from '@weasel-js/core';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { CloseButton } from '../CloseButton';
@@ -25,8 +25,9 @@ import { useRowMarks } from './useRowMarks';
 import { StructurePane } from './StructurePane';
 import { useDocument } from './useDocument';
 import { useAssetChanges, type SubmitAssets } from './useAssetChanges';
+import { useActionCatalog } from './useActionCatalog';
 import { useAssetView } from './useAssetView';
-import { assetOf, overOf, sameRoots, withRoots, type Asset, type ListedAsset, type Workspace } from './workspace';
+import { assetOf, overOf, sameRoots, shownAssets, withRoots, type Asset, type ListedAsset, type Workspace } from './workspace';
 import { editAsset, moveInAsset, NO_MOVES, removeInAsset, renameInAsset } from './workspaceEdit';
 import s from './PrefSchemaEditor.module.css';
 
@@ -44,6 +45,23 @@ const ignore = (): void => {};
 
 /** Where Delete and Backspace belong to the control and not to the selection. */
 const TEXT_ENTRY = 'input, textarea, select, [contenteditable]';
+
+/** A key pressed in the editor: a history key steps, and Delete or Backspace calls `remove`, given while anything is selected. */
+function onEditorKey(e: KeyboardEvent<HTMLDivElement>, step: (to: 'undo' | 'redo') => void, remove: (() => void) | null): void {
+  // A key pressed in a dialog of the editor's reaches here through React's tree, and is the dialog's.
+  if (!e.currentTarget.contains(e.target as Node)) return;
+  const to = historyKey(e);
+  if (to) {
+    e.preventDefault();
+    step(to);
+    return;
+  }
+  // In a field the key edits the text; anywhere else it removes what is selected.
+  if ((e.key === 'Delete' || e.key === 'Backspace') && remove && !(e.target as HTMLElement).closest(TEXT_ENTRY)) {
+    e.preventDefault();
+    remove();
+  }
+}
 
 /** Props for {@link AssetEditor}: {@link PrefSchemaEditorProps} over a workspace in place of one schema. */
 export interface AssetEditorProps extends Omit<PrefSchemaEditorProps<PrefGroup>, 'schema' | 'onChange' | 'original' | 'onSubmit'> {
@@ -81,6 +99,10 @@ export interface AssetEditorProps extends Omit<PrefSchemaEditorProps<PrefGroup>,
  * history and draft are the workspace's. With `list` its far pane lists the assets, to pick the one shown; picking is
  * not an edit, and an undo or a redo shows the asset it changed. A setting re-keyed, moved, or removed in a dialog
  * takes the pointers of every layout over that dialog with it, in the same step. A read-only asset takes no edit.
+ *
+ * A workspace's `actions` asset is the catalog its Actions pane lists: the reader drags its rows to sort and group
+ * them, and a row picked there shows its attributes, where what a pref dragged out of it carries is edited. Start
+ * one from `actionCatalog`. With none the pane lists the host's actions by their keys, and nothing sorts them.
  */
 export function AssetEditor(
   { workspace, onChange, original, codec, same = sameRoots, list = false, elsewhere, order, onElsewhere, onChangedAssets, startOn, preview, kinds = NO_KINDS, types = NO_TYPES, renderers, propertyRenderers, unplaced, actions, draftKey, draftStorage, onSubmit, taken = false, prefs, bar, maxDepth = 2, rowMark, className }: AssetEditorProps,
@@ -130,6 +152,10 @@ export function AssetEditor(
   const changed = useMemo(() => changedPaths(changes), [changes]);
   const changedAttrs = useMemo(() => changedAttributes(changes, selection.lead), [changes, selection.lead]);
   const actionList = useEditorActions(actions);
+  const catalog = useActionCatalog({ workspace, current: () => latest.current.workspace, actions: actionList, write: doc.commit, onPick: () => { selection.set([]); setNotice(null); } });
+  // A row picked among the actions is what the attributes show, until one of the structure's is.
+  const ofActions = catalog !== null && catalog.selected.length > 0;
+  const picked = () => { catalog?.clear(); setNotice(null); };
   const treeMark = useRowMarks({ schema, over, changes, actions: actionList, rowMark });
   const kindList = useMemo(() => [...BUILTIN_KINDS, ...Object.keys(kinds)], [kinds]);
   const editorPrefs = useEditorPrefs(prefs);
@@ -140,17 +166,17 @@ export function AssetEditor(
   const select = (paths: readonly string[]) => {
     if (keepsSelection()) return;
     selection.set(paths);
-    setNotice(null);
+    picked();
   };
   const pick = (ids: Iterable<string>) => {
     selection.pick(ids);
-    setNotice(null);
+    picked();
   };
   /** Select nodes picked outside the tree, opening the branches above them so the tree shows them. */
   const reveal = (paths: readonly string[]) => {
     if (keepsSelection()) return;
     selection.reveal(paths);
-    setNotice(null);
+    picked();
   };
   // `restore` is the selection to go back to where the drop keeps it: a drag begun in the preview selected its row on the press.
   const moveTo = (paths: readonly string[], target: SchemaTarget, restore?: readonly string[]) => {
@@ -219,25 +245,11 @@ export function AssetEditor(
     {/* Capture: React Aria's fields and tree stop a keydown from bubbling past them. */}
     <div className={[s.editor, list && s.listed, className].filter(Boolean).join(' ')}
       style={{ '--structure-w': `${structureSize.value}px`, '--attributes-w': `${attributesSize.value}px`, '--aside-w': `${asideSize.value}px` } as CSSProperties}
-      onKeyDownCapture={(e) => {
-      // A key pressed in a dialog of the editor's reaches here through React's tree, and is the dialog's.
-      if (!e.currentTarget.contains(e.target as Node)) return;
-      const to = historyKey(e);
-      if (to) {
-        e.preventDefault();
-        step(to);
-        return;
-      }
-      // In a field the key edits the text; anywhere else it removes what is selected.
-      if ((e.key === 'Delete' || e.key === 'Backspace') && selection.paths.length > 0 && !(e.target as HTMLElement).closest(TEXT_ENTRY)) {
-        e.preventDefault();
-        remove();
-      }
-    }}>
+      onKeyDownCapture={(e) => onEditorKey(e, step, ofActions ? catalog.remove : selection.paths.length > 0 ? remove : null)}>
       <EditorBar lead={bar} toolSlot={setToolSlot} canUndo={doc.canUndo} canRedo={doc.canRedo} onStep={step}
         draftSavedAt={doc.draftSavedAt} onDiscard={() => { doc.commit(base); select([]); }} prefs={<EditorPrefsButton prefs={editorPrefs} />} />
       <StructurePane schema={schema} onChange={commit} selected={selection.paths} lead={selection.lead} onPick={pick} onSelect={select} changed={changed} kinds={kindList} custom={kinds} renderers={renderers} types={types}
-        expanded={expanded} onExpandedChange={setExpanded} unplaced={over ? undefined : unplaced} actions={actionList ?? undefined} outside={outside} outsideDraws={drawsNode(drop)} onMove={moveTo} onCopy={copyTo} onAlias={aliasTo} onRemove={remove}
+        expanded={expanded} onExpandedChange={setExpanded} unplaced={over ? undefined : unplaced} actions={catalog ?? undefined} outside={outside} outsideDraws={drawsNode(drop)} onMove={moveTo} onCopy={copyTo} onAlias={aliasTo} onRemove={remove}
         toolSlot={toolSlot} shelfSlot={shelfSlot} maxDepth={maxDepth} rowMark={treeMark} readOnly={readOnly} over={over} />
       <ResizeHandle className={s.structureHandle} {...structureSize} min={180} max={640} ariaLabel="Resize structure" />
       <div className={s.middle}>
@@ -249,17 +261,20 @@ export function AssetEditor(
             </>
           )}
         </div>
-        <AttributesPane schema={schema} paths={selection.paths} onRename={rename}
+        {ofActions ? (
+          <AttributesPane key="actions" catalog schema={catalog.root} paths={catalog.selected} onRename={ignore} onChange={(next) => catalog.commit(next, `attr:${catalog.selected.join(',')}`)}
+            kinds={kindList} custom={kinds} types={types} renderers={renderers} actions={catalog.actions} readOnly={!catalog.editable} onNotice={setNotice} />
+        ) : <AttributesPane schema={schema} paths={selection.paths} onRename={rename}
           onChange={(next) => commit(next, attrKey)}
           added={selection.paths.length === 1 && changes.some((c) => c.op === 'add' && c.path === selection.lead)}
           changed={selection.paths.length > 1 ? undefined : changedAttrs}
-          kinds={kindList} custom={kinds} types={types} renderers={renderers} actions={actionList ?? undefined} over={over} readOnly={readOnly} onNotice={setNotice} />
+          kinds={kindList} custom={kinds} types={types} renderers={renderers} actions={actionList ?? undefined} over={over} readOnly={readOnly} onNotice={setNotice} />}
       </div>
       <ResizeHandle {...attributesSize} min={220} max={720} ariaLabel="Resize attributes" />
       <PreviewPane schema={schema} renderers={renderers} propertyRenderers={propertyRenderers} selected={selection.paths}
         onSelect={(path, how) => {
           // The root's own entry names no node to add to a selection.
-          if (how.toggle && path !== null) { selection.toggle(path); setNotice(null); }
+          if (how.toggle && path !== null) { selection.toggle(path); picked(); }
           else reveal(how.range ?? (path === null ? [] : [path]));
         }} onDefaults={over ? ignore : setDefaultsFrom} stageRef={stage} drop={drop} onStagePointerDown={(e) => { beforePress.current = latest.current.paths; previewDrag.onPointerDown(e); }} ghost={previewDrag.ghost} pageless={pageless} over={over} hosted={preview?.(asset, over)} />
       <Shelf slot={setShelfSlot}><ExportPanel schema={schema} types={types} changes={changedAssets.all} changesText={changedAssets.text} onSubmit={submit} /></Shelf>
@@ -267,7 +282,7 @@ export function AssetEditor(
         <>
           <ResizeHandle className={s.asideHandle} invert {...asideSize} min={120} max={640} ariaLabel="Resize sidebar" />
           <aside className={`${s.pane} ${s.aside}`} aria-label="Sidebar">
-            <AssetList assets={workspace.assets} elsewhere={elsewhere} order={order} onElsewhere={onElsewhere} selected={assetId} changed={changedAssets.ids} onSelect={(id) => { view.show(id); setNotice(null); }} />
+            <AssetList assets={shownAssets(workspace)} elsewhere={elsewhere} order={order} onElsewhere={onElsewhere} selected={assetId} changed={changedAssets.ids} onSelect={(id) => { view.show(id); setNotice(null); }} />
           </aside>
         </>
       )}

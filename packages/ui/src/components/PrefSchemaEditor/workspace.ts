@@ -20,14 +20,26 @@ export interface LayoutAsset extends AssetBase {
   over: string;
 }
 
-/** One thing the editor edits: a dialog, or a layout over one. */
-export type Asset = SchemaAsset | LayoutAsset;
+/**
+ * The host's actions as the Actions pane lists them: a group of `action` prefs, each firing one by key, in the
+ * groups and the order the reader sorts them into. It is no dialog and no layout, so the asset list leaves it out,
+ * and a workspace's first is the one its editor uses.
+ */
+export interface ActionsAsset extends AssetBase {
+  kind: 'actions';
+}
+
+/** An asset the editor shows in its structure tree, picked from the asset list. */
+export type ShownAsset = SchemaAsset | LayoutAsset;
+
+/** One thing the editor edits: a dialog, a layout over one, or the catalog of the host's actions. */
+export type Asset = ShownAsset | ActionsAsset;
 
 /** What the asset list files an asset under. */
 export type AssetHeading = 'Dialogs' | 'Panels' | 'Toolbars';
 
 /** Where the list files `asset`: a dialog, a layout whose root is drawn as a bar, or any other layout. */
-export function headingOf(asset: Asset): AssetHeading {
+export function headingOf(asset: ShownAsset): AssetHeading {
   if (asset.kind === 'schema') return 'Dialogs';
   return 'as' in asset.root && asset.root.as === 'bar' ? 'Toolbars' : 'Panels';
 }
@@ -59,6 +71,18 @@ export function overOf(workspace: Workspace, asset: Asset): SchemaRoot | undefin
 
 export function assetOf(workspace: Workspace, id: string): Asset | undefined {
   return workspace.assets.find((a) => a.id === id);
+}
+
+export const isShown = (asset: Asset): asset is ShownAsset => asset.kind !== 'actions';
+
+/** The assets the asset list offers, in the workspace's order. */
+export function shownAssets(workspace: Workspace): ShownAsset[] {
+  return workspace.assets.filter(isShown);
+}
+
+/** The catalog of the host's actions, where the workspace holds one. */
+export function catalogOf(workspace: Workspace): ActionsAsset | undefined {
+  return workspace.assets.find((a): a is ActionsAsset => a.kind === 'actions');
 }
 
 /**

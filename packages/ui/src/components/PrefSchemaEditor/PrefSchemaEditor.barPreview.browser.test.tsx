@@ -44,7 +44,7 @@ const treeRow = (tree: string, key: string) =>
 
 test('an action dropped on the near half of a cell of a bar root lands before it', () => {
   render(<Live />);
-  const row = treeRow('Actions', 'view.snap').firstElementChild as HTMLElement;
+  const row = treeRow('Actions', 'snap').firstElementChild as HTMLElement;
   drag(row, pointIn(cell('redo'), 0.25), { press: pointIn(row, 0.2) });
   expect(Object.keys(latest.children)).toEqual(['undo', 'viewSnap', 'redo', 'size']);
 });
