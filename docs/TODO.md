@@ -869,16 +869,6 @@ only story runner in the repo.
 
 ## Release-gate & build hygiene
 
-- **(P3) `foldTwisty.browser.test.tsx` fails on one machine and passes on the fleet.** "sets the
-  title of a panel with a hidden twisty where a panel that does not fold has it" measured the
-  title 3px higher with the twisty (`top: 12` against `15`) on brainhouse on 2026-10-13, with and
-  without that day's changes, and passed in three fleet runs on teitou the same day. Later that
-  day it failed the same way on orochi, run alone at `351efc55b`, and in one fleet run on teitou
-  at `77c2e4297`, after passing on studio at `351efc55b`. So it is not one machine, and one node
-  gives both answers. Not looked into: what differs between the runs (a face not yet loaded when
-  the header is measured is the first thing to rule out), and which answer a reader's browser
-  gives.
-
 - **(P2) Confirm on a fleet node that a new dependency in browser-tested code no longer fails the
   first run that meets it.** A node keeps its vite dep cache between runs, and a warm cache skips
   the scan that finds dependencies, so one first imported since then was met mid-run and vite
