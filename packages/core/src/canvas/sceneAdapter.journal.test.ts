@@ -72,8 +72,9 @@ describe('useScene journal routing via scene.applyBatch', () => {
       );
     });
 
-    // Scene undo stack untouched
-    expect(scene.canUndo()).toBe(false);
+    // Scene undo stack untouched; undo itself now steps the journal.
+    expect(scene.history.undoDepth()).toBe(0);
+    expect(scene.canUndo()).toBe(true);
     // Journal's inner stack has the entry
     expect(activeJournal.entries().undo.length).toBe(1);
     // Mutation still applied to scene state

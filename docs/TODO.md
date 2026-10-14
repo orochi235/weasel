@@ -325,7 +325,8 @@ Priority tags:
   consulting the journal accessor. `scene.recordedForm.test.ts` pins today's split. Routing `scene.batch` also needs a new method
   on `Journal`: `batch` records ops that have already applied (`engine.recordEntry`), and `Journal`
   has only `applyBatch`, which would apply them again; a direct call that touches a laid-out
-  container runs as a batch. draw opens a journal in every mode
+  container runs as a batch. draw opens a journal in every strict mode, and in every soft mode
+  unless the Modes > Undo inside a mode pref says the document's history
   (`apps/draw/src/modality/machine.ts`), so the change moves where every direct call made during
   a mode lands.
 

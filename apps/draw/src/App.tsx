@@ -29,7 +29,7 @@ export function App(): ReactElement {
   });
   const selection = useSelection({ mode: 'multi', scene });
   const modality = useModality(scene);
-  useSessionPersistence(scene, modality.history);
+  useSessionPersistence(scene);
 
   const [recentColors] = useState(() => createRecentColorsStore({ key: RECENT_COLORS_KEY }));
 

@@ -1,17 +1,16 @@
 import { defaultCommitAdapter } from '@weasel-js/core';
-import type { History } from '@weasel-js/history';
 import { useEffect, useRef } from 'react';
 import type { DrawScene } from './drawDocument';
 import { reportSessionSave } from './fileNotices';
 import { serializeReplacer } from './persistence';
-import { HISTORY_KEY, loadHistory, loadSceneHistory, LS_KEY, SCENE_HISTORY_KEY } from './sceneLoading';
+import { LEGACY_HISTORY_KEY, loadSceneHistory, LS_KEY, SCENE_HISTORY_KEY } from './sceneLoading';
 import { writeSession } from './sessionStore';
 
 /**
- * Keeps the drawing and both undo stacks in local storage: restores the stacks once on mount,
+ * Keeps the drawing and its undo stack in local storage: restores the stack once on mount,
  * then saves 300 ms after each render, and at once when the page goes away.
  */
-export function useSessionPersistence(scene: DrawScene, history: History): void {
+export function useSessionPersistence(scene: DrawScene): void {
   // After a reload, a restored entry's ops that wrote no scene state (a selection change) replay
   // against this adapter.
   useEffect(() => {
@@ -24,8 +23,7 @@ export function useSessionPersistence(scene: DrawScene, history: History): void 
   // initial stack first.
   const restoredRef = useRef(false);
   useEffect(() => {
-    const snap = loadHistory();
-    if (snap) history.restore(snap);
+    try { localStorage.removeItem(LEGACY_HISTORY_KEY); } catch { /* best-effort */ }
     const sceneSnap = loadSceneHistory();
     if (sceneSnap) {
       try {
@@ -37,7 +35,7 @@ export function useSessionPersistence(scene: DrawScene, history: History): void 
       }
     }
     restoredRef.current = true;
-    // Run once; scene and history are stable for the app lifetime.
+    // Run once; the scene is stable for the app lifetime.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -52,7 +50,6 @@ export function useSessionPersistence(scene: DrawScene, history: History): void 
           localStorage,
           [LS_KEY, JSON.stringify(scene.toJSON(), serializeReplacer)],
           [
-            [HISTORY_KEY, JSON.stringify(history.serialize(), serializeReplacer)],
             [SCENE_HISTORY_KEY, JSON.stringify(scene.serializeHistory(), serializeReplacer)],
           ],
         ));

@@ -188,17 +188,33 @@ describe('createRotationAffordance', () => {
 describe('rotation-handle cursor', () => {
   const regionOf = (state: ChromeState, opts = {}) =>
     createRotationAffordance(opts).regions(state)[0];
+  /** The cursor over world point (x, y), with the AABB (0,0,100,100) centered on (50, 50). */
+  const cursorAt = (state: ChromeState, x: number, y: number, view = VIEW) => {
+    const cursor = regionOf(state).cursor;
+    return typeof cursor === 'function' ? cursor({ x, y }, view) : cursor;
+  };
 
   it('defaults to the rotate glyph rather than a bare grab', () => {
-    expect(regionOf(stateWithSingle())).toMatchObject({
-      cursor: { glyph: 'rotate', angle: 0, fallback: 'grab' },
-    });
+    expect(cursorAt(stateWithSingle(), 50, -10)).toMatchObject({ glyph: 'rotate', angle: 0, fallback: 'grab' });
   });
 
-  it('turns the glyph with the target', () => {
-    expect(regionOf(stateWithSingle(Math.PI / 2)).cursor).toMatchObject({
-      angle: Math.PI / 2,
-    });
+  it('turns the glyph square to the line from the pivot to the pointer', () => {
+    const state = stateWithSingle();
+    expect(cursorAt(state, 110, 50)).toMatchObject({ angle: Math.PI / 2 });
+    expect(cursorAt(state, 50, 110)).toMatchObject({ angle: Math.PI });
+    expect(cursorAt(state, -10, 50)).toMatchObject({ angle: -Math.PI / 2 });
+    expect(cursorAt(state, 110, -10)).toMatchObject({ angle: Math.PI / 4 });
+  });
+
+  it('measures the turn on screen, not in world units', () => {
+    // A view that flips y puts world-below on screen-above.
+    const flipped = { ...VIEW, scale: { x: 1, y: -1 } };
+    expect(cursorAt(stateWithSingle(), 50, 110, flipped)).toMatchObject({ angle: 0 });
+  });
+
+  it("reads the pivot through the target's rotation", () => {
+    // Rotating the box about its own center leaves the pivot where it was.
+    expect(cursorAt(stateWithSingle(Math.PI / 2), 110, 50)).toMatchObject({ angle: Math.PI / 2 });
   });
 
   it('lets a caller override the whole spec', () => {

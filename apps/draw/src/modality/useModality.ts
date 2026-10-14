@@ -6,11 +6,10 @@
 import { useEffect, useMemo } from 'react';
 import {
   modeDecorationLayer,
-  sceneSelectionStore,
   type RenderLayer,
   type Scene,
 } from '@weasel-js/core';
-import { createHistory, type History } from '@weasel-js/history';
+import type { History } from '@weasel-js/history';
 import {
   createModeDecorations,
   createScopingDim,
@@ -22,6 +21,7 @@ import {
   createModeMachine,
   type ModeMachine,
 } from './index';
+import { drawPrefs } from '../prefs';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -30,8 +30,7 @@ export interface UseModalityReturn {
   decorations: ModeDecorations;
   scopingDim: ScopingDim;
   decorationLayer: RenderLayer<unknown>;
-  /** The live undo/redo History backing the mode machine. Exposed so the app
-   *  can `serialize()` it for persistence and `restore()` it on reload. */
+  /** The scene's history, which the mode machine opens its journals on. */
   history: History;
 }
 
@@ -40,27 +39,21 @@ export interface UseModalityReturn {
 /**
  * Bootstrap the mode machine.
  *
- * The mode machine is constructed from a History that lives alongside the
- * scene (not derived from the scene itself). `scene.applyOps` must consult
- * the machine's active journal — wired via `scene.setActiveJournalAccessor`
- * once the machine exists. No more ref-indirection cycle break needed at
- * the call site.
+ * The machine opens its journals on `scene.history`, and the scene reads the
+ * open one through `scene.setActiveJournalAccessor`: edits land in it, and
+ * undo and redo step it.
  */
 export function useModality(
   scene: Scene<unknown, string, unknown>,
 ): UseModalityReturn {
-  // Create a weasel-history History backed by the scene. Kit ops call
-  // op.apply(adapter) — the scene is a valid adapter (it has add/remove/
-  // setPose/update/move etc.). This History is what the mode machine calls
-  // beginJournal() on; the resulting Journal's applyBatch is what
-  // scene.applyBatch delegates to when getActiveJournal() is non-null.
-  const history = useMemo<History>(
-    () => createHistory(scene, { selection: sceneSelectionStore(scene) }),
-    [scene],
-  );
+  const history = scene.history;
 
   const machine = useMemo<ModeMachine>(
-    () => createModeMachine({ modes: DEFAULT_MODES, history }),
+    () => createModeMachine({
+      modes: DEFAULT_MODES,
+      history,
+      journalSoftModes: () => drawPrefs().get('modes.undo') === 'mode',
+    }),
     [history],
   );
 

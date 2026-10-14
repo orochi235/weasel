@@ -3,6 +3,7 @@ import type { BindingOpts, InvocationCtx, OngoingHandle } from '@weasel-js/routi
 import type { NodeId } from 'core/scene/types';
 import { closeGesture, runBehaviorCancel } from '../gestureLifecycle';
 import { inPlane, selectionLayer } from '../planeInput';
+import { rotateCursorAt } from 'affordances/rotateCursor';
 import { commitRotate } from './commit';
 import { nextFrame } from './frame';
 import { beginRotate, type RotateFrame } from './session';
@@ -34,10 +35,16 @@ export const rotateAction: Action & { requires: string[] } = inPlane({
       const subject = [...(ctx.deps.selection?.get() ?? [])] as string[];
       const hold = session.scene.overrides.hold();
       let frame: RotateFrame = { delta: 0, previews: new Map() };
+      let pointer = ctx.world;
       session.lifecycle.start(session.gestureCtx.draggedIds);
       return {
         kind: 'rotate',
+        cursor: () => {
+          const scale = ctx.deps.view?.get().scale;
+          return scale ? rotateCursorAt(session.turn.pivot, pointer, scale) : undefined;
+        },
         onMove(moveCtx: InvocationCtx): void {
+          pointer = moveCtx.world;
           frame = nextFrame(session, readers, moveCtx);
           hold.set(frame.previews);
         },

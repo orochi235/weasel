@@ -35,16 +35,12 @@ export interface ToolbarProps {
   setFilename: (name: string) => void;
   backgroundColor: string;
   setBackgroundColor: (color: string) => void;
-  /** Called at the start of every explicit save/load so stale journal
-   *  caches don't survive across document boundaries. */
-  onClearJournalCache: () => void;
 }
 
 export function Toolbar({
   scene, selection,
   paperSize, setPaperSize,
   filename, setFilename, backgroundColor, setBackgroundColor,
-  onClearJournalCache,
 }: ToolbarProps): ReactElement {
   const adapter = useSceneAdapter(scene, {});
   // Only its setter is read: a copy re-renders the bar so Paste re-evaluates.
@@ -100,11 +96,10 @@ export function Toolbar({
     <>
       <CommandBar
         onSaveSvg={() => {
-          onClearJournalCache();
           void saveSvgFile(scene, { filename, paperSize, backgroundColor });
         }}
         onOpenSvg={() => {
-          void openSvgFile({ scene, setFilename, setPaperSize, setBackgroundColor, onClearJournalCache });
+          void openSvgFile({ scene, setFilename, setPaperSize, setBackgroundColor });
         }}
         onImportSvg={() => { void importSvgFile(scene); }}
         onNew={(size) => {

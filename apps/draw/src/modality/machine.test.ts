@@ -1,268 +1,160 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { createModeMachine } from './machine';
 import { DEFAULT_MODES } from '@weasel-js/modes';
+import { createHistory, type Op } from '@weasel-js/history';
 
-function fakeHistory() {
-  const nextEntryId = 1;
-  const journals: Array<{ committed: boolean; cancelled: boolean; suspended: boolean }> = [];
-  return {
-    beginJournal: vi.fn((_opts) => {
-      const forkedAtEntryId = nextEntryId;
-      const j = {
-        forkedAtEntryId,
-        committed: false,
-        cancelled: false,
-        suspended: false,
-        applyBatch: vi.fn(),
-        commit(_label: string) { this.committed = true; },
-        cancel() { this.cancelled = true; },
-        suspend() { this.suspended = true; },
-        entries: () => ({ undo: [], redo: [] }),
-        canUndo: () => false,
-        canRedo: () => false,
-        undo: vi.fn(),
-        redo: vi.fn(),
-      };
-      journals.push(j);
-      return j;
-    }),
-    resumeJournal: vi.fn(),
-    // entries() returns an empty undo stack — no intervening edits in
-    // fake-history tests, so all cached journals are considered fresh.
-    entries: () => ({ undo: [], redo: [] }),
-    journals,
+/** A history over one counter, and an edit that bumps it — sent to the open journal when there is
+ *  one, the way the scene sends `applyBatch`. */
+function counter(journalSoftModes?: () => boolean) {
+  const state = { n: 0 };
+  const add = (by: number): Op => ({ apply: () => { state.n += by; }, invert: () => add(-by) });
+  const history = createHistory(state);
+  const m = createModeMachine({
+    modes: DEFAULT_MODES,
+    history,
+    ...(journalSoftModes ? { journalSoftModes } : {}),
+  });
+  const bump = (by: number): void => {
+    const journal = m.getActiveJournal();
+    if (journal) journal.applyBatch([add(by)], 'bump');
+    else history.applyOps([add(by)], 'bump');
   };
+  return { state, history, m, bump };
 }
 
 describe('createModeMachine', () => {
   it('starts in normal mode with no active journal', () => {
-    const m = createModeMachine({ modes: DEFAULT_MODES, history: fakeHistory() as never });
+    const { m } = counter();
     expect(m.registry.current().id).toBe('normal');
     expect(m.getActiveJournal()).toBe(null);
   });
 
-  it('enterMode("path-edit", { targetId }) starts a journal scoped to the target', () => {
-    const history = fakeHistory();
-    const m = createModeMachine({ modes: DEFAULT_MODES, history: history as never });
+  it('a soft mode opens a journal scoped to its target', () => {
+    const { m } = counter();
     m.enterMode('path-edit', { targetId: 'path-1' });
-
     expect(m.registry.current().id).toBe('path-edit');
-    expect(history.beginJournal).toHaveBeenCalledTimes(1);
-    expect(history.beginJournal.mock.calls[0][0].targetId).toBe('path-1');
-    expect(m.getActiveJournal()).not.toBe(null);
+    expect(m.getActiveJournal()?.targetId).toBe('path-1');
+    expect(m.getActiveTargetId()).toBe('path-1');
   });
 
-  it('exitMode on a soft mode suspends its journal and returns to normal', () => {
-    const history = fakeHistory();
-    const m = createModeMachine({ modes: DEFAULT_MODES, history: history as never });
+  it('leaving a soft mode lands its session on the history as one step named for the mode', () => {
+    const { state, history, m, bump } = counter();
+    bump(1);
     m.enterMode('path-edit', { targetId: 'p' });
-    const journal = m.getActiveJournal()!;
+    bump(10);
+    bump(100);
+    m.getActiveJournal()!.undo();
     m.exitMode();
-
-    expect((journal as never as { suspended: boolean }).suspended).toBe(true);
     expect(m.registry.current().id).toBe('normal');
     expect(m.getActiveJournal()).toBe(null);
+    expect(m.getActiveTargetId()).toBe(null);
+    expect(state.n).toBe(11);
+    expect(history.entries().undo.map((e) => e.label)).toEqual(['bump', 'Path Edit']);
+    history.undo();
+    expect(state.n).toBe(1);
+    history.redo();
+    expect(state.n).toBe(11);
   });
 
-  it('commitMode on a strict mode commits the journal with the mode label', () => {
-    const history = fakeHistory();
-    const m = createModeMachine({ modes: DEFAULT_MODES, history: history as never });
-    m.enterMode('free-transform', { targetId: 'sel' });
-    const journal = m.getActiveJournal()!;
-    m.commitMode();
-
-    expect((journal as never as { committed: boolean }).committed).toBe(true);
-    expect(m.registry.current().id).toBe('normal');
-  });
-
-  it('cancelMode on a strict mode cancels the journal', () => {
-    const history = fakeHistory();
-    const m = createModeMachine({ modes: DEFAULT_MODES, history: history as never });
-    m.enterMode('free-transform', { targetId: 'sel' });
-    const journal = m.getActiveJournal()!;
-    m.cancelMode();
-
-    expect((journal as never as { cancelled: boolean }).cancelled).toBe(true);
-    expect(m.registry.current().id).toBe('normal');
-  });
-
-  it('discardMode on a soft mode cancels (not suspends) the journal', () => {
-    const history = fakeHistory();
-    const m = createModeMachine({ modes: DEFAULT_MODES, history: history as never });
+  it('a session with no edits leaves nothing on the history', () => {
+    const { history, m } = counter();
     m.enterMode('path-edit', { targetId: 'p' });
-    const journal = m.getActiveJournal()!;
-    m.discardMode();
+    m.exitMode();
+    expect(history.undoDepth()).toBe(0);
+  });
 
-    expect((journal as never as { cancelled: boolean }).cancelled).toBe(true);
-    expect((journal as never as { suspended: boolean }).suspended).toBe(false);
+  it('re-entering the same target opens a fresh journal', () => {
+    const { m, bump } = counter();
+    m.enterMode('path-edit', { targetId: 'p' });
+    bump(10);
+    m.exitMode();
+    m.enterMode('path-edit', { targetId: 'p' });
+    expect(m.getActiveJournal()!.canUndo()).toBe(false);
+  });
+
+  it("discardMode takes back a soft mode's session and records nothing", () => {
+    const { state, history, m, bump } = counter();
+    bump(1);
+    m.enterMode('path-edit', { targetId: 'p' });
+    bump(10);
+    m.discardMode();
+    expect(state.n).toBe(1);
+    expect(history.undoDepth()).toBe(1);
     expect(m.registry.current().id).toBe('normal');
   });
 
-  it('enterMode while already in a mode throws (only one active journal at a time)', () => {
-    const history = fakeHistory();
-    const m = createModeMachine({ modes: DEFAULT_MODES, history: history as never });
+  it('commitMode lands a strict mode as one step; cancelMode takes it back', () => {
+    const { state, history, m, bump } = counter();
+    m.enterMode('free-transform', { targetId: 'sel' });
+    bump(10);
+    bump(100);
+    m.commitMode();
+    expect(history.entries().undo.map((e) => e.label)).toEqual(['Free Transform']);
+    m.enterMode('free-transform', { targetId: 'sel' });
+    bump(1000);
+    m.cancelMode();
+    expect(state.n).toBe(110);
+    expect(history.undoDepth()).toBe(1);
+  });
+
+  it('leaves a strict mode only by commit or cancel, and a soft one only by exit or discard', () => {
+    const { m } = counter();
+    m.enterMode('free-transform', { targetId: 'sel' });
+    m.exitMode();
+    m.discardMode();
+    expect(m.registry.current().id).toBe('free-transform');
+    m.cancelMode();
+    m.enterMode('path-edit', { targetId: 'p' });
+    m.commitMode();
+    m.cancelMode();
+    expect(m.registry.current().id).toBe('path-edit');
+  });
+
+  it('enterMode while already in a mode throws', () => {
+    const { m } = counter();
     m.enterMode('path-edit', { targetId: 'a' });
     expect(() => m.enterMode('free-transform', { targetId: 'b' })).toThrow();
   });
 
   it('enterMode("normal") is a no-op', () => {
-    const history = fakeHistory();
-    const m = createModeMachine({ modes: DEFAULT_MODES, history: history as never });
+    const { m } = counter();
     m.enterMode('normal', {});
     expect(m.getActiveJournal()).toBe(null);
   });
+});
 
-  it('targetId on the active mode is exposed for scoping queries', () => {
-    const history = fakeHistory();
-    const m = createModeMachine({ modes: DEFAULT_MODES, history: history as never });
+describe('soft modes with journalSoftModes off', () => {
+  it('records each edit on the history and opens no journal', () => {
+    const { state, history, m, bump } = counter(() => false);
+    bump(1);
     m.enterMode('path-edit', { targetId: 'p' });
+    expect(m.getActiveJournal()).toBe(null);
     expect(m.getActiveTargetId()).toBe('p');
+    bump(10);
+    bump(100);
+    expect(history.undoDepth()).toBe(3);
+    history.undo();
+    expect(state.n).toBe(11);
     m.exitMode();
-    expect(m.getActiveTargetId()).toBe(null);
-  });
-});
-
-describe('mode machine + cache', () => {
-  it('soft-mode exitMode caches the suspended journal by (modeId, targetId)', () => {
-    const history = fakeHistory();
-    const m = createModeMachine({ modes: DEFAULT_MODES, history: history as never });
-
-    m.enterMode('path-edit', { targetId: 'p1' });
-    const j1 = m.getActiveJournal();
-    m.exitMode();
-
-    m.enterMode('path-edit', { targetId: 'p1' });
-    // Re-entered same target — should NOT have called beginJournal a second time.
-    expect(history.beginJournal).toHaveBeenCalledTimes(1);
-    expect(m.getActiveJournal()).toBe(j1);
+    expect(m.registry.current().id).toBe('normal');
+    expect(history.undoDepth()).toBe(2);
   });
 
-  it('soft-mode exitMode does NOT cache when the target is null (non-scoping mode use)', () => {
-    const history = fakeHistory();
-    const m = createModeMachine({ modes: DEFAULT_MODES, history: history as never });
-    m.enterMode('text-edit', { targetId: null });
-    m.exitMode();
-    m.enterMode('text-edit', { targetId: null });
-    // No targetId means no cache key; second entry beings fresh.
-    expect(history.beginJournal).toHaveBeenCalledTimes(2);
-  });
-
-  it('strict-mode commitMode does not cache; subsequent entry is fresh', () => {
-    const history = fakeHistory();
-    const m = createModeMachine({ modes: DEFAULT_MODES, history: history as never });
-    m.enterMode('free-transform', { targetId: 'sel' });
-    m.commitMode();
-    m.enterMode('free-transform', { targetId: 'sel' });
-    expect(history.beginJournal).toHaveBeenCalledTimes(2);
-  });
-
-  it('discardMode removes the cache entry', () => {
-    const history = fakeHistory();
-    const m = createModeMachine({ modes: DEFAULT_MODES, history: history as never });
+  it('discardMode takes back only the edits made since entering', () => {
+    const { state, history, m, bump } = counter(() => false);
+    bump(1);
     m.enterMode('path-edit', { targetId: 'p' });
+    bump(10);
+    bump(100);
     m.discardMode();
-    m.enterMode('path-edit', { targetId: 'p' });
-    expect(history.beginJournal).toHaveBeenCalledTimes(2);  // fresh
+    expect(state.n).toBe(1);
+    expect(history.undoDepth()).toBe(1);
+    expect(m.registry.current().id).toBe('normal');
   });
 
-  it('clearJournalCache() empties the cache (called on save/load)', () => {
-    const history = fakeHistory();
-    const m = createModeMachine({ modes: DEFAULT_MODES, history: history as never });
-    m.enterMode('path-edit', { targetId: 'p' });
-    m.exitMode();
-    m.clearJournalCache();
-    m.enterMode('path-edit', { targetId: 'p' });
-    expect(history.beginJournal).toHaveBeenCalledTimes(2);
-  });
-});
-
-// ---------------------------------------------------------------------------
-// makeRealishHistoryStub — a stub that tracks forkedAtEntryId on journals and
-// supports adding entries with touchedIds after a fork point.
-// ---------------------------------------------------------------------------
-
-function makeRealishHistoryStub() {
-  // Internal mutable entries list, representing the undo stack of the parent.
-  const undoEntries: Array<{ id: number; touchedIds: ReadonlySet<string> }> = [];
-  let nextEntryId = 1;
-
-  const beginJournal = vi.fn((_opts: unknown) => {
-    const forkedAtEntryId = nextEntryId;
-    const j = {
-      forkedAtEntryId,
-      suspended: false,
-      committed: false,
-      cancelled: false,
-      applyBatch: vi.fn(),
-      commit(_label: string) { j.committed = true; },
-      cancel() { j.cancelled = true; },
-      suspend() { j.suspended = true; },
-      entries: () => ({ undo: [], redo: [] }),
-      canUndo: () => false,
-      canRedo: () => false,
-      undo: vi.fn(),
-      redo: vi.fn(),
-      isActive: () => !j.committed && !j.cancelled && !j.suspended,
-    };
-    return j;
-  });
-
-  const resumeJournal = vi.fn();
-
-  const stub = {
-    beginJournal,
-    resumeJournal,
-    entries() {
-      return {
-        undo: undoEntries.map((e) => ({
-          id: e.id,
-          label: 'test',
-          timestamp: 0,
-          touchedIds: e.touchedIds,
-        })),
-        redo: [],
-      };
-    },
-    /** Add a new parent-history entry that touched the given node ids.
-     *  Call this between exitMode and re-enterMode to simulate intervening edits. */
-    advanceEntries(touchedIds: ReadonlySet<string>) {
-      undoEntries.push({ id: nextEntryId++, touchedIds });
-    },
-  };
-
-  return stub;
-}
-
-describe('stale-journal discard', () => {
-  it('discards a cached journal if a parent-history entry since the fork-id touched its target', () => {
-    const history = makeRealishHistoryStub();
-    const m = createModeMachine({ modes: DEFAULT_MODES, history: history as never });
-
-    m.enterMode('path-edit', { targetId: 'p' });
-    m.exitMode();
-
-    // Simulate an intervening edit that touched 'p'.
-    history.advanceEntries(new Set(['p']));
-
-    // Re-entry must NOT resume — should begin fresh.
-    m.enterMode('path-edit', { targetId: 'p' });
-    expect(history.beginJournal).toHaveBeenCalledTimes(2);   // fresh
-    expect(history.resumeJournal).toHaveBeenCalledTimes(0);
-  });
-
-  it('resumes a cached journal when intervening entries did NOT touch the target', () => {
-    const history = makeRealishHistoryStub();
-    const m = createModeMachine({ modes: DEFAULT_MODES, history: history as never });
-
-    m.enterMode('path-edit', { targetId: 'p' });
-    m.exitMode();
-
-    // Intervening edit touched an unrelated node.
-    history.advanceEntries(new Set(['unrelated']));
-
-    // Re-entry should resume — target 'p' was not touched.
-    m.enterMode('path-edit', { targetId: 'p' });
-    expect(history.beginJournal).toHaveBeenCalledTimes(1);   // no fresh begin
-    expect(history.resumeJournal).toHaveBeenCalledTimes(1);  // resumed
+  it('still journals a strict mode', () => {
+    const { m } = counter(() => false);
+    m.enterMode('free-transform', { targetId: 'sel' });
+    expect(m.getActiveJournal()).not.toBe(null);
   });
 });
