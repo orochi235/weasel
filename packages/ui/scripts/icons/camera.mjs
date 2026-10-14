@@ -1,4 +1,4 @@
-import { chevron } from './base.mjs';
+import { chevron, chevronOn } from './base.mjs';
 
 const n = (v) => Math.round(v * 100) / 100;
 const rad = (deg) => (deg * Math.PI) / 180;
@@ -8,9 +8,8 @@ const rad = (deg) => (deg * Math.PI) / 180;
 // at the front. Whatever passes behind is cut away along the outline of what passes in front, grown by
 // `GAP`, so each cut end is parallel to the stroke in front and the clear band beside it is one width.
 //
-// The head does not sit on the ring. Past the axis the ring's front leaves its ellipse and runs level to
-// the head, so the head has a straight shaft behind it and its barbs lie on the diagonals; a head left on
-// the bend leans, and closes up on the inside. The ring's far-left arc still closes the loop behind it.
+// The head rides the ring itself, on the near side past the axis, hung on the ring's normal so it turns with
+// the bend (`chevronOn`).
 // `flip` mirrors the drawing left to right, and `swap` exchanges x and y, which lays the turn's vertical
 // axis on its side.
 /** The axis, right of center: the head's run gets the room, and the axis's ink lands on whole pixels at 16px. */
@@ -20,15 +19,16 @@ const RX = 6;
 // Puts the ring's back and front runs on whole pixels at 16px, as `AXIS` does for the axis.
 const RY = 3.25;
 const STROKE = 1.5;
-/** Clear space between a cut end and the ink in front of it: a pixel at 16px. */
-const GAP = 1.25;
+/** Clear space between a cut end and the ink in front of it. At 1.25 the band under the ring's front closes
+ *  up at 16px, where the ring's lower edge falls mid-pixel. */
+const GAP = 1.5;
 const CUT = STROKE / 2 + GAP;
 const ring = (deg) => [AXIS + RX * Math.cos(rad(deg)), MID - RY * Math.sin(rad(deg))];
-/** Where the ring's far-left arc starts. Any further round and it crowds the head's upper barb. */
-const TAIL = 150;
+/** Where the ring's far-left arc starts, and where the head's tip is. The two are kept apart by the gap
+ *  between them, which is what says the ring is open. */
+const TAIL = 132;
+const TIP = -158;
 const FRONT = MID + RY;
-const TIP = [3.9, FRONT];
-const HEAD = [3, 45];
 function turn(flip, swap) {
   const xy = ([x, y]) => {
     const fx = flip ? 20 - x : x;
@@ -58,8 +58,8 @@ function turn(flip, swap) {
     // Each back arc is drawn on past the cut, and the viewport takes off what is behind the axis.
     between(0, AXIS - CUT, `<path d="${arc(TAIL, 90)}"/>`) +
     between(AXIS + CUT, 20, `<path d="${arc(90, 0)}"/>`) +
-    `<path d="${arc(0, -90)}L${at(TIP)}"/>` +
-    `<path d="${chevron(xy(TIP), dir([-1, 0]), ...HEAD)}"/>`
+    `<path d="${arc(0, TIP)}"/>` +
+    `<path d="M${chevronOn(ring, TIP, 0.25).map(at).join(' ')}"/>`
   );
 }
 

@@ -39,6 +39,32 @@ export function chevron(tip, dir, L = 2.8, spread = 32) {
   return `M${x1} ${y1} ${n(tip[0])} ${n(tip[1])} ${x2} ${y2}`;
 }
 
+/** An open-V head on a shaft that stays curved to its tip, as path data. `curve(t)` is a point on the shaft,
+ *  the tip is at `t1`, and stepping `t` by `dt` walks back along the shaft from it. The barb ends stand on the
+ *  shaft's own normal, one trail of arc behind the tip and `L·sin(spread)` either side; aimed along the tangent
+ *  instead, a head points off the bend and reads as a mark of its own. Holds down to a bend radius of about
+ *  1.2·L, past which the inner barb fills the bend. */
+export function chevronOn(curve, t1, dt, L = 2.9, spread = 42) {
+  const trail = L * Math.cos(R(spread));
+  const half = L * Math.sin(R(spread));
+  let t = t1;
+  let len = 0;
+  let p = curve(t1);
+  while (len < trail) {
+    const q = curve(t + dt);
+    len += Math.hypot(q[0] - p[0], q[1] - p[1]);
+    p = q;
+    t += dt;
+  }
+  const a = curve(t - dt);
+  const b = curve(t + dt);
+  const m = Math.hypot(b[0] - a[0], b[1] - a[1]);
+  const nx = -(b[1] - a[1]) / m;
+  const ny = (b[0] - a[0]) / m;
+  const tip = curve(t1);
+  return [[p[0] + nx * half, p[1] + ny * half], tip, [p[0] - nx * half, p[1] - ny * half]];
+}
+
 /** Point on a circle at math-angle `deg` (SVG y-down). */
 export const onCircle = (cx, cy, r, deg) => [
   n(cx + r * Math.cos(R(deg))),
