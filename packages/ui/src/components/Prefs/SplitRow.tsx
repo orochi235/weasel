@@ -1,0 +1,152 @@
+import type { ReactNode } from 'react';
+import type { PrefLeaf, PrefLocus } from '@weasel-js/prefs';
+import { Badge } from '../Badge';
+import { Button } from '../Button';
+import { Disclosure } from '../Disclosure';
+import { PropertyRow } from '../Properties/PropertyRow';
+import type { RowWidth } from './compound';
+import type { PrefRenderContext } from './PrefsRow';
+import { splitMember, splitName, splitShape, type SplitCtx, type SplitLevel, type SplitMember, type SplitShape } from './splitRows';
+import s from './Prefs.module.css';
+import c from './Split.module.css';
+
+/** What the form draws for one leaf whose value may be split. */
+export interface SplitRowState {
+  shape: SplitShape;
+  /** The value is split and the form can write one member, so the row has a control to draw for each. */
+  members: boolean;
+  /** The row has something to open to: its members, or a split or a join to offer. */
+  opens: boolean;
+  open: boolean;
+  /** What the control that opens the row is called, and the group it opens to. */
+  name: string;
+}
+
+/**
+ * What the row of `pref` draws for its split value, in a form given something to split with. `own` is the row's
+ * path and `from` where its value lives; `aliased` says the leaf is one an alias shows. A value standing for
+ * several (`mixed`) has no one locus to draw the members of.
+ */
+export function splitRowState(
+  split: SplitCtx | undefined, values: unknown, pref: PrefLeaf, own: string, from: string, aliased: boolean, mixed: boolean,
+): SplitRowState | null {
+  if (split === undefined) return null;
+  const shape = splitShape(pref, split.loci?.get(from), (path) => split.selectorAt(path, aliased), values);
+  if (shape === null) return null;
+  const { levels, free } = shape;
+  const members = shape.locus !== undefined && levels.length > 0 && split.onChangeAt !== undefined && !mixed;
+  const opens = members || (split.onSplit !== undefined && free.length > 0) || (split.onJoin !== undefined && levels.length > 0);
+  const name = levels.length > 0 ? splitName(pref.name, levels) : `Split ${pref.name}`;
+  return { shape, members, opens, open: opens && split.opened.has(own), name };
+}
+
+/** The option each selector of a split value is set to, as marks beside the leaf's name. */
+export function SplitMarks({ levels }: { levels: readonly SplitLevel[] }) {
+  return levels.map((level) => (
+    <span key={level.by} className={c.mark} title={`${level.name}: ${level.current}`}>
+      <Badge size="xs" status="accent" variant="outline">{level.current}</Badge>
+    </span>
+  ));
+}
+
+/** The marks alone, for a leaf drawn where there is no row to open: a heading's control, a bar's cell. */
+export function splitMarks(split: SplitCtx | undefined, values: unknown, ctx: PrefRenderContext, aliased: boolean): ReactNode {
+  const state = splitRowState(split, values, ctx.pref, ctx.path, ctx.path, aliased, true);
+  return state && state.shape.levels.length > 0 ? <SplitMarks levels={state.shape.levels} /> : null;
+}
+
+/**
+ * What a row's label line carries for a leaf whose value may be split: the option each selector is set to, and
+ * the control that opens the row. That control is a button, which is labelable, so the row it sits in is a group
+ * and no `<label>`, whose name it would take off the row's control.
+ */
+export function SplitHead({ state, onToggle, lead = false }: {
+  state: SplitRowState;
+  onToggle: () => void;
+  /** On a line of its own, for a leaf with no label line. */
+  lead?: boolean;
+}) {
+  return (
+    <span className={lead ? `${c.head} ${c.lead}` : c.head}>
+      <SplitMarks levels={state.shape.levels} />
+      {state.opens && <Disclosure className={c.toggle} label={state.name} open={state.open} onToggle={onToggle} />}
+    </span>
+  );
+}
+
+/** What {@link SplitBody} is given to draw the leaf's own control for each member. */
+export interface SplitMemberParts {
+  /** Draws the leaf's control from a render context. */
+  renderControl: (ctx: PrefRenderContext) => ReactNode;
+  /** Whether the control's row is a group and not a `<label>`. */
+  isGroup: (ctx: PrefRenderContext) => boolean;
+  /** The room the leaf's control needs. */
+  width: RowWidth;
+}
+
+/**
+ * What a row opens to, under it: a split value's members, and a split or a join for each selector. The members
+ * are each option of the outermost selector, holding the leaf's own control over that member, or the next
+ * selector's options where the value is split again.
+ */
+export function SplitBody({ ctx, state, split, parts }: {
+  /** The leaf's own render context: its row's. */
+  ctx: PrefRenderContext;
+  state: SplitRowState;
+  split: SplitCtx;
+  parts: SplitMemberParts;
+}) {
+  const { levels, free, locus } = state.shape;
+  const { onSplit, onJoin, onChangeAt } = split;
+  const { pref, path } = ctx;
+  const stacked = parts.width !== 'column' || pref.block === true;
+  const row = (member: SplitMember): ReactNode => {
+    const of: PrefRenderContext = {
+      ...ctx,
+      pref: { ...pref, name: [pref.name, ...member.labels].join(', ') },
+      value: member.value,
+      mixed: false,
+      mixedAt: undefined,
+      setValueAt: undefined,
+      auto: false,
+      setAuto: () => {},
+      setValue: (value) => onChangeAt?.(path, value, member.at),
+    };
+    return (
+      <PropertyRow
+        key={member.labels.at(-1)}
+        label={member.labels.at(-1)}
+        layout={stacked ? 'block' : 'inline'}
+        className={stacked ? `${s.row} ${s.rowStacked}` : s.row}
+        group={parts.isGroup(of)}
+        disabled={of.disabled}
+      >
+        <span className={parts.width === 'filled' ? `${s.rowControl} ${s.rowControlFilled}` : s.rowControl}>{parts.renderControl(of)}</span>
+      </PropertyRow>
+    );
+  };
+  const under = (held: PrefLocus, depth: number, outer: SplitMember | undefined): ReactNode[] =>
+    levels[depth]!.options.map((option) => {
+      const member = splitMember(held, outer, levels[depth]!, option, pref.default);
+      if (depth === levels.length - 1) return row(member);
+      return (
+        <div key={option.value} role="group" aria-label={option.label} className={c.branch}>
+          <span className={c.branchName}>{option.label}</span>
+          {under(held, depth + 1, member)}
+        </div>
+      );
+    });
+  return (
+    <div role="group" aria-label={state.name} className={c.body}>
+      {state.members && locus !== undefined && under(locus, 0, undefined)}
+      <div className={c.actions}>
+        {onSplit && free.map(({ by, name }) => (
+          <Button key={by} size="sm" disabled={ctx.disabled} onClick={() => onSplit(path, by)}>Split by {name}</Button>
+        ))}
+        {onJoin && levels.map(({ by, name }) => (
+          <Button key={by} size="sm" disabled={ctx.disabled} onClick={() => onJoin(path, by)}>Join {name}</Button>
+        ))}
+      </div>
+    </div>
+  );
+}

@@ -7,6 +7,7 @@ import { PrefRow, prefRenderContext, renderPrefControl, shownLeaf, type WalkCtx 
 import { HiddenBadge, hiddenAttrs, marksHidden } from './hidden';
 import { aliasOfNothing } from './PrefWords';
 import { pathWithin, selectionAttrs, tabAttrs, useHeldTab } from './selection';
+import { splitMarks } from './SplitRow';
 import s from './Prefs.module.css';
 
 /** Props for {@link PrefsPane}. */
@@ -186,7 +187,9 @@ export function PaneBar({ ctx, group, path, depth, orientation }: {
           if (!drawn) return [{ path: own, content: <span className={s.unrenderable}>{aliasOfNothing(leaf as PrefAlias)}</span> }];
           const { renderCtx } = prefRenderContext(ctx, own, drawn.pref, drawn.at);
           const content = renderPrefControl(renderCtx, ctx.renderers, undefined, 'bar');
-          return content == null ? [] : [{ path: own, content: marksHidden(ctx.hidden, own) ? <>{content}<HiddenBadge /></> : content }];
+          if (content == null) return [];
+          const marks = splitMarks(ctx.split, ctx.values, renderCtx, drawn.at !== undefined);
+          return [{ path: own, content: marks || marksHidden(ctx.hidden, own) ? <>{content}{marks}{marksHidden(ctx.hidden, own) && <HiddenBadge />}</> : content }];
         })
       }
       row={({ path: own, leaf, at }) => <PrefRow ctx={ctx} path={own} pref={leaf} at={at} />}

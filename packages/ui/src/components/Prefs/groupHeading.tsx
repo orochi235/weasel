@@ -3,6 +3,7 @@ import { isPrefLeaf, prefHeadingKey, type PrefGroup, type PrefLeaf } from '@weas
 import { HiddenBadge, marksHidden } from './hidden';
 import { prefRenderContext, renderPrefControl, shownLeaf, type WalkCtx } from './PrefsRow';
 import { selectionAttrs } from './selection';
+import { splitMarks } from './SplitRow';
 import s from './Prefs.module.css';
 
 type Entry = [key: string, child: PrefLeaf | PrefGroup];
@@ -37,6 +38,7 @@ export function groupHeading(ctx: WalkCtx, group: PrefGroup, path: string): Grou
     control: (
       <span className={s.headingControl} {...selectionAttrs(own, ctx, true)}>
         {renderPrefControl(renderCtx, ctx.renderers)}
+        {splitMarks(ctx.split, ctx.values, renderCtx, shown.at !== undefined)}
         {marksHidden(ctx.hidden, own) && <HiddenBadge />}
       </span>
     ),

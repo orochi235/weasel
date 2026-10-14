@@ -1,0 +1,65 @@
+/* What a row's label line carries for a value that may be split: its marks, and the control that opens it. */
+.head {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wzl-space-2);
+  margin-inline-start: var(--wzl-space-2);
+}
+
+.mark {
+  display: inline-flex;
+  flex: none;
+}
+
+/* The label line is a line of text: the twisty's target is the line's height, and no taller. */
+.toggle {
+  --wzl-disclosure-target: var(--wzl-space-5);
+}
+
+/* On a line of its own, over a control that brings its own chrome. */
+.lead {
+  display: flex;
+  margin-inline-start: 0;
+  margin-block-end: var(--wzl-space-1);
+  font-size: var(--wzl-font-size-2xs);
+}
+
+/* What a row opens to, hung off the row it belongs to. */
+.body,
+.branch {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-2);
+}
+
+.body {
+  margin-block-start: var(--wzl-space-2);
+  margin-inline-start: var(--wzl-space-1);
+  padding-inline-start: var(--wzl-space-4);
+  border-inline-start: 2px solid var(--wzl-border-strong);
+}
+
+.branch + .branch {
+  margin-block-start: var(--wzl-space-2);
+}
+
+/* An outer option's name, over the inner selector's rows. */
+.branchName {
+  font-size: var(--wzl-font-size-xs);
+  font-weight: var(--wzl-font-weight-bold);
+  color: var(--wzl-fg-muted);
+}
+
+.branch > :not(.branchName) {
+  margin-inline-start: var(--wzl-space-4);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wzl-space-2);
+}
+
+.actions:empty {
+  display: none;
+}
