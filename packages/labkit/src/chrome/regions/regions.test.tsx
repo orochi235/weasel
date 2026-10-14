@@ -146,7 +146,11 @@ describe('ViewportRegion', () => {
     render(
       <ViewportRegion
         contributions={[
-          { id: 'fit', region: 'viewport', item: { icon: Glyph, label: 'Fit', onActivate: () => {} } },
+          {
+            id: 'fit',
+            region: 'viewport',
+            item: { icon: Glyph, label: 'Fit', onActivate: () => {} },
+          },
         ]}
         ctx={ctx}
       />,

@@ -81,7 +81,12 @@ export function LabSwitcher({ title, pages, path, className }: LabSwitcherProps)
       <MenuButton
         bare
         label={title}
-        items={pages.map((page, i) => ({ value: page.href, label: page.label, href: page.href, isCurrent: i === here }))}
+        items={pages.map((page, i) => ({
+          value: page.href,
+          label: page.label,
+          href: page.href,
+          isCurrent: i === here,
+        }))}
       />
     </h1>
   );

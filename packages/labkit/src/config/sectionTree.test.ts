@@ -235,7 +235,11 @@ describe('sectionTree, sections inside a group', () => {
           .label('Tank'),
       }),
     );
-    const { group } = sectionTree(resolved, { pump: true, rate: 1, tank: { fill: true, level: 1, open: false } });
+    const { group } = sectionTree(resolved, {
+      pump: true,
+      rate: 1,
+      tank: { fill: true, level: 1, open: false },
+    });
     const pumping = groupAt(group, 'pumping');
     expect(pumping.children.pump).toMatchObject({ heading: true });
     expect(pumping.children.rate).not.toMatchObject({ heading: true });

@@ -87,8 +87,11 @@ function prune(
     values[key] = kept.values;
   }
   const sectioned = new Set(resolved.sections.filter((s) => s.at === at).flatMap((s) => s.paths));
-  const loose = Object.keys(group.children).map((key) => `${at}.${key}`).filter((p) => !sectioned.has(p));
-  if (group.name !== '' && group.as !== 'fragment') markHeading(resolved, group.name, loose, at, children);
+  const loose = Object.keys(group.children)
+    .map((key) => `${at}.${key}`)
+    .filter((p) => !sectioned.has(p));
+  if (group.name !== '' && group.as !== 'fragment')
+    markHeading(resolved, group.name, loose, at, children);
   const taken = new Set(Object.keys(children));
   for (const section of resolved.sections) {
     if (section.at !== at || at === '') continue;

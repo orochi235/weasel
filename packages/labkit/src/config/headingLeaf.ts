@@ -1,4 +1,4 @@
-import { isPrefLeaf, prefFitsHeading, type PrefLeaf } from '@weasel-js/prefs';
+import { isPrefLeaf, type PrefLeaf, prefFitsHeading } from '@weasel-js/prefs';
 import { schemaNodeAtPath } from './path';
 import { stutters, warnOfStutter, warnOnce } from './stutter';
 import type { ControlRenderer, ResolvedConfig } from './types';

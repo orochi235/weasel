@@ -1,8 +1,8 @@
 import type {
   PrefAction,
+  PrefBarOverflow,
   PrefCondition,
   PrefGroup,
-  PrefBarOverflow,
   PrefGroupAs,
   PrefLeaf,
   PrefNumberUnit,

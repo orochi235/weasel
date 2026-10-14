@@ -35,12 +35,19 @@ describe('<ControlPanel> group drawn as a bar', () => {
   it('opens what does not fit from a button where the group says so', () => {
     const menu = resolveConfigSchema(
       f.schema({
-        text: f.group({ bold: f.boolean(false), size: f.number(12) }).as('bar').overflow('menu'),
+        text: f
+          .group({ bold: f.boolean(false), size: f.number(12) })
+          .as('bar')
+          .overflow('menu'),
       }),
       [],
     );
     render(
-      <ControlPanel schema={menu} config={{ text: { bold: false, size: 12 } }} setConfig={vi.fn()} />,
+      <ControlPanel
+        schema={menu}
+        config={{ text: { bold: false, size: 12 } }}
+        setConfig={vi.fn()}
+      />,
     );
     expect(screen.getByRole('toolbar')).toHaveAttribute('data-overflow', 'menu');
   });

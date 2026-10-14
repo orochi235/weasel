@@ -111,7 +111,10 @@ describe('summarizeLeaf', () => {
 
   it("writes an object's fields that have a unit so, and leaves the rest", () => {
     const arc = {
-      kind: 'object', name: 'Arc', description: '', default: {},
+      kind: 'object',
+      name: 'Arc',
+      description: '',
+      default: {},
       children: { sweep: angle, shape: { name: 'Shape', members: { turn: angle } }, count: plain },
     } as const;
     expect(summarizeLeaf(arc, { sweep: Math.PI / 2, turn: Math.PI, count: 2 })).toBe(
@@ -120,21 +123,56 @@ describe('summarizeLeaf', () => {
   });
 
   it("writes the entries of a list and a map by the item's unit, and a union by its variant's", () => {
-    const stops = { kind: 'list', name: 'Stops', description: '', default: [], item: angle } as const;
+    const stops = {
+      kind: 'list',
+      name: 'Stops',
+      description: '',
+      default: [],
+      item: angle,
+    } as const;
     expect(summarizeLeaf(stops, [0, Math.PI / 2])).toBe('0°, 90°');
-    const named = { kind: 'map', name: 'Named', description: '', default: {}, item: angle } as const;
+    const named = {
+      kind: 'map',
+      name: 'Named',
+      description: '',
+      default: {},
+      item: angle,
+    } as const;
     expect(summarizeLeaf(named, { half: Math.PI })).toBe('{"half":"180°"}');
     const shape = {
-      kind: 'union', name: 'Shape', description: '', default: {}, tag: 'type',
-      variants: { arc: { kind: 'object', name: 'Arc', description: '', default: {}, children: { sweep: angle } } },
+      kind: 'union',
+      name: 'Shape',
+      description: '',
+      default: {},
+      tag: 'type',
+      variants: {
+        arc: {
+          kind: 'object',
+          name: 'Arc',
+          description: '',
+          default: {},
+          children: { sweep: angle },
+        },
+      },
     } as const;
-    expect(summarizeLeaf(shape, { type: 'arc', sweep: Math.PI })).toBe('{"type":"arc","sweep":"180°"}');
+    expect(summarizeLeaf(shape, { type: 'arc', sweep: Math.PI })).toBe(
+      '{"type":"arc","sweep":"180°"}',
+    );
   });
 
   it('writes a list of objects entry by entry', () => {
     const arcs = {
-      kind: 'list', name: 'Arcs', description: '', default: [],
-      item: { kind: 'object', name: 'Arc', description: '', default: {}, children: { sweep: angle } },
+      kind: 'list',
+      name: 'Arcs',
+      description: '',
+      default: [],
+      item: {
+        kind: 'object',
+        name: 'Arc',
+        description: '',
+        default: {},
+        children: { sweep: angle },
+      },
     } as const;
     expect(summarizeLeaf(arcs, [{ sweep: Math.PI }])).toBe('{"sweep":"180°"}');
   });

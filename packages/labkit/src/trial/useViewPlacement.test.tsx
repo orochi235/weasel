@@ -72,7 +72,10 @@ describe('a view placed by its viewport size', () => {
   });
 
   it('leaves a view alone when where it opens does not depend on the size', () => {
-    const fixed: Instrument = { ...staged, stage: { size: SIZE, initialView: { zoom: 1, pan: { x: 9, y: 9 } } } };
+    const fixed: Instrument = {
+      ...staged,
+      stage: { size: SIZE, initialView: { zoom: 1, pan: { x: 9, y: 9 } } },
+    };
     const { result } = place(null, fixed);
     act(() => result.current.onResize(WIDE));
     act(() => result.current.onResize(NARROW));

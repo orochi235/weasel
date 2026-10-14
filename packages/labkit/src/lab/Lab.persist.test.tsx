@@ -145,7 +145,10 @@ describe('<Lab> with a storageKey', () => {
     const backing = new Map<string, unknown>([
       [`${P}meta`, { version: CURRENT_DOCUMENT_VERSION, mode: 'auto' }],
       [`${P}trial:ok`, { ...stored, id: 'ok', state: {}, order: 0 }],
-      [`${P}trial:broken`, { ...stored, id: 'broken', state: { bad: true }, title: 'Mine', order: 1 }],
+      [
+        `${P}trial:broken`,
+        { ...stored, id: 'broken', state: { bad: true }, title: 'Mine', order: 1 },
+      ],
     ]);
     const picky: Instrument = {
       ...stub,
@@ -164,10 +167,14 @@ describe('<Lab> with a storageKey', () => {
     );
     await screen.findByTestId('stub-content');
     const list = screen.getByRole('list', { name: 'Stored records that failed to load' });
-    expect(list).toHaveTextContent('Trial "Mine" (Stub) failed to load and is left out: unreadable state');
+    expect(list).toHaveTextContent(
+      'Trial "Mine" (Stub) failed to load and is left out: unreadable state',
+    );
     expect(backing.has(`${P}trial:broken`)).toBe(true);
 
-    await act(async () => screen.getByRole('button', { name: 'Discard Trial "Mine" (Stub)' }).click());
+    await act(async () =>
+      screen.getByRole('button', { name: 'Discard Trial "Mine" (Stub)' }).click(),
+    );
     expect(screen.queryByRole('list', { name: 'Stored records that failed to load' })).toBeNull();
     await waitFor(() => expect(backing.has(`${P}trial:broken`)).toBe(false));
     expect(backing.has(`${P}trial:ok`)).toBe(true);

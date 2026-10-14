@@ -575,8 +575,20 @@ describe('openLabStore — records it cannot use', () => {
 
       const opened = await open(backing, { serializers, configMigrations: { T: migrate } });
       expect(opened.store.getState().unreadable).toEqual([
-        { kind: 'trial', id: 'w2', instrumentName: 'T', label: 'Second', reason: 'unreadable state' },
-        { kind: 'snapshot', id: 's2', instrumentName: 'T', label: 'saved', reason: 'no path from this shape' },
+        {
+          kind: 'trial',
+          id: 'w2',
+          instrumentName: 'T',
+          label: 'Second',
+          reason: 'unreadable state',
+        },
+        {
+          kind: 'snapshot',
+          id: 's2',
+          instrumentName: 'T',
+          label: 'saved',
+          reason: 'no path from this shape',
+        },
       ]);
 
       opened.store.getState().discardUnreadable('trial', 'w2');

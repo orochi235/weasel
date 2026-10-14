@@ -18,6 +18,7 @@ import {
   Subpanel,
 } from '@weasel-js/ui';
 import { Fragment, type ReactNode } from 'react';
+import { headingLeaf } from '../config/headingLeaf';
 import { schemaNodeAtPath, valueAtPath } from '../config/path';
 import type { ControlRenderer, ResolvedConfig, SectionSpec } from '../config/types';
 import { isLeafEnabled, isLeafVisible } from '../config/visible';
@@ -25,7 +26,6 @@ import { ControlBar } from './ControlBar';
 import { ControlRow } from './ControlRow';
 import { type Rows, sectionRows } from './controlPack';
 import { BareControl, extra, isSliderLeaf, labField } from './fields';
-import { headingLeaf } from '../config/headingLeaf';
 import { ResetGroup } from './ResetGroup';
 import { PairedRow } from './rows';
 
@@ -233,18 +233,18 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
   const rowsFor = (paths: readonly string[], rows: Rows): ReactNode[] => {
     const runs = pairRuns(paths, pairable);
     // A run of groups drawn as tabs shares one strip. A group is never paired, so each is a run of its own.
-    const tabGroup = ({ items, pair }: (typeof runs)[number]): boolean => {
-      const found = pair ? undefined : schemaNodeAtPath(resolved.group, items[0]!);
+    const tabGroup = ({ items: [only], pair }: (typeof runs)[number]): boolean => {
+      const found = pair || only === undefined ? undefined : schemaNodeAtPath(resolved.group, only);
       return found !== undefined && !isPrefLeaf(found) && found.as === 'tab';
     };
     const out: ReactNode[] = [];
     for (const step of prefTabRuns(runs, tabGroup)) {
       if (step.tabs) {
-        const tabs = step.tabs.map((run) => run.items[0]!).filter(visible);
+        const tabs = step.tabs.flatMap((run) => run.items).filter(visible);
         if (tabs.length === 0) continue;
         out.push(
           <GroupTabs
-            key={step.tabs[0]!.items[0]}
+            key={step.tabs[0]?.items[0]}
             className="lk-control-tabs"
             tabs={tabs.map((path) => {
               const group = schemaNodeAtPath(resolved.group, path) as PrefGroup;
@@ -264,7 +264,7 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
       }
       const { items, pair } = step.item;
       if (!pair) {
-        out.push(node(items[0]!, rows));
+        for (const path of items) out.push(node(path, rows));
         continue;
       }
       const cells = items.map((path) => ({
