@@ -63,7 +63,7 @@ export {
 export * from '../core/viewport/fitToBounds';
 export { fitViewToBounds } from '../core/viewport/fitViewToBounds';
 export type { Bounds, ViewportDims, FitViewToBoundsOptions } from '../core/viewport/fitViewToBounds';
-export { layoutPages, pageAt, pageOfBounds, pagesBounds } from '../core/pages/pages';
+export { adjacentPage, layoutPages, pageAt, pageOfBounds, pagesBounds } from '../core/pages/pages';
 export type { Page, PageLayoutOptions, PlacedPage } from '../core/pages/pages';
 export { pagesLayer, type PagesLayerOptions } from '../core/pages/pagesLayer';
 export { fitViewToPage } from '../core/pages/fitViewToPage';

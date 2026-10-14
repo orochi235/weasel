@@ -856,10 +856,19 @@ From `docs/specs/2026-05-03-weasel-den-design.md`. **Read `packages/den/README.m
 spec's pack shape was superseded by core's `Contribution` + `mergeContributions`, and its
 convenience layer shipped inside core. The items below are what survives that.
 
-- **(P3) Additional domain bundles.** `useWhiteboardPack` (sticky notes, freeform pen, text),
-  `usePresentationPack` (frame tools, slide nav). Each is its own arc, and each is a
-  `Contribution` bundle rather than a den pack. The diagram bundle shipped as
-  `@weasel-js/diagram`; don't propose another.
+- **(P3) A presentation bundle and a whiteboard bundle.** Each is a `Contribution` bundle, the way
+  `@weasel-js/diagram` is (`createDiagramContribution`), in a package of its own: neither is a den
+  pack.
+  - Presentation. A frame is a page: `layoutPages` places the slides, `fitViewToPage` frames one,
+    and `adjacentPage` steps the order (`packages/core/src/core/pages/`). Left: (1) next-slide and
+    previous-slide actions that animate the view to `adjacentPage` through `useViewAnimation`, and
+    the contribution binding them to the arrow and page keys; (2) a frame tool, a drag-rect
+    binding whose action adds a page, which waits on the undoable page list under "Multi-page
+    documents"; (3) a presenting state that holds the view on the current page.
+  - Whiteboard. The freeform pen is `usePencilTool` and text is `useTextTool`. Left: (1) a sticky
+    note, as an `insert` node factory minting a filled rect that carries text, bound by a
+    drag-rect tool the way `useRectTool` is; (2) the contribution bundling the three tools with
+    their whiteboard defaults.
 - **(P3) Move `useSelectTool` / `useTextTool` / `usePenTool` /
   `usePencilTool` out of core's builtin tools.** The den's one motivation nothing
   has absorbed: separating finished, stable tools' test surface from core's. It

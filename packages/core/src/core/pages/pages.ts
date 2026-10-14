@@ -89,6 +89,26 @@ export function pageOfBounds(pages: readonly PlacedPage[], bounds: Bounds): Plac
   return best;
 }
 
+/**
+ * The page `step` places along the page order from the one with id `current`:
+ * the next slide is `1`, the one before is `-1`. `null` past either end, unless
+ * `wrap`. With no current page in the list, a step forward starts at the first
+ * page and a step back at the last.
+ */
+export function adjacentPage(
+  pages: readonly PlacedPage[],
+  current: string | null,
+  step: number,
+  options: { wrap?: boolean } = {},
+): PlacedPage | null {
+  const n = pages.length;
+  if (n === 0) return null;
+  const at = pages.findIndex((p) => p.id === current);
+  if (at < 0) return pages[step < 0 ? n - 1 : 0] ?? null;
+  const to = at + step;
+  return pages[options.wrap ? ((to % n) + n) % n : to] ?? null;
+}
+
 /** The box around every page, or `null` for a document with none. */
 export function pagesBounds(pages: readonly PlacedPage[]): Bounds | null {
   if (pages.length === 0) return null;

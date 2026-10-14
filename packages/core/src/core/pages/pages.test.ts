@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { layoutPages, pageAt, pageOfBounds, pagesBounds, type Page } from './pages';
+import { adjacentPage, layoutPages, pageAt, pageOfBounds, pagesBounds, type Page } from './pages';
 import { pagesLayer } from './pagesLayer';
 import { fitViewToPage } from './fitViewToPage';
 
@@ -60,6 +60,28 @@ describe('finding a page', () => {
   it('bounds every page, and nothing when there are none', () => {
     expect(pagesBounds(placed)).toEqual({ x: 0, y: 0, width: 470, height: 200 });
     expect(pagesBounds([])).toBeNull();
+  });
+});
+
+describe('adjacentPage', () => {
+  const placed = layoutPages([A, B, C]);
+
+  it('steps through the page order, and stops at either end', () => {
+    expect(adjacentPage(placed, 'a', 1)?.id).toBe('b');
+    expect(adjacentPage(placed, 'c', -2)?.id).toBe('a');
+    expect(adjacentPage(placed, 'c', 1)).toBeNull();
+    expect(adjacentPage(placed, 'a', -1)).toBeNull();
+  });
+
+  it('wraps when asked', () => {
+    expect(adjacentPage(placed, 'c', 1, { wrap: true })?.id).toBe('a');
+    expect(adjacentPage(placed, 'a', -4, { wrap: true })?.id).toBe('c');
+  });
+
+  it('starts from the first page, or the last going back, when the current one is not in the list', () => {
+    expect(adjacentPage(placed, null, 1)?.id).toBe('a');
+    expect(adjacentPage(placed, 'gone', -1)?.id).toBe('c');
+    expect(adjacentPage([], null, 1)).toBeNull();
   });
 });
 
