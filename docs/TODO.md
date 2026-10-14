@@ -448,10 +448,6 @@ Priority tags:
 
 ### Timelines and rigging
 
-- **(P3) `useRigNode` drops a running animation when the skeleton's joints change** — adding,
-  removing, renaming, or reordering a joint makes a new `target` at the bind pose, since a pose
-  target's axes are its joints in order. Carrying an animation across needs the animator to
-  move what runs on one target to another with different axes.
 - **(P3) The bone and weight tools have no icon and are not `defaultTools` ids** — they are
   mounted as `tools={{ bone, weight }}`, as slice is.
 
