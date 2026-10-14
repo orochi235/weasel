@@ -1006,6 +1006,13 @@ only story runner in the repo.
     on studio failed `glyphCoverage` and `rasterSession` the same way, and `labkit`'s
     `presentation.browser.test.tsx` ("entering refits the view…") in place of `overlayTyping`. Both
     `core` files pass alone at that commit on orochi, in 7 s.
+  - **Still failing on 2026-10-14**, branch `path-edit-commands`, which touches no renderer, font,
+    or labkit code: `glyphCoverage` and `rasterSession` timed out on teitou and again on studio, and
+    on studio so did `glyphCoverage`'s "puts down the same ink wherever a 7.2px H lands" and
+    `LabLightbox`'s "an expanded trial keeps its marks over it". Also on studio, not a timeout:
+    `ui/src/components/Prefs/PrefsRail.rootSection.browser.test.tsx` ("scrolls the root's page to a
+    section from its entry") saw `tools` as the current section where it expected `files`. It
+    passed on teitou at a commit whose `ui` tree was the same.
   - `forge/src/vite/plugin.test.ts` has its own entry under "Demos & visual regression".
 
 - **(P2) HUD vs DOM text: what the idle rerun left open.** `tests/perf/hud-vs-dom.spec.ts` prices
