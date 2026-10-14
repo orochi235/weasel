@@ -160,10 +160,11 @@ function drawTextDecorations(
     const [r, g, b, a] = isSolidPaint(paint) ? resolveColor(paint.color) : [0, 0, 0, 1];
     let cut: ClipRect | null | undefined;
     for (;;) {
-      const staged = stageSolid(ctx, 4);
+      const slot = stageSolid(ctx, 4);
+      const rgba = foldColor(ctx, r, g, b, a);
       if (ctx.drawBatch.pushRect(
         d.x0 + dx, d.y0 + dy, d.x1 - d.x0, d.y1 - d.y0, ctx.state.transform,
-        ...foldColor(ctx, staged, r, g, b, a),
+        rgba[0], rgba[1], rgba[2], rgba[3], slot,
       )) break;
       cut = enterUncut(ctx);
     }
@@ -179,7 +180,7 @@ function ruleMesh(x0: number, y0: number, x1: number, y1: number): Mesh {
 }
 
 /**
- * Amount `a_synthBold` shifts the SDF threshold by when the resolver fell back
+ * Amount the SDF threshold shifts by when the resolver fell back
  * from a missing bold variant to the regular atlas. Tuned on Inter: it
  * thickens strokes about a pixel at 16px without breaking glyph topology.
  */
@@ -191,9 +192,8 @@ const SYNTH_BOLD_AMOUNT = 0.08;
  * The text color and the atlas (a slot index packed with the paint mode) ride
  * the vertices, so a run off a baked MSDF atlas and one off the runtime canvas
  * bake belong to the same draw, and so does whatever else the page put around
- * them. The synthetic-bold threshold is the exception, and
- * `StagedBatchState.synthBold` says why. The synthetic oblique is sheared
- * into the corners as `pushGlyph` places them.
+ * them. The synthetic-bold threshold rides them too, and the synthetic
+ * oblique is sheared into the corners as `pushGlyph` places them.
  */
 function drawTextGroup(
   ctx: DrawContext, group: LaidOutGroup, dx: number, dy: number,
@@ -228,30 +228,27 @@ function drawTextGroup(
 
   const batch = ctx.drawBatch;
   const m = ctx.state.transform;
-  let { staged, slot } = stageGlyphs(ctx, atlasId, fieldScale, bold);
-  let rgba = foldColor(ctx, staged, color[0], color[1], color[2], color[3]);
+  let slot = stageGlyphs(ctx, atlasId, fieldScale);
+  const rgba = foldColor(ctx, color[0], color[1], color[2], color[3]);
 
   for (const q of group.quads) {
     if (batch.wouldOverflow(4)) {
       flushBatch(ctx);
-      ({ staged, slot } = stageGlyphs(ctx, atlasId, fieldScale, bold));
-      rgba = foldColor(ctx, staged, color[0], color[1], color[2], color[3]);
+      slot = stageGlyphs(ctx, atlasId, fieldScale);
     }
     let cut: ClipRect | null | undefined;
     while (!batch.pushGlyph(
       q.x0 + dx, q.y0 + dy, q.x1 + dx, q.y1 + dy, q.baselineY + dy, tanItalic, m,
       q.u0, q.v0, q.u1, q.v1,
       rgba[0], rgba[1], rgba[2], rgba[3],
-      slot, mode,
+      slot, mode, bold,
     )) {
       cut = enterUncut(ctx);
-      ({ staged, slot } = stageGlyphs(ctx, atlasId, fieldScale, bold));
-      rgba = foldColor(ctx, staged, color[0], color[1], color[2], color[3]);
+      slot = stageGlyphs(ctx, atlasId, fieldScale);
     }
     if (cut !== undefined) {
       leaveUncut(ctx, cut);
-      ({ staged, slot } = stageGlyphs(ctx, atlasId, fieldScale, bold));
-      rgba = foldColor(ctx, staged, color[0], color[1], color[2], color[3]);
+      slot = stageGlyphs(ctx, atlasId, fieldScale);
     }
   }
 }
@@ -318,7 +315,7 @@ function drawPaintedGlyphs(
       q.x0 + dx, q.y0 + dy, q.x1 + dx, q.y1 + dy, q.baselineY + dy, tanItalic, m,
       q.u0, q.v0, q.u1, q.v1,
       1, 1, 1, 1,
-      GLYPH_PAINT_ATLAS_UNIT, mode,
+      GLYPH_PAINT_ATLAS_UNIT, mode, 0,
     );
   }
   drawStagedGlyphs(ctx);

@@ -6,10 +6,11 @@
  * `u_samplers`, and slot 0 is always the 1x1 white texel, so a solid's
  * `texture() * a_vertexColor` is the vertex color exactly.
  *
- * **The chain is unrolled because GLSL ES 3.0 will not index a sampler array
- * with a variable** — the index must be a constant expression. The coordinate
- * it samples is a varying computed before the branch, which is what keeps the
- * implicit derivatives well defined.
+ * **The fetch is unrolled because GLSL ES 3.0 will not index a sampler array
+ * with a variable** — the index must be a constant expression. It is unrolled
+ * as a tree, so any slot is four compares away. The coordinate it samples is a
+ * varying computed before the branch, which is what keeps the implicit
+ * derivatives well defined.
  *
  * **The glyph math runs on every fragment, glyph or not**, because a
  * derivative in non-uniform control flow is undefined and it has to be taken
@@ -25,25 +26,34 @@
  * fetch from a varying is one the hardware schedules ahead, and one from a
  * computed coordinate is not.
  *
- * **Mode and slot share one attribute**, as `slot + 8 * mode`, because every
- * extra float widens the buffer write for every rect and quad in the run, not
- * just for the glyphs that read it.
+ * **Mode, slot, and matrix share one attribute**, as `slot + 16 * mode +
+ * 128 * matrix`, because every extra float widens the buffer write for every
+ * rect and quad in the run, not just for the vertices that read it.
+ *
+ * **Every vertex names the color matrix it is mapped by**, as an index into
+ * `u_colorMatrix`, `u_colorBias`, and `u_alpha`. A solid's color and a glyph's
+ * are mapped before they are staged, so they name an identity entry; a texel
+ * is not known until it is sampled, so a gradient or an image under a group's
+ * matrix names that matrix, and shares the draw with whatever is around it.
  *
  * **An image's texel is premultiplied, and nothing else's is.** The color
  * matrix wants straight color, so an image vertex says what it is with
  * `PAINT_MODE_IMAGE` and the fragment divides its alpha back out.
  *
  * `a_post` is the alpha factor applied *after* the color matrix. An image quad
- * puts its opacity there. Solid geometry and glyphs leave it at 1 and fold
- * their own alpha into `a_vertexColor`, which is only sound under an identity
- * matrix; the caller owns that condition.
+ * puts its opacity there. Solid geometry leaves it at 1 and folds its own
+ * alpha into `a_vertexColor`, which is only sound under an identity matrix;
+ * the caller owns that condition. A glyph folds its alpha the same way and
+ * has no use for the factor, so its `a_post` is the synthetic-bold shift on
+ * the field's threshold instead: text faked bold shares a run with text that
+ * is not, with no wider vertex.
  *
  * Inputs:
  *   a_position     vec2   screen-space x,y of the corner
  *   a_vertexColor  vec4   straight-alpha color; (1,1,1,1) on an image vertex
  *   a_uv           vec2   texture coordinate 0..1; the white texel for solids
- *   a_post         float  alpha factor applied after the color matrix
- *   a_texSlot      float  slot + 8 * paint mode; slot 0 is the white texel
+ *   a_post         float  alpha factor applied after the color matrix; a glyph's bold shift
+ *   a_texSlot      float  slot + 16 * paint mode + 128 * matrix index; slot 0 is the white texel
  *
  * Output: PREMULTIPLIED alpha. Blend: `gl.blendFunc(ONE, ONE_MINUS_SRC_ALPHA)`.
  */
@@ -54,14 +64,25 @@ import { STRAIGHT_RGB_GLSL } from './straightRgb';
 /**
  * Texture units the batch program samples, slot 0 being the white texel.
  *
- * Fixed rather than queried: WebGL2 guarantees at least 16 fragment texture
- * units, so 8 is available everywhere. Every extra slot is another compare in
- * the fragment chain.
+ * Fixed rather than queried: 16 is the most fragment texture units WebGL2
+ * guarantees, so it is available everywhere and no more is. A power of two,
+ * which keeps `sampleTree` balanced.
  */
-export const BATCH_TEXTURE_SLOTS = 8;
+export const BATCH_TEXTURE_SLOTS = 16;
 
 /** Slot every solid vertex carries — the white texel, bound by `flushBatch`. */
 export const WHITE_SLOT = 0;
+
+/**
+ * Color matrices, each with a group alpha, that one run can draw under. A
+ * vertex names its own, so a run breaks on a matrix only when it would be one
+ * more than this.
+ */
+export const BATCH_MATRIX_SLOTS = 8;
+
+/** Room for the paint modes in the packed attribute; they run 0 to 5. */
+const PAINT_MODES = 8;
+const MATRIX_STRIDE = BATCH_TEXTURE_SLOTS * PAINT_MODES;
 
 /** Paint mode for everything whose texel is a color rather than a field. */
 export const PAINT_MODE_PLAIN = 0;
@@ -85,15 +106,29 @@ export const PAINT_MODE_IMAGE = 5;
 /** 1 / 2π, which turns a conic gradient's angle into a ramp position. */
 const INV_TAU = (1 / (2 * Math.PI)).toFixed(10);
 
-/** Pack a texture slot and a paint mode into the one `a_texSlot` float. */
+/**
+ * Pack a texture slot and a paint mode into the one `a_texSlot` float. The
+ * sum is all there is to it, so a `slot` that already carries a matrix index
+ * (`withMatrix`) keeps it.
+ */
 export function packSlot(slot: number, mode: number): number {
   return slot + BATCH_TEXTURE_SLOTS * mode;
+}
+
+/** `slot` naming entry `matrix` of the run's color matrices as well. */
+export function withMatrix(slot: number, matrix: number): number {
+  return slot + MATRIX_STRIDE * matrix;
 }
 
 /** The paint mode packed into an `a_texSlot` value — for the tests, which read
  *  a vertex back out of the buffer it was staged into. */
 export function paintModeOf(packed: number): number {
-  return Math.floor((packed + 0.5) / BATCH_TEXTURE_SLOTS);
+  return Math.floor((packed + 0.5) / BATCH_TEXTURE_SLOTS) % PAINT_MODES;
+}
+
+/** The matrix index packed into an `a_texSlot` value, for the same tests. */
+export function matrixOf(packed: number): number {
+  return Math.floor((packed + 0.5) / MATRIX_STRIDE);
 }
 
 /**
@@ -106,12 +141,17 @@ export const BATCH_ATTRIBUTE_LOCATIONS = {
 
 const L = BATCH_ATTRIBUTE_LOCATIONS;
 
-function sampleChain(slots: number): string {
-  const arms: string[] = [];
-  for (let i = 1; i < slots; i++) {
-    arms.push(`  if (slot == ${i}) return texture(u_samplers[${i}], uv);`);
-  }
-  return arms.join('\n');
+/** The fetch for slots `lo` to `hi`, halving the range at each compare. */
+function sampleTree(lo: number, hi: number, indent = '  '): string {
+  if (lo === hi) return `${indent}return texture(u_samplers[${lo}], uv);`;
+  const mid = (lo + hi + 1) >> 1;
+  return [
+    `${indent}if (slot < ${mid}) {`,
+    sampleTree(lo, mid - 1, `${indent}  `),
+    `${indent}} else {`,
+    sampleTree(mid, hi, `${indent}  `),
+    `${indent}}`,
+  ].join('\n');
 }
 
 export const BATCH_VERT_SRC = /* glsl */ `#version 300 es
@@ -127,6 +167,7 @@ out vec2 v_uv;
 out float v_post;
 flat out int v_texSlot;
 flat out float v_paintMode;
+flat out int v_matrix;
 void main() {
   vec3 screen = u_model * vec3(a_position, 1.0);
   vec3 clip = u_proj * vec3(screen.xy, 1.0);
@@ -134,10 +175,12 @@ void main() {
   v_vertexColor = a_vertexColor;
   v_uv = a_uv;
   v_post = a_post;
-  // slot + 8 * mode, unpacked — see the file header for why they share a float.
+  // slot + 16 * mode + 128 * matrix, unpacked — see the file header for why
+  // they share a float.
   int packed = int(a_texSlot + 0.5);
   v_texSlot = packed % ${BATCH_TEXTURE_SLOTS};
-  v_paintMode = float(packed / ${BATCH_TEXTURE_SLOTS});
+  v_paintMode = float((packed / ${BATCH_TEXTURE_SLOTS}) % ${PAINT_MODES});
+  v_matrix = packed / ${MATRIX_STRIDE};
 }
 `;
 
@@ -148,18 +191,19 @@ in vec2 v_uv;
 in float v_post;
 flat in int v_texSlot;
 flat in float v_paintMode;
+flat in int v_matrix;
 uniform sampler2D u_samplers[${BATCH_TEXTURE_SLOTS}];
 uniform vec4 u_color;
-uniform float u_alpha;
-uniform float u_synthBold;
+uniform float u_alpha[${BATCH_MATRIX_SLOTS}];
 uniform vec2 u_fieldScale[${BATCH_TEXTURE_SLOTS}];
-uniform mat4 u_colorMatrix;
-uniform vec4 u_colorBias;
+uniform mat4 u_colorMatrix[${BATCH_MATRIX_SLOTS}];
+uniform vec4 u_colorBias[${BATCH_MATRIX_SLOTS}];
 out vec4 outColor;
 
 vec4 sampleSlot(int slot, vec2 uv) {
-${sampleChain(BATCH_TEXTURE_SLOTS)}
-  return texture(u_samplers[0], uv);
+${sampleTree(0, BATCH_TEXTURE_SLOTS - 1)}
+  // Never reached: every slot returns above.
+  return vec4(0.0);
 }
 ${GLYPH_COVERAGE_GLSL}
 ${STRAIGHT_RGB_GLSL}
@@ -190,19 +234,19 @@ void main() {
   texel.rgb = mix(texel.rgb, straightRgb(texel), step(${PAINT_MODE_IMAGE - 0.5}, v_paintMode));
   float isGlyph = step(0.5, v_paintMode) * step(v_paintMode, 2.5);
   // Unconditional, and multiplied out afterwards rather than branched around:
-  // see the file header.
-  float coverage = glyphCoverage(texel, v_paintMode, u_synthBold, v_uv, u_fieldScale[v_texSlot]);
+  // see the file header. A glyph's a_post is its synthetic-bold shift.
+  float coverage = glyphCoverage(texel, v_paintMode, v_post * isGlyph, v_uv, u_fieldScale[v_texSlot]);
   // A glyph's texel is a distance field, so it takes no part in the color; a
   // plain vertex multiplies its texel in as it always did.
   vec4 src = mix(texel, vec4(1.0), isGlyph) * u_color * v_vertexColor;
-  vec4 mapped = clamp(u_colorMatrix * src + u_colorBias, 0.0, 1.0);
-  float a = mapped.a * u_alpha * mix(v_post, 1.0, isGrad) * mix(1.0, coverage, isGlyph);
+  vec4 mapped = clamp(u_colorMatrix[v_matrix] * src + u_colorBias[v_matrix], 0.0, 1.0);
+  float a = mapped.a * u_alpha[v_matrix] * mix(v_post, 1.0, max(isGrad, isGlyph)) * mix(1.0, coverage, isGlyph);
   outColor = vec4(mapped.rgb * a, a);
 }
 `;
 
 export const BATCH_FILL_UNIFORMS = [
-  'u_proj', 'u_model', 'u_samplers', 'u_color', 'u_alpha', 'u_synthBold', 'u_fieldScale',
+  'u_proj', 'u_model', 'u_samplers', 'u_color', 'u_alpha', 'u_fieldScale',
   'u_colorMatrix', 'u_colorBias',
 ] as const;
 

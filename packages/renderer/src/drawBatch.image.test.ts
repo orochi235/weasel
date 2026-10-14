@@ -97,12 +97,12 @@ describe('renderer — consecutive image batching', () => {
   const imageQuadOf = (v: Float32Array, q: number) =>
     v.subarray(q * FLOATS_PER_QUAD, (q + 1) * FLOATS_PER_QUAD);
 
-  /** Every value written to `u_alpha` on the batch program. */
+  /** Every value written to `u_alpha` on the batch program, one per matrix a run draws under. */
   function alphaWrites(): number[] {
     const loc = r._batchFill().uniform('u_alpha');
     return recorder.calls
-      .filter((c) => c.name === 'uniform1f' && c.args[0] === loc)
-      .map((c) => c.args[1] as number);
+      .filter((c) => c.name === 'uniform1fv' && c.args[0] === loc)
+      .flatMap((c) => Array.from(c.args[1] as Float32Array));
   }
 
   it('merges a run of quads over one bitmap into a single draw', () => {
@@ -140,6 +140,18 @@ describe('renderer — consecutive image batching', () => {
     // Unit 0 for white, then one per bitmap, then back to 0 for whoever draws
     // next — a bind left on a high unit is one the next program never samples.
     expect(units).toEqual([0, 1, 2, 0]);
+  });
+
+  it('keeps eight bitmaps in one run, which seven slots could not', () => {
+    const sheets = Array.from({ length: 8 }, () => bitmap());
+    r.render(sheets.map((image, i) => ({ ...img(i * 20), image })));
+    expect(draws()).toEqual([48]);
+    // Each quad names a slot of its own, past the white texel at 0.
+    const v = recorder.calls.find(
+      (c) => c.name === 'bufferSubData' && c.args[0] === recorder.gl.ARRAY_BUFFER,
+    )!.args[2] as Float32Array;
+    const slots = sheets.map((_, i) => v[i * FLOATS_PER_QUAD + SLOT] % BATCH_TEXTURE_SLOTS);
+    expect(slots).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
   });
 
   it('breaks the run when every texture slot is taken', () => {

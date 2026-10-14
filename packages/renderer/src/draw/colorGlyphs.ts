@@ -22,12 +22,9 @@ export function drawColorGlyphs(ctx: DrawContext, group: LaidOutGroup, dx: numbe
 
   const batch = ctx.drawBatch;
   const m = ctx.state.transform;
-  let { staged, slot } = stageColorGlyphs(ctx, atlasId);
-  // Group alpha rides the vertices only in a run that folded it: see `drawImage`.
-  let alpha = opacity * (staged.foldsAlpha ? ctx.state.alpha : 1);
+  let { slot, tint } = stageColorGlyphs(ctx, atlasId);
   const restage = (): void => {
-    ({ staged, slot } = stageColorGlyphs(ctx, atlasId));
-    alpha = opacity * (staged.foldsAlpha ? ctx.state.alpha : 1);
+    ({ slot, tint } = stageColorGlyphs(ctx, atlasId));
   };
 
   for (const q of group.quads) {
@@ -38,7 +35,7 @@ export function drawColorGlyphs(ctx: DrawContext, group: LaidOutGroup, dx: numbe
     let cut: ClipRect | null | undefined;
     while (!batch.pushQuad(
       q.x0 + dx, q.y0 + dy, q.x1 - q.x0, q.y1 - q.y0, m,
-      q.u0, q.v0, q.u1, q.v1, alpha, slot,
+      q.u0, q.v0, q.u1, q.v1, opacity * tint[3], slot, tint[0], tint[1], tint[2],
     )) {
       cut = enterUncut(ctx);
       restage();

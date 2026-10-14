@@ -1,20 +1,16 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { registerFont, FIXTURE_FONT } from '@weasel-js/font';
 import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
-import { dispatch, flushBatch, type DrawContext } from './draw';
+import { dispatch, type DrawContext } from './draw';
 import { FLOATS_PER_VERTEX } from './drawBatch';
 import { createRecorderCtx, stagedVertices } from './testing/recorderCtx';
 
 describe('drawText synthetic-bold', () => {
-  /** Every `u_synthBold` the batch program was given, in issue order. */
+  /** The threshold shift each staged vertex carries, in `a_post`. */
   const boldValues = (ctx: DrawContext, calls: readonly { name: string; args: readonly unknown[] }[]): number[] => {
-    flushBatch(ctx);
+    const v = stagedVertices(ctx, calls);
     const out: number[] = [];
-    let bound: unknown = null;
-    for (const c of calls) {
-      if (c.name === 'useProgram') bound = c.args[0];
-      if (c.name === 'uniform1f' && bound === ctx.batchFill.handle) out.push(c.args[1] as number);
-    }
+    for (let i = 0; i < v.length; i += FLOATS_PER_VERTEX) out.push(v[i + 8]);
     return out;
   };
 
@@ -49,7 +45,9 @@ describe('drawText synthetic-bold', () => {
       }],
       maxWidth: Infinity, align: 'left', style: {},
     });
-    expect(boldValues(ctx, calls).some((v) => Math.abs(v - 0.08) < 1e-6)).toBe(true);
+    const sent = boldValues(ctx, calls);
+    expect(sent).toHaveLength(4);
+    expect(sent.every((v) => Math.abs(v - 0.08) < 1e-6)).toBe(true);
   });
 
   it('leaves the threshold alone for an exact-match variant', async () => {
@@ -66,7 +64,7 @@ describe('drawText synthetic-bold', () => {
       }],
       maxWidth: Infinity, align: 'left', style: {},
     });
-    expect(boldValues(ctx, calls).some((v) => Math.abs(v - 0.08) < 1e-6)).toBe(false);
+    expect(boldValues(ctx, calls)).toEqual([0, 0, 0, 0]);
   });
 });
 

@@ -2,12 +2,8 @@ import { mat3 } from '@weasel-js/geom';
 import { BATCH_TEXTURE_SLOTS } from '../shaders/batchFill';
 import type { DrawContext } from './drawContext';
 import { drawTriangles } from './drawTriangles';
-import {
-  setColorUniform,
-  setAlphaUniform,
-  setColorMatrixUniforms,
-  setProjAndModel,
-} from './uniforms';
+import { setColorUniform, setProjAndModel } from './uniforms';
+import { uploadBatchMatrices } from './batchMatrices';
 import { applyClipTest } from './stencil';
 
 /** The rect batch transforms its own corners, so it draws at model identity. */
@@ -51,9 +47,7 @@ export function flushBatch(ctx: DrawContext): void {
   const indexCount = batch.uploadAndBind();
   setProjAndModel(ctx, prog, BATCH_MODEL);
   setColorUniform(ctx, prog, 1, 1, 1, 1);
-  setAlphaUniform(ctx, prog, staged.alpha);
-  gl.uniform1f(prog.uniform('u_synthBold')!, staged.synthBold);
-  setColorMatrixUniforms(ctx, prog, staged.colorMatrix);
+  uploadBatchMatrices(ctx, prog, staged.matrices);
   gl.activeTexture(gl.TEXTURE0);
   gl.bindTexture(gl.TEXTURE_2D, ctx.whiteTexture);
   for (let i = 0; i < staged.textures.length; i++) {
@@ -82,7 +76,7 @@ export function flushBatch(ctx: DrawContext): void {
   applyClipTest(ctx, staged.clipDepth);
   drawTriangles(ctx, indexCount, ctx.gl.UNSIGNED_INT);
   // Everything else in the renderer binds its texture to unit 0 and some of it
-  // does so without an `activeTexture` of its own, so leaving unit 6 selected
+  // does so without an `activeTexture` of its own, so leaving a high unit selected
   // sends the next such bind to a unit nothing samples.
   gl.activeTexture(gl.TEXTURE0);
   // Not redundant: `drawShader` binds no VAO and points attributes at whatever

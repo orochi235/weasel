@@ -1,131 +1,14 @@
 import type { ColorSpace, GradStop } from '@weasel-js/paint';
 import { IDENTITY_COLOR_MATRIX } from '../state/GroupState';
-import { colorFolding, foldColor, isIdentityColorMatrix, stagedTint, textureTint, type Tint } from './foldColor';
+import { foldColor, foldsColor, textureTint, type Tint } from './foldColor';
 import type { Mesh } from '@weasel-js/geom/tessellate';
 import { resolveColor } from '@weasel-js/paint';
-import { BATCH_TEXTURE_SLOTS } from '../shaders/batchFill';
+import { PAINT_MODE_PLAIN, WHITE_SLOT, packSlot, withMatrix } from '../shaders/batchFill';
 import type { DrawContext } from './drawContext';
-import { sameValues } from './uniforms';
-import { runClipDepth, retryUncut, flushForOwnDraw } from './clip';
+import { retryUncut, flushForOwnDraw } from './clip';
 import { flushBatch } from './flushBatch';
+import { openRun, runTakes, slotForAtlas, slotForBitmap, slotForRamps, takeMatrix } from './batchRun';
 import { type BatchPaint, rampVertices } from './gradient';
-
-/**
- * The group state a staged run was built under.
- *
- * A run outlives the group it started in, so the state live when the flush
- * happens is not the state the rects belong to — the flush draws with these
- * values instead. Transform is absent because it rides the vertices; `alpha`
- * is 1 whenever it rode them too.
- */
-export interface StagedBatchState {
-  alpha: number;
-  colorMatrix: Float32Array;
-  clipDepth: number;
-  /**
-   * The SDF threshold shift `u_synthBold` draws this run under. A uniform
-   * rather than a vertex attribute, and so a thing that breaks a run: a
-   * per-vertex float only glyphs read would widen the buffer write for every
-   * rect and quad beside them. The break falls wherever faked-bold text meets
-   * text that is not, which is a fallback path: a registered bold face never
-   * sets this at all.
-   */
-  synthBold: number;
-  /** Whether group alpha folded into the vertex colors. */
-  foldsAlpha: boolean;
-  /**
-   * The textures this run samples, in the order they joined. A quad's vertices
-   * carry `index + 1`, because slot 0 is the white texel every solid samples.
-   *
-   * Two kinds, because two caches own them: an image quad names an
-   * `ImageBitmap` that `GLImageCache` keys by identity, a glyph names the
-   * string id of a font atlas in `GLTextureCache`. They share the slot list so
-   * a caption and the thumbnail above it share a draw.
-   *
-   * A bitmap's `sampling` is per entry and set per flush rather than at upload:
-   * MAG_FILTER is state on the texture object, so the same bitmap drawn at both
-   * filters in one frame needs two flushes, not two slots. An atlas carries no
-   * sampling because `GLTextureCache` owns its filtering — and must keep
-   * owning it: filtering a distance field destroys it, so a font atlas is
-   * never mipmapped and never joins a shared image atlas.
-   */
-  textures: BatchTexture[];
-}
-
-/** One entry in a run's slot list. */
-type BatchTexture =
-  | { kind: 'bitmap'; image: ImageBitmap; sampling: 'linear' | 'nearest' }
-  | { kind: 'atlas'; id: string; fieldScale: readonly [number, number] }
-  | { kind: 'ramps' };
-
-
-/**
- * Whether the live group state would draw the staged run identically.
- *
- * By value, not by reference: a group carrying an identity color matrix still
- * goes through `compose4x5`, which allocates a new array holding equal numbers.
- * Twenty float compares are nothing against the draw call they save.
- */
-function stagedStateIsLive(
-  ctx: DrawContext, staged: StagedBatchState,
-  image?: ImageBitmap, sampling?: 'linear' | 'nearest',
-  synthBold = 0,
-  folds = false,
-): boolean {
-  if (staged.clipDepth !== (ctx.clipStack.length === 0 ? ctx.clipDepth : runClipDepth(ctx))) return false;
-  // Solids and image quads ask with 0, which is what a run of them carries, so
-  // this only ever breaks between two kinds of glyph.
-  if (staged.synthBold !== synthBold) return false;
-  if (!staged.foldsAlpha && staged.alpha !== ctx.state.alpha) return false;
-  if (image !== undefined && slotForBitmap(staged, image, sampling!) < 0) return false;
-  const colorMatrix = ctx.state.colorMatrix;
-  if (staged.colorMatrix === colorMatrix || sameValues(staged.colorMatrix, colorMatrix)) return true;
-  // A run drawn under identity takes any solid or glyph, and a textured quad
-  // under a matrix a tint can stand in for: each is mapped before it is staged.
-  return folds && staged.foldsAlpha;
-}
-
-/**
- * The slot `image` would sample from in this run, or -1 if it cannot join.
- *
- * A bitmap already in the run reuses its slot — but only at the filter it went
- * in under, since MAG_FILTER belongs to the texture object and one draw cannot
- * have it both ways. Otherwise it takes the next free slot, and a run with none
- * left is a run this quad has to break.
- */
-function slotForBitmap(
-  staged: StagedBatchState, image: ImageBitmap, sampling: 'linear' | 'nearest',
-): number {
-  for (let i = 0; i < staged.textures.length; i++) {
-    const entry = staged.textures[i];
-    if (entry.kind !== 'bitmap' || entry.image !== image) continue;
-    return entry.sampling === sampling ? i + 1 : -1;
-  }
-  return nextFreeSlot(staged);
-}
-
-/** The same for the ramp atlas, of which there is one — so every gradient in a
- *  run shares the slot, however many distinct ramps they are. */
-function slotForRamps(staged: StagedBatchState): number {
-  for (let i = 0; i < staged.textures.length; i++) {
-    if (staged.textures[i].kind === 'ramps') return i + 1;
-  }
-  return nextFreeSlot(staged);
-}
-
-/** The same for a font atlas, which has no filter to disagree about. */
-function slotForAtlas(staged: StagedBatchState, id: string): number {
-  for (let i = 0; i < staged.textures.length; i++) {
-    const entry = staged.textures[i];
-    if (entry.kind === 'atlas' && entry.id === id) return i + 1;
-  }
-  return nextFreeSlot(staged);
-}
-
-/** The slot a texture new to this run would take, or -1 if it is full. */
-function nextFreeSlot(staged: StagedBatchState): number {
-  return staged.textures.length + 1 < BATCH_TEXTURE_SLOTS ? staged.textures.length + 1 : -1;
-}
 
 /**
  * Vertices above which a mesh keeps its own draw, by whether a run is open.
@@ -157,97 +40,115 @@ function canBatchMesh(ctx: DrawContext, mesh: Mesh): boolean {
 }
 
 /**
- * Open or continue a run for `vertices` more, flushing first if the run would
- * overflow or if the live group state no longer matches what it was staged
- * under. Returns the staged state, which the caller reads to resolve alpha.
+ * Open or continue a run for `vertices` more of solid geometry, flushing first
+ * if the run would overflow, was staged at another clip depth, or has no room
+ * for the matrix. Returns what the vertices carry in `a_texSlot`.
  *
- * Fill opacity folds into the vertex alpha, exactly as `u_color` carried it
- * when each shape was its own draw. Group alpha and the group's color matrix
- * fold in too, in a run drawn under identity (`foldColor`). A solid that joins
- * a run a textured quad opened under a real matrix leaves both to the shader,
- * and there a differing alpha breaks the run.
+ * Fill opacity folds into the vertex alpha, and so do the group's alpha and
+ * color matrix (`foldColor`), which is why the matrix a solid asks its run for
+ * is identity: a group's matrix cannot break a run of them.
  */
-export function stageSolid(ctx: DrawContext, vertices: number): StagedBatchState {
-  if (ctx.batchState !== undefined
-      && !stagedStateIsLive(ctx, ctx.batchState, undefined, undefined, 0, colorFolding.enabled)) {
-    flushBatch(ctx);
-  }
+export function stageSolid(ctx: DrawContext, vertices: number): number {
+  const folds = foldsColor(ctx);
+  const colorMatrix = folds ? IDENTITY_COLOR_MATRIX : ctx.state.colorMatrix;
+  const alpha = folds ? 1 : ctx.state.alpha;
+  const open = ctx.batchState;
+  if (open !== undefined && !runTakes(ctx, open, colorMatrix, alpha)) flushBatch(ctx);
   if (ctx.drawBatch.wouldOverflow(vertices)) flushBatch(ctx);
-  return openRun(ctx, colorFolding.enabled);
+  const matrix = takeMatrix(openRun(ctx), colorMatrix, alpha);
+  return packSlot(withMatrix(WHITE_SLOT, matrix), PAINT_MODE_PLAIN);
 }
 
 /**
- * The staged state, opening a run if none is. `folds` says the caller maps its
- * own color, so its run draws under identity whatever the group's matrix; a
- * textured quad under a matrix no tint expresses cannot, and its run draws
- * under the live one.
+ * What a textured vertex is staged under: the matrix and alpha its run draws
+ * it by, the tint its vertices carry, and, once a stage call has filled it in,
+ * the slot they name.
  */
-function openRun(ctx: DrawContext, folds = false): StagedBatchState {
-  if (ctx.batchState === undefined) {
-    const colorMatrix = folds ? IDENTITY_COLOR_MATRIX : ctx.state.colorMatrix;
-    const foldsAlpha = isIdentityColorMatrix(colorMatrix);
-    ctx.batchState = {
-      alpha: foldsAlpha ? 1 : ctx.state.alpha,
-      colorMatrix,
-      clipDepth: runClipDepth(ctx),
-      synthBold: 0,
-      foldsAlpha,
-      textures: [],
-    };
-  }
-  return ctx.batchState;
+interface Textured {
+  colorMatrix: Float32Array;
+  alpha: number;
+  /** The fourth channel carries group alpha wherever the entry's does not. */
+  tint: Tint;
+  /** Texture slot and matrix index together; `packSlot` adds the paint mode. */
+  slot: number;
+}
+
+const UNTINTED: Tint = [1, 1, 1, 1];
+
+/**
+ * A texel's color is not known until it is sampled, so the group's matrix
+ * reaches it one of two ways. One that only scales channels down becomes a
+ * tint on the vertices, in a run entry at identity. Any other stays a matrix
+ * for the shader, as an entry of its own.
+ *
+ * `alphaInEntry` says where group alpha goes in that second case: into the
+ * entry for a gradient, whose `a_post` may be its atlas row, and into the
+ * tint's fourth channel for a quad, which multiplies its `a_post` by it.
+ */
+function texturedUnder(ctx: DrawContext, alphaInEntry: boolean): Textured {
+  const tint = textureTint(ctx);
+  if (tint !== null) return { colorMatrix: IDENTITY_COLOR_MATRIX, alpha: 1, tint, slot: 0 };
+  const colorMatrix = ctx.state.colorMatrix;
+  const alpha = ctx.state.alpha;
+  return alphaInEntry
+    ? { colorMatrix, alpha, tint: UNTINTED, slot: 0 }
+    : { colorMatrix, alpha: 1, tint: [1, 1, 1, alpha], slot: 0 };
 }
 
 /**
  * Open or continue a run for one more image quad, flushing first if the run
  * would overflow or cannot give this bitmap a slot. A run adopts a bitmap it
  * has not seen rather than breaking, which is what lets a ground rect and the
- * atlas quad over it share a draw. Returns the staged state and the slot the
- * quad's vertices must carry.
+ * atlas quad over it share a draw. Returns the slot the quad's vertices carry
+ * and their tint.
  */
 export function stageImage(
   ctx: DrawContext, image: ImageBitmap, sampling: 'linear' | 'nearest',
-): { staged: StagedBatchState; slot: number; tint: Tint } {
-  const tint = colorFolding.enabled ? textureTint(ctx.state.colorMatrix) : null;
-  if (ctx.batchState !== undefined
-      && !stagedStateIsLive(ctx, ctx.batchState, image, sampling, 0, tint !== null)) {
+): { slot: number; tint: Tint } {
+  const under = texturedUnder(ctx, false);
+  const open = ctx.batchState;
+  if (open !== undefined
+      && (!runTakes(ctx, open, under.colorMatrix, under.alpha)
+          || slotForBitmap(open, image, sampling) < 0)) {
     flushBatch(ctx);
   }
   if (ctx.drawBatch.wouldOverflow(4)) flushBatch(ctx);
-  const staged = openRun(ctx, tint !== null);
+  const staged = openRun(ctx);
   let slot = slotForBitmap(staged, image, sampling);
   if (slot > staged.textures.length) {
     staged.textures.push({ kind: 'bitmap', image, sampling });
     slot = staged.textures.length;
   }
-  return { staged, slot, tint: stagedTint(staged, tint) };
+  under.slot = withMatrix(slot, takeMatrix(staged, under.colorMatrix, under.alpha));
+  return under;
 }
 
 /**
  * Open or continue a run for a glyph off the font atlas `atlasId`, flushing
  * first if the run would overflow or has no slot left for it. Every glyph a
  * face contributes to a frame shares one texture, so a paragraph is one run,
- * and a second face costs one more slot rather than a flush per word.
+ * and a second face costs one more slot rather than a flush per word. Returns
+ * the slot the glyph's vertices carry; its color is mapped as a solid's is.
  */
 export function stageGlyphs(
-  ctx: DrawContext, atlasId: string, fieldScale: readonly [number, number], synthBold: number,
-): { staged: StagedBatchState; slot: number } {
-  if (ctx.batchState !== undefined
-      && (!stagedStateIsLive(ctx, ctx.batchState, undefined, undefined, synthBold, colorFolding.enabled)
-          || slotForAtlas(ctx.batchState, atlasId) < 0)) {
+  ctx: DrawContext, atlasId: string, fieldScale: readonly [number, number],
+): number {
+  const folds = foldsColor(ctx);
+  const colorMatrix = folds ? IDENTITY_COLOR_MATRIX : ctx.state.colorMatrix;
+  const alpha = folds ? 1 : ctx.state.alpha;
+  const open = ctx.batchState;
+  if (open !== undefined
+      && (!runTakes(ctx, open, colorMatrix, alpha) || slotForAtlas(open, atlasId) < 0)) {
     flushBatch(ctx);
   }
   if (ctx.drawBatch.wouldOverflow(4)) flushBatch(ctx);
-  const staged = openRun(ctx, colorFolding.enabled);
-  // An empty run adopts the threshold; one that already has vertices agreed to
-  // it above, since a mismatch flushed.
-  staged.synthBold = synthBold;
+  const staged = openRun(ctx);
   let slot = slotForAtlas(staged, atlasId);
   if (slot > staged.textures.length) {
     staged.textures.push({ kind: 'atlas', id: atlasId, fieldScale });
     slot = staged.textures.length;
   }
-  return { staged, slot };
+  return withMatrix(slot, takeMatrix(staged, colorMatrix, alpha));
 }
 
 /**
@@ -263,10 +164,12 @@ export function stageGlyphs(
  */
 function stageRamps(
   ctx: DrawContext, stops: GradStop[], space: ColorSpace, vertices: number,
-): { staged: StagedBatchState; slot: number; rowV: number } {
+): { slot: number; tint: Tint; rowV: number } {
   if (ctx.gradRamps.wouldReshape(stops, space)) flushBatch(ctx);
-  if (ctx.batchState !== undefined
-      && (!stagedStateIsLive(ctx, ctx.batchState) || slotForRamps(ctx.batchState) < 0)) {
+  const under = texturedUnder(ctx, true);
+  const open = ctx.batchState;
+  if (open !== undefined
+      && (!runTakes(ctx, open, under.colorMatrix, under.alpha) || slotForRamps(open) < 0)) {
     flushBatch(ctx);
   }
   if (ctx.drawBatch.wouldOverflow(vertices)) flushBatch(ctx);
@@ -276,24 +179,19 @@ function stageRamps(
     staged.textures.push({ kind: 'ramps' });
     slot = staged.textures.length;
   }
-  return { staged, slot, rowV: ctx.gradRamps.rowV(ctx.gradRamps.upload(stops, space)) };
+  return {
+    slot: withMatrix(slot, takeMatrix(staged, under.colorMatrix, under.alpha)),
+    tint: under.tint,
+    rowV: ctx.gradRamps.rowV(ctx.gradRamps.upload(stops, space)),
+  };
 }
 
-/** Alpha a batched paint's vertices carry: its own opacity, and the group's
- *  under an identity color matrix. */
-function stagedAlpha(
-  ctx: DrawContext, staged: StagedBatchState, opacity: number | undefined,
-): number {
-  return (opacity ?? 1) * (staged.foldsAlpha ? ctx.state.alpha : 1);
-}
-
-/** Straight-alpha rgba for a solid paint under the staged state. */
+/** Straight-alpha rgba for a solid paint under the live group state. */
 function stagedColor(
-  ctx: DrawContext, staged: StagedBatchState,
-  paint: { color: string; opacity?: number },
+  ctx: DrawContext, paint: { color: string; opacity?: number },
 ): [number, number, number, number] {
   const [r, g, b, a] = resolveColor(paint.color);
-  return foldColor(ctx, staged, r, g, b, a * (paint.opacity ?? 1));
+  return foldColor(ctx, r, g, b, a * (paint.opacity ?? 1));
 }
 
 export function pushRect(
@@ -301,10 +199,10 @@ export function pushRect(
   rect: { x: number; y: number; width: number; height: number },
   fill: { color: string; opacity?: number },
 ): void {
-  const staged = stageSolid(ctx, 4);
-  const [r, g, b, a] = stagedColor(ctx, staged, fill);
+  const slot = stageSolid(ctx, 4);
+  const [r, g, b, a] = stagedColor(ctx, fill);
   if (!ctx.drawBatch.pushRect(
-    rect.x, rect.y, rect.width, rect.height, ctx.state.transform, r, g, b, a,
+    rect.x, rect.y, rect.width, rect.height, ctx.state.transform, r, g, b, a, slot,
   )) retryUncut(ctx, rect, fill, pushRect);
 }
 
@@ -313,9 +211,9 @@ function pushMesh(
   mesh: Mesh,
   paint: { color: string; opacity?: number },
 ): void {
-  const staged = stageSolid(ctx, mesh.vertices.length >> 1);
-  const [r, g, b, a] = stagedColor(ctx, staged, paint);
-  if (!ctx.drawBatch.pushMesh(mesh, ctx.state.transform, r, g, b, a)) {
+  const slot = stageSolid(ctx, mesh.vertices.length >> 1);
+  const [r, g, b, a] = stagedColor(ctx, paint);
+  if (!ctx.drawBatch.pushMesh(mesh, ctx.state.transform, r, g, b, a, slot)) {
     retryUncut(ctx, mesh, paint, pushMesh);
   }
 }
@@ -325,24 +223,24 @@ export function pushRampRect(
   rect: { x: number; y: number; width: number; height: number },
   paint: Extract<BatchPaint, { kind: 'ramp' }>,
 ): void {
-  const { staged, slot, rowV } = stageRamps(ctx, paint.stops, paint.space, 4);
+  const { slot, tint, rowV } = stageRamps(ctx, paint.stops, paint.space, 4);
   const { uv, post } = rampVertices(paint, rowV);
-  // White vertices, so the ramp texel passes through as its own color and the
-  // alpha channel carries what `u_opacity` and `u_alpha` used to.
+  // White vertices but for the tint, so the ramp texel passes through as its
+  // own color, and the alpha channel carries what `u_opacity` used to.
   if (!ctx.drawBatch.pushGradientRect(
     rect.x, rect.y, rect.width, rect.height, ctx.state.transform,
-    uv, post, slot, paint.mode, 1, 1, 1, stagedAlpha(ctx, staged, paint.opacity),
+    uv, post, slot, paint.mode, tint[0], tint[1], tint[2], (paint.opacity ?? 1) * tint[3],
   )) retryUncut(ctx, rect, paint, pushRampRect);
 }
 
 function pushRampMesh(
   ctx: DrawContext, mesh: Mesh, paint: Extract<BatchPaint, { kind: 'ramp' }>,
 ): void {
-  const { staged, slot, rowV } = stageRamps(ctx, paint.stops, paint.space, mesh.vertices.length >> 1);
+  const { slot, tint, rowV } = stageRamps(ctx, paint.stops, paint.space, mesh.vertices.length >> 1);
   const { uv, post } = rampVertices(paint, rowV);
   if (!ctx.drawBatch.pushGradientMesh(
     mesh, ctx.state.transform,
-    uv, post, slot, paint.mode, 1, 1, 1, stagedAlpha(ctx, staged, paint.opacity),
+    uv, post, slot, paint.mode, tint[0], tint[1], tint[2], (paint.opacity ?? 1) * tint[3],
   )) retryUncut(ctx, mesh, paint, pushRampMesh);
 }
 
@@ -373,15 +271,18 @@ const NO_FIELD = [0, 0] as const;
 
 /**
  * Open or continue a run for a quad off the page of color glyphs `atlasId`.
- * The page takes a slot as a font atlas does, and the run is an image quad's:
- * its texel is a color, which cannot fold through the group's color matrix
- * before it is staged.
+ * The page takes a slot as a font atlas does, and the quad is staged as an
+ * image's is: its texel is a color, which the group's matrix reaches as a tint
+ * or in the shader.
  */
 export function stageColorGlyphs(
   ctx: DrawContext, atlasId: string,
-): { staged: StagedBatchState; slot: number } {
-  if (ctx.batchState !== undefined
-      && (!stagedStateIsLive(ctx, ctx.batchState) || slotForAtlas(ctx.batchState, atlasId) < 0)) {
+): { slot: number; tint: Tint } {
+  const under = texturedUnder(ctx, false);
+  const open = ctx.batchState;
+  if (open !== undefined
+      && (!runTakes(ctx, open, under.colorMatrix, under.alpha)
+          || slotForAtlas(open, atlasId) < 0)) {
     flushBatch(ctx);
   }
   if (ctx.drawBatch.wouldOverflow(4)) flushBatch(ctx);
@@ -391,5 +292,6 @@ export function stageColorGlyphs(
     staged.textures.push({ kind: 'atlas', id: atlasId, fieldScale: NO_FIELD });
     slot = staged.textures.length;
   }
-  return { staged, slot };
+  under.slot = withMatrix(slot, takeMatrix(staged, under.colorMatrix, under.alpha));
+  return under;
 }

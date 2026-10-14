@@ -48,14 +48,32 @@ describe('WeaselRenderer.render — redundant uniform uploads', () => {
     expect(countOf('uniformMatrix3fv')).toBeLessThanOrEqual(2);
   });
 
-  it('re-uploads when a group changes the color matrix mid-frame', () => {
-    // Identity for the first rect, a real matrix for the second.
+  it('re-uploads when a later run draws under a color matrix the program does not hold', () => {
     const tinted = new Array(20).fill(0);
     tinted[0] = 0.5; tinted[6] = 0.5; tinted[12] = 0.5; tinted[18] = 1;
     tinted[4] = 0.25;
+    const other = [...tinted];
+    other[4] = 0.125;
     // Images under a bias, which only the shader can map: a solid's color, and
-    // an image's under a plain scale, is mapped on the CPU and never moves the
-    // uniform.
+    // an image's under a plain scale, is mapped on the CPU and never reaches
+    // the uniform. A clip only the stencil expresses breaks the run between them.
+    const image = { width: 16, height: 16, close: () => {} } as unknown as ImageBitmap;
+    const img = (x: number): DrawCommand => ({ kind: 'image', image, x, y: 0, w: 16, h: 16 });
+    const diamond: PolygonPath = {
+      kind: 'polygon', commands: new Uint8Array([M, L, L, L, Z]),
+      coords: new Float32Array([8, 0, 16, 8, 8, 16, 0, 8]), fillRule: 'nonzero',
+    };
+    r.render([
+      { kind: 'group', colorMatrix: tinted, children: [img(0)] } as unknown as DrawCommand,
+      { kind: 'group', clip: diamond, colorMatrix: other, children: [img(0)] } as unknown as DrawCommand,
+    ]);
+    expect(countOf('uniformMatrix4fv')).toBe(2);
+  });
+
+  it('uploads once for a run that draws under two color matrices', () => {
+    const tinted = new Array(20).fill(0);
+    tinted[0] = 0.5; tinted[6] = 0.5; tinted[12] = 0.5; tinted[18] = 1;
+    tinted[4] = 0.25;
     const image = { width: 16, height: 16, close: () => {} } as unknown as ImageBitmap;
     const img = (x: number): DrawCommand => ({ kind: 'image', image, x, y: 0, w: 16, h: 16 });
     r.render([
@@ -63,8 +81,11 @@ describe('WeaselRenderer.render — redundant uniform uploads', () => {
       { kind: 'group', colorMatrix: tinted, children: [img(20)] } as unknown as DrawCommand,
       img(40),
     ]);
-    // Identity, then the tint, then back to identity on the way out.
-    expect(countOf('uniformMatrix4fv')).toBeGreaterThanOrEqual(3);
+    expect(countOf('drawElements')).toBe(1);
+    const sent = recorder.calls.filter((c) => c.name === 'uniformMatrix4fv');
+    expect(sent).toHaveLength(1);
+    // Identity and the tint, 16 floats each.
+    expect((sent[0].args[2] as Float32Array).length).toBe(32);
   });
 
   it('re-uploads the model matrix when a group transform changes mid-frame', () => {
