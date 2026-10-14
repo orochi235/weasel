@@ -24,6 +24,10 @@ export interface Contour {
   closed: boolean;
   /** Flat index of `anchors[0]`. */
   first: number;
+  /** For each anchor, the index of the command that drew it among the
+   *  path's M, L, C, and Q commands: the numbering `countPathAnchors` sizes
+   *  per-anchor arrays by. */
+  sources: number[];
 }
 
 const lineSeg = (a: Vec, b: Vec): Seg => ({ line: true, p0: a, c1: a, c2: b, p3: b });
@@ -35,11 +39,13 @@ export function decodeContours(path: PolygonPath): Contour[] | null {
   const out: Contour[] = [];
   let cur: Contour | null = null;
   let flat = 0;
+  let drawn = 0;
   let bad = false;
   const last = (): Vec => cur!.anchors[cur!.anchors.length - 1];
   const push = (p: Vec, seg: Seg): void => {
     cur!.segs.push(seg);
     cur!.anchors.push(p);
+    cur!.sources.push(drawn++);
     flat++;
   };
   forEachSegment(commands, coords, (cmd, ci, _px, _py, _i, opens) => {
@@ -48,7 +54,7 @@ export function decodeContours(path: PolygonPath): Contour[] | null {
     switch (cmd) {
       case PATH_M:
         if (cur) out.push(cur);
-        cur = { anchors: [at(0)], segs: [], closed: false, first: flat++ };
+        cur = { anchors: [at(0)], segs: [], closed: false, first: flat++, sources: [drawn++] };
         break;
       case PATH_L:
         push(at(0), lineSeg(last(), at(0)));
@@ -83,6 +89,7 @@ function closeContour(c: Contour, unfold: () => void): void {
   const end = c.anchors[n - 1];
   if (n > 1 && !c.segs[n - 2].line && end.x === a0.x && end.y === a0.y) {
     c.anchors.pop();
+    c.sources.pop();
     unfold();
     return;
   }

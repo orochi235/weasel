@@ -3,7 +3,10 @@ import { PATH_C, PATH_L, PATH_M, PATH_Z } from '../commands';
 import type { PolygonPath } from '../path';
 import { polygonFromPoints } from './builder';
 import { boundsOfPath } from './bounds';
-import { cornerFrameAt, cornerFrames, cornerRadiusOf, cornerTrimOf, resolveCorners } from './corners';
+import {
+  cornerFrameAt, cornerFrames, cornerRadiusOf, cornerTrimOf, remapPerAnchor, resolveCorners,
+  resolveCornersWithSources,
+} from './corners';
 import { nextCornerStyle, withCorner, type CornerSpec } from './cornerSpec';
 import { anchorsToPath, pathToAnchors } from './anchors';
 import { pathFromD } from './pathFromD';
@@ -101,6 +104,27 @@ describe('resolveCorners', () => {
   it('is memoized per path', () => {
     const p = withCorner(square(), 1, { style: 'round', radius: 10 });
     expect(resolveCorners(p)).toBe(resolveCorners(p));
+  });
+});
+
+describe('resolveCornersWithSources', () => {
+  it("maps each expanded anchor to its source anchor, a corner's points to the corner", () => {
+    const { path, anchorSources } = resolveCornersWithSources(
+      withCorner(square(), 1, { style: 'round', radius: 10 }));
+    expect(path.commands.length - 1).toBe(5);
+    expect([...anchorSources!]).toEqual([0, 1, 1, 2, 3]);
+    expect(remapPerAnchor([10, 11, 12, 13], anchorSources!, 1)).toEqual([10, 11, 11, 12, 13]);
+  });
+
+  it('numbers sources the way countPathAnchors does, past a folded closing curve', () => {
+    const p = pathFromD('M 0 0 L 100 0 L 100 100 C 50 120 0 50 0 0 Z');
+    const { anchorSources } = resolveCornersWithSources(withCorner(p, 1, { style: 'chamfer', radius: 10 }));
+    expect([...anchorSources!]).toEqual([0, 1, 1, 2, 0]);
+  });
+
+  it('reports no sources for a path the expansion leaves alone', () => {
+    const p = square();
+    expect(resolveCornersWithSources(p)).toEqual({ path: p, anchorSources: null });
   });
 });
 

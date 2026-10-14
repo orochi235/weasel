@@ -119,7 +119,31 @@ export function cornerFrameAt(path: PolygonPath, index: number): CornerFrame | n
   return cornerFrames(path).find((f) => f.index === index) ?? null;
 }
 
-const expanded = new WeakMap<PolygonPath, PolygonPath>();
+/** A path with its corners expanded, and where its anchors came from. */
+export interface ResolvedCorners {
+  path: PolygonPath;
+  /**
+   * For each anchor of `path` (each M, L, C, or Q, as `countPathAnchors`
+   * counts them), the anchor of the source path it belongs to, in the same
+   * numbering. Every point a corner's cut adds belongs to that corner's
+   * anchor. Null when the expansion added none.
+   */
+  anchorSources: Uint32Array | null;
+}
+
+const expanded = new WeakMap<PolygonPath, ResolvedCorners>();
+
+/** {@link resolveCorners}, also answering which source anchor each anchor of
+ *  the result came from, so an array kept per anchor (`vertexColors`) can be
+ *  carried onto it with {@link remapPerAnchor}. */
+export function resolveCornersWithSources(path: PolygonPath): ResolvedCorners {
+  if (path.corners === undefined) return { path, anchorSources: null };
+  const hit = expanded.get(path);
+  if (hit) return hit;
+  const out = hasCorners(path) ? expand(path) : { path: withoutCorners(path), anchorSources: null };
+  expanded.set(path, out);
+  return out;
+}
 
 /**
  * `path` with its corner specs expanded into plain geometry and dropped: a
@@ -130,21 +154,44 @@ const expanded = new WeakMap<PolygonPath, PolygonPath>();
  */
 export function resolveCorners<P extends Path>(path: P): P;
 export function resolveCorners(path: Path): Path {
-  if (path.kind !== 'polygon' || path.corners === undefined) return path;
-  const hit = expanded.get(path);
-  if (hit) return hit;
-  const out = hasCorners(path) ? expand(path) : withoutCorners(path);
-  expanded.set(path, out);
+  if (path.kind !== 'polygon') return path;
+  return resolveCornersWithSources(path).path;
+}
+
+/** `values`, `stride` numbers per source anchor, as `stride` per anchor of
+ *  the expanded path that `sources` describes. */
+export function remapPerAnchor(values: readonly number[], sources: Uint32Array, stride: number): number[] {
+  const out = new Array<number>(sources.length * stride);
+  for (let i = 0; i < sources.length; i++) {
+    for (let k = 0; k < stride; k++) out[i * stride + k] = values[sources[i] * stride + k];
+  }
   return out;
 }
 
-function expand(path: PolygonPath): PolygonPath {
+/** A `PathBuilder` that records, for each anchor it writes, the source anchor `src`. */
+class Emitter {
+  readonly b = new PathBuilder();
+  readonly sources: number[] = [];
+  src = 0;
+  moveTo(x: number, y: number): void { this.b.moveTo(x, y); this.sources.push(this.src); }
+  lineTo(x: number, y: number): void { this.b.lineTo(x, y); this.sources.push(this.src); }
+  curveTo(a: number, b: number, c: number, d: number, x: number, y: number): void {
+    this.b.curveTo(a, b, c, d, x, y);
+    this.sources.push(this.src);
+  }
+  close(): void { this.b.close(); }
+}
+
+function expand(path: PolygonPath): ResolvedCorners {
   const contours = decodeContours(path);
-  if (!contours) return withoutCorners(path);
-  const b = new PathBuilder();
-  for (const c of contours) emitContour(b, c, contourCuts(path, c));
-  const { commands, coords } = b.build();
-  return { ...withoutCorners(path), commands, coords };
+  if (!contours) return { path: withoutCorners(path), anchorSources: null };
+  const e = new Emitter();
+  for (const c of contours) emitContour(e, c, contourCuts(path, c));
+  const { commands, coords } = e.b.build();
+  return {
+    path: { ...withoutCorners(path), commands, coords },
+    anchorSources: Uint32Array.from(e.sources),
+  };
 }
 
 /** Parameter on segment `k` where the cut at its start ends, and where the
@@ -157,13 +204,16 @@ function segSpan(c: Contour, cuts: readonly (AnchorCut | null)[], k: number): [n
   return [t0, Math.max(t0, t1)];
 }
 
-function emitContour(b: PathBuilder, c: Contour, cuts: readonly (AnchorCut | null)[]): void {
+function emitContour(b: Emitter, c: Contour, cuts: readonly (AnchorCut | null)[]): void {
   const n = c.anchors.length;
   const spans = c.segs.map((_s, k) => segSpan(c, cuts, k));
   const start = c.closed && c.segs.length > 0 ? pointAt(c.segs[0], spans[0][0]) : c.anchors[0];
+  b.src = c.sources[0];
   b.moveTo(start.x, start.y);
   c.segs.forEach((seg, k) => {
     const [t0, t1] = spans[k];
+    // Both the run up to the next anchor and the cut at it belong to that anchor.
+    b.src = c.sources[(k + 1) % n];
     const closing = c.closed && k === n - 1 && !(cuts[0]?.spec && cuts[0].trim > 0);
     if (t1 > t0 && !(closing && seg.line)) {
       if (seg.line) {
@@ -188,7 +238,7 @@ function emitContour(b: PathBuilder, c: Contour, cuts: readonly (AnchorCut | nul
 }
 
 function emitCut(
-  b: PathBuilder, style: CornerStyle, v: Vec,
+  b: Emitter, style: CornerStyle, v: Vec,
   p1: Vec, t1: Vec | null, p2: Vec, t2: Vec | null,
 ): void {
   if (style === 'chamfer' || !t1 || !t2) { b.lineTo(p2.x, p2.y); return; }

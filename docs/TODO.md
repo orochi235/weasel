@@ -167,10 +167,6 @@ Priority tags:
   one enters draw's path-edit mode with no anchors to drag, insert, or bend. Undecided: whether
   editing turns the rectangle into a polygon path on its first edit, and what then happens to
   anything that reads it as a rectangle.
-- **(P3) Per-anchor vertex colors do not follow dynamic corners.** `vertexColors` holds one color
-  per anchor of the stored path, and the renderer draws the path with its corners expanded
-  (`resolveCorners`, `packages/geom/src/paths/corners.ts`), which has more anchors, so a cornered
-  path with vertex colors draws them against the wrong points.
 - **(P2) Extend a path from its end.** Drag an open path's endpoint outward to grow it along its
   end tangent, or along its end curvature.
 - **(P2) Measure, then transform by the measurement.** A measure tool reads distance and angle

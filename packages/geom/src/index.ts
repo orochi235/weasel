@@ -26,7 +26,8 @@ export {
 } from './paths/builder';
 export { boundsOfPath } from './paths/bounds';
 export {
-  cornerFrameAt, cornerFrames, cornerRadiusOf, cornerTrimOf, resolveCorners, type CornerFrame,
+  cornerFrameAt, cornerFrames, cornerRadiusOf, cornerTrimOf, remapPerAnchor, resolveCorners,
+  resolveCornersWithSources, type CornerFrame, type ResolvedCorners,
 } from './paths/corners';
 export {
   CORNER_STYLES, compactCorners, cornerAt, cornerSpecAt, hasCorners, nextCornerStyle, scaleCorners, withCorner,

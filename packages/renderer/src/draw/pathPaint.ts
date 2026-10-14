@@ -4,7 +4,7 @@ import type { PathDrawCommand } from '../DrawCommand';
 import type { GLMeshHandle } from '../cache/GLMeshCache';
 import type { ShaderProgram } from '../shaders/ShaderProgram';
 import { resolveStrokeWidth } from '@weasel-js/stroke';
-import { resolveCorners } from '@weasel-js/geom';
+import { remapPerAnchor, resolveCornersWithSources } from '@weasel-js/geom';
 import { strokeMesh } from '../cache/strokeMeshCache';
 import { resolveStrokeLengths, type StrokedPathCommand } from '../strokeLengths';
 import { metricKeepsRects, type StrokeSpaces } from '@weasel-js/stroke';
@@ -20,13 +20,26 @@ import { batchPaint } from './gradient';
 import { paintBindContext, bindPattern, bindGradient } from './paintBind';
 
 export function drawPath(ctx: DrawContext, given: PathDrawCommand): void {
-  const path = resolveCorners(given.path);
-  const cmd = path === given.path ? given : { ...given, path };
+  const cmd = withCornersResolved(given);
   // A fill or a stroke with no `paint` paints nothing, the way a node's
   // `fill: null` does. Commands arriving from a consumer painter or overlay
   // can carry one.
   if (cmd.fill?.paint) drawPathFill(ctx, cmd, cmd.fill.paint);
   if (cmd.stroke?.paint) drawPathStroke(ctx, cmd as StrokedPathCommand);
+}
+
+/** `cmd` with its path's dynamic corners expanded, and its per-anchor colors
+ *  carried onto the anchors the expansion leaves. */
+function withCornersResolved(cmd: PathDrawCommand): PathDrawCommand {
+  if (cmd.path.kind !== 'polygon') return cmd;
+  const { path, anchorSources: src } = resolveCornersWithSources(cmd.path);
+  if (path === cmd.path) return cmd;
+  const out: PathDrawCommand = { ...cmd, path };
+  if (src && cmd.vertexColors) out.vertexColors = remapPerAnchor(cmd.vertexColors, src, 4);
+  if (src && cmd.stroke?.vertexColors) {
+    out.stroke = { ...cmd.stroke, vertexColors: remapPerAnchor(cmd.stroke.vertexColors, src, 4) };
+  }
+  return out;
 }
 
 function drawPathFill(ctx: DrawContext, cmd: PathDrawCommand, fill: CommandPaint): void {

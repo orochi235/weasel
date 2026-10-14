@@ -99,3 +99,38 @@ describe('vertex-colored stroke under a clip', () => {
     expect(drawIdx).toBeGreaterThan(disableIdx);
   });
 });
+
+describe('vertex colors on a path with dynamic corners', () => {
+  const RED = [1, 0, 0, 1], GREEN = [0, 1, 0, 1], BLUE = [0, 0, 1, 1], WHITE = [1, 1, 1, 1];
+
+  /** The per-vertex colors the fill uploads, four floats a vertex. */
+  function uploadedColors(cmd: DrawCommand): number[][] {
+    const { ctx, calls } = createRecorderCtx();
+    const colorLoc = ctx.pathFillVColor.attribute('a_vertexColor');
+    dispatch(ctx, cmd);
+    const enable = calls.findIndex((c) => c.name === 'enableVertexAttribArray' && c.args[0] === colorLoc);
+    const upload = calls.slice(0, enable).reverse().find((c) => c.name === 'bufferData')!;
+    const data = Array.from(upload.args[1] as Float32Array);
+    const out: number[][] = [];
+    for (let i = 0; i < data.length; i += 4) out.push(data.slice(i, i + 4));
+    return out;
+  }
+
+  it("gives a cut corner's points that corner's anchor color", () => {
+    const colors = uploadedColors({
+      kind: 'path',
+      path: {
+        kind: 'polygon',
+        commands: new Uint8Array([M, L, L, L, Z]),
+        coords: new Float32Array([0, 0, 100, 0, 100, 100, 0, 100]),
+        fillRule: 'nonzero',
+        corners: [null, { style: 'chamfer', radius: 20 }],
+      },
+      fill: { paint: { kind: 'solid', color: '#ffffff' } },
+      vertexColors: [...RED, ...GREEN, ...BLUE, ...WHITE],
+    } as unknown as DrawCommand);
+    expect(colors).toHaveLength(5);
+    expect(colors.filter((c) => c.every((v, i) => v === GREEN[i]))).toHaveLength(2);
+    for (const c of colors) expect(c.some(Number.isNaN)).toBe(false);
+  });
+});
