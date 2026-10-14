@@ -25,7 +25,7 @@ describe('outlinePath', () => {
     expect(outlinePath(custom, BOX)).toBe(custom);
   });
 
-  for (const outline of ['rect', 'diamond', 'stadium', 'parallelogram'] as const) {
+  for (const outline of ['rect', 'diamond', 'stadium', 'parallelogram', 'trapezoid'] as const) {
     it(`keeps a ${outline} inside its bounds`, () => {
       // A cubic's bounds are computed from the curve, not its hull, so a
       // stadium that bulges past its box shows up here.
@@ -113,7 +113,7 @@ describe('contentBox', () => {
     expect(contentBox(rectPath(0, 0, 1, 1), BOX)).toEqual(BOX);
   });
 
-  for (const outline of ['rect', 'diamond', 'parallelogram'] as const) {
+  for (const outline of ['rect', 'diamond', 'parallelogram', 'trapezoid'] as const) {
     it(`boxForContent inverts contentBox for a ${outline}`, () => {
       const want = { width: 60, height: 40 };
       const box = boxForContent(outline, want);
