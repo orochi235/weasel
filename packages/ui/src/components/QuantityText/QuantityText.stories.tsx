@@ -25,3 +25,6 @@ export const Vector: Story = { render: () => <QuantityText vector={[120, 48.5]} 
 export const MixedVector: Story = {
   render: () => <QuantityText vector={[tag(2, unit('ft')), tag(0.5, percent())]} labels={['w', 'h']} separator=" × " />,
 };
+
+/** Inside a control that speaks the value itself: the marked-up text and no second copy for a reader. */
+export const Muted: Story = { render: () => <QuantityText value={tag(2.5, unit('ft'))} mute /> };

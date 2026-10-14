@@ -50,6 +50,38 @@ describe('MenuButton', () => {
   });
 });
 
+describe('MenuButton link rows', () => {
+  const PAGES = [
+    { value: 'wall', label: 'Wall', href: '/corpus' },
+    { value: 'stats', label: 'Dashboard', href: '/stats', isCurrent: true },
+  ];
+  const open = () => act(() => {
+    fireEvent.click(screen.getByRole('button', { name: /Labs/ }));
+  });
+
+  it('draws a row with an href as a link to it, and needs no onAction', () => {
+    render(<MenuButton label="Labs" items={PAGES} />);
+    open();
+    const wall = screen.getByRole('menuitem', { name: 'Wall' });
+    expect(wall.tagName).toBe('A');
+    expect(wall).toHaveAttribute('href', '/corpus');
+  });
+
+  it('marks the row for the open page, and only that one', () => {
+    render(<MenuButton label="Labs" items={PAGES} />);
+    open();
+    expect(screen.getByRole('menuitem', { name: 'Dashboard' })).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByRole('menuitem', { name: 'Wall' })).not.toHaveAttribute('aria-current');
+  });
+
+  it('closes on Escape', () => {
+    render(<MenuButton label="Labs" items={PAGES} />);
+    open();
+    fireEvent.keyDown(screen.getByRole('menu'), { key: 'Escape' });
+    expect(screen.queryByRole('menu')).toBeNull();
+  });
+});
+
 /** Enter keyboard modality, then focus — RAC only opens tooltips on focus-visible. */
 function keyboardFocus(el: HTMLElement) {
   fireEvent.keyDown(document.body, { key: 'Tab' });

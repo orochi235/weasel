@@ -16,6 +16,43 @@
   color: var(--wzl-fg);
 }
 
+/* A trigger that is the text around it: a heading that opens a list. */
+.bare {
+  align-items: baseline;
+  gap: var(--wzl-space-2);
+  padding: 0;
+  background: none;
+  border: 0;
+  border-radius: var(--wzl-radius-sm);
+  color: inherit;
+  font: inherit;
+}
+
+.bare .label {
+  color: inherit;
+}
+
+.bare[data-hovered] {
+  color: var(--wzl-accent-fg);
+}
+
+.bare[data-focus-visible] {
+  outline: 2px solid var(--wzl-focus-ring);
+  outline-offset: 2px;
+}
+
+.bare[data-disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.bare .chevron {
+  width: 0.5em;
+  height: 0.5em;
+  color: inherit;
+  opacity: 0.6;
+}
+
 .chevron {
   width: 10px;
   height: 10px;
@@ -38,6 +75,14 @@
   color: var(--wzl-fg);
   white-space: nowrap;
   outline: none;
+}
+
+.item:any-link {
+  text-decoration: none;
+}
+
+.item[aria-current='page'] {
+  font-weight: var(--wzl-font-weight-bold);
 }
 
 .item[data-focused] {

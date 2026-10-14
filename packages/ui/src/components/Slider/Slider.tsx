@@ -1,6 +1,7 @@
 import { useMemo, type ReactElement } from 'react';
 import { qty, type Quantity } from '@weasel-js/quantity';
 import { endlessTrack } from '../../endless';
+import { QuantityText } from '../QuantityText';
 import { SliderBody } from './SliderBody';
 import { READOUT } from './stops';
 import { retagThumb, thumbDisplay, untagThumb, type PlainThumb } from './tagged';
@@ -66,7 +67,7 @@ export function Slider<T extends Thumb<Quantity> = Thumb>(props: SliderProps<T>)
       onChange={onChange && (next => onChange(outward(next)))}
       keyStep={keyStep && ((t, steps, i) => keyStep(retagThumb<T>(t), steps, i))}
       onAddThumb={onAddThumb && (at => { const made = onAddThumb(at); return made && untagThumb(made); })}
-      renderReadout={(t, i) => (renderReadout ? renderReadout(shown(t), i) : qty(shown(t).value, display ?? READOUT).text)}
+      renderReadout={(t, i) => (renderReadout ? renderReadout(shown(t), i) : <QuantityText value={shown(t).value} display={display ?? READOUT} mute />)}
       spokenAt={(v, t) => {
         const at = endless === undefined ? v : fromTrack(v);
         const own = thumbDisplay(t);

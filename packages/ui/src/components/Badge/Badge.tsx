@@ -186,7 +186,7 @@ export const Badge = forwardRef(function Badge(props: BadgeProps, ref: Ref<HTMLE
   // In half pixels, so the insets hold still while the outline's length, which sets how many
   // times an effect repeats along it, changes with the insets.
   const clear = composeBase?.fitsContent && sampler
-    ? Math.ceil(inwardReach(sampler, resolvedEffects, bloat ?? 0) * 2) / 2
+    ? Math.ceil(inwardReach(sampler, resolvedEffects, bloat ?? 0, box) * 2) / 2
     : 0;
   const insets = useInsets<unknown>(composeBase ?? shapeModule, composeBase ? composeBaseParams : params, contentRef, clear);
   const style: CSSProperties = {

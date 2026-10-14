@@ -1,6 +1,7 @@
 import type { ReactElement } from 'react';
 import { multiplier, qty } from '@weasel-js/quantity';
 import { DetentSlider } from '../DetentSlider';
+import { QuantityText } from '../QuantityText';
 import { Slider } from '../Slider';
 import { PauseIcon, PlayIcon } from '../../icons';
 import s from './Timeline.module.css';
@@ -73,6 +74,7 @@ export function Transport(props: TransportProps): ReactElement {
   const offered: readonly number[] = props.rates ?? TRANSPORT_RATES;
   const rateText = props.formatRate ?? multiplierText;
   const rateSpoken = props.formatRate ?? multiplierSpoken;
+  const rateDrawn = (r: number) => (props.formatRate ? props.formatRate(r) : <QuantityText value={r} display={RATE} mute />);
   const rates = offered.includes(rate) ? offered : [...offered, rate].sort((a, b) => a - b);
 
   return (
@@ -122,9 +124,9 @@ export function Transport(props: TransportProps): ReactElement {
           className={s.rateSlider}
         />
         <span className={s.rateReadout}>
-          <span>{rateText(rate)}</span>
+          <span>{rateDrawn(rate)}</span>
           <span className={s.sizer} aria-hidden="true">
-            {rates.map((r) => <span key={r}>{rateText(r)}</span>)}
+            {rates.map((r) => <span key={r}>{rateDrawn(r)}</span>)}
           </span>
         </span>
       </div>

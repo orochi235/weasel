@@ -1,6 +1,7 @@
 import { useRef, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, type ReactElement } from 'react';
 import { clamp } from '@weasel-js/geom';
 import { qty } from '@weasel-js/quantity';
+import { QuantityText } from '../QuantityText';
 import { ReadoutsBelow } from './ReadoutsBelow';
 import s from './Slider.module.css';
 import { crossEnd } from './crossEnd';
@@ -237,7 +238,7 @@ export function SliderBody<T extends Thumb = Thumb>(
       {placement === 'inline-after' && (
         <span data-readout="inline" className={s.readoutInline}>
           {thumbs.map((t, i) => (
-            <span key={i}>{i > 0 ? ' / ' : ''}{renderReadout ? renderReadout(t, i) : qty(t.value, display ?? READOUT).text}</span>
+            <span key={i}>{i > 0 ? ' / ' : ''}{renderReadout ? renderReadout(t, i) : <QuantityText value={t.value} display={display ?? READOUT} mute />}</span>
           ))}
         </span>
       )}
@@ -246,7 +247,7 @@ export function SliderBody<T extends Thumb = Thumb>(
         <ReadoutsBelow
           readouts={thumbs.map((t, i) => ({
             fraction: valueToFraction(t.value),
-            content: renderReadout ? renderReadout(t, i) : qty(t.value, display ?? READOUT).text,
+            content: renderReadout ? renderReadout(t, i) : <QuantityText value={t.value} display={display ?? READOUT} mute />,
           }))}
         />
       )}

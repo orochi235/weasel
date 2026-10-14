@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { TrialChromeContext, TrialContribution } from '../types';
 import { SidebarRegion } from './SidebarRegion';
@@ -140,5 +140,21 @@ describe('ViewportRegion', () => {
     );
     screen.getByRole('button', { name: 'Fit' }).click();
     expect(onActivate).toHaveBeenCalledWith(ctx);
+  });
+
+  it('names an item in a kit tooltip, not in a native title', () => {
+    render(
+      <ViewportRegion
+        contributions={[
+          { id: 'fit', region: 'viewport', item: { icon: Glyph, label: 'Fit', onActivate: () => {} } },
+        ]}
+        ctx={ctx}
+      />,
+    );
+    const fit = screen.getByRole('button', { name: 'Fit' });
+    expect(fit).not.toHaveAttribute('title');
+    fireEvent.keyDown(document.body, { key: 'Tab' });
+    act(() => fit.focus());
+    expect(screen.getByRole('tooltip').textContent).toContain('Fit');
   });
 });

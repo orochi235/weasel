@@ -199,6 +199,7 @@ function routeArgsForSpec(
   if ('key' in spec) return Array.isArray(spec.key) ? spec.key : [spec.key];
   if ('fingers' in spec) return [String(spec.fingers)];
   if ('direction' in spec) return [spec.direction ?? fallback];
+  if (spec.kind === 'hover') return [spec.motion ?? fallback];
   if ('types' in spec) return [spec.types?.length ? spec.types.join('|') : fallback];
   return [fallback];
 }

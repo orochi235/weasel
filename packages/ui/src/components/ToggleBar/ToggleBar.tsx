@@ -130,7 +130,6 @@ export function ToggleBar<V extends string | number = string>(props: ToggleBarPr
     s.root,
     size && s[`size_${size}`],
     variant && s[`variant_${variant}`],
-    variant === 'minimal' && s.minimalBoxed,
     className,
   ].filter(Boolean).join(' ');
 

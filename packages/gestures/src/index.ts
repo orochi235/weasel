@@ -81,7 +81,7 @@ export type {
   PointerIdentity,
   PointerDownEvent,
   PointerMoveEvent,
-  HoverEvent,
+  HoverEvent, HoverWhere,
   PointerUpEvent,
   PointerCancelEvent,
   ClickEvent,

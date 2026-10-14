@@ -501,20 +501,13 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 ## Selection, actions & UI panels
 
-- **(P3) Scallops on a fitted badge base still run through the label.** A fitted base
-  (`puzzle`, `quatrefoil`, `octant-spline`, `octant-bspline`) now leaves room for what moves its
-  outline inward (`inwardReach`, `Badge/composeOutline.ts`), and bites and a negative `bloat` clear
-  the label in headless Chromium. `scallops` (`scallopRadius: 5`, `scallopSpacing: 12`) does not on
-  the last three: the outline crosses both ends of the label, as it did before. Not read to a
-  cause; a scallop moves its points outward, so `inwardReach` counts nothing for it, and on a
-  concave stretch outward is toward the label. Seen in the same screenshot and also not read: a
-  removable `pill` with a two-word label wraps it onto two lines in a flex row with room to spare.
-
 - **(P3) A removable badge's remove control can wrap onto a line by itself.** On a wrapped `pill` or
   `plain` `Badge`, when the line cannot hold the last word and the control together, the control
   breaks alone and takes its negative margin with it, so it sits left of the line's start. Measured
   in bare markup, not on a badge. A word joiner, a non-breaking space, and `white-space: nowrap` do
-  not stop Chromium breaking before an inline-block.
+  not stop Chromium breaking before an inline-block. Seen once in a screenshot and not read to a
+  cause: a removable `pill` with a two-word label wrapped onto two lines in a flex row with room
+  to spare. Both need a browser to work in.
 
 - **(P3) Disabled has no signal of its own, now that emphasis is an alpha.** Disabled is `opacity:
   0.4`–`0.5` on the whole control, and subtle text is 0.54–0.64 alpha, so a disabled control and a
@@ -526,41 +519,30 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   `fonts.css`, so `--wzl-font-ui`'s Oswald and `--wzl-font-numeric`'s Oswald Tabular fall back to
   system faces in every demo. Left as is for now by decision; draw loads `fonts.css`.
 
-- **(P3) `ToggleBar`'s `minimal` is not `ButtonBar`'s.** The three bars share one skin,
-  `components/segmentedControl.module.css`, and fork only at `minimal`: `ButtonBar` and
-  `OptionsBar` draw bare rounded segments with a gap, and `ToggleBar` adds `.minimalBoxed` over
-  that, a bordered box with square corners and a rule between neighbors. Which look wins, or
-  whether both are variants every bar takes, is a visual call.
-
-- **(P3) No control in `@weasel-js/ui` draws its numbers through `QuantityText`.** `QuantityText`
-  draws a quantity, a range, or a vector as the HTML form `@weasel-js/quantity` writes, and dims
-  a unit, a percent sign, and a label. No control uses it: `Slider`'s readouts, `BandEditor`'s
-  ticks and ends, and `Transport`'s rate draw `qty().text`, and `PropertyField` still draws its
-  suffix from its own `unit` prop. It draws no kind's MathML form.
+- **(P3) `PropertyField` draws its unit from its own `unit` prop, not through `QuantityText`.**
+  `Slider`'s readouts, `BandEditor`'s ticks and ends, and `Transport`'s rate draw through
+  `QuantityText`, which dims a unit, a percent sign, and a label. `PropertyField`'s suffix is still a
+  `ReactNode` it is handed beside an editable number, so it follows none of that. `QuantityText`
+  draws no kind's MathML form.
 
 - **(P2) Redesign the stop color/opacity swatches under `GradientEditor`.** Each stop gets
   a `ColorField` with an alpha slider in a row beneath the track (`GradientEditor.tsx`). The
   owner wants that row redesigned; the shape it should take is still open.
 
-- **(P3) labkit's `LabSwitcher.less` menu is a fork of the weasel-ui popover skin.** It copies
-  `MenuButton`'s menu and items, but with an opaque surface and a different shadow from
-  `components/listbox.module.css`, which `MenuButton`, `Select`, `ComboBox`, `PaintField`, and
-  `Bar`'s popover share. Decide whether those differences are intended; if not, it wants the
-  shared skin — and its items are links, which `MenuButton` has no way to render yet.
+- **(P3) labkit and the apps hand-build what weasel-ui already draws.** Each waits on something
+  the ui component lacks, or on a look at the result in a browser:
+  `.lk-titlebar-button` is 18px square and `Button`'s smallest size is `--wzl-control-h-sm`;
+  `.lk-toolbar-button`'s `danger` reddens on hover, which a ghost `Button` has no way to do;
+  `SidebarRegion`'s section head and undock button against `SidebarPanel`, which takes no
+  `actions`, no undock control, no stance, and no `fill`; `LabHeader`'s bare "Add trial" button,
+  which sets its own baseline so its label lines up with the title and would lose that as a
+  `Button` with a leading icon; the theme editor's swatch tabs against `ToggleBar`'s flat variant
+  and its hex and number inputs against `Input` and `NumberField`.
 
-- **(P3) labkit and the apps hand-build what weasel-ui already draws.** Each differs a little
-  from the ui component, so swapping changes pixels and needs a call on which look wins:
-  labkit's `.lk-viewport-controls__button`, `.lk-toolbar-button`, and `.lk-titlebar-button`
-  against `Button`'s ghost icon button; `SidebarRegion`'s section head and undock button against
-  `SidebarPanel`; `LabHeader`'s bare "Add trial" button beside the `MenuButton` it becomes
-  with more than one instrument; the theme editor's swatch tabs against `ToggleBar`'s flat
-  variant and its hex and number inputs against `Input` and `NumberField`.
-
-- **(P3) Nothing on the site sets the mode.** The chrome follows `data-wzl-mode` and whatever
-  theme is applied, but no reader can pick one: the demo shell draws the default theme in dark.
-  `useColorModePreference` and a `ColorModeControl` in the sidebar would do it. Look at the pages
-  in light mode first: demo scenes still draw in colors chosen for a dark page (`#d4c4a8` labels
-  in `ViewportDemo`, `AudioDemo`, and other demos), a few rules darken with `rgba(0, 0, 0, 0.2)`
+- **(P3) The site's demos are colored for a dark page.** The demo shell's sidebar has a
+  `ColorModeControl` now, dark until a reader picks. Nobody has looked at the pages in light
+  mode: demo scenes still draw in colors chosen for a dark page (`#d4c4a8` labels in
+  `ViewportDemo`, `AudioDemo`, and other demos), a few rules darken with `rgba(0, 0, 0, 0.2)`
   in either mode, and the front page pins its own theme to dark.
 
 - **(P3) Overlays still set React Aria's deprecated `UNSTABLE_portalContainer`.**
@@ -571,16 +553,17 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   (`packages/ui/src/overlays/portalHost.tsx`) to the provider once RAC exports it.
   The same switch lets a contained `ToastRegion` drop its own region for RAC's,
   which would make it an F6 landmark again. Still absent from RAC's index at the
-  installed 1.21.1 and at nightly `3.0.0-nightly-99e610236-261006`, last checked 2026-10-11. 1.22.1 is out and unchecked.
+  installed 1.21.1, at 1.22.1 (the latest), and at nightly `3.0.0-nightly-99e610236-261006`, last
+  checked 2026-10-13.
 
-- **(P3) Hover reports motion only, and nothing in the kit binds it yet.** `hover` is a gesture
-  (`HoverSpec`; `docs/taxonomy.md`, "Gesture"): an immediate action bound to it runs on every
-  unpressed pointer move. It does not say when the pointer leaves the surface or passes from one
-  target to another, so the loupe (`packages/labkit/src/loupe/useLoupe.ts`), which puts its lens
-  away on `pointerleave`, still hand-attaches both listeners, and `CustomShaderDemo` reads the
-  cursor from its own `onPointerMove`. Wants a leave signal (and a decision on whether crossing
-  between targets is one), then the loupe's aim and the demo's cursor-following panels moved onto
-  bindings. Only jsdom has run a hover binding.
+- **(P3) The loupe's aim is a pair of hand-attached listeners.** `hover` is a gesture
+  (`HoverSpec`; `docs/taxonomy.md`, "Gesture"), and with `motion: 'leave'` it says when the
+  pointer passes out of its target or off the surface. The loupe
+  (`packages/labkit/src/loupe/useLoupe.ts`) still attaches `pointermove` and `pointerleave`
+  itself: its lens follows a pressed pointer too, which a hover stands down for, and
+  `<LoupeGestures>` mounts its own dispatcher with the pointer channel off. Moving it needs a
+  gesture for a pointer's moves pressed or not, or a ruling that the lens holds still through a
+  drag. Only jsdom has run a hover binding.
 
 - **(P3) labkit's palette drag-drop runs its own pointer session.** A trial's
   pan, zoom, tap, and loupe route through weasel's dispatcher (`CameraInput`),

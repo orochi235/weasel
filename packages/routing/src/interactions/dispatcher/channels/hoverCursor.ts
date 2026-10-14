@@ -3,13 +3,19 @@
  * unpressed pointer, and the cursor shown for what a press there would do.
  */
 import { createCursorSink, resolveCursorTier, type CursorSink, type CursorSpec, type PaintedCursorState } from '@weasel-js/cursor';
-import type { EventModifiers } from '@weasel-js/gestures';
+import type { EventModifiers, HoverWhere } from '@weasel-js/gestures';
 import type { DispatchCore } from '../dispatchCore';
 import { DEV, publishLiveDispatch } from '../dispatchTrace';
 import type { InputEvent } from '../matcher';
 import { underPointer, type UnderPointer } from '../underPointer';
 
 type Hover = EventModifiers & { clientX: number; clientY: number };
+
+const whereOf = ({ affordance, bodyTarget, bodyKind }: UnderPointer): HoverWhere => ({
+  ...(affordance !== undefined ? { affordance } : {}),
+  ...(bodyTarget !== undefined ? { bodyTarget } : {}),
+  ...(bodyKind !== undefined ? { bodyKind } : {}),
+});
 
 const hoverOf = (e: Hover): Hover => ({
   clientX: e.clientX, clientY: e.clientY,
@@ -101,8 +107,9 @@ export function hoverCursorInput(
       if (pointersHeld() === 0) {
         const w = toWorld(e.clientX, e.clientY);
         const where = underPointer(target(), last, w);
+        const from = facts ? { from: whereOf(facts.where) } : {};
         facts = { at: last, where };
-        dispatch({ kind: 'hover', x: w.x, y: w.y, clientX: e.clientX, clientY: e.clientY, ...where });
+        dispatch({ kind: 'hover', x: w.x, y: w.y, clientX: e.clientX, clientY: e.clientY, ...where, ...from });
       }
       refresh();
     },
@@ -111,6 +118,12 @@ export function hoverCursorInput(
       refreshSoon();
     },
     onLeave() {
+      if (facts) {
+        const { at, where } = facts;
+        const w = toWorld(at.clientX, at.clientY);
+        dispatch({ kind: 'hover', off: true, x: w.x, y: w.y, clientX: at.clientX, clientY: at.clientY, ...where, from: whereOf(where) });
+      }
+      facts = null;
       last = null;
       if (DEV) publishLiveDispatch(null);
       paintedCursor()?.clearPointer();

@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render } from '@testing-library/react';
+import { percent } from '@weasel-js/quantity';
 import { Slider } from './Slider';
 
 describe('Slider rendering', () => {
@@ -81,6 +82,19 @@ describe('Slider readouts', () => {
     const inline = container.querySelector('[data-readout="inline"]')!;
     expect(inline.textContent).toContain('0.123');
     expect(inline.textContent).toContain('0.456');
+  });
+
+  it('draws a readout as a marked-up quantity, in either placement', () => {
+    for (const readoutPlacement of ['inline-after', 'below-thumb'] as const) {
+      const { container, unmount } = render(
+        <Slider min={0} max={1} display={percent()} thumbs={[{ value: 0.5 }]} readoutPlacement={readoutPlacement} onInput={() => {}} />,
+      );
+      const readout = container.querySelector('[data-readout]')!;
+      expect(readout.querySelector('data')?.getAttribute('value'), readoutPlacement).toBe('0.5');
+      expect(readout.querySelector('[data-part="percentSign"]')?.textContent, readoutPlacement).toBe('%');
+      expect(readout.textContent, readoutPlacement).toBe('50%');
+      unmount();
+    }
   });
 
   it("'below-thumb' renders one absolutely-positioned readout per thumb", () => {

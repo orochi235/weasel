@@ -77,6 +77,19 @@ describe('Transport', () => {
     expect(onRateChange).toHaveBeenCalledWith(2, expect.anything());
   });
 
+  it('draws the rate as a marked-up quantity', () => {
+    const { container } = render(<Transport {...props} rate={4} />);
+    const shown = container.querySelector('data[value="4"]')!;
+    expect(shown.textContent).toBe('4x');
+    expect(shown.closest('[aria-hidden]')).toBeNull();
+  });
+
+  it('draws the rate as the text a formatRate hands back', () => {
+    const { container } = render(<Transport {...props} rate={4} formatRate={(r) => `${r} fps`} />);
+    expect(container.querySelector('data')).toBeNull();
+    expect(container.textContent).toContain('4 fps');
+  });
+
   it('speaks the rate rather than the detent index', () => {
     render(<Transport {...props} rate={4} />);
     expect(screen.getByRole('slider', { name: /rate/i })).toHaveAttribute('aria-valuetext', '4 times');

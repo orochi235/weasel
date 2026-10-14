@@ -1,4 +1,4 @@
-import { useRovingTabIndex } from '../../passthrough/weasel-ui';
+import { Button, useRovingTabIndex } from '../../passthrough/weasel-ui';
 import type { TrialChromeContext, TrialContribution } from '../types';
 
 /** Props for `<ViewportRegion>`. */
@@ -33,17 +33,17 @@ export function ViewportRegion({ contributions, ctx }: ViewportRegionProps) {
         if (c.region !== 'viewport' || !c.item) return null;
         const { icon: Icon, label, disabled, onActivate } = c.item;
         return (
-          <button
+          <Button
             key={c.id}
-            type="button"
-            className="lk-viewport-controls__button"
-            aria-label={label}
-            title={label}
+            variant="ghost"
+            iconOnly
+            ariaLabel={label}
+            tooltip={label}
             disabled={disabled}
             onClick={() => onActivate(ctx)}
           >
             <Icon size={16} />
-          </button>
+          </Button>
         );
       })}
     </div>

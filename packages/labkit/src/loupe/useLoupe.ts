@@ -63,9 +63,8 @@ function lensShown(over: boolean, enabled: boolean, peeking: boolean): boolean {
  * The peek key and the wheel are not here: they are `loupe.peek` and
  * `loupe.magnify`, routed through the gesture dispatcher that
  * `<LoupeGestures>` mounts on the same host. Aiming stays a plain listener
- * because a hover is not a gesture the grammar names — `GESTURE_DESCRIPTORS`
- * has no continuous-motion entry, and inventing one to carry the lens' aim
- * would be an input taxonomy change, not a loupe change.
+ * because the lens follows a pressed pointer too, and a `hover` binding stands
+ * down while one is held.
  */
 export function useLoupe({
   options,
