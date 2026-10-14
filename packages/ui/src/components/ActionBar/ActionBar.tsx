@@ -48,15 +48,18 @@ export function ActionBar(props: ActionBarProps) {
   );
   const schema = useMemo((): PrefGroup => {
     const keys = all.filter((a) => a.group === group).flatMap(actionItems).map((item) => item.key);
-    const leaf = (key: string): PrefAction => ({
-      kind: 'action',
-      // Empty, the button reads the registered action's own label.
-      name: labels?.[key] ?? '',
-      description: '',
-      default: undefined,
-      action: key,
-      ...(icons?.[key] === undefined ? {} : { icon: icons[key] }),
-    });
+    const leaf = (key: string): PrefAction => {
+      const icon = icons?.[key];
+      return {
+        kind: 'action',
+        // Empty, the button reads the registered action's own label.
+        name: labels?.[key] ?? '',
+        description: '',
+        default: undefined,
+        action: key,
+        ...(icon === undefined ? {} : { icon }),
+      };
+    };
     // An action's key may hold a dot, which a schema key may not, and a key that reads as an index would sort first.
     return { name: '', children: Object.fromEntries(keys.map((key, i) => [`action${i}`, leaf(key)])) };
   }, [all, group, icons, labels]);
