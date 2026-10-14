@@ -68,8 +68,13 @@ export async function warnWhenWatchIsSilent(server: ViteDevServer, probe: () => 
   if (!(await probe())) server.config.logger.warn(SILENT);
 }
 
+/** Options for the `watchProbe` vite plugin. */
 export interface WatchProbeOptions {
-  /** Answers whether file events arrive. Default: {@link fileEventsArrive}. */
+  /**
+   * Answers whether the OS is reporting file changes: false makes the plugin log its warning. Called once, as the
+   * dev server starts, and not at all where the server polls or does not watch. Default: {@link fileEventsArrive},
+   * which writes a temp file and waits five seconds for the report.
+   */
   probe?: () => Promise<boolean>;
 }
 
