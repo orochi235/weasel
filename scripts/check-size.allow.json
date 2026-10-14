@@ -157,9 +157,6 @@
   "packages/geom/src/tessellate/tessellate.ts": {
     "longestFunction": 124
   },
-  "packages/gestures/src/ui/match.ts": {
-    "longestFunction": 125
-  },
   "packages/guides/src/layout/strategies/tileGrid.ts": {
     "longestFunction": 281
   },
