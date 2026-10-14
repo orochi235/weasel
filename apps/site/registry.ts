@@ -653,6 +653,16 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/AutoControlsDemo.tsx',
   },
   {
+    id: 'scene-lab',
+    title: 'Scene in a lab',
+    package: 'labkit',
+    description:
+      "A weasel scene as a trial's subject. The instrument declares no `canvas` or `stage`, so the trial runs no camera of its own and the `<TrialSceneCanvas>` it renders owns every pointer, wheel and key gesture over it — selection, the tools' drags, Delete, Escape, its own pan and zoom. The trial's palette is the canvas's tool slot, so a pick there and the canvas's V, R and P keys move the same value. Undo and Redo, buttons and <kbd>Mod+Z</kbd> alike, step the scene's own history, and `useTrialScene` writes every recorded edit into the trial's state, so Reset, Clone and snapshots carry the drawing. The control panel's values reach the select and insert tools on the next render: snapping is the move action's `snap` strategy and the insert tools' `snapPoint`.",
+    hint: 'Pick Rectangle and drag on the canvas, or Pen and click out a path. Turn Snap to grid off and on, change the spacing, then undo with the button or <kbd>Mod+Z</kbd>.',
+    load: () => import('./demos/SceneLabDemo').then((m) => m.SceneLabDemo),
+    path: 'apps/site/demos/SceneLabDemo.tsx',
+  },
+  {
     id: 'bidi',
     title: 'Bidirectional text',
     package: 'bidi',
