@@ -846,14 +846,6 @@ only story runner in the repo.
   without that day's changes, and passed in three fleet runs on teitou the same day. Not looked
   into: which of the two machines draws the header the way a reader's browser does.
 
-- **(P3) A release whose notes for one package pass 125,000 characters fails after it has
-  published.** `changesets/action` writes a GitHub release per package with that package's
-  changelog section as the body, and GitHub refuses a longer one. 1.10.0's core section was 135,412
-  characters: every package was already on its way to npm and tagged, the step then failed, and the
-  registry check and the registry smoke test after it never ran. Its release was made by hand with
-  the notes cut short and a link to the changelog. Either the release step cuts a long body the
-  same way, or the two checks run whether or not that step failed.
-
 - **(P2) Confirm on a fleet node that a new dependency in browser-tested code no longer fails the
   first run that meets it.** A node keeps its vite dep cache between runs, and a warm cache skips
   the scan that finds dependencies, so one first imported since then was met mid-run and vite
@@ -1149,16 +1141,6 @@ only story runner in the repo.
   machine (the job allows 100 minutes), and whether the base, measured first, reads differently
   from the head for that reason alone.
 
-- **(P3) labkit inlines siblings that own module state.** `packages/labkit/tsup.config.ts` bundles
-  every `@weasel-js/*` sibling except core, theme, and animator, and its own comment gives the
-  reason those are external: module-global state inlined twice is two copies of it. The same holds
-  for `@weasel-js/quantity` (`registerDisplayKind` writes a module-level map, so a kind an app
-  registers is unknown to the copy inside labkit's `dist`, and `displayKindOf` falls back to
-  decimal without a warning), `@weasel-js/storage` (`memorySubscribers`), and `@weasel-js/ui`
-  (`RecentColorsProvider`, the overlay portal host). labkit also lists those siblings as
-  `dependencies`, so a consumer installs one copy and runs another. In the repo, aliases resolve
-  both to one source, so no test can see it.
-
 - **(P3) Five leaf packages keep their own listener sets.** Every other store notifies through
   `createEmitter()` in `@weasel-js/registry` (a pass walks the listeners held when it began; a
   throwing listener is logged and the rest run). These still hold a `Set` and a loop, because each
@@ -1168,11 +1150,12 @@ only story runner in the repo.
   still reaches whatever caused the notify. Moving them means either that dependency or the
   emitter living somewhere all five can reach.
 
-- **(P3) `SceneCanvasInner` is one 388-line function.** It is most of the 510-line
+- **(P3) `SceneCanvasInner` is one 386-line function.** It is most of the 508-line
   `canvas/SceneCanvas.tsx`. What is left in it is the prop destructure and the JSX, most of that
   the props of `StandardActionsRegistrar` and `GestureDispatcherMounter`; getting under the cap
-  means turning those mounters into hooks, the audit's section E, which also removes
-  `getActionRef` and `actionsRegistryRef`. `docs/audits/2026-10-12-SceneCanvas.md` lists what belongs to another
+  means turning those mounters into hooks, the audit's section E, which first has to settle
+  whether the registrar's dep registrations still land after its children's once they are the
+  parent's own effects. `docs/audits/2026-10-12-SceneCanvas.md` lists what belongs to another
   owner; its dead-code pass and its sections on the built-in tool registry, the preset table, the
   chrome-caps rule context, path editing, selection, ingestion, the device profile, the camera, the
   layer slots, and the redraw subscriptions have landed. `canvas/Canvas.tsx` is 742 lines, 443 of them `CanvasInner`,

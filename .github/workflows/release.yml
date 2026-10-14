@@ -45,7 +45,7 @@ jobs:
       - run: npm install -g npm@${{ env.NPM_VERSION }}
       - run: npm ci
       # Covers all thirteen workspaces, labkit included — it is last in
-      # `build:downstream` because it bundles the others.
+      # `build:downstream` because its types and stylesheet are built from the others'.
       - run: npm run build
       # Last gate before anything reaches npm: refuse to publish a package whose
       # `exports`/`types` map promises files the tarball does not contain.
@@ -94,6 +94,17 @@ jobs:
           version-script: npx changeset version
           commit-message: "chore: version packages"
           pr-title: "chore: version packages"
+          # scripts/github-releases.mjs writes them, in the next step: the action
+          # sends each changelog section whole, and GitHub refuses a body over
+          # 125,000 characters. 1.10.0's core section was 135,412, so this step
+          # failed with every package already on npm and the checks below skipped.
+          create-github-releases: false
+      - name: Write a GitHub release for each package
+        if: steps.changesets.outputs.published == 'true'
+        run: node scripts/github-releases.mjs
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PUBLISHED: ${{ steps.changesets.outputs.published-packages }}
       # The first gate *after* anything ships. `changeset publish` has twice
       # listed a package under "Successfully published" that never reached the
       # registry, with no npm error anywhere in the log, so its report is not
@@ -110,9 +121,10 @@ jobs:
       # the action takes it runs `changeset version` in this same working tree
       # and pushes the result to a branch without resetting, so the manifests
       # here hold versions nothing has published yet and every run that opens a
-      # version PR would fail.
+      # version PR would fail. `!cancelled()` runs it when the release notes
+      # above failed, since what is on npm does not depend on them.
       - name: Verify every version reached the registry
-        if: steps.changesets.outputs.published == 'true'
+        if: ${{ !cancelled() && steps.changesets.outputs.published == 'true' }}
         timeout-minutes: 65
         run: npm run check:published -- --wait
       # And the question a consumer actually asks. The group pins its siblings
@@ -120,5 +132,5 @@ jobs:
       # every other version is present — which is how 1.2.0 was found, by a
       # person installing it days later.
       - name: Install the release from the registry
-        if: steps.changesets.outputs.published == 'true'
+        if: ${{ !cancelled() && steps.changesets.outputs.published == 'true' }}
         run: npm run test:smoke:registry -- --wait

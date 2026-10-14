@@ -73,7 +73,6 @@ The assembly landed: `features/chrome-caps/useChromeCaps.ts` builds the context,
 
 Lines 757, 762-768, 1099, 1263-1333.
 
-- **`getActionRef` (757) and `actionsRegistryRef` (1099)** carry the actions registry up from `StandardActionsRegistrar` (its lines 188-207). The registry is in scope here, so they are vestigial. The "registry not mounted yet" branch of `ingest` goes with them: it is now in `features/ingestion/useCanvasIngestion.ts`, which takes the registry as a getter so this arc can re-point it.
 - **The registrar takes 37 props (1263-1299)**, mostly values this function computed only to hand down.
 - **`ToolKeybindingsMounter`** is misnamed: it also installs every contribution's actions, deps, and `attach` (`useContributionRoles`). It needs two `useKeybindings` calls because the takeover branch is decided above it.
 - **Mounter props that are constant gates** (evidence): `boundsOf` is read only in `if (!selectionRef || !boundsOf || !viewRef) return undefined` (`GestureDispatcherMounter.tsx:151`), and all three are always passed.
@@ -161,11 +160,9 @@ Adjacent, in `props.ts:164-168`: the `Omit` names `moveOptions`, `resizeOptions`
 | `onToolsCreatedRef` | 726 | render | effect 727 | dependency array |
 | `getNodeAtPointRef` | 732 | render | hit observers | dependency array |
 | `getNodeAtPointRefForHover` | 807 | render | hover | duplicate of 732 |
-| `getActionRef` | 757 | registrar effect | dispatcher `getAction` | provider boundary that is gone |
 | `dispatcherRef` | 762 | init | everything gesture-related | lazy init |
 | `committedSelectionRef` | — | render | `currentRuleInputs` | dependency array, and commit timing |
 | `chromeAffordancesRef` | 985 | mounter insertion effect | slops layer | child → parent, debug only |
-| `actionsRegistryRef` | 1099 | registrar effect | `useCanvasIngestion`'s registry getter | provider boundary that is gone |
 | `addedViews` | 1137 | `addView` / `remove` | JSX | — |
 | `testHookSceneRef`, `testHookSelectionRef` | 1232-1233 | render | test hook | duplicates of 970 and 465 |
 
@@ -182,7 +179,7 @@ Adjacent, in `props.ts:164-168`: the `Omit` names `moveOptions`, `resizeOptions`
 
 1. Landed: path-edit state, mask, live path, and overlay to `features/paths` (A).
 2. Landed: chrome-caps rule context to `features/chrome-caps`, and preset chrome and bindings to the preset table (C, D).
-3. Mounters become hooks, removing `getActionRef`, `actionsRegistryRef`, and the 37-prop call (E).
+3. Mounters become hooks, removing the 37-prop call (E). Landed ahead of it: the dispatcher and `ingest` read the actions registry from scope, where `getActionRef` and `actionsRegistryRef` carried it up from the registrar.
 4. Landed: one camera, made in SceneCanvas and handed to `<Canvas>` (F).
 5. Landed: ingestion hook (J).
 6. Landed: selection read-only view and kind labels to `core/selection` (H). The two kind classifiers stay two.

@@ -23,51 +23,24 @@ export default defineConfig({
   tsconfig: './tsconfig.lib.json',
   // .d.ts emission is handled by a dedicated pipeline: see
   // scripts/build-dts.mts, wired as the `build:dts` step after this build.
-  // Unlike the JS here, it imports the weasel siblings rather than inlining
-  // them; see the comment on `external` there.
+  // Like the JS here, it imports the weasel siblings rather than copying them.
   dts: false,
   sourcemap: true,
   clean: true,
-  // react/react-dom are peers; the rest are third-party libs declared as labkit
-  // dependencies. @weasel-js/core and @weasel-js/theme are peers too — see
-  // noExternal below.
+  // Nothing labkit depends on is inlined: every import of another package stays a
+  // specifier the consumer's install resolves, so each weasel sibling runs as one
+  // copy. Several own state with identity (core's registries, theme's context,
+  // quantity's display kinds, ui's providers, registry's MIXED), and a copy inlined
+  // here reads what the app's copy never wrote, with no error. In the repo aliases
+  // resolve both to one source, so only scripts/smoke-consumer-bundle.mjs sees it.
   external: [
     'react',
     'react-dom',
     'react-aria-components',
     'earcut',
     'polygon-clipping',
-    '@weasel-js/core',
-    /^@weasel-js\/core\//,
-    '@weasel-js/theme',
-    /^@weasel-js\/theme\//,
-    '@weasel-js/animator',
+    /^@weasel-js\//,
   ],
-  // Bundle labkit's weasel siblings into its dist — but never core, theme, or the animator.
-  //
-  // Core owns module-global registries (content handlers, paint kinds, shape
-  // painters, markers, programs). Inlining it ships a second set, and a consumer
-  // holding labkit *and* core registers into one and reads the other: blank
-  // canvas, no diagnostic beyond `layoutRuns`' warning. So core stays an
-  // external specifier, resolved once at the consumer, and is declared an exact
-  // peer to make npm say so at install time.
-  // See docs/proposals/2026-08-31-singleton-packages-as-peers.md.
-  //
-  // Theme is the same shape for a different reason: it owns a React context and
-  // the `wzl-themes` stylesheet's module-scoped handle. A second copy gives
-  // `useThemeOptional` a context the app's own `ThemeProvider` never wrote to,
-  // so it reads null and `<LabShell>` wraps a second provider over the app's
-  // theme — and where `adoptedStyleSheets` is missing, both copies append their
-  // own `<style id="wzl-themes">`.
-  //
-  // The animator keeps what it knows of each target in a module-scoped map, which core's
-  // pose targets are read through: a second copy would not know core's targets.
-  //
-  // The lookahead has to cover subpaths as well as the bare specifier: the
-  // bundled siblings import `@weasel-js/core/patterns-builtin` and labkit
-  // imports `@weasel-js/theme/react`, and matching only the bare names would
-  // inline those.
-  noExternal: [/^@weasel-js\/(?!(?:core|theme|animator)(?:$|\/))/],
   splitting: true,
   treeshake: true,
 });

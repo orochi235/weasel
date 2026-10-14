@@ -1,4 +1,4 @@
-import type { Action, ActionsProp, ActionsRegistry } from '@weasel-js/routing';
+import type { ActionsProp } from '@weasel-js/routing';
 import type { Dispatcher } from '@weasel-js/routing';
 import { useActionsRegistry, useDepSource, usePointerContext } from '@weasel-js/routing/react';
 import type { Scene } from 'core/scene/types';
@@ -64,7 +64,6 @@ export function StandardActionsRegistrar({
   poseDescriptor,
   geometryProjection,
   dispatcher,
-  getActionRef,
   pickEvery,
   layerIsPainted,
   alphaOf,
@@ -84,7 +83,6 @@ export function StandardActionsRegistrar({
   ingestionResolveSrc,
   ingestionSvg,
   ingestionClipboard,
-  actionsRegistryRef,
 }: {
   selection: SelectionApi;
   scene: Scene<unknown, string, unknown>;
@@ -109,10 +107,6 @@ export function StandardActionsRegistrar({
   /** Forwarded so `cancelGestureAction` and other actions that need to
    *  abort in-flight handles can read the dispatcher's control surface. */
   dispatcher: Dispatcher;
-  /** Ref populated with a live action-lookup function so the dispatcher's
-   *  `getAction` closure can resolve action ids after the registry is
-   *  mounted. Set on first render; cleared on unmount. */
-  getActionRef: React.MutableRefObject<((id: string) => Action | undefined) | null>;
   /** World-space picker forwarded so the `nodeAtPoint` dep source can
    *  reuse the same hit-test plumbing the tool dispatcher uses. */
   pickEvery: (worldX: number, worldY: number) => string[];
@@ -165,18 +159,8 @@ export function StandardActionsRegistrar({
    *  for the kit weasel-JSON handler, from `useCanvasIngestion`; absent
    *  when disabled. */
   ingestionClipboard?: ClipboardIngestCtx;
-  /** Populated with the live registry so `CanvasExtensionApi.ingest`
-   *  (assembled in SceneCanvasInner, OUTSIDE the actions provider) can call
-   *  `registry.trigger('ingest', …)`. Cleared on unmount. */
-  actionsRegistryRef: React.MutableRefObject<ActionsRegistry | null>;
 }) {
   const registry = useActionsRegistry();
-
-  // Stash the registry for SceneCanvasInner's imperative `ingest` handle.
-  useEffect(() => {
-    actionsRegistryRef.current = registry;
-    return () => { actionsRegistryRef.current = null; };
-  }, [registry, actionsRegistryRef]);
 
   // Wire the dispatcher into the registry so registry.begin() can delegate
   // to dispatcher.beginUiOngoing() for UI-driven ongoing actions (color,
@@ -185,14 +169,6 @@ export function StandardActionsRegistrar({
     if (!registry) return;
     return registry.setDispatcher(dispatcher);
   }, [registry, dispatcher]);
-
-  // Populate the action-lookup ref so the dispatcher's getAction closure
-  // can resolve action ids once the registry is in scope.
-  useEffect(() => {
-    if (!registry) return;
-    getActionRef.current = (id: string) => registry.list().find((a) => a.id === id);
-    return () => { getActionRef.current = null; };
-  }, [registry, getActionRef]);
 
   // Momentum for `viewport.dragPan`. The loop must be a hook (it owns a
   // `useVisibleRaf`), so it is built here and republished on the view dep.

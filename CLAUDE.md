@@ -465,11 +465,6 @@ handles one request at a time, which serializes a many-chunk build into a slowdo
 real host would show. Use a threaded server, and quote build-output byte counts rather
 than emulated FCP — the timings vary too much between runs to compare.
 
-**labkit bundles its siblings** (`noExternal` in `packages/labkit/tsup.config.ts`), so a
-source edit in `packages/text` or `packages/ui` does not reach labkit's `dist` until the
-whole workspace is rebuilt. A smoke test run before that reports the previous build's
-result as though it were the new one.
-
 **A bare `getContext('webgl2')` on a shared buffer can cripple every tenant of it.**
 Called on a canvas no renderer has opened yet, it creates the context with default
 attributes, and the renderer's later `getContext('webgl2', { stencil: true, … })`
