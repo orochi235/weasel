@@ -98,7 +98,7 @@ export interface DiagramViewApi {
   /** Lay the diagram out again from where its nodes stand, animated. `'force'`
    *  (default) relaxes until it settles; any other layout eases to its answer.
    *  What moved is reported to `onMove` once the run settles. */
-  layout(algorithm?: 'layered' | 'tree' | 'force' | LayoutFn): void;
+  layout(algorithm?: 'layered' | 'tree' | 'force' | 'chain' | LayoutFn): void;
   /** The run `layout` started: stop it where it stands, or cancel it. */
   live: LiveLayout;
 }
@@ -174,7 +174,7 @@ function Inner({
   const source = useMemo(() => sceneParticipants<RectPose>(scene), [scene]);
   // Each `layout()` call is a new run: the state change lands the algorithm in
   // the live layout's options before the effect restarts it.
-  const [run, setRun] = useState<{ algorithm: 'layered' | 'tree' | 'force' | LayoutFn } | null>(null);
+  const [run, setRun] = useState<{ algorithm: 'layered' | 'tree' | 'force' | 'chain' | LayoutFn } | null>(null);
   const live = useLiveLayout<RectPose>({ ...liveOpts, scene, source, algorithm: run?.algorithm ?? 'force' });
   useEffect(() => {
     if (run !== null) live.restart();

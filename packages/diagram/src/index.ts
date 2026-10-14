@@ -111,6 +111,7 @@ export type {
   LiveLayoutProducer,
   UseLiveLayoutOptions,
 } from './live';
+export { chain } from './chain';
 export { backEdges, layered, ranksOf } from './layered';
 export {
   DEFAULT_NODE_GAP,

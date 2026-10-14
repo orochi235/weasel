@@ -16,6 +16,7 @@ import { force } from './force';
 import type { Graph, GraphEdge, GraphGroup, GraphNode } from './graph';
 import type { DiagramAnchor } from './group';
 import type { DiagramLabel } from './label';
+import { chain } from './chain';
 import { layered } from './layered';
 import type { LayoutFn, LayoutOptions } from './layout';
 import { markSpecs, type DataMark, type DiagramMark } from './marks';
@@ -140,7 +141,7 @@ export type DiagramSpec = AddNodeSpec<DiagramSceneData, 'main', RectPose>;
 export interface DiagramSceneOptions {
   /** A layout by name, or any `LayoutFn`. Default `'layered'`. `'none'`
    *  leaves every node at its `at`. */
-  layout?: 'layered' | 'tree' | 'force' | 'none' | LayoutFn;
+  layout?: 'layered' | 'tree' | 'force' | 'chain' | 'none' | LayoutFn;
   /** Merged over `{ order: 'barycenter' }`. */
   layoutOptions?: LayoutOptions;
   /** Default `'bezier'`. */
@@ -178,7 +179,7 @@ const LABEL_PLACEMENT: DiagramLabel = { at: 'mid', offset: 9 };
 const LINE = 1.4;
 const GLYPH = 0.6;
 const MIN_WIDTH = 64;
-const LAYOUTS = { layered, tree, force } as const;
+const LAYOUTS = { layered, tree, force, chain } as const;
 
 /** The scene node id `diagramScene` gives an edge, built from its ends, ports, and label. */
 export const edgeIdOf = (e: DataEdge) =>
