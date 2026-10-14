@@ -1,15 +1,14 @@
-import { createModeRegistry, type ModeRegistry } from '@weasel-js/modes';
+import { createModeRegistry, modeLabel, type ModeRegistry } from '@weasel-js/modes';
 import type { ModeDefinition } from '@weasel-js/modes';
 import type { History, Journal } from '@weasel-js/history';
-import { createJournalCache, type JournalCache } from './journalCache';
 
 export interface CreateModeMachineOptions {
   modes: readonly ModeDefinition[];
   history: History;
   initial?: string;
-  cacheCapacity?: number;  // default 8
   /** Whether a soft mode keeps its edits in a journal of its own, which undo steps while the mode
-   *  is open. Read on entry. Without one, each edit is an entry on `history`. Defaults to true. */
+   *  is open and which lands on `history` as one entry when it closes. Read on entry. Without
+   *  one, each edit is an entry on `history`. Defaults to true. */
   journalSoftModes?: () => boolean;
 }
 
@@ -27,20 +26,18 @@ export interface ModeMachine {
   getActiveJournal(): Journal | null;
   getActiveTargetId(): string | null;
   enterMode(id: string, args: EnterModeArgs): void;
-  exitMode(): void;       // soft modes: suspend
+  exitMode(): void;       // soft modes: leave, keeping the session's edits
   commitMode(): void;     // strict modes: commit
   cancelMode(): void;     // strict modes: cancel
-  discardMode(): void;    // soft modes: take back the session's edits (no resume)
-  clearJournalCache(): void;
+  discardMode(): void;    // soft modes: take back the session's edits
 }
 
 export function createModeMachine(opts: CreateModeMachineOptions): ModeMachine {
+  const { history } = opts;
   const registry = createModeRegistry({
     modes: opts.modes,
     initial: opts.initial ?? 'normal',
   });
-
-  const cache: JournalCache = createJournalCache({ capacity: opts.cacheCapacity ?? 8 });
 
   let active = false;
   let activeJournal: Journal | null = null;
@@ -57,42 +54,11 @@ export function createModeMachine(opts: CreateModeMachineOptions): ModeMachine {
     }
     const def = registry.byId(id);
     const tid = args.targetId ?? null;
-
     if (def.kind === 'soft' && opts.journalSoftModes?.() === false) {
-      firstEntryId = opts.history.currentEntryId();
-      active = true;
-      activeTargetId = tid;
-      registry.setMode(id);
-      return;
+      firstEntryId = history.currentEntryId();
+    } else {
+      activeJournal = history.beginJournal({ targetId: tid ?? undefined, label: def.id });
     }
-
-    // Soft mode + targetId → consult cache
-    if (def.kind === 'soft' && tid !== null) {
-      const cached = cache.get(id, tid);
-      if (cached) {
-        // Staleness check: discard if any parent-history entry since the
-        // fork point touched the journal's target node.
-        const forkId = cached.forkedAtEntryId;
-        const since = opts.history.entries().undo.filter((e) => e.id >= forkId);
-        const stale = since.some((e) => e.touchedIds?.has(tid));
-        if (stale) {
-          cache.remove(id, tid);
-          // fall through to begin a fresh journal below
-        } else {
-          opts.history.resumeJournal(cached);
-          active = true;
-          activeJournal = cached;
-          activeTargetId = tid;
-          registry.setMode(id);
-          return;
-        }
-      }
-    }
-
-    activeJournal = opts.history.beginJournal({
-      targetId: tid ?? undefined,
-      label: def.id,
-    });
     active = true;
     activeTargetId = tid;
     registry.setMode(id);
@@ -105,57 +71,46 @@ export function createModeMachine(opts: CreateModeMachineOptions): ModeMachine {
     registry.setMode('normal');
   }
 
-  function exitMode(): void {
-    if (!active) return;
-    if (!activeJournal) return reset();
-    const def = registry.current();
-    activeJournal.suspend();
-    if (def.kind === 'soft' && activeTargetId !== null) {
-      cache.put(def.id, activeTargetId, activeJournal);
+  /** Close the mode, its journal's edits landing on `history` as one entry. */
+  function close(): void {
+    activeJournal?.commit(modeLabel(registry.current()));
+    reset();
+  }
+
+  /** Undo every entry pushed on `history` since the mode began. */
+  function undoSinceEntry(): void {
+    let depth = history.undoDepth();
+    while (depth > 0 && history.entries().undo[depth - 1]!.id >= firstEntryId) {
+      history.undo();
+      const after = history.undoDepth();
+      if (after >= depth) break;
+      depth = after;
     }
-    reset();
   }
 
-  function commitMode(): void {
-    if (!activeJournal) return;
-    const def = registry.current();
-    activeJournal.commit(def.id);
-    reset();
-  }
-
-  function cancelMode(): void {
-    if (!activeJournal) return;
-    activeJournal.cancel();
-    reset();
-  }
-
-  function discardMode(): void {
-    if (!active) return;
-    if (!activeJournal) {
-      let depth = opts.history.undoDepth();
-      while (depth > 0 && opts.history.entries().undo[depth - 1]!.id >= firstEntryId) {
-        opts.history.undo();
-        const after = opts.history.undoDepth();
-        if (after >= depth) break;
-        depth = after;
-      }
-      return reset();
-    }
-    const def = registry.current();
-    activeJournal.cancel();
-    if (activeTargetId !== null) cache.remove(def.id, activeTargetId);
-    reset();
-  }
+  const isSoft = (): boolean => active && registry.current().kind === 'soft';
 
   return {
     registry,
     getActiveJournal: () => activeJournal,
     getActiveTargetId: () => activeTargetId,
     enterMode,
-    exitMode,
-    commitMode,
-    cancelMode,
-    discardMode,
-    clearJournalCache: () => cache.clear(),
+    exitMode() {
+      if (isSoft()) close();
+    },
+    commitMode() {
+      if (active && registry.current().kind === 'strict') close();
+    },
+    cancelMode() {
+      if (!activeJournal || registry.current().kind !== 'strict') return;
+      activeJournal.cancel();
+      reset();
+    },
+    discardMode() {
+      if (!isSoft()) return;
+      if (activeJournal) activeJournal.cancel();
+      else undoSinceEntry();
+      reset();
+    },
   };
 }

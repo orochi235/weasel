@@ -114,11 +114,11 @@ describe('path-edit end-to-end integration', () => {
     expect(machine.registry.current().id).toBe('normal');
     expect(screen.queryByText(/path edit/i)).toBeNull();
 
-    // The journal was suspended (soft-mode exit suspends for potential resume).
+    // Leaving closed the journal, its edits landing on the history as one step.
     expect(machine.getActiveJournal()).toBeNull();
   });
 
-  it('re-entering path-edit on the same target resumes the cached journal', () => {
+  it('re-entering path-edit on the same target opens a fresh journal', () => {
     const history = fakeHistory();
     const machine = createModeMachine({
       modes: DEFAULT_MODES,
@@ -127,17 +127,10 @@ describe('path-edit end-to-end integration', () => {
 
     render(<MachineHarness machine={machine} />);
 
-    // Enter, then exit (suspend).
     act(() => { dispatchDoubleClickEntry({ kind: 'path', id: 'path-1' }, machine); });
-    expect(machine.registry.current().id).toBe('path-edit');
     act(() => { machine.exitMode(); });
-    expect(history.beginJournal).toHaveBeenCalledTimes(1);
-
-    // Re-enter the same target — journal cache should resume, not begin fresh.
     act(() => { dispatchDoubleClickEntry({ kind: 'path', id: 'path-1' }, machine); });
     expect(machine.registry.current().id).toBe('path-edit');
-    // beginJournal still at 1 — the cached journal was resumed.
-    expect(history.beginJournal).toHaveBeenCalledTimes(1);
-    expect(history.resumeJournal).toHaveBeenCalledTimes(1);
+    expect(history.beginJournal).toHaveBeenCalledTimes(2);
   });
 });

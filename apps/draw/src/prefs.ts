@@ -160,7 +160,7 @@ export const PREFS = {
         undo: {
           kind: 'enum',
           name: 'Undo inside a mode',
-          description: "What Undo takes back while a mode such as path edit is open. The mode's own edits: Undo stops where the mode began, the mode's edits stay out of the document's history, and opening the mode on the same object again picks them back up. The document's history: every edit is its own step there, and Undo can go on past where the mode began.",
+          description: "What Undo takes back while a mode such as path edit is open. The mode's own edits: Undo stops where the mode began, and leaving the mode puts its edits in the document's history as one step. The document's history: every edit is its own step there, and Undo can go on past where the mode began.",
           default: 'mode',
           options: [
             { value: 'mode', label: "The mode's own edits" },

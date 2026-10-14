@@ -325,14 +325,6 @@ Priority tags:
   (`apps/draw/src/modality/machine.ts`), so the change moves where every direct call made during
   a mode lands.
 
-- **(P2) A soft mode's edits drop out of undo once you leave the mode.** In draw with Modes > Undo
-  inside a mode at its default, the mode's own edits, leaving path edit suspends its journal, and
-  nothing of it reaches the scene's history. Back in normal mode, Undo skips those edits: after
-  drawing a path and dragging one of its anchors, Undo removes the path, and Redo brings it back
-  without the drag. Re-entering the mode resumes the journal only if no later entry touched the
-  node. Fixing it means deciding what leaving puts on the document's stack: the session as one
-  entry, which ends the resume-on-reentry cache, or a record a later resume can amend.
-
 ### Derived geometry follow-ups
 
 - **(P3) The preview channel still carries pose twice.** `move` / `resize` / `rotate` publish each

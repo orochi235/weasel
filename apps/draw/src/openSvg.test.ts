@@ -109,7 +109,6 @@ describe('openSvgFile', () => {
     setFilename: vi.fn(),
     setPaperSize: vi.fn(),
     setBackgroundColor: vi.fn(),
-    onClearJournalCache: vi.fn(),
   });
 
   it('replaces the document with the picked file and names it after the file', async () => {
@@ -121,7 +120,6 @@ describe('openSvgFile', () => {
     expect(t.setFilename).toHaveBeenCalledWith('art.svg');
     expect(t.setPaperSize).toHaveBeenCalledWith('a4');
     expect(t.setBackgroundColor).toHaveBeenCalledWith('#ffffff');
-    expect(t.onClearJournalCache).toHaveBeenCalledTimes(1);
   });
 
   it('keeps the paper size when the file declares none', async () => {
@@ -137,6 +135,5 @@ describe('openSvgFile', () => {
     await openSvgFile(t);
     expect(t.scene.roots).toEqual([asNodeId('old')]);
     expect(t.setFilename).not.toHaveBeenCalled();
-    expect(t.onClearJournalCache).not.toHaveBeenCalled();
   });
 });
