@@ -613,13 +613,15 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   a `ColorField` with an alpha slider in a row beneath the track (`GradientEditor.tsx`). The
   owner wants that row redesigned; the shape it should take is still open.
 
-- **(P3) labkit and the apps hand-build what weasel-ui already draws.** Each differs a little
-  from the ui component, so swapping changes pixels and needs a call on which look wins:
-  labkit's `.lk-viewport-controls__button`, `.lk-toolbar-button`, and `.lk-titlebar-button`
-  against `Button`'s ghost icon button; `SidebarRegion`'s section head and undock button against
-  `SidebarPanel`; `LabHeader`'s bare "Add trial" button beside the `MenuButton` it becomes
-  with more than one instrument; the theme editor's swatch tabs against `ToggleBar`'s flat
-  variant and its hex and number inputs against `Input` and `NumberField`.
+- **(P3) labkit and the apps hand-build what weasel-ui already draws.** Each waits on something
+  the ui component lacks, or on a look at the result in a browser:
+  `.lk-titlebar-button` is 18px square and `Button`'s smallest size is `--wzl-control-h-sm`;
+  `.lk-toolbar-button`'s `danger` reddens on hover, which a ghost `Button` has no way to do;
+  `SidebarRegion`'s section head and undock button against `SidebarPanel`, which takes no
+  `actions`, no undock control, no stance, and no `fill`; `LabHeader`'s bare "Add trial" button,
+  which sets its own baseline so its label lines up with the title and would lose that as a
+  `Button` with a leading icon; the theme editor's swatch tabs against `ToggleBar`'s flat variant
+  and its hex and number inputs against `Input` and `NumberField`.
 
 - **(P3) Nothing on the site sets the mode.** The chrome follows `data-wzl-mode` and whatever
   theme is applied, but no reader can pick one: the demo shell draws the default theme in dark.
