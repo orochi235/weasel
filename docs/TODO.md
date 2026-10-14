@@ -1005,7 +1005,10 @@ only story runner in the repo.
   `canvas/sceneAdapter.ts`, which hands each op the adapter it was called on; not run), so the
   seat has to say which of those glide. It would still miss a button's `scene.setPose`, which
   reaches no adapter: animating that needs the scene to report the write, as `onReflow` reports
-  a settle.
+  a settle. `<SceneCanvas reflowTransition>` is that shape for layout writes already: the scene
+  hands `useLayoutDepSource` each move with the pose it left, and the transition glides what is
+  shown from there through a pose override, writing nothing. A removal cannot follow it, since
+  the node is gone by the time a report arrives.
 
 - **(P3) draw: a double-click on a path is acted on twice.** The kit's `enterPathEdit` binding
   and the app's `onDoubleClick` observer (`apps/draw/src/modality/doubleClickEntry.ts`) both take
