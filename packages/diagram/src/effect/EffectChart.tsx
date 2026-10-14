@@ -55,6 +55,8 @@ export function EffectChart<TOptions = unknown>({
     const portOptions: DiagramViewProps['portOptions'] = {
       shape: 'circle',
       sizePx: 8,
+      // Every port a look declares has a value type; the compass defaults have none.
+      showsPort: (port) => port.type !== undefined,
       fill: (port) => ({ paint: { color: drawn.color(port.type) } }),
     };
     return { specs: diagramScene(drawn.data, drawn.scene), portOptions };

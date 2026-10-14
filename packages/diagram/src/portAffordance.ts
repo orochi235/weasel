@@ -74,6 +74,9 @@ export interface PortAffordanceOptions<TPose> {
   /** Which participants show their ports. Default: all of them. Gate on
    *  selection or hover by reading `state`. */
   shows?: (node: DiagramNodeLike, state: ChromeState) => boolean;
+  /** Which of a participant's ports show. Default: all of them. A port
+   *  this turns away is neither painted nor grabbable. */
+  showsPort?: (port: Port) => boolean;
   /** Screen-pixel hit radius. Default 8, the kit's `HANDLE_BASE_PX`. */
   hitRadiusPx?: number;
   /** Screen-pixel side of the painted square. Default 7. Omit `paint` entirely
@@ -146,6 +149,7 @@ export function createPortAffordance<TPose>(
       for (const { node, pose } of participants()) {
         if (opts.shows !== undefined && !opts.shows(node, state)) continue;
         for (const port of portsOf(node, pose, portOpts)) {
+          if (opts.showsPort !== undefined && !opts.showsPort(port)) continue;
           out.push({
             id: `${node.id}:${port.id}`,
             targetId: null,

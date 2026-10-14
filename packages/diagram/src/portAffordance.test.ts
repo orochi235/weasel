@@ -27,6 +27,15 @@ describe('createPortAffordance', () => {
     expect(affordance.regions(state).map((r) => r.id)).toEqual(['a:n', 'a:e', 'a:s', 'a:w']);
   });
 
+  it('leaves out the ports showsPort turns away', () => {
+    const trait = { diagram: { ports: [{ id: 'in', type: 'image', at: { u: 0, v: 0.5 } }, { id: 'extra', at: { u: 1, v: 0.5 } }] } };
+    const regions = createPortAffordance<Rect>(
+      () => [{ node: node(trait, 'a'), pose: box }],
+      { showsPort: (p) => p.type !== undefined },
+    ).regions(state);
+    expect(regions.map((r) => r.id)).toEqual(['a:in']);
+  });
+
   it('puts a region where the port is, not where its anchor is', () => {
     // A parallelogram's west anchor floats in the gap beside the leaning edge.
     // `portsOf` casts it onto the outline; the region has to be on the ink or

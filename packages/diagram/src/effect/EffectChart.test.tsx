@@ -2,9 +2,13 @@ import { cleanup } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-const seen: { onSelect?: (id: string | null) => void }[] = [];
+interface SeenProps {
+  onSelect?: (id: string | null) => void;
+  portOptions?: { showsPort?: (port: { type?: string }) => boolean };
+}
+const seen: SeenProps[] = [];
 vi.mock('../DiagramView', () => ({
-  DiagramView: (props: { onSelect?: (id: string | null) => void }) => {
+  DiagramView: (props: SeenProps) => {
     seen.push(props);
     return null;
   },
@@ -29,6 +33,15 @@ describe('EffectChart picking', () => {
     view.onSelect!('g');
     view.onSelect!(null);
     expect(onSelect.mock.calls.map((c) => c[0])).toEqual(['blur', null, null]);
+  });
+});
+
+describe('EffectChart ports', () => {
+  it('shows the ports a look declares and not the compass defaults', () => {
+    render(<EffectChart pipeline={{ stages: [{ id: 'a', title: 'A' }], wires: [] }} width={100} height={100} />);
+    const showsPort = seen[seen.length - 1]!.portOptions!.showsPort!;
+    expect(showsPort({ type: 'image' })).toBe(true);
+    expect(showsPort({})).toBe(false);
   });
 });
 
