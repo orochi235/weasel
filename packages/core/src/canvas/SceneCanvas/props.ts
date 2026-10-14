@@ -42,7 +42,6 @@ import type {
   InsertNodeFactory,
   InsertPaint
 } from '../deps';
-import type { SceneToAdapterOptions } from '../sceneAdapter';
 import type { SurfaceContribution } from '../surfaceContribution';
 import type { CameraProps } from '../useCanvasView';
 import type {
@@ -189,12 +188,6 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      *  spread over that slot's defaults; pass `slot: null` to suppress a
      *  default explicitly. */
     layers?: SceneCanvasLayers<Node<TData, TLayer, TPose>, TPose>;
-
-    /** Layout strategies keyed by container node id (or a resolver), for
-     *  containers whose scene node declares none (`ContainerNode.layout`
-     *  wins). Applied to a drag and to every other change to their children,
-     *  through the scene's layout pass. */
-    layouts?: SceneToAdapterOptions<TData, TLayer, TPose>['layouts'];
 
     /** Which layout container a drag lands in when several contain the drop
      *  point — the innermost (default), the topmost in paint order, or only

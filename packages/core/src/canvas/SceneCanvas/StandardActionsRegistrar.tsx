@@ -16,7 +16,6 @@ import type { UseResizeOptions } from 'interactions/actions/resize/options';
 import { useStandardActions } from 'interactions/actions/useStandardActions';
 import type React from 'react';
 import { useEffect } from 'react';
-import { useLayoutArrivals } from '../../layout/arrivals';
 import type { LayoutDropTargetMode, ReflowTransition } from '../../layout/types';
 import type { CanvasExtensionApi } from '../canvasExtension';
 import {
@@ -39,7 +38,7 @@ import {
   type InsertPaint
 } from '../deps';
 import { GeometryProjectionRegistrar, ResizePolicyRegistrar } from './poseRegistrars';
-import type { BridgeAdapter, SceneCanvasProps } from './props';
+import type { BridgeAdapter } from './props';
 import { useActionsPropResolver } from './useActionsPropResolver';
 import { useViewportActions } from './useViewportActions';
 
@@ -75,7 +74,6 @@ export function StandardActionsRegistrar({
   viewportRecenter,
   viewAnimation,
   editAnchorsExternalState,
-  layouts,
   layoutDropTarget,
   reflowTransition,
   insertNodeFactories,
@@ -143,9 +141,6 @@ export function StandardActionsRegistrar({
   /** Lifted edit-mode state so the `pathEditingOverlay` chrome (rendered
    *  outside this subtree) can read the same `editingId` the dep does. */
   editAnchorsExternalState: import('../deps/editAnchors').EditAnchorsStateRef;
-  /** Forwarded from `SceneCanvasProps` so the `layout` dep source can wire
-   *  the per-container layout strategy lookup consumed by `moveAction`. */
-  layouts?: SceneCanvasProps<unknown, string, unknown>['layouts'];
   layoutDropTarget?: LayoutDropTargetMode;
   reflowTransition?: ReflowTransition<unknown> | null;
   /** Forwarded from `SceneCanvasProps` so `useInsertDepSource` can wire the
@@ -235,8 +230,7 @@ export function StandardActionsRegistrar({
   // dep's contract and trade-offs.
   useAreaSelectDepSource(scene, selection, poseDescriptor, alphaOf);
   useNodeAtPointDepSource(pickEvery);
-  useLayoutDepSource(scene, layouts, layoutDropTarget, reflowTransition);
-  useLayoutArrivals(scene, { layouts, poseDescriptor });
+  useLayoutDepSource(scene, layoutDropTarget, reflowTransition);
   useInsertDepSource(scene, adapter, insertNodeFactories, insertPaint);
   useSliceDepSource(scene, selection, adapter, poseDescriptor);
   useSnapDepSource(snapPoint);

@@ -82,7 +82,6 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     insertNodeFactories,
     insertPaint,
     ingestion,
-    layouts,
     layoutDropTarget,
     reflowTransition,
     geometryProjection,
@@ -201,7 +200,6 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     // `adapterMethods` is memoized; `selection` itself is a fresh object each render.
     selection: selection.adapterMethods,
     poseDescriptor: descriptor,
-    layouts,
   });
 
   const {
@@ -399,7 +397,6 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
           viewportRecenter={viewport?.recenter}
           viewAnimation={viewAnimation}
           editAnchorsExternalState={pathEditState}
-          layouts={layouts as SceneCanvasProps<unknown, string, unknown>['layouts']}
           layoutDropTarget={layoutDropTarget}
           reflowTransition={reflowTransition as ReflowTransition<unknown> | null | undefined}
           insertNodeFactories={insertNodeFactories}

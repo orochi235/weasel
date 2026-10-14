@@ -357,11 +357,11 @@ Priority tags:
 
 ### `useScene` follow-ups
 
-- **(P3) Scene layout: what the first cut left.** A layout a container declares on its node
-  (`ContainerNode.layout`) is measured by `UseSceneOptions.layoutFrame` unless a canvas installs
-  its handler, so a scene whose canvas uses a custom pose descriptor states how a pose is measured
-  twice. And undecided: whether the `layouts` prop, now a second way to name a container's layout,
-  should be retired in favor of the node declaration.
+- **(P3) A scene and its canvas each say how a pose is measured.** A container's layout
+  (`ContainerNode.layout`) is measured by `UseSceneOptions.layoutFrame`, and everything a canvas
+  does by its `poseDescriptor` prop, so a scene whose poses are not rects states it twice. The
+  scene owns composition (`useScene({ composition })`); the descriptor could move there the same
+  way, with the layout frame read from it.
 - **(P3) A scene composes poses only when asked to.** Ruled 2026-10-11: the scene owns
   composition: a child's pose is relative to its container's frame, and moving a container writes
   one pose. The scene owns it now (`useScene({ composition })`, read everywhere as

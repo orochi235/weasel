@@ -10,7 +10,6 @@ import {
   createReparentOp,
   createScene,
   defaultCommitAdapter,
-  layoutArrivalHandler,
   moveAction,
   type InvocationCtx,
   type LayoutDep,
@@ -37,8 +36,7 @@ function setup(opts: Partial<TileGridOptions<RectPose>>, held = 4) {
   }
   const x = scene.add({ kind: 'leaf', id: 'x' as NodeId, layer: 'main', data: {}, pose: rect(300, 300) });
   const grid = tileGrid<RectPose>({ cols: 2, rows: 2, ...opts });
-  const layouts = { G: grid };
-  scene.setArrivalHandler(layoutArrivalHandler(scene, { layouts }));
+  scene.setLayout(G, grid);
   const adapter = defaultCommitAdapter(scene as never);
   const layout: LayoutDep = { getLayout: (id) => (id === 'G' ? (grid as never) : null) };
 
