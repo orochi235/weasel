@@ -981,11 +981,16 @@ only story runner in the repo.
   7 of 26 tests in one run on 2026-10-13, and polls now; whether a checkout loses them too is not
   measured.
 
-- **(P2) A docs minisite per package: overview, guides, and demos.** `npm run build:api` documents
-  every published package in one TypeDoc site at `/api/`. Still to design: an overview and
-  hand-written guides per package (only labkit has any, in its own VitePress site), and the
-  demos that exercise a package shown from its pages. Rendering TypeDoc's JSON output inside the
-  site's own shell is the route that puts all four in one place.
+- **(P2) Package pages: check the reference against a real build, then retire `/api/`.** Every
+  published package has a page at `#pkg/<name>` (overview, guides, reference, demos; how each is
+  fed is in `CONTRIBUTING.md`, "Package pages"). The reference half has only ever read a
+  hand-written TypeDoc project (`scripts/lib/reference/fixture.ts`): `npm run build:api` has not
+  been run since it began writing `dist-demo/reference/`, and no page has been seen in a browser.
+  Run it, open `#pkg/core/reference` and a subpath entry such as `#pkg/geom/reference/booleans`,
+  and fix what TypeDoc's real output shows the reader got wrong. Then drop the TypeDoc HTML site:
+  `out` in `typedoc.config.mjs`, the sidebar's "API reference" link, the `/api/` half of
+  `serveApiDocsInDev`, and the `/weasel/api/` links in the package READMEs. `vitepress` is still
+  in labkit's `devDependencies` with nothing using it. Only geom, gestures, and labkit have guides.
 
 - **(P3) SVG export writes wrapped text as one line.** `data-weasel-wrap` round-trips
   `TextStyle.wrap` for weasel's own reader, but SVG `<text>` never wraps, so any other reader draws

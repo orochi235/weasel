@@ -105,6 +105,22 @@ the rig for the first time:
 3. Capture the baseline via the update workflow above.
 4. Commit the spec and the baseline PNG together.
 
+## Package pages
+
+The site gives every published package a page at `#pkg/<name>` with four tabs.
+None of them is written for the site; each is read from the package:
+
+| Tab | Comes from | To change it |
+|---|---|---|
+| Overview | `package.json` (name, version, description, `exports`, weasel dependencies) and `README.md` | Edit the README. Its `# ` title is dropped; the page draws its own. |
+| Guides | Each Markdown file in `packages/<name>/docs/guides/` | Add a file. Its `# ` line is the guide's title, its filename the address (`paths.md` is `#pkg/<name>/guides/paths`), and a leading number (`1-recipes.md`) orders it without being part of the address. |
+| Reference | TypeDoc's JSON, split per package by `scripts/build-reference.ts` | Edit the doc comments. `npm run build:api` rebuilds it; until that has run, a dev server shows "has not been built". |
+| Demos | The demos whose source, or a file their code panel shows, imports `@weasel-js/<name>` | Import the package in the demo. There is no list to add it to. |
+
+A guide may link to an export's reference page as `[Box](#pkg/geom/reference/Box)`,
+or `#pkg/geom/reference/booleans/pathUnion` for a subpath entry. A README is also
+shown on npm, where those links go nowhere, so it links by full URL.
+
 ## Adding a `@weasel-js/*` sub-package
 
 Every package under `packages/` is published on its own. When
