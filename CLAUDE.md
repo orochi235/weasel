@@ -170,6 +170,10 @@ Pick where the curve ends so that run points along an axis or a diagonal. On a d
 off and blur at 16px. A head also needs a shaft showing behind its barbs, or it reads as a caret.
 A ring or an open arc is free to turn: before reshaping anything, slide its gap round until the
 head lands on the flattest stretch that is clear of other strokes.
+Where there is no room for a straight run, hang the head on the shaft instead of on its tangent:
+walk one trail of arc back from the tip and put the two barb ends on the curve's normal there, the
+same distance either side. That holds down to a bend radius of about 1.2 head lengths; tighter,
+the inner barb fills the bend, and the head wants to be solid. `chevron` does not do this yet.
 
 **Where one stroke passes behind another, cut it along the front stroke's outline grown by a fixed
 gap.** The cut end is parallel to the stroke in front, not square to the stroke being cut: a butt
