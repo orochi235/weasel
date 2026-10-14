@@ -84,6 +84,12 @@ describe('rack', () => {
     expect(grouped.data.groups).toEqual([{ id: 'g', members: ['blur'] }]);
   });
 
+  it('keeps the first of two groups sharing an id, and drops a group named like a stage', () => {
+    const twice = rack({ ...SKIP, groups: [{ id: 'g', members: ['q', 'blur'] }, { id: 'g', members: ['mix'] }, { id: 'mix', members: ['osc'] }] });
+    expect(twice.data.groups).toEqual([{ id: 'g', members: ['blur'] }]);
+    expect(() => diagramScene(twice.data, twice.scene)).not.toThrow();
+  });
+
   it('builds a scene diagramScene accepts, and an empty one for an empty pipeline', () => {
     expect(() => diagramScene(data, scene)).not.toThrow();
     const empty = rack({ stages: [], wires: [] });

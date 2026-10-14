@@ -3,7 +3,7 @@
 import type { Row } from '../body';
 import { edgeIdOf, type DataEdge, type DataNode, type DiagramRouter, type EdgeStyle, type NodeStyle } from '../fromData';
 import { checkPipeline } from './check';
-import { isControl, kindOf, portOn, stageStyle, typeColors, uniqueStages, wireStyle, type EffectLook } from './draw';
+import { isControl, kindOf, portOn, stageStyle, typeColors, uniqueGroups, uniqueStages, wireStyle, type EffectLook } from './draw';
 import { branchNode, type BranchChoice } from './symbols';
 import type { EffectPipeline, EffectStage, EffectWire } from './types';
 
@@ -89,7 +89,7 @@ export const nodeGraph: EffectLook<NodeGraphOptions> = (pipeline, options = {}) 
   });
 
   return {
-    data: { nodes, edges, groups: [...(pipeline.groups ?? [])] },
+    data: { nodes, edges, groups: uniqueGroups(pipeline) },
     scene: {
       layout: 'layered',
       layoutOptions: {

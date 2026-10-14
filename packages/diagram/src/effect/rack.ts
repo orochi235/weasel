@@ -4,7 +4,7 @@
  */
 import { edgeIdOf, type DataEdge, type DataNode, type EdgeStyle, type NodeStyle } from '../fromData';
 import type { PortAnchor, PortSpec } from '../types';
-import { isControl, kindOf, portOn, stageStyle, typeColors, uniqueStages, wireStyle, type EffectLook } from './draw';
+import { isControl, kindOf, portOn, stageStyle, typeColors, uniqueGroups, uniqueStages, wireStyle, type EffectLook } from './draw';
 import { mainChain, skipDecisions, type Skip } from './mainChain';
 import { drawableWires, exitLabel, stageRows } from './nodeGraph';
 import { branchNode, type BranchChoice } from './symbols';
@@ -152,7 +152,7 @@ export const rack: EffectLook<RackOptions> = (pipeline, options = {}) => {
     data: {
       nodes,
       edges,
-      groups: (pipeline.groups ?? []).map((g) => ({ ...g, members: g.members.filter((m) => !gone.has(m)) })),
+      groups: uniqueGroups(pipeline).map((g) => ({ ...g, members: g.members.filter((m) => !gone.has(m)) })),
     },
     scene: {
       layout: 'chain',

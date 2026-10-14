@@ -3,7 +3,7 @@ import type { EffectPipeline, EffectStage } from './types';
 /** One thing wrong with a pipeline, and where. */
 export interface EffectProblem {
   kind: 'missing-stage' | 'missing-port' | 'wrong-direction' | 'type-mismatch'
-    | 'duplicate-stage' | 'duplicate-port' | 'missing-member' | 'bad-split';
+    | 'duplicate-stage' | 'duplicate-port' | 'duplicate-group' | 'missing-member' | 'bad-split';
   message: string;
   stage?: string;
   port?: string;
@@ -18,6 +18,7 @@ export function splitProblem(stage: EffectStage): string | null {
   if (split === undefined) return null;
   if (!(stage.inputs ?? []).some((p) => p.id === split.input)) return `splits on "${split.input}", which is not one of its inputs`;
   if (split.at.length === 0) return 'splits with no cuts';
+  if (!split.at.every(Number.isFinite)) return 'has a cut that is not a finite number';
   if (split.at.some((cut, i) => i > 0 && cut <= split.at[i - 1]!)) return 'has cuts that are not in ascending order';
   const exits = (stage.outputs ?? []).length;
   if (exits !== split.at.length + 1) return `has ${split.at.length} cuts and ${exits} outputs; it needs ${split.at.length + 1}`;
@@ -67,8 +68,21 @@ export function checkPipeline(pipeline: EffectPipeline): EffectProblem[] {
     }
   });
 
-  const groupIds = new Set((pipeline.groups ?? []).map((g) => g.id));
-  for (const group of pipeline.groups ?? []) {
+  const groupIds = new Set<string>();
+  const groups = (pipeline.groups ?? []).filter((group) => {
+    const repeat = groupIds.has(group.id);
+    if (repeat || stages.has(group.id)) {
+      out.push({
+        kind: 'duplicate-group',
+        group: group.id,
+        message: repeat ? `Group "${group.id}" appears more than once.` : `Group "${group.id}" has the id of a stage.`,
+      });
+      return false;
+    }
+    groupIds.add(group.id);
+    return true;
+  });
+  for (const group of groups) {
     for (const member of group.members) {
       if (stages.has(member) || groupIds.has(member)) continue;
       out.push({ kind: 'missing-member', group: group.id, message: `Group "${group.id}" names "${member}", which is neither a stage nor a group.` });

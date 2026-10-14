@@ -84,6 +84,12 @@ describe('nodeGraph', () => {
     expect(() => diagramScene(twice.data, twice.scene)).not.toThrow();
   });
 
+  it('keeps the first of two groups sharing an id, and drops a group named like a stage', () => {
+    const twice = nodeGraph({ ...P, groups: [...P.groups!, { id: 'g', members: ['src'] }, { id: 'src', members: ['flag'] }] });
+    expect(twice.data.groups).toEqual([{ id: 'g', label: 'Soften', members: ['blur'] }]);
+    expect(() => diagramScene(twice.data, twice.scene)).not.toThrow();
+  });
+
   it('draws a stage with no ports as a box with its title', () => {
     const bare = nodeGraph({ stages: [{ id: 'x', title: 'X' }], wires: [] });
     expect(bare.data.nodes[0]!.rows).toEqual([{ kind: 'label', text: 'X', style: { bold: true } }]);

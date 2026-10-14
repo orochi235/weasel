@@ -62,6 +62,46 @@ describe('checkPipeline', () => {
     expect(kinds({ stages: [split({ split: { input: 'x', at: [] } })], wires: [] })).toEqual(['bad-split']);
   });
 
+  it('names a group whose id repeats an earlier group\'s, or is a stage\'s', () => {
+    const again = checkPipeline({ ...OK, groups: [{ id: 'g', members: ['blur'] }, { id: 'g', members: ['src'] }] });
+    expect(again.map((x) => [x.kind, x.group])).toEqual([['duplicate-group', 'g']]);
+    const stage = checkPipeline({ ...OK, groups: [{ id: 'blur', members: ['src'] }] });
+    expect(stage.map((x) => [x.kind, x.group])).toEqual([['duplicate-group', 'blur']]);
+  });
+
+  it('names a cut that is not a finite number', () => {
+    const gate = {
+      id: 'gate', title: 'Gate', kind: 'decision',
+      inputs: [{ id: 'x', type: 'number' }],
+      outputs: [{ id: 'lo', type: 'number' }, { id: 'hi', type: 'number' }],
+      split: { input: 'x', at: [Number.NaN] },
+    };
+    expect(checkPipeline({ stages: [gate], wires: [] }).map((x) => [x.kind, x.stage])).toEqual([['bad-split', 'gate']]);
+    expect(kinds({ stages: [{ ...gate, split: { input: 'x', at: [Infinity] } }], wires: [] })).toEqual(['bad-split']);
+  });
+
+  it('says which stage, port, wire or group each problem is about', () => {
+    const where = (p: EffectPipeline) => checkPipeline(p).map(({ message: _message, ...rest }) => rest);
+    expect(where({ ...OK, wires: [wire(['nope', 'out'], ['blur', 'image'])] }))
+      .toEqual([{ kind: 'missing-stage', wire: 0, stage: 'nope' }]);
+    expect(where({ ...OK, wires: [wire(['src', 'out'], ['blur', 'nope'])] }))
+      .toEqual([{ kind: 'missing-port', wire: 0, stage: 'blur', port: 'nope' }]);
+    expect(where({ ...OK, wires: [wire(['src', 'out'], ['blur', 'out'])] }))
+      .toEqual([{ kind: 'wrong-direction', wire: 0, stage: 'blur', port: 'out' }]);
+    expect(where({ ...OK, wires: [wire(['src', 'out'], ['blur', 'radius'])] }))
+      .toEqual([{ kind: 'type-mismatch', wire: 0 }]);
+    expect(where({ ...OK, stages: [...OK.stages, OK.stages[0]!] }))
+      .toEqual([{ kind: 'duplicate-stage', stage: 'src' }]);
+    const twice = { id: 'x', title: 'X', inputs: [{ id: 'a', type: 'image' }], outputs: [{ id: 'a', type: 'image' }] };
+    expect(where({ stages: [twice], wires: [] })).toEqual([{ kind: 'duplicate-port', stage: 'x', port: 'a' }]);
+    expect(where({ ...OK, groups: [{ id: 'g', members: ['blur', 'ghost'] }] }))
+      .toEqual([{ kind: 'missing-member', group: 'g' }]);
+    expect(where({ ...OK, groups: [{ id: 'g', members: ['blur'] }, { id: 'g', members: ['src'] }] }))
+      .toEqual([{ kind: 'duplicate-group', group: 'g' }]);
+    const gate = { id: 'gate', title: 'Gate', kind: 'decision', inputs: [{ id: 'x', type: 'number' }], split: { input: 'y', at: [0.5] } };
+    expect(where({ stages: [gate], wires: [] })).toEqual([{ kind: 'bad-split', stage: 'gate' }]);
+  });
+
   it('does not throw on an empty pipeline', () => {
     expect(checkPipeline({ stages: [], wires: [] })).toEqual([]);
   });

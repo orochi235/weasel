@@ -1,7 +1,7 @@
 /** What every look shares: how a type is colored, how a stage and a wire are
  *  styled, and the lookups a look does over a pipeline. */
 import type { DiagramData, DiagramSceneOptions, EdgeStyle, NodeStyle } from '../fromData';
-import type { EffectPipeline, EffectPort, EffectStage } from './types';
+import type { EffectGroup, EffectPipeline, EffectPort, EffectStage } from './types';
 
 export type TypeColor = (type: string | undefined) => string;
 
@@ -56,6 +56,13 @@ export function wireStyle(color: string, control: boolean, problem: boolean): Ed
 export function uniqueStages(pipeline: EffectPipeline): EffectStage[] {
   const seen = new Set<string>();
   return pipeline.stages.filter((s) => (seen.has(s.id) ? false : (seen.add(s.id), true)));
+}
+
+/** Groups with the repeats dropped, first one kept, and none that has the id
+ *  of a stage: `diagramScene` throws on an id that names two things. */
+export function uniqueGroups(pipeline: EffectPipeline): EffectGroup[] {
+  const seen = new Set(pipeline.stages.map((s) => s.id));
+  return (pipeline.groups ?? []).filter((g) => (seen.has(g.id) ? false : (seen.add(g.id), true)));
 }
 
 export function portOn(stage: EffectStage | undefined, id: string): EffectPort | undefined {
