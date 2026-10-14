@@ -906,6 +906,13 @@ only story runner in the repo.
   window every browser test shares, so a resize from anywhere fails it; what resized the window
   was not found.
 
+- **(P3) rolldown could not write a dependency map during `packages/forge/src/vite/plugin.test.ts`,
+  once.** One fleet run at `65c06d7c2` passed every file and exited 1 on an unhandled error:
+  `Failed to write file in …/T/forge-plugin-*/.vite/deps_temp_*/polygon-clipping.js.map`, `Invalid
+  argument (os error 22)`, after "serves the component graph from source, and pushes it again when
+  a component file changes". The test makes that directory and removes it when it ends, so the
+  dev server's dependency scan may have still been writing; not confirmed.
+
 - **(P2) Browser tests time out under fleet load, inside a Playwright action.** A click, a key, or
   a screenshot that takes a fraction of a second alone stalls for seconds in a full run on studio,
   teitou, or msb-uai, a different handful of tests each run, and the test hits its 15 s limit or
