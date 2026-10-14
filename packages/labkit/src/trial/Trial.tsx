@@ -51,9 +51,11 @@ import type { TrialRecord } from '../state/types';
 import { as2DView, DEFAULT_VIEW, withZoom } from '../state/view';
 import { resolveLabTool } from '../tools/labTool';
 import { LoupeSwitchContext } from './loupeSwitch';
-import type { LoupeBindings, UndoBindings } from './TrialChrome';
+import type { LoupeBindings } from './TrialChrome';
 import { TrialChrome } from './TrialChrome';
 import { TrialLayerList, useTrialLayerState } from './TrialLayerList';
+import { TrialHistoryContext, useMountedHistory } from './trialHistory';
+import { trialUndoBindings } from './trialUndo';
 import { useKeptMarks } from './useKeptMarks';
 import { useTrialMarks } from './useTrialMarks';
 import { useTrialWrites } from './useTrialWrites';
@@ -199,6 +201,11 @@ function TrialRuntime({
     schema,
   });
 
+  const { mount: mountHistory, history: ownHistory, holds: holdsHistory } = useMountedHistory();
+  const snapshotState = (event: string): void => {
+    if (!holdsHistory()) snapshotIfNeeded(event);
+  };
+
   const setView = (v: unknown): void => updateTrialView(record.id, v);
 
   const stage = instrument.canvas ? undefined : instrument.stage;
@@ -260,7 +267,7 @@ function TrialRuntime({
     state: record.state,
     config,
     setState: (next) => {
-      snapshotIfNeeded('state.change');
+      snapshotState('state.change');
       updateTrialState(record.id, next);
     },
     setConfig,
@@ -274,35 +281,26 @@ function TrialRuntime({
         updateTrialView(record.id, withZoom(view2d, z));
       },
       activeToolId: resolvedToolId,
+      setActiveTool,
       visibleLayers,
       pointer,
       ...(clockHandle ? { clock: clockHandle.clock } : {}),
     },
-    emit: snapshotIfNeeded,
+    emit: snapshotState,
     job: jobCap ? job : undefined,
   };
 
   // Marks are undone through weasel history, not through labkit's snapshot
-  // stack — the spec's rule, and the reason a mark scene is the truth. A trial
-  // declaring both takes the marks first: the most recent thing the user did
-  // is what undo is for, and only a mark change moves the mark history.
-  const stateHistory = useHistoryVersion(record.history);
-
-  const undoBindings: UndoBindings | undefined =
-    undoCap || annotationsCap
-      ? {
-          canUndo: markMoves.undo || (undoCap ? (stateHistory?.canUndo() ?? false) : false),
-          canRedo: markMoves.redo || (undoCap ? (stateHistory?.canRedo() ?? false) : false),
-          undo: () => {
-            if (annotationsCap && annotations.undo()) return;
-            if (undoCap) stateHistory?.undo();
-          },
-          redo: () => {
-            if (annotationsCap && annotations.redo()) return;
-            if (undoCap) stateHistory?.redo();
-          },
-        }
-      : undefined;
+  // stack — the spec's rule, and the reason a mark scene is the truth.
+  const snapshots = useHistoryVersion(record.history);
+  const undoBindings = trialUndoBindings({
+    declaresUndo: undoCap != null,
+    marks: annotationsCap
+      ? { moves: markMoves, undo: () => annotations.undo(), redo: () => annotations.redo() }
+      : null,
+    own: ownHistory,
+    snapshots,
+  });
 
   const loupeBindings: LoupeBindings | undefined =
     lenses > 0 ? { on: loupeOn, toggle: () => setLoupeOn((v) => !v) } : undefined;
@@ -502,7 +500,9 @@ function TrialRuntime({
     <WeaselProvider isolate>
       <PointerContextProvider store={pointer}>
         <CameraPublishContext.Provider value={publishCamera}>
-          <LoupeSwitchContext.Provider value={loupeSwitch}>{body}</LoupeSwitchContext.Provider>
+          <LoupeSwitchContext.Provider value={loupeSwitch}>
+            <TrialHistoryContext.Provider value={mountHistory}>{body}</TrialHistoryContext.Provider>
+          </LoupeSwitchContext.Provider>
         </CameraPublishContext.Provider>
       </PointerContextProvider>
     </WeaselProvider>
