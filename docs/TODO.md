@@ -26,13 +26,14 @@ Priority tags:
   `features`; the new word is not chosen yet. That leaves choosing it, then renaming the one path,
   its imports, and the section of the taxonomy.
 
-- **(P3) Nothing reads a mode's `entry.trigger`.** Draw enters path-edit and isolation from
-  `SceneCanvas`'s `onDoubleClick` observer through a kind-to-mode table of its own
-  (`apps/draw/src/modality/doubleClickEntry.ts`), not from the `'double-click-target'` the
-  definitions in `packages/modes/src/presets/default.ts` declare. Text-edit is entered by the
-  edit itself (`useTextEditSession`), so its trigger is unread by design. Binding the other two
-  means a double-click entry beside the kit's own `enterPathEdit` binding, and a definition does
-  not say which hits it takes (draw's table does).
+- **(P3) Nothing reads a mode's `entry.trigger`.** The `'double-click-target'` the definitions
+  in `packages/modes/src/presets/default.ts` declare is unread. A path with anchors is put in
+  path-edit by the kit's `enterPathEdit` binding, through draw's `PathEditHost`
+  (`apps/draw/src/modality/pathEditHost.ts`), and text-edit is entered by the edit itself
+  (`useTextEditSession`). Draw still enters isolation, and path-edit on a path with no anchors (a
+  rect), from `SceneCanvas`'s `onDoubleClick` observer through a kind-to-mode table of its own
+  (`apps/draw/src/modality/doubleClickEntry.ts`). Binding those means a double-click entry beside
+  `enterPathEdit`, and a definition does not say which hits it takes (draw's table does).
 
 - **(P3) External-content ingestion — follow-ups.** The pipeline is in
   `packages/core/src/features/ingestion/` (its README is the map). Left:
@@ -907,13 +908,6 @@ only story runner in the repo.
   hands `useLayoutDepSource` each move with the pose it left, and the transition glides what is
   shown from there through a pose override, writing nothing. A removal cannot follow it, since
   the node is gone by the time a report arrives.
-
-- **(P3) draw: a double-click on a path is acted on twice.** The kit's `enterPathEdit` binding
-  and the app's `onDoubleClick` observer (`apps/draw/src/modality/doubleClickEntry.ts`) both take
-  it; they reach the same machine call and the second is a no-op. Text has one way in: the edit
-  owns its mode, which `useTextEditSession` enters and leaves from the hook's `onStart` and
-  `onEnd`, so `text-edit`'s `entry.trigger` stays unread ("Nothing reads a mode's
-  `entry.trigger`" under Tools).
 
 ---
 
