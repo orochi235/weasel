@@ -18,7 +18,9 @@ export function StatusRegion<TCtx = TrialChromeContext>({
   region = 'status',
 }: StatusRegionProps<TCtx>) {
   if (contributions.length === 0) return null;
-  let spaced = false;
+  const shows = (c: RegionContribution<NoInfer<TCtx>>): boolean =>
+    !!c.render || (c.region === region && !!c.item);
+  const firstEnd = contributions.find((c) => c.end && shows(c));
   return (
     <StatusBar divided>
       {contributions.map((c) => {
@@ -30,8 +32,7 @@ export function StatusRegion<TCtx = TrialChromeContext>({
           body = item.text;
           title = item.title;
         } else return null;
-        const spacer = c.end && !spaced;
-        if (spacer) spaced = true;
+        const spacer = c === firstEnd;
         return (
           <Fragment key={c.id}>
             {spacer && <StatusBarSpacer />}

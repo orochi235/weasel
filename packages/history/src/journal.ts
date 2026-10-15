@@ -1,3 +1,4 @@
+import { createEmitter } from '@weasel-js/registry';
 import type { Op } from './op';
 import { _journalAccessInternal, createHistory, type CreateHistoryOptions, type History, type HistoryEntry } from './history';
 
@@ -81,10 +82,10 @@ export function createJournalInternal(
   });
   const selection = inherited.selection;
   let version = 0;
-  const listeners = new Set<() => void>();
+  const changed = createEmitter();
   function bump(): void {
     version++;
-    for (const l of listeners) l();
+    changed.emit();
   }
   inner.subscribe(bump);
   const forkedAtEntryId = parent.currentEntryId();
@@ -125,10 +126,7 @@ export function createJournalInternal(
       inner.seal();
     },
     getVersion: () => version,
-    subscribe(listener) {
-      listeners.add(listener);
-      return () => { listeners.delete(listener); };
-    },
+    subscribe: changed.subscribe,
     commit(label: string): void {
       if (state !== 'active') throw new Error('Journal is not active');
       // Coalescing splits an entry in two: the forward half is the latest

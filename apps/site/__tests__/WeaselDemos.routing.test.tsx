@@ -1,5 +1,6 @@
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { PACKAGES } from '../Packages/catalog';
 import { DEMOS } from '../registry';
 import { App } from '../App';
 import { WeaselDemos } from '../WeaselDemos';
@@ -96,10 +97,10 @@ describe('the hash router', () => {
     await heading('Releases');
   });
 
-  it("opens what's new on its own id", async () => {
+  it('opens demo updates on its own id', async () => {
     go('#__whats_new');
     render(<WeaselDemos />);
-    await heading(/what's new/i);
+    await heading(/demo updates/i);
     expect(window.location.hash).toBe('#__whats_new');
   });
 
@@ -130,6 +131,16 @@ describe('the sidebar', () => {
     const audio = within(packages).getByRole('heading', { level: 3, name: 'audio' }).closest('section')!;
     expect(within(audio).getByRole('link', { name: 'Audio' })).toBeTruthy();
     expect(within(nav).getAllByRole('link', { name: 'Audio' })).toHaveLength(1);
+  });
+
+  it('lists every published package, linked to its page, those with no demos included', () => {
+    go(`#${DEMOS[0].id}`);
+    render(<WeaselDemos />);
+    const packages = within(screen.getByRole('navigation')).getByRole('heading', { level: 2, name: 'Packages' }).closest('section')!;
+    const listed = within(packages).getAllByRole('heading', { level: 3 }).map((h) => h.textContent);
+    expect(listed).toEqual(expect.arrayContaining(PACKAGES.map((pkg) => pkg.name)));
+    const bare = PACKAGES.find((pkg) => !DEMOS.some((d) => d.package === pkg.name))!;
+    expect(within(packages).getByRole('link', { name: bare.name }).getAttribute('href')).toBe(`#pkg/${bare.name}`);
   });
 });
 

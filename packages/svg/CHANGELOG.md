@@ -1,5 +1,74 @@
 # @weasel-js/svg
 
+## 1.10.1
+
+### Patch Changes
+
+- cbd5b4d: `@weasel-js/geom`'s six-number affine type is `Affine`, no longer `Mat3`. It sat one capital letter from `mat3`, the namespace over the nine-element column-major `GlMat3` a GL uniform takes, and the two are different matrices. `mat3.toAffine` and `mat3.fromAffine` already named the conversion this way.
+  
+  Breaking: `import type { Mat3 } from '@weasel-js/geom'` becomes `import type { Affine }`. The values are unchanged, and so are the free functions beside the type (`identity`, `multiply`, `invert`, and the rest).
+- 886380f: Each README's "API reference" link now opens the package's page on the site, `https://orochi235.github.io/weasel/#pkg/<name>`, where it used to open the TypeDoc site at `/weasel/api/`, which is no longer built. A file comment that sat on an `export { … }` list is now marked as the file's, so an entry's description no longer shows up as the summary of each function the entry re-exports. No code changed. `@weasel-js/labkit` drops `vitepress` from its devDependencies, which nothing used.
+- a9cbaa7: `serializeSvg` writes a hard line break in a text node as a line of its own. Each line after the first is a `<tspan>` sent back to the anchor point by `x` and down by `dy`, at the node's font size times its line height, so a reader other than weasel draws the lines where it used to draw one line with a space at each break. A blank line is folded into the next line's `dy`, which carries `data-weasel-lines` so `parseSvg` reads the blank lines back.
+  
+  Breaking: what `parseSvg` returns for text weasel wrote changes in three ways. A multi-line node comes back with `style.lineHeight` set when it is not the default 1.2, where it used to come back without one. A line that opens in the style the previous line closed in continues that run, so `<tspan>` lines of one style read back as one run holding the breaks rather than a run per line. A break that ended a run is read back at the start of the next run, and an empty run is no longer written.
+- 0b5ff3b: `serializeSvg` writes a marked stroke so SVG draws the markers the renderer draws. A path with several subpaths and a start, mid, or end marker is written one subpath to a `<path>`: SVG draws one start and one end marker per `<path>` and a mid marker on every vertex between them, subpath joins included, where the renderer caps each open subpath and marks no join. A fill over such a path is written once, under the strokes, so an even-odd hole stays a hole. A closed subpath, and a `rect` path, is written with no start or end marker, which SVG would draw at its first vertex and the renderer does not. Breaking for a reader of the output that expected one `<path>` per node: these nodes are now a `<g>` of paths, as a path split for `openFill: 'none'` already was.
+- a3c34b4: `parseSvg` reads a `<tspan dx>` list. Each glyph takes the shift of the glyph after it as letter spacing, on top of the spacing already in force, so text kerned by hand with `dx` (as Inkscape writes it) keeps its spacing, and the tspan comes back as one run per stretch of glyphs spaced alike. A leading shift lands on the glyph before the tspan, or moves the text's `x` when the tspan opens it. It used to warn and leave the glyphs at their own advance. Still unread, each with a warning: a `dx` on `<text>` itself, a leading shift that opens a later line, and a list on a tspan whose white space SVG would collapse.
+- e962494: New package, `@weasel-js/symmetry`: live symmetry groups. A group's copies (a mirror at any angle, both axes, a point, radial, kaleidoscope, or a repeat with an optional glide) are drawn from its real children. Every edit to a child therefore reaches every copy, a click on a copy selects the child it copies, and `bakeSymmetry` turns the copies into real nodes. `createSymmetry(scene).contribution` draws the guide with draggable center, axis, and step handles, sends every tool's shapes into the active group, and keeps a path that is its own image under its group symmetric while its anchors are dragged or nudged.
+  
+  Core gains what the package is built on, and each piece is usable on its own:
+  
+  - `ContainerNode.copiesFromPose`: a container draws its subtree again under each affine it returns. Hit tests reach into the copies, and the clip travels with each one. Additive.
+  - The `insertInto` dep: the container the `insert` dep puts new nodes into.
+  - The `pathSymmetry` dep: transforms that anchor drags and nudges keep a path symmetric under.
+  
+  `@weasel-js/geom` adds `anchorSymmetry`, `anchorSymmetries`, `translateAnchorsSymmetric`, and `moveHandleSymmetric`. `@weasel-js/svg` writes a container's copies as transformed groups.
+- Updated dependencies [113c088]
+- Updated dependencies [cbd5b4d]
+- Updated dependencies [d3b73b9]
+- Updated dependencies [aaa2b4f]
+- Updated dependencies [c7b7ed5]
+- Updated dependencies [faf8ff3]
+- Updated dependencies [8bee821]
+- Updated dependencies [67a7de8]
+- Updated dependencies [f6e3e90]
+- Updated dependencies [74ba77e]
+- Updated dependencies [a8e8048]
+- Updated dependencies [755b7ff]
+- Updated dependencies [1d3ca5c]
+- Updated dependencies [566f15e]
+- Updated dependencies [ee59ccd]
+- Updated dependencies [f22f5ce]
+- Updated dependencies [92e6291]
+- Updated dependencies [2216d1b]
+- Updated dependencies [a7144f4]
+- Updated dependencies [35c4879]
+- Updated dependencies [9eefcc7]
+- Updated dependencies [886380f]
+- Updated dependencies [f8faa63]
+- Updated dependencies [3bc85c9]
+- Updated dependencies [d8b51a4]
+- Updated dependencies [d0c3896]
+- Updated dependencies [3448831]
+- Updated dependencies [27fe0fb]
+- Updated dependencies [8bbf878]
+- Updated dependencies [b5267f9]
+- Updated dependencies [62e766c]
+- Updated dependencies [5485d35]
+- Updated dependencies [690ea72]
+- Updated dependencies [ab9ea7a]
+- Updated dependencies [e962494]
+- Updated dependencies [bad37cf]
+- Updated dependencies [9e84e5d]
+- Updated dependencies [ef29364]
+- Updated dependencies [2f48645]
+- Updated dependencies [92c2e8e]
+- Updated dependencies [711ae46]
+- Updated dependencies [365eae0]
+- Updated dependencies [781a15e]
+- Updated dependencies [a092978]
+  - @weasel-js/core@1.10.1
+  - @weasel-js/geom@1.10.1
+
 ## 1.10.0
 
 ### Patch Changes

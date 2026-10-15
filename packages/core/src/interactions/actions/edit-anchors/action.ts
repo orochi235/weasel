@@ -11,6 +11,8 @@
  *     opposite one while the anchor is smooth. Alt breaks the mirror; Shift
  *     holds the handle to the angle it had at the press, changing only its
  *     length.
+ *   - **Under a `pathSymmetry` dep**, on a path that is its own image under
+ *     some of its transforms, every image of what is dragged follows it.
  *
  * Selection lives on the `editAnchors` dep (flat anchor indices) rather
  * than in this handle's scratch, because the keyboard actions
@@ -32,15 +34,18 @@ import {
   anchorAt,
   editAnchorSetTracked,
   handleAlongItsAngle,
+  moveHandleSymmetric,
   moveHandleTo,
-  translateAnchorBy,
+  translateAnchorsSymmetric,
   type AnchorSet,
+  type AnchorSymmetry,
   type PointOrigin,
 } from '@weasel-js/geom';
 import { pathToAnchors, type PolygonPath } from '@weasel-js/geom';
 import { inPlane, editingLayer } from '../planeInput';
 import { pathEditPreview } from './preview';
 import { pathEditToolActive } from '../defaults/pathEditTools';
+import { editedPathSymmetries } from './symmetry';
 
 /**
  * Parse an anchor affordance kind — `'anchor:N'` | `'controlIn:N'` |
@@ -99,6 +104,8 @@ interface EditAnchorsScratch {
   handleOrigin: { x: number; y: number } | null;
   originPose: PolygonPath;
   currentPose: PolygonPath;
+  /** The transforms `originPose` is its own image under, read at the press. */
+  symmetries: readonly AnchorSymmetry[];
   /** Where each point of `currentPose` came from in `originPose`. */
   origins?: readonly (PointOrigin | null)[];
 }
@@ -121,7 +128,7 @@ export const editAnchorsAction: Action & { requires: string[] } = inPlane({
     target: { kindOf: isAnchorOrControl },
   },
   eligible: { capability: 'edits-anchors' },
-  requires: ['selection', 'editAnchors'],
+  requires: ['selection', 'editAnchors', 'pathSymmetry'],
   invoker: {
     timing: 'ongoing',
     start(ctx: InvocationCtx, _opts): OngoingHandle {
@@ -190,6 +197,7 @@ export const editAnchorsAction: Action & { requires: string[] } = inPlane({
           : anchorInfo.part === 'controlOut' ? origin.outHandle : null) ?? null,
         originPose: worldPath,
         currentPose: worldPath,
+        symmetries: editedPathSymmetries(ctx.deps.pathSymmetry, editingId, decoded),
       };
 
       return {
@@ -200,7 +208,7 @@ export const editAnchorsAction: Action & { requires: string[] } = inPlane({
             const dx = moveCtx.world.x - scratch.anchorOrigin.x;
             const dy = moveCtx.world.y - scratch.anchorOrigin.y;
             track(scratch, editAnchorSetTracked(scratch.originPose, (set) => {
-              for (const flat of scratch.dragging) translateAnchorBy(set, flat, dx, dy);
+              translateAnchorsSymmetric(set, scratch.dragging, dx, dy, scratch.symmetries);
             }));
           } else {
             const side = scratch.part === 'controlIn' ? 'in' : 'out';
@@ -208,16 +216,11 @@ export const editAnchorsAction: Action & { requires: string[] } = inPlane({
             const to = moveCtx.modifiers.shift && scratch.handleOrigin
               ? handleAlongItsAngle(scratch.anchorOrigin, scratch.handleOrigin, moveCtx.world)
               : moveCtx.world;
-            track(scratch, editAnchorSetTracked(scratch.originPose, (set) =>
-              moveHandleTo(
-                set,
-                scratch.anchorIndex,
-                side,
-                to.x,
-                to.y,
-                moveCtx.modifiers.alt,
-              ),
-            ));
+            const move = scratch.symmetries.length > 0
+              ? (set: AnchorSet) => moveHandleSymmetric(
+                set, scratch.anchorIndex, side, to.x, to.y, moveCtx.modifiers.alt, scratch.symmetries)
+              : (set: AnchorSet) => moveHandleTo(set, scratch.anchorIndex, side, to.x, to.y, moveCtx.modifiers.alt);
+            track(scratch, editAnchorSetTracked(scratch.originPose, move));
           }
           active = true;
         },

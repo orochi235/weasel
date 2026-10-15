@@ -1,5 +1,38 @@
 # @weasel-js/renderer
 
+## 1.10.1
+
+### Patch Changes
+
+- 906fd19: A gradient or an image under a group's color matrix shares a draw with what is around it. A run of batched draws now holds up to eight color matrices, each with its group alpha, and every vertex names its own, so a matrix that mixes channels, carries a bias, or scales past 1 no longer breaks the batch around the textured things inside it. A gradient under a matrix that only scales channels down is tinted on its vertices, as an image already was.
+  
+  A solid or a glyph in a run that an image opened under a matrix is now mapped on the CPU like any other, where the shader used to map it; the pixels are the same.
+- 886380f: Each README's "API reference" link now opens the package's page on the site, `https://orochi235.github.io/weasel/#pkg/<name>`, where it used to open the TypeDoc site at `/weasel/api/`, which is no longer built. A file comment that sat on an `export { … }` list is now marked as the file's, so an entry's description no longer shows up as the summary of each function the entry re-exports. No code changed. `@weasel-js/labkit` drops `vitepress` from its devDependencies, which nothing used.
+- 0db6d9a: A gradient or a pattern drawn by the path programs keeps its place far from the origin. The matrix that takes a fragment to paint space is rebased on the CPU, in doubles, before it is uploaded: a gradient's is measured from the gradient's own start point or center, and a pattern's drops whole tiles from its translation. At world x = 262,144 and 64x zoom a `units: 'world'` gradient used to move in 2 px steps as the view panned.
+- 9253a8b: A run of batched draws holds fifteen textures where it held seven, so a page mixing more than seven images, font atlases, and gradients no longer breaks the batch at the eighth. The batch shader now samples sixteen texture units, the most WebGL2 guarantees, and reaches a unit in four compares where the old chain took up to seven.
+- f4100e9: A new renderer costs less to start drawing, which every one-shot `renderSceneToPixels` and every new canvas pays. In headless Chromium on SwiftShader, a one-shot render of one rect took 209 to 225 ms and now takes 129 to 139 ms, back where it was before runs held 15 textures and 8 color matrices; under ANGLE Metal with the shader cache warm, the first render went from 14 to 22 ms to 9.7 to 10.2 ms. Draws and pixels are unchanged.
+  
+  The batch program samples the gradient ramp atlas from a fixed slot, and a run under one color matrix draws with a program that has no matrix array to index; a run under several builds the full program the first time one is drawn. The path, vertex-color, gradient and pattern programs are built on the first frame that uses them rather than with the renderer.
+- 8a9ed26: Text faked bold shares a draw with the text around it. The shift on the distance field's threshold rides each glyph's vertices where it was a uniform, so a bold run in a face with no bold atlas no longer breaks the batch on either side of it.
+- Updated dependencies [cbd5b4d]
+- Updated dependencies [aaa2b4f]
+- Updated dependencies [c7b7ed5]
+- Updated dependencies [ee59ccd]
+- Updated dependencies [924edc4]
+- Updated dependencies [9eefcc7]
+- Updated dependencies [886380f]
+- Updated dependencies [d8b51a4]
+- Updated dependencies [62e766c]
+- Updated dependencies [ab9ea7a]
+- Updated dependencies [e962494]
+- Updated dependencies [f5870a4]
+  - @weasel-js/geom@1.10.1
+  - @weasel-js/stroke@1.10.1
+  - @weasel-js/text@1.10.1
+  - @weasel-js/font@1.10.1
+  - @weasel-js/paint@1.10.1
+  - @weasel-js/registry@1.10.1
+
 ## 1.10.0
 
 ### Patch Changes

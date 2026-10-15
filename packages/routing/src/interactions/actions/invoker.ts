@@ -301,6 +301,9 @@ export type OngoingOverlay =
        *  click point — for radial shapes (polygon/star), where no vertex
        *  sits on it, and for any shape in center mode. */
       anchorPoint?: { x: number; y: number };
+      /** World affines the shape will also be drawn under once it lands, by
+       *  the container it is drawn into: the preview is painted under each. */
+      copies?: readonly (readonly [number, number, number, number, number, number])[];
     };
 
 /** Handle returned from an `OngoingInvoker.start`. The dispatcher pumps

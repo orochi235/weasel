@@ -5,5 +5,7 @@
  *
  * Re-exported here so core's own call sites keep importing from
  * `core/ops/types`, which is where they have always looked for it.
+ *
+ * @packageDocumentation
  */
 export type { Op } from '@weasel-js/history';

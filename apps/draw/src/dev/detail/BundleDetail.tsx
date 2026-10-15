@@ -44,7 +44,7 @@ export function bundleMemberColumns(
       id: 'shortcut',
       header: 'shortcut',
       sortable: false,
-      render: (r) => <KeySequence keys={keySpecsFromShortcut(r.tool?.switchShortcut)} />,
+      render: (r) => <KeySequence keys={keySpecsFromShortcut(r.tool?.switchShortcut)} variant="inverse" />,
     },
   ];
 }

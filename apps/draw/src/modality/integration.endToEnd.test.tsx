@@ -1,10 +1,11 @@
 /**
- * Path-edit flow: dispatchDoubleClickEntry → ModeMachine.enterMode →
- * ModeBreadcrumb shows "Path Edit" → Escape → machine.exitMode() → breadcrumb gone.
+ * Path-edit flow: double-click a path → the canvas's `enterPathEdit` binding →
+ * ModeMachine.enterMode → ModeBreadcrumb shows "Path Edit" → Escape →
+ * machine.exitMode() → breadcrumb gone.
  *
  * App's <SceneCanvas> never mounts in jsdom (the canvas has zero dimensions, so
- * the hostDims gate holds it back), so this drives a real ModeMachine with a
- * fake path hit, beside a bare canvas carrying App's mode shortcuts.
+ * the hostDims gate holds it back), so this mounts a bare canvas wired to a real
+ * ModeMachine the way Workspace wires it, through `useCanvasModes`.
  */
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { screen, act, fireEvent } from '@testing-library/react';
@@ -12,11 +13,11 @@ import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { useState, useEffect, type ReactElement } from 'react';
 
 import { createModeMachine } from './machine';
-import { dispatchDoubleClickEntry } from './doubleClickEntry';
 import { ModeBreadcrumb } from './chrome/ModeBreadcrumb';
-import { modalityShortcuts } from './shortcuts';
+import { useCanvasModes } from './useCanvasModes';
 import { DEFAULT_MODES } from '@weasel-js/modes';
-import { SceneCanvas, createScene } from '@weasel-js/core';
+import { SceneCanvas, asNodeId, createScene, pathFromD, useSelection, type PolygonPath } from '@weasel-js/core';
+import type { DrawScene } from '../drawDocument';
 
 beforeAll(() => {
   (HTMLCanvasElement.prototype as unknown as { getContext: () => null }).getContext = () => null;
@@ -52,8 +53,18 @@ function MachineHarness({
   machine: ReturnType<typeof createModeMachine>;
 }): ReactElement {
   const [modeId, setModeId] = useState(machine.registry.current().id);
-  const [scene] = useState(() => createScene({ systemLayers: [{ id: 'main' }] }));
-  const [ambient] = useState(() => [modalityShortcuts(machine)]);
+  const [scene] = useState(() => {
+    const s = createScene({ systemLayers: [{ id: 'main' }] });
+    s.add({
+      id: asNodeId('path-1'), kind: 'leaf', layer: 'main',
+      data: { path: pathFromD('M 0 0 L 40 0 L 40 40 L 0 40 Z') as PolygonPath },
+      pose: { x: 0, y: 0, width: 40, height: 40 },
+    });
+    return s as unknown as DrawScene;
+  });
+  const selection = useSelection({ mode: 'multi', scene });
+  const modes = useCanvasModes(machine, scene, selection);
+  const [ambient] = useState(() => [modes.keys]);
 
   // Subscribe to registry changes — same pattern as App's useModeId helper.
   useEffect(() => {
@@ -69,11 +80,20 @@ function MachineHarness({
         onCommit={() => machine.commitMode()}
         onCancel={() => machine.cancelMode()}
       />
-      <SceneCanvas features={['draw']} scene={scene} layers={{}} width={64} height={64}
+      <SceneCanvas features={['draw']} scene={scene} selection={selection} layers={{}} width={64} height={64}
         ambient={ambient}
-        modes={machine.registry} />
+        onDoubleClick={modes.onDoubleClick}
+        modes={machine.registry}
+        pathEdit={modes.pathEdit} />
     </>
   );
+}
+
+function doubleClickPath(): void {
+  const canvas = document.querySelector('canvas')!;
+  const press = (type: string) =>
+    canvas.dispatchEvent(new PointerEvent(type, { bubbles: true, clientX: 20, clientY: 20, pointerId: 1 }));
+  act(() => { press('pointerdown'); press('pointerup'); press('pointerdown'); press('pointerup'); });
 }
 
 // ─── Tests ────────────────────────────────────────────────────────────────────
@@ -90,17 +110,14 @@ describe('path-edit end-to-end integration', () => {
     // Breadcrumb is absent in normal mode.
     expect(screen.queryByText(/path edit/i)).toBeNull();
 
-    // Simulate double-click on a path node — the same call App's onDoubleClick
-    // callback makes when SceneCanvas delivers a hit with kind='path'.
-    act(() => {
-      dispatchDoubleClickEntry({ kind: 'path', id: 'path-1' }, machine);
-    });
+    doubleClickPath();
 
     // Breadcrumb must now show "Path Edit".
     expect(screen.getByText(/path edit/i)).toBeTruthy();
 
     // The mode machine is in path-edit; the registry current id confirms it.
     expect(machine.registry.current().id).toBe('path-edit');
+    expect(machine.getActiveTargetId()).toBe('path-1');
 
     // The active journal was opened (path-edit is a soft mode with a journal).
     expect(machine.getActiveJournal()).not.toBeNull();
@@ -127,9 +144,9 @@ describe('path-edit end-to-end integration', () => {
 
     render(<MachineHarness machine={machine} />);
 
-    act(() => { dispatchDoubleClickEntry({ kind: 'path', id: 'path-1' }, machine); });
+    doubleClickPath();
     act(() => { machine.exitMode(); });
-    act(() => { dispatchDoubleClickEntry({ kind: 'path', id: 'path-1' }, machine); });
+    doubleClickPath();
     expect(machine.registry.current().id).toBe('path-edit');
     expect(history.beginJournal).toHaveBeenCalledTimes(2);
   });

@@ -70,6 +70,8 @@ export type ResolvedOverlay =
       /** The drag's anchor — a growth axis to mark. Absent for a pencil, which
        *  has none. */
       anchorPoint?: Point;
+      /** World affines the shape will also be drawn under, as the action gave them. */
+      copies?: readonly (readonly [number, number, number, number, number, number])[];
       /** The action's per-shape payload, verbatim. Carries what geometry
        *  cannot: an image insert's `src`, say. */
       extras: unknown;
@@ -140,6 +142,7 @@ export function resolveOverlays(overlays: Iterable<OngoingOverlay>): ResolvedOve
           geometry,
           extras: ov.extras,
           ...(ov.anchorPoint && ov.shape !== 'pencil' ? { anchorPoint: ov.anchorPoint } : {}),
+          ...(ov.copies ? { copies: ov.copies } : {}),
         });
         break;
       }

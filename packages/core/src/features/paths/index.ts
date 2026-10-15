@@ -5,6 +5,8 @@
  * The path data model and the math over it live in `@weasel-js/geom`;
  * re-exported by name (never `export *`, which esbuild cannot enumerate
  * across a package boundary).
+ *
+ * @packageDocumentation
  */
 
 export {

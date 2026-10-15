@@ -4,6 +4,8 @@
  * The pure half: no React, no DOM. The React seam that pumps browser events
  * into the dispatcher, and the providers that feed it, live behind
  * `@weasel-js/routing/react`.
+ *
+ * @packageDocumentation
  */
 
 // ─── vocabulary ───────────────────────────────────────────────────────────

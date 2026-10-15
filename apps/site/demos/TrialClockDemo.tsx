@@ -19,9 +19,11 @@ function Controls() {
   const forward = clock.rate >= 0;
   return (
     <div className={s.controls}>
+      {/* eslint-disable-next-line react-hooks/immutability -- the clock is driven by setting `rate` */}
       <Button onClick={() => { clock.rate = clock.rate === 0 ? 1 : 0; }}>
         {clock.rate === 0 ? 'Play' : 'Pause'}
       </Button>
+      {/* eslint-disable-next-line react-hooks/immutability -- the clock is driven by setting `rate` */}
       <Button onClick={() => { clock.rate = forward ? -1 : 1; }}>
         {forward ? 'Reverse' : 'Forward'}
       </Button>

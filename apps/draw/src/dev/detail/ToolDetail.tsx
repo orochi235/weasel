@@ -63,11 +63,11 @@ export function ToolDetail({ entry, onNavigate }: { entry: ToolEntry; onNavigate
         )}
         <DetailRow label="slot"><EntryLink kind="slot" id={entry.slot} onNavigate={onNavigate} /></DetailRow>
         {entry.switchShortcut && (
-          <DetailRow label="shortcut"><KeySequence keys={keySpecsFromShortcut(entry.switchShortcut)} /></DetailRow>
+          <DetailRow label="shortcut"><KeySequence keys={keySpecsFromShortcut(entry.switchShortcut)} variant="inverse" /></DetailRow>
         )}
         {entry.hotkey && (
           <DetailRow label="hold to engage">
-            <KeySequence keys={[hotkeyTriggerToKeySpec(entry.hotkey)]} />
+            <KeySequence keys={[hotkeyTriggerToKeySpec(entry.hotkey)]} variant="inverse" />
             <GestureRoute route={`[*:initial] keyHeld(${entry.hotkey})`} />
           </DetailRow>
         )}

@@ -1,5 +1,30 @@
 # @weasel-js/text
 
+## 1.10.1
+
+### Patch Changes
+
+- cbd5b4d: `@weasel-js/geom`'s six-number affine type is `Affine`, no longer `Mat3`. It sat one capital letter from `mat3`, the namespace over the nine-element column-major `GlMat3` a GL uniform takes, and the two are different matrices. `mat3.toAffine` and `mat3.fromAffine` already named the conversion this way.
+  
+  Breaking: `import type { Mat3 } from '@weasel-js/geom'` becomes `import type { Affine }`. The values are unchanged, and so are the free functions beside the type (`identity`, `multiply`, `invert`, and the rest).
+- 924edc4: Kerning reads through a nonspacing combining mark: in `A`, U+0301, `B` the `B` is kerned against the `A`, as it is in `AB`. The mark used to take the pair's kerning away, so an accented letter written as two code points set the next letter wider than the same letter precomposed. Text holding such marks can measure narrower than before.
+- 886380f: Each README's "API reference" link now opens the package's page on the site, `https://orochi235.github.io/weasel/#pkg/<name>`, where it used to open the TypeDoc site at `/weasel/api/`, which is no longer built. A file comment that sat on an `export { … }` list is now marked as the file's, so an entry's description no longer shows up as the summary of each function the entry re-exports. No code changed. `@weasel-js/labkit` drops `vitepress` from its devDependencies, which nothing used.
+- f5870a4: `textToPath` refuses text holding an emoji with a reason of its own, `'color-glyph'`, added to `TextOutlinesFailure`. It used to throw `'no-outlines'` with a message asking for outlines to be registered for a fallback face, which cannot help: an emoji is a picture in its own colors and has no outline. An emoji still waiting for its bake was left out of the path without an error, and is now refused the same way.
+- Updated dependencies [cbd5b4d]
+- Updated dependencies [aaa2b4f]
+- Updated dependencies [c7b7ed5]
+- Updated dependencies [ee59ccd]
+- Updated dependencies [9eefcc7]
+- Updated dependencies [886380f]
+- Updated dependencies [d8b51a4]
+- Updated dependencies [62e766c]
+- Updated dependencies [ab9ea7a]
+- Updated dependencies [e962494]
+  - @weasel-js/geom@1.10.1
+  - @weasel-js/font@1.10.1
+  - @weasel-js/paint@1.10.1
+  - @weasel-js/registry@1.10.1
+
 ## 1.10.0
 
 ### Patch Changes

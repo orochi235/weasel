@@ -96,6 +96,7 @@ function SceneScrollerDemoInner({ onRestart }: { onRestart: () => void }) {
     blur: createSlew({ rise: BONK_BLUR.perHit / BONK_BLUR.riseSeconds }),
   }), []);
   const sound = usePlatformerAudio(animator, () => {
+    // eslint-disable-next-line react-hooks/immutability -- a slew is steered by writing its fields
     impact.value = Math.min(impact.value + BONK_BLUR.perHit, BONK_BLUR.max);
   });
   const { hooks, beginFrame, endFrame, stats: soundStats } = sound;

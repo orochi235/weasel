@@ -116,7 +116,7 @@ export function useTiledSurface({ onFrame }: UseTiledSurfaceOptions): SurfaceHan
   }, []);
 
   const frameLoop = useVisibleRaf(
-    () => {
+    (_time, frameLoop) => {
       const el = container.current;
       if (!el) {
         dirty.current.clear();
@@ -138,7 +138,7 @@ export function useTiledSurface({ onFrame }: UseTiledSurfaceOptions): SurfaceHan
           // mid-flight at. Measure again next frame, and keep going until a
           // measurement finds nothing moved.
           needsMeasure.current = true;
-          schedule();
+          frameLoop.request();
         }
       }
       const dpr = globalThis.devicePixelRatio ?? 1;

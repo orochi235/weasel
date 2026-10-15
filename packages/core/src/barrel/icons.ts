@@ -1,4 +1,8 @@
-/** Part of the `@weasel-js/core` barrel. Default tool and action icons. */
+/**
+ * Part of the `@weasel-js/core` barrel. Default tool and action icons.
+ *
+ * @packageDocumentation
+ */
 
 // ─── Built-in tool icons ────────────────────────────────────────────────────
 // Match the convention used by the Pathfinder panel and WeaselDraw

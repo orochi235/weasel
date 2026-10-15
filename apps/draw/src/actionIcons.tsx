@@ -28,6 +28,18 @@ export function ReleaseCompoundIcon() {
   );
 }
 
+/** Live symmetry: a filled half and its outlined mirror either side of a
+ *  dashed axis. */
+export function SymmetryIcon() {
+  return (
+    <svg {...SVG_BASE}>
+      <path d="M8 4 L3 10 L8 16 Z" fill="currentColor" stroke="none" />
+      <path d="M12 4 L17 10 L12 16 Z" strokeLinejoin="round" />
+      <line x1="10" y1="2" x2="10" y2="18" strokeDasharray="1.5 1.5" />
+    </svg>
+  );
+}
+
 // ──────────────────────────────────────────────────────────────────────────
 // Settings — classic gear/cog: outer toothed ring + inner hub circle.
 // Stroked teeth (8 of them) match the outlined style of the other icons.

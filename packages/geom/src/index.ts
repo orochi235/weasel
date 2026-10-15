@@ -1,6 +1,9 @@
 /** @weasel-js/geom — pure 2D geometry kernel: scalars, affines, curves, the
  *  `Path` command stream and the math over it, and easing curves. Curve
- *  representations, tessellation and booleans live in subpaths. */
+ *  representations, tessellation and booleans live in subpaths.
+ *
+ * @packageDocumentation
+ */
 export { clamp, cross, dot, sub, len2, sign, approxEq, EPS } from './scalar';
 export { normalizeZoom, ZOOM_FLOOR, type View } from './view';
 export { identity, translate, scale, rotate, multiply, invert, applyToPoint, boxToBox, rotateAboutPoint, type Affine } from './affine';
@@ -88,6 +91,9 @@ export {
   type AnchorRect, type AnchorSet, type SegmentHit,
 } from './paths/anchorEdits';
 export { anchorsUnderBrush } from './paths/anchorBrush';
+export {
+  anchorSymmetries, anchorSymmetry, moveHandleSymmetric, translateAnchorsSymmetric, type AnchorSymmetry,
+} from './paths/anchorSymmetry';
 export { bendSegment, type BendGrip } from './paths/bendSegment';
 export { handleAlongItsAngle, makeHandlesSymmetric, retractHandles } from './paths/handleEdits';
 export { editAnchorSetTracked, remapPointValues, type PointOrigin } from './paths/anchorOrigins';
