@@ -944,18 +944,6 @@ only story runner in the repo.
 
 ---
 
-## Lint
-
-- **(P3) eslint-plugin-react-hooks v7's `immutability` rule is off.** It is the
-  last compiler rule that could come on: 51 reports in 37 files on 2026-10-12.
-  26 are tests assigning to a prop or an outer variable from inside a probe
-  component, which the test override in `eslint.config.js` that already turns
-  `react-hooks/globals` off would cover. The rest are `useVisibleRaf` loops
-  re-requesting themselves, and writes to forwarded refs, DOM nodes, and
-  mutable engine objects: each to be restructured or shown to be the point.
-
----
-
 ## Release-gate & build hygiene
 
 - **(P3) Two ways a new dependency can still reach a browser test unannounced.** The `browser`

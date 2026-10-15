@@ -357,7 +357,7 @@ export function usePenTool(
       refresh: track,
       /** The same, following `deps`' pointer from here on. */
       update(deps: ActionDeps): void {
-        view = deps.view;
+        view = deps.view; // eslint-disable-line react-hooks/immutability -- the trail's own camera, read by `track`
         follower.follow(deps.pointer);
         track();
       },

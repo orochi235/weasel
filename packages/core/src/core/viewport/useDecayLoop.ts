@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react';
-import { useVisibleRaf } from '@weasel-js/react';
+import { useVisibleRaf, type VisibleRaf } from '@weasel-js/react';
 
 /** Per-axis limits on a view's position. Any side may be left open. */
 export interface PanBounds {
@@ -65,24 +65,7 @@ export function useDecayLoop() {
     onEnd?: () => void;
   } | null>(null);
 
-  const frameLoop = useVisibleRaf(
-    (now: number) => { tick(now); },
-    {
-      // Coasting does not continue while suspended: dropping `lastTime` makes
-      // the resuming frame seed a fresh interval instead of applying an hour of
-      // friction at once, which would end the decay before it was seen.
-      onResume: useCallback(() => {
-        if (stateRef.current) stateRef.current.lastTime = null;
-      }, []),
-    },
-  );
-
-  const cancel = useCallback(() => {
-    frameLoop.cancel();
-    stateRef.current = null;
-  }, [frameLoop]);
-
-  const tick = useCallback((now: number) => {
+  const tick = useCallback((now: number, frameLoop: VisibleRaf) => {
     const s = stateRef.current;
     if (!s) return;
     if (s.lastTime === null) {
@@ -132,6 +115,23 @@ export function useDecayLoop() {
     }
     s.onTick(dx, dy);
     frameLoop.request();
+  }, []);
+
+  const frameLoop = useVisibleRaf(
+    tick,
+    {
+      // Coasting does not continue while suspended: dropping `lastTime` makes
+      // the resuming frame seed a fresh interval instead of applying an hour of
+      // friction at once, which would end the decay before it was seen.
+      onResume: useCallback(() => {
+        if (stateRef.current) stateRef.current.lastTime = null;
+      }, []),
+    },
+  );
+
+  const cancel = useCallback(() => {
+    frameLoop.cancel();
+    stateRef.current = null;
   }, [frameLoop]);
 
   const start = useCallback((config: DecayLoopConfig) => {

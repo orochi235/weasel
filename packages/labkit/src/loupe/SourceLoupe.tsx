@@ -26,7 +26,7 @@ export function SourceLoupe({ aim, factor, diameter, source, hostRef }: SourceLo
   const argsRef = useLatest({ aim, factor, diameter, dpr, source });
 
   const loop = useVisibleRaf(
-    () => {
+    (_time, loop) => {
       loop.request();
       const ctx = canvasRef.current?.getContext('2d');
       const a = argsRef.current;
