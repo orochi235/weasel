@@ -663,6 +663,16 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/SceneLabDemo.tsx',
   },
   {
+    id: 'lab-curvature-comb',
+    title: 'Curvature comb',
+    category: 'Geometry',
+    description:
+      "A path open in anchor editing, with its curvature comb on: teeth stand out of every curved segment along its normal, each as long as the curve is tight where it stands, and a line joins their tips. A tooth that jumps in length at an anchor marks a curvature break even where the tangent runs smooth through it; teeth that cross to the other side mark an inflection. The comb is part of the path-edit overlay, shown while chrome-caps shows `path-edit.comb`, and draws from the same in-flight path as the anchors, so it follows every anchor and handle drag. Its scale and density are the overlay slot's `comb` options, from `layers.pathEditingOverlay`.",
+    hint: "Drag an anchor or a handle and watch the comb follow. Comb scale sets the teeth's length and Teeth per segment their spacing; Show comb turns it off. <kbd>Escape</kbd> leaves path edit, and a double-click on the path goes back in.",
+    load: () => import('./demos/CurvatureCombLabDemo').then((m) => m.CurvatureCombLabDemo),
+    path: 'apps/site/demos/CurvatureCombLabDemo.tsx',
+  },
+  {
     id: 'symmetry-lab',
     title: 'Symmetry',
     package: 'symmetry',

@@ -1,14 +1,15 @@
 /**
  * Screen-space render layer for path-editing chrome — anchor squares,
  * tangent lines, and control-point dots for a polygon path that is the
- * current edit target. Marker sizes stay constant regardless of zoom.
+ * current edit target, and its curvature comb when chrome-caps shows it. Marker sizes stay constant regardless of zoom.
  */
 
 import type { DrawCommand } from '@weasel-js/renderer';
 import type { RenderLayer } from 'core/layers/render';
-import { type Path, type PolygonPath, type View, linePath, pathToAnchors, circlePath, rectMarkerPath, squarePath } from '@weasel-js/geom';
+import { type AnchorSet, type Path, type PolygonPath, type View, linePath, pathToAnchors, circlePath, rectMarkerPath, squarePath } from '@weasel-js/geom';
 import type { GesturePreviewSource } from 'canvas/gestureBounds';
 import { previewSourcesFrom, isVisibleFrom } from 'canvas/drawEnvelope';
+import { combCommands, PATH_COMB_CHROME_ID, type PathEditCombOptions } from './pathEditComb';
 
 /** Options for `createPathEditingOverlayLayer`. Everything is read per frame,
  *  so the layer follows a changing edit target without being rebuilt. */
@@ -36,6 +37,9 @@ export interface CreatePathEditingOverlayLayerOptions {
   getMarquee?(view: View): { x: number; y: number; width: number; height: number } | null;
   /** Optional styling overrides. */
   style?: PathEditingOverlayStyle;
+  /** How the curvature comb is drawn, read per frame. Whether it shows is
+   *  chrome-caps' call (`path-edit.comb`). */
+  getComb?(): PathEditCombOptions | undefined;
 }
 
 /** Appearance of the anchor and handle markers. */
@@ -98,9 +102,13 @@ export function createPathEditingOverlayLayer(
       const pose = opts.getPose(id, previewSourcesFrom(data), view);
       if (!pose || pose.kind !== 'polygon') return [];
 
-      const { anchors } = pathToAnchors(pose as PolygonPath);
+      const set = pathToAnchors(pose as PolygonPath) as AnchorSet;
+      const { anchors } = set;
       const selected = opts.getSelectedAnchors?.() ?? EMPTY_SELECTION;
-      const out: DrawCommand[] = [];
+      // Under the handles and anchors, which are what a press reaches first.
+      const out: DrawCommand[] = !isVisible || isVisible(PATH_COMB_CHROME_ID)
+        ? combCommands(set, view, opts.getComb?.())
+        : [];
 
       // Flat anchor index, incremented in walk order so it lines up with
       // `enumerateAnchors` — the same numbering the affordances and the
