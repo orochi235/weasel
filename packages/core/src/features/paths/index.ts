@@ -134,6 +134,7 @@ export {
   type CreatePathEditingOverlayLayerOptions,
   type PathEditingOverlayStyle,
 } from './pathEditingOverlayLayer';
+export { PATH_COMB_CHROME_ID, type PathEditCombOptions } from './pathEditComb';
 export {
   pathUnion,
   pathIntersect,

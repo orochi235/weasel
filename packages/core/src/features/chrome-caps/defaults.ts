@@ -51,6 +51,8 @@ export const defaultVisibilityRules: VisibilityRules = {
   // a path *being* edited.
   'path-edit.anchors': { editingAnchors: true } as Rule,
   'path-edit.overlay': { editingAnchors: true } as Rule,
+  // Off until a consumer turns it on; `editingAnchors` is the usual rule.
+  'path-edit.comb': { any: [] } as Rule,
 
   // Snap system — guides during any action; targets consumer-driven for now.
   'snap.guides': { gesturing: true } as Rule,

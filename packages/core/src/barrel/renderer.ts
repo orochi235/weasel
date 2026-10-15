@@ -134,6 +134,7 @@ export type {
   CanvasLayers,
   SceneSlotLayers,
   SelectionOverlaySlotConfig,
+  PathEditingOverlaySlotConfig,
   LayerSlotValue,
   StandardSlotConfig,
 } from '../canvas/layerSlots';

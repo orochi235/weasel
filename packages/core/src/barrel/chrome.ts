@@ -87,6 +87,7 @@ export {
   never,
   focused,
   gesturing,
+  editingAnchors,
   actionIs,
   selectionEmpty,
   selectionIs,

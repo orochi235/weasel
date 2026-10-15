@@ -1,18 +1,19 @@
 /**
  * Screen-space render layer for path-editing chrome — the open path's
  * outline, anchor markers, tangent lines, and control-point dots for a
- * polygon path that is the current edit target. Marker sizes stay constant
- * regardless of zoom.
+ * polygon path that is the current edit target, and its curvature comb when
+ * chrome-caps shows it. Marker sizes stay constant regardless of zoom.
  */
 
 import type { DrawCommand } from '@weasel-js/renderer';
 import type { RenderLayer } from 'core/layers/render';
-import { type Path, type PolygonPath, type View, rectMarkerPath } from '@weasel-js/geom';
+import { type AnchorSet, type Path, type PolygonPath, type View, pathToAnchors, rectMarkerPath } from '@weasel-js/geom';
 import type { GesturePreviewSource } from 'canvas/gestureBounds';
 import { previewSourcesFrom, isVisibleFrom } from 'canvas/drawEnvelope';
 import {
   anchorMarkerCommands, DEFAULT_OVERLAY_STYLE, worldToScreen, type PathEditingOverlayStyle,
 } from './anchorMarkers';
+import { combCommands, PATH_COMB_CHROME_ID, type PathEditCombOptions } from './pathEditComb';
 
 export type { PathEditingOverlayStyle } from './anchorMarkers';
 
@@ -42,6 +43,9 @@ export interface CreatePathEditingOverlayLayerOptions {
   getMarquee?(view: View): { x: number; y: number; width: number; height: number } | null;
   /** Optional styling overrides. */
   style?: PathEditingOverlayStyle;
+  /** How the curvature comb is drawn, read per frame. Whether it shows is
+   *  chrome-caps' call (`path-edit.comb`). */
+  getComb?(): PathEditCombOptions | undefined;
 }
 
 const EMPTY_SELECTION: ReadonlySet<number> = new Set();
@@ -70,7 +74,11 @@ export function createPathEditingOverlayLayer(
       if (!pose || pose.kind !== 'polygon') return [];
 
       const selected = opts.getSelectedAnchors?.() ?? EMPTY_SELECTION;
-      const out: DrawCommand[] = anchorMarkerCommands(pose as PolygonPath, view, selected, style);
+      // Under the markers, which are what a press reaches first.
+      const out: DrawCommand[] = !isVisible || isVisible(PATH_COMB_CHROME_ID)
+        ? combCommands(pathToAnchors(pose as PolygonPath) as AnchorSet, view, opts.getComb?.())
+        : [];
+      out.push(...anchorMarkerCommands(pose as PolygonPath, view, selected, style));
 
       // Marquee rubber band, on top of everything.
       const marquee = opts.getMarquee?.(view);
