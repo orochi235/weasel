@@ -2,9 +2,9 @@
  * Project an action's keyboard bindings into the shape a shortcut chip
  * renders from (`formatShortcut` / `formatShortcutParts` in `@weasel-js/ui`).
  */
-import type { GestureSpec } from '../gestures/spec';
-import type { Action } from '@weasel-js/routing';
-import { actionBindings } from '@weasel-js/routing';
+import type { GestureSpec } from '@weasel-js/gestures';
+import type { Action } from './action';
+import { actionBindings } from './binding';
 
 /** One keyboard shortcut, flattened for display. Structurally the
  *  `ShortcutInput` weasel-ui formats — kept local so core doesn't depend on

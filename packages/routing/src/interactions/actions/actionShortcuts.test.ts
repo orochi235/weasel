@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import type { Action } from '@weasel-js/routing';
-import type { GestureSpec } from '../gestures/spec';
+import type { GestureSpec } from '@weasel-js/gestures';
+import type { Action } from './action';
 import { actionShortcuts, keySpecShortcut } from './actionShortcuts';
 
 const base = { id: 'a', label: 'A' } as const;
