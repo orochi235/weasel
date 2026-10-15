@@ -178,6 +178,16 @@ Priority tags:
 
 ### Path editing tricks
 
+- **(P2) Tune the Simplify brush hands-on, with the maintainer driving.** It went in from its
+  audition lab with first-draft behavior and keys: brush size and its key, the tolerance it
+  applies, and how it shows what it will remove (`defaults/simplifyBrush.ts`).
+- **(P2) Tune the curvature comb hands-on, with the maintainer driving.** First-draft default
+  scale and density, when it shows, and no key to toggle it (`features/paths/pathEditComb.ts`).
+- **(P2) Tune handle locks hands-on, with the maintainer driving.** Which locks deserve keys, and
+  whether a lock holds through a modifier drag (`handleLock.*`, `defaults/handleLocks.tsx`).
+- **(P2) Tune draw's Symmetry toggle hands-on, with the maintainer driving.** Its key, the default
+  kind and copy count, and where a new group's center lands (`toggleSymmetry`,
+  `apps/draw/src/useSymmetry.ts`).
 - **(P2) A rectangle has no anchors in path edit.** Draw stores a drawn rectangle's `data.path`
   as a `RectPath` (`kind: 'rect'`), and `classifyPathStorage`
   (`packages/core/src/features/paths/editablePath.ts`) accepts only a polygon, so double-clicking
@@ -528,6 +538,12 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 ## Selection, actions & UI panels
 
+- **(P2) Every standard action ships with `<SceneCanvas>`, used or not.**
+  `StandardActionsRegistrar` calls `useStandardActions`, which imports every standard action
+  statically, and `excludeActions` drops them only at runtime, so a bundler cannot shake out one
+  the app never registers. Each specialty action added to the set (path tricks, type-design
+  tools) grows every consumer's bundle. Make the set composable at import time: the consumer
+  passes the action groups it wants, and the default import stays the current set.
 - **(P2) Labs still tune actions through the experimental `actions` prop.** The extend-path-end
   and dynamic-corners labs (on their own branches when `tune` landed) set `mode` and a K binding
   by restating whole descriptors through `actions`. Move each to `<SceneCanvas tune>` as it
