@@ -30,7 +30,8 @@ import { buildGraph, type Graph, type GraphSource } from './graph';
 import { chain } from './chain';
 import { layered } from './layered';
 import { LAYOUTS, layoutPoses } from './layoutAction';
-import { center, type LayoutFn, type LayoutOptions, type LayoutResult } from './layout';
+import { center, planOf, type LayoutFn, type LayoutOptions, type LayoutResult } from './layout';
+import { routeWrites, routesOf, type LayoutRoutes } from './routeWrites';
 import { tree } from './tree';
 import type { DiagramNodeReader } from './trait';
 
@@ -241,6 +242,11 @@ export function useLiveLayout<TPose>(opts: UseLiveLayoutOptions<TPose>): LiveLay
   const producer = useRef<LiveLayoutProducer<TPose> | null>(null);
   const producerFrame = useRef(0);
   const shape = useRef('');
+  /** The routes the run's layout laid out, written once it arrives. */
+  const routes = useRef<LayoutRoutes | undefined>(undefined);
+  /** Whether a gesture held a participant during the run: the routes were
+   *  laid out around where it was going, not where it was put. */
+  const held = useRef(false);
 
   const build = useCallback((): void => {
     const o = optsRef.current;
@@ -250,6 +256,8 @@ export function useLiveLayout<TPose>(opts: UseLiveLayoutOptions<TPose>): LiveLay
     });
     shape.current = shapeOf(graph);
     producerFrame.current = 0;
+    routes.current = undefined;
+    held.current = false;
     const algorithm = o.algorithm ?? 'force';
     if (algorithm === 'force') {
       producer.current = forceProducer<TPose>(graph, {
@@ -259,7 +267,9 @@ export function useLiveLayout<TPose>(opts: UseLiveLayoutOptions<TPose>): LiveLay
       return;
     }
     const fn = typeof algorithm === 'function' ? algorithm : LAYOUTS[algorithm] ?? layered;
-    producer.current = easedProducer<TPose>(graph, fn, {
+    const plan = planOf(fn, graph, o.layout);
+    routes.current = routesOf(graph, plan);
+    producer.current = easedProducer<TPose>(graph, () => plan.moves, {
       ...(o.layout ? { layout: o.layout } : {}),
       ...(o.frames === undefined ? {} : { frames: o.frames }),
       ...(o.easing ? { easing: o.easing } : {}),
@@ -269,6 +279,7 @@ export function useLiveLayout<TPose>(opts: UseLiveLayoutOptions<TPose>): LiveLay
   const step = useCallback((ctx: PoseRunCtx<TPose>): PoseRunStep<TPose> => {
     const o = optsRef.current;
     if (producer.current === null) return { poses: [], done: true };
+    if (ctx.pinned.size > 0) held.current = true;
     const { result, done } = producer.current({
       pinned: ctx.pinned,
       frame: producerFrame.current++,
@@ -290,6 +301,13 @@ export function useLiveLayout<TPose>(opts: UseLiveLayoutOptions<TPose>): LiveLay
     scene: opts.scene,
     step,
     onCommit: (moved) => optsRef.current.onSettle?.(moved),
+    // Routes match where the layout was going, so only a run that got there
+    // with nothing held along the way writes them.
+    commitWith: (finished) => {
+      if (!finished || held.current || routes.current === undefined) return;
+      const scene = optsRef.current.scene;
+      for (const [id, data] of routeWrites(scene as never, routes.current)) scene.update(id as never, { data });
+    },
     ...(opts.label ? { label: opts.label } : {}),
     ...(opts.requestFrame ? { requestFrame: opts.requestFrame } : {}),
     ...(opts.cancelFrame ? { cancelFrame: opts.cancelFrame } : {}),

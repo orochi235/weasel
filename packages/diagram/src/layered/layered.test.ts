@@ -4,7 +4,7 @@ import { SAMPLES } from '../effect/lab/samples';
 import { expandGroupEdges, insetOf } from '../cluster';
 import { diagramScene } from '../fromData';
 import type { Graph, GraphGroup, GraphNode } from '../graph';
-import { layered, layeredPlan } from '../layered';
+import { layered, layeredPlan, type LayeredPlan } from '../layered';
 import type { LayoutOptions, LayoutResult } from '../layout';
 import { ANCHORS } from './fixtures';
 import { crossingPairs, labelsInTheWay, wiresThroughBoxes } from './overlaps';
@@ -147,6 +147,18 @@ function after(graph: Graph, result: LayoutResult): Graph {
   return { ...graph, nodes, node: (id) => byId.get(id) };
 }
 
+/** `graph` once `plan` is written: its nodes moved, and every edge on the
+ *  route the plan gave it, as `applyLayout` leaves a scene. */
+function routed(graph: Graph, plan: LayeredPlan): Graph {
+  const moved = after(graph, plan.moves);
+  const edges = graph.edges.map((e) => {
+    const { waypoints: _, ...rest } = e;
+    const route = plan.waypoints.get(e.origin?.id ?? e.id);
+    return route === undefined ? rest : { ...rest, waypoints: route };
+  });
+  return { ...moved, edges };
+}
+
 const overlap = (a: GraphNode['bounds'], b: GraphNode['bounds']) =>
   a.x < b.x + b.width - 1e-6 && b.x < a.x + a.width - 1e-6 && a.y < b.y + b.height - 1e-6 && b.y < a.y + a.height - 1e-6;
 
@@ -186,8 +198,10 @@ describe('layered, over generated graphs', () => {
       expect(layered(generated(seed, true), opts)).toEqual(layered(generated(seed, true), opts));
     }
     for (const grouped of [false, true]) {
-      const once = after(generated(seed, grouped), layered(generated(seed, grouped)));
-      expect(layered(once).size).toBe(0);
+      const plan = layeredPlan(generated(seed, grouped));
+      const again = layeredPlan(routed(generated(seed, grouped), plan));
+      expect(again.moves.size).toBe(0);
+      expect(again.waypoints).toEqual(plan.waypoints);
     }
   });
 

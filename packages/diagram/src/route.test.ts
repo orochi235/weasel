@@ -47,6 +47,13 @@ describe('layered routes', () => {
     for (const p of waypoints!) expect(p.x <= b.x || p.x >= b.x + b.width).toBe(true);
   });
 
+  it('mark the route layout laid out as its own, and an author\'s as the author\'s', () => {
+    const { waypoints, laidOut } = traitOf(chain, skip);
+    expect(laidOut).toEqual(waypoints);
+    const drawn: DataEdge = { from: 'a', to: 'c', waypoints: [{ x: 5, y: 5 }] };
+    expect(traitOf({ ...chain, edges: [chain.edges[0]!, chain.edges[1]!, drawn] }, drawn).laidOut).toBeUndefined();
+  });
+
   it('give no waypoints to an edge whose end is pinned away from its rank', () => {
     // Every node pinned where the author put it, so layout's placeholders say
     // nothing about where `a -> c` should run.

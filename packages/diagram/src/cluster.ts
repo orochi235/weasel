@@ -329,6 +329,7 @@ export function expandGroupEdges(
       ...(fromGroup === undefined && e.fromPort !== undefined ? { fromPort: e.fromPort } : {}),
       ...(toGroup === undefined && e.toPort !== undefined ? { toPort: e.toPort } : {}),
       ...(e.label !== undefined ? { label: e.label } : {}),
+      ...(e.waypoints !== undefined ? { waypoints: e.waypoints } : {}),
     };
     for (const from of froms) {
       for (const to of tos) out.push({ id: `${e.id}#${k++}`, from, to, ...ports, origin: { id: e.id, from: e.from, to: e.to } });

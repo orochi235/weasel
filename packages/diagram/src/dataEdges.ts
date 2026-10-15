@@ -33,6 +33,8 @@ export function edgeSpecs(edges: readonly DataEdge[], ctx: EdgeSpecContext): Dia
     const id = ctx.idOf(e);
     const route = ctx.routes?.get(id);
     const { fromPort, toPort, waypoints } = route ?? e;
+    // Layout's own route, marked so a later layout of the live scene owns it.
+    const laidOut = e.waypoints === undefined && waypoints !== undefined;
     const style = ctx.opts.edgeStyle?.(e) ?? ctx.fallback;
     const markerStart = style.markerStart ?? null;
     const markerEnd = style.markerEnd === undefined ? 'arrow' : style.markerEnd;
@@ -48,6 +50,7 @@ export function edgeSpecs(edges: readonly DataEdge[], ctx: EdgeSpecContext): Dia
           to: toPort ? { port: toPort } : {},
           router: e.router ?? ctx.opts.router ?? 'bezier',
           ...(waypoints ? { waypoints } : {}),
+          ...(laidOut ? { laidOut: waypoints } : {}),
         },
         stroke: {
           paint: { color: style.stroke },

@@ -52,6 +52,7 @@ export {
   bezier,
   diagramEdgeOf,
   edgeDerivePath,
+  layoutOwnsRoute,
   orthogonal,
   resolveEnd,
   straight,
@@ -126,6 +127,7 @@ export {
   graphOrder,
   packAcross,
   pinnedSet,
+  planOf,
   seededOrder,
   settle,
   translated,
@@ -136,6 +138,7 @@ export type {
   LayoutDirection,
   LayoutFn,
   LayoutOptions,
+  LayoutPlan,
   LayoutResult,
   Slot,
 } from './layout';
@@ -147,6 +150,7 @@ export {
   createLayoutAction,
 } from './layoutAction';
 export type { ApplyLayoutOptions, LayoutActionOptions } from './layoutAction';
+export { routeWrites, routesOf, type LayoutRoutes } from './routeWrites';
 export { forestOf, tree, type Forest } from './tree';
 export { outlinePolyline, portsOnOutline, rayHit } from './onOutline';
 export {
