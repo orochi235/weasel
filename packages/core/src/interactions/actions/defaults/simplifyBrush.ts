@@ -47,13 +47,22 @@ type Point = { x: number; y: number };
 
 const brushing = (deps: Parameters<typeof depOf>[0]) => depOf(deps)?.tool === SIMPLIFY_BRUSH_TOOL;
 
+function radiusOf(params: SimplifyBrushParams | undefined): number {
+  const r = params?.radiusPx;
+  return typeof r === 'number' && r > 0 ? r : SIMPLIFY_BRUSH_RADIUS_PX;
+}
+
+function toleranceOf(params: SimplifyBrushParams | undefined): number {
+  const t = params?.tolerance;
+  return typeof t === 'number' && t >= 0 ? t : DEFAULT_SIMPLIFY_TOLERANCE;
+}
+
 export const simplifyBrushAction: Action & { requires: string[] } = inPlane({
   id: 'simplifyBrush',
   label: 'Simplify brush',
   // Declines through `enabled` unless its tool is on.
   defaultBinding: [{ spec: { kind: 'drag' }, opts: { yields: true } }],
-  // Static: a radius tuned away from the default shows here only once a stroke starts.
-  cursor: brushRingCursor(SIMPLIFY_BRUSH_RADIUS_PX),
+  cursor: (params) => brushRingCursor(radiusOf(params as SimplifyBrushParams | undefined)),
   eligible: { capability: 'edits-anchors' },
   requires: ['editAnchors', 'view'],
   invoker: {
@@ -66,15 +75,9 @@ export const simplifyBrushAction: Action & { requires: string[] } = inPlane({
       if (!origin || origin.kind !== 'polygon') return {};
       const originSet = pathToAnchors(origin) as AnchorSet;
 
-      const params = () => (resolveParams(opts?.params) ?? {}) as SimplifyBrushParams;
-      const radiusPx = (): number => {
-        const r = params().radiusPx;
-        return typeof r === 'number' && r > 0 ? r : SIMPLIFY_BRUSH_RADIUS_PX;
-      };
-      const tolerance = (): number => {
-        const t = params().tolerance;
-        return typeof t === 'number' && t >= 0 ? t : DEFAULT_SIMPLIFY_TOLERANCE;
-      };
+      const params = () => resolveParams(opts?.params) as SimplifyBrushParams | undefined;
+      const radiusPx = (): number => radiusOf(params());
+      const tolerance = (): number => toleranceOf(params());
       const scale = () => ctx.deps.view?.get().scale;
       const trail: Point[] = [];
       const gathered = new Set<number>();

@@ -77,6 +77,19 @@ describe('simplifyAnchorsAt', () => {
     expect(worstOff(set.anchors[0], original.anchors[0])).toBeLessThan(0.5 + 0.05);
   });
 
+  it('holds a sharp turn inside the brushed stretch, both ways within the tolerance', () => {
+    // A dense run out along x, a hairpin, and back above it: a chord across
+    // the hairpin would lie near the outward run, so measure both ways.
+    const out = range(0, 40).map((i) => ({ x: i * 1.5, y: 0 }));
+    const back = range(1, 40).map((i) => ({ x: 60 - i * 1.5, y: 4 + 0.05 * i * i }));
+    const original: AnchorSet = { anchors: [[...out, ...back]], closed: [false] };
+    const set = clone(original);
+    expect(simplifyAnchorsAt(set, range(0, 80), 1)).toBe(true);
+    expect(set.anchors[0].length).toBeLessThan(20);
+    expect(worstOff(set.anchors[0], original.anchors[0])).toBeLessThan(1.05);
+    expect(worstOff(original.anchors[0], sampleSub(set.anchors[0]))).toBeLessThan(1.05);
+  });
+
   it('changes nothing where no anchor can go', () => {
     const set = wave();
     expect(simplifyAnchorsAt(set, [10, 11], 0.5)).toBe(false);

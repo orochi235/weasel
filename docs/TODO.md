@@ -159,10 +159,6 @@ Priority tags:
 
 ### Path editing tricks
 
-- **(P3) The Simplify brush's hover ring is always the default size.** An action's `cursor` is
-  static, so a `radiusPx` tuned away from `SIMPLIFY_BRUSH_RADIUS_PX` shows at its true size only
-  once a stroke starts (the handle's `cursor()`). In draw the brush also refits at the default
-  tolerance, not the one the Simplify popover's slider holds.
 - **(P2) A rectangle has no anchors in path edit.** Draw stores a drawn rectangle's `data.path`
   as a `RectPath` (`kind: 'rect'`), and `classifyPathStorage`
   (`packages/core/src/features/paths/editablePath.ts`) accepts only a polygon, so double-clicking

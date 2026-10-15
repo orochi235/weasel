@@ -5,7 +5,7 @@ export { ActionsProvider, InputScope, useYoke, Yoke, useActionsRegistry, useActi
 export { useLatest } from '@weasel-js/react';
 export type { OngoingAction } from '@weasel-js/routing/react';
 export type { ActionEntry, ActionsProp, ActionsRegistry, UiOngoingControl } from '@weasel-js/routing';
-export { ActionDisabledReason } from '@weasel-js/routing';
+export { actionCursor, ActionDisabledReason } from '@weasel-js/routing';
 export type { Action, ActionDispatch, ActionPresentation, ActionVariant } from '@weasel-js/routing';
 export { actionBindings, actionItems } from '@weasel-js/routing';
 export { heldKeySpec } from '@weasel-js/routing';

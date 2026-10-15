@@ -1,6 +1,6 @@
 /** The ongoing handles a dispatcher has in flight, keyed by gesture id. */
 import { resolveCursor, type CursorSpec } from '@weasel-js/cursor';
-import type { Action } from '../actions/action';
+import { actionCursor, type Action } from '../actions/action';
 import type { OngoingHandle } from '../actions/invoker';
 
 const EMPTY_ENGAGED: ReadonlySet<string> = new Set();
@@ -73,7 +73,7 @@ export function createInFlightGestures(): InFlightGestures {
       let cursor: CursorSpec | null = null;
       for (const [id, handle] of handles) {
         const action = actions.get(id);
-        const spec = handle.cursor?.() ?? action?.activeCursor ?? action?.cursor;
+        const spec = handle.cursor?.() ?? action?.activeCursor ?? actionCursor(action);
         // The spec, not its CSS form: a painted glyph resolves to 'none', which
         // would tell the pump to hide the cursor and paint nothing.
         if (spec !== undefined && resolveCursor(spec)) cursor = spec;

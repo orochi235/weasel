@@ -57,7 +57,7 @@ function cogD(cx: number, cy: number): string {
 
 export const SEEDED_PATH_ID = 'scribble';
 
-const pathNode = (id: string, d: string, fill: string | null) => {
+const pathNode = (id: string, d: string, fill: string | null, stroke = { color: '#1a130d', width: 2 }) => {
   const path = pathFromD(d);
   return {
     id: asNodeId(id),
@@ -67,7 +67,7 @@ const pathNode = (id: string, d: string, fill: string | null) => {
     data: {
       path,
       ...(fill ? { fill: { paint: solid(fill) } } : {}),
-      stroke: { paint: solid('#1a130d'), width: 2 },
+      stroke: { paint: solid(stroke.color), width: stroke.width },
     },
   };
 };
@@ -76,7 +76,7 @@ const createLabScene = () =>
   createScene<unknown, 'default', RectPose>({
     systemLayers: [{ id: 'default' }],
     initial: [
-      pathNode(SEEDED_PATH_ID, scribbleD(), null),
+      pathNode(SEEDED_PATH_ID, scribbleD(), null, { color: '#d9480f', width: 3 }),
       pathNode('cog', cogD(520, 340), '#e0a458'),
     ],
   });

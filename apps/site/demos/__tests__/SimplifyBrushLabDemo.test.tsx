@@ -1,7 +1,9 @@
 import { act, cleanup, fireEvent, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { type PolygonPath, pathToAnchors } from '@weasel-js/core';
+import { type PenAnchor, type PolygonPath, pathInWorld, pathToAnchors, type RectPose } from '@weasel-js/core';
+import { cubicPointAt } from '@weasel-js/geom';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
+import { StrictMode } from 'react';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { SEEDED_PATH_ID, SimplifyBrushLabDemo } from '../SimplifyBrushLabDemo';
 
@@ -27,10 +29,11 @@ afterEach(() => {
   delete window.__weaselTest;
 });
 
-const scribble = (): { x: number; y: number }[] => {
+/** The scribble's anchors where they are drawn, in world coords. */
+const scribble = (): PenAnchor[] => {
   const node = window.__weaselTest!.getScene().nodes.find((n) => n.id === SEEDED_PATH_ID);
   const path = (node?.data as { path: PolygonPath }).path;
-  return pathToAnchors(path).anchors.flat();
+  return pathToAnchors(pathInWorld(path, node!.pose as RectPose) as PolygonPath).anchors.flat();
 };
 
 // jsdom's canvas rect is all zeros and the view is identity, so client
@@ -47,11 +50,29 @@ function dragThrough(canvas: Element, points: readonly { x: number; y: number }[
   });
 }
 
+/** The farthest any of `pts` lies from the polyline through `line`. */
+function farthest(pts: readonly { x: number; y: number }[], line: readonly { x: number; y: number }[]): number {
+  let worst = 0;
+  for (const p of pts) {
+    let best = Infinity;
+    for (let i = 0; i + 1 < line.length; i++) {
+      const a = line[i], b = line[i + 1];
+      const dx = b.x - a.x, dy = b.y - a.y;
+      const len = dx * dx + dy * dy;
+      const t = len === 0 ? 0 : Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / len));
+      best = Math.min(best, Math.hypot(p.x - a.x - t * dx, p.y - a.y - t * dy));
+    }
+    worst = Math.max(worst, best);
+  }
+  return worst;
+}
+
 /** A stroke along the scribble itself, from its 40th anchor to its 160th. */
 const alongScribble = () => scribble().slice(40, 161).filter((_, i) => i % 4 === 0);
 
+/** The lab as the site mounts it, under StrictMode, which runs every effect twice. */
 async function mount() {
-  const { container } = await renderSettled(<SimplifyBrushLabDemo />);
+  const { container } = await renderSettled(<StrictMode><SimplifyBrushLabDemo /></StrictMode>);
   const canvas = container.querySelector('.lk-trial-scene canvas');
   if (!canvas) throw new Error('no scene canvas in the trial');
   return canvas;
@@ -66,6 +87,27 @@ describe('SimplifyBrushLabDemo', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'Undo' }));
     expect(scribble()).toHaveLength(before);
+  });
+
+  it.each([16, 40, 60])('keeps the first wiggle within the tolerance when brushed from the start into the dip (%ipx)', async (radius) => {
+    const canvas = await mount();
+    act(() => {
+      fireEvent.change(screen.getByRole('slider', { name: 'Brush radius' }), { target: { value: String(radius) } });
+    });
+    const before = scribble();
+    const dip = before.slice(0, 80).reduce((best, a, i) => (a.y > before[best].y ? i : best), 0);
+    dragThrough(canvas, before.slice(0, dip + 1).filter((_, i) => i % 3 === 0));
+    await act(async () => { await new Promise((r) => setTimeout(r, 50)); });
+    const after = scribble();
+    expect(after.length).toBeLessThan(before.length);
+    const along: { x: number; y: number }[] = [];
+    for (let i = 0; i + 1 < after.length; i++) {
+      const a = after[i], b = after[i + 1];
+      for (let k = 0; k <= 16; k++) along.push(cubicPointAt(a, a.outHandle ?? a, b.inHandle ?? b, b, k / 16));
+    }
+    // Both ways: the refit stays near the original, and the original near the refit.
+    expect(farthest(along, before)).toBeLessThan(1.05);
+    expect(farthest(before, along)).toBeLessThan(1.05);
   });
 
   it("refits at the control panel's tolerance", async () => {

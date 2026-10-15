@@ -2,10 +2,10 @@ import { describe, expect, it } from 'vitest';
 import {
   anchorsToPath, cubicPointAt, pathToAnchors, type AnchorSet, type PenAnchor, type PolygonPath,
 } from '@weasel-js/geom';
-import type { InvocationCtx, OngoingHandle, OngoingInvoker } from '@weasel-js/routing';
+import { actionCursor, tuneAction, type InvocationCtx, type OngoingHandle, type OngoingInvoker } from '@weasel-js/routing';
 import { makeEditAnchorsDep } from '../testUtils';
 import {
-  simplifyBrushAction, SIMPLIFY_BRUSH_RADIUS_PX, SIMPLIFY_BRUSH_TOOL,
+  brushRingCursor, simplifyBrushAction, SIMPLIFY_BRUSH_RADIUS_PX, SIMPLIFY_BRUSH_TOOL,
 } from './simplifyBrush';
 
 /** A gentle wave sampled every 5 units along x from 0 to 400: dense, so most anchors are redundant. */
@@ -144,6 +144,13 @@ describe('simplifyBrush', () => {
       radiusPx: SIMPLIFY_BRUSH_RADIUS_PX,
     });
     expect(h.cursor?.()).toMatchObject({ glyph: 'brush' });
+  });
+
+  it('hovers with a ring as wide as the brush it would start', () => {
+    expect(actionCursor(simplifyBrushAction)).toEqual(brushRingCursor(SIMPLIFY_BRUSH_RADIUS_PX));
+    const tuned = tuneAction(simplifyBrushAction, [{ params: () => ({ radiusPx: 30 }) }]);
+    expect(actionCursor(tuned)).toEqual(brushRingCursor(30));
+    expect(brushRingCursor(30)).not.toEqual(brushRingCursor(SIMPLIFY_BRUSH_RADIUS_PX));
   });
 
   it('clears the anchor selection it renumbered', () => {

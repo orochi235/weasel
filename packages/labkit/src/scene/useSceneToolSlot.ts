@@ -30,7 +30,9 @@ export function useSceneToolSlot(
     const before = sceneSaw.current;
     sceneSaw.current = next.active;
     const wanted = slot.activeToolId;
-    if (before === undefined) {
+    // Until the canvas has had a tool, its first one is its default settling
+    // in, not a pick to carry back to the slot.
+    if (before === undefined || before === null) {
       activate(next, wanted);
     } else if (next.active !== before && next.active !== null && next.active !== wanted) {
       slot.setActiveTool(next.active);
