@@ -79,8 +79,42 @@ export function portsOf<TPose>(
   pose: TPose,
   opts: PortsOptions<TPose> = {},
 ): Port[] {
+  const placer = placerOf(node, pose, opts);
+  return placer === null ? [] : placer.specs.map((spec) => placer.place(spec, spec.at, spec.normal));
+}
+
+/** One named port, or `undefined` when the node has no such port. */
+export function portOf<TPose>(
+  node: DiagramNodeLike,
+  pose: TPose,
+  portId: string,
+  opts: PortsOptions<TPose> = {},
+): Port | undefined {
+  return portsOf(node, pose, opts).find((p) => p.id === portId);
+}
+
+/** One named port at each place it may sit: at `at` first, then at each of
+ *  its `sites`. Empty when the node has no such port. */
+export function portSitesOf<TPose>(
+  node: DiagramNodeLike,
+  pose: TPose,
+  portId: string,
+  opts: PortsOptions<TPose> = {},
+): Port[] {
+  const placer = placerOf(node, pose, opts);
+  const spec = placer?.specs.find((s) => s.id === portId);
+  if (placer === null || spec === undefined) return [];
+  return [placer.place(spec, spec.at, spec.normal), ...(spec.sites ?? []).map((at) => placer.place(spec, at, undefined))];
+}
+
+/** A node's port specs, and how to put one at an anchor in world coordinates. */
+function placerOf<TPose>(
+  node: DiagramNodeLike,
+  pose: TPose,
+  opts: PortsOptions<TPose>,
+): { specs: readonly PortSpec[]; place: (spec: PortSpec, at: PortAnchor, normal: Vec2 | null | undefined) => Port } | null {
   const trait = diagramNodeOf(node, opts.read);
-  if (trait === null) return [];
+  if (trait === null) return null;
   const geometry = opts.geometry ?? (AUTO_POSE_DESCRIPTOR as PoseDescriptor<TPose>);
   const bounds = geometry.getBounds(pose);
   const rotation = geometry.getRotation?.(pose) ?? 0;
@@ -94,13 +128,13 @@ export function portsOf<TPose>(
     ? null
     : outlinePolyline(trait.outline, bounds);
 
-  return (trait.ports ?? DEFAULT_PORTS).map((spec) => {
+  const place = (spec: PortSpec, at: PortAnchor, given: Vec2 | null | undefined): Port => {
     const anchored: Vec2 = {
-      x: bounds.x + spec.at.u * bounds.width,
-      y: bounds.y + spec.at.v * bounds.height,
+      x: bounds.x + at.u * bounds.width,
+      y: bounds.y + at.v * bounds.height,
     };
     const flat = (poly === null ? null : rayHit(poly, { x: cx, y: cy }, anchored)) ?? anchored;
-    const normal = spec.normal === undefined ? normalOf(spec.at) : spec.normal;
+    const normal = given === undefined ? normalOf(at) : given;
     if (rotation === 0) {
       return { id: spec.id, nodeId: node.id, point: flat, normal, ...typeOf(spec) };
     }
@@ -112,17 +146,8 @@ export function portsOf<TPose>(
       normal: normal === null ? null : rotatePoint(normal.x, normal.y, 0, 0, rotation),
       ...typeOf(spec),
     };
-  });
-}
-
-/** One named port, or `undefined` when the node has no such port. */
-export function portOf<TPose>(
-  node: DiagramNodeLike,
-  pose: TPose,
-  portId: string,
-  opts: PortsOptions<TPose> = {},
-): Port | undefined {
-  return portsOf(node, pose, opts).find((p) => p.id === portId);
+  };
+  return { specs: trait.ports ?? DEFAULT_PORTS, place };
 }
 
 /** Spread rather than assigned, so a port with no type has no `type` key at

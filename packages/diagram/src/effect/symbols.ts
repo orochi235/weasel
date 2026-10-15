@@ -41,12 +41,19 @@ function inputs(stage: EffectStage, pipeline: EffectPipeline, steer?: string): P
 const title = (stage: EffectStage): DataMark =>
   ({ text: stage.title, at: { u: 0.5, v: 1 }, self: { u: 0.5, v: 0 }, offset: { x: 0, y: 4 } });
 
+/** Two exits leave by the right vertex and by the bottom one, or the top
+ *  when that faces the wire better and no input holds it. */
 const diamond: BranchSymbol = (stage, pipeline) => {
   const exits = stage.outputs ?? [];
+  const ins = inputs(stage, pipeline);
+  const topFree = !ins.some((p) => p.at.v === 0);
   const out: PortSpec[] = exits.length === 2
-    ? [{ id: exits[0]!.id, type: exits[0]!.type, at: { u: 1, v: 0.5 } }, { id: exits[1]!.id, type: exits[1]!.type, at: { u: 0.5, v: 1 } }]
+    ? [
+        { id: exits[0]!.id, type: exits[0]!.type, at: { u: 1, v: 0.5 } },
+        { id: exits[1]!.id, type: exits[1]!.type, at: { u: 0.5, v: 1 }, ...(topFree ? { sites: [{ u: 0.5, v: 0 }] } : {}) },
+      ]
     : spread(exits, 'right');
-  return { outline: 'diamond', lines: [stage.title], ports: [...inputs(stage, pipeline), ...out] };
+  return { outline: 'diamond', lines: [stage.title], ports: [...ins, ...out] };
 };
 
 const BAND_TINTS = ['#c58bff', '#6fb3ff', '#5ad07f', '#f2c14e'];

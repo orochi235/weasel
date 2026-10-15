@@ -164,7 +164,7 @@ export { boxForContent, contentBox, outlinePath } from './outline';
 export { diagramShape, registerDiagramShape } from './shape';
 export type { DiagramShapeOptions } from './shape';
 export type { Bounds, Outline } from './outline';
-export { COMPASS, DEFAULT_PORTS, portOf, portsOf } from './ports';
+export { COMPASS, DEFAULT_PORTS, portOf, portSitesOf, portsOf } from './ports';
 export type { PortsOptions } from './ports';
 export {
   DIAGRAM_TRAIT_KEY,

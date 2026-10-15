@@ -157,6 +157,20 @@ describe('edgeDerivePath', () => {
     expect([...(path as { coords: Float32Array }).coords].slice(0, 2)).toEqual([40, 20]);
   });
 
+  it('takes whichever of a named port\'s places faces the other end', () => {
+    const exit = { diagram: { ports: [{ id: 'no', at: { u: 0.5, v: 1 }, sites: [{ u: 0.5, v: 0 }] }] } };
+    const start = (to: RectPose) =>
+      [...(derive(edgeNode({ from: { port: 'no' }, to: {} }), [dep(box(0, 0), exit), dep(to)]) as { coords: Float32Array }).coords].slice(0, 2);
+    expect(start(box(100, 200))).toEqual([20, 40]);
+    expect(start(box(100, -200))).toEqual([20, 0]);
+  });
+
+  it('aims an end at its first waypoint rather than at the other node', () => {
+    // The other node is to the right, but the wire leaves for a point above.
+    const path = derive(edgeNode({ from: {}, to: {}, waypoints: [{ x: 20, y: -100 }] }), [dep(box(0, 0)), dep(box(200, 0))]);
+    expect([...(path as { coords: Float32Array }).coords].slice(0, 2)).toEqual([20, 0]);
+  });
+
   it('routes through the waypoints an author dragged', () => {
     const path = derive(
       edgeNode({ from: {}, to: {}, waypoints: [{ x: 120, y: 90 }] }),

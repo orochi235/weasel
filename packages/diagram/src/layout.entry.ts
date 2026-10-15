@@ -65,6 +65,6 @@ export { outlinePolyline, portsOnOutline, rayHit } from './onOutline';
 export type { Bounds, Outline } from './outline';
 export { boxForContent, contentBox, outlinePath } from './outline';
 export type { PortsOptions } from './ports';
-export { COMPASS, DEFAULT_PORTS, portOf, portsOf } from './ports';
+export { COMPASS, DEFAULT_PORTS, portOf, portSitesOf, portsOf } from './ports';
 export { forestOf, tree } from './tree';
 export type { DiagramNode, Port, PortAnchor, PortSpec } from './types';
