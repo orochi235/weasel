@@ -50,11 +50,21 @@ export function withDrafts(
   return field;
 }
 
-/** `field` writing when `surface` writes it. A control given an `onInput` drafts through it and commits through
- *  `onChange`, so one that swallows the drafts is what makes a control write settled values only. */
+/**
+ * `field` writing when `surface` writes it. A control given an `onInput` drafts through it and commits through
+ * `onChange`, so one that swallows the drafts is what makes a control write settled values only. A typed number
+ * or text field commits only once its edit settles, so one the surface leaves live writes through `onInput`.
+ */
 export function withCommitPolicy(field: PropertyControlProps, surface: ParamsSurface): PropertyControlProps {
   const live = liveControl(field);
-  if (live === null || !PARAMS_SETTLES[surface][live]) return field;
-  if (field.kind === 'number') return { ...field, onInput: settledOnly };
-  return field.kind === 'string' || field.kind === 'color' ? { ...field, onInput: settledOnly } : field;
+  if (live === null) return field;
+  if (PARAMS_SETTLES[surface][live]) {
+    if (field.kind === 'number') return { ...field, onInput: settledOnly };
+    return field.kind === 'string' || field.kind === 'color' ? { ...field, onInput: settledOnly } : field;
+  }
+  if (live === 'number' && field.kind === 'number' && field.onInput === undefined)
+    return { ...field, onInput: field.onChange, onChange: settledOnly };
+  if (field.kind === 'string' && field.onInput === undefined)
+    return { ...field, onInput: field.onChange, onChange: settledOnly };
+  return field;
 }
