@@ -9,7 +9,7 @@ export { ActionsProvider, InputScope, useYoke, Yoke, useActionsRegistry, useActi
 export { useLatest } from '@weasel-js/react';
 export type { OngoingAction } from '@weasel-js/routing/react';
 export type { ActionEntry, ActionsProp, ActionsRegistry, UiOngoingControl } from '@weasel-js/routing';
-export { ActionDisabledReason } from '@weasel-js/routing';
+export { actionCursor, ActionDisabledReason } from '@weasel-js/routing';
 export type { Action, ActionDispatch, ActionPresentation, ActionVariant } from '@weasel-js/routing';
 export { actionBindings, actionItems } from '@weasel-js/routing';
 export { heldKeySpec } from '@weasel-js/routing';
@@ -29,6 +29,13 @@ export { areaSelectAction } from '../interactions/actions/defaults/areaSelect';
 export { insertAction } from '../interactions/actions/insert/action';
 export { insertRepositionAction, INSERT_REPOSITION_BINDING } from '../interactions/actions/insert/repositionAction';
 export { clearSelectionAction } from '../interactions/actions/defaults/clearSelection';
+export {
+  exitPathEditToolAction, pathEditToolAction, pathEditToolActive,
+} from '../interactions/actions/defaults/pathEditTools';
+export {
+  brushRingCursor, SIMPLIFY_BRUSH_RADIUS_PX, SIMPLIFY_BRUSH_TOOL, simplifyBrushAction, simplifyBrushToolAction,
+  type SimplifyBrushParams,
+} from '../interactions/actions/defaults/simplifyBrush';
 export { cloneAction } from '../interactions/actions/clone/action';
 export { inPlane, selectionLayer, insertLayer, editingLayer } from '../interactions/actions/planeInput';
 export type { EditedLayerOf } from '../interactions/actions/planeInput';

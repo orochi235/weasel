@@ -29,7 +29,7 @@
 import type { Action } from '@weasel-js/routing';
 import type { InvocationCtx, OngoingHandle } from '@weasel-js/routing';
 import type { EditAnchorsDep } from '../depSchema';
-import { isAnchorOrControl } from '@weasel-js/routing';
+import { ActionDisabledReason, isAnchorOrControl } from '@weasel-js/routing';
 import {
   anchorAt,
   editAnchorSetTracked,
@@ -44,6 +44,7 @@ import {
 import { pathToAnchors, type PolygonPath } from '@weasel-js/geom';
 import { inPlane, editingLayer } from '../planeInput';
 import { pathEditPreview } from './preview';
+import { pathEditToolActive } from '../defaults/pathEditTools';
 import { editedPathSymmetries } from './symmetry';
 
 /**
@@ -235,5 +236,6 @@ export const editAnchorsAction: Action & { requires: string[] } = inPlane({
       };
     },
   },
-  enabled: () => true,
+  // A path-edit tool has the drag.
+  enabled: (deps) => (pathEditToolActive(deps) ? ActionDisabledReason.NotApplicable : true),
 }, editingLayer);

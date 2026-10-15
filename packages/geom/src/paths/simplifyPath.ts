@@ -32,20 +32,79 @@ export function simplifyPath(
   tolerance: number,
   opts: SimplifyPathOptions = {},
 ): PolygonPath {
-  const tol = Math.max(tolerance, 1e-6);
-  const cosCorner = Math.cos(((opts.cornerAngle ?? 40) * Math.PI) / 180);
   const { anchors, closed } = pathToAnchors(path);
   const out: PenAnchor[][] = [];
   const outClosed: boolean[] = [];
   anchors.forEach((sub, s) => {
     if (sub.length < 2) return;
-    out.push(simplifySubpath(sub, closed[s], tol, cosCorner));
+    out.push(simplifySubpath(sub, closed[s], tolerance, opts));
     outClosed.push(closed[s]);
   });
   return anchorsToPath(out, outClosed, path);
 }
 
-function simplifySubpath(sub: PenAnchor[], closed: boolean, tol: number, cosCorner: number): PenAnchor[] {
+/** One subpath of {@link simplifyPath}: its anchors refitted, corners and
+ *  open ends kept. */
+export function simplifySubpath(
+  sub: PenAnchor[],
+  closed: boolean,
+  tolerance: number,
+  opts: SimplifyPathOptions = {},
+): PenAnchor[] {
+  const { tol, cosCorner } = fitParams(tolerance, opts);
+  const n = sub.length;
+  const corners = [...breaksOf(sub, closed, cosCorner)].sort((a, b) => a - b);
+  const result: PenAnchor[] = [];
+  if (closed && corners.length === 0) {
+    const pts = sampleRun(sub, 0, n, tol);
+    const t = unit(sub2(pts[1], pts[pts.length - 2]));
+    fitRun(pts, t, neg(t), tol, result, true);
+    return result;
+  }
+  fitStops(sub, closed ? [...corners, corners[0] + n] : corners, tol, result, closed);
+  return result;
+}
+
+/**
+ * The anchors of `sub` from index `from` to `to`, refitted the way
+ * {@link simplifyPath} refits a subpath: as few as hold the span within
+ * `tolerance`, corners inside it kept. Indices run modulo the subpath's
+ * length, so on a closed subpath `to` may pass its end and wrap; the span is
+ * shorter than one full turn. The two end anchors stay where they are and
+ * keep their handles facing out of the span. Answers the anchors from `from`
+ * to `to`, both included, to splice in place of the originals.
+ */
+export function simplifySpan(
+  sub: PenAnchor[],
+  closed: boolean,
+  from: number,
+  to: number,
+  tolerance: number,
+  opts: SimplifyPathOptions = {},
+): PenAnchor[] {
+  const { tol, cosCorner } = fitParams(tolerance, opts);
+  const n = sub.length;
+  const breaks = breaksOf(sub, closed, cosCorner);
+  const stops = [from];
+  for (let k = from + 1; k < to; k++) if (breaks.has(k % n)) stops.push(k);
+  stops.push(to);
+  const first = sub[from % n];
+  const result: PenAnchor[] = [{ x: first.x, y: first.y, ...(first.inHandle ? { inHandle: { ...first.inHandle } } : {}) }];
+  fitStops(sub, stops, tol, result, false);
+  const lastOut = sub[to % n].outHandle;
+  if (lastOut) result[result.length - 1].outHandle = { ...lastOut };
+  return result;
+}
+
+function fitParams(tolerance: number, opts: SimplifyPathOptions): { tol: number; cosCorner: number } {
+  return {
+    tol: Math.max(tolerance, 1e-6),
+    cosCorner: Math.cos(((opts.cornerAngle ?? 40) * Math.PI) / 180),
+  };
+}
+
+/** The anchors a refit must keep: corners, and both ends of a long straight. */
+function breaksOf(sub: PenAnchor[], closed: boolean, cosCorner: number): Set<number> {
   const n = sub.length;
   const breaks = new Set<number>();
   for (let i = 0; i < n; i++) {
@@ -55,21 +114,17 @@ function simplifySubpath(sub: PenAnchor[], closed: boolean, tol: number, cosCorn
       breaks.add((i + 1) % n);
     }
   }
-  const corners = [...breaks].sort((a, b) => a - b);
-  const result: PenAnchor[] = [];
-  if (closed && corners.length === 0) {
-    const pts = sampleRun(sub, 0, n, tol);
-    const t = unit(sub2(pts[1], pts[pts.length - 2]));
-    fitRun(pts, t, neg(t), tol, result, true);
-    return result;
-  }
-  const stops = closed ? [...corners, corners[0] + n] : corners;
+  return breaks;
+}
+
+/** Fit each run between consecutive `stops` and append it to `out`. With
+ *  `closing`, the last run ends on the subpath's first anchor. */
+function fitStops(sub: PenAnchor[], stops: readonly number[], tol: number, out: PenAnchor[], closing: boolean): void {
   for (let k = 0; k + 1 < stops.length; k++) {
     const pts = sampleRun(sub, stops[k], stops[k + 1], tol);
-    const last = closed && k + 2 === stops.length;
-    fitRun(pts, unit(sub2(pts[1], pts[0])), unit(sub2(pts[pts.length - 2], pts[pts.length - 1])), tol, result, last);
+    const last = closing && k + 2 === stops.length;
+    fitRun(pts, unit(sub2(pts[1], pts[0])), unit(sub2(pts[pts.length - 2], pts[pts.length - 1])), tol, out, last);
   }
-  return result;
 }
 
 /** Whether the path turns at `sub[i]` by more than the corner angle. */

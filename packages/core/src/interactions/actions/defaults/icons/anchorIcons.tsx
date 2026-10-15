@@ -48,3 +48,18 @@ export function SymmetricHandlesIcon() {
     </svg>
   );
 }
+
+/**
+ * Simplify brush: a smooth curve with a brush ring over its crest, the stretch
+ * the brush would thin.
+ *
+ * @experimental
+ */
+export function SimplifyBrushIcon() {
+  return (
+    <svg {...SVG_BASE}>
+      <path d="M2 16 C5 6 15 6 18 16" />
+      <circle cx="10" cy="8.5" r="5" strokeWidth={1} strokeDasharray="2 1.5" />
+    </svg>
+  );
+}

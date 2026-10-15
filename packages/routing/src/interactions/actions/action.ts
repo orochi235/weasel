@@ -165,12 +165,14 @@ export interface ActionDispatch extends BindingSource {
    * resolved earlier in the pump via `AffordanceRegion.cursor` and never
    * reach this field.
    *
-   * Static value only. Prediction runs `enabled()` but cannot run the
-   * invoker, so an action that matches yet bails at `start()` (empty
-   * handle) may still show its cursor — keep `enabled` accurate for
-   * actions that declare one.
+   * A function is asked each time with the params the winning binding would
+   * start the action with, tunings included, so a cursor can follow them — a
+   * brush ring as wide as the brush. Read it through {@link actionCursor}.
+   * Prediction runs `enabled()` but cannot run the invoker, so an action that
+   * matches yet bails at `start()` (empty handle) may still show its cursor —
+   * keep `enabled` accurate for actions that declare one.
    */
-  cursor?: CursorSpec;
+  cursor?: CursorSpec | ((params: Record<string, unknown> | undefined) => CursorSpec | undefined);
   /**
    * CSS cursor shown while THIS action's ongoing handle is in flight —
    * grabbing while panning, `move` while dragging a selection, `crosshair`
@@ -200,4 +202,14 @@ export interface Action extends ActionDispatch, ActionPresentation {}
  */
 export interface ActionSource {
   list(): readonly Action[];
+}
+
+/** `action`'s hover cursor for an invocation given `params`: its `cursor`,
+ *  asked when it is a function. */
+export function actionCursor(
+  action: Pick<Action, 'cursor'> | undefined,
+  params?: Record<string, unknown>,
+): CursorSpec | undefined {
+  const c = action?.cursor;
+  return typeof c === 'function' ? c(params) : c;
 }
