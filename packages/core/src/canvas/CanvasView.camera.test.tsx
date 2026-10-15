@@ -154,3 +154,14 @@ describe('<CanvasView> camera', () => {
     expect(seen).not.toHaveBeenCalled();
   });
 });
+
+describe('<CanvasView> repaint', () => {
+  // Its props reach the surface's paint through refs, so no identity the
+  // surface compares moves with them.
+  it('asks the surface to repaint when only a prop the paint reads changes', () => {
+    const { redraw, rerender } = mount({ layerVisibility: {} });
+    redraw.mockClear();
+    rerender({ layerVisibility: { grid: false } });
+    expect(redraw).toHaveBeenCalled();
+  });
+});

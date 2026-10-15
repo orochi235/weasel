@@ -1,8 +1,7 @@
 /**
- * The redraw tripwire has to cover the overlay-aware state the paint reads —
- * selection and the chrome derived from it — not just the props `<Canvas>`
- * happens to name in its dep array. A bare `<Canvas>` consumer changing
- * selection must get a repaint without a wrapper calling `requestRedraw()`.
+ * A committed render repaints: a bare `<Canvas>` consumer changing selection
+ * gets a repaint without a wrapper calling `requestRedraw()`, and however many
+ * renders land before the frame, it paints once.
  *
  * The GL recorder is load-bearing: without a `getContext('webgl2')` that
  * answers like WebGL2, every paint bails early and every assertion here
@@ -77,7 +76,7 @@ function Host({ draw, control }: {
   return <Canvas width={100} height={80} layers={layers} selection={selection} />;
 }
 
-describe('Canvas repaint tripwire', () => {
+describe('Canvas repaints on a committed render', () => {
   it('repaints when a bare consumer changes the selection', async () => {
     const draw = vi.fn();
     const control: { setSelection?: (ids: string[]) => void } = {};
@@ -92,17 +91,17 @@ describe('Canvas repaint tripwire', () => {
     expect(draw).toHaveBeenCalledTimes(2);
   });
 
-  it('does not repaint on a render that changed nothing the paint reads', async () => {
+  it('paints renders that land before one frame in that frame', async () => {
     const draw = vi.fn();
     const control: { bumpUnrelated?: () => void } = {};
     render(<Host draw={draw} control={control} />);
     await frame();
     expect(draw).toHaveBeenCalledTimes(1);
 
-    act(() => { control.bumpUnrelated!(); });
+    for (let i = 0; i < 3; i++) act(() => { control.bumpUnrelated!(); });
     await frame();
     await frame();
 
-    expect(draw).toHaveBeenCalledTimes(1);
+    expect(draw).toHaveBeenCalledTimes(2);
   });
 });
