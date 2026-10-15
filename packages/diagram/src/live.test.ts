@@ -250,6 +250,25 @@ describe('useLiveLayout', () => {
     expect(committed).toHaveBeenCalledTimes(1);
   });
 
+  it('routes a long edge in the same entry once it arrives, and not when stopped short', () => {
+    for (const stopped of [false, true]) {
+      const s = live('layered');
+      const long = s.scene.add({
+        kind: 'leaf', layer: 'main', pose: box(0, 0, 0, 0),
+        data: { diagram: { from: {}, to: {} } },
+        dependsOn: [s.a, s.c],
+      });
+      const entries = s.scene.historyEntries().length;
+      act(() => { s.handle().start(); });
+      act(() => { s.clock.frames(2); });
+      if (stopped) act(() => { s.handle().stop(); });
+      else act(() => { s.clock.frames(2); });
+      const waypoints = (s.scene.get(long)!.data as { diagram: { waypoints?: unknown[] } }).diagram.waypoints;
+      expect(waypoints?.length ?? 0).toBe(stopped ? 0 : 2);
+      expect(s.scene.historyEntries().length).toBe(entries + 1);
+    }
+  });
+
   it('leaves the document alone when canceled', () => {
     const { scene: s, b, clock, handle } = live('layered');
     const before = s.get(b)!.pose;

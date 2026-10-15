@@ -15,7 +15,8 @@ import { buildGraph, type GraphSource } from './graph';
 import { chain } from './chain';
 import { layered } from './layered';
 import { tree } from './tree';
-import type { LayoutFn, LayoutOptions, LayoutResult } from './layout';
+import { planOf, type LayoutFn, type LayoutOptions, type LayoutResult } from './layout';
+import { routeWrites, routesOf, type LayoutRoutes } from './routeWrites';
 import type { DiagramNodeReader } from './trait';
 
 /** The layouts this package ships. A consumer's own go in the same shape. */
@@ -31,13 +32,15 @@ export interface ApplyLayoutOptions<TPose> {
   geometry?: PoseDescriptor<TPose>;
   /** The undo entry's name. Default `'Layout'`. */
   label?: string;
+  /** Edge routes to write in the same batch, from `routesOf`. */
+  routes?: LayoutRoutes;
 }
 
 /**
  * Write a layout's answer to the scene, as one undoable batch.
  *
- * Returns how many nodes moved, which is zero for a layout that had nothing to
- * do — nothing is written and no history entry is pushed.
+ * Returns how many nodes moved. A layout with nothing to do, nodes or routes,
+ * writes nothing and pushes no history entry.
  *
  * Nodes are **translated**, never re-posed from the layout's numbers: a node's
  * pose can be a path or anything else a consumer wired, and only its own
@@ -52,14 +55,20 @@ export function applyLayout<TPose>(
   opts: ApplyLayoutOptions<TPose> = {},
 ): number {
   const poses = layoutPoses(scene, result, opts.geometry);
-  if (poses.size === 0) return 0;
+  const data = opts.routes === undefined ? new Map<string, unknown>() : routeWrites(scene as never, opts.routes);
+  if (poses.size === 0 && data.size === 0) return 0;
+  // A node on a locked layer stays put, as it does under a live run.
+  const open = [...poses].filter(([id]) => !scene.isLocked(id as never));
+  if (open.length === 0 && data.size === 0) return 0;
   scene.batch(opts.label ?? 'Layout', () => {
-    for (const [id, pose] of poses) scene.setPose(id as never, pose);
+    for (const [id, pose] of open) scene.setPose(id as never, pose);
+    for (const [id, d] of data) scene.update(id as never, { data: d });
   });
   // Participants, not the descendants they carried along: a caller asking how
   // much a layout did means the nodes it placed.
+  const wrote = new Set(open.map(([id]) => id));
   let moved = 0;
-  for (const id of result.keys()) if (poses.has(id)) moved++;
+  for (const id of result.keys()) if (wrote.has(id)) moved++;
   return moved;
 }
 
@@ -149,9 +158,11 @@ export function createLayoutAction<TPose>(opts: LayoutActionOptions<TPose>): Act
         const scene = deps['scene'] as Scene<unknown, string, TPose> | undefined;
         if (scene === undefined) return;
         const graph = buildGraph(opts.source, build);
-        applyLayout(scene, algorithm(graph, opts.layout), {
+        const plan = planOf(algorithm, graph, opts.layout);
+        applyLayout(scene, plan.moves, {
           ...(opts.geometry ? { geometry: opts.geometry } : {}),
           ...(opts.label ? { label: opts.label } : {}),
+          routes: routesOf(graph, plan),
         });
       },
     },

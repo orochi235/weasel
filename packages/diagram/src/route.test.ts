@@ -40,11 +40,31 @@ describe('layered routes', () => {
     expect(traitOf(data, labeled).waypoints).toBeUndefined();
   });
 
+  it('station a label the edge puts at the middle the same way, at its own offset', () => {
+    const labeled: DataEdge = { from: 'a', to: 'b', label: 'then', labelPlacement: { at: 'mid', offset: 4 } };
+    const data: DiagramData = { ...chain, edges: [labeled, chain.edges[1]!] };
+    const label = diagramScene(data).find((s) => s.id === `${edgeIdOf(labeled)}/label`)!;
+    expect((label.data!.diagram as { label: unknown }).label).toEqual({ at: { waypoint: 0.5 }, offset: 4 });
+  });
+
+  it('come from any layout that plans its routes, not only layered', () => {
+    const via = [{ x: 7, y: 8 }];
+    const own = Object.assign(() => new Map(), { plan: () => ({ moves: new Map(), waypoints: new Map([[edgeIdOf(skip), via]]) }) });
+    expect(traitOf(chain, skip, { layout: own }).waypoints).toEqual(via);
+  });
+
   it('take a long edge around a node in a rank it skips', () => {
     const { waypoints } = traitOf(chain, skip);
     const b = poseOf(chain, 'b');
     expect(waypoints?.length).toBeGreaterThan(0);
     for (const p of waypoints!) expect(p.x <= b.x || p.x >= b.x + b.width).toBe(true);
+  });
+
+  it('mark the route layout laid out as its own, and an author\'s as the author\'s', () => {
+    const { waypoints, laidOut } = traitOf(chain, skip);
+    expect(laidOut).toEqual(waypoints);
+    const drawn: DataEdge = { from: 'a', to: 'c', waypoints: [{ x: 5, y: 5 }] };
+    expect(traitOf({ ...chain, edges: [chain.edges[0]!, chain.edges[1]!, drawn] }, drawn).laidOut).toBeUndefined();
   });
 
   it('give no waypoints to an edge whose end is pinned away from its rank', () => {
