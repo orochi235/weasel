@@ -10,19 +10,18 @@ import type { Action, InvocationCtx, OngoingHandle } from '@weasel-js/routing';
 import { isCornerWidget } from '@weasel-js/routing';
 import {
   cornerFrames,
-  cornerRadiusOf,
   cornerSpecAt,
   withCorner,
   type CornerFrame,
-  type CornerStyle,
+  type CornerShape,
   type PolygonPath,
 } from '@weasel-js/geom';
 import type { EditAnchorsDep } from '../depSchema';
 import { pathEditPreview } from '../edit-anchors/preview';
 import { editingLayer, inPlane } from '../planeInput';
 
-/** The style a corner with no spec yet takes. */
-export const DEFAULT_CORNER_STYLE: CornerStyle = 'round';
+/** The shape a corner with no spec yet takes. */
+export const DEFAULT_CORNER_SHAPE: CornerShape = 'round';
 
 /** Flat anchor index of a `corner:N` affordance kind, or null. */
 function cornerIndexOf(kind: string): number | null {
@@ -37,15 +36,14 @@ export function editedPath(dep: EditAnchorsDep): PolygonPath | null {
 
 interface CornerTarget {
   frame: CornerFrame;
-  style: CornerStyle;
+  shape: CornerShape;
 }
 
 /** `path` with `radius` on every target, each clamped to the room it has. */
 function withRadius(path: PolygonPath, targets: readonly CornerTarget[], radius: number): PolygonPath {
   let out = path;
-  for (const { frame, style } of targets) {
-    const max = cornerRadiusOf(style, frame.maxTrim, frame.halfAngle);
-    out = withCorner(out, frame.index, { style, radius: Math.max(0, Math.min(radius, max)) });
+  for (const { frame, shape } of targets) {
+    out = withCorner(out, frame.index, { shape, radius: Math.max(0, Math.min(radius, frame.maxTrim)) });
   }
   return out;
 }
@@ -72,9 +70,8 @@ export const editCornerAction: Action & { requires: string[] } = inPlane({
       const targets: CornerTarget[] = [];
       for (const i of indices) {
         const frame = frames.get(i);
-        if (frame) targets.push({ frame, style: cornerSpecAt(origin, i)?.style ?? DEFAULT_CORNER_STYLE });
+        if (frame) targets.push({ frame, shape: cornerSpecAt(origin, i)?.shape ?? DEFAULT_CORNER_SHAPE });
       }
-      const style = cornerSpecAt(origin, index)?.style ?? DEFAULT_CORNER_STYLE;
       const press = ctx.drag?.start ?? ctx.world;
       let current: PolygonPath = origin;
       let active = false;
@@ -87,7 +84,7 @@ export const editCornerAction: Action & { requires: string[] } = inPlane({
           const along = (move.world.x - press.x) * pressed.bisector.x
             + (move.world.y - press.y) * pressed.bisector.y;
           const trim = Math.max(0, pressed.trim + along / Math.cos(pressed.halfAngle));
-          current = withRadius(origin, targets, cornerRadiusOf(style, trim, pressed.halfAngle));
+          current = withRadius(origin, targets, trim);
           active = true;
         },
         onEnd(_end: InvocationCtx, reason: 'commit' | 'cancel'): void {

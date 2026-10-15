@@ -1,26 +1,24 @@
 /**
  * Commands on the corners of the anchors selected in path edit: set their
- * style or radius, or step their style through round, bevel, and scoop.
+ * shape or radius, or step their shape through the `corner-shape` keywords.
  */
 import type { Action, ActionDeps, ImmediateInvoker } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import {
-  CORNER_STYLES,
   cornerFrames,
-  cornerRadiusOf,
   cornerSpecAt,
-  cornerTrimOf,
-  nextCornerStyle,
+  isCornerShape,
+  nextCornerShape,
   withCorner,
   type CornerFrame,
-  type CornerStyle,
+  type CornerShape,
   type PolygonPath,
 } from '@weasel-js/geom';
 import type { EditAnchorsDep } from '../depSchema';
 import { depOf, requiresAnchorSelection } from '../defaults/anchorEditing';
-import { DEFAULT_CORNER_STYLE, editedPath } from './action';
+import { DEFAULT_CORNER_SHAPE, editedPath } from './action';
 
-/** The share of a corner's room that a style given to a sharp corner cuts. */
+/** The share of a corner's room that a shape given to a sharp corner cuts. */
 export const DEFAULT_CORNER_TRIM_SHARE = 0.25;
 
 /** The selected anchors of the edited path that can take a corner. */
@@ -30,30 +28,26 @@ function selectedCorners(dep: EditAnchorsDep, path: PolygonPath): CornerFrame[] 
 
 /** What a corner command changes; a field left out is kept. */
 interface CornerChange {
-  style?: CornerStyle;
+  shape?: CornerShape;
   radius?: number;
 }
 
 /**
- * `path` with `change` made to every corner in `frames`. A new style keeps
- * the cut a radius makes, converting the number, and a radius is clamped to
- * the room each corner has. A style given to a sharp corner, with no radius,
- * cuts {@link DEFAULT_CORNER_TRIM_SHARE} of its room.
+ * `path` with `change` made to every corner in `frames`, each radius clamped
+ * to the room its corner has. A shape given to a sharp corner, with no
+ * radius, cuts {@link DEFAULT_CORNER_TRIM_SHARE} of its room: every shape
+ * looks alike at no radius.
  */
 function changeCorners(path: PolygonPath, frames: readonly CornerFrame[], change: CornerChange): PolygonPath {
   let out = path;
   for (const f of frames) {
     const spec = cornerSpecAt(path, f.index);
-    const style = change.style ?? spec?.style ?? DEFAULT_CORNER_STYLE;
-    let trim = change.radius !== undefined
-      ? cornerTrimOf(style, Math.max(0, change.radius), f.halfAngle)
-      : spec ? cornerTrimOf(spec.style, spec.radius, f.halfAngle) : 0;
-    // Every style looks alike at no radius, so a style alone cuts a visible corner.
-    if (change.style && change.radius === undefined && trim <= 0) trim = DEFAULT_CORNER_TRIM_SHARE * f.maxTrim;
-    out = withCorner(out, f.index, {
-      style,
-      radius: cornerRadiusOf(style, Math.min(trim, f.maxTrim), f.halfAngle),
-    });
+    const shape = change.shape ?? spec?.shape ?? DEFAULT_CORNER_SHAPE;
+    let radius = Math.max(0, change.radius ?? spec?.radius ?? 0);
+    if (change.shape !== undefined && change.radius === undefined && radius <= 0) {
+      radius = DEFAULT_CORNER_TRIM_SHARE * f.maxTrim;
+    }
+    out = withCorner(out, f.index, { shape, radius: Math.min(radius, f.maxTrim) });
   }
   return out;
 }
@@ -75,13 +69,12 @@ function cornersSelected(deps: ActionDeps | undefined): true | ActionDisabledRea
   return dep && path && selectedCorners(dep, path).length > 0 ? true : ActionDisabledReason.NotApplicable;
 }
 
-const isStyle = (v: unknown): v is CornerStyle => CORNER_STYLES.includes(v as CornerStyle);
-
 /**
- * Set the selected corners' style, radius, or both, from the `style` and
- * `radius` params; each is left alone when its param is absent, except that
- * a style given to a sharp corner also gives it a radius. A UI control's
- * action: it has no default binding.
+ * Set the selected corners' shape, radius, or both, from the `shape` (a
+ * keyword or a finite `superellipse()` parameter) and `radius` params; each
+ * is left alone when its param is absent, except that a shape given to a
+ * sharp corner also gives it a radius. A UI control's action: it has no
+ * default binding.
  */
 export const setCornersAction: Action & { requires: string[] } = {
   id: 'setCorners',
@@ -91,11 +84,11 @@ export const setCornersAction: Action & { requires: string[] } = {
   invoker: {
     timing: 'immediate',
     run: (deps, params) => {
-      const style = isStyle(params?.style) ? params.style : undefined;
+      const shape = isCornerShape(params?.shape) ? params.shape : undefined;
       const radius = typeof params?.radius === 'number' && Number.isFinite(params.radius) ? params.radius : undefined;
-      if (style === undefined && radius === undefined) return;
+      if (shape === undefined && radius === undefined) return;
       commitChange(deps, 'Set corners', () => ({
-        ...(style ? { style } : {}),
+        ...(shape !== undefined ? { shape } : {}),
         ...(radius !== undefined ? { radius } : {}),
       }));
     },
@@ -104,22 +97,22 @@ export const setCornersAction: Action & { requires: string[] } = {
 };
 
 /**
- * Step the selected corners to the next style, keeping their cut. Every one
- * takes the style after the first selected corner's, so a mixed selection
- * comes out alike, and a sharp corner gets a radius that shows it.
+ * Step the selected corners to the next `corner-shape` keyword, keeping
+ * their radius. Every one takes the keyword after the first selected
+ * corner's shape, so a mixed selection comes out alike, and a sharp corner
+ * gets a radius that shows it.
  */
-export const cycleCornerStyleAction: Action & { requires: string[] } = {
-  id: 'cycleCornerStyle',
-  label: 'Corner style',
+export const cycleCornerShapeAction: Action & { requires: string[] } = {
+  id: 'cycleCornerShape',
+  label: 'Next corner shape',
   group: 'anchors',
   eligible: { capability: 'edits-anchors' },
   requires: ['editAnchors'],
   invoker: {
     timing: 'immediate',
-    run: (deps) => commitChange(deps, 'Corner style', (frames, path) => {
-      const next = nextCornerStyle(cornerSpecAt(path, frames[0].index)?.style ?? DEFAULT_CORNER_STYLE);
-      return { style: next };
-    }),
+    run: (deps) => commitChange(deps, 'Next corner shape', (frames, path) => ({
+      shape: nextCornerShape(cornerSpecAt(path, frames[0].index)?.shape ?? DEFAULT_CORNER_SHAPE),
+    })),
   } as ImmediateInvoker,
   enabled: cornersSelected,
 };

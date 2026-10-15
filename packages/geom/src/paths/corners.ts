@@ -4,7 +4,8 @@
  */
 import type { Path, PolygonPath } from '../path';
 import { PathBuilder } from './builder';
-import { cornerAt, hasCorners, withoutCorners, type CornerSpec, type CornerStyle } from './cornerSpec';
+import { cornerAt, hasCorners, withoutCorners, type CornerSpec } from './cornerSpec';
+import { cornerShapeK, cornerShapePieces, type CornerShapeFrame } from './cornerShape';
 import {
   decodeContours, paramAtLength, pointAt, segLength, subCubic, tangentAt,
   type Contour, type Vec,
@@ -24,21 +25,10 @@ export interface CornerFrame {
   bisector: Vec;
   /** Half the angle between the two edges at the anchor. */
   halfAngle: number;
-  /** How far along each edge the stored spec cuts, after clamping. */
+  /** How far along each edge the stored spec cuts, its setback, after clamping. */
   trim: number;
   /** The longest cut the edges allow while the neighbors keep theirs. */
   maxTrim: number;
-}
-
-/** How far along each edge a corner of `style` and `radius` cuts, at an
- *  anchor whose edges meet at `2 * halfAngle`. */
-export function cornerTrimOf(style: CornerStyle, radius: number, halfAngle: number): number {
-  return style === 'round' ? radius / Math.tan(halfAngle) : radius;
-}
-
-/** The radius of a `style` corner that cuts `trim` along each edge. */
-export function cornerRadiusOf(style: CornerStyle, trim: number, halfAngle: number): number {
-  return style === 'round' ? trim * Math.tan(halfAngle) : trim;
 }
 
 interface AnchorCut {
@@ -66,7 +56,7 @@ function contourCuts(path: PolygonPath, c: Contour): (AnchorCut | null)[] {
     const bl = Math.hypot(bx, by);
     const halfAngle = (Math.PI - turn) / 2;
     const spec = cornerAt(path, c.first + i);
-    const want = spec ? cornerTrimOf(spec.style, spec.radius, halfAngle) : 0;
+    const want = spec ? spec.radius : 0;
     return {
       frame: { index: c.first + i, x: a.x, y: a.y, bisector: { x: bx / bl, y: by / bl }, halfAngle },
       spec,
@@ -146,9 +136,9 @@ export function resolveCornersWithSources(path: PolygonPath): ResolvedCorners {
 }
 
 /**
- * `path` with its corner specs expanded into plain geometry and dropped: a
- * round corner becomes a tangent arc, a bevel a straight cut, a scoop
- * an arc centered on the anchor. Each cut is clamped so the cuts on
+ * `path` with its corner specs expanded into plain geometry and dropped: each
+ * corner is cut `radius` along both edges and spans the cut with its shape's
+ * superellipse (`cornerShapePieces`). Each cut is clamped so the cuts on
  * either end of a segment never overlap. A path with no corners comes back
  * as itself, and so does a rect.
  */
@@ -228,40 +218,35 @@ function emitContour(b: Emitter, c: Contour, cuts: readonly (AnchorCut | null)[]
     const cut = cuts[j];
     const next = c.segs[j];
     if (!cut?.spec || cut.trim <= 0 || !next) return;
-    // The close draws a bevel that ends where the contour started.
-    if (j === 0 && cut.spec.style === 'bevel') return;
     const p1 = pointAt(seg, t1);
     const p2 = pointAt(next, spans[j][0]);
-    emitCut(b, cut.spec.style, { x: cut.frame.x, y: cut.frame.y }, p1, tangentAt(seg, t1), p2, tangentAt(next, spans[j][0]));
+    const frame = shapeFrame({ x: cut.frame.x, y: cut.frame.y }, p1, tangentAt(seg, t1), p2, tangentAt(next, spans[j][0]));
+    const pieces = cornerShapePieces(cornerShapeK(cut.spec.shape), frame);
+    // A closing line that ends where the contour started is drawn by the close.
+    if (j === 0 && pieces.at(-1)?.kind === 'line') pieces.pop();
+    for (const piece of pieces) {
+      if (piece.kind === 'line') b.lineTo(piece.to.x, piece.to.y);
+      else b.curveTo(piece.c1.x, piece.c1.y, piece.c2.x, piece.c2.y, piece.to.x, piece.to.y);
+    }
   });
   if (c.closed) b.close();
 }
 
-function emitCut(
-  b: Emitter, style: CornerStyle, v: Vec,
-  p1: Vec, t1: Vec | null, p2: Vec, t2: Vec | null,
-): void {
-  if (style === 'bevel' || !t1 || !t2) { b.lineTo(p2.x, p2.y); return; }
-  const cx = p2.x - p1.x, cy = p2.y - p1.y;
-  if (style === 'round') {
-    const turn = Math.acos(Math.max(-1, Math.min(1, t1.x * t2.x + t1.y * t2.y)));
-    if (turn < MIN_TURN) { b.lineTo(p2.x, p2.y); return; }
-    const r = Math.hypot(cx, cy) / (2 * Math.sin(turn / 2));
-    const h = (4 / 3) * Math.tan(turn / 4) * r;
-    b.curveTo(p1.x + t1.x * h, p1.y + t1.y * h, p2.x - t2.x * h, p2.y - t2.y * h, p2.x, p2.y);
-    return;
-  }
-  const r1x = p1.x - v.x, r1y = p1.y - v.y, r2x = p2.x - v.x, r2y = p2.y - v.y;
-  const l1 = Math.hypot(r1x, r1y), l2 = Math.hypot(r2x, r2y);
-  if (l1 === 0 || l2 === 0) { b.lineTo(p2.x, p2.y); return; }
-  const sweep = Math.acos(Math.max(-1, Math.min(1, (r1x * r2x + r1y * r2y) / (l1 * l2))));
-  const h = (4 / 3) * Math.tan(sweep / 4) * ((l1 + l2) / 2);
-  const u1 = towards(-r1y / l1, r1x / l1, cx, cy);
-  const u2 = towards(-r2y / l2, r2x / l2, cx, cy);
-  b.curveTo(p1.x + u1.x * h, p1.y + u1.y * h, p2.x - u2.x * h, p2.y - u2.y * h, p2.x, p2.y);
+/** The frame a corner's shape spans: from `p1` to `p2`, around where the two
+ *  edges' tangents there meet. That is the anchor itself between straight
+ *  edges; between curves it keeps every convex shape tangent to both. */
+function shapeFrame(v: Vec, p1: Vec, t1: Vec | null, p2: Vec, t2: Vec | null): CornerShapeFrame {
+  const outer = t1 && t2 ? tangentMeet(p1, t1, p2, t2) : null;
+  const chord = Math.hypot(p2.x - p1.x, p2.y - p1.y);
+  const far = !outer || Math.hypot(outer.x - v.x, outer.y - v.y) > 4 * chord;
+  return { start: p1, end: p2, outer: far ? v : outer };
 }
 
-/** `(x, y)` or its reverse, whichever points along `(dx, dy)`. */
-function towards(x: number, y: number, dx: number, dy: number): Vec {
-  return x * dx + y * dy >= 0 ? { x, y } : { x: -x, y: -y };
+/** Where the line through `a` along `ta` meets the one through `b` along
+ *  `tb`, or null when they are parallel. */
+function tangentMeet(a: Vec, ta: Vec, b: Vec, tb: Vec): Vec | null {
+  const den = ta.x * tb.y - ta.y * tb.x;
+  if (Math.abs(den) < 1e-9) return null;
+  const s = ((b.x - a.x) * tb.y - (b.y - a.y) * tb.x) / den;
+  return { x: a.x + ta.x * s, y: a.y + ta.y * s };
 }

@@ -9,7 +9,7 @@ const NS = { wd: 'https://weaseldraw.app/svg-ext' };
 
 const cornered = (): PolygonPath => withCorner(withCorner(
   polygonFromPoints([{ x: 10, y: 10 }, { x: 110, y: 10 }, { x: 110, y: 60 }, { x: 10, y: 60 }]),
-  1, { style: 'round', radius: 12 }), 3, { style: 'scoop', radius: 8 });
+  1, { shape: 'round', radius: 12 }), 3, { shape: 'scoop', radius: 8 });
 
 const obj = (path: PolygonPath): PathObj => ({
   id: 'a', tool: 'pen', x: 10, y: 10, width: 100, height: 50, path,
@@ -38,6 +38,13 @@ describe('corner shapes in a saved file', () => {
     expect([...back.commands]).toEqual([...path.commands]);
     expect([...back.coords]).toEqual([...path.coords]);
     expect([...resolveCorners(back).coords]).toEqual([...resolveCorners(path).coords]);
+  });
+
+  it('reopen a numeric superellipse parameter as that number', () => {
+    const path = withCorner(cornered(), 2, { shape: -0.75, radius: 10 });
+    const svg = serializeSvg([objToSvgNode(obj(path))], { namespaces: NS });
+    expect(svg).toMatch(/2:-0\.75:10/);
+    expect((reopen(svg).path as PolygonPath).corners?.[2]).toEqual({ shape: -0.75, radius: 10 });
   });
 
   it('are dropped when the path data no longer matches them', () => {

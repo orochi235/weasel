@@ -8,6 +8,7 @@
  *  (`recording`), so a button's shortcut is the binding that fires it. The buttons built here are the file ones. */
 import { ActionBar as KitActionBar, ButtonBar, MenuButton } from '@weasel-js/ui';
 import { PAPER_OPTIONS, type PaperSizeKey } from './paperSizes';
+import { CornerShape, type CornerShapeProps } from './ui/CornerShape';
 import { PathCommands } from './ui/PathCommands';
 
 export type { PaperSizeKey };
@@ -22,6 +23,8 @@ export interface CommandBarProps {
   /** Start a fresh document at the picked paper size. Removing the old nodes
    *  is one undoable entry; the view refits only when the paper size changes. */
   onNew(size: PaperSizeKey): void;
+  /** What the Corner shape controls read; without it they are left out. */
+  corners?: CornerShapeProps;
 }
 
 const KIT_GROUPS = [
@@ -60,6 +63,7 @@ export function CommandBar(p: CommandBarProps) {
       <KitActionBar group="pathfinder" />
       <PathCommands />
       <KitActionBar group="anchors" />
+      {p.corners && <CornerShape {...p.corners} />}
       <KitActionBar group="text" />
       <KitActionBar group="compound" />
       <div className="wd-commandbar-spacer" />

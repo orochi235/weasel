@@ -2,6 +2,7 @@ import {
   type ActionTunings,
   asNodeId,
   boundsOfPath,
+  type CornerControlsSelection,
   createScene,
   pathFromD,
   type PathEditHost,
@@ -22,7 +23,7 @@ import {
 } from '@weasel-js/labkit';
 import { PenIcon, SelectIcon } from '@weasel-js/ui';
 import { useMemo, useState } from 'react';
-import { CornerPanel, type CornerSelection } from './CornerShapePanel';
+import { CornerPanel } from './CornerShapePanel';
 import s from './CornerShapeLabDemo.module.css';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
@@ -50,9 +51,9 @@ function pathNode(id: string, path: PolygonPath, color: string, vertexColors?: n
 }
 
 const tile = [
-  [1, { style: 'round', radius: 24 }],
-  [3, { style: 'bevel', radius: 18 }],
-  [4, { style: 'scoop', radius: 20 }],
+  [1, { shape: 'round', radius: 24 }],
+  [3, { shape: 'bevel', radius: 18 }],
+  [4, { shape: 'scoop', radius: 20 }],
 ] as const;
 
 const createLabScene = () =>
@@ -65,18 +66,18 @@ const createLabScene = () =>
       ), '#7fb069'),
       pathNode('petal', withCorner(
         pathFromD('M280 60 C340 40 400 80 420 120 L400 220 C340 230 300 200 280 160 Z'),
-        1, { style: 'round', radius: 20 },
+        1, { shape: 'squircle', radius: 26 },
       ), '#d4a574'),
       pathNode('prism', withCorner(
         pathFromD('M120 260 L260 260 L190 380 Z'),
-        2, { style: 'round', radius: 30 },
+        2, { shape: 'round', radius: 30 },
       ), '#ffffff', [1, 0.3, 0.3, 1, 0.3, 0.6, 1, 1, 0.4, 0.9, 0.4, 1]),
     ],
   });
 
 /** Which path is open and which of its anchors are selected, held beside the
  *  trial so the lab opens on one corner and its panel can read them. */
-function useEditHost(): { host: PathEditHost; selection: CornerSelection } {
+function useEditHost(): { host: PathEditHost; selection: CornerControlsSelection } {
   return useState(() => {
     let id: string | null = FIRST;
     let anchors = FIRST_ANCHORS;
@@ -95,7 +96,7 @@ function useEditHost(): { host: PathEditHost; selection: CornerSelection } {
   })[0];
 }
 
-const TUNE: ActionTunings = { cycleCornerStyle: { bindings: [{ kind: 'key', key: 'k' }] } };
+const TUNE: ActionTunings = { cycleCornerShape: { bindings: [{ kind: 'key', key: 'k' }] } };
 
 function CornersTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const scene = useTrialScene(ctx, createLabScene);

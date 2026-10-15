@@ -1,4 +1,4 @@
-import { act, cleanup, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { resolveCorners, type PolygonPath } from '@weasel-js/core';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
@@ -56,6 +56,7 @@ const tilePath = () =>
   (window.__weaselTest!.getScene().nodes.find((n) => n.id === 'tile')!.data as { path: PolygonPath }).path;
 const radiusField = () => screen.getByRole('spinbutton', { name: 'Radius' }) as HTMLInputElement;
 const styleButton = (name: string) => screen.getByRole('radio', { name });
+const curvature = () => screen.getByRole('slider', { name: 'Curvature' }) as HTMLInputElement;
 
 async function mount() {
   const { container } = await renderSettled(<CornerShapeLabDemo />);
@@ -73,34 +74,34 @@ describe('CornerShapeLabDemo', () => {
     // diagonal. Dragging 20 further along it cuts 40 along each edge.
     const w = 60 + 14 * Math.SQRT1_2;
     drag(canvas, [w, w], [w + 20, w + 20]);
-    expect(tileCorners()[0]?.style).toBe('round');
+    expect(tileCorners()[0]?.shape).toBe('round');
     expect(tileCorners()[0]?.radius).toBeCloseTo(40, 3);
 
     await userEvent.click(screen.getByRole('button', { name: 'Undo' }));
     expect(tileCorners()[0]).toBeFalsy();
   });
 
-  it('cycles a selected corner\'s style with K', async () => {
+  it('cycles a selected corner\'s shape through the keywords with K', async () => {
     const canvas = await mount();
     click(canvas, 220, 60);
     act(() => { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', code: 'KeyK', bubbles: true })); });
-    expect(tileCorners()[1]?.style).toBe('bevel');
+    expect(tileCorners()[1]?.shape).toBe('bevel');
   });
 
-  it('opens on a selected sharp corner, which a style turns into a visible one', async () => {
+  it('opens on a selected sharp corner, which a keyword turns into a visible one', async () => {
     await mount();
     expect(radiusField().value).toBe('0');
     expect(styleButton('bevel')).toHaveAttribute('aria-checked', 'false');
     const before = resolveCorners(tilePath()).coords.length;
 
     await userEvent.click(styleButton('bevel'));
-    expect(tileCorners()[2]?.style).toBe('bevel');
+    expect(tileCorners()[2]?.shape).toBe('bevel');
     expect(tileCorners()[2]?.radius).toBeGreaterThan(0);
     expect(resolveCorners(tilePath()).coords.length).toBeGreaterThan(before);
     expect(styleButton('bevel')).toHaveAttribute('aria-checked', 'true');
   });
 
-  it("shows the selected corners' style and radius, mixed where they differ", async () => {
+  it("shows the selected corners' shape and radius, mixed where they differ", async () => {
     const canvas = await mount();
     click(canvas, 220, 60);
     expect(styleButton('round')).toHaveAttribute('aria-checked', 'true');
@@ -112,9 +113,19 @@ describe('CornerShapeLabDemo', () => {
     expect(radiusField().value).toBe('');
 
     await userEvent.click(styleButton('scoop'));
-    expect(tileCorners()[1]?.style).toBe('scoop');
-    expect(tileCorners()[3]?.style).toBe('scoop');
+    expect(tileCorners()[1]?.shape).toBe('scoop');
+    expect(tileCorners()[3]?.shape).toBe('scoop');
     expect(styleButton('scoop')).toHaveAttribute('aria-checked', 'true');
+  });
+
+  it('sets a parameter between the keywords from the curvature slider, and shows it back', async () => {
+    const canvas = await mount();
+    click(canvas, 220, 60);
+    expect(curvature()).toHaveValue('1');
+    fireEvent.change(curvature(), { target: { value: '1.5' } });
+    expect(tileCorners()[1]?.shape).toBe(1.5);
+    expect(curvature()).toHaveValue('1.5');
+    expect(styleButton('round')).toHaveAttribute('aria-checked', 'false');
   });
 
   it('disables the controls and says what to do with no corner selected', async () => {

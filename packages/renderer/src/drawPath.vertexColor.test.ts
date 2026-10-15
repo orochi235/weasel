@@ -124,7 +124,7 @@ describe('vertex colors on a path with corner shapes', () => {
         commands: new Uint8Array([M, L, L, L, Z]),
         coords: new Float32Array([0, 0, 100, 0, 100, 100, 0, 100]),
         fillRule: 'nonzero',
-        corners: [null, { style: 'bevel', radius: 20 }],
+        corners: [null, { shape: 'bevel', radius: 20 }],
       },
       fill: { paint: { kind: 'solid', color: '#ffffff' } },
       vertexColors: [...RED, ...GREEN, ...BLUE, ...WHITE],

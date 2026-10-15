@@ -3,7 +3,7 @@
  * `ActionParamSchema` so `<SceneCanvas tune>` types them. An action that
  * reads params gets its entry here, beside the others.
  */
-import type { CornerStyle } from '@weasel-js/geom';
+import type { CornerShape } from '@weasel-js/geom';
 import type { AlignReference } from './align/align';
 import type { DistributeMode } from './distribute/distribute';
 import type { FlipAxis, FlipPivot } from './flip/helpers';
@@ -18,7 +18,7 @@ type DistributeParams = { mode: DistributeMode };
 type ReorderParams = { distance: 'adjacent' | 'extreme' };
 type NudgeParams = { magnitude: 'small' | 'big' };
 /** Either field left out keeps that part of each selected corner. */
-type SetCornersParams = { style: CornerStyle; radius: number };
+type SetCornersParams = { shape: CornerShape; radius: number };
 
 declare module '@weasel-js/routing' {
   interface ActionParamSchema {

@@ -50,7 +50,7 @@ export { insertRepositionAction, INSERT_REPOSITION_BINDING } from '../insert/rep
 export { cloneAction } from '../clone/action';
 export { editAnchorsAction } from '../edit-anchors/action';
 export { editCornerAction } from '../edit-corners/action';
-export { cycleCornerStyleAction, setCornersAction } from '../edit-corners/commands';
+export { cycleCornerShapeAction, setCornersAction } from '../edit-corners/commands';
 export { lassoSelectAction } from '../lasso-select/action';
 export { pinchZoomAction } from './pinchZoom';
 export { viewportWheelPanAction } from './viewportWheelPan';

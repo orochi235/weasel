@@ -4,7 +4,7 @@ import { cornerAt, cornerSpecAt, polygonFromPoints, resolveCorners, withCorner, 
 import type { EditAnchorsDep } from '../depSchema';
 import { makeEditAnchorsDep, stubDeps } from '../testUtils';
 import { editCornerAction } from './action';
-import { cycleCornerStyleAction, DEFAULT_CORNER_TRIM_SHARE, setCornersAction } from './commands';
+import { cycleCornerShapeAction, DEFAULT_CORNER_TRIM_SHARE, setCornersAction } from './commands';
 
 const square = (): PolygonPath =>
   polygonFromPoints([{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 100 }, { x: 0, y: 100 }]);
@@ -56,7 +56,7 @@ describe('editCornerAction', () => {
     handle.onEnd!(ctx, 'commit');
     expect(edits).toHaveLength(1);
     const corner = cornerAt(edits[0], 1)!;
-    expect(corner.style).toBe('round');
+    expect(corner.shape).toBe('round');
     // 20 along the bisector of a right angle cuts 20 / cos 45° along each edge.
     expect(corner.radius).toBeCloseTo(20 / Math.SQRT1_2, 4);
   });
@@ -87,30 +87,30 @@ describe('editCornerAction', () => {
   });
 });
 
-describe('cycleCornerStyleAction', () => {
+describe('cycleCornerShapeAction', () => {
   const run = (dep: EditAnchorsDep) =>
-    (cycleCornerStyleAction.invoker as ImmediateInvoker).run(stubDeps({ editAnchors: dep }), undefined);
+    (cycleCornerShapeAction.invoker as ImmediateInvoker).run(stubDeps({ editAnchors: dep }), undefined);
 
-  it('steps the selected corners to the next style and keeps their cut', () => {
-    const path = withCorner(square(), 1, { style: 'round', radius: 10 });
+  it('steps the selected corners to the next keyword and keeps their radius', () => {
+    const path = withCorner(square(), 1, { shape: 'round', radius: 10 });
     const { dep, edits } = editing(path, [1]);
     run(dep);
     const spec = cornerSpecAt(edits[0], 1)!;
-    expect(spec.style).toBe('bevel');
+    expect(spec.shape).toBe('bevel');
     expect(spec.radius).toBeCloseTo(10, 9);
   });
 
-  it('gives a bare corner the style after round and a radius that shows it', () => {
+  it('gives a bare corner the keyword after round and a radius that shows it', () => {
     const { dep, edits } = editing(square(), [3]);
     run(dep);
-    expect(cornerSpecAt(edits[0], 3)?.style).toBe('bevel');
+    expect(cornerSpecAt(edits[0], 3)?.shape).toBe('bevel');
     expect(cornerSpecAt(edits[0], 3)?.radius).toBeCloseTo(DEFAULT_CORNER_TRIM_SHARE * 100, 6);
     expect(resolveCorners(edits[0]).coords.length).toBeGreaterThan(square().coords.length);
   });
 
   it('is disabled with no corner anchor selected', () => {
     const { dep } = editing(square());
-    expect(cycleCornerStyleAction.enabled!(stubDeps({ editAnchors: dep }))).not.toBe(true);
+    expect(cycleCornerShapeAction.enabled!(stubDeps({ editAnchors: dep }))).not.toBe(true);
   });
 });
 
@@ -118,25 +118,33 @@ describe('setCornersAction', () => {
   const run = (dep: EditAnchorsDep, params: Record<string, unknown>) =>
     (setCornersAction.invoker as ImmediateInvoker).run(stubDeps({ editAnchors: dep }), params);
 
-  it('sets the style and radius of the selected corners, clamped to their room', () => {
+  it('sets the shape and radius of the selected corners, clamped to their room', () => {
     const { dep, edits } = editing(square(), [0, 2]);
-    run(dep, { style: 'scoop', radius: 500 });
-    expect(cornerSpecAt(edits[0], 0)).toEqual({ style: 'scoop', radius: 100 });
-    expect(cornerSpecAt(edits[0], 2)).toEqual({ style: 'scoop', radius: 100 });
+    run(dep, { shape: 'scoop', radius: 500 });
+    expect(cornerSpecAt(edits[0], 0)).toEqual({ shape: 'scoop', radius: 100 });
+    expect(cornerSpecAt(edits[0], 2)).toEqual({ shape: 'scoop', radius: 100 });
     expect(cornerSpecAt(edits[0], 1)).toBeNull();
   });
 
-  it('gives a bare corner a visible radius with its style, unless the call names one', () => {
+  it('gives a bare corner a visible radius with its shape, unless the call names one', () => {
     const { dep, edits } = editing(square(), [1]);
-    run(dep, { style: 'scoop' });
+    run(dep, { shape: 'scoop' });
     expect(cornerSpecAt(edits[0], 1)?.radius).toBeGreaterThan(0);
-    run(dep, { style: 'bevel', radius: 7 });
-    expect(cornerSpecAt(edits[1], 1)).toEqual({ style: 'bevel', radius: 7 });
+    run(dep, { shape: 'bevel', radius: 7 });
+    expect(cornerSpecAt(edits[1], 1)).toEqual({ shape: 'bevel', radius: 7 });
   });
 
-  it('keeps the style when only a radius is given', () => {
-    const { dep, edits } = editing(withCorner(square(), 1, { style: 'bevel', radius: 5 }), [1]);
+  it('takes a superellipse parameter as the shape, and refuses one that is not finite', () => {
+    const { dep, edits } = editing(withCorner(square(), 1, { shape: 'round', radius: 5 }), [1]);
+    run(dep, { shape: 1.5 });
+    expect(cornerSpecAt(edits[0], 1)).toEqual({ shape: 1.5, radius: 5 });
+    run(dep, { shape: Infinity });
+    expect(edits).toHaveLength(1);
+  });
+
+  it('keeps the shape when only a radius is given', () => {
+    const { dep, edits } = editing(withCorner(square(), 1, { shape: 'bevel', radius: 5 }), [1]);
     run(dep, { radius: 12 });
-    expect(cornerSpecAt(edits[0], 1)).toEqual({ style: 'bevel', radius: 12 });
+    expect(cornerSpecAt(edits[0], 1)).toEqual({ shape: 'bevel', radius: 12 });
   });
 });

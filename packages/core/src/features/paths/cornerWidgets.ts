@@ -5,7 +5,7 @@
  * affordance hit-tests it from this one placement.
  */
 import {
-  circlePath, cornerSpecAt, cornerFrames, polygonFromPoints, standoff,
+  cornerFrames, cornerShapeK, cornerShapePieces, cornerSpecAt, PathBuilder, standoff,
   type CornerFrame, type PolygonPath, type Scale2, type View,
 } from '@weasel-js/geom';
 import type { DrawCommand } from '@weasel-js/renderer';
@@ -35,8 +35,8 @@ export function cornerWidgetAt(frame: CornerFrame, scale: Scale2): { x: number; 
   return { x: at.x, y: at.y };
 }
 
-/** Screen size of a widget's glyph. */
-const WIDGET_RADIUS_PX = 4;
+/** Half the side of a widget's glyph, in screen pixels. */
+const GLYPH_HALF_PX = 4.5;
 
 /** Paint for the widgets. */
 export interface CornerWidgetPaint {
@@ -44,10 +44,34 @@ export interface CornerWidgetPaint {
   stroke: string;
 }
 
+type V = { x: number; y: number };
+
+/** A square glyph centered at `c` whose corner facing along `toward` is
+ *  cut by the superellipse of parameter `k`: the shape the corner has, drawn
+ *  small and turned to face it. */
+function cornerGlyph(c: V, toward: V, k: number): PolygonPath {
+  const h = GLYPH_HALF_PX;
+  const r2 = Math.SQRT1_2;
+  const e1 = { x: (toward.x - toward.y) * r2, y: (toward.x + toward.y) * r2 };
+  const e2 = { x: (toward.x + toward.y) * r2, y: (toward.y - toward.x) * r2 };
+  const at = (a: number, b: number): V => ({ x: c.x + a * e1.x + b * e2.x, y: c.y + a * e1.y + b * e2.y });
+  const cut = 1.2 * h;
+  const outer = at(h, h);
+  const b = new PathBuilder().moveTo(at(-h, -h).x, at(-h, -h).y).lineTo(at(h, -h).x, at(h, -h).y);
+  const start = at(h, h - cut);
+  b.lineTo(start.x, start.y);
+  for (const piece of cornerShapePieces(k, { start, end: at(h - cut, h), outer })) {
+    if (piece.kind === 'line') b.lineTo(piece.to.x, piece.to.y);
+    else b.curveTo(piece.c1.x, piece.c1.y, piece.c2.x, piece.c2.y, piece.to.x, piece.to.y);
+  }
+  const last = at(-h, h);
+  return b.lineTo(last.x, last.y).close().build();
+}
+
 /**
- * The widget of every corner anchor of `path`, in screen space: a circle for
- * a round corner, a diamond for a bevel, and a ring around a dot for a
- * scoop. A corner with no spec draws as round, the style a drag gives it.
+ * The widget of every corner anchor of `path`, in screen space: a small
+ * square whose corner toward the anchor is cut in the corner's shape. A
+ * corner with no spec draws as round, the shape a drag gives it.
  */
 export function cornerWidgetCommands(path: PolygonPath, view: View, paint: CornerWidgetPaint): DrawCommand[] {
   const out: DrawCommand[] = [];
@@ -57,19 +81,11 @@ export function cornerWidgetCommands(path: PolygonPath, view: View, paint: Corne
     const w = cornerWidgetAt(frame, view.scale);
     const x = (w.x - view.x) * view.scale.x;
     const y = (w.y - view.y) * view.scale.y;
-    const r = WIDGET_RADIUS_PX;
-    const style = cornerSpecAt(path, frame.index)?.style ?? 'round';
-    if (style === 'bevel') {
-      const diamond = polygonFromPoints([
-        { x, y: y - r - 1 }, { x: x + r + 1, y }, { x, y: y + r + 1 }, { x: x - r - 1, y },
-      ]);
-      out.push({ kind: 'path', path: diamond, fill, stroke });
-    } else if (style === 'scoop') {
-      out.push({ kind: 'path', path: circlePath(x, y, r), fill, stroke });
-      out.push({ kind: 'path', path: circlePath(x, y, r / 2), fill: { paint: stroke.paint } });
-    } else {
-      out.push({ kind: 'path', path: circlePath(x, y, r), fill, stroke });
-    }
+    // On screen, the anchor lies back along the bisector.
+    const bx = -frame.bisector.x * view.scale.x, by = -frame.bisector.y * view.scale.y;
+    const bl = Math.hypot(bx, by) || 1;
+    const k = cornerShapeK(cornerSpecAt(path, frame.index)?.shape ?? 'round');
+    out.push({ kind: 'path', path: cornerGlyph({ x, y }, { x: bx / bl, y: by / bl }, k), fill, stroke });
   }
   return out;
 }

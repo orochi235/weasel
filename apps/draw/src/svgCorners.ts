@@ -2,18 +2,19 @@
  * Corner shapes in a saved file. The `<path>`'s `d` is the expanded
  * geometry any SVG reader draws; the `wd:` namespace adds the bare anchors
  * (`corner-anchors`, as path data) and the specs on them (`corners`, as
- * `index:style:radius` entries joined by `;`), so WeaselDraw reopens the
+ * `index:shape:radius` entries joined by `;`, a shape being a `corner-shape`
+ * keyword or a `superellipse()` parameter), so WeaselDraw reopens the
  * corners still editable.
  */
 import {
   boundsOfPath,
   boxToBox,
-  CORNER_STYLES,
+  isCornerShape,
   pathFromD,
   transformPath,
   withoutCorners,
+  type CornerShape,
   type CornerSpec,
-  type CornerStyle,
   type Path,
   type PolygonPath,
 } from '@weasel-js/geom';
@@ -23,7 +24,7 @@ import { serializePathD } from '@weasel-js/svg';
 export function cornerAttrs(path: Path): Record<string, string> {
   if (path.kind !== 'polygon' || !path.corners) return {};
   const entries: string[] = [];
-  path.corners.forEach((c, i) => { if (c) entries.push(`${i}:${c.style}:${c.radius}`); });
+  path.corners.forEach((c, i) => { if (c) entries.push(`${i}:${c.shape}:${c.radius}`); });
   if (entries.length === 0) return {};
   return { corners: entries.join(';'), 'corner-anchors': serializePathD(withoutCorners(path)) };
 }
@@ -31,13 +32,14 @@ export function cornerAttrs(path: Path): Record<string, string> {
 function parseCorners(text: string): (CornerSpec | null)[] | null {
   const out: (CornerSpec | null)[] = [];
   for (const entry of text.split(';')) {
-    const [i, style, radius] = entry.split(':');
+    const [i, text, radius] = entry.split(':');
     const index = Number(i);
     const r = Number(radius);
     if (!Number.isInteger(index) || index < 0 || !Number.isFinite(r) || r < 0) return null;
-    if (!CORNER_STYLES.includes(style as CornerStyle)) return null;
+    const shape: unknown = isCornerShape(text) ? text : text.trim() === '' ? NaN : Number(text);
+    if (!isCornerShape(shape)) return null;
     while (out.length < index) out.push(null);
-    out[index] = { style: style as CornerStyle, radius: r };
+    out[index] = { shape: shape as CornerShape, radius: r };
   }
   return out;
 }

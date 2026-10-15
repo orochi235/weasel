@@ -57,18 +57,24 @@ export {
   type ResolvedCorners,
   cornerFrames,
   cornerFrameAt,
-  cornerTrimOf,
-  cornerRadiusOf,
   type CornerFrame,
-  CORNER_STYLES,
   cornerAt,
   cornerSpecAt,
   hasCorners,
-  nextCornerStyle,
   withCorner,
   withoutCorners,
   type CornerSpec,
-  type CornerStyle,
+  CORNER_KEYWORDS,
+  CORNER_FIT_TOLERANCE,
+  cornerShapeK,
+  cornerKeywordOf,
+  cornerShapePieces,
+  isCornerShape,
+  nextCornerShape,
+  type CornerKeyword,
+  type CornerPiece,
+  type CornerShape,
+  type CornerShapeFrame,
   pathPoseDescriptor,
   pathOriginProjection,
   createPenPreviewLayer,
@@ -136,6 +142,19 @@ export {
   type ShapeGenerator,
   type StarGenerator,
 } from '../features/paths/shapeGenerator';
+export {
+  CORNER_CONTROLS,
+  CORNER_K_SLIDER_RANGE,
+  cornerControlsParams,
+  cornerControlsState,
+  type CornerControlsState,
+} from '../features/paths/cornerControls';
+export {
+  useCornerControls,
+  type CornerControlsScene,
+  type CornerControlsSelection,
+  type UseCornerControlsReturn,
+} from '../features/paths/useCornerControls';
 
 // ─── Curves: alternate path representations (Bezier, NURBS, Spiro) ──────────
 export {

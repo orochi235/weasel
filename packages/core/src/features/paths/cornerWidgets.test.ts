@@ -3,7 +3,7 @@
  * `cornerWidgetAt` answers.
  */
 import { describe, expect, it } from 'vitest';
-import { boundsOfPath, polygonFromPoints, withCorner, type PolygonPath } from '@weasel-js/geom';
+import { boundsOfPath, CORNER_KEYWORDS, polygonFromPoints, withCorner, type PolygonPath } from '@weasel-js/geom';
 import { anchorStateFrom, buildAffordanceAt } from 'canvas/affordanceAt';
 import type { ChromeState } from 'core/selection/chromeState';
 import { makeEditAnchorsDep } from 'interactions/actions/testUtils';
@@ -39,7 +39,7 @@ describe('corner widgets', () => {
   });
 
   it('follows the cut as the radius grows', () => {
-    const f = cornerWidgetFrames(withCorner(square(), 1, { style: 'bevel', radius: 20 }))[1];
+    const f = cornerWidgetFrames(withCorner(square(), 1, { shape: 'bevel', radius: 20 }))[1];
     const at = cornerWidgetAt(f, VIEW.scale);
     // The bevel's middle is (90, 10); the widget sits 7 further in.
     expect(at.x).toBeCloseTo(90 - 7 * Math.SQRT1_2, 6);
@@ -59,5 +59,14 @@ describe('corner widgets', () => {
     const b = boundsOfPath(third.path);
     expect(b.x + b.width / 2).toBeCloseTo((at.x - VIEW.x) * VIEW.scale.x, 3);
     expect(b.y + b.height / 2).toBeCloseTo((at.y - VIEW.y) * VIEW.scale.y, 3);
+  });
+
+  it('draws each corner-shape keyword as a glyph of its own', () => {
+    const glyphs = CORNER_KEYWORDS.map((shape) => {
+      const [cmd] = cornerWidgetCommands(withCorner(square(), 0, { shape, radius: 10 }), VIEW, { fill: '#fff', stroke: '#000' });
+      if (cmd.kind !== 'path' || cmd.path.kind !== 'polygon') throw new Error('expected a polygon');
+      return JSON.stringify([...cmd.path.commands, ...Array.from(cmd.path.coords, (v) => v.toFixed(2))]);
+    });
+    expect(new Set(glyphs).size).toBe(6);
   });
 });

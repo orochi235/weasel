@@ -26,13 +26,18 @@ export {
 } from './paths/builder';
 export { boundsOfPath } from './paths/bounds';
 export {
-  cornerFrameAt, cornerFrames, cornerRadiusOf, cornerTrimOf, remapPerAnchor, resolveCorners,
+  cornerFrameAt, cornerFrames, remapPerAnchor, resolveCorners,
   resolveCornersWithSources, type CornerFrame, type ResolvedCorners,
 } from './paths/corners';
 export {
-  CORNER_STYLES, compactCorners, cornerAt, cornerSpecAt, hasCorners, nextCornerStyle, scaleCorners, withCorner,
-  withoutCorners, type CornerSpec, type CornerStyle,
+  compactCorners, cornerAt, cornerSpecAt, hasCorners, scaleCorners, withCorner,
+  withoutCorners, type CornerSpec,
 } from './paths/cornerSpec';
+export {
+  CORNER_FIT_TOLERANCE, CORNER_KEYWORDS, cornerCenter, cornerKeywordOf, cornerShapeK, cornerShapePieces,
+  cornerShapePoint, isCornerShape, nextCornerShape, type CornerKeyword, type CornerPiece, type CornerShape,
+  type CornerShapeFrame,
+} from './paths/cornerShape';
 export { unionBoundsPath } from './paths/unionBoundsPath';
 export { translatePath, scalePathToBounds } from './paths/transform';
 export { transformPath } from './paths/transformPath';

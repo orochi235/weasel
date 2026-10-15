@@ -4,25 +4,14 @@
  * reader of its geometry sees them expanded (`resolveCorners`).
  */
 import type { PolygonPath } from '../path';
+import type { CornerShape } from './cornerShape';
 
-/** How a corner is cut: a tangent arc, a straight bevel, or an arc centered
- *  on the anchor that scoops into the shape. */
-export type CornerStyle = 'round' | 'bevel' | 'scoop';
-
-/** The corner at one anchor. For `round`, `radius` is the fillet circle's;
- *  for `bevel` and `scoop`, it is how far the cut runs along each edge
- *  from the anchor, which is also a scoop's arc radius. */
+/** The corner at one anchor: its shape, and its setback, how far along each
+ *  edge from the anchor the cut starts. A `round` corner between edges at a
+ *  right angle is a circle of that radius. */
 export interface CornerSpec {
-  style: CornerStyle;
+  shape: CornerShape;
   radius: number;
-}
-
-/** The order cycling a corner's style steps through. */
-export const CORNER_STYLES: readonly CornerStyle[] = ['round', 'bevel', 'scoop'];
-
-/** The style after `style` in {@link CORNER_STYLES}, wrapping. */
-export function nextCornerStyle(style: CornerStyle): CornerStyle {
-  return CORNER_STYLES[(CORNER_STYLES.indexOf(style) + 1) % CORNER_STYLES.length];
 }
 
 /** The corner cut at flat anchor `index`, or null. A zero radius cuts nothing. */
@@ -31,7 +20,7 @@ export function cornerAt(path: PolygonPath, index: number): CornerSpec | null {
   return spec && spec.radius > 0 ? spec : null;
 }
 
-/** The spec stored at flat anchor `index`, radius zero included: a style
+/** The spec stored at flat anchor `index`, radius zero included: a shape
  *  picked before any radius is dragged out. */
 export function cornerSpecAt(path: PolygonPath, index: number): CornerSpec | null {
   return path.corners?.[index] ?? null;
@@ -65,12 +54,12 @@ export function withoutCorners(path: PolygonPath): PolygonPath {
 }
 
 /** `path` with the corner at flat anchor `index` set to `spec`, or cleared
- *  when `spec` is null. A zero radius keeps the style and cuts nothing.
+ *  when `spec` is null. A zero radius keeps the shape and cuts nothing.
  *  Never mutates `path`. */
 export function withCorner(path: PolygonPath, index: number, spec: CornerSpec | null): PolygonPath {
   const next: (CornerSpec | null)[] = path.corners ? [...path.corners] : [];
   while (next.length <= index) next.push(null);
-  next[index] = spec ? { style: spec.style, radius: Math.max(0, spec.radius) } : null;
+  next[index] = spec ? { shape: spec.shape, radius: Math.max(0, spec.radius) } : null;
   const corners = compactCorners(next);
   const bare = withoutCorners(path);
   return corners ? { ...bare, corners } : bare;
@@ -82,6 +71,6 @@ export function scaleCorners(path: PolygonPath, factor: number): PolygonPath {
   if (!path.corners || factor === 1) return path;
   return {
     ...path,
-    corners: path.corners.map((c) => (c ? { style: c.style, radius: c.radius * factor } : null)),
+    corners: path.corners.map((c) => (c ? { shape: c.shape, radius: c.radius * factor } : null)),
   };
 }
