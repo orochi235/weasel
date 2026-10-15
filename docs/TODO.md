@@ -426,6 +426,11 @@ Priority tags:
   placeholder's seed order would come from wire ends layout moves, so two could trade places
   between runs and break "a second run moves nothing"; and a scene's waypoints belong to whoever
   drew them, so writing them is a decision of its own (`packages/diagram/src/layered/plan.ts`).
+- **(P3) A second pinned node can sit on a long edge's route.** `layeredPlan` anchors the layout
+  on the first pinned node; any other pinned node stays where its author put it, not in its slot.
+  A wire with that node as an end gets no waypoints, but a wire passing near it keeps the
+  waypoints laid out around the slot, and can run through the node
+  (`packages/diagram/src/layered/plan.ts`). Found by reading the code; no case reproduced yet.
 - **(P3) An ELK layout adapter.** elkjs (the Eclipse Layout Kernel) lays out ports, labels and
   nested groups well, but answers asynchronously and is large (around 1.5 MB; not measured), so it cannot sit behind
   the synchronous `LayoutFn`. An adapter in a package of its own, for laying out a generated
