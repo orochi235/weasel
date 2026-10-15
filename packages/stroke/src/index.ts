@@ -4,6 +4,8 @@
  * Paths come from `@weasel-js/geom` and the `Stroke` itself from
  * `@weasel-js/paint`; nothing here knows about a scene graph, a renderer or
  * React.
+ *
+ * @packageDocumentation
  */
 
 export { tessellateStroke, resolveStrokeWidth } from './tessellate/stroke';

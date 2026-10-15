@@ -433,6 +433,43 @@ describe('two writers', () => {
     expect(a.get('mode')).toBe('dark');
   });
 
+  it('runs every change listener past one that throws, and does not throw into the setter', async () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const cache = await openRecords({ storage: createMemoryAdapter(), prefix: PREFIX });
+    const after = vi.fn();
+    cache.subscribe(() => { throw new Error('boom'); });
+    cache.subscribe(after);
+    expect(() => cache.set('mode', 'light')).not.toThrow();
+    expect(after).toHaveBeenCalledTimes(1);
+    expect(error).toHaveBeenCalled();
+    error.mockRestore();
+  });
+
+  it('runs every overruled listener past one that throws, and still applies the change', async () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const backing = new Map<string, unknown>();
+    const memory = createMemoryAdapter(backing);
+    const slow: StorageAdapter = { ...memory, set: () => new Promise<void>(() => {}) };
+    const a = await openRecords({ storage: slow, prefix: PREFIX });
+    const b = await openRecords({ storage: createMemoryAdapter(backing), prefix: PREFIX });
+    const after = vi.fn();
+    const changed = vi.fn();
+    a.onOverruled(() => { throw new Error('boom'); });
+    a.onOverruled(after);
+    a.set('mode', 'light');
+    void a.flush();
+    a.subscribe(changed);
+    b.set('mode', 'auto');
+    b.set('other', 1);
+    await b.flush();
+    await tick();
+    expect(after).toHaveBeenCalledWith([['mode', 'auto']]);
+    expect(changed).toHaveBeenCalled();
+    expect(a.get('other')).toBe(1);
+    expect(error).toHaveBeenCalled();
+    error.mockRestore();
+  });
+
   it("propagates another writer's delete", async () => {
     const backing = new Map<string, unknown>([['lk:t:trial:x', { id: 'x' }]]);
     const { a, b } = await twoTabs(backing);

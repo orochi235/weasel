@@ -38,19 +38,10 @@
     "longestFunction": 253
   },
   "packages/core/src/canvas/SceneCanvas/StandardActionsRegistrar.tsx": {
-    "longestFunction": 187
+    "longestFunction": 183
   },
   "packages/core/src/canvas/SceneCanvas/props.ts": {
-    "lines": 668
-  },
-  "packages/core/src/canvas/SceneCanvas/useDispatcherOverlayLayer.ts": {
-    "longestFunction": 198
-  },
-  "packages/core/src/canvas/SceneCanvas/useSceneSelectTool.ts": {
-    "longestFunction": 155
-  },
-  "packages/core/src/canvas/pickWalk.ts": {
-    "lines": 444
+    "lines": 637
   },
   "packages/core/src/canvas/sceneAdapter.ts": {
     "longestFunction": 156
@@ -65,7 +56,7 @@
     "longestFunction": 164
   },
   "packages/core/src/core/scene/types.ts": {
-    "lines": 617
+    "lines": 584
   },
   "packages/core/src/debug/createDebugOverlayLayer.ts": {
     "lines": 440
@@ -83,7 +74,7 @@
     "longestFunction": 148
   },
   "packages/core/src/interactions/actions/depSchema.ts": {
-    "lines": 580
+    "lines": 556
   },
   "packages/core/src/tools/builtin/pen/usePenTool.ts": {
     "lines": 683,
@@ -152,8 +143,8 @@
     "longestFunction": 281
   },
   "packages/history/src/history.ts": {
-    "lines": 697,
-    "longestFunction": 448
+    "lines": 695,
+    "longestFunction": 445
   },
   "packages/hud/src/attach.ts": {
     "longestFunction": 162
@@ -228,7 +219,7 @@
     "longestFunction": 212
   },
   "packages/labkit/src/state/store.ts": {
-    "longestFunction": 230
+    "longestFunction": 227
   },
   "packages/labkit/src/surface/useTiledSurface.ts": {
     "longestFunction": 255
@@ -247,7 +238,7 @@
     "lines": 439
   },
   "packages/renderer/src/WeaselRenderer.ts": {
-    "lines": 731
+    "lines": 688
   },
   "packages/renderer/src/drawBatch.ts": {
     "lines": 608
@@ -262,7 +253,7 @@
     "longestFunction": 133
   },
   "packages/storage/src/records.ts": {
-    "longestFunction": 197
+    "longestFunction": 185
   },
   "packages/stroke/src/tessellate/stroke.ts": {
     "lines": 520

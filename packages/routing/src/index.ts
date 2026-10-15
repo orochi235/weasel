@@ -4,6 +4,8 @@
  * The pure half: no React, no DOM. The React seam that pumps browser events
  * into the dispatcher, and the providers that feed it, live behind
  * `@weasel-js/routing/react`.
+ *
+ * @packageDocumentation
  */
 
 // ─── vocabulary ───────────────────────────────────────────────────────────
@@ -16,6 +18,7 @@ export type {
 
 // ─── dependency schema ────────────────────────────────────────────────────
 import type { ActiveToolContextValue } from './interactions/actions/activeToolContext';
+import type { ActionTuning } from './interactions/actions/tuning';
 
 /**
  * The dependency schema — the map of dep name → value type that
@@ -51,6 +54,30 @@ export type DepName = keyof DepSchema;
 // `'@weasel-js/core'`, core re-exports from here, and that is one hop too many
 // unless the declaration sits at the export site.
 
+
+// ─── action param schema ──────────────────────────────────────────────────
+/**
+ * The params each action reads, by action id — what types a tuning's
+ * `params` and the params on the bindings it adds. Whoever ships an action
+ * merges its entry in, as with {@link DepSchema}:
+ *
+ * ```ts
+ * declare module '@weasel-js/core' {
+ *   interface ActionParamSchema { brushDeleteAnchors: { radiusPx: number } }
+ * }
+ * ```
+ *
+ * Declare an entry as a type literal, not an interface: an interface has no
+ * index signature, so it is not a `Record<string, unknown>`.
+ */
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export interface ActionParamSchema {}
+
+/** Tunings keyed by action id: typed by {@link ActionParamSchema} for an id it
+ *  declares, `Record<string, unknown>` params for any other. */
+export type ActionTunings =
+  & { readonly [K in keyof ActionParamSchema]?: ActionTuning<ActionParamSchema[K]> }
+  & { readonly [id: string]: ActionTuning | undefined };
 
 // ─── overlay schema ───────────────────────────────────────────────────────
 /**
@@ -92,6 +119,9 @@ export type { DepRegistry } from './interactions/actions/depNode';
 export { validateActionId, validateActionDefaultBinding } from './interactions/actions/registry';
 export type { ActionsRegistry, ActionEntry, ActionsProp } from './interactions/actions/registry';
 export { resolveParams } from './interactions/actions/invoker';
+export { tuneAction } from './interactions/actions/tuning';
+export type { ActionParams, ActionTuning, TunedBinding } from './interactions/actions/tuning';
+
 export type {
   Point2, AffordanceHit, DragSample, InvocationCtx, BindingOpts, ActionDeps,
   OverlayRole, OngoingOverlay, OngoingHandle, ImmediateInvoker, OngoingInvoker, Invoker,

@@ -19,5 +19,7 @@
  *   - scene-canvas    — SceneCanvas mount / unmount; adapter paste-translation warnings
  *   - history         — applyOps push, no-op suppression, serialize/restore
  *   - clipboard       — OS clipboard write/read failures, malformed payloads
+ *
+ * @packageDocumentation
  */
 export { dlog, dwarn, isDebugEnabled } from '@weasel-js/routing';

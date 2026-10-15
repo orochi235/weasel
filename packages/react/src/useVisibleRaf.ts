@@ -55,12 +55,12 @@ const resolveTarget = (target: VisibleRafTarget | undefined): Element | null =>
   typeof target === 'function' ? target() : (target?.current ?? null);
 
 /**
- * @param frame Runs on the frame, with the timestamp the clock supplied.
- *   A continuous loop calls `request()` again from inside it; a one-shot loop
- *   does not.
+ * @param frame Runs on the frame, with the timestamp the clock supplied and the
+ *   loop's own handle. A continuous loop calls `loop.request()` from inside it;
+ *   a one-shot loop does not.
  */
 export function useVisibleRaf(
-  frame: (time: number) => void,
+  frame: (time: number, loop: VisibleRaf) => void,
   options: VisibleRafOptions = {},
 ): VisibleRaf {
   const frameRef = useLatest(frame);
@@ -73,6 +73,7 @@ export function useVisibleRaf(
   const intersectingRef = useRef(true);
   const observerRef = useRef<IntersectionObserver | null>(null);
   const observedRef = useRef<Element | null>(null);
+  const handleRef = useRef<VisibleRaf | null>(null);
 
   const isVisible = useCallback(
     (): boolean =>
@@ -95,7 +96,7 @@ export function useVisibleRaf(
       rafRef.current = null;
       if (!aliveRef.current || !pendingRef.current || !isVisible()) return;
       pendingRef.current = false;
-      frameRef.current(time);
+      frameRef.current(time, handleRef.current!);
     });
   }, [frameRef, isVisible, optsRef]);
 
@@ -174,5 +175,7 @@ export function useVisibleRaf(
 
   // Stable identity: `requestRedraw` and friends outlive the render that made
   // them, and consumers capture the handle.
-  return useMemo(() => ({ request, cancel, isVisible }), [request, cancel, isVisible]);
+  const handle = useMemo(() => ({ request, cancel, isVisible }), [request, cancel, isVisible]);
+  useLayoutEffect(() => { handleRef.current = handle; }, [handle]);
+  return handle;
 }

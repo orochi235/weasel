@@ -1,4 +1,8 @@
-/** Part of the `@weasel-js/core` barrel. Actions, deps, the gesture dispatcher, and tools. */
+/**
+ * Part of the `@weasel-js/core` barrel. Actions, deps, the gesture dispatcher, and tools.
+ *
+ * @packageDocumentation
+ */
 
 // --- @experimental Actions Registry (2026-05-09) ----------------------------
 export { ActionsProvider, InputScope, useYoke, Yoke, useActionsRegistry, useAction, useOngoingAction } from '@weasel-js/routing/react';
@@ -11,6 +15,9 @@ export { actionBindings, actionItems } from '@weasel-js/routing';
 export { heldKeySpec } from '@weasel-js/routing';
 export type { ActionItem } from '@weasel-js/routing';
 export type { BoundGesture, BindingSource } from '@weasel-js/routing';
+export type { ActionParams, ActionTuning, TunedBinding } from '@weasel-js/routing';
+export { tuneAction } from '@weasel-js/routing';
+export type { ActionParamSchema, ActionTunings } from '../interactions/actions/actionParamSchema';
 export { evaluateActive, evaluateEnabled, buildDepsFromRequires } from '@weasel-js/routing';
 export type { ActionEnabledResult } from '@weasel-js/routing';
 export { actionShortcuts, keySpecShortcut } from '../interactions/actions/actionShortcuts';
@@ -83,6 +90,8 @@ export type {
   EditAnchorsDep,
   IngestionDep,
   InsertDep,
+  InsertIntoDep,
+  PathSymmetryDep,
   InsertLive,
   SnapDep,
   InsertExtras,

@@ -295,39 +295,8 @@ export interface SnapDep {
   point(p: { x: number; y: number }): { x: number; y: number };
 }
 
-/** Adapter dep for `insertAction`. The `extras` carry the active tool's kind
- *  + per-kind geometry. */
-export interface InsertDep {
-  /**
-   * Materialise a new node from the given drag-rect bounds and typed
-   * per-kind extras. Returns the new node's id, or `null` if the consumer
-   * rejected the insert (e.g. sub-threshold bounds, unknown kind).
-   */
-  commit(
-    bounds: { x: number; y: number; width: number; height: number },
-    extras: InsertExtras,
-  ): NodeId | null;
-  /**
-   * What `commit` would apply, unapplied: the new node's id and the ops that
-   * insert it, for a caller that has more to put in the same undo step. The
-   * pen joins two paths this way. Without it such a caller declines.
-   */
-  build?(
-    bounds: { x: number; y: number; width: number; height: number },
-    extras: InsertExtras,
-  ): { id: NodeId; ops: Op[] } | null;
-  /** The scene layer `commit` puts the node on. An insert on a layer carrying
-   *  `parallax` is dragged out in that plane's world, so `bounds` arrive
-   *  there too. Omitted: the camera's world. */
-  layer?(): string;
-}
-
-/** Holder for the insert gesture in flight in one input scope. `gesture` is
- *  `insertAction`'s own state, opaque to everything else, and `null` between
- *  gestures. A source must return the same object on every read. */
-export interface InsertLive {
-  gesture: unknown;
-}
+import type { InsertDep, PathSymmetryDep, InsertIntoDep, InsertLive } from './insertDeps';
+export type { InsertDep, PathSymmetryDep, InsertIntoDep, InsertLive };
 
 /**
  * Adapter dep for `resizeAction`: bounds-frame behaviors (e.g.
@@ -458,6 +427,10 @@ declare module '@weasel-js/routing' {
      *  `insert.adjustRotation` reaches the one in its own input scope.
      *  Sourced by `<SceneCanvas>`; without it the rotation does nothing. */
     insertLive?: InsertLive;
+    /** The container the `insert` dep puts new nodes into — every shape a
+     *  tool draws and every dropped image or text. Absent, or answering
+     *  `null`: the top of the tree. */
+    insertInto?: InsertIntoDep;
     /** Snap dep — world-space point snapping (grid / guides). Sourced by
      *  `<SceneCanvas>` from `toolOptions.snapPoint`. Absent means no snapping. */
     snap?: SnapDep;
@@ -472,6 +445,9 @@ declare module '@weasel-js/routing' {
     /** Edit-anchors dep — narrow read/write of one polygon's path. If
      *  absent, `editAnchorsAction`'s `start` returns an empty handle (no-op). */
     editAnchors: EditAnchorsDep;
+    /** The transforms a path being edited should stay its own image under.
+     *  Absent: an anchor drag moves only what is dragged. */
+    pathSymmetry?: PathSymmetryDep;
     /**
      * Text-edit dep — activates the in-place text editing overlay. Sourced
      * from consumer via `useTextEdit` / `useSceneTextEdit`.

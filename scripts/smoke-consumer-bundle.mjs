@@ -479,7 +479,7 @@ await writeFile(
   // (b) types re-exported across the package boundary must resolve to their
   //     real declarations in the sibling package, not to `any`/`never`.
   `import type { Action, ActionDeps, DepName, DepSchema, History, GestureSpec, SelectionApi, Op } from '@weasel-js/core';\n` +
-    `import type { Mat3 } from '@weasel-js/geom';\n` +
+    `import type { Affine } from '@weasel-js/geom';\n` +
     `import type { History as HistoryDirect } from '@weasel-js/history';\n` +
     `type _Sel = DepSchema['selection'];\n` +
     `type _View = DepSchema['view'];\n` +
@@ -492,7 +492,7 @@ await writeFile(
     // separate types and the assignment below fails.
     `declare const _viaCore: History;\n` +
     `const _viaDirect: HistoryDirect = _viaCore;\n` +
-    `type _M = Mat3;\n` +
+    `type _M = Affine;\n` +
     `type _G = GestureSpec;\n` +
     `type _S = SelectionApi;\n` +
     `type _O = Op;\n` +
@@ -538,13 +538,13 @@ await writeFile(
     `import { defineTool as routingDefineTool, type Tool as RoutingTool } from '@weasel-js/routing';\n` +
     `import type { RenderLayer, SceneCanvasProps } from '@weasel-js/core';\n` +
     `declare const _layer: RenderLayer<unknown>;\n` +
-    `declare const _routingTool: RoutingTool<null>;\n` +
+    `declare const _routingTool: RoutingTool;\n` +
     `const _tools: NonNullable<SceneCanvasProps<unknown, string, unknown>['tools']> = {\n` +
     `  bare: routingDefineTool({ id: 'smoke-bare' }),\n` +
-    `  drawn: routingDefineTool<null>({ id: 'smoke-drawn', overlay: _layer }),\n` +
+    `  drawn: routingDefineTool({ id: 'smoke-drawn', overlay: _layer }),\n` +
     `  typed: _routingTool,\n` +
     `  // @ts-expect-error an overlay that is not the kernel's must not fit\n` +
-    `  foreign: routingDefineTool<null, number>({ id: 'smoke-foreign', overlay: 1 }),\n` +
+    `  foreign: routingDefineTool<number>({ id: 'smoke-foreign', overlay: 1 }),\n` +
     `};\n` +
     `export const _t = _tools;\n` +
     `export type { _Sel, _View, _Scene, _Hist, _Tool, _M, _G, _S, _O, _Ui, _Hud, _UiSubpath, _Augmented };\n` +

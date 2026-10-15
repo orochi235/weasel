@@ -10,7 +10,13 @@ export type TrialToolSlot = Pick<RenderContext['trial'], 'activeToolId' | 'setAc
  * whichever direction it last moved: picking a tool in the trial's palette
  * activates it on the canvas, and a canvas hotkey that changes tool moves the
  * palette with it. A slot naming a tool the canvas has not registered — an
- * annotation tool on the lab's slot, say — leaves the canvas where it is.
+ * annotation tool on the lab's slot, or a path-edit tool the lab holds itself —
+ * leaves the canvas where it is.
+ *
+ * A canvas report is a pick, and moves the slot, only once the canvas holds a
+ * tool and has caught up with any tool this hook asked it to take. Any other
+ * report is the canvas settling — on its default as it mounts, or on a request
+ * it has not reached yet — and writing it back would undo what the slot says.
  *
  * Returns the `onToolsCreated` to hand the `<SceneCanvas>`, chained to the one
  * the caller passes.
@@ -23,16 +29,28 @@ export function useSceneToolSlot(
   // The last active tool the canvas reported, `undefined` before its first report.
   const sceneSaw = useRef<string | null | undefined>(undefined);
   const slotSaw = useRef(slot.activeToolId);
+  // A tool this hook told the canvas to take that it has not yet reported.
+  const asked = useRef<string | null>(null);
+
+  const push = (target: ToolsApi, id: string | null): void => pushTool(asked, target, id);
 
   const reported = (next: ToolsApi): void => {
     tools.current = next;
     onToolsCreated?.(next);
     const before = sceneSaw.current;
     sceneSaw.current = next.active;
-    const wanted = slot.activeToolId;
-    if (before === undefined) {
-      activate(next, wanted);
-    } else if (next.active !== before && next.active !== null && next.active !== wanted) {
+    // Settling, by the rule above: catching up with a request, or not yet holding a tool.
+    if (asked.current !== null) {
+      if (next.active === asked.current) asked.current = null;
+      return;
+    }
+    if (before === undefined || before === null) {
+      push(next, slot.activeToolId);
+      return;
+    }
+    if (next.active !== before && next.active !== null && next.active !== slot.activeToolId) {
+      // The slot is about to say what the canvas already has; nothing to push back.
+      slotSaw.current = next.active;
       slot.setActiveTool(next.active);
     }
   };
@@ -41,12 +59,14 @@ export function useSceneToolSlot(
   useEffect(() => {
     if (wanted === slotSaw.current) return;
     slotSaw.current = wanted;
-    if (tools.current) activate(tools.current, wanted);
+    if (tools.current) pushTool(asked, tools.current, wanted);
   }, [wanted]);
 
   return reported;
 }
 
-function activate(tools: ToolsApi, id: string | null): void {
-  if (id !== null && id !== tools.active && id in tools.registry) tools.setActive(id);
+function pushTool(asked: { current: string | null }, target: ToolsApi, id: string | null): void {
+  if (id === null || id === target.active || !(id in target.registry)) return;
+  asked.current = id;
+  target.setActive(id);
 }

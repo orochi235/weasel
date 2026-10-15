@@ -47,7 +47,7 @@ export function gestureRouteSegments(route: string): PowerlineSegment[] {
       argIsKey ? (
         <>
           {parsed.gesture}{' '}
-          <KeyCap label={keySpecFromKey(parsed.arg!).label} variant="minimal" className={s.keyCap} />
+          <KeyCap label={keySpecFromKey(parsed.arg!).label} className={s.keyCap} />
         </>
       ) : (
         <>

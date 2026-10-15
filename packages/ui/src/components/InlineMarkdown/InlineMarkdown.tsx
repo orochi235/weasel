@@ -31,7 +31,7 @@ function drawToken(token: InlineToken, links: 'anchor' | 'text'): ReactNode {
     case 'code':
       return <Code>{token.text}</Code>;
     case 'keys':
-      return <KeySequence keys={keySpecsFromChord(token.chord)} />;
+      return <KeySequence keys={keySpecsFromChord(token.chord)} variant="inverse" />;
     case 'strong':
       return <strong>{draw(token.children, links)}</strong>;
     case 'em':

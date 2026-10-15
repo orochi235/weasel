@@ -24,7 +24,7 @@ import {
 } from '@weasel-js/core';
 import { mapFillPaint } from './fillPaint';
 import type {
-  SvgGroupNode, SvgImageNode, SvgNode, SvgPaint, SvgPathNode, SvgStroke, SvgTextNode,
+  Matrix, SvgGroupNode, SvgImageNode, SvgNode, SvgPaint, SvgPathNode, SvgStroke, SvgTextNode,
 } from './types';
 import { paintThroughMatrix, strokeThroughMatrix } from './paintThroughMatrix';
 
@@ -171,6 +171,9 @@ export interface SvgKitTreeNode {
   kind: string;
   data: unknown;
   pose: SvgKitPose;
+  /** A container's copies, as the kit's `ContainerNode.copiesFromPose`
+   *  draws them: each is written as a transformed group of its children. */
+  copiesFromPose?(pose: SvgKitPose, node: never): readonly Matrix[] | null;
 }
 
 /** The read side of a scene that {@link svgNodesFromKit} walks. A kit
@@ -209,15 +212,28 @@ export function svgNodesFromKit<TId extends string>(
     const node = tree.get(id);
     if (!node) return null;
     if (node.kind === 'container') {
-      const children: SvgNode[] = [];
-      for (const c of tree.childrenOf(id)) {
-        const child = emit(c);
-        if (child) children.push(child);
-      }
-      const g: SvgGroupNode = { kind: 'group', children };
+      // Emitted afresh for each copy: a node object is never shared by two groups.
+      const emitChildren = (): SvgNode[] => {
+        const children: SvgNode[] = [];
+        for (const c of tree.childrenOf(id)) {
+          const child = emit(c);
+          if (child) children.push(child);
+        }
+        return children;
+      };
       // What a container draws is what it clips to; see `SvgSceneDraft`.
-      const clip = (node.data as SvgKitLeafData | null)?.path;
-      if (clip) g.clip = pathThroughPoseFrame(pathInPoseFrame(clip, node.pose), node.pose);
+      const path = (node.data as SvgKitLeafData | null)?.path;
+      const clip = path ? pathThroughPoseFrame(pathInPoseFrame(path, node.pose), node.pose) : undefined;
+      const copies = node.copiesFromPose?.(node.pose, node as never) ?? [];
+      const content = (): SvgGroupNode => ({ kind: 'group', children: emitChildren(), ...(clip ? { clip } : {}) });
+      let g = content();
+      if (copies.length > 0) {
+        // The clip travels with each copy, so it goes inside the transform.
+        g = {
+          kind: 'group',
+          children: [g, ...copies.map((transform): SvgGroupNode => ({ kind: 'group', transform, children: [content()] }))],
+        };
+      }
       return group ? group(id, g) : g;
     }
     return leaf ? leaf(id, node) : svgLeafFromKit(node.data as SvgKitLeafData, node.pose);

@@ -12,7 +12,7 @@ import {
 } from './index';
 import { KEYCAP_VARIANT_ICONS } from './variantIcons';
 
-const VARIANTS: KeyCapVariant[] = ['default', 'minimal'];
+const VARIANTS: KeyCapVariant[] = ['default', 'inverse'];
 const PLATFORMS: Platform[] = ['macos', 'windows', 'linux'];
 const LEGEND_STYLES: LegendStyle[] = ['auto', 'symbol', 'text'];
 
@@ -190,12 +190,11 @@ export const JoinNone: Story = {
   },
 };
 
-/** Minimal variant — every chip uses `currentColor`. Useful next to
- *  badges / colored text in tables. */
-export const Minimal: Story = {
+/** The default variant takes `currentColor`. Useful next to badges /
+ *  colored text in tables. */
+export const InColoredText: Story = {
   args: {
     keys: [{ label: '⌘' }, { label: '⇧' }, { label: 'P' }],
-    variant: 'minimal',
   },
   render: ({ platform = 'macos', legend = 'auto', keys, font, ...rest }) => (
     <span style={{ color: '#d4a574', fontSize: 14 }}>
@@ -204,7 +203,7 @@ export const Minimal: Story = {
   ),
 };
 
-/** Side-by-side comparison: same shortcuts in default vs minimal (under a
+/** Side-by-side comparison: same shortcuts in inverse vs default (under a
  *  colored container). Honors `platform` + `legend`. */
 export const Gallery: Story = {
   tags: ['gallery'],
@@ -239,8 +238,8 @@ function KeySequenceGallery({ platform, legend, font }: { platform: Platform; le
       <thead>
         <tr>
           <th style={cell}>case</th>
-          <th style={cell}>default</th>
-          <th style={cell}>minimal (in colored text)</th>
+          <th style={cell}>inverse</th>
+          <th style={cell}>default (in colored text)</th>
         </tr>
       </thead>
       <tbody>
@@ -249,8 +248,8 @@ function KeySequenceGallery({ platform, legend, font }: { platform: Platform; le
           return (
             <tr key={c.label}>
               <td style={cell}>{c.label}</td>
-              <td style={cell}><KeySequence keys={keys} font={font} /></td>
-              <td style={{ ...cell, color: '#7fb069' }}><KeySequence keys={keys} variant="minimal" font={font} /></td>
+              <td style={cell}><KeySequence keys={keys} variant="inverse" font={font} /></td>
+              <td style={{ ...cell, color: '#7fb069' }}><KeySequence keys={keys} font={font} /></td>
             </tr>
           );
         })}
