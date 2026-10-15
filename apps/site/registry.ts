@@ -663,14 +663,14 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/SceneLabDemo.tsx',
   },
   {
-    id: 'lab-variable-width-strokes',
-    title: 'Variable-width strokes',
+    id: 'lab-stroke-width',
+    title: 'Stroke width and nib',
     package: 'stroke',
     description:
-      "A stroke whose width varies along its length. `Stroke.widthProfile` holds stops of `{ t, width }` — a multiple of the base width at a fraction of each subpath's arc length — read by a monotone cubic through them, so the ribbon swells and thins without overshooting a stop. The four seeded strokes are one of plain width, one swelling in the middle, one tapering under a dash, and one with marker heads; joins, caps, dashes, and marker trims all follow the profile. The Width tool (`useWidthTool`) edits it: a drag on a stroke sets the width at the point pressed, at the stop already there or a new one, to twice the pointer's distance from the centerline, previewed live and committed as one undo entry, and the stroke last touched shows its stops. Turning on the `strokeToPath` outline draws the region the stroke covers as a hairline over the ribbon, which is what SVG export writes, since SVG has no variable width.",
-    hint: 'With Width picked, drag outward or inward from any point on a stroke. Press near a stop to move it, <kbd>Alt</kbd>-click a stop to remove it, then undo with the button or <kbd>Mod+Z</kbd>. Change Base width, Cap, and Join, and turn on Show strokeToPath outline to compare.',
-    load: () => import('./demos/VariableWidthStrokesLabDemo').then((m) => m.VariableWidthStrokesLabDemo),
-    path: 'apps/site/demos/VariableWidthStrokesLabDemo.tsx',
+      "A stroke whose width varies along its length, two ways that multiply. `Stroke.vertexWidths` gives each anchor a width of its own, which the tessellator interpolates between anchors; the Width tool (`useWidthTool`) edits it: a drag on an anchor sets its width to twice the pointer's distance from it, and a drag between two anchors first inserts one there without changing the path's shape, previewed live and committed as one undo entry. `Stroke.nib` is a broad pen, full width moving across the nib's edge and its `ratio` of that moving along it, so the cursive loops at the bottom go thick on the downstrokes and thin on the hairlines. Each side of a corner keeps its own width, and dashes, caps, joins, and marker heads all follow. The panel's style settings write onto the selected strokes, the handwriting to begin with. Turning on the `strokeToPath` outline draws the region the stroke covers as a hairline over it, which is what SVG export writes, since SVG has no variable width.",
+    hint: 'With Width picked, drag outward from an anchor, or from between two to add one; <kbd>Alt</kbd>-click an anchor to clear its width, and undo with the button or <kbd>Mod+Z</kbd>. Turn Nib angle and Nib thinnest to restyle the handwriting, pick Select to choose another stroke, and turn on Show strokeToPath outline to compare.',
+    load: () => import('./demos/StrokeWidthLabDemo').then((m) => m.StrokeWidthLabDemo),
+    path: 'apps/site/demos/StrokeWidthLabDemo.tsx',
   },
   {
     id: 'bidi',

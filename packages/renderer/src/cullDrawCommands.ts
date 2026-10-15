@@ -1,8 +1,8 @@
 import { type Path, mat3, type GlMat3 } from '@weasel-js/geom';
-import { resolveScreenLength, widestInProfile, type Stroke } from '@weasel-js/paint';
+import { resolveScreenLength, type Stroke } from '@weasel-js/paint';
 import { SPRITE_STRIDE, type DrawCommand } from './DrawCommand';
 import { resolveStrokeWidth } from '@weasel-js/stroke';
-import { markerReach } from '@weasel-js/stroke';
+import { markerReach, widestStrokeWidth } from '@weasel-js/stroke';
 import { isOwnComposite } from './effects/compositeOp';
 
 /** A screen-space rectangle, CSS pixels. */
@@ -127,11 +127,7 @@ function strokeReach(stroke: Stroke, m: GlMat3): number {
 export function strokeReachAt(stroke: Stroke, scale: number, least = scale): number {
   const at = least > 0 ? least : scale;
   const base = resolveStrokeWidth(stroke.width ?? 1, typeof stroke.width === 'object' ? at : scale);
-  let width = base;
-  if (stroke.vertexWidths) {
-    for (const v of stroke.vertexWidths) if (v > width) width = v;
-  }
-  width *= widestInProfile(stroke.widthProfile);
+  const width = widestStrokeWidth(base, stroke.vertexWidths);
   const spike = Math.max(stroke.miterLimit ?? DEFAULT_MITER_LIMIT, Math.SQRT2);
   const heads = markerReach(stroke);
   return Math.max(Math.abs(width) * spike, heads.world, resolveScreenLength({ px: heads.px }, at));

@@ -1,6 +1,6 @@
 import type { Polyline } from '@weasel-js/geom/tessellate';
-import type { WidthProfile } from '@weasel-js/paint';
-import { applyWidthProfile } from './widthProfile';
+import type { StrokeNib } from '@weasel-js/paint';
+import { applyNib } from './nib';
 
 /** What one unit of a `vertexWidths` entry measures across the line at a
  *  point whose unit tangent, in the polyline's own space, is `(tx, ty)`. */
@@ -42,18 +42,26 @@ export function populatePolylineWidths(
   pl.widths = widths;
 }
 
-/** Fill `pl.widths` from whichever of `vertexWidths` and `profile` a stroke
- *  sets, the profile's factor multiplying the per-vertex width. Leaves them
- *  unset for a stroke of one width. */
+/** The widest a stroke of `width` draws: `width`, or a wider per-vertex
+ *  entry. A nib only ever narrows it. */
+export function widestStrokeWidth(width: number, vertexWidths: readonly number[] | undefined): number {
+  let widest = width;
+  if (vertexWidths) for (const w of vertexWidths) if (w > widest) widest = w;
+  return widest;
+}
+
+/** Fill `pl.widths` from whichever of `vertexWidths` and `nib` a stroke
+ *  sets, the nib's factor multiplying the per-vertex width. Leaves them unset
+ *  for a stroke of one width. */
 export function populateWidths(
   pl: Polyline,
   vertexWidths: number[] | null,
-  profile: WidthProfile | undefined,
+  nib: StrokeNib | undefined,
   width: number,
   scale?: WidthScale,
 ): void {
   if (vertexWidths) populatePolylineWidths(pl, vertexWidths, width, scale);
-  if (profile && profile.length > 0) applyWidthProfile(pl, profile, width);
+  if (nib) applyNib(pl, nib, width);
 }
 
 /** `scale` along the line's direction at point `i`: the bisector of the

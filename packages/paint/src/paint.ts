@@ -5,7 +5,6 @@
 
 import type { PatternPaint } from './patternPaint';
 import type { ColorSpace } from './colorSpaces';
-import type { WidthProfile } from './widthProfile';
 
 /**
  * Color/texture strategy for fills (and, via `Stroke.paint`, strokes).
@@ -193,11 +192,22 @@ export interface Stroke {
    */
   varyingWidthJoinThreshold?: number;
   /**
-   * The width along each subpath's length, as multiples of `width` at
-   * fractions of its arc length. Multiplies `vertexWidths` where both are
-   * set. SVG has no variable width, so an export writes the stroke's outline.
+   * A broad nib: the stroke is as wide as `width` moving across the nib and
+   * `ratio` of that moving along it, an elliptical pen's width in between.
+   * Multiplies `vertexWidths` where both are set.
    */
-  widthProfile?: WidthProfile;
+  nib?: StrokeNib;
+}
+
+/** A pen whose mark depends on the direction it moves, as a calligraphy
+ *  pen's does. */
+export interface StrokeNib {
+  /** The nib's edge, in radians counterclockwise from the +x axis on screen
+   *  (y down), as the measure readout reads angles. */
+  angle: number;
+  /** Thinnest over widest, 0..1: the width moving along the nib, as a
+   *  fraction of the width moving across it. */
+  ratio: number;
 }
 
 /**

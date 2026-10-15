@@ -84,7 +84,8 @@ export function svgStrokeFromKit(stroke: Stroke | null | undefined, box: SvgKitP
     ...(stroke.markerStart !== undefined ? { markerStart: stroke.markerStart } : {}),
     ...(stroke.markerMid !== undefined ? { markerMid: stroke.markerMid } : {}),
     ...(stroke.markerEnd !== undefined ? { markerEnd: stroke.markerEnd } : {}),
-    ...(stroke.widthProfile?.length ? { widthProfile: stroke.widthProfile } : {}),
+    ...(stroke.vertexWidths?.length ? { vertexWidths: stroke.vertexWidths } : {}),
+    ...(stroke.nib ? { nib: stroke.nib } : {}),
   };
 }
 

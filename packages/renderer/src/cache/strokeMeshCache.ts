@@ -65,7 +65,7 @@ function configKey(stroke: Stroke, flattenTolerance: number | undefined, spaces:
     stroke.align ?? 'center',
     (stroke.dash ?? []).join(','),
     stroke.varyingWidthJoinThreshold ?? '',
-    (stroke.widthProfile ?? []).map((s) => `${s.t}:${s.width}`).join(','),
+    stroke.nib ? `${stroke.nib.angle}:${stroke.nib.ratio}` : '',
     flattenTolerance ?? '',
     insets.start,
     insets.end,

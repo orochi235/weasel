@@ -1,110 +1,123 @@
 /**
- * What the width tool reads and writes: the stroke under a point, the stop a
- * press takes hold of, and the profile a drag leaves behind.
+ * What the width tool reads and writes: the stroke under a point, the anchor
+ * a press takes hold of — inserting one where the press falls between two —
+ * and the per-vertex widths a drag leaves behind.
  */
-import type { PolygonPath } from '@weasel-js/geom';
 import {
-  normalizeWidthProfile, removeWidthStop, setWidthStop, widthProfileAt,
-  type Stroke, type WidthProfile, type WidthStop,
-} from '@weasel-js/paint';
-import { nearestStrokeSite, resolveStrokeWidth, strokeSitesAt, type StrokeSite } from '@weasel-js/stroke';
+  editAnchorSetTracked, insertAnchorOnSegment, nearestSegmentT, pathDistanceToPoint, pathToAnchors,
+  type PolygonPath,
+} from '@weasel-js/geom';
+import type { Stroke } from '@weasel-js/paint';
+import { resolveStrokeWidth, widestStrokeWidth } from '@weasel-js/stroke';
 import type { Node, NodeId, Scene } from 'core/scene/types';
 import { resolveEditablePathOf } from 'features/paths/editablePath';
+import { withPath } from 'interactions/actions/pathCommands/pathNodes';
 
 type AnyScene = Scene<unknown, string, unknown>;
 type AnyNode = Node<unknown, string, unknown>;
+type Point = { x: number; y: number };
 
-/** A stroked path node, its centerline in world space, and its stroke's
- *  width there. */
+/** A stroked path node and its centerline in world space. */
 export interface WidthTarget {
   id: NodeId;
   node: AnyNode;
   path: PolygonPath;
   stroke: Stroke;
-  /** `stroke.width` in world units, the unit a profile's widths multiply. */
-  base: number;
-}
-
-/** The stroke a press at `(x, y)` lands on, and where on it. */
-export interface WidthHit {
-  target: WidthTarget;
-  site: StrokeSite;
-}
-
-/** The node's stroke, when it paints one along an editable path. */
-function targetOf(scene: AnyScene, node: AnyNode, scale: number): WidthTarget | null {
-  if (node.kind !== 'leaf' || node.derivePath || node.derivePose || scene.isLocked(node.id)) return null;
-  const stroke = (node.data as { stroke?: Stroke | null } | null)?.stroke;
-  if (!stroke?.paint) return null;
-  const base = resolveStrokeWidth(stroke.width ?? 1, scale);
-  if (!(base > 0)) return null;
-  const path = resolveEditablePathOf(node);
-  return path ? { id: node.id, node, path, stroke, base } : null;
 }
 
 /**
- * The topmost stroke whose ink is within `reach` of `(x, y)`, with the point
- * on its centerline nearest there. `scale` resolves a `{ px }` width.
+ * The anchor a press took hold of, on a node's geometry as the press leaves
+ * it: `path` gained an anchor at `index` when the press fell between two.
  */
-export function widthHitAt(scene: AnyScene, x: number, y: number, scale: number, reach: number): WidthHit | null {
+export interface WidthGrip {
+  target: WidthTarget;
+  /** The world path, with the inserted anchor if there is one. */
+  path: PolygonPath;
+  /** The per-vertex widths, one per anchor of `path`; `NaN` takes `stroke.width`. */
+  widths: number[];
+  index: number;
+  at: Point;
+  inserted: boolean;
+}
+
+function anchorPoints(path: PolygonPath): Point[] {
+  return pathToAnchors(path).anchors.flat().map((a) => ({ x: a.x, y: a.y }));
+}
+
+/** The node's stroke, when it paints one along an editable path. */
+function targetOf(scene: AnyScene, node: AnyNode): WidthTarget | null {
+  if (node.kind !== 'leaf' || node.derivePath || node.derivePose || scene.isLocked(node.id)) return null;
+  const stroke = (node.data as { stroke?: Stroke | null } | null)?.stroke;
+  if (!stroke?.paint) return null;
+  const path = resolveEditablePathOf(node);
+  return path ? { id: node.id, node, path, stroke } : null;
+}
+
+/** The topmost stroke whose ink is within `reach` of `(x, y)`. `scale`
+ *  resolves a `{ px }` width. */
+export function widthTargetAt(scene: AnyScene, x: number, y: number, scale: number, reach: number): WidthTarget | null {
   const nodes = scene.renderOrderNodes();
   for (let i = nodes.length - 1; i >= 0; i--) {
-    const target = targetOf(scene, nodes[i], scale);
+    const target = targetOf(scene, nodes[i]);
     if (!target) continue;
-    const site = nearestStrokeSite(target.path, x, y);
-    if (!site) continue;
-    const half = (target.base * widthProfileAt(target.stroke.widthProfile ?? [], site.t)) / 2;
-    if (site.distance <= half + reach) return { target, site };
+    const half = widestStrokeWidth(resolveStrokeWidth(target.stroke.width ?? 1, scale), target.stroke.vertexWidths) / 2;
+    if (pathDistanceToPoint(target.path, x, y) <= half + reach) return target;
   }
   return null;
 }
 
-/** The `t` of the stop within `reach` of `site` along its subpath, or
- *  `site.t` for a new one. */
-export function grabbedT(profile: WidthProfile, site: StrokeSite, reach: number): number {
-  let best = site.t;
-  let bestGap = site.length > 0 ? reach / site.length : 0;
-  for (const s of profile) {
-    const gap = Math.abs(s.t - site.t);
-    if (gap <= bestGap) { bestGap = gap; best = s.t; }
-  }
+/** `target`'s per-vertex widths, one per anchor; `NaN` where none is set. */
+export function widthsOf(target: WidthTarget, count: number): number[] {
+  const own = target.stroke.vertexWidths ?? [];
+  return Array.from({ length: count }, (_, i) => {
+    const w = own[i];
+    return typeof w === 'number' && Number.isFinite(w) && w > 0 ? w : NaN;
+  });
+}
+
+/** The index of `target`'s anchor within `reach` of `(x, y)`, nearest first, or -1. */
+export function anchorNear(path: PolygonPath, x: number, y: number, reach: number): number {
+  let best = -1;
+  let bestD = reach;
+  anchorPoints(path).forEach((p, i) => {
+    const d = Math.hypot(p.x - x, p.y - y);
+    if (d <= bestD) { bestD = d; best = i; }
+  });
   return best;
 }
 
-/** The index of the stop within `reach` of `site`, or -1. */
-export function stopIndexNear(profile: WidthProfile, site: StrokeSite, reach: number): number {
-  const t = grabbedT(profile, site, reach);
-  return profile.findIndex((s) => s.t === t);
-}
-
 /**
- * `profile` with the stop at `t` set so the stroke there is as wide as
- * `pointer` is far from the centerline either side. An empty profile first
- * gets level stops at both ends, so a drag swells the stroke where it is
- * rather than everywhere.
+ * Take hold of `target` at `(x, y)`: the anchor within `reach`, or a new one
+ * on the segment nearest, split so the path keeps its shape.
  */
-export function profileDraggedTo(
-  target: WidthTarget, subpath: number, t: number, pointer: { x: number; y: number },
-): WidthStop[] {
-  const at = strokeSitesAt(target.path, t)[subpath];
-  if (!at) return [...(target.stroke.widthProfile ?? [])];
-  const width = (2 * Math.hypot(pointer.x - at.x, pointer.y - at.y)) / target.base;
-  const start = target.stroke.widthProfile?.length
-    ? target.stroke.widthProfile
-    : [{ t: 0, width: 1 }, { t: 1, width: 1 }];
-  return setWidthStop(start, t, width, 1e-9);
+export function gripAt(target: WidthTarget, x: number, y: number, reach: number): WidthGrip | null {
+  const count = anchorPoints(target.path).length;
+  const index = anchorNear(target.path, x, y, reach);
+  if (index >= 0) {
+    return { target, path: target.path, widths: widthsOf(target, count), index, at: anchorPoints(target.path)[index], inserted: false };
+  }
+  const set = pathToAnchors(target.path);
+  const hit = nearestSegmentT(set.anchors, x, y, set.closed);
+  if (!hit) return null;
+  let inserted = -1;
+  const next = editAnchorSetTracked(target.path, (s) => {
+    inserted = insertAnchorOnSegment(s, hit);
+    return inserted !== -1;
+  });
+  if (!next || inserted < 0) return null;
+  const widths = widthsOf(target, count);
+  widths.splice(inserted, 0, NaN);
+  return { target, path: next.path, widths, index: inserted, at: anchorPoints(next.path)[inserted], inserted: true };
 }
 
-/** `profile` without the stop at `index`, or `undefined` when none is left. */
-export function profileWithout(profile: WidthProfile, index: number): WidthStop[] | undefined {
-  const rest = normalizeWidthProfile(removeWidthStop(profile, index));
-  return rest.length > 0 ? rest : undefined;
-}
-
-/** `target`'s node data with its stroke's profile replaced. */
-export function dataWithProfile(target: WidthTarget, profile: WidthProfile | undefined): unknown {
-  const { widthProfile: _old, ...rest } = target.stroke;
+/** The node's pose and data with `grip`'s geometry and `widths`, or null
+ *  when the node cannot store the geometry. All-`NaN` widths drop the list. */
+export function storedWith(grip: WidthGrip, widths: readonly number[]): { pose: unknown; data: unknown } | null {
+  const { node, stroke } = grip.target;
+  const shaped = grip.inserted ? withPath(node, grip.path) : { pose: node.pose, data: node.data };
+  if (!shaped) return null;
+  const { vertexWidths: _old, ...rest } = stroke;
   void _old;
-  const stroke: Stroke = profile ? { ...rest, widthProfile: profile } : rest;
-  return { ...(target.node.data as object), stroke };
+  const next: Stroke = widths.some((w) => Number.isFinite(w)) ? { ...rest, vertexWidths: [...widths] } : rest;
+  return { pose: shaped.pose, data: { ...(shaped.data as object), stroke: next } };
 }

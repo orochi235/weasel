@@ -18,6 +18,7 @@ export type {
   Fill,
   Stroke,
   StrokeDashStyle,
+  StrokeNib,
   Region,
   ScreenLength,
 } from './paint';
@@ -41,10 +42,6 @@ export {
   type PatternTransform,
   type PatternTransformParts,
 } from './patternTransform';
-export {
-  normalizeWidthProfile, removeWidthStop, setWidthStop, widestInProfile, widthProfileAt,
-} from './widthProfile';
-export type { WidthProfile, WidthStop } from './widthProfile';
 export {
   alignedStrokeRect,
   resolveScreenLength,

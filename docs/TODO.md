@@ -190,9 +190,10 @@ Priority tags:
   distance readouts between the selection and the shape under the pointer.
 - **(P2) Live symmetry.** Draw on one side of an axis and the mirrored half follows.
 - **(P3) The width tool has no icon, and passes over rectangles.** `useWidthTool` shows the
-  unknown-tool glyph in draw's palette. It edits only nodes `resolveEditablePathOf` answers a
-  polygon for, so a drawn rectangle's stroke, which renders a `widthProfile` like any other, cannot
-  be shaped with it; that waits on "A rectangle has no anchors in path edit" above.
+  unknown-tool glyph in draw's palette and the lab's. It edits only nodes `resolveEditablePathOf`
+  answers a polygon for, so a drawn rectangle's stroke, which renders `vertexWidths` and a `nib`
+  like any other, cannot be shaped with it; that waits on "A rectangle has no anchors in path edit"
+  above.
 
 ### Pathfinder follow-ups (post-v1)
 

@@ -4,14 +4,15 @@ import { parseSvg, serializeSvg } from '@weasel-js/svg';
 import { objToSvgNode, svgNodesToSceneDrafts, SWILL_NAMESPACES, type SceneDraft } from './svgInterop';
 import type { PathObj } from './svgObj';
 
-describe('a width profile in a saved document', () => {
+describe('a variable-width stroke in a saved document', () => {
   it('survives a save and an open', () => {
-    const widthProfile = [{ t: 0, width: 0.5 }, { t: 0.4, width: 3 }, { t: 1, width: 1 }];
+    const vertexWidths = [2, 9];
+    const nib = { angle: Math.PI / 6, ratio: 0.2 };
     const obj: PathObj = {
       id: 'a', tool: 'pen', x: 0, y: 0, width: 100, height: 40,
       path: new PathBuilder().moveTo(0, 0).curveTo(30, 40, 70, 40, 100, 0).build() as PolygonPath,
       fill: null,
-      stroke: { paint: { color: '#123456' }, width: 4, cap: 'round', widthProfile },
+      stroke: { paint: { color: '#123456' }, width: 4, cap: 'round', vertexWidths, nib },
     };
     const svg = serializeSvg([objToSvgNode(obj)], { namespaces: SWILL_NAMESPACES });
     const parsed = parseSvg(svg, { namespaces: SWILL_NAMESPACES });
@@ -21,6 +22,6 @@ describe('a width profile in a saved document', () => {
     expect(leaves).toHaveLength(1);
     const back = leaves[0].obj as PathObj;
     expect(back.tool).toBe('pen');
-    expect(back.stroke).toMatchObject({ width: 4, cap: 'round', widthProfile });
+    expect(back.stroke).toMatchObject({ width: 4, cap: 'round', vertexWidths, nib });
   });
 });

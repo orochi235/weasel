@@ -9,7 +9,8 @@
 export { tessellateStroke, resolveStrokeWidth } from './tessellate/stroke';
 export type { StrokeOptions } from './tessellate/stroke';
 export { splitForDash } from './tessellate/dash';
-export { populatePolylineWidths } from './tessellate/vertexWidths';
+export { populatePolylineWidths, widestStrokeWidth } from './tessellate/vertexWidths';
+export { nibWidthScale } from './tessellate/nib';
 export type { WidthScale } from './tessellate/vertexWidths';
 export { trimInSpace } from './tessellate/insets';
 export type { InsetLength, MeasuredLength } from './tessellate/insets';
@@ -31,6 +32,4 @@ export type { MarkerHead } from './markerHeads';
 export { strokeToPath } from './strokeToPath';
 export type { StrokeToPathOptions } from './strokeToPath';
 export { offsetPath } from './offsetPath';
-export { nearestStrokeSite, strokeSitesAt } from './strokeSites';
-export type { StrokeSite, StrokeSiteOptions } from './strokeSites';
 export type { OffsetPathOptions } from './offsetPath';

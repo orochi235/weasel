@@ -76,6 +76,11 @@ export function splitForDash(pl: Polyline, dash: number[]): Polyline[] {
     const start = pointAt(i);
     const end = pointAt((i + 1) % ptCount);
     const segFullLen = Math.hypot(end.x - prevX, end.y - prevY);
+    // A coincident point still carries its width, as a nib's corner does.
+    if (segFullLen <= 1e-9) {
+      if (onPhase && cur) extend(cur, end);
+      continue;
+    }
     let segLen = segFullLen;
     let traveled = 0;
 

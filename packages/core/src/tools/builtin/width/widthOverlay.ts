@@ -1,65 +1,52 @@
-import { ellipsePath, polylineFromPoints } from '@weasel-js/geom';
-import { widthProfileAt } from '@weasel-js/paint';
+import { ellipsePath } from '@weasel-js/geom';
 import type { DrawCommand } from '@weasel-js/renderer';
-import { strokeSitesAt } from '@weasel-js/stroke';
 import type { RenderLayer } from 'core/layers/render';
 import { viewToTransform } from 'core/viewport/view';
 import { worldToScreen } from 'core/viewport/viewTransform';
 import type { WidthFocus } from './widthActions';
 
-const STOP_RADIUS_PX = 3.5;
+const DOT_RADIUS_PX = 3.5;
 const RIM = '#10161d';
-const STOP = '#ffffff';
-const SPAN = { paint: { color: '#2f80ed' }, width: 1 };
+const SET = '#ffffff';
+const UNSET = '#8a94a3';
+const RING = { paint: { color: '#2f80ed' }, width: 1 };
+
+const circle = (x: number, y: number, r: number) => ellipsePath({ x: x - r, y: y - r, width: 2 * r, height: 2 * r });
 
 /**
- * A screen-space layer marking each stop of the focused stroke's profile: a
- * line across the stroke as wide as the stop makes it, and a dot on the
- * centerline, on every subpath.
+ * A screen-space layer marking the anchors of the stroke the width tool last
+ * touched: a dot on each, white where it has a width of its own, and a ring
+ * as wide as that width around it.
  */
 export function createWidthOverlay(source: {
   focus(): WidthFocus | null;
   subscribe(fn: () => void): () => void;
 }): RenderLayer<unknown> {
   return {
-    id: 'width-tool-stops',
-    label: 'Width stops',
+    id: 'width-tool-anchors',
+    label: 'Width anchors',
     space: 'screen',
     subscribe: source.subscribe,
     draw: (_data, view) => {
       const focus = source.focus();
       if (!focus) return [];
       const m = viewToTransform(view);
-      const toScreen = (x: number, y: number) => {
-        const [sx, sy] = worldToScreen(x, y, m);
-        return { x: sx, y: sy };
-      };
-      const { target, profile } = focus;
-      const spans: DrawCommand[] = [];
+      const scale = (Math.abs(view.scale.x) + Math.abs(view.scale.y)) / 2;
+      const rings: DrawCommand[] = [];
       const dots: DrawCommand[] = [];
-      for (const stop of profile) {
-        for (const at of strokeSitesAt(target.path, stop.t)) {
-          const half = (target.base * widthProfileAt(profile, stop.t)) / 2;
-          spans.push({
-            kind: 'path',
-            path: polylineFromPoints([
-              toScreen(at.x - at.nx * half, at.y - at.ny * half),
-              toScreen(at.x + at.nx * half, at.y + at.ny * half),
-            ]),
-            stroke: SPAN,
-          });
-          const c = toScreen(at.x, at.y);
-          dots.push({
-            kind: 'path',
-            path: ellipsePath({
-              x: c.x - STOP_RADIUS_PX, y: c.y - STOP_RADIUS_PX, width: 2 * STOP_RADIUS_PX, height: 2 * STOP_RADIUS_PX,
-            }),
-            fill: { paint: { kind: 'solid', color: STOP } },
-            stroke: { paint: { color: RIM }, width: 1 },
-          });
-        }
-      }
-      return [...spans, ...dots];
+      focus.anchors.forEach((a, i) => {
+        const [x, y] = worldToScreen(a.x, a.y, m);
+        const w = focus.widths[i];
+        const set = typeof w === 'number' && Number.isFinite(w);
+        if (set) rings.push({ kind: 'path', path: circle(x, y, (w * scale) / 2), stroke: RING });
+        dots.push({
+          kind: 'path',
+          path: circle(x, y, DOT_RADIUS_PX),
+          fill: { paint: { kind: 'solid', color: set ? SET : UNSET } },
+          stroke: { paint: { color: RIM }, width: 1 },
+        });
+      });
+      return [...rings, ...dots];
     },
   };
 }

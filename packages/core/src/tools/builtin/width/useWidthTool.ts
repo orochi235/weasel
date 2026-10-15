@@ -4,7 +4,7 @@ import { createEmitter } from '@weasel-js/registry';
 import type { ToolKeybinding } from '@weasel-js/routing';
 import { defineTool } from '../../overlayBinding';
 import type { Tool } from '../../overlayBinding';
-import { createWidthActions, WIDTH_DRAG_ID, WIDTH_REMOVE_STOP_ID, type WidthEnv, type WidthFocus } from './widthActions';
+import { createWidthActions, WIDTH_CLEAR_ID, WIDTH_DRAG_ID, type WidthEnv, type WidthFocus } from './widthActions';
 import { createWidthOverlay } from './widthOverlay';
 
 /** Options for `useWidthTool`. */
@@ -12,16 +12,17 @@ export interface UseWidthToolOptions {
   /** Override the default keybinding (`{ key: 'W', shift: true }`). Pass `null` to omit. */
   keybinding?: ToolKeybinding | null;
   /** Screen px around a stroke's ink within which a press takes it, and
-   *  around a stop within which a press takes hold of that stop. Default 6. */
+   *  around an anchor within which a press takes hold of that anchor. Default 6. */
   reach?: number;
 }
 
 /**
  * Width tool: shapes a stroke's width along its length, into its
- * `widthProfile`. A drag on a stroke sets its width at the point pressed — at
- * the stop already there, or a new one — to twice the pointer's distance
- * from the centerline, live, as one undo entry. Alt-click removes the stop
- * under the pointer. The last stroke touched shows its stops.
+ * `vertexWidths`. A drag on an anchor sets that anchor's width to twice the
+ * pointer's distance from it; a drag between two anchors first inserts one
+ * there, keeping the path's shape. Either is live and one undo entry.
+ * Alt-click on an anchor clears its width, so it takes the stroke's own. The
+ * last stroke touched shows its anchors, ringed where they have a width.
  */
 export function useWidthTool(options: UseWidthToolOptions = {}): Tool {
   const opts = useLatest({ reach: options.reach ?? 6 });
@@ -56,7 +57,7 @@ export function useWidthTool(options: UseWidthToolOptions = {}): Tool {
     onDeactivate: () => env.setFocus(null),
     bindings: [
       { spec: { kind: 'drag', mods: { shift: 'optional' } }, actionId: WIDTH_DRAG_ID },
-      { spec: { kind: 'click', mods: { alt: true } }, actionId: WIDTH_REMOVE_STOP_ID },
+      { spec: { kind: 'click', mods: { alt: true } }, actionId: WIDTH_CLEAR_ID },
     ],
   }), [actions, overlay, keybinding, env]);
 }

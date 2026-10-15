@@ -63,6 +63,6 @@ export { useStarTool, type UseStarToolOptions } from './star';
 export { usePencilTool, type PencilPoint } from './pencil';
 export { useSliceTool, type UseSliceToolOptions, type SliceScratch } from './slice';
 export {
-  useWidthTool, createWidthOverlay, createWidthActions, WIDTH_DRAG_ID, WIDTH_REMOVE_STOP_ID,
-  type UseWidthToolOptions, type WidthEnv, type WidthFocus, type WidthHit, type WidthTarget,
+  useWidthTool, createWidthOverlay, createWidthActions, WIDTH_CLEAR_ID, WIDTH_DRAG_ID,
+  type UseWidthToolOptions, type WidthEnv, type WidthFocus, type WidthGrip, type WidthTarget,
 } from './width';

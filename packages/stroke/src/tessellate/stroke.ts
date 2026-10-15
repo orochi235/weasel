@@ -103,7 +103,7 @@ export function tessellateStroke(
   // Per-point widths come first, in the space the points are in, so a trim
   // interpolates them rather than re-reading an anchor's.
   const vertexWidths = stroke.vertexWidths && stroke.vertexWidths.length > 0 ? stroke.vertexWidths : null;
-  const polylines = extractPolylines(workingPath, strokeFlattening(opts.flattenTolerance, width, vertexWidths ?? undefined, stroke.widthProfile));
+  const polylines = extractPolylines(workingPath, strokeFlattening(opts.flattenTolerance, width, vertexWidths ?? undefined));
   const scale: WidthScale | undefined = !metric ? undefined
     : rectInMetric ? (tx, ty) => worldWidthInMetric(metric, tx, ty)
       : (ux, uy) => worldWidthInMetricAlongWorld(metric, ux, uy);
@@ -118,7 +118,7 @@ export function tessellateStroke(
   // running off under a marker head.
   const ribbonSpace = metric ?? null;
   for (const pl of polylines) {
-    populateWidths(pl, vertexWidths, stroke.widthProfile, width, scale);
+    populateWidths(pl, vertexWidths, stroke.nib, width, scale);
     const trimmed = trimInSpace(pl, rectInMetric ? ribbonSpace : null, ribbonSpace, opts.startInset, opts.endInset);
     if (trimmed === null) continue;
     const subs = dash.length > 0 ? splitForDash(trimmed, dash) : [trimmed];
@@ -458,7 +458,7 @@ function emitRoundJoin(
   const startY = verts[aOuterEnd * 2 + 1] - cy;
   const endX = verts[bOuterStart * 2] - cx;
   const endY = verts[bOuterStart * 2 + 1] - cy;
-  const r = Math.hypot(startX, startY);
+  const r0 = Math.hypot(startX, startY), r1 = Math.hypot(endX, endY);
 
   const startAngle = Math.atan2(startY, startX);
   const endAngle = Math.atan2(endY, endX);
@@ -479,10 +479,10 @@ function emitRoundJoin(
   let prevIdx = aOuterEnd;
   for (let i = 1; i < steps; i++) {
     const ang = startAngle + i * stepAngle;
-    const fx = cx + Math.cos(ang) * r;
-    const fy = cy + Math.sin(ang) * r;
-    const newIdx = verts.length / 2;
-    verts.push(fx, fy);
+    // Each side of a join can have its own width; the arc runs between them.
+    const r = r0 + ((r1 - r0) * i) / steps;
+    verts.push(cx + Math.cos(ang) * r, cy + Math.sin(ang) * r);
+    const newIdx = verts.length / 2 - 1;
     anchorA.push(cornerA); anchorB.push(cornerB); anchorT.push(cornerT);
     if (onPositive) idx.push(prevIdx, pivotIdx, newIdx);
     else            idx.push(prevIdx, newIdx, pivotIdx);

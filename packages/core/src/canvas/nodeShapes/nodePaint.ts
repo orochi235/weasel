@@ -1,8 +1,8 @@
-import { widestInProfile, type Paint, type Stroke, type Fill } from '@weasel-js/paint';
+import type { Paint, Stroke, Fill } from '@weasel-js/paint';
 import type { NodeInk, NodePaintCtx } from 'canvas/NodeShape';
 import { countPathAnchors } from '@weasel-js/geom';
 import { markerReach } from '@weasel-js/stroke';
-import { resolveStrokeWidth } from '@weasel-js/stroke';
+import { resolveStrokeWidth, widestStrokeWidth } from '@weasel-js/stroke';
 import type { DrawCommand, PathDrawCommand } from '@weasel-js/renderer';
 import { paintDrawKindRegistry } from '@weasel-js/renderer';
 import { bumpNodeMemoGeneration } from 'core/scene/nodeMemo';
@@ -62,9 +62,7 @@ export function inkReach(
   // A marker paints past the path's own end, and the kit's rule is that
   // visible chrome is hittable — so the reach has to cover it.
   const heads = markerReach(stroke);
-  const swell = widestInProfile(stroke.widthProfile);
-  const sides = (base: number, headReach: number) => {
-    const width = base * swell;
+  const sides = (width: number, headReach: number) => {
     switch (stroke.align ?? 'center') {
       case 'inner': return { outset: headReach, inset: width };
       case 'outer': return { outset: width + headReach, inset: 0 };
@@ -72,7 +70,9 @@ export function inkReach(
     }
   };
   const width = stroke.width ?? 1;
-  const world = sides(typeof width === 'object' ? 0 : resolveStrokeWidth(width, scale ?? 1), heads.world);
+  // Per-vertex widths are world units even on a `{ px }` stroke.
+  const worldWidth = widestStrokeWidth(typeof width === 'object' ? 0 : resolveStrokeWidth(width, scale ?? 1), stroke.vertexWidths);
+  const world = sides(worldWidth, heads.world);
   if (typeof width !== 'object' && !(heads.px > 0)) return world;
   const px = sides(typeof width === 'object' ? width.px : 0, heads.px);
   return { outset: world.outset, inset: world.inset, outsetPx: px.outset, insetPx: px.inset };
