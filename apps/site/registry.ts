@@ -200,6 +200,15 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/PathAnchorEditDemo.tsx',
   },
   {
+    id: 'lab-live-symmetry',
+    title: 'Live symmetry',
+    category: 'Geometry',
+    description: 'Drawing that mirrors across an axis, from core\'s `symmetryContribution`, installed through `ambient`. It publishes a `SymmetryStore` as the `symmetry` dep, which the kit\'s `insert` dep reads: every node a tool inserts — Rectangle, Pen, Pencil — is followed by its mirrored twins in the same batch, so the drawing and its mirror undo as one step. The same dep reaches `editAnchors`: on a path that is its own mirror image, dragging an anchor or a handle moves its partner too, and an anchor on the axis stays on it. The kite opens in path edit through a `pathEdit` host. The entry also draws the axis, with a handle at its center that drags it; only the handle takes a press, so a stroke can start on the line. The control panel turns symmetry off and on and picks the axis.',
+    hint: 'Drag one of the kite\'s side anchors or handles and watch the other side follow. <kbd>Escape</kbd> leaves path edit; double-click the kite to edit it again. Pick Rectangle, Pen, or Pencil and draw on one side of the axis. Drag the dot on the axis to move it, set Axis to Both, then undo with the button or <kbd>Mod+Z</kbd>.',
+    load: () => import('./demos/SymmetryLabDemo').then((m) => m.SymmetryLabDemo),
+    path: 'apps/site/demos/SymmetryLabDemo.tsx',
+  },
+  {
     id: 'boolean-ops',
     title: 'Boolean ops',
     category: 'Geometry',
