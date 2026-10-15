@@ -113,9 +113,9 @@
 }
 
 .since {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
   color: var(--wzl-fg);
   font-weight: 600;
-  font-variant-numeric: tabular-nums;
   margin-inline-end: 0.5ch;
 }
 

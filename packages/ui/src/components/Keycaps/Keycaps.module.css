@@ -40,6 +40,7 @@
 }
 
 .key {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -62,6 +63,24 @@
   font-size: var(--key-font-size);
   font-weight: var(--wzl-font-weight-bold);
   line-height: 1;
+}
+
+/* A symbol legend drawn as an icon, a little larger than the letters beside it
+   so its strokes stay whole at legend sizes. */
+.legendIcon {
+  flex: none;
+  width: calc(var(--key-font-size) * 1.25);
+  height: calc(var(--key-font-size) * 1.25);
+}
+
+/* The symbol's own character, for a screen reader and for copied text. */
+.legendText {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 /* Default chip is square — letters, digits, and single glyphs (⎋ ⌫ ↑ etc.)
