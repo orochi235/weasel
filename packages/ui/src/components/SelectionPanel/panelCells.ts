@@ -16,6 +16,8 @@ export interface PanelCellScope {
   nodes: readonly AnyNode[];
   renderers: Record<string, PropertyRenderer> | undefined;
   commit: (leaf: PanelLeaf, next: (prev: unknown) => unknown) => void;
+  /** A value on the way to the one `commit` takes: written, and kept out of undo. */
+  draft: (leaf: PanelLeaf, next: (prev: unknown) => unknown) => void;
   selectionKey: string;
   fields: readonly PrefFieldChoice[];
   /** What a node holding nothing at `path` reads as there. */
@@ -28,7 +30,7 @@ export interface PanelCellScope {
 }
 
 function leafContext(panelLeaf: PanelLeaf, scope: PanelCellScope): PropertyRenderContext {
-  const { nodes, commit, selectionKey, fields, absentAt, disabled, hidden } = scope;
+  const { nodes, commit, draft, selectionKey, fields, absentAt, disabled, hidden } = scope;
   const { path, leaf } = panelLeaf;
   const absent = absentValue(leaf);
   const inside = panelLeaf.own === undefined ? undefined : scope.targets;
@@ -47,6 +49,7 @@ function leafContext(panelLeaf: PanelLeaf, scope: PanelCellScope): PropertyRende
     }),
     setValue: (v) => commit(panelLeaf, () => v),
     update: (fn) => commit(panelLeaf, fn),
+    drafts: { setValue: (v) => draft(panelLeaf, () => v), update: (fn) => draft(panelLeaf, fn) },
     valueAt: (p) => {
       const at = aggregateValue(nodes, p, absentAt(p));
       return at === MIXED ? { value: undefined, mixed: true } : { value: at, mixed: false };

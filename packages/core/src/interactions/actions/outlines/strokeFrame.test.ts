@@ -3,7 +3,7 @@
  * screen for a `{ px }` one. Booleans and Outline Stroke both go through it.
  */
 import { describe, it, expect, vi } from 'vitest';
-import { boundsOfPath, pathFromD, type Mat3, type Path } from '@weasel-js/geom';
+import { boundsOfPath, pathFromD, type Affine, type Path } from '@weasel-js/geom';
 import type { ImmediateInvoker } from '@weasel-js/routing';
 import type { PathPaint } from 'canvas/nodeShapes/nodePaint';
 import { asNodeId, type NodeId } from 'core/scene/types';
@@ -12,16 +12,18 @@ import { outlineStrokeAction } from './outlineStrokeAction';
 import { stubDeps } from '../testUtils';
 import type { CreateOutlinesAdapter } from './createOutlines';
 import { applyOutlineStroke } from './outlineStroke';
+import { rootsTree } from 'core/adapters/testing/rootsTree';
 
 const RED = { color: '#f00' };
 const ACROSS = pathFromD('M0 50 L100 50');
 const DOWN = pathFromD('M50 0 L50 100');
 /** A frame that draws everything four times as wide. */
-const WIDE: Mat3 = [4, 0, 0, 1, 0, 0];
+const WIDE: Affine = [4, 0, 0, 1, 0, 0];
 
-function outlines(path: Path, paint: PathPaint, frame?: Mat3) {
+function outlines(path: Path, paint: PathPaint, frame?: Affine) {
   const made: Path[] = [];
   const adapter: CreateOutlinesAdapter = {
+    ...rootsTree(),
     getSelection: () => [asNodeId('line')],
     getTextSource: () => undefined,
     getWorldPath: () => path,
@@ -69,10 +71,11 @@ describe('applyOutlineStroke: the frame the stroke is drawn in', () => {
 describe('applyBooleanOp: the frame a counted stroke is drawn in', () => {
   const BOX: Path = { kind: 'rect', x: 0, y: 0, width: 100, height: 100 };
 
-  function harness(linePath: Path, stroke: NonNullable<PathPaint['stroke']>, frame?: Mat3) {
+  function harness(linePath: Path, stroke: NonNullable<PathPaint['stroke']>, frame?: Affine) {
     const made: Path[] = [];
     const paths: Record<string, Path> = { box: BOX, line: linePath };
     const adapter: BooleansAdapter = {
+      ...rootsTree(),
       getSelection: () => ['box', 'line'] as NodeId[],
       getWorldPath: (id) => paths[id],
       getPaint: (id) => (id === 'line' ? { fill: null, stroke } : { fill: { paint: RED } }),

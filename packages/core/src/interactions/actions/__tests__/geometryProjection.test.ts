@@ -10,7 +10,7 @@
 
 import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composePose';
 import { describe, it, expect } from 'vitest';
-import type { Mat3, Path } from '@weasel-js/geom';
+import type { Affine, Path } from '@weasel-js/geom';
 import { transformPath, rectPath, boundsOfPath } from 'features/paths';
 import { nudgeRightAction } from '../defaults/nudge';
 import type { ImmediateInvoker } from '@weasel-js/routing';
@@ -42,7 +42,7 @@ describe('geometryProjection seam', () => {
     const path = rectPath(0, 0, 10, 10);
     const { scene, datas, applyOps } = setup(path);
     const geometryProjection = {
-      transform: (node: { data: { path: Path } }, m: Mat3) => ({ ...node.data, path: transformPath(node.data.path, m) }),
+      transform: (node: { data: { path: Path } }, m: Affine) => ({ ...node.data, path: transformPath(node.data.path, m) }),
     };
     (nudgeRightAction.invoker as ImmediateInvoker).run(
       { selection: { get: () => ['n'] }, scene, applyOps, geometryProjection } as never,

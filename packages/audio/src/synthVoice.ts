@@ -3,7 +3,7 @@ import type { Inharmonic, NoiseColor, SynthPartial, VoiceFilter, Waveform } from
 
 /** Seconds of noise in each cached loop: long enough that the repeat is not
  *  heard as a pitch. */
-const NOISE_SECONDS = 2;
+export const NOISE_SECONDS = 2;
 /** Every color is scaled to this RMS, so changing color does not change level. */
 const NOISE_RMS = 0.25;
 

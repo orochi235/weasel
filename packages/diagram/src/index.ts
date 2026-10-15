@@ -78,6 +78,7 @@ export {
   DIAGRAM_GROUP,
   GROUP_DERIVE_POSE,
   anchorDerivePose,
+  boxAround,
   diagramAnchorOf,
   diagramGroupOf,
   groupDerivePose,
@@ -113,6 +114,8 @@ export type {
 } from './live';
 export { chain } from './chain';
 export { backEdges, layered, ranksOf } from './layered';
+export { layeredRoutes } from './route';
+export type { LayeredRoute, LayeredRouteInput, RouteEdge } from './route';
 export {
   DEFAULT_NODE_GAP,
   DEFAULT_RANK_GAP,

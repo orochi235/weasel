@@ -7,11 +7,14 @@ import { GradientEditor } from './GradientEditor';
 const meta: Meta<typeof GradientEditor> = {
   title: 'ui/GradientEditor',
   component: GradientEditor,
-  args: { kindSwitch: true, spaceSwitch: true, svg: false },
+  args: { kindSwitch: true, spaceSwitch: true, svg: false, disabled: false },
   argTypes: {
     kindSwitch: { control: 'boolean' },
     svg: { control: 'boolean' },
     spaceSwitch: { control: 'boolean' },
+    disabled: { control: 'boolean' },
+    selectedStop: { table: { disable: true } },
+    onSelectedStopChange: { table: { disable: true } },
     value: { table: { disable: true } },
     onInput: { table: { disable: true } },
     onChange: { table: { disable: true } },
@@ -22,20 +25,89 @@ export default meta;
 
 type Story = StoryObj<typeof GradientEditor>;
 
-type LiveArgs = Omit<Parameters<typeof GradientEditor>[0], 'value' | 'onChange' | 'onInput'>;
+type LiveArgs = Omit<Parameters<typeof GradientEditor>[0], 'value' | 'onChange' | 'onInput' | 'selectedStop' | 'onSelectedStopChange'>;
 
-function Live({ initial, ...args }: LiveArgs & { initial: Paint }) {
+/** Holds the value, and the selection too, so a story can open on a stop other than the first. */
+function Live({ initial, startOn, ...args }: LiveArgs & { initial: Paint; startOn?: number }) {
   const [value, setValue] = useState(initial);
-  return <GradientEditor {...args} value={value} onInput={setValue} onChange={setValue} />;
+  const [selected, setSelected] = useState(startOn);
+  return (
+    <GradientEditor
+      {...args}
+      value={value}
+      selectedStop={selected}
+      onSelectedStopChange={setSelected}
+      onInput={setValue}
+      onChange={setValue}
+    />
+  );
 }
 
 const linear = (stops: GradientPaint['stops']): GradientPaint =>
   ({ kind: 'linear-gradient', from: { x: 0, y: 0 }, to: { x: 1, y: 0 }, stops }) as GradientPaint;
 
+/** The smallest gradient. The first stop is selected, and the row under the
+ *  track edits it; neither stop can be removed, so the remove button is off. */
+export const TwoStops: Story = {
+  render: (args) => (
+    <Live
+      {...args}
+      initial={linear([
+        { offset: 0, color: '#ff0000ff' },
+        { offset: 1, color: '#0000ffff' },
+      ])}
+    />
+  ),
+};
+
 /** Stops at 0 and 1 sit flush with the ends of the track, and every stop sits
  *  over its own offset in the painted ramp — the 30% stop over the ramp's 30%
  *  point. */
 export const StopsAtTheEnds: Story = {
+  render: (args) => (
+    <Live
+      {...args}
+      initial={linear([
+        { offset: 0, color: '#ff0000ff' },
+        { offset: 0.3, color: '#ffff00ff' },
+        { offset: 1, color: '#0000ffff' },
+      ])}
+    />
+  ),
+};
+
+const SPECTRUM = ['#ff3b30ff', '#ff9500ff', '#ffcc00ff', '#34c759ff', '#00c7beff', '#007affff', '#5856d6ff', '#af52deff', '#ff2d55ff'];
+
+/** The editor is the same height at nine stops as at two: there is one row for
+ *  whichever stop is selected, not one per stop. */
+export const ManyStops: Story = {
+  render: (args) => (
+    <Live
+      {...args}
+      initial={linear(SPECTRUM.map((color, i) => ({ offset: i / (SPECTRUM.length - 1), color })))}
+    />
+  ),
+};
+
+/** The selected stop is the middle one, at 35% opacity. Its handle and the
+ *  ramp around it show the checker through the color. */
+export const TranslucentStop: Story = {
+  render: (args) => (
+    <Live
+      {...args}
+      startOn={1}
+      initial={linear([
+        { offset: 0, color: '#0a84ffff' },
+        { offset: 0.5, color: '#ff375f59' },
+        { offset: 1, color: '#ffd60a00' },
+      ])}
+    />
+  ),
+};
+
+/** Dimmed, out of the tab order, and taking no input. */
+export const Disabled: Story = {
+  args: { disabled: true },
   render: (args) => (
     <Live
       {...args}

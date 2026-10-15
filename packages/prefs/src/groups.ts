@@ -16,6 +16,14 @@ import type { PrefLeaf } from './schema';
  */
 export type PrefGroupAs = 'page' | 'tab' | 'panel' | 'section' | 'fragment' | 'bar';
 
+/**
+ * What a group or a section drawn `as: 'bar'` does with cells its line has no
+ * room for: `scroll` keeps them all on it, and `menu` opens the ones past its
+ * end from a button there. A bar set to `menu` takes all the room its host
+ * has along the line, which is why it is asked for and not the default.
+ */
+export type PrefBarOverflow = 'scroll' | 'menu';
+
 /** How a {@link PrefSection} is drawn. */
 export type PrefSectionAs = Exclude<PrefGroupAs, 'page'>;
 
@@ -36,6 +44,10 @@ export interface PrefGroup {
   /** How the group is drawn. Unset, its depth decides: a top-level group is a
    *  `page`, and one inside another is a `section`. */
   as?: PrefGroupAs;
+  /** Drawn `as: 'bar'`: what happens to the cells its line has no room for.
+   *  Unset: `scroll`. A surface that takes drops keeps every cell on the line
+   *  whatever this says, so each is there to drop beside. */
+  overflow?: PrefBarOverflow;
   /** Drawn, with everything under it, only while this holds. */
   showIf?: PrefCondition;
   /** Everything under it is disabled while this does not hold. */
@@ -59,6 +71,8 @@ export interface PrefSection {
    *  `page`, since nothing that draws sections has a rail. Unset: a heading
    *  over its rows. */
   as?: PrefSectionAs;
+  /** As a {@link PrefGroup}'s. */
+  overflow?: PrefBarOverflow;
   /** As a {@link PrefGroup}'s. */
   showIf?: PrefCondition;
   /** As a {@link PrefGroup}'s. */

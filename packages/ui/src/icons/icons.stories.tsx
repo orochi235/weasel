@@ -1,11 +1,11 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { Icon } from './Icon';
-import { ICON_GROUPS, MARK_ICONS } from './groups';
-import type { IconName } from './paths';
+import { ICON_GROUPS, MARK_ICONS } from './generated/groups';
+import type { IconName } from './generated/paths';
 import {
   SelectIcon, LassoIcon, RectIcon, EllipseIcon, ImageIcon, EyedropperIcon,
   LineIcon, ArrowIcon, PolygonIcon, StarIcon, PencilIcon, TextIcon, PenIcon,
-  HandIcon, UnknownIcon,
+  HandIcon, SliceIcon, UnknownIcon,
 } from './index';
 import s from './icons.stories.module.css';
 
@@ -21,7 +21,7 @@ export default meta;
 const TOOL_ICONS = {
   SelectIcon, LassoIcon, RectIcon, EllipseIcon, ImageIcon, EyedropperIcon,
   LineIcon, ArrowIcon, PolygonIcon, StarIcon, PencilIcon, TextIcon, PenIcon,
-  HandIcon, UnknownIcon,
+  HandIcon, SliceIcon, UnknownIcon,
 } as const;
 
 function ToolSheet({ size, proof }: { size: number; proof?: boolean }) {

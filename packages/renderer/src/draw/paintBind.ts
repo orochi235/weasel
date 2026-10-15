@@ -75,8 +75,12 @@ export function bindPattern(
   gl.useProgram(prog.handle);
   setProjAndModel(ctx, prog, model);
   setColorMatrixUniforms(ctx, prog);
-  gl.uniformMatrix3fv(prog.uniform('u_worldInv')!, false, mat3.toUniform(tileSpace));
   const [tw, th] = textureSize(entry.source);
+  // The tile repeats, so whole tiles come out of the translation here, in
+  // doubles: far from the origin a float32 has no bits left for the texel.
+  tileSpace[6] -= Math.floor(tileSpace[6] / tw) * tw;
+  tileSpace[7] -= Math.floor(tileSpace[7] / th) * th;
+  gl.uniformMatrix3fv(prog.uniform('u_worldInv')!, false, mat3.toUniform(tileSpace));
   gl.uniform2f(prog.uniform('u_tileSize')!, tw, th);
   ctx.textureCache.bind(tex.id, 0);
   gl.uniform1i(prog.uniform('u_sampler')!, 0);
@@ -102,13 +106,18 @@ export function bindGradient(
 ): ShaderProgram | null {
   const inverse = gradientSpaceInverse(ctx, fill.units);
   if (!inverse) return null;
+  // Measured from the gradient's own start, subtracted here in doubles: far
+  // from the origin a float32 paint-space point is coarser than a pixel, and
+  // the shader's subtraction would be of two such numbers.
+  const about = fill.kind === 'linear-gradient' ? fill.from : fill.center;
+  const aboutStart = mat3.multiply(mat3.translated(mat3.identity(), -about.x, -about.y), inverse);
   const gl = ctx.gl;
   const row = ctx.gradRamps.upload(fill.stops, fill.interpolate ?? 'rgb');
 
   gl.useProgram(prog.handle);
   setProjAndModel(ctx, prog, model);
 
-  gl.uniformMatrix3fv(prog.uniform('u_worldInv')!, false, mat3.toUniform(inverse));
+  gl.uniformMatrix3fv(prog.uniform('u_worldInv')!, false, mat3.toUniform(aboutStart));
   setColorMatrixUniforms(ctx, prog);
 
   ctx.gradRamps.bind(0);
@@ -122,14 +131,12 @@ export function bindGradient(
     const dx = fill.to.x - fill.from.x;
     const dy = fill.to.y - fill.from.y;
     const len = Math.hypot(dx, dy) || 1;
-    gl.uniform2f(prog.uniform('u_gradP0')!, fill.from.x, fill.from.y);
     gl.uniform2f(prog.uniform('u_gradDir')!, dx / len, dy / len);
     gl.uniform1f(prog.uniform('u_gradLen')!, len);
     gl.uniform1f(prog.uniform('u_gradRadius')!, 0);
     gl.uniform1f(prog.uniform('u_gradAngle')!, 0);
   } else if (fill.kind === 'radial-gradient') {
     gl.uniform1i(prog.uniform('u_gradKind')!, 1);
-    gl.uniform2f(prog.uniform('u_gradP0')!, fill.center.x, fill.center.y);
     gl.uniform2f(prog.uniform('u_gradDir')!, 0, 0);
     gl.uniform1f(prog.uniform('u_gradLen')!, 0);
     gl.uniform1f(prog.uniform('u_gradRadius')!, fill.radius);
@@ -137,7 +144,6 @@ export function bindGradient(
   } else {
     // conic
     gl.uniform1i(prog.uniform('u_gradKind')!, 2);
-    gl.uniform2f(prog.uniform('u_gradP0')!, fill.center.x, fill.center.y);
     gl.uniform2f(prog.uniform('u_gradDir')!, 0, 0);
     gl.uniform1f(prog.uniform('u_gradLen')!, 0);
     gl.uniform1f(prog.uniform('u_gradRadius')!, 0);

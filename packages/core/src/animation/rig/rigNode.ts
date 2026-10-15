@@ -158,8 +158,10 @@ export interface UseRigNodeOptions<TPose>
  * rig node or a node under it changes its pose or data, or when nodes under it come or go; an
  * edit elsewhere in the scene leaves it alone. A rig bound again keeps its `target`, with the
  * animations running on it, its committed pose, and its placement, unless the skeleton's
- * joints were added, removed, renamed, or reordered: then it starts at the bind pose with a
- * new `target`.
+ * joints were added, removed, renamed, or reordered. Then it has a new `target`, which takes
+ * over the placement and the pose of every joint the skeleton still names. Animations go on
+ * running on the target they were started on and show through the new one, so a joint that
+ * was renamed stops moving.
  */
 export function useRigNode<TPose>(options: UseRigNodeOptions<TPose>): Rig {
   const { scene, node, apply, descriptor, restPath, painting } = options;
@@ -176,9 +178,14 @@ export function useRigNode<TPose>(options: UseRigNodeOptions<TPose>): Rig {
   const parts = sameRefs(held, next) ? held : next;
   if (parts !== held) setHeld(next);
   const joints = JSON.stringify(parts.skeleton.joints.map((joint) => joint.name));
-  // A pose target's axes are its joints' names in order, so the seat holds while those do.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const seat = useMemo(() => createRigSeat(parts.skeleton), [joints]);
+  // A pose target's axes are its joints' names in order, so the seat holds while those do,
+  // and the next one takes over from it.
+  const [seated, setSeated] = useState(() => ({ joints, seat: createRigSeat(parts.skeleton) }));
+  let { seat } = seated;
+  if (seated.joints !== joints) {
+    seat = createRigSeat(parts.skeleton, seated.seat);
+    setSeated({ joints, seat });
+  }
   return useSeatedRig({
     scene, skeleton: parts.skeleton, bindings: parts.bindings, skins: parts.skins, apply, descriptor, restPath,
   }, seat);

@@ -6,16 +6,17 @@ export {
   type PrefRenderContext,
 } from './PrefsForm';
 export type { PrefSelectHow } from './selection';
+export type { PrefSplitProps, SplitCtx } from './splitRows';
 export type { MarkHiddenProps } from './hidden';
 export { prefFieldProps, type PrefFieldState } from './prefField';
-export { PARAMS_SETTLES, withCommitPolicy, type ParamsSurface, type LiveControl } from './commitPolicy';
+export { PARAMS_SETTLES, PARAMS_TEXT_WAIT_MS, liveControl, withCommitPolicy, withDrafts, type ParamsSurface, type LiveControl } from './commitPolicy';
 export { PARAMS_CONTROLS, withRowControl, withSurfaceControl, type SurfaceControls } from './surfaceControls';
 export { PrefActionButton } from './PrefActionButton';
 export { PrefMixed } from './PrefMixed';
 export { PrefLabelLine, PrefRule, PrefWords, prefDrawsNoControl } from './PrefWords';
 export { useLeafAction, type LeafAction } from './useLeafAction';
 export { PrefControl, type PrefControlProps } from './PrefControl';
-export { entryApplier, type EntryAt } from './entry';
+export { entriesDisabled, entryApplier, entryDisabledAt, type EntryAt, type EntryConditions } from './entry';
 export { prefListEntry, prefListIsText, prefListTexts } from './ListLeaf';
 export { MapEditor, type MapEditorProps } from './MapEditor';
 export { UnionPicker, type UnionPickerProps } from './UnionPicker';

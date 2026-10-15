@@ -3,7 +3,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { ViteDevServer } from 'vite';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { fileEventsArrive, warnWhenWatchIsSilent, type WatchDir } from './watchProbe';
+import { fileEventsArrive, warnWhenWatchIsSilent, watchProbe, type WatchDir } from './watchProbe';
 
 /** A directory watch that reports nothing until the test calls `report`. */
 function fakeWatch() {
@@ -93,5 +93,17 @@ describe('warnWhenWatchIsSilent', () => {
       expect(warn).not.toHaveBeenCalled();
     }
     expect(probe).not.toHaveBeenCalled();
+  });
+});
+
+describe('watchProbe', () => {
+  it('is a serve-only plugin that warns from any dev server getting no file events', async () => {
+    const warn = vi.fn();
+    const server = { config: { server: { watch: undefined }, logger: { warn } } } as unknown as ViteDevServer;
+    const plugin = watchProbe({ probe: async () => false });
+    expect(plugin.apply).toBe('serve');
+    (plugin.configureServer as (server: ViteDevServer) => void)(server);
+    await vi.waitFor(() => expect(warn).toHaveBeenCalledTimes(1));
+    expect(warn.mock.calls[0]?.[0]).not.toContain('forge');
   });
 });

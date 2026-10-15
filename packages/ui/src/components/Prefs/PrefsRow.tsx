@@ -28,6 +28,8 @@ import { dropValuePath, type PrefDrop } from './drop';
 import { HiddenBadge, marksHidden } from './hidden';
 import { withRowControl } from './surfaceControls';
 import { selectionAttrs } from './selection';
+import { SplitBody, SplitHead, splitRowState } from './SplitRow';
+import type { SplitCtx } from './splitRows';
 import s from './Prefs.module.css';
 
 /** What a {@link PrefRenderer} is given for the leaf it is rendering. */
@@ -97,12 +99,16 @@ export interface WalkCtx {
   lead?: string | null;
   /** The drop the form is drawing. */
   drop?: PrefDrop | null;
+  /** The form takes drops, so a bar in it keeps every cell on its line to drop beside. */
+  droppable?: boolean;
   /** Paths of the leaves, fields, and groups a failed `enableIf` disables. */
   disabled?: ReadonlySet<string>;
   /** Paths of the leaves, fields, and groups a failed `showIf` hides, in a form that draws them marked. */
   hidden?: ReadonlySet<string>;
   /** Answers the conditions that read an entry of a list or a map, for that entry. */
   entryAt?: EntryAt;
+  /** What the form was given to split values with, and which rows are open. */
+  split?: SplitCtx;
 }
 
 /**
@@ -197,6 +203,13 @@ function LeafRow({ ctx, path: own, pref, at }: { ctx: WalkCtx; path: string; pre
 
   const width = rowWidthOf(pref, ctx.renderers);
   const stacked = width !== 'column';
+  const split = splitRowState(ctx.split, ctx.values, pref, own, path, at !== undefined, renderCtx.mixedAt?.(path, true) === true);
+  const head = (lead: boolean): ReactNode =>
+    split && <SplitHead state={split} onToggle={() => ctx.split!.setOpen(own, !split.open)} lead={lead} />;
+  const members = split?.open && (
+    <SplitBody ctx={renderCtx} state={split} split={ctx.split!}
+      parts={{ renderControl: (of) => renderPrefControl(of, ctx.renderers), isGroup: (of) => rowIsGroup(of, ctx.renderers), width }} />
+  );
 
   // `block` leaves own their chrome (embedded editors with their own
   // header) — no label/tooltip row.
@@ -204,7 +217,9 @@ function LeafRow({ ctx, path: own, pref, at }: { ctx: WalkCtx; path: string; pre
     return (
       <div className={s.rowSlot} data-wide="" {...selectionAttrs(own, ctx, true)}>
         {marked && <HiddenBadge lead />}
+        {head(true)}
         {control}
+        {members}
       </div>
     );
   }
@@ -219,17 +234,18 @@ function LeafRow({ ctx, path: own, pref, at }: { ctx: WalkCtx; path: string; pre
       description={pref.description}
       layout={stacked ? 'block' : 'inline'}
       className={stacked ? `${s.row} ${s.rowStacked}` : s.row}
-      group={rowIsGroup(renderCtx, ctx.renderers)}
+      group={split !== null || rowIsGroup(renderCtx, ctx.renderers)}
       // The owner passes an inherited leaf's value already resolved, so the
       // control keeps drawing it; editing it pins, through `onChange`.
       auto={inherited}
       autoControl="dimmed"
       onAutoChange={toggles ? setAuto : undefined}
-      hint={marked ? <><HiddenBadge />{inheritHint}</> : inheritHint}
+      hint={marked || split ? <>{marked && <HiddenBadge />}{inheritHint}{head(false)}</> : inheritHint}
       disabled={renderCtx.disabled}
     >
       <span className={width === 'filled' ? `${s.rowControl} ${s.rowControlFilled}` : s.rowControl}>{control}</span>
     </PropertyRow>
+    {members}
     </div>
   );
 }

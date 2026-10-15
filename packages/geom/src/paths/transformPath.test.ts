@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { boxToBox, rotateAboutPoint } from '../mat3';
+import { boxToBox, rotateAboutPoint } from '../affine';
 import { rectPath, PathBuilder } from './builder';
 import { boundsOfPath } from './bounds';
 import { transformPath } from './transformPath';

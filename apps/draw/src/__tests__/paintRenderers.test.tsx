@@ -58,7 +58,7 @@ describe("WeaselDraw's data.stroke.paint renderer", () => {
       <ActionsProvider>{WD_RENDERERS['data.stroke.paint'](ctxWith(GRADIENT))}</ActionsProvider>,
     );
     expect(screen.getByRole('radio', { name: 'Linear' })).toBeChecked();
-    expect(screen.getByLabelText('Stop 1 at 0%')).toBeInTheDocument();
+    expect(screen.getByLabelText('Stop 1')).toBeInTheDocument();
   });
 });
 

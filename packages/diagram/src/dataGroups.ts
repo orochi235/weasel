@@ -4,7 +4,7 @@
  */
 import type { GroupInset } from './cluster';
 import type { DataGroup, DiagramSceneData, DiagramSpec, NodeStyle } from './fromData';
-import { ANCHOR_DERIVE_POSE, GROUP_DERIVE_POSE, type DiagramAnchor } from './group';
+import { ANCHOR_DERIVE_POSE, GROUP_DERIVE_POSE, boxAround, type DiagramAnchor } from './group';
 import { nestGroups } from './groupTree';
 
 /** A group with its members settled and its inset worked out. */
@@ -19,6 +19,8 @@ export interface ResolvedGroup {
   inset: GroupInset;
   pad: number;
   title: { width: number; height: number } | null;
+  /** Room for the title across the box, when there is one. */
+  minWidth?: number;
 }
 
 /**
@@ -55,12 +57,40 @@ export function resolveGroups(
     const inset = { top: pad + (title ? title.height + pad / 2 : 0), right: pad, bottom: pad, left: pad };
     return {
       group, direct: g.direct, members: g.members, inset, pad, title,
+      ...(title ? { minWidth: title.width + 2 * pad } : {}),
       ...(g.parent !== undefined ? { parent: g.parent } : {}),
     };
   });
 }
 
 type Rect = { x: number; y: number; width: number; height: number };
+
+/** Each group's box around where its members were placed. */
+export function groupBoxes(
+  groups: readonly ResolvedGroup[],
+  placedAt: ReadonlyMap<string, Rect>,
+): Map<string, Rect> {
+  const byId = new Map(groups.map((g) => [g.group.id, g]));
+  const boxes = new Map<string, Rect>();
+  const boxOf = (id: string): Rect => {
+    const known = boxes.get(id);
+    if (known !== undefined) return known;
+    const g = byId.get(id)!;
+    const rs = g.direct.map((m) => (byId.has(m) ? boxOf(m) : placedAt.get(m)!));
+    const x = Math.min(...rs.map((r) => r.x));
+    const y = Math.min(...rs.map((r) => r.y));
+    const box = boxAround({
+      x,
+      y,
+      width: Math.max(...rs.map((r) => r.x + r.width)) - x,
+      height: Math.max(...rs.map((r) => r.y + r.height)) - y,
+    }, g);
+    boxes.set(id, box);
+    return box;
+  };
+  for (const g of groups) boxOf(g.group.id);
+  return boxes;
+}
 
 /**
  * Each group's box, and its label when it has one, around where its members
@@ -72,35 +102,18 @@ export function groupSpecs(
   placedAt: ReadonlyMap<string, Rect>,
   styleOf: (group: DataGroup) => { style: NodeStyle; text: NonNullable<DiagramSceneData['style']> },
 ): DiagramSpec[] {
-  const byId = new Map(groups.map((g) => [g.group.id, g]));
-  const boxes = new Map<string, Rect>();
-  const boxOf = (id: string): Rect => {
-    const known = boxes.get(id);
-    if (known !== undefined) return known;
-    const g = byId.get(id)!;
-    const rs = g.direct.map((m) => (byId.has(m) ? boxOf(m) : placedAt.get(m)!));
-    const x = Math.min(...rs.map((r) => r.x)) - g.inset.left;
-    const y = Math.min(...rs.map((r) => r.y)) - g.inset.top;
-    const box = {
-      x,
-      y,
-      width: Math.max(...rs.map((r) => r.x + r.width)) + g.inset.right - x,
-      height: Math.max(...rs.map((r) => r.y + r.height)) + g.inset.bottom - y,
-    };
-    boxes.set(id, box);
-    return box;
-  };
+  const boxes = groupBoxes(groups, placedAt);
   const specs: DiagramSpec[] = [];
   for (const g of groups) {
     const { style, text } = styleOf(g.group);
-    const { x, y, width, height } = boxOf(g.group.id);
+    const { x, y, width, height } = boxes.get(g.group.id)!;
     specs.push({
       id: g.group.id as never,
       kind: 'leaf',
       layer: 'main',
       pose: { x, y, width, height },
       data: {
-        diagram: { outline: 'rect', group: { inset: g.inset } },
+        diagram: { outline: 'rect', group: { inset: g.inset, ...(g.minWidth !== undefined ? { minWidth: g.minWidth } : {}) } },
         fill: { paint: { color: style.fill } },
         stroke: {
           paint: { color: style.stroke },

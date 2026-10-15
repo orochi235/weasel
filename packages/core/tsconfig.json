@@ -119,6 +119,7 @@
       "@weasel-js/theme": ["../theme/src/index.ts"],
       "@weasel-js/theme/react": ["../theme/src/react.tsx"],
       "@weasel-js/theme/engine": ["../theme/src/engine.ts"],
+      "@weasel-js/theme/prefs": ["../theme/src/prefs.ts"],
       "@weasel-js/theme/themes/win9x": ["../theme/src/themes/win9x.ts"],
       "@weasel-js/theme/themes/platinum": ["../theme/src/themes/platinum.ts"],
       "@weasel-js/theme/tokens.css": ["../theme/src/generated/tokens.css"],

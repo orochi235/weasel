@@ -1,14 +1,7 @@
-import { useSyncExternalStore, type ReactNode } from 'react';
-import {
-  useActionsRegistry,
-  actionItems,
-  actionShortcuts,
-  type Action,
-  type ActionItem,
-} from '@weasel-js/core';
-import { BarActionButton } from '../Bar/BarAction';
-import { formatShortcut } from '../ToolPalette/formatShortcut';
-import { useActionStates } from './useActionStates';
+import { useMemo, useSyncExternalStore } from 'react';
+import { useActionsRegistry, actionItems, type Action } from '@weasel-js/core';
+import type { PrefAction, PrefGroup } from '@weasel-js/prefs';
+import { Bar } from '../Bar/Bar';
 import s from './ActionBar.module.css';
 
 const EMPTY_LIST: readonly Action[] = Object.freeze([]);
@@ -22,10 +15,11 @@ export interface ActionBarProps {
   orientation?: 'horizontal' | 'vertical';
   /**
    * Per-entry icon overrides, keyed by `ActionItem.key` — the action id, or
-   * `id:variant` for one variant of a parametric action. When an entry is provided
-   * it replaces the action's own `icon` for this bar only.
+   * `id:variant` for one variant of a parametric action. Each names a glyph
+   * in the kit's icon set, as a leaf's `icon` does, and replaces the action's
+   * own `icon` for this bar only. A name the set lacks leaves the action's.
    */
-  icons?: Record<string, ReactNode>;
+  icons?: Record<string, string>;
   /**
    * Per-entry label overrides, keyed like `icons`. Drives both `aria-label`
    * and `title`. When omitted, the entry's own `label` is used.
@@ -35,21 +29,14 @@ export interface ActionBarProps {
   className?: string;
 }
 
-function resolveIcon(item: ActionItem, override: ReactNode | undefined): ReactNode {
-  if (override !== undefined) return override;
-  const i = item.icon;
-  if (typeof i === 'function') return i();
-  return i;
-}
-
-
 /**
  * Generic group-keyed action toolbar. Reads the parent `ActionsRegistry`,
- * filters to actions whose `group` matches `props.group`, and renders one
- * icon button per match — or per variant, for an action that declares
- * `variants`. A button whose action's `enabled` predicate fails greys out and
- * swallows clicks, while the keybinding — if any — still fires through the
- * registry's keydown listener. No keyboard navigation (roving tabindex).
+ * filters to actions whose `group` matches `props.group`, and draws them as a
+ * {@link Bar} of `action` leaves: one icon button per match — or per variant,
+ * for an action that declares `variants`. A button whose action's `enabled`
+ * predicate fails greys out and swallows clicks, while the keybinding — if
+ * any — still fires through the registry's keydown listener. No keyboard
+ * navigation (roving tabindex).
  */
 export function ActionBar(props: ActionBarProps) {
   const { group, orientation = 'horizontal', icons, labels, className } = props;
@@ -59,29 +46,30 @@ export function ActionBar(props: ActionBarProps) {
     registry ? registry.list : () => EMPTY_LIST,
     registry ? registry.list : () => EMPTY_LIST,
   );
-  const items = all.filter((a) => a.group === group).flatMap(actionItems);
-  const shown = useActionStates(items);
-
-  const cls = [s.bar, orientation === 'vertical' && s.vertical, className]
-    .filter(Boolean)
-    .join(' ');
+  const schema = useMemo((): PrefGroup => {
+    const keys = all.filter((a) => a.group === group).flatMap(actionItems).map((item) => item.key);
+    const leaf = (key: string): PrefAction => {
+      const icon = icons?.[key];
+      return {
+        kind: 'action',
+        // Empty, the button reads the registered action's own label.
+        name: labels?.[key] ?? '',
+        description: '',
+        default: undefined,
+        action: key,
+        ...(icon === undefined ? {} : { icon }),
+      };
+    };
+    // An action's key may hold a dot, which a schema key may not, and a key that reads as an index would sort first.
+    return { name: '', children: Object.fromEntries(keys.map((key, i) => [`action${i}`, leaf(key)])) };
+  }, [all, group, icons, labels]);
 
   return (
-    <div className={cls} role="toolbar" aria-label={`${group} actions`}>
-      {items.map((item, i) => (
-        <BarActionButton
-          key={item.key}
-          data-testid={`action-bar-item-${item.key}`}
-          label={labels?.[item.key] ?? item.label}
-          icon={resolveIcon(item, icons?.[item.key])}
-          shortcut={item.action.shortcut ?? formatShortcut(actionShortcuts(item.action, item.params)[0])}
-          disabled={!shown[i]!.enabled}
-          active={shown[i]!.active}
-          // Through the registry, so the action's own guard runs. With no
-          // registry in scope the click does nothing.
-          onPress={() => registry?.trigger(item.action.id, item.params)}
-        />
-      ))}
-    </div>
+    <Bar
+      schema={schema}
+      orientation={orientation}
+      label={`${group} actions`}
+      className={[s.bar, className].filter(Boolean).join(' ')}
+    />
   );
 }

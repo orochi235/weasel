@@ -5,13 +5,18 @@ import { join } from 'node:path';
 import { createServer, type ViteDevServer } from 'vite';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { forge } from './plugin';
+import { fileEventsArrive } from './watchProbe';
 
 /** Under a loaded machine the watcher's first scan alone has taken seconds. */
 const FOLLOWS = { timeout: 15_000, interval: 250 };
 
+/** A real watcher serves nothing in this state, so a failure would say nothing about forge. */
+const NO_EVENTS = 'the OS is reporting no file changes, so no watcher can follow a replaced file';
+
 describe('a forge dev server, when an editor replaces a file whole', () => {
   let root: string;
   let server: ViteDevServer;
+  let events = true;
 
   /** Writes beside `file` and renames over it, so the path gets a new inode, as an editor's atomic save does. */
   const replace = (file: string, text: string) => {
@@ -25,7 +30,9 @@ describe('a forge dev server, when an editor replaces a file whole', () => {
     writeFileSync(join(root, 'a.stories.tsx'), `export default { title: 'ui/A' };\nexport const One = {};\n`);
     writeFileSync(join(root, 'part.css'), `.part { top: 0px; }\n`);
     writeFileSync(join(root, 'sheet.css'), `@import './part.css';\n`);
-    writeFileSync(join(root, 'part.ts'), `export const part = 0;\n`);    server = await createServer({
+    writeFileSync(join(root, 'part.ts'), `export const part = 0;\n`);
+    events = await fileEventsArrive({ waitMs: 3000 });
+    server = await createServer({
       root,
       configFile: false,
       plugins: [forge({ stories: ['*.stories.tsx'] })],
@@ -58,12 +65,14 @@ describe('a forge dev server, when an editor replaces a file whole', () => {
     }
   };
 
-  it('serves each replacement of a stylesheet another one imports, the third as well as the first', async () => {
+  it('serves each replacement of a stylesheet another one imports, the third as well as the first', async ({ skip }) => {
+    skip(!events, NO_EVENTS);
     expect(await served('/sheet.css')).toContain('top: 0px');
     await follows(join(root, 'part.css'), '/sheet.css', ['.part { top: 1px; }\n', '.part { top: 2px; }\n', '.part { top: 3px; }\n']);
   });
 
-  it('serves each replacement of a module', async () => {
+  it('serves each replacement of a module', async ({ skip }) => {
+    skip(!events, NO_EVENTS);
     expect(await served('/part.ts')).toContain('part = 0');
     await follows(join(root, 'part.ts'), '/part.ts', ['export const part = 1;\n', 'export const part = 2;\n', 'export const part = 3;\n']);
   });

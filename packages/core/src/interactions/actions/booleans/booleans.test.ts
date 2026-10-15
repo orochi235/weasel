@@ -10,6 +10,7 @@ import type { Op } from 'core/ops/types';
 import { asNodeId, type NodeId } from 'core/scene/types';
 import { createScene } from 'core/scene/scene';
 import { defaultCommitAdapter } from 'interactions/actions/defaultCommitAdapter';
+import { rootsTree } from 'core/adapters/testing/rootsTree';
 
 function rect(id: string, x: number, y: number, w: number, h: number) {
   return {
@@ -37,6 +38,7 @@ function makeAdapter(nodes: { id: NodeId; path: Path }[]): {
   const idx = new Map(nodes.map((n, i) => [n.id, i]));
   const paths = new Map(nodes.map((n) => [n.id, n.path]));
   const adapter: BooleansAdapter = {
+    ...rootsTree(),
     getSelection: () => nodes.map((n) => n.id),
     getWorldPath: (id) => paths.get(id),
     compareZ: (a, b) => (idx.get(a) ?? 0) - (idx.get(b) ?? 0),
@@ -88,6 +90,7 @@ describe('applyBooleanOp', () => {
     // Invert each delete op and apply — should restore the full object.
     const restored: { id: string }[] = [];
     const restoringAdapter = {
+      ...rootsTree(),
       insertNode: (n: { id: string }) => restored.push(n),
       removeNode: () => { /* ignore — we're only asserting inserts here */ },
       setSelection: () => { /* select-op inverts also fire on undo */ },
@@ -114,6 +117,7 @@ describe('applyBooleanOp', () => {
   it('no-op when selection has only non-path nodes (getWorldPath returns undefined)', () => {
     const nodes = [{ id: 'g1' as NodeId, path: null as any }];
     const adapter: BooleansAdapter = {
+      ...rootsTree(nodes.map((n) => n.id)),
       getSelection: () => nodes.map((n) => n.id),
       getWorldPath: () => undefined,
       compareZ: () => 0,
@@ -224,26 +228,20 @@ describe('applyBooleanOp — operation-specific behavior', () => {
   });
 });
 
-// Z-order-aware harness: adapter exposes `getZOrder` plus the
-// `ReorderAdapter` contract (`getChildren` / `setChildOrder`), so the kit
-// emits a `createMoveToIndexOp` after the inserts to drop results into the
-// topmost source's z-slot.
+// Z-order-aware harness: the adapter's tree lists the paths, so the kit emits
+// a `createMoveToIndexOp` after the inserts to drop results into the topmost
+// source's z-slot.
 function makeZOrderedAdapter(initialOrder: { id: string; path: Path }[]) {
   // A single ordered list under parentId=null. Newly-inserted nodes append
-  // to the end (mirrors a typical flat-array scene). `setChildOrder`
-  // replaces the order outright.
+  // to the end. `setChildOrder` replaces the order outright.
   const order: string[] = initialOrder.map((n) => n.id);
   const paths = new Map(initialOrder.map((n) => [n.id, n.path]));
   let nextId = 1;
-  const adapter: BooleansAdapter & {
-    getChildren(parentId: string | null): string[];
-    setChildOrder(parentId: string | null, ids: string[]): void;
-    getParent(id: string): string | null;
-  } = {
+  const adapter: BooleansAdapter = {
+    getNode: (id) => (order.includes(id) ? { id } : undefined),
     getSelection: () => initialOrder.map((n) => n.id as NodeId),
     getWorldPath: (id) => paths.get(id),
     compareZ: (a, b) => order.indexOf(a) - order.indexOf(b),
-    getZOrder: (id) => ({ parentId: null, index: order.indexOf(id) }),
     createPathNode: (path) => {
       const id = `result_${nextId++}`;
       paths.set(id, path);
@@ -255,7 +253,7 @@ function makeZOrderedAdapter(initialOrder: { id: string; path: Path }[]) {
       if (i >= 0) order.splice(i, 1);
       paths.delete(id);
     },
-    getChildren: (_parentId) => order.slice(),
+    getChildren: (parentId) => (parentId === null ? order.slice() : []),
     setChildOrder: (_parentId, ids) => { order.length = 0; order.push(...ids); },
     getParent: (_id) => null,
     setSelection: () => {},
@@ -266,7 +264,7 @@ function makeZOrderedAdapter(initialOrder: { id: string; path: Path }[]) {
   return { adapter, order };
 }
 
-describe('applyBooleanOp — z-position via getZOrder', () => {
+describe('applyBooleanOp — z-position among root siblings', () => {
   it('places the union result at the topmost source\'s z-slot', () => {
     // Bottom-up order: a, b, c, d. Selection: b and c. Topmost in
     // selection = c at index 2.
@@ -306,14 +304,12 @@ describe('applyBooleanOp — z-position via getZOrder', () => {
     for (let i = 1; i <= 3; i++) expect(h.order[i]).toMatch(/^result_/);
   });
 
-  it('falls back to default insert when adapter omits getZOrder', () => {
-    // Same makeAdapter shape as the earlier tests — no getZOrder. The
-    // result lands wherever insertNode defaults to (end of state.inserted).
+  it('leaves the result where the insert put it when no parent lists the sources', () => {
+    // `makeAdapter`'s tree is empty, so no source has a slot to take.
     const h = makeAdapter([
       rect('a', 0, 0, 10, 10),
       rect('b', 5, 5, 10, 10),
     ]);
-    expect(h.adapter.getZOrder).toBeUndefined();
     const result = applyBooleanOp(h.adapter, 'union');
     expect(result.kind).toBe('applied');
     // Confirm the batch doesn't include a MoveToIndex op (just delete +

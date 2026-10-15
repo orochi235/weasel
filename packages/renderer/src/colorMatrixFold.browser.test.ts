@@ -1,8 +1,9 @@
 /**
  * A solid under a group color matrix is mapped on the CPU, and so is an image
- * under one that only scales channels down; any other image is mapped by the
- * shader. Against real WebGL2, both routes have to paint the same pixel, and
- * nothing mapped on the CPU may also be mapped by the uniform.
+ * or a gradient under one that only scales channels down; any other texel is
+ * mapped by the shader, by the matrix its vertices name among the several a
+ * run draws under. Against real WebGL2, every route has to paint the same
+ * pixel, and nothing mapped on the CPU may also be mapped by a uniform.
  */
 import { describe, it, expect, afterEach } from 'vitest';
 import { WeaselRenderer } from './WeaselRenderer';
@@ -29,12 +30,21 @@ afterEach(() => {
   renderer = undefined;
 });
 
+/** `drawElements` calls the last `paint` made. */
+let draws = 0;
+
 function paint(commands: DrawCommand[]): (x: number, y: number) => number[] {
   const canvas = document.createElement('canvas');
   canvas.width = SIZE;
   canvas.height = SIZE;
   const gl = canvas.getContext('webgl2', { stencil: true })!;
   renderer = new WeaselRenderer({ gl, width: SIZE, height: SIZE, dpr: 1 });
+  draws = 0;
+  const drawElements = gl.drawElements.bind(gl);
+  gl.drawElements = (...args: Parameters<typeof drawElements>): void => {
+    draws++;
+    drawElements(...args);
+  };
   renderer.render(commands);
   const px = new Uint8Array(SIZE * SIZE * 4);
   gl.readPixels(0, 0, SIZE, SIZE, gl.RGBA, gl.UNSIGNED_BYTE, px);
@@ -102,6 +112,95 @@ describe('a group color matrix, in a real context', () => {
     // Alpha 128/255 by the matrix's half and the group's half; color premultiplied by it.
     const a = (128 / 255) * 0.25;
     expectNear(tinted, [200 * 0.5 * a, 100 * 0.25 * a, 50 * a, 255 * a]);
+  });
+
+  it('paints images under two matrices and under none in one draw, each by its own', async () => {
+    const image = await orangeBitmap();
+    const img = (x: number): DrawCommand => ({ kind: 'image', image, x, y: 0, w: 2, h: SIZE });
+    // Lifts blue by a half and leaves the rest: a second matrix no tint expresses.
+    const other = [
+      1, 0, 0, 0, 0,
+      0, 1, 0, 0, 0,
+      0, 0, 1, 0, 0.5,
+      0, 0, 0, 1, 0,
+    ];
+    const at = paint([
+      img(0),
+      { kind: 'group', colorMatrix: MATRIX, children: [img(2)] },
+      { kind: 'group', colorMatrix: other, children: [img(4)] },
+      img(6),
+    ]);
+    expect(draws).toBe(1);
+    expectNear(at(0, 4), [...ORANGE, 255]);
+    expectNear(at(2, 4), [...MAPPED, 255]);
+    expectNear(at(4, 4), [ORANGE[0], ORANGE[1], Math.round(ORANGE[2] + 0.5 * 255), 255]);
+    expectNear(at(6, 4), [...ORANGE, 255]);
+  });
+
+  it('carries group alpha on an image under a matrix as the uniform did', async () => {
+    const image = await orangeBitmap();
+    const commands: DrawCommand[] = [{
+      kind: 'group', colorMatrix: MATRIX, alpha: 0.5,
+      children: [{ kind: 'image', image, x: 0, y: 0, w: SIZE, h: SIZE, opacity: 0.5 }],
+    }];
+    const at = paint(commands);
+    // Premultiplied by a quarter: the group's half and the image's.
+    expectNear(at(4, 4), [...MAPPED.map((c) => c / 4), 64]);
+  });
+
+  describe('a gradient under a matrix', () => {
+    /** One color end to end, so any pixel of it reads as that color mapped. */
+    const flat = (x: number, opacity?: number): DrawCommand => ({
+      kind: 'path',
+      path: { kind: 'rect', x, y: 0, width: 4, height: SIZE },
+      fill: { paint: {
+        kind: 'linear-gradient', from: { x: 0, y: 0 }, to: { x: SIZE, y: 0 }, opacity,
+        stops: [
+          { offset: 0, color: `rgb(${ORANGE.join(',')})` },
+          { offset: 1, color: `rgb(${ORANGE.join(',')})` },
+        ],
+      } },
+    });
+
+    it('is mapped by the shader in the run with its neighbors, and faded once', () => {
+      const at = paint([
+        solid(0),
+        { kind: 'group', colorMatrix: MATRIX, alpha: 0.5, children: [flat(4, 0.5)] },
+      ]);
+      expect(draws).toBe(1);
+      expectNear(at(1, 4), [...ORANGE, 255]);
+      expectNear(at(5, 4), [...MAPPED.map((c) => c / 4), 64]);
+    });
+
+    it('paints the pixel it does with a run of its own', () => {
+      const commands: DrawCommand[] = [
+        solid(0),
+        { kind: 'group', colorMatrix: MATRIX, alpha: 0.5, children: [flat(4, 0.5)] },
+      ];
+      const shared = paint(commands)(5, 4);
+      renderer!.dispose();
+      colorFolding.enabled = false;
+      let alone: number[];
+      try {
+        alone = paint(commands)(5, 4);
+        expect(draws).toBe(2);
+      } finally {
+        colorFolding.enabled = true;
+      }
+      expectNear(shared, alone);
+    });
+
+    it('takes a matrix that only scales channels down as a tint, as the shader would', () => {
+      const scaled = [
+        0.5, 0, 0, 0, 0,
+        0, 0.25, 0, 0, 0,
+        0, 0, 1, 0, 0,
+        0, 0, 0, 0.5, 0,
+      ];
+      const at = paint([{ kind: 'group', colorMatrix: scaled, alpha: 0.5, children: [flat(0)] }]);
+      const a = 0.25;
+      expectNear(at(1, 4), [ORANGE[0] * 0.5 * a, ORANGE[1] * 0.25 * a, ORANGE[2] * a, 255 * a]);
+    });
   });
 
   it('fades a mapped solid by the group alpha once', () => {

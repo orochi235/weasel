@@ -107,9 +107,6 @@
     "lint": "biome check . && tsx scripts/check-class-prefix.ts && tsx scripts/check-design-tokens.ts",
     "lint:fix": "biome check --write .",
     "format": "biome format --write .",
-    "docs:dev": "vitepress dev docs",
-    "docs:build": "vitepress build docs",
-    "docs:preview": "vitepress preview docs",
     "dev:schema": "LABKIT_EXAMPLE=schema-lab vite",
     "dev:annotate": "LABKIT_EXAMPLE=annotate-lab vite",
     "dev:3d": "LABKIT_EXAMPLE=3d-lab vite"

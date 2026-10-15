@@ -9,12 +9,13 @@ export const DEMOS_ID = '__demos';
 const PAGE_IDS = new Set([GET_STARTED_ID, WHATS_NEW_ID, RELEASES_ID]);
 
 /**
- * The page a URL hash names: a built-in page, a demo, or — for an empty hash
- * and for one that names nothing — the front page.
+ * The page a URL hash names: a built-in page, a demo or a package page — which
+ * `isPage` answers for — or, for an empty hash and for one that names nothing,
+ * the front page.
  */
-export function routeOf(hash: string, isDemo: (id: string) => boolean): string {
+export function routeOf(hash: string, isPage: (id: string) => boolean): string {
   const id = hash.replace(/^#/, '');
-  return PAGE_IDS.has(id) || isDemo(id) ? id : FRONT_ID;
+  return PAGE_IDS.has(id) || isPage(id) ? id : FRONT_ID;
 }
 
 /** True when the URL has no hash, which is the front page's address. */

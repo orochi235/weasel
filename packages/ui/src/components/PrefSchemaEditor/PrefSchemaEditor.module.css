@@ -123,13 +123,14 @@
   grid-row: 4;
   block-size: var(--shelf-h);
   display: flex;
-  gap: var(--wzl-space-6);
+  gap: var(--wzl-space-3);
   min-height: 0;
 }
 /* The structure pane draws its lists into the slot, and they sit in the shelf's row as the export does. */
 .shelfSlot { display: contents; }
-.shelfPane { flex: 1 1 0; min-width: 0; }
-.export { flex: 2 1 0; display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+/* Each list stands at the width its handle was dragged to and gives way in a narrow shelf; the export takes the rest. */
+.shelfPane { flex: 0 1 var(--shelf-pane-w); min-width: 96px; }
+.export { flex: 1 1 0; display: flex; flex-direction: column; min-width: 200px; min-height: 0; }
 .export .exportBody { flex: 1; min-height: 0; }
 .exportHead {
   display: flex;

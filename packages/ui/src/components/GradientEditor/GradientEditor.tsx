@@ -1,22 +1,17 @@
-import { type ReactElement, type ReactNode } from 'react';
+import { type ReactElement } from 'react';
 import {
   isGradientPaint,
-  sampleGradientStops,
   switchGradientKind,
   useGradientKinds,
   usePaintKind,
   type ColorSpace,
   type Paint,
-  type GradStop,
-  type GradientPaint,
   type PaintKind,
 } from '@weasel-js/core';
 import { nativeSvgKind, nativeSvgSpace } from '@weasel-js/svg';
-import { Slider, type Thumb } from '../Slider';
-import { ColorField } from '../ColorField';
 import { MeshEditor, isMeshPaint } from '../MeshEditor';
 import { ToggleBar, type ToggleBarItem } from '../ToggleBar';
-import { paintGradientTrack } from '../../paintGradientTrack';
+import { GradientStops } from './GradientStops';
 import s from './GradientEditor.module.css';
 
 const SPACES: readonly ToggleBarItem<ColorSpace>[] = [
@@ -24,9 +19,6 @@ const SPACES: readonly ToggleBarItem<ColorSpace>[] = [
   { value: 'oklab', label: 'OKLab' },
   { value: 'oklch', label: 'OKLCh' },
 ];
-
-/** Fewer than two stops is not a gradient any renderer can ramp between. */
-const MIN_STOPS = 2;
 
 /**
  * Props for {@link GradientEditor}. `onInput` fires throughout a gesture and
@@ -61,16 +53,37 @@ export interface GradientEditorProps {
    * back. Default false.
    */
   svg?: boolean;
+  /**
+   * Which stop the stop editor is on, as an index into `value.stops`. Omit it
+   * and the editor keeps its own selection, starting on the first stop along
+   * the gradient. Pass it to share the selection with something else that
+   * shows the stops, such as handles on the artwork.
+   */
+  selectedStop?: number;
+  /** The reader picked a stop, or an edit moved the selection: a stop was
+   *  added, or the selected one removed. */
+  onSelectedStopChange?: (index: number) => void;
+  /** Draw the editor dimmed, out of the tab order, and taking no input. */
+  disabled?: boolean;
   className?: string;
 }
 
-type StopThumb = Thumb & { color: string };
+/** Sets `inert` on the node: React 18 does not know the attribute. */
+const inertWhen = (off: boolean) => (el: HTMLElement | null): void => {
+  el?.toggleAttribute('inert', off);
+};
 
 /**
- * Editor for a gradient's kind and colors: the stop list of a linear, radial
- * or conic gradient, a mesh's corner colors, or a registered kind's own
+ * Editor for a gradient's kind and colors: the stops of a linear, radial or
+ * conic gradient, a mesh's corner colors, or a registered kind's own
  * `Editor`. Switching kind goes through `switchGradientKind`, so the colors
  * carry across.
+ *
+ * Stops are handles on the track, each drawn in its own color. One is
+ * selected at a time — by a press, or by focus — and a single row under the
+ * track edits it: color, opacity, position, and removal. A press on bare
+ * track adds a stop there; arrow keys move a focused handle, and Delete
+ * removes it.
  *
  * Geometry (`from`/`to`, `center`, `radius`, `angle`) is not edited here — on
  * a canvas that belongs on the artwork, via `<GradientHandles>`.
@@ -80,7 +93,7 @@ type StopThumb = Thumb & { color: string };
  * the pointer.
  */
 export function GradientEditor(props: GradientEditorProps): ReactElement {
-  const { value, onInput, onChange, kindSwitch = true, spaceSwitch = true, svg = false, className } = props;
+  const { value, onInput, onChange, kindSwitch = true, spaceSwitch = true, svg = false, disabled = false, className } = props;
   const kind: PaintKind = value.kind ?? 'solid';
   const space: ColorSpace = (value as { interpolate?: ColorSpace }).interpolate ?? 'rgb';
 
@@ -96,18 +109,25 @@ export function GradientEditor(props: GradientEditorProps): ReactElement {
   };
 
   return (
-    <div className={[s.root, className].filter(Boolean).join(' ')}>
-      {kindSwitch && (
-        <ToggleBar<PaintKind>
-          items={kinds}
-          value={kind}
-          size="sm"
-          ariaLabel="Gradient kind"
-          onChange={(next) => next && switchKind(next)}
-        />
-      )}
+    <div
+      className={[s.root, className].filter(Boolean).join(' ')}
+      role={disabled ? 'group' : undefined}
+      aria-disabled={disabled || undefined}
+      data-disabled={disabled ? '' : undefined}
+    >
+      <div className={s.body} ref={inertWhen(disabled)}>
+        {kindSwitch && (
+          <ToggleBar<PaintKind>
+            items={kinds}
+            value={kind}
+            size="sm"
+            ariaLabel="Gradient kind"
+            onChange={(next) => next && switchKind(next)}
+          />
+        )}
 
-      {renderBody()}
+        {renderBody()}
+      </div>
     </div>
   );
 
@@ -127,79 +147,21 @@ export function GradientEditor(props: GradientEditorProps): ReactElement {
       return <><Editor value={value} onInput={onInput} onChange={onChange} />{spaceBar}</>;
     }
     if (isGradientPaint(value)) {
-      return <StopsBody value={value} spaceBar={spaceBar} onInput={onInput} onChange={onChange} />;
+      return (
+        <GradientStops
+          value={value}
+          spaceBar={spaceBar}
+          selectedStop={props.selectedStop}
+          onSelectedStopChange={props.onSelectedStopChange}
+          disabled={disabled}
+          onInput={onInput}
+          onChange={onChange}
+        />
+      );
     }
     if (isMeshPaint(value)) {
       return <><MeshEditor value={value} spaceSwitch={false} onInput={onInput} onChange={onChange} />{spaceBar}</>;
     }
     return <div className={s.noEditor}>{entry?.label ?? kind}: no editor</div>;
   }
-}
-
-/** The stop slider and swatch row of a linear, radial or conic gradient. */
-function StopsBody(props: {
-  value: GradientPaint;
-  spaceBar: ReactNode;
-  onInput?: (next: Paint) => void;
-  onChange: (next: Paint) => void;
-}): ReactElement {
-  const { value, spaceBar, onInput, onChange } = props;
-  const stops = value.stops;
-  const space = value.interpolate ?? 'rgb';
-
-  const withStops = (next: GradStop[]): GradientPaint => ({ ...value, stops: next });
-
-  const thumbs: StopThumb[] = stops.map((stop) => ({ value: stop.offset, color: stop.color }));
-
-  const applyThumbs = (next: StopThumb[]): GradStop[] =>
-    next.map((t) => ({ offset: t.value, color: t.color }));
-
-  const setStopColor = (index: number, color: string): GradStop[] =>
-    stops.map((stop, i) => (i === index ? { ...stop, color } : stop));
-
-  // Sorted view for the swatch row, carrying each stop's real index so a
-  // recolor writes back to the right entry.
-  const ordered = stops
-    .map((stop, index) => ({ stop, index }))
-    .sort((a, b) => a.stop.offset - b.stop.offset);
-
-  return (
-    <>
-      <Slider<StopThumb>
-        min={0}
-        max={1}
-        step={0.005}
-        constraint="free"
-        thumbs={thumbs}
-        ariaLabel="Gradient stops"
-        readoutPlacement="none"
-        onInput={(next) => onInput?.(withStops(applyThumbs(next)))}
-        onChange={(next) => onChange(withStops(applyThumbs(next)))}
-        onAddThumb={(at) => ({ value: at, color: sampleGradientStops(stops, at, space) })}
-        onRemoveThumb={() => stops.length > MIN_STOPS}
-        renderTrack={paintGradientTrack({
-          gradient: (t) => sampleGradientStops(stops, t, space),
-          // The track lerps between samples in sRGB whatever the gradient does,
-          // so a hue arc needs more of them to not read as a straight line.
-          samples: space === 'rgb' ? 32 : 64,
-        })}
-      />
-
-      {spaceBar}
-
-      <div className={s.swatches}>
-        {ordered.map(({ stop, index }, place) => (
-          <ColorField
-            key={index}
-            value={stop.color}
-            alpha
-            aria-label={`Stop ${place + 1} at ${Math.round(stop.offset * 100)}%`}
-            className={s.swatch}
-            onInput={(hex) => onInput?.(withStops(setStopColor(index, hex)))}
-            onChange={(hex) => onChange(withStops(setStopColor(index, hex)))}
-          />
-        ))}
-      </div>
-    </>
-  );
 }

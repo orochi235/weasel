@@ -14,9 +14,7 @@ type Story = StoryObj<typeof ToolOptionsBar>;
 
 // The app reserves this row permanently — this is what it looks like
 // with no active tool contributing controls.
-export const Empty: Story = {
-  render: () => <ToolOptionsBar />,
-};
+export const Empty: Story = {};
 
 const STYLE_TOGGLES = [
   { key: 'bold', label: 'B', ariaLabel: 'Bold' },
@@ -142,10 +140,11 @@ export const FromASchema: Story = {
 // A path whose sources disagree draws as each control's own indeterminate
 // state — what a caret range spanning two differently styled runs shows.
 export const MixedValues: Story = {
-  render: () => (
+  args: { label: 'Text' },
+  render: (args) => (
     <div style={{ width: 640 }}>
       <ToolOptionsBar
-        label="Text"
+        {...args}
         schema={TEXT_OPTIONS}
         values={{ bold: true, align: 'left' }}
         mixed={new Set(['fontSize', 'italic', 'color'])}

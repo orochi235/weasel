@@ -11,6 +11,7 @@ import { LabFooterRegion, LabHeaderRegion, labContributions } from '../chrome/La
 import { ClockRegistryContext } from '../clock/clockRegistry';
 import { useLabClocks } from '../clock/useLabClocks';
 import { PersistenceContext } from '../state/Persistence';
+import type { UndockedPanels } from '../state/undock';
 import { useOpenOnce, useWarnIgnoredChange } from '../state/useOpenOnce';
 import { interstellarTheme } from '../theme/interstellar';
 import { Trial } from '../trial/Trial';
@@ -35,6 +36,7 @@ import {
   useLabPresentation,
 } from './presentation';
 import { useStoreCommands } from './storeCommands';
+import { UnreadableRecords } from './UnreadableRecords';
 import { useFocusPick } from './useFocusPick';
 import { type PanelDescriptor, type TrialLayout, Workspace } from './Workspace';
 
@@ -108,6 +110,14 @@ export function Lab(props: LabProps) {
   return <LabRuntime {...props} opened={opened} start={start} />;
 }
 
+function panelsOf(undocked: UndockedPanels): PanelDescriptor[] {
+  return Object.entries(undocked).map(([key, panel]) => ({
+    key,
+    title: panel.sectionId,
+    as: panel.as,
+  }));
+}
+
 let seedWarned = false;
 function warnSeedIgnored(): void {
   if (seedWarned) return;
@@ -174,15 +184,7 @@ function LabRuntime({
   const options = { transport, messages };
   const presentation = useLabPresentation(start, focusedTrialId, labBody, clocks, options);
   const presenting = presentation.active;
-  const workspacePanels = useMemo<PanelDescriptor[]>(
-    () =>
-      Object.entries(undockedPanels).map(([key, panel]) => ({
-        key,
-        title: panel.sectionId,
-        as: panel.as,
-      })),
-    [undockedPanels],
-  );
+  const workspacePanels = useMemo(() => panelsOf(undockedPanels), [undockedPanels]);
   const resolvedMode = useResolvedColorMode(modeValue);
 
   // Tools and lab contributions share one id namespace, so they merge once
@@ -294,6 +296,7 @@ function LabRuntime({
                         )
                       }
                     >
+                      <UnreadableRecords />
                       <PanelHostContext.Provider value={panelHostsRef.current}>
                         <LabSurface bodyRef={setLabBody}>
                           {hasPaneChrome ? (

@@ -3,7 +3,6 @@
  * `getPose` / `setPose` return / write **local** coordinates (relative to
  * parent); world composition is the renderer's job via `composeWorldPose`.
  */
-import { useMemo } from 'react';
 import type {
   AreaSelectAdapter,
   ClipboardSnapshot,
@@ -124,14 +123,6 @@ export interface SceneToAdapterOptions<TData, TLayer extends string, TPose> {
   selection?: SceneAdapterSelection;
   /** How to read and rewrite this scene's poses. Default `AUTO_POSE_DESCRIPTOR`. */
   poseDescriptor?: PoseDescriptor<TPose>;
-  /** Layout strategies keyed by container node id, for containers whose
-   *  scene node declares none (`ContainerNode.layout` wins). `move` runs its
-   *  layout-aware pass on them; for inserts, deletes and resizes to reach
-   *  them too, install them with `useLayoutArrivals`. Pass either a static
-   *  map, or a `getLayout(id)` function for dynamic resolution. */
-  layouts?:
-    | Record<string, LayoutStrategy<TPose>>
-    | ((containerId: string) => LayoutStrategy<TPose> | null);
 }
 
 /** Derive the adapter for a scene. Reads go straight to the scene; writes are
@@ -224,13 +215,7 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
     },
     getLayers: () => scene.layers.map((l) => ({ id: l.id, visible: l.visible, parallax: l.parallax })),
     subscribeLayers: (listener) => scene.subscribe(listener),
-    getLayout(id) {
-      const declared = scene.layoutOf(asNodeId(id));
-      if (declared !== null || !options.layouts) return declared;
-      return typeof options.layouts === 'function'
-        ? options.layouts(id)
-        : options.layouts[id] ?? null;
-    },
+    getLayout: (id) => scene.layoutOf(asNodeId(id)),
     // With a label the ops are one batch checkpoint; without one they are
     // applied transiently, with no checkpoint (the AreaSelectAdapter contract).
     applyOps(ops: Op[], label?: string) {
@@ -304,23 +289,4 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
   };
 
   return adapter;
-}
-
-/**
- * React-hook wrapper around `sceneToAdapter`. Memoizes on every option, so
- * the adapter keeps its identity across renders unless one of them changes.
- */
-export function useSceneAdapter<TData, TLayer extends string, TPose>(
-  scene: Scene<TData, TLayer, TPose>,
-  options: SceneToAdapterOptions<TData, TLayer, TPose> = {},
-): SceneCanvasAdapter<TData, TLayer, TPose> {
-  const {
-    selection, commitInsert, insertLayer, layouts, poseDescriptor,
-  } = options;
-  return useMemo(
-    () => sceneToAdapter(scene, {
-      selection, commitInsert, insertLayer, layouts, poseDescriptor,
-    }),
-    [scene, selection, commitInsert, insertLayer, layouts, poseDescriptor],
-  );
 }

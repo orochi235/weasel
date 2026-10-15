@@ -256,7 +256,7 @@ describe('PrefsForm — union-valued leaves', () => {
       },
     });
     openPaint('Fill');
-    const stop = screen.getByLabelText('Stop 1 at 0%');
+    const stop = screen.getByLabelText('Stop 1');
     fireEvent.input(stop, { target: { value: '#112233' } });
     fireEvent.blur(stop);
     expect(onChange).toHaveBeenCalledWith('appearance.fill', expect.objectContaining({

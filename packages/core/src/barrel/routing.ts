@@ -137,7 +137,6 @@ export type {
   GestureFrames,
   SnapStrategy,
   ActionBehavior,
-  BehaviorMoveResult,
   BehaviorResult,
   GroupTransform,
   MoveBehavior,

@@ -9,6 +9,7 @@ import type { PrefCondition } from './condition';
 import type { PrefSection } from './groups';
 import type { PrefLabel, PrefSeparator } from './label';
 import type { PrefList } from './list';
+import type { PrefLocus } from './locus';
 import type { PrefMap } from './map';
 import type { PrefUnion } from './union';
 import type { PrefNumberUnit } from './unit';
@@ -56,6 +57,11 @@ export interface PrefBase<K extends string, Value> {
    *  (weasel-ui `PrefsForm` honors this for leaves whose control brings
    *  its own chrome). */
   block?: boolean;
+  /** Draw the control in the heading of the group or section holding the
+   *  leaf, in place of a row of its own. Only a built-in `boolean` or `enum`
+   *  fits there (`prefFitsHeading`); any other leaf stays a row. Honored by
+   *  weasel-ui `PrefsForm` and labkit's `ControlPanel`. */
+  heading?: boolean;
   /** Glyph naming this leaf in a host UI's icon set (weasel-ui resolves it
    *  against `ICON_PATHS`). A plain string because this package ships no
    *  icon set and cannot depend on one. Read where a leaf's `name` has nowhere to go — a
@@ -82,6 +88,19 @@ export interface PrefBase<K extends string, Value> {
    *  schema editor shows such a leaf as one closed thing and prints the name
    *  in place of its literal. */
   type?: string;
+  /** The `enum` leaves this one's value may be split by, each by the full
+   *  path its value is read at: the value may then be held once per option
+   *  of any of them (a {@link PrefLocus}), which the store folds into the one
+   *  value read. Whether it is split is the stored value's to say. The
+   *  order is the order a value split by several is stored in, the first
+   *  outermost. Each must be a plain `enum`: not `clearable`, with no
+   *  `encoding`, and not split itself. */
+  splitBy?: readonly string[];
+  /** What the leaf holds while nothing is stored for it, where that is a
+   *  split value: a default that differs by option. Split only by entries of
+   *  `splitBy`. `default` stays what a member it leaves out reads as, and
+   *  what the leaf's value type is read from. */
+  defaultLocus?: PrefLocus;
 }
 
 /** How a schema-driven UI should present a number pref. */

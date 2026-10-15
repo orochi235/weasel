@@ -10,7 +10,9 @@ import { anchorOffset } from './textAnchor';
 import { placeNode } from './placeBox';
 import { readLength } from './lengths';
 import { fontSizeOf } from './fontSize';
-import { DEFAULT_LINE_HEIGHT, joinLines, LineTracker, warnUnreadPositions } from './tspanLines';
+import { DEFAULT_LINE_HEIGHT, joinLines, LineTracker, statesLines, warnUnreadPositions } from './tspanLines';
+import { placeTspanRun } from './glyphShifts';
+import { collapseRunWhitespace, preservesSpace } from './textWhitespace';
 import { mapFillPaint } from './fillPaint';
 import { fillThroughMatrix } from './paintThroughMatrix';
 import { scaleRuns, scaleStroke, scaleTextStyle } from './metricScale';
@@ -20,61 +22,6 @@ import {
 } from './cascade';
 import { readProperty } from './properties';
 import { readStroke, isNonScalingStroke, ownStrokeStyle, coreStroke } from './readPaint';
-
-const XML_NS = 'http://www.w3.org/XML/1998/namespace';
-
-/**
- * Does `xml:space="preserve"` apply to this element? The attribute inherits,
- * so an ancestor can set it.
- *
- * weasel's own `<text>` output carries it, because the runs model stores real
- * line breaks and SVG's default whitespace handling would collapse them away.
- */
-function preservesSpace(el: Element): boolean {
-  for (let e: Element | null = el; e; e = e.parentElement) {
-    const v = e.getAttributeNS(XML_NS, 'space') ?? e.getAttribute('xml:space');
-    if (v === 'preserve') return true;
-    if (v === 'default') return false;
-  }
-  return false;
-}
-
-/**
- * Apply SVG's default whitespace handling to a `<text>` element's runs, in
- * place: newlines dropped, tabs folded to spaces, runs of spaces collapsed to
- * one, and leading / trailing space stripped across the element as a whole.
- *
- * Without this, importing any pretty-printed SVG drags the source file's
- * indentation into the document text — and, because the height estimate
- * counts newlines, reports a one-line label as four lines tall.
- */
-function collapseRunWhitespace(runs: StyledRun[]): void {
-  let atStart = true;
-  let lastWasSpace = false;
-  for (const run of runs) {
-    let out = '';
-    for (const ch of run.text.replace(/\n/g, '').replace(/[\t\r]/g, ' ')) {
-      if (ch === ' ') {
-        if (atStart || lastWasSpace) continue;
-        out += ' ';
-        lastWasSpace = true;
-        continue;
-      }
-      out += ch;
-      lastWasSpace = false;
-      atStart = false;
-    }
-    run.text = out;
-  }
-  for (let i = runs.length - 1; i >= 0; i--) {
-    if (runs[i].text === '') continue;
-    if (runs[i].text.endsWith(' ')) runs[i].text = runs[i].text.slice(0, -1);
-    break;
-  }
-  for (let i = runs.length - 1; i >= 0; i--) {
-    if (runs[i].text === '') runs.splice(i, 1);
-  }
-}
 
 /** Average glyph advance as a fraction of the em. Sans-serif Latin runs
  *  0.5–0.6; erring wide is the safer miss. */
@@ -173,33 +120,8 @@ export function parseTextElement(
   // naming its own still wins, as the SVG cascade says.
   const inheritedShift = ownValue(el, 'baseline-shift', onWarn) ?? {};
 
-  // Walk children: text nodes become plain run text; <tspan> elements
-  // become StyledRuns with their attribute overrides applied.
-  const runLines: StyledRun[][] = [[]];
   const tracker = new LineTracker(el, onWarn);
-  const push = (run: StyledRun): void => { runLines[runLines.length - 1].push(run); };
-  for (let i = 0; i < el.childNodes.length; i++) {
-    const child = el.childNodes[i];
-    if (child.nodeType === 3 /* TEXT_NODE */) {
-      const t = child.textContent ?? '';
-      if (!t) continue;
-      push({ text: t, ...inheritedShift });
-    } else if (child.nodeType === 1 /* ELEMENT_NODE */) {
-      const sp = child as Element;
-      if (sp.tagName.toLowerCase() !== 'tspan') {
-        onWarn(`<text> child <${sp.tagName}> not supported; flattening text content`);
-        const t = sp.textContent ?? '';
-        if (t) push({ text: t, ...inheritedShift });
-        continue;
-      }
-      warnUnreadPositions(sp, onWarn);
-      const afterText = runLines.some((line) => line.some((r) => r.text.trim() !== ''));
-      if (tracker.startsLine(sp, afterText)) runLines.push([]);
-      push(readTspanRun(sp, gradients, leafStyle, onWarn));
-    }
-  }
-  if (!preservesSpace(el)) for (const line of runLines) collapseRunWhitespace(line);
-  const runs = joinLines(runLines);
+  const { runs, lead } = readRuns(el, tracker, inheritedShift, textStyle.letterSpacing, gradients, leafStyle, onWarn);
   const plain = runs.map((r) => r.text).join('');
   const pitched = tracker.lineHeight(fontSize);
   if (pitched !== undefined) textStyle.lineHeight = pitched;
@@ -216,7 +138,7 @@ export function parseTextElement(
   const opacity = ownValue(el, 'opacity');
   const node: SvgTextNode = {
     kind: 'text',
-    x: ax - anchorOffset(textStyle, width, plain),
+    x: ax + lead - anchorOffset(textStyle, width, plain),
     y: topY,
     width,
     height,
@@ -253,6 +175,52 @@ export function parseTextElement(
   if (opacity != null) node.opacity = opacity;
   placeTextNode(node, multiply(ctm, localTransform), onWarn);
   return node;
+}
+
+/**
+ * The element's runs, with a `\n` wherever a `<tspan>` opens a new line:
+ * text nodes become plain runs, and `<tspan>` elements become runs carrying
+ * their attribute overrides.
+ */
+function readRuns(
+  el: Element,
+  tracker: LineTracker,
+  inheritedShift: Pick<StyledRun, 'script' | 'baselineShift'>,
+  letterSpacing: TextStyle['letterSpacing'],
+  gradients: GradientTable,
+  leafStyle: StyleContext,
+  onWarn: (m: string) => void,
+): { runs: StyledRun[]; lead: number } {
+  const runLines: StyledRun[][] = [[]];
+  let leading = 0;
+  let lead = 0;
+  const push = (run: StyledRun): void => { runLines[runLines.length - 1].push(run); };
+  for (let i = 0; i < el.childNodes.length; i++) {
+    const child = el.childNodes[i];
+    if (child.nodeType === 3 /* TEXT_NODE */) {
+      const t = child.textContent ?? '';
+      if (!t) continue;
+      push({ text: t, ...inheritedShift });
+    } else if (child.nodeType === 1 /* ELEMENT_NODE */) {
+      const sp = child as Element;
+      if (sp.tagName.toLowerCase() !== 'tspan') {
+        onWarn(`<text> child <${sp.tagName}> not supported; flattening text content`);
+        const t = sp.textContent ?? '';
+        if (t) push({ text: t, ...inheritedShift });
+        continue;
+      }
+      warnUnreadPositions(sp, onWarn);
+      const afterText = runLines.some((line) => line.some((r) => r.text.trim() !== ''));
+      const lines = tracker.startsLine(sp, afterText);
+      // A tspan opening the text steps down from nothing, so it breaks no
+      // line unless it says how many it stepped.
+      if (runLines.length === 1 && runLines[0].length === 0 && statesLines(sp)) leading = lines;
+      else for (let n = 0; n < lines; n++) runLines.push([]);
+      lead += placeTspanRun(sp, readTspanRun(sp, gradients, leafStyle, onWarn), runLines, letterSpacing, onWarn);
+    }
+  }
+  if (!preservesSpace(el)) for (const line of runLines) collapseRunWhitespace(line);
+  return { runs: joinLines(runLines, leading), lead };
 }
 
 function readTspanRun(

@@ -23,28 +23,28 @@
     "longestFunction": 165
   },
   "packages/core/src/canvas/Canvas.tsx": {
-    "lines": 742,
-    "longestFunction": 443
+    "lines": 737,
+    "longestFunction": 438
   },
   "packages/core/src/canvas/CanvasView.tsx": {
-    "lines": 412,
-    "longestFunction": 267
+    "lines": 409,
+    "longestFunction": 263
   },
   "packages/core/src/canvas/SceneCanvas.tsx": {
-    "lines": 510,
-    "longestFunction": 388
+    "lines": 505,
+    "longestFunction": 383
   },
   "packages/core/src/canvas/SceneCanvas/GestureDispatcherMounter.tsx": {
     "longestFunction": 253
   },
   "packages/core/src/canvas/SceneCanvas/StandardActionsRegistrar.tsx": {
-    "longestFunction": 216
+    "longestFunction": 187
   },
   "packages/core/src/canvas/SceneCanvas/defaultNodeProperties.ts": {
-    "longestFunction": 134
+    "longestFunction": 125
   },
   "packages/core/src/canvas/SceneCanvas/props.ts": {
-    "lines": 673
+    "lines": 668
   },
   "packages/core/src/canvas/SceneCanvas/useDispatcherOverlayLayer.ts": {
     "longestFunction": 198
@@ -56,10 +56,10 @@
     "longestFunction": 138
   },
   "packages/core/src/canvas/pickWalk.ts": {
-    "lines": 457
+    "lines": 444
   },
   "packages/core/src/canvas/sceneAdapter.ts": {
-    "longestFunction": 162
+    "longestFunction": 156
   },
   "packages/core/src/core/scene/kitOps.ts": {
     "longestFunction": 236
@@ -71,7 +71,7 @@
     "longestFunction": 164
   },
   "packages/core/src/core/scene/types.ts": {
-    "lines": 669
+    "lines": 617
   },
   "packages/core/src/debug/createDebugOverlayLayer.ts": {
     "lines": 440
@@ -86,16 +86,10 @@
     "lines": 749
   },
   "packages/core/src/features/text/useSceneTextEdit.ts": {
-    "longestFunction": 166
-  },
-  "packages/core/src/interactions/actions/defaults/viewportZoom.ts": {
-    "longestFunction": 127
+    "longestFunction": 148
   },
   "packages/core/src/interactions/actions/depSchema.ts": {
     "lines": 580
-  },
-  "packages/core/src/interactions/actions/edit-anchors/action.ts": {
-    "longestFunction": 131
   },
   "packages/core/src/tools/builtin/pen/usePenTool.ts": {
     "lines": 683,
@@ -128,7 +122,7 @@
     "longestFunction": 177
   },
   "packages/forge/src/shell/FrameView.tsx": {
-    "longestFunction": 229
+    "longestFunction": 225
   },
   "packages/forge/src/shell/TrialHost.tsx": {
     "longestFunction": 138
@@ -156,9 +150,6 @@
   },
   "packages/geom/src/tessellate/tessellate.ts": {
     "longestFunction": 124
-  },
-  "packages/gestures/src/ui/match.ts": {
-    "longestFunction": 125
   },
   "packages/guides/src/layout/strategies/tileGrid.ts": {
     "longestFunction": 281
@@ -215,7 +206,7 @@
     "longestFunction": 256
   },
   "packages/labkit/src/lab/Lab.tsx": {
-    "longestFunction": 205
+    "longestFunction": 198
   },
   "packages/labkit/src/lab/Workspace.tsx": {
     "longestFunction": 159
@@ -237,10 +228,10 @@
     "longestFunction": 132
   },
   "packages/labkit/src/state/bindLabStore.ts": {
-    "longestFunction": 216
+    "longestFunction": 212
   },
   "packages/labkit/src/state/store.ts": {
-    "longestFunction": 237
+    "longestFunction": 230
   },
   "packages/labkit/src/surface/useTiledSurface.ts": {
     "longestFunction": 255
@@ -262,13 +253,10 @@
     "lines": 731
   },
   "packages/renderer/src/drawBatch.ts": {
-    "lines": 612
+    "lines": 608
   },
   "packages/renderer/src/shaders/extractUniformNames.ts": {
     "longestFunction": 144
-  },
-  "packages/routing/src/interactions/dispatcher/useGestureDispatcher.tsx": {
-    "longestFunction": 160
   },
   "packages/simulation/src/useSimulation.ts": {
     "longestFunction": 130
@@ -291,14 +279,11 @@
   "packages/svg/src/parse.ts": {
     "longestFunction": 129
   },
-  "packages/svg/src/serialize.ts": {
-    "lines": 521
-  },
   "packages/text-dom/src/domRuns.ts": {
     "lines": 474
   },
   "packages/text-dom/src/useTextEdit.ts": {
-    "lines": 749,
+    "lines": 716,
     "longestFunction": 381
   },
   "packages/text/src/layout/lineBreak/lineBreaks.ts": {
@@ -331,8 +316,8 @@
     "longestFunction": 174
   },
   "packages/ui/src/components/CurveEditor/LayeredCurveEditor.tsx": {
-    "lines": 474,
-    "longestFunction": 356
+    "lines": 464,
+    "longestFunction": 345
   },
   "packages/ui/src/components/CurveEditor/createFunctionLayer.tsx": {
     "lines": 414,
@@ -362,7 +347,7 @@
     "longestFunction": 221
   },
   "packages/ui/src/components/PrefSchemaEditor/AssetEditor.tsx": {
-    "longestFunction": 193
+    "longestFunction": 186
   },
   "packages/ui/src/components/PrefSchemaEditor/AttributesPane.tsx": {
     "longestFunction": 187
@@ -399,13 +384,9 @@
     "lines": 425
   },
   "packages/ui/src/components/Tree/Tree.tsx": {
-    "lines": 458,
-    "longestFunction": 295
+    "longestFunction": 289
   },
   "packages/ui/src/components/Tree/useTreeDrag.ts": {
     "longestFunction": 143
-  },
-  "packages/ui/src/icons/paths.ts": {
-    "lines": 463
   }
 }

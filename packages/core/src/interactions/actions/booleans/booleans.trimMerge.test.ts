@@ -4,6 +4,7 @@ import type { Paint } from '@weasel-js/paint';
 import type { PathPaint } from 'canvas/nodeShapes/nodePaint';
 import type { NodeId } from 'core/scene/types';
 import { applyBooleanOp, type BooleansAdapter } from './booleans';
+import { rootsTree } from 'core/adapters/testing/rootsTree';
 
 const RED: Paint = { color: '#f00' };
 const BLUE: Paint = { color: '#00f' };
@@ -16,6 +17,7 @@ function harness(sources: Source[]) {
   const made: { source: string; paint: PathPaint | undefined; span: string }[] = [];
   const by = new Map(sources.map((s, i) => [s.id, { ...s, z: i }]));
   const adapter: BooleansAdapter = {
+    ...rootsTree(),
     getSelection: () => sources.map((s) => s.id as NodeId),
     getWorldPath: (id) => by.get(id)?.path,
     getPaint: (id) => by.get(id)?.paint,

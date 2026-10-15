@@ -6,6 +6,7 @@ import type { BooleansAdapter } from './booleans';
 import type { Path } from '@weasel-js/geom';
 import type { Op } from 'core/ops/types';
 import type { NodeId } from 'core/scene/types';
+import { rootsTree } from 'core/adapters/testing/rootsTree';
 
 function makeAdapter() {
   const nodes: { id: NodeId; path: Path }[] = [
@@ -21,6 +22,7 @@ function makeAdapter() {
   };
   let nextId = 1;
   const adapter: BooleansAdapter = {
+    ...rootsTree(),
     getSelection: () => nodes.map((n) => n.id),
     getWorldPath: (id) => paths.get(id),
     compareZ: (a, b) => (idx.get(a) ?? 0) - (idx.get(b) ?? 0),

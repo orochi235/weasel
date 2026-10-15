@@ -10,6 +10,17 @@ afterEach(cleanup);
 const preview = () => screen.getByRole('region', { name: 'Live preview' });
 
 describe('AssetEditor on a layout', () => {
+  it('stands a shelf list at the width its handle is stepped to', () => {
+    render(<Live />);
+    fireEvent.click(asset('Code'));
+    const handle = screen.getByRole('separator', { name: 'Resize settings' });
+    const pane = handle.previousElementSibling as HTMLElement;
+    expect(within(pane).getByRole('heading', { name: 'Settings' })).toBeInTheDocument();
+    expect(pane.style.getPropertyValue('--shelf-pane-w')).toBe('240px');
+    fireEvent.keyDown(handle, { key: 'ArrowRight', shiftKey: true });
+    expect(pane.style.getPropertyValue('--shelf-pane-w')).toBe('248px');
+  });
+
   it('previews a panel\'s pointers as the settings they name in its dialog', () => {
     render(<Live />);
     fireEvent.click(asset('Code'));

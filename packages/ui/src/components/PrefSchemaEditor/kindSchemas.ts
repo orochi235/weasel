@@ -55,6 +55,7 @@ const LEAF_BASE: KindAttrs = {
   showIf: SHOW_IF,
   enableIf: ENABLE_IF,
   block: flag('Block', 'Full width with no label row, for a control with its own chrome.'),
+  heading: flag('In heading', 'Drawn in the heading of the group holding it, in place of a row. A boolean or an enum only.'),
   icon: symbol('Icon', 'Glyph name in the host\'s icon set.'),
   pair: { kind: 'pair', name: 'Pair', description: 'The fields that share this one\'s row in compact property UIs, and what the row reads.', default: undefined },
   short: strings('Short names', 'Shorter forms of the name, longest first.'),
@@ -99,6 +100,8 @@ const KIND_ATTRS: Record<PrefKind, KindAttrs> = {
   alias: { of: { kind: 'field', name: 'Of', description: 'The pref this one shows: its control is drawn here too, over the one stored value.', default: '' } as PrefLeaf },
 };
 
+const BAR_OVERFLOW = choice('Overflow', 'Drawn as a bar: what happens to the cells its line has no room for. scroll keeps them all on it, and menu opens the ones past its end from a button there. Unset: scroll.', ['scroll', 'menu']);
+
 const GROUP_ATTRS: KindAttrs = {
   name: LEAF_BASE.name!,
   description: LEAF_BASE.description!,
@@ -129,7 +132,7 @@ const REQUIRED = new Set(['name', 'description', 'default', 'options', 'tag', 'o
 const SLOTS = new Set(['children', 'members', 'variants', 'item']);
 
 /** The fields a leaf made from a type sets where it is used; the rest are its type's. */
-const USE_SITE = new Set(['name', 'description', 'default', 'hidden', 'showIf', 'enableIf', 'block', 'icon', 'pair', 'short', 'absentIsDefault', 'manual', 'unpinned', 'autoValue']);
+const USE_SITE = new Set(['name', 'description', 'default', 'hidden', 'showIf', 'enableIf', 'block', 'heading', 'icon', 'pair', 'short', 'absentIsDefault', 'manual', 'unpinned', 'autoValue']);
 
 function valueAttr(leaf: PrefLeaf, base: { name: string; description: string }): PrefLeaf | null {
   switch (leaf.kind) {
@@ -182,8 +185,23 @@ function autoAttrs(leaf: PrefLeaf): KindAttrs {
   return { ...AUTO_FLAGS, ...(value ? { autoValue: value } : {}) };
 }
 
+/** What an action pref's attributes are told of an action the host has registered. */
+export interface RegisteredAction {
+  key: string;
+  label: string;
+  group?: string;
+  shortcut?: string;
+}
+
+/** What the registry says of the action a pref fires, which the pref does not hold and no row edits. */
+function registeredFacts(action: RegisteredAction | undefined): Array<[string, unknown]> {
+  if (!action) return [];
+  const facts: Array<[string, unknown]> = [['registered as', action.label], ['registered group', action.group], ['shortcut', action.shortcut]];
+  return facts.filter(([, value]) => value !== undefined && value !== '');
+}
+
 /** The `action` attribute as a choice among the keys a host has, with the key the pref holds now if it is none of them. */
-function actionChoice(attr: PrefLeaf, actions: ReadonlyArray<{ key: string; label: string }>, held: string | undefined): PrefLeaf {
+function actionChoice(attr: PrefLeaf, actions: readonly RegisteredAction[], held: string | undefined): PrefLeaf {
   const options = actions.map((a) => ({ value: a.key, label: `${a.label} (${a.key})` }));
   if (held !== undefined && held !== '' && !actions.some((a) => a.key === held)) options.unshift({ value: held, label: `${held} (not registered)` });
   return { kind: 'enum', name: attr.name, description: attr.description, default: undefined, clearable: true, options } as PrefLeaf;
@@ -221,9 +239,14 @@ export interface AttributeSchema {
 
 /** Editable attributes, rendered with `PrefsForm` over the node itself as values. */
 export function attributeSchema(
-  node: SchemaNode, custom: CustomKinds = {}, actions?: ReadonlyArray<{ key: string; label: string }>,
+  node: SchemaNode, custom: CustomKinds = {}, actions?: readonly RegisteredAction[],
 ): AttributeSchema {
-  if (!isPrefLeaf(node)) return { shared: { ...(isPrefSection(node) ? SECTION_ATTRS : GROUP_ATTRS) }, own: {}, auto: {}, entry: {}, readOnly: [] };
+  if (!isPrefLeaf(node)) {
+    const attrs = Object.entries(isPrefSection(node) ? SECTION_ATTRS : GROUP_ATTRS);
+    // Only a bar has a line to run out of, so only it is asked, after how it is drawn.
+    const shared = attrs.flatMap((attr): Array<[string, KindAttr]> => (attr[0] === 'as' && node.as === 'bar' ? [attr, ['overflow', BAR_OVERFLOW]] : [attr]));
+    return { shared: Object.fromEntries(shared), own: {}, auto: {}, entry: {}, readOnly: [] };
+  }
   const typed = node.type !== undefined;
   const def = defaultAttr(node);
   const item = entryOf(node);
@@ -240,6 +263,7 @@ export function attributeSchema(
   // Every leaf carries a `default`, which says nothing of one that holds no value.
   const listed = (k: string): boolean => k !== 'kind' && !SLOTS.has(k) && !undrawn.has(k) && !(k === 'default' && !prefHoldsValue(node));
   const readOnly = typed ? [] : Object.entries(fields).filter(([k]) => listed(k) && !(k in shared) && !(k in own) && !(k in auto));
+  if (node.kind === 'action') readOnly.push(...registeredFacts(actions?.find((a) => a.key === (node as { action?: string }).action)));
   return { shared, own, auto, entry, readOnly };
 }
 
@@ -290,7 +314,7 @@ export function blankSection(): PrefSection {
   return { name: 'New section', description: '', members: {} };
 }
 
-const SHARED = ['name', 'description', 'hidden', 'showIf', 'enableIf', 'block', 'icon', 'pair', 'short', 'absentIsDefault', 'manual', 'unpinned'];
+const SHARED = ['name', 'description', 'hidden', 'showIf', 'enableIf', 'block', 'heading', 'icon', 'pair', 'short', 'absentIsDefault', 'manual', 'unpinned'];
 
 const PRIMITIVES = new Set(['string', 'number', 'boolean']);
 

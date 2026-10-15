@@ -47,6 +47,9 @@ function makeAction(partial: Partial<Action> & Pick<Action, 'id'> & { run?: () =
   };
 }
 
+/** The bar's button for the action labeled `label`; a label is the action's id unless a test gives one. */
+const item = (label: string) => screen.getByRole('button', { name: label });
+
 describe('ActionBar', () => {
   it('renders empty toolbar when no actions match the group (no crash)', () => {
     render(
@@ -73,8 +76,8 @@ describe('ActionBar', () => {
     );
     const buttons = screen.getAllByRole('button');
     expect(buttons.length).toBe(2);
-    expect(screen.getByTestId('action-bar-item-a')).toBeTruthy();
-    expect(screen.getByTestId('action-bar-item-b')).toBeTruthy();
+    expect(item('a')).toBeTruthy();
+    expect(item('b')).toBeTruthy();
   });
 
   it('clicking an enabled button triggers the action.run', () => {
@@ -85,7 +88,7 @@ describe('ActionBar', () => {
         bar={<ActionBar group="demo" />}
       />,
     );
-    fireEvent.click(screen.getByTestId('action-bar-item-a'));
+    fireEvent.click(item('a'));
     expect(run).toHaveBeenCalledTimes(1);
   });
 
@@ -99,8 +102,8 @@ describe('ActionBar', () => {
         bar={<ActionBar group="demo" />}
       />,
     );
-    const on = screen.getByTestId('action-bar-item-on') as HTMLButtonElement;
-    const off = screen.getByTestId('action-bar-item-off') as HTMLButtonElement;
+    const on = item('on') as HTMLButtonElement;
+    const off = item('off') as HTMLButtonElement;
     expect(on.disabled).toBe(false);
     expect(off.disabled).toBe(true);
     expect(off.getAttribute('aria-disabled')).toBe('true');
@@ -128,7 +131,7 @@ describe('ActionBar', () => {
       </DepRegistryProvider>
     );
     const { rerender } = render(view(false));
-    const button = () => screen.getByTestId('action-bar-item-gated') as HTMLButtonElement;
+    const button = () => item('gated') as HTMLButtonElement;
     expect(button().disabled).toBe(true);
     rerender(view(true));
     expect(button().disabled).toBe(false);
@@ -157,7 +160,7 @@ describe('ActionBar', () => {
         </ActionsProvider>
       </DepRegistryProvider>,
     );
-    const button = () => screen.getByTestId('action-bar-item-gated') as HTMLButtonElement;
+    const button = () => item('gated') as HTMLButtonElement;
     expect(button().disabled).toBe(true);
     act(() => { gate.open = true; registry.changed!(); });
     expect(button().disabled).toBe(false);
@@ -171,23 +174,22 @@ describe('ActionBar', () => {
         bar={<ActionBar group="demo" />}
       />,
     );
-    fireEvent.click(screen.getByTestId('action-bar-item-off'));
+    fireEvent.click(item('off'));
     expect(run).not.toHaveBeenCalled();
   });
 
-  it('icons prop overrides the default action.icon for that id only', () => {
+  it('icons prop names a glyph that replaces the action.icon for that id only', () => {
     const DefaultIcon = () => <span data-testid="default-icon-a">A</span>;
-    const Custom = () => <span data-testid="custom-icon-a">★</span>;
     render(
       <Harness
         actions={[
           makeAction({ id: 'a', icon: <DefaultIcon /> }),
           makeAction({ id: 'b', icon: <span data-testid="default-icon-b">B</span> }),
         ]}
-        bar={<ActionBar group="demo" icons={{ a: <Custom /> }} />}
+        bar={<ActionBar group="demo" icons={{ a: 'close' }} />}
       />,
     );
-    expect(screen.getByTestId('custom-icon-a')).toBeTruthy();
+    expect(item('a').querySelector('svg')).not.toBeNull();
     expect(screen.queryByTestId('default-icon-a')).toBeNull();
     expect(screen.getByTestId('default-icon-b')).toBeTruthy();
   });
@@ -202,12 +204,12 @@ describe('ActionBar', () => {
         bar={<ActionBar group="demo" labels={{ a: 'Aleph' }} />}
       />,
     );
-    const a = screen.getByTestId('action-bar-item-a');
+    const a = item('Aleph');
     expect(a.getAttribute('aria-label')).toBe('Aleph');
     fireEvent.keyDown(document.body, { key: 'Tab' });
     act(() => a.focus());
     expect(screen.getByRole('tooltip').textContent).toBe('Aleph');
-    expect(screen.getByTestId('action-bar-item-b').getAttribute('aria-label')).toBe('Beta');
+    expect(item('Beta')).toBeTruthy();
   });
 
   it('shortcut appears in tooltip (in parentheses)', () => {
@@ -217,32 +219,32 @@ describe('ActionBar', () => {
         bar={<ActionBar group="demo" />}
       />,
     );
-    const a = screen.getByTestId('action-bar-item-a');
+    const a = item('Alpha');
     fireEvent.keyDown(document.body, { key: 'Tab' });
     act(() => a.focus());
     expect(screen.getByRole('tooltip').textContent).toBe('Alpha (A)');
   });
 
-  it('orientation="vertical" applies the vertical class', () => {
-    const { container } = render(
-      <Harness
-        actions={[makeAction({ id: 'a' })]}
-        bar={<ActionBar group="demo" orientation="vertical" />}
-      />,
+  it('runs the way `orientation` says, across by default', () => {
+    const bar = (orientation?: 'vertical') => (
+      <Harness actions={[makeAction({ id: 'a' })]} bar={<ActionBar group="demo" orientation={orientation} />} />
     );
-    const root = container.querySelector('[role="toolbar"]') as HTMLElement;
-    expect(Array.from(root.classList).some((c) => c.includes('vertical'))).toBe(true);
+    const { unmount } = render(bar('vertical'));
+    expect(screen.getByRole('toolbar')).toHaveAttribute('aria-orientation', 'vertical');
+    expect(item('a')).toBeTruthy();
+    unmount();
+    render(bar());
+    expect(screen.getByRole('toolbar')).toHaveAttribute('aria-orientation', 'horizontal');
   });
 
-  it('orientation defaults to horizontal (no vertical class)', () => {
-    const { container } = render(
+  it('keeps the order the registry lists the actions in', () => {
+    render(
       <Harness
-        actions={[makeAction({ id: 'a' })]}
+        actions={[makeAction({ id: 'z.last' }), makeAction({ id: 'a.first' }), makeAction({ id: '10' }), makeAction({ id: '2' })]}
         bar={<ActionBar group="demo" />}
       />,
     );
-    const root = container.querySelector('[role="toolbar"]') as HTMLElement;
-    expect(Array.from(root.classList).some((c) => c.includes('vertical'))).toBe(false);
+    expect(screen.getAllByRole('button').map((b) => b.getAttribute('aria-label'))).toEqual(['z.last', 'a.first', '10', '2']);
   });
 
   it('forwards className to the toolbar root', () => {
@@ -298,7 +300,7 @@ describe('ActionBar', () => {
     );
     expect(screen.getAllByRole('button').map((b) => b.getAttribute('aria-label')))
       .toEqual(['Flip Horizontal', 'Flip Vertical']);
-    fireEvent.click(screen.getByTestId('action-bar-item-flip:y'));
+    fireEvent.click(item('Flip Vertical'));
     expect(run).toHaveBeenCalledWith({ axis: 'y' });
   });
 
@@ -322,7 +324,7 @@ describe('ActionBar', () => {
         bar={<ActionBar group="demo" />}
       />,
     );
-    const y = screen.getByTestId('action-bar-item-flip:y');
+    const y = item('Flip Vertical');
     fireEvent.keyDown(document.body, { key: 'Tab' });
     act(() => y.focus());
     expect(screen.getByRole('tooltip').textContent).toBe('Flip Vertical (Shift+V)');
@@ -337,8 +339,10 @@ describe('ActionBar kit glyphs', () => {
         bar={<ActionBar group="clipboard" />}
       />,
     );
-    for (const key of ['clipboard.cut', 'clipboard.copy', 'clipboard.paste']) {
-      expect(screen.getByTestId(`action-bar-item-${key}`).querySelector('svg'), key).not.toBeNull();
+    const buttons = screen.getAllByRole('button');
+    expect(buttons).toHaveLength(3);
+    for (const button of buttons) {
+      expect(button.querySelector('svg'), button.getAttribute('aria-label') ?? '').not.toBeNull();
     }
   });
 });

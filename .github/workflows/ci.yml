@@ -103,10 +103,8 @@ jobs:
       - run: npx playwright install --with-deps chromium-headless-shell
       - run: npm run test:browser
       - run: npm run build
-      # labkit bundles its weasel siblings into its dist; build it after them so
-      # their built output is what it inlines. `@weasel-js/core` and
-      # `@weasel-js/theme` are the two it does not inline — both are exact peers,
-      # resolved at the consumer.
+      # labkit's declarations are checked against its siblings' built ones, and
+      # its stylesheet copies core's and ui's, so it builds after them.
       - run: npm run build -w @weasel-js/labkit
       # The suite above runs before any dist exists, so it skips forge's check
       # that the built plugin resolves its published shims. Rerun that file now;
@@ -134,11 +132,11 @@ jobs:
       # skip them — silently, exit 0. Cheap insurance; these two builds are seconds.
       - run: npm run build -w @weasel-js/ui -w @weasel-js/hud
       - run: npm run check:manifests
-      # labkit's dist inlines its weasel siblings and externalizes @weasel-js/core
-      # alone. Bundle every labkit entry from outside the monorepo + grep dist
-      # (js+dts) both ways: no sibling specifier leaked, and core's IS there. An
-      # inlined core is the silent failure — it resolves and renders, against a
-      # second copy of core's registries. Runs after the build above.
+      # labkit's dist inlines no weasel sibling. Bundle every labkit entry from
+      # outside the monorepo + grep dist (js+dts) both ways: every sibling
+      # specifier is one the manifest declares, and every declared one IS there.
+      # An inlined sibling is the silent failure — it resolves and renders,
+      # against a second copy of that package's state. Runs after the build above.
       # See packages/labkit/scripts/smoke-consumer-bundle.mjs.
       - run: npm run test:smoke:consumer -w @weasel-js/labkit
       # `npm pack` every published @weasel-js package, extract them into a tree
@@ -150,7 +148,7 @@ jobs:
       # catch any of this; it inherits the repo tsconfig paths.
       # See scripts/smoke-consumer-bundle.mjs.
       - run: npm run test:smoke:consumer
-      # The site pages.yml deploys: demos, API docs, draw, forge, labkit docs.
+      # The site pages.yml deploys: demos, API docs, draw, forge.
       # Left to pages.yml alone, a break here failed every deploy for three days
       # (an export with no typedoc category) while CI and every release stayed
       # green. One matrix leg is enough — the site is not an engines promise.
@@ -159,4 +157,3 @@ jobs:
           npm run build:demo
           npm run build:draw
           npm run build:forge
-          npm run docs:build -w @weasel-js/labkit

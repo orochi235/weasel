@@ -87,6 +87,18 @@ export type LabMode = ColorModePreference;
  *  the shell around them. */
 export type LabDensity = 'compact' | 'comfortable' | 'roomy';
 
+/** A stored trial or snapshot the lab could not load. Its record stays in
+ *  storage, unwritten, until `discardUnreadable` deletes it. */
+export interface UnreadableRecord {
+  kind: 'trial' | 'snapshot';
+  id: string;
+  instrumentName: string;
+  /** The trial's title or the snapshot's name, where the record carries one. */
+  label?: string;
+  /** What loading it threw, as text. */
+  reason: string;
+}
+
 /** Everything a lab persists: its trials, its saved snapshots, and the
  *  chosen color mode. */
 export interface LabStoreState {
@@ -105,6 +117,8 @@ export interface LabStoreState {
    *  Null for a store built without them, whose trials look their instrument
    *  up on the lab instead. Not persisted. */
   instruments: InstrumentList | null;
+  /** Stored trials and snapshots that failed to load. Not persisted. */
+  unreadable: UnreadableRecord[];
 }
 
 /** What `useTrialState` hands an instrument: its state and config, with

@@ -560,6 +560,73 @@ describe('openLabStore — records it cannot use', () => {
       expect(backing.has(`${P}save:s2`)).toBe(true);
     });
 
+    it('lists what it could not load, and deletes a record only when it is discarded', async () => {
+      const backing = new Map<string, unknown>();
+      storeLab(backing, {
+        trials: [trial('w1'), trial('w2', { state: { bad: true }, title: 'Second' })],
+        saves: [SNAPSHOT, { ...SNAPSHOT, id: 's2', config: { old: true } }],
+      });
+      backing.set(`${P}value:trial:w2:k`, 1);
+      vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const migrate = (config: unknown) => {
+        if ((config as { old?: boolean }).old) throw new Error('no path from this shape');
+        return config;
+      };
+
+      const opened = await open(backing, { serializers, configMigrations: { T: migrate } });
+      expect(opened.store.getState().unreadable).toEqual([
+        {
+          kind: 'trial',
+          id: 'w2',
+          instrumentName: 'T',
+          label: 'Second',
+          reason: 'unreadable state',
+        },
+        {
+          kind: 'snapshot',
+          id: 's2',
+          instrumentName: 'T',
+          label: 'saved',
+          reason: 'no path from this shape',
+        },
+      ]);
+
+      opened.store.getState().discardUnreadable('trial', 'w2');
+      expect(opened.store.getState().unreadable.map((u) => u.id)).toEqual(['s2']);
+      await opened.records.flush();
+      expect(backing.has(`${P}trial:w2`)).toBe(false);
+      expect(backing.has(`${P}value:trial:w2:k`)).toBe(false);
+      expect(backing.has(`${P}save:s2`)).toBe(true);
+
+      opened.store.getState().discardUnreadable('snapshot', 's2');
+      await opened.close();
+      expect(backing.has(`${P}save:s2`)).toBe(false);
+      expect(backing.has(`${P}trial:w1`)).toBe(true);
+      expect(backing.has(`${P}save:s1`)).toBe(true);
+    });
+
+    it('lists a trial another tab stored unreadably, and unlists it once that tab stores it readably', async () => {
+      const backing = new Map<string, unknown>();
+      storeLab(backing, { trials: [trial('w1'), trial('w2')] });
+      vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const mine = await open(backing, { serializers });
+      const theirs = await open(backing);
+
+      theirs.store.getState().updateTrialState('w2', { bad: true });
+      await theirs.records.flush();
+      await tick();
+      expect(mine.store.getState().unreadable.map((u) => u.id)).toEqual(['w2']);
+
+      theirs.store.getState().updateTrialState('w2', { n: 2 });
+      await theirs.records.flush();
+      await tick();
+      expect(mine.store.getState().unreadable).toEqual([]);
+      expect(mine.store.getState().trials.map((t) => t.id)).toEqual(['w1', 'w2']);
+      expect(backing.has(`${P}trial:w2`)).toBe(true);
+      await mine.close();
+      await theirs.close();
+    });
+
     it("drops a trial another tab stored in a state this one cannot read, and leaves that tab's record", async () => {
       const backing = new Map<string, unknown>();
       storeLab(backing, { trials: [trial('w1'), trial('w2')] });

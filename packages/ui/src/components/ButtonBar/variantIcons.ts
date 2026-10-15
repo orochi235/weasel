@@ -1,4 +1,4 @@
-import type { IconName } from '../../icons/paths';
+import type { IconName } from '../../icons/generated/paths';
 import type { ButtonBarVariant } from './ButtonBar';
 
 /** The glyph for each variant, for a picker that shows them. */

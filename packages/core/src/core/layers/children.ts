@@ -1,7 +1,6 @@
 /**
  * Z-ordered child renderer: a `RenderLayer` factory over an `OrderedAdapter`.
- * Children are drawn in z-order (index 0 = bottom). If the adapter doesn't
- * implement `getChildren`, the layer is a silent no-op.
+ * Children are drawn in z-order (index 0 = bottom).
  */
 
 import type { DrawCommand } from '@weasel-js/renderer';
@@ -39,13 +38,11 @@ export function createChildrenLayer<TData = unknown>(
     defaultVisible: opts.defaultVisible,
     alwaysOn: opts.alwaysOn,
     draw: (data, view) => {
-      const getChildren = opts.adapter.getChildren;
-      if (!getChildren) return [];
       const parent =
         typeof opts.parentId === 'function'
           ? opts.parentId()
           : opts.parentId ?? null;
-      const ids = getChildren(parent);
+      const ids = opts.adapter.getChildren(parent);
       const out: DrawCommand[] = [];
       for (const id of ids) {
         const sub = opts.drawChild(id, data, view);

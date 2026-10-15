@@ -145,16 +145,13 @@ describe('dep sources after an abandoned render', () => {
     expect(b.adapter.applyOps).not.toHaveBeenCalled();
   });
 
-  it('layout reads the committed layouts and drop target', () => {
+  it('layout reads the committed drop target', () => {
     const scene = sceneWith();
-    const layoutA = { kind: 'a' };
-    const layoutB = { kind: 'b' };
     const reg = registryAfterAbandon(
-      { layouts: { c: layoutA }, drop: 'innermost' as const },
-      { layouts: { c: layoutB }, drop: 'topmost' as const },
-      (p) => { useLayoutDepSource(scene as never, p.layouts as never, p.drop); },
+      { drop: 'innermost' as const },
+      { drop: 'topmost' as const },
+      (p) => { useLayoutDepSource(scene as never, p.drop); },
     );
-    expect(dep(reg, 'layout').getLayout('c')).toBe(layoutA);
     expect(dep(reg, 'layout').dropTarget).toBe('innermost');
   });
 

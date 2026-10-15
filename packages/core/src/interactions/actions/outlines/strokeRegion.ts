@@ -1,5 +1,5 @@
 import { strokeToPath } from '@weasel-js/stroke';
-import type { Mat3, Path, PolygonPath, Scale2 } from '@weasel-js/geom';
+import type { Affine, Path, PolygonPath, Scale2 } from '@weasel-js/geom';
 import type { Stroke } from '@weasel-js/paint';
 
 /** How Outline Stroke and a Boolean operation counting strokes measure one. */
@@ -22,7 +22,7 @@ export interface StrokeRegionOptions {
 export function strokeRegion(
   path: Path,
   stroke: Stroke,
-  frame: Mat3 | null | undefined,
+  frame: Affine | null | undefined,
   { scale = 1, flattenTolerance }: StrokeRegionOptions = {},
 ): PolygonPath {
   const tolerance = flattenTolerance === undefined ? {} : { flattenTolerance };

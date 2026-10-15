@@ -87,7 +87,7 @@ export function createPaintedCursorLayer(state: PaintedCursorState): RenderLayer
         angle: cursor.angle,
         at,
       });
-      // Column-major, the layout `Mat3` documents.
+      // Column-major, the layout `GlMat3` documents.
       const transform = new Float32Array([a, b, 0, c, d, 0, e, f, 1]);
       const children: DrawCommand[] = ops.map(commandFor);
       return [{ kind: 'group', transform, children }];

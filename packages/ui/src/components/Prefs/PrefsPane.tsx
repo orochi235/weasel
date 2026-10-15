@@ -1,11 +1,13 @@
 import { Fragment, type ReactNode, type RefObject } from 'react';
 import { isPrefLeaf, prefTabRuns, type PrefAlias, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
+import { groupHeading } from './groupHeading';
 import { GroupTabs } from './GroupTabs';
 import { BarLayout, groupBarNodes, shownBarNodes, type BarLeafNode, type BarOrientation } from '../Bar/BarLayout';
 import { PrefRow, prefRenderContext, renderPrefControl, shownLeaf, type WalkCtx } from './PrefsRow';
 import { HiddenBadge, hiddenAttrs, marksHidden } from './hidden';
 import { aliasOfNothing } from './PrefWords';
 import { pathWithin, selectionAttrs, tabAttrs, useHeldTab } from './selection';
+import { splitMarks } from './SplitRow';
 import s from './Prefs.module.css';
 
 /** Props for {@link PrefsPane}. */
@@ -39,7 +41,7 @@ const join = (path: string, key: string): string => (path === '' ? key : `${path
  */
 export function PrefsPane(props: PrefsPaneProps) {
   const { ctx, group, path, scrollRef, pageKey = path, className } = props;
-  const entries = Object.entries(group.children);
+  const head = groupHeading(ctx, group, path);
   // Whatever hides it, a page is drawn apart from what it sits in, so it carries the mark itself.
   const marked = ctx.hidden?.has(path) === true;
 
@@ -47,13 +49,13 @@ export function PrefsPane(props: PrefsPaneProps) {
     // A hidden page is marked whole: its heading and its rows share no element but this one.
     <div className={[s.pane, className].filter(Boolean).join(' ')} ref={scrollRef} data-pref-into={path} data-pref-scroll="" {...hiddenAttrs(marked)}>
       <div className={s.paneHead} {...selectionAttrs(path, { selected: ctx.selected })}>
-        <h3 className={s.paneTitle}>{group.name}{marked && <HiddenBadge />}</h3>
+        <h3 className={[s.paneTitle, head.className].filter(Boolean).join(' ')}>{group.name}{marked && <HiddenBadge />}{head.control}</h3>
         {group.description !== undefined && (
           <p className={s.paneDesc}>{group.description}</p>
         )}
       </div>
       <Fragment key={pageKey}>
-        {paneRuns(entries).map((run) =>
+        {paneRuns(head.entries).map((run) =>
           run.rows
             ? <div key={run.entries[0]![0]} className={s.rows}>{paneChildren(ctx, run.entries, path, 0)}</div>
             : paneChildren(ctx, run.entries, path, 0))}
@@ -129,6 +131,7 @@ function PaneSection({ ctx, group, path, depth, box }: {
   box?: (key: string, group: PrefGroup, path: string) => ReactNode;
 }) {
   const Heading = depth === 0 ? 'h4' : 'h5';
+  const head = groupHeading(ctx, group, path);
   return (
     <section
       className={depth === 0 ? s.paneSection : s.paneSubsection}
@@ -136,14 +139,15 @@ function PaneSection({ ctx, group, path, depth, box }: {
       {...selectionAttrs(path, ctx)}
       aria-label={group.name}
     >
-      <Heading className={depth === 0 ? s.sectionTitle : s.subsectionTitle} data-pref-sticky={depth === 0 ? '' : undefined}>
+      <Heading className={[depth === 0 ? s.sectionTitle : s.subsectionTitle, head.className].filter(Boolean).join(' ')} data-pref-sticky={depth === 0 ? '' : undefined}>
         {group.name}
         {marksHidden(ctx.hidden, path) && <HiddenBadge />}
+        {head.control}
       </Heading>
       {group.description !== undefined && (
         <p className={s.paneDesc}>{group.description}</p>
       )}
-      <div className={s.rows}>{paneChildren(ctx, Object.entries(group.children), path, depth + 1, box)}</div>
+      <div className={s.rows}>{paneChildren(ctx, head.entries, path, depth + 1, box)}</div>
     </section>
   );
 }
@@ -169,6 +173,7 @@ export function PaneBar({ ctx, group, path, depth, orientation }: {
     <BarLayout
       framed
       orientation={orientation}
+      overflow={ctx.droppable ? undefined : group.overflow}
       rootAttrs={{ ...selectionAttrs(path, ctx), 'data-pref-bar': '' }}
       label={group.name === '' ? undefined : group.name}
       nodes={shownBarNodes(groupBarNodes(group, path, (inner, at) => (
@@ -182,7 +187,9 @@ export function PaneBar({ ctx, group, path, depth, orientation }: {
           if (!drawn) return [{ path: own, content: <span className={s.unrenderable}>{aliasOfNothing(leaf as PrefAlias)}</span> }];
           const { renderCtx } = prefRenderContext(ctx, own, drawn.pref, drawn.at);
           const content = renderPrefControl(renderCtx, ctx.renderers, undefined, 'bar');
-          return content == null ? [] : [{ path: own, content: marksHidden(ctx.hidden, own) ? <>{content}<HiddenBadge /></> : content }];
+          if (content == null) return [];
+          const marks = splitMarks(ctx.split, ctx.values, renderCtx, drawn.at !== undefined);
+          return [{ path: own, content: marks || marksHidden(ctx.hidden, own) ? <>{content}{marks}{marksHidden(ctx.hidden, own) && <HiddenBadge />}</> : content }];
         })
       }
       row={({ path: own, leaf, at }) => <PrefRow ctx={ctx} path={own} pref={leaf} at={at} />}
@@ -199,12 +206,13 @@ function PanePanel({ ctx, group, path, depth }: {
   depth: number;
 }) {
   const marked = marksHidden(ctx.hidden, path);
+  const head = groupHeading(ctx, group, path);
   return (
     <section className={s.panePanel} {...selectionAttrs(path, ctx)} aria-label={group.name}>
-      {group.name !== '' && <h5 className={s.panelTitle}>{group.name}{marked && <HiddenBadge />}</h5>}
+      {group.name !== '' && <h5 className={[s.panelTitle, head.className].filter(Boolean).join(' ')}>{group.name}{marked && <HiddenBadge />}{head.control}</h5>}
       {group.name === '' && marked && <HiddenBadge lead />}
       {group.description !== undefined && <p className={s.paneDesc}>{group.description}</p>}
-      <div className={s.rows}>{paneChildren(ctx, Object.entries(group.children), path, depth + 1)}</div>
+      <div className={s.rows}>{paneChildren(ctx, head.entries, path, depth + 1)}</div>
     </section>
   );
 }

@@ -160,6 +160,38 @@ ends at `(x+dx, y+dy)` — an arrowhead capping that arc puts its vertex
 *there*. Same for a handle meeting a circle's rim: solve for the point on the
 circle rather than guessing a coordinate that looks close.
 
+**An arrowhead goes on a straight run, on a compass direction.** A head set on the end of a curve
+and aimed along its tangent leans outward, and its inside barb closes up against the bending shaft;
+below a radius of about twice the head's length it reads as a hook or a flag, and aiming it along
+the chord instead only helps above radius 5. So end the curve early and carry the head on a
+straight run at least as long as the barbs trail back.
+Pick where the curve ends so that run points along an axis or a diagonal. On a diagonal run use
+`chevron`'s spread of 45, which lays both barbs on the pixel axes; at 36–42 they sit a few degrees
+off and blur at 16px. A head also needs a shaft showing behind its barbs, or it reads as a caret.
+A ring or an open arc is free to turn: before reshaping anything, slide its gap round until the
+head lands on the flattest stretch that is clear of other strokes.
+Where there is no room for a straight run, hang the head on the shaft instead of on its tangent:
+walk one trail of arc back from the tip and put the two barb ends on the curve's normal there, the
+same distance either side. That holds down to a bend radius of about 1.2 head lengths; tighter,
+the inner barb fills the bend, and the head wants to be solid. `chevronOn` in `base.mjs` draws
+this head, and `turn` in `camera.mjs` uses it.
+
+**Where one stroke passes behind another, cut it along the front stroke's outline grown by a fixed
+gap.** The cut end is parallel to the stroke in front, not square to the stroke being cut: a butt
+cap is only that where the two cross at a right angle *and* the stroke in front is straight there.
+The gap is measured along the stroke being cut, and it is the same at every point across it: the
+cut end is the front stroke's edge slid along by the gap, not an offset at right angles to it.
+Behind a straight stroke, draw the back stroke on past the cut inside a nested `<svg>` whose
+viewport ends at the cut line — it clips to its box and needs no id. Behind a curved one, make the
+front stroke out of circular arcs, whose stroked edges are arcs again, fill the back stroke, and
+end it on that edge arc slid by the gap: `turn` in `camera.mjs` builds its ring as a four-arc oval
+for this, since an ellipse's edges are no curve path data can follow. Keep such coordinates to four
+places. Never call a cut close enough by its size; he measures these zoomed in. One optical
+exception: a short cut end facing a long curved edge reads flatter than the edge even when it
+measures parallel, because the eye takes the edge's curvature from its whole run, so `turn`'s upper
+axis end is bent 2.5 times as far as the ring beneath it, its middle kept at the gap. Round caps
+stopped short of the crossing are worse again: the gap pinches, and the strokes read as unrelated.
+
 **The small check is a separate check, and it is the pixel grid.** Proofing
 large tells you nothing about chrome size. Rasterise at the size the chrome
 actually renders — labkit's chrome regions draw glyphs at `size={16}` — magnify with
@@ -206,7 +238,9 @@ another session's uncommitted stylesheet.
 **A fleet run tests a commit: `npm run test:fleet`, never a bare `onto test`.** `onto test` ships
 the working tree, so from a checkout someone else is editing it tests their half-finished files
 and blames the commit. `test:fleet` checks the commit out into a throwaway worktree first. Run
-it on the branch before merging and on `main` after.
+it on the branch before merging and on `main` after. `onto` keeps one tree per repository on a
+node and every worktree syncs into it, so a run counts only if its log has `fleet-tree: N changed
+path(s) match <sha>` and that gate test passed rather than skipped.
 
 **The fleet also runs the `gate` project**: the typecheck, lint, and `check:*` steps CI runs,
 read from `ci.yml` by `scripts/ci-checks.gate.ts`, each as a test. CI only runs on a push, so
@@ -462,11 +496,6 @@ that survives.
 handles one request at a time, which serializes a many-chunk build into a slowdown no
 real host would show. Use a threaded server, and quote build-output byte counts rather
 than emulated FCP — the timings vary too much between runs to compare.
-
-**labkit bundles its siblings** (`noExternal` in `packages/labkit/tsup.config.ts`), so a
-source edit in `packages/text` or `packages/ui` does not reach labkit's `dist` until the
-whole workspace is rebuilt. A smoke test run before that reports the previous build's
-result as though it were the new one.
 
 **A bare `getContext('webgl2')` on a shared buffer can cripple every tenant of it.**
 Called on a canvas no renderer has opened yet, it creates the context with default

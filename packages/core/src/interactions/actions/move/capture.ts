@@ -10,6 +10,7 @@ import type { ReflowTransition } from '../../../layout/types';
 import type { GestureContext } from '../../gestures/types';
 import { invertPlane, planeOf } from '../planeInput';
 import { sceneGestureFrames } from '../gestureFrames';
+import { poseDescriptorOf } from '../poseDescriptorDep';
 import { scenePoseFrame } from '../poseFrame';
 import { translateTargets } from '../selectionSubtree';
 import type { MoveGestureAdapter } from './gestureAdapter';
@@ -124,6 +125,7 @@ export function buildGestureContext(
 ): GestureContext<unknown> {
   const origin = new Map<string, unknown>();
   for (const [id, pose] of startPoses) origin.set(id as string, pose);
+  const projection = poseDescriptorOf(ctx.deps.poseDescriptor);
   const gestureCtx: GestureContext<unknown> = {
     draggedIds: ids as unknown as string[],
     origin,
@@ -134,6 +136,11 @@ export function buildGestureContext(
     view: readers.view(),
     plane: readers.plane(),
     frames: sceneGestureFrames(scene, ctx.deps.view),
+    offset: (from, to) => {
+      const a = projection.getBounds(from);
+      const b = projection.getBounds(to);
+      return { dx: b.x - a.x, dy: b.y - a.y };
+    },
     adapter: adapter as unknown as GestureContext<unknown>['adapter'],
     scratch: {},
   };

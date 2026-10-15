@@ -18,6 +18,7 @@ function makeCtx(): GestureContext<Pose> {
     modifiers: { alt: false, shift: false, meta: false, ctrl: false },
     pointer: { worldX: 5, worldY: 5, clientX: 100, clientY: 100 },
     view: null,
+    offset: (from, to) => ({ dx: to.x - from.x, dy: to.y - from.y }),
     adapter: { getParent: () => 'oldParent' } as any,
     scratch: {},
   };
@@ -39,7 +40,7 @@ describe('snapToContainer', () => {
     const b = snapToContainer<Pose>({ dwellMs: 500, findTarget, isInstant: (t) => (t.metadata as any)?.instant });
     const ctx = makeCtx();
     const result = b.onMove!(ctx, tt(1, 1));
-    expect(result).toEqual({ pose: { x: 2, y: 3 }, poses: new Map([['p1', { x: 2, y: 3 }]]), snap: target });
+    expect(result).toEqual({ transform: tt(2, 3), poses: new Map([['p1', { x: 2, y: 3 }]]), snap: target });
   });
 
   it('does not snap until dwell elapses', () => {
@@ -62,7 +63,7 @@ describe('snapToContainer', () => {
     b.onMove!(ctx, tt(1, 1));
     vi.advanceTimersByTime(500);
     const r = b.onMove!(ctx, tt(1, 1));
-    expect(r).toMatchObject({ pose: { x: 2, y: 3 }, snap: target });
+    expect(r).toMatchObject({ transform: tt(2, 3), snap: target });
   });
 
   it('moving away from target before dwell cancels timer', () => {

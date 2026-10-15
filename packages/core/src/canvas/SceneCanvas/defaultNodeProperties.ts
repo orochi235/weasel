@@ -3,9 +3,10 @@ import { inferredNodeRouting } from './defaultNodeRouting';
 import { KIT_SHAPE_KINDS } from 'core/shapeKinds';
 import { listMarkers, markerGeneration } from '@weasel-js/stroke';
 import { dashForStrokeStyle, strokeDashStyleOf } from '@weasel-js/paint';
-import { resolveAlign, type TextAlign } from '@weasel-js/text';
+import { resolveAlign } from '@weasel-js/text';
 import type { NodePropertiesEntry } from 'core/scene/NodeProperties';
 import { ANGLE_RADIANS, decimal } from '@weasel-js/quantity';
+import { poseLinearOf } from '@weasel-js/geom';
 
 /** Radians-stored / degrees-shown conversion for `pose.rotation` leaves.
  *  Display rounds to 0.1° so a canonical radian value doesn't render as
@@ -66,16 +67,26 @@ const italicEncoding: PrefBooleanEncoding = {
 };
 
 /** `TextStyle.align` read as the edge that paints, or as `justify`. The model
- *  also holds the reading-order pair `start` / `end`, which the segments would
- *  otherwise leave unlit; they read through `direction`, and a click writes the
- *  edge. */
+ *  also holds the reading-order pair `start` / `end`, which name an edge only
+ *  under a stated `direction`. Under `auto` each paragraph takes its own from
+ *  its text, so no segment is lit. A click writes the edge. */
 const alignEncoding: PrefEnumEncoding = {
   read: (stored, style) => {
-    if (stored === undefined || stored === 'justify') return stored;
-    const direction = style?.direction === 'rtl' ? 'rtl' : 'ltr';
-    return resolveAlign(stored as TextAlign, direction);
+    if (stored === 'start' || stored === 'end') {
+      const direction = style?.direction;
+      return direction === 'ltr' || direction === 'rtl' ? resolveAlign(stored, direction) : undefined;
+    }
+    return stored as string | undefined;
   },
   write: (edge) => edge,
+};
+
+/** `pose.transform` as a flag: on while the pose carries a skew or a per-axis
+ *  scale, and off removes it. On keeps the one held, since a flag cannot
+ *  author a matrix. */
+const transformEncoding: PrefBooleanEncoding = {
+  read: (stored) => poseLinearOf({ transform: stored }) !== null,
+  write: (on, pose) => (on ? pose?.transform : undefined),
 };
 
 type MarkerOptions = PrefEnum['options'];
@@ -123,6 +134,19 @@ const FILL_LEAF: PrefLeaf = {
   },
 };
 
+/** The pose box, its rotation, and the `transform` inside that. */
+const LAYOUT: PrefSection = {
+  name: 'Layout',
+  members: {
+    'pose.x': { kind: 'number', display: TWO_PLACES, name: 'X', description: 'Left edge, world units.', default: 0, pair: { with: 'pose.y', label: 'Position' } },
+    'pose.y': { kind: 'number', display: TWO_PLACES, name: 'Y', description: 'Top edge, world units.', default: 0 },
+    'pose.width': { kind: 'number', display: TWO_PLACES, name: 'W', description: 'Width, world units.', default: 0, min: 0, pair: { with: 'pose.height', label: 'Size' } },
+    'pose.height': { kind: 'number', display: TWO_PLACES, name: 'H', description: 'Height, world units.', default: 0, min: 0 },
+    'pose.rotation': { kind: 'number', name: 'Rotation', description: 'Rotation about the box center.', default: 0, step: 1, unit: rotationDegreesUnit, absentIsDefault: true },
+    'pose.transform': { kind: 'boolean', name: 'Skew', description: 'The skew or per-axis scale the box and rotation cannot hold. Off removes it.', default: false, control: 'switch', encoding: transformEncoding },
+  },
+};
+
 /** Build the standard shape schema — Layout (pose box + rotation) +
  *  Appearance (fill / stroke), optionally a Text group. Matches the kit's
  *  builtin-shape data template (`{ path, fill, stroke?, text? }`,
@@ -131,16 +155,7 @@ function shapeSchema(opts: { text?: boolean } = {}): PrefSection {
   return {
     name: 'Properties',
     members: {
-      layout: {
-        name: 'Layout',
-        members: {
-          'pose.x': { kind: 'number', display: TWO_PLACES, name: 'X', description: 'Left edge, world units.', default: 0, pair: { with: 'pose.y', label: 'Position' } },
-          'pose.y': { kind: 'number', display: TWO_PLACES, name: 'Y', description: 'Top edge, world units.', default: 0 },
-          'pose.width': { kind: 'number', display: TWO_PLACES, name: 'W', description: 'Width, world units.', default: 0, min: 0, pair: { with: 'pose.height', label: 'Size' } },
-          'pose.height': { kind: 'number', display: TWO_PLACES, name: 'H', description: 'Height, world units.', default: 0, min: 0 },
-          'pose.rotation': { kind: 'number', name: 'Rotation', description: 'Rotation about the box center.', default: 0, step: 1, unit: rotationDegreesUnit, absentIsDefault: true },
-        },
-      },
+      layout: LAYOUT,
       // What the node *is* outranks how it is painted: a text node's copy is
       // the first thing an editor reaches for.
       ...(opts.text

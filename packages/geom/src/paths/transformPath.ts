@@ -1,4 +1,4 @@
-import type { Mat3 } from '../mat3';
+import type { Affine } from '../affine';
 import { transformCoords } from '../affine';
 import { PathBuilder } from './builder';
 import type { Path, PolygonPath } from '../path';
@@ -7,12 +7,12 @@ import type { Path, PolygonPath } from '../path';
  *  composing transforms (a half turn's sine is 1.2e-16), not a slant. */
 const AXIS_ALIGNED_EPSILON = 1e-9;
 
-/** Apply an affine `Mat3` to a path's geometry. Never mutates the input.
+/** Apply an `Affine` to a path's geometry. Never mutates the input.
  *
  * Axis-aligned maps (no rotation/shear: `m[1]` and `m[2]` within 1e-9 of 0) keep a
  * `RectPath` a rect, normalizing negative extent (mirror). Rotation or
  * shear promotes the rect's four corners to a `PolygonPath`. */
-export function transformPath(path: Path, m: Mat3): Path {
+export function transformPath(path: Path, m: Affine): Path {
   const [a, b, c, d, e, f] = m;
   if (path.kind === 'rect') {
     if (Math.abs(b) < AXIS_ALIGNED_EPSILON && Math.abs(c) < AXIS_ALIGNED_EPSILON) {
@@ -42,7 +42,7 @@ export function transformPath(path: Path, m: Mat3): Path {
   return transformPolygon(path, m);
 }
 
-function transformPolygon(path: PolygonPath, m: Mat3): PolygonPath {
+function transformPolygon(path: PolygonPath, m: Affine): PolygonPath {
   // transformCoords returns Float64Array; PolygonPath.coords is Float32Array.
   const mapped = transformCoords(path.coords, m);
   return { ...path, coords: Float32Array.from(mapped) };

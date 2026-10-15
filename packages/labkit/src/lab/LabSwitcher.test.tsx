@@ -107,11 +107,14 @@ describe('<LabSwitcher>', () => {
       </div>,
     );
     open();
-    fireEvent.keyDown(document, { key: 'Escape' });
+    fireEvent.keyDown(screen.getByRole('menu'), { key: 'Escape' });
     expect(screen.queryByRole('menu')).toBeNull();
 
     open();
-    fireEvent.pointerDown(screen.getByRole('button', { name: 'elsewhere' }));
+    const elsewhere = screen.getByRole('button', { name: 'elsewhere', hidden: true });
+    fireEvent.pointerDown(elsewhere, { button: 0 });
+    fireEvent.pointerUp(elsewhere, { button: 0 });
+    fireEvent.click(elsewhere, { button: 0 });
     expect(screen.queryByRole('menu')).toBeNull();
   });
 

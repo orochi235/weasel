@@ -20,10 +20,11 @@ const running: JobHandle = {
 /** The fill's edges at each step of one sweep, as fractions of the track. */
 function sweep(steps: number): { left: number; right: number }[] {
   const { container } = render(<JobProgress job={running} />);
-  const fill = container.querySelector<HTMLElement>('.lk-job__fill')!;
-  const track = fill.parentElement!.getBoundingClientRect();
-  const [animation] = fill.getAnimations();
-  const period = Number(animation.effect!.getComputedTiming().duration);
+  const fill = container.querySelector<HTMLElement>('.lk-job__fill');
+  const [animation] = fill?.getAnimations() ?? [];
+  if (!fill?.parentElement || !animation?.effect) throw new Error('the fill is not animating');
+  const track = fill.parentElement.getBoundingClientRect();
+  const period = Number(animation.effect.getComputedTiming().duration);
   animation.pause();
   return Array.from({ length: steps + 1 }, (_, i) => {
     // The last sample stops just short of the period, where the loop wraps.

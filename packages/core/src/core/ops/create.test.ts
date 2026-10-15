@@ -7,6 +7,8 @@ function makeAdapter() {
   const inserts: Obj[] = [];
   const removes: string[] = [];
   return {
+    getNode: (): Obj | undefined => undefined,
+    getChildren: (): string[] => [],
     insertNode: (o: Obj) => inserts.push(o),
     removeNode: (id: string) => removes.push(id),
     inserts,

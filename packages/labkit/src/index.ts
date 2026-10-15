@@ -262,7 +262,7 @@ export {
   type ControlMatrixRow,
 } from './controls/ControlMatrix';
 export { type ControlPack, ControlPanel, type ControlPanelProps } from './controls/ControlPanel';
-export { type InDialogOptions, inDialog, summarizeValue } from './controls/inDialog';
+export { type InDialogOptions, inDialog, summarizeLeaf, summarizeValue } from './controls/inDialog';
 export type {
   CheckboxField,
   ColorField,
@@ -326,6 +326,7 @@ export type {
   TrialInfo,
   TrialRecord,
   TrialStateHandle,
+  UnreadableRecord,
 } from './state/types';
 export type { UndockedPanel, UndockedPanels } from './state/undock';
 export { dockPanel, panelKey, undockPanel } from './state/undock';

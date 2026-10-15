@@ -39,6 +39,32 @@ export function chevron(tip, dir, L = 2.8, spread = 32) {
   return `M${x1} ${y1} ${n(tip[0])} ${n(tip[1])} ${x2} ${y2}`;
 }
 
+/** An open-V head on a shaft that stays curved to its tip, as path data. `curve(t)` is a point on the shaft,
+ *  the tip is at `t1`, and stepping `t` by `dt` walks back along the shaft from it. The barb ends stand on the
+ *  shaft's own normal, one trail of arc behind the tip and `L·sin(spread)` either side; aimed along the tangent
+ *  instead, a head points off the bend and reads as a mark of its own. Holds down to a bend radius of about
+ *  1.2·L, past which the inner barb fills the bend. */
+export function chevronOn(curve, t1, dt, L = 2.9, spread = 42) {
+  const trail = L * Math.cos(R(spread));
+  const half = L * Math.sin(R(spread));
+  let t = t1;
+  let len = 0;
+  let p = curve(t1);
+  while (len < trail) {
+    const q = curve(t + dt);
+    len += Math.hypot(q[0] - p[0], q[1] - p[1]);
+    p = q;
+    t += dt;
+  }
+  const a = curve(t - dt);
+  const b = curve(t + dt);
+  const m = Math.hypot(b[0] - a[0], b[1] - a[1]);
+  const nx = -(b[1] - a[1]) / m;
+  const ny = (b[0] - a[0]) / m;
+  const tip = curve(t1);
+  return [[p[0] + nx * half, p[1] + ny * half], tip, [p[0] - nx * half, p[1] - ny * half]];
+}
+
 /** Point on a circle at math-angle `deg` (SVG y-down). */
 export const onCircle = (cx, cy, r, deg) => [
   n(cx + r * Math.cos(R(deg))),
@@ -56,8 +82,10 @@ const rEnd = onCircle(10, 10, 5.8, 62);
 const resetArc = `M${rStart[0]} ${rStart[1]}A5.8 5.8 0 1 0 ${rEnd[0]} ${rEnd[1]}`;
 const resetHead = chevron(rEnd, ccwTangent(62), 2.9, 40);
 
-// ── save ─────────────────────────────────────────────────────────────────
-const saveHead = chevron([10, 11.7], [0, 1], 2.9, 36);
+// ── export ───────────────────────────────────────────────────────────────
+const exportHead = chevron([10, 11.7], [0, 1], 2.9, 36);
+/** The tray `export` drops into and `import` lifts out of, with its fill line. */
+export const TRAY = `<path d="M4 12.6v2.9A1.5 1.5 0 0 0 5.5 17h9a1.5 1.5 0 0 0 1.5-1.5v-2.9"/><path d="M6.8 14.7h6.4" stroke-width="1"/>`;
 
 // ── pan ──────────────────────────────────────────────────────────────────
 // Shafts start at the hub rim so nothing crosses the center.
@@ -117,11 +145,10 @@ export const BASE = {
   // stops short of their 3..17 margin to read as the same size beside them.
   close: `<path d="M4.5 4.5 15.5 15.5M15.5 4.5 4.5 15.5" stroke-width="1.75"/>`,
 
-  save: `
-    <path d="M4 12.6v2.9A1.5 1.5 0 0 0 5.5 17h9a1.5 1.5 0 0 0 1.5-1.5v-2.9"/>
+  export: `
+    ${TRAY}
     <path d="M10 3.2v8.5"/>
-    <path d="${saveHead}"/>
-    <path d="M6.8 14.7h6.4" stroke-width="1"/>`,
+    <path d="${exportHead}"/>`,
 
   zoom: `
     <circle cx="9" cy="9" r="5.4"/>
@@ -155,4 +182,4 @@ export const BASE = {
     <circle cx="10" cy="10" r="${HUB}"/>`,
 };
 
-export const BASE_ORDER = ['clone', 'reset', 'close', 'save', 'zoom', 'zoom-out', 'fit', 'fit-contain', 'fit-fill', 'fit-stretch', 'pan'];
+export const BASE_ORDER = ['clone', 'reset', 'close', 'export', 'zoom', 'zoom-out', 'fit', 'fit-contain', 'fit-fill', 'fit-stretch', 'pan'];

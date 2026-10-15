@@ -22,16 +22,10 @@ const LINEAR: GradientPaint = {
 };
 
 describe('GradientEditor', () => {
-  it('renders one color swatch per stop', () => {
-    render(<GradientEditor value={LINEAR} onChange={() => {}} />);
-    expect(screen.getByLabelText('Stop 1 at 0%')).toBeInTheDocument();
-    expect(screen.getByLabelText('Stop 2 at 100%')).toBeInTheDocument();
-  });
-
   it('recoloring a stop commits the whole gradient, geometry intact', () => {
     const onChange = vi.fn();
     render(<GradientEditor value={LINEAR} onChange={onChange} />);
-    const swatch = screen.getByLabelText('Stop 1 at 0%');
+    const swatch = screen.getByLabelText('Stop 1');
     fireEvent.input(swatch, { target: { value: '#00ff00' } });
     fireEvent.blur(swatch);
 
@@ -52,7 +46,7 @@ describe('GradientEditor', () => {
     const onInput = vi.fn();
     const onChange = vi.fn();
     render(<GradientEditor value={LINEAR} onInput={onInput} onChange={onChange} />);
-    fireEvent.input(screen.getByLabelText('Stop 1 at 0%'), { target: { value: '#00ff00' } });
+    fireEvent.input(screen.getByLabelText('Stop 1'), { target: { value: '#00ff00' } });
 
     expect(onInput).toHaveBeenCalledTimes(1);
     expect(onChange).not.toHaveBeenCalled();
@@ -79,7 +73,7 @@ describe('GradientEditor', () => {
     expect(screen.queryByRole('radio', { name: 'Radial' })).not.toBeInTheDocument();
   });
 
-  it('numbers swatches along the gradient and recolors the stop each one stands for', () => {
+  it('numbers stops along the gradient and recolors the stop each number stands for', () => {
     const onChange = vi.fn();
     const unordered: GradientPaint = {
       ...LINEAR,
@@ -89,9 +83,8 @@ describe('GradientEditor', () => {
       ],
     };
     render(<GradientEditor value={unordered} onChange={onChange} />);
-    expect(screen.getByLabelText('Stop 2 at 100%')).toBeInTheDocument();
-    // The leftmost swatch is stops[1]: numbered by where it sits, written by index.
-    const swatch = screen.getByLabelText('Stop 1 at 0%');
+    // The leftmost stop is stops[1]: numbered by where it sits, written by index.
+    const swatch = screen.getByLabelText('Stop 1');
     fireEvent.input(swatch, { target: { value: '#00ff00' } });
     fireEvent.blur(swatch);
 
@@ -193,7 +186,7 @@ describe('GradientEditor', () => {
       const mesh = seedMeshPatch('#ff0000ff') as unknown as Paint;
       render(<GradientEditor value={mesh} onChange={onChange} />);
       expect(screen.getByLabelText('Patch 1 corner 1')).toBeInTheDocument();
-      expect(screen.queryByRole('slider', { name: /Gradient stops/ })).toBeNull();
+      expect(screen.queryByRole('slider', { name: /Gradient stop/ })).toBeNull();
       expect(screen.getByRole('radio', { name: 'Mesh' })).toBeChecked();
 
       fireEvent.click(screen.getByRole('radio', { name: 'Linear' }));

@@ -26,18 +26,13 @@ Priority tags:
   `features`; the new word is not chosen yet. That leaves choosing it, then renaming the one path,
   its imports, and the section of the taxonomy.
 
-- **(P3) The slice tool has no icon.** `useSliceTool` declares a label and a key but no
-  `presentation.icon`, so `ToolPalette` draws its placeholder `?`, as the Slice demo shows. It
-  wants a knife glyph in `packages/core/src/icons`, proofed the way "Drawing icons" in
-  `CLAUDE.md` says.
-
-- **(P3) Nothing reads a mode's `entry.trigger`.** Draw enters path-edit, isolation, and text-edit
-  from `SceneCanvas`'s `onDoubleClick` observer through a kind-to-mode table of its own
+- **(P3) Nothing reads a mode's `entry.trigger`.** Draw enters path-edit and isolation from
+  `SceneCanvas`'s `onDoubleClick` observer through a kind-to-mode table of its own
   (`apps/draw/src/modality/doubleClickEntry.ts`), not from the `'double-click-target'` the
-  definitions in `packages/modes/src/presets/default.ts` declare. Binding it means a double-click
-  entry beside the kit's own `enterPathEdit` binding, and a definition does not say which hits it
-  takes (draw's table does), so it waits on the same ruling as "draw: two owners for "is a text
-  edit open"" under Demos, where the question is written out.
+  definitions in `packages/modes/src/presets/default.ts` declare. Text-edit is entered by the
+  edit itself (`useTextEditSession`), so its trigger is unread by design. Binding the other two
+  means a double-click entry beside the kit's own `enterPathEdit` binding, and a definition does
+  not say which hits it takes (draw's table does).
 
 - **(P3) External-content ingestion — follow-ups.** The pipeline is in
   `packages/core/src/features/ingestion/` (its README is the map). Left:
@@ -75,18 +70,14 @@ Priority tags:
   `PropertyPanel`. Its own arc, and the first question is whether labkit should support a lab with
   no trials at all.
 
-- **(P3) One dep still names a plane, not ten.** Read for what a camera-bearing host can
-  implement, only `geometryProjection` obstructs (its own entry below). `view` is per-kernel by
-  design, and `kernel3d` declares `camera3d`. `editAnchors` and `booleansAdapter` are 2D features a
-  3D kernel does not declare. `snap`, `lassoSelect`, `poseDescriptor`, `slice`, `ingestion`, and
-  `pointer` are satisfiable as typed, because every coordinate in them is a screen point under the
-  identity `clientToWorld` a 3D host passes. `pointer` was read, not run in a 3D host: its store
-  (`PointerContextValue`) holds one `{ worldX, worldY, viewId }` point and no camera.
-
-- **(P3) `geometryProjection` cannot hold a 3D transform.** `transform(node, m: Mat3)` names a
-  plane in its signature, so a kernel with a camera has nothing to implement it with. Core builds
-  the `Mat3` at four call sites (move, nudge, flip, and resize commit) before the dep is consulted,
-  so widening the type alone does not free it.
+- **(P3) `geometryProjection` cannot hold a 3D transform.** `transform(node, m: Affine)` names a
+  plane in its signature, and core builds the `Affine` at four call sites (move, nudge, flip, and
+  resize commit) before the dep is consulted, so widening the type alone does not free it. It is
+  the one dep a camera-bearing host cannot implement: `view` is per-kernel by design (`kernel3d`
+  declares `camera3d`), `editAnchors` and `booleansAdapter` are 2D features, and the rest take
+  screen points under the identity `clientToWorld` a 3D host passes. `pointer` was read, not run in
+  a 3D host: its store (`PointerContextValue`) holds one `{ worldX, worldY, viewId }` point and no
+  camera.
 
 - **(P3) Long-press: the native `contextmenu` a touch hold sends is unseen on a real device.**
   `useGestureDispatcher` treats a `contextmenu` that arrives while a touch or pen hold is in
@@ -102,25 +93,14 @@ Priority tags:
   AltGr: that Chrome and Firefox both report AltGraph for it, and that a plain Ctrl+Alt+letter, for
   which Firefox reports AltGraph too, is still read as a chord.
 
-- **(P3) What the pointer recognizer's extraction left.** Three `pointermove` hover channels
-  listen on one canvas element and each tracks "is a button down" its own way: the dispatcher's
-  hover pump (`channels/hoverCursor.ts`), `useSurfaceInput` in core's canvas, and
-  `PointerPublisher` in `PointerProviderIfRoot.tsx`.
+- **(P3) `BASELINE.md`'s text layout numbers include grouping.**
+  `tests/perf/bench/text-layout.bench.ts` times layout alone now, so they need re-recording.
 
-- **(P3) What the text layout split left.**
-  - `layoutEntries.ts` kerns each code point against the one before it, so a combining mark
-    between two letters takes their pair's kerning away: `A`, U+0301, `B` sets the `B` where an
-    unkerned one goes. `layoutEntries.letterSpacing.test.ts` ("tracks a base and its combining mark
-    once") expects exactly that, so whether a mark should be skipped when kerning is not chosen yet.
-  - `tests/perf/bench/text-layout.bench.ts` times layout alone now, so `BASELINE.md`'s numbers,
-    which included grouping, need re-recording.
-
-- **(P3) What removing the old tool design left.** A `<CanvasView>` converts client points with
-  the bare rect helper (`clientToWorldHere` in `CanvasView.tsx`), and so does `worldPointAt` for a
-  point that resolves to a declared view. A canvas's `clientToWorld` override reaches neither: it
-  maps into the canvas's own world, and these need a client-to-canvas-local conversion it does not
-  provide. The view resolver (`features/viewports/viewResolver.ts`) picks the view under a client
-  point from the canvas's rect the same way.
+- **(P3) The dispatcher's canvas-local point ignores a `clientToWorld` override.** `toCanvasLocal`
+  in `packages/routing/src/interactions/dispatcher/dispatchCore.ts` subtracts the element's rect,
+  so on a canvas under a CSS transform the painted cursor, a wheel or pinch's `local`, and the
+  long-press state's `local` are off. Core's `surfaceLocal` puts the override's world point back
+  through the camera; the dispatcher holds no camera to do the same with.
 
 - **(P3) What moving the Badge lab out of its stories file left.** The lab is
   `packages/ui/src/components/Badge/lab/` now.
@@ -145,67 +125,29 @@ Priority tags:
   under this driver, and why is the open question. A finding lands in `bake.ts`.
 
 ---
-- **(P3) A group transform is wired for a translate only.** `GroupTransform` and
-  `BehaviorResult.transform` exist (`packages/core/src/interactions/gestures/types.ts`), but the
-  resize and rotate behaviors still answer a `pose` (`ResizeMoveResult`, `RotateMoveResult`), not a
-  `scale` or `rotate` transform, and the `BehaviorResult.pose` shim they were to replace is still
-  there.
+- **(P3) Nothing produces `GroupTransform`'s `scale` and `rotate` arms.** A move behavior answers
+  a `translate`, and that is the only way it moves the drag. A resize behavior answers bounds
+  (`ResizeMoveResult.pose`) and a rotate behavior an angle or a pose (`RotateMoveResult`). A `scale`
+  about a pivot cannot say everything bounds can: a constraint that slides the box without resizing
+  it has no pivot. Left to rule: drop the two arms, or have resize and rotate answer a transform.
 
 ## Viewport
-
-- **(P3) A controlled consumer's own `setState` cannot interrupt a glide.** Every view write that
-  goes through the canvas cancels the camera runner. A consumer who owns `view` in state and writes
-  it directly does not go through the canvas: the prop change arrives asynchronously, after the
-  runner has lowered the flag that distinguishes its own frames, so it is indistinguishable from
-  one. Comparing the incoming prop against the last value written would work only for consumers who
-  store the view by reference — one who normalizes or clamps it would have every frame of their own
-  glide canceled. Wants a real design.
 
 - **(P3) Views do not nest.** A view paints and routes the surface's own stack, never another view,
   and a loupe magnifies the canvas's camera — aimed over a `<CanvasView>` panel it shows and edits
   the canvas's world, not the panel's. Composing would mean a view's camera derived from the view
   under its aim, and a resolver that descends rather than picking one rect.
 
-- **(P3) A page that does not load core's stylesheet shows every canvas at its buffer size.** The
-  renderer sets only a canvas's drawing buffer, and `<Canvas>`, `<SceneViewCanvas>`, and
-  `<DrawCanvas>` size the element with a zero-specificity class from `@weasel-js/core/style.css`
-  (`surfaceBox`). Without that stylesheet the element is `dpr` times too large, so it is wrong
-  only on a high-density screen, and nothing warns. Core could adopt the one rule itself when a
-  canvas mounts, the way `applyTheme` adopts its sheet; that reaches a page with no stylesheet
-  and misses a canvas in a shadow root or a second document. Not chosen yet.
-
 ---
-- **(P3) Wheel and keyboard zoom cannot be held to one axis.** `View.scale` is per axis and
-  `fitViewToBounds` has `stretch`, but `ViewportZoomOptions` (`viewportZoom.ts`) has no
-  `axis: 'both' | 'x' | 'y'`; only wheel pan and the hand tool take one.
 
 ## Paths & booleans
 
-- **(P3) a pose's `transform` is drawn, picked, outlined, and resized in its own frame, and these
-  do not read it yet.** A box pose may carry a `transform` (`PoseLinear`,
-  `packages/geom/src/poseFrame.ts`): the skew or per-axis scale its box and rotation cannot hold.
-  Ruled 2026-10-11: text and image nodes carry a full transform, and such text stays editable
-  text. The selection chrome, its hit regions, and a lone node's resize and rotate read the frame
-  through `core/geometry/targetFrame.ts`, and the text edit overlay is handed it as
-  `TextEditScreenPose.frame`; a resize writes the box and keeps the transform. What still sees
-  only the box and its rotation:
-  - `remapRotatedLeaf` (`core/geometry/poseDescriptor.ts`) drops the shear a non-uniform group
-    resize gives a turned leaf rather than writing it to the leaf's `transform`, and reads only
-    the leaf's rotation, so a leaf that already carries a skew is remapped as if it had none. The
-    chrome now follows whatever it writes.
-  - `useSceneTextEdit` places the overlay, and tests a double-click, against the node's own pose
-    (`effectivePose`), not its world pose, so text under a container whose pose is a frame is
-    edited where it would sit without that container. It also scales by `view.scale.x` alone, so
-    under non-uniform zoom the overlay is stretched wrong whatever the pose carries.
-  - `composeRectPose` / `composeRigidPose` (`core/scene/composePose.ts`) keep a child's own
-    transform and do not compose a container's into its children.
-  - `defaultNodeProperties` has no row for it, so `SelectionPanel` can neither show nor clear it.
-
-- **(P3) svg import: `<tspan>` glyph positioning is not read.** `dx`, `rotate`, and list-valued
-  per-glyph `x` / `y` are not applied; each warns, on `<text>` and `<tspan>` alike
-  (`packages/svg/src/tspanLines.ts`). Kerned text exported as one `<tspan>` per glyph run imports
-  with the glyphs run together: turning a positioned run into a letter spacing or a space needs the
-  advance of the glyphs before it, which a parse with no face loaded cannot measure.
+- **(P3) svg import: absolute and turned glyph positions are not read.** A `<tspan dx>` list is
+  read as letter spacing (`packages/svg/src/glyphShifts.ts`). `rotate`, list-valued per-glyph
+  `x` / `y`, and a `dx` on `<text>` itself are not applied; each warns
+  (`packages/svg/src/tspanLines.ts`). Kerned text exported with an `x` per glyph imports with the
+  glyphs run together: turning a position into a letter spacing or a space needs the advance of
+  the glyphs before it, which a parse with no face loaded cannot measure.
   `serializeSvg` writes no line height either, so a pitch read on import is dropped on export
   unless a caller carries it, as WeaselDraw does in `wd:line-height`.
 
@@ -215,13 +157,44 @@ Priority tags:
   ask for it, because a scene node has no hidden state of its own to map it to: only a layer has
   `visible`. With a per-node one, `unpackSvgFiles` passes `keepHidden` and writes the flag.
 
-- **(P3) svg export: a marked stroke with several open subpaths draws one pair of end markers.**
-  The renderer puts a start and an end marker on each open subpath (`markerHeads`, `markerSites` in
-  `packages/stroke/src`). A path split for `openFill: 'none'` is written one open subpath to a
-  `<path>`, so it matches. A path with `fill: none`, or one whose fill closes its open subpaths,
-  stays one `<path>`, and SVG draws one pair for the whole of it; `marker-mid` differs too, since
-  SVG puts one on every vertex between the path's first and last, subpath joins included. Read in
-  the code, not rendered. The filled case means writing the fill and the strokes as separate paths.
+### Path editing tricks
+
+- **(P2) Smart remove brush.** Brush along a path in edit mode to delete the anchors under the
+  brush, each gap refit to the shape it replaces the way `deleteAnchorsAt` refits one.
+- **(P2) A rectangle has no anchors in path edit.** Draw stores a drawn rectangle's `data.path`
+  as a `RectPath` (`kind: 'rect'`), and `classifyPathStorage`
+  (`packages/core/src/features/paths/editablePath.ts`) accepts only a polygon, so double-clicking
+  one enters draw's path-edit mode with no anchors to drag, insert, or bend. Undecided: whether
+  editing turns the rectangle into a polygon path on its first edit, and what then happens to
+  anything that reads it as a rectangle.
+- **(P2) Dynamic corners.** Round, chamfer, or invert any corner anchor by dragging a widget at
+  it, and change the radius later. Needs a corner radius per anchor in the path data, expanded
+  into geometry when it renders and on export.
+- **(P2) Extend a path from its end.** Drag an open path's endpoint outward to grow it along its
+  end tangent, or along its end curvature.
+- **(P2) Measure, then transform by the measurement.** A measure tool reads distance and angle
+  between two points, and the readout can move or rotate the selection by exactly that amount.
+- **(P2) Star and polygon stay editable after drawing.** The point count is adjustable with the
+  wheel only while the star is being dragged out (`useStarTool.tsx`); after commit it is plain
+  geometry. Keep the parameters on the node and edit them in the inspector.
+- **(P2) Handle commands.** Retract handles, make an anchor's handles symmetric, and keep a handle's
+  angle while dragging its length.
+- **(P2) Shape builder.** Drag across overlapping regions to merge them, Alt-drag to delete them.
+  `previewBooleanOp` already answers the pieces; the tool draws and picks among them. Building it
+  also gives "Live preview of a Boolean operation" below its display.
+- **(P2) Transform again.** Cmd+D repeats the last move, rotate, scale, or duplicate-and-move on
+  the current selection.
+- **(P2) Reposition a shape while drawing it.** Hold Space during a shape drag to move the shape
+  instead of resizing it.
+- **(P2) Spacing hints.** Equal-spacing markers between siblings while moving, and Alt-hover
+  distance readouts between the selection and the shape under the pointer.
+- **(P2) Live symmetry.** Draw on one side of an axis and the mirrored half follows.
+- **(P2) Variable-width strokes.** A width profile along a stroke's length, edited by dragging
+  on the stroke. `strokeToPath` handles a fixed width only.
+- **(P2) Offset path, simplify, cut at intersections, average and join anchors.** Path
+  commands draw lacks: offset from `strokeToPath`, simplify with a live slider
+  from `schneiderFit`, cut every path at its crossings from `splitBySegment`, and average or join
+  two selected endpoints.
 
 ### Pathfinder follow-ups (post-v1)
 
@@ -229,13 +202,14 @@ Priority tags:
 - **(P3) Non-destructive boolean groups.** Figma-style "boolean group" container node that recomputes geometry from children at render time. Requires a new layer/scene-node type plus renderer support.
 - **(P3) True curve booleans.** The booleans flatten beziers before clipping (`packages/geom/src/booleans/adapter.ts`), so the result is straight-line. Skia/PathKit-style curve-preserving booleans are substantially harder.
 - **(P3) Live preview of a Boolean operation.** Seeing the result before committing: on hovering a Pathfinder button, or holding an op key over a path. `previewBooleanOp` answers the pieces an operation would make, each with its source and paint, and mints and commits nothing. What is left is everything that shows them: no Pathfinder action has a gesture or a key to hold, an action has no way to say what it would do while its button is hovered, and nothing draws paths that are not nodes over the scene.
-- **(P3) A group's `data.label` is not drawn on the canvas.** Outline Stroke on draw's starter rect makes a group that takes the rect's data (`drawOutlinesAdapter`, `apps/draw/src/outlinesAdapter.ts`), so the layer list still reads "Welcome", but the word the rect wore on the canvas is gone. `defaultDrawOne` does emit a container's label, but `buildSceneTree` (`packages/core/src/canvas/buildSceneTree.ts`) pushes a container's own commands before its children's, so the group's paths cover it. Drawing it on top needs the walk to paint a container a second time after its children, which `drawOne` has no way to ask for.
 
 ---
 - **(P3) draw's SVG files do not carry layers.** A saved file keeps paper size, title, groups, and
   line height under the `wd:` namespace (`apps/draw/src/svgInterop.ts`) but no layer list and no
-  layer id on a shape, so layers are lost on reopen; export only leaves hidden layers out
-  (`svgExport.ts`). Whether a page has its own layers is undecided.
+  layer id on a shape; export only leaves hidden layers out (`svgExport.ts`). Nothing is lost yet:
+  draw has the one layer, `'default'` (`WeaselDrawLayer`, `drawDocument.ts`), and no way to add
+  another, and `openSvg.ts` puts every node on it. Whether a page has its own layers is undecided,
+  and the file format waits on that.
 
 ## Rendering & paint
 
@@ -248,17 +222,18 @@ Priority tags:
   leaves use a labeled `select`, where the sibling stroke enums (`cap`, `join`, `align`, `dash`)
   are icon toggles. The marker glyphs have to be authored to this repo's icon standard.
 
-- **(P3) Renderer: geometry and paint space far from the origin are still single precision.** The
-  transform stack is in doubles and a large model translation is rebased before upload
-  (`setProjAndModel`, `u_origin`); that is proven by float32 arithmetic in
-  `draw.precision.test.ts`, not in a browser. Not measured, and still float32: a path's own
-  coordinates (`PolygonPath.coords`, `Mesh.vertices`), which at world x = 262,144 sit on a 1/32
-  world unit grid, 2 px at 64x, so a tessellated shape is quantized where a batched rect (doubles)
-  is not; `u_worldInv`, which places a `units: 'world'` gradient or pattern per fragment from a
-  world-sized translation; and the model a consumer's own vertex stage receives (`u_view` on a
-  shader command, `u_model` in a registered paint kind), which has no `u_origin` to rebase against.
-  The first needs a per-path origin in `@weasel-js/geom`'s tessellation, the second the same
-  rebase applied to the paint matrix.
+- **(P3) Renderer: geometry far from the origin is still single precision.** The transform stack
+  is in doubles, a large model translation is rebased before upload (`setProjAndModel`,
+  `u_origin`), and a gradient's or a pattern's paint space is rebased the same way (`bindGradient`
+  measures from the gradient's own start, `bindPattern` drops whole tiles). Both are proven by
+  float32 arithmetic (`draw.precision.test.ts`, `draw.paintPrecision.test.ts`), not in a browser;
+  `gradientStart.browser.test.ts` checks where a ramp lands and has not been run. Still float32:
+  a path's own coordinates (`PolygonPath.coords`, `Mesh.vertices`), which at world x = 262,144
+  sit on a 1/32 world unit grid, 2 px at 64x, so a tessellated shape is quantized where a batched
+  rect (doubles) is not; and what a consumer's own stage receives, which has no origin to rebase
+  against: the model (`u_view` on a shader command, `u_model` in a registered paint kind) and the
+  paint matrix a registered kind asks for (`PaintBindContext.spaceInverse`). The first needs a
+  per-path origin in `@weasel-js/geom`'s tessellation.
 
 ---
 
@@ -311,57 +286,37 @@ Priority tags:
   synthesized (capitals scaled by x-height over cap height), and a face with an `smcp` feature
   should get its own small-cap glyphs instead.
 
-- **(P3) Text direction: the Align bar lights `start` / `end` as if an omitted `direction` were
-  `ltr`.** An omitted `TextStyle.direction` is `'auto'`, each paragraph's first strong character, so
-  right-to-left text aligned `start` paints from the right while the bar lights Left. The bar's
-  encoding (`alignEncoding` in `packages/core/src/canvas/SceneCanvas/defaultNodeProperties.ts`) is
-  handed the leaf's siblings, which are the style's fields and not the node's text, and
-  `paragraphDirection(text, direction)` needs the text. Undecided: whether `PrefEnumEncoding.read`
-  and `write` should be handed the whole node, or the bar should show `start` / `end` as their own
-  state instead of resolving them to an edge.
+- **(P3) Text direction: the Align bar has no segment for `start` / `end`.** Under a stated
+  `direction` they light the edge they resolve to; under `auto`, where each paragraph takes its
+  own from its first strong character, they light nothing. A click on any segment still writes an
+  edge over the reading-order value. Giving them segments of their own takes two glyphs, which
+  have to be drawn and proofed in a browser (`packages/ui/scripts/icons/text.mjs`).
+
+- **(P3) Icons: the size family and `orbit` collapse at 16px 1x.** `taller`, `shorter`, `wider`,
+  `narrower`, `tallest` and `shortest` carry two short arrows each, and at 16 device pixels the
+  heads close up into dots; `orbit`'s head does the same against its ring. All resolve at 2x.
+  They want heads on the pixel grid, or fewer of them (`packages/ui/scripts/icons/size.mjs`,
+  `camera.mjs`). The straight arrows drawn before the 45-degree rule in CLAUDE.md ("Drawing
+  icons") still use spreads of 36 to 42.
 
 - **(P3) Text: an emoji is a bitmap baked at one size.** A color glyph is rasterized at the canvas
   tier's `BAKE_SIZE` (48px) and mipmapped, so it is sharp at or below that on screen and blurs
   above it: a 96px heading, or body text zoomed past 4x. A distance field has no such limit and
   an emoji has no field, so it needs a second bake at the size it is drawn at, the way a vector
   image re-rasterizes in power-of-two steps (`maybeReraster` in
-  `packages/renderer/src/images/imageCache.ts`). Separately, `textToPath` refuses text holding an
-  emoji with `no-outlines`, as it did when the emoji was an escalated canvas glyph (read from
-  `textToPath.ts`, not run).
+  `packages/renderer/src/images/imageCache.ts`). The larger bakes want pages of their own: the
+  color pages empty together with the field pages when either set fills (`reclaim` in
+  `packages/font/src/dynamic/bakeQueue.ts`), and one 384px emoji takes the room of sixty at 48.
+  Whether the result is sharp can only be read in a browser.
 
 ---
 
 ## Scene, adapters & layout
 
-- **(P3) geom's `Mat3` and `mat3` are different matrices.** `Mat3` and the free functions beside
-  it (`identity`, `multiply`, `invert`) are the six-number affine; `mat3` and `GlMat3` are the
-  nine-element column-major matrix a GL uniform takes. Both are exported from `@weasel-js/geom`'s
-  root, a capital letter apart.
-
-- **(P2) Hand-written adapters may still be flat lists.** `sceneToAdapter` is the only adapter the
-  kit builds, and the scene slot paints only a tree. What is left is the tier below it: an adapter
-  written by hand against the narrow contracts, which may leave the tree out. Readers still carry
-  a second path for one that does — `adapterPickSource` (`canvas/pickWalk.ts`) walks `getNodes()`
-  when `getChildren` or `getNode` is missing, `OrderedAdapter`'s two methods are optional and
-  reorder ops do nothing without them, and the ops' `OrderedReader` (`core/ops/slot.ts`) treats a
-  missing `getChildren` as "no siblings". `useSelectTool.zorder.test.tsx` and
-  `useSelectTool.viewGates.test.tsx` pin the flat path. Needs a decision: require the tree of
-  every adapter and delete those paths, or keep the flat list as the least a hand-written adapter
-  can be. A smaller end: `sceneAsHierarchy`
-  (`canvas/sceneViewRender.ts`) rebuilds four of `sceneToAdapter`'s reads because
-  `sceneAdapter.ts` imports React for `useSceneAdapter`, which a headless render cannot.
-
-- **(P3) A marquee and a lasso disagree on a node whose descriptor bounds reach past what it
-  draws.** Two nodes share the pose `{0, 0, 40, 10}`, and a descriptor's `forNode` gives one a
-  40-square box. A marquee over the band above the pose takes that node; an `intersect` lasso
-  around the same band takes nothing. The node matches the default painter, whose silhouette is the
-  pose rect, so its outline is the pose and not the descriptor's box. `regionTakes`
-  (`core/geometry/regionHit.ts`) answers a marquee `true` for any rect outline once the bounds
-  overlap, which holds only when the outline is the bounds; the lasso tests the outline. The
-  `enclosed` branch's `!inBox` reject assumes the same the other way. Undecided: the module's
-  contract says the outline decides, so the marquee shortcut should compare the drawn rect with the
-  region, but that flips `sceneAdapter.regionOutline.test.ts`'s "marquee picks the ball and not the
-  box", which then needs a painter for the ball to say anything about `forNode`.
+- **(P3) A diagram's edge labels can land on nodes.** A label sits at a fraction of its route, offset
+  to one side, with no check for the boxes around it, so the label on a short edge between ranks
+  overlaps the node or group box it leaves or enters. `layeredRoutes` keeps routes clear of nodes;
+  nothing does the same for labels. blits' playground timing view shows it (`anchors` preset).
 
 - **(P3) A direct scene call made while a journal is open lands on the scene's own stack.**
   `scene.applyBatch` goes to the open journal; `scene.setPose` and its siblings, `scene.batch`, and
@@ -373,14 +328,6 @@ Priority tags:
   container runs as a batch. draw opens a journal in every mode
   (`apps/draw/src/modality/machine.ts`), so the change moves where every direct call made during
   a mode lands.
-
-- **(P3) Duplicate and Alt-drag clone: a copy that derives from nodes outside the copy still follows
-  the originals.** `copySelection` (`interactions/actions/defaults/copySubtree.ts`) re-points a
-  copied node's `dependsOn` id list at the copies only when every node in it was copied too. With
-  one or more left out, the copy keeps the original list, so duplicating an edge alone gives a
-  second edge drawn exactly over the first. A paste drops such a node instead (ruled 2026-10-11);
-  the call for a copy made inside the same scene, where the originals are still there to follow, is
-  whether it does the same, keeps the list, or re-points the ids it can.
 
 ### Derived geometry follow-ups
 
@@ -395,11 +342,11 @@ Priority tags:
 
 ### `useScene` follow-ups
 
-- **(P3) Scene layout: what the first cut left.** A layout a container declares on its node
-  (`ContainerNode.layout`) is measured by `UseSceneOptions.layoutFrame` unless a canvas installs
-  its handler, so a scene whose canvas uses a custom pose descriptor states how a pose is measured
-  twice. And undecided: whether the `layouts` prop, now a second way to name a container's layout,
-  should be retired in favor of the node declaration.
+- **(P3) A scene and its canvas each say how a pose is measured.** A container's layout
+  (`ContainerNode.layout`) is measured by `UseSceneOptions.layoutFrame`, and everything a canvas
+  does by its `poseDescriptor` prop, so a scene whose poses are not rects states it twice. The
+  scene owns composition (`useScene({ composition })`); the descriptor could move there the same
+  way, with the layout frame read from it.
 - **(P3) A scene composes poses only when asked to.** Ruled 2026-10-11: the scene owns
   composition: a child's pose is relative to its container's frame, and moving a container writes
   one pose. The scene owns it now (`useScene({ composition })`, read everywhere as
@@ -465,14 +412,13 @@ Priority tags:
     it is used, and its wire spans the whole chart. Ranking that minimizes total edge length
     (network simplex) would put each source next to the stage it feeds.
   - A wire spanning several ranks has no stand-in node in the ranks it crosses, so ordering cannot
-    see it and routing does not steer it round what stands there.
+    see it. Routing now steers it through the gaps (`layeredRoutes`, `packages/diagram/src/route.ts`),
+    but only through gaps that ordering left by chance.
   - Crossing reduction (`order: 'barycenter'`) is opt-in, and `nodeGraph` does not opt in. It also
     orders by a neighbor's position in its rank, not by the position of the port the wire joins.
   - Positions across a rank are packed and centered, not aligned to neighbors, so wires that
     could run straight bend.
   - Nothing places wire or port labels away from wires.
-
-  The `diagram-routes` branch (unmerged) takes on the routing case with `layeredRoutes`.
 - **(P3) `DiagramView` fits its view once, at mount.** `defaultView` only seeds the canvas's
   view, so when `width` or `height` changes the canvas resizes and the view does not refit; a
   diagram fitted for a wide box is clipped in a narrower one. The EffectChart lab shows it when
@@ -509,46 +455,8 @@ Priority tags:
 
 ## Animation
 
-- **(P3) Timeline: a frame that skips whole laps fires them under `loop: n` and not under
-  `loop: true`.** `tick` in `packages/animator/src/timeline/createTimeline.ts` fires every
-  skipped lap's events under `loop: n` but none under `loop: true`, where `booking.ts` says
-  crossings fire "nothing of the laps in between". Which of the two is meant is undecided.
-
 ### Timelines and rigging
 
-- **(P3) A pose typed by an interface is not a `ClipValue`** — `ClipValue`'s object arm is an
-  index signature, which an interface such as `RectPose` does not satisfy, so
-  `{ t: 0, value: pose }` is a type error for a `pose: RectPose` and fine for the same object
-  written inline.
-- **(P3) A view with its own `toPose` shows no pose override, a skinned path included** — a
-  scene slot's `toPose(node)` replaces the pose a node is painted at, so a drag in flight, a
-  rig's bound nodes, and a skinned path all show there as the document has them. The path is
-  the visible part: an override's `path` is in the scene's frame, and `sceneDerivedPathOf`
-  leaves it out for a `toPose` reader, as `sceneDepLookup` does for what derives through one.
-  Not built, because it is a choice about what `toPose` means, and fixing the path alone
-  would paint a bent path at the rest pose. The options:
-  - *`toPose` stays the document's view* (today; `SceneSlotConfig.toPose` says "committed
-    pose"). Nothing to build, and the entry closes with a sentence in `docs/concepts.md`.
-    A minimap or a second view drawn through `toPose` never shows motion.
-  - *`toPose` is handed the node as the scene shows it*, its `pose` the override's, and the
-    override's `path` is carried from the override's pose to the pose `toPose` answers: by
-    `descriptor.remapBounds` between the two boxes, or the pose frame's affine for a turned
-    one. Every override shows in every view, and a `toPose` that offsets or scales needs no
-    change. A `toPose` that ignores `node.pose` and places a node from its data alone gets
-    the bent path fitted into a box that did not move with it.
-  - *An override's `path` is kept relative to its `pose`*, as `data.path` is to a node's
-    pose, and every reader carries it through the pose it paints at. One rule for both
-    paths, at the cost of `pathInWorld` on every skinned path every frame in the common,
-    no-`toPose` case, and every writer and reader of `PoseOverride.path` changes.
-
-  Recommended: the second. A view exists to show the scene, an override is what the scene
-  is showing, and the cost lands only on a reader that passes a `toPose`. It needs the
-  pose `toPose` is called with settled first (`buildSceneLayer` and `scenePaintedPoseOf`
-  both call it with the stored node), which is the larger half of the work.
-- **(P3) `useRigNode` drops a running animation when the skeleton's joints change** — adding,
-  removing, renaming, or reordering a joint makes a new `target` at the bind pose, since a pose
-  target's axes are its joints in order. Carrying an animation across needs the animator to
-  move what runs on one target to another with different axes.
 - **(P3) The bone and weight tools have no icon and are not `defaultTools` ids** — they are
   mounted as `tools={{ bone, weight }}`, as slice is.
 
@@ -615,53 +523,69 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 ## Audio
 
-- **(P3) The side-scroller's music bed is engine voices nobody has heard.** It plays from a
-  pattern player on the music bus (`platformer/bed.ts`). The old render was
-  peak-normalized as a whole, which voices have no equivalent of: `MUSIC_GAIN`
-  in `usePlatformerAudio.ts` is set so one pass has the old render's RMS, and
-  `platformerBed.browser.test.ts` holds it there, and each octave within 2 dB
-  of the old balance. What is left is a listening pass: the bus gain chosen by
-  ear, or a compressor insert in its place.
+- **(P3) Nobody has listened to the side-scroller's music bed.** `MUSIC_GAIN`
+  in `usePlatformerAudio.ts` is set by measurement, to the RMS of the render
+  the bed replaced, and `platformerBed.browser.test.ts` holds it there. What is
+  left is the bus gain chosen by ear, or `createCompressorEffect` on the music
+  bus in its place.
 
-- **(P3) Trope-aware generative scoring: unheard.** `createScore`
-  plays a mood on three axes (valence, tension, urgency) as bars written by
-  `scoreBar` from `scoreParams`, and names the cue in force through `state()`
-  and `onBar`. Every number in the mapping was chosen from the description of
-  the four cues and checked only as structure: the thresholds between modes
-  and harmonies, the tempo range, the envelopes, the layer levels, and where
-  each cue sits on the axes. Whether dread reads as dread is a listening pass
-  nobody has done; the `score` demo (`apps/site/demos/ScoreDemo.tsx`) plays
-  each cue with its parameters beside the sliders, which is where to do it.
+- **(P3) Nobody has listened to the generative score.** Every number
+  `scoreParams` maps a mood through was chosen from descriptions of the four
+  cues and is tested as structure only. Whether dread reads as dread is for
+  ears: the `score` demo (`apps/site/demos/ScoreDemo.tsx`) plays each cue with
+  its parameters beside the sliders.
 
-- **(P3) AudioWorklet voices** — immune to main-thread jank. Moving only the
-  scheduler's timer into a worklet would change nothing: it already runs off
-  the main thread, in a Worker, and what a stall delays is the callback that
-  makes a voice's nodes, which has to run on the main thread. Immunity means
-  synthesizing the voices inside a worklet processor from events posted ahead
-  of time: a second implementation of the oscillator, partial, noise, filter,
-  and envelope voices, plus a worklet module, cross-thread messaging, and a
-  bundling story. The engine's `onLate` option reports every event a stall made
-  late, and by how many ms. Revisit when it fires in a real app whose
-  `lookahead` has already been raised.
+- **(P3) AudioWorklet voices** — immune to main-thread jank. What a stall
+  delays is the callback that makes a voice's nodes, which has to run on the
+  main thread, so immunity means synthesizing the voices inside a worklet
+  processor from events posted ahead of time. The synthesis is built:
+  `createNoteKernel` and `createNoiseKernel` (`voiceKernel.ts`) render what
+  `playNote` and `playNoise` play, a block at a time, and
+  `voiceKernel.browser.test.ts` holds them to the node graph. What is left:
+  - a processor that mixes kernels onto a bus from posted events. A worklet
+    cannot import the package's bundle, so the kernel has to reach it as source
+    text, which needs a build step.
+  - the engine's side. A worklet voice's handle, pool slot, steal, pan, and
+    position have to behave as a node voice's do, and `createAudioEngine.ts` is
+    one 611-line function at its size ceiling, so this starts by splitting it.
+  - a browser test that blocks the main thread and hears no gap.
 
 ---
 
 ## Selection, actions & UI panels
 
-- **(P3) Scallops on a fitted badge base still run through the label.** A fitted base
-  (`puzzle`, `quatrefoil`, `octant-spline`, `octant-bspline`) now leaves room for what moves its
-  outline inward (`inwardReach`, `Badge/composeOutline.ts`), and bites and a negative `bloat` clear
-  the label in headless Chromium. `scallops` (`scallopRadius: 5`, `scallopSpacing: 12`) does not on
-  the last three: the outline crosses both ends of the label, as it did before. Not read to a
-  cause; a scallop moves its points outward, so `inwardReach` counts nothing for it, and on a
-  concave stretch outward is toward the label. Seen in the same screenshot and also not read: a
-  removable `pill` with a two-word label wraps it onto two lines in a flex row with room to spare.
+- **(P3) Nothing puts `prefsCss` on a page.** `prefsCss(store)` writes the text and
+  `prefsCssAttributes(store)` the attributes (`packages/prefs/README.md`, "As CSS custom
+  properties"); a host adopts the one and sets the other by hand, and again on every change. The
+  kit adopts a rule in two places already, `holdRule` in `@weasel-js/theme` and core's own for a
+  canvas's size rule, which neither prefs nor a third copy should join: fold those into one
+  first, somewhere prefs can reach. Two more things it does not write: a color held as a
+  `ColorSource`, which the `value` option can hand to `colorSourceCss`, and a blend between two
+  options as `color-mix()` driven by a weight property, which would let a mode change crossfade
+  with no script. It must not become a third way a theme token reaches CSS: the build-time
+  emitter behind `tokens.css` and `applyTheme` are the two there are.
+
+- **(P3) Nobody has seen a theme's prefs schema in a form.** `themePrefsSchema`
+  (`@weasel-js/theme/prefs`) is tested as data and through a store, and no page draws it in
+  `PrefsForm` yet: a page in the rail per token group, and most color rows split by mode.
+  `apps/theme-editor` edits definitions through its own panels and is the place it would go.
+  Nothing drives `applyTheme`'s `weights` from an animator either, which is the same gap as the
+  selector weights under "What the split rows in `PrefsForm` left".
+
+- **(P3) What the split rows in `PrefsForm` left.** The marks a split leaf draws in a group's
+  heading and in a bar cell are tested in jsdom and were never seen. `list`, `map`, `union`,
+  hidden, and alias rows open to their members through the same path as the kinds that have a
+  test, and have none of their own. A row that can be split is a group and no `<label>`, so an
+  app renderer's control on such a leaf has to name itself. Nothing animates a selector's weights
+  yet: `store.get(path, { weights })` is there for an animator target to drive.
 
 - **(P3) A removable badge's remove control can wrap onto a line by itself.** On a wrapped `pill` or
   `plain` `Badge`, when the line cannot hold the last word and the control together, the control
   breaks alone and takes its negative margin with it, so it sits left of the line's start. Measured
   in bare markup, not on a badge. A word joiner, a non-breaking space, and `white-space: nowrap` do
-  not stop Chromium breaking before an inline-block.
+  not stop Chromium breaking before an inline-block. Seen once in a screenshot and not read to a
+  cause: a removable `pill` with a two-word label wrapped onto two lines in a flex row with room
+  to spare. Both need a browser to work in.
 
 - **(P3) Disabled has no signal of its own, now that emphasis is an alpha.** Disabled is `opacity:
   0.4`–`0.5` on the whole control, and subtle text is 0.54–0.64 alpha, so a disabled control and a
@@ -673,41 +597,26 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   `fonts.css`, so `--wzl-font-ui`'s Oswald and `--wzl-font-numeric`'s Oswald Tabular fall back to
   system faces in every demo. Left as is for now by decision; draw loads `fonts.css`.
 
-- **(P3) `ToggleBar`'s `minimal` is not `ButtonBar`'s.** The three bars share one skin,
-  `components/segmentedControl.module.css`, and fork only at `minimal`: `ButtonBar` and
-  `OptionsBar` draw bare rounded segments with a gap, and `ToggleBar` adds `.minimalBoxed` over
-  that, a bordered box with square corners and a rule between neighbors. Which look wins, or
-  whether both are variants every bar takes, is a visual call.
+- **(P3) `PropertyField` draws its unit from its own `unit` prop, not through `QuantityText`.**
+  `Slider`'s readouts, `BandEditor`'s ticks and ends, and `Transport`'s rate draw through
+  `QuantityText`, which dims a unit, a percent sign, and a label. `PropertyField`'s suffix is still a
+  `ReactNode` it is handed beside an editable number, so it follows none of that. `QuantityText`
+  draws no kind's MathML form.
 
-- **(P3) No control in `@weasel-js/ui` draws its numbers through `QuantityText`.** `QuantityText`
-  draws a quantity, a range, or a vector as the HTML form `@weasel-js/quantity` writes, and dims
-  a unit, a percent sign, and a label. No control uses it: `Slider`'s readouts, `BandEditor`'s
-  ticks and ends, and `Transport`'s rate draw `qty().text`, and `PropertyField` still draws its
-  suffix from its own `unit` prop. It draws no kind's MathML form.
+- **(P3) labkit and the apps hand-build what weasel-ui already draws.** Each waits on something
+  the ui component lacks, or on a look at the result in a browser:
+  `.lk-titlebar-button` is 18px square and `Button`'s smallest size is `--wzl-control-h-sm`;
+  `.lk-toolbar-button`'s `danger` reddens on hover, which a ghost `Button` has no way to do;
+  `SidebarRegion`'s section head and undock button against `SidebarPanel`, which takes no
+  `actions`, no undock control, no stance, and no `fill`; `LabHeader`'s bare "Add trial" button,
+  which sets its own baseline so its label lines up with the title and would lose that as a
+  `Button` with a leading icon; the theme editor's swatch tabs against `ToggleBar`'s flat variant
+  and its hex and number inputs against `Input` and `NumberField`.
 
-- **(P2) Redesign the stop color/opacity swatches under `GradientEditor`.** Each stop gets
-  a `ColorField` with an alpha slider in a row beneath the track (`GradientEditor.tsx`). The
-  owner wants that row redesigned; the shape it should take is still open.
-
-- **(P3) labkit's `LabSwitcher.less` menu is a fork of the weasel-ui popover skin.** It copies
-  `MenuButton`'s menu and items, but with an opaque surface and a different shadow from
-  `components/listbox.module.css`, which `MenuButton`, `Select`, `ComboBox`, `PaintField`, and
-  `Bar`'s popover share. Decide whether those differences are intended; if not, it wants the
-  shared skin — and its items are links, which `MenuButton` has no way to render yet.
-
-- **(P3) labkit and the apps hand-build what weasel-ui already draws.** Each differs a little
-  from the ui component, so swapping changes pixels and needs a call on which look wins:
-  labkit's `.lk-viewport-controls__button`, `.lk-toolbar-button`, and `.lk-titlebar-button`
-  against `Button`'s ghost icon button; `SidebarRegion`'s section head and undock button against
-  `SidebarPanel`; `LabHeader`'s bare "Add trial" button beside the `MenuButton` it becomes
-  with more than one instrument; the theme editor's swatch tabs against `ToggleBar`'s flat
-  variant and its hex and number inputs against `Input` and `NumberField`.
-
-- **(P3) Nothing on the site sets the mode.** The chrome follows `data-wzl-mode` and whatever
-  theme is applied, but no reader can pick one: the demo shell draws the default theme in dark.
-  `useColorModePreference` and a `ColorModeControl` in the sidebar would do it. Look at the pages
-  in light mode first: demo scenes still draw in colors chosen for a dark page (`#d4c4a8` labels
-  in `ViewportDemo`, `AudioDemo`, and other demos), a few rules darken with `rgba(0, 0, 0, 0.2)`
+- **(P3) The site's demos are colored for a dark page.** The demo shell's sidebar has a
+  `ColorModeControl` now, dark until a reader picks. Nobody has looked at the pages in light
+  mode: demo scenes still draw in colors chosen for a dark page (`#d4c4a8` labels in
+  `ViewportDemo`, `AudioDemo`, and other demos), a few rules darken with `rgba(0, 0, 0, 0.2)`
   in either mode, and the front page pins its own theme to dark.
 
 - **(P3) Overlays still set React Aria's deprecated `UNSTABLE_portalContainer`.**
@@ -718,16 +627,17 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   (`packages/ui/src/overlays/portalHost.tsx`) to the provider once RAC exports it.
   The same switch lets a contained `ToastRegion` drop its own region for RAC's,
   which would make it an F6 landmark again. Still absent from RAC's index at the
-  installed 1.21.1 and at nightly `3.0.0-nightly-99e610236-261006`, last checked 2026-10-11. 1.22.1 is out and unchecked.
+  installed 1.21.1, at 1.22.1 (the latest), and at nightly `3.0.0-nightly-99e610236-261006`, last
+  checked 2026-10-13.
 
-- **(P3) Hover reports motion only, and nothing in the kit binds it yet.** `hover` is a gesture
-  (`HoverSpec`; `docs/taxonomy.md`, "Gesture"): an immediate action bound to it runs on every
-  unpressed pointer move. It does not say when the pointer leaves the surface or passes from one
-  target to another, so the loupe (`packages/labkit/src/loupe/useLoupe.ts`), which puts its lens
-  away on `pointerleave`, still hand-attaches both listeners, and `CustomShaderDemo` reads the
-  cursor from its own `onPointerMove`. Wants a leave signal (and a decision on whether crossing
-  between targets is one), then the loupe's aim and the demo's cursor-following panels moved onto
-  bindings. Only jsdom has run a hover binding.
+- **(P3) The loupe's aim is a pair of hand-attached listeners.** `hover` is a gesture
+  (`HoverSpec`; `docs/taxonomy.md`, "Gesture"), and with `motion: 'leave'` it says when the
+  pointer passes out of its target or off the surface. The loupe
+  (`packages/labkit/src/loupe/useLoupe.ts`) still attaches `pointermove` and `pointerleave`
+  itself: its lens follows a pressed pointer too, which a hover stands down for, and
+  `<LoupeGestures>` mounts its own dispatcher with the pointer channel off. Moving it needs a
+  gesture for a pointer's moves pressed or not, or a ruling that the lens holds still through a
+  drag. Only jsdom has run a hover binding.
 
 - **(P3) labkit's palette drag-drop runs its own pointer session.** A trial's
   pan, zoom, tap, and loupe route through weasel's dispatcher (`CameraInput`),
@@ -759,55 +669,29 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   keyboard-operable gutters with it. It ships no band strategy of its own, and mapping domain
   values onto seams is still the consumer's.
 
-- **(P3) Shading drawn in black or white at an alpha.** Shading that belongs to one control's
-  artwork is still a literal: `Badge`'s bevel fills and text shadow, the default colors of its
-  `Metal` and `Sunbeams` effects, the `Slider` thumb's shadows, the segmented track's well, and
-  the glass ramp's gloss, rim, and drop shadows in `Button` and the selected segment, which
-  `--btn-*` tunes and `--wzl-gloss` fades. Whether any of it wants a theme token, and under what
-  name, is not decided.
+- **(P3) `<ToggleBar>` polish.** Visual still needs polish — literally, polish this, by eye in a
+  browser. Measured in Chromium 2026-10-13, three text segments, each variant at `md` and `sm`:
+  every segment sits inside its track at one height, none clips its label, and a focused segment
+  draws a 2px outline, so nothing measured is known to be off. Since then `minimal` takes its font
+  size from `size`, where both sizes drew at the `sm` font; nobody has looked at its `md`.
 
-- **(P3) `<ToggleBar>` polish.** Visual still needs polish — literally, polish this. Measured in
-  Chromium 2026-10-13, three text segments, each variant at `md` and `sm`: every segment sits
-  inside its track at one height, none clips its label, and a focused segment draws a 2px
-  outline. One thing a reader of the props would not expect: under `minimal`, `size` does
-  nothing. Both sizes are 20px high at the `sm` font size, where `default` is 32px and 22px
-  and `flat` 28px and 20px.
+- **(P3) A field's condition inside an object entry is written in code.** `PrefSchemaEditor`
+  edits an entry's own `enableIf` and nothing inside an object entry: the structure tree shows a
+  list or a map as one row (`slotOf` in `schemaTree.ts`), so a field of its item has no row to
+  select and its `{ from: 'item' }` condition no editor.
 
-- **(P3) A host cannot tell which assets a stored draft changed.** `AssetEditor` reports its
-  changed assets through `onChangedAssets` only once it is mounted, so a host that shows one
-  editor at a time and lists the others' assets as `elsewhere` marks nothing for a source whose
-  draft has not been opened since the page loaded. The draft's text is the editor's own format.
-  Left: a public function that reads a stored draft (its storage, key, codec, and the original
-  workspace) and returns the ids of the assets it changes.
+- **(P3) A lab's config schema takes no `over`.** A lab resolves its instrument's config schema
+  with none (`useConfigSchema`), so that schema cannot alias into another schema or hold a
+  condition on its setting. Every surface reads `over`'s values from the config it is handed, and
+  a trial's config holds its instrument's alone: where a lab keeps another schema's values (each
+  trial's config, the lab's store, or the app's) is not decided, and the instrument's `render`
+  would need them too.
 
-- **(P3) Loose ends of the condition work.** `PrefSchemaEditor` edits an entry's own
-  `enableIf` and nothing inside an object entry, whose fields it draws no rows for, so a field's
-  `{ from: 'item' }` condition is written in code. labkit's `ControlRow` draws a list of plain
-  text entries as one `ListEditor` and passes it no `entryDisabled`, so an item `enableIf` that
-  reads the entry does nothing in a lab; `PrefsForm` and `SelectionPanel` pass it.
-
-- **(P3) What `over` does not reach yet.** Every surface takes the schema its aliases point
-  into, and its own conditions may read, as `over`. Left: (1) A condition that reads a setting
-  of `over` takes that leaf's default only where the surface takes its own leaves': a `Bar`
-  reads `values` alone and a `SelectionPanel` only an `absentIsDefault` leaf's. Whether `over`'s
-  default should stand in there is not decided. (2) `PrefSchemaEditor`'s preview of a properties
-  layout seeds its one node from the layout's own leaves and writes only under `pose` and
-  `data`, so a row aliased into a dialog's schema draws unset and an edit to it goes nowhere.
-  (3) A lab resolves its instrument's config schema with no `over` (`useConfigSchema`), so that schema
-  cannot alias into another schema or hold a condition on its setting. Every surface reads `over`'s
-  values from the config it is handed, and a trial's config holds its instrument's alone: where a
-  lab keeps another schema's values (each trial's config, the lab's store, or the app's) is not
-  decided, and the instrument's `render` would need them too.
-
-- **(P3) What a bar does not do yet.** `ActionBar` is not built on `Bar`: its `icons` prop
-  overrides an entry's icon with a `ReactNode`, which a leaf, being data, cannot carry, so it needs
-  that prop to become icon names or `Bar` to take icon overrides by path. `overflow="menu"`
-  opens the cells a line has no room for from a button at its end, on `Bar` and `BarLayout` only: a
-  bar in a `PrefsForm`, a `SelectionPanel`, an object row, or labkit's `ControlBar` has no way to ask
-  for it, and whether it becomes the default is not decided. A cell in the menu is mounted only
-  while the menu is open, so `PrefSchemaEditor`'s preview, which asks for no menu and keeps every
-  cell on the line, would lose those cells as drop targets if it did. A group a standalone `Bar` opens from a button draws as
-  labeled rows whatever its `as`, where a bar in a `PrefsForm` opens it in its own form.
+- **(P3) A standalone `Bar` opens a group as labeled rows whatever its `as`.** A bar in a
+  `PrefsForm` opens a `page`, `tab`, or `panel` group in the form's own drawing of it; `Bar` draws
+  `GroupRows`, a row per leaf under each nested group's name. `Bar` holds its values flat, keyed by
+  dotted path, where the form's pane reads a nested tree, so the two do not share a body yet.
+  Nobody has looked at `ActionBar` in a browser since it became a `Bar` of `action` leaves.
 
 - **(P3) A rail of sections and pages: two things not decided.** A `PrefsForm` rail lists a page
   at any depth, and a section only when it sits directly on a page, the root's own included. (1) A
@@ -816,15 +700,12 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   section in view should unfold is open; it would move the rail under a reader who is scrolling.
   (2) A section's rail entry and a nested page's look the same until one is chosen.
 
-- **(P3) Loose ends beside a number's unit as data.** The text tool's
-  percent unit (`useTextTool.ts`) is still code, for the rounding it does on the way back to the
-  stored value, so the run properties do not export as a literal. A unit's `format` has one
-  reader, the auto value labkit's `ControlRow` quotes in a row's tooltip. A compound leaf's
-  one-line summary (`summarizeValue`) still writes the stored numbers of fields that have a unit.
-
 - **(P3) A fragment has no box for a preview drag to land on.** Its element is
-  `display: contents`, so a drag in `PrefSchemaEditor`'s preview cannot land beside or into an
-  `as: 'fragment'` group itself, only beside the rows inside it; the structure tree takes both.
+  `display: contents`, so `measure` in `Prefs/dropTarget.ts` reads an empty rect for it and a drag
+  in `PrefSchemaEditor`'s preview lands only beside the rows inside it; the structure tree takes
+  both. Its box can be the union of its rows' rects, but two things then need a browser to
+  settle: a point on its first row means both "before that row" and "before the fragment", which
+  wants an edge zone to tell apart, and an empty fragment still has no rect at all.
 
 - **(P3) `PrefSchemaEditor` sees only a `ResolvedConfig`'s `group`.** A schema built with
   `f.section` keeps its sections, `showIf` rules, `.render` overrides, and `.dialog` rows beside
@@ -832,12 +713,24 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   export drops all four. A schema is sectioned rather than nested where `f.group` would move its
   config paths.
 
-- **(P3) `sectionTree` doesn't lift heading controls.** `ControlPanel` draws a `.heading()` leaf,
-  or a first row repeating its heading ("Pump" under "Pumping"), in the heading's title row. The
-  prefs rail `sectionTree` feeds to `PrefsForm` still draws that leaf as a row under a heading of
-  the same name, because `PrefsForm` has no slot for a control in a rail item or subsection
-  heading, and `PrefLeaf` no field saying a leaf is one: `heading` is a labkit extra. `sectionTree`
-  warns about the repeat, as the panel does.
+- **(P3) `PrefSchemaEditor` has nowhere to keep an action catalog.** `AssetEditor` keeps one in
+  a workspace's `actions` asset, where its Actions list is sorted, grouped, and edited. The
+  one-schema editor builds its list from the host's actions on every draw, so its rows show their
+  attributes read-only and nothing sorts them. Giving it a catalog means a second asset in the
+  workspace `asWorkspace` makes, and `oneAssetCodec` and `sameSchema` read only the first: a
+  draft would drop the catalog and its steps.
+
+- **(P3) A step back over the action catalog does not restore the rows picked in it.**
+  `useAssetView.recorded` keeps each shown asset's selection with a step; the catalog's lives in
+  `useActionCatalog` and is not among them, so after an undo the Actions list keeps whichever of
+  its picked rows still exist.
+
+- **(P3) `SelectionPanel` draws a `heading` leaf as a row.** `PrefsForm` and labkit's
+  `ControlPanel` draw a leaf marked `heading` in the heading of the group holding it
+  (`prefHeadingKey`). `SelectionPanel`'s section title dims itself with `opacity`, which a control
+  inside it would inherit, so it needs a title row of its own before it can hold one. Nobody has
+  looked at the control in `PrefsForm`'s headings in a browser: the sticky section heading's
+  `scroll-margin-top` assumes one line of text.
 
 - **(P3) Nobody has looked at the desktop themes' bevels.** Under `win9xTheme` and
   `platinumTheme` (`@weasel-js/theme/themes/*`), every control in `@weasel-js/ui` that draws a
@@ -850,24 +743,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   through `--wzl-field-border`. The systems' own faces are named in the font stacks and not
   bundled; a bundled lookalike needs a face whose license allows it.
 
-- **(P3) Two gaps beside a `ColorSource` written to CSS.** A palette entry or a function source
-  is written as the literal it resolves to in the provider's selection (`colorSourceCss`,
-  `packages/theme/src/colorSource.ts`), so with no `<ThemeProvider>` it does not follow a mode
-  change the way a theme ref does. And a custom `CurveLayer` has no resolver on its
-  `LayerRenderCtx`, so one that wants a color has to render a component that calls `useColorCss`,
-  as `CurveFill` does.
-
-- **(P3) labkit stored lab: a trial that fails to hydrate is left out with only a console warning.**
-  `hydrateTrials` and `hydrateSnapshots` (`packages/labkit/src/state/hydrate.ts`) skip a trial or
-  a snapshot whose `deserialize` or `migrateConfig` throws, and its record stays in storage,
-  unwritten and undeleted. Nothing in the lab says a trial is missing, and nothing can discard its
-  record. The call to make is whether the lab draws a failed tile with a way to discard it.
-
-- **(P3) labkit trial: "Add trial" leaves the first trial's part outside its own stage.** In the
-  `annotate-lab` example, adding a trial narrows the first trial's stage, and its camera keeps the
-  pan it had, so the part and its marks sit past the stage's edge, out of sight until the trial is
-  panned back. Whether a stage that narrows should re-fit or keep its pan is not decided.
-
 - **(P3) What a leaf shows when its value is absent is decided in each params surface.** Which
   control a leaf draws is one table now (`PARAMS_CONTROLS`, `Prefs/surfaceControls.ts`, through
   `prefFieldProps`' `surface` argument). The value handed to it is not: a stored value that is
@@ -878,16 +753,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   select) and `openSlider: false` (a slider needs both bounds). Outside the table:
   `Bar/BarField.tsx` draws an enum's `radio` as segments on every surface, and `MatrixEditor`
   always lists an enum as radios.
-
-- **(P3) Two things the params commit table does not settle.** `PARAMS_SETTLES` in
-  `Prefs/commitPolicy.ts` says which controls write only a settled value in a form, a panel, and
-  a lab, and `withCommitPolicy` applies it for all three. (1) labkit's `ControlPanel` debounces
-  text by 150 ms in its own row (`useDebouncedText`), which the table has no word for: it reads
-  as "writes as it changes". (2) A slider dragged in a `SelectionPanel` leaves one undo step per
-  move. Measured in jsdom 2026-10-13: three `change` events on a `control: 'slider'` leaf took
-  three `scene.undo()` calls to unwind, because `commitLeaf` writes through `scene.batch`, whose
-  entries never coalesce. The slider is live there so the canvas follows the drag; one step per
-  drag needs the drag's writes to share an entry, which the scene has to offer.
 
 - **(P3) What each group `as` draws differs across the params surfaces.** The run of neighboring
   `tab` groups is collected once (`prefTabRuns`, `@weasel-js/prefs`); what is drawn is not: `panel`
@@ -907,15 +772,21 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   `PrefSection` with dotted keys into one or into a `ResolvedConfig`, so the example first needs a
   way for an instrument to declare its config as a pref schema.
 
-- **(P3) `PrefSchemaEditor`'s attributes pane lists a mixed list, map, or union attribute read-only.**
-  `aggregateAttributes` keeps an object attribute the selected nodes disagree on and marks its
-  mixed fields, each written into every node's own object. A list, a map, or a union that
-  disagrees is still dropped from the form and listed as `mixed`, as is an object with a field of
-  one of those kinds that disagrees: none has a control with a mixed state.
-
 ### WeaselDraw app follow-ups (defer)
 
-- **(P3) Multi-page documents.**
+- **(P3) Multi-page documents.** A document's pages are rects in one world space over one scene,
+  so one view, history, and selection serve all of them, and an object is on the page it overlaps
+  most. Core has the geometry (`packages/core/src/core/pages/`): `layoutPages` places a page list,
+  `pageAt` and `pageOfBounds` say which page a point or an object is on, `pagesLayer` paints the
+  sheets, and `fitViewToPage` frames one. draw paints its one page through it. Left, in order:
+  1. draw's document holds a page list where it holds `paperSize` (`useDocumentState.ts`,
+     `docPersistence.ts`), and `usePageFit` fits the current page.
+  2. Adding, removing, reordering, and resizing a page are undoable. The page list sits outside
+     the scene, so they need a history entry of their own, and a removed page has to say what
+     happens to the objects on it.
+  3. A page navigator in draw, and `viewport.recenter` on the current page.
+  4. SVG save and export per page: `svgInterop.ts` keeps one paper size under `wd:`, and
+     `svgExport.ts` writes one `viewBox`.
 
 ---
 
@@ -925,10 +796,19 @@ From `docs/specs/2026-05-03-weasel-den-design.md`. **Read `packages/den/README.m
 spec's pack shape was superseded by core's `Contribution` + `mergeContributions`, and its
 convenience layer shipped inside core. The items below are what survives that.
 
-- **(P3) Additional domain bundles.** `useWhiteboardPack` (sticky notes, freeform pen, text),
-  `usePresentationPack` (frame tools, slide nav). Each is its own arc, and each is a
-  `Contribution` bundle rather than a den pack. The diagram bundle shipped as
-  `@weasel-js/diagram`; don't propose another.
+- **(P3) A presentation bundle and a whiteboard bundle.** Each is a `Contribution` bundle, the way
+  `@weasel-js/diagram` is (`createDiagramContribution`), in a package of its own: neither is a den
+  pack.
+  - Presentation. A frame is a page: `layoutPages` places the slides, `fitViewToPage` frames one,
+    and `adjacentPage` steps the order (`packages/core/src/core/pages/`). Left: (1) next-slide and
+    previous-slide actions that animate the view to `adjacentPage` through `useViewAnimation`, and
+    the contribution binding them to the arrow and page keys; (2) a frame tool, a drag-rect
+    binding whose action adds a page, which waits on the undoable page list under "Multi-page
+    documents"; (3) a presenting state that holds the view on the current page.
+  - Whiteboard. The freeform pen is `usePencilTool` and text is `useTextTool`. Left: (1) a sticky
+    note, as an `insert` node factory minting a filled rect that carries text, bound by a
+    drag-rect tool the way `useRectTool` is; (2) the contribution bundling the three tools with
+    their whiteboard defaults.
 - **(P3) Move `useSelectTool` / `useTextTool` / `usePenTool` /
   `usePencilTool` out of core's builtin tools.** The den's one motivation nothing
   has absorbed: separating finished, stable tools' test surface from core's. It
@@ -956,14 +836,13 @@ only story runner in the repo.
 - **(P3) A story whose `render` takes no args has no controls.** forge reads a
   control for each prop of the meta's `component` (`packages/forge/src/vite/propTypes.ts`),
   and leaves them off a story whose `render` declares no parameter, since nothing
-  would read them. A grep of `render: () =>` finds 215 such stories in 76 files, most of them matrices or wrappers holding state. A story
-  drawing one instance in a plain configuration is the kind to rewrite around
-  `args`, the way `Tooltip`'s `Basic` is; a matrix or a hand-built composition
-  stays as it is. Where a component's props are a union or generic, as
-  `ToggleBar`'s and `PropertyField`'s are, its stories pass a few named args and
-  the other controls do nothing. Where a story holds a value in state, as
-  `Timeline`'s playhead and `Jog`'s index are, the control only sets where it
-  starts.
+  would read them. `grep 'render: () =>'` lists them. The ones that drew one plain
+  instance of the meta's component are rewritten around `args`; what is left is
+  matrices, hand-built compositions, generic components (`DataGrid<Route>`), and
+  stories that mount a harness holding state (`<Live start=… />`, `<Strip only=… />`).
+  A harness is the open kind: it can take the story's args and pass them to the
+  one instance it draws, the way `ToggleBar`'s stories do, with a control that
+  only sets where held state starts, as `Timeline`'s playhead does.
 
 - **(P3) Marks are off in the workshop until annotations are a feature.** forge's
   instruments do not declare labkit's `annotations` capability, so trials show
@@ -978,22 +857,16 @@ only story runner in the repo.
   that follows another token, a ramp, a contrast rule, or an alpha stays a
   per-trial override, and so does a scale step changed after its scale, because
   a value written over it would drop the derivation for every mode and density
-  the branch covers. A save also refuses a param that differs by `mode` while
-  the trial's mode is Auto, since the panel does not know which scheme the
-  frame resolved.
+  the branch covers. Not decided: whether such an edit should save at all, and
+  if so as a pin over the one step or as a change to what it follows.
 
-- **(P3, isolated stories only) A forge story whose `viewport` the index cannot
-  read reloads its frame once when first opened.** The index reads a native
-  story's `viewport` when both sides are number literals (`viewportOf`,
-  `packages/forge/src/vite/indexFile.ts`), and the first instrument takes its
-  stage from that. Otherwise — a computed size, or a CSF story, whose viewport
-  comes from `parameters.viewport` and `globals.viewport` — the stage arrives
-  with the frame's `ready`, and labkit's `Trial`
-  (`packages/labkit/src/trial/Trial.tsx`) renders stage content inside `<Stage>`
-  and other content bare, so `FrameView` remounts and the iframe reloads. A
-  general fix keeps the frame through that remount (it is already placed by hand,
-  and `moveBefore` moves an iframe without reloading it), or has `Trial` keep
-  the body at one tree position whether or not there is a stage.
+- **(P3, isolated stories only) Watch in a browser that a story whose `viewport` the index cannot
+  read keeps its frame when first opened.** The stage for a computed size, or a CSF story's
+  `parameters.viewport`, arrives with the frame's `ready`, and labkit's `Trial` then remounts
+  `FrameView` inside a `<Stage>`. The frame now moves to the new view with `moveBefore`
+  (`useKeptFrame`, `packages/forge/src/shell/keptFrame.ts`), tested in jsdom as the same element on
+  the same port, which cannot show that the document did not reload. A browser without
+  `moveBefore` still reloads it once.
 
 - **(P3) windease lays out a node that was registered and never shown.** A
   strip gives a `mounted` node its room and a seam, while `Container` renders
@@ -1003,18 +876,12 @@ only story runner in the repo.
   again (`createSplitStore`, `packages/labkit/src/primitives/Split.tsx`). The
   fix belongs in windease; the workaround goes when it lands.
 
-- **(P3) A dev server serves no edit while macOS file events are not arriving, and only forge's says so.**
-  This is what "a forge dev server started with `WAKE_EXTRA` served the modules it started with" was,
-  measured 2026-10-13 with `fseventsd` at 98% CPU and 2.6 GB: a write in a temp directory reached
-  neither `fs.watch` on that directory nor the `fsevents` module in 12 seconds, while a watch on the
-  file itself fired at once; a forge server on `WAKE_EXTRA` served none of three edits; and
-  `packages/forge/src/vite/replacedFile.test.ts` failed both its tests. wake, `WAKE_EXTRA`, and the
-  worktree are not part of it. That the earlier sighting had this cause is inferred from the matching
-  symptom, not measured. forge now writes a file at startup and warns when no event comes back
-  (`packages/forge/src/vite/watchProbe.ts`). Left: the site and draw servers give no such warning;
-  the forge tests that wait on a real watcher (`replacedFile.test.ts`, the `FOLLOWS` polls in
-  `plugin.test.ts`) fail in this state and read as a regression; and what holds `fseventsd` there is
-  not known.
+- **(P3) What holds `fseventsd` when macOS file events stop arriving is not known.** Measured
+  2026-10-13 with `fseventsd` at 98% CPU and 2.6 GB: a write in a temp directory reached neither
+  `fs.watch` on that directory nor the `fsevents` module in 12 seconds, while a watch on the file
+  itself fired at once, and a dev server served none of three edits. Every dev server in the repo
+  now warns when it starts in this state (`watchProbe`, `packages/forge/src/vite/watchProbe.ts`),
+  and the one test that needs a real watcher skips. The cause needs the machine in that state.
 
 - **(P2) Confirm in forge that a hot update is no longer followed by a full reload.** wake set a
   new stamp on every hot update and the page kept the one it loaded with, so about three seconds
@@ -1049,24 +916,26 @@ only story runner in the repo.
   7 of 26 tests in one run on 2026-10-13, and polls now; whether a checkout loses them too is not
   measured.
 
-- **(P2) A docs minisite per package: overview, guides, and demos.** `npm run build:api` documents
-  every published package in one TypeDoc site at `/api/`. Still to design: an overview and
-  hand-written guides per package (only labkit has any, in its own VitePress site), and the
-  demos that exercise a package shown from its pages. Rendering TypeDoc's JSON output inside the
-  site's own shell is the route that puts all four in one place.
+- **(P2) Package pages: check the reference against a real build, then retire `/api/`.** Every
+  published package has a page at `#pkg/<name>` (overview, guides, reference, demos; how each is
+  fed is in `CONTRIBUTING.md`, "Package pages"). The reference half has only ever read a
+  hand-written TypeDoc project (`scripts/lib/reference/fixture.ts`): `npm run build:api` has not
+  been run since it began writing `dist-demo/reference/`, and no page has been seen in a browser.
+  Run it, open `#pkg/core/reference` and a subpath entry such as `#pkg/geom/reference/booleans`,
+  and fix what TypeDoc's real output shows the reader got wrong. Then drop the TypeDoc HTML site:
+  `out` in `typedoc.config.mjs`, the sidebar's "API reference" link, the `/api/` half of
+  `serveApiDocsInDev`, and the `/weasel/api/` links in the package READMEs. `vitepress` is still
+  in labkit's `devDependencies` with nothing using it. Only geom, gestures, and labkit have guides.
 
-- **(P3) SVG export writes wrapped text as one line.** `data-weasel-wrap` round-trips
+- **(P3) SVG export writes wrapped text unwrapped.** `data-weasel-wrap` round-trips
   `TextStyle.wrap` for weasel's own reader, but SVG `<text>` never wraps, so any other reader draws
-  a wrapped node as its unbroken lines. Exporting the laid-out lines needs fonts at serialize time,
-  which `@weasel-js/svg` does not have. A justified node is written at its start edge with
+  a wrapped node as one line per hard break. Exporting the laid-out lines needs fonts at serialize
+  time, which `@weasel-js/svg` does not have. A justified node is written at its start edge with
   `data-weasel-align="justify"` for the same reason: once lines are exported, its wrapped lines
-  need per-word `x` placement too, since `text-anchor` has no justify. A hard line break is one
-  line too, and that half needs no fonts: `textXml` (`serialize.ts`) writes a `\n` as a literal
-  newline under `xml:space="preserve"`, which SVG draws as a space (by the spec; not checked in a
-  browser), where the importer already reads a `<tspan x dy>` per line (`LineTracker`). Undecided:
-  browsers ignore an empty `<tspan dy>`, so a blank line either folds into the next line's `dy`
-  and reads back as an uneven pitch, or is lost; and a styled run spanning a break comes back as
-  two runs.
+  need per-word `x` placement too, since `text-anchor` has no justify. The hard-break lines are
+  pitched at the node's font size times its line height (`linesXml` in `tspanLines.ts`), which is
+  where the layout puts them only when no run on the line is larger; a line holding a larger run
+  needs the same fonts. How a browser draws the `<tspan x dy>` lines has not been looked at in one.
 
 - **(P3) The animation wrappers have no canvas seat.** `animateOnSetPose` and `animateLifecycle`
   wrap an adapter the caller holds. `<SceneCanvas>` builds its own and takes neither, so nothing a
@@ -1076,32 +945,17 @@ only story runner in the repo.
   `canvas/sceneAdapter.ts`, which hands each op the adapter it was called on; not run), so the
   seat has to say which of those glide. It would still miss a button's `scene.setPose`, which
   reaches no adapter: animating that needs the scene to report the write, as `onReflow` reports
-  a settle.
+  a settle. `<SceneCanvas reflowTransition>` is that shape for layout writes already: the scene
+  hands `useLayoutDepSource` each move with the pose it left, and the transition glides what is
+  shown from there through a pose override, writing nothing. A removal cannot follow it, since
+  the node is gone by the time a report arrives.
 
-- **(P3) draw: two owners for "is a text edit open".** The kit's `useSceneTextEdit` holds
-  `editingId`; the app's mode machine (`apps/draw/src/modality/machine.ts`) holds a `text-edit` mode
-  that says the same thing. Two effects with `prev` refs in `apps/draw/src/useTextEditSession.ts` reconcile
-  them in each direction, and their comments record two shipped bugs from the split. Text cannot take the
-  shape path editing has (`<SceneCanvas pathEdit>` reading the open path from the machine,
-  `modality/pathEditHost.ts`) as it stands, because the session is real state inside the hook (the
-  overlay, the caret, the pending commit): the hook needs an `onEnd` for the ends it decides itself
-  (click-away, the node going away), and its `onDoubleClick` has to hand the hit and the caret seed
-  to the machine instead of starting the edit. A double-click on a path is still acted on by both
-  the kit's `enterPathEdit` binding and the app's `onDoubleClick` observer; they reach the same
-  machine call and the second is a no-op. `apps/draw/src/App.browser.test.tsx` drives both modes
-  through the machine in a browser, and fails when either effect is removed.
-
-  The two states can also disagree outright: the text tool's `enterTextEdit` binding and a newly
-  inserted text node both start an edit through the `textEdit` dep, which never enters the mode,
-  so an edit is open while the machine says `normal` (read from `TextEditDepPublisher.tsx`, not
-  driven in a browser).
-
-  Not ruled, and it is one question with "Nothing reads a mode's `entry.trigger`" under Tools:
-  which side owns the open edit? Either `useSceneTextEdit` takes a host the way the canvas takes
-  `pathEdit` (`editingId()` and `setEditingId(id, { caret })`, so every way in enters the mode and
-  every end leaves it, and the kit binds `'double-click-target'` once for paths, groups, and text,
-  which needs a mode definition to say which hits it takes), or the hook stays the owner and
-  reports `onStart` / `onEnd`, with the mode following it and the trigger staying unread.
+- **(P3) draw: a double-click on a path is acted on twice.** The kit's `enterPathEdit` binding
+  and the app's `onDoubleClick` observer (`apps/draw/src/modality/doubleClickEntry.ts`) both take
+  it; they reach the same machine call and the second is a no-op. Text has one way in: the edit
+  owns its mode, which `useTextEditSession` enters and leaves from the hook's `onStart` and
+  `onEnd`, so `text-edit`'s `entry.trigger` stays unread ("Nothing reads a mode's
+  `entry.trigger`" under Tools).
 
 ---
 
@@ -1134,35 +988,17 @@ only story runner in the repo.
 
 ## Lint
 
-- **(P3) eslint-plugin-react-hooks v7 compiler rules still off.**
-  Every compiler rule with no reports is on, as are `set-state-in-effect` and
-  `preserve-manual-memoization`. Two are off, with the rationale in `eslint.config.js`, counted on
-  2026-10-12:
-  - `refs` — 408 reports in 83 files; reading a ref during render is how a
-    canvas library reaches frame state, and there is no writes-only mode
-    (`weasel/no-render-ref-write` covers writes).
-  - `immutability` — 51 reports in 37 files, 26 of them in tests that assign to
-    a prop or an outer variable from inside a probe component. The rest are
-    `useVisibleRaf` loops re-requesting themselves, and writes to forwarded
-    refs, DOM nodes, and mutable engine objects.
+- **(P3) eslint-plugin-react-hooks v7's `immutability` rule is off.** It is the
+  last compiler rule that could come on: 51 reports in 37 files on 2026-10-12.
+  26 are tests assigning to a prop or an outer variable from inside a probe
+  component, which the test override in `eslint.config.js` that already turns
+  `react-hooks/globals` off would cover. The rest are `useVisibleRaf` loops
+  re-requesting themselves, and writes to forwarded refs, DOM nodes, and
+  mutable engine objects: each to be restructured or shown to be the point.
 
 ---
 
 ## Release-gate & build hygiene
-
-- **(P3) `foldTwisty.browser.test.tsx` fails on one machine and passes on the fleet.** "sets the
-  title of a panel with a hidden twisty where a panel that does not fold has it" measured the
-  title 3px higher with the twisty (`top: 12` against `15`) on brainhouse on 2026-10-13, with and
-  without that day's changes, and passed in three fleet runs on teitou the same day. Not looked
-  into: which of the two machines draws the header the way a reader's browser does.
-
-- **(P3) A release whose notes for one package pass 125,000 characters fails after it has
-  published.** `changesets/action` writes a GitHub release per package with that package's
-  changelog section as the body, and GitHub refuses a longer one. 1.10.0's core section was 135,412
-  characters: every package was already on its way to npm and tagged, the step then failed, and the
-  registry check and the registry smoke test after it never ran. Its release was made by hand with
-  the notes cut short and a link to the changelog. Either the release step cuts a long body the
-  same way, or the two checks run whether or not that step failed.
 
 - **(P2) Confirm on a fleet node that a new dependency in browser-tested code no longer fails the
   first run that meets it.** A node keeps its vite dep cache between runs, and a warm cache skips
@@ -1185,6 +1021,20 @@ only story runner in the repo.
   retrying would rerun groups already finished. The fix reaches a machine when its `onto` binary
   is rebuilt, and a node's agent refuses a launch against a tree that lost its stamp only after
   `onto push <node>`.
+
+- **(P3) `Callout.reanchor.browser.test.tsx` heard a window `resize` it did not expect, once.** "a
+  callout follows an anchor rect that only moves, each time, without a resize event on the window"
+  failed in one fleet run on teitou at `80b0a8314`: its `resize` listener was called once. It
+  passed in the six fleet runs before that the same day and passes alone. The listener is on the
+  window every browser test shares, so a resize from anywhere fails it; what resized the window
+  was not found.
+
+- **(P3) rolldown could not write a dependency map during `packages/forge/src/vite/plugin.test.ts`,
+  once.** One fleet run at `65c06d7c2` passed every file and exited 1 on an unhandled error:
+  `Failed to write file in …/T/forge-plugin-*/.vite/deps_temp_*/polygon-clipping.js.map`, `Invalid
+  argument (os error 22)`, after "serves the component graph from source, and pushes it again when
+  a component file changes". The test makes that directory and removes it when it ends, so the
+  dev server's dependency scan may have still been writing; not confirmed.
 
 - **(P2) Browser tests time out under fleet load, inside a Playwright action.** A click, a key, or
   a screenshot that takes a fraction of a second alone stalls for seconds in a full run on studio,
@@ -1220,6 +1070,18 @@ only story runner in the repo.
     failing runs were there. A 15 s `browser` timeout in a run made since would mean running beside
     the other projects was not the cause, and the `groupOrder` line should come out. Not measured:
     fewer workers for `browser`, and whether studio's own load is the cause.
+  - **Three runs on teitou on 2026-10-13 failed the same three `browser` tests, which none of the
+    commits touch**: `8777d97f0`, then `2445052c6` and `a06b02902`, whose trees differ from it only
+    in `PrefSchemaEditor`. Each is the only failure in its file: 15 s timeouts in
+    `core/src/canvas/glyphCoverage.browser.test.ts` ("keeps both stems of a 7.2px H at every
+    sub-pixel offset") and `core/src/canvas/rasterSession.browser.test.ts` ("do not push a canvas
+    already on the page out of its context"), neither of which makes a Playwright action, and
+    `frame.evaluate: Frame was detached` under `userEvent.keyboard` in
+    `text-dom/src/overlayTyping.browser.test.tsx`. All three passed on the run before the first,
+    whose tree differed only in `PrefSchemaEditor`'s shelf. It is not teitou: a run of `a06b02902`
+    on studio failed `glyphCoverage` and `rasterSession` the same way, and `labkit`'s
+    `presentation.browser.test.tsx` ("entering refits the view…") in place of `overlayTyping`. Both
+    `core` files pass alone at that commit on orochi, in 7 s.
   - `forge/src/vite/plugin.test.ts` has its own entry under "Demos & visual regression".
 
 - **(P2) HUD vs DOM text: what the idle rerun left open.** `tests/perf/hud-vs-dom.spec.ts` prices
@@ -1256,24 +1118,40 @@ only story runner in the repo.
 
   - **A run-breaker costs about 21 us a flush** (`flush-anatomy.spec.ts`), 16 of it bind and draw;
     no other call in `flushBatch` moves it by more than its noise, about 1.2 us. So what remains is
-    the draw count: synthetic bold and an eighth texture still break the run, and so does a color
-    matrix around a gradient, or around an image when it does more than scale channels down. A solid or a glyph under a color matrix has its color
-    mapped on the CPU (`draw/foldColor.ts`), which paints the same pixel as the shader in headless
-    Chromium (`colorMatrixFold.browser.test.ts`) and has not been timed. The specs that break a run
-    with a matrix on solid rects (`flush-anatomy`, `clip-cost`, `flush-noise`) turn the mapping off
-    through `colorFolding`, and have not been run since that edit. An image under a matrix that only
-    scales channels, each by 0 to 1, now rides its vertices the same way (`textureTint`), checked
-    against the shader's pixel in `colorMatrixFold.browser.test.ts` and not timed;
-    `image-quad.spec.ts`'s `unmerged` frame broke its runs with such a matrix, so it now uses a bias,
-    and has not been run since.
+    the draw count, and what still ends a run is a sixteenth texture, a ninth color matrix, a clip
+    only the stencil expresses, and a paint that draws for itself (a pattern, a shader, per-vertex
+    colors).
+  - **None of what joined the run since has been seen in a browser or timed.** Each is pinned by
+    draw count through the GL recorder, and has a `*.browser.test.ts` beside it that has never run:
+    - Synthetic bold: the threshold shift rides a glyph's `a_post` (`syntheticBold.browser.test.ts`).
+    - Fifteen textures where a run held seven, fetched through a tree of four compares where the
+      chain took up to seven (`batchSlots.browser.test.ts`). Not timed: the tree per fragment
+      (`fill-rate.spec.ts`), and the wider `u_samplers` and `u_fieldScale` uploads per flush.
+    - A gradient or an image under any color matrix: each vertex names one of up to eight
+      (matrix, group alpha) pairs the run draws under, `u_colorMatrix[i]`, packed into `a_texSlot`
+      (`draw/batchMatrices.ts`, `colorMatrixFold.browser.test.ts`). A gradient under a matrix that
+      only scales channels down rides a vertex tint, as an image does. Not timed: the indexed
+      matrix per fragment, and three array uniforms a flush where the matrices changed.
+    - Earlier, and in the same state: a solid's or a glyph's color mapped on the CPU
+      (`draw/foldColor.ts`), and an image's tint.
+  - **The perf specs have not been run since those edits.** `flush-anatomy`, `clip-cost`,
+    `flush-noise`, and `image-quad`'s `unmerged` frame break a run with a color matrix, which only
+    works with `colorFolding` off: that seam now also holds a run to one matrix. `flush-anatomy`
+    lost its `u_synthBold` variant and its color-matrix variant drops the array uploads;
+    `layer-dispatch` expects 16 textures a draw.
   - **A clip only the stencil can express still flushes on entry and exit**: a polygon, a rect
     turned off the axes, and a rect clip with a slanted item crossing it (`DrawBatch.clipQuad` says
     why a slanted edge cannot be cut). The stencil itself costs about 4.9 us a push and pop, 7.9 at
-    8 leaves (`clip-cost.spec.ts`).
-  - **Caching `u_synthBold`, `u_samplers`, and `u_fieldScale` was tried and reverted**, measured
-    through `finish`: it saved about 0.1 us a flush on color-matrix breaks and made a frame of
-    20,000 stroked rects 30% slower, with both renderers interleaved in one page. The cause was not
-    found.
+    8 leaves (`clip-cost.spec.ts`). The stencil reference is state, so one draw cannot test two
+    depths; putting such a clip in the run means deciding coverage in the fragment shader, from
+    half-planes a vertex names. That has to agree with the stencil where an item that draws for
+    itself sits under the same clip, at pixel centers on an edge and per sample on a multisampled
+    target, and only a browser can say whether it does.
+  - **Caching `u_synthBold` (a uniform then), `u_samplers`, and `u_fieldScale` was tried and
+    reverted**, measured through `finish`: it saved about 0.1 us a flush on color-matrix breaks and
+    made a frame of 20,000 stroked rects 30% slower, with both renderers interleaved in one page.
+    The cause was not found. The run's color matrices are cached the same way now
+    (`uploadBatchMatrices`), where `setColorMatrixUniforms` cached the one before.
   - **Changing kind costs 1.35–4.9 us a boundary** (`transition-matrix.spec.ts`): text and gradient
     the least, shader (4.9) and vcolor (4.4) the most. Pairs whose kinds share a batch cost nothing
     extra; the rest add 8–16 us, with a run-to-run spread up to 9.7 us, so the spec ranks pairs but
@@ -1443,16 +1321,6 @@ only story runner in the repo.
   machine (the job allows 100 minutes), and whether the base, measured first, reads differently
   from the head for that reason alone.
 
-- **(P3) labkit inlines siblings that own module state.** `packages/labkit/tsup.config.ts` bundles
-  every `@weasel-js/*` sibling except core, theme, and animator, and its own comment gives the
-  reason those are external: module-global state inlined twice is two copies of it. The same holds
-  for `@weasel-js/quantity` (`registerDisplayKind` writes a module-level map, so a kind an app
-  registers is unknown to the copy inside labkit's `dist`, and `displayKindOf` falls back to
-  decimal without a warning), `@weasel-js/storage` (`memorySubscribers`), and `@weasel-js/ui`
-  (`RecentColorsProvider`, the overlay portal host). labkit also lists those siblings as
-  `dependencies`, so a consumer installs one copy and runs another. In the repo, aliases resolve
-  both to one source, so no test can see it.
-
 - **(P3) Five leaf packages keep their own listener sets.** Every other store notifies through
   `createEmitter()` in `@weasel-js/registry` (a pass walks the listeners held when it began; a
   throwing listener is logged and the rest run). These still hold a `Set` and a loop, because each
@@ -1462,11 +1330,12 @@ only story runner in the repo.
   still reaches whatever caused the notify. Moving them means either that dependency or the
   emitter living somewhere all five can reach.
 
-- **(P3) `SceneCanvasInner` is one 388-line function.** It is most of the 510-line
+- **(P3) `SceneCanvasInner` is one 386-line function.** It is most of the 508-line
   `canvas/SceneCanvas.tsx`. What is left in it is the prop destructure and the JSX, most of that
   the props of `StandardActionsRegistrar` and `GestureDispatcherMounter`; getting under the cap
-  means turning those mounters into hooks, the audit's section E, which also removes
-  `getActionRef` and `actionsRegistryRef`. `docs/audits/2026-10-12-SceneCanvas.md` lists what belongs to another
+  means turning those mounters into hooks, the audit's section E, which first has to settle
+  whether the registrar's dep registrations still land after its children's once they are the
+  parent's own effects. `docs/audits/2026-10-12-SceneCanvas.md` lists what belongs to another
   owner; its dead-code pass and its sections on the built-in tool registry, the preset table, the
   chrome-caps rule context, path editing, selection, ingestion, the device profile, the camera, the
   layer slots, and the redraw subscriptions have landed. `canvas/Canvas.tsx` is 742 lines, 443 of them `CanvasInner`,

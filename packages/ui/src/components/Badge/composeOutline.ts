@@ -5,6 +5,9 @@ const SAMPLES = 600;
 
 interface Box { w: number; h: number }
 
+/** A rectangle inside a box, in CSS px from the box's top left. */
+export interface Held { left: number; top: number; right: number; bottom: number }
+
 function closedPath(at: (sCss: number) => { x: number; y: number }, totalCss: number): string {
   let d = '';
   for (let i = 0; i < SAMPLES; i++) {
@@ -41,16 +44,25 @@ function displacer(base: BaseSampler, effects: readonly BadgeEffectSpec[] | unde
 }
 
 /**
- * How far, in CSS px, `bloat` and the effects move any point of `base`'s outline that they
- * move inward: the clearance content needs from `base` to stay inside the composed outline.
+ * How far, in CSS px, `bloat` and the effects move any point of `base`'s outline that they move
+ * toward content: the clearance content needs from `base` to stay inside the composed outline.
+ * A point counts when it moves inward, wherever it is, since an effect that crawls carries its
+ * inward moves along the whole outline. A point moved outward counts when it lands on `held`,
+ * the part of `box` the content takes up, as one does that crosses a notch narrower than the
+ * distance it moves.
  */
-export function inwardReach(base: BaseSampler, effects: readonly BadgeEffectSpec[] | undefined, bloatCss: number): number {
+export function inwardReach(base: BaseSampler, effects: readonly BadgeEffectSpec[] | undefined, bloatCss: number, box: Box, held: Held): number {
   const moved = displacer(base, effects, bloatCss, 0);
   if (!moved) return 0;
   let reach = 0;
   for (let i = 0; i < SAMPLES; i++) {
     const { pt, dx, dy } = moved((i / SAMPLES) * base.totalCss);
-    if (dx * pt.nx + dy * pt.ny < 0) reach = Math.max(reach, Math.hypot(dx, dy));
+    const far = Math.hypot(dx, dy);
+    if (far <= reach) continue;
+    const x = (pt.x / 100) * box.w + dx;
+    const y = (pt.y / 100) * box.h + dy;
+    const lands = x > held.left && x < held.right && y > held.top && y < held.bottom;
+    if (lands || dx * pt.nx + dy * pt.ny < 0) reach = far;
   }
   return reach;
 }

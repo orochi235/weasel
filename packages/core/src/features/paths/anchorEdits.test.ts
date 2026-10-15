@@ -340,6 +340,19 @@ describe('deleteAnchorsAt', () => {
     expect(first.inHandle).not.toEqual({ x: 15, y: -5 });
   });
 
+  it('closes a gap between two straight segments with a straight one', () => {
+    const b = new PathBuilder();
+    b.moveTo(0, 0);
+    b.lineTo(10, 0);
+    b.lineTo(10, 10);
+    b.lineTo(0, 10);
+    b.close();
+    const set = decode(b.build());
+    deleteAnchorsAt(set, [1]);
+    expect(set.anchors[0][0].outHandle).toBeUndefined();
+    expect(set.anchors[0][1].inHandle).toBeUndefined();
+  });
+
   it('returns false when nothing addressable was passed', () => {
     expect(deleteAnchorsAt(decode(triangle()), [99])).toBe(false);
     expect(deleteAnchorsAt(decode(triangle()), [])).toBe(false);

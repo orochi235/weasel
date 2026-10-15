@@ -149,13 +149,20 @@ describe('layoutRuns — letterSpacing', () => {
 
   it('tracks a base and its combining mark once, as CSS does', async () => {
     await registerMarksFont();
-    // A(23) + U+0301(0) + B(22), no kerning across the mark: two clusters.
+    // A(23) + U+0301(0) + B(22), kerned -1 as the pair A, B: two clusters.
     const out = layoutAndPaint([MARKS('A\u0301B', 4)], OPTS);
-    expect(out.bounds.width).toBeCloseTo(45 + 2 * 4);
+    expect(out.bounds.width).toBeCloseTo(44 + 2 * 4);
     // The mark sits against its base, before the tracking gap, not after it.
     const cells = out.lines[0].cells;
-    expect(cells.map((c) => c.x)).toEqual([0, 23, 27]);
-    expect(cells.map((c) => c.advance)).toEqual([23, 4, 26]);
+    expect(cells.map((c) => c.x)).toEqual([0, 23, 26]);
+  });
+
+  it('kerns a base against the next base, through the mark between them', async () => {
+    await registerMarksFont();
+    const width = (text: string) => layoutAndPaint([MARKS(text, 0)], OPTS).bounds.width;
+    expect(width('A\u0301B')).toBeCloseTo(width('AB'));
+    // A mark with no base before it kerns against nothing.
+    expect(width('\u0301B')).toBeCloseTo(22);
   });
 
   it('tracks a ZWJ sequence once', async () => {

@@ -63,6 +63,27 @@ describe('defaultNodeProperties', () => {
   });
 });
 
+describe('pose.transform', () => {
+  const leaf = (name: string): PrefBoolean =>
+    (defaultNodeProperties.find((e) => e.name === name)!.schema.members.layout as PrefSection).members['pose.transform'] as PrefBoolean;
+
+  it('reads a skewed pose as on and an absent or identity transform as off', () => {
+    for (const e of [...defaultNodeProperties, ...inferredNodeProperties]) {
+      const { encoding } = (e.schema.members.layout as PrefSection).members['pose.transform'] as PrefBoolean;
+      expect(encoding!.read([1, 0, 0.5, 1], undefined)).toBe(true);
+      expect(encoding!.read([1, 0, 0, 1], undefined)).toBe(false);
+      expect(encoding!.read(undefined, undefined)).toBe(false);
+    }
+  });
+
+  it('clears the transform when turned off, and keeps the one held when on', () => {
+    const { encoding } = leaf('rect');
+    const pose = { x: 0, y: 0, width: 10, height: 10, transform: [1, 0, 0.5, 1] };
+    expect(encoding!.write(false, pose)).toBeUndefined();
+    expect(encoding!.write(true, pose)).toBe(pose.transform);
+  });
+});
+
 describe('leaves that read an absent value as their default', () => {
   const members = (name: string, section: string): PrefSection['members'] =>
     (defaultNodeProperties.find((e) => e.name === name)!.schema.members[section] as PrefSection).members;
@@ -243,6 +264,21 @@ describe('inferredNodeProperties', () => {
     ]);
     expect(align.encoding!.read('justify', { direction: 'rtl' })).toBe('justify');
     expect(align.encoding!.read('start', { direction: 'rtl' })).toBe('right');
+  });
+
+  it('lights no Align segment for start or end while the direction is each paragraph\'s own', () => {
+    const entry = inferredNodeProperties.find((e) => e.name === 'text')!;
+    const style = ((entry.schema.members.text as PrefSection).members['data.style']) as PrefObject;
+    const { read } = ((style.children.paragraph as PrefSection).members.align as PrefEnum).encoding!;
+    for (const siblings of [{}, { direction: 'auto' }, undefined]) {
+      expect(read('start', siblings)).toBeUndefined();
+      expect(read('end', siblings)).toBeUndefined();
+      expect(read('right', siblings)).toBe('right');
+      expect(read('justify', siblings)).toBe('justify');
+    }
+    expect(read('start', { direction: 'ltr' })).toBe('left');
+    expect(read('end', { direction: 'ltr' })).toBe('right');
+    expect(read('end', { direction: 'rtl' })).toBe('left');
   });
 
   it('offers the box alignment beside the style, as a field of the node', () => {

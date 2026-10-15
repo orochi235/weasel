@@ -58,6 +58,12 @@ function partitionModifiers(mods: ParsedModifiers): { required: string[]; option
   return { required, optional };
 }
 
+/** What a pointer leaves: the hover target, or with none the surface itself. */
+function leftClause(target: string | undefined): string {
+  if (target === undefined || target === '*') return 'off the surface';
+  return target === 'empty' ? 'off empty canvas' : `off a ${target}`;
+}
+
 function phaseAtomParts({ channel, phase }: PhaseAtom): RouteDescriptionPart[] {
   const subject = channel === '&' ? 'the tool'
     : channel === '*' ? 'any tool'
@@ -140,7 +146,7 @@ function actionClause(parsed: ParsedRoute, required: readonly string[]): string 
     case 'pointerDown':
       return userDoes(required, `presses${target}`);
     case 'hover':
-      return userDoes(required, `moves the pointer${target}`);
+      return userDoes(required, arg === 'leave' ? `moves the pointer ${leftClause(parsed.target)}` : `moves the pointer${target}`);
     case 'dblTap':
       return userDoes(required, `double-taps${target}`);
     case 'drag':

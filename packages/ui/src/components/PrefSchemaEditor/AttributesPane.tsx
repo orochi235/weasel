@@ -8,7 +8,7 @@ import { PrefsForm, type PrefRenderer } from '../Prefs';
 import { renderPrefControl } from '../Prefs/PrefsRow';
 import { Select } from '../Select';
 import { Switch } from '../Switch';
-import { aggregateAttributes, isObjectField, setObjectField } from './attrAggregate';
+import { aggregateAttributes, catalogAttributes, isObjectField, setObjectField } from './attrAggregate';
 import { ATTR_RENDERERS, MIXED_HINT } from './attrRenderers';
 import type { EditorAction } from './editorActions';
 import { changeKind, CONDITION_KIND, convertLeaf, entryOf, leafOf, normalizeAttr, type CustomKinds } from './kindSchemas';
@@ -70,6 +70,9 @@ export interface AttributesPaneProps {
   /** The dialog a layout's pointers name settings in. Given, an alias is a pointer: its form offers only where it points, among that
    *  dialog's settings. No leaf of a layout is offered another kind, which could make a setting of it. */
   over?: SchemaRoot;
+  /** The schema is the catalog of the host's actions: a node's form offers what a pref dragged out of it carries,
+   *  and lists what its action brings. Its key and its kind are the catalog's own to keep. */
+  catalog?: boolean;
   /** The schema takes no edit: the form shows what the nodes hold, with every control disabled. */
   readOnly?: boolean;
   onNotice(text: string | null): void;
@@ -89,7 +92,7 @@ function conditionRenderer(schema: SchemaRoot, exclude: readonly string[], holde
   }, { group: true, wide: true });
 }
 
-export function AttributesPane({ schema, onChange, paths, onRename, added = false, changed = NONE, kinds, custom, types, actions, renderers, over, readOnly: locked = false, onNotice }: AttributesPaneProps) {
+export function AttributesPane({ schema, onChange, paths, onRename, added = false, changed = NONE, kinds, custom, types, actions, renderers, over, catalog = false, readOnly: locked = false, onNotice }: AttributesPaneProps) {
   const targets: ReadonlyArray<string | null> = useMemo(() => (paths.length === 0 ? [null] : paths), [paths]);
   const several = targets.length > 1;
   // The key, a key that follows the name, and a list's entry belong to one node.
@@ -99,8 +102,8 @@ export function AttributesPane({ schema, onChange, paths, onRename, added = fals
   const agg = useMemo(() => {
     if (nodes.length === 0) return null;
     const all = aggregateAttributes(nodes, custom, drawsMixed, actions);
-    return pointers ? { ...all, schema: pointerAttributes(all.schema) } : all;
-  }, [nodes, custom, actions, pointers]);
+    return catalog ? catalogAttributes(all) : pointers ? { ...all, schema: pointerAttributes(all.schema) } : all;
+  }, [nodes, custom, actions, pointers, catalog]);
   const mixedPaths = useMemo(
     () => new Set([...(agg?.mixed ?? [])].flatMap((k) => [k, `${OWN}.${k}`, `${AUTO}.${k}`])),
     [agg],
@@ -118,8 +121,8 @@ export function AttributesPane({ schema, onChange, paths, onRename, added = fals
 
   const node = nodes[0]!;
   // A pointer is what it points at: its key stores nothing.
-  const leaf = agg.kind !== undefined && over === undefined;
-  const keyed = !several && path !== null && !pointers;
+  const leaf = agg.kind !== undefined && over === undefined && !catalog;
+  const keyed = !several && path !== null && !pointers && !catalog;
   const { shared, own, auto, entry, readOnly } = agg.schema;
   const item = !several && isPrefLeaf(node) ? entryOf(node) : undefined;
   const held = agg.values;

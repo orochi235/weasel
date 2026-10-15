@@ -2,8 +2,8 @@ import type { Op } from '../types';
 import { registerOpFactory } from '../registry';
 
 interface ChildOrderAdapter {
-  getChildren?(parentId: string | null): string[];
-  setChildOrder?(parentId: string | null, ids: string[]): void;
+  getChildren(parentId: string | null): string[];
+  setChildOrder(parentId: string | null, ids: string[]): void;
 }
 
 /** One parent's children, in order. */
@@ -34,10 +34,8 @@ export function createSetChildOrderOp(args: SetChildOrderArgs): Op {
     label,
     apply(adapter) {
       const a = adapter as ChildOrderAdapter;
-      if (!a.setChildOrder) return false;
-      const { getChildren } = a;
-      if (before === null && getChildren) {
-        before = orders.map((o) => ({ parentId: o.parentId, ids: getChildren.call(a, o.parentId).slice() }));
+      if (before === null) {
+        before = orders.map((o) => ({ parentId: o.parentId, ids: a.getChildren(o.parentId).slice() }));
         argsForSerial.prevOrders = before;
       }
       for (const o of orders) a.setChildOrder(o.parentId, o.ids.slice());

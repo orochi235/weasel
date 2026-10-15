@@ -4,12 +4,14 @@ import type { SerializedSceneHistory } from './historyForm';
 import type { ParallaxOpts } from '../viewport/parallax';
 import type { UnitScope } from '@weasel-js/quantity';
 import type { LayoutStrategy } from '../../layout/types';
+import type { AddLayerSpec, LayerRecord, SystemLayerRecord, SystemLayerSpec, UserLayerRecord } from './layerTypes';
 import type { LayoutFrame, LayoutMove } from './layoutTypes';
 import type { PoseComposition } from './composeFrame';
 import type { PoseLinear } from '@weasel-js/geom';
 import type { PoseHold, PoseOverride, PoseOverrides } from './poseOverrideTypes';
 import type { SerializedLayer, SerializedNode, SerializedScene } from './serializedTypes';
 
+export type { AddLayerSpec, LayerRecord, SystemLayerRecord, SystemLayerSpec, UserLayerRecord };
 export type { LayoutFrame, LayoutMove, PoseHold, PoseOverride, PoseOverrides, SerializedLayer, SerializedNode, SerializedScene };
 
 /**
@@ -73,7 +75,8 @@ export interface DerivedDep<TPose, TData = unknown, TLayer extends string = stri
    *  the document stores — `effectivePose`, the same answer the renderer uses. */
   pose: TPose;
   /** The path a pose override shows it by, else the one it derives, else
-   *  `null`; a `toPose` lookup and the document reading skip the override. Read
+   *  `null`; the document reading skips the override, and a `toPose` lookup
+   *  carries it into the box its `toPose` answers. Read
    *  it to place something *along* a dependency: a label on a routed edge.
    *  Resolved on first read and memoized on the dependency. */
   readonly path: Path | null;
@@ -187,37 +190,6 @@ export type Node<TData, TLayer extends string, TPose = RectPose> =
   | LeafNode<TData, TLayer, TPose>
   | ContainerNode<TData, TLayer, TPose>;
 
-interface LayerRecordBase<TLayer extends string> {
-  id: TLayer;
-  visible: boolean;
-  locked: boolean;
-  /** Draw this layer as a parallax plane: through a view derived from the
-   *  camera's (see `deriveParallaxView`), and picked through the same one.
-   *  Absent means the layer moves with the camera. */
-  parallax?: ParallaxOpts;
-}
-
-/** A layer declared when the scene was created. Fixed set, no display name —
- *  these are the kit's own render bands, not something a user manages. */
-export interface SystemLayerRecord<TLayer extends string>
-  extends LayerRecordBase<TLayer> {
-  kind: 'system';
-}
-
-/** A layer the user created and can rename, reorder or delete. */
-export interface UserLayerRecord<TLayer extends string>
-  extends LayerRecordBase<TLayer> {
-  kind: 'user';
-  name: string;
-}
-
-/** Per-layer metadata held by the scene: whether it is visible and locked,
- *  and where it sits in the render stack. Distinct from a node's `layer` tag,
- *  which merely names one of these. */
-export type LayerRecord<TLayer extends string> =
-  | SystemLayerRecord<TLayer>
-  | UserLayerRecord<TLayer>;
-
 /** What `Scene.add` needs to mint a node. Everything except the id is
  *  required; the id is generated unless one is supplied. */
 export interface AddNodeSpec<TData, TLayer extends string, TPose = RectPose> {
@@ -259,30 +231,6 @@ export interface RegisteredOp<P> {
    *  (a stored "from" value), never for a relative payload such as a delta.
    *  Omitted, or returning `undefined`, the op is always its own entry. */
   coalesceKey?: (payload: P) => string | undefined;
-}
-
-/** One of the layers a scene is created with. */
-export interface SystemLayerSpec<TLayer extends string> {
-  id: TLayer;
-  visible?: boolean;
-  locked?: boolean;
-  /** See `LayerRecord.parallax`. */
-  parallax?: ParallaxOpts;
-}
-
-/** Argument to `Scene.addLayer`. Always produces a `UserLayerRecord`
- *  (`kind: 'user'`). */
-export interface AddLayerSpec<TLayer extends string> {
-  id: TLayer;
-  name: string;
-  /** Default `true`. */
-  visible?: boolean;
-  /** Default `false`. */
-  locked?: boolean;
-  /** See `LayerRecord.parallax`. */
-  parallax?: ParallaxOpts;
-  /** Render-stack position. Default: top of stack (highest render index). */
-  index?: number;
 }
 
 /** Per-scene registry mapping string keys to live function references.

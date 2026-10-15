@@ -43,11 +43,14 @@ function fieldContext({ ctx, held, eachObject }: Pick<ObjectFieldOwner, 'ctx' | 
   // Each node's own object, with this one field changed. Deriving it per
   // node is what keeps a multi-selection edit from writing one node's
   // object over all the others.
-  const update = (fn: (prev: unknown, siblings?: Record<string, unknown>) => unknown): void =>
-    ctx.update((prev) => {
+  type Update = PropertyRenderContext['update'];
+  const through = (parent: Update): Update => (fn) =>
+    parent((prev) => {
       const base = prefObjectBase(pref, prev);
       return prefObjectWithField(pref, base, key, fn(fieldOf(base), base));
     });
+  const update = through(ctx.update);
+  const draft = ctx.drafts && through(ctx.drafts.update);
   return {
     path: childPath,
     ...(ctx.fields ? { fields: ctx.fields } : {}),
@@ -62,6 +65,7 @@ function fieldContext({ ctx, held, eachObject }: Pick<ObjectFieldOwner, 'ctx' | 
     selectionKey: ctx.selectionKey,
     update,
     setValue: (v) => update(() => v),
+    ...(draft ? { drafts: { update: draft, setValue: (v: unknown) => draft(() => v) } } : {}),
     disabled: ctx.disabled === true || ctx.disabledAt?.(childPath) === true,
     disabledAt: ctx.disabledAt,
     hidden: ctx.hidden === true || ctx.hiddenAt?.(childPath) === true,

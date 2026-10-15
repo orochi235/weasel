@@ -1,7 +1,9 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest';
+import { isValidElement } from 'react';
 import { renderHook, act } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { useSliceTool } from './useSliceTool';
+import { SliceIcon } from '../../../icons';
 import { reportRouteConflicts, type Action, type ActionDeps, type InvocationCtx } from '@weasel-js/routing';
 import type { RenderLayer } from 'core/layers/render';
 import { createPointerStore } from '@weasel-js/routing/react';
@@ -41,6 +43,14 @@ function setup(opts: Parameters<typeof useSliceTool>[0] = {}) {
   const paint = () => layer().draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 400, height: 400 });
   return { tool: () => result.current, actionOf, fire, click, commit, pointer, deps, layer, paint };
 }
+
+describe('useSliceTool — palette presentation', () => {
+  it('declares the knife glyph, so a palette draws no placeholder', () => {
+    const { tool } = setup();
+    const icon = tool().presentation?.icon;
+    expect(isValidElement(icon) && icon.type).toBe(SliceIcon);
+  });
+});
 
 describe('useSliceTool — click-by-click cut', () => {
   it('commits the placed points on Enter', () => {

@@ -32,6 +32,26 @@ describe('<ControlPanel> group drawn as a bar', () => {
     expect(bar.querySelector('[data-bar-label]')).not.toBeNull();
   });
 
+  it('opens what does not fit from a button where the group says so', () => {
+    const menu = resolveConfigSchema(
+      f.schema({
+        text: f
+          .group({ bold: f.boolean(false), size: f.number(12) })
+          .as('bar')
+          .overflow('menu'),
+      }),
+      [],
+    );
+    render(
+      <ControlPanel
+        schema={menu}
+        config={{ text: { bold: false, size: 12 } }}
+        setConfig={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole('toolbar')).toHaveAttribute('data-overflow', 'menu');
+  });
+
   it('writes a cell’s edit at the leaf’s path', () => {
     const setConfig = vi.fn();
     render(

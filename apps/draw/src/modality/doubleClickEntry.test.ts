@@ -28,10 +28,10 @@ describe('dispatchDoubleClickEntry', () => {
     expect(machine.enterMode).toHaveBeenCalledWith('isolation', { targetId: 'g1' });
   });
 
-  it('hit.kind="text" enters text-edit', () => {
+  it('hit.kind="text" enters nothing: the edit opening is what enters text-edit', () => {
     const machine = idle();
     dispatchDoubleClickEntry({ kind: 'text', id: 't1' }, machine as never);
-    expect(machine.enterMode).toHaveBeenCalledWith('text-edit', { targetId: 't1' });
+    expect(machine.enterMode).not.toHaveBeenCalled();
   });
 
   it('unknown kind is a no-op', () => {

@@ -1,4 +1,4 @@
-import { poseRotationOf } from '@weasel-js/geom';
+import { poseFrameOf } from '@weasel-js/geom';
 import type { InvocationCtx } from '@weasel-js/routing';
 import { pointerStateOf } from '../pointerState';
 import { localToWorld, worldDeltaToLocal, type TargetTransform } from 'core/geometry/targetFrame';
@@ -64,7 +64,7 @@ function constrain(
 
 /** One write id's world pose with the box taken from `src` to `dst`.
  *
- *  A rotated leaf resized with others needs its own frame: `src`/`dst`
+ *  A turned or skewed leaf resized with others needs its own frame: `src`/`dst`
  *  are world-frame there, unlike the lone path where the drag delta
  *  was already projected into the leaf's frame, so the naive affine
  *  scales the wrong pair of extents. See `remapRotatedLeaf`. */
@@ -75,7 +75,7 @@ function leafPose(
   dst: Bounds,
   sharedBox: boolean,
 ): unknown {
-  if (sharedBox && poseRotationOf(start) !== null) {
+  if (sharedBox && poseFrameOf(start) !== null) {
     return remapRotatedLeaf(start as RotatedPose, src, dst);
   }
   return g.remapBounds(start, src, dst);

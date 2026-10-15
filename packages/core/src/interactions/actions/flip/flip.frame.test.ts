@@ -12,7 +12,7 @@ import {
 } from 'core/scene/frameFixture';
 import type { NodeId, RectPose, Scene } from 'core/scene/types';
 import type { ImmediateInvoker } from '@weasel-js/routing';
-import type { Mat3 } from '@weasel-js/geom';
+import type { Affine } from '@weasel-js/geom';
 
 const { upright, turned } = FRAME_FIXTURE_IDS;
 
@@ -60,9 +60,9 @@ describe('flipAction under a container frame', () => {
 
   it('hands the geometry seam the mirror as the node itself sees it', () => {
     const scene = makeScene();
-    const seen: Mat3[] = [];
+    const seen: Affine[] = [];
     const geometryProjection = {
-      transform: vi.fn((_node: unknown, m: Mat3) => { seen.push(m); return null; }),
+      transform: vi.fn((_node: unknown, m: Affine) => { seen.push(m); return null; }),
     };
     run(scene, [upright], { geometryProjection });
     // A one-member union is that member's own visual box, so the world mirror

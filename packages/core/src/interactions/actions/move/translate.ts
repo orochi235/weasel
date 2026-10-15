@@ -1,4 +1,4 @@
-import type { Mat3 } from '@weasel-js/geom';
+import type { Affine } from '@weasel-js/geom';
 import { translatePoseViaDescriptor } from 'core/geometry/poseDescriptor';
 import { createTransformOp } from 'core/ops/transform';
 import type { Op } from 'core/ops/types';
@@ -18,7 +18,7 @@ export function translateOps(session: MoveSession, ids: Iterable<NodeId>, delta:
     const l = localDelta(session, id, delta.dx, delta.dy);
     const c = session.caught.get(id);
     if (c) { l.dx += c.dx; l.dy += c.dy; }
-    const m: Mat3 = [1, 0, 0, 1, l.dx, l.dy];
+    const m: Affine = [1, 0, 0, 1, l.dx, l.dy];
     // The authored pose, not the captured one: a derived node's captured pose
     // is its derivation, and writing that back would lose the placeholder undo
     // restores.

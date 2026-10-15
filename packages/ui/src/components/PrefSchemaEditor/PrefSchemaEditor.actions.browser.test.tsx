@@ -38,15 +38,15 @@ const UNDO = { kind: 'action', name: 'Undo', description: '', default: undefined
 
 test('an action dragged onto a group in the tree lands there as a pref that fires it, and stays listed', () => {
   render(<Live />);
-  drag(rowIn('Actions', 'edit.undo'), rowIn('Schema structure', 'tools'));
+  drag(rowIn('Actions', 'undo'), rowIn('Schema structure', 'tools'));
   expect(underTools().editUndo).toEqual(UNDO);
   expect(Object.keys(underTools())).toContain('grid');
-  expect(within(screen.getByRole('tree', { name: 'Actions' })).getByText('edit.undo')).toBeInTheDocument();
+  expect(within(screen.getByRole('tree', { name: 'Actions' })).getByText('undo')).toBeInTheDocument();
 });
 
 test('an action let go on a row the tree has not marked yet lands there', async () => {
   render(<Live />);
-  const from = rowIn('Actions', 'edit.undo');
+  const from = rowIn('Actions', 'undo');
   const onto = grip(rowIn('Schema structure', 'tools'));
   // One task, so React has drawn nothing of the move when the release comes.
   pointer('pointerdown', from, grip(from));

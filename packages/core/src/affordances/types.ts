@@ -4,6 +4,7 @@ import type { View } from 'core/viewport/view';
 import type { CommandStroke, CommandFill } from '@weasel-js/paint';
 import type { CursorSpec } from '@weasel-js/cursor';
 import type { ClaimableGesture } from '@weasel-js/gestures';
+import type { PolygonPath } from '@weasel-js/geom';
 
 /**
  * @experimental
@@ -53,7 +54,9 @@ export interface AffordanceRegion<TScratch = unknown> {
    *    chrome that floats a fixed distance off an edge at any zoom.
    *  - `rect`  — axis-aligned rect (target rotation applies).
    *  - `annulus` — outer ellipse minus inner rect cutout, for zones that sit *around* the
-   *    AABB (e.g. a rotate-on-hover band). */
+   *    AABB (e.g. a rotate-on-hover band).
+   *  - `outline` — within `hitRadiusPx` screen pixels of `path`'s outline, either side of it,
+   *    for chrome that is a path's own edge (path edit's segments). Hit-only. */
   shape:
     | {
         kind: 'point';
@@ -89,7 +92,8 @@ export interface AffordanceRegion<TScratch = unknown> {
          *  In screen pixels because the clamp has to know the view and the affordance
          *  doesn't: `ChromeState` carries no scale. */
         minBandPx?: number;
-      };
+      }
+    | { kind: 'outline'; path: PolygonPath; hitRadiusPx: number };
 
   /** Optional paint. World position is derived from `shape` + target
    *  transform; visual size stays in screen pixels (so handles don't

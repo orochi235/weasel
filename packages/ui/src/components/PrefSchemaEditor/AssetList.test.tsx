@@ -2,12 +2,12 @@ import { afterEach, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { AssetList } from './AssetList';
-import type { Asset } from './workspace';
+import type { ShownAsset } from './workspace';
 
 afterEach(cleanup);
 
 const root: PrefGroup = { name: '', children: {} };
-const ASSETS: Asset[] = [
+const ASSETS: ShownAsset[] = [
   { id: 'a', label: 'App', kind: 'schema', root },
   { id: 'b', label: 'Board', kind: 'schema', root },
   { id: 'p', label: 'Panel', kind: 'layout', root, over: 'a' },

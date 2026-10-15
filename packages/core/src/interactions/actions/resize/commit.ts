@@ -1,4 +1,4 @@
-import { boxToBox, type Mat3 } from '@weasel-js/geom';
+import { boxToBox, type Affine } from '@weasel-js/geom';
 import type { Op } from 'core/ops/types';
 import { createTransformOp } from 'core/ops/transform';
 import type { NodeId } from 'core/scene/types';
@@ -21,7 +21,7 @@ function projectedGeometry(
 ): { dataOp: Op; pose: unknown } | null {
   const sb = g.getBounds(from);
   const db = g.getBounds(next);
-  const m: Mat3 = boxToBox(
+  const m: Affine = boxToBox(
     sb.x, sb.y, sb.width, sb.height,
     db.x, db.y, db.width, db.height,
   );

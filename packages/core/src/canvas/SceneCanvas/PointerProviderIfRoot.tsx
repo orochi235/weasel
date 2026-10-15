@@ -8,6 +8,7 @@
  * surrounding context's `pointerRef`.
  */
 import { useEffect, type MutableRefObject, type ReactNode, type RefObject } from 'react';
+import { heldPointers } from '@weasel-js/gestures';
 import { PointerContextProvider, usePointerContext } from '@weasel-js/routing/react';
 import type { CanvasExtensionApi } from '../canvasExtension';
 import { useOptionalViewRegistry } from '../viewRegistry';
@@ -53,30 +54,21 @@ export function PointerPublisher({
       ctx.set({ worldX, worldY, viewId: target?.id ?? null });
     };
     const onMove = (e: PointerEvent): void => publish(e.pointerId, e.clientX, e.clientY);
+    const held = heldPointers(el);
     const onLeave = (e: PointerEvent): void => {
-      // Don't clear coords mid-drag: any pointer button down means the user
-      // is still actively manipulating the canvas, and downstream consumers
-      // (resize/move/etc.) need the latest world position even when the
-      // cursor leaves the canvas rect. The `useGestureDispatcher`-side
-      // `setPointerCapture` keeps pointermove flowing in that case, so we
-      // get fresh values; this guard just prevents the leave event from
-      // racing in and nulling them between captured moves.
-      if (e.buttons !== 0) {
+      // A pointer held on the canvas is still working it once it leaves the
+      // rect, and what it drives needs the latest world position.
+      if (held.count() > 0) {
         publish(e.pointerId, e.clientX, e.clientY);
         return;
       }
       ctx.set(null);
     };
-    // Document-level pointermove backstop so the HUD keeps updating when the
-    // pointer drifts off the canvas during a drag (pointer capture routes
-    // events back to the canvas, but the leave-window edge case is covered
-    // here too). Filter to events whose target isn't the canvas to avoid
-    // double-publishing.
+    // A drag that began on the canvas keeps reporting once it is off it; the
+    // canvas's own listener has the moves that still target it.
     const onDocMove = (e: PointerEvent): void => {
       if (e.target === el) return;
-      // Only forward off-canvas moves during an active drag — idle hover
-      // outside the canvas shouldn't be reported as a canvas pointer position.
-      if (e.buttons === 0) return;
+      if (held.count() === 0) return;
       publish(e.pointerId, e.clientX, e.clientY);
     };
     el.addEventListener('pointermove', onMove);
@@ -86,6 +78,7 @@ export function PointerPublisher({
       el.removeEventListener('pointermove', onMove);
       el.removeEventListener('pointerleave', onLeave);
       document.removeEventListener('pointermove', onDocMove);
+      held.release();
     };
     // canvasRef + registry + ctx identity are all stable across the lifetime
     // of the surrounding provider; effect runs once per mount.

@@ -59,3 +59,11 @@ it('draws a label as text, whatever is in it', () => {
   expect(form.querySelector('b')).toBeNull();
   expect(form.querySelector('[data-part="label"]')?.textContent).toBe('<b>x</b>');
 });
+
+it('draws only the HTML form when muted, for a control that speaks the value itself', () => {
+  const { container } = render(<QuantityText value={tag(2, unit('ft'))} mute />);
+  const { form, spoken } = drawn(container);
+  expect(form.innerHTML).toBe(present(tag(2, unit('ft'))).html);
+  expect(spoken).toBeUndefined();
+  expect(form.hasAttribute('aria-hidden')).toBe(false);
+});

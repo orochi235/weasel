@@ -1,7 +1,9 @@
 /**
  * `useSceneTextEdit` — scene-aware wrapper around `useTextEdit`: scene
  * lookups for text / style / runs / screen-pose, and
- * `scene.update(id, { data })` for commits.
+ * `scene.update(id, { data })` for commits. The overlay and a double-click
+ * both read the pose a node is painted at, so text inside a container whose
+ * pose is a frame is edited where it is drawn.
  *
  * Defaults assume the node's `data` carries `text` / `style` / `runs`
  * directly. For custom data shapes, override any of the optional projections.
@@ -11,7 +13,7 @@
 import { useCallback, useMemo, useRef, type MouseEvent } from 'react';
 import { useLatest } from '@weasel-js/react';
 import { asNodeId } from '../../core/scene/types';
-import { effectivePose } from '../../core/scene/effectivePose';
+import { scenePaintedPoseOf } from '../../canvas/derivedPath';
 import type { Scene } from '../../core/scene/types';
 import type { Stroke, Fill } from '@weasel-js/paint';
 import { resolveScreenLength } from '@weasel-js/paint';
@@ -77,10 +79,6 @@ export interface UseSceneTextEditOptions<TData> {
    * on, when there are several). With no canvas there, the node's world box
    * is passed through as screen pixels.
    *
-   * The overlay takes a single scale factor, so a non-uniform view scale is
-   * represented by its `scale.x`; text under `scale.x !== scale.y` will not
-   * match the canvas.
-   *
    * A thunk is re-read on every projection; a plain `View` is the value from
    * the render that supplied it.
    */
@@ -95,6 +93,12 @@ export interface UseSceneTextEditOptions<TData> {
   escape?: 'cancel' | 'commit';
   /** Forwarded to `useTextEdit`: how long an edit waits for its face. */
   fontHold?: number;
+  /** Forwarded to `useTextEdit`: called as an edit of the node `id` opens,
+   *  whichever way it was started. */
+  onStart?: (id: string) => void;
+  /** Forwarded to `useTextEdit`: called as the edit of `id` closes, after
+   *  any commit has been written to the scene. */
+  onEnd?: (id: string) => void;
 }
 
 function resolveView(view: View | (() => View) | undefined): View | undefined {
@@ -112,6 +116,22 @@ export interface UseSceneTextEditReturn extends UseTextEditReturn {
   /** The `isText` option asked of the node with this id: what
    *  `TextEditDep.isTextNode` wants, so both ways into an edit agree. */
   isTextNode: (id: string) => boolean;
+}
+
+/** How each field is read from a node's `data`: the option's projection, else the default shape. */
+function projectionsOf<TData extends DefaultTextData>(opts: { readonly current: UseSceneTextEditOptions<TData> }) {
+  return {
+    isText: (data: TData): boolean =>
+      opts.current.isText ? opts.current.isText(data) : isTextData(data),
+    text: (data: TData): string =>
+      opts.current.getText ? opts.current.getText(data) : (data.text ?? ''),
+    style: (data: TData): TextStyle | undefined =>
+      opts.current.getStyle ? opts.current.getStyle(data) : data.style,
+    runs: (data: TData): readonly StyledRun[] | undefined =>
+      opts.current.getRuns ? opts.current.getRuns(data) : data.runs,
+    verticalAlign: (data: TData): TextVerticalAlign | undefined =>
+      opts.current.getVerticalAlign ? opts.current.getVerticalAlign(data) : data.verticalAlign,
+  };
 }
 
 /** Wire double-click-to-edit text on a scene: mounts a DOM editing overlay
@@ -153,24 +173,15 @@ export function useSceneTextEdit<
     };
   };
 
-  const read = useMemo(() => ({
-    isText: (data: TData): boolean =>
-      optsRef.current.isText ? optsRef.current.isText(data) : isTextData(data),
-    text: (data: TData): string =>
-      optsRef.current.getText ? optsRef.current.getText(data) : (data.text ?? ''),
-    style: (data: TData): TextStyle | undefined =>
-      optsRef.current.getStyle ? optsRef.current.getStyle(data) : data.style,
-    runs: (data: TData): readonly StyledRun[] | undefined =>
-      optsRef.current.getRuns ? optsRef.current.getRuns(data) : data.runs,
-    verticalAlign: (data: TData): TextVerticalAlign | undefined =>
-      optsRef.current.getVerticalAlign ? optsRef.current.getVerticalAlign(data) : data.verticalAlign,
-  }), [optsRef]);
+  const read = useMemo(() => projectionsOf(optsRef), [optsRef]);
 
   const edit = useTextEdit({
     container,
     isEditorChrome: (el) => optsRef.current.isEditorChrome?.(el) ?? false,
     escape: options.escape,
     fontHold: options.fontHold,
+    onStart: (id) => optsRef.current.onStart?.(id),
+    onEnd: (id) => optsRef.current.onEnd?.(id),
     getText: (id) => {
       const node = sceneRef.current.get(asNodeId(id));
       return node ? read.text(node.data) : '';
@@ -189,29 +200,19 @@ export function useSceneTextEdit<
       const scene = sceneRef.current;
       const node = scene.get(asNodeId(id));
       if (!node) return null;
-      const pose = effectivePose(scene, node);
+      const pose = scenePaintedPoseOf(scene)(node);
       const style = read.style(node.data);
       const at = surface();
       const view = resolveView(optsRef.current.view) ?? at?.canvas.getView();
-      const zoom = view ? view.scale.x : 1;
-      const originX = at?.box.x ?? 0;
-      const originY = at?.box.y ?? 0;
-      // Only the origin is projected. Width, height and font size stay in
-      // world units and reach the screen through the overlay's own
-      // `scale(zoom)` — see `TextEditScreenPose.zoom`.
+      const box = screenBoxOf(pose, view, at?.box);
       return {
-        x: originX + (view ? (pose.x - view.x) * view.scale.x : pose.x),
-        y: originY + (view ? (pose.y - view.y) * view.scale.y : pose.y),
-        width: pose.width,
-        height: pose.height,
+        ...box,
         // Against `zoom`, the same factor the overlay scales back up by, so a
         // `{ px }` size arrives on screen at the pixel count it names.
         fontSize: resolveScreenLength(
           style?.fontSize ?? optsRef.current.defaultFontSize ?? 16,
-          zoom,
+          box.zoom,
         ),
-        zoom,
-        frame: frameLinearOf(pose),
         verticalAlign: read.verticalAlign(node.data),
       };
     },
@@ -252,12 +253,13 @@ export function useSceneTextEdit<
     // Top-most-first hit test: renderOrder() is back-to-front, so iterate
     // in reverse and break on the first hit.
     const order = sceneRef.current.renderOrderNodes();
+    const paintedPoseOf = scenePaintedPoseOf(sceneRef.current);
     for (let i = order.length - 1; i >= 0; i--) {
       const node = order[i];
       if (sceneRef.current.isLocked(node.id)) continue;
       if (!read.isText(node.data)) continue;
       const text = read.text(node.data);
-      const at = effectivePose(sceneRef.current, node);
+      const at = paintedPoseOf(node);
       const p = worldToLocal(targetTransformOf(at), cx, cy);
       if (!p) continue;
       const pose = {
@@ -283,8 +285,38 @@ export function useSceneTextEdit<
   return { ...edit, onDoubleClick, isTextNode };
 }
 
-/** The linear part of the frame `pose` is drawn in, as the overlay takes it. */
-function frameLinearOf(pose: unknown): TextEditScreenPose['frame'] {
+/**
+ * `pose`'s box as the overlay takes it, `origin` being the canvas's corner in
+ * container pixels. Only the box center is projected, since the overlay's
+ * frame is about it. Width and height stay in world units and reach the
+ * screen through the overlay's own `scale(zoom)` — see
+ * `TextEditScreenPose.zoom`.
+ */
+function screenBoxOf(
+  pose: RectPose,
+  view: View | undefined,
+  origin: { x: number; y: number } | undefined,
+): Pick<TextEditScreenPose, 'x' | 'y' | 'width' | 'height' | 'frame'> & { zoom: number } {
+  const zoom = view ? view.scale.x : 1;
+  const zoomY = view ? view.scale.y : 1;
+  const cx = (origin?.x ?? 0) + (pose.x + pose.width / 2 - (view?.x ?? 0)) * zoom;
+  const cy = (origin?.y ?? 0) + (pose.y + pose.height / 2 - (view?.y ?? 0)) * zoomY;
+  return {
+    x: cx - (pose.width * zoom) / 2,
+    y: cy - (pose.height * zoom) / 2,
+    width: pose.width,
+    height: pose.height,
+    zoom,
+    frame: frameLinearOf(pose, zoomY / zoom),
+  };
+}
+
+/** The linear part of the frame `pose` is drawn in, as the overlay takes it.
+ *  `stretch` is the view's y scale over its x scale: the overlay scales both
+ *  axes by the x scale, so the frame carries what is left of y. */
+function frameLinearOf(pose: unknown, stretch: number): TextEditScreenPose['frame'] {
   const m = poseFrameOf(pose);
-  return m ? [m[0], m[1], m[2], m[3]] : undefined;
+  if (!m && stretch === 1) return undefined;
+  const [a, b, c, d] = m ?? [1, 0, 0, 1];
+  return [a, b * stretch, c, d * stretch];
 }

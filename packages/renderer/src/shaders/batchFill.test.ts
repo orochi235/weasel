@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import {
   BATCH_VERT_SRC, BATCH_FRAG_SRC, BATCH_FILL_UNIFORMS, BATCH_FILL_ATTRIBUTES,
-  BATCH_TEXTURE_SLOTS, WHITE_SLOT, PAINT_MODE_PLAIN, PAINT_MODE_RADIAL,
-  PAINT_MODE_CONIC,
+  BATCH_TEXTURE_SLOTS, BATCH_MATRIX_SLOTS, WHITE_SLOT, PAINT_MODE_PLAIN, PAINT_MODE_RADIAL,
+  PAINT_MODE_CONIC, PAINT_MODE_IMAGE, packSlot, withMatrix, paintModeOf, matrixOf,
 } from './batchFill';
 import { FLOATS_PER_VERTEX } from '../drawBatch';
 
@@ -51,20 +51,68 @@ describe('batch program — declaration lists match the sources', () => {
   });
 });
 
-describe('batch program — the sampler chain', () => {
-  it('unrolls one arm per slot past the white texel', () => {
-    // GLSL ES 3.0 will not index a sampler array with a variable, so the arms
-    // over constants are the only legal form — and there must be exactly
-    // enough of them, or the last slots silently fall through to white.
-    const arms = [...BATCH_FRAG_SRC.matchAll(/if \(slot == (\d+)\)/g)].map((m) => Number(m[1]));
-    expect(arms).toEqual(
-      Array.from({ length: BATCH_TEXTURE_SLOTS - 1 }, (_, i) => i + 1),
-    );
+describe('batch program — the sampler tree', () => {
+  /** `sampleSlot`'s body with each fetch replaced by the unit it reads, so the
+   *  branching can be run here. */
+  const body = BATCH_FRAG_SRC.slice(
+    BATCH_FRAG_SRC.indexOf('vec4 sampleSlot(int slot, vec2 uv) {') + 'vec4 sampleSlot(int slot, vec2 uv) {'.length,
+    BATCH_FRAG_SRC.indexOf('float median('),
+  );
+  const unitFor = new Function(
+    'slot', body.replace(/texture\(u_samplers\[(\d+)\], uv\)/g, '$1').replace(/\}\s*$/, ''),
+  ) as (slot: number) => number;
+
+  it('samples the unit each slot names', () => {
+    // GLSL ES 3.0 will not index a sampler array with a variable, so a fetch
+    // per constant is the only legal form, and a slot whose arm is missing or
+    // crossed samples somebody else's texture.
+    expect(BATCH_TEXTURE_SLOTS).toBe(16);
+    const fetches = [...body.matchAll(/texture\(u_samplers\[(\d+)\], uv\)/g)].map((m) => Number(m[1]));
+    expect(fetches.slice(0, BATCH_TEXTURE_SLOTS)).toEqual(Array.from({ length: BATCH_TEXTURE_SLOTS }, (_, i) => i));
+    for (let slot = 0; slot < BATCH_TEXTURE_SLOTS; slot++) expect(unitFor(slot)).toBe(slot);
   });
 
-  it('falls through to the white texel, which is the slot solids carry', () => {
-    expect(BATCH_FRAG_SRC).toMatch(/return texture\(u_samplers\[0\], uv\);/);
+  it('reaches any slot in four compares, the white texel included', () => {
+    let depth = 0;
+    let deepest = 0;
+    for (const ch of body) {
+      if (ch === '{') deepest = Math.max(deepest, ++depth);
+      else if (ch === '}') depth--;
+    }
+    expect(deepest).toBe(Math.log2(BATCH_TEXTURE_SLOTS));
     expect(WHITE_SLOT).toBe(0);
+  });
+});
+
+describe('batch program — slot, mode, and matrix share a float', () => {
+  it('unpacks in the vertex stage what packSlot and withMatrix packed', () => {
+    // The divisors as the shader source spells them, so a constant that moved
+    // on one side only fails here.
+    const slotMod = Number(/v_texSlot = packed % (\d+);/.exec(BATCH_VERT_SRC)![1]);
+    const mode = /v_paintMode = float\(\(packed \/ (\d+)\) % (\d+)\);/.exec(BATCH_VERT_SRC)!;
+    const matrixDiv = Number(/v_matrix = packed \/ (\d+);/.exec(BATCH_VERT_SRC)![1]);
+    for (let slot = 0; slot < BATCH_TEXTURE_SLOTS; slot++) {
+      for (let m = PAINT_MODE_PLAIN; m <= PAINT_MODE_IMAGE; m++) {
+        for (let matrix = 0; matrix < BATCH_MATRIX_SLOTS; matrix++) {
+          const packed = packSlot(withMatrix(slot, matrix), m);
+          expect(Math.fround(packed)).toBe(packed);
+          expect([
+            packed % slotMod,
+            Math.floor(packed / Number(mode[1])) % Number(mode[2]),
+            Math.floor(packed / matrixDiv),
+          ]).toEqual([slot, m, matrix]);
+          expect([paintModeOf(packed), matrixOf(packed)]).toEqual([m, matrix]);
+        }
+      }
+    }
+  });
+
+  it('maps each fragment by the matrix its vertex names', () => {
+    expect(BATCH_FRAG_SRC).toContain(`uniform mat4 u_colorMatrix[${BATCH_MATRIX_SLOTS}];`);
+    expect(BATCH_FRAG_SRC).toContain(`uniform vec4 u_colorBias[${BATCH_MATRIX_SLOTS}];`);
+    expect(BATCH_FRAG_SRC).toContain(`uniform float u_alpha[${BATCH_MATRIX_SLOTS}];`);
+    expect(BATCH_FRAG_SRC).toMatch(/u_colorMatrix\[v_matrix\] \* src \+ u_colorBias\[v_matrix\]/);
+    expect(BATCH_FRAG_SRC).toMatch(/mapped\.a \* u_alpha\[v_matrix\]/);
   });
 });
 
@@ -124,6 +172,14 @@ describe('batch program — glyph coverage is unconditional', () => {
     expect(BATCH_FRAG_SRC).toMatch(
       /isGlyph\s*=\s*step\(0\.5,\s*v_paintMode\)\s*\*\s*step\(v_paintMode,\s*2\.5\)/,
     );
+  });
+
+  it('reads a glyph\'s bold shift from a_post, and keeps it out of the alpha', () => {
+    // A glyph's a_post is 0 or a small shift: read as the alpha factor it is on
+    // every other vertex, it would erase the text.
+    expect(BATCH_FRAG_SRC).not.toContain('u_synthBold');
+    expect(BATCH_FRAG_SRC).toMatch(/glyphCoverage\(texel,\s*v_paintMode,\s*v_post \* isGlyph,/);
+    expect(BATCH_FRAG_SRC).toMatch(/mix\(v_post,\s*1\.0,\s*max\(isGrad,\s*isGlyph\)\)/);
   });
 
   it('keeps a glyph texel out of the color', () => {

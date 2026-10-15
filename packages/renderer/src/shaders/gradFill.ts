@@ -3,7 +3,9 @@
  *
  * `u_gradKind` picks the kind (0=linear, 1=radial, 2=conic). `u_ramp` is
  * `GradientRampAtlas`'s texture, which holds every baked ramp in the frame,
- * one per row; `u_rampV` picks this fill's row. Output is PREMULTIPLIED alpha.
+ * one per row; `u_rampV` picks this fill's row. `u_worldInv` takes a screen
+ * position to the gradient's space measured from its own start point or
+ * center, so no stage subtracts one. Output is PREMULTIPLIED alpha.
  */
 
 export const GRAD_VERT_SRC = /* glsl */ `#version 300 es
@@ -23,8 +25,9 @@ void main() {
 `;
 
 /**
- * The gradient's color at a gradient-space point, premultiplied — the whole
- * of the fragment stage but the point it is asked about, so the glyph program
+ * The gradient's color at a gradient-space point, measured from the
+ * gradient's start or center, premultiplied — the whole of the fragment stage
+ * but the point it is asked about, so the glyph program
  * can mask the same paint the path program draws.
  */
 export const GRAD_PAINT_GLSL = /* glsl */ `
@@ -35,7 +38,6 @@ uniform mat4  u_colorMatrix;
 uniform vec4  u_colorBias;
 uniform float u_opacity;
 uniform int   u_gradKind;
-uniform vec2  u_gradP0;
 uniform vec2  u_gradDir;
 uniform float u_gradLen;
 uniform float u_gradRadius;
@@ -46,12 +48,11 @@ const float PI = 3.14159265358979323846;
 vec4 shadePaint(vec2 world) {
   float t;
   if (u_gradKind == 0) {
-    vec2 d = world - u_gradP0;
-    t = dot(d, u_gradDir) / max(u_gradLen, 0.0001);
+    t = dot(world, u_gradDir) / max(u_gradLen, 0.0001);
   } else if (u_gradKind == 1) {
-    t = length(world - u_gradP0) / max(u_gradRadius, 0.0001);
+    t = length(world) / max(u_gradRadius, 0.0001);
   } else {
-    float a = atan(world.y - u_gradP0.y, world.x - u_gradP0.x) - u_gradAngle;
+    float a = atan(world.y, world.x) - u_gradAngle;
     t = fract(a / (2.0 * PI));
   }
   t = clamp(t, 0.0, 1.0);
@@ -79,7 +80,7 @@ void main() {
 export const GRAD_FILL_UNIFORMS = [
   'u_proj', 'u_model', 'u_origin', 'u_worldInv', 'u_ramp', 'u_rampV',
   'u_alpha', 'u_opacity', 'u_colorMatrix', 'u_colorBias',
-  'u_gradKind', 'u_gradP0', 'u_gradDir', 'u_gradLen', 'u_gradRadius', 'u_gradAngle',
+  'u_gradKind', 'u_gradDir', 'u_gradLen', 'u_gradRadius', 'u_gradAngle',
 ] as const;
 
 export const GRAD_FILL_ATTRIBUTES = ['a_position'] as const;

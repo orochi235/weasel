@@ -87,6 +87,7 @@ export function DispatchTracePanel(props: DispatchTracePanelProps = {}): ReactEl
         />
         <ButtonBar
           variant="minimal"
+          size="sm"
           ariaLabel="Trace actions"
           items={[
             {

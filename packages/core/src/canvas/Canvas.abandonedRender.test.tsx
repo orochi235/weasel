@@ -31,7 +31,7 @@ function boxAt(left: number): HTMLElement {
 }
 
 describe('<Canvas> after an abandoned render', () => {
-  it('reports the committed input element as the detached surface origin', () => {
+  it('converts a client point from the committed input element', () => {
     const shared = document.createElement('canvas');
     document.body.append(shared);
     const a = boxAt(10);
@@ -47,7 +47,7 @@ describe('<Canvas> after an abandoned render', () => {
         <Canvas width={100} height={100} layers={{}} paintInto={{ canvas: shared, x: 0, y: 0 }} inputElement={input} />
       </ViewRegistryProvider>
     ));
-    expect(registry.surface()!.origin()).toEqual({ left: 10, top: 0 });
+    expect(registry.surface()!.clientToWorld(10, 0)).toEqual([0, 0]);
     for (const el of [shared, a, b]) el.remove();
   });
 

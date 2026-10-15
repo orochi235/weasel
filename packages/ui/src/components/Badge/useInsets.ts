@@ -1,7 +1,9 @@
 import { useLayoutEffect, useMemo, useState, type RefObject } from 'react';
 import type { ShapeInsets } from './types';
-import type { BaseModule } from './bases/types';
+import type { BaseModule, BaseSampler } from './bases/types';
 import { fitInsets, outlinePoints } from './bases/inscribedRect';
+import { inwardReach } from './composeOutline';
+import type { BadgeEffectSpec } from './effects';
 
 const NONE: ShapeInsets = { top: 0, right: 0, bottom: 0, left: 0 };
 const SIDES = ['top', 'right', 'bottom', 'left'] as const;
@@ -57,16 +59,49 @@ function useMeasured(ref: RefObject<HTMLElement | null>, enabled: boolean): Meas
   return enabled ? measured : null;
 }
 
+/** What moves a base's outline off the base: its effects, and its `bloat` in CSS px. */
+export interface Moved { effects?: readonly BadgeEffectSpec[]; bloat: number }
+
+const STILL: Moved = { bloat: 0 };
+
+/**
+ * `fitInsets` for `content` on the base `build` makes, `points` its outline in a 100 by 100
+ * box, at the least clearance that keeps the content inside the outline `moved` composes.
+ * `floor` itself when that already does.
+ */
+export function fitMoved(
+  build: (boxW: number, boxH: number) => BaseSampler,
+  points: readonly (readonly [number, number])[],
+  content: { w: number; h: number },
+  floor: ShapeInsets,
+  moved: Moved,
+): ShapeInsets {
+  let insets = fitInsets(points, content, floor);
+  let clear = 0;
+  // The clearance only grows, so this ends: nothing asks for more than the furthest move.
+  for (;;) {
+    const box = { w: content.w + insets.left + insets.right, h: content.h + insets.top + insets.bottom };
+    const held = { left: insets.left, top: insets.top, right: insets.left + content.w, bottom: insets.top + content.h };
+    // In half pixels, so a change in the outline's length, which sets how many times an effect
+    // repeats along it, seldom changes the clearance.
+    const need = Math.ceil(inwardReach(build(box.w, box.h), moved.effects, moved.bloat, box, held) * 2) / 2;
+    if (need <= clear) return insets;
+    clear = need;
+    insets = fitInsets(points, content, floor, clear);
+  }
+}
+
 /**
  * The padding a shape or base adds around the badge's content. A base that `fitsContent` has
  * an outline that dips inside its box by a share of the box, so its declared `insets`
  * stand while they keep the content at `contentRef` clear of the outline, and grow when they do not.
- * `clear` is how many CSS px inside that outline the drawn one runs.
+ * `moved` is what the drawn outline adds to the base's own.
  */
-export function useInsets<P>(source: InsetSource<P>, params: P, contentRef: RefObject<HTMLElement | null>, clear = 0): ShapeInsets {
+export function useInsets<P>(source: InsetSource<P>, params: P, contentRef: RefObject<HTMLElement | null>, moved: Moved = STILL): ShapeInsets {
   const fits = source.fitsContent === true && source.build !== undefined;
   const measured = useMeasured(contentRef, fits);
   const key = fits ? JSON.stringify(params) : '';
+  const movedKey = fits ? JSON.stringify(moved) : '';
   const points = useMemo(
     () => (fits ? outlinePoints(source.build!(params, 100, 100)) : null),
     // eslint-disable-next-line react-hooks/exhaustive-deps -- `params` is a fresh object every render; `key` is its value.
@@ -79,10 +114,11 @@ export function useInsets<P>(source: InsetSource<P>, params: P, contentRef: RefO
     // The badge's own padding counts toward clearing the outline, so it is fitted with the insets and taken back out.
     const { pad } = measured;
     const floor = { top: top + pad.top, right: right + pad.right, bottom: bottom + pad.bottom, left: left + pad.left };
-    const all = fitInsets(points, measured, floor, clear);
+    const all = fitMoved((w, h) => source.build!(params, w, h), points, measured, floor, moved);
     if (all === floor) return null;
     const less = (a: number, b: number) => Math.round((a - b) * 100) / 100;
     return { top: less(all.top, pad.top), right: less(all.right, pad.right), bottom: less(all.bottom, pad.bottom), left: less(all.left, pad.left) };
-  }, [points, measured, top, right, bottom, left, clear]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `params` and `moved` are fresh objects every render; the keys are their values.
+  }, [points, measured, top, right, bottom, left, source, key, movedKey]);
   return fitted ?? declared;
 }

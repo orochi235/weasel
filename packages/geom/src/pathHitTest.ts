@@ -15,7 +15,7 @@ import { pointInPolygon, pointSegmentDist2, segmentsCross } from './polyline';
 import type { Rect } from './box';
 import type { Path } from './path';
 import { closedSubpaths, flatSubpaths, regionSubpaths } from './pathSubpaths';
-import type { Mat3 } from './mat3';
+import type { Affine } from './affine';
 import type { Point } from './paths/cubicMath';
 import { capsuleWithinPx, isSimilarity, stretchOf, type Linear2 } from './screenBand';
 
@@ -42,7 +42,7 @@ export interface StrokeHitTestOptions {
    *  screen (only its linear part matters). A pointer's forgiveness is a
    *  screen distance, and under a non-uniform or rotated-then-squished
    *  transform no world distance equals it. */
-  slop?: { px: number; transform: Mat3 };
+  slop?: { px: number; transform: Affine };
 }
 
 // ─── Point vs path ──────────────────────────────────────────────────────────

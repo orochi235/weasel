@@ -7,6 +7,7 @@ import { definesFrame } from 'core/scene/effectivePose';
 import { deriveParallaxView, planeMap, type ParallaxOpts } from 'core/viewport/parallax';
 import { scenePlaneOf } from './pickWalk';
 import { clipCarrier, planeTransform } from './planeClips';
+import { splitOverChildren } from './overChildren';
 
 /** The scene-tree reading surface `buildSceneTree` walks. A `SceneCanvasAdapter` is one. */
 export interface HierarchicalAdapter<TNode, TPose> {
@@ -43,6 +44,9 @@ function wrapInClips(
  * **that node's own `layer`** — not its parent's. So a child whose `layer` differs from its
  * parent draws in its own layer's pass while staying a tree child for hit-testing / move /
  * reparent. Output is one group per visible layer, in adapter (`getLayers`) order.
+ *
+ * A node paints before its children. What its `drawOne` wraps in `overChildren` paints after
+ * them instead, in the node's own layer.
  *
  * `drawOne` returns world-coord commands. Because a node may be drawn outside its parent's
  * group, the tree nesting cannot carry geometry as renderer state; the walk folds each node's
@@ -100,7 +104,7 @@ export function buildSceneTree<
     const bucket = forLayer === undefined || node.layer === forLayer
       ? buckets.get(node.layer) : undefined;
     const v = planeViews?.get(node.layer) ?? view;
-    const self = bucket && !culled?.(node, pose, v) ? drawOne(node, pose, v) : [];
+    const { under: self, over } = splitOverChildren(bucket && !culled?.(node, pose, v) ? drawOne(node, pose, v) : []);
 
     // Extend the clip chain with this node's own clip when it is a container.
     let ownClips = ancestorClips;
@@ -130,6 +134,10 @@ export function buildSceneTree<
     // An envelope's children share its own parent's frame.
     const childFrame = definesFrame(node as never) ? pose : parentFrame;
     for (const cid of adapter.getChildren(id)) visit(cid, ownClips, childFrame);
+
+    if (bucket && over.length > 0) {
+      bucket.push(ownClips.length > 0 ? wrapInClips(over, ownClips, node.layer, carry) : { kind: 'group', children: over });
+    }
   }
 
   for (const rootId of adapter.getChildren(null)) visit(rootId, [], null);

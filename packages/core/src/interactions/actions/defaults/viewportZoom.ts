@@ -1,6 +1,6 @@
-import type { Action } from '@weasel-js/routing';
+import type { Action, BoundGesture } from '@weasel-js/routing';
 import type { ViewApi } from '../depSchema';
-import { zoomAt } from 'core/viewport/zoomAt';
+import { axisZoomFactor, zoomAt, type ZoomAxis } from 'core/viewport/zoomAt';
 import { wheelZoomFactor } from 'core/viewport/wheelHandler';
 import { DEFAULT_MIN_ZOOM, DEFAULT_MAX_ZOOM } from 'core/viewport/zoomBounds';
 import { viewToTransform, type View } from 'core/viewport/view';
@@ -43,6 +43,9 @@ export interface ViewportZoomOptions {
   min?: number;
   /** Upper clamp on the resulting view scale, forwarded to `zoomAt`. Default 8. */
   max?: number;
+  /** Hold wheel, trackpad-pinch, and key zoom to one axis; the other keeps its
+   *  scale and its translation. Default `'both'`. Cmd+0 still resets both. */
+  axis?: ZoomAxis;
   /**
    * Glide the discrete steps (Cmd+=, Cmd+-, Cmd+0) instead of jumping.
    * `true` uses the kit defaults; an object tunes them. Wheel and pinch never
@@ -50,6 +53,51 @@ export interface ViewportZoomOptions {
    * that implements `animate`; without one this is ignored.
    */
   animate?: boolean | ViewportZoomAnimateOptions;
+}
+
+/** The gestures `viewport.zoom` answers: the configurable wheel trigger, then
+ *  the fixed pinch and key bindings. */
+function zoomBindings(wheel: ViewportZoomOptions['wheel']): BoundGesture[] {
+  // 'plain': bare wheel (omitting `mods` forbids any modifier — see the
+  // matcher's strict modifier check). 'mod': Cmd/Ctrl+wheel.
+  const wheelSpec =
+    wheel === 'plain'
+      ? { kind: 'wheel' as const }
+      : { kind: 'wheel' as const, mods: { mod: true } };
+  return [
+    {
+      spec: wheelSpec,
+      opts: { params: { kind: 'wheel' } },
+    },
+    // Trackpad pinch, which the browser delivers as ctrl+wheel. Distinct from
+    // the `mod` binding on mac (`mod` is metaKey there), so without its own
+    // binding nothing claims it and the page zooms instead. Elsewhere it
+    // duplicates `mod`, and `matchBest` picks a single winner.
+    {
+      spec: { kind: 'wheel' as const, mods: { ctrl: true } },
+      opts: { params: { kind: 'wheel' } },
+    },
+    // Safari's trackpad pinch, reported as a scale rather than a wheel. Safari
+    // may send the same pinch as ctrl+wheel too; the dispatcher swallows that
+    // copy while a claimed gesture is live.
+    {
+      spec: { kind: 'pinch' as const },
+      opts: { params: { kind: 'pinch' } },
+    },
+    // Cmd+= → zoom in (also accepts Cmd+Shift+= which is Cmd++ on many keyboards)
+    {
+      spec: { kind: 'key', key: '=', mods: { mod: true, shift: 'optional' } },
+      opts: { params: { kind: 'in' } },
+    },
+    {
+      spec: { kind: 'key', key: '-', mods: { mod: true } },
+      opts: { params: { kind: 'out' } },
+    },
+    {
+      spec: { kind: 'key', key: '0', mods: { mod: true } },
+      opts: { params: { kind: 'reset' } },
+    },
+  ];
 }
 
 /**
@@ -63,12 +111,7 @@ export function makeViewportZoomAction(
   opts: ViewportZoomOptions = {},
 ): Action & { requires: string[] } {
   const clamp = { min: opts.min ?? DEFAULT_MIN_ZOOM, max: opts.max ?? DEFAULT_MAX_ZOOM };
-  // 'plain': bare wheel (omitting `mods` forbids any modifier — see the
-  // matcher's strict modifier check). 'mod': Cmd/Ctrl+wheel.
-  const wheelSpec =
-    opts.wheel === 'plain'
-      ? { kind: 'wheel' as const }
-      : { kind: 'wheel' as const, mods: { mod: true } };
+  const axis = opts.axis ?? 'both';
 
   const rawAnimate: ViewportZoomAnimateOptions | null =
     opts.animate === true ? {} : (opts.animate || null);
@@ -79,40 +122,7 @@ export function makeViewportZoomAction(
     id: 'viewport.zoom',
     label: 'Zoom',
     group: 'viewport',
-    defaultBinding: [
-      {
-        spec: wheelSpec,
-        opts: { params: { kind: 'wheel' } },
-      },
-      // Trackpad pinch, which the browser delivers as ctrl+wheel. Distinct from
-      // the `mod` binding on mac (`mod` is metaKey there), so without its own
-      // binding nothing claims it and the page zooms instead. Elsewhere it
-      // duplicates `mod`, and `matchBest` picks a single winner.
-      {
-        spec: { kind: 'wheel' as const, mods: { ctrl: true } },
-        opts: { params: { kind: 'wheel' } },
-      },
-      // Safari's trackpad pinch, reported as a scale rather than a wheel. Safari
-      // may send the same pinch as ctrl+wheel too; the dispatcher swallows that
-      // copy while a claimed gesture is live.
-      {
-        spec: { kind: 'pinch' as const },
-        opts: { params: { kind: 'pinch' } },
-      },
-      // Cmd+= → zoom in (also accepts Cmd+Shift+= which is Cmd++ on many keyboards)
-      {
-        spec: { kind: 'key', key: '=', mods: { mod: true, shift: 'optional' } },
-        opts: { params: { kind: 'in' } },
-      },
-      {
-        spec: { kind: 'key', key: '-', mods: { mod: true } },
-        opts: { params: { kind: 'out' } },
-      },
-      {
-        spec: { kind: 'key', key: '0', mods: { mod: true } },
-        opts: { params: { kind: 'reset' } },
-      },
-    ],
+    defaultBinding: zoomBindings(opts.wheel),
     requires: ['view', 'debug'],
     invoker: {
       timing: 'immediate',
@@ -144,7 +154,7 @@ export function makeViewportZoomAction(
         });
         const scaleBy = (factor: number) => {
           if (!(factor > 0) || !Number.isFinite(factor)) return;
-          const next = zoomAt(current, focal(), factor, clamp);
+          const next = zoomAt(current, focal(), axisZoomFactor(factor, axis), clamp);
           view.set(next);
           record(current, next, focal());
         };
@@ -159,7 +169,8 @@ export function makeViewportZoomAction(
           case 'in':
           case 'out': {
             const from = stepFrom();
-            const target = zoomAt(from, keyAnchor(view), kind === 'in' ? KEY_STEP : 1 / KEY_STEP, clamp);
+            const step = axisZoomFactor(kind === 'in' ? KEY_STEP : 1 / KEY_STEP, axis);
+            const target = zoomAt(from, keyAnchor(view), step, clamp);
             stepTo(target);
             record(from, target, keyAnchor(view));
             break;
@@ -177,7 +188,7 @@ export function makeViewportZoomAction(
             // Unknown kind — no-op. Legacy bridge calls with params=undefined;
             // default to zoom-in as a sensible fallback.
             if (params === undefined) {
-              view.set(zoomAt(current, { x: 0, y: 0 }, KEY_STEP, clamp));
+              view.set(zoomAt(current, { x: 0, y: 0 }, axisZoomFactor(KEY_STEP, axis), clamp));
             }
             break;
         }

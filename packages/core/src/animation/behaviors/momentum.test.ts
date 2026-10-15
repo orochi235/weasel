@@ -35,6 +35,7 @@ function makeCtx(initialPose: RectPose, setPose: (id: string, p: RectPose) => vo
       getNodes: () => [{ id: 'a' }],
       getPose: () => initialPose,
       getParent: () => null,
+      getChildren: () => [],
       setPose: (id: string, p: RectPose) => { setPose(id, p); },
       setParent: () => {},
     },

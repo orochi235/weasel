@@ -151,11 +151,22 @@ function Panel({
     }],
   }), [program, disabled, title, uniformsRef, clock]);
 
-  // Press routes through an ambient binding: a bare canvas has no active tool
-  // ahead of it to claim the press. Hover has no gesture yet, so the move
-  // handler below stays raw.
+  // Press and hover route through ambient bindings: a bare canvas has no
+  // active tool ahead of it to claim either.
   const onPressRef = useLatest(onPress);
+  const onPointerMoveRef = useLatest(onPointerMove);
   const ambient = useMemo(() => {
+    const follow: Action = {
+      id: 'shader.follow',
+      label: 'Follow the pointer over the shader panel',
+      invoker: {
+        timing: 'immediate',
+        run: (_deps, params) => {
+          const p = params as { worldX: number; worldY: number };
+          onPointerMoveRef.current?.(p.worldX / PANEL_W, p.worldY / PANEL_H);
+        },
+      },
+    };
     const press: Action = {
       id: 'shader.press',
       label: 'Press the shader panel',
@@ -170,10 +181,13 @@ function Panel({
     return [{
       id: 'press',
       eligibility: {},
-      actions: [press],
-      bindings: [{ spec: { kind: 'pointerDown' as const }, actionId: press.id }],
+      actions: [press, follow],
+      bindings: [
+        { spec: { kind: 'pointerDown' as const }, actionId: press.id },
+        { spec: { kind: 'hover' as const }, actionId: follow.id },
+      ],
     }];
-  }, [onPressRef]);
+  }, [onPressRef, onPointerMoveRef]);
 
   const scene = useScene<never, 'default'>({
     systemLayers: [{ id: 'default' }],
@@ -183,14 +197,7 @@ function Panel({
   return (
     <div style={{ display: 'flex', flexDirection: 'column' }}>
       <strong style={{ color: '#ddd', marginBottom: 4 }}>{title}</strong>
-      <div
-        style={{ position: 'relative', width: PANEL_W, height: PANEL_H }}
-        onPointerMove={(e) => {
-          if (!onPointerMove) return;
-          const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
-          onPointerMove((e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height);
-        }}
-      >
+      <div style={{ position: 'relative', width: PANEL_W, height: PANEL_H }}>
         <SceneCanvas
           width={PANEL_W}
           height={PANEL_H}

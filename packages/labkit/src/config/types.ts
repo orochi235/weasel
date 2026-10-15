@@ -1,5 +1,6 @@
 import type {
   PrefAction,
+  PrefBarOverflow,
   PrefCondition,
   PrefGroup,
   PrefGroupAs,
@@ -219,6 +220,7 @@ export interface BranchAnnotations {
   name?: string;
   description?: string;
   as?: PrefGroupAs;
+  overflow?: PrefBarOverflow;
   showIf?: PrefCondition;
   enableIf?: PrefCondition;
 }

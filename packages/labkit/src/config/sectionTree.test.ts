@@ -214,9 +214,56 @@ describe('sectionTree, sections inside a group', () => {
     sectionTree(resolved, config);
     sectionTree(resolved, config);
     expect(warn.mock.calls.map(([message]) => message)).toEqual([
-      '[labkit] "Pump" (pump) repeats its heading "Pumping". Give it a label of its own.',
-      '[labkit] "Fill" (tank.fill) repeats its heading "Filling". Give it a label of its own.',
+      '[labkit] "Pump" (pump) repeats its heading "Pumping". It is drawn in the heading instead; mark it .heading() to say so, or give it a label of its own.',
+      '[labkit] "Fill" (tank.fill) repeats its heading "Filling". It is drawn in the heading instead; mark it .heading() to say so, or give it a label of its own.',
     ]);
+    warn.mockRestore();
+  });
+
+  it('marks the leaf a heading carries, in a section, a section inside a group, and a group', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const resolved = resolveConfigSchema(
+      f.schema({
+        rate: f.number(1).label('Rate').section('Pumping'),
+        pump: f.boolean(true).label('Running').heading().section('Pumping'),
+        tank: f
+          .group({
+            fill: f.boolean(true).label('Fill').section('Filling'),
+            level: f.number(1).label('Level').section('Filling'),
+            open: f.boolean(false).label('Open').heading(),
+          })
+          .label('Tank'),
+      }),
+    );
+    const { group } = sectionTree(resolved, {
+      pump: true,
+      rate: 1,
+      tank: { fill: true, level: 1, open: false },
+    });
+    const pumping = groupAt(group, 'pumping');
+    expect(pumping.children.pump).toMatchObject({ heading: true });
+    expect(pumping.children.rate).not.toMatchObject({ heading: true });
+    const tank = groupAt(group, 'tank');
+    expect(tank.children.open).toMatchObject({ heading: true });
+    expect(groupAt(tank, 'filling').children.fill).toMatchObject({ heading: true });
+    warn.mockRestore();
+  });
+
+  it('leaves a leaf a row where its control cannot sit in a heading', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const resolved = resolveConfigSchema(
+      f.schema({
+        rate: f.number(1).label('Rate').heading().section('Pumping'),
+        fill: f
+          .boolean(true)
+          .label('Fill')
+          .section('Filling')
+          .render(() => null),
+      }),
+    );
+    const { group } = sectionTree(resolved, { fill: true, rate: 1 });
+    expect(groupAt(group, 'pumping').children.rate).not.toMatchObject({ heading: true });
+    expect(groupAt(group, 'filling').children.fill).not.toMatchObject({ heading: true });
     warn.mockRestore();
   });
 

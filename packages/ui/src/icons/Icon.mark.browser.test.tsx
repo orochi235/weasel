@@ -1,8 +1,8 @@
 import { cleanup, render } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
 import { Icon } from './Icon';
-import type { MarkIconName } from './groups';
-import type { IconName } from './paths';
+import type { MarkIconName } from './generated/groups';
+import type { IconName } from './generated/paths';
 
 afterEach(cleanup);
 
@@ -40,7 +40,22 @@ test('a mark is drawn at the middle of its slot', async () => {
   expect(await alphaAt('markDot', 15.5, 15.5)).toBe(255);
 });
 
+// The stop glyph's right edge passes over the minus, inside the slot's box but more than the band from the stroke.
+test('the clearing follows the mark\'s outline, not its slot', async () => {
+  expect(await alphaAt('markRemove', 14.4, 12.5, 'stop')).toBe(255);
+  expect(await alphaAt('markRemove', 12.8, 14.4, 'stop')).toBe(0);
+});
+
 // A mask sized by its target's bounding box has no height to work with here, and erases the line.
 test('a glyph that is one straight line survives being marked', async () => {
   expect(await alphaAt('markDot', 8, 10, 'remove')).toBe(255);
+});
+
+// The ring's back arcs are drawn on past the axis and clipped by nested viewports; one that failed to clip
+// would paint the ring straight across the band beside the axis.
+test('the turn ring stops short of its axis at the back, and the axis is whole there', async () => {
+  expect(await alphaAt(undefined, 8.2, 7.05, 'turnLeft')).toBe(255);
+  expect(await alphaAt(undefined, 9.4, 6.85, 'turnLeft')).toBe(0);
+  expect(await alphaAt(undefined, 12.1, 6.85, 'turnLeft')).toBe(0);
+  expect(await alphaAt(undefined, 10.75, 6.8, 'turnLeft')).toBe(255);
 });

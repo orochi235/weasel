@@ -7,7 +7,7 @@ import s from './Badge.module.css';
 import { SHAPES, type BadgeShapeParams } from './shapes';
 import type { BadgeBase, BadgeBaseParams } from './bases';
 import { EFFECTS, type BadgeEffectSpec } from './effects';
-import { composeOutline, inwardReach, offsetOutline } from './composeOutline';
+import { composeOutline, offsetOutline } from './composeOutline';
 import { resolveCompose } from './composeSpec';
 import { liftPadding, paddingStyle } from './paddingSides';
 import { useInsets } from './useInsets';
@@ -183,12 +183,12 @@ export const Badge = forwardRef(function Badge(props: BadgeProps, ref: Ref<HTMLE
   const sampler = composeBase ? composeBase.build(composeBaseParams, box.w, box.h) : null;
 
   const contentRef = useRef<HTMLSpanElement>(null);
-  // In half pixels, so the insets hold still while the outline's length, which sets how many
-  // times an effect repeats along it, changes with the insets.
-  const clear = composeBase?.fitsContent && sampler
-    ? Math.ceil(inwardReach(sampler, resolvedEffects, bloat ?? 0) * 2) / 2
-    : 0;
-  const insets = useInsets<unknown>(composeBase ?? shapeModule, composeBase ? composeBaseParams : params, contentRef, clear);
+  const insets = useInsets<unknown>(
+    composeBase ?? shapeModule,
+    composeBase ? composeBaseParams : params,
+    contentRef,
+    composeBase ? { effects: resolvedEffects, bloat: bloat ?? 0 } : undefined,
+  );
   const style: CSSProperties = {
     ...stanced.style,
     ['--badge-inset-top' as never]: `${insets.top}px`,

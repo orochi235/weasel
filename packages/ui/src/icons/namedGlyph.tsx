@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Icon } from './Icon';
-import { ICON_PATHS, type IconName } from './paths';
+import { ICON_PATHS, type IconName } from './generated/paths';
 
 /** Whether the kit's icon set holds a glyph called `name`. */
 export function isIconName(name: string | undefined): name is IconName {

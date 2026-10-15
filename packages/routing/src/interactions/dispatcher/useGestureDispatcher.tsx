@@ -10,17 +10,8 @@ import { useActiveToolContext } from '../actions/activeToolContext';
 import { useDepRegistry } from '../actions/depRegistry';
 import { useToolLifecycle } from '../../tools/useToolLifecycle';
 import { createDispatcher, type Dispatcher, type DispatcherContext } from './dispatcher';
-import { createDispatchCore } from './dispatchCore';
-import { dispatcherWatch } from './dispatcherWatch';
+import { attachInput } from './attachInput';
 import type { DispatcherViewTarget, UseGestureDispatcherOptions } from './gestureDispatcherOptions';
-import { contextMenuInput } from './channels/contextMenu';
-import { hoverCursorInput } from './channels/hoverCursor';
-import { DROPOVER_CLASS, ingestInput } from './channels/ingest';
-import { keyboardInput } from './channels/keyboard';
-import { listenerSet } from './channels/listeners';
-import { pointerInput, type PointerInput } from './channels/pointer';
-import { webkitPinchInput } from './channels/webkitPinch';
-import { wheelInput } from './channels/wheel';
 
 export type {
   DispatcherChannels, DispatcherViewTarget, UseGestureDispatcherOptions, ViewIdResolver,
@@ -101,96 +92,27 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
 
   useEffect(() => {
     if (!enabled) return;
-
-    let disposed = false;
-    const canvas = canvasRef.current;
-    // Dispatcher-only overlays (marquee, lasso) repaint on nothing else, and
-    // the event that closes a gesture still has to clear its overlay.
-    const redraw = dispatcherWatch(() => { requestRedrawRef.current?.(); });
-    redraw.sync(allDispatchers());
-    const core = createDispatchCore({
-      canvas,
+    return attachInput(canvasRef.current, {
       root: () => rootTargetRef.current,
       views: () => viewsRef.current,
       context: () => ctxRef.current,
       actions: () => registryRef.current,
-      uses: () => { redraw.sync(allDispatchers()); },
-      disposed: () => disposed,
-    });
-    const keys = keyboardInput(core);
-    const pinch = webkitPinchInput(core);
-    const ingest = ingestInput(core);
-    const hover = hoverCursorInput(core, () => cursorRef.current.painted?.(), () => pointer.heldCount(), () => cursorRef.current.sink?.());
-    const pointer: PointerInput = pointerInput(core, {
+      dispatchers: allDispatchers,
+      requestRedraw: () => { requestRedrawRef.current?.(); },
+      paintedCursor: () => cursorRef.current.painted?.(),
+      cursorSink: () => cursorRef.current.sink?.(),
       longPress: () => longPressRef.current,
       onClick: () => onClickRef.current,
       onDoubleClick: () => onDoubleClickRef.current,
       clicks: clicksRef.current,
-      hover,
+    }, {
+      keyboard,
+      pointer: pointerChannel,
+      wheel: wheelChannel,
+      pinch: pinchChannel,
+      contextMenu: contextMenuChannel,
+      ingest: ingestChannel,
     });
-
-    // A window that loses focus never delivers the keyup, so without this every
-    // in-flight key-held handle stays engaged until that key is pressed again.
-    // Nor can a drag trust the release it may or may not see later.
-    const onWindowBlur = (): void => {
-      pinch.end();
-      pointer.cancelHeld();
-      keys.releaseAll();
-    };
-
-    const listeners = listenerSet();
-    const keyCapture = keyboard === 'first';
-    if (keyboard) {
-      listeners.on(window, 'keydown', keys.onKeyDown, keyCapture);
-      listeners.on(window, 'keyup', keys.onKeyUp, keyCapture);
-    }
-    listeners.on(window, 'blur', onWindowBlur);
-    // Ahead of the pointer channel's own listener, and whether or not that
-    // channel is on: a press with any button makes this the scope chrome and
-    // keys reach.
-    listeners.on(canvas, 'pointerdown', () => { registryRef.current.activate(); });
-    if (pointerChannel) {
-      // Separate from the key channel's listeners, so the cursor also tracks
-      // modifiers when `keyboard: false` turns gesture key dispatch off.
-      listeners.on(window, 'keydown', hover.onKey);
-      listeners.on(window, 'keyup', hover.onKey);
-      listeners.on(canvas, 'pointerleave', hover.onLeave);
-      listeners.on(canvas, 'pointerdown', pointer.onPointerDown);
-      listeners.on(canvas, 'pointermove', pointer.onHoverMove);
-      listeners.on(canvas, 'dblclick', pointer.onNativeDoubleClick);
-    }
-    if (wheelChannel) {
-      listeners.on(canvas, 'wheel', wheelInput(core, pinch.live), { passive: false, capture: true });
-    }
-    if (pinchChannel) {
-      listeners.on(canvas, 'gesturestart', pinch.onGestureStart);
-      listeners.on(canvas, 'gesturechange', pinch.onGestureChange);
-      listeners.on(canvas, 'gestureend', pinch.onGestureEnd);
-    }
-    if (contextMenuChannel) {
-      listeners.on(canvas, 'contextmenu', contextMenuInput(core, pointer.takeNativeHold));
-    }
-    if (ingestChannel) {
-      listeners.on(canvas, 'dragenter', ingest.onDragOver);
-      listeners.on(canvas, 'dragover', ingest.onDragOver);
-      listeners.on(canvas, 'dragleave', ingest.onDragLeave);
-      listeners.on(canvas, 'drop', ingest.onDrop);
-      listeners.on(window, 'paste', ingest.onPaste);
-    }
-
-    return () => {
-      listeners.removeAll();
-      canvas?.classList.remove(DROPOVER_CLASS);
-      // eslint-disable-next-line react-hooks/exhaustive-deps -- a mirror of the registry prop, not a node: the one in use at teardown is the one holding the keys
-      registryRef.current.dropKeys();
-      hover.clear();
-      // `disposed` first: the sessions' cancels must not re-enter dispatch on
-      // the way out, and `cancelAll` below is what ends the gestures.
-      disposed = true;
-      pointer.dispose();
-      redraw.stop();
-      for (const d of allDispatchers()) d.cancelAll('cancel');
-    };
   }, [enabled, keyboard, canvasRef, pointerChannel, wheelChannel, pinchChannel, contextMenuChannel, ingestChannel,
     allDispatchers, ctxRef, longPressRef, onClickRef, onDoubleClickRef, cursorRef, registryRef, requestRedrawRef, rootTargetRef, viewsRef]);
 }

@@ -35,6 +35,16 @@ describe('resolvePrefUnit', () => {
     expect(deg.fromDisplay(90)).toBeCloseTo(Math.PI / 2, 12);
   });
 
+  it('stores a decimal typed at a decimal scale as the decimal it is, with no binary dust', () => {
+    const percent = resolvePrefUnit({ scale: 0.01, precision: 1, suffix: '%' });
+    expect(33.3 * 0.01).not.toBe(0.333);
+    expect(percent.fromDisplay(33.3)).toBe(0.333);
+    expect(percent.fromDisplay(58.33)).toBe(0.5833);
+    expect(percent.toDisplay(0.583)).toBe(58.3);
+    expect(resolvePrefUnit({ scale: 0.1, offset: 0.2 }).fromDisplay(1)).toBe(0.3);
+    expect(resolvePrefUnit({ scale: Math.PI / 180 }).fromDisplay(90)).toBe(90 * (Math.PI / 180));
+  });
+
   it('formats a linear unit to its precision, two places without one, and ends it with the suffix', () => {
     expect(resolvePrefUnit({ scale: 10, suffix: 'cm' }).format(25)).toBe('2.5cm');
     expect(resolvePrefUnit({ scale: 3 }).format(1)).toBe('0.33');

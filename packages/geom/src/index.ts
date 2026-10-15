@@ -3,7 +3,7 @@
  *  representations, tessellation and booleans live in subpaths. */
 export { clamp, cross, dot, sub, len2, sign, approxEq, EPS } from './scalar';
 export { normalizeZoom, ZOOM_FLOOR, type View } from './view';
-export { identity, translate, scale, rotate, multiply, invert, applyToPoint, boxToBox, rotateAboutPoint, type Mat3 } from './mat3';
+export { identity, translate, scale, rotate, multiply, invert, applyToPoint, boxToBox, rotateAboutPoint, type Affine } from './affine';
 export { boundsOfCoords, unionBox, boxContainsPoint, boxContainsBox, rectToContour, type Box, type Rect } from './box';
 export { PATH_COMMANDS, PATH_M, PATH_L, PATH_C, PATH_Q, PATH_Z, PATH_CMD_LENGTHS, pathCommandCoordCount, forEachSegment, type PathCommandName, type PathCommandCode } from './commands';
 export {
@@ -35,8 +35,9 @@ export { pathSignedArea, reversePath } from './paths/winding';
 export { pathFromD } from './paths/pathFromD';
 export { pointAlongPath, type PathStation, type PointAlongPathOptions } from './paths/pathAt';
 export { pathDistanceToPoint } from './paths/pathDistance';
-export { cubicPointAt, splitCubicAtT, fitCubicThroughDeletion, type Point } from './paths/cubicMath';
-export { schneiderFit } from './paths/schneiderFit';
+export { cubicPointAt, splitCubicAtT, type Point } from './paths/cubicMath';
+export { fitCubicThroughDeletion } from './paths/spanFit';
+export { schneiderFit, fitCubicWithTangents } from './paths/schneiderFit';
 export {
   pointInPath, strokeHitTest,
   pathContainsPoint, pathContainsRect, pathIntersectsRect,
@@ -80,6 +81,7 @@ export {
   locateAnchor, moveHandleTo, openSubpathAt, segmentAt, translateAnchorBy,
   type AnchorRect, type AnchorSet, type SegmentHit,
 } from './paths/anchorEdits';
+export { bendSegment, type BendGrip } from './paths/bendSegment';
 export { editAnchorSetTracked, remapPointValues, type PointOrigin } from './paths/anchorOrigins';
 export { nearestPathAnchor, reverseAnchors, type PathAnchorHit } from './paths/nearestAnchor';
 export { pathInPoseFrame, pathInWorld, worldEditToStorage, type PathInWorldPose } from './paths/pathInWorld';

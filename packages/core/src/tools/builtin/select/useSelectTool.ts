@@ -25,8 +25,8 @@ export { MULTI_RESIZE_TARGET_ID };
 export interface UseSelectToolOptions<TPose> {
   /** Return ids of all objects whose painted body covers (worldX, worldY).
    *  Order doesn't matter — the tool collapses parent/child overlap via
-   *  `pickTopMostHit`. When omitted, defaults to an AABB-vs-point scan over
-   *  `adapter.getNodes()` using the pose descriptor. Override for tighter
+   *  `pickTopMostHit`. When omitted, defaults to an AABB-vs-point walk of
+   *  the adapter's tree using the pose descriptor. Override for tighter
    *  shapes (path / polygon hit-tests). */
   pickEvery?: (worldX: number, worldY: number) => string[];
   /** Optional alt-aware selection-update hit returning the single id the
@@ -142,14 +142,14 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
 ): Tool {
 
   // pickEvery / boundsOf defaults — for any adapter the kit can derive both
-  // from `adapter.getNodes()` + `adapter.getPose(id)` + the descriptor.
+  // from the adapter's tree + `adapter.getPose(id)` + the descriptor.
   const d = (options.poseDescriptor ?? AUTO_POSE_DESCRIPTOR) as PoseDescriptor<TPose>;
   const preciseLeaves = options.leafPicking === 'silhouette';
   const tolerance = options.pickTolerance ?? 0;
   const pickEveryFn = options.pickEvery ?? ((worldX: number, worldY: number): string[] => {
     const camera = options.getView?.() ?? null;
     const planeOf = camera ? scenePlaneOf(adapter.getLayers?.(), camera) : null;
-    return pickWalk<TPose>(adapterPickSource(adapter as never, {
+    return pickWalk<TPose>(adapterPickSource(adapter, {
       ...(options.alphaOf ? { alphaOf: options.alphaOf } : {}),
       ...(options.layerIsPainted ? { layerIsPainted: options.layerIsPainted } : {}),
       ...(planeOf ? { planeOf } : {}),

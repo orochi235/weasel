@@ -41,6 +41,7 @@
     "build": "tsup"
   },
   "dependencies": {
+    "@weasel-js/paint": "1.10.0",
     "@weasel-js/quantity": "1.10.0",
     "@weasel-js/registry": "1.10.0",
     "@weasel-js/storage": "1.10.0"

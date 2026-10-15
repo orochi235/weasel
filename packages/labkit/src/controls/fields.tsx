@@ -1,6 +1,7 @@
 import { getAlpha01, toHex8, withAlpha01 } from '@weasel-js/core';
 import type { PrefLeaf } from '@weasel-js/prefs';
 import {
+  PARAMS_TEXT_WAIT_MS,
   type PrefFieldChoice,
   PropertyControl,
   type PropertyControlProps,
@@ -74,11 +75,7 @@ export function BareControl({
   /** The control takes no input: an `enableIf` on the way to it does not hold. */
   disabled?: boolean;
 }) {
-  const text = useDebouncedText(
-    typeof value === 'string' ? value : '',
-    write,
-    extra<number>(leaf, 'debounceMs') ?? 150,
-  );
+  const text = useDebouncedText(typeof value === 'string' ? value : '', write, textWaitMs(leaf));
   const field = labField(leaf, value, write, useFieldChoices(), disabled);
   if (field === null) return null;
   switch (field.kind) {
@@ -106,6 +103,10 @@ export function BareControl({
       return <PropertyControl {...field} name={name} />;
   }
 }
+
+/** How long `leaf`'s typed text waits before it is written: its own `debounceMs`, else a lab's. */
+export const textWaitMs = (leaf: PrefLeaf): number =>
+  extra<number>(leaf, 'debounceMs') ?? PARAMS_TEXT_WAIT_MS.lab;
 
 /**
  * Live text held locally between debounced commits, so typing does not re-run

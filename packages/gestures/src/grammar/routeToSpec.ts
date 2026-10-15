@@ -54,9 +54,10 @@ export function routeToSpec(parsed: ParsedRoute): GestureSpec {
   switch (kind) {
     case undefined:
       return fail(`${parsed.gesture} has no GestureSpec kind`);
+    case 'hover':
+      return withMods({ kind, ...(arg === 'leave' ? { motion: 'leave' as const } : {}), ...t });
     case 'click':
     case 'pointerDown':
-    case 'hover':
     case 'doubleClick':
     case 'drag':
     case 'contextMenu':

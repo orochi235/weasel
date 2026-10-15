@@ -87,9 +87,10 @@ const REGISTRY: readonly TreeNode[] = [
 /** `trailing` is decoration — a count here. It is read as part of the row's
  *  name, so a screen reader hears "drag 7". */
 export const WithCounts: Story = {
-  render: () => (
+  args: { 'aria-label': 'Registry', nodes: REGISTRY, defaultExpandedIds: ['Gestures'], selectionMode: 'single' },
+  render: (args) => (
     <div style={{ width: 240 }}>
-      <Tree aria-label="Registry" nodes={REGISTRY} defaultExpandedIds={['Gestures']} selectionMode="single" />
+      <Tree {...args} />
     </div>
   ),
 };

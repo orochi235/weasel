@@ -5,6 +5,7 @@ import {
   type StorageAdapter,
   type SyncStorageAdapter,
 } from '@weasel-js/storage';
+import type { PrefBlend } from './blend';
 import { type PrefsMigration, runPrefsMigrations, watchPrefsVersion } from './migrate';
 import type { PrefValidator } from './repair';
 import type { PrefGroup } from './groups';
@@ -21,6 +22,10 @@ export interface PrefsOptions {
   /** Validators for app-defined kinds, keyed by `kind`. One given for a
    *  built-in kind replaces that kind's own rule. */
   validators?: Readonly<Record<string, PrefValidator>>;
+  /** How a split value's alternatives fold into one for app-defined kinds,
+   *  keyed by `kind`. One given for a built-in kind replaces that kind's
+   *  own. A kind with none takes its heaviest alternative. */
+  blends?: Readonly<Record<string, PrefBlend>>;
 }
 
 /** Load every stored value for `schema`, migrate it, and return the store. */
@@ -31,7 +36,7 @@ export async function openPrefs<S extends PrefGroup>(
   const cache = await openRecords({ storage: options.storage, prefix: options.prefix });
   const stop = watch(cache, options);
   if (runPrefsMigrations(cache, options.migrations ?? [])) await cache.flush();
-  return createPrefsStore(schema, cache, options.validators, stop, options.migrations?.length ?? 0);
+  return createPrefsStore(schema, cache, options.validators, stop, options.migrations?.length ?? 0, options.blends);
 }
 
 /** `openPrefs` for an adapter that reads synchronously: the store is ready
@@ -41,7 +46,7 @@ export function openPrefsSync<S extends PrefGroup>(
   options: PrefsOptions & { storage: SyncStorageAdapter },
 ): PrefsStore<S> {
   const { cache, stop } = openPrefsCacheSync(options);
-  return createPrefsStore(schema, cache, options.validators, stop, options.migrations?.length ?? 0);
+  return createPrefsStore(schema, cache, options.validators, stop, options.migrations?.length ?? 0, options.blends);
 }
 
 /** The migrated cache `openPrefsSync` builds its store over, and what stops

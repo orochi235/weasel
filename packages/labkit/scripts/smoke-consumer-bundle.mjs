@@ -2,46 +2,36 @@
 
 // labkit consumer-bundle smoke test.
 //
-// labkit's `dist` bundles its weasel siblings — with ONE deliberate exception.
-// tsup inlines every transitively-used `@weasel-js/*` package (`noExternal` in
-// tsup.config.ts), so the JS needs only the third-party deps (react*, zustand,
-// earcut, …). The declarations do not inline the siblings labkit declares as
-// dependencies: they import them (scripts/build-dts.mts), because a copied type
-// labkit never re-exports gives a consumer TS2742. `@weasel-js/core` and `@weasel-js/theme` are the exceptions: exact
-// PEERS, kept as external specifiers, because each owns module-global state (core
-// its registries, theme its React context and stylesheet handle) and a second copy
-// fails silently. See docs/proposals/2026-08-31-singleton-packages-as-peers.md.
+// labkit's `dist` inlines no weasel sibling. Every `@weasel-js/*` package it uses
+// stays an external specifier in the JS (`external` in tsup.config.ts) and in the
+// declarations (scripts/build-dts.mts), resolved once at the consumer, because
+// several own module state with identity (core's registries, theme's React
+// context, quantity's display kinds, ui's providers) and a second copy fails
+// silently. See docs/proposals/2026-08-31-singleton-packages-as-peers.md.
 //
-// So this guards a promise with two halves — everything but the peers is inlined,
-// and the peers never are:
+// So this guards a promise with two halves: dist names no package the manifest
+// does not declare, and it inlines none that it does.
 //
 //   1. Bundle resolves. Relocate the built `dist` OUTSIDE the repo into a temp
 //      `node_modules/@weasel-js/labkit`, then esbuild-bundle a consumer that
 //      imports every package entry, with labkit's declared deps and peers marked
 //      external the way a real install satisfies them. Outside the monorepo,
 //      neither the repo tsconfig `paths` nor the workspace-linked sub-packages
-//      are discoverable — exactly a third party's situation. If a bundled
-//      sibling's specifier leaked into the emitted JS, esbuild fails to resolve
-//      it and this exits non-zero.
+//      are discoverable — exactly a third party's situation. An undeclared
+//      specifier in the emitted JS fails to resolve and this exits non-zero.
 //
-//   2. No `@weasel-js` specifier other than a peer's survives in dist `.js`, none
-//      but a peer's or a declared dependency's survives in `.d.ts`, and every
-//      peer's DOES survive, in both. The bundle check (1) only exercises
-//      runtime JS, and it marks core external, so neither half of this is
-//      reachable from it: a leaked sibling would resolve inside the smoke tree if
-//      it were merely mismarked, and an INLINED core resolves perfectly while
-//      shipping the duplicate registries this whole arrangement exists to
-//      prevent. Both directions are therefore checked statically here.
+//   2. Every `@weasel-js` specifier in dist `.js` and `.d.ts` is a declared
+//      dependency's or peer's, and every declared one DOES appear in the JS.
+//      The bundle check (1) marks them all external, so the second half is not
+//      reachable from it: an INLINED sibling resolves perfectly while shipping
+//      the duplicate state this whole arrangement exists to prevent.
 //
-//   3. Every scoped class name the bundle paints with is defined in the shipped
-//      stylesheet. Self-contained JS is not self-contained UI: the passed-through
-//      weasel-ui components are styled by CSS modules, whose scoped names come
-//      out of THAT package's build. Ship the bundle without its stylesheet — or
-//      against a stale one — and the consumer gets a component whose class names
-//      match nothing, with no error anywhere.
-//
-// Genuine third-party deps/peers are marked external (a real consumer installs
-// them); we only care that no path-alias / bare-workspace specifier leaks.
+//   3. Every scoped class name weasel-ui paints with is defined in the shipped
+//      stylesheet. labkit's `dist/styles.css` is the one sheet a consumer
+//      imports, and weasel-ui's components are styled by CSS modules whose
+//      scoped names come out of THAT package's build. Ship the sheet without
+//      them — or from a stale build — and the consumer gets a component whose
+//      class names match nothing, with no error anywhere.
 
 import { access, cp, mkdir, mkdtemp, readdir, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -64,13 +54,11 @@ try {
   process.exit(1);
 }
 
-// --- Check 2: dist externalizes the peers and nothing else under @weasel-js ---
+// --- Check 2: dist imports every declared @weasel-js package and no other ---
 // Matches `from '@weasel-js/…'`, `require('@weasel-js/…')`, `import('@weasel-js/…')`.
 const LEAK_RE = /(?:from|require\(|import\()\s*['"](@weasel-js\/[^'"]+)['"]/;
-// The specifiers dist is supposed to carry, bare or subpath.
-const PEERS = ['core', 'theme'];
-const peerOf = (spec) =>
-  PEERS.find((p) => spec === `@weasel-js/${p}` || spec.startsWith(`@weasel-js/${p}/`));
+// Declared and imported for its types alone, so no JS specifier is owed.
+const TYPES_ONLY = new Set(['@weasel-js/animator']);
 async function walk(dir) {
   const out = [];
   for (const ent of await readdir(dir, { withFileTypes: true })) {
@@ -125,57 +113,53 @@ function stripComments(text) {
   });
 }
 
-// The weasel siblings in `dependencies`: bundled into the JS, imported by the
-// `.d.ts`. Read off package.json so a new sibling needs no edit here.
+// Read off package.json so a new sibling needs no edit here.
 const declaredSiblings = new Set(
-  Object.keys(pkg.dependencies ?? {}).filter((dep) => dep.startsWith('@weasel-js/')),
+  Object.keys({ ...pkg.dependencies, ...pkg.peerDependencies }).filter((dep) =>
+    dep.startsWith('@weasel-js/'),
+  ),
 );
 const declaredSiblingOf = (spec) =>
   [...declaredSiblings].find((d) => spec === d || spec.startsWith(`${d}/`));
 
 const leaks = [];
-const peerCounts = Object.fromEntries(PEERS.map((p) => [p, { js: 0, dts: 0 }]));
+const jsCounts = Object.fromEntries([...declaredSiblings].map((d) => [d, 0]));
 for (const file of await walk(distDir)) {
   const text = await readFile(file, 'utf8');
   stripComments(text).forEach((line, i) => {
     const m = LEAK_RE.exec(line);
     if (!m) return;
-    const peer = peerOf(m[1]);
-    if (peer) {
-      peerCounts[peer][file.endsWith('.d.ts') ? 'dts' : 'js'] += 1;
+    const sibling = declaredSiblingOf(m[1]);
+    if (!sibling) {
+      leaks.push(`${file.slice(pkgRoot.length + 1)}:${i + 1}: ${line.trim()}`);
       return;
     }
-    if (file.endsWith('.d.ts') && declaredSiblingOf(m[1])) return;
-    leaks.push(`${file.slice(pkgRoot.length + 1)}:${i + 1}: ${line.trim()}`);
+    if (file.endsWith('.js')) jsCounts[sibling] += 1;
   });
 }
 if (leaks.length) {
   console.error(
-    `[smoke] dist carries @weasel-js specifiers that are neither peers (${PEERS.join(', ')}) nor, in .d.ts, declared dependencies — these should be inlined:\n`,
+    '[smoke] dist imports @weasel-js packages that package.json declares as neither a dependency nor a peer:\n',
   );
   console.error(leaks.join('\n'));
-  console.error(
-    '\n[smoke] Check `noExternal` in tsup.config.ts and the alias table in scripts/build-dts.mts.',
-  );
+  console.error('\n[smoke] Declare each one, or stop importing it.');
   process.exit(1);
 }
 
-// The inverse, and the one that matters more: a peer INLINED is the silent
+// The inverse, and the one that matters more: a sibling INLINED is the silent
 // failure. It resolves, it bundles, it renders — against its own second copy of
-// the state. Tracked separately for JS and `.d.ts` because the two
-// pipelines externalize independently (tsup.config.ts vs scripts/build-dts.mts),
-// and a bundle that duplicates core at runtime while emitting correct-looking
-// types is the worst of the states to be in.
-for (const [peer, { js, dts }] of Object.entries(peerCounts)) {
-  if (js > 0 && dts > 0) continue;
+// the state.
+const inlined = Object.entries(jsCounts)
+  .filter(([dep, count]) => count === 0 && !TYPES_ONLY.has(dep))
+  .map(([dep]) => dep);
+if (inlined.length) {
   console.error(
-    `[smoke] dist does not import @weasel-js/${peer} — it was INLINED, so a consumer\n` +
-      `holding both labkit and ${peer} gets two copies of its module state, and one\n` +
-      'copy reads what the other never wrote, with no error.\n',
-  );
-  console.error(
-    `  dist JS   : ${js} external ${peer} specifier(s) — check \`noExternal\`/\`external\` in tsup.config.ts\n` +
-      `  dist .d.ts: ${dts} external ${peer} specifier(s) — check DTS_EXCLUDE/\`external\` in scripts/build-dts.mts`,
+    `[smoke] dist JS imports none of: ${inlined.join(', ')}.\n` +
+      'Each is declared, so either it was INLINED — and a consumer holding both labkit\n' +
+      'and that package gets two copies of its module state, one reading what the other\n' +
+      'never wrote — or labkit no longer uses it at runtime.\n\n' +
+      'Check `external` in tsup.config.ts; a package now used for its types alone goes in\n' +
+      'TYPES_ONLY here, and one not used at all comes out of package.json.',
   );
   process.exit(1);
 }
@@ -189,19 +173,11 @@ const jsEntries = Object.entries(pkg.exports)
   })
   .filter(Boolean);
 
-/**
- * A real consumer installs labkit's declared deps and peers, so they are
- * external here. The weasel siblings in `dependencies` are NOT: they are
- * bundled, and their absence from dist is the thing under test. `@weasel-js/core`
- * is external because it is a peer the consumer installs — check 2 above is what
- * holds it to that.
- */
-const thirdPartyExternals = Object.keys({
-  ...pkg.dependencies,
-  ...pkg.peerDependencies,
-})
-  .filter((dep) => !declaredSiblings.has(dep))
-  .flatMap((dep) => [dep, `${dep}/*`]);
+// A real consumer installs labkit's declared deps and peers, so they are external.
+const externals = Object.keys({ ...pkg.dependencies, ...pkg.peerDependencies }).flatMap((dep) => [
+  dep,
+  `${dep}/*`,
+]);
 
 const workDir = await mkdtemp(join(tmpdir(), 'labkit-smoke-'));
 const installedDir = join(workDir, 'node_modules', '@weasel-js', 'labkit');
@@ -237,49 +213,54 @@ try {
     platform: 'browser',
     absWorkingDir: workDir,
     logLevel: 'silent',
-    external: thirdPartyExternals,
+    external: externals,
   });
 } catch (err) {
   console.error('[smoke] consumer bundle FAILED — dist emits unresolved specifiers:\n');
   console.error(err.message ?? err);
   console.error(
-    '\n[smoke] A @weasel-js/* package likely leaked into dist as a bare import.\n' +
-      'Check `noExternal` in tsup.config.ts.',
+    '\n[smoke] dist imports a package labkit does not declare, or a chunk it did not ship.',
   );
   process.exit(1);
 }
 
-// --- Check 3: every CSS module the bundle paints with shipped its stylesheet ---
-// CSS-module output, as `_local_hash_line` — the shape both esbuild and Vite emit.
+// --- Check 3: every CSS module weasel-ui paints with is in the shipped stylesheet ---
+// CSS-module output, as `_local_hash` — the shape scripts/vite-css-modules.ts mints.
 // The hash identifies the source file, so it is what gets asserted: an empty rule
 // (`.paletteBtn {}`) is dropped by the minifier and a `@keyframes` name is never
 // a selector, but either way its file's OTHER names are in the stylesheet. What
 // this catches is a whole module's CSS going missing.
-const SCOPED_CLASS_RE = /"(_[A-Za-z][\w-]*_([a-z0-9]{4,})_\d+)"/g;
+const SCOPED_CLASS_RE = /"(_[A-Za-z][\w-]*_([0-9a-f]{6}))"/g;
+const uiDist = join(pkgRoot, '../ui/dist');
+try {
+  await access(join(uiDist, 'index.js'));
+} catch {
+  console.error(`[smoke] ${uiDist} not found — run \`npm run build\` from the repo root first.`);
+  process.exit(1);
+}
 const stylesheet = await readFile(join(distDir, 'styles.css'), 'utf8');
 const missing = new Map();
-for (const file of await walk(distDir)) {
+for (const file of await walk(uiDist)) {
   if (!file.endsWith('.js')) continue;
   const text = await readFile(file, 'utf8');
   for (const [, cls, moduleHash] of text.matchAll(SCOPED_CLASS_RE)) {
-    if (!stylesheet.includes(`_${moduleHash}_`)) missing.set(moduleHash, cls);
+    if (!stylesheet.includes(`_${moduleHash}`)) missing.set(moduleHash, cls);
   }
 }
 if (missing.size) {
   console.error(
-    `[smoke] dist/styles.css carries no rule from ${missing.size} CSS module(s) the bundle paints with:\n`,
+    `[smoke] dist/styles.css carries no rule from ${missing.size} CSS module(s) weasel-ui paints with:\n`,
   );
   console.error([...missing.values()].slice(0, 10).join('\n'));
   console.error(
     "\n[smoke] Either `build:css` (package.json) stopped concatenating that package's\n" +
-      'stylesheet, or labkit was built against a stale dist of it — build it first.',
+      'stylesheet, or the sheet was copied from a stale dist of it — rebuild labkit.',
   );
   process.exit(1);
 }
 
 console.log(
-  `[smoke] OK — ${jsEntries.length} labkit entries bundle against the peers alone; ` +
-    'no other @weasel-js specifiers in dist js, only declared dependencies in dts; peers stay external ' +
-    `(${PEERS.map((p) => `${p} ${peerCounts[p].js} js/${peerCounts[p].dts} dts`).join(', ')}); ` +
-    "every CSS module's stylesheet shipped.",
+  `[smoke] OK — ${jsEntries.length} labkit entries bundle against the declared packages alone; ` +
+    `dist names no undeclared @weasel-js package and inlines none of the ${declaredSiblings.size} declared; ` +
+    "every weasel-ui CSS module's stylesheet shipped.",
 );

@@ -40,7 +40,7 @@ export const ACTIONS = {
 
   // Export keeps the tray-and-arrow; snapshot takes the camera. One word was
   // doing both jobs and the tray reads as download, not "capture this state".
-  export: BASE.save,
+  export: BASE.export,
 
   snapshot: `
     <path d="M3.8 8.3A1.4 1.4 0 0 1 5.2 6.9h1.9L8 5.1h4l.9 1.8h1.9A1.4 1.4 0 0 1 16.2 8.3v6A1.4 1.4 0 0 1 14.8 15.7H5.2A1.4 1.4 0 0 1 3.8 14.3z"/>

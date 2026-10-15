@@ -141,6 +141,32 @@ describe('event tracks', () => {
     h.advance(1060);
     expect(fired).toEqual(['x', 'x']);
   });
+
+  it('fires the same under a lap count: the outgoing tail, then the lap it lands in', () => {
+    const h = harness();
+    const fired: string[] = [];
+    createTimeline(h.register, 1, {
+      duration: 100,
+      loop: 20,
+      tracks: [{ kind: 'event', events: [{ t: 50, fire: () => fired.push('x') }] }],
+    });
+    h.advance(60);
+    h.advance(1060);
+    expect(fired).toEqual(['x', 'x']);
+  });
+
+  it('fires the last lap whole when a frame skips past the end of a lap count', () => {
+    const h = harness();
+    const fired: string[] = [];
+    createTimeline(h.register, 1, {
+      duration: 100,
+      loop: 3,
+      tracks: [{ kind: 'event', events: [{ t: 50, fire: () => fired.push('x') }, { t: 98, fire: () => fired.push('tail') }] }],
+    });
+    h.advance(60);
+    expect(h.advance(1060)).toBe(true);
+    expect(fired).toEqual(['x', 'tail', 'x', 'tail']);
+  });
 });
 
 describe('event crossing lateness', () => {

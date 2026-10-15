@@ -1,4 +1,4 @@
-import type { IconName } from '../../icons/paths';
+import type { IconName } from '../../icons/generated/paths';
 import type { BadgeVariant } from './types';
 
 /** The glyph for each variant, for a picker that shows them. */

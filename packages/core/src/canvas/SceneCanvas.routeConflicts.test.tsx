@@ -17,7 +17,7 @@ import { asNodeId } from 'core/scene/types';
 import type { Feature } from './SceneCanvas/features';
 import { WeaselProvider } from '../WeaselProvider';
 import { useSelection } from 'core/selection/useSelection';
-import { useSceneAdapter } from './sceneAdapter';
+import { useSceneAdapter } from './useSceneAdapter';
 import { useSelectTool } from '../tools/builtin/select/useSelectTool';
 import { useTools } from '../tools/overlayBinding';
 

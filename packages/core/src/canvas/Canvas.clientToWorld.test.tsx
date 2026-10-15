@@ -63,9 +63,9 @@ describe('<Canvas clientToWorld>', () => {
 
     const client = { x: LEFT + 40, y: TOP + 60 };
     fireEvent.pointerMove(canvas, { clientX: client.x, clientY: client.y });
-    // The registry asks in canvas-local pixels: the client point less the
-    // element's corner.
-    surface.claimsAbove(client.x - LEFT, client.y - TOP);
+    // The registry asks in the canvas's own pixels, which the transform draws
+    // at half the client's.
+    surface.claimsAbove((client.x - LEFT) / 2, (client.y - TOP) / 2);
 
     expect(hovered).toEqual([[20, 30]]);
     expect(tested).toEqual([[20, 30]]);

@@ -22,6 +22,7 @@ import {
   prefSectionLeaves,
   type PrefAlias,
   type PrefAliasTargets,
+  type PrefBarOverflow,
   type PrefLeaf,
   type PrefSection,
   type PrefSectionAs,
@@ -72,6 +73,8 @@ export interface PanelSection {
   name: string;
   /** How the section is drawn; unset, a heading over its rows. */
   as?: PrefSectionAs;
+  /** Drawn as a bar: what happens to the cells its line has no room for. */
+  overflow?: PrefBarOverflow;
   rows: PanelRow[];
 }
 
@@ -111,7 +114,7 @@ function flatten(schema: PrefSection, rawAliases: boolean, targets?: PrefAliasTa
       untitled.push(shown(key, child));
     } else {
       const leaves = prefSectionLeaves(child.members).map(([path, leaf]) => shown(path, leaf));
-      sections.push({ key, name: child.name, ...(child.as ? { as: child.as } : {}), rows: pairRows(leaves) });
+      sections.push({ key, name: child.name, ...(child.as ? { as: child.as } : {}), ...(child.overflow ? { overflow: child.overflow } : {}), rows: pairRows(leaves) });
     }
   }
   if (untitled.length > 0) {

@@ -57,6 +57,11 @@ export {
   type PrefScopeAtOptions,
 } from './scope';
 export { prefShownReader, prefShownValue } from './shown';
+export { isPrefLocus, locusSelectors as prefLocusSelectors, memberAt as prefLocusMember, type PrefLocus, type PrefSelection, type PrefWeighted, type PrefWeights } from './locus';
+export { PREF_BLENDS, type PrefBlend } from './blend';
+export { checkPrefSplits, type PrefSplitProblem } from './splitCheck';
+export { pref } from './build';
+export { prefsCss, prefsCssAttributes, type PrefsCssOptions, type PrefsCssSource } from './css';
 export { prefSchemaHolding } from './holding';
 export { prefAliasedLeaf, prefAliasName, prefAliasTarget, type PrefAlias } from './alias';
 export { prefAliasTargets, type PrefAliasTargets, type PrefAliasTargetsOptions } from './aliasTargets';
@@ -67,7 +72,8 @@ export type { PrefMap } from './map';
 export { prefVariantDefault, prefVariantOf, type PrefUnion } from './union';
 export { prefType } from './type';
 export { prefGroupIsPage } from './groups';
-export type { PrefGroup, PrefGroupAs, PrefSection, PrefSectionAs } from './groups';
+export { prefFitsHeading, prefHeadingKey } from './heading';
+export type { PrefBarOverflow, PrefGroup, PrefGroupAs, PrefSection, PrefSectionAs } from './groups';
 export type { PrefAtPath, PrefPath, PrefValueAt, PrefValueOf } from './paths';
 export type { PrefsMigration } from './migrate';
 export { openPrefs, openPrefsSync, type PrefsOptions } from './open';

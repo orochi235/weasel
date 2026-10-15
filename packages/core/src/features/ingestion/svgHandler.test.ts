@@ -23,6 +23,7 @@ import {
   WEASEL_CLIPBOARD_MIME,
   buildWeaselClipboardText,
 } from 'interactions/actions/clipboard/wireFormat';
+import { rootsTree } from 'core/adapters/testing/rootsTree';
 
 const svgFile = (name = 'pic.svg', type = 'image/svg+xml') =>
   new File(['<svg xmlns="http://www.w3.org/2000/svg"/>'], name, { type });
@@ -123,6 +124,7 @@ const matches = (i: IngestItem): boolean =>
  *  precedence tests that run BOTH kit handlers through real runIngest. */
 function pasteCtx(withClipboard: boolean) {
   const adapter = {
+    ...rootsTree(),
     insertNode: vi.fn(),
     setSelection: vi.fn(),
     getSelection: () => [] as string[],

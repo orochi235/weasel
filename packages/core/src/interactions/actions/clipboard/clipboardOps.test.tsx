@@ -7,6 +7,7 @@ import { asNodeId } from 'core/scene/types';
 import { PointerContextProvider, usePointerContext } from '@weasel-js/routing/react';
 import type { ReactNode } from 'react';
 import { WEASEL_CLIPBOARD_MIME, WEASEL_CLIPBOARD_MIME_WEB, buildWeaselClipboardText } from './wireFormat';
+import { rootsTree } from 'core/adapters/testing/rootsTree';
 
 interface Obj { id: string; x: number; y: number }
 
@@ -17,6 +18,7 @@ function makeAdapter(initial: { selection?: string[]; offsetOverride?: { dx: num
   const batches: { ops: Op[]; label: string }[] = [];
   const pasteCtxLog: ({ dropPoint?: { worldX: number; worldY: number } } | undefined)[] = [];
   const adapter: InsertAdapter<Obj> = {
+    ...rootsTree<Obj>(),
     commitInsert: () => null,
     commitPaste(clipboard, offset, ctx) {
       pasteCtxLog.push(ctx);
@@ -226,6 +228,7 @@ describe('useClipboardOps', () => {
     // `insertNode` (mimics React state that hasn't flushed yet).
     const pool: { id: string; x: number; y: number }[] = [{ id: 'a', x: 0, y: 0 }];
     const adapter: InsertAdapter<{ id: string; x: number; y: number }> = {
+      ...rootsTree<{ id: string; x: number; y: number }>(),
       commitInsert: () => null,
       commitPaste(clipboard, offset) {
         return (clipboard.items as { id: string; x: number; y: number }[]).map((src) => ({

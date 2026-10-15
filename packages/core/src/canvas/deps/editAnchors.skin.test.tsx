@@ -63,9 +63,9 @@ describe('anchor edits on a skinned path', () => {
     const before = t.scene.get(t.id)!.data;
     t.select(1);
     t.run(deleteAnchorsAction);
-    // Corner 1 is gone and 0 → 2 is refitted as a curve: 0, its handle, 2's handle, 2, 3.
-    expect(t.scene.get(t.id)!.data.path.coords).toHaveLength(10);
-    expect(t.skin()).toEqual({ a: [1, 1, 0, 0, 1], b: [0, 0, 1, 1, 0] });
+    // Corner 1 is gone and 0 → 2 closes with a line: 0, 2, 3.
+    expect(t.scene.get(t.id)!.data.path.coords).toHaveLength(6);
+    expect(t.skin()).toEqual({ a: [1, 0, 1], b: [0, 1, 0] });
     t.scene.undo();
     expect(t.scene.get(t.id)!.data).toBe(before);
   });

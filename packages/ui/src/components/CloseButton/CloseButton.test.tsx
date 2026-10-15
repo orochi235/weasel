@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { CloseButton } from './CloseButton';
-import { ICON_PATHS } from '../../icons/paths';
+import { ICON_PATHS } from '../../icons/generated/paths';
 
 describe('CloseButton', () => {
   it('draws the kit close glyph, not a text ×, named by ariaLabel', () => {

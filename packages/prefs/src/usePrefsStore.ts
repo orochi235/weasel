@@ -78,6 +78,7 @@ function acquire<S extends PrefGroup>(schema: S, options: SyncOptions): PrefsSto
       options.validators,
       undefined,
       options.migrations?.length ?? 0,
+      options.blends,
     ) as unknown as PrefsStore<PrefGroup>;
     // Opened by a render that may never mount.
     if (entry.holders === 0) closeUnheldSoon(storage, prefix, schema, entry);

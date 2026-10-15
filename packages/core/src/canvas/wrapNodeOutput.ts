@@ -10,6 +10,7 @@
  */
 import type { DrawCommand } from '@weasel-js/renderer';
 import { wrapWithPoseRotation } from './poseRotation';
+import { overChildren, splitOverChildren } from './overChildren';
 
 /** Rotate `cmds` about the pose's AABB center and multiply by `alpha`.
  *  Both wraps are skipped when they would be no-ops (zero/absent rotation,
@@ -20,6 +21,13 @@ export function wrapNodeOutput(
   pose: unknown,
   alpha: number,
 ): DrawCommand[] {
+  const { under, over } = splitOverChildren(cmds);
+  const wrapped = wrapPart(under, pose, alpha);
+  // What a painter asked to draw over the node's children is wrapped apart, so it is still over them.
+  return over.length > 0 ? [...wrapped, overChildren(wrapPart(over, pose, alpha))] : wrapped;
+}
+
+function wrapPart(cmds: DrawCommand[], pose: unknown, alpha: number): DrawCommand[] {
   const rotated = wrapWithPoseRotation(cmds, pose);
   if (alpha !== 1 && rotated.length > 0) {
     return [{ kind: 'group', alpha, children: rotated }];

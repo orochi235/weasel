@@ -1,6 +1,7 @@
-/** The signals `pickTopMostHit` ranks a hit list by. All optional. */
+/** What `pickTopMostHit` ranks a hit list by: the tree, and a z signal where
+ *  the adapter has one. */
 export interface PickTopMostHitAdapter {
-  getParent?: (id: string) => string | null;
+  getParent: (id: string) => string | null;
   /** Paint depth of `id`; higher draws later, so higher wins a hit. Ids the
    *  adapter doesn't know sort below every id it does. */
   getZIndex?: (id: string) => number | null | undefined;
@@ -19,33 +20,30 @@ export interface PickTopMostHitAdapter {
  *  neither z hook should resolve before calling. */
 export function pickTopMostHit(
   ids: readonly string[],
-  adapter: PickTopMostHitAdapter | undefined | null,
+  adapter: PickTopMostHitAdapter,
 ): string | null {
   if (ids.length === 0) return null;
   if (ids.length === 1) return ids[0];
 
   let candidates = ids;
 
-  const getParent = adapter?.getParent;
-  if (typeof getParent === 'function') {
-    const set = new Set(ids);
-    const dropped = new Set<string>();
-    for (const id of ids) {
-      let p: string | null = getParent(id);
-      // Cap walk to avoid pathological cycles in malformed adapters.
-      let depth = 0;
-      while (p != null && depth++ < 10_000) {
-        if (set.has(p)) dropped.add(p);
-        p = getParent(p);
-      }
+  const set = new Set(ids);
+  const dropped = new Set<string>();
+  for (const id of ids) {
+    let p: string | null = adapter.getParent(id);
+    // Cap walk to avoid pathological cycles in malformed adapters.
+    let depth = 0;
+    while (p != null && depth++ < 10_000) {
+      if (set.has(p)) dropped.add(p);
+      p = adapter.getParent(p);
     }
-    if (dropped.size > 0) {
-      const filtered = ids.filter((id) => !dropped.has(id));
-      // A pathological adapter (cyclic `getParent`) can drop everything;
-      // keep the original array rather than answering null.
-      if (filtered.length === 1) return filtered[0];
-      if (filtered.length > 1) candidates = filtered;
-    }
+  }
+  if (dropped.size > 0) {
+    const filtered = ids.filter((id) => !dropped.has(id));
+    // A pathological adapter (cyclic `getParent`) can drop everything;
+    // keep the original array rather than answering null.
+    if (filtered.length === 1) return filtered[0];
+    if (filtered.length > 1) candidates = filtered;
   }
 
   return pickHighestZ(candidates, adapter);
@@ -56,9 +54,9 @@ export function pickTopMostHit(
  *  the tiebreaker, so equal-z ids resolve the same way as no-z ones. */
 function pickHighestZ(
   ids: readonly string[],
-  adapter: PickTopMostHitAdapter | undefined | null,
+  adapter: PickTopMostHitAdapter,
 ): string {
-  const compareZ = adapter?.compareZ;
+  const compareZ = adapter.compareZ;
   if (typeof compareZ === 'function') {
     let best = ids[0];
     for (let i = 1; i < ids.length; i++) {
@@ -67,7 +65,7 @@ function pickHighestZ(
     return best;
   }
 
-  const getZIndex = adapter?.getZIndex;
+  const getZIndex = adapter.getZIndex;
   if (typeof getZIndex === 'function') {
     let best = ids[0];
     let bestZ = zOf(getZIndex, best);

@@ -98,7 +98,8 @@ function findFile(root: string, resolved: string): { path: string; ext: string }
 
 const RELATIVE_IMPORT_RE = /from\s+['"]([./][^'"]+)['"]/g;
 
-function tabsFor(root: string, demoPath: string): { path: string; language: Language }[] {
+/** A demo's files as its code panel lists them: the demo itself, then each file it imports by relative path. */
+export function tabsFor(root: string, demoPath: string): { path: string; language: Language }[] {
   const src = readFileSync(resolve(root, demoPath), 'utf8');
   const tabs: { path: string; language: Language }[] = [
     { path: demoPath, language: 'tsx' },

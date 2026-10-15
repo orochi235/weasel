@@ -52,6 +52,12 @@ describe('routeToSpec', () => {
     ]);
   });
 
+  it('maps a hover that leaves, and drops the move it is by default', () => {
+    expect(spec('[*:*] hover(leave)')).toEqual({ kind: 'hover', motion: 'leave' });
+    expect(spec('[*:*] hover(move)')).toEqual({ kind: 'hover' });
+    expect(spec('[*:*] hover')).toEqual({ kind: 'hover' });
+  });
+
   it('maps wheel and pinch directions, dropping the wildcard', () => {
     expect(spec('[*:*] wheel(up)')).toEqual({ kind: 'wheel', direction: 'up' });
     expect(spec('[*:*] wheel')).toEqual({ kind: 'wheel' });

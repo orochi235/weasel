@@ -258,6 +258,28 @@ describe('CssVarsPanel', () => {
     expect(vars().queryByRole('button', { name: 'Save to theme' })).toBeNull();
   });
 
+  it('saves a token that differs by mode into the branch the OS scheme picks while the trial’s mode is Auto', async () => {
+    location.hash = '#/x--a';
+    vi.stubGlobal('matchMedia', (query: string) => ({
+      matches: query.includes('light'),
+      addEventListener() {},
+      removeEventListener() {},
+    }));
+    const calls = stubStore({ status: 200, body: { status: 'saved', hash: 'h2', issues: [], regenerated: true, problems: [] } });
+    const mode = { label: 'Mode', default: 'auto', options: ['auto', 'light', 'dark'].map((value) => ({ value, label: value })) };
+    render(<Workshop index={[a]} frameUrl="/frame.html" config={{ globals: { mode } }} storage={createMemoryAdapter()} />);
+    await openTrial('A');
+    fireEvent.change(vars().getByLabelText('Filter'), { target: { value: 'accent-strong' } });
+    fireEvent.change(row(vars(), '--wzl-accent-strong').getByRole('textbox'), { target: { value: '#123456' } });
+    await flush();
+
+    fireEvent.click(vars().getByRole('button', { name: 'Save to theme' }));
+    await waitFor(() => expect(vars().getByRole('status')).toHaveTextContent('Saved to themes/weasel.json.'));
+    const body = JSON.parse(String(calls.find((c) => c.init?.method === 'PUT')?.init?.body));
+    const pin = weasel.pins?.['accent-strong'] as unknown as { dark: object; light: object };
+    expect(body.definition.pins['accent-strong']).toEqual({ ...pin, light: { ...pin.light, value: '#123456' } });
+  });
+
   it('reports a file changed on disk and keeps the edit', async () => {
     location.hash = '#/x--a';
     stubStore({ status: 409, body: { status: 'conflict', hash: 'h9' } });

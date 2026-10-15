@@ -3,6 +3,7 @@ import { EDGE_DERIVE_PATH } from './edge';
 import type { MeasureRowText } from './body';
 import type { DataEdge, DiagramSceneOptions, DiagramSpec, EdgeStyle } from './fromData';
 import { LABEL_DERIVE_POSE, type DiagramLabel } from './label';
+import type { LayeredRoute } from './route';
 
 export interface EdgeSpecContext {
   idOf: (edge: DataEdge) => string;
@@ -10,6 +11,8 @@ export interface EdgeSpecContext {
   measure: MeasureRowText;
   fallback: EdgeStyle;
   labelPlacement: DiagramLabel;
+  /** Ports and waypoints by edge id, overriding the edge's own (from `layeredRoutes`). */
+  routes?: ReadonlyMap<string, LayeredRoute> | null;
   opts: Pick<DiagramSceneOptions, 'edgeStyle' | 'router' | 'labelPlacement'>;
 }
 
@@ -17,6 +20,7 @@ export function edgeSpecs(edges: readonly DataEdge[], ctx: EdgeSpecContext): Dia
   const specs: DiagramSpec[] = [];
   for (const e of edges) {
     const id = ctx.idOf(e);
+    const { fromPort, toPort, waypoints } = ctx.routes?.get(id) ?? e;
     const style = ctx.opts.edgeStyle?.(e) ?? ctx.fallback;
     const markerStart = style.markerStart ?? null;
     const markerEnd = style.markerEnd === undefined ? 'arrow' : style.markerEnd;
@@ -28,10 +32,10 @@ export function edgeSpecs(edges: readonly DataEdge[], ctx: EdgeSpecContext): Dia
       pose: { x: 0, y: 0, width: 0, height: 0 },
       data: {
         diagram: {
-          from: e.fromPort ? { port: e.fromPort } : {},
-          to: e.toPort ? { port: e.toPort } : {},
+          from: fromPort ? { port: fromPort } : {},
+          to: toPort ? { port: toPort } : {},
           router: e.router ?? ctx.opts.router ?? 'bezier',
-          ...(e.waypoints ? { waypoints: e.waypoints } : {}),
+          ...(waypoints ? { waypoints } : {}),
         },
         stroke: {
           paint: { color: style.stroke },

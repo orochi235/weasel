@@ -5,7 +5,7 @@ import { moveGestureAdapter } from './gestureAdapter';
 import { moveAction } from './action';
 import { createDeleteOp } from 'core/ops/delete';
 import type { InvocationCtx } from '@weasel-js/routing';
-import type { Mat3 } from '@weasel-js/geom';
+import type { Affine } from '@weasel-js/geom';
 
 interface D { color: string }
 type L = 'main';
@@ -76,7 +76,7 @@ describe('moveGestureAdapter', () => {
         selection: { get: () => [leaf as NodeId] },
         scene,
         geometryProjection: {
-          transform: (n: { data: unknown }, m: Mat3) => ({
+          transform: (n: { data: unknown }, m: Affine) => ({
             ...(n.data as D),
             color: `#f00-moved-by-${m[4]},${m[5]}`,
           }),

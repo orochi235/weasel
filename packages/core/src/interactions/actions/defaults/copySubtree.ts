@@ -37,8 +37,9 @@ function copySubtree(
  * produces a populated group. Ops are in pre-order: a parent is inserted
  * before its children. A copied root keeps its source's parent.
  *
- * A copy that derives from an id list follows the copies when every node in
- * the list was copied with it, and keeps the original list otherwise.
+ * A copy that derives from an id list follows the copy of each node in the
+ * list that was copied with it, and the original of each that was not: the
+ * originals are still in the scene to follow.
  */
 export function copySelection(
   scene: AnyScene,
@@ -56,8 +57,8 @@ export function copySelection(
   for (const op of ops) {
     const node = (op.args as { node: AnyNode }).node;
     const deps = node.dependsOn;
-    if (!Array.isArray(deps) || !deps.every((dep) => copyOf.has(dep))) continue;
-    (node as { dependsOn?: readonly NodeId[] }).dependsOn = deps.map((dep) => copyOf.get(dep)!);
+    if (!Array.isArray(deps) || !deps.some((dep) => copyOf.has(dep))) continue;
+    (node as { dependsOn?: readonly NodeId[] }).dependsOn = deps.map((dep) => copyOf.get(dep) ?? dep);
   }
   return { ops, copies };
 }

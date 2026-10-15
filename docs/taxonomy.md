@@ -288,8 +288,15 @@ It is the one gesture that claims nothing. It has no press to own, so it binds
 only an immediate action, never an ongoing one; every live `hover` binding that
 matches a move runs, where every other gesture has one winner; and the move goes
 on to the hover-cursor pump as if no binding had been there. A held pointer's
-moves belong to its drag and are not hovers. It reports motion only: nothing
-says when the pointer leaves the surface or passes from one target to another.
+moves belong to its drag and are not hovers.
+
+A `hover` spec with `motion: 'leave'` (`hover(leave)` in a route) fires when the
+pointer passes out of what the binding targets, in place of on each move: onto
+something its `target` does not match, or off the surface. With no `target` the
+binding targets the whole surface, so it fires only when the pointer leaves it.
+Crossing from one target to another is therefore a leave for a binding that
+targets the first, and nothing for one that targets neither or both. A press is
+not a leave.
 
 Gestures are orthogonal to [Actions](#action) in this taxonomy. A gesture is *how*
 input arrives; an action is *what to do* with it. The same gesture (a rectangular
@@ -462,8 +469,7 @@ nearest guide line.
 `childPoses`, `getDropTargets`, `reflowPoses`, `commitDrop`, `snap`, and
 optional hooks (`contains`, `dropRegion`, `acceptsDrop`, `releaseDrop`, `arrive`,
 `depart`, `contentExtent`). A container declares one on its scene node
-(`ContainerNode.layout`, swapped undoably by `scene.setLayout`), or a canvas
-supplies one (`<SceneCanvas layouts>`). The scene's layout pass hands children
+(`ContainerNode.layout`, swapped undoably by `scene.setLayout`). The scene's layout pass hands children
 that leave the container to `depart`, children that join it to `arrive`, and
 any other change to its child set, order or size to `childPoses`, recording the
 writes in the same undo entry as the change.

@@ -51,6 +51,7 @@ export type {
   SerializedTrial,
   TrialRecord,
   TrialStateHandle,
+  UnreadableRecord,
 } from './types';
 export type { UndockedPanel, UndockedPanels } from './undock';
 export { dockPanel, panelKey, undockPanel } from './undock';

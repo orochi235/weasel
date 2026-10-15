@@ -1,4 +1,4 @@
-import { type Mat3 } from '@weasel-js/geom';
+import { type Affine } from '@weasel-js/geom';
 import { createSetDataOp } from 'core/ops/setData';
 import type { Op } from 'core/ops/types';
 
@@ -7,7 +7,7 @@ import type { Op } from 'core/ops/types';
  *  data-held geometry transformed by `m`, or `null` if this node has no
  *  data-held geometry (the kit leaves `data` alone). */
 export interface GeometryProjection {
-  transform(node: { id?: string; data: unknown; pose: unknown }, m: Mat3): unknown | null;
+  transform(node: { id?: string; data: unknown; pose: unknown }, m: Affine): unknown | null;
 }
 
 /** Build the `setData` op for a node when a geometryProjection is wired and
@@ -16,7 +16,7 @@ export interface GeometryProjection {
 export function geometryDataOp(
   projection: GeometryProjection | undefined,
   node: { id: string; data: unknown; pose: unknown } | undefined,
-  m: Mat3,
+  m: Affine,
   label: string,
 ): Op | undefined {
   if (!projection || !node) return undefined;

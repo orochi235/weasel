@@ -18,6 +18,7 @@ function makeRectAdapter(initial: string[] = [], poses: Record<string, RectPose>
   const adapter: AlignAdapter<RectPose> = {
     getSelection: () => selection,
     getPose: (id) => poses[id] ?? { x: 0, y: 0, width: 0, height: 0 },
+    getParent: () => null,
     applyOps: (ops, label) => { batches.push({ ops, label: label ?? '' }); },
   };
   return { adapter, batches, setSel: (ids: string[]) => { selection = [...ids] as NodeId[]; } };
@@ -167,6 +168,7 @@ describe('useAlign', () => {
     const adapter: AlignAdapter<Path> = {
       getSelection: () => selection,
       getPose: (id) => (id === 'a' ? triA : triB),
+      getParent: () => null,
       applyOps: (ops, label) => batches.push({ ops, label: label ?? '' }),
     };
     const { result } = renderHook(() => useAlign<Path>(adapter, { geometry: pathPoseDescriptor }));

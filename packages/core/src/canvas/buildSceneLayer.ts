@@ -19,7 +19,10 @@ export interface SceneSlotConfig<TNode extends { id: string }, TPose> {
   /** Paint these, in this order, in place of the adapter's tree: one flat run with no
    *  scene layers, no container clips, and no pose composition. */
   objects?: TNode[];
-  /** Project an object to its committed pose. Defaults to `adapter.getPose(obj.id)`. */
+  /** The pose an object is painted at. Defaults to `adapter.getPose(obj.id)`. `<SceneCanvas>`
+   *  hands it each node as the scene shows it, its `pose` an override's or a derived one,
+   *  and carries an override's `path` into the box it answers; return a pose placed from
+   *  `obj.pose`, or a drag in flight and a rig's motion do not show in this view. */
   toPose?: (obj: TNode) => TPose;
   /** Draw a single object as a `DrawCommand` tree. `ctx` carries a derived
    *  node's path: `<SceneCanvas>` resolves it from the scene, and

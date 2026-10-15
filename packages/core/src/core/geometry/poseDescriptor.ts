@@ -1,6 +1,6 @@
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { axisAlignedBounds } from 'core/geometry/unionBounds';
-import { poseLinearOf } from '@weasel-js/geom';
+import { multiply, poseLinearOf, rotate } from '@weasel-js/geom';
 import type { TargetAxes } from '@weasel-js/animator';
 
 /** `Bounds` with a required rotation angle (radians). Pivot is the AABB
@@ -138,7 +138,8 @@ export const ROTATED_POSE_DESCRIPTOR: PoseDescriptor<RotatedPose> = {
 };
 
 /**
- * Remap a **rotated** leaf inside a group resize.
+ * Remap a leaf drawn in a frame of its own, turned or skewed, inside a group
+ * resize.
  *
  * The naive `remapBounds` scales a leaf's axis-aligned `width`/`height` by the
  * group's per-axis factors and carries `rotation` through untouched. That is
@@ -146,11 +147,11 @@ export const ROTATED_POSE_DESCRIPTOR: PoseDescriptor<RotatedPose> = {
  * resize they are world-frame: at 90° a horizontal stretch should grow the
  * leaf's `height`, and the naive map grows its `width`.
  *
- * What this computes is the group affine applied to the leaf's local frame,
- * with the shear dropped — the pose model cannot represent the parallelogram
- * a non-uniform scale of a rotated box produces. The center moves exactly;
- * each local axis takes the length of its own image; the rotation follows the
- * image of the local x-axis.
+ * What this computes is the group affine applied to the leaf's frame. The
+ * center moves exactly; each box axis takes the length of its own image under
+ * the turn; the rotation follows the image of the box's x-axis; and the
+ * parallelogram a non-uniform scale makes of a turned box, which those cannot
+ * hold, is written to the leaf's `transform`.
  */
 export function remapRotatedLeaf<TPose extends RotatedPose>(
   pose: TPose,
@@ -166,23 +167,32 @@ export function remapRotatedLeaf<TPose extends RotatedPose>(
   // Images of the leaf's local unit axes under the group's diagonal scale.
   const ux = sx * cos, uy = sy * sin;
   const vx = -sx * sin, vy = sy * cos;
+  const kx = Math.hypot(ux, uy);
+  const ky = Math.hypot(vx, vy);
 
-  const width = pose.width * Math.hypot(ux, uy);
-  const height = pose.height * Math.hypot(vx, vy);
+  const width = pose.width * kx;
+  const height = pose.height * ky;
   const rotation = Math.atan2(uy, ux);
 
   // The center is a point, so it takes the group affine directly.
   const cxNew = dst.x + (pose.x + pose.width / 2 - src.x) * sx;
   const cyNew = dst.y + (pose.y + pose.height / 2 - src.y) * sy;
 
-  return {
-    ...pose,
-    x: cxNew - width / 2,
-    y: cyNew - height / 2,
-    width,
-    height,
-    rotation,
-  };
+  const next: RotatedPose = { ...pose, x: cxNew - width / 2, y: cyNew - height / 2, width, height, rotation };
+  // A collapsed axis leaves no frame to solve for; the leaf keeps the transform it had.
+  if (kx === 0 || ky === 0) return next as TPose;
+  const [ta, tb, tc, td] = poseLinearOf(pose) ?? [1, 0, 0, 1];
+  // The linear part the leaf must draw with, less what the new box and rotation already hold.
+  const [a, b, c, d] = multiply(
+    multiply(rotate(-rotation), [ux, uy, vx, vy, 0, 0]),
+    [ta / kx, tb / kx, tc / ky, td / ky, 0, 0],
+  );
+  if (Math.abs(a - 1) < 1e-12 && Math.abs(b) < 1e-12 && Math.abs(c) < 1e-12 && Math.abs(d - 1) < 1e-12) {
+    delete next.transform;
+  } else {
+    next.transform = [a, b, c, d];
+  }
+  return next as TPose;
 }
 
 /** The pose's visual bounds: its box expanded to cover the box as drawn

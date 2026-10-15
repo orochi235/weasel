@@ -2,7 +2,7 @@
  * What each selected node gives a Boolean operation: its path, its glyph
  * outlines, or the region its ink covers once a stroke is counted.
  */
-import type { Mat3, Path, Scale2 } from '@weasel-js/geom';
+import type { Affine, Path, Scale2 } from '@weasel-js/geom';
 import { pathUnion } from '@weasel-js/geom/booleans';
 import { textToPath, textToPathsByPaint } from '@weasel-js/text';
 import type { PathPaint } from 'canvas/nodeShapes/nodePaint';
@@ -44,7 +44,7 @@ export interface BooleanOperand {
 function inkOf(
   source: PaintedPath,
   strokes: BooleanStrokes,
-  frame: Mat3 | null | undefined,
+  frame: Affine | null | undefined,
   scale: number | Scale2 | undefined,
 ): BooleanOperand {
   const { path, fill } = source;

@@ -8,7 +8,7 @@
  */
 import type { AddNodeSpec, MarkerRef, RectPose, Stroke } from '@weasel-js/core';
 import { DEFAULT_GROUP_INSET, expandGroupEdges } from './cluster';
-import { groupSpecs, resolveGroups } from './dataGroups';
+import { groupBoxes, groupSpecs, resolveGroups, type ResolvedGroup } from './dataGroups';
 import { buildBody, measureBody, sizeToBody, type BodySpec, type MeasureRowText, type Row, type RowTextStyle } from './body';
 import { edgeSpecs } from './dataEdges';
 import type { DiagramEdge } from './edge';
@@ -18,9 +18,10 @@ import type { DiagramAnchor } from './group';
 import type { DiagramLabel } from './label';
 import { chain } from './chain';
 import { layered } from './layered';
-import type { LayoutFn, LayoutOptions } from './layout';
+import { DEFAULT_NODE_GAP, type LayoutFn, type LayoutOptions } from './layout';
 import { markSpecs, type DataMark, type DiagramMark } from './marks';
 import type { Outline } from './outline';
+import { authoredOver, type LayeredRoute } from './route';
 import { tree } from './tree';
 import type { DiagramNode, PortSpec } from './types';
 import type { Vec2 } from '@weasel-js/core/math';
@@ -203,6 +204,30 @@ function graphOf(nodes: GraphNode[], edges: GraphEdge[], groups: GraphGroup[] = 
   };
 }
 
+/** Each edge's ports and waypoints under `layered`: the author's where given, else `layeredRoutes`'. */
+function routed(data: DiagramData, edges: readonly DataEdge[], graph: Graph, groups: readonly ResolvedGroup[],
+  placedAt: ReadonlyMap<string, Rect>, layoutOptions: LayoutOptions): Map<string, LayeredRoute> {
+  return authoredOver(edges.map((e) => ({ ...e, id: edgeIdOf(e) })), {
+    graph,
+    boxes: new Map([...placedAt, ...groupBoxes(groups, placedAt)]),
+    members: new Map(groups.map((g) => [g.group.id, g.members])),
+    compass: new Set([...data.nodes.filter((n) => n.ports === undefined).map((n) => n.id), ...groups.map((g) => g.group.id)]),
+    clearance: (layoutOptions.nodeGap ?? DEFAULT_NODE_GAP) / 2,
+    ...(layoutOptions.direction ? { direction: layoutOptions.direction } : {}),
+  });
+}
+
+type Rect = { x: number; y: number; width: number; height: number };
+
+/** Each node's box where layout put it, or where it started if layout left it. */
+function placed(data: DiagramData, seeds: readonly GraphNode[], moved: ReadonlyMap<string, Vec2>): Map<string, Rect> {
+  return new Map(data.nodes.map((n, i) => {
+    const seed = seeds[i]!.bounds;
+    const at = moved.get(n.id) ?? seed;
+    return [n.id, { x: at.x, y: at.y, width: seed.width, height: seed.height }];
+  }));
+}
+
 /** Every spec carries an id — a node's own, `<id>/<k>` for its text,
  *  `<id>/mark:<i>` for its marks, `<edge id>/label`, a group's own and
  *  `<group id>/label` — so a later call's
@@ -264,6 +289,7 @@ export function diagramScene(data: DiagramData, opts: DiagramSceneOptions = {}):
     id: g.group.id,
     members: g.members,
     inset: g.inset,
+    ...(g.minWidth !== undefined ? { minWidth: g.minWidth } : {}),
     ...(g.parent !== undefined ? { parent: g.parent } : {}),
   }));
   const seedOf = new Map(seeds.map((n) => [n.id, n]));
@@ -281,14 +307,12 @@ export function diagramScene(data: DiagramData, opts: DiagramSceneOptions = {}):
   const layout = typeof opts.layout === 'function' ? opts.layout
     : opts.layout === 'none' ? null
     : LAYOUTS[opts.layout ?? 'layered'];
-  const moved = layout === null ? new Map() : layout(graph, { order: 'barycenter', ...opts.layoutOptions });
+  const layoutOptions: LayoutOptions = { order: 'barycenter', ...opts.layoutOptions };
+  const moved = layout === null ? new Map() : layout(graph, layoutOptions);
 
   const specs: DiagramSpec[] = [];
-  const placedAt = new Map(data.nodes.map((n, i) => {
-    const seed = seeds[i]!.bounds;
-    const at = moved.get(n.id) ?? seed;
-    return [n.id, { x: at.x, y: at.y, width: seed.width, height: seed.height }];
-  }));
+  const placedAt = placed(data, seeds, moved);
+  const routes = layout === layered ? routed(data, edges, graph, groups, placedAt, layoutOptions) : null;
   // Behind every node, so a box never paints over what it holds.
   specs.push(...groupSpecs(groups, placedAt, (g) => ({
     style: opts.groupStyle?.(g) ?? GROUP,
@@ -326,6 +350,6 @@ export function diagramScene(data: DiagramData, opts: DiagramSceneOptions = {}):
     }
     if (n.marks) specs.push(...markSpecs(n.id, n.marks, at, { style, textStyle: styleOf, measure }));
   }
-  specs.push(...edgeSpecs(edges, { idOf: edgeIdOf, font, measure, fallback: EDGE, labelPlacement: LABEL_PLACEMENT, opts }));
+  specs.push(...edgeSpecs(edges, { idOf: edgeIdOf, font, measure, fallback: EDGE, labelPlacement: LABEL_PLACEMENT, routes, opts }));
   return specs;
 }

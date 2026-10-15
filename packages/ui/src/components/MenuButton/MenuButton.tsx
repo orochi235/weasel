@@ -21,7 +21,16 @@ export type MenuButtonItem<T extends string = string> = {
   /** Plain-text form of `label`, for type-to-select and screen readers. A
    *  string label supplies this itself. */
   textValue?: string;
+  /** Makes the row a link: an `<a>` that goes here when chosen, and that a
+   *  middle or modified click opens as it opens any link. */
+  href?: string;
+  /** The row for the page that is open: `aria-current="page"`, drawn bold. */
+  isCurrent?: boolean;
 };
+
+/** React Aria passes a menu item no ARIA attribute it does not write itself. */
+const markCurrent = (el: HTMLElement | null) => el?.setAttribute('aria-current', 'page');
+const unmarkCurrent = (el: HTMLElement | null) => el?.removeAttribute('aria-current');
 
 /** Props for {@link MenuButton}. */
 export type MenuButtonProps<T extends string = string> = {
@@ -31,8 +40,11 @@ export type MenuButtonProps<T extends string = string> = {
    *  chosen, so it reads as a value and not as a prompt. */
   current?: boolean;
   items: ReadonlyArray<MenuButtonItem<T>>;
-  /** Fired with the value of the row chosen. */
-  onAction: (value: T) => void;
+  /** Fired with the value of the row chosen. A menu of links can go without. */
+  onAction?: (value: T) => void;
+  /** Draws the trigger as its label and a caret in the type around it, with
+   *  no field frame: for a heading that opens a list. */
+  bare?: boolean;
   isDisabled?: boolean;
   className?: string;
   'aria-label'?: string;
@@ -41,7 +53,8 @@ export type MenuButtonProps<T extends string = string> = {
 /**
  * A button that opens a list and acts on the row chosen — "Add trial…",
  * "Load…". Unlike a {@link Select} it holds no value, so it sizes to its own
- * label rather than to its widest row.
+ * label rather than to its widest row. A row with an `href` is a link, so
+ * the same list serves as a way between pages.
  *
  * `shortcut` adds a kit tooltip reading `Name (⌘N)`, named by `aria-label` or
  * a string `label`, as `Button` does; `tooltip` replaces that text.
@@ -52,6 +65,7 @@ export function MenuButton<T extends string = string>({
   items,
   onAction,
   isDisabled,
+  bare,
   className,
   'aria-label': ariaLabel,
   portalContainer,
@@ -67,7 +81,7 @@ export function MenuButton<T extends string = string>({
         disabled={isDisabled}
       >
         <RACButton
-          className={[f.frame, s.trigger, className].filter(Boolean).join(' ')}
+          className={[bare ? s.bare : f.frame, s.trigger, className].filter(Boolean).join(' ')}
           isDisabled={isDisabled}
           aria-label={ariaLabel}
           {...(current ? { 'data-current': '' } : {})}
@@ -80,12 +94,14 @@ export function MenuButton<T extends string = string>({
           outside the subtree the trigger sits in. */}
       {ready && (
         <RACPopover className={s.popover} data-weasel-overlay="" {...portalProps}>
-          <RACMenu className={`${listbox.surface} ${listbox.list}`} onAction={(key) => onAction(key as T)}>
+          <RACMenu className={`${listbox.surface} ${listbox.list}`} onAction={(key) => onAction?.(key as T)}>
             {items.map((item) => (
               <RACMenuItem
                 key={item.value}
                 id={item.value}
                 className={s.item}
+                href={item.href}
+                ref={item.isCurrent ? markCurrent : unmarkCurrent}
                 isDisabled={item.isDisabled}
                 textValue={item.textValue ?? (typeof item.label === 'string' ? item.label : undefined)}
               >

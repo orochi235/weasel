@@ -1,3 +1,4 @@
+import { withDrafts } from '../Prefs/commitPolicy';
 import { prefFieldProps, type PrefFieldState } from '../Prefs/prefField';
 import type { PropertyControlProps } from '../Properties/PropertyField';
 import type { PropertyPaintFieldProps } from '../Properties/fieldTypes';
@@ -9,7 +10,7 @@ import type { PropertyRenderContext } from './renderContext';
  * for a leaf that is not one control.
  */
 export function leafField(ctx: PropertyRenderContext, nested: boolean): PropertyControlProps | null {
-  const field = prefFieldProps(ctx.pref, {
+  const state: PrefFieldState = {
     value: ctx.value,
     mixed: ctx.mixed,
     unset: ctx.unset,
@@ -27,8 +28,15 @@ export function leafField(ctx: PropertyRenderContext, nested: boolean): Property
       style: ctx.valueAt(siblingPath(ctx.path, 'fontStyle')).value,
     },
     fontFamily: ctx.valueAt(siblingPath(ctx.path, 'fontFamily')).value,
-  }, 'panel');
+  };
+  const settled = prefFieldProps(ctx.pref, state, 'panel');
+  const field = settled && ctx.drafts ? withDrafts(settled, prefFieldProps(ctx.pref, drafting(state, ctx.drafts), 'panel'), 'panel') : settled;
   return field?.kind === 'paint' && nested ? nestedPaint(ctx, field) : field;
+}
+
+/** `state` writing through a context's drafts. */
+function drafting(state: PrefFieldState, drafts: NonNullable<PropertyRenderContext['drafts']>): PrefFieldState {
+  return { ...state, setValue: drafts.setValue, ...(state.update ? { update: drafts.update } : {}) };
 }
 
 /**

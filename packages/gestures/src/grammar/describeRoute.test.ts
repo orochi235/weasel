@@ -92,3 +92,13 @@ describe('describeRoute — modifiers', () => {
     );
   });
 });
+
+describe('describeRoute — hover', () => {
+  it('tells a move from the pointer leaving, and names what it leaves', () => {
+    expect(describeRoute(parseRoute('[initial] hover'))).toContain('moves the pointer');
+    expect(describeRoute(parseRoute('[initial] hover'))).not.toContain(' off ');
+    expect(describeRoute(parseRoute('[initial] hover(leave)'))).toContain('moves the pointer off the surface');
+    expect(describeRoute(parseRoute('[initial] hover(leave) => unselected-body'))).toContain('moves the pointer off a unselected-body');
+  });
+});
+

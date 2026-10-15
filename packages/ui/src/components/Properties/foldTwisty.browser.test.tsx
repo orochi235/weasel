@@ -41,7 +41,9 @@ it.each(CONTAINERS)('shows a hidden twisty under keyboard focus without moving t
 function titleBox(panel: ReactElement) {
   const { container, unmount } = render(panel);
   const box = container.firstElementChild!.getBoundingClientRect();
-  const title = screen.getByText('Fill').getBoundingClientRect();
+  // The heading's line box: a panel that folds wraps its words in an inline span, whose own box is as
+  // tall as whichever face drew them and sits higher or lower with it.
+  const title = screen.getByText('Fill').closest('h2')!.getBoundingClientRect();
   unmount();
   return { left: title.left - box.left, top: title.top - box.top };
 }

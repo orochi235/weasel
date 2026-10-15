@@ -66,7 +66,7 @@ describe('PaintInput', () => {
 
   it('shows a gradient as a gradient rather than an indeterminate chip', () => {
     const { container } = render(<PaintInput value={LINEAR} onChange={() => {}} />);
-    expect(screen.getByLabelText('Stop 1 at 0%')).toBeInTheDocument();
+    expect(screen.getByLabelText('Stop 1')).toBeInTheDocument();
     expect(container.querySelector('[data-mixed]')).toBeNull();
   });
 
@@ -259,7 +259,7 @@ describe('PaintInput — a registered kind', () => {
 
     render(<PaintInput value={LINEAR} onChange={() => {}} />);
     expect(screen.getByTestId('custom-linear')).toBeInTheDocument();
-    expect(screen.queryByLabelText('Stop 1 at 0%')).toBeNull();
+    expect(screen.queryByLabelText('Stop 1')).toBeNull();
   });
 
   it('refuses to edit a kind it has no editor for rather than flattening it to a solid', () => {

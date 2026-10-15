@@ -101,7 +101,8 @@ curly quote, so both codepoints are listed.
 | Action id | Default binding |
 |---|---|
 | `move` | drag on `selected-body` |
-| `editAnchors` | drag whose press hit an anchor or control-handle affordance — higher specificity than a bare `drag`, so it wins over `move` without any opt-out |
+| `editAnchors` | drag whose press hit an anchor or control-handle affordance; it ties `move` on specificity, and `move` turns those presses down |
+| `bendSegment` | drag whose press hit the edited path's `segment` affordance, between anchors; `move` turns those down too |
 | `marqueeAnchors` | drag on `empty` |
 | `enterPathEdit` | double-click on a body |
 | `selectAnchor` | click |
@@ -193,6 +194,12 @@ commit the returned `nodeStyle` holds it.
 
 The text layer should hide the node it's editing
 (`isHidden: (n) => n.id === editingId`) so the overlay isn't drawn twice.
+
+The hook owns whether an edit is open. State that follows it, an app's
+editing mode for one, takes `onStart(id)` and `onEnd(id)`: each is called from
+the call that opens or closes the edit, `onEnd` after any commit is written,
+so the follower never renders out of step with it. `useSceneTextEdit` takes
+the same pair.
 
 `useSceneTextEdit(scene, container, options?)` wires those callbacks against a
 scene. It projects through the view of the weasel canvas mounted inside

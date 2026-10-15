@@ -29,8 +29,8 @@ export function dispatchDoubleClickEntry(
   if (modeId !== undefined) enterModeOn(machine, modeId, hit.id);
 }
 
+// Text is not here: its mode follows the edit, which `useTextEditSession` enters it from.
 const MODE_OF_KIND: Record<string, string | undefined> = {
   path: 'path-edit',
   group: 'isolation',
-  text: 'text-edit',
 };

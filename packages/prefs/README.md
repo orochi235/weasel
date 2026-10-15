@@ -9,6 +9,22 @@ store.get('view.gridVisible');
 store.set('view.gridVisible', false);
 ```
 
+A schema is plain data, and `pref` writes it shorter:
+
+```ts
+const SCHEMA = pref.group('Prefs', {
+  view: pref.group('View', {
+    gridVisible: pref.boolean('Grid', true),
+    gridGap: pref.number('Grid gap', 8, { min: 2, max: 64, unit: { scale: 1, suffix: 'px' } }),
+    mode: pref.enum('Mode', 'dark', ['dark', 'light']),
+  }),
+});
+```
+
+Each builder returns what the literal would hold (`{ name, children }` for a
+group, `{ kind, name, description, default, … }` for a leaf), so paths and
+value types are read from it the same way, and the two can be mixed.
+
 One record per leaf. A leaf with no record follows its schema default. Reads
 repair stored values that no longer fit the schema without writing them back.
 `migrations[i]` takes stored records from version `i` to `i + 1`.
@@ -35,3 +51,87 @@ draws it there. Put an unlimited setting at the end of the range it is nearest:
 a 0–100% limit is off at 100, and a scale with no such end takes `endless`,
 which adds a stop one step past the range that stores `Infinity` and reads the
 leaf's `infinity` word.
+
+## Split values
+
+A leaf that lists `splitBy` may hold its value once per option of another
+leaf, where it would hold one. The other leaf, the selector, is an ordinary
+`enum` named by its path:
+
+```ts
+'look.mode': { kind: 'enum', default: 'dark', options: [dark, light], … }
+'gap':       { kind: 'number', default: 4, splitBy: ['look.mode'], … }
+
+store.split('gap', 'look.mode');   // holds { $by: 'look.mode', $of: { dark: 4, light: 4 } }
+store.set('gap', 8);               // writes the member the mode is set to
+store.set('look.mode', 'light');   // a change to every leaf split by it
+store.join('gap', 'look.mode');    // back to one value: the member the mode is set to
+```
+
+The stored value is a locus, `{ $by, $of }`, and a member may itself be split
+by a second selector. `store.get` reads the member the selectors are set to.
+`store.get(path, { weights })` reads the alternatives folded by weight, which
+is what a transition between two options shows on the way:
+
+```ts
+store.get('gap', { weights: { 'look.mode': { dark: 0.25, light: 0.75 } } });
+```
+
+A number blends linearly and a color blends in OKLCH. Every other kind takes
+its heaviest alternative, the first option on a tie; `blends` in the open
+options says otherwise for a kind. `store.values({ at: { 'look.mode': 'light' } })`
+is the whole tree as it would read with the selectors set as given.
+
+`store.set(path, value, { at })` writes the member a stated choice names,
+whatever the selectors are set to, and `store.loci()` is what every split leaf
+holds, by path: one map until something changes. `usePrefsValues` returns
+both shaped for `PrefsForm`, with `split` and `join` beside them:
+
+```tsx
+const { values, set, loci, split, join, setAt } = usePrefsValues(store);
+<PrefsForm schema={schema} values={values} onChange={set}
+  loci={loci} onSplit={split} onJoin={join} onChangeAt={setAt} />
+```
+
+A leaf's default may be split too. `defaultLocus` is what the leaf holds while
+nothing is stored for it, and `default` stays what a member it leaves out
+reads as:
+
+```ts
+'gap': { kind: 'number', default: 4, splitBy: ['look.mode'],
+         defaultLocus: { $by: 'look.mode', $of: { dark: 4, light: 6 } }, … }
+
+store.get('gap');                                    // 4, or 6 once the mode is light
+store.set('gap', 8, { at: { 'look.mode': 'light' } }); // holds { dark: 4, light: 8 }
+store.reset('gap');                                  // the split default again
+```
+
+A selector must be a plain `enum`: not `clearable`, with no `encoding`, and
+not split itself. The store warns of a `splitBy` that names anything else when
+it opens.
+
+## As CSS custom properties
+
+`prefsCss(store)` writes the store's values as custom properties, and
+`prefsCssAttributes(store)` gives the attributes that pick its blocks:
+
+```css
+:where(:root) {
+  --look-mode: dark;
+  --gap: 4px;          /* a split value, at the member the selectors' defaults name */
+}
+
+:where(:root[data-look-mode='light']) {
+  --look-mode: light;
+  --gap: 6px;
+}
+```
+
+Every leaf is set on the root. A block follows for each choice of options a
+split value tells apart, and only those: a value that is one thing under
+`light` at every density gets one block for `light`. Every block is inside
+`:where()`, so a rule of the page's own wins, and blocks naming more selectors
+come later. A number is written in its display unit where the unit's suffix is
+a CSS unit, a boolean as `1` or `0`, an enum's option as an identifier, and a
+string quoted; a leaf of any other kind is left out unless the `value` option
+writes it. `root`, `property`, and `attribute` rename what it writes.

@@ -13,10 +13,12 @@ import type { InsertAdapter } from 'core/adapters/types';
 import { asNodeId } from 'core/scene/types';
 import { useClipboardOps, type ClipboardFlavors } from './clipboardOps';
 import { WEASEL_CLIPBOARD_MIME } from './wireFormat';
+import { rootsTree } from 'core/adapters/testing/rootsTree';
 
 interface Obj { id: string }
 
 const adapter: InsertAdapter<Obj> = {
+  ...rootsTree<Obj>(),
   commitInsert: () => null,
   commitPaste: () => [],
   snapshotSelection: (ids) => ({ items: ids.map((id) => ({ id })) }),

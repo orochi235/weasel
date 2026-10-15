@@ -41,16 +41,10 @@ export function useTextTool(options: InsertToolOptions = {}): Tool {
 }
 
 /** Both script primitives are fractions of the inherited size, so both read
- *  as percentages. The step is a tenth of a point because the field snaps the
- *  *displayed* value to it, and a coarser one would render a superscript's
- *  58.3% as 60% and commit that on the next edit. */
-const PERCENT = {
-  toDisplay: (v: number) => Math.round(v * 1000) / 10,
-  // Rounded rather than divided: 33.3 / 100 is 0.33299999999999996, and that
-  // dust would be written into the document and shown back on the next read.
-  fromDisplay: (v: number) => Math.round(v * 1000) / 100_000,
-  suffix: '%',
-};
+ *  as percentages. A tenth of a point shows because the field snaps the
+ *  *displayed* value to its step, and a coarser one would render a
+ *  superscript's 58.3% as 60% and commit that on the next edit. */
+const PERCENT = { scale: 0.01, precision: 1, suffix: '%' };
 
 /** A run flag: on or off per character, drawn as one segment of a bar. */
 const flag = (name: string, icon: string) =>

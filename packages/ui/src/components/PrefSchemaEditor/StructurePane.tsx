@@ -8,7 +8,7 @@ import { Button } from '../Button';
 import { ToolButton } from '../ToolButton';
 import { AddNodeDialog, type NewNode } from './AddNodeDialog';
 import { PaneHeader } from './PaneHeader';
-import type { EditorAction } from './editorActions';
+import type { ActionCatalog } from './useActionCatalog';
 import { holdsPages, looseKeys, looseTarget, mayUnplace, schemaTarget, topLevelAllows } from './loose';
 import { Icon } from '../../icons';
 import { DraggedNodes, GHOST_WIDTH, ghostIsPage } from './NodeGhost';
@@ -55,7 +55,7 @@ export interface StructurePaneProps {
   /** Nodes the schema does not hold yet, listed under the tree with what it holds on no page, to be dragged into it. */
   unplaced?: PrefGroup;
   /** The actions the host has, listed in the shelf to be dragged into the tree as prefs that fire them. */
-  actions?: readonly EditorAction[];
+  actions?: ActionCatalog;
   /** Somewhere else a drag from this pane may end: the live preview. */
   outside?: DropOutside;
   /** `outside` is drawing what is dragged where it would land, so the palette and the trees draw no ghost of it. */

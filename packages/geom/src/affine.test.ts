@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { transformCoords } from './affine';
-import { multiply, translate, rotate, scale, applyToPoint } from './mat3';
+import { multiply, translate, rotate, scale, applyToPoint } from './affine';
 import { cubicEvalAt } from './curve';
 import { approxEq } from './scalar';
 

@@ -228,7 +228,6 @@ function Harness({ layers, onReady }: {
   const registry = useOptionalViewRegistry()!;
   useEffect(() => {
     registry.attachSurface({
-      origin: () => ({ left: 0, top: 0 }),
       view: () => ({ x: 0, y: 0, scale: { x: 1, y: 1 } }),
       dims: () => ({ width: 300, height: 200 }),
       layers: () => layers,

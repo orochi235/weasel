@@ -2,6 +2,7 @@ import {
   colorLiteralToCss,
   cssColorLiteral,
   resolvePaletteColor,
+  type ColorFnContext,
   type ColorLiteral,
   type ColorRef,
   type ColorSource,
@@ -95,18 +96,63 @@ function toneCss(source: ColorRef, ctx: ColorSourceContext): string | null {
   return isRef(item) && item.ref !== TONE_REF ? colorSourceCss(item, ctx) : literalCss(source, ctx);
 }
 
+function themeRefCss(ref: ColorRef, ctx: ColorSourceContext): string | null {
+  if (ref.ref === TONE_REF) return toneCss(ref, ctx);
+  const property = propertyOf(ref, ctx);
+  if (property === null) return null;
+  return ref.ref.startsWith('--') || tokenLiteral(property, ctx) ? `var(${property})` : null;
+}
+
+function nth<T>(items: Iterable<T>, n: number): T | undefined {
+  let i = 0;
+  for (const item of items) if (i++ === n) return item;
+  return undefined;
+}
+
 /**
- * `source` as a CSS color, naming what `colorSourceLiteral` resolves. A ref the
- * theme answers is written as its custom property, so it follows the cascade
- * with no re-render and a property spelled out need not be the theme's;
- * everything else is written as the literal it resolves to.
+ * The theme ref `source` comes down to when followed by name alone, through
+ * palette entries and functions that only name another color. `null` when it
+ * ends anywhere else, or when a function read a color to compute its own.
+ */
+function namedThemeRef(source: ColorSource, ctx: ColorSourceContext): ColorRef | null {
+  const entries = ctx.palette?.entries ?? [];
+  const seen = new Set<string>();
+  let read = false;
+  const fnCtx: ColorFnContext = {
+    resolve: (s) => {
+      read = true;
+      return colorSourceLiteral(s, ctx);
+    },
+  };
+  let at: ColorSource | null | undefined = source;
+  while (at != null && !read) {
+    if (typeof at === 'function') {
+      at = at(fnCtx);
+      continue;
+    }
+    if (!isRef(at)) return null;
+    const { ref, index = 0 } = at;
+    const entry = entries.find((e) => e.name === ref);
+    if (!entry) return at;
+    const key = `${index}:${ref}`;
+    if (seen.has(key)) return null;
+    seen.add(key);
+    if ('color' in entry) at = index === 0 ? entry.color : null;
+    else at = nth(entry.colors(fnCtx), index);
+  }
+  return null;
+}
+
+/**
+ * `source` as a CSS color, naming what `colorSourceLiteral` resolves. A source
+ * that comes down to a ref the theme answers, directly or through palette
+ * entries and functions that only name another color, is written as that
+ * ref's custom property: it follows the cascade with no re-render, and a
+ * property spelled out need not be the theme's. Everything else is written as
+ * the literal it resolves to in `ctx`, which includes a function that reads a
+ * color through `resolve` to compute its own.
  */
 export function colorSourceCss(source: ColorSource, ctx: ColorSourceContext = defaultContext()): string | null {
-  if (isRef(source) && !ctx.palette?.entries.some((e) => e.name === source.ref)) {
-    if (source.ref === TONE_REF) return toneCss(source, ctx);
-    const property = propertyOf(source, ctx);
-    if (property === null) return null;
-    return source.ref.startsWith('--') || tokenLiteral(property, ctx) ? `var(${property})` : null;
-  }
-  return literalCss(source, ctx);
+  const named = namedThemeRef(source, ctx);
+  return named ? themeRefCss(named, ctx) : literalCss(source, ctx);
 }

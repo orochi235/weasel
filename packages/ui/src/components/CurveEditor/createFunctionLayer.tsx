@@ -134,7 +134,7 @@ export function createFunctionLayer(cfg: FunctionLayerConfig = {}): CurveLayer<F
 
     return (
       <>
-        {fillD && cfg.fill && <CurveFill d={fillD} {...(cfg.fill.color ? { color: cfg.fill.color } : {})} />}
+        {fillD && cfg.fill && <CurveFill d={fillD} fill={ctx.colorCss(cfg.fill.color)} />}
         {pathD && curveVisible && (
           <path
             className={s.curve}

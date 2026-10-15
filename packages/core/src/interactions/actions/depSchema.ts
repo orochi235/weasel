@@ -351,9 +351,9 @@ export interface ResizePolicy<TPose> extends GestureLifecycleOptions {
 
 /**
  * Layout-strategy lookup by container id, consumed by `moveAction` to run
- * the drag-time reflow pass. Sourced by `<SceneCanvas>` from its `layouts`
- * prop. Optional: `getLayout` returns null for any container when no layout
- * is configured, so the reflow pass is a no-op then.
+ * the drag-time reflow pass. Sourced by `<SceneCanvas>` from the layout each
+ * container declares on its scene node. `getLayout` returns null for a
+ * container that declares none, so the reflow pass is a no-op then.
  */
 export interface LayoutDep {
   getLayout(containerId: string): import('../../layout/types').LayoutStrategy<unknown> | null;
@@ -513,7 +513,7 @@ declare module '@weasel-js/routing' {
      *  in-flight handle (Escape cancels a drag, etc.). */
     dispatcher?: { cancelAll(reason: 'commit' | 'cancel'): void };
     /**
-     * Layout-strategy lookup. Sourced by `<SceneCanvas>` from `layouts`.
+     * Layout-strategy lookup. Sourced by `<SceneCanvas>` from the scene.
      * Optional: absent (or all-null) → `moveAction` skips reflow.
      */
     layout?: LayoutDep;

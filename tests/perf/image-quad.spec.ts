@@ -102,6 +102,12 @@ test('image quad: geometry cost per draw', async ({ page, browser, browserName }
       const { timeInterleaved } = await import(
         /* @vite-ignore */ `${base}/tests/perf/lib/frameTiming.ts`
       );
+      // A run holds several color matrices now; `unmerged` times the break one
+      // used to cause, so it turns that off. Nothing else here has a matrix.
+      const { colorFolding } = await import(
+        /* @vite-ignore */ `${base}/packages/renderer/src/draw.ts`
+      );
+      colorFolding.enabled = false;
 
       const W = 800;
       const H = 600;
@@ -366,8 +372,8 @@ void main() { outColor = u_color; }`;
       const imageCmds: unknown[] = [];
       const unmergedCmds: unknown[] = [];
       const atlasCmds: unknown[] = [];
-      // Two color matrices, alternated, so every command ends the run before it.
-      // Each carries a bias: a plain scale rides the vertices and breaks nothing.
+      // Two color matrices, alternated, so every command ends the run before it
+      // while `colorFolding` is off.
       const matrices = [0.002, 0.004].map((b) => [1, 0, 0, 0, b, 0, 1, 0, 0, b, 0, 0, 1, 0, b, 0, 0, 0, 1, 0]);
       const patternCmds: unknown[] = [];
       // 4x4 cells of the first bitmap, so every quad samples one texture and

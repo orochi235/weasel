@@ -136,14 +136,15 @@ describe('createDeleteOp', () => {
     expect(flat.getChildren('g')).toEqual(['c1']);
   });
 
-  it('leaves the subtree empty when the adapter cannot enumerate children', () => {
-    const flat = { removeNode: () => {}, insertNode: vi.fn() };
+  it('captures nothing for a node the adapter does not hold', () => {
+    const adapter = makeAdapter();
+    const insertNode = vi.spyOn(adapter, 'insertNode');
     const node = leaf('a', 1);
     const op = createDeleteOp<Obj>({ node, index: 0 });
-    op.apply(flat as never);
-    expect((op.args as { cascaded?: unknown }).cascaded).toBeUndefined();
-    op.invert().apply(flat as never);
-    expect(flat.insertNode.mock.calls).toEqual([[node, 0]]);
+    op.apply(adapter as never);
+    expect((op.args as { cascaded?: unknown }).cascaded).toEqual([]);
+    op.invert().apply(adapter as never);
+    expect(insertNode.mock.calls).toEqual([[node, 0]]);
   });
 });
 
@@ -160,12 +161,9 @@ describe('createDeleteOp — slot anchoring', () => {
   });
 
   it('distinguishes an unobserved slot from a tail slot across JSON', () => {
-    const flat = {
-      removeNode: () => {},
-      insertNode: () => {},
-    };
+    // A node its parent does not list has no slot to observe.
     const unobserved = createDeleteOp<Obj>({ node: leaf('a', 1), index: 0 });
-    unobserved.apply(flat as never);
+    unobserved.apply(makeAdapter() as never);
 
     const adapter = makeAdapter([leaf('a', 1), leaf('b', 2)]);
     const tail = createDeleteOp<Obj>({ node: adapter.getNode('b')!, index: 1 });
@@ -213,13 +211,9 @@ describe('createDeleteOp — slot anchoring', () => {
     expect(adapter.order.ROOT).toEqual(['b', 'c']);
   });
 
-  it('honors the supplied index on an adapter with no ordering seam', () => {
-    const order: string[] = ['a', 'c'];
-    const flat = {
-      removeNode: (id: string) => { order.splice(order.indexOf(id), 1); },
-      insertNode: (o: Obj, index?: number) => { order.splice(index ?? order.length, 0, o.id); },
-    };
-    createDeleteOp<Obj>({ node: leaf('b', 2), index: 1 }).invert().apply(flat as never);
-    expect(order).toEqual(['a', 'b', 'c']);
+  it('honors the supplied index when no anchor was observed', () => {
+    const adapter = makeAdapter([leaf('a', 1), leaf('c', 3)]);
+    createDeleteOp<Obj>({ node: leaf('b', 2), index: 1 }).invert().apply(adapter as never);
+    expect(adapter.order.ROOT).toEqual(['a', 'b', 'c']);
   });
 });

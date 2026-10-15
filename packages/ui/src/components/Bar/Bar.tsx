@@ -33,7 +33,8 @@ export interface BarProps {
    *  aliases into another passes that other: each alias is drawn as the leaf of it at the alias's path, reads and
    *  writes `values` at that path, and is hidden and disabled by that leaf's conditions as well as its own. A
    *  condition of this schema's own may read a setting of that one too: a path no leaf here holds is compared as
-   *  the leaf of that schema there shows it. */
+   *  the leaf of that schema there shows it. That leaf is read as the bar reads its own, from `values` alone:
+   *  where they hold nothing its default does not stand in, since the bar would not draw it there either. */
   over?: PrefGroup | PrefSection;
   /** Which way the bar runs. A vertical bar has no room beside a field, so
    *  every leaf but an action opens from a button. Default `'horizontal'`. */
@@ -43,7 +44,8 @@ export interface BarProps {
   /** Draw the strip the bar sits on. Unset, the host's strip is under it. */
   framed?: boolean;
   /** What happens to cells the line has no room for: `'scroll'` keeps them all on it, and `'menu'` opens the
-   *  ones past its end from a button there, taking all the room the host has along the line. Default `'scroll'`. */
+   *  ones past its end from a button there, taking all the room the host has along the line. Default: what
+   *  `schema` says in its own `overflow`, else `'scroll'`. */
   overflow?: BarOverflowMode;
   /** What the button that opens the rest is called. Default `'More'`. */
   overflowLabel?: string;
@@ -71,7 +73,7 @@ export function Bar(props: BarProps) {
       orientation={orientation}
       label={label}
       framed={framed}
-      overflow={props.overflow}
+      overflow={props.overflow ?? schema.overflow}
       overflowLabel={props.overflowLabel}
       className={className}
       cells={(leaves) => barCells(leaves, draw)}

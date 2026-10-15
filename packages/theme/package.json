@@ -23,6 +23,10 @@
       "import": "./dist/engine.js",
       "types": "./dist/engine.d.ts"
     },
+    "./prefs": {
+      "import": "./dist/prefs.js",
+      "types": "./dist/prefs.d.ts"
+    },
     "./themes/win9x": {
       "import": "./dist/themes/win9x.js",
       "types": "./dist/themes/win9x.d.ts"
@@ -40,6 +44,7 @@
   },
   "dependencies": {
     "@weasel-js/paint": "1.10.0",
+    "@weasel-js/prefs": "1.10.0",
     "@weasel-js/registry": "1.10.0"
   },
   "peerDependencies": {

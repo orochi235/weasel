@@ -67,8 +67,15 @@ export function snapToContainer<TPose>(args: {
     }
     return slots;
   };
-  const snapped = (ctx: GestureContext<TPose>, snap: SnapTarget<TPose>): BehaviorResult<TPose> =>
-    ({ pose: snap.slotPose, poses: slotsFor(ctx, snap), snap });
+  const snapped = (ctx: GestureContext<TPose>, snap: SnapTarget<TPose>): BehaviorResult<TPose> => {
+    const start = ctx.origin.get(ctx.draggedIds[0]);
+    const toSlot = start !== undefined ? ctx.offset?.(start, snap.slotPose) : undefined;
+    return {
+      ...(toSlot ? { transform: { kind: 'translate' as const, ...toSlot } } : {}),
+      poses: slotsFor(ctx, snap),
+      snap,
+    };
+  };
 
   return {
     onMove(ctx, _proposed) {
@@ -114,7 +121,7 @@ export function snapToContainer<TPose>(args: {
       if (!snap) return;
       const ops: Op[] = [];
       const reparent = (id: string): void => {
-        const oldParent = ctx.adapter.getParent?.(id) ?? null;
+        const oldParent = ctx.adapter.getParent(id);
         if (oldParent !== snap.parentId) {
           ops.push(createReparentOp({
             id,
