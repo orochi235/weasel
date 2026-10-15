@@ -1,6 +1,6 @@
 import type { ActionsProp, ActionTunings } from '@weasel-js/routing';
 import type { Dispatcher } from '@weasel-js/routing';
-import { useActionsRegistry, useDepSource, usePointerContext } from '@weasel-js/routing/react';
+import { useActionsRegistry, useDepSource } from '@weasel-js/routing/react';
 import type { Scene } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import { useDecayLoop } from 'core/viewport/useDecayLoop';
@@ -32,6 +32,7 @@ import {
   usePoseDescriptorDepSource,
   useSliceDepSource,
   useSnapDepSource,
+  useSurfaceDepSources,
   useTextEditDepSource,
   useViewDepSource,
   type InsertNodeFactory,
@@ -195,8 +196,7 @@ export function StandardActionsRegistrar({
   useStandardActions({ selection, scene, view, history: scene.history, exclude: excludeActions });
   // A view overlays `view` with its own camera; this name it leaves alone.
   useDepSource('rootView', () => view);
-  const pointer = usePointerContext();
-  useDepSource('pointer', () => pointer ?? undefined);
+  useSurfaceDepSources(canvasRef, currentViewRef);
 
   // viewport.pan / viewport.zoom are SceneCanvas-coupled (need the `view` dep
   // published just above), so they're registered here rather than in

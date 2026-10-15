@@ -38,7 +38,7 @@
     "longestFunction": 253
   },
   "packages/core/src/canvas/SceneCanvas/StandardActionsRegistrar.tsx": {
-    "longestFunction": 183
+    "longestFunction": 182
   },
   "packages/core/src/canvas/SceneCanvas/props.ts": {
     "lines": 637

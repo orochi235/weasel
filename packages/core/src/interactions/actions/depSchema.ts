@@ -14,10 +14,7 @@ import type { Op } from 'core/ops/types';
 import type { GestureLifecycleOptions } from './gestureLifecycle';
 import type { InsertAdapter, PasteOmission, RegionPickView } from 'core/adapters/types';
 import type { History } from '@weasel-js/history';
-import type {
-  PointSnapBehavior,
-  BoundsConstraint,
-} from '../gestures/types';
+import type { PointSnapBehavior, BoundsConstraint } from '../gestures/types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { PoseDescriptor } from './resize/geometry';
 import type { GeometryProjection } from './geometryProjection';
@@ -379,6 +376,9 @@ declare module '@weasel-js/routing' {
      * Actions report what they did here, and the overlay draws it.
      */
     debug?: DebugSink;
+    /** Viewport point of a world point on this canvas, or null before it mounts.
+     *  Sourced by `<SceneCanvas>`. */
+    worldToClient?: (x: number, y: number) => { x: number; y: number } | null;
     /** Lasso-select dep — polygon hit-test + selection read/write. */
     lassoSelect: LassoSelectDep;
     /** Edit-anchors dep — narrow read/write of one polygon's path. If
