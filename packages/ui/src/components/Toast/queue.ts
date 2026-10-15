@@ -16,7 +16,7 @@ export interface ToastContent {
 export interface ToastOptions {
   description?: string;
   /**
-   * Auto-dismiss delay in ms. Default 8000. `null` — sticky until dismissed.
+   * Auto-dismiss delay in ms. Default: the `toast.ttlMs` kit setting a mounted `ToastRegion` sees, else 8000. `null` — sticky until dismissed.
    * Must be > 0; RAC treats 0 as no timer (sticky).
    */
   ttlMs?: number | null;
@@ -68,6 +68,20 @@ function viewTransitionWrapUpdate(fn: () => void): void {
 // containment rule. `racQueueOf` below is the folder-internal accessor.
 const RAC_QUEUES = new WeakMap<ToastQueue, UNSTABLE_ToastQueue<ToastContent>>();
 
+const DEFAULT_TTLS = new WeakMap<ToastQueue, () => number | undefined>();
+
+/**
+ * Has `queue` time a toast that sets no `ttlMs` by `read`, falling back to
+ * the constant where it answers `undefined`, until the returned release.
+ * Folder-internal: `ToastRegion` feeds it the kit settings.
+ */
+export function readDefaultTtl(queue: ToastQueue, read: () => number | undefined): () => void {
+  DEFAULT_TTLS.set(queue, read);
+  return () => {
+    if (DEFAULT_TTLS.get(queue) === read) DEFAULT_TTLS.delete(queue);
+  };
+}
+
 /**
  * Kit-owned toast queue. Create isolated instances with
  * `createToastQueue()` (tests, secondary roots); most apps use the
@@ -91,7 +105,7 @@ export class ToastQueue {
   }
 
   add(tone: ToastTone, title: string, options: ToastOptions = {}): void {
-    const { description, ttlMs = DEFAULT_TTL_MS, id } = options;
+    const { description, ttlMs = DEFAULT_TTLS.get(this)?.() ?? DEFAULT_TTL_MS, id } = options;
     const rac = RAC_QUEUES.get(this)!;
     if (id !== undefined) {
       const existing = this.keysById.get(id);
