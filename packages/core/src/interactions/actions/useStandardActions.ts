@@ -124,8 +124,8 @@ const KIT_STANDARD_DESCRIPTORS: Action[] = [
   selectAllAction,
   duplicateAction,
   transformAgainAction,
-  // Ahead of their node-level twins: with no mode registry both match, and
-  // the first enabled one fires, so these decline unless anchors are selected.
+  // Ahead of their node-level twins: with no mode registry nothing filters
+  // by capability, so a keystroke goes to the first of these that is enabled.
   nudgeAnchorsUpAction,
   nudgeAnchorsDownAction,
   nudgeAnchorsLeftAction,

@@ -19,16 +19,6 @@ Priority tags:
 
 ## Tools & gestures
 
-- **(P2) A canvas's first tool cancels every open edit.** A `<SceneCanvas>` with no
-  `initialActive` on its `ActiveToolContextProvider` starts with an empty tool slot, which the
-  first `useTools` call seeds after mounting. `useToolLifecycle` in the dispatcher sees that as a
-  switch from `null` to `select` and runs `onSwitch`, which calls `cancelAll` on every dispatcher.
-  So a `useOngoingAction` edit opened while the canvas mounts is canceled, and so is anything else
-  begun before the slot settles. Reproduced on a bare `<SceneCanvas features={['draw']}>` with no
-  labkit and no StrictMode. Likely fix: don't treat the slot's first seeding as a switch, since no
-  tool is outgoing. `apps/site/demos/ResampleLabDemo.tsx` waits for the canvas to report a tool
-  before opening its preview because of this; drop that wait once this is fixed.
-
 - **(P2) `features` names two things.** The `<SceneCanvas features>` prop composes behavior presets
   (`canvas/SceneCanvas/features.ts`); `packages/core/src/features/<name>/` is a source directory
   bundling one domain's primitives, and `docs/taxonomy.md` calls each of those a "feature" too.
@@ -198,7 +188,6 @@ Priority tags:
   drafts, not proofed at high resolution.
 - **(P2) Spacing hints.** Equal-spacing markers between siblings while moving, and Alt-hover
   distance readouts between the selection and the shape under the pointer.
-- **(P2) Live symmetry.** Draw on one side of an axis and the mirrored half follows.
 - **(P2) Variable-width strokes.** A width profile along a stroke's length, edited by dragging
   on the stroke. `strokeToPath` handles a fixed width only.
 
@@ -344,6 +333,19 @@ Priority tags:
   unless the Modes > Undo inside a mode pref says the document's history
   (`apps/draw/src/modality/machine.ts`), so the change moves where every direct call made during
   a mode lands.
+
+### Symmetry follow-ups
+
+- **(P3) Wallpaper tilings.** A new kind is a row in `SYMMETRY_KINDS`
+  (`packages/symmetry/src/kinds.ts`), but a lattice has no last copy: `copiesFromPose` sees only
+  the container's pose, so it would need an extent to tile within, which the spec would carry.
+- **(P3) Bake copies only path leaves.** `bakeSymmetry` reports text and image leaves in
+  `skipped` and leaves them uncopied. It also copies a paint laid out in the shape's own box, a
+  gradient say, without carrying it through the copy's mirror or turn.
+- **(P3) Symmetry in a scene that composes frames.** A group's center is its pose, so dragging the
+  center in such a scene moves its children too, and bake writes absolute poses.
+- **(P3) The angle knob sits on the shapes it turns.** It is fixed 64px out along the axis, where
+  the lab's petal is, and can cover a path-edit handle there.
 
 ### Derived geometry follow-ups
 

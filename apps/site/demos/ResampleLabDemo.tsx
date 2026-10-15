@@ -10,7 +10,7 @@ import {
   useTrialScene,
 } from '@weasel-js/labkit';
 import { Button, SelectIcon } from '@weasel-js/ui';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import { OpenInPathEdit, PathLabStage, pathLabScene, pathNode } from './pathLab/pathLab';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
@@ -39,11 +39,7 @@ function ResampleTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
     () => ({ count, spacing: by === 'spacing' ? spacing : 0, keepCorners, tolerance }),
     [by, count, spacing, keepCorners, tolerance],
   );
-  // The canvas seeding its first tool after mount counts as a tool switch and
-  // cancels an open preview (docs/TODO.md), so the preview opens once the canvas
-  // has a tool. From then on every change of the panel previews; Apply keeps it.
-  const [hasTool, setHasTool] = useState(false);
-  useEffect(() => { if (hasTool) resample.input(params); }, [resample, params, hasTool]);
+  useEffect(() => { resample.input(params); }, [resample, params]);
   const bar = (
     <>
       <Button variant="primary" size="sm" onClick={() => resample.commit()}>Apply</Button>
@@ -56,7 +52,6 @@ function ResampleTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
         features={['draw']}
         scene={scene}
         trial={ctx.trial}
-        onToolsCreated={(tools) => { if (tools.active !== null) setHasTool(true); }}
       />
       <OpenInPathEdit />
     </PathLabStage>

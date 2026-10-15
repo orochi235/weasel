@@ -123,8 +123,9 @@ describe('useOngoingAction', () => {
     expect(calls.paint.end).toEqual(['commit']);
   });
 
-  it('keeps an edit opened at mount open through StrictMode\'s rehearsal unmount', async () => {
-    const calls: Calls = { start: [], move: [], end: [] };
+  /** A control that opens `paint` from an effect, under StrictMode, beside a
+   *  registry wired to a dispatcher. */
+  function renderStrictOpener(calls: Calls) {
     const paint = recording('paint', calls);
     function Wiring() {
       const reg = useActionsRegistry()!;
@@ -137,9 +138,24 @@ describe('useOngoingAction', () => {
       useEffect(() => { edit.input({ color: '#f00' }); }, [edit]);
       return null;
     }
-    render(<StrictMode><ActionsProvider><Wiring /><Opener /></ActionsProvider></StrictMode>);
+    return render(<StrictMode><ActionsProvider><Wiring /><Opener /></ActionsProvider></StrictMode>);
+  }
+
+  it('keeps an edit opened at mount open through StrictMode\'s rehearsal unmount', async () => {
+    const calls: Calls = { start: [], move: [], end: [] };
+    renderStrictOpener(calls);
     await act(async () => { await Promise.resolve(); });
     expect(calls.end).not.toContain('commit');
+  });
+
+  it('commits the open edit when a StrictMode control really unmounts', async () => {
+    const calls: Calls = { start: [], move: [], end: [] };
+    const view = renderStrictOpener(calls);
+    await act(async () => { await Promise.resolve(); });
+    const ended = calls.end.length;
+    view.unmount();
+    await Promise.resolve();
+    expect(calls.end.slice(ended)).toEqual(['commit']);
   });
 
   it('commits the open edit on the old action when the id changes', () => {
