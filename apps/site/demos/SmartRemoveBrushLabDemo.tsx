@@ -1,5 +1,5 @@
 import {
-  type ActionsProp, asNodeId, boundsOfPath, createScene, type PathEditHost, pathFromD, type RectPose, solid,
+  type ActionTunings, asNodeId, boundsOfPath, createScene, type PathEditHost, pathFromD, type RectPose, solid,
   useLatest,
 } from '@weasel-js/core';
 import {
@@ -82,13 +82,8 @@ function BrushTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const { modes, pathEdit } = usePathEditMode(SEEDED_PATH_ID);
   const radius = useLatest(ctx.config.radiusPx);
   // Thunked, so a radius change reaches a stroke already under way.
-  const actions = useMemo<ActionsProp>(() => ({
-    brushDeleteAnchors: {
-      defaultBinding: [{
-        spec: { kind: 'drag', mods: { alt: true } },
-        opts: { params: () => ({ radiusPx: radius.current }) },
-      }],
-    },
+  const tune = useMemo<ActionTunings>(() => ({
+    brushDeleteAnchors: { params: () => ({ radiusPx: radius.current }) },
   }), [radius]);
   const selectionOptions = useMemo(() => ({ initial: [asNodeId(SEEDED_PATH_ID)] }), []);
 
@@ -100,7 +95,7 @@ function BrushTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
       trial={ctx.trial}
       modes={modes}
       pathEdit={pathEdit}
-      actions={actions}
+      tune={tune}
       selectionOptions={selectionOptions}
     />
   );
