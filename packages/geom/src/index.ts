@@ -41,8 +41,19 @@ export { schneiderFit, fitCubicWithTangents } from './paths/schneiderFit';
 export { simplifyPath, type SimplifyPathOptions } from './paths/simplifyPath';
 export {
   averageAnchorsAt, closestOpenEnds, joinAnchorsAt, joinSubpathEnds, subpathEndAt,
-  type AverageAxis, type SubpathEnd,
+  type AverageAxis, type JoinOptions, type SubpathEnd,
 } from './paths/joinAnchors';
+export {
+  SPIRO_KINDS, isSpiroKind, solveSpiro, type SpiroKind, type SpiroPoint, type SpiroSegment,
+} from './paths/spiro';
+export {
+  spiroContoursFromControl, spiroContoursOf, spiroControlPath, spiroToPath,
+  type SpiroContour, type SpiroPath, type SpiroToPathOptions,
+} from './paths/spiroPath';
+export {
+  eulerAngleAt, eulerCurvatureAt, eulerPointAt, fitEulerSegment, placeEulerSegment,
+  type EulerFit, type EulerSegment,
+} from './paths/eulerSpiral';
 export {
   pointInPath, strokeHitTest,
   pathContainsPoint, pathContainsRect, pathIntersectsRect,

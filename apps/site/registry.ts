@@ -711,7 +711,7 @@ const DEMO_META: DemoMeta[] = [
     id: 'curve-lab',
     title: 'Curve representations lab',
     package: 'geom',
-    description: 'The same anchor set rendered as cubic Bezier, quadratic Bezier, NURBS, and Spiro (κ-curves v1) side by side. Toggle the curvature comb, inflection marks, and anchor / control chrome to see where the representations diverge. Five seeded presets; pen-tool authoring is v1.1.',
+    description: 'The same anchor set rendered as cubic Bezier, quadratic Bezier, NURBS, and Spiro (κ-curves) side by side. Toggle the curvature comb, inflection marks, and anchor / control chrome to see where the representations diverge. Five seeded presets; pen-tool authoring is v1.1.',
     hint: 'Switch presets to see the differences; toggle overlays for analysis.',
     load: () => import('./demos/CurveLabDemo').then((m) => m.CurveLabDemo),
     path: 'apps/site/demos/CurveLabDemo.tsx',
