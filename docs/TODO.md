@@ -418,6 +418,11 @@ Priority tags:
     orders by a neighbor's position in its rank, not by the position of the port the wire joins.
   - Positions across a rank are packed and centered, not aligned to neighbors, so wires that
     could run straight bend.
+  - A named port sits at one fixed point, wherever its wire goes. The diamond puts its second exit
+    at the bottom (`branchNode` in `packages/diagram/src/effect/symbols.ts`), so a wire to a stage
+    above leaves downward and loops back up. A port should be able to name the places it may sit
+    (the diamond's top and bottom vertices, say), with layout picking the one facing its wire.
+    `layeredRoutes` already picks a face for a node with no named ports.
   - Nothing places wire or port labels away from wires.
 - **(P3) `DiagramView` fits its view once, at mount.** `defaultView` only seeds the canvas's
   view, so when `width` or `height` changes the canvas resizes and the view does not refit; a
