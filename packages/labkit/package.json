@@ -3,7 +3,9 @@
   "version": "1.10.1",
   "description": "React widgets for building self-contained interactive lab pages",
   "weasel": {
-    "needs": ["webgl2"]
+    "needs": [
+      "webgl2"
+    ]
   },
   "license": "MIT",
   "author": "orochi235",
