@@ -1,8 +1,9 @@
-import type { CSSProperties } from 'react';
+import { useRef, type CSSProperties } from 'react';
 import { Icon } from '../../icons/Icon';
 import type { IconName } from '../../icons/generated/paths';
 import s from './Keycaps.module.css';
 import { MODIFIER_LABELS } from './keySpecsFromMods';
+import { useLegendFit } from './useLegendFit';
 
 const WIDE_GLYPHS = new Set(['⇥', '↵', '␣']);
 const FUNCTION_KEY = /^F([1-9]|1\d|2[0-4])$/;
@@ -55,7 +56,9 @@ export interface KeyCapProps {
   /** Optional inline style. Useful for one-off width overrides (e.g.
    *  building a keyboard-layout where the space bar spans several
    *  standard-key widths). The component sets no inline styles of its
-   *  own — everything else comes from the CSS module. */
+   *  own — everything else comes from the CSS module — save one: a key in
+   *  a `KeyBank` printing a two-line spelling carries its own
+   *  `--key-legend-scale`. */
   style?: CSSProperties;
   /** Override the chip's font-family. Accepts any CSS font-family
    *  string. When omitted, the chip inherits from the design-system
@@ -63,28 +66,36 @@ export interface KeyCapProps {
    *  a different face is desired — though the canonical move is to
    *  override the CSS variable at the consumer's scope, not the prop. */
   font?: string;
+  /** Inside a `KeyBank`, lets this key print a two-line spelling,
+   *  overriding the bank's `wrap`. No effect outside a bank. */
+  wrap?: boolean;
 }
 
 /** Single bordered keycap chip for one glyph (modifier or key). Use
  *  `KeySequence` to render a full shortcut. */
-export function KeyCap({ label, inverted = false, variant = 'default', className, style, font }: KeyCapProps) {
-  const resolvedStyle = font ? { ...style, fontFamily: font } : style;
-  const icon = LEGEND_ICONS[label];
+export function KeyCap({ label, inverted = false, variant = 'default', className, style, font, wrap }: KeyCapProps) {
+  const ref = useRef<HTMLElement>(null);
+  const fit = useLegendFit(ref, label, wrap, font);
+  const fitted = fit.scale === undefined ? style : ({ ...style, '--key-legend-scale': String(fit.scale) } as CSSProperties);
+  const resolvedStyle = font ? { ...fitted, fontFamily: font } : fitted;
+  const icon = LEGEND_ICONS[fit.label];
   return (
     <kbd
+      ref={ref}
       className={[s.key, className].filter(Boolean).join(' ')}
       data-kind={inferKeycapKind(label)}
       data-fn={FUNCTION_KEY.test(label) || undefined}
       data-variant={variant === 'default' ? undefined : variant}
       data-inverted={inverted || undefined}
+      data-wrapped={fit.wrapped || undefined}
       style={resolvedStyle}
     >
       {icon ? (
         <>
           <Icon name={icon} className={s.legendIcon} />
-          <span className={s.legendText}>{label}</span>
+          <span className={s.legendText}>{fit.label}</span>
         </>
-      ) : label}
+      ) : fit.label}
     </kbd>
   );
 }
