@@ -35,6 +35,17 @@ export { pathSignedArea, reversePath } from './paths/winding';
 export { pathFromD } from './paths/pathFromD';
 export { pointAlongPath, type PathStation, type PointAlongPathOptions } from './paths/pathAt';
 export { pathDistanceToPoint } from './paths/pathDistance';
+export { intersectSegments, type SegmentCrossing } from './intersect/segmentIntersections';
+export { pathSegments, type PathSegment } from './intersect/pathSegments';
+export { pathCrossings, type PathCrossing, type PathStop } from './intersect/pathCrossings';
+export {
+  createPathSnapIndex, findPathSnap, PATH_SNAP_KINDS,
+  type PathSnapHit, type PathSnapIndex, type PathSnapKind, type PathSnapQuery, type PathSnapTarget,
+} from './snap/pathSnap';
+export { trimPathAt, type TrimPathOptions, type TrimResult } from './paths/trimPath';
+export {
+  extendToMeet, lengthenOpenEnd, openEndRay, openPathEnds, type ExtendToMeetOptions, type OpenPathEnd,
+} from './paths/extendPath';
 export { cubicPointAt, splitCubicAtT, type Point } from './paths/cubicMath';
 export { fitCubicThroughDeletion } from './paths/spanFit';
 export { schneiderFit, fitCubicWithTangents } from './paths/schneiderFit';
