@@ -17,6 +17,9 @@ const at = (x: number, y: number) => (
 const box = () => screen.getByRole('dialog').getBoundingClientRect();
 
 test('a callout follows an anchor rect that only moves, each time, without a resize event on the window', async () => {
+  // Vitest resets the frame's size only after the frame has loaded, so after a file that set its own viewport
+  // this one starts with a resize pending.
+  await frames(2);
   const onResize = vi.fn();
   window.addEventListener('resize', onResize);
   try {
