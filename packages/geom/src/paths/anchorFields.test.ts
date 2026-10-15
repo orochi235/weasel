@@ -54,4 +54,21 @@ describe('writeAnchorField', () => {
     expect(set.anchors[0][1].inHandle).toEqual({ x: 3, y: 10 });
     expect(set.anchors[0][1].outHandle).toBeUndefined();
   });
+
+  it("turns a smooth anchor's opposite handle with it, mirrored as a drag mirrors it", () => {
+    // (50, 0) is smooth: in at (40, 0), out at (70, 0), on one line through it.
+    const set = pathToAnchors(new PathBuilder().moveTo(0, 0).curveTo(10, 0, 40, 0, 50, 0).curveTo(70, 0, 90, 0, 100, 0).build());
+    writeAnchorField(set, [1], 'outAngle', { to: 90 });
+    const a = set.anchors[0][1];
+    expect(a.outHandle!.x).toBeCloseTo(50);
+    expect(a.outHandle!.y).toBeCloseTo(-20);
+    expect(a.inHandle!.x).toBeCloseTo(50);
+    expect(a.inHandle!.y).toBeCloseTo(20);
+  });
+
+  it("leaves a corner anchor's opposite handle where it is", () => {
+    const set = pathToAnchors(new PathBuilder().moveTo(0, 0).curveTo(10, 0, 40, 10, 50, 0).curveTo(70, 0, 90, 0, 100, 0).build());
+    writeAnchorField(set, [1], 'outAngle', { to: 90 });
+    expect(set.anchors[0][1].inHandle).toEqual({ x: 40, y: 10 });
+  });
 });

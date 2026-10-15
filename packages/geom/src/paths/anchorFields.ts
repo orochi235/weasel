@@ -55,8 +55,10 @@ export function readAnchorFields(set: AnchorSet, flatIndexes: Iterable<number>):
 
 /**
  * Write `entry` into `field` of every anchor at `flatIndexes`. Moving an
- * anchor carries its handles; a handle field leaves the opposite handle where
- * it is, and skips an anchor without that handle. An angle keeps the
+ * anchor carries its handles. A handle field moves the handle as a drag to
+ * the typed spot would (`moveHandleTo`): on a smooth anchor the opposite
+ * handle mirrors it, taking its turn and its length, and on a corner it stays
+ * where it is. An anchor without that handle is skipped. An angle keeps the
  * handle's length, and a length keeps its angle. Returns whether anything
  * moved.
  */
@@ -83,7 +85,7 @@ export function writeAnchorField(
     if (!h) continue;
     const to = handleTarget(a, h, field.slice(side.length) as 'X' | 'Y' | 'Angle' | 'Length', entry);
     if (to.x === h.x && to.y === h.y) continue;
-    moveHandleTo(set, flat, side, to.x, to.y, true);
+    moveHandleTo(set, flat, side, to.x, to.y, false);
     changed = true;
   }
   return changed;
