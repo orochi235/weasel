@@ -663,6 +663,16 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/SceneLabDemo.tsx',
   },
   {
+    id: 'lab-smart-remove-brush',
+    title: 'Smart remove brush',
+    package: 'core',
+    description:
+      "The `brushDeleteAnchors` action: an Alt-drag in path edit deletes every anchor a round brush passes over, and `deleteAnchorsAt` refits each gap to the shape it replaces, the same edit the Delete key makes. The flower opens already in path edit, its anchors showing. While the brush is down the path previews without the anchors it has swept, and the dispatcher overlay paints the band swept so far and the brush's rim; release commits one undo step, and Escape mid-stroke cancels it. The brush radius is in screen pixels, so it covers the same patch of screen at every zoom. The control panel's radius reaches the action through a thunked binding param, so moving it changes a stroke already under way.",
+    hint: 'Hold <kbd>Alt</kbd> and drag across the flower\'s outline to brush its anchors away, then undo with the button or <kbd>Mod+Z</kbd>. Change Brush radius and brush again. Escape leaves path edit; double-click the flower to come back.',
+    load: () => import('./demos/SmartRemoveBrushLabDemo').then((m) => m.SmartRemoveBrushLabDemo),
+    path: 'apps/site/demos/SmartRemoveBrushLabDemo.tsx',
+  },
+  {
     id: 'bidi',
     title: 'Bidirectional text',
     package: 'bidi',
