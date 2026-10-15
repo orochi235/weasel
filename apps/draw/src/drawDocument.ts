@@ -11,6 +11,7 @@ import type {
   ShapeGenerator,
 } from '@weasel-js/core';
 import { UNION_OF_CHILDREN, unionOfChildren } from '@weasel-js/core';
+import { symmetryRegistry } from '@weasel-js/symmetry';
 
 // ─── Document / scene shapes ────────────────────────────────────────────────
 
@@ -54,8 +55,10 @@ export interface WeaselDrawData {
 }
 
 /** The functions a draw document's nodes name by key, for the scene and for
- *  reading a saved document back: a group's hug of its members. */
+ *  reading a saved document back: a group's hug of its members, and a
+ *  symmetry group's copies. */
 export const DRAW_REGISTRY: SceneRegistry<WeaselDrawPose, WeaselDrawData, WeaselDrawLayer> = {
+  ...(symmetryRegistry as SceneRegistry<WeaselDrawPose, WeaselDrawData, WeaselDrawLayer>),
   derivePose: { [UNION_OF_CHILDREN]: unionOfChildren as never },
 };
 
