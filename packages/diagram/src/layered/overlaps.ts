@@ -20,7 +20,7 @@ export function routedWires(specs: readonly DiagramSpec[]): Wire[] {
   const wires: Wire[] = [];
   for (const spec of specs) {
     if (spec.derivePath !== EDGE_DERIVE_PATH) continue;
-    const [from, to] = (spec.dependsOn ?? []) as string[];
+    const [from, to] = (spec.dependsOn ?? []) as readonly string[];
     const a = byId.get(from!);
     const b = byId.get(to!);
     if (a === undefined || b === undefined) continue;
