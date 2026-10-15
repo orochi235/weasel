@@ -663,6 +663,36 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/SceneLabDemo.tsx',
   },
   {
+    id: 'lab-path-snap',
+    title: 'Path snapping',
+    package: 'core',
+    description:
+      "Geometric snapping onto the scene's paths, turned on by `toolOptions.pathSnap` and served through the `snap` dep, so the line tool, the pen, a move and an anchor drag all lock to the same targets: where two strokes cross, the tangent and perpendicular points from where the line being drawn starts, the middle of each segment, the extremes and quadrant points of a curve, and failing all of those the nearest point on a stroke. Every kind competes on distance within the snap radius, measured in screen pixels, and the snapped point wears a glyph and a label naming its kind. Each kind has its own switch in the control panel. The targets come from `findPathSnap` in `@weasel-js/geom`, over an index rebuilt only when the scene changes.",
+    hint: "With Line, drag from empty canvas toward where the two green diagonals cross: the end locks there and the marker says <em>intersection</em>. Start a line below the circle and pull its end to the circle's side for a <em>tangent</em>, or toward a diagonal for a <em>perpendicular</em>. Switch kinds off in the control panel. Pen clicks snap the same way, and with Select, dragging a shape or one of its anchors (double-click to edit anchors) locks to the other shapes.",
+    load: () => import('./demos/PathSnapLabDemo').then((m) => m.PathSnapLabDemo),
+    path: 'apps/site/demos/PathSnapLabDemo.tsx',
+  },
+  {
+    id: 'lab-trim',
+    title: 'Trim to intersection',
+    package: 'core',
+    description:
+      'The drafting trim. A click with `useTrimTool` hands the press to the `trimPath` action, which finds the topmost stroke within reach and removes its piece between the nearest crossings on either side, with any other path or with itself, through `trimPathAt` in `@weasel-js/geom`. Curves are split where they are cut and stay curves; a closed shape is opened; a piece with an open end runs back to the first crossing, and a stroke with nothing left is deleted. Each trim is one undo step. Click reach is the binding param the tool passes along.',
+    hint: 'Click a piece of a line between two crossings to cut it away, or the circle between the two points where the purple line crosses it. Click an end piece to cut back to the first crossing. Undo with the button or <kbd>Mod+Z</kbd>.',
+    load: () => import('./demos/TrimLabDemo').then((m) => m.TrimLabDemo),
+    path: 'apps/site/demos/TrimLabDemo.tsx',
+  },
+  {
+    id: 'lab-extend',
+    title: 'Extend to the next path',
+    package: 'core',
+    description:
+      'Extend to Next Path, the `extendToMeet` command: an open end travels along its tangent until it meets the first stroke in its way, through `extendToMeet` in `@weasel-js/geom`. A straight end grows longer; a curved one gains a straight run, so the tangent carries on unbroken. With the Extend tool a click picks the end nearest it; with a selection the command extends every open end of it, and in anchor editing just the selected end anchors. The lab binds the command to <kbd>E</kbd> through `<SceneCanvas tune>`. An end that meets nothing stays put.',
+    hint: 'With Extend, click near the right end of a short orange line: it grows to the green wall. The curve carries on in a straight line from its end. Or pick Select, select strokes, and press <kbd>E</kbd>. Undo with <kbd>Mod+Z</kbd>.',
+    load: () => import('./demos/ExtendLabDemo').then((m) => m.ExtendLabDemo),
+    path: 'apps/site/demos/ExtendLabDemo.tsx',
+  },
+  {
     id: 'bidi',
     title: 'Bidirectional text',
     package: 'bidi',

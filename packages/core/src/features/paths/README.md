@@ -74,6 +74,14 @@ commands; the ribbon, the marker registry and `strokeToPath` are in
 `@weasel-js/stroke`), plus `penPreviewLayer.ts` (the pen's
 in-progress path) and `pathEditingOverlayLayer.ts` (anchor-edit chrome)
 
+**Snapping** — `pathSnap/pathSnapper.ts` indexes the scene's editable paths
+for the `snap` dep (`toolOptions.pathSnap`), and `pathSnap/pathSnapMarkerLayer.ts`
+draws the glyph and label on a snapped point. The targets — crossings,
+tangent and perpendicular points, midpoints, extremes, quadrant points, nearest
+— are `findPathSnap` in `@weasel-js/geom` (`snap/`, over `intersect/`), which
+also holds `trimPathAt` and `extendToMeet` (`paths/trimPath.ts`,
+`paths/extendPath.ts`).
+
 ## Anchors are a view, not the storage
 
 `pathToAnchors` / `anchorsToPath` convert between the command stream and the

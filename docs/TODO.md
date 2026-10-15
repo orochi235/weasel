@@ -183,9 +183,21 @@ Priority tags:
   drag steps in a different direction from the drag. Recording the move in world space and
   mapping it through each node's parent on replay would make the two agree.
 - **(P3) The path commands have no icons.** `simplifyPath`, `offsetPath`, `snipAtCrossings`,
-  `joinPaths`, `joinAnchors`, and `averageAnchors` show as text in draw's bar.
+  `joinPaths`, `joinAnchors`, `averageAnchors`, and `extendToMeet` show as text in draw's bar, and
+  `useTrimTool` and `useExtendTool` borrow `SliceIcon`.
   `RetractHandlesIcon` and `SymmetricHandlesIcon` (`defaults/icons/anchorIcons.tsx`) are first
   drafts, not proofed at high resolution.
+- **(P2) Two helpers grow an open end along its tangent.** `lengthenOpenEnd` in
+  `packages/geom/src/paths/extendPath.ts` was written for Extend to Next Path while a separate
+  branch built drag-to-lengthen ("Lengthen") with a helper of its own. Whichever lands second folds
+  its callers onto the other's, so one rule decides whether a curved end grows a straight run.
+- **(P3) Trim shows nothing before the click.** `trimPathAction` answers only on the click; hovering
+  with the Trim tool does not mark the piece it would remove. `trimPathAt` already returns
+  `removed`; what is missing is a hover binding and an overlay to draw it.
+- **(P3) Path snapping reads editable polygon paths only.** `createPathSnapper`
+  (`packages/core/src/features/paths/pathSnap/pathSnapper.ts`) indexes each leaf
+  `resolveEditablePathOf` answers for, so a rect-pose node, text, or an image offers no targets.
+  An anchor drag skips the path being edited, since its own segments move with the drag.
 - **(P2) Spacing hints.** Equal-spacing markers between siblings while moving, and Alt-hover
   distance readouts between the selection and the shape under the pointer.
 - **(P2) Live symmetry.** Draw on one side of an axis and the mirrored half follows.

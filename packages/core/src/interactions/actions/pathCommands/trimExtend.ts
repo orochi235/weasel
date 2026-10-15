@@ -5,7 +5,7 @@
 import type { Action, ActionDeps, ImmediateInvoker } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import {
-  extendToMeet, locateAnchor, openPathEnds, pathToAnchors, trimPathAt,
+  extendToMeet, locateAnchor, openEndRay, openPathEnds, pathDistanceToPoint, pathToAnchors, trimPathAt,
   type AnchorSet, type OpenPathEnd, type PolygonPath,
 } from '@weasel-js/geom';
 import type { Op } from 'core/ops/types';
@@ -18,8 +18,20 @@ import {
 const TRIM_LABEL = 'Trim';
 const EXTEND_LABEL = 'Extend to Next Path';
 
-/** Default reach of a trim click from the stroke, in screen pixels. */
+/** Default reach of a trim or extend click from the stroke, in screen pixels. */
 export const DEFAULT_TRIM_RADIUS_PX = 6;
+
+type PressParams = { pressX?: number; pressY?: number; radiusPx?: number } | undefined;
+
+/** The press in `params` and how far from it a stroke may be, in world
+ *  units at the view's scale; null without a press. */
+function pressOf(deps: ActionDeps, params: unknown): { at: { x: number; y: number }; radius: number } | null {
+  const p = params as PressParams;
+  if (p?.pressX === undefined || p.pressY === undefined) return null;
+  const scale = deps.view?.get().scale ?? { x: 1, y: 1 };
+  const radius = (p.radiusPx ?? DEFAULT_TRIM_RADIUS_PX) / Math.max(Math.abs(scale.x), Math.abs(scale.y));
+  return { at: { x: p.pressX, y: p.pressY }, radius };
+}
 
 /** Every leaf of the scene holding an editable path, back to front. */
 export function scenePathNodes(deps: ActionDeps | undefined): PathNode[] {
@@ -50,11 +62,9 @@ export const trimPathAction: Action & { requires: string[] } = {
   invoker: {
     timing: 'immediate',
     run: (deps, params) => {
-      const p = params as { pressX?: number; pressY?: number; radiusPx?: number } | undefined;
-      if (p?.pressX === undefined || p.pressY === undefined || !deps.scene) return;
-      const probe = { x: p.pressX, y: p.pressY };
-      const scale = deps.view?.get().scale ?? { x: 1, y: 1 };
-      const radius = (p.radiusPx ?? DEFAULT_TRIM_RADIUS_PX) / Math.max(Math.abs(scale.x), Math.abs(scale.y));
+      const press = pressOf(deps, params);
+      if (!press || !deps.scene) return;
+      const { at: probe, radius } = press;
       const all = scenePathNodes(deps);
       for (let i = all.length - 1; i >= 0; i--) {
         const target = all[i];
@@ -88,12 +98,30 @@ function endsAt(path: PolygonPath, anchors: ReadonlySet<number>): OpenPathEnd[] 
   return picked.length > 0 ? picked : ends;
 }
 
+/** The topmost stroke within reach of `press` with an open end, and that end
+ *  of it nearest the press. */
+function endNearPress(all: readonly PathNode[], press: NonNullable<ReturnType<typeof pressOf>>) {
+  for (let i = all.length - 1; i >= 0; i--) {
+    const node = all[i];
+    if (pathDistanceToPoint(node.path, press.at.x, press.at.y) > press.radius) continue;
+    const near = openPathEnds(node.path)
+      .map((end) => ({ end, ray: openEndRay(node.path, end) }))
+      .filter((e) => e.ray)
+      .sort((a, b) => dist(a.ray!.at, press.at) - dist(b.ray!.at, press.at))[0];
+    if (near) return [{ node, ends: [near.end] }];
+  }
+  return [];
+}
+
+const dist = (a: { x: number; y: number }, b: { x: number; y: number }) => Math.hypot(a.x - b.x, a.y - b.y);
+
 /** What Extend to Next Path would make of each node it reaches. */
-function planExtend(deps: ActionDeps | undefined): Map<string, { node: PathNode; path: PolygonPath }> {
+function planExtend(deps: ActionDeps | undefined, params?: unknown): Map<string, { node: PathNode; path: PolygonPath }> {
   const out = new Map<string, { node: PathNode; path: PolygonPath }>();
   const all = scenePathNodes(deps);
   const editing = deps?.editAnchors?.editingId;
-  const subjects = editing
+  const press = deps ? pressOf(deps, params) : null;
+  const subjects = press ? endNearPress(all, press) : editing
     ? all.filter((n) => n.id === editing).map((node) => ({ node, ends: endsAt(node.path, deps!.editAnchors!.selectedAnchors) }))
     : selectedPathNodes(deps).map((node) => ({ node, ends: openPathEnds(node.path) }));
   for (const { node, ends } of subjects) {
@@ -109,23 +137,26 @@ function planExtend(deps: ActionDeps | undefined): Map<string, { node: PathNode;
  * @experimental Extend to Next Path: carry each open end of the selected
  * paths along its tangent to the first stroke it meets (`extendToMeet`). In
  * path edit, the selected end anchors of the edited path, or all its open
- * ends when none is selected. An end that meets nothing stays put. One undo
- * step.
+ * ends when none is selected. Given a press (`pressX`, `pressY`, as a click
+ * binding supplies), the open end nearest it of the topmost stroke within
+ * `radiusPx` instead. An end that meets nothing stays put. One undo step.
  */
 export const extendToMeetAction: Action & { requires: string[] } = {
   id: 'extendToMeet',
   label: EXTEND_LABEL,
   group: 'path',
   eligible: { capability: 'creates-shapes' },
-  requires: ['selection', 'scene', 'applyOps', 'editAnchors'],
+  requires: ['selection', 'scene', 'applyOps', 'editAnchors', 'view'],
   invoker: {
     timing: 'immediate',
-    run: (deps) => {
-      const plan = planExtend(deps);
+    run: (deps, params) => {
+      const plan = planExtend(deps, params);
       const ops: Op[] = [];
       for (const { node, path } of plan.values()) ops.push(...reshapeOps(node.node, path, EXTEND_LABEL));
       commitOps(deps, ops, EXTEND_LABEL);
     },
   } satisfies ImmediateInvoker,
-  enabled: (deps?: ActionDeps) => (planExtend(deps).size > 0 ? true : ActionDisabledReason.NotApplicable),
+  // A click's point arrives here without the binding's reach, so `run` decides there.
+  enabled: (deps?: ActionDeps, at?: { x: number; y: number }) =>
+    (at || planExtend(deps).size > 0 ? true : ActionDisabledReason.NotApplicable),
 };
