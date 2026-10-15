@@ -200,6 +200,15 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/PathAnchorEditDemo.tsx',
   },
   {
+    id: 'lab-dynamic-corners',
+    title: 'Dynamic corners',
+    category: 'Geometry',
+    description: "Any corner anchor of a path rounds, chamfers, or inverts, and keeps its radius editable. The path stores a `CornerSpec` per anchor in `PolygonPath.corners`, and `resolveCorners` expands it into plain geometry wherever the path is drawn, hit, bounded, or exported, clamping each cut so neighbors never overlap. In path edit every corner anchor shows a widget just inside it: dragging one runs `editCorner`, which sets the radius live and commits one undo step, and pressing a selected anchor's widget sets every selected corner. The control panel runs `setCorners` on the selected corners, and <kbd>K</kbd> is bound to `cycleCornerStyle`. The tile opens in path edit; the petal's corner sits between a curve and a line, and the prism carries per-anchor colors, which a cut corner keeps.",
+    hint: 'Drag a dot inside a corner of the green tile toward its middle. Click an anchor (<kbd>Shift</kbd>-click for more), then change Style or Radius in the panel, or press <kbd>K</kbd> to cycle the style. Double-click the petal or the prism to edit it instead, and undo with the button or <kbd>Mod+Z</kbd>.',
+    load: () => import('./demos/DynamicCornersLabDemo').then((m) => m.DynamicCornersLabDemo),
+    path: 'apps/site/demos/DynamicCornersLabDemo.tsx',
+  },
+  {
     id: 'boolean-ops',
     title: 'Boolean ops',
     category: 'Geometry',

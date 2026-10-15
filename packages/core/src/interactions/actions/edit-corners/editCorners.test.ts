@@ -3,7 +3,8 @@ import type { AffordanceHit, ImmediateInvoker, InvocationCtx } from '@weasel-js/
 import { cornerAt, cornerSpecAt, polygonFromPoints, withCorner, type PolygonPath } from '@weasel-js/geom';
 import type { EditAnchorsDep } from '../depSchema';
 import { makeEditAnchorsDep, stubDeps } from '../testUtils';
-import { cycleCornerStyleAction, editCornerAction } from './action';
+import { editCornerAction } from './action';
+import { cycleCornerStyleAction, setCornersAction } from './commands';
 
 const square = (): PolygonPath =>
   polygonFromPoints([{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 100 }, { x: 0, y: 100 }]);
@@ -108,5 +109,24 @@ describe('cycleCornerStyleAction', () => {
   it('is disabled with no corner anchor selected', () => {
     const { dep } = editing(square());
     expect(cycleCornerStyleAction.enabled!(stubDeps({ editAnchors: dep }))).not.toBe(true);
+  });
+});
+
+describe('setCornersAction', () => {
+  const run = (dep: EditAnchorsDep, params: Record<string, unknown>) =>
+    (setCornersAction.invoker as ImmediateInvoker).run(stubDeps({ editAnchors: dep }), params);
+
+  it('sets the style and radius of the selected corners, clamped to their room', () => {
+    const { dep, edits } = editing(square(), [0, 2]);
+    run(dep, { style: 'inverted', radius: 500 });
+    expect(cornerSpecAt(edits[0], 0)).toEqual({ style: 'inverted', radius: 100 });
+    expect(cornerSpecAt(edits[0], 2)).toEqual({ style: 'inverted', radius: 100 });
+    expect(cornerSpecAt(edits[0], 1)).toBeNull();
+  });
+
+  it('keeps the style when only a radius is given', () => {
+    const { dep, edits } = editing(withCorner(square(), 1, { style: 'chamfer', radius: 5 }), [1]);
+    run(dep, { radius: 12 });
+    expect(cornerSpecAt(edits[0], 1)).toEqual({ style: 'chamfer', radius: 12 });
   });
 });

@@ -108,7 +108,7 @@ parser, the renderer's `drawPath`, and `serializePathD` — call it first. A
 spec rides on its anchor through the anchor model (`PenAnchor.corner`), so an
 insert or delete keeps each corner on its anchor. In path edit, each corner
 anchor gets a widget (`cornerWidgets.ts`), hit as `corner:N` and dragged by
-`editCornerAction`; `cycleCornerStyleAction` steps the selected corners'
+`editCornerAction`; `cycleCornerStyleAction` and `setCornersAction` change the selected corners'
 style.
 
 ## Generated shapes
