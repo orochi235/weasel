@@ -10,7 +10,7 @@ import type { SceneCanvasAdapter } from '../sceneAdapter';
 import { pickWalk, scenePickSource, scenePlaneOf, type PickQuery, type ViewPickGates } from 'canvas/pickWalk';
 import { rectFromPlane, toPlane, type PlaneMap } from 'core/viewport/parallax';
 import type { View } from 'core/viewport/view';
-import { pathContainsPoint } from '@weasel-js/geom';
+import { applyToPoint, pathContainsPoint } from '@weasel-js/geom';
 import { useSelectTool, type Bounds } from 'tools/builtin/select';
 import { pickTopMostHit, type PickTopMostHitAdapter } from 'tools/builtin/pickTopMostHit';
 import type { Node, Scene } from 'core/scene/types';
@@ -223,6 +223,11 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
           inPlane: (m) => {
             const p = toPlane(m, { x: px, y: py });
             return pointQuery(p.x, p.y, { x: s.x / m.scale.x, y: s.y / m.scale.y });
+          },
+          inCopy: (m) => {
+            const [x, y] = applyToPoint(m, px, py);
+            const k = Math.sqrt(Math.abs(m[0] * m[3] - m[1] * m[2]));
+            return pointQuery(x, y, { x: s.x / k, y: s.y / k });
           },
         };
       };

@@ -1,4 +1,4 @@
-import type { Path } from '@weasel-js/geom';
+import type { Affine, Path } from '@weasel-js/geom';
 import type { History, SerializedHistory } from '@weasel-js/history';
 import type { SerializedSceneHistory } from './historyForm';
 import type { ParallaxOpts } from '../viewport/parallax';
@@ -107,6 +107,15 @@ export type DerivePoseFn<TPose, TData = unknown, TLayer extends string = string>
  *  and of each entry in `SceneRegistry.clipFromPose`. */
 export type ClipFromPoseFn<TPose> = Bivariant<(pose: TPose) => Path | null>;
 
+/** The extra times a container draws its children: the type of
+ *  `ContainerNode.copiesFromPose` and of each entry in
+ *  `SceneRegistry.copiesFromPose`. Each affine is in world coordinates and
+ *  carries the children, as drawn, to one copy. */
+export type CopiesFromPoseFn<TPose, TData = unknown, TLayer extends string = string> = Bivariant<(
+  pose: TPose,
+  node: ContainerNode<TData, TLayer, TPose>,
+) => readonly Affine[] | null>;
+
 interface NodeBase<TData, TLayer extends string, TPose> {
   id: NodeId;
   layer: TLayer;
@@ -171,6 +180,13 @@ export interface ContainerNode<TData, TLayer extends string, TPose = RectPose>
    *  means "no clip for this container right now"; an empty / zero-area path
    *  means "clip everything out" (children render nowhere). */
   clipFromPose?: ClipFromPoseFn<TPose>;
+  /** Draws the whole subtree again under each affine it returns, on top of
+   *  the original, which still draws once as authored. The copies are paint,
+   *  not nodes: nothing stores them, so they follow every edit to the
+   *  children, and a pick that lands on one answers with the child it copies.
+   *  A copy is a copy of the clipped content — the clip travels with it.
+   *  Re-evaluated each render; `null` or `[]` draws no copies. */
+  copiesFromPose?: CopiesFromPoseFn<TPose, TData, TLayer>;
   /** How this container arranges its children. Whenever the container's
    *  child set or order changes, or its bounds change size, the scene hands
    *  the change to the strategy — `depart` for children that left it,
@@ -206,6 +222,8 @@ export interface AddNodeSpec<TData, TLayer extends string, TPose = RectPose> {
   /** Only meaningful when `kind === 'container'`. Attach a clip-path function
    *  to the node; ignored for leaves. Mirrors `ContainerNode.clipFromPose`. */
   clipFromPose?: ClipFromPoseFn<TPose>;
+  /** Mirrors `ContainerNode.copiesFromPose`; ignored for leaves. */
+  copiesFromPose?: CopiesFromPoseFn<TPose, TData, TLayer>;
   /** Mirrors `SceneNode.dependsOn`. */
   dependsOn?: readonly NodeId[] | 'children';
   /** Mirrors `SceneNode.derivePath`. Taken as a live function; its registry key is
@@ -239,6 +257,8 @@ export interface RegisteredOp<P> {
 export interface SceneRegistry<TPose, TData = unknown, TLayer extends string = string> {
   /** Maps registry keys to `clipFromPose` factory functions for container nodes. */
   clipFromPose?: Readonly<Record<string, ClipFromPoseFn<TPose>>>;
+  /** Maps registry keys to `copiesFromPose` functions for container nodes. */
+  copiesFromPose?: Readonly<Record<string, CopiesFromPoseFn<TPose, TData, TLayer>>>;
   /** Maps registry keys to `derivePath` functions for nodes with `dependsOn`. */
   derivePath?: Readonly<Record<string, DerivePathFn<TPose, TData, TLayer>>>;
   /** Maps registry keys to `derivePose` functions for nodes with `dependsOn`. */
