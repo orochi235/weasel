@@ -129,22 +129,16 @@ function BooleanControl(p: PropertyBooleanFieldProps) {
 }
 
 /**
- * The text a field shows and how an edit to it lands. With `onInput` the
- * field drafts: the draft shows while it differs from `value`, and settles
- * through `onChange` on blur or Enter. Without it, every keystroke is the
- * value.
+ * The text a field shows and how an edit to it lands: the draft shows while it
+ * differs from `value`, `onInput` gets each keystroke, and the draft settles
+ * through `onChange` on blur or Enter.
  */
 function useTextEdit(p: PropertyStringFieldProps) {
   const [draft, setDraft] = useState<string | null>(null);
   const value = p.mixed ? '' : (p.value ?? '');
-  const drafting = p.onInput !== undefined;
   return {
     shown: draft ?? value,
     type: (next: string) => {
-      if (!drafting) {
-        p.onChange(next);
-        return;
-      }
       setDraft(next);
       p.onInput?.(next);
     },
