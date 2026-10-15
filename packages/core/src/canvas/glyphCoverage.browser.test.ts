@@ -8,15 +8,19 @@
  * columns straddle the stem sample equal field values, the derivative reads
  * flat, and the stem is thresholded away.
  */
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { registerFont } from '@weasel-js/font';
 import { createScene } from 'core/scene/scene';
 import type { RectPose } from 'core/scene/composePose';
-import { renderSceneToPixels, type RasterImage } from './renderSceneToPixels';
+import { createRasterSession, type RasterImage } from './renderSceneToPixels';
 import metricsUrl from '../../../../assets/fonts/inter/inter.json?url';
 import atlasUrl from '../../../../assets/fonts/inter/inter.png?url';
 
 const FAMILY = 'glyph-coverage-inter';
+
+// One session for every render: a one-shot render builds a renderer and compiles every program, which
+// is most of a render's cost and none of what these tests are about.
+const session = createRasterSession();
 
 function render(x: number, fontSize: number): RasterImage {
   const scene = createScene<unknown, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
@@ -29,7 +33,7 @@ function render(x: number, fontSize: number): RasterImage {
       fill: { paint: { kind: 'solid', color: '#ffffff' } },
     },
   });
-  return renderSceneToPixels({
+  return session.render({
     scene,
     sourceRect: { x: 0, y: 0, width: 32, height: 24 },
     scale: { x: 1, y: 1 },
@@ -49,6 +53,7 @@ function columns(img: RasterImage): number[] {
 beforeAll(async () => {
   await registerFont(FAMILY, {}, metricsUrl, atlasUrl);
 });
+afterAll(() => session.dispose());
 
 describe('atlas glyph coverage at small sizes', () => {
   it('keeps both stems of a 7.2px H at every sub-pixel offset', () => {

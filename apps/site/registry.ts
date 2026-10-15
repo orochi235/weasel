@@ -573,7 +573,7 @@ const DEMO_META: DemoMeta[] = [
     id: 'diagram-layout',
     title: 'Diagram layout',
     package: 'diagram',
-    description: "layered ranks a pipeline by longest path, tree centers a parent over its children's block, and force relaxes a graph that has no direction to read it in. DiagramView's layout() eases to the answer from where the boxes stand and reports what moved to onMove, which writes it back into the data. Each layout is a plain function of the graph that returns only the nodes that move, so pressing the same button twice moves nothing the second time. Order within a rank is seeded from where the boxes already sit, so boxes dragged past each other keep the order they were put in.",
+    description: "layered ranks a pipeline so its edges run as short as they can and lines each node up with its neighbors, tree centers a parent over its children's block, and force relaxes a graph that has no direction to read it in. DiagramView's layout() eases to the answer from where the boxes stand and reports what moved to onMove, which writes it back into the data. Each layout is a plain function of the graph that returns only the nodes that move, so pressing the same button twice moves nothing the second time. Order within a rank is seeded from where the boxes already sit, so boxes dragged past each other keep the order they were put in.",
     hint: "Press a button, then press the same one again — nothing moves. Drag two boxes past each other first and the layout keeps the order you put them in.",
     load: () => import('./demos/DiagramLayoutDemo').then((m) => m.DiagramLayoutDemo),
     path: 'apps/site/demos/DiagramLayoutDemo.tsx',
@@ -604,6 +604,24 @@ const DEMO_META: DemoMeta[] = [
     hint: "Press Relax, then grab a box and drag it while the graph is still moving — the rest answers, and lets go when you do.",
     load: () => import('./demos/DiagramLiveDemo').then((m) => m.DiagramLiveDemo),
     path: 'apps/site/demos/DiagramLiveDemo.tsx',
+  },
+  {
+    id: 'effect-chart',
+    title: 'Effect chart',
+    package: 'diagram',
+    description: "EffectChart draws an effects pipeline from plain data: stages, the typed ports each reads and writes, and the wires between them. This is the node-graph look. Every port is a named row, a wire takes the color of the value it carries, a control value's wire is dashed, and a decision draws as a branch symbol. checkPipeline reports a wire that names a missing port or joins two types; the chart draws a mismatched wire in a warning color and leaves out one with a missing end.",
+    hint: 'Click a stage: the picked readout names it. Drag to pan, scroll to zoom.',
+    load: () => import('./demos/EffectChartDemo').then((m) => m.EffectChartDemo),
+    path: 'apps/site/demos/EffectChartDemo.tsx',
+  },
+  {
+    id: 'effect-chart-rack',
+    title: 'Effect chart, rack look',
+    package: 'diagram',
+    description: "The same pipeline under the rack look. The main signal runs along one line with its stages in order, laid out by the chain layout; whatever feeds a stage from the side hangs under it. A decision that only chooses between going on and skipping ahead draws as a dashed arc over the stages it skips. A look is a function from a pipeline to what diagramScene takes, plus a color for each value type, so a new way of drawing a pipeline is a new function.",
+    hint: 'Compare with the node-graph demo: it is the same pipeline, and only the look differs.',
+    load: () => import('./demos/EffectChartDemo').then((m) => m.EffectChartRackDemo),
+    path: 'apps/site/demos/EffectChartDemo.tsx',
   },
   {
     id: 'hud',
@@ -691,6 +709,46 @@ const DEMO_META: DemoMeta[] = [
     hint: 'Pick Rectangle and drag on the canvas, or Pen and click out a path. Turn Snap to grid off and on, change the spacing, then undo with the button or <kbd>Mod+Z</kbd>.',
     load: () => import('./demos/SceneLabDemo').then((m) => m.SceneLabDemo),
     path: 'apps/site/demos/SceneLabDemo.tsx',
+  },
+  {
+    id: 'lab-handle-locks',
+    title: 'Handle locks',
+    category: 'Geometry',
+    description:
+      "Holding a control handle's length or its angle while it is dragged. Shift holds the angle, so the handle only grows and shrinks along its line; Mod (Cmd or Ctrl) holds the length, so it only turns. Each lock draws what it holds the handle to — the line, or the circle round the anchor — so which one is in force shows while dragging. Both together freeze the handle. The two buttons over the canvas are the `handleLock.angle` and `handleLock.length` actions, which hold a lock with no modifier: they set the locks the `editAnchors` dep holds, so a bar, the command palette and `editAnchors`'s `handleLock` param, which they start from, all reach one value.",
+    hint: 'Drag a handle dot holding <kbd>Shift</kbd> to keep its angle, or <kbd>Mod</kbd> to keep its length. Press Hold handle length and drag again with no key held.',
+    load: () => import('./demos/HandleLockLabDemo').then((m) => m.HandleLockLabDemo),
+    path: 'apps/site/demos/HandleLockLabDemo.tsx',
+  },
+  {
+    id: 'lab-curvature-comb',
+    title: 'Curvature comb',
+    category: 'Geometry',
+    description:
+      "A path open in anchor editing, with its curvature comb on: teeth stand out of every curved segment along its normal, each as long as the curve is tight where it stands, and a line joins their tips. A tooth that jumps in length at an anchor marks a curvature break even where the tangent runs smooth through it; teeth that cross to the other side mark an inflection. The comb is part of the path-edit overlay, shown while chrome-caps shows `path-edit.comb`, and draws from the same in-flight path as the anchors, so it follows every anchor and handle drag. Its scale and density are the overlay slot's `comb` options, from `layers.pathEditingOverlay`.",
+    hint: "Drag an anchor or a handle and watch the comb follow. Comb scale sets the teeth's length and Teeth per segment their spacing; Show comb turns it off. <kbd>Escape</kbd> leaves path edit, and a double-click on the path goes back in.",
+    load: () => import('./demos/CurvatureCombLabDemo').then((m) => m.CurvatureCombLabDemo),
+    path: 'apps/site/demos/CurvatureCombLabDemo.tsx',
+  },
+  {
+    id: 'lab-simplify-brush',
+    title: 'Simplify brush',
+    package: 'core',
+    description:
+      "The Simplify command, brushed on. Path edit has a set of named tools, one active at a time, that each change what a plain drag does; with the `simplifyBrush` tool on, a drag gathers every anchor a round brush passes over, and on each subpath it touched the brushed stretch is refitted as one span by `simplifyPath`'s own fitter (`simplifyAnchorsAt`). Only the anchors the shape does not need within the tolerance go: the scribble, drawn as a dense run of straight segments, thins to a few curves, while the cog's square teeth keep their corners. Path edit traces the open path in a thin accent line and draws anchors crowded closer than a marker as dots, so the scribble stays visible under them, and the cursor is a ring the size of the brush. Anchors outside the brush are left exactly as they were, the stroke previews while the brush is down, and release commits one undo step. The palette's Simplify brush is the path-edit tool, held by the trial through `<SceneCanvas pathEdit>`'s `tool` and `setTool`; Escape puts it down, and leaving path edit turns it off. Brush radius and Tolerance reach the action as thunked params through `<SceneCanvas tune>`, so moving them changes a stroke already under way.",
+    hint: 'Drag along the scribble to thin it, then undo with the button or <kbd>Mod+Z</kbd>. Raise Tolerance and brush again to go further. Press Escape to put the brush down and edit anchors, Escape again to leave path edit; then double-click the cog and pick Simplify brush to brush across its teeth.',
+    load: () => import('./demos/SimplifyBrushLabDemo').then((m) => m.SimplifyBrushLabDemo),
+    path: 'apps/site/demos/SimplifyBrushLabDemo.tsx',
+  },
+  {
+    id: 'lab-bridge',
+    title: 'Bridge',
+    category: 'Geometry',
+    description:
+      "Bridge joins two open ends with a curve that leaves each one along the direction its path was heading, so the joint has no kink. Each handle of the new segment is Tension times the gap long: `0` is a straight segment, as Join makes, and longer handles swing the curve wider. Two separate paths become one, the first selected keeping its style, and the whole change is one undo step. With one path selected, Bridge closes it. In path edit, select the two end anchors to bridge instead. The control panel's Tension reaches both commands through `<SceneCanvas tune>`.",
+    hint: 'The two upper paths open selected: press Bridge in the bar, or <kbd>Mod+Shift+J</kbd>, then undo and try another Tension. Join beside it spans the same gap straight. To bridge in path edit, double-click a path, select its two ends and press Bridge anchors.',
+    load: () => import('./demos/BridgeLabDemo').then((m) => m.BridgeLabDemo),
+    path: 'apps/site/demos/BridgeLabDemo.tsx',
   },
   {
     id: 'symmetry-lab',
@@ -964,9 +1022,6 @@ export const DEMOS: DemoEntry[] = DEMO_META.map((meta) => ({
 }));
 
 export const CATEGORIES = Array.from(new Set(DEMOS.flatMap((d) => (d.category ? [d.category] : []))));
-
-/** Package names (unscoped) that have at least one demo, sorted by name. */
-export const PACKAGES = Array.from(new Set(DEMOS.flatMap((d) => (d.package ? [d.package] : [])))).sort();
 
 /** The heading a demo is filed under. */
 export function placeOf(d: DemoMeta): string {

@@ -6,6 +6,8 @@
  * put it back. These live here rather than on the package barrel so that
  * reaching for them is a deliberate import of a test surface, not something an
  * application finds by autocomplete.
+ *
+ * @packageDocumentation
  */
 
 export { _resetPaintKindsForTests } from 'core/paint/paintKinds';

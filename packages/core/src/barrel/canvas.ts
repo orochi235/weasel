@@ -1,4 +1,8 @@
-/** Part of the `@weasel-js/core` barrel. SceneCanvas, ingestion, layers, and the kit-root provider. */
+/**
+ * Part of the `@weasel-js/core` barrel. SceneCanvas, ingestion, layers, and the kit-root provider.
+ *
+ * @packageDocumentation
+ */
 
 // ─── SceneCanvas: the top-level renderer ─────────────────────────────────────
 // `Canvas` is intentionally NOT exported — it is `@internal` / `@deprecated`
@@ -11,6 +15,7 @@ export { defaultDrawOne, defaultPaintBounds } from '../canvas/defaultDrawOne';
 export { overChildren, isOverChildren, splitOverChildren } from '../canvas/overChildren';
 export type { PaintBoundsFn } from '../canvas/paintCull';
 export type { SceneCanvasProps, SceneCanvasHit, SceneCanvasLayers, SceneCanvasLongPress } from '../canvas/SceneCanvas';
+export type { SceneCanvasGeometry } from '../canvas/SceneCanvas/geometryProps';
 export type { SceneCanvasViewport } from '../canvas/SceneCanvas/viewportProp';
 export type { PathEditHost } from '../canvas/SceneCanvas/pathEditHost';
 export { hostAnchorRect, hostAnchorCss } from '../canvas/hostAnchor';
@@ -40,6 +45,9 @@ export type {
   NodePaintCtx,
   ShapeCoversPointOptions,
 } from '../canvas/NodeShape';
+export { drawnBoundsOf, drawnAABBOf, inkExtentsOf, findShapeDrawnBounds } from '../canvas/drawnBounds';
+export type { DrawnBoundsOptions, DrawnBoundsScene } from '../canvas/drawnBounds';
+export type { InkExtents } from '../core/geometry/inkExtents';
 export {
   getImageBitmap,
   imageStatus,

@@ -82,6 +82,7 @@ export function TrialTransport({
         onPlay={touching(control.play)}
         onPause={touching(control.pause)}
         onLoopChange={touching((loop: boolean | number) => {
+          // eslint-disable-next-line react-hooks/immutability -- the clock's loop is set by assignment
           clock.loop = loop;
         })}
         onRateChange={touching(control.setSpeed)}

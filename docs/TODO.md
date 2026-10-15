@@ -26,13 +26,32 @@ Priority tags:
   `features`; the new word is not chosen yet. That leaves choosing it, then renaming the one path,
   its imports, and the section of the taxonomy.
 
-- **(P3) Nothing reads a mode's `entry.trigger`.** Draw enters path-edit and isolation from
-  `SceneCanvas`'s `onDoubleClick` observer through a kind-to-mode table of its own
-  (`apps/draw/src/modality/doubleClickEntry.ts`), not from the `'double-click-target'` the
-  definitions in `packages/modes/src/presets/default.ts` declare. Text-edit is entered by the
-  edit itself (`useTextEditSession`), so its trigger is unread by design. Binding the other two
-  means a double-click entry beside the kit's own `enterPathEdit` binding, and a definition does
-  not say which hits it takes (draw's table does).
+- **(P2) Path edit's in-gesture modifiers are hard-coded inside the actions.** A consumer can see
+  and remap a binding's `mods`, but not a modifier an action reads off `ctx.modifiers` once it is
+  running, and path edit reads most of its own that way. `editAnchors`
+  (`interactions/actions/edit-anchors/action.ts`) reads Shift at the press to toggle an anchor in
+  the selection, and Alt on every handle move to break the smooth mirror; `locksInForce` in
+  `edit-anchors/handleDrag.ts` reads Shift as the angle lock and Meta or Ctrl as the length lock.
+  `marqueeAnchors` (`defaults/anchorEditing.ts`) reads Shift at the press to add to the anchor
+  selection. The pen (`tools/builtin/pen/usePenTool.ts`) reads Alt to break a handle and Shift to
+  constrain it, at the press, on each move, and at the release. None of these shows in a binding
+  list, a keymap editor, or the command palette, and a host that wants Alt to lock the length
+  instead has to fork the action. `selectAnchor` is the model: its Shift-click is a second
+  binding whose params say `additive: true`. A declared form needs each ongoing action to name its
+  in-gesture modifiers as data — a role (`mirror.break`, `handle.holdAngle`, `handle.holdLength`,
+  `selection.add`) and its default modifier — that bindings or `tune` can rebind, with the
+  dispatcher resolving them into the ctx on every move rather than each action testing raw keys.
+  Modifiers that change mid-gesture are the part no binding models today, since a binding's `mods`
+  are matched once, at the press.
+
+- **(P3) Nothing reads a mode's `entry.trigger`.** The `'double-click-target'` the definitions
+  in `packages/modes/src/presets/default.ts` declare is unread. A path with anchors is put in
+  path-edit by the kit's `enterPathEdit` binding, through draw's `PathEditHost`
+  (`apps/draw/src/modality/pathEditHost.ts`), and text-edit is entered by the edit itself
+  (`useTextEditSession`). Draw still enters isolation, and path-edit on a path with no anchors (a
+  rect), from `SceneCanvas`'s `onDoubleClick` observer through a kind-to-mode table of its own
+  (`apps/draw/src/modality/doubleClickEntry.ts`). Binding those means a double-click entry beside
+  `enterPathEdit`, and a definition does not say which hits it takes (draw's table does).
 
 - **(P3) External-content ingestion — follow-ups.** The pipeline is in
   `packages/core/src/features/ingestion/` (its README is the map). Left:
@@ -159,8 +178,19 @@ Priority tags:
 
 ### Path editing tricks
 
-- **(P2) Smart remove brush.** Brush along a path in edit mode to delete the anchors under the
-  brush, each gap refit to the shape it replaces the way `deleteAnchorsAt` refits one.
+- **(P2) Tune the Simplify brush hands-on, with the maintainer driving.** It went in from its
+  audition lab with first-draft behavior and keys: brush size and its key, the tolerance it
+  applies, and how it shows what it will remove (`defaults/simplifyBrush.ts`).
+- **(P2) Tune the curvature comb hands-on, with the maintainer driving.** First-draft default
+  scale and density, when it shows, and no key to toggle it (`features/paths/pathEditComb.ts`).
+- **(P2) Tune handle locks hands-on, with the maintainer driving.** Which locks deserve keys, and
+  whether a lock holds through a modifier drag (`handleLock.*`, `defaults/handleLocks.tsx`).
+- **(P2) Tune Bridge hands-on, with the maintainer driving.** First-draft default Tension (0.4,
+  `DEFAULT_BRIDGE_TENSION`), how Tension is reached outside the lab, and the Mod+Shift+J binding
+  it shares with Bridge anchors (`pathCommands/cutJoin.ts`, `defaults/anchorJoin.ts`).
+- **(P2) Tune draw's Symmetry toggle hands-on, with the maintainer driving.** Its key, the default
+  kind and copy count, and where a new group's center lands (`toggleSymmetry`,
+  `apps/draw/src/useSymmetry.ts`).
 - **(P2) A rectangle has no anchors in path edit.** Draw stores a drawn rectangle's `data.path`
   as a `RectPath` (`kind: 'rect'`), and `classifyPathStorage`
   (`packages/core/src/features/paths/editablePath.ts`) accepts only a polygon, so double-clicking
@@ -199,9 +229,10 @@ Priority tags:
   drag steps in a different direction from the drag. Recording the move in world space and
   mapping it through each node's parent on replay would make the two agree.
 - **(P3) The path commands have no icons.** `simplifyPath`, `offsetPath`, `snipAtCrossings`,
-  `joinPaths`, `joinAnchors`, and `averageAnchors` show as text in draw's bar.
-  `RetractHandlesIcon` and `SymmetricHandlesIcon` (`defaults/icons/anchorIcons.tsx`) are first
-  drafts, not proofed at high resolution.
+  `joinPaths`, `bridgePaths`, `joinAnchors`, `bridgeAnchors`, and `averageAnchors` show as text
+  in draw's bar.
+  `RetractHandlesIcon`, `SymmetricHandlesIcon`, and `SimplifyBrushIcon`
+  (`defaults/icons/anchorIcons.tsx`) are first drafts, not proofed at high resolution.
 - **(P2) Spacing hints.** Equal-spacing markers between siblings while moving, and Alt-hover
   distance readouts between the selection and the shape under the pointer.
 - **(P2) Variable-width strokes.** A width profile along a stroke's length, edited by dragging
@@ -333,11 +364,6 @@ Priority tags:
 
 ## Scene, adapters & layout
 
-- **(P3) A diagram's edge labels can land on nodes.** A label sits at a fraction of its route, offset
-  to one side, with no check for the boxes around it, so the label on a short edge between ranks
-  overlaps the node or group box it leaves or enters. `layeredRoutes` keeps routes clear of nodes;
-  nothing does the same for labels. blits' playground timing view shows it (`anchors` preset).
-
 - **(P3) A direct scene call made while a journal is open lands on the scene's own stack.**
   `scene.applyBatch` goes to the open journal; `scene.setPose` and its siblings, `scene.batch`, and
   `scene.history.apply` do not, so a mode that mixes the two splits its edits across two stacks.
@@ -422,6 +448,98 @@ Priority tags:
   system (`prefUnit` in `packages/prefs/src/unit.ts`), whichever node it is showing. And a scope's
   `scale` only converts values: `RIGID_POSE_COMPOSITION` does not scale a container's frame by it,
   so whether a scoped container's children are also stored in its units is undecided.
+
+### Diagram follow-ups
+
+- **(P2) EffectChart: show a run.** A second input beside the pipeline, keyed by stage id and
+  wire, never new fields on the pipeline; a look takes it as a third argument. Which branch was
+  taken (the `switch` symbol already has a lever to throw), the value or a preview on each wire
+  (a body `slot` row is the room for one), cost per stage. Live state follows from it: the run
+  changes every frame, only what it touches repaints, and the layout stays put.
+- **(P3) EffectChart: more looks.** One lane per value type, with a stage as tall as the lanes it
+  touches; and a compact look with one-line stages and no ports drawn, for pipelines too big for
+  the node graph. Branch symbols sketched and not built: hexagon, step glyph, comparator,
+  crossover, and a bare fork with the conditions on its wires.
+- **(P3) A custom `Path` outline does not follow its node.** `outlinePath` returns a consumer's
+  path unchanged, in world coordinates, so `diagramScene`'s layout moves the box and leaves the
+  outline behind. Marks solve the same problem with path data in a unit square
+  (`packages/diagram/src/marks.ts`); an outline could take the same form.
+- **(P3) `layered` orders and places a port with several places at their mean.** A port's
+  `sites` are chosen per wire, by the router, once everything is placed, so ordering and placement
+  read the port at the mean of its places (`portAt` in `packages/diagram/src/layered/expand.ts`).
+  A wire whose port then turns to face it can cross a neighbor ordering thought it cleared. Picking
+  the place during ordering, from where the other end sits in the current order, would fix it.
+  `portAt` also reads a port at its anchor, where `portsOf` slides it onto a non-rectangular
+  outline: a diamond's anchor at `{ u: 0.75, v: 0 }` sits at about 0.667 (found in review, not
+  measured on a drawn diagram).
+- **(P3) A long label on a wire inside a group spills out of the group's box.** `layered` leaves
+  the label room inside the group's column, but the box is drawn around the members alone
+  (`GROUP_DERIVE_POSE`, `packages/diagram/src/group.ts`), so a label wider than the members'
+  overhang crosses the dashed edge. The box would need to know the room its members' wires took.
+- **(P3) A label stationed `{ waypoint }` follows an index, not a place.** `layeredPlan` points a
+  label at the run between two of its edge's waypoints by index
+  (`packages/diagram/src/label.ts`). Edit the edge's waypoints in a live scene and the label sits
+  on whichever run now has that index; remove enough and it falls back to the middle of the route.
+- **(P3) A live `layered` run draws its long edges through the old bends while it eases.** The
+  run moves nodes frame by frame but writes routes only when it arrives, so for its 24 frames an
+  edge layout routed last time still runs through those waypoints while its ends move away from
+  them (`useLiveLayout`, `packages/diagram/src/live.ts`). Easing each layout-owned waypoint from
+  where it was to where the plan puts it would need waypoints on the override channel, which
+  carries poses only.
+- **(P3) The ports `diagramScene` picks read as the author's on a live scene.** Under `layered`,
+  `layeredRoutes` names each edge's compass ports from which way it runs between ranks, and
+  `edgeSpecs` writes them as `from.port`/`to.port` with nothing like `laidOut` marking them
+  (`packages/diagram/src/dataEdges.ts`). A later live layout reads them as named by the author and
+  never revisits them, so an edit that turns which edge runs back up the ranks leaves a wire
+  leaving by the old face. Found in review, not reproduced.
+- **(P3) A long edge to a pinned node off its slot can reorder a second seeded run.** `layeredPlan`
+  gives such an edge no waypoints (`displaced`, `packages/diagram/src/layered/plan.ts`), so the
+  next run seeds its placeholders between its ends' new centers rather than where the last run
+  put them, and the rank's order can change. Found in review, not reproduced.
+- **(P3) `DiagramView`'s `onMove` reports nodes, not routes.** A layout run writes each long
+  edge's waypoints into the view's scene, but a consumer keeping the diagram as data hears only
+  the node moves, so the routes go whenever the data is laid into a scene again, or an edge's
+  spec changes and `reconcileSpecs` replaces its data (`packages/diagram/src/DiagramView.tsx`).
+- **(P3) A second pinned node can sit on a long edge's route.** `layeredPlan` anchors the layout
+  on the first pinned node; any other pinned node stays where its author put it, not in its slot.
+  A wire with that node as an end gets no waypoints, but a wire passing near it keeps the
+  waypoints laid out around the slot, and can run through the node
+  (`packages/diagram/src/layered/plan.ts`). Found by reading the code; no case reproduced yet.
+- **(P4) An ELK layout adapter.** elkjs (the Eclipse Layout Kernel) lays out ports, labels and
+  nested groups well, but answers asynchronously and is large (around 1.5 MB; not measured), so it cannot sit behind
+  the synchronous `LayoutFn`. An adapter in a package of its own, for laying out a generated
+  diagram once, would let a diagram be checked against it.
+- **(P3) `DiagramView` fits its view once, at mount.** `defaultView` only seeds the canvas's
+  view, so when `width` or `height` changes the canvas resizes and the view does not refit; a
+  diagram fitted for a wide box is clipped in a narrower one. The EffectChart lab shows it when
+  its frame is resized.
+- **(P3) Two wires can share an `edgeIdOf`.** Ids containing `.`, `->` or `:` build the same
+  edge id from different stages and ports. `diagramScene` keeps the first such edge, while the
+  looks keep one style per id, last one winning (`sceneStyles` in
+  `packages/diagram/src/effect/draw.ts`, `packages/diagram/src/fromData.ts`).
+- **(P3) The `rack` look overlaps side ports.** A stage's side ports are spread evenly along one
+  edge of a box sized by its text, however many there are, so a stage with many side inputs draws
+  them on top of one another (`spreadAt` in `packages/diagram/src/effect/rack.ts`).
+- **(P3) Branch symbols put control inputs on top whatever the rack's `side` is.** With the
+  default `side: 'below'`, the stage driving a decision hangs below it and its wire climbs to the
+  top edge (`inputs` in `packages/diagram/src/effect/symbols.ts`).
+- **(P3) A list of looks with different options needs a cast.** `EffectLook`'s options parameter
+  defaults to `unknown`, and `EffectLook<NodeGraphOptions>` is not assignable to it, so a list
+  holding `nodeGraph` and `rack` together is cast by hand (`packages/diagram/src/effect/draw.ts`;
+  the EffectChart lab story does it).
+- **(P3) `EffectChart` has no floor on its opening scale.** It opens every chart fitted whole and
+  passes no `minScale`, so a chart of hundreds of stages opens too small to read
+  (`packages/diagram/src/effect/EffectChart.tsx`; `DiagramView` already takes `minScale`).
+- **(P3) A branch symbol's drawn marks have fixed colors.** The `bar`'s bands and ticks and the
+  `switch`'s lever and contacts are color literals, so they stay bright on a bypassed decision
+  and a look cannot restyle them; only the titles follow the node style
+  (`packages/diagram/src/effect/symbols.ts`).
+- **(P3) Marks are only tested in jsdom.** No browser test moves a node that carries marks, so a
+  text mark following its node is unpinned, and so is a drawn mark's `opacity`
+  (`packages/diagram/src/marks.test.ts`).
+- **(P3) A mark whose path data does not parse fails when it is painted.** `diagramScene` passes
+  `d` through as given and `markShape` parses it on first paint, so a typo surfaces in the
+  renderer rather than where the data was built (`packages/diagram/src/marks.ts`).
 
 ---
 
@@ -526,12 +644,46 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 ## Selection, actions & UI panels
 
-- **(P2) Labs still tune actions through the experimental `actions` prop.** The smart remove
-  brush, extend-path-end, and dynamic-corners labs (on their own branches when `tune` landed) set
-  `radiusPx`, `mode`, and a K binding by restating whole descriptors through `actions`. Move each
-  to `<SceneCanvas tune>` as it merges, drop the restated gestures, and give its actions
-  (`brushDeleteAnchors`, `extendPathEnd`, …) entries in core's `ActionParamSchema`
-  (`interactions/actions/actionParamSchema.ts`).
+- **(P3) Some boxes still leave the stroke out.** `drawnBoundsOf` (`canvas/drawnBounds.ts`) is the
+  box a stroked shape is shown and measured with, and `<SceneCanvas>`'s chrome, resize, rotate,
+  flip, align, distribute, and `alignMoveBehavior` read it. Paths with no node or painter behind
+  them still measure the pose box: the selection overlay given its own `poseById`,
+  `composeSelectionPose`, the adapter-only `useAlign` hook, a bare `<Canvas>`, and the guides
+  package's origin snaps (`snapToGuides`, `snapToGrid`), which move a point rather than a box.
+  Text has no `drawnBounds` either, so a stroked glyph that spills past its layout box is not
+  covered. A `{ px }` stroke under a skewing or stretching `transform` is outset by its width at
+  the mean scale, which only approximates the screen-exact ribbon.
+
+- **(P2) Labs still tune actions through the experimental `actions` prop.** The extend-path-end
+  and dynamic-corners labs (on their own branches when `tune` landed) set `mode` and a K binding
+  by restating whole descriptors through `actions`. Move each to `<SceneCanvas tune>` as it
+  merges, drop the restated gestures, and give its actions (`extendPathEnd`, …) entries in core's
+  `ActionParamSchema` (`interactions/actions/actionParamSchema.ts`).
+
+- **(P1) The kit has no settings of its own.** Behavior a user would set once for every
+  component — how long a typed field waits idle before it commits, the stepper's repeat delay
+  and rate, typeahead and hover-open delays, a toast's lifetime — is a module constant in each
+  component (`REPEAT_DELAY_MS` in `NumberField/UnitField.tsx`, `TYPEAHEAD_MS` in `Tree/Tree.tsx`,
+  `HOVER_EXPAND_MS`, `DEFAULT_TTL_MS`, and others; `grep -rn "_MS = "`). `@weasel-js/prefs`
+  stores an app's prefs and has no schema for the kit's. Wanted: one kit settings schema, read
+  through one context with these numbers as defaults, that an app can show in its own `Prefs`
+  and persist with its store. Core's gesture timings (drag threshold, double-click interval)
+  belong in the same place.
+
+- **(P2) Every standard action ships with `<SceneCanvas>`, used or not.**
+  `StandardActionsRegistrar` calls `useStandardActions`, which imports every standard action
+  statically, and `excludeActions` drops them only at runtime, so a bundler cannot shake out one
+  the app never registers. Each specialty action added to the set (path tricks, type-design
+  tools) grows every consumer's bundle. Make the set composable at import time: the consumer
+  passes the action groups it wants, and the default import stays the current set.
+
+- **(P3) `PrefsRail`'s scroll-to-section browser test fails now and then.** "leaves a nested page
+  off the page that holds it and scrolls to a section that follows it"
+  (`packages/ui/src/components/Prefs/PrefsRail.marks.browser.test.tsx:91`) failed once on a fleet
+  run of 2026-10-14 and passed on the run before it, with no `packages/ui` change between: the
+  rail marked `canvas.grid` current where the test expects `canvas.rulers`. A guess, not
+  confirmed: the section is polled into view and the marks are then read once, so a scroll spy
+  that settles a frame later would still name the section above.
 
 - **(P3) Nothing puts `prefsCss` on a page.** `prefsCss(store)` writes the text and
   `prefsCssAttributes(store)` the attributes (`packages/prefs/README.md`, "As CSS custom
@@ -877,6 +1029,11 @@ only story runner in the repo.
 
 ## Demos & visual regression
 
+- **(P3) EffectChart visual baselines are not captured.** `tests/visual/effect-chart.spec.ts`
+  names `effect-chart.png` and `effect-chart-rack.png`; the update-baselines workflow has to
+  write them. Its `maxDiffRatio` of 0.004 was copied from `diagram.spec.ts`; set it
+  from the first captured baselines.
+
 - **(P3) A dev server on orochi has missed a file write.** A site dev server there served a file
   as it was before an edit on 2026-10-12, and a `touch` did not wake it. Seen once and not
   reproduced. `forge/src/vite/plugin.test.ts` lost file events for its temp directory the same way,
@@ -890,16 +1047,15 @@ only story runner in the repo.
   reload, so the cause isn't known; the first load after an agent edits a lab once threw
   `instrument.defaultConfig is not a function` before a reload fixed it.
 
-- **(P2) Package pages: check the reference against a real build, then retire `/api/`.** Every
-  published package has a page at `#pkg/<name>` (overview, guides, reference, demos; how each is
-  fed is in `CONTRIBUTING.md`, "Package pages"). The reference half has only ever read a
-  hand-written TypeDoc project (`scripts/lib/reference/fixture.ts`): `npm run build:api` has not
-  been run since it began writing `dist-demo/reference/`, and no page has been seen in a browser.
-  Run it, open `#pkg/core/reference` and a subpath entry such as `#pkg/geom/reference/booleans`,
-  and fix what TypeDoc's real output shows the reader got wrong. Then drop the TypeDoc HTML site:
-  `out` in `typedoc.config.mjs`, the sidebar's "API reference" link, the `/api/` half of
-  `serveApiDocsInDev`, and the `/weasel/api/` links in the package READMEs. `vitepress` is still
-  in labkit's `devDependencies` with nothing using it. Only geom, gestures, and labkit have guides.
+- **(P3) Package pages: a public signature names types the reference has no page for.** Every
+  published package has a page at `#pkg/<name>` (how each tab is fed is in `CONTRIBUTING.md`,
+  "Package pages"), and only geom, gestures, and labkit have guides. `npm run build:api` warns for
+  each type a public signature names that its package does not export, and the page writes that
+  name unlinked: symmetry's `Pt` and `AnyScene`, geom's `Side` and `Anchors`, prefs'
+  `SyncOptions`, diagram's `Rect`, and core's `ViewPoseAdapter`, among others. About 420 exports
+  have no doc comment, so their row in a module's list has no description. A page's "Declared in"
+  line links to GitHub only where TypeDoc found the repository, which it cannot from a git
+  worktree (it looks for a `.git` directory); the deployed build has not been checked for links.
 
 - **(P3) SVG export writes wrapped text unwrapped.** `data-weasel-wrap` round-trips
   `TextStyle.wrap` for weasel's own reader, but SVG `<text>` never wraps, so any other reader draws
@@ -923,13 +1079,6 @@ only story runner in the repo.
   hands `useLayoutDepSource` each move with the pose it left, and the transition glides what is
   shown from there through a pose override, writing nothing. A removal cannot follow it, since
   the node is gone by the time a report arrives.
-
-- **(P3) draw: a double-click on a path is acted on twice.** The kit's `enterPathEdit` binding
-  and the app's `onDoubleClick` observer (`apps/draw/src/modality/doubleClickEntry.ts`) both take
-  it; they reach the same machine call and the second is a no-op. Text has one way in: the edit
-  owns its mode, which `useTextEditSession` enters and leaves from the hook's `onStart` and
-  `onEnd`, so `text-edit`'s `entry.trigger` stays unread ("Nothing reads a mode's
-  `entry.trigger`" under Tools).
 
 ---
 
@@ -960,33 +1109,18 @@ only story runner in the repo.
 
 ---
 
-## Lint
-
-- **(P3) eslint-plugin-react-hooks v7's `immutability` rule is off.** It is the
-  last compiler rule that could come on: 51 reports in 37 files on 2026-10-12.
-  26 are tests assigning to a prop or an outer variable from inside a probe
-  component, which the test override in `eslint.config.js` that already turns
-  `react-hooks/globals` off would cover. The rest are `useVisibleRaf` loops
-  re-requesting themselves, and writes to forwarded refs, DOM nodes, and
-  mutable engine objects: each to be restructured or shown to be the point.
-
----
-
 ## Release-gate & build hygiene
 
-- **(P2) Confirm on a fleet node that a new dependency in browser-tested code no longer fails the
-  first run that meets it.** A node keeps its vite dep cache between runs, and a warm cache skips
-  the scan that finds dependencies, so one first imported since then was met mid-run and vite
-  reloaded the page under the suites ("Vitest failed to find the runner", 12 suites on 2026-10-13).
-  The `browser` project's `optimizeDeps.include` is now computed from what its tests import
-  (`scripts/vitest-browser-deps.ts`), and vite keys the cache on that list, so a new import
-  discards the cache before a test loads. Tested against vite alone; not yet run on a node with a
-  stale cache. To confirm: on a node that has run the suite, start a fleet run of a commit that
-  adds an import of an installed, not yet imported dependency to a module a browser test loads.
-  The log should read "Re-optimizing dependencies because vite config has changed" and no suite
-  should fail to find the runner. Two things it does not cover: a dependency reached only through
-  `import.meta.glob` or a computed `import()`, and the opt-in `forge-stories` project, which has
-  no such list.
+- **(P3) Two ways a new dependency can still reach a browser test unannounced.** The `browser`
+  project's `optimizeDeps.include` is computed from what its tests import
+  (`scripts/vitest-browser-deps.ts`), so a newly imported dependency changes vite's config hash and
+  a warm dep cache on a fleet node is rebuilt before any test loads; confirmed on studio and teitou
+  on 2026-10-15. The scan cannot see a dependency reached only through `import.meta.glob` or a
+  computed `import()`, and the opt-in `forge-stories` project has no such list. Either one met
+  mid-run reloads the page under the suites, which fails them with "Vitest failed to find the
+  runner". Vitest drops vite's info lines at its default `logLevel` of `warn`, so a fleet log shows
+  "Re-optimizing dependencies because vite config has changed" only with `logLevel: 'info'` set on
+  the project.
 
 - **(P3) `onto test --spread` fails a run whose tree moved, where the other commands sync again.**
   onto `f621d8b` makes a launch carry the stamp its own sync was answered with, so a suite can no
@@ -996,76 +1130,41 @@ only story runner in the repo.
   is rebuilt, and a node's agent refuses a launch against a tree that lost its stamp only after
   `onto push <node>`.
 
-- **(P3) `Callout.reanchor.browser.test.tsx` heard a window `resize` it did not expect, once.** "a
-  callout follows an anchor rect that only moves, each time, without a resize event on the window"
-  failed in one fleet run on teitou at `80b0a8314`: its `resize` listener was called once. It
-  passed in the six fleet runs before that the same day and passes alone. The listener is on the
-  window every browser test shares, so a resize from anywhere fails it; what resized the window
-  was not found.
-
-- **(P3) rolldown could not write a dependency map during `packages/forge/src/vite/plugin.test.ts`,
-  once.** One fleet run at `65c06d7c2` passed every file and exited 1 on an unhandled error:
+- **(P3) rolldown could not write a dependency file during `packages/forge/src/vite/plugin.test.ts`,
+  twice.** A fleet run at `65c06d7c2` passed every file and exited 1 on an unhandled error:
   `Failed to write file in …/T/forge-plugin-*/.vite/deps_temp_*/polygon-clipping.js.map`, `Invalid
   argument (os error 22)`, after "serves the component graph from source, and pushes it again when
-  a component file changes". The test makes that directory and removes it when it ends, so the
+  a component file changes". A run on teitou at `f4100e96c` (2026-10-15) did the same after the
+  same test, on `react-dom.js`. The test makes that directory and removes it when it ends, so the
   dev server's dependency scan may have still been writing; not confirmed.
 
-- **(P2) Browser tests time out under fleet load, inside a Playwright action.** A click, a key, or
-  a screenshot that takes a fraction of a second alone stalls for seconds in a full run on studio,
-  teitou, or msb-uai, a different handful of tests each run, and the test hits its 15 s limit or
-  the action's own. Every one passes alone, and nobody has confirmed load is the cause. Two stalls
-  were timed: 14.5 s in `userEvent.click` after the row was found and scrolled to
-  (`PrefSchemaEditor.types.browser.test.tsx`, 0.3 s alone), and 7.8 s in `page.screenshot` waiting
-  for a `position: fixed` element that never moves to be stable
-  (`core/src/features/text/overlayAlignment.browser.test.tsx`, "sans-serif 16px lands on the canvas
-  glyphs").
-  - **Still exposed**, because the action is what the test is about and nothing in it sleeps or
-    animates: `overlayAlignment` (a screenshot a test, 0.55 s each alone),
-    `labkit/src/lightbox/Lightbox.browser.test.tsx`,
-    `SelectionPanel/SelectionPanel.selection.browser.test.tsx`,
-    `PatternPicker/PatternPicker.browser.test.tsx`, and the full-page screenshot in
-    `labkit/src/lab/LabLightbox.browser.test.tsx`.
-  - **Changed on 2026-10-13, none of it confirmed by a fleet run.** `PrefSchemaEditor.types`,
-    `labkit/src/controls/compoundRows.browser.test.tsx`, and `LabLightbox`'s toolbar buttons click
-    through the DOM, since the click is not what they test; `compoundRows` is one test a dialog and
-    no longer waits for each to close. Testing Library's `waitFor` and `findBy*` wait 5 s in the
-    `browser` project, as `expect.poll` already did; they waited 1 s, in `LabLightbox` and in
-    `forge/src/timeline/timeline.browser.test.tsx` ("plays on real frames") among others. Two
-    timeouts were raised for tests that do the work: the sweeps in
-    `Prefs/PrefsForm.drop.browser.test.tsx` take 3.1 to 3.6 s each alone and have 60 s, and
-    `AssetEditor.steps.test.tsx`, a jsdom test that timed out at 5 s, takes 0.9 to 1.4 s alone and
-    has 20 s.
-  - **Running `browser` after the other projects** (`sequence.groupOrder` in `vitest.config.ts`),
-    measured 2026-10-12 over nine full runs at one commit, three on each node: none of six runs
-    had a timeout, and one of three baseline runs did (`overlayAlignment`, on studio). That is
-    suggestive and no more: at a one in three rate six clean runs come up about 9% of the time. It
-    cost 12 to 52 s a run on teitou and msb-uai and nothing on studio, which takes about 175 s
-    either way against 100 to 115 s on the others and hosts a long-running render service; both
-    failing runs were there. A 15 s `browser` timeout in a run made since would mean running beside
-    the other projects was not the cause, and the `groupOrder` line should come out. Not measured:
-    fewer workers for `browser`, and whether studio's own load is the cause.
-  - **Three runs on teitou on 2026-10-13 failed the same three `browser` tests, which none of the
-    commits touch**: `8777d97f0`, then `2445052c6` and `a06b02902`, whose trees differ from it only
-    in `PrefSchemaEditor`. Each is the only failure in its file: 15 s timeouts in
-    `core/src/canvas/glyphCoverage.browser.test.ts` ("keeps both stems of a 7.2px H at every
-    sub-pixel offset") and `core/src/canvas/rasterSession.browser.test.ts` ("do not push a canvas
-    already on the page out of its context"), neither of which makes a Playwright action, and
-    `frame.evaluate: Frame was detached` under `userEvent.keyboard` in
-    `text-dom/src/overlayTyping.browser.test.tsx`. All three passed on the run before the first,
-    whose tree differed only in `PrefSchemaEditor`'s shelf. It is not teitou: a run of `a06b02902`
-    on studio failed `glyphCoverage` and `rasterSession` the same way, and `labkit`'s
-    `presentation.browser.test.tsx` ("entering refits the view…") in place of `overlayTyping`. Both
-    `core` files pass alone at that commit on orochi, in 7 s.
-  - **Still failing on 2026-10-14**, branch `path-edit-commands`, which touches no renderer, font,
-    or labkit code: `glyphCoverage` and `rasterSession` timed out on teitou and again on studio, and
-    on studio so did `glyphCoverage`'s "puts down the same ink wherever a 7.2px H lands" and
-    `LabLightbox`'s "an expanded trial keeps its marks over it". Also on studio, not a timeout:
-    `ui/src/components/Prefs/PrefsRail.rootSection.browser.test.tsx` ("scrolls the root's page to a
-    section from its entry") saw `tools` as the current section where it expected `files`. It
-    passed on teitou at a commit whose `ui` tree was the same. Later the same day, branch
-    `soft-mode-history` (history and cursor code only) failed `glyphCoverage`'s "keeps both stems"
-    on teitou, then both `glyphCoverage` tests and `rasterSession` on studio, as did `main` at
-    `b1bcafb7d` on studio; both files pass alone on orochi at the branch head, in 12.7 s.
+- **(P2) What is left of the `browser` project's fleet failures.** Measured on 2026-10-15 from the
+  logs of 136 fleet runs (2026-10-11 to 10-15) and from runs of the `browser` project alone on
+  teitou, msb-uai and studio. Running it after the other projects (`sequence.groupOrder`) ended the
+  timeouts in Playwright actions: 8 of 18 fleet runs before that change had one; after it only
+  `LabLightbox`, which also builds WebGL contexts, did (3 of 118). The timeouts that followed, from
+  2026-10-13, were the project's own: it failed the same tests alone as in a full run, and sixteen
+  busy cores beside it changed nothing. Its tabs share one Chromium, and on teitou 17 of them took
+  the same 72 to 78 s as six while tests making WebGL contexts ran three to five times as long, so
+  it now runs six (`maxWorkers`). A tab that lost its connection mid-run ("Browser connection was
+  closed while running tests", every file after it left unrun; at six workers too, on
+  `17bd67dea`'s first fleet run) had a renderer full of Mach ports, which a removed test frame
+  holds until a full GC; `vitest.browser.setup.ts` now collects garbage at each file's start.
+  Measured on teitou, one or two workers: before, 11 of 11 runs lost a tab, 36 to 78 files in, and
+  in the 5 runs sampling ports each second its renderer held 14,086 to 16,661 when it went; with a
+  full GC between files, 8 of 8 kept every tab, the 5 sampled peaking at 414 ports, and a lone
+  tab ran all 176 files twice. That the port count is what closes the sockets is inferred from this,
+  not traced inside Chromium: every socket and request of that page closes at once from the
+  browser's side (a net log shows it), the page itself lives on, and no crash is reported. Left
+  open:
+  - **`text-dom/src/overlayTyping.browser.test.tsx`'s first test fails `frame.evaluate: Frame was
+    detached` under `userEvent.keyboard`**: 8 runs, all at the old worker count. One suspect is
+    Playwright's `page.frame('vitest-iframe')` returning the previous file's frame, since every
+    test frame has that name; in 18 runs a check at each file's start never found a second or a
+    detached one, but none of those runs had the failure, so that is unlikely, not ruled out.
+  - **`labkit/src/lab/presentation.browser.test.tsx` ("entering refits the view…") saw a pan off
+    on one axis** in 2 fleet runs at the old worker count, and in 6 of 19 runs of the project
+    alone at one or two workers on teitou, with and without the garbage collection.
   - `forge/src/vite/plugin.test.ts` has its own entry under "Demos & visual regression".
 
 - **(P2) HUD vs DOM text: what the idle rerun left open.** `tests/perf/hud-vs-dom.spec.ts` prices
@@ -1297,22 +1396,21 @@ only story runner in the repo.
   backend only. Result files: `tests/perf/recorded/layer-dispatch-2026-10-07/` and
   `tests/perf/recorded/layer-dispatch-dirty-2026-10-07/`.
 
-- **(P3) The pull request benchmark job has never run.** `.github/workflows/perf-pr.yml` runs
-  `perf:bench` and `test:perf` on a pull request's merge base and head and posts the `perf:compare`
-  table as a comment, without gating. The comment and directory-compare scripts are tested; the
-  workflow steps have only been read. `perf:bench` has never run on the runner at all, since
-  `perf.yml` runs `test:perf` alone. Unmeasured: how long two full runs take on the one self-hosted
-  machine (the job allows 100 minutes), and whether the base, measured first, reads differently
-  from the head for that reason alone.
-
-- **(P3) Five leaf packages keep their own listener sets.** Every other store notifies through
-  `createEmitter()` in `@weasel-js/registry` (a pass walks the listeners held when it began; a
-  throwing listener is logged and the rest run). These still hold a `Set` and a loop, because each
-  is in a package that depends on nothing else in weasel, and the move would give it its first
-  sibling dependency: history and its journal, `select/store.ts`, storage's records (two sets),
-  cursor's `paintedCursorState`, and react's `useFrameClock`. A throw from one of their listeners
-  still reaches whatever caused the notify. Moving them means either that dependency or the
-  emitter living somewhere all five can reach.
+- **(P3) The pull request benchmark job does not fit its time limit, and its comment shows
+  seven of fifteen benchmarks.** Its steps ran on keiei (Apple M2, 8 cores, load about 6.9) on
+  2026-10-15, outside GitHub: base checkout, `npm ci`, `perf:bench` and `test:perf` on each side,
+  `compare.mjs`, and `pr-comment.mjs --dry-run`. Every step worked. Measured:
+  - **Time.** `test:perf` took 53.8 min on the base and 51.1 on the head, and `perf:bench` about 4
+    min each; checkout to comment was 113 min against the job's `timeout-minutes: 100`.
+    `hud-vs-dom` alone is 27.2 min a run. One full `test:perf` also outruns `perf.yml`'s 45
+    minutes. Not measured on the runner itself (studio, M1 Max), so the overrun there is inferred.
+    Which to change is open: the limits, `hud-vs-dom`'s rounds, or which specs a pull request runs.
+  - **The comment.** `compare.txt` was 536,682 characters; `MAX_COMMENT_CHARS` keeps 60,000, which
+    is `animation-stress` through `flush-noise` in file order. Everything after, `image-quad` and
+    `layer-dispatch` among them, never reaches the pull request. What the comment should hold
+    instead (the largest ratios, one summary line per benchmark) is undecided.
+  - Still unmeasured: whether the base, measured first, reads differently from the head for that
+    reason alone. Result files and logs from that run were not kept.
 
 - **(P3) `SceneCanvasInner` is one 386-line function.** It is most of the 508-line
   `canvas/SceneCanvas.tsx`. What is left in it is the prop destructure and the JSX, most of that

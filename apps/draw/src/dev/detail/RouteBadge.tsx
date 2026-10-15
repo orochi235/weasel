@@ -64,7 +64,7 @@ export function RouteBadge({ route }: { route: string }) {
       <Badge {...(GESTURE_BADGE_PROPS as BadgeProps)}>
         {parsed.gesture}
         {hasArg && (argIsKey ? (
-          <> <KeyCap label={keySpecFromKey(parsed.arg!).label} variant="minimal" className={s.routeKeyCap} /></>
+          <> <KeyCap label={keySpecFromKey(parsed.arg!).label} className={s.routeKeyCap} /></>
         ) : (
           <span className={argIsDefault ? s.routeMuted : undefined}>({parsed.arg})</span>
         ))}
@@ -72,7 +72,7 @@ export function RouteBadge({ route }: { route: string }) {
       {modKeys && (
         <span className={s.modGroup}>
           <span className={s.modSigil}>+</span>
-          <KeySequence keys={modKeys} />
+          <KeySequence keys={modKeys} variant="inverse" />
         </span>
       )}
       {hasTarget && (

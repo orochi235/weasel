@@ -11,7 +11,7 @@ export function useClockLoop(clock: Clock | null, target?: VisibleRafTarget): vo
   const playing = useSyncExternalStore(clock?.subscribe ?? NEVER, clock ? () => clock.get().playing : notPlaying);
   const last = useRef<number | null>(null);
   const raf = useVisibleRaf(
-    (now) => {
+    (now, raf) => {
       if (!clock) return;
       const prev = last.current;
       last.current = now;

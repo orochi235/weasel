@@ -234,11 +234,16 @@ export default defineConfig({
           // After every other project, not beside them: a browser test's clicks and screenshots
           // stall when the node's cores are taken, and time out.
           sequence: { groupOrder: 1 },
+          // Every tab shares one Chromium. Past six, the project took no less wall time on 14- and
+          // 18-core nodes, and a test making WebGL contexts ran three to five times as long.
+          maxWorkers: 6,
           exclude: ['**/node_modules/**', '**/dist/**'],
           css: true,
           browser: {
             enabled: true,
-            provider: playwright(),
+            // A fake audio sink: on a node whose output device does not run, a real one leaves an
+            // AudioContext "running" with its clock stopped, and the tests sound on every node.
+            provider: playwright({ launchOptions: { args: ['--disable-audio-output'] } }),
             commands: browserCommands,
             headless: true,
             instances: [{ browser: 'chromium' }],

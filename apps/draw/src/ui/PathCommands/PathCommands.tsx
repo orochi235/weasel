@@ -2,10 +2,11 @@
  * The path commands in the command bar: the kit's `path` group (Cut at
  * Crossings, Join) as buttons, and Simplify and Offset Path as sliders in
  * popovers. Dragging a slider previews its command on the selection and
- * releasing it commits one undo entry.
+ * releasing it commits one undo entry. The Simplify slider is also the
+ * tolerance path edit's Simplify brush refits at.
  */
-import { useState, type ReactElement } from 'react';
-import { useOngoingAction } from '@weasel-js/core';
+import { useEffect, useState, type ReactElement } from 'react';
+import { useActionsRegistry, useLatest, useOngoingAction } from '@weasel-js/core';
 import { ActionBar, BarPopover, Slider } from '@weasel-js/ui';
 import s from './PathCommands.module.css';
 
@@ -15,6 +16,12 @@ export function PathCommands(): ReactElement {
   const simplify = useOngoingAction('simplifyPath');
   const offset = useOngoingAction('offsetPath');
   const [tolerance, setTolerance] = useState(1);
+  const registry = useActionsRegistry();
+  const brushTolerance = useLatest(tolerance);
+  useEffect(
+    () => registry?.tune('simplifyBrush', { params: () => ({ tolerance: brushTolerance.current }) }),
+    [registry, brushTolerance],
+  );
   const [distance, setDistance] = useState(0);
 
   return (

@@ -4,6 +4,8 @@
  * The pure half: no React, no DOM. The React seam that pumps browser events
  * into the dispatcher, and the providers that feed it, live behind
  * `@weasel-js/routing/react`.
+ *
+ * @packageDocumentation
  */
 
 // ─── vocabulary ───────────────────────────────────────────────────────────
@@ -61,7 +63,7 @@ export type DepName = keyof DepSchema;
  *
  * ```ts
  * declare module '@weasel-js/core' {
- *   interface ActionParamSchema { brushDeleteAnchors: { radiusPx: number } }
+ *   interface ActionParamSchema { simplifyBrush: { radiusPx: number } }
  * }
  * ```
  *
@@ -105,7 +107,7 @@ export type {
 export { actionItems } from './interactions/actions/actionItems';
 export type { ActionItem } from './interactions/actions/actionItems';
 // Both a const table and the union of its values, under one name.
-export { ActionDisabledReason } from './interactions/actions/action';
+export { actionCursor, ActionDisabledReason } from './interactions/actions/action';
 export type { ActionDisabledReason as ActionDisabledReasonValue } from './interactions/actions/action';
 export { actionBindings } from './interactions/actions/binding';
 export type { GestureBinding, BoundGesture, BindingSource } from './interactions/actions/binding';

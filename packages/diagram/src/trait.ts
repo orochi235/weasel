@@ -53,7 +53,7 @@ export const dataKeyReader: DiagramNodeReader = (node) => {
   const trait = (data as Record<string, unknown>)[DIAGRAM_TRAIT_KEY];
   if (trait === null || typeof trait !== 'object') return null;
   if ('from' in trait && 'to' in trait) return null;
-  if ('label' in trait || 'anchor' in trait) return null;
+  if ('label' in trait || 'anchor' in trait || 'mark' in trait) return null;
   return trait as DiagramNode;
 };
 

@@ -7,6 +7,8 @@ import type { AlignReference } from './align/align';
 import type { DistributeMode } from './distribute/distribute';
 import type { FlipAxis, FlipPivot } from './flip/helpers';
 import type { BendAlongEffect, BlendEffect, RepeatAlongEffect } from 'core/scene/pathEffects/effects';
+import type { EditAnchorsParams } from './edit-anchors/params';
+import type { SimplifyBrushParams } from './defaults/simplifyBrush';
 
 /** A point a spatial reference of `'pointer'` resolves to in place of the
  *  pointer dep, when the invocation has one of its own. */
@@ -46,6 +48,10 @@ declare module '@weasel-js/routing' {
     bendAlong: SettingsOf<BendAlongEffect>;
     repeatAlong: SettingsOf<RepeatAlongEffect>;
     editPathEffect: EditPathEffectParams;
+    editAnchors: EditAnchorsParams;
+    simplifyBrush: SimplifyBrushParams;
+    bridgePaths: { tension?: number };
+    bridgeAnchors: { tension?: number };
   }
 }
 

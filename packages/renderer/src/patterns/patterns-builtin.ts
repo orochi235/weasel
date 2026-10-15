@@ -8,6 +8,8 @@
  *
  * Prefer a tile paint (`{ kind: 'hatch', color }`) over calling these directly —
  * it serializes, a `TextureHandle` does not.
+ *
+ * @packageDocumentation
  */
 
 export { tileGeometry, tileSize, drawTileShapes } from './tileGeometry';

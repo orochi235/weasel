@@ -1,4 +1,8 @@
-/** Part of the `@weasel-js/core` barrel. Pointer, stylus, and key input. */
+/**
+ * Part of the `@weasel-js/core` barrel. Pointer, stylus, and key input.
+ *
+ * @packageDocumentation
+ */
 
 // ─── Stylus input: stylus / coalesced events / pressure ─────────────────────
 export {

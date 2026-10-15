@@ -89,6 +89,7 @@ via a tool's `bindings` or a `trigger` call.
 | `nudge.up` / `.down` / `.left` / `.right` | Arrow key (`magnitude: 'small'`), Shift+Arrow (`'big'`) |
 | `reorder.forward` | Mod+] (`distance: 'adjacent'`), Mod+Alt+] (`'extreme'`) |
 | `reorder.backward` | Mod+[ (`'adjacent'`), Mod+Alt+[ (`'extreme'`) |
+| `pathEditTool.exit` | Escape (channel `*`, phase `initial`) while a path-edit tool is on — puts the tool down, so a second Escape leaves path edit |
 | `exitPathEdit` | Escape |
 | `deleteAnchors` | Delete, Backspace (phase `initial`) |
 | `nudgeAnchors.<dir>` | Arrow / Shift+Arrow, as `nudge` |
@@ -105,6 +106,7 @@ curly quote, so both codepoints are listed.
 | `editAnchors` | drag whose press hit an anchor or control-handle affordance; it ties `move` on specificity, and `move` turns those presses down |
 | `bendSegment` | drag whose press hit the edited path's `segment` affordance, between anchors; `move` turns those down too |
 | `marqueeAnchors` | drag on `empty` |
+| `simplifyBrush` | drag anywhere, while path edit's `simplifyBrush` tool is on; `editAnchors`, `bendSegment`, `marqueeAnchors`, and `selectAnchor` stand aside while any path-edit tool is |
 | `enterPathEdit` | double-click on a body |
 | `selectAnchor` | click |
 | `insertPathAnchor` | Alt+click |

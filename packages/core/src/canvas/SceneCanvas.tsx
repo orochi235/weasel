@@ -384,7 +384,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
           currentViewRef={viewRef}
           onViewChange={viewState.setViewFromInput}
           resizeOptions={selectToolOpts?.resize as UseResizeOptions<unknown> | undefined}
-          poseDescriptor={descriptor as PoseDescriptor<unknown>}
+          poseDescriptor={descriptor as PoseDescriptor<unknown>} boundsIncludeStroke={geometry?.boundsIncludeStroke ?? true}
           geometryProjection={geometryProjection}
           dispatcher={dispatcher}
           pickEvery={internalPickEvery}

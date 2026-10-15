@@ -5,6 +5,8 @@
  * The path data model and the math over it live in `@weasel-js/geom`;
  * re-exported by name (never `export *`, which esbuild cannot enumerate
  * across a package boundary).
+ *
+ * @packageDocumentation
  */
 
 export {
@@ -102,11 +104,13 @@ export {
   anchorAt,
   anchorCount,
   anchorsInRect,
+  anchorsUnderBrush,
   deleteAnchorsAt,
   editAnchorSet,
   editAnchorSetTracked,
   flatAnchorIndex,
   handleAlongItsAngle,
+  handleAtItsLength,
   insertAnchorOnSegment,
   locateAnchor,
   makeHandlesSymmetric,
@@ -122,8 +126,9 @@ export {
   type SegmentHit,
 } from '@weasel-js/geom';
 export {
-  averageAnchorsAt, closestOpenEnds, joinAnchorsAt, joinSubpathEnds, simplifyPath, subpathEndAt,
-  type AverageAxis, type SimplifyPathOptions, type SubpathEnd,
+  averageAnchorsAt, closestOpenEnds, joinAnchorsAt, joinSubpathEnds, simplifyAnchorsAt, simplifyPath,
+  simplifySpan, simplifySubpath, subpathEndAt,
+  type AverageAxis, type JoinOptions, type SimplifyPathOptions, type SubpathEnd,
 } from '@weasel-js/geom';
 export { pathInPoseFrame, pathInWorld, worldEditToStorage, type PathInWorldPose } from '@weasel-js/geom';
 export { poseRotationOf, rotatePathAround, type PoseRotation } from '@weasel-js/geom';
@@ -143,6 +148,7 @@ export {
   type CreatePathEditingOverlayLayerOptions,
   type PathEditingOverlayStyle,
 } from './pathEditingOverlayLayer';
+export { PATH_COMB_CHROME_ID, type PathEditCombOptions } from './pathEditComb';
 export {
   pathUnion,
   pathIntersect,

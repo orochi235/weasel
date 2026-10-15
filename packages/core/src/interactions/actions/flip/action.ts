@@ -15,7 +15,8 @@ import {
   type FlipPivot,
 } from './helpers';
 import { unionAABB } from 'core/geometry/unionBounds';
-import { visualBoundsViaDescriptor } from '../align/align';
+import { drawnBoxes, type DrawnBoxes } from '../drawnBoxes';
+import { isNoInkExtents } from 'core/geometry/inkExtents';
 import { scenePoseFrame, type PoseFrame } from '../poseFrame';
 import { actionReferenceSources, resolveSpatialReference } from '../spatialReference';
 import type { PointerContextValue } from '@weasel-js/routing/react';
@@ -75,10 +76,12 @@ function flipSelection(
   geom: PoseDescriptor<unknown>,
   params: Record<string, unknown> | undefined,
   pointer: PointerContextValue | undefined,
+  boxesOver: (frame: PoseFrame<unknown>) => DrawnBoxes,
 ): void {
   const selected = selection.get();
   if (selected.length === 0) return;
   const frame = scenePoseFrame(scene);
+  const boxes = boxesOver(frame);
 
   // A group whose pose derives from its children mirrors by mirroring them,
   // about the group's own box where each selected node flips in place.
@@ -87,7 +90,7 @@ function flipSelection(
   for (const id of selected) {
     const members = shapeSources(scene, [id]) as NodeId[];
     const stoodIn = members.length !== 1 || members[0] !== id;
-    const box = stoodIn ? visualBoundsViaDescriptor(frame.world(id), geom) : null;
+    const box = stoodIn ? boxes.aabb(id, frame.world(id)) : null;
     for (const member of members) {
       if (ids.includes(member)) continue;
       ids.push(member);
@@ -97,13 +100,20 @@ function flipSelection(
 
   const worlds = new Map<string, unknown>();
   for (const id of ids) {
-    if (scene.get(id) !== undefined) worlds.set(id as string, frame.world(id));
+    if (scene.get(id) === undefined) continue;
+    const world = frame.world(id);
+    worlds.set(id as string, world);
+    // A shape whose ink reaches past its box unevenly flips in place about
+    // the box it is drawn with, so that box stays put.
+    if (!ownPivot.has(id as string) && !isNoInkExtents(boxes.extents(id, world))) {
+      ownPivot.set(id as string, boxes.aabb(id, world));
+    }
   }
   let sharedPivot: ReturnType<typeof unionAABB> = null;
   if (pivot === 'union') {
-    sharedPivot = unionAABB([...worlds.values()].map((p) => visualBoundsViaDescriptor(p, geom)));
+    sharedPivot = unionAABB([...worlds].map(([id, p]) => boxes.aabb(id, p)));
   } else if (pivot !== 'each') {
-    sharedPivot = resolveSpatialReference(pivot, actionReferenceSources(params, pointer, scene, frame, geom));
+    sharedPivot = resolveSpatialReference(pivot, actionReferenceSources(params, pointer, scene, frame, boxes));
     if (sharedPivot === null) return;
   }
 
@@ -159,7 +169,7 @@ export const flipAction: Action & { requires: string[] } = {
     { spec: { kind: 'key', key: ['v', 'V'], mods: { shift: true } }, opts: { params: { axis: 'y' } } },
   ],
   eligible: { capability: 'transforms-selection' },
-  requires: ['selection', 'scene', 'applyOps', 'geometryProjection', 'poseDescriptor', 'pointer'],
+  requires: ['selection', 'scene', 'applyOps', 'geometryProjection', 'poseDescriptor', 'pointer', 'view', 'boundsIncludeStroke'],
   invoker: {
     timing: 'immediate',
     run: (deps, params) => {
@@ -174,6 +184,7 @@ export const flipAction: Action & { requires: string[] } = {
         selection, scene, axis, pivot, applyOps, geometryProjection,
         poseDescriptorOf(deps.poseDescriptor),
         params, deps.pointer,
+        (frame) => drawnBoxes(deps, frame),
       );
     },
   },

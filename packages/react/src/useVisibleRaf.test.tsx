@@ -76,7 +76,7 @@ function Host({
   loopRef, frame, options,
 }: {
   loopRef: { current: VisibleRaf | null };
-  frame: (t: number) => void;
+  frame: (t: number, loop: VisibleRaf) => void;
   options?: VisibleRafOptions;
 }) {
   loopRef.current = useVisibleRaf(frame, options);
@@ -87,7 +87,7 @@ function TargetHost({
   loopRef, frame, options,
 }: {
   loopRef: { current: VisibleRaf | null };
-  frame: (t: number) => void;
+  frame: (t: number, loop: VisibleRaf) => void;
   options: VisibleRafOptions;
 }) {
   const ref = useRef<HTMLDivElement | null>(null);
@@ -95,7 +95,7 @@ function TargetHost({
   return <div ref={ref} />;
 }
 
-function mount(frame: (t: number) => void, options: VisibleRafOptions = {}, withTarget = false) {
+function mount(frame: (t: number, loop: VisibleRaf) => void, options: VisibleRafOptions = {}, withTarget = false) {
   const loopRef = { current: null as VisibleRaf | null };
   const Comp = withTarget ? TargetHost : Host;
   const view = render(<Comp loopRef={loopRef} frame={frame} options={options as VisibleRafOptions} />);
@@ -110,6 +110,17 @@ describe('useVisibleRaf', () => {
     act(() => { loop().request(); });
     act(() => { clock.flush(); });
     expect(frame).toHaveBeenCalledTimes(1);
+  });
+
+  it('hands the frame its own handle, so a continuous loop re-requests through it', () => {
+    const clock = makeClock();
+    const handles: VisibleRaf[] = [];
+    const { loop } = mount((_t, self) => { handles.push(self); self.request(); }, clock);
+    act(() => { loop().request(); });
+    act(() => { clock.flush(); });
+    act(() => { clock.flush(); });
+    expect(handles).toEqual([loop(), loop()]);
+    expect(clock.pending()).toBe(1);
   });
 
   it('coalesces repeated requests into one frame', () => {

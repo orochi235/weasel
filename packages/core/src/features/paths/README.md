@@ -64,7 +64,8 @@ tessellation, polylines, trim), `booleans/splitBySegment.ts` (`./booleans`).
 
 **Editing** — in `@weasel-js/geom`: `paths/anchorEdits.ts` (the anchor-set
 mutations: translate, handle-drag with smooth mirroring, insert-on-segment,
-delete-with-refit, scissors, rect select) and the anchor model itself
+delete-with-refit, scissors, rect select), the curvature comb
+(`paths/curvature.ts`), and the anchor model itself
 (`pathToAnchors` / `anchorsToPath`, `PenAnchor`, `nearestSegmentT`). Its
 invariant test, `anchorEdits.test.ts`, stays here because it reads an action's
 anchor walker.
@@ -72,7 +73,9 @@ anchor walker.
 **Rendering** — `pathLayer.ts`, `markerCommands.ts` (marker heads as draw
 commands; the ribbon, the marker registry and `strokeToPath` are in
 `@weasel-js/stroke`), plus `penPreviewLayer.ts` (the pen's
-in-progress path) and `pathEditingOverlayLayer.ts` (anchor-edit chrome)
+in-progress path) and `pathEditingOverlayLayer.ts` (anchor-edit chrome, with
+the curvature comb from `pathEditComb.ts` drawn under chrome-caps'
+`path-edit.comb`, off by default)
 
 ## Anchors are a view, not the storage
 

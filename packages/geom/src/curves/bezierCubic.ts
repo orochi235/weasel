@@ -2,34 +2,7 @@ import type { CurveRepresentation, Discriminator } from './types';
 import { defaultInHandle, defaultOutHandle, segmentAt } from './anchorHandles';
 import { PATH_C, PATH_M } from '../commands';
 import { cubicPointAt } from '../paths/cubicMath';
-
-function cubicDeriv1(
-  p0: { x: number; y: number },
-  p1: { x: number; y: number },
-  p2: { x: number; y: number },
-  p3: { x: number; y: number },
-  t: number,
-): { x: number; y: number } {
-  const u = 1 - t;
-  return {
-    x: 3 * u * u * (p1.x - p0.x) + 6 * u * t * (p2.x - p1.x) + 3 * t * t * (p3.x - p2.x),
-    y: 3 * u * u * (p1.y - p0.y) + 6 * u * t * (p2.y - p1.y) + 3 * t * t * (p3.y - p2.y),
-  };
-}
-
-function cubicDeriv2(
-  p0: { x: number; y: number },
-  p1: { x: number; y: number },
-  p2: { x: number; y: number },
-  p3: { x: number; y: number },
-  t: number,
-): { x: number; y: number } {
-  const u = 1 - t;
-  return {
-    x: 6 * u * (p2.x - 2 * p1.x + p0.x) + 6 * t * (p3.x - 2 * p2.x + p1.x),
-    y: 6 * u * (p2.y - 2 * p1.y + p0.y) + 6 * t * (p3.y - 2 * p2.y + p1.y),
-  };
-}
+import { cubicCurvatureAt } from '../paths/curvature';
 
 /** Cubic bezier: each segment takes two control handles. The familiar pen-tool curve, and what SVG path data stores natively. */
 export const bezierCubic: CurveRepresentation = {
@@ -67,16 +40,7 @@ export const bezierCubic: CurveRepresentation = {
     const { segIdx, localT } = segmentAt(anchors, t);
     const a = anchors[segIdx];
     const b = anchors[segIdx + 1];
-    const p0 = a;
-    const p1 = defaultOutHandle(anchors, segIdx);
-    const p2 = defaultInHandle(anchors, segIdx);
-    const p3 = b;
-    const d1 = cubicDeriv1(p0, p1, p2, p3, localT);
-    const d2 = cubicDeriv2(p0, p1, p2, p3, localT);
-    const num = d1.x * d2.y - d1.y * d2.x;
-    const den = Math.pow(d1.x * d1.x + d1.y * d1.y, 1.5);
-    if (den < 1e-12) return 0;
-    return num / den;
+    return cubicCurvatureAt(a, defaultOutHandle(anchors, segIdx), defaultInHandle(anchors, segIdx), b, localT);
   },
   discriminators(anchors) {
     const out: Discriminator[] = [];

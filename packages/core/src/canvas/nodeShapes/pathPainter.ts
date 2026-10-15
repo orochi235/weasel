@@ -12,6 +12,7 @@ import { DERIVED_PAINTER } from './derivedPainter';
 import { PAINT_SLOT } from './memo';
 import { inkReach, pathPaintOf, withAnimatedVertexColors, resolveNodeStroke } from './nodePaint';
 import { paintsPose, poseBoxBounds } from './poseBox';
+import { strokedPoseBox } from './strokedBounds';
 
 // ─── Built-in painters ─────────────────────────────────────────────────
 export const PATH_PAINTER: NodeShapeEntry<unknown, RectPose> = {
@@ -66,4 +67,8 @@ export const PATH_PAINTER: NodeShapeEntry<unknown, RectPose> = {
   // `pathInPoseFrame` fits the path's own bounds to the pose box.
   bounds: (node, pose, ctx) =>
     poseBoxBounds(pose, resolveNodeStroke((node.data as { stroke?: Stroke | null }).stroke), ctx),
+  drawnBounds: (node, pose, ctx) => {
+    const d = node.data as { path: Path; stroke?: Stroke | null };
+    return strokedPoseBox(node, pose, resolveNodeStroke(d.stroke), ctx, (at) => pathInPoseFrame(d.path, at));
+  },
 };

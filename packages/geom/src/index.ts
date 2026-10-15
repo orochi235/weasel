@@ -1,6 +1,9 @@
 /** @weasel-js/geom — pure 2D geometry kernel: scalars, affines, curves, the
  *  `Path` command stream and the math over it, and easing curves. Curve
- *  representations, tessellation and booleans live in subpaths. */
+ *  representations, tessellation and booleans live in subpaths.
+ *
+ * @packageDocumentation
+ */
 export { clamp, cross, dot, sub, len2, sign, approxEq, EPS } from './scalar';
 export { normalizeZoom, ZOOM_FLOOR, type View } from './view';
 export { identity, translate, scale, rotate, multiply, invert, applyToPoint, boxToBox, rotateAboutPoint, type Affine } from './affine';
@@ -47,10 +50,11 @@ export { pathDistanceToPoint } from './paths/pathDistance';
 export { cubicPointAt, splitCubicAtT, type Point } from './paths/cubicMath';
 export { fitCubicThroughDeletion } from './paths/spanFit';
 export { schneiderFit, fitCubicWithTangents } from './paths/schneiderFit';
-export { simplifyPath, type SimplifyPathOptions } from './paths/simplifyPath';
+export { simplifyPath, simplifySpan, simplifySubpath, type SimplifyPathOptions } from './paths/simplifyPath';
+export { simplifyAnchorsAt } from './paths/simplifyAnchors';
 export {
   averageAnchorsAt, closestOpenEnds, joinAnchorsAt, joinSubpathEnds, subpathEndAt,
-  type AverageAxis, type SubpathEnd,
+  type AverageAxis, type JoinOptions, type SubpathEnd,
 } from './paths/joinAnchors';
 export {
   pointInPath, strokeHitTest,
@@ -95,11 +99,16 @@ export {
   locateAnchor, moveHandleTo, openSubpathAt, segmentAt, translateAnchorBy,
   type AnchorRect, type AnchorSet, type SegmentHit,
 } from './paths/anchorEdits';
+export { anchorsUnderBrush } from './paths/anchorBrush';
 export {
   anchorSymmetries, anchorSymmetry, moveHandleSymmetric, translateAnchorsSymmetric, type AnchorSymmetry,
 } from './paths/anchorSymmetry';
 export { bendSegment, type BendGrip } from './paths/bendSegment';
-export { handleAlongItsAngle, makeHandlesSymmetric, retractHandles } from './paths/handleEdits';
+export { handleAlongItsAngle, handleAtItsLength, makeHandlesSymmetric, retractHandles } from './paths/handleEdits';
+export {
+  combTeeth, cubicCurvatureAt, cubicCurvatureSource, cubicDerivativeAt, curvatureComb,
+  type CombTooth, type CurvatureCombOptions, type CurvatureSource, type SegmentComb,
+} from './paths/curvature';
 export { editAnchorSetTracked, remapPointValues, type PointOrigin } from './paths/anchorOrigins';
 export { nearestPathAnchor, reverseAnchors, type PathAnchorHit } from './paths/nearestAnchor';
 export { pathInPoseFrame, pathInWorld, worldEditToStorage, type PathInWorldPose } from './paths/pathInWorld';

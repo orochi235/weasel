@@ -276,24 +276,24 @@ function CameraDispatch({
   // Input that lands outside the camera's element — an annotation target's
   // box, portalled into the surface — reaches the active camera's dispatcher
   // through here.
-  const wheelSlot = useContext(CameraWheelContext);
+  const wheelSlotRef = useContext(CameraWheelContext);
   useEffect(() => {
-    if (!wheelSlot) return;
+    if (!wheelSlotRef) return;
     const forward = (e: WheelEvent): void => {
       // The dispatcher cancels the copy it takes; the page acts on the original.
       const taken = hostRef.current?.dispatchEvent(new WheelEvent('wheel', e)) === false;
       if (taken) e.preventDefault();
     };
     const claim = (): void => {
-      if (registry.isActive()) wheelSlot.current = forward;
+      if (registry.isActive()) wheelSlotRef.current = forward;
     };
     claim();
     const off = registry.subscribe(claim);
     return () => {
       off();
-      if (wheelSlot.current === forward) wheelSlot.current = null;
+      if (wheelSlotRef.current === forward) wheelSlotRef.current = null;
     };
-  }, [wheelSlot, hostRef, registry]);
+  }, [wheelSlotRef, hostRef, registry]);
 
   return null;
 }

@@ -26,10 +26,17 @@ export {
   nudgeAnchorsLeftAction, nudgeAnchorsRightAction,
   deleteAnchorsAction, cutPathAtAnchorAction, marqueeAnchorsAction, selectAnchorAction,
 } from './anchorEditing';
-export { retractHandlesAction, makeHandlesSymmetricAction } from './anchorHandles';
-export { averageAnchorsAction, joinAnchorsAction } from './anchorJoin';
 export {
-  simplifyPathAction, offsetPathAction, snipAtCrossingsAction, joinPathsAction,
+  simplifyBrushAction, simplifyBrushToolAction, brushRingCursor,
+  SIMPLIFY_BRUSH_RADIUS_PX, SIMPLIFY_BRUSH_TOOL, type SimplifyBrushParams,
+} from './simplifyBrush';
+export { exitPathEditToolAction, pathEditToolAction, pathEditToolActive } from './pathEditTools';
+export { retractHandlesAction, makeHandlesSymmetricAction } from './anchorHandles';
+export { handleLockAngleAction, handleLockLengthAction } from './handleLocks';
+export { averageAnchorsAction, bridgeAnchorsAction, joinAnchorsAction } from './anchorJoin';
+export {
+  simplifyPathAction, offsetPathAction, snipAtCrossingsAction, joinPathsAction, bridgePathsAction,
+  DEFAULT_BRIDGE_TENSION,
 } from '../pathCommands';
 export {
   blendAction, bendAlongAction, repeatAlongAction, editPathEffectAction, expandPathEffectAction,

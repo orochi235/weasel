@@ -116,7 +116,7 @@ A tuning applies to whichever descriptor holds the id, whether a preset or a too
 ```tsx
 const radius = useRef(8);
 const tune = useMemo<ActionTunings>(() => ({
-  brushDeleteAnchors: { params: () => ({ radiusPx: radius.current }) },
+  simplifyBrush: { params: () => ({ radiusPx: radius.current }) },
   cycleCornerStyle: { bindings: [{ kind: 'key', key: 'k' }] },
 }), []);
 

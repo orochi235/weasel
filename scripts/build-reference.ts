@@ -2,8 +2,8 @@
  * Split TypeDoc's JSON for the workspace into one reference file per package,
  * in the shape the site's package pages draw (`apps/shared/reference.ts`).
  *
- * Reads `dist-demo/reference/typedoc.json`, which `typedoc` writes beside its
- * HTML (`json` in `typedoc.config.mjs`), and writes `dist-demo/reference/<package>.json`.
+ * Reads `dist-demo/reference/typedoc.json`, which `typedoc` writes (`json` in
+ * `typedoc.config.mjs`), and writes `dist-demo/reference/<package>.json`.
  * The site fetches those; TypeDoc's own file is far larger than their sum and
  * is deleted once it has been read, so the directory holds one file per
  * published package and nothing else.

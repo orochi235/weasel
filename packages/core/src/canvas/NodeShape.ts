@@ -124,6 +124,10 @@ export interface NodeShapeEntry<TData = unknown, TPose = unknown> {
    *  answer exists (`kit:text` has none short of laying out its glyphs); such
    *  a node is always painted. Same cheap-reads rule as `ink`. */
   bounds?(node: Node<TData, string, TPose>, pose: TPose, ctx?: NodeInkCtx): Bounds | null;
+  /** Optional: the tight box `paint` covers, stroke as drawn, in `bounds`'
+   *  frame; what `drawnBoundsOf` puts the selection chrome on. Not
+   *  conservative, unlike `bounds`. Absent or `null` is the pose box. */
+  drawnBounds?(node: Node<TData, string, TPose>, pose: TPose, ctx?: NodeInkCtx): Bounds | null;
 }
 
 /** How a painter inks its silhouette. See {@link NodeShapeEntry.ink}.
