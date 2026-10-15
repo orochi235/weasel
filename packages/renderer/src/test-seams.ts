@@ -1,4 +1,8 @@
-/** Reset seams and internals for tests in other packages; see `@weasel-js/text/test-seams`. */
+/**
+ * Reset seams and internals for tests in other packages; see `@weasel-js/text/test-seams`.
+ *
+ * @packageDocumentation
+ */
 
 export { getMesh, _resetCacheForTests } from './cache/cache';
 export { _resetMarkerCommandCacheForTests } from './cache/markerCommandCache';

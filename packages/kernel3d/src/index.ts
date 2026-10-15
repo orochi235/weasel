@@ -4,6 +4,8 @@
  *
  * It hosts a renderer rather than owning one: a consumer brings its own and
  * the kernel hands it poses. Nothing here touches WebGL.
+ *
+ * @packageDocumentation
  */
 
 export {

@@ -28,26 +28,17 @@ export default {
   entryPoints: publishedPackages(),
   // Keep the order above; TypeDoc would otherwise alphabetize core into the middle.
   sortEntryPoints: false,
-  out: 'dist-demo/api',
   // Read by `scripts/build-reference.ts`, which splits it per package for the site's package pages.
   json: 'dist-demo/reference/typedoc.json',
-  name: 'weasel API',
-  readme: 'README.md',
   plugin: ['./typedoc/plugin.mjs'],
   categorizeByGroup: false,
-  // TypeDoc's defaults, plus `xml` for the SVG in svg's README.
-  highlightLanguages: [
-    'bash', 'console', 'css', 'html', 'javascript', 'json', 'jsonc', 'json5', 'yaml', 'tsx', 'typescript', 'xml',
-  ],
-  navigation: {
-    includeCategories: true,
-    includeGroups: false,
-  },
   packageOptions: {
     excludePrivate: true,
     excludeInternal: true,
     excludeExternals: true,
     exclude: ['**/*.test.ts', '**/*.test.tsx'],
     skipErrorChecking: true,
+    // Source paths from the repository root, where a reader can find them; TypeDoc's default is each package's common directory.
+    displayBasePath: import.meta.dirname,
   },
 };

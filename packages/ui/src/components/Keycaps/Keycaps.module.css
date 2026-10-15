@@ -2,6 +2,12 @@
 .keys,
 .key {
   --key-h: var(--wzl-control-h-xs);
+  --key-font-size: var(--wzl-font-size-sm);
+}
+
+/* Function-key legends print smaller, as on a real keyboard. */
+.key[data-fn] {
+  --key-font-size: calc(var(--wzl-font-size-sm) * 0.85);
 }
 
 .keys {
@@ -34,28 +40,47 @@
 }
 
 .key {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
   height: var(--key-h);
   padding: 0 var(--wzl-space-2);
-  /* Light face, slightly-darker-than-face border, dark glyph — reads as
-     a real keycap rather than a recessed slot in the panel. */
-  background: var(--wzl-fg);
-  border: 1px solid #25272c;
+  /* No fill; border and legend follow currentColor, so a chip inline in
+     colored prose or beside a colored badge takes the surrounding color. */
+  background: transparent;
+  border: 1px solid currentColor;
   border-bottom-width: 2px;
   border-radius: var(--wzl-radius-sm);
-  color: var(--wzl-surface);
+  color: currentColor;
   /* Keycaps are a deliberate exception to the site theme — the design-
      system UI font (often a display face like Oswald) is wrong for
      keyboard chips. Use a neutral sans stack so labels read like real
      key legends. Consumers wanting a specific face per chip pass the
      `font` prop on KeyCap. */
   font-family: ui-sans-serif, system-ui, sans-serif;
-  font-size: var(--wzl-font-size-sm);
+  font-size: var(--key-font-size);
   font-weight: var(--wzl-font-weight-bold);
   line-height: 1;
+}
+
+/* A symbol legend drawn as an icon, a little larger than the letters beside it
+   so its strokes stay whole at legend sizes. */
+.legendIcon {
+  flex: none;
+  width: calc(var(--key-font-size) * 1.25);
+  height: calc(var(--key-font-size) * 1.25);
+}
+
+/* The symbol's own character, for a screen reader and for copied text. */
+.legendText {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 /* Default chip is square — letters, digits, and single glyphs (⎋ ⌫ ↑ etc.)
@@ -79,40 +104,32 @@
   padding: 0 var(--wzl-space-4);
 }
 
-/* Optional/inverted (default variant): face flips to dark; legend drops
-   to 60% opacity; dotted border drops to 40% opacity. Three soft cues
-   stacked for "may be held but isn't required." */
+/* Inverse variant: light face, slightly-darker-than-face border, dark
+   glyph — reads as a real keycap rather than a recessed slot in the panel. */
+.key[data-variant='inverse'] {
+  background: var(--wzl-fg);
+  border-color: #25272c;
+  color: var(--wzl-surface);
+}
+
+/* Optional: a dotted border at full currentColor. The dotted pattern alone
+   carries the cue, since the default chip defers its color to the context
+   and dimming would fight that. */
 .key[data-inverted] {
-  background: var(--wzl-surface);
-  color: color-mix(in srgb, var(--wzl-fg) 60%, transparent);
   border-style: dotted;
-  border-color: color-mix(in srgb, var(--wzl-fg) 40%, transparent);
   border-width: 1.5px;
   border-bottom-width: 1.5px;
 }
 
-/* Minimal variant — no fill, borders and legend follow currentColor.
-   Useful inline in colored prose / next to colored badges where the
-   chip should take the surrounding text color. */
-.key[data-variant='minimal'] {
-  background: transparent;
-  border-color: currentColor;
-  color: currentColor;
+/* Optional on the inverse variant: the face flips to dark, the legend drops
+   to 60% opacity and the dotted border to 40% — three stacked cues for
+   "may be held but isn't required." */
+.key[data-variant='inverse'][data-inverted] {
+  background: var(--wzl-surface);
+  color: color-mix(in srgb, var(--wzl-fg) 60%, transparent);
+  border-color: color-mix(in srgb, var(--wzl-fg) 40%, transparent);
 }
 
 .shortcut .key {
   font-weight: var(--wzl-font-weight-normal);
-}
-
-/* Optional + minimal: dotted border at full currentColor, legend at full
-   currentColor. The dotted pattern alone carries the "optional" cue here
-   — minimal's whole point is to defer color to the surrounding context,
-   so dimming would fight that. (Default variant uses graded opacity as a
-   stacked cue; minimal keeps it crisp.) */
-.key[data-variant='minimal'][data-inverted] {
-  border-style: dotted;
-  border-color: currentColor;
-  color: currentColor;
-  border-width: 1.5px;
-  border-bottom-width: 1.5px;
 }

@@ -52,7 +52,7 @@ const SECTIONS: readonly { title: string; routes: readonly string[] }[] = [
     ],
   },
   {
-    title: 'Key gestures — minimal KeyCap rendering',
+    title: 'Key gestures — KeyCap rendering',
     routes: [
       '[initial] keyDown(Escape)',
       '[initial] keyDown(ArrowDown)',

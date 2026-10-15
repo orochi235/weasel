@@ -1,5 +1,63 @@
 # @weasel-js/minimap
 
+## 1.10.1
+
+### Patch Changes
+
+- 886380f: Each README's "API reference" link now opens the package's page on the site, `https://orochi235.github.io/weasel/#pkg/<name>`, where it used to open the TypeDoc site at `/weasel/api/`, which is no longer built. A file comment that sat on an `export { … }` list is now marked as the file's, so an entry's description no longer shows up as the summary of each function the entry re-exports. No code changed. `@weasel-js/labkit` drops `vitepress` from its devDependencies, which nothing used.
+- Updated dependencies [113c088]
+- Updated dependencies [cbd5b4d]
+- Updated dependencies [d3b73b9]
+- Updated dependencies [aaa2b4f]
+- Updated dependencies [c7b7ed5]
+- Updated dependencies [faf8ff3]
+- Updated dependencies [8bee821]
+- Updated dependencies [3fda6e6]
+- Updated dependencies [67a7de8]
+- Updated dependencies [f6e3e90]
+- Updated dependencies [74ba77e]
+- Updated dependencies [a8e8048]
+- Updated dependencies [755b7ff]
+- Updated dependencies [1d3ca5c]
+- Updated dependencies [566f15e]
+- Updated dependencies [7c5af8a]
+- Updated dependencies [ee59ccd]
+- Updated dependencies [f22f5ce]
+- Updated dependencies [789e80d]
+- Updated dependencies [92e6291]
+- Updated dependencies [b8bfb2d]
+- Updated dependencies [2216d1b]
+- Updated dependencies [a7144f4]
+- Updated dependencies [35c4879]
+- Updated dependencies [b67b6cd]
+- Updated dependencies [886380f]
+- Updated dependencies [f8faa63]
+- Updated dependencies [3bc85c9]
+- Updated dependencies [d0c3896]
+- Updated dependencies [3448831]
+- Updated dependencies [27fe0fb]
+- Updated dependencies [8bbf878]
+- Updated dependencies [b5267f9]
+- Updated dependencies [62e766c]
+- Updated dependencies [5485d35]
+- Updated dependencies [690ea72]
+- Updated dependencies [e962494]
+- Updated dependencies [bad37cf]
+- Updated dependencies [9e84e5d]
+- Updated dependencies [bd6c203]
+- Updated dependencies [ef29364]
+- Updated dependencies [2f48645]
+- Updated dependencies [92c2e8e]
+- Updated dependencies [711ae46]
+- Updated dependencies [365eae0]
+- Updated dependencies [781a15e]
+- Updated dependencies [10c5d41]
+- Updated dependencies [a092978]
+  - @weasel-js/core@1.10.1
+  - @weasel-js/routing@1.10.1
+  - @weasel-js/animator@1.10.1
+  - @weasel-js/react@1.10.1
+
 ## 1.10.0
 
 ### Patch Changes

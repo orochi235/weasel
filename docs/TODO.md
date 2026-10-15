@@ -26,13 +26,14 @@ Priority tags:
   `features`; the new word is not chosen yet. That leaves choosing it, then renaming the one path,
   its imports, and the section of the taxonomy.
 
-- **(P3) Nothing reads a mode's `entry.trigger`.** Draw enters path-edit and isolation from
-  `SceneCanvas`'s `onDoubleClick` observer through a kind-to-mode table of its own
-  (`apps/draw/src/modality/doubleClickEntry.ts`), not from the `'double-click-target'` the
-  definitions in `packages/modes/src/presets/default.ts` declare. Text-edit is entered by the
-  edit itself (`useTextEditSession`), so its trigger is unread by design. Binding the other two
-  means a double-click entry beside the kit's own `enterPathEdit` binding, and a definition does
-  not say which hits it takes (draw's table does).
+- **(P3) Nothing reads a mode's `entry.trigger`.** The `'double-click-target'` the definitions
+  in `packages/modes/src/presets/default.ts` declare is unread. A path with anchors is put in
+  path-edit by the kit's `enterPathEdit` binding, through draw's `PathEditHost`
+  (`apps/draw/src/modality/pathEditHost.ts`), and text-edit is entered by the edit itself
+  (`useTextEditSession`). Draw still enters isolation, and path-edit on a path with no anchors (a
+  rect), from `SceneCanvas`'s `onDoubleClick` observer through a kind-to-mode table of its own
+  (`apps/draw/src/modality/doubleClickEntry.ts`). Binding those means a double-click entry beside
+  `enterPathEdit`, and a definition does not say which hits it takes (draw's table does).
 
 - **(P3) External-content ingestion — follow-ups.** The pipeline is in
   `packages/core/src/features/ingestion/` (its README is the map). Left:
@@ -188,7 +189,6 @@ Priority tags:
   drafts, not proofed at high resolution.
 - **(P2) Spacing hints.** Equal-spacing markers between siblings while moving, and Alt-hover
   distance readouts between the selection and the shape under the pointer.
-- **(P2) Live symmetry.** Draw on one side of an axis and the mirrored half follows.
 - **(P2) Variable-width strokes.** A width profile along a stroke's length, edited by dragging
   on the stroke. `strokeToPath` handles a fixed width only.
 
@@ -875,16 +875,15 @@ only story runner in the repo.
   reload, so the cause isn't known; the first load after an agent edits a lab once threw
   `instrument.defaultConfig is not a function` before a reload fixed it.
 
-- **(P2) Package pages: check the reference against a real build, then retire `/api/`.** Every
-  published package has a page at `#pkg/<name>` (overview, guides, reference, demos; how each is
-  fed is in `CONTRIBUTING.md`, "Package pages"). The reference half has only ever read a
-  hand-written TypeDoc project (`scripts/lib/reference/fixture.ts`): `npm run build:api` has not
-  been run since it began writing `dist-demo/reference/`, and no page has been seen in a browser.
-  Run it, open `#pkg/core/reference` and a subpath entry such as `#pkg/geom/reference/booleans`,
-  and fix what TypeDoc's real output shows the reader got wrong. Then drop the TypeDoc HTML site:
-  `out` in `typedoc.config.mjs`, the sidebar's "API reference" link, the `/api/` half of
-  `serveApiDocsInDev`, and the `/weasel/api/` links in the package READMEs. `vitepress` is still
-  in labkit's `devDependencies` with nothing using it. Only geom, gestures, and labkit have guides.
+- **(P3) Package pages: a public signature names types the reference has no page for.** Every
+  published package has a page at `#pkg/<name>` (how each tab is fed is in `CONTRIBUTING.md`,
+  "Package pages"), and only geom, gestures, and labkit have guides. `npm run build:api` warns for
+  each type a public signature names that its package does not export, and the page writes that
+  name unlinked: symmetry's `Pt` and `AnyScene`, geom's `Side` and `Anchors`, prefs'
+  `SyncOptions`, diagram's `Rect`, and core's `ViewPoseAdapter`, among others. About 420 exports
+  have no doc comment, so their row in a module's list has no description. A page's "Declared in"
+  line links to GitHub only where TypeDoc found the repository, which it cannot from a git
+  worktree (it looks for a `.git` directory); the deployed build has not been checked for links.
 
 - **(P3) SVG export writes wrapped text unwrapped.** `data-weasel-wrap` round-trips
   `TextStyle.wrap` for weasel's own reader, but SVG `<text>` never wraps, so any other reader draws
@@ -908,13 +907,6 @@ only story runner in the repo.
   hands `useLayoutDepSource` each move with the pose it left, and the transition glides what is
   shown from there through a pose override, writing nothing. A removal cannot follow it, since
   the node is gone by the time a report arrives.
-
-- **(P3) draw: a double-click on a path is acted on twice.** The kit's `enterPathEdit` binding
-  and the app's `onDoubleClick` observer (`apps/draw/src/modality/doubleClickEntry.ts`) both take
-  it; they reach the same machine call and the second is a no-op. Text has one way in: the edit
-  owns its mode, which `useTextEditSession` enters and leaves from the hook's `onStart` and
-  `onEnd`, so `text-edit`'s `entry.trigger` stays unread ("Nothing reads a mode's
-  `entry.trigger`" under Tools).
 
 ---
 
@@ -945,33 +937,18 @@ only story runner in the repo.
 
 ---
 
-## Lint
-
-- **(P3) eslint-plugin-react-hooks v7's `immutability` rule is off.** It is the
-  last compiler rule that could come on: 51 reports in 37 files on 2026-10-12.
-  26 are tests assigning to a prop or an outer variable from inside a probe
-  component, which the test override in `eslint.config.js` that already turns
-  `react-hooks/globals` off would cover. The rest are `useVisibleRaf` loops
-  re-requesting themselves, and writes to forwarded refs, DOM nodes, and
-  mutable engine objects: each to be restructured or shown to be the point.
-
----
-
 ## Release-gate & build hygiene
 
-- **(P2) Confirm on a fleet node that a new dependency in browser-tested code no longer fails the
-  first run that meets it.** A node keeps its vite dep cache between runs, and a warm cache skips
-  the scan that finds dependencies, so one first imported since then was met mid-run and vite
-  reloaded the page under the suites ("Vitest failed to find the runner", 12 suites on 2026-10-13).
-  The `browser` project's `optimizeDeps.include` is now computed from what its tests import
-  (`scripts/vitest-browser-deps.ts`), and vite keys the cache on that list, so a new import
-  discards the cache before a test loads. Tested against vite alone; not yet run on a node with a
-  stale cache. To confirm: on a node that has run the suite, start a fleet run of a commit that
-  adds an import of an installed, not yet imported dependency to a module a browser test loads.
-  The log should read "Re-optimizing dependencies because vite config has changed" and no suite
-  should fail to find the runner. Two things it does not cover: a dependency reached only through
-  `import.meta.glob` or a computed `import()`, and the opt-in `forge-stories` project, which has
-  no such list.
+- **(P3) Two ways a new dependency can still reach a browser test unannounced.** The `browser`
+  project's `optimizeDeps.include` is computed from what its tests import
+  (`scripts/vitest-browser-deps.ts`), so a newly imported dependency changes vite's config hash and
+  a warm dep cache on a fleet node is rebuilt before any test loads; confirmed on studio and teitou
+  on 2026-10-15. The scan cannot see a dependency reached only through `import.meta.glob` or a
+  computed `import()`, and the opt-in `forge-stories` project has no such list. Either one met
+  mid-run reloads the page under the suites, which fails them with "Vitest failed to find the
+  runner". Vitest drops vite's info lines at its default `logLevel` of `warn`, so a fleet log shows
+  "Re-optimizing dependencies because vite config has changed" only with `logLevel: 'info'` set on
+  the project.
 
 - **(P3) `onto test --spread` fails a run whose tree moved, where the other commands sync again.**
   onto `f621d8b` makes a launch carry the stamp its own sync was answered with, so a suite can no
@@ -981,76 +958,41 @@ only story runner in the repo.
   is rebuilt, and a node's agent refuses a launch against a tree that lost its stamp only after
   `onto push <node>`.
 
-- **(P3) `Callout.reanchor.browser.test.tsx` heard a window `resize` it did not expect, once.** "a
-  callout follows an anchor rect that only moves, each time, without a resize event on the window"
-  failed in one fleet run on teitou at `80b0a8314`: its `resize` listener was called once. It
-  passed in the six fleet runs before that the same day and passes alone. The listener is on the
-  window every browser test shares, so a resize from anywhere fails it; what resized the window
-  was not found.
-
-- **(P3) rolldown could not write a dependency map during `packages/forge/src/vite/plugin.test.ts`,
-  once.** One fleet run at `65c06d7c2` passed every file and exited 1 on an unhandled error:
+- **(P3) rolldown could not write a dependency file during `packages/forge/src/vite/plugin.test.ts`,
+  twice.** A fleet run at `65c06d7c2` passed every file and exited 1 on an unhandled error:
   `Failed to write file in …/T/forge-plugin-*/.vite/deps_temp_*/polygon-clipping.js.map`, `Invalid
   argument (os error 22)`, after "serves the component graph from source, and pushes it again when
-  a component file changes". The test makes that directory and removes it when it ends, so the
+  a component file changes". A run on teitou at `f4100e96c` (2026-10-15) did the same after the
+  same test, on `react-dom.js`. The test makes that directory and removes it when it ends, so the
   dev server's dependency scan may have still been writing; not confirmed.
 
-- **(P2) Browser tests time out under fleet load, inside a Playwright action.** A click, a key, or
-  a screenshot that takes a fraction of a second alone stalls for seconds in a full run on studio,
-  teitou, or msb-uai, a different handful of tests each run, and the test hits its 15 s limit or
-  the action's own. Every one passes alone, and nobody has confirmed load is the cause. Two stalls
-  were timed: 14.5 s in `userEvent.click` after the row was found and scrolled to
-  (`PrefSchemaEditor.types.browser.test.tsx`, 0.3 s alone), and 7.8 s in `page.screenshot` waiting
-  for a `position: fixed` element that never moves to be stable
-  (`core/src/features/text/overlayAlignment.browser.test.tsx`, "sans-serif 16px lands on the canvas
-  glyphs").
-  - **Still exposed**, because the action is what the test is about and nothing in it sleeps or
-    animates: `overlayAlignment` (a screenshot a test, 0.55 s each alone),
-    `labkit/src/lightbox/Lightbox.browser.test.tsx`,
-    `SelectionPanel/SelectionPanel.selection.browser.test.tsx`,
-    `PatternPicker/PatternPicker.browser.test.tsx`, and the full-page screenshot in
-    `labkit/src/lab/LabLightbox.browser.test.tsx`.
-  - **Changed on 2026-10-13, none of it confirmed by a fleet run.** `PrefSchemaEditor.types`,
-    `labkit/src/controls/compoundRows.browser.test.tsx`, and `LabLightbox`'s toolbar buttons click
-    through the DOM, since the click is not what they test; `compoundRows` is one test a dialog and
-    no longer waits for each to close. Testing Library's `waitFor` and `findBy*` wait 5 s in the
-    `browser` project, as `expect.poll` already did; they waited 1 s, in `LabLightbox` and in
-    `forge/src/timeline/timeline.browser.test.tsx` ("plays on real frames") among others. Two
-    timeouts were raised for tests that do the work: the sweeps in
-    `Prefs/PrefsForm.drop.browser.test.tsx` take 3.1 to 3.6 s each alone and have 60 s, and
-    `AssetEditor.steps.test.tsx`, a jsdom test that timed out at 5 s, takes 0.9 to 1.4 s alone and
-    has 20 s.
-  - **Running `browser` after the other projects** (`sequence.groupOrder` in `vitest.config.ts`),
-    measured 2026-10-12 over nine full runs at one commit, three on each node: none of six runs
-    had a timeout, and one of three baseline runs did (`overlayAlignment`, on studio). That is
-    suggestive and no more: at a one in three rate six clean runs come up about 9% of the time. It
-    cost 12 to 52 s a run on teitou and msb-uai and nothing on studio, which takes about 175 s
-    either way against 100 to 115 s on the others and hosts a long-running render service; both
-    failing runs were there. A 15 s `browser` timeout in a run made since would mean running beside
-    the other projects was not the cause, and the `groupOrder` line should come out. Not measured:
-    fewer workers for `browser`, and whether studio's own load is the cause.
-  - **Three runs on teitou on 2026-10-13 failed the same three `browser` tests, which none of the
-    commits touch**: `8777d97f0`, then `2445052c6` and `a06b02902`, whose trees differ from it only
-    in `PrefSchemaEditor`. Each is the only failure in its file: 15 s timeouts in
-    `core/src/canvas/glyphCoverage.browser.test.ts` ("keeps both stems of a 7.2px H at every
-    sub-pixel offset") and `core/src/canvas/rasterSession.browser.test.ts` ("do not push a canvas
-    already on the page out of its context"), neither of which makes a Playwright action, and
-    `frame.evaluate: Frame was detached` under `userEvent.keyboard` in
-    `text-dom/src/overlayTyping.browser.test.tsx`. All three passed on the run before the first,
-    whose tree differed only in `PrefSchemaEditor`'s shelf. It is not teitou: a run of `a06b02902`
-    on studio failed `glyphCoverage` and `rasterSession` the same way, and `labkit`'s
-    `presentation.browser.test.tsx` ("entering refits the view…") in place of `overlayTyping`. Both
-    `core` files pass alone at that commit on orochi, in 7 s.
-  - **Still failing on 2026-10-14**, branch `path-edit-commands`, which touches no renderer, font,
-    or labkit code: `glyphCoverage` and `rasterSession` timed out on teitou and again on studio, and
-    on studio so did `glyphCoverage`'s "puts down the same ink wherever a 7.2px H lands" and
-    `LabLightbox`'s "an expanded trial keeps its marks over it". Also on studio, not a timeout:
-    `ui/src/components/Prefs/PrefsRail.rootSection.browser.test.tsx` ("scrolls the root's page to a
-    section from its entry") saw `tools` as the current section where it expected `files`. It
-    passed on teitou at a commit whose `ui` tree was the same. Later the same day, branch
-    `soft-mode-history` (history and cursor code only) failed `glyphCoverage`'s "keeps both stems"
-    on teitou, then both `glyphCoverage` tests and `rasterSession` on studio, as did `main` at
-    `b1bcafb7d` on studio; both files pass alone on orochi at the branch head, in 12.7 s.
+- **(P2) What is left of the `browser` project's fleet failures.** Measured on 2026-10-15 from the
+  logs of 136 fleet runs (2026-10-11 to 10-15) and from runs of the `browser` project alone on
+  teitou, msb-uai and studio. Running it after the other projects (`sequence.groupOrder`) ended the
+  timeouts in Playwright actions: 8 of 18 fleet runs before that change had one; after it only
+  `LabLightbox`, which also builds WebGL contexts, did (3 of 118). The timeouts that followed, from
+  2026-10-13, were the project's own: it failed the same tests alone as in a full run, and sixteen
+  busy cores beside it changed nothing. Its tabs share one Chromium, and on teitou 17 of them took
+  the same 72 to 78 s as six while tests making WebGL contexts ran three to five times as long, so
+  it now runs six (`maxWorkers`). A tab that lost its connection mid-run ("Browser connection was
+  closed while running tests", every file after it left unrun; at six workers too, on
+  `17bd67dea`'s first fleet run) had a renderer full of Mach ports, which a removed test frame
+  holds until a full GC; `vitest.browser.setup.ts` now collects garbage at each file's start.
+  Measured on teitou, one or two workers: before, 11 of 11 runs lost a tab, 36 to 78 files in, and
+  in the 5 runs sampling ports each second its renderer held 14,086 to 16,661 when it went; with a
+  full GC between files, 8 of 8 kept every tab, the 5 sampled peaking at 414 ports, and a lone
+  tab ran all 176 files twice. That the port count is what closes the sockets is inferred from this,
+  not traced inside Chromium: every socket and request of that page closes at once from the
+  browser's side (a net log shows it), the page itself lives on, and no crash is reported. Left
+  open:
+  - **`text-dom/src/overlayTyping.browser.test.tsx`'s first test fails `frame.evaluate: Frame was
+    detached` under `userEvent.keyboard`**: 8 runs, all at the old worker count. One suspect is
+    Playwright's `page.frame('vitest-iframe')` returning the previous file's frame, since every
+    test frame has that name; in 18 runs a check at each file's start never found a second or a
+    detached one, but none of those runs had the failure, so that is unlikely, not ruled out.
+  - **`labkit/src/lab/presentation.browser.test.tsx` ("entering refits the view…") saw a pan off
+    on one axis** in 2 fleet runs at the old worker count, and in 6 of 19 runs of the project
+    alone at one or two workers on teitou, with and without the garbage collection.
   - `forge/src/vite/plugin.test.ts` has its own entry under "Demos & visual regression".
 
 - **(P2) HUD vs DOM text: what the idle rerun left open.** `tests/perf/hud-vs-dom.spec.ts` prices
@@ -1282,22 +1224,21 @@ only story runner in the repo.
   backend only. Result files: `tests/perf/recorded/layer-dispatch-2026-10-07/` and
   `tests/perf/recorded/layer-dispatch-dirty-2026-10-07/`.
 
-- **(P3) The pull request benchmark job has never run.** `.github/workflows/perf-pr.yml` runs
-  `perf:bench` and `test:perf` on a pull request's merge base and head and posts the `perf:compare`
-  table as a comment, without gating. The comment and directory-compare scripts are tested; the
-  workflow steps have only been read. `perf:bench` has never run on the runner at all, since
-  `perf.yml` runs `test:perf` alone. Unmeasured: how long two full runs take on the one self-hosted
-  machine (the job allows 100 minutes), and whether the base, measured first, reads differently
-  from the head for that reason alone.
-
-- **(P3) Five leaf packages keep their own listener sets.** Every other store notifies through
-  `createEmitter()` in `@weasel-js/registry` (a pass walks the listeners held when it began; a
-  throwing listener is logged and the rest run). These still hold a `Set` and a loop, because each
-  is in a package that depends on nothing else in weasel, and the move would give it its first
-  sibling dependency: history and its journal, `select/store.ts`, storage's records (two sets),
-  cursor's `paintedCursorState`, and react's `useFrameClock`. A throw from one of their listeners
-  still reaches whatever caused the notify. Moving them means either that dependency or the
-  emitter living somewhere all five can reach.
+- **(P3) The pull request benchmark job does not fit its time limit, and its comment shows
+  seven of fifteen benchmarks.** Its steps ran on keiei (Apple M2, 8 cores, load about 6.9) on
+  2026-10-15, outside GitHub: base checkout, `npm ci`, `perf:bench` and `test:perf` on each side,
+  `compare.mjs`, and `pr-comment.mjs --dry-run`. Every step worked. Measured:
+  - **Time.** `test:perf` took 53.8 min on the base and 51.1 on the head, and `perf:bench` about 4
+    min each; checkout to comment was 113 min against the job's `timeout-minutes: 100`.
+    `hud-vs-dom` alone is 27.2 min a run. One full `test:perf` also outruns `perf.yml`'s 45
+    minutes. Not measured on the runner itself (studio, M1 Max), so the overrun there is inferred.
+    Which to change is open: the limits, `hud-vs-dom`'s rounds, or which specs a pull request runs.
+  - **The comment.** `compare.txt` was 536,682 characters; `MAX_COMMENT_CHARS` keeps 60,000, which
+    is `animation-stress` through `flush-noise` in file order. Everything after, `image-quad` and
+    `layer-dispatch` among them, never reaches the pull request. What the comment should hold
+    instead (the largest ratios, one summary line per benchmark) is undecided.
+  - Still unmeasured: whether the base, measured first, reads differently from the head for that
+    reason alone. Result files and logs from that run were not kept.
 
 - **(P3) `SceneCanvasInner` is one 386-line function.** It is most of the 508-line
   `canvas/SceneCanvas.tsx`. What is left in it is the prop destructure and the JSX, most of that

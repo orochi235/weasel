@@ -143,8 +143,8 @@
     "longestFunction": 281
   },
   "packages/history/src/history.ts": {
-    "lines": 697,
-    "longestFunction": 448
+    "lines": 695,
+    "longestFunction": 445
   },
   "packages/hud/src/attach.ts": {
     "longestFunction": 162
@@ -238,7 +238,7 @@
     "lines": 439
   },
   "packages/renderer/src/WeaselRenderer.ts": {
-    "lines": 731
+    "lines": 688
   },
   "packages/renderer/src/drawBatch.ts": {
     "lines": 608
@@ -253,7 +253,7 @@
     "longestFunction": 133
   },
   "packages/storage/src/records.ts": {
-    "longestFunction": 197
+    "longestFunction": 185
   },
   "packages/stroke/src/tessellate/dash.ts": {
     "longestFunction": 125

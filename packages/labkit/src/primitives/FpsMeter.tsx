@@ -12,7 +12,7 @@ export function FpsMeter() {
   const rootRef = useRef<HTMLDivElement | null>(null);
 
   const loop = useVisibleRaf(
-    (time) => {
+    (time, loop) => {
       const last = lastTimeRef.current;
       if (last !== null) {
         const delta = time - last;

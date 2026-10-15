@@ -12,7 +12,7 @@
  * against it.
  */
 import { useCallback, useEffect, useMemo, useRef } from 'react';
-import { useLatest, useVisibleRaf } from '@weasel-js/react';
+import { useLatest, useVisibleRaf, type VisibleRaf } from '@weasel-js/react';
 import type { NodeId, PoseHold, Scene } from '../../core/scene/types';
 
 /** What a producer is told before it is asked for a frame. */
@@ -76,13 +76,6 @@ export function usePoseRun<TPose>(opts: UsePoseRunOptions<TPose>): PoseRun {
   const frame = useRef(0);
   const mounted = useRef(true);
 
-  // The gate defaults an absent clock to `requestAnimationFrame` itself, so
-  // these pass straight through rather than being defaulted twice.
-  const loop = useVisibleRaf(() => { tick(); }, {
-    requestFrame: opts.requestFrame,
-    cancelFrame: opts.cancelFrame,
-  });
-
   /** The hold on the scene the options name now. A run handed a different
    *  scene mid-flight lets go of the old one's nodes. */
   const holdNow = useCallback((): PoseHold<TPose> => {
@@ -118,12 +111,12 @@ export function usePoseRun<TPose>(opts: UsePoseRunOptions<TPose>): PoseRun {
     optsRef.current.onCommit?.(moved);
   };
 
-  const halt = (): void => {
+  const halt = (loop: VisibleRaf): void => {
     running.current = false;
     loop.cancel();
   };
 
-  const tick = (): void => {
+  const tick = (loop: VisibleRaf): void => {
     if (!mounted.current || !running.current) return;
     const hold = holdNow();
     const pinned = hold.others();
@@ -136,12 +129,19 @@ export function usePoseRun<TPose>(opts: UsePoseRunOptions<TPose>): PoseRun {
     }
     hold.set(previews.current);
     if (done) {
-      halt();
+      halt(loop);
       commit();
       return;
     }
     loop.request();
   };
+
+  // The gate defaults an absent clock to `requestAnimationFrame` itself, so
+  // these pass straight through rather than being defaulted twice.
+  const loop = useVisibleRaf((_time, loop) => { tick(loop); }, {
+    requestFrame: opts.requestFrame,
+    cancelFrame: opts.cancelFrame,
+  });
 
   useEffect(() => {
     mounted.current = true;
@@ -163,11 +163,11 @@ export function usePoseRun<TPose>(opts: UsePoseRunOptions<TPose>): PoseRun {
     },
     stop() {
       if (!running.current) return;
-      halt();
+      halt(loop);
       commit();
     },
     cancel() {
-      halt();
+      halt(loop);
       release();
     },
     isRunning: () => running.current,

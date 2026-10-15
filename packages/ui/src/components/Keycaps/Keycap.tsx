@@ -1,8 +1,23 @@
 import type { CSSProperties } from 'react';
+import { Icon } from '../../icons/Icon';
+import type { IconName } from '../../icons/generated/paths';
 import s from './Keycaps.module.css';
 import { MODIFIER_LABELS } from './keySpecsFromMods';
 
 const WIDE_GLYPHS = new Set(['⇥', '↵', '␣']);
+const FUNCTION_KEY = /^F([1-9]|1\d|2[0-4])$/;
+
+/** The icon a symbol legend is drawn as, so it matches its neighbors whatever
+ *  font the chip is in. Every symbol the legend tables produce has one. */
+const LEGEND_ICONS: Readonly<Record<string, IconName>> = {
+  '⌘': 'keyCommand', '⇧': 'keyShift', '⌥': 'keyOption', '⌃': 'keyControl', '⎈': 'keyHelm', '⎇': 'keyAlt',
+  '⎋': 'keyEscape', '↵': 'keyReturn', '⏎': 'keyReturn', '⇥': 'keyTab', '␣': 'keySpace',
+  '⌫': 'keyBackspace', '⌦': 'keyDelete', '⟵': 'keyBackspaceArrow',
+  '↑': 'keyArrowUp', '↓': 'keyArrowDown', '←': 'keyArrowLeft', '→': 'keyArrowRight',
+  '↖': 'keyHome', '↘': 'keyEnd', '⇞': 'keyPageUp', '⇟': 'keyPageDown',
+  '⎙': 'keyPrintScreen', '⎀': 'keyInsert', '⇳': 'keyScrollLock', '⎉': 'keyPause',
+  '⊞': 'keyWindows', '▤': 'keyMenu',
+};
 
 /**
  * Width class of a keycap: a modifier glyph, a multi-character legend that
@@ -22,21 +37,19 @@ export function inferKeycapKind(label: string): KeycapKind {
 }
 
 /** Visual style of a keycap chip. */
-export type KeyCapVariant = 'default' | 'minimal';
+export type KeyCapVariant = 'default' | 'inverse';
 
 /** Props for {@link KeyCap}. */
 export interface KeyCapProps {
   /** Glyph rendered in the chip (modifier or key). */
   label: string;
-  /** Marks the chip as not required to trigger the action. In the default
-   *  variant the chip face inverts (dark face / light glyph) for
-   *  emphasis. In the `'minimal'` variant the chip's border becomes
-   *  dotted to read as "may be held, but isn't required." */
+  /** Marks the chip as not required to trigger the action: its border
+   *  goes dotted, to read as "may be held, but isn't required." In the
+   *  `'inverse'` variant the face flips dark and the legend dims too. */
   inverted?: boolean;
-  /** Visual style. `'default'` (default) renders a filled chip; `'minimal'`
-   *  renders an unfilled chip whose border and legend are `currentColor`
-   *  — useful inline in colored prose / next to colored badges where the
-   *  chip should take the surrounding text color. */
+  /** Visual style. `'default'` renders an unfilled chip whose border and
+   *  legend are `currentColor`, so it takes the surrounding text color;
+   *  `'inverse'` renders a filled chip. */
   variant?: KeyCapVariant;
   className?: string;
   /** Optional inline style. Useful for one-off width overrides (e.g.
@@ -56,15 +69,22 @@ export interface KeyCapProps {
  *  `KeySequence` to render a full shortcut. */
 export function KeyCap({ label, inverted = false, variant = 'default', className, style, font }: KeyCapProps) {
   const resolvedStyle = font ? { ...style, fontFamily: font } : style;
+  const icon = LEGEND_ICONS[label];
   return (
     <kbd
       className={[s.key, className].filter(Boolean).join(' ')}
       data-kind={inferKeycapKind(label)}
+      data-fn={FUNCTION_KEY.test(label) || undefined}
       data-variant={variant === 'default' ? undefined : variant}
       data-inverted={inverted || undefined}
       style={resolvedStyle}
     >
-      {label}
+      {icon ? (
+        <>
+          <Icon name={icon} className={s.legendIcon} />
+          <span className={s.legendText}>{label}</span>
+        </>
+      ) : label}
     </kbd>
   );
 }

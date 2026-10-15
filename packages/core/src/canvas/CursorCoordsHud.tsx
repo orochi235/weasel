@@ -59,7 +59,7 @@ export function CursorCoordsHud({ canvasRef, anchorRef, viewRef, toWorld, offset
   const framesRef = useRef(0);
   const lastFlushRef = useRef(0);
   const fpsLoop = useVisibleRaf(
-    () => {
+    (_time, fpsLoop) => {
       framesRef.current++;
       const now = performance.now();
       const dt = now - lastFlushRef.current;

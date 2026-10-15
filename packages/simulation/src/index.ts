@@ -2,6 +2,8 @@
  * @weasel-js/simulation — a velocity-Verlet N-body integrator over forces in
  * d3-force's protocol. Nothing here needs React or a DOM; the frame-loop hook
  * is in `@weasel-js/simulation/react`.
+ *
+ * @packageDocumentation
  */
 export { createSimulation } from './createSimulation';
 export type {

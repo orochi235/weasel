@@ -94,8 +94,7 @@ export function WeaselDemos() {
             <VersionPill className="ckd-sidebar-version" />
           </h1>
           <p>{TAGLINE}</p>
-          <p><a href="./api/">API reference →</a></p>
-          <p><a href="./docs/ui/forge/">Component workshop →</a></p>
+          <p><a href="./docs/ui/forge/">UI catalog →</a></p>
           <p><a href="./draw/">WeaselDraw →</a></p>
           <p><a href="./draw/#/dev/toolkits">Toolkit builder →</a></p>
           <ColorModeControl

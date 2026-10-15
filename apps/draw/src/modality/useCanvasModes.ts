@@ -37,14 +37,15 @@ export function useCanvasModes(machine: ModeMachine, scene: DrawScene, selection
     selection: () => entry.current.selection(),
   }), [machine, entry]);
 
-  const pathEdit = useMemo(() => modePathEdit(
-    machine,
-    (id) => (scene.get(asNodeId(id))?.data as WeaselDrawData | undefined)?.path?.kind === 'polygon',
-  ), [machine, scene]);
+  const hasAnchors = useCallback(
+    (id: string) => (scene.get(asNodeId(id))?.data as WeaselDrawData | undefined)?.path?.kind === 'polygon',
+    [scene],
+  );
+  const pathEdit = useMemo(() => modePathEdit(machine, hasAnchors), [machine, hasAnchors]);
 
   const onDoubleClick = useCallback((hit: SceneCanvasHit | null) => {
-    dispatchDoubleClickEntry(hit, machine);
-  }, [machine]);
+    dispatchDoubleClickEntry(hit, machine, hasAnchors);
+  }, [machine, hasAnchors]);
 
   return { keys, pathEdit, onDoubleClick };
 }

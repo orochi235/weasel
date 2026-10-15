@@ -8,7 +8,7 @@ export interface ToolLifecycleOptions {
   /** The active tool's id, and the tools held on a hotkey, as the input scope reports them. */
   active: string | null;
   hotkeyStack: readonly string[];
-  /** The active tool changed. */
+  /** The active tool changed away from a tool. Not called when an empty slot is first filled. */
   onSwitch?: () => void;
 }
 
@@ -44,7 +44,8 @@ export function useToolLifecycle(opts: ToolLifecycleOptions): void {
     const next = new Set<string>(active === null ? hotkeyStack : [active, ...hotkeyStack]);
     liveRef.current = next;
     for (const id of prev) if (!next.has(id)) fire(id, 'onDeactivate');
-    if (prevActiveRef.current !== active) onSwitchRef.current?.();
+    // An empty slot being seeded has no outgoing tool, so nothing to end.
+    if (prevActiveRef.current !== null && prevActiveRef.current !== active) onSwitchRef.current?.();
     prevActiveRef.current = active;
     for (const id of next) if (!prev.has(id)) fire(id, 'onActivate');
   });
