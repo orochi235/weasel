@@ -70,6 +70,12 @@ Dragging one port onto another authors an edge. Which pairs may be joined is
 `canConnect`, which defaults to "a port may not join itself, and two ports that
 both declare a `type` must declare the same one".
 
+A port may name other places it can sit, in `sites`. An edge meeting it takes
+whichever place faces the edge's next point — its first waypoint, or the other
+node — so a decision's second exit can leave by its top or its bottom,
+wherever its wire goes. `portSitesOf` resolves every place; anything else that
+shows a port, the connect affordance included, shows it at `at`.
+
 ### Laying it out
 
 `layered`, `tree`, `force` and `chain` are plain functions of the graph. Each
@@ -96,12 +102,17 @@ relaxation seeded from the current positions, so re-running it keeps relaxing.
 rank that keeps the total edge length as short as it can (`ranksByLength`,
 network simplex), so a node with no inputs sits beside what it feeds rather
 than in the first rank. It lines each node up with its neighbors across the
-ranks (Brandes–Köpf). Under `order: 'barycenter'` it also reorders each rank
-to cut crossings, with an edge that spans ranks standing in each rank it
-crosses so ordering counts it and placement leaves it room.
-`layeredPlan(graph, opts)` answers with the moves plus each node's rank and
-each spanning edge's waypoints, for drawing those edges where their room was
-left. `ranksOf` is the plain longest-path ranking, which `chain` uses.
+ranks (Brandes–Köpf), lining up the two ports an edge joins rather than the two
+centers. Under `order: 'barycenter'` it also reorders each rank to cut
+crossings, reading each edge at the port it joins, so two wires into one node
+arrive in the order of its ports. There an edge that spans ranks stands in each
+rank it crosses, so ordering counts it and placement leaves it room, and an
+edge whose `GraphEdge.label` gives its label's size gets a rank of its own
+between its ends, with room beside its wire as big as the label.
+`layeredPlan(graph, opts)` answers with the moves plus each node's rank, each
+spanning edge's waypoints and where among them each label's room is, for
+drawing those edges where their room was left. `ranksOf` is the plain
+longest-path ranking, which `chain` uses.
 
 `chain` stands one run of nodes on a straight line and hangs everything else
 beside the chain node it is nearest to, counting edges in either direction. It
@@ -165,7 +176,9 @@ ranks runs through the room `layeredPlan` left for it in each rank it crosses,
 so it goes around what lies between its ends — unless an end is pinned away
 from where its rank would put it, when it takes the router's own path. An
 author's own ports and waypoints win. A label's `offset` is the gap between the
-route and the label's near side.
+route and the label's near side. A label whose edge sets no `labelPlacement`
+of its own sits in the room layout left it, placed with `at: { waypoint }`,
+which stations a label between two of its edge's waypoints.
 
 `groups` draws a box around some nodes, with an optional `label` inside it:
 
