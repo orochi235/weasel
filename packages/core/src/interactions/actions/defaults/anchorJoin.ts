@@ -10,6 +10,7 @@ import {
 } from '@weasel-js/geom';
 import { commitAnchorEdit, depOf } from './anchorEditing';
 import { bridgeTensionOf } from '../pathCommands/cutJoin';
+import { BridgeIcon } from './icons/anchorIcons';
 
 type AnchorEdit = (set: AnchorSet, selected: number[]) => boolean;
 
@@ -108,6 +109,7 @@ export const joinAnchorsAction: Action & { requires: string[] } = {
 export const bridgeAnchorsAction: Action & { requires: string[] } = {
   id: 'bridgeAnchors',
   label: 'Bridge anchors',
+  icon: BridgeIcon,
   group: 'anchors',
   defaultBinding: { kind: 'key', key: 'j', code: 'KeyJ', mods: { mod: true, shift: true } },
   eligible: { capability: 'edits-anchors' },
