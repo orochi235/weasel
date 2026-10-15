@@ -2,6 +2,9 @@
   "name": "@weasel-js/hud",
   "version": "1.10.1",
   "description": "WebGL-rendered UI widgets that composite into a weasel canvas",
+  "weasel": {
+    "needs": ["webgl2"]
+  },
   "license": "MIT",
   "type": "module",
   "sideEffects": false,
