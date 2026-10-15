@@ -1247,15 +1247,6 @@ only story runner in the repo.
   - Still unmeasured: whether the base, measured first, reads differently from the head for that
     reason alone. Result files and logs from that run were not kept.
 
-- **(P3) Five leaf packages keep their own listener sets.** Every other store notifies through
-  `createEmitter()` in `@weasel-js/registry` (a pass walks the listeners held when it began; a
-  throwing listener is logged and the rest run). These still hold a `Set` and a loop, because each
-  is in a package that depends on nothing else in weasel, and the move would give it its first
-  sibling dependency: history and its journal, `select/store.ts`, storage's records (two sets),
-  cursor's `paintedCursorState`, and react's `useFrameClock`. A throw from one of their listeners
-  still reaches whatever caused the notify. Moving them means either that dependency or the
-  emitter living somewhere all five can reach.
-
 - **(P3) `SceneCanvasInner` is one 386-line function.** It is most of the 508-line
   `canvas/SceneCanvas.tsx`. What is left in it is the prop destructure and the JSX, most of that
   the props of `StandardActionsRegistrar` and `GestureDispatcherMounter`; getting under the cap

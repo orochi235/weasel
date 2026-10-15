@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { createEmitter } from '@weasel-js/registry';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLatest } from './useLatest';
 import { useVisibleRaf } from './useVisibleRaf';
 
@@ -31,15 +32,15 @@ export function useFrameClock(options: FrameClockOptions = {}): FrameClock {
   const { paused = false, requestFrame, cancelFrame } = options;
   const elapsed = useRef(options.start ?? 0);
   const last = useRef<number | null>(null);
-  const listeners = useRef(new Set<() => void>());
+  const [ticked] = useState(() => createEmitter());
   const pausedRef = useLatest(paused);
 
   const loop = useVisibleRaf(
     (now, loop) => {
       if (last.current !== null) elapsed.current += (now - last.current) / 1000;
       last.current = now;
-      for (const listener of [...listeners.current]) listener();
-      if (listeners.current.size > 0 && !pausedRef.current) loop.request();
+      ticked.emit();
+      if (ticked.size > 0 && !pausedRef.current) loop.request();
     },
     { requestFrame, cancelFrame, onResume: () => { last.current = null; } },
   );
@@ -47,21 +48,20 @@ export function useFrameClock(options: FrameClockOptions = {}): FrameClock {
   useEffect(() => {
     if (paused) return;
     last.current = null;
-    if (listeners.current.size > 0) loop.request();
+    if (ticked.size > 0) loop.request();
     return () => loop.cancel();
-  }, [paused, loop]);
+  }, [paused, loop, ticked]);
 
   return useMemo<FrameClock>(() => ({
     seconds: () => elapsed.current,
     subscribe(listener) {
-      const set = listeners.current;
-      if (set.size === 0) last.current = null;
-      set.add(listener);
+      if (ticked.size === 0) last.current = null;
+      const off = ticked.subscribe(listener);
       if (!pausedRef.current) loop.request();
       return () => {
-        set.delete(listener);
-        if (set.size === 0) loop.cancel();
+        off();
+        if (ticked.size === 0) loop.cancel();
       };
     },
-  }), [loop, pausedRef]);
+  }), [loop, pausedRef, ticked]);
 }
