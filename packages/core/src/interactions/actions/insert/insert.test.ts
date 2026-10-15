@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { insertAction } from './action';
 
-import type { InvocationCtx, BindingOpts } from '@weasel-js/routing';
+import { overlaysOf, type InvocationCtx, type BindingOpts } from '@weasel-js/routing';
 import type { NodeId } from 'core/scene/types';
 import type { InsertDep, SnapDep } from '../depSchema';
 import { SHAPE_KINDS, shapeKindsWhere } from 'core/shapeKinds';
@@ -261,7 +261,7 @@ describe('insertAction descriptor', () => {
       const ctx = makeCtx({ world: { x: 5, y: 10 }, dep });
       const handle = invoker.start(ctx, undefined);
       handle.onMove!({ ...ctx, world: { x: 55, y: 60 } });
-      const ov = handle.overlay!();
+      const ov = (overlaysOf(handle)[0] ?? null);
       expect(ov).toMatchObject({
         kind: 'insertPreview',
         shape: 'rect',
@@ -284,7 +284,7 @@ describe('insertAction descriptor', () => {
         const ctx = makeCtx({ world: { x: 0, y: 0 }, dep });
         const handle = invoker.start(ctx, { params: { kind, ...(extraParams ?? {}) } });
         handle.onMove!({ ...ctx, world: { x: 20, y: 30 } });
-        const ov = handle.overlay!();
+        const ov = (overlaysOf(handle)[0] ?? null);
         expect(ov?.kind).toBe('insertPreview');
         if (ov?.kind === 'insertPreview') expect(ov.shape).toBe(kind);
       }
@@ -296,7 +296,7 @@ describe('insertAction descriptor', () => {
       const ctx = makeCtx({ world: { x: 10, y: 50 }, dep });
       const handle = invoker.start(ctx, { params: { kind: 'line' } });
       handle.onMove!({ ...ctx, world: { x: 100, y: 10 } });
-      const ov = handle.overlay!();
+      const ov = (overlaysOf(handle)[0] ?? null);
       if (ov?.kind !== 'insertPreview') throw new Error('expected insertPreview');
       expect(ov.extras).toMatchObject({ kind: 'line', a: { x: 10, y: 50 }, b: { x: 100, y: 10 } });
     });
@@ -307,7 +307,7 @@ describe('insertAction descriptor', () => {
       const ctx = makeCtx({ world: { x: 0, y: 0 }, dep });
       const handle = invoker.start(ctx, { params: { kind: 'image', src: 'photo.png' } });
       handle.onMove!({ ...ctx, world: { x: 40, y: 30 } });
-      const ov = handle.overlay!();
+      const ov = (overlaysOf(handle)[0] ?? null);
       if (ov?.kind !== 'insertPreview') throw new Error('expected insertPreview');
       expect(ov.extras).toMatchObject({ kind: 'image', src: 'photo.png' });
       expect(ov.bounds).toEqual({ x: 0, y: 0, width: 40, height: 30 });
@@ -329,7 +329,7 @@ describe('insertAction descriptor', () => {
       trail.push({ x: 10, y: 5 });
       trail.push({ x: 25, y: 15 });
       handle.onMove!({ ...ctx, world: { x: 25, y: 15 } });
-      const ov = handle.overlay!();
+      const ov = (overlaysOf(handle)[0] ?? null);
       if (ov?.kind !== 'insertPreview') throw new Error('expected insertPreview');
       expect(ov.shape).toBe('pencil');
       expect((ov.extras as { samples: unknown[] }).samples).toEqual(trail);
@@ -344,11 +344,11 @@ describe('insertAction descriptor', () => {
         params: () => ({ kind: 'polygon', sides, rotation: 0 }),
       });
       handle.onMove!({ ...ctx, world: { x: 100, y: 100 } });
-      let ov = handle.overlay!();
+      let ov = (overlaysOf(handle)[0] ?? null);
       if (ov?.kind !== 'insertPreview') throw new Error('expected insertPreview');
       expect((ov.extras as { sides: number }).sides).toBe(5);
       sides = 9;
-      ov = handle.overlay!();
+      ov = (overlaysOf(handle)[0] ?? null);
       if (ov?.kind !== 'insertPreview') throw new Error('expected insertPreview');
       expect((ov.extras as { sides: number }).sides).toBe(9);
     });
@@ -359,7 +359,7 @@ describe('insertAction descriptor', () => {
       const ctx = makeCtx({ world: { x: 0, y: 0 }, dep });
       const handle = invoker.start(ctx, { params: { kind: 'my-custom-widget' } });
       handle.onMove!({ ...ctx, world: { x: 30, y: 30 } });
-      expect(handle.overlay!()).toBeNull();
+      expect((overlaysOf(handle)[0] ?? null)).toBeNull();
     });
 
     it('returns null after onEnd (gesture closed)', () => {
@@ -368,9 +368,9 @@ describe('insertAction descriptor', () => {
       const ctx = makeCtx({ world: { x: 0, y: 0 }, dep });
       const handle = invoker.start(ctx, undefined);
       handle.onMove!({ ...ctx, world: { x: 30, y: 30 } });
-      expect(handle.overlay!()).not.toBeNull();
+      expect((overlaysOf(handle)[0] ?? null)).not.toBeNull();
       handle.onEnd!({ ...ctx, world: { x: 30, y: 30 } }, 'commit');
-      expect(handle.overlay!()).toBeNull();
+      expect((overlaysOf(handle)[0] ?? null)).toBeNull();
     });
   });
 
@@ -427,7 +427,7 @@ describe('insertAction — snap dep', () => {
     const ctx = makeCtx({ world: { x: 3, y: 4 }, dep, snap: gridSnap(10) });
     const handle = invoker.start(ctx, undefined);
     handle.onMove!({ ...ctx, world: { x: 47, y: 52 } });
-    const preview = handle.overlay!();
+    const preview = (overlaysOf(handle)[0] ?? null);
     handle.onEnd!({ ...ctx, world: { x: 47, y: 52 } }, 'commit');
 
     expect(preview).toMatchObject({ kind: 'insertPreview' });
@@ -565,7 +565,7 @@ describe('insertAction — insert-kind parity', () => {
       const ctx = makeCtx({ world: { x: 0, y: 0 }, dep });
       const handle = invoker.start(ctx, { params: { kind } });
       handle.onMove!({ ...ctx, world: { x: 20, y: 30 } });
-      if (handle.overlay!()?.kind !== 'insertPreview') missing.push(kind);
+      if ((overlaysOf(handle)[0] ?? null)?.kind !== 'insertPreview') missing.push(kind);
     }
     expect(missing, `kinds with no live insert preview: ${missing.join(', ')}`).toEqual([]);
   });

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import type { InvocationCtx, OngoingHandle, Vec2 } from '@weasel-js/core';
+import { overlaysOf, type InvocationCtx, type OngoingHandle, type Vec2 } from '@weasel-js/core';
 import { createConnectAction, type PendingEdge } from './connect';
 import type { DiagramNodeLike } from './trait';
 import type { Port } from './types';
@@ -73,7 +73,7 @@ describe('createConnectAction', () => {
 
   /** The routed run the handle is publishing, in world coordinates. */
   function previewPoints(handle: OngoingHandle): Vec2[] {
-    const overlay = handle.overlay!();
+    const overlay = (overlaysOf(handle)[0] ?? null);
     if (overlay === null || overlay.kind !== 'polyline') {
       throw new Error(`expected a polyline overlay, got ${String(overlay && overlay.kind)}`);
     }
@@ -163,7 +163,7 @@ describe('createConnectAction', () => {
     // `role` is the whole of what it says about how that run should read.
     const handle = open({ participants: PARTICIPANTS, commit: vi.fn() });
     handle.onMove!(ctxAt(300, 20));
-    expect(handle.overlay!()).toEqual({
+    expect((overlaysOf(handle)[0] ?? null)).toEqual({
       kind: 'polyline',
       points: [{ x: 100, y: 20 }, { x: 300, y: 20 }],
       role: 'connector',
@@ -173,7 +173,7 @@ describe('createConnectAction', () => {
   it('stops previewing once the gesture has ended', () => {
     const handle = open({ participants: PARTICIPANTS, commit: vi.fn() });
     handle.onEnd!(ctxAt(300, 20), 'commit');
-    expect(handle.overlay!()).toBeNull();
+    expect((overlaysOf(handle)[0] ?? null)).toBeNull();
   });
 
   it('commits with the deps handed to `start`, not the empty bag `onEnd` gets', () => {

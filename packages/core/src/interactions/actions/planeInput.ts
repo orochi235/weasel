@@ -254,10 +254,15 @@ function planeHandle(handle: OngoingHandle, plane: LivePlane): OngoingHandle {
   const out: OngoingHandle = { ...handle };
   if (handle.onMove) out.onMove = (c) => handle.onMove!(plane.carry(c));
   if (handle.onEnd) out.onEnd = (c, reason) => handle.onEnd!(plane.carry(c), reason);
+  if (handle.onWheel) out.onWheel = (c) => handle.onWheel!(plane.carry(c));
   if (handle.overlay) {
     out.overlay = () => {
       const ov = handle.overlay!();
-      return ov ? overlayFromPlane(ov, plane.map()) : ov;
+      if (!ov) return ov;
+      const m = plane.map();
+      return Array.isArray(ov)
+        ? (ov as readonly OngoingOverlay[]).map((o) => overlayFromPlane(o, m))
+        : overlayFromPlane(ov as OngoingOverlay, m);
     };
   }
   return out;

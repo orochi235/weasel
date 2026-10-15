@@ -6,4 +6,7 @@ import type { CommandPaint, CommandStroke } from '@weasel-js/paint';
 export const OVERLAY_ROLE_STROKES: Readonly<Record<string, CommandStroke & { paint: CommandPaint }>> = {
   cut: { paint: { color: '#e23b3b' }, width: 1, dash: [6, 4] },
   connector: { paint: { color: '#7ba7c7' }, width: 2, dash: [4, 4] },
+  falloff: { paint: { color: 'rgba(52, 120, 246, 0.28)' }, width: 10, cap: 'round', join: 'round' },
+  snap: { paint: { color: '#e8833a' }, width: 1, dash: [5, 3] },
+  lock: { paint: { color: '#d9480f' }, width: 1.5 },
 };

@@ -11,7 +11,7 @@
  * of points are paths, and a path is geometry this cannot flatten to a box.
  */
 
-import { resolveOverlays, type OngoingHandle } from '@weasel-js/core';
+import { overlaysOf, resolveOverlays, type OngoingHandle } from '@weasel-js/core';
 import type { ChromeBox } from './screen';
 
 /** Gesture chrome, in CSS pixels relative to the pane's top-left. */
@@ -20,10 +20,7 @@ export function collectOverlayBoxes(
   origin: { x: number; y: number },
 ): ChromeBox[] {
   const overlays = [];
-  for (const handle of handles) {
-    const ov = handle.overlay?.();
-    if (ov) overlays.push(ov);
-  }
+  for (const handle of handles) overlays.push(...overlaysOf(handle));
 
   const boxes: ChromeBox[] = [];
   for (const resolved of resolveOverlays(overlays)) {

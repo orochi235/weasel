@@ -66,7 +66,7 @@ export type { UseStandardActionsOptions } from '../interactions/actions/useStand
 export { defaultCommitAdapter } from '../interactions/actions/defaultCommitAdapter';
 
 // ─── Invoker / GestureBinding / ActiveToolContext ───
-export { resolveParams } from '@weasel-js/routing';
+export { overlaysOf, resolveParams } from '@weasel-js/routing';
 export type { Point2, DragSample, InvocationCtx, BindingOpts, ActionDeps, AffordanceHit, OngoingHandle, OngoingOverlay, OverlayRole, ImmediateInvoker, OngoingInvoker, Invoker } from '@weasel-js/routing';
 export type { GestureBinding } from '@weasel-js/routing';
 export { ActiveToolContextProvider, ActiveToolContextProviderIfRoot, useActiveToolContext, useOptionalActiveToolContext } from '@weasel-js/routing/react';
