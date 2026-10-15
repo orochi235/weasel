@@ -114,3 +114,19 @@ export function BridgeIcon() {
     </svg>
   );
 }
+
+/**
+ * Harmonize curvature: a smooth arch through its anchor, with comb teeth of
+ * one length standing out of it.
+ *
+ * @experimental
+ */
+export function HarmonizeIcon() {
+  return (
+    <svg {...SVG_BASE}>
+      <path d="M3 16 C3 9 6.5 6 10 6 S17 9 17 16" />
+      <path d="M4.02 7.43 L2.47 6.18 M10 3.5 V1.5 M15.98 7.43 L17.53 6.18" strokeWidth={1} />
+      <rect x="8.5" y="4.5" width="3" height="3" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}

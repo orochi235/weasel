@@ -71,7 +71,7 @@ const KIT_IDS = [
   'editAnchors', 'enterPathEdit', 'exitPathEdit', 'insertPathAnchor', 'bendSegment',
   'nudgeAnchors.up', 'nudgeAnchors.down', 'nudgeAnchors.left', 'nudgeAnchors.right',
   'deleteAnchors', 'cutPathAtAnchor', 'simplifyBrush', 'pathEditTool.simplifyBrush', 'pathEditTool.exit', 'retractHandles', 'makeHandlesSymmetric',
-  'handleLock.angle', 'handleLock.length',
+  'harmonizeAnchors', 'handleLock.angle', 'handleLock.length',
   'averageAnchors', 'joinAnchors', 'bridgeAnchors', 'simplifyPath', 'offsetPath', 'snipAtCrossings', 'joinPaths',
   'bridgePaths',
   'marqueeAnchors', 'selectAnchor',

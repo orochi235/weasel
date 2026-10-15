@@ -31,7 +31,7 @@ export {
   SIMPLIFY_BRUSH_RADIUS_PX, SIMPLIFY_BRUSH_TOOL, type SimplifyBrushParams,
 } from './simplifyBrush';
 export { exitPathEditToolAction, pathEditToolAction, pathEditToolActive } from './pathEditTools';
-export { retractHandlesAction, makeHandlesSymmetricAction } from './anchorHandles';
+export { retractHandlesAction, makeHandlesSymmetricAction, harmonizeAnchorsAction } from './anchorHandles';
 export { handleLockAngleAction, handleLockLengthAction } from './handleLocks';
 export { averageAnchorsAction, bridgeAnchorsAction, joinAnchorsAction } from './anchorJoin';
 export {
