@@ -1,0 +1,129 @@
+import { describe, expect, it } from 'vitest';
+import {
+  asNodeId, createScene, sceneFromJSON, type NodeId, type RectPose, type SceneRegistry,
+} from '@weasel-js/core';
+import { boundsOfPath, rectPath, type Path } from '@weasel-js/geom';
+import { createSymmetry } from './controller';
+import { isSymmetryGroup, symmetryCopies, symmetryRegistry } from './group';
+import { VERTICAL_AXIS } from './kinds';
+
+function setup() {
+  const scene = createScene<unknown, 'main', RectPose>({
+    systemLayers: [{ id: 'main' }],
+    registry: symmetryRegistry as SceneRegistry<RectPose>,
+  });
+  const sym = createSymmetry(scene as never);
+  const group = sym.create({ center: { x: 100, y: 0 }, symmetry: { kind: 'mirror', angle: VERTICAL_AXIS } });
+  const leaf = scene.add({
+    kind: 'leaf', layer: 'main', parent: group, id: asNodeId('sq'),
+    pose: { x: 120, y: 10, width: 10, height: 10 }, data: { path: rectPath(0, 0, 10, 10) },
+  });
+  return { scene, sym, group, leaf };
+}
+
+const copiesOf = (scene: ReturnType<typeof setup>['scene'], id: NodeId) => {
+  const node = scene.get(id)!;
+  return node.kind === 'container' ? node.copiesFromPose?.(node.pose, node as never) ?? [] : [];
+};
+
+describe('createSymmetry', () => {
+  it('makes the new group the active one, and forgets it once it is gone', () => {
+    const { scene, sym, group } = setup();
+    expect(sym.active()).toBe(group);
+    scene.remove(group);
+    expect(sym.active()).toBeNull();
+  });
+
+  it('mirrors about the group\'s center', () => {
+    const { scene, group } = setup();
+    const [m] = copiesOf(scene, group);
+    expect(m[0]).toBeCloseTo(-1);
+    expect(m[4]).toBeCloseTo(200);
+  });
+
+  it('moves the center with one undo step, the children staying put', () => {
+    const { scene, sym, group, leaf } = setup();
+    sym.update(group, { center: { x: 150, y: 0 } });
+    expect(copiesOf(scene, group)[0][4]).toBeCloseTo(300);
+    expect(scene.get(leaf)!.pose.x).toBe(120);
+    scene.undo();
+    expect(copiesOf(scene, group)[0][4]).toBeCloseTo(200);
+  });
+
+  it('changes the kind and count with one undo step', () => {
+    const { scene, sym, group } = setup();
+    sym.update(group, { spec: { kind: 'radial', count: 5 } });
+    expect(copiesOf(scene, group)).toHaveLength(4);
+    scene.undo();
+    expect(copiesOf(scene, group)).toHaveLength(1);
+  });
+
+  it('records nothing for a preview', () => {
+    const { scene, sym, group } = setup();
+    const before = scene.historyEntries().length;
+    sym.preview(group, { center: { x: 400, y: 0 } });
+    expect(scene.historyEntries()).toHaveLength(before);
+  });
+
+  it('round-trips a group through JSON with its registry', () => {
+    const { scene, group } = setup();
+    const back = sceneFromJSON(scene.toJSON(), { registry: symmetryRegistry as SceneRegistry<RectPose> });
+    const node = back.get(group)!;
+    expect(node.kind === 'container' && node.copiesFromPose).toBe(symmetryCopies);
+    expect(isSymmetryGroup(back as never, group)).toBe(true);
+  });
+});
+
+describe('the contribution\'s deps', () => {
+  it('draws into the active group, and the top of the tree with none', () => {
+    const { sym, group } = setup();
+    const into = sym.contribution.deps!.insertInto!();
+    expect(into.get()).toBe(group);
+    sym.setActive(null);
+    expect(into.get()).toBeNull();
+  });
+
+  it('answers a path\'s group transforms for anchor edits, whichever group is active', () => {
+    const { sym, leaf } = setup();
+    sym.setActive(null);
+    const dep = sym.contribution.deps!.pathSymmetry!();
+    expect(dep.transforms(leaf)).toHaveLength(1);
+    expect(dep.transforms('nowhere')).toEqual([]);
+  });
+
+  it('answers no transforms for a repeat, which no path is its own image under', () => {
+    const { sym, group, leaf } = setup();
+    sym.update(group, { spec: { kind: 'repeat', count: 4 } });
+    expect(sym.contribution.deps!.pathSymmetry!().transforms(leaf)).toEqual([]);
+  });
+});
+
+describe('bake', () => {
+  it('replaces the group with a plain one holding the original and a real copy, as one undo step', () => {
+    const { scene, sym, group, leaf } = setup();
+    const before = scene.historyEntries().length;
+    const out = sym.bake(group)!;
+    expect(scene.get(group)).toBeUndefined();
+    expect(isSymmetryGroup(scene as never, out.group)).toBe(false);
+    const kids = scene.childrenOf(out.group);
+    expect(kids).toHaveLength(2);
+    expect(kids[0]).toBe(leaf);
+    const copy = scene.get(kids[1])!;
+    expect(copy.pose).toMatchObject({ x: 70, y: 10, width: 10, height: 10 });
+    expect(boundsOfPath((copy.data as { path: Path }).path)).toMatchObject({ x: 70, y: 10 });
+    expect(scene.historyEntries()).toHaveLength(before + 1);
+    scene.undo();
+    expect(isSymmetryGroup(scene as never, group)).toBe(true);
+    expect(scene.childrenOf(group)).toEqual([leaf]);
+  });
+
+  it('reports a leaf it cannot copy and keeps it', () => {
+    const { scene, sym, group } = setup();
+    const label = scene.add({
+      kind: 'leaf', layer: 'main', parent: group, pose: { x: 0, y: 0, width: 5, height: 5 }, data: { text: 'hi' },
+    });
+    const out = sym.bake(group)!;
+    expect(out.skipped).toEqual([label]);
+    expect(scene.childrenOf(out.group)).toContain(label);
+  });
+});
