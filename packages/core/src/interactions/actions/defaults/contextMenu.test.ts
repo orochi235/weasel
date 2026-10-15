@@ -8,6 +8,8 @@ function deps(over: Record<string, unknown> = {}) {
     menuHost: { open: vi.fn(() => true) },
     selection: { get: () => selected, set: vi.fn((ids: string[]) => { selected.splice(0, selected.length, ...ids); }) },
     nodeAtPoint: vi.fn(() => 'b'),
+    hitAt: vi.fn(() => ({ bodyTarget: 'unselected-body', bodyKind: 'rect' })),
+    kindOfNode: (id: string) => (id === 'a' ? 'text' : 'rect'),
     worldToClient: (x: number, y: number) => ({ x: x + 1000, y: y + 1000 }),
     scene: { get: (id: string) => ({ id, kind: id === 'a' ? 'text' : 'rect' }) },
     ...over,
@@ -17,7 +19,7 @@ function deps(over: Record<string, unknown> = {}) {
 describe('openContextMenu', () => {
   it('selects an unselected body first, then opens for the hit', () => {
     const d = deps() as { menuHost: { open: ReturnType<typeof vi.fn> }; selection: { set: ReturnType<typeof vi.fn> } };
-    openContextMenu(d as never, { worldX: 5, worldY: 6, clientX: 50, clientY: 60, bodyTarget: 'unselected-body', bodyKind: 'rect' });
+    openContextMenu(d as never, { worldX: 5, worldY: 6, clientX: 50, clientY: 60 });
     expect(d.selection.set).toHaveBeenCalledWith(['b']);
     expect(d.menuHost.open).toHaveBeenCalledWith({
       hit: { bodyTarget: 'selected-body', bodyKind: 'rect' },
@@ -26,7 +28,8 @@ describe('openContextMenu', () => {
   });
   it('leaves the selection alone on empty canvas', () => {
     const d = deps() as { selection: { set: ReturnType<typeof vi.fn> } };
-    openContextMenu(d as never, { worldX: 5, worldY: 6, clientX: 50, clientY: 60, bodyTarget: 'empty' });
+    (d as unknown as { hitAt: ReturnType<typeof vi.fn> }).hitAt.mockReturnValue({ bodyTarget: 'empty' });
+    openContextMenu(d as never, { worldX: 5, worldY: 6, clientX: 50, clientY: 60 });
     expect(d.selection.set).not.toHaveBeenCalled();
   });
   it('opens from the keyboard at the selection, highlighted', () => {

@@ -28,7 +28,7 @@ const clickProbe = {
   bindings: [{ spec: { kind: 'click' }, actionId: 'test.click' }],
 };
 
-function setup(declare = true) {
+function setup(declare = true, menus: unknown[] = defs) {
   const scene = createScene<D, 'main', P>({ systemLayers: [{ id: 'main' }] });
   const ids = {} as Record<'a' | 'b', NodeId>;
   scene.batch('seed', () => {
@@ -38,7 +38,7 @@ function setup(declare = true) {
   let host: MenuHost | null = null;
   let selection: SelectionApi | null = null;
   function Menus() {
-    useMenus((declare ? defs : []) as never);
+    useMenus((declare ? menus : []) as never);
     const h = useMenuHost();
     useEffect(() => { host = h; });
     return null;
@@ -55,8 +55,9 @@ function setup(declare = true) {
     return (
       <ActionsProvider>
         <SceneCanvas
-          features={['pick', 'edit']} scene={scene} selection={sel} layers={{}} width={400} height={300}
+          features={['pick', 'edit']} claimKeys scene={scene} selection={sel} layers={{}} width={400} height={300}
           ambient={[clickProbe as never]}
+          routing={[{ name: 'rect', matches: (d: unknown) => (d as D).kind === 'rect' }]}
         >
           <Menus />
         </SceneCanvas>
@@ -74,7 +75,10 @@ function setup(declare = true) {
     act(() => { vi.advanceTimersByTime(holdMs); });
     act(() => { canvas.dispatchEvent(new PointerEvent('pointerup', init)); });
   };
-  return { ids, rightClick, touchTap, host: () => host!, selection: () => selection! };
+  const shiftF10 = () => act(() => {
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'F10', code: 'F10', shiftKey: true, bubbles: true }));
+  });
+  return { ids, rightClick, touchTap, shiftF10, host: () => host!, selection: () => selection! };
 }
 
 describe('menu.context', () => {
@@ -102,5 +106,34 @@ describe('menu.context', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  const rectMenu = [{
+    id: 'rect', when: { bodyTarget: 'selected-body', bodyKind: 'rect' }, sections: [[{ action: 'delete' }]],
+  }];
+
+  it('opens a menu declared for a routing kind, not the structural node kind', () => {
+    const t = setup(true, rectMenu);
+    t.rightClick(240, 130);
+    expect(t.host().current()?.entries).toHaveLength(1);
+  });
+
+  it('answers has() as open() does, for a match and a miss', () => {
+    const t = setup(true, rectMenu);
+    const req = (bodyKind: string) => ({ hit: { bodyTarget: 'selected-body' as const, bodyKind }, client: { x: 0, y: 0 } });
+    expect(t.host().has(req('rect'))).toBe(true);
+    expect(t.host().has(req('text'))).toBe(false);
+    t.rightClick(240, 130);
+    expect(t.host().current()).not.toBeNull();
+    t.host().close();
+    t.rightClick(380, 280);
+    expect(t.host().current()).toBeNull();
+  });
+
+  it('opens the menu for the selected shape on Shift+F10', () => {
+    const t = setup(true, rectMenu);
+    t.shiftF10();
+    expect(t.host().current()).toMatchObject({ source: 'keyboard' });
+    expect(t.host().current()?.entries).toHaveLength(1);
   });
 });
