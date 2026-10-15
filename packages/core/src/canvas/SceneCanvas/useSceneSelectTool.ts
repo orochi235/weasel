@@ -7,10 +7,9 @@
 import { useMemo } from 'react';
 import { useLatest } from '@weasel-js/react';
 import type { SceneCanvasAdapter } from '../sceneAdapter';
-import { pickWalk, scenePickSource, scenePlaneOf, type PickQuery, type ViewPickGates } from 'canvas/pickWalk';
-import { rectFromPlane, toPlane, type PlaneMap } from 'core/viewport/parallax';
+import { pickWalk, scenePickSource, scenePlaneOf, type ViewPickGates } from 'canvas/pickWalk';
+import { rectFromPlane, type PlaneMap } from 'core/viewport/parallax';
 import type { View } from 'core/viewport/view';
-import { applyToPoint, pathContainsPoint } from '@weasel-js/geom';
 import { useSelectTool, type Bounds } from 'tools/builtin/select';
 import { pickTopMostHit, type PickTopMostHitAdapter } from 'tools/builtin/pickTopMostHit';
 import type { Node, Scene } from 'core/scene/types';
@@ -22,9 +21,7 @@ import { snap as snapBehavior } from 'interactions/gestures/shared/snap';
 import { poseDescriptorForNode, type PoseDescriptor } from 'interactions/actions/resize/geometry';
 import { framedBounds } from 'core/geometry/poseDescriptor';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
-import { poseContains, poseContainsRotated } from './poseGeometry';
-import { shapeCoversPoint, findShapeInk } from 'canvas/NodeShape';
-import { meanScale } from '@weasel-js/geom';
+import { scenePointQuery } from './scenePointQuery';
 
 /**
  * Default grab slop around a shape's outline, in screen pixels.
@@ -189,48 +186,7 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
         ...(viewLayers ? { layerIsPainted: viewLayers } : {}),
         ...(camera ? { camera } : {}),
       });
-      // `s` makes the slop a screen distance, so the grab zone stays the same
-      // apparent thickness at any zoom and on every axis. A `{ px }` stroke's
-      // reach is on screen too, and joins the slop there.
-      const pointQuery = (px: number, py: number, s: { x: number; y: number }): PickQuery<TPose> => {
-        const scale = meanScale(s);
-        const tolerance = { px: pickTolerancePx, scale: s };
-        return {
-          hits: (n, pose, derived) => {
-            // The pre-filter has to be at least as generous as the refinement
-            // that follows it, or it rejects points the refinement would have
-            // claimed. A stroke reaches past the pose box by `outset` — a whole
-            // stroke width for an outer align — on top of the pointer slop.
-            const ink = shapePicking ? findShapeInk(n as never, pose, { scale }) : null;
-            // A derived node's pose is a placeholder — typically zero-sized at
-            // the origin — so its own box rejects every point the path covers.
-            // The path is the region to test instead, and `poseContains` already
-            // reads a path-like pose as one.
-            const slop = { ...tolerance, px: tolerance.px + (ink?.outsetPx ?? 0), reach: ink?.outset ?? 0 };
-            const admitted = derived
-              ? poseContains(derived as never, px, py, slop, d as PoseDescriptor<unknown>)
-              : poseContainsRotated(pose, px, py, slop, d as PoseDescriptor<unknown>);
-            if (!admitted) return false;
-            // `shapeCoversPoint` narrows the rect to the ink the painter actually
-            // lays down (and answers `true` for painters that have no silhouette,
-            // so nothing becomes unpickable).
-            return !shapePicking
-              || shapeCoversPoint(n as never, pose, px, py, {
-                tolerance, scale, derivedPath: derived,
-              });
-          },
-          clipAdmits: (clip) => pathContainsPoint(clip, px, py),
-          inPlane: (m) => {
-            const p = toPlane(m, { x: px, y: py });
-            return pointQuery(p.x, p.y, { x: s.x / m.scale.x, y: s.y / m.scale.y });
-          },
-          inCopy: (m) => {
-            const [x, y] = applyToPoint(m, px, py);
-            const k = Math.sqrt(Math.abs(m[0] * m[3] - m[1] * m[2]));
-            return pointQuery(x, y, { x: s.x / k, y: s.y / k });
-          },
-        };
-      };
+      const pointQuery = scenePointQuery<TPose>(d as PoseDescriptor<unknown>, shapePicking, pickTolerancePx);
       return pickWalk<TPose>(src, pointQuery(wx, wy, asked?.scale ?? { x: 1, y: 1 }));
     };
   }, [scene, adapter, pickEveryProp, shapePicking, pickTolerancePx, getView,

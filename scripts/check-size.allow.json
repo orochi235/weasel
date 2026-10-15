@@ -46,12 +46,6 @@
   "packages/core/src/canvas/SceneCanvas/useDispatcherOverlayLayer.ts": {
     "longestFunction": 198
   },
-  "packages/core/src/canvas/SceneCanvas/useSceneSelectTool.ts": {
-    "longestFunction": 155
-  },
-  "packages/core/src/canvas/pickWalk.ts": {
-    "lines": 444
-  },
   "packages/core/src/canvas/sceneAdapter.ts": {
     "longestFunction": 156
   },
@@ -65,7 +59,7 @@
     "longestFunction": 164
   },
   "packages/core/src/core/scene/types.ts": {
-    "lines": 617
+    "lines": 584
   },
   "packages/core/src/debug/createDebugOverlayLayer.ts": {
     "lines": 440
@@ -83,7 +77,7 @@
     "longestFunction": 148
   },
   "packages/core/src/interactions/actions/depSchema.ts": {
-    "lines": 580
+    "lines": 556
   },
   "packages/core/src/tools/builtin/pen/usePenTool.ts": {
     "lines": 683,
