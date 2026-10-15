@@ -30,6 +30,9 @@ export interface SceneHistoryEnv {
   refuseUntracked(verb: string): void;
   /** Run an op-driven edit with its arrivals settled into the same batch. */
   runArrivalEdit(ops: Op[], run: (ops: Op[]) => void): void;
+  /** The journal `applyBatch` writes to now, or null. Undo and redo step it
+   *  instead of the engine, so they take back the edits that went there. */
+  activeJournal(): Journal | null;
 }
 
 /** The scene's own spellings of its history, which answer what a caller
@@ -96,11 +99,22 @@ export function createSceneHistory(env: SceneHistoryEnv): { history: History; me
     return true;
   }
 
+  /** What undo and redo step: the open journal, else the engine. */
+  const stack = (): Pick<History, 'canUndo' | 'canRedo' | 'undo' | 'redo'> => env.activeJournal() ?? engine;
+
   const methods: SceneHistoryMethods = {
-    undo: () => step(() => engine.canUndo(), () => engine.undo()),
-    redo: () => step(() => engine.canRedo(), () => engine.redo()),
-    canUndo: () => engine.canUndo(),
-    canRedo: () => engine.canRedo(),
+    undo() {
+      const j = env.activeJournal();
+      if (j) { if (!j.canUndo()) return false; j.undo(); return true; }
+      return step(() => engine.canUndo(), () => engine.undo());
+    },
+    redo() {
+      const j = env.activeJournal();
+      if (j) { if (!j.canRedo()) return false; j.redo(); return true; }
+      return step(() => engine.canRedo(), () => engine.redo());
+    },
+    canUndo: () => stack().canUndo(),
+    canRedo: () => stack().canRedo(),
     historyEntries() {
       const { undo, redo } = engine.entries();
       // entries().redo is already chronological: the next redo comes first.

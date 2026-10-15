@@ -153,6 +153,22 @@ export const PREFS = {
         },
       },
     },
+    modes: {
+      name: 'Modes',
+      description: 'Path edit, isolation, and the other modes you work inside.',
+      children: {
+        undo: {
+          kind: 'enum',
+          name: 'Undo inside a mode',
+          description: "What Undo takes back while a mode such as path edit is open. The mode's own edits: Undo stops where the mode began, and leaving the mode puts its edits in the document's history as one step. The document's history: every edit is its own step there, and Undo can go on past where the mode began.",
+          default: 'mode',
+          options: [
+            { value: 'mode', label: "The mode's own edits" },
+            { value: 'document', label: "The document's history" },
+          ],
+        },
+      },
+    },
     recording: {
       name: 'Input recording',
       description: 'The recorder behind Record and Play in the command bar.',

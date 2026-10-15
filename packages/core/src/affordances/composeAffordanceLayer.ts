@@ -81,7 +81,8 @@ export function composeAffordanceLayer(
         affordances, wx, wy, state, view, isVisible ?? asIsVisible(data) ?? undefined,
       );
       if (!hit) return null;
-      const { cursor, strength, claimedKinds } = hit.region;
+      const { cursor } = hit;
+      const { strength, claimedKinds } = hit.region;
       return {
         ...hit.binding,
         ...(cursor !== undefined ? { cursor } : {}),

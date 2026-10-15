@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { PrefGroup } from '@weasel-js/prefs';
@@ -31,29 +31,22 @@ const SCHEMA: PrefGroup = {
 const NO_LOOSE: PrefGroup = { ...SCHEMA, children: Object.fromEntries(Object.entries(SCHEMA.children).filter(([key]) => key !== 'compact')) };
 
 const entry = (path: string) => document.querySelector<HTMLButtonElement>(`[data-pref-rail="${path}"]`)!;
-const marks = () => Object.fromEntries(
-  [...document.querySelectorAll('[data-rail-mark]')].map((el) => [el.getAttribute('data-pref-rail'), el.getAttribute('data-rail-mark')]),
-);
 const renderRail = (props: Partial<Parameters<typeof PrefsForm>[0]> = {}) =>
   render(<PrefsForm schema={SCHEMA} onChange={() => {}} layout="rail" {...props} />);
 
 describe('prefRailItems over a section on the root\'s page', () => {
-  it('lists it under the root\'s entry, filed on the root\'s page, with a page inside it', () => {
-    expect(prefRailItems(SCHEMA).map((i) => [i.path, i.depth, i.page])).toEqual([
-      ['', 0, ''],
-      ['tools', 1, ''],
-      ['tools.keys', 2, 'tools.keys'],
-      ['files', 1, ''],
-      ['canvas', 0, 'canvas'],
+  it('lists no entry for it, and a page inside it under the root\'s entry', () => {
+    expect(prefRailItems(SCHEMA).map((i) => [i.path, i.depth])).toEqual([
+      ['', 0],
+      ['tools.keys', 1],
+      ['canvas', 0],
     ]);
   });
 
   it('gives the root an entry when its page holds sections and no leaf', () => {
     expect(prefRailItems(NO_LOOSE).map((i) => [i.path, i.name, i.depth])).toEqual([
       ['', 'Preferences', 0],
-      ['tools', 'Tools', 1],
-      ['tools.keys', 'Keys', 2],
-      ['files', 'Files', 1],
+      ['tools.keys', 'Keys', 1],
       ['canvas', 'Canvas', 0],
     ]);
   });
@@ -72,38 +65,14 @@ describe('prefRailItems over a section on the root\'s page', () => {
 });
 
 describe('PrefsForm rail layout over a section on the root\'s page', () => {
-  it('nests the section\'s entry under the root\'s, and a page inside it under the section\'s', () => {
+  it('draws the section on the root\'s page, and nests a page inside it under the root\'s entry', () => {
     renderRail();
-    expect(entry('tools').parentElement).toBe(entry('files').parentElement);
-    expect(entry('tools').parentElement).not.toBe(entry('').parentElement);
-    expect(entry('tools').parentElement).not.toBe(entry('canvas').parentElement);
-    expect(entry('tools.keys').parentElement).not.toBe(entry('tools').parentElement);
-    expect(entry('').parentElement).toBe(entry('canvas').parentElement);
-  });
-
-  // Which section is in view before one is chosen is the browser's to say: `PrefsRail.rootSection.browser.test.tsx`.
-  it('scrolls the root\'s page to the section without opening anything, marking it current and the root open', async () => {
-    const user = userEvent.setup();
-    const onSectionChange = vi.fn();
-    renderRail({ onSectionChange });
-    await user.click(entry('tools'));
-    expect(marks()).toEqual({ '': 'open', tools: 'current' });
-    await user.click(entry('files'));
-    expect(onSectionChange).not.toHaveBeenCalled();
-    expect(marks()).toEqual({ '': 'open', files: 'current' });
-    expect(entry('files')).toHaveAttribute('aria-current', 'location');
-    expect(entry('')).toHaveAttribute('aria-current', 'page');
-  });
-
-  it('opens the root\'s page for a section chosen from another page', async () => {
-    const user = userEvent.setup();
-    const onSectionChange = vi.fn();
-    renderRail({ defaultSection: 'canvas', onSectionChange });
-    expect(screen.queryByRole('checkbox', { name: 'Back up' })).not.toBeInTheDocument();
-    await user.click(entry('files'));
-    expect(onSectionChange).toHaveBeenCalledWith('');
+    expect(entry('tools')).toBeNull();
+    expect(entry('files')).toBeNull();
+    expect(screen.getByRole('region', { name: 'Tools' })).toBeInTheDocument();
     expect(screen.getByRole('checkbox', { name: 'Back up' })).toBeInTheDocument();
-    expect(marks()).toEqual({ '': 'open', files: 'current' });
+    expect(entry('tools.keys').parentElement).not.toBe(entry('').parentElement);
+    expect(entry('').parentElement).toBe(entry('canvas').parentElement);
   });
 
   it('leaves a page inside the section off the root\'s page, and opens it from its entry', async () => {
@@ -117,29 +86,22 @@ describe('PrefsForm rail layout over a section on the root\'s page', () => {
     expect(screen.queryByRole('checkbox', { name: 'Snap' })).not.toBeInTheDocument();
   });
 
-  it('folds the root\'s sections under its entry, unfolded while the open page is it or under it', async () => {
+  it('folds a page inside a section of the root\'s page under the root\'s entry', async () => {
     const user = userEvent.setup();
     renderRail({ foldable: true, defaultSection: 'canvas' });
-    expect(entry('tools')).not.toBeInTheDocument();
-    expect(entry('canvas')).toBeInTheDocument();
+    expect(entry('tools.keys')).toBeNull();
     await user.click(entry(''));
-    expect(entry('tools')).toBeInTheDocument();
-    expect(entry('tools.keys')).not.toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Tools', expanded: false }));
+    expect(entry('tools.keys')).toBeInTheDocument();
     await user.click(entry('tools.keys'));
     expect(entry('tools.keys')).toHaveAttribute('aria-current', 'page');
-    expect(entry('tools')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Preferences', expanded: true })).toBeInTheDocument();
   });
 
-  it('opens the root\'s page on its sections when nothing is loose on it', async () => {
-    const user = userEvent.setup();
+  it('opens the root\'s page on its sections when nothing is loose on it', () => {
     render(<PrefsForm schema={NO_LOOSE} onChange={() => {}} layout="rail" />);
     expect(entry('')).toHaveAttribute('aria-current', 'page');
     expect(screen.getByRole('checkbox', { name: 'Snap' })).toBeInTheDocument();
     expect(screen.getByRole('checkbox', { name: 'Back up' })).toBeInTheDocument();
-    await user.click(entry('tools'));
-    expect(marks()).toEqual({ '': 'open', tools: 'current' });
   });
 
   it('opens the root\'s page when `section` names a section of it', () => {

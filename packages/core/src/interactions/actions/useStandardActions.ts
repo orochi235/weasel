@@ -23,6 +23,7 @@ import { cancelGestureAction } from './defaults/cancelGesture';
 import { selectAllAction } from './defaults/selectAll';
 import { deleteAction } from './defaults/delete';
 import { duplicateAction } from './defaults/duplicate';
+import { transformAgainAction } from './transform-again/action';
 import { groupAction, ungroupAction } from './defaults/group';
 import { undoAction, redoAction } from './defaults/undoRedo';
 import { flipAction } from './flip/action';
@@ -50,6 +51,7 @@ import { rotateAction } from './rotate/action';
 import { areaSelectAction } from './defaults/areaSelect';
 import { insertAction } from './insert/action';
 import { insertRotateAction } from './insert/rotateAction';
+import { insertRepositionAction } from './insert/repositionAction';
 import { clearSelectionAction } from './defaults/clearSelection';
 import { cloneAction } from './clone/action';
 import { editAnchorsAction } from './edit-anchors/action';
@@ -57,6 +59,11 @@ import { enterPathEditAction } from './defaults/enterPathEdit';
 import { exitPathEditAction } from './defaults/exitPathEdit';
 import { insertPathAnchorAction } from './defaults/insertPathAnchor';
 import { bendSegmentAction } from './defaults/bendSegment';
+import { makeHandlesSymmetricAction, retractHandlesAction } from './defaults/anchorHandles';
+import { averageAnchorsAction, joinAnchorsAction } from './defaults/anchorJoin';
+import {
+  joinPathsAction, offsetPathAction, simplifyPathAction, snipAtCrossingsAction,
+} from './pathCommands';
 import {
   nudgeAnchorsUpAction,
   nudgeAnchorsDownAction,
@@ -111,6 +118,7 @@ const KIT_STANDARD_DESCRIPTORS: Action[] = [
   cancelGestureAction,
   selectAllAction,
   duplicateAction,
+  transformAgainAction,
   deleteAction,
   groupAction,
   ungroupAction,
@@ -147,6 +155,7 @@ const KIT_STANDARD_DESCRIPTORS: Action[] = [
   areaSelectAction,
   insertAction,
   insertRotateAction,
+  insertRepositionAction,
   cloneAction,
   editAnchorsAction,
   enterPathEditAction,
@@ -159,6 +168,14 @@ const KIT_STANDARD_DESCRIPTORS: Action[] = [
   nudgeAnchorsRightAction,
   deleteAnchorsAction,
   cutPathAtAnchorAction,
+  retractHandlesAction,
+  makeHandlesSymmetricAction,
+  averageAnchorsAction,
+  joinAnchorsAction,
+  simplifyPathAction,
+  offsetPathAction,
+  snipAtCrossingsAction,
+  joinPathsAction,
   marqueeAnchorsAction,
   selectAnchorAction,
   lassoSelectAction,

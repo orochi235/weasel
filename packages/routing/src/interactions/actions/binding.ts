@@ -17,7 +17,6 @@ export interface GestureBinding {
 }
 
 /**
- * @experimental
  * A single entry in `Action.defaultBinding[]`. Either a bare `GestureSpec`
  * (no per-binding opts) or an object form that pairs a spec with
  * `BindingOpts` for parametric actions (e.g. `{ params: { axis: 'x' } }`).

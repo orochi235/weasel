@@ -5,6 +5,7 @@ import {
   type NodeRoutingEntry,
   type Scene,
   type SelectionApi,
+  useLatest,
 } from '@weasel-js/core';
 import { leafWrites } from './commitLeaf';
 import type { PropertyRenderer } from './renderContext';
@@ -101,7 +102,12 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
   } = props;
 
   useSyncExternalStore(scene.subscribe, scene.getVersion, scene.getVersion);
-  const writes = useMemo(() => leafWrites(scene), [scene]);
+  const traits = useLatest({ properties, routing });
+  const writes = useMemo(
+    () => leafWrites(scene, (node) =>
+      traits.current.properties.find((e) => e.name === classifyKind(node, traits.current.routing))?.settle),
+    [scene, traits],
+  );
 
   const nodes = selection.current
     .map((id) => scene.get(asNodeId(id)))

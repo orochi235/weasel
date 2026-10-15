@@ -49,7 +49,7 @@ export interface PrefsFormProps extends MarkHiddenProps, PrefSplitProps {
    * `'columns'` (the default) wraps each top-level group into its own panel
    * column. `'rail'` puts a navigation rail beside one page of settings at a
    * time: each top-level group is a page, a group nested in one is a section
-   * its rail entry scrolls the page to, and a nested group set `as: 'page'`
+   * drawn on that page with no rail entry, and a nested group set `as: 'page'`
    * opens a page of its own — what a dialog-sized surface wants, since columns
    * overflow sideways once there are more than two. `'list'` sets the root's
    * children down one column with no panel around them, nested groups as

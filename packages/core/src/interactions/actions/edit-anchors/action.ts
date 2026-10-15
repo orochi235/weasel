@@ -8,7 +8,9 @@
  *   - **Drag** then moves whatever the press left selected — one anchor,
  *     or every selected anchor together.
  *   - **Dragging a control handle** moves just that handle, mirroring the
- *     opposite one while the anchor is smooth. Alt breaks the mirror.
+ *     opposite one while the anchor is smooth. Alt breaks the mirror; Shift
+ *     holds the handle to the angle it had at the press, changing only its
+ *     length.
  *
  * Selection lives on the `editAnchors` dep (flat anchor indices) rather
  * than in this handle's scratch, because the keyboard actions
@@ -29,6 +31,7 @@ import { isAnchorOrControl } from '@weasel-js/routing';
 import {
   anchorAt,
   editAnchorSetTracked,
+  handleAlongItsAngle,
   moveHandleTo,
   translateAnchorBy,
   type AnchorSet,
@@ -91,6 +94,8 @@ interface EditAnchorsScratch {
    *  measured from here rather than accumulated per move, so the geometry
    *  is always derived from `originPose` in one step. */
   anchorOrigin: { x: number; y: number };
+  /** The dragged control handle's position at the press, for a handle drag. */
+  handleOrigin: { x: number; y: number } | null;
   originPose: PolygonPath;
   currentPose: PolygonPath;
   /** Where each point of `currentPose` came from in `originPose`. */
@@ -180,6 +185,8 @@ export const editAnchorsAction: Action & { requires: string[] } = inPlane({
         part: anchorInfo.part,
         dragging,
         anchorOrigin: { x: origin.x, y: origin.y },
+        handleOrigin: (anchorInfo.part === 'controlIn' ? origin.inHandle
+          : anchorInfo.part === 'controlOut' ? origin.outHandle : null) ?? null,
         originPose: worldPath,
         currentPose: worldPath,
       };
@@ -196,15 +203,17 @@ export const editAnchorsAction: Action & { requires: string[] } = inPlane({
             }));
           } else {
             const side = scratch.part === 'controlIn' ? 'in' : 'out';
+            // Modifiers are read live so the user can press or release them mid-drag.
+            const to = moveCtx.modifiers.shift && scratch.handleOrigin
+              ? handleAlongItsAngle(scratch.anchorOrigin, scratch.handleOrigin, moveCtx.world)
+              : moveCtx.world;
             track(scratch, editAnchorSetTracked(scratch.originPose, (set) =>
               moveHandleTo(
                 set,
                 scratch.anchorIndex,
                 side,
-                moveCtx.world.x,
-                moveCtx.world.y,
-                // Alt breaks the smooth mirror for this drag — read live so
-                // the user can press or release Alt mid-drag.
+                to.x,
+                to.y,
                 moveCtx.modifiers.alt,
               ),
             ));

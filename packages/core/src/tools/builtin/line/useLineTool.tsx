@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { defineTool } from '../../overlayBinding';
 import { LineIcon } from '../../../icons';
 import type { Tool } from '../../overlayBinding';
+import { INSERT_REPOSITION_BINDING } from 'interactions/actions/insert/repositionAction';
 import { insertBindingBehaviors, type InsertToolOptions } from '../shared/insertToolOptions';
 import { cursorFor } from '@weasel-js/cursor';
 
@@ -37,6 +38,7 @@ export function useLineTool(options: InsertToolOptions = {}): Tool {
             actionId: 'insert',
             opts: { params: { kind: 'line' } , ...insertBindingBehaviors(behaviors) },
           },
+          INSERT_REPOSITION_BINDING,
         ],
       }),
     [behaviors],

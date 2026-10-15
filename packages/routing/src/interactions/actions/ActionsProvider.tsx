@@ -24,6 +24,7 @@ import { buildDepsFromRequires } from './buildDeps';
 import type { Dispatcher } from '../dispatcher/dispatcher';
 import { validateActionId, validateActionDefaultBinding, type ActionsRegistry } from './registry';
 import { pushOwner, ScopeNode } from './scopeNode';
+import { tuneAction, type ActionTuning } from './tuning';
 
 /** @internal Provided by `<ActionsProvider>`, `<InputScope>` and `<Yoke>`. */
 export const ActionsContext = createContext<ActionsRegistry | null>(null);
@@ -53,6 +54,7 @@ function depsFor(a: Action, r: DepRegistry | null): Record<string, unknown> {
 export class ActionsNode extends ScopeNode<ActionsNode> {
   private readonly actions = new Map<string, Action[]>();
   private readonly muted = new Map<string, number>();
+  private readonly tunings = new Map<string, ActionTuning[]>();
   private readonly dispatchers: Dispatcher[] = [];
   private cache: { version: number; leaf: ActionsNode; list: readonly Action[] } | null = null;
   /** Called on `activate`, so a scope's dep and tool nodes move with it. */
@@ -71,9 +73,19 @@ export class ActionsNode extends ScopeNode<ActionsNode> {
     for (const n of this.chain()) {
       if (n.muted.has(id)) return undefined;
       const a = n.actions.get(id)?.at(-1);
-      if (a) return a;
+      if (a) return this.tuned(a);
     }
     return undefined;
+  }
+
+  /** `a` under every tuning for its id from the root down to here. */
+  private tuned(a: Action): Action {
+    const tunings: ActionTuning[] = [];
+    for (const n of this.chain()) {
+      const stack = n.tunings.get(a.id);
+      if (stack) tunings.unshift(...stack);
+    }
+    return tunings.length ? tuneAction(a, tunings) : a;
   }
 
   private snapshot(): readonly Action[] {
@@ -158,6 +170,20 @@ export class ActionsNode extends ScopeNode<ActionsNode> {
         if (held === undefined) return;
         if (held > 1) this.muted.set(id, held - 1);
         else this.muted.delete(id);
+        this.changed();
+      };
+    },
+    tune: (id: string, tuning: ActionTuning) => {
+      let stack = this.tunings.get(id);
+      if (!stack) this.tunings.set(id, (stack = []));
+      const release = pushOwner(stack, tuning);
+      this.changed();
+      let released = false;
+      return () => {
+        if (released) return;
+        released = true;
+        release();
+        if (stack.length === 0) this.tunings.delete(id);
         this.changed();
       };
     },

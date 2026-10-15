@@ -3,7 +3,7 @@ import { useRovingTabIndex } from '../../useRovingTabIndex';
 import { Disclosure } from '../Disclosure';
 import { dropSlot, isDropPath } from './drop';
 import { HiddenBadge, hiddenAttrs, marksHidden } from './hidden';
-import { prefRailAbove, prefRailParent, type PrefRailItem } from './schema';
+import { prefRailAbove, type PrefRailItem } from './schema';
 import s from './Prefs.module.css';
 
 /** Props for {@link PrefsRail}. */
@@ -11,12 +11,8 @@ export interface PrefsRailProps {
   items: readonly PrefRailItem[];
   /** Path of the open page. */
   section: string;
-  /** Path of the section of the open page in view, from the pane's scroll spy. */
-  current: string | null;
   /** A page's entry was chosen: open it. */
   onOpen: (path: string) => void;
-  /** A section's entry was chosen: scroll its page to it, opening that page first if another is open. */
-  onScrollTo: (path: string) => void;
   /** Accessible name for the rail's landmark. */
   ariaLabel: string;
   /** Rendered above the list — the filter field, when there is one. */
@@ -38,22 +34,13 @@ export interface PrefsRailProps {
 
 /**
  * The rail beside a `PrefsForm` pane: each page's entry, followed by those of
- * the groups nested in it. A nested entry scrolls its page to a section, or
- * opens a page of its own, as its item's `page` says.
+ * the pages nested in it. A section has none; it is found on its page.
  *
- * A list of buttons rather than a tablist, because only some of these entries
- * switch anything — a section's scrolls the pane a page's entry already
- * opened, and a tab that does not own a panel has no honest role.
- *
- * Two marks say where the reader is. The open page's entry is
- * `aria-current="page"` and the entry of the section in view is
- * `aria-current="location"`. Whichever of them is the reader's place carries
- * `data-rail-mark="current"`, the strong mark: the section in view, or the
- * page while none of its sections is. Under a current section its page carries
- * `data-rail-mark="open"`, the weak one.
+ * The open page's entry is `aria-current="page"` and carries
+ * `data-rail-mark="current"`.
  */
 export function PrefsRail(props: PrefsRailProps) {
-  const { items, section, current, onOpen, onScrollTo, ariaLabel, header, showCounts, dropInto, hidden } = props;
+  const { items, section, onOpen, ariaLabel, header, showCounts, dropInto, hidden } = props;
   const foldable = props.foldable === true;
   const holds = (path: string): boolean => {
     for (let at: string | null = section; at !== null; at = prefRailAbove(items, at)) if (at === path) return true;
@@ -78,13 +65,6 @@ export function PrefsRail(props: PrefsRailProps) {
     return true;
   });
 
-  const activate = (item: PrefRailItem): void => {
-    if (item.page === item.path) onOpen(item.path);
-    else onScrollTo(item.path);
-  };
-  // The reader's place: the section in view, the nearest entry above one that is folded away, or the open page.
-  let place = current !== null && items.some((i) => i.path === current && i.page === section) ? current : section;
-  while (place !== section && !shown.some((i) => i.path === place)) place = prefRailParent(place) ?? section;
   const roving = useRovingTabIndex<HTMLDivElement>({
     itemSelector: `.${s.railItem}`,
     orientation: foldable ? 'vertical' : 'both',
@@ -105,21 +85,20 @@ export function PrefsRail(props: PrefsRailProps) {
     shown.filter((item) => parentOf(item) === parent).map((item) => {
       const key = item.path === '' ? '\u0000root' : item.path;
       const open = item.path === section;
-      const here = item.path === place;
       const nested = nests.has(item.path);
       const entry = (
         <button
           type="button"
-          className={[s.railItem, item.depth > 0 && item.page !== item.path && s.railSub, item.passes && s.railPasses].filter(Boolean).join(' ')}
-          aria-current={open ? 'page' : here ? 'location' : undefined}
-          data-rail-mark={here ? 'current' : open ? 'open' : undefined}
+          className={[s.railItem, item.passes && s.railPasses].filter(Boolean).join(' ')}
+          aria-current={open ? 'page' : undefined}
+          data-rail-mark={open ? 'current' : undefined}
           data-rail-fold={foldable && nested ? item.path : undefined}
           data-pref-rail={isDropPath(item.path) ? undefined : item.path}
           data-drop-placeholder={isDropPath(item.path) ? dropSlot(item.path) ?? '' : undefined}
           data-drop-rail={isDropPath(item.path) ? '' : undefined}
           data-drop={dropInto === item.path ? 'into' : undefined}
           {...hiddenAttrs(hidden?.has(item.path) === true)}
-          onClick={() => activate(item)}
+          onClick={() => onOpen(item.path)}
         >
           <span className={s.railName}>{item.name}</span>
           {marksHidden(hidden, item.path) && <HiddenBadge gapped />}

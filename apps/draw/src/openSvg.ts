@@ -75,8 +75,6 @@ export interface OpenSvgTarget {
   setFilename(name: string): void;
   setPaperSize(size: PaperSizeKey): void;
   setBackgroundColor(color: string): void;
-  /** Journals cached for the old document's nodes must not outlive it. */
-  onClearJournalCache(): void;
 }
 
 /**
@@ -86,7 +84,6 @@ export interface OpenSvgTarget {
 export async function openSvgFile(target: OpenSvgTarget): Promise<void> {
   const picked = await pickSvgFileNamed();
   if (picked === null) return;
-  target.onClearJournalCache();
   const warnings: string[] = [];
   const opened = openSvgText(target.scene, picked.text, picked.name, (w) => warnings.push(w));
   reportSvgWarnings('Opened', warnings);

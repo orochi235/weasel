@@ -166,24 +166,23 @@ const LOOPING_PENCIL: InsertPreview = {
   },
 };
 
+/** Paths hold float32 coordinates, so a box read off one matches to a few places. */
+function expectBox(got: { x: number; y: number; width: number; height: number }, want: typeof got): void {
+  for (const k of ['x', 'y', 'width', 'height'] as const) expect(got[k]).toBeCloseTo(want[k], 4);
+}
+
 describe('insertPreviewExtent', () => {
-  it('resolves a centered polygon to its circumradius box, not the drag rect', () => {
+  it('resolves a centered polygon to the box of its vertices on the circumradius, not the drag rect', () => {
     const r = Math.hypot(50, 50);
-    expect(insertPreviewExtent(CENTERED_POLYGON).bounds).toEqual({
-      x: 100 - r,
-      y: 100 - r,
-      width: r * 2,
-      height: r * 2,
-    });
+    const half = r * Math.sin(Math.PI / 3);
+    expectBox(insertPreviewExtent(CENTERED_POLYGON).bounds, { x: 100 - r, y: 100 - half, width: r * 2, height: half * 2 });
   });
 
   it('gives a horizontal-drag star real height', () => {
-    expect(insertPreviewExtent(HORIZONTAL_STAR).bounds).toEqual({
-      x: 150,
-      y: 50,
-      width: 100,
-      height: 100,
-    });
+    // Its points reach 50 at 0° and ±72° from the center, and 50·cos 144° to the left.
+    const tip = 50 * Math.sin((72 * Math.PI) / 180);
+    const left = 200 + 50 * Math.cos((144 * Math.PI) / 180);
+    expectBox(insertPreviewExtent(HORIZONTAL_STAR).bounds, { x: left, y: 100 - tip, width: 250 - left, height: tip * 2 });
   });
 
   it('resolves a pencil to the AABB of its sample trail', () => {

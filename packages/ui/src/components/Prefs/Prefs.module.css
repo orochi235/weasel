@@ -260,7 +260,8 @@
   display: flex;
   flex-direction: column;
   gap: var(--wzl-space-2);
-  padding: var(--wzl-space-3) var(--wzl-space-2);
+  /* The far side clears a scrollbar laid over the box, which takes no room of its own. */
+  padding: var(--wzl-space-3) var(--wzl-space-8) var(--wzl-space-3) var(--wzl-space-2);
   background: var(--wzl-surface-sunken);
   border-right: 1px solid var(--wzl-border);
   overflow-y: auto;
@@ -324,24 +325,12 @@
   flex: 0 0 var(--wzl-control-h-sm);
 }
 
-/* A section under another entry is set lighter, and keeps the text's own color. A page is set as the top entries
-   are at any depth. */
-.railSub .railName {
-  font-weight: var(--wzl-font-weight-light);
-}
-
-/* Where the reader is: the section in view, or the open page while none of its sections is. */
+/* The open page. */
 .railItem[data-rail-mark='current'] {
   background: var(--wzl-accent);
   color: var(--wzl-fg-on-accent);
   --wzl-fg-muted: var(--wzl-fg-muted-on-accent);
   --wzl-fg-subtle: var(--wzl-fg-subtle-on-accent);
-}
-
-/* The open page, while a section under it carries the mark above. */
-.railItem[data-rail-mark='open'] {
-  background: var(--wzl-surface-raised);
-  box-shadow: inset 2px 0 0 var(--wzl-accent);
 }
 
 /* Choosing it opens the first entry under it: it has no page of its own to show. */
@@ -371,7 +360,8 @@
   overflow-y: auto;
   /* A placeholder's line can be the one that makes the pane scroll, and a scrollbar arriving would move every row. */
   scrollbar-gutter: stable;
-  padding: var(--wzl-space-5) var(--wzl-space-6);
+  /* The gutter is no room where the scrollbar is laid over the box, so the far side clears it itself. */
+  padding: var(--wzl-space-5) var(--wzl-space-8) var(--wzl-space-5) var(--wzl-space-6);
 }
 
 /* Rows that follow a group on the page stand off it as a group does. */

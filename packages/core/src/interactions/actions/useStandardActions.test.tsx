@@ -54,7 +54,7 @@ function ProbeDepSelection({ onValue }: { onValue: (v: unknown) => void }) {
 // Kit-standard descriptor IDs
 // ---------------------------------------------------------------------------
 const KIT_IDS = [
-  'escape', 'cancelGesture', 'selectAll', 'delete', 'duplicate',
+  'escape', 'cancelGesture', 'selectAll', 'delete', 'duplicate', 'transformAgain',
   'group', 'ungroup',
   'undo', 'redo',
   'flip',
@@ -67,10 +67,12 @@ const KIT_IDS = [
   'pathfinder.trim', 'pathfinder.merge',
   'createOutlines', 'outlineStroke',
   'move',
-  'resize', 'rotate', 'areaSelect', 'insert', 'insert.adjustRotation', 'clone',
+  'resize', 'rotate', 'areaSelect', 'insert', 'insert.adjustRotation', 'insert.reposition', 'clone',
   'editAnchors', 'enterPathEdit', 'exitPathEdit', 'insertPathAnchor', 'bendSegment',
   'nudgeAnchors.up', 'nudgeAnchors.down', 'nudgeAnchors.left', 'nudgeAnchors.right',
-  'deleteAnchors', 'cutPathAtAnchor', 'marqueeAnchors', 'selectAnchor',
+  'deleteAnchors', 'cutPathAtAnchor', 'retractHandles', 'makeHandlesSymmetric',
+  'averageAnchors', 'joinAnchors', 'simplifyPath', 'offsetPath', 'snipAtCrossings', 'joinPaths',
+  'marqueeAnchors', 'selectAnchor',
   'lassoSelect', 'viewport.pinchZoom',
   // viewport.pan / viewport.zoom are registered conditionally by SceneCanvas's
   // useViewportActions, not by useStandardActions — see useViewportActions.ts.

@@ -7,6 +7,7 @@ import type {
   TextVerticalAlign,
   Fill,
   Scene,
+  ShapeGenerator,
 } from '@weasel-js/core';
 
 // ─── Document / scene shapes ────────────────────────────────────────────────
@@ -44,11 +45,14 @@ export interface WeaselDrawData {
   /** A dropped bitmap, a dropped SVG kept whole, or an imported `<image>` —
    *  what the `kit:image` painter draws. */
   image?: ImageNodeData['image'];
+  /** The parameters a polygon or star was drawn with, which the sidebar
+   *  edits and `path` is made again from. */
+  generator?: ShapeGenerator;
   label?: string;
 }
 
 const CONTENT_KEYS: ReadonlySet<string> = new Set<keyof WeaselDrawData>([
-  'path', 'text', 'style', 'runs', 'verticalAlign', 'fill', 'stroke', 'image',
+  'path', 'generator', 'text', 'style', 'runs', 'verticalAlign', 'fill', 'stroke', 'image',
 ]);
 
 /** What a node made from `data`'s node keeps of it: everything but the content

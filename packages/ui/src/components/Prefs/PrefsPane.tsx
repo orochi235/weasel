@@ -17,7 +17,7 @@ export interface PrefsPaneProps {
   group: PrefGroup;
   /** Dotted path of `group`. Empty for the loose-leaf pane. */
   path: string;
-  /** The pane's scroll container, for the rail's scroll spy. */
+  /** The pane's scroll container, which the rail scrolls back to the top when a page opens. */
   scrollRef: RefObject<HTMLDivElement | null>;
   /** Which page this is. Rows start fresh when it changes, so one page's row state (a half-typed entry) never
    *  shows on another whose row has the same key. Default `path`; an owner whose `path` moves while the page
@@ -121,8 +121,7 @@ export function paneChildren(
   return out;
 }
 
-/** A nested group inside a pane. One directly on the page is named by `data-spy-section` for the rail entry that
- *  scrolls to it; a section inside another indents and has no entry. */
+/** A nested group inside a pane. A section inside another indents. */
 function PaneSection({ ctx, group, path, depth, box }: {
   ctx: WalkCtx;
   group: PrefGroup;
@@ -135,7 +134,6 @@ function PaneSection({ ctx, group, path, depth, box }: {
   return (
     <section
       className={depth === 0 ? s.paneSection : s.paneSubsection}
-      data-spy-section={depth === 0 ? path : undefined}
       {...selectionAttrs(path, ctx)}
       aria-label={group.name}
     >

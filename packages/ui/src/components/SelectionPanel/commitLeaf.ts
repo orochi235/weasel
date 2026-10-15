@@ -1,7 +1,12 @@
-import { asNodeId, type NodeId, type Scene, type SelectionApi } from '@weasel-js/core';
+import { asNodeId, type NodeId, type NodePropertiesEntry, type Scene, type SelectionApi } from '@weasel-js/core';
 import { absentValue, nodeValueAt, setAtPath, type AnyNode, type PanelLeaf } from './model';
 
 type Next = (prev: unknown) => unknown;
+
+/** The `settle` of the properties entry a node is edited under, if it has one. */
+export type SettleOf = (node: AnyNode) => NodePropertiesEntry['settle'];
+
+const NO_SETTLE: SettleOf = () => undefined;
 
 /** Writes, into every node of `ids`, what `next` derives from the value that node holds at the leaf's path. */
 function writeLeaf<TData, TLayer extends string, TPose>(
@@ -9,6 +14,7 @@ function writeLeaf<TData, TLayer extends string, TPose>(
   ids: readonly NodeId[],
   leaf: PanelLeaf,
   next: Next,
+  settleOf: SettleOf,
 ): void {
   const [head, ...rest] = leaf.path.split('.');
   for (const id of ids) {
@@ -20,11 +26,17 @@ function writeLeaf<TData, TLayer extends string, TPose>(
     // consumer `pose`/`data` are assumed plain-object-shaped along
     // that path (a class instance's prototype would be dropped by
     // the spread) — the `as TPose`/`as TData` casts below rely on it.
-    if (head === 'pose') {
-      scene.setPose(id, setAtPath(node.pose as object, rest, value) as TPose);
-    } else if (head === 'data') {
-      scene.update(id, { data: setAtPath(node.data as object, rest, value) as TData });
-    }
+    const prev = { pose: node.pose as unknown, data: node.data as unknown };
+    let written = head === 'pose'
+      ? { pose: setAtPath(node.pose as object, rest, value) as unknown, data: prev.data }
+      : head === 'data'
+        ? { pose: prev.pose, data: setAtPath(node.data as object, rest, value) as unknown }
+        : null;
+    if (written === null) continue;
+    const settle = settleOf(node as AnyNode);
+    if (settle) written = settle(written, prev);
+    if (written.pose !== prev.pose) scene.setPose(id, written.pose as TPose);
+    if (written.data !== prev.data) scene.update(id, { data: written.data as TData });
   }
 }
 
@@ -32,17 +44,19 @@ const writable = (leaf: PanelLeaf): boolean => /^(pose|data)\../.test(leaf.path)
 
 /**
  * Writes, into every selected node, what `next` derives from the value that
- * node holds at the leaf's path, as one labeled batch.
+ * node holds at the leaf's path, as one labeled batch. A node whose properties
+ * entry has a `settle` stores what that returns.
  */
 export function commitLeaf<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,
   selection: Pick<SelectionApi, 'current'>,
   leaf: PanelLeaf,
   next: Next,
+  settleOf: SettleOf = NO_SETTLE,
 ): void {
   if (!writable(leaf)) return;
   const ids = selection.current.map(asNodeId);
-  scene.batch(`Edit ${leaf.leaf.name}`, () => writeLeaf(scene, ids, leaf, next));
+  scene.batch(`Edit ${leaf.leaf.name}`, () => writeLeaf(scene, ids, leaf, next, settleOf));
 }
 
 /** A panel's two writes into the selected nodes. */
@@ -54,20 +68,23 @@ export interface LeafWrites {
 }
 
 /** The writes of one panel over `scene`. Keep one per panel: it holds what the drafts in flight wrote over. */
-export function leafWrites<TData, TLayer extends string, TPose>(scene: Scene<TData, TLayer, TPose>): LeafWrites {
-  // By leaf path: the pose or data each node held before the first draft of the edit in flight.
-  const drafted = new Map<string, Map<NodeId, unknown>>();
+export function leafWrites<TData, TLayer extends string, TPose>(
+  scene: Scene<TData, TLayer, TPose>,
+  settleOf: SettleOf = NO_SETTLE,
+): LeafWrites {
+  // By leaf path: the pose and data each node held before the first draft of the edit in flight.
+  const drafted = new Map<string, Map<NodeId, { pose: unknown; data: unknown }>>();
 
   const restore = (leaf: PanelLeaf): void => {
     const before = drafted.get(leaf.path);
     if (!before) return;
     drafted.delete(leaf.path);
-    const pose = leaf.path.startsWith('pose.');
     scene.untracked(() => {
       for (const [id, held] of before) {
-        if (!scene.get(id)) continue;
-        if (pose) scene.setPose(id, held as TPose);
-        else scene.update(id, { data: held as TData });
+        const node = scene.get(id);
+        if (!node) continue;
+        if (node.pose !== held.pose) scene.setPose(id, held.pose as TPose);
+        if (node.data !== held.data) scene.update(id, { data: held.data as TData });
       }
     });
   };
@@ -76,19 +93,18 @@ export function leafWrites<TData, TLayer extends string, TPose>(scene: Scene<TDa
     commit: (selection, leaf, next) => {
       // A batch records a write from what the document holds, so the drafts come out first.
       restore(leaf);
-      commitLeaf(scene, selection, leaf, next);
+      commitLeaf(scene, selection, leaf, next, settleOf);
     },
     draft: (selection, leaf, next) => {
       if (!writable(leaf)) return;
       const ids = selection.current.map(asNodeId);
-      const before = drafted.get(leaf.path) ?? new Map<NodeId, unknown>();
+      const before = drafted.get(leaf.path) ?? new Map<NodeId, { pose: unknown; data: unknown }>();
       drafted.set(leaf.path, before);
-      const pose = leaf.path.startsWith('pose.');
       for (const id of ids) {
         const node = scene.get(id);
-        if (node && !before.has(id)) before.set(id, pose ? node.pose : node.data);
+        if (node && !before.has(id)) before.set(id, { pose: node.pose, data: node.data });
       }
-      scene.untracked(() => writeLeaf(scene, ids, leaf, next));
+      scene.untracked(() => writeLeaf(scene, ids, leaf, next, settleOf));
     },
   };
 }

@@ -2,6 +2,8 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import { defineTool } from '../../overlayBinding';
 import { StarIcon } from '../../../icons';
 import type { Tool } from '../../overlayBinding';
+import { INSERT_REPOSITION_BINDING } from 'interactions/actions/insert/repositionAction';
+import { SHAPE_COUNT_RANGE } from 'features/paths/shapeGenerator';
 import { insertBindingBehaviors, type InsertToolOptions } from '../shared/insertToolOptions';
 import type { Action } from '@weasel-js/routing';
 import { useLatest } from '@weasel-js/react';
@@ -21,9 +23,6 @@ export interface UseStarToolOptions extends InsertToolOptions {
    *  per-instance ratios should override the `insert` dep. */
   innerRatio?: number;
 }
-
-const MIN_POINTS = 3;
-const MAX_POINTS = 32;
 
 /**
  * Drag-from-center star tool. Pointerdown sets center; drag determines
@@ -67,8 +66,8 @@ export function useStarTool<TNode extends { id: string } = { id: string }>(
             : 0);
           if (step === 0) return;
           pointsRef.current = step > 0
-            ? Math.min(MAX_POINTS, pointsRef.current + 1)
-            : Math.max(MIN_POINTS, pointsRef.current - 1);
+            ? Math.min(SHAPE_COUNT_RANGE.max, pointsRef.current + 1)
+            : Math.max(SHAPE_COUNT_RANGE.min, pointsRef.current - 1);
           bumpPoints();
         },
       },
@@ -108,6 +107,7 @@ export function useStarTool<TNode extends { id: string } = { id: string }>(
               ...insertBindingBehaviors(behaviors),
             },
           },
+          INSERT_REPOSITION_BINDING,
           {
             spec: { kind: 'wheel', phase: 'engaged' },
             actionId: 'star.adjustPoints',

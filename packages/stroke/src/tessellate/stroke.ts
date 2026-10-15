@@ -3,6 +3,7 @@ import type { ScreenLength, Stroke } from '@weasel-js/paint';
 import { alignedStrokeRect, resolveScreenLength } from '@weasel-js/paint';
 import { type Mesh, extractPolylines, type Polyline } from '@weasel-js/geom/tessellate';
 import { splitForDash } from './dash';
+import { strokeFlattening } from './flattening';
 import { populatePolylineWidths, type WidthScale } from './vertexWidths';
 import { type InsetLength, trimInSpace } from './insets';
 import {
@@ -96,20 +97,13 @@ export function tessellateStroke(
   const rectInMetric = metric && path.kind === 'rect' ? rectIntoMetric(path, metric) : null;
   let workingPath: Path = rectInMetric ?? path;
   if (workingPath.kind === 'rect' && align !== 'center') {
-    const aligned = alignedStrokeRect(workingPath, align, width);
-    workingPath = {
-      kind: 'rect',
-      x: aligned.x,
-      y: aligned.y,
-      width: aligned.width,
-      height: aligned.height,
-    };
+    workingPath = { kind: 'rect', ...alignedStrokeRect(workingPath, align, width) };
   }
 
-  const polylines = extractPolylines(workingPath, opts);
   // Per-point widths come first, in the space the points are in, so a trim
   // interpolates them rather than re-reading an anchor's.
   const vertexWidths = stroke.vertexWidths && stroke.vertexWidths.length > 0 ? stroke.vertexWidths : null;
+  const polylines = extractPolylines(workingPath, strokeFlattening(opts.flattenTolerance, width, vertexWidths ?? undefined));
   const scale: WidthScale | undefined = !metric ? undefined
     : rectInMetric ? (tx, ty) => worldWidthInMetric(metric, tx, ty)
       : (ux, uy) => worldWidthInMetricAlongWorld(metric, ux, uy);

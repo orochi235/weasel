@@ -2,8 +2,9 @@ import type { Affordance, AffordanceBinding, AffordanceRegion, CommonAffordanceS
 import type { ChromeState, Bounds } from 'core/selection/chromeState';
 import type { CommandStroke, CommandFill } from '@weasel-js/paint';
 import { MULTI_RESIZE_TARGET_ID } from 'core/selection/selectionTarget';
-import { angleOf, transformOf } from './hitAffordanceRegions';
+import { localToWorld, transformOf } from './hitAffordanceRegions';
 import type { CursorSpec } from '@weasel-js/cursor';
+import { rotateCursorAt } from './rotateCursor';
 
 /** Options for `createRotationAffordance` — how thick the rotate band is
  *  outside the selection, and how (or whether) it is painted. */
@@ -20,8 +21,8 @@ export interface RotationAffordanceOptions {
     | null
     | false;
   /** Cursor while hovering the ring. Defaults to the `rotate` glyph turned
-   *  with the target, falling back to `'grab'` if the browser rejects the
-   *  image. */
+   *  square to the line from the pivot to the pointer, falling back to
+   *  `'grab'` if the browser rejects the image. */
   cursor?: CursorSpec;
   /** A grab region for a rotate badge painted off the top edge — the one
    *  the selection overlay's `rotationHandle` draws. `distancePx` is how far
@@ -96,12 +97,9 @@ export function createRotationAffordance(
       const halfW = b.width / 2;
       const halfH = b.height / 2;
 
-      // Turned with the target, so the arc follows the selection it rotates.
-      const regionCursor: CursorSpec = cursor ?? {
-        glyph: 'rotate',
-        angle: angleOf(transformOf(state, target.id)),
-        fallback: 'grab',
-      };
+      const pivot = localToWorld(transformOf(state, target.id), b.x + halfW, b.y + halfH);
+      const regionCursor: AffordanceRegion['cursor'] = cursor
+        ?? ((at, view) => rotateCursorAt(pivot, at, view.scale));
       const bind = (): AffordanceBinding => ({
         initialScratch: {
           targetId: target.id,

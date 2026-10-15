@@ -115,8 +115,9 @@ export interface AffordanceRegion<TScratch = unknown> {
    *  `<affordanceId>:<regionId>`. */
   hitKind?: string;
 
-  /** Cursor to show while hovering this region. */
-  cursor?: CursorSpec;
+  /** Cursor to show while hovering this region: one spec, or one worked out
+   *  from where the pointer is (`at`, in world coords). */
+  cursor?: CursorSpec | ((at: { x: number; y: number }, view: View) => CursorSpec);
 
   /** `'exclusive'` bars every binding whose target doesn't consult the
    *  affordance. Read only when the affordance is composed into a

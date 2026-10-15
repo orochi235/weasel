@@ -25,6 +25,7 @@ import {
   type PolygonPath,
 } from '@weasel-js/geom';
 import { insertPreviewExtent } from '../insertPreviewExtent';
+import type { ShapeGenerator } from 'features/paths/shapeGenerator';
 import type { Stroke, Fill } from '@weasel-js/paint';
 import { cycleFill, solid, strokeOf } from '../../util/paint';
 
@@ -87,6 +88,44 @@ export const paletteInsertPaint: InsertPaint = (kind, seq) => {
   return { fill: { paint: solid(color) } };
 };
 
+/** The kit's default data for a kind drawn as a box, or `null` for a kind it has none for. */
+function boxKindData(
+  kind: string,
+  bounds: { x: number; y: number; width: number; height: number },
+  extras: InsertExtras,
+  painted: (as?: string) => ReturnType<typeof paintKeys>,
+): unknown {
+  switch (kind) {
+    case 'rect':
+      // The rect path lives at the origin and the pose carries position:
+      // `pathInPoseFrame` rebases a rect path onto the pose box, so don't
+      // double-count the position.
+      return { path: rectPath(0, 0, bounds.width, bounds.height), ...painted() };
+    case 'ellipse':
+      return { path: ellipsePath(bounds), ...painted() };
+    case 'path': {
+      const e = extras as { path: PolygonPath; closed: boolean };
+      return { path: e.path, ...painted(), ...(e.closed ? {} : { fill: null }) };
+    }
+    case 'text': {
+      // The built-in text tool drags an empty text box you then type into, so
+      // `extras` carries no content. The kit:text painter matches on
+      // `data.text != null` and applies style defaults at render time, so a bare
+      // `{ text }` is a complete, editable node.
+      const e = extras as Partial<{ text: string }>;
+      return { text: e.text ?? '' };
+    }
+    case 'image': {
+      // The bitmap is loaded + cached by `imageCache` keyed on `src`;
+      // only the (serializable) `src` lives on the node.
+      const e = extras as Partial<{ src: string; opacity: number }>;
+      return { image: { src: e.src ?? '', ...(e.opacity !== undefined ? { opacity: e.opacity } : {}) } };
+    }
+    default:
+      return null;
+  }
+}
+
 export function useInsertDepSource(
   scene: Scene<unknown, string, unknown>,
   adapter: OpsApplier,
@@ -143,12 +182,19 @@ export function useInsertDepSource(
           case 'polygon':
             data = {
               path: regularPolygonPath(geom.center, geom.radius, geom.sides, geom.rotation),
+              generator: { kind: 'polygon', sides: geom.sides, rotation: geom.rotation } satisfies ShapeGenerator,
               ...painted(),
             };
             break;
           case 'star':
             data = {
               path: starPath(geom.center, geom.outerRadius, geom.points, geom.innerRadius, geom.rotation),
+              generator: {
+                kind: 'star',
+                points: geom.points,
+                innerRadiusRatio: geom.outerRadius === 0 ? 0.5 : geom.innerRadius / geom.outerRadius,
+                rotation: geom.rotation,
+              } satisfies ShapeGenerator,
               ...painted(),
             };
             break;
@@ -164,45 +210,10 @@ export function useInsertDepSource(
             break;
           }
           case 'box':
-            switch (kind) {
-              case 'rect':
-                // The rect path lives at the origin and the pose carries position:
-                // `pathInPoseFrame` rebases a rect path onto the pose box, so don't
-                // double-count the position.
-                data = { path: rectPath(0, 0, extent.bounds.width, extent.bounds.height), ...painted() };
-                break;
-              case 'ellipse':
-                data = { path: ellipsePath(extent.bounds), ...painted() };
-                break;
-              case 'path': {
-                const e = extras as { path: PolygonPath; closed: boolean };
-                data = { path: e.path, ...painted(), ...(e.closed ? {} : { fill: null }) };
-                break;
-              }
-              case 'text': {
-                // The built-in text tool drags an empty text box you then type into, so
-                // `extras` carries no content. The kit:text painter matches on
-                // `data.text != null` and applies style defaults at render time, so a bare
-                // `{ text }` is a complete, editable node.
-                const e = extras as Partial<{ text: string }>;
-                data = { text: e.text ?? '' };
-                break;
-              }
-              case 'image': {
-                // The bitmap is loaded + cached by `imageCache` keyed on `src`;
-                // only the (serializable) `src` lives on the node.
-                const e = extras as Partial<{ src: string; opacity: number }>;
-                data = {
-                  image: {
-                    src: e.src ?? '',
-                    ...(e.opacity !== undefined ? { opacity: e.opacity } : {}),
-                  },
-                };
-                break;
-              }
-              default:
-                console.warn(`weasel insertDep: no factory for kind="${kind}". Skipping insert.`);
-                return null;
+            data = boxKindData(kind, extent.bounds, extras, painted);
+            if (data === null) {
+              console.warn(`weasel insertDep: no factory for kind="${kind}". Skipping insert.`);
+              return null;
             }
             break;
         }

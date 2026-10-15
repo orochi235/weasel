@@ -6,7 +6,7 @@ import type { KitInsertShape } from 'core/shapeKinds';
 import { runBehaviorSettled } from '../gestureLifecycle';
 import { inPlane, insertLayer } from '../planeInput';
 import { cancelInsert, commitInsert } from './commit';
-import { nextFrame } from './frame';
+import { carryStart, nextFrame } from './frame';
 import type { InsertLiveGesture } from './live';
 import { beginInsert } from './session';
 import { insertKind, insertShape } from './shape';
@@ -38,13 +38,14 @@ export const insertAction: Action & { requires: string[] } = inPlane({
       if (!begun) return {};
       const { session, readers } = begun;
       let frame = begun.frame;
-      const gesture: InsertLiveGesture = { open: true, userRotation: 0 };
+      const gesture: InsertLiveGesture = { open: true, userRotation: 0, repositioning: false };
       const live = ctx.deps.insertLive;
       if (live) live.gesture = gesture;
 
       return {
         kind: 'insert',
         onMove(moveCtx: InvocationCtx): void {
+          if (gesture.repositioning) carryStart(session, frame.pointer, moveCtx.world);
           frame = nextFrame(session, readers, frame, moveCtx);
         },
         overlay(): OngoingOverlay | null {

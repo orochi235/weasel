@@ -104,6 +104,7 @@ export interface DiagramViewApi {
 }
 
 const AMBIENT = [dragPanContribution()];
+const NO_MARQUEE = { areaSelect: null };
 
 /** A diagram: drag or wheel to pan, zoom, and pick a node; drag nodes with
  *  `onMove`, join ports with `onConnect`. Labels paint only in a registered
@@ -224,6 +225,8 @@ function Inner({
       features={onMove ? ['view', 'pick', 'move'] : ['view', 'pick']}
       enableKeybindings={enableKeybindings ?? (onMove !== undefined || onConnect !== undefined)}
       ambient={ambient}
+      // A drag on empty canvas pans: the select tool's marquee would outrank the ambient pan.
+      actions={NO_MARQUEE}
       onClick={onClick}
       width={width}
       height={height}

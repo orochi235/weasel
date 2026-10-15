@@ -3,6 +3,7 @@ import { isValidElement } from 'react';
 import { actionItems, type ActionItem } from '@weasel-js/routing';
 import { clipboardCopyAction, clipboardCutAction, clipboardPasteAction } from '../clipboard/action';
 import { duplicateAction } from './duplicate';
+import { transformAgainAction } from '../transform-again/action';
 import { groupAction, ungroupAction } from './group';
 import { reorderForwardAction, reorderBackwardAction } from './reorder';
 import { flipAction } from '../flip/action';
@@ -17,14 +18,14 @@ function iconOf(item: ActionItem) {
 describe('default edit-action icons', () => {
   const items = [
     undoAction, redoAction, deleteAction,
-    clipboardCutAction, clipboardCopyAction, clipboardPasteAction, duplicateAction,
+    clipboardCutAction, clipboardCopyAction, clipboardPasteAction, duplicateAction, transformAgainAction,
     groupAction, ungroupAction, reorderForwardAction, reorderBackwardAction, flipAction,
   ].flatMap(actionItems);
 
   it('gives every entry an svg glyph', () => {
     expect(items.map((i) => i.key)).toEqual([
       'undo', 'redo', 'delete',
-      'clipboard.cut', 'clipboard.copy', 'clipboard.paste', 'duplicate', 'group', 'ungroup',
+      'clipboard.cut', 'clipboard.copy', 'clipboard.paste', 'duplicate', 'transformAgain', 'group', 'ungroup',
       'reorder.forward:adjacent', 'reorder.forward:extreme',
       'reorder.backward:adjacent', 'reorder.backward:extreme',
       'flip:x', 'flip:y',

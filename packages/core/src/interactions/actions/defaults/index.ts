@@ -1,6 +1,7 @@
 export { selectAllAction } from './selectAll';
 export { escapeAction } from './escape';
 export { duplicateAction } from './duplicate';
+export { transformAgainAction } from '../transform-again/action';
 export { nudgeUpAction, nudgeDownAction, nudgeLeftAction, nudgeRightAction } from './nudge';
 export { reorderForwardAction, reorderBackwardAction } from './reorder';
 export { flipAction } from '../flip/action';
@@ -25,6 +26,11 @@ export {
   nudgeAnchorsLeftAction, nudgeAnchorsRightAction,
   deleteAnchorsAction, cutPathAtAnchorAction, marqueeAnchorsAction, selectAnchorAction,
 } from './anchorEditing';
+export { retractHandlesAction, makeHandlesSymmetricAction } from './anchorHandles';
+export { averageAnchorsAction, joinAnchorsAction } from './anchorJoin';
+export {
+  simplifyPathAction, offsetPathAction, snipAtCrossingsAction, joinPathsAction,
+} from '../pathCommands';
 export { undoAction, redoAction } from './undoRedo';
 export { clipboardCopyAction, clipboardCutAction, clipboardPasteAction, clipboardPasteEventAction } from '../clipboard/action';
 export { makeToolOffhandAction, buildToolOffhandBindings, TOOL_OFFHAND_ID, type ToolOffhandBindingSpec } from '@weasel-js/routing';
@@ -40,6 +46,7 @@ export { resizeAction } from '../resize/action';
 export { rotateAction } from '../rotate/action';
 export { areaSelectAction } from './areaSelect';
 export { insertAction } from '../insert/action';
+export { insertRepositionAction, INSERT_REPOSITION_BINDING } from '../insert/repositionAction';
 export { cloneAction } from '../clone/action';
 export { editAnchorsAction } from '../edit-anchors/action';
 export { lassoSelectAction } from '../lasso-select/action';

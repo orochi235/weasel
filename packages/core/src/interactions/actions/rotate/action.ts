@@ -3,9 +3,11 @@ import type { BindingOpts, InvocationCtx, OngoingHandle } from '@weasel-js/routi
 import type { NodeId } from 'core/scene/types';
 import { closeGesture, runBehaviorCancel } from '../gestureLifecycle';
 import { inPlane, selectionLayer } from '../planeInput';
+import { rotateCursorAt } from 'affordances/rotateCursor';
 import { commitRotate } from './commit';
 import { nextFrame } from './frame';
 import { beginRotate, type RotateFrame } from './session';
+import { recordTransform } from '../transform-again/memory';
 
 /**
  * @experimental
@@ -30,20 +32,32 @@ export const rotateAction: Action & { requires: string[] } = inPlane({
       const begun = beginRotate(ctx, opts);
       if (!begun) return {};
       const { session, readers } = begun;
+      const subject = [...(ctx.deps.selection?.get() ?? [])] as string[];
       const hold = session.scene.overrides.hold();
       let frame: RotateFrame = { delta: 0, previews: new Map() };
+      let pointer = ctx.world;
       session.lifecycle.start(session.gestureCtx.draggedIds);
       return {
         kind: 'rotate',
+        cursor: () => {
+          const scale = ctx.deps.view?.get().scale;
+          return scale ? rotateCursorAt(session.turn.pivot, pointer, scale) : undefined;
+        },
         onMove(moveCtx: InvocationCtx): void {
+          pointer = moveCtx.world;
           frame = nextFrame(session, readers, moveCtx);
           hold.set(frame.previews);
         },
         onEnd(_endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
           let committed = false;
           try {
-            if (reason === 'commit') committed = commitRotate(session, frame);
-            else runBehaviorCancel(session.behaviors, session.gestureCtx);
+            if (reason === 'commit') {
+              committed = commitRotate(session, frame);
+              if (committed) {
+                const pivot = session.ids.length > 1 && !session.turn.useUnionPivot ? 'each' : 'union';
+                recordTransform(session.scene, { kind: 'rotate', angle: frame.delta, pivot }, subject);
+              }
+            } else runBehaviorCancel(session.behaviors, session.gestureCtx);
           } finally {
             closeGesture({ hold, previews: frame.previews, behaviors: session.behaviors, ctx: session.gestureCtx, lifecycle: session.lifecycle }, committed);
           }

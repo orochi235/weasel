@@ -174,27 +174,23 @@ Priority tags:
   end tangent, or along its end curvature.
 - **(P2) Measure, then transform by the measurement.** A measure tool reads distance and angle
   between two points, and the readout can move or rotate the selection by exactly that amount.
-- **(P2) Star and polygon stay editable after drawing.** The point count is adjustable with the
-  wheel only while the star is being dragged out (`useStarTool.tsx`); after commit it is plain
-  geometry. Keep the parameters on the node and edit them in the inspector.
-- **(P2) Handle commands.** Retract handles, make an anchor's handles symmetric, and keep a handle's
-  angle while dragging its length.
 - **(P2) Shape builder.** Drag across overlapping regions to merge them, Alt-drag to delete them.
   `previewBooleanOp` already answers the pieces; the tool draws and picks among them. Building it
   also gives "Live preview of a Boolean operation" below its display.
-- **(P2) Transform again.** Cmd+D repeats the last move, rotate, scale, or duplicate-and-move on
-  the current selection.
-- **(P2) Reposition a shape while drawing it.** Hold Space during a shape drag to move the shape
-  instead of resizing it.
+- **(P3) A move under a rotated parent repeats in the parent's axes.** Nudge, duplicate, and
+  Transform Again (`interactions/actions/transform-again/`) offset a node along its parent's axes;
+  a drag and an Alt-drag clone measure on screen. So inside a group drawn turned, Cmd+D after a
+  drag steps in a different direction from the drag. Recording the move in world space and
+  mapping it through each node's parent on replay would make the two agree.
+- **(P3) The path commands have no icons.** `simplifyPath`, `offsetPath`, `snipAtCrossings`,
+  `joinPaths`, `joinAnchors`, and `averageAnchors` show as text in draw's bar.
+  `RetractHandlesIcon` and `SymmetricHandlesIcon` (`defaults/icons/anchorIcons.tsx`) are first
+  drafts, not proofed at high resolution.
 - **(P2) Spacing hints.** Equal-spacing markers between siblings while moving, and Alt-hover
   distance readouts between the selection and the shape under the pointer.
 - **(P2) Live symmetry.** Draw on one side of an axis and the mirrored half follows.
 - **(P2) Variable-width strokes.** A width profile along a stroke's length, edited by dragging
   on the stroke. `strokeToPath` handles a fixed width only.
-- **(P2) Offset path, simplify, cut at intersections, average and join anchors.** Path
-  commands draw lacks: offset from `strokeToPath`, simplify with a live slider
-  from `schneiderFit`, cut every path at its crossings from `splitBySegment`, and average or join
-  two selected endpoints.
 
 ### Pathfinder follow-ups (post-v1)
 
@@ -234,6 +230,15 @@ Priority tags:
   against: the model (`u_view` on a shader command, `u_model` in a registered paint kind) and the
   paint matrix a registered kind asks for (`PaintBindContext.spaceInverse`). The first needs a
   per-path origin in `@weasel-js/geom`'s tessellation.
+
+- **(P3) Curve flattening ignores zoom on the live canvas.** `<Canvas>` leaves `flattenTolerance`
+  unset unless a consumer passes one, and WeaselDraw doesn't, so every curve flattens at
+  `DEFAULT_FLATTEN_TOLERANCE`, 0.5 world units, whatever the zoom: 4 px of chord error at 8x.
+  `renderSceneToPixels` already derives the tolerance from the output scale. The live path
+  needs the same, with the fill and stroke mesh caches keyed on a quantized tolerance, so that
+  a continuous zoom doesn't rebuild every mesh on every frame. Thick strokes already cap each
+  flattened step at 10° (`strokeFlattening` in `@weasel-js/stroke`), which fixes what the facets
+  look like at a tight bend but not this.
 
 ---
 
@@ -325,7 +330,8 @@ Priority tags:
   consulting the journal accessor. `scene.recordedForm.test.ts` pins today's split. Routing `scene.batch` also needs a new method
   on `Journal`: `batch` records ops that have already applied (`engine.recordEntry`), and `Journal`
   has only `applyBatch`, which would apply them again; a direct call that touches a laid-out
-  container runs as a batch. draw opens a journal in every mode
+  container runs as a batch. draw opens a journal in every strict mode, and in every soft mode
+  unless the Modes > Undo inside a mode pref says the document's history
   (`apps/draw/src/modality/machine.ts`), so the change moves where every direct call made during
   a mode lands.
 
@@ -577,6 +583,14 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   rail marked `canvas.grid` current where the test expects `canvas.rulers`. A guess, not
   confirmed: the section is polled into view and the marks are then read once, so a scroll spy
   that settles a frame later would still name the section above.
+
+- **(P2) Labs still tune actions through the experimental `actions` prop.** The smart remove
+  brush, extend-path-end, and dynamic-corners labs (on their own branches when `tune` landed) set
+  `radiusPx`, `mode`, and a K binding by restating whole descriptors through `actions`. Move each
+  to `<SceneCanvas tune>` as it merges, drop the restated gestures, and give its actions
+  (`brushDeleteAnchors`, `extendPathEnd`, …) entries in core's `ActionParamSchema`
+  (`interactions/actions/actionParamSchema.ts`).
+
 - **(P3) Nothing puts `prefsCss` on a page.** `prefsCss(store)` writes the text and
   `prefsCssAttributes(store)` the attributes (`packages/prefs/README.md`, "As CSS custom
   properties"); a host adopts the one and sets the other by hand, and again on every change. The
@@ -715,13 +729,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   `GroupRows`, a row per leaf under each nested group's name. `Bar` holds its values flat, keyed by
   dotted path, where the form's pane reads a nested tree, so the two do not share a body yet.
   Nobody has looked at `ActionBar` in a browser since it became a `Bar` of `action` leaves.
-
-- **(P3) A rail of sections and pages: two things not decided.** A `PrefsForm` rail lists a page
-  at any depth, and a section only when it sits directly on a page, the root's own included. (1) A
-  foldable rail unfolds an entry only while the open page is it or under it, so a section holding
-  pages of its own keeps their entries shut while the reader scrolls through it. Whether the
-  section in view should unfold is open; it would move the rail under a reader who is scrolling.
-  (2) A section's rail entry and a nested page's look the same until one is chosen.
 
 - **(P3) A fragment has no box for a preview drag to land on.** Its element is
   `display: contents`, so `measure` in `Prefs/dropTarget.ts` reads an empty rect for it and a drag
@@ -939,6 +946,13 @@ only story runner in the repo.
   7 of 26 tests in one run on 2026-10-13, and polls now; whether a checkout loses them too is not
   measured.
 
+- **(P3) A freshly started site dev server's first page load can come up blank.** Started from a
+  worktree with `WAKE_EXTRA=<port> npx vite --port <port>`, the first one or two loads of a demo
+  show an empty page with wake's "dev server unreachable" pill, and a reload renders it. Seen on
+  every one of a dozen servers on 2026-10-14. The server logs no dependency re-optimization or
+  reload, so the cause isn't known; the first load after an agent edits a lab once threw
+  `instrument.defaultConfig is not a function` before a reload fixed it.
+
 - **(P2) Package pages: check the reference against a real build, then retire `/api/`.** Every
   published package has a page at `#pkg/<name>` (overview, guides, reference, demos; how each is
   fed is in `CONTRIBUTING.md`, "Package pages"). The reference half has only ever read a
@@ -1105,6 +1119,16 @@ only story runner in the repo.
     on studio failed `glyphCoverage` and `rasterSession` the same way, and `labkit`'s
     `presentation.browser.test.tsx` ("entering refits the view…") in place of `overlayTyping`. Both
     `core` files pass alone at that commit on orochi, in 7 s.
+  - **Still failing on 2026-10-14**, branch `path-edit-commands`, which touches no renderer, font,
+    or labkit code: `glyphCoverage` and `rasterSession` timed out on teitou and again on studio, and
+    on studio so did `glyphCoverage`'s "puts down the same ink wherever a 7.2px H lands" and
+    `LabLightbox`'s "an expanded trial keeps its marks over it". Also on studio, not a timeout:
+    `ui/src/components/Prefs/PrefsRail.rootSection.browser.test.tsx` ("scrolls the root's page to a
+    section from its entry") saw `tools` as the current section where it expected `files`. It
+    passed on teitou at a commit whose `ui` tree was the same. Later the same day, branch
+    `soft-mode-history` (history and cursor code only) failed `glyphCoverage`'s "keeps both stems"
+    on teitou, then both `glyphCoverage` tests and `rasterSession` on studio, as did `main` at
+    `b1bcafb7d` on studio; both files pass alone on orochi at the branch head, in 12.7 s.
   - `forge/src/vite/plugin.test.ts` has its own entry under "Demos & visual regression".
 
 - **(P2) HUD vs DOM text: what the idle rerun left open.** `tests/perf/hud-vs-dom.spec.ts` prices

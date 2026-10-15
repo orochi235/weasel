@@ -38,6 +38,11 @@ export { pathDistanceToPoint } from './paths/pathDistance';
 export { cubicPointAt, splitCubicAtT, type Point } from './paths/cubicMath';
 export { fitCubicThroughDeletion } from './paths/spanFit';
 export { schneiderFit, fitCubicWithTangents } from './paths/schneiderFit';
+export { simplifyPath, type SimplifyPathOptions } from './paths/simplifyPath';
+export {
+  averageAnchorsAt, closestOpenEnds, joinAnchorsAt, joinSubpathEnds, subpathEndAt,
+  type AverageAxis, type SubpathEnd,
+} from './paths/joinAnchors';
 export {
   pointInPath, strokeHitTest,
   pathContainsPoint, pathContainsRect, pathIntersectsRect,
@@ -82,6 +87,7 @@ export {
   type AnchorRect, type AnchorSet, type SegmentHit,
 } from './paths/anchorEdits';
 export { bendSegment, type BendGrip } from './paths/bendSegment';
+export { handleAlongItsAngle, makeHandlesSymmetric, retractHandles } from './paths/handleEdits';
 export { editAnchorSetTracked, remapPointValues, type PointOrigin } from './paths/anchorOrigins';
 export { nearestPathAnchor, reverseAnchors, type PathAnchorHit } from './paths/nearestAnchor';
 export { pathInPoseFrame, pathInWorld, worldEditToStorage, type PathInWorldPose } from './paths/pathInWorld';

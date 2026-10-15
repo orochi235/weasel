@@ -53,16 +53,13 @@ export function prefFieldChoices(schema: PrefGroup | PrefSection): PrefFieldChoi
   return out;
 }
 
-/** One entry in a {@link PrefsForm} rail: a group the reader can navigate to. */
+/** One entry in a {@link PrefsForm} rail: a page the reader can open. */
 export interface PrefRailItem {
-  /** Dotted path of the group. Empty for the entry holding loose root leaves. */
+  /** Dotted path of the page's group. Empty for the entry holding loose root leaves. */
   path: string;
   name: string;
   /** How far the entry nests: 0 at the top, and one more than the nearest entry above it. */
   depth: number;
-  /** Path of the page the group is drawn on. Its own path: choosing the entry opens that page. Another's: the
-   *  group is a section of that page, and choosing the entry scrolls the page to it. */
-  page: string;
   /** Leaves surviving the active filter, counted over the whole subtree. */
   matches: number;
   /** Its page would draw nothing, so choosing it opens the first entry nested in it. */
@@ -98,16 +95,14 @@ export function prefRailParent(path: string): string | null {
   return at < 0 ? null : path.slice(0, at);
 }
 
-/** Path of the rail entry the one at `path` nests under: the nearest group above it that `items` lists, since a
- *  section inside a section has no entry, and the root's for a section of the root's own page. Null when there is
- *  none. */
+/** Path of the rail entry the one at `path` nests under: the nearest page above it that `items` lists, since a
+ *  section has no entry, and the root's for a page inside a section or a fragment of the root's own page. Null
+ *  when there is none. */
 export function prefRailAbove(items: readonly PrefRailItem[], path: string): string | null {
   for (let at = prefRailParent(path); at !== null; at = prefRailParent(at)) {
     if (items.some((i) => i.path === at)) return at;
   }
-  if (path === '' || !items.some((i) => i.path === '')) return null;
-  // A section of the root's own page, or a page inside a top-level fragment.
-  return path.includes('.') || items.some((i) => i.path === path && i.page === '') ? '' : null;
+  return path.includes('.') && items.some((i) => i.path === '') ? '' : null;
 }
 
 /** What the rail and pane call a root's loose leaves: the root's name, or `General` when it has none. */
@@ -124,14 +119,13 @@ function countPrefLeaves(node: PrefLeaf | PrefGroup): number {
 }
 
 /**
- * The rail's model for a schema: each top-level page, followed by the entries nested in it, each followed by its
- * own. A group that is `as: 'page'` opens a page of its own and is listed at any depth. Any other nested group is
- * a section, listed only when it sits directly on a page; a section inside a section is drawn on that page with
- * no entry. Nothing inside a tab or a panel is listed. What a fragment holds is listed as its parent's.
+ * The rail's model for a schema: each top-level page, followed by the pages nested in it, each followed by its
+ * own. A group that is `as: 'page'` opens a page of its own and is listed at any depth, a section in between
+ * included. A section has no entry: it is drawn on its page, under its heading. Nothing inside a tab or a panel is
+ * listed. What a fragment holds is listed as its parent's.
  *
  * The root's own page leads the list under an entry named for the root itself: its loose leaves, which belong to
- * no group that could name them, and every top-level group that is not a page. A top-level section is a section
- * of that page and nests under its entry, as one does on any other page.
+ * no group that could name them, and every top-level group that is not a page.
  */
 export function prefRailItems(root: PrefGroup): PrefRailItem[] {
   const items: PrefRailItem[] = [];
@@ -139,34 +133,31 @@ export function prefRailItems(root: PrefGroup): PrefRailItem[] {
   const loose = Object.values(root.children).filter((c) => isPrefLeaf(c) || !prefGroupIsPage(c));
   const passing = (group: PrefGroup): { passes?: true } =>
     Object.keys(group.children).length > 0 && !prefPageHasOwn(group) ? { passes: true } : {};
-  /** `direct`: `group`'s children sit directly on `page`, where a section is listed. */
-  const nest = (group: PrefGroup, path: string, depth: number, page: string, direct: boolean): void => {
+  const nest = (group: PrefGroup, path: string, depth: number): void => {
     for (const [key, sub] of Object.entries(group.children)) {
       if (isPrefLeaf(sub)) continue;
       const subPath = path === '' ? key : `${path}.${key}`;
       if (isFragment(sub)) {
-        nest(sub, subPath, depth, page, direct);
+        nest(sub, subPath, depth);
         continue;
       }
       if (!prefGroupNests(sub)) continue;
       // A top-level page is no part of the root's own page.
       if (path === '' && prefGroupIsPage(sub)) continue;
       const opens = prefGroupOpensPage(sub);
-      const listed = opens || direct;
-      const on = opens ? subPath : page;
-      if (listed) items.push({ path: subPath, name: sub.name, depth, page: on, matches: countPrefLeaves(sub), ...(opens ? passing(sub) : {}) });
-      nest(sub, subPath, listed ? depth + 1 : depth, on, opens);
+      if (opens) items.push({ path: subPath, name: sub.name, depth, matches: countPrefLeaves(sub), ...passing(sub) });
+      nest(sub, subPath, opens ? depth + 1 : depth);
     }
   };
   if (loose.length > 0) {
     const matches = loose.reduce((n, c) => n + countPrefLeaves(c), 0);
-    items.push({ path: '', name: looseEntryName(root.name), depth: 0, page: '', matches });
-    nest(root, '', 1, '', true);
+    items.push({ path: '', name: looseEntryName(root.name), depth: 0, matches });
+    nest(root, '', 1);
   }
   for (const [key, child] of Object.entries(root.children)) {
     if (isPrefLeaf(child) || !prefGroupIsPage(child)) continue;
-    items.push({ path: key, name: child.name, depth: 0, page: key, matches: countPrefLeaves(child), ...passing(child) });
-    nest(child, key, 1, key, true);
+    items.push({ path: key, name: child.name, depth: 0, matches: countPrefLeaves(child), ...passing(child) });
+    nest(child, key, 1);
   }
   return items;
 }

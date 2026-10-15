@@ -1,26 +1,14 @@
-import {
-  SceneCanvas,
-  WeaselProvider,
-  createScene,
-  sceneFromJSON,
-  screenToWorld,
-  solid,
-  useSelection,
-  viewToTransform,
-} from '@weasel-js/core';
-import type {
-  AddNodeSpec,
-  Paint,
-  RectPose,
-  Scene,
-  SerializedScene,
-  UnitSystem,
-  View,
-  Fill,
-} from '@weasel-js/core';
+import { createScene, screenToWorld, solid, viewToTransform } from '@weasel-js/core';
+import type { AddNodeSpec, Fill, Paint, RectPose, UnitSystem, View } from '@weasel-js/core';
 import { createGridLayer } from '@weasel-js/guides';
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
-import { defineInstrument, type RenderContext } from '@weasel-js/labkit';
+import { useMemo, useRef } from 'react';
+import {
+  defineInstrument,
+  type RenderContext,
+  type SceneTrialState,
+  TrialSceneCanvas,
+  useTrialScene,
+} from '@weasel-js/labkit';
 
 type Kind = 'tree' | 'shrub' | 'flower';
 
@@ -30,11 +18,7 @@ interface NodeData {
 }
 type Pose = RectPose;
 type LayerId = 'default';
-type SerializedSceneJSON = SerializedScene<NodeData, LayerId, Pose>;
-
-interface GardenState {
-  scene: SerializedSceneJSON | null;
-}
+type GardenState = SceneTrialState<NodeData, LayerId, Pose>;
 interface GardenConfig {
   showGrid: boolean;
 }
@@ -78,67 +62,16 @@ export const INITIAL_NODES: readonly AddNodeSpec<NodeData, LayerId, Pose>[] = [
   },
 ];
 
-function buildScene(json: SerializedSceneJSON | null): Scene<NodeData, LayerId, Pose> {
-  if (json) return sceneFromJSON<NodeData, LayerId, Pose>(json, {});
-  return createScene<NodeData, LayerId, Pose>({
-    systemLayers: SYSTEM_LAYERS,
-    initial: INITIAL_NODES,
-  });
-}
+const createGarden = () =>
+  createScene<NodeData, LayerId, Pose>({ systemLayers: SYSTEM_LAYERS, initial: INITIAL_NODES });
 
 const DRAG_MIME = 'application/x-garden-kind';
 
-interface BodyProps {
-  config: GardenConfig;
-  state: GardenState;
-  setState: (next: GardenState | ((prev: GardenState) => GardenState)) => void;
-}
-
-function GardenBody({ config, state, setState }: BodyProps) {
-  const sceneRef = useRef<Scene<NodeData, LayerId, Pose> | null>(null);
-  if (sceneRef.current === null) sceneRef.current = buildScene(state.scene);
-
-  const lastPushedRef = useRef<SerializedSceneJSON | null>(state.scene);
-  const [, forceRender] = useState(0);
-
-  useEffect(() => {
-    if (state.scene === lastPushedRef.current) return;
-    sceneRef.current = buildScene(state.scene);
-    lastPushedRef.current = state.scene;
-    forceRender((n) => n + 1);
-  }, [state.scene]);
-
-  const scene = sceneRef.current;
-  useSyncExternalStore(scene.subscribe, scene.getVersion, scene.getVersion);
-
-  useEffect(() => {
-    return scene.subscribe(() => {
-      const json = scene.toJSON();
-      lastPushedRef.current = json;
-      setState((prev) => ({ ...prev, scene: json }));
-    });
-  }, [scene, setState]);
-
-  const selection = useSelection();
+function GardenBody({ ctx }: { ctx: RenderContext<GardenState, GardenConfig> }) {
+  const scene = useTrialScene(ctx, createGarden);
+  const { config } = ctx;
   const canvasHostRef = useRef<HTMLDivElement | null>(null);
-  const [size, setSize] = useState({ w: 800, h: 600 });
   const viewRef = useRef<View>(DEFAULT_VIEW);
-
-  useEffect(() => {
-    const el = canvasHostRef.current;
-    if (!el) return;
-    const ro = new ResizeObserver((entries) => {
-      const entry = entries[0];
-      if (!entry) return;
-      const box = entry.contentBoxSize?.[0];
-      const w = Math.round(box ? box.inlineSize : entry.contentRect.width);
-      const h = Math.round(box ? box.blockSize : entry.contentRect.height);
-      if (w <= 0 || h <= 0) return;
-      setSize((prev) => (prev.w === w && prev.h === h ? prev : { w, h }));
-    });
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
 
   const layers = useMemo(
     () => ({
@@ -195,11 +128,10 @@ function GardenBody({ config, state, setState }: BodyProps) {
         onDrop={handleCanvasDrop}
       >
         <div className="lk-garden-canvas__inner">
-          <SceneCanvas features={['view', 'pick', 'move', 'transform']}
-            width={size.w}
-            height={size.h}
+          <TrialSceneCanvas
+            features={['view', 'pick', 'move', 'transform']}
             scene={scene}
-            selection={selection}
+            trial={ctx.trial}
             defaultView={DEFAULT_VIEW}
             onViewChange={(v) => {
               viewRef.current = v;
@@ -235,13 +167,6 @@ export const GardenInstrument = defineInstrument<GardenState, GardenConfig>({
   configSchema: () => [
     { type: 'checkbox', key: 'showGrid', label: 'Show grid', default: true },
   ],
-  undo: { snapshotOn: ['state.change'], maxDepth: 50 },
-  render: (ctx) => {
-    const typed = ctx as RenderContext<GardenState, GardenConfig>;
-    return (
-      <WeaselProvider>
-        <GardenBody config={typed.config} state={typed.state} setState={typed.setState} />
-      </WeaselProvider>
-    );
-  },
+  undo: {},
+  render: (ctx) => <GardenBody ctx={ctx} />,
 });

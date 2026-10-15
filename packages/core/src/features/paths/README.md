@@ -95,3 +95,13 @@ structure matters. The two orders agree only because `pathToAnchors` and
 `enumerateAnchors` walk the same stream and emit one anchor per M/L/C/Q — if
 you touch either walker, `anchorEdits.test.ts` has the invariant test that
 catches the divergence.
+
+## Generated shapes
+
+A drawn polygon or star keeps the parameters it was made from in
+`data.generator`, beside `data.path` (`shapeGenerator.ts`). The path stays the
+geometry everything reads; the generator only says how to make it again, which
+the properties panel does through the entry's `settle` when Sides, Points or
+Inner changes. Editing the path by hand turns the shape into plain geometry:
+`editAnchors` drops the generator, and a generator whose path no longer matches
+it is dropped on the next parameter change rather than overwriting the edit.

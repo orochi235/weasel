@@ -11,3 +11,4 @@ export { trianglesToPath } from './trianglesToPath';
 export { pathToMultiPolygon, multiPolygonToPath } from './adapter';
 export type { Pair, Ring, Polygon, MultiPolygon, PathToMultiPolygonOptions } from './adapter';
 export { splitPathBySegment, splitPathByPolyline, snipPathByPolyline, type SplitBySegmentOptions } from './splitBySegment';
+export { snipPathsAtCrossings, type SnipAtCrossingsOptions } from './snipAtCrossings';

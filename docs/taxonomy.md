@@ -121,7 +121,9 @@ several at once — the hand tool is palette-selectable and space-held:
 
 - `focus` — selectable as the focused entry; exclusive, one at a time.
 - `offhand: HotkeyTrigger` — also live while that key is held: a modifier,
-  `'space'`, or any other key (`'o'`), matched case-insensitively.
+  `'space'`, or any other key (`'o'`), matched case-insensitively. The key
+  engages it only between gestures; mid-gesture it belongs to the gesture's
+  own tool (Space repositions a shape being drawn).
 - `always` — live regardless of what is focused.
 - `claimed` — live only for input this entry's own affordances produced.
 - `capabilities` — modality filter, applied wherever it would otherwise be live.
@@ -336,6 +338,12 @@ Examples: `selectAll`, `escape`, `duplicate`, `nudge`, `reorder`, `delete`,
 register via `<SceneCanvas>`, each under the `features` preset that names it
 (`FEATURE_ACTION_IDS`), or with a tool that binds it; consumer-level actions
 register explicitly. See `packages/routing/src/interactions/actions/registry.ts`.
+
+A **tuning** changes an action its host did not write: params every invocation
+starts from, and bindings added beside its own (`ActionsRegistry.tune`,
+`<SceneCanvas tune>`). It applies to whichever descriptor holds the id, so
+setting a param never restates the gesture that reaches the action. See
+`packages/routing/src/interactions/actions/tuning.ts`.
 
 An action may declare an optional `cursor` — the hover hint shown while the
 pointer rests where a drag would route to that action. The hover-cursor pump

@@ -38,22 +38,16 @@
     "longestFunction": 253
   },
   "packages/core/src/canvas/SceneCanvas/StandardActionsRegistrar.tsx": {
-    "longestFunction": 187
-  },
-  "packages/core/src/canvas/SceneCanvas/defaultNodeProperties.ts": {
-    "longestFunction": 125
+    "longestFunction": 183
   },
   "packages/core/src/canvas/SceneCanvas/props.ts": {
-    "lines": 668
+    "lines": 637
   },
   "packages/core/src/canvas/SceneCanvas/useDispatcherOverlayLayer.ts": {
     "longestFunction": 198
   },
   "packages/core/src/canvas/SceneCanvas/useSceneSelectTool.ts": {
     "longestFunction": 155
-  },
-  "packages/core/src/canvas/deps/insert.ts": {
-    "longestFunction": 138
   },
   "packages/core/src/canvas/pickWalk.ts": {
     "lines": 444
@@ -96,7 +90,7 @@
     "longestFunction": 455
   },
   "packages/core/src/tools/builtin/polygon/usePolygonTool.tsx": {
-    "longestFunction": 124
+    "longestFunction": 123
   },
   "packages/core/src/tools/builtin/select/useSelectTool.ts": {
     "longestFunction": 209
@@ -231,14 +225,14 @@
     "longestFunction": 212
   },
   "packages/labkit/src/state/store.ts": {
-    "longestFunction": 230
+    "longestFunction": 227
   },
   "packages/labkit/src/surface/useTiledSurface.ts": {
     "longestFunction": 255
   },
   "packages/labkit/src/trial/Trial.tsx": {
     "lines": 548,
-    "longestFunction": 425
+    "longestFunction": 423
   },
   "packages/labkit/src/trial/TrialChrome.tsx": {
     "longestFunction": 227
@@ -271,7 +265,7 @@
     "longestFunction": 125
   },
   "packages/stroke/src/tessellate/stroke.ts": {
-    "lines": 526
+    "lines": 520
   },
   "packages/svg/src/gradients.ts": {
     "lines": 624
@@ -354,9 +348,6 @@
   },
   "packages/ui/src/components/PrefSchemaEditor/StructurePane.tsx": {
     "longestFunction": 189
-  },
-  "packages/ui/src/components/Prefs/RailLayout.tsx": {
-    "longestFunction": 131
   },
   "packages/ui/src/components/Prefs/prefField.tsx": {
     "longestFunction": 167

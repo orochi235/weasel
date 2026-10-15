@@ -2,6 +2,8 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import { defineTool } from '../../overlayBinding';
 import { PolygonIcon } from '../../../icons';
 import type { Tool } from '../../overlayBinding';
+import { INSERT_REPOSITION_BINDING } from 'interactions/actions/insert/repositionAction';
+import { SHAPE_COUNT_RANGE } from 'features/paths/shapeGenerator';
 import { insertBindingBehaviors, type InsertToolOptions } from '../shared/insertToolOptions';
 import type { Action } from '@weasel-js/routing';
 import { cursorFor } from '@weasel-js/cursor';
@@ -17,9 +19,6 @@ export interface UsePolygonToolOptions extends InsertToolOptions {
    *  ArrowUp/Down or wheel (range 3–32). */
   sides?: number;
 }
-
-const MIN_SIDES = 3;
-const MAX_SIDES = 32;
 
 /**
  * Drag-from-center polygon tool. Pointerdown sets center; drag
@@ -58,17 +57,15 @@ export function usePolygonTool<TNode extends { id: string } = { id: string }>(
         run: (_deps, params) => {
           const p = params as { deltaY?: number; delta?: number } | undefined;
           // `delta` comes from the ArrowUp/ArrowDown key bindings; `deltaY`
-          // is the dispatcher-injected wheel delta. Wheel "up" (deltaY > 0
-          // under Mac natural scrolling / page-scrolls-up gesture) adds a
-          // side; wheel "down" removes one. Matches the user's mental model:
-          // scroll up = more.
+          // from the wheel. Wheel up (deltaY > 0 under natural scrolling)
+          // adds a side.
           const step = p?.delta ?? (p?.deltaY !== undefined && p.deltaY !== 0
             ? (p.deltaY > 0 ? 1 : -1)
             : 0);
           if (step === 0) return;
           sidesRef.current = step > 0
-            ? Math.min(MAX_SIDES, sidesRef.current + 1)
-            : Math.max(MIN_SIDES, sidesRef.current - 1);
+            ? Math.min(SHAPE_COUNT_RANGE.max, sidesRef.current + 1)
+            : Math.max(SHAPE_COUNT_RANGE.min, sidesRef.current - 1);
           bumpSides();
         },
       },
@@ -118,6 +115,7 @@ export function usePolygonTool<TNode extends { id: string } = { id: string }>(
               ...insertBindingBehaviors(behaviors),
             },
           },
+          INSERT_REPOSITION_BINDING,
           // Wheel-during-drag → adjust side count. Phase-gated to
           // `engaged` so wheel while the tool is idle still falls
           // through to ambient viewport.pan / viewport.zoom.
