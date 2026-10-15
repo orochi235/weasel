@@ -70,6 +70,12 @@ export {
   pathIntersectsPolygon,
   pathDistanceToPoint,
   pointAlongPath,
+  measurePath,
+  blendPaths,
+  prepareBlend,
+  bendAlongPath,
+  repeatAlongPath,
+  stationsAlongPath,
   splitPathBySegment,
   splitPathByPolyline,
   snipPathByPolyline,
@@ -95,6 +101,13 @@ export type {
   PathInWorldPose,
   PathStation,
   PointAlongPathOptions,
+  MeasurePathOptions,
+  PathMeasure,
+  BlendPathsOptions,
+  PathBlend,
+  BendAlongPathOptions,
+  RepeatAlongPathOptions,
+  RepeatStation,
   SplitBySegmentOptions,
   SnipAtCrossingsOptions,
   OffsetPathOptions,
@@ -118,6 +131,26 @@ export {
   type ShapeGenerator,
   type StarGenerator,
 } from '../features/paths/shapeGenerator';
+
+// ─── Path effects: live blend, bend along, and repeat along ────────────────
+export {
+  PATH_EFFECT,
+  pathEffectDerivePath,
+  pathEffectDerivePose,
+  pathEffectNode,
+  pathEffectOf,
+  pathEffectParts,
+  derivedPartsOf,
+  pathFromParts,
+} from '../core/scene/pathEffects';
+export type {
+  BendAlongEffect,
+  BlendEffect,
+  DerivedPart,
+  PathEffect,
+  RepeatAlongEffect,
+} from '../core/scene/pathEffects';
+export { PATH_EFFECTS_GROUP } from '../interactions/actions/pathEffects';
 
 // ─── Curves: alternate path representations (Bezier, NURBS, Spiro) ──────────
 export {

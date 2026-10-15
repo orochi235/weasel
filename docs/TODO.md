@@ -177,6 +177,15 @@ Priority tags:
 - **(P2) Shape builder.** Drag across overlapping regions to merge them, Alt-drag to delete them.
   `previewBooleanOp` already answers the pieces; the tool draws and picks among them. Building it
   also gives "Live preview of a Boolean operation" below its display.
+- **(P2) A path effect cannot be moved or resized by itself.** A blend, bend or repeat
+  (`core/scene/pathEffects/`) derives its pose from what it paints, so a drag or a resize handle on
+  it writes an authored pose nothing reads, and nothing on screen changes. Undecided: whether
+  dragging one moves its sources, carries an offset in its `data.pathEffect`, or is refused.
+  Its sources must also be leaves sharing a parent frame: the effect paints in the frame its
+  dependencies are painted in, and has not been tried inside a container that composes frames.
+- **(P3) A blend has no spine, and its steps no spacing by distance.** `BlendEffect` places
+  `steps` shapes evenly in `t` on the straight run between its sources; laying them along a
+  third path, or spacing them so neighboring shapes sit a fixed distance apart, is not offered.
 - **(P3) A move under a rotated parent repeats in the parent's axes.** Nudge, duplicate, and
   Transform Again (`interactions/actions/transform-again/`) offset a node along its parent's axes;
   a drag and an Alt-drag clone measure on screen. So inside a group drawn turned, Cmd+D after a

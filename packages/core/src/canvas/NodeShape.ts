@@ -22,7 +22,9 @@ import { hasSlop, slopForStrokeHit, widenSlop, type PickSlop } from 'core/viewpo
 import type { View } from 'core/viewport/view';
 import type { VertexColorChannel } from '@weasel-js/animator';
 import type { DrawCommand } from '@weasel-js/renderer';
+import { installEffectSourceReader } from 'core/scene/pathEffects/source';
 import { DERIVED_PAINTER } from './nodeShapes/derivedPainter';
+import { readEffectSource } from './nodeShapes/effectSource';
 import { IMAGE_PAINTER } from './nodeShapes/imagePainter';
 import { derivesPath } from './nodeShapes/memo';
 import { PATH_PAINTER } from './nodeShapes/pathPainter';
@@ -174,6 +176,9 @@ export interface RegisterNodeShapeOptions {
    *  it can win over a kit built-in). `'normal'` appends at the end. */
   priority?: 'high' | 'normal';
 }
+
+// A path effect reads its sources' outlines through this registry's painters.
+installEffectSourceReader(readEffectSource);
 
 const PAINTERS: { high: NodeShapeEntry[]; normal: NodeShapeEntry[] } = {
   high: [],

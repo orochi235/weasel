@@ -31,6 +31,9 @@ export { averageAnchorsAction, joinAnchorsAction } from './anchorJoin';
 export {
   simplifyPathAction, offsetPathAction, snipAtCrossingsAction, joinPathsAction,
 } from '../pathCommands';
+export {
+  blendAction, bendAlongAction, repeatAlongAction, editPathEffectAction, expandPathEffectAction,
+} from '../pathEffects';
 export { undoAction, redoAction } from './undoRedo';
 export { clipboardCopyAction, clipboardCutAction, clipboardPasteAction, clipboardPasteEventAction } from '../clipboard/action';
 export { makeToolOffhandAction, buildToolOffhandBindings, TOOL_OFFHAND_ID, type ToolOffhandBindingSpec } from '@weasel-js/routing';

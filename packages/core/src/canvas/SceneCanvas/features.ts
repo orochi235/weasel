@@ -138,6 +138,7 @@ export const FEATURE_PRESETS: Readonly<Record<BaseFeature, FeaturePreset>> = {
       'deleteAnchors', 'cutPathAtAnchor', 'marqueeAnchors', 'selectAnchor',
       'retractHandles', 'makeHandlesSymmetric', 'averageAnchors', 'joinAnchors',
       'simplifyPath', 'offsetPath', 'snipAtCrossings', 'joinPaths',
+      'blend', 'bendAlong', 'repeatAlong', 'editPathEffect', 'expandPathEffect',
     ],
   },
   ingest: {

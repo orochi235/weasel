@@ -1,0 +1,145 @@
+import { describe, expect, it } from 'vitest';
+import { boundsOfPath, rectPath } from '@weasel-js/geom';
+import type { ImmediateInvoker, InvocationCtx } from '@weasel-js/routing';
+// Loading the painter registry is what teaches path effects to read a source's outline.
+import 'canvas/NodeShape';
+import { createScene, sceneFromJSON } from 'core/scene/scene';
+import { derivedDepOf, effectivePose } from 'core/scene/effectivePose';
+import type { NodeId, RectPose, Scene } from 'core/scene/types';
+import { derivedPartsOf } from 'core/scene/derivedParts';
+import { pathEffectDerivePath, pathEffectOf, pathEffectParts } from 'core/scene/pathEffects/derive';
+import { blendAction, bendAlongAction, editPathEffectAction, expandPathEffectAction, repeatAlongAction } from './actions';
+
+type TestScene = Scene<unknown, 'default', RectPose>;
+
+const box = (id: string, x: number, color: string, rotation?: number) => ({
+  id: id as NodeId,
+  kind: 'leaf' as const,
+  layer: 'default' as const,
+  pose: { x, y: 0, width: 20, height: 20, ...(rotation === undefined ? {} : { rotation }) },
+  data: { path: rectPath(0, 0, 20, 20), fill: { paint: { color } } },
+});
+
+const spine = {
+  id: 'spine' as NodeId,
+  kind: 'leaf' as const,
+  layer: 'default' as const,
+  pose: { x: 0, y: 100, width: 200, height: 0 },
+  data: { path: { kind: 'polygon', commands: new Uint8Array([0, 1]), coords: new Float32Array([0, 0, 200, 0]), fillRule: 'nonzero' }, stroke: { paint: { color: '#000' }, width: 1 } },
+};
+
+function setup(selected: string[]) {
+  const scene: TestScene = createScene<unknown, 'default', RectPose>({
+    systemLayers: [{ id: 'default' }],
+    initial: [box('a', 0, '#ff0000'), box('b', 200, '#0000ff', Math.PI / 2), spine],
+  });
+  let current = selected;
+  const selection = { get: () => current, set: (next: string[]) => { current = next; } };
+  const deps = { scene, selection } as unknown as InvocationCtx['deps'];
+  return { scene, deps, selected: () => current };
+}
+
+const run = (action: { invoker?: unknown }, deps: InvocationCtx['deps'], params?: Record<string, unknown>) =>
+  (action.invoker as ImmediateInvoker).run(deps, params);
+
+function partsOf(scene: TestScene, id: string) {
+  const node = scene.get(id as NodeId)!;
+  const deps = (node.dependsOn as NodeId[]).map((d) => derivedDepOf(scene, d));
+  return pathEffectParts(node, deps)!;
+}
+
+describe('blend', () => {
+  it('adds a live node of steps between the two selected shapes, just under the upper', () => {
+    const { scene, deps, selected } = setup(['a', 'b']);
+    run(blendAction, deps, { steps: 3 });
+    const [id] = selected();
+    const node = scene.get(id as NodeId)!;
+    expect(pathEffectOf(node)).toMatchObject({ kind: 'blend', steps: 3 });
+    expect(scene.roots.indexOf(id as NodeId)).toBe(1);
+
+    const parts = partsOf(scene, id!);
+    expect(parts).toHaveLength(3);
+    // The middle step sits halfway, turned halfway, and is violet-ish.
+    const mid = boundsOfPath(parts[1]!.path);
+    expect(mid.x + mid.width / 2).toBeCloseTo(110, 3);
+    expect((parts[1]!.fill?.paint as { color: string }).color).not.toBe('#ff0000');
+
+    // Moving a source moves the steps.
+    scene.setPose('b' as NodeId, { x: 400, y: 0, width: 20, height: 20, rotation: Math.PI / 2 });
+    const moved = boundsOfPath(partsOf(scene, id!)[1]!.path);
+    expect(moved.x + moved.width / 2).toBeCloseTo(210, 3);
+    // Its pose is the bounds of what it paints: steps centered 110 to 310.
+    const pose = effectivePose(scene, node);
+    expect(pose.x).toBeLessThan(110);
+    expect(pose.x + pose.width).toBeGreaterThan(310);
+  });
+
+  it('paints each step in its own color', () => {
+    const { scene, deps, selected } = setup(['a', 'b']);
+    run(blendAction, deps, { steps: 2 });
+    const node = scene.get(selected()[0] as NodeId)!;
+    const path = pathEffectDerivePath(node, (node.dependsOn as NodeId[]).map((d) => derivedDepOf(scene, d)));
+    expect(derivedPartsOf(path)).toHaveLength(2);
+  });
+
+  it('survives a save and load', () => {
+    const { scene, deps, selected } = setup(['a', 'b']);
+    run(blendAction, deps, { steps: 2 });
+    const loaded = sceneFromJSON<unknown, 'default', RectPose>(scene.toJSON());
+    const node = loaded.get(selected()[0] as NodeId)!;
+    expect(node.derivePath).toBe(pathEffectDerivePath);
+    expect(partsOf(loaded as TestScene, node.id)).toHaveLength(2);
+  });
+
+  it('changes its settings in one undoable edit, and commits nothing for no change', () => {
+    const { scene, deps, selected } = setup(['a', 'b']);
+    run(blendAction, deps, { steps: 2 });
+    const id = selected()[0]!;
+    run(editPathEffectAction, deps, { ids: [id], steps: 5 });
+    expect(partsOf(scene, id)).toHaveLength(5);
+    run(editPathEffectAction, deps, { ids: [id], steps: 5 });
+    scene.undo();
+    expect(partsOf(scene, id)).toHaveLength(2);
+    // The next undo is the blend's own insert: the no-change edit left no entry.
+    scene.undo();
+    expect(scene.get(id as NodeId)).toBeUndefined();
+  });
+});
+
+describe('bend and repeat along a path', () => {
+  it('bends the first selected shape along the second', () => {
+    const { scene, deps, selected } = setup(['a', 'spine']);
+    run(bendAlongAction, deps, {});
+    const [part] = partsOf(scene, selected()[0]!);
+    const b = boundsOfPath(part!.path);
+    expect(b.width).toBeCloseTo(200, 1);
+    expect(b.y + b.height / 2).toBeCloseTo(100, 1);
+    expect(part!.fill).toEqual({ paint: { color: '#ff0000' } });
+  });
+
+  it('repeats the first selected shape along the second', () => {
+    const { scene, deps, selected } = setup(['a', 'spine']);
+    run(repeatAlongAction, deps, { count: 3, orient: false });
+    const xs = partsOf(scene, selected()[0]!).map((p) => boundsOfPath(p.path).x);
+    expect(xs).toEqual([-10, 90, 190]);
+  });
+});
+
+describe('expand', () => {
+  it('replaces the effect with ordinary paths in its paint, and undoes as one step', () => {
+    const { scene, deps, selected } = setup(['a', 'spine']);
+    run(repeatAlongAction, deps, { count: 3, orient: false });
+    const effect = selected()[0]!;
+    const before = scene.roots.length;
+    run(expandPathEffectAction, deps);
+    expect(scene.get(effect as NodeId)).toBeUndefined();
+    expect(scene.roots.length).toBe(before + 2);
+    const made = selected().map((id) => scene.get(id as NodeId)!);
+    expect(made).toHaveLength(3);
+    expect(made.every((n) => n.dependsOn === undefined)).toBe(true);
+    expect(made[0]!.data).toMatchObject({ fill: { paint: { color: '#ff0000' } } });
+    expect(made.map((n) => n.pose.x)).toEqual([-10, 90, 190]);
+    scene.undo();
+    expect(scene.get(effect as NodeId)).toBeDefined();
+  });
+});

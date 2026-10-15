@@ -65,6 +65,9 @@ import {
   joinPathsAction, offsetPathAction, simplifyPathAction, snipAtCrossingsAction,
 } from './pathCommands';
 import {
+  bendAlongAction, blendAction, editPathEffectAction, expandPathEffectAction, repeatAlongAction,
+} from './pathEffects';
+import {
   nudgeAnchorsUpAction,
   nudgeAnchorsDownAction,
   nudgeAnchorsLeftAction,
@@ -176,6 +179,11 @@ const KIT_STANDARD_DESCRIPTORS: Action[] = [
   offsetPathAction,
   snipAtCrossingsAction,
   joinPathsAction,
+  blendAction,
+  bendAlongAction,
+  repeatAlongAction,
+  editPathEffectAction,
+  expandPathEffectAction,
   marqueeAnchorsAction,
   selectAnchorAction,
   lassoSelectAction,

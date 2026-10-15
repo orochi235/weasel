@@ -8,6 +8,7 @@
  * consumer's, which stays the winner on a key collision.
  */
 import { unionAABB } from '../geometry/unionBounds';
+import { PATH_EFFECT, pathEffectDerivePath, pathEffectDerivePose } from './pathEffects/derive';
 import type { RectPose, SceneRegistry } from './types';
 
 /** Registry key for {@link unionOfChildren}. */
@@ -58,12 +59,16 @@ export function asRectPose(pose: unknown): RectPose | null {
 export function withKitRegistry<TPose, TData = unknown, TLayer extends string = string>(
   registry: SceneRegistry<TPose, TData, TLayer>,
 ): SceneRegistry<TPose, TData, TLayer> {
+  type Fns<K extends 'derivePath' | 'derivePose'> = NonNullable<SceneRegistry<TPose, TData, TLayer>[K]>[string];
   return {
     ...registry,
+    derivePath: {
+      [PATH_EFFECT]: pathEffectDerivePath as Fns<'derivePath'>,
+      ...registry.derivePath,
+    },
     derivePose: {
-      [UNION_OF_CHILDREN]: unionOfChildren as NonNullable<
-        SceneRegistry<TPose, TData, TLayer>['derivePose']
-      >[string],
+      [UNION_OF_CHILDREN]: unionOfChildren as Fns<'derivePose'>,
+      [PATH_EFFECT]: pathEffectDerivePose as unknown as Fns<'derivePose'>,
       ...registry.derivePose,
     },
   };
