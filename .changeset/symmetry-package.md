@@ -1,6 +1,7 @@
 ---
 "@weasel-js/core": patch
 "@weasel-js/geom": patch
+"@weasel-js/routing": patch
 "@weasel-js/svg": patch
 "@weasel-js/symmetry": patch
 ---

@@ -26,6 +26,10 @@ import {
   linePath,
   regularPolygonPath,
   starPath,
+  invert,
+  mat3,
+  multiply,
+  type Affine,
 } from '@weasel-js/geom';
 import { getImageBitmap } from '@weasel-js/renderer';
 import { resolveOverlays } from 'interactions/actions/resolveOverlays';
@@ -193,6 +197,16 @@ export function useDispatcherOverlayLayer(args: {
               stroke: { paint: { color: cfg.stroke }, width: cfg.lineWidth, dash: cfg.dash },
             };
             out.push(cmd);
+            // Each copy the shape will be drawn in, carried into screen space.
+            if (ov.copies && ov.copies.length > 0) {
+              const toScreen: Affine = [view.scale.x, 0, 0, view.scale.y, t.panX, t.panY];
+              const toWorld = invert(toScreen);
+              for (const m of ov.copies) {
+                if (!toWorld) break;
+                const s = multiply(toScreen, multiply(m, toWorld));
+                out.push({ kind: 'group', transform: mat3.fromAffine(s), children: [cmd] });
+              }
+            }
             // Anchor dot at the drag's click point: for radial shapes no
             // vertex sits at the AABB corner, and in center mode the dot marks
             // the growth axis.
