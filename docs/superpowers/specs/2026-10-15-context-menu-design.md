@@ -20,8 +20,8 @@ binds `contextMenu`.
 | Package | Adds |
 |---|---|
 | `@weasel-js/menu` (new) | Headless model: entry types, state machine, placement. Depends on nothing in weasel. |
-| `@weasel-js/routing` | `MenuDef`; `menus` on `ToolDef` and `Contribution`; `resolveMenu`; `evaluateEnabled` takes `at` |
-| `@weasel-js/core` | `contextMenu` standard action; `menuHost` dep; `clientX`/`clientY` in immediate params for `contextmenu` |
+| `@weasel-js/routing` | `MenuDef`; `menus` on `ToolDef` and `Contribution`; `useMenus`; `MenuHost` (picks, resolves and holds the open menu); `resolveMenu`; `actionShortcuts` (moved from core); `evaluateEnabled` takes `at` |
+| `@weasel-js/core` | `contextMenu` standard action; `menuHost` dep; `worldToClient` dep; `clientX`/`clientY` in immediate params for `contextmenu` |
 | `@weasel-js/ui` | `<ContextMenuHost>` (DOM renderer); `useContextMenu` for chrome |
 | `@weasel-js/hud` | `attachMenuHost(hud)` (WebGL renderer) |
 
@@ -47,7 +47,7 @@ type MenuDefEntry =
   | { actionVariants: string };   // one row per ActionVariant
 ```
 
-- Contributed like bindings: `ToolDef.menus`, `Contribution.menus`, `<SceneCanvas menus>`.
+- Contributed like bindings: `ToolDef.menus`, `Contribution.menus`, `useMenus(defs)` from `@weasel-js/routing/react`.
   Definitions sharing an `id` merge section by section in contribution order; a tool's come after
   ambient ones.
 - `resolveMenu(def, registry, deps, at)` produces model entries. Label, icon, shortcut chip
@@ -74,7 +74,7 @@ chrome right-click ─▶ useContextMenu(menuId, { params }) ──────�
 
 1. On an unselected body, select it. On empty canvas, leave the selection alone.
 2. Pick the first `MenuDef` whose `when` matches `bodyTarget` / `bodyKind`.
-3. `resolveMenu`, then `menuHost.open`.
+3. `menuHost.open({ hit, client, world, source })`; the host picks the menu, resolves it and holds it.
 
 No match does nothing; the browser menu stays suppressed. A keyboard open anchors at the
 selection's bounding-box center and starts with the first row highlighted.
@@ -82,8 +82,7 @@ selection's bounding-box center and starts with the first row highlighted.
 **Chrome**: `useContextMenu(menuId, { params })` returns an `onContextMenu` handler. Selecting
 the row stays the chrome's job.
 
-**Closing**: an item is chosen, Escape, a press outside, window blur, or the view changing while
-open. After a pointer open, focus returns where it was.
+**Closing**: an item is chosen, Escape, a press outside, window blur, or a wheel outside the menu (every pan and zoom while the menu holds focus starts with one). After a pointer open, focus returns where it was.
 
 ## Model (`@weasel-js/menu`)
 
