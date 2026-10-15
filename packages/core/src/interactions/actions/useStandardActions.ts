@@ -19,6 +19,7 @@ import type {} from './depSchema';
 import { useOptionalActiveToolContext } from '@weasel-js/routing/react';
 
 import { escapeAction } from './defaults/escape';
+import { contextMenuAction } from './defaults/contextMenu';
 import { cancelGestureAction } from './defaults/cancelGesture';
 import { selectAllAction } from './defaults/selectAll';
 import { deleteAction } from './defaults/delete';
@@ -118,6 +119,7 @@ export interface UseStandardActionsOptions {
  */
 const KIT_STANDARD_DESCRIPTORS: Action[] = [
   escapeAction,
+  contextMenuAction,
   cancelGestureAction,
   selectAllAction,
   duplicateAction,
