@@ -39,9 +39,9 @@ describe('corner widgets', () => {
   });
 
   it('follows the cut as the radius grows', () => {
-    const f = cornerWidgetFrames(withCorner(square(), 1, { style: 'chamfer', radius: 20 }))[1];
+    const f = cornerWidgetFrames(withCorner(square(), 1, { style: 'bevel', radius: 20 }))[1];
     const at = cornerWidgetAt(f, VIEW.scale);
-    // The chamfer's middle is (90, 10); the widget sits 7 further in.
+    // The bevel's middle is (90, 10); the widget sits 7 further in.
     expect(at.x).toBeCloseTo(90 - 7 * Math.SQRT1_2, 6);
     expect(at.y).toBeCloseTo(10 + 7 * Math.SQRT1_2, 6);
   });

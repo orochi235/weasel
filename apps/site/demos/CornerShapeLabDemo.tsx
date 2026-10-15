@@ -51,8 +51,8 @@ function pathNode(id: string, path: PolygonPath, color: string, vertexColors?: n
 
 const tile = [
   [1, { style: 'round', radius: 24 }],
-  [3, { style: 'chamfer', radius: 18 }],
-  [4, { style: 'inverted', radius: 20 }],
+  [3, { style: 'bevel', radius: 18 }],
+  [4, { style: 'scoop', radius: 20 }],
 ] as const;
 
 const createLabScene = () =>

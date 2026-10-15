@@ -98,8 +98,8 @@ catches the divergence.
 
 ## Corner shape
 
-`PolygonPath.corners` holds an optional `CornerSpec` (`round`, `chamfer`, or
-`inverted`, and a radius) per flat anchor index. The command stream keeps the
+`PolygonPath.corners` holds an optional `CornerSpec` (`round`, `bevel`, or
+`scoop`, and a radius) per flat anchor index. The command stream keeps the
 bare anchors, so editing still works on them; `resolveCorners`
 (`@weasel-js/geom`, `paths/corners.ts`) expands the specs into plain geometry,
 and the readers that draw, hit, bound, and export a path — tessellation,

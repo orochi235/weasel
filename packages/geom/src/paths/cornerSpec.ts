@@ -7,18 +7,18 @@ import type { PolygonPath } from '../path';
 
 /** How a corner is cut: a tangent arc, a straight bevel, or an arc centered
  *  on the anchor that scoops into the shape. */
-export type CornerStyle = 'round' | 'chamfer' | 'inverted';
+export type CornerStyle = 'round' | 'bevel' | 'scoop';
 
 /** The corner at one anchor. For `round`, `radius` is the fillet circle's;
- *  for `chamfer` and `inverted`, it is how far the cut runs along each edge
- *  from the anchor, which is also an inverted arc's radius. */
+ *  for `bevel` and `scoop`, it is how far the cut runs along each edge
+ *  from the anchor, which is also a scoop's arc radius. */
 export interface CornerSpec {
   style: CornerStyle;
   radius: number;
 }
 
 /** The order cycling a corner's style steps through. */
-export const CORNER_STYLES: readonly CornerStyle[] = ['round', 'chamfer', 'inverted'];
+export const CORNER_STYLES: readonly CornerStyle[] = ['round', 'bevel', 'scoop'];
 
 /** The style after `style` in {@link CORNER_STYLES}, wrapping. */
 export function nextCornerStyle(style: CornerStyle): CornerStyle {

@@ -31,8 +31,8 @@ describe('resolveCorners', () => {
     expect(resolveCorners(p)).toBe(p);
   });
 
-  it('chamfers a corner with a straight cut `radius` along each edge', () => {
-    const out = resolveCorners(withCorner(square(), 1, { style: 'chamfer', radius: 10 }));
+  it('bevels a corner with a straight cut `radius` along each edge', () => {
+    const out = resolveCorners(withCorner(square(), 1, { style: 'bevel', radius: 10 }));
     expect(out.corners).toBeUndefined();
     expect([...out.commands]).toEqual([PATH_M, PATH_L, PATH_L, PATH_L, PATH_L, PATH_Z]);
     expect(points(out)).toEqual([[0, 0], [90, 0], [100, 10], [100, 100], [0, 100]]);
@@ -51,8 +51,8 @@ describe('resolveCorners', () => {
     expect(pts[4]).toEqual([100, 10]);
   });
 
-  it('scoops an inverted corner with an arc centered on the anchor', () => {
-    const out = resolveCorners(withCorner(square(), 1, { style: 'inverted', radius: 10 }));
+  it('scoops a corner with an arc centered on the anchor', () => {
+    const out = resolveCorners(withCorner(square(), 1, { style: 'scoop', radius: 10 }));
     const pts = points(out);
     expect(pts[1]).toEqual([90, 0]);
     // The first control leaves (90, 0) straight down, into the shape.
@@ -65,14 +65,14 @@ describe('resolveCorners', () => {
   });
 
   it('cuts the first anchor of a closed subpath across the seam', () => {
-    const out = resolveCorners(withCorner(square(), 0, { style: 'chamfer', radius: 10 }));
+    const out = resolveCorners(withCorner(square(), 0, { style: 'bevel', radius: 10 }));
     expect(points(out)).toEqual([[10, 0], [100, 0], [100, 100], [0, 100], [0, 10]]);
     expect(out.commands[out.commands.length - 1]).toBe(PATH_Z);
   });
 
   it('clamps two corners on one edge so their cuts meet and never overlap', () => {
-    const p = withCorner(withCorner(square(), 0, { style: 'chamfer', radius: 80 }), 1, {
-      style: 'chamfer', radius: 80,
+    const p = withCorner(withCorner(square(), 0, { style: 'bevel', radius: 80 }), 1, {
+      style: 'bevel', radius: 80,
     });
     const pts = points(resolveCorners(p));
     // The top edge is 100 long; both cuts scale to 50 and meet at its middle.
@@ -93,7 +93,7 @@ describe('resolveCorners', () => {
 
   it('cuts a corner between two curves along each curve', () => {
     const p = pathFromD('M 0 0 C 30 0 60 0 100 0 C 100 30 100 60 100 100 L 0 100 Z');
-    const out = resolveCorners(withCorner(p, 1, { style: 'chamfer', radius: 10 }));
+    const out = resolveCorners(withCorner(p, 1, { style: 'bevel', radius: 10 }));
     const b = boundsOfPath(out);
     expect(b.x).toBeCloseTo(0, 4);
     expect(b.width).toBeCloseTo(100, 3);
@@ -118,7 +118,7 @@ describe('resolveCornersWithSources', () => {
 
   it('numbers sources the way countPathAnchors does, past a folded closing curve', () => {
     const p = pathFromD('M 0 0 L 100 0 L 100 100 C 50 120 0 50 0 0 Z');
-    const { anchorSources } = resolveCornersWithSources(withCorner(p, 1, { style: 'chamfer', radius: 10 }));
+    const { anchorSources } = resolveCornersWithSources(withCorner(p, 1, { style: 'bevel', radius: 10 }));
     expect([...anchorSources!]).toEqual([0, 1, 1, 2, 0]);
   });
 
@@ -129,10 +129,10 @@ describe('resolveCornersWithSources', () => {
 });
 
 describe('the geometry readers see corners expanded', () => {
-  const cut = (): PolygonPath => withCorner(square(), 1, { style: 'chamfer', radius: 20 });
+  const cut = (): PolygonPath => withCorner(square(), 1, { style: 'bevel', radius: 20 });
 
   it('bounds the expanded geometry', () => {
-    const p = withAll(square(), { style: 'inverted', radius: 10 });
+    const p = withAll(square(), { style: 'scoop', radius: 10 });
     expect(boundsOfPath(p)).toEqual(boundsOfPath(resolveCorners(p)));
   });
 
@@ -169,7 +169,7 @@ describe('cornerFrames', () => {
   it('converts between radius and trim per style', () => {
     const half = Math.PI / 6;
     expect(cornerRadiusOf('round', cornerTrimOf('round', 7, half), half)).toBeCloseTo(7, 9);
-    expect(cornerTrimOf('chamfer', 7, half)).toBe(7);
+    expect(cornerTrimOf('bevel', 7, half)).toBe(7);
     expect(cornerTrimOf('round', 10, Math.PI / 4)).toBeCloseTo(10, 9);
   });
 });
@@ -193,10 +193,10 @@ describe('corners through the anchor model', () => {
 });
 
 describe('nextCornerStyle', () => {
-  it('cycles round, chamfer, inverted', () => {
-    expect(nextCornerStyle('round')).toBe('chamfer');
-    expect(nextCornerStyle('chamfer')).toBe('inverted');
-    expect(nextCornerStyle('inverted')).toBe('round');
+  it('cycles round, bevel, scoop', () => {
+    expect(nextCornerStyle('round')).toBe('bevel');
+    expect(nextCornerStyle('bevel')).toBe('scoop');
+    expect(nextCornerStyle('scoop')).toBe('round');
   });
 });
 

@@ -46,8 +46,8 @@ export interface CornerWidgetPaint {
 
 /**
  * The widget of every corner anchor of `path`, in screen space: a circle for
- * a round corner, a diamond for a chamfer, and a ring around a dot for an
- * inverted one. A corner with no spec draws as round, the style a drag gives it.
+ * a round corner, a diamond for a bevel, and a ring around a dot for a
+ * scoop. A corner with no spec draws as round, the style a drag gives it.
  */
 export function cornerWidgetCommands(path: PolygonPath, view: View, paint: CornerWidgetPaint): DrawCommand[] {
   const out: DrawCommand[] = [];
@@ -59,12 +59,12 @@ export function cornerWidgetCommands(path: PolygonPath, view: View, paint: Corne
     const y = (w.y - view.y) * view.scale.y;
     const r = WIDGET_RADIUS_PX;
     const style = cornerSpecAt(path, frame.index)?.style ?? 'round';
-    if (style === 'chamfer') {
+    if (style === 'bevel') {
       const diamond = polygonFromPoints([
         { x, y: y - r - 1 }, { x: x + r + 1, y }, { x, y: y + r + 1 }, { x: x - r - 1, y },
       ]);
       out.push({ kind: 'path', path: diamond, fill, stroke });
-    } else if (style === 'inverted') {
+    } else if (style === 'scoop') {
       out.push({ kind: 'path', path: circlePath(x, y, r), fill, stroke });
       out.push({ kind: 'path', path: circlePath(x, y, r / 2), fill: { paint: stroke.paint } });
     } else {

@@ -147,8 +147,8 @@ export function resolveCornersWithSources(path: PolygonPath): ResolvedCorners {
 
 /**
  * `path` with its corner specs expanded into plain geometry and dropped: a
- * round corner becomes a tangent arc, a chamfer a straight cut, an inverted
- * corner an arc centered on the anchor. Each cut is clamped so the cuts on
+ * round corner becomes a tangent arc, a bevel a straight cut, a scoop
+ * an arc centered on the anchor. Each cut is clamped so the cuts on
  * either end of a segment never overlap. A path with no corners comes back
  * as itself, and so does a rect.
  */
@@ -228,8 +228,8 @@ function emitContour(b: Emitter, c: Contour, cuts: readonly (AnchorCut | null)[]
     const cut = cuts[j];
     const next = c.segs[j];
     if (!cut?.spec || cut.trim <= 0 || !next) return;
-    // The close draws a chamfer that ends where the contour started.
-    if (j === 0 && cut.spec.style === 'chamfer') return;
+    // The close draws a bevel that ends where the contour started.
+    if (j === 0 && cut.spec.style === 'bevel') return;
     const p1 = pointAt(seg, t1);
     const p2 = pointAt(next, spans[j][0]);
     emitCut(b, cut.spec.style, { x: cut.frame.x, y: cut.frame.y }, p1, tangentAt(seg, t1), p2, tangentAt(next, spans[j][0]));
@@ -241,7 +241,7 @@ function emitCut(
   b: Emitter, style: CornerStyle, v: Vec,
   p1: Vec, t1: Vec | null, p2: Vec, t2: Vec | null,
 ): void {
-  if (style === 'chamfer' || !t1 || !t2) { b.lineTo(p2.x, p2.y); return; }
+  if (style === 'bevel' || !t1 || !t2) { b.lineTo(p2.x, p2.y); return; }
   const cx = p2.x - p1.x, cy = p2.y - p1.y;
   if (style === 'round') {
     const turn = Math.acos(Math.max(-1, Math.min(1, t1.x * t2.x + t1.y * t2.y)));

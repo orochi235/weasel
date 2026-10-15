@@ -44,8 +44,8 @@ const SCHEMA: PrefGroup = {
       kind: 'enum', name: 'Style', description: '', default: 'round', control: 'toggle', enableIf: ENABLED,
       options: [
         { value: 'round', label: 'round' },
-        { value: 'chamfer', label: 'chamfer' },
-        { value: 'inverted', label: 'inverted' },
+        { value: 'bevel', label: 'bevel' },
+        { value: 'scoop', label: 'scoop' },
       ],
     },
     radius: {

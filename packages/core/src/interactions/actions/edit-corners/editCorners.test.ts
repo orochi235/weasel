@@ -96,14 +96,14 @@ describe('cycleCornerStyleAction', () => {
     const { dep, edits } = editing(path, [1]);
     run(dep);
     const spec = cornerSpecAt(edits[0], 1)!;
-    expect(spec.style).toBe('chamfer');
+    expect(spec.style).toBe('bevel');
     expect(spec.radius).toBeCloseTo(10, 9);
   });
 
   it('gives a bare corner the style after round and a radius that shows it', () => {
     const { dep, edits } = editing(square(), [3]);
     run(dep);
-    expect(cornerSpecAt(edits[0], 3)?.style).toBe('chamfer');
+    expect(cornerSpecAt(edits[0], 3)?.style).toBe('bevel');
     expect(cornerSpecAt(edits[0], 3)?.radius).toBeCloseTo(DEFAULT_CORNER_TRIM_SHARE * 100, 6);
     expect(resolveCorners(edits[0]).coords.length).toBeGreaterThan(square().coords.length);
   });
@@ -120,23 +120,23 @@ describe('setCornersAction', () => {
 
   it('sets the style and radius of the selected corners, clamped to their room', () => {
     const { dep, edits } = editing(square(), [0, 2]);
-    run(dep, { style: 'inverted', radius: 500 });
-    expect(cornerSpecAt(edits[0], 0)).toEqual({ style: 'inverted', radius: 100 });
-    expect(cornerSpecAt(edits[0], 2)).toEqual({ style: 'inverted', radius: 100 });
+    run(dep, { style: 'scoop', radius: 500 });
+    expect(cornerSpecAt(edits[0], 0)).toEqual({ style: 'scoop', radius: 100 });
+    expect(cornerSpecAt(edits[0], 2)).toEqual({ style: 'scoop', radius: 100 });
     expect(cornerSpecAt(edits[0], 1)).toBeNull();
   });
 
   it('gives a bare corner a visible radius with its style, unless the call names one', () => {
     const { dep, edits } = editing(square(), [1]);
-    run(dep, { style: 'inverted' });
+    run(dep, { style: 'scoop' });
     expect(cornerSpecAt(edits[0], 1)?.radius).toBeGreaterThan(0);
-    run(dep, { style: 'chamfer', radius: 7 });
-    expect(cornerSpecAt(edits[1], 1)).toEqual({ style: 'chamfer', radius: 7 });
+    run(dep, { style: 'bevel', radius: 7 });
+    expect(cornerSpecAt(edits[1], 1)).toEqual({ style: 'bevel', radius: 7 });
   });
 
   it('keeps the style when only a radius is given', () => {
-    const { dep, edits } = editing(withCorner(square(), 1, { style: 'chamfer', radius: 5 }), [1]);
+    const { dep, edits } = editing(withCorner(square(), 1, { style: 'bevel', radius: 5 }), [1]);
     run(dep, { radius: 12 });
-    expect(cornerSpecAt(edits[0], 1)).toEqual({ style: 'chamfer', radius: 12 });
+    expect(cornerSpecAt(edits[0], 1)).toEqual({ style: 'bevel', radius: 12 });
   });
 });

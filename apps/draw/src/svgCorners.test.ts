@@ -9,7 +9,7 @@ const NS = { wd: 'https://weaseldraw.app/svg-ext' };
 
 const cornered = (): PolygonPath => withCorner(withCorner(
   polygonFromPoints([{ x: 10, y: 10 }, { x: 110, y: 10 }, { x: 110, y: 60 }, { x: 10, y: 60 }]),
-  1, { style: 'round', radius: 12 }), 3, { style: 'inverted', radius: 8 });
+  1, { style: 'round', radius: 12 }), 3, { style: 'scoop', radius: 8 });
 
 const obj = (path: PolygonPath): PathObj => ({
   id: 'a', tool: 'pen', x: 10, y: 10, width: 100, height: 50, path,
@@ -28,7 +28,7 @@ describe('corner shapes in a saved file', () => {
     // The round corner is a curve in `d`; the bare rectangle has none.
     const d = /<path[^>]* d="([^"]+)"/.exec(svg)![1];
     expect(d).toMatch(/C/);
-    expect(svg).toMatch(/wd:corners="1:round:12;3:inverted:8"/);
+    expect(svg).toMatch(/wd:corners="1:round:12;3:scoop:8"/);
   });
 
   it('reopen as the same anchors with the same corners', () => {

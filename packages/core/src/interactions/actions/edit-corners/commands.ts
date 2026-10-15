@@ -1,6 +1,6 @@
 /**
  * Commands on the corners of the anchors selected in path edit: set their
- * style or radius, or step their style through round, chamfer, and inverted.
+ * style or radius, or step their style through round, bevel, and scoop.
  */
 import type { Action, ActionDeps, ImmediateInvoker } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';

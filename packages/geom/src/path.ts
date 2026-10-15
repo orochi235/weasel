@@ -32,8 +32,8 @@ export interface PolygonPath {
   openFill?: PathOpenFill;
   /**
    * Corner shapes, indexed by flat anchor index (`enumerateAnchors` order):
-   * the anchor at each non-null slot is drawn rounded, chamfered, or
-   * inverted. The commands and coords hold the bare anchors; `resolveCorners`
+   * the anchor at each non-null slot is drawn rounded, beveled, or
+   * scooped. The commands and coords hold the bare anchors; `resolveCorners`
    * expands the specs into the geometry everything draws, hits, and bounds.
    */
   corners?: readonly (CornerSpec | null)[];

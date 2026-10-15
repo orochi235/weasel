@@ -84,20 +84,20 @@ describe('CornerShapeLabDemo', () => {
     const canvas = await mount();
     click(canvas, 220, 60);
     act(() => { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', code: 'KeyK', bubbles: true })); });
-    expect(tileCorners()[1]?.style).toBe('chamfer');
+    expect(tileCorners()[1]?.style).toBe('bevel');
   });
 
   it('opens on a selected sharp corner, which a style turns into a visible one', async () => {
     await mount();
     expect(radiusField().value).toBe('0');
-    expect(styleButton('chamfer')).toHaveAttribute('aria-checked', 'false');
+    expect(styleButton('bevel')).toHaveAttribute('aria-checked', 'false');
     const before = resolveCorners(tilePath()).coords.length;
 
-    await userEvent.click(styleButton('chamfer'));
-    expect(tileCorners()[2]?.style).toBe('chamfer');
+    await userEvent.click(styleButton('bevel'));
+    expect(tileCorners()[2]?.style).toBe('bevel');
     expect(tileCorners()[2]?.radius).toBeGreaterThan(0);
     expect(resolveCorners(tilePath()).coords.length).toBeGreaterThan(before);
-    expect(styleButton('chamfer')).toHaveAttribute('aria-checked', 'true');
+    expect(styleButton('bevel')).toHaveAttribute('aria-checked', 'true');
   });
 
   it("shows the selected corners' style and radius, mixed where they differ", async () => {
@@ -108,13 +108,13 @@ describe('CornerShapeLabDemo', () => {
 
     click(canvas, 160, 200, true);
     expect(styleButton('round')).toHaveAttribute('aria-checked', 'false');
-    expect(styleButton('chamfer')).toHaveAttribute('aria-checked', 'false');
+    expect(styleButton('bevel')).toHaveAttribute('aria-checked', 'false');
     expect(radiusField().value).toBe('');
 
-    await userEvent.click(styleButton('inverted'));
-    expect(tileCorners()[1]?.style).toBe('inverted');
-    expect(tileCorners()[3]?.style).toBe('inverted');
-    expect(styleButton('inverted')).toHaveAttribute('aria-checked', 'true');
+    await userEvent.click(styleButton('scoop'));
+    expect(tileCorners()[1]?.style).toBe('scoop');
+    expect(tileCorners()[3]?.style).toBe('scoop');
+    expect(styleButton('scoop')).toHaveAttribute('aria-checked', 'true');
   });
 
   it('disables the controls and says what to do with no corner selected', async () => {
