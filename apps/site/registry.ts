@@ -713,6 +713,16 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/TrimLabDemo.tsx',
   },
   {
+    id: 'lab-extend',
+    title: 'Extend to next path',
+    category: 'Geometry',
+    description:
+      'Extend to next path, the `extendToMeet` command: an open end travels along its tangent until it meets the first stroke in its way, through `extendToMeet` in `@weasel-js/geom`. A straight end grows longer; a curved one gains a straight run, so the tangent carries on unbroken. With `useExtendTool` a click picks the end nearest it; with a selection the command extends every open end of it, and in anchor editing just the selected end anchors. The lab binds the command to <kbd>E</kbd> through `<SceneCanvas tune>`. An end that meets nothing stays put, and each extend is one undo step.',
+    hint: 'With the Extend tool, click near the right end of the short orange line: it grows to the green wall. The curve carries on in a straight line from its end. Or pick Select, select strokes, and press <kbd>E</kbd>. Undo with <kbd>Mod+Z</kbd>.',
+    load: () => import('./demos/ExtendLabDemo').then((m) => m.ExtendLabDemo),
+    path: 'apps/site/demos/ExtendLabDemo.tsx',
+  },
+  {
     id: 'symmetry-lab',
     title: 'Symmetry',
     package: 'symmetry',

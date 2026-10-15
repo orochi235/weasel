@@ -42,6 +42,9 @@ export { intersectSegments, type SegmentCrossing } from './intersect/segmentInte
 export { pathSegments, type PathSegment } from './intersect/pathSegments';
 export { pathCrossings, type PathCrossing, type PathStop } from './intersect/pathCrossings';
 export { trimPathAt, type TrimPathOptions, type TrimResult } from './paths/trimPath';
+export {
+  extendToMeet, lengthenOpenEnd, openEndRay, openPathEnds, type ExtendToMeetOptions, type OpenPathEnd,
+} from './paths/extendPath';
 export { cubicPointAt, splitCubicAtT, type Point } from './paths/cubicMath';
 export { fitCubicThroughDeletion } from './paths/spanFit';
 export { schneiderFit, fitCubicWithTangents } from './paths/schneiderFit';

@@ -192,6 +192,16 @@ Priority tags:
   screen px, `DEFAULT_STROKE_REACH_PX` in `pathCommands/scenePaths.ts`), the preview's look (the
   `cut` overlay role's red dash at width 3, `tools/builtin/trim/piecePreview.ts`), and its tool key,
   Y (`tools/builtin/trim/useTrimTool.ts`). The `trimPath` action itself has no key.
+- **(P2) Tune Extend to next path hands-on, with the maintainer driving.** First-draft click reach
+  (the same 6 screen px as Trim segment, `pathCommands/scenePaths.ts`), that a curved end grows a
+  straight run rather than following its curvature (`lengthenOpenEnd`,
+  `packages/geom/src/paths/extendPath.ts`), no preview of where an end will land, its tool key, U
+  (`tools/builtin/extend/useExtendTool.ts`), and no default key for the `extendToMeet` action; the
+  lab binds E through `tune`.
+- **(P2) Two helpers grow an open end along its tangent.** `lengthenOpenEnd` in
+  `packages/geom/src/paths/extendPath.ts` serves Extend to next path, and the unmerged
+  `extend-path-end` branch (Lengthen) has `lengthenPathEnd` of its own. Whichever lands second
+  folds its callers onto the other's, so one rule decides whether a curved end grows a straight run.
 - **(P2) Tune draw's Symmetry toggle hands-on, with the maintainer driving.** Its key, the default
   kind and copy count, and where a new group's center lands (`toggleSymmetry`,
   `apps/draw/src/useSymmetry.ts`).
@@ -201,11 +211,11 @@ Priority tags:
   one enters draw's path-edit mode with no anchors to drag, insert, or bend. Undecided: whether
   editing turns the rectangle into a polygon path on its first edit, and what then happens to
   anything that reads it as a rectangle.
-- **(P3) Trim segment changes editable polygon paths only.** Any node's drawn outline cuts it
-  (`nodeOutline`, `features/paths/strokeOutline.ts`), but what it reshapes comes from
-  `scenePathNodes` (`pathCommands/scenePaths.ts`), which reads `resolveEditablePathOf`: a
-  rect-pose rectangle cannot itself be trimmed, which waits on "A rectangle has no anchors in path
-  edit" above.
+- **(P3) Trim segment and Extend to next path change editable polygon paths only.** Any node's
+  drawn outline cuts or stops them (`nodeOutline`, `features/paths/strokeOutline.ts`), but what
+  they reshape comes from `scenePathNodes` (`pathCommands/scenePaths.ts`), which reads
+  `resolveEditablePathOf`: a rect-pose rectangle cannot itself be trimmed or extended, which waits
+  on "A rectangle has no anchors in path edit" above.
 - **(P2) Dynamic corners.** Round, chamfer, or invert any corner anchor by dragging a widget at
   it, and change the radius later. Needs a corner radius per anchor in the path data, expanded
   into geometry when it renders and on export.
@@ -222,8 +232,9 @@ Priority tags:
   drag steps in a different direction from the drag. Recording the move in world space and
   mapping it through each node's parent on replay would make the two agree.
 - **(P3) The path commands have no icons.** `simplifyPath`, `offsetPath`, `snipAtCrossings`,
-  `joinPaths`, `bridgePaths`, `joinAnchors`, `bridgeAnchors`, and `averageAnchors` show as text
-  in draw's bar, and `useTrimTool` borrows `SliceIcon`.
+  `joinPaths`, `bridgePaths`, `joinAnchors`, `bridgeAnchors`, `averageAnchors`, and
+  `extendToMeet` show as text in draw's bar, and `useTrimTool` and `useExtendTool` borrow
+  `SliceIcon`.
   `RetractHandlesIcon`, `SymmetricHandlesIcon`, and `SimplifyBrushIcon`
   (`defaults/icons/anchorIcons.tsx`) are first drafts, not proofed at high resolution.
 - **(P2) Spacing hints.** Equal-spacing markers between siblings while moving, and Alt-hover

@@ -123,8 +123,8 @@ export {
   poseFrameOf, poseFrameInverseOf, poseLinearOf, pathThroughPoseFrame, type PoseLinear,
 } from '@weasel-js/geom';
 export {
-  intersectSegments, pathCrossings, pathSegments, trimPathAt,
-  type PathCrossing, type PathSegment, type PathStop, type SegmentCrossing, type TrimPathOptions, type TrimResult,
+  extendToMeet, intersectSegments, lengthenOpenEnd, openEndRay, openPathEnds, pathCrossings, pathSegments, trimPathAt,
+  type ExtendToMeetOptions, type OpenPathEnd, type PathCrossing, type PathSegment, type PathStop, type SegmentCrossing, type TrimPathOptions, type TrimResult,
 } from '@weasel-js/geom';
 export { createPathLayer, type CreatePathLayerOpts } from './pathLayer';
 export { pathPoseDescriptor } from 'core/geometry/pathPoseDescriptor';
