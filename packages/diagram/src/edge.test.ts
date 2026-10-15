@@ -104,6 +104,13 @@ describe('bezier', () => {
   it('samples a smooth run rather than two points', () => {
     expect(pts.length).toBeGreaterThan(8);
   });
+
+  it('holds the straight run between two waypoints level on one axis', () => {
+    const run = bezier(req(port('a', 0, 0, { x: 0, y: 1 }), port('b', 200, 200, { x: 0, y: -1 }), [{ x: 100, y: 80 }, { x: 100, y: 120 }]));
+    const between = run.filter((p) => p.y > 80 && p.y < 120);
+    expect(between.length).toBeGreaterThan(0);
+    for (const p of between) expect(p.x).toBeCloseTo(100, 6);
+  });
 });
 
 describe('diagramEdgeOf', () => {
@@ -155,6 +162,28 @@ describe('edgeDerivePath', () => {
     const path = derive(edgeNode({ from: { port: 'nope' }, to: {} }),
       [dep(box(0, 0)), dep(box(200, 0))]);
     expect([...(path as { coords: Float32Array }).coords].slice(0, 2)).toEqual([40, 20]);
+  });
+
+  it('takes whichever of a named port\'s places faces the other end', () => {
+    const exit = { diagram: { ports: [{ id: 'no', at: { u: 0.5, v: 1 }, sites: [{ u: 0.5, v: 0 }] }] } };
+    const start = (to: RectPose) =>
+      [...(derive(edgeNode({ from: { port: 'no' }, to: {} }), [dep(box(0, 0), exit), dep(to)]) as { coords: Float32Array }).coords].slice(0, 2);
+    expect(start(box(100, 200))).toEqual([20, 40]);
+    expect(start(box(100, -200))).toEqual([20, 0]);
+  });
+
+  it('keeps a named port at its anchor when none of its places faces the other end', () => {
+    // A self-loop aims at its own center, which every place faces away from.
+    const exit = { diagram: { ports: [{ id: 'no', at: { u: 0.5, v: 1 }, sites: [{ u: 0.5, v: 0 }] }] } };
+    const from = dep(box(0, 0), exit);
+    const path = derive(edgeNode({ from: { port: 'no' }, to: { port: 'no' } }), [from, from]);
+    expect([...(path as { coords: Float32Array }).coords].slice(0, 2)).toEqual([20, 40]);
+  });
+
+  it('aims an end at its first waypoint rather than at the other node', () => {
+    // The other node is to the right, but the wire leaves for a point above.
+    const path = derive(edgeNode({ from: {}, to: {}, waypoints: [{ x: 20, y: -100 }] }), [dep(box(0, 0)), dep(box(200, 0))]);
+    expect([...(path as { coords: Float32Array }).coords].slice(0, 2)).toEqual([20, 0]);
   });
 
   it('routes through the waypoints an author dragged', () => {

@@ -33,9 +33,10 @@ export {
 export { exitPathEditToolAction, pathEditToolAction, pathEditToolActive } from './pathEditTools';
 export { retractHandlesAction, makeHandlesSymmetricAction } from './anchorHandles';
 export { handleLockAngleAction, handleLockLengthAction } from './handleLocks';
-export { averageAnchorsAction, joinAnchorsAction } from './anchorJoin';
+export { averageAnchorsAction, bridgeAnchorsAction, joinAnchorsAction } from './anchorJoin';
 export {
-  simplifyPathAction, offsetPathAction, snipAtCrossingsAction, joinPathsAction,
+  simplifyPathAction, offsetPathAction, snipAtCrossingsAction, joinPathsAction, bridgePathsAction,
+  DEFAULT_BRIDGE_TENSION,
 } from '../pathCommands';
 export { undoAction, redoAction } from './undoRedo';
 export { clipboardCopyAction, clipboardCutAction, clipboardPasteAction, clipboardPasteEventAction } from '../clipboard/action';

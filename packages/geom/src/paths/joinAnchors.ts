@@ -21,6 +21,14 @@ export interface SubpathEnd {
 /** Endpoints closer than this are one point, and joining them merges them. */
 const COINCIDENT = 1e-6;
 
+/** How {@link joinSubpathEnds} spans the gap between two ends apart. */
+export interface JoinOptions {
+  /** Absent, a straight segment. Given, a curve leaving each end along the
+   *  direction its path was heading there, each handle `tension` times the
+   *  gap long; `0` is a straight segment. */
+  tension?: number;
+}
+
 /**
  * Move each anchor in `flatIndexes` to their mean position, along `axis`.
  * Each anchor carries its handles with it. Returns false, changing nothing,
@@ -57,10 +65,11 @@ export function subpathEndAt(set: AnchorSet, flatIndex: number): SubpathEnd | nu
  * close it; ends of two subpaths make one subpath, `a`'s run followed by
  * `b`'s, in the slot of whichever came first. Ends that coincide merge into
  * one anchor, keeping the handle on either side; ends apart are bridged by a
- * straight segment. Returns false, changing nothing, when the ends are not
- * two distinct ends of open subpaths.
+ * straight segment, or with `options.tension` by a curve meeting each end
+ * tangentially. Returns false, changing nothing, when the ends are not two
+ * distinct ends of open subpaths.
  */
-export function joinSubpathEnds(set: AnchorSet, a: SubpathEnd, b: SubpathEnd): boolean {
+export function joinSubpathEnds(set: AnchorSet, a: SubpathEnd, b: SubpathEnd, options: JoinOptions = {}): boolean {
   const subA = set.anchors[a.sub];
   const subB = set.anchors[b.sub];
   if (!subA || !subB || set.closed[a.sub] || set.closed[b.sub]) return false;
@@ -71,6 +80,8 @@ export function joinSubpathEnds(set: AnchorSet, a: SubpathEnd, b: SubpathEnd): b
     if (coincide(first, last) && subA.length > 2) {
       if (last.inHandle) first.inHandle = last.inHandle;
       subA.pop();
+    } else if (options.tension !== undefined) {
+      bridge(subA, subA, options.tension);
     }
     set.closed[a.sub] = true;
     return true;
@@ -84,6 +95,7 @@ export function joinSubpathEnds(set: AnchorSet, a: SubpathEnd, b: SubpathEnd): b
     if (head.outHandle) tail.outHandle = head.outHandle;
     joined = [...subA, ...subB.slice(1)];
   } else {
+    if (options.tension !== undefined) bridge(subA, subB, options.tension);
     joined = [...subA, ...subB];
   }
   const keep = Math.min(a.sub, b.sub);
@@ -96,12 +108,12 @@ export function joinSubpathEnds(set: AnchorSet, a: SubpathEnd, b: SubpathEnd): b
 
 /** {@link joinSubpathEnds} for two anchors named by flat index, each the end
  *  of an open subpath. */
-export function joinAnchorsAt(set: AnchorSet, flatA: number, flatB: number): boolean {
+export function joinAnchorsAt(set: AnchorSet, flatA: number, flatB: number, options: JoinOptions = {}): boolean {
   if (flatA === flatB) return false;
   const a = subpathEndAt(set, flatA);
   const b = subpathEndAt(set, flatB);
   if (!a || !b) return false;
-  return joinSubpathEnds(set, a, b);
+  return joinSubpathEnds(set, a, b, options);
 }
 
 /**
@@ -132,6 +144,56 @@ export function closestOpenEnds(
 }
 
 const coincide = (p: PenAnchor, q: PenAnchor): boolean => Math.hypot(p.x - q.x, p.y - q.y) <= COINCIDENT;
+
+type Vec = { x: number; y: number };
+
+/** The unit vector from `from` to `to`, or null when they coincide. */
+function unit(from: Vec, to: Vec): Vec | null {
+  const d = Math.hypot(to.x - from.x, to.y - from.y);
+  return d > COINCIDENT ? { x: (to.x - from.x) / d, y: (to.y - from.y) / d } : null;
+}
+
+/** The direction `sub` heads in at its last anchor: along the last segment's
+ *  final tangent, from the nearest of its controls that is apart from it. */
+function headingAtLast(sub: PenAnchor[]): Vec | null {
+  const end = sub[sub.length - 1];
+  const prev = sub.length > 1 ? sub[sub.length - 2] : null;
+  for (const c of [end.inHandle, prev?.outHandle, prev]) {
+    const u = c ? unit(c, end) : null;
+    if (u) return u;
+  }
+  return null;
+}
+
+/** The direction `sub` heads in as it leaves its first anchor. */
+function headingAtFirst(sub: PenAnchor[]): Vec | null {
+  const start = sub[0];
+  const next = sub.length > 1 ? sub[1] : null;
+  for (const c of [start.outHandle, next?.inHandle, next]) {
+    const u = c ? unit(start, c) : null;
+    if (u) return u;
+  }
+  return null;
+}
+
+/**
+ * Shape the segment from `from`'s last anchor to `to`'s first as a curve that
+ * carries on from each: handles `tension` times the gap long, along the
+ * heading of each path at its end. An end with no heading of its own (a lone
+ * anchor) aims at the other end.
+ */
+function bridge(from: PenAnchor[], to: PenAnchor[], tension: number): void {
+  const tail = from[from.length - 1];
+  const head = to[0];
+  const gap = Math.hypot(head.x - tail.x, head.y - tail.y);
+  const chord = unit(tail, head);
+  if (!chord || tension <= 0) return;
+  const out = headingAtLast(from) ?? chord;
+  const into = headingAtFirst(to) ?? chord;
+  const len = tension * gap;
+  tail.outHandle = { x: tail.x + out.x * len, y: tail.y + out.y * len };
+  head.inHandle = { x: head.x - into.x * len, y: head.y - into.y * len };
+}
 
 /** Reverse `sub`'s direction keeping each anchor object, so origin tracking
  *  (`editAnchorSetTracked`) still recognizes them. */

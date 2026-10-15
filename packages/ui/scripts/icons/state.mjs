@@ -3,6 +3,14 @@ import { chevron, onCircle } from './base.mjs';
 // ── transport ────────────────────────────────────────────────────────────
 const playTri = `M7.6 5.2 15.6 10 7.6 14.8Z`;
 
+// ── broadcast ────────────────────────────────────────────────────────────
+// Arcs about the mast's tip, each spanning 70°, at two radii on each side.
+const wave = (r, from, to) => {
+  const [a, b] = [onCircle(10, 7.6, r, from), onCircle(10, 7.6, r, to)];
+  return `M${a.join(' ')}A${r} ${r} 0 0 0 ${b.join(' ')}`;
+};
+const WAVES = `<path d="${[3.4, 6.2].flatMap((r) => [wave(r, -35, 35), wave(r, 145, 215)]).join('')}"/>`;
+
 // ── refresh ──────────────────────────────────────────────────────────────
 // Two arcs, each a third of the circle, heads on opposite ends. Distinct from
 // `reset`, which is a single near-full arc.
@@ -182,6 +190,15 @@ const STATE = {
     <circle cx="10" cy="10" r="2.2"/>
     <path d="M4.2 15.8 15.8 4.2"/>`,
 
+  // A mast with two waves to either side of its tip.
+  broadcast: `
+    <circle cx="10" cy="7.6" r="1.2" fill="currentColor" stroke="none"/>
+    <path d="M10 9.4 7.6 17.2M10 9.4l2.4 7.8M8.4 14.4h3.2"/>
+    ${WAVES}`,
+  // A pole with a cloth that ripples once along its top and bottom.
+  flag: `
+    <path d="M5.2 2.8v14.4"/>
+    <path d="M5.2 3.8c1.8-.9 3.6-.9 5.5 0s3.7.9 5.5 0v7.2c-1.8.9-3.6.9-5.5 0s-3.7-.9-5.5 0"/>`,
   pin: `
     <path d="M8.2 3.4v5.2l-2 2.6h7.6l-2-2.6V3.4z"/><path d="M7 3.4h6"/>
     <path d="M10 11.2v5.4"/>`,
@@ -254,7 +271,7 @@ const STATE = {
 const SPLIT = {
   playback: ['play', 'pause', 'stop', 'stepBack', 'stepForward', 'rewind', 'fastForward', 'live', 'record', 'loop', 'speed'],
   status: [
-    'lock', 'unlock', 'bolt', 'visible', 'hidden', 'pin', 'bookmark',
+    'lock', 'unlock', 'bolt', 'visible', 'hidden', 'broadcast', 'flag', 'pin', 'bookmark',
     'info', 'warning', 'error', 'busy', 'check',
     'mode-light', 'mode-dark', 'mode-auto',
   ],

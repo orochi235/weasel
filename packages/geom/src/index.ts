@@ -45,7 +45,7 @@ export { simplifyPath, simplifySpan, simplifySubpath, type SimplifyPathOptions }
 export { simplifyAnchorsAt } from './paths/simplifyAnchors';
 export {
   averageAnchorsAt, closestOpenEnds, joinAnchorsAt, joinSubpathEnds, subpathEndAt,
-  type AverageAxis, type SubpathEnd,
+  type AverageAxis, type JoinOptions, type SubpathEnd,
 } from './paths/joinAnchors';
 export {
   pointInPath, strokeHitTest,
