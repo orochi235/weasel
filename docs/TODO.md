@@ -958,19 +958,16 @@ only story runner in the repo.
 
 ## Release-gate & build hygiene
 
-- **(P2) Confirm on a fleet node that a new dependency in browser-tested code no longer fails the
-  first run that meets it.** A node keeps its vite dep cache between runs, and a warm cache skips
-  the scan that finds dependencies, so one first imported since then was met mid-run and vite
-  reloaded the page under the suites ("Vitest failed to find the runner", 12 suites on 2026-10-13).
-  The `browser` project's `optimizeDeps.include` is now computed from what its tests import
-  (`scripts/vitest-browser-deps.ts`), and vite keys the cache on that list, so a new import
-  discards the cache before a test loads. Tested against vite alone; not yet run on a node with a
-  stale cache. To confirm: on a node that has run the suite, start a fleet run of a commit that
-  adds an import of an installed, not yet imported dependency to a module a browser test loads.
-  The log should read "Re-optimizing dependencies because vite config has changed" and no suite
-  should fail to find the runner. Two things it does not cover: a dependency reached only through
-  `import.meta.glob` or a computed `import()`, and the opt-in `forge-stories` project, which has
-  no such list.
+- **(P3) Two ways a new dependency can still reach a browser test unannounced.** The `browser`
+  project's `optimizeDeps.include` is computed from what its tests import
+  (`scripts/vitest-browser-deps.ts`), so a newly imported dependency changes vite's config hash and
+  a warm dep cache on a fleet node is rebuilt before any test loads; confirmed on studio and teitou
+  on 2026-10-15. The scan cannot see a dependency reached only through `import.meta.glob` or a
+  computed `import()`, and the opt-in `forge-stories` project has no such list. Either one met
+  mid-run reloads the page under the suites, which fails them with "Vitest failed to find the
+  runner". Vitest drops vite's info lines at its default `logLevel` of `warn`, so a fleet log shows
+  "Re-optimizing dependencies because vite config has changed" only with `logLevel: 'info'` set on
+  the project.
 
 - **(P3) `onto test --spread` fails a run whose tree moved, where the other commands sync again.**
   onto `f621d8b` makes a launch carry the stamp its own sync was answered with, so a suite can no
