@@ -217,7 +217,7 @@ export function StandardActionsRegistrar({
   useIngestionDepSource(canvasRef, () => currentViewRef.current, ingestionResolveSrc, ingestionSvg, ingestionClipboard);
   useLassoSelectDepSource(scene, selection, poseDescriptor, alphaOf);
   useTextEditDepSource(scene);
-  useEditAnchorsDepSource(scene, selection, adapter, editAnchorsExternalState);
+  useEditAnchorsDepSource(scene, selection, adapter, editAnchorsExternalState, tune);
   useDispatcherDepSource(dispatcher);
   usePoseDescriptorDepSource(poseDescriptor);
 

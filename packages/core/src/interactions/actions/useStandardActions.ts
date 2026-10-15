@@ -60,6 +60,7 @@ import { exitPathEditAction } from './defaults/exitPathEdit';
 import { insertPathAnchorAction } from './defaults/insertPathAnchor';
 import { bendSegmentAction } from './defaults/bendSegment';
 import { makeHandlesSymmetricAction, retractHandlesAction } from './defaults/anchorHandles';
+import { handleLockAngleAction, handleLockLengthAction } from './defaults/handleLocks';
 import { averageAnchorsAction, joinAnchorsAction } from './defaults/anchorJoin';
 import { simplifyBrushAction, simplifyBrushToolAction } from './defaults/simplifyBrush';
 import { exitPathEditToolAction } from './defaults/pathEditTools';
@@ -177,6 +178,8 @@ const KIT_STANDARD_DESCRIPTORS: Action[] = [
   exitPathEditToolAction,
   retractHandlesAction,
   makeHandlesSymmetricAction,
+  handleLockAngleAction,
+  handleLockLengthAction,
   averageAnchorsAction,
   joinAnchorsAction,
   simplifyPathAction,

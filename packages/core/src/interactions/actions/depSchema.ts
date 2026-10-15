@@ -24,6 +24,8 @@ import type { GeometryProjection } from './geometryProjection';
 import type { Point2, DragSample, DebugSink, LongPressState } from '@weasel-js/routing';
 import type { EditAnchorsDep } from './editAnchorsDep';
 
+export type { EditAnchorsDep };
+
 /** Minimal view API the action layer consumes. */
 export interface ViewApi {
   get(): View;
@@ -94,8 +96,6 @@ export interface AreaSelectDep {
   /** Replace the current selection. */
   setSelection(ids: NodeId[]): void;
 }
-
-export type { EditAnchorsDep } from './editAnchorsDep';
 
 /**
  * Adapter dep for `lassoSelectAction`: polygon-lasso hit-testing +
