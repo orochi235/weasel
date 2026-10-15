@@ -57,14 +57,16 @@ const sameFit = (a: Fit | null, b: Fit) =>
 /**
  * Fits a key's legend inside a `KeyBank`: picks the spelling it prints and
  * reports that spelling's largest scale to the bank. Returns the label to
- * print, whether the key is in a bank, and the key's own scale when its spelling is a two-line one. Outside
- * a bank it measures nothing and returns the label unchanged.
+ * print, whether the key is in a bank, and the key's own scale when its
+ * spelling is a two-line one. Only a `fixed` key — one whose box its layout
+ * sizes — is measured: a key sized by its legend has no room of its own to fit,
+ * so it prints its first spelling at the bank's scale. Outside a bank nothing
+ * is measured.
  */
 export function useLegendFit(
   ref: RefObject<HTMLElement | null>,
   label: string,
-  wrapOverride: boolean | undefined,
-  font: string | undefined,
+  { wrap: wrapOverride, font, fixed }: { wrap: boolean | undefined; font: string | undefined; fixed: boolean },
 ): { label: string; banked: boolean; wrapped: boolean; scale?: number } {
   const bank = useContext(KeyBankContext);
   const id = useId();
@@ -73,22 +75,30 @@ export function useLegendFit(
 
   useLayoutEffect(() => {
     const kbd = ref.current;
-    if (!bank || !kbd) return;
+    if (!bank || !kbd || !fixed) return;
     let live = true;
+    let size = '';
+    let last: Fit | null = null;
     const measure = () => {
       if (!live) return;
+      size = `${kbd.clientWidth}x${kbd.clientHeight}`;
       const fits = measureForms(kbd, spellingsOf(label, bank.spellings));
       if (!fits) return;
       const best = pickSpelling(fits, { wrap, minScale: bank.minScale });
       const next = { for: label, label: best.label, wrapped: best.lines > 1, scale: best.scale };
+      if (sameFit(last, next)) return;
+      last = next;
       setFit((prev) => (sameFit(prev, next) ? prev : next));
       bank.report(id, { scale: next.scale, wrapped: next.wrapped });
+    };
+    const onResize = () => {
+      if (`${kbd.clientWidth}x${kbd.clientHeight}` !== size) measure();
     };
     measure();
     const fonts = typeof document === 'undefined' ? undefined : document.fonts;
     void fonts?.ready.then(measure);
     fonts?.addEventListener?.('loadingdone', measure);
-    const resize = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(measure);
+    const resize = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(onResize);
     resize?.observe(kbd);
     return () => {
       live = false;
@@ -96,10 +106,10 @@ export function useLegendFit(
       fonts?.removeEventListener?.('loadingdone', measure);
       bank.report(id, null);
     };
-  }, [ref, bank, id, label, wrap, font]);
+  }, [ref, bank, id, label, wrap, font, fixed]);
 
   const banked = !!bank;
-  if (!bank || !fit || fit.for !== label) return { label, banked, wrapped: false };
+  if (!bank || !fixed || !fit || fit.for !== label) return { label, banked, wrapped: false };
   return fit.wrapped
     ? { label: fit.label, banked, wrapped: true, scale: clampScale(fit.scale, bank.minScale) }
     : { label: fit.label, banked, wrapped: false };

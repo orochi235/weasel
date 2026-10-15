@@ -69,13 +69,19 @@ export interface KeyCapProps {
   /** Inside a `KeyBank`, lets this key print a two-line spelling,
    *  overriding the bank's `wrap`. No effect outside a bank. */
   wrap?: boolean;
+  /** The key's width is set by its layout rather than by its legend. Inside a
+   *  `KeyBank` only a fixed key fits its legend to its box; any other prints
+   *  its first spelling at the bank's scale. Defaults to true when `style`
+   *  gives a `width` or the key is square, whose width the stylesheet fixes. */
+  fixed?: boolean;
 }
 
 /** Single bordered keycap chip for one glyph (modifier or key). Use
  *  `KeySequence` to render a full shortcut. */
-export function KeyCap({ label, inverted = false, variant = 'default', className, style, font, wrap }: KeyCapProps) {
+export function KeyCap({ label, inverted = false, variant = 'default', className, style, font, wrap, fixed }: KeyCapProps) {
   const ref = useRef<HTMLElement>(null);
-  const fit = useLegendFit(ref, label, wrap, font);
+  const kind = inferKeycapKind(label);
+  const fit = useLegendFit(ref, label, { wrap, font, fixed: fixed ?? (style?.width !== undefined || kind === 'square') });
   const fitted = fit.scale === undefined ? style : ({ ...style, '--key-legend-scale': String(fit.scale) } as CSSProperties);
   const resolvedStyle = font ? { ...fitted, fontFamily: font } : fitted;
   const icon = LEGEND_ICONS[fit.label];
@@ -83,7 +89,7 @@ export function KeyCap({ label, inverted = false, variant = 'default', className
     <kbd
       ref={ref}
       className={[s.key, className].filter(Boolean).join(' ')}
-      data-kind={inferKeycapKind(label)}
+      data-kind={kind}
       data-fn={FUNCTION_KEY.test(label) || undefined}
       data-banked={fit.banked || undefined}
       data-variant={variant === 'default' ? undefined : variant}

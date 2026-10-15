@@ -11,4 +11,6 @@ function key in a bank drops its smaller default size so it matches Esc. With
 `wrap`, on the bank or on one `KeyCap`, a key may print a two-line spelling
 such as `Pg`/`Up` instead of shrinking; that key sizes itself. The spellings
 table is exported as `KEY_SPELLINGS` and replaced per bank with `spellings`.
-Keycaps outside a bank render as before.
+Only a key whose width its layout sets is fitted — one given a `style` width,
+a square key, or one marked `fixed`; a key sized by its own legend prints its
+first spelling at the bank's scale. Keycaps outside a bank render as before.
