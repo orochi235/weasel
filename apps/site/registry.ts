@@ -663,6 +663,16 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/SceneLabDemo.tsx',
   },
   {
+    id: 'lab-path-constraints',
+    title: 'Path constraints',
+    category: 'Geometry',
+    description:
+      "Geometric constraints on a path's anchors that hold while you edit. The shape opens in path edit as a parallelogram: its opposite sides are parallel, its bottom edge is horizontal, and its bottom-left anchor is fixed. Each constraint is drawn as a small mark beside the geometry, and the list lives in the node's `data.constraints`, so it undoes and saves with the scene. Every edit of the path — a drag, a nudge, a delete — goes through a damped Gauss-Newton solve from the state the edit left: the anchors you moved stay where you put them, fixed ones go back, and the rest move the least they must. A constraint that cannot hold with the others is kept but left out of the solve, drawn in red and named in the status line, rather than allowed to pull the rest out of true. The control panel picks the kind of constraint the C key adds.",
+    hint: 'Drag any anchor: the shape stays a parallelogram, and the fixed anchor stays put. Click an anchor, <kbd>Shift</kbd>-click more, pick a kind in the control panel, and press <kbd>C</kbd> to add it — two anchors make one segment, three make two segments meeting at the middle one, four make two separate segments. <kbd>Shift</kbd>+<kbd>C</kbd> removes the constraints whose anchors are all selected. Undo with the button or <kbd>Mod+Z</kbd>.',
+    load: () => import('./demos/PathConstraintsLabDemo').then((m) => m.PathConstraintsLabDemo),
+    path: 'apps/site/demos/PathConstraintsLabDemo.tsx',
+  },
+  {
     id: 'bidi',
     title: 'Bidirectional text',
     package: 'bidi',

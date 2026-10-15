@@ -192,6 +192,38 @@ Priority tags:
 - **(P2) Variable-width strokes.** A width profile along a stroke's length, edited by dragging
   on the stroke. `strokeToPath` handles a fixed width only.
 
+### Path constraints
+
+The solver and the first kinds are in: fixed, horizontal, vertical, parallel, perpendicular,
+equal length, length, and coincident (`packages/geom/src/constraints/`), held through path edit
+by the `editAnchors` dep and added with `constrainAnchors` (lab: `lab-path-constraints`).
+
+- **(P2) Tangent (G1) at an anchor.** The solver's variables are anchor positions only; handles
+  ride along with their anchor. G1 needs each handle as a variable of its own (direction, or
+  both handle points), and the handle drag to call `constrainEdit` the way the anchor drag does.
+- **(P2) Point on a path.** An anchor held on a segment of its own path or another node's needs
+  a parameter variable `t` per constraint and a residual from `nearestOnPath`-style evaluation.
+  Constraints between two nodes also need a home other than one node's `data.constraints`, and
+  both nodes solved in one edit.
+- **(P2) Transforms that bypass path edit do not solve.** Resize, rotate and flip write the path
+  without the dep, so a non-uniform scale leaves a perpendicular or equal-length constraint
+  failing (drawn as a conflict), and rotating a polygon-pose node turns its horizontal edge.
+- **(P2) A solve can satisfy a set by collapsing it.** Horizontal and vertical on the same two
+  anchors hold when the anchors meet, so `constrainAnchors` collapses the segment instead of
+  reporting a conflict. A solution that shrinks a segment from some length to nothing should
+  count as a conflict.
+- **(P3) A conflict names only the constraints that fail, not the set that conflicts.** Adding
+  one that cannot hold keeps it unsolved and marks it; the overlay, the lab's status line and
+  `setConstraints`' return value are the only reports. Finding the minimal conflicting set needs
+  the Jacobian's rank, which the damped solve does not compute.
+- **(P3) Constraint marks cannot be picked.** Removing one means selecting all of its anchors and
+  `unconstrainAnchors`; clicking a mark to select or delete it needs the marks as affordances.
+- **(P3) The solve is dense.** The Jacobian is a full `m × 2n` matrix built by central
+  differences; fine at a few hundred anchors, but a large constrained path wants sparse rows and
+  analytic derivatives.
+- **(P3) WeaselDraw binds no constraint action.** It needs keys or a bar group for
+  `constrainAnchors` and `unconstrainAnchors`, and icons for them.
+
 ### Pathfinder follow-ups (post-v1)
 
 - **(P3) Create Outlines refuses synthetic-bold text.** `textToPath` answers `reason: 'synthetic-bold'`: emboldening it is a union with the glyphs' own outline stroke, but the width has to match what the renderer's distance-field shift (`SYNTH_BOLD_AMOUNT`, `packages/renderer/src/draw/text.ts`) draws. Read from `glyphCoverage` and `glyphFieldScale` (`packages/font/src/textSdf.ts`) and not measured against pixels: the shift moves the edge out by `SYNTH_BOLD_AMOUNT` of the field's span, which is `distanceRange` texels in a baked atlas and `SDF_RADIUS` in a runtime canvas page, and a texel is `1 / info.size` em, so the outline grows by `SYNTH_BOLD_AMOUNT × span / info.size` em on each side and differs by which tier serves the glyph. What is left: `textToPath` (`packages/text`) has no stroke outliner to call, since `strokeToPath` is in `@weasel-js/stroke`, which text does not depend on; the union flattens every curve of the glyph; and the result has to be compared with the field in a browser.
