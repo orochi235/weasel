@@ -446,7 +446,7 @@ Priority tags:
   A wire with that node as an end gets no waypoints, but a wire passing near it keeps the
   waypoints laid out around the slot, and can run through the node
   (`packages/diagram/src/layered/plan.ts`). Found by reading the code; no case reproduced yet.
-- **(P3) An ELK layout adapter.** elkjs (the Eclipse Layout Kernel) lays out ports, labels and
+- **(P4) An ELK layout adapter.** elkjs (the Eclipse Layout Kernel) lays out ports, labels and
   nested groups well, but answers asynchronously and is large (around 1.5 MB; not measured), so it cannot sit behind
   the synchronous `LayoutFn`. An adapter in a package of its own, for laying out a generated
   diagram once, would let a diagram be checked against it.
