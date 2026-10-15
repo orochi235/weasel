@@ -3,7 +3,9 @@ import { ActionDisabledReason } from '@weasel-js/routing';
 import type { PathOverlay, TransientPath } from 'canvas/pathOverlay';
 import type { NodeId } from 'core/scene/types';
 import type { BooleanOpOptions } from 'interactions/actions/booleans/operands';
-import { facesAlong, planShapeBuilder, type ShapeBuilderPlan } from 'interactions/actions/booleans/shapeBuilder';
+import {
+  facesAlong, planShapeBuilder, type ShapeBuilderMode, type ShapeBuilderPlan,
+} from 'interactions/actions/booleans/shapeBuilder';
 
 type Point = { x: number; y: number };
 
@@ -43,13 +45,23 @@ const enoughSelected = (deps: ActionDeps | undefined): true | ActionDisabledReas
   return (deps.selection?.get().length ?? 0) >= 2 ? true : ActionDisabledReason.SelectionRequired;
 };
 
+/** What the tool reads on every gesture: how operands are taken, and what a
+ *  gesture without Alt does. Alt does the other. */
+export interface ShapeBuilderSettings {
+  op: BooleanOpOptions;
+  mode: ShapeBuilderMode;
+}
+
+const OTHER: Record<ShapeBuilderMode, ShapeBuilderMode> = { merge: 'delete', delete: 'merge' };
+
 /** The tool's actions: showing the face under the pointer, and taking the
  *  faces a drag or a click passes through. */
-export function createShapeBuilderActions(overlay: PathOverlay, opts: () => BooleanOpOptions): {
+export function createShapeBuilderActions(overlay: PathOverlay, settings: () => ShapeBuilderSettings): {
   actions: Action[];
   reset(): void;
 } {
-  const plans = createPlanCache(opts);
+  const plans = createPlanCache(() => settings().op);
+  const modeFor = (alt: boolean | undefined): ShapeBuilderMode => (alt ? OTHER[settings().mode] : settings().mode);
   const show = (plan: ShapeBuilderPlan, faces: readonly number[], role: string): void => {
     overlay.set(faces.map((i): TransientPath => ({ path: plan.faces[i]!.path, role })));
   };
@@ -68,7 +80,7 @@ export function createShapeBuilderActions(overlay: PathOverlay, opts: () => Bool
         const plan = enoughSelected(deps) === true ? plans.get(deps) : null;
         const at = plan && p?.worldX !== undefined && p.worldY !== undefined ? plan.faceAt(p.worldX, p.worldY) : -1;
         if (!plan || at < 0) overlay.clear();
-        else show(plan, [at], p?.mods?.alt ? 'remove' : 'chrome');
+        else show(plan, [at], modeFor(p?.mods?.alt) === 'delete' ? 'remove' : 'chrome');
       },
     },
   };
@@ -96,7 +108,7 @@ export function createShapeBuilderActions(overlay: PathOverlay, opts: () => Bool
         if (at < 0) return;
         overlay.clear();
         plans.clear();
-        plan.commit([at], p.mods?.alt ? 'delete' : 'merge');
+        plan.commit([at], modeFor(p.mods?.alt));
       },
     },
   };
@@ -118,7 +130,7 @@ export function createShapeBuilderActions(overlay: PathOverlay, opts: () => Bool
         const trail: Point[] = [last];
         const picked = facesAlong(plan, [last], step);
         let alt = ctx.modifiers.alt;
-        const paint = () => show(plan, picked, alt ? 'remove' : 'picked');
+        const paint = () => show(plan, picked, modeFor(alt) === 'delete' ? 'remove' : 'picked');
         paint();
         return {
           kind: 'shapeBuilder',
@@ -133,7 +145,7 @@ export function createShapeBuilderActions(overlay: PathOverlay, opts: () => Bool
           onEnd: (_c, reason) => {
             overlay.clear();
             plans.clear();
-            if (reason === 'commit') plan.commit(picked, alt ? 'delete' : 'merge');
+            if (reason === 'commit') plan.commit(picked, modeFor(alt));
           },
           overlay: () => (trail.length >= 2 ? { kind: 'polyline', points: trail } : null),
         };

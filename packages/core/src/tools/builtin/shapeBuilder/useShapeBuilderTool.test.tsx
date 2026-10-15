@@ -14,8 +14,8 @@ const VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 const noMods = { shift: false, alt: false, meta: false, ctrl: false };
 
 /** a (back) at 0..10, b in front at 5..15. */
-function setup(ids: string[] = ['a', 'b']) {
-  const { result } = renderHook(() => useShapeBuilderTool());
+function setup(ids: string[] = ['a', 'b'], opts: Parameters<typeof useShapeBuilderTool>[0] = {}) {
+  const { result } = renderHook(() => useShapeBuilderTool(opts));
   const paths: Record<string, Path> = { a: rect(0, 0, 10, 10), b: rect(5, 0, 10, 10) };
   let n = 0;
   const createPathNode = vi.fn((path: Path, _op: string, sourceId: string) => ({ id: `made${n++}`, path, sourceId }));
@@ -89,6 +89,15 @@ describe('useShapeBuilderTool', () => {
     const s = setup();
     s.drag([[7, 5], [7, 8]], true).onEnd?.(handleEndCtx(), 'commit');
     expect(s.made()).toEqual([['divide', 'a', 0, 5], ['divide', 'b', 10, 5]]);
+  });
+
+  it('deletes on a plain drag and unites on an Alt-drag under mode delete', () => {
+    const plain = setup(['a', 'b'], { mode: 'delete' });
+    plain.drag([[7, 5], [7, 8]]).onEnd?.(handleEndCtx(), 'commit');
+    expect(plain.made()).toEqual([['divide', 'a', 0, 5], ['divide', 'b', 10, 5]]);
+    const alt = setup(['a', 'b'], { mode: 'delete' });
+    alt.drag([[13, 5], [7, 5]], true).onEnd?.(handleEndCtx(), 'commit');
+    expect(alt.made()).toEqual([['divide', 'a', 0, 5], ['union', 'b', 5, 10]]);
   });
 
   it('commits nothing for a canceled drag', () => {

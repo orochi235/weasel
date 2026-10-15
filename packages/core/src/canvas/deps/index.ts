@@ -13,6 +13,8 @@ export { useEditAnchorsDepSource } from './editAnchors';
 export { paletteInsertPaint, useInsertDepSource, type InsertNodeFactory, type InsertPaint } from './insert';
 export { useSnapDepSource } from './snap';
 export { useSliceDep, useSliceDepSource } from './slice';
+export { useBooleansAdapterSource } from './booleans';
+export { usePathLeafDepSources } from './pathLeafDeps';
 export { useDebugDepSource } from './debug';
 export { useDepChangeNotices } from './changes';
 export { useDispatcherDepSource } from './dispatcher';
