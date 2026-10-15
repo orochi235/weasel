@@ -85,6 +85,10 @@ export {
   averageAnchorsAt,
   joinAnchorsAt,
   transformPath,
+  intersectSegments,
+  pathCrossings,
+  pathSegments,
+  trimPathAt,
 } from '../features/paths';
 export type {
   Path,
@@ -110,6 +114,12 @@ export type {
   JoinOptions,
   PoseRotation,
   PoseLinear,
+  PathCrossing,
+  PathSegment,
+  PathStop,
+  SegmentCrossing,
+  TrimPathOptions,
+  TrimResult,
 } from '../features/paths';
 export {
   SHAPE_COUNT_RANGE,

@@ -188,6 +188,10 @@ Priority tags:
 - **(P2) Tune Bridge hands-on, with the maintainer driving.** First-draft default Tension (0.4,
   `DEFAULT_BRIDGE_TENSION`), how Tension is reached outside the lab, and the Mod+Shift+J binding
   it shares with Bridge anchors (`pathCommands/cutJoin.ts`, `defaults/anchorJoin.ts`).
+- **(P2) Tune Trim segment hands-on, with the maintainer driving.** First-draft click reach (6
+  screen px, `DEFAULT_STROKE_REACH_PX` in `pathCommands/scenePaths.ts`), the preview's look (the
+  `cut` overlay role's red dash at width 3, `tools/builtin/trim/piecePreview.ts`), and its tool key,
+  Y (`tools/builtin/trim/useTrimTool.ts`). The `trimPath` action itself has no key.
 - **(P2) Tune draw's Symmetry toggle hands-on, with the maintainer driving.** Its key, the default
   kind and copy count, and where a new group's center lands (`toggleSymmetry`,
   `apps/draw/src/useSymmetry.ts`).
@@ -197,6 +201,11 @@ Priority tags:
   one enters draw's path-edit mode with no anchors to drag, insert, or bend. Undecided: whether
   editing turns the rectangle into a polygon path on its first edit, and what then happens to
   anything that reads it as a rectangle.
+- **(P3) Trim segment changes editable polygon paths only.** Any node's drawn outline cuts it
+  (`nodeOutline`, `features/paths/strokeOutline.ts`), but what it reshapes comes from
+  `scenePathNodes` (`pathCommands/scenePaths.ts`), which reads `resolveEditablePathOf`: a
+  rect-pose rectangle cannot itself be trimmed, which waits on "A rectangle has no anchors in path
+  edit" above.
 - **(P2) Dynamic corners.** Round, chamfer, or invert any corner anchor by dragging a widget at
   it, and change the radius later. Needs a corner radius per anchor in the path data, expanded
   into geometry when it renders and on export.
@@ -214,7 +223,7 @@ Priority tags:
   mapping it through each node's parent on replay would make the two agree.
 - **(P3) The path commands have no icons.** `simplifyPath`, `offsetPath`, `snipAtCrossings`,
   `joinPaths`, `bridgePaths`, `joinAnchors`, `bridgeAnchors`, and `averageAnchors` show as text
-  in draw's bar.
+  in draw's bar, and `useTrimTool` borrows `SliceIcon`.
   `RetractHandlesIcon`, `SymmetricHandlesIcon`, and `SimplifyBrushIcon`
   (`defaults/icons/anchorIcons.tsx`) are first drafts, not proofed at high resolution.
 - **(P2) Spacing hints.** Equal-spacing markers between siblings while moving, and Alt-hover

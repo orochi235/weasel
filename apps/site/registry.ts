@@ -703,6 +703,16 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/BridgeLabDemo.tsx',
   },
   {
+    id: 'lab-trim',
+    title: 'Trim segment',
+    category: 'Geometry',
+    description:
+      'Trim segment cuts a stroke back to where other strokes cross it. While the tool is up, a hover binding asks `planTrim`, the same plan the click commits, for the piece under the pointer, and the tool draws it dashed in red. A click with `useTrimTool` hands the press to the `trimPath` action, which finds the topmost stroke within reach and removes its piece between the nearest crossings on either side, with any other path or with itself, through `trimPathAt` in `@weasel-js/geom`. Curves are split where they are cut and stay curves; a closed shape is opened; a piece with an open end runs back to the first crossing, and a stroke with nothing left is deleted. Each trim is one undo step. Click reach is the binding param the tool passes along.',
+    hint: 'Move over a line: the piece a click would cut shows dashed in red. Click a piece between two crossings to cut it away, or the circle between the two points where the purple line crosses it. Click an end piece to cut back to the first crossing. Undo with the button or <kbd>Mod+Z</kbd>.',
+    load: () => import('./demos/TrimLabDemo').then((m) => m.TrimLabDemo),
+    path: 'apps/site/demos/TrimLabDemo.tsx',
+  },
+  {
     id: 'symmetry-lab',
     title: 'Symmetry',
     package: 'symmetry',

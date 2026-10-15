@@ -65,7 +65,7 @@ import { averageAnchorsAction, bridgeAnchorsAction, joinAnchorsAction } from './
 import { simplifyBrushAction, simplifyBrushToolAction } from './defaults/simplifyBrush';
 import { exitPathEditToolAction } from './defaults/pathEditTools';
 import {
-  bridgePathsAction, joinPathsAction, offsetPathAction, simplifyPathAction, snipAtCrossingsAction,
+  bridgePathsAction, joinPathsAction, offsetPathAction, simplifyPathAction, snipAtCrossingsAction, trimPathAction,
 } from './pathCommands';
 import {
   nudgeAnchorsUpAction,
@@ -188,6 +188,7 @@ const KIT_STANDARD_DESCRIPTORS: Action[] = [
   snipAtCrossingsAction,
   joinPathsAction,
   bridgePathsAction,
+  trimPathAction,
   marqueeAnchorsAction,
   selectAnchorAction,
   lassoSelectAction,
