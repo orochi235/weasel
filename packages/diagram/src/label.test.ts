@@ -51,11 +51,18 @@ describe('labelDerivePose', () => {
   });
 
   it('offsets to the left of travel, which is above a rightward edge', () => {
-    expect(poseOf({ at: 'mid', offset: 10 }, edgeDep(line))).toEqual(box(40, -14));
+    // Its bottom side, not its center, 10 above the line.
+    expect(poseOf({ at: 'mid', offset: 10 }, edgeDep(line))).toEqual(box(40, -18));
   });
 
   it('offsets the other way for a negative offset', () => {
-    expect(poseOf({ at: 'mid', offset: -10 }, edgeDep(line))).toEqual(box(40, 6));
+    expect(poseOf({ at: 'mid', offset: -10 }, edgeDep(line))).toEqual(box(40, 10));
+  });
+
+  it('clears its own width beside an edge running down', () => {
+    // Down's left is +x, so its left side lands 10 right of the line at x = 0.
+    const down = polylineFromPoints([{ x: 0, y: 0 }, { x: 0, y: 100 }]);
+    expect(poseOf({ at: 'mid', offset: 10 }, edgeDep(down))).toEqual(box(10, 46));
   });
 
   it('keeps its own size wherever it lands', () => {

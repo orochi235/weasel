@@ -12,6 +12,7 @@ export function makeRegistry(actions: Action[]): ActionsRegistry {
     register: vi.fn().mockReturnValue(() => {}),
     unregister: vi.fn(),
     mute: vi.fn().mockReturnValue(() => {}),
+    tune: vi.fn().mockReturnValue(() => {}),
     list: () => Array.from(map.values()),
     trigger: vi.fn().mockReturnValue(false),
     subscribe: vi.fn().mockReturnValue(() => {}),
