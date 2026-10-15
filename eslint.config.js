@@ -22,13 +22,9 @@ const CORE_ALIASES = (() => {
  * No formatting rules and no type-aware rules — `tsc --noEmit` covers types, and nothing here
  * should have an opinion about layout.
  *
- * Deliberately off — eslint-plugin-react-hooks v7's compiler rules:
- *   - `refs`: reading a ref during render is how a canvas library gets at mutable frame state.
- *     It cannot be narrowed to writes, so render-time ref writes are the local
- *     `weasel/no-render-ref-write` instead.
- *   - `immutability`: a `useVisibleRaf` callback re-requesting its own loop reads as
- *     use-before-declare, and assigning to a forwarded ref, a mutable engine object, or a DOM
- *     node reads as mutating a hook's value.
+ * Deliberately off — eslint-plugin-react-hooks v7's `refs` rule: reading a ref during render is
+ * how a canvas library gets at mutable frame state. It cannot be narrowed to writes, so
+ * render-time ref writes are the local `weasel/no-render-ref-write` instead.
  */
 
 const languageOptions = {
@@ -215,7 +211,7 @@ export default [
      * The baseline. Rules are enumerated rather than spread from a plugin's
      * `recommended`, because a preset changes what this repo enforces whenever
      * a dependency is upgraded, and the two react-hooks presets in particular
-     * now carry the compiler rules deliberately left off below.
+     * now carry the `refs` rule deliberately left off above.
      */
     files: ['**/*.{ts,tsx}'],
     languageOptions,
@@ -236,6 +232,7 @@ export default [
       'react-hooks/unsupported-syntax': 'error',
       'react-hooks/incompatible-library': 'error',
       'react-hooks/preserve-manual-memoization': 'error',
+      'react-hooks/immutability': 'error',
 
       '@typescript-eslint/no-explicit-any': 'error',
       '@typescript-eslint/no-unsafe-function-type': 'error',
@@ -268,14 +265,15 @@ export default [
      * asserting on a private field.
      *
      * A probe component writing what it rendered into a ref or an outer variable is how a test
-     * observes a render, so render-time ref writes and `react-hooks/globals` are the point here
-     * too.
+     * observes a render, so render-time ref writes, `react-hooks/globals` and
+     * `react-hooks/immutability` are the point here too.
      */
     files: ['**/*.{test,spec}.{ts,tsx}', '**/__tests__/**/*.{ts,tsx}', '**/testing/**/*.{ts,tsx}'],
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
       'weasel/no-render-ref-write': 'off',
       'react-hooks/globals': 'off',
+      'react-hooks/immutability': 'off',
     },
   },
   {

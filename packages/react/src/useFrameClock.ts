@@ -35,7 +35,7 @@ export function useFrameClock(options: FrameClockOptions = {}): FrameClock {
   const pausedRef = useLatest(paused);
 
   const loop = useVisibleRaf(
-    (now) => {
+    (now, loop) => {
       if (last.current !== null) elapsed.current += (now - last.current) / 1000;
       last.current = now;
       for (const listener of [...listeners.current]) listener();
