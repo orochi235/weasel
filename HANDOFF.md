@@ -29,9 +29,7 @@ form. The arc after them is a P2 entry in `docs/TODO.md`: a theme's tokens as a 
 3. Rulings: `docs/unruled.md`, and the either/ors left in `docs/TODO.md` entries. Two wait on a
    word from the owner: the new name for the `features` directory, and the second cue for disabled
    controls.
-4. "Five leaf packages keep their own listener sets" in `docs/TODO.md` was skipped only because
-   its fix adds a dependency, and the agents could not touch `package-lock.json`.
-5. astv: the Changes pane's Submit button is built (`onSubmit(changes, literal)` on
+4. astv: the Changes pane's Submit button is built (`onSubmit(changes, literal)` on
    `PrefSchemaEditor`) and astv's session wires the host half. Its prefs adapter can stop resending
    refused writes once it reads a rebuilt `dist`.
 

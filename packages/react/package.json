@@ -21,6 +21,9 @@
   "peerDependenciesMeta": {
     "react": { "optional": true }
   },
+  "dependencies": {
+    "@weasel-js/registry": "1.10.0"
+  },
   "author": "orochi235",
   "homepage": "https://orochi235.github.io/weasel/",
   "repository": {
