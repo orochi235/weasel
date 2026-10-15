@@ -32,6 +32,8 @@ interface OpsApplier {
 
 /** The part of a `PathEditState` the dep reads and writes. */
 export type EditAnchorsStateRef = Omit<PathEditState, 'subscribe' | 'getEditingIds'>;
+/** The same, with the change notice chrome reading the dep waits on. */
+export type EditAnchorsStateSource = EditAnchorsStateRef & Partial<Pick<PathEditState, 'subscribe'>>;
 
 export { resolveEditablePathOf };
 
@@ -62,6 +64,7 @@ export function useEditAnchorsDepSource(
     // hand them out alongside an empty id.
     const selectedAnchors = effectiveId ? state.getSelectedAnchors() : EMPTY_ANCHOR_SELECTION;
     const marquee = effectiveId ? state.getMarquee() : null;
+    const tool = effectiveId ? state.getTool() : null;
     const editOps = (id: string, worldPath: unknown, label: string, origins?: readonly (PointOrigin | null)[]): Op[] => {
       const wp = worldPath as PolygonPath;
       const node = sc.get(id as NodeId);
@@ -102,6 +105,11 @@ export function useEditAnchorsDepSource(
       setMarquee(rect) {
         if (!effectiveId) return;
         state.setMarquee(rect);
+      },
+      tool,
+      setTool(id) {
+        if (!effectiveId) return;
+        state.setTool(id);
       },
       getEditablePath(id: string): PolygonPath | null {
         const node = sc.get(id as NodeId);

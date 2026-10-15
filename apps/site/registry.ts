@@ -663,14 +663,14 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/SceneLabDemo.tsx',
   },
   {
-    id: 'lab-smart-remove-brush',
-    title: 'Smart remove brush',
+    id: 'lab-simplify-brush',
+    title: 'Simplify brush',
     package: 'core',
     description:
-      "The `brushDeleteAnchors` action: an Alt-drag in path edit deletes every anchor a round brush passes over, and `deleteAnchorsAt` refits each gap to the shape it replaces, the same edit the Delete key makes. The flower opens already in path edit, its anchors showing. While the brush is down the path previews without the anchors it has swept, and the dispatcher overlay paints the band swept so far and the brush's rim; release commits one undo step, and Escape mid-stroke cancels it. The brush radius is in screen pixels, so it covers the same patch of screen at every zoom. The control panel's radius reaches the action as a thunked param through `<SceneCanvas tune>`, so moving it changes a stroke already under way.",
-    hint: 'Hold <kbd>Alt</kbd> and drag across the flower\'s outline to brush its anchors away, then undo with the button or <kbd>Mod+Z</kbd>. Change Brush radius and brush again. Escape leaves path edit; double-click the flower to come back.',
-    load: () => import('./demos/SmartRemoveBrushLabDemo').then((m) => m.SmartRemoveBrushLabDemo),
-    path: 'apps/site/demos/SmartRemoveBrushLabDemo.tsx',
+      "The Simplify command, brushed on. Path edit has a set of named tools, one active at a time, that each change what a plain drag does; with the `simplifyBrush` tool on, a drag gathers every anchor a round brush passes over, and on each subpath it touched the brushed stretch is refitted as one span by `simplifyPath`'s own fitter (`simplifyAnchorsAt`). Only the anchors the shape does not need within the tolerance go: the scribble, drawn as a dense run of straight segments, thins to a few curves, while the cog's square teeth keep their corners. Anchors outside the brush are left exactly as they were, the stroke previews while the brush is down, and release commits one undo step. The palette's Simplify brush is the path-edit tool, held by the trial through `<SceneCanvas pathEdit>`'s `tool` and `setTool`; Escape puts it down, and leaving path edit turns it off. Brush radius and Tolerance reach the action as thunked params through `<SceneCanvas tune>`, so moving them changes a stroke already under way.",
+    hint: 'Drag along the scribble to thin it, then undo with the button or <kbd>Mod+Z</kbd>. Raise Tolerance and brush again to go further. Press Escape to put the brush down and edit anchors, Escape again to leave path edit; then double-click the cog and pick Simplify brush to brush across its teeth.',
+    load: () => import('./demos/SimplifyBrushLabDemo').then((m) => m.SimplifyBrushLabDemo),
+    path: 'apps/site/demos/SimplifyBrushLabDemo.tsx',
   },
   {
     id: 'bidi',

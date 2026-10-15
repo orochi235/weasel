@@ -6,7 +6,7 @@
 import type { AlignReference } from './align/align';
 import type { DistributeMode } from './distribute/distribute';
 import type { FlipAxis, FlipPivot } from './flip/helpers';
-import type { BrushDeleteAnchorsParams } from './defaults/brushDeleteAnchors';
+import type { SimplifyBrushParams } from './defaults/simplifyBrush';
 
 /** A point a spatial reference of `'pointer'` resolves to in place of the
  *  pointer dep, when the invocation has one of its own. */
@@ -36,7 +36,7 @@ declare module '@weasel-js/routing' {
     'nudge.left': NudgeParams;
     'nudge.right': NudgeParams;
     'tool.activate': { toolId: string };
-    brushDeleteAnchors: BrushDeleteAnchorsParams;
+    simplifyBrush: SimplifyBrushParams;
   }
 }
 

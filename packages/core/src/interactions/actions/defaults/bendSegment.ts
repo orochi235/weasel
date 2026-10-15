@@ -17,6 +17,7 @@ import { bendSegment, editAnchorSetTracked, type PointOrigin, type PolygonPath }
 import { inPlane, editingLayer } from '../planeInput';
 import { pathEditPreview } from '../edit-anchors/preview';
 import { segmentUnder } from './segmentUnder';
+import { pathEditToolActive } from './pathEditTools';
 
 const BEND_CURSOR: CursorSpec = 'grab';
 
@@ -59,7 +60,7 @@ export const bendSegmentAction: Action & { requires: string[] } = inPlane({
     },
   },
   enabled: (deps, at) => {
-    if (!deps?.editAnchors?.editingId) return ActionDisabledReason.NotApplicable;
+    if (!deps?.editAnchors?.editingId || pathEditToolActive(deps)) return ActionDisabledReason.NotApplicable;
     if (at && !segmentUnder(deps, at.x, at.y)) return ActionDisabledReason.NotApplicable;
     return true;
   },

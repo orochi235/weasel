@@ -61,7 +61,7 @@ export type DepName = keyof DepSchema;
  *
  * ```ts
  * declare module '@weasel-js/core' {
- *   interface ActionParamSchema { brushDeleteAnchors: { radiusPx: number } }
+ *   interface ActionParamSchema { simplifyBrush: { radiusPx: number } }
  * }
  * ```
  *
