@@ -226,6 +226,36 @@ const DEMO_META: DemoMeta[] = [
     load: () => import('./demos/StrokeMarkersDemo').then((m) => m.StrokeMarkersDemo),
     path: 'apps/site/demos/StrokeMarkersDemo.tsx',
   },
+  {
+    id: 'lab-blend',
+    title: 'Blend',
+    category: 'Geometry',
+    description:
+      "Steps between two shapes, live. The blend is one scene node whose `dependsOn` names its two sources and whose `derivePath` interpolates them: anchors matched contour to contour, the shape with fewer split at its longest segments until the counts agree, and the second shape's start point picked to keep matched anchors closest. Fill and stroke mix through OKLab, and a turned source turns its neighbors rather than squashing them. Each step paints in its own color because the derived path is built with `pathFromParts`. Its pose derives too — the bounds of its steps — so it selects like any shape, and Expand to Paths swaps it for ordinary paths in one undo step.",
+    hint: 'Drag either end shape and the steps follow; double-click one to edit its anchors. The panel sets the step count, the start point and direction, and whether rotation turns. Select two shapes and press Blend (<kbd>Mod+Alt+B</kbd>) for a new blend; select a blend and press Expand to Paths (<kbd>Mod+Alt+E</kbd>) to make its steps real.',
+    load: () => import('./demos/BlendLabDemo').then((m) => m.BlendLabDemo),
+    path: 'apps/site/demos/BlendLabDemo.tsx',
+  },
+  {
+    id: 'lab-bend-along',
+    title: 'Bend along a path',
+    category: 'Geometry',
+    description:
+      "A shape laid along a spine: its x becomes distance along the spine and its y distance off it, along the spine's normal. Every segment is sampled through the bend and refit to cubics within the tolerance, one segment at a time, so a corner of the shape stays a corner. The bent copy is a derived node over the shape and the spine, painted in the shape's own fill and stroke, so editing either one re-bends it.",
+    hint: 'The spine opens in path edit: drag its anchors and handles and the ribbon follows. Double-click the ribbon to reshape it instead. The panel switches between stretching the ribbon over the whole spine and keeping its width, moves where across it the spine runs, flips it, and sets the refit tolerance. Select a shape then a path and press Bend Along Path (<kbd>Mod+Alt+W</kbd>) for a new one; select the bent copy and press Expand to Paths (<kbd>Mod+Alt+E</kbd>) to keep it as a path.',
+    load: () => import('./demos/BendAlongLabDemo').then((m) => m.BendAlongLabDemo),
+    path: 'apps/site/demos/BendAlongLabDemo.tsx',
+  },
+  {
+    id: 'lab-repeat-along',
+    title: 'Repeat along a path',
+    category: 'Geometry',
+    description:
+      'Copies of a shape placed along a path, live: a derived node over the shape and the path that paints one copy per station, each centered on the path and, with Turn to the path on, turned to its heading there. With no spacing the copies spread evenly end to end, or evenly round a closed path; with a spacing they sit that far apart, as many as fit up to the count, and the run lines up at the start, middle or end of the path.',
+    hint: 'The track opens in path edit: drag its anchors and the copies follow. The panel sets the count, the spacing (0 spreads them over the whole track), where a spaced run sits, a slide along the track, and whether copies turn with it. Select a shape then a path and press Repeat Along Path (<kbd>Mod+Alt+R</kbd>) for a new run; select the copies and press Expand to Paths (<kbd>Mod+Alt+E</kbd>) to make them separate paths.',
+    load: () => import('./demos/RepeatAlongLabDemo').then((m) => m.RepeatAlongLabDemo),
+    path: 'apps/site/demos/RepeatAlongLabDemo.tsx',
+  },
 
   // ─── Animation ────────────────────────────────────────────────────────────
   {
