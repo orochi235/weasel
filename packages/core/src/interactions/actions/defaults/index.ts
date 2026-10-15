@@ -28,6 +28,9 @@ export {
 } from './anchorEditing';
 export { retractHandlesAction, makeHandlesSymmetricAction } from './anchorHandles';
 export { averageAnchorsAction, joinAnchorsAction } from './anchorJoin';
+export { reversePathAction, setPathStartAction } from './pathStructure';
+export { convertSegmentAtAction, convertSegmentsAction } from './convertSegments';
+export { setAnchorFieldAction, type SetAnchorFieldParams } from './anchorFields';
 export {
   simplifyPathAction, offsetPathAction, snipAtCrossingsAction, joinPathsAction,
 } from '../pathCommands';

@@ -118,6 +118,12 @@ export {
   type ShapeGenerator,
   type StarGenerator,
 } from '../features/paths/shapeGenerator';
+export { PATH_DIRECTION_CHROME_ID } from '../features/paths/pathEditingOverlayLayer';
+export { useAnchorFields, type AnchorFieldsApi } from '../features/paths/useAnchorFields';
+export type { SetAnchorFieldParams } from '../interactions/actions/defaults/anchorFields';
+export type {
+  AnchorField, AnchorFieldValues, DirectionMark, NumberEntry, SegmentRef, SegmentType,
+} from '@weasel-js/geom';
 
 // ─── Curves: alternate path representations (Bezier, NURBS, Spiro) ──────────
 export {

@@ -137,6 +137,7 @@ export const FEATURE_PRESETS: Readonly<Record<BaseFeature, FeaturePreset>> = {
       'nudgeAnchors.up', 'nudgeAnchors.down', 'nudgeAnchors.left', 'nudgeAnchors.right',
       'deleteAnchors', 'cutPathAtAnchor', 'marqueeAnchors', 'selectAnchor',
       'retractHandles', 'makeHandlesSymmetric', 'averageAnchors', 'joinAnchors',
+      'setPathStart', 'reversePath', 'convertSegments', 'convertSegmentAt', 'setAnchorField',
       'simplifyPath', 'offsetPath', 'snipAtCrossings', 'joinPaths',
     ],
   },

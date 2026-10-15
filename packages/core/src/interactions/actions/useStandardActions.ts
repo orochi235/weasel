@@ -61,6 +61,9 @@ import { insertPathAnchorAction } from './defaults/insertPathAnchor';
 import { bendSegmentAction } from './defaults/bendSegment';
 import { makeHandlesSymmetricAction, retractHandlesAction } from './defaults/anchorHandles';
 import { averageAnchorsAction, joinAnchorsAction } from './defaults/anchorJoin';
+import { reversePathAction, setPathStartAction } from './defaults/pathStructure';
+import { convertSegmentAtAction, convertSegmentsAction } from './defaults/convertSegments';
+import { setAnchorFieldAction } from './defaults/anchorFields';
 import {
   joinPathsAction, offsetPathAction, simplifyPathAction, snipAtCrossingsAction,
 } from './pathCommands';
@@ -172,6 +175,11 @@ const KIT_STANDARD_DESCRIPTORS: Action[] = [
   makeHandlesSymmetricAction,
   averageAnchorsAction,
   joinAnchorsAction,
+  setPathStartAction,
+  reversePathAction,
+  convertSegmentsAction,
+  convertSegmentAtAction,
+  setAnchorFieldAction,
   simplifyPathAction,
   offsetPathAction,
   snipAtCrossingsAction,

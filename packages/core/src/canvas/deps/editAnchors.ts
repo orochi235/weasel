@@ -5,19 +5,19 @@
  * (`pose.kind === 'polygon'`), or `data.path` with a rect pose, stored pose-local.
  * `getEditablePath` returns it in **world coords** either way, and `applyEdit` commits in the
  * correct storage shape as one undoable batch, preserving the render invariant
- * `pathInWorld(stored, pose) === world`. A node with a `data.skin` has it renumbered in that
- * batch when the caller says where the points came from. Live previews ride the standard
- * `OngoingHandle.previewIds/Pose/Data` triple — this dep doesn't own preview state.
+ * `pathInWorld(stored, pose) === world`. What the node keeps per anchor — a `data.skin`, vertex
+ * colors — is renumbered in that batch when the caller says where the points came from. Live
+ * previews ride the standard `OngoingHandle.previewIds/Pose/Data` triple — this dep doesn't own
+ * preview state.
  */
-import { useState } from 'react';
-import { useDepSource } from '@weasel-js/routing/react';
+import { useEffect, useState } from 'react';
+import { useDepRegistry, useDepSource } from '@weasel-js/routing/react';
 import { useLatest } from '@weasel-js/react';
 import type { EditAnchorsDep } from 'interactions/actions/depSchema';
 import type { Scene, NodeId } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { PointOrigin, PolygonPath } from '@weasel-js/geom';
-import type { Skin } from '@weasel-js/animator';
-import { remapSkin } from '../../animation/rig/skinBinding';
+import { carryAnchorData } from 'features/paths/anchorData';
 import { classifyPathStorage, resolveEditablePathOf, storeEditablePath } from 'features/paths/editablePath';
 import { withoutShapeGenerator } from 'features/paths/shapeGenerator';
 import { createPathEditState, isSelectedNode, type PathEditState } from 'features/paths/pathEditState';
@@ -30,8 +30,10 @@ interface OpsApplier {
   applyOps(ops: Op[], label?: string): void;
 }
 
-/** The part of a `PathEditState` the dep reads and writes. */
-export type EditAnchorsStateRef = Omit<PathEditState, 'subscribe' | 'getEditingIds'>;
+/** The part of a `PathEditState` the dep reads and writes. Given `subscribe`, the dep registry
+ *  hears each change, so chrome reading the anchor selection redraws. */
+export type EditAnchorsStateRef = Omit<PathEditState, 'subscribe' | 'getEditingIds'>
+  & Partial<Pick<PathEditState, 'subscribe'>>;
 
 export { resolveEditablePathOf };
 
@@ -51,7 +53,10 @@ export function useEditAnchorsDepSource(
   const [ownState] = useState(() => createPathEditState({
     isSelectedNode: (id) => isSelectedNode(sceneRef.current, selectionRef.current, id),
   }));
-  const stateRef = useLatest(externalState ?? ownState);
+  const watched = externalState ?? ownState;
+  const stateRef = useLatest(watched);
+  const registry = useDepRegistry();
+  useEffect(() => watched.subscribe?.(() => registry.changed?.()), [watched, registry]);
 
   useDepSource('editAnchors', (): EditAnchorsDep => {
     const sc = sceneRef.current;
@@ -66,15 +71,16 @@ export function useEditAnchorsDepSource(
       const wp = worldPath as PolygonPath;
       const node = sc.get(id as NodeId);
       if (!node) return [];
-      const next = storeEditablePath(node as { pose: unknown; data: unknown }, wp);
-      if (!next) return [];
-      const skin = (node.data as { skin?: Skin } | null)?.skin;
-      const reskinned = skin && origins ? { skin: remapSkin(skin, origins) } : null;
+      const shape = node as { pose: unknown; data: unknown };
+      const before = resolveEditablePathOf(shape);
+      const next = storeEditablePath(shape, wp);
+      if (!next || !before) return [];
       const reshape = createTransformOp({ id, from: node.pose, to: next.pose, label });
       // A path edited by hand is no longer what its generator makes: it becomes plain geometry.
-      const data = next.data === node.data ? node.data : withoutShapeGenerator(next.data);
-      if (data === node.data && !reskinned) return [reshape];
-      return [reshape, createSetDataOp({ id, from: node.data, to: { ...(data as object), ...reskinned }, label })];
+      const stored = next.data === node.data ? node.data : withoutShapeGenerator(next.data);
+      const data = origins ? carryAnchorData(stored, before, wp, origins) : stored;
+      if (data === node.data) return [reshape];
+      return [reshape, createSetDataOp({ id, from: node.data, to: data, label })];
     };
     return {
       editingId: effectiveId,

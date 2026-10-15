@@ -70,6 +70,7 @@ export type ChromeId =
   | 'snap.guides'
   | 'snap.targets'
   | 'grid'
+  | 'path-edit.direction'
   | (string & {});
 
 /**

@@ -237,6 +237,7 @@ describe('chrome-caps / defaults table', () => {
       'action.marquee',
       'action.move-ghosts',
       'path-edit.anchors',
+      'path-edit.direction',
       'path-edit.overlay',
       'selection.outline',
       'selection.resize-handles',

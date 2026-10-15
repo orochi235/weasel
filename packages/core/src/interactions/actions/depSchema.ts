@@ -127,7 +127,7 @@ export interface EditAnchorsDep {
   /** Commit `worldPath` as the new value for `id`, as one history entry
    *  labeled `label`: a setPose when the pose IS the polygon, a batched
    *  setPose+update when it lives on data.path. Given `origins` (from
-   *  `editAnchorSetTracked`), a `data.skin` is renumbered in that entry. */
+   *  `editAnchorSetTracked`), its per-anchor data (skin, vertex colors) is renumbered too. */
   applyEdit(id: string, worldPath: unknown, label: string, origins?: readonly (import('@weasel-js/geom').PointOrigin | null)[]): void;
   /** The ops `applyEdit` would commit for the same arguments, unapplied, so
    *  a caller can make the edit part of a larger batch — the pen joining

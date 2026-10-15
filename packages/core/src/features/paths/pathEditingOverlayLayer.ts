@@ -6,7 +6,10 @@
 
 import type { DrawCommand } from '@weasel-js/renderer';
 import type { RenderLayer } from 'core/layers/render';
-import { type Path, type PolygonPath, type View, linePath, pathToAnchors, circlePath, rectMarkerPath, squarePath } from '@weasel-js/geom';
+import {
+  type Path, type PolygonPath, type View, circlePath, directionMarks, linePath, pathToAnchors, polygonFromPoints,
+  rectMarkerPath, squarePath,
+} from '@weasel-js/geom';
 import type { GesturePreviewSource } from 'canvas/gestureBounds';
 import { previewSourcesFrom, isVisibleFrom } from 'canvas/drawEnvelope';
 
@@ -54,6 +57,10 @@ export interface PathEditingOverlayStyle {
   marqueeStroke?: string;
   /** Fill of the marquee rubber band. */
   marqueeFill?: string;
+  /** Color of the direction arrows and start rings `path-edit.direction` shows. */
+  directionColor?: string;
+  /** Length of a direction arrow, tip to base. */
+  directionSizePx?: number;
 }
 
 const DEFAULT_STYLE: Required<PathEditingOverlayStyle> = {
@@ -67,7 +74,12 @@ const DEFAULT_STYLE: Required<PathEditingOverlayStyle> = {
   anchorFillSelected: '#3478f6',
   marqueeStroke: '#3478f6',
   marqueeFill: 'rgba(52, 120, 246, 0.08)',
+  directionColor: '#e8590c',
+  directionSizePx: 9,
 };
+
+/** The chrome id of the arrows showing which way the edited path runs. Off by default. */
+export const PATH_DIRECTION_CHROME_ID = 'path-edit.direction';
 
 const EMPTY_SELECTION: ReadonlySet<number> = new Set();
 
@@ -98,7 +110,8 @@ export function createPathEditingOverlayLayer(
       const pose = opts.getPose(id, previewSourcesFrom(data), view);
       if (!pose || pose.kind !== 'polygon') return [];
 
-      const { anchors } = pathToAnchors(pose as PolygonPath);
+      const set = pathToAnchors(pose as PolygonPath);
+      const { anchors } = set;
       const selected = opts.getSelectedAnchors?.() ?? EMPTY_SELECTION;
       const out: DrawCommand[] = [];
 
@@ -153,6 +166,8 @@ export function createPathEditingOverlayLayer(
         }
       }
 
+      if (isVisible?.(PATH_DIRECTION_CHROME_ID)) out.push(...directionChrome(set, view, style));
+
       // Marquee rubber band, on top of everything.
       const marquee = opts.getMarquee?.(view);
       if (marquee) {
@@ -169,4 +184,38 @@ export function createPathEditingOverlayLayer(
       return out;
     },
   };
+}
+
+/** An arrow at the middle of every segment pointing the way the path runs,
+ *  and a ring round each subpath's start anchor. */
+function directionChrome(
+  set: ReturnType<typeof pathToAnchors>,
+  view: View,
+  style: Required<PathEditingOverlayStyle>,
+): DrawCommand[] {
+  const paint = { kind: 'solid' as const, color: style.directionColor };
+  const out: DrawCommand[] = [];
+  const len = style.directionSizePx;
+  for (const m of directionMarks(set)) {
+    const [cx, cy] = w2s(m.x, m.y, view);
+    const sx = m.dx * view.scale.x;
+    const sy = m.dy * view.scale.y;
+    const k = Math.hypot(sx, sy);
+    if (k === 0) continue;
+    const ux = sx / k, uy = sy / k;
+    const tip = { x: cx + (ux * len) / 2, y: cy + (uy * len) / 2 };
+    const back = { x: cx - (ux * len) / 2, y: cy - (uy * len) / 2 };
+    const half = len * 0.45;
+    out.push({
+      kind: 'path',
+      path: polygonFromPoints([tip, { x: back.x - uy * half, y: back.y + ux * half }, { x: back.x + uy * half, y: back.y - ux * half }]),
+      fill: { paint },
+    });
+  }
+  for (const sub of set.anchors) {
+    if (sub.length === 0) continue;
+    const [ax, ay] = w2s(sub[0].x, sub[0].y, view);
+    out.push({ kind: 'path', path: circlePath(ax, ay, style.anchorSizePx), stroke: { paint, width: 2 } });
+  }
+  return out;
 }
