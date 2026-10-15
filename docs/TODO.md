@@ -457,9 +457,22 @@ Priority tags:
   path unchanged, in world coordinates, so `diagramScene`'s layout moves the box and leaves the
   outline behind. Marks solve the same problem with path data in a unit square
   (`packages/diagram/src/marks.ts`); an outline could take the same form.
-- **(P3) The `nodeGraph` look draws wires over stage boxes.** `diagramScene` emits edges after
-  nodes, and `layered` gives a wire that skips a column no waypoints, so it runs across whatever
-  stage stands in that column (`packages/diagram/src/effect/nodeGraph.ts`).
+- **(P2) `layered` lets wires, boxes and labels overlap.** The EffectChart node-graph demo shows
+  every case: a wire runs through the decision diamond, wires cross each other into a stage's
+  ports, and port and wire labels sit under wires. The causes, all in
+  `packages/diagram/src/layered.ts` and `barycenter.ts`:
+  - Ranks are longest-path from the sources, so every input sits in the first column however late
+    it is used, and its wire spans the whole chart. Ranking that minimizes total edge length
+    (network simplex) would put each source next to the stage it feeds.
+  - A wire spanning several ranks has no stand-in node in the ranks it crosses, so ordering cannot
+    see it and routing does not steer it round what stands there.
+  - Crossing reduction (`order: 'barycenter'`) is opt-in, and `nodeGraph` does not opt in. It also
+    orders by a neighbor's position in its rank, not by the position of the port the wire joins.
+  - Positions across a rank are packed and centered, not aligned to neighbors, so wires that
+    could run straight bend.
+  - Nothing places wire or port labels away from wires.
+
+  The `diagram-routes` branch (unmerged) takes on the routing case with `layeredRoutes`.
 - **(P3) `DiagramView` fits its view once, at mount.** `defaultView` only seeds the canvas's
   view, so when `width` or `height` changes the canvas resizes and the view does not refit; a
   diagram fitted for a wide box is clipped in a narrower one. The EffectChart lab shows it when
