@@ -1,0 +1,50 @@
+.trial {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.panel {
+  position: absolute;
+  top: var(--wzl-space-4);
+  right: var(--wzl-space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-3);
+  padding: var(--wzl-space-3) var(--wzl-space-4);
+  border: 1px solid var(--wzl-border);
+  border-radius: var(--wzl-radius-md);
+  background: var(--wzl-surface-raised);
+}
+
+.buttons {
+  display: flex;
+  gap: var(--wzl-space-3);
+}
+
+.empty {
+  margin: 0;
+  color: var(--wzl-fg-muted);
+}
+
+.readout {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-2);
+  margin: 0;
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--wzl-space-5);
+}
+
+.row dt {
+  color: var(--wzl-fg-muted);
+}
+
+.row dd {
+  margin: 0;
+}
