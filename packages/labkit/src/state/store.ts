@@ -257,10 +257,7 @@ export function createLabStore(options: CreateLabStoreOptions = {}): LabStore {
 
     setLabTool: (id) => set({ activeToolId: id }),
 
-    setTrialTool: (trialId, id) =>
-      set((s) => ({
-        trials: s.trials.map((t) => (t.id === trialId ? { ...t, activeToolId: id } : t)),
-      })),
+    setTrialTool: (trialId, id) => set((s) => (holdsTool(s.trials, trialId, id) ? s : { trials: withTool(s.trials, trialId, id) })),
 
     undockPanel: (trialId, sectionId, as) => {
       set((s) => ({ undockedPanels: undockPanelIn(s.undockedPanels, trialId, sectionId, as) }));
@@ -307,6 +304,16 @@ export function createLabStore(options: CreateLabStoreOptions = {}): LabStore {
   const store = createStore<LabStoreState & LabStoreActions>()(dockingDepartedTrials(init));
 
   return store;
+}
+
+// A write of the tool a trial already holds must notify no one: the canvas a
+// trial's tool slot mirrors answers every notice with a write of its own.
+function holdsTool(trials: readonly TrialRecord[], trialId: string, id: string | null): boolean {
+  return !trials.some((t) => t.id === trialId && t.activeToolId !== id);
+}
+
+function withTool(trials: readonly TrialRecord[], trialId: string, id: string | null): TrialRecord[] {
+  return trials.map((t) => (t.id === trialId ? { ...t, activeToolId: id } : t));
 }
 
 function initialHooks(options: CreateLabStoreOptions): InstrumentHooks {
