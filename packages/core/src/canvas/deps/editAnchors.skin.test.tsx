@@ -36,6 +36,8 @@ function setup() {
     setSelectedAnchors: (next) => { selected = next; },
     getMarquee: () => null,
     setMarquee: () => {},
+    getHandleLocks: () => null,
+    setHandleLocks: () => {},
     getTool: () => null,
     setTool: () => {},
   };

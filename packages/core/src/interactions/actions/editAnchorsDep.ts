@@ -1,4 +1,5 @@
 import type { Op } from 'core/ops/types';
+import type { HandleLocks } from './edit-anchors/params';
 
 /**
  * Adapter dep for `editAnchorsAction`: narrow read/write access to the
@@ -69,4 +70,12 @@ export interface EditAnchorsDep {
   tool: string | null;
   /** Switch path-edit tool, or pass null for plain anchor editing. */
   setTool(id: string | null): void;
+
+  /** The handle locks held for every handle drag, on top of the modifiers —
+   *  what the `handleLock.angle` and `handleLock.length` toggles set. Absent,
+   *  the drag holds what its `handleLock` param names. Unlike the anchor
+   *  selection, they outlast a change of edited path. */
+  handleLocks?: HandleLocks;
+  /** Replace the held handle locks. Absent, the toggles are unavailable. */
+  setHandleLocks?(next: HandleLocks): void;
 }

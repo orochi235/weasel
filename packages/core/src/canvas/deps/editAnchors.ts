@@ -10,9 +10,10 @@
  * `OngoingHandle.previewIds/Pose/Data` triple — this dep doesn't own preview state.
  */
 import { useState } from 'react';
-import { useDepSource } from '@weasel-js/routing/react';
+import { useDepRegistry, useDepSource } from '@weasel-js/routing/react';
 import { useLatest } from '@weasel-js/react';
 import type { EditAnchorsDep } from 'interactions/actions/depSchema';
+import { locksOf, type EditAnchorsParams } from 'interactions/actions/edit-anchors/params';
 import type { Scene, NodeId } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { PointOrigin, PolygonPath } from '@weasel-js/geom';
@@ -21,7 +22,7 @@ import { remapSkin } from '../../animation/rig/skinBinding';
 import { classifyPathStorage, resolveEditablePathOf, storeEditablePath } from 'features/paths/editablePath';
 import { withoutShapeGenerator } from 'features/paths/shapeGenerator';
 import { createPathEditState, isSelectedNode, type PathEditState } from 'features/paths/pathEditState';
-import { recordModeSwitch } from '@weasel-js/routing';
+import { recordModeSwitch, resolveParams, type ActionTunings } from '@weasel-js/routing';
 import type { Op } from 'core/ops/types';
 import { createTransformOp } from 'core/ops/transform';
 import { createSetDataOp } from 'core/ops/setData';
@@ -37,6 +38,11 @@ export type EditAnchorsStateSource = EditAnchorsStateRef & Partial<Pick<PathEdit
 
 export { resolveEditablePathOf };
 
+function tunedHandleLock(tune: ActionTunings | undefined): EditAnchorsParams['handleLock'] {
+  const params = resolveParams(tune?.editAnchors?.params as Parameters<typeof resolveParams>[0]);
+  return (params as EditAnchorsParams | undefined)?.handleLock;
+}
+
 const EMPTY_ANCHOR_SELECTION: ReadonlySet<number> = new Set<number>();
 
 export function useEditAnchorsDepSource(
@@ -44,7 +50,12 @@ export function useEditAnchorsDepSource(
   selection: SelectionApi,
   adapter: OpsApplier,
   externalState?: EditAnchorsStateRef,
+  /** `<SceneCanvas tune>`: the handle locks start from its `editAnchors`
+   *  `handleLock` param until a toggle sets them. */
+  tune?: ActionTunings,
 ): void {
+  const registry = useDepRegistry();
+  const tuneRef = useLatest(tune);
   const sceneRef = useLatest(scene);
   const selectionRef = useLatest(selection);
   const adapterRef = useLatest(adapter);
@@ -105,6 +116,11 @@ export function useEditAnchorsDepSource(
       setMarquee(rect) {
         if (!effectiveId) return;
         state.setMarquee(rect);
+      },
+      handleLocks: state.getHandleLocks() ?? locksOf(tunedHandleLock(tuneRef.current)),
+      setHandleLocks(next) {
+        state.setHandleLocks(next);
+        registry.changed?.();
       },
       tool,
       setTool(id) {
