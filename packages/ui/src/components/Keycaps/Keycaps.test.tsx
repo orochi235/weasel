@@ -25,6 +25,12 @@ describe('KeyCap', () => {
     expect(container.querySelector('kbd')?.getAttribute('data-kind')).toBe('square');
   });
 
+  it('marks function keys F1 to F24 with data-fn, and nothing else', () => {
+    const fn = (label: string) => render(<KeyCap label={label} />).container.querySelector('kbd')!.hasAttribute('data-fn');
+    expect(['F1', 'F9', 'F12', 'F24'].map(fn)).toEqual([true, true, true, true]);
+    expect(['F', 'F0', 'F25', 'fn', 'FN', 'F1a'].map(fn)).toEqual([false, false, false, false, false, false]);
+  });
+
   it('applies data-inverted when inverted prop is true', () => {
     const { container } = render(<KeyCap label="K" inverted />);
     expect(container.querySelector('kbd')?.hasAttribute('data-inverted')).toBe(true);

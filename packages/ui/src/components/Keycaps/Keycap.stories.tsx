@@ -417,6 +417,8 @@ let measureCtx: CanvasRenderingContext2D | null = null;
 function FitCap({ label, width, font }: { label: string; width: string; font?: string }): ReactElement {
   const ref = useRef<HTMLSpanElement>(null);
   const [fit, setFit] = useState({ label, scale: 1 });
+  const scaleRef = useRef(1);
+  scaleRef.current = fit.scale;
 
   useLayoutEffect(() => {
     const kbd = ref.current?.querySelector('kbd');
@@ -428,7 +430,7 @@ function FitCap({ label, width, font }: { label: string; width: string; font?: s
       const ctx = measureCtx;
       const cs = getComputedStyle(kbd);
       const px = (v: string) => parseFloat(v) || 0;
-      const size = px(cs.getPropertyValue('--wzl-font-size-sm')) || 11;
+      const size = px(cs.fontSize) / scaleRef.current;
       ctx.font = `${LAYOUT_WEIGHT} ${size}px ${cs.fontFamily}`;
       const roomW = kbd.clientWidth - px(cs.paddingLeft) - px(cs.paddingRight);
       const roomH = kbd.clientHeight - px(cs.paddingTop) - px(cs.paddingBottom) - 4;
@@ -454,7 +456,7 @@ function FitCap({ label, width, font }: { label: string; width: string; font?: s
         label={fit.label}
         style={{
           width, minWidth: 0, padding: '0 2px', fontWeight: LAYOUT_WEIGHT,
-          fontSize: `calc(var(--wzl-font-size-sm) * ${fit.scale.toFixed(3)})`,
+          fontSize: `calc(var(--key-font-size) * ${fit.scale.toFixed(3)})`,
           whiteSpace: 'pre-line', textAlign: 'center',
           lineHeight: fit.label.includes('\n') ? BROKEN_LINE_HEIGHT : undefined,
         }}

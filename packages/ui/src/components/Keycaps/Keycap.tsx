@@ -3,6 +3,7 @@ import s from './Keycaps.module.css';
 import { MODIFIER_LABELS } from './keySpecsFromMods';
 
 const WIDE_GLYPHS = new Set(['⇥', '↵', '␣']);
+const FUNCTION_KEY = /^F([1-9]|1\d|2[0-4])$/;
 
 /**
  * Width class of a keycap: a modifier glyph, a multi-character legend that
@@ -60,6 +61,7 @@ export function KeyCap({ label, inverted = false, variant = 'default', className
     <kbd
       className={[s.key, className].filter(Boolean).join(' ')}
       data-kind={inferKeycapKind(label)}
+      data-fn={FUNCTION_KEY.test(label) || undefined}
       data-variant={variant === 'default' ? undefined : variant}
       data-inverted={inverted || undefined}
       style={resolvedStyle}

@@ -2,6 +2,12 @@
 .keys,
 .key {
   --key-h: var(--wzl-control-h-xs);
+  --key-font-size: var(--wzl-font-size-sm);
+}
+
+/* Function-key legends print smaller, as on a real keyboard. */
+.key[data-fn] {
+  --key-font-size: calc(var(--wzl-font-size-sm) * 0.85);
 }
 
 .keys {
@@ -53,7 +59,7 @@
      key legends. Consumers wanting a specific face per chip pass the
      `font` prop on KeyCap. */
   font-family: ui-sans-serif, system-ui, sans-serif;
-  font-size: var(--wzl-font-size-sm);
+  font-size: var(--key-font-size);
   font-weight: var(--wzl-font-weight-bold);
   line-height: 1;
 }
