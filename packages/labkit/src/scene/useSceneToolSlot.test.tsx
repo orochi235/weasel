@@ -3,30 +3,44 @@ import type { ToolsApi } from '@weasel-js/core';
 import { describe, expect, it, vi } from 'vitest';
 import { useSceneToolSlot } from './useSceneToolSlot';
 
-/** A canvas tool slot whose registry holds `ids`, its active tool `active`. */
-function tools(active: string | null, ids = ['select', 'pen']): ToolsApi {
-  return {
+function canvasTools(active: string | null): ToolsApi {
+  const tools = {
     active,
-    registry: Object.fromEntries(ids.map((id) => [id, {}])),
-    setActive: vi.fn(),
-  } as unknown as ToolsApi;
+    registry: { select: {}, pen: {} },
+    setActive: vi.fn((id: string) => {
+      tools.active = id;
+    }),
+  };
+  return tools as unknown as ToolsApi;
 }
 
 describe('useSceneToolSlot', () => {
-  it("keeps a slot naming a tool the canvas lacks while the canvas's tool settles", () => {
-    const setActiveTool = vi.fn();
-    const { result } = renderHook(() => useSceneToolSlot({ activeToolId: 'brush', setActiveTool }));
-    // A canvas reports before its default tool is active, then again once it is.
-    result.current(tools(null));
-    result.current(tools('select'));
-    expect(setActiveTool).not.toHaveBeenCalled();
+  it('keeps a slot naming a tool the canvas lacks while the canvas settles on its own first tool', () => {
+    const slot = { activeToolId: 'lengthen', setActiveTool: vi.fn() };
+    const { result } = renderHook(() => useSceneToolSlot(slot));
+    result.current(canvasTools(null));
+    result.current(canvasTools(null));
+    result.current(canvasTools('select'));
+    expect(slot.setActiveTool).not.toHaveBeenCalled();
   });
 
-  it("moves the slot when the canvas's own hotkey changes tool", () => {
-    const setActiveTool = vi.fn();
-    const { result } = renderHook(() => useSceneToolSlot({ activeToolId: 'select', setActiveTool }));
-    result.current(tools('select'));
-    result.current(tools('pen'));
-    expect(setActiveTool).toHaveBeenCalledWith('pen');
+  it('hands the slot a tool the canvas changes to after it has one', () => {
+    const slot = { activeToolId: 'lengthen', setActiveTool: vi.fn() };
+    const { result } = renderHook(() => useSceneToolSlot(slot));
+    result.current(canvasTools(null));
+    result.current(canvasTools('select'));
+    result.current(canvasTools('pen'));
+    expect(slot.setActiveTool).toHaveBeenCalledWith('pen');
+  });
+
+  it('pushes the slot onto a settling canvas, and leaves the slot alone while it catches up', () => {
+    const slot = { activeToolId: 'pen', setActiveTool: vi.fn() };
+    const { result } = renderHook(() => useSceneToolSlot(slot));
+    const mounting = canvasTools(null);
+    result.current(mounting);
+    expect(mounting.setActive).toHaveBeenCalledWith('pen');
+    result.current(canvasTools('select'));
+    result.current(canvasTools('pen'));
+    expect(slot.setActiveTool).not.toHaveBeenCalled();
   });
 });

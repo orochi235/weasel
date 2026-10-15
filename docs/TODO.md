@@ -316,6 +316,11 @@ Priority tags:
 
 ## Scene, adapters & layout
 
+- **(P3) A diagram's edge labels can land on nodes.** A label sits at a fraction of its route, offset
+  to one side, with no check for the boxes around it, so the label on a short edge between ranks
+  overlaps the node or group box it leaves or enters. `layeredRoutes` keeps routes clear of nodes;
+  nothing does the same for labels. blits' playground timing view shows it (`anchors` preset).
+
 - **(P3) A direct scene call made while a journal is open lands on the scene's own stack.**
   `scene.applyBatch` goes to the open journal; `scene.setPose` and its siblings, `scene.batch`, and
   `scene.history.apply` do not, so a mode that mixes the two splits its edits across two stacks.
@@ -846,6 +851,13 @@ only story runner in the repo.
   reproduced. `forge/src/vite/plugin.test.ts` lost file events for its temp directory the same way,
   7 of 26 tests in one run on 2026-10-13, and polls now; whether a checkout loses them too is not
   measured.
+
+- **(P3) A freshly started site dev server's first page load can come up blank.** Started from a
+  worktree with `WAKE_EXTRA=<port> npx vite --port <port>`, the first one or two loads of a demo
+  show an empty page with wake's "dev server unreachable" pill, and a reload renders it. Seen on
+  every one of a dozen servers on 2026-10-14. The server logs no dependency re-optimization or
+  reload, so the cause isn't known; the first load after an agent edits a lab once threw
+  `instrument.defaultConfig is not a function` before a reload fixed it.
 
 - **(P2) Package pages: check the reference against a real build, then retire `/api/`.** Every
   published package has a page at `#pkg/<name>` (overview, guides, reference, demos; how each is
