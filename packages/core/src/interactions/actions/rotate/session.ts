@@ -1,4 +1,4 @@
-import type { BindingOpts, InvocationCtx } from '@weasel-js/routing';
+import type { ActionDeps, BindingOpts, InvocationCtx } from '@weasel-js/routing';
 import { pointerStateOf } from '../pointerState';
 import { sceneGestureFrames } from '../gestureFrames';
 import { resolveParams } from '@weasel-js/routing';
@@ -15,7 +15,8 @@ import { moveGestureAdapter } from '../move/gestureAdapter';
 import { carryPose, invertPlane, planeOf } from '../planeInput';
 import { nodeDescriptors, poseDescriptorOf } from '../poseDescriptorDep';
 import { scenePoseFrame, type PoseFrame } from '../poseFrame';
-import { visualBoundsViaDescriptor, type PoseDescriptor } from '../resize/geometry';
+import type { PoseDescriptor } from '../resize/geometry';
+import { drawnBoxes, type DrawnBoxes } from '../drawnBoxes';
 import { shapeSources } from '../selectionSubtree';
 
 /** One rotated node as the press found it, in the plane the pointer's angle
@@ -72,6 +73,7 @@ function captureOrigins(
   ids: readonly NodeId[],
   descriptorOf: (id: NodeId) => PoseDescriptor<unknown>,
   poseFrame: PoseFrame<unknown>,
+  boxes: DrawnBoxes,
 ): { originPoses: Map<NodeId, unknown>; origins: Map<NodeId, TurnOrigin>; visual: Bounds[] } {
   const originPoses = new Map<NodeId, unknown>();
   const origins = new Map<NodeId, TurnOrigin>();
@@ -92,7 +94,7 @@ function captureOrigins(
       center: { x: b.x + b.width / 2, y: b.y + b.height / 2 },
       rotation: g.getRotation?.(world) ?? 0,
     });
-    visual.push(visualBoundsViaDescriptor(world, g));
+    visual.push(boxes.aabb(id, world));
   }
   return { originPoses, origins, visual };
 }
@@ -113,7 +115,7 @@ function buildGestureContext(
     pointer: pointerStateOf(ctx.world, ctx),
     view: readers.view(),
     plane: readers.plane(),
-    frames: sceneGestureFrames(scene, ctx.deps.view),
+    frames: sceneGestureFrames(scene, ctx.deps),
     adapter: moveGestureAdapter(scene, undefined, selectionMethods) as unknown as GestureContext<unknown>['adapter'],
     scratch: {},
   };
@@ -124,16 +126,18 @@ function buildGestureContext(
 export function captureTurn(
   scene: Scene<unknown, string, unknown>,
   ids: readonly NodeId[],
-  view: unknown,
-  poseDescriptor: Parameters<typeof poseDescriptorOf>[0],
+  deps: Pick<ActionDeps, 'view' | 'poseDescriptor' | 'boundsIncludeStroke'>,
   pivot: 'union' | 'each',
 ): { turn: Turn; originPoses: Map<NodeId, unknown>; poseFrame: PoseFrame<unknown> } | null {
-  const descriptorOf = nodeDescriptors(scene, poseDescriptorOf(poseDescriptor));
+  const view = deps.view;
+  const descriptorOf = nodeDescriptors(scene, poseDescriptorOf(deps.poseDescriptor));
   // The pivot the pointer orbits is a world point, so every pose the
   // gesture turns is a world pose. Each turned result is stored back in
   // the node's own parent frame at preview and commit alike.
   const poseFrame = scenePoseFrame(scene);
-  const { originPoses, origins, visual } = captureOrigins(view, scene, ids, descriptorOf, poseFrame);
+  // A selection turns about the center of the box its chrome draws.
+  const boxes = drawnBoxes({ ...deps, scene }, poseFrame);
+  const { originPoses, origins, visual } = captureOrigins(view, scene, ids, descriptorOf, poseFrame, boxes);
   if (originPoses.size === 0) return null;
   const union = unionAABB(visual)!;
   return {
@@ -165,9 +169,7 @@ export function beginRotate(
   const ids = shapeSources(scene, selection.get()) as NodeId[];
   if (ids.length === 0) return null;
 
-  const captured = captureTurn(
-    scene, ids, ctx.deps.view, ctx.deps.poseDescriptor, params?.['pivot'] === 'each' ? 'each' : 'union',
-  );
+  const captured = captureTurn(scene, ids, ctx.deps, params?.['pivot'] === 'each' ? 'each' : 'union');
   if (!captured) return null;
   const { turn, originPoses, poseFrame } = captured;
   const { origins, pivot } = turn;

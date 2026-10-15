@@ -12,6 +12,7 @@ import { remapRotatedLeaf, translatePoseViaDescriptor, type PoseDescriptor } fro
 import { snapPose } from './pointSnap';
 import { boundsForRules } from './ruleBounds';
 import { boxFrame } from './boxFrame';
+import { insetBox, outsetBox } from 'core/geometry/inkExtents';
 import type { ResizeBox, ResizeFrame, ResizeSession } from './session';
 
 /** `ob` with the edges `anchor` leaves free moved by the drag delta, which is
@@ -160,16 +161,14 @@ export function nextFrame(session: ResizeSession, readers: GestureReaders, moveC
   gctx.view = readers.view();
   gctx.plane = readers.plane();
 
-  const proposed = constrain(
-    session.constraints,
-    gctx,
-    box.anchor,
-    computeProposedBounds(box.bounds, box.anchor, at.x - session.startWorld.x, at.y - session.startWorld.y, boxFrame(box, box.bounds)),
-  );
+  // The constraints see the box as drawn; the stroke keeps its width, so the
+  // extents come back off what they leave.
+  const moved = computeProposedBounds(box.bounds, box.anchor, at.x - session.startWorld.x, at.y - session.startWorld.y, boxFrame(box, box.bounds));
+  const proposed = insetBox(constrain(session.constraints, gctx, box.anchor, outsetBox(moved, box.extents)), box.extents);
 
   const { previews, lone } = posesInBox(session, proposed, (g, world) => snapPose(
     session.pointSnap, g, world, box, box.anchor, gctx.modifiers, gctx.plane ?? null,
   ));
-  if (lone) gctx.current = new Map<string, Bounds>([[lone.id as string, boundsForRules(lone.g, lone.world)]]);
+  if (lone) gctx.current = new Map<string, Bounds>([[lone.id as string, outsetBox(boundsForRules(lone.g, lone.world), box.extents)]]);
   return { previews, proposed };
 }

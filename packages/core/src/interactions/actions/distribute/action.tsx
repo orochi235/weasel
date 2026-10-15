@@ -2,10 +2,10 @@ import type { ReactNode } from 'react';
 import type { Scene } from 'core/scene/types';
 import type { PoseDescriptor } from '../resize/geometry';
 import { poseDescriptorOf } from '../poseDescriptorDep';
-import { visualBoundsViaDescriptor } from '../align/align';
+import { drawnBoxes, type DrawnBoxes } from '../drawnBoxes';
 import type { DistributeAxis, DistributeMode } from './distribute';
 import { planDistribute } from './plan';
-import { scenePoseFrame } from '../poseFrame';
+import { scenePoseFrame, type PoseFrame } from '../poseFrame';
 import { translateEach } from '../selectionSubtree';
 import type { Action } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
@@ -39,14 +39,16 @@ function distributeSelection(
   axis: DistributeAxis,
   mode: DistributeMode,
   geom: PoseDescriptor<unknown>,
+  boxesOver: (frame: PoseFrame<unknown>) => DrawnBoxes,
 ): void {
   const ids = selection.get();
   if (ids.length < 3) return;
   const frame = scenePoseFrame(scene);
+  const boxes = boxesOver(frame);
 
   const items = ids.map((id) => {
     const pose = frame.world(id);
-    return { id, pose, b: visualBoundsViaDescriptor(pose, geom) };
+    return { id, pose, b: boxes.aabb(id, pose) };
   });
   const targets = planDistribute(items.map((it) => it.b), axis, mode);
 
@@ -68,7 +70,7 @@ function makeDistributeAction(axis: DistributeAxis): Action {
     icon: ICON_FOR[axis],
     group: 'distribute',
     eligible: { capability: 'transforms-selection' },
-    requires: ['selection', 'scene', 'poseDescriptor'],
+    requires: ['selection', 'scene', 'poseDescriptor', 'view', 'boundsIncludeStroke'],
     // No default keybindings. Wire bindings explicitly via the actions registry.
     invoker: {
       timing: 'immediate',
@@ -77,7 +79,9 @@ function makeDistributeAction(axis: DistributeAxis): Action {
         const scene = deps.scene;
         if (!selection || !scene) return;
         const mode = (params?.mode as DistributeMode | undefined) ?? 'centers';
-        distributeSelection(selection, scene, axis, mode, poseDescriptorOf(deps.poseDescriptor));
+        distributeSelection(
+          selection, scene, axis, mode, poseDescriptorOf(deps.poseDescriptor), (frame) => drawnBoxes(deps, frame),
+        );
       },
     } satisfies ImmediateInvoker,
     // Deps-aware, matching `distributeSelection`'s own `ids.length < 3` guard:
