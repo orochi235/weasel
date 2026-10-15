@@ -10,7 +10,7 @@ import {
 } from './keySpecsFromMods';
 import { KEYCAP_VARIANT_ICONS } from './variantIcons';
 
-const VARIANTS: KeyCapVariant[] = ['default', 'minimal'];
+const VARIANTS: KeyCapVariant[] = ['default', 'inverse'];
 const PLATFORMS: Platform[] = ['macos', 'windows', 'linux'];
 const LEGENDS: LegendStyle[] = ['auto', 'symbol', 'text'];
 
@@ -75,12 +75,12 @@ const meta: Meta<StoryArgs> = {
     },
     inverted: {
       control: 'boolean',
-      description: 'Marks the chip as optional. Default variant flips face + dotted border; minimal uses a dotted border only.',
+      description: 'Marks the chip as optional. The default variant goes to a dotted border; inverse also flips its face and dims its legend.',
     },
     variant: {
       control: { type: 'inline-radio', icons: KEYCAP_VARIANT_ICONS },
       options: VARIANTS,
-      description: '`default` = filled chip. `minimal` = currentColor border + legend, no fill.',
+      description: '`default` = currentColor border + legend, no fill. `inverse` = filled chip.',
     },
     platform: {
       control: 'inline-radio',
@@ -126,24 +126,21 @@ export const Wide: Story = {
   args: { label: '↵' },
 };
 
-/** Inverted chip — under the default variant, face flips, the border
- *  becomes dotted in the legend color, and the legend drops to 60%
- *  opacity. */
-export const Inverted: Story = {
-  args: { label: '⌘', inverted: true },
+/** Inverse variant — a filled chip. */
+export const Inverse: Story = {
+  args: { label: 'K', variant: 'inverse' },
 };
 
-/** Minimal variant — no fill; border + legend follow `currentColor`. Use
- *  inline in colored prose / next to colored badges where the chip should
- *  take the surrounding text color. */
-export const Minimal: Story = {
-  args: { label: 'K', variant: 'minimal' },
+/** Optional under `inverse` — the face flips, the border becomes dotted in
+ *  the legend color, and the legend drops to 60% opacity. */
+export const InverseOptional: Story = {
+  args: { label: '⌘', variant: 'inverse', inverted: true },
 };
 
-/** `minimal` inside a colored container — the chip picks up the parent's
- *  `color`. */
-export const MinimalInColoredText: Story = {
-  args: { label: '⌘', variant: 'minimal' },
+/** The default variant inside a colored container — the chip picks up the
+ *  parent's `color`. */
+export const InColoredText: Story = {
+  args: { label: '⌘' },
   render: ({ platform = 'macos', legend = 'auto', label, font, ...rest }) => (
     <span style={{ color: '#7fb069' }}>
       Press <KeyCap {...rest} label={relabel(label, platform, legend)} font={resolveFont(font)} /> to confirm.
@@ -151,10 +148,10 @@ export const MinimalInColoredText: Story = {
   ),
 };
 
-/** Optional under `minimal` — the border goes dotted to read as
- *  "may be held but isn't required." */
-export const MinimalOptional: Story = {
-  args: { label: '⇧', variant: 'minimal', inverted: true },
+/** Optional — the border goes dotted to read as "may be held but isn't
+ *  required." */
+export const Optional: Story = {
+  args: { label: '⇧', inverted: true },
 };
 
 /** Every `KeycapKind` (`square` / `modifier` / `wide`) and every variant
@@ -199,8 +196,8 @@ function KeyCapGallery({ platform, legend, font }: { platform: Platform; legend:
           <th style={cell}>kind</th>
           <th style={cell}>default</th>
           <th style={cell}>optional</th>
-          <th style={cell}>minimal</th>
-          <th style={cell}>minimal + optional</th>
+          <th style={cell}>inverse</th>
+          <th style={cell}>inverse + optional</th>
         </tr>
       </thead>
       <tbody>
@@ -212,8 +209,8 @@ function KeyCapGallery({ platform, legend, font }: { platform: Platform; legend:
               <td style={cell}>{r.kind}</td>
               <td style={cell}><KeyCap label={rendered} font={font} /></td>
               <td style={cell}><KeyCap label={rendered} inverted font={font} /></td>
-              <td style={cell}><KeyCap label={rendered} variant="minimal" font={font} /></td>
-              <td style={cell}><KeyCap label={rendered} variant="minimal" inverted font={font} /></td>
+              <td style={cell}><KeyCap label={rendered} variant="inverse" font={font} /></td>
+              <td style={cell}><KeyCap label={rendered} variant="inverse" inverted font={font} /></td>
             </tr>
           );
         })}

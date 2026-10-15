@@ -46,9 +46,9 @@ describe('KeyCap', () => {
     expect(container.querySelector('kbd')?.hasAttribute('data-variant')).toBe(false);
   });
 
-  it('tags data-variant="minimal" when variant="minimal"', () => {
-    const { container } = render(<KeyCap label="K" variant="minimal" />);
-    expect(container.querySelector('kbd')?.getAttribute('data-variant')).toBe('minimal');
+  it('tags data-variant="inverse" when variant="inverse"', () => {
+    const { container } = render(<KeyCap label="K" variant="inverse" />);
+    expect(container.querySelector('kbd')?.getAttribute('data-variant')).toBe('inverse');
   });
 
   it('omits inline font-family by default (inherits CSS-var token)', () => {
@@ -63,11 +63,11 @@ describe('KeyCap', () => {
     expect(kbd.style.fontFamily).toMatch(/Roboto Mono/);
   });
 
-  it('still surfaces data-inverted under variant="minimal" (rendered as dotted border)', () => {
-    const { container } = render(<KeyCap label="K" variant="minimal" inverted />);
+  it('still surfaces data-inverted under variant="inverse"', () => {
+    const { container } = render(<KeyCap label="K" variant="inverse" inverted />);
     const kbd = container.querySelector('kbd');
     expect(kbd?.hasAttribute('data-inverted')).toBe(true);
-    expect(kbd?.getAttribute('data-variant')).toBe('minimal');
+    expect(kbd?.getAttribute('data-variant')).toBe('inverse');
   });
 });
 
@@ -217,12 +217,12 @@ describe('KeySequence', () => {
     }
   });
 
-  it('forwards variant="minimal" to every KeyCap', () => {
+  it('forwards variant="inverse" to every KeyCap', () => {
     const { container } = render(
-      <KeySequence keys={[{ label: '⌘' }, { label: 'K' }]} variant="minimal" />,
+      <KeySequence keys={[{ label: '⌘' }, { label: 'K' }]} variant="inverse" />,
     );
     for (const chip of chips(container)) {
-      expect(chip.getAttribute('data-variant')).toBe('minimal');
+      expect(chip.getAttribute('data-variant')).toBe('inverse');
     }
   });
 });

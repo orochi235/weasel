@@ -23,21 +23,19 @@ export function inferKeycapKind(label: string): KeycapKind {
 }
 
 /** Visual style of a keycap chip. */
-export type KeyCapVariant = 'default' | 'minimal';
+export type KeyCapVariant = 'default' | 'inverse';
 
 /** Props for {@link KeyCap}. */
 export interface KeyCapProps {
   /** Glyph rendered in the chip (modifier or key). */
   label: string;
-  /** Marks the chip as not required to trigger the action. In the default
-   *  variant the chip face inverts (dark face / light glyph) for
-   *  emphasis. In the `'minimal'` variant the chip's border becomes
-   *  dotted to read as "may be held, but isn't required." */
+  /** Marks the chip as not required to trigger the action: its border
+   *  goes dotted, to read as "may be held, but isn't required." In the
+   *  `'inverse'` variant the face flips dark and the legend dims too. */
   inverted?: boolean;
-  /** Visual style. `'default'` (default) renders a filled chip; `'minimal'`
-   *  renders an unfilled chip whose border and legend are `currentColor`
-   *  — useful inline in colored prose / next to colored badges where the
-   *  chip should take the surrounding text color. */
+  /** Visual style. `'default'` renders an unfilled chip whose border and
+   *  legend are `currentColor`, so it takes the surrounding text color;
+   *  `'inverse'` renders a filled chip. */
   variant?: KeyCapVariant;
   className?: string;
   /** Optional inline style. Useful for one-off width overrides (e.g.
