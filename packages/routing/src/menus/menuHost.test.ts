@@ -78,4 +78,16 @@ describe('createMenuHost', () => {
     h.define({ id: 'row', sections: [[{ action: 'cut' }]] }, 'pen');
     expect(h.open({ menu: 'row', client: { x: 0, y: 0 } })).toBe(false);
   });
+  it('has() answers what open() would, without opening or notifying', () => {
+    const h = host();
+    const fn = vi.fn();
+    h.subscribe(fn);
+    h.define({ id: 'sel', when: { bodyTarget: 'selected-body' }, sections: [[{ action: 'cut' }]] });
+    h.define({ id: 'gone', when: { bodyTarget: 'empty' }, sections: [[{ action: 'nope' }]] });
+    expect(h.has({ hit: { bodyTarget: 'selected-body' }, client: { x: 0, y: 0 } })).toBe(true);
+    expect(h.has({ hit: { bodyTarget: 'empty' }, client: { x: 0, y: 0 } })).toBe(false);
+    expect(h.has({ menu: 'sel', client: { x: 0, y: 0 } })).toBe(true);
+    expect(h.current()).toBeNull();
+    expect(fn).not.toHaveBeenCalled();
+  });
 });

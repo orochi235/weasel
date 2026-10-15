@@ -15,6 +15,8 @@ let depGet: ((name: string) => unknown) | null = null;
 const probe: SurfaceContribution = {
   id: 'menu-host-probe',
   eligibility: { always: true },
+  actions: [{ id: 'probe.cut', label: 'Cut', invoker: { timing: 'immediate', run: () => {} } }],
+  menus: [{ id: 'probe.menu', when: { bodyTarget: 'empty' }, sections: [[{ action: 'probe.cut' }]] }],
   attach: (_api, deps) => { depGet = (name) => deps.get(name as never); return () => {}; },
 };
 

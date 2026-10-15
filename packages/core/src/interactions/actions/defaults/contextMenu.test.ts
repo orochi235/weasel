@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import { openContextMenu } from './contextMenu';
+import { createScene } from 'core/scene/scene';
+import { keyboardAnchor, openContextMenu } from './contextMenu';
 
 function deps(over: Record<string, unknown> = {}) {
   const selected: string[] = ['a'];
@@ -39,5 +40,18 @@ describe('openContextMenu', () => {
   });
   it('does nothing without a menu host', () => {
     expect(openContextMenu(deps({ menuHost: undefined }) as never, { worldX: 0, worldY: 0, clientX: 0, clientY: 0 })).toBe(false);
+  });
+
+});
+
+describe('keyboardAnchor', () => {
+  it('is the center of the selection bounds', () => {
+    const scene = createScene<unknown, 'main', unknown>({ systemLayers: [{ id: 'main' }] });
+    const id = scene.add({ kind: 'leaf', data: {}, layer: 'main', pose: { x: 10, y: 20, width: 100, height: 40 } });
+    expect(keyboardAnchor({ scene, selection: { get: () => [id] } } as never)).toEqual({ x: 60, y: 40 });
+  });
+  it('is the center of the view with nothing selected', () => {
+    const view = { get: () => ({ x: 100, y: 50, scale: { x: 2, y: 2 } }), hostSize: () => ({ width: 400, height: 200 }) };
+    expect(keyboardAnchor({ selection: { get: () => [] }, view } as never)).toEqual({ x: 200, y: 100 });
   });
 });

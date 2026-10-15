@@ -1,4 +1,4 @@
-import type { Action, ActionDeps } from '@weasel-js/routing';
+import { ActionDisabledReason, type Action, type ActionDeps } from '@weasel-js/routing';
 import type { BodyTarget } from '@weasel-js/gestures';
 import { scenePoseFrame } from '../poseFrame';
 import { nodeDescriptors, poseDescriptorOf } from '../poseDescriptorDep';
@@ -25,6 +25,21 @@ export function keyboardAnchor(deps: ActionDeps): XY | null {
   return { x, y };
 }
 
+/**
+ * The hit a menu would be picked for: the shape at `at`, counted as selected
+ * because opening selects it first; with no `at`, the current selection.
+ */
+export function menuHitFor(deps: ActionDeps, at?: XY): { bodyTarget: BodyTarget; bodyKind?: string } {
+  if (at) {
+    const id = deps.nodeAtPoint?.(at);
+    if (!id) return { bodyTarget: 'empty' };
+    return { bodyTarget: 'selected-body', bodyKind: (deps.scene?.get(id) as { kind?: string } | undefined)?.kind };
+  }
+  const ids = deps.selection?.get() ?? [];
+  const bodyKind = ids.length === 1 ? (deps.scene?.get(ids[0]!) as { kind?: string } | undefined)?.kind : undefined;
+  return { bodyTarget: ids.length ? 'selected-body' : 'empty', bodyKind };
+}
+
 /** Open the menu for a right-click, or for Shift+F10 when `params` carry no client point. */
 export function openContextMenu(
   deps: ActionDeps,
@@ -49,12 +64,7 @@ export function openContextMenu(
   const world = anchorOf(deps);
   const client = world && deps.worldToClient?.(world.x, world.y);
   if (!world || !client) return false;
-  const ids = deps.selection?.get() ?? [];
-  const bodyKind = ids.length === 1 ? (deps.scene?.get(ids[0]!) as { kind?: string } | undefined)?.kind : undefined;
-  return host.open({
-    hit: { bodyTarget: ids.length ? 'selected-body' : 'empty', bodyKind },
-    client, world, source: 'keyboard',
-  });
+  return host.open({ hit: menuHitFor(deps), client, world, source: 'keyboard' });
 }
 
 const INITIAL = [{ channel: '*', phase: 'initial' }] as const;
@@ -74,5 +84,9 @@ export const contextMenuAction: Action & { requires: string[] } = {
     { kind: 'key', key: 'ContextMenu', phase: [...INITIAL] },
   ],
   requires: ['menuHost', 'selection', 'nodeAtPoint', 'scene', 'poseDescriptor', 'view', 'worldToClient'],
+  // Disabled when no menu would open, so the dispatcher leaves the press, click and drag to whatever else is bound.
+  enabled: (deps, at) => (deps?.menuHost?.has({ hit: menuHitFor(deps, at), client: { x: 0, y: 0 }, world: at })
+    ? true
+    : ActionDisabledReason.NotApplicable),
   invoker: { timing: 'immediate', run: (deps, params) => { openContextMenu(deps, params); } },
 };

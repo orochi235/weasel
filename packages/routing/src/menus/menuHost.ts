@@ -34,6 +34,8 @@ export interface MenuHost {
   define(def: MenuDef, owner?: string | null): () => void;
   /** Pick, resolve and show. False when nothing matched or nothing resolved. */
   open(req: MenuOpenRequest): boolean;
+  /** Whether `open(req)` would show anything. Changes no state and notifies no one. */
+  has(req: MenuOpenRequest): boolean;
   close(): void;
   current(): OpenMenu | null;
   subscribe(fn: () => void): () => void;
@@ -52,6 +54,14 @@ export function createMenuHost(src: MenuSources & { activeTool(): string | null 
     emit();
   };
 
+  const resolve = (req: MenuOpenRequest): readonly MenuEntry[] => {
+    const live = mergeMenuDefs(defs, src.activeTool());
+    const def = req.menu !== undefined
+      ? live.find((d) => d.id === req.menu)
+      : req.hit ? pickMenu(live, req.hit) : undefined;
+    return def ? resolveMenu(def, src, req.world, req.params) : [];
+  };
+
   return {
     define(def, owner = null) {
       const entry = { def, owner };
@@ -62,11 +72,7 @@ export function createMenuHost(src: MenuSources & { activeTool(): string | null 
       };
     },
     open(req) {
-      const live = mergeMenuDefs(defs, src.activeTool());
-      const def = req.menu !== undefined
-        ? live.find((d) => d.id === req.menu)
-        : req.hit ? pickMenu(live, req.hit) : undefined;
-      const entries = def ? resolveMenu(def, src, req.world, req.params) : [];
+      const entries = resolve(req);
       if (!entries.length) {
         close();
         return false;
@@ -78,6 +84,7 @@ export function createMenuHost(src: MenuSources & { activeTool(): string | null 
       emit();
       return true;
     },
+    has: (req) => resolve(req).length > 0,
     close,
     current: () => open,
     subscribe(fn) {

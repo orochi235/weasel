@@ -20,7 +20,15 @@ beforeAll(() => {
 
 const defs = [{ id: 'sel', when: { bodyTarget: 'selected-body' }, sections: [[{ action: 'delete' }]] }];
 
-function setup() {
+const clicked = vi.fn();
+const clickProbe = {
+  id: 'click-probe',
+  eligibility: { always: true },
+  actions: [{ id: 'test.click', label: 'click', invoker: { timing: 'immediate', run: () => { clicked(); } } }],
+  bindings: [{ spec: { kind: 'click' }, actionId: 'test.click' }],
+};
+
+function setup(declare = true) {
   const scene = createScene<D, 'main', P>({ systemLayers: [{ id: 'main' }] });
   const ids = {} as Record<'a' | 'b', NodeId>;
   scene.batch('seed', () => {
@@ -30,7 +38,7 @@ function setup() {
   let host: MenuHost | null = null;
   let selection: SelectionApi | null = null;
   function Menus() {
-    useMenus(defs as never);
+    useMenus((declare ? defs : []) as never);
     const h = useMenuHost();
     useEffect(() => { host = h; });
     return null;
@@ -48,6 +56,7 @@ function setup() {
       <ActionsProvider>
         <SceneCanvas
           features={['pick', 'edit']} scene={scene} selection={sel} layers={{}} width={400} height={300}
+          ambient={[clickProbe as never]}
         >
           <Menus />
         </SceneCanvas>
@@ -59,7 +68,13 @@ function setup() {
   const rightClick = (x: number, y: number) => act(() => {
     canvas.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: x, clientY: y }));
   });
-  return { ids, rightClick, host: () => host!, selection: () => selection! };
+  const touchTap = (x: number, y: number, holdMs: number) => {
+    const init = { bubbles: true, pointerId: 1, pointerType: 'touch', clientX: x, clientY: y };
+    act(() => { canvas.dispatchEvent(new PointerEvent('pointerdown', { ...init, button: 0, buttons: 1 })); });
+    act(() => { vi.advanceTimersByTime(holdMs); });
+    act(() => { canvas.dispatchEvent(new PointerEvent('pointerup', init)); });
+  };
+  return { ids, rightClick, touchTap, host: () => host!, selection: () => selection! };
 }
 
 describe('menu.context', () => {
@@ -68,5 +83,24 @@ describe('menu.context', () => {
     t.rightClick(240, 130);
     expect(t.selection().get()).toEqual([t.ids.b]);
     expect(t.host().current()?.entries.map((e) => e.kind === 'item' && e.label)).toEqual(['Delete']);
+  });
+
+  it('leaves the selection alone on a right-click when no menu is declared', () => {
+    const t = setup(false);
+    t.rightClick(240, 130);
+    expect(t.selection().get()).toEqual([t.ids.a]);
+    expect(t.host().current()).toBeNull();
+  });
+
+  it('lets a long-press with no menu to open fall through to the click', () => {
+    vi.useFakeTimers();
+    try {
+      const t = setup(false);
+      clicked.mockClear();
+      t.touchTap(240, 130, 600);
+      expect(clicked).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
