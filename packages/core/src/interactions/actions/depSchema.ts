@@ -322,6 +322,13 @@ export interface InsertDep {
   layer?(): string;
 }
 
+/** Where the `insert` dep puts what it makes. Read at each insert. A node
+ *  goes onto the container's layer, with its pose made local to it when the
+ *  scene composes frames; an id naming no container is the same as `null`. */
+export interface InsertIntoDep {
+  get(): string | null;
+}
+
 /** Holder for the insert gesture in flight in one input scope. `gesture` is
  *  `insertAction`'s own state, opaque to everything else, and `null` between
  *  gestures. A source must return the same object on every read. */
@@ -458,6 +465,10 @@ declare module '@weasel-js/routing' {
      *  `insert.adjustRotation` reaches the one in its own input scope.
      *  Sourced by `<SceneCanvas>`; without it the rotation does nothing. */
     insertLive?: InsertLive;
+    /** The container the `insert` dep puts new nodes into — every shape a
+     *  tool draws and every dropped image or text. Absent, or answering
+     *  `null`: the top of the tree. */
+    insertInto?: InsertIntoDep;
     /** Snap dep — world-space point snapping (grid / guides). Sourced by
      *  `<SceneCanvas>` from `toolOptions.snapPoint`. Absent means no snapping. */
     snap?: SnapDep;

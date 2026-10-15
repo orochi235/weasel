@@ -7,7 +7,7 @@
  * live preview and the reported gesture bounds use.
  */
 import { useRef } from 'react';
-import { useDepSource } from '@weasel-js/routing/react';
+import { useDepRegistry, useDepSource } from '@weasel-js/routing/react';
 import { useLatest } from '@weasel-js/react';
 import type { InsertDep, InsertExtras, InsertLive } from 'interactions/actions/depSchema';
 import type { Scene, NodeId } from 'core/scene/types';
@@ -129,7 +129,7 @@ function boxKindData(
 }
 
 /**
- * Where an insert lands: the container `into` names, on that container's
+ * Where an insert lands: the container the `insertInto` dep names, on that container's
  * layer, with the pose made local to it when the scene composes frames —
  * or the top of the tree, on the first layer, when it names no container.
  */
@@ -158,15 +158,12 @@ export function useInsertDepSource(
   adapter: OpsApplier,
   factories?: Record<string, InsertNodeFactory>,
   paint: InsertPaint = paletteInsertPaint,
-  /** The container drawn nodes go into, read at each insert. See
-   *  `SceneCanvasProps.insertInto`. */
-  into?: () => string | null,
 ): void {
   const sceneRef = useLatest(scene);
   const adapterRef = useLatest(adapter);
   const factoriesRef = useLatest(factories);
   const paintRef = useLatest(paint);
-  const intoRef = useLatest(into);
+  const registry = useDepRegistry();
   const insertSeqRef = useRef(0);
   const liveRef = useRef<InsertLive>({ gesture: null });
   useDepSource('insertLive', () => liveRef.current);
@@ -175,7 +172,7 @@ export function useInsertDepSource(
     const sc = sceneRef.current;
     const ad = adapterRef.current;
 
-    const site = () => insertSite(sc, intoRef.current?.());
+    const site = () => insertSite(sc, registry.get('insertInto')?.get());
     const build = (
       bounds: { x: number; y: number; width: number; height: number },
       extras: InsertExtras,

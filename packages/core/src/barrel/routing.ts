@@ -86,6 +86,7 @@ export type {
   EditAnchorsDep,
   IngestionDep,
   InsertDep,
+  InsertIntoDep,
   InsertLive,
   SnapDep,
   InsertExtras,

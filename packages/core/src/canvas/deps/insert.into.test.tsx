@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { render } from '@testing-library/react';
-import { DepRegistryProvider, useDepRegistry, type DepRegistry } from '@weasel-js/routing/react';
+import { DepRegistryProvider, useDepRegistry, useDepSource, type DepRegistry } from '@weasel-js/routing/react';
 import { createScene } from 'core/scene/scene';
 import type { RectPose } from 'core/scene/composePose';
 import type { Op } from 'core/ops/types';
@@ -13,7 +13,8 @@ function wire(into: () => string | null) {
   const applied: Op[][] = [];
   let reg!: DepRegistry;
   function Wire() {
-    useInsertDepSource(scene as never, { applyOps: (ops) => { applied.push(ops); } }, undefined, undefined, into);
+    useDepSource('insertInto', () => ({ get: into }));
+    useInsertDepSource(scene as never, { applyOps: (ops) => { applied.push(ops); } });
     reg = useDepRegistry();
     return null;
   }
@@ -26,7 +27,7 @@ function wire(into: () => string | null) {
   return { group, leaf, nodeOf };
 }
 
-describe('useInsertDepSource: insertInto', () => {
+describe('useInsertDepSource: the insertInto dep', () => {
   it('puts the new node in the container it names, on that container\'s layer', () => {
     let target: string | null = null;
     const { group, nodeOf } = wire(() => target);
