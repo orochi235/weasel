@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
+import { useLatest } from '@weasel-js/react';
 import { useLayoutEffect, useRef, useState, type CSSProperties, type ReactElement } from 'react';
 import { KeyCap, type KeyCapVariant, type KeyCapProps } from './Keycap';
 import {
@@ -415,8 +416,7 @@ let measureCtx: CanvasRenderingContext2D | null = null;
 function FitCap({ label, width, font }: { label: string; width: string; font?: string }): ReactElement {
   const ref = useRef<HTMLSpanElement>(null);
   const [fit, setFit] = useState({ label, scale: 1 });
-  const scaleRef = useRef(1);
-  scaleRef.current = fit.scale;
+  const scale = useLatest(fit.scale);
 
   useLayoutEffect(() => {
     const kbd = ref.current?.querySelector('kbd');
@@ -428,7 +428,7 @@ function FitCap({ label, width, font }: { label: string; width: string; font?: s
       const ctx = measureCtx;
       const cs = getComputedStyle(kbd);
       const px = (v: string) => parseFloat(v) || 0;
-      const size = px(cs.fontSize) / scaleRef.current;
+      const size = px(cs.fontSize) / scale.current;
       ctx.font = `${LAYOUT_WEIGHT} ${size}px ${cs.fontFamily}`;
       const roomW = kbd.clientWidth - px(cs.paddingLeft) - px(cs.paddingRight);
       const roomH = kbd.clientHeight - px(cs.paddingTop) - px(cs.paddingBottom) - 4;
@@ -446,7 +446,7 @@ function FitCap({ label, width, font }: { label: string; width: string; font?: s
     measure();
     void document.fonts?.ready.then(measure);
     return () => { live = false; };
-  }, [label, width, font]);
+  }, [label, width, font, scale]);
 
   return (
     // A flex box, not a line box: a two-line legend's baseline would otherwise
