@@ -527,6 +527,20 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 ## Selection, actions & UI panels
 
+- **(P2) Context menus.** Designed in `docs/superpowers/specs/2026-10-15-context-menu-design.md`
+  (branch `context-menu`), none of it built: a headless `@weasel-js/menu` model, menus declared
+  as action references, a default `contextMenu` action, DOM and WebGL renderers, and WeaselDraw's
+  canvas and layer-list menus.
+
+- **(P4) A headless-component layer shared by DOM and WebGL chrome.** The context-menu model
+  splits state, keyboard and placement from drawing so one menu renders in both. Generalize that
+  split (focus, roving highlight, placement, a measure/draw contract) so buttons, lists and other
+  chrome can draw on either substrate from one behavior.
+
+- **(P4) The WebGL context menu has no screen-reader surface.** `attachMenuHost` draws into the
+  canvas and exposes only `accessibleName`. Mirror the open menu as hidden DOM with menu roles,
+  kept in step with the model's highlight.
+
 - **(P2) Labs still tune actions through the experimental `actions` prop.** The extend-path-end
   and dynamic-corners labs (on their own branches when `tune` landed) set `mode` and a K binding
   by restating whole descriptors through `actions`. Move each to `<SceneCanvas tune>` as it
