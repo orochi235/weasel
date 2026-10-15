@@ -7,6 +7,7 @@ import type { CurveRepresentation, Discriminator, SharedAnchor } from './types';
 import { PATH_C, PATH_M } from '../commands';
 import { segmentAt } from './anchorHandles';
 import { cubicPointAt } from '../paths/cubicMath';
+import { cubicCurvatureAt } from '../paths/curvature';
 
 const TANGENT_SCALE = 1 / 3;
 
@@ -104,15 +105,7 @@ export const spiro: CurveRepresentation = {
     const a = anchors[segIdx];
     const b = anchors[segIdx + 1];
     const { c1, c2 } = controlsFor(anchors, segIdx);
-    const u = 1 - localT;
-    const d1x = 3 * u * u * (c1.x - a.x) + 6 * u * localT * (c2.x - c1.x) + 3 * localT * localT * (b.x - c2.x);
-    const d1y = 3 * u * u * (c1.y - a.y) + 6 * u * localT * (c2.y - c1.y) + 3 * localT * localT * (b.y - c2.y);
-    const d2x = 6 * u * (c2.x - 2 * c1.x + a.x) + 6 * localT * (b.x - 2 * c2.x + c1.x);
-    const d2y = 6 * u * (c2.y - 2 * c1.y + a.y) + 6 * localT * (b.y - 2 * c2.y + c1.y);
-    const num = d1x * d2y - d1y * d2x;
-    const den = Math.pow(d1x * d1x + d1y * d1y, 1.5);
-    if (den < 1e-12) return 0;
-    return num / den;
+    return cubicCurvatureAt(a, c1, c2, b, localT);
   },
   discriminators(anchors) {
     const out: Discriminator[] = [];
