@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import type { AffordanceHit, ImmediateInvoker, InvocationCtx } from '@weasel-js/routing';
-import { cornerAt, cornerSpecAt, polygonFromPoints, withCorner, type PolygonPath } from '@weasel-js/geom';
+import { cornerAt, cornerSpecAt, polygonFromPoints, resolveCorners, withCorner, type PolygonPath } from '@weasel-js/geom';
 import type { EditAnchorsDep } from '../depSchema';
 import { makeEditAnchorsDep, stubDeps } from '../testUtils';
 import { editCornerAction } from './action';
-import { cycleCornerStyleAction, setCornersAction } from './commands';
+import { cycleCornerStyleAction, DEFAULT_CORNER_TRIM_SHARE, setCornersAction } from './commands';
 
 const square = (): PolygonPath =>
   polygonFromPoints([{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 100 }, { x: 0, y: 100 }]);
@@ -100,10 +100,12 @@ describe('cycleCornerStyleAction', () => {
     expect(spec.radius).toBeCloseTo(10, 9);
   });
 
-  it('gives a bare corner the style after round, for a drag to size', () => {
+  it('gives a bare corner the style after round and a radius that shows it', () => {
     const { dep, edits } = editing(square(), [3]);
     run(dep);
-    expect(cornerSpecAt(edits[0], 3)).toEqual({ style: 'chamfer', radius: 0 });
+    expect(cornerSpecAt(edits[0], 3)?.style).toBe('chamfer');
+    expect(cornerSpecAt(edits[0], 3)?.radius).toBeCloseTo(DEFAULT_CORNER_TRIM_SHARE * 100, 6);
+    expect(resolveCorners(edits[0]).coords.length).toBeGreaterThan(square().coords.length);
   });
 
   it('is disabled with no corner anchor selected', () => {
@@ -122,6 +124,14 @@ describe('setCornersAction', () => {
     expect(cornerSpecAt(edits[0], 0)).toEqual({ style: 'inverted', radius: 100 });
     expect(cornerSpecAt(edits[0], 2)).toEqual({ style: 'inverted', radius: 100 });
     expect(cornerSpecAt(edits[0], 1)).toBeNull();
+  });
+
+  it('gives a bare corner a visible radius with its style, unless the call names one', () => {
+    const { dep, edits } = editing(square(), [1]);
+    run(dep, { style: 'inverted' });
+    expect(cornerSpecAt(edits[0], 1)?.radius).toBeGreaterThan(0);
+    run(dep, { style: 'chamfer', radius: 7 });
+    expect(cornerSpecAt(edits[1], 1)).toEqual({ style: 'chamfer', radius: 7 });
   });
 
   it('keeps the style when only a radius is given', () => {

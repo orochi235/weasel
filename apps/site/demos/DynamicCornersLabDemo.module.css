@@ -1,0 +1,23 @@
+.frame {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.panel {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 240px;
+  padding: 8px 10px;
+  border: 1px solid var(--wzl-border);
+  border-radius: 6px;
+  background: var(--wzl-surface-raised);
+  color: var(--wzl-fg);
+}
+
+.prompt {
+  margin: 0 0 6px;
+  font-size: var(--wzl-font-size-sm);
+  color: var(--wzl-fg-muted);
+}

@@ -1,6 +1,6 @@
 import { act, cleanup, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import type { PolygonPath } from '@weasel-js/core';
+import { resolveCorners, type PolygonPath } from '@weasel-js/core';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { DynamicCornersLabDemo } from '../DynamicCornersLabDemo';
@@ -34,8 +34,8 @@ const tileCorners = () => {
 
 // jsdom's canvas rect is all zeros and the view is identity, so client
 // coords are world coords.
-function pointer(canvas: Element, type: string, x: number, y: number) {
-  canvas.dispatchEvent(new PointerEvent(type, { bubbles: true, clientX: x, clientY: y, pointerId: 1, button: 0, buttons: 1 }));
+function pointer(canvas: Element, type: string, x: number, y: number, shiftKey = false) {
+  canvas.dispatchEvent(new PointerEvent(type, { bubbles: true, clientX: x, clientY: y, pointerId: 1, button: 0, buttons: 1, shiftKey }));
 }
 function drag(canvas: Element, [x0, y0]: number[], [x1, y1]: number[]) {
   act(() => {
@@ -45,12 +45,17 @@ function drag(canvas: Element, [x0, y0]: number[], [x1, y1]: number[]) {
     pointer(canvas, 'pointerup', x1, y1);
   });
 }
-function click(canvas: Element, x: number, y: number) {
+function click(canvas: Element, x: number, y: number, shiftKey = false) {
   act(() => {
-    pointer(canvas, 'pointerdown', x, y);
-    pointer(canvas, 'pointerup', x, y);
+    pointer(canvas, 'pointerdown', x, y, shiftKey);
+    pointer(canvas, 'pointerup', x, y, shiftKey);
   });
 }
+
+const tilePath = () =>
+  (window.__weaselTest!.getScene().nodes.find((n) => n.id === 'tile')!.data as { path: PolygonPath }).path;
+const radiusField = () => screen.getByRole('spinbutton', { name: 'Radius' }) as HTMLInputElement;
+const styleButton = (name: string) => screen.getByRole('radio', { name });
 
 async function mount() {
   const { container } = await renderSettled(<DynamicCornersLabDemo />);
@@ -82,11 +87,42 @@ describe('DynamicCornersLabDemo', () => {
     expect(tileCorners()[1]?.style).toBe('chamfer');
   });
 
-  it("sets a selected corner's style from the control panel", async () => {
+  it('opens on a selected sharp corner, which a style turns into a visible one', async () => {
+    await mount();
+    expect(radiusField().value).toBe('0');
+    expect(styleButton('chamfer')).toHaveAttribute('aria-checked', 'false');
+    const before = resolveCorners(tilePath()).coords.length;
+
+    await userEvent.click(styleButton('chamfer'));
+    expect(tileCorners()[2]?.style).toBe('chamfer');
+    expect(tileCorners()[2]?.radius).toBeGreaterThan(0);
+    expect(resolveCorners(tilePath()).coords.length).toBeGreaterThan(before);
+    expect(styleButton('chamfer')).toHaveAttribute('aria-checked', 'true');
+  });
+
+  it("shows the selected corners' style and radius, mixed where they differ", async () => {
     const canvas = await mount();
     click(canvas, 220, 60);
-    await userEvent.click(screen.getByRole('radio', { name: 'inverted' }));
+    expect(styleButton('round')).toHaveAttribute('aria-checked', 'true');
+    expect(radiusField().value).toBe('24');
+
+    click(canvas, 160, 200, true);
+    expect(styleButton('round')).toHaveAttribute('aria-checked', 'false');
+    expect(styleButton('chamfer')).toHaveAttribute('aria-checked', 'false');
+    expect(radiusField().value).toBe('');
+
+    await userEvent.click(styleButton('inverted'));
     expect(tileCorners()[1]?.style).toBe('inverted');
-    expect(tileCorners()[1]?.radius).toBeCloseTo(24, 6);
+    expect(tileCorners()[3]?.style).toBe('inverted');
+    expect(styleButton('inverted')).toHaveAttribute('aria-checked', 'true');
+  });
+
+  it('disables the controls and says what to do with no corner selected', async () => {
+    const canvas = await mount();
+    expect(screen.queryByText(/Click a corner anchor/)).toBeNull();
+    click(canvas, 140, 130);
+    expect(screen.getByText('Click a corner anchor (Shift-click for more) to edit it')).toBeInTheDocument();
+    expect(radiusField()).toBeDisabled();
+    expect(styleButton('round')).toBeDisabled();
   });
 });

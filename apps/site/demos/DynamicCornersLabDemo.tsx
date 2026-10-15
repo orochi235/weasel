@@ -8,7 +8,6 @@ import {
   type PolygonPath,
   type RectPose,
   solid,
-  useActionsRegistry,
   withCorner,
 } from '@weasel-js/core';
 import {
@@ -22,19 +21,22 @@ import {
   useTrialScene,
 } from '@weasel-js/labkit';
 import { PenIcon, SelectIcon } from '@weasel-js/ui';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
+import { CornerPanel, type CornerSelection } from './DynamicCornersPanel';
+import s from './DynamicCornersLabDemo.module.css';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 
-const config = f.schema({
-  style: f.enum('round', ['round', 'chamfer', 'inverted']).radio().label('Style of selected corners'),
-  radius: f.number(16).range(0, 80).step(1).suffix('px').label('Radius of selected corners'),
-});
+// The corner controls read the selection, so they sit over the canvas
+// rather than in the trial's config.
+const config = f.schema({});
 type Config = ConfigOf<typeof config>;
 type State = SceneTrialState<unknown, 'default', RectPose>;
 
-/** The path open for anchor editing as the lab starts. */
+/** The path open for anchor editing as the lab starts, and its selected
+ *  anchor: the sharp corner at (220, 140). */
 const FIRST = 'tile';
+const FIRST_ANCHORS: ReadonlySet<number> = new Set([2]);
 
 function pathNode(id: string, path: PolygonPath, color: string, vertexColors?: number[]) {
   const { x, y, width, height } = boundsOfPath(path);
@@ -72,46 +74,36 @@ const createLabScene = () =>
     ],
   });
 
-/** Which path is open for anchor editing, kept beside the trial so the lab
- *  opens on one; double-clicking another switches. */
-function useEditHost(): { host: PathEditHost; changed: { subscribe(l: () => void): () => void } } {
+/** Which path is open and which of its anchors are selected, held beside the
+ *  trial so the lab opens on one corner and its panel can read them. */
+function useEditHost(): { host: PathEditHost; selection: CornerSelection } {
   return useState(() => {
     let id: string | null = FIRST;
+    let anchors = FIRST_ANCHORS;
     const listeners = new Set<() => void>();
+    const changed = () => listeners.forEach((l) => l());
+    const subscribe = (l: () => void) => { listeners.add(l); return () => { listeners.delete(l); }; };
     return {
       host: {
         editingId: () => id,
-        setEditingId: (next: string | null) => { id = next; listeners.forEach((l) => l()); },
+        setEditingId: (next: string | null) => { id = next; changed(); },
+        selectedAnchors: () => anchors,
+        setSelectedAnchors: (next: ReadonlySet<number>) => { anchors = next; changed(); },
       },
-      changed: { subscribe: (l: () => void) => { listeners.add(l); return () => listeners.delete(l); } },
+      selection: { editingId: () => id, selectedAnchors: () => anchors, subscribe },
     };
   })[0];
-}
-
-/** Sends each change of a control to the selected corners: the field that
- *  moved, and only once it moves. */
-function CornerControls({ style, radius }: Config) {
-  const actions = useActionsRegistry();
-  const last = useRef({ style, radius });
-  useEffect(() => {
-    const prev = last.current;
-    last.current = { style, radius };
-    if (style !== prev.style) actions?.trigger('setCorners', { style });
-    if (radius !== prev.radius) actions?.trigger('setCorners', { radius });
-  }, [actions, style, radius]);
-  return null;
 }
 
 const TUNE: ActionTunings = { cycleCornerStyle: { bindings: [{ kind: 'key', key: 'k' }] } };
 
 function CornersTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const scene = useTrialScene(ctx, createLabScene);
-  const { host, changed } = useEditHost();
-  const redrawOn = useMemo(() => [changed], [changed]);
+  const { host, selection } = useEditHost();
+  const redrawOn = useMemo(() => [selection], [selection]);
   const selectionOptions = useMemo(() => ({ initial: [asNodeId(FIRST)] }), []);
   return (
-    <>
-      <CornerControls style={ctx.config.style} radius={ctx.config.radius} />
+    <div className={s.frame}>
       <TrialSceneCanvas
         features={['draw']}
         defaultTools={['pen']}
@@ -122,7 +114,8 @@ function CornersTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
         selectionOptions={selectionOptions}
         tune={TUNE}
       />
-    </>
+      <CornerPanel scene={scene} selection={selection} />
+    </div>
   );
 }
 

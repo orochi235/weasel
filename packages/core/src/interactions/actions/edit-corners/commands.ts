@@ -20,6 +20,9 @@ import type { EditAnchorsDep } from '../depSchema';
 import { depOf, requiresAnchorSelection } from '../defaults/anchorEditing';
 import { DEFAULT_CORNER_STYLE, editedPath } from './action';
 
+/** The share of a corner's room that a style given to a sharp corner cuts. */
+export const DEFAULT_CORNER_TRIM_SHARE = 0.25;
+
 /** The selected anchors of the edited path that can take a corner. */
 function selectedCorners(dep: EditAnchorsDep, path: PolygonPath): CornerFrame[] {
   return cornerFrames(path).filter((f) => dep.selectedAnchors.has(f.index));
@@ -34,16 +37,19 @@ interface CornerChange {
 /**
  * `path` with `change` made to every corner in `frames`. A new style keeps
  * the cut a radius makes, converting the number, and a radius is clamped to
- * the room each corner has.
+ * the room each corner has. A style given to a sharp corner, with no radius,
+ * cuts {@link DEFAULT_CORNER_TRIM_SHARE} of its room.
  */
 function changeCorners(path: PolygonPath, frames: readonly CornerFrame[], change: CornerChange): PolygonPath {
   let out = path;
   for (const f of frames) {
     const spec = cornerSpecAt(path, f.index);
     const style = change.style ?? spec?.style ?? DEFAULT_CORNER_STYLE;
-    const trim = change.radius !== undefined
+    let trim = change.radius !== undefined
       ? cornerTrimOf(style, Math.max(0, change.radius), f.halfAngle)
       : spec ? cornerTrimOf(spec.style, spec.radius, f.halfAngle) : 0;
+    // Every style looks alike at no radius, so a style alone cuts a visible corner.
+    if (change.style && change.radius === undefined && trim <= 0) trim = DEFAULT_CORNER_TRIM_SHARE * f.maxTrim;
     out = withCorner(out, f.index, {
       style,
       radius: cornerRadiusOf(style, Math.min(trim, f.maxTrim), f.halfAngle),
@@ -73,8 +79,9 @@ const isStyle = (v: unknown): v is CornerStyle => CORNER_STYLES.includes(v as Co
 
 /**
  * Set the selected corners' style, radius, or both, from the `style` and
- * `radius` params; each is left alone when its param is absent. A UI
- * control's action: it has no default binding.
+ * `radius` params; each is left alone when its param is absent, except that
+ * a style given to a sharp corner also gives it a radius. A UI control's
+ * action: it has no default binding.
  */
 export const setCornersAction: Action & { requires: string[] } = {
   id: 'setCorners',
@@ -99,8 +106,7 @@ export const setCornersAction: Action & { requires: string[] } = {
 /**
  * Step the selected corners to the next style, keeping their cut. Every one
  * takes the style after the first selected corner's, so a mixed selection
- * comes out alike. A corner with no radius yet keeps the style for the drag
- * that gives it one.
+ * comes out alike, and a sharp corner gets a radius that shows it.
  */
 export const cycleCornerStyleAction: Action & { requires: string[] } = {
   id: 'cycleCornerStyle',
