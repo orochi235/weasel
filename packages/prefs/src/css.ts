@@ -29,7 +29,8 @@ export interface PrefsCssSource {
   get(path: string): unknown;
 }
 
-const kebab = (path: string): string => path.replace(/\./g, '-').replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
+/** A path as the default names spell it: `look.gridGap` is `look-grid-gap`. */
+export const kebab = (path: string): string => path.replace(/\./g, '-').replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
 
 /** The CSS unit a number leaf's suffix names, for the suffixes that name one. */
 const CSS_UNITS: Readonly<Record<string, string>> = {
