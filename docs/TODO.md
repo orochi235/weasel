@@ -188,6 +188,9 @@ Priority tags:
 - **(P2) Tune Bridge hands-on, with the maintainer driving.** First-draft default Tension (0.4,
   `DEFAULT_BRIDGE_TENSION`), how Tension is reached outside the lab, and the Mod+Shift+J binding
   it shares with Bridge anchors (`pathCommands/cutJoin.ts`, `defaults/anchorJoin.ts`).
+- **(P2) Tune Blend, Bend along a path, and Repeat along a path hands-on, with the maintainer
+  driving.** First-draft step counts, spacing, and turn defaults, their keys, and how an effect is
+  re-edited and expanded (`interactions/actions/pathEffects/`, `features/pathEffects/`).
 - **(P2) Tune draw's Symmetry toggle hands-on, with the maintainer driving.** Its key, the default
   kind and copy count, and where a new group's center lands (`toggleSymmetry`,
   `apps/draw/src/useSymmetry.ts`).
