@@ -1,5 +1,148 @@
 # @weasel-js/labkit
 
+## 1.10.1
+
+### Patch Changes
+
+- b6e04e2: `ActionBar` is a `Bar` of `action` leaves, one per registered action in its group, so it draws its buttons, tooltips, and disabled and pressed states the way every other bar does. Breaking: its `icons` prop takes icon names (`Record<string, string>`, glyphs of the kit's icon set, as a leaf's `icon`) where it took `ReactNode`s, and its buttons no longer carry `data-testid="action-bar-item-<key>"`; find one by its role and name. `Bar`'s gap reads `--bar-gap`, which `ActionBar` sets to keep its buttons close.
+  
+  A group or a section drawn `as: 'bar'` says what happens to the cells its line has no room for. Additive: `PrefGroup` and `PrefSection` gain `overflow` (`'scroll'`, the default, or `'menu'`), typed `PrefBarOverflow`, and every surface that draws such a bar reads it: `Bar` (under its own `overflow` prop), `PrefsForm`, `SelectionPanel`, an object leaf's rows, and labkit's `ControlPanel`, whose builder gains `.overflow()`. `PrefSchemaEditor` offers it as "Overflow" on a node drawn as a bar. A form that takes drops, as the schema editor's preview does, keeps every cell on the line whatever the group says, so each stays a place to drop beside. `scroll` stays the default because a bar set to `menu` takes all the room its host has along the line.
+- 88322e8: labkit's `LabSwitcher` is a `MenuButton`, so its menu wears the popover skin `MenuButton`, `Select`, and `ComboBox` share and its own copy of that skin is gone. Breaking for a host that styled it: the `lk-switcher`, `lk-switcher-trigger`, `lk-switcher-caret`, `lk-switcher-menu`, and `lk-switcher-item` classes no longer exist, a `className` lands on the `<h1>`, and the menu renders in the overlay portal instead of under the title.
+  
+  Additive in `@weasel-js/ui`: a `MenuButton` row takes `href`, which makes it a link, and `isCurrent`, which marks it `aria-current="page"` and draws it bold; `bare` draws the trigger as its label and a caret in the type around it, with no field frame; and `onAction` is optional.
+- e41f61f: A list of plain text entries in a lab's control panel now disables each entry by the item's own `enableIf`, where that condition reads the entry (`{ from: 'item' }`), as `PrefsForm` and `SelectionPanel` already did. Additive: `@weasel-js/ui` exports `entriesDisabled` and `entryDisabledAt`, the two questions a surface asks about a list's entries.
+- ddfa72f: labkit's Recipes and Agent guide are on its page of the weasel site now, at `https://orochi235.github.io/weasel/#pkg/labkit/guides/recipes` and `.../guides/agents`, and the README links there. The VitePress site at `/weasel/labkit/` is no longer built, so a link to it stops working. No code changed.
+- f7827d4: labkit's `dist` no longer inlines any `@weasel-js` package. It used to bundle every sibling but
+  core, theme, and the animator, so an app holding labkit and, say, `@weasel-js/quantity` ran two
+  copies: a display kind registered with `registerDisplayKind` was unknown inside labkit, and
+  `@weasel-js/ui`'s `RecentColorsProvider` and overlay portal host existed twice. Every sibling is
+  now an import the consumer's install resolves, which it already was in the declarations.
+  
+  Breaking for a consumer that relied on the bundle: a page loading labkit's `dist` with no package
+  resolution now needs labkit's dependencies resolvable too.
+- 09b0bf2: A stored trial or snapshot that fails to load is listed in the lab, in a strip above the workspace, with a Discard button that deletes its record. It used to be left out with only a console warning, and nothing could remove the record. Additive: the lab store holds the list as `unreadable` and deletes one with `discardUnreadable(kind, id)`; `UnreadableRecord` is the entry's type. A record another tab stores unreadably is listed too, and unlisted once that tab stores it readably or deletes it.
+- 947ced3: A trial's view that nobody has moved is placed again when its viewport changes size. With an `initialView` that depends on the viewport, which a `stage` has by default (`fitStage`), adding a trial used to narrow the first trial's stage and leave its content past the edge, at the pan it opened with. A view that has been panned or zoomed keeps its pan through a resize, as before. This changes behavior for a canvas instrument whose `initialView` is a function too: it is called again on a resize while the view still sits where it last put it.
+- 886380f: Each README's "API reference" link now opens the package's page on the site, `https://orochi235.github.io/weasel/#pkg/<name>`, where it used to open the TypeDoc site at `/weasel/api/`, which is no longer built. A file comment that sat on an `export { … }` list is now marked as the file's, so an entry's description no longer shows up as the summary of each function the entry re-exports. No code changed. `@weasel-js/labkit` drops `vitepress` from its devDependencies, which nothing used.
+- 5b890ad: A slider dragged in a `SelectionPanel` or a selection `Bar` leaves one undo step, back to where each node was before the drag. Every move used to be a step of its own. The moves are still written to the scene as they happen, through `scene.untracked`, so the canvas follows the thumb.
+  
+  Additive: a `PropertyRenderContext` carries `drafts`, a `setValue` and `update` for the values on the way to the one an edit settles on, which a custom renderer with a drag of its own can write through; `withDrafts` and `liveControl` sit beside `withCommitPolicy`. `PARAMS_TEXT_WAIT_MS` says how long typed text waits before a live write on each surface, and labkit's `ControlPanel` reads its 150 ms from it.
+- d30823f: A leaf marked `heading` is drawn in the heading of the group holding it, in place of a row of its own. Additive: `PrefLeaf` gains `heading`, which labkit's `.heading()` already wrote and only `ControlPanel` read; `@weasel-js/prefs` exports `prefHeadingKey` and `prefFitsHeading`, which say which leaf a heading carries and whether a control fits there (a built-in `boolean` or `enum`). `PrefsForm` draws it in a page's, a section's, a panel's, and a column's heading, under the group's name, and `PrefSchemaEditor` lists the attribute as "In heading".
+  
+  labkit's `sectionTree` marks the leaf a control panel would lift, so a form drawn from it shows the same control in the same heading, including a first row that only repeats its heading. Its warning for that row now says the row is drawn in the heading, as the panel's does.
+- 15dede7: A weasel scene can be a trial's subject. `<TrialSceneCanvas>` is a `<SceneCanvas>` that fills an instrument's trial and takes part in it: the trial's tool palette and the canvas's active tool are one value, moved by either, and the trial's Undo and Redo, buttons and Mod+Z alike, step the scene's own history. `useTrialScene(ctx, create)` builds the scene once per trial and keeps it in the trial's `state.scene`, so persistence, Reset, Clone, and snapshots carry it, loading any change from outside into the same `Scene`. `SceneTrialState` is that state's shape.
+  
+  `useTrialHistory(source)` hands a trial any history an instrument keeps itself — `canUndo`, `canRedo`, `undo`, `redo`, and `subscribe`. While one is mounted, the trial's Undo and Redo step it and `setState` stops snapshotting `state`; the buttons still come from declaring `undo`. `RenderContext.trial` gains `setActiveTool`, which writes the slot `activeToolId` reads.
+  
+  The weasel-lab, minimal, and drag-lab examples are rebuilt on these, and no longer push every scene mutation through labkit's snapshot stack.
+- 14f6571: A trial whose palette opens on a tool its scene canvas has not registered, such as a path-edit tool a lab holds itself, kept it only until the canvas settled on its own default: the canvas reported no tool and then Select, and the palette followed it. The tool slot now takes a canvas report as a pick only once the canvas holds a tool and has caught up with any tool the slot asked it to take. Before that, the canvas is settling, and the slot's tool is pushed onto it rather than replaced by its default.
+- 0c4a384: A `<TrialSceneCanvas>` whose trial picks a tool as it mounts no longer locks the page up with "Maximum update depth exceeded". The canvas reported the tool it had before the pick, the tool slot took that as a change made on the canvas and wrote it back, and the two traded values for good — reliably under `StrictMode`. The slot now waits for the canvas to report a tool it was told to take before it reads the canvas's tool as a choice of its own. A trial's tool write of the tool it already holds no longer notifies the store's subscribers either.
+- 365eae0: A linear unit stores a decimal typed at a decimal `scale` as the decimal the two multiply to: 33.3 at a scale of 0.01 is 0.333, where it was 0.33299999999999996. Nothing is rounded away, and a scale that is no short decimal (degrees over radians) converts as before.
+  
+  The text tool's percent unit for `fontScale` and `baselineShift` is that data now (`{ scale: 0.01, precision: 1, suffix: '%' }`) and no longer a pair of functions, so the run properties print as a literal. Breaking in one detail: a percentage typed to more than three places is stored as typed, where it was cut to five places of the stored fraction.
+  
+  labkit's one-line summary of a compound leaf writes each number that has a unit as its field shows it, in an object's fields, a list's and a map's entries, and a union's variant, and writes a list of objects entry by entry where it wrote `[object Object]`. Additive: `summarizeLeaf(leaf, value)` is exported beside `summarizeValue`, and `inDialog`'s default summary is the leaf's.
+- fd4520a: A trial's viewport controls are `@weasel-js/ui` ghost icon `Button`s, so each wears the kit's hover and pressed fills and names itself in a kit tooltip where it had a native `title`. Breaking for a host that styled them: the `lk-viewport-controls__button` class no longer exists.
+- Updated dependencies [b6e04e2]
+- Updated dependencies [2445052]
+- Updated dependencies [113c088]
+- Updated dependencies [cbd5b4d]
+- Updated dependencies [d3b73b9]
+- Updated dependencies [aaa2b4f]
+- Updated dependencies [1fe1c2b]
+- Updated dependencies [3d15a20]
+- Updated dependencies [c7b7ed5]
+- Updated dependencies [faf8ff3]
+- Updated dependencies [8bee821]
+- Updated dependencies [3fda6e6]
+- Updated dependencies [a7bd356]
+- Updated dependencies [88b8840]
+- Updated dependencies [6e99dbd]
+- Updated dependencies [19da739]
+- Updated dependencies [d8c9a75]
+- Updated dependencies [67a7de8]
+- Updated dependencies [a713caa]
+- Updated dependencies [f6e3e90]
+- Updated dependencies [74ba77e]
+- Updated dependencies [a8e8048]
+- Updated dependencies [63fff44]
+- Updated dependencies [755b7ff]
+- Updated dependencies [1d3ca5c]
+- Updated dependencies [fa20203]
+- Updated dependencies [566f15e]
+- Updated dependencies [ee59ccd]
+- Updated dependencies [e88b291]
+- Updated dependencies [a05096a]
+- Updated dependencies [f22f5ce]
+- Updated dependencies [7810d7c]
+- Updated dependencies [88322e8]
+- Updated dependencies [e41f61f]
+- Updated dependencies [92e6291]
+- Updated dependencies [ff35a6d]
+- Updated dependencies [b8bfb2d]
+- Updated dependencies [b3b5ccd]
+- Updated dependencies [2216d1b]
+- Updated dependencies [784e255]
+- Updated dependencies [40cbb3b]
+- Updated dependencies [a7144f4]
+- Updated dependencies [35c4879]
+- Updated dependencies [9eefcc7]
+- Updated dependencies [886380f]
+- Updated dependencies [e771f58]
+- Updated dependencies [f8faa63]
+- Updated dependencies [5b890ad]
+- Updated dependencies [3bc85c9]
+- Updated dependencies [d8b51a4]
+- Updated dependencies [d0c3896]
+- Updated dependencies [3448831]
+- Updated dependencies [10449af]
+- Updated dependencies [e05a5f9]
+- Updated dependencies [d30823f]
+- Updated dependencies [815a447]
+- Updated dependencies [42db2c4]
+- Updated dependencies [0be7a53]
+- Updated dependencies [f51ecce]
+- Updated dependencies [27fe0fb]
+- Updated dependencies [8bbf878]
+- Updated dependencies [b5267f9]
+- Updated dependencies [85d4035]
+- Updated dependencies [b8fbcc5]
+- Updated dependencies [62e766c]
+- Updated dependencies [5485d35]
+- Updated dependencies [690ea72]
+- Updated dependencies [ab9ea7a]
+- Updated dependencies [7a9d331]
+- Updated dependencies [22f129f]
+- Updated dependencies [a9cbaa7]
+- Updated dependencies [0b5ff3b]
+- Updated dependencies [a3c34b4]
+- Updated dependencies [e962494]
+- Updated dependencies [bad37cf]
+- Updated dependencies [9e84e5d]
+- Updated dependencies [c56fc4a]
+- Updated dependencies [bd6c203]
+- Updated dependencies [1e6d23f]
+- Updated dependencies [ef29364]
+- Updated dependencies [2f48645]
+- Updated dependencies [1f32358]
+- Updated dependencies [52f488f]
+- Updated dependencies [92c2e8e]
+- Updated dependencies [711ae46]
+- Updated dependencies [365eae0]
+- Updated dependencies [781a15e]
+- Updated dependencies [a092978]
+  - @weasel-js/ui@1.10.1
+  - @weasel-js/prefs@1.10.1
+  - @weasel-js/core@1.10.1
+  - @weasel-js/geom@1.10.1
+  - @weasel-js/svg@1.10.1
+  - @weasel-js/animator@1.10.1
+  - @weasel-js/theme@1.10.1
+  - @weasel-js/storage@1.10.1
+  - @weasel-js/minimap@1.10.1
+  - @weasel-js/quantity@1.10.1
+  - @weasel-js/registry@1.10.1
+  - @weasel-js/loupe@1.10.1
+
 ## 1.10.0
 
 ### Patch Changes
