@@ -1,4 +1,8 @@
-/** Part of the `@weasel-js/core` barrel. Paths, curves, and boolean operations. */
+/**
+ * Part of the `@weasel-js/core` barrel. Paths, curves, and boolean operations.
+ *
+ * @packageDocumentation
+ */
 
 // ─── Paths: data, builders, hit-tests, boolean ops, pen preview ─────────────
 export {

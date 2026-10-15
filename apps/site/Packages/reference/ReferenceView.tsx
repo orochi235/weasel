@@ -1,3 +1,4 @@
+import { InlineMarkdown } from '@weasel-js/ui';
 import { packageRoute, splitReferencePath } from '../../../shared/packageRoutes';
 import type { PackageReference, ReferenceSymbol } from '../../../shared/reference';
 import { Prose } from '../../Prose';
@@ -71,11 +72,14 @@ function SymbolBody({ symbol }: { symbol: ReferenceSymbol }) {
       return <ClassPage symbol={symbol} />;
     case 'alias':
       return (
-        <p className={s.note}>
-          {symbol.to
-            ? <>Re-exported. <a href={`#${symbol.to}`}>See where it is declared.</a></>
-            : 'Re-exported from a package this reference does not document.'}
-        </p>
+        <>
+          {symbol.summary && <p><InlineMarkdown text={symbol.summary} links="text" /></p>}
+          <p className={s.note}>
+            {symbol.to
+              ? <>Re-exported. <a href={`#${symbol.to}`}>See where it is declared.</a></>
+              : 'Re-exported from a package this reference does not document.'}
+          </p>
+        </>
       );
     default:
       return <TypePage symbol={symbol} />;

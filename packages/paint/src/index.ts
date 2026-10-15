@@ -1,4 +1,8 @@
-/** @weasel-js/paint — the kit's paint vocabulary. Plain data, no renderer. */
+/**
+ * @weasel-js/paint — the kit's paint vocabulary. Plain data, no renderer.
+ *
+ * @packageDocumentation
+ */
 export type { TextureHandle } from './texture';
 export type {
   CommandFill, CommandPaint, CommandPaintUnits, CommandStroke, InCommandUnits, PosedPaint, SolidPaint,

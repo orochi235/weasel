@@ -5,6 +5,8 @@
  * and edges are scene nodes, which is what buys selection, hit-testing, hover,
  * styling, z-order, SVG export, undo and copy/paste without implementing any
  * of them.
+ *
+ * @packageDocumentation
  */
 export {
   bodyOutline,

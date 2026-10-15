@@ -1,4 +1,8 @@
-/** Part of the `@weasel-js/core` barrel. Renderer types and values a consumer of this barrel names. */
+/**
+ * Part of the `@weasel-js/core` barrel. Renderer types and values a consumer of this barrel names.
+ *
+ * @packageDocumentation
+ */
 
 // ─── Trailing type re-exports ────────────────────────────────────────────────
 // Types reachable through the public API but previously only importable via

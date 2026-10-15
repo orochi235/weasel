@@ -11,6 +11,8 @@
  *
  * Also absent on purpose: the routers, which live in `edge` where this package
  * meets the scene registry, and anything that reads or writes a node's trait.
+ *
+ * @packageDocumentation
  */
 
 export type {

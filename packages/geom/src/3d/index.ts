@@ -4,7 +4,10 @@
  *
  *  The names deliberately repeat the 2D ones (`dot`, `scale`, `invert`). The
  *  subpath is the namespace; import one or the other, or alias at the call
- *  site. */
+ *  site.
+ *
+ * @packageDocumentation
+ */
 export {
   add, sub, scale, dot, cross, len, len2, normalize,
   quatIdentity, quatFromAxisAngle,
