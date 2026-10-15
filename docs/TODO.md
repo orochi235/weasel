@@ -334,11 +334,6 @@ Priority tags:
 
 ## Scene, adapters & layout
 
-- **(P3) A diagram's edge labels can land on nodes.** A label sits at a fraction of its route, offset
-  to one side, with no check for the boxes around it, so the label on a short edge between ranks
-  overlaps the node or group box it leaves or enters. `layeredRoutes` keeps routes clear of nodes;
-  nothing does the same for labels. blits' playground timing view shows it (`anchors` preset).
-
 - **(P3) A direct scene call made while a journal is open lands on the scene's own stack.**
   `scene.applyBatch` goes to the open journal; `scene.setPose` and its siblings, `scene.batch`, and
   `scene.history.apply` do not, so a mode that mixes the two splits its edits across two stacks.
@@ -423,6 +418,85 @@ Priority tags:
   system (`prefUnit` in `packages/prefs/src/unit.ts`), whichever node it is showing. And a scope's
   `scale` only converts values: `RIGID_POSE_COMPOSITION` does not scale a container's frame by it,
   so whether a scoped container's children are also stored in its units is undecided.
+
+### Diagram follow-ups
+
+- **(P2) EffectChart: show a run.** A second input beside the pipeline, keyed by stage id and
+  wire, never new fields on the pipeline; a look takes it as a third argument. Which branch was
+  taken (the `switch` symbol already has a lever to throw), the value or a preview on each wire
+  (a body `slot` row is the room for one), cost per stage. Live state follows from it: the run
+  changes every frame, only what it touches repaints, and the layout stays put.
+- **(P3) EffectChart: more looks.** One lane per value type, with a stage as tall as the lanes it
+  touches; and a compact look with one-line stages and no ports drawn, for pipelines too big for
+  the node graph. Branch symbols sketched and not built: hexagon, step glyph, comparator,
+  crossover, and a bare fork with the conditions on its wires.
+- **(P3) A custom `Path` outline does not follow its node.** `outlinePath` returns a consumer's
+  path unchanged, in world coordinates, so `diagramScene`'s layout moves the box and leaves the
+  outline behind. Marks solve the same problem with path data in a unit square
+  (`packages/diagram/src/marks.ts`); an outline could take the same form.
+- **(P3) `layered` orders and places a port with several places at their mean.** A port's
+  `sites` are chosen per wire, by the router, once everything is placed, so ordering and placement
+  read the port at the mean of its places (`portAt` in `packages/diagram/src/layered/expand.ts`).
+  A wire whose port then turns to face it can cross a neighbor ordering thought it cleared. Picking
+  the place during ordering, from where the other end sits in the current order, would fix it.
+  `portAt` also reads a port at its anchor, where `portsOf` slides it onto a non-rectangular
+  outline: a diamond's anchor at `{ u: 0.75, v: 0 }` sits at about 0.667 (found in review, not
+  measured on a drawn diagram).
+- **(P3) A long label on a wire inside a group spills out of the group's box.** `layered` leaves
+  the label room inside the group's column, but the box is drawn around the members alone
+  (`GROUP_DERIVE_POSE`, `packages/diagram/src/group.ts`), so a label wider than the members'
+  overhang crosses the dashed edge. The box would need to know the room its members' wires took.
+- **(P3) A label stationed `{ waypoint }` follows an index, not a place.** `layeredPlan` points a
+  label at the run between two of its edge's waypoints by index
+  (`packages/diagram/src/label.ts`). Edit the edge's waypoints in a live scene and the label sits
+  on whichever run now has that index; remove enough and it falls back to the middle of the route.
+- **(P3) A live scene's `layered` layout gets no placeholders, waypoints or label room.** Under
+  `order: 'seeded'`, which `layoutAction` uses, a spanning edge gets no room in the ranks it
+  crosses, a labeled edge no rank for its label, and the scene's edges get no waypoints, so a long
+  edge can run through a node and a label can land on one. A
+  placeholder's seed order would come from wire ends layout moves, so two could trade places
+  between runs and break "a second run moves nothing"; and a scene's waypoints belong to whoever
+  drew them, so writing them is a decision of its own (`packages/diagram/src/layered/plan.ts`).
+- **(P3) A second pinned node can sit on a long edge's route.** `layeredPlan` anchors the layout
+  on the first pinned node; any other pinned node stays where its author put it, not in its slot.
+  A wire with that node as an end gets no waypoints, but a wire passing near it keeps the
+  waypoints laid out around the slot, and can run through the node
+  (`packages/diagram/src/layered/plan.ts`). Found by reading the code; no case reproduced yet.
+- **(P4) An ELK layout adapter.** elkjs (the Eclipse Layout Kernel) lays out ports, labels and
+  nested groups well, but answers asynchronously and is large (around 1.5 MB; not measured), so it cannot sit behind
+  the synchronous `LayoutFn`. An adapter in a package of its own, for laying out a generated
+  diagram once, would let a diagram be checked against it.
+- **(P3) `DiagramView` fits its view once, at mount.** `defaultView` only seeds the canvas's
+  view, so when `width` or `height` changes the canvas resizes and the view does not refit; a
+  diagram fitted for a wide box is clipped in a narrower one. The EffectChart lab shows it when
+  its frame is resized.
+- **(P3) Two wires can share an `edgeIdOf`.** Ids containing `.`, `->` or `:` build the same
+  edge id from different stages and ports. `diagramScene` keeps the first such edge, while the
+  looks keep one style per id, last one winning (`sceneStyles` in
+  `packages/diagram/src/effect/draw.ts`, `packages/diagram/src/fromData.ts`).
+- **(P3) The `rack` look overlaps side ports.** A stage's side ports are spread evenly along one
+  edge of a box sized by its text, however many there are, so a stage with many side inputs draws
+  them on top of one another (`spreadAt` in `packages/diagram/src/effect/rack.ts`).
+- **(P3) Branch symbols put control inputs on top whatever the rack's `side` is.** With the
+  default `side: 'below'`, the stage driving a decision hangs below it and its wire climbs to the
+  top edge (`inputs` in `packages/diagram/src/effect/symbols.ts`).
+- **(P3) A list of looks with different options needs a cast.** `EffectLook`'s options parameter
+  defaults to `unknown`, and `EffectLook<NodeGraphOptions>` is not assignable to it, so a list
+  holding `nodeGraph` and `rack` together is cast by hand (`packages/diagram/src/effect/draw.ts`;
+  the EffectChart lab story does it).
+- **(P3) `EffectChart` has no floor on its opening scale.** It opens every chart fitted whole and
+  passes no `minScale`, so a chart of hundreds of stages opens too small to read
+  (`packages/diagram/src/effect/EffectChart.tsx`; `DiagramView` already takes `minScale`).
+- **(P3) A branch symbol's drawn marks have fixed colors.** The `bar`'s bands and ticks and the
+  `switch`'s lever and contacts are color literals, so they stay bright on a bypassed decision
+  and a look cannot restyle them; only the titles follow the node style
+  (`packages/diagram/src/effect/symbols.ts`).
+- **(P3) Marks are only tested in jsdom.** No browser test moves a node that carries marks, so a
+  text mark following its node is unpinned, and so is a drawn mark's `opacity`
+  (`packages/diagram/src/marks.test.ts`).
+- **(P3) A mark whose path data does not parse fails when it is painted.** `diagramScene` passes
+  `d` through as given and `markShape` parses it on first paint, so a typo surfaces in the
+  renderer rather than where the data was built (`packages/diagram/src/marks.ts`).
 
 ---
 
@@ -541,11 +615,20 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   canvas and exposes only `accessibleName`. Mirror the open menu as hidden DOM with menu roles,
   kept in step with the model's highlight.
 
-- **(P2) Labs still tune actions through the experimental `actions` prop.** The extend-path-end
-  and dynamic-corners labs (on their own branches when `tune` landed) set `mode` and a K binding
-  by restating whole descriptors through `actions`. Move each to `<SceneCanvas tune>` as it
-  merges, drop the restated gestures, and give its actions (`extendPathEnd`, …) entries in core's
-  `ActionParamSchema` (`interactions/actions/actionParamSchema.ts`).
+- **(P3) `PrefsRail`'s scroll-to-section browser test fails now and then.** "leaves a nested page
+  off the page that holds it and scrolls to a section that follows it"
+  (`packages/ui/src/components/Prefs/PrefsRail.marks.browser.test.tsx:91`) failed once on a fleet
+  run of 2026-10-14 and passed on the run before it, with no `packages/ui` change between: the
+  rail marked `canvas.grid` current where the test expects `canvas.rulers`. A guess, not
+  confirmed: the section is polled into view and the marks are then read once, so a scroll spy
+  that settles a frame later would still name the section above.
+
+- **(P2) Labs still tune actions through the experimental `actions` prop.** The smart remove
+  brush, extend-path-end, and dynamic-corners labs (on their own branches when `tune` landed) set
+  `radiusPx`, `mode`, and a K binding by restating whole descriptors through `actions`. Move each
+  to `<SceneCanvas tune>` as it merges, drop the restated gestures, and give its actions
+  (`brushDeleteAnchors`, `extendPathEnd`, …) entries in core's `ActionParamSchema`
+  (`interactions/actions/actionParamSchema.ts`).
 
 - **(P3) Nothing puts `prefsCss` on a page.** `prefsCss(store)` writes the text and
   `prefsCssAttributes(store)` the attributes (`packages/prefs/README.md`, "As CSS custom
@@ -890,6 +973,11 @@ only story runner in the repo.
 ---
 
 ## Demos & visual regression
+
+- **(P3) EffectChart visual baselines are not captured.** `tests/visual/effect-chart.spec.ts`
+  names `effect-chart.png` and `effect-chart-rack.png`; the update-baselines workflow has to
+  write them. Its `maxDiffRatio` of 0.004 was copied from `diagram.spec.ts`; set it
+  from the first captured baselines.
 
 - **(P3) A dev server on orochi has missed a file write.** A site dev server there served a file
   as it was before an edit on 2026-10-12, and a `touch` did not wake it. Seen once and not

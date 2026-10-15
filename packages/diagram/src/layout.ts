@@ -34,8 +34,9 @@ export interface LayoutOptions {
   rankGap?: number;
   /** How `layered` orders nodes within a rank. `'seeded'` (default) keeps
    *  the order they already sit in; `'barycenter'` reorders to reduce edge
-   *  crossings, for a generated diagram with no arranged order to keep.
-   *  Other layouts ignore it. */
+   *  crossings, for a generated diagram with no arranged order to keep, and
+   *  leaves room in each rank an edge crosses so `layeredPlan` can route it
+   *  through. Other layouts ignore it. */
   order?: 'seeded' | 'barycenter';
   /** Ids layout must not move, on top of whatever carries `pinned: true`. */
   pin?: Iterable<string>;
@@ -43,6 +44,12 @@ export interface LayoutOptions {
    *  `1e-6` — a float-noise floor, not a snapping quantum. Raise it to let a
    *  `force` pass that has stopped doing anything useful commit nothing. */
   tolerance?: number;
+  /** `chain` only: the ids that stand on the line, in order. Unset, the
+   *  longest path through the graph. */
+  chain?: readonly string[];
+  /** `chain` only: which side of the line everything else hangs on, along
+   *  the cross axis. Default `'after'`. */
+  chainSide?: 'after' | 'before';
 }
 
 /** The new top-left for each node that moves. A node that is already there is
@@ -131,14 +138,17 @@ export function settle(
   for (const node of graph.nodes) {
     const slot = slots.get(node.id);
     if (slot === undefined) continue;
-    const along = axes.sign === 1 ? slot.rank : -(slot.rank + extent(node.bounds, axes.rank));
-    placed.set(
-      node.id,
-      axes.rank === 'y' ? { x: slot.cross, y: along } : { x: along, y: slot.cross },
-    );
+    placed.set(node.id, worldOf(slot, extent(node.bounds, axes.rank), axes));
   }
 
   return translated(graph, placed, pinned, tolerance);
+}
+
+/** A slot's top-left in world coordinates, before {@link settle}'s
+ *  translation, for something `depth` deep along the rank axis. */
+export function worldOf(slot: Slot, depth: number, axes: LayoutAxes): Vec2 {
+  const along = axes.sign === 1 ? slot.rank : -(slot.rank + depth);
+  return axes.rank === 'y' ? { x: slot.cross, y: along } : { x: along, y: slot.cross };
 }
 
 /**
@@ -189,7 +199,7 @@ export function translated(
   pinned: ReadonlySet<string>,
   tolerance = DEFAULT_TOLERANCE,
 ): LayoutResult {
-  const anchor = anchorDelta(graph, placed, pinned);
+  const anchor = anchorOffset(graph, placed, pinned);
   const out = new Map<string, Vec2>();
   for (const node of graph.nodes) {
     const at = placed.get(node.id);
@@ -204,7 +214,9 @@ export function translated(
   return out;
 }
 
-function anchorDelta(
+/** How far {@link translated} moves a placement: onto the first pinned node,
+ *  or else so its low corner lands on the graph's current one. */
+export function anchorOffset(
   graph: Graph,
   placed: ReadonlyMap<string, Vec2>,
   pinned: ReadonlySet<string>,

@@ -12,6 +12,7 @@ export const LIBRARIES: readonly Library[] = [
   { path: '/packages/ui/', label: 'ui', tone: tone('amber') },
   { path: '/packages/labkit/', label: 'labkit', tone: tone('teal') },
   { path: '/packages/forge/', label: 'forge', tone: tone('blue') },
+  { path: '/packages/diagram/', label: 'diagram', tone: tone('teal') },
   { path: '/apps/draw/', label: 'draw', tone: tone('rose') },
   { path: '/apps/forge/', label: 'forge', tone: tone('blue') },
 ];
