@@ -21,6 +21,7 @@ export { default as TextIcon } from './TextIcon';
 export { default as PenIcon } from './PenIcon';
 export { default as HandIcon } from './HandIcon';
 export { default as SliceIcon } from './SliceIcon';
-export { default as MeasureIcon } from './MeasureIcon';
+// Drawn by @weasel-js/ui's icon pipeline, which emits its markup into core.
+export { MeasureIcon } from '../interactions/actions/defaults/icons/actionGlyphIcons';
 export { default as UnknownIcon } from './UnknownIcon';
 export type { IconProps } from './types';

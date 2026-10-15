@@ -10,3 +10,5 @@ The tool owns three commands in the `measure` group, so `<ActionBar group="measu
 The measurement lives in a `MeasurementStore` (`createMeasurementStore()`); pass one as `useMeasureTool({ store })` to read it outside the canvas, and `useMeasurement(store)` re-renders on each change. A `Measurement` carries `start`, `end`, `dx`, `dy`, `distance`, and `angle`, in radians on the world's axes, so a positive angle turns clockwise on screen, the same way a rotate by it turns. `measureBetween(a, b)` computes one, and `createMeasureActions(store)` builds the actions for a tool of your own.
 
 `@weasel-js/ui` adds `<MeasureReadout store={store}>`, the readout for it: a chip at the bottom of the nearest positioned ancestor with the distance, offset, and angle, and the `measure` group's buttons.
+
+The ruler has one drawing: the icon pipeline emits it into core's `ACTION_GLYPHS` beside undo, redo, and delete, core's `MeasureIcon` draws it, `@weasel-js/ui` re-exports that same `MeasureIcon`, and `<Icon name="measure">` points at the same markup.

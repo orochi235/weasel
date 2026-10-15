@@ -162,7 +162,7 @@ export const ICON_PATHS = {
   tune: `<path d="M3.4 6h13.2M3.4 10h13.2M3.4 14h13.2" stroke-width="1.25"/><circle cx="7" cy="6" r="1.8"/><circle cx="12.6" cy="10" r="1.8"/><circle cx="9" cy="14" r="1.8"/>`,
   grid: `<rect x="3.4" y="3.4" width="13.2" height="13.2" rx="1.4"/><path d="M7.8 3.4v13.2M12.2 3.4v13.2M3.4 7.8h13.2M3.4 12.2h13.2" stroke-width="1"/>`,
   snap: `<path d="M5.4 15.6V9.4a4.6 4.6 0 0 1 9.2 0v6.2h-3.2V9.4a1.4 1.4 0 0 0-2.8 0v6.2z"/><path d="M5.4 12.8h3.2M11.4 12.8h3.2" stroke-width="1"/>`,
-  measure: `<rect x="2.6" y="7.4" width="14.8" height="5.2" rx="1.2"/><path d="M6 7.4v2.2M9.4 7.4v3M12.8 7.4v2.2" stroke-width="1"/>`,
+  measure: ACTION_GLYPHS.measure,
   randomize: `<rect x="3.6" y="3.6" width="12.8" height="12.8" rx="2"/><circle cx="7.2" cy="7.2" r="1" fill="currentColor" stroke="none"/><circle cx="10" cy="10" r="1" fill="currentColor" stroke="none"/><circle cx="12.8" cy="12.8" r="1" fill="currentColor" stroke="none"/>`,
   refresh: `<path d="M4.27 12.09A6.1 6.1 0 0 1 14.67 6.08"/><path d="M14.67 3.38 14.67 6.08 12.01 5.61"/><path d="M15.73 7.91A6.1 6.1 0 0 1 5.33 13.92"/><path d="M5.33 16.62 5.33 13.92 7.99 14.39"/>`,
   drop: `<path d="M10 2.8L14.02 9.47A4.7 4.7 0 1 1 5.98 9.47Z"/>`,
