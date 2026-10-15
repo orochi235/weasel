@@ -8,7 +8,7 @@
  * `{ waypoint }`, and its edge's route is layout's.
  */
 import type { Vec2 } from '@weasel-js/core/math';
-import { diagramEdgeOf, layoutOwnsRoute, samePoints, type DiagramEdge } from './edge';
+import { diagramEdgeOf, layoutOwnsRoute, type DiagramEdge } from './edge';
 import { labelFollowsLayout, type Graph } from './graph';
 import { diagramLabelOf, type DiagramLabel } from './label';
 import type { LayoutPlan } from './layout';
@@ -16,19 +16,22 @@ import type { LayoutPlan } from './layout';
 /** Edge routes for `applyLayout` to write alongside a layout's moves. */
 export interface LayoutRoutes {
   /** Every edge the layout laid out. Each one layout owns gets its route
-   *  from `waypoints`, or loses the one layout gave it last time. */
+   *  from `waypoints`, or loses the one a layout gave it before. */
   edges: ReadonlySet<string>;
   waypoints: ReadonlyMap<string, readonly Vec2[]>;
   labels?: ReadonlyMap<string, number>;
 }
 
-/** The routes `plan` laid out for `graph`'s edges; `undefined` for a layout
- *  that routes nothing, which leaves every edge as it is. */
-export function routesOf(graph: Graph, plan: LayoutPlan): LayoutRoutes | undefined {
-  if (plan.waypoints === undefined) return undefined;
+/** How far a route may sit from the one already written and still count as
+ *  it, in world units: a re-run's translation can land an ulp off. */
+const ROUTE_TOLERANCE = 1e-3;
+
+/** The routes `plan` laid out for `graph`'s edges. A layout that routes
+ *  nothing routes every edge straight, taking back what `layered` wrote. */
+export function routesOf(graph: Graph, plan: LayoutPlan): LayoutRoutes {
   return {
     edges: new Set(graph.edges.map((e) => e.origin?.id ?? e.id)),
-    waypoints: plan.waypoints,
+    waypoints: plan.waypoints ?? new Map(),
     ...(plan.labels !== undefined ? { labels: plan.labels } : {}),
   };
 }
@@ -36,10 +39,12 @@ export function routesOf(graph: Graph, plan: LayoutPlan): LayoutRoutes | undefin
 /** A scene as {@link routeWrites} reads it. */
 export interface RoutedScene {
   get(id: never): { data: unknown } | undefined;
+  isLocked(id: never): boolean;
   renderOrderNodes(): readonly { id: string; data: unknown; dependsOn?: readonly string[] | 'children' }[];
 }
 
-/** The new `data` for every edge and label whose route or place changes. */
+/** The new `data` for every edge and label whose route or place changes. A
+ *  locked edge or label is left as it is. */
 export function routeWrites(scene: RoutedScene, routes: LayoutRoutes): Map<string, unknown> {
   const out = new Map<string, unknown>();
   const owned = new Set<string>();
@@ -48,17 +53,21 @@ export function routeWrites(scene: RoutedScene, routes: LayoutRoutes): Map<strin
     const edge = node === undefined ? null : diagramEdgeOf(node);
     if (node === undefined || edge === null || !layoutOwnsRoute(edge)) continue;
     owned.add(id);
+    if (scene.isLocked(id as never)) continue;
     const next = rerouted(edge, routes.waypoints.get(id));
     if (next !== edge) out.set(id, withTrait(node.data, next));
   }
+  // The first label on an edge is the one `buildGraph` left room for.
+  const stationed = new Set<string>();
   for (const node of scene.renderOrderNodes()) {
     const label = diagramLabelOf(node);
     const deps = node.dependsOn;
     if (label === null || !Array.isArray(deps) || deps.length !== 1 || !owned.has(deps[0]!)) continue;
-    if (!labelFollowsLayout(label.at)) continue;
+    if (!labelFollowsLayout(label.at) || stationed.has(deps[0]!)) continue;
+    stationed.add(deps[0]!);
     const k = routes.labels?.get(deps[0]!);
     const at: DiagramLabel['at'] = k === undefined ? 'mid' : { waypoint: k };
-    if (sameAt(label.at, at)) continue;
+    if (sameAt(label.at, at) || scene.isLocked(node.id as never)) continue;
     out.set(node.id, withTrait(node.data, { ...label, at }, 'label'));
   }
   return out;
@@ -72,8 +81,13 @@ function rerouted(edge: DiagramEdge, route: readonly Vec2[] | undefined): Diagra
     const { waypoints: _w, laidOut: _l, ...rest } = edge;
     return rest;
   }
-  if (edge.waypoints !== undefined && samePoints(edge.waypoints, route)) return edge;
+  if (edge.waypoints !== undefined && near(edge.waypoints, route)) return edge;
   return { ...edge, waypoints: route, laidOut: route };
+}
+
+function near(a: readonly Vec2[], b: readonly Vec2[]): boolean {
+  return a.length === b.length
+    && a.every((p, i) => Math.abs(p.x - b[i]!.x) <= ROUTE_TOLERANCE && Math.abs(p.y - b[i]!.y) <= ROUTE_TOLERANCE);
 }
 
 function sameAt(a: DiagramLabel['at'], b: DiagramLabel['at']): boolean {

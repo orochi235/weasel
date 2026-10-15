@@ -260,6 +260,7 @@ export function useLiveLayout<TPose>(opts: UseLiveLayoutOptions<TPose>): LiveLay
     held.current = false;
     const algorithm = o.algorithm ?? 'force';
     if (algorithm === 'force') {
+      routes.current = routesOf(graph, { moves: new Map() });
       producer.current = forceProducer<TPose>(graph, {
         ...o.layout, ...o.force,
         ...(o.geometry ? { geometry: o.geometry } : {}),

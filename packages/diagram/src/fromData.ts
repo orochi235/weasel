@@ -13,12 +13,12 @@ import { bodyTrait, buildBody, measureBody, sizeToBody, type BodySpec, type Meas
 import { edgeSpecs, labelStyleOf } from './dataEdges';
 import type { DiagramEdge } from './edge';
 import { force } from './force';
-import type { EdgeLabelRoom, Graph, GraphEdge, GraphGroup, GraphNode } from './graph';
+import { labelFollowsLayout, type EdgeLabelRoom, type Graph, type GraphEdge, type GraphGroup, type GraphNode } from './graph';
 import type { DiagramAnchor } from './group';
 import type { DiagramLabel } from './label';
 import { chain } from './chain';
-import { layered, layeredPlan, type LayeredPlan } from './layered';
-import type { LayoutFn, LayoutOptions } from './layout';
+import { layered, type LayeredPlan } from './layered';
+import type { LayoutFn, LayoutOptions, LayoutPlan } from './layout';
 import { markSpecs, type DataMark, type DiagramMark } from './marks';
 import type { Outline } from './outline';
 import { authoredOver, type LayeredRoute } from './route';
@@ -66,10 +66,10 @@ export interface DataEdge {
   fromPort?: string;
   toPort?: string;
   label?: string;
-  /** Where along the edge the label sits. Unset, under `layered` the label
-   *  sits in the room layout leaves it beside its wire, at
-   *  `DiagramSceneOptions.labelPlacement`'s offset; otherwise at that
-   *  placement. */
+  /** Where along the edge the label sits. Unset or at `'mid'`, under
+   *  `layered` the label sits in the room layout leaves it beside its wire,
+   *  at this placement's offset, else `DiagramSceneOptions.labelPlacement`'s;
+   *  otherwise at the placement. */
   labelPlacement?: DiagramLabel;
   /** Default `DiagramSceneOptions.router`. */
   router?: DiagramRouter;
@@ -207,26 +207,29 @@ function graphOf(nodes: GraphNode[], edges: GraphEdge[], groups: GraphGroup[] = 
   };
 }
 
-/** Each edge's ports and waypoints under `layered`: the author's where given, else `layeredRoutes`'. */
+/** Each edge's ports and waypoints under a layout that plans its routes: the
+ *  author's where given, else `layeredRoutes`'. */
 function routed(data: DiagramData, edges: readonly DataEdge[], groups: readonly ResolvedGroup[],
-  plan: LayeredPlan, layoutOptions: LayoutOptions): Map<string, LayeredRoute> {
+  plan: LayoutPlan, layoutOptions: LayoutOptions): Map<string, LayeredRoute> {
   return authoredOver(edges.map((e) => ({ ...e, id: edgeIdOf(e) })), {
-    ranks: plan.ranks,
-    waypoints: plan.waypoints,
-    labels: plan.labels,
+    ranks: 'ranks' in plan ? (plan as LayeredPlan).ranks : new Map(),
+    waypoints: plan.waypoints ?? new Map(),
+    ...(plan.labels !== undefined ? { labels: plan.labels } : {}),
     members: new Map(groups.map((g) => [g.group.id, g.members])),
     compass: new Set([...data.nodes.filter((n) => n.ports === undefined).map((n) => n.id), ...groups.map((g) => g.group.id)]),
     ...(layoutOptions.direction ? { direction: layoutOptions.direction } : {}),
   });
 }
 
-/** The room an edge's label asks layout for: none when the edge places its
- *  label itself, or routes itself through waypoints of its own. */
+/** The room an edge's label asks layout for: none when the edge puts its
+ *  label somewhere layout does not station it, or routes itself through
+ *  waypoints of its own. */
 function labelRoomOf(e: DataEdge, opts: DiagramSceneOptions, font: { fontFamily: string; fontSize: number },
   measure: MeasureRowText): EdgeLabelRoom | null {
-  if (!e.label || e.labelPlacement !== undefined || e.waypoints !== undefined) return null;
+  if (!e.label || e.waypoints !== undefined) return null;
+  if (e.labelPlacement !== undefined && !labelFollowsLayout(e.labelPlacement.at)) return null;
   const style = labelStyleOf(font);
-  const offset = (opts.labelPlacement ?? LABEL_PLACEMENT).offset;
+  const offset = (e.labelPlacement ?? opts.labelPlacement ?? LABEL_PLACEMENT).offset;
   return { width: measure(e.label, style).width, height: style.fontSize, ...(offset !== undefined ? { offset } : {}) };
 }
 
@@ -331,11 +334,11 @@ export function diagramScene(data: DiagramData, opts: DiagramSceneOptions = {}):
     expandGroupEdges(edges.map((e) => graphEdgeOf(e, labelRoomOf(e, opts, font, measure))), graphGroups),
     graphGroups,
   );
-  const layout = typeof opts.layout === 'function' ? opts.layout
+  const layout: LayoutFn | null = typeof opts.layout === 'function' ? opts.layout
     : opts.layout === 'none' ? null
     : LAYOUTS[opts.layout ?? 'layered'];
   const layoutOptions: LayoutOptions = { order: 'barycenter', ...opts.layoutOptions };
-  const plan = layout === layered ? layeredPlan(graph, layoutOptions) : null;
+  const plan = layout?.plan?.(graph, layoutOptions) ?? null;
   const moved = plan?.moves ?? (layout === null ? new Map() : layout(graph, layoutOptions));
 
   const specs: DiagramSpec[] = [];

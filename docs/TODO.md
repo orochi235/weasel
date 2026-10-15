@@ -440,6 +440,16 @@ Priority tags:
   them (`useLiveLayout`, `packages/diagram/src/live.ts`). Easing each layout-owned waypoint from
   where it was to where the plan puts it would need waypoints on the override channel, which
   carries poses only.
+- **(P3) The ports `diagramScene` picks read as the author's on a live scene.** Under `layered`,
+  `layeredRoutes` names each edge's compass ports from which way it runs between ranks, and
+  `edgeSpecs` writes them as `from.port`/`to.port` with nothing like `laidOut` marking them
+  (`packages/diagram/src/dataEdges.ts`). A later live layout reads them as named by the author and
+  never revisits them, so an edit that turns which edge runs back up the ranks leaves a wire
+  leaving by the old face. Found in review, not reproduced.
+- **(P3) A long edge to a pinned node off its slot can reorder a second seeded run.** `layeredPlan`
+  gives such an edge no waypoints (`displaced`, `packages/diagram/src/layered/plan.ts`), so the
+  next run seeds its placeholders between its ends' new centers rather than where the last run
+  put them, and the rank's order can change. Found in review, not reproduced.
 - **(P3) `DiagramView`'s `onMove` reports nodes, not routes.** A layout run writes each long
   edge's waypoints into the view's scene, but a consumer keeping the diagram as data hears only
   the node moves, so the routes go whenever the data is laid into a scene again, or an edge's

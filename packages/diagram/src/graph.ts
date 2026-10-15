@@ -74,6 +74,9 @@ export interface GraphEdge {
    *  placeholder where the route already crosses that rank, so a re-run keeps
    *  the order the last one settled on. */
   waypoints?: readonly Vec2[];
+  /** Its route is someone's own: layout leaves it, and keeps no room for it
+   *  in the ranks it crosses. */
+  authored?: boolean;
   /** The edge as drawn, when this one stands in for an edge to or from a
    *  group (see `expandGroupEdges`). */
   origin?: { id: string; from: string; to: string };
@@ -148,6 +151,7 @@ export function buildGraph<TPose>(
           ...(edge.from.port !== undefined ? { fromPort: edge.from.port } : {}),
           ...(edge.to.port !== undefined ? { toPort: edge.to.port } : {}),
           ...(edge.waypoints !== undefined && edge.waypoints.length > 0 ? { waypoints: edge.waypoints } : {}),
+          ...(layoutOwnsRoute(edge) ? {} : { authored: true }),
         });
         if (layoutOwnsRoute(edge)) routed.add(node.id);
       }

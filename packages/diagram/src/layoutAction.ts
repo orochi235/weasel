@@ -57,14 +57,18 @@ export function applyLayout<TPose>(
   const poses = layoutPoses(scene, result, opts.geometry);
   const data = opts.routes === undefined ? new Map<string, unknown>() : routeWrites(scene as never, opts.routes);
   if (poses.size === 0 && data.size === 0) return 0;
+  // A node on a locked layer stays put, as it does under a live run.
+  const open = [...poses].filter(([id]) => !scene.isLocked(id as never));
+  if (open.length === 0 && data.size === 0) return 0;
   scene.batch(opts.label ?? 'Layout', () => {
-    for (const [id, pose] of poses) scene.setPose(id as never, pose);
+    for (const [id, pose] of open) scene.setPose(id as never, pose);
     for (const [id, d] of data) scene.update(id as never, { data: d });
   });
   // Participants, not the descendants they carried along: a caller asking how
   // much a layout did means the nodes it placed.
+  const wrote = new Set(open.map(([id]) => id));
   let moved = 0;
-  for (const id of result.keys()) if (poses.has(id)) moved++;
+  for (const id of result.keys()) if (wrote.has(id)) moved++;
   return moved;
 }
 
@@ -155,11 +159,10 @@ export function createLayoutAction<TPose>(opts: LayoutActionOptions<TPose>): Act
         if (scene === undefined) return;
         const graph = buildGraph(opts.source, build);
         const plan = planOf(algorithm, graph, opts.layout);
-        const routes = routesOf(graph, plan);
         applyLayout(scene, plan.moves, {
           ...(opts.geometry ? { geometry: opts.geometry } : {}),
           ...(opts.label ? { label: opts.label } : {}),
-          ...(routes !== undefined ? { routes } : {}),
+          routes: routesOf(graph, plan),
         });
       },
     },

@@ -42,6 +42,7 @@ interface Drawn {
   toPort?: string;
   label?: EdgeLabelRoom;
   waypoints?: readonly Vec2[];
+  authored?: boolean;
   back: boolean;
 }
 
@@ -156,6 +157,9 @@ export function expand(graph: Graph, nodeRanks: ReadonlyMap<string, number>, bac
     const a = span(from);
     const b = span(to);
     if (a === null || b === null || a[1] >= b[0]) continue;
+    // Its route goes where its author put it, and no seed from it would
+    // follow where this run puts the ranks it crosses.
+    if (d.authored && b[0] - a[1] > 1) continue;
     const group = sharedGroup(from, to);
     const start = crossCenter(from);
     const end = crossCenter(to);
@@ -227,6 +231,7 @@ function drawnEdges(edges: readonly GraphEdge[], back: ReadonlySet<string>): Dra
       ...(e.toPort !== undefined ? { toPort: e.toPort } : {}),
       ...(e.label !== undefined ? { label: e.label } : {}),
       ...(e.waypoints !== undefined ? { waypoints: e.waypoints } : {}),
+      ...(e.authored ? { authored: true } : {}),
       back: back.has(e.id),
     });
   }

@@ -117,7 +117,7 @@ describe('routes', () => {
   const lay = (scene: Scene<Data, 'main', Rect>): number => {
     const graph = graphOf(scene);
     const plan = planOf(layered, graph);
-    return applyLayout(scene, plan.moves, { routes: routesOf(graph, plan)! });
+    return applyLayout(scene, plan.moves, { routes: routesOf(graph, plan) });
   };
   const trait = (scene: Scene<Data, 'main', Rect>, id: string) =>
     (scene.get(id as never)!.data as { diagram: Record<string, unknown> }).diagram;
@@ -173,6 +173,58 @@ describe('routes', () => {
     lay(scene);
     expect(trait(scene, long)['waypoints']).toBeUndefined();
     expect(trait(scene, long)['laidOut']).toBeUndefined();
+  });
+
+  it('leaves a locked layer alone rather than throwing', () => {
+    const { scene, long } = spanning();
+    scene.setLayerLocked('main', true);
+    expect(lay(scene)).toBe(0);
+    expect(trait(scene, long)['waypoints']).toBeUndefined();
+    expect(scene.get('a' as never)!.pose).toMatchObject(START['a']!);
+  });
+
+  it('takes layered\'s routes back when a layout that routes nothing runs', () => {
+    const { scene, long, label } = spanning();
+    lay(scene);
+    const graph = graphOf(scene);
+    const plan = planOf(LAYOUTS['tree']!, graph);
+    applyLayout(scene, plan.moves, { routes: routesOf(graph, plan) });
+    expect(trait(scene, long)['waypoints']).toBeUndefined();
+    expect(trait(scene, long)['laidOut']).toBeUndefined();
+    expect(trait(scene, label)['label']).toEqual({ at: 'mid' });
+  });
+
+  it('stations only the first label on an edge, the one it left room for', () => {
+    const { scene, long, label } = spanning();
+    const second = scene.add({
+      kind: 'leaf', layer: 'main',
+      pose: { x: 0, y: 0, width: 60, height: 16 },
+      data: { diagram: { label: { at: 'mid' } } },
+      dependsOn: [long] as never,
+    });
+    lay(scene);
+    expect(trait(scene, label)['label']).toEqual({ at: { waypoint: 0.5 } });
+    expect(trait(scene, second)['label']).toEqual({ at: 'mid' });
+  });
+
+  it('leaves an edge someone routed out of the ranks it crosses, so a re-run moves nothing', () => {
+    // `s → t` is bent by hand at x 500, between `l` at 0 and `r` at 1000 in
+    // the rank it crosses. Placement packs `r` in toward `l`, past 500, so a
+    // bend counted as the edge's place there would reorder the next run.
+    const scene = createScene<Data, 'main', Rect>({ systemLayers: [{ id: 'main' }] });
+    const at = { s: [500, 0], l: [0, 200], r: [1000, 200], t: [500, 400] } as const;
+    for (const [id, [x, y]] of Object.entries(at)) {
+      scene.add({ id: id as never, kind: 'leaf', layer: 'main', pose: { x, y, width: 100, height: 40 }, data: { diagram: {} } });
+    }
+    const edge = (from: string, to: string, waypoints?: { x: number; y: number }[]) => scene.add({
+      kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 0, height: 0 },
+      data: { diagram: { from: {}, to: {}, ...(waypoints ? { waypoints } : {}) } },
+      dependsOn: [from, to] as never,
+    });
+    edge('s', 'l'); edge('s', 'r'); edge('l', 't'); edge('r', 't');
+    edge('s', 't', [{ x: 550, y: 200 }, { x: 550, y: 240 }]);
+    lay(scene);
+    expect(lay(scene)).toBe(0);
   });
 
   it('leaves a label put at an end where it is', () => {

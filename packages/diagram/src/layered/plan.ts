@@ -62,8 +62,9 @@ export function layeredPlan(graph: Graph, opts: LayoutOptions = {}): LayeredPlan
 }
 
 function routed(edge: GraphEdge, plan: LayeredPlan): GraphEdge {
+  const { waypoints: _, ...rest } = edge;
   const route = plan.waypoints.get(edge.origin?.id ?? edge.id);
-  return route === undefined ? edge : { ...edge, waypoints: route };
+  return route === undefined ? rest : { ...rest, waypoints: route };
 }
 
 function planOnce(graph: Graph, opts: LayoutOptions = {}): LayeredPlan {

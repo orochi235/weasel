@@ -19,11 +19,11 @@ export interface EdgeSpecContext {
 /** The face an edge label is set in: the diagram's, two sizes down. */
 export const labelStyleOf = (font: { fontFamily: string; fontSize: number }) => ({ ...font, fontSize: font.fontSize - 2 });
 
-/** Where a label sits: the edge's own placement, else beside the room layout
- *  left it at the diagram's offset, else the diagram's placement. */
+/** Where a label sits: beside the room layout left it, at the edge's own
+ *  offset or else the diagram's; else the edge's own placement, else the
+ *  diagram's. */
 function placementOf(e: DataEdge, route: LayeredRoute | undefined, ctx: EdgeSpecContext): DiagramLabel {
-  if (e.labelPlacement !== undefined) return e.labelPlacement;
-  const placement = ctx.opts.labelPlacement ?? ctx.labelPlacement;
+  const placement = e.labelPlacement ?? ctx.opts.labelPlacement ?? ctx.labelPlacement;
   return route?.labelAt === undefined ? placement : { ...placement, at: { waypoint: route.labelAt } };
 }
 

@@ -121,10 +121,13 @@ and its label, when it sits at the default middle, moves into the room left
 beside them. An edge records the waypoints layout wrote as `laidOut`, and
 layout rewrites a route only while the edge's waypoints still match them; once
 someone moves a bend, the route is theirs and layout leaves it and its label
-alone. A live run writes its routes only when it arrives with nothing held
-along the way, since a drag or a `stop` leaves the nodes somewhere the routes
-were not laid out for. A layout of your own hands routes back the same way, by
-giving its `LayoutFn` a `plan`.
+alone, and keeps no room for it in the ranks it crosses. A layout that routes
+nothing, `tree` or `force`, takes layered's routes back off, and anything on a
+locked layer stays as it is. A live run writes its routes only when it arrives
+with nothing held along the way, since a drag or a `stop` leaves the nodes
+somewhere the routes were not laid out for. A layout of your own hands routes
+back the same way, by giving its `LayoutFn` a `plan`, which `diagramScene`
+reads too.
 
 `chain` stands one run of nodes on a straight line and hangs everything else
 beside the chain node it is nearest to, counting edges in either direction. It
@@ -189,7 +192,7 @@ so it goes around what lies between its ends — unless an end is pinned away
 from where its rank would put it, when it takes the router's own path. An
 author's own ports and waypoints win. A label's `offset` is the gap between the
 route and the label's near side. A label whose edge sets no `labelPlacement`
-of its own sits in the room layout left it, placed with `at: { waypoint }`,
+of its own, or one at `'mid'`, sits in the room layout left it, placed with `at: { waypoint }`,
 which stations a label between two of its edge's waypoints.
 
 `groups` draws a box around some nodes, with an optional `label` inside it:

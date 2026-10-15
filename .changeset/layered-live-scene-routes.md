@@ -15,8 +15,15 @@
   `buildGraph` reads a scene label's size as its edge's label room.
 - **Whose route it is.** `DiagramEdge.laidOut` records the waypoints layout wrote, and layout
   rewrites a route only while the edge's waypoints still match them (`layoutOwnsRoute`). An edge
-  someone has bent, and the label on it, are left alone; so is a label put at `'start'`, `'end'`
-  or a fraction. `diagramScene` marks the routes it lays out the same way.
+  someone has bent, and the label on it, are left alone, and get no room in the ranks the edge
+  crosses (`GraphEdge.authored`); so is a label put at `'start'`, `'end'` or a fraction.
+  `diagramScene` marks the routes it lays out the same way. A layout that routes nothing
+  (`tree`, `force`, `chain`) takes layered's routes back off.
+- **`diagramScene`.** A label whose edge sets `labelPlacement` at `'mid'` now gets room beside
+  its wire like an unplaced one, at that placement's offset. Routes come from any layout with a
+  `plan`, not only `layered`.
+- **Locked layers.** `applyLayout` skips a node, edge or label on a locked layer instead of
+  throwing.
 - **New surface.** `LayoutFn` may carry a `plan` returning `LayoutPlan` (`moves`, `waypoints`,
   `labels`); `layered.plan` is `layeredPlan`, and `planOf` reads any layout's. `routesOf` and
   `routeWrites` turn a plan into scene edits, and `applyLayout` takes them as `routes`.
