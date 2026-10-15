@@ -198,7 +198,10 @@ export function resolveEnd<TPose>(
 ): Port | undefined {
   if (end.port !== undefined) {
     const sites = portSitesOf(dep.node as never, dep.pose, end.port, opts);
-    if (sites.length > 0) return facing(sites, toward);
+    // A place counts only when it faces `toward` at all; else the port sits
+    // at `at`, as a self-loop's does.
+    const ahead = sites.filter((p) => p.normal !== null && p.normal.x * (toward.x - p.point.x) + p.normal.y * (toward.y - p.point.y) > 0);
+    if (sites.length > 0) return ahead.length > 0 ? facing(ahead, toward) : sites[0];
   }
   return facing(allPorts(dep), toward);
 }

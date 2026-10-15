@@ -410,6 +410,17 @@ Priority tags:
   read the port at the mean of its places (`portAt` in `packages/diagram/src/layered/expand.ts`).
   A wire whose port then turns to face it can cross a neighbor ordering thought it cleared. Picking
   the place during ordering, from where the other end sits in the current order, would fix it.
+  `portAt` also reads a port at its anchor, where `portsOf` slides it onto a non-rectangular
+  outline: a diamond's anchor at `{ u: 0.75, v: 0 }` sits at about 0.667 (found in review, not
+  measured on a drawn diagram).
+- **(P3) A long label on a wire inside a group spills out of the group's box.** `layered` leaves
+  the label room inside the group's column, but the box is drawn around the members alone
+  (`GROUP_DERIVE_POSE`, `packages/diagram/src/group.ts`), so a label wider than the members'
+  overhang crosses the dashed edge. The box would need to know the room its members' wires took.
+- **(P3) A label stationed `{ waypoint }` follows an index, not a place.** `layeredPlan` points a
+  label at the run between two of its edge's waypoints by index
+  (`packages/diagram/src/label.ts`). Edit the edge's waypoints in a live scene and the label sits
+  on whichever run now has that index; remove enough and it falls back to the middle of the route.
 - **(P3) A live scene's `layered` layout gets no placeholders, waypoints or label room.** Under
   `order: 'seeded'`, which `layoutAction` uses, a spanning edge gets no room in the ranks it
   crosses, a labeled edge no rank for its label, and the scene's edges get no waypoints, so a long

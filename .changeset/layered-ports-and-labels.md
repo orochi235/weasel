@@ -18,6 +18,7 @@
   waypoints.
 
 Behavior changes: a diagram with labeled edges laid out by `diagramScene` is taller (or wider)
-than before, and lands in a different place. An edge end with no named port now aims at the
+than before, and lands in a different place. Inside a group, `layered` keeps each member where
+placement lined it up instead of centering each rank in the group's column. An edge end with no named port now aims at the
 edge's first or last waypoint, not the other node, when it has waypoints. A smooth (`bezier`)
 route passes two waypoints level on one axis along that axis.

@@ -42,6 +42,22 @@ describe('layered, measured through diagramScene', () => {
   });
 });
 
+describe('layered inside a group', () => {
+  it('keeps a labeled wire between two members straight through its label room', () => {
+    const data = {
+      nodes: ['a', 'b', 'c', 'd'].map((id) => ({ id, lines: [id] })),
+      edges: [{ from: 'a', to: 'g' }, { from: 'b', to: 'c', label: 'inside' }, { from: 'g', to: 'd' }],
+      groups: [{ id: 'g', members: ['b', 'c'] }],
+    };
+    const specs = diagramScene(data, { layoutOptions: { direction: 'down', nodeGap: 40, rankGap: 56 } });
+    const center = (id: string) => { const p = specs.find((s) => s.id === id)!.pose; return p.x + p.width / 2; };
+    const wire = specs.find((s) => s.id === 'edge:b->c:inside')!.data!.diagram as { waypoints?: readonly { x: number }[] };
+    expect(center('b')).toBeCloseTo(center('c'), 6);
+    expect(wire.waypoints?.map((p) => p.x)).toEqual([center('b'), center('b')]);
+    expect(labelsInTheWay(data, specs)).toEqual([]);
+  });
+});
+
 describe('layeredPlan', () => {
   it('settles a grouped seeded layout the way layered does', () => {
     // `mid` starts between the group's members and has to leave, which

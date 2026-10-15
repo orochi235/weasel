@@ -228,17 +228,15 @@ export function packClusters(
     const known = blocks.get(span);
     if (known !== undefined) return known;
     const byRow = itemsByRow(span, span.children);
-    const childAt = new Map<Span, number>(span.children.map((c) => [c, 0]));
-    const { nodeAt, ends } = settle(byRow, childAt, () => 0, 0);
+    // Each node keeps where placement put it, measured from the block's
+    // lowest, so the ports a wire joins stay lined up inside a group; nested
+    // columns and the gap only push things apart.
+    const base = Math.min(...rows.flat().filter((n) => span.group.members.includes(n.id) || spanOf(n) === span).map(pref));
+    const childAt = new Map<Span, number>(span.children.map((c) => [c, Math.max(0, centerOf.get(c)! - outer(c) / 2 - base)]));
+    const { nodeAt, ends } = settle(byRow, childAt, (n) => pref(n) - base, 0);
     const block: Block = { width: Math.max(0, ...ends), nodeAt, childAt };
     const slack = widen(block, span.group, insets.get(span)!, axes);
-    // A rank no nested column passes through is free to sit in the middle.
-    byRow.forEach((items, r) => {
-      const shift = items.some((item) => item.kind === 'group') ? slack : (block.width - ends[r]!) / 2;
-      for (const item of items) {
-        if (item.kind === 'node') nodeAt.set(item.node.id, nodeAt.get(item.node.id)! + shift);
-      }
-    });
+    for (const [id, x] of nodeAt) nodeAt.set(id, x + slack);
     blocks.set(span, block);
     return block;
   };
