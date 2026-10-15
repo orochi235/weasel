@@ -27,6 +27,7 @@ export {
   deleteAnchorsAction, cutPathAtAnchorAction, marqueeAnchorsAction, selectAnchorAction,
 } from './anchorEditing';
 export { retractHandlesAction, makeHandlesSymmetricAction } from './anchorHandles';
+export { constrainAnchorsAction, unconstrainAnchorsAction } from './anchorConstraints';
 export { averageAnchorsAction, joinAnchorsAction } from './anchorJoin';
 export {
   simplifyPathAction, offsetPathAction, snipAtCrossingsAction, joinPathsAction,

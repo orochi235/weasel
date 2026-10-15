@@ -9,6 +9,7 @@ import { rectFromPlane, type PlaneMap } from 'core/viewport/parallax';
 import type { View } from 'core/viewport/view';
 import { liveEditablePath, type EditableShape } from './editablePath';
 import { createPathEditingOverlayLayer } from './pathEditingOverlayLayer';
+import { constraintAxisOf, constraintsOf } from './pathConstraints';
 import { createPathEditState, type PathEditState } from './pathEditState';
 
 export interface UsePathEditStateOptions {
@@ -51,6 +52,10 @@ export function usePathEditOverlayLayer(
       getPose: (id, previews, view) =>
         liveEditablePath(id, live.current.nodeOf(id), previews, live.current.planeOfNode(id, view)),
       getSelectedAnchors: state.getSelectedAnchors,
+      getConstraints: (id) => {
+        const node = live.current.nodeOf(id);
+        return node ? { constraints: constraintsOf(node.data), axisAngle: constraintAxisOf(node) } : null;
+      },
       // Drawn by an action that ran in the edited path's plane.
       getMarquee: (view) => {
         const rect = state.getMarquee();

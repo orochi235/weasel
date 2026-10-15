@@ -1,0 +1,10 @@
+---
+'@weasel-js/geom': patch
+'@weasel-js/core': patch
+---
+
+Geometric constraints on a path's anchors that hold while it is edited. Additive throughout.
+
+`@weasel-js/geom` gains `PathConstraint` — fixed, horizontal, vertical, parallel, perpendicular, equal length, length, and coincident, each naming anchors by flat index — and a damped Gauss-Newton solver for them. `solveConstraints` moves points the least that makes a list hold, with held points giving way last and fixed ones put back where they were; `solvePathConstraints` does the same over a path's anchors, carrying each anchor's handles with it. `constrainPathEdit` finishes an edit of a constrained path: it renumbers the constraints through the edit's point origins, holds the anchors the edit moved, and leaves out of the solve, and reports, any constraint that already failed before the edit. `unsatisfiedConstraints` says which of a list do not hold.
+
+In `@weasel-js/core`, a node's `data.constraints` holds through every path edit: the `editAnchors` dep's `editOps` solves and renumbers them before storing the path, an edit they cannot survive commits nothing, and the anchor drag calls the dep's new `constrainEdit` each frame so the preview is what the commit stores. `setConstraints` on the dep replaces a node's list in one history entry, moving the path to satisfy it and answering which constraints conflict; a conflicting one is kept, left out of later solves, and drawn as a conflict. The path-edit overlay marks each constraint beside the geometry (`getConstraints` and two colors in `PathEditingOverlayStyle`). The `paths` feature registers `constrainAnchors` (params `{ kind, length? }`, read from the selected anchors in selection order) and `unconstrainAnchors` (params `{ kind? }`), with no default bindings. `EditAnchorsDep` now lives in its own module; it is still exported from the same places.

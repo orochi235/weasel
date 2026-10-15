@@ -11,6 +11,9 @@
  *     opposite one while the anchor is smooth. Alt breaks the mirror; Shift
  *     holds the handle to the angle it had at the press, changing only its
  *     length.
+ *   - **Constraints** on the node hold every frame: the dragged anchors go
+ *     where the pointer puts them and the dep's `constrainEdit` moves the
+ *     rest.
  *
  * Selection lives on the `editAnchors` dep (flat anchor indices) rather
  * than in this handle's scratch, because the keyboard actions
@@ -102,9 +105,14 @@ interface EditAnchorsScratch {
   origins?: readonly (PointOrigin | null)[];
 }
 
+/** Take `next` as the frame to show, with the node's constraints made to hold. A frame they
+ *  cannot hold in is dropped, so the path stays at the last one they could. */
 function track(scratch: EditAnchorsScratch, next: ReturnType<typeof editAnchorSetTracked>): void {
   if (!next) return;
-  scratch.currentPose = next.path;
+  const { dep, id } = scratch;
+  const path = dep.constrainEdit ? dep.constrainEdit(id, next.path, next.origins) : next.path;
+  if (!path) return;
+  scratch.currentPose = path as PolygonPath;
   scratch.origins = next.origins;
 }
 

@@ -96,6 +96,24 @@ structure matters. The two orders agree only because `pathToAnchors` and
 you touch either walker, `anchorEdits.test.ts` has the invariant test that
 catches the divergence.
 
+## Constraints
+
+A node's `data.constraints` is a list of `PathConstraint`s (`@weasel-js/geom`),
+numbered by flat anchor index. The `editAnchors` dep makes them hold through
+every path edit: `editOps` runs `constrainPathEdit` before it stores the path,
+and renumbers the list through the edit's origins, so a delete or an insert
+keeps each constraint on the anchors it named. The anchor drag calls the dep's
+`constrainEdit` each frame, so the preview is what the commit will store; a
+frame the constraints cannot hold in is dropped. A constraint that does not
+hold when an edit starts conflicts with the rest: it is left out of the solve,
+and the overlay draws its mark (`constraintGlyphs.ts`) in the conflict color.
+`constrainAnchors` and `unconstrainAnchors` add and remove constraints on the
+selected anchors through the dep's `setConstraints`. Horizontal and vertical
+read a `data.path` node's rotation as their frame (`pathConstraints.ts`).
+
+Transforms that bypass path edit — resize, rotate, flip — do not solve: a
+non-uniform scale can leave a perpendicular constraint showing as a conflict.
+
 ## Generated shapes
 
 A drawn polygon or star keeps the parameters it was made from in

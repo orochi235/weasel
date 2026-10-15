@@ -6,7 +6,11 @@
 
 import type { DrawCommand } from '@weasel-js/renderer';
 import type { RenderLayer } from 'core/layers/render';
-import { type Path, type PolygonPath, type View, linePath, pathToAnchors, circlePath, rectMarkerPath, squarePath } from '@weasel-js/geom';
+import {
+  type Path, type PathConstraint, type PolygonPath, type View,
+  linePath, pathAnchorPoints, pathToAnchors, circlePath, rectMarkerPath, squarePath, unsatisfiedConstraints,
+} from '@weasel-js/geom';
+import { constraintGlyphs } from './constraintGlyphs';
 import type { GesturePreviewSource } from 'canvas/gestureBounds';
 import { previewSourcesFrom, isVisibleFrom } from 'canvas/drawEnvelope';
 
@@ -34,6 +38,11 @@ export interface CreatePathEditingOverlayLayerOptions {
   /** In-flight anchor-marquee rect in world coords, or null. Drawn as a
    *  rubber band while `marqueeAnchorsAction` is dragging. */
   getMarquee?(view: View): { x: number; y: number; width: number; height: number } | null;
+  /** The edited node's constraints, and the radians their frame is turned
+   *  from the world's, to mark on its anchors. Each is drawn in
+   *  `constraintStroke` while it holds and `constraintConflictStroke` while
+   *  it does not. */
+  getConstraints?(id: string): { constraints: readonly PathConstraint[]; axisAngle: number } | null;
   /** Optional styling overrides. */
   style?: PathEditingOverlayStyle;
 }
@@ -54,6 +63,10 @@ export interface PathEditingOverlayStyle {
   marqueeStroke?: string;
   /** Fill of the marquee rubber band. */
   marqueeFill?: string;
+  /** Stroke of a constraint mark while the constraint holds. */
+  constraintStroke?: string;
+  /** Stroke of a constraint mark while it conflicts with the others. */
+  constraintConflictStroke?: string;
 }
 
 const DEFAULT_STYLE: Required<PathEditingOverlayStyle> = {
@@ -67,12 +80,34 @@ const DEFAULT_STYLE: Required<PathEditingOverlayStyle> = {
   anchorFillSelected: '#3478f6',
   marqueeStroke: '#3478f6',
   marqueeFill: 'rgba(52, 120, 246, 0.08)',
+  constraintStroke: '#0e9f8e',
+  constraintConflictStroke: '#e5484d',
 };
 
 const EMPTY_SELECTION: ReadonlySet<number> = new Set();
 
 function w2s(wx: number, wy: number, view: View): [number, number] {
   return [(wx - view.x) * view.scale.x, (wy - view.y) * view.scale.y];
+}
+
+/** The marks for `path`'s constraints, under everything else the overlay draws. */
+function constraintMarks(
+  marked: { constraints: readonly PathConstraint[]; axisAngle: number } | null | undefined,
+  path: PolygonPath,
+  view: View,
+  style: Required<PathEditingOverlayStyle>,
+): DrawCommand[] {
+  if (!marked || marked.constraints.length === 0) return [];
+  const world = pathAnchorPoints(path);
+  const unsatisfied = new Set(unsatisfiedConstraints(world, marked.constraints, { axisAngle: marked.axisAngle }));
+  const screen = world.map((p) => {
+    const [x, y] = w2s(p.x, p.y, view);
+    return { x, y };
+  });
+  return constraintGlyphs(screen, marked.constraints, unsatisfied, {
+    stroke: style.constraintStroke,
+    conflictStroke: style.constraintConflictStroke,
+  });
 }
 
 /** Render layer that draws the anchors and control handles of the path
@@ -100,7 +135,7 @@ export function createPathEditingOverlayLayer(
 
       const { anchors } = pathToAnchors(pose as PolygonPath);
       const selected = opts.getSelectedAnchors?.() ?? EMPTY_SELECTION;
-      const out: DrawCommand[] = [];
+      const out: DrawCommand[] = constraintMarks(opts.getConstraints?.(id), pose as PolygonPath, view, style);
 
       // Flat anchor index, incremented in walk order so it lines up with
       // `enumerateAnchors` — the same numbering the affordances and the

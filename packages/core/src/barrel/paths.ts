@@ -119,6 +119,28 @@ export {
   type StarGenerator,
 } from '../features/paths/shapeGenerator';
 
+// ─── Geometric constraints on a path's anchors ──────────────────────────────
+export {
+  constrainPathEdit,
+  constraintAnchors,
+  pathAnchorPoints,
+  solveConstraints,
+  solvePathConstraints,
+  unsatisfiedConstraints,
+  CONSTRAINT_TOLERANCE,
+} from '@weasel-js/geom';
+export type {
+  AnchorPair,
+  ConstrainedPathEdit,
+  ConstraintPoint,
+  PathConstraint,
+  PathConstraintKind,
+  SolveConstraintsOptions,
+  SolveConstraintsResult,
+} from '@weasel-js/geom';
+export { constraintAxisOf, constraintsOf } from '../features/paths/pathConstraints';
+export { constraintsForAnchors, type ConstrainAnchorsParams } from '../interactions/actions/defaults/anchorConstraints';
+
 // ─── Curves: alternate path representations (Bezier, NURBS, Spiro) ──────────
 export {
   bezierCubic,
