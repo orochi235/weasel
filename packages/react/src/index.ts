@@ -31,3 +31,12 @@ export { KitSettingsProvider, useKitSetting, useKitSettings } from './useKitSett
  */
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface KitSettings {}
+
+/**
+ * The `targets` area's leaves — hit and snap radii — which more than one
+ * package adds to. Each augments this interface with its own keys and declares
+ * `targets: KitTargetSettings` in its `KitSettings` augmentation: two packages
+ * declaring `targets` as different object types do not merge.
+ */
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export interface KitTargetSettings {}
