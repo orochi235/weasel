@@ -1,13 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { boundsOfPath, rectPath } from '@weasel-js/geom';
-import type { ImmediateInvoker, InvocationCtx } from '@weasel-js/routing';
-// Loading the painter registry is what teaches path effects to read a source's outline.
-import 'canvas/NodeShape';
+import type { ImmediateInvoker, InvocationCtx, OngoingHandle, OngoingInvoker } from '@weasel-js/routing';
 import { createScene, sceneFromJSON } from 'core/scene/scene';
 import { derivedDepOf, effectivePose } from 'core/scene/effectivePose';
 import type { NodeId, RectPose, Scene } from 'core/scene/types';
 import { derivedPartsOf } from 'core/scene/derivedParts';
-import { pathEffectDerivePath, pathEffectOf, pathEffectParts } from 'core/scene/pathEffects/derive';
+import { pathEffectOf, pathEffectParts } from 'core/scene/pathEffects/derive';
+import { PATH_EFFECT_DERIVATIONS, withPathEffectsRegistry } from 'features/pathEffects';
+import { moveAction } from '../move/action';
+import { shapeSources } from '../selectionSubtree';
 import { blendAction, bendAlongAction, editPathEffectAction, expandPathEffectAction, repeatAlongAction } from './actions';
 
 type TestScene = Scene<unknown, 'default', RectPose>;
@@ -28,9 +29,10 @@ const spine = {
   data: { path: { kind: 'polygon', commands: new Uint8Array([0, 1]), coords: new Float32Array([0, 0, 200, 0]), fillRule: 'nonzero' }, stroke: { paint: { color: '#000' }, width: 1 } },
 };
 
-function setup(selected: string[]) {
+function setup(selected: string[], registered = true) {
   const scene: TestScene = createScene<unknown, 'default', RectPose>({
     systemLayers: [{ id: 'default' }],
+    ...(registered ? { registry: withPathEffectsRegistry() } : {}),
     initial: [box('a', 0, '#ff0000'), box('b', 200, '#0000ff', Math.PI / 2), spine],
   });
   let current = selected;
@@ -47,6 +49,15 @@ function partsOf(scene: TestScene, id: string) {
   const deps = (node.dependsOn as NodeId[]).map((d) => derivedDepOf(scene, d));
   return pathEffectParts(node, deps)!;
 }
+
+describe('a scene that does not register path effects', () => {
+  it('refuses to make one, where it could neither paint nor save it', () => {
+    const { scene, deps } = setup(['a', 'b'], false);
+    expect(blendAction.enabled!(deps)).toBe('not-applicable');
+    run(blendAction, deps, {});
+    expect(scene.roots).toHaveLength(3);
+  });
+});
 
 describe('blend', () => {
   it('adds a live node of steps between the two selected shapes, just under the upper', () => {
@@ -78,16 +89,16 @@ describe('blend', () => {
     const { scene, deps, selected } = setup(['a', 'b']);
     run(blendAction, deps, { steps: 2 });
     const node = scene.get(selected()[0] as NodeId)!;
-    const path = pathEffectDerivePath(node, (node.dependsOn as NodeId[]).map((d) => derivedDepOf(scene, d)));
+    const path = PATH_EFFECT_DERIVATIONS.derivePath(node, (node.dependsOn as NodeId[]).map((d) => derivedDepOf(scene, d)));
     expect(derivedPartsOf(path)).toHaveLength(2);
   });
 
   it('survives a save and load', () => {
     const { scene, deps, selected } = setup(['a', 'b']);
     run(blendAction, deps, { steps: 2 });
-    const loaded = sceneFromJSON<unknown, 'default', RectPose>(scene.toJSON());
+    const loaded = sceneFromJSON<unknown, 'default', RectPose>(scene.toJSON(), { registry: withPathEffectsRegistry() });
     const node = loaded.get(selected()[0] as NodeId)!;
-    expect(node.derivePath).toBe(pathEffectDerivePath);
+    expect(node.derivePath).toBe(PATH_EFFECT_DERIVATIONS.derivePath);
     expect(partsOf(loaded as TestScene, node.id)).toHaveLength(2);
   });
 
@@ -141,5 +152,36 @@ describe('expand', () => {
     expect(made.map((n) => n.pose.x)).toEqual([-10, 90, 190]);
     scene.undo();
     expect(scene.get(effect as NodeId)).toBeDefined();
+  });
+});
+
+describe('moving and reshaping an effect', () => {
+  const dragCtx = (deps: InvocationCtx['deps'], drag?: { x: number; y: number }) => ({
+    world: drag ?? { x: 0, y: 0 },
+    screen: { x: 0, y: 0 },
+    modifiers: { alt: false, ctrl: false, meta: false, shift: false },
+    deps,
+    ...(drag ? { drag: { start: { x: 0, y: 0 }, current: drag, delta: drag } } : {}),
+  }) as unknown as InvocationCtx;
+
+  it('drags its sources with it, so it follows them, as one undo step', () => {
+    const { scene, deps, selected } = setup(['a', 'b']);
+    run(blendAction, deps, { steps: 3 });
+    const effect = selected()[0]!;
+    const handle = (moveAction.invoker as OngoingInvoker).start(dragCtx(deps), {}) as OngoingHandle;
+    handle.onMove!(dragCtx(deps, { x: 0, y: 50 }));
+    handle.onEnd!(dragCtx(deps, { x: 0, y: 50 }), 'commit');
+    expect(scene.get('a' as NodeId)!.pose.y).toBe(50);
+    expect(scene.get('b' as NodeId)!.pose.y).toBe(50);
+    const mid = boundsOfPath(partsOf(scene, effect)[1]!.path);
+    expect(mid.y + mid.height / 2).toBeCloseTo(60, 3);
+    scene.undo();
+    expect(scene.get('a' as NodeId)!.pose.y).toBe(0);
+  });
+
+  it('resizes and turns through its sources, which a resize or rotation writes in its place', () => {
+    const { scene, deps, selected } = setup(['a', 'spine']);
+    run(bendAlongAction, deps, {});
+    expect(shapeSources(scene as never, [selected()[0]!])).toEqual(['a', 'spine']);
   });
 });

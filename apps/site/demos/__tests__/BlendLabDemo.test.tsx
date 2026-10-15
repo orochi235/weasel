@@ -64,6 +64,21 @@ describe('BlendLabDemo', () => {
     expect(after[0]!.y - before[0]!.y).toBeLessThan(after[4]!.y - before[4]!.y);
   });
 
+  it('drags both sources when the blend itself is dragged, and the steps go with them', async () => {
+    const { container } = await renderSettled(<StrictMode><BlendLabDemo /></StrictMode>);
+    const canvas = container.querySelector('.lk-trial-scene canvas');
+    if (!canvas) throw new Error('no scene canvas in the trial');
+    const pose = (id: string) => nodes().find((n) => n.id === id)!.pose as { y: number };
+    const [fromY, toY] = [pose('from').y, pose('to').y];
+    const middle = stepCenters()[2]!;
+
+    drag(canvas, [middle.x, middle.y], [middle.x, middle.y + 50]);
+
+    expect(pose('from').y).toBeCloseTo(fromY + 50, 3);
+    expect(pose('to').y).toBeCloseTo(toY + 50, 3);
+    expect(stepCenters()[2]!.y).toBeCloseTo(middle.y + 50, 3);
+  });
+
   it('expands the selected blend into ordinary paths', async () => {
     await renderSettled(<StrictMode><BlendLabDemo /></StrictMode>);
     expect(nodes()).toHaveLength(3);

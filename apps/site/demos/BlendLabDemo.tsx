@@ -1,12 +1,14 @@
 import {
   asNodeId,
   createScene,
+  PATH_EFFECT_DERIVATIONS,
   pathEffectNode,
   type ActionTunings,
   type RectPose,
   solid,
   strokeOf,
   useSelection,
+  withPathEffectsRegistry,
 } from '@weasel-js/core';
 import {
   type ConfigOf,
@@ -57,11 +59,12 @@ function createLabScene() {
   }, Math.PI / 4);
   const { steps, autoAlign, startOffset, rotate } = config.defaults();
   const blend = {
-    ...pathEffectNode({ kind: 'blend', steps, autoAlign, startOffset, rotate }, [from.id, to.id], 'default'),
+    ...pathEffectNode({ kind: 'blend', steps, autoAlign, startOffset, rotate }, [from.id, to.id], 'default', PATH_EFFECT_DERIVATIONS),
     id: BLEND,
   };
   return createScene<unknown, 'default', RectPose>({
     systemLayers: [{ id: 'default' }],
+    registry: withPathEffectsRegistry(),
     initial: [from, blend, to],
     coalesceWindowMs: 600,
   });
@@ -72,7 +75,7 @@ function BlendTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const selection = useSelection({ initial: [BLEND] });
   const settings = settingsOf(ctx.config);
   const latest = useLatest(settings);
-  // A blend made from the bar or with Mod+Alt+B takes the panel's settings.
+  // A blend made from the bar or with Alt+Shift+B takes the panel's settings.
   const tune = useMemo<ActionTunings>(() => ({ blend: { params: () => latest.current } }), [latest]);
   usePathEffectSettings(scene, 'blend', settings);
   usePathEffectProbe(scene);

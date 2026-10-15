@@ -4,12 +4,13 @@
  * is `@weasel-js/geom`'s; this is the scene node that keeps it current.
  */
 export {
+  createPathEffectDerivations,
   PATH_EFFECT,
-  pathEffectDerivePath,
-  pathEffectDerivePose,
   pathEffectNode,
   pathEffectOf,
   pathEffectParts,
+  registeredPathEffects,
+  type PathEffectDerivations,
 } from './derive';
 export {
   effectParts,
@@ -18,5 +19,5 @@ export {
   type PathEffect,
   type RepeatAlongEffect,
 } from './effects';
-export { type EffectSource } from './source';
+export type { EffectSource, EffectSourceReader } from './source';
 export { derivedPartsOf, pathFromParts, type DerivedPart } from '../derivedParts';

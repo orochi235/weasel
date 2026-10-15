@@ -1,7 +1,6 @@
 /**
- * How a path effect reads a source node: its outline from its painter's
- * silhouette, its paint as `kit:path` resolves it. Installed into the scene's
- * path effects by `NodeShape.ts` as it loads.
+ * How the kit's path effects read a source node: its outline from its
+ * painter's silhouette, its paint as `kit:path` resolves it.
  */
 import { pathThroughPoseFrame, poseLinearOf } from '@weasel-js/geom';
 import type { Fill, Stroke } from '@weasel-js/paint';
@@ -9,7 +8,7 @@ import { findNodeShape } from 'canvas/NodeShape';
 import { isRectPose } from 'core/geometry/autoPoseDescriptor';
 import type { EffectSource } from 'core/scene/pathEffects/source';
 import type { DerivedDep } from 'core/scene/types';
-import { pathPaintOf } from './nodePaint';
+import { pathPaintOf } from 'canvas/nodeShapes/nodePaint';
 
 /** `dep` as a path effect's source, or `null` when it has no outline. */
 export function readEffectSource(dep: DerivedDep<unknown>): EffectSource | null {

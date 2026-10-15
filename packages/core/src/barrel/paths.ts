@@ -134,12 +134,12 @@ export {
 
 // ─── Path effects: live blend, bend along, and repeat along ────────────────
 export {
+  createPathEffectDerivations,
   PATH_EFFECT,
-  pathEffectDerivePath,
-  pathEffectDerivePose,
   pathEffectNode,
   pathEffectOf,
   pathEffectParts,
+  registeredPathEffects,
   derivedPartsOf,
   pathFromParts,
 } from '../core/scene/pathEffects';
@@ -147,9 +147,13 @@ export type {
   BendAlongEffect,
   BlendEffect,
   DerivedPart,
+  EffectSource,
+  EffectSourceReader,
+  PathEffectDerivations,
   PathEffect,
   RepeatAlongEffect,
 } from '../core/scene/pathEffects';
+export { PATH_EFFECT_DERIVATIONS, readEffectSource, withPathEffectsRegistry } from '../features/pathEffects';
 export { PATH_EFFECTS_GROUP } from '../interactions/actions/pathEffects';
 
 // ─── Curves: alternate path representations (Bezier, NURBS, Spiro) ──────────

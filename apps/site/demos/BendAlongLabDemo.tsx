@@ -1,12 +1,14 @@
 import {
   asNodeId,
   createScene,
+  PATH_EFFECT_DERIVATIONS,
   pathEffectNode,
   type ActionTunings,
   type RectPose,
   solid,
   strokeOf,
   useSelection,
+  withPathEffectsRegistry,
 } from '@weasel-js/core';
 import {
   type ConfigOf,
@@ -47,9 +49,10 @@ function createLabScene() {
     fill: null,
     stroke: strokeOf('#8a8a8a', 1),
   });
-  const bent = { ...pathEffectNode({ kind: 'bendAlong', ...settingsOf(config.defaults()) }, [ribbon.id, spine.id], 'default'), id: asNodeId('bent') };
+  const bent = { ...pathEffectNode({ kind: 'bendAlong', ...settingsOf(config.defaults()) }, [ribbon.id, spine.id], 'default', PATH_EFFECT_DERIVATIONS), id: asNodeId('bent') };
   return createScene<unknown, 'default', RectPose>({
     systemLayers: [{ id: 'default' }],
+    registry: withPathEffectsRegistry(),
     initial: [ribbon, spine, bent],
     coalesceWindowMs: 600,
   });
@@ -60,7 +63,7 @@ function BendTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const selection = useSelection({ initial: [SPINE] });
   const settings = settingsOf(ctx.config);
   const latest = useLatest(settings);
-  // A bend made from the bar or with Mod+Alt+W takes the panel's settings.
+  // A bend made from the bar or with Alt+Shift+W takes the panel's settings.
   const tune = useMemo<ActionTunings>(() => ({ bendAlong: { params: () => latest.current } }), [latest]);
   usePathEffectSettings(scene, 'bendAlong', settings);
   usePathEffectProbe(scene);

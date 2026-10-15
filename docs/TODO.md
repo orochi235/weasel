@@ -177,12 +177,13 @@ Priority tags:
 - **(P2) Shape builder.** Drag across overlapping regions to merge them, Alt-drag to delete them.
   `previewBooleanOp` already answers the pieces; the tool draws and picks among them. Building it
   also gives "Live preview of a Boolean operation" below its display.
-- **(P2) A path effect cannot be moved or resized by itself.** A blend, bend or repeat
-  (`core/scene/pathEffects/`) derives its pose from what it paints, so a drag or a resize handle on
-  it writes an authored pose nothing reads, and nothing on screen changes. Undecided: whether
-  dragging one moves its sources, carries an offset in its `data.pathEffect`, or is refused.
-  Its sources must also be leaves sharing a parent frame: the effect paints in the frame its
-  dependencies are painted in, and has not been tried inside a container that composes frames.
+- **(P2) Two kit key bindings are chords a browser takes first.** `createOutlines` is on
+  Mod+Shift+O (Chrome's bookmark manager) and `averageAnchors` on Mod+Alt+J (Chrome's console),
+  so neither fires there. `browserReservedBindings.test.ts` pins the pair, so a new collision
+  fails it; moving these two is a choice of new keys.
+- **(P3) A path effect inside a container that composes frames is untried.** An effect paints in
+  the frame its sources are painted in (`core/scene/pathEffects/`); the actions only make one
+  over two leaves, inserted beside the first.
 - **(P3) A blend has no spine, and its steps no spacing by distance.** `BlendEffect` places
   `steps` shapes evenly in `t` on the straight run between its sources; laying them along a
   third path, or spacing them so neighboring shapes sit a fixed distance apart, is not offered.

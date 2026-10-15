@@ -9,7 +9,9 @@ import type { Op } from 'core/ops/types';
 import { createSetDataOp } from 'core/ops/setData';
 import { derivedDepOf } from 'core/scene/effectivePose';
 import type { Node, NodeId, Scene } from 'core/scene/types';
-import { pathEffectNode, pathEffectOf, pathEffectParts } from 'core/scene/pathEffects/derive';
+import {
+  pathEffectNode, pathEffectOf, pathEffectParts, registeredPathEffects,
+} from 'core/scene/pathEffects/derive';
 import type { PathEffect } from 'core/scene/pathEffects/effects';
 import { commitOps, deleteNode, insertAt, slotOf } from '../pathCommands/pathNodes';
 import { EFFECT_DEFAULTS, withEffectSettings } from './params';
@@ -20,10 +22,12 @@ type AnyNode = Node<unknown, string, unknown>;
 /** The `group` every path-effect action is in, for an `<ActionBar>`. */
 export const PATH_EFFECTS_GROUP = 'pathEffects';
 
-/** The first two selected leaves, in the order they were selected. */
+/** The first two selected leaves, in the order they were selected. `null`
+ *  too in a scene whose registry holds no path effects, which could not save
+ *  one. */
 function selectedPair(deps: ActionDeps | undefined): [AnyNode, AnyNode] | null {
   const scene = deps?.scene as AnyScene | undefined;
-  if (!scene) return null;
+  if (!scene || registeredPathEffects(scene.registry) === null) return null;
   const leaves = (deps?.selection?.get() ?? [])
     .map((id) => scene.get(id as NodeId))
     .filter((n): n is AnyNode => n !== undefined && n.kind === 'leaf');
@@ -54,8 +58,10 @@ function createEffectAction(spec: CreateSpec): Action & { requires: string[] } {
     id: spec.id,
     label: spec.label,
     group: PATH_EFFECTS_GROUP,
-    // `code` too: with Alt held on a Mac the key reads as another glyph.
-    defaultBinding: { kind: 'key', key: spec.key, code: spec.code, mods: { mod: true, alt: true } },
+    // Alt+Shift, which no major browser takes for these letters (see
+    // `BROWSER_RESERVED_CHORDS`); `code` too, since with Alt held on a Mac the
+    // key reads as another glyph.
+    defaultBinding: { kind: 'key', key: spec.key, code: spec.code, mods: { alt: true, shift: true } },
     eligible: { capability: 'creates-shapes' },
     requires: ['selection', 'scene', 'applyOps'],
     invoker: {
@@ -64,6 +70,7 @@ function createEffectAction(spec: CreateSpec): Action & { requires: string[] } {
         const scene = deps.scene as AnyScene | undefined;
         const pair = selectedPair(deps);
         if (!scene || !pair) return;
+        const derivations = registeredPathEffects(scene.registry)!;
         const [a, b] = pair;
         const effect = withEffectSettings(EFFECT_DEFAULTS[spec.kind], params as Record<string, unknown> | undefined);
         const sameParent = a.parent === b.parent;
@@ -71,7 +78,7 @@ function createEffectAction(spec: CreateSpec): Action & { requires: string[] } {
         // Inserting at the upper source's slot puts the steps just under it.
         const index = !sameParent ? -1 : spec.between ? Math.max(...slots) : Math.max(...slots) + 1;
         const node = {
-          ...pathEffectNode(effect, [a.id, b.id], a.layer),
+          ...pathEffectNode(effect, [a.id, b.id], a.layer, derivations),
           id: scene.mintId(),
           parent: sameParent ? a.parent : null,
         } as unknown as AnyNode;
@@ -79,7 +86,11 @@ function createEffectAction(spec: CreateSpec): Action & { requires: string[] } {
         deps.selection?.set([node.id] as never);
       },
     } satisfies ImmediateInvoker,
-    enabled: (deps) => (selectedPair(deps) ? true : ActionDisabledReason.SelectionRequired),
+    enabled: (deps) => {
+      const scene = deps?.scene as AnyScene | undefined;
+      if (scene && registeredPathEffects(scene.registry) === null) return ActionDisabledReason.NotApplicable;
+      return selectedPair(deps) ? true : ActionDisabledReason.SelectionRequired;
+    },
   };
 }
 
@@ -165,7 +176,7 @@ export const expandPathEffectAction: Action & { requires: string[] } = {
   id: 'expandPathEffect',
   label: EXPAND_LABEL,
   group: PATH_EFFECTS_GROUP,
-  defaultBinding: { kind: 'key', key: 'e', code: 'KeyE', mods: { mod: true, alt: true } },
+  defaultBinding: { kind: 'key', key: 'e', code: 'KeyE', mods: { alt: true, shift: true } },
   eligible: { capability: 'creates-shapes' },
   requires: ['selection', 'scene', 'applyOps'],
   invoker: {

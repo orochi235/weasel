@@ -1,12 +1,14 @@
 import {
   asNodeId,
   createScene,
+  PATH_EFFECT_DERIVATIONS,
   pathEffectNode,
   type ActionTunings,
   type RectPose,
   solid,
   strokeOf,
   useSelection,
+  withPathEffectsRegistry,
 } from '@weasel-js/core';
 import {
   type ConfigOf,
@@ -50,9 +52,10 @@ function createLabScene() {
     fill: null,
     stroke: strokeOf('#8a8a8a', 1),
   });
-  const copies = { ...pathEffectNode({ kind: 'repeatAlong', ...settingsOf(config.defaults()) }, [tile.id, track.id], 'default'), id: asNodeId('copies') };
+  const copies = { ...pathEffectNode({ kind: 'repeatAlong', ...settingsOf(config.defaults()) }, [tile.id, track.id], 'default', PATH_EFFECT_DERIVATIONS), id: asNodeId('copies') };
   return createScene<unknown, 'default', RectPose>({
     systemLayers: [{ id: 'default' }],
+    registry: withPathEffectsRegistry(),
     initial: [tile, track, copies],
     coalesceWindowMs: 600,
   });
@@ -63,7 +66,7 @@ function RepeatTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const selection = useSelection({ initial: [TRACK] });
   const settings = settingsOf(ctx.config);
   const latest = useLatest(settings);
-  // A repeat made from the bar or with Mod+Alt+R takes the panel's settings.
+  // A repeat made from the bar or with Alt+Shift+R takes the panel's settings.
   const tune = useMemo<ActionTunings>(() => ({ repeatAlong: { params: () => latest.current } }), [latest]);
   usePathEffectSettings(scene, 'repeatAlong', settings);
   usePathEffectProbe(scene);
