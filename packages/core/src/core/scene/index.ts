@@ -8,6 +8,7 @@ export type {
   AddLayerSpec,
   Bivariant,
   ClipFromPoseFn,
+  CopiesFromPoseFn,
   DerivedDep,
   DerivePathFn,
   DerivePoseFn,

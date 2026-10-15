@@ -111,6 +111,7 @@
       "@weasel-js/stroke/test-seams": ["../stroke/src/test-seams.ts"],
       "@weasel-js/svg": ["../svg/src/index.ts"],
       "@weasel-js/svg/testing/*": ["../svg/src/testing/*"],
+      "@weasel-js/symmetry": ["../symmetry/src/index.ts"],
       "@weasel-js/text": ["../text/src/index.ts"],
       "@weasel-js/text/test-seams": ["../text/src/test-seams.ts"],
       "@weasel-js/text-dom": ["../text-dom/src/index.ts"],
