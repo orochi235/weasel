@@ -16,7 +16,8 @@
  *     registry at all. There the eligibility filter is skipped entirely,
  *     so these actions report themselves disabled unless a path is
  *     actually being edited with anchors selected, and the dispatcher
- *     moves on to the node-level twin.
+ *     moves on to the node-level twin. That needs the keyboard actions
+ *     registered ahead of their twins, which `useStandardActions` does.
  *
  * Relying on eligibility alone would break every non-modal consumer;
  * relying on `enabled` alone would let a node-level action fire inside
