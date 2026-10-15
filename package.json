@@ -53,6 +53,7 @@
     "check:imports": "node scripts/check-declared-imports.mjs",
     "check:treeshake": "node scripts/check-treeshake.mjs",
     "check:react-free": "node scripts/check-react-free.mjs",
+    "check:needs": "node scripts/check-package-needs.mjs",
     "check:published": "node scripts/check-published-versions.mjs",
     "test:smoke:registry": "node scripts/smoke-registry-install.mjs",
     "check:build-order": "node scripts/check-build-order.mjs",
@@ -96,6 +97,7 @@
     "gen:icons": "node packages/ui/scripts/gen-icons.mjs",
     "gen:stances": "tsx packages/ui/scripts/gen-stances.ts",
     "gen:cursors": "node packages/cursor/scripts/gen-cursors.mjs",
+    "gen:badges": "node scripts/gen-badges.mjs",
     "proof:cursors": "node --import ./packages/cursor/scripts/ts-resolve.mjs packages/cursor/scripts/proof-cursors.mjs",
     "proof:pixels": "node --import ./packages/cursor/scripts/ts-resolve.mjs packages/cursor/scripts/proof-pixels.mjs",
     "proof:painted": "node --import ./packages/cursor/scripts/ts-resolve.mjs packages/cursor/scripts/proof-painted.mjs"
