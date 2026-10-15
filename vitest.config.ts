@@ -40,6 +40,7 @@ const VITE_SERVER_TESTS = [
   'packages/forge/src/csf/shims/alias.test.ts',
   'packages/forge/src/vite/plugin.test.ts',
   'packages/forge/src/vite/replacedFile.test.ts',
+  'packages/prefs/src/vite.test.ts',
   'scripts/vitest-browser-deps.vite.test.ts',
 ];
 
