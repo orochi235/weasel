@@ -25,6 +25,9 @@ export interface ActionBarProps {
    * and `title`. When omitted, the entry's own `label` is used.
    */
   labels?: Record<string, string>;
+  /** Only these entries of the group, each an action id — every variant of it — or an
+   *  `id:variant` key. Absent, the whole group. */
+  only?: readonly string[];
   /** Additional class for the toolbar root. */
   className?: string;
 }
@@ -39,7 +42,7 @@ export interface ActionBarProps {
  * navigation (roving tabindex).
  */
 export function ActionBar(props: ActionBarProps) {
-  const { group, orientation = 'horizontal', icons, labels, className } = props;
+  const { group, orientation = 'horizontal', icons, labels, only, className } = props;
   const registry = useActionsRegistry();
   const all = useSyncExternalStore(
     registry ? registry.subscribe : noopSubscribe,
@@ -47,7 +50,9 @@ export function ActionBar(props: ActionBarProps) {
     registry ? registry.list : () => EMPTY_LIST,
   );
   const schema = useMemo((): PrefGroup => {
-    const keys = all.filter((a) => a.group === group).flatMap(actionItems).map((item) => item.key);
+    const keys = all.filter((a) => a.group === group).flatMap(actionItems)
+      .filter((item) => !only || only.includes(item.key) || only.includes(item.action.id))
+      .map((item) => item.key);
     const leaf = (key: string): PrefAction => {
       const icon = icons?.[key];
       return {
@@ -62,7 +67,7 @@ export function ActionBar(props: ActionBarProps) {
     };
     // An action's key may hold a dot, which a schema key may not, and a key that reads as an index would sort first.
     return { name: '', children: Object.fromEntries(keys.map((key, i) => [`action${i}`, leaf(key)])) };
-  }, [all, group, icons, labels]);
+  }, [all, group, icons, labels, only]);
 
   return (
     <Bar

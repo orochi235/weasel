@@ -41,7 +41,7 @@
     "longestFunction": 183
   },
   "packages/core/src/canvas/SceneCanvas/props.ts": {
-    "lines": 637
+    "lines": 636
   },
   "packages/core/src/canvas/SceneCanvas/useDispatcherOverlayLayer.ts": {
     "longestFunction": 198
@@ -335,7 +335,7 @@
     "longestFunction": 204
   },
   "packages/ui/src/components/NumberField/UnitField.tsx": {
-    "longestFunction": 196
+    "longestFunction": 188
   },
   "packages/ui/src/components/PaintInput/PaintInput.tsx": {
     "longestFunction": 138

@@ -12,6 +12,7 @@ export * from './components/Code';
 export * from './components/InlineMarkdown';
 export * from './components/CodeBlock';
 export * from './components/DataGrid';
+export * from './components/AnchorFields';
 export * from './components/DetailList';
 export * from './components/Disclosure';
 export * from './components/DragGhost';

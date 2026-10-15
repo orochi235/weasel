@@ -3,7 +3,7 @@
  */
 import { useLatest } from '@weasel-js/react';
 import { useState } from 'react';
-import type { PathEditHost } from 'canvas/SceneCanvas/pathEditHost';
+import type { PathEditHost, PathEditOpening } from 'canvas/SceneCanvas/pathEditHost';
 import type { RenderLayer } from 'core/layers/render';
 import { rectFromPlane, type PlaneMap } from 'core/viewport/parallax';
 import type { View } from 'core/viewport/view';
@@ -14,6 +14,8 @@ import { createPathEditState, type PathEditState } from './pathEditState';
 export interface UsePathEditStateOptions {
   /** `<SceneCanvas pathEdit>`. */
   host: PathEditHost | undefined;
+  /** `<SceneCanvas defaultPathEdit>`: what the state starts holding. */
+  opening?: PathEditOpening;
   /** See `PathEditSource.isAllowed`; absent when no mode registry is wired. */
   isAllowed: (() => boolean) | undefined;
   isSelectedNode: (id: string) => boolean;
@@ -23,11 +25,19 @@ export interface UsePathEditStateOptions {
  *  options of the last committed render. */
 export function usePathEditState(options: UsePathEditStateOptions): PathEditState {
   const live = useLatest(options);
-  const [state] = useState(() => createPathEditState({
-    host: () => live.current.host,
-    isAllowed: () => live.current.isAllowed?.() ?? true,
-    isSelectedNode: (id) => live.current.isSelectedNode(id),
-  }));
+  const [state] = useState(() => {
+    const made = createPathEditState({
+      host: () => live.current.host,
+      isAllowed: () => live.current.isAllowed?.() ?? true,
+      isSelectedNode: (id) => live.current.isSelectedNode(id),
+    });
+    const { opening } = options;
+    if (opening) {
+      made.setEditingId(opening.id);
+      made.setSelectedAnchors(new Set(opening.anchors ?? []));
+    }
+    return made;
+  });
   return state;
 }
 

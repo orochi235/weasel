@@ -123,6 +123,7 @@ export function NumberInput(p: PropertyNumberFieldProps) {
       onInput={p.onInput ?? p.onChange}
       onChange={p.onInput ? p.onChange : ignore}
       onCancel={p.onCancel}
+      onOffset={p.onOffset}
     />
   );
   if (p.unit == null || (known && !Number.isFinite(p.value))) return input;

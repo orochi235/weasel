@@ -14,6 +14,7 @@ import {
   withAlpha01
 } from '@weasel-js/core';
 import {
+  AnchorFields,
   LayerList,
   type LayerListItem,
   PropertyField,
@@ -32,6 +33,7 @@ import {
 import type { ActivePaint } from './ActiveSwatches';
 import { PAPER_OPTIONS, type PaperSizeKey } from './paperSizes';
 import { DEFAULT_FILENAME } from './docPersistence';
+import { DOCUMENT_UNITS } from './documentUnits';
 import type { DrawScene, WeaselDrawData } from './drawDocument';
 import { WD_RENDERERS } from './paintRenderers';
 import { type PanelChrome, usePanel } from './panels';
@@ -191,17 +193,20 @@ export function RightSidebar({
               />
             </PropertyList>
           ) : (
-            <SelectionPanel
-              scene={scene}
-              selection={selection}
-              // WeaselDraw's kinds come from the kit's inferred routing (`text` /
-              // `path` / `image` — no `data.kind` tag), so the panel classifies
-              // with the same entries SceneCanvas applies when `routing` is unset.
-              properties={inferredNodeProperties}
-              routing={inferredNodeRouting}
-              renderers={WD_RENDERERS}
-              emptyState={<em className="wd-no-selection">No selection</em>}
-            />
+            <>
+              <AnchorFields accepts={DOCUMENT_UNITS} unit="pt" />
+              <SelectionPanel
+                scene={scene}
+                selection={selection}
+                // WeaselDraw's kinds come from the kit's inferred routing (`text` /
+                // `path` / `image` — no `data.kind` tag), so the panel classifies
+                // with the same entries SceneCanvas applies when `routing` is unset.
+                properties={inferredNodeProperties}
+                routing={inferredNodeRouting}
+                renderers={WD_RENDERERS}
+                emptyState={<em className="wd-no-selection">No selection</em>}
+              />
+            </>
           )}
         </SidebarPanel>
       )}
