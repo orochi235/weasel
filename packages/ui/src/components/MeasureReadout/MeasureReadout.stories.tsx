@@ -1,44 +1,64 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import {
   ActionsProvider,
-  createMeasureActions,
-  createMeasurementStore,
-  measureBetween,
+  createMeasurements,
+  createScene,
+  DepRegistryProvider,
+  measureNode,
+  measurementsContribution,
   useAction,
+  useDepSource,
   type Action,
+  type DepName,
+  type NodeId,
+  type Scene,
 } from '@weasel-js/core';
 import { useState } from 'react';
 import { MeasureReadout } from './MeasureReadout';
 import s from './MeasureReadout.stories.module.css';
+
+type AnyScene = Scene<unknown, string, unknown>;
+type Pt = { x: number; y: number };
 
 function Register({ action }: { action: Action }) {
   useAction(action);
   return null;
 }
 
-/** A held measurement, with the measure tool's commands registered. Nothing
- *  is selected, so Move by and Rotate by read as unavailable. */
-function Held({ from, to }: { from: { x: number; y: number }; to: { x: number; y: number } }) {
-  const [store] = useState(() => {
-    const made = createMeasurementStore();
-    made.set(measureBetween(from, to));
-    return made;
+function Deps({ scene, selected }: { scene: AnyScene; selected: readonly string[] }) {
+  useDepSource('scene' as DepName, () => scene as never);
+  useDepSource('selection' as DepName, () => ({ get: () => selected, set: () => {} }) as never);
+  return null;
+}
+
+/** One measurement from `from` to `to` on an annotation layer, with the
+ *  measurement commands registered and `selected` as the content selection. */
+function Held({ from, to, selected }: { from: Pt; to: Pt; selected: readonly string[] }) {
+  const [{ scene, ms, actions }] = useState(() => {
+    const sc = createScene<unknown, 'main' | 'notes', unknown>({
+      systemLayers: [{ id: 'main' }, { id: 'notes', annotation: true }],
+    }) as unknown as AnyScene;
+    sc.add(measureNode('m' as NodeId, 'notes', from, to) as never);
+    const m = createMeasurements({ layer: 'notes' });
+    return { scene: sc, ms: m, actions: measurementsContribution(sc, m).actions ?? [] };
   });
-  const [actions] = useState(() => createMeasureActions(store));
   return (
-    <ActionsProvider>
-      {actions.map((a) => <Register key={a.id} action={a} />)}
-      <div className={s.stage}>
-        <MeasureReadout store={store} />
-      </div>
-    </ActionsProvider>
+    <DepRegistryProvider>
+      <ActionsProvider>
+        <Deps scene={scene} selected={selected} />
+        {actions.map((a) => <Register key={a.id} action={a} />)}
+        <div className={s.stage}>
+          <MeasureReadout scene={scene} measurements={ms} />
+        </div>
+      </ActionsProvider>
+    </DepRegistryProvider>
   );
 }
 
 const meta: Meta<typeof Held> = {
   title: 'ui/MeasureReadout',
   component: Held,
-  args: { from: { x: 10, y: 10 }, to: { x: 130, y: 60 } },
+  args: { from: { x: 10, y: 10 }, to: { x: 130, y: 60 }, selected: ['shape'] },
 };
 export default meta;
 
@@ -55,4 +75,9 @@ export const Rising: Story = {
 /** Up and to the left: both offsets negative, with the minus sign, and an angle past 90°. */
 export const Negative: Story = {
   args: { from: { x: 300, y: 200 }, to: { x: 12.5, y: 40 } },
+};
+
+/** Nothing selected: Move by and Rotate by are unavailable, and their tooltips say why. */
+export const NothingSelected: Story = {
+  args: { selected: [] },
 };

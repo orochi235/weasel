@@ -94,6 +94,12 @@ export const PREFS = {
           max: 200,
         },
         panels: PANELS_PREF,
+        showAnnotations: {
+          kind: 'boolean',
+          name: 'Show annotations in Layers',
+          description: 'List the layers that are not printed — measurements, and anything else drawn as an aid — and their items in the Layers panel. The canvas draws them either way, and export leaves them out.',
+          default: false,
+        },
       },
     },
     view: {

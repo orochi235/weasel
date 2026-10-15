@@ -159,6 +159,16 @@ Priority tags:
 
 ### Path editing tricks
 
+- **(P2) Measurement rows in draw's Layers panel cannot be renamed, or hidden or locked one at a
+  time.** `LayerList` has no rename, and the scene has no per-node visibility or lock, so a
+  measurement row offers select and remove only; the annotation layer's own row can be hidden,
+  and shows its lock without toggling it. A measurement's `data.label` is what a rename would write.
+- **(P3) Moving a shape does not snap to measurement ends.** `nearestMeasureEnd` reaches the
+  insert tools through the `snap` dep; the select tool's move snaps through its own `snap`
+  strategy (`gridSnapStrategy`), which knows nothing of measurements.
+- **(P3) `renderSceneToPixels` draws annotation layers.** The SVG export leaves them out through
+  `isAnnotationNode`; a headless raster draws whatever the scene holds. Undecided: whether a raster
+  is an export, and so skips them, or a view of the canvas, and so keeps them.
 - **(P2) Smart remove brush.** Brush along a path in edit mode to delete the anchors under the
   brush, each gap refit to the shape it replaces the way `deleteAnchorsAt` refits one.
 - **(P2) A rectangle has no anchors in path edit.** Draw stores a drawn rectangle's `data.path`

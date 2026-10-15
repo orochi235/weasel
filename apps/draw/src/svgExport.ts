@@ -12,6 +12,7 @@ import {
   documentPose,
   embedWeaselMetadataInSvg,
   fillInPoseFrame,
+  isAnnotationNode,
   pathInPoseFrame,
   shapeGeneratorOf,
   unionAABB,
@@ -136,7 +137,8 @@ function poseOfIn<TLayer extends string>(
 }
 
 /** The `SceneSource` `sceneToSvgNodes` walks. `isPainted` drops what a hidden
- *  layer holds, so an export carries what the pixel path draws. */
+ *  layer holds, so an export carries what the pixel path draws, and what an
+ *  annotation layer holds, which is never printed. */
 function sceneSourceOf<TLayer extends string>(
   scene: DrawScene<TLayer>,
   poseOf: (id: string) => WeaselDrawPose | undefined,
@@ -150,7 +152,7 @@ function sceneSourceOf<TLayer extends string>(
     get: (id) => scene.get(id as never),
     isPainted: (id) => {
       const layer = scene.get(id as never)?.layer;
-      return layer === undefined || !hidden.has(String(layer));
+      return layer === undefined || (!hidden.has(String(layer)) && !isAnnotationNode(scene as never, id));
     },
     objOf: (id) => {
       const node = scene.get(id as never);

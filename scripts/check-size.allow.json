@@ -50,7 +50,7 @@
     "longestFunction": 155
   },
   "packages/core/src/canvas/pickWalk.ts": {
-    "lines": 444
+    "lines": 434
   },
   "packages/core/src/canvas/sceneAdapter.ts": {
     "longestFunction": 156
@@ -331,7 +331,7 @@
     "longestFunction": 225
   },
   "packages/ui/src/components/LayerList/LayerList.tsx": {
-    "lines": 546,
+    "lines": 510,
     "longestFunction": 204
   },
   "packages/ui/src/components/NumberField/UnitField.tsx": {

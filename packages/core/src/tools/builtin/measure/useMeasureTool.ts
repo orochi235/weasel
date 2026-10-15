@@ -1,23 +1,18 @@
-import { createElement, useMemo, useState } from 'react';
+import { createElement, useMemo } from 'react';
 import { useLatest } from '@weasel-js/react';
 import { defineTool } from '../../overlayBinding';
 import type { Tool } from '../../overlayBinding';
-import type { RenderLayer } from 'core/layers/render';
-import type { DrawCommand } from '@weasel-js/renderer';
 import type { ToolKeybinding } from '@weasel-js/routing';
-import { worldToScreen } from 'core/viewport/viewTransform';
-import { viewToTransform } from 'core/viewport/view';
-import { polylineFromPoints } from '@weasel-js/geom';
-import { OVERLAY_ROLE_STROKES } from 'canvas/overlayRoleStrokes';
 import { MeasureIcon } from '../../../icons';
-import { createMeasureActions, MEASURE_ACTION_IDS } from './measureActions';
-import { createMeasurementStore, type MeasurementStore } from './measurement';
+import type { Measurements } from 'features/measure/measurements';
+import { measureCreateAction, measurePickAtAction } from 'features/measure/measureGestures';
+import { MEASURE_ACTION_IDS } from 'features/measure/actionIds';
 
 /** Options for `useMeasureTool`. */
 export interface UseMeasureToolOptions {
-  /** Where the tool keeps its measurement. Pass one to read it from outside
-   *  the canvas — a readout, a panel. Default: a store of the tool's own. */
-  store?: MeasurementStore;
+  /** Where the measurements go and which one is picked — the same object the
+   *  canvas's `measurementsContribution` and a readout are given. */
+  measurements: Measurements;
   /** The angle step, in radians, Shift holds a measurement to. Default 15°.
    *  Read on every pointer move, so a change mid-drag applies at once. */
   angleStep?: number;
@@ -25,59 +20,21 @@ export interface UseMeasureToolOptions {
   keybinding?: ToolKeybinding | null;
 }
 
-/** Screen-px half-length of the ticks across each end of the line. */
-const TICK_PX = 5;
-
-/** The measured line and a tick across each end, in screen space. */
-function measureLayer(store: MeasurementStore): RenderLayer<unknown> {
-  return {
-    id: 'measure-line',
-    label: 'Measure — line',
-    space: 'screen',
-    subscribe: store.subscribe,
-    draw: (_data, view) => {
-      const m = store.get();
-      if (!m) return [];
-      const t = viewToTransform(view);
-      const [ax, ay] = worldToScreen(m.start.x, m.start.y, t);
-      const [bx, by] = worldToScreen(m.end.x, m.end.y, t);
-      const stroke = OVERLAY_ROLE_STROKES['measure'];
-      const len = Math.hypot(bx - ax, by - ay);
-      // The ticks run across the line; with no length yet they stand upright.
-      const nx = len > 0 ? -(by - ay) / len : 0;
-      const ny = len > 0 ? (bx - ax) / len : 1;
-      const tick = (x: number, y: number): DrawCommand => ({
-        kind: 'path',
-        path: polylineFromPoints([
-          { x: x - nx * TICK_PX, y: y - ny * TICK_PX },
-          { x: x + nx * TICK_PX, y: y + ny * TICK_PX },
-        ]),
-        stroke,
-      });
-      const out: DrawCommand[] = [tick(ax, ay), tick(bx, by)];
-      if (len > 0) out.unshift({ kind: 'path', path: polylineFromPoints([{ x: ax, y: ay }, { x: bx, y: by }]), stroke });
-      return out;
-    },
-  };
-}
-
 /**
- * Measure tool. A drag measures from press to release in world units — both
- * ends through the `snap` dep, Shift holding the angle to `angleStep` — and the
- * measurement stays on the canvas until the next drag, Escape, or a switch to
- * another tool. `measure.moveBy` moves the selection by the measured offset
- * and `measure.rotateBy` turns it about its center by the measured angle, each
- * as one undo step; they are the tool's own actions, so a readout can bind
- * buttons to them through the actions registry.
+ * Measure tool. A drag adds a measurement from press to release in world
+ * units — both ends through the `snap` dep, Shift holding the angle to
+ * `angleStep` — as one undo step, and picks it. A click picks the
+ * measurement under it, Escape drops the pick, and Delete removes the
+ * current measurement. The measurements are scene nodes on an annotation
+ * layer, so they stay when the tool changes; editing them under any tool,
+ * and the commands that transform by them, come from
+ * `measurementsContribution`, which the canvas installs beside this tool.
  */
-export function useMeasureTool(options: UseMeasureToolOptions = {}): Tool {
-  const [ownStore] = useState(createMeasurementStore);
-  const store = options.store ?? ownStore;
-  const actions = useMemo(() => createMeasureActions(store), [store]);
-  const overlay = useMemo(() => measureLayer(store), [store]);
+export function useMeasureTool(options: UseMeasureToolOptions): Tool {
+  const { measurements: ms, keybinding } = options;
+  const actions = useMemo(() => [measureCreateAction(ms), measurePickAtAction(ms)], [ms]);
   const angleStep = useLatest(options.angleStep);
 
-  const { keybinding } = options;
   return useMemo(() => defineTool({
     id: 'measure',
     capabilities: ['navigation'],
@@ -86,15 +43,21 @@ export function useMeasureTool(options: UseMeasureToolOptions = {}): Tool {
     presentation: { label: 'Measure', icon: createElement(MeasureIcon), group: 'view' },
     ...(keybinding === null ? {} : { keybinding: keybinding ?? { key: 'M' } }),
     actions,
-    overlay,
-    onDeactivate: () => store.set(null),
+    onActivate: () => ms.measuring.set(true),
+    onDeactivate: () => {
+      ms.measuring.set(false);
+      ms.draft.set(null);
+    },
     bindings: [
+      { spec: { kind: 'click' }, actionId: MEASURE_ACTION_IDS.pickAt },
       {
         spec: { kind: 'drag', mods: { shift: 'optional' } },
         actionId: MEASURE_ACTION_IDS.measure,
         opts: { params: () => (angleStep.current === undefined ? {} : { angleStep: angleStep.current }) },
       },
-      { spec: { kind: 'key', key: 'Escape' }, actionId: MEASURE_ACTION_IDS.clear },
+      { spec: { kind: 'key', key: 'Escape' }, actionId: MEASURE_ACTION_IDS.unpick },
+      { spec: { kind: 'key', key: 'Delete' }, actionId: MEASURE_ACTION_IDS.delete },
+      { spec: { kind: 'key', key: 'Backspace' }, actionId: MEASURE_ACTION_IDS.delete },
     ],
-  }), [actions, overlay, keybinding, store, angleStep]);
+  }), [actions, keybinding, ms, angleStep]);
 }
