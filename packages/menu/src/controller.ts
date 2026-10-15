@@ -56,6 +56,7 @@ export function createMenuController(opts: MenuControllerOptions): MenuControlle
   let pending: (() => void) | null = null;
   let pendingKind: 'open' | 'diagonal' | null = null;
   let lastPoint: Point | null = null;
+  let deferred: { level: number; index: number | null } | null = null;
   let typed: TypeaheadBuffer = { text: '', at: -Infinity };
   let closed = false;
 
@@ -135,7 +136,10 @@ export function createMenuController(opts: MenuControllerOptions): MenuControlle
       if (index !== null && !isRowAt(level, index)) return;
       const sameRow = index === stack[level];
       if (point && !sameRow && headingIntoChild(level, point)) {
-        if (pendingKind !== 'diagonal') later('diagonal', () => hoverNow(level, index), DIAGONAL_GRACE_MS);
+        deferred = { level, index };
+        if (pendingKind !== 'diagonal') {
+          later('diagonal', () => { if (deferred) hoverNow(deferred.level, deferred.index); }, DIAGONAL_GRACE_MS);
+        }
         return;
       }
       if (point) lastPoint = point;

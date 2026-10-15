@@ -184,6 +184,19 @@ describe('createMenuController', () => {
     expect(c.stack()).toEqual([3]);
   });
 
+  it('switches to the row under the pointer when the diagonal grace ends', () => {
+    const { c, advance } = setup();
+    c.setPanel(0, { x: 0, y: 0, w: 100, h: 100 });
+    c.hover(0, 2, { x: 50, y: 50 });
+    advance(200);
+    c.setPanel(1, { x: 100, y: 40, w: 100, h: 60 });
+    c.hover(0, 3, { x: 70, y: 60 });
+    advance(100);
+    c.hover(0, 5, { x: 80, y: 70 });
+    advance(200);
+    expect(c.stack()).toEqual([5]);
+  });
+
   it('runs an item once however many presses arrive', () => {
     const { c, ran, onClose } = setup();
     c.press(0, 0);
