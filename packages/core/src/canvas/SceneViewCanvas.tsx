@@ -112,7 +112,7 @@ function SceneViewCanvasInner<TData, TLayer extends string, TPose>(
     });
     return lease.paint(canvas, commands, view, { width, height });
   };
-  const { requestRedraw } = useCanvasSurface(paint, { target: localRef, paintOnCommit: true });
+  const { requestRedraw } = useCanvasSurface(paint, { target: localRef, onCommit: 'paint' });
 
   // Override writes never bump the scene version, so the version subscription
   // above cannot see them.
