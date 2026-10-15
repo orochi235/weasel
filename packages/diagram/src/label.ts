@@ -20,9 +20,9 @@ export interface DiagramLabel {
   /** `'start'`, `'mid'` and `'end'` are 0, 0.5 and 1; a number is that
    *  fraction of the route's length. */
   at: 'start' | 'mid' | 'end' | number;
-  /** World units perpendicular to the route, to the **left of the direction of
-   *  travel** — above a left-to-right edge. Default 0, which centers the label
-   *  on the line. */
+  /** World units between the route and the label's near side, to the **left
+   *  of the direction of travel** — above a left-to-right edge. Default 0,
+   *  which centers the label on the line. */
   offset?: number;
 }
 
@@ -68,12 +68,16 @@ export function labelDerivePose<TPose>(
     const station = pointAlongPath(path, t);
     if (station === null) return null;
 
-    const offset = label.offset ?? 0;
-    // Left of travel: with y down, that is above an edge running rightward.
-    const x = station.point.x + station.tangent.y * offset;
-    const y = station.point.y - station.tangent.x * offset;
-
     const bounds = geometry.getBounds(node.pose);
+    const nx = station.tangent.y;
+    const ny = -station.tangent.x;
+    // Half the label's depth along the normal, so its near side, not its center, sits `offset` off the line.
+    const offset = label.offset ?? 0;
+    const reach = offset + Math.sign(offset) * (Math.abs(nx) * bounds.width + Math.abs(ny) * bounds.height) / 2;
+    // Left of travel: with y down, that is above an edge running rightward.
+    const x = station.point.x + nx * reach;
+    const y = station.point.y + ny * reach;
+
     return translatePoseViaDescriptor(
       node.pose,
       x - (bounds.x + bounds.width / 2),

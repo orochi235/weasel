@@ -21,9 +21,7 @@ import type {
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { PoseDescriptor } from './resize/geometry';
 import type { GeometryProjection } from './geometryProjection';
-import type { SymmetryDep } from 'features/symmetry/types';
-import type { InsertDep, InsertLive } from './insertDep';
-import type { Point2, DebugSink, LongPressState } from '@weasel-js/routing';
+import type { Point2, DragSample, DebugSink, LongPressState } from '@weasel-js/routing';
 
 /** Minimal view API the action layer consumes. */
 export interface ViewApi {
@@ -255,6 +253,39 @@ export interface IngestionDep {
 }
 
 /**
+ * Per-kind extra geometry passed to `InsertDep.commit`.
+ *
+ * Built-in tools populate a typed variant so the kit's default factory can
+ * render the true tool params (line endpoints, polygon side count, star
+ * geometry, pencil sample list). Consumer-defined tools may pass any
+ * `{ kind: string; ... }` payload; the kit's factory falls back to AABB
+ * inscription for unknown kinds.
+ *
+ * `bounds` is still passed alongside as a useful AABB pose hint — factories
+ * may use it as the node's pose even when richer geometry is available.
+ */
+export type InsertExtras =
+  | { kind: 'rect' }
+  | { kind: 'ellipse' }
+  | { kind: 'line'; a: { x: number; y: number }; b: { x: number; y: number } }
+  | { kind: 'polygon'; sides: number; rotation: number; center?: { x: number; y: number }; radius?: number }
+  | { kind: 'star'; points: number; innerRadiusRatio: number; rotation: number; center?: { x: number; y: number }; outerRadius?: number }
+  | { kind: 'pencil'; samples: ReadonlyArray<DragSample> }
+  | { kind: 'text'; text?: string }
+  /** A finished path in world coords, as the pen tool commits one. `bounds`
+   *  is its AABB. An open path takes no fill. */
+  | { kind: 'path'; path: import('@weasel-js/geom').PolygonPath; closed: boolean }
+  | {
+      kind: 'image';
+      src?: string;
+      opacity?: number;
+      /** Chrome-only: what the in-flight drag paints. Read by the overlay
+       *  layer, ignored by the insert dep. */
+      preview?: 'bitmap' | 'outline';
+    }
+  | { kind: string; [extra: string]: unknown };
+
+/**
  * World-space point snapping — grid, guides, or any consumer rule. Actions
  * apply it to the coords they ingest so the live preview and the committed
  * geometry agree.
@@ -264,6 +295,8 @@ export interface SnapDep {
   point(p: { x: number; y: number }): { x: number; y: number };
 }
 
+import type { InsertDep, PathSymmetryDep, InsertIntoDep, InsertLive } from './insertDeps';
+export type { InsertDep, PathSymmetryDep, InsertIntoDep, InsertLive };
 
 /**
  * Adapter dep for `resizeAction`: bounds-frame behaviors (e.g.
@@ -394,12 +427,13 @@ declare module '@weasel-js/routing' {
      *  `insert.adjustRotation` reaches the one in its own input scope.
      *  Sourced by `<SceneCanvas>`; without it the rotation does nothing. */
     insertLive?: InsertLive;
+    /** The container the `insert` dep puts new nodes into — every shape a
+     *  tool draws and every dropped image or text. Absent, or answering
+     *  `null`: the top of the tree. */
+    insertInto?: InsertIntoDep;
     /** Snap dep — world-space point snapping (grid / guides). Sourced by
      *  `<SceneCanvas>` from `toolOptions.snapPoint`. Absent means no snapping. */
     snap?: SnapDep;
-    /** Live symmetry, which the `insert` dep and `editAnchorsAction` read.
-     *  `symmetryContribution` sources it. Absent means none. */
-    symmetry?: SymmetryDep;
     /**
      * The canvas's debug sink.
      * Sourced by `<SceneCanvas>`; absent while its `debug` overlay is off.
@@ -411,6 +445,9 @@ declare module '@weasel-js/routing' {
     /** Edit-anchors dep — narrow read/write of one polygon's path. If
      *  absent, `editAnchorsAction`'s `start` returns an empty handle (no-op). */
     editAnchors: EditAnchorsDep;
+    /** The transforms a path being edited should stay its own image under.
+     *  Absent: an anchor drag moves only what is dragged. */
+    pathSymmetry?: PathSymmetryDep;
     /**
      * Text-edit dep — activates the in-place text editing overlay. Sourced
      * from consumer via `useTextEdit` / `useSceneTextEdit`.
@@ -517,4 +554,3 @@ declare module '@weasel-js/routing' {
  * interface, not the empty one routing declares.
  */
 export type { DepSchema, DepName } from '@weasel-js/routing';
-export type { InsertDep, InsertExtras, InsertLive } from './insertDep';

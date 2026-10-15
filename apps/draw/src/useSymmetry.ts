@@ -1,48 +1,59 @@
-import { createSymmetryStore, symmetryContribution, type SymmetryAxis, useLatest } from '@weasel-js/core';
-import { useLayoutEffect, useMemo, useRef, useState } from 'react';
+import type { NodeId } from '@weasel-js/core';
+import {
+  createSymmetry, HORIZONTAL_AXIS, isSymmetryGroup, VERTICAL_AXIS, type SymmetryController, type SymmetrySpec,
+} from '@weasel-js/symmetry';
+import { useLayoutEffect, useMemo, useState } from 'react';
 import type { AppCommands } from './appCommands';
+import type { DrawScene } from './drawDocument';
 import { usePref } from './prefs';
 
-type Point = { x: number; y: number };
+const SPECS: Record<string, Pick<SymmetrySpec, 'kind' | 'angle'>> = {
+  vertical: { kind: 'mirror', angle: VERTICAL_AXIS },
+  horizontal: { kind: 'mirror', angle: HORIZONTAL_AXIS },
+  both: { kind: 'both', angle: HORIZONTAL_AXIS },
+};
 
-const AXES: readonly SymmetryAxis[] = ['vertical', 'horizontal', 'both'];
+const sameSpec = (a: Pick<SymmetrySpec, 'kind' | 'angle'>, b: Pick<SymmetrySpec, 'kind' | 'angle'>) =>
+  a.kind === b.kind && a.angle === b.angle;
+
+/** The document's first top-level symmetry group, so a reopened document draws into the one it saved. */
+function existingGroup(scene: DrawScene, ctrl: SymmetryController): NodeId | null {
+  const node = scene.renderOrderNodes().find((n) => n.parent == null && isSymmetryGroup(ctrl.scene, n.id));
+  return node?.id ?? null;
+}
 
 /**
- * Live symmetry, driven by the View preferences: the canvas entry that
- * publishes it and draws the axis across the page, and the toggle the command
- * bar fires. The axis starts at the page center; where it is dragged to holds
- * until the page changes size.
+ * Live symmetry, driven by the View preferences. While it is on, every tool
+ * draws into one symmetry group, made at the page center the first time and
+ * kept in the document after; the axis preference sets that group's kind.
+ * Turning it off stops drawing into the group, whose copies stay.
  */
-export function useSymmetry(page: { width: number; height: number }) {
+export function useSymmetry(scene: DrawScene, page: { width: number; height: number }) {
   const [on, setOn] = usePref('view.symmetry');
   const [axisPref] = usePref('view.symmetryAxis');
-  const axis = AXES.find((a) => a === axisPref) ?? 'vertical';
-  const [store] = useState(() => createSymmetryStore());
-  const pageRef = useLatest(page);
-  const dragged = useRef<Point | null>(null);
-  const sizedFor = useRef({ width: page.width, height: page.height });
-
-  useLayoutEffect(() => store.subscribe(() => {
-    dragged.current = store.get()?.center ?? dragged.current;
-  }), [store]);
+  const spec = SPECS[axisPref] ?? SPECS.vertical!;
+  const ctrl = useMemo(() => createSymmetry(scene as never), [scene]);
+  const [group, setGroup] = useState<NodeId | null>(null);
 
   const { width, height } = page;
   useLayoutEffect(() => {
-    if (sizedFor.current.width !== width || sizedFor.current.height !== height) {
-      sizedFor.current = { width, height };
-      dragged.current = null;
+    if (!on) {
+      ctrl.setActive(null);
+      return;
     }
-    const center = dragged.current ?? { x: width / 2, y: height / 2 };
-    store.set(on ? { axis, center } : null);
-  }, [store, on, axis, width, height]);
-
-  const contribution = useMemo(() => symmetryContribution(store, {
-    extent: () => ({ x: 0, y: 0, width: pageRef.current.width, height: pageRef.current.height }),
-  }), [store, pageRef]);
+    const id = (ctrl.read(group) ? group : null) ?? existingGroup(scene, ctrl);
+    if (id === null) {
+      setGroup(ctrl.create({ center: { x: width / 2, y: height / 2 }, symmetry: spec }));
+      return;
+    }
+    if (id !== group) setGroup(id);
+    ctrl.setActive(id);
+    if (!sameSpec(ctrl.read(id)!.spec, spec)) ctrl.update(id, { spec });
+  }, [ctrl, scene, on, spec, group, width, height]);
 
   const commands: Pick<AppCommands, 'symmetryOn' | 'toggleSymmetry'> = {
     symmetryOn: on,
     toggleSymmetry: () => setOn(!on),
   };
-  return { contribution, commands };
+  return { contribution: ctrl.contribution, commands };
 }

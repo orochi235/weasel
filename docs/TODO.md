@@ -188,10 +188,7 @@ Priority tags:
   drafts, not proofed at high resolution.
 - **(P2) Spacing hints.** Equal-spacing markers between siblings while moving, and Alt-hover
   distance readouts between the selection and the shape under the pointer.
-- **(P2) Symmetry does not reach an extended path or a twin.** With symmetry on, extending an
-  open path from its end with the pen (`continuing` in `usePenTool`) writes through `editAnchors`
-  rather than the `insert` dep, so only the drawn side grows. And a twin is its own node: editing
-  the drawn half afterwards leaves its mirror as it was.
+- **(P2) Live symmetry.** Draw on one side of an axis and the mirrored half follows.
 - **(P2) Variable-width strokes.** A width profile along a stroke's length, edited by dragging
   on the stroke. `strokeToPath` handles a fixed width only.
 
@@ -321,6 +318,11 @@ Priority tags:
 
 ## Scene, adapters & layout
 
+- **(P3) A diagram's edge labels can land on nodes.** A label sits at a fraction of its route, offset
+  to one side, with no check for the boxes around it, so the label on a short edge between ranks
+  overlaps the node or group box it leaves or enters. `layeredRoutes` keeps routes clear of nodes;
+  nothing does the same for labels. blits' playground timing view shows it (`anchors` preset).
+
 - **(P3) A direct scene call made while a journal is open lands on the scene's own stack.**
   `scene.applyBatch` goes to the open journal; `scene.setPose` and its siblings, `scene.batch`, and
   `scene.history.apply` do not, so a mode that mixes the two splits its edits across two stacks.
@@ -332,6 +334,19 @@ Priority tags:
   unless the Modes > Undo inside a mode pref says the document's history
   (`apps/draw/src/modality/machine.ts`), so the change moves where every direct call made during
   a mode lands.
+
+### Symmetry follow-ups
+
+- **(P3) Wallpaper tilings.** A new kind is a row in `SYMMETRY_KINDS`
+  (`packages/symmetry/src/kinds.ts`), but a lattice has no last copy: `copiesFromPose` sees only
+  the container's pose, so it would need an extent to tile within, which the spec would carry.
+- **(P3) Bake copies only path leaves.** `bakeSymmetry` reports text and image leaves in
+  `skipped` and leaves them uncopied. It also copies a paint laid out in the shape's own box, a
+  gradient say, without carrying it through the copy's mirror or turn.
+- **(P3) Symmetry in a scene that composes frames.** A group's center is its pose, so dragging the
+  center in such a scene moves its children too, and bake writes absolute poses.
+- **(P3) The angle knob sits on the shapes it turns.** It is fixed 64px out along the axis, where
+  the lab's petal is, and can cover a path-edit handle there.
 
 ### Derived geometry follow-ups
 
@@ -495,6 +510,13 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 ---
 
 ## Selection, actions & UI panels
+
+- **(P2) Labs still tune actions through the experimental `actions` prop.** The smart remove
+  brush, extend-path-end, and dynamic-corners labs (on their own branches when `tune` landed) set
+  `radiusPx`, `mode`, and a K binding by restating whole descriptors through `actions`. Move each
+  to `<SceneCanvas tune>` as it merges, drop the restated gestures, and give its actions
+  (`brushDeleteAnchors`, `extendPathEnd`, …) entries in core's `ActionParamSchema`
+  (`interactions/actions/actionParamSchema.ts`).
 
 - **(P3) Nothing puts `prefsCss` on a page.** `prefsCss(store)` writes the text and
   `prefsCssAttributes(store)` the attributes (`packages/prefs/README.md`, "As CSS custom
@@ -845,6 +867,13 @@ only story runner in the repo.
   reproduced. `forge/src/vite/plugin.test.ts` lost file events for its temp directory the same way,
   7 of 26 tests in one run on 2026-10-13, and polls now; whether a checkout loses them too is not
   measured.
+
+- **(P3) A freshly started site dev server's first page load can come up blank.** Started from a
+  worktree with `WAKE_EXTRA=<port> npx vite --port <port>`, the first one or two loads of a demo
+  show an empty page with wake's "dev server unreachable" pill, and a reload renders it. Seen on
+  every one of a dozen servers on 2026-10-14. The server logs no dependency re-optimization or
+  reload, so the cause isn't known; the first load after an agent edits a lab once threw
+  `instrument.defaultConfig is not a function` before a reload fixed it.
 
 - **(P2) Package pages: check the reference against a real build, then retire `/api/`.** Every
   published package has a page at `#pkg/<name>` (overview, guides, reference, demos; how each is

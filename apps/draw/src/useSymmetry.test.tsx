@@ -1,5 +1,8 @@
+import { createScene } from '@weasel-js/core';
+import { HORIZONTAL_AXIS, isSymmetryGroup, readGroup, symmetryGroupSpec, VERTICAL_AXIS } from '@weasel-js/symmetry';
 import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
+import { DRAW_REGISTRY, type DrawScene } from './drawDocument';
 import { drawPrefs } from './prefs';
 import { useSymmetry } from './useSymmetry';
 
@@ -7,38 +10,56 @@ const PAGE = { width: 600, height: 800 };
 
 beforeEach(() => act(() => drawPrefs().reset()));
 
-const storeOf = (r: { current: ReturnType<typeof useSymmetry> }) => r.current.contribution.deps!.symmetry!()!;
+const newScene = (): DrawScene => createScene({ systemLayers: [{ id: 'default' }], registry: DRAW_REGISTRY });
+const groups = (scene: DrawScene) => scene.renderOrderNodes().filter((n) => isSymmetryGroup(scene as never, n.id));
+const insertInto = (r: { current: ReturnType<typeof useSymmetry> }) => r.current.contribution.deps!.insertInto!()!.get();
 
 describe('useSymmetry', () => {
-  it('starts off', () => {
-    const { result } = renderHook(() => useSymmetry(PAGE));
+  it('starts off, drawing into nothing', () => {
+    const scene = newScene();
+    const { result } = renderHook(() => useSymmetry(scene, PAGE));
     expect(result.current.commands.symmetryOn).toBe(false);
-    expect(storeOf(result).get()).toBeNull();
+    expect(groups(scene)).toHaveLength(0);
+    expect(insertInto(result)).toBeNull();
   });
 
-  it('turns on about the page center, on the axis the preference names', () => {
+  it('turns on into a group at the page center, of the kind the axis preference names', () => {
     act(() => drawPrefs().set('view.symmetryAxis', 'both'));
-    const { result } = renderHook(() => useSymmetry(PAGE));
+    const scene = newScene();
+    const { result } = renderHook(() => useSymmetry(scene, PAGE));
     act(() => result.current.commands.toggleSymmetry());
     expect(drawPrefs().get('view.symmetry')).toBe(true);
-    expect(result.current.commands.symmetryOn).toBe(true);
-    expect(storeOf(result).get()).toEqual({ axis: 'both', center: { x: 300, y: 400 } });
+    const [group] = groups(scene);
+    expect(insertInto(result)).toBe(group!.id);
+    expect(readGroup(scene as never, group!.id)).toMatchObject({
+      center: { x: 300, y: 400 }, spec: { kind: 'both', angle: HORIZONTAL_AXIS },
+    });
   });
 
-  it('keeps an axis that was dragged across a change of axis, and drops it with the page', () => {
+  it('turns the group it has when the axis preference changes, rather than making another', () => {
     act(() => drawPrefs().set('view.symmetry', true));
-    const { result, rerender } = renderHook(({ page }) => useSymmetry(page), { initialProps: { page: PAGE } });
-    act(() => storeOf(result).set({ axis: 'vertical', center: { x: 120, y: 400 } }));
+    const scene = newScene();
+    renderHook(() => useSymmetry(scene, PAGE));
     act(() => drawPrefs().set('view.symmetryAxis', 'horizontal'));
-    expect(storeOf(result).get()).toEqual({ axis: 'horizontal', center: { x: 120, y: 400 } });
-    rerender({ page: { width: 200, height: 100 } });
-    expect(storeOf(result).get()?.center).toEqual({ x: 100, y: 50 });
+    expect(groups(scene)).toHaveLength(1);
+    expect(readGroup(scene as never, groups(scene)[0]!.id)?.spec).toMatchObject({ kind: 'mirror', angle: HORIZONTAL_AXIS });
   });
 
-  it('turns off again', () => {
+  it('draws into the group a reopened document already has', () => {
+    const scene = newScene();
+    const saved = scene.add(symmetryGroupSpec({ layer: 'default', center: { x: 10, y: 20 }, symmetry: { angle: VERTICAL_AXIS } }) as never);
     act(() => drawPrefs().set('view.symmetry', true));
-    const { result } = renderHook(() => useSymmetry(PAGE));
+    const { result } = renderHook(() => useSymmetry(scene, PAGE));
+    expect(groups(scene)).toHaveLength(1);
+    expect(insertInto(result)).toBe(saved);
+  });
+
+  it('turns off, keeping the group but drawing into nothing', () => {
+    act(() => drawPrefs().set('view.symmetry', true));
+    const scene = newScene();
+    const { result } = renderHook(() => useSymmetry(scene, PAGE));
     act(() => result.current.commands.toggleSymmetry());
-    expect(storeOf(result).get()).toBeNull();
+    expect(insertInto(result)).toBeNull();
+    expect(groups(scene)).toHaveLength(1);
   });
 });

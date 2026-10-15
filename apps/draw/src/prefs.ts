@@ -125,13 +125,13 @@ export const PREFS = {
         symmetry: {
           kind: 'boolean',
           name: 'Symmetry',
-          description: 'Mirror what you draw across the symmetry axis, and the anchors you drag on a path that is already its own mirror image. Drag the handle on the axis to move it.',
+          description: 'Draw into a symmetry group, whose mirrored copies follow every edit to what is drawn in it, and the anchors you drag on a path that is already its own mirror image. Drag the handles on the axis to move or turn it. Turning it off stops drawing into the group; what is in it stays mirrored.',
           default: false,
         },
         symmetryAxis: {
           kind: 'enum',
           name: 'Symmetry axis',
-          description: 'Which way drawing mirrors while Symmetry is on: left and right, top and bottom, or into all four quarters.',
+          description: 'Which way the symmetry group mirrors: left and right, top and bottom, or into all four quarters.',
           default: 'vertical',
           options: [
             { value: 'vertical', label: 'Vertical (left and right)' },

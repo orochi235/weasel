@@ -75,6 +75,7 @@ function needsReplace<TData, TLayer extends string, TPose>(
     || a.derivePath !== b.derivePath
     || a.derivePose !== b.derivePose
     || a.clipFromPose !== b.clipFromPose
+    || a.copiesFromPose !== b.copiesFromPose
     || a.layout !== b.layout;
 }
 

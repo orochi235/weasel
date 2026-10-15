@@ -157,7 +157,7 @@ const DEMO_META: DemoMeta[] = [
     id: 'align',
     title: 'Align & flip to the cursor',
     category: 'Selection & actions',
-    description: 'The align.* actions take a `to` param and flip a `pivot` param naming what the selection lines up against: \'union\' (the selection itself), \'pointer\', a world point or rect, or a key node { node: id }. This demo binds keys through the `actions` prop: a letter aligns to the selection\'s union, the same letter with Shift aligns to wherever the cursor is, and F mirrors about the cursor.',
+    description: 'The align.* actions take a `to` param and flip a `pivot` param naming what the selection lines up against: \'union\' (the selection itself), \'pointer\', a world point or rect, or a key node { node: id }. This demo adds keys through the `tune` prop: a letter aligns to the selection\'s union, the same letter with Shift aligns to wherever the cursor is, and F mirrors about the cursor.',
     hint: 'All three rects start selected. Press <kbd>L</kbd>, <kbd>T</kbd>, or <kbd>C</kbd> to align left, top or centers; hold <kbd>Shift</kbd> to align to the cursor instead. Press <kbd>F</kbd> to flip about the cursor.',
     load: () => import('./demos/AlignDemo').then((m) => m.AlignDemo),
     path: 'apps/site/demos/AlignDemo.tsx',
@@ -198,15 +198,6 @@ const DEMO_META: DemoMeta[] = [
     hint: 'Double-click a shape, then drag its anchors or its edges. <kbd>Escape</kbd> to finish.',
     load: () => import('./demos/PathAnchorEditDemo').then((m) => m.PathAnchorEditDemo),
     path: 'apps/site/demos/PathAnchorEditDemo.tsx',
-  },
-  {
-    id: 'lab-live-symmetry',
-    title: 'Live symmetry',
-    category: 'Geometry',
-    description: 'Drawing that mirrors across an axis, from core\'s `symmetryContribution`, installed through `ambient`. It publishes a `SymmetryStore` as the `symmetry` dep, which the kit\'s `insert` dep reads: every node a tool inserts — Rectangle, Pen, Pencil — is followed by its mirrored twins in the same batch, so the drawing and its mirror undo as one step. The same dep reaches `editAnchors`: on a path that is its own mirror image, dragging an anchor or a handle moves its partner too, and an anchor on the axis stays on it. The kite opens in path edit through a `pathEdit` host. The entry also draws the axis, with a handle at its center that drags it; only the handle takes a press, so a stroke can start on the line. The control panel turns symmetry off and on and picks the axis.',
-    hint: 'Drag one of the kite\'s side anchors or handles and watch the other side follow. <kbd>Escape</kbd> leaves path edit; double-click the kite to edit it again. Pick Rectangle, Pen, or Pencil and draw on one side of the axis. Drag the dot on the axis to move it, set Axis to Both, then undo with the button or <kbd>Mod+Z</kbd>.',
-    load: () => import('./demos/SymmetryLabDemo').then((m) => m.SymmetryLabDemo),
-    path: 'apps/site/demos/SymmetryLabDemo.tsx',
   },
   {
     id: 'boolean-ops',
@@ -670,6 +661,16 @@ const DEMO_META: DemoMeta[] = [
     hint: 'Pick Rectangle and drag on the canvas, or Pen and click out a path. Turn Snap to grid off and on, change the spacing, then undo with the button or <kbd>Mod+Z</kbd>.',
     load: () => import('./demos/SceneLabDemo').then((m) => m.SceneLabDemo),
     path: 'apps/site/demos/SceneLabDemo.tsx',
+  },
+  {
+    id: 'symmetry-lab',
+    title: 'Symmetry',
+    package: 'symmetry',
+    description:
+      'A live symmetry group: its copies are drawn from the shapes inside it, never stored, so moving or reshaping a shape moves every copy with it, and a click on a copy selects the shape it copies. Anything drawn with the tools lands in the group. The petal is open in path edit, and it is its own mirror image across the axis it sits on, so dragging one of its anchors or handles moves the mirrored one too. On the canvas, drag the round center to move the group, the white knob to turn the axis, and, for Repeat, the white handle to set the step.',
+    hint: 'Drag a petal anchor, then draw an ellipse anywhere. Switch Kind between Mirror, Radial and Repeat, change Count, and drag the white knob with <kbd>Shift</kbd> held.',
+    load: () => import('./demos/SymmetryLabDemo').then((m) => m.SymmetryLabDemo),
+    path: 'apps/site/demos/SymmetryLabDemo.tsx',
   },
   {
     id: 'bidi',

@@ -11,6 +11,7 @@ export { defaultDrawOne, defaultPaintBounds } from '../canvas/defaultDrawOne';
 export { overChildren, isOverChildren, splitOverChildren } from '../canvas/overChildren';
 export type { PaintBoundsFn } from '../canvas/paintCull';
 export type { SceneCanvasProps, SceneCanvasHit, SceneCanvasLayers, SceneCanvasLongPress } from '../canvas/SceneCanvas';
+export type { SceneCanvasViewport } from '../canvas/SceneCanvas/viewportProp';
 export type { PathEditHost } from '../canvas/SceneCanvas/pathEditHost';
 export { hostAnchorRect, hostAnchorCss } from '../canvas/hostAnchor';
 export type { HostAnchorInput, HostAnchorAlign, HostAnchorOffset } from '../canvas/hostAnchor';
@@ -118,9 +119,6 @@ export { workspaceTintLayer, modeDecorationLayer } from '../features/modes/modeL
 export type { WorkspaceTintLayerOptions } from '../features/modes/modeLayers';
 export { createChildrenLayer } from '../core/layers/children';
 export type { CreateChildrenLayerOpts } from '../core/layers/children';
-
-// ─── Live symmetry: the setting, its insert twinning, and the axis on canvas ─
-export * from '../features/symmetry';
 
 // ─── Debug overlay subsystem (URL-flagged tree-shakeable) ───────────────────
 export * from '../debug';

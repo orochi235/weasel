@@ -2,7 +2,7 @@ import { act, cleanup, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
-import { SymmetryLabDemo } from '../SymmetryLabDemo';
+import { GROUP_ID, PETAL_ID, SymmetryLabDemo } from '../SymmetryLabDemo';
 
 // windease lays a lab's tiles out only once something measures them, and
 // jsdom ships no ResizeObserver.
@@ -26,8 +26,13 @@ afterEach(() => {
   delete window.__weaselTest;
 });
 
-type Node = { pose: { x: number; y: number; width: number; height: number }; data: { path: { coords: ArrayLike<number> } } };
+type Node = {
+  id: string; parent?: string;
+  pose: { x: number; y: number; width: number; height: number };
+  data: { path?: { coords: ArrayLike<number> } };
+};
 const nodes = () => window.__weaselTest!.getScene().nodes as unknown as Node[];
+const node = (id: string) => nodes().find((n) => n.id === id)!;
 
 // jsdom's canvas rect is all zeros and the view is identity, so client
 // coords are world coords.
@@ -50,34 +55,35 @@ async function mount() {
 }
 
 describe('SymmetryLabDemo', () => {
-  it('moves the mirror partner of a kite anchor dragged in path edit', async () => {
+  it('keeps the petal its own mirror image when its tip handle is dragged', async () => {
     const canvas = await mount();
-    drag(canvas, [380, 160], [400, 150]);
-    // An edit stores the path in the pose's frame, whose box is the path's own.
-    const { data, pose } = nodes()[0];
-    const at = (i: number) => [data.path.coords[i] + pose.x, data.path.coords[i + 1] + pose.y];
-    // The right anchor ends the first curve; the left one ends the line before the closing curve.
-    expect(at(6)).toEqual([400, 150]);
-    expect(at(10)).toEqual([200, 150]);
+    drag(canvas, [435, 275], [470, 300]);
+    const { data, pose } = node(PETAL_ID);
+    const c = data.path!.coords;
+    const ys: number[] = [];
+    for (let i = 1; i < c.length; i += 2) ys.push(c[i] + pose.y);
+    // Mirrored across y = 240, every y has its partner at 480 - y.
+    const sorted = [...ys].sort((a, b) => a - b);
+    sorted.forEach((y, i) => expect(y + sorted[sorted.length - 1 - i]).toBeCloseTo(480, 3));
+    expect(Math.max(...ys)).toBeCloseTo(300, 3);
   });
 
-  it('draws a rectangle and its mirror, and undoes both at once', async () => {
+  it('draws a new shape into the group', async () => {
     const canvas = await mount();
     await userEvent.click(screen.getByRole('button', { name: /^Rectangle/ }));
-    drag(canvas, [100, 400], [160, 440]);
-    expect(nodes().slice(1).map((n) => n.pose)).toMatchObject([
-      { x: 100, y: 400, width: 60, height: 40 },
-      { x: 440, y: 400, width: 60, height: 40 },
-    ]);
-    await userEvent.click(screen.getByRole('button', { name: 'Undo' }));
-    expect(nodes()).toHaveLength(1);
+    const before = nodes().length;
+    drag(canvas, [100, 60], [140, 90]);
+    const added = nodes().slice(before);
+    expect(added).toHaveLength(1);
+    expect(added[0].parent).toBe(GROUP_ID);
   });
 
-  it('draws a single rectangle once Symmetry is off in the control panel', async () => {
+  it('draws at the top of the tree once Draw into the group is off', async () => {
     const canvas = await mount();
-    await userEvent.click(screen.getByRole('checkbox', { name: 'Symmetry' }));
+    await userEvent.click(screen.getByRole('checkbox', { name: 'Draw into the group' }));
     await userEvent.click(screen.getByRole('button', { name: /^Rectangle/ }));
-    drag(canvas, [100, 400], [160, 440]);
-    expect(nodes()).toHaveLength(2);
+    const before = nodes().length;
+    drag(canvas, [100, 60], [140, 90]);
+    expect(nodes().slice(before).map((n) => n.parent ?? null)).toEqual([null]);
   });
 });
