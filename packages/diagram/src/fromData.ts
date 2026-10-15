@@ -10,13 +10,16 @@ import type { AddNodeSpec, MarkerRef, RectPose, Stroke } from '@weasel-js/core';
 import { DEFAULT_GROUP_INSET, expandGroupEdges } from './cluster';
 import { groupBoxes, groupSpecs, resolveGroups, type ResolvedGroup } from './dataGroups';
 import { buildBody, measureBody, sizeToBody, type BodySpec, type MeasureRowText, type Row, type RowTextStyle } from './body';
-import { EDGE_DERIVE_PATH, type DiagramEdge } from './edge';
+import { edgeSpecs } from './dataEdges';
+import type { DiagramEdge } from './edge';
 import { force } from './force';
 import type { Graph, GraphEdge, GraphGroup, GraphNode } from './graph';
 import type { DiagramAnchor } from './group';
-import { LABEL_DERIVE_POSE, type DiagramLabel } from './label';
+import type { DiagramLabel } from './label';
+import { chain } from './chain';
 import { layered } from './layered';
 import { DEFAULT_NODE_GAP, type LayoutFn, type LayoutOptions } from './layout';
+import { markSpecs, type DataMark, type DiagramMark } from './marks';
 import type { Outline } from './outline';
 import { authoredOver, type LayeredRoute } from './route';
 import { tree } from './tree';
@@ -48,6 +51,9 @@ export interface DataNode {
   gap?: number;
   /** Default `DiagramSceneOptions.verticalAlign`. */
   verticalAlign?: BodySpec['verticalAlign'];
+  /** Drawn over the box besides its rows: shapes in a unit square stretched
+   *  over it, and text pinned to a point on it. */
+  marks?: readonly DataMark[];
 }
 
 /** One edge of a {@link DiagramData}, between two nodes or groups by id. */
@@ -88,8 +94,8 @@ export interface DiagramData {
   nodes: readonly DataNode[];
   edges: readonly DataEdge[];
   /** A group may be a member of another. `layered`, `tree`, and `force` keep
-   *  each group's members together; `'none'` ignores groups but still draws
-   *  them. */
+   *  each group's members together; `chain` and `'none'` ignore groups but
+   *  still draw them. */
   groups?: readonly DataGroup[];
 }
 
@@ -122,8 +128,8 @@ export type DiagramTextStyle = { fontFamily: string; fontSize: number; fontWeigh
 
 /** The `data` of a scene node `diagramScene` makes: its diagram role, and what it paints. */
 export interface DiagramSceneData {
-  diagram?: DiagramNode | DiagramEdge | { label: DiagramLabel } | { anchor: DiagramAnchor };
-  fill?: { paint: { color: string } };
+  diagram?: DiagramNode | DiagramEdge | { label: DiagramLabel } | { anchor: DiagramAnchor } | { mark: DiagramMark };
+  fill?: { paint: { color: string; opacity?: number } };
   stroke?: Stroke;
   text?: string;
   style?: DiagramTextStyle;
@@ -136,7 +142,7 @@ export type DiagramSpec = AddNodeSpec<DiagramSceneData, 'main', RectPose>;
 export interface DiagramSceneOptions {
   /** A layout by name, or any `LayoutFn`. Default `'layered'`. `'none'`
    *  leaves every node at its `at`. */
-  layout?: 'layered' | 'tree' | 'force' | 'none' | LayoutFn;
+  layout?: 'layered' | 'tree' | 'force' | 'chain' | 'none' | LayoutFn;
   /** Merged over `{ order: 'barycenter' }`. */
   layoutOptions?: LayoutOptions;
   /** Default `'bezier'`. */
@@ -174,7 +180,7 @@ const LABEL_PLACEMENT: DiagramLabel = { at: 'mid', offset: 9 };
 const LINE = 1.4;
 const GLYPH = 0.6;
 const MIN_WIDTH = 64;
-const LAYOUTS = { layered, tree, force } as const;
+const LAYOUTS = { layered, tree, force, chain } as const;
 
 /** The scene node id `diagramScene` gives an edge, built from its ends, ports, and label. */
 export const edgeIdOf = (e: DataEdge) =>
@@ -223,7 +229,8 @@ function placed(data: DiagramData, seeds: readonly GraphNode[], moved: ReadonlyM
 }
 
 /** Every spec carries an id — a node's own, `<id>/<k>` for its text,
- *  `<edge id>/label`, a group's own and `<group id>/label` — so a later call's
+ *  `<id>/mark:<i>` for its marks, `<edge id>/label`, a group's own and
+ *  `<group id>/label` — so a later call's
  *  specs can be reconciled against this one's. Throws on a repeated id among
  *  nodes and groups, which names two things as one. An edge whose
  *  end is not a node is dropped, and so is a repeat of an earlier edge with
@@ -341,56 +348,8 @@ export function diagramScene(data: DiagramData, opts: DiagramSceneOptions = {}):
     for (const [k, s] of built.specs.entries()) {
       specs.push({ ...s, ...(k === 0 ? {} : { id: `${n.id}/${k}` }) } as DiagramSpec);
     }
+    if (n.marks) specs.push(...markSpecs(n.id, n.marks, at, { style, textStyle: styleOf, measure }));
   }
-
-  for (const e of edges) {
-    const id = edgeIdOf(e);
-    const { fromPort, toPort, waypoints } = routes?.get(id) ?? e;
-    const style = opts.edgeStyle?.(e) ?? EDGE;
-    const markerStart = style.markerStart ?? null;
-    const markerEnd = style.markerEnd === undefined ? 'arrow' : style.markerEnd;
-    specs.push({
-      id: id as never,
-      kind: 'leaf',
-      layer: 'main',
-      pickable: false,
-      pose: { x: 0, y: 0, width: 0, height: 0 },
-      data: {
-        diagram: {
-          from: fromPort ? { port: fromPort } : {},
-          to: toPort ? { port: toPort } : {},
-          router: e.router ?? opts.router ?? 'bezier',
-          ...(waypoints ? { waypoints } : {}),
-        },
-        stroke: {
-          paint: { color: style.stroke },
-          width: style.width ?? 1.5,
-          ...(style.dash ? { dash: style.dash } : {}),
-          ...(markerStart !== null ? { markerStart } : {}),
-          ...(markerEnd !== null ? { markerEnd } : {}),
-        },
-      },
-      dependsOn: [e.from as never, e.to as never],
-      derivePath: EDGE_DERIVE_PATH,
-    });
-    if (e.label) {
-      const labelStyle = { ...font, fontSize: font.fontSize - 2 };
-      specs.push({
-        id: `${id}/label` as never,
-        kind: 'leaf',
-        layer: 'main',
-        pickable: false,
-        pose: { x: 0, y: 0, width: measure(e.label, labelStyle).width, height: labelStyle.fontSize },
-        data: {
-          diagram: { label: e.labelPlacement ?? opts.labelPlacement ?? LABEL_PLACEMENT },
-          text: e.label,
-          style: labelStyle,
-          fill: { paint: { color: style.label ?? style.stroke } },
-        },
-        dependsOn: [id as never],
-        derivePose: LABEL_DERIVE_POSE as never,
-      });
-    }
-  }
+  specs.push(...edgeSpecs(edges, { idOf: edgeIdOf, font, measure, fallback: EDGE, labelPlacement: LABEL_PLACEMENT, routes, opts }));
   return specs;
 }

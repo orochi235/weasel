@@ -50,6 +50,7 @@
       "@weasel-js/d3": ["./packages/d3/src/index.ts"],
       "@weasel-js/diagram": ["./packages/diagram/src/index.ts"],
       "@weasel-js/diagram/layout": ["./packages/diagram/src/layout.entry.ts"],
+      "@weasel-js/diagram/effect": ["./packages/diagram/src/effect.entry.ts"],
       "@weasel-js/font": ["./packages/font/src/index.ts"],
       "@weasel-js/font/test-seams": ["./packages/font/src/test-seams.ts"],
       "@weasel-js/font/testing/*": ["./packages/font/src/testing/*"],

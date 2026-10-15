@@ -389,6 +389,73 @@ Priority tags:
   `scale` only converts values: `RIGID_POSE_COMPOSITION` does not scale a container's frame by it,
   so whether a scoped container's children are also stored in its units is undecided.
 
+### Diagram follow-ups
+
+- **(P2) EffectChart: show a run.** A second input beside the pipeline, keyed by stage id and
+  wire, never new fields on the pipeline; a look takes it as a third argument. Which branch was
+  taken (the `switch` symbol already has a lever to throw), the value or a preview on each wire
+  (a body `slot` row is the room for one), cost per stage. Live state follows from it: the run
+  changes every frame, only what it touches repaints, and the layout stays put.
+- **(P3) EffectChart: more looks.** One lane per value type, with a stage as tall as the lanes it
+  touches; and a compact look with one-line stages and no ports drawn, for pipelines too big for
+  the node graph. Branch symbols sketched and not built: hexagon, step glyph, comparator,
+  crossover, and a bare fork with the conditions on its wires.
+- **(P3) A custom `Path` outline does not follow its node.** `outlinePath` returns a consumer's
+  path unchanged, in world coordinates, so `diagramScene`'s layout moves the box and leaves the
+  outline behind. Marks solve the same problem with path data in a unit square
+  (`packages/diagram/src/marks.ts`); an outline could take the same form.
+- **(P2) `layered` lets wires, boxes and labels overlap.** The EffectChart node-graph demo shows
+  every case: a wire runs through the decision diamond, wires cross each other into a stage's
+  ports, and port and wire labels sit under wires. The causes, all in
+  `packages/diagram/src/layered.ts` and `barycenter.ts`:
+  - Ranks are longest-path from the sources, so every input sits in the first column however late
+    it is used, and its wire spans the whole chart. Ranking that minimizes total edge length
+    (network simplex) would put each source next to the stage it feeds.
+  - A wire spanning several ranks has no stand-in node in the ranks it crosses, so ordering cannot
+    see it. Routing now steers it through the gaps (`layeredRoutes`, `packages/diagram/src/route.ts`),
+    but only through gaps that ordering left by chance.
+  - Crossing reduction (`order: 'barycenter'`) is opt-in, and `nodeGraph` does not opt in. It also
+    orders by a neighbor's position in its rank, not by the position of the port the wire joins.
+  - Positions across a rank are packed and centered, not aligned to neighbors, so wires that
+    could run straight bend.
+  - A named port sits at one fixed point, wherever its wire goes. The diamond puts its second exit
+    at the bottom (`branchNode` in `packages/diagram/src/effect/symbols.ts`), so a wire to a stage
+    above leaves downward and loops back up. A port should be able to name the places it may sit
+    (the diamond's top and bottom vertices, say), with layout picking the one facing its wire.
+    `layeredRoutes` already picks a face for a node with no named ports.
+  - Nothing places wire or port labels away from wires.
+- **(P3) `DiagramView` fits its view once, at mount.** `defaultView` only seeds the canvas's
+  view, so when `width` or `height` changes the canvas resizes and the view does not refit; a
+  diagram fitted for a wide box is clipped in a narrower one. The EffectChart lab shows it when
+  its frame is resized.
+- **(P3) Two wires can share an `edgeIdOf`.** Ids containing `.`, `->` or `:` build the same
+  edge id from different stages and ports. `diagramScene` keeps the first such edge, while the
+  looks keep one style per id, last one winning (`sceneStyles` in
+  `packages/diagram/src/effect/draw.ts`, `packages/diagram/src/fromData.ts`).
+- **(P3) The `rack` look overlaps side ports.** A stage's side ports are spread evenly along one
+  edge of a box sized by its text, however many there are, so a stage with many side inputs draws
+  them on top of one another (`spreadAt` in `packages/diagram/src/effect/rack.ts`).
+- **(P3) Branch symbols put control inputs on top whatever the rack's `side` is.** With the
+  default `side: 'below'`, the stage driving a decision hangs below it and its wire climbs to the
+  top edge (`inputs` in `packages/diagram/src/effect/symbols.ts`).
+- **(P3) A list of looks with different options needs a cast.** `EffectLook`'s options parameter
+  defaults to `unknown`, and `EffectLook<NodeGraphOptions>` is not assignable to it, so a list
+  holding `nodeGraph` and `rack` together is cast by hand (`packages/diagram/src/effect/draw.ts`;
+  the EffectChart lab story does it).
+- **(P3) `EffectChart` has no floor on its opening scale.** It opens every chart fitted whole and
+  passes no `minScale`, so a chart of hundreds of stages opens too small to read
+  (`packages/diagram/src/effect/EffectChart.tsx`; `DiagramView` already takes `minScale`).
+- **(P3) A branch symbol's drawn marks have fixed colors.** The `bar`'s bands and ticks and the
+  `switch`'s lever and contacts are color literals, so they stay bright on a bypassed decision
+  and a look cannot restyle them; only the titles follow the node style
+  (`packages/diagram/src/effect/symbols.ts`).
+- **(P3) Marks are only tested in jsdom.** No browser test moves a node that carries marks, so a
+  text mark following its node is unpinned, and so is a drawn mark's `opacity`
+  (`packages/diagram/src/marks.test.ts`).
+- **(P3) A mark whose path data does not parse fails when it is painted.** `diagramScene` passes
+  `d` through as given and `markShape` parses it on first paint, so a typo surfaces in the
+  renderer rather than where the data was built (`packages/diagram/src/marks.ts`).
+
 ---
 
 ## Animation
@@ -842,6 +909,11 @@ only story runner in the repo.
 ---
 
 ## Demos & visual regression
+
+- **(P3) EffectChart visual baselines are not captured.** `tests/visual/effect-chart.spec.ts`
+  names `effect-chart.png` and `effect-chart-rack.png`; the update-baselines workflow has to
+  write them. Its `maxDiffRatio` of 0.004 was copied from `diagram.spec.ts`; set it
+  from the first captured baselines.
 
 - **(P3) A dev server on orochi has missed a file write.** A site dev server there served a file
   as it was before an edit on 2026-10-12, and a `touch` did not wake it. Seen once and not

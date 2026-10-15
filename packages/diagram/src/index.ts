@@ -98,6 +98,8 @@ export type {
   EdgeStyle,
   NodeStyle,
 } from './fromData';
+export { diagramMarkOf, markShape, registerMarkShape } from './marks';
+export type { DataMark, DiagramMark } from './marks';
 export { force, forceRelaxation } from './force';
 export type { ForceBody, ForceOptions, ForceRelaxation } from './force';
 export { EASED_LAYOUTS, easedProducer, forceProducer, useLiveLayout } from './live';
@@ -110,6 +112,7 @@ export type {
   LiveLayoutProducer,
   UseLiveLayoutOptions,
 } from './live';
+export { chain } from './chain';
 export { backEdges, layered, ranksOf } from './layered';
 export { layeredRoutes } from './route';
 export type { LayeredRoute, LayeredRouteInput, RouteEdge } from './route';

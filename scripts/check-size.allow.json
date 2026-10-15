@@ -114,9 +114,6 @@
   "packages/diagram/src/cluster.ts": {
     "longestFunction": 124
   },
-  "packages/diagram/src/fromData.ts": {
-    "longestFunction": 166
-  },
   "packages/font/src/registerFont.ts": {
     "lines": 839,
     "longestFunction": 130

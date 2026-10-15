@@ -43,6 +43,12 @@ export interface LayoutOptions {
    *  `1e-6` — a float-noise floor, not a snapping quantum. Raise it to let a
    *  `force` pass that has stopped doing anything useful commit nothing. */
   tolerance?: number;
+  /** `chain` only: the ids that stand on the line, in order. Unset, the
+   *  longest path through the graph. */
+  chain?: readonly string[];
+  /** `chain` only: which side of the line everything else hangs on, along
+   *  the cross axis. Default `'after'`. */
+  chainSide?: 'after' | 'before';
 }
 
 /** The new top-left for each node that moves. A node that is already there is
