@@ -6,7 +6,7 @@
  * a picker of its own.
  */
 import type { BodyClassification, BodyTarget } from '@weasel-js/gestures';
-import type { LongPressState } from '@weasel-js/routing';
+import type { DepSchema, LongPressState } from '@weasel-js/routing';
 import { useDepSource } from '@weasel-js/routing/react';
 
 declare module '@weasel-js/routing' {
@@ -21,15 +21,22 @@ declare module '@weasel-js/routing' {
   }
 }
 
+type Classify = (world: { x: number; y: number }) => BodyClassification;
+
+/** The `hitAt` answer for one view: its own classifier's verdict on a point. */
+export function hitAtOf(classifyTarget: Classify): NonNullable<DepSchema['hitAt']> {
+  return (world) => {
+    const c = classifyTarget(world);
+    return { bodyTarget: c.body, bodyKind: c.kind };
+  };
+}
+
 export function useDispatchDepSources(
   longPress: LongPressState,
-  classifyTarget: ((world: { x: number; y: number }) => BodyClassification) | undefined,
+  classifyTarget: Classify | undefined,
   kindOfNode: { readonly current: ((id: string) => string | undefined) | undefined },
 ): void {
   useDepSource('longPress', () => longPress);
-  useDepSource('hitAt', () => classifyTarget && ((world) => {
-    const c = classifyTarget(world);
-    return { bodyTarget: c.body, bodyKind: c.kind };
-  }));
+  useDepSource('hitAt', () => classifyTarget && hitAtOf(classifyTarget));
   useDepSource('kindOfNode', () => (id) => kindOfNode.current?.(id));
 }

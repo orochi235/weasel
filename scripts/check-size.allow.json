@@ -28,7 +28,7 @@
   },
   "packages/core/src/canvas/CanvasView.tsx": {
     "lines": 409,
-    "longestFunction": 263
+    "longestFunction": 262
   },
   "packages/core/src/canvas/SceneCanvas.tsx": {
     "lines": 505,

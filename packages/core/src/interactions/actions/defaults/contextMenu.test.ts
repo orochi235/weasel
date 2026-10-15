@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createScene } from 'core/scene/scene';
-import { keyboardAnchor, openContextMenu } from './contextMenu';
+import { keyboardAnchor, menuHitFor, openContextMenu } from './contextMenu';
 
 function deps(over: Record<string, unknown> = {}) {
   const selected: string[] = ['a'];
@@ -56,5 +56,11 @@ describe('keyboardAnchor', () => {
   it('is the center of the view with nothing selected', () => {
     const view = { get: () => ({ x: 100, y: 50, scale: { x: 2, y: 2 } }), hostSize: () => ({ width: 400, height: 200 }) };
     expect(keyboardAnchor({ selection: { get: () => [] }, view } as never)).toEqual({ x: 200, y: 100 });
+  });
+});
+
+describe('menuHitFor', () => {
+  it('names no body for a pointer hit when no classifier is wired', () => {
+    expect(menuHitFor({ selection: { get: () => ['a'] } } as never, { x: 1, y: 2 })).toEqual({});
   });
 });
