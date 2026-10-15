@@ -85,6 +85,7 @@ export function KeyCap({ label, inverted = false, variant = 'default', className
       className={[s.key, className].filter(Boolean).join(' ')}
       data-kind={inferKeycapKind(label)}
       data-fn={FUNCTION_KEY.test(label) || undefined}
+      data-banked={fit.banked || undefined}
       data-variant={variant === 'default' ? undefined : variant}
       data-inverted={inverted || undefined}
       data-wrapped={fit.wrapped || undefined}

@@ -33,6 +33,23 @@ test('Ins, Home, and End print at one size, small enough for the widest', async 
   expect(home.scrollWidth).toBeLessThanOrEqual(home.clientWidth);
 });
 
+test('a function key in a bank prints at its neighbors\' size, though a loose one prints smaller', async () => {
+  const { container } = render(
+    <>
+      <KeyCap label="Esc" />
+      <KeyCap label="F1" />
+      <KeyBank>
+        {['Esc', 'F1', 'F12'].map((k) => <KeyCap key={k} label={k} style={KEY} />)}
+      </KeyBank>
+    </>,
+  );
+  await document.fonts.ready;
+  const px = [...container.querySelectorAll('kbd')].map((k) => parseFloat(getComputedStyle(k).fontSize));
+  expect(px[1]).toBeLessThan(px[0]!);
+  expect(px[2]).toBe(px[3]);
+  expect(px[3]).toBe(px[4]);
+});
+
 test('a key on a two-line spelling sizes itself; the rest still share one size', async () => {
   const { container } = render(
     <KeyBank wrap>

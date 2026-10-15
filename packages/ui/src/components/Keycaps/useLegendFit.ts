@@ -5,27 +5,43 @@ import { clampScale, pickSpelling, spellingsOf, type LegendFit } from './legendF
 /** Vertical room kept clear inside the key, for the thicker bottom border. */
 const ROOM_H_SLACK = 4;
 
-let measureCtx: CanvasRenderingContext2D | null | undefined;
+let probe: HTMLSpanElement | null = null;
+
+/** Measures text with a hidden span rather than a canvas, so the width is the
+ *  one the page lays out. Zero means this environment has no layout. */
+function textWidth(text: string, cs: CSSStyleDeclaration, size: number): number {
+  if (!probe) {
+    probe = document.createElement('span');
+    probe.setAttribute('aria-hidden', 'true');
+    Object.assign(probe.style, { position: 'absolute', visibility: 'hidden', whiteSpace: 'pre', left: '-9999px', top: '0' });
+  }
+  if (!probe.isConnected) document.body.appendChild(probe);
+  Object.assign(probe.style, {
+    fontFamily: cs.fontFamily, fontWeight: cs.fontWeight, fontStyle: cs.fontStyle,
+    fontStretch: cs.fontStretch, letterSpacing: cs.letterSpacing, fontSize: `${size}px`,
+  });
+  probe.textContent = text;
+  return probe.getBoundingClientRect().width;
+}
 
 function measureForms(kbd: HTMLElement, forms: readonly string[]): LegendFit[] | null {
-  measureCtx ??= document.createElement('canvas').getContext('2d');
-  const ctx = measureCtx;
-  if (!ctx) return null;
   const cs = getComputedStyle(kbd);
   const px = (v: string) => parseFloat(v) || 0;
   const applied = px(cs.getPropertyValue('--key-legend-scale')) || 1;
   const size = px(cs.fontSize) / applied;
   if (!size) return null;
   const lineHeight = px(cs.getPropertyValue('--key-wrap-line-height')) || 1;
-  ctx.font = `${cs.fontStyle} ${cs.fontWeight} ${size}px ${cs.fontFamily}`;
   const roomW = kbd.clientWidth - px(cs.paddingLeft) - px(cs.paddingRight);
   const roomH = kbd.clientHeight - px(cs.paddingTop) - px(cs.paddingBottom) - ROOM_H_SLACK;
-  return forms.map((label) => {
+  const fits: LegendFit[] = [];
+  for (const label of forms) {
     const lines = label.split('\n');
-    const wide = Math.max(...lines.map((l) => ctx.measureText(l).width));
+    const wide = Math.max(...lines.map((l) => textWidth(l, cs, size)));
+    if (!wide) return null;
     const tall = lines.length * size * (lines.length > 1 ? lineHeight : 1);
-    return { label, lines: lines.length, scale: Math.min(roomW / wide, roomH / tall) };
-  });
+    fits.push({ label, lines: lines.length, scale: Math.min(roomW / wide, roomH / tall) });
+  }
+  return fits;
 }
 
 interface Fit {
@@ -41,7 +57,7 @@ const sameFit = (a: Fit | null, b: Fit) =>
 /**
  * Fits a key's legend inside a `KeyBank`: picks the spelling it prints and
  * reports that spelling's largest scale to the bank. Returns the label to
- * print, and the key's own scale when its spelling is a two-line one. Outside
+ * print, whether the key is in a bank, and the key's own scale when its spelling is a two-line one. Outside
  * a bank it measures nothing and returns the label unchanged.
  */
 export function useLegendFit(
@@ -49,7 +65,7 @@ export function useLegendFit(
   label: string,
   wrapOverride: boolean | undefined,
   font: string | undefined,
-): { label: string; wrapped: boolean; scale?: number } {
+): { label: string; banked: boolean; wrapped: boolean; scale?: number } {
   const bank = useContext(KeyBankContext);
   const id = useId();
   const [fit, setFit] = useState<Fit | null>(null);
@@ -82,8 +98,9 @@ export function useLegendFit(
     };
   }, [ref, bank, id, label, wrap, font]);
 
-  if (!bank || !fit || fit.for !== label) return { label, wrapped: false };
+  const banked = !!bank;
+  if (!bank || !fit || fit.for !== label) return { label, banked, wrapped: false };
   return fit.wrapped
-    ? { label: fit.label, wrapped: true, scale: clampScale(fit.scale, bank.minScale) }
-    : { label: fit.label, wrapped: false };
+    ? { label: fit.label, banked, wrapped: true, scale: clampScale(fit.scale, bank.minScale) }
+    : { label: fit.label, banked, wrapped: false };
 }

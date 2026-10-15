@@ -10,8 +10,9 @@
   display: contents;
 }
 
-/* Function-key legends print smaller, as on a real keyboard. */
-.key[data-fn] {
+/* Function-key legends print smaller, as on a real keyboard — except in a
+   KeyBank, where every single-line legend prints at one size. */
+.key[data-fn]:not([data-banked]) {
   --key-font-size: calc(var(--wzl-font-size-sm) * 0.85);
 }
 
