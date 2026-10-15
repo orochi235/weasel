@@ -96,7 +96,7 @@ structure matters. The two orders agree only because `pathToAnchors` and
 you touch either walker, `anchorEdits.test.ts` has the invariant test that
 catches the divergence.
 
-## Dynamic corners
+## Corner shape
 
 `PolygonPath.corners` holds an optional `CornerSpec` (`round`, `chamfer`, or
 `inverted`, and a radius) per flat anchor index. The command stream keeps the

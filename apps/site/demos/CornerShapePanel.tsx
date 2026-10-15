@@ -1,5 +1,5 @@
 /**
- * The corner panel of the dynamic-corners lab: what the selected corners of
+ * The corner panel of the corner-shape lab: what the selected corners of
  * the open path are now, editable, and mixed where they differ.
  */
 import {
@@ -12,7 +12,7 @@ import {
 import type { PrefGroup } from '@weasel-js/prefs';
 import { PrefsForm } from '@weasel-js/ui';
 import { useCallback, useMemo, useSyncExternalStore } from 'react';
-import s from './DynamicCornersLabDemo.module.css';
+import s from './CornerShapeLabDemo.module.css';
 
 /** The selected corners, read the way the controls show them. */
 export interface CornerSummary {

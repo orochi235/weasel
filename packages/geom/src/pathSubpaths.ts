@@ -12,7 +12,7 @@ import { resolveCorners } from './paths/corners';
  * `path` flattened to interleaved `[x, y, …]` runs, sorted by whether each
  * subpath encloses area. A `Z` closing fewer than three points yields an open
  * run, as does any subpath a `Z` never ends. The closing edge of a closed run
- * back to its first vertex is implicit. Dynamic corners are walked expanded.
+ * back to its first vertex is implicit. Corner shapes are walked expanded.
  */
 export function flatSubpaths(
   path: PolygonPath,

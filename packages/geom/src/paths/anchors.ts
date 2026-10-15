@@ -23,7 +23,7 @@ export interface PenAnchor {
   y: number;
   inHandle?: { x: number; y: number };
   outHandle?: { x: number; y: number };
-  /** The dynamic corner cut at this anchor (`PolygonPath.corners`). */
+  /** The corner shape cut at this anchor (`PolygonPath.corners`). */
   corner?: CornerSpec;
 }
 

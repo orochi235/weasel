@@ -22,7 +22,7 @@ function reopen(svg: string): PathObj {
   return leaf.obj as PathObj;
 }
 
-describe('dynamic corners in a saved file', () => {
+describe('corner shapes in a saved file', () => {
   it('write the expanded geometry as the path data', () => {
     const svg = serializeSvg([objToSvgNode(obj(cornered()))], { namespaces: NS });
     // The round corner is a curve in `d`; the bare rectangle has none.

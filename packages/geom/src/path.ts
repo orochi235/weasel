@@ -31,7 +31,7 @@ export interface PolygonPath {
   /** Absent, the engine default: see `setDefaultOpenFill`. */
   openFill?: PathOpenFill;
   /**
-   * Dynamic corners, indexed by flat anchor index (`enumerateAnchors` order):
+   * Corner shapes, indexed by flat anchor index (`enumerateAnchors` order):
    * the anchor at each non-null slot is drawn rounded, chamfered, or
    * inverted. The commands and coords hold the bare anchors; `resolveCorners`
    * expands the specs into the geometry everything draws, hits, and bounds.

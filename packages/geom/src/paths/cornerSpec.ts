@@ -1,5 +1,5 @@
 /**
- * Per-anchor corner specs: the stored half of dynamic corners. A path carries
+ * Per-anchor corner specs: the stored half of corner shapes. A path carries
  * them in `PolygonPath.corners`, indexed by flat anchor index, and every
  * reader of its geometry sees them expanded (`resolveCorners`).
  */

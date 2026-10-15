@@ -6,7 +6,7 @@ import { resolveCorners } from './corners';
 /**
  * AABB of a `Path`, returned as a `RectPath` for direct reuse with rect-fast-path machinery.
  * Control points are NOT included directly; they're used only to compute extrema that actually
- * lie on the curve. Dynamic corners are bounded as they are drawn, expanded. Empty paths (no commands) return a zero-size rect anchored at the origin.
+ * lie on the curve. Corner shapes are bounded as they are drawn, expanded. Empty paths (no commands) return a zero-size rect anchored at the origin.
  */
 export function boundsOfPath(path: Path): RectPath {
   if (path.kind === 'rect') return path;

@@ -5,7 +5,7 @@
  * stores it.
  *
  * `tool` and `params` ride on `meta.wd.attrs` under the local names `tool`, `params-sides`,
- * `params-points`, `params-ratio`, `params-rotation`; a path's dynamic corners under `corners`
+ * `params-points`, `params-ratio`, `params-rotation`; a path's corner shapes under `corners`
  * and `corner-anchors` (`svgCorners.ts`).
  */
 

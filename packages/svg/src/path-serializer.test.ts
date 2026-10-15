@@ -3,7 +3,7 @@ import { polygonFromPoints, withCorner } from '@weasel-js/core';
 import { serializePathD } from './path-serializer';
 
 describe('serializePathD', () => {
-  it('writes a path with dynamic corners as the geometry they draw', () => {
+  it('writes a path with corner shapes as the geometry they draw', () => {
     const square = polygonFromPoints([{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }, { x: 0, y: 10 }]);
     expect(serializePathD(square)).toBe('M0 0L10 0L10 10L0 10Z');
     expect(serializePathD(withCorner(square, 1, { style: 'chamfer', radius: 2 })))

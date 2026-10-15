@@ -1,5 +1,5 @@
 /**
- * Dynamic corners in path edit: drag a corner's widget to set its radius.
+ * Corner shape in path edit: drag a corner's widget to set its radius.
  *
  * A drag measures how far the pointer moves along the corner's bisector and
  * turns that into a cut along the edges, clamped to the room the neighboring

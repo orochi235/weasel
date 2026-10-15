@@ -1,5 +1,5 @@
 /**
- * Dynamic corners in a saved file. The `<path>`'s `d` is the expanded
+ * Corner shapes in a saved file. The `<path>`'s `d` is the expanded
  * geometry any SVG reader draws; the `wd:` namespace adds the bare anchors
  * (`corner-anchors`, as path data) and the specs on them (`corners`, as
  * `index:style:radius` entries joined by `;`), so WeaselDraw reopens the

@@ -310,7 +310,7 @@ describe('persistence — legacy string paint migration', () => {
   });
 });
 
-describe('persistence — dynamic corners', () => {
+describe('persistence — corner shape', () => {
   it("keeps a path's corner specs through the JSON hop", () => {
     const path = {
       kind: 'polygon',

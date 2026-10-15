@@ -100,7 +100,7 @@ describe('vertex-colored stroke under a clip', () => {
   });
 });
 
-describe('vertex colors on a path with dynamic corners', () => {
+describe('vertex colors on a path with corner shapes', () => {
   const RED = [1, 0, 0, 1], GREEN = [0, 1, 0, 1], BLUE = [0, 0, 1, 1], WHITE = [1, 1, 1, 1];
 
   /** The per-vertex colors the fill uploads, four floats a vertex. */

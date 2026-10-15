@@ -22,8 +22,8 @@ import {
 } from '@weasel-js/labkit';
 import { PenIcon, SelectIcon } from '@weasel-js/ui';
 import { useMemo, useState } from 'react';
-import { CornerPanel, type CornerSelection } from './DynamicCornersPanel';
-import s from './DynamicCornersLabDemo.module.css';
+import { CornerPanel, type CornerSelection } from './CornerShapePanel';
+import s from './CornerShapeLabDemo.module.css';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 
@@ -133,10 +133,10 @@ const cornersInstrument = defineInstrument<State, Config>({
   render: (ctx) => <CornersTrial ctx={ctx} />,
 });
 
-export function DynamicCornersLabDemo() {
+export function CornerShapeLabDemo() {
   return (
     <div className="ckd-lab-frame">
-      <Lab title="Dynamic corners" instruments={[cornersInstrument]} defaultInstrument="Corners" />
+      <Lab title="Corner shape" instruments={[cornersInstrument]} defaultInstrument="Corners" />
     </div>
   );
 }

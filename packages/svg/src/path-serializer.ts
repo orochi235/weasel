@@ -1,7 +1,7 @@
 /**
  * Serialize a weasel `Path` to an SVG `d=` attribute string. `RectPath`
  * lowers to `M h v h Z`; `PolygonPath` walks the (commands, coords)
- * arrays, emitting one SVG command per kit command, with dynamic corners
+ * arrays, emitting one SVG command per kit command, with corner shapes
  * expanded into the geometry they draw.
  *
  * Output uses absolute commands only and a small amount of whitespace

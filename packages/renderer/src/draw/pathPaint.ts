@@ -28,7 +28,7 @@ export function drawPath(ctx: DrawContext, given: PathDrawCommand): void {
   if (cmd.stroke?.paint) drawPathStroke(ctx, cmd as StrokedPathCommand);
 }
 
-/** `cmd` with its path's dynamic corners expanded, and its per-anchor colors
+/** `cmd` with its path's corner shapes expanded, and its per-anchor colors
  *  carried onto the anchors the expansion leaves. */
 function withCornersResolved(cmd: PathDrawCommand): PathDrawCommand {
   if (cmd.path.kind !== 'polygon') return cmd;

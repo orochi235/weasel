@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { resolveCorners, type PolygonPath } from '@weasel-js/core';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
-import { DynamicCornersLabDemo } from '../DynamicCornersLabDemo';
+import { CornerShapeLabDemo } from '../CornerShapeLabDemo';
 
 // windease lays a lab's tiles out only once something measures them, and
 // jsdom ships no ResizeObserver.
@@ -58,13 +58,13 @@ const radiusField = () => screen.getByRole('spinbutton', { name: 'Radius' }) as 
 const styleButton = (name: string) => screen.getByRole('radio', { name });
 
 async function mount() {
-  const { container } = await renderSettled(<DynamicCornersLabDemo />);
+  const { container } = await renderSettled(<CornerShapeLabDemo />);
   const canvas = container.querySelector('.lk-trial-scene canvas');
   if (!canvas) throw new Error('no scene canvas in the trial');
   return canvas;
 }
 
-describe('DynamicCornersLabDemo', () => {
+describe('CornerShapeLabDemo', () => {
   it('rounds the open path\'s corner by dragging its widget, as one undo step', async () => {
     const canvas = await mount();
     expect(tileCorners()[0]).toBeFalsy();

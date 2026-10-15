@@ -62,7 +62,7 @@ export const isControlHandle = hitPredicate((target) => {
   return k !== undefined && /^(controlIn|controlOut):\d+$/.test(k);
 });
 
-/** A dynamic-corner widget, set inside a corner anchor of the edited path. */
+/** A corner-shape widget, set inside a corner anchor of the edited path. */
 export const isCornerWidget = hitPredicate((target) => {
   const k = kindOf(target);
   return k !== undefined && /^corner:\d+$/.test(k);
