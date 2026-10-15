@@ -37,7 +37,7 @@ export interface PathSnapHit {
   kind: PathSnapKind;
   x: number;
   y: number;
-  /** Distance from the probe. */
+  /** Distance from the probe, in the query's `radius` units. */
   distance: number;
   /** Indices of the paths that make the target: two for a crossing between
    *  paths, one otherwise. */
@@ -46,8 +46,13 @@ export interface PathSnapHit {
 
 /** A query for {@link findPathSnap}. */
 export interface PathSnapQuery {
-  /** How far from the probe a target may be, in the paths' units. */
+  /** How far from the probe a target may be, in the paths' units times
+   *  `scale`. */
   radius: number;
+  /** Per-axis scale from the paths' units to the units `radius` is in — a
+   *  view's, to measure the radius in screen pixels under any zoom. Default
+   *  `{ x: 1, y: 1 }`. */
+  scale?: { x: number; y: number };
   /** Kinds to consider. Absent, all of them. */
   kinds?: Iterable<PathSnapKind>;
   /** Where the line being drawn starts. Tangent and perpendicular targets are
@@ -149,10 +154,12 @@ function nearestOnSeg(s: Seg, p: Point): { x: number; y: number; dist: number } 
 export function findPathSnap(index: PathSnapIndex, probe: Point, query: PathSnapQuery): PathSnapHit | null {
   const kinds = new Set(query.kinds ?? PATH_SNAP_KINDS);
   const r = query.radius;
+  const sx = Math.abs(query.scale?.x ?? 1), sy = Math.abs(query.scale?.y ?? 1);
+  const metric = (dx: number, dy: number) => Math.hypot(dx * sx, dy * sy);
   const skip = query.skip ?? (() => false);
   const pick: { best: PathSnapHit | null } = { best: null };
   const offer = (kind: PathSnapKind, x: number, y: number, paths: readonly number[]) => {
-    const distance = Math.hypot(x - probe.x, y - probe.y);
+    const distance = metric(x - probe.x, y - probe.y);
     if (distance > r || (pick.best && distance >= pick.best.distance)) return;
     pick.best = { kind, x, y, distance, paths };
   };
@@ -162,8 +169,9 @@ export function findPathSnap(index: PathSnapIndex, probe: Point, query: PathSnap
     for (const t of index.targets(kind)) if (!t.paths.some(skip)) offer(kind, t.x, t.y, t.paths);
   }
 
+  const rx = r / (sx || 1), ry = r / (sy || 1);
   const near = (s: PathSegment) =>
-    s.box.x0 - r <= probe.x && probe.x <= s.box.x1 + r && s.box.y0 - r <= probe.y && probe.y <= s.box.y1 + r;
+    s.box.x0 - rx <= probe.x && probe.x <= s.box.x1 + rx && s.box.y0 - ry <= probe.y && probe.y <= s.box.y1 + ry;
   const o = query.origin;
   if (o && (kinds.has('tangent') || kinds.has('perpendicular'))) {
     index.segments.forEach((segs, path) => {
@@ -176,7 +184,7 @@ export function findPathSnap(index: PathSnapIndex, probe: Point, query: PathSnap
         for (const [kind, ts] of lists) {
           for (const t of ts) {
             const p = evalSeg(s.pts, t);
-            if (Math.hypot(p.x - o.x, p.y - o.y) > r) offer(kind, p.x, p.y, [path]);
+            if (metric(p.x - o.x, p.y - o.y) > r) offer(kind, p.x, p.y, [path]);
           }
         }
       }

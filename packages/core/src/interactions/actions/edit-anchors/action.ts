@@ -102,6 +102,18 @@ interface EditAnchorsScratch {
   origins?: readonly (PointOrigin | null)[];
 }
 
+/** Where the pressed anchor goes for a pointer at `world`: onto a path
+ *  target of any other shape in range, where the `snap` dep finds one. The
+ *  edited path offers none, since its own segments move with the drag. */
+function snapAnchorDrag(
+  ctx: InvocationCtx,
+  scratch: Pick<EditAnchorsScratch, 'anchorOrigin' | 'id'>,
+  world: { x: number; y: number },
+): { x: number; y: number } {
+  const snap = ctx.deps.snap?.toPaths;
+  return snap?.(world, { origin: scratch.anchorOrigin, exclude: [scratch.id] }) ?? world;
+}
+
 function track(scratch: EditAnchorsScratch, next: ReturnType<typeof editAnchorSetTracked>): void {
   if (!next) return;
   scratch.currentPose = next.path;
@@ -120,7 +132,7 @@ export const editAnchorsAction: Action & { requires: string[] } = inPlane({
     target: { kindOf: isAnchorOrControl },
   },
   eligible: { capability: 'edits-anchors' },
-  requires: ['selection', 'editAnchors'],
+  requires: ['selection', 'editAnchors', 'snap'],
   invoker: {
     timing: 'ongoing',
     start(ctx: InvocationCtx, _opts): OngoingHandle {
@@ -196,8 +208,9 @@ export const editAnchorsAction: Action & { requires: string[] } = inPlane({
         onMove(moveCtx: InvocationCtx): void {
           if (scratch.part === 'anchor') {
             if (scratch.dragging.length === 0) return;
-            const dx = moveCtx.world.x - scratch.anchorOrigin.x;
-            const dy = moveCtx.world.y - scratch.anchorOrigin.y;
+            const to = snapAnchorDrag(ctx, scratch, moveCtx.world);
+            const dx = to.x - scratch.anchorOrigin.x;
+            const dy = to.y - scratch.anchorOrigin.y;
             track(scratch, editAnchorSetTracked(scratch.originPose, (set) => {
               for (const flat of scratch.dragging) translateAnchorBy(set, flat, dx, dy);
             }));
@@ -222,6 +235,7 @@ export const editAnchorsAction: Action & { requires: string[] } = inPlane({
         },
         onEnd(_endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
           active = false;
+          ctx.deps.snap?.release?.();
           if (reason === 'cancel') return;
           if (scratch.originPose === scratch.currentPose) return;
           scratch.dep.applyEdit(scratch.id, scratch.currentPose, 'Edit anchors', scratch.origins);

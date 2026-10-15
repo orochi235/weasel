@@ -88,6 +88,7 @@ export type {
   InsertDep,
   InsertLive,
   SnapDep,
+  SnapQuery,
   InsertExtras,
   LassoSelectDep,
   LayoutDep,

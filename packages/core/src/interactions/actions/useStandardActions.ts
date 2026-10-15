@@ -62,7 +62,7 @@ import { bendSegmentAction } from './defaults/bendSegment';
 import { makeHandlesSymmetricAction, retractHandlesAction } from './defaults/anchorHandles';
 import { averageAnchorsAction, joinAnchorsAction } from './defaults/anchorJoin';
 import {
-  joinPathsAction, offsetPathAction, simplifyPathAction, snipAtCrossingsAction,
+  extendToMeetAction, joinPathsAction, offsetPathAction, simplifyPathAction, snipAtCrossingsAction, trimPathAction,
 } from './pathCommands';
 import {
   nudgeAnchorsUpAction,
@@ -176,6 +176,8 @@ const KIT_STANDARD_DESCRIPTORS: Action[] = [
   offsetPathAction,
   snipAtCrossingsAction,
   joinPathsAction,
+  trimPathAction,
+  extendToMeetAction,
   marqueeAnchorsAction,
   selectAnchorAction,
   lassoSelectAction,

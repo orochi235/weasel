@@ -185,7 +185,7 @@ describe('dep sources after an abandoned render', () => {
     const reg = registryAfterAbandon(
       () => ({ x: 1, y: 1 }),
       () => ({ x: 2, y: 2 }),
-      (fn) => { useSnapDepSource(fn); },
+      (fn) => { useSnapDepSource({ snapPoint: fn as never }, { current: null }); },
     );
     expect(dep(reg, 'snap').point({ x: 0, y: 0 })).toEqual({ x: 1, y: 1 });
   });

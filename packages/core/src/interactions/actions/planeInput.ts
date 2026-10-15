@@ -31,7 +31,7 @@ import {
 } from 'core/viewport/parallax';
 import type { View } from 'core/viewport/view';
 import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
-import type { NodeAtPointDep, SnapDep, ViewApi } from './depSchema';
+import type { NodeAtPointDep, SnapDep, SnapQuery, ViewApi } from './depSchema';
 
 type Point = { x: number; y: number };
 
@@ -192,7 +192,19 @@ function livePlane(
   }
   const snap = declared.includes('snap') ? bag.snap as SnapDep | undefined : undefined;
   if (snap) {
-    override('snap', { point: (p: Point) => toPlane(map(), snap.point(fromPlane(map(), p))) } as SnapDep);
+    const query = (at: SnapQuery | undefined): SnapQuery | undefined =>
+      (at?.origin ? { ...at, origin: fromPlane(map(), at.origin) } : at);
+    const toPaths = snap.toPaths;
+    override('snap', {
+      point: (p: Point, at?: SnapQuery) => toPlane(map(), snap.point(fromPlane(map(), p), query(at))),
+      ...(toPaths ? {
+        toPaths: (p: Point, at?: SnapQuery) => {
+          const hit = toPaths(fromPlane(map(), p), query(at));
+          return hit && toPlane(map(), hit);
+        },
+      } : {}),
+      ...(snap.release ? { release: () => snap.release!() } : {}),
+    } satisfies SnapDep);
   }
 
   // The drag's origin, fixed in the plane at the moment it was pressed,

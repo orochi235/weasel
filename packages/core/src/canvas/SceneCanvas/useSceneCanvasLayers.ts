@@ -18,6 +18,8 @@ import { useDispatcherOverlayLayer } from './useDispatcherOverlayLayer';
 import { usePreviewGhostLayer } from './usePreviewGhostLayer';
 import { useSceneSlotLayers } from './useSceneSlotLayers';
 import { useSelectionOverlayLayer } from './useSelectionOverlayLayer';
+import type { PathSnapper } from 'features/paths/pathSnap/pathSnapper';
+import { createPathSnapMarkerLayer } from 'features/paths/pathSnap/pathSnapMarkerLayer';
 
 /**
  * The layer map `<SceneCanvas>` hands `<Canvas>`: the caller's `layers` over
@@ -41,6 +43,8 @@ export function useSceneCanvasLayers<TData, TLayer extends string, TPose>(args: 
   /** Ids an in-flight gesture is ghosting. */
   previewIds: () => Iterable<string> | null;
   dispatcher: Dispatcher;
+  /** Whose mark the snap-marker layer draws. */
+  pathSnapper: PathSnapper;
   pathEditState: PathEditState;
   /** `debug.slops`: paint the hit regions of the chrome affordances. */
   slops: boolean;
@@ -52,7 +56,7 @@ export function useSceneCanvasLayers<TData, TLayer extends string, TPose>(args: 
    *  so the slops halos are the hit regions rather than a copy of them. */
   chromeAffordancesRef: MutableRefObject<readonly Affordance[]>;
 } {
-  const { scene, adapter, poseDescriptor, alphaFor, dispatcher, pathEditState, slops, targetScale } = args;
+  const { scene, adapter, poseDescriptor, alphaFor, dispatcher, pathEditState, slops, targetScale, pathSnapper } = args;
 
   const merged = useMemo(
     () => mergeLayersWithDefaults(args.layers, targetScale),
@@ -78,6 +82,8 @@ export function useSceneCanvasLayers<TData, TLayer extends string, TPose>(args: 
     [],
   );
 
+  const snapMarkerLayer = useMemo(() => createPathSnapMarkerLayer(pathSnapper), [pathSnapper]);
+
   const pathEditingOverlayLayer = usePathEditOverlayLayer(pathEditState, {
     nodeOf: (id) => scene.get(id as NodeId),
     planeOfNode: args.planeOfNode,
@@ -96,8 +102,9 @@ export function useSceneCanvasLayers<TData, TLayer extends string, TPose>(args: 
     previewGhost: { layer: previewLayer, after: 'scene' },
     dispatcherOverlay: { layer: dispatcherOverlay, after: 'previewGhost' },
     pathEditingOverlay: { layer: pathEditingOverlayLayer, after: 'selectionOverlay' },
-    ...(slops ? { slopsDebug: { layer: slopsLayer, after: 'pathEditingOverlay' } } : {}),
-  }), [merged, sceneLayers, selectionOverlayLayer, previewLayer, dispatcherOverlay, pathEditingOverlayLayer, slops, slopsLayer]);
+    pathSnapMarker: { layer: snapMarkerLayer, after: 'pathEditingOverlay' },
+    ...(slops ? { slopsDebug: { layer: slopsLayer, after: 'pathSnapMarker' } } : {}),
+  }), [merged, sceneLayers, selectionOverlayLayer, previewLayer, dispatcherOverlay, pathEditingOverlayLayer, snapMarkerLayer, slops, slopsLayer]);
 
   return { layers, rotationBadge, chromeAffordancesRef };
 }

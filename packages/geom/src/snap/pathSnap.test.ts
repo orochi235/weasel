@@ -54,6 +54,11 @@ describe('findPathSnap', () => {
     expect(findPathSnap(line, { x: 31, y: 2 }, { radius: 5, kinds: ['perpendicular'] })).toBeNull();
   });
 
+  it('measures the radius at the given scale', () => {
+    expect(findPathSnap(cross, { x: 53, y: 50 }, { radius: 5, kinds: ['intersection'], scale: { x: 2, y: 2 } })).toBeNull();
+    expect(findPathSnap(cross, { x: 50, y: 53 }, { radius: 5, kinds: ['intersection'], scale: { x: 4, y: 1 } })).not.toBeNull();
+  });
+
   it('skips the paths a drag is moving, and the crossings they make', () => {
     expect(findPathSnap(cross, { x: 50, y: 50 }, { radius: 5, skip: (i) => i === 1 })?.kind).not.toBe('intersection');
     expect(findPathSnap(cross, { x: 50, y: 50 }, { radius: 5, skip: () => true })).toBeNull();

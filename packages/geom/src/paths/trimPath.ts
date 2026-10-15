@@ -53,11 +53,11 @@ function stretch(segs: readonly Seg[], a: number, b: number): Seg[] {
  * Remove the piece of `path`'s stroke that `probe` is nearest, bounded by the
  * nearest crossings on either side — with any of `cutters`, or with the path
  * itself. On an open subpath an end with no crossing before it bounds the
- * piece too; a closed subpath is opened, and one crossed at a single point is
- * removed whole.
+ * piece too, so a subpath touched only at its ends goes whole; a closed
+ * subpath is opened, and one crossed at a single point is removed whole.
  *
  * Returns null when the probe is further than `radius` from the stroke, or
- * when nothing crosses the subpath it is on. Curves are split where they are
+ * when nothing crosses or touches the subpath it is on. Curves are split where they are
  * cut and keep their type; other subpaths are left as they were.
  */
 export function trimPathAt(
@@ -77,19 +77,21 @@ export function trimPathAt(
 
   const { segs, closed } = subs[found.sub];
   const n = segs.length;
-  const stops = crossingStops(path, cutters)
+  const touches = crossingStops(path, cutters)
     .filter((s) => s.sub === found.sub)
-    .map((s) => s.index + s.t)
+    .map((s) => s.index + s.t);
+  if (touches.length === 0) return null;
+  const stops = touches
     .map((s) => (closed && s > n - EDGE ? 0 : s))
     .filter((s) => closed || (s > EDGE && s < n - EDGE))
     .sort((p, q) => p - q);
-  if (stops.length === 0) return null;
 
   const below = stops.filter((s) => s < found.at);
   const above = stops.filter((s) => s > found.at);
   const keep: SegmentRun[] = [];
   let removed: Seg[];
   if (closed) {
+    if (stops.length === 0) return null;
     const lo = below.length > 0 ? below[below.length - 1] : stops[stops.length - 1] - n;
     const hi = above.length > 0 ? above[0] : stops[0] + n;
     removed = stretch(segs, lo, hi);

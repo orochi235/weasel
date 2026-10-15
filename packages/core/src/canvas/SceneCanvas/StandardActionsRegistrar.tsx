@@ -35,7 +35,8 @@ import {
   useTextEditDepSource,
   useViewDepSource,
   type InsertNodeFactory,
-  type InsertPaint
+  type InsertPaint,
+  type SnapSources,
 } from '../deps';
 import { GeometryProjectionRegistrar, ResizePolicyRegistrar } from './poseRegistrars';
 import type { BridgeAdapter } from './props';
@@ -78,7 +79,7 @@ export function StandardActionsRegistrar({
   reflowTransition,
   insertNodeFactories,
   insertPaint,
-  snapPoint,
+  snap,
   canvasRef,
   canvasApiRef,
   ingestionResolveSrc,
@@ -143,9 +144,9 @@ export function StandardActionsRegistrar({
    *  consumer's per-kind node factories into the `insert` dep. */
   insertNodeFactories?: Record<string, InsertNodeFactory>;
   insertPaint?: InsertPaint;
-  /** Forwarded from `SceneCanvasProps.toolOptions.snapPoint` so the `snap`
-   *  dep source can expose grid snapping to `insertAction`. */
-  snapPoint?: (p: { x: number; y: number }) => { x: number; y: number };
+  /** `toolOptions.snapPoint` and the canvas's path snapper, which the
+   *  `snap` dep composes for the drawing and dragging actions. */
+  snap: SnapSources;
   /** The canvas element ref, so `useIngestionDepSource` can compute the
    *  visible world rect from the client rect + current view. */
   canvasRef: React.RefObject<HTMLElement | null>;
@@ -211,7 +212,7 @@ export function StandardActionsRegistrar({
   useLayoutDepSource(scene, layoutDropTarget, reflowTransition);
   useInsertDepSource(scene, adapter, insertNodeFactories, insertPaint);
   useSliceDepSource(scene, selection, adapter, poseDescriptor);
-  useSnapDepSource(snapPoint);
+  useSnapDepSource(snap, currentViewRef);
   useDebugDepSource(canvasApiRef);
   useDepChangeNotices(scene, selection.current);
   useIngestionDepSource(canvasRef, () => currentViewRef.current, ingestionResolveSrc, ingestionSvg, ingestionClipboard);

@@ -22,6 +22,8 @@ import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { PoseDescriptor } from './resize/geometry';
 import type { GeometryProjection } from './geometryProjection';
 import type { Point2, DragSample, DebugSink, LongPressState } from '@weasel-js/routing';
+import type { SnapDep } from './snapDep';
+export type { SnapDep, SnapQuery } from './snapDep';
 
 /** Minimal view API the action layer consumes. */
 export interface ViewApi {
@@ -285,15 +287,6 @@ export type InsertExtras =
     }
   | { kind: string; [extra: string]: unknown };
 
-/**
- * World-space point snapping — grid, guides, or any consumer rule. Actions
- * apply it to the coords they ingest so the live preview and the committed
- * geometry agree.
- */
-export interface SnapDep {
-  /** Snap a world-space point. Return `p` unchanged to opt out. */
-  point(p: { x: number; y: number }): { x: number; y: number };
-}
 
 /** Adapter dep for `insertAction`. The `extras` carry the active tool's kind
  *  + per-kind geometry. */
@@ -458,8 +451,9 @@ declare module '@weasel-js/routing' {
      *  `insert.adjustRotation` reaches the one in its own input scope.
      *  Sourced by `<SceneCanvas>`; without it the rotation does nothing. */
     insertLive?: InsertLive;
-    /** Snap dep — world-space point snapping (grid / guides). Sourced by
-     *  `<SceneCanvas>` from `toolOptions.snapPoint`. Absent means no snapping. */
+    /** Snap dep — world-space point snapping (path geometry, grid, guides).
+     *  Sourced by `<SceneCanvas>` from `toolOptions.pathSnap` and
+     *  `toolOptions.snapPoint`. Absent means no snapping. */
     snap?: SnapDep;
     /**
      * The canvas's debug sink.

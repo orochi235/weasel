@@ -4,6 +4,7 @@ import type { NodeId } from 'core/scene/types';
 import type { GestureReaders } from '../../gestures/shared/screenTolerance';
 import type { BehaviorResult, GroupTransform } from '../../gestures/types';
 import { draggedStoredPose } from './delta';
+import { snapMoveDelta } from './pathSnap';
 import type { MoveFrame, MoveSession } from './session';
 
 function foldBehaviors(
@@ -49,7 +50,8 @@ function foldBehaviors(
  *  it, every displaced id's stored pose under it, and whatever else the
  *  behaviors posed. */
 export function nextFrame(session: MoveSession, readers: GestureReaders, moveCtx: InvocationCtx): MoveFrame {
-  const { dx, dy, posed, opaque } = foldBehaviors(session, readers, moveCtx, moveCtx.drag!.delta.x, moveCtx.drag!.delta.y);
+  const snapped = snapMoveDelta(session.pathSnap, moveCtx.drag!.delta.x, moveCtx.drag!.delta.y);
+  const { dx, dy, posed, opaque } = foldBehaviors(session, readers, moveCtx, snapped.dx, snapped.dy);
 
   // The delta stays in the frame — no scene writes, no history entries.
   const delta = { dx, dy };

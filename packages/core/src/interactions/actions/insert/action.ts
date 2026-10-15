@@ -73,6 +73,7 @@ export const insertAction: Action & { requires: string[] } = inPlane({
             if (reason === 'cancel') cancelInsert(session);
             else committed = commitInsert(session, frame, endCtx.drag?.points ?? frame.points, gesture.userRotation);
           } finally {
+            session.releaseSnap();
             runBehaviorSettled(session.behaviors, session.gestureCtx, committed);
           }
         },

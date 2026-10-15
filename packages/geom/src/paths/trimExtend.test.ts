@@ -23,6 +23,11 @@ describe('trimPathAt', () => {
     expect(coords(trimPathAt(line, walls, { x: 4, y: 0 })!.path)).toEqual([10, 0, 30, 0]);
   });
 
+  it('removes a subpath touched only at its ends whole', () => {
+    const r = trimPathAt(pathFromD('M10 0 H20'), walls, { x: 15, y: 0 })!;
+    expect(r.path.commands).toHaveLength(0);
+  });
+
   it('declines when nothing crosses, or the probe is out of reach', () => {
     expect(trimPathAt(line, [], { x: 15, y: 0 })).toBeNull();
     expect(trimPathAt(line, walls, { x: 15, y: 6 }, { radius: 5 })).toBeNull();

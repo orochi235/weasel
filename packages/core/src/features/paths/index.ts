@@ -117,6 +117,18 @@ export { poseRotationOf, rotatePathAround, type PoseRotation } from '@weasel-js/
 export {
   poseFrameOf, poseFrameInverseOf, poseLinearOf, pathThroughPoseFrame, type PoseLinear,
 } from '@weasel-js/geom';
+export {
+  createPathSnapIndex, extendToMeet, findPathSnap, intersectSegments, lengthenOpenEnd, openEndRay, openPathEnds,
+  pathCrossings, trimPathAt, PATH_SNAP_KINDS,
+  type ExtendToMeetOptions, type OpenPathEnd, type PathCrossing, type PathSnapHit, type PathSnapIndex,
+  type PathSnapKind, type PathSnapQuery, type SegmentCrossing, type TrimPathOptions, type TrimResult,
+} from '@weasel-js/geom';
+export {
+  createPathSnapper, DEFAULT_PATH_SNAP_RADIUS, type PathSnapMark, type PathSnapOptions, type PathSnapper,
+} from './pathSnap/pathSnapper';
+export {
+  createPathSnapMarkerLayer, pathSnapGlyph, PATH_SNAP_LABELS, type PathSnapMarkerStyle,
+} from './pathSnap/pathSnapMarkerLayer';
 export { createPathLayer, type CreatePathLayerOpts } from './pathLayer';
 export { pathPoseDescriptor } from 'core/geometry/pathPoseDescriptor';
 export { pathOriginProjection } from './originProjection';
