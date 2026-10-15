@@ -23,16 +23,33 @@ export function useSceneToolSlot(
   // The last active tool the canvas reported, `undefined` before its first report.
   const sceneSaw = useRef<string | null | undefined>(undefined);
   const slotSaw = useRef(slot.activeToolId);
+  // A tool this hook told the canvas to take that it has not yet reported. Until
+  // it does, what it reports is from before the request: writing that back to
+  // the slot would undo the request, and the two sides would trade values forever.
+  const asked = useRef<string | null>(null);
+
+  const push = (target: ToolsApi, id: string | null): void => {
+    if (id === null || id === target.active || !(id in target.registry)) return;
+    asked.current = id;
+    target.setActive(id);
+  };
 
   const reported = (next: ToolsApi): void => {
     tools.current = next;
     onToolsCreated?.(next);
     const before = sceneSaw.current;
     sceneSaw.current = next.active;
-    const wanted = slot.activeToolId;
     if (before === undefined) {
-      activate(next, wanted);
-    } else if (next.active !== before && next.active !== null && next.active !== wanted) {
+      push(next, slot.activeToolId);
+      return;
+    }
+    if (asked.current !== null) {
+      if (next.active === asked.current) asked.current = null;
+      return;
+    }
+    if (next.active !== before && next.active !== null && next.active !== slot.activeToolId) {
+      // The slot is about to say what the canvas already has; nothing to push back.
+      slotSaw.current = next.active;
       slot.setActiveTool(next.active);
     }
   };
@@ -41,12 +58,8 @@ export function useSceneToolSlot(
   useEffect(() => {
     if (wanted === slotSaw.current) return;
     slotSaw.current = wanted;
-    if (tools.current) activate(tools.current, wanted);
+    if (tools.current) push(tools.current, wanted);
   }, [wanted]);
 
   return reported;
-}
-
-function activate(tools: ToolsApi, id: string | null): void {
-  if (id !== null && id !== tools.active && id in tools.registry) tools.setActive(id);
 }
