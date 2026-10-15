@@ -49,7 +49,7 @@ export function layeredPlan(graph: Graph, opts: LayoutOptions = {}): LayeredPlan
   return { ...plan, moves: untilSettled((g, o) => planOnce(g, o).moves, graph, opts) };
 }
 
-function planOnce(graph: Graph, opts: LayoutOptions): LayeredPlan {
+function planOnce(graph: Graph, opts: LayoutOptions = {}): LayeredPlan {
   const axes = axesFor(opts.direction);
   const nodeGap = opts.nodeGap ?? DEFAULT_NODE_GAP;
   const rankGap = opts.rankGap ?? DEFAULT_RANK_GAP;
