@@ -1,6 +1,10 @@
 export { KeyCap, inferKeycapKind } from './Keycap';
 export type { KeyCapProps, KeyCapVariant, KeycapKind } from './Keycap';
 export { KeySequence } from './Keycaps';
+export { KeyBank } from './KeyBank';
+export type { KeyBankProps } from './KeyBank';
+export { KEY_SPELLINGS, KEY_MIN_SCALE } from './legendFit';
+export type { KeySpellings } from './legendFit';
 export type { KeySequenceJoins, KeySequenceProps, KeySpec } from './Keycaps';
 export { keyGlyph } from './keyGlyph';
 export { keySpecsFromMods, keySpecFromKey, detectPlatform } from './keySpecsFromMods';
