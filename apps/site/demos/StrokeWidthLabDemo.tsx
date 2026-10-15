@@ -1,7 +1,8 @@
 import {
   asNodeId, boundsOfPath, createScene, type Path, PathBuilder, pathInWorld, type RectPose, type RenderLayer, type Scene,
-  solid, type Stroke, strokeToPath, useWidthTool,
+  solid, type Stroke, useWidthTool,
 } from '@weasel-js/core';
+import { strokeToPath } from '@weasel-js/stroke';
 import {
   type ConfigOf, defineInstrument, f, Lab, type RenderContext, type SceneTrialState, TrialSceneCanvas, useTrialScene,
 } from '@weasel-js/labkit';
@@ -58,7 +59,7 @@ function seed(): Scene<Data, 'default', RectPose> {
     systemLayers: [{ id: 'default' }],
     initial: [
       strokeNode(wave(40), '#5b7c99', {}),
-      strokeNode(wave(130), '#7fb069', { vertexWidths: [2, 20, 4] }),
+      strokeNode(wave(130), '#7fb069', { vertexWidths: [2, { left: 4, right: 16 }, 4] }),
       strokeNode(wave(220), '#d4a574', { vertexWidths: [14, 4, 14], dash: [20, 10], cap: 'butt' }),
       strokeNode(wave(310), '#a48bd4', { vertexWidths: [4, 16, 6], markerStart: 'circle', markerEnd: 'arrow' }),
       strokeNode(handwriting(520), '#2d2a32', { width: 14, nib: { angle: radians(30), ratio: 0.15 } }),

@@ -193,7 +193,8 @@ Priority tags:
   unknown-tool glyph in draw's palette and the lab's. It edits only nodes `resolveEditablePathOf`
   answers a polygon for, so a drawn rectangle's stroke, which renders `vertexWidths` and a `nib`
   like any other, cannot be shaped with it; that waits on "A rectangle has no anchors in path edit"
-  above.
+  above. `strokeEdgeNear`, which it hit-tests with, measures every stroke as centered, so on an
+  inner- or outer-aligned stroke the grab point sits off the edge that is drawn.
 
 ### Pathfinder follow-ups (post-v1)
 

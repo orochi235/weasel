@@ -1,34 +1,51 @@
 import type { Action, ActionDeps, InvocationCtx } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import { pathToAnchors, type PolygonPath } from '@weasel-js/geom';
+import type { VertexWidth } from '@weasel-js/paint';
 import type { Op } from 'core/ops/types';
 import { createSetDataOp } from 'core/ops/setData';
 import { createTransformOp } from 'core/ops/transform';
 import type { Scene } from 'core/scene/types';
 import { commitOps } from 'interactions/actions/pathCommands/pathNodes';
 import { sceneReach } from '../bone/placedRig';
-import { anchorNear, gripAt, storedWith, widthsOf, widthTargetAt, type WidthGrip } from './widthEdit';
+import {
+  anchorNormals, draggedWidth, gripAt, isWidthSet, movedSide, storedWith, widthEdgeAt, widthPointNear, widthsOf,
+  widthTargetAt, type WidthGrip, type WidthTarget,
+} from './widthEdit';
 
 type AnyScene = Scene<unknown, string, unknown>;
+type Point = { x: number; y: number };
 
-/** What the width tool's overlay shows: the anchors of the stroke last
- *  pressed on, in world space, with their widths (`NaN` for none). */
+/** What the width tool's overlay shows, in world space: the anchors of the
+ *  stroke last hovered or pressed on, each with its unit normal toward its
+ *  right edge and its `vertexWidths` entry (`NaN` for none), and, over an
+ *  edge, the grab point on it and the width point a press there moves. */
 export interface WidthFocus {
-  anchors: readonly { x: number; y: number }[];
-  widths: readonly number[];
+  anchors: readonly Point[];
+  normals: readonly Point[];
+  widths: readonly VertexWidth[];
+  /** The stroke's own width, which an unset entry takes. */
+  fallback: number;
+  grab?: { edge: Point; at: Point };
 }
 
 /** The width tool's own state, shared by its actions and its overlay. */
 export interface WidthEnv {
   focus(): WidthFocus | null;
   setFocus(next: WidthFocus | null): void;
-  /** Screen px around a stroke's ink within which a press takes it, and
-   *  around an anchor within which a press takes hold of that anchor. */
+  /** Screen px around a stroke's edge within which a press takes hold of it,
+   *  and along the path within which it takes the anchor there. */
   reachPx(): number;
 }
 
+/** Id of the action that drags a stroke's edge. */
 export const WIDTH_DRAG_ID = 'width.drag';
+/** Id of the action that clears the width point under a click. */
 export const WIDTH_CLEAR_ID = 'width.clear';
+/** Id of the action that marks the edge under a hover. */
+export const WIDTH_HOVER_ID = 'width.hover';
+/** Id of the action that drops the hover mark when the pointer leaves. */
+export const WIDTH_UNHOVER_ID = 'width.unhover';
 const LABEL = 'Stroke width';
 const REQUIRES = ['scene', 'view', 'selection', 'applyOps'] as const;
 
@@ -37,20 +54,32 @@ const meanScale = (deps: ActionDeps): number => {
   return (Math.abs(s.x) + Math.abs(s.y)) / 2;
 };
 
-function targetAt(deps: ActionDeps, env: WidthEnv, x: number, y: number) {
+const found = (deps: ActionDeps, env: WidthEnv) => {
   const scene = deps.scene as AnyScene | undefined;
-  if (!scene) return null;
-  const reach = sceneReach(deps, env.reachPx());
-  const target = widthTargetAt(scene, x, y, meanScale(deps), reach);
-  return target && { target, reach };
-}
+  return scene ? { scene, scale: meanScale(deps), reach: sceneReach(deps, env.reachPx()) } : null;
+};
 
-const focusOf = (path: PolygonPath, widths: readonly number[]): WidthFocus => ({
+const focusOf = (path: PolygonPath, widths: readonly VertexWidth[], fallback: number, grab?: WidthFocus['grab']): WidthFocus => ({
   anchors: pathToAnchors(path).anchors.flat().map((a) => ({ x: a.x, y: a.y })),
+  normals: anchorNormals(path),
   widths,
+  fallback,
+  ...(grab ? { grab } : {}),
 });
 
-function commit(deps: ActionDeps, grip: WidthGrip, widths: readonly number[]): void {
+const restingFocus = (target: WidthTarget): WidthFocus =>
+  focusOf(target.path, widthsOf(target, pathToAnchors(target.path).anchors.flat().length), target.fallback);
+
+/** The focus as it was, less its grab point. */
+function dropGrab(env: WidthEnv): void {
+  const last = env.focus();
+  if (!last?.grab) return;
+  const { grab: _grab, ...rest } = last;
+  void _grab;
+  env.setFocus(rest);
+}
+
+function commit(deps: ActionDeps, grip: WidthGrip, widths: readonly VertexWidth[]): void {
   const next = storedWith(grip, widths);
   if (!next) return;
   const { id, node } = grip.target;
@@ -60,83 +89,127 @@ function commit(deps: ActionDeps, grip: WidthGrip, widths: readonly number[]): v
   commitOps(deps, ops, LABEL);
 }
 
+const edgeOf = (grip: WidthGrip, moved: number): Point => ({
+  x: grip.at.x + grip.normal.x * moved * grip.factor,
+  y: grip.at.y + grip.normal.y * moved * grip.factor,
+});
+
+function dragAction(env: WidthEnv): Action['invoker'] {
+  return {
+    timing: 'ongoing',
+    start: ({ deps, drag, world }: InvocationCtx) => {
+      const press = drag?.start ?? world;
+      const at = found(deps, env);
+      const hit = at && widthEdgeAt(at.scene, press.x, press.y, at.scale, at.reach);
+      const grip = hit && gripAt(hit);
+      if (!grip) return {};
+      const { fallback } = grip.target;
+      let widths: VertexWidth[] | null = null;
+      let preview: { pose: unknown; data: unknown } | null = null;
+      env.setFocus(focusOf(grip.path, grip.widths, fallback, { edge: edgeOf(grip, grip.start[grip.side]), at: grip.at }));
+      return {
+        kind: WIDTH_DRAG_ID,
+        onMove: (move: InvocationCtx) => {
+          const p = move.drag?.current ?? move.world;
+          const moved = movedSide(grip, (p.x - press.x) * grip.normal.x + (p.y - press.y) * grip.normal.y);
+          widths = [...grip.widths];
+          widths[grip.index] = draggedWidth(grip, moved, move.modifiers.alt);
+          preview = storedWith(grip, widths);
+          env.setFocus(focusOf(grip.path, widths, fallback, { edge: edgeOf(grip, moved), at: grip.at }));
+        },
+        // The dispatcher hands `onEnd` a context with empty deps.
+        onEnd: (_end: InvocationCtx, reason: 'commit' | 'cancel') => {
+          const done = widths;
+          widths = null;
+          preview = null;
+          if (reason === 'cancel' || done === null) {
+            env.setFocus(restingFocus(grip.target));
+            return;
+          }
+          commit(deps, grip, done);
+          env.setFocus(focusOf(grip.path, done, fallback));
+        },
+        previewIds: () => (preview ? [grip.target.id] : null),
+        previewPose: (id: string) => (preview && id === grip.target.id ? preview.pose : null),
+        previewData: (id: string) => (preview && id === grip.target.id ? preview.data : null),
+      };
+    },
+  };
+}
+
 /**
  * The width tool's actions, which write a stroke's `vertexWidths`.
- * `width.drag` takes hold of the anchor under the press — inserting one,
- * shape and all kept, where the press falls between two — and sets its width
- * to twice the pointer's distance from it, live, as one undo entry.
- * `width.clear` clears the width of the anchor under a click, so it takes the
- * stroke's own again.
+ * `width.drag` takes hold of the stroke edge under the press, at the anchor
+ * there or at one it inserts, shape kept, between two. The edge follows the
+ * pointer along the path's normal, the other edge mirroring it so the width
+ * stays centered; with Alt held only the grabbed edge moves, which writes a
+ * `{ left, right }` pair. Either is live, and one undo entry. `width.clear`
+ * clears the width point under a click, so it takes the stroke's own width
+ * again. `width.hover` and `width.unhover` show and hide the grab point under
+ * the pointer.
  */
 export function createWidthActions(env: WidthEnv): Action[] {
   const eligible = { capability: 'edits-page' } as const;
   const hasScene = (deps?: ActionDeps) => (deps?.scene ? true : ActionDisabledReason.NotApplicable);
+  const base = { eligible, requires: REQUIRES, enabled: hasScene };
   return [
-    {
-      id: WIDTH_DRAG_ID,
-      label: 'Width — drag a stroke\'s width at an anchor',
-      eligible,
-      requires: REQUIRES,
-      enabled: hasScene,
-      invoker: {
-        timing: 'ongoing',
-        start: ({ deps, drag, world }: InvocationCtx) => {
-          const press = drag?.start ?? world;
-          const hit = targetAt(deps, env, press.x, press.y);
-          const grip = hit && gripAt(hit.target, press.x, press.y, hit.reach);
-          if (!grip) return {};
-          let widths: number[] | null = null;
-          let preview: { pose: unknown; data: unknown } | null = null;
-          env.setFocus(focusOf(grip.target.path, widthsOf(grip.target, grip.widths.length - (grip.inserted ? 1 : 0))));
-          return {
-            kind: WIDTH_DRAG_ID,
-            onMove: (move: InvocationCtx) => {
-              const p = move.drag?.current ?? move.world;
-              widths = [...grip.widths];
-              widths[grip.index] = 2 * Math.hypot(p.x - grip.at.x, p.y - grip.at.y);
-              preview = storedWith(grip, widths);
-              env.setFocus(focusOf(grip.path, widths));
-            },
-            // The dispatcher hands `onEnd` a context with empty deps.
-            onEnd: (_end: InvocationCtx, reason: 'commit' | 'cancel') => {
-              const done = widths;
-              widths = null;
-              preview = null;
-              if (reason === 'cancel' || done === null) {
-                env.setFocus(focusOf(grip.target.path, widthsOf(grip.target, grip.widths.length - (grip.inserted ? 1 : 0))));
-                return;
-              }
-              commit(deps, grip, done);
-            },
-            previewIds: () => (preview ? [grip.target.id] : null),
-            previewPose: (id: string) => (preview && id === grip.target.id ? preview.pose : null),
-            previewData: (id: string) => (preview && id === grip.target.id ? preview.data : null),
-          };
-        },
-      },
-    },
+    { id: WIDTH_DRAG_ID, label: 'Width — drag a stroke\'s edge', ...base, invoker: dragAction(env) },
     {
       id: WIDTH_CLEAR_ID,
-      label: 'Width — clear the width of the anchor under the pointer',
-      eligible,
-      requires: REQUIRES,
-      enabled: hasScene,
+      label: 'Width — clear the width point under the pointer',
+      ...base,
       invoker: {
         timing: 'immediate',
         run: (deps, params) => {
           const p = params as { pressX?: number; pressY?: number } | undefined;
-          if (p?.pressX === undefined || p.pressY === undefined) return;
-          const hit = targetAt(deps, env, p.pressX, p.pressY);
-          if (!hit) return;
-          const index = anchorNear(hit.target.path, p.pressX, p.pressY, hit.reach);
-          const count = pathToAnchors(hit.target.path).anchors.flat().length;
-          const widths = widthsOf(hit.target, count);
-          if (index < 0 || Number.isNaN(widths[index])) return;
+          const at = found(deps, env);
+          if (!at || p?.pressX === undefined || p.pressY === undefined) return;
+          const target = widthTargetAt(at.scene, p.pressX, p.pressY, at.scale, at.reach);
+          if (!target) return;
+          const index = widthPointNear(target, p.pressX, p.pressY, at.reach);
+          const widths = widthsOf(target, pathToAnchors(target.path).anchors.flat().length);
+          if (index < 0 || !isWidthSet(widths[index])) return;
           widths[index] = NaN;
-          const grip: WidthGrip = { target: hit.target, path: hit.target.path, widths, index, at: { x: 0, y: 0 }, inserted: false };
+          const grip: WidthGrip = {
+            target, path: target.path, widths, index, at: { x: 0, y: 0 }, inserted: false,
+            side: 'right', normal: { x: 0, y: 1 }, start: { left: 0, right: 0 }, factor: 1,
+          };
           commit(deps, grip, widths);
-          env.setFocus(focusOf(hit.target.path, widths));
+          env.setFocus(focusOf(target.path, widths, target.fallback));
         },
+      },
+    },
+    {
+      id: WIDTH_HOVER_ID,
+      label: 'Width — show the stroke edge under the pointer',
+      ...base,
+      invoker: {
+        timing: 'immediate',
+        run: (deps, params) => {
+          const p = params as { worldX?: number; worldY?: number } | undefined;
+          const at = found(deps, env);
+          if (!at || p?.worldX === undefined || p.worldY === undefined) return;
+          const hit = widthEdgeAt(at.scene, p.worldX, p.worldY, at.scale, at.reach);
+          if (!hit) {
+            dropGrab(env);
+            return;
+          }
+          const { edge } = hit;
+          const half = edge.side === 'right' ? edge.right : edge.left;
+          env.setFocus({
+            ...restingFocus(hit.target),
+            grab: { edge: { x: edge.x + edge.nx * half, y: edge.y + edge.ny * half }, at: hit.at },
+          });
+        },
+      },
+    },
+    {
+      id: WIDTH_UNHOVER_ID,
+      label: 'Width — hide the grab point',
+      ...base,
+      invoker: {
+        timing: 'immediate',
+        run: () => dropGrab(env),
       },
     },
   ];
