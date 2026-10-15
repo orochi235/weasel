@@ -58,12 +58,20 @@ async function mount() {
 describe('PathSnapLabDemo', () => {
   it('locks a drawn line to where the two diagonals cross', async () => {
     const canvas = await mount();
-    expect(nodes()).toHaveLength(4);
+    expect(nodes()).toHaveLength(6);
     drag(canvas, [650, 450], [283, 228]);
-    expect(nodes()).toHaveLength(5);
+    expect(nodes()).toHaveLength(7);
     const [x, y] = lastEnd();
     expect(x).toBeCloseTo(280, 3);
     expect(y).toBeCloseTo(230, 3);
+  });
+
+  it("locks to a text box's center and a rectangle's corner", async () => {
+    const canvas = await mount();
+    drag(canvas, [440, 590], [662, 398]);
+    expect(lastEnd().map((v) => Math.round(v * 1000) / 1000)).toEqual([660, 400]);
+    drag(canvas, [440, 590], [717, 483]);
+    expect(lastEnd().map((v) => Math.round(v * 1000) / 1000)).toEqual([720, 480]);
   });
 
   it('stops snapping to a kind the control panel turns off', async () => {

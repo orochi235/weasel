@@ -23,7 +23,7 @@ import type { PoseDescriptor } from './resize/geometry';
 import type { GeometryProjection } from './geometryProjection';
 import type { Point2, DragSample, DebugSink, LongPressState } from '@weasel-js/routing';
 import type { SnapDep } from './snapDep';
-export type { SnapDep, SnapQuery } from './snapDep';
+export type { SnapDep, SnapGeometry, SnapQuery } from './snapDep';
 
 /** Minimal view API the action layer consumes. */
 export interface ViewApi {

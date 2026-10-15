@@ -124,6 +124,10 @@ export interface NodeShapeEntry<TData = unknown, TPose = unknown> {
    *  answer exists (`kit:text` has none short of laying out its glyphs); such
    *  a node is always painted. Same cheap-reads rule as `ink`. */
   bounds?(node: Node<TData, string, TPose>, pose: TPose, ctx?: NodeInkCtx): Bounds | null;
+  /** Snap to the node's pose box — its edges, corners and center — rather
+   *  than its silhouette. For content whose silhouette is no drawn outline,
+   *  as text's line boxes and an image's pixels are not. */
+  snapsToBox?: boolean;
 }
 
 /** How a painter inks its silhouette. See {@link NodeShapeEntry.ink}.

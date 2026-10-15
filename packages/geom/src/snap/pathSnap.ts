@@ -15,6 +15,9 @@ import { perpendicularTsFrom, segmentExtremaT, segmentMidT, tangentTsFrom } from
 /**
  * What a snap target is.
  *
+ * - `anchor` — an end of a segment: a path's anchors, a box's corners.
+ * - `center` — a point a caller names as the middle of something: a text or
+ *   image box's center, given to {@link createPathSnapIndex} as a target.
  * - `intersection` — where two strokes cross, or one crosses itself.
  * - `tangent` — where a line from the query's origin touches a curve.
  * - `perpendicular` — where a line from the origin meets a stroke square on.
@@ -25,12 +28,17 @@ import { perpendicularTsFrom, segmentExtremaT, segmentMidT, tangentTsFrom } from
  * - `nearest` — the closest point on any stroke, when nothing else is in range.
  */
 export type PathSnapKind =
-  | 'intersection' | 'tangent' | 'perpendicular' | 'midpoint' | 'extremum' | 'quadrant' | 'nearest';
+  | 'anchor' | 'center' | 'intersection' | 'tangent' | 'perpendicular' | 'midpoint' | 'extremum' | 'quadrant'
+  | 'nearest';
 
 /** Every snap kind, in the order a picker lists them. */
 export const PATH_SNAP_KINDS: readonly PathSnapKind[] = [
-  'intersection', 'tangent', 'perpendicular', 'midpoint', 'extremum', 'quadrant', 'nearest',
+  'anchor', 'center', 'intersection', 'tangent', 'perpendicular', 'midpoint', 'extremum', 'quadrant', 'nearest',
 ];
+
+/** The kinds whose targets stand whatever the probe. */
+export type StaticPathSnapKind = 'anchor' | 'center' | 'intersection' | 'midpoint' | 'extremum' | 'quadrant';
+const STATIC_KINDS: readonly StaticPathSnapKind[] = ['anchor', 'center', 'intersection', 'midpoint', 'extremum', 'quadrant'];
 
 /** A target the probe landed on. */
 export interface PathSnapHit {
@@ -62,10 +70,10 @@ export interface PathSnapQuery {
   skip?: (path: number) => boolean;
 }
 
-/** A target that stands whatever the probe: a crossing, a midpoint, an
- *  extremum or a quadrant point. */
+/** A target that stands whatever the probe: an anchor, a center, a crossing,
+ *  a midpoint, an extremum or a quadrant point. */
 export interface PathSnapTarget {
-  kind: PathSnapKind;
+  kind: StaticPathSnapKind;
   x: number;
   y: number;
   paths: readonly number[];
@@ -78,16 +86,33 @@ export interface PathSnapIndex {
   /** Each path's segments. */
   readonly segments: readonly (readonly PathSegment[])[];
   /** The targets that do not depend on the probe, of one kind. */
-  targets(kind: 'intersection' | 'midpoint' | 'extremum' | 'quadrant'): readonly PathSnapTarget[];
+  targets(kind: StaticPathSnapKind): readonly PathSnapTarget[];
 }
 
 /** Prepare `paths` for {@link findPathSnap}. Build one per set of paths and
- *  reuse it while they stand: a crossing search is quadratic in segments. */
-export function createPathSnapIndex(paths: readonly Path[]): PathSnapIndex {
+ *  reuse it while they stand: a crossing search is quadratic in segments.
+ *  `extra` adds targets of the caller's own — the center of a box, a point
+ *  with no segment at it — each naming the path it belongs to. */
+export function createPathSnapIndex(paths: readonly Path[], extra: readonly PathSnapTarget[] = []): PathSnapIndex {
   const segments = paths.map(pathSegments);
   const cache = new Map<string, PathSnapTarget[]>();
   const build = (kind: string): PathSnapTarget[] => {
-    const out: PathSnapTarget[] = [];
+    const out: PathSnapTarget[] = extra.filter((t) => t.kind === kind);
+    if (kind === 'center') return out;
+    if (kind === 'anchor') {
+      segments.forEach((segs, path) => {
+        const seen = new Set<string>();
+        for (const s of segs) {
+          for (const p of [s.pts[0], s.pts[s.pts.length - 1]]) {
+            const key = `${p.x},${p.y}`;
+            if (seen.has(key)) continue;
+            seen.add(key);
+            out.push({ kind: 'anchor', x: p.x, y: p.y, paths: [path] });
+          }
+        }
+      });
+      return out;
+    }
     if (kind === 'intersection') {
       for (const c of pathCrossings(paths)) {
         out.push({ kind: 'intersection', x: c.x, y: c.y, paths: c.a.path === c.b.path ? [c.a.path] : [c.a.path, c.b.path] });
@@ -101,7 +126,7 @@ export function createPathSnapIndex(paths: readonly Path[]): PathSnapIndex {
       }
       for (const s of segs) {
         const ts = kind === 'midpoint' ? [segmentMidT(s.pts)] : segmentExtremaT(s.pts);
-        for (const t of ts) out.push({ kind: kind as PathSnapKind, ...evalSeg(s.pts, t), paths: [path] });
+        for (const t of ts) out.push({ kind: kind as StaticPathSnapKind, ...evalSeg(s.pts, t), paths: [path] });
       }
     });
     return out;
@@ -164,7 +189,7 @@ export function findPathSnap(index: PathSnapIndex, probe: Point, query: PathSnap
     pick.best = { kind, x, y, distance, paths };
   };
 
-  for (const kind of ['intersection', 'midpoint', 'extremum', 'quadrant'] as const) {
+  for (const kind of STATIC_KINDS) {
     if (!kinds.has(kind)) continue;
     for (const t of index.targets(kind)) if (!t.paths.some(skip)) offer(kind, t.x, t.y, t.paths);
   }

@@ -191,13 +191,11 @@ Priority tags:
   `packages/geom/src/paths/extendPath.ts` was written for Extend to Next Path while a separate
   branch built drag-to-lengthen ("Lengthen") with a helper of its own. Whichever lands second folds
   its callers onto the other's, so one rule decides whether a curved end grows a straight run.
-- **(P3) Trim shows nothing before the click.** `trimPathAction` answers only on the click; hovering
-  with the Trim tool does not mark the piece it would remove. `trimPathAt` already returns
-  `removed`; what is missing is a hover binding and an overlay to draw it.
-- **(P3) Path snapping reads editable polygon paths only.** `createPathSnapper`
-  (`packages/core/src/features/paths/pathSnap/pathSnapper.ts`) indexes each leaf
-  `resolveEditablePathOf` answers for, so a rect-pose node, text, or an image offers no targets.
-  An anchor drag skips the path being edited, since its own segments move with the drag.
+- **(P3) Trim and Extend change editable polygon paths only.** Any node's outline cuts or stops
+  them (`nodeSnapGeometry`), but what they reshape comes from `scenePathNodes`
+  (`packages/core/src/interactions/actions/pathCommands/trimExtend.ts`), which reads
+  `resolveEditablePathOf`: a rect-pose rectangle cannot itself be trimmed, which waits on "A
+  rectangle has no anchors in path edit" above.
 - **(P2) Spacing hints.** Equal-spacing markers between siblings while moving, and Alt-hover
   distance readouts between the selection and the shape under the pointer.
 - **(P2) Live symmetry.** Draw on one side of an axis and the mirrored half follows.

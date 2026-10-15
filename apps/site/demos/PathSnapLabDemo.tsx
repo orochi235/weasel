@@ -1,4 +1,4 @@
-import { createScene, ellipsePath, pathFromD, type PathSnapOptions } from '@weasel-js/core';
+import { asNodeId, createScene, ellipsePath, pathFromD, solid, type PathSnapOptions } from '@weasel-js/core';
 import {
   type ConfigOf,
   defineInstrument,
@@ -17,6 +17,8 @@ import 'windease/styles.css';
 
 const config = f.schema({
   kinds: f.group({
+    anchor: f.boolean(true).label('Anchors and corners'),
+    center: f.boolean(true).label('Box centers'),
     intersection: f.boolean(true).label('Intersections'),
     tangent: f.boolean(true).label('Tangent points'),
     perpendicular: f.boolean(true).label('Perpendicular foot'),
@@ -31,6 +33,9 @@ const config = f.schema({
 type Config = ConfigOf<typeof config>;
 type State = SceneTrialState<unknown, 'default', unknown>;
 
+const box = (id: string, pose: { x: number; y: number; width: number; height: number }, data: unknown) =>
+  ({ id: asNodeId(id), kind: 'leaf' as const, layer: 'default' as const, parent: null, pose, data });
+
 const createLabScene = () =>
   createScene<unknown, 'default', unknown>({
     systemLayers: [{ id: 'default' }],
@@ -39,6 +44,8 @@ const createLabScene = () =>
       strokeNode('fall', pathFromD('M80 80 L560 440'), '#7fb069'),
       strokeNode('ring', ellipsePath({ x: 560, y: 140, width: 160, height: 160 }), '#a48bd4', true),
       strokeNode('wave', pathFromD('M80 470 C200 380 360 560 520 470'), '#d4a574'),
+      box('note', { x: 600, y: 380, width: 120, height: 40 }, { text: 'Snap to my box', fill: { paint: solid('#e8e0d4') } }),
+      box('card', { x: 600, y: 480, width: 120, height: 60 }, { fill: { paint: solid('#7ab8d455') } }),
     ],
   });
 

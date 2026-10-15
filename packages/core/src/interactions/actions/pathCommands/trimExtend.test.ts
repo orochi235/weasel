@@ -4,7 +4,7 @@ import type { ImmediateInvoker } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import type { Op } from 'core/ops/types';
 import { asNodeId, type NodeId } from 'core/scene/types';
-import { extendToMeetAction, trimPathAction } from './trimExtend';
+import { extendToMeetAction, planTrim, trimPathAction } from './trimExtend';
 
 interface StubNode { id: NodeId; kind: 'leaf'; layer: string; pose: unknown; data: unknown; parent: NodeId | null }
 
@@ -54,6 +54,14 @@ describe('trimPathAction', () => {
     run(trimPathAction, deps, { pressX: 15, pressY: 0, radiusPx: 3 });
     expect(batches[0].ops[0].name).toBe('delete');
     expect(selection.set).toHaveBeenCalledWith([]);
+  });
+
+  it("plans from a hover's pointer what the click would cut, and cuts nothing", () => {
+    const { deps, batches } = setup({ line: 'M0 0 H30', ...walls });
+    const plan = planTrim(deps, { worldX: 15, worldY: 2, radiusPx: 3 })!;
+    expect(plan.target.id).toBe('line');
+    expect(Array.from(plan.result.removed.coords)).toEqual([10, 0, 20, 0]);
+    expect(batches).toHaveLength(0);
   });
 
   it('does nothing off every stroke, or on one nothing crosses', () => {

@@ -64,3 +64,11 @@ describe('findPathSnap', () => {
     expect(findPathSnap(cross, { x: 50, y: 50 }, { radius: 5, skip: () => true })).toBeNull();
   });
 });
+
+describe('anchor and center targets', () => {
+  it("snaps to a segment's ends and to a caller's center", () => {
+    const box = createPathSnapIndex([pathFromD('M0 0 H40 V20 H0 Z')], [{ kind: 'center', x: 20, y: 10, paths: [0] }]);
+    expect(findPathSnap(box, { x: 38, y: 2 }, { radius: 4 })).toMatchObject({ kind: 'anchor', x: 40, y: 0 });
+    expect(findPathSnap(box, { x: 21, y: 11 }, { radius: 4 })).toMatchObject({ kind: 'center', x: 20, y: 10 });
+  });
+});

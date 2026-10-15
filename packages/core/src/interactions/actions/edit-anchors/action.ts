@@ -26,13 +26,14 @@
 
 import type { Action } from '@weasel-js/routing';
 import type { InvocationCtx, OngoingHandle } from '@weasel-js/routing';
-import type { EditAnchorsDep } from '../depSchema';
+import type { EditAnchorsDep, SnapGeometry } from '../depSchema';
 import { isAnchorOrControl } from '@weasel-js/routing';
 import {
   anchorAt,
   editAnchorSetTracked,
   handleAlongItsAngle,
   moveHandleTo,
+  pathAwayFromAnchors,
   translateAnchorBy,
   type AnchorSet,
   type PointOrigin,
@@ -100,18 +101,26 @@ interface EditAnchorsScratch {
   currentPose: PolygonPath;
   /** Where each point of `currentPose` came from in `originPose`. */
   origins?: readonly (PointOrigin | null)[];
+  /** What of the edited path holds still, for the drag to snap to; read on
+   *  the first move. */
+  still?: SnapGeometry;
 }
 
 /** Where the pressed anchor goes for a pointer at `world`: onto a path
- *  target of any other shape in range, where the `snap` dep finds one. The
- *  edited path offers none, since its own segments move with the drag. */
+ *  target in range, where the `snap` dep finds one — on another shape, or on
+ *  the edited path's own anchors and segments that the drag leaves still. */
 function snapAnchorDrag(
   ctx: InvocationCtx,
-  scratch: Pick<EditAnchorsScratch, 'anchorOrigin' | 'id'>,
+  scratch: Pick<EditAnchorsScratch, 'anchorOrigin' | 'id' | 'originPose' | 'dragging' | 'still'>,
   world: { x: number; y: number },
 ): { x: number; y: number } {
   const snap = ctx.deps.snap?.toPaths;
-  return snap?.(world, { origin: scratch.anchorOrigin, exclude: [scratch.id] }) ?? world;
+  if (!snap) return world;
+  if (!scratch.still) {
+    const { path, anchors } = pathAwayFromAnchors(scratch.originPose, scratch.dragging);
+    scratch.still = { paths: [path], anchors };
+  }
+  return snap(world, { origin: scratch.anchorOrigin, exclude: [scratch.id], also: scratch.still }) ?? world;
 }
 
 function track(scratch: EditAnchorsScratch, next: ReturnType<typeof editAnchorSetTracked>): void {

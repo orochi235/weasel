@@ -6,11 +6,12 @@ import type { Action, ActionDeps, ImmediateInvoker } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import {
   extendToMeet, locateAnchor, openEndRay, openPathEnds, pathDistanceToPoint, pathToAnchors, trimPathAt,
-  type AnchorSet, type OpenPathEnd, type PolygonPath,
+  type AnchorSet, type OpenPathEnd, type Path, type PolygonPath, type TrimResult,
 } from '@weasel-js/geom';
 import type { Op } from 'core/ops/types';
 import type { NodeId } from 'core/scene/types';
 import { resolveEditablePathOf } from 'features/paths/editablePath';
+import { nodeSnapGeometry } from 'features/paths/pathSnap/snapGeometry';
 import {
   commitOps, deleteNode, reshapeOps, selectedPathNodes, type AnyNode, type PathNode,
 } from './pathNodes';
@@ -21,16 +22,53 @@ const EXTEND_LABEL = 'Extend to Next Path';
 /** Default reach of a trim or extend click from the stroke, in screen pixels. */
 export const DEFAULT_TRIM_RADIUS_PX = 6;
 
-type PressParams = { pressX?: number; pressY?: number; radiusPx?: number } | undefined;
+type PressParams = {
+  pressX?: number; pressY?: number; worldX?: number; worldY?: number; radiusPx?: number;
+} | undefined;
 
-/** The press in `params` and how far from it a stroke may be, in world
- *  units at the view's scale; null without a press. */
+/** The press in `params` — a click's, or else a hover's pointer — and how far
+ *  from it a stroke may be, in world units at the view's scale; null with
+ *  neither. */
 function pressOf(deps: ActionDeps, params: unknown): { at: { x: number; y: number }; radius: number } | null {
   const p = params as PressParams;
-  if (p?.pressX === undefined || p.pressY === undefined) return null;
+  const x = p?.pressX ?? p?.worldX, y = p?.pressY ?? p?.worldY;
+  if (x === undefined || y === undefined) return null;
   const scale = deps.view?.get().scale ?? { x: 1, y: 1 };
-  const radius = (p.radiusPx ?? DEFAULT_TRIM_RADIUS_PX) / Math.max(Math.abs(scale.x), Math.abs(scale.y));
-  return { at: { x: p.pressX, y: p.pressY }, radius };
+  const radius = (p?.radiusPx ?? DEFAULT_TRIM_RADIUS_PX) / Math.max(Math.abs(scale.x), Math.abs(scale.y));
+  return { at: { x, y }, radius };
+}
+
+/** What a trim at the press in `params` would do: the stroke it reaches, and
+ *  what `trimPathAt` makes of it. Null when it reaches none it can trim.
+ *  `params` as {@link trimPathAction} reads them; a hover's pointer serves
+ *  as the press, which is how a tool previews the piece. */
+export function planTrim(
+  deps: ActionDeps,
+  params: unknown,
+): { target: PathNode; result: TrimResult } | null {
+  const press = pressOf(deps, params);
+  if (!press) return null;
+  const all = scenePathNodes(deps);
+  for (let i = all.length - 1; i >= 0; i--) {
+    const target = all[i];
+    const cutters = strokesBesides(deps, target.id);
+    const result = trimPathAt(target.path, cutters, press.at, { radius: press.radius });
+    if (result) return { target, result };
+  }
+  return null;
+}
+
+/** The drawn outline of every leaf but `id` — any node with geometry, as
+ *  path snapping sees it: what a trim cuts at and an end extends to. */
+function strokesBesides(deps: ActionDeps | undefined, id: string): Path[] {
+  const scene = deps?.scene as { renderOrderNodes?(): readonly AnyNode[] } | undefined;
+  const out: Path[] = [];
+  for (const node of scene?.renderOrderNodes?.() ?? []) {
+    if (node.kind !== 'leaf' || node.id === id) continue;
+    const g = nodeSnapGeometry(node);
+    if (g) out.push(g.path);
+  }
+  return out;
 }
 
 /** Every leaf of the scene holding an editable path, back to front. */
@@ -62,23 +100,15 @@ export const trimPathAction: Action & { requires: string[] } = {
   invoker: {
     timing: 'immediate',
     run: (deps, params) => {
-      const press = pressOf(deps, params);
-      if (!press || !deps.scene) return;
-      const { at: probe, radius } = press;
-      const all = scenePathNodes(deps);
-      for (let i = all.length - 1; i >= 0; i--) {
-        const target = all[i];
-        const cutters = all.filter((n) => n !== target).map((n) => n.path);
-        const r = trimPathAt(target.path, cutters, probe, { radius });
-        if (!r) continue;
-        const gone = r.path.commands.length === 0;
-        const ops = gone
-          ? [deleteNode(deps.scene as never, target.node, TRIM_LABEL)]
-          : reshapeOps(target.node, r.path, TRIM_LABEL);
-        commitOps(deps, ops, TRIM_LABEL);
-        if (gone) deps.selection?.set((deps.selection.get() ?? []).filter((id) => id !== target.id) as never);
-        return;
-      }
+      const plan = deps.scene ? planTrim(deps, params) : null;
+      if (!plan) return;
+      const { target, result } = plan;
+      const gone = result.path.commands.length === 0;
+      const ops = gone
+        ? [deleteNode(deps.scene as never, target.node, TRIM_LABEL)]
+        : reshapeOps(target.node, result.path, TRIM_LABEL);
+      commitOps(deps, ops, TRIM_LABEL);
+      if (gone) deps.selection?.set((deps.selection.get() ?? []).filter((id) => id !== target.id) as never);
     },
   } satisfies ImmediateInvoker,
   enabled: () => true,
@@ -125,7 +155,7 @@ function planExtend(deps: ActionDeps | undefined, params?: unknown): Map<string,
     ? all.filter((n) => n.id === editing).map((node) => ({ node, ends: endsAt(node.path, deps!.editAnchors!.selectedAnchors) }))
     : selectedPathNodes(deps).map((node) => ({ node, ends: openPathEnds(node.path) }));
   for (const { node, ends } of subjects) {
-    const boundaries = all.filter((n) => n.id !== node.id).map((n) => n.path);
+    const boundaries = strokesBesides(deps, node.id);
     let path = node.path;
     for (const end of ends) path = extendToMeet(path, boundaries, end)?.path ?? path;
     if (path !== node.path) out.set(node.id, { node, path });

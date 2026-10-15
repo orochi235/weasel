@@ -1,6 +1,16 @@
 /** The `snap` dep: what a drawn or dragged point locks to. */
 
+import type { Path } from '@weasel-js/geom';
+
 type Point = { x: number; y: number };
+
+/** Geometry a gesture brings to snap to that is in no scene node: what stays
+ *  put of a path whose anchors it is dragging. World coords. */
+export interface SnapGeometry {
+  paths?: readonly Path[];
+  /** Points to snap to as anchors. */
+  anchors?: readonly Point[];
+}
 
 /** What a snap request knows about the gesture asking. Every field is
  *  optional, and a snapper that reads none of them answers the same. */
@@ -13,6 +23,9 @@ export interface SnapQuery {
   exclude?: readonly string[];
   /** Only these nodes' geometry offers targets. */
   include?: readonly string[];
+  /** Geometry to snap to besides the scene's, whatever `include` says. A
+   *  snapper may index it once per object, so pass the same one each move. */
+  also?: SnapGeometry;
 }
 
 /**

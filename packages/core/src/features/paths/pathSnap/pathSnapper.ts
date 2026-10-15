@@ -5,11 +5,11 @@
 import { createEmitter } from '@weasel-js/registry';
 import {
   createPathSnapIndex, findPathSnap, PATH_SNAP_KINDS,
-  type PathSnapIndex, type PathSnapKind, type PolygonPath,
+  type Path, type PathSnapIndex, type PathSnapKind, type PathSnapTarget,
 } from '@weasel-js/geom';
 import type { Scene } from 'core/scene/types';
-import type { SnapQuery } from 'interactions/actions/snapDep';
-import { resolveEditablePathOf } from '../editablePath';
+import type { SnapGeometry, SnapQuery } from 'interactions/actions/snapDep';
+import { nodeSnapGeometry } from './snapGeometry';
 
 type Point = { x: number; y: number };
 
@@ -52,25 +52,36 @@ export interface PathSnapper {
 /** Default snap radius, in screen pixels. */
 export const DEFAULT_PATH_SNAP_RADIUS = 8;
 
-/** A snapper over every leaf of `scene` holding an editable path. The paths
- *  are indexed once per scene version. */
+/** A snapper over every leaf of `scene` with geometry (`nodeSnapGeometry`),
+ *  indexed once per scene version, and again when a query brings geometry of
+ *  its own. */
 export function createPathSnapper(scene: Pick<Scene<unknown, string, unknown>, 'nodes' | 'getVersion'>): PathSnapper {
   const changed = createEmitter();
   let options: PathSnapOptions | undefined;
   let current: PathSnapMark | null = null;
-  let cached: { version: number; ids: string[]; index: PathSnapIndex } | null = null;
+  let cached: { version: number; also: SnapGeometry | undefined; ids: (string | null)[]; index: PathSnapIndex } | null = null;
 
-  const indexed = () => {
+  const indexed = (also: SnapGeometry | undefined) => {
     const version = scene.getVersion();
-    if (cached?.version === version) return cached;
-    const ids: string[] = [];
-    const paths: PolygonPath[] = [];
+    if (cached?.version === version && cached.also === also) return cached;
+    const ids: (string | null)[] = [];
+    const paths: Path[] = [];
+    const extra: PathSnapTarget[] = [];
     for (const node of scene.nodes.values()) {
       if (node.kind !== 'leaf') continue;
-      const path = resolveEditablePathOf(node);
-      if (path) { ids.push(node.id); paths.push(path); }
+      const g = nodeSnapGeometry(node);
+      if (!g) continue;
+      for (const p of g.points) extra.push({ ...p, paths: [paths.length] });
+      ids.push(node.id);
+      paths.push(g.path);
     }
-    cached = { version, ids, index: createPathSnapIndex(paths) };
+    for (const path of also?.paths ?? []) { ids.push(null); paths.push(path); }
+    if (also?.anchors) {
+      ids.push(null);
+      for (const p of also.anchors) extra.push({ kind: 'anchor', x: p.x, y: p.y, paths: [paths.length] });
+      paths.push({ kind: 'polygon', commands: new Uint8Array(), coords: new Float32Array(), fillRule: 'nonzero' });
+    }
+    cached = { version, also, ids, index: createPathSnapIndex(paths, extra) };
     return cached;
   };
   const setMark = (next: PathSnapMark | null) => {
@@ -82,7 +93,7 @@ export function createPathSnapper(scene: Pick<Scene<unknown, string, unknown>, '
   return {
     snap(p, at, scale) {
       if (!options) return null;
-      const { ids, index } = indexed();
+      const { ids, index } = indexed(at?.also);
       const off = options.kinds ?? {};
       const exclude = at?.exclude ? new Set(at.exclude) : null;
       const include = at?.include ? new Set(at.include) : null;
@@ -91,7 +102,11 @@ export function createPathSnapper(scene: Pick<Scene<unknown, string, unknown>, '
         scale,
         kinds: PATH_SNAP_KINDS.filter((k) => off[k] !== false),
         ...(at?.origin ? { origin: at.origin } : {}),
-        skip: (i) => (exclude?.has(ids[i]) ?? false) || (include ? !include.has(ids[i]) : false),
+        skip: (i) => {
+          const id = ids[i];
+          if (id === null) return false;
+          return (exclude?.has(id) ?? false) || (include ? !include.has(id) : false);
+        },
       });
       setMark(hit ? { kind: hit.kind, x: hit.x, y: hit.y } : null);
       return hit ? { x: hit.x, y: hit.y } : null;

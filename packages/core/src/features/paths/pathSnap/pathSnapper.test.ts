@@ -89,3 +89,26 @@ describe('createPathSnapMarkerLayer', () => {
     expect(createPathSnapMarkerLayer(s).draw(null, view, { width: 0, height: 0 } as never)).toEqual([]);
   });
 });
+
+describe('what a node offers to snap to', () => {
+  const leaf = (id: string, pose: unknown, data: unknown) =>
+    [asNodeId(id), { id: asNodeId(id), kind: 'leaf' as const, layer: 'default', parent: null, pose, data }] as const;
+
+  it("gives a text node's box: its corners and its center", () => {
+    const nodes = new Map([leaf('t', { x: 0, y: 0, width: 100, height: 40 }, { text: 'hi' })]);
+    const s = createPathSnapper({ nodes, getVersion: () => 1 } as never);
+    s.configure({ kinds: { nearest: false, midpoint: false } });
+    expect(s.snap({ x: 51, y: 21 }, undefined, ONE)).toEqual({ x: 50, y: 20 });
+    expect(s.mark()?.kind).toBe('center');
+    expect(s.snap({ x: 98, y: 2 }, undefined, ONE)).toEqual({ x: 100, y: 0 });
+    expect(s.mark()?.kind).toBe('anchor');
+  });
+
+  it("gives a filled rectangle its drawn outline", () => {
+    const nodes = new Map([leaf('r', { x: 10, y: 10, width: 50, height: 30 }, { fill: { paint: { color: '#000' } } })]);
+    const s = createPathSnapper({ nodes, getVersion: () => 1 } as never);
+    s.configure({ kinds: { nearest: false } });
+    expect(s.snap({ x: 58, y: 38 }, undefined, ONE)).toEqual({ x: 60, y: 40 });
+    expect(s.snap({ x: 35, y: 12 }, undefined, ONE)).toEqual({ x: 35, y: 10 });
+  });
+});
