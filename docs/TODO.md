@@ -209,6 +209,14 @@ Priority tags:
 
 ## Rendering & paint
 
+- **(P3) Building a `WeaselRenderer` costs twice what it did on 2026-10-13.** A one-shot
+  `renderSceneToPixels` of one solid rect took 115 to 122 ms in headless Chromium on teitou at
+  `9e0703c8a`, 166 to 188 ms after `9253a8ba4` (a run holds 15 textures) and 208 to 215 ms after
+  `906fd1905` (a run takes 8 color matrices); a second render through one `createRasterSession`
+  takes about 1 ms at every one of those commits. So the cost is the build, most likely compiling
+  the larger batch shader (inferred, not profiled). Every one-shot render and every new canvas
+  pays it.
+
 - **(P3) Pattern fills: no image-upload patterns.** WeaselDraw's picker covers the four built-in
   tiles only, each a paint kind of its own (`{ kind: 'hatch', color }`). A user-supplied bitmap
   needs a paint kind that persists the image itself (data URI, or a document-scoped asset table),
@@ -958,13 +966,6 @@ only story runner in the repo.
   is rebuilt, and a node's agent refuses a launch against a tree that lost its stamp only after
   `onto push <node>`.
 
-- **(P3) `Callout.reanchor.browser.test.tsx` heard a window `resize` it did not expect, once.** "a
-  callout follows an anchor rect that only moves, each time, without a resize event on the window"
-  failed in one fleet run on teitou at `80b0a8314`: its `resize` listener was called once. It
-  passed in the six fleet runs before that the same day and passes alone. The listener is on the
-  window every browser test shares, so a resize from anywhere fails it; what resized the window
-  was not found.
-
 - **(P3) rolldown could not write a dependency map during `packages/forge/src/vite/plugin.test.ts`,
   once.** One fleet run at `65c06d7c2` passed every file and exited 1 on an unhandled error:
   `Failed to write file in …/T/forge-plugin-*/.vite/deps_temp_*/polygon-clipping.js.map`, `Invalid
@@ -972,62 +973,28 @@ only story runner in the repo.
   a component file changes". The test makes that directory and removes it when it ends, so the
   dev server's dependency scan may have still been writing; not confirmed.
 
-- **(P2) Browser tests time out under fleet load, inside a Playwright action.** A click, a key, or
-  a screenshot that takes a fraction of a second alone stalls for seconds in a full run on studio,
-  teitou, or msb-uai, a different handful of tests each run, and the test hits its 15 s limit or
-  the action's own. Every one passes alone, and nobody has confirmed load is the cause. Two stalls
-  were timed: 14.5 s in `userEvent.click` after the row was found and scrolled to
-  (`PrefSchemaEditor.types.browser.test.tsx`, 0.3 s alone), and 7.8 s in `page.screenshot` waiting
-  for a `position: fixed` element that never moves to be stable
-  (`core/src/features/text/overlayAlignment.browser.test.tsx`, "sans-serif 16px lands on the canvas
-  glyphs").
-  - **Still exposed**, because the action is what the test is about and nothing in it sleeps or
-    animates: `overlayAlignment` (a screenshot a test, 0.55 s each alone),
-    `labkit/src/lightbox/Lightbox.browser.test.tsx`,
-    `SelectionPanel/SelectionPanel.selection.browser.test.tsx`,
-    `PatternPicker/PatternPicker.browser.test.tsx`, and the full-page screenshot in
-    `labkit/src/lab/LabLightbox.browser.test.tsx`.
-  - **Changed on 2026-10-13, none of it confirmed by a fleet run.** `PrefSchemaEditor.types`,
-    `labkit/src/controls/compoundRows.browser.test.tsx`, and `LabLightbox`'s toolbar buttons click
-    through the DOM, since the click is not what they test; `compoundRows` is one test a dialog and
-    no longer waits for each to close. Testing Library's `waitFor` and `findBy*` wait 5 s in the
-    `browser` project, as `expect.poll` already did; they waited 1 s, in `LabLightbox` and in
-    `forge/src/timeline/timeline.browser.test.tsx` ("plays on real frames") among others. Two
-    timeouts were raised for tests that do the work: the sweeps in
-    `Prefs/PrefsForm.drop.browser.test.tsx` take 3.1 to 3.6 s each alone and have 60 s, and
-    `AssetEditor.steps.test.tsx`, a jsdom test that timed out at 5 s, takes 0.9 to 1.4 s alone and
-    has 20 s.
-  - **Running `browser` after the other projects** (`sequence.groupOrder` in `vitest.config.ts`),
-    measured 2026-10-12 over nine full runs at one commit, three on each node: none of six runs
-    had a timeout, and one of three baseline runs did (`overlayAlignment`, on studio). That is
-    suggestive and no more: at a one in three rate six clean runs come up about 9% of the time. It
-    cost 12 to 52 s a run on teitou and msb-uai and nothing on studio, which takes about 175 s
-    either way against 100 to 115 s on the others and hosts a long-running render service; both
-    failing runs were there. A 15 s `browser` timeout in a run made since would mean running beside
-    the other projects was not the cause, and the `groupOrder` line should come out. Not measured:
-    fewer workers for `browser`, and whether studio's own load is the cause.
-  - **Three runs on teitou on 2026-10-13 failed the same three `browser` tests, which none of the
-    commits touch**: `8777d97f0`, then `2445052c6` and `a06b02902`, whose trees differ from it only
-    in `PrefSchemaEditor`. Each is the only failure in its file: 15 s timeouts in
-    `core/src/canvas/glyphCoverage.browser.test.ts` ("keeps both stems of a 7.2px H at every
-    sub-pixel offset") and `core/src/canvas/rasterSession.browser.test.ts` ("do not push a canvas
-    already on the page out of its context"), neither of which makes a Playwright action, and
-    `frame.evaluate: Frame was detached` under `userEvent.keyboard` in
-    `text-dom/src/overlayTyping.browser.test.tsx`. All three passed on the run before the first,
-    whose tree differed only in `PrefSchemaEditor`'s shelf. It is not teitou: a run of `a06b02902`
-    on studio failed `glyphCoverage` and `rasterSession` the same way, and `labkit`'s
-    `presentation.browser.test.tsx` ("entering refits the view…") in place of `overlayTyping`. Both
-    `core` files pass alone at that commit on orochi, in 7 s.
-  - **Still failing on 2026-10-14**, branch `path-edit-commands`, which touches no renderer, font,
-    or labkit code: `glyphCoverage` and `rasterSession` timed out on teitou and again on studio, and
-    on studio so did `glyphCoverage`'s "puts down the same ink wherever a 7.2px H lands" and
-    `LabLightbox`'s "an expanded trial keeps its marks over it". Also on studio, not a timeout:
-    `ui/src/components/Prefs/PrefsRail.rootSection.browser.test.tsx` ("scrolls the root's page to a
-    section from its entry") saw `tools` as the current section where it expected `files`. It
-    passed on teitou at a commit whose `ui` tree was the same. Later the same day, branch
-    `soft-mode-history` (history and cursor code only) failed `glyphCoverage`'s "keeps both stems"
-    on teitou, then both `glyphCoverage` tests and `rasterSession` on studio, as did `main` at
-    `b1bcafb7d` on studio; both files pass alone on orochi at the branch head, in 12.7 s.
+- **(P2) What is left of the `browser` project's fleet failures.** Measured on 2026-10-15 from the
+  logs of 136 fleet runs (2026-10-11 to 10-15) and from runs of the `browser` project alone on
+  teitou, msb-uai and studio. Running it after the other projects (`sequence.groupOrder`) ended the
+  timeouts in Playwright actions: 8 of 18 fleet runs before that change had one; after it only
+  `LabLightbox`, which also builds WebGL contexts, did (3 of 118). The timeouts that followed, from
+  2026-10-13, were the project's own: it failed the same tests alone as in a full run, and sixteen
+  busy cores beside it changed nothing. Its tabs share one Chromium, and on teitou 17 of them took
+  the same 72 to 78 s as six while tests making WebGL contexts ran three to five times as long, so
+  it now runs six (`maxWorkers`); 13 runs at six to nine workers on three nodes were green. Left
+  open:
+  - **Under six workers a tab drops its connection mid-run** ("Browser connection was closed
+    while running tests"), and the files after it never run: 7 of 9 runs at two or four workers,
+    none of 20 at six or more. The provider reports no page crash, and the cause is not found.
+    Both runs logged with `DEBUG=vitest:browser:*` lost the tab as it started its 36th file. Six
+    workers give a tab about 30 of today's 181 files, so a growing project could bring it back.
+  - **`text-dom/src/overlayTyping.browser.test.tsx`'s first test fails `frame.evaluate: Frame was
+    detached` under `userEvent.keyboard`**: 8 runs, all at the old worker count. One suspect is
+    Playwright's `page.frame('vitest-iframe')` returning the previous file's frame, since every
+    test frame has that name; in 18 runs a check at each file's start never found a second or a
+    detached one, but none of those runs had the failure, so that is unlikely, not ruled out.
+  - **`labkit/src/lab/presentation.browser.test.tsx` ("entering refits the view…") saw a pan off
+    on one axis** in 2 fleet runs and 2 probe runs, all at the old worker count.
   - `forge/src/vite/plugin.test.ts` has its own entry under "Demos & visual regression".
 
 - **(P2) HUD vs DOM text: what the idle rerun left open.** `tests/perf/hud-vs-dom.spec.ts` prices
