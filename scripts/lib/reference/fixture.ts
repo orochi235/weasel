@@ -349,7 +349,9 @@ const core = {
   kind: 2,
   flags: {},
   children: [
-    { id: 20, name: 'Box', variant: 'reference', kind: 4194304, flags: {}, target: 10 },
+    { id: 20, name: 'Box', variant: 'reference', kind: 4194304, flags: {}, target: 10, sources: source('packages/core/src/index.ts', 3) },
+    // TypeDoc writes a name that is both a type and a value as one reference to each.
+    { id: 22, name: 'Box', variant: 'reference', kind: 4194304, flags: {}, target: 10 },
     {
       id: 21,
       name: 'fit',
@@ -378,7 +380,7 @@ const core = {
       ],
     },
   ],
-  categories: [{ title: 'Viewport', children: [21] }, { title: 'Geometry', children: [20] }],
+  categories: [{ title: 'Viewport', children: [21] }, { title: 'Geometry', children: [20, 22] }],
   groups: [{ title: 'Functions', children: [21] }],
 };
 

@@ -875,16 +875,15 @@ only story runner in the repo.
   reload, so the cause isn't known; the first load after an agent edits a lab once threw
   `instrument.defaultConfig is not a function` before a reload fixed it.
 
-- **(P2) Package pages: check the reference against a real build, then retire `/api/`.** Every
-  published package has a page at `#pkg/<name>` (overview, guides, reference, demos; how each is
-  fed is in `CONTRIBUTING.md`, "Package pages"). The reference half has only ever read a
-  hand-written TypeDoc project (`scripts/lib/reference/fixture.ts`): `npm run build:api` has not
-  been run since it began writing `dist-demo/reference/`, and no page has been seen in a browser.
-  Run it, open `#pkg/core/reference` and a subpath entry such as `#pkg/geom/reference/booleans`,
-  and fix what TypeDoc's real output shows the reader got wrong. Then drop the TypeDoc HTML site:
-  `out` in `typedoc.config.mjs`, the sidebar's "API reference" link, the `/api/` half of
-  `serveApiDocsInDev`, and the `/weasel/api/` links in the package READMEs. `vitepress` is still
-  in labkit's `devDependencies` with nothing using it. Only geom, gestures, and labkit have guides.
+- **(P3) Package pages: a public signature names types the reference has no page for.** Every
+  published package has a page at `#pkg/<name>` (how each tab is fed is in `CONTRIBUTING.md`,
+  "Package pages"), and only geom, gestures, and labkit have guides. `npm run build:api` warns for
+  each type a public signature names that its package does not export, and the page writes that
+  name unlinked: symmetry's `Pt` and `AnyScene`, geom's `Side` and `Anchors`, prefs'
+  `SyncOptions`, diagram's `Rect`, and core's `ViewPoseAdapter`, among others. About 420 exports
+  have no doc comment, so their row in a module's list has no description. A page's "Declared in"
+  line links to GitHub only where TypeDoc found the repository, which it cannot from a git
+  worktree (it looks for a `.git` directory); the deployed build has not been checked for links.
 
 - **(P3) SVG export writes wrapped text unwrapped.** `data-weasel-wrap` round-trips
   `TextStyle.wrap` for weasel's own reader, but SVG `<text>` never wraps, so any other reader draws

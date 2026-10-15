@@ -144,8 +144,7 @@
     "@weasel-js/modes": "1.10.0",
     "less": "^4.2.0",
     "rollup-plugin-dts": "^6.4.1",
-    "tsx": "^4.19.0",
-    "vitepress": "^1.6.4"
+    "tsx": "^4.19.0"
   },
   "publishConfig": {
     "access": "public",

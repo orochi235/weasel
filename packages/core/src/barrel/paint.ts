@@ -1,4 +1,8 @@
-/** Part of the `@weasel-js/core` barrel. Fills, strokes, paint kinds, and color. */
+/**
+ * Part of the `@weasel-js/core` barrel. Fills, strokes, paint kinds, and color.
+ *
+ * @packageDocumentation
+ */
 
 // ─── Tile / pattern fills ───────────────────────────────────────────────────
 export { createTilePattern } from '@weasel-js/renderer';

@@ -1,4 +1,8 @@
-/** Part of the `@weasel-js/core` barrel. Selection, affordances, chrome visibility, and units. */
+/**
+ * Part of the `@weasel-js/core` barrel. Selection, affordances, chrome visibility, and units.
+ *
+ * @packageDocumentation
+ */
 
 // ─── Selection state hook ───────────────────────────────────────────────────
 export { useSelection } from '../core/selection/useSelection';

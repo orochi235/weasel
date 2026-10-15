@@ -9,9 +9,9 @@ import type { JSONOutput } from 'typedoc';
 import type { PackageReference, ReferenceModule, ReferenceSymbol } from '../../../apps/shared/reference.ts';
 import { packageRoute, symbolRoute } from '../../../apps/shared/packageRoutes.ts';
 import type { Links } from './code.ts';
-import { docOf } from './comments.ts';
+import { docOf, summaryOf } from './comments.ts';
 import { Kind } from './kinds.ts';
-import { readSymbol } from './symbols.ts';
+import { commentOf, readSymbol } from './symbols.ts';
 
 type Declaration = JSONOutput.DeclarationReflection;
 type Child = Declaration | JSONOutput.ReferenceReflection;
@@ -76,18 +76,28 @@ function listedIn(container: Declaration, prefix = ''): Listed[] {
 function linksOf(modules: readonly ModuleSource[]): Links {
   const byId = new Map<number, string>();
   const byName = new Map<string, string>();
+  const exports = new Map<number, Child>();
   for (const module of modules) {
     byId.set(module.container.id, packageRoute(module.package, 'reference', module.name));
     for (const { name, child } of module.listed) {
+      exports.set(child.id, child);
       const route = symbolRoute(module.package, module.name, name);
       for (const id of idsUnder(child)) byId.set(id, route);
       const key = `${unscopedSpecifier(module)}:${name}`;
       if (!byName.has(key)) byName.set(key, route);
     }
   }
+  const summary = (id: number, seen = new Set<number>()): string => {
+    const child = exports.get(id);
+    if (!child || seen.has(id)) return '';
+    seen.add(id);
+    if (child.variant === 'reference') return summary((child as JSONOutput.ReferenceReflection).target, seen);
+    return summaryOf(commentOf(child));
+  };
   return {
     byId: (id) => byId.get(id),
     byName: (packageName, name) => (packageName ? byName.get(`${packageName}:${name}`) : undefined),
+    summary: (id) => summary(id),
   };
 }
 
@@ -117,9 +127,11 @@ function readModule(source: ModuleSource, links: Links): ReferenceModule {
   for (const { name, child } of source.listed) {
     const symbol = readSymbol(child, name, links);
     if (!symbol) continue;
-    symbols.push(symbol);
     const owner = namespaceOf(source.container, child) ?? child;
     namesById.set(owner.id, [...(namesById.get(owner.id) ?? []), name]);
+    // A name that is both a type and a value is re-exported as two references to one page.
+    if (symbol.kind === 'alias' && symbols.some((s) => s.kind === 'alias' && s.name === name && s.to === symbol.to)) continue;
+    symbols.push(symbol);
   }
   const groups = groupsOf(source.container, namesById);
   return {

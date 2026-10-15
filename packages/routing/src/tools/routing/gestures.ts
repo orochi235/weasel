@@ -1,4 +1,8 @@
-/** Re-export from the extracted `@weasel-js/gestures` package. */
+/**
+ * Re-export from the extracted `@weasel-js/gestures` package.
+ *
+ * @packageDocumentation
+ */
 export {
   GESTURE_DESCRIPTORS,
   getGestureDescriptor,

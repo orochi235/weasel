@@ -6,6 +6,8 @@
  * provider it reads from. React is an optional peer of this package, so a
  * kernel that drives routing itself imports only the main entry and never
  * loads any of this.
+ *
+ * @packageDocumentation
  */
 export { useGestureDispatcher } from './interactions/dispatcher/useGestureDispatcher';
 export type {

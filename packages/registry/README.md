@@ -4,7 +4,7 @@ Keyed registries with a uniform reflection surface: enumerate the entries, see w
 
 Part of [weasel](https://github.com/orochi235/weasel), a domain-agnostic 2D
 scene-graph canvas kit for React. See the
-[API reference](https://orochi235.github.io/weasel/api/).
+[API reference](https://orochi235.github.io/weasel/#pkg/registry).
 
 ## Install
 

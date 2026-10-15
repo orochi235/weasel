@@ -1,4 +1,8 @@
-/** Part of the `@weasel-js/core` barrel. SceneCanvas, ingestion, layers, and the kit-root provider. */
+/**
+ * Part of the `@weasel-js/core` barrel. SceneCanvas, ingestion, layers, and the kit-root provider.
+ *
+ * @packageDocumentation
+ */
 
 // ─── SceneCanvas: the top-level renderer ─────────────────────────────────────
 // `Canvas` is intentionally NOT exported — it is `@internal` / `@deprecated`
