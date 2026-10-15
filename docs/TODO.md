@@ -181,6 +181,12 @@ Priority tags:
   Mod+Shift+O (Chrome's bookmark manager) and `averageAnchors` on Mod+Alt+J (Chrome's console),
   so neither fires there. `browserReservedBindings.test.ts` pins the pair, so a new collision
   fails it; moving these two is a choice of new keys.
+- **(P3) A path effect reopens from draw's SVG as plain paths.** Export writes an effect as a
+  group of the paths it shows (`apps/draw/src/svgExport.ts`), so the file looks right, but the
+  blend, bend or repeat is no longer live once reopened. Carrying it needs its sources named by
+  id, and an imported leaf takes a fresh id (`svgNodesToSceneDrafts` keeps ids for groups only,
+  through `wd:group-id`); with a leaf id carried the same way, the effect's `data.pathEffect`
+  and `dependsOn` can ride as `wd:` attributes on its group.
 - **(P3) A path effect inside a container that composes frames is untried.** An effect paints in
   the frame its sources are painted in (`core/scene/pathEffects/`); the actions only make one
   over two leaves, inserted beside the first.
