@@ -48,7 +48,10 @@ upstream silently loses the optimization).
 `paths/pathDistance.ts`, `paths/pathAt.ts`, `paths/unionBoundsPath.ts`,
 `paths/transform.ts`, `paths/transformPath.ts`, `paths/compose.ts`,
 `paths/splitSubpaths.ts`, `paths/cubicMath.ts`, `paths/schneiderFit.ts`
-(curve fitting for freehand), `pathHitTest.ts`, `flatten.ts`, `curves/`
+(curve fitting for freehand), `paths/resamplePath.ts` and `paths/arcRun.ts`
+(even arc-length resampling), `paths/extremaAnchors.ts` (anchors at curve
+extremes), `paths/anchorSelection.ts` (selections walked along the path),
+`pathHitTest.ts`, `flatten.ts`, `curves/`
 (`./curves` subpath), `tessellate/` (`./tessellate` subpath: fill
 tessellation, polylines, trim), `booleans/splitBySegment.ts` (`./booleans`).
 

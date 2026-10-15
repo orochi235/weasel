@@ -28,8 +28,13 @@ export {
 } from './anchorEditing';
 export { retractHandlesAction, makeHandlesSymmetricAction } from './anchorHandles';
 export { averageAnchorsAction, joinAnchorsAction } from './anchorJoin';
+export { addExtremeAnchorsAction, type AddExtremesScope } from './addExtremeAnchors';
 export {
-  simplifyPathAction, offsetPathAction, snipAtCrossingsAction, joinPathsAction,
+  growAnchorSelectionAction, shrinkAnchorSelectionAction, selectEveryNthAnchorAction,
+  selectCornerAnchorsAction, selectSmoothAnchorsAction, invertAnchorSelectionAction,
+} from './anchorSelectAlong';
+export {
+  simplifyPathAction, offsetPathAction, snipAtCrossingsAction, joinPathsAction, resamplePathAction,
 } from '../pathCommands';
 export { undoAction, redoAction } from './undoRedo';
 export { clipboardCopyAction, clipboardCutAction, clipboardPasteAction, clipboardPasteEventAction } from '../clipboard/action';

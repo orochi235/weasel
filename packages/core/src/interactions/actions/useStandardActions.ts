@@ -61,8 +61,13 @@ import { insertPathAnchorAction } from './defaults/insertPathAnchor';
 import { bendSegmentAction } from './defaults/bendSegment';
 import { makeHandlesSymmetricAction, retractHandlesAction } from './defaults/anchorHandles';
 import { averageAnchorsAction, joinAnchorsAction } from './defaults/anchorJoin';
+import { addExtremeAnchorsAction } from './defaults/addExtremeAnchors';
 import {
-  joinPathsAction, offsetPathAction, simplifyPathAction, snipAtCrossingsAction,
+  growAnchorSelectionAction, invertAnchorSelectionAction, selectCornerAnchorsAction, selectEveryNthAnchorAction,
+  selectSmoothAnchorsAction, shrinkAnchorSelectionAction,
+} from './defaults/anchorSelectAlong';
+import {
+  joinPathsAction, offsetPathAction, resamplePathAction, simplifyPathAction, snipAtCrossingsAction,
 } from './pathCommands';
 import {
   nudgeAnchorsUpAction,
@@ -119,6 +124,13 @@ const KIT_STANDARD_DESCRIPTORS: Action[] = [
   selectAllAction,
   duplicateAction,
   transformAgainAction,
+  // Ahead of their node-level twins: with no mode registry both match, and
+  // the first enabled one fires, so these decline unless anchors are selected.
+  nudgeAnchorsUpAction,
+  nudgeAnchorsDownAction,
+  nudgeAnchorsLeftAction,
+  nudgeAnchorsRightAction,
+  deleteAnchorsAction,
   deleteAction,
   groupAction,
   ungroupAction,
@@ -152,6 +164,7 @@ const KIT_STANDARD_DESCRIPTORS: Action[] = [
   moveAction,
   resizeAction,
   rotateAction,
+  marqueeAnchorsAction,
   areaSelectAction,
   insertAction,
   insertRotateAction,
@@ -162,21 +175,23 @@ const KIT_STANDARD_DESCRIPTORS: Action[] = [
   exitPathEditAction,
   insertPathAnchorAction,
   bendSegmentAction,
-  nudgeAnchorsUpAction,
-  nudgeAnchorsDownAction,
-  nudgeAnchorsLeftAction,
-  nudgeAnchorsRightAction,
-  deleteAnchorsAction,
   cutPathAtAnchorAction,
   retractHandlesAction,
   makeHandlesSymmetricAction,
   averageAnchorsAction,
   joinAnchorsAction,
+  addExtremeAnchorsAction,
+  growAnchorSelectionAction,
+  shrinkAnchorSelectionAction,
+  selectEveryNthAnchorAction,
+  selectCornerAnchorsAction,
+  selectSmoothAnchorsAction,
+  invertAnchorSelectionAction,
   simplifyPathAction,
+  resamplePathAction,
   offsetPathAction,
   snipAtCrossingsAction,
   joinPathsAction,
-  marqueeAnchorsAction,
   selectAnchorAction,
   lassoSelectAction,
   pinchZoomAction,

@@ -136,8 +136,10 @@ export const FEATURE_PRESETS: Readonly<Record<BaseFeature, FeaturePreset>> = {
       'editAnchors', 'enterPathEdit', 'exitPathEdit', 'insertPathAnchor', 'bendSegment',
       'nudgeAnchors.up', 'nudgeAnchors.down', 'nudgeAnchors.left', 'nudgeAnchors.right',
       'deleteAnchors', 'cutPathAtAnchor', 'marqueeAnchors', 'selectAnchor',
-      'retractHandles', 'makeHandlesSymmetric', 'averageAnchors', 'joinAnchors',
-      'simplifyPath', 'offsetPath', 'snipAtCrossings', 'joinPaths',
+      'retractHandles', 'makeHandlesSymmetric', 'averageAnchors', 'joinAnchors', 'addExtremeAnchors',
+      'growAnchorSelection', 'shrinkAnchorSelection', 'selectEveryNthAnchor',
+      'selectCornerAnchors', 'selectSmoothAnchors', 'invertAnchorSelection',
+      'simplifyPath', 'resamplePath', 'offsetPath', 'snipAtCrossings', 'joinPaths',
     ],
   },
   ingest: {

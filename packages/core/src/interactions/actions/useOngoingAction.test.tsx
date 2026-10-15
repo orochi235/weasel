@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
-import type { ReactNode } from 'react';
-import { ActionsProvider, useActionsRegistry, useOngoingAction } from '@weasel-js/routing/react';
+import { render, renderHook, act } from '@testing-library/react';
+import { StrictMode, useEffect, type ReactNode } from 'react';
+import { ActionsProvider, useAction, useActionsRegistry, useOngoingAction } from '@weasel-js/routing/react';
 import type { Action, ActionsRegistry } from '@weasel-js/routing';
 import { createDispatcher } from '@weasel-js/routing';
 
@@ -115,11 +115,31 @@ describe('useOngoingAction', () => {
     expect(calls.paint.end).toEqual(['cancel']);
   });
 
-  it('commits an open edit when the control unmounts', () => {
+  it('commits an open edit when the control unmounts', async () => {
     const { hook, calls } = setup(['paint']);
     act(() => { hook.result.current.edit.input({ color: '#f00' }); });
     hook.unmount();
+    await Promise.resolve();
     expect(calls.paint.end).toEqual(['commit']);
+  });
+
+  it('keeps an edit opened at mount open through StrictMode\'s rehearsal unmount', async () => {
+    const calls: Calls = { start: [], move: [], end: [] };
+    const paint = recording('paint', calls);
+    function Wiring() {
+      const reg = useActionsRegistry()!;
+      useAction(paint);
+      useEffect(() => reg.setDispatcher(createDispatcher({ getAction: (id) => reg.list().find((a) => a.id === id) })), [reg]);
+      return null;
+    }
+    function Opener() {
+      const edit = useOngoingAction('paint');
+      useEffect(() => { edit.input({ color: '#f00' }); }, [edit]);
+      return null;
+    }
+    render(<StrictMode><ActionsProvider><Wiring /><Opener /></ActionsProvider></StrictMode>);
+    await act(async () => { await Promise.resolve(); });
+    expect(calls.end).not.toContain('commit');
   });
 
   it('commits the open edit on the old action when the id changes', () => {
