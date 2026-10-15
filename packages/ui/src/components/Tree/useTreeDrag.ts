@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type Ref } from 'react';
+import { useKitSetting } from '@weasel-js/react';
 import { isInControlWithin, startThresholdDrag, useLatest, type ThresholdDragHandle } from '@weasel-js/core';
 import { resolveDrop, type DropMark, type DropRow, type ResolvedDrop, type TreeDropTarget } from '../../dropTarget';
 import { swallowNextClick, type PressModifiers, type ReorderGhost } from '../../useReorderDragList';
@@ -66,7 +67,7 @@ const IDLE: TreeDragState = { dragging: null, effect: 'move', mark: null, ghost:
 
 /** Pointer drag-to-reorder for `Tree`. Inert unless `enabled`. */
 export function useTreeDrag(opts: UseTreeDragOptions) {
-  const o = useLatest(opts);
+  const o = useLatest({ ...opts, hoverExpandMs: useKitSetting('tree.hoverExpandMs') ?? HOVER_EXPAND_MS });
   const drag = useRef<ThresholdDragHandle | null>(null);
   const hover = useRef<{ id: string; timer: ReturnType<typeof setTimeout> } | null>(null);
   const [state, setState] = useState<TreeDragState>(IDLE);
@@ -155,7 +156,7 @@ export function useTreeDrag(opts: UseTreeDragOptions) {
       if (into && !o.current.expanded.has(into)) {
         if (hover.current?.id !== into) {
           clearHover();
-          hover.current = { id: into, timer: setTimeout(() => o.current.expand(into), HOVER_EXPAND_MS) };
+          hover.current = { id: into, timer: setTimeout(() => o.current.expand(into), o.current.hoverExpandMs) };
         }
       } else {
         clearHover();

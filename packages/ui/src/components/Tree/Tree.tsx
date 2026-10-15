@@ -24,6 +24,7 @@ import { nodeById } from './treeMoves';
 import { modsOf, textOf, useControlledSet } from './treeUtils';
 import { useRowTip } from './useRowTip';
 import { useTreeDrag } from './useTreeDrag';
+import { useTypeahead } from './useTypeahead';
 export type { TreeNode, TreeProps, TreeSelectionMode } from './treeTypes';
 
 interface Visible {
@@ -32,8 +33,6 @@ interface Visible {
   level: number;
   index: number;
 }
-
-export const TYPEAHEAD_MS = 500;
 
 /**
  * A hierarchy of rows that expand and collapse: a file tree, a registry
@@ -91,7 +90,7 @@ export const Tree = forwardRef(function Tree(
 
   const [focusId, setFocusId] = useState<string | null>(null);
   const anchor = useRef<string | null>(null);
-  const typed = useRef({ text: '', at: 0 });
+  const typeahead = useTypeahead();
   const pendingFocus = useRef<string | null>(null);
   const pendingFocusFrame = useRef(0);
   useEffect(() => {
@@ -216,7 +215,7 @@ export const Tree = forwardRef(function Tree(
         return;
       case ' ':
         // Mid-search a space is a typed character: "new f" must not activate at the space.
-        if (Date.now() - typed.current.at <= TYPEAHEAD_MS) {
+        if (typeahead.searching()) {
           e.preventDefault();
           typeAhead(e, i);
           return;
@@ -235,13 +234,10 @@ export const Tree = forwardRef(function Tree(
   };
 
   const typeAhead = (e: KeyboardEvent, from: number) => {
-    const now = Date.now();
-    const t = typed.current;
-    t.text = now - t.at > TYPEAHEAD_MS ? e.key : t.text + e.key;
-    t.at = now;
-    const want = t.text.toLowerCase();
+    const text = typeahead.type(e.key);
+    const want = text.toLowerCase();
     // A fresh first letter looks past the current row; a longer prefix may still match it.
-    const start = t.text.length === 1 ? from + 1 : from;
+    const start = text.length === 1 ? from + 1 : from;
     for (let k = 0; k < visible.length; k++) {
       const v = visible[(start + k) % visible.length];
       if (textOf(v.node).toLowerCase().startsWith(want)) {
