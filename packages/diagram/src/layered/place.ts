@@ -10,7 +10,12 @@ interface Frame {
   rows: string[][];
   size: Map<string, number>;
   gap: number;
+  /** For each upper and lower pair joined by a hop, keyed `upper\0lower`:
+   *  where its first hop meets each, as `Hop.fromAt` and `Hop.toAt`. */
+  ports: Map<string, readonly [upper: number, lower: number]>;
 }
+
+const pairKey = (upper: string, lower: string) => `${upper}\u0000${lower}`;
 
 /**
  * Each node's low corner along the cross axis `axis`, keyed by node id
@@ -19,13 +24,19 @@ interface Frame {
  * The order inside each rank is kept as given; neighbors in a rank sit at
  * least their half-extents plus `nodeGap` apart, center to center. Each hop
  * joins a node in rank `r` to one in rank `r + 1`; several hops between the
- * same pair count once. The result is the balanced combination of four
- * alignments, which lines a straight run up exactly and keeps a run of
- * placeholders straight where another wire crosses it.
+ * same pair count once, at the first one's ports. Aligning a pair lines up
+ * where the hop meets each (`Hop.fromAt`, `Hop.toAt`), not the two centers.
+ * The result is the balanced combination of four alignments, which lines a
+ * straight run up exactly and keeps a run of placeholders straight where
+ * another wire crosses it.
  */
 export function placeAcross(rows: Rows, hops: readonly Hop[], axis: 'x' | 'y', nodeGap: number): Map<string, number> {
-  const frame: Frame = { rows: rows.map((row) => row.map((n) => n.id)), size: new Map(), gap: nodeGap };
+  const frame: Frame = { rows: rows.map((row) => row.map((n) => n.id)), size: new Map(), gap: nodeGap, ports: new Map() };
   for (const row of rows) for (const node of row) frame.size.set(node.id, extent(node.bounds, axis));
+  for (const hop of hops) {
+    const key = pairKey(hop.from, hop.to);
+    if (!frame.ports.has(key)) frame.ports.set(key, [hop.fromAt ?? 0.5, hop.toAt ?? 0.5]);
+  }
   const { up, down } = neighborsOf(frame.rows, hops);
   const conflicts = markConflicts(frame.rows, up);
 
@@ -136,12 +147,23 @@ function alignedLayout(frame: Frame, nbrs: Neighbors, conflicts: Conflicts, down
 
   const root = new Map<string, string>();
   const align = new Map<string, string>();
+  // Each node's center less its block root's, so the ports an aligned hop
+  // joins sit level rather than the two centers.
+  const shift = new Map<string, number>();
   for (const row of rows) {
     for (const id of row) {
       root.set(id, id);
       align.set(id, id);
+      shift.set(id, 0);
     }
   }
+  /** How far `id`'s port for the hop to `other` sits from its center, in this
+   *  layout's orientation. */
+  const offset = (id: string, other: string): number => {
+    const below = frame.ports.get(pairKey(id, other));
+    const frac = below !== undefined ? below[0] : frame.ports.get(pairKey(other, id))?.[1] ?? 0.5;
+    return ((right ? 1 - frac : frac) - 0.5) * frame.size.get(id)!;
+  };
   for (const row of rows) {
     let taken = -1;
     for (const v of row) {
@@ -156,15 +178,19 @@ function alignedLayout(frame: Frame, nbrs: Neighbors, conflicts: Conflicts, down
           align.set(u, v);
           root.set(v, root.get(u)!);
           align.set(v, root.get(v)!);
+          shift.set(v, shift.get(u)! + offset(u, v) - offset(v, u));
           taken = pos.get(u)!;
         }
       }
     }
   }
 
-  const xs = compact(rows, root, frame);
+  const xs = compact(rows, root, shift, frame);
   const out = new Map<string, number>();
-  for (const [id, r] of root) out.set(id, right ? -xs.get(r)! : xs.get(r)!);
+  for (const [id, r] of root) {
+    const x = xs.get(r)! + shift.get(id)!;
+    out.set(id, right ? -x : x);
+  }
   return out;
 }
 
@@ -172,7 +198,7 @@ function alignedLayout(frame: Frame, nbrs: Neighbors, conflicts: Conflicts, down
  *  named by its root) is placed as far toward the low end as its left
  *  neighbors allow, then pulled toward the high end as far as its right
  *  neighbors allow, which closes the gaps between separate classes. */
-function compact(rows: string[][], root: Map<string, string>, frame: Frame): Map<string, number> {
+function compact(rows: string[][], root: Map<string, string>, shift: Map<string, number>, frame: Frame): Map<string, number> {
   const blocks: string[] = [];
   const preds = new Map<string, Map<string, number>>();
   const succs = new Map<string, Map<string, number>>();
@@ -191,7 +217,7 @@ function compact(rows: string[][], root: Map<string, string>, frame: Frame): Map
       const b = row[j]!;
       const ra = root.get(a)!;
       const rb = root.get(b)!;
-      const sep = (frame.size.get(a)! + frame.size.get(b)!) / 2 + frame.gap;
+      const sep = (frame.size.get(a)! + frame.size.get(b)!) / 2 + frame.gap + shift.get(a)! - shift.get(b)!;
       const prior = preds.get(rb)!.get(ra) ?? -Infinity;
       if (sep <= prior) continue;
       preds.get(rb)!.set(ra, sep);

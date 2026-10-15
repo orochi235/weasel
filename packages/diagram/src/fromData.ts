@@ -9,11 +9,11 @@
 import type { AddNodeSpec, MarkerRef, RectPose, Stroke } from '@weasel-js/core';
 import { DEFAULT_GROUP_INSET, expandGroupEdges } from './cluster';
 import { groupSpecs, resolveGroups, type ResolvedGroup } from './dataGroups';
-import { buildBody, measureBody, sizeToBody, type BodySpec, type MeasureRowText, type Row, type RowTextStyle } from './body';
-import { edgeSpecs } from './dataEdges';
+import { bodyTrait, buildBody, measureBody, sizeToBody, type BodySpec, type MeasureRowText, type Row, type RowTextStyle } from './body';
+import { edgeSpecs, labelStyleOf } from './dataEdges';
 import type { DiagramEdge } from './edge';
 import { force } from './force';
-import type { Graph, GraphEdge, GraphGroup, GraphNode } from './graph';
+import type { EdgeLabelRoom, Graph, GraphEdge, GraphGroup, GraphNode } from './graph';
 import type { DiagramAnchor } from './group';
 import type { DiagramLabel } from './label';
 import { chain } from './chain';
@@ -66,7 +66,10 @@ export interface DataEdge {
   fromPort?: string;
   toPort?: string;
   label?: string;
-  /** Where along the edge the label sits. Default `DiagramSceneOptions.labelPlacement`. */
+  /** Where along the edge the label sits. Unset, under `layered` the label
+   *  sits in the room layout leaves it beside its wire, at
+   *  `DiagramSceneOptions.labelPlacement`'s offset; otherwise at that
+   *  placement. */
   labelPlacement?: DiagramLabel;
   /** Default `DiagramSceneOptions.router`. */
   router?: DiagramRouter;
@@ -210,10 +213,34 @@ function routed(data: DiagramData, edges: readonly DataEdge[], groups: readonly 
   return authoredOver(edges.map((e) => ({ ...e, id: edgeIdOf(e) })), {
     ranks: plan.ranks,
     waypoints: plan.waypoints,
+    labels: plan.labels,
     members: new Map(groups.map((g) => [g.group.id, g.members])),
     compass: new Set([...data.nodes.filter((n) => n.ports === undefined).map((n) => n.id), ...groups.map((g) => g.group.id)]),
     ...(layoutOptions.direction ? { direction: layoutOptions.direction } : {}),
   });
+}
+
+/** The room an edge's label asks layout for: none when the edge places its
+ *  label itself, or routes itself through waypoints of its own. */
+function labelRoomOf(e: DataEdge, opts: DiagramSceneOptions, font: { fontFamily: string; fontSize: number },
+  measure: MeasureRowText): EdgeLabelRoom | null {
+  if (!e.label || e.labelPlacement !== undefined || e.waypoints !== undefined) return null;
+  const style = labelStyleOf(font);
+  const offset = (opts.labelPlacement ?? LABEL_PLACEMENT).offset;
+  return { width: measure(e.label, style).width, height: style.fontSize, ...(offset !== undefined ? { offset } : {}) };
+}
+
+/** A data edge as layout reads it: its ends, the ports it names, and the room
+ *  its label asks for. */
+function graphEdgeOf(e: DataEdge, room: EdgeLabelRoom | null): GraphEdge {
+  return {
+    id: edgeIdOf(e),
+    from: e.from,
+    to: e.to,
+    ...(e.fromPort ? { fromPort: e.fromPort } : {}),
+    ...(e.toPort ? { toPort: e.toPort } : {}),
+    ...(room !== null ? { label: room } : {}),
+  };
 }
 
 type Rect = { x: number; y: number; width: number; height: number };
@@ -282,7 +309,8 @@ export function diagramScene(data: DiagramData, opts: DiagramSceneOptions = {}):
       { ...(n.at ?? { x: i, y: i }), width: n.width ?? opts.minWidth ?? MIN_WIDTH, height: n.height ?? 0 },
       measureBody(bodies[i]!, measure),
     );
-    return { id: n.id, bounds: pose, pinned: n.pinned === true };
+    const ports = bodyTrait(bodies[i]!, pose, measure).ports;
+    return { id: n.id, bounds: pose, pinned: n.pinned === true, ...(ports !== undefined ? { ports } : {}) };
   });
   const graphGroups: GraphGroup[] = groups.map((g) => ({
     id: g.group.id,
@@ -300,7 +328,7 @@ export function diagramScene(data: DiagramData, opts: DiagramSceneOptions = {}):
   }
   const graph = graphOf(
     seeds,
-    expandGroupEdges(edges.map((e) => ({ id: edgeIdOf(e), from: e.from, to: e.to })), graphGroups),
+    expandGroupEdges(edges.map((e) => graphEdgeOf(e, labelRoomOf(e, opts, font, measure))), graphGroups),
     graphGroups,
   );
   const layout = typeof opts.layout === 'function' ? opts.layout

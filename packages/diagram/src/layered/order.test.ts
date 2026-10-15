@@ -54,6 +54,18 @@ describe('crossings', () => {
     expect(crossings(rowsOf(['a', 'b'], ['x', 'y']), hopsOf(['a', 'x'], ['a', 'y'], ['b', 'y']))).toBe(0);
   });
 
+  it('counts two hops into one node crossing when their ports sit the other way round', () => {
+    const rows = rowsOf(['a', 'b'], ['x']);
+    const hops: Hop[] = [{ from: 'a', to: 'x', edge: 'e0', toAt: 0.9 }, { from: 'b', to: 'x', edge: 'e1', toAt: 0.1 }];
+    expect(crossings(rows, hops)).toBe(1);
+    expect(crossings(rows, hops.map((h) => ({ ...h, toAt: 1 - h.toAt! })))).toBe(0);
+  });
+
+  it('does not count hops meeting at one port', () => {
+    const hops: Hop[] = [{ from: 'a', to: 'x', edge: 'e0', toAt: 0.2 }, { from: 'b', to: 'x', edge: 'e1', toAt: 0.2 }];
+    expect(crossings(rowsOf(['a', 'b'], ['x']), hops)).toBe(0);
+  });
+
   it('sums every pair across every rank pair', () => {
     // A full reversal of three is 3 crossings; the second pair adds 1 more.
     const rows = rowsOf(['a', 'b', 'c'], ['x', 'y', 'z'], ['p', 'q']);
@@ -68,6 +80,16 @@ describe('orderRows', () => {
     const hops = hopsOf(['a', 'z'], ['b', 'y'], ['c', 'x'], ['x', 'r'], ['y', 'q'], ['z', 'p']);
     expect(crossings(rows, hops)).toBeGreaterThan(0);
     expect(crossings(orderRows(rows, hops), hops)).toBe(0);
+  });
+
+  it('orders the wires into one node by the ports they join', () => {
+    // Sunbeams feeds Composite's upper port and Blur its lower one.
+    const rows = rowsOf(['blur', 'sunbeams'], ['composite']);
+    const hops: Hop[] = [
+      { from: 'blur', to: 'composite', edge: 'base', toAt: 0.75 },
+      { from: 'sunbeams', to: 'composite', edge: 'over', toAt: 0.25 },
+    ];
+    expect(ids(orderRows(rows, hops))).toEqual([['sunbeams', 'blur'], ['composite']]);
   });
 
   it('never ends with more crossings than its seed', () => {

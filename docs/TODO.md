@@ -318,11 +318,6 @@ Priority tags:
 
 ## Scene, adapters & layout
 
-- **(P3) A diagram's edge labels can land on nodes.** A label sits at a fraction of its route, offset
-  to one side, with no check for the boxes around it, so the label on a short edge between ranks
-  overlaps the node or group box it leaves or enters. `layeredRoutes` keeps routes clear of nodes;
-  nothing does the same for labels. blits' playground timing view shows it (`anchors` preset).
-
 - **(P3) A direct scene call made while a journal is open lands on the scene's own stack.**
   `scene.applyBatch` goes to the open journal; `scene.setPose` and its siblings, `scene.batch`, and
   `scene.history.apply` do not, so a mode that mixes the two splits its edits across two stacks.
@@ -410,25 +405,26 @@ Priority tags:
   path unchanged, in world coordinates, so `diagramScene`'s layout moves the box and leaves the
   outline behind. Marks solve the same problem with path data in a unit square
   (`packages/diagram/src/marks.ts`); an outline could take the same form.
-- **(P2) `layered` cannot see ports, so wires still cross into a stage and loop out of one.**
-  Ranking, placeholders for spanning edges, crossing reduction and aligned placement are in
-  (`packages/diagram/src/layered/`). What the EffectChart node-graph demo still shows:
-  - Ordering sorts by which node a wire comes from, not which port it joins, so wires into a
-    stage's ports cross as they arrive (Sunbeams into Composite's `over`, under Blur into `base`).
-    The layout graph (`Graph` in `packages/diagram/src/graph.ts`) carries no ports.
-  - A named port sits at one fixed point, wherever its wire goes. The diamond puts its second exit
-    at the bottom (`branchNode` in `packages/diagram/src/effect/symbols.ts`), so a wire to a stage
-    above leaves downward and loops back up. A port should be able to name the places it may sit
-    (the diamond's top and bottom vertices, say), with layout picking the one facing its wire.
-    `layeredRoutes` already picks a face for a node with no named ports.
-- **(P2) Nothing keeps a diagram's labels clear of boxes and wires.** A wire's label sits at a
-  fraction of its route with no check for what is around it, and port labels sit under incoming
-  wires. The standard fix makes each label a placeholder of its own in the middle of its wire, so
-  ranking, ordering and placement leave it room. The P3 "A diagram's edge labels can land on
-  nodes" is one case of this.
-- **(P3) A live scene's `layered` layout gets no placeholders and no waypoints.** Under
+- **(P3) `layered` orders and places a port with several places at their mean.** A port's
+  `sites` are chosen per wire, by the router, once everything is placed, so ordering and placement
+  read the port at the mean of its places (`portAt` in `packages/diagram/src/layered/expand.ts`).
+  A wire whose port then turns to face it can cross a neighbor ordering thought it cleared. Picking
+  the place during ordering, from where the other end sits in the current order, would fix it.
+  `portAt` also reads a port at its anchor, where `portsOf` slides it onto a non-rectangular
+  outline: a diamond's anchor at `{ u: 0.75, v: 0 }` sits at about 0.667 (found in review, not
+  measured on a drawn diagram).
+- **(P3) A long label on a wire inside a group spills out of the group's box.** `layered` leaves
+  the label room inside the group's column, but the box is drawn around the members alone
+  (`GROUP_DERIVE_POSE`, `packages/diagram/src/group.ts`), so a label wider than the members'
+  overhang crosses the dashed edge. The box would need to know the room its members' wires took.
+- **(P3) A label stationed `{ waypoint }` follows an index, not a place.** `layeredPlan` points a
+  label at the run between two of its edge's waypoints by index
+  (`packages/diagram/src/label.ts`). Edit the edge's waypoints in a live scene and the label sits
+  on whichever run now has that index; remove enough and it falls back to the middle of the route.
+- **(P3) A live scene's `layered` layout gets no placeholders, waypoints or label room.** Under
   `order: 'seeded'`, which `layoutAction` uses, a spanning edge gets no room in the ranks it
-  crosses and the scene's edges get no waypoints, so a long edge can run through a node. A
+  crosses, a labeled edge no rank for its label, and the scene's edges get no waypoints, so a long
+  edge can run through a node and a label can land on one. A
   placeholder's seed order would come from wire ends layout moves, so two could trade places
   between runs and break "a second run moves nothing"; and a scene's waypoints belong to whoever
   drew them, so writing them is a decision of its own (`packages/diagram/src/layered/plan.ts`).

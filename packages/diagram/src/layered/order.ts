@@ -5,17 +5,21 @@
 import type { GraphGroup, GraphNode } from '../graph';
 import type { Hop, Rows } from './types';
 
-type Pair = readonly [from: string, to: string];
+type Pair = readonly [from: string, to: string, fromAt: number, toAt: number];
 
-/** Hops grouped by the rank of their `from` end, as id pairs. Hops that do not
- *  join a rank to the next are left out. */
+/** Where a hop meets a node, as a position in its rank: past every node before
+ *  it, and inside its own node's slot by where the port sits. */
+const at = (pos: number, frac: number): number => pos + 0.25 + frac / 2;
+
+/** Hops grouped by the rank of their `from` end, as id pairs with their port
+ *  places. Hops that do not join a rank to the next are left out. */
 function hopsByRank(rows: Rows, hops: readonly Hop[]): Pair[][] {
   const rank = new Map<string, number>();
   rows.forEach((row, r) => row.forEach((n) => rank.set(n.id, r)));
   const out: Pair[][] = rows.map(() => []);
   for (const h of hops) {
     const r = rank.get(h.from);
-    if (r !== undefined && rank.get(h.to) === r + 1) out[r]!.push([h.from, h.to]);
+    if (r !== undefined && rank.get(h.to) === r + 1) out[r]!.push([h.from, h.to, h.fromAt ?? 0.5, h.toAt ?? 0.5]);
   }
   return out;
 }
@@ -28,13 +32,17 @@ function positions(rows: Rows): Map<string, number> {
 
 /** Crossings among one rank pair's hops: sort by upper end, then count the
  *  lower ends already seen that lie strictly beyond each one. */
-function pairCrossings(pairs: readonly Pair[], pos: ReadonlyMap<string, number>, width: number): number {
-  const ends = pairs.map(([a, b]) => [pos.get(a)!, pos.get(b)!] as const)
+function pairCrossings(pairs: readonly Pair[], pos: ReadonlyMap<string, number>): number {
+  const ends = pairs.map(([a, b, fa, fb]) => [at(pos.get(a)!, fa), at(pos.get(b)!, fb)] as const)
     .sort((p, q) => p[0] - q[0] || p[1] - q[1]);
+  const lows = [...new Set(ends.map(([, b]) => b))].sort((p, q) => p - q);
+  const slot = new Map(lows.map((b, i) => [b, i]));
+  const width = lows.length;
   const tree = new Array<number>(width + 1).fill(0);
   let seen = 0;
   let count = 0;
-  for (const [, b] of ends) {
+  for (const [, end] of ends) {
+    const b = slot.get(end)!;
     let atMost = 0;
     for (let i = b + 1; i > 0; i -= i & -i) atMost += tree[i]!;
     count += seen - atMost;
@@ -46,13 +54,13 @@ function pairCrossings(pairs: readonly Pair[], pos: ReadonlyMap<string, number>,
 
 function total(rows: Rows, byRank: readonly Pair[][], pos: ReadonlyMap<string, number>): number {
   let sum = 0;
-  for (let r = 0; r + 1 < rows.length; r++) sum += pairCrossings(byRank[r]!, pos, rows[r + 1]!.length);
+  for (let r = 0; r + 1 < rows.length; r++) sum += pairCrossings(byRank[r]!, pos);
   return sum;
 }
 
 /** Crossings between each pair of adjacent ranks, summed. Two hops cross when
- *  their upper ends and their lower ends sit in opposite orders; hops sharing
- *  an end never cross. */
+ *  their upper ends and their lower ends sit in opposite orders, reading each
+ *  end at its port; hops meeting at one port never cross. */
 export function crossings(rows: Rows, hops: readonly Hop[]): number {
   return total(rows, hopsByRank(rows, hops), positions(rows));
 }
@@ -139,11 +147,18 @@ function sortRank(
   return out;
 }
 
+/** A node's neighbor through one hop, and where on that neighbor the hop
+ *  lands. */
+interface Near {
+  id: string;
+  frac: number;
+}
+
 interface Work {
   rows: GraphNode[][];
   pos: Map<string, number>;
-  ups: Map<string, string[]>;
-  downs: Map<string, string[]>;
+  ups: Map<string, Near[]>;
+  downs: Map<string, Near[]>;
   chainOf: (group: string | undefined) => readonly string[];
 }
 
@@ -151,22 +166,24 @@ function reindex(work: Work, r: number): void {
   work.rows[r]!.forEach((n, i) => work.pos.set(n.id, i));
 }
 
-/** Sort rank `r` by the mean position of its neighbors through `side`. */
-function reorder(work: Work, r: number, side: Map<string, string[]>): void {
+/** Sort rank `r` by the mean position of the ports its hops land on through
+ *  `side`. */
+function reorder(work: Work, r: number, side: Map<string, Near[]>): void {
   const key = (n: GraphNode, i: number) => {
     const near = side.get(n.id);
     if (near === undefined || near.length === 0) return i;
-    return near.reduce((s, id) => s + work.pos.get(id)!, 0) / near.length;
+    // Less a half, so a port at its node's middle keys at the node's index.
+    return near.reduce((s, m) => s + at(work.pos.get(m.id)!, m.frac) - 0.5, 0) / near.length;
   };
   work.rows[r] = sortRank(work.rows[r]!, key, work.chainOf);
   reindex(work, r);
 }
 
 /** Crossings among hops of `u` and of `v` on one side, with `u` before `v`. */
-function between(u: readonly string[] | undefined, v: readonly string[] | undefined, pos: Map<string, number>): number {
+function between(u: readonly Near[] | undefined, v: readonly Near[] | undefined, pos: Map<string, number>): number {
   if (u === undefined || v === undefined) return 0;
   let n = 0;
-  for (const a of u) for (const b of v) if (pos.get(a)! > pos.get(b)!) n++;
+  for (const a of u) for (const b of v) if (at(pos.get(a.id)!, a.frac) > at(pos.get(b.id)!, b.frac)) n++;
   return n;
 }
 
@@ -207,12 +224,12 @@ export function orderRows(rows: Rows, hops: readonly Hop[], opts: OrderOptions =
   const maxSweeps = opts.maxSweeps ?? 24;
   const chainOf = chainsOf(opts.groups ?? []);
   const byRank = hopsByRank(rows, hops);
-  const ups = new Map<string, string[]>();
-  const downs = new Map<string, string[]>();
+  const ups = new Map<string, Near[]>();
+  const downs = new Map<string, Near[]>();
   for (const pairs of byRank) {
-    for (const [a, b] of pairs) {
-      (downs.get(a) ?? downs.set(a, []).get(a)!).push(b);
-      (ups.get(b) ?? ups.set(b, []).get(b)!).push(a);
+    for (const [a, b, fa, fb] of pairs) {
+      (downs.get(a) ?? downs.set(a, []).get(a)!).push({ id: b, frac: fb });
+      (ups.get(b) ?? ups.set(b, []).get(b)!).push({ id: a, frac: fa });
     }
   }
   const seeded = rows.map((row) => sortRank(row, (_, i) => i, chainOf));

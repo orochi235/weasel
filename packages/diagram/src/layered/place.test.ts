@@ -87,6 +87,21 @@ describe('placeAcross', () => {
     }
   });
 
+  it('lines up the ports a hop joins, not the two centers', () => {
+    const rows: Rows = [[box('a', 40)], [box('b', 80)]];
+    const low = placeAcross(rows, [{ ...hop('a', 'b'), fromAt: 0.5, toAt: 0.25 }], 'x', GAP);
+    expect(low.get('a')! + 40 * 0.5).toBe(low.get('b')! + 80 * 0.25);
+  });
+
+  it('keeps every rank in order and apart when hops meet ports off center', () => {
+    for (let seed = 1; seed <= 60; seed++) {
+      const { rows, hops } = generated(seed);
+      const rand = lcg(seed * 7);
+      const ported = hops.map((h) => ({ ...h, fromAt: rand(), toAt: rand() }));
+      expectOrderAndGaps(rows, placeAcross(rows, ported, 'x', GAP));
+    }
+  });
+
   it('puts a parent over the middle of three children', () => {
     const rows: Rows = [[box('p', 30)], [box('a', 40), box('b', 40), box('c', 40)]];
     const low = placeAcross(rows, [hop('p', 'a'), hop('p', 'b'), hop('p', 'c')], 'x', GAP);

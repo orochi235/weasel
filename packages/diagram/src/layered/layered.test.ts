@@ -7,12 +7,15 @@ import type { Graph, GraphGroup, GraphNode } from '../graph';
 import { layered, layeredPlan } from '../layered';
 import type { LayoutOptions, LayoutResult } from '../layout';
 import { ANCHORS } from './fixtures';
-import { crossingPairs, wiresThroughBoxes } from './overlaps';
+import { crossingPairs, labelsInTheWay, wiresThroughBoxes } from './overlaps';
 
-/** Crossings each fixture drew before ranks, placeholders, ordering and
- *  placement were reworked; none may get worse. */
+/** Crossings each fixture draws, counting wires that cross on their way into
+ *  one node's different ports; none may get worse. Before ordering and
+ *  placement read ports, sideInputs drew 2, skip 6 and broken 2. anchors'
+ *  one cannot go: `voice:intro` feeds both joins and sits left of the query
+ *  feeding the left one. */
 const CROSSINGS_BEFORE: Record<string, number> = {
-  anchors: 0, chain: 0, branch: 0, sideInputs: 2, skip: 3, bands: 0, large: 17, broken: 0,
+  anchors: 1, chain: 0, branch: 0, sideInputs: 0, skip: 0, bands: 0, large: 0, broken: 1,
 };
 
 describe('layered, measured through diagramScene', () => {
@@ -30,6 +33,28 @@ describe('layered, measured through diagramScene', () => {
 
   it.each(cases)('%s: no more crossings than before', (name, specs) => {
     expect(crossingPairs(specs)).toBeLessThanOrEqual(CROSSINGS_BEFORE[name]!);
+  });
+
+  it.each(['down', 'right', 'up', 'left'] as const)('anchors, laid out %s: no label sits on a box or under another wire', (direction) => {
+    const specs = diagramScene(ANCHORS, { layoutOptions: { direction, order: 'barycenter', nodeGap: 40, rankGap: 56 } });
+    expect(labelsInTheWay(ANCHORS, specs)).toEqual([]);
+    expect(wiresThroughBoxes(ANCHORS, specs)).toEqual([]);
+  });
+});
+
+describe('layered inside a group', () => {
+  it('keeps a labeled wire between two members straight through its label room', () => {
+    const data = {
+      nodes: ['a', 'b', 'c', 'd'].map((id) => ({ id, lines: [id] })),
+      edges: [{ from: 'a', to: 'g' }, { from: 'b', to: 'c', label: 'inside' }, { from: 'g', to: 'd' }],
+      groups: [{ id: 'g', members: ['b', 'c'] }],
+    };
+    const specs = diagramScene(data, { layoutOptions: { direction: 'down', nodeGap: 40, rankGap: 56 } });
+    const center = (id: string) => { const p = specs.find((s) => s.id === id)!.pose; return p.x + p.width / 2; };
+    const wire = specs.find((s) => s.id === 'edge:b->c:inside')!.data!.diagram as { waypoints?: readonly { x: number }[] };
+    expect(center('b')).toBeCloseTo(center('c'), 6);
+    expect(wire.waypoints?.map((p) => p.x)).toEqual([center('b'), center('b')]);
+    expect(labelsInTheWay(data, specs)).toEqual([]);
   });
 });
 
