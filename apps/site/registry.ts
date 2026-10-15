@@ -663,6 +663,36 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/SceneLabDemo.tsx',
   },
   {
+    id: 'lab-soft-selection',
+    title: 'Soft selection',
+    category: 'Geometry',
+    description:
+      "Dragging an anchor in path edit also moves the anchors near it, each by a weight that falls from 1 at the dragged anchor to 0 at the radius. The radius is measured along the path in screen pixels, not straight across, so two anchors close together across a bend are as far apart as the curve between them. The falloff is smooth, linear or sharp. It is `editAnchors`'s `soft` param, set through `<SceneCanvas tune>`; the stretch of path it reaches is drawn as a band while the drag is in flight, and the wheel scrubs the radius mid-drag, reporting it back through `onSoftRadius` so the control panel follows. Soft selection is off unless the param is given; the lab turns it on.",
+    hint: 'Drag any anchor of the wave. While dragging, turn the wheel to grow or shrink the radius. Change the falloff, or turn Soft selection off to move one anchor alone.',
+    load: () => import('./demos/SoftSelectionLabDemo').then((m) => m.SoftSelectionLabDemo),
+    path: 'apps/site/demos/SoftSelectionLabDemo.tsx',
+  },
+  {
+    id: 'lab-handle-snap',
+    title: 'Handle snapping',
+    category: 'Geometry',
+    description:
+      "A control handle dragged in path edit snaps its angle to steps — every 45° by default — and to the line through the anchor's other handle, so the two come out in line. It snaps only within a tolerance and keeps the handle's length. The line it snapped to is drawn while the drag lasts. It is `editAnchors`'s `handleSnap` param, set through `<SceneCanvas tune>`, and off unless given. The bottom anchor is a corner, so its handles move separately and the opposite-handle snap has something to find.",
+    hint: 'Drag a handle dot slowly round its anchor and watch it catch on each step. Drag one of the bottom corner\'s handles until it lines up with the other. <kbd>Alt</kbd> breaks a smooth anchor\'s mirror so its handles move apart.',
+    load: () => import('./demos/HandleSnapLabDemo').then((m) => m.HandleSnapLabDemo),
+    path: 'apps/site/demos/HandleSnapLabDemo.tsx',
+  },
+  {
+    id: 'lab-handle-locks',
+    title: 'Handle locks',
+    category: 'Geometry',
+    description:
+      "Holding a control handle's length or its angle while it is dragged. Shift holds the angle, so the handle only grows and shrinks along its line; Mod (Cmd or Ctrl) holds the length, so it only turns. Each lock draws what it holds the handle to — the line, or the circle round the anchor — so which one is in force shows while dragging. Both modifiers together freeze the handle. `editAnchors`'s `handleLock` param holds a lock without a modifier, which is what the control panel sets.",
+    hint: 'Drag a handle dot: with Hold handle on Length it only turns. Set it to Modifiers only, then drag holding <kbd>Shift</kbd> to keep the angle or <kbd>Mod</kbd> to keep the length.',
+    load: () => import('./demos/HandleLockLabDemo').then((m) => m.HandleLockLabDemo),
+    path: 'apps/site/demos/HandleLockLabDemo.tsx',
+  },
+  {
     id: 'bidi',
     title: 'Bidirectional text',
     package: 'bidi',
