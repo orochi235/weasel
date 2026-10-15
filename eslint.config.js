@@ -278,10 +278,10 @@ export default [
   },
   {
     files: ['**/*.{ts,tsx}'],
-    ignores: ['**/*.browser.test.{ts,tsx}'],
+    ignores: ['**/*.browser.test.{ts,tsx}', 'vitest.browser.setup.ts'],
     rules: {
-      // Its matcher types clash with jest-dom's; only browser tests, typechecked
-      // on their own by `packages/tsconfig.json`, may load them.
+      // Its matcher types clash with jest-dom's; only browser tests and their setup file,
+      // typechecked on their own by `packages/tsconfig.json`, may load them.
       'no-restricted-imports': ['error', {
         paths: [{ name: 'vitest/browser', message: 'Only *.browser.test files may import vitest/browser.' }],
         patterns: [{ group: ['@vitest/browser', '@vitest/browser/*'], message: 'Only *.browser.test files may import @vitest/browser.' }],
