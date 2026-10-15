@@ -25,6 +25,33 @@ describe('KeyCap', () => {
     expect(container.querySelector('kbd')?.getAttribute('data-kind')).toBe('square');
   });
 
+  it('draws a symbol legend as an icon, keeping its character as hidden text', () => {
+    const kbd = render(<KeyCap label="⌘" />).container.querySelector('kbd')!;
+    expect(kbd.querySelector('svg')).not.toBeNull();
+    expect(kbd.textContent).toBe('⌘');
+  });
+
+  it('draws every symbol the legend tables produce as an icon', () => {
+    const labels = new Set<string>();
+    for (const platform of ['macos', 'windows', 'linux'] as const) {
+      for (const legend of ['auto', 'symbol', 'text'] as const) {
+        for (const name of ['mod', 'shift', 'alt', 'ctrl', 'meta'] as const) labels.add(keySpecsFromMods([{ name }], { platform, legend })[0]!.label);
+        for (const key of ['Escape', 'Enter', 'Tab', 'Space', 'Backspace', 'Delete', 'ContextMenu', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End', 'PageUp', 'PageDown', 'PrintScreen', 'Insert', 'ScrollLock', 'Pause']) {
+          labels.add(keySpecFromKey(key, { platform, legend }).label);
+        }
+      }
+    }
+    const symbols = [...labels].filter((l) => /[^\x20-\x7e]/.test(l));
+    const unDrawn = symbols.filter((l) => !render(<KeyCap label={l} />).container.querySelector('kbd svg'));
+    expect(unDrawn).toEqual([]);
+  });
+
+  it('leaves a plain-text legend as text', () => {
+    const kbd = render(<KeyCap label="Ctrl" />).container.querySelector('kbd')!;
+    expect(kbd.querySelector('svg')).toBeNull();
+    expect(kbd.textContent).toBe('Ctrl');
+  });
+
   it('marks function keys F1 to F24 with data-fn, and nothing else', () => {
     const fn = (label: string) => render(<KeyCap label={label} />).container.querySelector('kbd')!.hasAttribute('data-fn');
     expect(['F1', 'F9', 'F12', 'F24'].map(fn)).toEqual([true, true, true, true]);

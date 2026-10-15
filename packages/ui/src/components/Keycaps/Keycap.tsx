@@ -1,9 +1,23 @@
 import type { CSSProperties } from 'react';
+import { Icon } from '../../icons/Icon';
+import type { IconName } from '../../icons/generated/paths';
 import s from './Keycaps.module.css';
 import { MODIFIER_LABELS } from './keySpecsFromMods';
 
 const WIDE_GLYPHS = new Set(['⇥', '↵', '␣']);
 const FUNCTION_KEY = /^F([1-9]|1\d|2[0-4])$/;
+
+/** The icon a symbol legend is drawn as, so it matches its neighbors whatever
+ *  font the chip is in. Every symbol the legend tables produce has one. */
+const LEGEND_ICONS: Readonly<Record<string, IconName>> = {
+  '⌘': 'keyCommand', '⇧': 'keyShift', '⌥': 'keyOption', '⌃': 'keyControl', '⎈': 'keyHelm', '⎇': 'keyAlt',
+  '⎋': 'keyEscape', '↵': 'keyReturn', '⏎': 'keyReturn', '⇥': 'keyTab', '␣': 'keySpace',
+  '⌫': 'keyBackspace', '⌦': 'keyDelete', '⟵': 'keyBackspaceArrow',
+  '↑': 'keyArrowUp', '↓': 'keyArrowDown', '←': 'keyArrowLeft', '→': 'keyArrowRight',
+  '↖': 'keyHome', '↘': 'keyEnd', '⇞': 'keyPageUp', '⇟': 'keyPageDown',
+  '⎙': 'keyPrintScreen', '⎀': 'keyInsert', '⇳': 'keyScrollLock', '⎉': 'keyPause',
+  '⊞': 'keyWindows', '▤': 'keyMenu',
+};
 
 /**
  * Width class of a keycap: a modifier glyph, a multi-character legend that
@@ -55,6 +69,7 @@ export interface KeyCapProps {
  *  `KeySequence` to render a full shortcut. */
 export function KeyCap({ label, inverted = false, variant = 'default', className, style, font }: KeyCapProps) {
   const resolvedStyle = font ? { ...style, fontFamily: font } : style;
+  const icon = LEGEND_ICONS[label];
   return (
     <kbd
       className={[s.key, className].filter(Boolean).join(' ')}
@@ -64,7 +79,12 @@ export function KeyCap({ label, inverted = false, variant = 'default', className
       data-inverted={inverted || undefined}
       style={resolvedStyle}
     >
-      {label}
+      {icon ? (
+        <>
+          <Icon name={icon} className={s.legendIcon} />
+          <span className={s.legendText}>{label}</span>
+        </>
+      ) : label}
     </kbd>
   );
 }
