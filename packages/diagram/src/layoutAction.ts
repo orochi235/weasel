@@ -12,6 +12,7 @@ import {
 } from '@weasel-js/core';
 import { force } from './force';
 import { buildGraph, type GraphSource } from './graph';
+import { chain } from './chain';
 import { layered } from './layered';
 import { tree } from './tree';
 import type { LayoutFn, LayoutOptions, LayoutResult } from './layout';
@@ -22,6 +23,7 @@ export const LAYOUTS: Readonly<Record<string, LayoutFn>> = Object.freeze({
   layered,
   tree,
   force,
+  chain,
 });
 
 /** Options for {@link applyLayout}. */

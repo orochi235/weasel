@@ -12,6 +12,7 @@ import { diagramEdgeOf } from './edge';
 import { nestGroups } from './groupTree';
 import type { Bounds } from './outline';
 import { diagramNodeOf, type DiagramNodeLike, type DiagramNodeReader } from './trait';
+import type { PortSpec } from './types';
 
 /** A scene node as the graph reads it. `dependsOn` is what an edge's two
  *  endpoints are: the edge trait names *ports*, and the nodes those ports are
@@ -33,6 +34,9 @@ export interface GraphNode {
   pinned: boolean;
   /** The innermost group it belongs to, when it belongs to one. */
   group?: string;
+  /** Where its ports sit. Absent, the four compass midpoints
+   *  (`DEFAULT_PORTS`). */
+  ports?: readonly PortSpec[];
 }
 
 /** A box drawn around some participants, which a layout keeps together and
@@ -57,6 +61,27 @@ export interface GraphEdge {
   id: string;
   from: string;
   to: string;
+  /** The port it leaves `from` by, when it names one. */
+  fromPort?: string;
+  /** The port it arrives at `to` by, when it names one. */
+  toPort?: string;
+  /** Room its label needs: the label's box, and how far its near side sits
+   *  from the wire (`DiagramLabel.offset`). `layered` sets the label beside
+   *  its wire in a rank of its own. */
+  label?: EdgeLabelRoom;
+  /** The edge as drawn, when this one stands in for an edge to or from a
+   *  group (see `expandGroupEdges`). */
+  origin?: { id: string; from: string; to: string };
+}
+
+/** The room a {@link GraphEdge}'s label takes, in world units. */
+export interface EdgeLabelRoom {
+  width: number;
+  height: number;
+  /** Between the wire and the label's near side, to the left of the
+   *  direction of travel; negative for the right. Default 0, which centers
+   *  the label on the wire. */
+  offset?: number;
 }
 
 /**
@@ -105,10 +130,17 @@ export function buildGraph<TPose>(
   const groupNodes: { id: string; members: readonly string[]; inset: GroupInset; minWidth?: number }[] = [];
 
   for (const { node, pose } of source()) {
-    if (diagramEdgeOf(node) !== null) {
+    const edge = diagramEdgeOf(node);
+    if (edge !== null) {
       const deps = node.dependsOn;
       if (Array.isArray(deps) && deps.length === 2) {
-        candidates.push({ id: node.id, from: deps[0]!, to: deps[1]! });
+        candidates.push({
+          id: node.id,
+          from: deps[0]!,
+          to: deps[1]!,
+          ...(edge.from.port !== undefined ? { fromPort: edge.from.port } : {}),
+          ...(edge.to.port !== undefined ? { toPort: edge.to.port } : {}),
+        });
       }
       continue;
     }
@@ -128,6 +160,7 @@ export function buildGraph<TPose>(
       id: node.id,
       bounds: geometry.getBounds(pose),
       pinned: trait.pinned === true,
+      ...(trait.ports !== undefined ? { ports: trait.ports } : {}),
     };
     nodes.push(entry);
     byId.set(entry.id, entry);

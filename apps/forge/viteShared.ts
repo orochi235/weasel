@@ -7,6 +7,7 @@ export const stories = [
   'apps/draw/src/**/*.stories.{ts,tsx}',
   'packages/labkit/src/**/*.stories.{ts,tsx}',
   'packages/forge/src/**/*.stories.{ts,tsx}',
+  'packages/diagram/src/**/*.stories.{ts,tsx}',
 ];
 
 export const frameConfig = 'apps/forge/forge.frame.tsx';
