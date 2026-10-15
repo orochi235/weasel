@@ -19,8 +19,8 @@ form. The arc after them is a P2 entry in `docs/TODO.md`: a theme's tokens as a 
 
 ## Next
 
-1. Run what has never run: `npm run build:api` with the new per-package reference. Everything
-   else on the 2026-10-13 list ran on 2026-10-15 and passes; what it turned up is the pull request
+1. Everything on the 2026-10-13 never-run list ran on 2026-10-15 and passes, `npm run build:api`
+   included (the package pages entry in `docs/TODO.md` holds what is left); what it turned up is the pull request
    benchmark entry in `docs/TODO.md` (over its time limit, and a comment that drops half the
    benchmarks). The five edited perf specs ran on keiei but were compared against nothing, so
    the batch's new shader paths still have no before-and-after number. Not exercised: the
