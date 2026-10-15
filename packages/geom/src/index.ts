@@ -39,6 +39,7 @@ export { cubicPointAt, splitCubicAtT, type Point } from './paths/cubicMath';
 export { fitCubicThroughDeletion } from './paths/spanFit';
 export { schneiderFit, fitCubicWithTangents } from './paths/schneiderFit';
 export { simplifyPath, type SimplifyPathOptions } from './paths/simplifyPath';
+export * from './warp';
 export {
   averageAnchorsAt, closestOpenEnds, joinAnchorsAt, joinSubpathEnds, subpathEndAt,
   type AverageAxis, type SubpathEnd,

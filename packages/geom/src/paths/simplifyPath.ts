@@ -1,8 +1,7 @@
 import type { PolygonPath } from '../path';
-import { nearestOnCubic, nearestOnLine } from '../nearest';
 import { anchorsToPath, pathToAnchors, type PenAnchor } from './anchors';
 import { cubicPointAt, type Point } from './cubicMath';
-import { fitCubicWithTangents } from './schneiderFit';
+import { fitPointRun } from './fitRun';
 
 /** Options for {@link simplifyPath}. */
 export interface SimplifyPathOptions {
@@ -60,14 +59,14 @@ function simplifySubpath(sub: PenAnchor[], closed: boolean, tol: number, cosCorn
   if (closed && corners.length === 0) {
     const pts = sampleRun(sub, 0, n, tol);
     const t = unit(sub2(pts[1], pts[pts.length - 2]));
-    fitRun(pts, t, neg(t), tol, result, true);
+    fitPointRun(pts, t, neg(t), tol, result, true);
     return result;
   }
   const stops = closed ? [...corners, corners[0] + n] : corners;
   for (let k = 0; k + 1 < stops.length; k++) {
     const pts = sampleRun(sub, stops[k], stops[k + 1], tol);
     const last = closed && k + 2 === stops.length;
-    fitRun(pts, unit(sub2(pts[1], pts[0])), unit(sub2(pts[pts.length - 2], pts[pts.length - 1])), tol, result, last);
+    fitPointRun(pts, unit(sub2(pts[1], pts[0])), unit(sub2(pts[pts.length - 2], pts[pts.length - 1])), tol, result, last);
   }
   return result;
 }
@@ -123,68 +122,6 @@ function sampleRun(sub: PenAnchor[], from: number, to: number, tol: number): Poi
     }
   }
   return dedupe(pts);
-}
-
-/**
- * Fit `pts` with cubics held to the end tangents, splitting at the worst
- * sample until every sample is within `tol`, and append the anchors after the
- * first to `out` (the first too when `out` is empty). `closing` folds the
- * final anchor, which lands on the subpath's first, into that first one.
- */
-function fitRun(pts: Point[], tStart: Point, tEnd: Point, tol: number, out: PenAnchor[], closing: boolean): void {
-  if (out.length === 0) out.push({ x: pts[0].x, y: pts[0].y });
-  const segs: Array<{ c1?: Point; c2?: Point; end: Point }> = [];
-  fitRecursive(pts, tStart, tEnd, tol, segs);
-  segs.forEach((seg, i) => {
-    const prev = out[out.length - 1];
-    if (seg.c1) prev.outHandle = seg.c1;
-    const isLast = i === segs.length - 1;
-    if (closing && isLast) {
-      if (seg.c2) out[0].inHandle = seg.c2;
-      return;
-    }
-    out.push(seg.c2 ? { x: seg.end.x, y: seg.end.y, inHandle: seg.c2 } : { x: seg.end.x, y: seg.end.y });
-  });
-}
-
-function fitRecursive(
-  pts: Point[], tStart: Point, tEnd: Point, tol: number,
-  out: Array<{ c1?: Point; c2?: Point; end: Point }>,
-): void {
-  const a = pts[0];
-  const e = pts[pts.length - 1];
-  if (pts.length <= 2 || worstFromLine(pts, a, e).dist <= tol) {
-    out.push({ end: e });
-    return;
-  }
-  const { cp1, cp2 } = fitCubicWithTangents(pts, tStart, tEnd);
-  const worst = worstFromCubic(pts, a, cp1, cp2, e);
-  if (worst.dist <= tol) {
-    out.push({ c1: cp1, c2: cp2, end: e });
-    return;
-  }
-  const k = worst.index;
-  const center = unit(sub2(pts[k + 1], pts[k - 1]));
-  fitRecursive(pts.slice(0, k + 1), tStart, neg(center), tol, out);
-  fitRecursive(pts.slice(k), center, tEnd, tol, out);
-}
-
-function worstFromLine(pts: Point[], a: Point, e: Point): { index: number; dist: number } {
-  let index = 1, dist = 0;
-  for (let i = 1; i < pts.length - 1; i++) {
-    const d = nearestOnLine(pts[i].x, pts[i].y, a.x, a.y, e.x, e.y).dist;
-    if (d > dist) { dist = d; index = i; }
-  }
-  return { index, dist };
-}
-
-function worstFromCubic(pts: Point[], a: Point, c1: Point, c2: Point, e: Point): { index: number; dist: number } {
-  let index = 1, dist = 0;
-  for (let i = 1; i < pts.length - 1; i++) {
-    const d = nearestOnCubic(pts[i].x, pts[i].y, a.x, a.y, c1.x, c1.y, c2.x, c2.y, e.x, e.y).dist;
-    if (d > dist) { dist = d; index = i; }
-  }
-  return { index, dist };
 }
 
 function dedupe(pts: Point[]): Point[] {
