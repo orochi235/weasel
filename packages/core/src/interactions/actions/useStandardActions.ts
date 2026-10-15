@@ -61,11 +61,11 @@ import { insertPathAnchorAction } from './defaults/insertPathAnchor';
 import { bendSegmentAction } from './defaults/bendSegment';
 import { makeHandlesSymmetricAction, retractHandlesAction } from './defaults/anchorHandles';
 import { handleLockAngleAction, handleLockLengthAction } from './defaults/handleLocks';
-import { averageAnchorsAction, joinAnchorsAction } from './defaults/anchorJoin';
+import { averageAnchorsAction, bridgeAnchorsAction, joinAnchorsAction } from './defaults/anchorJoin';
 import { simplifyBrushAction, simplifyBrushToolAction } from './defaults/simplifyBrush';
 import { exitPathEditToolAction } from './defaults/pathEditTools';
 import {
-  joinPathsAction, offsetPathAction, simplifyPathAction, snipAtCrossingsAction,
+  bridgePathsAction, joinPathsAction, offsetPathAction, simplifyPathAction, snipAtCrossingsAction,
 } from './pathCommands';
 import {
   nudgeAnchorsUpAction,
@@ -182,10 +182,12 @@ const KIT_STANDARD_DESCRIPTORS: Action[] = [
   handleLockLengthAction,
   averageAnchorsAction,
   joinAnchorsAction,
+  bridgeAnchorsAction,
   simplifyPathAction,
   offsetPathAction,
   snipAtCrossingsAction,
   joinPathsAction,
+  bridgePathsAction,
   marqueeAnchorsAction,
   selectAnchorAction,
   lassoSelectAction,
