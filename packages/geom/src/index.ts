@@ -86,6 +86,9 @@ export {
   locateAnchor, moveHandleTo, openSubpathAt, segmentAt, translateAnchorBy,
   type AnchorRect, type AnchorSet, type SegmentHit,
 } from './paths/anchorEdits';
+export {
+  anchorSymmetries, anchorSymmetry, moveHandleSymmetric, translateAnchorsSymmetric, type AnchorSymmetry,
+} from './paths/anchorSymmetry';
 export { bendSegment, type BendGrip } from './paths/bendSegment';
 export { handleAlongItsAngle, makeHandlesSymmetric, retractHandles } from './paths/handleEdits';
 export { editAnchorSetTracked, remapPointValues, type PointOrigin } from './paths/anchorOrigins';

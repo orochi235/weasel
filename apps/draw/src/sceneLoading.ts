@@ -8,7 +8,7 @@ import {
   solid,
   strokeOf
 } from '@weasel-js/core';
-import type { WeaselDrawData, WeaselDrawLayer, WeaselDrawPose } from './drawDocument';
+import { DRAW_REGISTRY, type WeaselDrawData, type WeaselDrawLayer, type WeaselDrawPose } from './drawDocument';
 import { nodeSpecsFromSnapshot, reviveSnapshot } from './persistence';
 
 export const LS_KEY = 'weaseldraw:scene-v1';
@@ -30,7 +30,7 @@ export function loadInitial(): AddNodeSpec<WeaselDrawData, WeaselDrawLayer, Weas
     if (raw) {
       const json = JSON.parse(raw) as SerializedScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>;
       if (json && json.version === 1 && Array.isArray(json.nodes)) {
-        return nodeSpecsFromSnapshot(json);
+        return nodeSpecsFromSnapshot(json, DRAW_REGISTRY);
       }
     }
   } catch {

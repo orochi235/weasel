@@ -188,7 +188,6 @@ Priority tags:
   drafts, not proofed at high resolution.
 - **(P2) Spacing hints.** Equal-spacing markers between siblings while moving, and Alt-hover
   distance readouts between the selection and the shape under the pointer.
-- **(P2) Live symmetry.** Draw on one side of an axis and the mirrored half follows.
 - **(P2) Variable-width strokes.** A width profile along a stroke's length, edited by dragging
   on the stroke. `strokeToPath` handles a fixed width only.
 
@@ -357,6 +356,19 @@ by the `editAnchors` dep and added with `constrainAnchors` (lab: `lab-path-const
   unless the Modes > Undo inside a mode pref says the document's history
   (`apps/draw/src/modality/machine.ts`), so the change moves where every direct call made during
   a mode lands.
+
+### Symmetry follow-ups
+
+- **(P3) Wallpaper tilings.** A new kind is a row in `SYMMETRY_KINDS`
+  (`packages/symmetry/src/kinds.ts`), but a lattice has no last copy: `copiesFromPose` sees only
+  the container's pose, so it would need an extent to tile within, which the spec would carry.
+- **(P3) Bake copies only path leaves.** `bakeSymmetry` reports text and image leaves in
+  `skipped` and leaves them uncopied. It also copies a paint laid out in the shape's own box, a
+  gradient say, without carrying it through the copy's mirror or turn.
+- **(P3) Symmetry in a scene that composes frames.** A group's center is its pose, so dragging the
+  center in such a scene moves its children too, and bake writes absolute poses.
+- **(P3) The angle knob sits on the shapes it turns.** It is fixed 64px out along the axis, where
+  the lab's petal is, and can cover a path-edit handle there.
 
 ### Derived geometry follow-ups
 
@@ -877,6 +889,13 @@ only story runner in the repo.
   reproduced. `forge/src/vite/plugin.test.ts` lost file events for its temp directory the same way,
   7 of 26 tests in one run on 2026-10-13, and polls now; whether a checkout loses them too is not
   measured.
+
+- **(P3) A freshly started site dev server's first page load can come up blank.** Started from a
+  worktree with `WAKE_EXTRA=<port> npx vite --port <port>`, the first one or two loads of a demo
+  show an empty page with wake's "dev server unreachable" pill, and a reload renders it. Seen on
+  every one of a dozen servers on 2026-10-14. The server logs no dependency re-optimization or
+  reload, so the cause isn't known; the first load after an agent edits a lab once threw
+  `instrument.defaultConfig is not a function` before a reload fixed it.
 
 - **(P2) Package pages: check the reference against a real build, then retire `/api/`.** Every
   published package has a page at `#pkg/<name>` (overview, guides, reference, demos; how each is
