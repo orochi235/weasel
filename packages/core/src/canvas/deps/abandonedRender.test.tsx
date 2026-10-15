@@ -95,6 +95,8 @@ describe('dep sources after an abandoned render', () => {
       setSelectedAnchors: vi.fn(),
       getMarquee: () => null,
       setMarquee: vi.fn(),
+      getHandleLocks: () => null,
+      setHandleLocks: vi.fn(),
     });
     const a = ext();
     const b = ext();

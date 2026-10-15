@@ -96,6 +96,7 @@ export {
   editAnchorSetTracked,
   flatAnchorIndex,
   handleAlongItsAngle,
+  handleAtItsLength,
   insertAnchorOnSegment,
   locateAnchor,
   makeHandlesSymmetric,

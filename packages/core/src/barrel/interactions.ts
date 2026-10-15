@@ -100,6 +100,9 @@ export {
 } from '../interactions/actions/edit-anchors';
 export type {
   AnchorHit,
+  EditAnchorsParams,
+  HandleLock,
+  HandleLocks,
   PathAnchor,
 } from '../interactions/actions/edit-anchors';
 

@@ -48,3 +48,37 @@ export function SymmetricHandlesIcon() {
     </svg>
   );
 }
+
+/**
+ * Hold handle angle: a handle knob on the line out of its anchor, with an
+ * arrowhead saying it only slides along that line.
+ *
+ * @experimental
+ */
+export function HoldHandleAngleIcon() {
+  return (
+    <svg {...SVG_BASE}>
+      <path d="M5 15 L16 4" />
+      <path d="M12 4 H16 V8" />
+      <circle cx="10.5" cy="9.5" r="1.75" fill="currentColor" stroke="none" />
+      <rect x="3.5" y="13.5" width="3" height="3" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+/**
+ * Hold handle length: a handle from its anchor to a knob on the circle it
+ * keeps to, so it only turns.
+ *
+ * @experimental
+ */
+export function HoldHandleLengthIcon() {
+  return (
+    <svg {...SVG_BASE}>
+      <circle cx="10" cy="10" r="6.5" strokeWidth={1} />
+      <path d="M10 10 L14.5962 5.4038" />
+      <circle cx="14.5962" cy="5.4038" r="1.75" fill="currentColor" stroke="none" />
+      <rect x="8.5" y="8.5" width="3" height="3" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}

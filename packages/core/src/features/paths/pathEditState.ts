@@ -6,6 +6,7 @@
  */
 import { createEmitter } from '@weasel-js/registry';
 import type { PathEditHost } from 'canvas/SceneCanvas/pathEditHost';
+import type { HandleLocks } from 'interactions/actions/edit-anchors/params';
 
 /** A world-coord rect. */
 export interface AnchorMarquee {
@@ -55,6 +56,10 @@ export interface PathEditState {
   /** The in-flight anchor-marquee rect, in the edited path's world. */
   getMarquee(): AnchorMarquee | null;
   setMarquee(rect: AnchorMarquee | null): void;
+  /** The handle locks the `handleLock.*` toggles set; null until one is
+   *  pressed. Not tied to the edited path, so they outlast a change of it. */
+  getHandleLocks(): HandleLocks | null;
+  setHandleLocks(next: HandleLocks): void;
   /** Notified when a write changes what the anchor overlay paints. A host
    *  that owns the id announces its own changes. */
   subscribe(listener: () => void): () => void;
@@ -76,6 +81,7 @@ export function createPathEditState(source: PathEditSource = {}): PathEditState 
   let ownId = '';
   let selectedAnchors = NO_ANCHORS;
   let marquee: AnchorMarquee | null = null;
+  let handleLocks: HandleLocks | null = null;
   let idSet = NO_IDS;
   const changed = createEmitter();
   const notify = changed.emit;
@@ -113,6 +119,11 @@ export function createPathEditState(source: PathEditSource = {}): PathEditState 
     getMarquee: () => marquee,
     setMarquee(rect) {
       marquee = rect;
+      notify();
+    },
+    getHandleLocks: () => handleLocks,
+    setHandleLocks(next) {
+      handleLocks = { angle: next.angle, length: next.length };
       notify();
     },
     subscribe: changed.subscribe,

@@ -231,6 +231,8 @@ export type OverlayRole =
   | 'cut'
   /** An edge the gesture would author between two points. */
   | 'connector'
+  /** What a lock holds a dragged point to — a line, a circle. */
+  | 'lock'
   | (string & {});
 
 /**

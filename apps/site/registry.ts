@@ -663,6 +663,16 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/SceneLabDemo.tsx',
   },
   {
+    id: 'lab-handle-locks',
+    title: 'Handle locks',
+    category: 'Geometry',
+    description:
+      "Holding a control handle's length or its angle while it is dragged. Shift holds the angle, so the handle only grows and shrinks along its line; Mod (Cmd or Ctrl) holds the length, so it only turns. Each lock draws what it holds the handle to — the line, or the circle round the anchor — so which one is in force shows while dragging. Both together freeze the handle. The two buttons over the canvas are the `handleLock.angle` and `handleLock.length` actions, which hold a lock with no modifier: they set the locks the `editAnchors` dep holds, so a bar, the command palette and `editAnchors`'s `handleLock` param, which they start from, all reach one value.",
+    hint: 'Drag a handle dot holding <kbd>Shift</kbd> to keep its angle, or <kbd>Mod</kbd> to keep its length. Press Hold handle length and drag again with no key held.',
+    load: () => import('./demos/HandleLockLabDemo').then((m) => m.HandleLockLabDemo),
+    path: 'apps/site/demos/HandleLockLabDemo.tsx',
+  },
+  {
     id: 'symmetry-lab',
     title: 'Symmetry',
     package: 'symmetry',
