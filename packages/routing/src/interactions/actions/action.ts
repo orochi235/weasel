@@ -100,8 +100,9 @@ export interface ActionDispatch extends BindingSource {
    * command palette greys out a disabled row, skips it in keyboard nav,
    * ignores clicks, and shows the reason next to the label. The dispatcher
    * skips a disabled action too, on a key as on a pointer, and falls through
-   * to the next binding that matches. `ActionsRegistry.trigger` does not ask,
-   * so the action's own `run` should still self-guard.
+   * to the next binding that matches. `ActionsRegistry.trigger` asks too, but
+   * with no point, so a `run` whose answer depends on `at` should still
+   * self-guard.
    *
    * **Contract:** must be pure (no side effects), fast (< 4ms in dev), and
    * must not throw. A throw is caught and treated as disabled with reason
