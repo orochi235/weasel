@@ -569,9 +569,9 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   off the page that holds it and scrolls to a section that follows it"
   (`packages/ui/src/components/Prefs/PrefsRail.marks.browser.test.tsx:91`) failed once on a fleet
   run of 2026-10-14 and passed on the run before it, with no `packages/ui` change between: the
-  rail marked `canvas.grid` current where the test expects `canvas.rulers`. The section is polled
-  into view, then the marks are read once, so a scroll spy that settles a frame later reads the
-  section above.
+  rail marked `canvas.grid` current where the test expects `canvas.rulers`. A guess, not
+  confirmed: the section is polled into view and the marks are then read once, so a scroll spy
+  that settles a frame later would still name the section above.
 - **(P3) Nothing puts `prefsCss` on a page.** `prefsCss(store)` writes the text and
   `prefsCssAttributes(store)` the attributes (`packages/prefs/README.md`, "As CSS custom
   properties"); a host adopts the one and sets the other by hand, and again on every change. The
