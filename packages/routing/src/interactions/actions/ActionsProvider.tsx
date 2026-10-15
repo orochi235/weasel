@@ -23,6 +23,8 @@ import {
 import { buildDepsFromRequires } from './buildDeps';
 import type { Dispatcher } from '../dispatcher/dispatcher';
 import { validateActionId, validateActionDefaultBinding, type ActionsRegistry } from './registry';
+import { createMenuHost } from '../../menus/menuHost';
+import { MenuHostContext } from '../../menus/MenuHostContext';
 import { pushOwner, ScopeNode } from './scopeNode';
 import { tuneAction, type ActionTuning } from './tuning';
 
@@ -240,7 +242,17 @@ export function ActionsProvider({ children }: { children: ReactNode }): ReactEle
   const depReg = useOptionalDepRegistry();
   const depRegRef = useLatest<DepRegistry | null>(depReg);
   const node = useMemo(() => new ActionsNode(null, true, () => depRegRef.current), [depRegRef]);
-  return <ActionsContext.Provider value={node.registry}>{children}</ActionsContext.Provider>;
+  const menuHost = useMemo(() => createMenuHost({
+    actions: () => node.registry.list(),
+    depsFor: (a) => depsFor(a, depRegRef.current) as never,
+    trigger: (id, params) => node.registry.trigger(id, params),
+    activeTool: () => depRegRef.current?.get('activeTool')?.active ?? null,
+  }), [node, depRegRef]);
+  return (
+    <ActionsContext.Provider value={node.registry}>
+      <MenuHostContext.Provider value={menuHost}>{children}</MenuHostContext.Provider>
+    </ActionsContext.Provider>
+  );
 }
 
 /**

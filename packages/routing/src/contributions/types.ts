@@ -1,5 +1,6 @@
 import type { GestureBinding } from '../interactions/actions/binding';
 import type { Action } from '../interactions/actions/action';
+import type { MenuDef } from '../menus/types';
 import type { CapabilityTag } from '@weasel-js/modes';
 import type { DepName, DepSchema, KernelOverlay } from '../index';
 
@@ -75,6 +76,8 @@ export interface ContributionRouting {
   eligibility: Eligibility;
   bindings?: GestureBinding[];
   actions?: Action[];
+  /** Menus this entry declares: always, for an ambient entry; while active, for a tool. */
+  menus?: MenuDef[];
   /** Dep sources this entry provides while it is installed. A host installs
    *  them for as long as the entry is registered, whatever its eligibility. */
   deps?: ContributionDeps;

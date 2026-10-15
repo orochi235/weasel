@@ -41,6 +41,8 @@ import type { ActionTuning } from './interactions/actions/tuning';
 export interface DepSchema {
   /** Currently active tool id + hotkey-hold stack. */
   activeTool: ActiveToolContextValue;
+  /** The menu host of the `ActionsProvider` in scope. */
+  menuHost?: import('./menus/menuHost').MenuHost;
 }
 
 /** Every dep name declared by anything that has merged into {@link DepSchema}. */
@@ -198,4 +200,6 @@ export { dlog, dwarn, isDebugEnabled } from './dlog';
 export type { MenuDef, MenuDefEntry, MenuWhen, MenuHit, OwnedMenuDef } from './menus/types';
 export { mergeMenuDefs, pickMenu } from './menus/pickMenu';
 export { resolveMenu } from './menus/resolveMenu';
+export { createMenuHost } from './menus/menuHost';
+export type { MenuHost, MenuOpenRequest, OpenMenu } from './menus/menuHost';
 export type { MenuSources } from './menus/resolveMenu';
