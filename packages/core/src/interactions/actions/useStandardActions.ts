@@ -64,6 +64,7 @@ import { averageAnchorsAction, joinAnchorsAction } from './defaults/anchorJoin';
 import {
   joinPathsAction, offsetPathAction, simplifyPathAction, snipAtCrossingsAction,
 } from './pathCommands';
+import { configureWarpAction, expandWarpAction } from './warp/warpActions';
 import {
   nudgeAnchorsUpAction,
   nudgeAnchorsDownAction,
@@ -176,6 +177,8 @@ const KIT_STANDARD_DESCRIPTORS: Action[] = [
   offsetPathAction,
   snipAtCrossingsAction,
   joinPathsAction,
+  expandWarpAction,
+  configureWarpAction,
   marqueeAnchorsAction,
   selectAnchorAction,
   lassoSelectAction,
