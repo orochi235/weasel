@@ -37,11 +37,8 @@
   "packages/core/src/canvas/SceneCanvas/GestureDispatcherMounter.tsx": {
     "longestFunction": 253
   },
-  "packages/core/src/canvas/SceneCanvas/StandardActionsRegistrar.tsx": {
-    "longestFunction": 183
-  },
   "packages/core/src/canvas/SceneCanvas/props.ts": {
-    "lines": 637
+    "lines": 610
   },
   "packages/core/src/canvas/sceneAdapter.ts": {
     "longestFunction": 156
@@ -74,7 +71,7 @@
     "longestFunction": 148
   },
   "packages/core/src/interactions/actions/depSchema.ts": {
-    "lines": 495
+    "lines": 435
   },
   "packages/core/src/tools/builtin/pen/usePenTool.ts": {
     "lines": 683,

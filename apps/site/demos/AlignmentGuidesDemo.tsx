@@ -5,6 +5,7 @@ import {
   useSelection,
   rectPath,
   solid,
+  drawnAABBOf,
 } from '@weasel-js/core';
 import { alignInsertBehavior, alignMoveBehavior, createGuidesLayer, deriveAlignmentGuides } from '@weasel-js/guides';
 import type { Guide, SpacingGap } from '@weasel-js/guides';
@@ -49,17 +50,18 @@ export function AlignmentGuidesDemo() {
   const { selectTool, toolOptions } = useMemo(() => {
     const setActiveGuides = (g: readonly Guide[]) => { activeRef.current = g; };
     const setActiveGaps = (g: readonly SpacingGap[]) => { gapsRef.current = g; };
-    const poses = (exclude: ReadonlySet<NodeId>) =>
-      [...scene.nodes.values()].filter((n) => !exclude.has(n.id)).map((n) => n.pose as Pose);
+    // Each sibling as drawn, stroke included, the way the dragged selection is measured.
+    const boxes = (exclude: ReadonlySet<NodeId>) =>
+      [...scene.nodes.values()].filter((n) => !exclude.has(n.id)).map((n) => drawnAABBOf(scene, n.id, n.pose));
     // Candidates come from every node not in `exclude`, plus the page.
-    const candidates = (exclude: ReadonlySet<NodeId>) => deriveAlignmentGuides(poses(exclude), { page: PAGE });
+    const candidates = (exclude: ReadonlySet<NodeId>) => deriveAlignmentGuides(boxes(exclude), { page: PAGE });
     return {
       selectTool: { move: { behaviors: [alignMoveBehavior<Pose>({
         tolerance: 6,
         getCandidates: () => candidates(new Set(selection.get())),
         setActiveGuides,
         // Equal-spacing snaps measure the gaps between the same siblings.
-        getSpacingTargets: () => poses(new Set(selection.get())),
+        getSpacingTargets: () => boxes(new Set(selection.get())),
         setActiveGaps,
       })] } },
       // The rect being drawn is not in the scene yet, so every node counts.

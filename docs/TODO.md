@@ -615,6 +615,22 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 ## Selection, actions & UI panels
 
+- **(P3) Some boxes still leave the stroke out.** `drawnBoundsOf` (`canvas/drawnBounds.ts`) is the
+  box a stroked shape is shown and measured with, and `<SceneCanvas>`'s chrome, resize, rotate,
+  flip, align, distribute, and `alignMoveBehavior` read it. Paths with no node or painter behind
+  them still measure the pose box: the selection overlay given its own `poseById`,
+  `composeSelectionPose`, the adapter-only `useAlign` hook, a bare `<Canvas>`, and the guides
+  package's origin snaps (`snapToGuides`, `snapToGrid`), which move a point rather than a box.
+  Text has no `drawnBounds` either, so a stroked glyph that spills past its layout box is not
+  covered. A `{ px }` stroke under a skewing or stretching `transform` is outset by its width at
+  the mean scale, which only approximates the screen-exact ribbon.
+
+- **(P2) Labs still tune actions through the experimental `actions` prop.** The extend-path-end
+  and dynamic-corners labs (on their own branches when `tune` landed) set `mode` and a K binding
+  by restating whole descriptors through `actions`. Move each to `<SceneCanvas tune>` as it
+  merges, drop the restated gestures, and give its actions (`extendPathEnd`, …) entries in core's
+  `ActionParamSchema` (`interactions/actions/actionParamSchema.ts`).
+
 - **(P1) The kit has no settings of its own.** Behavior a user would set once for every
   component — how long a typed field waits idle before it commits, the stepper's repeat delay
   and rate, typeahead and hover-open delays, a toast's lifetime — is a module constant in each
@@ -639,13 +655,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   rail marked `canvas.grid` current where the test expects `canvas.rulers`. A guess, not
   confirmed: the section is polled into view and the marks are then read once, so a scroll spy
   that settles a frame later would still name the section above.
-
-- **(P2) Labs still tune actions through the experimental `actions` prop.** The smart remove
-  brush, extend-path-end, and dynamic-corners labs (on their own branches when `tune` landed) set
-  `radiusPx`, `mode`, and a K binding by restating whole descriptors through `actions`. Move each
-  to `<SceneCanvas tune>` as it merges, drop the restated gestures, and give its actions
-  (`brushDeleteAnchors`, `extendPathEnd`, …) entries in core's `ActionParamSchema`
-  (`interactions/actions/actionParamSchema.ts`).
 
 - **(P3) Nothing puts `prefsCss` on a page.** `prefsCss(store)` writes the text and
   `prefsCssAttributes(store)` the attributes (`packages/prefs/README.md`, "As CSS custom
