@@ -53,13 +53,11 @@ function ShapeBuilderTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const shapeBuilder = useShapeBuilderTool({ mode: ctx.config.mode });
   const tools = useMemo(() => ({ shapeBuilder }), [shapeBuilder]);
 
-  // A fresh or reset trial opens on the three circles, selected, with the builder in hand.
+  // A fresh or reset trial opens on the three circles, selected.
   const fresh = ctx.state.scene === null;
-  const latest = useLatest({ selection, setActiveTool: ctx.trial.setActiveTool });
+  const latest = useLatest(selection);
   useEffect(() => {
-    if (!fresh) return;
-    latest.current.selection.set(SEED_IDS);
-    latest.current.setActiveTool('shapeBuilder');
+    if (fresh) latest.current.set(SEED_IDS);
   }, [fresh, latest]);
 
   return (
@@ -80,6 +78,7 @@ const shapeBuilderInstrument = defineInstrument<State, Config>({
   initialState: () => ({ scene: null }),
   undo: {},
   tools: {
+    initial: 'shapeBuilder',
     tools: [
       { id: 'select', label: 'Select', icon: SelectIcon, shortcut: 'V' },
       { id: 'shapeBuilder', label: 'Shape Builder', icon: UnionIcon, shortcut: 'Shift+M' },

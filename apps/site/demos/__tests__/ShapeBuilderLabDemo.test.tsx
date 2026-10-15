@@ -2,6 +2,7 @@ import { act, cleanup, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { StrictMode } from 'react';
 import { ShapeBuilderLabDemo } from '../ShapeBuilderLabDemo';
 
 // windease lays a lab's tiles out only once something measures them, and
@@ -42,7 +43,8 @@ function drag(canvas: Element, run: [number, number][], altKey = false) {
 }
 
 async function mount() {
-  const { container } = await renderSettled(<ShapeBuilderLabDemo />);
+  // Strict, as the site mounts it.
+  const { container } = await renderSettled(<StrictMode><ShapeBuilderLabDemo /></StrictMode>);
   const canvas = container.querySelector('.lk-trial-scene canvas');
   if (!canvas) throw new Error('no scene canvas in the trial');
   expect(ids()).toEqual(SEED);
