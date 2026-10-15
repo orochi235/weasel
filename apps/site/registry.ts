@@ -157,7 +157,7 @@ const DEMO_META: DemoMeta[] = [
     id: 'align',
     title: 'Align & flip to the cursor',
     category: 'Selection & actions',
-    description: 'The align.* actions take a `to` param and flip a `pivot` param naming what the selection lines up against: \'union\' (the selection itself), \'pointer\', a world point or rect, or a key node { node: id }. This demo binds keys through the `actions` prop: a letter aligns to the selection\'s union, the same letter with Shift aligns to wherever the cursor is, and F mirrors about the cursor.',
+    description: 'The align.* actions take a `to` param and flip a `pivot` param naming what the selection lines up against: \'union\' (the selection itself), \'pointer\', a world point or rect, or a key node { node: id }. This demo adds keys through the `tune` prop: a letter aligns to the selection\'s union, the same letter with Shift aligns to wherever the cursor is, and F mirrors about the cursor.',
     hint: 'All three rects start selected. Press <kbd>L</kbd>, <kbd>T</kbd>, or <kbd>C</kbd> to align left, top or centers; hold <kbd>Shift</kbd> to align to the cursor instead. Press <kbd>F</kbd> to flip about the cursor.',
     load: () => import('./demos/AlignDemo').then((m) => m.AlignDemo),
     path: 'apps/site/demos/AlignDemo.tsx',
