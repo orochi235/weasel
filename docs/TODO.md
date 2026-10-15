@@ -184,7 +184,7 @@ Priority tags:
   mapping it through each node's parent on replay would make the two agree.
 - **(P3) The path commands have no icons.** `simplifyPath`, `offsetPath`, `snipAtCrossings`,
   `joinPaths`, `joinAnchors`, `averageAnchors`, `setPathStart`, `reversePath`, and `convertSegments`
-  show as text in draw's bar.
+  show as text in draw's bar, as does draw's own `view.pathDirection` toggle.
   `RetractHandlesIcon` and `SymmetricHandlesIcon` (`defaults/icons/anchorIcons.tsx`) are first
   drafts, not proofed at high resolution.
 - **(P2) Spacing hints.** Equal-spacing markers between siblings while moving, and Alt-hover

@@ -13,6 +13,7 @@ export interface EditorAmbientArgs {
   /** The mode shortcuts, from `useCanvasModes`. */
   modeKeys: Contribution;
   grid: Pick<AppCommands, 'gridVisible' | 'toggleGrid' | 'snapToGrid' | 'toggleSnap'>;
+  pathDirection: Pick<AppCommands, 'pathDirection' | 'togglePathDirection'>;
   view: View;
   setView: (view: View) => void;
   openPrefs: () => void;
@@ -30,6 +31,7 @@ export function useEditorAmbient(args: EditorAmbientArgs): readonly SurfaceContr
 
   const appCommands: AppCommands = {
     ...args.grid,
+    ...args.pathDirection,
     canReleaseCompound: hasCompoundPath(scene, selection.current),
     releaseCompound: () => selection.set(releaseCompoundPaths(scene, selection.current)),
     openPrefs: args.openPrefs,

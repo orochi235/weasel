@@ -37,6 +37,8 @@ function Actions({ selected, compound, children }: { selected: number; compound:
     toggleGrid: () => setGrid((v) => !v),
     snapToGrid,
     toggleSnap: () => setSnap((v) => !v),
+    pathDirection: false,
+    togglePathDirection: noop,
     canReleaseCompound: compound,
     releaseCompound: noop,
     openPrefs: noop,

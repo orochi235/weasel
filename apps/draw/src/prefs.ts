@@ -122,6 +122,12 @@ export const PREFS = {
           description: 'Constrain move/resize gestures to grid intersections.',
           default: false,
         },
+        pathDirection: {
+          kind: 'boolean',
+          name: 'Show path direction',
+          description: 'While editing a path, draw an arrow on each segment the way the path runs, and a ring on its start.',
+          default: false,
+        },
       },
     },
     text: {
