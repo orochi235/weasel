@@ -404,26 +404,32 @@ Priority tags:
   path unchanged, in world coordinates, so `diagramScene`'s layout moves the box and leaves the
   outline behind. Marks solve the same problem with path data in a unit square
   (`packages/diagram/src/marks.ts`); an outline could take the same form.
-- **(P2) `layered` lets wires, boxes and labels overlap.** The EffectChart node-graph demo shows
-  every case: a wire runs through the decision diamond, wires cross each other into a stage's
-  ports, and port and wire labels sit under wires. The causes, all in
-  `packages/diagram/src/layered.ts` and `barycenter.ts`:
-  - Ranks are longest-path from the sources, so every input sits in the first column however late
-    it is used, and its wire spans the whole chart. Ranking that minimizes total edge length
-    (network simplex) would put each source next to the stage it feeds.
-  - A wire spanning several ranks has no stand-in node in the ranks it crosses, so ordering cannot
-    see it. Routing now steers it through the gaps (`layeredRoutes`, `packages/diagram/src/route.ts`),
-    but only through gaps that ordering left by chance.
-  - Crossing reduction (`order: 'barycenter'`) is opt-in, and `nodeGraph` does not opt in. It also
-    orders by a neighbor's position in its rank, not by the position of the port the wire joins.
-  - Positions across a rank are packed and centered, not aligned to neighbors, so wires that
-    could run straight bend.
+- **(P2) `layered` cannot see ports, so wires still cross into a stage and loop out of one.**
+  Ranking, placeholders for spanning edges, crossing reduction and aligned placement are in
+  (`packages/diagram/src/layered/`). What the EffectChart node-graph demo still shows:
+  - Ordering sorts by which node a wire comes from, not which port it joins, so wires into a
+    stage's ports cross as they arrive (Sunbeams into Composite's `over`, under Blur into `base`).
+    The layout graph (`Graph` in `packages/diagram/src/graph.ts`) carries no ports.
   - A named port sits at one fixed point, wherever its wire goes. The diamond puts its second exit
     at the bottom (`branchNode` in `packages/diagram/src/effect/symbols.ts`), so a wire to a stage
     above leaves downward and loops back up. A port should be able to name the places it may sit
     (the diamond's top and bottom vertices, say), with layout picking the one facing its wire.
     `layeredRoutes` already picks a face for a node with no named ports.
-  - Nothing places wire or port labels away from wires.
+- **(P2) Nothing keeps a diagram's labels clear of boxes and wires.** A wire's label sits at a
+  fraction of its route with no check for what is around it, and port labels sit under incoming
+  wires. The standard fix makes each label a placeholder of its own in the middle of its wire, so
+  ranking, ordering and placement leave it room. The P3 "A diagram's edge labels can land on
+  nodes" is one case of this.
+- **(P3) A live scene's `layered` layout gets no placeholders and no waypoints.** Under
+  `order: 'seeded'`, which `layoutAction` uses, a spanning edge gets no room in the ranks it
+  crosses and the scene's edges get no waypoints, so a long edge can run through a node. A
+  placeholder's seed order would come from wire ends layout moves, so two could trade places
+  between runs and break "a second run moves nothing"; and a scene's waypoints belong to whoever
+  drew them, so writing them is a decision of its own (`packages/diagram/src/layered/plan.ts`).
+- **(P3) An ELK layout adapter.** elkjs (the Eclipse Layout Kernel) lays out ports, labels and
+  nested groups well, but answers asynchronously and is large (around 1.5 MB; not measured), so it cannot sit behind
+  the synchronous `LayoutFn`. An adapter in a package of its own, for laying out a generated
+  diagram once, would let a diagram be checked against it.
 - **(P3) `DiagramView` fits its view once, at mount.** `defaultView` only seeds the canvas's
   view, so when `width` or `height` changes the canvas resizes and the view does not refit; a
   diagram fitted for a wide box is clipped in a narrower one. The EffectChart lab shows it when

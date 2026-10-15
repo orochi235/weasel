@@ -34,8 +34,9 @@ export interface LayoutOptions {
   rankGap?: number;
   /** How `layered` orders nodes within a rank. `'seeded'` (default) keeps
    *  the order they already sit in; `'barycenter'` reorders to reduce edge
-   *  crossings, for a generated diagram with no arranged order to keep.
-   *  Other layouts ignore it. */
+   *  crossings, for a generated diagram with no arranged order to keep, and
+   *  leaves room in each rank an edge crosses so `layeredPlan` can route it
+   *  through. Other layouts ignore it. */
   order?: 'seeded' | 'barycenter';
   /** Ids layout must not move, on top of whatever carries `pinned: true`. */
   pin?: Iterable<string>;
