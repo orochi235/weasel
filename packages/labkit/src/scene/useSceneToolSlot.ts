@@ -32,11 +32,7 @@ export function useSceneToolSlot(
   // A tool this hook told the canvas to take that it has not yet reported.
   const asked = useRef<string | null>(null);
 
-  const push = (target: ToolsApi, id: string | null): void => {
-    if (id === null || id === target.active || !(id in target.registry)) return;
-    asked.current = id;
-    target.setActive(id);
-  };
+  const push = (target: ToolsApi, id: string | null): void => pushTool(asked, target, id);
 
   const reported = (next: ToolsApi): void => {
     tools.current = next;
@@ -63,8 +59,14 @@ export function useSceneToolSlot(
   useEffect(() => {
     if (wanted === slotSaw.current) return;
     slotSaw.current = wanted;
-    if (tools.current) push(tools.current, wanted);
+    if (tools.current) pushTool(asked, tools.current, wanted);
   }, [wanted]);
 
   return reported;
+}
+
+function pushTool(asked: { current: string | null }, target: ToolsApi, id: string | null): void {
+  if (id === null || id === target.active || !(id in target.registry)) return;
+  asked.current = id;
+  target.setActive(id);
 }

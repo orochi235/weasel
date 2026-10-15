@@ -7,13 +7,15 @@ function canvasTools(active: string | null): ToolsApi {
   const tools = {
     active,
     registry: { select: {}, pen: {} },
-    setActive: vi.fn((id: string) => { tools.active = id; }),
+    setActive: vi.fn((id: string) => {
+      tools.active = id;
+    }),
   };
   return tools as unknown as ToolsApi;
 }
 
 describe('useSceneToolSlot', () => {
-  it("keeps a slot naming a tool the canvas lacks while the canvas settles on its own first tool", () => {
+  it('keeps a slot naming a tool the canvas lacks while the canvas settles on its own first tool', () => {
     const slot = { activeToolId: 'lengthen', setActiveTool: vi.fn() };
     const { result } = renderHook(() => useSceneToolSlot(slot));
     result.current(canvasTools(null));

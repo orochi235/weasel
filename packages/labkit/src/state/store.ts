@@ -257,7 +257,10 @@ export function createLabStore(options: CreateLabStoreOptions = {}): LabStore {
 
     setLabTool: (id) => set({ activeToolId: id }),
 
-    setTrialTool: (trialId, id) => set((s) => (holdsTool(s.trials, trialId, id) ? s : { trials: withTool(s.trials, trialId, id) })),
+    setTrialTool: (trialId, id) =>
+      set((s) =>
+        holdsTool(s.trials, trialId, id) ? s : { trials: withTool(s.trials, trialId, id) },
+      ),
 
     undockPanel: (trialId, sectionId, as) => {
       set((s) => ({ undockedPanels: undockPanelIn(s.undockedPanels, trialId, sectionId, as) }));
@@ -312,7 +315,11 @@ function holdsTool(trials: readonly TrialRecord[], trialId: string, id: string |
   return !trials.some((t) => t.id === trialId && t.activeToolId !== id);
 }
 
-function withTool(trials: readonly TrialRecord[], trialId: string, id: string | null): TrialRecord[] {
+function withTool(
+  trials: readonly TrialRecord[],
+  trialId: string,
+  id: string | null,
+): TrialRecord[] {
   return trials.map((t) => (t.id === trialId ? { ...t, activeToolId: id } : t));
 }
 

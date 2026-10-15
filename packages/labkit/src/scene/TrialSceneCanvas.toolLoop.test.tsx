@@ -1,6 +1,6 @@
 /** The trial's tool slot and the canvas's active tool settle, whatever each side is handed. */
 import { act, renderHook, screen } from '@testing-library/react';
-import { createScene, type ToolsApi, useLatest, useEllipseTool } from '@weasel-js/core';
+import { createScene, type ToolsApi, useEllipseTool, useLatest } from '@weasel-js/core';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { RectIcon, SelectIcon } from '@weasel-js/ui';
 import { StrictMode, useEffect } from 'react';
@@ -9,11 +9,13 @@ import { defineInstrument } from '../instrument/defineInstrument';
 import type { RenderContext } from '../instrument/types';
 import { Lab } from '../lab/Lab';
 import { TrialSceneCanvas } from './TrialSceneCanvas';
-import { type SceneTrialState, useTrialScene } from './useTrialScene';
 import { useSceneToolSlot } from './useSceneToolSlot';
+import { type SceneTrialState, useTrialScene } from './useTrialScene';
 
 beforeAll(() => {
-  HTMLCanvasElement.prototype.getContext = vi.fn(() => null) as unknown as HTMLCanvasElement['getContext'];
+  HTMLCanvasElement.prototype.getContext = vi.fn(
+    () => null,
+  ) as unknown as HTMLCanvasElement['getContext'];
 });
 
 type Pose = { x: number; y: number; width: number; height: number };
@@ -24,14 +26,26 @@ let live: { tools: ToolsApi | null; renders: number };
 
 /** `pick` is written to the slot once as the trial mounts, or — with `everyRender` —
  *  from an effect that runs on every render, as one keyed on `setActiveTool` does. */
-function Body({ ctx, pick, everyRender }: { ctx: RenderContext<State, Record<string, never>>; pick: string; everyRender: boolean }) {
+function Body({
+  ctx,
+  pick,
+  everyRender,
+}: {
+  ctx: RenderContext<State, Record<string, never>>;
+  pick: string;
+  everyRender: boolean;
+}) {
   const scene = useTrialScene(ctx, create);
   live.renders++;
   const ellipse = useEllipseTool();
   const latest = useLatest(ctx.trial.setActiveTool);
   const { setActiveTool } = ctx.trial;
-  useEffect(() => { latest.current(pick); }, [latest, pick]);
-  useEffect(() => { if (everyRender) setActiveTool(pick); }, [everyRender, setActiveTool, pick]);
+  useEffect(() => {
+    latest.current(pick);
+  }, [latest, pick]);
+  useEffect(() => {
+    if (everyRender) setActiveTool(pick);
+  }, [everyRender, setActiveTool, pick]);
   return (
     <TrialSceneCanvas
       features={['draw']}
@@ -39,23 +53,26 @@ function Body({ ctx, pick, everyRender }: { ctx: RenderContext<State, Record<str
       tools={{ ellipse }}
       scene={scene}
       trial={ctx.trial}
-      onToolsCreated={(tools) => { live.tools = tools; }}
+      onToolsCreated={(tools) => {
+        live.tools = tools;
+      }}
     />
   );
 }
 
-const instrument = (pick: string, everyRender = false) => defineInstrument<State, Record<string, never>>({
-  name: 'Scene',
-  defaultConfig: () => ({}),
-  initialState: () => ({ scene: null }),
-  tools: {
-    tools: [
-      { id: 'select', label: 'Select', icon: SelectIcon },
-      { id: 'ellipse', label: 'Ellipse', icon: RectIcon },
-    ],
-  },
-  render: (ctx) => <Body ctx={ctx} pick={pick} everyRender={everyRender} />,
-});
+const instrument = (pick: string, everyRender = false) =>
+  defineInstrument<State, Record<string, never>>({
+    name: 'Scene',
+    defaultConfig: () => ({}),
+    initialState: () => ({ scene: null }),
+    tools: {
+      tools: [
+        { id: 'select', label: 'Select', icon: SelectIcon },
+        { id: 'ellipse', label: 'Ellipse', icon: RectIcon },
+      ],
+    },
+    render: (ctx) => <Body ctx={ctx} pick={pick} everyRender={everyRender} />,
+  });
 
 async function mount(pick: string, everyRender = false) {
   live = { tools: null, renders: 0 };
