@@ -656,13 +656,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   confirmed: the section is polled into view and the marks are then read once, so a scroll spy
   that settles a frame later would still name the section above.
 
-- **(P2) Labs still tune actions through the experimental `actions` prop.** The smart remove
-  brush, extend-path-end, and dynamic-corners labs (on their own branches when `tune` landed) set
-  `radiusPx`, `mode`, and a K binding by restating whole descriptors through `actions`. Move each
-  to `<SceneCanvas tune>` as it merges, drop the restated gestures, and give its actions
-  (`brushDeleteAnchors`, `extendPathEnd`, …) entries in core's `ActionParamSchema`
-  (`interactions/actions/actionParamSchema.ts`).
-
 - **(P3) Nothing puts `prefsCss` on a page.** `prefsCss(store)` writes the text and
   `prefsCssAttributes(store)` the attributes (`packages/prefs/README.md`, "As CSS custom
   properties"); a host adopts the one and sets the other by hand, and again on every change. The
