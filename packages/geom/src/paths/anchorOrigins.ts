@@ -3,6 +3,7 @@
  * weights) can follow an edit that inserts, deletes, or reorders points.
  */
 
+import { PATH_C, PATH_Q, PATH_Z, forEachSegment } from '../commands';
 import type { PolygonPath } from '../path';
 import { anchorsToPath, pathToAnchors, type PenAnchor } from './anchors';
 
@@ -166,4 +167,48 @@ export function remapPointValues(
     const a = values[o.a] ?? 0;
     return o.t === 0 ? a : a + ((values[o.b] ?? 0) - a) * o.t;
   });
+}
+
+/** For each point of `path`, the index of the anchor it ends, as `countPathAnchors` counts
+ *  them (one per M, L, C and Q), or -1 for a control point. */
+function anchorOfPoint(path: PolygonPath): Int32Array {
+  const owner = new Int32Array(path.coords.length >> 1).fill(-1);
+  let anchor = 0;
+  forEachSegment(path.commands, path.coords, (cmd, ci) => {
+    if (cmd === PATH_Z) return;
+    const n = cmd === PATH_C ? 6 : cmd === PATH_Q ? 4 : 2;
+    owner[(ci + n - 2) >> 1] = anchor++;
+  });
+  return owner;
+}
+
+/**
+ * An array kept per anchor of a path, `stride` numbers each — four color channels, say —
+ * carried through an edit from `before` to `after`, with `origins` as
+ * {@link editAnchorSetTracked} answered. An anchor the edit kept keeps its numbers; one it
+ * made blends those of the anchors it came between. An anchor with no origin reads 0. Anchors
+ * are counted as `countPathAnchors` counts them.
+ */
+export function remapAnchorValues(
+  values: ArrayLike<number>,
+  stride: number,
+  before: PolygonPath,
+  after: PolygonPath,
+  origins: readonly (PointOrigin | null)[],
+): number[] {
+  const wasAnchor = anchorOfPoint(before);
+  const isAnchor = anchorOfPoint(after);
+  const out: number[] = [];
+  isAnchor.forEach((anchor, point) => {
+    if (anchor === -1) return;
+    const o = origins[point];
+    const a = o ? wasAnchor[o.a] ?? -1 : -1;
+    const b = o ? wasAnchor[o.b] ?? -1 : -1;
+    for (let k = 0; k < stride; k++) {
+      const va = a === -1 ? 0 : values[a * stride + k] ?? 0;
+      const vb = b === -1 ? va : values[b * stride + k] ?? 0;
+      out.push(o && o.t !== 0 ? va + (vb - va) * o.t : va);
+    }
+  });
+  return out;
 }

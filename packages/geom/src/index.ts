@@ -88,7 +88,18 @@ export {
 } from './paths/anchorEdits';
 export { bendSegment, type BendGrip } from './paths/bendSegment';
 export { handleAlongItsAngle, makeHandlesSymmetric, retractHandles } from './paths/handleEdits';
-export { editAnchorSetTracked, remapPointValues, type PointOrigin } from './paths/anchorOrigins';
+export { editAnchorSetTracked, remapAnchorValues, remapPointValues, type PointOrigin } from './paths/anchorOrigins';
+export {
+  directionMarks, flatIndexesAfterReverse, reverseSubpaths, setSubpathStart, subpathsOfAnchors,
+  type DirectionMark,
+} from './paths/pathStructure';
+export {
+  convertSegments, isSegmentStraight, segmentsBetweenAnchors, type SegmentRef, type SegmentType,
+} from './paths/segmentType';
+export {
+  ANCHOR_FIELDS, readAnchorFields, writeAnchorField,
+  type AnchorField, type AnchorFieldValues, type NumberEntry,
+} from './paths/anchorFields';
 export { nearestPathAnchor, reverseAnchors, type PathAnchorHit } from './paths/nearestAnchor';
 export { pathInPoseFrame, pathInWorld, worldEditToStorage, type PathInWorldPose } from './paths/pathInWorld';
 export {
