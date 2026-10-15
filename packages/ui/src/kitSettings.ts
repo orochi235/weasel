@@ -1,7 +1,7 @@
 import { pref, type PrefNumber } from '@weasel-js/prefs';
 import { ANCHOR_SNAP_PX, CURVE_HIT_PX as FUNCTION_CURVE_HIT_PX } from './components/CurveEditor/createFunctionLayer';
 import { CURVE_HIT_PX, HANDLE_HIT_PX, KEY_HIT_PX } from './components/CurveEditor/createKeyframeLayer';
-import { REPEAT_DELAY_MS, REPEAT_EVERY_MS } from './components/NumberField/UnitField';
+import { REPEAT_DELAY_MS, REPEAT_EVERY_MS } from './components/NumberField/useStepRepeat';
 import { PARAMS_SETTLES, PARAMS_TEXT_WAIT_MS, type LiveControl, type ParamsSurface } from './components/Prefs/commitPolicy';
 import { COALESCE_MS } from './components/PrefSchemaEditor/useDocument';
 import { FOCUS_DELAY } from './components/Properties/rowHelp';
