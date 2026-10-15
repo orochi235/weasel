@@ -353,7 +353,7 @@ function KeyboardLayout({ platform, legend, font }: { platform: Platform; legend
       <header style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.06em', opacity: 0.65, marginBottom: 6 }}>
         {platform}
       </header>
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: unit(1) + GAP }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: unit(0.5) }}>
         <KeyboardBlock rows={mainRows} gap={GAP} fnRowSpacing />
         <KeyboardBlock rows={clusterRows} gap={GAP} fnRowSpacing />
       </div>
@@ -448,7 +448,9 @@ function FitCap({ label, width, font }: { label: string; width: string; font?: s
   }, [label, width, font]);
 
   return (
-    <span ref={ref}>
+    // A flex box, not a line box: a two-line legend's baseline would otherwise
+    // make the line taller than the key and push its row down.
+    <span ref={ref} style={{ display: 'flex' }}>
       <KeyCap
         label={fit.label}
         style={{
