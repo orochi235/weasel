@@ -1,12 +1,12 @@
-import { entriesAt, type MenuEntry } from './entries';
+import { entriesAt, isRow, type MenuEntry } from './entries';
 import { firstRow, keyStep, type MenuStack } from './keys';
 import type { Point, Rect } from './placement';
 import { inTriangle } from './triangle';
-import { typeaheadMatch } from './typeahead';
+import { typeaheadStep, type TypeaheadBuffer } from './typeahead';
 
+export { TYPEAHEAD_RESET_MS } from './typeahead';
 export const SUBMENU_OPEN_MS = 200;
 export const DIAGONAL_GRACE_MS = 300;
-export const TYPEAHEAD_RESET_MS = 500;
 
 /** Clock and timer, injected so tests and headless hosts control time. */
 export interface MenuScheduler {
@@ -54,36 +54,43 @@ export function createMenuController(opts: MenuControllerOptions): MenuControlle
   const listeners = new Set<() => void>();
   const panels = new Map<number, Rect>();
   let pending: (() => void) | null = null;
+  let pendingKind: 'open' | 'diagonal' | null = null;
   let lastPoint: Point | null = null;
-  let typed = '';
-  let typedAt = -Infinity;
-  let live = true;
+  let typed: TypeaheadBuffer = { text: '', at: -Infinity };
+  let closed = false;
 
   const set = (next: MenuStack) => {
     stack = next;
+    for (const level of [...panels.keys()]) if (level >= next.length) panels.delete(level);
     for (const fn of listeners) fn();
   };
-  const cancel = () => { pending?.(); pending = null; };
-  const later = (fn: () => void, ms: number) => {
+  const cancel = () => { pending?.(); pending = null; pendingKind = null; };
+  const later = (kind: 'open' | 'diagonal', fn: () => void, ms: number) => {
     cancel();
-    pending = sched.set(() => { pending = null; if (live) fn(); }, ms);
+    pendingKind = kind;
+    pending = sched.set(() => { pending = null; pendingKind = null; if (!closed) fn(); }, ms);
+  };
+  const entryAt = (level: number, index: number) => entriesAt(root, stack, level)[index];
+  const isRowAt = (level: number, index: number) => {
+    const e = entryAt(level, index);
+    return e !== undefined && isRow(e);
   };
 
+  const finish = () => { closed = true; cancel(); onClose(); };
   const choose = (level: number, index: number) => {
-    const e = entriesAt(root, stack, level)[index];
+    const e = entryAt(level, index);
     if (e?.kind !== 'item' || e.disabled) return;
-    cancel();
-    onClose();
+    finish();
     e.run();
   };
 
   const openAt = (level: number, index: number) => {
-    const e = entriesAt(root, stack, level)[index];
+    const e = entryAt(level, index);
     const base = [...stack.slice(0, level), index];
     set(e?.kind === 'submenu' && !e.disabled ? [...base, null] : base);
   };
 
-  /** Heading from the last point toward the open child's near edge. */
+  /** Heading from the point the deferral began toward the open child's near edge. */
   const headingIntoChild = (level: number, p: Point): boolean => {
     const child = panels.get(level + 1);
     const parent = panels.get(level);
@@ -93,51 +100,54 @@ export function createMenuController(opts: MenuControllerOptions): MenuControlle
   };
 
   const hoverNow = (level: number, index: number | null) => {
-    if (index === null) {
-      if (stack.length === level + 1) set([...stack.slice(0, level), null]);
-      return;
-    }
-    const e = entriesAt(root, stack, level)[index];
-    set([...stack.slice(0, level), index]);
-    if (e?.kind === 'submenu' && !e.disabled) later(() => openAt(level, index), SUBMENU_OPEN_MS);
-    else cancel();
+    cancel();
+    if (index === null && stack.length !== level + 1) return;
+    const next = [...stack.slice(0, level), index];
+    if (next.length !== stack.length || next[level] !== stack[level]) set(next);
+    if (index === null) return;
+    const e = entryAt(level, index);
+    if (e?.kind === 'submenu' && !e.disabled) later('open', () => openAt(level, index), SUBMENU_OPEN_MS);
   };
 
   return {
     stack: () => stack,
     entriesAt: (level) => entriesAt(root, stack, level),
     key(key) {
+      if (closed) return false;
       const r = keyStep(root, stack, key);
       if (r.handled) {
         cancel();
-        if (r.stack !== stack) set(r.stack);
+        if (r.stack !== stack) { typed = { text: '', at: -Infinity }; set(r.stack); }
         if (r.effect.kind === 'choose') choose(r.effect.level, r.effect.index);
-        else if (r.effect.kind === 'close') onClose();
+        else if (r.effect.kind === 'close') finish();
         return true;
       }
       if (key.length !== 1 || key === ' ') return false;
-      const now = sched.now();
-      typed = (now - typedAt < TYPEAHEAD_RESET_MS ? typed : '') + key;
-      typedAt = now;
+      cancel();
       const level = stack.length - 1;
-      const hit = typeaheadMatch(entriesAt(root, stack, level), stack[level] ?? null, typed);
-      if (hit !== null) set([...stack.slice(0, level), hit]);
+      const t = typeaheadStep(entriesAt(root, stack, level), stack[level] ?? null, typed, key, sched.now());
+      typed = t.buffer;
+      if (t.hit !== null) set([...stack.slice(0, level), t.hit]);
       return true;
     },
     hover(level, index, point) {
-      if (point && index !== stack[level] && headingIntoChild(level, point)) {
-        lastPoint = point;
-        later(() => hoverNow(level, index), DIAGONAL_GRACE_MS);
+      if (closed || level >= stack.length) return;
+      if (index !== null && !isRowAt(level, index)) return;
+      const sameRow = index === stack[level];
+      if (point && !sameRow && headingIntoChild(level, point)) {
+        if (pendingKind !== 'diagonal') later('diagonal', () => hoverNow(level, index), DIAGONAL_GRACE_MS);
         return;
       }
       if (point) lastPoint = point;
-      if (index === stack[level] && stack.length > level + 1) { cancel(); return; }
+      if (sameRow && stack.length > level + 1) { cancel(); return; }
+      if (sameRow && pendingKind === 'open') return;
       hoverNow(level, index);
     },
     press(level, index) {
-      const e = entriesAt(root, stack, level)[index];
+      if (closed || level >= stack.length || !isRowAt(level, index)) return;
+      if (stack[level] === index && stack.length > level + 1) return;
       cancel();
-      if (e?.kind === 'item') choose(level, index);
+      if (entryAt(level, index)?.kind === 'item') choose(level, index);
       else openAt(level, index);
     },
     setPanel(level, rect) { panels.set(level, rect); },
@@ -146,7 +156,7 @@ export function createMenuController(opts: MenuControllerOptions): MenuControlle
       return () => { listeners.delete(fn); };
     },
     dispose() {
-      live = false;
+      closed = true;
       cancel();
       listeners.clear();
     },

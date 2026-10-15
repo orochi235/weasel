@@ -18,3 +18,26 @@ export function typeaheadMatch(
   }
   return null;
 }
+
+export const TYPEAHEAD_RESET_MS = 500;
+
+export interface TypeaheadBuffer {
+  text: string;
+  at: number;
+}
+
+/** One typed character: the new buffer and the row it lands on. A key that
+ *  repeats the whole buffer searches that one letter, so it cycles. */
+export function typeaheadStep(
+  entries: readonly MenuEntry[],
+  from: number | null,
+  buffer: TypeaheadBuffer,
+  key: string,
+  now: number,
+): { buffer: TypeaheadBuffer; hit: number | null } {
+  const prev = now - buffer.at < TYPEAHEAD_RESET_MS ? buffer.text : '';
+  const k = key.toLowerCase();
+  const cycling = prev !== '' && [...prev].every((c) => c.toLowerCase() === k);
+  const text = cycling ? key : prev + key;
+  return { buffer: { text, at: now }, hit: typeaheadMatch(entries, from, text) };
+}

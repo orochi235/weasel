@@ -86,7 +86,7 @@ the row stays the chrome's job.
 
 ## Model (`@weasel-js/menu`)
 
-- `createMenuState(entries)` reduces input to `{ openPath, highlight }`: arrows, Home/End,
+- `createMenuController(entries)` owns the open path and highlight and reduces input to them: arrows, Home/End,
   typeahead, →/← into and out of submenus, Enter/Space to choose, Escape closes one level, hover
   opens a submenu after a delay (~200ms), and a pointer heading diagonally into an open submenu
   keeps it open.

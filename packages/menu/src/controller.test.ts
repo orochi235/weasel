@@ -32,6 +32,8 @@ function setup(highlightFirst = false) {
       { kind: 'item', key: 'fwd', label: 'Forward', run: run('fwd') },
     ] },
     { kind: 'item', key: 'del', label: 'Delete', run: run('del') },
+    { kind: 'separator', key: 'sep' },
+    { kind: 'item', key: 'clone', label: 'Clone', run: run('clone') },
   ];
   const onClose = vi.fn();
   const { s, advance } = fakeScheduler();
@@ -110,11 +112,134 @@ describe('createMenuController', () => {
 
   it('typeahead accumulates within the reset window', () => {
     const { c, advance } = setup(true);
-    c.key('d');
-    expect(c.stack()).toEqual([3]);
+    c.key('c');
+    expect(c.stack()).toEqual([5]);
+    advance(100);
+    c.key('u');
+    expect(c.stack()).toEqual([0]);
+  });
+
+  it('typeahead starts over after the reset window', () => {
+    const { c, advance } = setup(true);
+    c.key('c');
     advance(600);
+    c.key('u');
+    expect(c.stack()).toEqual([5]);
+  });
+
+  it('a repeated letter cycles instead of searching for the doubled letters', () => {
+    const { c } = setup(true);
+    c.key('c');
+    expect(c.stack()).toEqual([5]);
     c.key('c');
     expect(c.stack()).toEqual([0]);
+  });
+
+  it('a key that moves the highlight clears the typeahead buffer', () => {
+    const { c } = setup(true);
+    c.key('c');
+    c.key('ArrowUp');
+    c.key('u');
+    expect(c.stack()).toEqual([3]);
+  });
+
+  it('a typeahead key cancels a pending submenu open', () => {
+    const { c, advance } = setup();
+    c.hover(0, 2, { x: 0, y: 0 });
+    c.key('d');
+    advance(300);
+    expect(c.stack()).toEqual([3]);
+  });
+
+  it('hovering the same submenu row repeatedly still opens it after the delay', () => {
+    const { c, advance } = setup();
+    c.hover(0, 2, { x: 0, y: 0 });
+    advance(100);
+    c.hover(0, 2, { x: 1, y: 0 });
+    advance(100);
+    expect(c.stack()).toEqual([2, null]);
+  });
+
+  it('leaving a submenu row before the delay does not open it', () => {
+    const { c, advance } = setup();
+    c.hover(0, 2, { x: 0, y: 0 });
+    advance(100);
+    c.hover(0, null, { x: 0, y: 200 });
+    advance(300);
+    expect(c.stack()).toEqual([null]);
+  });
+
+  it('measures the diagonal grace from its first in-triangle move', () => {
+    const { c, advance } = setup();
+    c.setPanel(0, { x: 0, y: 0, w: 100, h: 100 });
+    c.hover(0, 2, { x: 50, y: 50 });
+    advance(200);
+    c.setPanel(1, { x: 100, y: 40, w: 100, h: 60 });
+    c.hover(0, 3, { x: 70, y: 60 });
+    advance(100);
+    c.hover(0, 3, { x: 75, y: 65 });
+    advance(100);
+    c.hover(0, 3, { x: 80, y: 70 });
+    advance(100);
+    expect(c.stack()).toEqual([3]);
+  });
+
+  it('runs an item once however many presses arrive', () => {
+    const { c, ran, onClose } = setup();
+    c.press(0, 0);
+    c.press(0, 0);
+    expect(ran).toEqual(['cut']);
+    expect(onClose).toHaveBeenCalledOnce();
+  });
+
+  it('ignores keys after closing', () => {
+    const { c, ran } = setup(true);
+    expect(c.key('Enter')).toBe(true);
+    expect(c.key('Enter')).toBe(false);
+    expect(ran).toEqual(['cut']);
+  });
+
+  it('ignores hover and press after dispose', () => {
+    const { c, ran } = setup();
+    c.dispose();
+    c.hover(0, 3);
+    c.press(0, 3);
+    expect(c.stack()).toEqual([null]);
+    expect(ran).toEqual([]);
+  });
+
+  it('ignores a level that is not open and a row that is a separator', () => {
+    const { c, ran, onClose } = setup();
+    c.hover(1, 0);
+    c.press(1, 0);
+    c.hover(0, 4);
+    c.press(0, 4);
+    expect(c.stack()).toEqual([null]);
+    expect(ran).toEqual([]);
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it('pressing a submenu row whose child is open keeps the child highlight', () => {
+    const { c } = setup();
+    c.press(0, 2);
+    c.hover(1, 0);
+    expect(c.stack()).toEqual([2, 0]);
+    c.press(0, 2);
+    expect(c.stack()).toEqual([2, 0]);
+  });
+
+  it('forgets the panel of a level that closed', () => {
+    const { c, advance } = setup();
+    c.setPanel(0, { x: 0, y: 0, w: 100, h: 100 });
+    c.hover(0, 2, { x: 50, y: 50 });
+    advance(200);
+    c.setPanel(1, { x: 100, y: 40, w: 100, h: 60 });
+    c.hover(0, 0, { x: 30, y: 80 });
+    expect(c.stack()).toEqual([0]);
+    c.hover(0, 2, { x: 50, y: 50 });
+    advance(200);
+    c.hover(0, 3, { x: 70, y: 60 });
+    expect(c.stack()).toEqual([3]);
   });
 
   it('Escape at the root closes', () => {
