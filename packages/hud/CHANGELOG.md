@@ -1,5 +1,24 @@
 # @weasel-js/hud
 
+## 1.10.2
+
+### Patch Changes
+
+- Updated dependencies [5338358]
+- Updated dependencies [e0608bf]
+- Updated dependencies [765cd31]
+- Updated dependencies [6812344]
+- Updated dependencies [616a4b2]
+- Updated dependencies [9073669]
+- Updated dependencies [70fe7cc]
+  - @weasel-js/geom@1.10.2
+  - @weasel-js/core@1.10.2
+  - @weasel-js/loupe@1.10.2
+  - @weasel-js/font@1.10.2
+  - @weasel-js/paint@1.10.2
+  - @weasel-js/registry@1.10.2
+  - @weasel-js/theme@1.10.2
+
 ## 1.10.1
 
 ### Patch Changes

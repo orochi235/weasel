@@ -1,6 +1,6 @@
 {
   "name": "@weasel-js/ui",
-  "version": "1.10.1",
+  "version": "1.10.2",
   "description": "UI chrome primitives for weasel apps (properties panel, etc.)",
   "license": "MIT",
   "type": "module",
@@ -23,26 +23,26 @@
     "./package.json": "./package.json"
   },
   "dependencies": {
-    "@weasel-js/font": "1.10.1",
-    "@weasel-js/geom": "1.10.1",
-    "@weasel-js/gestures": "1.10.1",
-    "@weasel-js/modes": "1.10.1",
-    "@weasel-js/paint": "1.10.1",
-    "@weasel-js/prefs": "1.10.1",
-    "@weasel-js/quantity": "1.10.1",
-    "@weasel-js/react": "1.10.1",
-    "@weasel-js/registry": "1.10.1",
-    "@weasel-js/select": "1.10.1",
-    "@weasel-js/svg": "1.10.1",
-    "@weasel-js/theme": "1.10.1",
+    "@weasel-js/font": "1.10.2",
+    "@weasel-js/geom": "1.10.2",
+    "@weasel-js/gestures": "1.10.2",
+    "@weasel-js/modes": "1.10.2",
+    "@weasel-js/paint": "1.10.2",
+    "@weasel-js/prefs": "1.10.2",
+    "@weasel-js/quantity": "1.10.2",
+    "@weasel-js/react": "1.10.2",
+    "@weasel-js/registry": "1.10.2",
+    "@weasel-js/select": "1.10.2",
+    "@weasel-js/svg": "1.10.2",
+    "@weasel-js/theme": "1.10.2",
     "prism-react-renderer": "^2.4.1",
     "react-aria-components": "^1.5.0"
   },
   "peerDependencies": {
     "react": ">=18",
     "react-dom": ">=18",
-    "@weasel-js/animator": "1.10.1",
-    "@weasel-js/core": "1.10.1"
+    "@weasel-js/animator": "1.10.2",
+    "@weasel-js/core": "1.10.2"
   },
   "author": "orochi235",
   "homepage": "https://orochi235.github.io/weasel/",
@@ -70,6 +70,6 @@
     "provenance": true
   },
   "devDependencies": {
-    "@weasel-js/cursor": "1.10.1"
+    "@weasel-js/cursor": "1.10.2"
   }
 }

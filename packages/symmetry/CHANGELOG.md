@@ -1,5 +1,20 @@
 # @weasel-js/symmetry
 
+## 1.10.2
+
+### Patch Changes
+
+- baaa5cf: The package description no longer says "No React." Importing `@weasel-js/symmetry` loads `@weasel-js/core`, which loads React.
+- Updated dependencies [5338358]
+- Updated dependencies [e0608bf]
+- Updated dependencies [765cd31]
+- Updated dependencies [6812344]
+- Updated dependencies [616a4b2]
+- Updated dependencies [9073669]
+- Updated dependencies [70fe7cc]
+  - @weasel-js/geom@1.10.2
+  - @weasel-js/core@1.10.2
+
 ## 1.10.1
 
 ### Patch Changes
