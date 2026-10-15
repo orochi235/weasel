@@ -198,6 +198,29 @@ describe('resolveOverlays — polyline', () => {
   });
 });
 
+describe('resolveOverlays — brush', () => {
+  it('passes the path and the screen radius through under its chrome-caps id', () => {
+    const points = [{ x: 0, y: 0 }, { x: 5, y: 5 }];
+    expect(only([{ kind: 'brush', points, radiusPx: 12 }])).toEqual({
+      kind: 'brush',
+      visibilityId: 'action.brush',
+      points,
+      radiusPx: 12,
+    });
+  });
+
+  it('keeps a single dab: the footprint is worth showing before the brush moves', () => {
+    expect(only([{ kind: 'brush', points: [{ x: 3, y: 4 }], radiusPx: 8 }])).toMatchObject({
+      points: [{ x: 3, y: 4 }],
+    });
+  });
+
+  it('drops a brush with no points or no size', () => {
+    expect(resolveOverlays([{ kind: 'brush', points: [], radiusPx: 8 }])).toEqual([]);
+    expect(resolveOverlays([{ kind: 'brush', points: [{ x: 0, y: 0 }], radiusPx: 0 }])).toEqual([]);
+  });
+});
+
 describe('resolveOverlays', () => {
   it('tags each variant with the chrome-caps id the gate consults', () => {
     const resolved = resolveOverlays([

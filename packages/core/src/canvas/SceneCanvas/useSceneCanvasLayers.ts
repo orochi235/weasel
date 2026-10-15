@@ -11,7 +11,7 @@ import { usePathEditOverlayLayer } from 'features/paths/usePathEdit';
 import type { rotationBadgeOf } from 'features/selection/overlay';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import type { HierarchicalAdapter } from '../buildSceneTree';
-import { builtLayersOf, type CanvasLayers } from '../layerSlots';
+import { builtLayersOf, isCustomEntry, type CanvasLayers } from '../layerSlots';
 import { createSlopsDebugLayer } from '../slopsDebugLayer';
 import { mergeLayersWithDefaults, type SceneCanvasLayers } from './props';
 import { useDispatcherOverlayLayer } from './useDispatcherOverlayLayer';
@@ -78,10 +78,12 @@ export function useSceneCanvasLayers<TData, TLayer extends string, TPose>(args: 
     [],
   );
 
+  const overlaySlot = merged.pathEditingOverlay;
+  const overlayConfig = overlaySlot && !isCustomEntry(overlaySlot) ? overlaySlot : undefined;
   const pathEditingOverlayLayer = usePathEditOverlayLayer(pathEditState, {
     nodeOf: (id) => scene.get(id as NodeId),
     planeOfNode: args.planeOfNode,
-  });
+  }, overlayConfig);
 
   const { layer: selectionOverlayLayer, rotationBadge } = useSelectionOverlayLayer<TPose>(
     merged.selectionOverlay,
@@ -95,9 +97,11 @@ export function useSceneCanvasLayers<TData, TLayer extends string, TPose>(args: 
     selectionOverlay: selectionOverlayLayer ? { layer: selectionOverlayLayer } : null,
     previewGhost: { layer: previewLayer, after: 'scene' },
     dispatcherOverlay: { layer: dispatcherOverlay, after: 'previewGhost' },
-    pathEditingOverlay: { layer: pathEditingOverlayLayer, after: 'selectionOverlay' },
+    pathEditingOverlay: overlaySlot === null || isCustomEntry(overlaySlot)
+      ? overlaySlot
+      : { layer: pathEditingOverlayLayer, after: 'selectionOverlay' },
     ...(slops ? { slopsDebug: { layer: slopsLayer, after: 'pathEditingOverlay' } } : {}),
-  }), [merged, sceneLayers, selectionOverlayLayer, previewLayer, dispatcherOverlay, pathEditingOverlayLayer, slops, slopsLayer]);
+  }), [merged, sceneLayers, selectionOverlayLayer, previewLayer, dispatcherOverlay, pathEditingOverlayLayer, overlaySlot, slops, slopsLayer]);
 
   return { layers, rotationBadge, chromeAffordancesRef };
 }

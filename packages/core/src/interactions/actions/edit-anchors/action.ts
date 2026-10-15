@@ -33,7 +33,7 @@
 import type { Action } from '@weasel-js/routing';
 import type { BindingOpts, InvocationCtx, OngoingHandle, OngoingOverlay } from '@weasel-js/routing';
 import type { EditAnchorsDep } from '../depSchema';
-import { isAnchorOrControl, resolveParams } from '@weasel-js/routing';
+import { ActionDisabledReason, isAnchorOrControl, resolveParams } from '@weasel-js/routing';
 import {
   anchorAt,
   editAnchorSetTracked,
@@ -50,6 +50,7 @@ import { inPlane, editingLayer } from '../planeInput';
 import { lockHandle, locksInForce, type HandlePress } from './handleDrag';
 import { locksOf, type EditAnchorsParams } from './params';
 import { pathEditPreview } from './preview';
+import { pathEditToolActive } from '../defaults/pathEditTools';
 import { editedPathSymmetries } from './symmetry';
 
 /**
@@ -259,5 +260,6 @@ export const editAnchorsAction: Action & { requires: string[] } = inPlane({
       };
     },
   },
-  enabled: () => true,
+  // A path-edit tool has the drag.
+  enabled: (deps) => (pathEditToolActive(deps) ? ActionDisabledReason.NotApplicable : true),
 }, editingLayer);

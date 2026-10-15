@@ -673,6 +673,26 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/HandleLockLabDemo.tsx',
   },
   {
+    id: 'lab-curvature-comb',
+    title: 'Curvature comb',
+    category: 'Geometry',
+    description:
+      "A path open in anchor editing, with its curvature comb on: teeth stand out of every curved segment along its normal, each as long as the curve is tight where it stands, and a line joins their tips. A tooth that jumps in length at an anchor marks a curvature break even where the tangent runs smooth through it; teeth that cross to the other side mark an inflection. The comb is part of the path-edit overlay, shown while chrome-caps shows `path-edit.comb`, and draws from the same in-flight path as the anchors, so it follows every anchor and handle drag. Its scale and density are the overlay slot's `comb` options, from `layers.pathEditingOverlay`.",
+    hint: "Drag an anchor or a handle and watch the comb follow. Comb scale sets the teeth's length and Teeth per segment their spacing; Show comb turns it off. <kbd>Escape</kbd> leaves path edit, and a double-click on the path goes back in.",
+    load: () => import('./demos/CurvatureCombLabDemo').then((m) => m.CurvatureCombLabDemo),
+    path: 'apps/site/demos/CurvatureCombLabDemo.tsx',
+  },
+  {
+    id: 'lab-simplify-brush',
+    title: 'Simplify brush',
+    package: 'core',
+    description:
+      "The Simplify command, brushed on. Path edit has a set of named tools, one active at a time, that each change what a plain drag does; with the `simplifyBrush` tool on, a drag gathers every anchor a round brush passes over, and on each subpath it touched the brushed stretch is refitted as one span by `simplifyPath`'s own fitter (`simplifyAnchorsAt`). Only the anchors the shape does not need within the tolerance go: the scribble, drawn as a dense run of straight segments, thins to a few curves, while the cog's square teeth keep their corners. Path edit traces the open path in a thin accent line and draws anchors crowded closer than a marker as dots, so the scribble stays visible under them, and the cursor is a ring the size of the brush. Anchors outside the brush are left exactly as they were, the stroke previews while the brush is down, and release commits one undo step. The palette's Simplify brush is the path-edit tool, held by the trial through `<SceneCanvas pathEdit>`'s `tool` and `setTool`; Escape puts it down, and leaving path edit turns it off. Brush radius and Tolerance reach the action as thunked params through `<SceneCanvas tune>`, so moving them changes a stroke already under way.",
+    hint: 'Drag along the scribble to thin it, then undo with the button or <kbd>Mod+Z</kbd>. Raise Tolerance and brush again to go further. Press Escape to put the brush down and edit anchors, Escape again to leave path edit; then double-click the cog and pick Simplify brush to brush across its teeth.',
+    load: () => import('./demos/SimplifyBrushLabDemo').then((m) => m.SimplifyBrushLabDemo),
+    path: 'apps/site/demos/SimplifyBrushLabDemo.tsx',
+  },
+  {
     id: 'symmetry-lab',
     title: 'Symmetry',
     package: 'symmetry',

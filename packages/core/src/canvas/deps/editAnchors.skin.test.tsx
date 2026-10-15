@@ -38,6 +38,8 @@ function setup() {
     setMarquee: () => {},
     getHandleLocks: () => null,
     setHandleLocks: () => {},
+    getTool: () => null,
+    setTool: () => {},
   };
   const loose = scene as unknown as Scene<unknown, string, unknown>;
   const adapter = {

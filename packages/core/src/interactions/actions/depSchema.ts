@@ -21,8 +21,8 @@ import type {
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { PoseDescriptor } from './resize/geometry';
 import type { GeometryProjection } from './geometryProjection';
-import type { EditAnchorsDep } from './edit-anchors/dep';
 import type { Point2, DragSample, DebugSink, LongPressState } from '@weasel-js/routing';
+import type { EditAnchorsDep } from './editAnchorsDep';
 
 export type { EditAnchorsDep };
 

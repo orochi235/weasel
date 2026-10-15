@@ -146,7 +146,6 @@ export interface UseViewHelpersOpts<TPose> {
 
 export interface ViewHelpersBundle<TPose> {
   helpers: CanvasViewHelpers<TPose>;
-  chromeState: ChromeState;
 }
 
 function worldPoseOf<TPose>(adapter: ViewPoseAdapter<TPose>, id: string): TPose {
@@ -262,5 +261,5 @@ export function useViewHelpers<TPose>(
     getIsVisible: (): ((id: string) => boolean) => getIsVisible?.() ?? alwaysVisible,
   };
 
-  return { helpers, chromeState };
+  return { helpers };
 }

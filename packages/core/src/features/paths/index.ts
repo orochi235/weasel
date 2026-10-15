@@ -91,6 +91,7 @@ export {
   anchorAt,
   anchorCount,
   anchorsInRect,
+  anchorsUnderBrush,
   deleteAnchorsAt,
   editAnchorSet,
   editAnchorSetTracked,
@@ -112,7 +113,8 @@ export {
   type SegmentHit,
 } from '@weasel-js/geom';
 export {
-  averageAnchorsAt, closestOpenEnds, joinAnchorsAt, joinSubpathEnds, simplifyPath, subpathEndAt,
+  averageAnchorsAt, closestOpenEnds, joinAnchorsAt, joinSubpathEnds, simplifyAnchorsAt, simplifyPath,
+  simplifySpan, simplifySubpath, subpathEndAt,
   type AverageAxis, type SimplifyPathOptions, type SubpathEnd,
 } from '@weasel-js/geom';
 export { pathInPoseFrame, pathInWorld, worldEditToStorage, type PathInWorldPose } from '@weasel-js/geom';
@@ -133,6 +135,7 @@ export {
   type CreatePathEditingOverlayLayerOptions,
   type PathEditingOverlayStyle,
 } from './pathEditingOverlayLayer';
+export { PATH_COMB_CHROME_ID, type PathEditCombOptions } from './pathEditComb';
 export {
   pathUnion,
   pathIntersect,

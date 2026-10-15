@@ -64,13 +64,29 @@ function withBindings(
   return [...base, ...(added as readonly BoundGesture[]).filter((b) => !base.includes(b))];
 }
 
+const CURSOR_WRAPS = new WeakMap<object, { inner: Action['cursor']; params: ActionParams }>();
+
+/** A cursor that reads params, handed the tuning's under the call's. */
+function wrapCursor(cursor: Action['cursor'], params: ActionParams): Action['cursor'] {
+  if (typeof cursor !== 'function') return cursor;
+  for (let w: Action['cursor'] = cursor; typeof w === 'function'; w = CURSOR_WRAPS.get(w)?.inner) {
+    if (CURSOR_WRAPS.get(w)?.params === params) return cursor;
+  }
+  const wrapped = (given: Record<string, unknown> | undefined) =>
+    cursor({ ...resolveParams(params as Params), ...given });
+  CURSOR_WRAPS.set(wrapped, { inner: cursor, params });
+  return wrapped;
+}
+
 function tuneOnce(action: Action, tuning: ActionTuning): Action {
   const invoker = tuning.params && action.invoker ? wrapInvoker(action.invoker, tuning.params) : action.invoker;
+  const cursor = tuning.params ? wrapCursor(action.cursor, tuning.params) : action.cursor;
   const bindings = tuning.bindings?.length ? withBindings(action.defaultBinding, tuning.bindings) : null;
-  if (invoker === action.invoker && bindings === null) return action;
+  if (invoker === action.invoker && cursor === action.cursor && bindings === null) return action;
   return {
     ...action,
     ...(invoker ? { invoker } : {}),
+    ...(cursor ? { cursor } : {}),
     ...(bindings ? { defaultBinding: bindings } : {}),
   };
 }

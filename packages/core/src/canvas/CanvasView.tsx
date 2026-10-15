@@ -399,11 +399,11 @@ export function CanvasView(props: CanvasViewProps): null {
   // changes: only the view going away ends what is in flight over it.
   useEffect(() => () => dispatcherRef.current?.cancelAll('cancel'), []);
 
-  // A controlled camera change is invisible until the surface repaints; an
-  // uncontrolled one asks for its repaint in `setView`.
+  // The surface paints this view from `live`, so any committed render of it —
+  // a controlled camera, its bounds, its layer gate — needs a frame.
   useEffect(() => {
     registry?.surface()?.requestRedraw();
-  }, [registry, viewProp]);
+  });
 
   return null;
 }

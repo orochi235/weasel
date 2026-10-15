@@ -178,8 +178,6 @@ Priority tags:
 
 ### Path editing tricks
 
-- **(P2) Smart remove brush.** Brush along a path in edit mode to delete the anchors under the
-  brush, each gap refit to the shape it replaces the way `deleteAnchorsAt` refits one.
 - **(P2) A rectangle has no anchors in path edit.** Draw stores a drawn rectangle's `data.path`
   as a `RectPath` (`kind: 'rect'`), and `classifyPathStorage`
   (`packages/core/src/features/paths/editablePath.ts`) accepts only a polygon, so double-clicking
@@ -203,8 +201,8 @@ Priority tags:
   mapping it through each node's parent on replay would make the two agree.
 - **(P3) The path commands have no icons.** `simplifyPath`, `offsetPath`, `snipAtCrossings`,
   `joinPaths`, `joinAnchors`, and `averageAnchors` show as text in draw's bar.
-  `RetractHandlesIcon` and `SymmetricHandlesIcon` (`defaults/icons/anchorIcons.tsx`) are first
-  drafts, not proofed at high resolution.
+  `RetractHandlesIcon`, `SymmetricHandlesIcon`, and `SimplifyBrushIcon`
+  (`defaults/icons/anchorIcons.tsx`) are first drafts, not proofed at high resolution.
 - **(P2) Spacing hints.** Equal-spacing markers between siblings while moving, and Alt-hover
   distance readouts between the selection and the shape under the pointer.
 - **(P2) Variable-width strokes.** A width profile along a stroke's length, edited by dragging
@@ -529,12 +527,11 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 ## Selection, actions & UI panels
 
-- **(P2) Labs still tune actions through the experimental `actions` prop.** The smart remove
-  brush, extend-path-end, and dynamic-corners labs (on their own branches when `tune` landed) set
-  `radiusPx`, `mode`, and a K binding by restating whole descriptors through `actions`. Move each
-  to `<SceneCanvas tune>` as it merges, drop the restated gestures, and give its actions
-  (`brushDeleteAnchors`, `extendPathEnd`, …) entries in core's `ActionParamSchema`
-  (`interactions/actions/actionParamSchema.ts`).
+- **(P2) Labs still tune actions through the experimental `actions` prop.** The extend-path-end
+  and dynamic-corners labs (on their own branches when `tune` landed) set `mode` and a K binding
+  by restating whole descriptors through `actions`. Move each to `<SceneCanvas tune>` as it
+  merges, drop the restated gestures, and give its actions (`extendPathEnd`, …) entries in core's
+  `ActionParamSchema` (`interactions/actions/actionParamSchema.ts`).
 
 - **(P3) Nothing puts `prefsCss` on a page.** `prefsCss(store)` writes the text and
   `prefsCssAttributes(store)` the attributes (`packages/prefs/README.md`, "As CSS custom

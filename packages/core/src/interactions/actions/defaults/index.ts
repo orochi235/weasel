@@ -26,6 +26,11 @@ export {
   nudgeAnchorsLeftAction, nudgeAnchorsRightAction,
   deleteAnchorsAction, cutPathAtAnchorAction, marqueeAnchorsAction, selectAnchorAction,
 } from './anchorEditing';
+export {
+  simplifyBrushAction, simplifyBrushToolAction, brushRingCursor,
+  SIMPLIFY_BRUSH_RADIUS_PX, SIMPLIFY_BRUSH_TOOL, type SimplifyBrushParams,
+} from './simplifyBrush';
+export { exitPathEditToolAction, pathEditToolAction, pathEditToolActive } from './pathEditTools';
 export { retractHandlesAction, makeHandlesSymmetricAction } from './anchorHandles';
 export { handleLockAngleAction, handleLockLengthAction } from './handleLocks';
 export { averageAnchorsAction, joinAnchorsAction } from './anchorJoin';

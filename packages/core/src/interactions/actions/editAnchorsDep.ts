@@ -1,6 +1,5 @@
-import type { PointOrigin } from '@weasel-js/geom';
 import type { Op } from 'core/ops/types';
-import type { HandleLocks } from './params';
+import type { HandleLocks } from './edit-anchors/params';
 
 /**
  * Adapter dep for `editAnchorsAction`: narrow read/write access to the
@@ -36,13 +35,13 @@ export interface EditAnchorsDep {
    *  labeled `label`: a setPose when the pose IS the polygon, a batched
    *  setPose+update when it lives on data.path. Given `origins` (from
    *  `editAnchorSetTracked`), a `data.skin` is renumbered in that entry. */
-  applyEdit(id: string, worldPath: unknown, label: string, origins?: readonly (PointOrigin | null)[]): void;
+  applyEdit(id: string, worldPath: unknown, label: string, origins?: readonly (import('@weasel-js/geom').PointOrigin | null)[]): void;
   /** The ops `applyEdit` would commit for the same arguments, unapplied, so
    *  a caller can make the edit part of a larger batch — the pen joining
    *  two paths edits one node and deletes the other in one undo step.
    *  Optional; a caller that needs it declines the composite edit without
    *  it. Returns `[]` when `id` has no editable polygon. */
-  editOps?(id: string, worldPath: unknown, label: string, origins?: readonly (PointOrigin | null)[]): Op[];
+  editOps?(id: string, worldPath: unknown, label: string, origins?: readonly (import('@weasel-js/geom').PointOrigin | null)[]): Op[];
 
   /**
    * Anchors currently selected within the edited path, as **flat anchor
@@ -64,6 +63,13 @@ export interface EditAnchorsDep {
   marquee: { x: number; y: number; width: number; height: number } | null;
   /** Set or clear the in-flight marquee rect. */
   setMarquee(rect: { x: number; y: number; width: number; height: number } | null): void;
+
+  /** The path-edit tool in use, or null for plain anchor editing — one of a
+   *  set of named tools, such as `'simplifyBrush'`, that each change what a
+   *  plain drag in path edit does. Always null with no path open. */
+  tool: string | null;
+  /** Switch path-edit tool, or pass null for plain anchor editing. */
+  setTool(id: string | null): void;
 
   /** The handle locks held for every handle drag, on top of the modifiers —
    *  what the `handleLock.angle` and `handleLock.length` toggles set. Absent,
