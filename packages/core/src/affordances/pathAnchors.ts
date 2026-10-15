@@ -16,6 +16,9 @@ export interface AnchorState {
   editingId: string | null;
   /** Current editable path for a node id. Non-polygon values are ignored. */
   getPose(id: string): unknown;
+  /** The path whose outline counts as a segment press, when it is not
+   *  `getPose`'s: a spiro curve, edited through its control path. */
+  getOutline?(id: string): unknown;
 }
 
 /** Options for the path-anchor affordances. */
@@ -152,10 +155,11 @@ export function createPathAnchorAffordances(
       if (editingId === null) return [];
       const edited = editablePaths(state).find(({ id }) => id === editingId);
       if (!edited) return [];
+      const outline = getAnchorState()?.getOutline?.(editingId) as PolygonPath | null | undefined;
       return [{
         id: `${editingId}:segment`,
         targetId: null,
-        shape: { kind: 'outline', path: edited.path, hitRadiusPx: hitRadius },
+        shape: { kind: 'outline', path: outline?.kind === 'polygon' ? outline : edited.path, hitRadiusPx: hitRadius },
         hitKind: 'segment',
         bind: (): AffordanceBinding => ({ initialScratch: { targetId: editingId } }),
       }];

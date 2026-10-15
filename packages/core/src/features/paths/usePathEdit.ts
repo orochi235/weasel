@@ -7,7 +7,7 @@ import type { PathEditHost } from 'canvas/SceneCanvas/pathEditHost';
 import type { RenderLayer } from 'core/layers/render';
 import { rectFromPlane, type PlaneMap } from 'core/viewport/parallax';
 import type { View } from 'core/viewport/view';
-import { liveEditablePath, type EditableShape } from './editablePath';
+import { liveEditablePath, liveSpiroKinds, type EditableShape } from './editablePath';
 import { createPathEditingOverlayLayer } from './pathEditingOverlayLayer';
 import { createPathEditState, type PathEditState } from './pathEditState';
 
@@ -50,6 +50,7 @@ export function usePathEditOverlayLayer(
       getEditingId: () => state.getEditingId() || null,
       getPose: (id, previews, view) =>
         liveEditablePath(id, live.current.nodeOf(id), previews, live.current.planeOfNode(id, view)),
+      getAnchorKinds: (id, previews) => liveSpiroKinds(id, live.current.nodeOf(id), previews),
       getSelectedAnchors: state.getSelectedAnchors,
       // Drawn by an action that ran in the edited path's plane.
       getMarquee: (view) => {

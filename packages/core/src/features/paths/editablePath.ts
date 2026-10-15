@@ -2,7 +2,7 @@
  * A node's editable polygon. It lives in one of two places: the pose itself
  * (`pose.kind === 'polygon'`), or `data.path` with a rect pose, stored pose-local.
  */
-import { pathInWorld, worldEditToStorage, type Path, type PolygonPath } from '@weasel-js/geom';
+import { pathInWorld, worldEditToStorage, type Path, type PolygonPath, type SpiroKind } from '@weasel-js/geom';
 import type { GesturePreviewSource } from 'canvas/gestureBounds';
 import { pathFromPlane } from 'canvas/planeClips';
 import { isRectPose } from 'core/geometry/autoPoseDescriptor';
@@ -128,4 +128,15 @@ export function liveEditablePath(
 ): PolygonPath | null {
   if (!node) return null;
   return pathFromPlane(pathEditPathOf(previewedShape(id, node, previews)), plane);
+}
+
+/** The spiro kind of each anchor {@link liveEditablePath} shows for node `id`,
+ *  or null when the node is not a spiro curve. */
+export function liveSpiroKinds(
+  id: string,
+  node: EditableShape | undefined | null,
+  previews: readonly GesturePreviewSource[],
+): readonly SpiroKind[] | null {
+  if (!node) return null;
+  return spiroOf(previewedShape(id, node, previews).data)?.kinds ?? null;
 }

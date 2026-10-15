@@ -107,6 +107,9 @@ export function useEditAnchorsDepSource(
         const node = sc.get(id as NodeId);
         return pathEditPathOf(node as { pose: unknown; data: unknown });
       },
+      getOutlinePath(id: string): PolygonPath | null {
+        return resolveEditablePathOf(sc.get(id as NodeId) as { pose: unknown; data: unknown });
+      },
       getStorageKind(id: string): 'pose' | 'data' | null {
         const node = sc.get(id as NodeId);
         const storage = classifyPathStorage(node as { pose: unknown; data: unknown });

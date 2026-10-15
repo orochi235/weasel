@@ -85,6 +85,22 @@ describe('SpiroLabDemo', () => {
     expect(points(wave())[1]).toEqual([160, 170]);
   });
 
+  it('adds a smooth point where the curve is dragged between two points, and moves it', async () => {
+    const canvas = await mount();
+    const { path, spiro } = wave().data as SpiroData;
+    const curve = pathToAnchors(pathInWorld(path, wave().pose as RectPose) as PolygonPath).anchors[0];
+    // Halfway along the first cubic, between the first two points.
+    const [a, b] = [curve[0], curve[1]];
+    const c1 = a.outHandle!, c2 = b.inHandle!;
+    const mid = { x: (a.x + 3 * c1.x + 3 * c2.x + b.x) / 8, y: (a.y + 3 * c1.y + 3 * c2.y + b.y) / 8 };
+
+    drag(canvas, [mid.x, mid.y], [mid.x - 20, mid.y - 30]);
+
+    const after = (wave().data as SpiroData).spiro;
+    expect(after.kinds).toEqual(['smooth', ...spiro.kinds]);
+    expect(points(wave())[1]).toEqual([Math.round(mid.x - 20), Math.round(mid.y - 30)]);
+  });
+
   it('draws a new spiro curve with the tool, one point per click', async () => {
     const canvas = await mount();
     await userEvent.click(screen.getByRole('button', { name: /^Spiro\s*B$/ }));

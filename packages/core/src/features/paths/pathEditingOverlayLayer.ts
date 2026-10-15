@@ -6,7 +6,10 @@
 
 import type { DrawCommand } from '@weasel-js/renderer';
 import type { RenderLayer } from 'core/layers/render';
-import { type Path, type PolygonPath, type View, linePath, pathToAnchors, circlePath, rectMarkerPath, squarePath } from '@weasel-js/geom';
+import {
+  type Path, type PolygonPath, type SpiroKind, type View, linePath, pathToAnchors, circlePath, rectMarkerPath,
+} from '@weasel-js/geom';
+import { anchorMarkerPath } from './anchorMarkers';
 import type { GesturePreviewSource } from 'canvas/gestureBounds';
 import { previewSourcesFrom, isVisibleFrom } from 'canvas/drawEnvelope';
 
@@ -28,6 +31,10 @@ export interface CreatePathEditingOverlayLayerOptions {
    * layer is a parallax plane stores its path in the plane's.
    */
   getPose(id: string, previews: readonly GesturePreviewSource[], view: View): Path | null;
+  /** The spiro kind of each anchor, by flat index, for a node whose anchors
+   *  are spiro points; null for an ordinary path. Each kind draws its own
+   *  marker (`anchorMarkerPath`). Resolve against `previews` as `getPose` does. */
+  getAnchorKinds?(id: string, previews: readonly GesturePreviewSource[]): readonly SpiroKind[] | null;
   /** Flat indices of the selected anchors. Selected anchors render
    *  filled; unselected ones hollow. */
   getSelectedAnchors?(): ReadonlySet<number>;
@@ -95,10 +102,12 @@ export function createPathEditingOverlayLayer(
       // the chrome still gets grabbable invisible anchors, or vice versa.
       const isVisible = isVisibleFrom(data);
       if (isVisible && !isVisible('path-edit.anchors')) return [];
-      const pose = opts.getPose(id, previewSourcesFrom(data), view);
+      const previews = previewSourcesFrom(data);
+      const pose = opts.getPose(id, previews, view);
       if (!pose || pose.kind !== 'polygon') return [];
+      const kinds = opts.getAnchorKinds?.(id, previews) ?? null;
 
-      const { anchors } = pathToAnchors(pose as PolygonPath);
+      const { anchors, closed: closedSubs } = pathToAnchors(pose as PolygonPath);
       const selected = opts.getSelectedAnchors?.() ?? EMPTY_SELECTION;
       const out: DrawCommand[] = [];
 
@@ -106,9 +115,16 @@ export function createPathEditingOverlayLayer(
       // `enumerateAnchors` — the same numbering the affordances and the
       // anchor selection use. See `anchorEdits` for why they agree.
       let flat = 0;
-      for (const sub of anchors) {
-        for (const a of sub) {
+      for (const [s, sub] of anchors.entries()) {
+        const onScreen = (i: number) => {
+          const n = sub[(i + sub.length) % sub.length];
+          const [x, y] = w2s(n.x, n.y, view);
+          return { x, y };
+        };
+        const closed = closedSubs[s];
+        for (const [i, a] of sub.entries()) {
           const isSelected = selected.has(flat);
+          const kind = kinds?.[flat] ?? null;
           flat++;
           const [ax, ay] = w2s(a.x, a.y, view);
 
@@ -140,10 +156,12 @@ export function createPathEditingOverlayLayer(
             });
           }
 
-          // Anchor square — drawn on top.
+          // The anchor's marker, drawn on top.
+          const prev = i > 0 || closed ? onScreen(i - 1) : null;
+          const next = i < sub.length - 1 || closed ? onScreen(i + 1) : null;
           out.push({
             kind: 'path',
-            path: squarePath(ax, ay, style.anchorSizePx),
+            path: anchorMarkerPath(kind, { x: ax, y: ay }, style.anchorSizePx, prev, next),
             fill: { paint: {
               kind: 'solid',
               color: isSelected ? style.anchorFillSelected : style.anchorFill,

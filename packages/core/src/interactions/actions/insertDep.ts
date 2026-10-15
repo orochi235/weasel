@@ -1,5 +1,7 @@
 import type { PolygonPath, SpiroPoint } from '@weasel-js/geom';
 import type { DragSample } from '@weasel-js/routing';
+import type { NodeId } from 'core/scene/types';
+import type { Op } from 'core/ops/types';
 
 /**
  * Per-kind extra geometry passed to `InsertDep.commit`.
@@ -37,3 +39,37 @@ export type InsertExtras =
       preview?: 'bitmap' | 'outline';
     }
   | { kind: string; [extra: string]: unknown };
+
+/** Adapter dep for `insertAction`. The `extras` carry the active tool's kind
+ *  + per-kind geometry. */
+export interface InsertDep {
+  /**
+   * Materialise a new node from the given drag-rect bounds and typed
+   * per-kind extras. Returns the new node's id, or `null` if the consumer
+   * rejected the insert (e.g. sub-threshold bounds, unknown kind).
+   */
+  commit(
+    bounds: { x: number; y: number; width: number; height: number },
+    extras: InsertExtras,
+  ): NodeId | null;
+  /**
+   * What `commit` would apply, unapplied: the new node's id and the ops that
+   * insert it, for a caller that has more to put in the same undo step. The
+   * pen joins two paths this way. Without it such a caller declines.
+   */
+  build?(
+    bounds: { x: number; y: number; width: number; height: number },
+    extras: InsertExtras,
+  ): { id: NodeId; ops: Op[] } | null;
+  /** The scene layer `commit` puts the node on. An insert on a layer carrying
+   *  `parallax` is dragged out in that plane's world, so `bounds` arrive
+   *  there too. Omitted: the camera's world. */
+  layer?(): string;
+}
+
+/** Holder for the insert gesture in flight in one input scope. `gesture` is
+ *  `insertAction`'s own state, opaque to everything else, and `null` between
+ *  gestures. A source must return the same object on every read. */
+export interface InsertLive {
+  gesture: unknown;
+}

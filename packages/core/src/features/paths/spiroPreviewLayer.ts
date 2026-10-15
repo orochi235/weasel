@@ -5,11 +5,9 @@
  * curve. Runs in screen space so markers keep their size under zoom.
  */
 import type { DrawCommand } from '@weasel-js/renderer';
-import {
-  circlePath, polygonFromPoints, spiroToPath, squarePath, transformPath,
-  type Affine, type PolygonPath, type SpiroKind, type SpiroPoint,
-} from '@weasel-js/geom';
+import { circlePath, spiroToPath, transformPath, type Affine, type PolygonPath, type SpiroPoint } from '@weasel-js/geom';
 import type { RenderLayer } from 'core/layers/render';
+import { anchorMarkerPath } from './anchorMarkers';
 
 /** What the spiro tool has placed, as the preview reads it each frame. */
 export interface SpiroPreviewState {
@@ -27,20 +25,8 @@ export interface CreateSpiroPreviewLayerOptions {
   color?: string;
 }
 
-const MARKER_PX = 4;
+const MARKER_PX = 8;
 const CLOSE_HINT_PX = 8;
-
-/** A point's marker: a circle for a smooth point, a square for a corner, and
- *  a triangle pointing along the line for a point beside one. */
-function marker(kind: SpiroKind, x: number, y: number): PolygonPath {
-  const r = MARKER_PX;
-  if (kind === 'smooth') return circlePath(x, y, r);
-  if (kind === 'corner') return squarePath(x, y, r * 1.6);
-  const dir = kind === 'left' ? -1 : 1;
-  return polygonFromPoints([
-    { x: x + dir * r, y: y - r }, { x: x + dir * r, y: y + r }, { x: x - dir * r, y },
-  ]);
-}
 
 /** Render layer drawing the spiro tool's curve in progress; nothing while
  *  no point is placed. */
@@ -63,9 +49,11 @@ export function createSpiroPreviewLayer(opts: CreateSpiroPreviewLayerOptions): R
         const toScreen: Affine = [view.scale.x, 0, 0, view.scale.y, -view.x * view.scale.x, -view.y * view.scale.y];
         out.push({ kind: 'path', path: transformPath(path, toScreen) as PolygonPath, stroke: { paint, width: 1 } });
       }
-      for (const p of points) {
-        out.push({ kind: 'path', path: marker(p.kind, sx(p), sy(p)), fill: { paint }, stroke: { paint, width: 1 } });
-      }
+      const screen = points.map((p) => ({ x: sx(p), y: sy(p) }));
+      points.forEach((p, i) => {
+        const path = anchorMarkerPath(p.kind, screen[i], MARKER_PX, screen[i - 1] ?? null, screen[i + 1] ?? null);
+        out.push({ kind: 'path', path, fill: { paint }, stroke: { paint, width: 1 } });
+      });
       if (closeHint) {
         out.push({ kind: 'path', path: circlePath(sx(points[0]), sy(points[0]), CLOSE_HINT_PX), stroke: { paint, width: 1.5 } });
       }

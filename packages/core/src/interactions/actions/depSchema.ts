@@ -22,9 +22,9 @@ import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { PoseDescriptor } from './resize/geometry';
 import type { GeometryProjection } from './geometryProjection';
 import type { Point2, DebugSink, LongPressState } from '@weasel-js/routing';
-import type { InsertExtras } from './insertExtras';
+import type { InsertDep, InsertExtras, InsertLive } from './insertDep';
 
-export type { InsertExtras };
+export type { InsertDep, InsertExtras, InsertLive };
 
 /** Minimal view API the action layer consumes. */
 export interface ViewApi {
@@ -120,6 +120,9 @@ export interface EditAnchorsDep {
    *  flight previews — callers that need live state read the dispatcher's
    *  in-flight handles. */
   getEditablePath(id: string): unknown;
+  /** The drawn geometry, in world coordinates, whose outline is a segment press: a spiro
+   *  node's curve rather than its control path. Absent, `getEditablePath`'s path. */
+  getOutlinePath?(id: string): unknown;
   /** Returns where the polygon is stored — `'pose'` when `node.pose`
    *  IS the polygon, `'data'` when it lives on `node.data.path` with a
    *  rect pose, or `null` when the node has no editable polygon. */
@@ -265,40 +268,6 @@ export interface IngestionDep {
 export interface SnapDep {
   /** Snap a world-space point. Return `p` unchanged to opt out. */
   point(p: { x: number; y: number }): { x: number; y: number };
-}
-
-/** Adapter dep for `insertAction`. The `extras` carry the active tool's kind
- *  + per-kind geometry. */
-export interface InsertDep {
-  /**
-   * Materialise a new node from the given drag-rect bounds and typed
-   * per-kind extras. Returns the new node's id, or `null` if the consumer
-   * rejected the insert (e.g. sub-threshold bounds, unknown kind).
-   */
-  commit(
-    bounds: { x: number; y: number; width: number; height: number },
-    extras: InsertExtras,
-  ): NodeId | null;
-  /**
-   * What `commit` would apply, unapplied: the new node's id and the ops that
-   * insert it, for a caller that has more to put in the same undo step. The
-   * pen joins two paths this way. Without it such a caller declines.
-   */
-  build?(
-    bounds: { x: number; y: number; width: number; height: number },
-    extras: InsertExtras,
-  ): { id: NodeId; ops: Op[] } | null;
-  /** The scene layer `commit` puts the node on. An insert on a layer carrying
-   *  `parallax` is dragged out in that plane's world, so `bounds` arrive
-   *  there too. Omitted: the camera's world. */
-  layer?(): string;
-}
-
-/** Holder for the insert gesture in flight in one input scope. `gesture` is
- *  `insertAction`'s own state, opaque to everything else, and `null` between
- *  gestures. A source must return the same object on every read. */
-export interface InsertLive {
-  gesture: unknown;
 }
 
 /**

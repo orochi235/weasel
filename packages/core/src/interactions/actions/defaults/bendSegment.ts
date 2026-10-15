@@ -7,8 +7,9 @@
  * ties the marquee's `empty` and move's `selected-body` on specificity and
  * registers ahead of the marquee; move turns segment presses down itself.
  * An anchor's own affordance sits above the segment's, so a press on an
- * anchor is the anchor drag's. A spiro curve declines: its control path's
- * segments carry no handles for the solve to keep.
+ * anchor is the anchor drag's. On a spiro curve, which has no handles to
+ * bend, a press on the curve adds a smooth point there and drags it
+ * (`spiroSegmentDrag`).
  */
 
 import type { Action, InvocationCtx, OngoingHandle } from '@weasel-js/routing';
@@ -18,10 +19,7 @@ import { bendSegment, editAnchorSetTracked, type PointOrigin, type PolygonPath }
 import { inPlane, editingLayer } from '../planeInput';
 import { pathEditPreview } from '../edit-anchors/preview';
 import { segmentUnder } from './segmentUnder';
-import type { EditAnchorsDep } from '../depSchema';
-import { spiroOf } from 'features/paths/spiroShape';
-
-const editsSpiro = (dep: EditAnchorsDep): boolean => spiroOf(dep.getNodeShape(dep.editingId)?.data) !== null;
+import { editsSpiro, spiroInsertAt, spiroInsertDrag } from './spiroSegmentDrag';
 
 const BEND_CURSOR: CursorSpec = 'grab';
 
@@ -35,8 +33,10 @@ export const bendSegmentAction: Action & { requires: string[] } = inPlane({
   invoker: {
     timing: 'ongoing',
     start(ctx: InvocationCtx): OngoingHandle {
-      const under = segmentUnder(ctx.deps, ctx.world.x, ctx.world.y);
-      if (!under || editsSpiro(under.dep)) return {};
+      const spiro = spiroInsertAt(ctx.deps, ctx.world.x, ctx.world.y);
+      if (spiro) return spiroInsertDrag(spiro);
+      const under = editsSpiro(ctx.deps) ? null : segmentUnder(ctx.deps, ctx.world.x, ctx.world.y);
+      if (!under) return {};
       const { dep, path: originPath, hit } = under;
       const id = dep.editingId;
       const press = { x: ctx.world.x, y: ctx.world.y };
@@ -64,8 +64,10 @@ export const bendSegmentAction: Action & { requires: string[] } = inPlane({
     },
   },
   enabled: (deps, at) => {
-    if (!deps?.editAnchors?.editingId || editsSpiro(deps.editAnchors)) return ActionDisabledReason.NotApplicable;
-    if (at && !segmentUnder(deps, at.x, at.y)) return ActionDisabledReason.NotApplicable;
+    if (!deps?.editAnchors?.editingId) return ActionDisabledReason.NotApplicable;
+    const hit = (p: { x: number; y: number }) =>
+      (editsSpiro(deps) ? spiroInsertAt(deps, p.x, p.y) : segmentUnder(deps, p.x, p.y)) !== null;
+    if (at && !hit(at)) return ActionDisabledReason.NotApplicable;
     return true;
   },
 }, editingLayer);

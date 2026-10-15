@@ -107,6 +107,10 @@ export function anchorStateFrom(
       // `getEditablePath`: both pose-as-polygon and `data.path` consumers
       // resolve correctly.
       getPose: (id) => (toCamera ? toCamera(id, dep.getEditablePath(id)) : dep.getEditablePath(id)),
+      getOutline: (id) => {
+        const path = dep.getOutlinePath?.(id) ?? dep.getEditablePath(id);
+        return toCamera ? toCamera(id, path) : path;
+      },
     };
   };
 }
