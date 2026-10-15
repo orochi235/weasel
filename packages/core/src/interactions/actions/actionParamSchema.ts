@@ -39,6 +39,8 @@ declare module '@weasel-js/routing' {
     'tool.activate': { toolId: string };
     editAnchors: EditAnchorsParams;
     simplifyBrush: SimplifyBrushParams;
+    bridgePaths: { tension?: number };
+    bridgeAnchors: { tension?: number };
   }
 }
 

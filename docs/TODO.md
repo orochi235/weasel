@@ -200,7 +200,8 @@ Priority tags:
   drag steps in a different direction from the drag. Recording the move in world space and
   mapping it through each node's parent on replay would make the two agree.
 - **(P3) The path commands have no icons.** `simplifyPath`, `offsetPath`, `snipAtCrossings`,
-  `joinPaths`, `joinAnchors`, and `averageAnchors` show as text in draw's bar.
+  `joinPaths`, `bridgePaths`, `joinAnchors`, `bridgeAnchors`, and `averageAnchors` show as text
+  in draw's bar.
   `RetractHandlesIcon`, `SymmetricHandlesIcon`, and `SimplifyBrushIcon`
   (`defaults/icons/anchorIcons.tsx`) are first drafts, not proofed at high resolution.
 - **(P2) Spacing hints.** Equal-spacing markers between siblings while moving, and Alt-hover
