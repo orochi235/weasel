@@ -209,14 +209,6 @@ Priority tags:
 
 ## Rendering & paint
 
-- **(P3) Building a `WeaselRenderer` costs twice what it did on 2026-10-13.** A one-shot
-  `renderSceneToPixels` of one solid rect took 115 to 122 ms in headless Chromium on teitou at
-  `9e0703c8a`, 166 to 188 ms after `9253a8ba4` (a run holds 15 textures) and 208 to 215 ms after
-  `906fd1905` (a run takes 8 color matrices); a second render through one `createRasterSession`
-  takes about 1 ms at every one of those commits. So the cost is the build, most likely compiling
-  the larger batch shader (inferred, not profiled). Every one-shot render and every new canvas
-  pays it.
-
 - **(P3) Pattern fills: no image-upload patterns.** WeaselDraw's picker covers the four built-in
   tiles only, each a paint kind of its own (`{ kind: 'hatch', color }`). A user-supplied bitmap
   needs a paint kind that persists the image itself (data URI, or a document-scoped asset table),
@@ -966,11 +958,12 @@ only story runner in the repo.
   is rebuilt, and a node's agent refuses a launch against a tree that lost its stamp only after
   `onto push <node>`.
 
-- **(P3) rolldown could not write a dependency map during `packages/forge/src/vite/plugin.test.ts`,
-  once.** One fleet run at `65c06d7c2` passed every file and exited 1 on an unhandled error:
+- **(P3) rolldown could not write a dependency file during `packages/forge/src/vite/plugin.test.ts`,
+  twice.** A fleet run at `65c06d7c2` passed every file and exited 1 on an unhandled error:
   `Failed to write file in …/T/forge-plugin-*/.vite/deps_temp_*/polygon-clipping.js.map`, `Invalid
   argument (os error 22)`, after "serves the component graph from source, and pushes it again when
-  a component file changes". The test makes that directory and removes it when it ends, so the
+  a component file changes". A run on teitou at `f4100e96c` (2026-10-15) did the same after the
+  same test, on `react-dom.js`. The test makes that directory and removes it when it ends, so the
   dev server's dependency scan may have still been writing; not confirmed.
 
 - **(P2) What is left of the `browser` project's fleet failures.** Measured on 2026-10-15 from the

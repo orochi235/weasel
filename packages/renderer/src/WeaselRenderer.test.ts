@@ -242,6 +242,8 @@ describe('dispose', () => {
       path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 },
       fill: { paint: { color: '#f00' } },
     }] as never);
+    // The rest are built on first use; build them so dispose has all to free.
+    r._pathFill(); r._pathFillVColor(); r._gradFill(); r._patternFill();
     r.dispose();
     const names = rec.calls.map((c) => c.name);
     // Every built-in: pathFill, pathFillVColor, batchFill, gradFill, patternFill.
@@ -260,8 +262,43 @@ describe('dispose', () => {
     rec.reset();
     r.dispose();
     const names = rec.calls.map((c) => c.name);
-    // 5 built-ins + 1 registered.
-    expect(names.filter((n) => n === 'deleteProgram').length).toBe(6);
+    // The batch program, built with the renderer, + 1 registered. The other
+    // built-ins were never drawn with, so never built.
+    expect(names.filter((n) => n === 'deleteProgram').length).toBe(2);
+  });
+
+  it('builds the batch program alone until a frame draws with another', () => {
+    const rec = makeGLRecorder();
+    const r = new WeaselRenderer({ gl: rec.gl, width: 10, height: 10, dpr: 1 });
+    const links = () => rec.calls.filter((c) => c.name === 'linkProgram').length;
+    expect(links()).toBe(1);
+    r.render([{
+      kind: 'path',
+      path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 },
+      fill: { paint: { color: '#f00' } },
+    }] as never);
+    expect(links()).toBe(1);
+    // Per-vertex colors are the vertex-color program's, built on this frame.
+    const vertexColored = {
+      kind: 'path',
+      path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 },
+      fill: { paint: { kind: 'solid', color: '#fff' } },
+      vertexColors: [1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1, 1, 1, 0, 1],
+    };
+    r.render([vertexColored] as never);
+    expect(links()).toBe(2);
+    r.render([vertexColored] as never);
+    expect(links()).toBe(2);
+  });
+
+  it('builds a lazy program again on a restored context', () => {
+    const canvas = document.createElement('canvas');
+    const rec = makeGLRecorder();
+    const r = new WeaselRenderer({ gl: rec.gl, canvas, width: 10, height: 10, dpr: 1 });
+    const first = r._pathFill();
+    canvas.dispatchEvent(new Event('webglcontextlost'));
+    canvas.dispatchEvent(new Event('webglcontextrestored'));
+    expect(r._pathFill()).not.toBe(first);
   });
 
   it('looks up a uniform the program declares in its own vertex shader', () => {

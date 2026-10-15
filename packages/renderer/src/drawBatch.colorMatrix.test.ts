@@ -64,27 +64,41 @@ describe('renderer — a group color matrix and the run', () => {
   const draws = (): number[] =>
     recorder.calls.filter((c) => c.name === 'drawElements').map((c) => c.args[1] as number);
 
+  /** The program bound at each `drawElements`, replayed from `useProgram`. */
+  const drawPrograms = (): unknown[] => {
+    const out: unknown[] = [];
+    let live: unknown = null;
+    for (const c of recorder.calls) {
+      if (c.name === 'useProgram') live = c.args[0];
+      else if (c.name === 'drawElements') out.push(live);
+    }
+    return out;
+  };
+
   /**
-   * What the batch program held at each draw, one value per matrix the run
-   * draws under: `u_colorBias[i].r`, which is 0.25 under `TINTED` and 0 under
-   * identity, and `u_alpha[i]`. An upload the renderer skipped leaves the
-   * previous one in force, as it does on the GPU.
+   * What the batch program bound at each draw held, one value per matrix the
+   * run draws under: `u_colorBias[i].r`, which is 0.25 under `TINTED` and 0
+   * under identity, and `u_alpha[i]`. An upload the renderer skipped leaves
+   * the previous one in force, as it does on the GPU. A run under one matrix
+   * draws with `_batchFill`, one under more with `_batchFillMatrices`, and
+   * each holds its own.
    */
   const uniformsAtDraws = (): { bias: number[]; alpha: number[] }[] => {
-    const uBias = r._batchFill().uniform('u_colorBias');
-    const uAlpha = r._batchFill().uniform('u_alpha');
+    const programs = [r._batchFill(), r._batchFillMatrices()];
+    const held = new Map(programs.map((p) => [p.handle as unknown, { bias: [] as number[], alpha: [] as number[] }]));
+    const owner = (loc: unknown, name: string) => programs.find((p) => p.uniform(name) === loc)?.handle;
     const out: { bias: number[]; alpha: number[] }[] = [];
-    let bias: number[] = [];
-    let alpha: number[] = [];
+    let bound: unknown = null;
     for (const c of recorder.calls) {
-      if (c.name === 'uniform4fv' && c.args[0] === uBias) {
+      if (c.name === 'useProgram') bound = c.args[0];
+      const biasOf = c.name === 'uniform4fv' ? owner(c.args[0], 'u_colorBias') : undefined;
+      if (biasOf !== undefined) {
         const data = c.args[1] as Float32Array;
-        bias = Array.from({ length: data.length / 4 }, (_, i) => data[4 * i]);
+        held.get(biasOf)!.bias = Array.from({ length: data.length / 4 }, (_, i) => data[4 * i]);
       }
-      if (c.name === 'uniform1fv' && c.args[0] === uAlpha) {
-        alpha = Array.from(c.args[1] as Float32Array);
-      }
-      if (c.name === 'drawElements') out.push({ bias, alpha });
+      const alphaOf = c.name === 'uniform1fv' ? owner(c.args[0], 'u_alpha') : undefined;
+      if (alphaOf !== undefined) held.get(alphaOf)!.alpha = Array.from(c.args[1] as Float32Array);
+      if (c.name === 'drawElements') out.push({ ...held.get(bound)! });
     }
     return out;
   };
@@ -151,6 +165,8 @@ describe('renderer — a group color matrix and the run', () => {
     const swap = new Array<number>(20).fill(0);
     swap[2] = 1; swap[6] = 1; swap[12] = 1; swap[18] = 1; swap[9] = 0.5;
     r.render([group({ colorMatrix: swap }, [img(0)])]);
+    // One matrix in the run, so the program that indexes entry 0 draws it.
+    expect(drawPrograms()).toEqual([r._batchFill().handle]);
     const uMatrix = r._batchFill().uniform('u_colorMatrix');
     const sent = recorder.calls.find((c) => c.name === 'uniformMatrix4fv' && c.args[0] === uMatrix)!;
     const m = Array.from(sent.args[2] as Float32Array);
@@ -224,6 +240,7 @@ describe('renderer — a group color matrix and the run', () => {
     expect(draws()).toEqual([30]);
     expect(biasAtDraws()).toEqual([[0, 0.25, 0.125]]);
     expect(quadMatrices()).toEqual([0, 0, 1, 2, 0]);
+    expect(drawPrograms()).toEqual([r._batchFillMatrices().handle]);
     // The last rect is mapped by the second matrix: red 0.5 + 0.125.
     expect(quadColors()[4]).toEqual([0.625, 0, 0, 1]);
   });
