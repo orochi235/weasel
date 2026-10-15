@@ -51,7 +51,12 @@ describe('measureBetween', () => {
   it('reads the offset, its length, and its angle', () => {
     const m = measureBetween({ x: 1, y: 2 }, { x: 4, y: 6 });
     expect(m).toMatchObject({ dx: 3, dy: 4, distance: 5 });
-    expect(m.angle).toBeCloseTo(Math.atan2(4, 3), 12);
+    expect(m.angle).toBeCloseTo(-Math.atan2(4, 3), 12);
+  });
+
+  it('reads a line rising up and to the right as a positive angle, like a protractor', () => {
+    expect(measureBetween({ x: 0, y: 0 }, { x: 10, y: -10 }).angle).toBeCloseTo(Math.PI / 4, 12);
+    expect(measureBetween({ x: 0, y: 0 }, { x: -10, y: 0 }).angle).toBeCloseTo(Math.PI, 12);
   });
 
   it('reads a zero angle for a zero-length measurement', () => {
@@ -85,7 +90,7 @@ describe('measure drag', () => {
   it('holds the angle to the binding\'s angleStep with Shift', () => {
     const rig = setup();
     rig.measure({ x: 0, y: 0 }, { x: 100, y: 70 }, { shift: true, params: () => ({ angleStep: Math.PI / 4 }) });
-    expect(rig.store.get()!.angle).toBeCloseTo(Math.PI / 4, 12);
+    expect(rig.store.get()!.angle).toBeCloseTo(-Math.PI / 4, 12);
   });
 
   it('drops the measurement when the drag is canceled', () => {
@@ -120,6 +125,15 @@ describe('transform by the measurement', () => {
     expect(lastTransform(rig.scene)).toEqual({ kind: 'translate', dx: 30.5, dy: -10.25 });
     rig.scene.undo();
     expect(rig.pose(rig.ids[0])).toMatchObject({ x: 0, y: 0 });
+  });
+
+  it('turns the selection counterclockwise on screen for a rising measurement', () => {
+    const rig = setup();
+    rig.measure({ x: 0, y: 0 }, { x: 10, y: -10 });
+    rig.run(MEASURE_ACTION_IDS.rotateBy);
+    // The canvas's rotation is clockwise-positive, so counterclockwise is negative.
+    expect(rig.pose(rig.ids[0]).rotation).toBeCloseTo(-Math.PI / 4, 12);
+    expect(lastTransform(rig.scene)).toMatchObject({ kind: 'rotate', angle: -Math.PI / 4 });
   });
 
   it('rotates the selection by exactly the measured angle, as one undo step', () => {

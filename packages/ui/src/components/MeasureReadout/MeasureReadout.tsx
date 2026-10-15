@@ -25,8 +25,9 @@ export interface MeasureReadoutProps {
  * The measure tool's readout: a chip pinned to the bottom of the nearest
  * positioned ancestor while a measurement is held, with its distance, offset,
  * and angle in world units, and the `measure` group's commands — Move by,
- * Rotate by, Clear — drawn from the actions registry. The angle reads in the
- * canvas's own sense, clockwise positive, so it is the angle "Rotate by" turns.
+ * Rotate by, Clear — drawn from the actions registry. The angle reads like a
+ * protractor, counterclockwise-positive: a line rising to the right at 30°
+ * reads 30°, and Rotate by turns the selection that way.
  */
 export function MeasureReadout({ store, className }: MeasureReadoutProps): ReactElement | null {
   const m = useMeasurement(store);

@@ -108,12 +108,14 @@ function rotateBy(store: MeasurementStore): Action {
         const scene = deps.scene as AnyScene | undefined;
         if (!m || !selection || !scene) return;
         const selected = selection.get() as string[];
+        // The measurement reads counterclockwise-positive; the canvas turns clockwise-positive.
+        const turn = -m.angle;
         const ops = rotateSelectionOps(
-          scene, selected, deps.view, deps.poseDescriptor, m.angle, 'union', ROTATE_LABEL,
+          scene, selected, deps.view, deps.poseDescriptor, turn, 'union', ROTATE_LABEL,
         );
         if (ops.length === 0) return;
         commitOps(deps, ops, ROTATE_LABEL);
-        recordTransform(scene, { kind: 'rotate', angle: m.angle, pivot: 'union' }, selected);
+        recordTransform(scene, { kind: 'rotate', angle: turn, pivot: 'union' }, selected);
       },
     },
   };

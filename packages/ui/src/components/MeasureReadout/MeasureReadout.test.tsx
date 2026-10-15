@@ -37,7 +37,7 @@ describe('MeasureReadout', () => {
     mount(store);
     act(() => store.set(measureBetween({ x: 10, y: 10 }, { x: 40, y: -30 })));
     const values = screen.getAllByRole('status').map((el) => el.textContent);
-    expect(values).toEqual(['50.00', '30.00', '−40.00', '−53.13°']);
+    expect(values).toEqual(['50.00', '30.00', '−40.00', '53.13°']);
     expect(screen.getByRole('button', { name: 'Move by' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Rotate by' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Measure' })).toBeNull();

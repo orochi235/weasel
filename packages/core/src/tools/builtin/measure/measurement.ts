@@ -4,9 +4,11 @@ import { createEmitter } from '@weasel-js/registry';
 export interface MeasurePoint { x: number; y: number }
 
 /**
- * The offset from `start` to `end`, in world units. `angle` is in radians on
- * the world's own axes — y grows downward, so a positive angle turns
- * clockwise on screen, the same sense a rotate of that many radians turns.
+ * The offset from `start` to `end`, in world units. `dx` and `dy` are on the
+ * world's own axes, where y grows downward; `angle` reads like a protractor
+ * instead, counterclockwise-positive on screen, so a line rising up and to
+ * the right at 30° reads +30°. The canvas's own rotations are
+ * clockwise-positive: a rotate that follows the line turns by `-angle`.
  */
 export interface Measurement {
   readonly start: MeasurePoint;
@@ -14,7 +16,7 @@ export interface Measurement {
   readonly dx: number;
   readonly dy: number;
   readonly distance: number;
-  /** `atan2(dy, dx)`, in `(-π, π]`. Zero for a zero-length measurement. */
+  /** `atan2(-dy, dx)`, in `(-π, π]`. Zero for a zero-length measurement. */
   readonly angle: number;
 }
 
@@ -28,7 +30,8 @@ export function measureBetween(start: MeasurePoint, end: MeasurePoint): Measurem
     dx,
     dy,
     distance: Math.hypot(dx, dy),
-    angle: dx === 0 && dy === 0 ? 0 : Math.atan2(dy, dx),
+    // `|| 0` drops the sign of a negated zero, which would read a leftward line as -π.
+    angle: dx === 0 && dy === 0 ? 0 : Math.atan2(-dy || 0, dx),
   };
 }
 

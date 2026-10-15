@@ -44,9 +44,15 @@ export default meta;
 
 type Story = StoryObj<typeof Held>;
 
+/** Down and to the right: the angle reads negative, clockwise below the horizontal. */
 export const Measuring: Story = {};
 
-/** Up and to the left: negative offsets and angle, with the minus sign. */
+/** Up and to the right: the angle reads positive, like a protractor, and dy is negative. */
+export const Rising: Story = {
+  args: { from: { x: 10, y: 200 }, to: { x: 183.2, y: 100 } },
+};
+
+/** Up and to the left: both offsets negative, with the minus sign, and an angle past 90°. */
 export const Negative: Story = {
   args: { from: { x: 300, y: 200 }, to: { x: 12.5, y: 40 } },
 };
