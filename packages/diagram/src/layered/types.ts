@@ -8,6 +8,11 @@ export interface Hop {
   to: string;
   /** The graph edge this hop is part of. */
   edge: string;
+  /** Where along `from`'s extent across the rank the hop leaves it, 0 at its
+   *  low corner and 1 at its high one: its port's place. Default 0.5. */
+  fromAt?: number;
+  /** The same, where the hop arrives at `to`. */
+  toAt?: number;
 }
 
 /** A rank's members in order. A placeholder is a `GraphNode` whose id starts

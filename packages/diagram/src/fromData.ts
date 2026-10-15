@@ -9,7 +9,7 @@
 import type { AddNodeSpec, MarkerRef, RectPose, Stroke } from '@weasel-js/core';
 import { DEFAULT_GROUP_INSET, expandGroupEdges } from './cluster';
 import { groupSpecs, resolveGroups, type ResolvedGroup } from './dataGroups';
-import { buildBody, measureBody, sizeToBody, type BodySpec, type MeasureRowText, type Row, type RowTextStyle } from './body';
+import { bodyTrait, buildBody, measureBody, sizeToBody, type BodySpec, type MeasureRowText, type Row, type RowTextStyle } from './body';
 import { edgeSpecs } from './dataEdges';
 import type { DiagramEdge } from './edge';
 import { force } from './force';
@@ -282,7 +282,8 @@ export function diagramScene(data: DiagramData, opts: DiagramSceneOptions = {}):
       { ...(n.at ?? { x: i, y: i }), width: n.width ?? opts.minWidth ?? MIN_WIDTH, height: n.height ?? 0 },
       measureBody(bodies[i]!, measure),
     );
-    return { id: n.id, bounds: pose, pinned: n.pinned === true };
+    const ports = bodyTrait(bodies[i]!, pose, measure).ports;
+    return { id: n.id, bounds: pose, pinned: n.pinned === true, ...(ports !== undefined ? { ports } : {}) };
   });
   const graphGroups: GraphGroup[] = groups.map((g) => ({
     id: g.group.id,
@@ -300,7 +301,13 @@ export function diagramScene(data: DiagramData, opts: DiagramSceneOptions = {}):
   }
   const graph = graphOf(
     seeds,
-    expandGroupEdges(edges.map((e) => ({ id: edgeIdOf(e), from: e.from, to: e.to })), graphGroups),
+    expandGroupEdges(edges.map((e) => ({
+      id: edgeIdOf(e),
+      from: e.from,
+      to: e.to,
+      ...(e.fromPort ? { fromPort: e.fromPort } : {}),
+      ...(e.toPort ? { toPort: e.toPort } : {}),
+    })), graphGroups),
     graphGroups,
   );
   const layout = typeof opts.layout === 'function' ? opts.layout

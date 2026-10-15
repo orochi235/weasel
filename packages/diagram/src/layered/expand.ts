@@ -3,6 +3,7 @@
  * ordering counts its crossings and placement leaves it room.
  */
 import type { Graph, GraphEdge, GraphNode } from '../graph';
+import { DEFAULT_PORTS } from '../ports';
 import { center, extent, graphOrder, seededOrder, type LayoutAxes } from '../layout';
 import { PLACEHOLDER, type Hop, type Rows } from './types';
 
@@ -31,7 +32,22 @@ interface Drawn {
   id: string;
   from: string;
   to: string;
+  fromPort?: string;
+  toPort?: string;
   back: boolean;
+}
+
+/**
+ * Where a port sits along its node's extent across the rank, 0 to 1. A port
+ * with several places counts at their mean, since the route picks among them
+ * only once everything is placed; no port named is the middle.
+ */
+export function portAt(node: GraphNode | undefined, port: string | undefined, axis: 'x' | 'y'): number {
+  if (node === undefined || port === undefined) return 0.5;
+  const spec = (node.ports ?? DEFAULT_PORTS).find((p) => p.id === port);
+  if (spec === undefined) return 0.5;
+  const places = [spec.at, ...(spec.sites ?? [])];
+  return places.reduce((sum, at) => sum + (axis === 'x' ? at.u : at.v), 0) / places.length;
 }
 
 /**
@@ -79,6 +95,10 @@ export function expand(graph: Graph, ranks: ReadonlyMap<string, number>, back: R
   const chains: Expanded['chains'] = new Map();
   for (const d of drawnEdges(graph.edges, back)) {
     const [from, to] = d.back ? [d.to, d.from] : [d.from, d.to];
+    const [fromPort, toPort] = d.back ? [d.toPort, d.fromPort] : [d.fromPort, d.toPort];
+    // A group end's members have no port of the edge's own.
+    const leave = (id: string) => (id === from ? { fromAt: portAt(graph.node(id), fromPort, axes.cross) } : {});
+    const arrive = (id: string) => (id === to ? { toAt: portAt(graph.node(id), toPort, axes.cross) } : {});
     const a = span(from);
     const b = span(to);
     if (a === null || b === null || a[1] >= b[0]) continue;
@@ -94,11 +114,11 @@ export function expand(graph: Graph, ranks: ReadonlyMap<string, number>, back: R
       const at = start + ((end - start) * (r - a[1])) / (b[0] - a[1]) - width / 2;
       const bounds = axes.cross === 'x' ? { x: at, y: 0, width, height: 0 } : { x: 0, y: at, width: 0, height: width };
       add(r, { id, bounds, pinned: false, ...(group !== undefined ? { group } : {}) });
-      for (const p of prev) hops.push({ from: p, to: id, edge: d.id });
+      for (const p of prev) hops.push({ from: p, to: id, edge: d.id, ...leave(p) });
       prev = [id];
       chain.push(id);
     }
-    for (const p of prev) for (const q of inRank(to, b[0])) hops.push({ from: p, to: q, edge: d.id });
+    for (const p of prev) for (const q of inRank(to, b[0])) hops.push({ from: p, to: q, edge: d.id, ...leave(p), ...arrive(q) });
     if (chain.length > 0) {
       const ends = [...(groups.get(from)?.members ?? [from]), ...(groups.get(to)?.members ?? [to])];
       chains.set(d.id, { ids: d.back ? chain.reverse() : chain, back: d.back, ends });
@@ -126,7 +146,14 @@ function drawnEdges(edges: readonly GraphEdge[], back: ReadonlySet<string>): Dra
     const from = e.origin?.from ?? e.from;
     const to = e.origin?.to ?? e.to;
     if (from === to) continue;
-    seen.set(id, { id, from, to, back: back.has(e.id) });
+    seen.set(id, {
+      id,
+      from,
+      to,
+      ...(e.fromPort !== undefined ? { fromPort: e.fromPort } : {}),
+      ...(e.toPort !== undefined ? { toPort: e.toPort } : {}),
+      back: back.has(e.id),
+    });
   }
   return [...seen.values()];
 }

@@ -61,6 +61,7 @@ export type { SelfLoop } from './selfLoop';
 export { buildGraph } from './graph';
 export type {
   BuildGraphOptions,
+  EdgeLabelRoom,
   Graph,
   GraphEdge,
   GraphGroup,

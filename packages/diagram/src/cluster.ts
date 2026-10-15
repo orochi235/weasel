@@ -326,8 +326,14 @@ export function expandGroupEdges(
     const froms = fromGroup !== undefined ? exits.get(fromGroup)! : [e.from];
     const tos = toGroup !== undefined ? entries.get(toGroup)! : [e.to];
     let k = 0;
+    // A port names a place on a node, so only a node end keeps its own.
+    const ports = {
+      ...(fromGroup === undefined && e.fromPort !== undefined ? { fromPort: e.fromPort } : {}),
+      ...(toGroup === undefined && e.toPort !== undefined ? { toPort: e.toPort } : {}),
+      ...(e.label !== undefined ? { label: e.label } : {}),
+    };
     for (const from of froms) {
-      for (const to of tos) out.push({ id: `${e.id}#${k++}`, from, to, origin: { id: e.id, from: e.from, to: e.to } });
+      for (const to of tos) out.push({ id: `${e.id}#${k++}`, from, to, ...ports, origin: { id: e.id, from: e.from, to: e.to } });
     }
   }
   return out;
