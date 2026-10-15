@@ -73,23 +73,64 @@ describe('PathConstraintsLabDemo', () => {
     const { container } = await renderSettled(<StrictMode><PathConstraintsLabDemo /></StrictMode>);
     const canvas = container.querySelector('.lk-trial-scene canvas');
     if (!canvas) throw new Error('no scene canvas in the trial');
-    const click = (x: number, y: number, shiftKey = false) => act(() => {
-      for (const type of ['pointerdown', 'pointerup']) {
-        canvas.dispatchEvent(new PointerEvent(type, { bubbles: true, clientX: x, clientY: y, pointerId: 1, button: 0, buttons: type === 'pointerdown' ? 1 : 0, shiftKey }));
-      }
-      canvas.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: x, clientY: y, button: 0, shiftKey }));
-    });
+    const click = clicker(canvas);
     click(140, 300);
     click(340, 300, true);
     click(420, 140, true);
-    act(() => {
-      canvas.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'c', code: 'KeyC' }));
-      canvas.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true, key: 'c', code: 'KeyC' }));
-    });
+    key(canvas, 'c');
 
     expect(screen.getByRole('status').textContent).toBe('5 constraints, all holding.');
     // Perpendicular at corner 1 on top of the rest makes a rectangle.
     const p = anchors();
     expect(p[2].x).toBeCloseTo(p[1].x, 2);
   });
+
+  it('deletes a clicked anchor rather than the shape, renumbering the constraints', async () => {
+    const { container } = await renderSettled(<StrictMode><PathConstraintsLabDemo /></StrictMode>);
+    const canvas = container.querySelector('.lk-trial-scene canvas');
+    if (!canvas) throw new Error('no scene canvas in the trial');
+    clicker(canvas)(420, 140);
+    key(canvas, 'Delete');
+    expect(anchors()).toHaveLength(3);
+    // Both parallels named corner 2; the horizontal edge and the fixed corner remain.
+    expect(screen.getByRole('status').textContent).toBe('2 constraints, all holding.');
+  });
+
+  it('nudges a clicked anchor with the arrows rather than the whole shape', async () => {
+    const { container } = await renderSettled(<StrictMode><PathConstraintsLabDemo /></StrictMode>);
+    const canvas = container.querySelector('.lk-trial-scene canvas');
+    if (!canvas) throw new Error('no scene canvas in the trial');
+    clicker(canvas)(420, 140);
+    key(canvas, 'ArrowUp');
+    const p = anchors();
+    expect(p[0]).toEqual({ x: 140, y: 300 });
+    expect(p[2].y).toBeLessThan(140);
+  });
+
+  it('deletes a constraint whose mark is clicked', async () => {
+    const { container } = await renderSettled(<StrictMode><PathConstraintsLabDemo /></StrictMode>);
+    const canvas = container.querySelector('.lk-trial-scene canvas');
+    if (!canvas) throw new Error('no scene canvas in the trial');
+    // The bottom edge's H sits 12 above its midpoint, inside the shape.
+    clicker(canvas)(240, 288);
+    key(canvas, 'Delete');
+    expect(screen.getByRole('status').textContent).toBe('3 constraints, all holding.');
+    expect(anchors()).toHaveLength(4);
+  });
 });
+
+function clicker(canvas: Element) {
+  return (x: number, y: number, shiftKey = false) => act(() => {
+    for (const type of ['pointerdown', 'pointerup']) {
+      canvas.dispatchEvent(new PointerEvent(type, { bubbles: true, clientX: x, clientY: y, pointerId: 1, button: 0, buttons: type === 'pointerdown' ? 1 : 0, shiftKey }));
+    }
+    canvas.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: x, clientY: y, button: 0, shiftKey }));
+  });
+}
+
+function key(canvas: Element, name: string) {
+  act(() => {
+    canvas.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: name }));
+    canvas.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true, key: name }));
+  });
+}

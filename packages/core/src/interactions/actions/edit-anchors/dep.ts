@@ -85,4 +85,13 @@ export interface EditAnchorsDep {
    * names the constraints that do not hold, by index. Optional.
    */
   setConstraints?(id: string, constraints: readonly PathConstraint[], label: string): readonly number[];
+  /**
+   * Index into the edited node's constraints of the one whose mark was
+   * clicked, or null. Selecting one clears the anchor selection and
+   * selecting anchors clears it, so Delete acts on one or the other;
+   * `setConstraints` clears it too, since it renumbers the list. Optional.
+   */
+  selectedConstraint?: number | null;
+  /** Select a constraint by index, or pass null to clear. */
+  setSelectedConstraint?(index: number | null): void;
 }

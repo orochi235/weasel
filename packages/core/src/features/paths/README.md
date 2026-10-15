@@ -111,8 +111,18 @@ and the overlay draws its mark (`constraintGlyphs.ts`) in the conflict color.
 selected anchors through the dep's `setConstraints`. Horizontal and vertical
 read a `data.path` node's rotation as their frame (`pathConstraints.ts`).
 
-Transforms that bypass path edit — resize, rotate, flip — do not solve: a
-non-uniform scale can leave a perpendicular constraint showing as a conflict.
+A click on a mark selects that constraint (the anchor selection and the
+constraint selection exclude each other), and Delete removes it
+(`deleteConstraint`). A solve that holds only by shrinking a named segment to a
+point — horizontal and vertical on one segment — counts as a conflict.
+
+A whole-shape transform — resize, rotate, flip — does not solve. It carries
+the list unchanged: a rigid move keeps every constraint, a scale or a flip keeps
+all but a set length (and, when non-uniform, equal lengths and angles off the
+scale's axes), and a rotation of a `data.path` node turns the frame its
+horizontal and vertical read. What a transform breaks is reported by
+`constraintConflictsOf`, the same report a conflicting add gets, and later edits
+leave it out of the solve.
 
 ## Generated shapes
 

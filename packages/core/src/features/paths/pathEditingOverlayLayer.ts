@@ -43,6 +43,8 @@ export interface CreatePathEditingOverlayLayerOptions {
    *  `constraintStroke` while it holds and `constraintConflictStroke` while
    *  it does not. */
   getConstraints?(id: string): { constraints: readonly PathConstraint[]; axisAngle: number } | null;
+  /** Index of the selected constraint, whose mark is drawn heavier, or null. */
+  getSelectedConstraint?(): number | null;
   /** Optional styling overrides. */
   style?: PathEditingOverlayStyle;
 }
@@ -93,6 +95,7 @@ function w2s(wx: number, wy: number, view: View): [number, number] {
 /** The marks for `path`'s constraints, under everything else the overlay draws. */
 function constraintMarks(
   marked: { constraints: readonly PathConstraint[]; axisAngle: number } | null | undefined,
+  selected: number | null,
   path: PolygonPath,
   view: View,
   style: Required<PathEditingOverlayStyle>,
@@ -107,7 +110,7 @@ function constraintMarks(
   return constraintGlyphs(screen, marked.constraints, unsatisfied, {
     stroke: style.constraintStroke,
     conflictStroke: style.constraintConflictStroke,
-  });
+  }, selected);
 }
 
 /** Render layer that draws the anchors and control handles of the path
@@ -135,7 +138,9 @@ export function createPathEditingOverlayLayer(
 
       const { anchors } = pathToAnchors(pose as PolygonPath);
       const selected = opts.getSelectedAnchors?.() ?? EMPTY_SELECTION;
-      const out: DrawCommand[] = constraintMarks(opts.getConstraints?.(id), pose as PolygonPath, view, style);
+      const out: DrawCommand[] = constraintMarks(
+        opts.getConstraints?.(id), opts.getSelectedConstraint?.() ?? null, pose as PolygonPath, view, style,
+      );
 
       // Flat anchor index, incremented in walk order so it lines up with
       // `enumerateAnchors` — the same numbering the affordances and the

@@ -17,6 +17,7 @@ import {
 import { constraintsOf } from 'features/paths/pathConstraints';
 import type { EditAnchorsDep } from '../depSchema';
 import { depOf } from './anchorEditing';
+import { editedPath } from './constraintMarks';
 
 /** Params for `constrainAnchors`. */
 export interface ConstrainAnchorsParams {
@@ -70,11 +71,6 @@ export function constraintsForAnchors(
 
 const sameConstraint = (a: PathConstraint, b: PathConstraint) => JSON.stringify(a) === JSON.stringify(b);
 
-function editedPath(dep: EditAnchorsDep): PolygonPath | null {
-  const p = dep.getEditablePath(dep.editingId) as PolygonPath | undefined;
-  return p?.kind === 'polygon' ? p : null;
-}
-
 /** The constraints adding `params` to the edited path's would leave it with, or null for no change. */
 function withAdded(dep: EditAnchorsDep, params: Partial<ConstrainAnchorsParams> | undefined): PathConstraint[] | null {
   const path = editedPath(dep);
@@ -119,6 +115,38 @@ function constraintCommand(
     enabled: (deps) => (ready(deps) ? true : ActionDisabledReason.SelectionRequired),
   };
 }
+
+/**
+ * Delete the constraint whose mark was clicked. Bound to Delete and
+ * Backspace beside `deleteAnchors`, which is disabled while a constraint
+ * rather than anchors is selected, so each key reaches the one selected.
+ */
+export const deleteConstraintAction: Action & { requires: string[] } = {
+  id: 'deleteConstraint',
+  label: 'Delete constraint',
+  defaultBinding: {
+    kind: 'key',
+    key: ['Delete', 'Backspace'],
+    phase: [{ channel: '*', phase: 'initial' }],
+  },
+  eligible: { capability: 'edits-anchors' },
+  requires: ['editAnchors'],
+  invoker: {
+    timing: 'immediate',
+    run: (deps) => {
+      const dep = depOf(deps);
+      const index = dep?.selectedConstraint;
+      if (!dep?.setConstraints || index == null) return;
+      const current = constraintsOf(dep.getNodeShape(dep.editingId)?.data);
+      if (index >= current.length) return;
+      dep.setConstraints(dep.editingId, current.filter((_, i) => i !== index), 'Delete constraint');
+    },
+  } as ImmediateInvoker,
+  enabled: (deps) => {
+    const dep = depOf(deps);
+    return dep?.setConstraints && dep.selectedConstraint != null ? true : ActionDisabledReason.SelectionRequired;
+  },
+};
 
 /**
  * Constrain the selected anchors: params `{ kind, length? }`, read as

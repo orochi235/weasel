@@ -52,6 +52,7 @@ export function usePathEditOverlayLayer(
       getPose: (id, previews, view) =>
         liveEditablePath(id, live.current.nodeOf(id), previews, live.current.planeOfNode(id, view)),
       getSelectedAnchors: state.getSelectedAnchors,
+      getSelectedConstraint: state.getSelectedConstraint,
       getConstraints: (id) => {
         const node = live.current.nodeOf(id);
         return node ? { constraints: constraintsOf(node.data), axisAngle: constraintAxisOf(node) } : null;

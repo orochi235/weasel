@@ -89,6 +89,7 @@ export function useEditAnchorsDepSource(
           );
           // Anchor indices only mean something relative to one path.
           state.setSelectedAnchors(EMPTY_ANCHOR_SELECTION);
+          state.setSelectedConstraint(null);
           state.setMarquee(null);
         }
         stateRef.current.setEditingId(id);
@@ -96,7 +97,15 @@ export function useEditAnchorsDepSource(
       selectedAnchors,
       setSelectedAnchors(next: Iterable<number>) {
         if (!effectiveId) return;
-        state.setSelectedAnchors(new Set(next));
+        const set = new Set(next);
+        if (set.size > 0) state.setSelectedConstraint(null);
+        state.setSelectedAnchors(set);
+      },
+      selectedConstraint: effectiveId ? state.getSelectedConstraint() : null,
+      setSelectedConstraint(index: number | null) {
+        if (!effectiveId) return;
+        if (index !== null) state.setSelectedAnchors(EMPTY_ANCHOR_SELECTION);
+        state.setSelectedConstraint(index);
       },
       marquee,
       setMarquee(rect) {
@@ -131,6 +140,7 @@ export function useEditAnchorsDepSource(
         const solved = solveNodeConstraints(node, constraints);
         if (!node || !solved) return [];
         const ops = reshapeOps(id, node, solved.path, label, { constraints: [...constraints] });
+        state.setSelectedConstraint(null);
         if (ops.length > 0) ad.applyOps(ops, label);
         return solved.unsatisfied;
       },

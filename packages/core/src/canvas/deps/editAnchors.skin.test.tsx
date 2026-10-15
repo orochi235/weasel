@@ -36,6 +36,8 @@ function setup() {
     setSelectedAnchors: (next) => { selected = next; },
     getMarquee: () => null,
     setMarquee: () => {},
+    getSelectedConstraint: () => null,
+    setSelectedConstraint: () => {},
   };
   const loose = scene as unknown as Scene<unknown, string, unknown>;
   const adapter = {

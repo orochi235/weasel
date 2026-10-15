@@ -39,6 +39,7 @@ import {
 import { pathToAnchors, type PolygonPath } from '@weasel-js/geom';
 import { pxExtent } from '@weasel-js/geom';
 import { selectionAfterAnchorPress } from '../edit-anchors/action';
+import { constraintMarkUnder } from './constraintMarks';
 import { inPlane, editingLayer } from '../planeInput';
 import { NUDGE_KEY, NUDGE_LABEL, nudgeDelta, type NudgeDirection } from './nudgeSteps';
 
@@ -134,9 +135,14 @@ export const selectAnchorAction: Action & { requires: string[] } = inPlane({
       const hit = nearestAnchorIndex(worldPath, wx, wy, anchorClickSlop(deps));
       const additive = params?.additive === true;
       if (hit === -1) {
-        // Missed every anchor. A bare click clears; a shift-click leaves
-        // the selection alone.
-        if (!additive) dep.setSelectedAnchors([]);
+        // Missed every anchor: a constraint mark is next. Otherwise a bare
+        // click clears, and a shift-click leaves the selection alone.
+        const mark = constraintMarkUnder(dep, deps, wx, wy);
+        if (mark !== -1) dep.setSelectedConstraint?.(mark);
+        else if (!additive) {
+          dep.setSelectedAnchors([]);
+          dep.setSelectedConstraint?.(null);
+        }
         return;
       }
       dep.setSelectedAnchors(selectionAfterAnchorPress(dep.selectedAnchors, hit, additive));

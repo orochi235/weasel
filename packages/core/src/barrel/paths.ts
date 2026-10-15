@@ -138,7 +138,7 @@ export type {
   SolveConstraintsOptions,
   SolveConstraintsResult,
 } from '@weasel-js/geom';
-export { constraintAxisOf, constraintsOf } from '../features/paths/pathConstraints';
+export { constraintAxisOf, constraintConflictsOf, constraintsOf } from '../features/paths/pathConstraints';
 export { constraintsForAnchors, type ConstrainAnchorsParams } from '../interactions/actions/defaults/anchorConstraints';
 
 // ─── Curves: alternate path representations (Bezier, NURBS, Spiro) ──────────

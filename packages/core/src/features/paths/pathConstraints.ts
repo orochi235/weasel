@@ -28,6 +28,21 @@ export function constraintAxisOf(node: EditableShape | null | undefined): number
   return storage?.kind === 'data' ? (storage.pose as { rotation?: number }).rotation ?? 0 : 0;
 }
 
+/**
+ * Indices of `node`'s constraints that do not hold in its committed path:
+ * the ones that conflict with the rest. Edits leave them out of the solve,
+ * and so does a whole-shape transform — resize, rotate, flip — which carries
+ * the list unchanged: a constraint the transform breaks, such as a set
+ * length under a scale or an equal length under a non-uniform one, is
+ * reported here rather than solved back.
+ */
+export function constraintConflictsOf(node: EditableShape | null | undefined): number[] {
+  const constraints = constraintsOf(node?.data);
+  const path = constraints.length > 0 ? resolveEditablePathOf(node) : null;
+  if (!path) return [];
+  return unsatisfiedConstraints(pathAnchorPoints(path), constraints, { axisAngle: constraintAxisOf(node) });
+}
+
 /** What an edit of a constrained node commits: its path, and its constraints renumbered for it. */
 export interface ConstrainedNodeEdit {
   path: PolygonPath;

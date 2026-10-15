@@ -2,18 +2,15 @@ import {
   type ActionTunings,
   asNodeId,
   boundsOfPath,
-  constraintAxisOf,
+  constraintConflictsOf,
   constraintsOf,
   createScene,
   type PathConstraint,
   type PathConstraintKind,
-  pathAnchorPoints,
-  pathInWorld,
   type PolygonPath,
   polygonFromPoints,
   type RectPose,
   solid,
-  unsatisfiedConstraints,
   worldEditToStorage,
 } from '@weasel-js/core';
 import {
@@ -107,8 +104,7 @@ function describeStatus(scene: ReturnType<typeof createLabScene>): string {
   const node = scene.get(ID);
   if (!node) return 'The shape is gone.';
   const constraints = constraintsOf(node.data);
-  const world = pathInWorld(node.data.path, node.pose) as PolygonPath;
-  const broken = unsatisfiedConstraints(pathAnchorPoints(world), constraints, { axisAngle: constraintAxisOf(node) });
+  const broken = constraintConflictsOf(node);
   const count = `${constraints.length} constraint${constraints.length === 1 ? '' : 's'}`;
   if (broken.length === 0) return `${count}, all holding.`;
   return `${count}. Conflicting, left unsolved: ${broken.map((i) => KIND_LABELS[constraints[i].kind]).join(', ')}.`;

@@ -205,19 +205,10 @@ by the `editAnchors` dep and added with `constrainAnchors` (lab: `lab-path-const
   a parameter variable `t` per constraint and a residual from `nearestOnPath`-style evaluation.
   Constraints between two nodes also need a home other than one node's `data.constraints`, and
   both nodes solved in one edit.
-- **(P2) Transforms that bypass path edit do not solve.** Resize, rotate and flip write the path
-  without the dep, so a non-uniform scale leaves a perpendicular or equal-length constraint
-  failing (drawn as a conflict), and rotating a polygon-pose node turns its horizontal edge.
-- **(P2) A solve can satisfy a set by collapsing it.** Horizontal and vertical on the same two
-  anchors hold when the anchors meet, so `constrainAnchors` collapses the segment instead of
-  reporting a conflict. A solution that shrinks a segment from some length to nothing should
-  count as a conflict.
 - **(P3) A conflict names only the constraints that fail, not the set that conflicts.** Adding
-  one that cannot hold keeps it unsolved and marks it; the overlay, the lab's status line and
+  one that cannot hold keeps it unsolved and marks it; the overlay, `constraintConflictsOf` and
   `setConstraints`' return value are the only reports. Finding the minimal conflicting set needs
   the Jacobian's rank, which the damped solve does not compute.
-- **(P3) Constraint marks cannot be picked.** Removing one means selecting all of its anchors and
-  `unconstrainAnchors`; clicking a mark to select or delete it needs the marks as affordances.
 - **(P3) The solve is dense.** The Jacobian is a full `m × 2n` matrix built by central
   differences; fine at a few hundred anchors, but a large constrained path wants sparse rows and
   analytic derivatives.

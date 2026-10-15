@@ -8,8 +8,8 @@ import { createScene } from 'core/scene/scene';
 import type { NodeId, Scene } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import { defaultCommitAdapter } from 'interactions/actions/defaultCommitAdapter';
-import { deleteAnchorsAction, nudgeAnchorsUpAction } from 'interactions/actions/defaults/anchorEditing';
-import { constrainAnchorsAction, unconstrainAnchorsAction } from 'interactions/actions/defaults/anchorConstraints';
+import { deleteAnchorsAction, nudgeAnchorsUpAction, selectAnchorAction } from 'interactions/actions/defaults/anchorEditing';
+import { constrainAnchorsAction, deleteConstraintAction, unconstrainAnchorsAction } from 'interactions/actions/defaults/anchorConstraints';
 import { editAnchorsAction } from 'interactions/actions/edit-anchors/action';
 import type { EditAnchorsDep } from 'interactions/actions/depSchema';
 import { useEditAnchorsDepSource, type EditAnchorsStateRef } from './editAnchors';
@@ -33,6 +33,7 @@ function setup(constraints: PathConstraint[] = PARALLELOGRAM) {
     data: { constraints },
   });
   let selected: ReadonlySet<number> = new Set();
+  let selectedConstraint: number | null = null;
   const state: EditAnchorsStateRef = {
     getEditingId: () => id,
     setEditingId: () => {},
@@ -40,6 +41,8 @@ function setup(constraints: PathConstraint[] = PARALLELOGRAM) {
     setSelectedAnchors: (next) => { selected = next; },
     getMarquee: () => null,
     setMarquee: () => {},
+    getSelectedConstraint: () => selectedConstraint,
+    setSelectedConstraint: (next) => { selectedConstraint = next; },
   };
   const loose = scene as unknown as Scene<unknown, string, unknown>;
   const adapter = {
@@ -74,7 +77,7 @@ function setup(constraints: PathConstraint[] = PARALLELOGRAM) {
     return pathAnchorPoints(preview);
   };
   return {
-    scene, id, run, drag, points, dep,
+    scene, id, run, drag, points, dep, deps,
     select: (...flat: number[]) => { selected = new Set(flat); },
     constraints: () => scene.get(id)!.data.constraints ?? [],
   };
@@ -140,6 +143,30 @@ describe('constrainAnchors and unconstrainAnchors', () => {
     const p = t.points();
     expect(p[2]).toEqual({ x: 100, y: 130 });
     expect(p[3].y).toBeCloseTo(130, 3);
+  });
+
+  it('reports vertical on a horizontal edge as a conflict instead of collapsing the edge', () => {
+    const t = setup([{ kind: 'horizontal', segment: [0, 1] }]);
+    const before = t.points();
+    t.select(0, 1);
+    t.run(constrainAnchorsAction, { kind: 'vertical' });
+    expect(t.points()).toEqual(before);
+    expect(t.dep().setConstraints!(t.id, t.constraints(), 'Constrain')).toEqual([1]);
+  });
+
+  it('selects a constraint by clicking its mark, and deletes just that one', () => {
+    const t = setup([{ kind: 'horizontal', segment: [0, 1] }, { kind: 'vertical', segment: [1, 2] }]);
+    t.select(2);
+    // The bottom edge's mark sits 12 inside its midpoint, toward the square's center.
+    t.run(selectAnchorAction, { worldX: 50, worldY: 12 });
+    expect(t.dep().selectedConstraint).toBe(0);
+    expect(t.dep().selectedAnchors.size).toBe(0);
+    expect(deleteAnchorsAction.enabled!(t.deps())).not.toBe(true);
+    t.run(deleteConstraintAction);
+    expect(t.constraints()).toEqual([{ kind: 'vertical', segment: [1, 2] }]);
+    expect(t.dep().selectedConstraint).toBeNull();
+    t.scene.undo();
+    expect(t.constraints()).toHaveLength(2);
   });
 
   it('reads three selected anchors as two segments meeting at the middle one', () => {

@@ -55,6 +55,9 @@ export interface PathEditState {
   /** The in-flight anchor-marquee rect, in the edited path's world. */
   getMarquee(): AnchorMarquee | null;
   setMarquee(rect: AnchorMarquee | null): void;
+  /** Index into the edited node's `data.constraints` of the selected constraint mark, or null. */
+  getSelectedConstraint(): number | null;
+  setSelectedConstraint(index: number | null): void;
   /** Notified when a write changes what the anchor overlay paints. A host
    *  that owns the id announces its own changes. */
   subscribe(listener: () => void): () => void;
@@ -77,6 +80,7 @@ export function createPathEditState(source: PathEditSource = {}): PathEditState 
   let selectedAnchors = NO_ANCHORS;
   let marquee: AnchorMarquee | null = null;
   let idSet = NO_IDS;
+  let selectedConstraint: number | null = null;
   const changed = createEmitter();
   const notify = changed.emit;
 
@@ -113,6 +117,12 @@ export function createPathEditState(source: PathEditSource = {}): PathEditState 
     getMarquee: () => marquee,
     setMarquee(rect) {
       marquee = rect;
+      notify();
+    },
+    getSelectedConstraint: () => selectedConstraint,
+    setSelectedConstraint(index) {
+      if (index === selectedConstraint) return;
+      selectedConstraint = index;
       notify();
     },
     subscribe: changed.subscribe,

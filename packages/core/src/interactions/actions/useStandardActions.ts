@@ -60,7 +60,7 @@ import { exitPathEditAction } from './defaults/exitPathEdit';
 import { insertPathAnchorAction } from './defaults/insertPathAnchor';
 import { bendSegmentAction } from './defaults/bendSegment';
 import { makeHandlesSymmetricAction, retractHandlesAction } from './defaults/anchorHandles';
-import { constrainAnchorsAction, unconstrainAnchorsAction } from './defaults/anchorConstraints';
+import { constrainAnchorsAction, deleteConstraintAction, unconstrainAnchorsAction } from './defaults/anchorConstraints';
 import { averageAnchorsAction, joinAnchorsAction } from './defaults/anchorJoin';
 import {
   joinPathsAction, offsetPathAction, simplifyPathAction, snipAtCrossingsAction,
@@ -120,6 +120,14 @@ const KIT_STANDARD_DESCRIPTORS: Action[] = [
   selectAllAction,
   duplicateAction,
   transformAgainAction,
+  // Ahead of their node-level twins: with no mode registry nothing filters
+  // by capability, so a keystroke goes to the first of these that is enabled.
+  nudgeAnchorsUpAction,
+  nudgeAnchorsDownAction,
+  nudgeAnchorsLeftAction,
+  nudgeAnchorsRightAction,
+  deleteAnchorsAction,
+  deleteConstraintAction,
   deleteAction,
   groupAction,
   ungroupAction,
@@ -163,11 +171,6 @@ const KIT_STANDARD_DESCRIPTORS: Action[] = [
   exitPathEditAction,
   insertPathAnchorAction,
   bendSegmentAction,
-  nudgeAnchorsUpAction,
-  nudgeAnchorsDownAction,
-  nudgeAnchorsLeftAction,
-  nudgeAnchorsRightAction,
-  deleteAnchorsAction,
   cutPathAtAnchorAction,
   retractHandlesAction,
   makeHandlesSymmetricAction,

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { PathConstraint } from '@weasel-js/geom';
-import { constraintGlyphs } from './constraintGlyphs';
+import { constraintGlyphs, constraintMarkAt } from './constraintGlyphs';
 
 const STYLE = { stroke: 'ok', conflictStroke: 'bad' };
 const SQUARE = [{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 100 }, { x: 0, y: 100 }];
@@ -23,6 +23,19 @@ describe('constraintGlyphs', () => {
     const coords = (mark as { path: { coords: Float32Array } }).path.coords;
     const ys = Array.from(coords).filter((_, i) => i % 2 === 1);
     expect(Math.min(...ys.map(Math.abs))).toBeGreaterThan(5);
+  });
+
+  it('finds the mark under a point, inside the shape, and draws the selected one heavier', () => {
+    const constraints: PathConstraint[] = [
+      { kind: 'horizontal', segment: [0, 1] },
+      { kind: 'vertical', segment: [1, 2] },
+    ];
+    expect(constraintMarkAt(SQUARE, constraints, { x: 50, y: 12 }, 8)).toBe(0);
+    expect(constraintMarkAt(SQUARE, constraints, { x: 88, y: 50 }, 8)).toBe(1);
+    expect(constraintMarkAt(SQUARE, constraints, { x: 50, y: -12 }, 8)).toBe(-1);
+    const widths = constraintGlyphs(SQUARE, constraints, new Set(), STYLE, 1)
+      .map((cmd) => (cmd as { stroke: { width: number } }).stroke.width);
+    expect(widths).toEqual([1.5, 3]);
   });
 
   it('draws nothing for a constraint naming an anchor the path lacks', () => {
