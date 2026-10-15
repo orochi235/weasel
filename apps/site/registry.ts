@@ -663,6 +663,16 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/SceneLabDemo.tsx',
   },
   {
+    id: 'lab-variable-width-strokes',
+    title: 'Variable-width strokes',
+    package: 'stroke',
+    description:
+      "A stroke whose width varies along its length. `Stroke.widthProfile` holds stops of `{ t, width }` — a multiple of the base width at a fraction of each subpath's arc length — read by a monotone cubic through them, so the ribbon swells and thins without overshooting a stop. The four seeded strokes are one of plain width, one swelling in the middle, one tapering under a dash, and one with marker heads; joins, caps, dashes, and marker trims all follow the profile. The Width tool (`useWidthTool`) edits it: a drag on a stroke sets the width at the point pressed, at the stop already there or a new one, to twice the pointer's distance from the centerline, previewed live and committed as one undo entry, and the stroke last touched shows its stops. Turning on the `strokeToPath` outline draws the region the stroke covers as a hairline over the ribbon, which is what SVG export writes, since SVG has no variable width.",
+    hint: 'With Width picked, drag outward or inward from any point on a stroke. Press near a stop to move it, <kbd>Alt</kbd>-click a stop to remove it, then undo with the button or <kbd>Mod+Z</kbd>. Change Base width, Cap, and Join, and turn on Show strokeToPath outline to compare.',
+    load: () => import('./demos/VariableWidthStrokesLabDemo').then((m) => m.VariableWidthStrokesLabDemo),
+    path: 'apps/site/demos/VariableWidthStrokesLabDemo.tsx',
+  },
+  {
     id: 'bidi',
     title: 'Bidirectional text',
     package: 'bidi',

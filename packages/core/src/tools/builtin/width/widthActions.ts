@@ -66,7 +66,7 @@ export function createWidthActions(env: WidthEnv): Action[] {
       id: WIDTH_DRAG_ID,
       label: 'Width — drag a stroke\'s width at a point',
       eligible,
-      requires: ['scene', 'view'],
+      requires: ['scene', 'view', 'selection', 'applyOps'],
       enabled: hasScene,
       invoker: {
         timing: 'ongoing',
@@ -105,7 +105,7 @@ export function createWidthActions(env: WidthEnv): Action[] {
       id: WIDTH_REMOVE_STOP_ID,
       label: 'Width — remove the stop under the pointer',
       eligible,
-      requires: ['scene', 'view'],
+      requires: ['scene', 'view', 'selection', 'applyOps'],
       enabled: hasScene,
       invoker: {
         timing: 'immediate',
