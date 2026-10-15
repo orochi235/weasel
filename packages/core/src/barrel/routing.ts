@@ -87,6 +87,7 @@ export type {
   IngestionDep,
   InsertDep,
   InsertIntoDep,
+  PathSymmetryDep,
   InsertLive,
   SnapDep,
   InsertExtras,

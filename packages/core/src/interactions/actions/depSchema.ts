@@ -322,6 +322,18 @@ export interface InsertDep {
   layer?(): string;
 }
 
+/**
+ * What `editAnchorsAction` keeps a path symmetric under. Asked once at the
+ * press, with the id of the path being edited; answer every transform of the
+ * symmetry group except the identity, in world coordinates. Of those, the
+ * ones the path is already its own image under are held through the drag:
+ * each image of a dragged anchor or handle follows it, and one a transform
+ * fixes stays where that transform allows.
+ */
+export interface PathSymmetryDep {
+  transforms(id: string): readonly import('@weasel-js/geom').Affine[];
+}
+
 /** Where the `insert` dep puts what it makes. Read at each insert. A node
  *  goes onto the container's layer, with its pose made local to it when the
  *  scene composes frames; an id naming no container is the same as `null`. */
@@ -483,6 +495,9 @@ declare module '@weasel-js/routing' {
     /** Edit-anchors dep — narrow read/write of one polygon's path. If
      *  absent, `editAnchorsAction`'s `start` returns an empty handle (no-op). */
     editAnchors: EditAnchorsDep;
+    /** The transforms a path being edited should stay its own image under.
+     *  Absent: an anchor drag moves only what is dragged. */
+    pathSymmetry?: PathSymmetryDep;
     /**
      * Text-edit dep — activates the in-place text editing overlay. Sourced
      * from consumer via `useTextEdit` / `useSceneTextEdit`.
