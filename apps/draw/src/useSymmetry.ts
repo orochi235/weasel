@@ -2,7 +2,7 @@ import type { NodeId } from '@weasel-js/core';
 import {
   createSymmetry, HORIZONTAL_AXIS, isSymmetryGroup, VERTICAL_AXIS, type SymmetryController, type SymmetrySpec,
 } from '@weasel-js/symmetry';
-import { useLayoutEffect, useMemo, useState } from 'react';
+import { useLayoutEffect, useMemo, useRef } from 'react';
 import type { AppCommands } from './appCommands';
 import type { DrawScene } from './drawDocument';
 import { usePref } from './prefs';
@@ -33,7 +33,7 @@ export function useSymmetry(scene: DrawScene, page: { width: number; height: num
   const [axisPref] = usePref('view.symmetryAxis');
   const spec = SPECS[axisPref] ?? SPECS.vertical!;
   const ctrl = useMemo(() => createSymmetry(scene as never), [scene]);
-  const [group, setGroup] = useState<NodeId | null>(null);
+  const group = useRef<NodeId | null>(null);
 
   const { width, height } = page;
   useLayoutEffect(() => {
@@ -41,15 +41,13 @@ export function useSymmetry(scene: DrawScene, page: { width: number; height: num
       ctrl.setActive(null);
       return;
     }
-    const id = (ctrl.read(group) ? group : null) ?? existingGroup(scene, ctrl);
-    if (id === null) {
-      setGroup(ctrl.create({ center: { x: width / 2, y: height / 2 }, symmetry: spec }));
-      return;
-    }
-    if (id !== group) setGroup(id);
+    const id = (ctrl.read(group.current) ? group.current : null)
+      ?? existingGroup(scene, ctrl)
+      ?? ctrl.create({ center: { x: width / 2, y: height / 2 }, symmetry: spec });
+    group.current = id;
     ctrl.setActive(id);
     if (!sameSpec(ctrl.read(id)!.spec, spec)) ctrl.update(id, { spec });
-  }, [ctrl, scene, on, spec, group, width, height]);
+  }, [ctrl, scene, on, spec, width, height]);
 
   const commands: Pick<AppCommands, 'symmetryOn' | 'toggleSymmetry'> = {
     symmetryOn: on,
