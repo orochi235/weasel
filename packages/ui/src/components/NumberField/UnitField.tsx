@@ -54,8 +54,8 @@ export type StepperSide = 'start' | 'end';
 
 const FULL_PRECISION = decimal({ maxPlaces: 20, grouping: false });
 
-const REPEAT_DELAY_MS = 400;
-const REPEAT_EVERY_MS = 60;
+export const REPEAT_DELAY_MS = 400;
+export const REPEAT_EVERY_MS = 60;
 
 /**
  * A number typed as text, so it can carry a unit: `12mm` in a field showing

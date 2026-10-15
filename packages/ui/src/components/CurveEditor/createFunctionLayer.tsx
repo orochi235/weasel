@@ -29,8 +29,8 @@ const SAMPLES_PER_SEGMENT = 16;
 const ENDPOINT_HALF = handleHalf('--wzl-handle-size-lg');
 const LOCKED_HALF = handleHalf('--wzl-handle-size-sm');
 const ANCHOR_RADIUS = handleHalf('--wzl-handle-dot-size');
-const ANCHOR_SNAP_PX = 12;
-const CURVE_HIT_PX = 8;
+export const ANCHOR_SNAP_PX = 12;
+export const CURVE_HIT_PX = 8;
 /** An arrow-key nudge, as a fraction of the range; shift takes ten. */
 const KEY_STEP_FRACTION = 0.01;
 const SHIFT_MULTIPLIER = 10;

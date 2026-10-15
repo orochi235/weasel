@@ -60,9 +60,9 @@ export interface KeyframeLayerConfig {
 }
 
 const SAMPLES_PER_SEGMENT = 16;
-const KEY_HIT_PX = 8;
-const HANDLE_HIT_PX = 8;
-const CURVE_HIT_PX = 6;
+export const KEY_HIT_PX = 8;
+export const HANDLE_HIT_PX = 8;
+export const CURVE_HIT_PX = 6;
 const KEY_HALF = handleHalf('--wzl-handle-size');
 const HANDLE_RADIUS = handleHalf('--wzl-handle-dot-size-sm');
 const SHIFT_MULTIPLIER = 10;

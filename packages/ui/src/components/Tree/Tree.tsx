@@ -33,7 +33,7 @@ interface Visible {
   index: number;
 }
 
-const TYPEAHEAD_MS = 500;
+export const TYPEAHEAD_MS = 500;
 
 /**
  * A hierarchy of rows that expand and collapse: a file tree, a registry

@@ -3,7 +3,7 @@ import { createHistory, useLatest } from '@weasel-js/core';
 import { SWAP, swapOp, type DocumentCodec, type DraftStorage, type OpenedDocument } from './document';
 
 /** Edits this close together under one coalesce key undo as one, so typing a name is one step. */
-const COALESCE_MS = 800;
+export const COALESCE_MS = 800;
 
 export interface DocumentOptions<V> {
   value: V;

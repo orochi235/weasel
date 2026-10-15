@@ -7,7 +7,7 @@ import type { TreeNode } from './Tree';
 import { modsOf } from './treeUtils';
 import { useOutsideDrop, type TreeDropHandle } from './useOutsideDrop';
 
-const HOVER_EXPAND_MS = 600;
+export const HOVER_EXPAND_MS = 600;
 /** How far the ghost's corner sits from the pointer, so what is under the pointer stays visible. */
 const GHOST_OFFSET = 10;
 

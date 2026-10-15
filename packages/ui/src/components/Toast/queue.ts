@@ -24,7 +24,7 @@ export interface ToastOptions {
   id?: string;
 }
 
-const DEFAULT_TTL_MS = 8000;
+export const DEFAULT_TTL_MS = 8000;
 
 // Tracks overlapping toast-triggered view transitions so the `:root`
 // marker class survives until the *last* one settles.

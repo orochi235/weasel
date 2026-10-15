@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 
 /** How long the pointer or keyboard focus rests on a row before its tooltip opens. */
-const REST_MS = 300;
+export const REST_MS = 300;
 
 /** The row whose tooltip is open, and the element the tooltip points at. */
 export interface RowTip {
