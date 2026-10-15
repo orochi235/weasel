@@ -39,7 +39,7 @@ function replay(deps: ActionDeps, scene: Scene<unknown, string, unknown>, t: Rep
       ) ? selected : null;
     case 'rotate':
       return commit(deps, scene, rotateSelectionOps(
-        scene, selected, deps.view, deps.poseDescriptor, t.angle, t.pivot, LABEL,
+        scene, selected, deps, t.angle, t.pivot, LABEL,
       )) ? selected : null;
     case 'scale':
       return commit(deps, scene, resizeSelectionOps(scene, selected, t.anchor, t.to, deps, LABEL)) ? selected : null;
@@ -63,6 +63,7 @@ export const transformAgainAction: Action & { requires: string[] } = {
   eligible: { capability: 'transforms-selection' },
   requires: [
     'scene', 'selection', 'applyOps', 'poseDescriptor', 'geometryProjection', 'resizePolicy', 'view',
+    'boundsIncludeStroke',
   ],
   invoker: {
     timing: 'immediate',

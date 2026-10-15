@@ -16,6 +16,8 @@ const EPS = 1e-3;
  *  `span` covers every box that produced it.
  *  Poses go through the same descriptor `alignMoveBehavior` matches with, so
  *  a rotated sibling advertises its ink edges rather than its stored box.
+ *  The moving selection is measured with its stroke (`drawnBoundsOf`), so
+ *  pass each sibling's `drawnAABBOf` box as its target for the two to agree.
  *  The lines are in the camera's world: a sibling on a parallax layer needs
  *  `planeOf` to say which plane its pose is in. */
 export function deriveAlignmentGuides<TPose = Bounds>(

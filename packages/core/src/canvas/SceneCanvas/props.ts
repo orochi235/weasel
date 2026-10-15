@@ -1,5 +1,6 @@
 import type { ModeRegistry } from '@weasel-js/modes';
 import type { PathEditHost } from './pathEditHost';
+import type { SceneCanvasGeometry } from './geometryProps';
 import type { Paint } from '@weasel-js/paint';
 import type { ActionsProp, ActionTunings } from '@weasel-js/routing';
 import { Yoke } from '@weasel-js/routing/react';
@@ -19,7 +20,6 @@ import type { UseResizeOptions } from 'interactions/actions/resize/options';
 import type { UseRotateOptions } from 'interactions/actions/rotate/options';
 import type { SnapStrategy } from 'interactions/gestures/types';
 import type { ReactNode } from 'react';
-import type { Bounds } from 'tools/builtin/select';
 import type { Animator } from '@weasel-js/animator';
 import { HANDLE_BASE_PX, targetSizesPx } from '../../core/device/targets';
 import type { DeviceProfile } from '../../core/device/types';
@@ -228,34 +228,7 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
 
     // --- Geometry: hit-test + bounds overrides consumed by the internal
     //     `useSelectTool`. Ignored if the consumer passes their own `tools`. ---
-    geometry?: {
-      /** Hit-test override. Return the topmost id, the full back-to-front hit
-       *  stack (`string[]`), or `null` for empty space. The stack form lets a
-       *  consumer with domain overlap ordering (e.g. children over their
-       *  container) feed the kit's `pickTopMostHit` the true order instead of
-       *  pre-collapsing to one id. Matches `Canvas`'s `pickEvery` shape. */
-      pickEvery?: (worldX: number, worldY: number) => string | string[] | null;
-      boundsOf?: (id: string) => Bounds | null;
-      /**
-       * What "the pointer is on this node" means for the default body-pick.
-       *
-       * - `'pose'` — the node's pose rect, rotation honored.
-       * - `'shape'` (default) — the pose rect as a pre-filter, then the ink the painter
-       *   actually lays down: its silhouette filled or not per the painter's `ink`, plus
-       *   its outline widened by the stroke half-width and `pickTolerancePx`.
-       *
-       * Painters with no silhouette keep the pose-rect answer either way. Ignored when
-       * `pickEvery` is supplied: that override owns the test.
-       */
-      picking?: 'pose' | 'shape';
-      /**
-       * Grab slop around a shape's outline, in **screen** pixels, so the target keeps
-       * its apparent size at any zoom. Default 4. It widens the outline test under
-       * `picking: 'shape'` and grows the pose-rect pre-filter so those outline hits
-       * survive it. Set `0` for exact geometry.
-       */
-      pickTolerancePx?: number;
-    };
+    geometry?: SceneCanvasGeometry;
 
     // --- Selection options. `pickBest` and `handleHitRadius` configure the
     //     internal select tool, and are ignored under a `tools` takeover;
