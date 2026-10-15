@@ -43,9 +43,6 @@
   "packages/core/src/canvas/SceneCanvas/props.ts": {
     "lines": 637
   },
-  "packages/core/src/canvas/SceneCanvas/useDispatcherOverlayLayer.ts": {
-    "longestFunction": 198
-  },
   "packages/core/src/canvas/sceneAdapter.ts": {
     "longestFunction": 156
   },
