@@ -39,9 +39,9 @@ function ResampleTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
     () => ({ count, spacing: by === 'spacing' ? spacing : 0, keepCorners, tolerance }),
     [by, count, spacing, keepCorners, tolerance],
   );
-  // A tool switch ends an open preview, and the canvas takes up its first
-  // tool after mounting, so the preview opens once it has one. From then on
-  // every change of the panel previews, and Apply keeps what is shown.
+  // The canvas seeding its first tool after mount counts as a tool switch and
+  // cancels an open preview (docs/TODO.md), so the preview opens once the canvas
+  // has a tool. From then on every change of the panel previews; Apply keeps it.
   const [hasTool, setHasTool] = useState(false);
   useEffect(() => { if (hasTool) resample.input(params); }, [resample, params, hasTool]);
   const bar = (

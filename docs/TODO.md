@@ -19,6 +19,16 @@ Priority tags:
 
 ## Tools & gestures
 
+- **(P2) A canvas's first tool cancels every open edit.** A `<SceneCanvas>` with no
+  `initialActive` on its `ActiveToolContextProvider` starts with an empty tool slot, which the
+  first `useTools` call seeds after mounting. `useToolLifecycle` in the dispatcher sees that as a
+  switch from `null` to `select` and runs `onSwitch`, which calls `cancelAll` on every dispatcher.
+  So a `useOngoingAction` edit opened while the canvas mounts is canceled, and so is anything else
+  begun before the slot settles. Reproduced on a bare `<SceneCanvas features={['draw']}>` with no
+  labkit and no StrictMode. Likely fix: don't treat the slot's first seeding as a switch, since no
+  tool is outgoing. `apps/site/demos/ResampleLabDemo.tsx` waits for the canvas to report a tool
+  before opening its preview because of this; drop that wait once this is fixed.
+
 - **(P2) `features` names two things.** The `<SceneCanvas features>` prop composes behavior presets
   (`canvas/SceneCanvas/features.ts`); `packages/core/src/features/<name>/` is a source directory
   bundling one domain's primitives, and `docs/taxonomy.md` calls each of those a "feature" too.
