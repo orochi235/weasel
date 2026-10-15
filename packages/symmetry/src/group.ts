@@ -41,8 +41,9 @@ export const symmetryCopies: CopiesFromPoseFn<unknown> = (pose, node) =>
 /** A group draws its copies wherever they land, so it clips nothing. */
 const drawEverywhere = (): null => null;
 
-/** The registry keys a group's functions are saved under. */
+/** The registry key a group's `copiesFromPose` is saved under. */
 export const SYMMETRY_COPIES_KEY = 'weasel-symmetry:copies';
+/** The registry key a group's `clipFromPose`, which clips nothing, is saved under. */
 export const SYMMETRY_CLIP_KEY = 'weasel-symmetry:no-clip';
 
 /**

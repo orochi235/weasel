@@ -4,9 +4,9 @@ import {
 } from '@weasel-js/core';
 import { SYMMETRY_KINDS, type SymmetrySpec } from './kinds';
 
-/** The guide layer's id; a press on one of its handles arrives as an
- *  affordance of kind {@link SYMMETRY_HANDLE_KIND}. */
+/** The guide layer's id. */
 export const SYMMETRY_GUIDE_ID = 'weasel-symmetry-guide';
+/** The affordance kind a press on one of the guide's handles arrives as. */
 export const SYMMETRY_HANDLE_KIND = `layer:${SYMMETRY_GUIDE_ID}`;
 
 /** Which handle a press took: the center, the knob that turns the axis, or

@@ -2,6 +2,7 @@ import type { Action, InvocationCtx, NodeId, OngoingHandle } from '@weasel-js/co
 import type { SymmetryChange, SymmetryController } from './controller';
 import type { SymmetryHandlePress } from './guide';
 
+/** The id of the action that drags a guide handle. */
 export const SYMMETRY_HANDLE_ACTION_ID = 'symmetry.dragHandle';
 
 /** Shift holds an axis to steps of this many radians. */
