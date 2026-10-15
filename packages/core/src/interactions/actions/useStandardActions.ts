@@ -61,6 +61,8 @@ import { insertPathAnchorAction } from './defaults/insertPathAnchor';
 import { bendSegmentAction } from './defaults/bendSegment';
 import { makeHandlesSymmetricAction, retractHandlesAction } from './defaults/anchorHandles';
 import { averageAnchorsAction, joinAnchorsAction } from './defaults/anchorJoin';
+import { simplifyBrushAction, simplifyBrushToolAction } from './defaults/simplifyBrush';
+import { exitPathEditToolAction } from './defaults/pathEditTools';
 import {
   joinPathsAction, offsetPathAction, simplifyPathAction, snipAtCrossingsAction,
 } from './pathCommands';
@@ -170,6 +172,9 @@ const KIT_STANDARD_DESCRIPTORS: Action[] = [
   insertPathAnchorAction,
   bendSegmentAction,
   cutPathAtAnchorAction,
+  simplifyBrushAction,
+  simplifyBrushToolAction,
+  exitPathEditToolAction,
   retractHandlesAction,
   makeHandlesSymmetricAction,
   averageAnchorsAction,

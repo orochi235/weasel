@@ -136,7 +136,7 @@ export function StandardActionsRegistrar({
   viewAnimation: ViewAnimationApi;
   /** Lifted edit-mode state so the `pathEditingOverlay` chrome (rendered
    *  outside this subtree) can read the same `editingId` the dep does. */
-  editAnchorsExternalState: import('../deps/editAnchors').EditAnchorsStateRef;
+  editAnchorsExternalState: import('../deps/editAnchors').EditAnchorsStateSource;
   layoutDropTarget?: LayoutDropTargetMode;
   reflowTransition?: ReflowTransition<unknown> | null;
   /** Forwarded from `SceneCanvasProps` so `useInsertDepSource` can wire the
@@ -213,7 +213,7 @@ export function StandardActionsRegistrar({
   useSliceDepSource(scene, selection, adapter, poseDescriptor);
   useSnapDepSource(snapPoint);
   useDebugDepSource(canvasApiRef);
-  useDepChangeNotices(scene, selection.current);
+  useDepChangeNotices(scene, selection.current, editAnchorsExternalState);
   useIngestionDepSource(canvasRef, () => currentViewRef.current, ingestionResolveSrc, ingestionSvg, ingestionClipboard);
   useLassoSelectDepSource(scene, selection, poseDescriptor, alphaOf);
   useTextEditDepSource(scene);

@@ -80,6 +80,7 @@ export {
   snipPathsAtCrossings,
   offsetPath,
   simplifyPath,
+  simplifyAnchorsAt,
   averageAnchorsAt,
   joinAnchorsAt,
   transformPath,

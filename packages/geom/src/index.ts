@@ -41,7 +41,8 @@ export { pathDistanceToPoint } from './paths/pathDistance';
 export { cubicPointAt, splitCubicAtT, type Point } from './paths/cubicMath';
 export { fitCubicThroughDeletion } from './paths/spanFit';
 export { schneiderFit, fitCubicWithTangents } from './paths/schneiderFit';
-export { simplifyPath, type SimplifyPathOptions } from './paths/simplifyPath';
+export { simplifyPath, simplifySpan, simplifySubpath, type SimplifyPathOptions } from './paths/simplifyPath';
+export { simplifyAnchorsAt } from './paths/simplifyAnchors';
 export {
   averageAnchorsAt, closestOpenEnds, joinAnchorsAt, joinSubpathEnds, subpathEndAt,
   type AverageAxis, type SubpathEnd,
@@ -89,6 +90,7 @@ export {
   locateAnchor, moveHandleTo, openSubpathAt, segmentAt, translateAnchorBy,
   type AnchorRect, type AnchorSet, type SegmentHit,
 } from './paths/anchorEdits';
+export { anchorsUnderBrush } from './paths/anchorBrush';
 export {
   anchorSymmetries, anchorSymmetry, moveHandleSymmetric, translateAnchorsSymmetric, type AnchorSymmetry,
 } from './paths/anchorSymmetry';
