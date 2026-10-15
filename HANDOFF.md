@@ -19,13 +19,12 @@ form. The arc after them is a P2 entry in `docs/TODO.md`: a theme's tokens as a 
 
 ## Next
 
-1. Run what has never run: a build of every package since the wildcard `paths` keys went and
-   since labkit stopped inlining its siblings, `npm run test:smoke:consumer` (root and labkit's),
-   `npm run check:treeshake`, `npm run build:api` with the new per-package reference,
-   `scripts/github-releases.mjs` and the release job's new steps, the pull request benchmark
-   workflow, and the perf specs `image-quad`, `flush-anatomy`, `clip-cost`, `flush-noise`, and
-   `layer-dispatch` since their frames were edited. Nothing in the batch's new shader paths has
-   been timed.
+1. Run what has never run: `npm run build:api` with the new per-package reference. Everything
+   else on the 2026-10-13 list ran on 2026-10-15 and passes; what it turned up is the pull request
+   benchmark entry in `docs/TODO.md` (over its time limit, and a comment that drops half the
+   benchmarks). The five edited perf specs ran on keiei but were compared against nothing, so
+   the batch's new shader paths still have no before-and-after number. Not exercised: the
+   release job's `npm run release` and `gh release create`, which only a real release can run.
 2. See the list below in a browser.
 3. Rulings: `docs/unruled.md`, and the either/ors left in `docs/TODO.md` entries. Two wait on a
    word from the owner: the new name for the `features` directory, and the second cue for disabled

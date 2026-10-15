@@ -1226,13 +1226,21 @@ only story runner in the repo.
   backend only. Result files: `tests/perf/recorded/layer-dispatch-2026-10-07/` and
   `tests/perf/recorded/layer-dispatch-dirty-2026-10-07/`.
 
-- **(P3) The pull request benchmark job has never run.** `.github/workflows/perf-pr.yml` runs
-  `perf:bench` and `test:perf` on a pull request's merge base and head and posts the `perf:compare`
-  table as a comment, without gating. The comment and directory-compare scripts are tested; the
-  workflow steps have only been read. `perf:bench` has never run on the runner at all, since
-  `perf.yml` runs `test:perf` alone. Unmeasured: how long two full runs take on the one self-hosted
-  machine (the job allows 100 minutes), and whether the base, measured first, reads differently
-  from the head for that reason alone.
+- **(P3) The pull request benchmark job does not fit its time limit, and its comment shows
+  seven of fifteen benchmarks.** Its steps ran on keiei (Apple M2, 8 cores, load about 6.9) on
+  2026-10-15, outside GitHub: base checkout, `npm ci`, `perf:bench` and `test:perf` on each side,
+  `compare.mjs`, and `pr-comment.mjs --dry-run`. Every step worked. Measured:
+  - **Time.** `test:perf` took 53.8 min on the base and 51.1 on the head, and `perf:bench` about 4
+    min each; checkout to comment was 113 min against the job's `timeout-minutes: 100`.
+    `hud-vs-dom` alone is 27.2 min a run. One full `test:perf` also outruns `perf.yml`'s 45
+    minutes. Not measured on the runner itself (studio, M1 Max), so the overrun there is inferred.
+    Which to change is open: the limits, `hud-vs-dom`'s rounds, or which specs a pull request runs.
+  - **The comment.** `compare.txt` was 536,682 characters; `MAX_COMMENT_CHARS` keeps 60,000, which
+    is `animation-stress` through `flush-noise` in file order. Everything after, `image-quad` and
+    `layer-dispatch` among them, never reaches the pull request. What the comment should hold
+    instead (the largest ratios, one summary line per benchmark) is undecided.
+  - Still unmeasured: whether the base, measured first, reads differently from the head for that
+    reason alone. Result files and logs from that run were not kept.
 
 - **(P3) Five leaf packages keep their own listener sets.** Every other store notifies through
   `createEmitter()` in `@weasel-js/registry` (a pass walks the listeners held when it began; a
