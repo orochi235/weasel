@@ -258,6 +258,7 @@ function KeyboardLayout({ platform, legend, font }: { platform: Platform; legend
   const backspace = keySpecFromKey('Backspace', { platform, legend }).label;
   const esc = keySpecFromKey('Escape', { platform, legend }).label;
   const del = keySpecFromKey('Delete', { platform, legend }).label;
+  const named = (key: string) => keySpecFromKey(key, { platform, legend }).label;
 
   // Multi-char labels (F1, Esc, Caps, …) default to `wide` kind (min-width
   // 32px); without this override they'd break the slot accounting.
@@ -335,11 +336,11 @@ function KeyboardLayout({ platform, legend, font }: { platform: Platform; legend
   // Each cluster row aligns vertically with the corresponding main row.
   const clusterRows: ReactElement[][] = [
     // Function row alignment: PrtSc / ScrLk / Pause.
-    [<span key="prtsc">{cap('PrtSc')}</span>, <span key="scrlk">{cap('ScrLk')}</span>, <span key="pause">{cap('Pause')}</span>],
+    [<span key="prtsc">{cap(named('PrintScreen'))}</span>, <span key="scrlk">{cap(named('ScrollLock'))}</span>, <span key="pause">{cap(named('Pause'))}</span>],
     // Number row alignment.
-    [<span key="ins">{cap('Ins')}</span>, <span key="home">{cap('Home')}</span>, <span key="pgup">{cap('PgUp')}</span>],
+    [<span key="ins">{cap(named('Insert'))}</span>, <span key="home">{cap(named('Home'))}</span>, <span key="pgup">{cap(named('PageUp'))}</span>],
     // QWERTY row alignment.
-    [<span key="del">{cap(del)}</span>, <span key="end">{cap('End')}</span>, <span key="pgdn">{cap('PgDn')}</span>],
+    [<span key="del">{cap(del)}</span>, <span key="end">{cap(named('End'))}</span>, <span key="pgdn">{cap(named('PageDown'))}</span>],
     // Home row alignment — empty.
     [<Spacer key="e1" width={unit(3)} />],
     // Bottom-row alignment — Up alone in the middle slot.
@@ -398,7 +399,7 @@ function KeyboardBlock({
  *  preference: shorter words, then the two-line forms real keycaps print. */
 const OTHER_FORMS: Record<string, readonly string[]> = {
   Control: ['Ctrl'], Option: ['Opt'], Delete: ['Del'], Backspace: ['Bksp', 'Back\nspace'], Return: ['Ret'],
-  Super: ['Sup'], PrtSc: ['Prt\nSc'], ScrLk: ['Scr\nLk'], PgUp: ['Pg\nUp'], PgDn: ['Pg\nDn'],
+  Super: ['Sup'], PrtSc: ['Prt\nSc'], ScrLk: ['Scr\nLk'], PgUp: ['Pg\nUp'], PgDn: ['Pg\nDn'], Insert: ['Ins'],
 };
 /** How far a legend's type may shrink before it is left to overflow. */
 const MIN_SCALE = 0.6;
