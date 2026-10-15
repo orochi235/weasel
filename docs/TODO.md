@@ -537,6 +537,12 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 ## Selection, actions & UI panels
 
+- **(P2) Every standard action ships with `<SceneCanvas>`, used or not.**
+  `StandardActionsRegistrar` calls `useStandardActions`, which imports every standard action
+  statically, and `excludeActions` drops them only at runtime, so a bundler cannot shake out one
+  the app never registers. Each specialty action added to the set (path tricks, type-design
+  tools) grows every consumer's bundle. Make the set composable at import time: the consumer
+  passes the action groups it wants, and the default import stays the current set.
 - **(P2) Labs still tune actions through the experimental `actions` prop.** The extend-path-end
   and dynamic-corners labs (on their own branches when `tune` landed) set `mode` and a K binding
   by restating whole descriptors through `actions`. Move each to `<SceneCanvas tune>` as it
