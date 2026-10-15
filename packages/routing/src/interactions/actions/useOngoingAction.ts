@@ -33,6 +33,7 @@ export interface OngoingAction {
  *
  * An edit left open when the control unmounts, or when `actionId` changes, is
  * committed — it is what the user was looking at when the control went away.
+ * On unmount that happens a microtask later.
  * The returned object is stable for the life of the component.
  */
 export function useOngoingAction(actionId: string): OngoingAction {
@@ -65,7 +66,22 @@ export function useOngoingAction(actionId: string): OngoingAction {
     };
   }, [regRef, idRef]);
 
-  useEffect(() => () => edit.commit(), [edit, actionId]);
+  // The commit waits a microtask so that StrictMode's rehearsal unmount, which
+  // remounts with the same id before then, does not end an edit opened in an effect.
+  const leaving = useRef<string | null>(null);
+  useEffect(() => {
+    const left = leaving.current;
+    leaving.current = null;
+    if (left !== null && left !== actionId) edit.commit();
+    return () => {
+      leaving.current = actionId;
+      queueMicrotask(() => {
+        if (leaving.current !== actionId) return;
+        leaving.current = null;
+        edit.commit();
+      });
+    };
+  }, [edit, actionId]);
 
   return edit;
 }
