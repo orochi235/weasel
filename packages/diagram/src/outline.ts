@@ -2,7 +2,7 @@
  * The shapes a built body can wear, as paths in the node's bounds.
  *
  * These are the flowchart vocabulary — a decision is a diamond, an I/O step a
- * parallelogram, a terminator a stadium — plus `'rect'` for everything else and
+ * parallelogram, a terminator a stadium, a demultiplexer a trapezoid — plus `'rect'` for everything else and
  * a `Path` escape hatch for a shape the vocabulary does not have. The path is
  * built in world coordinates from the bounds it is given, the same way the
  * kit's own `clipFromPose` factories are.
@@ -21,7 +21,7 @@ export interface Bounds {
 }
 
 /** A named flowchart shape, or a path a consumer built themselves. */
-export type Outline = 'rect' | 'diamond' | 'stadium' | 'parallelogram' | Path;
+export type Outline = 'rect' | 'diamond' | 'stadium' | 'parallelogram' | 'trapezoid' | Path;
 
 /** How far a parallelogram's top edge leans past its bottom one, as a
  *  fraction of the box's width. The flowchart convention. */
@@ -60,6 +60,14 @@ export function outlinePath(outline: Outline, bounds: Bounds): Path {
         { x, y: y + h },
       ]);
     }
+
+    case 'trapezoid':
+      return polygonFromPoints([
+        { x, y: y + h / 4 },
+        { x: x + w, y },
+        { x: x + w, y: y + h },
+        { x, y: y + (h * 3) / 4 },
+      ]);
 
     case 'stadium':
       return stadiumPath(x, y, w, h);
@@ -132,6 +140,8 @@ export function contentBox(outline: Outline, bounds: Bounds): Bounds {
       const lean = Math.min(w * LEAN, w / 2);
       return { x: x + lean, y, width: Math.max(w - lean * 2, 0), height: h };
     }
+    case 'trapezoid':
+      return { x, y: y + h / 4, width: w, height: h / 2 };
     case 'stadium': {
       const r = Math.min(w, h) / 2;
       return w >= h
@@ -161,6 +171,8 @@ export function boxForContent(
       return { width: content.width * 2, height: content.height * 2 };
     case 'parallelogram':
       return { width: content.width / (1 - LEAN * 2), height: content.height };
+    case 'trapezoid':
+      return { width: content.width, height: content.height * 2 };
     case 'stadium':
       return { width: content.width + content.height, height: content.height };
   }

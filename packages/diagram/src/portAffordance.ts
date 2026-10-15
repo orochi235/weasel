@@ -27,6 +27,7 @@ import type {
   PoseDescriptor,
   CommandFill,
 } from '@weasel-js/core';
+import { ellipsePath, viewToTransform } from '@weasel-js/core';
 import { portsOf } from './ports';
 import type { DiagramNodeLike, DiagramNodeReader } from './trait';
 import type { Port } from './types';
@@ -73,13 +74,21 @@ export interface PortAffordanceOptions<TPose> {
   /** Which participants show their ports. Default: all of them. Gate on
    *  selection or hover by reading `state`. */
   shows?: (node: DiagramNodeLike, state: ChromeState) => boolean;
+  /** Which of a participant's ports show. Default: all of them. A port
+   *  this turns away is not painted or grabbable, and passed with the connect
+   *  options (as `diagramPorts` and `DiagramView` do), no connect lands on it. */
+  showsPort?: (port: Port) => boolean;
   /** Screen-pixel hit radius. Default 8, the kit's `HANDLE_BASE_PX`. */
   hitRadiusPx?: number;
-  /** Screen-pixel side of the painted square. Default 7. Omit `paint` entirely
-   *  by passing 0 — a port the consumer draws itself is still hittable. */
+  /** Screen-pixel size of the painted mark: a square's side, or a circle's
+   *  diameter. Default 7. Omit `paint` entirely by passing 0 — a port the
+   *  consumer draws itself is still hittable. */
   sizePx?: number;
-  fill?: CommandFill;
+  /** One fill for every port, or a function of the port — its `type`, say. */
+  fill?: CommandFill | ((port: Port) => CommandFill);
   stroke?: CommandStroke;
+  /** Default `'square'`. */
+  shape?: 'square' | 'circle';
   cursor?: CursorSpec;
   /** Default `'exclusive'` on pointer gestures: a drag from a port is a
    *  connect, never a move of the node underneath it. */
@@ -93,6 +102,10 @@ const DEFAULT_SIZE_PX = 7;
 export function portScratchOf(hit: { payload?: unknown } | null | undefined): PortScratch | null {
   const payload = hit?.payload as PortScratch | undefined;
   return payload !== undefined && typeof payload.portId === 'string' ? payload : null;
+}
+
+function withPaint(paint: AffordanceRegion['paint']): { paint?: NonNullable<AffordanceRegion['paint']> } {
+  return paint === undefined ? {} : { paint };
 }
 
 /**
@@ -114,14 +127,22 @@ export function createPortAffordance<TPose>(
     ...(opts.geometry ? { geometry: opts.geometry } : {}),
     ...(opts.read ? { read: opts.read } : {}),
   };
-  const paint = sizePx <= 0
-    ? undefined
-    : {
-      kind: 'square' as const,
-      sizePx,
-      ...(opts.fill ? { fill: opts.fill } : {}),
-      ...(opts.stroke ? { stroke: opts.stroke } : {}),
+  const paintOf = (port: Port): AffordanceRegion['paint'] => {
+    if (sizePx <= 0) return undefined;
+    const fill = typeof opts.fill === 'function' ? opts.fill(port) : opts.fill;
+    const look = { ...(fill ? { fill } : {}), ...(opts.stroke ? { stroke: opts.stroke } : {}) };
+    if (opts.shape !== 'circle') return { kind: 'square', sizePx, ...look };
+    return {
+      kind: 'custom',
+      // An affordance layer paints in screen pixels, so the mark stays one size at any zoom.
+      draw: ({ world, view }) => {
+        const t = viewToTransform(view);
+        const x = t.panX + world.x * t.zoom.x - sizePx / 2;
+        const y = t.panY + world.y * t.zoom.y - sizePx / 2;
+        return [{ kind: 'path', path: ellipsePath({ x, y, width: sizePx, height: sizePx }), ...look }];
+      },
     };
+  };
 
   return {
     id,
@@ -130,11 +151,12 @@ export function createPortAffordance<TPose>(
       for (const { node, pose } of participants()) {
         if (opts.shows !== undefined && !opts.shows(node, state)) continue;
         for (const port of portsOf(node, pose, portOpts)) {
+          if (opts.showsPort !== undefined && !opts.showsPort(port)) continue;
           out.push({
             id: `${node.id}:${port.id}`,
             targetId: null,
             shape: { kind: 'point', x: port.point.x, y: port.point.y, hitRadiusPx },
-            ...(paint ? { paint } : {}),
+            ...withPaint(paintOf(port)),
             ...(opts.cursor !== undefined ? { cursor: opts.cursor } : {}),
             strength,
             claimedKinds: ['pointer'],

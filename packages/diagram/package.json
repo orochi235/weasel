@@ -17,6 +17,10 @@
       "import": "./dist/layout.js",
       "types": "./dist/layout.d.ts"
     },
+    "./effect": {
+      "import": "./dist/effect.js",
+      "types": "./dist/effect.d.ts"
+    },
     "./package.json": "./package.json"
   },
   "peerDependencies": {
