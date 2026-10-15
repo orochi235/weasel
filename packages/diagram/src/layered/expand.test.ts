@@ -37,6 +37,29 @@ describe('expand', () => {
     ]);
   });
 
+  it('gives a labeled edge a row of its own between its ends, with room for the label beside its wire', () => {
+    const g = graphOf(['a', 'b', 'c'], [['a', 'b'], ['b', 'c']]);
+    const labeled: Graph = { ...g, edges: g.edges.map((e) => (e.id === 'e0' ? { ...e, label: { width: 30, height: 10, offset: 5 } } : e)) };
+    const out = expand(labeled, ranks({ a: 0, b: 1, c: 2 }), new Set(), { axes: AXES, nodeGap: 40, placeholders: true, labels: true });
+    expect(out.rows.map((r) => r.map((n) => (isPlaceholder(n.id) ? '·' : n.id)))).toEqual([['a'], ['·'], ['b'], ['c']]);
+    expect([...out.labelRows]).toEqual([1]);
+    const room = out.rows[1]![0]!;
+    expect(out.labels.get('e0')).toBe(room.id);
+    // A quarter gap, the offset, then the label: across, its width; along, its height.
+    expect([room.bounds.width, room.bounds.height]).toEqual([10 + 5 + 30, 10]);
+    // Running down, left of travel is +x, so the wire runs on the low side.
+    expect(out.wires.get(room.id)).toBe(10);
+  });
+
+  it('puts the label of an edge spanning ranks in the gap nearest its middle, and every edge crossing that gap through it', () => {
+    const g = graphOf(['a', 'b', 'c', 'd'], [['a', 'b'], ['b', 'c'], ['c', 'd'], ['a', 'd']]);
+    const labeled: Graph = { ...g, edges: g.edges.map((e) => (e.id === 'e3' ? { ...e, label: { width: 30, height: 10 } } : e)) };
+    const out = expand(labeled, ranks({ a: 0, b: 1, c: 2, d: 3 }), new Set(), { axes: AXES, nodeGap: 40, placeholders: true, labels: true });
+    expect(out.rows.map((r) => r.filter((n) => isPlaceholder(n.id)).length)).toEqual([0, 1, 2, 1, 0]);
+    expect([...out.labelRows]).toEqual([2]);
+    expect(out.chains.get('e1')!.ids).toHaveLength(1);
+  });
+
   it('adds no placeholders, and no hops for a spanning edge, when told not to', () => {
     const g = graphOf(['a', 'b', 'c'], [['a', 'b'], ['b', 'c'], ['a', 'c']]);
     const { rows, hops, chains } = expand(g, ranks({ a: 0, b: 1, c: 2 }), new Set(), { axes: AXES, nodeGap: 40, placeholders: false });

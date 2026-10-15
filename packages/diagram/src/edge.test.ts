@@ -104,6 +104,13 @@ describe('bezier', () => {
   it('samples a smooth run rather than two points', () => {
     expect(pts.length).toBeGreaterThan(8);
   });
+
+  it('holds the straight run between two waypoints level on one axis', () => {
+    const run = bezier(req(port('a', 0, 0, { x: 0, y: 1 }), port('b', 200, 200, { x: 0, y: -1 }), [{ x: 100, y: 80 }, { x: 100, y: 120 }]));
+    const between = run.filter((p) => p.y > 80 && p.y < 120);
+    expect(between.length).toBeGreaterThan(0);
+    for (const p of between) expect(p.x).toBeCloseTo(100, 6);
+  });
 });
 
 describe('diagramEdgeOf', () => {

@@ -23,6 +23,9 @@ export interface LayeredRoute {
   fromPort?: string;
   toPort?: string;
   waypoints?: readonly Vec2[];
+  /** Where among `waypoints` layout left the edge's label room, as a
+   *  `DiagramLabel`'s `{ waypoint }`. */
+  labelAt?: number;
 }
 
 /** What {@link layeredRoutes} reads: where `layeredPlan` put things. */
@@ -32,6 +35,9 @@ export interface LayeredRouteInput {
   ranks: ReadonlyMap<string, number>;
   /** Each spanning edge's waypoints, from `layeredPlan`. */
   waypoints: ReadonlyMap<string, readonly Vec2[]>;
+  /** Where each labeled edge's label room is among its waypoints, from
+   *  `layeredPlan`. */
+  labels?: ReadonlyMap<string, number>;
   /** Each group's node members, through nested groups. */
   members: ReadonlyMap<string, readonly string[]>;
   /** Ids whose ports are the four compass midpoints, which are the only ones
@@ -69,7 +75,11 @@ export function layeredRoutes(input: LayeredRouteInput): Map<string, LayeredRout
     if (compass.has(edge.from)) route.fromPort = ahead ? faces.out : faces.in;
     if (compass.has(edge.to)) route.toPort = ahead ? faces.in : faces.out;
     const waypoints = input.waypoints.get(edge.id);
-    if (waypoints !== undefined && waypoints.length > 0) route.waypoints = waypoints;
+    if (waypoints !== undefined && waypoints.length > 0) {
+      route.waypoints = waypoints;
+      const label = input.labels?.get(edge.id);
+      if (label !== undefined) route.labelAt = label;
+    }
     if (route.fromPort !== undefined || route.toPort !== undefined || route.waypoints !== undefined) {
       routes.set(edge.id, route);
     }
@@ -89,6 +99,13 @@ export function authoredOver(
     const fromPort = e.fromPort ?? r?.fromPort;
     const toPort = e.toPort ?? r?.toPort;
     const waypoints = e.waypoints ?? r?.waypoints;
-    return [e.id, { ...(fromPort ? { fromPort } : {}), ...(toPort ? { toPort } : {}), ...(waypoints ? { waypoints } : {}) }];
+    // The room is beside layout's waypoints, not the author's.
+    const labelAt = e.waypoints === undefined ? r?.labelAt : undefined;
+    return [e.id, {
+      ...(fromPort ? { fromPort } : {}),
+      ...(toPort ? { toPort } : {}),
+      ...(waypoints ? { waypoints } : {}),
+      ...(labelAt !== undefined ? { labelAt } : {}),
+    }];
   }));
 }

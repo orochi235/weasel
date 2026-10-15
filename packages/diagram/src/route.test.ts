@@ -24,6 +24,22 @@ describe('layered routes', () => {
       .toMatchObject({ from: { port: 'e' }, to: { port: 'w' } });
   });
 
+  it('set a label beside the room layout left it among its waypoints', () => {
+    const labeled: DataEdge = { from: 'a', to: 'b', label: 'then' };
+    const data: DiagramData = { ...chain, edges: [labeled, chain.edges[1]!] };
+    const label = diagramScene(data).find((s) => s.id === `${edgeIdOf(labeled)}/label`)!;
+    expect((label.data!.diagram as { label: unknown }).label).toEqual({ at: { waypoint: 0.5 }, offset: 9 });
+    expect(traitOf(data, labeled).waypoints).toHaveLength(2);
+  });
+
+  it('leave a label its edge places itself where the edge says', () => {
+    const labeled: DataEdge = { from: 'a', to: 'b', label: 'then', labelPlacement: { at: 'start' } };
+    const data: DiagramData = { ...chain, edges: [labeled, chain.edges[1]!] };
+    const label = diagramScene(data).find((s) => s.id === `${edgeIdOf(labeled)}/label`)!;
+    expect((label.data!.diagram as { label: unknown }).label).toEqual({ at: 'start' });
+    expect(traitOf(data, labeled).waypoints).toBeUndefined();
+  });
+
   it('take a long edge around a node in a rank it skips', () => {
     const { waypoints } = traitOf(chain, skip);
     const b = poseOf(chain, 'b');

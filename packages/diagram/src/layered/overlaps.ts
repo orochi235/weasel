@@ -1,6 +1,7 @@
 /** Test helper: what a built diagram's routed wires run through and across. */
 import { pointAlongPath, type Vec2 } from '@weasel-js/core';
 import { EDGE_DERIVE_PATH } from '../edge';
+import { LABEL_DERIVE_POSE } from '../label';
 import type { DiagramData, DiagramSpec } from '../fromData';
 
 type Rect = { x: number; y: number; width: number; height: number };
@@ -62,6 +63,34 @@ export function wiresThroughBoxes(data: DiagramData, specs: readonly DiagramSpec
   }
   return out;
 }
+
+/** Ids of the edge labels that overlap a node's box, or that a wire other than
+ *  their own runs through. */
+export function labelsInTheWay(data: DiagramData, specs: readonly DiagramSpec[]): string[] {
+  const byId = new Map(specs.map((s) => [s.id as string, s]));
+  const wires = routedWires(specs);
+  const out: string[] = [];
+  for (const spec of specs) {
+    if (spec.derivePose !== LABEL_DERIVE_POSE) continue;
+    const edgeId = (spec.dependsOn as readonly string[])[0]!;
+    const edge = byId.get(edgeId)!;
+    const [from, to] = edge.dependsOn as readonly string[];
+    const ends = [byId.get(from!)!, byId.get(to!)!];
+    const path = EDGE_DERIVE_PATH(edge as never, ends.map((n) => ({ node: n, pose: n.pose })) as never);
+    const box = LABEL_DERIVE_POSE(spec as never, [{ node: edge, pose: edge.pose, path }] as never) as Rect | null;
+    if (box === null) continue;
+    const onBox = data.nodes.some((n) => {
+      const r = byId.get(n.id)?.pose as Rect | undefined;
+      return r !== undefined && overlap(box, r, 1);
+    });
+    const crossed = wires.some((w) => w.id !== edgeId && w.points.some((p) => inside(p, box, 1)));
+    if (onBox || crossed) out.push(spec.id as string);
+  }
+  return out;
+}
+
+const overlap = (a: Rect, b: Rect, inset: number) =>
+  a.x + inset < b.x + b.width && b.x + inset < a.x + a.width && a.y + inset < b.y + b.height && b.y + inset < a.y + a.height;
 
 function membersOf(data: DiagramData, group: string): string[] {
   const g = (data.groups ?? []).find((x) => x.id === group);

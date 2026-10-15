@@ -148,10 +148,18 @@ export const bezier: Router = (req) => {
 
 const BEZIER_SAMPLES = 16;
 
-/** The direction a smooth route passes an interior stop: from the stop before it toward the one after. */
+/**
+ * The direction a smooth route passes an interior stop: along the straight run
+ * it makes with a neighboring waypoint level with it on one axis, else from
+ * the stop before it toward the one after. Two such waypoints are a run the
+ * route was meant to hold, the way `layered` lays one through each rank.
+ */
 function through(stops: readonly Vec2[], i: number): Vec2 | null {
-  const dx = stops[i + 1]!.x - stops[i - 1]!.x;
-  const dy = stops[i + 1]!.y - stops[i - 1]!.y;
+  const last = stops.length - 1;
+  const run = (a: number, b: number) => a >= 1 && b <= last - 1 && (stops[a]!.x === stops[b]!.x || stops[a]!.y === stops[b]!.y);
+  const [from, to] = run(i, i + 1) ? [i, i + 1] : run(i - 1, i) ? [i - 1, i] : [i - 1, i + 1];
+  const dx = stops[to]!.x - stops[from]!.x;
+  const dy = stops[to]!.y - stops[from]!.y;
   const len = Math.hypot(dx, dy);
   return len === 0 ? null : { x: dx / len, y: dy / len };
 }

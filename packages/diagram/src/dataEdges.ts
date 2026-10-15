@@ -16,11 +16,23 @@ export interface EdgeSpecContext {
   opts: Pick<DiagramSceneOptions, 'edgeStyle' | 'router' | 'labelPlacement'>;
 }
 
+/** The face an edge label is set in: the diagram's, two sizes down. */
+export const labelStyleOf = (font: { fontFamily: string; fontSize: number }) => ({ ...font, fontSize: font.fontSize - 2 });
+
+/** Where a label sits: the edge's own placement, else beside the room layout
+ *  left it at the diagram's offset, else the diagram's placement. */
+function placementOf(e: DataEdge, route: LayeredRoute | undefined, ctx: EdgeSpecContext): DiagramLabel {
+  if (e.labelPlacement !== undefined) return e.labelPlacement;
+  const placement = ctx.opts.labelPlacement ?? ctx.labelPlacement;
+  return route?.labelAt === undefined ? placement : { ...placement, at: { waypoint: route.labelAt } };
+}
+
 export function edgeSpecs(edges: readonly DataEdge[], ctx: EdgeSpecContext): DiagramSpec[] {
   const specs: DiagramSpec[] = [];
   for (const e of edges) {
     const id = ctx.idOf(e);
-    const { fromPort, toPort, waypoints } = ctx.routes?.get(id) ?? e;
+    const route = ctx.routes?.get(id);
+    const { fromPort, toPort, waypoints } = route ?? e;
     const style = ctx.opts.edgeStyle?.(e) ?? ctx.fallback;
     const markerStart = style.markerStart ?? null;
     const markerEnd = style.markerEnd === undefined ? 'arrow' : style.markerEnd;
@@ -49,7 +61,7 @@ export function edgeSpecs(edges: readonly DataEdge[], ctx: EdgeSpecContext): Dia
       derivePath: EDGE_DERIVE_PATH,
     });
     if (!e.label) continue;
-    const labelStyle = { ...ctx.font, fontSize: ctx.font.fontSize - 2 };
+    const labelStyle = labelStyleOf(ctx.font);
     specs.push({
       id: `${id}/label` as never,
       kind: 'leaf',
@@ -57,7 +69,7 @@ export function edgeSpecs(edges: readonly DataEdge[], ctx: EdgeSpecContext): Dia
       pickable: false,
       pose: { x: 0, y: 0, width: ctx.measure(e.label, labelStyle).width, height: labelStyle.fontSize },
       data: {
-        diagram: { label: e.labelPlacement ?? ctx.opts.labelPlacement ?? ctx.labelPlacement },
+        diagram: { label: placementOf(e, route, ctx) },
         text: e.label,
         style: labelStyle,
         fill: { paint: { color: style.label ?? style.stroke } },

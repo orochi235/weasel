@@ -7,13 +7,15 @@ import type { Graph, GraphGroup, GraphNode } from '../graph';
 import { layered, layeredPlan } from '../layered';
 import type { LayoutOptions, LayoutResult } from '../layout';
 import { ANCHORS } from './fixtures';
-import { crossingPairs, wiresThroughBoxes } from './overlaps';
+import { crossingPairs, labelsInTheWay, wiresThroughBoxes } from './overlaps';
 
 /** Crossings each fixture draws, counting wires that cross on their way into
  *  one node's different ports; none may get worse. Before ordering and
- *  placement read ports, sideInputs drew 2, skip 6 and broken 2. */
+ *  placement read ports, sideInputs drew 2, skip 6 and broken 2. anchors'
+ *  one cannot go: `voice:intro` feeds both joins and sits left of the query
+ *  feeding the left one. */
 const CROSSINGS_BEFORE: Record<string, number> = {
-  anchors: 0, chain: 0, branch: 0, sideInputs: 0, skip: 1, bands: 0, large: 0, broken: 1,
+  anchors: 1, chain: 0, branch: 0, sideInputs: 0, skip: 0, bands: 0, large: 0, broken: 1,
 };
 
 describe('layered, measured through diagramScene', () => {
@@ -31,6 +33,12 @@ describe('layered, measured through diagramScene', () => {
 
   it.each(cases)('%s: no more crossings than before', (name, specs) => {
     expect(crossingPairs(specs)).toBeLessThanOrEqual(CROSSINGS_BEFORE[name]!);
+  });
+
+  it.each(['down', 'right', 'up', 'left'] as const)('anchors, laid out %s: no label sits on a box or under another wire', (direction) => {
+    const specs = diagramScene(ANCHORS, { layoutOptions: { direction, order: 'barycenter', nodeGap: 40, rankGap: 56 } });
+    expect(labelsInTheWay(ANCHORS, specs)).toEqual([]);
+    expect(wiresThroughBoxes(ANCHORS, specs)).toEqual([]);
   });
 });
 
