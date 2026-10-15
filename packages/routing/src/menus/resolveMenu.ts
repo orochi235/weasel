@@ -21,7 +21,7 @@ type Ctx = {
 };
 
 function itemOf(
-  ctx: Ctx, action: Action, key: string, label: string, own?: Readonly<Record<string, unknown>>,
+  ctx: Ctx, action: Action, key: string, label: string, icon: unknown, own?: Readonly<Record<string, unknown>>,
 ): MenuEntry {
   const deps = ctx.src.depsFor(action);
   const point = ctx.at ? { worldX: ctx.at.x, worldY: ctx.at.y } : {};
@@ -29,7 +29,7 @@ function itemOf(
     kind: 'item',
     key,
     label,
-    icon: action.icon,
+    icon,
     shortcut: actionShortcuts(action, own)[0],
     disabled: !evaluateEnabled(action, deps, ctx.at).enabled,
     checked: evaluateActive(action, deps),
@@ -37,9 +37,9 @@ function itemOf(
   };
 }
 
-function rowsOf(ctx: Ctx, e: MenuDefEntry, path: string): MenuEntry[] {
+function rowsOf(ctx: Ctx, e: MenuDefEntry, path: string, at: string): MenuEntry[] {
   if ('submenu' in e) {
-    const key = `${path}/${e.submenu}`;
+    const key = `${path}/${at}:${e.submenu}`;
     const entries = sectionsOf(ctx, e.sections, key);
     return entries.length ? [{ kind: 'submenu', key, label: e.label, entries }] : [];
   }
@@ -47,15 +47,15 @@ function rowsOf(ctx: Ctx, e: MenuDefEntry, path: string): MenuEntry[] {
   const action = ctx.byId.get(id);
   if (!action || action.invoker?.timing !== 'immediate') return [];
   if ('actionVariants' in e) {
-    return actionItems(action).map((it) => itemOf(ctx, action, `${path}/${it.key}`, it.label, it.params));
+    return actionItems(action).map((it) => itemOf(ctx, action, `${path}/${at}:${it.key}`, it.label, it.icon, it.params));
   }
-  return [itemOf(ctx, action, `${path}/${action.id}`, e.label ?? action.label, e.params)];
+  return [itemOf(ctx, action, `${path}/${at}:${action.id}`, e.label ?? action.label, action.icon, e.params)];
 }
 
 function sectionsOf(ctx: Ctx, sections: MenuDefEntry[][], path: string): MenuEntry[] {
   const out: MenuEntry[] = [];
   sections.forEach((section, i) => {
-    const rows = section.flatMap((e) => rowsOf(ctx, e, path));
+    const rows = section.flatMap((e, j) => rowsOf(ctx, e, path, `${i}.${j}`));
     if (!rows.length) return;
     if (out.length) out.push({ kind: 'separator', key: `${path}/sep${i}` });
     out.push(...rows);

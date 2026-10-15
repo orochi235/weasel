@@ -12,6 +12,10 @@ const actions: Action[] = [
     { key: 'l', label: 'Left', params: { edge: 'left' } },
     { key: 'r', label: 'Right', params: { edge: 'right' } },
   ] },
+  { id: 'flip', label: 'Flip', icon: 'flip-icon', invoker: immediate, variants: [
+    { key: 'h', label: 'Horizontal', icon: 'h-icon', params: { axis: 'x' } },
+    { key: 'v', label: 'Vertical', params: { axis: 'y' } },
+  ] },
   { id: 'drag', label: 'Drag', invoker: { timing: 'ongoing', start: () => ({}) as never } },
 ];
 
@@ -53,5 +57,39 @@ describe('resolveMenu', () => {
     const entries = resolveMenu(def, sources());
     expect(entries).toHaveLength(1);
     expect(entries[0]).toMatchObject({ kind: 'submenu', label: 'Arrange' });
+  });
+
+  it('shows a variant its own icon and falls back to the action icon', () => {
+    const entries = resolveMenu({ id: 'm', sections: [[{ actionVariants: 'flip' }]] }, sources());
+    expect(entries.map((e) => e.kind === 'item' && e.icon)).toEqual(['h-icon', 'flip-icon']);
+  });
+  it('lets item params beat menu params, and the point beat item params', () => {
+    const src = sources();
+    const def = { id: 'm', sections: [[{ action: 'cut', params: { a: 1, worldX: 99 } }]] };
+    (resolveMenu(def, src, { x: 3, y: 4 }, { a: 0 })[0] as { run(): void }).run();
+    expect(src.trigger).toHaveBeenCalledWith('cut', { a: 1, worldX: 3, worldY: 4 });
+  });
+  it('sends no point when opened without one', () => {
+    const src = sources();
+    (resolveMenu({ id: 'm', sections: [[{ action: 'cut' }]] }, src)[0] as { run(): void }).run();
+    expect(src.trigger).toHaveBeenCalledWith('cut', {});
+  });
+  it('runs a variant row with that variant params', () => {
+    const src = sources();
+    const rows = resolveMenu({ id: 'm', sections: [[{ actionVariants: 'align' }]] }, src);
+    (rows[1] as { run(): void }).run();
+    expect(src.trigger).toHaveBeenCalledWith('align', { edge: 'right' });
+  });
+  it('gives the same action listed twice distinct keys', () => {
+    const def = { id: 'm', sections: [[
+      { action: 'align', params: { edge: 'left' } }, { action: 'align', params: { edge: 'right' } },
+    ], [{ action: 'align' }]] };
+    const keys = resolveMenu(def, sources()).map((e) => e.key);
+    expect(new Set(keys).size).toBe(keys.length);
+  });
+  it('keeps variant keys distinct when the action repeats', () => {
+    const def = { id: 'm', sections: [[{ actionVariants: 'align' }, { actionVariants: 'align' }]] };
+    const keys = resolveMenu(def, sources()).map((e) => e.key);
+    expect(new Set(keys).size).toBe(4);
   });
 });
