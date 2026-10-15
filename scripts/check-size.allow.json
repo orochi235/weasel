@@ -38,10 +38,10 @@
     "longestFunction": 253
   },
   "packages/core/src/canvas/SceneCanvas/StandardActionsRegistrar.tsx": {
-    "longestFunction": 187
+    "longestFunction": 183
   },
   "packages/core/src/canvas/SceneCanvas/props.ts": {
-    "lines": 668
+    "lines": 637
   },
   "packages/core/src/canvas/SceneCanvas/useDispatcherOverlayLayer.ts": {
     "longestFunction": 194

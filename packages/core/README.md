@@ -102,6 +102,39 @@ An `Action` is a named operation — `delete`, `duplicate`, `group`, `insert`, `
 
 `<SceneCanvas>` mounts a provider when none is above it and registers the kit-standard actions its `features` presets name — under `draw`, all of them: escape, select-all, delete, duplicate, group and ungroup, undo and redo, flip, nudge, reorder, align, distribute, the pathfinder booleans, path-anchor editing, fill and stroke, clipboard, and the pointer-driven move, resize, rotate, clone, area-select and lasso. `FEATURE_ACTION_IDS` lists which preset registers which, and `COMPOSITE_FEATURES` what `pick`, `transform` and `draw` abbreviate. `insert` comes with the shape tools that bind it.
 
+### Tuning an action
+
+`tune` changes a built-in action on one canvas without restating it. Each entry, keyed by action id, can carry:
+
+| Field | What it does |
+|---|---|
+| `params` | Params every invocation of the action starts from. Whatever a binding or a `trigger(id, params)` call passes is laid over them, so these fill in only what the call leaves out. A thunk is read on every call, so a value that changes mid-drag reaches an ongoing action the next time it reads its params. |
+| `bindings` | Gestures added beside the action's own `defaultBinding`, each a `GestureSpec` or `{ spec, opts: { params } }`. |
+
+A tuning applies to whichever descriptor holds the id, whether a preset or a tool registered it, and whether it registered before the tuning or after. Changing `params` never requires knowing what gesture reaches the action.
+
+```tsx
+const radius = useRef(8);
+const tune = useMemo<ActionTunings>(() => ({
+  brushDeleteAnchors: { params: () => ({ radiusPx: radius.current }) },
+  cycleCornerStyle: { bindings: [{ kind: 'key', key: 'k' }] },
+}), []);
+
+<SceneCanvas scene={scene} features={['paths']} tune={tune} />
+```
+
+`ActionParamSchema` types `params` for the kit actions that read them (`flip`, `align.*`, `distribute.*`, `reorder.*`, `nudge.*`, `tool.activate`); any other id takes a plain record. An action of your own declares its params the way `DepSchema` takes deps:
+
+```ts
+declare module '@weasel-js/core' {
+  interface ActionParamSchema { 'app.stamp': { size: number } }
+}
+```
+
+Pass `tune` a stable object — a module constant or a `useMemo` — since a new one re-applies every tuning. The registry underneath is `ActionsRegistry.tune(id, tuning)`, which returns its release.
+
+### Replacing actions (`@experimental`)
+
 ```tsx
 <SceneCanvas
   width={W}
