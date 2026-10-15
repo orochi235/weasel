@@ -4,7 +4,7 @@ import { type EventTrack, type Keyframe, type SampledTrack, type TimelineTrack }
 import { DisclosureMark } from '../Disclosure';
 import s from './Timeline.module.css';
 import { createTimeScale, spanPercent, toPercent, type TimeWindow } from './timeScale';
-import { SNAP_RADIUS_PX, snapToNearest } from '../../snap';
+import { snapToNearest, useSnapRadiusPx } from '../../snap';
 import { LaneGraph } from './LaneGraph';
 import type { LaneRow } from './lanes';
 
@@ -58,6 +58,7 @@ export function Lane(props: LaneProps): ReactElement {
   // `onKeyInput` — the committed key stays put underneath as the origin.
   const [drag, setDrag] = useState<{ keyIndex: number; t: number } | null>(null);
 
+  const snapRadiusPx = useSnapRadiusPx();
   const pct = (ms: number): string => toPercent(win, ms + row.offset);
 
   const msAt = (clientX: number): number => {
@@ -67,9 +68,8 @@ export function Lane(props: LaneProps): ReactElement {
   };
 
   const snapPxToMs = (): number => {
-    const width = trackRef.current?.getBoundingClientRect().width ?? 0;
-    const scale = createTimeScale(win, width);
-    return scale.toMs(SNAP_RADIUS_PX) - scale.toMs(0);
+    const scale = createTimeScale(win, trackRef.current?.getBoundingClientRect().width ?? 0);
+    return scale.toMs(snapRadiusPx) - scale.toMs(0);
   };
 
   // Only a numeric sampled row has an honest value axis to graph.
