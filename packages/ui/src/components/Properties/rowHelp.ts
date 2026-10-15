@@ -1,4 +1,5 @@
 import { useEffect, useId, useState, type RefObject } from 'react';
+import { useKitSetting, useLatest } from '@weasel-js/react';
 
 const CONTROLS = 'input, select, textarea, button, [tabindex]:not([tabindex="-1"])';
 
@@ -23,6 +24,7 @@ export interface RowHelp {
 export function useRowHelp(cue: RefObject<HTMLElement | null>, within: string | undefined): RowHelp {
   const id = useId();
   const [open, setOpen] = useState(false);
+  const delay = useLatest(useKitSetting('help.focusDelayMs') ?? FOCUS_DELAY);
 
   useEffect(() => {
     const row = within === undefined ? null : cue.current?.closest(within);
@@ -58,7 +60,7 @@ export function useRowHelp(cue: RefObject<HTMLElement | null>, within: string | 
     const onFocus = (e: Event): void => {
       if (pressed || cue.current?.parentElement?.contains(e.target as Node)) return;
       clearTimeout(timer);
-      timer = setTimeout(() => setOpen(true), FOCUS_DELAY);
+      timer = setTimeout(() => setOpen(true), delay.current);
     };
     const onBlur = (e: Event): void => {
       if (row.contains((e as FocusEvent).relatedTarget as Node | null)) return;
@@ -85,7 +87,7 @@ export function useRowHelp(cue: RefObject<HTMLElement | null>, within: string | 
       row.removeEventListener('pointerdown', onDown);
       row.removeEventListener('pointerup', onUp);
     };
-  }, [cue, within, id]);
+  }, [cue, within, id, delay]);
 
   return { id, open, setOpen };
 }
