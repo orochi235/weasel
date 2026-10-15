@@ -77,7 +77,7 @@ describe('createSymmetry', () => {
 describe('the contribution\'s deps', () => {
   it('draws into the active group, and the top of the tree with none', () => {
     const { sym, group } = setup();
-    const into = sym.contribution.deps!.insertInto!();
+    const into = sym.contribution.deps!.insertInto!()!;
     expect(into.get()).toBe(group);
     sym.setActive(null);
     expect(into.get()).toBeNull();
@@ -86,7 +86,7 @@ describe('the contribution\'s deps', () => {
   it('answers a path\'s group transforms for anchor edits, whichever group is active', () => {
     const { sym, leaf } = setup();
     sym.setActive(null);
-    const dep = sym.contribution.deps!.pathSymmetry!();
+    const dep = sym.contribution.deps!.pathSymmetry!()!;
     expect(dep.transforms(leaf)).toHaveLength(1);
     expect(dep.transforms('nowhere')).toEqual([]);
   });
@@ -94,7 +94,7 @@ describe('the contribution\'s deps', () => {
   it('answers no transforms for a repeat, which no path is its own image under', () => {
     const { sym, group, leaf } = setup();
     sym.update(group, { spec: { kind: 'repeat', count: 4 } });
-    expect(sym.contribution.deps!.pathSymmetry!().transforms(leaf)).toEqual([]);
+    expect(sym.contribution.deps!.pathSymmetry!()!.transforms(leaf)).toEqual([]);
   });
 });
 

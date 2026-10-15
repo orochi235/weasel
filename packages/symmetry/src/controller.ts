@@ -1,4 +1,4 @@
-import { hitPredicate, type NodeId, type Scene, type SurfaceContribution } from '@weasel-js/core';
+import { hitPredicate, type Action, type NodeId, type Scene, type SurfaceContribution } from '@weasel-js/core';
 import { bakeSymmetry, type BakeResult } from './bake';
 import {
   editSymmetries, isSymmetryGroup, poseAtCenter, readGroup, specOfData, symmetryGroupOf,
@@ -52,6 +52,14 @@ export interface SymmetryController {
 export interface CreateSymmetryOptions {
   guide?: SymmetryGuideStyle;
 }
+
+const GRAB_HANDLE_ID = 'symmetry.grabHandle';
+const grabHandle: Action = {
+  id: GRAB_HANDLE_ID,
+  label: 'Grab symmetry handle',
+  invoker: { timing: 'immediate', run: () => {} },
+  enabled: () => true as const,
+};
 
 const MODS_ANY = { shift: 'optional', alt: 'optional', meta: 'optional', ctrl: 'optional' } as const;
 const onHandle = hitPredicate((hit) => (hit as { kind?: string } | null | undefined)?.kind === SYMMETRY_HANDLE_KIND);
@@ -122,8 +130,14 @@ export function createSymmetry(scene: AnyScene, opts: CreateSymmetryOptions = {}
       insertInto: () => ({ get: () => ctrl.active() }),
       pathSymmetry: () => ({ transforms: (pathId: string) => editSymmetries(scene, symmetryGroupOf(scene, pathId)) }),
     },
-    actions: [action],
-    bindings: [{ spec: { kind: 'drag', target: { kindOf: onHandle }, mods: MODS_ANY }, actionId: SYMMETRY_HANDLE_ACTION_ID }],
+    actions: [action, grabHandle],
+    bindings: [
+      { spec: { kind: 'drag', target: { kindOf: onHandle }, mods: MODS_ANY }, actionId: SYMMETRY_HANDLE_ACTION_ID },
+      // A handle's claim bars every other binding for the whole press, so its
+      // pointer-down and a click that never becomes a drag need one too.
+      { spec: { kind: 'pointerDown', target: `affordance:${SYMMETRY_HANDLE_KIND}` }, actionId: GRAB_HANDLE_ID },
+      { spec: { kind: 'click', target: `affordance:${SYMMETRY_HANDLE_KIND}` }, actionId: GRAB_HANDLE_ID },
+    ],
     attach: (api) => {
       const off = api.registerLayer(guide);
       api.requestRedraw();

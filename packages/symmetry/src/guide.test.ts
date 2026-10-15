@@ -6,6 +6,7 @@ import { DEFAULT_SYMMETRY, HORIZONTAL_AXIS, type SymmetrySpec } from './kinds';
 
 const VIEW: View = { x: 0, y: 0, scale: { x: 2, y: 2 } };
 const C = { x: 50, y: 50 };
+const DIMS = { width: 400, height: 400 };
 const spec = (over: Partial<SymmetrySpec>): SymmetrySpec => ({ ...DEFAULT_SYMMETRY, ...over });
 const source = (s: SymmetrySpec) => ({ current: () => ({ group: 'g', spec: s, center: C }), subscribe: () => () => {} });
 
@@ -29,11 +30,11 @@ describe('guideHandles', () => {
 describe('symmetryGuideLayer', () => {
   it('claims a press on a handle, saying which, and nothing elsewhere on the line', () => {
     const layer = symmetryGuideLayer(source(spec({ kind: 'mirror', angle: HORIZONTAL_AXIS })));
-    const hit = layer.hitTest!(50, 50, undefined, VIEW);
+    const hit = layer.hitTest!(50, 50, undefined, VIEW, DIMS);
     expect(hit?.strength).toBe('exclusive');
     expect(hit?.initialScratch).toEqual({ handle: 'center', group: 'g' });
-    expect(layer.hitTest!(82, 50, undefined, VIEW)?.initialScratch).toEqual({ handle: 'angle', group: 'g' });
-    expect(layer.hitTest!(120, 50, undefined, VIEW)).toBeNull();
+    expect(layer.hitTest!(82, 50, undefined, VIEW, DIMS)?.initialScratch).toEqual({ handle: 'angle', group: 'g' });
+    expect(layer.hitTest!(120, 50, undefined, VIEW, DIMS)).toBeNull();
   });
 
   it('draws nothing without an active group', () => {
