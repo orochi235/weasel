@@ -103,7 +103,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     longPress,
     viewport,
     layers,
-    actions,
+    actions, tune,
     describeKind,
     animator,
     views: viewDescriptors,
@@ -379,7 +379,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
           selection={selection}
           scene={scene}
           adapter={adapter as unknown as BridgeAdapter}
-          actions={resolvedActions}
+          actions={resolvedActions} tune={tune}
           excludeActions={standardActionsExclude}
           currentViewRef={viewRef}
           onViewChange={viewState.setViewFromInput}

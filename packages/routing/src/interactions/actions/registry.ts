@@ -7,6 +7,7 @@
 import type { GestureSpec, PhaseSpec } from '@weasel-js/gestures';
 import type { BoundGesture } from './binding';
 import type { Action } from './action';
+import type { ActionTuning } from './tuning';
 import { RESERVED_ID_NAMES, RESERVED_ID_PREFIXES, type PhaseAtom } from '../../tools/routing/routeGrammar';
 import type { Dispatcher, UiOngoingControl } from '../dispatcher/dispatcher';
 export type { UiOngoingControl } from '../dispatcher/dispatcher';
@@ -46,6 +47,10 @@ export interface ActionsRegistry {
    *  `trigger` nor `begin` will fire it. Returns a release. This is the
    *  "not for me" door — `unregister` is the "should not exist" one. */
   mute(id: string): () => void;
+  /** Tune `id` here and in scopes below: its params and added bindings
+   *  apply to whichever descriptor is live for it, registered before the
+   *  tuning or after. Returns a release. See {@link ActionTuning}. */
+  tune(id: string, tuning: ActionTuning): () => void;
   list(): readonly Action[];
   /** Fire an immediate-invoker action by id. The optional `params` arg is
    *  forwarded to `ImmediateInvoker.run` as its second argument — use it for

@@ -339,6 +339,12 @@ register via `<SceneCanvas>`, each under the `features` preset that names it
 (`FEATURE_ACTION_IDS`), or with a tool that binds it; consumer-level actions
 register explicitly. See `packages/routing/src/interactions/actions/registry.ts`.
 
+A **tuning** changes an action its host did not write: params every invocation
+starts from, and bindings added beside its own (`ActionsRegistry.tune`,
+`<SceneCanvas tune>`). It applies to whichever descriptor holds the id, so
+setting a param never restates the gesture that reaches the action. See
+`packages/routing/src/interactions/actions/tuning.ts`.
+
 An action may declare an optional `cursor` — the hover hint shown while the
 pointer rests where a drag would route to that action. The hover-cursor pump
 predicts the route via `Dispatcher.resolveOnly` (the same match walk a real
