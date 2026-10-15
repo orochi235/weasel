@@ -1,5 +1,51 @@
 # @weasel-js/ui
 
+## 1.10.2
+
+### Patch Changes
+
+- 97a672c: Two glyphs join the icon set's State family. Additive: `IconName` gains `broadcast`, a mast with two waves to either side of its tip, and `flag`, a pole with a rippling cloth.
+- 5e7ee7b: New `KeyBank` groups keycaps that print their legends at one size, as a
+  keyboard's function row or navigation cluster does. Each `KeyCap` inside picks
+  the spelling of its legend that fits its key best — `Ins` for `Insert`, `Bksp`
+  for `Backspace` — and every single-line legend in the bank then prints at the
+  smallest scale any of them needs, floored at `minScale` (0.6 by default); a
+  function key in a bank drops its smaller default size so it matches Esc. With
+  `wrap`, on the bank or on one `KeyCap`, a key may print a two-line spelling
+  such as `Pg`/`Up` instead of shrinking; that key sizes itself. The spellings
+  table is exported as `KEY_SPELLINGS` and replaced per bank with `spellings`.
+  Only a key whose width its layout sets is fitted — one given a `style` width,
+  a square key, or one marked `fixed`; a key sized by its own legend prints its
+  first spelling at the bank's scale. Keycaps outside a bank render as before.
+- 5a48607: `KeyCap` sets a function key's legend (`F1` to `F24`) at 85% of the usual size, as a real keyboard prints it, and marks the chip `data-fn`. The size is the chip's `--key-font-size` custom property, so a consumer scaling one legend can multiply it rather than restate the token.
+- aa27fa7: `legend: 'symbol'` now draws symbols on Windows and Linux too, where it used to fall back to text for almost every key. Control (and `mod`) is ⎈ and Alt is ⎇, from ISO/IEC 9995-7, Backspace is ⟵, and Esc, Enter, Tab, Space, and Delete take the symbols macOS already used (⎋ ↵ ⇥ ␣ ⌦). The `auto` and `text` legends are unchanged.
+- 620d2db: `KeyCap` draws every symbol legend as an icon instead of a font glyph: the Mac modifiers, ISO/IEC 9995-7's Control and Alt, the editing keys, the arrows, and the navigation keys. A symbol now matches its neighbors whatever font the chip is in, where it used to come from whichever fallback font had it. The icon is 1.25 times the legend's font size, and the symbol's character stays in the chip as visually hidden text, so a screen reader and `textContent` still read it. The 27 glyphs are in the icon set as `key*` (`keyCommand`, `keyEscape`, `keyPageUp`, …), drawn at a 2-unit stroke so they hold up at legend sizes.
+- 1c9459d: `keySpecFromKey` knows Home, End, PageUp, PageDown, PrintScreen, Insert, ScrollLock, and Pause. In symbol mode they draw ↖ ↘ ⇞ ⇟ ⎙ ⎀ ⇳ ⎉ on every platform; by default they show the text a key prints (Home, End, PgUp, PgDn, PrtSc, Ins, ScrLk, Pause).
+  
+  A new `labels` option on `keySpecsFromMods`, `keySpecFromKey`, `keySpecsFromShortcut`, and `keySpecsFromChord` replaces any label, by a modifier's logical name (`mod`, `shift`, `alt`, `ctrl`, `meta`) or a key's `KeyboardEvent.key`, up to a whole keyboard's worth. A letter key is found whichever case it is named in. `KeyLabels` is its type.
+- cabeeab: **Breaking:** `KeyCap`'s and `KeySequence`'s variants are renamed. The unfilled chip whose border and legend follow `currentColor`, which was `'minimal'`, is now `'default'`, and is what a chip with no `variant` draws. The filled chip, which was `'default'`, is now `'inverse'`. Pass `variant="inverse"` to keep a chip that relied on the old default filled, and drop `variant="minimal"`. The chip writes `data-variant="inverse"` for the filled one and no attribute for the default. `KEYCAP_VARIANT_ICONS` follows the new names.
+- Updated dependencies [5338358]
+- Updated dependencies [e0608bf]
+- Updated dependencies [765cd31]
+- Updated dependencies [6812344]
+- Updated dependencies [616a4b2]
+- Updated dependencies [9073669]
+- Updated dependencies [70fe7cc]
+  - @weasel-js/geom@1.10.2
+  - @weasel-js/core@1.10.2
+  - @weasel-js/animator@1.10.2
+  - @weasel-js/svg@1.10.2
+  - @weasel-js/font@1.10.2
+  - @weasel-js/gestures@1.10.2
+  - @weasel-js/modes@1.10.2
+  - @weasel-js/paint@1.10.2
+  - @weasel-js/prefs@1.10.2
+  - @weasel-js/quantity@1.10.2
+  - @weasel-js/react@1.10.2
+  - @weasel-js/registry@1.10.2
+  - @weasel-js/select@1.10.2
+  - @weasel-js/theme@1.10.2
+
 ## 1.10.1
 
 ### Patch Changes

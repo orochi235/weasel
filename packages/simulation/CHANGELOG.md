@@ -1,5 +1,11 @@
 # @weasel-js/simulation
 
+## 1.10.2
+
+### Patch Changes
+
+- @weasel-js/react@1.10.2
+
 ## 1.10.1
 
 ### Patch Changes

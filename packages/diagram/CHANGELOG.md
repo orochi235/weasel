@@ -1,5 +1,95 @@
 # @weasel-js/diagram
 
+## 1.10.2
+
+### Patch Changes
+
+- a083eaf: `@weasel-js/diagram/effect` is new: `EffectChart` draws an effects pipeline given as plain data, with stages, the typed ports each reads and writes, the wires between them, and groups. How the pipeline is drawn is a look, a function from a pipeline to what `diagramScene` takes; `nodeGraph` gives every port a named row and `rack` runs the main signal along one line with the rest hung beside it. `EffectChart` takes the pipeline, which it compares by content, a look, the look's options, a size, a `background` paint, and the usual `selected` / `onSelect`, and reports `checkPipeline`'s findings through `onProblems`. A stage that sends the signal one of several ways draws as a branch symbol (`diamond`, `bar`, `demux`, `switch`), and one with `split` draws its cut values as ticks on a bar. `checkPipeline` reports a wire that names a missing stage or port, runs the wrong way, or joins two types, a repeated stage, port or group id (`duplicate-group` for a group whose id repeats another's or a stage's), and the other ways a pipeline can be wrong.
+  
+  For writing a look, the entry also exports what the shipped looks are built from: `uniqueStages`, `uniqueGroups`, `drawableWires` and its `DrawableWire` type, `stageRows`, `exitLabel`, `stageStyle`, `wireStyle`, `isControl`, `kindOf`, `portOn` and `PROBLEM_COLOR`.
+  
+  The rest is additive in `@weasel-js/diagram` itself, and nothing existing changes:
+  
+  - `DiagramView` takes `ports="show"`, to draw ports with nothing to connect.
+  - `portOptions.fill` may be a function of the port.
+  - `portOptions.shape` may be `'circle'`.
+  - `portOptions.showsPort` picks which of a node's ports show; `createPortAffordance` takes the same option, and `createConnectAction` takes it to keep a connect from landing on a hidden port.
+  - `'trapezoid'` is an outline.
+  - A data node takes `marks`: shapes in a unit square stretched over its box, and text pinned to a point on it. `diagramMarkOf`, `markShape`, `registerMarkShape` and the `DataMark` and `DiagramMark` types are exported.
+  - `chain` is a layout, exported and accepted by name as `layout: 'chain'` in `diagramScene`, `layout('chain')` on a `DiagramView` and `algorithm: 'chain'` in `createLayoutAction`. It stands one run of nodes on a line and hangs the rest beside it; the `chain` and `chainSide` layout options pick the run and the side, and the run is the longest path when `chain` is unset or names no node.
+- 6812344: `layered` routes long edges and leaves labels room on a live scene too.
+  
+  - **Under `order: 'seeded'`.** An edge spanning ranks now stands in each rank it crosses and a
+    labeled edge gets a rank of its own, as under `'barycenter'`. An edge keeps its place in a rank
+    the way a node does, from where its route crosses that rank now (`GraphEdge.waypoints`, which
+    `buildGraph` fills in), so a second run still moves nothing. This changes where a seeded layout
+    puts nodes in any graph with a long or labeled edge.
+  - **Written to the scene.** The layout action and a live `layered` run write each long edge's
+    waypoints, and station its label in the room left for it, in the same undo entry as the moves.
+    `buildGraph` reads a scene label's size as its edge's label room.
+  - **Whose route it is.** `DiagramEdge.laidOut` records the waypoints layout wrote, and layout
+    rewrites a route only while the edge's waypoints still match them (`layoutOwnsRoute`). An edge
+    someone has bent, and the label on it, are left alone, and get no room in the ranks the edge
+    crosses (`GraphEdge.authored`); so is a label put at `'start'`, `'end'` or a fraction.
+    `diagramScene` marks the routes it lays out the same way. A layout that routes nothing
+    (`tree`, `force`, `chain`) takes layered's routes back off.
+  - **`diagramScene`.** A label whose edge sets `labelPlacement` at `'mid'` now gets room beside
+    its wire like an unplaced one, at that placement's offset. Routes come from any layout with a
+    `plan`, not only `layered`.
+  - **Locked layers.** `applyLayout` skips a node, edge or label on a locked layer instead of
+    throwing.
+  - **New surface.** `LayoutFn` may carry a `plan` returning `LayoutPlan` (`moves`, `waypoints`,
+    `labels`); `layered.plan` is `layeredPlan`, and `planOf` reads any layout's. `routesOf` and
+    `routeWrites` turn a plan into scene edits, and `applyLayout` takes them as `routes`.
+    `usePoseRun` takes `commitWith`, writes of the caller's own made inside the commit's batch.
+  - `expand`'s `placeholders` and `labels` options are gone; it always adds both.
+- 89229df: `layered` reads ports and leaves labels room.
+  
+  - **Ports.** The layout graph carries each node's ports (`GraphNode.ports`) and the ports an edge
+    names (`GraphEdge.fromPort`, `toPort`); `buildGraph` and `diagramScene` fill them in. Ordering
+    reads each wire at the port it joins, so wires into one node arrive in the order of its ports,
+    and placement lines up the two ports a wire joins rather than the two centers.
+  - **Port places.** A `PortSpec` may list other places it can sit in `sites`. An edge meeting the
+    port takes whichever place faces its next point; `portSitesOf` resolves them all. The decision
+    diamond's second exit may now leave by its top vertex as well as its bottom.
+  - **Label room.** Under `order: 'barycenter'`, an edge whose `GraphEdge.label` gives its label's
+    size gets a rank of its own between its ends, with room beside its wire. `layeredPlan` reports
+    where (`labels`), and `diagramScene` sets each label there unless its edge sets
+    `labelPlacement`. `DiagramLabel.at` takes `{ waypoint }`, a place between two of the edge's
+    waypoints.
+  
+  Behavior changes: a diagram with labeled edges laid out by `diagramScene` is taller (or wider)
+  than before, and lands in a different place. Inside a group, `layered` keeps each member where
+  placement lined it up instead of centering each rank in the group's column. An edge end with no named port now aims at the
+  edge's first or last waypoint, not the other node, when it has waypoints. A smooth (`bezier`)
+  route passes two waypoints level on one axis along that axis.
+- 298b28b: `layered` lays diagrams out differently, so a diagram laid out before this lands somewhere else
+  after it. Ranks keep edges as short as they can (network simplex, exported as `ranksByLength`),
+  so a node with no inputs sits beside what it feeds instead of in the first rank, and nodes are
+  lined up with their neighbors across ranks (Brandes–Köpf) instead of packed and centered. Under
+  `order: 'barycenter'`, which `diagramScene` uses, an edge spanning ranks stands in each rank it
+  crosses, so ordering counts its crossings and placement leaves it room; ordering also swaps
+  neighbors to clear crossings and keeps the best order it finds. An edge closing a cycle is turned
+  around for layout, so it gets a route too.
+  
+  New `layeredPlan(graph, opts)` returns the moves with each node's rank and each spanning edge's
+  waypoints; `diagramScene` draws those edges through them. `LayeredRouteInput` changes shape: it
+  takes `ranks` and `waypoints` from a plan in place of `graph`, `boxes` and `clearance`.
+  `GraphEdge` gains an optional `origin`, the edge as drawn, on edges `expandGroupEdges` made for
+  an edge to or from a group.
+- Updated dependencies [5338358]
+- Updated dependencies [e0608bf]
+- Updated dependencies [765cd31]
+- Updated dependencies [6812344]
+- Updated dependencies [616a4b2]
+- Updated dependencies [9073669]
+- Updated dependencies [70fe7cc]
+  - @weasel-js/geom@1.10.2
+  - @weasel-js/core@1.10.2
+  - @weasel-js/animator@1.10.2
+  - @weasel-js/font@1.10.2
+  - @weasel-js/simulation@1.10.2
+
 ## 1.10.1
 
 ### Patch Changes

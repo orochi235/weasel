@@ -1,5 +1,95 @@
 # Changelog
 
+## 1.10.2
+
+### Patch Changes
+
+- 5338358: Bridge: `bridgePaths` ("Bridge", Mod+Shift+J) joins the nearest open ends of two selected paths with a curve that leaves each end along the direction its path was heading, each new handle `params.tension` times the gap long (default `DEFAULT_BRIDGE_TENSION`, 0.4; `0` is the straight segment Join makes). The two paths become one, the first selected keeping its style, as one undo step; with one path selected, Bridge closes it. In path edit, `bridgeAnchors` ("Bridge anchors", Mod+Shift+J) does the same for the two selected end anchors. Both are in the standard actions and the `paths` feature preset, and their `tension` param types through `ActionParamSchema`, so `<SceneCanvas tune>` reaches it. Underneath, `joinSubpathEnds` and `joinAnchorsAt` in `@weasel-js/geom` take an optional `JoinOptions` with that `tension`. Additive.
+- e0608bf: `<Canvas>`, and so `<SceneCanvas>`, repaints after every committed render
+  instead of only when a prop on a fixed list changed. A prop that reaches the
+  paint through a ref or a memo — `chromeVisibility` is one, since the
+  chrome-caps resolver reads its rules live — used to change on screen only when
+  something else happened to draw a frame. Renders that land before a frame
+  still paint once in it; a hover that changes nothing and a drag paint exactly
+  as many frames as before. `<CanvasView>` asks its surface for a frame on every
+  committed render for the same reason, so a change to its `bounds`, `layers`,
+  or layer gate alone now shows.
+- 765cd31: Path edit can show a curvature comb: teeth standing out of each curved segment along its normal, each as long as the curvature where it stands, with a line through their tips. It draws from the same in-flight path as the anchors, so it follows anchor and handle drags. It shows while chrome-caps shows the new `path-edit.comb` id, which is off by default; `editingAnchors`, now exported, is the usual rule to turn it on with. Its scale, teeth per segment, and color come from the `<SceneCanvas>` layer slot `layers.pathEditingOverlay`, which also takes the overlay's `style`. A `null` or a layer of your own in that slot now replaces the overlay, as it does for `selectionOverlay`.
+  
+  `@weasel-js/geom` adds the geometry underneath: `cubicCurvatureAt`, `cubicDerivativeAt`, and `curvatureComb` over an anchor set. `combTeeth` stands a comb on any `CurvatureSource`, a curve read as point, tangent, and curvature over t; `cubicCurvatureSource` makes one from a cubic, and `curvatureSourceOf` in `@weasel-js/geom/curves` makes one from any curve representation. The cubic and Spiro representations' `curvatureAt` now read `cubicCurvatureAt`.
+- 6812344: `layered` routes long edges and leaves labels room on a live scene too.
+  
+  - **Under `order: 'seeded'`.** An edge spanning ranks now stands in each rank it crosses and a
+    labeled edge gets a rank of its own, as under `'barycenter'`. An edge keeps its place in a rank
+    the way a node does, from where its route crosses that rank now (`GraphEdge.waypoints`, which
+    `buildGraph` fills in), so a second run still moves nothing. This changes where a seeded layout
+    puts nodes in any graph with a long or labeled edge.
+  - **Written to the scene.** The layout action and a live `layered` run write each long edge's
+    waypoints, and station its label in the room left for it, in the same undo entry as the moves.
+    `buildGraph` reads a scene label's size as its edge's label room.
+  - **Whose route it is.** `DiagramEdge.laidOut` records the waypoints layout wrote, and layout
+    rewrites a route only while the edge's waypoints still match them (`layoutOwnsRoute`). An edge
+    someone has bent, and the label on it, are left alone, and get no room in the ranks the edge
+    crosses (`GraphEdge.authored`); so is a label put at `'start'`, `'end'` or a fraction.
+    `diagramScene` marks the routes it lays out the same way. A layout that routes nothing
+    (`tree`, `force`, `chain`) takes layered's routes back off.
+  - **`diagramScene`.** A label whose edge sets `labelPlacement` at `'mid'` now gets room beside
+    its wire like an unplaced one, at that placement's offset. Routes come from any layout with a
+    `plan`, not only `layered`.
+  - **Locked layers.** `applyLayout` skips a node, edge or label on a locked layer instead of
+    throwing.
+  - **New surface.** `LayoutFn` may carry a `plan` returning `LayoutPlan` (`moves`, `waypoints`,
+    `labels`); `layered.plan` is `layeredPlan`, and `planOf` reads any layout's. `routesOf` and
+    `routeWrites` turn a plan into scene edits, and `applyLayout` takes them as `routes`.
+    `usePoseRun` takes `commitWith`, writes of the caller's own made inside the commit's batch.
+  - `expand`'s `placeholders` and `labels` options are gone; it always adds both.
+- 616a4b2: Path edit's handle drags gain a length lock beside the angle lock. Mod (Cmd or Ctrl) held while dragging a control handle keeps its length and changes only its angle, as Shift keeps its angle and changes only its length; both together freeze it. The lock in force draws what it holds the handle to — the line, or the circle round the anchor — as a `polyline` overlay of the new `lock` role.
+  
+  Two toggle actions, `handleLock.angle` and `handleLock.length` (group `anchors`, no default binding, in the `paths` preset), hold a lock for every handle drag without a modifier. They set `handleLocks` on the `editAnchors` dep, which `EditAnchorsDep` gains with `setHandleLocks`, so a bar, the command palette, and `<SceneCanvas tune>` reach one value: `editAnchors`'s new `handleLock: 'angle' | 'length'` param (`EditAnchorsParams`) is where the locks start until a toggle is pressed.
+  
+  `@weasel-js/geom` adds `handleAtItsLength`, the length-holding counterpart of `handleAlongItsAngle`.
+- 9073669: Path edit has tools: a set of named tools, one active at a time, that each change what a plain drag in path edit does. With none on, a drag edits anchors as before. The `editAnchors` dep carries the active one as `tool` and switches it with `setTool(id | null)`; a `<SceneCanvas pathEdit>` host may own it by also giving `tool()` and `setTool(id)`, as it already owns the open path. A tool belongs to the open path, so leaving path edit puts it down. `pathEditToolAction(tool, label, icon)` makes a bar toggle for one (id `pathEditTool.<tool>`, group `anchors`, pressed while on), and `pathEditTool.exit` puts the tool down on Escape, so a second Escape leaves path edit. While any tool is on, `editAnchors`, `bendSegment`, `marqueeAnchors`, and `selectAnchor` stand aside; Alt-click still inserts an anchor.
+  
+  The first tool is the Simplify brush, a local version of the Simplify command. Its toggle, `pathEditTool.simplifyBrush`, sits in the `anchors` bar with `SimplifyBrushIcon`. While it is on, a plain drag gathers every anchor a round brush passes over, and each unbroken stretch of them along a subpath is refitted as one span by Simplify's own fitter, at a tolerance in world units (default 1, as for Simplify). Only the anchors the shape does not need within that tolerance go, corners stay, and anchors outside the brush are left exactly as they were. The path previews the result during the stroke, release commits one undo step, and Escape mid-stroke cancels it. The action is `simplifyBrush`, in the standard actions and the `paths` feature preset; `ActionParamSchema` types its `radiusPx` (screen pixels, default 12) and `tolerance` for `<SceneCanvas tune>`. The cursor over the canvas is the brush ring, as wide as the brush a drag there would start, a tuned radius included.
+  
+  An action's hover `cursor` may now be a function of the params the winning binding would start it with, tunings included; `actionCursor(action, params)` reads either form, and `resolveOnly` reports the winning binding's `params`.
+  
+  Path edit draws the open path's outline as a thin accent line over its own paint, so a path stays visible under its markers, and an unselected anchor that sits closer to a neighbor on screen than a marker is wide is drawn as a small dot, so a dense freehand run reads as a line of dots rather than a solid band. `PathEditingOverlayStyle` takes `outlineStroke`, `outlineWidthPx`, and `denseDotRadiusPx`.
+  
+  `@weasel-js/routing` adds a `brush` overlay variant: `{ kind: 'brush', points, radiusPx }`, the world path a round brush has taken and its radius on screen. `<SceneCanvas>`'s dispatcher overlay paints it as the swept band and a rim at the brush's position, gated by the `action.brush` chrome-caps id.
+  
+  `@weasel-js/geom` factors Simplify's fitter onto a span: `simplifySpan(sub, closed, from, to, tolerance)` refits one stretch of a subpath and `simplifySubpath` a whole one, both of which `simplifyPath` now runs on. `simplifyAnchorsAt(set, flatIndexes, tolerance)` refits each unbroken run of the named anchors, and `anchorsUnderBrush(set, from, to, { radiusPx, scale })` answers the anchors within `radiusPx` of a segment, measured on screen.
+- 70fe7cc: A stroked shape's box now includes its stroke as drawn, engine-wide. The selection outline and handles sit on the stroke's outer edge (align, joins, markers, variable widths, and screen-pixel widths at the view's scale all counted), and a group's box reaches as far as its members' strokes. Resizing moves that box and keeps the stroke's width, so the stroke's outer edge lands under the pointer: a 100×100 rect with a centered stroke 10 wide shows a 110×110 box at (−5, −5), and dragging its right handle to x = 205 leaves the rect 200 wide. Resize constraints and point snaps see the box with the stroke. Rotate turns a selection about the center of that box, and flip, align, distribute, and `alignMoveBehavior` measure it too. Stored geometry is unchanged: a group's derived pose, booleans, outlines, and export still read the pose box.
+  
+  This changes behavior for any stroked shape. `<SceneCanvas geometry={{ boundsIncludeStroke: false }}>` restores geometric boxes; actions read it as the new `boundsIncludeStroke` dep.
+  
+  New in core: `drawnBoundsOf`, `drawnAABBOf`, and `inkExtentsOf` answer the box for any scene node, and `NodeShapeEntry.drawnBounds` lets a painter report its own (the built-in shape and path painters measure miter joins and markers on polygons, stars, and paths). `GestureFrames.drawnBounds` hands that box to gesture behaviors. `SceneCanvasGeometry` names the `geometry` prop's type. A variable-width stroke's picking reach now uses its widest vertex.
+  
+  `@weasel-js/guides`: `alignMoveBehavior` measures the dragged selection with its stroke. Pass `drawnAABBOf` boxes to `deriveAlignmentGuides` so siblings are measured the same way.
+- Updated dependencies [5338358]
+- Updated dependencies [765cd31]
+- Updated dependencies [616a4b2]
+- Updated dependencies [9073669]
+  - @weasel-js/geom@1.10.2
+  - @weasel-js/routing@1.10.2
+  - @weasel-js/animator@1.10.2
+  - @weasel-js/renderer@1.10.2
+  - @weasel-js/stroke@1.10.2
+  - @weasel-js/text@1.10.2
+  - @weasel-js/text-dom@1.10.2
+  - @weasel-js/cursor@1.10.2
+  - @weasel-js/font@1.10.2
+  - @weasel-js/gestures@1.10.2
+  - @weasel-js/history@1.10.2
+  - @weasel-js/modes@1.10.2
+  - @weasel-js/paint@1.10.2
+  - @weasel-js/prefs@1.10.2
+  - @weasel-js/quantity@1.10.2
+  - @weasel-js/react@1.10.2
+  - @weasel-js/registry@1.10.2
+  - @weasel-js/select@1.10.2
+  - @weasel-js/simulation@1.10.2
+
 ## 1.10.1
 
 ### Patch Changes
