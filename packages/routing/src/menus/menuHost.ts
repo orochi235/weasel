@@ -46,6 +46,12 @@ export function createMenuHost(src: MenuSources & { activeTool(): string | null 
   let seq = 0;
   const emit = () => { for (const fn of listeners) fn(); };
 
+  const close = () => {
+    if (!open) return;
+    open = null;
+    emit();
+  };
+
   return {
     define(def, owner = null) {
       const entry = { def, owner };
@@ -61,7 +67,10 @@ export function createMenuHost(src: MenuSources & { activeTool(): string | null 
         ? live.find((d) => d.id === req.menu)
         : req.hit ? pickMenu(live, req.hit) : undefined;
       const entries = def ? resolveMenu(def, src, req.world, req.params) : [];
-      if (!entries.length) return false;
+      if (!entries.length) {
+        close();
+        return false;
+      }
       open = {
         seq: ++seq, entries, client: req.client, world: req.world, viewId: req.viewId,
         source: req.source ?? 'pointer',
@@ -69,11 +78,7 @@ export function createMenuHost(src: MenuSources & { activeTool(): string | null 
       emit();
       return true;
     },
-    close() {
-      if (!open) return;
-      open = null;
-      emit();
-    },
+    close,
     current: () => open,
     subscribe(fn) {
       listeners.add(fn);

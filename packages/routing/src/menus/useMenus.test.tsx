@@ -10,15 +10,18 @@ const defs = [{ id: 'row', sections: [[{ action: 'cut' }]] }];
 describe('useMenus', () => {
   it('registers defs on the host ActionsProvider created, for its lifetime', () => {
     let host: MenuHost | null = null;
-    function Probe() {
-      useAction(cut);
+    function Menus() {
       useMenus(defs);
-      host = useMenuHost();
       return null;
     }
-    const { unmount } = render(<ActionsProvider><Probe /></ActionsProvider>);
+    function Outer({ show }: { show: boolean }) {
+      useAction(cut);
+      host = useMenuHost();
+      return show ? <Menus /> : null;
+    }
+    const { rerender } = render(<ActionsProvider><Outer show /></ActionsProvider>);
     expect(host!.open({ menu: 'row', client: { x: 0, y: 0 } })).toBe(true);
-    unmount();
+    rerender(<ActionsProvider><Outer show={false} /></ActionsProvider>);
     expect(host!.open({ menu: 'row', client: { x: 0, y: 0 } })).toBe(false);
   });
 });

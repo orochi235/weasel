@@ -21,6 +21,7 @@ import {
   type DepName,
 } from './depRegistry';
 import { buildDepsFromRequires } from './buildDeps';
+import type { ActionDeps } from './invoker';
 import type { Dispatcher } from '../dispatcher/dispatcher';
 import { validateActionId, validateActionDefaultBinding, type ActionsRegistry } from './registry';
 import { createMenuHost } from '../../menus/menuHost';
@@ -244,7 +245,7 @@ export function ActionsProvider({ children }: { children: ReactNode }): ReactEle
   const node = useMemo(() => new ActionsNode(null, true, () => depRegRef.current), [depRegRef]);
   const menuHost = useMemo(() => createMenuHost({
     actions: () => node.registry.list(),
-    depsFor: (a) => depsFor(a, depRegRef.current) as never,
+    depsFor: (a) => depsFor(a, depRegRef.current) as ActionDeps,
     trigger: (id, params) => node.registry.trigger(id, params),
     activeTool: () => depRegRef.current?.get('activeTool')?.active ?? null,
   }), [node, depRegRef]);

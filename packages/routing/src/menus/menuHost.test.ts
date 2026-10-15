@@ -51,6 +51,28 @@ describe('createMenuHost', () => {
     release();
     expect(h.open({ menu: 'row', client: { x: 0, y: 0 } })).toBe(false);
   });
+  it('uses a tool-owned def while that tool is active', () => {
+    const h = host('pen');
+    h.define({ id: 'row', sections: [[{ action: 'cut' }]] }, 'pen');
+    expect(h.open({ menu: 'row', client: { x: 0, y: 0 } })).toBe(true);
+  });
+  it('a failed open closes the open menu and notifies once', () => {
+    const h = host();
+    h.define({ id: 'row', sections: [[{ action: 'cut' }]] });
+    h.open({ menu: 'row', client: { x: 0, y: 0 } });
+    const fn = vi.fn();
+    h.subscribe(fn);
+    expect(h.open({ menu: 'missing', client: { x: 0, y: 0 } })).toBe(false);
+    expect(h.current()).toBeNull();
+    expect(fn).toHaveBeenCalledTimes(1);
+  });
+  it('close with nothing open does not notify', () => {
+    const h = host();
+    const fn = vi.fn();
+    h.subscribe(fn);
+    h.close();
+    expect(fn).not.toHaveBeenCalled();
+  });
   it('only uses a tool-owned def while that tool is active', () => {
     const h = host('select');
     h.define({ id: 'row', sections: [[{ action: 'cut' }]] }, 'pen');
