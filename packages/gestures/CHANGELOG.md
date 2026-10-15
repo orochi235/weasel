@@ -1,5 +1,17 @@
 # @weasel-js/gestures
 
+## 1.10.1
+
+### Patch Changes
+
+- 789e80d: A `hover` binding can ask for the pointer leaving. `HoverSpec` takes `motion: 'leave'`, written `hover(leave)` in a route: the binding then runs when the pointer passes out of what it targets, onto something its `target` does not match or off the surface, in place of on each move. With no `target` it runs only when the pointer leaves the surface. Its params are those of the move that took the pointer out, or of the last move before it left the surface. Additive: `hover` gains a `motion` arg in the route grammar that defaults to `move`, `HoverEvent` gains `from` and `off`, and `HoverWhere` is exported. A binding for a move and one for a leave on the same target no longer read as a conflict.
+- 35c4879: One answer to "is a pointer held on this canvas". `heldPointers(element)` is new in `@weasel-js/gestures` (additive): it counts the pointers pressed on an element with any button and not yet released, and every reader of one element shares its listeners. The dispatcher's `hover` gesture and hover cursor, a layer's `onUncapturedMove`, and the `pointer` dep's published position all read it, where each used to track a press its own way.
+  
+  What changes: a move with a secondary or middle button held is no longer a `hover`; `onUncapturedMove` stays off until the last of several pointers is released, and through a `pointerleave` mid-press; and the `pointer` dep no longer reports a position for a drag that began outside the canvas and passed over the page.
+  
+  `giveKeys` (`@weasel-js/react/testing/giveKeys`) releases the middle-button press it makes.
+- 9eefcc7: The READMEs of `@weasel-js/geom` and `@weasel-js/gestures` are overviews now: what is in the package, how its parts relate, and examples, where each used to be an install line and an empty import. Each links to its page on the site, `https://orochi235.github.io/weasel/#pkg/<name>`, which shows the README beside the package's guides, API reference, and demos. No code changed in either.
+
 ## 1.10.0
 
 ### Patch Changes
