@@ -1,7 +1,8 @@
-import { useCallback, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { useLayoutEffect, useMemo, useState, type CSSProperties, type ReactNode } from 'react';
+import { BankFitter } from './bankFitter';
 import { KeyBankContext, type KeyBankContextValue } from './keyBankContext';
 import s from './Keycaps.module.css';
-import { KEY_MIN_SCALE, KEY_SPELLINGS, resolveBankScales, type BankMember, type KeySpellings } from './legendFit';
+import { KEY_MIN_SCALE, KEY_SPELLINGS, type KeySpellings } from './legendFit';
 
 /** Props for {@link KeyBank}. */
 export interface KeyBankProps {
@@ -30,21 +31,19 @@ export interface KeyBankProps {
  * itself. Keys outside a bank are never fitted.
  */
 export function KeyBank({ children, wrap = false, spellings = KEY_SPELLINGS, minScale = KEY_MIN_SCALE, className }: KeyBankProps) {
-  const members = useRef(new Map<string, BankMember>());
   const [scale, setScale] = useState<number | null>(null);
+  const [fitter] = useState(() => new BankFitter(setScale));
 
-  const report = useCallback((id: string, member: BankMember | null) => {
-    if (member) members.current.set(id, member);
-    else members.current.delete(id);
-    const list = [...members.current.values()];
-    const single = list.findIndex((m) => !m.wrapped);
-    setScale(single < 0 ? null : Math.round(resolveBankScales(list, minScale)[single]! * 1000) / 1000);
-  }, [minScale]);
+  useLayoutEffect(() => {
+    fitter.attach();
+    return () => fitter.detach();
+  }, [fitter]);
+  useLayoutEffect(() => fitter.configure(spellings, minScale), [fitter, spellings, minScale]);
+  // Members join in their own layout effects, which run before this one, so
+  // a commit's keys are all measured here in one pass, before paint.
+  useLayoutEffect(() => fitter.flush());
 
-  const value = useMemo<KeyBankContextValue>(
-    () => ({ wrap, spellings, minScale, report }),
-    [wrap, spellings, minScale, report],
-  );
+  const value = useMemo<KeyBankContextValue>(() => ({ wrap, minScale, fitter }), [wrap, minScale, fitter]);
   // A measured value has no static home in the stylesheet, so the scale rides
   // an inline custom property; nothing else is set inline.
   const style = scale === null ? undefined : ({ '--key-legend-scale': String(scale) } as CSSProperties);
