@@ -8,6 +8,7 @@ interface Run {
   b: number[];
   t: number[];
   w: number[] | null;
+  o: number[] | null;
 }
 
 /** One point of the source walk, or a point between two of them. */
@@ -15,15 +16,17 @@ interface At {
   x: number; y: number;
   a: number; b: number; t: number;
   w: number;
+  o: number;
 }
 
-function runFrom(p: At, widths: boolean): Run {
-  return { pts: [p.x, p.y], a: [p.a], b: [p.b], t: [p.t], w: widths ? [p.w] : null };
+function runFrom(p: At, widths: boolean, offsets: boolean): Run {
+  return { pts: [p.x, p.y], a: [p.a], b: [p.b], t: [p.t], w: widths ? [p.w] : null, o: offsets ? [p.o] : null };
 }
 
 function extend(run: Run, p: At): void {
   run.pts.push(p.x, p.y); run.a.push(p.a); run.b.push(p.b); run.t.push(p.t);
   run.w?.push(p.w);
+  run.o?.push(p.o);
 }
 
 function toPolyline(run: Run, closed = false): Polyline {
@@ -35,6 +38,7 @@ function toPolyline(run: Run, closed = false): Polyline {
     anchorT: new Float32Array(run.t),
   };
   if (run.w) pl.widths = new Float32Array(run.w);
+  if (run.o) pl.offsets = new Float32Array(run.o);
   return pl;
 }
 
@@ -42,7 +46,7 @@ function toPolyline(run: Run, closed = false): Polyline {
  * Split a polyline into open sub-polylines for the "on" portions of a dash
  * pattern. Each output sub-polyline gets caps from the stroke's `cap` setting.
  * The "off" portions become invisible gaps. Anchor params and per-point
- * widths are carried through: a dash boundary landing mid-segment takes
+ * widths and offsets are carried through: a dash boundary landing mid-segment takes
  * {@link anchorParamsBetween}'s params and the width interpolated there.
  */
 export function splitForDash(pl: Polyline, dash: number[]): Polyline[] {
@@ -52,21 +56,22 @@ export function splitForDash(pl: Polyline, dash: number[]): Polyline[] {
   const plB = pl.anchorB ?? new Uint32Array(ptCount);
   const plT = pl.anchorT ?? new Float32Array(ptCount);
   const W = pl.widths;
+  const O = pl.offsets;
   const pointAt = (i: number): At => ({
-    x: pl.points[i * 2], y: pl.points[i * 2 + 1], a: plA[i], b: plB[i], t: plT[i], w: W ? W[i] : 0,
+    x: pl.points[i * 2], y: pl.points[i * 2 + 1], a: plA[i], b: plB[i], t: plT[i], w: W ? W[i] : 0, o: O ? O[i] : 0,
   });
 
   let dashIdx = 0;
   let dashRemaining = dash[0];
   let onPhase = true;
-  let cur: Run | null = runFrom(pointAt(0), !!W);
+  let cur: Run | null = runFrom(pointAt(0), !!W, !!O);
 
   const flushAndAdvance = (at: At) => {
     if (cur && cur.pts.length >= 4) out.push(toPolyline(cur));
     dashIdx = (dashIdx + 1) % dash.length;
     dashRemaining = dash[dashIdx];
     onPhase = !onPhase;
-    cur = onPhase ? runFrom(at, !!W) : null;
+    cur = onPhase ? runFrom(at, !!W, !!O) : null;
   };
 
   let prevX = pl.points[0], prevY = pl.points[1];
@@ -97,7 +102,7 @@ export function splitForDash(pl: Polyline, dash: number[]): Polyline[] {
         const [a, b, t] = anchorParamsBetween(start.a, start.b, start.t, end.a, end.b, end.t, frac);
         const mid: At = {
           x: start.x + (end.x - start.x) * frac, y: start.y + (end.y - start.y) * frac,
-          a, b, t, w: start.w + (end.w - start.w) * frac,
+          a, b, t, w: start.w + (end.w - start.w) * frac, o: start.o + (end.o - start.o) * frac,
         };
         if (onPhase && cur) extend(cur, mid);
         prevX = mid.x; prevY = mid.y;
@@ -129,7 +134,7 @@ function closeOut(pl: Polyline, tail: Run, out: Polyline[]): void {
     // a loop stroked as an open run seams at its own start vertex too.
     out.push(toPolyline({
       pts: tail.pts.slice(0, -2), a: tail.a.slice(0, -1), b: tail.b.slice(0, -1), t: tail.t.slice(0, -1),
-      w: tail.w ? tail.w.slice(0, -1) : null,
+      w: tail.w ? tail.w.slice(0, -1) : null, o: tail.o ? tail.o.slice(0, -1) : null,
     }, true));
   } else {
     out.push(toPolyline(tail));
@@ -147,5 +152,6 @@ function joinAtSeam(tail: Polyline, head: Polyline): Polyline {
     anchorT: Float32Array.from([...tail.anchorT!, ...head.anchorT!.subarray(1)]),
   };
   if (tail.widths && head.widths) pl.widths = Float32Array.from([...tail.widths, ...head.widths.subarray(1)]);
+  if (tail.offsets && head.offsets) pl.offsets = Float32Array.from([...tail.offsets, ...head.offsets.subarray(1)]);
   return pl;
 }

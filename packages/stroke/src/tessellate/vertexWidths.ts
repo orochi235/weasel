@@ -1,5 +1,5 @@
 import type { Polyline } from '@weasel-js/geom/tessellate';
-import type { StrokeNib } from '@weasel-js/paint';
+import { type StrokeNib, type VertexWidth, vertexHalfWidths, widestHalfWidth } from '@weasel-js/paint';
 import { applyNib } from './nib';
 
 /** What one unit of a `vertexWidths` entry measures across the line at a
@@ -7,13 +7,14 @@ import { applyNib } from './nib';
 export type WidthScale = (tx: number, ty: number) => number;
 
 /** Fill `pl.widths` by interpolating `vertexWidths` across each point's
- *  (anchorA, anchorB, anchorT). Anchor-aligned points (A === B) read the
- *  anchor's value directly. Out-of-range / non-finite anchor entries fall
- *  back to `fallbackWidth`. Given `scale`, each entry is scaled at the point
- *  that reads it, and the fallback is not. */
+ *  (anchorA, anchorB, anchorT), each side of the path on its own, and
+ *  `pl.offsets` where the two sides differ. Anchor-aligned points (A === B)
+ *  read the anchor's value directly. Entries resolve through
+ *  `vertexHalfWidths`, so a missing one takes `fallbackWidth`. Given `scale`,
+ *  each entry is scaled at the point that reads it, and the fallback is not. */
 export function populatePolylineWidths(
   pl: Polyline,
-  vertexWidths: number[],
+  vertexWidths: readonly VertexWidth[],
   fallbackWidth: number,
   scale?: WidthScale,
 ): void {
@@ -23,31 +24,36 @@ export function populatePolylineWidths(
   const aB = pl.anchorB ?? new Uint32Array(ptCount);
   const aT = pl.anchorT ?? new Float32Array(ptCount);
   const widths = new Float32Array(ptCount);
+  const offsets = new Float32Array(ptCount);
+  let sided = false;
+  const fallback = fallbackWidth / 2;
   let k = 1;
-  const read = (i: number): number => {
-    const v = vertexWidths[i];
-    return typeof v === 'number' && isFinite(v) && v > 0 ? v * k : fallbackWidth;
+  // A fallback side is not scaled: it is the stroke's own width.
+  const sides = (i: number): [number, number] => {
+    const h = vertexHalfWidths(vertexWidths[i], NaN);
+    return [Number.isNaN(h.left) ? fallback : h.left * k, Number.isNaN(h.right) ? fallback : h.right * k];
   };
   for (let i = 0; i < ptCount; i++) {
     if (scale) k = scaleAt(pl, i, scale);
     const a = aA[i], b = aB[i], t = aT[i];
-    if (a === b) {
-      widths[i] = read(a);
-    } else {
-      const wa = read(a);
-      const wb = read(b);
-      widths[i] = wa + (wb - wa) * t;
+    let [left, right] = sides(a);
+    if (a !== b) {
+      const [lb, rb] = sides(b);
+      left += (lb - left) * t;
+      right += (rb - right) * t;
     }
+    widths[i] = left + right;
+    offsets[i] = (right - left) / 2;
+    if (offsets[i] !== 0) sided = true;
   }
   pl.widths = widths;
+  if (sided) pl.offsets = offsets;
 }
 
-/** The widest a stroke of `width` draws: `width`, or a wider per-vertex
- *  entry. A nib only ever narrows it. */
-export function widestStrokeWidth(width: number, vertexWidths: readonly number[] | undefined): number {
-  let widest = width;
-  if (vertexWidths) for (const w of vertexWidths) if (w > widest) widest = w;
-  return widest;
+/** The widest a stroke of `width` draws: twice the farthest any edge sits
+ *  from the path. A nib only ever narrows it. */
+export function widestStrokeWidth(width: number, vertexWidths: readonly VertexWidth[] | undefined): number {
+  return 2 * widestHalfWidth(width, vertexWidths);
 }
 
 /** Fill `pl.widths` from whichever of `vertexWidths` and `nib` a stroke
@@ -55,7 +61,7 @@ export function widestStrokeWidth(width: number, vertexWidths: readonly number[]
  *  for a stroke of one width. */
 export function populateWidths(
   pl: Polyline,
-  vertexWidths: number[] | null,
+  vertexWidths: readonly VertexWidth[] | null,
   nib: StrokeNib | undefined,
   width: number,
   scale?: WidthScale,

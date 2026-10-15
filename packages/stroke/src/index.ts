@@ -31,6 +31,8 @@ export type { MarkerSite, MarkerSiteRequest } from './markerSites';
 export { markerHeads, markerReadsKey, markerReach } from './markerHeads';
 export type { MarkerHead } from './markerHeads';
 
+export { strokeEdgeNear } from './strokeEdge';
+export type { StrokeEdgeHit, StrokeEdgeOptions, StrokeSide } from './strokeEdge';
 export { strokeToPath } from './strokeToPath';
 export type { StrokeToPathOptions } from './strokeToPath';
 export { offsetPath } from './offsetPath';

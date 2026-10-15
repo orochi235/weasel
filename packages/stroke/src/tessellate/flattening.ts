@@ -1,4 +1,5 @@
 import { DEFAULT_FLATTEN_TOLERANCE } from '@weasel-js/geom';
+import type { VertexWidth } from '@weasel-js/paint';
 import type { ExtractOptions } from '@weasel-js/geom/tessellate';
 import { widestStrokeWidth } from './vertexWidths';
 
@@ -15,7 +16,7 @@ const STROKE_MAX_TURN = Math.PI / 18;
 export function strokeFlattening(
   flattenTolerance: number | undefined,
   width: number,
-  vertexWidths?: readonly number[],
+  vertexWidths?: readonly VertexWidth[],
 ): ExtractOptions {
   const tolerance = flattenTolerance ?? DEFAULT_FLATTEN_TOLERANCE;
   const widest = widestStrokeWidth(width, vertexWidths);

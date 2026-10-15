@@ -5,6 +5,7 @@
 
 import type { PatternPaint } from './patternPaint';
 import type { ColorSpace } from './colorSpaces';
+import type { VertexWidth } from './vertexWidth';
 
 /**
  * Color/texture strategy for fills (and, via `Stroke.paint`, strokes).
@@ -172,18 +173,21 @@ export interface Stroke {
   vertexColors?: number[];
   /**
    * Per-anchor stroke width (length = `countPathAnchors(path)`). When set,
-   * the tessellator interpolates half-widths along each segment to produce
-   * a tapered ribbon. Entries are world units, even on a `{ px }` stroke.
-   * `width` is used as the fallback for any anchor whose entry is missing or
-   * non-finite. Pair with `pressureToWidth` to derive widths from stylus
-   * input.
+   * the tessellator interpolates each edge's distance from the path along
+   * each segment to produce a tapered ribbon. An entry is a full width
+   * centered on the path, or a `{ left, right }` pair giving each edge its own
+   * distance — see {@link VertexWidth}, and read one through
+   * `vertexHalfWidths`. Entries are world units, even on a `{ px }` stroke.
+   * `width` is used as the fallback for any anchor whose entry, or side of
+   * one, is missing, negative, or non-finite. Pair with `pressureToWidth` to
+   * derive widths from stylus input.
    *
    * Joins between adjacent segments whose widths differ by more than
    * `varyingWidthJoinThreshold` (default 1.5×) are forced to bevel
    * regardless of the `join` setting — miter math is unstable when widths
    * vary across the corner.
    */
-  vertexWidths?: number[];
+  vertexWidths?: VertexWidth[];
   /**
    * Max width ratio (greater / lesser) at which a non-bevel join is
    * preserved when `vertexWidths` causes adjacent segments to differ.

@@ -19,7 +19,8 @@ export function nibWidthScale(nib: StrokeNib): WidthScale {
 }
 
 /**
- * Scale `pl`'s widths (its own, or `base` where it has none) by the nib at
+ * Scale `pl`'s widths (its own, or `base` where it has none), and each side's
+ * share of them, by the nib at
  * each segment's direction. A corner takes two coincident points, the end of
  * the segment into it and the start of the one out, so each side of a join
  * keeps its own width; the ribbon drops the zero-length span between them.
@@ -42,12 +43,13 @@ export function applyNib(pl: Polyline, nib: StrokeNib, base: number): void {
   for (let i = 0; i < segCount; i++) {
     if (Number.isNaN(factors[i])) factors[i] = i > 0 ? factors[i - 1] : (factors.find((f) => !Number.isNaN(f)) ?? 1);
   }
-  const A = pl.anchorA, B = pl.anchorB, T = pl.anchorT, W = pl.widths;
-  const pts: number[] = [], aA: number[] = [], aB: number[] = [], aT: number[] = [], ws: number[] = [];
+  const A = pl.anchorA, B = pl.anchorB, T = pl.anchorT, W = pl.widths, O = pl.offsets;
+  const pts: number[] = [], aA: number[] = [], aB: number[] = [], aT: number[] = [], ws: number[] = [], os: number[] = [];
   const push = (i: number, factor: number) => {
     pts.push(P[i * 2], P[i * 2 + 1]);
     aA.push(A ? A[i] : 0); aB.push(B ? B[i] : 0); aT.push(T ? T[i] : 0);
     ws.push((W ? W[i] : base) * factor);
+    if (O) os.push(O[i] * factor);
   };
   push(0, factors[0]);
   for (let i = 1; i < n; i++) {
@@ -60,4 +62,5 @@ export function applyNib(pl: Polyline, nib: StrokeNib, base: number): void {
   pl.anchorB = Uint32Array.from(aB);
   pl.anchorT = Float32Array.from(aT);
   pl.widths = Float32Array.from(ws);
+  if (O) pl.offsets = Float32Array.from(os);
 }

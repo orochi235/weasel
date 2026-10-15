@@ -103,4 +103,11 @@ describe('a variable-width stroke in SVG', () => {
     expect(svg).not.toContain('stroke-outline');
     expect(svg).toContain('stroke-width="2"');
   });
+  it('round-trips a vertexWidths pair beside a number and an unset entry', () => {
+    const sided = [{ left: 1.5, right: 4 }, NaN, 6];
+    const svg = serializeSvg([node({ path: new PathBuilder().moveTo(0, 0).lineTo(50, 0).lineTo(100, 0).build(), stroke: { paint: { kind: 'solid', color: '#000' }, width: 2, vertexWidths: sided } })]);
+    expect(svg).toContain('wzl:vertex-widths="1.5/4 - 6"');
+    const back = parseSvg(svg).nodes[0] as SvgPathNode;
+    expect(back.stroke?.vertexWidths).toEqual(sided);
+  });
 });

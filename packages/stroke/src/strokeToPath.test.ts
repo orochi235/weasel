@@ -99,6 +99,14 @@ describe('strokeToPath', () => {
     expect(pathContainsPoint(out, 100, 80)).toBe(true);
   });
 
+  it('outlines a vertexWidths pair at each edge\'s own distance, aligned or not', () => {
+    const sided = { paint: PAINT, width: 4, vertexWidths: [{ left: 1, right: 5 }, { left: 1, right: 5 }] };
+    expect(boundsOfPath(strokeToPath(line(0, 0, 100, 0), sided))).toMatchObject({ y: -1, height: 6 });
+    const outer = strokeToPath(SQUARE, { ...sided, vertexWidths: [{ left: 1, right: 5 }, { left: 1, right: 5 }, { left: 1, right: 5 }, { left: 1, right: 5 }], align: 'outer' as const });
+    // The square runs clockwise on screen, so its left side is outside.
+    expect(boundsOfPath(outer).x).toBeCloseTo(-2, 3);
+  });
+
   it('answers an empty path for a stroke with no width', () => {
     expect(strokeToPath(SQUARE, { paint: PAINT, width: 0 }).commands.length).toBe(0);
   });

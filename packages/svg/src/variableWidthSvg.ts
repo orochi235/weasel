@@ -12,7 +12,7 @@
  * opacity wraps the two in one group holding it, so they composite as one
  * layer.
  */
-import { strokeToPath, type Stroke } from '@weasel-js/core';
+import { strokeToPath, vertexHalfWidths, type Stroke, type VertexWidth } from '@weasel-js/core';
 import type { Path } from '@weasel-js/geom';
 import { WEASEL_NS, WEASEL_NS_PREFIX } from './gradients';
 import { serializePathD } from './path-serializer';
@@ -26,8 +26,10 @@ const ROLE = 'role';
 const OUTLINE = 'stroke-outline';
 const GROUP = 'stroke-group';
 const MARKER_ATTR = /^(marker-(?:start|mid|end))=/;
-/** An entry that falls back to the stroke's `width`. */
+/** An entry, or one side of a pair, that falls back to the stroke's `width`. */
 const UNSET = '-';
+/** Between a pair's left and right edge distances. */
+const SIDES = '/';
 
 function attrOf(el: Element, name: string): string | null {
   return el.getAttributeNS(WEASEL_NS, name) ?? el.getAttribute(`${WEASEL_NS_PREFIX}:${name}`);
@@ -44,7 +46,20 @@ export function writesVariableWidth(nodes: readonly SvgNode[]): boolean {
   return nodes.some((n) => (n.kind === 'group' ? writesVariableWidth(n.children) : n.kind === 'path' && hasVariableWidth(n.stroke)));
 }
 
-const isSet = (w: number | null | undefined): w is number => typeof w === 'number' && Number.isFinite(w) && w > 0;
+/** One entry as a token: a width, `left/right` for a pair, `-` for unset. */
+function widthToken(entry: VertexWidth): string {
+  const { left, right } = vertexHalfWidths(entry, NaN);
+  const side = (v: number) => (Number.isNaN(v) ? UNSET : trimNumber(v));
+  if (typeof entry === 'number') return Number.isNaN(left) ? UNSET : trimNumber(left + right);
+  return Number.isNaN(left) && Number.isNaN(right) ? UNSET : `${side(left)}${SIDES}${side(right)}`;
+}
+
+function widthOfToken(token: string): VertexWidth {
+  const side = (v: string) => (v === UNSET ? NaN : Number(v));
+  if (!token.includes(SIDES)) return side(token);
+  const [left, right] = token.split(SIDES);
+  return { left: side(left), right: side(right) };
+}
 
 /** `strokeAttrs` for a variable-width stroke: the drawn width zeroed, the
  *  markers moved aside, and what the outline was made from beside them. */
@@ -56,7 +71,7 @@ export function variableWidthAttrs(stroke: SvgStroke, strokeAttrs: readonly stri
     `${WEASEL_NS_PREFIX}:${WIDTH}="${trimNumber(width)}"`,
   ];
   if (stroke.vertexWidths?.length) {
-    const list = stroke.vertexWidths.map((w) => (isSet(w) ? trimNumber(w) : UNSET)).join(' ');
+    const list = stroke.vertexWidths.map(widthToken).join(' ');
     out.push(`${WEASEL_NS_PREFIX}:${VERTEX_WIDTHS}="${list}"`);
   }
   if (stroke.nib) {
@@ -116,7 +131,7 @@ export function withVariableWidth(el: Element, stroke: SvgStroke | undefined): S
   if (!stroke || !Number.isFinite(width)) return stroke;
   const out: SvgStroke = { ...stroke, width: typeof stroke.width === 'number' ? width : { px: width } };
   const list = attrOf(el, VERTEX_WIDTHS);
-  if (list) out.vertexWidths = list.trim().split(/\s+/).map((w) => (w === UNSET ? NaN : Number(w)));
+  if (list) out.vertexWidths = list.trim().split(/\s+/).map(widthOfToken);
   const [angle, ratio] = (attrOf(el, NIB) ?? '').trim().split(/\s+/).map(Number);
   if (Number.isFinite(angle) && Number.isFinite(ratio)) out.nib = { angle, ratio };
   for (const [attr, field] of [['marker-start', 'markerStart'], ['marker-mid', 'markerMid'], ['marker-end', 'markerEnd']] as const) {

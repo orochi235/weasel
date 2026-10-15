@@ -5,7 +5,7 @@
  * marker trims; unioning its triangles gives the silhouette with every
  * self-overlap resolved, so the outline and the drawn stroke cannot disagree.
  */
-import type { Stroke } from '@weasel-js/paint';
+import { scaleVertexWidth, type Stroke } from '@weasel-js/paint';
 import { invert, transformPath, type Affine, type Path, type PolygonPath } from '@weasel-js/geom';
 import { pathIntersect, pathSubtract, pathUnion, trianglesToPath } from '@weasel-js/geom/booleans';
 import { strokeInsets } from './markerInset';
@@ -59,7 +59,7 @@ function outlineOf(path: Path, stroke: Stroke, opts: StrokeToPathOptions): Polyg
   // ribbon twice as wide, cut to the side of the path it belongs on.
   const cut = align !== 'center' && path.kind !== 'rect';
   const ribbonStroke: Stroke = cut
-    ? { ...sized, width: width * 2, align: 'center', vertexWidths: stroke.vertexWidths?.map((w) => w * 2) }
+    ? { ...sized, width: width * 2, align: 'center', vertexWidths: stroke.vertexWidths?.map((w) => scaleVertexWidth(w, 2)) }
     : sized;
   const mesh = tessellateStroke(path, ribbonStroke, {
     flattenTolerance: tolerance, startInset: insets.start, endInset: insets.end,

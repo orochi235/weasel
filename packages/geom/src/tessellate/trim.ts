@@ -16,13 +16,14 @@ interface Sample {
   x: number; y: number;
   a: number; b: number; t: number;
   w: number;
+  o: number;
   /** Index of the first original point at or after this sample. */
   next: number;
 }
 
 function sampleAt(
   pl: Polyline, cum: Float64Array,
-  A: Uint32Array, B: Uint32Array, T: Float32Array, W: Float32Array | undefined,
+  A: Uint32Array, B: Uint32Array, T: Float32Array, W: Float32Array | undefined, O: Float32Array | undefined,
   dist: number,
   /** For a cut landing exactly on a vertex: whether the vertex belongs to the
    *  run after the sample (a head) or before it (a tail), so it is kept once. */
@@ -41,7 +42,8 @@ function sampleAt(
   const [a, b, t] = anchorParamsBetween(A[i - 1], B[i - 1], T[i - 1], A[i], B[i], T[i], f);
 
   const w = W ? W[i - 1] + (W[i] - W[i - 1]) * f : 0;
-  return { x: px + (qx - px) * f, y: py + (qy - py) * f, a, b, t, w, next: i };
+  const o = O ? O[i - 1] + (O[i] - O[i - 1]) * f : 0;
+  return { x: px + (qx - px) * f, y: py + (qy - py) * f, a, b, t, w, o, next: i };
 }
 
 /**
@@ -69,6 +71,7 @@ export function trimPolyline(
   const B = pl.anchorB ?? new Uint32Array(n);
   const T = pl.anchorT ?? new Float32Array(n);
   const W = pl.widths;
+  const O = pl.offsets;
 
   const cum = new Float64Array(n);
   for (let i = 1; i < n; i++) {
@@ -81,24 +84,27 @@ export function trimPolyline(
   const cutB = total - to;
   if (cutB - cutA <= EPS) return null;
 
-  const head = sampleAt(pl, cum, A, B, T, W, cutA, true);
-  const tail = sampleAt(pl, cum, A, B, T, W, cutB, false);
+  const head = sampleAt(pl, cum, A, B, T, W, O, cutA, true);
+  const tail = sampleAt(pl, cum, A, B, T, W, O, cutB, false);
 
   const points: number[] = [head.x, head.y];
   const aOut: number[] = [head.a];
   const bOut: number[] = [head.b];
   const tOut: number[] = [head.t];
   const wOut: number[] | undefined = W ? [head.w] : undefined;
+  const oOut: number[] | undefined = O ? [head.o] : undefined;
 
   for (let i = head.next; i < tail.next; i++) {
     points.push(pl.points[i * 2], pl.points[i * 2 + 1]);
     aOut.push(A[i]); bOut.push(B[i]); tOut.push(T[i]);
     if (wOut) wOut.push(W![i]);
+    if (oOut) oOut.push(O![i]);
   }
 
   points.push(tail.x, tail.y);
   aOut.push(tail.a); bOut.push(tail.b); tOut.push(tail.t);
   if (wOut) wOut.push(tail.w);
+  if (oOut) oOut.push(tail.o);
 
   return {
     points,
@@ -107,5 +113,6 @@ export function trimPolyline(
     anchorB: new Uint32Array(bOut),
     anchorT: new Float32Array(tOut),
     ...(wOut ? { widths: new Float32Array(wOut) } : {}),
+    ...(oOut ? { offsets: new Float32Array(oOut) } : {}),
   };
 }
