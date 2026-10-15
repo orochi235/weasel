@@ -106,7 +106,7 @@
     "longestFunction": 337
   },
   "packages/diagram/src/cluster.ts": {
-    "longestFunction": 124
+    "longestFunction": 122
   },
   "packages/font/src/registerFont.ts": {
     "lines": 839,
