@@ -867,6 +867,13 @@ only story runner in the repo.
   7 of 26 tests in one run on 2026-10-13, and polls now; whether a checkout loses them too is not
   measured.
 
+- **(P3) A freshly started site dev server's first page load can come up blank.** Started from a
+  worktree with `WAKE_EXTRA=<port> npx vite --port <port>`, the first one or two loads of a demo
+  show an empty page with wake's "dev server unreachable" pill, and a reload renders it. Seen on
+  every one of a dozen servers on 2026-10-14. The server logs no dependency re-optimization or
+  reload, so the cause isn't known; the first load after an agent edits a lab once threw
+  `instrument.defaultConfig is not a function` before a reload fixed it.
+
 - **(P2) Package pages: check the reference against a real build, then retire `/api/`.** Every
   published package has a page at `#pkg/<name>` (overview, guides, reference, demos; how each is
   fed is in `CONTRIBUTING.md`, "Package pages"). The reference half has only ever read a
