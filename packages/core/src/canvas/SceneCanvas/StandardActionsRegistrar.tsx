@@ -78,6 +78,7 @@ export function StandardActionsRegistrar({
   reflowTransition,
   insertNodeFactories,
   insertPaint,
+  insertInto,
   snapPoint,
   canvasRef,
   canvasApiRef,
@@ -143,6 +144,7 @@ export function StandardActionsRegistrar({
    *  consumer's per-kind node factories into the `insert` dep. */
   insertNodeFactories?: Record<string, InsertNodeFactory>;
   insertPaint?: InsertPaint;
+  insertInto?: () => string | null;
   /** Forwarded from `SceneCanvasProps.toolOptions.snapPoint` so the `snap`
    *  dep source can expose grid snapping to `insertAction`. */
   snapPoint?: (p: { x: number; y: number }) => { x: number; y: number };
@@ -209,7 +211,7 @@ export function StandardActionsRegistrar({
   useAreaSelectDepSource(scene, selection, poseDescriptor, alphaOf);
   useNodeAtPointDepSource(pickEvery);
   useLayoutDepSource(scene, layoutDropTarget, reflowTransition);
-  useInsertDepSource(scene, adapter, insertNodeFactories, insertPaint);
+  useInsertDepSource(scene, adapter, insertNodeFactories, insertPaint, insertInto);
   useSliceDepSource(scene, selection, adapter, poseDescriptor);
   useSnapDepSource(snapPoint);
   useDebugDepSource(canvasApiRef);

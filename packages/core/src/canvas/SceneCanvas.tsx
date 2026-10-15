@@ -81,6 +81,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     selectTool: selectToolOpts,
     insertNodeFactories,
     insertPaint,
+    insertInto,
     ingestion,
     layoutDropTarget,
     reflowTransition,
@@ -400,6 +401,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
           reflowTransition={reflowTransition as ReflowTransition<unknown> | null | undefined}
           insertNodeFactories={insertNodeFactories}
           insertPaint={insertPaint}
+          insertInto={insertInto}
           snapPoint={toolOptions?.snapPoint}
           canvasRef={internalCanvasRef}
           canvasApiRef={canvasApiRef}

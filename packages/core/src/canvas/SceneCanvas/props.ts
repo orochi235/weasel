@@ -291,6 +291,12 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      *  `insertNodeFactories` is not asked. */
     insertPaint?: InsertPaint;
 
+    /** The container the `insert` dep puts new nodes into — every shape a
+     *  tool draws and every dropped image or text — read at each insert; `null` for the top of the tree. A node goes onto that
+     *  container's layer, with its pose made local to it when the scene
+     *  composes frames. An id naming no container is the same as `null`. */
+    insertInto?: () => string | null;
+
     /** External-content ingestion (OS drop / clipboard paste / picker).
      *
      *  - `handlers` — consumer content handlers registered for this canvas's
