@@ -39,7 +39,7 @@ export type { ForceBody, ForceOptions, ForceRelaxation } from './force';
 export { force, forceRelaxation } from './force';
 export type { Graph, GraphEdge, GraphNode } from './graph';
 export { chain } from './chain';
-export { backEdges, layered, ranksOf } from './layered';
+export { backEdges, layered, layeredPlan, ranksByLength, ranksOf, type LayeredPlan } from './layered';
 export type {
   LayoutAxes,
   LayoutDirection,

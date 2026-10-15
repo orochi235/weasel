@@ -31,8 +31,9 @@ describe('layered routes', () => {
     for (const p of waypoints!) expect(p.x <= b.x || p.x >= b.x + b.width).toBe(true);
   });
 
-  it('give no waypoints where nothing is in the way', () => {
-    // Pinned so `b`, in the rank `a -> c` skips, stands well off its line.
+  it('give no waypoints to an edge whose end is pinned away from its rank', () => {
+    // Every node pinned where the author put it, so layout's placeholders say
+    // nothing about where `a -> c` should run.
     const at = { a: { x: 0, y: 0 }, b: { x: 300, y: 100 }, c: { x: 0, y: 200 } };
     const clear: DiagramData = {
       ...chain,
@@ -48,11 +49,15 @@ describe('layered routes', () => {
     expect(traitOf(data, authored)).toMatchObject({ from: { port: 'e' }, to: { port: 'n' }, waypoints: [{ x: 500, y: 500 }] });
   });
 
-  it('leave an edge running back up the ranks to the facing rule', () => {
+  it('take an edge running back up the ranks around what it skips, leaving toward the last rank', () => {
     const back: DataEdge = { from: 'c', to: 'a' };
     const data = { ...chain, edges: [...chain.edges, back] };
-    expect(traitOf(data, back)).toMatchObject({ from: {}, to: {} });
-    expect(traitOf(data, back).waypoints).toBeUndefined();
+    const { waypoints } = traitOf(data, back);
+    const b = diagramScene(data).find((s) => s.id === 'b')!.pose;
+    expect(traitOf(data, back)).toMatchObject({ from: { port: 'n' }, to: { port: 's' } });
+    expect(waypoints).toHaveLength(2);
+    expect(waypoints![0]!.y).toBeGreaterThan(waypoints![1]!.y);
+    for (const p of waypoints!) expect(p.x <= b.x || p.x >= b.x + b.width).toBe(true);
   });
 
   it('are not made for any other layout', () => {

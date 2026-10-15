@@ -12,7 +12,9 @@ import { PLACEHOLDER, type Hop, type Rows } from './types';
 export interface Expanded {
   rows: Rows;
   hops: Hop[];
-  chains: Map<string, { ids: string[]; back: boolean }>;
+  /** `ends` is every node the edge starts or ends at: its two ends, or a
+   *  group end's members. */
+  chains: Map<string, { ids: string[]; back: boolean; ends: string[] }>;
 }
 
 /** Options for {@link expand}. */
@@ -97,7 +99,10 @@ export function expand(graph: Graph, ranks: ReadonlyMap<string, number>, back: R
       chain.push(id);
     }
     for (const p of prev) for (const q of inRank(to, b[0])) hops.push({ from: p, to: q, edge: d.id });
-    if (chain.length > 0) chains.set(d.id, { ids: d.back ? chain.reverse() : chain, back: d.back });
+    if (chain.length > 0) {
+      const ends = [...(groups.get(from)?.members ?? [from]), ...(groups.get(to)?.members ?? [to])];
+      chains.set(d.id, { ids: d.back ? chain.reverse() : chain, back: d.back, ends });
+    }
   }
 
   const order = graphOrder(graph);

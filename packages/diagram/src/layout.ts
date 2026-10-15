@@ -137,14 +137,17 @@ export function settle(
   for (const node of graph.nodes) {
     const slot = slots.get(node.id);
     if (slot === undefined) continue;
-    const along = axes.sign === 1 ? slot.rank : -(slot.rank + extent(node.bounds, axes.rank));
-    placed.set(
-      node.id,
-      axes.rank === 'y' ? { x: slot.cross, y: along } : { x: along, y: slot.cross },
-    );
+    placed.set(node.id, worldOf(slot, extent(node.bounds, axes.rank), axes));
   }
 
   return translated(graph, placed, pinned, tolerance);
+}
+
+/** A slot's top-left in world coordinates, before {@link settle}'s
+ *  translation, for something `depth` deep along the rank axis. */
+export function worldOf(slot: Slot, depth: number, axes: LayoutAxes): Vec2 {
+  const along = axes.sign === 1 ? slot.rank : -(slot.rank + depth);
+  return axes.rank === 'y' ? { x: slot.cross, y: along } : { x: along, y: slot.cross };
 }
 
 /**
@@ -195,7 +198,7 @@ export function translated(
   pinned: ReadonlySet<string>,
   tolerance = DEFAULT_TOLERANCE,
 ): LayoutResult {
-  const anchor = anchorDelta(graph, placed, pinned);
+  const anchor = anchorOffset(graph, placed, pinned);
   const out = new Map<string, Vec2>();
   for (const node of graph.nodes) {
     const at = placed.get(node.id);
@@ -210,7 +213,9 @@ export function translated(
   return out;
 }
 
-function anchorDelta(
+/** How far {@link translated} moves a placement: onto the first pinned node,
+ *  or else so its low corner lands on the graph's current one. */
+export function anchorOffset(
   graph: Graph,
   placed: ReadonlyMap<string, Vec2>,
   pinned: ReadonlySet<string>,

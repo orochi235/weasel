@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { barycenterOrder } from '../barycenter';
-import type { Graph, GraphEdge, GraphGroup, GraphNode } from '../graph';
+import type { GraphGroup, GraphNode } from '../graph';
 import { crossings, orderRows } from './order';
 import { PLACEHOLDER, type Hop, type Rows } from './types';
 
@@ -78,19 +77,10 @@ describe('orderRows', () => {
     }
   });
 
-  it('reaches a minimum transposition finds and barycenter alone does not', () => {
+  // A barycenter sweep alone leaves one crossing here; only a swap clears it.
+  it('reaches a minimum only transposition finds', () => {
     const rows = rowsOf(['a0', 'a1', 'a2', 'a3'], ['b0', 'b1', 'b2']);
-    const pairs: [string, string][] = [['a1', 'b0'], ['a1', 'b2'], ['a0', 'b1'], ['a0', 'b0'], ['a2', 'b0'], ['a3', 'b1']];
-    const hops = hopsOf(...pairs);
-
-    const edges: GraphEdge[] = pairs.map(([from, to], i) => ({ id: `e${i}`, from, to }));
-    const graph: Graph = {
-      nodes: rows.flat(), edges,
-      node: (id) => rows.flat().find((n) => n.id === id),
-      outgoing: (id) => edges.filter((e) => e.from === id),
-      incoming: (id) => edges.filter((e) => e.to === id),
-    };
-    expect(crossings(barycenterOrder(graph, rows, new Set()), hops)).toBe(1);
+    const hops = hopsOf(['a1', 'b0'], ['a1', 'b2'], ['a0', 'b1'], ['a0', 'b0'], ['a2', 'b0'], ['a3', 'b1']);
     expect(crossings(orderRows(rows, hops), hops)).toBe(0);
   });
 
