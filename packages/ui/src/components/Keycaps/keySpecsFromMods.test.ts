@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { keySpecsFromMods, keySpecFromKey, type Platform } from './keySpecsFromMods';
+import { keySpecsFromMods, keySpecFromKey, type LogicalMod, type Platform } from './keySpecsFromMods';
 
 describe('keySpecsFromMods — platform mapping', () => {
   it('maps `mod` to ⌘ on macOS (symbol legend default)', () => {
@@ -54,9 +54,13 @@ describe('keySpecsFromMods — legend override', () => {
       .toEqual([{ label: 'Cmd' }, { label: 'Option' }, { label: 'Control' }, { label: 'Shift' }]);
   });
 
-  it('honors legend: "symbol" on Windows (Shift stays ⇧; mod/alt/ctrl remain text since they have no widely-recognized symbol)', () => {
-    expect(keySpecsFromMods([{ name: 'mod' }, { name: 'shift' }, { name: 'meta' }], { platform: 'windows', legend: 'symbol' }))
-      .toEqual([{ label: 'Ctrl' }, { label: '⇧' }, { label: '⊞' }]);
+  it('honors legend: "symbol" off macOS with the ISO/IEC 9995-7 symbols', () => {
+    for (const platform of ['windows', 'linux'] as const) {
+      expect(keySpecsFromMods(['mod', 'ctrl', 'alt', 'shift', 'meta'].map((name) => ({ name: name as LogicalMod })), { platform, legend: 'symbol' }))
+        .toEqual(['⎈', '⎈', '⎇', '⇧', '⊞'].map((label) => ({ label })));
+      expect(['Escape', 'Enter', 'Tab', 'Space', 'Backspace', 'Delete', 'ContextMenu'].map((k) => keySpecFromKey(k, { platform, legend: 'symbol' }).label))
+        .toEqual(['⎋', '↵', '⇥', '␣', '⌫', '⌦', '▤']);
+    }
   });
 
   it('explicit legend: "auto" matches the default behavior', () => {
