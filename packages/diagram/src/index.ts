@@ -113,7 +113,7 @@ export type {
   UseLiveLayoutOptions,
 } from './live';
 export { chain } from './chain';
-export { backEdges, layered, ranksOf } from './layered';
+export { backEdges, layered, layeredPlan, ranksByLength, ranksOf, type LayeredPlan } from './layered';
 export { layeredRoutes } from './route';
 export type { LayeredRoute, LayeredRouteInput, RouteEdge } from './route';
 export {

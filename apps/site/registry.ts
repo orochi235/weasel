@@ -543,7 +543,7 @@ const DEMO_META: DemoMeta[] = [
     id: 'diagram-layout',
     title: 'Diagram layout',
     package: 'diagram',
-    description: "layered ranks a pipeline by longest path, tree centers a parent over its children's block, and force relaxes a graph that has no direction to read it in. DiagramView's layout() eases to the answer from where the boxes stand and reports what moved to onMove, which writes it back into the data. Each layout is a plain function of the graph that returns only the nodes that move, so pressing the same button twice moves nothing the second time. Order within a rank is seeded from where the boxes already sit, so boxes dragged past each other keep the order they were put in.",
+    description: "layered ranks a pipeline so its edges run as short as they can and lines each node up with its neighbors, tree centers a parent over its children's block, and force relaxes a graph that has no direction to read it in. DiagramView's layout() eases to the answer from where the boxes stand and reports what moved to onMove, which writes it back into the data. Each layout is a plain function of the graph that returns only the nodes that move, so pressing the same button twice moves nothing the second time. Order within a rank is seeded from where the boxes already sit, so boxes dragged past each other keep the order they were put in.",
     hint: "Press a button, then press the same one again — nothing moves. Drag two boxes past each other first and the layout keeps the order you put them in.",
     load: () => import('./demos/DiagramLayoutDemo').then((m) => m.DiagramLayoutDemo),
     path: 'apps/site/demos/DiagramLayoutDemo.tsx',

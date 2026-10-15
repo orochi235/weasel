@@ -92,6 +92,17 @@ nodes already sit, and a node carrying `pinned: true` that nothing moves.
 `force` is the exception to the second half of that: it is an iterative
 relaxation seeded from the current positions, so re-running it keeps relaxing.
 
+`layered` turns around any edge that closes a cycle, then gives each node a
+rank that keeps the total edge length as short as it can (`ranksByLength`,
+network simplex), so a node with no inputs sits beside what it feeds rather
+than in the first rank. It lines each node up with its neighbors across the
+ranks (Brandes–Köpf). Under `order: 'barycenter'` it also reorders each rank
+to cut crossings, with an edge that spans ranks standing in each rank it
+crosses so ordering counts it and placement leaves it room.
+`layeredPlan(graph, opts)` answers with the moves plus each node's rank and
+each spanning edge's waypoints, for drawing those edges where their room was
+left. `ranksOf` is the plain longest-path ranking, which `chain` uses.
+
 `chain` stands one run of nodes on a straight line and hangs everything else
 beside the chain node it is nearest to, counting edges in either direction. It
 is picked like the others, by name: `layout: 'chain'` in `diagramScene`,
@@ -148,11 +159,13 @@ is `'square'` (default) or `'circle'`, `fill` is one fill or a function of the
 port (its `type`, say), and `showsPort` picks which of a node's ports show.
 
 Under `layered`, an edge that names neither leaves its source by the face
-toward the next rank and arrives at its target's face toward the last, and one
-that skips ranks is given waypoints through the gaps in each rank it crosses, so
-it goes around what lies between its ends. An edge running back up the ranks
-keeps the default: the side facing the other end most directly. A label's
-`offset` is the gap between the route and the label's near side.
+toward the next rank and arrives at its target's face toward the last; an edge
+running back up the ranks does the same the other way round. One that spans
+ranks runs through the room `layeredPlan` left for it in each rank it crosses,
+so it goes around what lies between its ends — unless an end is pinned away
+from where its rank would put it, when it takes the router's own path. An
+author's own ports and waypoints win. A label's `offset` is the gap between the
+route and the label's near side.
 
 `groups` draws a box around some nodes, with an optional `label` inside it:
 

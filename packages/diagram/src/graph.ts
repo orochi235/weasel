@@ -57,6 +57,9 @@ export interface GraphEdge {
   id: string;
   from: string;
   to: string;
+  /** The edge as drawn, when this one stands in for an edge to or from a
+   *  group (see `expandGroupEdges`). */
+  origin?: { id: string; from: string; to: string };
 }
 
 /**

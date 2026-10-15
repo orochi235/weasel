@@ -327,7 +327,7 @@ export function expandGroupEdges(
     const tos = toGroup !== undefined ? entries.get(toGroup)! : [e.to];
     let k = 0;
     for (const from of froms) {
-      for (const to of tos) out.push({ id: `${e.id}#${k++}`, from, to });
+      for (const to of tos) out.push({ id: `${e.id}#${k++}`, from, to, origin: { id: e.id, from: e.from, to: e.to } });
     }
   }
   return out;
