@@ -434,13 +434,16 @@ Priority tags:
   label at the run between two of its edge's waypoints by index
   (`packages/diagram/src/label.ts`). Edit the edge's waypoints in a live scene and the label sits
   on whichever run now has that index; remove enough and it falls back to the middle of the route.
-- **(P3) A live scene's `layered` layout gets no placeholders, waypoints or label room.** Under
-  `order: 'seeded'`, which `layoutAction` uses, a spanning edge gets no room in the ranks it
-  crosses, a labeled edge no rank for its label, and the scene's edges get no waypoints, so a long
-  edge can run through a node and a label can land on one. A
-  placeholder's seed order would come from wire ends layout moves, so two could trade places
-  between runs and break "a second run moves nothing"; and a scene's waypoints belong to whoever
-  drew them, so writing them is a decision of its own (`packages/diagram/src/layered/plan.ts`).
+- **(P3) A live `layered` run draws its long edges through the old bends while it eases.** The
+  run moves nodes frame by frame but writes routes only when it arrives, so for its 24 frames an
+  edge layout routed last time still runs through those waypoints while its ends move away from
+  them (`useLiveLayout`, `packages/diagram/src/live.ts`). Easing each layout-owned waypoint from
+  where it was to where the plan puts it would need waypoints on the override channel, which
+  carries poses only.
+- **(P3) `DiagramView`'s `onMove` reports nodes, not routes.** A layout run writes each long
+  edge's waypoints into the view's scene, but a consumer keeping the diagram as data hears only
+  the node moves, so the routes go whenever the data is laid into a scene again, or an edge's
+  spec changes and `reconcileSpecs` replaces its data (`packages/diagram/src/DiagramView.tsx`).
 - **(P3) A second pinned node can sit on a long edge's route.** `layeredPlan` anchors the layout
   on the first pinned node; any other pinned node stays where its author put it, not in its slot.
   A wire with that node as an end gets no waypoints, but a wire passing near it keeps the
