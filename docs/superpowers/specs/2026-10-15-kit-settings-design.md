@@ -44,21 +44,21 @@ stay constants: a settings surface says changing them is supported.
 |---|---|---|
 | `gestures` | `doubleClickMs`, `doubleClickPx`, `longPressMs`, `tapPx`, `dragPx` | `gestures/recognizer/thresholds.ts`, `ui/dragThreshold.ts` |
 | `numberField` | `repeatDelayMs`, `repeatEveryMs` | `UnitField.tsx` |
-| `params` | `textWaitMs`, `settles.<control>` — split by a `params.surface` enum | `Prefs/commitPolicy.ts` |
+| `params` | `form` / `panel` / `lab`, each with `textWaitMs` and `settles.<control>` | `Prefs/commitPolicy.ts` |
 | `tree` | `typeaheadMs`, `hoverExpandMs`, `tipRestMs` | `Tree.tsx`, `useTreeDrag.ts`, `useRowTip.ts` |
 | `help` | `focusDelayMs` | `Properties/rowHelp.ts` |
 | `toast` | `ttlMs` | `Toast/queue.ts` |
 | `targets` | hit and snap radii, overlay dot sizes | `core/device/targets.ts` (joins its device scaling), the `*_HIT_PX` / `*_SNAP_PX` / `*_RADIUS_PX` constants in core and ui, guide and pick tolerance |
 | `view` | `animationMs`, defaulting to 0 under `prefers-reduced-motion` | `useViewAnimation.ts` |
 | `history` | `coalesceMs` | the `COALESCE_MS` constants |
-| `rates` | `orbit`, `dolly`, `wheelZoom` | `kernel3d/tools.ts`, `loupe/loupeActions.ts` |
+| `orbit3d` | `orbitRate`, `dollyRate` | `kernel3d/tools.ts` |
+| `loupe` | `wheelRate` | `labkit/loupe/loupeActions.ts` |
 
 Staying constants: renderer and animator internals (`REBASE_TRANSLATION_PX`, `SLACK_PX`,
 `RESYNC_MS`, `RETIME_MS`), `ENABLED_BUDGET_MS`, forge and labkit timeouts, `Select`'s `CLICK_MS`.
 
-`params` is the one area whose values vary by context. Its leaves split by `params.surface`
-(`form` / `panel` / `lab`) through `splitBy`, the mechanism theme tokens use for mode and density,
-so `prefsCss` writes them as attribute-matched blocks with no special case.
+`params` is nested per surface, not split by a surface enum: a split leaf is chosen by one global
+selection, and a surface is a property of the component, varying within one page.
 
 ## Schema → CSS custom properties
 
@@ -83,7 +83,7 @@ Each arc is its own worktree and merges to `main` on a green `npm run test:fleet
 1. Store, provider, `useKitSetting`, `KitSettings` in `@weasel-js/react`.
 2. `ui` areas and their schema group.
 3. `gestures` thunks, dispatcher wiring, core's gesture schema group.
-4. `targets`, `view`, `history`, `rates`: core plumbing and schema.
+4. `targets`, `view`, `history`, `orbit3d`, `loupe`: core plumbing and schema.
 5. `prefsDefaultsSource`, `@weasel-js/prefs/vite`, runtime adopt in the bridge.
 6. A lab showing the composed schema in `Prefs` driving live components.
 

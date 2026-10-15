@@ -7,3 +7,27 @@ export type { VisibleRaf, VisibleRafOptions, VisibleRafTarget } from './useVisib
 export { useFrameClock } from './useFrameClock';
 export type { FrameClock, FrameClockOptions } from './useFrameClock';
 export { useStableByContent, sameList } from './useStableByContent';
+export { createKitSettingsStore, NO_KIT_SETTINGS } from './kitSettings';
+export type { KitSettingAt, KitSettingLeaf, KitSettingPath, KitSettingsOverrides, KitSettingsStore, WritableKitSettingsStore } from './kitSettings';
+export { KitSettingsProvider, useKitSetting, useKitSettings } from './useKitSetting';
+
+/**
+ * The kit's settings, one key per area: behavior a user sets once for every
+ * component, such as how long a tree waits between typeahead keys. A package
+ * adds its area by augmenting this interface from its own source:
+ *
+ * ```ts
+ * declare module '@weasel-js/react' {
+ *   interface KitSettings { tree: { typeaheadMs: number } }
+ * }
+ * ```
+ *
+ * Declared here in the barrel, not in `kitSettings.ts`: an augmentation
+ * merges through one re-export hop, and a package re-exporting this one adds
+ * a second.
+ *
+ * Every leaf is a number, string or boolean. Nothing here holds a default:
+ * a reader falls back to its own constant when no provider sets the value.
+ */
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export interface KitSettings {}
