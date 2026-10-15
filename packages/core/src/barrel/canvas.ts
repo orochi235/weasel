@@ -11,6 +11,7 @@ export { defaultDrawOne, defaultPaintBounds } from '../canvas/defaultDrawOne';
 export { overChildren, isOverChildren, splitOverChildren } from '../canvas/overChildren';
 export type { PaintBoundsFn } from '../canvas/paintCull';
 export type { SceneCanvasProps, SceneCanvasHit, SceneCanvasLayers, SceneCanvasLongPress } from '../canvas/SceneCanvas';
+export type { SceneCanvasViewport } from '../canvas/SceneCanvas/viewportProp';
 export type { PathEditHost } from '../canvas/SceneCanvas/pathEditHost';
 export { hostAnchorRect, hostAnchorCss } from '../canvas/hostAnchor';
 export type { HostAnchorInput, HostAnchorAlign, HostAnchorOffset } from '../canvas/hostAnchor';

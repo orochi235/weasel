@@ -1,4 +1,4 @@
-import type { ActionsProp } from '@weasel-js/routing';
+import type { ActionsProp, ActionTunings } from '@weasel-js/routing';
 import type { Dispatcher } from '@weasel-js/routing';
 import { useActionsRegistry, useDepSource, usePointerContext } from '@weasel-js/routing/react';
 import type { Scene } from 'core/scene/types';
@@ -40,6 +40,7 @@ import {
 import { GeometryProjectionRegistrar, ResizePolicyRegistrar } from './poseRegistrars';
 import type { BridgeAdapter } from './props';
 import { useActionsPropResolver } from './useActionsPropResolver';
+import { useActionTunings } from './useActionTunings';
 import { useViewportActions } from './useViewportActions';
 
 /**
@@ -56,7 +57,7 @@ export function StandardActionsRegistrar({
   selection,
   scene,
   adapter,
-  actions,
+  actions, tune,
   excludeActions,
   currentViewRef,
   onViewChange,
@@ -88,6 +89,7 @@ export function StandardActionsRegistrar({
   scene: Scene<unknown, string, unknown>;
   adapter: BridgeAdapter;
   actions?: ActionsProp;
+  tune?: ActionTunings;
   /** Kit-standard action ids this canvas's presets and tools leave out. */
   excludeActions: readonly string[];
   currentViewRef: React.RefObject<View>;
@@ -222,16 +224,11 @@ export function StandardActionsRegistrar({
   // Keyed on the exclusion too: a re-registration of the standard set would
   // otherwise land over the overrides applied on top of it.
   useActionsPropResolver(actions, excludeActions.join('|'));
+  useActionTunings(tune);
 
-  // Gate the `resizePolicy` dep registration on the consumer having
-  // passed `selectTool.resize`. When absent, consumers wire it via a child
-  // component (see PointSnapDemo / GroupsDemo). Registering empty defaults
-  // here would race with child-component registrations — React runs child
-  // effects before parent effects, so the parent's empty default would
-  // overwrite the child's real value. The conditional mount avoids that.
-  //
-  // Same pattern for `geometryProjection`: only mount when the consumer
-  // passed the prop so absent → dep undefined → actions stay pose-only.
+  // Mounted only when passed: an empty default registered here would land
+  // after, and over, a dep a child component registered (child effects run
+  // first). Absent `geometryProjection` leaves the dep undefined.
   return (
     <>
       {resizeOptions ? <ResizePolicyRegistrar options={resizeOptions} /> : null}
