@@ -108,6 +108,13 @@ starting `at`, and a minimum `width`/`height`; `lines` is shorthand for one
 label row each. An edge can name `fromPort`/`toPort`, its own `router`,
 `waypoints` and `labelPlacement`.
 
+Under `layered`, an edge that names neither leaves its source by the face
+toward the next rank and arrives at its target's face toward the last, and one
+that skips ranks is given waypoints through the gaps in each rank it crosses, so
+it goes around what lies between its ends. An edge running back up the ranks
+keeps the default: the side facing the other end most directly. A label's
+`offset` is the gap between the route and the label's near side.
+
 `groups` draws a box around some nodes, with an optional `label` inside it:
 
 ```tsx
@@ -118,7 +125,9 @@ diagramScene({ nodes, edges, groups: [{ id: 'ingest', members: ['fetch', 'decode
 on the cross axis that nothing else enters, in every rank from its first
 member's to its last, and rank gaps widen where a box needs the room. The box
 is an ordinary scene node that depends on its members and derives its pose from
-theirs (`groupDerivePose`), so dragging a member carries the box along. An edge
+theirs (`groupDerivePose`), so dragging a member carries the box along. It is
+never narrower than its label, and a layout running down or up leaves room for
+that width. An edge
 whose `from` or `to` names a group meets the box, and ranks against the
 group's first stage. Groups are flat, and `force` ignores them. A scene built
 any other way joins in with a node whose trait carries `group` and whose

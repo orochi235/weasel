@@ -231,10 +231,10 @@ export function packClusters(
     const childAt = new Map<Span, number>(span.children.map((c) => [c, 0]));
     const { nodeAt, ends } = settle(byRow, childAt, () => 0, 0);
     const block: Block = { width: Math.max(0, ...ends), nodeAt, childAt };
+    const slack = widen(block, span.group, insets.get(span)!, axes);
     // A rank no nested column passes through is free to sit in the middle.
     byRow.forEach((items, r) => {
-      if (items.some((item) => item.kind === 'group')) return;
-      const shift = (block.width - ends[r]!) / 2;
+      const shift = items.some((item) => item.kind === 'group') ? slack : (block.width - ends[r]!) / 2;
       for (const item of items) {
         if (item.kind === 'node') nodeAt.set(item.node.id, nodeAt.get(item.node.id)! + shift);
       }
@@ -259,6 +259,17 @@ export function packClusters(
   };
   for (const root of roots) place(root, start.get(root)!);
   return at;
+}
+
+/** Widen a block to its group's `minWidth`, centering what it holds, and
+ *  answer the room added on each side. A label only runs along world x, so
+ *  only a vertical layout widens for it. */
+function widen(block: Block, group: GraphGroup, inset: CanonicalInset, axes: LayoutAxes): number {
+  const floor = axes.cross === 'x' ? (group.minWidth ?? 0) - inset.crossLo - inset.crossHi : 0;
+  const slack = Math.max(0, floor - block.width) / 2;
+  block.width += 2 * slack;
+  for (const [child, local] of block.childAt) block.childAt.set(child, local + slack);
+  return slack;
 }
 
 /**

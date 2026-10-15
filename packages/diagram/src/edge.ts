@@ -123,8 +123,9 @@ function isHorizontal(normal: Vec2 | null | undefined): boolean {
  * A smooth route, sampled into points.
  *
  * Each leg is a cubic that leaves along the departing end's normal and arrives
- * against the receiving one's. Sampled rather than emitted as curve commands so
- * every router returns the same thing.
+ * against the receiving one's, and passes each waypoint without a corner.
+ * Sampled rather than emitted as curve commands so every router returns the
+ * same thing.
  */
 export const bezier: Router = (req) => {
   const stops = [req.from.point, ...req.waypoints, req.to.point];
@@ -132,8 +133,8 @@ export const bezier: Router = (req) => {
   for (let i = 1; i < stops.length; i++) {
     const a = stops[i - 1]!;
     const b = stops[i]!;
-    const outN = i === 1 ? req.from.normal : null;
-    const inN = i === stops.length - 1 ? req.to.normal : null;
+    const outN = i === 1 ? req.from.normal : through(stops, i - 1);
+    const inN = i === stops.length - 1 ? req.to.normal : negated(through(stops, i));
     const leg = portCurvePoints(
       a.x, a.y, b.x, b.y,
       outN == null ? null : [outN.x, outN.y],
@@ -146,6 +147,16 @@ export const bezier: Router = (req) => {
 };
 
 const BEZIER_SAMPLES = 16;
+
+/** The direction a smooth route passes an interior stop: from the stop before it toward the one after. */
+function through(stops: readonly Vec2[], i: number): Vec2 | null {
+  const dx = stops[i + 1]!.x - stops[i - 1]!.x;
+  const dy = stops[i + 1]!.y - stops[i - 1]!.y;
+  const len = Math.hypot(dx, dy);
+  return len === 0 ? null : { x: dx / len, y: dy / len };
+}
+
+const negated = (v: Vec2 | null): Vec2 | null => (v === null ? null : { x: -v.x, y: -v.y });
 
 /** The routers this package ships. A consumer's own go in the same shape. */
 export const ROUTERS: Readonly<Record<string, Router>> = Object.freeze({
