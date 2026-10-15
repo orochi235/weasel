@@ -13,7 +13,6 @@
  * cut crossings, and adds the placeholders whose positions route long edges.
  */
 import type { LayoutFn } from './layout';
-import { untilSettled } from './layout';
 import { layeredPlan } from './layered/plan';
 
 export { backEdges, ranksOf } from './layered/cycles';
@@ -23,9 +22,4 @@ export { ranksByLength } from './layered/rank';
 /** The ranked layout: each edge points one rank further along `direction`.
  *  Under `order: 'seeded'` a re-run moves nothing; `order: 'barycenter'`
  *  reorders ranks to cut crossings. */
-export const layered: LayoutFn = (graph, opts = {}) =>
-  // Barycenter ordering reorders on every run by design, so it has no
-  // arrangement to settle on.
-  ((graph.groups?.length ?? 0) > 0 && opts.order !== 'barycenter'
-    ? untilSettled((g, o) => layeredPlan(g, o).moves, graph, opts)
-    : layeredPlan(graph, opts).moves);
+export const layered: LayoutFn = (graph, opts = {}) => layeredPlan(graph, opts).moves;

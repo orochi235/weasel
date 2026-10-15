@@ -3,7 +3,7 @@ import type { Graph } from '../graph';
 
 /** Edge ids that close a cycle, found by a depth-first walk in graph order.
  *  Which edges get named depends only on the node order, so it is the same
- *  every run. */
+ *  every run. A self-loop is not one: it points neither way. */
 export function backEdges(graph: Graph): Set<string> {
   const back = new Set<string>();
   const done = new Set<string>();
@@ -13,6 +13,7 @@ export function backEdges(graph: Graph): Set<string> {
     if (done.has(id)) return;
     onStack.add(id);
     for (const edge of graph.outgoing(id)) {
+      if (edge.to === id) continue;
       if (onStack.has(edge.to)) back.add(edge.id);
       else walk(edge.to);
     }
@@ -39,7 +40,7 @@ export function ranksOf(graph: Graph, back: ReadonlySet<string>): Map<string, nu
     resolving.add(id);
     let rank = 0;
     for (const edge of graph.incoming(id)) {
-      if (back.has(edge.id)) continue;
+      if (back.has(edge.id) || edge.from === id) continue;
       rank = Math.max(rank, rankOf(edge.from) + 1);
     }
     resolving.delete(id);

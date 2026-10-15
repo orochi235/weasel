@@ -33,6 +33,42 @@ describe('layered, measured through diagramScene', () => {
   });
 });
 
+describe('layeredPlan', () => {
+  it('settles a grouped seeded layout the way layered does', () => {
+    // `mid` starts between the group's members and has to leave, which
+    // changes the order a second pass reads.
+    const graph = generatedFrom(
+      ['in', 'a0', 'mid', 'a1', 'z'],
+      [['in', 'a0'], ['in', 'mid'], ['in', 'a1'], ['a0', 'z'], ['mid', 'z'], ['a1', 'z']],
+      { A: ['a0', 'a1'] },
+    );
+    expect(layeredPlan(graph).moves).toEqual(layered(graph));
+    expect(layered(after(graph, layeredPlan(graph).moves)).size).toBe(0);
+  });
+
+  it('does not count a self-loop as turned around', () => {
+    const graph = generatedFrom(['a', 'b'], [['a', 'a'], ['a', 'b']], {});
+    expect([...layeredPlan(graph).back]).toEqual([]);
+    expect(layeredPlan(graph).ranks.get('a')).toBe(0);
+  });
+});
+
+function generatedFrom(ids: string[], pairs: [string, string][], groups: Record<string, string[]>): Graph {
+  const nodes: GraphNode[] = ids.map((id, i) => ({ id, bounds: { x: i * 120, y: 0, width: 80, height: 30 }, pinned: false }));
+  const gs: GraphGroup[] = Object.entries(groups).map(([id, members]) => ({ id, members, inset: insetOf(12) }));
+  for (const g of gs) for (const m of g.members) nodes.find((n) => n.id === m)!.group = g.id;
+  const edges = expandGroupEdges(pairs.map(([from, to], i) => ({ id: `e${i}`, from, to })), gs);
+  const byId = new Map(nodes.map((n) => [n.id, n]));
+  return {
+    nodes,
+    edges,
+    groups: gs,
+    node: (id) => byId.get(id),
+    outgoing: (id) => edges.filter((e) => e.from === id),
+    incoming: (id) => edges.filter((e) => e.to === id),
+  };
+}
+
 /** A small deterministic generator, so a failure names a seed that replays. */
 function lcg(seed: number): () => number {
   let s = seed >>> 0;

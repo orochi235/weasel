@@ -14,6 +14,7 @@ import {
   extent,
   pinnedSet,
   translated,
+  untilSettled,
   worldOf,
   type LayoutOptions,
   type LayoutResult,
@@ -40,6 +41,15 @@ export interface LayeredPlan {
 
 /** The layered layout, with the ranks and edge routes it settled on. */
 export function layeredPlan(graph: Graph, opts: LayoutOptions = {}): LayeredPlan {
+  const plan = planOnce(graph, opts);
+  // Keeping groups together can move an outsider out of a group's column,
+  // which changes the order the next seeded run starts from. Barycenter
+  // ordering reorders on every run, so it has no arrangement to settle on.
+  if ((graph.groups?.length ?? 0) === 0 || opts.order === 'barycenter') return plan;
+  return { ...plan, moves: untilSettled((g, o) => planOnce(g, o).moves, graph, opts) };
+}
+
+function planOnce(graph: Graph, opts: LayoutOptions): LayeredPlan {
   const axes = axesFor(opts.direction);
   const nodeGap = opts.nodeGap ?? DEFAULT_NODE_GAP;
   const rankGap = opts.rankGap ?? DEFAULT_RANK_GAP;
