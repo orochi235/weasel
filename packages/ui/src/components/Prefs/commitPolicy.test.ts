@@ -41,8 +41,8 @@ describe('PARAMS_TEXT_WAIT_MS', () => {
 });
 
 describe('withCommitPolicy', () => {
-  it('settles a typed number, a slider, and a color in a form, and writes text as it is typed', () => {
-    expect([number, slider, text, color].map((field) => settles(field, 'form'))).toEqual([true, true, false, true]);
+  it('settles every control in a form', () => {
+    expect([number, slider, text, color].map((field) => settles(field, 'form'))).toEqual([true, true, true, true]);
   });
 
   it('settles a typed number, text, and a color in a panel, and writes a slider as it moves', () => {
