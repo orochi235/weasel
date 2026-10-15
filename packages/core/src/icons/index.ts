@@ -19,6 +19,7 @@ export { default as StarIcon } from './StarIcon';
 export { default as PencilIcon } from './PencilIcon';
 export { default as TextIcon } from './TextIcon';
 export { default as PenIcon } from './PenIcon';
+export { default as SpiroIcon } from './SpiroIcon';
 export { default as HandIcon } from './HandIcon';
 export { default as SliceIcon } from './SliceIcon';
 export { default as UnknownIcon } from './UnknownIcon';

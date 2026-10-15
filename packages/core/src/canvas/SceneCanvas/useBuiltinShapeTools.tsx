@@ -12,6 +12,7 @@ import { useLassoTool } from 'tools/builtin/lasso/useLassoTool';
 import { useLineTool } from 'tools/builtin/line/useLineTool';
 import { usePencilTool } from 'tools/builtin/pencil/usePencilTool';
 import { usePenTool } from 'tools/builtin/pen/usePenTool';
+import { useSpiroTool } from 'tools/builtin/spiro/useSpiroTool';
 import { usePolygonTool } from 'tools/builtin/polygon/usePolygonTool';
 import { useRectTool } from 'tools/builtin/rect/useRectTool';
 import { useStarTool } from 'tools/builtin/star/useStarTool';
@@ -35,8 +36,8 @@ export interface BuiltinToolOptions {
    *
    *  Registered as the `snap` dep, which `insertAction` applies to the
    *  drag start and current point — so the live preview and the committed
-   *  geometry agree — and which the pen tool reads for its own anchor
-   *  placement. Covers every drag-to-insert tool (rect / ellipse / line /
+   *  geometry agree — and which the pen and spiro tools read for their own
+   *  point placement. Covers every drag-to-insert tool (rect / ellipse / line /
    *  polygon / star / text); freehand pencil samples are deliberately left
    *  unsnapped. */
   snapPoint?: (p: { x: number; y: number }) => { x: number; y: number };
@@ -73,7 +74,8 @@ export function useBuiltinShapeTools(args: UseBuiltinShapeToolsArgs = {}): Built
   const star = useStarTool(insert);
   const pencil = usePencilTool(insert);
   const pen = usePenTool({ snapPoint });
+  const spiro = useSpiroTool({ snapPoint });
   const lasso = useLassoTool(options?.lasso ?? {});
   const text = useTextTool(insert);
-  return { rect, ellipse, line, polygon, star, pen, pencil, lasso, text };
+  return { rect, ellipse, line, polygon, star, pen, spiro, pencil, lasso, text };
 }

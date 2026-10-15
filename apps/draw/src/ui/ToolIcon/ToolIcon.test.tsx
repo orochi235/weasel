@@ -2,14 +2,14 @@ import { render } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import {
   EllipseIcon, ImageIcon, KIT_SHAPE_KINDS, LassoIcon, LineIcon, PenIcon, PencilIcon, PolygonIcon,
-  RectIcon, StarIcon, TextIcon, UnknownIcon,
+  RectIcon, SpiroIcon, StarIcon, TextIcon, UnknownIcon,
 } from '@weasel-js/core';
 import { ToolIcon } from './ToolIcon';
 
 describe('ToolIcon', () => {
   const GLYPHS = {
     rect: RectIcon, ellipse: EllipseIcon, line: LineIcon, polygon: PolygonIcon, star: StarIcon,
-    pen: PenIcon, pencil: PencilIcon, lasso: LassoIcon, text: TextIcon, image: ImageIcon,
+    pen: PenIcon, spiro: SpiroIcon, pencil: PencilIcon, lasso: LassoIcon, text: TextIcon, image: ImageIcon,
   };
 
   it('draws the palette glyph for every kit shape tool', () => {

@@ -19,6 +19,7 @@ export {
   PencilIcon,
   TextIcon,
   PenIcon,
+  SpiroIcon,
   HandIcon,
   SliceIcon,
   UnknownIcon,

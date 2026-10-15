@@ -11,6 +11,7 @@ import { pxExtent, withinPxRadius, nearestPathAnchor, reverseAnchors, type PathA
 import { PenIcon } from '../../../icons';
 import { boundsOfPath, type PolygonPath, anchorsToPath, editAnchorSetTracked, pathToAnchors } from '@weasel-js/geom';
 import { createPenPreviewLayer } from 'features/paths/penPreviewLayer';
+import { resolveEditablePathOf } from 'features/paths/editablePath';
 import type { Op } from 'core/ops/types';
 import { createDeleteOp } from 'core/ops/delete';
 import { defaultCommitAdapter } from 'interactions/actions/defaultCommitAdapter';
@@ -244,7 +245,7 @@ export function usePenTool(
     const current = s.current!;
     const { anchors: added, closed: addedClosed } = pathToAnchors(buildPath([...s.finishedSubpaths, current], null));
 
-    const other = edit.getEditablePath(hit.id) as PolygonPath;
+    const other = (resolveEditablePathOf(scene?.get(hit.id as never)) ?? edit.getEditablePath(hit.id)) as PolygonPath;
     const otherSet = pathToAnchors(other);
     const tail = hit.end === 'last' ? reverseAnchors(otherSet.anchors[hit.sub]) : otherSet.anchors[hit.sub];
     const joined = added[added.length - 1];
@@ -412,7 +413,6 @@ export function usePenTool(
             }
 
             const join = joinable(scratch, deps, hit);
-            // Otherwise: append a corner anchor, starting a subpath if needed.
             if (!scratch.current) scratch.current = { anchors: [], closed: false };
             scratch.current.anchors.push({ x: wx, y: wy });
             if (join) commitJoin(scratch, deps, hit);

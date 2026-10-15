@@ -27,9 +27,10 @@ export {
   deleteAnchorsAction, cutPathAtAnchorAction, marqueeAnchorsAction, selectAnchorAction,
 } from './anchorEditing';
 export { retractHandlesAction, makeHandlesSymmetricAction } from './anchorHandles';
-export { averageAnchorsAction, joinAnchorsAction } from './anchorJoin';
+export { averageAnchorsAction, bridgeAnchorsAction, joinAnchorsAction } from './anchorJoin';
 export {
-  simplifyPathAction, offsetPathAction, snipAtCrossingsAction, joinPathsAction,
+  simplifyPathAction, offsetPathAction, snipAtCrossingsAction, joinPathsAction, bridgePathsAction,
+  setSpiroKindAction, releaseSpiroAction, DEFAULT_BRIDGE_TENSION,
 } from '../pathCommands';
 export { undoAction, redoAction } from './undoRedo';
 export { clipboardCopyAction, clipboardCutAction, clipboardPasteAction, clipboardPasteEventAction } from '../clipboard/action';

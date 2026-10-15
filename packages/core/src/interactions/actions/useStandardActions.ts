@@ -60,9 +60,10 @@ import { exitPathEditAction } from './defaults/exitPathEdit';
 import { insertPathAnchorAction } from './defaults/insertPathAnchor';
 import { bendSegmentAction } from './defaults/bendSegment';
 import { makeHandlesSymmetricAction, retractHandlesAction } from './defaults/anchorHandles';
-import { averageAnchorsAction, joinAnchorsAction } from './defaults/anchorJoin';
+import { averageAnchorsAction, bridgeAnchorsAction, joinAnchorsAction } from './defaults/anchorJoin';
 import {
-  joinPathsAction, offsetPathAction, simplifyPathAction, snipAtCrossingsAction,
+  bridgePathsAction, joinPathsAction, offsetPathAction, releaseSpiroAction, setSpiroKindAction, simplifyPathAction,
+  snipAtCrossingsAction,
 } from './pathCommands';
 import {
   nudgeAnchorsUpAction,
@@ -172,10 +173,14 @@ const KIT_STANDARD_DESCRIPTORS: Action[] = [
   makeHandlesSymmetricAction,
   averageAnchorsAction,
   joinAnchorsAction,
+  bridgeAnchorsAction,
+  setSpiroKindAction,
   simplifyPathAction,
   offsetPathAction,
   snipAtCrossingsAction,
   joinPathsAction,
+  bridgePathsAction,
+  releaseSpiroAction,
   marqueeAnchorsAction,
   selectAnchorAction,
   lassoSelectAction,

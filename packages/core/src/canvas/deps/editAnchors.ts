@@ -18,7 +18,7 @@ import type { SelectionApi } from 'core/selection/useSelection';
 import type { PointOrigin, PolygonPath } from '@weasel-js/geom';
 import type { Skin } from '@weasel-js/animator';
 import { remapSkin } from '../../animation/rig/skinBinding';
-import { classifyPathStorage, resolveEditablePathOf, storeEditablePath } from 'features/paths/editablePath';
+import { classifyPathStorage, pathEditPathOf, resolveEditablePathOf, storeEditablePath } from 'features/paths/editablePath';
 import { withoutShapeGenerator } from 'features/paths/shapeGenerator';
 import { createPathEditState, isSelectedNode, type PathEditState } from 'features/paths/pathEditState';
 import { recordModeSwitch } from '@weasel-js/routing';
@@ -105,7 +105,7 @@ export function useEditAnchorsDepSource(
       },
       getEditablePath(id: string): PolygonPath | null {
         const node = sc.get(id as NodeId);
-        return resolveEditablePathOf(node as { pose: unknown; data: unknown });
+        return pathEditPathOf(node as { pose: unknown; data: unknown });
       },
       getStorageKind(id: string): 'pose' | 'data' | null {
         const node = sc.get(id as NodeId);

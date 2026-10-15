@@ -8,6 +8,7 @@ import { pathFromPlane } from 'canvas/planeClips';
 import { isRectPose } from 'core/geometry/autoPoseDescriptor';
 import type { RectPose } from 'core/scene/types';
 import type { PlaneMap } from 'core/viewport/parallax';
+import { respiro, spiroEditPath, spiroOf, withoutSpiro } from './spiroShape';
 
 /** The two fields of a node the editable path is read from. */
 export interface EditableShape {
@@ -51,9 +52,22 @@ export function resolveEditablePathOf(
 }
 
 /**
+ * What path edit edits on a node, in world coords: a spiro node's control
+ * path (`spiroShape`), whose anchors are the curve's points, and any other
+ * node's editable polygon. Null when the node has no editable polygon.
+ */
+export function pathEditPathOf(node: EditableShape | undefined | null): PolygonPath | null {
+  const path = resolveEditablePathOf(node);
+  const spiro = path ? spiroOf(node!.data) : null;
+  return (spiro && spiroEditPath(path!, spiro)) ?? path;
+}
+
+/**
  * The pose and data that store `worldPath` where `node` stores its editable
  * polygon — the inverse of {@link resolveEditablePathOf}, so a `data.path`
- * node keeps its rotation. Null when `node` has no editable polygon.
+ * node keeps its rotation. On a spiro node, `worldPath` is an edit of what
+ * {@link pathEditPathOf} gave: the curve is solved again through its anchors.
+ * Null when `node` has no editable polygon.
  */
 export function storeEditablePath(
   node: EditableShape | undefined | null,
@@ -61,9 +75,18 @@ export function storeEditablePath(
 ): EditableShape | null {
   const storage = classifyPathStorage(node);
   if (!storage) return null;
-  if (storage.kind === 'pose') return { pose: worldPath, data: node!.data };
-  const { pose, path } = worldEditToStorage(storage.pose, worldPath);
-  return { pose, data: { ...storage.data, path } };
+  let path = worldPath;
+  let data = node!.data;
+  const spiro = spiroOf(data);
+  if (spiro) {
+    // A spiro whose points no longer describe the path has nothing to solve: plain geometry.
+    const solved = respiro(resolveEditablePathOf(node)!, spiro, worldPath);
+    path = solved?.path ?? worldPath;
+    data = solved ? { ...(data as object), spiro: solved.spiro } : withoutSpiro(data);
+  }
+  if (storage.kind === 'pose') return { pose: path, data };
+  const stored = worldEditToStorage(storage.pose, path);
+  return { pose: stored.pose, data: { ...(data as object), path: stored.path } };
 }
 
 /** `node` as the in-flight gestures in `previews` would leave it: a handle
@@ -93,7 +116,7 @@ function previewedShape(
 }
 
 /**
- * The editable polygon of node `id` as it is drawn right now: following any
+ * What path edit shows of node `id` right now ({@link pathEditPathOf}): following any
  * in-flight gesture in `previews`, and in the world of the camera whose
  * `plane` this is — a path on a parallax plane is stored in the plane's.
  */
@@ -104,5 +127,5 @@ export function liveEditablePath(
   plane: PlaneMap | null,
 ): PolygonPath | null {
   if (!node) return null;
-  return pathFromPlane(resolveEditablePathOf(previewedShape(id, node, previews)), plane);
+  return pathFromPlane(pathEditPathOf(previewedShape(id, node, previews)), plane);
 }

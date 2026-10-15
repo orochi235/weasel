@@ -54,6 +54,7 @@ export {
   pathPoseDescriptor,
   pathOriginProjection,
   createPenPreviewLayer,
+  createSpiroPreviewLayer,
   createPathEditingOverlayLayer,
   pathUnion,
   pathIntersect,
@@ -90,6 +91,8 @@ export type {
   CreatePathLayerOpts,
   CreatePenPreviewLayerOptions,
   PenPreviewStyle,
+  CreateSpiroPreviewLayerOptions,
+  SpiroPreviewState,
   CreatePathEditingOverlayLayerOptions,
   PathEditingOverlayStyle,
   PathInWorldPose,
@@ -100,6 +103,7 @@ export type {
   OffsetPathOptions,
   SimplifyPathOptions,
   AverageAxis,
+  JoinOptions,
   PoseRotation,
   PoseLinear,
 } from '../features/paths';
@@ -118,6 +122,30 @@ export {
   type ShapeGenerator,
   type StarGenerator,
 } from '../features/paths/shapeGenerator';
+export { DEFAULT_BRIDGE_TENSION } from '../interactions/actions/pathCommands';
+export {
+  respiro,
+  respiroWithKind,
+  spiroContours,
+  spiroEditPath,
+  spiroNodeData,
+  spiroOf,
+  withoutSpiro,
+  type SpiroShape,
+} from '../features/paths/spiroShape';
+export {
+  SPIRO_KINDS,
+  isSpiroKind,
+  solveSpiro,
+  spiroControlPath,
+  spiroToPath,
+  type SpiroContour,
+  type SpiroKind,
+  type SpiroPath,
+  type SpiroPoint,
+  type SpiroSegment,
+  type SpiroToPathOptions,
+} from '@weasel-js/geom';
 
 // ─── Curves: alternate path representations (Bezier, NURBS, Spiro) ──────────
 export {

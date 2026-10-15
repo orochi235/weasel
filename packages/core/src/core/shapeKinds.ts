@@ -30,6 +30,7 @@ export const SHAPE_KINDS = {
   polygon: { tool: true, insertPreview: true },
   star: { tool: true, insertPreview: true },
   pen: { tool: true, insertPreview: false },
+  spiro: { tool: true, insertPreview: false },
   pencil: { tool: true, insertPreview: true },
   lasso: { tool: true, insertPreview: false },
   text: { tool: true, insertPreview: true },

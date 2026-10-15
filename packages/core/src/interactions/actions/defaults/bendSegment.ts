@@ -7,7 +7,8 @@
  * ties the marquee's `empty` and move's `selected-body` on specificity and
  * registers ahead of the marquee; move turns segment presses down itself.
  * An anchor's own affordance sits above the segment's, so a press on an
- * anchor is the anchor drag's.
+ * anchor is the anchor drag's. A spiro curve declines: its control path's
+ * segments carry no handles for the solve to keep.
  */
 
 import type { Action, InvocationCtx, OngoingHandle } from '@weasel-js/routing';
@@ -17,6 +18,10 @@ import { bendSegment, editAnchorSetTracked, type PointOrigin, type PolygonPath }
 import { inPlane, editingLayer } from '../planeInput';
 import { pathEditPreview } from '../edit-anchors/preview';
 import { segmentUnder } from './segmentUnder';
+import type { EditAnchorsDep } from '../depSchema';
+import { spiroOf } from 'features/paths/spiroShape';
+
+const editsSpiro = (dep: EditAnchorsDep): boolean => spiroOf(dep.getNodeShape(dep.editingId)?.data) !== null;
 
 const BEND_CURSOR: CursorSpec = 'grab';
 
@@ -31,7 +36,7 @@ export const bendSegmentAction: Action & { requires: string[] } = inPlane({
     timing: 'ongoing',
     start(ctx: InvocationCtx): OngoingHandle {
       const under = segmentUnder(ctx.deps, ctx.world.x, ctx.world.y);
-      if (!under) return {};
+      if (!under || editsSpiro(under.dep)) return {};
       const { dep, path: originPath, hit } = under;
       const id = dep.editingId;
       const press = { x: ctx.world.x, y: ctx.world.y };
@@ -59,7 +64,7 @@ export const bendSegmentAction: Action & { requires: string[] } = inPlane({
     },
   },
   enabled: (deps, at) => {
-    if (!deps?.editAnchors?.editingId) return ActionDisabledReason.NotApplicable;
+    if (!deps?.editAnchors?.editingId || editsSpiro(deps.editAnchors)) return ActionDisabledReason.NotApplicable;
     if (at && !segmentUnder(deps, at.x, at.y)) return ActionDisabledReason.NotApplicable;
     return true;
   },

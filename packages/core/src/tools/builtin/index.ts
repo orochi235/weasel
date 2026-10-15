@@ -48,6 +48,7 @@ export {
   type PenAnchor,
   type PenSubpath,
 } from './pen';
+export { useSpiroTool, type UseSpiroToolOptions } from './spiro';
 export { useRectTool } from './rect';
 export type { InsertToolOptions } from './shared/insertToolOptions';
 export { useEllipseTool } from './ellipse';

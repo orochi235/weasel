@@ -1,7 +1,7 @@
 import type { ComponentType } from 'react';
 import {
   EllipseIcon, ImageIcon, LassoIcon, LineIcon, PenIcon, PencilIcon, PolygonIcon, RectIcon,
-  StarIcon, TextIcon, UnknownIcon,
+  SpiroIcon, StarIcon, TextIcon, UnknownIcon,
   type BuiltinShapeToolId, type IconProps,
 } from '@weasel-js/core';
 
@@ -16,6 +16,7 @@ const BY_TOOL = {
   polygon: PolygonIcon,
   star: StarIcon,
   pen: PenIcon,
+  spiro: SpiroIcon,
   pencil: PencilIcon,
   lasso: LassoIcon,
   text: TextIcon,

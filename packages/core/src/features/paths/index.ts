@@ -110,7 +110,7 @@ export {
 } from '@weasel-js/geom';
 export {
   averageAnchorsAt, closestOpenEnds, joinAnchorsAt, joinSubpathEnds, simplifyPath, subpathEndAt,
-  type AverageAxis, type SimplifyPathOptions, type SubpathEnd,
+  type AverageAxis, type JoinOptions, type SimplifyPathOptions, type SubpathEnd,
 } from '@weasel-js/geom';
 export { pathInPoseFrame, pathInWorld, worldEditToStorage, type PathInWorldPose } from '@weasel-js/geom';
 export { poseRotationOf, rotatePathAround, type PoseRotation } from '@weasel-js/geom';
@@ -125,6 +125,11 @@ export {
   type CreatePenPreviewLayerOptions,
   type PenPreviewStyle,
 } from './penPreviewLayer';
+export {
+  createSpiroPreviewLayer,
+  type CreateSpiroPreviewLayerOptions,
+  type SpiroPreviewState,
+} from './spiroPreviewLayer';
 export {
   createPathEditingOverlayLayer,
   type CreatePathEditingOverlayLayerOptions,

@@ -183,9 +183,18 @@ Priority tags:
   drag steps in a different direction from the drag. Recording the move in world space and
   mapping it through each node's parent on replay would make the two agree.
 - **(P3) The path commands have no icons.** `simplifyPath`, `offsetPath`, `snipAtCrossings`,
-  `joinPaths`, `joinAnchors`, and `averageAnchors` show as text in draw's bar.
-  `RetractHandlesIcon` and `SymmetricHandlesIcon` (`defaults/icons/anchorIcons.tsx`) are first
-  drafts, not proofed at high resolution.
+  `joinPaths`, `bridgePaths`, `joinAnchors`, `bridgeAnchors`, `averageAnchors`, `setSpiroKind`, and
+  `releaseSpiro` show as text in draw's bar.
+  `RetractHandlesIcon` and `SymmetricHandlesIcon` (`defaults/icons/anchorIcons.tsx`) and the spiro
+  tool's `SpiroIcon` (`packages/core/src/icons/SpiroIcon.tsx`) are first drafts, not proofed at
+  high resolution.
+- **(P2) Spiro curves in path edit.** A spiro node (`features/paths/spiroShape.ts`) is edited
+  through its straight-sided control path, and two things there are unfinished. Its points all
+  draw as ordinary anchors, so a point's kind shows only in the spiro tool's preview, which marks
+  each kind with its own shape; the path-edit overlay should do the same. And only curvature-continuous
+  (G2) points are solved: a point that also keeps the rate of change of curvature continuous (G4,
+  a cubic-curvature segment either side) needs a second segment type in `eulerSpiral.ts` and two
+  more equations per point in `solveSpiro`.
 - **(P2) Spacing hints.** Equal-spacing markers between siblings while moving, and Alt-hover
   distance readouts between the selection and the shape under the pointer.
 - **(P2) Live symmetry.** Draw on one side of an axis and the mirrored half follows.

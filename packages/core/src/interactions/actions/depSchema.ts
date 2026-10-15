@@ -21,7 +21,10 @@ import type {
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { PoseDescriptor } from './resize/geometry';
 import type { GeometryProjection } from './geometryProjection';
-import type { Point2, DragSample, DebugSink, LongPressState } from '@weasel-js/routing';
+import type { Point2, DebugSink, LongPressState } from '@weasel-js/routing';
+import type { InsertExtras } from './insertExtras';
+
+export type { InsertExtras };
 
 /** Minimal view API the action layer consumes. */
 export interface ViewApi {
@@ -111,7 +114,9 @@ export interface EditAnchorsDep {
    *  string) to exit. */
   setEditingId(id: string | null): void;
   /** Returns the COMMITTED editable polygon in world coordinates, or
-   *  null if this node has no editable polygon. Does NOT consult in-
+   *  null if this node has no editable polygon. For a spiro node it is the
+   *  straight-sided control path through the curve's points, which
+   *  `applyEdit` solves the curve through again. Does NOT consult in-
    *  flight previews — callers that need live state read the dispatcher's
    *  in-flight handles. */
   getEditablePath(id: string): unknown;
@@ -251,39 +256,6 @@ export interface IngestionDep {
    *  Live accessor, same caveat as `resolveSrc`. */
   clipboard?: ClipboardIngestCtx;
 }
-
-/**
- * Per-kind extra geometry passed to `InsertDep.commit`.
- *
- * Built-in tools populate a typed variant so the kit's default factory can
- * render the true tool params (line endpoints, polygon side count, star
- * geometry, pencil sample list). Consumer-defined tools may pass any
- * `{ kind: string; ... }` payload; the kit's factory falls back to AABB
- * inscription for unknown kinds.
- *
- * `bounds` is still passed alongside as a useful AABB pose hint — factories
- * may use it as the node's pose even when richer geometry is available.
- */
-export type InsertExtras =
-  | { kind: 'rect' }
-  | { kind: 'ellipse' }
-  | { kind: 'line'; a: { x: number; y: number }; b: { x: number; y: number } }
-  | { kind: 'polygon'; sides: number; rotation: number; center?: { x: number; y: number }; radius?: number }
-  | { kind: 'star'; points: number; innerRadiusRatio: number; rotation: number; center?: { x: number; y: number }; outerRadius?: number }
-  | { kind: 'pencil'; samples: ReadonlyArray<DragSample> }
-  | { kind: 'text'; text?: string }
-  /** A finished path in world coords, as the pen tool commits one. `bounds`
-   *  is its AABB. An open path takes no fill. */
-  | { kind: 'path'; path: import('@weasel-js/geom').PolygonPath; closed: boolean }
-  | {
-      kind: 'image';
-      src?: string;
-      opacity?: number;
-      /** Chrome-only: what the in-flight drag paints. Read by the overlay
-       *  layer, ignored by the insert dep. */
-      preview?: 'bitmap' | 'outline';
-    }
-  | { kind: string; [extra: string]: unknown };
 
 /**
  * World-space point snapping — grid, guides, or any consumer rule. Actions

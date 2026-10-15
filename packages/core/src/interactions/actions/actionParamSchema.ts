@@ -35,6 +35,10 @@ declare module '@weasel-js/routing' {
     'nudge.left': NudgeParams;
     'nudge.right': NudgeParams;
     'tool.activate': { toolId: string };
+    bridgePaths: { tension?: number };
+    bridgeAnchors: { tension?: number };
+    setSpiroKind: { kind: import('@weasel-js/geom').SpiroKind };
+    'spiro.placePoint': { kind?: import('@weasel-js/geom').SpiroKind };
   }
 }
 

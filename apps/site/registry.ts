@@ -663,6 +663,26 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/SceneLabDemo.tsx',
   },
   {
+    id: 'lab-spiro',
+    title: 'Spiro curves',
+    package: 'core',
+    description:
+      "A curve drawn by its on-curve points alone. Between each pair of points runs a piece of an Euler spiral, whose curvature changes evenly along it, and `solveSpiro` solves the pieces together so tangent and curvature carry straight through every smooth point. A corner lets the two sides turn independently; a point marked as following a line continues the straight segment arriving at it, and one marked as leading into a line runs the curve into the straight segment leaving it. The node stores the solved curve as ordinary cubics in `data.path`, split wherever one cubic would stray, and `data.spiro` records which anchors are the points. Path edit edits those points through a straight-sided control path and solves the curve again on every move, so the drag shows the finished curve. The bar over the canvas sets the kind of the selected points, or converts the curve to a path whose anchors and handles are its own.",
+    hint: 'The wave opens in path edit: drag one of its points and watch the whole curve re-solve. Select points and press a kind in the bar, or Convert to path. Pick Spiro (<kbd>B</kbd>) to draw one: click to place points of the kind set under New point kind, <kbd>Alt</kbd>-click for a corner, click the first point to close, <kbd>Enter</kbd> or double-click to finish open, <kbd>Backspace</kbd> takes back a point, <kbd>Esc</kbd> discards.',
+    load: () => import('./demos/SpiroLabDemo').then((m) => m.SpiroLabDemo),
+    path: 'apps/site/demos/SpiroLabDemo.tsx',
+  },
+  {
+    id: 'lab-bridge',
+    title: 'Bridge',
+    package: 'core',
+    description:
+      "Bridge joins two open ends with a curve that leaves each one along the direction its path was heading, so the joint has no kink. Each handle of the new segment is Tension times the gap long: `0` is a straight segment, as Join makes, and longer handles swing the curve wider. Two separate paths become one, the first selected keeping its style, and the whole change is one undo step. With one path selected, Bridge closes it. In path edit, select the two end anchors to bridge instead. The control panel's Tension reaches both commands through `<SceneCanvas tune>`.",
+    hint: 'The two upper paths open selected: press Bridge in the bar, or <kbd>Mod+Shift+J</kbd>, then undo and try another Tension. Join beside it spans the same gap straight. To bridge in path edit, double-click a path, select its two ends and press Bridge anchors.',
+    load: () => import('./demos/BridgeLabDemo').then((m) => m.BridgeLabDemo),
+    path: 'apps/site/demos/BridgeLabDemo.tsx',
+  },
+  {
     id: 'bidi',
     title: 'Bidirectional text',
     package: 'bidi',

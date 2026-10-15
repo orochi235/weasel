@@ -5,7 +5,8 @@ import { ActionDisabledReason } from '@weasel-js/routing';
 import type { Op } from 'core/ops/types';
 import { asNodeId, type NodeId } from 'core/scene/types';
 import { simplifyPathAction, offsetPathAction } from './simplifyOffset';
-import { joinPathsAction, snipAtCrossingsAction } from './cutJoin';
+import { snipAtCrossingsAction } from './cutAtCrossings';
+import { joinPathsAction } from './join';
 
 interface StubNode { id: NodeId; kind: 'leaf'; layer: string; pose: unknown; data: unknown; parent: NodeId | null }
 

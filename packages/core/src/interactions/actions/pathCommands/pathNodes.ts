@@ -2,8 +2,8 @@
  * What the path commands share: reading the selected path nodes, and writing
  * new geometry back into a node or into a copy of one. A node's geometry is
  * stored where it already lives (`storeEditablePath`); a skin, whose weights
- * follow anchors the new geometry no longer has, is dropped, and so is a
- * shape generator, which no longer makes it.
+ * follow anchors the new geometry no longer has, is dropped, and so are a
+ * shape generator and a spiro, which no longer make it.
  */
 import type { ActionDeps } from '@weasel-js/routing';
 import type { PolygonPath } from '@weasel-js/geom';
@@ -15,6 +15,7 @@ import { createInsertOp } from 'core/ops/create';
 import { createDeleteOp } from 'core/ops/delete';
 import { resolveEditablePathOf, storeEditablePath } from 'features/paths/editablePath';
 import { withoutShapeGenerator } from 'features/paths/shapeGenerator';
+import { withoutSpiro } from 'features/paths/spiroShape';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
 
 type AnyScene = Scene<unknown, string, unknown>;
@@ -42,9 +43,10 @@ export function selectedPathNodes(deps: ActionDeps | undefined): PathNode[] {
   return out;
 }
 
-/** `node` storing `worldPath`, or null when it holds no editable polygon. */
+/** `node` storing `worldPath` as plain geometry, or null when it holds no
+ *  editable polygon. */
 export function withPath(node: AnyNode, worldPath: PolygonPath): { pose: unknown; data: unknown } | null {
-  const stored = storeEditablePath(node, worldPath);
+  const stored = storeEditablePath({ pose: node.pose, data: withoutSpiro(node.data) }, worldPath);
   if (!stored) return null;
   const data = withoutShapeGenerator(stored.data) as { skin?: unknown } | null;
   if (data && typeof data === 'object' && 'skin' in data) {
@@ -58,7 +60,11 @@ export function withPath(node: AnyNode, worldPath: PolygonPath): { pose: unknown
 /** The ops that give `node` the geometry `worldPath`, labeled `label`. */
 export function reshapeOps(node: AnyNode, worldPath: PolygonPath, label: string): Op[] {
   const next = withPath(node, worldPath);
-  if (!next) return [];
+  return next ? nodeShapeOps(node, next, label) : [];
+}
+
+/** The ops that give `node` the pose and data of `next`, labeled `label`. */
+export function nodeShapeOps(node: AnyNode, next: { pose: unknown; data: unknown }, label: string): Op[] {
   const ops: Op[] = [];
   if (next.pose !== node.pose) ops.push(createTransformOp({ id: node.id, from: node.pose, to: next.pose, label }));
   if (next.data !== node.data) ops.push(createSetDataOp({ id: node.id, from: node.data, to: next.data, label }));
