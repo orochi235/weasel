@@ -1,13 +1,3 @@
-/**
- * `simplifyBrushAction` — the Simplify command, brushed on. While path edit's
- * `simplifyBrush` tool is on, a plain drag gathers every anchor a round brush
- * passes over, and each unbroken stretch of them along a subpath is refitted
- * as one span by Simplify's own fitter (`simplifyAnchorsAt`) at `tolerance`.
- * Only anchors the shape does not need go, so brushing again goes further.
- * The path previews the result while the brush is down and commits as one
- * undo step on release.
- */
-
 import type { Action, InvocationCtx, OngoingHandle } from '@weasel-js/routing';
 import { ActionDisabledReason, resolveParams } from '@weasel-js/routing';
 import type { CursorSpec } from '@weasel-js/cursor';
@@ -57,6 +47,15 @@ function toleranceOf(params: SimplifyBrushParams | undefined): number {
   return typeof t === 'number' && t >= 0 ? t : DEFAULT_SIMPLIFY_TOLERANCE;
 }
 
+/**
+ * The Simplify command, brushed on. While path edit's
+ * `simplifyBrush` tool is on, a plain drag gathers every anchor a round brush
+ * passes over, and each unbroken stretch of them along a subpath is refitted
+ * as one span by Simplify's own fitter (`simplifyAnchorsAt`) at `tolerance`.
+ * Only anchors the shape does not need go, so brushing again goes further.
+ * The path previews the result while the brush is down and commits as one
+ * undo step on release.
+ */
 export const simplifyBrushAction: Action & { requires: string[] } = inPlane({
   id: 'simplifyBrush',
   label: 'Simplify brush',
