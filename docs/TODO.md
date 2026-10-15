@@ -981,20 +981,25 @@ only story runner in the repo.
   2026-10-13, were the project's own: it failed the same tests alone as in a full run, and sixteen
   busy cores beside it changed nothing. Its tabs share one Chromium, and on teitou 17 of them took
   the same 72 to 78 s as six while tests making WebGL contexts ran three to five times as long, so
-  it now runs six (`maxWorkers`); 13 runs at six to nine workers on three nodes were green. Left
+  it now runs six (`maxWorkers`). A tab that lost its connection mid-run ("Browser connection was
+  closed while running tests", every file after it left unrun; at six workers too, on
+  `17bd67dea`'s first fleet run) had a renderer full of Mach ports, which a removed test frame
+  holds until a full GC; `vitest.browser.setup.ts` now collects garbage at each file's start.
+  Measured on teitou, one or two workers: before, 11 of 11 runs lost a tab, 36 to 78 files in, and
+  in the 5 runs sampling ports each second its renderer held 14,086 to 16,661 when it went; with a
+  full GC between files, 8 of 8 kept every tab, the 5 sampled peaking at 414 ports, and a lone
+  tab ran all 176 files twice. That the port count is what closes the sockets is inferred from this,
+  not traced inside Chromium: every socket and request of that page closes at once from the
+  browser's side (a net log shows it), the page itself lives on, and no crash is reported. Left
   open:
-  - **Under six workers a tab drops its connection mid-run** ("Browser connection was closed
-    while running tests"), and the files after it never run: 7 of 9 runs at two or four workers,
-    none of 20 at six or more. The provider reports no page crash, and the cause is not found.
-    Both runs logged with `DEBUG=vitest:browser:*` lost the tab as it started its 36th file. Six
-    workers give a tab about 30 of today's 181 files, so a growing project could bring it back.
   - **`text-dom/src/overlayTyping.browser.test.tsx`'s first test fails `frame.evaluate: Frame was
     detached` under `userEvent.keyboard`**: 8 runs, all at the old worker count. One suspect is
     Playwright's `page.frame('vitest-iframe')` returning the previous file's frame, since every
     test frame has that name; in 18 runs a check at each file's start never found a second or a
     detached one, but none of those runs had the failure, so that is unlikely, not ruled out.
   - **`labkit/src/lab/presentation.browser.test.tsx` ("entering refits the view…") saw a pan off
-    on one axis** in 2 fleet runs and 2 probe runs, all at the old worker count.
+    on one axis** in 2 fleet runs at the old worker count, and in 6 of 19 runs of the project
+    alone at one or two workers on teitou, with and without the garbage collection.
   - `forge/src/vite/plugin.test.ts` has its own entry under "Demos & visual regression".
 
 - **(P2) HUD vs DOM text: what the idle rerun left open.** `tests/perf/hud-vs-dom.spec.ts` prices
