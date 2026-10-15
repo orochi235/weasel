@@ -193,3 +193,9 @@ export {
 export type { IngestItem } from '@weasel-js/gestures';
 export { clientToCanvas, clientToCanvasRect } from './viewport/clientToCanvas';
 export { dlog, dwarn, isDebugEnabled } from './dlog';
+
+// ─── menus ────────────────────────────────────────────────────────────────
+export type { MenuDef, MenuDefEntry, MenuWhen, MenuHit, OwnedMenuDef } from './menus/types';
+export { mergeMenuDefs, pickMenu } from './menus/pickMenu';
+export { resolveMenu } from './menus/resolveMenu';
+export type { MenuSources } from './menus/resolveMenu';
