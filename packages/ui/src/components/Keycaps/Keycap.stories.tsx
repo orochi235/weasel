@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import type { CSSProperties, ReactElement } from 'react';
+import { useLayoutEffect, useRef, useState, type CSSProperties, type ReactElement } from 'react';
 import { KeyCap, type KeyCapVariant, type KeyCapProps } from './Keycap';
 import {
   keySpecFromKey,
@@ -227,7 +227,7 @@ function KeyCapGallery({ platform, legend, font }: { platform: Platform; legend:
  *  control cluster — enough surface to show every OS-divergent label
  *  (Esc / Cmd / Win / Super / Option / Alt) at once. */
 export const KeyboardLayouts: Story = {
-  args: { legend: 'auto', font: 'system sans' },
+  args: { legend: 'auto', font: 'oswald' },
   argTypes: {
     label: { table: { disable: true } },
     inverted: { table: { disable: true } },
@@ -264,13 +264,7 @@ function KeyboardLayout({ platform, legend, font }: { platform: Platform; legend
 
   // Multi-char labels (F1, Esc, Caps, …) default to `wide` kind (min-width
   // 32px); without this override they'd break the slot accounting.
-  const cap = (label: string, n = 1) => (
-    <KeyCap
-      label={label}
-      style={{ width: unit(n), minWidth: 0, padding: '0 2px' }}
-      font={font}
-    />
-  );
+  const cap = (label: string, n = 1) => <FitCap label={label} width={unit(n)} font={font} />;
   const wide = cap;
 
   // ── Main block: 15-slot rows ──────────────────────────────────────
@@ -400,6 +394,73 @@ function KeyboardBlock({
         </div>
       ))}
     </div>
+  );
+}
+
+/** Other spellings a legend may take when it overflows its key, in order of
+ *  preference: shorter words, then the two-line forms real keycaps print. */
+const OTHER_FORMS: Record<string, readonly string[]> = {
+  Control: ['Ctrl'], Option: ['Opt'], Delete: ['Del'], Backspace: ['Bksp', 'Back\nspace'], Return: ['Ret'],
+  Super: ['Sup'], PrtSc: ['Prt\nSc'], ScrLk: ['Scr\nLk'], PgUp: ['Pg\nUp'], PgDn: ['Pg\nDn'],
+};
+/** How far a legend's type may shrink before it is left to overflow. */
+const MIN_SCALE = 0.6;
+const LAYOUT_WEIGHT = 300;
+/** Line height of a two-line legend, tight so both lines fit a short key. */
+const BROKEN_LINE_HEIGHT = 0.85;
+
+let measureCtx: CanvasRenderingContext2D | null = null;
+
+/** A layout key whose legend is the first of its spellings that fits at full
+ *  size, else a two-line one, else the one that fits at the largest type,
+ *  shrunk no further than {@link MIN_SCALE}. */
+function FitCap({ label, width, font }: { label: string; width: string; font?: string }): ReactElement {
+  const ref = useRef<HTMLSpanElement>(null);
+  const [fit, setFit] = useState({ label, scale: 1 });
+
+  useLayoutEffect(() => {
+    const kbd = ref.current?.querySelector('kbd');
+    if (!kbd) return;
+    let live = true;
+    const measure = () => {
+      measureCtx ??= document.createElement('canvas').getContext('2d');
+      if (!live || !measureCtx) return;
+      const ctx = measureCtx;
+      const cs = getComputedStyle(kbd);
+      const px = (v: string) => parseFloat(v) || 0;
+      const size = px(cs.getPropertyValue('--wzl-font-size-sm')) || 11;
+      ctx.font = `${LAYOUT_WEIGHT} ${size}px ${cs.fontFamily}`;
+      const roomW = kbd.clientWidth - px(cs.paddingLeft) - px(cs.paddingRight);
+      const roomH = kbd.clientHeight - px(cs.paddingTop) - px(cs.paddingBottom) - 4;
+      const fits = [label, ...(OTHER_FORMS[label] ?? [])].map((form) => {
+        const lines = form.split('\n');
+        const wide = Math.max(...lines.map((l) => ctx.measureText(l).width));
+        return { label: form, broken: lines.length > 1, scale: Math.min(1, roomW / wide, roomH / (lines.length * size * (lines.length > 1 ? BROKEN_LINE_HEIGHT : 1))) };
+      });
+      const largest = (list: typeof fits) => list.reduce((a, b) => (b.scale > a.scale + 0.01 ? b : a));
+      // Nothing fits at full size: a key's printed line break reads better than smaller type.
+      const broken = fits.filter((f) => f.broken && f.scale >= MIN_SCALE);
+      const best = fits.find((f) => f.scale >= 1) ?? (broken.length ? largest(broken) : largest(fits));
+      setFit({ label: best.label, scale: Math.max(MIN_SCALE, best.scale) });
+    };
+    measure();
+    void document.fonts?.ready.then(measure);
+    return () => { live = false; };
+  }, [label, width, font]);
+
+  return (
+    <span ref={ref}>
+      <KeyCap
+        label={fit.label}
+        style={{
+          width, minWidth: 0, padding: '0 2px', fontWeight: LAYOUT_WEIGHT,
+          fontSize: `calc(var(--wzl-font-size-sm) * ${fit.scale.toFixed(3)})`,
+          whiteSpace: 'pre-line', textAlign: 'center',
+          lineHeight: fit.label.includes('\n') ? BROKEN_LINE_HEIGHT : undefined,
+        }}
+        font={font}
+      />
+    </span>
   );
 }
 
