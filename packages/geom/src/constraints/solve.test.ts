@@ -103,6 +103,24 @@ describe('solveConstraints', () => {
     expect(r.points).toEqual([P(0, 0), P(100, 0)]);
   });
 
+  it('reports a set it could satisfy only by collapsing a segment to a point', () => {
+    const constraints: PathConstraint[] = [
+      { kind: 'horizontal', segment: [0, 1] },
+      { kind: 'vertical', segment: [0, 1] },
+    ];
+    const r = solveConstraints([P(0, 0), P(100, 10)], constraints);
+    expect(r.converged).toBe(false);
+    expect(r.unsatisfied).toEqual([0, 1]);
+  });
+
+  it('lets a pair meant to meet meet', () => {
+    const constraints: PathConstraint[] = [
+      { kind: 'horizontal', segment: [0, 1] },
+      { kind: 'coincident', anchors: [1, 0] },
+    ];
+    expect(solveConstraints([P(0, 0), P(100, 10)], constraints).converged).toBe(true);
+  });
+
   it('leaves skipped constraints out of the solve but still reports them', () => {
     const constraints: PathConstraint[] = [
       { kind: 'horizontal', segment: [0, 1] },

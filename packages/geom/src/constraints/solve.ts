@@ -9,7 +9,7 @@
 
 import { solveDense } from './linear';
 import { frameAt, residualRows, writeResiduals, type ConstraintFrame } from './residuals';
-import { constraintAnchors, constraintFits, type PathConstraint } from './types';
+import { constraintAnchors, constraintFits, type AnchorPair, type PathConstraint } from './types';
 
 /** A point the solver reads and writes. */
 export interface ConstraintPoint {
@@ -206,14 +206,57 @@ function solveWith(
   }
 
   const out = points.map((_, i) => ({ x: x[2 * i], y: x[2 * i + 1] }));
-  const unsatisfied = unsatisfiedConstraints(out, constraints, { axisAngle: opts.axisAngle, reference: opts.reference });
   const skipped = new Set(opts.skip ?? []);
+  const collapsed = collapsedBy(points, out, constraints, skipped);
+  const unsatisfied = [...new Set([
+    ...unsatisfiedConstraints(out, constraints, { axisAngle: opts.axisAngle, reference: opts.reference }),
+    ...collapsed,
+  ])].sort((a, b) => a - b);
   return {
     points: out,
     converged: maxAbs(r) <= Math.max(tolerance, CONSTRAINT_TOLERANCE) && unsatisfied.every((i) => skipped.has(i)),
     iterations,
     unsatisfied,
   };
+}
+
+/** The anchor pairs `c` measures as segments. */
+function segmentsOf(c: PathConstraint): AnchorPair[] {
+  switch (c.kind) {
+    case 'fixed':
+    case 'coincident': return [];
+    case 'horizontal':
+    case 'vertical':
+    case 'length': return [c.segment];
+    default: return [...c.segments];
+  }
+}
+
+/**
+ * Constraints the solve satisfied only by shrinking a segment they name to a
+ * point — horizontal and vertical on one segment both hold once its ends meet.
+ * That is a conflict, not a solution. A pair a constraint means to join, by
+ * `coincident` or a zero `length`, is exempt.
+ */
+function collapsedBy(
+  from: readonly ConstraintPoint[],
+  to: readonly ConstraintPoint[],
+  constraints: readonly PathConstraint[],
+  skipped: ReadonlySet<number>,
+): number[] {
+  const key = ([a, b]: AnchorPair) => (a < b ? `${a},${b}` : `${b},${a}`);
+  const joined = new Set(constraints.flatMap((c) =>
+    c.kind === 'coincident' ? [key(c.anchors)]
+      : c.kind === 'length' && c.length <= CONSTRAINT_TOLERANCE ? [key(c.segment)] : []));
+  const len = (p: readonly ConstraintPoint[], [a, b]: AnchorPair) => Math.hypot(p[b].x - p[a].x, p[b].y - p[a].y);
+  const out: number[] = [];
+  constraints.forEach((c, i) => {
+    if (skipped.has(i) || !constraintFits(c, from.length)) return;
+    const shrunk = segmentsOf(c).some((s) =>
+      !joined.has(key(s)) && len(from, s) > 10 * CONSTRAINT_TOLERANCE && len(to, s) <= CONSTRAINT_TOLERANCE);
+    if (shrunk) out.push(i);
+  });
+  return out;
 }
 
 /** Options for {@link unsatisfiedConstraints}. */
