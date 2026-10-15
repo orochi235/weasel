@@ -178,6 +178,16 @@ Priority tags:
 
 ### Path editing tricks
 
+- **(P2) Tune the Simplify brush hands-on, with the maintainer driving.** It went in from its
+  audition lab with first-draft behavior and keys: brush size and its key, the tolerance it
+  applies, and how it shows what it will remove (`defaults/simplifyBrush.ts`).
+- **(P2) Tune the curvature comb hands-on, with the maintainer driving.** First-draft default
+  scale and density, when it shows, and no key to toggle it (`features/paths/pathEditComb.ts`).
+- **(P2) Tune handle locks hands-on, with the maintainer driving.** Which locks deserve keys, and
+  whether a lock holds through a modifier drag (`handleLock.*`, `defaults/handleLocks.tsx`).
+- **(P2) Tune draw's Symmetry toggle hands-on, with the maintainer driving.** Its key, the default
+  kind and copy count, and where a new group's center lands (`toggleSymmetry`,
+  `apps/draw/src/useSymmetry.ts`).
 - **(P2) A rectangle has no anchors in path edit.** Draw stores a drawn rectangle's `data.path`
   as a `RectPath` (`kind: 'rect'`), and `classifyPathStorage`
   (`packages/core/src/features/paths/editablePath.ts`) accepts only a polygon, so double-clicking
