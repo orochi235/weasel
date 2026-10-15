@@ -541,6 +541,15 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 ## Selection, actions & UI panels
 
+- **(P1) The kit has no settings of its own.** Behavior a user would set once for every
+  component — how long a typed field waits idle before it commits, the stepper's repeat delay
+  and rate, typeahead and hover-open delays, a toast's lifetime — is a module constant in each
+  component (`REPEAT_DELAY_MS` in `NumberField/UnitField.tsx`, `TYPEAHEAD_MS` in `Tree/Tree.tsx`,
+  `HOVER_EXPAND_MS`, `DEFAULT_TTL_MS`, and others; `grep -rn "_MS = "`). `@weasel-js/prefs`
+  stores an app's prefs and has no schema for the kit's. Wanted: one kit settings schema, read
+  through one context with these numbers as defaults, that an app can show in its own `Prefs`
+  and persist with its store. Core's gesture timings (drag threshold, double-click interval)
+  belong in the same place.
 - **(P2) Every standard action ships with `<SceneCanvas>`, used or not.**
   `StandardActionsRegistrar` calls `useStandardActions`, which imports every standard action
   statically, and `excludeActions` drops them only at runtime, so a bundler cannot shake out one
