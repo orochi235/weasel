@@ -96,6 +96,10 @@ export {
 } from '../interactions/actions/edit-anchors';
 export type {
   AnchorHit,
+  EditAnchorsParams,
+  HandleLock,
+  HandleSnapParams,
+  SoftSelectionParams,
   PathAnchor,
 } from '../interactions/actions/edit-anchors';
 

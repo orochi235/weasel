@@ -87,7 +87,15 @@ export {
   type AnchorRect, type AnchorSet, type SegmentHit,
 } from './paths/anchorEdits';
 export { bendSegment, type BendGrip } from './paths/bendSegment';
-export { handleAlongItsAngle, makeHandlesSymmetric, retractHandles } from './paths/handleEdits';
+export {
+  handleAlongItsAngle, handleAtItsLength, makeHandlesSymmetric, retractHandles, snapHandleAngle,
+  type HandleAngleSnap, type HandleAngleSnapOptions,
+} from './paths/handleEdits';
+export {
+  measureAnchorPath, softFalloff, softSelectionBand, softSelectionWeights,
+  type AnchorPathMeasure, type AnchorSubpathMeasure, type MeasureAnchorPathOptions, type SegmentMeasure,
+  type SoftFalloff,
+} from './paths/softSelection';
 export { editAnchorSetTracked, remapPointValues, type PointOrigin } from './paths/anchorOrigins';
 export { nearestPathAnchor, reverseAnchors, type PathAnchorHit } from './paths/nearestAnchor';
 export { pathInPoseFrame, pathInWorld, worldEditToStorage, type PathInWorldPose } from './paths/pathInWorld';

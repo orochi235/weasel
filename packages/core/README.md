@@ -123,7 +123,7 @@ const tune = useMemo<ActionTunings>(() => ({
 <SceneCanvas scene={scene} features={['paths']} tune={tune} />
 ```
 
-`ActionParamSchema` types `params` for the kit actions that read them (`flip`, `align.*`, `distribute.*`, `reorder.*`, `nudge.*`, `tool.activate`); any other id takes a plain record. An action of your own declares its params the way `DepSchema` takes deps:
+`ActionParamSchema` types `params` for the kit actions that read them (`flip`, `align.*`, `distribute.*`, `reorder.*`, `nudge.*`, `tool.activate`, `editAnchors`); any other id takes a plain record. `editAnchors` takes `soft` (soft selection: a radius along the path in screen pixels and a falloff, which the wheel scrubs mid-drag), `handleSnap` (angle steps and the opposite handle's line) and `handleLock` (`'angle'` or `'length'`, held without the Shift or Mod modifier). An action of your own declares its params the way `DepSchema` takes deps:
 
 ```ts
 declare module '@weasel-js/core' {

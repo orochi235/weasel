@@ -93,6 +93,85 @@ export function handleAlongItsAngle(anchor: Point, handle: Point, to: Point): Po
   return { x: anchor.x + ux * along, y: anchor.y + uy * along };
 }
 
+/**
+ * Where a handle lands when dragged toward `to` but held to its current
+ * length from `anchor`: on the circle of that length, aimed at `to`. A `to`
+ * on the anchor itself gives no direction, and leaves the handle where it is.
+ */
+export function handleAtItsLength(anchor: Point, handle: Point, to: Point): Point {
+  const len = Math.hypot(handle.x - anchor.x, handle.y - anchor.y);
+  const d = offset(anchor, to);
+  const dl = Math.hypot(d.x, d.y);
+  if (dl === 0) return { x: handle.x, y: handle.y };
+  return { x: anchor.x + (d.x / dl) * len, y: anchor.y + (d.y / dl) * len };
+}
+
+/** Options for {@link snapHandleAngle}. */
+export interface HandleAngleSnapOptions {
+  /** Snap to every multiple of this many degrees. Omit, or 0, for no steps. */
+  stepDeg?: number;
+  /** How near, in degrees, the handle must come to an angle to snap to it. */
+  toleranceDeg: number;
+  /** The anchor's other handle: also snap to the line through it and the
+   *  anchor, so the two handles come out collinear. */
+  opposite?: Point | null;
+}
+
+/** What {@link snapHandleAngle} decided. */
+export interface HandleAngleSnap {
+  /** Where the handle goes — `to`, or `to` turned about the anchor onto the
+   *  snapped angle at the same length. */
+  point: Point;
+  /** The angle it snapped to, in radians from +X, and why: a multiple of the
+   *  step, or the line through the opposite handle. Null when nothing was in
+   *  reach. */
+  snapped: { kind: 'step' | 'opposite'; angle: number } | null;
+}
+
+/**
+ * Snap a handle dragged to `to` onto the nearest of the angles `opts` names,
+ * keeping its length, when one is within `toleranceDeg`. On a tie the line
+ * through the opposite handle wins over a step.
+ */
+export function snapHandleAngle(anchor: Point, to: Point, opts: HandleAngleSnapOptions): HandleAngleSnap {
+  const d = offset(anchor, to);
+  const len = Math.hypot(d.x, d.y);
+  if (len === 0) return { point: { x: to.x, y: to.y }, snapped: null };
+  const angle = Math.atan2(d.y, d.x);
+  const tolerance = (opts.toleranceDeg * Math.PI) / 180;
+  const candidates: { kind: 'step' | 'opposite'; angle: number }[] = [];
+  if (opts.opposite) {
+    const o = offset(opts.opposite, anchor);
+    if (o.x !== 0 || o.y !== 0) candidates.push({ kind: 'opposite', angle: Math.atan2(o.y, o.x) });
+  }
+  if (opts.stepDeg && opts.stepDeg > 0) {
+    const step = (opts.stepDeg * Math.PI) / 180;
+    candidates.push({ kind: 'step', angle: Math.round(angle / step) * step });
+  }
+  let snapped: HandleAngleSnap['snapped'] = null;
+  let bestDiff = Infinity;
+  for (const c of candidates) {
+    const diff = Math.abs(angleBetween(angle, c.angle));
+    if (diff <= tolerance && diff < bestDiff) {
+      snapped = c;
+      bestDiff = diff;
+    }
+  }
+  if (!snapped) return { point: { x: to.x, y: to.y }, snapped: null };
+  return {
+    point: { x: anchor.x + Math.cos(snapped.angle) * len, y: anchor.y + Math.sin(snapped.angle) * len },
+    snapped,
+  };
+}
+
+/** Signed difference `a - b`, wrapped into (-π, π]. */
+function angleBetween(a: number, b: number): number {
+  let d = (a - b) % (2 * Math.PI);
+  if (d > Math.PI) d -= 2 * Math.PI;
+  if (d <= -Math.PI) d += 2 * Math.PI;
+  return d;
+}
+
 function offset(from: Point, to: Point): Point {
   return { x: to.x - from.x, y: to.y - from.y };
 }
