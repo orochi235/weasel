@@ -32,6 +32,11 @@ describe('packageInfos, over the real workspace', () => {
     expect(named('quantity').guides).toEqual([]);
   });
 
+  it('dates each package from the oldest version its changelog has a section for', () => {
+    expect(named('core').since).toBe('0.1.0');
+    expect(named('symmetry').since).toBe('1.10.1');
+  });
+
   it('points every demo it lists at a file that exists', () => {
     const missing = infos.flatMap((i) => i.demos).filter((path) => !existsSync(resolve(ROOT, path)));
     expect(missing).toEqual([]);

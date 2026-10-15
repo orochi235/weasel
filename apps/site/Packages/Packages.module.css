@@ -112,6 +112,13 @@
   line-height: 1.5;
 }
 
+.since {
+  color: var(--wzl-fg);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  margin-inline-end: 0.5ch;
+}
+
 /* ---------- Overview ---------- */
 .facts {
   display: grid;
