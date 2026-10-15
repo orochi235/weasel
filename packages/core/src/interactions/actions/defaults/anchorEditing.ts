@@ -27,13 +27,14 @@ import type { Action } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import type { ActionDeps } from '@weasel-js/routing';
 import type { ImmediateInvoker, InvocationCtx, OngoingHandle } from '@weasel-js/routing';
-import type { EditAnchorsDep } from '../depSchema';
+import type { EditAnchorsDep, PathSymmetryDep } from '../depSchema';
+import { editedPathSymmetries } from '../edit-anchors/symmetry';
 import {
   anchorsInRect,
   deleteAnchorsAt,
   editAnchorSetTracked,
   openSubpathAt,
-  translateAnchorBy,
+  translateAnchorsSymmetric,
   type AnchorSet,
 } from '@weasel-js/geom';
 import { pathToAnchors, type PolygonPath } from '@weasel-js/geom';
@@ -159,7 +160,7 @@ function makeNudgeAnchorsAction(dir: NudgeDirection): Action & { requires: strin
       { spec: { kind: 'key', key: NUDGE_KEY[dir], mods: { shift: true } }, opts: { params: { magnitude: 'big' } } },
     ],
     eligible: { capability: 'edits-anchors' },
-    requires: ['editAnchors'],
+    requires: ['editAnchors', 'pathSymmetry'],
     invoker: {
       timing: 'immediate',
       run: (deps, params) => {
@@ -167,11 +168,9 @@ function makeNudgeAnchorsAction(dir: NudgeDirection): Action & { requires: strin
         if (!dep || dep.selectedAnchors.size === 0) return;
         const { dx, dy } = nudgeDelta(dir, params?.magnitude);
         const selected = [...dep.selectedAnchors];
-        commitAnchorEdit(dep, 'Nudge anchor', (set) => {
-          let any = false;
-          for (const flat of selected) any = translateAnchorBy(set, flat, dx, dy) || any;
-          return any;
-        });
+        const symmetry = (deps as { pathSymmetry?: PathSymmetryDep } | undefined)?.pathSymmetry;
+        commitAnchorEdit(dep, 'Nudge anchor', (set) => translateAnchorsSymmetric(
+          set, selected, dx, dy, editedPathSymmetries(symmetry, dep.editingId, set)));
       },
     } as ImmediateInvoker,
     enabled: requiresAnchorSelection,

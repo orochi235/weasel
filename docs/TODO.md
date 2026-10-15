@@ -335,6 +335,19 @@ Priority tags:
   (`apps/draw/src/modality/machine.ts`), so the change moves where every direct call made during
   a mode lands.
 
+### Symmetry follow-ups
+
+- **(P3) Wallpaper tilings.** A new kind is a row in `SYMMETRY_KINDS`
+  (`packages/symmetry/src/kinds.ts`), but a lattice has no last copy: `copiesFromPose` sees only
+  the container's pose, so it would need an extent to tile within, which the spec would carry.
+- **(P3) Bake copies only path leaves.** `bakeSymmetry` reports text and image leaves in
+  `skipped` and leaves them uncopied. It also copies a paint laid out in the shape's own box, a
+  gradient say, without carrying it through the copy's mirror or turn.
+- **(P3) Symmetry in a scene that composes frames.** A group's center is its pose, so dragging the
+  center in such a scene moves its children too, and bake writes absolute poses.
+- **(P3) The angle knob sits on the shapes it turns.** It is fixed 64px out along the axis, where
+  the lab's petal is, and can cover a path-edit handle there.
+
 ### Derived geometry follow-ups
 
 - **(P3) The preview channel still carries pose twice.** `move` / `resize` / `rotate` publish each
