@@ -491,8 +491,8 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 ## Selection, actions & UI panels
 
 - **(P2) Labs still tune actions through the experimental `actions` prop.** The smart remove
-  brush, extend-path-end, and dynamic-corners labs (on their own branches when `tune` landed) set
-  `radiusPx`, `mode`, and a K binding by restating whole descriptors through `actions`. Move each
+  brush and extend-path-end labs (on their own branches when `tune` landed) set `radiusPx` and
+  `mode` by restating whole descriptors through `actions`. Move each
   to `<SceneCanvas tune>` as it merges, drop the restated gestures, and give its actions
   (`brushDeleteAnchors`, `extendPathEnd`, …) entries in core's `ActionParamSchema`
   (`interactions/actions/actionParamSchema.ts`).

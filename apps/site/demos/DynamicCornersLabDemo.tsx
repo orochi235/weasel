@@ -1,4 +1,5 @@
 import {
+  type ActionTunings,
   asNodeId,
   boundsOfPath,
   createScene,
@@ -101,7 +102,7 @@ function CornerControls({ style, radius }: Config) {
   return null;
 }
 
-const ACTIONS = { cycleCornerStyle: { defaultBinding: { kind: 'key' as const, key: 'k' } } };
+const TUNE: ActionTunings = { cycleCornerStyle: { bindings: [{ kind: 'key', key: 'k' }] } };
 
 function CornersTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const scene = useTrialScene(ctx, createLabScene);
@@ -119,7 +120,7 @@ function CornersTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
         pathEdit={host}
         redrawOn={redrawOn}
         selectionOptions={selectionOptions}
-        actions={ACTIONS}
+        tune={TUNE}
       />
     </>
   );
