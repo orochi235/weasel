@@ -27,6 +27,7 @@ import {
 import { type EasingFn } from '@weasel-js/animator';
 import { forceRelaxation, type ForceOptions } from './force';
 import { buildGraph, type Graph, type GraphSource } from './graph';
+import { chain } from './chain';
 import { layered } from './layered';
 import { LAYOUTS, layoutPoses } from './layoutAction';
 import { center, type LayoutFn, type LayoutOptions, type LayoutResult } from './layout';
@@ -331,4 +332,5 @@ export function useLiveLayout<TPose>(opts: UseLiveLayoutOptions<TPose>): LiveLay
 export const EASED_LAYOUTS: Readonly<Record<string, LayoutFn>> = Object.freeze({
   layered,
   tree,
+  chain,
 });
