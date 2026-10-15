@@ -38,6 +38,7 @@
       "@weasel-js/parallax",
       "@weasel-js/animator",
       "@weasel-js/minimap",
+      "@weasel-js/symmetry",
       "@weasel-js/forge",
       "@weasel-js/routing"
     ]

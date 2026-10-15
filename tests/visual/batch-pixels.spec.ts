@@ -329,6 +329,22 @@ test('batched runs paint their own colors', async ({ page }) => {
         { name: 'eighth: right', x: 84, y: 24, want: [32, 0, 223] },
       ]);
 
+      // The ramp atlas sits in the last slot, not the next free one, and the
+      // radial and conic arm fetches it from there. Two bitmaps take the slots
+      // below it in the same run, so a fetch from the wrong unit reads red or blue.
+      frame('a radial and a conic after two bitmaps', [
+        quad(red, 8, 8, 32),
+        quad(blue, 56, 8, 32),
+        radialRect(104, 8, 32, 120.5, 24.5, 8, stops('#00ff00', '#ff00ff')),
+        conicRect(152, 8, 32, 168.5, 24.5, 0, stops('#00ff00', '#ff00ff')),
+      ], [
+        { name: 'red quad', x: 24, y: 24, want: [255, 0, 0] },
+        { name: 'blue quad', x: 72, y: 24, want: [0, 0, 255] },
+        { name: 'radial center', x: 120, y: 24, want: [0, 255, 0] },
+        { name: 'radial past its edge', x: 120, y: 36, want: [255, 0, 255] },
+        { name: 'conic quarter turn', x: 168, y: 36, want: [64, 191, 64] },
+      ]);
+
       return { cases, glRenderer };
     },
     { root: repoRoot, w: W, h: H },

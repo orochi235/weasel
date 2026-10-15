@@ -8,8 +8,7 @@
       "!storybook-static",
       "!node_modules",
       "!examples",
-      "!docs/.vitepress/dist",
-      "!docs/.vitepress/cache"
+      "!tsconfig.docs.json"
     ]
   },
   "formatter": {

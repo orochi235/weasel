@@ -25,6 +25,39 @@ describe('KeyCap', () => {
     expect(container.querySelector('kbd')?.getAttribute('data-kind')).toBe('square');
   });
 
+  it('draws a symbol legend as an icon, keeping its character as hidden text', () => {
+    const kbd = render(<KeyCap label="⌘" />).container.querySelector('kbd')!;
+    expect(kbd.querySelector('svg')).not.toBeNull();
+    expect(kbd.textContent).toBe('⌘');
+  });
+
+  it('draws every symbol the legend tables produce as an icon', () => {
+    const labels = new Set<string>();
+    for (const platform of ['macos', 'windows', 'linux'] as const) {
+      for (const legend of ['auto', 'symbol', 'text'] as const) {
+        for (const name of ['mod', 'shift', 'alt', 'ctrl', 'meta'] as const) labels.add(keySpecsFromMods([{ name }], { platform, legend })[0]!.label);
+        for (const key of ['Escape', 'Enter', 'Tab', 'Space', 'Backspace', 'Delete', 'ContextMenu', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End', 'PageUp', 'PageDown', 'PrintScreen', 'Insert', 'ScrollLock', 'Pause']) {
+          labels.add(keySpecFromKey(key, { platform, legend }).label);
+        }
+      }
+    }
+    const symbols = [...labels].filter((l) => /[^\x20-\x7e]/.test(l));
+    const unDrawn = symbols.filter((l) => !render(<KeyCap label={l} />).container.querySelector('kbd svg'));
+    expect(unDrawn).toEqual([]);
+  });
+
+  it('leaves a plain-text legend as text', () => {
+    const kbd = render(<KeyCap label="Ctrl" />).container.querySelector('kbd')!;
+    expect(kbd.querySelector('svg')).toBeNull();
+    expect(kbd.textContent).toBe('Ctrl');
+  });
+
+  it('marks function keys F1 to F24 with data-fn, and nothing else', () => {
+    const fn = (label: string) => render(<KeyCap label={label} />).container.querySelector('kbd')!.hasAttribute('data-fn');
+    expect(['F1', 'F9', 'F12', 'F24'].map(fn)).toEqual([true, true, true, true]);
+    expect(['F', 'F0', 'F25', 'fn', 'FN', 'F1a'].map(fn)).toEqual([false, false, false, false, false, false]);
+  });
+
   it('applies data-inverted when inverted prop is true', () => {
     const { container } = render(<KeyCap label="K" inverted />);
     expect(container.querySelector('kbd')?.hasAttribute('data-inverted')).toBe(true);
@@ -40,9 +73,9 @@ describe('KeyCap', () => {
     expect(container.querySelector('kbd')?.hasAttribute('data-variant')).toBe(false);
   });
 
-  it('tags data-variant="minimal" when variant="minimal"', () => {
-    const { container } = render(<KeyCap label="K" variant="minimal" />);
-    expect(container.querySelector('kbd')?.getAttribute('data-variant')).toBe('minimal');
+  it('tags data-variant="inverse" when variant="inverse"', () => {
+    const { container } = render(<KeyCap label="K" variant="inverse" />);
+    expect(container.querySelector('kbd')?.getAttribute('data-variant')).toBe('inverse');
   });
 
   it('omits inline font-family by default (inherits CSS-var token)', () => {
@@ -57,11 +90,11 @@ describe('KeyCap', () => {
     expect(kbd.style.fontFamily).toMatch(/Roboto Mono/);
   });
 
-  it('still surfaces data-inverted under variant="minimal" (rendered as dotted border)', () => {
-    const { container } = render(<KeyCap label="K" variant="minimal" inverted />);
+  it('still surfaces data-inverted under variant="inverse"', () => {
+    const { container } = render(<KeyCap label="K" variant="inverse" inverted />);
     const kbd = container.querySelector('kbd');
     expect(kbd?.hasAttribute('data-inverted')).toBe(true);
-    expect(kbd?.getAttribute('data-variant')).toBe('minimal');
+    expect(kbd?.getAttribute('data-variant')).toBe('inverse');
   });
 });
 
@@ -211,12 +244,12 @@ describe('KeySequence', () => {
     }
   });
 
-  it('forwards variant="minimal" to every KeyCap', () => {
+  it('forwards variant="inverse" to every KeyCap', () => {
     const { container } = render(
-      <KeySequence keys={[{ label: '⌘' }, { label: 'K' }]} variant="minimal" />,
+      <KeySequence keys={[{ label: '⌘' }, { label: 'K' }]} variant="inverse" />,
     );
     for (const chip of chips(container)) {
-      expect(chip.getAttribute('data-variant')).toBe('minimal');
+      expect(chip.getAttribute('data-variant')).toBe('inverse');
     }
   });
 });

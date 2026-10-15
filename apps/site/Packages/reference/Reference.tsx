@@ -12,8 +12,7 @@ const pending = new Map<string, Promise<PackageReference | Unbuilt>>();
 
 /**
  * One package's reference, as `npm run build:api` wrote it beside the site.
- * Fetched, not bundled: the reference is built after the site is, from the
- * same TypeDoc run that writes `/api/`.
+ * Fetched, not bundled: the reference is built after the site is.
  */
 function loadReference(name: string): Promise<PackageReference | Unbuilt> {
   let load = pending.get(name);

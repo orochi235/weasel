@@ -1,6 +1,8 @@
 /**
  * The mesh-gradient paint kind's geometry, baking, and draw slots, published
  * as `@weasel-js/renderer/mesh`. `@weasel-js/core/mesh` registers the kind.
+ *
+ * @packageDocumentation
  */
 
 export {

@@ -1,4 +1,8 @@
-/** Part of the `@weasel-js/core` barrel. Actions, deps, the gesture dispatcher, and tools. */
+/**
+ * Part of the `@weasel-js/core` barrel. Actions, deps, the gesture dispatcher, and tools.
+ *
+ * @packageDocumentation
+ */
 
 // --- @experimental Actions Registry (2026-05-09) ----------------------------
 export { ActionsProvider, InputScope, useYoke, Yoke, useActionsRegistry, useAction, useOngoingAction } from '@weasel-js/routing/react';
@@ -86,6 +90,8 @@ export type {
   EditAnchorsDep,
   IngestionDep,
   InsertDep,
+  InsertIntoDep,
+  PathSymmetryDep,
   InsertLive,
   SnapDep,
   InsertExtras,

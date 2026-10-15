@@ -13,10 +13,10 @@ test("a titled list's header sits beside what scrolls, not inside it", () => {
 
 test('a shortcut in a list is outlined keycaps in the UI font, a cap for each key', () => {
   const { container } = render(<ShortcutKeys legend="⇧⌘Z" />);
-  const caps = [...container.querySelectorAll<HTMLElement>('[data-variant]')];
+  const caps = [...container.querySelectorAll<HTMLElement>('kbd')];
   expect(caps.map((c) => c.textContent)).toEqual(['⇧', '⌘', 'Z']);
   for (const cap of caps) {
-    expect(cap.dataset.variant).toBe('minimal');
+    expect(cap.hasAttribute('data-variant')).toBe(false);
     expect(cap.style.fontFamily).toBe('var(--wzl-font-ui)');
   }
 });

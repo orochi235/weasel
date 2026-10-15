@@ -1,6 +1,8 @@
 /**
  * @weasel-js/prefs — the preferences schema and the store over it. No React:
  * the hooks live behind `@weasel-js/prefs/react`.
+ *
+ * @packageDocumentation
  */
 export {
   filterPrefSubtree,
