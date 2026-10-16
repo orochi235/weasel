@@ -110,8 +110,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     onClick,
     chromeVisibility,
     modes,
-    pathEdit, defaultPathEdit,
-    getFocused: getFocusedProp,
+    pathEdit, defaultPathEdit, getFocused: getFocusedProp,
     cursorCoordsHud, pickHud, modalityHud,
     view, onViewChange, defaultView, viewBounds, redrawOn: redrawOnProp,
     ...restProps
