@@ -4,11 +4,11 @@ import type { PathDrawCommand } from '../DrawCommand';
 import type { GLMeshHandle } from '../cache/GLMeshCache';
 import type { ShaderProgram } from '../shaders/ShaderProgram';
 import { resolveStrokeWidth } from '@weasel-js/stroke';
-import { remapPerAnchor, resolveCornersWithSources } from '@weasel-js/geom';
 import { strokeMesh } from '../cache/strokeMeshCache';
 import { resolveStrokeLengths, type StrokedPathCommand } from '../strokeLengths';
 import { metricKeepsRects, type StrokeSpaces } from '@weasel-js/stroke';
 import { cachedMarkerCommands } from '../cache/markerCommandCache';
+import { withCornersResolved } from './cornersResolved';
 import type { DrawContext } from './drawContext';
 import { drawTriangles } from './drawTriangles';
 import { fillMesh, meshHandle, fillMeshHandle } from './mesh';
@@ -26,25 +26,6 @@ export function drawPath(ctx: DrawContext, given: PathDrawCommand): void {
   // can carry one.
   if (cmd.fill?.paint) drawPathFill(ctx, cmd, cmd.fill.paint);
   if (cmd.stroke?.paint) drawPathStroke(ctx, cmd as StrokedPathCommand);
-}
-
-/** `cmd` with its path's corner shapes expanded, and its per-anchor colors
- *  and widths carried onto the anchors the expansion leaves. */
-function withCornersResolved(cmd: PathDrawCommand): PathDrawCommand {
-  if (cmd.path.kind !== 'polygon') return cmd;
-  const { path, anchorSources: src } = resolveCornersWithSources(cmd.path);
-  if (path === cmd.path) return cmd;
-  const out: PathDrawCommand = { ...cmd, path };
-  if (src && cmd.vertexColors) out.vertexColors = remapPerAnchor(cmd.vertexColors, src, 4);
-  if (src && cmd.stroke && (cmd.stroke.vertexColors || cmd.stroke.vertexWidths)) {
-    const { vertexColors, vertexWidths } = cmd.stroke;
-    out.stroke = {
-      ...cmd.stroke,
-      ...(vertexColors ? { vertexColors: remapPerAnchor(vertexColors, src, 4) } : {}),
-      ...(vertexWidths ? { vertexWidths: remapPerAnchor(vertexWidths, src, 1) } : {}),
-    };
-  }
-  return out;
 }
 
 function drawPathFill(ctx: DrawContext, cmd: PathDrawCommand, fill: CommandPaint): void {
