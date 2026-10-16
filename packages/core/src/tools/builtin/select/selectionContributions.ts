@@ -72,8 +72,8 @@ export function selectionMoveBindings<TPose>(
       // the body classifier still reports 'selected-body'; without this
       // opt-out, move's binding beats editAnchors's on every anchor drag.
       //
-      // `isPathEditPart` covers exactly what `editAnchorsAction` and
-      // `bendSegmentAction` match on. That is load-bearing: they must agree
+      // `isPathEditPart` covers exactly what `editAnchorsAction`,
+      // `bendSegmentAction`, and `balanceHandlesAction` match on. That is load-bearing: they must agree
       // on what counts as an anchor or segment hit or move steals the
       // drag — which is exactly the bug this opt-out exists to prevent.
       spec: {

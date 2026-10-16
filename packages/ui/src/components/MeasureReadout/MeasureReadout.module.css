@@ -1,0 +1,40 @@
+.readout {
+  position: absolute;
+  bottom: var(--wzl-space-6);
+  left: 50%;
+  translate: -50% 0;
+  display: flex;
+  align-items: center;
+  gap: var(--wzl-space-5);
+  padding: var(--wzl-space-2) var(--wzl-space-5);
+  border-radius: var(--wzl-radius-md);
+  background: color-mix(in srgb, var(--wzl-surface-raised) 78%, transparent);
+  backdrop-filter: blur(var(--wzl-glass-blur));
+  color: var(--wzl-fg);
+  font-size: var(--wzl-font-size-sm);
+  white-space: nowrap;
+  z-index: var(--wzl-z-overlay);
+}
+
+.actions {
+  flex: none;
+  display: flex;
+  gap: var(--wzl-space-2);
+}
+
+.cell {
+  display: inline-flex;
+  gap: var(--wzl-space-2);
+  align-items: baseline;
+}
+
+.name {
+  color: var(--wzl-fg-muted);
+}
+
+/* Sized for the widest value a page holds, so a live readout does not shift its neighbors. */
+.value {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
+  min-width: 9ch;
+  text-align: end;
+}

@@ -5,7 +5,7 @@
 // encoding; loads read the tags back, and also the untagged shapes older saves
 // wrote, which is why the walk here is draw's own.
 
-import type { AddNodeSpec, SerializedScene } from '@weasel-js/core';
+import type { AddNodeSpec, SceneRegistry, SerializedScene } from '@weasel-js/core';
 import { asNodeId, solid } from '@weasel-js/core';
 import { typedArrayReplacer, untagTypedArray } from '@weasel-js/geom';
 
@@ -157,17 +157,27 @@ export function clipboardJsonReviver(key: string, value: unknown): unknown {
  *  (parents before children), so a sequential `add` finds each
  *  node's parent already present.
  *
- *  Note: container clip-paths (`clipFromPoseKey`) are not restored — WeaselDraw
- *  groups carry no clip today. Wire a `SceneRegistry` here if that changes. */
+ *  A node's `dependsOn` and its derivations come back too, each derivation
+ *  looked up by its key in `registry`: a key `registry` lacks leaves the node
+ *  as authored. Container clip-paths (`clipFromPoseKey`) are not restored —
+ *  WeaselDraw groups carry no clip today. */
 export function nodeSpecsFromSnapshot<TData, TLayer extends string, TPose>(
   json: SerializedScene<TData, TLayer, TPose>,
+  registry: SceneRegistry<TPose, TData, TLayer> = {},
 ): AddNodeSpec<TData, TLayer, TPose>[] {
-  return json.nodes.map((n) => ({
-    kind: n.kind,
-    layer: n.layer,
-    pose: n.pose,
-    data: reviveSnapshot(n.data),
-    id: asNodeId(n.id),
-    ...(n.parent != null ? { parent: asNodeId(n.parent) } : {}),
-  }));
+  return json.nodes.map((n) => {
+    const derivePath = n.derivePathKey === undefined ? undefined : registry.derivePath?.[n.derivePathKey];
+    const derivePose = n.derivePoseKey === undefined ? undefined : registry.derivePose?.[n.derivePoseKey];
+    return {
+      kind: n.kind,
+      layer: n.layer,
+      pose: n.pose,
+      data: reviveSnapshot(n.data),
+      id: asNodeId(n.id),
+      ...(n.parent != null ? { parent: asNodeId(n.parent) } : {}),
+      ...(n.dependsOn !== undefined ? { dependsOn: n.dependsOn === 'children' ? 'children' : n.dependsOn.map(asNodeId) } : {}),
+      ...(derivePath ? { derivePath } : {}),
+      ...(derivePose ? { derivePose } : {}),
+    };
+  });
 }

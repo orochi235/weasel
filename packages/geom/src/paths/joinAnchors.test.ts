@@ -121,3 +121,43 @@ describe('closestOpenEnds', () => {
     expect(closestOpenEnds({ anchors: [[pt(0, 0), pt(1, 0)]], closed: [false] })).toBeNull();
   });
 });
+
+describe('joinSubpathEnds with a tension', () => {
+  it('bridges two paths with a curve leaving each end along its own heading', () => {
+    const set = twoLines();
+    expect(joinSubpathEnds(set, { sub: 0, end: 'last' }, { sub: 1, end: 'first' }, { tension: 0.5 })).toBe(true);
+    const gap = Math.hypot(10, 5);
+    expect(set.anchors).toHaveLength(1);
+    const [, tail, head] = set.anchors[0];
+    expect(tail.outHandle!.x).toBeCloseTo(10 + gap / 2, 9);
+    expect(tail.outHandle!.y).toBeCloseTo(0, 9);
+    expect(head.inHandle!.x).toBeCloseTo(20 - gap / 2, 9);
+    expect(head.inHandle!.y).toBeCloseTo(5, 9);
+  });
+
+  it('follows a curved end along its last handle, and an end picked up backwards along its reversed run', () => {
+    const set: AnchorSet = {
+      anchors: [[pt(0, 0), { x: 10, y: 0, inHandle: pt(10, -4) }], [pt(20, 5), pt(30, 5)]],
+      closed: [false, false],
+    };
+    joinSubpathEnds(set, { sub: 0, end: 'last' }, { sub: 1, end: 'last' }, { tension: 1 });
+    const run = set.anchors[0];
+    // Heading straight down out of (10, 0); arriving at (30, 5) heading left, as the reversed line runs.
+    expect(run[1].outHandle!.x).toBeCloseTo(10, 9);
+    expect(run[1].outHandle!.y).toBeGreaterThan(0);
+    expect(run[2]).toMatchObject({ x: 30, y: 5 });
+    expect(run[2].inHandle!.x).toBeGreaterThan(30);
+    expect(run[2].inHandle!.y).toBeCloseTo(5, 9);
+  });
+
+  it('closes one path with a curve, and with no tension bridges straight', () => {
+    const arc: AnchorSet = { anchors: [[pt(0, 0), pt(10, 10), pt(20, 0)]], closed: [false] };
+    joinSubpathEnds(arc, { sub: 0, end: 'last' }, { sub: 0, end: 'first' }, { tension: 0.4 });
+    expect(arc.closed).toEqual([true]);
+    expect(arc.anchors[0][2].outHandle).toBeDefined();
+    expect(arc.anchors[0][0].inHandle).toBeDefined();
+    const flat = twoLines();
+    joinSubpathEnds(flat, { sub: 0, end: 'last' }, { sub: 1, end: 'first' }, { tension: 0 });
+    expect(flat.anchors[0].every((a) => !a.inHandle && !a.outHandle)).toBe(true);
+  });
+});

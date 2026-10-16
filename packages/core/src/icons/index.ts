@@ -5,6 +5,8 @@
  *  All icons are 20×20-viewBox `<svg>`s rendered in `currentColor`, with
  *  an optional `size` prop for re-scaling. Sized for direct embedding in
  *  consumer tool buttons or as `Tool.presentation.icon` defaults.
+ *
+ * @packageDocumentation
  */
 export { default as SelectIcon } from './SelectIcon';
 export { default as LassoIcon } from './LassoIcon';
@@ -21,5 +23,7 @@ export { default as TextIcon } from './TextIcon';
 export { default as PenIcon } from './PenIcon';
 export { default as HandIcon } from './HandIcon';
 export { default as SliceIcon } from './SliceIcon';
+// Drawn by @weasel-js/ui's icon pipeline, which emits its markup into core.
+export { MeasureIcon } from '../interactions/actions/defaults/icons/actionGlyphIcons';
 export { default as UnknownIcon } from './UnknownIcon';
 export type { IconProps } from './types';

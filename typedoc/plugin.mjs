@@ -1,5 +1,6 @@
 import { Application, Comment, CommentTag, Converter, ReflectionKind } from 'typedoc';
 import { categoryOf } from './categoryOf.mjs';
+import { headerOnExportList } from './headerComments.mjs';
 import { specifierOf } from './packageOptions.mjs';
 import { pointAtOwners } from './pointers.mjs';
 
@@ -8,6 +9,8 @@ const CATEGORIZED = '@weasel-js/core';
 
 /** @param {import('typedoc').Application} app */
 export function load(app) {
+  app.converter.on(Converter.EVENT_BEGIN, (context) => checkHeaderComments(context.programs));
+
   app.converter.on(Converter.EVENT_RESOLVE_BEGIN, (context) => {
     for (const module of modulesOf(context.project)) nameOrFold(context.project, module);
   });
@@ -24,6 +27,27 @@ export function load(app) {
     const pointed = pointAtOwners(project);
     app.logger.info(`${pointed} re-exported symbols point at the package that declares them`);
   });
+}
+
+/** Package sources already checked; every package's program reads its siblings' too. */
+const checked = new Set();
+
+/** @param {readonly import('typescript').Program[]} programs */
+function checkHeaderComments(programs) {
+  const found = [];
+  for (const file of programs.flatMap((program) => program.getSourceFiles())) {
+    const { fileName } = file;
+    if (checked.has(fileName) || !/\/packages\/[^/]+\/src\//.test(fileName) || /\.d\.ts$|\.test\.tsx?$/.test(fileName)) continue;
+    checked.add(fileName);
+    if (headerOnExportList(fileName, file.text)) found.push(`    ${fileName.slice(fileName.indexOf('packages/'))}`);
+  }
+  if (found.length > 0) {
+    throw new Error(
+      `${found.length} file(s) open with a doc comment on an export list, which TypeDoc gives to each name it exports:\n` +
+        `${found.join('\n')}\n\n` +
+        '  Add @packageDocumentation if it describes the file, or move it onto the declaration it describes.',
+    );
+  }
 }
 
 /** @param {import('typedoc').ProjectReflection} project */

@@ -49,6 +49,7 @@ export function defineTool<TOverlay = KernelOverlay>(
       ...(def.hotkey ? { offhand: def.hotkey } : {}),
     },
     actions: def.actions,
+    menus: def.menus,
     def,
     presentation: def.presentation,
     keybinding: def.keybinding,

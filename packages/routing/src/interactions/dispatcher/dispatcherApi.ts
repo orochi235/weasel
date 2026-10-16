@@ -76,6 +76,8 @@ export interface ResolveOnlyResult {
   scope: BindingScope;
   /** Tool id owning the winning binding; `null` for ambient action bindings. */
   ownerId: string | null;
+  /** The params the winning binding would start the action with, resolved now. */
+  params?: Record<string, unknown>;
 }
 
 /**

@@ -37,9 +37,9 @@ export function pathSegments(path: Path): PathSegment[] {
   return out;
 }
 
-/** Whether two boxes come within `pad` of each other. */
-export function boxesNear(a: PathSegment['box'], b: PathSegment['box'], pad = 0): boolean {
-  return a.x0 <= b.x1 + pad && b.x0 <= a.x1 + pad && a.y0 <= b.y1 + pad && b.y0 <= a.y1 + pad;
+/** Whether two boxes overlap or touch. */
+export function boxesNear(a: PathSegment['box'], b: PathSegment['box']): boolean {
+  return a.x0 <= b.x1 && b.x0 <= a.x1 && a.y0 <= b.y1 && b.y0 <= a.y1;
 }
 
 /** Whether segments `a` and `b` of one path follow each other, so they meet

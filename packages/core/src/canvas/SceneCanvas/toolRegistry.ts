@@ -1,5 +1,5 @@
 import type { Tool } from 'tools/overlayBinding';
-import { featureToolIds, type BaseFeature } from './features';
+import { presetBuiltinTools, presetOwnTools, type EnabledPresets } from './features';
 import { IS_DEV } from './isDev';
 import { BUILTIN_TOOL_IDS, type BuiltinToolId } from './props';
 
@@ -14,9 +14,8 @@ export interface ResolveToolRegistryArgs {
   builtins: BuiltinTools;
   /** Built-ins asked for by id. */
   defaultTools?: readonly BuiltinToolId[];
-  /** The presets the canvas runs with, each bringing the tools its
-   *  `FEATURE_PRESETS` row names. */
-  enabled: ReadonlySet<BaseFeature>;
+  /** The presets the canvas runs with, each bringing the tools it names. */
+  enabled: EnabledPresets;
   patch: ToolsPatch | null;
   /** Whether to warn about a patch entry that is probably a mistake. */
   dev?: boolean;
@@ -26,18 +25,22 @@ export interface ResolveToolRegistryArgs {
  * The tool registry a canvas mounts when it is not handed a whole `ToolsApi`.
  *
  * Built-ins come first, in `BUILTIN_TOOL_IDS` order whatever order they were
- * asked for in; a patch tool replaces a mounted one where it stands, and any
- * other is appended in patch order. That order is the palette's.
+ * asked for in, then the presets' own tools in preset order; a patch tool
+ * replaces a mounted one where it stands, and any other is appended in patch
+ * order. That order is the palette's.
  */
 export function resolveToolRegistry(args: ResolveToolRegistryArgs): Record<string, Tool> {
   const { builtins, defaultTools = [], enabled, patch, dev = IS_DEV } = args;
   const registry: Record<string, Tool> = {};
-  const preset = featureToolIds(enabled);
+  const preset = presetBuiltinTools(enabled);
   for (const id of BUILTIN_TOOL_IDS) {
     const patched = patch?.[id];
     if (patched === false) continue;
     const asked = patched === true || defaultTools.includes(id) || preset.has(id);
     if (asked) registry[id] = builtins[id];
+  }
+  for (const [id, tool] of Object.entries(presetOwnTools(enabled))) {
+    if (patch?.[id] !== false) registry[id] = tool;
   }
   for (const [id, value] of Object.entries(patch ?? {})) {
     if (value === false) continue;

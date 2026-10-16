@@ -22,6 +22,7 @@ import { ObjectLeaf } from './ObjectLeaf';
 import { UnionPicker } from './UnionPicker';
 import { controlIsGroup, PropertyControl, type PropertyControlProps } from '../Properties/PropertyField';
 import { PropertyRow } from '../Properties/PropertyRow';
+import type { LiveControl } from './commitPolicy';
 import { prefFieldProps } from './prefField';
 import type { PrefFieldChoice } from './schema';
 import { dropValuePath, type PrefDrop } from './drop';
@@ -64,6 +65,9 @@ export interface PrefRenderContext {
   hiddenAt?: (path: string) => boolean;
   /** An entry of a list or a map under this leaf, as the conditions that read the entry leave it. */
   entryAt?: EntryAt;
+  /** Which live controls write only the value an edit settles on, as the form's kit settings have it. Absent, the
+   *  form's defaults. */
+  settles?: Readonly<Record<LiveControl, boolean>>;
 }
 
 /**
@@ -107,6 +111,8 @@ export interface WalkCtx {
   hidden?: ReadonlySet<string>;
   /** Answers the conditions that read an entry of a list or a map, for that entry. */
   entryAt?: EntryAt;
+  /** Which live controls write only the value an edit settles on. */
+  settles?: Readonly<Record<LiveControl, boolean>>;
   /** What the form was given to split values with, and which rows are open. */
   split?: SplitCtx;
 }
@@ -171,6 +177,7 @@ export function prefRenderContext(
     disabledAt: inside?.disabledAt ?? ((at) => ctx.disabled?.has(at) ?? false),
     ...(ctx.hidden ? { hidden: ctx.hidden.has(own), hiddenAt: inside?.hiddenAt ?? ((at: string) => ctx.hidden!.has(at)) } : {}),
     ...(entryAt ? { entryAt } : {}),
+    ...(ctx.settles ? { settles: ctx.settles } : {}),
   };
   return { renderCtx, toggles };
 }
@@ -350,5 +357,6 @@ function leafField(ctx: PrefRenderContext, siblings: Record<string, unknown> | u
     ctx.pref,
     { value: ctx.value, mixed: ctx.mixed, siblings, setValue: ctx.setValue, fields: ctx.fields, disabled: ctx.disabled },
     'form',
+    ctx.settles,
   );
 }

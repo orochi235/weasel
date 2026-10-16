@@ -293,6 +293,7 @@ function overlayFromPlane(ov: OngoingOverlay, m: PlaneMap): OngoingOverlay {
     case 'lasso':
       return { ...ov, vertices: ov.vertices.map(pt), current: pt(ov.current) };
     case 'polyline':
+    case 'brush':
       return { ...ov, points: ov.points.map(pt) };
     case 'insertPreview':
       return {

@@ -11,8 +11,9 @@ import { usePathEditOverlayLayer } from 'features/paths/usePathEdit';
 import type { rotationBadgeOf } from 'features/selection/overlay';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import type { HierarchicalAdapter } from '../buildSceneTree';
-import { builtLayersOf, type CanvasLayers } from '../layerSlots';
+import { builtLayersOf, isCustomEntry, type CanvasLayers } from '../layerSlots';
 import { createSlopsDebugLayer } from '../slopsDebugLayer';
+import { useTargetBasePx } from 'core/device/useTargetBasePx';
 import { mergeLayersWithDefaults, type SceneCanvasLayers } from './props';
 import { useDispatcherOverlayLayer } from './useDispatcherOverlayLayer';
 import { usePreviewGhostLayer } from './usePreviewGhostLayer';
@@ -58,9 +59,10 @@ export function useSceneCanvasLayers<TData, TLayer extends string, TPose>(args: 
 } {
   const { scene, adapter, poseDescriptor, alphaFor, dispatcher, pathEditState, slops, targetScale, pathSnapper } = args;
 
+  const baseSizes = useTargetBasePx();
   const merged = useMemo(
-    () => mergeLayersWithDefaults(args.layers, targetScale),
-    [args.layers, targetScale],
+    () => mergeLayersWithDefaults(args.layers, targetScale, baseSizes),
+    [args.layers, targetScale, baseSizes],
   );
 
   const { config: sceneSlot, layers: sceneLayers } = useSceneSlotLayers({
@@ -83,11 +85,12 @@ export function useSceneCanvasLayers<TData, TLayer extends string, TPose>(args: 
   );
 
   const snapMarkerLayer = useMemo(() => createPathSnapMarkerLayer(pathSnapper), [pathSnapper]);
-
+  const overlaySlot = merged.pathEditingOverlay;
+  const overlayConfig = overlaySlot && !isCustomEntry(overlaySlot) ? overlaySlot : undefined;
   const pathEditingOverlayLayer = usePathEditOverlayLayer(pathEditState, {
     nodeOf: (id) => scene.get(id as NodeId),
     planeOfNode: args.planeOfNode,
-  });
+  }, overlayConfig);
 
   const { layer: selectionOverlayLayer, rotationBadge } = useSelectionOverlayLayer<TPose>(
     merged.selectionOverlay,
@@ -101,10 +104,15 @@ export function useSceneCanvasLayers<TData, TLayer extends string, TPose>(args: 
     selectionOverlay: selectionOverlayLayer ? { layer: selectionOverlayLayer } : null,
     previewGhost: { layer: previewLayer, after: 'scene' },
     dispatcherOverlay: { layer: dispatcherOverlay, after: 'previewGhost' },
-    pathEditingOverlay: { layer: pathEditingOverlayLayer, after: 'selectionOverlay' },
-    pathSnapMarker: { layer: snapMarkerLayer, after: 'pathEditingOverlay' },
+    pathEditingOverlay: overlaySlot === null || isCustomEntry(overlaySlot)
+      ? overlaySlot
+      : { layer: pathEditingOverlayLayer, after: 'selectionOverlay' },
+    pathSnapMarker: { layer: snapMarkerLayer, after: overlaySlot === null ? 'dispatcherOverlay' : 'pathEditingOverlay' },
     ...(slops ? { slopsDebug: { layer: slopsLayer, after: 'pathSnapMarker' } } : {}),
-  }), [merged, sceneLayers, selectionOverlayLayer, previewLayer, dispatcherOverlay, pathEditingOverlayLayer, snapMarkerLayer, slops, slopsLayer]);
+  }), [
+    merged, sceneLayers, selectionOverlayLayer, previewLayer, dispatcherOverlay, pathEditingOverlayLayer, overlaySlot,
+    snapMarkerLayer, slops, slopsLayer,
+  ]);
 
   return { layers, rotationBadge, chromeAffordancesRef };
 }

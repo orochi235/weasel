@@ -11,7 +11,7 @@ import {
 } from '@weasel-js/labkit';
 import { LineIcon, PenIcon, SelectIcon } from '@weasel-js/ui';
 import { useMemo } from 'react';
-import { strokeNode } from './labs/strokeNode';
+import { strokeNode } from './pathEditLabScene';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 

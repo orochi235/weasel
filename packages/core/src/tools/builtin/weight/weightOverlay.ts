@@ -5,7 +5,7 @@ import { viewToTransform } from 'core/viewport/view';
 import { worldToScreen } from 'core/viewport/viewTransform';
 import type { WeighedPath } from './weightActions';
 
-const POINT_RADIUS_PX = 3.5;
+export const POINT_RADIUS_PX = 3.5;
 const RIM = '#10161d';
 /** No weight, and all of it. */
 const COLD = [0x1f, 0x6f, 0x8b];
@@ -27,6 +27,8 @@ export function createWeightOverlay(source: {
   paths(): readonly WeighedPath[];
   active(): string | null;
   subscribe(fn: () => void): () => void;
+  /** Point dot radius in screen px, read each frame. Default `POINT_RADIUS_PX`. */
+  pointRadiusPx?: () => number | undefined;
 }): RenderLayer<unknown> {
   return {
     id: source.id,
@@ -36,6 +38,7 @@ export function createWeightOverlay(source: {
     draw: (_data, view) => {
       const t = viewToTransform(view);
       const active = source.active();
+      const r = source.pointRadiusPx?.() ?? POINT_RADIUS_PX;
       const out: DrawCommand[] = [];
       for (const { path, skin } of source.paths()) {
         const weights = active === null ? undefined : skin[active];
@@ -49,7 +52,7 @@ export function createWeightOverlay(source: {
           const share = total && total[i] > 0 ? (weights?.[i] ?? 0) / total[i] : 0;
           out.push({
             kind: 'path',
-            path: ellipsePath({ x: x - POINT_RADIUS_PX, y: y - POINT_RADIUS_PX, width: 2 * POINT_RADIUS_PX, height: 2 * POINT_RADIUS_PX }),
+            path: ellipsePath({ x: x - r, y: y - r, width: 2 * r, height: 2 * r }),
             fill: { paint: { kind: 'solid', color: active === null ? IDLE : mix(share) } },
             stroke: { paint: { color: RIM }, width: 1 },
           });

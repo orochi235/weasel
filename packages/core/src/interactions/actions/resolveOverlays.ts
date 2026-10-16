@@ -29,7 +29,8 @@ export type OverlayVisibilityId =
   | 'action.marquee'
   | 'action.lasso'
   | 'action.insert-preview'
-  | 'action.polyline';
+  | 'action.polyline'
+  | 'action.brush';
 
 /**
  * One in-flight overlay, in world coordinates.
@@ -69,6 +70,8 @@ export type ResolvedOverlay =
       /** The drag's anchor — a growth axis to mark. Absent for a pencil, which
        *  has none. */
       anchorPoint?: Point;
+      /** World affines the shape will also be drawn under, as the action gave them. */
+      copies?: readonly (readonly [number, number, number, number, number, number])[];
       /** The action's per-shape payload, verbatim. Carries what geometry
        *  cannot: an image insert's `src`, say. */
       extras: unknown;
@@ -83,6 +86,14 @@ export type ResolvedOverlay =
        *  away: `'chrome'` when the action named none. A role the painter has
        *  no style for is drawn as plain chrome, not dropped. */
       role: OverlayRole;
+    }
+  | {
+      kind: 'brush';
+      visibilityId: 'action.brush';
+      /** The brush's path, at least one point; the last is where it is now. */
+      points: ReadonlyArray<Point>;
+      /** On screen: a painter draws it at this size at every zoom. */
+      radiusPx: number;
     };
 
 /** The overlays worth painting, in the order the handles published them. */
@@ -131,6 +142,7 @@ export function resolveOverlays(overlays: Iterable<OngoingOverlay>): ResolvedOve
           geometry,
           extras: ov.extras,
           ...(ov.anchorPoint && ov.shape !== 'pencil' ? { anchorPoint: ov.anchorPoint } : {}),
+          ...(ov.copies ? { copies: ov.copies } : {}),
         });
         break;
       }
@@ -142,6 +154,11 @@ export function resolveOverlays(overlays: Iterable<OngoingOverlay>): ResolvedOve
           points: ov.points,
           role: ov.role ?? 'chrome',
         });
+        break;
+      }
+      case 'brush': {
+        if (ov.points.length === 0 || !(ov.radiusPx > 0)) break;
+        out.push({ kind: 'brush', visibilityId: 'action.brush', points: ov.points, radiusPx: ov.radiusPx });
         break;
       }
     }

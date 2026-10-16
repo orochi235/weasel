@@ -7,7 +7,7 @@
  * rect, rotated if the pose is.
  */
 import type { Scene, NodeId } from 'core/scene/types';
-import { pathIntersectsRect } from '@weasel-js/geom';
+import { applyToPoint, pathIntersectsRect, type Affine } from '@weasel-js/geom';
 import type { LassoHitMode } from 'core/adapters/types';
 import {
   poseDescriptorForNode,
@@ -23,7 +23,7 @@ import {
 } from 'canvas/pickWalk';
 import { rectToPlane, toPlane, type PlaneMap } from 'core/viewport/parallax';
 
-export { hiddenLayerIds } from 'canvas/pickWalk';
+export { hiddenLayerIds } from 'canvas/pickLayers';
 import type { HitTestView } from 'interactions/actions/depSchema';
 import { findShapeInk, findShapeSilhouette } from 'canvas/NodeShape';
 import {
@@ -151,6 +151,7 @@ function walkArea(
         asInked(filled, findShapeSilhouette(node as never, pose) ?? poseOutline(pose, b)), filled);
     },
     inPlane: (m) => regionQuery(regionInPlane(r, m)),
+    inCopy: (m) => regionQuery(regionInCopy(r, m)),
   });
   return pickWalk<unknown>(scenePickSource(scene, opts), regionQuery(region)) as NodeId[];
 }
@@ -164,4 +165,18 @@ function regionInPlane(r: SelectRegion, m: PlaneMap): SelectRegion {
     coords.push(p.x, p.y);
   }
   return regionOf(coords, rectToPlane(m, r.bounds), r.isRect)!;
+}
+
+/** `r` carried by an affine into a copy's source frame. A rect stays one only
+ *  while the map keeps the axes; a turn makes it a polygon. */
+function regionInCopy(r: SelectRegion, m: Affine): SelectRegion {
+  const coords: number[] = [];
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  for (const v of r.verts) {
+    const [x, y] = applyToPoint(m, v.x, v.y);
+    coords.push(x, y);
+    x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y);
+  }
+  const keepsAxes = (m[1] === 0 && m[2] === 0) || (m[0] === 0 && m[3] === 0);
+  return regionOf(coords, { x: x0, y: y0, width: x1 - x0, height: y1 - y0 }, r.isRect && keepsAxes)!;
 }

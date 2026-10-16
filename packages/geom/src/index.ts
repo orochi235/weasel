@@ -1,6 +1,9 @@
 /** @weasel-js/geom — pure 2D geometry kernel: scalars, affines, curves, the
  *  `Path` command stream and the math over it, and easing curves. Curve
- *  representations, tessellation and booleans live in subpaths. */
+ *  representations, tessellation and booleans live in subpaths.
+ *
+ * @packageDocumentation
+ */
 export { clamp, cross, dot, sub, len2, sign, approxEq, EPS } from './scalar';
 export { normalizeZoom, ZOOM_FLOOR, type View } from './view';
 export { identity, translate, scale, rotate, multiply, invert, applyToPoint, boxToBox, rotateAboutPoint, type Affine } from './affine';
@@ -34,6 +37,15 @@ export { hasOpenSubpath, splitByClosure } from './paths/splitByClosure';
 export { pathSignedArea, reversePath } from './paths/winding';
 export { pathFromD } from './paths/pathFromD';
 export { pointAlongPath, type PathStation, type PointAlongPathOptions } from './paths/pathAt';
+export { measurePath, type MeasurePathOptions, type PathMeasure } from './paths/pathMeasure';
+export {
+  pathToCubicContours, cubicContoursToPath, type CubicContour, type CubicSegment,
+} from './paths/cubicContours';
+export { blendPaths, prepareBlend, type BlendPathsOptions, type PathBlend } from './paths/blendPaths';
+export { bendAlongPath, type BendAlongPathOptions } from './paths/bendAlongPath';
+export {
+  repeatAlongPath, stationsAlongPath, type RepeatAlongPathOptions, type RepeatStation,
+} from './paths/repeatAlongPath';
 export { pathDistanceToPoint } from './paths/pathDistance';
 export { intersectSegments, type SegmentCrossing } from './intersect/segmentIntersections';
 export { pathSegments, type PathSegment } from './intersect/pathSegments';
@@ -51,10 +63,12 @@ export {
 export { cubicPointAt, splitCubicAtT, type Point } from './paths/cubicMath';
 export { fitCubicThroughDeletion } from './paths/spanFit';
 export { schneiderFit, fitCubicWithTangents } from './paths/schneiderFit';
-export { simplifyPath, type SimplifyPathOptions } from './paths/simplifyPath';
+export { simplifyPath, simplifySpan, simplifySubpath, type SimplifyPathOptions } from './paths/simplifyPath';
+export { simplifyAnchorsAt } from './paths/simplifyAnchors';
+export * from './warp';
 export {
   averageAnchorsAt, closestOpenEnds, joinAnchorsAt, joinSubpathEnds, subpathEndAt,
-  type AverageAxis, type SubpathEnd,
+  type AverageAxis, type JoinOptions, type SubpathEnd,
 } from './paths/joinAnchors';
 export {
   pointInPath, strokeHitTest,
@@ -99,9 +113,29 @@ export {
   locateAnchor, moveHandleTo, openSubpathAt, segmentAt, translateAnchorBy,
   type AnchorRect, type AnchorSet, type SegmentHit,
 } from './paths/anchorEdits';
+export { anchorsUnderBrush } from './paths/anchorBrush';
+export {
+  anchorSymmetries, anchorSymmetry, moveHandleSymmetric, translateAnchorsSymmetric, type AnchorSymmetry,
+} from './paths/anchorSymmetry';
 export { bendSegment, type BendGrip } from './paths/bendSegment';
-export { handleAlongItsAngle, makeHandlesSymmetric, retractHandles } from './paths/handleEdits';
+export { smudgePath, type SmudgePathOptions } from './paths/smudgePath';
+export { handleAlongItsAngle, handleAtItsLength, makeHandlesSymmetric, retractHandles } from './paths/handleEdits';
+export {
+  combTeeth, cubicCurvatureAt, cubicCurvatureSource, cubicDerivativeAt, curvatureComb,
+  type CombTooth, type CurvatureCombOptions, type CurvatureSource, type SegmentComb,
+} from './paths/curvature';
+export {
+  balanceFactorToward, equalizeSegmentHandles, handleBalances, scaleSegmentHandles, type HandleBalance,
+} from './paths/balanceHandles';
+export { harmonizeAnchors } from './paths/harmonize';
 export { editAnchorSetTracked, remapPointValues, type PointOrigin } from './paths/anchorOrigins';
+export {
+  anchorsBefore, constrainPathEdit, constraintAnchors, constraintFits, mapConstraintAnchors, pathAnchorPoints,
+  remapConstraints, solveConstraints, solvePathConstraints, unsatisfiedConstraints, CONSTRAINT_TOLERANCE,
+  type AnchorPair, type ConstrainPathEditOptions, type ConstrainedPathEdit, type ConstraintPoint,
+  type PathConstraint, type PathConstraintKind, type SolveConstraintsOptions, type SolveConstraintsResult,
+  type SolvePathConstraintsResult, type UnsatisfiedConstraintsOptions,
+} from './constraints';
 export { nearestPathAnchor, reverseAnchors, type PathAnchorHit } from './paths/nearestAnchor';
 export { pathInPoseFrame, pathInWorld, worldEditToStorage, type PathInWorldPose } from './paths/pathInWorld';
 export {

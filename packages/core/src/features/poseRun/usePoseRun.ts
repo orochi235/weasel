@@ -12,7 +12,7 @@
  * against it.
  */
 import { useCallback, useEffect, useMemo, useRef } from 'react';
-import { useLatest, useVisibleRaf } from '@weasel-js/react';
+import { useLatest, useVisibleRaf, type VisibleRaf } from '@weasel-js/react';
 import type { NodeId, PoseHold, Scene } from '../../core/scene/types';
 
 /** What a producer is told before it is asked for a frame. */
@@ -44,6 +44,10 @@ export interface UsePoseRunOptions<TPose> {
   label?: string;
   /** How many nodes the commit wrote. Fires after the ops land. */
   onCommit?: (moved: number) => void;
+  /** Writes of the caller's own, made inside the commit's batch so they
+   *  share its undo entry. `finished` is false when `stop` cut the run short
+   *  of where `step` was taking it. */
+  commitWith?: (finished: boolean) => void;
   /** Clock injection, for tests. Defaults to `requestAnimationFrame`. */
   requestFrame?: (cb: (t: number) => void) => number;
   cancelFrame?: (handle: number) => void;
@@ -76,13 +80,6 @@ export function usePoseRun<TPose>(opts: UsePoseRunOptions<TPose>): PoseRun {
   const frame = useRef(0);
   const mounted = useRef(true);
 
-  // The gate defaults an absent clock to `requestAnimationFrame` itself, so
-  // these pass straight through rather than being defaulted twice.
-  const loop = useVisibleRaf(() => { tick(); }, {
-    requestFrame: opts.requestFrame,
-    cancelFrame: opts.cancelFrame,
-  });
-
   /** The hold on the scene the options name now. A run handed a different
    *  scene mid-flight lets go of the old one's nodes. */
   const holdNow = useCallback((): PoseHold<TPose> => {
@@ -99,17 +96,19 @@ export function usePoseRun<TPose>(opts: UsePoseRunOptions<TPose>): PoseRun {
     previews.current.clear();
   }, []);
 
-  const commit = (): void => {
+  const commit = (finished: boolean): void => {
     const scene = optsRef.current.scene;
+    const also = optsRef.current.commitWith;
     let moved = 0;
     try {
-      if (previews.current.size > 0) {
+      if (previews.current.size > 0 || also !== undefined) {
         scene.batch(optsRef.current.label ?? 'Layout', () => {
           for (const [id, pose] of previews.current) {
             if (scene.get(id) === undefined || scene.isLocked(id)) continue;
             scene.setPose(id, pose);
             moved++;
           }
+          also?.(finished);
         });
       }
     } finally {
@@ -118,12 +117,12 @@ export function usePoseRun<TPose>(opts: UsePoseRunOptions<TPose>): PoseRun {
     optsRef.current.onCommit?.(moved);
   };
 
-  const halt = (): void => {
+  const halt = (loop: VisibleRaf): void => {
     running.current = false;
     loop.cancel();
   };
 
-  const tick = (): void => {
+  const tick = (loop: VisibleRaf): void => {
     if (!mounted.current || !running.current) return;
     const hold = holdNow();
     const pinned = hold.others();
@@ -136,12 +135,19 @@ export function usePoseRun<TPose>(opts: UsePoseRunOptions<TPose>): PoseRun {
     }
     hold.set(previews.current);
     if (done) {
-      halt();
-      commit();
+      halt(loop);
+      commit(true);
       return;
     }
     loop.request();
   };
+
+  // The gate defaults an absent clock to `requestAnimationFrame` itself, so
+  // these pass straight through rather than being defaulted twice.
+  const loop = useVisibleRaf((_time, loop) => { tick(loop); }, {
+    requestFrame: opts.requestFrame,
+    cancelFrame: opts.cancelFrame,
+  });
 
   useEffect(() => {
     mounted.current = true;
@@ -163,11 +169,11 @@ export function usePoseRun<TPose>(opts: UsePoseRunOptions<TPose>): PoseRun {
     },
     stop() {
       if (!running.current) return;
-      halt();
-      commit();
+      halt(loop);
+      commit(false);
     },
     cancel() {
-      halt();
+      halt(loop);
       release();
     },
     isRunning: () => running.current,

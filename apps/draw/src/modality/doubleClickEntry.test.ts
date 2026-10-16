@@ -16,10 +16,16 @@ const idle = (enterMode = vi.fn()) => ({
 });
 
 describe('dispatchDoubleClickEntry', () => {
-  it('hit.kind="path" enters path-edit with hit.id', () => {
+  it('hit.kind="path" enters nothing: the canvas\'s enterPathEdit binding is the way in', () => {
     const machine = idle();
     dispatchDoubleClickEntry({ kind: 'path', id: 'p1' }, machine as never);
-    expect(machine.enterMode).toHaveBeenCalledWith('path-edit', { targetId: 'p1' });
+    expect(machine.enterMode).not.toHaveBeenCalled();
+  });
+
+  it('hit.kind="path" the canvas cannot open (a rect) enters path-edit itself, as Enter does', () => {
+    const machine = idle();
+    dispatchDoubleClickEntry({ kind: 'path', id: 'r1' }, machine as never, (id) => id !== 'r1');
+    expect(machine.enterMode).toHaveBeenCalledWith('path-edit', { targetId: 'r1' });
   });
 
   it('hit.kind="group" enters isolation', () => {
@@ -46,26 +52,18 @@ describe('dispatchDoubleClickEntry', () => {
     expect(machine.enterMode).not.toHaveBeenCalled();
   });
 
-  it('a second double-click on the path being edited stays in path-edit', () => {
-    const machine = realMachine();
-    machine.enterMode('path-edit', { targetId: 'a' });
-    expect(() => dispatchDoubleClickEntry({ kind: 'path', id: 'a' }, machine)).not.toThrow();
-    expect(machine.registry.current().id).toBe('path-edit');
-    expect(machine.getActiveTargetId()).toBe('a');
-  });
-
-  it('a double-click on a path inside an isolated group leaves isolation for path-edit', () => {
+  it('a second double-click on the group being isolated stays in isolation', () => {
     const machine = realMachine();
     machine.enterMode('isolation', { targetId: 'g' });
-    expect(() => dispatchDoubleClickEntry({ kind: 'path', id: 'a' }, machine)).not.toThrow();
-    expect(machine.registry.current().id).toBe('path-edit');
-    expect(machine.getActiveTargetId()).toBe('a');
+    expect(() => dispatchDoubleClickEntry({ kind: 'group', id: 'g' }, machine)).not.toThrow();
+    expect(machine.registry.current().id).toBe('isolation');
+    expect(machine.getActiveTargetId()).toBe('g');
   });
 
   it('a double-click during a strict mode leaves it alone', () => {
     const machine = realMachine();
     machine.enterMode('crop', {});
-    expect(() => dispatchDoubleClickEntry({ kind: 'path', id: 'a' }, machine)).not.toThrow();
+    expect(() => dispatchDoubleClickEntry({ kind: 'group', id: 'g' }, machine)).not.toThrow();
     expect(machine.registry.current().id).toBe('crop');
   });
 });

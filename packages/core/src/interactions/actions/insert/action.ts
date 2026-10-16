@@ -1,10 +1,12 @@
-import type { Action } from '@weasel-js/routing';
+import type { Action, NodeId } from '@weasel-js/routing';
 import type { InvocationCtx, OngoingHandle, BindingOpts, OngoingOverlay } from '@weasel-js/routing';
 import { resolveParams } from '@weasel-js/routing';
 import { shapeKindInfo } from 'core/shapeKinds';
 import type { KitInsertShape } from 'core/shapeKinds';
 import { runBehaviorSettled } from '../gestureLifecycle';
 import { inPlane, insertLayer } from '../planeInput';
+import { copiesWithin } from 'canvas/copiesAbove';
+import { scenePaintedPoseOf } from 'canvas/derivedPath';
 import { cancelInsert, commitInsert } from './commit';
 import { carryStart, nextFrame } from './frame';
 import type { InsertLiveGesture } from './live';
@@ -30,7 +32,7 @@ export const insertAction: Action & { requires: string[] } = inPlane({
   label: 'Insert',
   group: 'insert',
   eligible: { capability: 'creates-shapes' },
-  requires: ['insert', 'insertLive', 'selection', 'snap', 'textEdit', 'scene', 'applyOps', 'view'],
+  requires: ['insert', 'insertLive', 'insertInto', 'selection', 'snap', 'textEdit', 'scene', 'applyOps', 'view'],
   invoker: {
     timing: 'ongoing',
     start(ctx: InvocationCtx, opts?: BindingOpts): OngoingHandle {
@@ -41,6 +43,10 @@ export const insertAction: Action & { requires: string[] } = inPlane({
       const gesture: InsertLiveGesture = { open: true, userRotation: 0, repositioning: false };
       const live = ctx.deps.insertLive;
       if (live) live.gesture = gesture;
+      // Where the shape will land decides the copies it will be drawn in.
+      const scene = ctx.deps.scene;
+      const into = (ctx.deps.insertInto?.get() ?? null) as NodeId | null;
+      const copies = scene ? copiesWithin(scene, into, scenePaintedPoseOf(scene)) : [];
 
       return {
         kind: 'insert',
@@ -63,6 +69,7 @@ export const insertAction: Action & { requires: string[] } = inPlane({
             // Anchor dot at the click point: radial shapes have no vertex
             // there, and in center mode it marks the growth axis.
             anchorPoint: { x: start.x, y: start.y },
+            ...(copies.length > 0 ? { copies } : {}),
           };
         },
         onEnd(endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {

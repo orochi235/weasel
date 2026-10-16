@@ -71,7 +71,17 @@ const dropClipboard: BrowserCommand<[]> = async (ctx) => {
   if (server) await new Promise((r) => server.close(r));
 };
 
-export const browserCommands = { grantClipboard, holdClipboard, dropClipboard, armDownload, takeDownload };
+/** Run a full garbage collection in the renderer the test page lives in. */
+const collectGarbage: BrowserCommand<[]> = async (ctx) => {
+  const cdp = await ctx.page.context().newCDPSession(ctx.page);
+  try {
+    await cdp.send('HeapProfiler.collectGarbage');
+  } finally {
+    await cdp.detach();
+  }
+};
+
+export const browserCommands = { grantClipboard, holdClipboard, dropClipboard, armDownload, takeDownload, collectGarbage };
 
 declare module 'vitest/browser' {
   interface BrowserCommands {
@@ -80,5 +90,6 @@ declare module 'vitest/browser' {
     dropClipboard: () => Promise<void>;
     armDownload: (timeoutMs: number) => Promise<void>;
     takeDownload: () => Promise<{ filename: string; text: string } | null>;
+    collectGarbage: () => Promise<void>;
   }
 }

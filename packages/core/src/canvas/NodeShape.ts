@@ -24,6 +24,7 @@ import type { VertexColorChannel } from '@weasel-js/animator';
 import type { DrawCommand } from '@weasel-js/renderer';
 import { DERIVED_PAINTER } from './nodeShapes/derivedPainter';
 import { IMAGE_PAINTER } from './nodeShapes/imagePainter';
+import { MEASURE_PAINTER } from './nodeShapes/measurePainter';
 import { derivesPath } from './nodeShapes/memo';
 import { PATH_PAINTER } from './nodeShapes/pathPainter';
 import { paintsPose } from './nodeShapes/poseBox';
@@ -124,6 +125,10 @@ export interface NodeShapeEntry<TData = unknown, TPose = unknown> {
    *  answer exists (`kit:text` has none short of laying out its glyphs); such
    *  a node is always painted. Same cheap-reads rule as `ink`. */
   bounds?(node: Node<TData, string, TPose>, pose: TPose, ctx?: NodeInkCtx): Bounds | null;
+  /** Optional: the tight box `paint` covers, stroke as drawn, in `bounds`'
+   *  frame; what `drawnBoundsOf` puts the selection chrome on. Not
+   *  conservative, unlike `bounds`. Absent or `null` is the pose box. */
+  drawnBounds?(node: Node<TData, string, TPose>, pose: TPose, ctx?: NodeInkCtx): Bounds | null;
   /** Snap to the node's pose box — its edges, corners and center — rather
    *  than its silhouette. For content whose silhouette is no drawn outline,
    *  as text's line boxes and an image's pixels are not. */
@@ -386,6 +391,7 @@ export function _resetShapePaintersForTests(): void {
 
 function registerBuiltInShapePainters(): void {
   registerNodeShape(TEXT_PAINTER);
+  registerNodeShape(MEASURE_PAINTER);
   // Ahead of path/shape/image: a derived node whose `data` also carries a
   // `path`, `shape` or `image` means the derived path, and those three match
   // on the presence of the field alone.

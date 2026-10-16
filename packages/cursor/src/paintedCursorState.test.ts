@@ -31,4 +31,16 @@ describe('createPaintedCursorState', () => {
     state.setOverride(null);
     expect(state.current()).toEqual({ cursor: ring, at: { x: 6, y: 7 } });
   });
+
+  it('runs every subscriber past one that throws, and does not throw into the setter', () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const state = createPaintedCursorState();
+    const after = vi.fn();
+    state.subscribe(() => { throw new Error('boom'); });
+    state.subscribe(after);
+    expect(() => state.setBase(ring)).not.toThrow();
+    expect(after).toHaveBeenCalledTimes(1);
+    expect(error).toHaveBeenCalled();
+    error.mockRestore();
+  });
 });

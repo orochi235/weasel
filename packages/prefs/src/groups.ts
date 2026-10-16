@@ -41,6 +41,9 @@ export interface PrefGroup {
    *  reads as nothing without it). */
   name: string;
   description?: string;
+  /** Tags every leaf under the group carries besides its own. A settings
+   *  search matching one keeps the whole group, as matching its name does. */
+  tags?: readonly string[];
   /** How the group is drawn. Unset, its depth decides: a top-level group is a
    *  `page`, and one inside another is a `section`. */
   as?: PrefGroupAs;
@@ -67,6 +70,8 @@ export interface PrefSection {
    *  {@link PrefGroup}. */
   name: string;
   description?: string;
+  /** As a {@link PrefGroup}'s. */
+  tags?: readonly string[];
   /** How the section is drawn, as a {@link PrefGroup}'s `as` — without
    *  `page`, since nothing that draws sections has a rail. Unset: a heading
    *  over its rows. */

@@ -12,7 +12,8 @@ import {
 } from 'features/chrome-caps/useChromeCaps';
 import type { CanvasExtensionApi } from '../canvasExtension';
 import { useOptionalViewRegistry } from '../viewRegistry';
-import { featureChromeRules, type BaseFeature } from './features';
+import { presetChromeRules, type EnabledPresets } from './features';
+import { PRESET_OWNED_CHROME } from './presets/chrome';
 import type { NodeAtPoint } from './useNodeAtPoint';
 import { worldPointAt } from './worldPointAt';
 
@@ -61,7 +62,7 @@ export function useSceneHover(args: {
  * as insert, but paints nothing. `rotateOff` hides the rotation handle.
  */
 export function useChromeRules(args: {
-  enabled: ReadonlySet<BaseFeature>;
+  enabled: EnabledPresets;
   selectable: boolean;
   /** `selectTool.rotate === false`. */
   rotateOff: boolean;
@@ -69,7 +70,7 @@ export function useChromeRules(args: {
 }): VisibilityRules {
   const { enabled, selectable, rotateOff, chromeVisibility } = args;
   return useMemo(() => {
-    const defaults = featureChromeRules(enabled);
+    const defaults = presetChromeRules(enabled, PRESET_OWNED_CHROME);
     if (!selectable) {
       defaults['action.marquee'] = never;
       defaults['action.lasso'] = never;

@@ -62,6 +62,4 @@ export { usePolygonTool, type UsePolygonToolOptions } from './polygon';
 export { useStarTool, type UseStarToolOptions } from './star';
 export { usePencilTool, type PencilPoint } from './pencil';
 export { useSliceTool, type UseSliceToolOptions, type SliceScratch } from './slice';
-export {
-  useExtendTool, useTrimTool, type StrokeClickToolOptions, type UseExtendToolOptions, type UseTrimToolOptions,
-} from './trimExtend';
+export { useMeasureTool, type UseMeasureToolOptions } from './measure';

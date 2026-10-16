@@ -1,4 +1,4 @@
-import { BATCH_TEXTURE_SLOTS } from '../shaders/batchFill';
+import { BATCH_TEXTURE_SLOTS, RAMP_SLOT } from '../shaders/batchFill';
 import { type BatchMatrix, matrixIndex } from './batchMatrices';
 import { runClipDepth } from './clip';
 import type { DrawContext } from './drawContext';
@@ -22,6 +22,7 @@ export interface StagedBatchState {
   /**
    * The textures this run samples, in the order they joined. A quad's vertices
    * carry `index + 1`, because slot 0 is the white texel every solid samples.
+   * The ramp atlas is not among them: see `ramps`.
    *
    * Two kinds, because two caches own them: an image quad names an
    * `ImageBitmap` that `GLImageCache` keys by identity, a glyph names the
@@ -36,13 +37,19 @@ export interface StagedBatchState {
    * never mipmapped and never joins a shared image atlas.
    */
   textures: BatchTexture[];
+  /**
+   * Whether the run samples the ramp atlas, which always sits at `RAMP_SLOT`
+   * rather than the next free slot. It still counts against the run's
+   * textures, so the run holds as many as before; the fixed slot is what lets
+   * the radial and conic arm of the batch shader fetch it directly.
+   */
+  ramps: boolean;
 }
 
 /** One entry in a run's slot list. */
 type BatchTexture =
   | { kind: 'bitmap'; image: ImageBitmap; sampling: 'linear' | 'nearest' }
-  | { kind: 'atlas'; id: string; fieldScale: readonly [number, number] }
-  | { kind: 'ramps' };
+  | { kind: 'atlas'; id: string; fieldScale: readonly [number, number] };
 
 /**
  * The slot `image` would sample from in this run, or -1 if it cannot join.
@@ -66,10 +73,10 @@ export function slotForBitmap(
 /** The same for the ramp atlas, of which there is one — so every gradient in a
  *  run shares the slot, however many distinct ramps they are. */
 export function slotForRamps(staged: StagedBatchState): number {
-  for (let i = 0; i < staged.textures.length; i++) {
-    if (staged.textures[i].kind === 'ramps') return i + 1;
-  }
-  return nextFreeSlot(staged);
+  if (staged.ramps) return RAMP_SLOT;
+  // Other textures fill from slot 1 up, so `RAMP_SLOT` is taken only once
+  // every slot is.
+  return nextFreeSlot(staged) < 0 ? -1 : RAMP_SLOT;
 }
 
 /** The same for a font atlas, which has no filter to disagree about. */
@@ -83,7 +90,8 @@ export function slotForAtlas(staged: StagedBatchState, id: string): number {
 
 /** The slot a texture new to this run would take, or -1 if it is full. */
 function nextFreeSlot(staged: StagedBatchState): number {
-  return staged.textures.length + 1 < BATCH_TEXTURE_SLOTS ? staged.textures.length + 1 : -1;
+  const taken = staged.textures.length + (staged.ramps ? 1 : 0);
+  return taken + 1 < BATCH_TEXTURE_SLOTS ? staged.textures.length + 1 : -1;
 }
 
 /**
@@ -99,7 +107,7 @@ export function runTakes(
 
 /** The staged state, opening a run if none is. */
 export function openRun(ctx: DrawContext): StagedBatchState {
-  ctx.batchState ??= { clipDepth: runClipDepth(ctx), matrices: [], textures: [] };
+  ctx.batchState ??= { clipDepth: runClipDepth(ctx), matrices: [], textures: [], ramps: false };
   return ctx.batchState;
 }
 

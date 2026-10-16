@@ -13,6 +13,7 @@
       "@weasel-js/geom",
       "@weasel-js/gestures",
       "@weasel-js/history",
+      "@weasel-js/menu",
       "@weasel-js/quantity",
       "@weasel-js/simulation",
       "@weasel-js/stroke",
@@ -38,6 +39,8 @@
       "@weasel-js/parallax",
       "@weasel-js/animator",
       "@weasel-js/minimap",
+      "@weasel-js/symmetry",
+      "@weasel-js/path-tools",
       "@weasel-js/forge",
       "@weasel-js/routing"
     ]

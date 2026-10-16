@@ -1,4 +1,5 @@
 import { ThemeProvider } from '@weasel-js/theme/react';
+import { PACKAGES_ID } from '../../shared/packageRoutes';
 import { DEMOS_ID, GET_STARTED_ID, RELEASES_ID } from '../routes';
 import { projectTheme } from './projectTheme';
 import { TAGLINE } from './tagline';
@@ -10,7 +11,7 @@ const DARK = { mode: 'dark' } as const;
 
 const LINKS = [
   { href: `#${GET_STARTED_ID}`, title: 'Get started', note: 'Install, first scene' },
-  { href: './api/', title: 'API docs', note: 'Every package' },
+  { href: `#${PACKAGES_ID}`, title: 'Packages', note: 'Guides and API reference' },
   { href: `#${DEMOS_ID}`, title: 'Demos', note: 'Live, with source' },
   { href: './docs/ui/forge/', title: 'Components', note: 'The UI workshop' },
   { href: './draw/', title: 'WeaselDraw', note: 'The app built on it' },

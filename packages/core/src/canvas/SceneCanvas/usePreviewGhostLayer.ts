@@ -23,6 +23,9 @@ import { scenePlaneOf } from '../pickWalk';
 import { planeTransform } from '../planeClips';
 import { deriveParallaxView } from 'core/viewport/parallax';
 import type { PlaneMap } from 'core/viewport/parallax';
+import { mat3 } from '@weasel-js/geom';
+import { copiesAbove } from '../copiesAbove';
+import { scenePaintedPoseOf } from '../derivedPath';
 
 const GHOST_ALPHA = 0.85;
 
@@ -109,9 +112,16 @@ export function usePreviewGhostLayer<TData, TLayer extends string, TPose>(args: 
       // sibling reflowing into place brings its own contents with it.
       const ghosted: DrawCommand[] = [];
       const settled: DrawCommand[] = [];
+      // A node an ancestor draws copies of is ghosted in each copy too, or
+      // the copies vanish for the length of the gesture.
+      const paintedPose = scenePaintedPoseOf(sc);
       for (const root of roots) {
         const sink = root.opaque ? settled : ghosted;
-        for (const cmd of drawEntry(root, null)) sink.push(cmd);
+        const cmds = drawEntry(root, null);
+        for (const cmd of cmds) sink.push(cmd);
+        for (const m of copiesAbove(sc, root.node.id, paintedPose)) {
+          sink.push({ kind: 'group', transform: mat3.fromAffine(m), children: cmds });
+        }
       }
       if (ghosted.length === 0 && settled.length === 0) return [];
       // World-space commands; drawLayers wraps in viewToMat3 automatically.

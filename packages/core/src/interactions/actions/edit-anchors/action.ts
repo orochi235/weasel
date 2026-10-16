@@ -10,7 +10,15 @@
  *   - **Dragging a control handle** moves just that handle, mirroring the
  *     opposite one while the anchor is smooth. Alt breaks the mirror; Shift
  *     holds the handle to the angle it had at the press, changing only its
- *     length.
+ *     length; Mod (Cmd or Ctrl) holds its length, changing only its angle;
+ *     both freeze it. The `editAnchors` dep's `handleLocks`, or else the
+ *     `handleLock` param ({@link EditAnchorsParams}), holds a lock with no
+ *     modifier. The lock in force draws its guide as a `polyline` overlay
+ *     of role `lock`: the line, or the circle round the anchor.
+ *   - **Every frame is finished** by the dep's `finishEdit`, so what a
+ *     path-edit extension keeps true holds while the drag runs.
+ *   - **Under a `pathSymmetry` dep**, on a path that is its own image under
+ *     some of its transforms, every image of what is dragged follows it.
  *
  * Selection lives on the `editAnchors` dep (flat anchor indices) rather
  * than in this handle's scratch, because the keyboard actions
@@ -25,22 +33,29 @@
  */
 
 import type { Action } from '@weasel-js/routing';
-import type { InvocationCtx, OngoingHandle } from '@weasel-js/routing';
-import type { EditAnchorsDep, SnapGeometry } from '../depSchema';
-import { isAnchorOrControl } from '@weasel-js/routing';
+import type { BindingOpts, InvocationCtx, OngoingHandle, OngoingOverlay } from '@weasel-js/routing';
+import type { EditAnchorsDep, SnapDep, SnapGeometry } from '../depSchema';
+import { ActionDisabledReason, isAnchorOrControl, resolveParams } from '@weasel-js/routing';
 import {
   anchorAt,
   editAnchorSetTracked,
-  handleAlongItsAngle,
+  moveHandleSymmetric,
   moveHandleTo,
   pathAwayFromAnchors,
-  translateAnchorBy,
+  translateAnchorsSymmetric,
   type AnchorSet,
+  type AnchorSymmetry,
+  type PenAnchor,
   type PointOrigin,
 } from '@weasel-js/geom';
 import { pathToAnchors, type PolygonPath } from '@weasel-js/geom';
 import { inPlane, editingLayer } from '../planeInput';
+import { lockHandle, locksInForce, type HandlePress } from './handleDrag';
+import { locksOf, type EditAnchorsParams } from './params';
 import { pathEditPreview } from './preview';
+import { pathEditToolActive } from '../defaults/pathEditTools';
+import { editedPathSymmetries } from './symmetry';
+import { pathOperationTags } from '../pathGestureTags';
 
 /**
  * Parse an anchor affordance kind — `'anchor:N'` | `'controlIn:N'` |
@@ -95,44 +110,71 @@ interface EditAnchorsScratch {
    *  measured from here rather than accumulated per move, so the geometry
    *  is always derived from `originPose` in one step. */
   anchorOrigin: { x: number; y: number };
-  /** The dragged control handle's position at the press, for a handle drag. */
-  handleOrigin: { x: number; y: number } | null;
+  /** The anchor and the dragged control handle at the press, for a handle drag. */
+  handlePress: HandlePress | null;
+  /** The guide the lock in force drew at the last move. */
+  guide: OngoingOverlay | null;
   originPose: PolygonPath;
   currentPose: PolygonPath;
+  /** The transforms `originPose` is its own image under, read at the press. */
+  symmetries: readonly AnchorSymmetry[];
   /** Where each point of `currentPose` came from in `originPose`. */
   origins?: readonly (PointOrigin | null)[];
-  /** What of the edited path holds still, for the drag to snap to; read on
-   *  the first move. */
-  still?: SnapGeometry;
 }
 
-/** Where the pressed anchor goes for a pointer at `world`: onto a path
- *  target in range, where the `snap` dep finds one — on another shape, or on
- *  the edited path's own anchors and segments that the drag leaves still. */
-function snapAnchorDrag(
-  ctx: InvocationCtx,
-  scratch: Pick<EditAnchorsScratch, 'anchorOrigin' | 'id' | 'originPose' | 'dragging' | 'still'>,
-  world: { x: number; y: number },
-): { x: number; y: number } {
-  const snap = ctx.deps.snap?.toPaths;
-  if (!snap) return world;
-  if (!scratch.still) {
-    const { path, anchors } = pathAwayFromAnchors(scratch.originPose, scratch.dragging);
-    scratch.still = { paths: [path], anchors };
-  }
-  return snap(world, { origin: scratch.anchorOrigin, exclude: [scratch.id], also: scratch.still }) ?? world;
+type Point = { x: number; y: number };
+
+/**
+ * An anchor drag's snap, from the press: where the pressed anchor goes for a
+ * pointer at `world` — onto a path target in range, on another shape or on
+ * the edited path's own anchors and segments that the drag leaves still.
+ * Identity without a path snapper.
+ */
+function anchorDragSnap(
+  snap: SnapDep | undefined,
+  press: { id: string; origin: Point; originPose: PolygonPath; dragging: readonly number[] },
+): (world: Point) => Point {
+  const toPaths = snap?.toPaths;
+  if (!toPaths) return (world) => world;
+  // Built on the first move, and the same object after, so the snapper indexes it once.
+  let still: SnapGeometry | undefined;
+  return (world) => {
+    if (!still) {
+      const { path, anchors } = pathAwayFromAnchors(press.originPose, press.dragging);
+      still = { paths: [path], anchors };
+    }
+    return toPaths(world, { origin: press.origin, exclude: [press.id], also: still }) ?? world;
+  };
 }
 
+const paramsOf = (opts: BindingOpts | undefined): EditAnchorsParams =>
+  (resolveParams(opts?.params) ?? {}) as EditAnchorsParams;
+
+/** Take `next` as the frame to show, finished by the dep. A frame it cannot
+ *  finish is dropped, so the path stays at the last one it could. */
 function track(scratch: EditAnchorsScratch, next: ReturnType<typeof editAnchorSetTracked>): void {
   if (!next) return;
-  scratch.currentPose = next.path;
+  const { dep, id } = scratch;
+  const path = dep.finishEdit ? dep.finishEdit(id, next.path, next.origins) : next.path;
+  if (!path) return;
+  scratch.currentPose = path as PolygonPath;
   scratch.origins = next.origins;
+}
+
+/** The anchor and the handle a press on `part` grabbed; null for an anchor press. */
+function handlePressOf(
+  origin: PenAnchor,
+  part: EditAnchorsScratch['part'],
+): HandlePress | null {
+  const handle = part === 'controlIn' ? origin.inHandle : part === 'controlOut' ? origin.outHandle : undefined;
+  return handle ? { anchor: { x: origin.x, y: origin.y }, handle: { ...handle } } : null;
 }
 
 /** Static descriptor for the `editAnchors` Action. */
 export const editAnchorsAction: Action & { requires: string[] } = inPlane({
   id: 'editAnchors',
   label: 'Edit Anchors',
+  tags: pathOperationTags('drag'),
   defaultBinding: {
     kind: 'drag',
     // Only matches drags whose pointerdown hit an anchor or control handle.
@@ -141,10 +183,10 @@ export const editAnchorsAction: Action & { requires: string[] } = inPlane({
     target: { kindOf: isAnchorOrControl },
   },
   eligible: { capability: 'edits-anchors' },
-  requires: ['selection', 'editAnchors', 'snap'],
+  requires: ['selection', 'editAnchors', 'pathSymmetry', 'snap'],
   invoker: {
     timing: 'ongoing',
-    start(ctx: InvocationCtx, _opts): OngoingHandle {
+    start(ctx: InvocationCtx, opts): OngoingHandle {
       const dep = ctx.deps.editAnchors;
       if (!dep) return {};
 
@@ -206,42 +248,45 @@ export const editAnchorsAction: Action & { requires: string[] } = inPlane({
         part: anchorInfo.part,
         dragging,
         anchorOrigin: { x: origin.x, y: origin.y },
-        handleOrigin: (anchorInfo.part === 'controlIn' ? origin.inHandle
-          : anchorInfo.part === 'controlOut' ? origin.outHandle : null) ?? null,
+        handlePress: handlePressOf(origin, anchorInfo.part),
+        guide: null,
         originPose: worldPath,
         currentPose: worldPath,
+        symmetries: editedPathSymmetries(ctx.deps.pathSymmetry, editingId, decoded),
       };
+      const snapAnchor = anchorDragSnap(ctx.deps.snap, {
+        id: editingId, origin: scratch.anchorOrigin, originPose: worldPath, dragging,
+      });
 
       return {
         kind: 'edit-anchors',
         onMove(moveCtx: InvocationCtx): void {
           if (scratch.part === 'anchor') {
             if (scratch.dragging.length === 0) return;
-            const to = snapAnchorDrag(ctx, scratch, moveCtx.world);
+            const to = snapAnchor(moveCtx.world);
             const dx = to.x - scratch.anchorOrigin.x;
             const dy = to.y - scratch.anchorOrigin.y;
             track(scratch, editAnchorSetTracked(scratch.originPose, (set) => {
-              for (const flat of scratch.dragging) translateAnchorBy(set, flat, dx, dy);
+              translateAnchorsSymmetric(set, scratch.dragging, dx, dy, scratch.symmetries);
             }));
           } else {
             const side = scratch.part === 'controlIn' ? 'in' : 'out';
-            // Modifiers are read live so the user can press or release them mid-drag.
-            const to = moveCtx.modifiers.shift && scratch.handleOrigin
-              ? handleAlongItsAngle(scratch.anchorOrigin, scratch.handleOrigin, moveCtx.world)
-              : moveCtx.world;
-            track(scratch, editAnchorSetTracked(scratch.originPose, (set) =>
-              moveHandleTo(
-                set,
-                scratch.anchorIndex,
-                side,
-                to.x,
-                to.y,
-                moveCtx.modifiers.alt,
-              ),
-            ));
+            // Modifiers and held locks are read live, so either can change mid-drag.
+            const held = (moveCtx.deps.editAnchors ?? scratch.dep).handleLocks ?? locksOf(paramsOf(opts).handleLock);
+            const locked = scratch.handlePress
+              ? lockHandle(scratch.handlePress, moveCtx.world, locksInForce(held, moveCtx.modifiers))
+              : { to: moveCtx.world, guide: null };
+            const to = locked.to;
+            scratch.guide = locked.guide;
+            const move = scratch.symmetries.length > 0
+              ? (set: AnchorSet) => moveHandleSymmetric(
+                set, scratch.anchorIndex, side, to.x, to.y, moveCtx.modifiers.alt, scratch.symmetries)
+              : (set: AnchorSet) => moveHandleTo(set, scratch.anchorIndex, side, to.x, to.y, moveCtx.modifiers.alt);
+            track(scratch, editAnchorSetTracked(scratch.originPose, move));
           }
           active = true;
         },
+        overlay: () => (active ? scratch.guide : null),
         onEnd(_endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
           active = false;
           ctx.deps.snap?.release?.();
@@ -255,5 +300,6 @@ export const editAnchorsAction: Action & { requires: string[] } = inPlane({
       };
     },
   },
-  enabled: () => true,
+  // A path-edit tool has the drag.
+  enabled: (deps) => (pathEditToolActive(deps) ? ActionDisabledReason.NotApplicable : true),
 }, editingLayer);

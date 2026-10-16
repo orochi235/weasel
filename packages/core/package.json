@@ -1,7 +1,10 @@
 {
   "name": "@weasel-js/core",
-  "version": "1.10.0",
+  "version": "1.10.1",
   "description": "A 2D scene-graph engine for React, rendered on WebGL2: the scene tree, viewport math, pointer and keyboard input, layered rendering, and op-based undo.",
+  "weasel": {
+    "needs": ["webgl2"]
+  },
   "license": "MIT",
   "author": "orochi235",
   "homepage": "https://orochi235.github.io/weasel/",
@@ -86,29 +89,29 @@
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "peerDependencies": {
-    "@weasel-js/font": "1.10.0",
+    "@weasel-js/font": "1.10.1",
     "react": ">=18"
   },
   "dependencies": {
     "@msb235/blits": "0.10.0",
-    "@weasel-js/animator": "1.10.0",
-    "@weasel-js/cursor": "1.10.0",
-    "@weasel-js/geom": "1.10.0",
-    "@weasel-js/gestures": "1.10.0",
-    "@weasel-js/history": "1.10.0",
-    "@weasel-js/modes": "1.10.0",
-    "@weasel-js/paint": "1.10.0",
-    "@weasel-js/prefs": "1.10.0",
-    "@weasel-js/quantity": "1.10.0",
-    "@weasel-js/react": "1.10.0",
-    "@weasel-js/registry": "1.10.0",
-    "@weasel-js/renderer": "1.10.0",
-    "@weasel-js/routing": "1.10.0",
-    "@weasel-js/select": "1.10.0",
-    "@weasel-js/simulation": "1.10.0",
-    "@weasel-js/stroke": "1.10.0",
-    "@weasel-js/text": "1.10.0",
-    "@weasel-js/text-dom": "1.10.0",
+    "@weasel-js/animator": "1.10.1",
+    "@weasel-js/cursor": "1.10.1",
+    "@weasel-js/geom": "1.10.1",
+    "@weasel-js/gestures": "1.10.1",
+    "@weasel-js/history": "1.10.1",
+    "@weasel-js/modes": "1.10.1",
+    "@weasel-js/paint": "1.10.1",
+    "@weasel-js/prefs": "1.10.1",
+    "@weasel-js/quantity": "1.10.1",
+    "@weasel-js/react": "1.10.1",
+    "@weasel-js/registry": "1.10.1",
+    "@weasel-js/renderer": "1.10.1",
+    "@weasel-js/routing": "1.10.1",
+    "@weasel-js/select": "1.10.1",
+    "@weasel-js/simulation": "1.10.1",
+    "@weasel-js/stroke": "1.10.1",
+    "@weasel-js/text": "1.10.1",
+    "@weasel-js/text-dom": "1.10.1",
     "earcut": "3.2.3",
     "polygon-clipping": "^0.15.7"
   },
@@ -126,7 +129,7 @@
     "2d"
   ],
   "devDependencies": {
-    "@weasel-js/modes": "1.10.0",
-    "@weasel-js/theme": "1.10.0"
+    "@weasel-js/modes": "1.10.1",
+    "@weasel-js/theme": "1.10.1"
   }
 }

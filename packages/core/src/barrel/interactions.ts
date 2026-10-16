@@ -1,4 +1,8 @@
-/** Part of the `@weasel-js/core` barrel. Drag and keyboard action hooks, snapping, and animation. */
+/**
+ * Part of the `@weasel-js/core` barrel. Drag and keyboard action hooks, snapping, and animation.
+ *
+ * @packageDocumentation
+ */
 
 // ─── Snapping seam: `snap` wraps a SnapStrategy as a MoveBehavior; an origin
 // projection says how a pose is read and moved. The strategies themselves
@@ -96,6 +100,9 @@ export {
 } from '../interactions/actions/edit-anchors';
 export type {
   AnchorHit,
+  EditAnchorsParams,
+  HandleLock,
+  HandleLocks,
   PathAnchor,
 } from '../interactions/actions/edit-anchors';
 

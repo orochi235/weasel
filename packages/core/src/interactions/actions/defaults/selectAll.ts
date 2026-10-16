@@ -1,5 +1,6 @@
 import type { NodeId } from 'core/scene/types';
 import type { Action } from '@weasel-js/routing';
+import { isAnnotationLayer } from 'core/scene/annotation';
 
 /**
  * @experimental
@@ -20,7 +21,7 @@ export const selectAllAction: Action & { requires: string[] } = {
       const scene = deps.scene;
       const view = deps.view;
       const skipped = new Set(
-        (scene?.layers ?? []).filter((l) => !l.visible || l.locked === true).map((l) => l.id),
+        (scene?.layers ?? []).filter((l) => !l.visible || l.locked === true || isAnnotationLayer(l)).map((l) => l.id),
       );
       // Scene exposes `renderOrder()` (bottom→top iterable of NodeIds), not
       // the never-implemented `listAll()`. The node walk is the same sequence

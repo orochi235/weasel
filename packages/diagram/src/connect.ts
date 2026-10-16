@@ -70,6 +70,10 @@ export interface ConnectActionOptions<TPose> {
   geometry?: PoseDescriptor<TPose>;
   /** Default {@link defaultCanConnect}. */
   canConnect?: CanConnect;
+  /** Which ports a connect may land on: a port this turns away is never a
+   *  target. The port affordance's option of the same name, so a port that is
+   *  not shown cannot be dropped onto. Default: all of them. */
+  showsPort?: (port: Port) => boolean;
   /** How near the pointer must come to a port, in world units, before the
    *  edge snaps to it. Default 16. */
   snapRadius?: number;
@@ -204,6 +208,7 @@ export function createConnectAction<TPose>(opts: ConnectActionOptions<TPose>): A
     let bestD2 = snapRadius * snapRadius;
     for (const { node, pose } of opts.participants()) {
       for (const port of portsOf(node, pose, portOpts)) {
+        if (opts.showsPort !== undefined && !opts.showsPort(port)) continue;
         if (!canConnect(from, port)) continue;
         const d2 = (port.point.x - at.x) ** 2 + (port.point.y - at.y) ** 2;
         if (d2 <= bestD2) {

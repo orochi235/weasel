@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useReducer, useRef, useState, createElement } from 'react';
-import { useLatest } from '@weasel-js/react';
+import { useKitSettings, useLatest } from '@weasel-js/react';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { defineTool } from '../../overlayBinding';
 import type { Tool } from '../../overlayBinding';
@@ -163,12 +163,12 @@ export function usePenTool(
 
   // Latest options stashed so handlers see fresh values without rebuilding
   // the Tool record.
-  const optsRef = useLatest({ autoSelect, autoCommitOnClose, closeHitRadius, anchorSnapRadius, snapPoint });
+  const optsRef = useLatest({ autoSelect, autoCommitOnClose, closeHitRadius, anchorSnapRadius, snapPoint, kitSettings: useKitSettings() });
 
   // Scratch mutations alone don't trigger React re-renders, so the preview
   // layer would not repaint. Force a render after every scratch mutation.
   const [, forceRender] = useReducer((x: number) => x + 1, 0);
-  const [overlay] = useState(() => createPenPreviewLayer({ state: scratchRef.current! }));
+  const [overlay] = useState(() => createPenPreviewLayer({ state: scratchRef.current!, kitSettings: () => optsRef.current.kitSettings }));
 
   /** Write the pen's subpaths back into the node it picked up: the first
    *  replaces the subpath it continued, any later ones are appended. Skips
@@ -352,7 +352,7 @@ export function usePenTool(
       refresh: track,
       /** The same, following `deps`' pointer from here on. */
       update(deps: ActionDeps): void {
-        followed = deps;
+        followed = deps; // eslint-disable-line react-hooks/immutability -- the trail's own deps, read by `track`
         follower.follow(deps.pointer);
         track();
       },

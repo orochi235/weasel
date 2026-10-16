@@ -1,4 +1,5 @@
-import { createScene, ellipsePath, pathFromD, useTrimTool } from '@weasel-js/core';
+import { createScene, ellipsePath, pathFromD } from '@weasel-js/core';
+import { trimPreset, useTrimTool } from '@weasel-js/path-tools';
 import {
   type ConfigOf,
   defineInstrument,
@@ -11,9 +12,11 @@ import {
 } from '@weasel-js/labkit';
 import { SelectIcon, SliceIcon } from '@weasel-js/ui';
 import { useMemo } from 'react';
-import { strokeNode } from './labs/strokeNode';
+import { strokeNode } from './pathEditLabScene';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
+
+const FEATURES = ['draw', trimPreset] as const;
 
 const config = f.schema({
   reach: f.number(6).range(2, 20).step(1).suffix('px').label('Click reach'),
@@ -40,7 +43,7 @@ function TrimTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const tools = useMemo(() => ({ trim }), [trim]);
   return (
     <TrialSceneCanvas
-      features={['draw']}
+      features={FEATURES}
       scene={scene}
       trial={ctx.trial}
       tools={tools}
@@ -49,14 +52,14 @@ function TrimTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
 }
 
 const trimInstrument = defineInstrument<State, Config>({
-  name: 'Trim',
+  name: 'Trim segment',
   config,
   initialState: () => ({ scene: null }),
   undo: {},
   tools: {
     initial: 'trim',
     tools: [
-      { id: 'trim', label: 'Trim', icon: SliceIcon, shortcut: 'Y' },
+      { id: 'trim', label: 'Trim segment', icon: SliceIcon, shortcut: 'Y' },
       { id: 'select', label: 'Select', icon: SelectIcon, shortcut: 'V' },
     ],
   },
@@ -66,7 +69,7 @@ const trimInstrument = defineInstrument<State, Config>({
 export function TrimLabDemo() {
   return (
     <div className="ckd-lab-frame">
-      <Lab title="Trim to intersection" instruments={[trimInstrument]} defaultInstrument="Trim" />
+      <Lab title="Trim segment" instruments={[trimInstrument]} defaultInstrument="Trim segment" />
     </div>
   );
 }

@@ -4,7 +4,7 @@ import { plain } from './code';
 import { PROJECT } from './fixture';
 import { readProject } from './project';
 
-// The fixture is hand-written from TypeDoc's schema; nothing here has read a file TypeDoc produced.
+// The fixture is hand-written from TypeDoc's schema; `npm run build:api` is what reads a real one.
 const [geom, core] = readProject(PROJECT);
 const root = geom.modules[0];
 
@@ -154,8 +154,15 @@ describe('a class', () => {
 });
 
 describe('across packages', () => {
-  it('points a re-export at the package that declares it', () => {
-    expect(symbol('Box', core.modules[0])).toMatchObject({ kind: 'alias', to: 'pkg/geom/reference/Box' });
+  it('points a re-export at the package that declares it, with the summary written there', () => {
+    const box = symbol('Box', core.modules[0]);
+    expect(box).toMatchObject({ kind: 'alias', to: 'pkg/geom/reference/Box', summary: 'An axis-aligned rectangle.' });
+    expect(box.source).toBeUndefined();
+  });
+
+  it('lists a name re-exported as both a type and a value once', () => {
+    expect(core.modules[0].symbols.filter((s) => s.name === 'Box')).toHaveLength(1);
+    expect(core.modules[0].groups.find((g) => g.title === 'Geometry')?.names).toEqual(['Box']);
   });
 
   it('links a type TypeDoc left unresolved by its package and name', () => {

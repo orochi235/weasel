@@ -75,8 +75,17 @@ export function immediateParams(
       };
     // Only a `stage: 'press'` pointerdown reaches an immediate invoker: the
     // buffered copy matches `drag` specs, which are ongoing.
-    case 'pointerdown':
     case 'contextmenu':
+      return {
+        worldX: event.x, worldY: event.y,
+        clientX: event.clientX, clientY: event.clientY,
+        affordance: event.affordance,
+        bodyTarget: event.bodyTarget,
+        bodyKind: event.bodyKind,
+        mods: modifiersOf(event),
+        ...resolved,
+      };
+    case 'pointerdown':
     case 'longpress':
       return {
         worldX: event.x, worldY: event.y,

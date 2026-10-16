@@ -1,5 +1,173 @@
 # Changelog
 
+## 1.10.1
+
+### Patch Changes
+
+- 113c088: Every adapter carries the tree. `getParent` and `getChildren` are required on `MoveAdapter` (and so on `SelectAdapter`), `getNode`, `getParent`, and `getChildren` on `InsertAdapter`, both methods on `OrderedAdapter`, and `getParent` on `AlignAdapter`, `DistributeAdapter`, and `PickTopMostHitAdapter`. `BooleansAdapter` and `CreateOutlinesAdapter` require `getNode`, `getParent`, and `getChildren`, and `BooleansAdapter` requires `setChildOrder` too. The readers no longer carry a second path for an adapter that leaves one out: the default pick of `useSelectTool` walks `getChildren` and never `getNodes()`, and the insert, delete, reparent, and reorder ops call the tree reads without checking for them.
+  
+  Breaking: an adapter written by hand without these methods no longer compiles, and an op applied against an object without them throws where it used to skip the step. A store with no nesting answers as a tree of roots: `getParent: () => null` and `getChildren: (parentId) => (parentId === null ? ids : [])`. A node with no children must answer `[]`; an adapter that answers the whole list for every parent makes a delete op recurse until the stack overflows.
+  
+  Also breaking: `BooleansAdapter.getZOrder` is removed, since the slot it overrode is now always read through `getParent` and `getChildren`, and `pickTopMostHit` takes an adapter, no longer `null` or `undefined`.
+  
+  `sceneAdapter.ts` no longer imports React (`useSceneAdapter` lives in its own module, exported as before), and a detached scene view (`renderSceneToCanvas`, `renderSceneToPixels`) reads the scene through `sceneToAdapter`.
+- cbd5b4d: `@weasel-js/geom`'s six-number affine type is `Affine`, no longer `Mat3`. It sat one capital letter from `mat3`, the namespace over the nine-element column-major `GlMat3` a GL uniform takes, and the two are different matrices. `mat3.toAffine` and `mat3.fromAffine` already named the conversion this way.
+  
+  Breaking: `import type { Mat3 } from '@weasel-js/geom'` becomes `import type { Affine }`. The values are unchanged, and so are the free functions beside the type (`identity`, `multiply`, `invert`, and the rest).
+- d3b73b9: The text Align bar no longer lights Left for `align: 'start'` (or Right for `'end'`) when the style states no `direction`. An omitted direction is `auto`, each paragraph's own, so right-to-left text aligned `start` painted from the right under a bar reading Left. The bar now lights nothing for `start` / `end` unless `direction` is `ltr` or `rtl`, and resolves them to an edge as before when it is.
+- aaa2b4f: Path edit has two commands for the selected anchors' handles. `retractHandles` collapses them onto their anchors, making sharp corners; a segment whose ends both lose their handles turns straight. `makeHandlesSymmetric` gives each anchor two handles of equal length pointing opposite ways, making it smooth: the shared direction splits the difference between the two handles' own, the shared length is their mean, and an anchor with one handle mirrors it. The ends of an open path are skipped. Both are in the standard actions and the `paths` feature preset, in the `anchors` group, with icons `RetractHandlesIcon` and `SymmetricHandlesIcon`, and are disabled when they would change nothing.
+  
+  Dragging a control handle with Shift held keeps it at the angle it had at the press and changes only its length; it can shrink onto its anchor but not flip through it.
+  
+  `@weasel-js/geom` adds the edits underneath: `retractHandles(set, flatIndexes)`, `makeHandlesSymmetric(set, flatIndexes)`, and `handleAlongItsAngle(anchor, handle, to)`.
+- c7b7ed5: In path edit, dragging a segment bends it: the point pressed follows the pointer and the segment's two handles move to carry it, and a straight segment becomes a curve. An end anchor that was smooth stays smooth, its other handle turning at its own length. It is the `bendSegment` action, in the standard actions and the `paths` feature preset. A drag that starts on an anchor or off the path still moves anchors or draws the marquee, and on a canvas with no mode registry a drag that starts on the edge no longer moves the shape.
+  
+  Path edit now lays a `segment` affordance along the edited path's outline, under its anchors and controls, and `bendSegment` binds to it. Affordance regions take a new shape for it, `{ kind: 'outline', path, hitRadiusPx }`: hit within that many screen pixels of the path's outline. `@weasel-js/routing` adds `isSegment` for that hit and `isPathEditPart` for any anchor, control, or segment hit; `move` turns down a press on any of them.
+  
+  `bendSegment(set, grip, dx, dy)` (`@weasel-js/geom`) is the edit underneath, taking the `{ sub, segIdx, t }` that `segmentAt` reports.
+- faf8ff3: A kit canvas brings its own size rule. `<Canvas>`, `<SceneViewCanvas>`, and `<DrawCanvas>` used to take their CSS size from a class in `@weasel-js/core/style.css`, so a page that did not load that stylesheet showed each one at its drawing buffer's size, `dpr` times too large. Each canvas now adopts the one rule into the document or shadow root it mounts in, so a popout window and a shadow root are covered too. The rule keys on a `data-wzl-surface` attribute at zero specificity, as before, so a class passed to the canvas still resizes it. The rule is gone from `style.css`, and the canvas no longer carries the kit's `surface` class.
+- 8bee821: `SceneCanvasApi.ingest` works from the canvas's first render. It reached the action registry through a ref an effect filled, so a call made before that effect ran was dropped with a warning.
+- 67a7de8: On a controlled `<SceneCanvas>`, writing `view` in your own state now stops a camera glide in flight, the way `setView` and input already did; before, the glide's next frame overwrote the write. The canvas tells the write from your handling of the glide's own frames by order, not by value: a `view` prop that moves when the glide has written no frame since the prop last moved is yours. So a consumer who clamps or rounds inside `onViewChange` still gets a whole glide, and one who moves the prop a second time for one frame (from an effect, or a deferred value) stops it. A write that lands in the same render as a frame's is not seen, and the glide carries on. Behavior change.
+- f6e3e90: Duplicate and Alt-drag clone point a copied node's `dependsOn` list at the copy of each dependency that was copied with it, and at the original of each that was not. A copy used to follow the copies only when every dependency was copied, so duplicating an edge with one of its endpoints left the new edge on both original endpoints, drawn over the first. A copy none of whose dependencies were copied still follows the originals.
+  
+  Changes behavior: a copied derived node with some of its dependencies in the copy now derives from a mix of copies and originals.
+- 74ba77e: Additive: a document's pages as geometry. `layoutPages` places a list of `Page`s in one world space, in a row or a column; `pageAt` and `pageOfBounds` answer which page a point or an object is on; `pagesBounds` is the box around all of them; `adjacentPage` steps the page order, for a next-slide move; `pagesLayer` is a world-space render layer that paints each sheet; and `fitViewToPage` is the view that frames one.
+- a8e8048: A node that derives from a skinned path follows it as it bends. `DerivedDep.path` now answers the path a pose override shows the dependency by, ahead of one the dependency derives, so a `derivePose` or `derivePath` reading `deps[0].path` gets a skinned path as its rig bends it where it used to get `null`. A derivation is run again when that path is replaced, even inside the same bounds. The document reading (`documentPose`) and a lookup through a scene slot's `toPose` still answer the derived path alone.
+  
+  Changes behavior: a derivation that took a non-null `path` to mean "this dependency derives one" now also sees one on any node a pose override gives a `path`.
+- 755b7ff: A painter can draw over a container's children. `overChildren(commands)` wraps part of what a `drawOne` returns, and the scene walk (`buildSceneTree`, so `<SceneCanvas>` and `buildSceneViewCommands` alike) paints that part after the node's children, in the node's own layer, with the node's rotation, alpha, and clips. `defaultDrawOne` uses it for a container's `data.label`, which the container's children used to cover: a group made by Outline Stroke from a labeled rect shows its label again. Additive: `overChildren`, `isOverChildren`, and `splitOverChildren` are new exports, and outside a scene walk the wrapped part is an ordinary group painted where it sits.
+- 1d3ca5c: A drawn polygon or star stays editable as one. The `insert` dep stores the parameters it was drawn with on the node as `data.generator` (`{ kind: 'polygon', sides, rotation }` or `{ kind: 'star', points, innerRadiusRatio, rotation }`) beside `data.path`, which stays the geometry every reader uses. The `polygon`, `star`, and inferred `path` entries of `defaultNodeProperties` / `inferredNodeProperties` show Sides, or Points and Inner, for a node holding one, and changing one makes the shape again on the same circle, under the same rotation, in the same undo step.
+  
+  Editing the path in path edit drops the generator, leaving plain geometry; so does changing a parameter of a shape whose path no longer matches its generator.
+  
+  `NodePropertiesEntry` gains `settle(next, prev)`: what a property write stores, given the node as the write left it and as it was. `SelectionPanel` applies it to commits and to slider drafts. Core exports the generator helpers: `regenerateShape`, `settleShapeGenerator`, `shapeGeneratorOf`, `shapeGeneratorPath`, `clampShapeGenerator`, `isShapeGenerator`, `withoutShapeGenerator`, `SHAPE_COUNT_RANGE`, `STAR_RATIO_RANGE`, and the `ShapeGenerator` types.
+  
+  A committed polygon or star is no longer stretched: its pose was the box of its circle, and the stored path's own box was stretched to fill it, so a five-point star came out stretched 5% along one axis and 10% along the other, unlike its preview. The pose, and the insert's reported bounds, are now the box of the shape itself.
+- 566f15e: A double-click on a path with several nodes selected now opens the path under the pointer for anchor editing. Before, `enterPathEdit` opened the first editable path in the selection, which need not be the one double-clicked. It still falls back to that path when no editable path is under the pointer. The action now requires the `nodeAtPoint` dep, which `<SceneCanvas>` sources.
+- ee59ccd: Deleting an anchor keeps the curve's shape. The segment that replaces the two either side of it keeps the directions they left and arrived with, and its handle lengths are now fitted to them rather than set to a third of the chord, so deleting one anchor of a circle leaves a round arc instead of a flat lobe. An anchor that was inserted on a curve and then deleted gives back the original curve. A gap between two straight segments closes with a straight one.
+  
+  `fitCubicWithTangents` (`@weasel-js/geom`) is the fit underneath: the one cubic through a run of samples whose control points keep given end tangents.
+  
+  Breaking: `fitCubicThroughDeletion(prev, next)` becomes `fitCubicThroughDeletion(prev, removed, next)`, since the fit needs the anchor being removed.
+- f22f5ce: Resizing several nodes at once keeps a turned or skewed one's shape. A non-uniform resize makes a parallelogram of a turned box, and `remapRotatedLeaf` now writes that to the leaf's `pose.transform` where it used to drop it; it also reads a `transform` the leaf already carries, and a skewed leaf with no rotation goes through it too. Breaking for a caller that relied on the result never carrying a `transform`: a turned leaf resized unevenly now has one. A uniform resize, an upright plain leaf, and a leaf turned by a quarter turn still get none.
+- 92e6291: A container's layout is the one its scene node declares, and nothing else. The `layouts` prop of `<SceneCanvas>` and the `layouts` option of `sceneToAdapter` and `useSceneAdapter` are removed, along with `useLayoutArrivals`, `layoutArrivalHandler`, `LayoutSource`, and `LayoutArrivalOptions`, which existed to carry that map into the scene's layout pass.
+  
+  Breaking: declare the layout on the node (`scene.add({ kind: 'container', layout })`) or set it with `scene.setLayout(id, layout)`, which is undoable. The scene's own layout pass arranges it, measured by `useScene({ layoutFrame })`; a canvas's `poseDescriptor` no longer measures a layout, so a scene whose poses are not rects passes `layoutFrame`. `scene.setArrivalHandler` is unchanged.
+- 2216d1b: A marquee and a lasso now agree on a node whose pose descriptor bounds reach past what it draws. A marquee took such a node as soon as its bounds overlapped the rect, and an enclosing lasso refused it when its bounds poked out; both now decide by the drawn outline, as an `intersect` lasso already did.
+  
+  Changes behavior: a node whose descriptor (`forNode` included) reports a box larger than its painter's silhouette is no longer taken by a marquee over the part of that box where nothing is drawn. Give the node a painter whose `silhouette` covers what it draws.
+- a7144f4: Breaking: a move behavior moves the drag by returning `transform`, and nothing else. `BehaviorResult.pose`, the deprecated override that was turned into a translate for the first dragged id, is gone, and so is the deprecated `BehaviorMoveResult` alias of `BehaviorResult`. Return `{ transform: { kind: 'translate', dx, dy } }`.
+  
+  A move gesture's context carries `offset(from, to)`, the translation between two poses' bounds, so a behavior that knows where a node lands can return it as a `transform`. `snapToContainer` does.
+- 35c4879: One answer to "is a pointer held on this canvas". `heldPointers(element)` is new in `@weasel-js/gestures` (additive): it counts the pointers pressed on an element with any button and not yet released, and every reader of one element shares its listeners. The dispatcher's `hover` gesture and hover cursor, a layer's `onUncapturedMove`, and the `pointer` dep's published position all read it, where each used to track a press its own way.
+  
+  What changes: a move with a secondary or middle button held is no longer a `hover`; `onUncapturedMove` stays off until the last of several pointers is released, and through a `pointerleave` mid-press; and the `pointer` dep no longer reports a position for a drag that began outside the canvas and passed over the page.
+  
+  `giveKeys` (`@weasel-js/react/testing/giveKeys`) releases the middle-button press it makes.
+- 886380f: Each README's "API reference" link now opens the package's page on the site, `https://orochi235.github.io/weasel/#pkg/<name>`, where it used to open the TypeDoc site at `/weasel/api/`, which is no longer built. A file comment that sat on an `export { … }` list is now marked as the file's, so an entry's description no longer shows up as the summary of each function the entry re-exports. No code changed. `@weasel-js/labkit` drops `vitepress` from its devDependencies, which nothing used.
+- f8faa63: The default node properties show a typed number to at most two decimal places: position, size, font size, tracking, leading, and tab size. A node left at `123.45678901234567` by a drag read that way in the panel. Only the text changes; the stored value keeps its digits until someone types a new one.
+- 3bc85c9: Path commands as kit actions, in the `paths` feature preset. `simplifyPath` and `offsetPath` are ongoing actions driven by one number — `tolerance` and `distance` — so a slider can preview them live with `useOngoingAction` and commit once: Simplify refits each selected path in place, and Offset Path adds the grown or shrunk outline beside each, behind its source when grown and in front when shrunk, and selects the new paths. `snipAtCrossings` (Cut at Crossings) replaces each selected path with its pieces wherever another selected path crosses it. `joinPaths` (Cmd/Ctrl+J) closes a selected open path or joins two at their nearest open ends. In path edit, `joinAnchors` (Cmd/Ctrl+J) joins the two selected end anchors and `averageAnchors` (Cmd/Ctrl+Alt+J) moves the selected anchors to their mean, with variants that average one axis only. The object commands are in a new `path` group; the anchor ones join the `anchors` group.
+  
+  These commands drop a node's `skin` and shape generator, since the new geometry has neither the anchors the skin follows nor the shape the generator makes. The geometry behind them — `simplifyPath`, `offsetPath`, `snipPathsAtCrossings`, `averageAnchorsAt`, `joinAnchorsAt` — is exported too.
+- d0c3896: Delete, Backspace, and the arrow keys in path edit now act on the selected anchors in a `<SceneCanvas>` with no mode registry. They used to delete or nudge the whole shape, because the node-level `delete` and `nudge.*` actions were registered ahead of `deleteAnchors` and `nudgeAnchors.*` and took the keystroke. The anchor actions now register first and still decline when no anchor is selected, so the same keys reach the node then.
+- 3448831: The default node properties have a Skew row for `pose.transform`, in Layout under Rotation. It reads on while a node's pose carries a skew or a per-axis scale, and turning it off removes the transform, so `SelectionPanel` can show and clear one. Additive: the row is a switch, not a matrix editor, and turning it on writes nothing new.
+- 27fe0fb: `useRigNode` keeps a rig moving when its skeleton's joints are added, removed, or reordered. The rig still gets a new `target`, but that target takes over the placement and the committed pose of every joint the skeleton still names, where it used to start at the bind pose, and an animation that was running goes on running on the target it was started on and shows through the new one. A joint that was renamed is a different joint, and stops moving.
+- 8bbf878: `composeRigidPose` composes a container's `transform` into its children, and `decomposeRigidPose` takes it back out. A child under a skewed or unevenly scaled container now answers a world pose whose box center, rotation, and `transform` draw it where the container's frame puts it; what the child's box and rotation cannot hold of the result is written to the child's own `transform`. Breaking for a scene that set a `transform` on a container under `RIGID_POSE_COMPOSITION` and relied on its children ignoring it. `composeRectPose` is unchanged: under it a container's pose only offsets its children, so neither its rotation nor its `transform` reaches them.
+- b5267f9: The rotate cursor now turns with the pointer, so the opening of its arc faces the selection's pivot from wherever the pointer is: over the rotation ring, and through the rotate drag, which used to show no rotate cursor at all. It used to be turned to match the target's own rotation.
+  
+  Two new surfaces carry it. An `AffordanceRegion`'s `cursor` may be a function of the pointer's world point and the view, worked out on each hit and reported on `AffordanceRegionHit.cursor`; read the cursor there rather than off `region.cursor`, which may now be a function. An `OngoingHandle` may declare `cursor()`, read after every move and ahead of its action's `activeCursor`.
+- 62e766c: Editing the points of a skinned path keeps its weights with its points. Inserting, deleting, cutting, nudging, and dragging anchors, and continuing or joining the path with the pen, now write the node's `data.skin` in the same undo entry as its path, so one undo restores both. Before, the weight arrays kept their old numbering and every point after the edit followed the wrong joints. A new point takes weights between those of the anchors either side of it, by its distance to each; a point drawn past an end takes the end's. Hand-painted weights are kept: nothing is weighed again from the bones.
+  
+  Adds API: `editAnchorSetTracked(path, edit)` is `editAnchorSet` that also answers `origins`, where each point of the new path came from in the old one, and `remapPointValues(values, origins)` carries an array kept per point through that edit. `remapSkin(skin, origins)` does the same for a skin. `EditAnchorsDep.applyEdit` and `editOps` take `origins` as an optional fourth argument; a dep of your own that ignores it leaves a skin as it was.
+- 5485d35: The slice tool declares a palette icon: `SliceIcon`, a knife, exported from `@weasel-js/core` and `@weasel-js/ui` beside the other tool icons. A `ToolPalette` drew its placeholder `?` for the tool before. Additive.
+- 690ea72: Hold Space while drawing a rectangle, ellipse, line, polygon, or star to move the shape instead of resizing it; let go and the drag resizes again from where the shape now sits. It is the `insert.reposition` action, which each kit shape tool binds through `INSERT_REPOSITION_BINDING` (a Space hold gated to the tool's own engaged phase), so a consumer's own drag-to-draw tool can bind it the same way. A grid-snapped start stays on the grid as it moves.
+  
+  An offhand tool now engages only between gestures: `buildToolOffhandBindings` gates its key-held specs to `[{ channel: '*', phase: 'initial' }]`. Before, pressing Space mid-drag pushed the hand tool, and the tool switch canceled the drag.
+- e962494: New package, `@weasel-js/symmetry`: live symmetry groups. A group's copies (a mirror at any angle, both axes, a point, radial, kaleidoscope, or a repeat with an optional glide) are drawn from its real children. Every edit to a child therefore reaches every copy, a click on a copy selects the child it copies, and `bakeSymmetry` turns the copies into real nodes. `createSymmetry(scene).contribution` draws the guide with draggable center, axis, and step handles, sends every tool's shapes into the active group, and keeps a path that is its own image under its group symmetric while its anchors are dragged or nudged.
+  
+  Core gains what the package is built on, and each piece is usable on its own:
+  
+  - `ContainerNode.copiesFromPose`: a container draws its subtree again under each affine it returns. Hit tests reach into the copies, and the clip travels with each one. Additive.
+  - The `insertInto` dep: the container the `insert` dep puts new nodes into.
+  - The `pathSymmetry` dep: transforms that anchor drags and nudges keep a path symmetric under.
+  
+  `@weasel-js/geom` adds `anchorSymmetry`, `anchorSymmetries`, `translateAnchorsSymmetric`, and `moveHandleSymmetric`. `@weasel-js/svg` writes a container's copies as transformed groups.
+- bad37cf: `useSceneTextEdit` edits text where it is drawn. The overlay and the double-click test both read the pose a node is painted at, so text inside a container whose pose is a frame (`RIGID_POSE_COMPOSITION`) opens over the turned or skewed text and takes a click there; it used to open where the text would sit without the container. Under a view whose `scale.x` and `scale.y` differ, the overlay is stretched to match the canvas, where it used to scale both axes by `scale.x`.
+- 9e84e5d: Additive: `useTextEdit` and `useSceneTextEdit` take `onStart(id)` and `onEnd(id)`. `onStart` is called as an edit opens, whichever way it was started (`startEdit`, a double-click, the `textEdit` dep). `onEnd` is called as it closes, however it does: a commit, a cancel, Escape, a click away, or another edit opening over it, and after any commit has been written. Both are called from the call that changes the edit, not from an effect, so state that follows the edit is never a render behind it. Neither is called when the hook unmounts with an edit open.
+- ef29364: A scene slot's `toPose` is handed each node as the scene shows it: its `pose` is a pose override's or a derived one, where it used to be the stored pose. A view drawn through a `toPose` now shows a drag in flight, a rig's bound nodes, and a skinned path, whose override `path` is carried from the box the scene shows the node at into the box `toPose` answers. A dependency read through such a slot answers the carried path too, and so does one in a scene that composes frames. Breaking for a `toPose` that relied on seeing the document's pose mid-gesture; one that places a node from its data alone, ignoring `node.pose`, still shows no motion.
+- 2f48645: Cmd/Ctrl+D is now Transform Again: it repeats the last move, nudge, rotate, resize, duplicate, or Alt-drag clone on whatever is selected, as one undo entry. A rotate repeats about the new selection's center and a resize repeats as the same scale held at the same handle's opposite corner. Duplicating and then moving the copies makes the copies' offset the step, so pressing Cmd+D again lays down another copy one step further each time. With nothing to repeat it duplicates, as Cmd+D did before.
+  
+  Duplicate moves to Cmd/Ctrl+Shift+D. This changes a default binding: an app relying on Cmd+D to duplicate after a move now gets the move repeated.
+  
+  The kit keeps the last transform per scene: `lastTransform(scene)`, `recordTransform(scene, transform, selectedIds)`, and `forgetTransform(scene)`, with the `RepeatableTransform` type. The action is `transformAgain` in the standard actions and the `edit` feature preset, in the `edit` group with a new `TransformAgainIcon`.
+- 92c2e8e: `<SceneCanvas tune>` changes a built-in action on one canvas without restating it. Keyed by action id, an entry sets `params` every invocation starts from (a thunk is read on each call, so a value changed mid-drag reaches an ongoing action) and adds `bindings` beside the action's own. A binding's or a `trigger` call's own params are laid over the tuned ones. The tuning applies to whichever descriptor holds the id, from a preset or a tool, so setting a param no longer means copying the gesture that reaches the action. Additive: `ActionsRegistry.tune(id, tuning)` underneath it, `tuneAction`, the types `ActionTuning`, `ActionTunings`, `ActionParams` and `TunedBinding`, and `ActionParamSchema`, which types params by action id for the kit's parametric actions and takes an app's own entries by declaration merging, as `DepSchema` does. `BoundGesture` is no longer marked experimental.
+  
+  `SceneCanvasViewport` names the type of `<SceneCanvas viewport>`.
+- 711ae46: While a scene has an active journal (`getActiveJournal` / `setActiveJournalAccessor`), `scene.undo`, `scene.redo`, `canUndo`, and `canRedo` (and the same on `scene.history`) now step that journal, the same place `applyBatch` sends edits. Before, undo stepped the scene's own history and skipped the journal's edits entirely: the `undo` action took back whatever came before the journal opened instead of the edit just made. Once the journal is suspended, committed, or canceled, undo steps the scene's history again. `historyEntries`, `historyIndex`, and `jumpToHistoryIndex` still read the scene's own history.
+- 365eae0: A linear unit stores a decimal typed at a decimal `scale` as the decimal the two multiply to: 33.3 at a scale of 0.01 is 0.333, where it was 0.33299999999999996. Nothing is rounded away, and a scale that is no short decimal (degrees over radians) converts as before.
+  
+  The text tool's percent unit for `fontScale` and `baselineShift` is that data now (`{ scale: 0.01, precision: 1, suffix: '%' }`) and no longer a pair of functions, so the run properties print as a literal. Breaking in one detail: a percentage typed to more than three places is stored as typed, where it was cut to five places of the stored fraction.
+  
+  labkit's one-line summary of a compound leaf writes each number that has a unit as its field shows it, in an object's fields, a list's and a map's entries, and a union's variant, and writes a list of objects entry by entry where it wrote `[object Object]`. Additive: `summarizeLeaf(leaf, value)` is exported beside `summarizeValue`, and `inDialog`'s default summary is the leaf's.
+- 781a15e: A canvas's `clientToWorld` override reaches the views declared on it. Which `<CanvasView>` a client point is in, where it lands in that view's world, and the `pointer` dep's position over a view were all worked out from the element's bounding rect, so a canvas under a CSS transform routed a press to the wrong view or converted it wrong.
+  
+  Breaking, in the experimental view resolver: `createViewResolver` takes `toLocal(clientX, clientY)`, a client point in the canvas's own pixels, where it took `canvasOrigin`; and a `ViewTarget` carries `world`, the point in the resolved view's world, where it carried `origin`.
+- a092978: Zoom can be held to one axis. `viewport={{ zoom: { axis: 'x' } }}` makes the wheel, the trackpad pinch, and Cmd+=/- scale only x, leaving y's scale and translation alone; `pinchZoom: { axis }` does the same for a two-finger pinch, which still pans on both. `makeViewportZoomAction` and `makePinchZoomAction` take the same option, and `axisZoomFactor` and the `ZoomAxis` type are exported for a host calling `zoomAt` itself. Additive.
+- Updated dependencies [b6e04e2]
+- Updated dependencies [cbd5b4d]
+- Updated dependencies [aaa2b4f]
+- Updated dependencies [c7b7ed5]
+- Updated dependencies [3fda6e6]
+- Updated dependencies [906fd19]
+- Updated dependencies [7c5af8a]
+- Updated dependencies [ee59ccd]
+- Updated dependencies [789e80d]
+- Updated dependencies [924edc4]
+- Updated dependencies [b8bfb2d]
+- Updated dependencies [35c4879]
+- Updated dependencies [b67b6cd]
+- Updated dependencies [9eefcc7]
+- Updated dependencies [886380f]
+- Updated dependencies [0db6d9a]
+- Updated dependencies [d8b51a4]
+- Updated dependencies [10449af]
+- Updated dependencies [e05a5f9]
+- Updated dependencies [d30823f]
+- Updated dependencies [0be7a53]
+- Updated dependencies [b5267f9]
+- Updated dependencies [9253a8b]
+- Updated dependencies [62e766c]
+- Updated dependencies [f4100e9]
+- Updated dependencies [690ea72]
+- Updated dependencies [ab9ea7a]
+- Updated dependencies [e962494]
+- Updated dependencies [8a9ed26]
+- Updated dependencies [9e84e5d]
+- Updated dependencies [f5870a4]
+- Updated dependencies [bd6c203]
+- Updated dependencies [92c2e8e]
+- Updated dependencies [365eae0]
+- Updated dependencies [10c5d41]
+  - @weasel-js/prefs@1.10.1
+  - @weasel-js/geom@1.10.1
+  - @weasel-js/stroke@1.10.1
+  - @weasel-js/text@1.10.1
+  - @weasel-js/routing@1.10.1
+  - @weasel-js/animator@1.10.1
+  - @weasel-js/renderer@1.10.1
+  - @weasel-js/gestures@1.10.1
+  - @weasel-js/history@1.10.1
+  - @weasel-js/select@1.10.1
+  - @weasel-js/cursor@1.10.1
+  - @weasel-js/react@1.10.1
+  - @weasel-js/font@1.10.1
+  - @weasel-js/modes@1.10.1
+  - @weasel-js/paint@1.10.1
+  - @weasel-js/quantity@1.10.1
+  - @weasel-js/registry@1.10.1
+  - @weasel-js/simulation@1.10.1
+  - @weasel-js/text-dom@1.10.1
+
 ## 1.10.0
 
 ### Patch Changes

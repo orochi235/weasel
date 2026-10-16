@@ -18,6 +18,14 @@ import { visualBoundsViaDescriptor, type PoseDescriptor } from './geometry';
 import { boundsForRules } from './ruleBounds';
 import { boxFrame } from './boxFrame';
 import type { ResizeBox } from './session';
+import type { DrawnBoxes } from '../drawnBoxes';
+import {
+  inkExtentsBetween,
+  isNoInkExtents,
+  NO_INK_EXTENTS,
+  outsetBox,
+  type InkExtents,
+} from 'core/geometry/inkExtents';
 
 const IDENTITY_EXPAND = (ids: string[]) => ids;
 const EMPTY_POINT_SNAP: PointSnapBehavior<Bounds>[] = [];
@@ -68,8 +76,14 @@ export interface ResizeStarts {
   startPoses: Map<NodeId, unknown>;
   /** In world, carried into the plane the edit is measured in. */
   startWorlds: Map<NodeId, unknown>;
+  /** Each write id's pose box, unturned. */
   leafBounds: Bounds[];
+  /** Each write id's pose box as it covers the world, turned. */
   drawnBounds: Bounds[];
+  /** How far each write id's ink reaches past its pose box. */
+  leafExtents: InkExtents[];
+  /** `drawnBounds` with the ink. */
+  inkedBounds: Bounds[];
 }
 
 export function captureStarts(
@@ -78,11 +92,14 @@ export function captureStarts(
   geometryOf: (id: NodeId) => PoseDescriptor<unknown>,
   poseFrame: PoseFrame<unknown>,
   view: unknown,
+  boxes: DrawnBoxes,
 ): ResizeStarts {
   const startPoses = new Map<NodeId, unknown>();
   const startWorlds = new Map<NodeId, unknown>();
   const leafBounds: Bounds[] = [];
   const drawnBounds: Bounds[] = [];
+  const leafExtents: InkExtents[] = [];
+  const inkedBounds: Bounds[] = [];
   for (const id of writeIds) {
     const node = scene.get(id);
     if (!node) continue;
@@ -92,14 +109,32 @@ export function captureStarts(
     startWorlds.set(id, world);
     leafBounds.push(g.getBounds(world));
     drawnBounds.push(visualBoundsViaDescriptor(world, g));
+    leafExtents.push(boxes.extents(id, world));
+    inkedBounds.push(boxes.aabb(id, world));
   }
-  return { startPoses, startWorlds, leafBounds, drawnBounds };
+  return { startPoses, startWorlds, leafBounds, drawnBounds, leafExtents, inkedBounds };
+}
+
+/** How far the ink of everything in a box reaches past it: a lone target's
+ *  own extents, or the union of the members as drawn past their union. */
+function boxExtents(
+  starts: Pick<ResizeStarts, 'leafBounds' | 'leafExtents' | 'inkedBounds'>,
+  bounds: Bounds,
+  isGroupPath: boolean,
+): InkExtents {
+  const { leafBounds, leafExtents } = starts;
+  if (leafBounds.length === 1) return leafExtents[0]!;
+  if (leafExtents.every(isNoInkExtents)) return NO_INK_EXTENTS;
+  const inked = isGroupPath
+    ? unionBounds(leafBounds.map((b, i) => outsetBox(b, leafExtents[i]!)))
+    : unionAABB(starts.inkedBounds);
+  return inked ? inkExtentsBetween(bounds, inked) : NO_INK_EXTENTS;
 }
 
 /** The box the drag resizes, and that box as the constraints read it.
  *  `starts` must hold at least one pose. */
 export function captureBox(
-  starts: Pick<ResizeStarts, 'startWorlds' | 'leafBounds' | 'drawnBounds'>,
+  starts: Pick<ResizeStarts, 'startWorlds' | 'leafBounds' | 'drawnBounds' | 'leafExtents' | 'inkedBounds'>,
   writeIds: readonly NodeId[],
   isGroupPath: boolean,
   anchor: ResizeAnchor,
@@ -124,9 +159,10 @@ export function captureBox(
 
   const fixedLocal = fixedCornerOf(bounds, anchor);
   const fixedWorld = localToWorld(boxFrame({ rotation, transform }, bounds), fixedLocal.x, fixedLocal.y);
+  const extents = boxExtents(starts, bounds, isGroupPath);
   return {
-    box: { bounds, anchor, rotation, transform, fixedWorld },
-    ruleOrigin: boundsForRules(originGeometry, originPose),
+    box: { bounds, anchor, rotation, transform, fixedWorld, extents },
+    ruleOrigin: outsetBox(boundsForRules(originGeometry, originPose), extents),
   };
 }
 
@@ -149,7 +185,7 @@ export function buildGestureContext(
     view: readers.view(),
     plane: readers.plane(),
     ...(ctx.deps.scene
-      ? { frames: sceneGestureFrames(ctx.deps.scene, ctx.deps.view) as GestureContext<Bounds>['frames'] }
+      ? { frames: sceneGestureFrames(ctx.deps.scene, ctx.deps) as GestureContext<Bounds>['frames'] }
       : {}),
     // `adapter` is unused by the kit's behaviors; cast to satisfy the type.
     adapter: undefined as unknown as GestureContext<Bounds>['adapter'],

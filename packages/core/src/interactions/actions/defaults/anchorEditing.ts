@@ -16,7 +16,8 @@
  *     registry at all. There the eligibility filter is skipped entirely,
  *     so these actions report themselves disabled unless a path is
  *     actually being edited with anchors selected, and the dispatcher
- *     moves on to the node-level twin.
+ *     moves on to the node-level twin. That needs the keyboard actions
+ *     registered ahead of their twins, which `useStandardActions` does.
  *
  * Relying on eligibility alone would break every non-modal consumer;
  * relying on `enabled` alone would let a node-level action fire inside
@@ -27,33 +28,39 @@ import type { Action } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import type { ActionDeps } from '@weasel-js/routing';
 import type { ImmediateInvoker, InvocationCtx, OngoingHandle } from '@weasel-js/routing';
-import type { EditAnchorsDep } from '../depSchema';
+import type { EditAnchorsDep, PathSymmetryDep } from '../depSchema';
+import { editedPathSymmetries } from '../edit-anchors/symmetry';
 import {
   anchorsInRect,
   deleteAnchorsAt,
   editAnchorSetTracked,
   openSubpathAt,
-  translateAnchorBy,
+  translateAnchorsSymmetric,
   type AnchorSet,
 } from '@weasel-js/geom';
 import { pathToAnchors, type PolygonPath } from '@weasel-js/geom';
 import { pxExtent } from '@weasel-js/geom';
 import { selectionAfterAnchorPress } from '../edit-anchors/action';
+import { deleteSelectedMark, markUnder } from './pathEditMarks';
 import { inPlane, editingLayer } from '../planeInput';
 import { NUDGE_KEY, NUDGE_LABEL, nudgeDelta, type NudgeDirection } from './nudgeSteps';
+import { pathEditToolActive } from './pathEditTools';
+import { pathOperationTags } from '../pathGestureTags';
 
 /** Screen-pixel radius for "this click landed on an anchor". */
-const ANCHOR_CLICK_PX = 10;
+export const ANCHOR_CLICK_PX = 10;
 
-/** `ANCHOR_CLICK_PX` in world units through the view; with no view, one
+/** `targets.anchorClickPx`, else `ANCHOR_CLICK_PX`, in world units through the view; with no view, one
  *  pixel is one unit. */
 function anchorClickSlop(deps: ActionDeps | undefined): number {
+  const px = deps?.kitSettings?.get('targets.anchorClickPx') ?? ANCHOR_CLICK_PX;
   const scale = deps?.view?.get().scale;
-  if (!scale) return ANCHOR_CLICK_PX;
-  const extent = pxExtent(ANCHOR_CLICK_PX, scale);
+  if (!scale) return px;
+  const extent = pxExtent(px, scale);
   return Math.max(extent.x, extent.y);
 }
 
+/** The `editAnchors` dep while a path is open, or null. */
 export function depOf(deps: ActionDeps | undefined): EditAnchorsDep | null {
   const dep = deps?.editAnchors;
   if (!dep || !dep.editingId) return null;
@@ -85,6 +92,19 @@ export function commitAnchorEdit(
   return true;
 }
 
+/** Whether `edit` would change the edited path, tried on a scratch decode. */
+export function anchorEditWouldChange(deps: ActionDeps | undefined, edit: (set: AnchorSet) => boolean | void): boolean {
+  const dep = depOf(deps);
+  const path = dep ? worldPathOf(dep) : null;
+  return path !== null && editAnchorSetTracked(path, edit) !== null;
+}
+
+/** Enabled while a path is open and no path-edit tool has the pointer. */
+function plainAnchorEditing(deps?: ActionDeps): true | ActionDisabledReason {
+  if (!depOf(deps)) return ActionDisabledReason.SelectionRequired;
+  return pathEditToolActive(deps) ? ActionDisabledReason.NotApplicable : true;
+}
+
 /** Enabled only while a path is in edit mode with anchors selected. */
 export function requiresAnchorSelection(deps?: ActionDeps): true | ActionDisabledReason {
   const dep = depOf(deps);
@@ -114,12 +134,13 @@ export function requiresAnchorSelection(deps?: ActionDeps): true | ActionDisable
 export const selectAnchorAction: Action & { requires: string[] } = inPlane({
   id: 'selectAnchor',
   label: 'Select anchor',
+  tags: pathOperationTags('click'),
   defaultBinding: [
     { spec: { kind: 'click', mods: {} },              opts: { params: { additive: false } } },
     { spec: { kind: 'click', mods: { shift: true } }, opts: { params: { additive: true } } },
   ],
   eligible: { capability: 'edits-anchors' },
-  requires: ['editAnchors', 'view'],
+  requires: ['editAnchors', 'view', 'kitSettings'],
   invoker: {
     timing: 'immediate',
     run: (deps, params) => {
@@ -134,15 +155,20 @@ export const selectAnchorAction: Action & { requires: string[] } = inPlane({
       const hit = nearestAnchorIndex(worldPath, wx, wy, anchorClickSlop(deps));
       const additive = params?.additive === true;
       if (hit === -1) {
-        // Missed every anchor. A bare click clears; a shift-click leaves
-        // the selection alone.
-        if (!additive) dep.setSelectedAnchors([]);
+        // Missed every anchor: an extension's mark is next. Otherwise a bare
+        // click clears, and a shift-click leaves the selection alone.
+        const mark = markUnder(dep, deps, wx, wy);
+        if (mark) dep.setSelectedMark?.(mark);
+        else if (!additive) {
+          dep.setSelectedAnchors([]);
+          dep.setSelectedMark?.(null);
+        }
         return;
       }
       dep.setSelectedAnchors(selectionAfterAnchorPress(dep.selectedAnchors, hit, additive));
     },
   } as ImmediateInvoker,
-  enabled: (deps) => (depOf(deps) ? true : ActionDisabledReason.SelectionRequired),
+  enabled: plainAnchorEditing,
 }, editingLayer);
 
 /**
@@ -159,7 +185,7 @@ function makeNudgeAnchorsAction(dir: NudgeDirection): Action & { requires: strin
       { spec: { kind: 'key', key: NUDGE_KEY[dir], mods: { shift: true } }, opts: { params: { magnitude: 'big' } } },
     ],
     eligible: { capability: 'edits-anchors' },
-    requires: ['editAnchors'],
+    requires: ['editAnchors', 'pathSymmetry'],
     invoker: {
       timing: 'immediate',
       run: (deps, params) => {
@@ -167,20 +193,22 @@ function makeNudgeAnchorsAction(dir: NudgeDirection): Action & { requires: strin
         if (!dep || dep.selectedAnchors.size === 0) return;
         const { dx, dy } = nudgeDelta(dir, params?.magnitude);
         const selected = [...dep.selectedAnchors];
-        commitAnchorEdit(dep, 'Nudge anchor', (set) => {
-          let any = false;
-          for (const flat of selected) any = translateAnchorBy(set, flat, dx, dy) || any;
-          return any;
-        });
+        const symmetry = (deps as { pathSymmetry?: PathSymmetryDep } | undefined)?.pathSymmetry;
+        commitAnchorEdit(dep, 'Nudge anchor', (set) => translateAnchorsSymmetric(
+          set, selected, dx, dy, editedPathSymmetries(symmetry, dep.editingId, set)));
       },
     } as ImmediateInvoker,
     enabled: requiresAnchorSelection,
   };
 }
 
+/** Move the selected anchors up one step; Shift for a big step. */
 export const nudgeAnchorsUpAction    = makeNudgeAnchorsAction('up');
+/** Move the selected anchors down one step; Shift for a big step. */
 export const nudgeAnchorsDownAction  = makeNudgeAnchorsAction('down');
+/** Move the selected anchors left one step; Shift for a big step. */
 export const nudgeAnchorsLeftAction  = makeNudgeAnchorsAction('left');
+/** Move the selected anchors right one step; Shift for a big step. */
 export const nudgeAnchorsRightAction = makeNudgeAnchorsAction('right');
 
 /**
@@ -189,11 +217,13 @@ export const nudgeAnchorsRightAction = makeNudgeAnchorsAction('right');
  *
  * Deleting renumbers every anchor after the lowest deleted index, so the
  * selection is cleared rather than left pointing at whatever slid into
- * those slots.
+ * those slots. A selected extension mark, which excludes an anchor
+ * selection, is deleted instead.
  */
 export const deleteAnchorsAction: Action & { requires: string[] } = {
   id: 'deleteAnchors',
   label: 'Delete Anchors',
+  tags: pathOperationTags('command'),
   defaultBinding: {
     kind: 'key',
     key: ['Delete', 'Backspace'],
@@ -205,7 +235,7 @@ export const deleteAnchorsAction: Action & { requires: string[] } = {
     timing: 'immediate',
     run: (deps) => {
       const dep = depOf(deps);
-      if (!dep || dep.selectedAnchors.size === 0) return;
+      if (!dep || deleteSelectedMark(dep) || dep.selectedAnchors.size === 0) return;
       const doomed = [...dep.selectedAnchors];
       const changed = commitAnchorEdit(dep, 'Delete anchor', (set) =>
         deleteAnchorsAt(set, doomed),
@@ -213,7 +243,7 @@ export const deleteAnchorsAction: Action & { requires: string[] } = {
       if (changed) dep.setSelectedAnchors([]);
     },
   } as ImmediateInvoker,
-  enabled: requiresAnchorSelection,
+  enabled: (deps) => (depOf(deps)?.selectedMark ? true : requiresAnchorSelection(deps)),
 };
 
 /**
@@ -228,9 +258,10 @@ export const deleteAnchorsAction: Action & { requires: string[] } = {
 export const cutPathAtAnchorAction: Action & { requires: string[] } = inPlane({
   id: 'cutPathAtAnchor',
   label: 'Cut path at anchor',
+  tags: pathOperationTags('click'),
   defaultBinding: { kind: 'click', mods: { alt: true, shift: true } },
   eligible: { capability: 'edits-anchors' },
-  requires: ['editAnchors', 'view'],
+  requires: ['editAnchors', 'view', 'kitSettings'],
   invoker: {
     timing: 'immediate',
     run: (deps, params) => {
@@ -292,6 +323,7 @@ function nearestAnchorIndex(
 export const marqueeAnchorsAction: Action & { requires: string[] } = inPlane({
   id: 'marqueeAnchors',
   label: 'Marquee-select anchors',
+  tags: pathOperationTags('drag'),
   defaultBinding: { kind: 'drag', target: 'empty' },
   eligible: { capability: 'edits-anchors' },
   requires: ['editAnchors'],
@@ -333,7 +365,8 @@ export const marqueeAnchorsAction: Action & { requires: string[] } = inPlane({
       };
     },
   },
-  enabled: () => true,
+  // A path-edit tool has the drag.
+  enabled: (deps) => (pathEditToolActive(deps) ? ActionDisabledReason.NotApplicable : true),
 }, editingLayer);
 
 /** Flat indices of `path`'s anchors inside `rect`. */

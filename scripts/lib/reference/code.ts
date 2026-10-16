@@ -6,6 +6,8 @@ export interface Links {
   byId(id: number): string | undefined;
   /** The page of an export known only by its package and name. */
   byName(packageName: string | undefined, name: string): string | undefined;
+  /** The summary of the export with this id, following re-exports to the declaration. */
+  summary(id: number): string;
 }
 
 /** Builds a run of code, keeping neighboring text in one token. */

@@ -3,6 +3,7 @@ export { bezierCubic } from './bezierCubic';
 export { bezierQuadratic } from './bezierQuadratic';
 export { nurbs } from './nurbs';
 export { spiro } from './spiro';
+export { curvatureSourceOf } from './curvatureSource';
 
 import { bezierCubic } from './bezierCubic';
 import { bezierQuadratic } from './bezierQuadratic';

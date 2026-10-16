@@ -1,3 +1,2 @@
 export { DEFAULT_SIMPLIFY_TOLERANCE, offsetPathAction, simplifyPathAction } from './simplifyOffset';
-export { joinPathsAction, snipAtCrossingsAction } from './cutJoin';
-export { DEFAULT_TRIM_RADIUS_PX, extendToMeetAction, planTrim, trimPathAction } from './trimExtend';
+export { joinPathsAction, joinPathsCommand, planJoin, snipAtCrossingsAction } from './cutJoin';

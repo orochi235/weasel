@@ -1,4 +1,5 @@
-import { type ActionTunings, createScene, ellipsePath, pathFromD, useExtendTool } from '@weasel-js/core';
+import { type ActionTunings, createScene, ellipsePath, pathFromD } from '@weasel-js/core';
+import { extendPreset, useExtendTool } from '@weasel-js/path-tools';
 import {
   type ConfigOf,
   defineInstrument,
@@ -11,9 +12,11 @@ import {
 } from '@weasel-js/labkit';
 import { ArrowRightIcon, SelectIcon } from '@weasel-js/ui';
 import { useMemo } from 'react';
-import { strokeNode } from './labs/strokeNode';
+import { strokeNode } from './pathEditLabScene';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
+
+const FEATURES = ['draw', extendPreset] as const;
 
 const config = f.schema({
   reach: f.number(6).range(2, 20).step(1).suffix('px').label('Click reach'),
@@ -41,7 +44,7 @@ function ExtendTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const tools = useMemo(() => ({ extend }), [extend]);
   return (
     <TrialSceneCanvas
-      features={['draw']}
+      features={FEATURES}
       scene={scene}
       trial={ctx.trial}
       tools={tools}
@@ -51,14 +54,14 @@ function ExtendTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
 }
 
 const extendInstrument = defineInstrument<State, Config>({
-  name: 'Extend',
+  name: 'Extend to next path',
   config,
   initialState: () => ({ scene: null }),
   undo: {},
   tools: {
     initial: 'extend',
     tools: [
-      { id: 'extend', label: 'Extend', icon: ArrowRightIcon, shortcut: 'U' },
+      { id: 'extend', label: 'Extend to next path', icon: ArrowRightIcon, shortcut: 'U' },
       { id: 'select', label: 'Select (then E extends the selection)', icon: SelectIcon, shortcut: 'V' },
     ],
   },
@@ -68,7 +71,7 @@ const extendInstrument = defineInstrument<State, Config>({
 export function ExtendLabDemo() {
   return (
     <div className="ckd-lab-frame">
-      <Lab title="Extend to the next path" instruments={[extendInstrument]} defaultInstrument="Extend" />
+      <Lab title="Extend to next path" instruments={[extendInstrument]} defaultInstrument="Extend to next path" />
     </div>
   );
 }

@@ -181,6 +181,10 @@ export interface Widget {
   /** True if the widget takes keyboard focus. A press on it focuses it, and
    *  Tab reaches it. Absent means false. */
   readonly focusable?: boolean;
+  /** Whether the HUD draws its focus ring around this widget when it has
+   *  keyboard focus. Absent means true. A widget that shows focus its own
+   *  way — a menu's highlighted row — sets false. */
+  readonly focusRing?: boolean;
   /** Position in the HUD's tab order. Widgets that declare one come first,
    *  ascending; the rest follow in the order they were added. */
   readonly tabOrder?: number;

@@ -1,8 +1,9 @@
 import { describe, it, expect, vi } from 'vitest';
-import { StrictMode, createElement } from 'react';
+import { StrictMode, createElement, type ReactNode } from 'react';
 import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import { renderHook, act } from '@testing-library/react';
-import { useViewAnimation, type ViewAnimationApi, type ViewChannel } from './useViewAnimation';
+import { DEFAULT_VIEW_ANIMATION_MS, useViewAnimation, type ViewAnimationApi, type ViewChannel } from './useViewAnimation';
+import { KitSettingsProvider, type KitSettingsOverrides } from '@weasel-js/react';
 import { useAnimator } from '@weasel-js/animator';
 import { linear } from '@weasel-js/geom';
 import { zoomAt } from './zoomAt';
@@ -76,6 +77,27 @@ describe('useViewAnimation', () => {
     expect(done).toHaveBeenCalledTimes(1);
     act(() => { clock.advance(50); });
     expect(done).toHaveBeenCalledTimes(1);
+  });
+
+  it('takes its default duration from view.animationMs, else DEFAULT_VIEW_ANIMATION_MS', () => {
+    const doneAfter = (settings: KitSettingsOverrides | null): number => {
+      const clock = makeClock();
+      const { channel } = makeChannel(HOME);
+      const { result } = renderHook(
+        () => useViewAnimation(channel, useAnimator(clock)),
+        settings ? { wrapper: ({ children }: { children: ReactNode }) => createElement(KitSettingsProvider, { value: settings }, children) } : undefined,
+      );
+      const done = vi.fn();
+      act(() => { result.current.animate({ x: 5, y: 5, scale: { x: 1, y: 1 } }, { onDone: done }); });
+      let elapsed = 0;
+      while (!done.mock.calls.length && elapsed < 5000) {
+        act(() => { clock.advance(10); });
+        elapsed += 10;
+      }
+      return elapsed;
+    };
+    expect(doneAfter(null)).toBe(DEFAULT_VIEW_ANIMATION_MS);
+    expect(doneAfter({ view: { animationMs: 80 } })).toBe(80);
   });
 
   it('starts a retarget from the live view, not from a captured start', () => {
