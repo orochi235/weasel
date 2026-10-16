@@ -91,9 +91,11 @@ export function ControlRow<TC extends Record<string, unknown>>(props: ControlRow
     // An action's button reads its own label, so it takes the row's whole width with none beside it.
     return (
       <div className="lk-control-actions">
-        {leaf.kind === 'actions'
-          ? <PrefActionRows pref={leaf as PrefActions} path={props.path} disabled={props.disabled} />
-          : <PrefActionButton pref={leaf as PrefAction} path={props.path} disabled={props.disabled} />}
+        {leaf.kind === 'actions' ? (
+          <PrefActionRows pref={leaf as PrefActions} path={props.path} disabled={props.disabled} />
+        ) : (
+          <PrefActionButton pref={leaf as PrefAction} path={props.path} disabled={props.disabled} />
+        )}
       </div>
     );
   }

@@ -51,18 +51,14 @@ describe('<ControlPanel> rows', () => {
     expect(screen.getByRole('button', { name: 'Edit Tags' })).toBeInTheDocument();
   });
 
-  it('does not run an action when its label is clicked', async () => {
+  it('reads an action row\'s label once, on the button that runs it', async () => {
     const run = vi.fn();
     const schema = resolveConfigSchema(f.schema({ wipe: f.action(run).label('Wipe') }), []);
     render(<ControlPanel schema={schema} config={{}} setConfig={vi.fn()} />);
     const button = screen.getByRole('button', { name: 'Wipe' });
-    const row = button.closest('[class*="row"]') as HTMLElement;
-    await userEvent.click(
-      within(row)
-        .getAllByText('Wipe')
-        .find((el) => el !== button && !button.contains(el)) as HTMLElement,
-    );
-    expect(run).not.toHaveBeenCalled();
+    expect(screen.getAllByText('Wipe').every((el) => button.contains(el))).toBe(true);
+    await userEvent.click(button);
+    expect(run).toHaveBeenCalledTimes(1);
   });
 
   it('offers no auto toggle on a row whose unpinning would close a resolver cycle', async () => {

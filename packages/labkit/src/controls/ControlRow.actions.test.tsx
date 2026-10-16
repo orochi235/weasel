@@ -1,6 +1,6 @@
 import { cleanup, render, screen } from '@testing-library/react';
-import { ActionsProvider, useAction, type Action } from '@weasel-js/core';
-import { pref, type PrefLeaf } from '@weasel-js/prefs';
+import { type Action, ActionsProvider, useAction } from '@weasel-js/core';
+import { type PrefLeaf, pref } from '@weasel-js/prefs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { f } from '../config/builder';
 import { resolveConfigSchema } from '../config/resolve';
@@ -13,7 +13,12 @@ function Register({ action }: { action: Action }) {
   return null;
 }
 
-const act = (id: string, label: string): Action => ({ id, label, group: 'arrange', invoker: { timing: 'immediate', run: () => {} } });
+const act = (id: string, label: string): Action => ({
+  id,
+  label,
+  group: 'arrange',
+  invoker: { timing: 'immediate', run: () => {} },
+});
 
 function row(leaf: PrefLeaf, config: Record<string, unknown> = {}) {
   const resolved = resolveConfigSchema(f.schema({}), []);
@@ -21,7 +26,15 @@ function row(leaf: PrefLeaf, config: Record<string, unknown> = {}) {
     <ActionsProvider>
       <Register action={act('front', 'Bring to front')} />
       <Register action={act('back', 'Send to back')} />
-      <ControlRow path="x" leaf={leaf} resolved={resolved} config={config} shown={config} setConfig={vi.fn()} pack="auto" />
+      <ControlRow
+        path="x"
+        leaf={leaf}
+        resolved={resolved}
+        config={config}
+        shown={config}
+        setConfig={vi.fn()}
+        pack="auto"
+      />
     </ActionsProvider>,
   );
 }
@@ -34,7 +47,10 @@ describe('ControlRow actions and readouts', () => {
 
   it('draws an actions leaf as one button row per action', () => {
     const { container } = row(pref.actions('arrange', { name: 'Arrange' }));
-    expect(screen.getAllByRole('button').map((b) => b.getAttribute('aria-label'))).toEqual(['Bring to front', 'Send to back']);
+    expect(screen.getAllByRole('button').map((b) => b.getAttribute('aria-label'))).toEqual([
+      'Bring to front',
+      'Send to back',
+    ]);
     expect(container.querySelector('.lk-control-actions')).not.toBeNull();
     expect(screen.queryByText('Arrange')).toBeNull();
   });
