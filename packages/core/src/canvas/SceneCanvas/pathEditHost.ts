@@ -13,9 +13,9 @@ export interface PathEditHost {
   /** The canvas asking to open `id` for editing, or with null to close the open one. */
   setEditingId(id: string | null): void;
   /**
-   * The selected anchors of the open path, as flat anchor indices. With this and
-   * {@link setSelectedAnchors}, the host owns the anchor selection too, so it can
-   * seed one and show what is selected; without them the canvas keeps its own.
+   * The selected anchors of the open path, as flat anchor indices, for a host that owns the
+   * anchor selection too, so it can seed one and show what is selected. Give both or neither;
+   * without them the canvas keeps its own.
    */
   selectedAnchors?(): ReadonlySet<number>;
   /** The canvas changing the anchor selection: a click, a marquee, an edit that

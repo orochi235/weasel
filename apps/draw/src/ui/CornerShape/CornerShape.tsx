@@ -1,5 +1,5 @@
 /**
- * Corner shape in the command bar: the kit's corner controls, in a popover,
+ * Corner shape in the command bar: path-tools' corner controls, in a popover,
  * over the selected corners of the path open in path edit.
  */
 import type { ReactElement } from 'react';
@@ -8,7 +8,7 @@ import {
   useCornerControls,
   type CornerControlsScene,
   type CornerControlsSelection,
-} from '@weasel-js/core';
+} from '@weasel-js/path-tools';
 import { BarPopover, PrefsForm } from '@weasel-js/ui';
 import s from './CornerShape.module.css';
 

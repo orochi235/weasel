@@ -1,5 +1,5 @@
 /**
- * The corner panel of the corner-shape lab: core's corner controls over the
+ * The corner panel of the corner-shape lab: path-tools' corner controls over the
  * selected corners of the open path, mixed where they differ.
  */
 import {
@@ -7,7 +7,7 @@ import {
   useCornerControls,
   type CornerControlsScene,
   type CornerControlsSelection,
-} from '@weasel-js/core';
+} from '@weasel-js/path-tools';
 import { PrefsForm } from '@weasel-js/ui';
 import s from './CornerShapeLabDemo.module.css';
 

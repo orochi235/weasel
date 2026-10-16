@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import type { AffordanceHit, ImmediateInvoker, InvocationCtx } from '@weasel-js/routing';
+import type { ActionDeps, AffordanceHit, ImmediateInvoker, InvocationCtx } from '@weasel-js/routing';
 import { cornerAt, cornerSpecAt, polygonFromPoints, resolveCorners, withCorner, type PolygonPath } from '@weasel-js/geom';
-import type { EditAnchorsDep } from '../depSchema';
-import { makeEditAnchorsDep, stubDeps } from '../testUtils';
-import { editCornerAction } from './action';
-import { cycleCornerShapeAction, DEFAULT_CORNER_TRIM_SHARE, setCornersAction } from './commands';
+import type { EditAnchorsDep } from '@weasel-js/core';
+import { makeEditAnchorsDepForTests as makeEditAnchorsDep } from '@weasel-js/core/test-seams';
+import { editCornerAction } from './editCorner';
+import { cycleCornerShapeAction, DEFAULT_CORNER_TRIM_SHARE, setCornersAction } from './cornerCommands';
+
+const stubDeps = (deps: Record<string, unknown>) => deps as ActionDeps;
 
 const square = (): PolygonPath =>
   polygonFromPoints([{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 100 }, { x: 0, y: 100 }]);

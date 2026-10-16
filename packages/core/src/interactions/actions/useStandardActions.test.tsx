@@ -68,7 +68,7 @@ const KIT_IDS = [
   'createOutlines', 'outlineStroke',
   'move',
   'resize', 'rotate', 'areaSelect', 'insert', 'insert.adjustRotation', 'insert.reposition', 'clone',
-  'editAnchors', 'editCorner', 'enterPathEdit', 'exitPathEdit', 'insertPathAnchor', 'bendSegment',
+  'editAnchors', 'enterPathEdit', 'exitPathEdit', 'insertPathAnchor', 'bendSegment',
   'nudgeAnchors.up', 'nudgeAnchors.down', 'nudgeAnchors.left', 'nudgeAnchors.right',
   'deleteAnchors', 'cutPathAtAnchor', 'pathEditTool.exit', 'retractHandles', 'makeHandlesSymmetric',
   'averageAnchors', 'joinAnchors', 'simplifyPath', 'offsetPath', 'snipAtCrossings', 'joinPaths',

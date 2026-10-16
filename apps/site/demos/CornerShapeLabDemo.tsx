@@ -2,7 +2,6 @@ import {
   type ActionTunings,
   asNodeId,
   boundsOfPath,
-  type CornerControlsSelection,
   createScene,
   pathFromD,
   type PathEditHost,
@@ -21,6 +20,7 @@ import {
   TrialSceneCanvas,
   useTrialScene,
 } from '@weasel-js/labkit';
+import { cornerShapePreset, type CornerControlsSelection } from '@weasel-js/path-tools';
 import { PenIcon, SelectIcon } from '@weasel-js/ui';
 import { useMemo, useState } from 'react';
 import { CornerPanel } from './CornerShapePanel';
@@ -96,6 +96,7 @@ function useEditHost(): { host: PathEditHost; selection: CornerControlsSelection
   })[0];
 }
 
+const FEATURES = ['draw', cornerShapePreset] as const;
 const TUNE: ActionTunings = { cycleCornerShape: { bindings: [{ kind: 'key', key: 'k' }] } };
 
 function CornersTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
@@ -106,7 +107,7 @@ function CornersTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   return (
     <div className={s.frame}>
       <TrialSceneCanvas
-        features={['draw']}
+        features={FEATURES}
         defaultTools={['pen']}
         scene={scene}
         trial={ctx.trial}

@@ -6,8 +6,9 @@
  * corners leave. Pressing the widget of a selected anchor gives every
  * selected corner the same radius. The release commits one undo step.
  */
-import type { Action, InvocationCtx, OngoingHandle } from '@weasel-js/routing';
-import { isCornerWidget } from '@weasel-js/routing';
+import {
+  type Action, type ActionDeps, ActionDisabledReason, type InvocationCtx, isCornerWidget, type OngoingHandle,
+} from '@weasel-js/routing';
 import {
   cornerFrames,
   cornerSpecAt,
@@ -16,9 +17,9 @@ import {
   type CornerShape,
   type PolygonPath,
 } from '@weasel-js/geom';
-import type { EditAnchorsDep } from '../depSchema';
-import { pathEditPreview } from '../edit-anchors/preview';
-import { editingLayer, inPlane } from '../planeInput';
+import {
+  editingLayer, inPlane, pathEditPreview, pathEditToolActive, pathOperationTags, type EditAnchorsDep,
+} from '@weasel-js/core';
 
 /** The shape a corner with no spec yet takes. */
 export const DEFAULT_CORNER_SHAPE: CornerShape = 'round';
@@ -29,6 +30,7 @@ function cornerIndexOf(kind: string): number | null {
   return m ? parseInt(m[1], 10) : null;
 }
 
+/** The open path, when it is a polygon. */
 export function editedPath(dep: EditAnchorsDep): PolygonPath | null {
   const p = dep.getEditablePath(dep.editingId) as PolygonPath | undefined;
   return p && p.kind === 'polygon' ? p : null;
@@ -48,10 +50,19 @@ function withRadius(path: PolygonPath, targets: readonly CornerTarget[], radius:
   return out;
 }
 
+/** Enabled while a path is open and no path-edit tool has the pointer. */
+function widgetEnabled(deps: ActionDeps | undefined): true | ActionDisabledReason {
+  if (!deps?.editAnchors?.editingId || pathEditToolActive(deps)) return ActionDisabledReason.NotApplicable;
+  return true;
+}
+
 /** Drag a corner widget to set the corner's radius. */
 export const editCornerAction: Action & { requires: string[] } = inPlane({
   id: 'editCorner',
-  label: 'Corner Radius',
+  label: 'Corner radius',
+  tags: pathOperationTags('drag'),
+  // Ties the marquee's `empty` and move's `selected-body` on specificity and
+  // registers ahead of the marquee; move turns path-edit presses down itself.
   defaultBinding: { kind: 'drag', target: { kindOf: isCornerWidget } },
   eligible: { capability: 'edits-anchors' },
   requires: ['editAnchors'],
@@ -98,5 +109,5 @@ export const editCornerAction: Action & { requires: string[] } = inPlane({
       };
     },
   },
-  enabled: () => true,
+  enabled: widgetEnabled,
 }, editingLayer);

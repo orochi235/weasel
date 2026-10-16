@@ -2,7 +2,7 @@
  * The params this package's actions read, merged into routing's
  * `ActionParamSchema` so `<SceneCanvas tune>` types them.
  */
-import type { PathConstraintKind } from '@weasel-js/geom';
+import type { CornerShape, PathConstraintKind } from '@weasel-js/geom';
 import type { BendAlongEffect, BlendEffect, RepeatAlongEffect } from '@weasel-js/core';
 import type { ConstrainAnchorsParams } from './constraints/anchorConstraints';
 import type { SimplifyBrushParams } from './simplifyBrush/simplifyBrush';
@@ -13,6 +13,8 @@ import type { WarpKind, WarpSettings } from './warp/warpTargets';
  *  `'auto'`, handing the direction back to `autoAlign`. */
 type SettingsOf<E> = { [K in Exclude<keyof E, 'kind'>]?: E[K] };
 type BlendParams = Omit<SettingsOf<BlendEffect>, 'reverse'> & { reverse?: boolean | 'auto' };
+/** Either field left out keeps that part of each selected corner. */
+type SetCornersParams = { shape: CornerShape; radius: number };
 type EditPathEffectParams = BlendParams & SettingsOf<BendAlongEffect> & SettingsOf<RepeatAlongEffect>
   & { ids?: readonly string[] };
 
@@ -33,6 +35,7 @@ declare module '@weasel-js/routing' {
     'puppet.drag': WarpSettings;
     'puppet.addPin': WarpSettings;
     configureWarp: WarpSettings & { kind?: WarpKind };
+    setCorners: SetCornersParams;
   }
 }
 

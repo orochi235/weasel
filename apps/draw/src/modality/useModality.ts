@@ -6,12 +6,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   asNodeId,
-  type CornerControlsSelection,
   modeDecorationLayer,
   type PathEditHost,
   type RenderLayer,
   type Scene,
 } from '@weasel-js/core';
+import type { CornerControlsSelection } from '@weasel-js/path-tools';
 import type { History } from '@weasel-js/history';
 import {
   createModeDecorations,

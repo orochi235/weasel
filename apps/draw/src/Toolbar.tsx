@@ -3,7 +3,6 @@ import {
   buildWeaselClipboardText,
   type ClipboardDep,
   type ClipboardSnapshot,
-  type CornerControlsSelection,
   type NodeId,
   useClipboardOps,
   useDepSource,
@@ -11,6 +10,7 @@ import {
   type SelectionApi,
   WEASEL_CLIPBOARD_MIME
 } from '@weasel-js/core';
+import type { CornerControlsSelection } from '@weasel-js/path-tools';
 import {
   type ReactElement,
   useCallback,

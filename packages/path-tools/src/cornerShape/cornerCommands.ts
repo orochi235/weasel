@@ -2,8 +2,7 @@
  * Commands on the corners of the anchors selected in path edit: set their
  * shape or radius, or step their shape through the `corner-shape` keywords.
  */
-import type { Action, ActionDeps, ImmediateInvoker } from '@weasel-js/routing';
-import { ActionDisabledReason } from '@weasel-js/routing';
+import { type Action, type ActionDeps, ActionDisabledReason, type ImmediateInvoker } from '@weasel-js/routing';
 import {
   cornerFrames,
   cornerSpecAt,
@@ -14,9 +13,8 @@ import {
   type CornerShape,
   type PolygonPath,
 } from '@weasel-js/geom';
-import type { EditAnchorsDep } from '../depSchema';
-import { depOf, requiresAnchorSelection } from '../defaults/anchorEditing';
-import { DEFAULT_CORNER_SHAPE, editedPath } from './action';
+import { depOf, pathOperationTags, requiresAnchorSelection, type EditAnchorsDep } from '@weasel-js/core';
+import { DEFAULT_CORNER_SHAPE, editedPath } from './editCorner';
 
 /** The share of a corner's room that a shape given to a sharp corner cuts. */
 export const DEFAULT_CORNER_TRIM_SHARE = 0.25;
@@ -79,6 +77,7 @@ function cornersSelected(deps: ActionDeps | undefined): true | ActionDisabledRea
 export const setCornersAction: Action & { requires: string[] } = {
   id: 'setCorners',
   label: 'Set corners',
+  tags: pathOperationTags('command'),
   eligible: { capability: 'edits-anchors' },
   requires: ['editAnchors'],
   invoker: {
@@ -105,6 +104,7 @@ export const setCornersAction: Action & { requires: string[] } = {
 export const cycleCornerShapeAction: Action & { requires: string[] } = {
   id: 'cycleCornerShape',
   label: 'Next corner shape',
+  tags: pathOperationTags('command'),
   group: 'anchors',
   eligible: { capability: 'edits-anchors' },
   requires: ['editAnchors'],

@@ -196,7 +196,10 @@ function extensionParts(
       return extensions.flatMap((ext) => ext.parts!(target).map((part): AffordanceRegion => ({
         id: `${editingId}:${part.hitKind}`,
         targetId: null,
-        shape: { kind: 'point', x: part.x, y: part.y, hitRadiusPx: hitRadius },
+        shape: {
+          kind: 'point', x: part.x, y: part.y, hitRadiusPx: part.hitRadiusPx ?? hitRadius,
+          ...(part.standoff ? { standoff: part.standoff } : {}),
+        },
         hitKind: part.hitKind,
         ...(part.chromeId ? { chromeId: part.chromeId } : {}),
         cursor,

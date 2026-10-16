@@ -4,14 +4,13 @@
  * `setCorners` on the registry the caller sits under.
  */
 import { useActionsRegistry } from '@weasel-js/routing/react';
-import type { PolygonPath } from '@weasel-js/geom';
 import { useCallback, useMemo, useSyncExternalStore } from 'react';
-import type { NodeId } from 'core/scene/types';
+import { resolveEditablePathOf, type EditableShape, type NodeId } from '@weasel-js/core';
 import { cornerControlsParams, cornerControlsState } from './cornerControls';
 
 /** The part of a scene the controls read. */
 export interface CornerControlsScene {
-  get(id: NodeId): { data: unknown } | undefined;
+  get(id: NodeId): EditableShape | undefined;
   subscribe(listener: () => void): () => void;
 }
 
@@ -32,8 +31,8 @@ export interface UseCornerControlsReturn {
 
 function snapshot(scene: CornerControlsScene, selection: CornerControlsSelection): string {
   const id = selection.editingId();
-  const path = id ? (scene.get(id as NodeId)?.data as { path?: PolygonPath } | undefined)?.path : undefined;
-  const { values, mixed } = cornerControlsState(path?.kind === 'polygon' ? path : null, selection.selectedAnchors());
+  const path = id ? resolveEditablePathOf(scene.get(id as NodeId)) : null;
+  const { values, mixed } = cornerControlsState(path, selection.selectedAnchors());
   return JSON.stringify({ values, mixed: [...mixed] });
 }
 

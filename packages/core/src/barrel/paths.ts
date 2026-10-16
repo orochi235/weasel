@@ -188,19 +188,6 @@ export {
   type ShapeGenerator,
   type StarGenerator,
 } from '../features/paths/shapeGenerator';
-export {
-  CORNER_CONTROLS,
-  CORNER_K_SLIDER_RANGE,
-  cornerControlsParams,
-  cornerControlsState,
-  type CornerControlsState,
-} from '../features/paths/cornerControls';
-export {
-  useCornerControls,
-  type CornerControlsScene,
-  type CornerControlsSelection,
-  type UseCornerControlsReturn,
-} from '../features/paths/useCornerControls';
 
 // ─── Building path commands and path-edit features on core ─────────────────
 export { commitOps } from '../interactions/actions/defaultCommitAdapter';

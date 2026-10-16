@@ -1,14 +1,20 @@
 /**
- * Where path edit puts a corner's widget: inside the corner, at the middle
- * of its cut, pushed a fixed distance further in on screen so that it clears
- * the anchor square at a zero radius. The overlay paints it and the
- * affordance hit-tests it from this one placement.
+ * The corner widgets path edit shows on the open path: one inside each corner
+ * anchor, at the middle of its cut, pushed a fixed distance further in on
+ * screen so that it clears the anchor square at a zero radius. The overlay
+ * paints it and the hit-test presses it, as `corner:N`, from this one
+ * placement.
  */
 import {
   cornerFrames, cornerShapeK, cornerShapePieces, cornerSpecAt, PathBuilder, standoff,
   type CornerFrame, type PolygonPath, type Scale2, type View,
 } from '@weasel-js/geom';
 import type { DrawCommand } from '@weasel-js/renderer';
+import { DEFAULT_OVERLAY_STYLE, type PathEditExtension } from '@weasel-js/core';
+
+/** Chrome-caps id the corner widgets are drawn and hit-tested under. On by
+ *  default. */
+export const PATH_CORNERS_CHROME_ID = 'path-edit.corners';
 
 /** Screen distance from the middle of a corner's cut to its widget. */
 export const CORNER_WIDGET_STANDOFF_PX = 14;
@@ -38,11 +44,17 @@ export function cornerWidgetAt(frame: CornerFrame, scale: Scale2): { x: number; 
 /** Half the side of a widget's glyph, in screen pixels. */
 const GLYPH_HALF_PX = 4.5;
 
-/** Paint for the widgets. */
-export interface CornerWidgetPaint {
-  fill: string;
-  stroke: string;
+/** How the widgets are drawn. */
+export interface CornerWidgetStyle {
+  /** Default: path edit's anchor fill. */
+  fill?: string;
+  /** Default: path edit's anchor stroke. */
+  stroke?: string;
 }
+
+/** Hit radius of a widget, in screen px: under the anchor's, which wins
+ *  where the two overlap. */
+const WIDGET_HIT_RADIUS_PX = 6;
 
 type V = { x: number; y: number };
 
@@ -73,10 +85,10 @@ function cornerGlyph(c: V, toward: V, k: number): PolygonPath {
  * square whose corner toward the anchor is cut in the corner's shape. A
  * corner with no spec draws as round, the shape a drag gives it.
  */
-export function cornerWidgetCommands(path: PolygonPath, view: View, paint: CornerWidgetPaint): DrawCommand[] {
+export function cornerWidgetCommands(path: PolygonPath, view: View, style: CornerWidgetStyle = {}): DrawCommand[] {
   const out: DrawCommand[] = [];
-  const fill = { paint: { kind: 'solid' as const, color: paint.fill } };
-  const stroke = { paint: { kind: 'solid' as const, color: paint.stroke }, width: 1 };
+  const fill = { paint: { kind: 'solid' as const, color: style.fill ?? DEFAULT_OVERLAY_STYLE.anchorFill } };
+  const stroke = { paint: { kind: 'solid' as const, color: style.stroke ?? DEFAULT_OVERLAY_STYLE.anchorStroke }, width: 1 };
   for (const frame of cornerWidgetFrames(path)) {
     const w = cornerWidgetAt(frame, view.scale);
     const x = (w.x - view.x) * view.scale.x;
@@ -88,4 +100,20 @@ export function cornerWidgetCommands(path: PolygonPath, view: View, paint: Corne
     out.push({ kind: 'path', path: cornerGlyph({ x, y }, { x: bx / bl, y: by / bl }, k), fill, stroke });
   }
   return out;
+}
+
+/** The corner widgets as a path-edit extension: drawn, and pressed as
+ *  `corner:N`, while chrome-caps shows {@link PATH_CORNERS_CHROME_ID}. */
+export function createCornerWidgetsExtension(style: CornerWidgetStyle = {}): PathEditExtension {
+  return {
+    id: 'cornerShape',
+    marks: (ctx) => (ctx.isVisible(PATH_CORNERS_CHROME_ID) ? cornerWidgetCommands(ctx.path, ctx.view, style) : []),
+    parts: (target) => cornerWidgetFrames(target.path).map((f) => ({
+      ...cornerCutMiddle(f),
+      hitKind: `corner:${f.index}`,
+      chromeId: PATH_CORNERS_CHROME_ID,
+      hitRadiusPx: WIDGET_HIT_RADIUS_PX,
+      standoff: { px: CORNER_WIDGET_STANDOFF_PX, normal: f.bisector },
+    })),
+  };
 }

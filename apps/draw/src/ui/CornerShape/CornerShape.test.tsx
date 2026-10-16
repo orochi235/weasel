@@ -6,9 +6,9 @@ import {
   polygonFromPoints,
   useAction,
   withCorner,
-  type CornerControlsSelection,
   type PolygonPath,
 } from '@weasel-js/core';
+import type { CornerControlsSelection } from '@weasel-js/path-tools';
 import { CornerShape } from './CornerShape';
 
 afterEach(cleanup);
@@ -18,7 +18,7 @@ const square = (): PolygonPath =>
 
 function setup(selected: number[]) {
   const path = withCorner(withCorner(square(), 0, { shape: 'scoop', radius: 8 }), 1, { shape: 2.5, radius: 8 });
-  const scene = { get: (id: unknown) => (id === asNodeId('p') ? { data: { path } } : undefined), subscribe: () => () => {} };
+  const scene = { get: (id: unknown) => (id === asNodeId('p') ? { pose: { x: 0, y: 0, width: 100, height: 100 }, data: { path } } : undefined), subscribe: () => () => {} };
   let anchors: ReadonlySet<number> = new Set(selected);
   const listeners = new Set<() => void>();
   const selection: CornerControlsSelection = {

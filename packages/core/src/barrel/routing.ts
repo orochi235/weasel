@@ -54,8 +54,6 @@ export {
   type WheelPanOptions,
 } from '../interactions/actions/defaults/viewportWheelPan';
 export { editAnchorsAction } from '../interactions/actions/edit-anchors/action';
-export { editCornerAction } from '../interactions/actions/edit-corners/action';
-export { cycleCornerShapeAction, setCornersAction } from '../interactions/actions/edit-corners/commands';
 export {
   deleteAnchorsAction, nudgeAnchorsDownAction, nudgeAnchorsLeftAction, nudgeAnchorsRightAction, nudgeAnchorsUpAction,
   selectAnchorAction,

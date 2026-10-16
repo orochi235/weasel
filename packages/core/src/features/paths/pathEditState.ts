@@ -138,11 +138,11 @@ export function createPathEditState(source: PathEditSource = {}): PathEditState 
     },
     getSelectedAnchors: () => {
       const host = source.host?.();
-      return host?.selectedAnchors ? host.selectedAnchors() : selectedAnchors;
+      return host?.selectedAnchors && host.setSelectedAnchors ? host.selectedAnchors() : selectedAnchors;
     },
     setSelectedAnchors(next) {
       const host = source.host?.();
-      if (host?.setSelectedAnchors) { host.setSelectedAnchors(next); return; }
+      if (host?.selectedAnchors && host.setSelectedAnchors) { host.setSelectedAnchors(next); return; }
       selectedAnchors = next;
       notify();
     },

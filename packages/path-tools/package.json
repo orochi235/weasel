@@ -1,7 +1,7 @@
 {
   "name": "@weasel-js/path-tools",
   "version": "1.10.1",
-  "description": "Path-editing tools for a weasel canvas, as presets an app opts into: brushes, bridge, trim and extend, curvature and handle balance, path constraints, path effects, and warps.",
+  "description": "Path-editing tools for a weasel canvas, as presets an app opts into: brushes, bridge, trim and extend, curvature and handle balance, path constraints, corner shape, path effects, and warps.",
   "license": "MIT",
   "type": "module",
   "sideEffects": false,
@@ -38,6 +38,7 @@
   },
   "dependencies": {
     "@weasel-js/cursor": "1.10.1",
+    "@weasel-js/prefs": "1.10.1",
     "@weasel-js/react": "1.10.1",
     "@weasel-js/registry": "1.10.1",
     "@weasel-js/renderer": "1.10.1",

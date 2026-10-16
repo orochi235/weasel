@@ -27,10 +27,10 @@ Tag: `path-drag`
 | Handle locks | `handleLock.angle`, `handleLock.length` | Hold a handle's angle or length during a drag | Toggles; Mod while dragging holds length | main | path-tools |
 | Balance handles | `balanceHandles` | Scales a segment's two handles together from a grip on its balance line; a length lock holds it still | Drag a balance grip, shown under `path-edit.balance` | main | path-tools |
 | Path constraints | `constrainAnchors`, `unconstrainAnchors` | Keep geometric relations (parallel, level, fixed) during any anchor drag | C / Shift+C in its lab only | main | path-tools |
+| Corner shape | `editCorner` | Sets a corner anchor's radius, or every selected corner's, from the widget inside it | Drag a corner widget, shown under `path-edit.corners` | main | path-tools |
 | Soft selection | — | Moves nearby anchors with falling weight | Drag an anchor | audition | — |
 | Handle snap | — | Snaps a handle's angle to steps and to its partner | Drag a handle | audition | — |
 | Lengthen | — | Grows an open end along its tangent or curvature | Drag an end anchor | audition | — |
-| Corner shape | — | Rounds, chamfers, or scoops a corner anchor | Drag a corner widget | audition | — |
 
 ## Click on a path
 
@@ -82,6 +82,8 @@ Tag: `path-command`
 | Retract handles | `retractHandles` | Collapses selected anchors' handles | — | main | core |
 | Make handles symmetric | `makeHandlesSymmetric` | Equal length, opposite direction | — | main | core |
 | Delete anchors | `deleteAnchors` | Removes selected anchors | Delete | main | core |
+| Set corners | `setCorners` | Gives the selected corners a `corner-shape` keyword or `superellipse()` parameter, a radius, or both | — (the corner controls panel) | main | path-tools |
+| Next corner shape | `cycleCornerShape` | Steps the selected corners to the next `corner-shape` keyword | K in its lab only | main | path-tools |
 | Harmonize curvature | `harmonizeAnchors` | Rescales a smooth anchor's handles so curvature is continuous | H in its lab only | main | path-tools |
 | Blend | `blend` | Live steps between two shapes | — | main | path-tools |
 | Bend along a path | `bendAlong` | Lays a shape along a spine | — | main | path-tools |
