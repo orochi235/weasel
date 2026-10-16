@@ -10,6 +10,7 @@ import type { BendAlongEffect, BlendEffect, RepeatAlongEffect } from 'core/scene
 import type { EditAnchorsParams } from './edit-anchors/params';
 import type { SimplifyBrushParams } from './defaults/simplifyBrush';
 import type { WarpKind, WarpSettings } from './warp/warpTargets';
+import type { SmudgeBrushParams } from './pathCommands/smudgeBrush';
 
 /** A point a spatial reference of `'pointer'` resolves to in place of the
  *  pointer dep, when the invocation has one of its own. */
@@ -51,6 +52,7 @@ declare module '@weasel-js/routing' {
     editPathEffect: EditPathEffectParams;
     editAnchors: EditAnchorsParams;
     simplifyBrush: SimplifyBrushParams;
+    smudgeBrush: SmudgeBrushParams;
     bridgePaths: { tension?: number };
     bridgeAnchors: { tension?: number };
     'distort.drag': WarpSettings;

@@ -4,6 +4,7 @@
  */
 import { withBarLabel, type LeafSurface } from '../Bar/renderBarLeaf';
 import type { PrefAliasTargets } from '@weasel-js/prefs';
+import type { LiveControl } from '../Prefs/commitPolicy';
 import type { EntryAt } from '../Prefs/entry';
 import type { PrefFieldChoice } from '../Prefs/schema';
 import { renderCells, type LeafCell, type RenderedCell } from './cells';
@@ -27,6 +28,8 @@ export interface PanelCellScope {
   entryAt?: EntryAt;
   /** The schema the panel's aliases point into, where that is not a kind's own: what is inside an alias's row answers to it. */
   targets?: PrefAliasTargets;
+  /** Which live controls write only the value an edit settles on. */
+  settles?: Readonly<Record<LiveControl, boolean>>;
 }
 
 function leafContext(panelLeaf: PanelLeaf, scope: PanelCellScope): PropertyRenderContext {
@@ -61,6 +64,7 @@ function leafContext(panelLeaf: PanelLeaf, scope: PanelCellScope): PropertyRende
     hidden: hidden.has(panelLeafKey(panelLeaf)),
     hiddenAt: inside?.hiddenAt ?? ((at) => hidden.has(at)),
     ...(entryAt ? { entryAt } : {}),
+    ...(scope.settles ? { settles: scope.settles } : {}),
   };
 }
 

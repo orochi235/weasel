@@ -492,3 +492,55 @@ describe('held pointers', () => {
     expect(h.kinds()).toEqual(['pointermove']);
   });
 });
+
+describe('thresholds read through options', () => {
+  it('takes the double-click window from doubleClickMs, read at each click', () => {
+    let ms: number | undefined = 100;
+    const h = harness({ more: { doubleClickMs: () => ms } });
+    h.click();
+    h.clock.advance(100);
+    h.click();
+    expect(h.kinds()).not.toContain('doubleclick');
+
+    ms = undefined;
+    h.clock.advance(DOUBLE_CLICK_MAX_MS);
+    h.click();
+    h.clock.advance(DOUBLE_CLICK_MAX_MS - 1);
+    h.click();
+    expect(h.kinds()).toContain('doubleclick');
+  });
+
+  it('takes the double-click distance from doubleClickPx', () => {
+    const h = harness({ more: { doubleClickPx: () => 20 } });
+    h.click(0);
+    h.click(DOUBLE_CLICK_MAX_PX + 5);
+    expect(h.kinds()).toContain('doubleclick');
+  });
+
+  it('takes the drag threshold from dragPx', () => {
+    const h = harness({ more: { dragPx: () => 20 } });
+    h.down(1, 0);
+    h.recognizer.move(h.at(1, 19));
+    expect(h.kinds()).toEqual(['press', 'pointermove']);
+    h.recognizer.move(h.at(1, 20));
+    expect(h.kinds()).toEqual(['press', 'pointermove', 'pointerdown', 'pointermove']);
+  });
+
+  it('takes the multitouch tap travel from tapPx', () => {
+    const touch = { pointerType: 'touch' } as const;
+    const tight = harness({ more: { tapPx: () => 2 } });
+    tight.down(1, 0, touch);
+    tight.down(2, 40, touch);
+    tight.recognizer.move(tight.at(1, -3));
+    tight.recognizer.release(tight.at(1, -3));
+    expect(tight.kinds()).not.toContain('multitouchtap');
+
+    const wide = harness({ more: { tapPx: () => 30 } });
+    wide.down(1, 0, touch);
+    wide.down(2, 40, touch);
+    wide.recognizer.move(wide.at(1, -(TAP_THRESHOLD_PX + 1)));
+    wide.recognizer.move(wide.at(2, 40 + TAP_THRESHOLD_PX + 1));
+    wide.recognizer.release(wide.at(1, -(TAP_THRESHOLD_PX + 1)));
+    expect(wide.kinds()).toContain('multitouchtap');
+  });
+});

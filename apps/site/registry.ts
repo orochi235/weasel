@@ -781,6 +781,16 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/ExtendLabDemo.tsx',
   },
   {
+    id: 'lab-smudge-brush',
+    title: 'Smudge brush',
+    category: 'Geometry',
+    description:
+      "A round brush that pushes the outline of the selected paths along with the pointer, through `smudgePath` in `@weasel-js/geom`. Points under the brush move with it, most at its center and not at all at its rim, and a segment the brush meets that is longer than a third of its radius gets anchors added at its middle until it can bend there, so a straight edge dents instead of swinging about its corners. `useSmudgeBrushTool` only binds a drag to the `smudgeBrush` action, which owns the stroke and commits it as one undo step. The brush's radius is in screen pixels, so it covers the same part of the canvas at any zoom; it and the strength are the action's params, set here with `<SceneCanvas tune>` from the control panel. The cursor is a ring the size of the brush, the same one the Simplify brush draws, shown wherever a drag would smudge.",
+    hint: 'The Smudge brush is active and both shapes are selected: the ring under the pointer is the brush. Drag across an edge to push it. Change Brush radius and Strength in the control panel. Each stroke is one undo step, with the button or <kbd>Mod+Z</kbd>. Press <kbd>V</kbd> to select a single shape, then <kbd>S</kbd> to smudge again.',
+    load: () => import('./demos/SmudgeBrushLabDemo').then((m) => m.SmudgeBrushLabDemo),
+    path: 'apps/site/demos/SmudgeBrushLabDemo.tsx',
+  },
+  {
     id: 'lab-distort',
     title: 'Perspective and free distort',
     category: 'Geometry',
@@ -1053,6 +1063,16 @@ const DEMO_META: DemoMeta[] = [
     hint: 'Press "Store size 500": the record keeps 500, and the value reads 64, the leaf\'s max. Reload to see it persist.',
     load: () => import('./demos/PrefsDemo').then((m) => m.PrefsDemo),
     path: 'apps/site/demos/PrefsDemo.tsx',
+  },
+  {
+    id: 'kit-settings',
+    title: 'Kit settings',
+    package: 'prefs',
+    description:
+      "Behavior a user sets once for every component — typeahead and hover-open delays, a stepper's repeat, the double-click interval, the drag threshold, hit-target sizes — read through `useKitSetting` with each component's own constant as the default. `ui` and `core` each export a schema group for theirs, `mergePrefGroups` composes them into one, and `<KitSettingsFromPrefs>` hands a prefs store's values to everything inside. With `css`, the same values are written as `--wzl-kit-*` custom properties; the panel under the specimens shows that sheet.",
+    hint: 'Set Trees → Typeahead to 2000 and type "ap" slowly into the tree, or raise Targets → Selection handle and select a rectangle. Values persist across a reload; Reset puts them back.',
+    load: () => import('./demos/KitSettingsDemo').then((m) => m.KitSettingsDemo),
+    path: 'apps/site/demos/KitSettingsDemo.tsx',
   },
   {
     id: 'registry',

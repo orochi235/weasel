@@ -36,6 +36,7 @@ export { handleLockAngleAction, handleLockLengthAction } from './handleLocks';
 export { averageAnchorsAction, bridgeAnchorsAction, joinAnchorsAction } from './anchorJoin';
 export {
   simplifyPathAction, offsetPathAction, snipAtCrossingsAction, joinPathsAction, bridgePathsAction, trimPathAction, extendToMeetAction,
+  smudgeBrushAction,
   DEFAULT_BRIDGE_TENSION,
 } from '../pathCommands';
 export {

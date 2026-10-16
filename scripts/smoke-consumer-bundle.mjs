@@ -546,6 +546,16 @@ await writeFile(
     `  // @ts-expect-error an overlay that is not the kernel's must not fit\n` +
     `  foreign: routingDefineTool<number>({ id: 'smoke-foreign', overlay: 1 }),\n` +
     `};\n` +
+    // Routing, core and ui each augment `@weasel-js/react`'s `KitSettings`, and
+    // ui and core both add to `KitTargetSettings`. If a merge is lost in the
+    // published .d.ts the path types read `never`, and these fail TS2322.
+    `import type { KitSettingAt, KitSettingPath } from '@weasel-js/react';\n` +
+    `const _kitTree: KitSettingAt<'tree.typeaheadMs'> = 500;\n` +
+    `const _kitGesture: KitSettingAt<'gestures.doubleClickMs'> = 600;\n` +
+    `const _kitTargets: KitSettingPath[] = ['targets.handlePx', 'targets.curveKeyHitPx'];\n` +
+    `// @ts-expect-error no such kit setting\n` +
+    `const _kitWrong: KitSettingPath = 'tree.nope';\n` +
+    `export const _kit = [_kitTree, _kitGesture, _kitTargets, _kitWrong];\n` +
     `export const _t = _tools;\n` +
     `export type { _Sel, _View, _Scene, _Hist, _Tool, _M, _G, _S, _O, _Ui, _Hud, _UiSubpath, _Augmented };\n` +
     `export const _key = _k;\n` +

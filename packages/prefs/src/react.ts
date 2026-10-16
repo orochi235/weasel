@@ -6,3 +6,4 @@
  */
 export { usePref, usePrefsValues } from './hooks';
 export { usePrefsStore } from './usePrefsStore';
+export { KitSettingsFromPrefs } from './KitSettingsFromPrefs';

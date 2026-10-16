@@ -9,6 +9,12 @@ import type { Skin } from '@weasel-js/animator';
 import { IDENTITY_JOINT, type Skeleton } from '@weasel-js/animator';
 import { createRigEditState } from '../bone/rigEditState';
 import { useWeightTool } from './useWeightTool';
+import { POINT_RADIUS_PX } from './weightOverlay';
+import { JOINT_RADIUS_PX } from '../bone/boneOverlay';
+import { boundsOfPath } from '@weasel-js/geom';
+import { KitSettingsProvider, type KitSettingsOverrides } from '@weasel-js/react';
+import type { ReactNode } from 'react';
+import type { DrawCommand } from '@weasel-js/renderer';
 
 type Data = { skeleton?: Skeleton; skin?: Skin; path?: Path };
 
@@ -22,7 +28,7 @@ const ARM: Skeleton = {
   ],
 };
 
-function setup() {
+function setup(settings?: KitSettingsOverrides) {
   const scene = createScene<Data, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
   const rig = scene.add({ kind: 'container', layer: 'main', pose: { x: 100, y: 100, width: 200, height: 100 }, data: { skeleton: ARM } });
   const sleeve = scene.add({
@@ -30,7 +36,9 @@ function setup() {
     data: { path: polygonFromPoints([{ x: 110, y: 120 }, { x: 190, y: 120 }, { x: 290, y: 120 }, { x: 200, y: 140 }]) },
   });
   const state = createRigEditState();
-  const { result } = renderHook(() => useWeightTool({ scene: scene as never, rig: () => rig, state }));
+  const { result } = renderHook(() => useWeightTool({ scene: scene as never, rig: () => rig, state }), {
+    ...(settings ? { wrapper: ({ children }: { children: ReactNode }) => <KitSettingsProvider value={settings}>{children}</KitSettingsProvider> } : {}),
+  });
   const deps = { view: { get: () => VIEW, set: () => {} } } as unknown as ActionDeps;
   const actionOf = (id: string): Action => (result.current.actions ?? []).find((x) => x.id === id)!;
   const ctx = (x: number, y: number, alt: boolean): InvocationCtx => ({
@@ -108,6 +116,16 @@ describe('useWeightTool', () => {
     expect(during[2]).toBe(cold);
     expect(t.skin()).toBeUndefined();
     expect(fills()[0]).toBe(cold);
+  });
+
+  it('sizes its point and joint dots from the targets kit settings, else the constants', () => {
+    const widths = (cmds: DrawCommand[]) => cmds.filter((c) => c.kind === 'path' && c.fill).map((c) => (c.kind === 'path' ? boundsOfPath(c.path).width : 0));
+    const plain = setup();
+    expect(new Set(widths(plain.painted(0)))).toEqual(new Set([2 * POINT_RADIUS_PX]));
+    expect(new Set(widths(plain.painted(1)))).toEqual(new Set([2 * JOINT_RADIUS_PX]));
+    const set = setup({ targets: { weightPointRadiusPx: 6, boneJointRadiusPx: 9 } });
+    expect(new Set(widths(set.painted(0)))).toEqual(new Set([12]));
+    expect(new Set(widths(set.painted(1)))).toEqual(new Set([18]));
   });
 
   it('draws a dot on every point and the skeleton over them', () => {

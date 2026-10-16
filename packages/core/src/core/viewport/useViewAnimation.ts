@@ -1,5 +1,5 @@
 import { useId, useMemo, useRef } from 'react';
-import { useLatest } from '@weasel-js/react';
+import { useKitSetting, useLatest } from '@weasel-js/react';
 import { useAnimator } from '@weasel-js/animator';
 import { easeOutCubic } from '@weasel-js/geom';
 import type { Animator, EasingSpec, InterpolatorFactory } from '@weasel-js/animator';
@@ -13,11 +13,12 @@ import { normalizeView, type View } from './view';
  *  sharing an animator do not cancel each other. */
 export const VIEW_ANIMATION_KEY = 'view';
 
-const DEFAULT_MS = 250;
+/** How long an animated camera move takes, in ms, where nothing says otherwise. */
+export const DEFAULT_VIEW_ANIMATION_MS = 250;
 
 /** How the camera should move. */
 export interface ViewAnimationOptions {
-  /** Duration in ms. Default 250. */
+  /** Duration in ms. Default the `view.animationMs` kit setting, else `DEFAULT_VIEW_ANIMATION_MS`. */
   ms?: number;
   /** Easing curve. Default `easeOutCubic`. */
   easing?: EasingSpec;
@@ -103,10 +104,11 @@ export function useViewAnimationOn(view: ViewChannel, animator: Animator): ViewA
   /** Where this runner's own animation is heading. */
   const targetRef = useRef<View | null>(null);
   const writingRef = useRef(false);
+  const msRef = useLatest(useKitSetting('view.animationMs') ?? DEFAULT_VIEW_ANIMATION_MS);
 
   return useMemo(
-    () => createViewAnimation(key, viewRef, animatorRef, targetRef, writingRef),
-    [key, viewRef, animatorRef],
+    () => createViewAnimation(key, viewRef, animatorRef, targetRef, writingRef, msRef),
+    [key, viewRef, animatorRef, msRef],
   );
 }
 
@@ -117,6 +119,8 @@ function createViewAnimation(
   animatorRef: { readonly current: Animator },
   targetRef: { current: View | null },
   writingRef: { current: boolean },
+  /** The duration a move takes when its own options name none. */
+  msRef: { readonly current: number },
 ): ViewAnimationApi {
   // The value the target's animations add to. While any is in flight it is kept here, apart
   // from the channel, which holds the folded view; null says to work it out from the channel.
@@ -167,7 +171,7 @@ function createViewAnimation(
     animatorRef.current.tween<View>({
       target: viewTarget,
       to: resolved,
-      ms: opts.ms ?? DEFAULT_MS,
+      ms: opts.ms ?? msRef.current,
       easing: opts.easing ?? easeOutCubic,
       interpolator: opts.interpolator ?? interpolateView,
       cancelKey: key,
