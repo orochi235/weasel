@@ -84,14 +84,14 @@ Tag: `path-command`
 | Make handles symmetric | `makeHandlesSymmetric` | Equal length, opposite direction | — | main | core |
 | Delete anchors | `deleteAnchors` | Removes selected anchors | Delete | main | core |
 | Harmonize curvature | `harmonizeAnchors` | Rescales a smooth anchor's handles so curvature is continuous | H in its lab only | main | path-tools |
+| Resample | `resamplePath` | Spreads anchors evenly by arc length, to a count or a spacing, holding corners | — | main | path-tools |
+| Add extremes | `addExtremeAnchors` | Adds anchors at each curve's leftmost, rightmost, top, and bottom, on segments with both ends selected, or the whole path while none is | Alt+X in path edit | main | path-tools |
+| Grow, shrink, and every-Nth selection | `growAnchorSelection`, `shrinkAnchorSelection`, `selectEveryNthAnchor`, `selectCornerAnchors`, `selectSmoothAnchors`, `invertAnchorSelection` | Selects anchors along the path: one further each way, one fewer, every Nth, the corners, the smooth ones, or the rest | ] / [, Alt+N, Alt+C, Alt+M, Alt+I in path edit | main | path-tools |
 | Blend | `blend` | Live steps between two shapes | — | main | path-tools |
 | Bend along a path | `bendAlong` | Lays a shape along a spine | — | main | path-tools |
 | Repeat along a path | `repeatAlong` | Live copies placed along a path | — | main | path-tools |
 | Expand warp | `expandWarp` | Drops a held distort, envelope, or puppet warp, keeping its geometry | — | main | path-tools |
 | Warp settings | `configureWarp` | Remakes a held warp with new settings | — | main | path-tools |
-| Resample | — | Spreads anchors evenly by arc length | — | audition | — |
-| Add extremes | — | Adds anchors at each curve's leftmost, rightmost, top, and bottom | — | audition | — |
-| Grow, shrink, and every-Nth selection | — | Selects anchors along the path | — | audition | — |
 | Segment type | — | Turns selected segments straight or curved | — | audition | — |
 | Path start and direction | — | Sets where a subpath starts and which way it runs | — | audition | — |
 

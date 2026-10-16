@@ -10,7 +10,7 @@ export { identity, translate, scale, rotate, multiply, invert, applyToPoint, box
 export { boundsOfCoords, unionBox, boxContainsPoint, boxContainsBox, rectToContour, type Box, type Rect } from './box';
 export { PATH_COMMANDS, PATH_M, PATH_L, PATH_C, PATH_Q, PATH_Z, PATH_CMD_LENGTHS, pathCommandCoordCount, forEachSegment, type PathCommandName, type PathCommandCode } from './commands';
 export {
-  cubicEvalAt, quadraticEvalAt, elevateQuadraticToCubic, cubicBounds,
+  cubicEvalAt, quadraticEvalAt, elevateQuadraticToCubic, cubicBounds, cubicAxisExtremaTs,
   splitCubicAt, splitQuadraticAt, splitLineAt,
   type LineCoords, type QuadraticCoords, type CubicCoords,
 } from './curve';
@@ -66,6 +66,12 @@ export { schneiderFit, fitCubicWithTangents } from './paths/schneiderFit';
 export { simplifyPath, simplifySpan, simplifySubpath, type SimplifyPathOptions } from './paths/simplifyPath';
 export { simplifyAnchorsAt } from './paths/simplifyAnchors';
 export * from './warp';
+export { resamplePath, type ResamplePathOptions } from './paths/resamplePath';
+export { addExtremaAnchors, segmentExtremaTs } from './paths/extremaAnchors';
+export {
+  anchorsWhere, cornerAnchors, everyNthAnchor, growAnchorSelection, invertAnchorSelection,
+  shrinkAnchorSelection, smoothAnchors,
+} from './paths/anchorSelection';
 export {
   averageAnchorsAt, closestOpenEnds, joinAnchorsAt, joinSubpathEnds, subpathEndAt,
   type AverageAxis, type JoinOptions, type SubpathEnd,
