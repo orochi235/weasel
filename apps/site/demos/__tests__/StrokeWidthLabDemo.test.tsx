@@ -46,7 +46,7 @@ function drag(canvas: Element, [x0, y0]: number[], [x1, y1]: number[], altKey = 
 }
 
 describe('StrokeWidthLabDemo', () => {
-  it("drags a stroke's edge with the Width tool, both sides or with Alt one, as one undo entry each", async () => {
+  it("drags a stroke's edge with the Girth tool, both sides or with Alt one, as one undo entry each", async () => {
     const { container } = await renderSettled(<StrictMode><StrokeWidthLabDemo /></StrictMode>);
     const canvas = container.querySelector('.lk-trial-scene canvas');
     if (!canvas) throw new Error('no scene canvas in the trial');

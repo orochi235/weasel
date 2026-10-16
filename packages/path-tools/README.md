@@ -54,6 +54,6 @@ chrome-caps shows them; the corner widgets show until it hides
 a click selects and Delete removes, and what an edit keeps true.
 
 The tools are hooks, mounted with `<SceneCanvas tools>` as core's are; each
-binds an action its family's preset registers, so turn on both. `useWidthTool`
+binds an action its family's preset registers, so turn on both. `useGirthTool`
 (Shift+W) is the exception: it carries its own actions, and shapes a stroke's
 `vertexWidths` by dragging its edges.

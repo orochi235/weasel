@@ -40,11 +40,11 @@ describe('ToolkitBuilder', () => {
 
   it("mounts path-tools' tools and actions while its switch is on", async () => {
     mount();
-    expect(await screen.findByText('useWidthTool')).toBeTruthy();
+    expect(await screen.findByText('useGirthTool')).toBeTruthy();
     expect(await screen.findByText('useSmudgeBrushTool')).toBeTruthy();
     const withPaths = await countIn('Actions');
     fireEvent.click(screen.getByRole('switch', { name: 'path-tools' }));
-    await waitFor(() => expect(screen.queryByText('useWidthTool')).toBeNull());
+    await waitFor(() => expect(screen.queryByText('useGirthTool')).toBeNull());
     expect(await countIn('Actions')).toBeLessThan(withPaths);
     expect(window.location.hash).toBe('#/dev/toolkits?bundle=standard&paths=0');
   });
@@ -52,7 +52,7 @@ describe('ToolkitBuilder', () => {
   it('mounts path-tools beside every built-in tool', async () => {
     window.history.replaceState(null, '', '#/dev/toolkits?bundle=exhaustive');
     mount();
-    expect(await screen.findByText('useWidthTool')).toBeTruthy();
+    expect(await screen.findByText('useGirthTool')).toBeTruthy();
     expect(await screen.findByText('usePenTool')).toBeTruthy();
   });
 });
