@@ -36,6 +36,9 @@ interface FieldBase {
   /** The control takes no input: every element of it is disabled, and keeps
    *  showing its value. */
   disabled?: boolean;
+  /** The field shows its value and offers nothing to change it with: it draws
+   *  as that value in words (`PropertyReadout`), not as a control. */
+  readOnly?: boolean;
   /** Class on the control element itself. */
   className?: string;
   /** Id for the control element, for a `<label htmlFor>` outside it. */

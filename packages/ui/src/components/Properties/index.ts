@@ -23,6 +23,7 @@ export type {
   PropertyStringFieldProps,
 } from './PropertyField';
 export { PropertyControl, PropertyField } from './PropertyField';
+export { PropertyReadout } from './PropertyReadout';
 export type { PropertyHelpProps } from './PropertyHelp';
 export { PropertyHelp } from './PropertyHelp';
 export type {

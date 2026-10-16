@@ -7,6 +7,7 @@ import { prefAsBox, prefTabRuns } from '@weasel-js/prefs';
 import { BarLayout } from '../Bar/BarLayout';
 import { HiddenBadge, hiddenAttrs } from '../Prefs/hidden';
 import { prefDrawsNoControl } from '../Prefs/PrefWords';
+import { prefDrawsActionRow } from '../Prefs/registeredActions';
 import { pathWithin, RAIL_ATTR, selectionAttrs } from '../Prefs/selection';
 import type { RenderedCell } from './cells';
 import { panelLeafKey, type PanelRow, type PanelSection } from './model';
@@ -53,7 +54,7 @@ function blockRow(row: PanelRow, control: RenderedCell, headless: boolean, marks
     <div key={panelLeafKey(only)} className={only.leaf.kind === 'object' ? undefined : s.blockRow}
       {...selectionAttrs(panelLeafKey(only), marks, true)}>
       {marked && <HiddenBadge lead />}
-      {headless && only.leaf.kind !== 'object' && !prefDrawsNoControl(only.leaf) && (
+      {headless && only.leaf.kind !== 'object' && !prefDrawsNoControl(only.leaf) && !prefDrawsActionRow(only.leaf) && (
         <h4 className={s.sectionTitle} title={only.leaf.description}>
           {only.leaf.name}
         </h4>

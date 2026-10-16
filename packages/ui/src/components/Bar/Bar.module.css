@@ -257,3 +257,23 @@
 .action > svg {
   display: block;
 }
+
+/* An `actions` leaf's buttons: one cell, spaced as the bar spaces its cells. */
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--bar-gap, var(--wzl-space-3));
+}
+
+.bar[data-orientation='vertical'] .actions,
+.menu .actions {
+  flex-direction: column;
+}
+
+/* An action as a panel's row: its icon and label once, across the row. */
+.actionRow {
+  inline-size: 100%;
+  justify-content: flex-start;
+  border: 1px solid var(--wzl-border);
+  background: var(--wzl-surface);
+}

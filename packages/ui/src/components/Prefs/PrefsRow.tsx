@@ -3,6 +3,7 @@ import {
   prefAliasName,
   prefValueAtPath,
   type PrefAction,
+  type PrefActions,
   type PrefAlias,
   type PrefAliasTargets,
   type PrefLeaf,
@@ -11,7 +12,8 @@ import {
   prefDrawsSeveral,
 } from '@weasel-js/prefs';
 import { renderBarLeaf, withBarLabel, type LeafSurface } from '../Bar/renderBarLeaf';
-import { PrefActionButton } from './PrefActionButton';
+import { PrefActionButton, PrefActionRows } from './PrefActionButton';
+import { prefDrawsActionRow } from './registeredActions';
 import { PrefMixed } from './PrefMixed';
 import { aliasOfNothing, prefDrawsNoControl, PrefWords } from './PrefWords';
 import { rowWidthOf } from './compound';
@@ -205,8 +207,6 @@ function LeafRow({ ctx, path: own, pref, at }: { ctx: WalkCtx; path: string; pre
       </div>
     );
   }
-  // No panel draws an `actions` run yet, and a row with no control would be a stray label.
-  if (pref.kind === 'actions' && !custom) return null;
   const control = custom ? custom(renderCtx) : renderBuiltin(renderCtx, ctx.renderers);
   if (custom && control === null) return null;
 
@@ -221,8 +221,8 @@ function LeafRow({ ctx, path: own, pref, at }: { ctx: WalkCtx; path: string; pre
   );
 
   // `block` leaves own their chrome (embedded editors with their own
-  // header) — no label/tooltip row.
-  if (pref.block) {
+  // header), and an action's button reads its own label — no label/tooltip row.
+  if (pref.block || (!custom && prefDrawsActionRow(pref))) {
     return (
       <div className={s.rowSlot} data-wide="" {...selectionAttrs(own, ctx, true)}>
         {marked && <HiddenBadge lead />}
@@ -328,7 +328,7 @@ function renderBuiltin(
     );
   }
   if (pref.kind === 'action') return <PrefActionButton pref={pref as PrefAction} path={ctx.path} disabled={ctx.disabled} />;
-  if (pref.kind === 'actions') return null;
+  if (pref.kind === 'actions') return <PrefActionRows pref={pref as PrefActions} path={ctx.path} disabled={ctx.disabled} />;
   const field = leafField(ctx, siblings);
   if (field === null) {
     // App-defined kind with no `renderers` entry: labeled placeholder, not a

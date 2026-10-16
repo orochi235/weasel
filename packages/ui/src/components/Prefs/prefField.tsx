@@ -1,6 +1,6 @@
 import { numericWeight, type Paint } from '@weasel-js/core';
 import { endless as withInfinity } from '@weasel-js/quantity';
-import { isBuiltinPref, prefDisplayBounds, resolvePrefUnit, type PrefField, type PrefLeaf } from '@weasel-js/prefs';
+import { isBuiltinPref, prefDisplayBounds, resolvePrefUnit, type PrefField, type PrefLeaf, type PrefValueBase } from '@weasel-js/prefs';
 import { endlessAllows } from '../../endless';
 import { stepDisplay } from '../Properties/NumberControls';
 import { namedGlyph } from '../../icons/namedGlyph';
@@ -63,7 +63,8 @@ export function prefFieldProps(
   const made = enabledFieldProps(leaf, state);
   if (made === null) return null;
   const field = surface === undefined ? made : withCommitPolicy(withSurfaceControl(made, surface), surface, settles);
-  return state.disabled ? { ...field, disabled: true } : field;
+  const shown = (leaf as PrefValueBase<string, unknown>).readout === true ? { ...field, readOnly: true } : field;
+  return state.disabled ? { ...shown, disabled: true } : shown;
 }
 
 /** A `field` leaf as a select among the fields the surface draws. */

@@ -108,7 +108,7 @@ export function BarLayout(props: BarLayoutProps) {
       // A vertical bar has no room beside a field, so only a button stays on it.
       const drawn = vertical
         ? pending.flatMap((node): readonly BarCell[] => {
-            if (node.leaf.kind === 'action') return cells([node]);
+            if (node.leaf.kind === 'action' || node.leaf.kind === 'actions') return cells([node]);
             const body = row(node);
             if (body == null) return [];
             return [{ path: node.path, content: <BarPopover label={barLeafName(node.leaf)}>{body}</BarPopover> }];

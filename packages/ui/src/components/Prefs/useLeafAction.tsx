@@ -1,16 +1,12 @@
-import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
-import {
-  actionItems,
-  actionShortcuts,
-  useActionsRegistry,
-  type Action,
-  type ActionItem,
-} from '@weasel-js/core';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { actionItems, actionShortcuts, useActionsRegistry, type ActionItem } from '@weasel-js/core';
 import type { PrefAction } from '@weasel-js/prefs';
 import { namedGlyph } from '../../icons/namedGlyph';
 import { actionIcon } from '../../icons/actionIcon';
 import { formatShortcut } from '../ToolPalette/formatShortcut';
 import { useActionStates } from '../ActionBar/useActionStates';
+import { DEFAULT_REASON_LABELS } from '../ActionBar/reasonLabels';
+import { useRegisteredActions } from './registeredActions';
 
 /** What an action leaf's button is and does, on whatever surface draws it. */
 export interface LeafAction {
@@ -21,15 +17,14 @@ export interface LeafAction {
   shortcut: string | undefined;
   /** It cannot be pressed now: the action says so, a `run` is still going, or the leaf is disabled. */
   disabled: boolean;
+  /** Why the action says it cannot run, in words, when it says. */
+  reason: string | undefined;
   /** Held down. `undefined` for an action with no pressed state. */
   active: boolean | undefined;
   /** The key the leaf names, where nothing registered answers to it. */
   missing: string | undefined;
 }
 
-const NONE: readonly Action[] = Object.freeze([]);
-const noSubscribe = (): (() => void) => () => {};
-const none = (): readonly Action[] => NONE;
 const NO_ITEMS: readonly ActionItem[] = Object.freeze([]);
 
 /**
@@ -44,11 +39,7 @@ const NO_ITEMS: readonly ActionItem[] = Object.freeze([]);
  */
 export function useLeafAction(leaf: PrefAction, path: string, disabled = false): LeafAction {
   const registry = useActionsRegistry();
-  const all = useSyncExternalStore(
-    registry ? registry.subscribe : noSubscribe,
-    registry ? registry.list : none,
-    registry ? registry.list : none,
-  );
+  const all = useRegisteredActions();
   const key = leaf.action;
   const item = key === undefined ? undefined : all.flatMap(actionItems).find((i) => i.key === key);
 
@@ -75,6 +66,7 @@ export function useLeafAction(leaf: PrefAction, path: string, disabled = false):
       icon,
       shortcut: item ? (item.action.shortcut ?? formatShortcut(actionShortcuts(item.action, item.params)[0])) : undefined,
       disabled: disabled || (item !== undefined && !shown.enabled),
+      reason: item && !shown.enabled && shown.reason !== undefined ? (DEFAULT_REASON_LABELS[shown.reason] ?? shown.reason) : undefined,
       active: shown.active,
       missing: item ? undefined : key,
     };
@@ -93,6 +85,7 @@ export function useLeafAction(leaf: PrefAction, path: string, disabled = false):
     icon,
     shortcut: undefined,
     disabled: disabled || pending,
+    reason: undefined,
     active: undefined,
     missing: undefined,
   };

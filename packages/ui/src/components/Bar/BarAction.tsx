@@ -13,6 +13,8 @@ export interface BarActionButtonProps {
   shortcut?: string;
   /** Read the label beside the icon. A button with no icon reads it regardless. */
   labeled?: boolean;
+  /** Drawn as a panel's row: icon and label across the row's width. Implies `labeled`. */
+  row?: boolean;
   /** It cannot be pressed now. */
   disabled?: boolean;
   /** Why it cannot be pressed. Given, a disabled button keeps its tooltip and
@@ -32,7 +34,8 @@ export interface BarActionButtonProps {
  * entry.
  */
 export function BarActionButton(props: BarActionButtonProps) {
-  const { label, icon, shortcut, labeled = false, disabled = false, active, missing, onPress, disabledReason } = props;
+  const { label, icon, shortcut, row = false, disabled = false, active, missing, onPress, disabledReason } = props;
+  const labeled = row || props.labeled === true;
   const dead = missing !== undefined;
   const explained = dead || (disabled && disabledReason !== undefined);
   const tip = dead
@@ -52,7 +55,7 @@ export function BarActionButton(props: BarActionButtonProps) {
           {...(disabled && disabledReason !== undefined ? { 'aria-description': disabledReason } : {})}
           aria-pressed={active}
           disabled={disabled && !explained}
-          className={words ? `${s.action} ${s.actionLabeled}` : s.action}
+          className={[s.action, words && s.actionLabeled, row && s.actionRow].filter(Boolean).join(' ')}
           {...(dead ? { 'data-missing': missing } : {})}
           onClick={() => {
             if (!disabled && !dead) onPress();

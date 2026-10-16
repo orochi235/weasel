@@ -5,10 +5,10 @@
  * tool's options through the same function.
  */
 import type { ReactNode } from 'react';
-import { type PrefAction, type PrefAlias, type PrefMap, type PrefUnion, prefVariantOf } from '@weasel-js/prefs';
+import { type PrefAction, type PrefActions, type PrefAlias, type PrefMap, type PrefUnion, prefVariantOf } from '@weasel-js/prefs';
 import { entryConditions } from '../Prefs/entry';
 import { MapEditor } from '../Prefs/MapEditor';
-import { PrefActionButton } from '../Prefs/PrefActionButton';
+import { PrefActionButton, PrefActionRows } from '../Prefs/PrefActionButton';
 import { PrefMixed } from '../Prefs/PrefMixed';
 import { aliasOfNothing, prefDrawsNoControl, PrefWords } from '../Prefs/PrefWords';
 import { withRowControl } from '../Prefs/surfaceControls';
@@ -139,7 +139,7 @@ export function renderBuiltin(
     );
   }
   if (pref.kind === 'action') return <PrefActionButton pref={pref as PrefAction} path={ctx.path} disabled={ctx.disabled} />;
-  if (pref.kind === 'actions') return null;
+  if (pref.kind === 'actions') return <PrefActionRows pref={pref as PrefActions} path={ctx.path} disabled={ctx.disabled} />;
   if (prefDrawsNoControl(pref)) return <PrefWords pref={pref} />;
   if (pref.kind === 'alias') {
     // The panel draws a resolved alias as its target, so one that reaches here points at nothing.
