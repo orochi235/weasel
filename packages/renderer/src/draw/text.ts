@@ -142,9 +142,9 @@ function drawOutlineMesh(ctx: DrawContext, fill: Paint, mesh: Mesh): void {
  * Stage the rules an underline, strikethrough or overline asks for.
  *
  * Color resolution matches `drawTextGroup` exactly, `fill.opacity` included,
- * so a rule can never disagree with the glyphs it underlines. They stage as ordinary rects, which is what keeps them in the
- * run their glyphs are in. A rule under a texture paint is geometry under it,
- * the way an outline glyph is.
+ * so a rule can never disagree with the glyphs it underlines. They stage as
+ * ordinary rects, which is what keeps them in the run their glyphs are in. A
+ * rule under a texture paint is geometry under it, the way an outline glyph is.
  */
 function drawTextDecorations(
   ctx: DrawContext, decorations: readonly LaidOutDecoration[], dx: number, dy: number,
