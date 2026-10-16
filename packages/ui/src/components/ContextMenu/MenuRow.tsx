@@ -1,15 +1,16 @@
-import type { PointerEvent, ReactNode } from 'react';
+import type { PointerEvent } from 'react';
 import type { MenuEntry } from '@weasel-js/menu';
 import { formatShortcut } from '../ToolPalette/formatShortcut';
 import { Caret } from '../Caret';
+import { actionIcon, type ActionIconSource } from '../../icons/actionIcon';
 import s from './ContextMenu.module.css';
-
-const iconOf = (icon: unknown): ReactNode => (typeof icon === 'function' ? (icon as () => ReactNode)() : (icon as ReactNode));
 
 /** One line of a panel. Rows are `div`s: the panel owns focus and points at
  *  the highlighted row with `aria-activedescendant`. */
 export function MenuRow(props: {
   entry: MenuEntry; id: string; highlighted: boolean; expanded: boolean;
+  /** The id of the panel a submenu row opens. */
+  controls: string;
   onHover(e: PointerEvent): void; onPress(): void;
 }) {
   const { entry: e, id, highlighted, expanded } = props;
@@ -25,10 +26,11 @@ export function MenuRow(props: {
       aria-checked={checkable ? e.checked : undefined}
       aria-haspopup={e.kind === 'submenu' ? 'menu' : undefined}
       aria-expanded={e.kind === 'submenu' ? expanded : undefined}
+      aria-controls={e.kind === 'submenu' && expanded ? props.controls : undefined}
       onPointerMove={props.onHover}
       onClick={props.onPress}
     >
-      <span className={s.icon} aria-hidden="true">{e.kind === 'item' && e.checked ? '✓' : iconOf(e.icon)}</span>
+      <span className={s.icon} aria-hidden="true">{e.kind === 'item' && e.checked ? '✓' : actionIcon(e.icon as ActionIconSource)}</span>
       <span className={s.label}>{e.label}</span>
       {e.kind === 'item' && e.shortcut && <span className={s.shortcut}>{formatShortcut(e.shortcut)}</span>}
       {e.kind === 'submenu' && <Caret className={s.caret} />}

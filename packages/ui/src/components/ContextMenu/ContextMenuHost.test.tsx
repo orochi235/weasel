@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { StrictMode } from 'react';
 import {
   ActionDisabledReason, ActionsProvider, useAction, useMenuHost, useMenus, type MenuDef, type MenuHost,
 } from '@weasel-js/core';
@@ -129,6 +130,59 @@ describe('ContextMenuHost', () => {
       act(dismiss);
       expect(screen.queryByRole('menu')).toBeNull();
     }
+  });
+
+  it('closes on resize', () => {
+    render(<ActionsProvider><Setup /></ActionsProvider>);
+    openAt();
+    act(() => { window.dispatchEvent(new Event('resize')); });
+    expect(screen.queryByRole('menu')).toBeNull();
+  });
+
+  it('works under StrictMode: keys move the highlight and a click runs the item', () => {
+    ran.length = 0;
+    render(<StrictMode><ActionsProvider><Setup /></ActionsProvider></StrictMode>);
+    openAt(10, 10, 'keyboard');
+    const menu = screen.getByRole('menu');
+    expect(document.activeElement).toBe(menu);
+    fireEvent.keyDown(menu, { key: 'ArrowDown' });
+    expect(menu.getAttribute('aria-activedescendant')).toBe(screen.getByRole('menuitem', { name: 'Copy' }).id);
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Copy' }));
+    expect(ran).toEqual(['copy']);
+    expect(screen.queryByRole('menu')).toBeNull();
+  });
+
+  it('a replacing open keeps focus on the new menu, and the close returns it once', () => {
+    render(<ActionsProvider><button>canvas</button><Setup /></ActionsProvider>);
+    const before = screen.getByRole('button', { name: 'canvas' });
+    before.focus();
+    const focus = vi.spyOn(before, 'focus');
+    openAt(10, 10);
+    openAt(50, 50);
+    expect(document.activeElement).toBe(screen.getByRole('menu'));
+    fireEvent.keyDown(screen.getByRole('menu'), { key: 'Escape' });
+    expect(document.activeElement).toBe(before);
+    expect(focus).toHaveBeenCalledTimes(1);
+  });
+
+  it('labels a submenu by its row, and the row controls it', () => {
+    render(<ActionsProvider><Setup /></ActionsProvider>);
+    openAt(10, 10, 'keyboard');
+    fireEvent.keyDown(screen.getByRole('menu'), { key: 'End' });
+    fireEvent.keyDown(screen.getByRole('menu'), { key: 'ArrowRight' });
+    const row = screen.getByRole('menuitem', { name: 'Arrange' });
+    const sub = screen.getAllByRole('menu')[1]!;
+    expect(sub.getAttribute('aria-labelledby')).toBe(row.id);
+    expect(sub.id).toBeTruthy();
+    expect(row.getAttribute('aria-controls')).toBe(sub.id);
+  });
+
+  it('keeps a right-click inside the menu from reaching the app', () => {
+    const spy = vi.fn();
+    render(<ActionsProvider><div onContextMenu={spy}><Setup /></div></ActionsProvider>);
+    openAt();
+    fireEvent.contextMenu(screen.getByRole('menuitem', { name: 'Cut' }));
+    expect(spy).not.toHaveBeenCalled();
   });
 
   it('a second open replaces the first (Review Focus 3)', () => {

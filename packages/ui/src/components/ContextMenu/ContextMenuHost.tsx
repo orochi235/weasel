@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useId, useMemo, useRef, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { createPortal } from 'react-dom';
-import { createMenuController, type Rect } from '@weasel-js/menu';
-import { useMenuHost, type OpenMenu } from '@weasel-js/core';
+import { createMenuController, type MenuController, type Rect } from '@weasel-js/menu';
+import { useMenuHost, type MenuHost, type OpenMenu } from '@weasel-js/core';
 import { useOverlayPortal } from '../../overlays/portalHost';
 import { MenuPanel } from './MenuPanel';
 import { useDismiss } from './useDismiss';
@@ -13,6 +13,7 @@ const nothing = () => null;
 export function ContextMenuHost() {
   const host = useMenuHost();
   const open = useSyncExternalStore(host?.subscribe ?? noop, host?.current ?? nothing, host?.current ?? nothing);
+  useReturnFocus(host);
   const { anchor, portalProps, ready } = useOverlayPortal();
   const target = portalProps.UNSTABLE_portalContainer ?? (typeof document !== 'undefined' ? document.body : null);
   return (
@@ -23,17 +24,41 @@ export function ContextMenuHost() {
   );
 }
 
+/** Remember what had focus when a menu opens from none, and give it back when the last one closes.
+ *  Reads the host as it changes, before any panel renders and takes focus. */
+function useReturnFocus(host: MenuHost | null): void {
+  useEffect(() => {
+    if (!host) return;
+    let returnTo: Element | null = null;
+    let wasOpen = host.current() !== null;
+    return host.subscribe(() => {
+      const isOpen = host.current() !== null;
+      if (isOpen && !wasOpen) returnTo = document.activeElement;
+      if (!isOpen && wasOpen) {
+        const el = returnTo as HTMLElement | null;
+        returnTo = null;
+        if (el?.isConnected) el.focus?.();
+      }
+      wasOpen = isOpen;
+    });
+  }, [host]);
+}
+
 function OpenPanels({ open, close }: { open: OpenMenu; close: () => void }) {
+  const [controller, setController] = useState<MenuController | null>(null);
+  // Built where it is disposed, so StrictMode's rerun of this effect gets a live one.
+  useLayoutEffect(() => {
+    const c = createMenuController({ entries: open.entries, highlightFirst: open.source === 'keyboard', onClose: close });
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- publishes the controller this effect creates
+    setController(c);
+    return () => c.dispose();
+  }, [open, close]);
+  return controller ? <Panels controller={controller} open={open} close={close} /> : null;
+}
+
+function Panels({ controller, open, close }: { controller: MenuController; open: OpenMenu; close: () => void }) {
   const idBase = useId();
-  const returnTo = useRef<Element | null>(typeof document !== 'undefined' ? document.activeElement : null);
   const panels = useRef(new Map<number, HTMLElement>());
-  const controller = useMemo(() => createMenuController({
-    entries: open.entries, highlightFirst: open.source === 'keyboard', onClose: close,
-  }), [open, close]);
-  useEffect(() => () => {
-    controller.dispose();
-    (returnTo.current as HTMLElement | null)?.focus?.();
-  }, [controller]);
   const stack = useSyncExternalStore(controller.subscribe, controller.stack, controller.stack);
   const isInside = useCallback(
     (t: EventTarget | null) => t instanceof Node && [...panels.current.values()].some((el) => el.contains(t)),
@@ -41,9 +66,9 @@ function OpenPanels({ open, close }: { open: OpenMenu; close: () => void }) {
   );
   useDismiss(isInside, close);
 
+  const rowId = (level: number) => `${idBase}-${level}-${stack[level]}`;
   const rowRect = (level: number): Rect | null => {
-    const at = stack[level];
-    const el = at == null ? null : document.getElementById(`${idBase}-${level}-${at}`);
+    const el = stack[level] == null ? null : document.getElementById(rowId(level));
     if (!el) return null;
     const r = el.getBoundingClientRect();
     return { x: r.left, y: r.top, w: r.width, h: r.height };
@@ -61,6 +86,7 @@ function OpenPanels({ open, close }: { open: OpenMenu; close: () => void }) {
           highlight={highlight}
           childOpen={stack.length > level + 1}
           idBase={idBase}
+          labelledBy={level === 0 ? undefined : rowId(level - 1)}
           anchor={level === 0 ? open.client : null}
           parentRow={() => (level === 0 ? null : rowRect(level - 1))}
           focus={level === stack.length - 1}

@@ -8,6 +8,8 @@ import s from './ContextMenu.module.css';
 export function MenuPanel(props: {
   controller: MenuController; level: number; entries: readonly MenuEntry[];
   highlight: number | null; childOpen: boolean; idBase: string;
+  /** The row a submenu hangs from. */
+  labelledBy?: string;
   anchor: { x: number; y: number } | null;
   parentRow: () => Rect | null;
   focus: boolean;
@@ -43,13 +45,15 @@ export function MenuPanel(props: {
   return (
     <div
       ref={(el) => { ref.current = el; props.register(el); }}
+      id={`${idBase}-panel-${level}`}
       role="menu"
       tabIndex={-1}
+      aria-labelledby={props.labelledBy}
       className={s.panel}
       aria-activedescendant={highlight == null ? undefined : `${idBase}-${level}-${highlight}`}
       onKeyDown={onKeyDown}
       onPointerLeave={() => c.hover(level, null)}
-      onContextMenu={(e) => e.preventDefault()}
+      onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); }}
     >
       {entries.map((entry, i) => (
         <MenuRow
@@ -58,6 +62,7 @@ export function MenuPanel(props: {
           id={`${idBase}-${level}-${i}`}
           highlighted={highlight === i}
           expanded={highlight === i && props.childOpen}
+          controls={`${idBase}-panel-${level + 1}`}
           onHover={(e) => c.hover(level, i, { x: e.clientX, y: e.clientY })}
           onPress={() => c.press(level, i)}
         />
