@@ -12,7 +12,8 @@
  * hit-tested only while chrome-caps shows `path-edit.balance`. N is the flat
  * index of the anchor the segment starts at.
  *
- * Both keep each handle's angle, so an angle lock holds through them. A length
+ * Under a `pathSymmetry` dep a grip drag moves every image of both handles,
+ * as `editAnchors` moves a dragged handle's. Both keep each handle's angle, so an angle lock holds through them. A length
  * lock in force for handle drags (the `editAnchors` dep's `handleLocks`, or Mod)
  * holds the drag still, as it would a handle drag with the angle held too.
  */
@@ -32,6 +33,7 @@ import {
 } from '@weasel-js/geom';
 import type { EditAnchorsDep } from '../depSchema';
 import { inPlane, editingLayer } from '../planeInput';
+import { editedPathSymmetries } from '../edit-anchors/symmetry';
 import { pathEditPreview } from '../edit-anchors/preview';
 import { locksInForce } from '../edit-anchors/handleDrag';
 import { commitAnchorEdit } from './anchorEditing';
@@ -68,7 +70,7 @@ export const balanceHandlesAction: Action & { requires: string[] } = inPlane({
   defaultBinding: { kind: 'drag', target: { kindOf: isBalanceGrip } },
   cursor: 'grab',
   eligible: { capability: 'edits-anchors' },
-  requires: ['editAnchors'],
+  requires: ['editAnchors', 'pathSymmetry'],
   invoker: {
     timing: 'ongoing',
     start(ctx: InvocationCtx): OngoingHandle {
@@ -77,6 +79,7 @@ export const balanceHandlesAction: Action & { requires: string[] } = inPlane({
       const { dep, path: originPath, sub, segIdx } = target;
       const id = dep.editingId;
       const origin = pathToAnchors(originPath) as AnchorSet;
+      const symmetries = editedPathSymmetries(ctx.deps.pathSymmetry, id, origin);
       // The grip is wherever the press landed within its radius; measure the
       // drag from there so the grab doesn't jump.
       const press = { x: ctx.world.x, y: ctx.world.y };
@@ -96,7 +99,7 @@ export const balanceHandlesAction: Action & { requires: string[] } = inPlane({
           }
           const at = balanceFactorToward(origin, sub, segIdx, moveCtx.world);
           const factor = pressFactor > 0 ? at / pressFactor : at;
-          current = editAnchorSetTracked(originPath, (set) => scaleSegmentHandles(set, sub, segIdx, factor)) ?? current;
+          current = editAnchorSetTracked(originPath, (set) => scaleSegmentHandles(set, sub, segIdx, factor, symmetries)) ?? current;
         },
         onEnd(_endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
           const done = current;

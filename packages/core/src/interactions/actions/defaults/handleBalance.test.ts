@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { PathBuilder, pathToAnchors, type PolygonPath } from '@weasel-js/geom';
+import { PathBuilder, pathFromD, pathToAnchors, type Affine, type PolygonPath } from '@weasel-js/geom';
 import type { ImmediateInvoker, InvocationCtx, OngoingInvoker } from '@weasel-js/routing';
 import { makeEditAnchorsDep } from '../testUtils';
 import { balanceHandlesAction, equalizeHandlesAction } from './handleBalance';
@@ -72,6 +72,37 @@ describe('balanceHandlesAction', () => {
     expect(drag({ angle: false, length: true })).toHaveLength(0);
     expect(drag(null, { meta: true })).toHaveLength(0);
     expect(drag({ angle: true, length: false }, { shift: true })).toHaveLength(1);
+  });
+
+  it('scales the images of both handles on a path symmetric under the pathSymmetry dep', () => {
+    // Two segments, each the other's mirror across x = 50, meeting at a smooth
+    // anchor on the axis. The first segment's grip sits at (25, 25) and slides
+    // up from the chord's middle (25, 15) by 10 per unit of scale.
+    let current = pathFromD('M0 0 C10 20 40 30 50 30 C60 30 90 20 100 0') as PolygonPath;
+    const commits: PolygonPath[] = [];
+    const dep = makeEditAnchorsDep({
+      editingId: 'p1',
+      getEditablePath: () => current,
+      applyEdit: (_id, worldPath) => {
+        current = worldPath as PolygonPath;
+        commits.push(current);
+      },
+    });
+    const across50: Affine = [-1, 0, 0, 1, 100, 0];
+    const deps = { editAnchors: dep, pathSymmetry: { transforms: () => [across50] } } as unknown as InvocationCtx['deps'];
+    const handle = (balanceHandlesAction.invoker as OngoingInvoker).start(at(deps, 25, 25, 'balance:0'), {});
+    // Pump events carry an empty dep bag, as the dispatcher sends them.
+    handle.onMove!(at({} as InvocationCtx['deps'], 25, 35));
+    handle.onEnd!(at({} as InvocationCtx['deps'], 25, 35), 'commit');
+    expect(commits).toHaveLength(1);
+    const [a, mid, b] = pathToAnchors(commits[0]).anchors[0];
+    expect(a.outHandle!.x).toBeCloseTo(20, 4);
+    expect(a.outHandle!.y).toBeCloseTo(40, 4);
+    expect(mid.inHandle!.x).toBeCloseTo(30, 4);
+    expect(mid.outHandle!.x).toBeCloseTo(70, 4);
+    expect(mid.outHandle!.y).toBeCloseTo(30, 4);
+    expect(b.inHandle!.x).toBeCloseTo(80, 4);
+    expect(b.inHandle!.y).toBeCloseTo(40, 4);
   });
 
   it('declines a press that is not on a balance grip', () => {

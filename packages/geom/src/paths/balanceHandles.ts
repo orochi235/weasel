@@ -1,5 +1,6 @@
 import { flatAnchorIndex, type AnchorSet } from './anchorEdits';
 import { isStraightSegment, segmentEnds, type PenAnchor } from './anchors';
+import { moveHandleSymmetric, type AnchorSymmetry } from './anchorSymmetry';
 
 type Point = { x: number; y: number };
 
@@ -67,16 +68,30 @@ function segmentHandles(
  * either end stays smooth: its other handle points the same way as before.
  * `factor` below zero counts as zero, which retracts both handles.
  *
+ * Under `syms`, as `anchorSymmetries` gives them, every image of either handle
+ * moves to the image of where that handle goes, the way `moveHandleSymmetric`
+ * moves a dragged handle's.
+ *
  * Returns false when the segment has no balance line or nothing moved.
  */
-export function scaleSegmentHandles(set: AnchorSet, sub: number, segIdx: number, factor: number): boolean {
+export function scaleSegmentHandles(
+  set: AnchorSet,
+  sub: number,
+  segIdx: number,
+  factor: number,
+  syms: readonly AnchorSymmetry[] = [],
+): boolean {
   const handles = segmentHandles(set, sub, segIdx);
   if (!handles) return false;
   const k = Math.max(0, factor);
   if (k === 1) return false;
   const { a, b } = handles;
-  a.outHandle = scaledFrom(a, a.outHandle!, k);
-  b.inHandle = scaledFrom(b, b.inHandle!, k);
+  // Both targets before either write: an image of the first handle can be the second.
+  const out = scaledFrom(a, a.outHandle!, k);
+  const into = scaledFrom(b, b.inHandle!, k);
+  const next = segIdx + 1 === set.anchors[sub].length ? 0 : segIdx + 1;
+  moveHandleSymmetric(set, flatAnchorIndex(set, sub, segIdx), 'out', out.x, out.y, true, syms);
+  moveHandleSymmetric(set, flatAnchorIndex(set, sub, next), 'in', into.x, into.y, true, syms);
   return true;
 }
 
