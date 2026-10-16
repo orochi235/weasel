@@ -838,6 +838,15 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/LoupeModelDemo.tsx',
   },
   {
+    id: 'context-menu',
+    title: 'Context menus',
+    category: 'Selection & actions',
+    description: "Menus declared as data: each row names a registered action, so the menu, the palette and the keyboard all run the same command. Right-click a shape and the kit selects it, then opens the menu declared for a selected shape; right-click empty canvas for the canvas menu. The list beside the canvas opens a menu from ordinary HTML with useContextMenu. Rows show each action's shortcut and gray out when the action cannot run.",
+    hint: 'Right-click a shape, the canvas, or a row in the list. <kbd>Shift</kbd>+<kbd>F10</kbd> opens the menu from the keyboard.',
+    load: () => import('./demos/ContextMenuDemo').then((m) => m.ContextMenuDemo),
+    path: 'apps/site/demos/ContextMenuDemo.tsx',
+  },
+  {
     id: 'gesture-grammar',
     title: 'Route grammar and matcher',
     package: 'gestures',
