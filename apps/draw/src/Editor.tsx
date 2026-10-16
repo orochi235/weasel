@@ -3,6 +3,7 @@ import {
   createMeasurements,
   type SceneCanvasApi,
   type SelectionApi,
+  type Tool,
   type ToolsApi,
   useActionsRegistry,
   type View
@@ -26,8 +27,13 @@ import { useDocumentState } from './useDocumentState';
 import { useLastTool } from './useLastTool';
 import { useMachineFontOutlines } from './useMachineFontOutlines';
 import { useRightSidebarWidth } from './useRightSidebarWidth';
+import { isPathTool } from './usePathToolsTools';
 import { useTextEditSession } from './useTextEditSession';
 import { Workspace } from './Workspace';
+
+const isCoreTool = (tool: Tool): boolean => !isPathTool(tool);
+/** The path palette's groups: the Width tool, the stroke tools, then the warps. */
+const PATH_TOOL_GROUPS = ['shape', 'path', 'warp'] as const;
 
 export interface EditorProps {
   scene: DrawScene;
@@ -103,12 +109,26 @@ export function Editor({ scene, selection, modality }: EditorProps): ReactElemen
             {tools && (
               <ToolPalette
                 tools={tools}
+                include={isCoreTool}
                 orientation="vertical"
                 lookupShortcut={(id) => lookupShortcutByToolId(id, actionsReg?.list() ?? [])}
                 modeRegistry={modality.machine.registry}
               />
             )}
             <ActiveSwatches />
+          </Sidebar>
+          <Sidebar side="left" className="wd-sidebar left path" ariaLabel="Path tools">
+            {tools && (
+              <ToolPalette
+                tools={tools}
+                include={isPathTool}
+                ariaLabel="Path tools"
+                groupOrder={PATH_TOOL_GROUPS}
+                orientation="vertical"
+                lookupShortcut={(id) => lookupShortcutByToolId(id, actionsReg?.list() ?? [])}
+                modeRegistry={modality.machine.registry}
+              />
+            )}
           </Sidebar>
           <Workspace
             scene={scene}

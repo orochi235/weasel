@@ -16,7 +16,7 @@ import { DispatchTraceWidget } from './toolkit/DispatchTraceWidget';
 import { ResolutionWidget } from './toolkit/ResolutionWidget';
 import { RoutesWidget } from './toolkit/RoutesWidget';
 import { ToolsWidget } from './toolkit/ToolsWidget';
-import { usePathToolsTools } from './toolkit/usePathToolsTools';
+import { usePathToolsTools } from '../usePathToolsTools';
 import { useLiveActions, useToolReflection } from './toolkit/useToolReflection';
 import s from './ToolkitBuilder.module.css';
 

@@ -15,7 +15,7 @@ import {
   type View,
   workspaceTintLayer
 } from '@weasel-js/core';
-import { pathTools, useWidthTool } from '@weasel-js/path-tools';
+import { pathTools } from '@weasel-js/path-tools';
 import { unpackSvgFiles } from '@weasel-js/svg';
 import { MeasureReadout, SceneGradientHandles, ToastRegion } from '@weasel-js/ui';
 import { type ReactElement, type RefObject, useCallback, useMemo } from 'react';
@@ -38,6 +38,7 @@ import { useColorContext } from './tools/colorContext';
 import { useEditorAmbient } from './useEditorAmbient';
 import { useGrid } from './useGrid';
 import { usePathDirection } from './usePathDirection';
+import { usePathToolsTools } from './usePathToolsTools';
 import { useSymmetry } from './useSymmetry';
 import { usePageFit } from './usePageFit';
 
@@ -111,7 +112,7 @@ export function Workspace(props: WorkspaceProps): ReactElement {
   });
   const insertPaint = useInsertPaint();
   const sliceTool = useSliceTool();
-  const widthTool = useWidthTool();
+  const pathToolsTools = usePathToolsTools();
   const { measurements } = props;
   const measureTool = useMeasureTool({ measurements });
   const measureEntry = useMemo(
@@ -175,7 +176,7 @@ export function Workspace(props: WorkspaceProps): ReactElement {
           scene={scene}
           selection={selection}
           defaultTools={BUILTIN_TOOL_IDS}
-          tools={{ slice: sliceTool, width: widthTool, measure: measureTool, opacityScrub: opacityScrubTool }}
+          tools={{ ...pathToolsTools, slice: sliceTool, measure: measureTool, opacityScrub: opacityScrubTool }}
           ingestion={DRAW_INGESTION}
           insertPaint={insertPaint}
           // Pick on the drawn shape, not the bounding box: clicking the blank right half of a
