@@ -2,6 +2,8 @@ import { Icon, type IconProps } from './Icon';
 
 export { Icon, isFillable } from './Icon';
 export type { IconProps } from './Icon';
+export { actionIcon } from './actionIcon';
+export type { ActionIconSource } from './actionIcon';
 export { ICON_GROUPS, MARK_ICONS } from './generated/groups';
 export type { MarkIconName } from './generated/groups';
 export { ICON_FILLS } from './generated/fills';
