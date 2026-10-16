@@ -61,7 +61,6 @@ export { simplifyPath, simplifySpan, simplifySubpath, type SimplifyPathOptions }
 export { simplifyAnchorsAt } from './paths/simplifyAnchors';
 export * from './warp';
 export { resamplePath, type ResamplePathOptions } from './paths/resamplePath';
-export { arcRun, type ArcRun } from './paths/arcRun';
 export { addExtremaAnchors, segmentExtremaTs } from './paths/extremaAnchors';
 export {
   anchorsWhere, cornerAnchors, everyNthAnchor, growAnchorSelection, invertAnchorSelection,

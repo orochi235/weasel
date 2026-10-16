@@ -130,10 +130,6 @@ export {
   simplifySpan, simplifySubpath, subpathEndAt,
   type AverageAxis, type JoinOptions, type SimplifyPathOptions, type SubpathEnd,
 } from '@weasel-js/geom';
-export {
-  addExtremaAnchors, resamplePath, type ResamplePathOptions,
-  cornerAnchors, everyNthAnchor, growAnchorSelection, invertAnchorSelection, shrinkAnchorSelection, smoothAnchors,
-} from '@weasel-js/geom';
 export { pathInPoseFrame, pathInWorld, worldEditToStorage, type PathInWorldPose } from '@weasel-js/geom';
 export { poseRotationOf, rotatePathAround, type PoseRotation } from '@weasel-js/geom';
 export {

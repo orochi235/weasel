@@ -1,16 +1,23 @@
-import { act } from '@testing-library/react';
+import { act, cleanup } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { pathToAnchors, type PolygonPath } from '@weasel-js/core';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { StrictMode } from 'react';
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { ResampleLabDemo } from '../ResampleLabDemo';
-import { installLabEnv } from './labEnv';
+import { stubResizeObserver } from './pathEditLabHarness';
 
-installLabEnv();
+beforeAll(() => {
+  window.history.replaceState(null, '', '/?test=1');
+  stubResizeObserver();
+});
+afterEach(() => {
+  cleanup();
+  delete window.__weaselTest;
+});
 
 const anchors = () =>
-  pathToAnchors((window.__weaselTest!.getScene().nodes.find((n) => n.id === 'wave')!.data as { path: PolygonPath }).path)
+  pathToAnchors((window.__weaselTest!.getScene().nodes.find((n) => n.id === 'curve')!.data as { path: PolygonPath }).path)
     .anchors[0].length;
 
 describe('ResampleLabDemo', () => {

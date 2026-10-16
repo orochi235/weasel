@@ -2,11 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { pathFromD, type PolygonPath } from '@weasel-js/geom';
 import type { ActionDeps, ImmediateInvoker } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
-import { makeEditAnchorsDep } from '../testUtils';
+import { makeEditAnchorsDepForTests as makeEditAnchorsDep } from '@weasel-js/core/test-seams';
 import {
   growAnchorSelectionAction, invertAnchorSelectionAction, selectCornerAnchorsAction, selectEveryNthAnchorAction,
   selectSmoothAnchorsAction, shrinkAnchorSelectionAction,
-} from './anchorSelectAlong';
+} from './anchorSelect';
 
 /** An open path of six anchors: corner, smooth, smooth, then three corners. */
 const PATH = pathFromD('M 0 0 C 10 -10 20 -10 30 0 C 40 10 50 10 60 0 C 70 -10 80 -10 90 0 L 120 0 L 150 30') as PolygonPath;

@@ -3,8 +3,9 @@
  * ongoing action so a control can preview it and commit once.
  */
 import { resamplePath, type ResamplePathOptions } from '@weasel-js/geom';
-import { livePathEdit } from './livePathEdit';
-import { reshapeOps } from './pathNodes';
+import { livePathEdit, reshapeOps } from '@weasel-js/core';
+
+const LABEL = 'Resample';
 
 /** What the `resamplePath` action reads from its params. */
 export type ResamplePathParams = {
@@ -20,12 +21,12 @@ export type ResamplePathParams = {
 
 const num = (v: unknown): number | undefined => (typeof v === 'number' && Number.isFinite(v) ? v : undefined);
 
-/** `params` as `resamplePath` options, with `count` given as `value`. */
-function resampleOptions(value: number, params: Readonly<Record<string, unknown>>): ResamplePathOptions {
+/** `params` as `resamplePath` options, with `count` given as `count`. */
+function resampleOptions(count: number, params: Readonly<Record<string, unknown>>): ResamplePathOptions {
   const spacing = num(params.spacing);
   const tolerance = num(params.tolerance);
   return {
-    ...(spacing !== undefined && spacing > 0 ? { spacing } : value > 0 ? { count: value } : {}),
+    ...(spacing !== undefined && spacing > 0 ? { spacing } : count > 0 ? { count } : {}),
     ...(tolerance !== undefined ? { tolerance } : {}),
     keepCorners: params.keepCorners !== false,
   };
@@ -41,9 +42,9 @@ function resampleOptions(value: number, params: Readonly<Record<string, unknown>
  */
 export const resamplePathAction = livePathEdit({
   id: 'resamplePath',
-  label: 'Resample',
+  label: LABEL,
   param: 'count',
   initial: 0,
   edit: ({ path }, count, params) => resamplePath(path, resampleOptions(count, params)),
-  commit: (_deps, next) => [...next.values()].flatMap(({ node, path }) => reshapeOps(node.node, path, 'Resample')),
+  commit: (_deps, next) => [...next.values()].flatMap(({ node, path }) => reshapeOps(node.node, path, LABEL)),
 });

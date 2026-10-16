@@ -1,4 +1,5 @@
-import { pathFromD, type RectPose, useOngoingAction } from '@weasel-js/core';
+import { type RectPose, useOngoingAction } from '@weasel-js/core';
+import { resamplePreset } from '@weasel-js/path-tools';
 import {
   type ConfigOf,
   defineInstrument,
@@ -11,7 +12,8 @@ import {
 } from '@weasel-js/labkit';
 import { Button, SelectIcon } from '@weasel-js/ui';
 import { useEffect, useMemo } from 'react';
-import { OpenInPathEdit, PathLabStage, pathLabScene, pathNode } from './pathLab/pathLab';
+import { createPathLabScene, useSeededPathEdit } from './pathEditLabSeed';
+import { PathLabStage } from './pathLab/pathLab';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 
@@ -29,10 +31,12 @@ type State = SceneTrialState<unknown, 'default', RectPose>;
 const WAVE = 'M 80 300 C 120 120 160 120 200 220 C 220 270 300 300 320 180 L 380 120 '
   + 'C 420 60 470 80 520 180 C 540 220 600 260 660 200';
 
-const createLabScene = () => pathLabScene([pathNode('wave', pathFromD(WAVE), null)]);
+const createLabScene = () => createPathLabScene(WAVE);
+const features = ['draw', resamplePreset] as const;
 
 function ResampleTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const scene = useTrialScene(ctx, createLabScene);
+  const { selection, pathEdit, redrawOn } = useSeededPathEdit();
   const resample = useOngoingAction('resamplePath');
   const { by, count, spacing, keepCorners, tolerance } = ctx.config;
   const params = useMemo(
@@ -49,11 +53,13 @@ function ResampleTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   return (
     <PathLabStage bar={bar}>
       <TrialSceneCanvas
-        features={['draw']}
+        features={features}
         scene={scene}
         trial={ctx.trial}
+        selection={selection}
+        pathEdit={pathEdit}
+        redrawOn={redrawOn}
       />
-      <OpenInPathEdit />
     </PathLabStage>
   );
 }

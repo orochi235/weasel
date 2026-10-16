@@ -6,7 +6,6 @@ import type { Op } from 'core/ops/types';
 import { asNodeId, type NodeId } from 'core/scene/types';
 import { simplifyPathAction, offsetPathAction } from './simplifyOffset';
 import { joinPathsAction, snipAtCrossingsAction } from './cutJoin';
-import { resamplePathAction } from './resample';
 
 interface StubNode { id: NodeId; kind: 'leaf'; layer: string; pose: unknown; data: unknown; parent: NodeId | null }
 
@@ -147,31 +146,5 @@ describe('joinPathsAction', () => {
     expect(joinPathsAction.enabled!(three.deps)).toBe(ActionDisabledReason.NotApplicable);
     const editing = setup({ a: line(0, 0, 1, 0) }, ['a'], { editAnchors: { editingId: 'a' } });
     expect(joinPathsAction.enabled!(editing.deps)).toBe(ActionDisabledReason.NotApplicable);
-  });
-});
-
-describe('resamplePathAction', () => {
-  const ongoing = resamplePathAction.invoker as OngoingInvoker;
-  const count = (p: unknown) => pathToAnchors(p as PolygonPath).anchors[0].length;
-
-  it('previews each change of params and commits the last as one entry', () => {
-    const { deps, batches } = setup({ a: square(100) }, ['a']);
-    const handle = ongoing.start(ctx(deps, { count: 8, keepCorners: true }), {});
-    // Every corner is held, so a count of 8 adds one anchor to each side.
-    expect(count(handle.previewPose!('a'))).toBe(8);
-    handle.onMove!(ctx(deps, { spacing: 20 }));
-    expect(count(handle.previewPose!('a'))).toBe(20);
-    handle.onMove!(ctx(deps, { keepCorners: false, spacing: 0, count: 6, tolerance: 1 }));
-    expect(count(handle.previewPose!('a'))).toBeGreaterThanOrEqual(6);
-    expect(batches).toHaveLength(0);
-    handle.onEnd!(ctx(deps), 'commit');
-    expect(batches).toHaveLength(1);
-    expect(batches[0].label).toBe('Resample');
-  });
-
-  it('reads params a tuning supplies as a thunk', () => {
-    const { deps } = setup({ a: square(100) }, ['a']);
-    const handle = ongoing.start(ctx(deps), { params: () => ({ count: 12 }) });
-    expect(count(handle.previewPose!('a'))).toBe(12);
   });
 });
