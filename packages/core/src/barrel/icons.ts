@@ -25,6 +25,8 @@ export {
   PenIcon,
   HandIcon,
   SliceIcon,
+  BoneIcon,
+  WeightIcon,
   MeasureIcon,
   UnknownIcon,
 } from '../icons';
@@ -47,7 +49,7 @@ export {
 } from '../interactions/actions/defaults/icons/booleanIcons';
 export { CreateOutlinesIcon, OutlineStrokeIcon } from '../interactions/actions/defaults/icons/outlineIcons';
 export {
-  AverageAnchorsIcon, HarmonizeIcon, HoldHandleAngleIcon, HoldHandleLengthIcon, RetractHandlesIcon, SimplifyBrushIcon,
+  AverageAnchorsIcon, BendSegmentIcon, HarmonizeIcon, HoldHandleAngleIcon, HoldHandleLengthIcon, RetractHandlesIcon, SimplifyBrushIcon,
   SymmetricHandlesIcon,
 } from '../interactions/actions/defaults/icons/anchorIcons';
 export {

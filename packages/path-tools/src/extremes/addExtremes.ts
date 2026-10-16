@@ -6,6 +6,7 @@ import type { Action, ImmediateInvoker } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import { addExtremaAnchors, anchorAt, segmentEnds, type AnchorSet, type PenAnchor } from '@weasel-js/geom';
 import { anchorEditWouldChange, commitAnchorEdit, depOf, pathOperationTags } from '@weasel-js/core';
+import { ExtremeAnchorsIcon } from '../commandIcons';
 
 const LABEL = 'Add extremes';
 
@@ -45,6 +46,7 @@ function addExtremesTo(set: AnchorSet, selected: ReadonlySet<number>): number[] 
  */
 export const addExtremeAnchorsAction: Action & { requires: string[] } = {
   id: 'addExtremeAnchors',
+  icon: ExtremeAnchorsIcon,
   label: LABEL,
   group: 'anchors',
   tags: pathOperationTags('command'),

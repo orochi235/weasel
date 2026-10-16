@@ -19,6 +19,10 @@ Priority tags:
 
 ## Tools & gestures
 
+- **(P2) The Width tool shows no icon.** `GirthIcon` in `@weasel-js/path-tools` is drawn for it
+  but left unwired while the `width-to-path-tools` branch moves the tool out of core and renames
+  it Girth; that change sets the tool's `presentation.icon` to `createElement(GirthIcon)`.
+
 - **(P1) Guides and snapping, designed as one arc.** Spacing hints (equal-gap markers while
   moving, Alt-hover distance readouts between the selection and the shape under the pointer) go in
   as part of a pass over every guide and snap at once, not alone. The pieces today don't share a

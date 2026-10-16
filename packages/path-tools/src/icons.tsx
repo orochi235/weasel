@@ -1,24 +1,5 @@
-/**
- * Icons for the path tools, in the register of core's action glyphs: 20x20
- * viewBox, stroked in `currentColor`. Filled squares are anchors and filled
- * circles handle knobs, as path edit draws them.
- */
-const SVG_BASE = {
-  viewBox: '0 0 20 20',
-  width: 20,
-  height: 20,
-  fill: 'none',
-  stroke: 'currentColor',
-  strokeWidth: 1.5,
-  strokeLinecap: 'round' as const,
-  strokeLinejoin: 'round' as const,
-  'aria-hidden': true,
-};
-
-const DOT = { fill: 'currentColor', stroke: 'none' };
-
-/** An anchor's filled square, centered on (x, y). */
-const anchor = (x: number, y: number) => <rect x={x - 1.5} y={y - 1.5} width="3" height="3" {...DOT} />;
+/** Icons for the path tools and the effects they make. */
+import { anchor, DOT, SVG_BASE } from './iconBase';
 
 /**
  * Smudge brush: a path dragged up into the brush ring that carries it.
@@ -188,6 +169,54 @@ export function EqualizeHandlesIcon() {
     <svg {...SVG_BASE}>
       <BalancedSegment />
       <path d="M8.5 10.8 H11.5 M8.5 12.8 H11.5" strokeWidth={1} />
+    </svg>
+  );
+}
+
+/**
+ * Trim segment: a stroke between two crossings, its middle piece gone.
+ *
+ * @experimental
+ */
+export function TrimIcon() {
+  return (
+    <svg {...SVG_BASE}>
+      <path d="M6.875 3 V17 M13.125 3 V17" strokeWidth={1.25} />
+      <path d="M2.5 10.625 H6.875 M13.125 10.625 H17.5" />
+      <path d="M8.6 10.625 H11.4" strokeWidth={1} strokeDasharray="1.2 1.2" />
+    </svg>
+  );
+}
+
+/**
+ * Extend to next path: an open end carried on, dashed, to the stroke it meets.
+ *
+ * @experimental
+ */
+export function ExtendIcon() {
+  return (
+    <svg {...SVG_BASE}>
+      <path d="M16.875 3 V17" strokeWidth={1.25} />
+      <path d="M2.5 10.625 H8" />
+      {anchor(8, 10.625)}
+      <path d="M10.5 10.625 H15" strokeWidth={1} strokeDasharray="1.4 1.3" />
+    </svg>
+  );
+}
+
+/**
+ * Girth: a stroke swelling from fine ends, with the width handle across its
+ * widest point.
+ *
+ * @experimental
+ */
+export function GirthIcon() {
+  return (
+    <svg {...SVG_BASE}>
+      <path d="M2.5 10 C6 4.6 14 4.6 17.5 10 C14 15.4 6 15.4 2.5 10 Z" />
+      <path d="M10 6.6 V13.4" strokeWidth={1} />
+      <circle cx="10" cy="6.6" r="1.4" {...DOT} />
+      <circle cx="10" cy="13.4" r="1.4" {...DOT} />
     </svg>
   );
 }
