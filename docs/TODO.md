@@ -198,6 +198,11 @@ Priority tags:
   `packages/geom/src/paths/extendPath.ts`), no preview of where an end will land, its tool key, U
   (`tools/builtin/extend/useExtendTool.ts`), and no default key for the `extendToMeet` action; the
   lab binds E through `tune`.
+- **(P2) Tune the Smudge brush hands-on, with the maintainer driving.** First-draft brush radius
+  (40 screen px) and strength (0.6) (`DEFAULT_SMUDGE_RADIUS_PX`, `DEFAULT_SMUDGE_STRENGTH` in
+  `pathCommands/smudgeBrush.ts`), the falloff `(1 − (d/r)²)²` and the subdivision threshold of a
+  third of the radius (`packages/geom/src/paths/smudgePath.ts`), how radius and strength are
+  reached outside the lab, and its tool key, S (`tools/builtin/smudge/useSmudgeBrushTool.ts`).
 - **(P2) Two helpers grow an open end along its tangent.** `lengthenOpenEnd` in
   `packages/geom/src/paths/extendPath.ts` serves Extend to next path, and the unmerged
   `extend-path-end` branch (Lengthen) has `lengthenPathEnd` of its own. Whichever lands second
@@ -233,8 +238,8 @@ Priority tags:
   mapping it through each node's parent on replay would make the two agree.
 - **(P3) The path commands have no icons.** `simplifyPath`, `offsetPath`, `snipAtCrossings`,
   `joinPaths`, `bridgePaths`, `joinAnchors`, `bridgeAnchors`, `averageAnchors`, and
-  `extendToMeet` show as text in draw's bar, and `useTrimTool` and `useExtendTool` borrow
-  `SliceIcon`.
+  `extendToMeet` show as text in draw's bar, `useTrimTool` and `useExtendTool` borrow
+  `SliceIcon`, and `useSmudgeBrushTool` has none.
   `RetractHandlesIcon`, `SymmetricHandlesIcon`, and `SimplifyBrushIcon`
   (`defaults/icons/anchorIcons.tsx`) are first drafts, not proofed at high resolution.
 - **(P2) Spacing hints.** Equal-spacing markers between siblings while moving, and Alt-hover
