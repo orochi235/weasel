@@ -2,7 +2,7 @@ import type { DrawCommand, GroupDrawCommand } from '@weasel-js/renderer';
 import type { View } from 'core/viewport/view';
 import { findShapeSilhouette } from './NodeShape';
 import type { Node } from 'core/scene/types';
-import type { Path } from '@weasel-js/geom';
+import { mat3, type Affine, type Path } from '@weasel-js/geom';
 import { definesFrame } from 'core/scene/effectivePose';
 import { deriveParallaxView, planeMap, type ParallaxOpts } from 'core/viewport/parallax';
 import { scenePlaneOf } from './pickWalk';
@@ -21,20 +21,25 @@ export interface HierarchicalAdapter<TNode, TPose> {
   composePose?(parent: TPose, child: TPose): TPose;
 }
 
-/** A clip on the chain, with the layer whose world it is drawn in. */
-interface ChainClip { path: Path; layer: string }
+/** A clip on the chain, with the layer whose world it is drawn in, or the
+ *  transform of a copy a container draws — see `ContainerNode.copiesFromPose`. */
+type ChainEntry = { path: Path; layer: string } | { copy: Affine };
 
-/** Wrap `cmds` in one nested group per clip so the renderer intersects them.
- *  Outermost group carries the ancestor-most clip; innermost holds `cmds`. */
-function wrapInClips(
+/** Wrap `cmds` in one nested group per chain entry, so the renderer intersects
+ *  the clips and applies each copy's transform to everything inside it.
+ *  Outermost group carries the ancestor-most entry; innermost holds `cmds`. */
+function wrapInChain(
   cmds: DrawCommand[],
-  clips: readonly ChainClip[],
+  chain: readonly ChainEntry[],
   toLayer: string,
   carry: ReturnType<typeof clipCarrier>,
 ): DrawCommand {
   let node: GroupDrawCommand = { kind: 'group', children: cmds };
-  for (let i = clips.length - 1; i >= 0; i--) {
-    node = { kind: 'group', children: [node], clip: carry(clips[i].path, clips[i].layer, toLayer) };
+  for (let i = chain.length - 1; i >= 0; i--) {
+    const e = chain[i];
+    node = 'copy' in e
+      ? { kind: 'group', children: [node], transform: mat3.fromAffine(e.copy) }
+      : { kind: 'group', children: [node], clip: carry(e.path, e.layer, toLayer) };
   }
   return node;
 }
@@ -90,8 +95,10 @@ export function buildSceneTree<
 
   function visit(
     id: string,
-    ancestorClips: readonly ChainClip[],
+    ancestorClips: readonly ChainEntry[],
     parentFrame: TPose | null,
+    /** Under a copy: the pose is not where it paints, so the cull cannot judge it. */
+    copied: boolean,
   ): void {
     const node = adapter.getNode(id);
     if (!node) return;
@@ -104,11 +111,18 @@ export function buildSceneTree<
     const bucket = forLayer === undefined || node.layer === forLayer
       ? buckets.get(node.layer) : undefined;
     const v = planeViews?.get(node.layer) ?? view;
-    const { under: self, over } = splitOverChildren(bucket && !culled?.(node, pose, v) ? drawOne(node, pose, v) : []);
+    const { under: self, over } = splitOverChildren(
+      bucket && (copied || !culled?.(node, pose, v)) ? drawOne(node, pose, v) : [],
+    );
 
     // Extend the clip chain with this node's own clip when it is a container.
     let ownClips = ancestorClips;
-    const maybeContainer = node as { kind?: string; clipFromPose?: (pose: TPose) => unknown };
+    let ownClip: ChainEntry | null = null;
+    const maybeContainer = node as {
+      kind?: string;
+      clipFromPose?: (pose: TPose) => unknown;
+      copiesFromPose?: (pose: TPose, node: unknown) => readonly Affine[] | null;
+    };
     if (maybeContainer.kind === 'container') {
       let clip: unknown;
       if (typeof maybeContainer.clipFromPose === 'function') {
@@ -122,25 +136,38 @@ export function buildSceneTree<
           { derivedPath: derivedPathOf?.(node, pose) },
         );
       }
-      if (clip) ownClips = [...ancestorClips, { path: clip as Path, layer: node.layer }];
+      if (clip) {
+        ownClip = { path: clip as Path, layer: node.layer };
+        ownClips = [...ancestorClips, ownClip];
+      }
     }
 
     // Every node emits a wrapper group even with empty paint, keeping the per-node tree
     // shape stable.
     if (bucket) {
-      bucket.push(ownClips.length > 0 ? wrapInClips(self, ownClips, node.layer, carry) : { kind: 'group', children: self });
+      bucket.push(ownClips.length > 0 ? wrapInChain(self, ownClips, node.layer, carry) : { kind: 'group', children: self });
     }
 
     // An envelope's children share its own parent's frame.
     const childFrame = definesFrame(node as never) ? pose : parentFrame;
-    for (const cid of adapter.getChildren(id)) visit(cid, ownClips, childFrame);
+    const children = adapter.getChildren(id);
+    for (const cid of children) visit(cid, ownClips, childFrame, copied);
+
+    // A copy is a copy of the clipped content, so its transform encloses the
+    // container's own clip and sits inside every clip above it.
+    const copies = typeof maybeContainer.copiesFromPose === 'function'
+      ? maybeContainer.copiesFromPose(pose, node) : null;
+    for (const copy of copies ?? []) {
+      const chain: ChainEntry[] = [...ancestorClips, { copy }, ...(ownClip ? [ownClip] : [])];
+      for (const cid of children) visit(cid, chain, childFrame, true);
+    }
 
     if (bucket && over.length > 0) {
-      bucket.push(ownClips.length > 0 ? wrapInClips(over, ownClips, node.layer, carry) : { kind: 'group', children: over });
+      bucket.push(ownClips.length > 0 ? wrapInChain(over, ownClips, node.layer, carry) : { kind: 'group', children: over });
     }
   }
 
-  for (const rootId of adapter.getChildren(null)) visit(rootId, [], null);
+  for (const rootId of adapter.getChildren(null)) visit(rootId, [], null, false);
 
   const out: DrawCommand[] = [];
   for (const layer of layers) {

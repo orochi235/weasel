@@ -93,6 +93,19 @@ export function handleAlongItsAngle(anchor: Point, handle: Point, to: Point): Po
   return { x: anchor.x + ux * along, y: anchor.y + uy * along };
 }
 
+/**
+ * Where a handle lands when dragged toward `to` but held to its current
+ * length from `anchor`: on the circle of that length, aimed at `to`. A `to`
+ * on the anchor itself gives no direction, and leaves the handle where it is.
+ */
+export function handleAtItsLength(anchor: Point, handle: Point, to: Point): Point {
+  const len = Math.hypot(handle.x - anchor.x, handle.y - anchor.y);
+  const d = offset(anchor, to);
+  const dl = Math.hypot(d.x, d.y);
+  if (dl === 0) return { x: handle.x, y: handle.y };
+  return { x: anchor.x + (d.x / dl) * len, y: anchor.y + (d.y / dl) * len };
+}
+
 function offset(from: Point, to: Point): Point {
   return { x: to.x - from.x, y: to.y - from.y };
 }

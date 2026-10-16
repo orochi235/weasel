@@ -6,6 +6,7 @@
 import { simplifyPath } from '@weasel-js/geom';
 import { offsetPath } from '@weasel-js/stroke';
 import type { Op } from 'core/ops/types';
+import { OffsetPathIcon, SimplifyIcon } from '../defaults/icons/pathIcons';
 import { livePathEdit } from './livePathEdit';
 import { insertAt, pathCopy, reshapeOps, slotOf } from './pathNodes';
 
@@ -19,6 +20,7 @@ export const DEFAULT_SIMPLIFY_TOLERANCE = 1;
 export const simplifyPathAction = livePathEdit({
   id: 'simplifyPath',
   label: 'Simplify',
+  icon: SimplifyIcon,
   param: 'tolerance',
   initial: DEFAULT_SIMPLIFY_TOLERANCE,
   edit: ({ path }, tolerance) => simplifyPath(path, Math.max(tolerance, 0)),
@@ -35,6 +37,7 @@ export const simplifyPathAction = livePathEdit({
 export const offsetPathAction = livePathEdit({
   id: 'offsetPath',
   label: 'Offset Path',
+  icon: OffsetPathIcon,
   param: 'distance',
   initial: 0,
   overlaysSource: true,

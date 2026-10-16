@@ -42,6 +42,27 @@ It takes an adapter that reads synchronously, and components naming the same
 `storage` and `prefix` with different schemas each get a store over the same
 records.
 
+## Tags
+
+A leaf, a group, and a section can each carry `tags`: words a settings search
+also finds it by, and that gather it with others. A leaf carries its own and
+every group's above it, so tagging a group tags all it holds:
+
+```ts
+canvas: { name: 'Canvas', tags: ['workspace'], children: {
+  grid: { kind: 'boolean', name: 'Show grid', description: '', default: true, tags: ['guides'] },
+} },
+
+prefLeavesTagged(SCHEMA, 'guides');      // Map { 'canvas.grid' => … }
+prefLeafTags(SCHEMA, 'canvas.grid');     // ['workspace', 'guides']
+filterPrefSubtree(SCHEMA, 'guide');      // keeps canvas.grid, matched by its tag
+```
+
+A search matches a tag as it matches a name, and a group a tag matches keeps
+all its leaves, as one its name matches does. An alias carries its target's
+tags and its own. `tags` is unrelated to a `union` leaf's `tag`, the field its
+value's variant is read from.
+
 ## Ranges
 
 A number leaf's range is one scale: the low end is the least of what its label
@@ -135,3 +156,24 @@ come later. A number is written in its display unit where the unit's suffix is
 a CSS unit, a boolean as `1` or `0`, an enum's option as an identifier, and a
 string quoted; a leaf of any other kind is left out unless the `value` option
 writes it. `root`, `property`, and `attribute` rename what it writes.
+
+`prefsDefaultsSource(schema)` stands in for a store at its defaults, so
+`prefsCss(prefsDefaultsSource(schema))` is a schema's stylesheet with no store.
+The Vite plugin in `@weasel-js/prefs/vite` serves that sheet for every schema
+you name, by module and export, and rewrites it when a schema changes:
+
+```ts
+// vite.config.ts
+import { weaselPrefsCss } from '@weasel-js/prefs/vite';
+export default { plugins: [weaselPrefsCss({ schemas: { './src/prefs.ts': 'SCHEMA' } })] };
+
+// main.ts
+import 'virtual:weasel-prefs.css';
+```
+
+For the kit's own settings, `<KitSettingsFromPrefs store at="kit">` in
+`@weasel-js/prefs/react` hands the store's values under `kit` to
+`KitSettingsProvider`, so `useKitSetting('tree.typeaheadMs')` reads the user's
+value. With `css`, it also writes that subtree as `--wzl-kit-*` properties into
+the document or shadow root it renders in, and keeps them current as the store
+changes; `kitSettingsCssOptions(at)` is the naming it uses.

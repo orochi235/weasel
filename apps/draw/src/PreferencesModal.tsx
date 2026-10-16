@@ -12,6 +12,7 @@ import {
   Code,
   DataGrid,
   PrefsDialog,
+  Select,
   Switch,
   type DataGridColumn,
   type PrefRenderContext,
@@ -26,7 +27,9 @@ import {
 } from './prefs';
 import type { RegistryEnumSources } from './registry/types';
 import { RegistryEnumSourcesContext, RegistrySelect } from './registry/RegistrySelect';
-import { PANELS, type PanelsValue } from './panels';
+import { SURFACE_ASSETS } from './surfaces/assets';
+import { surfaceOf } from './surfaces/surfaceState';
+import type { SurfaceAsset, SurfaceKind, SurfacesValue } from './surfaces/types';
 
 /** Dev mode: the Vite dev server sets `import.meta.env.DEV`. In a
  *  production bundle this is false, so the toggle and any hidden prefs
@@ -99,41 +102,56 @@ export function RegistryEnumControl(ctx: PrefRenderContext) {
 }
 
 export function DataControl(ctx: PrefRenderContext) {
-  // Only `ui.panels` has a known shape; any other data pref belongs to other
+  // Only `ui.surfaces` has a known shape; any other data pref belongs to other
   // code, so it shows read-only as a placeholder.
-  if (ctx.path === 'ui.panels') return <PanelsEditor ctx={ctx} />;
+  if (ctx.path === 'ui.surfaces') return <SurfacesEditor ctx={ctx} />;
   return <Code status="muted" variant="plain" size="xs">(data)</Code>;
 }
 
-type PanelRow = (typeof PANELS)[number];
+const SURFACE_NAMES: Record<SurfaceKind, string> = { bar: 'Toolbar', panel: 'Panel', menu: 'Menu' };
 
-export function PanelsEditor({ ctx }: { ctx: PrefRenderContext }) {
+export function SurfacesEditor({ ctx }: { ctx: PrefRenderContext }) {
   const pref = ctx.pref as WeaselDrawPrefData;
-  const panels = (ctx.value ?? {}) as PanelsValue;
-  const update = (id: string, field: 'hidden' | 'collapsed', next: boolean): void => {
-    ctx.setValue({ ...panels, [id]: { ...panels[id], [field]: next } });
+  const surfaces = (ctx.value ?? {}) as SurfacesValue;
+  const update = (id: string, patch: SurfacesValue[string]): void => {
+    ctx.setValue({ ...surfaces, [id]: { ...surfaces[id], ...patch } });
   };
-  const flag = (field: 'hidden' | 'collapsed', header: string, verb: string): DataGridColumn<PanelRow> => ({
+  const flag = (field: 'hidden' | 'collapsed', header: string, verb: string): DataGridColumn<SurfaceAsset> => ({
     id: field,
     header,
     sortable: false,
     render: ({ id, label }) => (
       <Checkbox
-        isSelected={!!panels[id]?.[field]}
-        onChange={(v) => update(id, field, v)}
-        aria-label={`${verb} ${label} panel`}
+        isSelected={!!surfaces[id]?.[field]}
+        onChange={(v) => update(id, { [field]: v })}
+        aria-label={`${verb} ${label}`}
       />
     ),
   });
-  const columns: DataGridColumn<PanelRow>[] = [
-    { id: 'label', header: 'Panel', sortable: false },
+  const columns: DataGridColumn<SurfaceAsset>[] = [
+    { id: 'label', header: 'Name', sortable: false },
+    {
+      id: 'surface',
+      header: 'Shown as',
+      sortable: false,
+      render: (asset) => asset.surfaces.length < 2 ? SURFACE_NAMES[asset.defaultSurface] : (
+        <Select<SurfaceKind>
+          variant="bare"
+          width="fit"
+          aria-label={`Show ${asset.label} as`}
+          options={asset.surfaces.map((value) => ({ value, label: SURFACE_NAMES[value] }))}
+          selectedKey={surfaceOf(asset, surfaces[asset.id])}
+          onSelectionChange={(surface) => update(asset.id, { surface })}
+        />
+      ),
+    },
     flag('hidden', 'Hidden', 'Hide'),
     flag('collapsed', 'Collapsed', 'Collapse'),
   ];
   return (
     <div className="wd-prefs-panels">
       <div className="wd-prefs-panels-title">{pref.name}</div>
-      <DataGrid<PanelRow> rows={PANELS} columns={columns} />
+      <DataGrid<SurfaceAsset> rows={SURFACE_ASSETS} columns={columns} />
     </div>
   );
 }

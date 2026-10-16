@@ -228,17 +228,15 @@ export function packClusters(
     const known = blocks.get(span);
     if (known !== undefined) return known;
     const byRow = itemsByRow(span, span.children);
-    const childAt = new Map<Span, number>(span.children.map((c) => [c, 0]));
-    const { nodeAt, ends } = settle(byRow, childAt, () => 0, 0);
+    // Each node keeps where placement put it, measured from the block's
+    // lowest, so the ports a wire joins stay lined up inside a group; nested
+    // columns and the gap only push things apart.
+    const base = Math.min(...rows.flat().filter((n) => span.group.members.includes(n.id) || spanOf(n) === span).map(pref));
+    const childAt = new Map<Span, number>(span.children.map((c) => [c, Math.max(0, centerOf.get(c)! - outer(c) / 2 - base)]));
+    const { nodeAt, ends } = settle(byRow, childAt, (n) => pref(n) - base, 0);
     const block: Block = { width: Math.max(0, ...ends), nodeAt, childAt };
-    // A rank no nested column passes through is free to sit in the middle.
-    byRow.forEach((items, r) => {
-      if (items.some((item) => item.kind === 'group')) return;
-      const shift = (block.width - ends[r]!) / 2;
-      for (const item of items) {
-        if (item.kind === 'node') nodeAt.set(item.node.id, nodeAt.get(item.node.id)! + shift);
-      }
-    });
+    const slack = widen(block, span.group, insets.get(span)!, axes);
+    for (const [id, x] of nodeAt) nodeAt.set(id, x + slack);
     blocks.set(span, block);
     return block;
   };
@@ -259,6 +257,17 @@ export function packClusters(
   };
   for (const root of roots) place(root, start.get(root)!);
   return at;
+}
+
+/** Widen a block to its group's `minWidth`, centering what it holds, and
+ *  answer the room added on each side. A label only runs along world x, so
+ *  only a vertical layout widens for it. */
+function widen(block: Block, group: GraphGroup, inset: CanonicalInset, axes: LayoutAxes): number {
+  const floor = axes.cross === 'x' ? (group.minWidth ?? 0) - inset.crossLo - inset.crossHi : 0;
+  const slack = Math.max(0, floor - block.width) / 2;
+  block.width += 2 * slack;
+  for (const [child, local] of block.childAt) block.childAt.set(child, local + slack);
+  return slack;
 }
 
 /**
@@ -315,8 +324,16 @@ export function expandGroupEdges(
     const froms = fromGroup !== undefined ? exits.get(fromGroup)! : [e.from];
     const tos = toGroup !== undefined ? entries.get(toGroup)! : [e.to];
     let k = 0;
+    // A port names a place on a node, so only a node end keeps its own.
+    const ports = {
+      ...(fromGroup === undefined && e.fromPort !== undefined ? { fromPort: e.fromPort } : {}),
+      ...(toGroup === undefined && e.toPort !== undefined ? { toPort: e.toPort } : {}),
+      ...(e.label !== undefined ? { label: e.label } : {}),
+      ...(e.waypoints !== undefined ? { waypoints: e.waypoints } : {}),
+      ...(e.authored ? { authored: true } : {}),
+    };
     for (const from of froms) {
-      for (const to of tos) out.push({ id: `${e.id}#${k++}`, from, to });
+      for (const to of tos) out.push({ id: `${e.id}#${k++}`, from, to, ...ports, origin: { id: e.id, from: e.from, to: e.to } });
     }
   }
   return out;

@@ -1,8 +1,9 @@
-import { useMemo, useRef } from 'react';
-import { useLatest } from '@weasel-js/react';
+import { createElement, useMemo, useRef } from 'react';
+import { useKitSettings, useLatest } from '@weasel-js/react';
 import type { ToolKeybinding } from '@weasel-js/routing';
 import type { NodeId, Scene } from 'core/scene/types';
 import type { Skeleton } from '@weasel-js/animator';
+import { BoneIcon } from '../../../icons';
 import { defineTool } from '../../overlayBinding';
 import type { Tool } from '../../overlayBinding';
 import { createBoneActions, type BoneEnv } from './boneActions';
@@ -62,12 +63,14 @@ export function useBoneTool(options: UseBoneToolOptions): Tool {
   }, [opts, state]);
 
   const actions = useMemo(() => createBoneActions(env), [env]);
+  const kitSettings = useKitSettings();
   const overlay = useMemo(() => createBoneOverlay({
     id: 'bone-tool-skeleton',
     skeleton: () => env.shown() ?? env.placed()?.skeleton ?? null,
     active: state.active,
     subscribe: env.listen,
-  }), [env, state]);
+    jointRadiusPx: () => kitSettings.get('targets.boneJointRadiusPx'),
+  }), [env, state, kitSettings]);
 
   const { keybinding } = options;
   return useMemo(() => defineTool({
@@ -75,7 +78,7 @@ export function useBoneTool(options: UseBoneToolOptions): Tool {
     capabilities: ['edits-page'],
     hookName: 'useBoneTool',
     cursor: 'crosshair',
-    presentation: { label: 'Bone', group: 'shape' },
+    presentation: { label: 'Bone', icon: createElement(BoneIcon), group: 'shape' },
     ...(keybinding === null ? {} : { keybinding: keybinding ?? { key: 'J' } }),
     actions,
     overlay,

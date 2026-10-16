@@ -10,13 +10,17 @@ import type { Skin } from '@weasel-js/animator';
 import type { Skeleton } from '@weasel-js/animator';
 import { createRigEditState } from './rigEditState';
 import { useBoneTool } from './useBoneTool';
+import { JOINT_RADIUS_PX } from './boneOverlay';
+import { boundsOfPath } from '@weasel-js/geom';
+import { KitSettingsProvider, type KitSettingsOverrides } from '@weasel-js/react';
+import type { ReactNode } from 'react';
 
 type Data = { skeleton?: Skeleton; skin?: Skin; label?: string };
 
 const VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 const MODS = { alt: false, ctrl: false, meta: false, shift: false };
 
-function setup() {
+function setup(settings?: KitSettingsOverrides) {
   const scene = createScene<Data, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
   const rig = scene.add({ kind: 'container', layer: 'main', pose: { x: 100, y: 100, width: 200, height: 100 }, data: { label: 'arm' } });
   const sleeve = scene.add({
@@ -25,7 +29,9 @@ function setup() {
   });
   let target: NodeId | null = rig;
   const state = createRigEditState();
-  const { result } = renderHook(() => useBoneTool({ scene: scene as never, rig: () => target, state }));
+  const { result } = renderHook(() => useBoneTool({ scene: scene as never, rig: () => target, state }), {
+    ...(settings ? { wrapper: ({ children }: { children: ReactNode }) => <KitSettingsProvider value={settings}>{children}</KitSettingsProvider> } : {}),
+  });
   const deps = { view: { get: () => VIEW, set: () => {} } } as unknown as ActionDeps;
   const actionOf = (id: string): Action => {
     const a = (result.current.actions ?? []).find((x) => x.id === id);
@@ -64,6 +70,17 @@ function setup() {
 }
 
 describe('useBoneTool', () => {
+  it('sizes its joint dots from targets.boneJointRadiusPx, else JOINT_RADIUS_PX', () => {
+    const jointWidths = (t: ReturnType<typeof setup>) => t.painted()
+      .flatMap((c) => (c.kind === 'path' && c.fill ? [boundsOfPath(c.path).width] : []));
+    const plain = setup();
+    plain.drag([120, 150], [200, 150]);
+    expect(new Set(jointWidths(plain))).toEqual(new Set([2 * JOINT_RADIUS_PX]));
+    const set = setup({ targets: { boneJointRadiusPx: 7 } });
+    set.drag([120, 150], [200, 150]);
+    expect(new Set(jointWidths(set))).toEqual(new Set([14]));
+  });
+
   it('draws a first bone from the press to the release, kept relative to the node\'s box', () => {
     const t = setup();
     t.drag([120, 150], [200, 150]);

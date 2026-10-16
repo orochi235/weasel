@@ -13,6 +13,8 @@ export interface PackageInfo {
   /** `@weasel-js/geom`. */
   specifier: string;
   version: string;
+  /** The first version it was released in, from its changelog; null when it has none. */
+  since: string | null;
   description: string;
   /** Every specifier a consumer may import from it, the root first. */
   entries: string[];

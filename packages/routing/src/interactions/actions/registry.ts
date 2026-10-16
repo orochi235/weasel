@@ -7,6 +7,7 @@
 import type { GestureSpec, PhaseSpec } from '@weasel-js/gestures';
 import type { BoundGesture } from './binding';
 import type { Action } from './action';
+import type { ActionTuning } from './tuning';
 import { RESERVED_ID_NAMES, RESERVED_ID_PREFIXES, type PhaseAtom } from '../../tools/routing/routeGrammar';
 import type { Dispatcher, UiOngoingControl } from '../dispatcher/dispatcher';
 export type { UiOngoingControl } from '../dispatcher/dispatcher';
@@ -46,13 +47,23 @@ export interface ActionsRegistry {
    *  `trigger` nor `begin` will fire it. Returns a release. This is the
    *  "not for me" door — `unregister` is the "should not exist" one. */
   mute(id: string): () => void;
+  /** Tune `id` here and in scopes below: its params and added bindings
+   *  apply to whichever descriptor is live for it, registered before the
+   *  tuning or after. Returns a release. See {@link ActionTuning}. */
+  tune(id: string, tuning: ActionTuning): () => void;
+  /** The params an invocation of `id` from this scope starts with when it
+   *  passes `given`: every tuning's params, `given` laid over them. What a
+   *  tool's chrome reads to show what the action it binds will do. */
+  paramsOf(id: string, given?: Record<string, unknown>): Record<string, unknown>;
   list(): readonly Action[];
   /** Fire an immediate-invoker action by id. The optional `params` arg is
    *  forwarded to `ImmediateInvoker.run` as its second argument — use it for
    *  parametric actions (e.g. `trigger('tool.activate', { toolId: 'rect' })`).
    *  Returns whether it ran one: `false` for an unknown id, for an action
    *  whose `enabled` refuses, and for an ongoing-invoker action, which
-   *  `trigger` cannot reach (see `begin`). `enabled` is asked with no point. */
+   *  `trigger` cannot reach (see `begin`). `enabled` is asked at
+   *  `{ x: params.worldX, y: params.worldY }` when both are numbers, and with
+   *  no point otherwise. */
   trigger(id: string, params?: Record<string, unknown>): boolean;
   /**
    * Subscribe to registry mutations. The callback fires after any

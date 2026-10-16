@@ -48,19 +48,23 @@ export function moveSources(scene: AnyScene, ids: readonly string[]): string[] {
 
 /**
  * The nodes a resize, rotation, flip, or alignment of `ids` has to write. A
- * container whose pose is derived from its children cannot be written itself,
- * so its children stand in for it, through however many such containers
- * nest. Each id appears once, in the order it was first reached.
+ * node whose pose is derived cannot be written itself, so what it derives
+ * from stands in for it — a container's children, or the ids a node names —
+ * through however many derived nodes that takes. Each id appears once, in
+ * the order it was first reached.
  */
 export function shapeSources(scene: AnyScene, ids: readonly string[]): string[] {
   const out = new Set<string>();
+  const walked = new Set<string>();
   const visit = (id: string): void => {
+    if (walked.has(id)) return;
+    walked.add(id);
     const node = scene.get(asNodeId(id));
-    if (node !== undefined && node.dependsOn === 'children' && node.derivePose !== undefined) {
-      for (const child of scene.childrenOf(asNodeId(id))) visit(child);
-    } else {
-      out.add(id);
-    }
+    const deps = node?.derivePose === undefined
+      ? []
+      : node.dependsOn === 'children' ? scene.childrenOf(asNodeId(id)) : node.dependsOn ?? [];
+    if (deps.length === 0 && node?.dependsOn !== 'children') out.add(id);
+    else for (const dep of deps) visit(dep);
   };
   for (const id of ids) visit(id);
   return [...out];

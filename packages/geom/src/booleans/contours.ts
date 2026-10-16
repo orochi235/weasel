@@ -6,6 +6,7 @@ import { PATH_C, PATH_L, PATH_M, PATH_Q, PATH_Z } from '../commands';
 import type { Point } from '../paths/cubicMath';
 import { EPS } from '../scalar';
 import { fillsOpenSubpaths } from '../openFill';
+import { resolveCorners } from '../paths/corners';
 import { type Contour, evalSeg, derivSeg, reverseContour, sideCoeffs, signChanges } from './contourSegments';
 
 /** The contours a fill of `path` covers: an open subpath closes implicitly
@@ -26,7 +27,8 @@ export interface Subpath {
  * as a fill sees them) every subpath ends in its closing edge; without it,
  * only a subpath closed by `Z` does, as a stroke sees them.
  */
-export function parseSubpaths(path: Path, implicitClose = true): Subpath[] {
+export function parseSubpaths(given: Path, implicitClose = true): Subpath[] {
+  const path = resolveCorners(given);
   if (path.kind === 'rect') {
     const { x, y, width: w, height: h } = path;
     const p = [{ x, y }, { x: x + w, y }, { x: x + w, y: y + h }, { x, y: y + h }];

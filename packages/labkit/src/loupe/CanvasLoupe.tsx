@@ -44,7 +44,7 @@ export function CanvasLoupe({
   const argsRef = useLatest(args);
 
   const loop = useVisibleRaf(
-    () => {
+    (_time, loop) => {
       loop.request();
       const canvas = canvasRef.current;
       const ctx = canvas?.getContext('2d');

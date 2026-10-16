@@ -1,0 +1,15 @@
+.stage {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.bar {
+  position: absolute;
+  top: var(--wzl-space-3);
+  left: var(--wzl-space-3);
+  z-index: 1;
+  display: flex;
+  gap: var(--wzl-space-3);
+  align-items: center;
+}

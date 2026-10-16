@@ -14,6 +14,8 @@ import type { UseSceneOptions } from 'core/scene/types';
 import { useSceneAdapter } from 'canvas/useSceneAdapter';
 import { asNodeId } from 'core/scene/types';
 import { useSceneSelectTool } from './useSceneSelectTool';
+import { KitSettingsProvider, type KitSettingsOverrides } from '@weasel-js/react';
+import type { ReactNode } from 'react';
 import { rectPath, linePath } from '@weasel-js/geom';
 import type { Fill } from '@weasel-js/paint';
 
@@ -40,7 +42,7 @@ const NODES: UseSceneOptions<Item, 'default', Pose>['initial'] = [
   },
 ];
 
-function harness(picking?: 'pose' | 'shape') {
+function harness(picking?: 'pose' | 'shape', settings?: KitSettingsOverrides) {
   const { result } = renderHook(() => {
     const scene = useScene<Item, 'default', Pose>({
       systemLayers: [{ id: 'default' }],
@@ -52,9 +54,16 @@ function harness(picking?: 'pose' | 'shape') {
       adapter,
       ...(picking ? { geometry: { picking } } : {}),
     });
-  });
+  }, settings ? { wrapper: ({ children }: { children: ReactNode }) => <KitSettingsProvider value={settings}>{children}</KitSettingsProvider> } : undefined);
   return (x: number, y: number) => result.current.pickEvery(x, y);
 }
+
+describe('useSceneSelectTool — pick tolerance', () => {
+  it('grabs an outline as far off as targets.pickTolerancePx', () => {
+    expect(harness()(50, -8)).toEqual([]);
+    expect(harness(undefined, { targets: { pickTolerancePx: 10 } })(50, -8)).toEqual(['ellipse']);
+  });
+});
 
 describe('useSceneSelectTool — hidden layers', () => {
   it('stops picking nodes on a layer the scene has hidden', () => {

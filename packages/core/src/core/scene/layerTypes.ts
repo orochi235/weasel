@@ -8,6 +8,11 @@ interface LayerRecordBase<TLayer extends string> {
    *  camera's (see `deriveParallaxView`), and picked through the same one.
    *  Absent means the layer moves with the camera. */
   parallax?: ParallaxOpts;
+  /** A non-printing layer of aids — measurements, notes — rather than content.
+   *  Its nodes draw on the canvas and save with the scene, but export leaves
+   *  them out and content picking passes through them. Read it through
+   *  `isAnnotationLayer`. Absent means content. */
+  annotation?: boolean;
 }
 
 /** A layer declared when the scene was created. Fixed set, no display name —
@@ -38,6 +43,8 @@ export interface SystemLayerSpec<TLayer extends string> {
   locked?: boolean;
   /** See `LayerRecord.parallax`. */
   parallax?: ParallaxOpts;
+  /** See `LayerRecord.annotation`. */
+  annotation?: boolean;
 }
 
 /** Argument to `Scene.addLayer`. Always produces a `UserLayerRecord`
@@ -51,6 +58,8 @@ export interface AddLayerSpec<TLayer extends string> {
   locked?: boolean;
   /** See `LayerRecord.parallax`. */
   parallax?: ParallaxOpts;
+  /** See `LayerRecord.annotation`. */
+  annotation?: boolean;
   /** Render-stack position. Default: top of stack (highest render index). */
   index?: number;
 }

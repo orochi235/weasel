@@ -2,6 +2,8 @@
  * Per-dep wiring modules — extracted from `StandardActionsRegistrar` so each
  * kit-standard dep source lives in its own file. Consumers augmenting
  * `DepSchema` can use these as templates for their own dep modules.
+ *
+ * @packageDocumentation
  */
 export { hitTestArea, hitTestAreaPolygon, type AABBBounds } from './hitTestArea';
 export { useViewDepSource } from './view';
@@ -11,9 +13,11 @@ export { useLassoSelectDepSource } from './lassoSelect';
 export { useTextEditDepSource } from './textEdit';
 export { useEditAnchorsDepSource } from './editAnchors';
 export { paletteInsertPaint, useInsertDepSource, type InsertNodeFactory, type InsertPaint } from './insert';
-export { useSnapDepSource } from './snap';
+export { useSnapDepSource, type SnapSources } from './snap';
 export { useSliceDep, useSliceDepSource } from './slice';
 export { useDebugDepSource } from './debug';
+export { useSurfaceDepSources } from './surface';
+export { useKitSettingsDepSource } from './kitSettings';
 export { useDepChangeNotices } from './changes';
 export { useDispatcherDepSource } from './dispatcher';
 export {

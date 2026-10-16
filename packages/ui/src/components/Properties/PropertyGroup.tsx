@@ -1,4 +1,4 @@
-import { type ReactNode, useId } from 'react';
+import { type MouseEventHandler, type ReactNode, useId } from 'react';
 import { Disclosure } from '../Disclosure';
 import { type Motif, MotifFrame } from '../MotifFrame';
 import type { StanceProps } from '../stance';
@@ -29,6 +29,8 @@ export interface PropertyGroupProps extends PropertyMetricProps, StanceProps, Co
   span?: boolean;
   /** How rows pack into the 2-column grid — see `<PropertyList pack>`. */
   pack?: PropertyListPack;
+  /** A right-click anywhere on the group. */
+  onContextMenu?: MouseEventHandler;
 }
 
 /**
@@ -63,6 +65,7 @@ export function PropertyGroup({
   align,
   stance,
   tone,
+  onContextMenu,
 }: PropertyGroupProps) {
   const bodyId = useId();
   const fold = useCollapse({ collapsible, defaultCollapsed, collapsed, onCollapsedChange, twisty });
@@ -91,6 +94,7 @@ export function PropertyGroup({
       className={cls}
       stance={stance}
       tone={tone}
+      onContextMenu={onContextMenu}
     >
       {description !== undefined && description !== '' && <PropertyNote>{description}</PropertyNote>}
       <div id={bodyId} className={s.groupBody} hidden={folded}>

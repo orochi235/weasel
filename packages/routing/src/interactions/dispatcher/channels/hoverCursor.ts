@@ -4,7 +4,9 @@
  */
 import { createCursorSink, resolveCursorTier, type CursorSink, type CursorSpec, type PaintedCursorState } from '@weasel-js/cursor';
 import type { EventModifiers, HoverWhere } from '@weasel-js/gestures';
+import { actionCursor } from '../../actions/action';
 import type { DispatchCore } from '../dispatchCore';
+import type { ResolveOnlyResult } from '../dispatcherApi';
 import { DEV, publishLiveDispatch } from '../dispatchTrace';
 import type { InputEvent } from '../matcher';
 import { underPointer, type UnderPointer } from '../underPointer';
@@ -80,7 +82,8 @@ export function hoverCursorInput(
     const press: InputEvent = { kind: 'pointerdown', x: w.x, y: w.y, clientX: h.clientX, clientY: h.clientY, ...where };
     if (DEV) publishLiveDispatch(() => d.explain(press, ctx));
     const click: InputEvent = { kind: 'click', x: w.x, y: w.y, pressX: w.x, pressY: w.y, ...where };
-    const cursor = d.resolveOnly(press, ctx)?.action.cursor ?? dispatcherNow().resolveOnly(click, ctx)?.action.cursor;
+    const cursorOf = (r: ResolveOnlyResult | null) => (r ? actionCursor(r.action, r.params) : undefined);
+    const cursor = cursorOf(d.resolveOnly(press, ctx)) ?? cursorOf(dispatcherNow().resolveOnly(click, ctx));
     override.apply(cursor ?? null);
   };
 

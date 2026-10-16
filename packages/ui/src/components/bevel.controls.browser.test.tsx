@@ -6,7 +6,6 @@ import { InlineRange } from './InlineRange';
 import { OptionsBar } from './OptionsBar/OptionsBar';
 import { Tab, TabList, TabPanel, Tabs } from './Tabs';
 import { ToolButton } from './ToolButton';
-import actionBar from './ActionBar/ActionBar.module.css';
 import bar from './Bar/Bar.module.css';
 import slider from './Slider/Slider.module.css';
 import options from './ToolOptionsBar/ToolOptionsBar.module.css';
@@ -160,7 +159,7 @@ describe('a toolbar', () => {
   const strips = (
     <>
       <div className={palette.palette} data-testid="palette" />
-      <div className={actionBar.bar} data-testid="actions" />
+      <div className={bar.segmented} data-testid="actions" />
       <div className={`${bar.bar} ${bar.framed}`} data-testid="framed" />
       <div className={bar.bar} data-testid="bare" />
       <div className={options.root} data-testid="options" />

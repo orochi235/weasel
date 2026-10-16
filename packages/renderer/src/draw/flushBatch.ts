@@ -1,5 +1,5 @@
 import { mat3 } from '@weasel-js/geom';
-import { BATCH_TEXTURE_SLOTS } from '../shaders/batchFill';
+import { BATCH_TEXTURE_SLOTS, RAMP_SLOT } from '../shaders/batchFill';
 import type { DrawContext } from './drawContext';
 import { drawTriangles } from './drawTriangles';
 import { setColorUniform, setProjAndModel } from './uniforms';
@@ -42,7 +42,7 @@ export function flushBatch(ctx: DrawContext): void {
     return;
   }
   const gl = ctx.gl;
-  const prog = ctx.batchFill;
+  const prog = staged.matrices.length > 1 ? ctx.batchFillMatrices ?? ctx.batchFill : ctx.batchFill;
   gl.useProgram(prog.handle);
   const indexCount = batch.uploadAndBind();
   setProjAndModel(ctx, prog, BATCH_MODEL);
@@ -58,10 +58,6 @@ export function flushBatch(ctx: DrawContext): void {
       FIELD_SCALES[2 * (i + 1) + 1] = entry.fieldScale[1];
       continue;
     }
-    if (entry.kind === 'ramps') {
-      ctx.gradRamps.bind(i + 1);
-      continue;
-    }
     ctx.imageCache.bind(entry.image, i + 1);
     // Per flush, not at upload: the same bitmap can be drawn at both filters in
     // one frame. The cache skips the write when the texture already carries the
@@ -71,6 +67,7 @@ export function flushBatch(ctx: DrawContext): void {
       entry.sampling === 'nearest' ? gl.NEAREST : gl.LINEAR,
     );
   }
+  if (staged.ramps) ctx.gradRamps.bind(RAMP_SLOT);
   gl.uniform1iv(prog.uniform('u_samplers')!, SAMPLER_UNITS);
   gl.uniform2fv(prog.uniform('u_fieldScale')!, FIELD_SCALES);
   applyClipTest(ctx, staged.clipDepth);

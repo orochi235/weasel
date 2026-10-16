@@ -6,6 +6,7 @@ import { useContext, useEffect, useMemo, type ReactElement, type ReactNode } fro
 import { ActionsContext, ActionsNode, actionsNodeOf, useActionsRegistry } from './ActionsProvider';
 import { DepNode, DepRegistryContext, depNodeOf, useOptionalDepRegistry } from './depRegistry';
 import { ActiveToolNodeContext, ToolNode } from './activeToolContext';
+import { MenuHostContext } from '../../menus/MenuHostContext';
 
 /**
  * @experimental
@@ -53,11 +54,16 @@ function useNodes(
   return nodes;
 }
 
+/** Puts a tier's nodes in scope, and its tree's menu host when no
+ *  `<ActionsProvider>` above has put one there. */
 function Provide({ nodes, children }: { nodes: Yoke; children: ReactNode }): ReactElement {
+  const menuHost = useContext(MenuHostContext) ?? nodes.actions.menuHost();
   return (
     <DepRegistryContext.Provider value={nodes.deps.registry}>
       <ActionsContext.Provider value={nodes.actions.registry}>
-        <ActiveToolNodeContext.Provider value={nodes.tools}>{children}</ActiveToolNodeContext.Provider>
+        <ActiveToolNodeContext.Provider value={nodes.tools}>
+          <MenuHostContext.Provider value={menuHost}>{children}</MenuHostContext.Provider>
+        </ActiveToolNodeContext.Provider>
       </ActionsContext.Provider>
     </DepRegistryContext.Provider>
   );
@@ -76,7 +82,8 @@ export interface InputScopeProps {
  * One canvas's input: actions, deps and a tool of its own, under whichever
  * registries are in scope (or its yoke's). What the canvas registers stays
  * here; what it looks up is answered here first, then by the tiers above.
- * With nothing in scope it is a root.
+ * With nothing in scope it is a root, and makes the menu host
+ * `<ActionsProvider>` would have.
  *
  * Chrome above calls `trigger` / `begin` / `useActiveToolContext` on its own
  * registries, and those reach the active scope: the one last activated — by a

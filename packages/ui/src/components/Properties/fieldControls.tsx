@@ -14,10 +14,12 @@ import type {
 } from './fieldTypes';
 import { ColorControl, PaintControl } from './ColorControls';
 import { EnumControl } from './EnumControl';
+import { PropertyReadout } from './PropertyReadout';
 import s from './Properties.module.css';
 
 /** The control a field's `kind` and `control` choose, for every kind but a slider. */
 export function ControlBody(props: PropertyControlProps) {
+  if (props.readOnly) return <PropertyReadout {...props} />;
   switch (props.kind) {
     case 'boolean':
       return <BooleanControl {...props} />;
@@ -129,22 +131,16 @@ function BooleanControl(p: PropertyBooleanFieldProps) {
 }
 
 /**
- * The text a field shows and how an edit to it lands. With `onInput` the
- * field drafts: the draft shows while it differs from `value`, and settles
- * through `onChange` on blur or Enter. Without it, every keystroke is the
- * value.
+ * The text a field shows and how an edit to it lands: the draft shows while it
+ * differs from `value`, `onInput` gets each keystroke, and the draft settles
+ * through `onChange` on blur or Enter.
  */
 function useTextEdit(p: PropertyStringFieldProps) {
   const [draft, setDraft] = useState<string | null>(null);
   const value = p.mixed ? '' : (p.value ?? '');
-  const drafting = p.onInput !== undefined;
   return {
     shown: draft ?? value,
     type: (next: string) => {
-      if (!drafting) {
-        p.onChange(next);
-        return;
-      }
       setDraft(next);
       p.onInput?.(next);
     },

@@ -26,7 +26,7 @@ function shapeEndpoints(
   if (kind === 'line' && raw.shiftHeld) {
     current = snapTo15Degrees(start, current);
   }
-  current = session.snap(current);
+  current = session.snap(current, { origin: start });
 
   if (session.behaviors.length > 0) {
     gctx.modifiers = { ...moveCtx.modifiers };

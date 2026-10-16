@@ -27,13 +27,14 @@ describe('gradient units — which space a gradient measures its geometry in', (
     fillRule: 'evenodd',
   };
 
-  /** Uniform locations are resolved at link time, inside the constructor —
-   *  captured before `reset()` clears the log the assertions read. */
+  /** Uniform locations are resolved at link time, when the gradient program is
+   *  first built — captured before `reset()` clears the log the assertions read. */
   let worldInvLocs: unknown[];
 
   beforeEach(() => {
     recorder = makeGLRecorder();
     r = new WeaselRenderer({ gl: recorder.gl, width: 800, height: 600, dpr: 1 });
+    r._gradFill();
     worldInvLocs = recorder.calls
       .filter((c) => c.name === 'getUniformLocation' && c.args[1] === 'u_worldInv')
       .map((c) => c.result);

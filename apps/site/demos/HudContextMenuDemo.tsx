@@ -1,0 +1,86 @@
+import { useContext, useEffect, useRef } from 'react';
+import {
+  ActionsProvider, SceneCanvas, rectPath, solid, useMenuHost, useMenus, useScene, useSelection,
+} from '@weasel-js/core';
+import type { Fill, MenuDef, NodeId, Path, SceneCanvasApi } from '@weasel-js/core';
+import { attachMenuHost } from '@weasel-js/hud';
+import { pref } from '@weasel-js/prefs';
+import { useHud, useHudContribution } from '@weasel-js/hud/react';
+import { ThemeProvider } from '@weasel-js/theme/react';
+import { SiteColorModeContext } from '../colorMode';
+
+interface NodeData { path: Path; fill: Fill }
+interface Pose { x: number; y: number; width: number; height: number }
+
+const W = 400, H = 260;
+
+const rect = (id: string, pose: Pose, color: string) => ({
+  id: id as NodeId, kind: 'leaf' as const, layer: 'default' as const, pose,
+  data: { path: rectPath(0, 0, pose.width, pose.height), fill: { paint: solid(color) } },
+});
+
+const MENUS: MenuDef[] = [
+  {
+    id: 'demo.selection', when: { bodyTarget: 'selected-body' }, menu: pref.group('', {
+      edit: pref.group('', { duplicate: pref.action('duplicate'), delete: pref.action('delete') }),
+      order: pref.group('', { forward: pref.action('reorder.forward'), backward: pref.action('reorder.backward') }),
+    }),
+  },
+  {
+    id: 'demo.canvas', when: { bodyTarget: 'empty' }, menu: pref.group('', {
+      selectAll: pref.action('selectAll'), undo: pref.action('undo'), redo: pref.action('redo'),
+    }),
+  },
+];
+
+function Demo() {
+  const scene = useScene<NodeData, 'default', Pose>({
+    systemLayers: [{ id: 'default' }],
+    initial: [
+      rect('Green', { x: 30, y: 50, width: 90, height: 70 }, '#7fb069'),
+      rect('Tan', { x: 160, y: 110, width: 80, height: 80 }, '#d4a574'),
+      rect('Violet', { x: 270, y: 40, width: 90, height: 60 }, '#a48bd4'),
+    ],
+  });
+  const selection = useSelection({ scene, mode: 'single' });
+  useMenus(MENUS);
+
+  const canvasRef = useRef<SceneCanvasApi>(null);
+  const hud = useHud();
+  const hudEntry = useHudContribution(hud, { font: 'sans-serif' });
+  const host = useMenuHost();
+  useEffect(() => {
+    if (!host) return;
+    return attachMenuHost(hud, host, {
+      toCanvas: ({ x, y }) => {
+        const r = canvasRef.current?.element?.getBoundingClientRect();
+        return r ? { x: x - r.left, y: y - r.top } : { x, y };
+      },
+      canvasSize: () => ({ width: W, height: H }),
+    });
+  }, [hud, host]);
+
+  return (
+    <SceneCanvas
+      ref={canvasRef}
+      features={['pick', 'move', 'edit', 'arrange']}
+      claimKeys
+      width={W}
+      height={H}
+      className="ckd-canvas"
+      scene={scene}
+      selection={selection}
+      ambient={[hudEntry]}
+    />
+  );
+}
+
+export function HudContextMenuDemo() {
+  // The hud draws in the canvas, so the page's mode reaches it as a theme, not through CSS.
+  const mode = useContext(SiteColorModeContext);
+  return (
+    <ThemeProvider selection={{ mode }} className="ckd-shape-tools-demo">
+      <ActionsProvider><Demo /></ActionsProvider>
+    </ThemeProvider>
+  );
+}

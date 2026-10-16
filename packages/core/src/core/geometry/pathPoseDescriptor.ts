@@ -1,6 +1,7 @@
 import {
   boxToBox,
   boundsOfPath,
+  lerpCorners,
   translatePath,
   transformPath,
   type Path,
@@ -40,7 +41,9 @@ export const pathPoseDescriptor: PoseDescriptor<Path> = {
       for (let i = 0; i < a.coords.length; i++) {
         next[i] = a.coords[i] + (b.coords[i] - a.coords[i]) * t;
       }
-      return { ...a, coords: next };
+      const { corners: _a, ...bare } = a;
+      const corners = lerpCorners(a.corners, b.corners, t);
+      return corners ? { ...bare, coords: next, corners } : { ...bare, coords: next };
     }
     throw new Error('pathPoseDescriptor.lerp: incompatible path shapes');
   },

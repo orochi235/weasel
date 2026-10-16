@@ -66,6 +66,7 @@ describe('an export\'s page', () => {
     cleanup();
     render(<ReferenceView reference={core} rest="Box" />);
     expect(hrefOf('See where it is declared.')).toBe('#pkg/geom/reference/Box');
+    expect(screen.getByText('An axis-aligned rectangle.')).toBeTruthy();
   });
 
   it('says so when the address names nothing the entry exports', () => {

@@ -2,6 +2,7 @@ import { useMemo, useSyncExternalStore, type ReactNode } from 'react';
 import { actionItems, actionShortcuts, useActionsRegistry, type Action } from '@weasel-js/core';
 import type { PrefAction, PrefLeaf } from '@weasel-js/prefs';
 import { formatShortcut } from '../ToolPalette/formatShortcut';
+import { actionIcon } from '../../icons/actionIcon';
 import { childrenOf, undigit, type SchemaNode, type SchemaRoot } from './schemaEdit';
 
 /** An action a schema editor offers to place: one a host has registered, by the key an action pref fires. */
@@ -11,6 +12,8 @@ export interface EditorAction {
   label: string;
   /** What the list files it under. */
   group?: string;
+  /** Words its filter also finds it by: the action's tags, then its variant's. */
+  tags?: readonly string[];
   icon?: ReactNode;
   shortcut?: string;
 }
@@ -37,7 +40,8 @@ export function useEditorActions(given: readonly EditorAction[] | undefined): re
       key: item.key,
       label: item.label,
       ...(item.action.group !== undefined ? { group: item.action.group } : {}),
-      icon: typeof item.icon === 'function' ? item.icon() : item.icon,
+      ...(item.tags.length > 0 ? { tags: item.tags } : {}),
+      icon: actionIcon(item.icon),
       shortcut: item.action.shortcut ?? formatShortcut(actionShortcuts(item.action, item.params)[0]),
     }));
   }, [given, registry, all]);

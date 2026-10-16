@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { keySpecsFromMods, keySpecFromKey, type Platform } from './keySpecsFromMods';
+import { keySpecsFromMods, keySpecFromKey, type LogicalMod, type Platform } from './keySpecsFromMods';
 
 describe('keySpecsFromMods — platform mapping', () => {
   it('maps `mod` to ⌘ on macOS (symbol legend default)', () => {
@@ -54,9 +54,13 @@ describe('keySpecsFromMods — legend override', () => {
       .toEqual([{ label: 'Cmd' }, { label: 'Option' }, { label: 'Control' }, { label: 'Shift' }]);
   });
 
-  it('honors legend: "symbol" on Windows (Shift stays ⇧; mod/alt/ctrl remain text since they have no widely-recognized symbol)', () => {
-    expect(keySpecsFromMods([{ name: 'mod' }, { name: 'shift' }, { name: 'meta' }], { platform: 'windows', legend: 'symbol' }))
-      .toEqual([{ label: 'Ctrl' }, { label: '⇧' }, { label: '⊞' }]);
+  it('honors legend: "symbol" off macOS with the ISO/IEC 9995-7 symbols', () => {
+    for (const platform of ['windows', 'linux'] as const) {
+      expect(keySpecsFromMods(['mod', 'ctrl', 'alt', 'shift', 'meta'].map((name) => ({ name: name as LogicalMod })), { platform, legend: 'symbol' }))
+        .toEqual(['⎈', '⎈', '⎇', '⇧', '⊞'].map((label) => ({ label })));
+      expect(['Escape', 'Enter', 'Tab', 'Space', 'Backspace', 'Delete', 'ContextMenu'].map((k) => keySpecFromKey(k, { platform, legend: 'symbol' }).label))
+        .toEqual(['⎋', '↵', '⇥', '␣', '⟵', '⌦', '▤']);
+    }
   });
 
   it('explicit legend: "auto" matches the default behavior', () => {
@@ -141,7 +145,7 @@ describe('keySpecFromKey — named keys', () => {
 
   it('passes unknown multi-character keys through unchanged', () => {
     expect(keySpecFromKey('F1', { platform: 'macos' })).toEqual({ label: 'F1' });
-    expect(keySpecFromKey('Insert', { platform: 'windows' })).toEqual({ label: 'Insert' });
+    expect(keySpecFromKey('NumLock', { platform: 'windows' })).toEqual({ label: 'NumLock' });
   });
 
   it('forwards the optional flag', () => {
@@ -165,5 +169,52 @@ describe('keySpecFromKey — named keys', () => {
     expect(keySpecFromKey('ContextMenu', { platform: 'linux' })).toEqual({ label: '▤' });
     // text mode collapses every platform to "Menu".
     expect(keySpecFromKey('ContextMenu', { platform: 'windows', legend: 'text' })).toEqual({ label: 'Menu' });
+  });
+});
+
+describe('navigation keys', () => {
+  const keys = ['Home', 'End', 'PageUp', 'PageDown', 'PrintScreen', 'Insert', 'ScrollLock', 'Pause'];
+  const labels = (platform: Platform, legend: 'auto' | 'symbol' | 'text') =>
+    keys.map((k) => keySpecFromKey(k, { platform, legend }).label);
+
+  it('draws their symbols in symbol mode on every platform', () => {
+    for (const p of ['macos', 'windows', 'linux'] as const) {
+      expect(labels(p, 'symbol')).toEqual(['↖', '↘', '⇞', '⇟', '⎙', '⎀', '⇳', '⎉']);
+    }
+  });
+
+  it('shows the printed text by default, on every platform', () => {
+    for (const p of ['macos', 'windows', 'linux'] as const) {
+      expect(labels(p, 'auto')).toEqual(['Home', 'End', 'PgUp', 'PgDn', 'PrtSc', 'Ins', 'ScrLk', 'Pause']);
+    }
+  });
+});
+
+describe('backspace off macOS', () => {
+  it('is a long left arrow in symbol mode', () => {
+    for (const platform of ['windows', 'linux'] as const) {
+      expect(keySpecFromKey('Backspace', { platform, legend: 'symbol' }).label).toBe('⟵');
+    }
+    expect(keySpecFromKey('Backspace', { platform: 'macos', legend: 'symbol' }).label).toBe('⌫');
+  });
+});
+
+describe('labels', () => {
+  it('replaces a modifier\'s label by its logical name, and a key\'s by its KeyboardEvent.key', () => {
+    const labels = { mod: 'Strg', Escape: 'Esc!', Home: 'Pos1' };
+    expect(keySpecsFromMods([{ name: 'mod' }, { name: 'shift' }], { platform: 'windows', labels }))
+      .toEqual([{ label: 'Strg' }, { label: '⇧' }]);
+    expect(keySpecFromKey('Escape', { platform: 'macos', labels }).label).toBe('Esc!');
+    expect(keySpecFromKey('Home', { platform: 'linux', legend: 'symbol', labels }).label).toBe('Pos1');
+  });
+
+  it('reaches a letter key whichever case it is named in', () => {
+    expect(keySpecFromKey('z', { labels: { Z: 'Y' } }).label).toBe('Y');
+    expect(keySpecFromKey('z', { labels: { z: 'y' } }).label).toBe('y');
+  });
+
+  it('keeps an optional key optional', () => {
+    expect(keySpecsFromMods([{ name: 'shift', optional: true }], { labels: { shift: 'Umschalt' } }))
+      .toEqual([{ label: 'Umschalt', optional: true }]);
   });
 });

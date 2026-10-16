@@ -80,3 +80,7 @@
   color: var(--wzl-fg-muted);
   font-size: var(--wzl-font-size-sm);
 }
+
+.fg-css-vars__unused {
+  font-size: var(--wzl-font-size-sm);
+}

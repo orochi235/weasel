@@ -7,6 +7,7 @@ import {
   type ReactNode,
 } from 'react';
 import { historyKey, openPointerSession, useLatest, type PointerSession } from '@weasel-js/core';
+import { useKitSettings } from '@weasel-js/react';
 import {
   Plot2D,
   type Plot2DHandle,
@@ -14,14 +15,12 @@ import {
   type AxesSettings,
   type TickSettings,
 } from '../Plot2D';
-import {
-  modelToPlot, plotToModel,
-  type ModelRange,
-} from '../Plot2D/geometry';
+import type { ModelRange } from '../Plot2D/geometry';
 import { dlog } from '../../dlog';
 import s from './CurveEditor.module.css';
 import { dispatchContextMenu } from './contextMenuDispatch';
 import { CurveLayers } from './CurveLayers';
+import { layerCtxOver } from './layerCtx';
 import { sameFields } from './sameFields';
 import type {
   CurveLayer, LayerCtx, LayerGesture, LayerModifiers, ModelPoint, PlotPoint,
@@ -141,21 +140,15 @@ export function LayeredCurveEditor(props: LayeredCurveEditorProps) {
   const layersRef = useLatest(layers);
   const modelRangeRef = useLatest(modelRange);
   const plotSizeRef = useLatest(plotSize);
+  const kitSettings = useKitSettings();
 
   const plotRef = useRef<Plot2DHandle | null>(null);
 
   // ── Coord helpers ──────────────────────────────────────────────────
-  const makeCtx = useCallback((modifiers: LayerModifiers): LayerCtx => {
-    const mr = modelRangeRef.current;
-    const ps = plotSizeRef.current;
-    return {
-      modelRange: mr,
-      plotSize: ps,
-      toPlot: (p) => modelToPlot(p, mr, ps),
-      toModel: (p) => plotToModel(p, mr, ps),
-      modifiers,
-    };
-  }, [modelRangeRef, plotSizeRef]);
+  const makeCtx = useCallback(
+    (modifiers: LayerModifiers): LayerCtx => ({ ...layerCtxOver(modelRangeRef.current, plotSizeRef.current, kitSettings), modifiers }),
+    [modelRangeRef, plotSizeRef, kitSettings],
+  );
 
   // ── Gesture routing ────────────────────────────────────────────────
   const activeRef = useRef(null as ActiveGesture | null);
@@ -428,12 +421,7 @@ export function LayeredCurveEditor(props: LayeredCurveEditorProps) {
   useEffect(() => () => { sessionRef.current?.cancel(); }, []);
 
   // ── render ─────────────────────────────────────────────────────────
-  const renderCtxBase: Omit<LayerCtx, 'modifiers'> = useMemo(() => ({
-    modelRange,
-    plotSize,
-    toPlot: (p) => modelToPlot(p, modelRange, plotSize),
-    toModel: (p) => plotToModel(p, modelRange, plotSize),
-  }), [modelRange, plotSize]);
+  const renderCtxBase = useMemo(() => layerCtxOver(modelRange, plotSize, kitSettings), [modelRange, plotSize, kitSettings]);
 
   const cls = [s.root, className].filter(Boolean).join(' ');
 
