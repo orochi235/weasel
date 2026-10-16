@@ -178,6 +178,16 @@ Priority tags:
 
 ### Path editing tricks
 
+- **(P1) Move the path-editing tricks into their own package, `@weasel-js/path-tools`.** Decided
+  2026-10-15, to start once the adopted audition branches have landed. Core keeps basic path
+  edit (anchors, handles, Join, Cut at crossings, Simplify, Offset) and `@weasel-js/geom` keeps
+  the pure math; the package takes the actions, tools, and their chrome built on core: Simplify
+  brush, handle locks, Bridge, Trim segment, Extend to next path, Harmonize curvature, Smudge
+  brush, path constraints, Blend / Bend along / Repeat along, and the distort tools. An app turns
+  it on as a preset. First the foundation it needs: a way for a package to contribute actions to
+  the standard set and to a `features` preset, which is also what "Every standard action ships
+  with `<SceneCanvas>`" below asks for. Then the tool renames the maintainer deferred to the end
+  of the adoption pass (Envelope mesh becomes Fabric distort, among others).
 - **(P2) Tune the Simplify brush hands-on, with the maintainer driving.** It went in from its
   audition lab with first-draft behavior and keys: brush size and its key, the tolerance it
   applies, and how it shows what it will remove (`defaults/simplifyBrush.ts`).
