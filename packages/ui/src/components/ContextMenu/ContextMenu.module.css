@@ -4,6 +4,7 @@
   z-index: var(--wzl-z-popover);
   min-width: 180px;
   padding: var(--wzl-space-2);
+  color: var(--wzl-fg);
   user-select: none;
 }
 
