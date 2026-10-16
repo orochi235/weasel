@@ -44,6 +44,16 @@ describe('a menu widget with no measure of its own', () => {
     color: () => undefined,
   } as never as HudDrawCtx;
 
+  it('measures in no guessed family before the hud has drawn', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    createMenuWidget({
+      open: { seq: 1, source: 'pointer', client: { x: 10, y: 10 }, entries: [{ kind: 'item', key: 'a', label: 'A', run: () => {} }] },
+      close: () => {}, toCanvas: (p) => p, canvasSize: () => ({ width: 800, height: 600 }), onChange: () => {},
+    });
+    expect(warn).not.toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
   it('sizes its panel from the family the hud draws in', () => {
     const label = 'A'.repeat(20);
     const open: OpenMenu = {
