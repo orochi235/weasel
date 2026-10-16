@@ -31,6 +31,7 @@ import { Canvas } from './Canvas';
 import { CanvasView } from './CanvasView';
 import { canvasDebug, DevHuds } from './SceneCanvas/DevHuds';
 import { GestureDispatcherMounter } from './SceneCanvas/GestureDispatcherMounter';
+import { IconRegistryProviderIfRoot } from '../iconRegistry';
 import { PointerProviderIfRoot, PointerPublisher } from './SceneCanvas/PointerProviderIfRoot';
 import { StandardActionsRegistrar } from './SceneCanvas/StandardActionsRegistrar';
 import { ToolKeybindingsMounter } from './SceneCanvas/ToolKeybindingsMounter';
@@ -331,6 +332,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
 
   return (
     <ViewInputsProvider value={viewInputs}>
+      <IconRegistryProviderIfRoot>
       <PointerProviderIfRoot>
         <Canvas<TPose>
           ref={handleRef}
@@ -443,6 +445,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
         {addedViews.map((v) => <CanvasView key={`added:${v.id}`} {...v} />)}
         {children}
       </PointerProviderIfRoot>
+      </IconRegistryProviderIfRoot>
     </ViewInputsProvider>
   );
 }

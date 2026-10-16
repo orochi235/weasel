@@ -62,6 +62,7 @@
       "@weasel-js/guides/resize": ["../guides/src/resize.ts"],
       "@weasel-js/guides/insert": ["../guides/src/insert.ts"],
       "@weasel-js/history": ["../history/src/index.ts"],
+      "@weasel-js/icons": ["../icons/src/index.ts"],
       "@weasel-js/menu": ["../menu/src/index.ts"],
       "@weasel-js/hud": ["../hud/src/index.ts"],
       "@weasel-js/hud/react": ["../hud/src/react/index.ts"],

@@ -97,3 +97,15 @@ export {
   type ActionGlyphProps,
 } from '../interactions/actions/defaults/icons/actionGlyphIcons';
 export { ACTION_GLYPHS } from '../interactions/actions/defaults/icons/actionGlyphs';
+
+// ─── Icon registry ──────────────────────────────────────────────────────────
+export {
+  IconRegistryProvider,
+  IconRegistryProviderIfRoot,
+  useIconRegistry,
+  useIconGlyph,
+  useIconVariant,
+} from '../iconRegistry';
+export type { IconRegistryProviderProps } from '../iconRegistry';
+export { toIconRef } from '@weasel-js/icons';
+export type { IconRef, IconTable } from '@weasel-js/icons';

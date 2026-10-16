@@ -1,0 +1,63 @@
+import { act, render, renderHook, screen, waitFor } from '@testing-library/react';
+import type { ReactNode } from 'react';
+import { describe, expect, it, vi } from 'vitest';
+import type { IconTable } from '@weasel-js/icons';
+import { IconRegistryProvider, useIconGlyph, useIconVariant } from './index';
+
+const core: IconTable = {
+  namespace: 'core', owner: '@weasel-js/core',
+  icons: { undo: { body: '<path d="u"/>', group: 'History', tags: ['history'] } },
+};
+const more: IconTable = {
+  namespace: 'core', owner: '@weasel-js/core',
+  icons: { redo: { body: '<path d="r"/>', group: 'History', tags: [] } },
+};
+
+describe('icon registry provider', () => {
+  it('serves a glyph from the tables it was given', () => {
+    const wrapper = ({ children }: { children: ReactNode }) => <IconRegistryProvider icons={core}>{children}</IconRegistryProvider>;
+    const { result } = renderHook(() => useIconGlyph('core:undo'), { wrapper });
+    expect(result.current?.body).toBe('<path d="u"/>');
+  });
+
+  it('answers undefined with no provider in scope, and for a miss', () => {
+    expect(renderHook(() => useIconGlyph('core:undo')).result.current).toBeUndefined();
+    const wrapper = ({ children }: { children: ReactNode }) => <IconRegistryProvider icons={core}>{children}</IconRegistryProvider>;
+    expect(renderHook(() => useIconGlyph('core:redo'), { wrapper }).result.current).toBeUndefined();
+  });
+
+  it('loads a variant when asked, and re-renders with its entries', async () => {
+    const loader = vi.fn(async () => ({ default: [more] }));
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <IconRegistryProvider icons={core} variants={{ all: loader }}>{children}</IconRegistryProvider>
+    );
+    const { result } = renderHook(() => useIconVariant('all'), { wrapper });
+    await waitFor(() => expect(result.current.state).toBe('loaded'));
+    expect(result.current.entries.map((e) => e.ref).sort()).toEqual(['core:redo', 'core:undo']);
+    expect(loader).toHaveBeenCalledTimes(1);
+  });
+
+  it('reports a variant with no loader as unknown, listing what is registered', () => {
+    const wrapper = ({ children }: { children: ReactNode }) => <IconRegistryProvider icons={core}>{children}</IconRegistryProvider>;
+    const { result } = renderHook(() => useIconVariant('picker'), { wrapper });
+    expect(result.current.state).toBe('unknown');
+    expect(result.current.entries.map((e) => e.ref)).toEqual(['core:undo']);
+  });
+
+  it('a failed variant can be asked for again', async () => {
+    let fail = true;
+    const loader = async () => { if (fail) throw new Error('offline'); return { default: [more] }; };
+    function Probe() {
+      const { state } = useIconVariant('all');
+      return <span>{state}</span>;
+    }
+    const tree = (k: number) => (
+      <IconRegistryProvider icons={core} variants={{ all: loader }}><Probe key={k} /></IconRegistryProvider>
+    );
+    const { rerender } = render(tree(1));
+    await waitFor(() => expect(screen.getByText('failed')).toBeTruthy());
+    fail = false;
+    await act(async () => rerender(tree(2)));
+    await waitFor(() => expect(screen.getByText('loaded')).toBeTruthy());
+  });
+});
