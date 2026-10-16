@@ -15,6 +15,10 @@ export interface EffectLookResult {
   data: DiagramData;
   scene: DiagramSceneOptions;
   color: TypeColor;
+  /** Edges standing in for a decision's exits where the look draws no
+   *  decision, keyed by edge id: which stage chose, and by which output. A
+   *  run reads that stage's `taken` for them. */
+  exits?: ReadonlyMap<string, { stage: string; port: string }>;
 }
 
 /** One way of drawing a pipeline. */
@@ -114,15 +118,36 @@ export function drawableWires(pipeline: EffectPipeline): DrawableWire[] {
   });
 }
 
+/** What a value row shows before a run fills it in. */
+export const NO_VALUE = '–';
+/** What a value row is measured as, so most values a run writes fit. */
+const VALUE_ROOM = '00000.000';
+
+/** The row id of the value row for an output, under its stage's body. */
+export const valueRowId = (port: string): string => `value:${port}`;
+
 /** The body rows of an ordinary stage: its title, a row of its ports when
- *  `withPorts` (inputs left, outputs right), then its params when `showParams`. */
-export function stageRows(stage: EffectStage, showParams: boolean, withPorts: boolean): Row[] {
+ *  `withPorts` (inputs left, outputs right), a row per output for a run's
+ *  value when `showValues`, then its params when `showParams`. */
+export function stageRows(
+  stage: EffectStage,
+  opts: { showParams: boolean; withPorts: boolean; showValues?: boolean },
+): Row[] {
   const rows: Row[] = [{ kind: 'label', text: stage.title, style: { bold: true } }];
   const side = (ports: EffectStage['inputs']) => (ports ?? []).map((p) => ({ id: p.id, label: p.label ?? p.id, type: p.type }));
-  if (withPorts && ((stage.inputs?.length ?? 0) > 0 || (stage.outputs?.length ?? 0) > 0)) {
+  if (opts.withPorts && ((stage.inputs?.length ?? 0) > 0 || (stage.outputs?.length ?? 0) > 0)) {
     rows.push({ kind: 'ports', left: side(stage.inputs), right: side(stage.outputs) });
   }
-  if (showParams) for (const p of stage.params ?? []) rows.push({ kind: 'field', label: p.label, value: p.value });
+  if (opts.showValues === true) {
+    // A repeated port id is a problem `checkPipeline` reports; one row for it.
+    const seen = new Set<string>();
+    for (const p of stage.outputs ?? []) {
+      if (seen.has(p.id)) continue;
+      seen.add(p.id);
+      rows.push({ kind: 'field', id: valueRowId(p.id), label: p.label ?? p.id, value: NO_VALUE, room: VALUE_ROOM });
+    }
+  }
+  if (opts.showParams) for (const p of stage.params ?? []) rows.push({ kind: 'field', label: p.label, value: p.value });
   return rows;
 }
 
@@ -138,12 +163,12 @@ export function exitLabel(d: DrawableWire): string | undefined {
  *  perimeter ports; pass none when the rows carry them. */
 export function boxNode(
   stage: EffectStage,
-  opts: { showParams: boolean; rowPorts: boolean; ports: readonly PortSpec[] },
+  opts: { showParams: boolean; rowPorts: boolean; ports: readonly PortSpec[]; showValues?: boolean },
 ): DataNode {
   return {
     id: stage.id,
     outline: kindOf(stage) === 'stage' ? 'rect' : 'stadium',
-    rows: stageRows(stage, opts.showParams, opts.rowPorts),
+    rows: stageRows(stage, { showParams: opts.showParams, withPorts: opts.rowPorts, showValues: opts.showValues === true }),
     // Always set: left off, a stage port named n, e, s or w would share its id with a compass default.
     ports: opts.ports,
   };

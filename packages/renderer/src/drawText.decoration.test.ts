@@ -152,6 +152,17 @@ describe('drawText — decoration reaches the GPU', () => {
     expect(calls.filter((c) => c.name === 'drawElements')).toHaveLength(1);
   });
 
+  it('takes a solid fill\'s opacity into the glyphs\' alpha and the rule\'s', () => {
+    const { ctx, calls } = createRecorderCtx();
+    dispatch(ctx, {
+      kind: 'text', x: 0, y: 0,
+      runs: [decoratedRun({ underline: true, fill: { paint: { kind: 'solid', color: '#ff0000', opacity: 0.25 } } })],
+      maxWidth: Infinity, align: 'left', style: {},
+    } as DrawCommand);
+    expect(quadsOfMode(ctx, calls, 0).map((q) => q.rgba)).toEqual([[1, 0, 0, 0.25]]);
+    expect(quadsOfMode(ctx, calls, GLYPH_MODE_MSDF).map((q) => q.rgba)).toEqual([[1, 0, 0, 0.25]]);
+  });
+
   it('shifts the rule by the verticalAlign offset, with the glyphs', () => {
     const runs = [decoratedRun({ underline: true })];
     const cmd = { kind: 'text', x: 0, y: 0, runs, maxWidth: Infinity, align: 'left', style: {} };

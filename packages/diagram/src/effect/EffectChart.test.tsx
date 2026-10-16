@@ -131,6 +131,16 @@ describe('EffectChart and a pipeline rebuilt each render', () => {
     expect(view.mounts).toBe(2);
   });
 
+  it('keeps the view through a new run, and hands it the run painted on', () => {
+    const pipeline = make();
+    const { rerender } = render(<EffectChart pipeline={pipeline} width={100} height={100} />);
+    rerender(<EffectChart pipeline={pipeline} run={{ stages: { a: { cost: 3 } } }} width={100} height={100} />);
+    rerender(<EffectChart pipeline={pipeline} run={{ stages: { a: { cost: 4 } } }} width={100} height={100} />);
+    expect(view.mounts).toBe(1);
+    const specs = (seen[seen.length - 1] as { specs: { id: string; data: { text?: string } }[] }).specs;
+    expect(specs.find((s) => s.id === 'a/cost')?.data.text).toBe('4 ms');
+  });
+
   it('settles under a parent that builds the pipeline inline and keeps the problems in state', () => {
     let renders = 0;
     function Parent() {

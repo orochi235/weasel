@@ -309,6 +309,7 @@ A stage:
 | Prop | Meaning |
 | --- | --- |
 | `pipeline` | The pipeline. It is compared by its JSON, so it may be rebuilt on every render; a value JSON drops or flattens in a stage's `data`, such as a function or a `Map`, is not seen changing. |
+| `run` | One run of the pipeline, drawn over it (below). It may change every frame. |
 | `look`, `options` | How it is drawn, and that look's options. Default look `nodeGraph`. |
 | `width`, `height` | The canvas size. |
 | `background` | What the canvas paints behind the chart. Unset, it is transparent; the shipped looks are drawn for a dark ground. |
@@ -321,6 +322,37 @@ the chart out again and opens it fitted afresh, as a pipeline whose content
 changes does. Ports that
 carry a value type are drawn, colored by type. As with `DiagramView`, call
 `registerCanvasFont('sans-serif')` once or labels render blank.
+
+#### Runs
+
+A run is what one pass through the pipeline did, kept beside the pipeline
+rather than in it, keyed by stage id:
+
+```ts
+const run: EffectRun = {
+  stages: {
+    src: { cost: 0.3, values: { out: '1920×1080' } },
+    q: { taken: 'yes' },                    // a decision's chosen output
+    blur: { cost: 4.2, values: { out: '6.0 px' } },
+  },
+};
+```
+
+A stage the run has no entry for is one it never reached. The chart fades such
+a stage, its rows and its wires, and a decision's wires to the outputs it did
+not take, every one of them when `taken` names none; where a look draws a
+decision as something else, as `rack` draws a skip as an arc, the look's
+`exits` say which edges stand for which exit. It writes each stage's `cost`, in milliseconds, above its top-right
+corner; and writes each output's value into the row a look keeps for it when
+its `showValues` option is on, with a dash for an output the run says nothing
+about. Port dots are drawn outside the scene and do not fade, and a decision a
+look does not draw has nowhere to show its cost.
+
+A run never lays the chart out again or refits it: `paintRun(pipeline, specs,
+run)` edits the specs the look already built, data only, and `DiagramView`
+writes just the fields that changed. So `showValues` keeps its rows from the
+first draw, wide enough for a value of about nine characters, and a longer one
+runs past the box's edge rather than resizing it.
 
 `checkPipeline(pipeline)` returns the problems without drawing anything, each
 `{ kind, message, stage?, port?, wire?, group? }`, where `wire` is an index into
@@ -346,11 +378,12 @@ and a `color(type)` for the ports. `EFFECT_LOOKS` holds `nodeGraph` and `rack`.
 
 | Look | Draws | Options |
 | --- | --- | --- |
-| `nodeGraph` (default) | Every port a named row on its stage, a wire from port to port, flowing left to right. | `router` (default `'bezier'`), `nodeGap`, `rankGap`, `colors`, `showParams`, `branch` |
-| `rack` | The main signal on one straight line, and everything else hung beside the stage on the line it is nearest to, whichever way the wire runs. | `chain`, `side`, `nodeGap`, `rankGap`, `colors`, `showParams`, `branch`, `collapseSkips` |
+| `nodeGraph` (default) | Every port a named row on its stage, a wire from port to port, flowing left to right. | `router` (default `'bezier'`), `nodeGap`, `rankGap`, `colors`, `showParams`, `showValues`, `branch` |
+| `rack` | The main signal on one straight line, and everything else hung beside the stage on the line it is nearest to, whichever way the wire runs. | `chain`, `side`, `nodeGap`, `rankGap`, `colors`, `showParams`, `showValues`, `branch`, `collapseSkips` |
 
 `colors` maps a value type to a color, over the palette; `showParams` (default
-true) shows the `params` of ordinary stages, sources and sinks. `rack` runs
+true) shows the `params` of ordinary stages, sources and sinks; `showValues`
+(default false) keeps a row per output on those stages for a run's values. `rack` runs
 along `chain`, a list of stage ids that defaults to the longest path over data
 wires (`mainChain(pipeline)` returns it); `side` is `'below'` (default) or
 `'above'`.
@@ -382,7 +415,8 @@ A decision stage draws as a branch symbol, chosen by `branch`:
 signal enters on the left; inputs of a `control` type enter at the top, and so
 does the input a `'bar'` tests, when the stage has more than one input.
 
-To write a look, return `{ data, scene, color }`; `scene` takes any
+To write a look, return `{ data, scene, color }`, and `exits` if it draws a
+decision as something other than itself; `scene` takes any
 `diagramScene` option. The shipped looks are built from these, which are
 exported for yours:
 
@@ -396,7 +430,7 @@ exported for yours:
 | `isControl(pipeline, type)` | Whether `types` marks a value type as `control`. |
 | `kindOf(stage)` | The stage's `kind`, with any value the shipped looks do not know read as `'stage'`. |
 | `portOn(stage, id)` | The stage's port with that id. |
-| `stageRows(stage, showParams, withPorts)` | Body rows for a stage: its title, a row of its ports, its params. |
+| `stageRows(stage, { showParams, withPorts, showValues })` | Body rows for a stage: its title, a row of its ports, a value row per output (`valueRowId(port)`, showing `NO_VALUE`), its params. |
 | `exitLabel(wire)` | What to call one of `drawableWires`' wires: its own label, or for a wire leaving a decision the exit's label or id. |
 | `branchNode(stage, pipeline, branch)` | The node a decision draws as. |
 

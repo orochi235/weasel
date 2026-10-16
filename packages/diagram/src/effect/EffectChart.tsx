@@ -5,7 +5,8 @@ import { diagramScene } from '../fromData';
 import { checkPipeline, type EffectProblem } from './check';
 import type { EffectLook } from './draw';
 import { nodeGraph } from './nodeGraph';
-import type { EffectPipeline } from './types';
+import { paintRun } from './run';
+import type { EffectPipeline, EffectRun } from './types';
 
 /** Props for `EffectChart`. */
 export interface EffectChartProps<TOptions = unknown> {
@@ -13,6 +14,12 @@ export interface EffectChartProps<TOptions = unknown> {
    *  lays out again only when that changes. A value JSON drops or flattens
    *  in a stage's `data` (a function, a `Map`) is not seen changing. */
   pipeline: EffectPipeline;
+  /** One run of the pipeline, drawn over it: stages it never reached and
+   *  branches it did not take faded, each stage's cost above its corner, and
+   *  each output's value in the row a look keeps for it (`showValues`). It may
+   *  change every frame: the chart neither lays out again nor refits, and
+   *  repaints only what changed. */
+  run?: EffectRun;
   /** How the pipeline is drawn. Default `nodeGraph`. */
   look?: EffectLook<TOptions>;
   /** The look's options. Keep the object's identity steady between renders,
@@ -72,7 +79,7 @@ function useSameContent<T>(value: T): T {
  *  only in a registered font family, so call `registerCanvasFont('sans-serif')`
  *  once before mounting one. */
 export function EffectChart<TOptions = unknown>({
-  pipeline: given, look, options, width, height, background, selected, onSelect, onProblems, className,
+  pipeline: given, run, look, options, width, height, background, selected, onSelect, onProblems, className,
 }: EffectChartProps<TOptions>) {
   const pipeline = useSameContent(given);
   const problems = useMemo(() => checkPipeline(pipeline), [pipeline]);
@@ -90,14 +97,17 @@ export function EffectChart<TOptions = unknown>({
       showsPort: (port) => port.type !== undefined,
       fill: (port) => ({ paint: { color: drawn.color(port.type) } }),
     };
-    return { specs: diagramScene(drawn.data, drawn.scene), portOptions };
+    return { specs: diagramScene(drawn.data, drawn.scene), portOptions, exits: drawn.exits };
   }, [pipeline, look, options]);
+
+  // Keyed by the layout alone: a run edits the scene in place.
+  const painted = useMemo(() => paintRun(pipeline, built.specs, run, built.exits), [pipeline, built, run]);
 
   const stageIds = useMemo(() => new Set(pipeline.stages.map((s) => s.id)), [pipeline]);
   return (
     <DiagramView
       key={keyOf(built)}
-      specs={built.specs}
+      specs={painted}
       width={width}
       height={height}
       ports="show"

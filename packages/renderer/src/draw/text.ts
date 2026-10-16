@@ -11,7 +11,7 @@ import type { TextDrawCommand } from '../DrawCommand';
 import type { ShaderProgram } from '../shaders/ShaderProgram';
 import type { GlMat3 } from '@weasel-js/geom';
 import type { Mesh } from '@weasel-js/geom/tessellate';
-import { isSolidPaint, resolveColor } from '@weasel-js/paint';
+import { isSolidPaint } from '@weasel-js/paint';
 import {
   ensureFontTexture,
   textureCacheKey,
@@ -30,7 +30,7 @@ import { drawColorGlyphs } from './colorGlyphs';
 import { applyClipTest } from './stencil';
 import { enterUncut, leaveUncut, flushForOwnDraw } from './clip';
 import { BATCH_MODEL, flushBatch } from './flushBatch';
-import { stageSolid, stageGlyphs, tryStageFill } from './batch';
+import { solidColor, stageSolid, stageGlyphs, tryStageFill } from './batch';
 import { foldColor } from './foldColor';
 import { batchPaint } from './gradient';
 import { bindPattern, bindGradient } from './paintBind';
@@ -141,11 +141,10 @@ function drawOutlineMesh(ctx: DrawContext, fill: Paint, mesh: Mesh): void {
 /**
  * Stage the rules an underline, strikethrough or overline asks for.
  *
- * Color resolution matches `drawTextGroup` exactly — including its ignoring
- * of `fill.opacity` — so a rule can never disagree with the glyphs it
- * underlines. They stage as ordinary rects, which is what keeps them in the
- * run their glyphs are in. A rule under a texture paint is geometry under it,
- * the way an outline glyph is.
+ * Color resolution matches `drawTextGroup` exactly, `fill.opacity` included,
+ * so a rule can never disagree with the glyphs it underlines. They stage as
+ * ordinary rects, which is what keeps them in the run their glyphs are in. A
+ * rule under a texture paint is geometry under it, the way an outline glyph is.
  */
 function drawTextDecorations(
   ctx: DrawContext, decorations: readonly LaidOutDecoration[], dx: number, dy: number,
@@ -157,7 +156,7 @@ function drawTextDecorations(
       drawOutlineMesh(ctx, paint, ruleMesh(d.x0 + dx, d.y0 + dy, d.x1 + dx, d.y1 + dy));
       continue;
     }
-    const [r, g, b, a] = isSolidPaint(paint) ? resolveColor(paint.color) : [0, 0, 0, 1];
+    const [r, g, b, a] = isSolidPaint(paint) ? solidColor(paint) : [0, 0, 0, 1];
     let cut: ClipRect | null | undefined;
     for (;;) {
       const slot = stageSolid(ctx, 4);
@@ -222,9 +221,7 @@ function drawTextGroup(
     drawPaintedGlyphs(ctx, group, dx, dy, paintKind, atlasId, mode, bold, tanItalic, fieldScale);
     return;
   }
-  const color = isSolidPaint(fill)
-    ? resolveColor(fill.color)
-    : [0, 0, 0, 1];
+  const color = isSolidPaint(fill) ? solidColor(fill) : [0, 0, 0, 1];
 
   const batch = ctx.drawBatch;
   const m = ctx.state.transform;

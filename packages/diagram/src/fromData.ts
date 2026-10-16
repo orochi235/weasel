@@ -377,7 +377,7 @@ export function diagramScene(data: DiagramData, opts: DiagramSceneOptions = {}):
       },
     );
     for (const [k, s] of built.specs.entries()) {
-      specs.push({ ...s, ...(k === 0 ? {} : { id: `${n.id}/${k}` }) } as DiagramSpec);
+      specs.push({ ...s, ...(s.id !== undefined ? {} : { id: `${n.id}/${k}` }) } as DiagramSpec);
     }
     if (n.marks) specs.push(...markSpecs(n.id, n.marks, at, { style, textStyle: styleOf, measure }));
   }

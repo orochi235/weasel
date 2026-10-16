@@ -16,6 +16,10 @@ export interface NodeGraphOptions {
   /** Whether a stage lists its `params`. Default true. A decision's symbol
    *  does not show params either way. */
   showParams?: boolean;
+  /** Whether a stage keeps a row per output for the value an `EffectRun`
+   *  shows there. Default false. Kept from the start, so a run fills it in
+   *  without the chart laying out again. */
+  showValues?: boolean;
   /** Default `'auto'`. */
   branch?: BranchChoice;
 }
@@ -27,7 +31,7 @@ export const nodeGraph: EffectLook<NodeGraphOptions> = (pipeline, options = {}) 
   const stages = uniqueStages(pipeline);
   const nodes = stages.map((stage) => (kindOf(stage) === 'decision'
     ? { id: stage.id, ...branchNode(stage, pipeline, options.branch) }
-    : boxNode(stage, { showParams: options.showParams !== false, rowPorts: true, ports: [] })));
+    : boxNode(stage, { showParams: options.showParams !== false, rowPorts: true, ports: [], showValues: options.showValues === true })));
   const edges = drawableWires(pipeline).map((d) => ({
     edge: wireEdge(d.wire.from, d.wire.to, exitLabel(d)),
     style: wireStyle(color(d.type), isControl(pipeline, d.type), d.problem),

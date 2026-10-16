@@ -643,11 +643,12 @@ Priority tags:
 
 ### Diagram follow-ups
 
-- **(P2) EffectChart: show a run.** A second input beside the pipeline, keyed by stage id and
-  wire, never new fields on the pipeline; a look takes it as a third argument. Which branch was
-  taken (the `switch` symbol already has a lever to throw), the value or a preview on each wire
-  (a body `slot` row is the room for one), cost per stage. Live state follows from it: the run
-  changes every frame, only what it touches repaints, and the layout stays put.
+- **(P3) An `EffectRun` shows values as text, not previews.** A run's `values` are strings in a
+  row `showValues` keeps (`paintRun`, `packages/diagram/src/effect/run.ts`). An image preview on
+  an output would need a `slot` row sized for it and an image node a run fills, with a cache so a
+  frame's preview does not re-upload. The `switch` symbol's lever also stays where it was drawn
+  rather than thrown to the output a run took, and port dots, which the port layer draws outside
+  the scene, do not fade with a stage the run never reached.
 - **(P3) EffectChart: more looks.** One lane per value type, with a stage as tall as the lanes it
   touches; and a compact look with one-line stages and no ports drawn, for pipelines too big for
   the node graph. Branch symbols sketched and not built: hexagon, step glyph, comparator,

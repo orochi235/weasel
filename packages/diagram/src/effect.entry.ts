@@ -5,6 +5,7 @@
 export { checkPipeline } from './effect/check';
 export type { EffectProblem } from './effect/check';
 export {
+  NO_VALUE,
   PROBLEM_COLOR,
   drawableWires,
   exitLabel,
@@ -16,6 +17,7 @@ export {
   typeColors,
   uniqueGroups,
   uniqueStages,
+  valueRowId,
   wireStyle,
 } from './effect/draw';
 export type { DrawableWire, EffectLook, EffectLookResult, TypeColor } from './effect/draw';
@@ -27,13 +29,16 @@ export { nodeGraph } from './effect/nodeGraph';
 export type { NodeGraphOptions } from './effect/nodeGraph';
 export { rack } from './effect/rack';
 export type { RackOptions } from './effect/rack';
+export { costText, paintRun } from './effect/run';
 export { BRANCH_SYMBOLS, branchNode, symbolNameFor } from './effect/symbols';
 export type { BranchChoice, BranchNode, BranchSymbol } from './effect/symbols';
 export type {
   EffectGroup,
   EffectPipeline,
   EffectPort,
+  EffectRun,
   EffectStage,
+  EffectStageRun,
   EffectType,
   EffectWire,
 } from './effect/types';
