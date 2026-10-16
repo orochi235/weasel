@@ -1,5 +1,5 @@
 import { boundsOfPath, type Path } from '@weasel-js/geom';
-import type { Stroke } from '@weasel-js/paint';
+import { scaleVertexWidth, type Stroke } from '@weasel-js/paint';
 import { markerHeads, resolveStrokeWidth, strokeInsets, tessellateStroke } from '@weasel-js/stroke';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { nodeMemo } from 'core/scene/nodeMemo';
@@ -23,7 +23,7 @@ export function strokedBounds(path: Path, stroke: Stroke, scale: number): Bounds
     const insets = strokeInsets(sized, width);
     const mesh = tessellateStroke(
       path,
-      { ...sized, width: width * k, align: 'center', vertexWidths: stroke.vertexWidths?.map((w) => w * k) },
+      { ...sized, width: width * k, align: 'center', vertexWidths: stroke.vertexWidths?.map((w) => scaleVertexWidth(w, k)) },
       { startInset: insets.start, endInset: insets.end },
     );
     const v = mesh.vertices;

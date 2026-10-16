@@ -246,12 +246,6 @@
   "packages/storage/src/records.ts": {
     "longestFunction": 185
   },
-  "packages/stroke/src/tessellate/dash.ts": {
-    "longestFunction": 125
-  },
-  "packages/stroke/src/tessellate/stroke.ts": {
-    "lines": 520
-  },
   "packages/svg/src/gradients.ts": {
     "lines": 624
   },
