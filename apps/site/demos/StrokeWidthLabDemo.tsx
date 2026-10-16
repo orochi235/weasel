@@ -1,7 +1,8 @@
 import {
   asNodeId, boundsOfPath, createScene, type Path, PathBuilder, pathInWorld, type RectPose, type RenderLayer, type Scene,
-  solid, type Stroke, useWidthTool,
+  solid, type Stroke,
 } from '@weasel-js/core';
+import { useWidthTool } from '@weasel-js/path-tools';
 import { strokeToPath } from '@weasel-js/stroke';
 import {
   type ConfigOf, defineInstrument, f, Lab, type RenderContext, type SceneTrialState, TrialSceneCanvas, useTrialScene,

@@ -85,6 +85,10 @@ export {
   type UseDistortToolOptions, type UseEnvelopeToolOptions, type UsePuppetToolOptions, type WarpTool,
 } from './warp/useWarpTool';
 export { warpLayerId } from './warp/warpHandles';
+export {
+  useWidthTool, createWidthOverlay, createWidthActions, WIDTH_CLEAR_ID, WIDTH_DRAG_ID, WIDTH_HOVER_ID, WIDTH_UNHOVER_ID,
+  type UseWidthToolOptions, type WidthEdgeHit, type WidthEnv, type WidthFocus, type WidthGrip, type WidthTarget,
+} from './width';
 
 // ─── Icons ─────────────────────────────────────────────────────────────────
 export {

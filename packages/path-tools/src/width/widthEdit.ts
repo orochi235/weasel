@@ -10,12 +10,10 @@ import {
   type HalfWidths, type Stroke, type VertexWidth, vertexHalfWidths, vertexWidthFromSides,
 } from '@weasel-js/paint';
 import { resolveStrokeWidth, strokeEdgeNear, type StrokeEdgeHit, type StrokeSide } from '@weasel-js/stroke';
-import type { Node, NodeId, Scene } from 'core/scene/types';
-import { resolveEditablePathOf } from 'features/paths/editablePath';
-import { withPath } from 'interactions/actions/pathCommands/pathNodes';
+import { resolveEditablePathOf, withPath, type NodeId, type Scene, type SceneNode } from '@weasel-js/core';
 
 type AnyScene = Scene<unknown, string, unknown>;
-type AnyNode = Node<unknown, string, unknown>;
+type AnyNode = SceneNode<unknown, string, unknown>;
 type Point = { x: number; y: number };
 
 /** A stroked path node and its centerline in world space. */

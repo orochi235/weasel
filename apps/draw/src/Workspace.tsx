@@ -12,11 +12,10 @@ import {
   type UseSceneTextEditReturn,
   useMeasureTool,
   useSliceTool,
-  useWidthTool,
   type View,
   workspaceTintLayer
 } from '@weasel-js/core';
-import { pathTools } from '@weasel-js/path-tools';
+import { pathTools, useWidthTool } from '@weasel-js/path-tools';
 import { unpackSvgFiles } from '@weasel-js/svg';
 import { MeasureReadout, SceneGradientHandles, ToastRegion } from '@weasel-js/ui';
 import { type ReactElement, type RefObject, useCallback, useMemo } from 'react';
