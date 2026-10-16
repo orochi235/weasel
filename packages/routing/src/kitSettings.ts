@@ -3,6 +3,8 @@
  * the dispatcher reads it, and routing sits below core.
  */
 
+import type {} from '@weasel-js/react';
+
 /** Pointer gesture timings and travel; each falls back to its constant in `@weasel-js/gestures`. */
 export interface GestureKitSettings {
   /** Longest gap between the clicks of a double click, in ms. */

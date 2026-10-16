@@ -1,3 +1,4 @@
+import type {} from '@weasel-js/react';
 import { pref } from '@weasel-js/prefs';
 import { DOLLY_RATE, ORBIT_RATE } from './tools';
 
