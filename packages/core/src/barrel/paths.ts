@@ -185,6 +185,28 @@ export type {
 export { PATH_EFFECT_DERIVATIONS, readEffectSource, withPathEffectsRegistry } from '../features/pathEffects';
 export { PATH_EFFECTS_GROUP } from '../interactions/actions/pathEffects';
 
+// ─── Geometric constraints on a path's anchors ──────────────────────────────
+export {
+  constrainPathEdit,
+  constraintAnchors,
+  pathAnchorPoints,
+  solveConstraints,
+  solvePathConstraints,
+  unsatisfiedConstraints,
+  CONSTRAINT_TOLERANCE,
+} from '@weasel-js/geom';
+export type {
+  AnchorPair,
+  ConstrainedPathEdit,
+  ConstraintPoint,
+  PathConstraint,
+  PathConstraintKind,
+  SolveConstraintsOptions,
+  SolveConstraintsResult,
+} from '@weasel-js/geom';
+export { constraintAxisOf, constraintConflictsOf, constraintsOf } from '../features/paths/pathConstraints';
+export { constraintsForAnchors, type ConstrainAnchorsParams } from '../interactions/actions/defaults/anchorConstraints';
+
 // ─── Curves: alternate path representations (Bezier, NURBS, Spiro) ──────────
 export {
   bezierCubic,

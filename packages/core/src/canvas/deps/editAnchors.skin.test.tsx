@@ -36,6 +36,8 @@ function setup() {
     setSelectedAnchors: (next) => { selected = next; },
     getMarquee: () => null,
     setMarquee: () => {},
+    getSelectedConstraint: () => null,
+    setSelectedConstraint: () => {},
     getHandleLocks: () => null,
     setHandleLocks: () => {},
     getTool: () => null,

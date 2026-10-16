@@ -60,6 +60,7 @@ import { exitPathEditAction } from './defaults/exitPathEdit';
 import { insertPathAnchorAction } from './defaults/insertPathAnchor';
 import { bendSegmentAction } from './defaults/bendSegment';
 import { harmonizeAnchorsAction, makeHandlesSymmetricAction, retractHandlesAction } from './defaults/anchorHandles';
+import { constrainAnchorsAction, deleteConstraintAction, unconstrainAnchorsAction } from './defaults/anchorConstraints';
 import { handleLockAngleAction, handleLockLengthAction } from './defaults/handleLocks';
 import { averageAnchorsAction, bridgeAnchorsAction, joinAnchorsAction } from './defaults/anchorJoin';
 import { simplifyBrushAction, simplifyBrushToolAction } from './defaults/simplifyBrush';
@@ -133,6 +134,7 @@ const KIT_STANDARD_DESCRIPTORS: Action[] = [
   nudgeAnchorsLeftAction,
   nudgeAnchorsRightAction,
   deleteAnchorsAction,
+  deleteConstraintAction,
   deleteAction,
   groupAction,
   ungroupAction,
@@ -185,6 +187,8 @@ const KIT_STANDARD_DESCRIPTORS: Action[] = [
   harmonizeAnchorsAction,
   handleLockAngleAction,
   handleLockLengthAction,
+  constrainAnchorsAction,
+  unconstrainAnchorsAction,
   averageAnchorsAction,
   joinAnchorsAction,
   bridgeAnchorsAction,

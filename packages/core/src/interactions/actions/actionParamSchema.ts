@@ -9,6 +9,8 @@ import type { FlipAxis, FlipPivot } from './flip/helpers';
 import type { BendAlongEffect, BlendEffect, RepeatAlongEffect } from 'core/scene/pathEffects/effects';
 import type { EditAnchorsParams } from './edit-anchors/params';
 import type { SimplifyBrushParams } from './defaults/simplifyBrush';
+import type { PathConstraintKind } from '@weasel-js/geom';
+import type { ConstrainAnchorsParams } from './defaults/anchorConstraints';
 import type { SmudgeBrushParams } from './pathCommands/smudgeBrush';
 
 /** A point a spatial reference of `'pointer'` resolves to in place of the
@@ -54,6 +56,8 @@ declare module '@weasel-js/routing' {
     smudgeBrush: SmudgeBrushParams;
     bridgePaths: { tension?: number };
     bridgeAnchors: { tension?: number };
+    constrainAnchors: ConstrainAnchorsParams;
+    unconstrainAnchors: { kind?: PathConstraintKind };
   }
 }
 

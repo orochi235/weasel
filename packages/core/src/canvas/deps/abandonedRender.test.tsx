@@ -95,6 +95,8 @@ describe('dep sources after an abandoned render', () => {
       setSelectedAnchors: vi.fn(),
       getMarquee: () => null,
       setMarquee: vi.fn(),
+      getSelectedConstraint: () => null,
+      setSelectedConstraint: vi.fn(),
       getHandleLocks: () => null,
       setHandleLocks: vi.fn(),
       getTool: () => null,

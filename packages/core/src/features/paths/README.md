@@ -99,6 +99,39 @@ structure matters. The two orders agree only because `pathToAnchors` and
 you touch either walker, `anchorEdits.test.ts` has the invariant test that
 catches the divergence.
 
+## Constraints
+
+A node's `data.constraints` is a list of `PathConstraint`s (`@weasel-js/geom`),
+numbered by flat anchor index. The `editAnchors` dep makes them hold through
+every path edit: `editOps` runs `constrainPathEdit` before it stores the path,
+and renumbers the list through the edit's origins, so a delete or an insert
+keeps each constraint on the anchors it named. The anchor drag calls the dep's
+`constrainEdit` each frame, so the preview is what the commit will store; a
+frame the constraints cannot hold in is dropped. A constraint that does not
+hold when an edit starts conflicts with the rest: it is left out of the solve,
+and the overlay draws its mark (`constraintGlyphs.ts`) in the conflict color.
+`constrainAnchors` and `unconstrainAnchors` add and remove constraints on the
+selected anchors through the dep's `setConstraints`. Horizontal and vertical
+read a `data.path` node's rotation as their frame (`pathConstraints.ts`).
+
+A click on a mark selects that constraint (the anchor selection and the
+constraint selection exclude each other), and Delete removes it
+(`deleteConstraint`). A solve that holds only by shrinking a named segment to a
+point — horizontal and vertical on one segment — counts as a conflict.
+
+A whole-shape transform — resize, rotate, flip — does not solve. It carries
+the list unchanged: a rigid move keeps every constraint, a scale or a flip keeps
+all but a set length (and, when non-uniform, equal lengths and angles off the
+scale's axes), and a rotation of a `data.path` node turns the frame its
+horizontal and vertical read. What a transform breaks is reported by
+`constraintConflictsOf`, the same report a conflicting add gets, and later edits
+leave it out of the solve.
+
+The whole-path commands — Simplify, Offset, Trim segment, Extend to next path,
+and the rest built on `pathCommands/pathNodes.ts` — rebuild the anchor list
+without origins to renumber it through, so they drop the constraints, as they
+drop a skin.
+
 ## Generated shapes
 
 A drawn polygon or star keeps the parameters it was made from in

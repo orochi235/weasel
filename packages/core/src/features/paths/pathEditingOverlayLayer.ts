@@ -7,12 +7,16 @@
 
 import type { DrawCommand } from '@weasel-js/renderer';
 import type { RenderLayer } from 'core/layers/render';
-import { type AnchorSet, type Path, type PolygonPath, type View, pathToAnchors, rectMarkerPath } from '@weasel-js/geom';
+import {
+  type AnchorSet, type Path, type PathConstraint, type PolygonPath, type View,
+  pathAnchorPoints, pathToAnchors, rectMarkerPath, unsatisfiedConstraints,
+} from '@weasel-js/geom';
 import type { GesturePreviewSource } from 'canvas/gestureBounds';
 import { previewSourcesFrom, isVisibleFrom } from 'canvas/drawEnvelope';
 import {
   anchorMarkerCommands, DEFAULT_OVERLAY_STYLE, worldToScreen, type PathEditingOverlayStyle,
 } from './anchorMarkers';
+import { constraintGlyphs } from './constraintGlyphs';
 import { combCommands, PATH_COMB_CHROME_ID, type PathEditCombOptions } from './pathEditComb';
 
 export type { PathEditingOverlayStyle } from './anchorMarkers';
@@ -41,6 +45,13 @@ export interface CreatePathEditingOverlayLayerOptions {
   /** In-flight anchor-marquee rect in world coords, or null. Drawn as a
    *  rubber band while `marqueeAnchorsAction` is dragging. */
   getMarquee?(view: View): { x: number; y: number; width: number; height: number } | null;
+  /** The edited node's constraints, and the radians their frame is turned
+   *  from the world's, to mark on its anchors. Each is drawn in
+   *  `constraintStroke` while it holds and `constraintConflictStroke` while
+   *  it does not. */
+  getConstraints?(id: string): { constraints: readonly PathConstraint[]; axisAngle: number } | null;
+  /** Index of the selected constraint, whose mark is drawn heavier, or null. */
+  getSelectedConstraint?(): number | null;
   /** Optional styling overrides. */
   style?: PathEditingOverlayStyle;
   /** How the curvature comb is drawn, read per frame. Whether it shows is
@@ -49,6 +60,23 @@ export interface CreatePathEditingOverlayLayerOptions {
 }
 
 const EMPTY_SELECTION: ReadonlySet<number> = new Set();
+
+/** The marks for `path`'s constraints. */
+function constraintMarks(
+  marked: { constraints: readonly PathConstraint[]; axisAngle: number } | null | undefined,
+  selected: number | null,
+  path: PolygonPath,
+  view: View,
+  style: Required<PathEditingOverlayStyle>,
+): DrawCommand[] {
+  if (!marked || marked.constraints.length === 0) return [];
+  const world = pathAnchorPoints(path);
+  const unsatisfied = new Set(unsatisfiedConstraints(world, marked.constraints, { axisAngle: marked.axisAngle }));
+  return constraintGlyphs(world.map((p) => worldToScreen(p, view)), marked.constraints, unsatisfied, {
+    stroke: style.constraintStroke,
+    conflictStroke: style.constraintConflictStroke,
+  }, selected);
+}
 
 /** Render layer that draws the outline and the anchors and control handles
  *  of the path currently being anchor-edited. Draws nothing when no path is
@@ -74,10 +102,13 @@ export function createPathEditingOverlayLayer(
       if (!pose || pose.kind !== 'polygon') return [];
 
       const selected = opts.getSelectedAnchors?.() ?? EMPTY_SELECTION;
-      // Under the markers, which are what a press reaches first.
+      // Comb, then constraint marks, under the markers, which are what a press reaches first.
       const out: DrawCommand[] = !isVisible || isVisible(PATH_COMB_CHROME_ID)
         ? combCommands(pathToAnchors(pose as PolygonPath) as AnchorSet, view, opts.getComb?.())
         : [];
+      out.push(...constraintMarks(
+        opts.getConstraints?.(id), opts.getSelectedConstraint?.() ?? null, pose as PolygonPath, view, style,
+      ));
       out.push(...anchorMarkerCommands(pose as PolygonPath, view, selected, style));
 
       // Marquee rubber band, on top of everything.

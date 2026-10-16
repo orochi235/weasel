@@ -222,6 +222,16 @@ Priority tags:
   `pathCommands/smudgeBrush.ts`), the falloff `(1 − (d/r)²)²` and the subdivision threshold of a
   third of the radius (`packages/geom/src/paths/smudgePath.ts`), how radius and strength are
   reached outside the lab, and its tool key, S (`tools/builtin/smudge/useSmudgeBrushTool.ts`).
+- **(P2) Tune path constraints hands-on, with the maintainer driving.** First-draft behavior and
+  keys: `constrainAnchors` and `unconstrainAnchors` have no default keys (the lab binds C and
+  Shift+C through `tune`), and which kind C adds is a param with no UI outside the lab
+  (`defaults/anchorConstraints.ts`); the marks' look, their 12 px offset and 8 px click reach, and
+  their teal and red (`features/paths/constraintGlyphs.ts`, `defaults/constraintMarks.ts`,
+  `features/paths/anchorMarkers.ts`); a drag frame the constraints cannot hold in is dropped, so
+  the path sticks rather than giving way (`edit-anchors/action.ts`); how far a dragged anchor
+  yields to the rest (`HELD_MOBILITY` in `packages/geom/src/constraints/solve.ts`); and that the
+  whole-path commands drop the list rather than keep what still applies
+  (`pathCommands/pathNodes.ts`).
 - **(P2) Two helpers grow an open end along its tangent.** `lengthenOpenEnd` in
   `packages/geom/src/paths/extendPath.ts` serves Extend to next path, and the unmerged
   `extend-path-end` branch (Lengthen) has `lengthenPathEnd` of its own. Whichever lands second
@@ -281,6 +291,29 @@ Priority tags:
   distance readouts between the selection and the shape under the pointer.
 - **(P2) Variable-width strokes.** A width profile along a stroke's length, edited by dragging
   on the stroke. `strokeToPath` handles a fixed width only.
+
+### Path constraints
+
+The solver and the first kinds are in: fixed, horizontal, vertical, parallel, perpendicular,
+equal length, length, and coincident (`packages/geom/src/constraints/`), held through path edit
+by the `editAnchors` dep and added with `constrainAnchors` (lab: `lab-path-constraints`).
+
+- **(P2) Tangent (G1) at an anchor.** The solver's variables are anchor positions only; handles
+  ride along with their anchor. G1 needs each handle as a variable of its own (direction, or
+  both handle points), and the handle drag to call `constrainEdit` the way the anchor drag does.
+- **(P2) Point on a path.** An anchor held on a segment of its own path or another node's needs
+  a parameter variable `t` per constraint and a residual from `nearestOnPath`-style evaluation.
+  Constraints between two nodes also need a home other than one node's `data.constraints`, and
+  both nodes solved in one edit.
+- **(P3) A conflict names only the constraints that fail, not the set that conflicts.** Adding
+  one that cannot hold keeps it unsolved and marks it; the overlay, `constraintConflictsOf` and
+  `setConstraints`' return value are the only reports. Finding the minimal conflicting set needs
+  the Jacobian's rank, which the damped solve does not compute.
+- **(P3) The solve is dense.** The Jacobian is a full `m × 2n` matrix built by central
+  differences; fine at a few hundred anchors, but a large constrained path wants sparse rows and
+  analytic derivatives.
+- **(P3) WeaselDraw binds no constraint action.** It needs keys or a bar group for
+  `constrainAnchors` and `unconstrainAnchors`, and icons for them.
 
 ### Pathfinder follow-ups (post-v1)
 

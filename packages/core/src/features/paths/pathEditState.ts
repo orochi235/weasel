@@ -56,6 +56,9 @@ export interface PathEditState {
   /** The in-flight anchor-marquee rect, in the edited path's world. */
   getMarquee(): AnchorMarquee | null;
   setMarquee(rect: AnchorMarquee | null): void;
+  /** Index into the edited node's `data.constraints` of the selected constraint mark, or null. */
+  getSelectedConstraint(): number | null;
+  setSelectedConstraint(index: number | null): void;
   /** The handle locks the `handleLock.*` toggles set; null until one is
    *  pressed. Not tied to the edited path, so they outlast a change of it. */
   getHandleLocks(): HandleLocks | null;
@@ -94,6 +97,7 @@ export function createPathEditState(source: PathEditSource = {}): PathEditState 
   let handleLocks: HandleLocks | null = null;
   let ownTool: { id: string; on: string } | null = null;
   let idSet = NO_IDS;
+  let selectedConstraint: number | null = null;
   const changed = createEmitter();
   const notify = changed.emit;
 
@@ -131,6 +135,12 @@ export function createPathEditState(source: PathEditSource = {}): PathEditState 
     getMarquee: () => marquee,
     setMarquee(rect) {
       marquee = rect;
+      notify();
+    },
+    getSelectedConstraint: () => selectedConstraint,
+    setSelectedConstraint(index) {
+      if (index === selectedConstraint) return;
+      selectedConstraint = index;
       notify();
     },
     getHandleLocks: () => handleLocks,

@@ -41,6 +41,7 @@ import {
 import { pathToAnchors, type PolygonPath } from '@weasel-js/geom';
 import { pxExtent } from '@weasel-js/geom';
 import { selectionAfterAnchorPress } from '../edit-anchors/action';
+import { constraintMarkUnder, deleteSelectedConstraint } from './constraintMarks';
 import { inPlane, editingLayer } from '../planeInput';
 import { NUDGE_KEY, NUDGE_LABEL, nudgeDelta, type NudgeDirection } from './nudgeSteps';
 import { pathEditToolActive } from './pathEditTools';
@@ -144,9 +145,14 @@ export const selectAnchorAction: Action & { requires: string[] } = inPlane({
       const hit = nearestAnchorIndex(worldPath, wx, wy, anchorClickSlop(deps));
       const additive = params?.additive === true;
       if (hit === -1) {
-        // Missed every anchor. A bare click clears; a shift-click leaves
-        // the selection alone.
-        if (!additive) dep.setSelectedAnchors([]);
+        // Missed every anchor: a constraint mark is next. Otherwise a bare
+        // click clears, and a shift-click leaves the selection alone.
+        const mark = constraintMarkUnder(dep, deps, wx, wy);
+        if (mark !== -1) dep.setSelectedConstraint?.(mark);
+        else if (!additive) {
+          dep.setSelectedAnchors([]);
+          dep.setSelectedConstraint?.(null);
+        }
         return;
       }
       dep.setSelectedAnchors(selectionAfterAnchorPress(dep.selectedAnchors, hit, additive));
@@ -197,7 +203,8 @@ export const nudgeAnchorsRightAction = makeNudgeAnchorsAction('right');
  *
  * Deleting renumbers every anchor after the lowest deleted index, so the
  * selection is cleared rather than left pointing at whatever slid into
- * those slots.
+ * those slots. A selected constraint, which excludes an anchor selection,
+ * is deleted instead.
  */
 export const deleteAnchorsAction: Action & { requires: string[] } = {
   id: 'deleteAnchors',
@@ -213,7 +220,7 @@ export const deleteAnchorsAction: Action & { requires: string[] } = {
     timing: 'immediate',
     run: (deps) => {
       const dep = depOf(deps);
-      if (!dep || dep.selectedAnchors.size === 0) return;
+      if (!dep || deleteSelectedConstraint(dep) || dep.selectedAnchors.size === 0) return;
       const doomed = [...dep.selectedAnchors];
       const changed = commitAnchorEdit(dep, 'Delete anchor', (set) =>
         deleteAnchorsAt(set, doomed),
@@ -221,7 +228,7 @@ export const deleteAnchorsAction: Action & { requires: string[] } = {
       if (changed) dep.setSelectedAnchors([]);
     },
   } as ImmediateInvoker,
-  enabled: requiresAnchorSelection,
+  enabled: (deps) => (depOf(deps)?.selectedConstraint != null ? true : requiresAnchorSelection(deps)),
 };
 
 /**

@@ -119,6 +119,13 @@ export {
 } from './paths/curvature';
 export { harmonizeAnchors } from './paths/harmonize';
 export { editAnchorSetTracked, remapPointValues, type PointOrigin } from './paths/anchorOrigins';
+export {
+  anchorsBefore, constrainPathEdit, constraintAnchors, constraintFits, mapConstraintAnchors, pathAnchorPoints,
+  remapConstraints, solveConstraints, solvePathConstraints, unsatisfiedConstraints, CONSTRAINT_TOLERANCE,
+  type AnchorPair, type ConstrainPathEditOptions, type ConstrainedPathEdit, type ConstraintPoint,
+  type PathConstraint, type PathConstraintKind, type SolveConstraintsOptions, type SolveConstraintsResult,
+  type SolvePathConstraintsResult, type UnsatisfiedConstraintsOptions,
+} from './constraints';
 export { nearestPathAnchor, reverseAnchors, type PathAnchorHit } from './paths/nearestAnchor';
 export { pathInPoseFrame, pathInWorld, worldEditToStorage, type PathInWorldPose } from './paths/pathInWorld';
 export {

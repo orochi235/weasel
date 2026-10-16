@@ -1,3 +1,4 @@
+import type { PathConstraint, PointOrigin } from '@weasel-js/geom';
 import type { Op } from 'core/ops/types';
 import type { HandleLocks } from './edit-anchors/params';
 
@@ -34,14 +35,18 @@ export interface EditAnchorsDep {
   /** Commit `worldPath` as the new value for `id`, as one history entry
    *  labeled `label`: a setPose when the pose IS the polygon, a batched
    *  setPose+update when it lives on data.path. Given `origins` (from
-   *  `editAnchorSetTracked`), a `data.skin` is renumbered in that entry. */
-  applyEdit(id: string, worldPath: unknown, label: string, origins?: readonly (import('@weasel-js/geom').PointOrigin | null)[]): void;
+   *  `editAnchorSetTracked`), a `data.skin` is renumbered in that entry,
+   *  and so are `data.constraints`. The node's constraints are made to hold
+   *  first (see `constrainEdit`); an edit they cannot survive commits
+   *  nothing. */
+  applyEdit(id: string, worldPath: unknown, label: string, origins?: readonly (PointOrigin | null)[]): void;
   /** The ops `applyEdit` would commit for the same arguments, unapplied, so
    *  a caller can make the edit part of a larger batch — the pen joining
    *  two paths edits one node and deletes the other in one undo step.
    *  Optional; a caller that needs it declines the composite edit without
-   *  it. Returns `[]` when `id` has no editable polygon. */
-  editOps?(id: string, worldPath: unknown, label: string, origins?: readonly (import('@weasel-js/geom').PointOrigin | null)[]): Op[];
+   *  it. Returns `[]` when `id` has no editable polygon, or when its
+   *  constraints cannot hold after the edit. */
+  editOps?(id: string, worldPath: unknown, label: string, origins?: readonly (PointOrigin | null)[]): Op[];
 
   /**
    * Anchors currently selected within the edited path, as **flat anchor
@@ -78,4 +83,32 @@ export interface EditAnchorsDep {
   handleLocks?: HandleLocks;
   /** Replace the held handle locks. Absent, the toggles are unavailable. */
   setHandleLocks?(next: HandleLocks): void;
+
+  /**
+   * `worldPath`, an edit of `id`'s committed path, finished so the node's
+   * constraints hold: the anchors the edit moved stay put where they can, and
+   * the rest move the least they must (see `constrainPathEdit`). Null when the
+   * constraints cannot hold after this edit, which should then not happen.
+   * `applyEdit` and `editOps` run it themselves; an ongoing edit calls it
+   * each frame so its preview is what they will commit. Optional: absent,
+   * paths edit unconstrained.
+   */
+  constrainEdit?(id: string, worldPath: unknown, origins?: readonly (PointOrigin | null)[]): unknown;
+  /**
+   * Replace `id`'s constraints with `constraints` as one history entry
+   * labeled `label`, moving its path the least that makes them all hold. When
+   * they cannot all hold the path stays as it is and the list is stored all
+   * the same, the conflict left for the anchor overlay to show; the answer
+   * names the constraints that do not hold, by index. Optional.
+   */
+  setConstraints?(id: string, constraints: readonly PathConstraint[], label: string): readonly number[];
+  /**
+   * Index into the edited node's constraints of the one whose mark was
+   * clicked, or null. Selecting one clears the anchor selection and
+   * selecting anchors clears it, so Delete acts on one or the other;
+   * `setConstraints` clears it too, since it renumbers the list. Optional.
+   */
+  selectedConstraint?: number | null;
+  /** Select a constraint by index, or pass null to clear. */
+  setSelectedConstraint?(index: number | null): void;
 }
