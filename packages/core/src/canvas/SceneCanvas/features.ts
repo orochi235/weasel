@@ -139,6 +139,7 @@ export const FEATURE_PRESETS: Readonly<Record<BaseFeature, FeaturePreset>> = {
       'retractHandles', 'makeHandlesSymmetric', 'harmonizeAnchors', 'handleLock.angle', 'handleLock.length',
       'averageAnchors', 'joinAnchors', 'bridgeAnchors',
       'simplifyPath', 'offsetPath', 'snipAtCrossings', 'joinPaths', 'bridgePaths', 'trimPath', 'extendToMeet',
+      'smudgeBrush',
       'blend', 'bendAlong', 'repeatAlong', 'editPathEffect', 'expandPathEffect',
     ],
   },
