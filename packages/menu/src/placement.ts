@@ -1,5 +1,8 @@
+/** A position in screen pixels. */
 export interface Point { x: number; y: number }
+/** A width and height in pixels. */
 export interface Size { w: number; h: number }
+/** A rectangle in screen pixels: top-left corner plus width and height. */
 export interface Rect { x: number; y: number; w: number; h: number }
 
 /** Start at `at`, else end there (flip), else slide inside `[lo, lo + span]`. */

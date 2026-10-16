@@ -37,8 +37,8 @@
 }
 
 .shortcut {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
   color: var(--wzl-fg-muted);
-  font-variant-numeric: tabular-nums;
 }
 
 .caret {

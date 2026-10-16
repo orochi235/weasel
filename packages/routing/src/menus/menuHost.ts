@@ -41,6 +41,7 @@ export interface MenuHost {
   subscribe(fn: () => void): () => void;
 }
 
+/** Creates the host that decides which context menu is open, from the menus registered to it. */
 export function createMenuHost(src: MenuSources & { activeTool(): string | null }): MenuHost {
   const defs: OwnedMenuDef[] = [];
   const listeners = new Set<() => void>();

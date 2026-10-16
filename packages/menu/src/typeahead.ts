@@ -19,6 +19,7 @@ export function typeaheadMatch(
   return null;
 }
 
+/** How long typing can pause before the typeahead buffer starts over, in milliseconds. */
 export const TYPEAHEAD_RESET_MS = 500;
 
 export interface TypeaheadBuffer {

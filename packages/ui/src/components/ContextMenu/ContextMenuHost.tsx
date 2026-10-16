@@ -14,8 +14,8 @@ export function ContextMenuHost() {
   const host = useMenuHost();
   const open = useSyncExternalStore(host?.subscribe ?? noop, host?.current ?? nothing, host?.current ?? nothing);
   useReturnFocus(host);
-  const { anchor, portalProps, ready } = useOverlayPortal();
-  const target = portalProps.UNSTABLE_portalContainer ?? (typeof document !== 'undefined' ? document.body : null);
+  const { anchor, container, ready } = useOverlayPortal();
+  const target = container ?? (typeof document !== 'undefined' ? document.body : null);
   return (
     <>
       {anchor}

@@ -5,7 +5,9 @@ import { inTriangle } from './triangle';
 import { typeaheadStep, type TypeaheadBuffer } from './typeahead';
 
 export { TYPEAHEAD_RESET_MS } from './typeahead';
+/** How long the pointer rests on a submenu row before its panel opens, in milliseconds. */
 export const SUBMENU_OPEN_MS = 200;
+/** How long a move toward an open submenu keeps it open while the pointer crosses other rows, in milliseconds. */
 export const DIAGONAL_GRACE_MS = 300;
 
 /** Clock and timer, injected so tests and headless hosts control time. */
@@ -15,6 +17,7 @@ export interface MenuScheduler {
   set(fn: () => void, ms: number): () => void;
 }
 
+/** The real-time scheduler: `Date.now` and `setTimeout`. */
 export const timerScheduler: MenuScheduler = {
   now: () => Date.now(),
   set: (fn, ms) => {
@@ -23,6 +26,7 @@ export const timerScheduler: MenuScheduler = {
   },
 };
 
+/** What {@link createMenuController} needs: the entries, how to close, and optionally a clock. */
 export interface MenuControllerOptions {
   entries: readonly MenuEntry[];
   /** Highlight the first row at open, as a keyboard open does. */
@@ -47,6 +51,7 @@ export interface MenuController {
   dispose(): void;
 }
 
+/** Creates the controller that runs one open menu: highlight, keys, submenus and typeahead. */
 export function createMenuController(opts: MenuControllerOptions): MenuController {
   const { entries: root, onClose } = opts;
   const sched = opts.scheduler ?? timerScheduler;
