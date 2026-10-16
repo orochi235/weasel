@@ -918,6 +918,16 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/ExtendLabDemo.tsx',
   },
   {
+    id: 'lab-lengthen',
+    title: 'Lengthen',
+    category: 'Geometry',
+    description:
+      "Three open paths, one ending straight, one in a gentle curve, one in a tight curl, with the gently curved one open in path edit and the Lengthen path-edit tool on. While it is on, dragging an open end runs the `lengthenPath` action over `lengthenPathEnd` in `@weasel-js/geom`: outward grows the path straight along its end tangent, or along a circular arc with the curvature the end has, meeting the path smoothly; inward shortens it along itself. A straight end grows in place; a curved one gets a new segment, one per quarter turn of arc, and an arc stops at a full turn. Extend to next path grows an end by the same rule in tangent mode. The palette's Lengthen is the path-edit tool, held by the trial through `<SceneCanvas pathEdit>`'s `tool` and `setTool`; Escape puts it down. Lengthen along is the action's `mode` param, a thunk through `<SceneCanvas tune>`, so a change reaches a drag under way, and Shift picks the other mode. Each drag is one undo step.",
+    hint: 'Drag the right-hand end of the orange path outward, then back in to shorten it. Hold <kbd>Shift</kbd> mid-drag to switch between tangent and curvature, or set the default with Lengthen along. Press Escape to put the tool down and move anchors, Escape again to leave path edit; then double-click the purple curl and pick Lengthen. Undo with the button or <kbd>Mod+Z</kbd>.',
+    load: () => import('./demos/LengthenLabDemo').then((m) => m.LengthenLabDemo),
+    path: 'apps/site/demos/LengthenLabDemo.tsx',
+  },
+  {
     id: 'lab-smudge-brush',
     title: 'Smudge brush',
     category: 'Geometry',

@@ -9,7 +9,8 @@ import type { Seg } from '../booleans/contourSegments';
 import { parseSubpaths } from '../booleans/contours';
 import { intersectSegments } from '../intersect/segmentIntersections';
 import { pathSegments } from '../intersect/pathSegments';
-import { writeSubpaths } from '../intersect/writeSubpaths';
+import { editAnchorSetTracked } from './anchorOrigins';
+import { lengthenPathEnd } from './lengthenPathEnd';
 
 /** One end of an open subpath. */
 export interface OpenPathEnd {
@@ -40,28 +41,15 @@ export function openEndRay(path: Path, end: OpenPathEnd): { at: Point; dir: Poin
 }
 
 /**
- * `path` with `end` carried `distance` further along its tangent. A straight
- * end segment grows longer; a curved one gains a straight segment, which
- * keeps the tangent continuous. Null when the end is not open or has no
- * direction, or `distance` is not positive.
+ * `path` with `end` carried `distance` further along its tangent, by
+ * `lengthenPathEnd` in `'tangent'` mode: a straight end segment grows longer,
+ * and a curved one gains a straight segment, which keeps the tangent
+ * continuous. Null when the end is not open or has no direction, or
+ * `distance` is not positive.
  */
 export function lengthenOpenEnd(path: Path, end: OpenPathEnd, distance: number): PolygonPath | null {
-  if (!(distance > 0)) return null;
-  const ray = openEndRay(path, end);
-  if (!ray) return null;
-  const subs = parseSubpaths(path, false);
-  const segs = subs[end.sub].segs.slice();
-  const to = { x: ray.at.x + ray.dir.x * distance, y: ray.at.y + ray.dir.y * distance };
-  if (end.end === 'last') {
-    const last = segs[segs.length - 1];
-    if (last.length === 2) segs[segs.length - 1] = [last[0], to];
-    else segs.push([last[last.length - 1], to]);
-  } else {
-    const first = segs[0];
-    if (first.length === 2) segs[0] = [to, first[1]];
-    else segs.unshift([to, first[0]]);
-  }
-  return writeSubpaths(subs.map((s, i) => (i === end.sub ? { segs, closed: false } : s)), path);
+  if (!(distance > 0) || path.kind !== 'polygon') return null;
+  return editAnchorSetTracked(path, (set) => lengthenPathEnd(set, end, distance, 'tangent'))?.path ?? null;
 }
 
 /** Options for {@link extendToMeet}. */

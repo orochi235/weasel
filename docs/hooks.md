@@ -111,6 +111,7 @@ curly quote, so both codepoints are listed.
 | `equalizeHandles` | double-click on a `balance:N` grip |
 | `marqueeAnchors` | drag on `empty` |
 | `simplifyBrush` | drag anywhere, while path edit's `simplifyBrush` tool is on; `editAnchors`, `editCorner`, `bendSegment`, `balanceHandles`, `equalizeHandles`, `marqueeAnchors`, and `selectAnchor` stand aside while any path-edit tool is |
+| `lengthenPath` | drag on an open path's end anchor, Shift optional, while path edit's `lengthen` tool is on; its `mode` param (`'tangent'`, the default, or `'curvature'`) picks how the end grows, Shift picks the other, and both are read on every move |
 | `enterPathEdit` | double-click on a body |
 | `selectAnchor` | click |
 | `insertPathAnchor` | Alt+click |

@@ -1,7 +1,7 @@
 /** Extend to next path: carry an open end along its tangent until it meets a stroke. */
 import { type Action, type ActionDeps, ActionDisabledReason, type ImmediateInvoker } from '@weasel-js/routing';
 import {
-  extendToMeet, locateAnchor, openEndRay, openPathEnds, pathDistanceToPoint, pathToAnchors,
+  extendToMeet, openEndAt, openEndRay, openPathEnds, pathDistanceToPoint, pathToAnchors,
   type AnchorSet, type OpenPathEnd, type PolygonPath,
 } from '@weasel-js/geom';
 import { commitOps, type Op, type PathNode, reshapeOps, selectedPathNodes, pathOperationTags } from '@weasel-js/core';
@@ -15,11 +15,8 @@ function endsAt(path: PolygonPath, anchors: ReadonlySet<number>): OpenPathEnd[] 
   const ends = openPathEnds(path);
   if (anchors.size === 0) return ends;
   const set = pathToAnchors(path) as AnchorSet;
-  const picked = ends.filter((e) => [...anchors].some((flat) => {
-    const at = locateAnchor(set, flat);
-    if (!at || at.sub !== e.sub) return false;
-    return e.end === 'first' ? at.idx === 0 : at.idx === set.anchors[at.sub].length - 1;
-  }));
+  const at = [...anchors].map((flat) => openEndAt(set, flat));
+  const picked = ends.filter((e) => at.some((o) => o?.sub === e.sub && o.end === e.end));
   return picked.length > 0 ? picked : ends;
 }
 

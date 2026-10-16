@@ -73,6 +73,10 @@ export { pathAwayFromAnchors, type PathAwayFromAnchors } from './paths/pathAwayF
 export {
   extendToMeet, lengthenOpenEnd, openEndRay, openPathEnds, type ExtendToMeetOptions, type OpenPathEnd,
 } from './paths/extendPath';
+export {
+  lengthenPathEnd, lengthToward, openEndAt, pathEndAnchorIndex, pathEndFrame,
+  type LengthenMode, type PathEndFrame,
+} from './paths/lengthenPathEnd';
 export { cubicPointAt, splitCubicAtT, type Point } from './paths/cubicMath';
 export { fitCubicThroughDeletion } from './paths/spanFit';
 export { schneiderFit, fitCubicWithTangents } from './paths/schneiderFit';

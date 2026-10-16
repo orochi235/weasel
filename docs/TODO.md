@@ -273,10 +273,18 @@ Priority tags:
   Y (`packages/path-tools/src/trim/useTrimTool.ts`). The `trimPath` action itself has no key.
 - **(P2) Tune Extend to next path hands-on, with the maintainer driving.** First-draft click reach
   (the same 6 screen px as Trim segment, `packages/path-tools/src/shared/scenePaths.ts`), that a curved end grows a
-  straight run rather than following its curvature (`lengthenOpenEnd`,
-  `packages/geom/src/paths/extendPath.ts`), no preview of where an end will land, its tool key, U
+  straight run rather than following its curvature (`lengthenOpenEnd`, which is Lengthen's
+  `lengthenPathEnd` in tangent mode, `packages/geom/src/paths/lengthenPathEnd.ts`), no preview of where an end will land, its tool key, U
   (`packages/path-tools/src/extend/useExtendTool.ts`), and no default key for the `extendToMeet` action; the
   lab binds E through `tune`.
+- **(P2) Tune Lengthen hands-on, with the maintainer driving.** First-draft behavior and keys: the
+  tool toggle has no key; a plain drag grows along the end tangent and Shift along the end
+  curvature (the `mode` param flips which); a curvature arc stops at a full turn, and a trim always
+  leaves a thousandth of the subpath (`packages/geom/src/paths/lengthenPathEnd.ts`); an end is
+  pressed within 8 screen px, the cursor is `penPlus`, nothing previews where a drag will land
+  before it starts, and the end anchor is left selected after a drag
+  (`packages/path-tools/src/lengthen/lengthenPath.ts`). Its toolbar glyph, `LengthenIcon`, has not
+  been proofed large.
 - **(P2) Tune the Smudge brush hands-on, with the maintainer driving.** First-draft brush radius
   (40 screen px) and strength (0.6) (`DEFAULT_SMUDGE_RADIUS_PX`, `DEFAULT_SMUDGE_STRENGTH` in
   `packages/path-tools/src/smudge/smudgeBrush.ts`), the falloff `(1 − (d/r)²)²` and the subdivision threshold of a
@@ -307,10 +315,6 @@ Priority tags:
   selection adds a pin and Alt-click on a pin takes it out, the pin dots (5 screen px radius,
   `packages/path-tools/src/warp/warpHandles.ts`), and its tool key, B
   (`packages/path-tools/src/warp/useWarpTool.ts`).
-- **(P2) Two helpers grow an open end along its tangent.** `lengthenOpenEnd` in
-  `packages/geom/src/paths/extendPath.ts` serves Extend to next path, and the unmerged
-  `extend-path-end` branch (Lengthen) has `lengthenPathEnd` of its own. Whichever lands second
-  folds its callers onto the other's, so one rule decides whether a curved end grows a straight run.
 - **(P2) Tune draw's Symmetry toggle hands-on, with the maintainer driving.** Its key, the default
   kind and copy count, and where a new group's center lands (`toggleSymmetry`,
   `apps/draw/src/useSymmetry.ts`).
@@ -355,8 +359,6 @@ Priority tags:
   they reshape comes from `scenePathNodes` (`pathCommands/scenePaths.ts`), which reads
   `resolveEditablePathOf`: a rect-pose rectangle cannot itself be trimmed or extended, which waits
   on "A rectangle has no anchors in path edit" above.
-- **(P2) Extend a path from its end.** Drag an open path's endpoint outward to grow it along its
-  end tangent, or along its end curvature.
 - **(P2) Shape builder.** Drag across overlapping regions to merge them, Alt-drag to delete them.
   `previewBooleanOp` already answers the pieces; the tool draws and picks among them. Building it
   also gives "Live preview of a Boolean operation" below its display.
@@ -883,11 +885,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   Text has no `drawnBounds` either, so a stroked glyph that spills past its layout box is not
   covered. A `{ px }` stroke under a skewing or stretching `transform` is outset by its width at
   the mean scale, which only approximates the screen-exact ribbon.
-
-- **(P2) Labs still tune actions through the experimental `actions` prop.** The extend-path-end
-  lab (on its own branch when `tune` landed) sets `mode` by restating whole descriptors through
-  `actions`. Move it to `<SceneCanvas tune>` as it merges, drop the restated gestures, and give
-  `extendPathEnd` an entry in core's `ActionParamSchema` (`interactions/actions/actionParamSchema.ts`).
 
 - **(P2) Kit settings that do not reach their readers yet.** `history.coalesceMs` is read once,
   when `PrefSchemaEditor` mounts, because `createHistory` (`@weasel-js/history`) fixes its window
