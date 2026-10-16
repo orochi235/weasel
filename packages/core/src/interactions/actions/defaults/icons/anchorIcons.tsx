@@ -97,3 +97,20 @@ export function SimplifyBrushIcon() {
     </svg>
   );
 }
+
+/**
+ * Bridge: two open ends facing each other across a gap, joined by a curve
+ * that leaves each one along its path's heading.
+ *
+ * @experimental
+ */
+export function BridgeIcon() {
+  return (
+    <svg {...SVG_BASE}>
+      <path d="M2 15.6 H6 M14 4.4 H18" />
+      <path d="M6 15.6 C11 15.6 9 4.4 14 4.4" />
+      <rect x="4.5" y="14.1" width="3" height="3" fill="currentColor" stroke="none" />
+      <rect x="12.5" y="2.9" width="3" height="3" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}

@@ -27,7 +27,7 @@ const ranks = (r: Record<string, number>) => new Map(Object.entries(r));
 describe('expand', () => {
   it('adds one placeholder per rank an edge skips, and joins them with hops', () => {
     const g = graphOf(['a', 'b', 'c', 'd'], [['a', 'b'], ['b', 'c'], ['c', 'd'], ['a', 'd']]);
-    const { rows, hops, chains } = expand(g, ranks({ a: 0, b: 1, c: 2, d: 3 }), new Set(), { axes: AXES, nodeGap: 40, placeholders: true });
+    const { rows, hops, chains } = expand(g, ranks({ a: 0, b: 1, c: 2, d: 3 }), new Set(), { axes: AXES, nodeGap: 40 });
     expect(rows.map((r) => r.filter((n) => isPlaceholder(n.id)).length)).toEqual([0, 1, 1, 0]);
     const chain = chains.get('e3')!;
     expect(chain.ids).toHaveLength(2);
@@ -40,7 +40,7 @@ describe('expand', () => {
   it('gives a labeled edge a row of its own between its ends, with room for the label beside its wire', () => {
     const g = graphOf(['a', 'b', 'c'], [['a', 'b'], ['b', 'c']]);
     const labeled: Graph = { ...g, edges: g.edges.map((e) => (e.id === 'e0' ? { ...e, label: { width: 30, height: 10, offset: 5 } } : e)) };
-    const out = expand(labeled, ranks({ a: 0, b: 1, c: 2 }), new Set(), { axes: AXES, nodeGap: 40, placeholders: true, labels: true });
+    const out = expand(labeled, ranks({ a: 0, b: 1, c: 2 }), new Set(), { axes: AXES, nodeGap: 40 });
     expect(out.rows.map((r) => r.map((n) => (isPlaceholder(n.id) ? '·' : n.id)))).toEqual([['a'], ['·'], ['b'], ['c']]);
     expect([...out.labelRows]).toEqual([1]);
     const room = out.rows[1]![0]!;
@@ -54,23 +54,29 @@ describe('expand', () => {
   it('puts the label of an edge spanning ranks in the gap nearest its middle, and every edge crossing that gap through it', () => {
     const g = graphOf(['a', 'b', 'c', 'd'], [['a', 'b'], ['b', 'c'], ['c', 'd'], ['a', 'd']]);
     const labeled: Graph = { ...g, edges: g.edges.map((e) => (e.id === 'e3' ? { ...e, label: { width: 30, height: 10 } } : e)) };
-    const out = expand(labeled, ranks({ a: 0, b: 1, c: 2, d: 3 }), new Set(), { axes: AXES, nodeGap: 40, placeholders: true, labels: true });
+    const out = expand(labeled, ranks({ a: 0, b: 1, c: 2, d: 3 }), new Set(), { axes: AXES, nodeGap: 40 });
     expect(out.rows.map((r) => r.filter((n) => isPlaceholder(n.id)).length)).toEqual([0, 1, 2, 1, 0]);
     expect([...out.labelRows]).toEqual([2]);
     expect(out.chains.get('e1')!.ids).toHaveLength(1);
   });
 
-  it('adds no placeholders, and no hops for a spanning edge, when told not to', () => {
+  it('starts a placeholder where its edge\'s route crosses the rank now', () => {
     const g = graphOf(['a', 'b', 'c'], [['a', 'b'], ['b', 'c'], ['a', 'c']]);
-    const { rows, hops, chains } = expand(g, ranks({ a: 0, b: 1, c: 2 }), new Set(), { axes: AXES, nodeGap: 40, placeholders: false });
-    expect(rows.flat().some((n) => isPlaceholder(n.id))).toBe(false);
-    expect(hops.map((h) => h.edge)).toEqual(['e0', 'e1']);
-    expect(chains.size).toBe(0);
+    const across = (waypoints?: { x: number; y: number }[]) => {
+      const edges = g.edges.map((e) => (e.id === 'e2' && waypoints ? { ...e, waypoints } : e));
+      const { rows } = expand({ ...g, edges }, ranks({ a: 0, b: 1, c: 2 }), new Set(), { axes: AXES, nodeGap: 40 });
+      return rows[1]!.map((n) => (isPlaceholder(n.id) ? 'e2' : n.id));
+    };
+    // Between its ends, the placeholder ties with `b` and a node wins a tie.
+    expect(across()).toEqual(['b', 'e2']);
+    expect(across([{ x: -300, y: 40 }, { x: -300, y: 60 }])).toEqual(['e2', 'b']);
+    // A route with some other number of waypoints says nothing about this one.
+    expect(across([{ x: -300, y: 40 }])).toEqual(['b', 'e2']);
   });
 
   it('lists a turned-around edge\'s placeholders from its own from end', () => {
     const g = graphOf(['a', 'b', 'c', 'd'], [['a', 'b'], ['b', 'c'], ['c', 'd'], ['d', 'a']]);
-    const { chains, hops } = expand(g, ranks({ a: 0, b: 1, c: 2, d: 3 }), new Set(['e3']), { axes: AXES, nodeGap: 40, placeholders: true });
+    const { chains, hops } = expand(g, ranks({ a: 0, b: 1, c: 2, d: 3 }), new Set(['e3']), { axes: AXES, nodeGap: 40 });
     const chain = chains.get('e3')!;
     expect(chain.back).toBe(true);
     // From `d` (rank 3) back to `a` (rank 0): rank 2 first.
@@ -82,7 +88,7 @@ describe('expand', () => {
   it('puts an edge to a group between the group\'s span and the other end', () => {
     const G: GraphGroup = { id: 'G', members: ['m1', 'm2'], inset: insetOf(12) };
     const g = graphOf(['a', 'm1', 'm2', 'z'], [['m1', 'm2'], ['G', 'z'], ['a', 'm1']], [G]);
-    const { chains, hops } = expand(g, ranks({ a: 0, m1: 1, m2: 2, z: 4 }), new Set(), { axes: AXES, nodeGap: 40, placeholders: true });
+    const { chains, hops } = expand(g, ranks({ a: 0, m1: 1, m2: 2, z: 4 }), new Set(), { axes: AXES, nodeGap: 40 });
     expect(chains.get('e1')!.ids).toHaveLength(1);
     expect(hops.filter((h) => h.edge === 'e1')[0]!.from).toBe('m2');
   });
@@ -90,7 +96,7 @@ describe('expand', () => {
   it('puts a placeholder in a group only when both ends are inside it', () => {
     const G: GraphGroup = { id: 'G', members: ['p', 'q', 'r'], inset: insetOf(12) };
     const g = graphOf(['p', 'q', 'r', 'o'], [['p', 'q'], ['q', 'r'], ['p', 'r'], ['p', 'o']], [G]);
-    const { rows } = expand(g, ranks({ p: 0, q: 1, r: 2, o: 2 }), new Set(), { axes: AXES, nodeGap: 40, placeholders: true });
+    const { rows } = expand(g, ranks({ p: 0, q: 1, r: 2, o: 2 }), new Set(), { axes: AXES, nodeGap: 40 });
     const placeholders = rows.flat().filter((n) => isPlaceholder(n.id));
     expect(placeholders.find((n) => n.id.includes('e2'))!.group).toBe('G');
     expect(placeholders.find((n) => n.id.includes('e3'))!.group).toBeUndefined();

@@ -188,6 +188,20 @@ Priority tags:
 - **(P2) Tune Bridge hands-on, with the maintainer driving.** First-draft default Tension (0.4,
   `DEFAULT_BRIDGE_TENSION`), how Tension is reached outside the lab, and the Mod+Shift+J binding
   it shares with Bridge anchors (`pathCommands/cutJoin.ts`, `defaults/anchorJoin.ts`).
+- **(P2) Tune Trim segment hands-on, with the maintainer driving.** First-draft click reach (6
+  screen px, `DEFAULT_STROKE_REACH_PX` in `pathCommands/scenePaths.ts`), the preview's look (the
+  `cut` overlay role's red dash at width 3, `tools/builtin/trim/piecePreview.ts`), and its tool key,
+  Y (`tools/builtin/trim/useTrimTool.ts`). The `trimPath` action itself has no key.
+- **(P2) Tune Extend to next path hands-on, with the maintainer driving.** First-draft click reach
+  (the same 6 screen px as Trim segment, `pathCommands/scenePaths.ts`), that a curved end grows a
+  straight run rather than following its curvature (`lengthenOpenEnd`,
+  `packages/geom/src/paths/extendPath.ts`), no preview of where an end will land, its tool key, U
+  (`tools/builtin/extend/useExtendTool.ts`), and no default key for the `extendToMeet` action; the
+  lab binds E through `tune`.
+- **(P2) Two helpers grow an open end along its tangent.** `lengthenOpenEnd` in
+  `packages/geom/src/paths/extendPath.ts` serves Extend to next path, and the unmerged
+  `extend-path-end` branch (Lengthen) has `lengthenPathEnd` of its own. Whichever lands second
+  folds its callers onto the other's, so one rule decides whether a curved end grows a straight run.
 - **(P2) Tune draw's Symmetry toggle hands-on, with the maintainer driving.** Its key, the default
   kind and copy count, and where a new group's center lands (`toggleSymmetry`,
   `apps/draw/src/useSymmetry.ts`).
@@ -197,6 +211,11 @@ Priority tags:
   one enters draw's path-edit mode with no anchors to drag, insert, or bend. Undecided: whether
   editing turns the rectangle into a polygon path on its first edit, and what then happens to
   anything that reads it as a rectangle.
+- **(P3) Trim segment and Extend to next path change editable polygon paths only.** Any node's
+  drawn outline cuts or stops them (`nodeOutline`, `features/paths/strokeOutline.ts`), but what
+  they reshape comes from `scenePathNodes` (`pathCommands/scenePaths.ts`), which reads
+  `resolveEditablePathOf`: a rect-pose rectangle cannot itself be trimmed or extended, which waits
+  on "A rectangle has no anchors in path edit" above.
 - **(P2) Dynamic corners.** Round, chamfer, or invert any corner anchor by dragging a widget at
   it, and change the radius later. Needs a corner radius per anchor in the path data, expanded
   into geometry when it renders and on export.
@@ -213,8 +232,9 @@ Priority tags:
   drag steps in a different direction from the drag. Recording the move in world space and
   mapping it through each node's parent on replay would make the two agree.
 - **(P3) The path commands have no icons.** `simplifyPath`, `offsetPath`, `snipAtCrossings`,
-  `joinPaths`, `bridgePaths`, `joinAnchors`, `bridgeAnchors`, and `averageAnchors` show as text
-  in draw's bar.
+  `joinPaths`, `bridgePaths`, `joinAnchors`, `bridgeAnchors`, `averageAnchors`, and
+  `extendToMeet` show as text in draw's bar, and `useTrimTool` and `useExtendTool` borrow
+  `SliceIcon`.
   `RetractHandlesIcon`, `SymmetricHandlesIcon`, and `SimplifyBrushIcon`
   (`defaults/icons/anchorIcons.tsx`) are first drafts, not proofed at high resolution.
 - **(P2) Spacing hints.** Equal-spacing markers between siblings while moving, and Alt-hover
@@ -464,13 +484,26 @@ Priority tags:
   label at the run between two of its edge's waypoints by index
   (`packages/diagram/src/label.ts`). Edit the edge's waypoints in a live scene and the label sits
   on whichever run now has that index; remove enough and it falls back to the middle of the route.
-- **(P3) A live scene's `layered` layout gets no placeholders, waypoints or label room.** Under
-  `order: 'seeded'`, which `layoutAction` uses, a spanning edge gets no room in the ranks it
-  crosses, a labeled edge no rank for its label, and the scene's edges get no waypoints, so a long
-  edge can run through a node and a label can land on one. A
-  placeholder's seed order would come from wire ends layout moves, so two could trade places
-  between runs and break "a second run moves nothing"; and a scene's waypoints belong to whoever
-  drew them, so writing them is a decision of its own (`packages/diagram/src/layered/plan.ts`).
+- **(P3) A live `layered` run draws its long edges through the old bends while it eases.** The
+  run moves nodes frame by frame but writes routes only when it arrives, so for its 24 frames an
+  edge layout routed last time still runs through those waypoints while its ends move away from
+  them (`useLiveLayout`, `packages/diagram/src/live.ts`). Easing each layout-owned waypoint from
+  where it was to where the plan puts it would need waypoints on the override channel, which
+  carries poses only.
+- **(P3) The ports `diagramScene` picks read as the author's on a live scene.** Under `layered`,
+  `layeredRoutes` names each edge's compass ports from which way it runs between ranks, and
+  `edgeSpecs` writes them as `from.port`/`to.port` with nothing like `laidOut` marking them
+  (`packages/diagram/src/dataEdges.ts`). A later live layout reads them as named by the author and
+  never revisits them, so an edit that turns which edge runs back up the ranks leaves a wire
+  leaving by the old face. Found in review, not reproduced.
+- **(P3) A long edge to a pinned node off its slot can reorder a second seeded run.** `layeredPlan`
+  gives such an edge no waypoints (`displaced`, `packages/diagram/src/layered/plan.ts`), so the
+  next run seeds its placeholders between its ends' new centers rather than where the last run
+  put them, and the rank's order can change. Found in review, not reproduced.
+- **(P3) `DiagramView`'s `onMove` reports nodes, not routes.** A layout run writes each long
+  edge's waypoints into the view's scene, but a consumer keeping the diagram as data hears only
+  the node moves, so the routes go whenever the data is laid into a scene again, or an edge's
+  spec changes and `reconcileSpecs` replaces its data (`packages/diagram/src/DiagramView.tsx`).
 - **(P3) A second pinned node can sit on a long edge's route.** `layeredPlan` anchors the layout
   on the first pinned node; any other pinned node stays where its author put it, not in its slot.
   A wire with that node as an end gets no waypoints, but a wire passing near it keeps the

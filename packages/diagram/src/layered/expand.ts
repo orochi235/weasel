@@ -2,6 +2,7 @@
  * Placeholders: a node standing in for an edge in each rank it crosses, so
  * ordering counts its crossings and placement leaves it room.
  */
+import type { Vec2 } from '@weasel-js/core/math';
 import type { EdgeLabelRoom, Graph, GraphEdge, GraphNode } from '../graph';
 import { DEFAULT_PORTS } from '../ports';
 import { center, extent, graphOrder, seededOrder, type LayoutAxes } from '../layout';
@@ -29,12 +30,6 @@ export interface Expanded {
 export interface ExpandOptions {
   axes: LayoutAxes;
   nodeGap: number;
-  /** Add placeholders. Without them an edge spanning ranks adds no hops. */
-  placeholders: boolean;
-  /** Give each labeled edge a row of its own between two ranks, with a
-   *  placeholder there as big as its label beside its wire. Needs
-   *  `placeholders`. */
-  labels?: boolean;
 }
 
 /** One drawn edge, its ends as drawn: a node or a group, either way round
@@ -46,6 +41,8 @@ interface Drawn {
   fromPort?: string;
   toPort?: string;
   label?: EdgeLabelRoom;
+  waypoints?: readonly Vec2[];
+  authored?: boolean;
   back: boolean;
 }
 
@@ -118,9 +115,7 @@ export function expand(graph: Graph, nodeRanks: ReadonlyMap<string, number>, bac
     return rs.length === 0 ? null : [Math.min(...rs), Math.max(...rs)];
   };
   const drawn = drawnEdges(graph.edges, back);
-  const labeled = opts.labels === true && opts.placeholders
-    ? labelRowsOf(drawn, nodeRanks, spanIn)
-    : { rows: nodeRanks, labelRow: new Map<string, number>() };
+  const labeled = labelRowsOf(drawn, nodeRanks, spanIn);
   const ranks = labeled.rows;
   const span = (id: string) => spanIn(id, ranks);
   const inRank = (id: string, r: number): string[] =>
@@ -162,10 +157,20 @@ export function expand(graph: Graph, nodeRanks: ReadonlyMap<string, number>, bac
     const a = span(from);
     const b = span(to);
     if (a === null || b === null || a[1] >= b[0]) continue;
-    if (!opts.placeholders && b[0] - a[1] > 1) continue;
+    // Its route goes where its author put it, and no seed from it would
+    // follow where this run puts the ranks it crosses.
+    if (d.authored && b[0] - a[1] > 1) continue;
     const group = sharedGroup(from, to);
     const start = crossCenter(from);
     const end = crossCenter(to);
+    const crossings = b[0] - a[1] - 1;
+    // Where the route crosses each rank now, two waypoints a rank, read from
+    // its `from` end as drawn; only a route with exactly that many says.
+    const now = d.waypoints?.length === crossings * 2 ? d.waypoints : undefined;
+    const seed = (j: number): number => {
+      if (now !== undefined) return now[(d.back ? crossings - 1 - j : j) * 2]![axes.cross];
+      return start + ((end - start) * (j + 1)) / (crossings + 1);
+    };
     const labelRow = labeled.labelRow.get(d.id);
     let prev = inRank(from, a[1]);
     let prevAt: { fromAt: number } | null = null;
@@ -175,7 +180,7 @@ export function expand(graph: Graph, nodeRanks: ReadonlyMap<string, number>, bac
       const room = r === labelRow && d.label !== undefined
         ? labelRoom(d.label, axes, d.back, opts.nodeGap)
         : { size: opts.nodeGap / 2, depth: 0, wire: opts.nodeGap / 4 };
-      const at = start + ((end - start) * (r - a[1])) / (b[0] - a[1]) - room.wire;
+      const at = seed(r - a[1] - 1) - room.wire;
       const bounds = axes.cross === 'x'
         ? { x: at, y: 0, width: room.size, height: room.depth }
         : { x: 0, y: at, width: room.depth, height: room.size };
@@ -225,6 +230,8 @@ function drawnEdges(edges: readonly GraphEdge[], back: ReadonlySet<string>): Dra
       ...(e.fromPort !== undefined ? { fromPort: e.fromPort } : {}),
       ...(e.toPort !== undefined ? { toPort: e.toPort } : {}),
       ...(e.label !== undefined ? { label: e.label } : {}),
+      ...(e.waypoints !== undefined ? { waypoints: e.waypoints } : {}),
+      ...(e.authored ? { authored: true } : {}),
       back: back.has(e.id),
     });
   }

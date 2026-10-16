@@ -4,7 +4,7 @@
  */
 import type { Vec2 } from '@weasel-js/core/math';
 import { packClusters, rankGaps } from '../cluster';
-import type { Graph } from '../graph';
+import type { Graph, GraphEdge } from '../graph';
 import { backEdges } from './cycles';
 import {
   DEFAULT_NODE_GAP,
@@ -35,25 +35,36 @@ export interface LayeredPlan {
   back: ReadonlySet<string>;
   /** For each edge spanning ranks, keyed by the edge's id as drawn: points
    *  from its `from` end to its `to` end, two per rank it crosses, where it
-   *  enters and leaves that rank. Empty unless `order` is `'barycenter'`. */
+   *  enters and leaves that rank. */
   waypoints: ReadonlyMap<string, readonly Vec2[]>;
   /** For each labeled edge given room, keyed by the edge's id as drawn: the
    *  place among its waypoints that room is beside, as a `DiagramLabel`'s
-   *  `{ waypoint }` reads it. Empty unless `order` is `'barycenter'`. */
+   *  `{ waypoint }` reads it. */
   labels: ReadonlyMap<string, number>;
 }
 
 /** How much of `rankGap` each side of a label's row keeps. */
 const LABEL_GAP = 0.75;
-
 /** The layered layout, with the ranks and edge routes it settled on. */
 export function layeredPlan(graph: Graph, opts: LayoutOptions = {}): LayeredPlan {
-  const plan = planOnce(graph, opts);
   // Keeping groups together can move an outsider out of a group's column,
   // which changes the order the next seeded run starts from. Barycenter
   // ordering reorders on every run, so it has no arrangement to settle on.
-  if ((graph.groups?.length ?? 0) === 0 || opts.order === 'barycenter') return plan;
-  return { ...plan, moves: untilSettled((g, o) => planOnce(g, o).moves, graph, opts) };
+  if ((graph.groups?.length ?? 0) === 0 || opts.order === 'barycenter') return planOnce(graph, opts);
+  // Each pass starts its placeholders on the routes the pass before laid out,
+  // and the routes kept are the last pass's.
+  let last: LayeredPlan | undefined;
+  const moves = untilSettled((g, o) => {
+    last = planOnce(last === undefined ? g : { ...g, edges: g.edges.map((e) => routed(e, last!)) }, o);
+    return last.moves;
+  }, graph, opts);
+  return { ...last!, moves };
+}
+
+function routed(edge: GraphEdge, plan: LayeredPlan): GraphEdge {
+  const { waypoints: _, ...rest } = edge;
+  const route = plan.waypoints.get(edge.origin?.id ?? edge.id);
+  return route === undefined ? rest : { ...rest, waypoints: route };
 }
 
 function planOnce(graph: Graph, opts: LayoutOptions = {}): LayeredPlan {
@@ -64,7 +75,7 @@ function planOnce(graph: Graph, opts: LayoutOptions = {}): LayeredPlan {
 
   const back = backEdges(graph);
   const ranks = ranksByLength(graph, back);
-  const expanded = expand(graph, ranks, back, { axes, nodeGap, placeholders: finding, labels: finding });
+  const expanded = expand(graph, ranks, back, { axes, nodeGap });
   const rows = finding ? orderRows(expanded.rows, expanded.hops, { groups: graph.groups ?? [] }) : expanded.rows;
 
   const preferred = placeAcross(rows, expanded.hops, axes.cross, nodeGap);

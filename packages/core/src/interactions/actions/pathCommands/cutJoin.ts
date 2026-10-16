@@ -14,6 +14,7 @@ import type { Op } from 'core/ops/types';
 import {
   commitOps, deleteNode, insertAt, pathCopy, reshapeOps, selectedPathNodes, slotOf, type PathNode,
 } from './pathNodes';
+import { BridgeIcon } from '../defaults/icons/anchorIcons';
 
 const CUT_LABEL = 'Cut at Crossings';
 
@@ -97,7 +98,7 @@ type Params = Record<string, unknown> | undefined;
 /** A command joining the selected paths by {@link planJoin} as one undo step,
  *  spanning gaps as `options` reads from its params. */
 function joinPathsCommand(
-  base: Pick<Action, 'id' | 'label' | 'defaultBinding'>,
+  base: Pick<Action, 'id' | 'label' | 'icon' | 'defaultBinding'>,
   options: (params: Params) => JoinOptions,
 ): Action & { requires: string[] } {
   const plan = (deps: ActionDeps | undefined, params?: Params) => planJoin(selectedPathNodes(deps), options(params));
@@ -161,6 +162,7 @@ export const bridgePathsAction = joinPathsCommand(
   {
     id: 'bridgePaths',
     label: 'Bridge',
+    icon: BridgeIcon,
     // `code` too: with Shift held the key reads as `J`.
     defaultBinding: { kind: 'key', key: 'j', code: 'KeyJ', mods: { mod: true, shift: true } },
   },

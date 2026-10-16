@@ -9,8 +9,9 @@
  * `plan` puts it together.
  *
  * Under `order: 'seeded'` (the default) each rank keeps the order its nodes
- * already sit in, so a re-run moves nothing. `order: 'barycenter'` reorders to
- * cut crossings, and adds the placeholders whose positions route long edges.
+ * and edges already sit in, so a re-run moves nothing. `order: 'barycenter'`
+ * reorders to cut crossings. Either way, a placeholder's position routes its
+ * long edge, which `layered.plan` hands back.
  */
 import type { LayoutFn } from './layout';
 import { layeredPlan } from './layered/plan';
@@ -22,4 +23,7 @@ export { ranksByLength } from './layered/rank';
 /** The ranked layout: each edge points one rank further along `direction`.
  *  Under `order: 'seeded'` a re-run moves nothing; `order: 'barycenter'`
  *  reorders ranks to cut crossings. */
-export const layered: LayoutFn = (graph, opts = {}) => layeredPlan(graph, opts).moves;
+export const layered: LayoutFn = Object.assign(
+  (graph: Parameters<LayoutFn>[0], opts: Parameters<LayoutFn>[1] = {}) => layeredPlan(graph, opts).moves,
+  { plan: layeredPlan },
+);
