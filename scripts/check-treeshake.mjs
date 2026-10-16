@@ -34,6 +34,11 @@ const PROBES = ['asNodeId', 'unionBounds', 'screenToWorld', 'VERSION'];
 const MESH_MODULE = /renderer\/(dist\/mesh\.|src\/meshPaint\/)|core\/paint\/meshKind/;
 const MESH_REGISTRATION = /label:\s*(`Mesh`|"Mesh")/;
 
+// A canvas handed one preset object carries that preset's actions and no
+// other's: not core's named presets, and none of the heavy action families.
+const LEAN_CANVAS = 'LeanSceneCanvas, selectPreset';
+const UNASKED_PRESET = /core\/dist\/(canvas\/SceneCanvas\/(namedPresets|presets\/(?!select|chrome|toolDriven))|interactions\/actions\/(booleans|outlines|pathCommands|pathEffects)\/)/;
+
 const entryCode = (symbol, from) => `import { ${symbol} } from '${from}';\nconsole.log(${symbol});\n`;
 const EXTERNAL = [/^react($|\/)/, /^react-dom($|\/)/];
 
@@ -125,8 +130,8 @@ async function measureOrExplain(bundler, symbol, from) {
 }
 
 const failures = [];
-const width = Math.max(...PROBES.map((p) => p.length), 'seedMeshPatch'.length);
-const total = (PROBES.length + 2) * Object.keys(BUNDLERS).length;
+const width = Math.max(...PROBES.map((p) => p.length), LEAN_CANVAS.length);
+const total = (PROBES.length + 3) * Object.keys(BUNDLERS).length;
 let n = 0;
 const line = (bundler, symbol, bytes, verdict) => console.log(
   `[treeshake] ${String(++n).padStart(2)}/${total}  ${bundler.padEnd(8)}  ${symbol.padEnd(width)}  ${String(bytes).padStart(9)} B  ${verdict}`,
@@ -168,6 +173,19 @@ for (const bundler of Object.keys(BUNDLERS)) {
         `${bundler}: importing seedMeshPatch from @weasel-js/core/mesh no longer carries the\n` +
           'mesh kind\'s registration, so an app using mesh code would draw nothing for a mesh\n' +
           'fill until it loads.',
+      );
+    }
+  }
+
+  {
+    const { bytes, modules } = await measureOrExplain(bundler, LEAN_CANVAS, '@weasel-js/core');
+    const unasked = modules.filter((m) => UNASKED_PRESET.test(m));
+    line(bundler, LEAN_CANVAS, bytes, unasked.length ? 'OTHER PRESETS' : 'ok, its preset only');
+    if (unasked.length) {
+      failures.push(
+        `${bundler}: a LeanSceneCanvas handed only selectPreset carries modules no preset it\n` +
+          `was handed needs:\n  ${unasked.slice(0, 8).join('\n  ')}\n` +
+          'Something it imports reaches core\'s named presets or another preset\'s actions.',
       );
     }
   }

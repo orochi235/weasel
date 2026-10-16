@@ -15,6 +15,8 @@
  *     `handleLock` param ({@link EditAnchorsParams}), holds a lock with no
  *     modifier. The lock in force draws its guide as a `polyline` overlay
  *     of role `lock`: the line, or the circle round the anchor.
+ *   - **Every frame is finished** by the dep's `finishEdit`, so what a
+ *     path-edit extension keeps true holds while the drag runs.
  *   - **Under a `pathSymmetry` dep**, on a path that is its own image under
  *     some of its transforms, every image of what is dragged follows it.
  *
@@ -52,6 +54,7 @@ import { locksOf, type EditAnchorsParams } from './params';
 import { pathEditPreview } from './preview';
 import { pathEditToolActive } from '../defaults/pathEditTools';
 import { editedPathSymmetries } from './symmetry';
+import { pathOperationTags } from '../pathGestureTags';
 
 /**
  * Parse an anchor affordance kind — `'anchor:N'` | `'controlIn:N'` |
@@ -121,9 +124,14 @@ interface EditAnchorsScratch {
 const paramsOf = (opts: BindingOpts | undefined): EditAnchorsParams =>
   (resolveParams(opts?.params) ?? {}) as EditAnchorsParams;
 
+/** Take `next` as the frame to show, finished by the dep. A frame it cannot
+ *  finish is dropped, so the path stays at the last one it could. */
 function track(scratch: EditAnchorsScratch, next: ReturnType<typeof editAnchorSetTracked>): void {
   if (!next) return;
-  scratch.currentPose = next.path;
+  const { dep, id } = scratch;
+  const path = dep.finishEdit ? dep.finishEdit(id, next.path, next.origins) : next.path;
+  if (!path) return;
+  scratch.currentPose = path as PolygonPath;
   scratch.origins = next.origins;
 }
 
@@ -140,6 +148,7 @@ function handlePressOf(
 export const editAnchorsAction: Action & { requires: string[] } = inPlane({
   id: 'editAnchors',
   label: 'Edit Anchors',
+  tags: pathOperationTags('drag'),
   defaultBinding: {
     kind: 'drag',
     // Only matches drags whose pointerdown hit an anchor or control handle.

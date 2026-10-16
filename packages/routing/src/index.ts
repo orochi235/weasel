@@ -110,6 +110,7 @@ export { actionItems } from './interactions/actions/actionItems';
 export type { ActionItem } from './interactions/actions/actionItems';
 export { actionShortcuts, keySpecShortcut } from './interactions/actions/actionShortcuts';
 export type { ActionShortcut } from './interactions/actions/actionShortcuts';
+export { actionsTagged, taggedActionItems, matchActionItem } from './interactions/actions/actionTags';
 // Both a const table and the union of its values, under one name.
 export { actionCursor, ActionDisabledReason } from './interactions/actions/action';
 export type { ActionDisabledReason as ActionDisabledReasonValue } from './interactions/actions/action';
@@ -151,6 +152,7 @@ export type {
   PendingLongPress, LongPressState, LongPressStore, LongPressOptions,
 } from './interactions/dispatcher/longPressState';
 export { DRAG_THRESHOLD_PX, pastDragThreshold, CONTROL_SELECTOR, isInControlWithin } from '@weasel-js/gestures';
+export type { GestureKitSettings } from './kitSettings';
 export { openPointerSession } from './interactions/pointerSession';
 export type {
   PointerSession, PointerSessionOptions, PointerSessionCallbacks, PointerSessionCancelReason,
@@ -187,6 +189,7 @@ export { reportRouteConflicts, type ToolScopes } from './tools/routing/reflectio
 // ─── input plumbing ───────────────────────────────────────────────────────
 export { activatesFocusedControl, focusedControlOwnsKey, historyKey, isEditableTarget, matchesKeyBinding } from './interactions/keyHelpers';
 export type { KeyBinding } from './interactions/keyHelpers';
+export { BROWSER_RESERVED_CHORDS, browserReservedChord, type ReservedChord } from './interactions/browserReservedKeys';
 export { scratchKey, getScratch, setScratch, deleteScratch } from './interactions/scratchKey';
 export type { ScratchKey, ScratchStore } from './interactions/scratchKey';
 export {

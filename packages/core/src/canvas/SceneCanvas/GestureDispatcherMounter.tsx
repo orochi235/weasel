@@ -10,8 +10,10 @@ import { useCallback, useInsertionEffect, useMemo, useState } from 'react';
 import type { Contribution } from '../../tools/overlayBinding';
 import type { ToolsApi } from '../../tools/overlayBinding';
 import { useDispatchDepSources } from '../deps/dispatchSources';
-import { anchorStateFrom, buildAffordanceAt, buildClassifyTarget, chromeAffordances, layerAffordance } from '../affordanceAt';
+import { anchorStateFrom, buildAffordanceAt, buildClassifyTarget, layerAffordance } from '../affordanceAt';
+import { useChromeAffordances } from './useChromeAffordances';
 import type { CanvasExtensionApi } from '../canvasExtension';
+import { useKitSettingsDepSource } from '../deps/kitSettings';
 import { pathFromPlane } from '../planeClips';
 import { useOptionalViewRegistry } from '../viewRegistry';
 import { traceConversion } from './coordTrace';
@@ -138,12 +140,7 @@ export function GestureDispatcherMounter({
 
   // Build the `affordanceAt` thunk. Takes world coords and delegates to
   // `buildAffordanceAt` for handle hit-testing.
-  const affordances = useMemo(() => chromeAffordances({
-    ...(targetScale !== undefined ? { targetScale } : {}),
-    ...(handleHitRadius !== undefined ? { handleHitRadius } : {}),
-    rotationBadge,
-    getAnchorState,
-  }), [targetScale, handleHitRadius, rotationBadge, getAnchorState]);
+  const affordances = useChromeAffordances({ targetScale, handleHitRadius, rotationBadge, getAnchorState });
   useInsertionEffect(() => {
     if (chromeAffordancesRef) chromeAffordancesRef.current = affordances;
   });
@@ -268,5 +265,6 @@ export function GestureDispatcherMounter({
     ...(views ? { views } : {}),
   });
   useDispatchDepSources(longPressState, classifyTarget, kindOfNodeRef);
+  useKitSettingsDepSource();
   return null;
 }

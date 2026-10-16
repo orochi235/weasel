@@ -130,3 +130,4 @@ export type {
 } from './useReorderDragList';
 export { HANDLE_SIZE_TOKENS, handleHalf, handleSize } from './handles';
 export type { HandleSizeToken } from './handles';
+export { uiKitSettingsSchema } from './kitSettings';

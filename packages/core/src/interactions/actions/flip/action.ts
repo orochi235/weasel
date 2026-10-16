@@ -160,6 +160,7 @@ export const flipAction: Action & { requires: string[] } = {
   id: 'flip',
   label: 'Flip',
   group: 'flip',
+  tags: ['mirror'],
   variants: [
     { key: 'x', label: 'Flip Horizontal', icon: createElement(FlipXIcon), params: { axis: 'x' } },
     { key: 'y', label: 'Flip Vertical', icon: createElement(FlipYIcon), params: { axis: 'y' } },

@@ -226,6 +226,36 @@ const DEMO_META: DemoMeta[] = [
     load: () => import('./demos/StrokeMarkersDemo').then((m) => m.StrokeMarkersDemo),
     path: 'apps/site/demos/StrokeMarkersDemo.tsx',
   },
+  {
+    id: 'lab-blend',
+    title: 'Blend',
+    category: 'Geometry',
+    description:
+      "Steps between two shapes, live. The blend is one scene node whose `dependsOn` names its two sources and whose `derivePath` interpolates them: anchors matched contour to contour, the shape with fewer split at its longest segments until the counts agree, and the second shape's start point picked to keep matched anchors closest. Fill and stroke mix through OKLab, and a turned source turns its neighbors rather than squashing them. Each step paints in its own color because the derived path is built with `pathFromParts`. Its pose derives too — the bounds of its steps — so it selects like any shape, and Expand to Paths swaps it for ordinary paths in one undo step.",
+    hint: 'Drag either end shape and the steps follow, or drag the blend itself to carry both; double-click an end shape to edit its anchors. The panel sets the step count, the start point and direction, and whether rotation turns. Select two shapes and press Blend (<kbd>Alt+Shift+B</kbd>) for a new blend; select a blend and press Expand to Paths (<kbd>Alt+Shift+E</kbd>) to make its steps real.',
+    load: () => import('./demos/BlendLabDemo').then((m) => m.BlendLabDemo),
+    path: 'apps/site/demos/BlendLabDemo.tsx',
+  },
+  {
+    id: 'lab-bend-along',
+    title: 'Bend along a path',
+    category: 'Geometry',
+    description:
+      "A shape laid along a spine: its x becomes distance along the spine and its y distance off it, along the spine's normal. Every segment is sampled through the bend and refit to cubics within the tolerance, one segment at a time, so a corner of the shape stays a corner. The bent copy is a derived node over the shape and the spine, painted in the shape's own fill and stroke, so editing either one re-bends it.",
+    hint: 'The spine opens in path edit: drag its anchors and handles and the ribbon follows. Double-click the ribbon to reshape it instead. The panel switches between stretching the ribbon over the whole spine and keeping its width, moves where across it the spine runs, flips it, and sets the refit tolerance. Select a shape then a path and press Bend Along Path (<kbd>Alt+Shift+W</kbd>) for a new one; select the bent copy and press Expand to Paths (<kbd>Alt+Shift+E</kbd>) to keep it as a path.',
+    load: () => import('./demos/BendAlongLabDemo').then((m) => m.BendAlongLabDemo),
+    path: 'apps/site/demos/BendAlongLabDemo.tsx',
+  },
+  {
+    id: 'lab-repeat-along',
+    title: 'Repeat along a path',
+    category: 'Geometry',
+    description:
+      'Copies of a shape placed along a path, live: a derived node over the shape and the path that paints one copy per station, each centered on the path and, with Turn to the path on, turned to its heading there. With no spacing the copies spread evenly end to end, or evenly round a closed path; with a spacing they sit that far apart, as many as fit up to the count, and the run lines up at the start, middle or end of the path.',
+    hint: 'The track opens in path edit: drag its anchors and the copies follow. The panel sets the count, the spacing (0 spreads them over the whole track), where a spaced run sits, a slide along the track, and whether copies turn with it. Select a shape then a path and press Repeat Along Path (<kbd>Alt+Shift+R</kbd>) for a new run; select the copies and press Expand to Paths (<kbd>Alt+Shift+E</kbd>) to make them separate paths.',
+    load: () => import('./demos/RepeatAlongLabDemo').then((m) => m.RepeatAlongLabDemo),
+    path: 'apps/site/demos/RepeatAlongLabDemo.tsx',
+  },
 
   // ─── Animation ────────────────────────────────────────────────────────────
   {
@@ -690,6 +720,16 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/SceneLabDemo.tsx',
   },
   {
+    id: 'lab-path-constraints',
+    title: 'Path constraints',
+    category: 'Geometry',
+    description:
+      "Geometric constraints on a path's anchors that hold while you edit. The shape opens in path edit as a parallelogram: its opposite sides are parallel, its bottom edge is horizontal, and its bottom-left anchor is fixed. Each constraint is drawn as a small mark beside the geometry, and the list lives in the node's `data.constraints`, so it undoes and saves with the scene. Every edit of the path — a drag, a nudge, a delete — goes through a damped Gauss-Newton solve from the state the edit left: the anchors you moved stay where you put them, fixed ones go back, and the rest move the least they must. A constraint that cannot hold with the others is kept but left out of the solve, drawn in red and named in the status line, rather than allowed to pull the rest out of true. The control panel picks the kind of constraint the C key adds.",
+    hint: 'Drag any anchor: the shape stays a parallelogram, and the fixed anchor stays put. Click an anchor, <kbd>Shift</kbd>-click more, pick a kind in the control panel, and press <kbd>C</kbd> to add it — two anchors make one segment, three make two segments meeting at the middle one, four make two separate segments. <kbd>Shift</kbd>+<kbd>C</kbd> removes the constraints whose anchors are all selected; or click the mark of a constraint and press <kbd>Delete</kbd> to remove just that one. Undo with the button or <kbd>Mod+Z</kbd>.',
+    load: () => import('./demos/PathConstraintsLabDemo').then((m) => m.PathConstraintsLabDemo),
+    path: 'apps/site/demos/PathConstraintsLabDemo.tsx',
+  },
+  {
     id: 'lab-handle-locks',
     title: 'Handle locks',
     category: 'Geometry',
@@ -700,14 +740,34 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/HandleLockLabDemo.tsx',
   },
   {
+    id: 'lab-balance-handles',
+    title: 'Balance handles',
+    category: 'Geometry',
+    description:
+      "Each curved segment of the edited path shows its balance line, from the tip of its first handle to the tip of its second, with a grip at the middle. Dragging the grip scales both handles together, each along its own direction, so the segment fills out toward the corner its handle lines meet at or flattens toward its chord, with neither end turning. Double-clicking it gives the two handles one proportion: each reaches the same fraction of the way to that corner, the mean of the two fractions they had. The lines and grips are part of the path-edit overlay, shown and hit-tested while chrome-caps shows `path-edit.balance`, and the `balanceHandles` and `equalizeHandles` actions bind to the `balance:N` grips. A grip drag keeps every handle's angle, so an angle lock holds through it; a length lock, from `handleLock.length` or Mod held, holds it still.",
+    hint: 'Drag a grip, the hollow dot midway along a line between two handle tips, to scale both handles at once; hold <kbd>Mod</kbd> and the drag holds still. Double-click a grip to even out its handles. Turn on Show comb to watch the curvature change as you drag.',
+    load: () => import('./demos/BalanceHandlesLabDemo').then((m) => m.BalanceHandlesLabDemo),
+    path: 'apps/site/demos/BalanceHandlesLabDemo.tsx',
+  },
+  {
     id: 'lab-curvature-comb',
     title: 'Curvature comb',
     category: 'Geometry',
     description:
-      "A path open in anchor editing, with its curvature comb on: teeth stand out of every curved segment along its normal, each as long as the curve is tight where it stands, and a line joins their tips. A tooth that jumps in length at an anchor marks a curvature break even where the tangent runs smooth through it; teeth that cross to the other side mark an inflection. The comb is part of the path-edit overlay, shown while chrome-caps shows `path-edit.comb`, and draws from the same in-flight path as the anchors, so it follows every anchor and handle drag. Its scale and density are the overlay slot's `comb` options, from `layers.pathEditingOverlay`.",
+      "A path open in anchor editing, with its curvature comb on: teeth stand out of every curved segment along its normal, each as long as the curve is tight where it stands, and a line joins their tips. A tooth that jumps in length at an anchor marks a curvature break even where the tangent runs smooth through it; teeth that cross to the other side mark an inflection. The comb is part of the path-edit overlay, shown while chrome-caps shows `path-edit.comb`, and draws from the same in-flight path as the anchors, so it follows every anchor and handle drag. Its scale and density are the options of `createCurvatureCombPreset`, from `@weasel-js/path-tools`.",
     hint: "Drag an anchor or a handle and watch the comb follow. Comb scale sets the teeth's length and Teeth per segment their spacing; Show comb turns it off. <kbd>Escape</kbd> leaves path edit, and a double-click on the path goes back in.",
     load: () => import('./demos/CurvatureCombLabDemo').then((m) => m.CurvatureCombLabDemo),
     path: 'apps/site/demos/CurvatureCombLabDemo.tsx',
+  },
+  {
+    id: 'lab-harmonize',
+    title: 'Harmonize curvature',
+    category: 'Geometry',
+    description:
+      "The `harmonizeAnchors` command makes a smooth anchor curvature-continuous: it changes only the lengths of the anchor's two handles, along the directions they already have, until the curve bends as tightly just after the anchor as just before it, keeping the product of the two lengths. Fixing one anchor shifts the curvature at its neighbors, so it repeats over the anchors until they settle. With anchors selected it harmonizes those; with none, every smooth anchor of the path. Corners, open ends, and anchors the curve inflects through are left alone, since lengths alone cannot join them. The blob opens with lopsided handles at all four anchors and the comb on, so the steps in the comb show what it fixes.",
+    hint: 'Press Harmonize curvature in the bar, or <kbd>H</kbd>, and watch the comb join up at each anchor; undo with the button or <kbd>Mod+Z</kbd> to compare. Click an anchor first, or <kbd>Shift</kbd>-click several, to harmonize only those.',
+    load: () => import('./demos/HarmonizeLabDemo').then((m) => m.HarmonizeLabDemo),
+    path: 'apps/site/demos/HarmonizeLabDemo.tsx',
   },
   {
     id: 'lab-simplify-brush',
@@ -728,6 +788,66 @@ const DEMO_META: DemoMeta[] = [
     hint: 'The two upper paths open selected: press Bridge in the bar, or <kbd>Mod+Shift+J</kbd>, then undo and try another Tension. Join beside it spans the same gap straight. To bridge in path edit, double-click a path, select its two ends and press Bridge anchors.',
     load: () => import('./demos/BridgeLabDemo').then((m) => m.BridgeLabDemo),
     path: 'apps/site/demos/BridgeLabDemo.tsx',
+  },
+  {
+    id: 'lab-trim',
+    title: 'Trim segment',
+    category: 'Geometry',
+    description:
+      'Trim segment cuts a stroke back to where other strokes cross it. While the tool is up, a hover binding asks `planTrim`, the same plan the click commits, for the piece under the pointer, and the tool draws it dashed in red. A click with `useTrimTool` hands the press to the `trimPath` action, which finds the topmost stroke within reach and removes its piece between the nearest crossings on either side, with any other path or with itself, through `trimPathAt` in `@weasel-js/geom`. Curves are split where they are cut and stay curves; a closed shape is opened; a piece with an open end runs back to the first crossing, and a stroke with nothing left is deleted. Each trim is one undo step. Click reach is the binding param the tool passes along.',
+    hint: 'Move over a line: the piece a click would cut shows dashed in red. Click a piece between two crossings to cut it away, or the circle between the two points where the purple line crosses it. Click an end piece to cut back to the first crossing. Undo with the button or <kbd>Mod+Z</kbd>.',
+    load: () => import('./demos/TrimLabDemo').then((m) => m.TrimLabDemo),
+    path: 'apps/site/demos/TrimLabDemo.tsx',
+  },
+  {
+    id: 'lab-extend',
+    title: 'Extend to next path',
+    category: 'Geometry',
+    description:
+      'Extend to next path, the `extendToMeet` command: an open end travels along its tangent until it meets the first stroke in its way, through `extendToMeet` in `@weasel-js/geom`. A straight end grows longer; a curved one gains a straight run, so the tangent carries on unbroken. With `useExtendTool` a click picks the end nearest it; with a selection the command extends every open end of it, and in anchor editing just the selected end anchors. The lab binds the command to <kbd>E</kbd> through `<SceneCanvas tune>`. An end that meets nothing stays put, and each extend is one undo step.',
+    hint: 'With the Extend tool, click near the right end of the short orange line: it grows to the green wall. The curve carries on in a straight line from its end. Or pick Select, select strokes, and press <kbd>E</kbd>. Undo with <kbd>Mod+Z</kbd>.',
+    load: () => import('./demos/ExtendLabDemo').then((m) => m.ExtendLabDemo),
+    path: 'apps/site/demos/ExtendLabDemo.tsx',
+  },
+  {
+    id: 'lab-smudge-brush',
+    title: 'Smudge brush',
+    category: 'Geometry',
+    description:
+      "A round brush that pushes the outline of the selected paths along with the pointer, through `smudgePath` in `@weasel-js/geom`. Points under the brush move with it, most at its center and not at all at its rim, and a segment the brush meets that is longer than a third of its radius gets anchors added at its middle until it can bend there, so a straight edge dents instead of swinging about its corners. `useSmudgeBrushTool` only binds a drag to the `smudgeBrush` action, which owns the stroke and commits it as one undo step. The brush's radius is in screen pixels, so it covers the same part of the canvas at any zoom; it and the strength are the action's params, set here with `<SceneCanvas tune>` from the control panel. The cursor is a ring the size of the brush, the same one the Simplify brush draws, shown wherever a drag would smudge.",
+    hint: 'The Smudge brush is active and both shapes are selected: the ring under the pointer is the brush. Drag across an edge to push it. Change Brush radius and Strength in the control panel. Each stroke is one undo step, with the button or <kbd>Mod+Z</kbd>. Press <kbd>V</kbd> to select a single shape, then <kbd>S</kbd> to smudge again.',
+    load: () => import('./demos/SmudgeBrushLabDemo').then((m) => m.SmudgeBrushLabDemo),
+    path: 'apps/site/demos/SmudgeBrushLabDemo.tsx',
+  },
+  {
+    id: 'lab-distort',
+    title: 'Perspective and free distort',
+    category: 'Geometry',
+    description:
+      "`useDistortTool` puts a handle on each corner of the box around the selected paths. The first drag gives every selected path one shared distort, held on each path as `data.warp` beside the geometry it made, so the corners come back where they were left the next time the paths are selected with the tool — after a move, a resize or a rotation too. Free maps the box bilinearly, so the checkerboard's inner lines bend; Perspective maps it projectively, so every line stays straight and the far side foreshortens. Each segment is carried through the map and refitted as cubics within the refit tolerance, keeping every anchor, and a segment the map keeps straight stays a line. Switching Mode or the tolerance remakes the held warp through `configureWarp`; Expand warp (`expandWarp`) drops it and leaves plain paths.",
+    hint: 'Drag any corner handle. Switch Mode between Free and Perspective to see the same corners remapped. Press Expand warp in the palette to keep the shape as plain paths, then undo with <kbd>Mod+Z</kbd>.',
+    load: () => import('./demos/DistortLabDemo').then((m) => m.DistortLabDemo),
+    path: 'apps/site/demos/DistortLabDemo.tsx',
+  },
+  {
+    id: 'lab-envelope-mesh',
+    title: 'Envelope mesh',
+    category: 'Geometry',
+    description:
+      "`useEnvelopeTool` lays a grid of control points over the box around the selected paths, and dragging any of them warps the shapes through the mesh. Bicubic runs a smooth spline surface through every point, so a pull spreads across neighboring patches; Coons fills each patch from the splines along its four edges alone. Changing Rows or Columns resamples the held mesh at the new resolution where the current one carries an even grid, so the shape changes as little as the new grid allows. The mesh is held on the path as `data.warp` until Expand warp drops it.",
+    hint: 'Drag a mesh point on the striped banner. Change Rows, Columns or Mapping in the control panel and drag again. Press Expand warp in the palette to keep the result as a plain path.',
+    load: () => import('./demos/EnvelopeLabDemo').then((m) => m.EnvelopeLabDemo),
+    path: 'apps/site/demos/EnvelopeLabDemo.tsx',
+  },
+  {
+    id: 'lab-puppet-warp',
+    title: 'Puppet warp',
+    category: 'Geometry',
+    description:
+      "`usePuppetTool` pins a path where it is clicked and bends it when a pin is dragged. The deformation is rigid moving least squares: each point takes the rotation and translation that best carry the pins to where they were dragged, weighting near pins over far ones. It needs no triangulation and no solver, and a point's image is always a rigid motion of it, so nothing can fly off — far from every pin the shape moves as one piece, and a pin left alone holds its place. The cost is that it weighs straight-line distance rather than distance through the shape. The eel opens with three pins placed by `withPathWarp`.",
+    hint: 'Drag the pin at the eel\'s head and the tail holds. Click on the eel to add a pin, <kbd>Alt</kbd>-click a pin to take it out. Press Expand warp in the palette to keep the bent shape as a plain path.',
+    load: () => import('./demos/PuppetLabDemo').then((m) => m.PuppetLabDemo),
+    path: 'apps/site/demos/PuppetLabDemo.tsx',
   },
   {
     id: 'symmetry-lab',
@@ -981,6 +1101,16 @@ const DEMO_META: DemoMeta[] = [
     hint: 'Press "Store size 500": the record keeps 500, and the value reads 64, the leaf\'s max. Reload to see it persist.',
     load: () => import('./demos/PrefsDemo').then((m) => m.PrefsDemo),
     path: 'apps/site/demos/PrefsDemo.tsx',
+  },
+  {
+    id: 'kit-settings',
+    title: 'Kit settings',
+    package: 'prefs',
+    description:
+      "Behavior a user sets once for every component — typeahead and hover-open delays, a stepper's repeat, the double-click interval, the drag threshold, hit-target sizes — read through `useKitSetting` with each component's own constant as the default. `ui` and `core` each export a schema group for theirs, `mergePrefGroups` composes them into one, and `<KitSettingsFromPrefs>` hands a prefs store's values to everything inside. With `css`, the same values are written as `--wzl-kit-*` custom properties; the panel under the specimens shows that sheet.",
+    hint: 'Set Trees → Typeahead to 2000 and type "ap" slowly into the tree, or raise Targets → Selection handle and select a rectangle. Values persist across a reload; Reset puts them back.',
+    load: () => import('./demos/KitSettingsDemo').then((m) => m.KitSettingsDemo),
+    path: 'apps/site/demos/KitSettingsDemo.tsx',
   },
   {
     id: 'registry',

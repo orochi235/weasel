@@ -46,6 +46,19 @@ export {
   pointAlongPath,
   type PathStation,
   type PointAlongPathOptions,
+  measurePath,
+  type MeasurePathOptions,
+  type PathMeasure,
+  blendPaths,
+  prepareBlend,
+  type BlendPathsOptions,
+  type PathBlend,
+  bendAlongPath,
+  type BendAlongPathOptions,
+  repeatAlongPath,
+  stationsAlongPath,
+  type RepeatAlongPathOptions,
+  type RepeatStation,
   translatePath,
   scalePathToBounds,
   transformPath,
@@ -122,6 +135,10 @@ export { poseRotationOf, rotatePathAround, type PoseRotation } from '@weasel-js/
 export {
   poseFrameOf, poseFrameInverseOf, poseLinearOf, pathThroughPoseFrame, type PoseLinear,
 } from '@weasel-js/geom';
+export {
+  extendToMeet, smudgePath, type SmudgePathOptions, intersectSegments, lengthenOpenEnd, openEndRay, openPathEnds, pathCrossings, pathSegments, trimPathAt,
+  type ExtendToMeetOptions, type OpenPathEnd, type PathCrossing, type PathSegment, type PathStop, type SegmentCrossing, type TrimPathOptions, type TrimResult,
+} from '@weasel-js/geom';
 export { createPathLayer, type CreatePathLayerOpts } from './pathLayer';
 export { pathPoseDescriptor } from 'core/geometry/pathPoseDescriptor';
 export { pathOriginProjection } from './originProjection';
@@ -135,7 +152,17 @@ export {
   type CreatePathEditingOverlayLayerOptions,
   type PathEditingOverlayStyle,
 } from './pathEditingOverlayLayer';
-export { PATH_COMB_CHROME_ID, type PathEditCombOptions } from './pathEditComb';
+export {
+  GEOMETRY_BOUND_DATA,
+  withoutGeometryBoundData,
+  type FinishedPathEdit,
+  type PathEditExtension,
+  type PathEditMark,
+  type PathEditMarksCtx,
+  type PathEditPart,
+  type PathEditStore,
+  type PathEditTarget,
+} from './pathEditExtension';
 export {
   pathUnion,
   pathIntersect,

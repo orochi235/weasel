@@ -1,15 +1,17 @@
 import { useEffect, useMemo } from 'react';
 import { useLatest } from '@weasel-js/react';
-import { KIT_STANDARD_ACTION_IDS } from 'interactions/actions/useStandardActions';
+import type { Action } from '@weasel-js/routing';
 import { createLongPressFeedbackContribution } from '../../features/longPress/longPressFeedback';
 import { useTools, type Contribution, type Tool, type ToolsApi } from '../../tools/overlayBinding';
 import {
-  featureActionIds,
-  featureAmbient,
+  presetActions,
+  presetAmbient,
+  presetContributions,
   resolveFeatures,
-  type BaseFeature,
-  type Feature,
+  type EnabledPresets,
   type FeatureBindingOptions,
+  type FeatureEntry,
+  type NamedPresets,
 } from './features';
 import type { SceneCanvasProps } from './props';
 import type { ToolsPatch } from './toolRegistry';
@@ -23,17 +25,27 @@ function isToolsApi(tools: ToolsApi | ToolsPatch): tools is ToolsApi {
   return typeof (tools as ToolsApi).setActive === 'function';
 }
 
-/** The presets a canvas runs with. Keyed on the ids, not the array, so an
- *  inline `features={['draw']}` does not re-derive every render. */
+const presetSerials = new WeakMap<object, number>();
+let nextSerial = 0;
+const entryKey = (e: FeatureEntry): string => {
+  if (typeof e === 'string') return e;
+  let n = presetSerials.get(e);
+  if (n === undefined) presetSerials.set(e, (n = nextSerial++));
+  return `#${n}`;
+};
+
+/** The presets a canvas runs with. Keyed on the entries, not the array, so
+ *  an inline `features={['draw', pathTools]}` does not re-derive every render. */
 export function useEnabledFeatures(
-  features: readonly Feature[] | undefined,
+  features: readonly FeatureEntry[] | undefined,
+  named: NamedPresets | null,
   hasViewport: boolean,
-): ReadonlySet<BaseFeature> {
-  const featuresKey = (features ?? []).join('|');
+): EnabledPresets {
+  const featuresKey = (features ?? []).map(entryKey).join('|');
   return useMemo(
-    () => resolveFeatures(features, { viewport: hasViewport }),
+    () => resolveFeatures(features, named, { viewport: hasViewport }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [featuresKey, hasViewport],
+    [featuresKey, named, hasViewport],
   );
 }
 
@@ -45,7 +57,7 @@ export function useEnabledFeatures(
 export function useCanvasTools(args: {
   /** The canvas's select tool, which is built from its scene and pickers. */
   select: Tool;
-  enabled: ReadonlySet<BaseFeature>;
+  enabled: EnabledPresets;
   tools: Props['tools'];
   defaultTools: Props['defaultTools'];
   toolOptions: Props['toolOptions'];
@@ -80,8 +92,8 @@ export function useCanvasTools(args: {
   const feedbackOpt = args.pressFeedback ?? true;
   const pressFeedback = feedbackOpt === true ? defaultPressFeedback : feedbackOpt || null;
   const mergedAmbient = useMemo(
-    () => (pressFeedback ? [...(ambient ?? []), pressFeedback] : (ambient ?? [])),
-    [ambient, pressFeedback],
+    () => [...presetContributions(enabled), ...(ambient ?? []), ...(pressFeedback ? [pressFeedback] : [])],
+    [enabled, ambient, pressFeedback],
   );
 
   const internal = useTools({
@@ -99,30 +111,41 @@ export function useCanvasTools(args: {
 }
 
 /**
- * The presets' ambient bindings, and the kit-standard actions the canvas
- * leaves unregistered. The bindings are not tools and sit outside `tools`, so
- * they apply under a takeover too. An action is registered when a preset
- * names it or a tool or contribution on this canvas binds it: a tool brings
- * the actions it routes to, so `defaultTools={['rect']}` works under any preset.
+ * The presets' ambient bindings, and the standard actions the canvas
+ * registers. The bindings are not tools and sit outside `tools`, so they apply
+ * under a takeover too. An action is registered when an enabled preset brings
+ * it, or when it is in `pool` and a tool or contribution on this canvas binds
+ * it: a tool brings the actions it routes to, so `defaultTools={['rect']}`
+ * works under any preset.
  */
 export function useFeatureBindings(args: {
-  enabled: ReadonlySet<BaseFeature>;
+  enabled: EnabledPresets;
+  /** Actions registered only when something binds them. */
+  pool: readonly Action[];
   tools: Pick<ToolsApi, 'registry' | 'ambient'>;
   move: FeatureBindingOptions['move'];
   rotate: FeatureBindingOptions['rotate'];
-}): { contributions: Contribution[]; standardActionsExclude: string[] } {
-  const { enabled, tools, move, rotate } = args;
+}): { contributions: Contribution[]; standardActions: Action[] } {
+  const { enabled, pool, tools, move, rotate } = args;
   const contributions = useMemo<Contribution[]>(
-    () => featureAmbient(enabled, { move, rotate }),
+    () => presetAmbient(enabled, { move, rotate }),
     [enabled, move, rotate],
   );
-  const standardActionsExclude = useMemo(() => {
-    const include = featureActionIds(enabled);
-    const bound = [...Object.values(tools.registry), ...tools.ambient, ...contributions];
-    for (const entry of bound) {
-      for (const b of entry.bindings ?? []) include.add(b.actionId);
+  const standardActions = useMemo(() => {
+    const out = presetActions(enabled);
+    const have = new Set(out.map((a) => a.id));
+    const bound = new Set<string>();
+    for (const entry of [...Object.values(tools.registry), ...tools.ambient, ...contributions]) {
+      for (const b of entry.bindings ?? []) bound.add(b.actionId);
     }
-    return KIT_STANDARD_ACTION_IDS.filter((id) => !include.has(id));
-  }, [enabled, tools, contributions]);
-  return { contributions, standardActionsExclude };
+    for (const a of pool) {
+      if (bound.has(a.id) && !have.has(a.id)) {
+        have.add(a.id);
+        out.push(a);
+      }
+    }
+    return out;
+  }, [enabled, pool, tools, contributions]);
+  return { contributions, standardActions };
 }
+

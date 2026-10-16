@@ -20,7 +20,7 @@ import { wheelInput } from './channels/wheel';
 /** What a listener set reads. Each thunk answers for the hook's latest render. */
 export interface InputSources
   extends Pick<DispatchCoreSources, 'root' | 'views' | 'context' | 'actions'>,
-    Pick<PointerInputOptions, 'longPress' | 'onClick' | 'onDoubleClick' | 'clicks'> {
+    Pick<PointerInputOptions, 'longPress' | 'kitSettings' | 'onClick' | 'onDoubleClick' | 'clicks'> {
   /** Every live dispatcher — what a cancel-everything has to reach. */
   dispatchers(): Dispatcher[];
   requestRedraw(): void;
@@ -64,6 +64,7 @@ export function attachInput(
   const hover = hoverCursorInput(core, src.paintedCursor, () => held?.count() ?? 0, src.cursorSink);
   const pointer: PointerInput = pointerInput(core, {
     longPress: src.longPress,
+    kitSettings: src.kitSettings,
     onClick: src.onClick,
     onDoubleClick: src.onDoubleClick,
     clicks: src.clicks,

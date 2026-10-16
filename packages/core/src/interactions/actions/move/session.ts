@@ -97,8 +97,8 @@ export function beginMove(
 
   if (!selection || !scene) return null;
   const pc = scene.composition;
-  // Anchors and segments sit on the selected body, and this binding ties editAnchors' and
-  // bendSegment's on specificity; with no mode registry to filter move out, declining is what
+  // Anchors, segments, and balance grips sit on the selected body, and this binding ties the
+  // path-edit drags' on specificity; with no mode registry to filter move out, declining is what
   // lets them through.
   if (isPathEditPart(ctx.drag?.affordance)) return null;
 
@@ -122,7 +122,7 @@ export function beginMove(
     reparentOnDrop(gesture),
   ];
   const dragThresholdPx = (params?.['dragThresholdPx'] as number | undefined)
-    ?? DRAG_THRESHOLD_PX;
+    ?? ctx.deps.kitSettings?.get('gestures.dragPx') ?? DRAG_THRESHOLD_PX;
   const lifecycle = readGestureLifecycle(params, 'Move', behaviors);
   // A behavior that commits after the gesture has ended, a coast coming to
   // rest, lands its batch the way the gesture's own commit does.

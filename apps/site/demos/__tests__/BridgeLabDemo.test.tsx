@@ -1,6 +1,7 @@
 import { cleanup, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { DEFAULT_BRIDGE_TENSION, pathToAnchors, type PolygonPath } from '@weasel-js/core';
+import { pathToAnchors, type PolygonPath } from '@weasel-js/core';
+import { DEFAULT_BRIDGE_TENSION } from '@weasel-js/path-tools';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { StrictMode } from 'react';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';

@@ -27,7 +27,7 @@ import { validateActionId, validateActionDefaultBinding, type ActionsRegistry } 
 import { createMenuHost, type MenuHost } from '../../menus/menuHost';
 import { MenuHostContext } from '../../menus/MenuHostContext';
 import { pushOwner, ScopeNode } from './scopeNode';
-import { tuneAction, type ActionTuning } from './tuning';
+import { tuneAction, tunedParams, type ActionTuning } from './tuning';
 
 /** @internal Provided by `<ActionsProvider>`, `<InputScope>` and `<Yoke>`. */
 export const ActionsContext = createContext<ActionsRegistry | null>(null);
@@ -82,13 +82,19 @@ export class ActionsNode extends ScopeNode<ActionsNode> {
     return undefined;
   }
 
-  /** `a` under every tuning for its id from the root down to here. */
-  private tuned(a: Action): Action {
+  /** Every tuning for `id` from the root down to here, root first. */
+  private tuningsOf(id: string): ActionTuning[] {
     const tunings: ActionTuning[] = [];
     for (const n of this.chain()) {
-      const stack = n.tunings.get(a.id);
+      const stack = n.tunings.get(id);
       if (stack) tunings.unshift(...stack);
     }
+    return tunings;
+  }
+
+  /** `a` under every tuning for its id from the root down to here. */
+  private tuned(a: Action): Action {
+    const tunings = this.tuningsOf(a.id);
     return tunings.length ? tuneAction(a, tunings) : a;
   }
 
@@ -209,6 +215,7 @@ export class ActionsNode extends ScopeNode<ActionsNode> {
         this.changed();
       };
     },
+    paramsOf: (id: string, given?: Record<string, unknown>) => tunedParams(this.tuningsOf(id), given),
     list: () => this.snapshot(),
     trigger: (id: string, params?: Record<string, unknown>) => {
       const leaf = this.start();

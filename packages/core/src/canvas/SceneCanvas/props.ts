@@ -21,7 +21,7 @@ import type { UseRotateOptions } from 'interactions/actions/rotate/options';
 import type { SnapStrategy } from 'interactions/gestures/types';
 import type { ReactNode } from 'react';
 import type { Animator } from '@weasel-js/animator';
-import { HANDLE_BASE_PX, targetSizesPx } from '../../core/device/targets';
+import { HANDLE_BASE_PX, targetSizesPx, type TargetSizesPx } from '../../core/device/targets';
 import type { DeviceProfile } from '../../core/device/types';
 import type { NodeRoutingEntry } from '../../core/scene/NodeRouting';
 import type { DebugConfig } from '../../debug/types';
@@ -39,9 +39,7 @@ import type {
 } from '../deps';
 import type { SurfaceContribution } from '../surfaceContribution';
 import type { CameraProps } from '../useCanvasView';
-import type {
-  Feature
-} from './features';
+import type { FeatureEntry } from './features';
 import type { BuiltinToolOptions } from './useBuiltinShapeTools';
 import type { VersionCheck } from './useContributionRoles';
 import type { SceneCanvasViewport } from './viewportProp';
@@ -89,10 +87,10 @@ export type SceneCanvasLayers<TNode extends { id: string }, TPose> = LayersMap<
 /** Deep-merge user-supplied `layers` with kit defaults. Slots the user
  *  doesn't mention get filled with defaults; slots explicitly set to
  *  `null` are dropped. Partial slot configs are shallow-spread on top of the
- *  default slot config. `targetScale` comes from the resolved {@link DeviceProfile}. */
+ *  default slot config. `targetScale` (from the {@link DeviceProfile}) and `baseSizes` go to `targetSizesPx`. */
 export function mergeLayersWithDefaults<TData, TLayer extends string, TPose>(
   user: SceneCanvasLayers<Node<TData, TLayer, TPose>, TPose> | undefined,
-  targetScale = 1,
+  targetScale = 1, baseSizes: Partial<TargetSizesPx> = {},
 ): LayersMap<Node<TData, TLayer, TPose>, TPose> {
   const defaults = {
     scene: {
@@ -102,7 +100,7 @@ export function mergeLayersWithDefaults<TData, TLayer extends string, TPose>(
       ) => DrawCommand[],
       paintBounds: defaultPaintBounds<TData, TLayer, TPose>,
     },
-    selectionOverlay: { handles: { size: targetSizesPx(targetScale).handle } },
+    selectionOverlay: { handles: { size: targetSizesPx(targetScale, baseSizes).handle } },
   };
 
   if (!user) return defaults as LayersMap<Node<TData, TLayer, TPose>, TPose>;
@@ -342,11 +340,13 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      *   whatever `ingestion.handlers` accept, on Cmd/Ctrl+V or an OS drop.
      * - `draw` — all of the above.
      *
+     * Any `FeaturePreset` object goes beside the names: core's own
+     * (`pathsPreset`), or one a package ships.
      * Tools add the actions they bind — a shape tool brings `insert` — so
      * `defaultTools` composes with any preset. `actions` then adds, overrides
      * or removes on top of what the presets registered.
      */
-    features?: readonly Feature[];
+    features?: readonly FeatureEntry[];
 
     /** Extra tools or overrides keyed by id, or a full `ToolsApi` takeover.
      *

@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import type { PrefLeaf } from '@weasel-js/prefs';
+import type { LiveControl } from '../Prefs/commitPolicy';
 import type { EntryAt } from '../Prefs/entry';
 import type { PrefFieldChoice } from '../Prefs/schema';
 
@@ -88,6 +89,9 @@ export interface PropertyRenderContext {
   hiddenAt?: (path: string) => boolean;
   /** An entry of a list or a map under this leaf, as the conditions that read the entry leave it. */
   entryAt?: EntryAt;
+  /** Which live controls write only the value an edit settles on, as the panel's kit settings have it. Absent, the
+   *  panel's defaults. */
+  settles?: Readonly<Record<LiveControl, boolean>>;
 }
 
 /**

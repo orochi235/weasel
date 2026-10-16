@@ -1,19 +1,21 @@
 /**
  * Screen-space render layer for path-editing chrome — the open path's
  * outline, anchor markers, tangent lines, and control-point dots for a
- * polygon path that is the current edit target, and its curvature comb when
- * chrome-caps shows it. Marker sizes stay constant regardless of zoom.
+ * polygon path that is the current edit target, under them whatever marks
+ * its path-edit extensions draw. Marker sizes stay constant regardless of zoom.
  */
 
 import type { DrawCommand } from '@weasel-js/renderer';
 import type { RenderLayer } from 'core/layers/render';
-import { type AnchorSet, type Path, type PolygonPath, type View, pathToAnchors, rectMarkerPath } from '@weasel-js/geom';
+import {
+  type AnchorSet, type Path, type PolygonPath, type View, pathToAnchors, rectMarkerPath,
+} from '@weasel-js/geom';
 import type { GesturePreviewSource } from 'canvas/gestureBounds';
 import { previewSourcesFrom, isVisibleFrom } from 'canvas/drawEnvelope';
 import {
   anchorMarkerCommands, DEFAULT_OVERLAY_STYLE, worldToScreen, type PathEditingOverlayStyle,
 } from './anchorMarkers';
-import { combCommands, PATH_COMB_CHROME_ID, type PathEditCombOptions } from './pathEditComb';
+import type { PathEditExtension, PathEditMark } from './pathEditExtension';
 
 export type { PathEditingOverlayStyle } from './anchorMarkers';
 
@@ -41,14 +43,18 @@ export interface CreatePathEditingOverlayLayerOptions {
   /** In-flight anchor-marquee rect in world coords, or null. Drawn as a
    *  rubber band while `marqueeAnchorsAction` is dragging. */
   getMarquee?(view: View): { x: number; y: number; width: number; height: number } | null;
+  /** The edited node's committed pose and data, which extensions' marks read. */
+  getNode?(id: string): { pose: unknown; data: unknown } | null;
+  /** The path-edit extensions whose marks are drawn, in order. */
+  getExtensions?(): readonly PathEditExtension[];
+  /** The selected extension mark, or null. */
+  getSelectedMark?(): PathEditMark | null;
   /** Optional styling overrides. */
   style?: PathEditingOverlayStyle;
-  /** How the curvature comb is drawn, read per frame. Whether it shows is
-   *  chrome-caps' call (`path-edit.comb`). */
-  getComb?(): PathEditCombOptions | undefined;
 }
 
 const EMPTY_SELECTION: ReadonlySet<number> = new Set();
+const ALWAYS = (): boolean => true;
 
 /** Render layer that draws the outline and the anchors and control handles
  *  of the path currently being anchor-edited. Draws nothing when no path is
@@ -74,10 +80,22 @@ export function createPathEditingOverlayLayer(
       if (!pose || pose.kind !== 'polygon') return [];
 
       const selected = opts.getSelectedAnchors?.() ?? EMPTY_SELECTION;
-      // Under the markers, which are what a press reaches first.
-      const out: DrawCommand[] = !isVisible || isVisible(PATH_COMB_CHROME_ID)
-        ? combCommands(pathToAnchors(pose as PolygonPath) as AnchorSet, view, opts.getComb?.())
-        : [];
+      // Extensions' marks under the markers, which are what a press reaches first.
+      const out: DrawCommand[] = [];
+      const node = opts.getNode?.(id);
+      if (node) {
+        const mark = opts.getSelectedMark?.() ?? null;
+        const anchors = pathToAnchors(pose as PolygonPath) as AnchorSet;
+        const toScreen = (p: { x: number; y: number }) => worldToScreen(p, view);
+        for (const ext of opts.getExtensions?.() ?? []) {
+          if (!ext.marks) continue;
+          out.push(...ext.marks({
+            id, node, path: pose as PolygonPath, anchors, view, toScreen,
+            isVisible: isVisible ?? ALWAYS,
+            selected: mark?.owner === ext.id ? mark.index : null,
+          }));
+        }
+      }
       out.push(...anchorMarkerCommands(pose as PolygonPath, view, selected, style));
 
       // Marquee rubber band, on top of everything.

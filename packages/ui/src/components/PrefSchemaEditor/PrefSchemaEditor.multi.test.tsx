@@ -4,6 +4,12 @@ import { useState } from 'react';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { PrefSchemaEditor } from './PrefSchemaEditor';
 
+/** Types `value` and leaves the field, which is when a typed field commits. */
+const settle = (el: HTMLElement, value: string): void => {
+  fireEvent.change(el, { target: { value } });
+  fireEvent.blur(el);
+};
+
 afterEach(cleanup);
 
 const START: PrefGroup = {
@@ -87,7 +93,7 @@ describe('PrefSchemaEditor with several nodes selected', () => {
   it('writes an edit to every selected node, as one step back', () => {
     render(<Live />);
     pickTwo();
-    fireEvent.change(field('Description'), { target: { value: 'Both.' } });
+    settle(field('Description'), 'Both.');
     fireEvent.click(row('grid'));
     expect(field('Description')).toHaveValue('Both.');
     fireEvent.click(row('snap'));
@@ -101,7 +107,7 @@ describe('PrefSchemaEditor with several nodes selected', () => {
     render(<Live />);
     pickTwo();
     fireEvent.focus(field('Name'));
-    fireEvent.change(field('Name'), { target: { value: 'Same' } });
+    settle(field('Name'), 'Same');
     fireEvent.blur(field('Name'));
     expect(row('grid')).toBeInTheDocument();
     expect(row('snap')).toBeInTheDocument();

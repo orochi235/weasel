@@ -41,6 +41,12 @@ describe('the settings of a layout\'s dialog', () => {
     expect(within(settings()).getByText('snap')).toBeInTheDocument();
   });
 
+  it('lists a setting a tag of its own finds', () => {
+    const over = { name: '', children: { look: { name: 'Look', children: { glow: { kind: 'boolean', name: 'Glow', description: '', default: false, tags: ['halo'] } } } } } as const;
+    render(<SettingsTree over={over as never} layout={{ name: '', children: {} }} sought="halo" onDrag={() => {}} onDrop={() => {}} />);
+    expect(within(settings()).getByText('glow')).toBeInTheDocument();
+  });
+
   it('carries a pointer to the setting dragged out, and a heading of pointers for a group', () => {
     const dropped: PaletteDrag[] = [];
     render(<SettingsTree over={SETTINGS} layout={CODE} sought="" onDrag={() => {}} onDrop={(drag) => dropped.push(drag)} />);

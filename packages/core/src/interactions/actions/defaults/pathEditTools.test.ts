@@ -5,28 +5,27 @@ import { editAnchorsAction } from '../edit-anchors/action';
 import { bendSegmentAction } from './bendSegment';
 import { marqueeAnchorsAction, selectAnchorAction } from './anchorEditing';
 import { exitPathEditToolAction, pathEditToolAction } from './pathEditTools';
-import { simplifyBrushToolAction } from './simplifyBrush';
 
 const run = (a: { invoker?: unknown }, deps: unknown) => (a.invoker as ImmediateInvoker).run(deps as never, undefined);
+const brush = pathEditToolAction('brush', 'Brush');
 
 describe('path-edit tools', () => {
   it('toggles its tool on and off, and reads as pressed while on', () => {
     const dep = makeEditAnchorsDep({ editingId: 'p1' });
     const deps = { editAnchors: dep } as never;
-    expect(simplifyBrushToolAction.id).toBe('pathEditTool.simplifyBrush');
-    expect(simplifyBrushToolAction.group).toBe('anchors');
-    expect(simplifyBrushToolAction.active?.(deps)).toBe(false);
-    run(simplifyBrushToolAction, deps);
-    expect(dep.tool).toBe('simplifyBrush');
-    expect(simplifyBrushToolAction.active?.(deps)).toBe(true);
-    run(simplifyBrushToolAction, deps);
+    expect(brush.id).toBe('pathEditTool.brush');
+    expect(brush.active?.(deps)).toBe(false);
+    run(brush, deps);
+    expect(dep.tool).toBe('brush');
+    expect(brush.active?.(deps)).toBe(true);
+    run(brush, deps);
     expect(dep.tool).toBeNull();
   });
 
   it('switches from one tool straight to another', () => {
     const dep = makeEditAnchorsDep({ editingId: 'p1' });
     const lengthen = pathEditToolAction('lengthen', 'Lengthen');
-    run(simplifyBrushToolAction, { editAnchors: dep });
+    run(brush, { editAnchors: dep });
     run(lengthen, { editAnchors: dep });
     expect(dep.tool).toBe('lengthen');
   });
@@ -35,7 +34,7 @@ describe('path-edit tools', () => {
     const dep = makeEditAnchorsDep({ editingId: 'p1' });
     const deps = { editAnchors: dep } as never;
     expect(exitPathEditToolAction.enabled?.(deps)).not.toBe(true);
-    dep.setTool('simplifyBrush');
+    dep.setTool('brush');
     expect(exitPathEditToolAction.enabled?.(deps)).toBe(true);
     run(exitPathEditToolAction, deps);
     expect(dep.tool).toBeNull();
@@ -45,7 +44,7 @@ describe('path-edit tools', () => {
     const dep = makeEditAnchorsDep({ editingId: 'p1' });
     const deps = { editAnchors: dep } as never;
     const plain = [editAnchorsAction, bendSegmentAction, marqueeAnchorsAction, selectAnchorAction];
-    dep.setTool('simplifyBrush');
+    dep.setTool('brush');
     for (const a of plain) expect(a.enabled?.(deps), a.id).not.toBe(true);
     dep.setTool(null);
     for (const a of [editAnchorsAction, marqueeAnchorsAction, selectAnchorAction]) {

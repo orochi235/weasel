@@ -51,6 +51,10 @@ export interface ActionsRegistry {
    *  apply to whichever descriptor is live for it, registered before the
    *  tuning or after. Returns a release. See {@link ActionTuning}. */
   tune(id: string, tuning: ActionTuning): () => void;
+  /** The params an invocation of `id` from this scope starts with when it
+   *  passes `given`: every tuning's params, `given` laid over them. What a
+   *  tool's chrome reads to show what the action it binds will do. */
+  paramsOf(id: string, given?: Record<string, unknown>): Record<string, unknown>;
   list(): readonly Action[];
   /** Fire an immediate-invoker action by id. The optional `params` arg is
    *  forwarded to `ImmediateInvoker.run` as its second argument — use it for

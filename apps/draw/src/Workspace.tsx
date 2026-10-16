@@ -11,6 +11,7 @@ import {
   type View,
   workspaceTintLayer
 } from '@weasel-js/core';
+import { pathTools } from '@weasel-js/path-tools';
 import { unpackSvgFiles } from '@weasel-js/svg';
 import { SceneGradientHandles, ToastRegion } from '@weasel-js/ui';
 import { type ReactElement, type RefObject, useCallback, useMemo } from 'react';
@@ -135,7 +136,7 @@ export function Workspace(props: WorkspaceProps): ReactElement {
         onCancel={() => machine.cancelMode()}
       />
       {hostDims.width > 0 && hostDims.height > 0 && (
-        <SceneCanvas<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose> features={['draw']}
+        <SceneCanvas<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose> features={['draw', pathTools]}
           claimKeys
           ref={props.onCanvas}
           ambient={ambient}
