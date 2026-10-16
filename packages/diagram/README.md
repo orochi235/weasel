@@ -340,10 +340,13 @@ const run: EffectRun = {
 
 A stage the run has no entry for is one it never reached. The chart fades such
 a stage, its rows and its wires, and a decision's wires to the outputs it did
-not take; writes each stage's `cost`, in milliseconds, above its top-right
+not take, every one of them when `taken` names none; where a look draws a
+decision as something else, as `rack` draws a skip as an arc, the look's
+`exits` say which edges stand for which exit. It writes each stage's `cost`, in milliseconds, above its top-right
 corner; and writes each output's value into the row a look keeps for it when
 its `showValues` option is on, with a dash for an output the run says nothing
-about. Port dots are drawn outside the scene and do not fade.
+about. Port dots are drawn outside the scene and do not fade, and a decision a
+look does not draw has nowhere to show its cost.
 
 A run never lays the chart out again or refits it: `paintRun(pipeline, specs,
 run)` edits the specs the look already built, data only, and `DiagramView`
@@ -412,7 +415,8 @@ A decision stage draws as a branch symbol, chosen by `branch`:
 signal enters on the left; inputs of a `control` type enter at the top, and so
 does the input a `'bar'` tests, when the stage has more than one input.
 
-To write a look, return `{ data, scene, color }`; `scene` takes any
+To write a look, return `{ data, scene, color }`, and `exits` if it draws a
+decision as something other than itself; `scene` takes any
 `diagramScene` option. The shipped looks are built from these, which are
 exported for yours:
 

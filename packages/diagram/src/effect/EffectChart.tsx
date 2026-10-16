@@ -97,11 +97,11 @@ export function EffectChart<TOptions = unknown>({
       showsPort: (port) => port.type !== undefined,
       fill: (port) => ({ paint: { color: drawn.color(port.type) } }),
     };
-    return { specs: diagramScene(drawn.data, drawn.scene), portOptions };
+    return { specs: diagramScene(drawn.data, drawn.scene), portOptions, exits: drawn.exits };
   }, [pipeline, look, options]);
 
   // Keyed by the layout alone: a run edits the scene in place.
-  const painted = useMemo(() => paintRun(pipeline, built.specs, run), [pipeline, built, run]);
+  const painted = useMemo(() => paintRun(pipeline, built.specs, run, built.exits), [pipeline, built, run]);
 
   const stageIds = useMemo(() => new Set(pipeline.stages.map((s) => s.id)), [pipeline]);
   return (

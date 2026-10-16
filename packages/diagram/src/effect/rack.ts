@@ -1,4 +1,5 @@
 import type { PortAnchor, PortSpec } from '../types';
+import { edgeIdOf } from '../fromData';
 import {
   boxNode, drawableWires, exitLabel, isControl, kindOf, portOn, sceneStyles, typeColors, uniqueGroups, uniqueStages,
   wireEdge, wireStyle, type EffectLook,
@@ -41,6 +42,8 @@ interface RackWire {
   problem: boolean;
   label?: string;
   arc?: boolean;
+  /** The exit of a collapsed decision this wire stands in for. */
+  exit?: { stage: string; port: string };
 }
 
 /** The ports of the chain, and which of them carry the main signal. */
@@ -60,7 +63,10 @@ function rackWires(pipeline: EffectPipeline, skips: readonly Skip[]): RackWire[]
     return { from: d.wire.from, to: d.wire.to, type: d.type, problem: d.problem, ...(label !== undefined ? { label } : {}) };
   });
   for (const s of skips) {
-    wires.push({ from: s.into.wire.from, to: s.through.wire.to, type: s.into.type, problem: s.into.problem || s.through.problem });
+    wires.push({
+      from: s.into.wire.from, to: s.through.wire.to, type: s.into.type, problem: s.into.problem || s.through.problem,
+      exit: { stage: s.decision.id, port: s.through.wire.from.port },
+    });
     wires.push({
       from: { stage: s.into.wire.from.stage, port: SKIP_OUT },
       to: { stage: s.skip.wire.to.stage, port: SKIP_IN },
@@ -68,6 +74,7 @@ function rackWires(pipeline: EffectPipeline, skips: readonly Skip[]): RackWire[]
       problem: s.into.problem || s.skip.problem,
       label: `${s.decision.title}: ${exitLabel(s.skip)!}`,
       arc: true,
+      exit: { stage: s.decision.id, port: s.skip.wire.from.port },
     });
   }
   return wires;
@@ -165,5 +172,6 @@ export const rack: EffectLook<RackOptions> = (pipeline, options = {}) => {
       ...sceneStyles(kept, edges),
     },
     color,
+    exits: new Map(wires.flatMap((wire, i) => (wire.exit === undefined ? [] : [[edgeIdOf(edges[i]!.edge), wire.exit]]))),
   };
 };

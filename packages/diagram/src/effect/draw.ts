@@ -15,6 +15,10 @@ export interface EffectLookResult {
   data: DiagramData;
   scene: DiagramSceneOptions;
   color: TypeColor;
+  /** Edges standing in for a decision's exits where the look draws no
+   *  decision, keyed by edge id: which stage chose, and by which output. A
+   *  run reads that stage's `taken` for them. */
+  exits?: ReadonlyMap<string, { stage: string; port: string }>;
 }
 
 /** One way of drawing a pipeline. */
@@ -135,7 +139,11 @@ export function stageRows(
     rows.push({ kind: 'ports', left: side(stage.inputs), right: side(stage.outputs) });
   }
   if (opts.showValues === true) {
+    // A repeated port id is a problem `checkPipeline` reports; one row for it.
+    const seen = new Set<string>();
     for (const p of stage.outputs ?? []) {
+      if (seen.has(p.id)) continue;
+      seen.add(p.id);
       rows.push({ kind: 'field', id: valueRowId(p.id), label: p.label ?? p.id, value: NO_VALUE, room: VALUE_ROOM });
     }
   }

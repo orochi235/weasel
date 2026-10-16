@@ -105,6 +105,80 @@ describe('paintRun', () => {
   });
 });
 
+describe('paintRun, where a look draws no decision', () => {
+  // `q` only chooses between `blur`, next on the line, and skipping to `mix`,
+  // so `rack` draws it as an arc over `blur`.
+  const image = (id: string) => ({ id, type: 'image' });
+  const skipping: EffectPipeline = {
+    stages: [
+      { id: 'src', title: 'Source', kind: 'source', outputs: [image('out')] },
+      { id: 'q', title: 'q', kind: 'decision', inputs: [image('in')], outputs: [image('yes'), image('no')] },
+      { id: 'blur', title: 'Blur', inputs: [image('in')], outputs: [image('out')] },
+      { id: 'mix', title: 'Mix', inputs: [image('in')], outputs: [image('out')] },
+    ],
+    wires: [
+      { from: { stage: 'src', port: 'out' }, to: { stage: 'q', port: 'in' } },
+      { from: { stage: 'q', port: 'yes' }, to: { stage: 'blur', port: 'in' } },
+      { from: { stage: 'q', port: 'no' }, to: { stage: 'mix', port: 'in' } },
+      { from: { stage: 'blur', port: 'out' }, to: { stage: 'mix', port: 'in' } },
+    ],
+  };
+
+  it('fades the stand-in for the exit the decision did not take', () => {
+    const drawn = rack(skipping);
+    const specs = diagramScene(drawn.data, drawn.scene);
+    expect(specs.some((s) => s.id === 'q')).toBe(false);
+    const stroke = (run: EffectRun) => {
+      const painted = paintRun(skipping, specs, run, drawn.exits);
+      const arc = painted.find((s) => (s.data as { diagram?: { from?: { port?: string } } }).diagram?.from?.port === '~skip-out')!;
+      return opacity(arc, 'stroke');
+    };
+    const all = { src: {}, blur: {}, mix: {} };
+    expect(stroke({ stages: { ...all, q: { taken: 'yes' } } })).toBeLessThan(1);
+    expect(stroke({ stages: { ...all, q: { taken: 'no' } } })).toBeUndefined();
+  });
+});
+
+describe('paintRun on awkward pipelines', () => {
+  it('sets a bar decision\'s cost in its title\'s color, not black', () => {
+    const bar: EffectPipeline = {
+      stages: [{
+        id: 'split', title: 'Split', kind: 'decision', split: { input: 'in', at: [0.5] },
+        inputs: [{ id: 'in', type: 'number' }], outputs: [{ id: 'lo', type: 'number' }, { id: 'hi', type: 'number' }],
+      }],
+      wires: [],
+    };
+    const drawn = nodeGraph(bar);
+    const painted = paintRun(bar, diagramScene(drawn.data, drawn.scene), { stages: { split: { cost: 0.5 } } });
+    const fill = (byId(painted, 'split/cost').data as { fill?: { paint?: { color?: string } } }).fill;
+    expect(fill?.paint?.color).toBeDefined();
+  });
+
+  it('keeps one value row for an output id a stage repeats', () => {
+    const repeated: EffectPipeline = {
+      stages: [{ id: 'a', title: 'A', outputs: [{ id: 'out', type: 't' }, { id: 'out', type: 't' }] }],
+      wires: [],
+    };
+    const drawn = nodeGraph(repeated, { showValues: true });
+    const ids = diagramScene(drawn.data, drawn.scene).map((s) => s.id);
+    expect(ids.filter((id) => id === 'a/value:out')).toHaveLength(1);
+  });
+
+  it('fades the title of an unreached decision whose id has a slash in it', () => {
+    const slashed: EffectPipeline = {
+      stages: [{
+        id: 'fx/pick', title: 'Pick', kind: 'decision', split: { input: 'in', at: [0.5] },
+        inputs: [{ id: 'in', type: 'number' }], outputs: [{ id: 'lo', type: 'number' }, { id: 'hi', type: 'number' }],
+      }],
+      wires: [],
+    };
+    const drawn = nodeGraph(slashed);
+    const painted = paintRun(slashed, diagramScene(drawn.data, drawn.scene), { stages: {} });
+    const title = painted.find((s) => (s.data as { text?: string }).text === 'Pick')!;
+    expect(opacity(title, 'fill')).toBeLessThan(1);
+  });
+});
+
 describe('costText', () => {
   it('gives three figures, and whole milliseconds from 100 up', () => {
     expect([costText(0.4213), costText(12.345), costText(1234.5)]).toEqual(['0.421 ms', '12.3 ms', '1235 ms']);

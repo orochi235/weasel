@@ -18,5 +18,7 @@
 - **Body rows.** A `label` or `field` row may carry an `id`, which names its scene node
   `<body id>/<row id>` so it can be found again; and a `field` may carry `room`, a value it is
   measured at least as wide as.
-- **Renderer:** text now honors a solid fill's `opacity`, in its glyphs and its decoration rules.
-  It was ignored, so faded text drew at full strength.
+- **`EffectLookResult.exits`** maps the edges that stand in for a decision a look does not draw,
+  such as `rack`'s skip arcs, to the exit each one is, so a run's `taken` reaches them.
+- **Renderer:** text now honors a solid fill's `opacity`, in its glyphs, its color glyphs (emoji)
+  and its decoration rules. It was ignored, so faded text drew at full strength.
