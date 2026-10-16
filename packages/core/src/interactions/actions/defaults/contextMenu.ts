@@ -1,5 +1,4 @@
-import { ActionDisabledReason, type Action, type ActionDeps } from '@weasel-js/routing';
-import type { BodyTarget } from '@weasel-js/gestures';
+import { ActionDisabledReason, type Action, type ActionDeps, type MenuHit } from '@weasel-js/routing';
 import { scenePoseFrame } from '../poseFrame';
 import { nodeDescriptors, poseDescriptorOf } from '../poseDescriptorDep';
 import { visualBoundsViaDescriptor } from '../resize/geometry';
@@ -25,8 +24,6 @@ export function keyboardAnchor(deps: ActionDeps): XY | null {
   const [x, y] = screenToWorld(size.width / 2, size.height / 2, viewToTransform(view));
   return { x, y };
 }
-
-type MenuHit = { bodyTarget?: BodyTarget; bodyKind?: string };
 
 /**
  * The hit a menu is picked for, from the dispatcher's own classifier (the

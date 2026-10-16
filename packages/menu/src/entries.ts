@@ -1,4 +1,5 @@
-/** A key chip, structurally the `ActionShortcut` routing derives from bindings. */
+/** A key chip: the key, and which modifiers are held with it. `@weasel-js/routing`
+ *  derives these from action bindings as `ActionShortcut`. */
 export interface MenuShortcut {
   key: string;
   mod: boolean;
