@@ -19,7 +19,7 @@ import {
 import { THEME_SOURCES, TOKEN_MANIFEST } from '@weasel-js/theme';
 import { scale as generateScale, type ThemeApi } from '@weasel-js/theme/engine';
 import { historyKey } from '@weasel-js/core';
-import { Button, Icon, SearchIcon } from '@weasel-js/ui';
+import { Button, Checkbox, Icon, SearchIcon } from '@weasel-js/ui';
 import { useCallback, useContext, useMemo, useState } from 'react';
 import type { Globals } from '../../protocol/messages';
 import { effectiveGlobals, GLOBALS_KEY } from '../globals';
@@ -134,15 +134,17 @@ export function CssVarsPanel({ globals = NO_GLOBALS, themeApi }: CssVarsPanelPro
   const [edited, setEdited] = usePersistedState<Readonly<Record<string, TokenScale>>>('fg-css-vars-scales', {}, { scope: 'trial' });
   const [tab, setTab] = useState<Tab>('theme');
   const [filter, setFilter] = useState('');
+  const [showUnused, setShowUnused] = usePersistedState('fg-css-vars-unused', false, { scope: 'lab' });
 
   const themeTokens = useThemeTokens(globals, frame.vars);
   const tokens = useMemo<TokenEntry[]>(() => {
     if (tab === 'theme') return themeTokens;
-    return frame.vars.map(({ name, value }) => {
+    return frame.vars.flatMap(({ name, value, used }) => {
+      if (!used && !showUnused) return [];
       const known = MANIFEST.get(name);
-      return { name, type: known?.type ?? inferTokenType(value), group: known?.group ?? groupOf(name), value };
+      return [{ name, type: known?.type ?? inferTokenType(value), group: known?.group ?? groupOf(name), value }];
     });
-  }, [tab, frame.vars, themeTokens]);
+  }, [tab, frame.vars, themeTokens, showUnused]);
 
   const query = filter.trim().toLowerCase();
   const shown = tokens
@@ -249,6 +251,11 @@ export function CssVarsPanel({ globals = NO_GLOBALS, themeApi }: CssVarsPanelPro
             </Button>
           </div>
         </div>
+        {tab === 'story' ? (
+          <Checkbox className="fg-css-vars__unused" isSelected={showUnused} onChange={setShowUnused}>
+            Show variables the story doesn’t use
+          </Checkbox>
+        ) : null}
         {tab === 'theme' && (pending || notice) ? (
           <div className="fg-css-vars__save">
             {pending ? (
@@ -269,7 +276,11 @@ export function CssVarsPanel({ globals = NO_GLOBALS, themeApi }: CssVarsPanelPro
       </div>
       {shown.length === 0 ? (
         <p className="fg-css-vars__empty">
-          {tokens.length === 0 ? 'The story’s frame has reported no variables.' : 'No variables match.'}
+          {tokens.length > 0
+            ? 'No variables match.'
+            : tab === 'story' && !showUnused && frame.vars.length > 0
+              ? 'The story uses no variables.'
+              : 'The story’s frame has reported no variables.'}
         </p>
       ) : (
         <div className="fg-css-vars__list">

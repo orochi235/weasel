@@ -1,11 +1,7 @@
 import type { CssVarReport } from '../protocol/messages';
+import { usedCssVars, varRefs } from './cssVarUse';
 
-const VAR_REF = /var\(\s*(--[\w-]+)/g;
-
-function collect(text: string, names: Set<string>): void {
-  if (!text.includes('var(')) return;
-  for (const [, name] of text.matchAll(VAR_REF)) names.add(name!);
-}
+const collect = (text: string, names: Set<string>) => void varRefs(text, names);
 
 /** A grouping rule's text holds its children's; an `@import` holds only its URL, so its sheet is read too. */
 function walkRules(sheet: CSSStyleSheet, names: Set<string>): void {
@@ -25,8 +21,8 @@ function walkRules(sheet: CSSStyleSheet, names: Set<string>): void {
 
 /**
  * Every custom property the document references with `var()`, from inline styles and stylesheet rules — computed
- * styles have already substituted the reference away. Values resolve on `root`, the document's by default, or else
- * on the first element under it that declares one.
+ * styles have already substituted the reference away — each marked with whether the story under `root` uses it.
+ * Values resolve on `root`, the document's by default, or else on the first element under it that declares one.
  */
 export function scanCssVars(
   doc: Document,
@@ -38,9 +34,10 @@ export function scanCssVars(
   for (const sheet of Array.from(doc.styleSheets)) walkRules(sheet, names);
 
   const values = resolveValues(doc, names, root);
+  const used = usedCssVars(doc, root);
   return [...names]
     .sort()
-    .map((name) => ({ name, value: values.get(name) ?? '', overridden: overridden(name) }));
+    .map((name) => ({ name, value: values.get(name) ?? '', overridden: overridden(name), used: used.has(name) }));
 }
 
 function resolveValues(doc: Document, names: Iterable<string>, root: Element): Map<string, string> {
