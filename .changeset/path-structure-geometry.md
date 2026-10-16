@@ -8,6 +8,6 @@ Segments convert in place: `convertSegments(set, segs, to?)` turns lines into cu
 
 Anchors as typed numbers: `readAnchorFields(set, flatIndexes)` answers the selected anchors' X and Y — `null` where they differ — and a lone anchor's handle X, Y, angle and length; `writeAnchorField(set, flatIndexes, field, entry)` sets a value on every anchor or offsets each by an amount (`{ to }` or `{ by }`).
 
-`remapAnchorValues(values, stride, before, after, origins)` carries an array kept per anchor, such as vertex colors, through an edit `editAnchorSetTracked` reported.
+`remapAnchorValues(values, stride, before, after, origins)` carries an array kept per anchor, such as vertex colors, through an edit `editAnchorSetTracked` reported, and `anchorOriginsOf(before, after, origins)` says where each anchor came from, for arrays that need more than a blend. A `PointOrigin` on an anchor's own point now carries `reversed: true` when its subpath runs the other way through it after the edit, read from which way its neighbors followed it before.
 
 A typed handle moves as a drag to that spot would: on a smooth anchor the opposite handle mirrors it, turning with it and taking its length, and on a corner it stays put.

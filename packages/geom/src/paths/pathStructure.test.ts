@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { PathBuilder } from './builder';
 import { pathToAnchors, type PenAnchor } from './anchors';
-import { editAnchorSetTracked, remapAnchorValues } from './anchorOrigins';
+import { editAnchorSetTracked } from './anchorOrigins';
+import { remapAnchorValues } from './anchorValues';
 import type { AnchorSet } from './anchorEdits';
 import {
   directionMarks, flatIndexesAfterReverse, reverseSubpaths, setSubpathStart, subpathsOfAnchors,

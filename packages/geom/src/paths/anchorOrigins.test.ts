@@ -3,6 +3,7 @@ import type { PolygonPath } from '../path';
 import { PathBuilder } from './builder';
 import { deleteAnchorsAt, insertAnchorOnSegment, openSubpathAt, translateAnchorBy } from './anchorEdits';
 import { editAnchorSetTracked, remapPointValues } from './anchorOrigins';
+import { anchorOriginsOf } from './anchorValues';
 import { reverseAnchors } from './nearestAnchor';
 
 /** Closed square, points 0..3 at its corners. */
@@ -93,5 +94,28 @@ describe('editAnchorSetTracked', () => {
 describe('remapPointValues', () => {
   it('reads a point with no origin, or one past the array\'s end, as 0', () => {
     expect(remapPointValues([4], [null, { a: 0, b: 0, t: 0 }, { a: 0, b: 3, t: 0.5 }])).toEqual([0, 4, 2]);
+  });
+});
+
+describe('anchorOriginsOf', () => {
+  const origins = (path: PolygonPath, edit: Parameters<typeof editAnchorSetTracked>[1]) => {
+    const tracked = editAnchorSetTracked(path, edit)!;
+    return anchorOriginsOf(path, tracked.path, tracked.origins);
+  };
+
+  it('names the anchor each anchor came from, and the two an inserted one sits between', () => {
+    expect(origins(square(), (set) => translateAnchorBy(set, 2, 5, 5)))
+      .toEqual([{ a: 0, b: 0, t: 0 }, { a: 1, b: 1, t: 0 }, { a: 2, b: 2, t: 0 }, { a: 3, b: 3, t: 0 }]);
+    const [, made] = origins(square(), (set) => { insertAnchorOnSegment(set, { sub: 0, segIdx: 0, t: 0.25 }); });
+    expect(made).toEqual({ a: 0, b: 1, t: 0.25 });
+  });
+
+  it('marks the anchors of a subpath that now runs the other way, and not those of one turned to start elsewhere', () => {
+    expect(origins(square(), (set) => { set.anchors[0] = [set.anchors[0][0], ...reverseAnchors(set.anchors[0].slice(1))]; }))
+      .toEqual([0, 3, 2, 1].map((a) => ({ a, b: a, t: 0, reversed: true })));
+    expect(origins(square(), (set) => { set.anchors[0] = [...set.anchors[0].slice(2), ...set.anchors[0].slice(0, 2)]; }))
+      .toEqual([2, 3, 0, 1].map((a) => ({ a, b: a, t: 0 })));
+    expect(origins(curveThenLine(), (set) => { set.anchors[0] = reverseAnchors(set.anchors[0]); }))
+      .toEqual([2, 1, 0].map((a) => ({ a, b: a, t: 0, reversed: true })));
   });
 });

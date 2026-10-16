@@ -122,7 +122,8 @@ export {
   balanceFactorToward, equalizeSegmentHandles, handleBalances, scaleSegmentHandles, type HandleBalance,
 } from './paths/balanceHandles';
 export { harmonizeAnchors } from './paths/harmonize';
-export { editAnchorSetTracked, remapAnchorValues, remapPointValues, type PointOrigin } from './paths/anchorOrigins';
+export { editAnchorSetTracked, remapPointValues, type PointOrigin } from './paths/anchorOrigins';
+export { anchorOriginsOf, remapAnchorValues } from './paths/anchorValues';
 export {
   anchorsBefore, constrainPathEdit, constraintAnchors, constraintFits, mapConstraintAnchors, pathAnchorPoints,
   remapConstraints, solveConstraints, solvePathConstraints, unsatisfiedConstraints, CONSTRAINT_TOLERANCE,
