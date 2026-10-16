@@ -5,7 +5,7 @@ import type { NodeId, Scene } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import { gestureReaders, type GestureReaders } from '../../gestures/shared/screenTolerance';
 import type { GestureContext, InsertBehavior, InsertPoint } from '../../gestures/types';
-import type { InsertDep, TextEditDep } from '../depSchema';
+import type { InsertDep, SnapQuery, TextEditDep } from '../depSchema';
 
 /** The key an insert's single gesture point rides under in the behaviors'
  *  `draggedIds` / `origin` / `current` — insert has no node id yet. */
@@ -23,7 +23,9 @@ export interface InsertSession {
    *  the live preview and the committed geometry agree. Freehand pencil
    *  samples are deliberately NOT snapped — a grid-quantized freehand trail
    *  is a staircase, not a stroke. */
-  readonly snap: (p: { x: number; y: number }) => { x: number; y: number };
+  readonly snap: (p: { x: number; y: number }, at?: SnapQuery) => { x: number; y: number };
+  /** Drops the mark the last snap left; called once the drag ends. */
+  readonly releaseSnap: () => void;
   /** The active binding's opts — re-resolved on every read so thunked
    *  params see the latest tool state (e.g. polygon `sides` after ArrowUp). */
   readonly opts: BindingOpts | undefined;
@@ -80,7 +82,7 @@ export function beginInsert(
 
   const snapDep = ctx.deps.snap;
   const snap = snapDep
-    ? (p: { x: number; y: number }) => snapDep.point(p)
+    ? (p: { x: number; y: number }, at?: SnapQuery) => snapDep.point(p, at)
     : (p: { x: number; y: number }) => p;
   const behaviors = (opts?.behaviors ?? []) as InsertBehavior<unknown>[];
   const readers = gestureReaders(ctx.deps);
@@ -105,6 +107,7 @@ export function beginInsert(
     dep,
     textEdit: ctx.deps.textEdit,
     snap,
+    releaseSnap: () => snapDep?.release?.(),
     opts,
     priorSelection,
     behaviors,

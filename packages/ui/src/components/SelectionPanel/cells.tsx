@@ -6,6 +6,7 @@
 import type { ReactNode } from 'react';
 import type { PrefBoolean, PrefLeaf } from '@weasel-js/prefs';
 import { prefDrawsNoControl } from '../Prefs/PrefWords';
+import { prefDrawsActionRow } from '../Prefs/registeredActions';
 import { prefFieldProps } from '../Prefs/prefField';
 import { FitLabel, labelForms } from '../FitLabel/FitLabel';
 import type { PropertyBooleanFieldProps } from '../Properties/PropertyField';
@@ -54,9 +55,15 @@ export function isFlagLeaf(leaf: PrefLeaf, path: string, renderers?: Record<stri
   return (
     leaf.kind === 'boolean' &&
     (leaf as PrefBoolean).control === 'toggle' &&
+    (leaf as PrefBoolean).readout !== true &&
     renderers?.[path] === undefined &&
     renderers?.[leaf.kind] === undefined
   );
+}
+
+/** True for an action leaf drawn as its own buttons, which read their own words and want no row label. */
+function builtinActionRow(cell: LeafCell, renderers?: Record<string, PropertyRenderer>): boolean {
+  return prefDrawsActionRow(cell.leaf) && renderers?.[cell.ctx.path] === undefined && renderers?.[cell.leaf.kind] === undefined;
 }
 
 /** True for a leaf that can join a flag bar: a paired {@link isFlagLeaf}. */
@@ -79,7 +86,7 @@ export function renderCells(
     if (!isFlagCell(cell, renderers)) {
       const content = cell.render();
       if (content != null) {
-        out.push({ key: cell.key, leaf: cell.leaf, block: cell.leaf.block === true || prefDrawsNoControl(cell.leaf), disabled: cell.ctx.disabled === true, hidden: cell.ctx.hidden === true, content, ...(cell.pair ? { pair: cell.pair } : {}) });
+        out.push({ key: cell.key, leaf: cell.leaf, block: cell.leaf.block === true || prefDrawsNoControl(cell.leaf) || builtinActionRow(cell, renderers), disabled: cell.ctx.disabled === true, hidden: cell.ctx.hidden === true, content, ...(cell.pair ? { pair: cell.pair } : {}) });
       }
       i += 1;
       continue;

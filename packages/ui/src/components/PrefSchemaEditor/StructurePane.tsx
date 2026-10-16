@@ -2,7 +2,8 @@ import { useEffect, useMemo, useRef, useState, type Dispatch, type ReactNode, ty
 import { createPortal } from 'react-dom';
 import { isPrefLeaf, isPrefSection, type PrefGroup } from '@weasel-js/prefs';
 import { Input } from '../Input';
-import { filterTree, Tree, treeBranchIds, type TreeDragEffect, type TreeDropHandle } from '../Tree';
+import { Tree, treeBranchIds, type TreeDragEffect, type TreeDropHandle } from '../Tree';
+import { seekRows } from './rowSearch';
 import type { PrefRenderer } from '../Prefs';
 import { Button } from '../Button';
 import { ToolButton } from '../ToolButton';
@@ -126,7 +127,7 @@ export function StructurePane({ schema, onChange, selected, lead, onPick, onSele
   const [query, setQuery] = useState('');
   const sought = query.trim().toLowerCase();
   const shown = useMemo(
-    () => (sought === '' ? nodes : filterTree(nodes, (n) => (n.textValue ?? '').toLowerCase().includes(sought))),
+    () => seekRows(nodes, sought),
     [nodes, sought],
   );
   const [adding, setAdding] = useState<'pref' | 'branch' | null>(null);

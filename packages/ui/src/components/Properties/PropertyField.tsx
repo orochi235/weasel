@@ -116,7 +116,7 @@ export function PropertyField<T extends string = string>(props: PropertyFieldPro
       : id,
   };
 
-  if (control.kind === 'number' && control.control === 'slider') {
+  if (control.kind === 'number' && control.control === 'slider' && !control.readOnly) {
     return <SliderRow row={row} readout={readout} control={control} />;
   }
   return (
@@ -134,7 +134,7 @@ export function PropertyField<T extends string = string>(props: PropertyFieldPro
  */
 export function PropertyControl<T extends string = string>(typed: PropertyControlProps<T>) {
   const props = typed as unknown as PropertyControlProps;
-  if (props.kind === 'number' && props.control === 'slider') return <SliderCell {...props} />;
+  if (props.kind === 'number' && props.control === 'slider' && !props.readOnly) return <SliderCell {...props} />;
   return <ControlBody {...props} />;
 }
 
@@ -146,6 +146,8 @@ export function controlIsGroup(control: PropertyControlProps<string>): boolean {
 
 /** How a row holds a field's control. */
 function rowShape(p: PropertyControlProps<string>): { variant: PropertyRowVariant; group: boolean } {
+  // A readout is one `<output>`, which a label may name.
+  if (p.readOnly) return { variant: 'default', group: false };
   switch (p.kind) {
     case 'boolean':
       // A switch renders its own <label>, and a segment is a button: neither

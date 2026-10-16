@@ -46,6 +46,8 @@ const LAYERS = ladder(process.env.WEASEL_PERF_LAYERS, [1, 4, 16, 64]);
 const CMDS = ladder(process.env.WEASEL_PERF_CMDS, [10, 30, 100, 300, 1000]);
 
 const RUNS = rounds(3);
+/** Distinct cached-layer textures; layer l draws texture l % LAYER_TEXTURES. */
+const LAYER_TEXTURES = 8;
 
 const VARIANTS = ['control', 'submit', 'composite', 'submitDirty', 'compositeDirty'] as const;
 type Variant = (typeof VARIANTS)[number];
@@ -103,7 +105,7 @@ test('layer dispatch: unchanged layers submitted against composited', async ({ p
   await page.waitForSelector('canvas');
 
   const { glRenderer } = await page.evaluate(
-    async ({ root, w, h, dpr, layerLadder, cmdLadder, runs, variants }) => {
+    async ({ root, w, h, dpr, layerLadder, cmdLadder, runs, variants, layerTextureCount }) => {
       const report = (globalThis as unknown as {
         __layerReport: (m: unknown) => Promise<void>;
       }).__layerReport;
@@ -157,7 +159,7 @@ test('layer dispatch: unchanged layers submitted against composited', async ({ p
 
       /** Stand-ins for cached layer textures: canvas-sized, partly transparent. */
       const layerTextures: ImageBitmap[] = [];
-      for (let t = 0; t < 8; t++) {
+      for (let t = 0; t < layerTextureCount; t++) {
         const oc = new OffscreenCanvas(w * dpr, h * dpr);
         const c2 = oc.getContext('2d')!;
         for (let s = 0; s < 40; s++) {
@@ -293,7 +295,7 @@ void main() { outColor = texture(u_source, v_uv); }
       return { glRenderer };
     },
     {
-      root: repoRoot, w: W, h: H, dpr: DPR, layerLadder: LAYERS, cmdLadder: CMDS,
+      root: repoRoot, w: W, h: H, dpr: DPR, layerLadder: LAYERS, cmdLadder: CMDS, layerTextureCount: LAYER_TEXTURES,
       runs: RUNS, variants: [...VARIANTS],
     },
   );
@@ -339,10 +341,11 @@ void main() { outColor = texture(u_source, v_uv); }
   console.log(lines.join('\n'));
 
   expect(errors, `page errors:\n${errors.join('\n')}`).toEqual([]);
-  // The batch binds up to 16 textures a draw (`BATCH_TEXTURE_SLOTS`), so a
-  // composite of n layers is at least n / 16 draws; fewer means layers went missing.
+  // The batch binds up to 16 distinct textures a draw (`BATCH_TEXTURE_SLOTS`), and the layers
+  // share LAYER_TEXTURES of them, so a composite is at least that many / 16 draws.
   for (const n of LAYERS) {
-    for (const m of CMDS) expect(draws(n, m, 'composite'), `${n}x${m} composite`).toBeGreaterThanOrEqual(Math.ceil(n / 16));
+    const floor = Math.ceil(Math.min(n, LAYER_TEXTURES) / 16);
+    for (const m of CMDS) expect(draws(n, m, 'composite'), `${n}x${m} composite`).toBeGreaterThanOrEqual(floor);
   }
 
   run.machine({ glRenderer, browser: `${browserName} ${browser.version()}` });

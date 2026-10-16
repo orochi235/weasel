@@ -42,6 +42,7 @@ export function drawnSize(
  *  Registered before `kit:rect-fallback` so image nodes don't fall through. */
 export const IMAGE_PAINTER: NodeShapeEntry<unknown, RectPose> = {
   id: 'kit:image',
+  snapsToBox: true,
   matches: (node) => {
     if (!paintsPose(node.pose)) return false;
     const src = (node.data as { image?: { src?: unknown } } | null)?.image?.src;

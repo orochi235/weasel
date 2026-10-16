@@ -21,11 +21,18 @@ export interface PortSpec {
   /** Unique within the node. Edges name this, so it outlives a re-layout. */
   id: string;
   at: PortAnchor;
+  /** Other places the port may sit. An edge meeting the port takes whichever
+   *  of `at` and these faces the edge's next point most directly, so a
+   *  diamond's second exit can leave by its top or its bottom vertex, toward
+   *  wherever its wire goes. Everything else that shows a port where it is —
+   *  the connect affordance, `portsOf` — reads `at`. */
+  sites?: readonly PortAnchor[];
   /** Consulted by a connect gesture's validity predicate. Uninterpreted here. */
   type?: string;
   /** The direction an edge leaves along, overriding the one the anchor
    *  implies. `null` means "no preferred direction" — a router goes straight
-   *  at it. */
+   *  at it. Applies at `at`; a port at one of its `sites` faces away from
+   *  the node's center. */
   normal?: Vec2 | null;
 }
 
@@ -58,6 +65,9 @@ export interface DiagramGroup {
   /** Room the box keeps around its members, in world units: one number for
    *  every side, or per side. Default 12 on each. */
   inset?: number | Partial<GroupInset>;
+  /** The narrowest the box may be, in world units, as room for its label.
+   *  A box its members leave narrower grows evenly on both sides. */
+  minWidth?: number;
 }
 
 /** A port resolved against a node's current pose: where it is in world

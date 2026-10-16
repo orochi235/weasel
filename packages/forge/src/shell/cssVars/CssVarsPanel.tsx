@@ -1,13 +1,11 @@
 import './cssVars.css';
 import {
   Input,
-  inferTokenType,
   type LabContribution,
   ToggleBar,
   type ToggleBarItem,
   refitScale,
   type TokenCategory,
-  type TokenEntry,
   TokenPanel,
   type TokenScale,
   type TokenScaleRule,
@@ -19,7 +17,7 @@ import {
 import { THEME_SOURCES, TOKEN_MANIFEST } from '@weasel-js/theme';
 import { scale as generateScale, type ThemeApi } from '@weasel-js/theme/engine';
 import { historyKey } from '@weasel-js/core';
-import { Button, Icon, SearchIcon } from '@weasel-js/ui';
+import { Button, Checkbox, Icon, SearchIcon } from '@weasel-js/ui';
 import { useCallback, useContext, useMemo, useState } from 'react';
 import type { Globals } from '../../protocol/messages';
 import { effectiveGlobals, GLOBALS_KEY } from '../globals';
@@ -27,7 +25,8 @@ import { StoryGlobalsContext } from '../StoryGlobalsContext';
 import { useTrialFrame } from '../trialFrames';
 import { useCssOverrides } from './overrides';
 import { SectionJump } from './SectionJump';
-import { THEME_NAME, TOKEN_PREFIX, type UnsavedScale, useThemeSave } from './useThemeSave';
+import { THEME_NAME, type ThemeSave, TOKEN_PREFIX, type UnsavedScale, useThemeSave } from './useThemeSave';
+import { useStoryTokens } from './useStoryTokens';
 import { useThemeTokens } from './useThemeTokens';
 import { useVarsHistory, type VarsState } from './varsHistory';
 
@@ -103,12 +102,6 @@ function standingScale(source: ScaleSource, amounts: readonly number[]): TokenSc
   return { ...seed, base: Math.round(base * 100) / 100, rule };
 }
 
-/** A reported var's group: its name without the leading dashes or its last segment, which names the step. */
-function groupOf(name: string): string {
-  const segments = name.replace(/^--/, '').split('-');
-  return segments.length > 1 ? segments.slice(0, -1).join('-') : name.replace(/^--/, '');
-}
-
 export interface CssVarsPanelProps {
   /** The globals the trial renders under, which pick the axis values a save writes into. */
   readonly globals?: Globals;
@@ -136,13 +129,8 @@ export function CssVarsPanel({ globals = NO_GLOBALS, themeApi }: CssVarsPanelPro
   const [filter, setFilter] = useState('');
 
   const themeTokens = useThemeTokens(globals, frame.vars);
-  const tokens = useMemo<TokenEntry[]>(() => {
-    if (tab === 'theme') return themeTokens;
-    return frame.vars.map(({ name, value }) => {
-      const known = MANIFEST.get(name);
-      return { name, type: known?.type ?? inferTokenType(value), group: known?.group ?? groupOf(name), value };
-    });
-  }, [tab, frame.vars, themeTokens]);
+  const story = useStoryTokens(frame.vars);
+  const tokens = tab === 'theme' ? themeTokens : story.tokens;
 
   const query = filter.trim().toLowerCase();
   const shown = tokens
@@ -249,27 +237,16 @@ export function CssVarsPanel({ globals = NO_GLOBALS, themeApi }: CssVarsPanelPro
             </Button>
           </div>
         </div>
-        {tab === 'theme' && (pending || notice) ? (
-          <div className="fg-css-vars__save">
-            {pending ? (
-              <Button variant="primary" size="sm" loading={saving} disabled={saving} onClick={() => void save()}>
-                Save to theme
-              </Button>
-            ) : null}
-            {notice ? (
-              <p
-                className={`fg-css-vars__notice fg-css-vars__notice--${notice.tone}`}
-                role={notice.tone === 'error' ? 'alert' : 'status'}
-              >
-                {notice.text}
-              </p>
-            ) : null}
-          </div>
+        {tab === 'story' ? (
+          <Checkbox className="fg-css-vars__unused" isSelected={story.showUnused} onChange={story.setShowUnused}>
+            Show variables the story doesn’t use
+          </Checkbox>
         ) : null}
+        {tab === 'theme' ? <SaveRow pending={pending} saving={saving} notice={notice} onSave={() => void save()} /> : null}
       </div>
       {shown.length === 0 ? (
         <p className="fg-css-vars__empty">
-          {tokens.length === 0 ? 'The story’s frame has reported no variables.' : 'No variables match.'}
+          {tokens.length > 0 ? 'No variables match.' : tab === 'story' ? story.emptyText : 'The story’s frame has reported no variables.'}
         </p>
       ) : (
         <div className="fg-css-vars__list">
@@ -284,6 +261,29 @@ export function CssVarsPanel({ globals = NO_GLOBALS, themeApi }: CssVarsPanelPro
           />
         </div>
       )}
+    </div>
+  );
+}
+
+interface SaveRowProps extends Pick<ThemeSave, 'pending' | 'saving' | 'notice'> {
+  readonly onSave: () => void;
+}
+
+/** The Save to theme button while there is something to save, and what the last save said. */
+function SaveRow({ pending, saving, notice, onSave }: SaveRowProps) {
+  if (!pending && !notice) return null;
+  return (
+    <div className="fg-css-vars__save">
+      {pending ? (
+        <Button variant="primary" size="sm" loading={saving} disabled={saving} onClick={onSave}>
+          Save to theme
+        </Button>
+      ) : null}
+      {notice ? (
+        <p className={`fg-css-vars__notice fg-css-vars__notice--${notice.tone}`} role={notice.tone === 'error' ? 'alert' : 'status'}>
+          {notice.text}
+        </p>
+      ) : null}
     </div>
   );
 }

@@ -13,6 +13,12 @@ export interface EditorAmbientArgs {
   /** The mode shortcuts, from `useCanvasModes`. */
   modeKeys: Contribution;
   grid: Pick<AppCommands, 'gridVisible' | 'toggleGrid' | 'snapToGrid' | 'toggleSnap'>;
+  pathDirection: Pick<AppCommands, 'pathDirection' | 'togglePathDirection'>;
+  /** Live symmetry, from `useSymmetry`: its canvas entry and its toggle. */
+  symmetry: {
+    contribution: SurfaceContribution;
+    commands: Pick<AppCommands, 'symmetryOn' | 'toggleSymmetry'>;
+  };
   view: View;
   setView: (view: View) => void;
   openPrefs: () => void;
@@ -20,7 +26,7 @@ export interface EditorAmbientArgs {
 }
 
 /** Everything draw binds on the canvas whatever tool is active: the HUD, the mode keys, the
- *  color keys, the app's own commands, and the input recorder. */
+ *  color keys, the app's own commands, the input recorder, and live symmetry. */
 export function useEditorAmbient(args: EditorAmbientArgs): readonly SurfaceContribution[] {
   const { scene, selection, modeKeys, view, setView } = args;
   const hudTool = useHudContribution();
@@ -30,6 +36,8 @@ export function useEditorAmbient(args: EditorAmbientArgs): readonly SurfaceContr
 
   const appCommands: AppCommands = {
     ...args.grid,
+    ...args.pathDirection,
+    ...args.symmetry.commands,
     canReleaseCompound: hasCompoundPath(scene, selection.current),
     releaseCompound: () => selection.set(releaseCompoundPaths(scene, selection.current)),
     openPrefs: args.openPrefs,
@@ -39,9 +47,10 @@ export function useEditorAmbient(args: EditorAmbientArgs): readonly SurfaceContr
   const appKeys = useMemo(() => appCommandsContribution(() => appCommandsRef.current), [appCommandsRef]);
 
   const recordingKeys = useRecording({ scene, view: () => view, setView });
+  const symmetry = args.symmetry.contribution;
 
   return useMemo(
-    () => [hudTool, modeKeys, colorKeys, appKeys, recordingKeys],
-    [hudTool, modeKeys, colorKeys, appKeys, recordingKeys],
+    () => [hudTool, modeKeys, colorKeys, appKeys, recordingKeys, symmetry],
+    [hudTool, modeKeys, colorKeys, appKeys, recordingKeys, symmetry],
   );
 }

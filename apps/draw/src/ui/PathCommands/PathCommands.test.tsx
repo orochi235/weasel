@@ -11,6 +11,7 @@ vi.mock('@weasel-js/core', async (importOriginal) => ({
   },
 }));
 
+import { ActionsProvider, useActionsRegistry, type Action, type ActionsRegistry } from '@weasel-js/core';
 import { PathCommands } from './PathCommands';
 
 afterEach(() => {
@@ -45,5 +46,25 @@ describe('PathCommands', () => {
       fireEvent.keyDown(slider, { key: 'ArrowLeft' });
     });
     expect(edits.get('offsetPath')!.commit).toHaveBeenCalledWith({ distance: -0.5 });
+  });
+
+  it("tunes the Simplify brush to the Simplify slider's tolerance", () => {
+    const run = vi.fn();
+    const brush: Action = { id: 'simplifyBrush', label: 'Simplify brush', invoker: { timing: 'immediate', run } };
+    let registry: ActionsRegistry | null = null;
+    function Grab() {
+      registry = useActionsRegistry();
+      return null;
+    }
+    render(<ActionsProvider><Grab /><PathCommands /></ActionsProvider>);
+    act(() => { registry!.register(brush); });
+    openPopover('Simplify');
+    act(() => {
+      fireEvent.keyDown(screen.getByRole('slider', { name: 'Simplify tolerance' }), { key: 'ArrowRight' });
+    });
+    const tuned = registry!.list().find((a) => a.id === 'simplifyBrush')!;
+    if (tuned.invoker?.timing !== 'immediate') throw new Error('timing');
+    tuned.invoker.run({}, undefined);
+    expect(run.mock.calls[0][1]).toEqual({ tolerance: expect.closeTo(1.1, 5) });
   });
 });

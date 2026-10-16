@@ -1,5 +1,5 @@
 import { useId, useMemo, useRef } from 'react';
-import { useLatest } from '@weasel-js/react';
+import { useKitSetting, useLatest } from '@weasel-js/react';
 import { useAnimator } from '@weasel-js/animator';
 import { easeOutCubic } from '@weasel-js/geom';
 import type { Animator, EasingSpec, InterpolatorFactory } from '@weasel-js/animator';
@@ -13,11 +13,12 @@ import { normalizeView, type View } from './view';
  *  sharing an animator do not cancel each other. */
 export const VIEW_ANIMATION_KEY = 'view';
 
-const DEFAULT_MS = 250;
+/** How long an animated camera move takes, in ms, where nothing says otherwise. */
+export const DEFAULT_VIEW_ANIMATION_MS = 250;
 
 /** How the camera should move. */
 export interface ViewAnimationOptions {
-  /** Duration in ms. Default 250. */
+  /** Duration in ms. Default the `view.animationMs` kit setting, else `DEFAULT_VIEW_ANIMATION_MS`. */
   ms?: number;
   /** Easing curve. Default `easeOutCubic`. */
   easing?: EasingSpec;
@@ -103,96 +104,111 @@ export function useViewAnimationOn(view: ViewChannel, animator: Animator): ViewA
   /** Where this runner's own animation is heading. */
   const targetRef = useRef<View | null>(null);
   const writingRef = useRef(false);
+  const msRef = useLatest(useKitSetting('view.animationMs') ?? DEFAULT_VIEW_ANIMATION_MS);
 
-  return useMemo<ViewAnimationApi>(() => {
-    // The value the target's animations add to. While any is in flight it is kept here, apart
-    // from the channel, which holds the folded view; null says to work it out from the channel.
-    let committed: View | null = null;
-    /** What the animations in flight added to the channel's view when `committed` was dropped. */
-    let offset: number[] | null = null;
-    const base = (): View => {
-      if (committed) return committed;
-      const live = viewRef.current.get();
-      return offset ? viewAxes.from(viewAxes.to(live).map((n, i) => n - offset![i]!)) : live;
-    };
-    const write = (v: View): void => {
-      writingRef.current = true;
-      try { viewRef.current.set(normalizeView(v)); } finally { writingRef.current = false; }
-    };
-    const viewTarget: Target<View> = createTarget<View>({
-      axes: viewAxes,
-      get: base,
-      set: (v) => { committed = v; offset = null; },
-      show: (v) => {
-        if (viewTarget.active) {
-          if (!committed) { committed = base(); offset = null; }
-          write(v);
-          return;
-        }
-        // At rest. A stop or an outside write left the view as it stands; a finish lands it.
-        const landed = committed;
-        committed = offset = null;
-        if (landed) write(landed);
+  return useMemo(
+    () => createViewAnimation(key, viewRef, animatorRef, targetRef, writingRef, msRef),
+    [key, viewRef, animatorRef, msRef],
+  );
+}
+
+/** The runner behind {@link useViewAnimationOn}. */
+function createViewAnimation(
+  key: string,
+  viewRef: { readonly current: ViewChannel },
+  animatorRef: { readonly current: Animator },
+  targetRef: { current: View | null },
+  writingRef: { current: boolean },
+  /** The duration a move takes when its own options name none. */
+  msRef: { readonly current: number },
+): ViewAnimationApi {
+  // The value the target's animations add to. While any is in flight it is kept here, apart
+  // from the channel, which holds the folded view; null says to work it out from the channel.
+  let committed: View | null = null;
+  /** What the animations in flight added to the channel's view when `committed` was dropped. */
+  let offset: number[] | null = null;
+  const base = (): View => {
+    if (committed) return committed;
+    const live = viewRef.current.get();
+    return offset ? viewAxes.from(viewAxes.to(live).map((n, i) => n - offset![i]!)) : live;
+  };
+  const write = (v: View): void => {
+    writingRef.current = true;
+    try { viewRef.current.set(normalizeView(v)); } finally { writingRef.current = false; }
+  };
+  const viewTarget: Target<View> = createTarget<View>({
+    axes: viewAxes,
+    get: base,
+    set: (v) => { committed = v; offset = null; },
+    show: (v) => {
+      if (viewTarget.active) {
+        if (!committed) { committed = base(); offset = null; }
+        write(v);
+        return;
+      }
+      // At rest. A stop or an outside write left the view as it stands; a finish lands it.
+      const landed = committed;
+      committed = offset = null;
+      if (landed) write(landed);
+    },
+  });
+
+  const isAnimating = () => animatorRef.current.isActive(key);
+  const target = () => (isAnimating() ? targetRef.current : null);
+  /** Cancels this runner's animation; whatever else moves the view goes on from where it was. */
+  const cancel = (): void => {
+    animatorRef.current.cancelKey(key);
+    targetRef.current = null;
+  };
+  const stop = () => {
+    cancel();
+    if (!viewTarget.active) committed = offset = null;
+  };
+
+  const animate: ViewAnimationApi['animate'] = (to, opts = {}) => {
+    const resolved = normalizeView(typeof to === 'function' ? to(target() ?? base()) : to);
+    targetRef.current = resolved;
+    animatorRef.current.tween<View>({
+      target: viewTarget,
+      to: resolved,
+      ms: opts.ms ?? msRef.current,
+      easing: opts.easing ?? easeOutCubic,
+      interpolator: opts.interpolator ?? interpolateView,
+      cancelKey: key,
+      onDone: () => {
+        targetRef.current = null;
+        // Ahead of the frame's own write, so `onDone` reads the view it finished on.
+        write(viewTarget.read());
+        if (!viewTarget.active) committed = offset = null;
+        opts.onDone?.();
       },
     });
+  };
 
-    const isAnimating = () => animatorRef.current.isActive(key);
-    const target = () => (isAnimating() ? targetRef.current : null);
-    /** Cancels this runner's animation; whatever else moves the view goes on from where it was. */
-    const cancel = (): void => {
-      animatorRef.current.cancelKey(key);
-      targetRef.current = null;
-    };
-    const stop = () => {
+  return {
+    animate,
+    animateToBounds: (bounds, dims, opts = {}) => {
+      const current = viewRef.current.get();
+      const fitted = fitViewToBounds(bounds, dims, current, opts);
+      if (fitted === current) return; // helper bailed (zero-area bounds/viewport)
+      animate(fitted, opts);
+    },
+    stop,
+    isAnimating,
+    target,
+    stopIfExternal: () => {
+      if (writingRef.current) return;
       cancel();
-      if (!viewTarget.active) committed = offset = null;
-    };
-
-    const animate: ViewAnimationApi['animate'] = (to, opts = {}) => {
-      const resolved = normalizeView(typeof to === 'function' ? to(target() ?? base()) : to);
-      targetRef.current = resolved;
-      animatorRef.current.tween<View>({
-        target: viewTarget,
-        to: resolved,
-        ms: opts.ms ?? DEFAULT_MS,
-        easing: opts.easing ?? easeOutCubic,
-        interpolator: opts.interpolator ?? interpolateView,
-        cancelKey: key,
-        onDone: () => {
-          targetRef.current = null;
-          // Ahead of the frame's own write, so `onDone` reads the view it finished on.
-          write(viewTarget.read());
-          if (!viewTarget.active) committed = offset = null;
-          opts.onDone?.();
-        },
-      });
-    };
-
-    return {
-      animate,
-      animateToBounds: (bounds, dims, opts = {}) => {
-        const current = viewRef.current.get();
-        const fitted = fitViewToBounds(bounds, dims, current, opts);
-        if (fitted === current) return; // helper bailed (zero-area bounds/viewport)
-        animate(fitted, opts);
-      },
-      stop,
-      isAnimating,
-      target,
-      stopIfExternal: () => {
-        if (writingRef.current) return;
-        cancel();
-        // The writer read the folded view, so what is still in flight stays on top of its write.
-        if (viewTarget.active) {
-          const shown = viewAxes.to(viewTarget.read());
-          const under = viewAxes.to(base());
-          offset = shown.map((n, i) => n - under[i]!);
-        } else {
-          offset = null;
-        }
-        committed = null;
-      },
-      viewTarget,
-    };
-  }, [key, viewRef, animatorRef]);
+      // The writer read the folded view, so what is still in flight stays on top of its write.
+      if (viewTarget.active) {
+        const shown = viewAxes.to(viewTarget.read());
+        const under = viewAxes.to(base());
+        offset = shown.map((n, i) => n - under[i]!);
+      } else {
+        offset = null;
+      }
+      committed = null;
+    },
+    viewTarget,
+  };
 }

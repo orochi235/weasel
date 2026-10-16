@@ -32,6 +32,7 @@ export const PREF_KIND_TRAITS: Record<PrefKind, PrefKindTraits> = {
   union: MANY,
   field: ONE,
   action: { compound: false, several: true },
+  actions: { compound: false, several: true },
   alias: ONE,
   label: ONE,
   separator: ONE,

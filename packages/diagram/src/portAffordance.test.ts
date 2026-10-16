@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import type { ChromeState } from '@weasel-js/core';
+import { viewToTransform, type ChromeState } from '@weasel-js/core';
 import { createPortAffordance, portScratchOf } from './portAffordance';
 import type { DiagramNodeLike } from './trait';
 
@@ -25,6 +25,15 @@ describe('createPortAffordance', () => {
       { node: node({ diagram: {} }, 'a'), pose: box },
     ]);
     expect(affordance.regions(state).map((r) => r.id)).toEqual(['a:n', 'a:e', 'a:s', 'a:w']);
+  });
+
+  it('leaves out the ports showsPort turns away', () => {
+    const trait = { diagram: { ports: [{ id: 'in', type: 'image', at: { u: 0, v: 0.5 } }, { id: 'extra', at: { u: 1, v: 0.5 } }] } };
+    const regions = createPortAffordance<Rect>(
+      () => [{ node: node(trait, 'a'), pose: box }],
+      { showsPort: (p) => p.type !== undefined },
+    ).regions(state);
+    expect(regions.map((r) => r.id)).toEqual(['a:in']);
   });
 
   it('puts a region where the port is, not where its anchor is', () => {
@@ -84,5 +93,49 @@ describe('createPortAffordance', () => {
       { shows: (n) => n.id === 'b' },
     ).regions(state);
     expect([...new Set(regions.map((r) => r.id.split(':')[0]))]).toEqual(['b']);
+  });
+});
+
+describe('port paint', () => {
+  const paintParticipants = () => [{
+    node: node({ diagram: { ports: [
+      { id: 'in', at: { u: 0, v: 0.5 }, type: 'image' },
+      { id: 'amt', at: { u: 0, v: 0.8 }, type: 'number' },
+    ] } }, 'a'),
+    pose: box,
+  }];
+
+  it('asks the fill function once per port and paints what it answers', () => {
+    const fill = (port: { type?: string }) => ({ paint: { color: port.type === 'image' ? '#00f' : '#fa0' } });
+    const regions = createPortAffordance<Rect>(paintParticipants, { fill }).regions(state);
+    expect(regions.map((r) => r.paint)).toEqual([
+      { kind: 'square', sizePx: 7, fill: { paint: { color: '#00f' } } },
+      { kind: 'square', sizePx: 7, fill: { paint: { color: '#fa0' } } },
+    ]);
+  });
+
+  it('paints a circle as one path centered on the port in screen pixels', () => {
+    const [region] = createPortAffordance<Rect>(paintParticipants, { shape: 'circle', sizePx: 8 }).regions(state);
+    const paint = region!.paint!;
+    expect(paint.kind).toBe('custom');
+    if (paint.kind !== 'custom') return;
+    const cmds = paint.draw({
+      world: { x: 10, y: 20 },
+      local: region!.shape,
+      view: { x: 5, y: 7, scale: { x: 2, y: 2 } },
+      state,
+    });
+    expect(cmds).toHaveLength(1);
+    const path = (cmds[0] as { path: { coords: Float32Array } }).path;
+    const xs = [...path.coords].filter((_, i) => i % 2 === 0);
+    const ys = [...path.coords].filter((_, i) => i % 2 === 1);
+    // Screen center is pan + world * zoom; read both from `viewToTransform` so the
+    // test does not restate the view's own convention.
+    const mid = (v: number[]) => (Math.min(...v) + Math.max(...v)) / 2;
+    expect(Math.max(...xs) - Math.min(...xs)).toBeCloseTo(8, 4);
+    expect(Math.max(...ys) - Math.min(...ys)).toBeCloseTo(8, 4);
+    const t = viewToTransform({ x: 5, y: 7, scale: { x: 2, y: 2 } });
+    expect(mid(xs)).toBeCloseTo(t.panX + 10 * t.zoom.x, 4);
+    expect(mid(ys)).toBeCloseTo(t.panY + 20 * t.zoom.y, 4);
   });
 });

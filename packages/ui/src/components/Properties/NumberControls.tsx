@@ -118,11 +118,10 @@ export function NumberInput(p: PropertyNumberFieldProps) {
       steppers={p.steppers}
       disabled={p.disabled}
       aria-label={p.name}
-      // With one callback it is the live one: every keystroke and step reaches
-      // it, and the commit on blur would only repeat the last of them.
-      onInput={p.onInput ?? p.onChange}
-      onChange={p.onInput ? p.onChange : ignore}
+      onInput={p.onInput}
+      onChange={p.onChange}
       onCancel={p.onCancel}
+      onOffset={p.onOffset}
     />
   );
   if (p.unit == null || (known && !Number.isFinite(p.value))) return input;

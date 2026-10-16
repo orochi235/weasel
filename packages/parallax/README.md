@@ -5,7 +5,7 @@ background planes move less than the camera and foreground planes move more.
 
 Part of [weasel](https://github.com/orochi235/weasel), a domain-agnostic 2D
 scene-graph canvas kit for React. See the
-[API reference](https://orochi235.github.io/weasel/api/).
+[API reference](https://orochi235.github.io/weasel/#pkg/parallax).
 
 ```sh
 npm install @weasel-js/parallax

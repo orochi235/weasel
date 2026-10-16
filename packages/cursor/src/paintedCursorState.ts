@@ -10,6 +10,7 @@
  * inline style for the CSS tier.
  */
 
+import { createEmitter } from '@weasel-js/registry';
 import type { ResolvedCursor } from './resolve';
 
 /** The painted arm of `ResolvedCursor` — what this module stores. */
@@ -69,11 +70,8 @@ export function createPaintedCursorState(): PaintedCursorState {
   let base: PaintedCursor | null = null;
   let override: PaintedCursor | 'none' | null = null;
   let at: { x: number; y: number } | null = null;
-  const subs = new Set<() => void>();
-
-  const notify = (): void => {
-    for (const fn of subs) fn();
-  };
+  const changed = createEmitter();
+  const notify = changed.emit;
   const shown = (): PaintedCursor | null => (override === 'none' ? null : override ?? base);
 
   return {
@@ -108,9 +106,6 @@ export function createPaintedCursorState(): PaintedCursorState {
       if (!cursor || !at) return null;
       return { cursor, at };
     },
-    subscribe(fn) {
-      subs.add(fn);
-      return () => { subs.delete(fn); };
-    },
+    subscribe: changed.subscribe,
   };
 }

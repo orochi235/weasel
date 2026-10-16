@@ -5,7 +5,8 @@
  * stores it.
  *
  * `tool` and `params` ride on `meta.wd.attrs` under the local names `tool`, `params-sides`,
- * `params-points`, `params-ratio`, `params-rotation`.
+ * `params-points`, `params-ratio`, `params-rotation`; a path's corner shapes under `corners`
+ * and `corner-anchors` (`svgCorners.ts`).
  */
 
 import type { Fill, TextStyle } from '@weasel-js/core';
@@ -30,6 +31,7 @@ import type {
 import { downloadBlob, pickFile } from './fileIO';
 import { isPaperSize, type PaperSizeKey } from './paperSizes';
 import type { ImageObj, Obj, PathObj, PathParams, PathToolKind, TextObj } from './svgObj';
+import { cornerAttrs, pathWithCorners } from './svgCorners';
 
 /**
  * The `wd:` XML namespace, carrying WeaselDraw-specific metadata on top of standard SVG.
@@ -189,7 +191,7 @@ export function objToSvgNode(o: Obj): SvgNode {
   };
   const stroke = svgStrokeFromKit(o.stroke, o);
   if (stroke) node.stroke = stroke;
-  node.meta = { wd: { attrs: encodeWdAttrs(o) } };
+  node.meta = { wd: { attrs: { ...encodeWdAttrs(o), ...cornerAttrs(o.path) } } };
   if (o.rotation) node.rotation = o.rotation;
   return node;
 }
@@ -249,7 +251,7 @@ function kitLeafToObj(
     id,
     tool,
     ...box,
-    path: data.path,
+    path: pathWithCorners(data.path, attrs),
     fill: data.fill === undefined ? DEFAULT_IMPORT_FILL : data.fill,
     stroke: data.stroke ?? null,
     ...(params ? { params } : {}),
@@ -284,7 +286,9 @@ export function svgNodesToSceneDrafts(
  * layer, which is skipped along with everything under it.
  */
 export interface SceneSource extends SvgKitTree<string> {
-  objOf(id: string): Obj | undefined;
+  /** The leaf as one object, or as several — a live path effect, which
+   *  exports as a group of the paths it shows. */
+  objOf(id: string): Obj | readonly Obj[] | undefined;
   isPainted?(id: string): boolean;
 }
 
@@ -303,7 +307,9 @@ export function sceneToSvgNodes(source: SceneSource, roots?: readonly string[]):
     ...(source.isPainted ? { include: (id: string) => source.isPainted!(id) } : {}),
     leaf: (id) => {
       const obj = source.objOf(id);
-      return obj ? objToSvgNode(obj) : null;
+      if (obj === undefined) return null;
+      if (!Array.isArray(obj)) return objToSvgNode(obj as Obj);
+      return { kind: 'group', children: obj.map(objToSvgNode) };
     },
     group: (id, g) => ({ ...g, meta: { wd: { attrs: { 'group-id': id } } } }),
   });

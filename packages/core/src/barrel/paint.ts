@@ -1,4 +1,8 @@
-/** Part of the `@weasel-js/core` barrel. Fills, strokes, paint kinds, and color. */
+/**
+ * Part of the `@weasel-js/core` barrel. Fills, strokes, paint kinds, and color.
+ *
+ * @packageDocumentation
+ */
 
 // ─── Tile / pattern fills ───────────────────────────────────────────────────
 export { createTilePattern } from '@weasel-js/renderer';
@@ -18,10 +22,17 @@ export {
   dashForStrokeStyle,
   decomposePatternTransform,
   hexToRgbBytes,
+  lerpFill,
+  lerpPaint,
+  lerpStroke,
   parseHexBytes,
   resolveScreenLength,
+  scaleVertexWidth,
   strokeDashStyleOf,
   STROKE_DASH_RATIOS,
+  vertexHalfWidths,
+  vertexWidthFromSides,
+  widestHalfWidth,
 } from '@weasel-js/paint';
 export { resolveStrokeWidth } from '@weasel-js/stroke';
 export type {
@@ -49,6 +60,10 @@ export type {
   Stroke,
   StrokeAlign,
   StrokeDashStyle,
+  StrokeNib,
+  HalfWidths,
+  VertexWidth,
+  VertexWidthSides,
   Region,
   KitMarkerKey,
   MarkerKey,

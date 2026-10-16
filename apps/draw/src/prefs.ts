@@ -16,6 +16,8 @@ import {
 import { usePref as usePrefOf } from '@weasel-js/prefs/react';
 import { localStorageAdapter, type SyncStorageAdapter } from '@weasel-js/storage';
 import type { RegistryEnumFilter } from './registry/types';
+import { panelsToSurfaces } from './surfaces/prefsMigration';
+import type { SurfacesValue } from './surfaces/types';
 
 // ──────────────────────────────────────────────────────────────────────────
 // Types
@@ -31,7 +33,7 @@ export interface WeaselDrawPrefRegistryEnum extends PrefBase<'registry-enum', st
 }
 
 /** A value other code owns and the form only displays or hands to a bespoke
- *  editor (`ui.panels`). Unlike the built-in `object`, it has no `children`. */
+ *  editor (`ui.surfaces`). Unlike the built-in `object`, it has no `children`. */
 export type WeaselDrawPrefData<T = unknown> = PrefBase<'data', T>;
 
 /**
@@ -46,12 +48,12 @@ function composeToolPrefs<T extends Record<string, PrefGroup>>(t: T): T {
 
 // Declared apart: inline, the schema's open `kind: string` leaf widens the literal
 // `kind` (dropping the path from `DrawPrefPath`) and rejects `source`.
-const PANELS_PREF = {
+const SURFACES_PREF = {
   kind: 'data',
-  name: 'Panel visibility',
-  description: 'Hidden/collapsed state per right-sidebar panel.',
+  name: 'Toolbars, panels, and menus',
+  description: 'Where each one is shown, and whether its panel is hidden or collapsed.',
   block: true,
-  default: {} as Record<string, { hidden?: boolean; collapsed?: boolean }>,
+  default: {} as SurfacesValue,
 } as const satisfies WeaselDrawPrefData;
 
 const LAST_TOOL = {
@@ -93,7 +95,13 @@ export const PREFS = {
           min: 40,
           max: 200,
         },
-        panels: PANELS_PREF,
+        surfaces: SURFACES_PREF,
+        showAnnotations: {
+          kind: 'boolean',
+          name: 'Show annotations in Layers',
+          description: 'List the layers that are not printed — measurements, and anything else drawn as an aid — and their items in the Layers panel. The canvas draws them either way, and export leaves them out.',
+          default: false,
+        },
       },
     },
     view: {
@@ -121,6 +129,29 @@ export const PREFS = {
           name: 'Snap to grid',
           description: 'Constrain move/resize gestures to grid intersections.',
           default: false,
+        },
+        pathDirection: {
+          kind: 'boolean',
+          name: 'Show path direction',
+          description: 'While editing a path, draw an arrow on each segment the way the path runs, and a ring on its start.',
+          default: false,
+        },
+        symmetry: {
+          kind: 'boolean',
+          name: 'Symmetry',
+          description: 'Draw into a symmetry group, whose mirrored copies follow every edit to what is drawn in it, and the anchors you drag on a path that is already its own mirror image. Drag the handles on the axis to move or turn it. Turning it off stops drawing into the group; what is in it stays mirrored.',
+          default: false,
+        },
+        symmetryAxis: {
+          kind: 'enum',
+          name: 'Symmetry axis',
+          description: 'Which way the symmetry group mirrors: left and right, top and bottom, or into all four quarters.',
+          default: 'vertical',
+          options: [
+            { value: 'vertical', label: 'Vertical (left and right)' },
+            { value: 'horizontal', label: 'Horizontal (top and bottom)' },
+            { value: 'both', label: 'Both' },
+          ],
         },
       },
     },
@@ -222,9 +253,12 @@ const VALIDATORS: Record<string, PrefValidator> = {
   data: (v, leaf) => (shapeOf(v) === shapeOf(leaf.default) ? v : undefined),
 };
 
+/** `MIGRATIONS[i]` takes stored records from version `i` to `i + 1`. */
+const MIGRATIONS = [panelsToSurfaces];
+
 /** The app's prefs over `storage`. Tests pass a memory adapter. */
 export function openDrawPrefs(storage: SyncStorageAdapter): PrefsStore<typeof PREFS> {
-  return openPrefsSync(PREFS, { storage, prefix: PREFS_PREFIX, validators: VALIDATORS });
+  return openPrefsSync(PREFS, { storage, prefix: PREFS_PREFIX, validators: VALIDATORS, migrations: MIGRATIONS });
 }
 
 let store: PrefsStore<typeof PREFS> | null = null;
@@ -288,6 +322,8 @@ function foldLegacyPrefs(
     parsed = undefined;
   }
   if (parsed !== undefined && (parsed as { version?: unknown } | null)?.version !== 2) return;
+  const ui = (parsed as { ui?: { panels?: unknown; surfaces?: unknown } } | undefined)?.ui;
+  if (ui && typeof ui === 'object' && ui.panels !== undefined) ui.surfaces ??= ui.panels;
   for (const [path, value] of flattenPrefValues(PREFS, parsed)) {
     if (!target.isSet(path as DrawPrefPath)) target.set(path as DrawPrefPath, value as never);
   }

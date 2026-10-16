@@ -180,4 +180,12 @@ describe('core action glyph re-exports', () => {
       expect(ui[name], name).toBeTypeOf('function');
     }
   });
+
+  it('passes the tool glyphs through by identity, so each has one drawing', async () => {
+    const ui = await import('./index');
+    const core = await import('@weasel-js/core');
+    for (const name of ['SliceIcon', 'MeasureIcon'] as const) {
+      expect(ui[name], name).toBe(core[name]);
+    }
+  });
 });

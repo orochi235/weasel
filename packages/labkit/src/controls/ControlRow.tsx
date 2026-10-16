@@ -1,5 +1,6 @@
 import {
   type PrefAction,
+  type PrefActions,
   type PrefAlias,
   type PrefAliasTargets,
   type PrefGroup,
@@ -17,11 +18,13 @@ import {
   entryDisabledAt,
   ListEditor,
   PrefActionButton,
+  PrefActionRows,
   PrefControl,
   PrefWords,
   PropertyField,
   PropertyRow,
   type PropertyRowLayout,
+  prefDrawsActionRow,
   prefDrawsNoControl,
   prefListIsText,
   prefListTexts,
@@ -81,6 +84,18 @@ export function ControlRow<TC extends Record<string, unknown>>(props: ControlRow
     return (
       <div className="lk-control-words">
         <PrefWords pref={leaf} />
+      </div>
+    );
+  }
+  if (prefDrawsActionRow(leaf) && !drawn && !renderers?.[leaf.kind]) {
+    // An action's button reads its own label, so it takes the row's whole width with none beside it.
+    return (
+      <div className="lk-control-actions">
+        {leaf.kind === 'actions' ? (
+          <PrefActionRows pref={leaf as PrefActions} path={props.path} disabled={props.disabled} />
+        ) : (
+          <PrefActionButton pref={leaf as PrefAction} path={props.path} disabled={props.disabled} />
+        )}
       </div>
     );
   }
@@ -268,7 +283,7 @@ function LeafRow<TC extends Record<string, unknown>>({
 
   if (leaf.kind === 'action') {
     return (
-      // Not a `<label>`: that would hand a click on its text to the button.
+      // An icon alone, which the row's label names. Not a `<label>`: that would hand a click on its text to the button.
       <PropertyRow
         group
         label={label}

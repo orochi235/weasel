@@ -2,6 +2,8 @@
  * `@weasel-js/geom/booleans` — polygon booleans on `Path` values, and the path
  * splitting built on them. The only geom entry that needs `polygon-clipping`,
  * which geom takes as an optional peer so the root barrel stays `deps: {}`.
+ *
+ * @packageDocumentation
  */
 export {
   pathUnion, pathIntersect, pathSubtract, pathExclude, pathDivide, pathCrop,

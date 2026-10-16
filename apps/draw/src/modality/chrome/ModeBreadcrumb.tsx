@@ -28,10 +28,10 @@ export const ModeBreadcrumb = memo(function ModeBreadcrumb(props: ModeBreadcrumb
         <Button size="sm" onClick={props.onExit}>Exit</Button>
       ) : (
         <>
-          <Button size="sm" onClick={props.onCancel} trailingIcon={<KeyCap label="⎋" variant="minimal" />}>
+          <Button size="sm" onClick={props.onCancel} trailingIcon={<KeyCap label="⎋" />}>
             Cancel
           </Button>
-          <Button size="sm" variant="primary" onClick={props.onCommit} trailingIcon={<KeyCap label="⏎" variant="minimal" />}>
+          <Button size="sm" variant="primary" onClick={props.onCommit} trailingIcon={<KeyCap label="⏎" />}>
             Commit
           </Button>
         </>

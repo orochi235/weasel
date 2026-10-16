@@ -79,3 +79,20 @@ export const KeyboardNav: Story = {
     },
   },
 };
+
+const DRAWING = new Set(['rect', 'text', 'pen']);
+
+function SplitDemo() {
+  const [active, setActive] = useState<string>('select');
+  const tools = makeFakeToolsApi(fullList(), active, setActive);
+  return (
+    <div style={{ display: 'flex', gap: 16 }}>
+      <ToolPalette tools={tools} include={(t) => !DRAWING.has(t.id)} />
+      <ToolPalette tools={tools} include={(t) => DRAWING.has(t.id)} ariaLabel="Drawing tools" />
+    </div>
+  );
+}
+
+// One `tools`, two palettes: `include` splits the canvas's tools between them,
+// and the active tool shows pressed in whichever palette holds it.
+export const Split: Story = { render: () => <SplitDemo /> };

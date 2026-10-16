@@ -325,7 +325,7 @@ describe('startFrame', () => {
       const { shell, of } = start(styled!);
       shell.send(empty);
       await flush();
-      expect(ink(of('vars').at(-1)?.vars)).toEqual({ name: '--fg-t-ink', value: 'red', overridden: false });
+      expect(ink(of('vars').at(-1)?.vars)).toEqual({ name: '--fg-t-ink', value: 'red', overridden: false, used: true });
     });
 
     it('applies vars.set as an override, reports it, and drops it on a null value', async () => {
@@ -336,10 +336,10 @@ describe('startFrame', () => {
       shell.send({ type: 'vars.set', name: '--fg-t-ink', value: 'blue' });
       await flush();
       expect(document.head.querySelector('style[data-fg-overrides]')?.textContent).toContain('--fg-t-ink: blue;');
-      expect(ink(of('vars').at(-1)?.vars)).toEqual({ name: '--fg-t-ink', value: 'blue', overridden: true });
+      expect(ink(of('vars').at(-1)?.vars)).toEqual({ name: '--fg-t-ink', value: 'blue', overridden: true, used: true });
       shell.send({ type: 'vars.set', name: '--fg-t-ink', value: null });
       await flush();
-      expect(ink(of('vars').at(-1)?.vars)).toEqual({ name: '--fg-t-ink', value: 'red', overridden: false });
+      expect(ink(of('vars').at(-1)?.vars)).toEqual({ name: '--fg-t-ink', value: 'red', overridden: false, used: true });
     });
 
     it('answers each vars.set with the last report, flag updated, and never rescans for it', async () => {
@@ -359,7 +359,7 @@ describe('startFrame', () => {
       expect(scanCssVars).not.toHaveBeenCalled();
       const sent = of('vars').slice(before);
       expect(sent.map((m) => ink(m.vars)?.overridden)).toEqual([true, true, true, false]);
-      expect(ink(sent.at(-1)?.vars)).toEqual({ name: '--fg-t-ink', value: 'red', overridden: false });
+      expect(ink(sent.at(-1)?.vars)).toEqual({ name: '--fg-t-ink', value: 'red', overridden: false, used: true });
     });
 
     it('writes overrides under the scope the setup names', async () => {

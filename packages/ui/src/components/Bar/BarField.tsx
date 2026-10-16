@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { FitLabel, labelForms } from '../FitLabel/FitLabel';
 import { type DistributiveOmit, PropertyControl, type PropertyControlProps } from '../Properties/PropertyField';
+import { PropertyReadout } from '../Properties/PropertyReadout';
 import { BarPopover } from './BarPopover';
 import s from './Bar.module.css';
 
@@ -29,6 +30,15 @@ export type BarFieldProps<T extends string = string> = DistributiveOmit<Property
  */
 export function BarField<T extends string = string>(typed: BarFieldProps<T>) {
   const { icon, ...p } = typed as unknown as PropertyControlProps & BarFieldCellProps;
+  if (p.readOnly) {
+    // A value alone does not say what it is a value of, so a readout is always named.
+    return (
+      <span className={s.field}>
+        <BarLabel name={p.name} short={p.short} icon={icon} />
+        <PropertyReadout {...p} />
+      </span>
+    );
+  }
   switch (p.kind) {
     case 'number':
       return (

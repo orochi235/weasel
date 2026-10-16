@@ -72,6 +72,15 @@ describe('drawText — an emoji', () => {
     for (const v of quad) expect(v.post).toBeCloseTo(128 / 255);
   });
 
+  it('fades with the fill\'s opacity, as the letters beside it do', () => {
+    const { ctx, calls } = createRecorderCtx();
+    const command = textCommand('👍', '#ff0000');
+    command.runs[0]!.fill = { paint: { kind: 'solid', color: '#ff0000', opacity: 0.25 } } as never;
+    dispatch(ctx, command);
+    const quad = verticesOf(stagedVertices(ctx, calls), PAINT_MODE_IMAGE);
+    for (const v of quad) expect(v.post).toBeCloseTo(0.25);
+  });
+
   it('samples the color page it uploaded', () => {
     const { ctx, calls, gl } = createRecorderCtx();
     dispatch(ctx, textCommand('👍', '#000'));

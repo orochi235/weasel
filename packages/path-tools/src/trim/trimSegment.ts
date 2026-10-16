@@ -1,0 +1,60 @@
+/** Trim segment: cut a stroke back to the crossings on either side of a click. */
+import type { Action, ActionDeps, ImmediateInvoker } from '@weasel-js/routing';
+import { trimPathAt, type TrimResult } from '@weasel-js/geom';
+import { commitOps, deleteNode, reshapeOps, type PathNode, pathOperationTags } from '@weasel-js/core';
+import { pressOf, scenePathNodes, strokesBesides } from '../shared/scenePaths';
+import { TrimIcon } from '../icons';
+
+const TRIM_LABEL = 'Trim segment';
+
+/** What a trim at the press in `params` would do: the stroke it reaches, and
+ *  what `trimPathAt` makes of it. Null when it reaches none it can trim.
+ *  `params` as {@link trimPathAction} reads them; a hover's pointer serves
+ *  as the press, which is how a tool previews the piece. */
+export function planTrim(
+  deps: ActionDeps,
+  params: unknown,
+): { target: PathNode; result: TrimResult } | null {
+  const press = pressOf(deps, params);
+  if (!press) return null;
+  const all = scenePathNodes(deps);
+  for (let i = all.length - 1; i >= 0; i--) {
+    const target = all[i];
+    const result = trimPathAt(target.path, strokesBesides(deps, target.id), press.at, { radius: press.radius });
+    if (result) return { target, result };
+  }
+  return null;
+}
+
+/**
+ * @experimental Trim segment: remove the piece of the stroke under the press
+ * between the nearest crossings on either side — with any other node's
+ * outline, or with itself — as `trimPathAt` cuts it. The topmost stroke
+ * within `radiusPx` of the press (default 6) is the one trimmed; a stroke
+ * with nothing left is deleted. Params: `pressX`, `pressY` in world space,
+ * which a click binding supplies.
+ */
+export const trimPathAction: Action & { requires: string[] } = {
+  id: 'trimPath',
+  icon: TrimIcon,
+  label: TRIM_LABEL,
+  tags: pathOperationTags('click'),
+  group: 'path',
+  eligible: { capability: 'creates-shapes' },
+  requires: ['scene', 'applyOps', 'selection', 'view'],
+  invoker: {
+    timing: 'immediate',
+    run: (deps, params) => {
+      const plan = deps.scene ? planTrim(deps, params) : null;
+      if (!plan) return;
+      const { target, result } = plan;
+      const gone = result.path.commands.length === 0;
+      const ops = gone
+        ? [deleteNode(deps.scene as never, target.node, TRIM_LABEL)]
+        : reshapeOps(target.node, result.path, TRIM_LABEL);
+      commitOps(deps, ops, TRIM_LABEL);
+      if (gone) deps.selection?.set((deps.selection.get() ?? []).filter((id) => id !== target.id) as never);
+    },
+  } satisfies ImmediateInvoker,
+  enabled: () => true,
+};

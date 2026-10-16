@@ -32,3 +32,14 @@ export interface PrefAction extends PrefBase<'action', undefined> {
    *  its tooltip. Unset: a button in a row, an icon in a bar. */
   control?: PrefActionControl;
 }
+
+/**
+ * Every action the host registered in the action group `group`, in registry
+ * order, each drawn as an {@link PrefAction} naming it would be: an action
+ * registered later appears without the schema changing. Holds no value, as
+ * an `action` holds none.
+ */
+export interface PrefActions extends PrefBase<'actions', undefined> {
+  /** The registry action group whose actions are drawn. */
+  group: string;
+}

@@ -15,6 +15,7 @@ import { layoutDrop } from './behaviors/layoutDrop';
 import { reparentOnDrop } from './behaviors/reparentOnDrop';
 import { buildGestureContext, captureFrames, capturePlaneRefs, captureStartPoses } from './capture';
 import { moveGestureAdapter, type MoveGestureAdapter } from './gestureAdapter';
+import { captureMovePathSnap, type MovePathSnap } from './pathSnap';
 
 /** Allowed values for the `reparentOnDrop` binding param. `'off'` (the
  *  default) preserves the legacy translate-only commit. `'top'` lands the
@@ -59,6 +60,9 @@ export interface MoveSession {
   /** Read at release: a binding's params may be a thunk. */
   readonly reparentOnDrop: () => ReparentOnDrop;
   readonly dragThresholdPx: number;
+  /** Path snapping for the drag's base point; null when the `snap` dep
+   *  snaps to no paths. */
+  readonly pathSnap: MovePathSnap | null;
 }
 
 /** What one `onMove` produced. Replaced, not mutated, by the next. */
@@ -97,8 +101,8 @@ export function beginMove(
 
   if (!selection || !scene) return null;
   const pc = scene.composition;
-  // Anchors and segments sit on the selected body, and this binding ties editAnchors' and
-  // bendSegment's on specificity; with no mode registry to filter move out, declining is what
+  // Anchors, segments, and balance grips sit on the selected body, and this binding ties the
+  // path-edit drags' on specificity; with no mode registry to filter move out, declining is what
   // lets them through.
   if (isPathEditPart(ctx.drag?.affordance)) return null;
 
@@ -122,7 +126,7 @@ export function beginMove(
     reparentOnDrop(gesture),
   ];
   const dragThresholdPx = (params?.['dragThresholdPx'] as number | undefined)
-    ?? DRAG_THRESHOLD_PX;
+    ?? ctx.deps.kitSettings?.get('gestures.dragPx') ?? DRAG_THRESHOLD_PX;
   const lifecycle = readGestureLifecycle(params, 'Move', behaviors);
   // A behavior that commits after the gesture has ended, a coast coming to
   // rest, lands its batch the way the gesture's own commit does.
@@ -155,6 +159,7 @@ export function beginMove(
     nodeAtPoint: ctx.deps.nodeAtPoint,
     reparentOnDrop: () => (resolveParams(opts?.params)?.['reparentOnDrop'] as ReparentOnDrop | undefined) ?? 'off',
     dragThresholdPx,
+    pathSnap: captureMovePathSnap(ctx.deps.snap, ctx.drag?.start ?? ctx.world, [...startPoses.keys()]),
   };
   return { session, readers };
 }

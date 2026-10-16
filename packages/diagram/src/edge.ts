@@ -26,7 +26,7 @@ import {
 import { portCurvePoints } from '@weasel-js/geom';
 import { ANCHOR_DERIVE_POSE, DIAGRAM_ANCHOR, DIAGRAM_GROUP, GROUP_DERIVE_POSE } from './group';
 import { DIAGRAM_LABEL, LABEL_DERIVE_POSE } from './label';
-import { portOf, portsOf, type PortsOptions } from './ports';
+import { portSitesOf, portsOf, type PortsOptions } from './ports';
 import { selfLoop } from './selfLoop';
 import type { Port } from './types';
 
@@ -48,6 +48,23 @@ export interface DiagramEdge {
   /** Points in world coordinates the route must pass through, in order. The
    *  author owns these; the router owns everything between them. */
   waypoints?: readonly Vec2[];
+  /** The waypoints layout last wrote here. While `waypoints` still equals
+   *  them, layout owns the route and rewrites it on its next run; once anyone
+   *  edits them, they are the author's and layout leaves them alone. */
+  laidOut?: readonly Vec2[];
+}
+
+/** Whether layout may rewrite this edge's route: it has no waypoints, or only
+ *  the ones layout last wrote. */
+export function layoutOwnsRoute(edge: DiagramEdge): boolean {
+  const points = edge.waypoints ?? [];
+  if (points.length === 0) return true;
+  return edge.laidOut !== undefined && samePoints(points, edge.laidOut);
+}
+
+/** Two point lists the same, point for point. */
+export function samePoints(a: readonly Vec2[], b: readonly Vec2[]): boolean {
+  return a.length === b.length && a.every((p, i) => p.x === b[i]!.x && p.y === b[i]!.y);
 }
 
 /** What a router is given: the two resolved ends, and the author's waypoints
@@ -123,8 +140,9 @@ function isHorizontal(normal: Vec2 | null | undefined): boolean {
  * A smooth route, sampled into points.
  *
  * Each leg is a cubic that leaves along the departing end's normal and arrives
- * against the receiving one's. Sampled rather than emitted as curve commands so
- * every router returns the same thing.
+ * against the receiving one's, and passes each waypoint without a corner.
+ * Sampled rather than emitted as curve commands so every router returns the
+ * same thing.
  */
 export const bezier: Router = (req) => {
   const stops = [req.from.point, ...req.waypoints, req.to.point];
@@ -132,8 +150,8 @@ export const bezier: Router = (req) => {
   for (let i = 1; i < stops.length; i++) {
     const a = stops[i - 1]!;
     const b = stops[i]!;
-    const outN = i === 1 ? req.from.normal : null;
-    const inN = i === stops.length - 1 ? req.to.normal : null;
+    const outN = i === 1 ? req.from.normal : through(stops, i - 1);
+    const inN = i === stops.length - 1 ? req.to.normal : negated(through(stops, i));
     const leg = portCurvePoints(
       a.x, a.y, b.x, b.y,
       outN == null ? null : [outN.x, outN.y],
@@ -146,6 +164,24 @@ export const bezier: Router = (req) => {
 };
 
 const BEZIER_SAMPLES = 16;
+
+/**
+ * The direction a smooth route passes an interior stop: along the straight run
+ * it makes with a neighboring waypoint level with it on one axis, else from
+ * the stop before it toward the one after. Two such waypoints are a run the
+ * route was meant to hold, the way `layered` lays one through each rank.
+ */
+function through(stops: readonly Vec2[], i: number): Vec2 | null {
+  const last = stops.length - 1;
+  const run = (a: number, b: number) => a >= 1 && b <= last - 1 && (stops[a]!.x === stops[b]!.x || stops[a]!.y === stops[b]!.y);
+  const [from, to] = run(i, i + 1) ? [i, i + 1] : run(i - 1, i) ? [i - 1, i] : [i - 1, i + 1];
+  const dx = stops[to]!.x - stops[from]!.x;
+  const dy = stops[to]!.y - stops[from]!.y;
+  const len = Math.hypot(dx, dy);
+  return len === 0 ? null : { x: dx / len, y: dy / len };
+}
+
+const negated = (v: Vec2 | null): Vec2 | null => (v === null ? null : { x: -v.x, y: -v.y });
 
 /** The routers this package ships. A consumer's own go in the same shape. */
 export const ROUTERS: Readonly<Record<string, Router>> = Object.freeze({
@@ -164,8 +200,8 @@ export function diagramEdgeOf(node: { data: unknown }): DiagramEdge | null {
 }
 
 /**
- * The port an end resolves to: the one it named, else the port facing the
- * other end most directly.
+ * The port an end resolves to: the one it named, at whichever of its places
+ * faces `toward` most directly, else the port facing `toward` most directly.
  *
  * "Facing" rather than "nearest": a port on the far side of a wide node can be
  * closer in a straight line than the one pointing at the target.
@@ -178,20 +214,28 @@ export function resolveEnd<TPose>(
   allPorts: (d: DerivedDep<TPose>) => Port[],
 ): Port | undefined {
   if (end.port !== undefined) {
-    const named = portOf(dep.node as never, dep.pose, end.port, opts);
-    if (named !== undefined) return named;
+    const sites = portSitesOf(dep.node as never, dep.pose, end.port, opts);
+    // A place counts only when it faces `toward` at all; else the port sits
+    // at `at`, as a self-loop's does.
+    const ahead = sites.filter((p) => p.normal !== null && p.normal.x * (toward.x - p.point.x) + p.normal.y * (toward.y - p.point.y) > 0);
+    if (sites.length > 0) return ahead.length > 0 ? facing(ahead, toward) : sites[0];
   }
+  return facing(allPorts(dep), toward);
+}
+
+/** The port pointing at `toward` most directly, tie-broken toward the closer. */
+function facing(ports: readonly Port[], toward: Vec2): Port | undefined {
   let best: Port | undefined;
   let bestScore = -Infinity;
-  for (const port of allPorts(dep)) {
+  for (const port of ports) {
     const dx = toward.x - port.point.x;
     const dy = toward.y - port.point.y;
     const len = Math.hypot(dx, dy) || 1;
     // Alignment with the port's own facing, tie-broken toward the closer port.
-    const facing = port.normal === null
+    const aim = port.normal === null
       ? 0
       : (port.normal.x * dx + port.normal.y * dy) / len;
-    const score = facing - len / 1e6;
+    const score = aim - len / 1e6;
     if (score > bestScore) {
       bestScore = score;
       best = port;
@@ -245,13 +289,14 @@ export function edgeDerivePath<TPose>(
     const loop = fromDep.node.id === toDep.node.id && edge.from.port === undefined && edge.to.port === undefined
       ? selfLoop(allPorts(fromDep), opts.selfLoopStandoff ?? standoffOf(fromDep))
       : null;
-    // Each end aims at the other's center, which is stable while both are
-    // being resolved — aiming at the other *port* would be circular.
-    const from = loop?.from ?? resolveEnd(edge.from, fromDep, centerOf(toDep), portOpts, allPorts);
-    const to = loop?.to ?? resolveEnd(edge.to, toDep, centerOf(fromDep), portOpts, allPorts);
+    // Each end aims at its first waypoint, else at the other's center, which
+    // is stable while both are being resolved — aiming at the other *port*
+    // would be circular.
+    const authored = edge.waypoints ?? [];
+    const from = loop?.from ?? resolveEnd(edge.from, fromDep, authored[0] ?? centerOf(toDep), portOpts, allPorts);
+    const to = loop?.to ?? resolveEnd(edge.to, toDep, authored[authored.length - 1] ?? centerOf(fromDep), portOpts, allPorts);
     if (from === undefined || to === undefined) return null;
 
-    const authored = edge.waypoints ?? [];
     const waypoints = loop !== null && authored.length === 0 ? [loop.via] : authored;
     const routers = opts.routers ?? ROUTERS;
     const router = (edge.router !== undefined && routers[edge.router]) || straight;

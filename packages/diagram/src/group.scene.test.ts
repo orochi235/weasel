@@ -36,6 +36,22 @@ describe('a group in a scene', () => {
     expect(specs.findIndex((s) => s.id === 'G')).toBeLessThan(specs.findIndex((s) => s.id === 'a'));
   });
 
+  it('grows to fit a label longer than its members are wide, and keeps its neighbors clear', () => {
+    const data: DiagramData = {
+      nodes: [{ id: 'a', lines: ['a'] }, { id: 'b', lines: ['b'] }, { id: 'c', lines: ['c'] }],
+      edges: [{ from: 'c', to: 'a' }, { from: 'c', to: 'b' }],
+      groups: [{ id: 'G', members: ['a'], label: 'a label much wider than its one member' }],
+    };
+    const { specs, pose } = load(data);
+    const title = pose('G/label');
+    expect(pose('G').width).toBeGreaterThanOrEqual(title.width);
+    expect(contains(pose('G'), title)).toBe(true);
+    const g = pose('G');
+    const b = pose('b');
+    expect(b.x >= g.x + g.width || b.x + b.width <= g.x).toBe(true);
+    expect(specs.find((s) => s.id === 'G')!.pose).toEqual(g);
+  });
+
   it('derives the same box the spec was built with', () => {
     const { specs, pose } = load();
     expect(pose('G')).toEqual(specs.find((s) => s.id === 'G')!.pose);

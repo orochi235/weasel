@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { SidebarPanel } from './SidebarPanel';
 import { Sidebar } from '../Sidebar';
+import { MenuButton } from '../MenuButton';
 
 const meta: Meta<typeof SidebarPanel> = {
   title: 'ui/SidebarPanel',
@@ -23,6 +24,15 @@ export const StaticHeader: Story = {};
 export const Collapsible: Story = { args: { onToggleCollapse: () => {} } };
 export const Closeable: Story = {
   args: { onToggleCollapse: () => {}, onHide: () => {} },
+};
+export const WithActions: Story = {
+  args: {
+    onToggleCollapse: () => {},
+    onHide: () => {},
+    actions: (
+      <MenuButton bare current label="Panel" items={[{ value: 'bar', label: 'Show as toolbar' }, { value: 'menu', label: 'Show as menu' }]} />
+    ),
+  },
 };
 
 // Drive collapse + hide state locally so a reader can click both

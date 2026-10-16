@@ -36,7 +36,7 @@ export const moveAction: Action & { requires: string[] } = inPlane({
   // through.
   defaultBinding: { kind: 'drag', target: 'selected-body' },
   eligible: { capability: 'transforms-selection' },
-  requires: ['selection', 'scene', 'poseDescriptor', 'layout', 'applyOps', 'geometryProjection', 'nodeAtPoint', 'view'],
+  requires: ['selection', 'scene', 'poseDescriptor', 'layout', 'applyOps', 'geometryProjection', 'nodeAtPoint', 'view', 'boundsIncludeStroke', 'kitSettings', 'snap'],
   invoker: {
     timing: 'ongoing',
     start(ctx: InvocationCtx, opts?: BindingOpts): OngoingHandle {
@@ -76,6 +76,7 @@ export const moveAction: Action & { requires: string[] } = inPlane({
               if (committed) recordTransform(session.scene, { kind: 'translate', ...frame.delta }, subject);
             } else runBehaviorCancel(session.behaviors, session.gestureCtx);
           } finally {
+            session.pathSnap?.snap.release?.();
             // After the commit, so no frame can paint the pre-drag pose between
             // the override going away and the document catching up.
             closeGesture({ hold, previews: frame.previews, behaviors: session.behaviors, ctx: session.gestureCtx, lifecycle: session.lifecycle }, committed);

@@ -2,7 +2,7 @@ import { asNodeId, createScene, type NodeId, type RectPose, type SelectionApi, s
 import { renderHook } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { LayerListItem } from './LayerList';
-import { useSceneLayerList } from './useSceneLayerList';
+import { ANNOTATION_LAYER_ROW, useSceneLayerList, type SceneLayerListAnnotations } from './useSceneLayerList';
 
 const box: RectPose = { x: 0, y: 0, width: 10, height: 10 };
 
@@ -65,5 +65,60 @@ describe('useSceneLayerList', () => {
     const { hook, scene } = setup();
     hook.result.current.onReorder({ ids: ['g1'], parentId: 'g', index: 0 });
     expect(scene.childrenOf(asNodeId('g'))).toEqual(['g2', 'g1']);
+  });
+});
+
+/** A content box and two notes on an annotation layer. */
+function annotated(annotations?: SceneLayerListAnnotations) {
+  const scene = createScene<{ name: string }, 'main' | 'notes', RectPose>({
+    systemLayers: [{ id: 'main' }, { id: 'notes', annotation: true }],
+  });
+  scene.add({ id: asNodeId('box'), kind: 'leaf', layer: 'main', pose: box, data: { name: 'box' } });
+  scene.add({ id: asNodeId('n1'), kind: 'leaf', layer: 'notes', pose: box, data: { name: 'n1' } });
+  scene.add({ id: asNodeId('n2'), kind: 'leaf', layer: 'notes', pose: box, data: { name: 'n2' } });
+  const selection = { current: [asNodeId('box')], set: vi.fn() } as unknown as SelectionApi;
+  const hook = renderHook(() =>
+    useSceneLayerList({ scene, selection, itemFor: (n) => ({ label: n.data.name }), ...(annotations ? { annotations } : {}) }),
+  );
+  return { scene, selection, hook };
+}
+
+describe('useSceneLayerList — annotation layers', () => {
+  const row = `${ANNOTATION_LAYER_ROW}notes`;
+
+  it('leaves annotations out of the list by default', () => {
+    const { hook } = annotated();
+    expect(ids(hook.result.current.items)).toEqual(['box']);
+    expect(hook.result.current.onRemove).toBeUndefined();
+  });
+
+  it('shows each annotation layer as a row holding its nodes, marked not printed', () => {
+    const { hook } = annotated({ picked: null, pick: vi.fn(), labelOf: () => 'Measurements' });
+    const items = hook.result.current.items;
+    expect(ids(items)).toEqual([[row, ['n2', 'n1']], 'box']);
+    expect(items[0]).toMatchObject({ label: 'Measurements', nonPrinting: true, removable: false });
+    expect(items[0]!.children![0]).toMatchObject({ nonPrinting: true, hideable: false });
+    expect(items[1]).toMatchObject({ hideable: false, removable: false });
+  });
+
+  it('picks an annotation row without touching the content selection', () => {
+    const pick = vi.fn();
+    const { hook, selection } = annotated({ picked: 'n1', pick });
+    expect(hook.result.current.selectedIds).toEqual(['box', 'n1']);
+    hook.result.current.onSelect(['n2']);
+    expect(pick).toHaveBeenCalledWith('n2');
+    expect(selection.set).not.toHaveBeenCalled();
+  });
+
+  it('hides the annotation layer from its row, and removes a node from its row', () => {
+    const pick = vi.fn();
+    const { hook, scene } = annotated({ picked: 'n1', pick });
+    hook.result.current.onVisibilityChange!(row, false);
+    expect(scene.layers.find((l) => l.id === 'notes')?.visible).toBe(false);
+    hook.result.current.onRemove!('n1');
+    expect(scene.get(asNodeId('n1'))).toBeUndefined();
+    expect(pick).toHaveBeenCalledWith(null);
+    hook.result.current.onRemove!('box');
+    expect(scene.get(asNodeId('box'))).toBeDefined();
   });
 });

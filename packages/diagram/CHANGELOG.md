@@ -1,5 +1,70 @@
 # @weasel-js/diagram
 
+## 1.10.1
+
+### Patch Changes
+
+- cdf60a1: `DiagramView` pans on a drag that starts on empty canvas, as its docs say. The select tool behind picking marquee-selected on that drag, and as the active tool's binding it outranked the view's drag-pan, so the view never moved. The diagram picks one node at a time, so it drops the marquee; a click on empty canvas still clears the pick.
+- 00f60ff: `diagramScene` routes a `layered` diagram's edges. An edge running down the ranks leaves its source by the face toward the next rank and arrives at its target's face toward the last, where it used to take whichever side faced the other end, and an edge that skips ranks gets waypoints through the gaps in each rank it crosses, so it goes around the nodes and group boxes in its way. An author's `fromPort`, `toPort` and `waypoints` win; an edge running back up the ranks, and every other layout, keep the facing rule. `layeredRoutes` is the pass on its own.
+  
+  The `bezier` router passes a waypoint without a corner; it used to draw each leg between two waypoints as a straight line.
+  
+  A group's box fits its label. `DiagramGroup` gains `minWidth`, which `diagramScene` sets from the label, `groupDerivePose` widens the box to evenly, and `layered` and `tree` leave room for in a layout running down or up; `GraphGroup` carries it too, and `boxAround` is the box rule on its own.
+  
+  Breaking: a label's `offset` is the gap between the route and the label's near side, where it was the distance to the label's center, so a label beside a vertical edge no longer straddles it.
+- 886380f: Each README's "API reference" link now opens the package's page on the site, `https://orochi235.github.io/weasel/#pkg/<name>`, where it used to open the TypeDoc site at `/weasel/api/`, which is no longer built. A file comment that sat on an `export { … }` list is now marked as the file's, so an entry's description no longer shows up as the summary of each function the entry re-exports. No code changed. `@weasel-js/labkit` drops `vitepress` from its devDependencies, which nothing used.
+- Updated dependencies [113c088]
+- Updated dependencies [cbd5b4d]
+- Updated dependencies [d3b73b9]
+- Updated dependencies [aaa2b4f]
+- Updated dependencies [c7b7ed5]
+- Updated dependencies [faf8ff3]
+- Updated dependencies [8bee821]
+- Updated dependencies [3fda6e6]
+- Updated dependencies [67a7de8]
+- Updated dependencies [f6e3e90]
+- Updated dependencies [74ba77e]
+- Updated dependencies [a8e8048]
+- Updated dependencies [755b7ff]
+- Updated dependencies [1d3ca5c]
+- Updated dependencies [566f15e]
+- Updated dependencies [ee59ccd]
+- Updated dependencies [f22f5ce]
+- Updated dependencies [92e6291]
+- Updated dependencies [2216d1b]
+- Updated dependencies [a7144f4]
+- Updated dependencies [35c4879]
+- Updated dependencies [9eefcc7]
+- Updated dependencies [886380f]
+- Updated dependencies [f8faa63]
+- Updated dependencies [3bc85c9]
+- Updated dependencies [d8b51a4]
+- Updated dependencies [d0c3896]
+- Updated dependencies [3448831]
+- Updated dependencies [27fe0fb]
+- Updated dependencies [8bbf878]
+- Updated dependencies [b5267f9]
+- Updated dependencies [62e766c]
+- Updated dependencies [5485d35]
+- Updated dependencies [690ea72]
+- Updated dependencies [ab9ea7a]
+- Updated dependencies [e962494]
+- Updated dependencies [bad37cf]
+- Updated dependencies [9e84e5d]
+- Updated dependencies [bd6c203]
+- Updated dependencies [ef29364]
+- Updated dependencies [2f48645]
+- Updated dependencies [92c2e8e]
+- Updated dependencies [711ae46]
+- Updated dependencies [365eae0]
+- Updated dependencies [781a15e]
+- Updated dependencies [a092978]
+  - @weasel-js/core@1.10.1
+  - @weasel-js/geom@1.10.1
+  - @weasel-js/animator@1.10.1
+  - @weasel-js/font@1.10.1
+  - @weasel-js/simulation@1.10.1
+
 ## 1.10.0
 
 ### Patch Changes

@@ -1,7 +1,7 @@
 import { defineConfig, type PluginOption } from 'vite';
 import react from '@vitejs/plugin-react';
 import { existsSync, statSync, createReadStream } from 'node:fs';
-import { extname, join, resolve } from 'node:path';
+import { join, resolve } from 'node:path';
 import { weaselAliases } from './scripts/vite-aliases.ts';
 import { weaselDefines } from './scripts/vite-build-info.ts';
 import { demoTimestamps } from './scripts/vite-demo-timestamps.ts';
@@ -14,34 +14,19 @@ import { watchProbe } from './packages/forge/src/vite/watchProbe.ts';
 import ports from './scripts/dev-ports.json' with { type: 'json' };
 
 /**
- * Dev-only middleware: serve what `npm run build:api` writes into `dist-demo/`
- * under the site's base, where the deployed site (GitHub Pages) has it: the
- * TypeDoc site at `/weasel/api/*`, which the sidebar's "API reference →" link
- * points at, and the per-package reference the package pages fetch at
- * `/weasel/reference/*`. Vite's dev server doesn't serve `dist-demo`, so
- * without this both 404 locally.
- *
- * Run `npm run build:api` once to generate them. A page asking for `api/`
- * before then is told so; a fetch of `reference/` gets a 404 it can read, not
- * vite's fallback to the app's own HTML.
+ * Dev-only middleware: serve the per-package reference `npm run build:api`
+ * writes into `dist-demo/reference/` at `/weasel/reference/*`, where the
+ * deployed site (GitHub Pages) has it and the package pages fetch it. Vite's
+ * dev server doesn't serve `dist-demo`, so without this it 404s locally. A
+ * fetch before the build has run gets a 404 it can read, not vite's fallback
+ * to the app's own HTML.
  */
-function serveApiDocsInDev(): PluginOption {
-  const apiRoot = resolve(import.meta.dirname, 'dist-demo/api');
-  const MIME: Record<string, string> = {
-    '.html': 'text/html; charset=utf-8',
-    '.js': 'application/javascript; charset=utf-8',
-    '.css': 'text/css; charset=utf-8',
-    '.json': 'application/json; charset=utf-8',
-    '.svg': 'image/svg+xml',
-    '.png': 'image/png',
-    '.woff': 'font/woff',
-    '.woff2': 'font/woff2',
-  };
+function serveReferenceInDev(): PluginOption {
+  const referenceRoot = resolve(import.meta.dirname, 'dist-demo/reference');
   return {
-    name: 'serve-api-docs-in-dev',
+    name: 'serve-reference-in-dev',
     apply: 'serve',
     configureServer(server) {
-      const referenceRoot = resolve(import.meta.dirname, 'dist-demo/reference');
       server.middlewares.use('/weasel/reference', (req, res) => {
         const file = join(referenceRoot, decodeURIComponent((req.url ?? '/').split('?')[0]));
         if (!file.startsWith(referenceRoot) || !existsSync(file) || !statSync(file).isFile()) {
@@ -49,36 +34,10 @@ function serveApiDocsInDev(): PluginOption {
           res.end('not built: npm run build:api');
           return;
         }
-        res.setHeader('content-type', MIME['.json']);
+        res.setHeader('content-type', 'application/json; charset=utf-8');
+        // A rebuild replaces these in place; without this the browser keeps showing the last build.
+        res.setHeader('cache-control', 'no-cache');
         createReadStream(file).pipe(res);
-      });
-      // Under the site's `base`, where the page's `./api/` link points.
-      server.middlewares.use('/weasel/api', (req, res, next) => {
-        if (!existsSync(apiRoot)) {
-          res.statusCode = 404;
-          res.setHeader('content-type', 'text/html; charset=utf-8');
-          res.end(
-            '<!doctype html><title>API docs not built</title>'
-            + '<body style="font-family:system-ui;padding:2rem;max-width:32rem">'
-            + '<h1>API docs not built</h1>'
-            + '<p>Run <code>npm run build:api</code> once to generate the typedoc '
-            + 'output into <code>dist-demo/api/</code>. The dev server will pick '
-            + 'it up on the next request — no restart needed.</p>'
-            + '</body>',
-          );
-          return;
-        }
-        const cleanPath = decodeURIComponent((req.url ?? '/').split('?')[0]);
-        let filePath = join(apiRoot, cleanPath === '/' ? 'index.html' : cleanPath);
-        try {
-          if (statSync(filePath).isDirectory()) filePath = join(filePath, 'index.html');
-        } catch {
-          next();
-          return;
-        }
-        if (!existsSync(filePath)) { next(); return; }
-        res.setHeader('content-type', MIME[extname(filePath).toLowerCase()] ?? 'application/octet-stream');
-        createReadStream(filePath).pipe(res);
       });
     },
   };
@@ -93,7 +52,7 @@ export default defineConfig({
   },
   plugins: [
     react(),
-    serveApiDocsInDev(),
+    serveReferenceInDev(),
     demoTimestamps({ root: import.meta.dirname }),
     demoSources({ root: import.meta.dirname }),
     changelogs({ root: import.meta.dirname }),

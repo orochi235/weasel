@@ -1,12 +1,12 @@
 import { numericWeight, type Paint } from '@weasel-js/core';
 import { endless as withInfinity } from '@weasel-js/quantity';
-import { isBuiltinPref, prefDisplayBounds, resolvePrefUnit, type PrefLeaf } from '@weasel-js/prefs';
+import { isBuiltinPref, prefDisplayBounds, resolvePrefUnit, type PrefField, type PrefLeaf, type PrefValueBase } from '@weasel-js/prefs';
 import { endlessAllows } from '../../endless';
 import { stepDisplay } from '../Properties/NumberControls';
 import { namedGlyph } from '../../icons/namedGlyph';
 import { isPaint } from '../paintValue';
 import type { PropertyControlProps } from '../Properties/PropertyField';
-import { type ParamsSurface, withCommitPolicy } from './commitPolicy';
+import { type LiveControl, type ParamsSurface, withCommitPolicy } from './commitPolicy';
 import { prefUnitAccepts, type PrefFieldChoice } from './schema';
 import { withSurfaceControl } from './surfaceControls';
 
@@ -51,18 +51,32 @@ export interface PrefFieldState {
  *
  * Given a `surface`, the control is the one that surface draws for what the
  * leaf asked for ({@link PARAMS_CONTROLS}), and it writes when that surface
- * writes ({@link PARAMS_SETTLES}). A leaf naming no control is left without
- * one; {@link withRowControl} fills in a row's.
+ * writes ({@link PARAMS_SETTLES}, or `settles` where given). A leaf naming no
+ * control is left without one; {@link withRowControl} fills in a row's.
  */
 export function prefFieldProps(
   leaf: PrefLeaf,
   state: PrefFieldState,
   surface?: ParamsSurface,
+  settles?: Readonly<Record<LiveControl, boolean>>,
 ): PropertyControlProps | null {
   const made = enabledFieldProps(leaf, state);
   if (made === null) return null;
-  const field = surface === undefined ? made : withCommitPolicy(withSurfaceControl(made, surface), surface);
-  return state.disabled ? { ...field, disabled: true } : field;
+  const field = surface === undefined ? made : withCommitPolicy(withSurfaceControl(made, surface), surface, settles);
+  const shown = (leaf as PrefValueBase<string, unknown>).readout === true ? { ...field, readOnly: true } : field;
+  return state.disabled ? { ...shown, disabled: true } : shown;
+}
+
+/** A `field` leaf as a select among the fields the surface draws. */
+function fieldRefProps(leaf: PrefField, state: PrefFieldState): PropertyControlProps {
+  const { value, mixed = false, unset = false, setValue } = state;
+  const choices = (state.fields ?? []).filter((f) => !leaf.kinds || leaf.kinds.includes(f.kind));
+  const current = mixed || unset ? undefined : typeof value === 'string' && value !== '' ? value : undefined;
+  const options = choices.map((f) => ({ value: f.path, label: `${f.name} (${f.path})` }));
+  // A reference to a field this surface does not draw still shows what it names.
+  if (current !== undefined && !choices.some((f) => f.path === current))
+    options.unshift({ value: current, label: current });
+  return { kind: 'enum', control: 'select', value: current, mixed, unset, options, onChange: setValue };
 }
 
 function enabledFieldProps(leaf: PrefLeaf, state: PrefFieldState): PropertyControlProps | null {
@@ -209,19 +223,13 @@ function enabledFieldProps(leaf: PrefLeaf, state: PrefFieldState): PropertyContr
     case 'map':
     case 'union':
     case 'action':
+    case 'actions':
     case 'alias':
     case 'label':
     case 'separator':
       return null;
-    case 'field': {
-      const choices = (state.fields ?? []).filter((f) => !leaf.kinds || leaf.kinds.includes(f.kind));
-      const current = mixed || unset ? undefined : typeof value === 'string' && value !== '' ? value : undefined;
-      const options = choices.map((f) => ({ value: f.path, label: `${f.name} (${f.path})` }));
-      // A reference to a field this surface does not draw still shows what it names.
-      if (current !== undefined && !choices.some((f) => f.path === current))
-        options.unshift({ value: current, label: current });
-      return { kind: 'enum', control: 'select', value: current, mixed, unset, options, onChange: setValue };
-    }
+    case 'field':
+      return fieldRefProps(leaf, state);
     default: {
       // Not reachable while every built-in kind has an arm — and a new kind
       // that lacks one is a compile error here, never a blank row.

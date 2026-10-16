@@ -63,3 +63,4 @@ export { useStarTool, type UseStarToolOptions } from './star';
 export { usePencilTool, type PencilPoint } from './pencil';
 export { useSliceTool, type UseSliceToolOptions, type SliceScratch } from './slice';
 export { useShapeBuilderTool, type UseShapeBuilderToolOptions } from './shapeBuilder';
+export { useMeasureTool, type UseMeasureToolOptions } from './measure';

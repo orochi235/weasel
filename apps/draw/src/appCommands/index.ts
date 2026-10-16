@@ -1,9 +1,10 @@
 import type { Contribution } from '@weasel-js/core';
+import { DRAW_MENUS } from '../menus';
 import { appActions, type AppCommands } from './actions';
 
 export type { AppCommands } from './actions';
 
-/** The app's own commands and the `appCommands` dep they read, as one entry
+/** The app's own commands, the `appCommands` dep they read, and the app's menus, as one entry
  *  for `<SceneCanvas ambient>`. `read` returns the live state. */
 export function appCommandsContribution(read: () => AppCommands): Contribution {
   return {
@@ -11,5 +12,6 @@ export function appCommandsContribution(read: () => AppCommands): Contribution {
     eligibility: { always: true },
     actions: appActions,
     deps: { appCommands: read },
+    menus: DRAW_MENUS,
   };
 }

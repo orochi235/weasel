@@ -1,6 +1,8 @@
 /**
  * @weasel-js/prefs — the preferences schema and the store over it. No React:
  * the hooks live behind `@weasel-js/prefs/react`.
+ *
+ * @packageDocumentation
  */
 export {
   filterPrefSubtree,
@@ -16,8 +18,9 @@ export {
   VERSION_RECORD,
   visiblePrefSubtree,
 } from './helpers';
-export type { PrefAction, PrefActionContext, PrefActionControl } from './action';
+export type { PrefAction, PrefActionContext, PrefActionControl, PrefActions } from './action';
 export { prefTabRuns, type PrefTabRun } from './tabRuns';
+export { prefLeavesTagged, prefLeafTags } from './tags';
 export {
   isPrefCondition,
   mapPrefConditionPaths,
@@ -62,6 +65,8 @@ export { PREF_BLENDS, type PrefBlend } from './blend';
 export { checkPrefSplits, type PrefSplitProblem } from './splitCheck';
 export { pref } from './build';
 export { prefsCss, prefsCssAttributes, type PrefsCssOptions, type PrefsCssSource } from './css';
+export { prefsDefaultsSource } from './defaultsSource';
+export { kitSettingsCssOptions } from './kitCss';
 export { prefSchemaHolding } from './holding';
 export { prefAliasedLeaf, prefAliasName, prefAliasTarget, type PrefAlias } from './alias';
 export { prefAliasTargets, type PrefAliasTargets, type PrefAliasTargetsOptions } from './aliasTargets';
@@ -71,7 +76,7 @@ export type { PrefList } from './list';
 export type { PrefMap } from './map';
 export { prefVariantDefault, prefVariantOf, type PrefUnion } from './union';
 export { prefType } from './type';
-export { prefGroupIsPage } from './groups';
+export { prefAsBox, prefGroupIsPage } from './groups';
 export { prefFitsHeading, prefHeadingKey } from './heading';
 export type { PrefBarOverflow, PrefGroup, PrefGroupAs, PrefSection, PrefSectionAs } from './groups';
 export type { PrefAtPath, PrefPath, PrefValueAt, PrefValueOf } from './paths';
@@ -96,6 +101,7 @@ export {
   pairRowsOf,
   type BuiltinPref,
   type PrefBase,
+  type PrefValueBase,
   type PrefBoolean,
   type PrefBooleanControl,
   type PrefBooleanEncoding,
@@ -116,3 +122,4 @@ export {
   type PrefString,
   type PrefStringControl,
 } from './schema';
+export { mergePrefGroups } from './merge';

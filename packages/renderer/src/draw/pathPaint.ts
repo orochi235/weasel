@@ -1,4 +1,4 @@
-import type { CommandPaint, Stroke, Paint, TexturePaint } from '@weasel-js/paint';
+import { scaleVertexWidth, type CommandPaint, type Stroke, type Paint, type TexturePaint, type VertexWidth } from '@weasel-js/paint';
 import { getPaintDrawKind } from '../paintKinds';
 import type { PathDrawCommand } from '../DrawCommand';
 import type { GLMeshHandle } from '../cache/GLMeshCache';
@@ -8,6 +8,7 @@ import { strokeMesh } from '../cache/strokeMeshCache';
 import { resolveStrokeLengths, type StrokedPathCommand } from '../strokeLengths';
 import { metricKeepsRects, type StrokeSpaces } from '@weasel-js/stroke';
 import { cachedMarkerCommands } from '../cache/markerCommandCache';
+import { withCornersResolved } from './cornersResolved';
 import type { DrawContext } from './drawContext';
 import { drawTriangles } from './drawTriangles';
 import { fillMesh, meshHandle, fillMeshHandle } from './mesh';
@@ -18,7 +19,8 @@ import { pushRect, pushRampRect, tryStageFill } from './batch';
 import { batchPaint } from './gradient';
 import { paintBindContext, bindPattern, bindGradient } from './paintBind';
 
-export function drawPath(ctx: DrawContext, cmd: PathDrawCommand): void {
+export function drawPath(ctx: DrawContext, given: PathDrawCommand): void {
+  const cmd = withCornersResolved(given);
   // A fill or a stroke with no `paint` paints nothing, the way a node's
   // `fill: null` does. Commands arriving from a consumer painter or overlay
   // can carry one.
@@ -282,12 +284,12 @@ function drawPathStrokeUnclipped(ctx: DrawContext, cmd: StrokedPathCommand, spac
 
 /** The ribbon cache compares `vertexWidths` by reference, so the doubled copy
  *  has to be the same array on every frame the source array is. */
-const DOUBLED_VERTEX_WIDTHS = new WeakMap<number[], number[]>();
+const DOUBLED_VERTEX_WIDTHS = new WeakMap<VertexWidth[], VertexWidth[]>();
 
-function doubledVertexWidths(widths: number[]): number[] {
+function doubledVertexWidths(widths: VertexWidth[]): VertexWidth[] {
   let doubled = DOUBLED_VERTEX_WIDTHS.get(widths);
   if (doubled === undefined) {
-    doubled = widths.map((w) => w * 2);
+    doubled = widths.map((w) => scaleVertexWidth(w, 2));
     DOUBLED_VERTEX_WIDTHS.set(widths, doubled);
   }
   return doubled;

@@ -71,7 +71,7 @@ describe('built-in kind table', () => {
     expectTypeOf<keyof typeof PREF_KINDS>().toEqualTypeOf<PrefKind>();
     expectTypeOf<BuiltinPref['kind']>().toEqualTypeOf<PrefKind>();
     expect(Object.keys(PREF_KINDS).sort()).toEqual(
-      ['action', 'alias', 'boolean', 'color', 'enum', 'field', 'label', 'list', 'map', 'number', 'object', 'paint', 'separator', 'string', 'union'],
+      ['action', 'actions', 'alias', 'boolean', 'color', 'enum', 'field', 'label', 'list', 'map', 'number', 'object', 'paint', 'separator', 'string', 'union'],
     );
   });
 

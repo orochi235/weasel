@@ -4,6 +4,8 @@
  * and per-vertex color), strokes, MSDF text, images, plus a
  * custom shader API (registerProgram, registerTexture, kind:'shader'), and
  * full-screen effect passes (registerEffect, blur/vignette, group `effects`).
+ *
+ * @packageDocumentation
  */
 
 export {

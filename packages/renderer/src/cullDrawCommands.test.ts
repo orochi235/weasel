@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import type { DrawCommand, GroupDrawCommand, PathDrawCommand } from './DrawCommand';
-import { cullDrawCommands } from './cullDrawCommands';
+import { cullDrawCommands, strokeReachAt } from './cullDrawCommands';
 import { mat3 } from '@weasel-js/geom';
 import { PATH_M, PATH_L, PATH_C } from '@weasel-js/geom';
 
@@ -14,6 +14,15 @@ const rect = (x: number, y: number, width = 10, height = 10): PathDrawCommand =>
 });
 
 const I = mat3.identity();
+
+describe('strokeReachAt', () => {
+  it('reaches as far as the wider side of a vertexWidths pair', () => {
+    const plain = strokeReachAt({ paint, width: 4, miterLimit: 1 }, 1);
+    const sided = strokeReachAt({ paint, width: 4, miterLimit: 1, vertexWidths: [{ left: 1, right: 20 }, 4] }, 1);
+    expect(sided).toBeGreaterThan(plain);
+    expect(sided).toBeCloseTo(40 * Math.SQRT2, 6);
+  });
+});
 
 describe('cullDrawCommands', () => {
   it('drops a path wholly outside the screen and keeps one inside', () => {

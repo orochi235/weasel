@@ -1,4 +1,8 @@
-/** Part of the `@weasel-js/core` barrel. Default tool and action icons. */
+/**
+ * Part of the `@weasel-js/core` barrel. Default tool and action icons.
+ *
+ * @packageDocumentation
+ */
 
 // ─── Built-in tool icons ────────────────────────────────────────────────────
 // Match the convention used by the Pathfinder panel and WeaselDraw
@@ -21,6 +25,9 @@ export {
   PenIcon,
   HandIcon,
   SliceIcon,
+  BoneIcon,
+  WeightIcon,
+  MeasureIcon,
   UnknownIcon,
 } from '../icons';
 export type { IconProps } from '../icons';
@@ -41,7 +48,13 @@ export {
   MergeIcon,
 } from '../interactions/actions/defaults/icons/booleanIcons';
 export { CreateOutlinesIcon, OutlineStrokeIcon } from '../interactions/actions/defaults/icons/outlineIcons';
-export { RetractHandlesIcon, SymmetricHandlesIcon } from '../interactions/actions/defaults/icons/anchorIcons';
+export {
+  AverageAnchorsIcon, BendSegmentIcon, HarmonizeIcon, HoldHandleAngleIcon, HoldHandleLengthIcon, RetractHandlesIcon, SimplifyBrushIcon,
+  SymmetricHandlesIcon,
+} from '../interactions/actions/defaults/icons/anchorIcons';
+export {
+  BridgeIcon, CutAtCrossingsIcon, JoinIcon, OffsetPathIcon, SimplifyIcon,
+} from '../interactions/actions/defaults/icons/pathIcons';
 
 // ─── Default edit-action icons ──────────────────────────────────────────────
 // Shipped on the clipboard, duplicate, group, reorder and flip actions.
@@ -80,6 +93,7 @@ export {
   UndoIcon,
   RedoIcon,
   DeleteIcon,
+  TuneIcon,
   type ActionGlyphProps,
 } from '../interactions/actions/defaults/icons/actionGlyphIcons';
 export { ACTION_GLYPHS } from '../interactions/actions/defaults/icons/actionGlyphs';

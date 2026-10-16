@@ -274,17 +274,19 @@ describe('PropertyField number', () => {
       />,
     );
 
-  it('reports every keystroke that reads, units and all, through a lone onChange', () => {
+  it('reports every keystroke that reads, units and all, through onInput and never onChange', () => {
+    const onInput = vi.fn();
     const onChange = vi.fn();
-    width({ onChange });
+    width({ onInput, onChange });
     const field = screen.getByRole('spinbutton', { name: 'Width' });
     fireEvent.change(field, { target: { value: '1' } });
     fireEvent.change(field, { target: { value: '15mm' } });
     fireEvent.change(field, { target: { value: '15x' } });
-    expect(onChange.mock.calls).toEqual([[1], [1.5]]);
-    // Text that ends unreadable gives back the value typing began from.
+    expect(onInput.mock.calls).toEqual([[1], [1.5]]);
+    // Text that ends unreadable gives back the value typing began from, and commits nothing.
     fireEvent.blur(field);
-    expect(onChange.mock.calls).toEqual([[1], [1.5], [2]]);
+    expect(onInput.mock.calls).toEqual([[1], [1.5], [2]]);
+    expect(onChange).not.toHaveBeenCalled();
   });
 
   it('splits live keystrokes from the value settled on blur', () => {
