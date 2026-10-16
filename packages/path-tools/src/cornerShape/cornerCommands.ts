@@ -15,6 +15,7 @@ import {
 } from '@weasel-js/geom';
 import { depOf, pathOperationTags, requiresAnchorSelection, type EditAnchorsDep } from '@weasel-js/core';
 import { DEFAULT_CORNER_SHAPE, editedPath } from './editCorner';
+import { CornerRadiusIcon, CornerShapeIcon } from '../commandIcons';
 
 /** The share of a corner's room that a shape given to a sharp corner cuts. */
 export const DEFAULT_CORNER_TRIM_SHARE = 0.25;
@@ -76,6 +77,7 @@ function cornersSelected(deps: ActionDeps | undefined): true | ActionDisabledRea
  */
 export const setCornersAction: Action & { requires: string[] } = {
   id: 'setCorners',
+  icon: CornerRadiusIcon,
   label: 'Set corners',
   tags: pathOperationTags('command'),
   eligible: { capability: 'edits-anchors' },
@@ -103,6 +105,7 @@ export const setCornersAction: Action & { requires: string[] } = {
  */
 export const cycleCornerShapeAction: Action & { requires: string[] } = {
   id: 'cycleCornerShape',
+  icon: CornerShapeIcon,
   label: 'Next corner shape',
   tags: pathOperationTags('command'),
   group: 'anchors',

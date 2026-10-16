@@ -18,6 +18,7 @@ export {
   polygonFromPoints,
   polylineFromPoints,
   rectPath,
+  asPolygonPath,
   ellipsePath,
   regularPolygonPath,
   starPath,
@@ -134,6 +135,7 @@ export {
   PATH_SNAP_LABELS,
   DEFAULT_PATH_SNAP_RADIUS,
 } from '../features/paths';
+export { hasEditablePath } from '../features/paths/editablePath';
 export type {
   Path,
   PolygonPath,

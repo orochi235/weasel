@@ -1,7 +1,8 @@
 import { useMemo } from 'react';
 import type { Action, ToolKeybinding } from '@weasel-js/routing';
 import type { PolygonPath } from '@weasel-js/geom';
-import { type Scene, SliceIcon, type Tool } from '@weasel-js/core';
+import { type Scene, type Tool } from '@weasel-js/core';
+import { TrimIcon } from '../icons';
 import { planTrim } from './trimSegment';
 import { useStrokeClickTool, type StrokeClickExtras, type StrokeClickToolOptions } from '../shared/strokeClickTool';
 import { createPiecePreview } from './piecePreview';
@@ -43,7 +44,7 @@ export function useTrimTool(options: UseTrimToolOptions = {}): Tool {
     };
   }, []);
   return useStrokeClickTool(
-    { id: 'trim', label: 'Trim segment', icon: SliceIcon, hookName: 'useTrimTool', actionId: 'trimPath', keybinding: TRIM_KEY },
+    { id: 'trim', label: 'Trim segment', icon: TrimIcon, hookName: 'useTrimTool', actionId: 'trimPath', keybinding: TRIM_KEY },
     options,
     extras,
   );

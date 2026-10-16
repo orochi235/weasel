@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { PathBuilder, pathToAnchors, type PolygonPath } from '@weasel-js/geom';
+import { PathBuilder, boundsOfPath, pathToAnchors, rectPath, type PolygonPath } from '@weasel-js/geom';
 import type { ImmediateInvoker, InvocationCtx, OngoingInvoker } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import type { Op } from 'core/ops/types';
@@ -9,11 +9,14 @@ import { joinPathsAction, snipAtCrossingsAction } from './cutJoin';
 
 interface StubNode { id: NodeId; kind: 'leaf'; layer: string; pose: unknown; data: unknown; parent: NodeId | null }
 
-/** A scene whose nodes store their polygon as the pose, in the order given. */
-function setup(paths: Record<string, PolygonPath>, selected: string[], extra: Record<string, unknown> = {}) {
+type Stored = { pose: unknown; data: unknown };
+
+/** A scene whose nodes store their polygon as the pose, or as given, in the order given. */
+function setup(paths: Record<string, PolygonPath | Stored>, selected: string[], extra: Record<string, unknown> = {}) {
   const nodes = new Map<string, StubNode>();
   for (const [id, path] of Object.entries(paths)) {
-    nodes.set(id, { id: asNodeId(id), kind: 'leaf', layer: 'main', pose: path, data: { tag: id, skin: [1], constraints: [{ kind: 'fixed', anchor: 0 }] }, parent: null });
+    const stored = 'kind' in path ? { pose: path, data: { tag: id, skin: [1], constraints: [{ kind: 'fixed', anchor: 0 }] } } : path;
+    nodes.set(id, { id: asNodeId(id), kind: 'leaf', layer: 'main', ...stored, parent: null });
   }
   let minted = 0;
   const scene = {
@@ -96,6 +99,18 @@ describe('offsetPathAction', () => {
     expect(insert.slot).toEqual({ index: 1 });
     expect(insert.node!.data).toEqual({ tag: 'b' });
     expect(selection.set).toHaveBeenLastCalledWith(['new-1']);
+  });
+
+  it('offsets a rectangle stored as a rect path, the copy holding a polygon', () => {
+    const rect = { pose: { x: 10, y: 10, width: 20, height: 20 }, data: { path: rectPath(0, 0, 20, 20) } };
+    const { deps, batches } = setup({ a: rect }, ['a']);
+    const handle = ongoing.start(ctx(deps, { distance: 5 }), {});
+    handle.onEnd!(ctx(deps), 'commit');
+    const copy = args(batches[0].ops[0]).node!;
+    const path = (copy.data as { path: PolygonPath }).path;
+    expect(path.kind).toBe('polygon');
+    expect(copy.pose).toMatchObject({ x: 5, y: 5, width: 30, height: 30 });
+    expect(boundsOfPath(path)).toMatchObject({ width: 30, height: 30 });
   });
 
   it('puts a shrunk copy in front of its source', () => {

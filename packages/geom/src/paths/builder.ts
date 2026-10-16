@@ -10,8 +10,9 @@
  * cases. `rectPath` returns the lighter `RectPath` subtype, not a polygon.
  */
 
+import { rectToContour } from '../box';
 import { PATH_C, PATH_L, PATH_M, PATH_Q, PATH_Z } from '../commands';
-import type { PathFillRule, PolygonPath, RectPath } from '../path';
+import type { Path, PathFillRule, PolygonPath, RectPath } from '../path';
 
 /** Fluent builder for `PolygonPath`; hides the `Uint8Array`/`Float32Array` encoding behind move/line/curve/close calls. */
 export class PathBuilder {
@@ -85,6 +86,18 @@ export class PathBuilder {
 /** Construct a `RectPath` (the fast-path subtype). */
 export function rectPath(x: number, y: number, width: number, height: number): RectPath {
   return { kind: 'rect', x, y, width, height };
+}
+
+/** `path` as a command stream drawing the same outline. A rect becomes its four
+ *  corners clockwise from `(x, y)`, the order `countPathAnchors` numbers them in. */
+export function asPolygonPath(path: Path): PolygonPath {
+  if (path.kind === 'polygon') return path;
+  return {
+    kind: 'polygon',
+    commands: new Uint8Array([PATH_M, PATH_L, PATH_L, PATH_L, PATH_Z]),
+    coords: Float32Array.from(rectToContour(path.x, path.y, path.width, path.height)),
+    fillRule: 'nonzero',
+  };
 }
 
 /** Build an open polyline from a flat list of points — the same geometry as

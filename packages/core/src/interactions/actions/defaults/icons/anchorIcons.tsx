@@ -130,3 +130,20 @@ export function AverageAnchorsIcon() {
     </svg>
   );
 }
+
+/**
+ * Bend segment: a straight segment, dashed, pulled up into a curve.
+ *
+ * @experimental
+ */
+export function BendSegmentIcon() {
+  return (
+    <svg {...SVG_BASE}>
+      <path d="M3.5 15 H16.5" strokeWidth={1} strokeDasharray="1.4 1.4" />
+      <path d="M3.5 15 Q10 3 16.5 15" />
+      <path d="M10 12.5 V10 M8.8 11.2 L10 10 L11.2 11.2" strokeWidth={1} />
+      <rect x="2" y="13.5" width="3" height="3" fill="currentColor" stroke="none" />
+      <rect x="15" y="13.5" width="3" height="3" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}

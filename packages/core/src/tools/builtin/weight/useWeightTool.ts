@@ -1,7 +1,8 @@
-import { useMemo } from 'react';
+import { createElement, useMemo } from 'react';
 import { useKitSettings, useLatest } from '@weasel-js/react';
 import type { ToolKeybinding } from '@weasel-js/routing';
 import type { NodeId, Scene } from 'core/scene/types';
+import { WeightIcon } from '../../../icons';
 import { defineTool } from '../../overlayBinding';
 import type { Tool } from '../../overlayBinding';
 import { createBoneOverlay } from '../bone/boneOverlay';
@@ -75,7 +76,7 @@ export function useWeightTool(options: UseWeightToolOptions): Tool {
     capabilities: ['edits-page'],
     hookName: 'useWeightTool',
     cursor: 'crosshair',
-    presentation: { label: 'Weight', group: 'shape' },
+    presentation: { label: 'Weight', icon: createElement(WeightIcon), group: 'shape' },
     ...(keybinding === null ? {} : { keybinding: keybinding ?? { key: 'W' } }),
     actions,
     overlay,
