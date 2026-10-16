@@ -90,6 +90,7 @@
       "@weasel-js/parallax": ["../parallax/src/index.ts"],
       "@weasel-js/prefs": ["../prefs/src/index.ts"],
       "@weasel-js/prefs/react": ["../prefs/src/react.ts"],
+      "@weasel-js/prefs/vite": ["../prefs/src/vite.ts"],
       "@weasel-js/quantity": ["../quantity/src/index.ts"],
       "@weasel-js/react": ["../react/src/index.ts"],
       "@weasel-js/react/testing/*": ["../react/src/testing/*"],
