@@ -8,6 +8,7 @@ import {
   ANCHOR_FIELDS, pathToAnchors, readAnchorFields, writeAnchorField,
   type AnchorField, type AnchorFieldValues, type NumberEntry, type PolygonPath,
 } from '@weasel-js/geom';
+import { pathOperationTags } from '../pathGestureTags';
 import { commitAnchorEdit, depOf, requiresAnchorSelection } from './anchorEditing';
 
 /** What `setAnchorField` takes: the field, and either the value every
@@ -34,6 +35,7 @@ function entryOf(params: Record<string, unknown> | undefined): { field: AnchorFi
 export const setAnchorFieldAction: Action & { requires: string[] } = {
   id: 'setAnchorField',
   label: 'Set anchor position',
+  tags: pathOperationTags('command'),
   eligible: { capability: 'edits-anchors' },
   requires: ['editAnchors'],
   invoker: {

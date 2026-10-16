@@ -1,5 +1,6 @@
 import { act, renderHook } from '@testing-library/react';
-import { always, never, PATH_DIRECTION_CHROME_ID, type ActionDeps, type ImmediateInvoker } from '@weasel-js/core';
+import { always, never, type ActionDeps, type ImmediateInvoker } from '@weasel-js/core';
+import { PATH_DIRECTION_CHROME_ID } from '@weasel-js/path-tools';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { togglePathDirectionAction } from './appCommands/actions';
 import { drawPrefs } from './prefs';

@@ -19,6 +19,7 @@ import {
   TrialSceneCanvas,
   useTrialScene,
 } from '@weasel-js/labkit';
+import { segmentTypePreset } from '@weasel-js/path-tools';
 import { ActionBar, SelectIcon } from '@weasel-js/ui';
 import { useMemo } from 'react';
 import '@weasel-js/labkit/styles.css';
@@ -49,6 +50,8 @@ const createLabScene = () => {
   });
 };
 
+const FEATURES = ['pick', 'move', 'paths', segmentTypePreset] as const;
+
 /** Opens in path edit with the top edge's two anchors selected, so Shift+C has a segment to convert. */
 const OPENING = { id: 'tab', anchors: [1, 2] };
 
@@ -63,7 +66,7 @@ function SegmentTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   return (
     <>
       <TrialSceneCanvas
-        features={['pick', 'move', 'paths']}
+        features={FEATURES}
         scene={scene}
         selection={selection}
         trial={ctx.trial}

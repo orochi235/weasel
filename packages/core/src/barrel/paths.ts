@@ -166,9 +166,7 @@ export {
 } from '../features/paths/shapeGenerator';
 export { useAnchorFields, type AnchorFieldsApi } from '../features/paths/useAnchorFields';
 export type { SetAnchorFieldParams } from '../interactions/actions/defaults/anchorFields';
-export type {
-  AnchorField, AnchorFieldValues, DirectionMark, NumberEntry, SegmentRef, SegmentType,
-} from '@weasel-js/geom';
+export type { AnchorField, AnchorFieldValues, NumberEntry } from '@weasel-js/geom';
 
 // ─── Building path commands and path-edit features on core ─────────────────
 export { commitOps } from '../interactions/actions/defaultCommitAdapter';
@@ -192,6 +190,7 @@ export {
 export { makeHandleCommand, type HandleEdit, type HandleScope } from '../interactions/actions/defaults/anchorHandles';
 export { joinSelectedAnchors } from '../interactions/actions/defaults/anchorJoin';
 export { deleteSelectedMark, editTargetOf, markUnder } from '../interactions/actions/defaults/pathEditMarks';
+export { segmentUnder } from '../interactions/actions/defaults/segmentUnder';
 export { pathEditPreview } from '../interactions/actions/edit-anchors/preview';
 export { editedPathSymmetries } from '../interactions/actions/edit-anchors/symmetry';
 export { locksInForce } from '../interactions/actions/edit-anchors/handleDrag';

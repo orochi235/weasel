@@ -20,6 +20,7 @@ import {
   TrialSceneCanvas,
   useTrialScene,
 } from '@weasel-js/labkit';
+import { PATH_DIRECTION_CHROME_ID, pathStructurePreset } from '@weasel-js/path-tools';
 import { ActionBar, SelectIcon } from '@weasel-js/ui';
 import { useMemo } from 'react';
 import '@weasel-js/labkit/styles.css';
@@ -61,6 +62,8 @@ const createLabScene = () =>
     ],
   });
 
+const FEATURES = ['pick', 'move', 'paths', pathStructurePreset] as const;
+
 /** Opens on the ring in path edit with its third anchor selected, ready for Make start point. */
 const OPENING = { id: 'ring', anchors: [2] };
 
@@ -68,11 +71,11 @@ function DirectionTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const scene = useTrialScene(ctx, createLabScene);
   const selection = useSelection({ mode: 'multi', scene, initial: [asNodeId('ring')] });
   const { arrows } = ctx.config;
-  const chromeVisibility = useMemo(() => ({ 'path-edit.direction': arrows ? always : never }), [arrows]);
+  const chromeVisibility = useMemo(() => ({ [PATH_DIRECTION_CHROME_ID]: arrows ? always : never }), [arrows]);
   return (
     <>
       <TrialSceneCanvas
-        features={['pick', 'move', 'paths']}
+        features={FEATURES}
         scene={scene}
         selection={selection}
         trial={ctx.trial}

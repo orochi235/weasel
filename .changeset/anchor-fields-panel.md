@@ -7,6 +7,6 @@
 
 `UnitField` and a typed `PropertyField` number take an offset: `+=` or `-=` and an amount, units read. Given `onOffset`, the amount goes there — what a mixed field needs, for each value it stands for to move by its own amount; without it, the offset is added to `value` and commits through `onChange`.
 
-`<ActionBar only>` keeps just the named entries of its group, each an action id or an `id:variant` key.
+`<ActionBar only>` keeps just the named entries of those its `group` or `tag` picks, each an action id or an `id:variant` key.
 
 `<SceneCanvas defaultPathEdit={{ id, anchors }}>` opens the canvas with that path in anchor edit and those anchors selected, as though it had been double-clicked; it is read once, at mount, and `id` must be selected. Its type is `PathEditOpening`.

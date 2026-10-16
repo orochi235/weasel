@@ -94,7 +94,6 @@ via a tool's `bindings` or a `trigger` call.
 | `exitPathEdit` | Escape |
 | `deleteAnchors` | Delete, Backspace (phase `initial`) |
 | `nudgeAnchors.<dir>` | Arrow / Shift+Arrow, as `nudge` |
-| `convertSegments` | Shift+C — flips the selected segments between straight and curved |
 
 Mod+Alt+bracket rather than Mod+Shift+bracket for the extreme reorders: Chrome
 reserves Mod+Shift+bracket for tab switching. On macOS Option+bracket emits a
@@ -115,7 +114,6 @@ curly quote, so both codepoints are listed.
 | `selectAnchor` | click |
 | `insertPathAnchor` | Alt+click |
 | `cutPathAtAnchor` | Alt+Shift+click |
-| `convertSegmentAt` | Shift+double-click on a segment of the edited path |
 | `viewport.pinchZoom` | two-finger `multiTouch` |
 | `ingest` | `drop` or `paste`, any modifiers |
 | `clipboard.pasteEvent` | `paste` carrying `text/plain`, any modifiers — registered only where `ingest` is not |
@@ -135,7 +133,7 @@ from the `resize`, `rotate` and `move` presets' selection contributions.
 `.top` / `.bottom` / `.centerX` / `.centerY`, `distribute.horizontal` /
 `.vertical`, `pathfinder.union` / `.subtract` / `.intersect` / `.exclude` /
 `.divide` / `.crop`, `setFill`, `setStroke`, `setFillOpacity`,
-`setStrokeOpacity`, `setPathStart`, `reversePath`, `setAnchorField` — all UI-driven.
+`setStrokeOpacity`, `setAnchorField` — all UI-driven.
 
 The `align.*` actions take a `to` param and `flip` a `pivot` param naming what
 the selection lines up against: `'union'` (the selection itself — align's

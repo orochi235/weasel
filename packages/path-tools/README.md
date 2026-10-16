@@ -35,14 +35,17 @@ that imports only some never loads the others:
 | `curvatureCombPreset` | The curvature comb over the open path, under chrome id `path-edit.comb` |
 | `balancePreset` | Balance handles and Equalize, from grips under chrome id `path-edit.balance` |
 | `constraintsPreset` | Path constraints: the actions, their marks, and every edit finished so they hold |
+| `pathStructurePreset` | Make start point and Reverse path direction, and arrows showing which way the open path runs, under chrome id `path-edit.direction` |
+| `segmentTypePreset` | Turn segments straight or curved, from the selection (Shift+C) or under a Shift+double-click |
 | `pathEffectsPreset` | Blend, Bend along, and Repeat along, and the actions that edit and expand them |
 | `warpPreset` | Expand and configure a held warp; `useDistortTool`, `useEnvelopeTool`, and `usePuppetTool` bring their own drags |
 
-The comb, balance lines, and constraint marks are off until chrome-caps shows
-them, and `createCurvatureCombPreset`, `createBalancePreset`, and
-`createConstraintsPreset` take their look. They reach path edit through core's
-`PathEditExtension`: marks drawn on the open path, parts of it to press, marks
-a click selects and Delete removes, and what an edit keeps true.
+The comb, balance lines, constraint marks, and direction arrows are off until
+chrome-caps shows them, and `createCurvatureCombPreset`, `createBalancePreset`,
+`createConstraintsPreset`, and `createPathStructurePreset` take their look.
+They reach path edit through core's `PathEditExtension`: marks drawn on the
+open path, parts of it to press, marks a click selects and Delete removes, and
+what an edit keeps true.
 
 The tools are hooks, mounted with `<SceneCanvas tools>` as core's are; each
 binds an action its family's preset registers, so turn on both.

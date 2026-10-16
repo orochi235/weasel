@@ -274,6 +274,22 @@ Priority tags:
   keys: its tool key, M, which moved Envelope mesh to C when the two met in draw; the Shift angle
   step; that Move by and Rotate by fall back to the newest measurement when none is picked; and the
   readout's look (`packages/core/src/tools/builtin/measure/`, `<MeasureReadout>` in `@weasel-js/ui`).
+- **(P2) Tune path start and direction hands-on, with the maintainer driving.** First-draft
+  behavior and keys: `setPathStart` and `reversePath` have no default keys, an open subpath's
+  interior anchor cannot become its start, and the direction marks' look (a 9 px orange arrow per
+  segment and an 8 px start ring, `DIRECTION_DEFAULTS`), off by default under
+  `path-edit.direction` with draw's View toggle as the only switch
+  (`packages/path-tools/src/pathStructure/`, `apps/draw/src/usePathDirection.ts`).
+- **(P2) Tune segment type hands-on, with the maintainer driving.** First-draft behavior and keys:
+  a curved segment's handles start at its thirds, Shift+C with no `to` flips the lot by whether
+  any is straight, and Shift+double-click flips one segment
+  (`packages/path-tools/src/segmentType/convertSegments.ts`). Shift+C is also what the path
+  constraints lab tunes onto `unconstrainAnchors`, and C is Envelope mesh's tool key.
+- **(P2) Tune anchor fields hands-on, with the maintainer driving.** First-draft behavior: the
+  panel shows X and Y for any selection and handles only for a lone anchor, a typed handle mirrors
+  on a smooth anchor, `+=`/`-=` offsets each anchor by its own amount, and draw shows it at the
+  top of Properties in points (`packages/ui/src/components/AnchorFields/`,
+  `packages/geom/src/paths/anchorFields.ts`, `apps/draw/src/RightSidebar.tsx`).
 - **(P2) A rectangle has no anchors in path edit.** Draw stores a drawn rectangle's `data.path`
   as a `RectPath` (`kind: 'rect'`), and `classifyPathStorage`
   (`packages/core/src/features/paths/editablePath.ts`) accepts only a polygon, so double-clicking
@@ -316,8 +332,9 @@ Priority tags:
   mapping it through each node's parent on replay would make the two agree.
 - **(P3) The path commands have no icons.** `simplifyPath`, `offsetPath`, `snipAtCrossings`,
   `joinPaths`, `bridgePaths`, `joinAnchors`, `bridgeAnchors`, `averageAnchors`, and
-  `extendToMeet` show as text in draw's bar, `useTrimTool` and `useExtendTool` borrow
-  `SliceIcon`, and `useSmudgeBrushTool` has none. `expandWarp` and `configureWarp` have none
+  `extendToMeet` show as text in draw's bar, as do `setPathStart`, `reversePath`,
+  `convertSegments`, and draw's own `view.pathDirection` toggle; `useTrimTool` and
+  `useExtendTool` borrow `SliceIcon`, and `useSmudgeBrushTool` has none. `expandWarp` and `configureWarp` have none
   either, and `useDistortTool`, `useEnvelopeTool`, and `usePuppetTool` give no
   `presentation.icon`: their labs borrow `FitStretchIcon`, `GridIcon`, and `PinIcon` from
   `@weasel-js/ui`.

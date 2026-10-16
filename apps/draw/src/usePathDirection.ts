@@ -1,4 +1,5 @@
-import { always, never, PATH_DIRECTION_CHROME_ID, type VisibilityRules } from '@weasel-js/core';
+import { always, never, type VisibilityRules } from '@weasel-js/core';
+import { PATH_DIRECTION_CHROME_ID } from '@weasel-js/path-tools';
 import { useMemo } from 'react';
 import type { AppCommands } from './appCommands';
 import { usePref } from './prefs';

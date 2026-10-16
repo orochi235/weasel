@@ -3,41 +3,28 @@
  * (`convertSegments`): the selected segments from the keyboard, or the one
  * under a Shift+double-click.
  */
-
-import type { Action, ActionDeps, ImmediateInvoker } from '@weasel-js/routing';
-import { ActionDisabledReason } from '@weasel-js/routing';
+import { ActionDisabledReason, type Action, type ImmediateInvoker } from '@weasel-js/routing';
+import { convertSegments, editAnchorSetTracked, segmentsBetweenAnchors, type SegmentType } from '@weasel-js/geom';
 import {
-  convertSegments, editAnchorSetTracked, pathToAnchors, segmentsBetweenAnchors,
-  type PolygonPath, type SegmentType,
-} from '@weasel-js/geom';
-import { inPlane, editingLayer } from '../planeInput';
-import { commitAnchorEdit, depOf } from './anchorEditing';
-import { segmentUnder } from './segmentUnder';
+  anchorEditWouldChange, commitAnchorEdit, depOf, editingLayer, inPlane, pathOperationTags, segmentUnder,
+} from '@weasel-js/core';
 
 const LABEL = 'Convert segments';
 
 const typeOf = (params: Record<string, unknown> | undefined): SegmentType | undefined =>
   (params?.to === 'line' || params?.to === 'curve' ? params.to : undefined);
 
-/** Whether the anchors selected in path edit bound any segment. */
-function hasSelectedSegments(deps: ActionDeps | undefined): boolean {
-  const dep = depOf(deps);
-  if (!dep || dep.selectedAnchors.size < 2) return false;
-  const path = dep.getEditablePath(dep.editingId) as PolygonPath | null | undefined;
-  if (!path || path.kind !== 'polygon') return false;
-  return segmentsBetweenAnchors(pathToAnchors(path), dep.selectedAnchors).length > 0;
-}
-
 /**
- * Convert the selected segments — those whose two ends are
- * both selected anchors. `params.to` `'line'` straightens them, `'curve'`
- * curves them with handles at their thirds so they keep their shape, and no
- * `to` (Shift+C) curves them all when any is straight and straightens them
+ * @experimental Convert the selected segments — those whose two ends are both
+ * selected anchors. `params.to` `'line'` straightens them, `'curve'` curves
+ * them with handles at their thirds so they keep their shape, and no `to`
+ * (Shift+C) curves them all when any is straight and straightens them
  * otherwise.
  */
 export const convertSegmentsAction: Action & { requires: string[] } = {
   id: 'convertSegments',
   label: LABEL,
+  tags: pathOperationTags('command'),
   group: 'anchors',
   variants: [
     { key: 'line', label: 'Make segments straight', params: { to: 'line' } },
@@ -55,20 +42,25 @@ export const convertSegmentsAction: Action & { requires: string[] } = {
       commitAnchorEdit(dep, LABEL, (set) => convertSegments(set, segmentsBetweenAnchors(set, selected), typeOf(params)));
     },
   } as ImmediateInvoker,
-  enabled: (deps) => (hasSelectedSegments(deps) ? true : ActionDisabledReason.SelectionRequired),
+  enabled: (deps) => {
+    const selected = [...(depOf(deps)?.selectedAnchors ?? [])];
+    const any = selected.length > 1
+      && anchorEditWouldChange(deps, (set) => convertSegments(set, segmentsBetweenAnchors(set, selected)));
+    return any ? true : ActionDisabledReason.SelectionRequired;
+  },
 };
 
 /**
- * Shift+double-click a segment of the path being edited to
- * flip it between straight and curved. Off every segment the click falls
- * through.
+ * @experimental Shift+double-click a segment of the path being edited to flip
+ * it between straight and curved. Off every segment the click falls through.
  */
 export const convertSegmentAtAction: Action & { requires: string[] } = inPlane({
   id: 'convertSegmentAt',
   label: 'Convert segment',
+  tags: pathOperationTags('click'),
   defaultBinding: { kind: 'doubleClick', mods: { shift: true } },
   eligible: { capability: 'edits-anchors' },
-  requires: ['editAnchors', 'view'],
+  requires: ['editAnchors', 'view', 'kitSettings'],
   invoker: {
     timing: 'immediate',
     run(deps, params) {

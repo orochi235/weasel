@@ -16,12 +16,15 @@ export {
   createBalancePreset,
   createConstraintsPreset,
   createCurvatureCombPreset,
+  createPathStructurePreset,
   curvatureCombPreset,
   extendPreset,
   handleLocksPreset,
   harmonizePreset,
   pathEffectsPreset,
+  pathStructurePreset,
   pathTools,
+  segmentTypePreset,
   simplifyBrushPreset,
   smudgePreset,
   trimPreset,
@@ -44,6 +47,8 @@ export {
   DEFAULT_SMUDGE_RADIUS_PX, DEFAULT_SMUDGE_STRENGTH, smudgeBrushAction, type SmudgeBrushParams,
 } from './smudge/smudgeBrush';
 export { harmonizeAnchorsAction } from './harmonize/harmonize';
+export { reversePathAction, setPathStartAction } from './pathStructure/pathStructure';
+export { convertSegmentAtAction, convertSegmentsAction } from './segmentType/convertSegments';
 export { balanceHandlesAction, equalizeHandlesAction } from './balance/handleBalance';
 export {
   constrainAnchorsAction, constraintsForAnchors, deleteConstraintAction, unconstrainAnchorsAction,
@@ -83,6 +88,9 @@ export {
   CONSTRAINTS_EXTENSION_ID, createConstraintsExtension, selectedConstraintOf, setConstraints,
 } from './constraints/constraintsExtension';
 export type { ConstraintGlyphStyle } from './constraints/constraintGlyphs';
+export {
+  createDirectionExtension, directionCommands, PATH_DIRECTION_CHROME_ID, type PathDirectionStyle,
+} from './pathStructure/directionMarks';
 
 // ─── Data the tools keep on a node ─────────────────────────────────────────
 export { constraintAxisOf, constraintConflictsOf, constraintsOf } from './constraints/pathConstraints';
