@@ -63,7 +63,7 @@ const MOD_ORDER = ['mod', 'ctrl', 'meta', 'shift', 'alt'] as const;
 
 function renderSpec(spec: GestureSpec): ReactNode {
   const shortcut = keySpecShortcut(spec);
-  if (shortcut) return <KeySequence keys={keySpecsFromShortcut(shortcut)} />;
+  if (shortcut) return <KeySequence keys={keySpecsFromShortcut(shortcut)} variant="inverse" />;
   const mods: LogicalModSpec[] = [];
   if ('mods' in spec && spec.mods) {
     for (const name of MOD_ORDER) {
@@ -85,7 +85,7 @@ function renderSpec(spec: GestureSpec): ReactNode {
       {mods.length > 0 && (
         <>
           <span className={s.bindingSep}>+</span>
-          <KeySequence keys={keySpecsFromMods(mods)} />
+          <KeySequence keys={keySpecsFromMods(mods)} variant="inverse" />
         </>
       )}
     </>

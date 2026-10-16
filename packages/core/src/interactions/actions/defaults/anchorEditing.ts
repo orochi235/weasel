@@ -44,6 +44,7 @@ import { selectionAfterAnchorPress } from '../edit-anchors/action';
 import { constraintMarkUnder } from './constraintMarks';
 import { inPlane, editingLayer } from '../planeInput';
 import { NUDGE_KEY, NUDGE_LABEL, nudgeDelta, type NudgeDirection } from './nudgeSteps';
+import { pathEditToolActive } from './pathEditTools';
 
 /** Screen-pixel radius for "this click landed on an anchor". */
 const ANCHOR_CLICK_PX = 10;
@@ -86,6 +87,12 @@ export function commitAnchorEdit(
   if (!next) return false;
   dep.applyEdit(dep.editingId, next.path, label, next.origins);
   return true;
+}
+
+/** Enabled while a path is open and no path-edit tool has the pointer. */
+function plainAnchorEditing(deps?: ActionDeps): true | ActionDisabledReason {
+  if (!depOf(deps)) return ActionDisabledReason.SelectionRequired;
+  return pathEditToolActive(deps) ? ActionDisabledReason.NotApplicable : true;
 }
 
 /** Enabled only while a path is in edit mode with anchors selected. */
@@ -150,7 +157,7 @@ export const selectAnchorAction: Action & { requires: string[] } = inPlane({
       dep.setSelectedAnchors(selectionAfterAnchorPress(dep.selectedAnchors, hit, additive));
     },
   } as ImmediateInvoker,
-  enabled: (deps) => (depOf(deps) ? true : ActionDisabledReason.SelectionRequired),
+  enabled: plainAnchorEditing,
 }, editingLayer);
 
 /**
@@ -339,7 +346,8 @@ export const marqueeAnchorsAction: Action & { requires: string[] } = inPlane({
       };
     },
   },
-  enabled: () => true,
+  // A path-edit tool has the drag.
+  enabled: (deps) => (pathEditToolActive(deps) ? ActionDisabledReason.NotApplicable : true),
 }, editingLayer);
 
 /** Flat indices of `path`'s anchors inside `rect`. */

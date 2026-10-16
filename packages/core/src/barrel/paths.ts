@@ -1,4 +1,8 @@
-/** Part of the `@weasel-js/core` barrel. Paths, curves, and boolean operations. */
+/**
+ * Part of the `@weasel-js/core` barrel. Paths, curves, and boolean operations.
+ *
+ * @packageDocumentation
+ */
 
 // ─── Paths: data, builders, hit-tests, boolean ops, pen preview ─────────────
 export {
@@ -55,6 +59,7 @@ export {
   pathOriginProjection,
   createPenPreviewLayer,
   createPathEditingOverlayLayer,
+  PATH_COMB_CHROME_ID,
   pathUnion,
   pathIntersect,
   pathSubtract,
@@ -76,9 +81,18 @@ export {
   snipPathsAtCrossings,
   offsetPath,
   simplifyPath,
+  simplifyAnchorsAt,
   averageAnchorsAt,
   joinAnchorsAt,
   transformPath,
+  intersectSegments,
+  pathCrossings,
+  pathSegments,
+  trimPathAt,
+  extendToMeet,
+  lengthenOpenEnd,
+  openEndRay,
+  openPathEnds,
 } from '../features/paths';
 export type {
   Path,
@@ -92,6 +106,7 @@ export type {
   PenPreviewStyle,
   CreatePathEditingOverlayLayerOptions,
   PathEditingOverlayStyle,
+  PathEditCombOptions,
   PathInWorldPose,
   PathStation,
   PointAlongPathOptions,
@@ -100,8 +115,17 @@ export type {
   OffsetPathOptions,
   SimplifyPathOptions,
   AverageAxis,
+  JoinOptions,
   PoseRotation,
   PoseLinear,
+  PathCrossing,
+  PathSegment,
+  PathStop,
+  SegmentCrossing,
+  TrimPathOptions,
+  TrimResult,
+  ExtendToMeetOptions,
+  OpenPathEnd,
 } from '../features/paths';
 export {
   SHAPE_COUNT_RANGE,
@@ -118,6 +142,7 @@ export {
   type ShapeGenerator,
   type StarGenerator,
 } from '../features/paths/shapeGenerator';
+export { DEFAULT_BRIDGE_TENSION } from '../interactions/actions/pathCommands';
 
 // ─── Geometric constraints on a path's anchors ──────────────────────────────
 export {

@@ -99,7 +99,7 @@ export function ActionDetail({ entry, tools, onNavigate }: {
           <DetailRow label="group"><EntryLink kind="group" id={`action:${entry.group}`} label={entry.group} onNavigate={onNavigate} /></DetailRow>
         )}
         {entry.bindingShortcut && (
-          <DetailRow label="binding"><KeySequence keys={keySpecsFromShortcut(entry.bindingShortcut)} /></DetailRow>
+          <DetailRow label="binding"><KeySequence keys={keySpecsFromShortcut(entry.bindingShortcut)} variant="inverse" /></DetailRow>
         )}
         {entry.shortcut && (
           <DetailRow label="shortcut"><code>{entry.shortcut}</code></DetailRow>

@@ -12,7 +12,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { makeGLRecorder } from './testing/glRecorder';
 import { WeaselRenderer } from './WeaselRenderer';
 import { SOLID_RING_SIZE, MAX_VERTICES_PER_BATCH, FLOATS_PER_VERTEX } from './drawBatch';
-import { BATCH_TEXTURE_SLOTS, PAINT_MODE_IMAGE, PAINT_MODE_PLAIN, paintModeOf } from './shaders/batchFill';
+import { BATCH_TEXTURE_SLOTS, RAMP_SLOT, PAINT_MODE_IMAGE, PAINT_MODE_PLAIN, paintModeOf } from './shaders/batchFill';
 import type { DrawCommand } from './DrawCommand';
 import { PATH_M as M, PATH_L as L, PATH_Z as Z, type PolygonPath } from '@weasel-js/geom';
 
@@ -161,6 +161,52 @@ describe('renderer — consecutive image batching', () => {
     r.render(sheets.map((image, i) => ({ ...img(i * 20), image })));
     // The first slots-minus-one fill the run; the last opens a second.
     expect(draws()).toEqual([(BATCH_TEXTURE_SLOTS - 1) * 6, 6]);
+  });
+
+  describe('the ramp atlas, which always takes the last slot', () => {
+    const linear = (x: number) => ({
+      kind: 'path' as const,
+      path: { kind: 'rect' as const, x, y: 0, width: 16, height: 16 },
+      fill: { paint: {
+        kind: 'linear-gradient' as const, from: { x: 0, y: 0 }, to: { x: 16, y: 0 },
+        stops: [{ offset: 0, color: '#000' }, { offset: 1, color: '#fff' }],
+      } },
+    }) as DrawCommand;
+    const sheets = (n: number) =>
+      Array.from({ length: n }, (_, i) => ({ ...img(40 + i * 20), image: bitmap() }));
+
+    // The run holds one texture fewer than BATCH_TEXTURE_SLOTS whichever of
+    // them is the ramp atlas, and whenever it joins.
+    it('shares a run with all but one of the other slots, joining first', () => {
+      r.render([linear(0), ...sheets(BATCH_TEXTURE_SLOTS - 2)]);
+      expect(draws()).toEqual([(BATCH_TEXTURE_SLOTS - 1) * 6]);
+    });
+
+    it('shares a run with all but one of the other slots, joining last', () => {
+      r.render([...sheets(BATCH_TEXTURE_SLOTS - 2), linear(0)]);
+      expect(draws()).toEqual([(BATCH_TEXTURE_SLOTS - 1) * 6]);
+    });
+
+    it('breaks the run at one texture more, joining first', () => {
+      r.render([linear(0), ...sheets(BATCH_TEXTURE_SLOTS - 1)]);
+      expect(draws()).toEqual([(BATCH_TEXTURE_SLOTS - 1) * 6, 6]);
+    });
+
+    it('breaks the run at one texture more, joining last', () => {
+      r.render([...sheets(BATCH_TEXTURE_SLOTS - 1), linear(0)]);
+      expect(draws()).toEqual([(BATCH_TEXTURE_SLOTS - 1) * 6, 6]);
+    });
+
+    it('binds the atlas at its slot, with the bitmaps below it', () => {
+      r.render([linear(0), img(20)]);
+      const units = recorder.calls
+        .filter((c) => c.name === 'activeTexture')
+        .map((c) => (c.args[0] as number) - recorder.gl.TEXTURE0);
+      expect(units).toEqual([0, 1, RAMP_SLOT, 0]);
+      const v = quadUploads()[0];
+      const slot = (vertex: number) => v[vertex * FLOATS_PER_VERTEX + SLOT] % BATCH_TEXTURE_SLOTS;
+      expect([slot(0), slot(4)]).toEqual([RAMP_SLOT, 1]);
+    });
   });
 
   it('folds per-command opacity into the vertices rather than breaking the run', () => {

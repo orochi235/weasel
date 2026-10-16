@@ -23,8 +23,8 @@
     "longestFunction": 165
   },
   "packages/core/src/canvas/Canvas.tsx": {
-    "lines": 737,
-    "longestFunction": 438
+    "lines": 720,
+    "longestFunction": 422
   },
   "packages/core/src/canvas/CanvasView.tsx": {
     "lines": 409,
@@ -37,11 +37,8 @@
   "packages/core/src/canvas/SceneCanvas/GestureDispatcherMounter.tsx": {
     "longestFunction": 253
   },
-  "packages/core/src/canvas/SceneCanvas/StandardActionsRegistrar.tsx": {
-    "longestFunction": 183
-  },
   "packages/core/src/canvas/SceneCanvas/props.ts": {
-    "lines": 637
+    "lines": 610
   },
   "packages/core/src/canvas/sceneAdapter.ts": {
     "longestFunction": 156
@@ -74,7 +71,7 @@
     "longestFunction": 148
   },
   "packages/core/src/interactions/actions/depSchema.ts": {
-    "lines": 495
+    "lines": 435
   },
   "packages/core/src/tools/builtin/pen/usePenTool.ts": {
     "lines": 683,
@@ -97,10 +94,7 @@
     "longestFunction": 337
   },
   "packages/diagram/src/cluster.ts": {
-    "longestFunction": 124
-  },
-  "packages/diagram/src/fromData.ts": {
-    "longestFunction": 166
+    "longestFunction": 122
   },
   "packages/font/src/registerFont.ts": {
     "lines": 839,
@@ -143,8 +137,8 @@
     "longestFunction": 281
   },
   "packages/history/src/history.ts": {
-    "lines": 697,
-    "longestFunction": 448
+    "lines": 695,
+    "longestFunction": 445
   },
   "packages/hud/src/attach.ts": {
     "longestFunction": 162
@@ -238,7 +232,7 @@
     "lines": 439
   },
   "packages/renderer/src/WeaselRenderer.ts": {
-    "lines": 731
+    "lines": 688
   },
   "packages/renderer/src/drawBatch.ts": {
     "lines": 608
@@ -253,7 +247,7 @@
     "longestFunction": 133
   },
   "packages/storage/src/records.ts": {
-    "longestFunction": 197
+    "longestFunction": 185
   },
   "packages/stroke/src/tessellate/dash.ts": {
     "longestFunction": 125

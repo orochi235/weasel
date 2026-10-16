@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
-  BATCH_VERT_SRC, BATCH_FRAG_SRC, BATCH_FILL_UNIFORMS, BATCH_FILL_ATTRIBUTES,
-  BATCH_TEXTURE_SLOTS, BATCH_MATRIX_SLOTS, WHITE_SLOT, PAINT_MODE_PLAIN, PAINT_MODE_RADIAL,
+  BATCH_VERT_SRC, BATCH_FRAG_SRC, BATCH_MATRICES_FRAG_SRC, BATCH_FILL_UNIFORMS, BATCH_FILL_ATTRIBUTES,
+  BATCH_TEXTURE_SLOTS, BATCH_MATRIX_SLOTS, WHITE_SLOT, RAMP_SLOT, PAINT_MODE_PLAIN, PAINT_MODE_RADIAL,
   PAINT_MODE_CONIC, PAINT_MODE_IMAGE, packSlot, withMatrix, paintModeOf, matrixOf,
 } from './batchFill';
 import { FLOATS_PER_VERTEX } from '../drawBatch';
@@ -82,6 +82,15 @@ describe('batch program — the sampler tree', () => {
     expect(deepest).toBe(Math.log2(BATCH_TEXTURE_SLOTS));
     expect(WHITE_SLOT).toBe(0);
   });
+
+  it('fetches a radial or conic ramp from the ramp slot, so the tree is written once', () => {
+    // A second copy of the tree in the gradient arm took a software
+    // rasterizer longer to build than the rest of the program.
+    expect(RAMP_SLOT).toBe(BATCH_TEXTURE_SLOTS - 1);
+    expect(BATCH_FRAG_SRC).toContain(`texture(u_samplers[${RAMP_SLOT}], vec2(t, v_post))`);
+    expect([...BATCH_FRAG_SRC.matchAll(/texture\(/g)]).toHaveLength(BATCH_TEXTURE_SLOTS + 1);
+    expect([...BATCH_FRAG_SRC.matchAll(/sampleSlot\(v_texSlot/g)]).toHaveLength(1);
+  });
 });
 
 describe('batch program — slot, mode, and matrix share a float', () => {
@@ -108,11 +117,21 @@ describe('batch program — slot, mode, and matrix share a float', () => {
   });
 
   it('maps each fragment by the matrix its vertex names', () => {
-    expect(BATCH_FRAG_SRC).toContain(`uniform mat4 u_colorMatrix[${BATCH_MATRIX_SLOTS}];`);
-    expect(BATCH_FRAG_SRC).toContain(`uniform vec4 u_colorBias[${BATCH_MATRIX_SLOTS}];`);
-    expect(BATCH_FRAG_SRC).toContain(`uniform float u_alpha[${BATCH_MATRIX_SLOTS}];`);
-    expect(BATCH_FRAG_SRC).toMatch(/u_colorMatrix\[v_matrix\] \* src \+ u_colorBias\[v_matrix\]/);
-    expect(BATCH_FRAG_SRC).toMatch(/mapped\.a \* u_alpha\[v_matrix\]/);
+    expect(BATCH_MATRICES_FRAG_SRC).toContain(`uniform mat4 u_colorMatrix[${BATCH_MATRIX_SLOTS}];`);
+    expect(BATCH_MATRICES_FRAG_SRC).toContain(`uniform vec4 u_colorBias[${BATCH_MATRIX_SLOTS}];`);
+    expect(BATCH_MATRICES_FRAG_SRC).toContain(`uniform float u_alpha[${BATCH_MATRIX_SLOTS}];`);
+    expect(BATCH_MATRICES_FRAG_SRC).toMatch(/u_colorMatrix\[v_matrix\] \* src \+ u_colorBias\[v_matrix\]/);
+    expect(BATCH_MATRICES_FRAG_SRC).toMatch(/mapped\.a \* u_alpha\[v_matrix\]/);
+  });
+
+  it('maps a run under one matrix by entry 0, with the same arithmetic', () => {
+    expect(BATCH_FRAG_SRC).toContain('uniform mat4 u_colorMatrix[1];');
+    expect(BATCH_FRAG_SRC).not.toContain('[v_matrix]');
+    // Nothing else differs, so a run draws the same pixels under either.
+    const one = BATCH_MATRICES_FRAG_SRC
+      .replace(/(u_colorMatrix|u_colorBias|u_alpha)\[\d+\];/g, '$1[1];')
+      .replace(/\[v_matrix\]/g, '[0]');
+    expect(BATCH_FRAG_SRC).toBe(one);
   });
 });
 

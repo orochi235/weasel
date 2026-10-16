@@ -40,7 +40,6 @@ function ShortcutChips({ item }: { item: ActionItem }) {
           key={`${s.key}|${s.mod}|${s.alt}|${s.shift}`}
           keys={keySpecsFromShortcut(s)}
           joins="none"
-          variant="minimal"
         />
       ))}
     </span>
@@ -192,7 +191,7 @@ export function CommandPalette({ open, onClose, reasonLabels }: CommandPalettePr
           {headerText && <span className={styles.selection}>{headerText}</span>}
           {HINTS.map((h) => (
             <span className={styles.hint} key={h.label}>
-              <KeySequence keys={h.keys} joins="none" />
+              <KeySequence keys={h.keys} joins="none" variant="inverse" />
               {h.label}
             </span>
           ))}

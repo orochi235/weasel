@@ -6,6 +6,8 @@
 import type { AlignReference } from './align/align';
 import type { DistributeMode } from './distribute/distribute';
 import type { FlipAxis, FlipPivot } from './flip/helpers';
+import type { EditAnchorsParams } from './edit-anchors/params';
+import type { SimplifyBrushParams } from './defaults/simplifyBrush';
 import type { PathConstraintKind } from '@weasel-js/geom';
 import type { ConstrainAnchorsParams } from './defaults/anchorConstraints';
 
@@ -37,6 +39,10 @@ declare module '@weasel-js/routing' {
     'nudge.left': NudgeParams;
     'nudge.right': NudgeParams;
     'tool.activate': { toolId: string };
+    editAnchors: EditAnchorsParams;
+    simplifyBrush: SimplifyBrushParams;
+    bridgePaths: { tension?: number };
+    bridgeAnchors: { tension?: number };
     constrainAnchors: ConstrainAnchorsParams;
     unconstrainAnchors: { kind?: PathConstraintKind };
   }

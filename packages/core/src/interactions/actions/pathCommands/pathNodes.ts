@@ -1,9 +1,9 @@
 /**
  * What the path commands share: reading the selected path nodes, and writing
  * new geometry back into a node or into a copy of one. A node's geometry is
- * stored where it already lives (`storeEditablePath`); a skin, whose weights
- * follow anchors the new geometry no longer has, is dropped, and so is a
- * shape generator, which no longer makes it.
+ * stored where it already lives (`storeEditablePath`); a skin and path
+ * constraints, which name anchors the new geometry no longer has, are
+ * dropped, and so is a shape generator, which no longer makes it.
  */
 import type { ActionDeps } from '@weasel-js/routing';
 import type { PolygonPath } from '@weasel-js/geom';
@@ -46,10 +46,11 @@ export function selectedPathNodes(deps: ActionDeps | undefined): PathNode[] {
 export function withPath(node: AnyNode, worldPath: PolygonPath): { pose: unknown; data: unknown } | null {
   const stored = storeEditablePath(node, worldPath);
   if (!stored) return null;
-  const data = withoutShapeGenerator(stored.data) as { skin?: unknown } | null;
-  if (data && typeof data === 'object' && 'skin' in data) {
-    const { skin: _orphaned, ...rest } = data;
-    void _orphaned;
+  const data = withoutShapeGenerator(stored.data) as { skin?: unknown; constraints?: unknown } | null;
+  if (data && typeof data === 'object' && ('skin' in data || 'constraints' in data)) {
+    const { skin: _skin, constraints: _constraints, ...rest } = data;
+    void _skin;
+    void _constraints;
     return { pose: stored.pose, data: rest };
   }
   return { pose: stored.pose, data };

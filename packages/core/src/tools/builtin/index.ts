@@ -62,3 +62,6 @@ export { usePolygonTool, type UsePolygonToolOptions } from './polygon';
 export { useStarTool, type UseStarToolOptions } from './star';
 export { usePencilTool, type PencilPoint } from './pencil';
 export { useSliceTool, type UseSliceToolOptions, type SliceScratch } from './slice';
+export { useTrimTool, type UseTrimToolOptions } from './trim';
+export { useExtendTool, type UseExtendToolOptions } from './extend';
+export type { StrokeClickToolOptions } from './shared/strokeClickTool';

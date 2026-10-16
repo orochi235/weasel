@@ -174,11 +174,8 @@ function stageRamps(
   }
   if (ctx.drawBatch.wouldOverflow(vertices)) flushBatch(ctx);
   const staged = openRun(ctx);
-  let slot = slotForRamps(staged);
-  if (slot > staged.textures.length) {
-    staged.textures.push({ kind: 'ramps' });
-    slot = staged.textures.length;
-  }
+  const slot = slotForRamps(staged);
+  staged.ramps = true;
   return {
     slot: withMatrix(slot, takeMatrix(staged, under.colorMatrix, under.alpha)),
     tint: under.tint,

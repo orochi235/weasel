@@ -43,48 +43,8 @@ import { useActionsPropResolver } from './useActionsPropResolver';
 import { useActionTunings } from './useActionTunings';
 import { useViewportActions } from './useViewportActions';
 
-/**
- * Registers the kit's default action set into this canvas's input scope.
- *
- * For `delete`, `duplicate`, `group`, and `ungroup` the descriptor's
- * invoker is a stub (those deps aren't in `DepSchema` yet — Phase 4 T8
- * TODO). This component registers legacy bridge overrides for them so the
- * consumer-facing `run` path is functional. The overrides land after the
- * descriptor registrations (last-writer-wins) and use the same id, so the
- * dispatcher and keybinding system see a real `run` body.
- */
-export function StandardActionsRegistrar({
-  selection,
-  scene,
-  adapter,
-  actions, tune,
-  excludeActions,
-  currentViewRef,
-  onViewChange,
-  resizeOptions,
-  poseDescriptor,
-  geometryProjection,
-  dispatcher,
-  pickEvery,
-  layerIsPainted,
-  alphaOf,
-  viewportPanEnabled,
-  viewportZoom,
-  viewportPinchZoom,
-  viewportRecenter,
-  viewAnimation,
-  editAnchorsExternalState,
-  layoutDropTarget,
-  reflowTransition,
-  insertNodeFactories,
-  insertPaint,
-  snapPoint,
-  canvasRef,
-  canvasApiRef,
-  ingestionResolveSrc,
-  ingestionSvg,
-  ingestionClipboard,
-}: {
+/** What `<SceneCanvas>` hands {@link StandardActionsRegistrar}. */
+export interface StandardActionsRegistrarProps {
   selection: SelectionApi;
   scene: Scene<unknown, string, unknown>;
   adapter: BridgeAdapter;
@@ -102,6 +62,9 @@ export function StandardActionsRegistrar({
   /** Forwarded from `SceneCanvasProps.poseDescriptor` — wires the
    *  `poseDescriptor` dep every built-in pose-touching action reads. */
   poseDescriptor: PoseDescriptor<unknown>;
+  /** Forwarded from `SceneCanvasProps.geometry.boundsIncludeStroke` — wires
+   *  the `boundsIncludeStroke` dep. */
+  boundsIncludeStroke: boolean;
   /** Forwarded from `SceneCanvasProps.geometryProjection` — wires the
    *  `geometryProjection` dep consumed by pose-transform actions (move,
    *  resize, nudge, flip). Conditionally mounted so absent → dep undefined. */
@@ -136,7 +99,7 @@ export function StandardActionsRegistrar({
   viewAnimation: ViewAnimationApi;
   /** Lifted edit-mode state so the `pathEditingOverlay` chrome (rendered
    *  outside this subtree) can read the same `editingId` the dep does. */
-  editAnchorsExternalState: import('../deps/editAnchors').EditAnchorsStateRef;
+  editAnchorsExternalState: import('../deps/editAnchors').EditAnchorsStateSource;
   layoutDropTarget?: LayoutDropTargetMode;
   reflowTransition?: ReflowTransition<unknown> | null;
   /** Forwarded from `SceneCanvasProps` so `useInsertDepSource` can wire the
@@ -161,7 +124,51 @@ export function StandardActionsRegistrar({
    *  for the kit weasel-JSON handler, from `useCanvasIngestion`; absent
    *  when disabled. */
   ingestionClipboard?: ClipboardIngestCtx;
-}) {
+}
+
+/**
+ * Registers the kit's default action set into this canvas's input scope.
+ *
+ * For `delete`, `duplicate`, `group`, and `ungroup` the descriptor's
+ * invoker is a stub (those deps aren't in `DepSchema` yet — Phase 4 T8
+ * TODO). This component registers legacy bridge overrides for them so the
+ * consumer-facing `run` path is functional. The overrides land after the
+ * descriptor registrations (last-writer-wins) and use the same id, so the
+ * dispatcher and keybinding system see a real `run` body.
+ */
+export function StandardActionsRegistrar({
+  selection,
+  scene,
+  adapter,
+  actions, tune,
+  excludeActions,
+  currentViewRef,
+  onViewChange,
+  resizeOptions,
+  poseDescriptor,
+  boundsIncludeStroke,
+  geometryProjection,
+  dispatcher,
+  pickEvery,
+  layerIsPainted,
+  alphaOf,
+  viewportPanEnabled,
+  viewportZoom,
+  viewportPinchZoom,
+  viewportRecenter,
+  viewAnimation,
+  editAnchorsExternalState,
+  layoutDropTarget,
+  reflowTransition,
+  insertNodeFactories,
+  insertPaint,
+  snapPoint,
+  canvasRef,
+  canvasApiRef,
+  ingestionResolveSrc,
+  ingestionSvg,
+  ingestionClipboard,
+}: StandardActionsRegistrarProps) {
   const registry = useActionsRegistry();
 
   // Wire the dispatcher into the registry so registry.begin() can delegate
@@ -213,13 +220,14 @@ export function StandardActionsRegistrar({
   useSliceDepSource(scene, selection, adapter, poseDescriptor);
   useSnapDepSource(snapPoint);
   useDebugDepSource(canvasApiRef);
-  useDepChangeNotices(scene, selection.current);
+  useDepChangeNotices(scene, selection.current, editAnchorsExternalState);
   useIngestionDepSource(canvasRef, () => currentViewRef.current, ingestionResolveSrc, ingestionSvg, ingestionClipboard);
   useLassoSelectDepSource(scene, selection, poseDescriptor, alphaOf);
   useTextEditDepSource(scene);
-  useEditAnchorsDepSource(scene, selection, adapter, editAnchorsExternalState);
+  useEditAnchorsDepSource(scene, selection, adapter, editAnchorsExternalState, tune);
   useDispatcherDepSource(dispatcher);
   usePoseDescriptorDepSource(poseDescriptor);
+  useDepSource('boundsIncludeStroke', () => boundsIncludeStroke);
 
   // Keyed on the exclusion too: a re-registration of the standard set would
   // otherwise land over the overrides applied on top of it.

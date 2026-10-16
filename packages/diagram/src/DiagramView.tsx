@@ -21,7 +21,8 @@ import type { DataEdge, DiagramSceneData, DiagramSpec } from './fromData';
 import type { LayoutFn } from './layout';
 import { useLiveLayout, type LiveLayout, type UseLiveLayoutOptions } from './live';
 import { useMirroredSelection } from './mirrorSelection';
-import { sceneParticipants } from './portLayer';
+import { portLayer, sceneParticipants } from './portLayer';
+import { registerMarkShape } from './marks';
 import { registerDiagramShape } from './shape';
 
 /** Where a moved node now stands. */
@@ -46,9 +47,13 @@ export interface DiagramViewProps {
    *  moved. Store each as the data node's `at` with `pinned: true`, or the
    *  next `diagramScene` lays it out again. */
   onMove?: (moves: readonly NodeMove[]) => void;
-  /** Set to make ports grabbable. Dragging one port onto another reports the
+  /** Ports are grabbable when this is set, unless `ports` says otherwise. Dragging one port onto another reports the
    *  edge it describes and draws nothing; add it to the data to keep it. */
   onConnect?: (edge: DataEdge) => void;
+  /** Whether ports are drawn. `'connect'` draws them and lets one be dragged
+   *  onto another; `'show'` only draws them. Default: `'connect'` when
+   *  `onConnect` is set, else `'none'`. */
+  ports?: 'connect' | 'show' | 'none';
   /** Whether the canvas's keyboard shortcuts — held Space to pan among them —
    *  run. They listen page-wide, so a view-only diagram beside other UI would
    *  claim keys meant for the page. Default: on when `onMove` or `onConnect`
@@ -61,7 +66,7 @@ export interface DiagramViewProps {
    *  preview draws with. */
   portOptions?: Pick<
     DiagramContributionOptions<RectPose>,
-    'fill' | 'stroke' | 'sizePx' | 'hitRadiusPx' | 'cursor' | 'shows' | 'snapRadius' | 'router'
+    'fill' | 'stroke' | 'shape' | 'sizePx' | 'hitRadiusPx' | 'cursor' | 'shows' | 'showsPort' | 'snapRadius' | 'router'
   >;
   /** How a layout run from {@link DiagramViewApi.layout} behaves: its forces,
    *  how many frames an eased layout takes, its easing. */
@@ -93,7 +98,7 @@ export interface DiagramViewApi {
   /** Lay the diagram out again from where its nodes stand, animated. `'force'`
    *  (default) relaxes until it settles; any other layout eases to its answer.
    *  What moved is reported to `onMove` once the run settles. */
-  layout(algorithm?: 'layered' | 'tree' | 'force' | LayoutFn): void;
+  layout(algorithm?: 'layered' | 'tree' | 'force' | 'chain' | LayoutFn): void;
   /** The run `layout` started: stop it where it stands, or cancel it. */
   live: LiveLayout;
 }
@@ -114,10 +119,13 @@ export const DiagramView = forwardRef<DiagramViewApi, DiagramViewProps>(function
 });
 
 function Inner({
-  specs, width, height, selected, onSelect, onMove, onConnect, enableKeybindings, canConnect, portOptions, live: liveOpts,
+  specs, width, height, selected, onSelect, onMove, onConnect, enableKeybindings, canConnect, portOptions, ports: portMode, live: liveOpts,
   minScale, maxScale, anchor, fitPadding, background, view, onViewChange, className, apiRef,
 }: DiagramViewProps & { apiRef: Ref<DiagramViewApi> }) {
-  useEffect(() => registerDiagramShape<RectPose>(), []);
+  useEffect(() => {
+    const disposers = [registerDiagramShape<RectPose>(), registerMarkShape<RectPose>()];
+    return () => disposers.forEach((dispose) => dispose());
+  }, []);
   const registry = useMemo(() => withDiagramRegistry<RectPose>(), []);
   const scene = useScene<DiagramSceneData, 'main', RectPose>({
     systemLayers: [{ id: 'main' }],
@@ -167,7 +175,7 @@ function Inner({
   const source = useMemo(() => sceneParticipants<RectPose>(scene), [scene]);
   // Each `layout()` call is a new run: the state change lands the algorithm in
   // the live layout's options before the effect restarts it.
-  const [run, setRun] = useState<{ algorithm: 'layered' | 'tree' | 'force' | LayoutFn } | null>(null);
+  const [run, setRun] = useState<{ algorithm: 'layered' | 'tree' | 'force' | 'chain' | LayoutFn } | null>(null);
   const live = useLiveLayout<RectPose>({ ...liveOpts, scene, source, algorithm: run?.algorithm ?? 'force' });
   useEffect(() => {
     if (run !== null) live.restart();
@@ -178,8 +186,8 @@ function Inner({
   }), [live]);
 
   const onConnectRef = useLatest(onConnect);
-  const connecting = onConnect !== undefined;
-  const ports = useMemo(() => connecting
+  const mode = portMode ?? (onConnect !== undefined ? 'connect' : 'none');
+  const ports = useMemo(() => mode === 'connect'
     ? diagramPorts<RectPose>({
         ...portOptions,
         participants: source,
@@ -188,9 +196,16 @@ function Inner({
           from: from.nodeId, fromPort: from.id, to: to.nodeId, toPort: to.id,
         }),
       })
-    : null, [connecting, source, canConnect, portOptions, onConnectRef]);
+    : null, [mode, source, canConnect, portOptions, onConnectRef]);
+  // A registered layer with no `hitTest` is painted and claims no press.
+  const shown = useMemo(() => {
+    if (mode !== 'show') return null;
+    const { hitTest: _hitTest, ...paintOnly } = portLayer<RectPose>(source, portOptions);
+    return paintOnly;
+  }, [mode, source, portOptions]);
   const canvasRef = useRef<SceneCanvasApi | null>(null);
-  useEffect(() => (ports ? canvasRef.current?.registerLayer(ports.layer) : undefined), [ports]);
+  const layer = ports?.layer ?? shown;
+  useEffect(() => (layer ? canvasRef.current?.registerLayer(layer) : undefined), [layer]);
   const ambient = useMemo(() => (ports ? [...AMBIENT, ports.contribution] : AMBIENT), [ports]);
 
   const controlled = view !== undefined;

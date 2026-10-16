@@ -140,7 +140,7 @@ function ForeignGl() {
   const clock = useRef({ last: null as number | null, t: 0 });
 
   const loop = useVisibleRaf(
-    (now) => {
+    (now, loop) => {
       loop.request();
       const g = gl.current;
       const canvas = canvasRef.current;

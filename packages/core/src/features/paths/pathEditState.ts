@@ -6,6 +6,7 @@
  */
 import { createEmitter } from '@weasel-js/registry';
 import type { PathEditHost } from 'canvas/SceneCanvas/pathEditHost';
+import type { HandleLocks } from 'interactions/actions/edit-anchors/params';
 
 /** A world-coord rect. */
 export interface AnchorMarquee {
@@ -58,6 +59,20 @@ export interface PathEditState {
   /** Index into the edited node's `data.constraints` of the selected constraint mark, or null. */
   getSelectedConstraint(): number | null;
   setSelectedConstraint(index: number | null): void;
+  /** The handle locks the `handleLock.*` toggles set; null until one is
+   *  pressed. Not tied to the edited path, so they outlast a change of it. */
+  getHandleLocks(): HandleLocks | null;
+  setHandleLocks(next: HandleLocks): void;
+  /**
+   * The path-edit tool in use, or null for plain anchor editing. Path edit has
+   * a set of named tools, one active at a time, each changing what a plain
+   * drag does: `'simplifyBrush'` brushes the path simpler. A tool belongs to
+   * the open path; with none open, or a different one, there is none.
+   */
+  getTool(): string | null;
+  /** Switch tool, or pass null to go back to plain anchor editing. Ignored
+   *  with no path open. */
+  setTool(id: string | null): void;
   /** Notified when a write changes what the anchor overlay paints. A host
    *  that owns the id announces its own changes. */
   subscribe(listener: () => void): () => void;
@@ -79,11 +94,14 @@ export function createPathEditState(source: PathEditSource = {}): PathEditState 
   let ownId = '';
   let selectedAnchors = NO_ANCHORS;
   let marquee: AnchorMarquee | null = null;
+  let handleLocks: HandleLocks | null = null;
+  let ownTool: { id: string; on: string } | null = null;
   let idSet = NO_IDS;
   let selectedConstraint: number | null = null;
   const changed = createEmitter();
   const notify = changed.emit;
 
+  const next = (id: string | null): string => id ?? '';
   const getEditingId = (): string => {
     const host = source.host?.();
     const id = host ? host.editingId() ?? '' : ownId;
@@ -103,10 +121,10 @@ export function createPathEditState(source: PathEditSource = {}): PathEditState 
     },
     setEditingId(id) {
       const host = source.host?.();
+      if (next(id) !== getEditingId()) ownTool = null;
       if (host) { host.setEditingId(id); return; }
-      const next = id ?? '';
-      if (next === ownId) return;
-      ownId = next;
+      if (next(id) === ownId) return;
+      ownId = next(id);
       notify();
     },
     getSelectedAnchors: () => selectedAnchors,
@@ -123,6 +141,29 @@ export function createPathEditState(source: PathEditSource = {}): PathEditState 
     setSelectedConstraint(index) {
       if (index === selectedConstraint) return;
       selectedConstraint = index;
+      notify();
+    },
+    getHandleLocks: () => handleLocks,
+    setHandleLocks(next) {
+      handleLocks = { angle: next.angle, length: next.length };
+      notify();
+    },
+    getTool() {
+      const on = getEditingId();
+      const host = source.host?.();
+      if (host?.tool) return on ? host.tool() : null;
+      // Dropped on the read that finds its path gone: a host can close the
+      // path without telling this state.
+      if (ownTool && ownTool.on !== on) ownTool = null;
+      return ownTool?.id ?? null;
+    },
+    setTool(id) {
+      const host = source.host?.();
+      if (host?.tool && host.setTool) { host.setTool(id); return; }
+      const on = getEditingId();
+      const tool = id && on ? { id, on } : null;
+      if (tool?.id === ownTool?.id && tool?.on === ownTool?.on) return;
+      ownTool = tool;
       notify();
     },
     subscribe: changed.subscribe,

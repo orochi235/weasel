@@ -11,9 +11,10 @@
  * `OngoingHandle.previewIds/Pose/Data` triple — this dep doesn't own preview state.
  */
 import { useState } from 'react';
-import { useDepSource } from '@weasel-js/routing/react';
+import { useDepRegistry, useDepSource } from '@weasel-js/routing/react';
 import { useLatest } from '@weasel-js/react';
 import type { EditAnchorsDep } from 'interactions/actions/depSchema';
+import { locksOf, type EditAnchorsParams } from 'interactions/actions/edit-anchors/params';
 import type { Scene, NodeId } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { PathConstraint, PointOrigin, PolygonPath } from '@weasel-js/geom';
@@ -23,7 +24,7 @@ import { classifyPathStorage, resolveEditablePathOf, storeEditablePath } from 'f
 import { withoutShapeGenerator } from 'features/paths/shapeGenerator';
 import { constrainNodeEdit, constraintsOf, solveNodeConstraints } from 'features/paths/pathConstraints';
 import { createPathEditState, isSelectedNode, type PathEditState } from 'features/paths/pathEditState';
-import { recordModeSwitch } from '@weasel-js/routing';
+import { recordModeSwitch, resolveParams, type ActionTunings } from '@weasel-js/routing';
 import type { Op } from 'core/ops/types';
 import { createTransformOp } from 'core/ops/transform';
 import { createSetDataOp } from 'core/ops/setData';
@@ -34,8 +35,15 @@ interface OpsApplier {
 
 /** The part of a `PathEditState` the dep reads and writes. */
 export type EditAnchorsStateRef = Omit<PathEditState, 'subscribe' | 'getEditingIds'>;
+/** The same, with the change notice chrome reading the dep waits on. */
+export type EditAnchorsStateSource = EditAnchorsStateRef & Partial<Pick<PathEditState, 'subscribe'>>;
 
 export { resolveEditablePathOf };
+
+function tunedHandleLock(tune: ActionTunings | undefined): EditAnchorsParams['handleLock'] {
+  const params = resolveParams(tune?.editAnchors?.params as Parameters<typeof resolveParams>[0]);
+  return (params as EditAnchorsParams | undefined)?.handleLock;
+}
 
 const EMPTY_ANCHOR_SELECTION: ReadonlySet<number> = new Set<number>();
 
@@ -44,7 +52,12 @@ export function useEditAnchorsDepSource(
   selection: SelectionApi,
   adapter: OpsApplier,
   externalState?: EditAnchorsStateRef,
+  /** `<SceneCanvas tune>`: the handle locks start from its `editAnchors`
+   *  `handleLock` param until a toggle sets them. */
+  tune?: ActionTunings,
 ): void {
+  const registry = useDepRegistry();
+  const tuneRef = useLatest(tune);
   const sceneRef = useLatest(scene);
   const selectionRef = useLatest(selection);
   const adapterRef = useLatest(adapter);
@@ -64,18 +77,7 @@ export function useEditAnchorsDepSource(
     // hand them out alongside an empty id.
     const selectedAnchors = effectiveId ? state.getSelectedAnchors() : EMPTY_ANCHOR_SELECTION;
     const marquee = effectiveId ? state.getMarquee() : null;
-    const editOps = (id: string, worldPath: unknown, label: string, origins?: readonly (PointOrigin | null)[]): Op[] => {
-      const node = sc.get(id as NodeId) as EditableNode | undefined;
-      if (!node) return [];
-      const solved = constrainNodeEdit(node, worldPath as PolygonPath, origins);
-      if (!solved) return [];
-      const skin = (node.data as { skin?: Skin } | null)?.skin;
-      const patch = {
-        ...(skin && origins ? { skin: remapSkin(skin, origins) } : {}),
-        ...(solved.constraints !== constraintsOf(node.data) ? { constraints: solved.constraints } : {}),
-      };
-      return reshapeOps(id, node, solved.path, label, Object.keys(patch).length > 0 ? patch : null);
-    };
+    const tool = effectiveId ? state.getTool() : null;
     return {
       editingId: effectiveId,
       setEditingId(id: string | null) {
@@ -112,40 +114,73 @@ export function useEditAnchorsDepSource(
         if (!effectiveId) return;
         state.setMarquee(rect);
       },
-      getEditablePath(id: string): PolygonPath | null {
-        const node = sc.get(id as NodeId);
-        return resolveEditablePathOf(node as { pose: unknown; data: unknown });
+      handleLocks: state.getHandleLocks() ?? locksOf(tunedHandleLock(tuneRef.current)),
+      setHandleLocks(next) {
+        state.setHandleLocks(next);
+        registry.changed?.();
       },
-      getStorageKind(id: string): 'pose' | 'data' | null {
-        const node = sc.get(id as NodeId);
-        const storage = classifyPathStorage(node as { pose: unknown; data: unknown });
-        return storage?.kind ?? null;
+      tool,
+      setTool(id) {
+        if (!effectiveId) return;
+        state.setTool(id);
       },
-      getNodeShape(id: string): { pose: unknown; data: unknown } | null {
-        const node = sc.get(id as NodeId);
-        if (!node) return null;
-        return { pose: node.pose, data: node.data };
-      },
-      applyEdit(id: string, worldPath: unknown, label: string, origins?: readonly (PointOrigin | null)[]) {
-        const ops = editOps(id, worldPath, label, origins);
-        if (ops.length > 0) ad.applyOps(ops, label);
-      },
-      editOps,
-      constrainEdit(id: string, worldPath: unknown, origins?: readonly (PointOrigin | null)[]) {
-        const node = sc.get(id as NodeId) as EditableNode | undefined;
-        return constrainNodeEdit(node, worldPath as PolygonPath, origins)?.path ?? null;
-      },
-      setConstraints(id: string, constraints: readonly PathConstraint[], label: string) {
-        const node = sc.get(id as NodeId) as EditableNode | undefined;
-        const solved = solveNodeConstraints(node, constraints);
-        if (!node || !solved) return [];
-        const ops = reshapeOps(id, node, solved.path, label, { constraints: [...constraints] });
-        state.setSelectedConstraint(null);
-        if (ops.length > 0) ad.applyOps(ops, label);
-        return solved.unsatisfied;
-      },
+      ...pathAccess(sc, ad, state),
     };
   });
+}
+
+/** The members of the dep that read the scene and commit to it. */
+function pathAccess(
+  sc: Scene<unknown, string, unknown>,
+  ad: OpsApplier,
+  state: Pick<EditAnchorsStateRef, 'setSelectedConstraint'>,
+): Pick<EditAnchorsDep, 'getEditablePath' | 'getStorageKind' | 'getNodeShape' | 'applyEdit' | 'editOps' | 'constrainEdit' | 'setConstraints'> {
+  const editOps = (id: string, worldPath: unknown, label: string, origins?: readonly (PointOrigin | null)[]): Op[] => {
+    const node = sc.get(id as NodeId) as EditableNode | undefined;
+    if (!node) return [];
+    const solved = constrainNodeEdit(node, worldPath as PolygonPath, origins);
+    if (!solved) return [];
+    const skin = (node.data as { skin?: Skin } | null)?.skin;
+    const patch = {
+      ...(skin && origins ? { skin: remapSkin(skin, origins) } : {}),
+      ...(solved.constraints !== constraintsOf(node.data) ? { constraints: solved.constraints } : {}),
+    };
+    return reshapeOps(id, node, solved.path, label, Object.keys(patch).length > 0 ? patch : null);
+  };
+  return {
+    getEditablePath(id: string): PolygonPath | null {
+      const node = sc.get(id as NodeId);
+      return resolveEditablePathOf(node as { pose: unknown; data: unknown });
+    },
+    getStorageKind(id: string): 'pose' | 'data' | null {
+      const node = sc.get(id as NodeId);
+      const storage = classifyPathStorage(node as { pose: unknown; data: unknown });
+      return storage?.kind ?? null;
+    },
+    getNodeShape(id: string): { pose: unknown; data: unknown } | null {
+      const node = sc.get(id as NodeId);
+      if (!node) return null;
+      return { pose: node.pose, data: node.data };
+    },
+    applyEdit(id: string, worldPath: unknown, label: string, origins?: readonly (PointOrigin | null)[]) {
+      const ops = editOps(id, worldPath, label, origins);
+      if (ops.length > 0) ad.applyOps(ops, label);
+    },
+    editOps,
+    constrainEdit(id: string, worldPath: unknown, origins?: readonly (PointOrigin | null)[]) {
+      const node = sc.get(id as NodeId) as EditableNode | undefined;
+      return constrainNodeEdit(node, worldPath as PolygonPath, origins)?.path ?? null;
+    },
+    setConstraints(id: string, constraints: readonly PathConstraint[], label: string) {
+      const node = sc.get(id as NodeId) as EditableNode | undefined;
+      const solved = solveNodeConstraints(node, constraints);
+      if (!node || !solved) return [];
+      const ops = reshapeOps(id, node, solved.path, label, { constraints: [...constraints] });
+      state.setSelectedConstraint(null);
+      if (ops.length > 0) ad.applyOps(ops, label);
+      return solved.unsatisfied;
+    },
+  };
 }
 
 type EditableNode = { pose: unknown; data: unknown };

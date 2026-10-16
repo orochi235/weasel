@@ -2,13 +2,14 @@
  * The path-edit state and its anchor overlay for one canvas surface.
  */
 import { useLatest } from '@weasel-js/react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { PathEditHost } from 'canvas/SceneCanvas/pathEditHost';
 import type { RenderLayer } from 'core/layers/render';
 import { rectFromPlane, type PlaneMap } from 'core/viewport/parallax';
 import type { View } from 'core/viewport/view';
 import { liveEditablePath, type EditableShape } from './editablePath';
 import { createPathEditingOverlayLayer } from './pathEditingOverlayLayer';
+import type { PathEditingOverlaySlotConfig } from 'canvas/layerSlots';
 import { constraintAxisOf, constraintsOf } from './pathConstraints';
 import { createPathEditState, type PathEditState } from './pathEditState';
 
@@ -39,14 +40,16 @@ export interface PathEditOverlayInputs {
   planeOfNode: (id: string, view: View) => PlaneMap | null;
 }
 
-/** The anchor overlay for `state`. Built once: it reads `inputs` as of the
- *  last commit and repaints itself when the state changes. */
+/** The anchor overlay for `state`, drawn as `config` says. Rebuilt when
+ *  `config` changes, so pass a stable one; otherwise it reads `inputs` as of
+ *  the last commit and repaints itself when the state changes. */
 export function usePathEditOverlayLayer(
   state: PathEditState,
   inputs: PathEditOverlayInputs,
+  config?: PathEditingOverlaySlotConfig,
 ): RenderLayer<unknown> {
   const live = useLatest(inputs);
-  const [layer] = useState<RenderLayer<unknown>>(() => ({
+  return useMemo<RenderLayer<unknown>>(() => ({
     ...createPathEditingOverlayLayer({
       getEditingId: () => state.getEditingId() || null,
       getPose: (id, previews, view) =>
@@ -63,8 +66,9 @@ export function usePathEditOverlayLayer(
         const plane = rect ? live.current.planeOfNode(state.getEditingId(), view) : null;
         return rect && plane ? rectFromPlane(plane, rect) : rect;
       },
+      ...(config?.style ? { style: config.style } : {}),
+      getComb: () => config?.comb,
     }),
     subscribe: state.subscribe,
-  }));
-  return layer;
+  }), [state, live, config]);
 }

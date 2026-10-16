@@ -2,6 +2,8 @@
  * @weasel-js/text — typography: styled runs, style resolution, kerned glyph
  * layout, wrap and measurement. Glyphs come from `@weasel-js/font`; nothing
  * here knows about a scene graph, a renderer or React.
+ *
+ * @packageDocumentation
  */
 
 export {
