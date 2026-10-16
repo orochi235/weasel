@@ -15,6 +15,7 @@ the common extension points, and mounting tools in a host of your own.
 | **View** | A second camera over a rect of the surface, with input routed to it | A contribution's `views`, the `views` prop, or `<CanvasView>` |
 | **Tool** | A contribution the user switches into (`eligibility.focus`), with scratch and previews | `useTools` / the `tools` prop |
 | **Contribution** | A whole feature: any of the roles above, plus `attach`, frame hooks and `requires` | `<SceneCanvas ambient>` |
+| **Preset** | What an app opts into: standard actions, tools, ambient bindings, selection chrome and contributions together | `<SceneCanvas features>` |
 
 `SurfaceContribution` is the unit a feature ships as. Every role is optional,
 installing the entry installs every role it declares, and removing the entry
@@ -38,6 +39,33 @@ interface SurfaceContribution {
 
 `mergeContributions(...bundles)` concatenates several features' entries and
 throws on a duplicate entry id, dep name or view id.
+
+### Presets
+
+A package ships its behavior as a `FeaturePreset`, and an app turns it on by
+passing the object beside core's names: `features={['draw', pathTools]}`. An
+app that does not import a preset never loads its code.
+
+```ts
+interface FeaturePreset {
+  id: string;
+  actions?: Action[];                  // standard actions: `actions` and `tune` reach them
+  tools?: (BuiltinToolId | Tool)[];    // mounted in the canvas's registry
+  ambient?: (options) => Contribution; // always-live bindings, under a takeover too
+  chrome?: ChromeId[];                 // selection chrome drawn only while it is on
+  contributions?: SurfaceContribution[]; // installed beside `ambient`
+  refines?: string[];                  // preset ids whose actions its own go ahead of
+  includes?: FeaturePreset[];          // presets it turns on with itself
+}
+```
+
+Actions register in preset order, and a preset goes ahead of the presets it
+`refines`: core's `paths` refines `edit`, so anchor nudging is tried before
+node nudging on the same arrow key. Core's own presets are exported too
+(`selectPreset`, `editPreset`, `pathsPreset`, …), and `<SceneCanvas>` resolves
+its names through them. `<SceneCanvas>` itself loads every core preset to
+resolve those names; `<LeanSceneCanvas>` takes objects only, so a bundle
+holds just the presets it was handed.
 
 ### Frame hooks
 

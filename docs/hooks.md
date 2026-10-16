@@ -17,9 +17,10 @@ option fields not covered here are in the source — every export carries JSDoc.
 ## Actions and bindings
 
 `<SceneCanvas>` mounts an `<ActionsProvider>` and a `<DepRegistryProvider>`,
-then calls `useStandardActions` to register the kit-standard descriptors its
-`features` presets name (`FEATURE_ACTION_IDS`) and its tools bind — none on a
-bare canvas, all of them under `features={['draw']}`. A
+then registers the standard actions its `features` presets carry
+(`FEATURE_ACTION_IDS` for core's) and the kit actions its tools bind — none on
+a bare canvas, all of core's under `features={['draw']}`. `useStandardActions`
+does the same for a host of your own, taking any action list. A
 descriptor declares *what* it does (`invoker.run`), *what it needs*
 (`requires`, resolved from the dep registry at dispatch time), *when it's
 allowed* (`eligible` / `enabled`), and *how it's reached by default*

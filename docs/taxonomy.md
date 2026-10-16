@@ -335,9 +335,9 @@ and dispatched through the action registry. A tool's entire input surface is
 
 Examples: `selectAll`, `escape`, `duplicate`, `nudge`, `reorder`, `delete`,
 `align.{left,...}`, `distribute.{horizontal,vertical}`, `flip.{x,y}`. Kit defaults
-register via `<SceneCanvas>`, each under the `features` preset that names it
+register via `<SceneCanvas>`, each with the `features` preset that carries it
 (`FEATURE_ACTION_IDS`), or with a tool that binds it; consumer-level actions
-register explicitly. See `packages/routing/src/interactions/actions/registry.ts`.
+register explicitly, or ship in a preset of their own. See `packages/routing/src/interactions/actions/registry.ts`.
 
 A **tuning** changes an action its host did not write: params every invocation
 starts from, and bindings added beside its own (`ActionsRegistry.tune`,
@@ -549,10 +549,11 @@ bundles parts with consumer-facing composition rules) in that features are inter
 to the kit — though a feature often exports one.
 
 The `<SceneCanvas features>` prop is a different thing that shares the word. It
-names behavior presets (`select`, `move`, `draw`), declared in
-`packages/core/src/canvas/SceneCanvas/features.ts`. A preset turns behavior on
-for one canvas, where a feature directory only organizes source, and neither
-list is drawn from the other.
+takes behavior presets: `FeaturePreset` objects
+(`packages/core/src/canvas/SceneCanvas/features.ts`), core's by name (`select`,
+`move`, `draw`) or a package's by import. A preset turns behavior on for one
+canvas, where a feature directory only organizes source, and neither list is
+drawn from the other.
 
 **Bundle-shaped vs protocol-shaped features.** Features fall on a spectrum:
 
@@ -646,8 +647,8 @@ they fit.
   `useDragRadial`, `useDragGesture` — the spatial input primitives.
 - **Actions** (depend on selection + scene): the
   [Actions Registry](#action) and its descriptors — `duplicate`, `delete`,
-  `nudge.*`, `reorder.*`, `selectAll`, `escape`, and the rest.
-  `useStandardActions` registers the descriptors.
+  `nudge.*`, `reorder.*`, `selectAll`, `escape`, and the rest. Presets carry
+  the descriptors, and `<SceneCanvas>` or `useStandardActions` registers them.
 - **Tools** (depend on gestures + actions): `useSelectTool`, `useRectTool` and
   the other shape tools, `useHandTool`, `usePenTool`, the viewport tools.
 - **Top-level** (depends on most things): `<Canvas>`, `<SceneCanvas>`.

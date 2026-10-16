@@ -184,11 +184,9 @@ Priority tags:
   the pure math; the package takes the actions, tools, and their chrome built on core: Simplify
   brush, handle locks, Bridge, Trim segment, Extend to next path, Harmonize curvature, Balance
   handles, Smudge brush, path constraints, Blend / Bend along / Repeat along, and the distort
-  tools. An app turns it on as a preset. First the foundation it needs: a way for a package to
-  contribute actions to the standard set and to a `features` preset, which is also what "Every
-  standard action ships with `<SceneCanvas>`" below asks for. Then the tool renames the
-  maintainer deferred to the end of the adoption pass (Envelope mesh becomes Cloth warp, among
-  others).
+  tools. An app turns it on as a preset: a `FeaturePreset` object passed to `features`
+  (`docs/extending.md`, "Presets"). Then the tool renames the maintainer deferred to the end of
+  the adoption pass (Envelope mesh becomes Cloth warp, among others).
 - **(P2) Tag the path operations by the gesture that drives them.** Actions and prefs carry
   `tags` now (`actionsTagged`, `taggedActionItems`, `prefLeavesTagged`), but none of the path
   operations in `docs/path-operations.md` is tagged: the adopted branches were landing when tags
@@ -790,13 +788,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   `DEFAULT_GUIDE_TOLERANCE_PX`, the pen and slice tools' close and snap radii (written as a bare
   `8`), and `thresholdDrag`, a plain function with no store in reach. `view.animationMs` ignores
   `prefers-reduced-motion`. See `docs/conventions.md` ("Kit settings").
-
-- **(P2) Every standard action ships with `<SceneCanvas>`, used or not.**
-  `StandardActionsRegistrar` calls `useStandardActions`, which imports every standard action
-  statically, and `excludeActions` drops them only at runtime, so a bundler cannot shake out one
-  the app never registers. Each specialty action added to the set (path tricks, type-design
-  tools) grows every consumer's bundle. Make the set composable at import time: the consumer
-  passes the action groups it wants, and the default import stays the current set.
 
 - **(P3) `PrefsRail`'s scroll-to-section browser test fails now and then.** "leaves a nested page
   off the page that holds it and scrolls to a section that follows it"
