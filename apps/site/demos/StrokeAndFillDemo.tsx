@@ -13,6 +13,7 @@ import {
   solid,
   strokeOf,
   useActionsRegistry,
+  vertexHalfWidths,
   useScene,
   useSelection,
   type DragSample,
@@ -246,7 +247,9 @@ function PaintPanel({
 
   const data = node.data;
   const width = typeof data.stroke?.width === 'number' ? data.stroke.width : 1;
-  const taper = data.stroke?.vertexWidths?.[1];
+  const taperEntry = data.stroke?.vertexWidths?.[1];
+  const taperSides = taperEntry === undefined ? undefined : vertexHalfWidths(taperEntry, width);
+  const taper = taperSides && taperSides.left + taperSides.right;
 
   return (
     <div className="ckd-panel">
