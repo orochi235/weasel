@@ -21,6 +21,7 @@ import type { Skin } from '@weasel-js/animator';
 import { remapSkin } from '../../animation/rig/skinBinding';
 import { classifyPathStorage, resolveEditablePathOf, storeEditablePath } from 'features/paths/editablePath';
 import { withoutShapeGenerator } from 'features/paths/shapeGenerator';
+import { withoutPathWarp } from 'features/paths/pathWarp';
 import { createPathEditState, isSelectedNode, type PathEditState } from 'features/paths/pathEditState';
 import { recordModeSwitch, resolveParams, type ActionTunings } from '@weasel-js/routing';
 import type { Op } from 'core/ops/types';
@@ -85,8 +86,8 @@ export function useEditAnchorsDepSource(
       const skin = (node.data as { skin?: Skin } | null)?.skin;
       const reskinned = skin && origins ? { skin: remapSkin(skin, origins) } : null;
       const reshape = createTransformOp({ id, from: node.pose, to: next.pose, label });
-      // A path edited by hand is no longer what its generator makes: it becomes plain geometry.
-      const data = next.data === node.data ? node.data : withoutShapeGenerator(next.data);
+      // A path edited by hand is no longer what its generator or warp makes: it becomes plain geometry.
+      const data = withoutPathWarp(next.data === node.data ? node.data : withoutShapeGenerator(next.data));
       if (data === node.data && !reskinned) return [reshape];
       return [reshape, createSetDataOp({ id, from: node.data, to: { ...(data as object), ...reskinned }, label })];
     };

@@ -65,3 +65,7 @@ export { useSliceTool, type UseSliceToolOptions, type SliceScratch } from './sli
 export { useTrimTool, type UseTrimToolOptions } from './trim';
 export { useExtendTool, type UseExtendToolOptions } from './extend';
 export type { StrokeClickToolOptions } from './shared/strokeClickTool';
+export {
+  useDistortTool, useEnvelopeTool, usePuppetTool, warpLayerId,
+  type UseDistortToolOptions, type UseEnvelopeToolOptions, type UsePuppetToolOptions, type WarpTool,
+} from './warp';

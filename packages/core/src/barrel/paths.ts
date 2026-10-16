@@ -180,3 +180,25 @@ export type {
   UseBooleansOptions,
   UseBooleansReturn,
 } from '../interactions/actions/booleans';
+
+// ─── Warps: distort, envelope and puppet, held on a path until expanded ─────
+export {
+  heldPathWarpOf,
+  resolvePathWarp,
+  withoutPathWarp,
+  type HeldPathWarp,
+  type ResolvedPathWarp,
+} from '../features/paths/pathWarp';
+export {
+  configureWarpAction,
+  expandWarpAction,
+  warpHandleScratchOf,
+  type WarpHandleScratch,
+} from '../interactions/actions/warp/warpActions';
+export {
+  DEFAULT_ENVELOPE_SIZE,
+  DEFAULT_WARP_TOLERANCE,
+  withPathWarp,
+  type WarpKind,
+  type WarpSettings,
+} from '../interactions/actions/warp/warpTargets';

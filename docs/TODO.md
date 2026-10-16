@@ -239,6 +239,21 @@ Priority tags:
   (`defaults/icons/anchorIcons.tsx`) are first drafts, not proofed at high resolution.
 - **(P2) Spacing hints.** Equal-spacing markers between siblings while moving, and Alt-hover
   distance readouts between the selection and the shape under the pointer.
+- **(P2) Puppet warp bends by straight-line distance, not through the shape.** `rigidPuppetMap`
+  (`packages/geom/src/warp/puppet.ts`) weights each pin by its distance across the plane, so two
+  limbs that nearly touch move together when a pin on one is dragged. As-rigid-as-possible over
+  a triangulation of the filled region (`tessellate` already triangulates it) would weigh
+  distance through the shape; it needs a mesh solve per drag frame and a way to map the path's
+  sample points through the deformed triangles.
+- **(P3) Paths warped together drift apart once one is moved alone.** Each path holds its own
+  copy of a shared warp, matched by `HeldPathWarp.id`; the warp tools show the controls of the
+  first path holding an id, and a drag moves every path with it by the same world delta. After
+  one of them is moved on its own, its controls no longer sit under the ones shown.
+- **(P3) A polygon-pose node rotated after a warp drops the warp.** `resolvePathWarp`
+  (`packages/core/src/features/paths/pathWarp.ts`) recovers a move or a resize of a polygon pose
+  as a box-to-box map, but a rotation rewrites the coordinates in a way no such map undoes, so the
+  warp stops resolving and the warp tools start a fresh one. A `data.path` node keeps its warp
+  through a rotation.
 - **(P2) Variable-width strokes.** A width profile along a stroke's length, edited by dragging
   on the stroke. `strokeToPath` handles a fixed width only.
 

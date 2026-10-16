@@ -74,6 +74,7 @@ const KIT_IDS = [
   'handleLock.angle', 'handleLock.length',
   'averageAnchors', 'joinAnchors', 'bridgeAnchors', 'simplifyPath', 'offsetPath', 'snipAtCrossings', 'joinPaths',
   'bridgePaths', 'trimPath', 'extendToMeet',
+  'expandWarp', 'configureWarp',
   'marqueeAnchors', 'selectAnchor',
   'lassoSelect', 'viewport.pinchZoom',
   // viewport.pan / viewport.zoom are registered conditionally by SceneCanvas's

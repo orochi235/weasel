@@ -68,6 +68,7 @@ import {
   bridgePathsAction, extendToMeetAction, joinPathsAction, offsetPathAction, simplifyPathAction, snipAtCrossingsAction,
   trimPathAction,
 } from './pathCommands';
+import { configureWarpAction, expandWarpAction } from './warp/warpActions';
 import {
   nudgeAnchorsUpAction,
   nudgeAnchorsDownAction,
@@ -191,6 +192,8 @@ const KIT_STANDARD_DESCRIPTORS: Action[] = [
   bridgePathsAction,
   trimPathAction,
   extendToMeetAction,
+  expandWarpAction,
+  configureWarpAction,
   marqueeAnchorsAction,
   selectAnchorAction,
   lassoSelectAction,
