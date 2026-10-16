@@ -51,7 +51,7 @@ describe('<ControlPanel> rows', () => {
     expect(screen.getByRole('button', { name: 'Edit Tags' })).toBeInTheDocument();
   });
 
-  it('reads an action row\'s label once, on the button that runs it', async () => {
+  it("reads an action row's label once, on the button that runs it", async () => {
     const run = vi.fn();
     const schema = resolveConfigSchema(f.schema({ wipe: f.action(run).label('Wipe') }), []);
     render(<ControlPanel schema={schema} config={{}} setConfig={vi.fn()} />);
