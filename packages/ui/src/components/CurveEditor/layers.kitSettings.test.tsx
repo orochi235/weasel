@@ -35,7 +35,7 @@ describe('createKeyframeLayer kit settings', () => {
     selectedSegment: 1,
   };
   const hit = (plot: PlotPoint, settings?: KitSettingsOverrides): string | undefined =>
-    layer.hitTest(state, plot, ctxWith(settings))?.kind;
+    layer.hitTest!(state, plot, ctxWith(settings))?.kind;
 
   it('takes a key inside targets.curveKeyHitPx, the constant without it', () => {
     expect(hit({ x: 112, y: 0 })).not.toBe('key');
@@ -59,7 +59,7 @@ describe('createFunctionLayer kit settings', () => {
   const layer = createFunctionLayer({ interpolation: 'linear' });
   const state = functionLayerState([{ x: 0, y: 0 }, { x: 1000, y: 10 }]);
   const hit = (plot: PlotPoint, settings?: KitSettingsOverrides): string | undefined =>
-    layer.hitTest(state, plot, ctxWith(settings))?.kind;
+    layer.hitTest!(state, plot, ctxWith(settings))?.kind;
 
   it('takes an anchor inside targets.curveAnchorSnapPx, the constant without it', () => {
     expect(hit({ x: 0, y: 85 })).toBeUndefined();
@@ -79,7 +79,7 @@ describe('LayeredCurveEditor kit settings', () => {
     const probe: CurveLayer<null> = {
       id: 'probe',
       render: () => null,
-      hitTest: (_s, _p, ctx): LayerHit | null => {
+      hitTest: (_s: null, _p: PlotPoint, ctx: LayerCtx): LayerHit | null => {
         seen = ctx.kitSettings?.get('targets.curveKeyHitPx');
         return null;
       },

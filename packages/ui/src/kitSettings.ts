@@ -2,7 +2,8 @@ import { pref, type PrefNumber } from '@weasel-js/prefs';
 import { ANCHOR_SNAP_PX, CURVE_HIT_PX as FUNCTION_CURVE_HIT_PX } from './components/CurveEditor/createFunctionLayer';
 import { CURVE_HIT_PX, HANDLE_HIT_PX, KEY_HIT_PX } from './components/CurveEditor/createKeyframeLayer';
 import { REPEAT_DELAY_MS, REPEAT_EVERY_MS } from './components/NumberField/useStepRepeat';
-import { PARAMS_SETTLES, PARAMS_TEXT_WAIT_MS, type LiveControl, type ParamsSurface } from './components/Prefs/commitPolicy';
+import { PARAMS_SETTLES, PARAMS_TEXT_WAIT_MS, type ParamsSurface } from './components/Prefs/commitPolicy';
+import type { ParamsPolicy } from './components/Prefs/useParamsPolicy';
 import { COALESCE_MS } from './components/PrefSchemaEditor/useDocument';
 import { FOCUS_DELAY } from './components/Properties/rowHelp';
 import { STOP_SNAP_PX } from './components/Slider/stops';
@@ -12,16 +13,10 @@ import { REST_MS } from './components/Tree/useRowTip';
 import { HOVER_EXPAND_MS } from './components/Tree/useTreeDrag';
 import { SNAP_RADIUS_PX } from './snap';
 
-/** How one params surface writes: how long typed text waits, and which live controls write only where an edit settles. */
-export interface ParamsSurfaceSettings {
-  textWaitMs: number;
-  settles: Record<LiveControl, boolean>;
-}
-
 declare module '@weasel-js/react' {
   interface KitSettings {
     numberField: { repeatDelayMs: number; repeatEveryMs: number };
-    params: Record<ParamsSurface, ParamsSurfaceSettings>;
+    params: Record<ParamsSurface, ParamsPolicy>;
     tree: { typeaheadMs: number; hoverExpandMs: number; tipRestMs: number };
     help: { focusDelayMs: number };
     toast: { ttlMs: number };
