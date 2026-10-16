@@ -1,5 +1,5 @@
 import type { ModeRegistry } from '@weasel-js/modes';
-import type { PathEditHost } from './pathEditHost';
+import type { PathEditHost, PathEditOpening } from './pathEditHost';
 import type { SceneCanvasGeometry } from './geometryProps';
 import type { Paint } from '@weasel-js/paint';
 import type { ActionsProp, ActionTunings } from '@weasel-js/routing';
@@ -490,11 +490,8 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      */
     children?: ReactNode;
 
-    /**
-     * A yoke to join, from `useYoke()`: canvases on one yoke share the
-     * active tool, the gesture in flight and history. Omitted, this canvas
-     * keeps its own.
-     */
+    /** A yoke to join, from `useYoke()`: canvases on one yoke share the active tool, the gesture
+     *  in flight and history. Omitted, this canvas keeps its own. */
     yoke?: Yoke;
 
     /**
@@ -518,6 +515,8 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
 
     /** Hands which path is being anchor-edited to the host. See {@link PathEditHost}. */
     pathEdit?: PathEditHost;
+    /** A path to open in anchor edit as the canvas mounts, with anchors selected. Read once. */
+    defaultPathEdit?: PathEditOpening;
 
     /**
      * Override detected device facts. Merged over what `matchMedia` reports;

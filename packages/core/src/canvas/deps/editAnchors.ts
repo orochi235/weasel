@@ -5,8 +5,8 @@
  * (`pose.kind === 'polygon'`), or `data.path` with a rect pose, stored pose-local.
  * `getEditablePath` returns it in **world coords** either way, and `applyEdit` commits in the
  * correct storage shape as one undoable batch, preserving the render invariant
- * `pathInWorld(stored, pose) === world`. A node with a `data.skin` has it renumbered in that
- * batch when the caller says where the points came from, and each path-edit extension finishes
+ * `pathInWorld(stored, pose) === world`. What the node keeps per anchor — a `data.skin`, vertex
+ * colors — is renumbered in that batch when the caller says where the points came from, and each path-edit extension finishes
  * the edit first (`PathEditExtension.finishEdit`). Live previews ride the standard
  * `OngoingHandle.previewIds/Pose/Data` triple — this dep doesn't own preview state.
  */
@@ -18,8 +18,7 @@ import { locksOf, type EditAnchorsParams } from 'interactions/actions/edit-ancho
 import type { Scene, NodeId } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { PointOrigin, PolygonPath } from '@weasel-js/geom';
-import type { Skin } from '@weasel-js/animator';
-import { remapSkin } from '../../animation/rig/skinBinding';
+import { anchorDataPatch } from 'features/paths/anchorData';
 import { classifyPathStorage, resolveEditablePathOf, storeEditablePath } from 'features/paths/editablePath';
 import { withoutShapeGenerator } from 'features/paths/shapeGenerator';
 import { withoutGeometryBoundData, type PathEditExtension } from 'features/paths/pathEditExtension';
@@ -166,8 +165,8 @@ function pathAccess(
     if (!node) return [];
     const done = finish(extensions, node, worldPath as PolygonPath, origins);
     if (!done) return [];
-    const skin = (node.data as { skin?: Skin } | null)?.skin;
-    const patch = { ...(skin && origins ? { skin: remapSkin(skin, origins) } : {}), ...done.data };
+    const before = origins ? resolveEditablePathOf(node) : null;
+    const patch = { ...(before && origins ? anchorDataPatch(node.data, before, done.path, origins) : {}), ...done.data };
     return reshapeOps(id, node, done.path, label, Object.keys(patch).length > 0 ? patch : null);
   };
   return {

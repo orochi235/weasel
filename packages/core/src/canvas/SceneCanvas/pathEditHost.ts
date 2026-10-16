@@ -28,3 +28,11 @@ export interface PathEditHost {
   tool?(): string | null;
   setTool?(id: string | null): void;
 }
+
+/** A path a canvas opens in anchor edit as it mounts (`defaultPathEdit`), as though it had been
+ *  double-clicked: `id` must be selected, as an edit target always is. */
+export interface PathEditOpening {
+  id: string;
+  /** Flat indices of the anchors to select in it. */
+  anchors?: readonly number[];
+}

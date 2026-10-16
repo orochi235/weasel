@@ -19,7 +19,7 @@ export type { PaintBoundsFn } from '../canvas/paintCull';
 export type { SceneCanvasProps, SceneCanvasHit, SceneCanvasLayers, SceneCanvasLongPress } from '../canvas/SceneCanvas';
 export type { SceneCanvasGeometry } from '../canvas/SceneCanvas/geometryProps';
 export type { SceneCanvasViewport } from '../canvas/SceneCanvas/viewportProp';
-export type { PathEditHost } from '../canvas/SceneCanvas/pathEditHost';
+export type { PathEditHost, PathEditOpening } from '../canvas/SceneCanvas/pathEditHost';
 export { hostAnchorRect, hostAnchorCss } from '../canvas/hostAnchor';
 export type { HostAnchorInput, HostAnchorAlign, HostAnchorOffset } from '../canvas/hostAnchor';
 export { useHostAnchor } from '../canvas/useHostAnchor';

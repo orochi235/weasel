@@ -759,6 +759,36 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/SceneLabDemo.tsx',
   },
   {
+    id: 'lab-path-direction',
+    title: 'Path start and direction',
+    category: 'Geometry',
+    description:
+      "Where a path starts and which way it runs, in path edit. `setPathStart` makes the one selected anchor its subpath's start: a closed subpath turns to start there, and an open one reverses when given its last anchor. `reversePath` runs a path the other way without changing its shape, a closed one keeping its start; in path edit it reverses the subpaths holding the selected anchors, and the selection follows its anchors. The ring's anchors each carry a vertex color, and the colors move with their anchors through both. Both come with `pathStructurePreset` from `@weasel-js/path-tools`, which also draws the arrows and the start ring over the open path under the chrome id `path-edit.direction`, off by default and turned on here through `chromeVisibility`.",
+    hint: 'The ring opens in path edit with one anchor selected. Press Make start point: the start ring jumps to it and the colors stay put. Press Reverse path direction and the arrows turn round. Click another anchor and repeat, or double-click the wave and pick its last anchor. Untick Direction arrows to hide them.',
+    load: () => import('./demos/PathDirectionLabDemo').then((m) => m.PathDirectionLabDemo),
+    path: 'apps/site/demos/PathDirectionLabDemo.tsx',
+  },
+  {
+    id: 'lab-segment-type',
+    title: 'Segment type',
+    category: 'Geometry',
+    description:
+      "Segments turned straight or curved in place. `convertSegments` works on the selected segments — those whose two ends are both selected anchors: a line becomes a curve with its handles at its thirds, drawing the same line until a handle moves, and a curve drops the two handles that shape it, leaving the segments beside it alone. With no `to` param it curves them all when any is straight and straightens them otherwise. `convertSegmentAt` flips the one segment under a Shift+double-click. Both come with `segmentTypePreset` from `@weasel-js/path-tools`. The control panel tunes what Shift+C does through `tune`.",
+    hint: 'The top edge opens selected: press <kbd>Shift+C</kbd> and drag one of its new handles. <kbd>Shift</kbd>+double-click the base or the curved shoulder to flip it. Make segments curved and straight are the panel buttons; the Shift+C control picks flip, straighten or curve.',
+    load: () => import('./demos/SegmentTypeLabDemo').then((m) => m.SegmentTypeLabDemo),
+    path: 'apps/site/demos/SegmentTypeLabDemo.tsx',
+  },
+  {
+    id: 'lab-anchor-fields',
+    title: 'Anchor numbers',
+    category: 'Geometry',
+    description:
+      "The anchors selected in path edit as numbers: `<AnchorFields>` shows their X and Y in document units, and for a lone anchor each handle's X and Y or its angle and length. A field the anchors disagree on reads Mixed. Typing a number moves every selected anchor to it, `+=` or `-=` with an amount moves each by that much, and a unit converts — `1in` is 72 points. Each entry commits through the `setAnchorField` action as one undo step, and `useAnchorFields()` is what the panel reads and writes through.",
+    hint: 'Both anchors open selected, so X reads Mixed: type <kbd>+=20</kbd> into X and press Enter, then <kbd>2in</kbd> into Y. Click one anchor to see its handles, and switch Handles as to angle and length.',
+    load: () => import('./demos/AnchorFieldsLabDemo').then((m) => m.AnchorFieldsLabDemo),
+    path: 'apps/site/demos/AnchorFieldsLabDemo.tsx',
+  },
+  {
     id: 'lab-path-snap',
     title: 'Path snapping',
     category: 'Geometry',

@@ -20,12 +20,15 @@ export {
   createConstraintsPreset,
   createCornerShapePreset,
   createCurvatureCombPreset,
+  createPathStructurePreset,
   curvatureCombPreset,
   extendPreset,
   handleLocksPreset,
   harmonizePreset,
   pathEffectsPreset,
+  pathStructurePreset,
   pathTools,
+  segmentTypePreset,
   resamplePreset,
   simplifyBrushPreset,
   smudgePreset,
@@ -49,6 +52,8 @@ export {
   DEFAULT_SMUDGE_RADIUS_PX, DEFAULT_SMUDGE_STRENGTH, smudgeBrushAction, type SmudgeBrushParams,
 } from './smudge/smudgeBrush';
 export { harmonizeAnchorsAction } from './harmonize/harmonize';
+export { reversePathAction, setPathStartAction } from './pathStructure/pathStructure';
+export { convertSegmentAtAction, convertSegmentsAction } from './segmentType/convertSegments';
 export {
   ANCHOR_SELECTION_GROUP, growAnchorSelectionAction, invertAnchorSelectionAction, selectCornerAnchorsAction,
   selectEveryNthAnchorAction, selectSmoothAnchorsAction, shrinkAnchorSelectionAction,
@@ -100,6 +105,9 @@ export {
   CORNER_WIDGET_STANDOFF_PX, cornerWidgetCommands, cornerWidgetFrames, createCornerWidgetsExtension,
   PATH_CORNERS_CHROME_ID, type CornerWidgetStyle,
 } from './cornerShape/cornerWidgets';
+export {
+  createDirectionExtension, directionCommands, PATH_DIRECTION_CHROME_ID, type PathDirectionStyle,
+} from './pathStructure/directionMarks';
 
 // ─── Panels ────────────────────────────────────────────────────────────────
 export {

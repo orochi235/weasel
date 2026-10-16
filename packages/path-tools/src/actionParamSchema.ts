@@ -2,7 +2,7 @@
  * The params this package's actions read, merged into routing's
  * `ActionParamSchema` so `<SceneCanvas tune>` types them.
  */
-import type { CornerShape, PathConstraintKind } from '@weasel-js/geom';
+import type { CornerShape, PathConstraintKind, SegmentType } from '@weasel-js/geom';
 import type { BendAlongEffect, BlendEffect, RepeatAlongEffect } from '@weasel-js/core';
 import type { ConstrainAnchorsParams } from './constraints/anchorConstraints';
 import type { ResamplePathParams } from './resample/resample';
@@ -36,6 +36,8 @@ declare module '@weasel-js/routing' {
     'puppet.drag': WarpSettings;
     'puppet.addPin': WarpSettings;
     configureWarp: WarpSettings & { kind?: WarpKind };
+    convertSegments: { to?: SegmentType };
+    convertSegmentAt: { to?: SegmentType };
     selectEveryNthAnchor: { n?: number };
     resamplePath: ResamplePathParams;
     setCorners: SetCornersParams;

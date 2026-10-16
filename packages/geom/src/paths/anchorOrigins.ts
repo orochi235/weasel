@@ -20,6 +20,8 @@ export interface PointOrigin {
   a: number;
   b: number;
   t: number;
+  /** On an anchor's own point: its subpath now runs the other way through it. */
+  reversed?: true;
 }
 
 /** The points of the path before the edit that one anchor held. */
@@ -27,6 +29,9 @@ interface Held {
   point: number;
   in?: number;
   out?: number;
+  /** Where the anchor sat before the edit: its subpath and its index there. */
+  sub?: number;
+  idx?: number;
 }
 
 interface Point { x: number; y: number }
@@ -45,7 +50,7 @@ function heldBy(path: PolygonPath, set: Anchors): Held[][] {
   return indexed.map((sub, s) => {
     // No two index points coincide, so a closing curve the real walk folded is unfolded here.
     if (sub.length === set.anchors[s].length + 1) sub[0].inHandle = sub.pop()!.inHandle;
-    return sub.map((a) => ({ point: a.x, in: a.inHandle?.x, out: a.outHandle?.x }));
+    return sub.map((a, i) => ({ point: a.x, in: a.inHandle?.x, out: a.outHandle?.x, sub: s, idx: i }));
   });
 }
 
@@ -101,13 +106,42 @@ function blended(
   return { a, b, t: dp + dn > 0 ? dp / (dp + dn) : 0 };
 }
 
+/**
+ * For each anchor of a subpath after an edit, whether the subpath now runs the other way
+ * through it: its neighbors in the new walk follow it in the old one more often backward than
+ * forward. An anchor the edit made takes the answer of the nearest kept anchor before it.
+ */
+function runsBackward(
+  sub: readonly (Held | undefined)[],
+  closed: boolean,
+  before: { lengths: readonly number[]; closed: readonly boolean[] },
+): boolean[] {
+  const nextWas = (h: Held): number => {
+    const n = before.lengths[h.sub!];
+    return h.idx! + 1 < n ? h.idx! + 1 : before.closed[h.sub!] ? 0 : -1;
+  };
+  // +1 when `y`, after `x` in the new walk, came after it in the old one too; -1 when before it.
+  const step = (x: Held | undefined, y: Held | undefined): number => {
+    if (x?.sub === undefined || y?.sub === undefined || x.sub !== y.sub) return 0;
+    return nextWas(x) === y.idx ? 1 : nextWas(y) === x.idx ? -1 : 0;
+  };
+  const at = (i: number) => (closed ? sub[(i + sub.length) % sub.length] : sub[i]);
+  const own = sub.map((h, i) => (h ? step(at(i - 1), h) + step(h, at(i + 1)) < 0 : null));
+  return own.map((flag, i) => {
+    if (flag !== null) return flag;
+    const p = neighbor(sub, closed, i, -1);
+    const n = neighbor(sub, closed, i, 1);
+    return p !== -1 ? own[p] === true : n !== -1 && own[n] === true;
+  });
+}
+
 /** What an anchor the edit put exactly where one was holds: that anchor's point, and each
  *  handle that is where one of its handles was. */
 function copied(anchor: PenAnchor, byPlace: ReadonlyMap<string, Held>): Held | undefined {
   const was = byPlace.get(keyOf(anchor));
   if (!was) return undefined;
   const handle = (h: Point | undefined) => (h ? byPlace.get(`${keyOf(anchor)}:${keyOf(h)}`)?.point : undefined);
-  return { point: was.point, in: handle(anchor.inHandle), out: handle(anchor.outHandle) };
+  return { ...was, in: handle(anchor.inHandle), out: handle(anchor.outHandle) };
 }
 
 /**
@@ -133,19 +167,22 @@ export function editAnchorSetTracked(
     // Handles are filed under where they are, for an anchor that comes back as a copy.
     if (anchor.inHandle) byPlace.set(`${keyOf(anchor)}:${keyOf(anchor.inHandle)}`, { point: held.in! });
     if (anchor.outHandle) byPlace.set(`${keyOf(anchor)}:${keyOf(anchor.outHandle)}`, { point: held.out! });
-    byPlace.set(keyOf(anchor), { point: held.point });
+    byPlace.set(keyOf(anchor), { point: held.point, sub: held.sub, idx: held.idx });
   }));
 
+  const before = { lengths: set.anchors.map((sub) => sub.length), closed: [...set.closed] };
   if (edit(set) === false) return null;
 
   const held: (Held | undefined)[] = [];
   const own: (PointOrigin | null)[] = [];
   set.anchors.forEach((sub, s) => {
     const subHeld = sub.map((a) => byAnchor.get(a) ?? copied(a, byPlace));
+    const flipped = runsBackward(subHeld, set.closed[s], before);
     sub.forEach((_, i) => {
       const h = subHeld[i];
       held.push(h);
-      own.push(h ? { a: h.point, b: h.point, t: 0 } : blended(sub, subHeld, set.closed[s], i));
+      const origin = h ? { a: h.point, b: h.point, t: 0 } : blended(sub, subHeld, set.closed[s], i);
+      own.push(origin && flipped[i] ? { ...origin, reversed: true } : origin);
     });
   });
 

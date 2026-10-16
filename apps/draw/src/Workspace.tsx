@@ -38,6 +38,7 @@ import { TextEditDepPublisher } from './TextEditDepPublisher';
 import { useColorContext } from './tools/colorContext';
 import { useEditorAmbient } from './useEditorAmbient';
 import { useGrid } from './useGrid';
+import { usePathDirection } from './usePathDirection';
 import { useSymmetry } from './useSymmetry';
 import { usePageFit } from './usePageFit';
 
@@ -84,6 +85,7 @@ export function Workspace(props: WorkspaceProps): ReactElement {
 
   const paperLayer = usePaperLayer(page, backgroundColor);
   const grid = useGrid(page, backgroundColor);
+  const pathDirection = usePathDirection();
   const symmetry = useSymmetry(scene, page);
   // The mode tint covers the workspace around the page, not the page itself.
   // Bolder than the modes' own 0.12 so it reads through the stripes.
@@ -101,6 +103,7 @@ export function Workspace(props: WorkspaceProps): ReactElement {
     selection,
     modeKeys: modes.keys,
     grid: grid.commands,
+    pathDirection: pathDirection.commands,
     symmetry,
     view,
     setView: onViewChange,
@@ -198,6 +201,7 @@ export function Workspace(props: WorkspaceProps): ReactElement {
           onDoubleClick={modes.onDoubleClick}
           modes={machine.registry}
           pathEdit={modes.pathEdit}
+          chromeVisibility={pathDirection.chromeVisibility}
           geometryProjection={{
             transform: (node, m) => {
               const data = node.data as WeaselDrawData;
