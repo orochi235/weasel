@@ -31,7 +31,7 @@ export {
   SIMPLIFY_BRUSH_RADIUS_PX, SIMPLIFY_BRUSH_TOOL, type SimplifyBrushParams,
 } from './simplifyBrush';
 export { exitPathEditToolAction, pathEditToolAction, pathEditToolActive } from './pathEditTools';
-export { retractHandlesAction, makeHandlesSymmetricAction } from './anchorHandles';
+export { retractHandlesAction, makeHandlesSymmetricAction, harmonizeAnchorsAction } from './anchorHandles';
 export { balanceHandlesAction, equalizeHandlesAction } from './handleBalance';
 export { handleLockAngleAction, handleLockLengthAction } from './handleLocks';
 export { averageAnchorsAction, bridgeAnchorsAction, joinAnchorsAction } from './anchorJoin';
@@ -39,6 +39,9 @@ export {
   simplifyPathAction, offsetPathAction, snipAtCrossingsAction, joinPathsAction, bridgePathsAction, trimPathAction, extendToMeetAction,
   DEFAULT_BRIDGE_TENSION,
 } from '../pathCommands';
+export {
+  blendAction, bendAlongAction, repeatAlongAction, editPathEffectAction, expandPathEffectAction,
+} from '../pathEffects';
 export { undoAction, redoAction } from './undoRedo';
 export { clipboardCopyAction, clipboardCutAction, clipboardPasteAction, clipboardPasteEventAction } from '../clipboard/action';
 export { makeToolOffhandAction, buildToolOffhandBindings, TOOL_OFFHAND_ID, type ToolOffhandBindingSpec } from '@weasel-js/routing';

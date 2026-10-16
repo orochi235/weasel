@@ -8,12 +8,12 @@ export type LiveControl = 'number' | 'slider' | 'string' | 'color';
 
 /**
  * Which controls write only the value an edit settles on, by surface; any other writes as it changes. A form
- * stores settings, so only text, which has no gesture to end, writes as it goes. A panel edits a scene, where
- * every write is an undo step, so text settles too, and a slider is left live for the canvas to follow: its
+ * stores settings, so every typed field settles on blur or Enter. A panel edits a scene, where every write is
+ * an undo step, so its typed fields settle too, and a slider is left live for the canvas to follow: its
  * moves are drafts ({@link withDrafts}), and the drag is one step. A lab follows every change.
  */
 export const PARAMS_SETTLES: Record<ParamsSurface, Record<LiveControl, boolean>> = {
-  form: { number: true, slider: true, string: false, color: true },
+  form: { number: true, slider: true, string: true, color: true },
   panel: { number: true, slider: false, string: true, color: true },
   lab: { number: false, slider: false, string: false, color: false },
 };
@@ -50,11 +50,21 @@ export function withDrafts(
   return field;
 }
 
-/** `field` writing when `surface` writes it. A control given an `onInput` drafts through it and commits through
- *  `onChange`, so one that swallows the drafts is what makes a control write settled values only. */
+/**
+ * `field` writing when `surface` writes it. A control given an `onInput` drafts through it and commits through
+ * `onChange`, so one that swallows the drafts is what makes a control write settled values only. A typed number
+ * or text field commits only once its edit settles, so one the surface leaves live writes through `onInput`.
+ */
 export function withCommitPolicy(field: PropertyControlProps, surface: ParamsSurface): PropertyControlProps {
   const live = liveControl(field);
-  if (live === null || !PARAMS_SETTLES[surface][live]) return field;
-  if (field.kind === 'number') return { ...field, onInput: settledOnly };
-  return field.kind === 'string' || field.kind === 'color' ? { ...field, onInput: settledOnly } : field;
+  if (live === null) return field;
+  if (PARAMS_SETTLES[surface][live]) {
+    if (field.kind === 'number') return { ...field, onInput: settledOnly };
+    return field.kind === 'string' || field.kind === 'color' ? { ...field, onInput: settledOnly } : field;
+  }
+  if (live === 'number' && field.kind === 'number' && field.onInput === undefined)
+    return { ...field, onInput: field.onChange, onChange: settledOnly };
+  if (field.kind === 'string' && field.onInput === undefined)
+    return { ...field, onInput: field.onChange, onChange: settledOnly };
+  return field;
 }

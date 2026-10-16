@@ -9,9 +9,12 @@ const text = { kind: 'string', value: '', onChange } as PropertyControlProps;
 const color = { kind: 'color', value: '#000000', onChange } as PropertyControlProps;
 const flag = { kind: 'boolean', value: true, onChange } as PropertyControlProps;
 
-/** Whether the field writes only once an edit settles: it was handed an `onInput` to swallow what comes before. */
-const settles = (field: PropertyControlProps, surface: ParamsSurface): boolean =>
-  'onInput' in withCommitPolicy(field, surface);
+/** Whether the field writes only once an edit settles: it was handed an `onInput` to swallow what comes before,
+ *  and kept its own `onChange` for the value the edit settles on. */
+const settles = (field: PropertyControlProps, surface: ParamsSurface): boolean => {
+  const made = withCommitPolicy(field, surface);
+  return 'onInput' in made && made.onChange === field.onChange;
+};
 
 describe('withDrafts', () => {
   const drafts = (field: PropertyControlProps) => ({ ...field, onChange: () => {} }) as PropertyControlProps;
@@ -38,8 +41,8 @@ describe('PARAMS_TEXT_WAIT_MS', () => {
 });
 
 describe('withCommitPolicy', () => {
-  it('settles a typed number, a slider, and a color in a form, and writes text as it is typed', () => {
-    expect([number, slider, text, color].map((field) => settles(field, 'form'))).toEqual([true, true, false, true]);
+  it('settles every control in a form', () => {
+    expect([number, slider, text, color].map((field) => settles(field, 'form'))).toEqual([true, true, true, true]);
   });
 
   it('settles a typed number, text, and a color in a panel, and writes a slider as it moves', () => {
@@ -48,6 +51,16 @@ describe('withCommitPolicy', () => {
 
   it('settles nothing in a lab, which follows every change', () => {
     expect([number, slider, text, color].map((field) => settles(field, 'lab'))).toEqual([false, false, false, false]);
+  });
+
+  it('writes a live typed number or text through onInput, which a typed field calls per keystroke', () => {
+    for (const field of [number, text]) {
+      const made = withCommitPolicy(field, 'lab');
+      expect(made).toHaveProperty('onInput', onChange);
+      expect(made.onChange).not.toBe(onChange);
+    }
+    expect(withCommitPolicy(slider, 'lab')).toBe(slider);
+    expect(withCommitPolicy(color, 'lab')).toBe(color);
   });
 
   it('leaves a control with one write per edit as it is, on every surface', () => {
