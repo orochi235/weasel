@@ -1,6 +1,6 @@
 import type { PrefGroup, PrefSection } from '@weasel-js/prefs';
 import { describe, expect, it } from 'vitest';
-import { looseKeys, looseTarget, mayUnplace, placedOnly, schemaTarget, topLevelAllows } from './loose';
+import { holdsPages, looseKeys, looseTarget, mayUnplace, placedOnly, schemaTarget, topLevelAllows } from './loose';
 
 const leaf = (name: string) => ({ kind: 'boolean' as const, name, description: '', default: false });
 // Root order: a page, a leaf, a page, a leaf, a tab. The tree shows canvas and tools; the rest are loose.
@@ -15,6 +15,12 @@ const ROOT: PrefGroup = {
   },
 };
 const SECTION: PrefSection = { name: 'Node', members: { 'pose.x': leaf('X') } };
+
+it('a menu root holds no pages', () => {
+  const menu: PrefGroup = { name: '', description: '', as: 'menu', children: { copy: leaf('Copy') } };
+  expect(holdsPages(menu)).toBe(false);
+  expect(looseKeys(menu)).toEqual([]);
+});
 
 describe('what a root holds outside any page', () => {
   it('is a group root\'s own leaves and its groups that are not pages, and nothing of a section root', () => {

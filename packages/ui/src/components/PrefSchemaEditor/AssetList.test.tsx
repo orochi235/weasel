@@ -29,6 +29,21 @@ it('marks an asset that came to differ while another under its heading is the on
   expect(marked('App')).toBe(false);
 });
 
+it('lists a menu asset under Menus, after Toolbars', () => {
+  const bar: PrefGroup = { name: '', as: 'bar', children: {} };
+  const menu: PrefGroup = { name: 'Edit', as: 'menu', children: {} };
+  const assets: ShownAsset[] = [
+    ...ASSETS,
+    { id: 't', label: 'Tools', kind: 'layout', root: bar, over: 'a' },
+    { id: 'm', label: 'Edit menu', kind: 'layout', root: menu, over: 'a' },
+  ];
+  render(<AssetList assets={assets} selected="a" changed={new Set()} onSelect={() => {}} />);
+  const titles = ['Dialogs', 'Panels', 'Toolbars', 'Menus'];
+  const order = screen.getAllByRole('group').map((g) => titles.find((t) => g.textContent?.startsWith(t)));
+  expect(order).toEqual(titles);
+  expect(screen.getByRole('option', { name: 'Edit menu' }).closest('[role="group"]')?.textContent).toContain('Menus');
+});
+
 it('marks an asset another editor holds where the host says it changed', () => {
   render(<AssetList assets={ASSETS} selected="a" changed={new Set()} onSelect={() => {}}
     elsewhere={[{ id: 'r', label: 'Reader', under: 'Dialogs', changed: true }, { id: 's', label: 'Shell', under: 'Dialogs' }]} />);

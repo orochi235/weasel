@@ -3,11 +3,12 @@ import { nodeAt, type SchemaNode, type SchemaRoot, type SchemaTarget } from './s
 
 /**
  * Whether a root files what it holds onto pages, so that anything under it that is not a page is on none. A
- * section root does not, and neither does a group drawn as a bar, which holds its prefs on its own line.
+ * section root does not, and neither does a group drawn as a bar, which holds its prefs on its own line, or as a
+ * menu, which holds its rows.
  * `pageless` says the root is neither and still files nothing: a layout's, whose rows sit directly under it.
  */
 export function holdsPages(root: SchemaRoot, pageless = false): root is PrefGroup {
-  return !pageless && !isPrefSection(root) && root.as !== 'bar';
+  return !pageless && !isPrefSection(root) && root.as !== 'bar' && root.as !== 'menu';
 }
 
 /** Whether a node sitting under a root that holds pages would be on no page: a leaf, or a group that is not a page. */
