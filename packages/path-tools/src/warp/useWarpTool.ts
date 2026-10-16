@@ -70,7 +70,7 @@ function definedOf(settings: WarpSettings): Record<string, unknown> {
   return Object.fromEntries(Object.entries(settings).filter(([, v]) => v !== undefined));
 }
 
-const KEYS: Record<WarpKind, ToolKeybinding> = { distort: { key: 'F' }, envelope: { key: 'C' }, puppet: { key: 'B' } };
+const KEYS: Record<WarpKind, ToolKeybinding> = { distort: { key: 'F' }, envelope: { key: 'F', shift: true }, puppet: { key: 'B' } };
 
 /** What a warp tool keeps between renders: whether it is active, the canvas
  *  it is attached to, and the in-flight drag its controls follow. */

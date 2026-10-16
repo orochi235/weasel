@@ -302,7 +302,8 @@ Priority tags:
 - **(P2) Tune Envelope mesh hands-on, with the maintainer driving.** First-draft 3 by 3 Bicubic
   mesh (`DEFAULT_ENVELOPE_SIZE`, `packages/path-tools/src/warp/warpTargets.ts`), the grid lines drawn
   between mesh points (`packages/path-tools/src/warp/warpHandles.ts`), that Rows and Columns change only
-  through `configureWarp`, and its tool key, C (`packages/path-tools/src/warp/useWarpTool.ts`).
+  through `configureWarp`, and its tool key, Shift+F beside Distort's F, since draw's crop mode holds C
+  (`packages/path-tools/src/warp/useWarpTool.ts`).
 - **(P2) Tune Puppet warp hands-on, with the maintainer driving.** First-draft pin falloff (1, so
   weights go as 1/d², `rigidPuppetMap` in `packages/geom/src/warp/puppet.ts`), that a click on the
   selection adds a pin and Alt-click on a pin takes it out, the pin dots (5 screen px radius,
@@ -316,7 +317,7 @@ Priority tags:
   kind and copy count, and where a new group's center lands (`toggleSymmetry`,
   `apps/draw/src/useSymmetry.ts`).
 - **(P2) Tune the Measure tool hands-on, with the maintainer driving.** First-draft behavior and
-  keys: its tool key, M, which moved Envelope mesh to C when the two met in draw; the Shift angle
+  keys: its tool key, M, which moved Envelope mesh off it when the two met in draw; the Shift angle
   step; that Move by and Rotate by fall back to the newest measurement when none is picked; and the
   readout's look (`packages/core/src/tools/builtin/measure/`, `<MeasureReadout>` in `@weasel-js/ui`).
 - **(P2) Tune path start and direction hands-on, with the maintainer driving.** First-draft
@@ -329,7 +330,7 @@ Priority tags:
   a curved segment's handles start at its thirds, Shift+C with no `to` flips the lot by whether
   any is straight, and Shift+double-click flips one segment
   (`packages/path-tools/src/segmentType/convertSegments.ts`). Shift+C is also what the path
-  constraints lab tunes onto `unconstrainAnchors`, and C is Envelope mesh's tool key.
+  constraints lab tunes onto `unconstrainAnchors`.
 - **(P2) Tune anchor fields hands-on, with the maintainer driving.** First-draft behavior: the
   panel shows X and Y for any selection and handles only for a lone anchor, a typed handle mirrors
   on a smooth anchor, `+=`/`-=` offsets each anchor by its own amount, and draw shows it at the

@@ -32,16 +32,16 @@ describe('lookupShortcutByToolId', () => {
     expect(lookupShortcutByToolId('pen', actions as never)).toBeUndefined();
   });
 
-  it('includes modifier flags when set on the matched entry', () => {
+  it('includes the modifiers the matched entry holds under mods', () => {
     const actions = [
       {
         id: 'tool.activate',
         defaultBinding: [
-          { spec: { kind: 'key', key: 'r', mod: true }, opts: { params: { toolId: 'rect' } } },
+          { spec: { kind: 'key', key: 'W', mods: { shift: true } }, opts: { params: { toolId: 'width' } } },
         ],
       },
     ];
-    expect(lookupShortcutByToolId('rect', actions as never)).toEqual({ key: 'r', mod: true });
+    expect(lookupShortcutByToolId('width', actions as never)).toEqual({ key: 'W', shift: true });
   });
 
   it('returns undefined when the matched entry is not a key spec', () => {
