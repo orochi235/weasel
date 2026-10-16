@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { createPortal } from 'react-dom';
 import { createMenuController, type MenuController, type Rect } from '@weasel-js/menu';
 import { useMenuHost, type MenuHost, type OpenMenu } from '@weasel-js/core';
@@ -67,6 +67,7 @@ function Panels({ controller, open, close }: { controller: MenuController; open:
   );
   useDismiss(isInside, close);
 
+  const root = useMemo(() => (open.under ? { client: open.client, under: open.under } : { client: open.client }), [open]);
   const rowId = (level: number) => `${idBase}-${level}-${stack[level]}`;
   const rowRect = (level: number): Rect | null => {
     const el = stack[level] == null ? null : document.getElementById(rowId(level));
@@ -88,7 +89,7 @@ function Panels({ controller, open, close }: { controller: MenuController; open:
           childOpen={stack.length > level + 1}
           idBase={idBase}
           labelledBy={level === 0 ? undefined : rowId(level - 1)}
-          anchor={level === 0 ? open.client : null}
+          anchor={level === 0 ? root : null}
           parentRow={() => (level === 0 ? null : rowRect(level - 1))}
           focus={level === stack.length - 1}
           register={(el) => { if (el) panels.current.set(level, el); else panels.current.delete(level); }}

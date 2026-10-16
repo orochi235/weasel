@@ -71,7 +71,8 @@ export function BarMenu({ label, schema, values, onChange, over }: BarMenuProps)
     });
     if (entries.length === 0) return;
     const rect = button.current!.getBoundingClientRect();
-    setOpen((prev) => ({ seq: (prev?.seq ?? 0) + 1, entries, client: { x: rect.left, y: rect.bottom }, source }));
+    const under = { x: rect.left, y: rect.top, w: rect.width, h: rect.height };
+    setOpen((prev) => ({ seq: (prev?.seq ?? 0) + 1, entries, client: { x: rect.left, y: rect.bottom }, under, source }));
   };
 
   return (

@@ -1,4 +1,4 @@
-import { placeMenu, placeSubmenu, type MenuController, type MenuEntry, type Rect } from '@weasel-js/menu';
+import { placeMenu, placeMenuUnder, placeSubmenu, type MenuController, type MenuEntry, type Rect } from '@weasel-js/menu';
 import { faceGeneration } from '@weasel-js/font';
 import { panelSize, rowLayout, type MenuMetrics } from './drawPanel';
 import { estimateWidth } from './measureLabel';
@@ -8,6 +8,8 @@ type XY = { x: number; y: number };
 /** What placing needs: where the menu opened, the canvas, and how to measure. */
 export interface PlaceOptions {
   anchor: XY;
+  /** The button the menu hangs from, in canvas pixels; when set, `anchor` is not used. */
+  under?: Rect;
   canvasSize(): { width: number; height: number };
   measure(text: string, fontSize: number, fontFamily: string): number;
   metrics: MenuMetrics;
@@ -54,7 +56,7 @@ export function createPlacer(opts: PlaceOptions): (c: MenuController, fontFamily
       const size = panelSize(entries, m, (t, s) => (fontFamily === null ? estimateWidth(t, s) : opts.measure(t, s, fontFamily)));
       let at: XY;
       if (level === 0) {
-        at = placeMenu(size, opts.anchor, bounds);
+        at = opts.under ? placeMenuUnder(size, opts.under, bounds) : placeMenu(size, opts.anchor, bounds);
       } else {
         const parent = next[level - 1]!.rect;
         const row = rowLayout(c.entriesAt(level - 1), m)[parentRow!]!;

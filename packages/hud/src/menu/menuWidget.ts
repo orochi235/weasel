@@ -14,7 +14,7 @@ export interface MenuWidgetOptions {
   open: OpenMenu;
   /** The menu is done: an item was chosen, or it was dismissed. */
   close(): void;
-  /** Viewport point to canvas CSS pixels, for `open.client`. */
+  /** Viewport point to canvas CSS pixels, for `open.client` and `open.under`. */
   toCanvas(client: XY): XY;
   canvasSize(): { width: number; height: number };
   /** Width of a label in the family the hud draws with. Defaults to the
@@ -22,6 +22,12 @@ export interface MenuWidgetOptions {
   measure?(text: string, fontSize: number, fontFamily: string): number;
   metrics?: MenuMetrics;
   onChange(): void;
+}
+
+function underOnCanvas(r: Rect, toCanvas: (client: XY) => XY): Rect {
+  const a = toCanvas({ x: r.x, y: r.y });
+  const b = toCanvas({ x: r.x + r.w, y: r.y + r.h });
+  return { x: a.x, y: a.y, w: b.x - a.x, h: b.y - a.y };
 }
 
 /** A widget that draws `open` as one panel per open level, driven by a menu controller it owns. */
@@ -32,7 +38,9 @@ export function createMenuWidget(opts: MenuWidgetOptions): Widget {
     entries: opts.open.entries, highlightFirst: opts.open.source === 'keyboard', onClose: opts.close,
   });
   const place = createPlacer({
-    anchor: opts.toCanvas(opts.open.client), canvasSize: opts.canvasSize,
+    anchor: opts.toCanvas(opts.open.client),
+    ...(opts.open.under ? { under: underOnCanvas(opts.open.under, opts.toCanvas) } : {}),
+    canvasSize: opts.canvasSize,
     measure: opts.measure ?? measureLabel, metrics: m,
   });
   // The hud's font is known only once it draws.
