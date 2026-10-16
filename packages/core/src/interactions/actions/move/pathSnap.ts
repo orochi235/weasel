@@ -1,4 +1,3 @@
-import type { InvocationCtx } from '@weasel-js/routing';
 import type { SnapDep } from '../snapDep';
 
 type Point = { x: number; y: number };
@@ -13,12 +12,14 @@ export interface MovePathSnap {
   readonly exclude: readonly string[];
 }
 
-/** The base point of a move pressed at `ctx`, or null when the `snap` dep
- *  snaps to no paths. */
-export function captureMovePathSnap(ctx: InvocationCtx, moved: readonly string[]): MovePathSnap | null {
-  const snap = ctx.deps.snap;
+/** The base point of a move of `moved` pressed at `press`, or null when
+ *  `snap` snaps to no paths. */
+export function captureMovePathSnap(
+  snap: SnapDep | undefined,
+  press: Point,
+  moved: readonly string[],
+): MovePathSnap | null {
   if (!snap?.toPaths) return null;
-  const press = ctx.drag?.start ?? ctx.world;
   const base = snap.toPaths(press, { include: moved }) ?? { x: press.x, y: press.y };
   return { base, snap: snap as MovePathSnap['snap'], exclude: moved };
 }

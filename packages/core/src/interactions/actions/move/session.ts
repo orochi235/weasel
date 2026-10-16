@@ -159,7 +159,7 @@ export function beginMove(
     nodeAtPoint: ctx.deps.nodeAtPoint,
     reparentOnDrop: () => (resolveParams(opts?.params)?.['reparentOnDrop'] as ReparentOnDrop | undefined) ?? 'off',
     dragThresholdPx,
-    pathSnap: captureMovePathSnap(ctx, [...startPoses.keys()]),
+    pathSnap: captureMovePathSnap(ctx.deps.snap, ctx.drag?.start ?? ctx.world, [...startPoses.keys()]),
   };
   return { session, readers };
 }
