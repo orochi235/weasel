@@ -178,17 +178,9 @@ Priority tags:
 
 ### Path editing tricks
 
-- **(P1) Move the path-editing tricks into their own package, `@weasel-js/path-tools`.** Decided
-  2026-10-15, to start once the adopted audition branches have landed. Core keeps basic path
-  edit (anchors, handles, Join, Cut at crossings, Simplify, Offset) and `@weasel-js/geom` keeps
-  the pure math; the package takes the actions, tools, and their chrome built on core: Simplify
-  brush, handle locks, Bridge, Trim segment, Extend to next path, Harmonize curvature, Balance
-  handles, Smudge brush, path constraints, Blend / Bend along / Repeat along, and the distort
-  tools. An app turns it on as a preset. First the foundation it needs: a way for a package to
-  contribute actions to the standard set and to a `features` preset, which is also what "Every
-  standard action ships with `<SceneCanvas>`" below asks for. Then the tool renames the
-  maintainer deferred to the end of the adoption pass (Envelope mesh becomes Cloth warp, among
-  others).
+- **(P1) Rename the path tools the maintainer deferred to the end of the adoption pass.**
+  Envelope mesh becomes Cloth warp, among others. They live in `@weasel-js/path-tools` now
+  (`packages/path-tools/README.md`); the move kept every name.
 - **(P2) Tag the path operations by the gesture that drives them.** Actions and prefs carry
   `tags` now (`actionsTagged`, `taggedActionItems`, `prefLeavesTagged`), but none of the path
   operations in `docs/path-operations.md` is tagged: the adopted branches were landing when tags
@@ -196,71 +188,71 @@ Priority tags:
   the operations sharing a gesture can be gathered into one tool's variants by tag.
 - **(P2) Tune the Simplify brush hands-on, with the maintainer driving.** It went in from its
   audition lab with first-draft behavior and keys: brush size and its key, the tolerance it
-  applies, and how it shows what it will remove (`defaults/simplifyBrush.ts`).
+  applies, and how it shows what it will remove (`packages/path-tools/src/simplifyBrush/simplifyBrush.ts`).
 - **(P2) Tune the curvature comb hands-on, with the maintainer driving.** First-draft default
-  scale and density, when it shows, and no key to toggle it (`features/paths/pathEditComb.ts`).
+  scale and density, when it shows, and no key to toggle it (`packages/path-tools/src/comb/comb.ts`).
 - **(P2) Tune Balance handles hands-on, with the maintainer driving.** First-draft behavior: a
   grip drag scales both handles by one factor, read off the pointer's projection onto the line the
   grip slides along, and a length lock (`handleLock.length`, or Mod) holds it still
-  (`packages/geom/src/paths/balanceHandles.ts`, `defaults/handleBalance.ts`). Its look: a purple
+  (`packages/geom/src/paths/balanceHandles.ts`, `packages/path-tools/src/balance/handleBalance.ts`). Its look: a purple
   line between the handle tips and a 4px hollow grip, drawn under the anchor markers and beaten by
-  them on a press (`features/paths/pathEditBalance.ts`, `affordances/pathAnchors.ts`). Off by
+  them on a press (`packages/path-tools/src/balance/balanceMarks.ts`). Off by
   default under `path-edit.balance`, with no key to show it, and Equalize handles has only the
   grip's double-click (`apps/site/demos/BalanceHandlesLabDemo.tsx`).
 - **(P2) Tune handle locks hands-on, with the maintainer driving.** Which locks deserve keys, and
-  whether a lock holds through a modifier drag (`handleLock.*`, `defaults/handleLocks.tsx`).
+  whether a lock holds through a modifier drag (`handleLock.*`, `packages/path-tools/src/handleLocks/handleLocks.tsx`).
 - **(P2) Tune Bridge hands-on, with the maintainer driving.** First-draft default Tension (0.4,
   `DEFAULT_BRIDGE_TENSION`), how Tension is reached outside the lab, and the Mod+Shift+J binding
-  it shares with Bridge anchors (`pathCommands/cutJoin.ts`, `defaults/anchorJoin.ts`).
+  it shares with Bridge anchors (`packages/path-tools/src/bridge/bridge.ts`).
 - **(P2) Tune Harmonize curvature hands-on, with the maintainer driving.** First-draft behavior:
   it keeps the product of each anchor's two handle lengths, takes every smooth anchor when none is
   selected, and skips anchors the curve inflects through (`packages/geom/src/paths/harmonize.ts`,
-  `defaults/anchorHandles.tsx`). It has no key of its own; its lab tunes H onto it,
+  `packages/path-tools/src/harmonize/harmonize.tsx`). It has no key of its own; its lab tunes H onto it,
   which the Hand tool also answers wherever that tool is mounted
   (`apps/site/demos/HarmonizeLabDemo.tsx`).
 - **(P2) Tune Blend, Bend along a path, and Repeat along a path hands-on, with the maintainer
   driving.** First-draft step counts, spacing, and turn defaults, their keys, and how an effect is
-  re-edited and expanded (`interactions/actions/pathEffects/`, `features/pathEffects/`).
+  re-edited and expanded (`packages/path-tools/src/pathEffects/`, and core's `features/pathEffects/`).
 - **(P2) Tune Trim segment hands-on, with the maintainer driving.** First-draft click reach (6
-  screen px, `DEFAULT_STROKE_REACH_PX` in `pathCommands/scenePaths.ts`), the preview's look (the
-  `cut` overlay role's red dash at width 3, `tools/builtin/trim/piecePreview.ts`), and its tool key,
-  Y (`tools/builtin/trim/useTrimTool.ts`). The `trimPath` action itself has no key.
+  screen px, `DEFAULT_STROKE_REACH_PX` in `packages/path-tools/src/shared/scenePaths.ts`), the preview's look (the
+  `cut` overlay role's red dash at width 3, `packages/path-tools/src/trim/piecePreview.ts`), and its tool key,
+  Y (`packages/path-tools/src/trim/useTrimTool.ts`). The `trimPath` action itself has no key.
 - **(P2) Tune Extend to next path hands-on, with the maintainer driving.** First-draft click reach
-  (the same 6 screen px as Trim segment, `pathCommands/scenePaths.ts`), that a curved end grows a
+  (the same 6 screen px as Trim segment, `packages/path-tools/src/shared/scenePaths.ts`), that a curved end grows a
   straight run rather than following its curvature (`lengthenOpenEnd`,
   `packages/geom/src/paths/extendPath.ts`), no preview of where an end will land, its tool key, U
-  (`tools/builtin/extend/useExtendTool.ts`), and no default key for the `extendToMeet` action; the
+  (`packages/path-tools/src/extend/useExtendTool.ts`), and no default key for the `extendToMeet` action; the
   lab binds E through `tune`.
 - **(P2) Tune the Smudge brush hands-on, with the maintainer driving.** First-draft brush radius
   (40 screen px) and strength (0.6) (`DEFAULT_SMUDGE_RADIUS_PX`, `DEFAULT_SMUDGE_STRENGTH` in
-  `pathCommands/smudgeBrush.ts`), the falloff `(1 − (d/r)²)²` and the subdivision threshold of a
+  `packages/path-tools/src/smudge/smudgeBrush.ts`), the falloff `(1 − (d/r)²)²` and the subdivision threshold of a
   third of the radius (`packages/geom/src/paths/smudgePath.ts`), how radius and strength are
-  reached outside the lab, and its tool key, S (`tools/builtin/smudge/useSmudgeBrushTool.ts`).
+  reached outside the lab, and its tool key, S (`packages/path-tools/src/smudge/useSmudgeBrushTool.ts`).
 - **(P2) Tune path constraints hands-on, with the maintainer driving.** First-draft behavior and
   keys: `constrainAnchors` and `unconstrainAnchors` have no default keys (the lab binds C and
   Shift+C through `tune`), and which kind C adds is a param with no UI outside the lab
-  (`defaults/anchorConstraints.ts`); the marks' look, their 12 px offset and 8 px click reach, and
-  their teal and red (`features/paths/constraintGlyphs.ts`, `defaults/constraintMarks.ts`,
-  `features/paths/anchorMarkers.ts`); a drag frame the constraints cannot hold in is dropped, so
+  (`packages/path-tools/src/constraints/anchorConstraints.ts`); the marks' look, their 12 px offset and 8 px click
+  reach, and their teal and red (`packages/path-tools/src/constraints/constraintGlyphs.ts`,
+  `packages/path-tools/src/constraints/constraintsExtension.ts`); a drag frame the constraints cannot hold in is dropped, so
   the path sticks rather than giving way (`edit-anchors/action.ts`); how far a dragged anchor
   yields to the rest (`HELD_MOBILITY` in `packages/geom/src/constraints/solve.ts`); and that the
   whole-path commands drop the list rather than keep what still applies
   (`pathCommands/pathNodes.ts`).
 - **(P2) Tune Perspective and free distort hands-on, with the maintainer driving.** First-draft
-  corner handles (8 screen px squares, 8 px hit reach, `tools/builtin/warp/warpHandles.ts`), that a
+  corner handles (8 screen px squares, 8 px hit reach, `packages/path-tools/src/warp/warpHandles.ts`), that a
   new distort starts Free rather than Perspective, the refit tolerance (0.5,
-  `DEFAULT_WARP_TOLERANCE` in `interactions/actions/warp/warpTargets.ts`), and its tool key, F
-  (`KEYS` in `tools/builtin/warp/useWarpTool.ts`). Its label lives in `WARP_LABELS` beside it; the
+  `DEFAULT_WARP_TOLERANCE` in `packages/path-tools/src/warp/warpTargets.ts`), and its tool key, F
+  (`KEYS` in `packages/path-tools/src/warp/useWarpTool.ts`). Its label lives in `WARP_LABELS` beside it; the
   name may change.
 - **(P2) Tune Envelope mesh hands-on, with the maintainer driving.** First-draft 3 by 3 Bicubic
-  mesh (`DEFAULT_ENVELOPE_SIZE`, `interactions/actions/warp/warpTargets.ts`), the grid lines drawn
-  between mesh points (`tools/builtin/warp/warpHandles.ts`), that Rows and Columns change only
-  through `configureWarp`, and its tool key, M (`tools/builtin/warp/useWarpTool.ts`).
+  mesh (`DEFAULT_ENVELOPE_SIZE`, `packages/path-tools/src/warp/warpTargets.ts`), the grid lines drawn
+  between mesh points (`packages/path-tools/src/warp/warpHandles.ts`), that Rows and Columns change only
+  through `configureWarp`, and its tool key, M (`packages/path-tools/src/warp/useWarpTool.ts`).
 - **(P2) Tune Puppet warp hands-on, with the maintainer driving.** First-draft pin falloff (1, so
   weights go as 1/d², `rigidPuppetMap` in `packages/geom/src/warp/puppet.ts`), that a click on the
   selection adds a pin and Alt-click on a pin takes it out, the pin dots (5 screen px radius,
-  `tools/builtin/warp/warpHandles.ts`), and its tool key, B
-  (`tools/builtin/warp/useWarpTool.ts`).
+  `packages/path-tools/src/warp/warpHandles.ts`), and its tool key, B
+  (`packages/path-tools/src/warp/useWarpTool.ts`).
 - **(P2) Two helpers grow an open end along its tangent.** `lengthenOpenEnd` in
   `packages/geom/src/paths/extendPath.ts` serves Extend to next path, and the unmerged
   `extend-path-end` branch (Lengthen) has `lengthenPathEnd` of its own. Whichever lands second
@@ -332,7 +324,7 @@ Priority tags:
   first path holding an id, and a drag moves every path with it by the same world delta. After
   one of them is moved on its own, its controls no longer sit under the ones shown.
 - **(P3) A polygon-pose node rotated after a warp drops the warp.** `resolvePathWarp`
-  (`packages/core/src/features/paths/pathWarp.ts`) recovers a move or a resize of a polygon pose
+  (`packages/path-tools/src/warp/pathWarp.ts`) recovers a move or a resize of a polygon pose
   as a box-to-box map, but a rotation rewrites the coordinates in a way no such map undoes, so the
   warp stops resolving and the warp tools start a fresh one. A `data.path` node keeps its warp
   through a rotation.
@@ -790,13 +782,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   `DEFAULT_GUIDE_TOLERANCE_PX`, the pen and slice tools' close and snap radii (written as a bare
   `8`), and `thresholdDrag`, a plain function with no store in reach. `view.animationMs` ignores
   `prefers-reduced-motion`. See `docs/conventions.md` ("Kit settings").
-
-- **(P2) Every standard action ships with `<SceneCanvas>`, used or not.**
-  `StandardActionsRegistrar` calls `useStandardActions`, which imports every standard action
-  statically, and `excludeActions` drops them only at runtime, so a bundler cannot shake out one
-  the app never registers. Each specialty action added to the set (path tricks, type-design
-  tools) grows every consumer's bundle. Make the set composable at import time: the consumer
-  passes the action groups it wants, and the default import stays the current set.
 
 - **(P3) `PrefsRail`'s scroll-to-section browser test fails now and then.** "leaves a nested page
   off the page that holds it and scrolls to a section that follows it"

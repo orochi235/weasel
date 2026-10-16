@@ -10,6 +10,7 @@ import {
   useSelection,
   withPathEffectsRegistry,
 } from '@weasel-js/core';
+import { pathEffectsPreset } from '@weasel-js/path-tools';
 import {
   type ConfigOf,
   defineInstrument,
@@ -26,6 +27,8 @@ import { useMemo } from 'react';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { PathEffectFrame, pathNode, usePathEffectProbe, usePathEffectSettings, useSeedPathEdit } from './pathEffectLab';
+
+const FEATURES = ['draw', pathEffectsPreset] as const;
 
 const config = f.schema({
   fit: f.enum('stretch', ['stretch', 'natural']).label('Fit'),
@@ -72,7 +75,7 @@ function BendTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   return (
     <PathEffectFrame>
       <TrialSceneCanvas
-        features={['draw']}
+        features={FEATURES}
         defaultTools={['rect', 'pen']}
         scene={scene}
         selection={selection}

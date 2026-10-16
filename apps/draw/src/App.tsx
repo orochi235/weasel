@@ -1,5 +1,5 @@
 /**
- * WeaselDraw's editor: one `<SceneCanvas features={['draw']}>` with every built-in tool over a
+ * WeaselDraw's editor: one `<SceneCanvas features={['draw', pathTools]}>` with every built-in tool over a
  * `useScene` document, saved to local storage 300 ms after each change.
  */
 import { DEFAULT_STROKE_COLOR, useScene, useSelection } from '@weasel-js/core';

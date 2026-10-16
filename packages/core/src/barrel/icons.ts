@@ -46,7 +46,8 @@ export {
 } from '../interactions/actions/defaults/icons/booleanIcons';
 export { CreateOutlinesIcon, OutlineStrokeIcon } from '../interactions/actions/defaults/icons/outlineIcons';
 export {
-  HarmonizeIcon, RetractHandlesIcon, SimplifyBrushIcon, SymmetricHandlesIcon,
+  BridgeIcon, HarmonizeIcon, HoldHandleAngleIcon, HoldHandleLengthIcon, RetractHandlesIcon, SimplifyBrushIcon,
+  SymmetricHandlesIcon,
 } from '../interactions/actions/defaults/icons/anchorIcons';
 
 // ─── Default edit-action icons ──────────────────────────────────────────────

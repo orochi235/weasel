@@ -1,4 +1,5 @@
 import { editingAnchors, never, type RectPose } from '@weasel-js/core';
+import { createCurvatureCombPreset } from '@weasel-js/path-tools';
 import {
   type ConfigOf,
   defineInstrument,
@@ -34,21 +35,19 @@ function CombTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const { comb, scale, teeth } = ctx.config;
 
   const chromeVisibility = useMemo(() => ({ 'path-edit.comb': comb ? editingAnchors : never }), [comb]);
-  const layers = useMemo(
-    () => ({ pathEditingOverlay: { comb: { scale, samplesPerSegment: teeth } } }),
-    [scale, teeth],
-  );
+  const features = useMemo(() => [
+    'pick', 'move', 'paths', createCurvatureCombPreset(() => ({ scale, samplesPerSegment: teeth })),
+  ] as const, [scale, teeth]);
 
   return (
     <TrialSceneCanvas
-      features={['pick', 'move', 'paths']}
+      features={features}
       scene={scene}
       trial={ctx.trial}
       selection={selection}
       pathEdit={pathEdit}
       redrawOn={redrawOn}
       chromeVisibility={chromeVisibility}
-      layers={layers}
     />
   );
 }

@@ -1,5 +1,6 @@
 import { cleanup } from '@testing-library/react';
-import { heldPathWarpOf, pathInWorld, type Path } from '@weasel-js/core';
+import { pathInWorld, type Path } from '@weasel-js/core';
+import { heldPathWarpOf } from '@weasel-js/path-tools';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { StrictMode } from 'react';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';

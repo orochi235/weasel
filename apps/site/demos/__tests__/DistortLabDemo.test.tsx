@@ -1,6 +1,6 @@
 import { cleanup, screen } from '@testing-library/react';
+import { heldPathWarpOf } from '@weasel-js/path-tools';
 import userEvent from '@testing-library/user-event';
-import { heldPathWarpOf } from '@weasel-js/core';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { StrictMode } from 'react';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';

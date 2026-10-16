@@ -30,12 +30,9 @@ export interface PathEditingOverlayStyle {
   marqueeStroke?: string;
   /** Fill of the marquee rubber band. */
   marqueeFill?: string;
-  /** Stroke of a constraint mark while the constraint holds. */
-  constraintStroke?: string;
-  /** Stroke of a constraint mark while it conflicts with the others. */
-  constraintConflictStroke?: string;
 }
 
+/** The path-edit overlay's look where a {@link PathEditingOverlayStyle} leaves a field out. */
 export const DEFAULT_OVERLAY_STYLE: Required<PathEditingOverlayStyle> = {
   anchorSizePx: 8,
   handleDotRadiusPx: 5,
@@ -50,8 +47,6 @@ export const DEFAULT_OVERLAY_STYLE: Required<PathEditingOverlayStyle> = {
   denseDotRadiusPx: 1.5,
   marqueeStroke: '#3478f6',
   marqueeFill: 'rgba(52, 120, 246, 0.08)',
-  constraintStroke: '#0e9f8e',
-  constraintConflictStroke: '#e5484d',
 };
 
 type Point = { x: number; y: number };

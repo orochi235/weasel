@@ -152,8 +152,17 @@ export {
   type CreatePathEditingOverlayLayerOptions,
   type PathEditingOverlayStyle,
 } from './pathEditingOverlayLayer';
-export { PATH_COMB_CHROME_ID, type PathEditCombOptions } from './pathEditComb';
-export type { PathEditBalanceStyle } from './pathEditBalance';
+export {
+  GEOMETRY_BOUND_DATA,
+  withoutGeometryBoundData,
+  type FinishedPathEdit,
+  type PathEditExtension,
+  type PathEditMark,
+  type PathEditMarksCtx,
+  type PathEditPart,
+  type PathEditStore,
+  type PathEditTarget,
+} from './pathEditExtension';
 export {
   pathUnion,
   pathIntersect,

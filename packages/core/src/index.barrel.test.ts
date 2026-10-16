@@ -168,7 +168,7 @@ describe('draw command exports', () => {
   });
 });
 
-describe('reset seams', () => {
+describe('test seams', () => {
   it('keeps them off the package barrel', () => {
     expect(Object.keys(Barrel).filter((k) => k.endsWith('ForTests'))).toEqual([]);
   });

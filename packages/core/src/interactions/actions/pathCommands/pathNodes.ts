@@ -1,9 +1,9 @@
 /**
  * What the path commands share: reading the selected path nodes, and writing
  * new geometry back into a node or into a copy of one. A node's geometry is
- * stored where it already lives (`storeEditablePath`); a skin and path
- * constraints, which name anchors the new geometry no longer has, are
- * dropped, and so are a shape generator and a held warp, which no longer make it.
+ * stored where it already lives (`storeEditablePath`); a shape generator, and
+ * the data in `GEOMETRY_BOUND_DATA`, which no longer make it or name anchors
+ * it no longer has, are dropped.
  */
 import type { ActionDeps } from '@weasel-js/routing';
 import type { PolygonPath } from '@weasel-js/geom';
@@ -15,7 +15,7 @@ import { createInsertOp } from 'core/ops/create';
 import { createDeleteOp } from 'core/ops/delete';
 import { resolveEditablePathOf, storeEditablePath } from 'features/paths/editablePath';
 import { withoutShapeGenerator } from 'features/paths/shapeGenerator';
-import { withoutPathWarp } from 'features/paths/pathWarp';
+import { withoutGeometryBoundData } from 'features/paths/pathEditExtension';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
 
 type AnyScene = Scene<unknown, string, unknown>;
@@ -58,14 +58,7 @@ export function pathNodesOf(
 export function withPath(node: AnyNode, worldPath: PolygonPath): { pose: unknown; data: unknown } | null {
   const stored = storeEditablePath(node, worldPath);
   if (!stored) return null;
-  const data = withoutPathWarp(withoutShapeGenerator(stored.data)) as { skin?: unknown; constraints?: unknown } | null;
-  if (data && typeof data === 'object' && ('skin' in data || 'constraints' in data)) {
-    const { skin: _skin, constraints: _constraints, ...rest } = data;
-    void _skin;
-    void _constraints;
-    return { pose: stored.pose, data: rest };
-  }
-  return { pose: stored.pose, data };
+  return { pose: stored.pose, data: withoutGeometryBoundData(withoutShapeGenerator(stored.data)) };
 }
 
 /** The ops that give `node` the geometry `worldPath`, labeled `label`. */

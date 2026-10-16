@@ -1,12 +1,5 @@
-import {
-  asNodeId,
-  createScene,
-  PathBuilder,
-  type RectPose,
-  usePuppetTool,
-  useSelection,
-  withPathWarp,
-} from '@weasel-js/core';
+import { asNodeId, createScene, PathBuilder, type RectPose, useSelection } from '@weasel-js/core';
+import { usePuppetTool, warpPreset, withPathWarp } from '@weasel-js/path-tools';
 import {
   type ConfigOf,
   defineInstrument,
@@ -22,6 +15,8 @@ import { useMemo } from 'react';
 import { expandWarpCommand, pathLeaf, useWarpLabActions } from './warpLab';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
+
+const FEATURES = ['draw', warpPreset] as const;
 
 const config = f.schema({
   tolerance: f.number(0.5).range(0.05, 5).step(0.05).suffix('px').label('Refit tolerance'),
@@ -60,7 +55,7 @@ function PuppetTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const puppet = usePuppetTool(settings);
   return (
     <TrialSceneCanvas
-      features={['draw']}
+      features={FEATURES}
       scene={scene}
       selection={selection}
       trial={ctx.trial}

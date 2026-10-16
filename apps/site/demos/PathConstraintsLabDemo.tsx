@@ -1,18 +1,5 @@
-import {
-  type ActionTunings,
-  asNodeId,
-  boundsOfPath,
-  constraintConflictsOf,
-  constraintsOf,
-  createScene,
-  type PathConstraint,
-  type PathConstraintKind,
-  type PolygonPath,
-  polygonFromPoints,
-  type RectPose,
-  solid,
-  worldEditToStorage,
-} from '@weasel-js/core';
+import { type ActionTunings, asNodeId, boundsOfPath, createScene, type PathConstraint, type PathConstraintKind, type PolygonPath, polygonFromPoints, type RectPose, solid, worldEditToStorage } from '@weasel-js/core';
+import { constraintConflictsOf, constraintsOf, constraintsPreset } from '@weasel-js/path-tools';
 import {
   type ConfigOf,
   defineInstrument,
@@ -28,6 +15,8 @@ import { useMemo, useState, useSyncExternalStore } from 'react';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import s from './PathConstraintsLabDemo.module.css';
+
+const FEATURES = ['draw', constraintsPreset] as const;
 
 const KIND_LABELS: Record<PathConstraintKind, string> = {
   horizontal: 'Horizontal',
@@ -127,7 +116,7 @@ function ConstraintsTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   return (
     <div className={s.trial}>
       <TrialSceneCanvas
-        features={['draw']}
+        features={FEATURES}
         scene={scene}
         trial={ctx.trial}
         pathEdit={host}

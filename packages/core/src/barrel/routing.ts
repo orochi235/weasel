@@ -24,6 +24,7 @@ export type { ActionEnabledResult } from '@weasel-js/routing';
 export { actionShortcuts, keySpecShortcut } from '../interactions/actions/actionShortcuts';
 export type { ActionShortcut } from '../interactions/actions/actionShortcuts';
 export { moveAction } from '../interactions/actions/move/action';
+export { flipAction } from '../interactions/actions/flip/action';
 export { resizeAction } from '../interactions/actions/resize/action';
 export { rotateAction } from '../interactions/actions/rotate/action';
 export { areaSelectAction } from '../interactions/actions/defaults/areaSelect';
@@ -33,10 +34,6 @@ export { clearSelectionAction } from '../interactions/actions/defaults/clearSele
 export {
   exitPathEditToolAction, pathEditToolAction, pathEditToolActive,
 } from '../interactions/actions/defaults/pathEditTools';
-export {
-  brushRingCursor, SIMPLIFY_BRUSH_RADIUS_PX, SIMPLIFY_BRUSH_TOOL, simplifyBrushAction, simplifyBrushToolAction,
-  type SimplifyBrushParams,
-} from '../interactions/actions/defaults/simplifyBrush';
 export { cloneAction } from '../interactions/actions/clone/action';
 export { inPlane, selectionLayer, insertLayer, editingLayer } from '../interactions/actions/planeInput';
 export type { EditedLayerOf } from '../interactions/actions/planeInput';
@@ -54,6 +51,10 @@ export {
   type WheelPanOptions,
 } from '../interactions/actions/defaults/viewportWheelPan';
 export { editAnchorsAction } from '../interactions/actions/edit-anchors/action';
+export {
+  deleteAnchorsAction, nudgeAnchorsDownAction, nudgeAnchorsLeftAction, nudgeAnchorsRightAction, nudgeAnchorsUpAction,
+  selectAnchorAction,
+} from '../interactions/actions/defaults/anchorEditing';
 export { lassoSelectAction } from '../interactions/actions/lasso-select/action';
 export { sliceAction } from '../interactions/actions/defaults/slice';
 export {

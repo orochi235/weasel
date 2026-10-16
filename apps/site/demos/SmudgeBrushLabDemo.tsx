@@ -1,16 +1,5 @@
-import {
-  type ActionTunings,
-  asNodeId,
-  boundsOfPath,
-  createScene,
-  ellipsePath,
-  polygonFromPoints,
-  type PolygonPath,
-  type RectPose,
-  solid,
-  useLatest,
-  useSmudgeBrushTool,
-} from '@weasel-js/core';
+import { type ActionTunings, asNodeId, boundsOfPath, createScene, ellipsePath, polygonFromPoints, type PolygonPath, type RectPose, solid, useLatest } from '@weasel-js/core';
+import { smudgePreset, useSmudgeBrushTool } from '@weasel-js/path-tools';
 import {
   type ConfigOf,
   defineInstrument,
@@ -25,6 +14,8 @@ import { CrosshairIcon, SelectIcon } from '@weasel-js/ui';
 import { useMemo } from 'react';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
+
+const FEATURES = ['draw', smudgePreset] as const;
 
 const config = f.schema({
   radiusPx: f.number(40).range(5, 150).step(1).suffix('px').label('Brush radius'),
@@ -62,7 +53,7 @@ function SmudgeTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const tune = useMemo<ActionTunings>(() => ({
     smudgeBrush: { params: () => ({ radiusPx: brush.current.radiusPx, strength: brush.current.strength }) },
   }), [brush]);
-  return <TrialSceneCanvas features={['draw']} scene={scene} trial={ctx.trial} tools={tools} tune={tune} />;
+  return <TrialSceneCanvas features={FEATURES} scene={scene} trial={ctx.trial} tools={tools} tune={tune} />;
 }
 
 const smudgeInstrument = defineInstrument<State, Config>({

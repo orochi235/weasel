@@ -1,13 +1,5 @@
-import {
-  asNodeId,
-  createScene,
-  PathBuilder,
-  type PolygonPath,
-  type RectPose,
-  starPath,
-  useEnvelopeTool,
-  useSelection,
-} from '@weasel-js/core';
+import { asNodeId, createScene, PathBuilder, type PolygonPath, type RectPose, starPath, useSelection } from '@weasel-js/core';
+import { useEnvelopeTool, warpPreset } from '@weasel-js/path-tools';
 import {
   type ConfigOf,
   defineInstrument,
@@ -23,6 +15,8 @@ import { useMemo } from 'react';
 import { expandWarpCommand, pathLeaf, useWarpLabActions } from './warpLab';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
+
+const FEATURES = ['draw', warpPreset] as const;
 
 const config = f.schema({
   rows: f.number(3).range(1, 8).step(1).label('Rows'),
@@ -67,7 +61,7 @@ function EnvelopeTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const envelope = useEnvelopeTool(settings);
   return (
     <TrialSceneCanvas
-      features={['draw']}
+      features={FEATURES}
       scene={scene}
       selection={selection}
       trial={ctx.trial}

@@ -1,13 +1,5 @@
-import {
-  asNodeId,
-  createScene,
-  ellipsePath,
-  PathBuilder,
-  type PolygonPath,
-  type RectPose,
-  useDistortTool,
-  useSelection,
-} from '@weasel-js/core';
+import { asNodeId, createScene, ellipsePath, PathBuilder, type PolygonPath, type RectPose, useSelection } from '@weasel-js/core';
+import { useDistortTool, warpPreset } from '@weasel-js/path-tools';
 import {
   type ConfigOf,
   defineInstrument,
@@ -23,6 +15,8 @@ import { useMemo } from 'react';
 import { expandWarpCommand, pathLeaf, useWarpLabActions } from './warpLab';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
+
+const FEATURES = ['draw', warpPreset] as const;
 
 const config = f.schema({
   mode: f.enum('perspective', [
@@ -68,7 +62,7 @@ function DistortTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const distort = useDistortTool(settings);
   return (
     <TrialSceneCanvas
-      features={['draw']}
+      features={FEATURES}
       scene={scene}
       selection={selection}
       trial={ctx.trial}

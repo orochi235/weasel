@@ -41,7 +41,7 @@ import {
 import { pathToAnchors, type PolygonPath } from '@weasel-js/geom';
 import { pxExtent } from '@weasel-js/geom';
 import { selectionAfterAnchorPress } from '../edit-anchors/action';
-import { constraintMarkUnder, deleteSelectedConstraint } from './constraintMarks';
+import { deleteSelectedMark, markUnder } from './pathEditMarks';
 import { inPlane, editingLayer } from '../planeInput';
 import { NUDGE_KEY, NUDGE_LABEL, nudgeDelta, type NudgeDirection } from './nudgeSteps';
 import { pathEditToolActive } from './pathEditTools';
@@ -59,6 +59,7 @@ function anchorClickSlop(deps: ActionDeps | undefined): number {
   return Math.max(extent.x, extent.y);
 }
 
+/** The `editAnchors` dep while a path is open, or null. */
 export function depOf(deps: ActionDeps | undefined): EditAnchorsDep | null {
   const dep = deps?.editAnchors;
   if (!dep || !dep.editingId) return null;
@@ -88,6 +89,13 @@ export function commitAnchorEdit(
   if (!next) return false;
   dep.applyEdit(dep.editingId, next.path, label, next.origins);
   return true;
+}
+
+/** Whether `edit` would change the edited path, tried on a scratch decode. */
+export function anchorEditWouldChange(deps: ActionDeps | undefined, edit: (set: AnchorSet) => boolean | void): boolean {
+  const dep = depOf(deps);
+  const path = dep ? worldPathOf(dep) : null;
+  return path !== null && editAnchorSetTracked(path, edit) !== null;
 }
 
 /** Enabled while a path is open and no path-edit tool has the pointer. */
@@ -145,13 +153,13 @@ export const selectAnchorAction: Action & { requires: string[] } = inPlane({
       const hit = nearestAnchorIndex(worldPath, wx, wy, anchorClickSlop(deps));
       const additive = params?.additive === true;
       if (hit === -1) {
-        // Missed every anchor: a constraint mark is next. Otherwise a bare
+        // Missed every anchor: an extension's mark is next. Otherwise a bare
         // click clears, and a shift-click leaves the selection alone.
-        const mark = constraintMarkUnder(dep, deps, wx, wy);
-        if (mark !== -1) dep.setSelectedConstraint?.(mark);
+        const mark = markUnder(dep, deps, wx, wy);
+        if (mark) dep.setSelectedMark?.(mark);
         else if (!additive) {
           dep.setSelectedAnchors([]);
-          dep.setSelectedConstraint?.(null);
+          dep.setSelectedMark?.(null);
         }
         return;
       }
@@ -192,9 +200,13 @@ function makeNudgeAnchorsAction(dir: NudgeDirection): Action & { requires: strin
   };
 }
 
+/** Move the selected anchors up one step; Shift for a big step. */
 export const nudgeAnchorsUpAction    = makeNudgeAnchorsAction('up');
+/** Move the selected anchors down one step; Shift for a big step. */
 export const nudgeAnchorsDownAction  = makeNudgeAnchorsAction('down');
+/** Move the selected anchors left one step; Shift for a big step. */
 export const nudgeAnchorsLeftAction  = makeNudgeAnchorsAction('left');
+/** Move the selected anchors right one step; Shift for a big step. */
 export const nudgeAnchorsRightAction = makeNudgeAnchorsAction('right');
 
 /**
@@ -203,8 +215,8 @@ export const nudgeAnchorsRightAction = makeNudgeAnchorsAction('right');
  *
  * Deleting renumbers every anchor after the lowest deleted index, so the
  * selection is cleared rather than left pointing at whatever slid into
- * those slots. A selected constraint, which excludes an anchor selection,
- * is deleted instead.
+ * those slots. A selected extension mark, which excludes an anchor
+ * selection, is deleted instead.
  */
 export const deleteAnchorsAction: Action & { requires: string[] } = {
   id: 'deleteAnchors',
@@ -220,7 +232,7 @@ export const deleteAnchorsAction: Action & { requires: string[] } = {
     timing: 'immediate',
     run: (deps) => {
       const dep = depOf(deps);
-      if (!dep || deleteSelectedConstraint(dep) || dep.selectedAnchors.size === 0) return;
+      if (!dep || deleteSelectedMark(dep) || dep.selectedAnchors.size === 0) return;
       const doomed = [...dep.selectedAnchors];
       const changed = commitAnchorEdit(dep, 'Delete anchor', (set) =>
         deleteAnchorsAt(set, doomed),
@@ -228,7 +240,7 @@ export const deleteAnchorsAction: Action & { requires: string[] } = {
       if (changed) dep.setSelectedAnchors([]);
     },
   } as ImmediateInvoker,
-  enabled: (deps) => (depOf(deps)?.selectedConstraint != null ? true : requiresAnchorSelection(deps)),
+  enabled: (deps) => (depOf(deps)?.selectedMark ? true : requiresAnchorSelection(deps)),
 };
 
 /**

@@ -27,7 +27,6 @@ export {
 export {
   createPathAnchorAffordances,
   PATH_ANCHOR_CHROME_ID,
-  PATH_BALANCE_CHROME_ID,
   type AnchorState,
   type AnchorScratch,
   type PathAnchorAffordanceOptions,
