@@ -31,6 +31,9 @@ export function Row({ item, shared, parentId, level, ghosted, selected, open, ch
       data-selected={selected ? 'true' : undefined}
       data-locked={item.locked ? 'true' : undefined}
       onPointerDown={onPointerDown}
+      onContextMenu={
+        ghosted || !props.onRowContextMenu ? undefined : (e) => props.onRowContextMenu?.(item.id, e)
+      }
       {...(ghosted
         ? {}
         : {
