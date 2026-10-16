@@ -28,8 +28,10 @@ silently. Nothing is a registry, and no build drops unused glyphs.
 - **Qualified names are `namespace:name`** — `core:undo`, `ui:close`, `path-tools:reversePath`.
 - **The publisher declares the namespace.** Nothing derives it from the npm name. The kit's
   convention is one namespace per package, named after the package without its scope.
-- **A namespace belongs to one table.** Registering a second table that claims a namespace
-  already registered is refused. Replacing a single icon is explicit: `override: true` on
+- **A namespace belongs to one owner.** A table carries its `owner` (the publishing package's
+  name). A second table claiming a registered namespace merges into it when the owner matches
+  (the plugin's eager subset of `core`, then the full `core` table from the `all` variant) and
+  is refused when it does not. Replacing a single icon is explicit: `override: true` on
   that icon. A whole namespace is never taken over.
 - **Inside a package, names may be bare.** Each package's `icon()` is bound to its own
   namespace: in core, `icon('undo')` is `core:undo`. A bare name resolves only against the
@@ -46,7 +48,7 @@ sits below core and prefs.
 | `IconName` | Interface whose keys are qualified names. Packages and apps extend it by declaration merging. |
 | `IconRef` | A branded string. Only `icon()` produces one, so a bare string literal fails the typecheck wherever an `IconRef` is required. |
 | `scopedIcon(ns)` | Builds a package's `icon()`. At run time it qualifies a bare name and returns it. |
-| `IconTable` | `{ namespace, icons: Record<name, { body, fill?, group, tags }> }` |
+| `IconTable` | `{ namespace, owner, icons: Record<name, { body, fill?, group, tags }> }` |
 | `createIconRegistry()` | Built on `createReflectable`. Enforces the namespace rules above, and loads variants (below) on request. |
 | `./plugin` | `weaselIcons()`, written once with `unplugin`: `.vite` for vite and vitest, `.esbuild` for tsup, `.rolldown` for a bare rolldown build. One implementation; a separate adapter only if `unplugin`'s esbuild output fails under tsup. |
 | `./virtual` | `declare module` types for `virtual:weasel-icons` and its variants, so the import typechecks. |
@@ -61,8 +63,15 @@ Each package that owns icons has:
 - `icons/*.mjs`: its definitions, beside the code that uses them. The shared helpers
   (`base.mjs`'s `chevron`, `chevronOn`, terminus math) move into the icons package's scripts.
 - `src/icons.gen.ts`: generated. Holds its bound `icon()` and its `IconName` augmentation.
-- A `./icons` export: its generated `IconTable`.
-- Its namespace, declared once in `package.json` as `"weaselIcons": { "namespace": "core" }`. `gen:icons` reads it there and stamps it into the table.
+- `icons/index.mjs`: declares its namespace and owner and lists its groups, in the order
+  they are drawn. Apps here have no `package.json`, so the declaration lives with the
+  definitions rather than in a manifest.
+- `src/icons.table.json` and `src/icons.table.ts`: the generated table, as data the plugin
+  reads in Node and as a module.
+- A `./icons` export (published packages): the table module; and a `"weaselIcons": { "table": … }`
+  field in `package.json` pointing at the JSON, which is how the plugin finds an installed
+  package's table. For source in the build, the plugin finds the table beside the
+  `icons.gen` module the source imports.
 
 `gen:icons` reads every package's definitions and writes each package's table and
 `icons.gen.ts`, plus a repo manifest (namespace, name, group, tags) for the site's gallery
@@ -119,7 +128,8 @@ Presets carry no icons. Icons are settled when the app is built, not when a canv
 
 **App mode** (the consumer's vite build, apps/draw, the site):
 
-- Rewrites the app's own `icon()` calls the same way.
+- Rewrites the app's own `icon()` calls the same way. It reads the namespace for bare names
+  out of the generated `icons.gen` module the call's `icon` was imported from.
 - In `transform`, collects every `@icon` literal in the module graph, `node_modules`
   included, and records which package each module belongs to. It needs no globs: the
   bundler hands it every module the build pulls in.
