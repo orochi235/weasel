@@ -5,6 +5,7 @@ import {
   pathFromD,
   solid,
   useSelection,
+  type Path,
   type PathEditHost,
   type RectPose,
 } from '@weasel-js/core';
@@ -21,15 +22,20 @@ export const BLOB = 'M240 80 C320 80 380 140 380 200 C380 260 330 300 240 320 C2
 /** The state of a lab trial whose scene is one editable path. */
 export type PathLabState = SceneTrialState<unknown, 'default', RectPose>;
 
-/** The node shape the kit's shape tools produce, so `editAnchors` edits `data.path` in place. */
-function pathNode(d: string, color: string) {
-  const path = pathFromD(d);
+/** A path leaf in the node shape the kit's shape tools produce, so
+ *  `editAnchors` edits `data.path` in place: stroked in `color`, and filled
+ *  with a tint of it when `filled`. */
+export function strokeNode(id: string, path: Path, color: string, filled = false) {
   return {
     kind: 'leaf' as const,
-    id: asNodeId(LAB_PATH_ID),
+    id: asNodeId(id),
     layer: 'default' as const,
     pose: boundsOfPath(path),
-    data: { path, stroke: { paint: solid(color), width: 2 } },
+    data: {
+      path,
+      ...(filled ? { fill: { paint: solid(`${color}33`) } } : {}),
+      stroke: { paint: solid(color), width: 2 },
+    },
   };
 }
 
@@ -41,7 +47,7 @@ export function usePathEditTrial<TC>(ctx: RenderContext<PathLabState, TC>, d: st
   const scene = useTrialScene(ctx, () =>
     createScene<unknown, 'default', RectPose>({
       systemLayers: [{ id: 'default' }],
-      initial: [pathNode(d, color)],
+      initial: [strokeNode(LAB_PATH_ID, pathFromD(d), color)],
     }),
   );
   const selection = useSelection({ initial: [asNodeId(LAB_PATH_ID)] });
