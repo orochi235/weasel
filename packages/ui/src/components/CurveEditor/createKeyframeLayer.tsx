@@ -48,7 +48,7 @@ export interface KeyframeLayerConfig {
   formatX?: (x: number) => string;
   /** Times a dragged key snaps to. Holding alt defeats the snap. */
   snapX?: readonly number[];
-  /** Snap reach, in plot pixels. Default 6. */
+  /** Snap reach, in plot pixels. Default: the `targets.snapRadiusPx` kit setting, else 6. */
   snapRadiusPx?: number;
   /** Bounds for a key's time. Default: unbounded. */
   xClamp?: readonly [number, number];
@@ -145,7 +145,7 @@ export function createKeyframeLayer(cfg: KeyframeLayerConfig = {}): CurveLayer<K
   const id = cfg.id ?? 'keyframes';
   const label = cfg.label ?? 'Curve';
   const formatX = cfg.formatX ?? ((x: number) => String(Math.round(x)));
-  const snapRadiusPx = cfg.snapRadiusPx ?? SNAP_RADIUS_PX;
+  const snapRadiusPx = (ctx: LayerCtx): number => cfg.snapRadiusPx ?? ctx.kitSettings?.get('targets.snapRadiusPx') ?? SNAP_RADIUS_PX;
 
   // A live handle drag is previewed straight from its control points: a
   // fresh spec per pointermove through `resolveEasing` would leave one
@@ -298,12 +298,12 @@ export function createKeyframeLayer(cfg: KeyframeLayerConfig = {}): CurveLayer<K
   function hitTest(state: KeyframeLayerState, plot: PlotPoint, ctx: LayerCtx): LayerHit | null {
     const bezier = activeBezier(state);
     if (bezier) {
-      const h = hitTestAnchor(handlePoints(state, bezier, ctx), plot, HANDLE_HIT_PX);
+      const h = hitTestAnchor(handlePoints(state, bezier, ctx), plot, ctx.kitSettings?.get('targets.curveHandleHitPx') ?? HANDLE_HIT_PX);
       if (h) return { kind: 'handle', payload: { handle: h.index } };
     }
-    const k = hitTestAnchor(state.keys.map((key) => ctx.toPlot({ x: key.t, y: key.value })), plot, KEY_HIT_PX);
+    const k = hitTestAnchor(state.keys.map((key) => ctx.toPlot({ x: key.t, y: key.value })), plot, ctx.kitSettings?.get('targets.curveKeyHitPx') ?? KEY_HIT_PX);
     if (k) return { kind: 'key', payload: { index: k.index } };
-    const c = hitTestCurve(segmentSamples(state, state.keys, ctx), plot, CURVE_HIT_PX);
+    const c = hitTestCurve(segmentSamples(state, state.keys, ctx), plot, ctx.kitSettings?.get('targets.curveHitPx') ?? CURVE_HIT_PX);
     if (c) return { kind: 'segment', payload: { segment: c.segIdx + 1 } };
     return null;
   }
@@ -315,7 +315,7 @@ export function createKeyframeLayer(cfg: KeyframeLayerConfig = {}): CurveLayer<K
         let t = clampTo(model.x, cfg.xClamp);
         if (cfg.snapX && !e.altKey) {
           const perPx = (ctx.modelRange.xMax - ctx.modelRange.xMin) / ctx.plotSize.width;
-          t = clampTo(snapToNearest(t, cfg.snapX, Math.abs(perPx) * snapRadiusPx), cfg.xClamp);
+          t = clampTo(snapToNearest(t, cfg.snapX, Math.abs(perPx) * snapRadiusPx(ctx)), cfg.xClamp);
         }
         return { ...state, drag: { kind: 'key', index, t, value: clampTo(model.y, cfg.yClamp) } };
       },

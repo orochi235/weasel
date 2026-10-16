@@ -211,11 +211,11 @@ export function createFunctionLayer(cfg: FunctionLayerConfig = {}): CurveLayer<F
   function hitTest(state: FunctionLayerState, plot: PlotPoint, ctx: LayerCtx) {
     if (!interactive) return null;
     const plotAnchors = projectAnchors(state.points, ctx);
-    const a = hitTestAnchor(plotAnchors, plot, ANCHOR_SNAP_PX);
+    const a = hitTestAnchor(plotAnchors, plot, ctx.kitSettings?.get('targets.curveAnchorSnapPx') ?? ANCHOR_SNAP_PX);
     if (a) return { kind: 'anchor' as const, payload: { index: a.index } };
     if (addPointMode === 'click-curve' && curveVisible) {
       const segs = segmentSamples(state.points, interpolation, ctx);
-      const c = hitTestCurve(segs, plot, CURVE_HIT_PX);
+      const c = hitTestCurve(segs, plot, ctx.kitSettings?.get('targets.functionCurveHitPx') ?? CURVE_HIT_PX);
       if (c) return { kind: 'curve' as const, payload: { segIdx: c.segIdx, t: c.t } };
     }
     return null;
