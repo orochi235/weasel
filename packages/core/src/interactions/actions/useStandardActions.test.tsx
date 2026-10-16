@@ -69,6 +69,7 @@ const KIT_IDS = [
   'move',
   'resize', 'rotate', 'areaSelect', 'insert', 'insert.adjustRotation', 'insert.reposition', 'clone',
   'editAnchors', 'enterPathEdit', 'exitPathEdit', 'insertPathAnchor', 'bendSegment',
+  'balanceHandles', 'equalizeHandles',
   'nudgeAnchors.up', 'nudgeAnchors.down', 'nudgeAnchors.left', 'nudgeAnchors.right',
   'deleteAnchors', 'cutPathAtAnchor', 'simplifyBrush', 'pathEditTool.simplifyBrush', 'pathEditTool.exit', 'retractHandles', 'makeHandlesSymmetric',
   'handleLock.angle', 'handleLock.length',

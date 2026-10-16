@@ -62,6 +62,7 @@ export function usePathEditOverlayLayer(
       },
       ...(config?.style ? { style: config.style } : {}),
       getComb: () => config?.comb,
+      getBalance: () => config?.balance,
     }),
     subscribe: state.subscribe,
   }), [state, live, config]);

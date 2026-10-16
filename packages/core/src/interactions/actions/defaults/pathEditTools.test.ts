@@ -3,6 +3,7 @@ import type { ImmediateInvoker } from '@weasel-js/routing';
 import { makeEditAnchorsDep } from '../testUtils';
 import { editAnchorsAction } from '../edit-anchors/action';
 import { bendSegmentAction } from './bendSegment';
+import { balanceHandlesAction, equalizeHandlesAction } from './handleBalance';
 import { marqueeAnchorsAction, selectAnchorAction } from './anchorEditing';
 import { exitPathEditToolAction, pathEditToolAction } from './pathEditTools';
 import { simplifyBrushToolAction } from './simplifyBrush';
@@ -44,11 +45,14 @@ describe('path-edit tools', () => {
   it('takes plain anchor editing out of the way while a tool is on', () => {
     const dep = makeEditAnchorsDep({ editingId: 'p1' });
     const deps = { editAnchors: dep } as never;
-    const plain = [editAnchorsAction, bendSegmentAction, marqueeAnchorsAction, selectAnchorAction];
+    const plain = [
+      editAnchorsAction, bendSegmentAction, balanceHandlesAction, equalizeHandlesAction,
+      marqueeAnchorsAction, selectAnchorAction,
+    ];
     dep.setTool('simplifyBrush');
     for (const a of plain) expect(a.enabled?.(deps), a.id).not.toBe(true);
     dep.setTool(null);
-    for (const a of [editAnchorsAction, marqueeAnchorsAction, selectAnchorAction]) {
+    for (const a of [editAnchorsAction, balanceHandlesAction, equalizeHandlesAction, marqueeAnchorsAction, selectAnchorAction]) {
       expect(a.enabled?.(deps), a.id).toBe(true);
     }
   });

@@ -107,6 +107,9 @@ export {
   combTeeth, cubicCurvatureAt, cubicCurvatureSource, cubicDerivativeAt, curvatureComb,
   type CombTooth, type CurvatureCombOptions, type CurvatureSource, type SegmentComb,
 } from './paths/curvature';
+export {
+  balanceFactorToward, equalizeSegmentHandles, handleBalances, scaleSegmentHandles, type HandleBalance,
+} from './paths/balanceHandles';
 export { editAnchorSetTracked, remapPointValues, type PointOrigin } from './paths/anchorOrigins';
 export { nearestPathAnchor, reverseAnchors, type PathAnchorHit } from './paths/nearestAnchor';
 export { pathInPoseFrame, pathInWorld, worldEditToStorage, type PathInWorldPose } from './paths/pathInWorld';

@@ -32,6 +32,7 @@ export {
 } from './simplifyBrush';
 export { exitPathEditToolAction, pathEditToolAction, pathEditToolActive } from './pathEditTools';
 export { retractHandlesAction, makeHandlesSymmetricAction } from './anchorHandles';
+export { balanceHandlesAction, equalizeHandlesAction } from './handleBalance';
 export { handleLockAngleAction, handleLockLengthAction } from './handleLocks';
 export { averageAnchorsAction, bridgeAnchorsAction, joinAnchorsAction } from './anchorJoin';
 export {

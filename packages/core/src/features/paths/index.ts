@@ -140,6 +140,7 @@ export {
   type PathEditingOverlayStyle,
 } from './pathEditingOverlayLayer';
 export { PATH_COMB_CHROME_ID, type PathEditCombOptions } from './pathEditComb';
+export type { PathEditBalanceStyle } from './pathEditBalance';
 export {
   pathUnion,
   pathIntersect,

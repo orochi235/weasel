@@ -105,8 +105,10 @@ curly quote, so both codepoints are listed.
 | `move` | drag on `selected-body` |
 | `editAnchors` | drag whose press hit an anchor or control-handle affordance; it ties `move` on specificity, and `move` turns those presses down |
 | `bendSegment` | drag whose press hit the edited path's `segment` affordance, between anchors; `move` turns those down too |
+| `balanceHandles` | drag whose press hit a curved segment's `balance:N` grip, shown while chrome-caps shows `path-edit.balance`; `move` turns those down too, and a length lock in force (`handleLock.length`, or Mod) holds it still |
+| `equalizeHandles` | double-click on a `balance:N` grip |
 | `marqueeAnchors` | drag on `empty` |
-| `simplifyBrush` | drag anywhere, while path edit's `simplifyBrush` tool is on; `editAnchors`, `bendSegment`, `marqueeAnchors`, and `selectAnchor` stand aside while any path-edit tool is |
+| `simplifyBrush` | drag anywhere, while path edit's `simplifyBrush` tool is on; `editAnchors`, `bendSegment`, `balanceHandles`, `equalizeHandles`, `marqueeAnchors`, and `selectAnchor` stand aside while any path-edit tool is |
 | `enterPathEdit` | double-click on a body |
 | `selectAnchor` | click |
 | `insertPathAnchor` | Alt+click |
