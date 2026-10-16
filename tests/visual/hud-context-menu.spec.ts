@@ -6,35 +6,59 @@
  * Baselines: `UPDATE_SNAPSHOTS=1 npm run test:visual -- hud-context-menu`,
  * on a fleet node rather than a laptop, whose rasterizer differs.
  */
-import { test, expect } from '@playwright/test';
+import { test, expect, type Locator, type Page } from '@playwright/test';
 import { resolve } from 'node:path';
-import { assertMatchesBaseline, captureCanvas, readCanvasPixels, waitForRepaint } from './diff.js';
+import { PNG } from 'pngjs';
+import { assertMatchesBaseline, readCanvasPixels, waitForRepaint } from './diff.js';
 
 const DEMO_ID = 'hud-context-menu';
 const BASELINE_DIR = resolve(import.meta.dirname, 'baselines');
 
 /** On the green shape; the menu opens with its top-left here. */
 const AT = { x: 75, y: 85 };
-/** Inside the second row (Delete): rows start 4px down and are 24px tall. */
+/** Rows start 4px down, 24px tall, with a 9px separator after the second. */
 const ROW_2 = { x: AT.x + 40, y: AT.y + 40 };
+/** Right of every label, so these read the row's background, not its text. */
+const DELETE_BG = { x: AT.x + 150, y: AT.y + 40 };
+const BRING_FORWARD_BG = { x: AT.x + 150, y: AT.y + 73 };
+
+/** The canvas once two reads a few frames apart agree: the menu measures its
+ *  labels again when the hud's font lands, so one frame is not the last. */
+async function settled(page: Page, canvas: Locator): Promise<Buffer> {
+  let last = await readCanvasPixels(canvas);
+  await expect.poll(async () => {
+    await waitForRepaint(page);
+    const next = await readCanvasPixels(canvas);
+    const same = next.equals(last);
+    last = next;
+    return same;
+  }, { intervals: [100], timeout: 20_000 }).toBe(true);
+  return last;
+}
+
+function rgba(png: Buffer, { x, y }: { x: number; y: number }): number[] {
+  const { data, width } = PNG.sync.read(png);
+  const i = (y * width + x) * 4;
+  return [...data.subarray(i, i + 4)];
+}
 
 for (const mode of ['light', 'dark'] as const) {
   test(`${DEMO_ID} — ${mode}: the open menu highlights the hovered row`, async ({ page }) => {
     await page.addInitScript((m) => window.localStorage.setItem('ckd-mode', m), mode);
-    const closed = await captureCanvas(page, `/#${DEMO_ID}`, { settleMs: 400 });
+    await page.goto(`/#${DEMO_ID}`);
     const canvas = page.locator('canvas').first();
+    await canvas.waitFor({ timeout: 60_000 });
     const box = (await canvas.boundingBox())!;
+    const closed = await settled(page, canvas);
 
     await page.mouse.click(box.x + AT.x, box.y + AT.y, { button: 'right' });
-    await waitForRepaint(page);
-    const open = await readCanvasPixels(canvas);
-    // An updated baseline is written unchecked, so say here that each step drew.
+    const open = await settled(page, canvas);
     expect(open.equals(closed), 'the right-click should open a menu').toBe(false);
+    expect(rgba(open, DELETE_BG), 'no row is highlighted before the hover').toEqual(rgba(open, BRING_FORWARD_BG));
 
     await page.mouse.move(box.x + ROW_2.x, box.y + ROW_2.y);
-    await waitForRepaint(page);
-    const hovered = await readCanvasPixels(canvas);
-    expect(hovered.equals(open), 'hovering a row should highlight it').toBe(false);
+    const hovered = await settled(page, canvas);
+    expect(rgba(hovered, DELETE_BG), 'the hovered row is highlighted').not.toEqual(rgba(hovered, BRING_FORWARD_BG));
 
     assertMatchesBaseline(hovered, resolve(BASELINE_DIR, `${DEMO_ID}-${mode}.png`));
   });
