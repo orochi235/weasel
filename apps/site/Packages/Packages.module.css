@@ -112,6 +112,13 @@
   line-height: 1.5;
 }
 
+.since {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
+  color: var(--wzl-fg);
+  font-weight: 600;
+  margin-inline-end: 0.5ch;
+}
+
 /* ---------- Overview ---------- */
 .facts {
   display: grid;

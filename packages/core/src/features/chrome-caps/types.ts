@@ -67,10 +67,10 @@ export type ChromeId =
   | 'action.move-ghosts'
   | 'action.insert-preview'
   | 'action.polyline'
+  | 'action.brush'
   | 'snap.guides'
   | 'snap.targets'
   | 'grid'
-  | 'path-edit.direction'
   | (string & {});
 
 /**

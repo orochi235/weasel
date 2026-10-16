@@ -18,22 +18,22 @@ interface AnchorDataCarrier {
 }
 
 /**
- * `data` with its per-anchor arrays renumbered for the edit from `before` to
- * `after`, or `data` itself when it holds none. Only what `data` already has
- * is written; nothing is added.
+ * The per-anchor fields of `data`, renumbered for the edit from `before` to
+ * `after`, to lay over it; empty when it holds none. Only what `data`
+ * already has is written.
  */
-export function carryAnchorData<T>(
-  data: T,
+export function anchorDataPatch(
+  data: unknown,
   before: PolygonPath,
   after: PolygonPath,
   origins: readonly (PointOrigin | null)[],
-): T {
-  if (!data || typeof data !== 'object') return data;
+): Record<string, unknown> {
+  if (!data || typeof data !== 'object') return {};
   const d = data as AnchorDataCarrier;
   const colors = (values: number[]) => remapAnchorValues(values, COLOR_STRIDE, before, after, origins);
-  const next: AnchorDataCarrier = {};
-  if (d.skin) next.skin = remapSkin(d.skin, origins);
-  if (d.vertexColors) next.vertexColors = colors(d.vertexColors);
-  if (d.stroke?.vertexColors) next.stroke = { ...d.stroke, vertexColors: colors(d.stroke.vertexColors) };
-  return Object.keys(next).length === 0 ? data : { ...data, ...next };
+  const patch: AnchorDataCarrier = {};
+  if (d.skin) patch.skin = remapSkin(d.skin, origins);
+  if (d.vertexColors) patch.vertexColors = colors(d.vertexColors);
+  if (d.stroke?.vertexColors) patch.stroke = { ...d.stroke, vertexColors: colors(d.stroke.vertexColors) };
+  return patch as Record<string, unknown>;
 }

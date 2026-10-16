@@ -96,7 +96,10 @@ Behavior is turned on by naming presets in `features`. Each is independent:
 | `draw` | every preset above |
 
 `FEATURE_ACTION_IDS` is the table of which kit action each preset registers,
-and `COMPOSITE_FEATURES` of what `pick`, `transform` and `draw` abbreviate. A
+and `COMPOSITE_FEATURES` of what `pick`, `transform` and `draw` abbreviate.
+Each name stands for a `FeaturePreset` object (`selectPreset`, `pathsPreset`,
+…), and `features` takes those objects, or a package's own, beside the names;
+`docs/extending.md` ("Presets") has the shape. A
 canvas supplying its own select tool names `outline` rather than `pick`, so the
 built-in one is not mounted beside it.
 Passing `viewport` implies `view`; the prop only configures it. A tool brings

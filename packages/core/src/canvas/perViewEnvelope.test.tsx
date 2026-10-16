@@ -17,7 +17,7 @@ import type { ChromeState } from 'core/selection/chromeState';
 import type { GesturePreviewSource } from './gestureBounds';
 import { usePreviewGhostLayer } from './SceneCanvas/usePreviewGhostLayer';
 import { useDispatcherOverlayLayer } from './SceneCanvas/useDispatcherOverlayLayer';
-import { createPathEditingOverlayLayer, PATH_DIRECTION_CHROME_ID } from 'features/paths/pathEditingOverlayLayer';
+import { createPathEditingOverlayLayer } from 'features/paths/pathEditingOverlayLayer';
 import { chromeAffordances } from './affordanceAt';
 import { createSlopsDebugLayer } from './slopsDebugLayer';
 import { polygonFromPoints, type PolygonPath } from '@weasel-js/geom';
@@ -51,8 +51,7 @@ function envelope(parts: {
       selection: [], multiActive: false, boundsOf: () => null, unionBounds: null,
       modifiers: { alt: false, shift: false, meta: false, ctrl: false },
     } as ChromeState,
-    // Everything but what the kit's defaults hide outright.
-    getIsVisible: () => parts.isVisible ?? ((id: string) => id !== PATH_DIRECTION_CHROME_ID),
+    getIsVisible: () => parts.isVisible ?? (() => true),
   };
 }
 

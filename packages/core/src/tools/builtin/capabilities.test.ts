@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import * as builtins from './index';
+import { createMeasurements } from 'features/measure/measurements';
 
 // Hooks here are pure factories at top level — we instantiate each by
 // calling its hook in a renderHook environment with a minimal set of
@@ -26,6 +27,7 @@ describe('built-in tool capabilities', () => {
     }, ['creates-paths']],
     ['pencil', () => builtins.usePencilTool(), ['creates-paths']],
     ['slice', () => builtins.useSliceTool(), ['edits-page']],
+    ['measure', () => builtins.useMeasureTool({ measurements: createMeasurements({ layer: 'notes' }) }), ['navigation']],
     ['weight', () => builtins.useWeightTool({ scene: {} as never, rig: () => null }), ['edits-page']],
     ['bone', () => builtins.useBoneTool({ scene: {} as never, rig: () => null }), ['edits-page']],
     ['text', () => builtins.useTextTool(), ['creates-text']],

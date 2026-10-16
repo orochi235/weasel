@@ -94,6 +94,12 @@ export const PREFS = {
           max: 200,
         },
         panels: PANELS_PREF,
+        showAnnotations: {
+          kind: 'boolean',
+          name: 'Show annotations in Layers',
+          description: 'List the layers that are not printed — measurements, and anything else drawn as an aid — and their items in the Layers panel. The canvas draws them either way, and export leaves them out.',
+          default: false,
+        },
       },
     },
     view: {
@@ -127,6 +133,23 @@ export const PREFS = {
           name: 'Show path direction',
           description: 'While editing a path, draw an arrow on each segment the way the path runs, and a ring on its start.',
           default: false,
+        },
+        symmetry: {
+          kind: 'boolean',
+          name: 'Symmetry',
+          description: 'Draw into a symmetry group, whose mirrored copies follow every edit to what is drawn in it, and the anchors you drag on a path that is already its own mirror image. Drag the handles on the axis to move or turn it. Turning it off stops drawing into the group; what is in it stays mirrored.',
+          default: false,
+        },
+        symmetryAxis: {
+          kind: 'enum',
+          name: 'Symmetry axis',
+          description: 'Which way the symmetry group mirrors: left and right, top and bottom, or into all four quarters.',
+          default: 'vertical',
+          options: [
+            { value: 'vertical', label: 'Vertical (left and right)' },
+            { value: 'horizontal', label: 'Horizontal (top and bottom)' },
+            { value: 'both', label: 'Both' },
+          ],
         },
       },
     },

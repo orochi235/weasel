@@ -307,9 +307,9 @@ function ButtonsAndToggles() {
       </Cell>
       <Cell label="Keycaps">
         <div className="lk-specimen__row">
-          <KeySequence keys={[{ label: '⌘' }, { label: '⇧' }, { label: 'K' }]} separator="+" />
-          <KeyCap label="K" />
-          <KeyCap label="⌥" variant="minimal" />
+          <KeySequence keys={[{ label: '⌘' }, { label: '⇧' }, { label: 'K' }]} variant="inverse" />
+          <KeyCap label="K" variant="inverse" />
+          <KeyCap label="⌥" />
         </div>
       </Cell>
     </Section>

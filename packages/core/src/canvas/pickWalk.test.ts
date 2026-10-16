@@ -171,6 +171,16 @@ describe('pickWalk — layers', () => {
   it('only an explicit false hides a layer', () => {
     expect(hiddenLayerIds([{ id: 'a' }, { id: 'b', visible: false }])).toEqual(new Set(['b']));
   });
+
+  it('passes through an annotation layer for a point pick and an area query alike', () => {
+    const scene = createScene<{ kind: string }, 'main' | 'notes', RectPose>({
+      systemLayers: [{ id: 'main' }, { id: 'notes', annotation: true }],
+    });
+    scene.add({ kind: 'leaf', layer: 'main', id: asNodeId('a'), pose: { x: 0, y: 0, width: 40, height: 40 }, data: { kind: 'rect' } });
+    scene.add({ kind: 'leaf', layer: 'notes', id: asNodeId('n'), pose: { x: 0, y: 0, width: 40, height: 40 }, data: { kind: 'rect' } });
+    expect(pickAt(scene as never, 5, 5)).toEqual(['a']);
+    expect(hitTestArea(scene as never, { x: -10, y: -10, width: 100, height: 100 })).toEqual(['a']);
+  });
 });
 
 describe('pickWalk — order and clips', () => {

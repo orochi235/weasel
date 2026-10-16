@@ -8,7 +8,7 @@ import type { Skeleton } from '@weasel-js/animator';
 
 const BONE = '#4f9cf7';
 const JOINT_FILL = '#ffffff';
-const JOINT_RADIUS_PX = 4.5;
+export const JOINT_RADIUS_PX = 4.5;
 
 const dot = (x: number, y: number, r: number) => ellipsePath({ x: x - r, y: y - r, width: 2 * r, height: 2 * r });
 
@@ -22,6 +22,8 @@ export function createBoneOverlay(source: {
   skeleton(): Skeleton | null;
   active(): string | null;
   subscribe(fn: () => void): () => void;
+  /** Joint dot radius in screen px, read each frame. Default `JOINT_RADIUS_PX`. */
+  jointRadiusPx?: () => number | undefined;
 }): RenderLayer<unknown> {
   return {
     id: source.id,
@@ -47,10 +49,11 @@ export function createBoneOverlay(source: {
         });
       }
       const active = source.active();
+      const r = source.jointRadiusPx?.() ?? JOINT_RADIUS_PX;
       for (const [name, p] of at) {
         out.push({
           kind: 'path',
-          path: dot(p.x, p.y, JOINT_RADIUS_PX),
+          path: dot(p.x, p.y, r),
           fill: { paint: { kind: 'solid', color: name === active ? BONE : JOINT_FILL } },
           stroke: { paint: { color: BONE }, width: 1.5 },
         });

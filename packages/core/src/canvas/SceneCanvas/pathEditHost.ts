@@ -12,6 +12,12 @@ export interface PathEditHost {
   editingId(): string | null;
   /** The canvas asking to open `id` for editing, or with null to close the open one. */
   setEditingId(id: string | null): void;
+  /**
+   * The path-edit tool in use — see `PathEditState.getTool` — for a host that keeps it, such as
+   * a palette showing it as a tool. Give both or neither; without them the canvas keeps its own.
+   */
+  tool?(): string | null;
+  setTool?(id: string | null): void;
 }
 
 /** A path a canvas opens in anchor edit as it mounts (`defaultPathEdit`), as though it had been

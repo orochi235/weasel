@@ -24,6 +24,8 @@ function setup(over: Partial<AppCommands> = {}) {
     toggleSnap: vi.fn(),
     pathDirection: false,
     togglePathDirection: vi.fn(),
+    symmetryOn: false,
+    toggleSymmetry: vi.fn(),
     canReleaseCompound: true,
     releaseCompound: vi.fn(),
     openPrefs: vi.fn(),
@@ -89,6 +91,14 @@ describe('draw app commands', () => {
     fireEvent.click(snap);
     expect(t.commands.toggleSnap).toHaveBeenCalledOnce();
     expect(t.commands.toggleGrid).not.toHaveBeenCalled();
+  });
+
+  it('draws symmetry as a toggle that shows its state, and fires on click', () => {
+    const t = setup({ symmetryOn: true });
+    const symmetry = screen.getByRole('button', { name: 'Symmetry' });
+    expect(symmetry.getAttribute('aria-pressed')).toBe('true');
+    fireEvent.click(symmetry);
+    expect(t.commands.toggleSymmetry).toHaveBeenCalledOnce();
   });
 
   it('disables Release compound path when no selected path is compound', () => {

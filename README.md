@@ -184,46 +184,55 @@ Core's main entry carries the everyday surface. A few narrower ones have their o
 
 ## Packages
 
-Every package is published under `@weasel-js` and released together at one version.
+Every package is published under `@weasel-js` and released together at one version. `npm run check:needs` holds the marks to the code.
 
-| Package | What it is |
-|---|---|
-| `core` | the scene graph, `<SceneCanvas>`, actions, and tools |
-| `geom` | pure 2D geometry — affine, box, curve, polyline; polygon booleans under `./booleans` |
-| `gestures` | the gesture taxonomy, route grammars and matchers; no React, no DOM |
-| `history` | undo/redo with scoped sub-histories; no React, no DOM |
-| `routing` | binding-to-action routing: the gesture dispatcher, the action registry, tool and contribution declaration |
-| `select` | selection as a value: which ids a press selects, with toggle, range and anchor rules; no React, no DOM |
-| `registry` | keyed registries you can enumerate and subscribe to; no React, no DOM |
-| `react` | generic React hooks the other packages share: `useLatest`, `useStableByContent`, `useVisibleRaf` |
-| `paint` | fills, strokes, gradients and dashes as plain data |
-| `stroke` | a stroke as geometry: the ribbon mesh, the marker registry, and a stroke outlined as a path |
-| `renderer` | the WebGL2 renderer: draw commands, batched fills and strokes, text, images, gradients, patterns, shader programs, and effects |
-| `text` | styled runs, kerned layout, wrapping and measurement |
-| `text-dom` | in-place text editing: a contenteditable overlay that reads and writes styled runs |
-| `bidi` | the Unicode Bidirectional Algorithm (UAX #9) |
-| `font` | MSDF atlases, glyph metrics and runtime glyph rasterization |
-| `quantity` | numbers with units and a display, as text, spoken text, HTML and MathML; no React, no DOM |
-| `simulation` | an N-body integrator that takes d3-force's forces, and a hook that runs it on a frame loop |
-| `svg` | SVG import and export |
-| `modes` | app-level modality: capability tags, mode definitions, a mode registry |
-| `storage` | keyed async storage behind one adapter interface: IndexedDB, localStorage, the URL hash, memory |
-| `prefs` | a preferences schema, a store that validates, migrates and persists against it, and React hooks over the store |
-| `diagram` | node-link diagrams: ports on any node's perimeter, flowchart-style bodies |
-| `guides` | placement aids: grids, guide lines, alignment and snapping to them, container layout strategies |
-| `hud` | WebGL-rendered widgets composited into a canvas |
-| `animator` | tweens, springs, holds, staggers and timelines that combine on targets, on one frame loop; no scene |
-| `parallax` | parallax planes and tiled surfaces: layers that draw other layers through a derived view |
-| `minimap` | a minimap with linked cursors: an overview you press and drag to move the main camera, on the canvas's own surface or one of its own |
-| `kernel3d` | poses, an orbit camera, ray picking and screen-projected chrome over core's scene graph; hosts a renderer |
-| `cursor` | tool cursors as authored glyphs, baked to CSS or painted when too large |
-| `loupe` | a magnifier model: where it's aimed, how far it magnifies, what's under it |
-| `audio` | a Web Audio engine: voices, buses, lookahead scheduling, spatialization; no weasel dependencies |
-| `d3` | d3 data-join and transitions over `useScene` |
-| `theme` | design tokens as CSS variables and a parallel TypeScript export |
-| `ui` | React chrome components for weasel apps |
-| `labkit` | React widgets for self-contained interactive lab pages |
-| `forge` | a component workshop on labkit: stories in isolated frames, controls and state in lab trials |
+<!-- packages:start -->
+
+<img src="docs/badges/react.svg" width="20" height="20" alt="Needs React" title="Needs React"> needs React · <img src="docs/badges/react-optional.svg" width="20" height="20" alt="React only under the /react subpath" title="React only under the /react subpath"> React only under `/react` · <img src="docs/badges/dom.svg" width="20" height="20" alt="Needs a browser" title="Needs a browser"> needs a browser; the rest run in Node or a worker · <img src="docs/badges/webgl2.svg" width="20" height="20" alt="Draws with WebGL2" title="Draws with WebGL2"> WebGL2 · <img src="docs/badges/webaudio.svg" width="20" height="20" alt="Plays through Web Audio" title="Plays through Web Audio"> Web Audio · <img src="docs/badges/standalone.svg" width="20" height="20" alt="Depends on no other weasel package" title="Depends on no other weasel package"> no other weasel package
+
+| Package | | What it is |
+|---|---|---|
+| `core` | <img src="docs/badges/react.svg" width="20" height="20" alt="Needs React" title="Needs React"><img src="docs/badges/dom.svg" width="20" height="20" alt="Needs a browser: document, window or navigator" title="Needs a browser: document, window or navigator"><img src="docs/badges/webgl2.svg" width="20" height="20" alt="Draws with WebGL2" title="Draws with WebGL2"> | the scene graph, `<SceneCanvas>`, actions, and tools |
+| `geom` | <img src="docs/badges/standalone.svg" width="20" height="20" alt="Depends on no other weasel package" title="Depends on no other weasel package"> | pure 2D geometry — affine, box, curve, polyline; polygon booleans under `./booleans` |
+| `gestures` | <img src="docs/badges/dom.svg" width="20" height="20" alt="Needs a browser: document, window or navigator" title="Needs a browser: document, window or navigator"><img src="docs/badges/standalone.svg" width="20" height="20" alt="Depends on no other weasel package" title="Depends on no other weasel package"> | the gesture taxonomy, route grammars and matchers |
+| `history` |  | undo/redo with scoped sub-histories |
+| `routing` | <img src="docs/badges/react.svg" width="20" height="20" alt="Needs React" title="Needs React"><img src="docs/badges/dom.svg" width="20" height="20" alt="Needs a browser: document, window or navigator" title="Needs a browser: document, window or navigator"> | binding-to-action routing: the gesture dispatcher, the action registry, tool and contribution declaration |
+| `select` |  | selection as a value: which ids a press selects, with toggle, range and anchor rules |
+| `menu` | <img src="docs/badges/standalone.svg" width="20" height="20" alt="Depends on no other weasel package" title="Depends on no other weasel package"> | the headless model behind context menus: entries, a controller for highlight, submenus, keyboard and typeahead, and placement |
+| `registry` | <img src="docs/badges/standalone.svg" width="20" height="20" alt="Depends on no other weasel package" title="Depends on no other weasel package"> | keyed registries you can enumerate and subscribe to |
+| `react` | <img src="docs/badges/react.svg" width="20" height="20" alt="Needs React" title="Needs React"><img src="docs/badges/dom.svg" width="20" height="20" alt="Needs a browser: document, window or navigator" title="Needs a browser: document, window or navigator"> | generic React hooks the other packages share: `useLatest`, `useStableByContent`, `useVisibleRaf` |
+| `paint` | <img src="docs/badges/standalone.svg" width="20" height="20" alt="Depends on no other weasel package" title="Depends on no other weasel package"> | fills, strokes, gradients and dashes as plain data |
+| `stroke` |  | a stroke as geometry: the ribbon mesh, the marker registry, and a stroke outlined as a path |
+| `renderer` | <img src="docs/badges/dom.svg" width="20" height="20" alt="Needs a browser: document, window or navigator" title="Needs a browser: document, window or navigator"><img src="docs/badges/webgl2.svg" width="20" height="20" alt="Draws with WebGL2" title="Draws with WebGL2"> | the WebGL2 renderer: draw commands, batched fills and strokes, text, images, gradients, patterns, shader programs, and effects |
+| `text` | <img src="docs/badges/dom.svg" width="20" height="20" alt="Needs a browser: document, window or navigator" title="Needs a browser: document, window or navigator"> | styled runs, kerned layout, wrapping and measurement |
+| `text-dom` | <img src="docs/badges/react.svg" width="20" height="20" alt="Needs React" title="Needs React"><img src="docs/badges/dom.svg" width="20" height="20" alt="Needs a browser: document, window or navigator" title="Needs a browser: document, window or navigator"> | in-place text editing: a contenteditable overlay that reads and writes styled runs |
+| `bidi` | <img src="docs/badges/standalone.svg" width="20" height="20" alt="Depends on no other weasel package" title="Depends on no other weasel package"> | the Unicode Bidirectional Algorithm (UAX #9) |
+| `font` | <img src="docs/badges/dom.svg" width="20" height="20" alt="Needs a browser: document, window or navigator" title="Needs a browser: document, window or navigator"> | MSDF atlases, glyph metrics and runtime glyph rasterization |
+| `quantity` | <img src="docs/badges/standalone.svg" width="20" height="20" alt="Depends on no other weasel package" title="Depends on no other weasel package"> | numbers with units and a display, as text, spoken text, HTML and MathML |
+| `simulation` | <img src="docs/badges/react-optional.svg" width="20" height="20" alt="React only under the /react subpath" title="React only under the /react subpath"> | an N-body integrator that takes d3-force's forces, and a hook that runs it on a frame loop |
+| `svg` | <img src="docs/badges/react.svg" width="20" height="20" alt="Needs React" title="Needs React"><img src="docs/badges/dom.svg" width="20" height="20" alt="Needs a browser: document, window or navigator" title="Needs a browser: document, window or navigator"> | SVG import and export |
+| `modes` |  | app-level modality: capability tags, mode definitions, a mode registry |
+| `storage` | <img src="docs/badges/dom.svg" width="20" height="20" alt="Needs a browser: document, window or navigator" title="Needs a browser: document, window or navigator"> | keyed async storage behind one adapter interface: IndexedDB, localStorage, the URL hash, memory |
+| `prefs` | <img src="docs/badges/react-optional.svg" width="20" height="20" alt="React only under the /react subpath" title="React only under the /react subpath"><img src="docs/badges/dom.svg" width="20" height="20" alt="Needs a browser: document, window or navigator" title="Needs a browser: document, window or navigator"> | a preferences schema, a store that validates, migrates and persists against it, and React hooks over the store |
+| `diagram` | <img src="docs/badges/react.svg" width="20" height="20" alt="Needs React" title="Needs React"><img src="docs/badges/dom.svg" width="20" height="20" alt="Needs a browser: document, window or navigator" title="Needs a browser: document, window or navigator"> | node-link diagrams: ports on any node's perimeter, flowchart-style bodies |
+| `guides` | <img src="docs/badges/react.svg" width="20" height="20" alt="Needs React" title="Needs React"><img src="docs/badges/dom.svg" width="20" height="20" alt="Needs a browser: document, window or navigator" title="Needs a browser: document, window or navigator"> | placement aids: grids, guide lines, alignment and snapping to them, container layout strategies |
+| `hud` | <img src="docs/badges/react.svg" width="20" height="20" alt="Needs React" title="Needs React"><img src="docs/badges/dom.svg" width="20" height="20" alt="Needs a browser: document, window or navigator" title="Needs a browser: document, window or navigator"><img src="docs/badges/webgl2.svg" width="20" height="20" alt="Draws with WebGL2" title="Draws with WebGL2"> | WebGL-rendered widgets composited into a canvas |
+| `animator` | <img src="docs/badges/react.svg" width="20" height="20" alt="Needs React" title="Needs React"><img src="docs/badges/dom.svg" width="20" height="20" alt="Needs a browser: document, window or navigator" title="Needs a browser: document, window or navigator"> | tweens, springs, holds, staggers and timelines that combine on targets, on one frame loop; no scene |
+| `parallax` | <img src="docs/badges/react.svg" width="20" height="20" alt="Needs React" title="Needs React"><img src="docs/badges/dom.svg" width="20" height="20" alt="Needs a browser: document, window or navigator" title="Needs a browser: document, window or navigator"> | parallax planes and tiled surfaces: layers that draw other layers through a derived view |
+| `minimap` | <img src="docs/badges/react.svg" width="20" height="20" alt="Needs React" title="Needs React"><img src="docs/badges/dom.svg" width="20" height="20" alt="Needs a browser: document, window or navigator" title="Needs a browser: document, window or navigator"> | a minimap with linked cursors: an overview you press and drag to move the main camera, on the canvas's own surface or one of its own |
+| `kernel3d` | <img src="docs/badges/react.svg" width="20" height="20" alt="Needs React" title="Needs React"><img src="docs/badges/dom.svg" width="20" height="20" alt="Needs a browser: document, window or navigator" title="Needs a browser: document, window or navigator"> | poses, an orbit camera, ray picking and screen-projected chrome over core's scene graph; hosts a renderer |
+| `symmetry` | <img src="docs/badges/react.svg" width="20" height="20" alt="Needs React" title="Needs React"><img src="docs/badges/dom.svg" width="20" height="20" alt="Needs a browser: document, window or navigator" title="Needs a browser: document, window or navigator"> | live symmetry groups: a container whose mirrored, rotated and repeated copies are drawn from its real children, so every edit reaches every copy |
+| `path-tools` | <img src="docs/badges/react.svg" width="20" height="20" alt="Needs React" title="Needs React"><img src="docs/badges/dom.svg" width="20" height="20" alt="Needs a browser: document, window or navigator" title="Needs a browser: document, window or navigator"> | path-editing tools as presets an app opts into: brushes, bridge, trim and extend, curvature and handle balance, path constraints, path effects, and warps |
+| `cursor` |  | tool cursors as authored glyphs, baked to CSS or painted when too large |
+| `loupe` | <img src="docs/badges/dom.svg" width="20" height="20" alt="Needs a browser: document, window or navigator" title="Needs a browser: document, window or navigator"> | a magnifier model: where it's aimed, how far it magnifies, what's under it |
+| `audio` | <img src="docs/badges/dom.svg" width="20" height="20" alt="Needs a browser: document, window or navigator" title="Needs a browser: document, window or navigator"><img src="docs/badges/webaudio.svg" width="20" height="20" alt="Plays through Web Audio" title="Plays through Web Audio"><img src="docs/badges/standalone.svg" width="20" height="20" alt="Depends on no other weasel package" title="Depends on no other weasel package"> | a Web Audio engine: voices, buses, lookahead scheduling, spatialization |
+| `d3` | <img src="docs/badges/react.svg" width="20" height="20" alt="Needs React" title="Needs React"><img src="docs/badges/dom.svg" width="20" height="20" alt="Needs a browser: document, window or navigator" title="Needs a browser: document, window or navigator"> | d3 data-join and transitions over `useScene` |
+| `theme` | <img src="docs/badges/react-optional.svg" width="20" height="20" alt="React only under the /react subpath" title="React only under the /react subpath"><img src="docs/badges/dom.svg" width="20" height="20" alt="Needs a browser: document, window or navigator" title="Needs a browser: document, window or navigator"> | design tokens as CSS variables and a parallel TypeScript export |
+| `ui` | <img src="docs/badges/react.svg" width="20" height="20" alt="Needs React" title="Needs React"><img src="docs/badges/dom.svg" width="20" height="20" alt="Needs a browser: document, window or navigator" title="Needs a browser: document, window or navigator"> | React chrome components for weasel apps |
+| `labkit` | <img src="docs/badges/react.svg" width="20" height="20" alt="Needs React" title="Needs React"><img src="docs/badges/dom.svg" width="20" height="20" alt="Needs a browser: document, window or navigator" title="Needs a browser: document, window or navigator"><img src="docs/badges/webgl2.svg" width="20" height="20" alt="Draws with WebGL2" title="Draws with WebGL2"> | React widgets for self-contained interactive lab pages |
+| `forge` | <img src="docs/badges/react.svg" width="20" height="20" alt="Needs React" title="Needs React"><img src="docs/badges/dom.svg" width="20" height="20" alt="Needs a browser: document, window or navigator" title="Needs a browser: document, window or navigator"> | a component workshop on labkit: stories in isolated frames, controls and state in lab trials |
+
+<!-- packages:end -->
 
 ## Documentation
 

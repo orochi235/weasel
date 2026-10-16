@@ -5,6 +5,7 @@ import {
   actionItems,
   buildDepsFromRequires,
   evaluateEnabled,
+  matchActionItem,
   type ActionItem,
   type ActionEnabledResult,
   type ActionsRegistry,
@@ -12,9 +13,11 @@ import {
 
 export interface PaletteItems {
   registry: ActionsRegistry | null;
-  /** The entries whose label contains `query`, in registration order. */
+  /** The entries whose label or a tag contains `query`, in registration order. */
   filtered: readonly ActionItem[];
   enabledOf(item: ActionItem): ActionEnabledResult;
+  /** The tag that found `item`, when its label did not. */
+  tagOf(item: ActionItem): string | undefined;
 }
 
 const ENABLED: ActionEnabledResult = { enabled: true };
@@ -40,11 +43,20 @@ export function usePaletteItems(open: boolean, query: string): PaletteItems {
     return m;
   }, [allItems, depReg]);
 
-  const filtered = useMemo<readonly ActionItem[]>(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return allItems;
-    return allItems.filter((i) => i.label.toLowerCase().includes(q));
+  const { filtered, tags } = useMemo(() => {
+    const byTag = new Map<string, string>();
+    const kept = allItems.filter((i) => {
+      const hit = matchActionItem(i, query);
+      if (hit?.by === 'tag') byTag.set(i.key, hit.tag);
+      return hit !== null;
+    });
+    return { filtered: kept, tags: byTag };
   }, [allItems, query]);
 
-  return { registry, filtered, enabledOf: (item) => enabledById.get(item.action.id) ?? ENABLED };
+  return {
+    registry,
+    filtered,
+    enabledOf: (item) => enabledById.get(item.action.id) ?? ENABLED,
+    tagOf: (item) => tags.get(item.key),
+  };
 }

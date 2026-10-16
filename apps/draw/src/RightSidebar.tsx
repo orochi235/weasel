@@ -1,13 +1,8 @@
 import {
-  type Paint,
   getAlpha01,
   inferredNodeProperties,
   inferredNodeRouting,
-  isGradientPaint,
-  resolveTextStyle,
-  isSolidPaint,
-  isTilePaint,
-  sampleGradientStops,
+  type Measurements,
   toHex8,
   useOngoingAction,
   type SelectionApi,
@@ -15,26 +10,20 @@ import {
 } from '@weasel-js/core';
 import {
   AnchorFields,
-  LayerList,
-  type LayerListItem,
   PropertyField,
   PropertyList,
   SelectionPanel,
   SidebarPanel,
   solidColorOf,
-  SwatchStrip,
-  useSceneLayerList
+  SwatchStrip
 } from '@weasel-js/ui';
-import {
-  lazy,
-  type CSSProperties, type ReactElement,
-  Suspense
-} from 'react';
+import { lazy, type ReactElement, Suspense } from 'react';
 import type { ActivePaint } from './ActiveSwatches';
 import { PAPER_OPTIONS, type PaperSizeKey } from './paperSizes';
 import { DEFAULT_FILENAME } from './docPersistence';
 import { DOCUMENT_UNITS } from './documentUnits';
-import type { DrawScene, WeaselDrawData } from './drawDocument';
+import type { DrawScene } from './drawDocument';
+import { LayersPanel } from './LayersPanel';
 import { WD_RENDERERS } from './paintRenderers';
 import { type PanelChrome, usePanel } from './panels';
 import { useColorContext } from './tools/colorContext';
@@ -46,45 +35,7 @@ const DispatchTracePanel = import.meta.env.DEV
   ? lazy(() => import('./dev/DispatchTracePanel').then((m) => ({ default: m.DispatchTracePanel })))
   : null;
 
-/** Synthetic id for the locked "Background" row in the Layers panel.
- *  Selecting this row surfaces the Document properties branch in the
- *  Properties panel; clicking any real node clears it. */
-export const BACKGROUND_ROW_ID = '__background__';
-
-// ─── Right sidebar: LayerList + SelectionPanel ──────────────────────────────
-
-/**
- * The color chip on a layer row. Every node kind keeps its paint in
- * `data.fill`, text included.
- *
- * `resolveTextStyle` is the same function the renderer resolves through, so
- * an unpainted text node reports the black it actually paints rather than
- * nothing. Non-solid paints (gradient, pattern) have no single color to show
- * and return undefined until the row can draw a real preview.
- */
-export function LayerSwatch({ color }: { color: string | undefined }): ReactElement | null {
-  if (color === undefined) return null;
-  // A custom property rather than a class: the chip's color is the node's data.
-  return <span className="wd-layer-swatch" style={{ '--wd-swatch': color } as CSSProperties} aria-hidden="true" />;
-}
-
-export function layerSwatch(data: WeaselDrawData): string | undefined {
-  if (data.fill?.paint) return paintChipColor(data.fill.paint);
-  if (data.text === undefined) return undefined;
-  const paint = resolveTextStyle(data.style, { fill: data.fill }).fill?.paint;
-  return isSolidPaint(paint) ? paint.color : undefined;
-}
-
-/** One representative color for a `Paint`, for a chip too small to draw
- *  the real paint: a gradient shows its midpoint, which reads closer to the
- *  whole ramp than either end does, and a tile pattern shows the color it
- *  draws with. A `texture` paint has no color to report. */
-export function paintChipColor(fill: Paint): string | undefined {
-  if (isGradientPaint(fill)) return sampleGradientStops(fill.stops, 0.5);
-  if (fill.kind === undefined || fill.kind === 'solid') return fill.color;
-  if (isTilePaint(fill)) return fill.color;
-  return undefined;
-}
+// ─── Right sidebar: Properties, Colors, Layers, History ──────────────────────
 
 /** The `#rrggbb` a native color input accepts; non-hex colors fall back to black. */
 export function opaqueHex(color: string): string {
@@ -95,6 +46,7 @@ export function opaqueHex(color: string): string {
 export interface RightSidebarProps {
   scene: DrawScene;
   selection: SelectionApi;
+  measurements: Measurements;
   filename: string;
   setFilename: (v: string) => void;
   backgroundColor: string;
@@ -108,6 +60,7 @@ export interface RightSidebarProps {
 export function RightSidebar({
   scene,
   selection,
+  measurements,
   filename,
   setFilename,
   backgroundColor,
@@ -117,48 +70,6 @@ export function RightSidebar({
   docSelected,
   setDocSelected,
 }: RightSidebarProps): ReactElement {
-  const baseLayerListProps = useSceneLayerList({
-    scene,
-    selection,
-    itemFor: (node) => {
-      const data = node.data as WeaselDrawData;
-      return {
-        label: data.text ?? data.label ?? node.id,
-        leading: <LayerSwatch color={layerSwatch(data)} />,
-      };
-    },
-  });
-
-  // Augment the kit-derived layer items with a pinned, locked virtual
-  // "Background" row. Selecting it routes to the Document properties
-  // branch instead of the kit `SelectionApi` (the synthetic id is not a
-  // real NodeId and would corrupt scene queries).
-  const backgroundRow: LayerListItem = {
-    id: BACKGROUND_ROW_ID,
-    label: 'Background',
-    leading: <LayerSwatch color={backgroundColor} />,
-    locked: true,
-  };
-  const layerItems = [...baseLayerListProps.items, backgroundRow];
-  const layerSelectedIds = docSelected
-    ? [BACKGROUND_ROW_ID]
-    : baseLayerListProps.selectedIds;
-  const onLayerSelect = (ids: string[]): void => {
-    if (ids.includes(BACKGROUND_ROW_ID)) {
-      setDocSelected(true);
-      selection.set([]);
-    } else {
-      setDocSelected(false);
-      baseLayerListProps.onSelect(ids);
-    }
-  };
-  const layerListProps = {
-    ...baseLayerListProps,
-    items: layerItems,
-    selectedIds: layerSelectedIds,
-    onSelect: onLayerSelect,
-  };
-
   const propertiesPanel = usePanel('properties');
   const colorsPanel = usePanel('colors');
   const layersPanel = usePanel('layers');
@@ -212,14 +123,15 @@ export function RightSidebar({
       )}
       {!colorsPanel.hidden && <ColorsPanel chrome={colorsPanel} />}
       {!layersPanel.hidden && (
-        <SidebarPanel
-          title="Layers"
-          collapsed={layersPanel.collapsed}
-          onToggleCollapse={layersPanel.onToggleCollapse}
-          onHide={layersPanel.onHide}
-        >
-          <LayerList {...layerListProps} empty="No nodes" />
-        </SidebarPanel>
+        <LayersPanel
+          scene={scene}
+          selection={selection}
+          measurements={measurements}
+          backgroundColor={backgroundColor}
+          docSelected={docSelected}
+          setDocSelected={setDocSelected}
+          chrome={layersPanel}
+        />
       )}
       {!historyPanel.hidden && (
         <SidebarPanel

@@ -3,6 +3,7 @@ import { decimal, parseAs, parseNumber, qty, type Display, type UnitTable } from
 import { clampToBounds, spinKey } from '../spin';
 import f from '../field.module.css';
 import s from './NumberField.module.css';
+import { useStepRepeat } from './useStepRepeat';
 
 /** Props for {@link UnitField}. */
 export interface UnitFieldProps {
@@ -60,9 +61,6 @@ export interface UnitFieldProps {
 export type StepperSide = 'start' | 'end';
 
 const FULL_PRECISION = decimal({ maxPlaces: 20, grouping: false });
-
-const REPEAT_DELAY_MS = 400;
-const REPEAT_EVERY_MS = 60;
 
 /**
  * A number typed as text, so it can carry a unit: `12mm` in a field showing
@@ -161,35 +159,29 @@ export function UnitField({
     return () => el.removeEventListener('wheel', onWheel);
   }, []);
 
-  const repeat = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const stopRepeat = () => {
-    if (repeat.current !== null) clearTimeout(repeat.current);
-    repeat.current = null;
-  };
-  useEffect(() => stopRepeat, []);
-  const startRepeat = (key: 'ArrowUp' | 'ArrowDown') => {
-    stopRepeat();
-    latestSpin.current(key);
-    const tick = (delay: number) => {
-      repeat.current = setTimeout(() => {
-        // At a bound the button is disabled while still held, and a disabled
-        // button may never hear the release that would end the repeat.
-        if (latestSpent.current(key)) return stopRepeat();
-        latestSpin.current(key);
-        tick(REPEAT_EVERY_MS);
-      }, delay);
-    };
-    tick(REPEAT_DELAY_MS);
-  };
+  const repeat = useStepRepeat(latestSpin, latestSpent);
   const stepper = (key: 'ArrowUp' | 'ArrowDown', label: string, glyph: string, atBound: boolean) => (
-    <Stepper
-      label={label}
-      glyph={glyph}
+    <button
+      type="button"
+      className={s.stepper}
+      aria-label={label}
+      tabIndex={-1}
       disabled={atBound || disabled}
-      onHold={() => startRepeat(key)}
-      onRelease={stopRepeat}
-      onTap={() => latestSpin.current(key)}
-    />
+      // Keeps focus in the input, where a press on the button would take it.
+      onPointerDown={(e) => {
+        e.preventDefault();
+        repeat.start(key);
+      }}
+      onPointerUp={repeat.stop}
+      onPointerLeave={repeat.stop}
+      onPointerCancel={repeat.stop}
+      // A click with no pointer down before it — assistive tech, or a test.
+      onClick={(e) => {
+        if (e.detail === 0) latestSpin.current(key);
+      }}
+    >
+      {glyph}
+    </button>
   );
 
   return (
@@ -268,39 +260,4 @@ function offsetIn(typed: string, read: (text: string) => number): number | null 
   if (!m) return null;
   const n = read(m[2]);
   return m[1] === '-' ? -n : n;
-}
-
-interface StepperProps {
-  label: string;
-  glyph: string;
-  disabled: boolean;
-  onHold: () => void;
-  onRelease: () => void;
-  onTap: () => void;
-}
-
-function Stepper({ label, glyph, disabled, onHold, onRelease, onTap }: StepperProps) {
-  return (
-    <button
-      type="button"
-      className={s.stepper}
-      aria-label={label}
-      tabIndex={-1}
-      disabled={disabled}
-      // Keeps focus in the input, where a press on the button would take it.
-      onPointerDown={(e) => {
-        e.preventDefault();
-        onHold();
-      }}
-      onPointerUp={onRelease}
-      onPointerLeave={onRelease}
-      onPointerCancel={onRelease}
-      // A click with no pointer down before it — assistive tech, or a test.
-      onClick={(e) => {
-        if (e.detail === 0) onTap();
-      }}
-    >
-      {glyph}
-    </button>
-  );
 }

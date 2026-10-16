@@ -6,7 +6,7 @@
 import type { AlignReference } from './align/align';
 import type { DistributeMode } from './distribute/distribute';
 import type { FlipAxis, FlipPivot } from './flip/helpers';
-import type { SegmentType } from '@weasel-js/geom';
+import type { EditAnchorsParams } from './edit-anchors/params';
 import type { SetAnchorFieldParams } from './defaults/anchorFields';
 
 /** A point a spatial reference of `'pointer'` resolves to in place of the
@@ -37,8 +37,7 @@ declare module '@weasel-js/routing' {
     'nudge.left': NudgeParams;
     'nudge.right': NudgeParams;
     'tool.activate': { toolId: string };
-    convertSegments: { to: SegmentType };
-    convertSegmentAt: { to: SegmentType };
+    editAnchors: EditAnchorsParams;
     setAnchorField: SetAnchorFieldParams;
   }
 }

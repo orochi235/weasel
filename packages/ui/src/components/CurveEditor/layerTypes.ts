@@ -10,6 +10,7 @@
  * keeps reading the latest state.
  */
 import type { ColorSource } from '@weasel-js/paint';
+import type { KitSettingsStore } from '@weasel-js/react';
 import type { ReactNode } from 'react';
 import type { Point as PlotPoint, ModelRange } from '../Plot2D/geometry';
 
@@ -33,6 +34,8 @@ export interface LayerCtx {
   toPlot(p: ModelPoint): PlotPoint;
   toModel(p: PlotPoint): ModelPoint;
   readonly modifiers: LayerModifiers;
+  /** The kit settings the editor sees, for a layer's hit and snap radii. Absent, a layer uses its own constants. */
+  readonly kitSettings?: KitSettingsStore;
 }
 
 /**

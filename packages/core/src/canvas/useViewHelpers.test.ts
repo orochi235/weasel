@@ -29,18 +29,18 @@ describe('useViewHelpers chrome state', () => {
     const { result, rerender } = renderHook((o) => useViewHelpers(o), { initialProps: opts });
     const corners = createCornerResizeAffordance();
     const cornerAt = (tag: string) => {
-      const r = corners.regions(result.current.chromeState).find((x) => x.id === `corner-${tag}`);
+      const r = corners.regions(result.current.helpers.getChromeState()).find((x) => x.id === `corner-${tag}`);
       return r && r.shape.kind === 'point' ? { x: r.shape.x, y: r.shape.y } : null;
     };
 
-    expect(result.current.chromeState.unionBounds).toEqual({ x: 0, y: 0, width: 50, height: 30 });
+    expect(result.current.helpers.getChromeState().unionBounds).toEqual({ x: 0, y: 0, width: 50, height: 30 });
     const seBefore = cornerAt('max-max');
 
     poses.a = { x: 100, y: 100, width: 10, height: 10 };
     poses.b = { x: 140, y: 120, width: 10, height: 10 };
     rerender(opts);
 
-    expect(result.current.chromeState.unionBounds).toEqual({ x: 100, y: 100, width: 50, height: 30 });
+    expect(result.current.helpers.getChromeState().unionBounds).toEqual({ x: 100, y: 100, width: 50, height: 30 });
     expect(cornerAt('max-max')).toEqual({ x: seBefore!.x + 100, y: seBefore!.y + 100 });
   });
 });

@@ -1,17 +1,23 @@
 /**
- * Screen-space render layer for path-editing chrome — anchor squares,
- * tangent lines, and control-point dots for a polygon path that is the
- * current edit target. Marker sizes stay constant regardless of zoom.
+ * Screen-space render layer for path-editing chrome — the open path's
+ * outline, anchor markers, tangent lines, and control-point dots for a
+ * polygon path that is the current edit target, under them whatever marks
+ * its path-edit extensions draw. Marker sizes stay constant regardless of zoom.
  */
 
 import type { DrawCommand } from '@weasel-js/renderer';
 import type { RenderLayer } from 'core/layers/render';
 import {
-  type Path, type PolygonPath, type View, circlePath, directionMarks, linePath, pathToAnchors, polygonFromPoints,
-  rectMarkerPath, squarePath,
+  type AnchorSet, type Path, type PolygonPath, type View, pathToAnchors, rectMarkerPath,
 } from '@weasel-js/geom';
 import type { GesturePreviewSource } from 'canvas/gestureBounds';
 import { previewSourcesFrom, isVisibleFrom } from 'canvas/drawEnvelope';
+import {
+  anchorMarkerCommands, DEFAULT_OVERLAY_STYLE, worldToScreen, type PathEditingOverlayStyle,
+} from './anchorMarkers';
+import type { PathEditExtension, PathEditMark } from './pathEditExtension';
+
+export type { PathEditingOverlayStyle } from './anchorMarkers';
 
 /** Options for `createPathEditingOverlayLayer`. Everything is read per frame,
  *  so the layer follows a changing edit target without being rebuilt. */
@@ -37,63 +43,26 @@ export interface CreatePathEditingOverlayLayerOptions {
   /** In-flight anchor-marquee rect in world coords, or null. Drawn as a
    *  rubber band while `marqueeAnchorsAction` is dragging. */
   getMarquee?(view: View): { x: number; y: number; width: number; height: number } | null;
+  /** The edited node's committed pose and data, which extensions' marks read. */
+  getNode?(id: string): { pose: unknown; data: unknown } | null;
+  /** The path-edit extensions whose marks are drawn, in order. */
+  getExtensions?(): readonly PathEditExtension[];
+  /** The selected extension mark, or null. */
+  getSelectedMark?(): PathEditMark | null;
   /** Optional styling overrides. */
   style?: PathEditingOverlayStyle;
 }
 
-/** Appearance of the anchor and handle markers. */
-export interface PathEditingOverlayStyle {
-  anchorSizePx?: number;
-  handleDotRadiusPx?: number;
-  anchorFill?: string;
-  anchorStroke?: string;
-  handleStroke?: string;
-  /** Fill of the control-point circle. Defaults to the handleStroke color
-   *  at 50% alpha. */
-  handleDotFill?: string;
-  /** Fill of a selected anchor square. Defaults to the anchor stroke color. */
-  anchorFillSelected?: string;
-  /** Stroke of the marquee rubber band. */
-  marqueeStroke?: string;
-  /** Fill of the marquee rubber band. */
-  marqueeFill?: string;
-  /** Color of the direction arrows and start rings `path-edit.direction` shows. */
-  directionColor?: string;
-  /** Length of a direction arrow, tip to base. */
-  directionSizePx?: number;
-}
-
-const DEFAULT_STYLE: Required<PathEditingOverlayStyle> = {
-  anchorSizePx: 8,
-  handleDotRadiusPx: 5,
-  anchorFill: '#ffffff',
-  anchorStroke: '#3478f6',
-  handleStroke: '#7da7e8',
-  // 50%-opacity handle-stroke color. #7da7e8 → rgba(125, 167, 232, 0.5).
-  handleDotFill: 'rgba(125, 167, 232, 0.5)',
-  anchorFillSelected: '#3478f6',
-  marqueeStroke: '#3478f6',
-  marqueeFill: 'rgba(52, 120, 246, 0.08)',
-  directionColor: '#e8590c',
-  directionSizePx: 9,
-};
-
-/** The chrome id of the arrows showing which way the edited path runs. Off by default. */
-export const PATH_DIRECTION_CHROME_ID = 'path-edit.direction';
-
 const EMPTY_SELECTION: ReadonlySet<number> = new Set();
+const ALWAYS = (): boolean => true;
 
-function w2s(wx: number, wy: number, view: View): [number, number] {
-  return [(wx - view.x) * view.scale.x, (wy - view.y) * view.scale.y];
-}
-
-/** Render layer that draws the anchors and control handles of the path
- *  currently being anchor-edited. Draws nothing when no path is being
- *  edited. */
+/** Render layer that draws the outline and the anchors and control handles
+ *  of the path currently being anchor-edited. Draws nothing when no path is
+ *  being edited. */
 export function createPathEditingOverlayLayer(
   opts: CreatePathEditingOverlayLayerOptions,
 ): RenderLayer<unknown> {
-  const style = { ...DEFAULT_STYLE, ...(opts.style ?? {}) };
+  const style = { ...DEFAULT_OVERLAY_STYLE, ...(opts.style ?? {}) };
 
   return {
     id: 'path-editing-overlay',
@@ -110,72 +79,33 @@ export function createPathEditingOverlayLayer(
       const pose = opts.getPose(id, previewSourcesFrom(data), view);
       if (!pose || pose.kind !== 'polygon') return [];
 
-      const set = pathToAnchors(pose as PolygonPath);
-      const { anchors } = set;
       const selected = opts.getSelectedAnchors?.() ?? EMPTY_SELECTION;
+      // Extensions' marks under the markers, which are what a press reaches first.
       const out: DrawCommand[] = [];
-
-      // Flat anchor index, incremented in walk order so it lines up with
-      // `enumerateAnchors` — the same numbering the affordances and the
-      // anchor selection use. See `anchorEdits` for why they agree.
-      let flat = 0;
-      for (const sub of anchors) {
-        for (const a of sub) {
-          const isSelected = selected.has(flat);
-          flat++;
-          const [ax, ay] = w2s(a.x, a.y, view);
-
-          // Tangent stems + handle dots first so the anchor square paints on top.
-          if (a.inHandle) {
-            const [hx, hy] = w2s(a.inHandle.x, a.inHandle.y, view);
-            out.push({
-              kind: 'path',
-              path: linePath({ x: ax, y: ay }, { x: hx, y: hy }),
-              stroke: { paint: { kind: 'solid', color: style.handleStroke }, width: 1 },
-            });
-            out.push({
-              kind: 'path',
-              path: circlePath(hx, hy, style.handleDotRadiusPx),
-              fill: { paint: { kind: 'solid', color: style.handleDotFill } },
-            });
-          }
-          if (a.outHandle) {
-            const [hx, hy] = w2s(a.outHandle.x, a.outHandle.y, view);
-            out.push({
-              kind: 'path',
-              path: linePath({ x: ax, y: ay }, { x: hx, y: hy }),
-              stroke: { paint: { kind: 'solid', color: style.handleStroke }, width: 1 },
-            });
-            out.push({
-              kind: 'path',
-              path: circlePath(hx, hy, style.handleDotRadiusPx),
-              fill: { paint: { kind: 'solid', color: style.handleDotFill } },
-            });
-          }
-
-          // Anchor square — drawn on top.
-          out.push({
-            kind: 'path',
-            path: squarePath(ax, ay, style.anchorSizePx),
-            fill: { paint: {
-              kind: 'solid',
-              color: isSelected ? style.anchorFillSelected : style.anchorFill,
-            } },
-            stroke: { paint: { kind: 'solid', color: style.anchorStroke }, width: 1 },
-          });
+      const node = opts.getNode?.(id);
+      if (node) {
+        const mark = opts.getSelectedMark?.() ?? null;
+        const anchors = pathToAnchors(pose as PolygonPath) as AnchorSet;
+        const toScreen = (p: { x: number; y: number }) => worldToScreen(p, view);
+        for (const ext of opts.getExtensions?.() ?? []) {
+          if (!ext.marks) continue;
+          out.push(...ext.marks({
+            id, node, path: pose as PolygonPath, anchors, view, toScreen,
+            isVisible: isVisible ?? ALWAYS,
+            selected: mark?.owner === ext.id ? mark.index : null,
+          }));
         }
       }
-
-      if (isVisible?.(PATH_DIRECTION_CHROME_ID)) out.push(...directionChrome(set, view, style));
+      out.push(...anchorMarkerCommands(pose as PolygonPath, view, selected, style));
 
       // Marquee rubber band, on top of everything.
       const marquee = opts.getMarquee?.(view);
       if (marquee) {
-        const [mx, my] = w2s(marquee.x, marquee.y, view);
-        const [mx2, my2] = w2s(marquee.x + marquee.width, marquee.y + marquee.height, view);
+        const m = worldToScreen(marquee, view);
+        const m2 = worldToScreen({ x: marquee.x + marquee.width, y: marquee.y + marquee.height }, view);
         out.push({
           kind: 'path',
-          path: rectMarkerPath(mx, my, mx2 - mx, my2 - my),
+          path: rectMarkerPath(m.x, m.y, m2.x - m.x, m2.y - m.y),
           fill: { paint: { kind: 'solid', color: style.marqueeFill } },
           stroke: { paint: { kind: 'solid', color: style.marqueeStroke }, width: 1 },
         });
@@ -184,38 +114,4 @@ export function createPathEditingOverlayLayer(
       return out;
     },
   };
-}
-
-/** An arrow at the middle of every segment pointing the way the path runs,
- *  and a ring round each subpath's start anchor. */
-function directionChrome(
-  set: ReturnType<typeof pathToAnchors>,
-  view: View,
-  style: Required<PathEditingOverlayStyle>,
-): DrawCommand[] {
-  const paint = { kind: 'solid' as const, color: style.directionColor };
-  const out: DrawCommand[] = [];
-  const len = style.directionSizePx;
-  for (const m of directionMarks(set)) {
-    const [cx, cy] = w2s(m.x, m.y, view);
-    const sx = m.dx * view.scale.x;
-    const sy = m.dy * view.scale.y;
-    const k = Math.hypot(sx, sy);
-    if (k === 0) continue;
-    const ux = sx / k, uy = sy / k;
-    const tip = { x: cx + (ux * len) / 2, y: cy + (uy * len) / 2 };
-    const back = { x: cx - (ux * len) / 2, y: cy - (uy * len) / 2 };
-    const half = len * 0.45;
-    out.push({
-      kind: 'path',
-      path: polygonFromPoints([tip, { x: back.x - uy * half, y: back.y + ux * half }, { x: back.x + uy * half, y: back.y - ux * half }]),
-      fill: { paint },
-    });
-  }
-  for (const sub of set.anchors) {
-    if (sub.length === 0) continue;
-    const [ax, ay] = w2s(sub[0].x, sub[0].y, view);
-    out.push({ kind: 'path', path: circlePath(ax, ay, style.anchorSizePx), stroke: { paint, width: 2 } });
-  }
-  return out;
 }

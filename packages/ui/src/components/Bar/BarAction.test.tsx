@@ -6,7 +6,7 @@ import {
 } from '@weasel-js/core';
 import type { PrefAction } from '@weasel-js/prefs';
 import { PrefActionButton } from '../Prefs/PrefActionButton';
-import { BarAction } from './BarAction';
+import { BarAction, BarActionButton } from './BarAction';
 
 function Register({ action }: { action: Action }) {
   useAction(action);
@@ -127,6 +127,14 @@ describe('BarAction', () => {
     const button = screen.getByRole('button', { name: 'Bold' });
     expect(button).toHaveAttribute('aria-disabled', 'true');
     expect(button).toHaveAttribute('data-missing', 'gone.missing');
+  });
+
+  it('keeps a disabled button focusable and says why, given a reason', () => {
+    render(<BarActionButton label="Move by" labeled disabled disabledReason="Selection required" onPress={() => {}} />);
+    const button = screen.getByRole('button', { name: 'Move by' });
+    expect(button).not.toBeDisabled();
+    expect(button).toHaveAttribute('aria-disabled', 'true');
+    expect(button).toHaveAttribute('aria-description', 'Selection required');
   });
 
   it('is a dead button with no registry above it', () => {

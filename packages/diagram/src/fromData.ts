@@ -8,15 +8,18 @@
  */
 import type { AddNodeSpec, MarkerRef, RectPose, Stroke } from '@weasel-js/core';
 import { DEFAULT_GROUP_INSET, expandGroupEdges } from './cluster';
-import { groupBoxes, groupSpecs, resolveGroups, type ResolvedGroup } from './dataGroups';
-import { buildBody, measureBody, sizeToBody, type BodySpec, type MeasureRowText, type Row, type RowTextStyle } from './body';
-import { EDGE_DERIVE_PATH, type DiagramEdge } from './edge';
+import { groupSpecs, resolveGroups, type ResolvedGroup } from './dataGroups';
+import { bodyTrait, buildBody, measureBody, sizeToBody, type BodySpec, type MeasureRowText, type Row, type RowTextStyle } from './body';
+import { edgeSpecs, labelStyleOf } from './dataEdges';
+import type { DiagramEdge } from './edge';
 import { force } from './force';
-import type { Graph, GraphEdge, GraphGroup, GraphNode } from './graph';
+import { labelFollowsLayout, type EdgeLabelRoom, type Graph, type GraphEdge, type GraphGroup, type GraphNode } from './graph';
 import type { DiagramAnchor } from './group';
-import { LABEL_DERIVE_POSE, type DiagramLabel } from './label';
-import { layered } from './layered';
-import { DEFAULT_NODE_GAP, type LayoutFn, type LayoutOptions } from './layout';
+import type { DiagramLabel } from './label';
+import { chain } from './chain';
+import { layered, type LayeredPlan } from './layered';
+import type { LayoutFn, LayoutOptions, LayoutPlan } from './layout';
+import { markSpecs, type DataMark, type DiagramMark } from './marks';
 import type { Outline } from './outline';
 import { authoredOver, type LayeredRoute } from './route';
 import { tree } from './tree';
@@ -48,6 +51,9 @@ export interface DataNode {
   gap?: number;
   /** Default `DiagramSceneOptions.verticalAlign`. */
   verticalAlign?: BodySpec['verticalAlign'];
+  /** Drawn over the box besides its rows: shapes in a unit square stretched
+   *  over it, and text pinned to a point on it. */
+  marks?: readonly DataMark[];
 }
 
 /** One edge of a {@link DiagramData}, between two nodes or groups by id. */
@@ -60,7 +66,10 @@ export interface DataEdge {
   fromPort?: string;
   toPort?: string;
   label?: string;
-  /** Where along the edge the label sits. Default `DiagramSceneOptions.labelPlacement`. */
+  /** Where along the edge the label sits. Unset or at `'mid'`, under
+   *  `layered` the label sits in the room layout leaves it beside its wire,
+   *  at this placement's offset, else `DiagramSceneOptions.labelPlacement`'s;
+   *  otherwise at the placement. */
   labelPlacement?: DiagramLabel;
   /** Default `DiagramSceneOptions.router`. */
   router?: DiagramRouter;
@@ -88,8 +97,8 @@ export interface DiagramData {
   nodes: readonly DataNode[];
   edges: readonly DataEdge[];
   /** A group may be a member of another. `layered`, `tree`, and `force` keep
-   *  each group's members together; `'none'` ignores groups but still draws
-   *  them. */
+   *  each group's members together; `chain` and `'none'` ignore groups but
+   *  still draw them. */
   groups?: readonly DataGroup[];
 }
 
@@ -122,8 +131,8 @@ export type DiagramTextStyle = { fontFamily: string; fontSize: number; fontWeigh
 
 /** The `data` of a scene node `diagramScene` makes: its diagram role, and what it paints. */
 export interface DiagramSceneData {
-  diagram?: DiagramNode | DiagramEdge | { label: DiagramLabel } | { anchor: DiagramAnchor };
-  fill?: { paint: { color: string } };
+  diagram?: DiagramNode | DiagramEdge | { label: DiagramLabel } | { anchor: DiagramAnchor } | { mark: DiagramMark };
+  fill?: { paint: { color: string; opacity?: number } };
   stroke?: Stroke;
   text?: string;
   style?: DiagramTextStyle;
@@ -136,7 +145,7 @@ export type DiagramSpec = AddNodeSpec<DiagramSceneData, 'main', RectPose>;
 export interface DiagramSceneOptions {
   /** A layout by name, or any `LayoutFn`. Default `'layered'`. `'none'`
    *  leaves every node at its `at`. */
-  layout?: 'layered' | 'tree' | 'force' | 'none' | LayoutFn;
+  layout?: 'layered' | 'tree' | 'force' | 'chain' | 'none' | LayoutFn;
   /** Merged over `{ order: 'barycenter' }`. */
   layoutOptions?: LayoutOptions;
   /** Default `'bezier'`. */
@@ -174,7 +183,7 @@ const LABEL_PLACEMENT: DiagramLabel = { at: 'mid', offset: 9 };
 const LINE = 1.4;
 const GLYPH = 0.6;
 const MIN_WIDTH = 64;
-const LAYOUTS = { layered, tree, force } as const;
+const LAYOUTS = { layered, tree, force, chain } as const;
 
 /** The scene node id `diagramScene` gives an edge, built from its ends, ports, and label. */
 export const edgeIdOf = (e: DataEdge) =>
@@ -198,17 +207,43 @@ function graphOf(nodes: GraphNode[], edges: GraphEdge[], groups: GraphGroup[] = 
   };
 }
 
-/** Each edge's ports and waypoints under `layered`: the author's where given, else `layeredRoutes`'. */
-function routed(data: DiagramData, edges: readonly DataEdge[], graph: Graph, groups: readonly ResolvedGroup[],
-  placedAt: ReadonlyMap<string, Rect>, layoutOptions: LayoutOptions): Map<string, LayeredRoute> {
+/** Each edge's ports and waypoints under a layout that plans its routes: the
+ *  author's where given, else `layeredRoutes`'. */
+function routed(data: DiagramData, edges: readonly DataEdge[], groups: readonly ResolvedGroup[],
+  plan: LayoutPlan, layoutOptions: LayoutOptions): Map<string, LayeredRoute> {
   return authoredOver(edges.map((e) => ({ ...e, id: edgeIdOf(e) })), {
-    graph,
-    boxes: new Map([...placedAt, ...groupBoxes(groups, placedAt)]),
+    ranks: 'ranks' in plan ? (plan as LayeredPlan).ranks : new Map(),
+    waypoints: plan.waypoints ?? new Map(),
+    ...(plan.labels !== undefined ? { labels: plan.labels } : {}),
     members: new Map(groups.map((g) => [g.group.id, g.members])),
     compass: new Set([...data.nodes.filter((n) => n.ports === undefined).map((n) => n.id), ...groups.map((g) => g.group.id)]),
-    clearance: (layoutOptions.nodeGap ?? DEFAULT_NODE_GAP) / 2,
     ...(layoutOptions.direction ? { direction: layoutOptions.direction } : {}),
   });
+}
+
+/** The room an edge's label asks layout for: none when the edge puts its
+ *  label somewhere layout does not station it, or routes itself through
+ *  waypoints of its own. */
+function labelRoomOf(e: DataEdge, opts: DiagramSceneOptions, font: { fontFamily: string; fontSize: number },
+  measure: MeasureRowText): EdgeLabelRoom | null {
+  if (!e.label || e.waypoints !== undefined) return null;
+  if (e.labelPlacement !== undefined && !labelFollowsLayout(e.labelPlacement.at)) return null;
+  const style = labelStyleOf(font);
+  const offset = (e.labelPlacement ?? opts.labelPlacement ?? LABEL_PLACEMENT).offset;
+  return { width: measure(e.label, style).width, height: style.fontSize, ...(offset !== undefined ? { offset } : {}) };
+}
+
+/** A data edge as layout reads it: its ends, the ports it names, and the room
+ *  its label asks for. */
+function graphEdgeOf(e: DataEdge, room: EdgeLabelRoom | null): GraphEdge {
+  return {
+    id: edgeIdOf(e),
+    from: e.from,
+    to: e.to,
+    ...(e.fromPort ? { fromPort: e.fromPort } : {}),
+    ...(e.toPort ? { toPort: e.toPort } : {}),
+    ...(room !== null ? { label: room } : {}),
+  };
 }
 
 type Rect = { x: number; y: number; width: number; height: number };
@@ -223,7 +258,8 @@ function placed(data: DiagramData, seeds: readonly GraphNode[], moved: ReadonlyM
 }
 
 /** Every spec carries an id — a node's own, `<id>/<k>` for its text,
- *  `<edge id>/label`, a group's own and `<group id>/label` — so a later call's
+ *  `<id>/mark:<i>` for its marks, `<edge id>/label`, a group's own and
+ *  `<group id>/label` — so a later call's
  *  specs can be reconciled against this one's. Throws on a repeated id among
  *  nodes and groups, which names two things as one. An edge whose
  *  end is not a node is dropped, and so is a repeat of an earlier edge with
@@ -276,7 +312,8 @@ export function diagramScene(data: DiagramData, opts: DiagramSceneOptions = {}):
       { ...(n.at ?? { x: i, y: i }), width: n.width ?? opts.minWidth ?? MIN_WIDTH, height: n.height ?? 0 },
       measureBody(bodies[i]!, measure),
     );
-    return { id: n.id, bounds: pose, pinned: n.pinned === true };
+    const ports = bodyTrait(bodies[i]!, pose, measure).ports;
+    return { id: n.id, bounds: pose, pinned: n.pinned === true, ...(ports !== undefined ? { ports } : {}) };
   });
   const graphGroups: GraphGroup[] = groups.map((g) => ({
     id: g.group.id,
@@ -294,18 +331,19 @@ export function diagramScene(data: DiagramData, opts: DiagramSceneOptions = {}):
   }
   const graph = graphOf(
     seeds,
-    expandGroupEdges(edges.map((e) => ({ id: edgeIdOf(e), from: e.from, to: e.to })), graphGroups),
+    expandGroupEdges(edges.map((e) => graphEdgeOf(e, labelRoomOf(e, opts, font, measure))), graphGroups),
     graphGroups,
   );
-  const layout = typeof opts.layout === 'function' ? opts.layout
+  const layout: LayoutFn | null = typeof opts.layout === 'function' ? opts.layout
     : opts.layout === 'none' ? null
     : LAYOUTS[opts.layout ?? 'layered'];
   const layoutOptions: LayoutOptions = { order: 'barycenter', ...opts.layoutOptions };
-  const moved = layout === null ? new Map() : layout(graph, layoutOptions);
+  const plan = layout?.plan?.(graph, layoutOptions) ?? null;
+  const moved = plan?.moves ?? (layout === null ? new Map() : layout(graph, layoutOptions));
 
   const specs: DiagramSpec[] = [];
   const placedAt = placed(data, seeds, moved);
-  const routes = layout === layered ? routed(data, edges, graph, groups, placedAt, layoutOptions) : null;
+  const routes = plan === null ? null : routed(data, edges, groups, plan, layoutOptions);
   // Behind every node, so a box never paints over what it holds.
   specs.push(...groupSpecs(groups, placedAt, (g) => ({
     style: opts.groupStyle?.(g) ?? GROUP,
@@ -341,56 +379,8 @@ export function diagramScene(data: DiagramData, opts: DiagramSceneOptions = {}):
     for (const [k, s] of built.specs.entries()) {
       specs.push({ ...s, ...(k === 0 ? {} : { id: `${n.id}/${k}` }) } as DiagramSpec);
     }
+    if (n.marks) specs.push(...markSpecs(n.id, n.marks, at, { style, textStyle: styleOf, measure }));
   }
-
-  for (const e of edges) {
-    const id = edgeIdOf(e);
-    const { fromPort, toPort, waypoints } = routes?.get(id) ?? e;
-    const style = opts.edgeStyle?.(e) ?? EDGE;
-    const markerStart = style.markerStart ?? null;
-    const markerEnd = style.markerEnd === undefined ? 'arrow' : style.markerEnd;
-    specs.push({
-      id: id as never,
-      kind: 'leaf',
-      layer: 'main',
-      pickable: false,
-      pose: { x: 0, y: 0, width: 0, height: 0 },
-      data: {
-        diagram: {
-          from: fromPort ? { port: fromPort } : {},
-          to: toPort ? { port: toPort } : {},
-          router: e.router ?? opts.router ?? 'bezier',
-          ...(waypoints ? { waypoints } : {}),
-        },
-        stroke: {
-          paint: { color: style.stroke },
-          width: style.width ?? 1.5,
-          ...(style.dash ? { dash: style.dash } : {}),
-          ...(markerStart !== null ? { markerStart } : {}),
-          ...(markerEnd !== null ? { markerEnd } : {}),
-        },
-      },
-      dependsOn: [e.from as never, e.to as never],
-      derivePath: EDGE_DERIVE_PATH,
-    });
-    if (e.label) {
-      const labelStyle = { ...font, fontSize: font.fontSize - 2 };
-      specs.push({
-        id: `${id}/label` as never,
-        kind: 'leaf',
-        layer: 'main',
-        pickable: false,
-        pose: { x: 0, y: 0, width: measure(e.label, labelStyle).width, height: labelStyle.fontSize },
-        data: {
-          diagram: { label: e.labelPlacement ?? opts.labelPlacement ?? LABEL_PLACEMENT },
-          text: e.label,
-          style: labelStyle,
-          fill: { paint: { color: style.label ?? style.stroke } },
-        },
-        dependsOn: [id as never],
-        derivePose: LABEL_DERIVE_POSE as never,
-      });
-    }
-  }
+  specs.push(...edgeSpecs(edges, { idOf: edgeIdOf, font, measure, fallback: EDGE, labelPlacement: LABEL_PLACEMENT, routes, opts }));
   return specs;
 }

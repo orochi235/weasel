@@ -1,37 +1,14 @@
 import { createPaintResources, type OwnedPaintResources } from './paintResources';
 import { ShaderProgram } from './shaders/ShaderProgram';
 import {
-  VERT_SRC,
-  FRAG_SRC,
-  VCOLOR_VERT_SRC,
-  VCOLOR_FRAG_SRC,
-  PATH_FILL_UNIFORMS,
-  PATH_FILL_ATTRIBUTES,
-  PATH_FILL_VCOLOR_ATTRIBUTES,
-} from './shaders/pathFill';
+  LazyProgram, PATH_FILL_SPEC, PATH_FILL_VCOLOR_SPEC, GRAD_FILL_SPEC, PATTERN_FILL_SPEC,
+  BATCH_FILL_MATRICES_SPEC, createBatchFill,
+} from './shaders/builtinPrograms';
 import {
   markAllFontsNotUploaded,
   resetBakeBudget,
   DEFAULT_BAKE_BUDGET,
 } from '@weasel-js/font';
-import {
-  BATCH_VERT_SRC,
-  BATCH_FRAG_SRC,
-  BATCH_FILL_UNIFORMS,
-  BATCH_FILL_ATTRIBUTES,
-} from './shaders/batchFill';
-import {
-  GRAD_VERT_SRC,
-  GRAD_FRAG_SRC,
-  GRAD_FILL_UNIFORMS,
-  GRAD_FILL_ATTRIBUTES,
-} from './shaders/gradFill';
-import {
-  PATTERN_VERT_SRC,
-  PATTERN_FRAG_SRC,
-  PATTERN_FILL_UNIFORMS,
-  PATTERN_FILL_ATTRIBUTES,
-} from './shaders/patternFill';
 import {
   GLYPH_PAINT_VERT_SRC,
   GLYPH_PATTERN_FRAG_SRC,
@@ -190,11 +167,14 @@ const GLYPH_PAINT_SOURCES: Record<GlyphPaintKind, readonly [string, readonly str
 export class WeaselRenderer {
   private readonly gl: WebGL2RenderingContext;
   private stats: RenderStats = { drawCalls: 0, ms: 0, spans: [] };
-  private pathFill: ShaderProgram;
-  private pathFillVColor: ShaderProgram;
+  /** Built on the first frame that draws with each, so a one-shot render of
+   *  plain shapes builds the batch program alone. */
+  private readonly pathFill: LazyProgram;
+  private readonly pathFillVColor: LazyProgram;
   private batchFill: ShaderProgram;
-  private gradFill: ShaderProgram;
-  private patternFill: ShaderProgram;
+  private readonly batchFillMatrices: LazyProgram;
+  private readonly gradFill: LazyProgram;
+  private readonly patternFill: LazyProgram;
   /** Compiled on first use: only atlas text under a texture paint needs one. */
   private glyphPaintPrograms = new Map<GlyphPaintKind, ShaderProgram>();
   private meshCache: GLMeshCache;
@@ -286,25 +266,12 @@ export class WeaselRenderer {
     this.applyGlState();
     this.applyTarget();
 
-    this.pathFill = new ShaderProgram(this.gl, VERT_SRC, FRAG_SRC);
-    this.pathFill.lookupUniforms(PATH_FILL_UNIFORMS);
-    this.pathFill.lookupAttributes(PATH_FILL_ATTRIBUTES);
-
-    this.pathFillVColor = new ShaderProgram(this.gl, VCOLOR_VERT_SRC, VCOLOR_FRAG_SRC);
-    this.pathFillVColor.lookupUniforms(PATH_FILL_UNIFORMS);
-    this.pathFillVColor.lookupAttributes(PATH_FILL_VCOLOR_ATTRIBUTES);
-
-    this.batchFill = new ShaderProgram(this.gl, BATCH_VERT_SRC, BATCH_FRAG_SRC);
-    this.batchFill.lookupUniforms(BATCH_FILL_UNIFORMS);
-    this.batchFill.lookupAttributes(BATCH_FILL_ATTRIBUTES);
-
-    this.gradFill = new ShaderProgram(this.gl, GRAD_VERT_SRC, GRAD_FRAG_SRC);
-    this.gradFill.lookupUniforms(GRAD_FILL_UNIFORMS);
-    this.gradFill.lookupAttributes(GRAD_FILL_ATTRIBUTES);
-
-    this.patternFill = new ShaderProgram(this.gl, PATTERN_VERT_SRC, PATTERN_FRAG_SRC);
-    this.patternFill.lookupUniforms(PATTERN_FILL_UNIFORMS);
-    this.patternFill.lookupAttributes(PATTERN_FILL_ATTRIBUTES);
+    this.pathFill = new LazyProgram(this.gl, PATH_FILL_SPEC);
+    this.pathFillVColor = new LazyProgram(this.gl, PATH_FILL_VCOLOR_SPEC);
+    this.gradFill = new LazyProgram(this.gl, GRAD_FILL_SPEC);
+    this.patternFill = new LazyProgram(this.gl, PATTERN_FILL_SPEC);
+    this.batchFillMatrices = new LazyProgram(this.gl, BATCH_FILL_MATRICES_SPEC);
+    this.batchFill = createBatchFill(this.gl);
 
     this.meshCache = new GLMeshCache(this.gl);
     this.textureCache = new GLTextureCache(this.gl);
@@ -313,6 +280,10 @@ export class WeaselRenderer {
     this.uploadQuadGeometry();
     this.drawBatch = new DrawBatch(this.gl, this.batchFill);
     this.whiteTexture = createWhiteTexture(this.gl);
+  }
+
+  private lazyPrograms(): LazyProgram[] {
+    return [this.pathFill, this.pathFillVColor, this.gradFill, this.patternFill, this.batchFillMatrices];
   }
 
   private uploadQuadGeometry(): void {
@@ -488,23 +459,8 @@ export class WeaselRenderer {
     this.paintScratch.release();
     this.paintResources.release();
     this.paintResources = createPaintResources();
-    this.pathFill = new ShaderProgram(this.gl, VERT_SRC, FRAG_SRC);
-    this.pathFill.lookupUniforms(PATH_FILL_UNIFORMS);
-    this.pathFill.lookupAttributes(PATH_FILL_ATTRIBUTES);
-    this.pathFillVColor = new ShaderProgram(this.gl, VCOLOR_VERT_SRC, VCOLOR_FRAG_SRC);
-    this.pathFillVColor.lookupUniforms(PATH_FILL_UNIFORMS);
-    this.pathFillVColor.lookupAttributes(PATH_FILL_VCOLOR_ATTRIBUTES);
-
-    this.batchFill = new ShaderProgram(this.gl, BATCH_VERT_SRC, BATCH_FRAG_SRC);
-    this.batchFill.lookupUniforms(BATCH_FILL_UNIFORMS);
-    this.batchFill.lookupAttributes(BATCH_FILL_ATTRIBUTES);
-    this.gradFill = new ShaderProgram(this.gl, GRAD_VERT_SRC, GRAD_FRAG_SRC);
-    this.gradFill.lookupUniforms(GRAD_FILL_UNIFORMS);
-    this.gradFill.lookupAttributes(GRAD_FILL_ATTRIBUTES);
-
-    this.patternFill = new ShaderProgram(this.gl, PATTERN_VERT_SRC, PATTERN_FRAG_SRC);
-    this.patternFill.lookupUniforms(PATTERN_FILL_UNIFORMS);
-    this.patternFill.lookupAttributes(PATTERN_FILL_ATTRIBUTES);
+    for (const lazy of this.lazyPrograms()) lazy.abandon();
+    this.batchFill = createBatchFill(this.gl);
     this.glyphPaintPrograms.clear();
     this.meshCache = new GLMeshCache(this.gl);
     this.textureCache = new GLTextureCache(this.gl);
@@ -545,10 +501,8 @@ export class WeaselRenderer {
     }
     this.meshCache.dispose();
     this.paintResources.release();
-    for (const prog of [
-      this.pathFill, this.pathFillVColor, this.batchFill, this.gradFill, this.patternFill,
-      ...this.glyphPaintPrograms.values(),
-    ]) {
+    for (const lazy of this.lazyPrograms()) lazy.release();
+    for (const prog of [this.batchFill, ...this.glyphPaintPrograms.values()]) {
       gl.deleteProgram(prog.handle);
     }
     this.glyphPaintPrograms.clear();
@@ -609,13 +563,15 @@ export class WeaselRenderer {
       gl.clear(gl.COLOR_BUFFER_BIT | gl.STENCIL_BUFFER_BIT);
     }
     const device = this.deviceRect();
+    const { pathFill, pathFillVColor, gradFill, patternFill, batchFillMatrices } = this;
     const ctx: DrawContext = {
       gl,
-      pathFill: this.pathFill,
-      pathFillVColor: this.pathFillVColor,
+      get pathFill() { return pathFill.get(); },
+      get pathFillVColor() { return pathFillVColor.get(); },
       batchFill: this.batchFill,
-      gradFill: this.gradFill,
-      patternFill: this.patternFill,
+      get batchFillMatrices() { return batchFillMatrices.get(); },
+      get gradFill() { return gradFill.get(); },
+      get patternFill() { return patternFill.get(); },
       meshCache: this.meshCache,
       textureCache: this.textureCache,
       imageCache: this.imageCache,
@@ -695,12 +651,13 @@ export class WeaselRenderer {
   }
 
   /** @internal */ _gl(): WebGL2RenderingContext { return this.gl; }
-  /** @internal */ _pathFill(): ShaderProgram { return this.pathFill; }
-  /** @internal */ _pathFillVColor(): ShaderProgram { return this.pathFillVColor; }
+  /** @internal */ _pathFill(): ShaderProgram { return this.pathFill.get(); }
+  /** @internal */ _pathFillVColor(): ShaderProgram { return this.pathFillVColor.get(); }
   /** @internal */ _drawBatch(): DrawBatch { return this.drawBatch; }
   /** @internal */ _batchFill(): ShaderProgram { return this.batchFill; }
-  /** @internal */ _gradFill(): ShaderProgram { return this.gradFill; }
-  /** @internal */ _patternFill(): ShaderProgram { return this.patternFill; }
+  /** @internal */ _batchFillMatrices(): ShaderProgram { return this.batchFillMatrices.get(); }
+  /** @internal */ _gradFill(): ShaderProgram { return this.gradFill.get(); }
+  /** @internal */ _patternFill(): ShaderProgram { return this.patternFill.get(); }
   /** @internal */ _meshCache(): GLMeshCache { return this.meshCache; }
   /** @internal */ _textureCache(): GLTextureCache { return this.textureCache; }
   /** @internal */ _imageCache(): GLImageCache { return this.imageCache; }

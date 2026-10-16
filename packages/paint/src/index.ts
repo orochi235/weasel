@@ -1,4 +1,8 @@
-/** @weasel-js/paint — the kit's paint vocabulary. Plain data, no renderer. */
+/**
+ * @weasel-js/paint — the kit's paint vocabulary. Plain data, no renderer.
+ *
+ * @packageDocumentation
+ */
 export type { TextureHandle } from './texture';
 export type {
   CommandFill, CommandPaint, CommandPaintUnits, CommandStroke, InCommandUnits, PosedPaint, SolidPaint,
@@ -73,6 +77,7 @@ export {
   type OklchDeg,
 } from './colorSpaces';
 export { contrastLineColor } from './contrast';
+export { lerpFill, lerpPaint, lerpStroke } from './lerpPaint';
 export { parseHexBytes, hexToRgbBytes } from './hex';
 export {
   parseColor,

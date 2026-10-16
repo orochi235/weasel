@@ -1,11 +1,11 @@
 import { getAlpha01, toHex8, withAlpha01 } from '@weasel-js/core';
 import type { PrefLeaf } from '@weasel-js/prefs';
 import {
-  PARAMS_TEXT_WAIT_MS,
   type PrefFieldChoice,
   PropertyControl,
   type PropertyControlProps,
   prefFieldProps,
+  useParamsPolicy,
 } from '@weasel-js/ui';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useFieldChoices } from './fieldChoices';
@@ -75,12 +75,12 @@ export function BareControl({
   /** The control takes no input: an `enableIf` on the way to it does not hold. */
   disabled?: boolean;
 }) {
-  const text = useDebouncedText(typeof value === 'string' ? value : '', write, textWaitMs(leaf));
+  const text = useDebouncedText(typeof value === 'string' ? value : '', write, useTextWaitMs(leaf));
   const field = labField(leaf, value, write, useFieldChoices(), disabled);
   if (field === null) return null;
   switch (field.kind) {
     case 'string':
-      return <PropertyControl {...field} name={name} value={text.local} onChange={text.type} />;
+      return <PropertyControl {...field} name={name} value={text.local} onInput={text.type} />;
     case 'number':
       // The pair names the row, so a cell has no room for a unit.
       return <PropertyControl {...field} name={name} control="input" unit={undefined} />;
@@ -105,8 +105,10 @@ export function BareControl({
 }
 
 /** How long `leaf`'s typed text waits before it is written: its own `debounceMs`, else a lab's. */
-export const textWaitMs = (leaf: PrefLeaf): number =>
-  extra<number>(leaf, 'debounceMs') ?? PARAMS_TEXT_WAIT_MS.lab;
+export function useTextWaitMs(leaf: PrefLeaf): number {
+  const lab = useParamsPolicy('lab').textWaitMs;
+  return extra<number>(leaf, 'debounceMs') ?? lab;
+}
 
 /**
  * Live text held locally between debounced commits, so typing does not re-run

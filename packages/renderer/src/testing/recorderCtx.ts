@@ -19,14 +19,19 @@ import { paintModeOf } from '../shaders/batchFill';
 export function createRecorderCtx(): { ctx: DrawContext; calls: ReturnType<typeof makeGLRecorder>['calls']; gl: ReturnType<typeof makeGLRecorder>['gl'] } {
   const recorder = makeGLRecorder();
   const r = new WeaselRenderer({ gl: recorder.gl, width: 800, height: 600, dpr: 1 });
-  recorder.reset();
-  const ctx: DrawContext = {
-    gl: recorder.gl,
+  // Built before the reset, as they were when the renderer built them all eagerly.
+  const programs = {
     pathFill: r._pathFill(),
     pathFillVColor: r._pathFillVColor(),
     batchFill: r._batchFill(),
+    batchFillMatrices: r._batchFillMatrices(),
     gradFill: r._gradFill(),
     patternFill: r._patternFill(),
+  };
+  recorder.reset();
+  const ctx: DrawContext = {
+    gl: recorder.gl,
+    ...programs,
     meshCache: r._meshCache(),
     textureCache: r._textureCache(),
     imageCache: r._imageCache(),

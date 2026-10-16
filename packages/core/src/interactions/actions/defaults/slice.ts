@@ -1,6 +1,7 @@
 import type { Action } from '@weasel-js/routing';
 import { ActionDisabledReason, resolveParams } from '@weasel-js/routing';
 import type { BindingOpts, InvocationCtx, OngoingHandle, OngoingOverlay, Point2 } from '@weasel-js/routing';
+import { pathOperationTags } from '../pathGestureTags';
 
 /**
  * @experimental
@@ -16,6 +17,7 @@ import type { BindingOpts, InvocationCtx, OngoingHandle, OngoingOverlay, Point2 
 export const sliceAction: Action & { requires: string[] } = {
   id: 'slice',
   label: 'Slice',
+  tags: pathOperationTags('click'),
   group: 'edit',
   eligible: { capability: 'edits-page' },
   requires: ['slice'],

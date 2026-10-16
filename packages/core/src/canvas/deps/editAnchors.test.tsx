@@ -67,6 +67,40 @@ describe('useEditAnchorsDepSource', () => {
     expect((reg.get as any)('editAnchors').editingId).toBe('');
   });
 
+  it('holds the handle locks, starting from the default lock and telling the registry when they change', () => {
+    const scene = {
+      layers: [{ id: 'default' }],
+      renderOrder: () => [] as NodeId[],
+      get: () => undefined,
+      update: () => {},
+    } as unknown as Scene<unknown, string, unknown>;
+    const sel = { current: [] as NodeId[], set: () => {} } as unknown as SelectionApi;
+    let lock: 'angle' | 'length' | null = 'length';
+    let reg!: DepRegistry;
+    function Wire() {
+      useEditAnchorsDepSource(scene, sel, { applyOps: () => {} }, undefined, { editAnchors: { params: () => ({ handleLock: lock }) } });
+      return null;
+    }
+    render(
+      <DepRegistryProvider>
+        <Wire />
+        <Capture onR={(r) => { reg = r; }} />
+      </DepRegistryProvider>,
+    );
+    const dep = () => (reg.get as any)('editAnchors');
+    expect(dep().handleLocks).toEqual({ angle: false, length: true });
+    lock = null;
+    expect(dep().handleLocks).toEqual({ angle: false, length: false });
+
+    const heard = vi.fn();
+    reg.subscribe!(heard);
+    act(() => { dep().setHandleLocks({ angle: true, length: false }); });
+    expect(heard).toHaveBeenCalled();
+    // Once set, the default no longer decides.
+    lock = 'length';
+    expect(dep().handleLocks).toEqual({ angle: true, length: false });
+  });
+
   it('clears the effective editingId when the target leaves the selection', () => {
     const nodes = new Map<string, any>([
       ['poly', {

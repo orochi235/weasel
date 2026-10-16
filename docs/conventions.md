@@ -122,6 +122,26 @@ geom's `cubicBezierEasing` (via core). The scalar `Math.max(lo, Math.min(hi, v))
 scattered through ui and labkit are not geometry; geom has no scalar clamp. d3
 and modes do no geometry at all.
 
+## Kit settings
+
+A timing, threshold, target size or rate that a user would set once for
+every component is a kit setting, not a module constant alone. The constant
+stays, as the only definition of the default; the component reads
+`useKitSetting('<area>.<leaf>') ?? CONSTANT`, and code outside React reads
+`get(path)` from `useKitSettings()` (the canvas publishes that store as the
+`kitSettings` dep) at the moment it needs the value. A component's own prop
+still wins over a provider.
+
+To add one: augment `KitSettings` from `@weasel-js/react` in the package's
+`kitSettings.ts` (`targets` leaves go on `KitTargetSettings`, which several
+packages add to), read it as above, and add a leaf to the package's
+`*KitSettingsSchema` whose default imports the constant. Each schema group
+has a test that its defaults equal the constants.
+
+A numeric limit the code depends on — renderer slack, animator retiming, a
+budget, a dev tool's timeout — stays a constant: listing it as a setting
+says changing it is supported.
+
 ## Every public export is documented and nameable
 
 `npm run audit:jsdoc` must report zero undocumented exports and no

@@ -5,6 +5,8 @@
  * canvas package directly. This passthrough is narrow on purpose —
  * weasel's full surface is engine-sized, and we only widen as labs
  * demand it.
+ *
+ * @packageDocumentation
  */
 export {
   buildSceneViewCommands,

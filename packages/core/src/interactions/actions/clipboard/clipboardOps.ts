@@ -50,7 +50,8 @@ export type ClipboardFlavors = Record<string, string | Promise<string>>;
 /** Return shape of `useClipboardOps`: imperative `copy`, `paste`, and `isEmpty` functions. */
 export interface UseClipboardOpsReturn {
   copy(): void;
-  paste(): void;
+  /** Paste at `at` when given; otherwise at the drop point, else the cascade offset. */
+  paste(at?: { worldX: number; worldY: number }): void;
   isEmpty(): boolean;
 }
 
@@ -100,13 +101,13 @@ export function useClipboardOps<TNode extends { id: string }>(
     if (flavors) void writeOsClipboard(flavors);
   }, [adapterRef, optsRef]);
 
-  const paste = useCallback(() => {
+  const paste = useCallback((at?: { worldX: number; worldY: number }) => {
     const cb = clipboardRef.current;
     if (cb.items.length === 0) return;
     const a = adapterRef.current;
     const result = materializePaste(a, cb, {
       currentSelection: optsRef.current.getSelection(),
-      dropPoint: optsRef.current.getDropPoint?.(),
+      dropPoint: at ?? optsRef.current.getDropPoint?.(),
       onOmitted: optsRef.current.onPasteOmitted,
     });
     if (!result) return;

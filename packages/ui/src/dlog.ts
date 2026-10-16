@@ -8,5 +8,7 @@
  *
  * The flag is read once and cached for the page session — reload to
  * pick up changes.
+ *
+ * @packageDocumentation
  */
 export { dlog, isDebugEnabled } from '@weasel-js/core';

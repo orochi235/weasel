@@ -10,7 +10,7 @@
  * the tool hook callable from anywhere.
  */
 import { useEffect, useRef } from 'react';
-import { useActionsRegistry, useOffhandAction, useOptionalDepRegistry } from '@weasel-js/routing/react';
+import { useActionsRegistry, useMenuHost, useOffhandAction, useOptionalDepRegistry } from '@weasel-js/routing/react';
 import type { DepRegistry } from '@weasel-js/routing/react';
 import type { DepName } from 'interactions/actions/depSchema';
 import type { ToolsApi } from '../../tools/overlayBinding';
@@ -104,6 +104,19 @@ export function useContributionRoles(
     }
     return () => { for (const u of unregisters) u(); };
   }, [registry, toolRegistry, ambient]);
+
+  const menuHost = useMenuHost();
+  useEffect(() => {
+    if (!menuHost) return;
+    const releases: Array<() => void> = [];
+    for (const [id, entry] of Object.entries(toolRegistry)) {
+      for (const def of (entry as SurfaceContribution).menus ?? []) releases.push(menuHost.define(def, id));
+    }
+    for (const entry of ambient) {
+      for (const def of (entry as SurfaceContribution).menus ?? []) releases.push(menuHost.define(def, null));
+    }
+    return () => { for (const r of releases) r(); };
+  }, [menuHost, toolRegistry, ambient]);
 
   const entries = contributionEntries(tools);
   // Development only for a warning; a strict surface asked to be stopped, so

@@ -15,6 +15,7 @@ import {
   releaseCompoundAction,
   toggleGridAction,
   toggleSnapAction,
+  toggleSymmetryAction,
   type AppCommands,
 } from './appCommands/actions';
 import './app.css';
@@ -32,6 +33,7 @@ function Actions({ selected, compound, children }: { selected: number; compound:
   useStandardActions({ selection });
   const [gridVisible, setGrid] = useState(false);
   const [snapToGrid, setSnap] = useState(false);
+  const [symmetryOn, setSymmetry] = useState(false);
   const commands: AppCommands = {
     gridVisible,
     toggleGrid: () => setGrid((v) => !v),
@@ -39,6 +41,8 @@ function Actions({ selected, compound, children }: { selected: number; compound:
     toggleSnap: () => setSnap((v) => !v),
     pathDirection: false,
     togglePathDirection: noop,
+    symmetryOn,
+    toggleSymmetry: () => setSymmetry((v) => !v),
     canReleaseCompound: compound,
     releaseCompound: noop,
     openPrefs: noop,
@@ -47,6 +51,7 @@ function Actions({ selected, compound, children }: { selected: number; compound:
   useDepSource('appCommands', () => commands);
   useAction(toggleGridAction);
   useAction(toggleSnapAction);
+  useAction(toggleSymmetryAction);
   useAction(releaseCompoundAction);
   useAction(preferencesAction);
   return <>{children}</>;

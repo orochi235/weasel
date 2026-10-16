@@ -23,34 +23,22 @@
     "longestFunction": 165
   },
   "packages/core/src/canvas/Canvas.tsx": {
-    "lines": 737,
-    "longestFunction": 438
+    "lines": 720,
+    "longestFunction": 422
   },
   "packages/core/src/canvas/CanvasView.tsx": {
     "lines": 409,
-    "longestFunction": 263
+    "longestFunction": 262
   },
   "packages/core/src/canvas/SceneCanvas.tsx": {
-    "lines": 505,
+    "lines": 503,
     "longestFunction": 383
   },
   "packages/core/src/canvas/SceneCanvas/GestureDispatcherMounter.tsx": {
-    "longestFunction": 253
-  },
-  "packages/core/src/canvas/SceneCanvas/StandardActionsRegistrar.tsx": {
-    "longestFunction": 183
+    "longestFunction": 249
   },
   "packages/core/src/canvas/SceneCanvas/props.ts": {
-    "lines": 636
-  },
-  "packages/core/src/canvas/SceneCanvas/useDispatcherOverlayLayer.ts": {
-    "longestFunction": 198
-  },
-  "packages/core/src/canvas/SceneCanvas/useSceneSelectTool.ts": {
-    "longestFunction": 155
-  },
-  "packages/core/src/canvas/pickWalk.ts": {
-    "lines": 444
+    "lines": 610
   },
   "packages/core/src/canvas/sceneAdapter.ts": {
     "longestFunction": 156
@@ -65,7 +53,7 @@
     "longestFunction": 164
   },
   "packages/core/src/core/scene/types.ts": {
-    "lines": 617
+    "lines": 584
   },
   "packages/core/src/debug/createDebugOverlayLayer.ts": {
     "lines": 440
@@ -82,9 +70,6 @@
   "packages/core/src/features/text/useSceneTextEdit.ts": {
     "longestFunction": 148
   },
-  "packages/core/src/interactions/actions/depSchema.ts": {
-    "lines": 580
-  },
   "packages/core/src/tools/builtin/pen/usePenTool.ts": {
     "lines": 683,
     "longestFunction": 455
@@ -96,7 +81,7 @@
     "longestFunction": 209
   },
   "packages/core/src/tools/builtin/slice/useSliceTool.ts": {
-    "longestFunction": 188
+    "longestFunction": 185
   },
   "packages/d3/src/bind.ts": {
     "longestFunction": 140
@@ -106,10 +91,7 @@
     "longestFunction": 337
   },
   "packages/diagram/src/cluster.ts": {
-    "longestFunction": 124
-  },
-  "packages/diagram/src/fromData.ts": {
-    "longestFunction": 166
+    "longestFunction": 122
   },
   "packages/font/src/registerFont.ts": {
     "lines": 839,
@@ -152,8 +134,8 @@
     "longestFunction": 281
   },
   "packages/history/src/history.ts": {
-    "lines": 697,
-    "longestFunction": 448
+    "lines": 695,
+    "longestFunction": 445
   },
   "packages/hud/src/attach.ts": {
     "longestFunction": 162
@@ -215,7 +197,7 @@
     "longestFunction": 214
   },
   "packages/labkit/src/loupe/useLoupe.ts": {
-    "longestFunction": 198
+    "longestFunction": 196
   },
   "packages/labkit/src/primitives/FloatingPanel.tsx": {
     "longestFunction": 149
@@ -247,7 +229,7 @@
     "lines": 439
   },
   "packages/renderer/src/WeaselRenderer.ts": {
-    "lines": 731
+    "lines": 688
   },
   "packages/renderer/src/drawBatch.ts": {
     "lines": 608
@@ -262,13 +244,7 @@
     "longestFunction": 133
   },
   "packages/storage/src/records.ts": {
-    "longestFunction": 197
-  },
-  "packages/stroke/src/tessellate/dash.ts": {
-    "longestFunction": 125
-  },
-  "packages/stroke/src/tessellate/stroke.ts": {
-    "lines": 520
+    "longestFunction": 185
   },
   "packages/svg/src/gradients.ts": {
     "lines": 624
@@ -313,8 +289,8 @@
     "longestFunction": 174
   },
   "packages/ui/src/components/CurveEditor/LayeredCurveEditor.tsx": {
-    "lines": 464,
-    "longestFunction": 345
+    "lines": 452,
+    "longestFunction": 334
   },
   "packages/ui/src/components/CurveEditor/createFunctionLayer.tsx": {
     "lines": 414,
@@ -331,11 +307,11 @@
     "longestFunction": 225
   },
   "packages/ui/src/components/LayerList/LayerList.tsx": {
-    "lines": 546,
+    "lines": 477,
     "longestFunction": 204
   },
   "packages/ui/src/components/NumberField/UnitField.tsx": {
-    "longestFunction": 188
+    "longestFunction": 177
   },
   "packages/ui/src/components/PaintInput/PaintInput.tsx": {
     "longestFunction": 138
@@ -378,7 +354,7 @@
     "lines": 425
   },
   "packages/ui/src/components/Tree/Tree.tsx": {
-    "longestFunction": 289
+    "longestFunction": 286
   },
   "packages/ui/src/components/Tree/useTreeDrag.ts": {
     "longestFunction": 143

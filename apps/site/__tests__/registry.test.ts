@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { CATEGORIES, DEMOS, DEMOS_BY_ID, PACKAGES, placeOf } from '../registry';
+import { CATEGORIES, DEMOS, DEMOS_BY_ID, placeOf } from '../registry';
 
 /** Repo root, from `apps/site/__tests__/`. */
 const ROOT = resolve(__dirname, '../../..');
@@ -58,9 +58,8 @@ describe('the demo registry', () => {
     expect(wrong.map((d) => d.id)).toEqual([]);
   });
 
-  it('derives categories in first-appearance order and packages by name, with no duplicates', () => {
+  it('derives categories in first-appearance order, with no duplicates', () => {
     expect(CATEGORIES).toEqual([...new Set(DEMOS.flatMap((d) => (d.category ? [d.category] : [])))]);
-    expect(PACKAGES).toEqual([...new Set(DEMOS.flatMap((d) => (d.package ? [d.package] : [])))].sort());
   });
 
   it('gives every outbound link a label and an absolute href', () => {

@@ -5,6 +5,12 @@ import { prefType, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
 import { PrefSchemaEditor } from './PrefSchemaEditor';
 import { rowKey } from './treeRows.fixture';
 
+/** Types `value` and leaves the field, which is when a typed field commits. */
+const settle = (el: HTMLElement, value: string): void => {
+  fireEvent.change(el, { target: { value } });
+  fireEvent.blur(el);
+};
+
 afterEach(cleanup);
 
 const GradientStop = prefType('GradientStop', {
@@ -62,7 +68,7 @@ describe('PrefSchemaEditor over a list, a union and a typed leaf', () => {
   it('edits a list\'s entry among the list\'s own attributes', () => {
     render(<Live />);
     fireEvent.click(row('phases'));
-    fireEvent.change(entryField('name'), { target: { value: 'Hold' } });
+    settle(entryField('name'), 'Hold');
     expect(literal()).toHaveTextContent(/item: \{ kind: 'number', name: 'Hold'/);
   });
 
@@ -94,7 +100,7 @@ describe('PrefSchemaEditor over a list, a union and a typed leaf', () => {
     fireEvent.click(row('phases'));
     fireEvent.click(screen.getByRole('button', { name: 'Add pref' }));
     const dialog = screen.getByRole('dialog', { name: 'Add pref' });
-    fireEvent.change(within(dialog).getByRole('textbox', { name: 'Name' }), { target: { value: 'Last stop' } });
+    settle(within(dialog).getByRole('textbox', { name: 'Name' }), 'Last stop');
     fireEvent.click(within(dialog).getByRole('button', { name: /Kind/ }));
     expect(screen.getAllByRole('option').map((o) => o.textContent)).not.toContain('union');
     fireEvent.click(screen.getByRole('option', { name: 'GradientStop' }));

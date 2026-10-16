@@ -50,6 +50,11 @@ function heldBy(path: PolygonPath, set: Anchors): Held[][] {
   });
 }
 
+/** For each anchor of `path`, by flat index, the index of the point that holds it. */
+export function anchorPointIndices(path: PolygonPath): number[] {
+  return heldBy(path, pathToAnchors(path)).flat().map((held) => held.point);
+}
+
 /** For each point `anchorsToPath` writes for `set`: the flat index of the anchor it belongs to,
  *  times 3, plus 0 for the anchor's own point, 1 for its in handle, and 2 for its out handle. */
 function writtenFrom(set: Anchors): Float32Array {
