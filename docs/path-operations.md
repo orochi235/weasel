@@ -17,7 +17,7 @@ adopted.
 | Bend segment | `bendSegment` | Reshapes a segment by its middle | Drag on a segment | main |
 | Marquee-select anchors | `marqueeAnchors` | Selects anchors in a box | Drag on empty canvas | main |
 | Handle locks | `handleLock.angle`, `handleLock.length` | Hold a handle's angle or length during a drag | Toggles; Mod while dragging holds length | main |
-| Balance handles | — | Scales a segment's two handles together from a grip on its balance line | Drag the grip | landing |
+| Balance handles | `balanceHandles` | Scales a segment's two handles together from a grip on its balance line; a length lock holds it still | Drag a balance grip, shown under `path-edit.balance` | main |
 | Path constraints | `constrainAnchors`, `unconstrainAnchors` | Keep geometric relations (parallel, level, fixed) during any anchor drag | C / Shift+C in its lab only | landing |
 | Soft selection | — | Moves nearby anchors with falling weight | Drag an anchor | audition |
 | Handle snap | — | Snaps a handle's angle to steps and to its partner | Drag a handle | audition |
@@ -31,6 +31,7 @@ adopted.
 | Select anchor | `selectAnchor` | Selects an anchor | Click | main |
 | Insert anchor | `insertPathAnchor` | Adds an anchor on the segment | Alt+click | main |
 | Cut path at anchor | `cutPathAtAnchor` | Opens the path there | Alt+Shift+click | main |
+| Equalize handles | `equalizeHandles` | Gives a segment's two handles one proportion of the way to their corner | Double-click a balance grip | main |
 | Trim segment | `trimPath` | Removes the piece between the nearest crossings | Click with the Trim tool (Y) | main |
 | Extend to next path | `extendToMeet` | Carries an open end to the next stroke | Click with the Extend tool (U) | main |
 | Slice | `slice` | Cuts shapes along a drawn line | Slice tool (K) | main |
