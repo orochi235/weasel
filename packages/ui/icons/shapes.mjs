@@ -14,7 +14,7 @@ import {
   P,
   transform,
   underFill,
-} from './lib/plot.mjs';
+} from '../../icons/scripts/lib/plot.mjs';
 
 const R = BOX / 2;
 const C = CENTER;

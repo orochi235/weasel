@@ -1,4 +1,4 @@
-import { chevron, onCircle } from './base.mjs';
+import { chevron, onCircle } from '../../icons/scripts/lib/base.mjs';
 
 // ── settings ─────────────────────────────────────────────────────────────
 // Six teeth: with eight, the valleys between them are narrower than the stroke and close up.

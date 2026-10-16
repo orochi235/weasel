@@ -1,4 +1,4 @@
-import { chevron } from './base.mjs';
+import { chevron } from '../../icons/scripts/lib/base.mjs';
 
 // Size: a bar, and arrows along the axis it grows on. `at` places a point given
 // along that axis and across it, so the tall glyphs and the wide ones are one drawing.

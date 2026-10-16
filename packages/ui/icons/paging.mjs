@@ -1,4 +1,4 @@
-import { chevron } from './base.mjs';
+import { chevron } from '../../icons/scripts/lib/base.mjs';
 
 // Paging: one step through a sequence, or all the way to an end of it. The
 // chevron is `chevron`'s own, turned on its side; a bar behind it is the end.

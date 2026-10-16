@@ -1,4 +1,5 @@
-import { chevron, BASE } from './base.mjs';
+import { chevron } from '../../icons/scripts/lib/base.mjs';
+import { BASE } from './base-glyphs.mjs';
 
 // ── delete ───────────────────────────────────────────────────────────────
 const canBody = `M5.2 5.8v9.6A1.6 1.6 0 0 0 6.8 17h6.4a1.6 1.6 0 0 0 1.6-1.6V5.8`;

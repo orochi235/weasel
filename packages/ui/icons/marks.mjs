@@ -1,4 +1,4 @@
-import { onCircle } from './base.mjs';
+import { onCircle } from '../../icons/scripts/lib/base.mjs';
 
 // Marks: what `<Icon mark>` sets in a corner of another glyph, to say what a
 // press does with it. Each is a glyph like any other and draws alone at full

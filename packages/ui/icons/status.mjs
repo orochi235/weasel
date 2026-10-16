@@ -1,4 +1,4 @@
-import { onCircle } from './base.mjs';
+import { onCircle } from '../../icons/scripts/lib/base.mjs';
 
 // Badge statuses. info, warn and danger are state.mjs's `info`, `warning` and
 // `error`; these are the rest, drawn on the same r=7 ring so the set reads as

@@ -1,4 +1,4 @@
-import { chevron, chevronOn } from './base.mjs';
+import { chevron, chevronOn } from '../../icons/scripts/lib/base.mjs';
 
 const rad = (deg) => (deg * Math.PI) / 180;
 

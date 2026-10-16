@@ -2,7 +2,7 @@
 // polyhedron projected orthographically: the faces turned toward the viewer
 // supply the edges, and the silhouette is the outline and the fill.
 
-import { BOX, CENTER, P } from './lib/plot.mjs';
+import { BOX, CENTER, P } from '../../icons/scripts/lib/plot.mjs';
 
 const PHI = (1 + Math.sqrt(5)) / 2;
 const EPS = 1e-6;

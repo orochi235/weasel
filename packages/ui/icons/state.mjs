@@ -1,4 +1,4 @@
-import { chevron, onCircle } from './base.mjs';
+import { chevron, onCircle } from '../../icons/scripts/lib/base.mjs';
 
 // ── transport ────────────────────────────────────────────────────────────
 const playTri = `M7.6 5.2 15.6 10 7.6 14.8Z`;

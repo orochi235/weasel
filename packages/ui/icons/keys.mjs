@@ -1,4 +1,4 @@
-import { chevron } from './base.mjs';
+import { chevron } from '../../icons/scripts/lib/base.mjs';
 
 // Key legends: the symbols printed on keycaps, for a KeyCap to draw in place
 // of a font's glyph. Their ink fills the same 3..17 box, so a row of them reads

@@ -26,7 +26,7 @@ import {
   underFill,
   X0,
   X1,
-} from './lib/plot.mjs';
+} from '../../icons/scripts/lib/plot.mjs';
 
 const cubic = (p1, p2) =>
   `M${P(onBand(0, 0))}C${P(onBand(...p1))} ${P(onBand(...p2))} ${P(onBand(1, 0))}`;

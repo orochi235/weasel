@@ -1,4 +1,4 @@
-import { chevron } from './base.mjs';
+import { chevron } from '../../icons/scripts/lib/base.mjs';
 
 // A shaft the width of the frame's margin-to-margin, under an open head.
 const HEAD = [3.6, 42];

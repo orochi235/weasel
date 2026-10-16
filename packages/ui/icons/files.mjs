@@ -1,4 +1,4 @@
-import { chevron, TRAY } from './base.mjs';
+import { chevron, TRAY } from '../../icons/scripts/lib/base.mjs';
 
 export const FILES = {
   // `export`'s tray, the arrow leaving it.

@@ -20,7 +20,8 @@ const SKIP_DIRS = new Set(['node_modules', 'dist', 'dist-examples', 'examples', 
 const isSource = (name) =>
   /\.(ts|tsx)$/.test(name) &&
   !/\.(test|spec|stories)\.(ts|tsx)$/.test(name) &&
-  !name.endsWith('.d.ts');
+  !name.endsWith('.d.ts') &&
+  !name.endsWith('.gen.ts');
 
 function* walk(dir) {
   for (const entry of readdirSync(dir)) {
