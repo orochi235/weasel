@@ -9,7 +9,7 @@ const num: PrefLeaf = { kind: 'number', name: 'N', description: '', default: 3, 
 describe('kindSchemas', () => {
   it('describes a number leaf with base, default and number attributes', () => {
     const { shared, own, readOnly } = attributeSchema(num);
-    expect(Object.keys(shared)).toEqual(expect.arrayContaining(['name', 'description', 'hidden']));
+    expect(Object.keys(shared)).toEqual(expect.arrayContaining(['name', 'description', 'tags', 'hidden']));
     expect(Object.keys(own)).toEqual(['default', 'min', 'max', 'step', 'control', 'endless']);
     expect(own.default).toMatchObject({ kind: 'number', min: 0, max: 10 });
     expect(readOnly.map(([k]) => k)).toEqual(['unit']);
@@ -36,10 +36,10 @@ describe('kindSchemas', () => {
 
   it('describes a group and a section each with a name, a description and how it is drawn, a section with no page', () => {
     const { shared, own } = attributeSchema({ name: 'G', children: {} });
-    expect(Object.keys(shared)).toEqual(['name', 'description', 'as', 'showIf', 'enableIf']);
+    expect(Object.keys(shared)).toEqual(['name', 'description', 'tags', 'as', 'showIf', 'enableIf']);
     expect(own).toEqual({});
     const section = attributeSchema({ name: 'S', members: {} }).shared;
-    expect(Object.keys(section)).toEqual(['name', 'description', 'as', 'showIf', 'enableIf']);
+    expect(Object.keys(section)).toEqual(['name', 'description', 'tags', 'as', 'showIf', 'enableIf']);
     expect((section.as as unknown as { options: Array<{ value: string }> }).options.map((o) => o.value)).toEqual(['tab', 'panel', 'section', 'fragment', 'bar']);
   });
 

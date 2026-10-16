@@ -44,6 +44,12 @@ export interface ActionPresentation {
    *  ships defaults for `'align'` (six edges/centers), `'distribute'`
    *  (two axes), and recommends `'pathfinder'` for boolean ops. */
   group?: string;
+  /** Words the action is also found by and gathered under. Where `group` is
+   *  the one place an action sits, an action carries any number of tags: a
+   *  palette search matches them as it matches the label, and
+   *  `actionsTagged` / `taggedActionItems` gather every action or entry
+   *  carrying one, for a bar or a menu built from a tag. */
+  tags?: readonly string[];
   /** Display override for the keyboard shortcut. When omitted, palette
    *  surfaces derive a label from `defaultBinding` via their own
    *  formatter. */
@@ -66,6 +72,8 @@ export interface ActionVariant {
   label: string;
   /** Falls back to the action's own `icon`. */
   icon?: ReactNode | (() => ReactNode);
+  /** Tags this variant carries besides its action's, which it carries too. */
+  tags?: readonly string[];
   /** Passed to `trigger`, and matched against each binding's
    *  `opts.params` to find the variant's shortcuts. */
   params: Readonly<Record<string, unknown>>;

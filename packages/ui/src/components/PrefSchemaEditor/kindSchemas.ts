@@ -51,6 +51,7 @@ const control = (values: readonly string[]) => choice('Control', 'Which control 
 const LEAF_BASE: KindAttrs = {
   name: text('Name', 'The label beside the control.'),
   description: text('Description', 'Help text for the tooltip or the line under the label.', true),
+  tags: strings('Tags', 'Words a settings search also finds it by, and that gather it with others carrying them.'),
   hidden: flag('Hidden', 'Left out of a settings UI unless it shows hidden prefs.'),
   showIf: SHOW_IF,
   enableIf: ENABLE_IF,
@@ -105,6 +106,7 @@ const BAR_OVERFLOW = choice('Overflow', 'Drawn as a bar: what happens to the cel
 const GROUP_ATTRS: KindAttrs = {
   name: LEAF_BASE.name!,
   description: LEAF_BASE.description!,
+  tags: strings('Tags', 'Tags every pref under it carries too. A settings search matching one keeps all of them.'),
   as: choice('Drawn as', 'A page of its own in the rail, a tab beside its neighbors, a bordered panel, a heading over its rows, a fragment: its rows among its neighbors\' with nothing drawn around them, or a bar: its prefs on one line in their bar forms. Unset: a page at the top level, a section inside another group.', ['page', 'tab', 'panel', 'section', 'fragment', 'bar']),
   showIf: SHOW_IF,
   enableIf: ENABLE_IF,
@@ -112,6 +114,7 @@ const GROUP_ATTRS: KindAttrs = {
 const SECTION_ATTRS: KindAttrs = {
   name: LEAF_BASE.name!,
   description: LEAF_BASE.description!,
+  tags: strings('Tags', 'Tags every pref under it carries too. A settings search matching one keeps all of them.'),
   as: choice('Drawn as', 'A tab beside its neighbors, a bordered panel, a heading over its rows, a fragment: its rows among its neighbors\' with nothing drawn around them, or a bar: its prefs on one line in their bar forms. Unset: a heading.', ['tab', 'panel', 'section', 'fragment', 'bar']),
   showIf: SHOW_IF,
   enableIf: ENABLE_IF,
@@ -132,7 +135,7 @@ const REQUIRED = new Set(['name', 'description', 'default', 'options', 'tag', 'o
 const SLOTS = new Set(['children', 'members', 'variants', 'item']);
 
 /** The fields a leaf made from a type sets where it is used; the rest are its type's. */
-const USE_SITE = new Set(['name', 'description', 'default', 'hidden', 'showIf', 'enableIf', 'block', 'heading', 'icon', 'pair', 'short', 'absentIsDefault', 'manual', 'unpinned', 'autoValue']);
+const USE_SITE = new Set(['name', 'description', 'tags', 'default', 'hidden', 'showIf', 'enableIf', 'block', 'heading', 'icon', 'pair', 'short', 'absentIsDefault', 'manual', 'unpinned', 'autoValue']);
 
 function valueAttr(leaf: PrefLeaf, base: { name: string; description: string }): PrefLeaf | null {
   switch (leaf.kind) {
@@ -314,7 +317,7 @@ export function blankSection(): PrefSection {
   return { name: 'New section', description: '', members: {} };
 }
 
-const SHARED = ['name', 'description', 'hidden', 'showIf', 'enableIf', 'block', 'heading', 'icon', 'pair', 'short', 'absentIsDefault', 'manual', 'unpinned'];
+const SHARED = ['name', 'description', 'tags', 'hidden', 'showIf', 'enableIf', 'block', 'heading', 'icon', 'pair', 'short', 'absentIsDefault', 'manual', 'unpinned'];
 
 const PRIMITIVES = new Set(['string', 'number', 'boolean']);
 

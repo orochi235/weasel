@@ -48,6 +48,10 @@ cursors.get('pen'); // 'crosshair'
   not stop the rest.
 - `isPlainObject(value)` and `isPlainPrototype(proto)` — plain-object tests
   that hold for objects from another realm.
+- `matchQuery(query, { text, tags })` and `QueryMatch` — the text search
+  every finder shares: whether an entry answers a person's query, by its text
+  or by a tag, ignoring case. `hasTag(tags, tag)` is the exact test for
+  gathering what carries one.
 - `MIXED` and `Mixed` — the sentinel for a value aggregated across sources
   that disagree.
 
