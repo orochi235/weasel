@@ -1306,7 +1306,10 @@ only story runner in the repo.
     detached one, but none of those runs had the failure, so that is unlikely, not ruled out.
   - **`labkit/src/lab/presentation.browser.test.tsx` ("entering refits the view…") saw a pan off
     on one axis** in 2 fleet runs at the old worker count, and in 6 of 19 runs of the project
-    alone at one or two workers on teitou, with and without the garbage collection.
+    alone at one or two workers on teitou, with and without the garbage collection. Run as the
+    only file on an idle teitou on 2026-10-16 it failed 5 of 10 on `main` (`9741e1af3`), the pan
+    coming back 1.7 or 5.2 px short in y, so load is not the cause. Unverified guess: the test
+    keeps the tile's first non-null view, before the tile's height settles.
   - `forge/src/vite/plugin.test.ts` has its own entry under "Demos & visual regression".
 
 - **(P2) HUD vs DOM text: what the idle rerun left open.** `tests/perf/hud-vs-dom.spec.ts` prices
