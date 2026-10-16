@@ -10,6 +10,8 @@
 import type {} from './actionParamSchema';
 
 export {
+  addExtremesPreset,
+  anchorSelectionPreset,
   balancePreset,
   bridgePreset,
   constraintsPreset,
@@ -22,6 +24,7 @@ export {
   harmonizePreset,
   pathEffectsPreset,
   pathTools,
+  resamplePreset,
   simplifyBrushPreset,
   smudgePreset,
   trimPreset,
@@ -44,6 +47,12 @@ export {
   DEFAULT_SMUDGE_RADIUS_PX, DEFAULT_SMUDGE_STRENGTH, smudgeBrushAction, type SmudgeBrushParams,
 } from './smudge/smudgeBrush';
 export { harmonizeAnchorsAction } from './harmonize/harmonize';
+export {
+  ANCHOR_SELECTION_GROUP, growAnchorSelectionAction, invertAnchorSelectionAction, selectCornerAnchorsAction,
+  selectEveryNthAnchorAction, selectSmoothAnchorsAction, shrinkAnchorSelectionAction,
+} from './anchorSelect/anchorSelect';
+export { resamplePathAction, type ResamplePathParams } from './resample/resample';
+export { addExtremeAnchorsAction } from './extremes/addExtremes';
 export { balanceHandlesAction, equalizeHandlesAction } from './balance/handleBalance';
 export {
   constrainAnchorsAction, constraintsForAnchors, deleteConstraintAction, unconstrainAnchorsAction,
