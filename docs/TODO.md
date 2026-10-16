@@ -19,6 +19,20 @@ Priority tags:
 
 ## Tools & gestures
 
+- **(P1) Guides and snapping, designed as one arc.** Spacing hints (equal-gap markers while
+  moving, Alt-hover distance readouts between the selection and the shape under the pointer) go in
+  as part of a pass over every guide and snap at once, not alone. The pieces today don't share a
+  pipeline: `@weasel-js/guides` has ruler guides, alignment guides, and equal-spacing snaps
+  (`packages/guides/src/guides/alignment/spacing.ts`), none of them wired into draw; the select
+  tool's move snaps only through `gridSnapStrategy`, so it ignores measurement ends; path snapping
+  just landed with its own `snapPoint` ranking (`packages/core/src/features/paths/pathSnap/`); and
+  the tolerances are fixed constants (`DEFAULT_GUIDE_TOLERANCE_PX`). The arc settles one snap
+  pipeline every gesture uses — which targets compete, how ties are ranked, how a modifier
+  suspends them mid-gesture — and one readout layer for gaps, distances, and guide labels. The
+  `spacing-hints` audition branch is source material: an Alt-hover distance readout
+  (`distanceReadout.ts`), a hover dispatched when a modifier changes, and draw's move snapping to
+  equal sibling spacing. The P3 "Moving a shape does not snap to measurement ends" folds into it.
+
 - **(P3) A `contextmenu` with no preceding press resolves against the wrong input scope.** The
   keyboard ContextMenu key sends one with no press before it, so it falls to the active or newest
   input scope; with several sibling canvases and no press yet, that may not be the canvas the
@@ -378,8 +392,6 @@ Priority tags:
   `@weasel-js/ui`.
   `RetractHandlesIcon`, `SymmetricHandlesIcon`, `SimplifyBrushIcon`, and `HarmonizeIcon`
   (`defaults/icons/anchorIcons.tsx`) are first drafts, not proofed at high resolution.
-- **(P2) Spacing hints.** Equal-spacing markers between siblings while moving, and Alt-hover
-  distance readouts between the selection and the shape under the pointer.
 - **(P2) Puppet warp bends by straight-line distance, not through the shape.** `rigidPuppetMap`
   (`packages/geom/src/warp/puppet.ts`) weights each pin by its distance across the plane, so two
   limbs that nearly touch move together when a pin on one is dragged. As-rigid-as-possible over
