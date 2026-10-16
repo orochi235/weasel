@@ -78,7 +78,7 @@ function rotateBy(ms: Measurements): Action {
         // The measurement reads counterclockwise-positive; the canvas turns clockwise-positive.
         const turn = -c.m.angle;
         const ops = rotateSelectionOps(
-          scene, selected, deps.view, deps.poseDescriptor, turn, 'union', ROTATE_LABEL,
+          scene, selected, deps, turn, 'union', ROTATE_LABEL,
         );
         if (ops.length === 0) return;
         commitOps(deps, ops, ROTATE_LABEL);

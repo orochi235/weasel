@@ -4,10 +4,10 @@ import { resolveParams } from '@weasel-js/routing';
 import { useDistortTool, useEnvelopeTool, usePuppetTool } from './useWarpTool';
 
 describe('warp tools', () => {
-  it('take F, M and B by default, and a keybinding overrides or omits one', () => {
+  it('take F, C and B by default, and a keybinding overrides or omits one', () => {
     const keys = renderHook(() => [useDistortTool(), useEnvelopeTool(), usePuppetTool()]).result.current
       .map((t) => t.keybinding?.key);
-    expect(keys).toEqual(['F', 'M', 'B']);
+    expect(keys).toEqual(['F', 'C', 'B']);
     expect(renderHook(() => usePuppetTool({ keybinding: { key: 'Q' } })).result.current.keybinding?.key).toBe('Q');
     expect(renderHook(() => usePuppetTool({ keybinding: null })).result.current.keybinding).toBeUndefined();
   });
