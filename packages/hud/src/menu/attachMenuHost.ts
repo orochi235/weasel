@@ -3,26 +3,14 @@ import type { Hud } from '../hud';
 import type { Widget } from '../widget';
 import { createMenuWidget, type MenuWidgetOptions } from './menuWidget';
 
-/** What {@link attachMenuHost} needs beyond the hud and host. `measure` defaults to {@link canvasMeasure} in Inter. */
+/** What {@link attachMenuHost} needs beyond the hud and host. */
 export type AttachMenuHostOptions =
-  Pick<MenuWidgetOptions, 'toCanvas' | 'canvasSize'> & Partial<Pick<MenuWidgetOptions, 'measure' | 'metrics'>>;
-
-/** Measures with a 2D canvas in the given family. Matches the atlas font
- *  only as closely as the browser's copy of that family does. */
-export function canvasMeasure(fontFamily: string): (text: string, fontSize: number) => number {
-  const ctx = typeof OffscreenCanvas !== 'undefined' ? new OffscreenCanvas(1, 1).getContext('2d') : null;
-  return (text, size) => {
-    if (!ctx) return text.length * size * 0.55;
-    ctx.font = `${size}px ${fontFamily}`;
-    return ctx.measureText(text).width;
-  };
-}
+  Pick<MenuWidgetOptions, 'toCanvas' | 'canvasSize' | 'measure' | 'metrics'>;
 
 /** Draw `host`'s open menu as a widget on `hud`, focused while open. A press
  *  anywhere else takes focus from it, which closes the menu. Returns a detach. */
 export function attachMenuHost(hud: Hud, host: MenuHost, opts: AttachMenuHostOptions): () => void {
   let widget: Widget | null = null;
-  const measure = opts.measure ?? canvasMeasure('Inter, sans-serif');
 
   // Cleared before removal: removing the focused widget blurs it, and that
   // blur must not read as a press elsewhere.
@@ -39,13 +27,14 @@ export function attachMenuHost(hud: Hud, host: MenuHost, opts: AttachMenuHostOpt
     drop();
     if (!open) return;
     const w = createMenuWidget({
-      ...opts, measure, open,
+      ...opts, open,
       close: () => { if (host.current() === open) host.close(); },
       onChange: () => hud.markDirty(),
     });
     widget = w;
     hud.add(w);
-    if (!hud.focus(w)) drop();
+    // A menu that cannot take focus could never be dismissed, so it does not open.
+    if (!hud.focus(w)) { drop(); host.close(); }
   };
 
   const unsubscribe = host.subscribe(sync);

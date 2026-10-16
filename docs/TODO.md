@@ -615,6 +615,18 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   canvas and exposes only `accessibleName`. Mirror the open menu as hidden DOM with menu roles,
   kept in step with the model's highlight.
 
+- **(P3) The WebGL context menu stays open through a wheel or resize elsewhere.** The DOM menu's
+  `useDismiss` closes on a wheel outside its panels, on window blur and on resize; `attachMenuHost`
+  closes only when HUD focus moves, so a wheel over the canvas zooms under an open menu and a
+  resize leaves it where the old canvas put it.
+
+- **(P4) The WebGL context menu has square corners and no shadow.** The DOM panel takes
+  `--wzl-radius-md` and `--wzl-bevel-raised`; `drawPanel` draws a plain bordered rect.
+
+- **(P3) The WebGL context menu does not return HUD focus on close.** The DOM host gives focus back
+  to whatever held it when the menu opened (`useReturnFocus`); `attachMenuHost` leaves the HUD with
+  nothing focused, so a keyboard user loses their place among the widgets.
+
 - **(P3) `PrefsRail`'s scroll-to-section browser test fails now and then.** "leaves a nested page
   off the page that holds it and scrolls to a section that follows it"
   (`packages/ui/src/components/Prefs/PrefsRail.marks.browser.test.tsx:91`) failed once on a fleet

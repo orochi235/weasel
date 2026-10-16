@@ -1,7 +1,11 @@
-import { createMenuController, placeMenu, placeSubmenu, type Rect } from '@weasel-js/menu';
+import { createMenuController, type Rect } from '@weasel-js/menu';
+import { faceGeneration } from '@weasel-js/font';
 import type { ClaimableGesture, OpenMenu } from '@weasel-js/core';
 import { createRevision, type HudKeyEvent, type HudPointerEvent, type Widget, type WidgetBounds } from '../widget';
-import { DEFAULT_MENU_METRICS, drawPanel, panelSize, rowAt, rowLayout, type MenuMetrics } from './drawPanel';
+import { DEFAULT_FONT_FAMILY } from '../fonts/registerDefaultFont';
+import { DEFAULT_MENU_METRICS, drawPanel, rowAt, type MenuMetrics } from './drawPanel';
+import { measureLabel } from './measureLabel';
+import { createPlacer } from './placePanels';
 
 type XY = { x: number; y: number };
 const CLAIMS: readonly ClaimableGesture[] = ['pointer', 'doubleClick', 'contextMenu', 'longPress', 'wheel'];
@@ -14,7 +18,9 @@ export interface MenuWidgetOptions {
   /** Viewport point to canvas CSS pixels, for `open.client`. */
   toCanvas(client: XY): XY;
   canvasSize(): { width: number; height: number };
-  measure(text: string, fontSize: number): number;
+  /** Width of a label in the family the hud draws with. Defaults to the
+   *  registered face's own advances, which is what the text is laid out with. */
+  measure?(text: string, fontSize: number, fontFamily: string): number;
   metrics?: MenuMetrics;
   onChange(): void;
 }
@@ -26,32 +32,17 @@ export function createMenuWidget(opts: MenuWidgetOptions): Widget {
   const c = createMenuController({
     entries: opts.open.entries, highlightFirst: opts.open.source === 'keyboard', onClose: opts.close,
   });
-  let panels: Rect[] = [];
+  const place = createPlacer({
+    anchor: opts.toCanvas(opts.open.client), canvasSize: opts.canvasSize,
+    measure: opts.measure ?? measureLabel, metrics: m,
+  });
+  // The hud's font is known only once it draws; until then, its default.
+  let family = DEFAULT_FONT_FAMILY;
+  let panels: Rect[] = place(c, family);
   let disposed = false;
   let armed = false;
-
-  const layout = () => {
-    const { width, height } = opts.canvasSize();
-    const bounds = { x: 0, y: 0, w: width, h: height };
-    const stack = c.stack();
-    panels = [];
-    stack.forEach((_, level) => {
-      const size = panelSize(c.entriesAt(level), m, opts.measure);
-      let at: XY;
-      if (level === 0) {
-        at = placeMenu(size, opts.toCanvas(opts.open.client), bounds);
-      } else {
-        const parent = panels[level - 1]!;
-        const row = rowLayout(c.entriesAt(level - 1), m)[stack[level - 1]!]!;
-        at = placeSubmenu(size, { x: parent.x, y: parent.y + row.y, w: parent.w, h: row.h }, bounds);
-      }
-      const panel = { x: at.x, y: at.y, w: size.w, h: size.h };
-      panels.push(panel);
-      c.setPanel(level, panel);
-    });
-  };
-  layout();
-  c.subscribe(() => { layout(); rev.changed(); });
+  let under: number | null = null;
+  c.subscribe(() => { panels = place(c, family); rev.changed(); });
 
   /** The topmost panel under (x, y), or -1. */
   const levelAt = (x: number, y: number): number => {
@@ -70,8 +61,15 @@ export function createMenuWidget(opts: MenuWidgetOptions): Widget {
     return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
   };
 
+  /** The pointer is now over `level` (null: no panel). Leaving a panel clears
+   *  its row, as the DOM menu's per-panel `pointerleave` does. */
+  const enter = (level: number | null) => {
+    if (under !== null && under !== level) c.hover(under, null);
+    under = level;
+  };
+
   const pointer = (evt: HudPointerEvent) => {
-    if (evt.type === 'hoverleave') { c.hover(c.stack().length - 1, null); return; }
+    if (evt.type === 'hoverleave') { enter(null); return; }
     if (evt.type === 'cancel') { armed = false; return; }
     if (evt.type === 'down') { armed = true; return; }
     if (evt.type !== 'hovermove' && evt.type !== 'move' && evt.type !== 'up') return;
@@ -80,6 +78,7 @@ export function createMenuWidget(opts: MenuWidgetOptions): Widget {
     // right-click or long-press that opened the menu must not.
     const choose = evt.type === 'up' && armed;
     if (evt.type === 'up') armed = false;
+    if (!choose) enter(level < 0 ? null : level);
     if (level < 0) return;
     const index = rowAt(c.entriesAt(level), m, evt.y - panels[level]!.y);
     if (!choose) c.hover(level, index, { x: evt.x, y: evt.y });
@@ -100,9 +99,14 @@ export function createMenuWidget(opts: MenuWidgetOptions): Widget {
     get disposed() { return disposed; },
     claims: CLAIMS,
     focusable: true,
+    focusRing: false,
     accessibleName: 'Context menu',
-    deps: rev.deps,
-    draw: (ctx) => panels.flatMap((p, level) => drawPanel(ctx, p, c.entriesAt(level), c.stack()[level] ?? null, m)),
+    deps: (ctx) => [...rev.deps(), ctx.defaultFont, faceGeneration()],
+    draw: (ctx) => {
+      family = ctx.defaultFont;
+      panels = place(c, family);
+      return panels.flatMap((p, level) => drawPanel(ctx, p, c.entriesAt(level), c.stack()[level] ?? null, m));
+    },
     hitTest: (x, y) => levelAt(x, y) >= 0,
     cursorAt: () => 'default',
     onPointer: pointer,

@@ -23,7 +23,8 @@ export {
   type WindowZone, type WindowMetrics,
 } from './widgets/window/zones';
 export type { HudContentCtx } from './widget';
-export { attachMenuHost, canvasMeasure, type AttachMenuHostOptions } from './menu/attachMenuHost';
+export { attachMenuHost, type AttachMenuHostOptions } from './menu/attachMenuHost';
+export { measureLabel } from './menu/measureLabel';
 export { createMenuWidget, type MenuWidgetOptions } from './menu/menuWidget';
 export { DEFAULT_MENU_METRICS, type MenuMetrics } from './menu/drawPanel';
 export { createLoupe, type LoupeOptions, type LoupeBaseOptions, type LoupeHandle, type LoupeMode } from './loupe/createLoupe';
