@@ -1,0 +1,25 @@
+import { afterEach, describe, expect, it } from 'vitest';
+import { cleanup, screen } from '@testing-library/react';
+import { renderSettled } from '@weasel-js/react/testing/renderSettled';
+import { ActionsProvider, useCommand } from '@weasel-js/core';
+import type { PrefGroup } from '@weasel-js/prefs';
+import { BarMenu } from './BarMenu';
+
+afterEach(cleanup);
+
+const FILE: PrefGroup = {
+  name: 'File', description: '', as: 'menu',
+  children: { open: { kind: 'action', action: 'file.open', name: '', description: '', default: undefined } },
+};
+
+function Setup() {
+  useCommand('file.open', 'Open', () => {});
+  return <BarMenu label="File" schema={FILE} values={() => undefined} defaultOpen />;
+}
+
+describe('BarMenu', () => {
+  it('opens on mount with defaultOpen', async () => {
+    await renderSettled(<ActionsProvider><Setup /></ActionsProvider>);
+    expect(screen.getByRole('menuitem', { name: 'Open' })).toBeDefined();
+  });
+});
