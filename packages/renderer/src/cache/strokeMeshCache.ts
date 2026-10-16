@@ -7,7 +7,7 @@
  */
 
 import type { Path } from '@weasel-js/geom';
-import type { Stroke } from '@weasel-js/paint';
+import type { Stroke, VertexWidth } from '@weasel-js/paint';
 import { tessellateStroke, resolveStrokeWidth } from '@weasel-js/stroke';
 import { strokeInsets } from '@weasel-js/stroke';
 import { metricKey, type ScreenSpace, type StrokeSpaces } from '@weasel-js/stroke';
@@ -43,7 +43,7 @@ interface StrokeEntry {
   readonly mesh: Mesh;
   /** Compared by reference — long enough that stringifying it per frame would
    *  cost what the cache saves. */
-  readonly vertexWidths: number[] | undefined;
+  readonly vertexWidths: VertexWidth[] | undefined;
 }
 
 let cache = new WeakMap<Path, Map<string, StrokeEntry>>();
@@ -65,6 +65,7 @@ function configKey(stroke: Stroke, flattenTolerance: number | undefined, spaces:
     stroke.align ?? 'center',
     (stroke.dash ?? []).join(','),
     stroke.varyingWidthJoinThreshold ?? '',
+    stroke.nib ? `${stroke.nib.angle}:${stroke.nib.ratio}` : '',
     flattenTolerance ?? '',
     insets.start,
     insets.end,

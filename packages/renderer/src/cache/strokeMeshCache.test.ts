@@ -34,6 +34,13 @@ describe('stroke ribbon cache', () => {
     expect(strokeMesh(path, { ...base, dash: [2, 2] }, undefined)).not.toBe(first);
   });
 
+  it('misses when the nib changes, and hits on an equal one', () => {
+    const path = rect();
+    const first = strokeMesh(path, { ...base, nib: { angle: 0.5, ratio: 0.2 } }, undefined);
+    expect(strokeMesh(path, { ...base, nib: { angle: 0.5, ratio: 0.3 } }, undefined)).not.toBe(first);
+    expect(strokeMesh(path, { ...base, nib: { angle: 0.5, ratio: 0.2 } }, undefined)).toBe(first);
+  });
+
   it('misses when varyingWidthJoinThreshold changes', () => {
     const path = rect();
     const widths = [1, 2, 3, 4];

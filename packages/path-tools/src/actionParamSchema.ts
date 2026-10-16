@@ -5,6 +5,7 @@
 import type { CornerShape, PathConstraintKind } from '@weasel-js/geom';
 import type { BendAlongEffect, BlendEffect, RepeatAlongEffect } from '@weasel-js/core';
 import type { ConstrainAnchorsParams } from './constraints/anchorConstraints';
+import type { ResamplePathParams } from './resample/resample';
 import type { SimplifyBrushParams } from './simplifyBrush/simplifyBrush';
 import type { SmudgeBrushParams } from './smudge/smudgeBrush';
 import type { WarpKind, WarpSettings } from './warp/warpTargets';
@@ -35,6 +36,8 @@ declare module '@weasel-js/routing' {
     'puppet.drag': WarpSettings;
     'puppet.addPin': WarpSettings;
     configureWarp: WarpSettings & { kind?: WarpKind };
+    selectEveryNthAnchor: { n?: number };
+    resamplePath: ResamplePathParams;
     setCorners: SetCornersParams;
   }
 }

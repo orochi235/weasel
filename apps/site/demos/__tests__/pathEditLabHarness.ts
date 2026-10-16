@@ -62,3 +62,12 @@ export function doubleClick(canvas: Element, x: number, y: number): void {
     }
   });
 }
+
+/** A key pressed and released at the page, as the canvas holding the keys hears it. */
+export function press(key: string, code: string, mods: { altKey?: boolean; shiftKey?: boolean } = {}): void {
+  act(() => {
+    for (const type of ['keydown', 'keyup']) {
+      document.body.dispatchEvent(new KeyboardEvent(type, { key, code, ...mods, bubbles: true, cancelable: true }));
+    }
+  });
+}

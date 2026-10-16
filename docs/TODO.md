@@ -220,6 +220,21 @@ Priority tags:
   `packages/path-tools/src/harmonize/harmonize.tsx`). It has no key of its own; its lab tunes H onto it,
   which the Hand tool also answers wherever that tool is mounted
   (`apps/site/demos/HarmonizeLabDemo.tsx`).
+- **(P2) Tune anchor selection along the path hands-on, with the maintainer driving.**
+  First-draft behavior and keys: `]` grows and `[` shrinks by one anchor, Alt+N selects every Nth
+  (N defaults to 2, counted from the first selected anchor, with no UI for N outside the lab's
+  `tune`), Alt+C corners, Alt+M smooth anchors, and Alt+I the complement; grow and shrink stay
+  within a subpath, and none of them is an undo step
+  (`packages/path-tools/src/anchorSelect/anchorSelect.ts`, `packages/geom/src/paths/anchorSelection.ts`).
+- **(P2) Tune Resample hands-on, with the maintainer driving.** First-draft behavior: no key,
+  driven only as an ongoing action; a count of 0 keeps the path's anchor count, corners are held
+  by default, the refit tolerance is 0.5 and a piece that misses it is halved up to six times, so
+  the result can hold more anchors than asked for (`packages/path-tools/src/resample/resample.ts`,
+  `packages/geom/src/paths/resamplePath.ts`).
+- **(P2) Tune Add extremes hands-on, with the maintainer driving.** First-draft behavior and key:
+  Alt+X adds to segments whose two ends are both selected, or to the whole path while no anchor
+  is, so a selection reaching no whole segment does nothing; the new anchors join the selection
+  (`packages/path-tools/src/extremes/addExtremes.ts`, `packages/geom/src/paths/extremaAnchors.ts`).
 - **(P2) Tune Blend, Bend along a path, and Repeat along a path hands-on, with the maintainer
   driving.** First-draft step counts, spacing, and turn defaults, their keys, and how an effect is
   re-edited and expanded (`packages/path-tools/src/pathEffects/`, and core's `features/pathEffects/`).
@@ -274,6 +289,10 @@ Priority tags:
   keys: its tool key, M, which moved Envelope mesh to C when the two met in draw; the Shift angle
   step; that Move by and Rotate by fall back to the newest measurement when none is picked; and the
   readout's look (`packages/core/src/tools/builtin/measure/`, `<MeasureReadout>` in `@weasel-js/ui`).
+- **(P2) Tune the Width tool hands-on, with the maintainer driving.** First-draft behavior and
+  keys: Shift+W in draw; how near an edge a press must land to grab it; Alt moving one edge alone
+  and Alt-click clearing a width point; and whether a press between anchors should insert one
+  (`packages/core/src/tools/builtin/width/`).
 - **(P2) A rectangle has no anchors in path edit.** Draw stores a drawn rectangle's `data.path`
   as a `RectPath` (`kind: 'rect'`), and `classifyPathStorage`
   (`packages/core/src/features/paths/editablePath.ts`) accepts only a polygon, so double-clicking
@@ -312,8 +331,8 @@ Priority tags:
   drag steps in a different direction from the drag. Recording the move in world space and
   mapping it through each node's parent on replay would make the two agree.
 - **(P3) The path commands have no icons.** `simplifyPath`, `offsetPath`, `snipAtCrossings`,
-  `joinPaths`, `bridgePaths`, `joinAnchors`, `bridgeAnchors`, `averageAnchors`, and
-  `extendToMeet` show as text in draw's bar, `useTrimTool` and `useExtendTool` borrow
+  `joinPaths`, `bridgePaths`, `joinAnchors`, `bridgeAnchors`, `averageAnchors`, `resamplePath`,
+  `addExtremeAnchors`, the anchor selection commands, and `extendToMeet` show as text in draw's bar, `useTrimTool` and `useExtendTool` borrow
   `SliceIcon`, and `useSmudgeBrushTool` has none. `expandWarp` and `configureWarp` have none
   either, and `useDistortTool`, `useEnvelopeTool`, and `usePuppetTool` give no
   `presentation.icon`: their labs borrow `FitStretchIcon`, `GridIcon`, and `PinIcon` from
@@ -337,8 +356,12 @@ Priority tags:
   as a box-to-box map, but a rotation rewrites the coordinates in a way no such map undoes, so the
   warp stops resolving and the warp tools start a fresh one. A `data.path` node keeps its warp
   through a rotation.
-- **(P2) Variable-width strokes.** A width profile along a stroke's length, edited by dragging
-  on the stroke. `strokeToPath` handles a fixed width only.
+- **(P3) The width tool has no icon, and passes over rectangles.** `useWidthTool` shows the
+  unknown-tool glyph in draw's palette and the lab's. It edits only nodes `resolveEditablePathOf`
+  answers a polygon for, so a drawn rectangle's stroke, which renders `vertexWidths` and a `nib`
+  like any other, cannot be shaped with it; that waits on "A rectangle has no anchors in path edit"
+  above. `strokeEdgeNear`, which it hit-tests with, measures every stroke as centered, so on an
+  inner- or outer-aligned stroke the grab point sits off the edge that is drawn.
 
 ### Path constraints
 

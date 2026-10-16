@@ -150,6 +150,36 @@ describe('the stroke leaf\'s dash style', () => {
   });
 });
 
+describe('the stroke leaf\'s nib', () => {
+  const strokeLeaf = (): PrefObject => {
+    const entry = inferredNodeProperties.find((e) => e.name === 'path')!;
+    const appearance = entry.schema.members.appearance as PrefSection;
+    return appearance.members['data.stroke'] as PrefObject;
+  };
+
+  it('turns a nib on with a default, and off by removing it', () => {
+    const nib = strokeLeaf().children.nib as PrefBoolean;
+    expect(nib.kind).toBe('boolean');
+    expect(nib.encoding!.read(undefined, {})).toBe(false);
+    const on = nib.encoding!.write(true, {}) as { angle: number; ratio: number };
+    expect(on.ratio).toBeGreaterThan(0);
+    expect(on.ratio).toBeLessThan(1);
+    expect(nib.encoding!.read(on, { nib: on })).toBe(true);
+    const kept = { angle: 1, ratio: 0.5 };
+    expect(nib.encoding!.write(true, { nib: kept })).toBe(kept);
+    expect(nib.encoding!.write(false, { nib: kept })).toBeUndefined();
+  });
+
+  it('edits the angle in degrees and the ratio, shown only while a nib is on', () => {
+    const angle = strokeLeaf().children['nib.angle'] as PrefNumber;
+    const ratio = strokeLeaf().children['nib.ratio'] as PrefNumber;
+    expect(angle.unit).toBeDefined();
+    expect([ratio.min, ratio.max]).toEqual([0, 1]);
+    expect(angle.showIf).toEqual({ path: 'data.stroke.nib' });
+    expect(ratio.showIf).toEqual({ path: 'data.stroke.nib' });
+  });
+});
+
 describe('the stroke leaf\'s markers', () => {
   const strokeLeaf = (): PrefObject => {
     const entry = inferredNodeProperties.find((e) => e.name === 'path')!;
