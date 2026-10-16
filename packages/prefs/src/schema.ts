@@ -39,6 +39,12 @@ export interface PrefBase<K extends string, Value> {
   description: string;
   /** Fallback when nothing is persisted. */
   default: Value;
+  /** Words the leaf is also found by and gathered under: a settings search
+   *  matches them as it matches `name`, and `prefLeavesTagged` gathers every
+   *  leaf carrying one. A leaf also carries the tags of every group above it
+   *  (`prefLeafTags`). Unrelated to a union leaf's `tag`, which names the
+   *  field its value's variant is read from. */
+  tags?: readonly string[];
   /** Hide from a host app's settings UI by default. */
   hidden?: boolean;
   /** Drawn only while this holds. Presentational: the value stays stored

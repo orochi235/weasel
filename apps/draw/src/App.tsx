@@ -1,5 +1,5 @@
 /**
- * WeaselDraw's editor: one `<SceneCanvas features={['draw']}>` with every built-in tool over a
+ * WeaselDraw's editor: one `<SceneCanvas features={['draw', pathTools]}>` with every built-in tool over a
  * `useScene` document, saved to local storage 300 ms after each change.
  */
 import { DEFAULT_STROKE_COLOR, useScene, useSelection } from '@weasel-js/core';
@@ -7,7 +7,7 @@ import { createRecentColorsStore, RecentColorsProvider } from '@weasel-js/ui';
 import { type ReactElement, useState } from 'react';
 import type { ActivePaint } from './ActiveSwatches';
 import './app.css';
-import { DRAW_LAYERS, type WeaselDrawData, type WeaselDrawLayer, type WeaselDrawPose } from './drawDocument';
+import { DRAW_LAYERS, DRAW_REGISTRY, type WeaselDrawData, type WeaselDrawLayer, type WeaselDrawPose } from './drawDocument';
 import { Editor } from './Editor';
 import { useModality } from './modality/useModality';
 import { loadInitial } from './sceneLoading';
@@ -25,6 +25,7 @@ export function App(): ReactElement {
   const [initialScene] = useState(loadInitial);
   const scene = useScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>({
     systemLayers: DRAW_LAYERS,
+    registry: DRAW_REGISTRY,
     initial: initialScene,
   });
   const selection = useSelection({ mode: 'multi', scene });

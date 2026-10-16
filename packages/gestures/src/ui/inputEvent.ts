@@ -34,6 +34,8 @@ export interface BodyClassification {
   /** Semantic kind of the hit body. Undefined on empty canvas, and undefined
    *  on a body whose kind the scene can't name — never guessed. */
   kind?: BodyKind;
+  /** The node classified. Matching ignores it. */
+  id?: string;
 }
 
 /** A keystroke. */

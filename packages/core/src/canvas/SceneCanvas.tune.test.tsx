@@ -52,7 +52,7 @@ describe('<SceneCanvas tune>', () => {
   it("types a kit action's params, and takes any id's", () => {
     // @ts-expect-error flip's axis is 'x' or 'y'
     const wrong: ActionTunings = { flip: { params: { axis: 'z' } } };
-    const other: ActionTunings = { brushDeleteAnchors: { params: () => ({ radiusPx: 12 }) } };
+    const other: ActionTunings = { simplifyBrush: { params: () => ({ radiusPx: 12 }) } };
     expect([wrong, other]).toHaveLength(2);
   });
 

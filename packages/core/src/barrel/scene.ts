@@ -76,6 +76,7 @@ export type {
   AddNodeSpec,
   Bivariant,
   ClipFromPoseFn,
+  CopiesFromPoseFn,
   DerivedDep,
   DerivePathFn,
   DerivePoseFn,

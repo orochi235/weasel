@@ -36,7 +36,7 @@ export const moveAction: Action & { requires: string[] } = inPlane({
   // through.
   defaultBinding: { kind: 'drag', target: 'selected-body' },
   eligible: { capability: 'transforms-selection' },
-  requires: ['selection', 'scene', 'poseDescriptor', 'layout', 'applyOps', 'geometryProjection', 'nodeAtPoint', 'view'],
+  requires: ['selection', 'scene', 'poseDescriptor', 'layout', 'applyOps', 'geometryProjection', 'nodeAtPoint', 'view', 'boundsIncludeStroke', 'kitSettings'],
   invoker: {
     timing: 'ongoing',
     start(ctx: InvocationCtx, opts?: BindingOpts): OngoingHandle {

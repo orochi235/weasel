@@ -36,7 +36,7 @@ export interface SnapshotSource {
 }
 
 /** What `stored` reads as for `leaf`: a locus with each member repaired where the leaf may hold one, else the value repaired. */
-function readStored(source: SnapshotSource, leaf: PrefLeaf, stored: unknown): unknown {
+export function readStored(source: Pick<SnapshotSource, 'selectors' | 'validators'>, leaf: PrefLeaf, stored: unknown): unknown {
   const repair = (value: unknown): unknown => repairPrefValue(leaf, value, source.validators);
   if (!leaf.splitBy?.length || !isPrefLocus(stored)) return repair(stored);
   const read = repairLocus(stored, leaf.splitBy, (path) => source.selectors.get(path), repair);
@@ -44,7 +44,7 @@ function readStored(source: SnapshotSource, leaf: PrefLeaf, stored: unknown): un
 }
 
 /** `held` folded under `weights`: itself where it is not split. */
-export function resolveHeld(source: SnapshotSource, leaf: PrefLeaf, held: unknown, weights: PrefWeights): unknown {
+export function resolveHeld(source: Pick<SnapshotSource, 'blends'>, leaf: PrefLeaf, held: unknown, weights: PrefWeights): unknown {
   return isPrefLocus(held) ? blendPref(leaf, weighLocus(held, weights, leaf.default), source.blends) : held;
 }
 

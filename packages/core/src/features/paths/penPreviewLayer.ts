@@ -12,6 +12,7 @@
 
 import type { DrawCommand } from '@weasel-js/renderer';
 import type { RenderLayer } from 'core/layers/render';
+import type { KitSettingsStore } from '@weasel-js/react';
 import type { PenScratch, PenAnchor, PenSubpath } from 'tools/builtin/pen';
 import { PATH_C, PATH_L, PATH_M, type PolygonPath, anchorsToPath, circlePath } from '@weasel-js/geom';
 
@@ -31,6 +32,8 @@ export interface CreatePenPreviewLayerOptions {
    *  the layer reads the same one on every frame. */
   state: PenScratch;
   style?: PenPreviewStyle;
+  /** The kit settings whose `targets.pen*RadiusPx` size the dots, read each frame. */
+  kitSettings?: () => KitSettingsStore;
 }
 
 const DEFAULT_STYLE: Required<PenPreviewStyle> = {
@@ -42,9 +45,15 @@ const DEFAULT_STYLE: Required<PenPreviewStyle> = {
   finishedSubpathStroke: '#8a7a5e',
 };
 
-const ANCHOR_RADIUS_PX = 4;
-const HANDLE_DOT_RADIUS_PX = 3;
-const CLOSE_HINT_RADIUS_PX = 8;
+export const ANCHOR_RADIUS_PX = 4;
+export const HANDLE_DOT_RADIUS_PX = 3;
+export const CLOSE_HINT_RADIUS_PX = 8;
+
+const radiiOf = (kit: KitSettingsStore | undefined) => ({
+  anchor: kit?.get('targets.penAnchorRadiusPx') ?? ANCHOR_RADIUS_PX,
+  handleDot: kit?.get('targets.penHandleDotRadiusPx') ?? HANDLE_DOT_RADIUS_PX,
+  closeHint: kit?.get('targets.penCloseHintRadiusPx') ?? CLOSE_HINT_RADIUS_PX,
+});
 
 function w2s(wx: number, wy: number, view: { x: number; y: number; scale: { x: number; y: number } }): [number, number] {
   return [(wx - view.x) * view.scale.x, (wy - view.y) * view.scale.y];
@@ -90,7 +99,7 @@ export function createPenPreviewLayer(
     space: 'screen',
     draw: (_data, view) => {
       const out: DrawCommand[] = [];
-
+      const r = radiiOf(opts.kitSettings?.());
       // (1) Finished subpaths — faded outline.
       for (const sp of s.finishedSubpaths) {
         const path = subpathToPath(sp, view);
@@ -154,7 +163,7 @@ export function createPenPreviewLayer(
           const [ax, ay] = w2s(a.x, a.y, view);
           out.push({
             kind: 'path',
-            path: approximateCircle(ax, ay, ANCHOR_RADIUS_PX),
+            path: approximateCircle(ax, ay, r.anchor),
             fill: { paint: { kind: 'solid', color: style.anchorFill } },
             stroke: { paint: { kind: 'solid', color: style.anchorStroke }, width: 1 },
           });
@@ -174,7 +183,7 @@ export function createPenPreviewLayer(
             });
             out.push({
               kind: 'path',
-              path: approximateCircle(hx, hy, HANDLE_DOT_RADIUS_PX),
+              path: approximateCircle(hx, hy, r.handleDot),
               fill: { paint: { kind: 'solid', color: style.handleStroke } },
             });
             const inSide = a.inHandle;
@@ -193,7 +202,7 @@ export function createPenPreviewLayer(
               });
               out.push({
                 kind: 'path',
-                path: approximateCircle(mx, my, HANDLE_DOT_RADIUS_PX),
+                path: approximateCircle(mx, my, r.handleDot),
                 fill: { paint: { kind: 'solid', color: style.handleStroke } },
               });
             }
@@ -206,7 +215,7 @@ export function createPenPreviewLayer(
           const [fx, fy] = w2s(first.x, first.y, view);
           out.push({
             kind: 'path',
-            path: approximateCircle(fx, fy, CLOSE_HINT_RADIUS_PX),
+            path: approximateCircle(fx, fy, r.closeHint),
             stroke: { paint: { kind: 'solid', color: style.closeHintFill }, width: 1.5 },
           });
         }

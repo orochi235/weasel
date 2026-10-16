@@ -3,9 +3,12 @@ import { createHistory } from '@weasel-js/history';
 import type { SerializedHistory } from '@weasel-js/history';
 import type { Op, SerializedScene } from '@weasel-js/core';
 import {
-  asNodeId, buildWeaselClipboardText, createScene, isAnnotationNode, measureNode, measurementOf, parseWeaselClipboardText,
+  asNodeId, buildWeaselClipboardText, createScene, effectivePose, isAnnotationNode, measureNode, measurementOf,
+  parseWeaselClipboardText,
 } from '@weasel-js/core';
-import { ANNOTATION_LAYER, DRAW_LAYERS, type WeaselDrawData, type WeaselDrawLayer, type WeaselDrawPose } from './drawDocument';
+import {
+  ANNOTATION_LAYER, DRAW_LAYERS, DRAW_REGISTRY, type WeaselDrawData, type WeaselDrawLayer, type WeaselDrawPose,
+} from './drawDocument';
 import { clipboardJsonReviver, nodeSpecsFromSnapshot, reviveSnapshot, reviveTypedArrays, serializeReplacer } from './persistence';
 
 // These cover the new bit of App's localStorage autosave: the undo history is
@@ -324,5 +327,26 @@ describe('persistence — legacy string paint migration', () => {
     const data = dataOf({ fill: '#7ab8d4', coords: [1.5, 2.5] });
     expect(data.coords).toBeInstanceOf(Float32Array);
     expect(data.fill).toEqual({ paint: { color: '#7ab8d4' } });
+  });
+});
+
+describe('persistence — a group reopens tracking its members', () => {
+  it('restores dependsOn and the derived pose, so moving a member moves the group', () => {
+    const make = (initial?: Parameters<typeof createScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>>[0]['initial']) =>
+      createScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>({
+        systemLayers: [{ id: 'default' }], registry: DRAW_REGISTRY, ...(initial ? { initial } : {}),
+      });
+    const scene = make();
+    const g = scene.add({
+      kind: 'container', layer: 'default', pose: { x: 0, y: 0, width: 0, height: 0 }, data: {},
+      dependsOn: 'children', derivePose: DRAW_REGISTRY.derivePose!['kit:unionOfChildren'],
+    });
+    const a = scene.add({ kind: 'leaf', layer: 'default', pose: { x: 10, y: 10, width: 20, height: 20 }, data: {}, parent: g });
+
+    const json = JSON.parse(JSON.stringify(scene.toJSON(), serializeReplacer)) as SerializedScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>;
+    const reopened = make(nodeSpecsFromSnapshot(json, DRAW_REGISTRY));
+    reopened.setPose(a, { x: 100, y: 10, width: 20, height: 20 });
+
+    expect(effectivePose(reopened, reopened.get(g)!)).toMatchObject({ x: 100, y: 10, width: 20, height: 20 });
   });
 });

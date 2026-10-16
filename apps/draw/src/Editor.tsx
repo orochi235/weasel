@@ -7,7 +7,7 @@ import {
   useActionsRegistry,
   type View
 } from '@weasel-js/core';
-import { CharacterOptions, CommandPalette, ResizeHandle, Sidebar, ToolPalette } from '@weasel-js/ui';
+import { CharacterOptions, CommandPalette, ContextMenuHost, ResizeHandle, Sidebar, ToolPalette } from '@weasel-js/ui';
 import { type CSSProperties, type ReactElement, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActiveSwatches } from './ActiveSwatches';
 import { lookupShortcutByToolId } from './dev/keybindingsView';
@@ -88,6 +88,7 @@ export function Editor({ scene, selection, modality }: EditorProps): ReactElemen
         />
         <PreferencesModal open={prefsOpen} onClose={() => setPrefsOpen(false)} registryEnumSources={prefSources} />
         <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
+        <ContextMenuHost />
         {/* Permanently reserved, never mounted on demand: the canvas is sized
             to the workspace, so appearing mid-edit would resize it under the
             caret. Empty until a text edit is in progress. */}

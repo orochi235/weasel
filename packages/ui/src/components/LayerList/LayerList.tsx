@@ -16,43 +16,9 @@ import { DragGhost } from '../DragGhost';
 import rows from '../ItemList/ItemList.module.css';
 import { PropertyGroup, PropertyList } from '../Properties';
 import s from './LayerList.module.css';
-import { Controls, Handle, Row } from './LayerRow';
-import type { LayerListItem, LayerMove } from './layerListTypes';
-
-export type { LayerListItem, LayerMove } from './layerListTypes';
-
-/** Props for `<LayerList>`. */
-export interface LayerListProps {
-  items: LayerListItem[];
-  /** Omit for a list the user cannot reorder. */
-  onReorder?: (move: LayerMove) => void;
-  /** Giving both makes rows selectable: a click selects one, Cmd/Ctrl-click adds
-   *  or removes one, shift-click selects every row from the last click to this
-   *  one, and dragging a selected row drags its selected siblings. */
-  selectedIds?: readonly string[];
-  onSelect?: (ids: string[]) => void;
-  /** Adds a visibility checkbox to every unlocked layer. */
-  onVisibilityChange?: (id: string, visible: boolean) => void;
-  /** Adds a remove button to every unlocked layer. */
-  onRemove?: (id: string) => void;
-  /** A layer's controls. Returning `null` leaves that layer a one-line row. */
-  renderBody?: (item: LayerListItem) => ReactNode;
-  /** Ids whose body and children are folded away. Giving it makes folding
-   *  controlled; `onCollapsedChange` fires either way. */
-  collapsedIds?: readonly string[];
-  onCollapsedChange?: (ids: string[]) => void;
-  /** Heading above the list. */
-  title?: string;
-  /** Names the list for assistive tech when it has no `title`. */
-  label?: string;
-  /** Kinds the user can add, as buttons beside the title. Shown only with `onAdd`. */
-  addKinds?: string[];
-  onAdd?: (kind: string) => void;
-  /** Shown in place of the list when `items` is empty. */
-  empty?: ReactNode;
-  /** Appended to the root's class list — the module's own names are hashed. */
-  className?: string;
-}
+import type { LayerListItem, LayerListProps, LayerMove } from './layerListProps';
+import { Controls, Handle, Row, rowContextMenu } from './LayerRow';
+export type { LayerListItem, LayerListProps, LayerMove };
 
 /** Returns `items` with `move` applied, for a consumer that holds the tree as state. */
 export function moveLayers(items: LayerListItem[], move: LayerMove): LayerListItem[] {
@@ -448,6 +414,7 @@ function Level({ items, parentId, shared, path, level, grid, name }: LevelProps)
             />
           }
           actions={ghosted ? undefined : controls}
+          onContextMenu={rowContextMenu(shared, item, ghosted)}
         >
           {ghosted ? null : body}
         </PropertyGroup>

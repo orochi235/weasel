@@ -13,7 +13,8 @@ import type { SelectionApi } from 'core/selection/useSelection';
 import { KIT_STANDARD_ACTION_IDS } from 'interactions/actions/useStandardActions';
 import type { ToolsApi } from '../tools/overlayBinding';
 import { SceneCanvas } from './SceneCanvas';
-import { FEATURE_PRESETS, type BaseFeature } from './SceneCanvas/features';
+import type { BaseFeature } from './SceneCanvas/features';
+import { FEATURE_PRESETS } from './SceneCanvas/namedPresets';
 import type { CanvasHelpers } from './useViewHelpers';
 
 type P = { x: number; y: number; width: number; height: number; rotation: number };
@@ -92,7 +93,7 @@ describe('<SceneCanvas features={[preset]}>', () => {
     const row = FEATURE_PRESETS[preset];
     const got = mountWith(preset);
     expect(got.tools).toEqual([...(row.tools ?? [])]);
-    expect(got.actions).toEqual([...row.actions].sort());
+    expect(got.actions).toEqual((row.actions ?? []).map((a) => a.id).sort());
     expect(got.ambient).toEqual(row.ambient ? [row.ambient({}).id] : []);
     for (const chrome of OWNED_CHROME) {
       expect(got.isVisible(chrome), chrome).toBe((row.chrome ?? []).includes(chrome));

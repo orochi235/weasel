@@ -6,6 +6,8 @@
  * missing-engine warning fires once per process. They live here rather than on
  * the package barrel so that reaching for one is a deliberate import of a test
  * surface, not something an application finds by autocomplete.
+ *
+ * @packageDocumentation
  */
 
 export { _resetLayoutCacheForTests } from './layout/layoutCache';

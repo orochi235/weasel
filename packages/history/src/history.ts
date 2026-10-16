@@ -1,3 +1,4 @@
+import { createEmitter } from '@weasel-js/registry';
 import type { Op } from './op';
 import { createJournalInternal, _resumeJournalInternal, type Journal, type BeginJournalOptions } from './journal';
 import {
@@ -275,10 +276,10 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
    *  edit made after stepping back rewrites whatever entry the step left on
    *  top, and one undo then jumps past it. */
   let coalesceAnchorVersion = -1;
-  const listeners = new Set<() => void>();
+  const changed = createEmitter();
   function bump(): void {
     version++;
-    for (const l of listeners) l();
+    changed.emit();
   }
 
   /** Report entries that just became permanently unreachable. A throwing
@@ -636,10 +637,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
       bump();
     },
     getVersion: () => version,
-    subscribe(listener) {
-      listeners.add(listener);
-      return () => { listeners.delete(listener); };
-    },
+    subscribe: changed.subscribe,
     serialize: () => snapshot({ undoStack, redoStack, forks, floorId, nextEntryId }, logger),
     recordEntry(ops: Op[], label: string, options?: RecordEntryOptions): void {
       record(ops, ops, label, options);

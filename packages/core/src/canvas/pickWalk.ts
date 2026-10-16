@@ -16,10 +16,9 @@
  * a locked node is on screen and still out of reach.
  */
 
-import type { Path } from '@weasel-js/geom';
+import { invert, type Affine, type Path } from '@weasel-js/geom';
 import { findShapeSilhouette } from 'canvas/NodeShape';
-import { adapterDerivedPathOf } from './adapterDerivedPath';
-import type { ClipFromPoseFn, DerivedDep, Node, NodeId, Scene } from 'core/scene/types';
+import type { ClipFromPoseFn, CopiesFromPoseFn, DerivedDep, Node, NodeId, Scene } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
 import { unpickedLayerIds } from './pickLayers';
 export { hiddenLayerIds } from './pickLayers';
@@ -27,6 +26,7 @@ import { resolveDerivedPath, sceneDerivedPathOf, scenePaintedPoseOf, showsComput
 import { planeMap, type ParallaxOpts, type PlaneMap } from 'core/viewport/parallax';
 import type { View } from 'core/viewport/view';
 import { clipCarrier } from './planeClips';
+import { reaches } from './pickReach';
 
 /** Shared, never mutated: most scenes are flat and every node returns it. */
 const EMPTY_PARENTS: readonly never[] = [];
@@ -41,6 +41,7 @@ export interface PickCandidate<TPose> {
   /** `false` makes the node transparent to the walk — see `SceneNode.pickable`. */
   pickable?: boolean;
   clipFromPose?: ClipFromPoseFn<TPose>;
+  copiesFromPose?: CopiesFromPoseFn<TPose>;
 }
 
 /**
@@ -107,6 +108,10 @@ export interface PickQuery<TPose> {
    *  A query without it cannot reach nodes on a plane — it would test them
    *  where their poses sit rather than where they are painted. */
   inPlane?(map: PlaneMap): PickQuery<TPose>;
+  /** The same question carried by `m`, an affine from world into the source
+   *  frame of a copy a container draws. A query without it cannot reach
+   *  copies — see `ContainerNode.copiesFromPose`. */
+  inCopy?(m: Affine): PickQuery<TPose>;
 }
 
 /** The clip a container imposes on its subtree, or null when it imposes none. */
@@ -153,6 +158,18 @@ export function pickWalk<TPose>(
     return resolved;
   };
 
+  const copyMaps = new Map<string, readonly Affine[]>();
+  const copiesOf = (ancestor: PickCandidate<TPose>): readonly Affine[] => {
+    let found = copyMaps.get(ancestor.id);
+    if (found === undefined) {
+      const fn = ancestor.kind === 'container' ? ancestor.copiesFromPose : undefined;
+      const copies = fn ? fn(src.poseOf(ancestor), ancestor as never) ?? [] : [];
+      found = copies.map(invert).filter((m): m is Affine => m !== null);
+      copyMaps.set(ancestor.id, found);
+    }
+    return found;
+  };
+
   // One reprojected query per plane per walk; `null` marks a plane this
   // query cannot reach.
   const planeQueries = new Map<string, PickQuery<TPose> | null>();
@@ -167,7 +184,9 @@ export function pickWalk<TPose>(
     return found;
   };
 
-  for (const node of src.order()) {
+  const order = src.order();
+  const copying = order.some((n) => n.kind === 'container' && typeof n.copiesFromPose === 'function');
+  for (const node of order) {
     if (!includeContainers && node.kind === 'container') continue;
     // Transparent to picking: the click belongs to whatever is behind it,
     // which for a label inside a box is the box.
@@ -180,19 +199,7 @@ export function pickWalk<TPose>(
     if (query === null) continue;
     const pose = src.poseOf(node);
     const derived = src.derivedPathOf?.(node);
-    if (!query.hits(node, pose, derived)) continue;
-
-    let clipped = false;
-    for (const ancestor of src.parentsOf(node)) {
-      const clip = clipOf(ancestor);
-      if (clip === null) continue;
-      if (!query.clipAdmits(carry(clip, ancestor.layer, node.layer), node, pose, derived)) {
-        clipped = true;
-        break;
-      }
-    }
-    if (clipped) continue;
-
+    if (!reaches(node, pose, derived, query, () => src.parentsOf(node), copying, { clipOf, copiesOf, carry })) continue;
     out.push(node.id);
   }
 
@@ -360,75 +367,4 @@ export function scenePlaneOf(
   return (layer) => found.get(layer) ?? null;
 }
 
-/** The adapter surface the walk can reach without a `Scene`. */
-interface PickAdapter<TPose> {
-  /** Composed world pose, when the adapter has a composition strategy.
-   *  Falls back to `getPose`, which is the same value under the
-   *  absolute-pose model. */
-  getWorldPose?(id: string): TPose;
-  getPose(id: string): TPose;
-  getNode(id: string): unknown;
-  getChildren(parentId: string | null): readonly string[];
-}
-
-/**
- * A source over a bare `SelectAdapter`, for consumers with no `Scene`.
- *
- * The adapter's tree is walked depth-first, parents before children — the
- * same back-to-front order `renderOrderNodes` produces for a single layer.
- *
- * `gates` come from whichever view is picking, never from the adapter.
- */
-export function adapterPickSource<TPose>(
-  adapter: PickAdapter<TPose>,
-  gates: AdapterPickGates = {},
-): PickSource<TPose> {
-  // Rebuilt per walk: the tree may have changed between queries, and a walk
-  // is the only thing that reads it.
-  let parents = new Map<string, PickCandidate<TPose>>();
-
-  // The adapter composes if it has a strategy; `getPose` alone is the node's
-  // own pose, which is not where a framed child is drawn.
-  const worldPose = (id: string): TPose =>
-    (typeof adapter.getWorldPose === 'function' ? adapter.getWorldPose(id) : adapter.getPose(id));
-
-  const derived = adapterDerivedPathOf(adapter);
-  const nodeOf = (id: string): PickCandidate<TPose> => {
-    const raw = adapter.getNode(id) as Partial<PickCandidate<TPose>>;
-    return { ...raw, id, pose: worldPose(id) } as PickCandidate<TPose>;
-  };
-
-  return {
-    order() {
-      const out: PickCandidate<TPose>[] = [];
-      const next = new Map<string, PickCandidate<TPose>>();
-      const visit = (parentId: string | null, parent: PickCandidate<TPose> | null): void => {
-        for (const childId of adapter.getChildren(parentId)) {
-          const node = nodeOf(childId);
-          if (parent) next.set(childId, parent);
-          out.push(node);
-          visit(childId, node);
-        }
-      };
-      visit(null, null);
-      parents = next;
-      return out;
-    },
-    ...(gates.alphaOf ? { alphaOf: gates.alphaOf } : {}),
-    ...(gates.layerIsPainted ? { layerIsPainted: gates.layerIsPainted } : {}),
-    ...(gates.planeOf ? { planeOf: gates.planeOf } : {}),
-    poseOf: (node) => worldPose(node.id),
-    derivedPathOf: (node: PickCandidate<TPose>) => derived(node.id),
-    parentsOf(node) {
-      const chain: PickCandidate<TPose>[] = [];
-      let cur = parents.get(node.id);
-      const seen = new Set<string>();
-      while (cur && !seen.has(cur.id)) {
-        seen.add(cur.id);
-        chain.push(cur);
-        cur = parents.get(cur.id);
-      }
-      return chain;
-    },
-  };
-}
+export { adapterPickSource } from './adapterPickSource';

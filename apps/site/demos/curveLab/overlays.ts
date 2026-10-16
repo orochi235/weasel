@@ -1,6 +1,7 @@
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import type { RenderLayer, View } from '@weasel-js/core';
-import type { CurveRepresentation, SharedAnchor } from '@weasel-js/geom/curves';
+import { combTeeth, polylineFromPoints } from '@weasel-js/geom';
+import { curvatureSourceOf, type CurveRepresentation, type SharedAnchor } from '@weasel-js/geom/curves';
 
 interface ViewLike { x: number; y: number; scale: { x: number; y: number } }
 
@@ -91,7 +92,7 @@ export function createCurvatureCombLayer(
   getAnchors: () => SharedAnchor[],
   scale = 600,
 ): RenderLayer<unknown> {
-  const SAMPLES = 64;
+  const paint = { color: 'rgba(255, 120, 80, 0.6)' };
   return {
     id: `curve-lab-comb-${rep.kind}`,
     label: 'Curvature comb',
@@ -99,30 +100,17 @@ export function createCurvatureCombLayer(
     draw: (_data, view: View) => {
       const anchors = getAnchors();
       if (anchors.length < 2) return [];
-      const out: DrawCommand[] = [];
-      const eps = 1 / SAMPLES;
-      for (let i = 0; i <= SAMPLES; i++) {
-        const t = i / SAMPLES;
-        const p = rep.evaluate(anchors, t);
-        const t0 = Math.max(0, t - eps);
-        const t1 = Math.min(1, t + eps);
-        const p0 = rep.evaluate(anchors, t0);
-        const p1 = rep.evaluate(anchors, t1);
-        const tx = p1.x - p0.x;
-        const ty = p1.y - p0.y;
-        const tLen = Math.hypot(tx, ty) || 1;
-        const nx = -ty / tLen;
-        const ny = tx / tLen;
-        const k = rep.curvatureAt(anchors, t);
-        const len = k * scale;
-        const [sx, sy] = w2s(p.x, p.y, view);
-        const [ex, ey] = w2s(p.x + nx * len, p.y + ny * len, view);
-        out.push({
-          kind: 'path',
-          path: linePath(sx, sy, ex, ey),
-          stroke: { paint: { color: 'rgba(255, 120, 80, 0.6)' }, width: 1 },
-        } as DrawCommand);
-      }
+      const teeth = combTeeth(curvatureSourceOf(rep, anchors), { scale, samplesPerSegment: 65 });
+      const out: DrawCommand[] = teeth.map((tooth) => {
+        const [sx, sy] = w2s(tooth.x, tooth.y, view);
+        const [ex, ey] = w2s(tooth.tipX, tooth.tipY, view);
+        return { kind: 'path', path: linePath(sx, sy, ex, ey), stroke: { paint, width: 1 } } as DrawCommand;
+      });
+      const tips = teeth.map((tooth) => {
+        const [x, y] = w2s(tooth.tipX, tooth.tipY, view);
+        return { x, y };
+      });
+      out.push({ kind: 'path', path: polylineFromPoints(tips), stroke: { paint, width: 1.5 } } as DrawCommand);
       return out;
     },
   };

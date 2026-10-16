@@ -10,8 +10,8 @@ import {
   type SelectionApi,
 } from '@weasel-js/core';
 import { decimal, qty } from '@weasel-js/quantity';
-import { Checkbox, LayerList, type LayerListItem, SidebarPanel, useSceneLayerList } from '@weasel-js/ui';
-import { type CSSProperties, type ReactElement, useSyncExternalStore } from 'react';
+import { Checkbox, LayerList, type LayerListItem, SidebarPanel, useContextMenu, useSceneLayerList } from '@weasel-js/ui';
+import { type CSSProperties, type MouseEvent, type ReactElement, useSyncExternalStore } from 'react';
 import type { DrawScene, WeaselDrawData } from './drawDocument';
 import type { PanelChrome } from './panels';
 import { usePref } from './prefs';
@@ -108,6 +108,13 @@ export function LayersPanel(props: LayersPanelProps): ReactElement {
       base.onSelect(ids);
     }
   };
+  const selectedIds = docSelected ? [BACKGROUND_ROW_ID] : base.selectedIds;
+  const openRowMenu = useContextMenu('draw.layerRow');
+  const onRowContextMenu = (id: string, e: MouseEvent): void => {
+    if (id === BACKGROUND_ROW_ID) return;
+    if (!selectedIds.includes(id)) onSelect([id]);
+    openRowMenu(e);
+  };
 
   return (
     <SidebarPanel
@@ -120,8 +127,9 @@ export function LayersPanel(props: LayersPanelProps): ReactElement {
       <LayerList
         {...base}
         items={[...base.items, backgroundRow]}
-        selectedIds={docSelected ? [BACKGROUND_ROW_ID] : base.selectedIds}
+        selectedIds={selectedIds}
         onSelect={onSelect}
+        onRowContextMenu={onRowContextMenu}
         empty="No nodes"
       />
     </SidebarPanel>

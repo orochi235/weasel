@@ -139,7 +139,7 @@ export function attachHud(
         for (const cmd of frameCommands(w, ctx, focus)) out.push(cmd);
       }
       // Pass 3: the focus ring, over every frame so a neighbor can't hide it.
-      if (f && hud.focusVisible && !f.hidden) out.push(focusRing(f, theme['--wzl-focus-ring']));
+      if (f && hud.focusVisible && !f.hidden && f.focusRing !== false) out.push(focusRing(f, theme['--wzl-focus-ring']));
       return out;
     },
     hitTest: (worldX, worldY, _data, view, _dims): LayerHit | null => {

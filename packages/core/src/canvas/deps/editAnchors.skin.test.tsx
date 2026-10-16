@@ -36,6 +36,13 @@ function setup() {
     setSelectedAnchors: (next) => { selected = next; },
     getMarquee: () => null,
     setMarquee: () => {},
+    getSelectedMark: () => null,
+    setSelectedMark: () => {},
+    getExtensions: () => [],
+    getHandleLocks: () => null,
+    setHandleLocks: () => {},
+    getTool: () => null,
+    setTool: () => {},
   };
   const loose = scene as unknown as Scene<unknown, string, unknown>;
   const adapter = {

@@ -1,4 +1,5 @@
 import type { PlaneMap } from 'core/viewport/parallax';
+import type { Bounds } from 'core/viewport/fitViewToBounds';
 
 /**
  * What a behavior needs to take a pose between the frame a node stores it in
@@ -18,4 +19,8 @@ export interface GestureFrames<TPose> {
   /** How the world the gesture edits in maps into the world `layer`'s nodes
    *  are stored in, read now. Null when they are the same world. */
   planeOf(layer: string): PlaneMap | null;
+  /** The axis-aligned box `id` covers drawn at `worldPose`: its stroke
+   *  included unless the canvas opted out. What a snap that lines boxes up
+   *  measures, so it agrees with the selection chrome. */
+  drawnBounds?(id: string, worldPose: TPose): Bounds;
 }

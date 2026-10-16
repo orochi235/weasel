@@ -5,6 +5,7 @@ import { asNodeId } from 'core/scene/types';
 import { createPoseOverrides } from 'core/scene/poseOverrides';
 import type { NodeId } from 'core/scene/types';
 import type { BoundGesture } from '@weasel-js/routing';
+import { taggedActionItems } from '@weasel-js/routing';
 import { rotatedRectCorners } from '../rotate/geometry';
 
 interface Pose { x: number; y: number; width: number; height: number; rotation?: number }
@@ -326,5 +327,11 @@ describe('flip about a reference', () => {
     const scene = makeStubScene(initial);
     runFlip({ selection: makeSelection(['a']), scene, pointer: { get: () => null } }, { axis: 'x', pivot: 'pointer' });
     expect(scene.batchLog).toHaveLength(0);
+  });
+});
+
+describe('flip in a search', () => {
+  it('is gathered under "mirror", each way', () => {
+    expect(taggedActionItems([flipAction], 'mirror').map((i) => i.label)).toEqual(['Flip Horizontal', 'Flip Vertical']);
   });
 });

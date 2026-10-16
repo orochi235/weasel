@@ -21,10 +21,13 @@ import {
   type DepName,
 } from './depRegistry';
 import { buildDepsFromRequires } from './buildDeps';
+import type { ActionDeps } from './invoker';
 import type { Dispatcher } from '../dispatcher/dispatcher';
 import { validateActionId, validateActionDefaultBinding, type ActionsRegistry } from './registry';
+import { createMenuHost, type MenuHost } from '../../menus/menuHost';
+import { MenuHostContext } from '../../menus/MenuHostContext';
 import { pushOwner, ScopeNode } from './scopeNode';
-import { tuneAction, type ActionTuning } from './tuning';
+import { tuneAction, tunedParams, type ActionTuning } from './tuning';
 
 /** @internal Provided by `<ActionsProvider>`, `<InputScope>` and `<Yoke>`. */
 export const ActionsContext = createContext<ActionsRegistry | null>(null);
@@ -32,9 +35,9 @@ export const ActionsContext = createContext<ActionsRegistry | null>(null);
 /** The deps an action is invoked with: its declared `requires` when it has
  *  one, the legacy fixed bag otherwise. The fixed bag has no `applyOps`, so an
  *  action that needs the consumer's history must declare it. */
-function depsFor(a: Action, r: DepRegistry | null): Record<string, unknown> {
+function depsFor(a: Action, r: DepRegistry | null): ActionDeps {
   if (!r) return {};
-  if (a.requires) return buildDepsFromRequires(a, r) as Record<string, unknown>;
+  if (a.requires) return buildDepsFromRequires(a, r);
   return {
     selection: r.get('selection' as DepName),
     scene: r.get('scene' as DepName),
@@ -42,7 +45,7 @@ function depsFor(a: Action, r: DepRegistry | null): Record<string, unknown> {
     view: r.get('view' as DepName),
     activeTool: r.get('activeTool'),
     booleansAdapter: r.get('booleansAdapter' as DepName),
-  };
+  } as ActionDeps;
 }
 
 /**
@@ -57,6 +60,7 @@ export class ActionsNode extends ScopeNode<ActionsNode> {
   private readonly tunings = new Map<string, ActionTuning[]>();
   private readonly dispatchers: Dispatcher[] = [];
   private cache: { version: number; leaf: ActionsNode; list: readonly Action[] } | null = null;
+  private host: MenuHost | null = null;
   /** Called on `activate`, so a scope's dep and tool nodes move with it. */
   readonly onActivate: (() => void)[] = [];
 
@@ -78,13 +82,19 @@ export class ActionsNode extends ScopeNode<ActionsNode> {
     return undefined;
   }
 
-  /** `a` under every tuning for its id from the root down to here. */
-  private tuned(a: Action): Action {
+  /** Every tuning for `id` from the root down to here, root first. */
+  private tuningsOf(id: string): ActionTuning[] {
     const tunings: ActionTuning[] = [];
     for (const n of this.chain()) {
-      const stack = n.tunings.get(a.id);
+      const stack = n.tunings.get(id);
       if (stack) tunings.unshift(...stack);
     }
+    return tunings;
+  }
+
+  /** `a` under every tuning for its id from the root down to here. */
+  private tuned(a: Action): Action {
+    const tunings = this.tuningsOf(a.id);
     return tunings.length ? tuneAction(a, tunings) : a;
   }
 
@@ -110,6 +120,24 @@ export class ActionsNode extends ScopeNode<ActionsNode> {
       if (r) return r;
     }
     return null;
+  }
+
+  /** The deps `a` is invoked with from here: the active scope's, which is
+   *  what `trigger` and `begin` run it with. */
+  depsOf(a: Action): ActionDeps {
+    return depsFor(a, this.start().deps());
+  }
+
+  /** The menu host of this node's tree, made by its root on first ask. Rows
+   *  resolve and run against the active scope, as chrome's `trigger` does. */
+  menuHost(): MenuHost {
+    const root = [...this.chain()].at(-1)!;
+    return root.host ??= createMenuHost({
+      actions: () => root.registry.list(),
+      depsFor: (a) => root.depsOf(a),
+      trigger: (id, params) => root.registry.trigger(id, params),
+      activeTool: () => root.start().deps()?.get('activeTool')?.active ?? null,
+    });
   }
 
   private dispatcher(): Dispatcher | null {
@@ -187,15 +215,18 @@ export class ActionsNode extends ScopeNode<ActionsNode> {
         this.changed();
       };
     },
+    paramsOf: (id: string, given?: Record<string, unknown>) => tunedParams(this.tuningsOf(id), given),
     list: () => this.snapshot(),
     trigger: (id: string, params?: Record<string, unknown>) => {
       const leaf = this.start();
       const a = leaf.resolve(id);
       if (!a?.invoker || a.invoker.timing !== 'immediate') return false;
-      const deps = depsFor(a, leaf.deps());
-      if (!evaluateEnabled(a, deps as never).enabled) return false;
+      const deps = leaf.depsOf(a);
+      const { worldX: x, worldY: y } = params ?? {};
+      const at = typeof x === 'number' && typeof y === 'number' ? { x, y } : undefined;
+      if (!evaluateEnabled(a, deps, at).enabled) return false;
       try {
-        a.invoker.run(deps as never, params);
+        a.invoker.run(deps, params);
       } catch (err) {
         console.error(`weasel ActionsRegistry: action "${id}" threw`, err);
       }
@@ -208,7 +239,7 @@ export class ActionsNode extends ScopeNode<ActionsNode> {
       const a = leaf.resolve(id);
       const disp = leaf.dispatcher();
       if (!a || !disp) return null;
-      return disp.beginUiOngoing(id, depsFor(a, leaf.deps()) as never, params);
+      return disp.beginUiOngoing(id, leaf.depsOf(a), params);
     },
     activate: () => this.activate(),
     isActive: () => this.isActive(),
@@ -240,7 +271,11 @@ export function ActionsProvider({ children }: { children: ReactNode }): ReactEle
   const depReg = useOptionalDepRegistry();
   const depRegRef = useLatest<DepRegistry | null>(depReg);
   const node = useMemo(() => new ActionsNode(null, true, () => depRegRef.current), [depRegRef]);
-  return <ActionsContext.Provider value={node.registry}>{children}</ActionsContext.Provider>;
+  return (
+    <ActionsContext.Provider value={node.registry}>
+      <MenuHostContext.Provider value={node.menuHost()}>{children}</MenuHostContext.Provider>
+    </ActionsContext.Provider>
+  );
 }
 
 /**

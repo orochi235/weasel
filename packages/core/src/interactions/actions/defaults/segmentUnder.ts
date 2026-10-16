@@ -5,7 +5,7 @@ import { pathToAnchors, segmentAt, type AnchorSet, type PolygonPath, type Segmen
 /** Screen-px reach of a segment, and the radius around each anchor that
  *  stays the anchor's. Matches the path-anchor affordance's default hit
  *  radius, so the two regions meet without a gap. */
-const SEGMENT_HIT_PX = 8;
+export const SEGMENT_HIT_PX = 8;
 
 /** The segment of the path being edited under world point `(x, y)`, or null
  *  off every segment, on an anchor, or with no path in edit mode. */
@@ -20,7 +20,7 @@ export function segmentUnder(
   if (!path || path.kind !== 'polygon') return null;
   const scale = deps?.view?.get().scale;
   const hit = segmentAt(pathToAnchors(path) as AnchorSet, x, y, {
-    tolerancePx: SEGMENT_HIT_PX,
+    tolerancePx: deps?.kitSettings?.get('targets.segmentHitPx') ?? SEGMENT_HIT_PX,
     ...(scale ? { scale } : {}),
   });
   return hit ? { dep, path, hit } : null;

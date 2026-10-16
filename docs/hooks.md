@@ -17,9 +17,10 @@ option fields not covered here are in the source — every export carries JSDoc.
 ## Actions and bindings
 
 `<SceneCanvas>` mounts an `<ActionsProvider>` and a `<DepRegistryProvider>`,
-then calls `useStandardActions` to register the kit-standard descriptors its
-`features` presets name (`FEATURE_ACTION_IDS`) and its tools bind — none on a
-bare canvas, all of them under `features={['draw']}`. A
+then registers the standard actions its `features` presets carry
+(`FEATURE_ACTION_IDS` for core's) and the kit actions its tools bind — none on
+a bare canvas, all of core's under `features={['draw']}`. `useStandardActions`
+does the same for a host of your own, taking any action list. A
 descriptor declares *what* it does (`invoker.run`), *what it needs*
 (`requires`, resolved from the dep registry at dispatch time), *when it's
 allowed* (`eligible` / `enabled`), and *how it's reached by default*
@@ -89,6 +90,7 @@ via a tool's `bindings` or a `trigger` call.
 | `nudge.up` / `.down` / `.left` / `.right` | Arrow key (`magnitude: 'small'`), Shift+Arrow (`'big'`) |
 | `reorder.forward` | Mod+] (`distance: 'adjacent'`), Mod+Alt+] (`'extreme'`) |
 | `reorder.backward` | Mod+[ (`'adjacent'`), Mod+Alt+[ (`'extreme'`) |
+| `pathEditTool.exit` | Escape (channel `*`, phase `initial`) while a path-edit tool is on — puts the tool down, so a second Escape leaves path edit |
 | `exitPathEdit` | Escape |
 | `deleteAnchors` | Delete, Backspace (phase `initial`) |
 | `nudgeAnchors.<dir>` | Arrow / Shift+Arrow, as `nudge` |
@@ -104,7 +106,10 @@ curly quote, so both codepoints are listed.
 | `move` | drag on `selected-body` |
 | `editAnchors` | drag whose press hit an anchor or control-handle affordance; it ties `move` on specificity, and `move` turns those presses down |
 | `bendSegment` | drag whose press hit the edited path's `segment` affordance, between anchors; `move` turns those down too |
+| `balanceHandles` | drag whose press hit a curved segment's `balance:N` grip, shown while chrome-caps shows `path-edit.balance`; `move` turns those down too, and a length lock in force (`handleLock.length`, or Mod) holds it still |
+| `equalizeHandles` | double-click on a `balance:N` grip |
 | `marqueeAnchors` | drag on `empty` |
+| `simplifyBrush` | drag anywhere, while path edit's `simplifyBrush` tool is on; `editAnchors`, `bendSegment`, `balanceHandles`, `equalizeHandles`, `marqueeAnchors`, and `selectAnchor` stand aside while any path-edit tool is |
 | `enterPathEdit` | double-click on a body |
 | `selectAnchor` | click |
 | `insertPathAnchor` | Alt+click |

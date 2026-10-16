@@ -25,17 +25,17 @@ import type React from 'react';
 import { forwardRef, useEffect, useMemo, useRef, useState } from 'react';
 import { DeviceProfileProvider, useDeviceProfile } from '../core/device/useDeviceProfile';
 import { dlog } from '../debug/flag';
-import type { DebugConfig } from '../debug/types';
 import type { ReflowTransition } from '../layout/types';
 import { useTestHook } from '../test-hook/useTestHook';
 import { Canvas } from './Canvas';
 import { CanvasView } from './CanvasView';
-import { DevHuds } from './SceneCanvas/DevHuds';
+import { canvasDebug, DevHuds } from './SceneCanvas/DevHuds';
 import { GestureDispatcherMounter } from './SceneCanvas/GestureDispatcherMounter';
 import { PointerProviderIfRoot, PointerPublisher } from './SceneCanvas/PointerProviderIfRoot';
 import { StandardActionsRegistrar } from './SceneCanvas/StandardActionsRegistrar';
 import { ToolKeybindingsMounter } from './SceneCanvas/ToolKeybindingsMounter';
-import type { FeatureBindingOptions } from './SceneCanvas/features';
+import type { FeatureBindingOptions, PresetSource } from './SceneCanvas/features';
+import { CORE_PRESET_SOURCE } from './SceneCanvas/namedPresets';
 import type { BridgeAdapter, SceneCanvasProps } from './SceneCanvas/props';
 import { actionsMuting } from './SceneCanvas/useActionsPropResolver';
 import { useCanvasDispatcher } from './SceneCanvas/useCanvasDispatcher';
@@ -63,15 +63,8 @@ export type { BuiltinToolOptions } from './SceneCanvas/useBuiltinShapeTools';
 export { defaultDrawOne } from './defaultDrawOne';
 export { rotateAroundAABBCenter } from './poseRotation';
 
-/** `<SceneCanvas debug>` minus the flag only SceneCanvas reads. */
-function canvasDebug(debug: (DebugConfig & { slops?: boolean }) | false): DebugConfig | false {
-  if (debug === false) return false;
-  const { slops: _slops, ...rest } = debug;
-  return rest;
-}
-
 function SceneCanvasInner<TData, TLayer extends string, TPose>(
-  props: SceneCanvasProps<TData, TLayer, TPose>,
+  props: SceneCanvasProps<TData, TLayer, TPose> & { presetSource: PresetSource },
   ref: React.ForwardedRef<SceneCanvasApi>,
 ) {
   const {
@@ -90,7 +83,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     selectionOptions,
     selectable = true,
     tools: toolsProp,
-    features,
+    features, presetSource,
     enableKeybindings = true,
     claimKeys = false,
     enableGestureDispatcher = true,
@@ -167,14 +160,15 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     scene, supplied: selectionProp, options: selectionOptions, selectable, describeKind,
   });
 
-  // `isAllowed` is absent, not a predicate, when no mode registry is wired:
-  // see `PathEditSource.isAllowed`.
+  const enabled = useEnabledFeatures(features, presetSource.named, viewport !== undefined);
+  // `isAllowed` is absent, not a predicate, when no mode registry is wired: see `PathEditSource.isAllowed`.
   const pathEditState = usePathEditState({
     host: pathEdit,
     isAllowed: getActiveMode
       ? () => getActiveMode().allowedCapabilities.has('edits-anchors')
       : undefined,
     isSelectedNode: (id) => isSelectedNode(scene, selection, id),
+    extensions: enabled.pathEdit,
   });
 
   const selectToolWithDefaults = useMemo(() => ({
@@ -225,7 +219,6 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     pickBest: internalPickBest, nodes: adapter, kindOfData, isPointerInteractive,
   });
 
-  const enabled = useEnabledFeatures(features, viewport !== undefined);
   const { tools, internal: internalTools, takeover: toolsTakeover } = useCanvasTools({
     select: internalSelect,
     enabled,
@@ -239,8 +232,8 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     modes,
     onToolsCreated,
   });
-  const { contributions: featureContributions, standardActionsExclude } = useFeatureBindings({
-    enabled,
+  const { contributions: featureContributions, standardActions } = useFeatureBindings({
+    enabled, pool: presetSource.pool,
     tools,
     move: internalMoveOptions as FeatureBindingOptions['move'],
     rotate: (selectToolOpts?.rotate || undefined) as FeatureBindingOptions['rotate'],
@@ -380,11 +373,11 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
           scene={scene}
           adapter={adapter as unknown as BridgeAdapter}
           actions={resolvedActions} tune={tune}
-          excludeActions={standardActionsExclude}
+          standardActions={standardActions}
           currentViewRef={viewRef}
           onViewChange={viewState.setViewFromInput}
           resizeOptions={selectToolOpts?.resize as UseResizeOptions<unknown> | undefined}
-          poseDescriptor={descriptor as PoseDescriptor<unknown>}
+          poseDescriptor={descriptor as PoseDescriptor<unknown>} boundsIncludeStroke={geometry?.boundsIncludeStroke ?? true}
           geometryProjection={geometryProjection}
           dispatcher={dispatcher}
           pickEvery={internalPickEvery}
@@ -459,7 +452,9 @@ const SceneCanvasInnerForwardRef = forwardRef(SceneCanvasInner);
 // The canvas's input scope sits above `SceneCanvasInner`, whose own hooks
 // (`useTools` among them) must already read this canvas's tool and registries.
 // Its device profile too, so the canvas and everything under it share one.
-function SceneCanvasWrapper<TData, TLayer extends string, TPose>(
+/** A scene canvas resolving its `features` through `source`. */
+export function renderSceneCanvas<TData, TLayer extends string, TPose>(
+  source: PresetSource,
   { device, ...props }: SceneCanvasProps<TData, TLayer, TPose>,
   ref: React.ForwardedRef<SceneCanvasApi>,
 ) {
@@ -467,13 +462,20 @@ function SceneCanvasWrapper<TData, TLayer extends string, TPose>(
     <InputScope yoke={props.yoke}>
       <DeviceProfileProvider value={device}>
         <ViewRegistryProvider>
-          <SceneCanvasInnerForwardRef {...(props as SceneCanvasProps<unknown, string, unknown>)} ref={ref} />
+          <SceneCanvasInnerForwardRef {...(props as SceneCanvasProps<unknown, string, unknown>)} presetSource={source} ref={ref} />
         </ViewRegistryProvider>
       </DeviceProfileProvider>
     </InputScope>
   );
 }
 
+function SceneCanvasWrapper<TData, TLayer extends string, TPose>(
+  props: SceneCanvasProps<TData, TLayer, TPose>, ref: React.ForwardedRef<SceneCanvasApi>,
+) {
+  return renderSceneCanvas(CORE_PRESET_SOURCE, props, ref);
+}
+
+// Marked pure so a bundle using only `LeanSceneCanvas` drops it, and core's named presets with it.
 /**
  * The canvas component: renders a `Scene` and wires the interaction stack
  * around it.
@@ -488,7 +490,7 @@ function SceneCanvasWrapper<TData, TLayer extends string, TPose>(
  * Its ref exposes a `SceneCanvasApi` for the imperative operations that do not
  * fit a prop (view control, hit queries, redraw requests).
  */
-export const SceneCanvas = forwardRef(SceneCanvasWrapper) as <
+export const SceneCanvas = /* @__PURE__ */ forwardRef(SceneCanvasWrapper) as <
   TData, TLayer extends string, TPose,
 >(
   props: SceneCanvasProps<TData, TLayer, TPose> & { ref?: React.Ref<SceneCanvasApi> },
@@ -496,10 +498,6 @@ export const SceneCanvas = forwardRef(SceneCanvasWrapper) as <
 
 export { DEFAULT_HANDLE_SIZE, mergeLayersWithDefaults, BUILTIN_TOOL_IDS } from './SceneCanvas/props';
 export type {
-  SceneCanvasProps,
-  SceneCanvasHit,
-  SceneCanvasLayers,
-  SceneCanvasLongPress,
-  BuiltinToolId,
+  SceneCanvasProps, SceneCanvasHit, SceneCanvasLayers, SceneCanvasLongPress, BuiltinToolId,
 } from './SceneCanvas/props';
 export type { CoordTraceEntry } from './SceneCanvas/coordTrace';

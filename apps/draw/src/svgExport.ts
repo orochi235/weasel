@@ -5,14 +5,21 @@
  * rides on the node so the serializer emits a `rotate` transform.
  */
 import {
+  type Fill,
+  type Path,
   type Scene,
+  type Stroke,
+  boundsOfPath,
   composesFrames,
   composeWorldPose,
   definesFrame,
+  derivedDepOf,
   documentPose,
   embedWeaselMetadataInSvg,
   fillInPoseFrame,
   isAnnotationNode,
+  pathEffectOf,
+  pathEffectParts,
   pathInPoseFrame,
   shapeGeneratorOf,
   unionAABB,
@@ -72,25 +79,51 @@ function leafToObj(id: string, data: WeaselDrawData, pose: WeaselDrawPose): Obj 
     return o;
   }
   if (data.path == null) return null;
-  const path = pathInPoseFrame(data.path, pose);
   const generator = shapeGeneratorOf(data);
+  return {
+    ...pathObj(id, pathInPoseFrame(data.path, pose), pose, data.fill, data.stroke),
+    ...(generator ? toolOfGenerator(generator) : {}),
+  };
+}
+
+/** A path already in page coordinates, boxed by `pose`, as a `PathObj`. */
+function pathObj(
+  id: string,
+  path: Path,
+  pose: WeaselDrawPose,
+  fill: Fill | null | undefined,
+  stroke: Stroke | null | undefined,
+): PathObj {
   const o: PathObj = {
     id,
     tool: 'imported',
-    ...(generator ? toolOfGenerator(generator) : {}),
     x: pose.x, y: pose.y, width: pose.width, height: pose.height,
     path,
     // The path above is baked into page coordinates, and the serializer
     // emits gradients as `userSpaceOnUse` — so a box-relative gradient has
     // to be resolved against the same pose.
-    fill: data.fill?.paint == null ? null : { ...data.fill, paint: fillInPoseFrame(data.fill.paint, pose) },
+    fill: fill?.paint == null ? null : { ...fill, paint: fillInPoseFrame(fill.paint, pose) },
     // A stroke with no paint draws nothing, and exports as no stroke.
-    stroke: data.stroke?.paint == null
-      ? null
-      : { ...data.stroke, paint: fillInPoseFrame(data.stroke.paint, pose) },
+    stroke: stroke?.paint == null ? null : { ...stroke, paint: fillInPoseFrame(stroke.paint, pose) },
   };
   if (pose.rotation) o.rotation = pose.rotation;
   return o;
+}
+
+/** A live path effect as the paths it shows — what Expand to Paths would
+ *  make of it, each part in its own paint. */
+function effectToObjs<TLayer extends string>(scene: DrawScene<TLayer>, id: string): PathObj[] {
+  const node = scene.get(id as never)!;
+  const deps = (Array.isArray(node.dependsOn) ? node.dependsOn : []).map((d) => derivedDepOf(scene, d));
+  return (pathEffectParts(node, deps) ?? []).map((part, k) => {
+    const { x, y, width, height } = boundsOfPath(part.path);
+    const own = node.data as WeaselDrawData;
+    return pathObj(
+      `${id}-${k}`, part.path, { x, y, width, height },
+      part.fill === undefined ? own.fill : part.fill,
+      part.stroke === undefined ? own.stroke : part.stroke,
+    );
+  });
 }
 
 export interface SceneToSvgOptions {
@@ -157,6 +190,7 @@ function sceneSourceOf<TLayer extends string>(
     objOf: (id) => {
       const node = scene.get(id as never);
       if (!node || node.kind !== 'leaf') return undefined;
+      if (pathEffectOf(node) !== null) return effectToObjs(scene, id);
       return leafToObj(id, node.data, poseOf(id)!) ?? undefined;
     },
   };

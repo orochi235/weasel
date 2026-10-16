@@ -1,0 +1,14 @@
+/* The path-effect labs: the trial's scene canvas, with the effect actions'
+   bar floating over its top-left corner. */
+.frame {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.bar {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 1;
+}

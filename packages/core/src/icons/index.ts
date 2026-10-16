@@ -5,6 +5,8 @@
  *  All icons are 20×20-viewBox `<svg>`s rendered in `currentColor`, with
  *  an optional `size` prop for re-scaling. Sized for direct embedding in
  *  consumer tool buttons or as `Tool.presentation.icon` defaults.
+ *
+ * @packageDocumentation
  */
 export { default as SelectIcon } from './SelectIcon';
 export { default as LassoIcon } from './LassoIcon';

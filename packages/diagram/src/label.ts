@@ -13,13 +13,17 @@ import {
   translatePoseViaDescriptor,
   type DerivedDep,
   type PoseDescriptor,
+  type Vec2,
 } from '@weasel-js/core';
 
 /** Where along an edge a label sits. */
 export interface DiagramLabel {
   /** `'start'`, `'mid'` and `'end'` are 0, 0.5 and 1; a number is that
-   *  fraction of the route's length. */
-  at: 'start' | 'mid' | 'end' | number;
+   *  fraction of the route's length. `{ waypoint: k }` is the edge's
+   *  waypoint `k`, and a fraction between two waypoints is that far along the
+   *  straight run between them — where `layered` leaves a label room. An
+   *  edge without that waypoint puts the label at `'mid'`. */
+  at: 'start' | 'mid' | 'end' | number | { waypoint: number };
   /** World units between the route and the label's near side, to the **left
    *  of the direction of travel** — above a left-to-right edge. Default 0,
    *  which centers the label on the line. */
@@ -37,6 +41,25 @@ export function diagramLabelOf(node: { data: unknown }): DiagramLabel | null {
   const label = (trait as { label?: unknown }).label;
   if (label === null || typeof label !== 'object') return null;
   return 'at' in label ? (label as DiagramLabel) : null;
+}
+
+/** The point `k` waypoints along an edge's own waypoints, and the direction of
+ *  the run it is on; `null` when the edge has no such waypoint. Read off the
+ *  edge's data rather than its path, which only passes through them. */
+function atWaypoint(data: unknown, k: number): { point: Vec2; tangent: Vec2 } | null {
+  const trait = (data as { diagram?: { waypoints?: unknown } } | null)?.diagram;
+  const points = trait?.waypoints;
+  if (!Array.isArray(points) || points.length < 2 || !(k >= 0) || k > points.length - 1) return null;
+  const i = Math.min(Math.floor(k), points.length - 2);
+  const a = points[i] as Vec2;
+  const b = points[i + 1] as Vec2;
+  const len = Math.hypot(b.x - a.x, b.y - a.y);
+  if (len === 0) return null;
+  const t = k - i;
+  return {
+    point: { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t },
+    tangent: { x: (b.x - a.x) / len, y: (b.y - a.y) / len },
+  };
 }
 
 /** Options for {@link labelDerivePose}. `geometry` defaults to the kit's
@@ -64,8 +87,9 @@ export function labelDerivePose<TPose>(
     const path = deps[0]?.path ?? null;
     if (path === null) return null;
 
-    const t = typeof label.at === 'number' ? label.at : NAMED[label.at] ?? 0.5;
-    const station = pointAlongPath(path, t);
+    const station = typeof label.at === 'object'
+      ? atWaypoint(deps[0]!.node.data, label.at.waypoint) ?? pointAlongPath(path, 0.5)
+      : pointAlongPath(path, typeof label.at === 'number' ? label.at : NAMED[label.at] ?? 0.5);
     if (station === null) return null;
 
     const bounds = geometry.getBounds(node.pose);

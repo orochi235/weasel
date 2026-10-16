@@ -7,4 +7,5 @@ export const OVERLAY_ROLE_STROKES: Readonly<Record<string, CommandStroke & { pai
   cut: { paint: { color: '#e23b3b' }, width: 1, dash: [6, 4] },
   connector: { paint: { color: '#7ba7c7' }, width: 2, dash: [4, 4] },
   measure: { paint: { color: '#1f8fff' }, width: 1 },
+  lock: { paint: { color: '#d9480f' }, width: 1.5 },
 };

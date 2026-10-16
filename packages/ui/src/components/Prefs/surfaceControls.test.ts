@@ -42,10 +42,19 @@ describe('prefFieldProps on a surface', () => {
     expect(controls(leaf('boolean'))).toEqual([undefined, undefined, undefined]);
   });
 
-  it('writes when the surface writes', () => {
+  it('writes typed text as it is typed only where the surface writes as it goes', () => {
     const text = leaf('string');
-    const drafts = SURFACES.map((surface) => 'onInput' in prefFieldProps(text, { value: '', setValue: () => {} }, surface)!);
-    expect(drafts).toEqual([false, true, false]);
+    const writesPerKey = SURFACES.map((surface) => {
+      let wrote = false;
+      const field = prefFieldProps(text, { value: '', setValue: () => (wrote = true) }, surface)!;
+      if (field.kind === 'string') field.onInput?.('a');
+      return wrote;
+    });
+    expect(Object.fromEntries(SURFACES.map((surface, i) => [surface, writesPerKey[i]]))).toEqual({
+      form: false,
+      panel: false,
+      lab: true,
+    });
   });
 });
 

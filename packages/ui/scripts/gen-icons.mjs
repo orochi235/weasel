@@ -31,6 +31,7 @@ import { PARAGRAPH, TEXT } from './icons/text.mjs';
 import { STATUSES } from './icons/status.mjs';
 import { VARIANTS } from './icons/variants.mjs';
 import { MARKS } from './icons/marks.mjs';
+import { KEYS } from './icons/keys.mjs';
 
 const RENAME = { zoom: 'zoomIn' };
 
@@ -45,6 +46,7 @@ const GROUPS = [
   ['Playback', PLAYBACK],
   ['Paging', PAGING],
   ['Arrows', ARROWS],
+  ['Key legends', KEYS],
   ['Hierarchy', HIERARCHY],
   ['Size', SIZE],
   ['Camera moves', CAMERA],

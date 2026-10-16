@@ -2,7 +2,8 @@ import { useMemo, useRef, useState } from 'react';
 import { isPrefLeaf } from '@weasel-js/prefs';
 import { Badge } from '../Badge';
 import { ShortcutKeys } from '../Keycaps';
-import { filterTree, Tree, treeBranchIds, type TreeNode } from '../Tree';
+import { Tree, treeBranchIds, type TreeNode } from '../Tree';
+import { seekRows, soughtRow } from './rowSearch';
 import { firedBy, keyTails } from './actionCatalog';
 import type { EditorAction } from './editorActions';
 import type { PaletteDrag } from './Palette';
@@ -18,7 +19,8 @@ function toRows(node: SchemaNode, path: string | null, tails: ReadonlyMap<string
     const fires = firedBy(child);
     const action = fires === undefined ? undefined : registered.get(fires);
     const tail = tails.get(id) ?? (isPrefLeaf(child) ? key : '');
-    const row = { id, label: nodeLabel(child.name, tail), textValue: `${child.name} ${fires ?? tail}`, ...(child.description ? { tooltip: child.description } : {}) };
+    const tags = [...(child.tags ?? []), ...(action?.tags ?? [])];
+    const row = soughtRow({ id, label: nodeLabel(child.name, tail), ...(child.description ? { tooltip: child.description } : {}) }, { text: [child.name, fires ?? tail], tags });
     if (!isPrefLeaf(child)) return { ...row, children: toRows(child, id, tails, registered) };
     return {
       ...row,
@@ -38,7 +40,7 @@ function toRows(node: SchemaNode, path: string | null, tails: ReadonlyMap<string
  */
 export function ActionList({ catalog, sought, ghost, onDrag, onDrop }: {
   catalog: ActionCatalog;
-  /** What the structure's filter holds, lowercased: only rows whose name or key has it are listed. Empty for all. */
+  /** What the structure's filter holds, lowercased: only rows whose name, key, or a tag has it are listed. Empty for all. */
   sought: string;
   /** As `Tree`'s `ghost`. */
   ghost?: boolean;
@@ -49,7 +51,7 @@ export function ActionList({ catalog, sought, ghost, onDrag, onDrop }: {
   const { root, actions } = catalog;
   const all = useMemo(() => toRows(root, null, keyTails(root), new Map(actions.map((a) => [a.key, a]))), [root, actions]);
   const rows = useMemo(
-    () => (sought === '' ? all : filterTree(all, (n) => (n.textValue ?? '').toLowerCase().includes(sought))),
+    () => seekRows(all, sought),
     [all, sought],
   );
   // What is folded, so that a group made or moved since starts open.

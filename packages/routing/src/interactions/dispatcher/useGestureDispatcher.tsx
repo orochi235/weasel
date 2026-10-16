@@ -5,7 +5,7 @@
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { isApplePlatform, type ClickMemory } from '@weasel-js/gestures';
-import { useLatest } from '@weasel-js/react';
+import { useKitSettings, useLatest } from '@weasel-js/react';
 import { useActiveToolContext } from '../actions/activeToolContext';
 import { useDepRegistry } from '../actions/depRegistry';
 import { useToolLifecycle } from '../../tools/useToolLifecycle';
@@ -73,6 +73,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
   const requestRedrawRef = useLatest(requestRedraw);
   const cursorRef = useLatest({ painted: paintedCursor, sink: cursorSink });
   const longPressRef = useLatest(longPress);
+  const kitSettingsRef = useLatest(useKitSettings());
 
   // Held here rather than in the effect: a re-bind of the listeners between
   // two clicks would otherwise drop the double click.
@@ -102,6 +103,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       paintedCursor: () => cursorRef.current.painted?.(),
       cursorSink: () => cursorRef.current.sink?.(),
       longPress: () => longPressRef.current,
+      kitSettings: () => kitSettingsRef.current,
       onClick: () => onClickRef.current,
       onDoubleClick: () => onDoubleClickRef.current,
       clicks: clicksRef.current,
@@ -114,5 +116,5 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       ingest: ingestChannel,
     });
   }, [enabled, keyboard, canvasRef, pointerChannel, wheelChannel, pinchChannel, contextMenuChannel, ingestChannel,
-    allDispatchers, ctxRef, longPressRef, onClickRef, onDoubleClickRef, cursorRef, registryRef, requestRedrawRef, rootTargetRef, viewsRef]);
+    allDispatchers, ctxRef, kitSettingsRef, longPressRef, onClickRef, onDoubleClickRef, cursorRef, registryRef, requestRedrawRef, rootTargetRef, viewsRef]);
 }

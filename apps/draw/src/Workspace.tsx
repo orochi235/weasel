@@ -15,6 +15,7 @@ import {
   type View,
   workspaceTintLayer
 } from '@weasel-js/core';
+import { pathTools } from '@weasel-js/path-tools';
 import { unpackSvgFiles } from '@weasel-js/svg';
 import { MeasureReadout, SceneGradientHandles, ToastRegion } from '@weasel-js/ui';
 import { type ReactElement, type RefObject, useCallback, useMemo } from 'react';
@@ -36,6 +37,7 @@ import { TextEditDepPublisher } from './TextEditDepPublisher';
 import { useColorContext } from './tools/colorContext';
 import { useEditorAmbient } from './useEditorAmbient';
 import { useGrid } from './useGrid';
+import { useSymmetry } from './useSymmetry';
 import { usePageFit } from './usePageFit';
 
 /** Screen-px radius within which a drawing tool snaps to a measurement's end. */
@@ -81,6 +83,7 @@ export function Workspace(props: WorkspaceProps): ReactElement {
 
   const paperLayer = usePaperLayer(page, backgroundColor);
   const grid = useGrid(page, backgroundColor);
+  const symmetry = useSymmetry(scene, page);
   // The mode tint covers the workspace around the page, not the page itself.
   // Bolder than the modes' own 0.12 so it reads through the stripes.
   const workspaceTint = useMemo(() => workspaceTintLayer({
@@ -97,6 +100,7 @@ export function Workspace(props: WorkspaceProps): ReactElement {
     selection,
     modeKeys: modes.keys,
     grid: grid.commands,
+    symmetry,
     view,
     setView: onViewChange,
     openPrefs: props.openPrefs,
@@ -156,7 +160,7 @@ export function Workspace(props: WorkspaceProps): ReactElement {
         onCancel={() => machine.cancelMode()}
       />
       {hostDims.width > 0 && hostDims.height > 0 && (
-        <SceneCanvas<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose> features={['draw']}
+        <SceneCanvas<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose> features={['draw', pathTools]}
           claimKeys
           ref={props.onCanvas}
           ambient={ambientEntries}

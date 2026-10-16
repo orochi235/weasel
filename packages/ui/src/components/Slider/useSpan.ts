@@ -1,6 +1,7 @@
 import { useCallback, useMemo } from 'react';
 import { snapToStep } from '../spin';
 import { clamp } from '@weasel-js/geom';
+import { useKitSetting } from '@weasel-js/react';
 import { STOP_SNAP_PX, attract, usableStops } from './stops';
 import type { SliderProps } from './types';
 
@@ -17,6 +18,7 @@ export function useSpan(props: Pick<SliderProps, 'stops' | 'min' | 'max' | 'spac
  *  value a pointer at a place chooses once step and stops have had their say. */
 export function useScale(span: ReturnType<typeof useSpan>, strict: boolean, step: number | undefined) {
   const { stops, even, min, max } = span;
+  const stopSnapPx = useKitSetting('targets.sliderStopSnapPx') ?? STOP_SNAP_PX;
 
   const valueToFraction = useCallback(
     (v: number): number => {
@@ -48,9 +50,9 @@ export function useScale(span: ReturnType<typeof useSpan>, strict: boolean, step
       const v = fractionToValue(f);
       if (strict) return attract(v, stops, Infinity, valueToFraction);
       const q = clamp(snapToStep(v, step, min), min, max);
-      return stops.length > 0 ? attract(q, stops, STOP_SNAP_PX / trackWidth, valueToFraction) : q;
+      return stops.length > 0 ? attract(q, stops, stopSnapPx / trackWidth, valueToFraction) : q;
     },
-    [fractionToValue, valueToFraction, strict, stops, step, min, max],
+    [fractionToValue, valueToFraction, strict, stops, step, min, max, stopSnapPx],
   );
 
   return { valueToFraction, fractionToValue, valueAt };
