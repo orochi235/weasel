@@ -35,6 +35,7 @@ export function MotifFrame({
   className,
   stance,
   tone,
+  onContextMenu,
 }: MotifFrameProps) {
   const titleId = useId();
   const stanced = useStance({ stance, tone });
@@ -47,6 +48,7 @@ export function MotifFrame({
     role: 'group',
     'aria-labelledby': titleId,
     'data-motif': chosen.id,
+    ...(onContextMenu ? { onContextMenu } : {}),
   };
   return chosen.render({ heading: { title, titleId, twisty, leading, actions }, body: children, root });
 }

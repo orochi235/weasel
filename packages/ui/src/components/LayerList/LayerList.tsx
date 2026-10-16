@@ -17,8 +17,7 @@ import rows from '../ItemList/ItemList.module.css';
 import { PropertyGroup, PropertyList } from '../Properties';
 import s from './LayerList.module.css';
 import type { LayerListItem, LayerListProps, LayerMove } from './layerListProps';
-import { Controls, Handle, Row } from './LayerRow';
-
+import { Controls, Handle, Row, rowContextMenu } from './LayerRow';
 export type { LayerListItem, LayerListProps, LayerMove };
 
 /** Returns `items` with `move` applied, for a consumer that holds the tree as state. */
@@ -415,6 +414,7 @@ function Level({ items, parentId, shared, path, level, grid, name }: LevelProps)
             />
           }
           actions={ghosted ? undefined : controls}
+          onContextMenu={rowContextMenu(shared, item, ghosted)}
         >
           {ghosted ? null : body}
         </PropertyGroup>

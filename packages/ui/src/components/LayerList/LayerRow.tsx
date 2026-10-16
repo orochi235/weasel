@@ -1,3 +1,4 @@
+import type { MouseEventHandler } from 'react';
 import { LockIcon } from '../../icons';
 import { CloseButton } from '../CloseButton';
 import { Disclosure } from '../Disclosure';
@@ -22,6 +23,12 @@ interface RowProps {
 }
 
 /** A layer with no body: one line, and one row of its treegrid. */
+/** The right-click handler for a layer's root element, none for a ghost or when the list has no handler. */
+export function rowContextMenu(shared: Shared, item: LayerListItem, ghosted: boolean): MouseEventHandler | undefined {
+  const handler = shared.props.onRowContextMenu;
+  return ghosted || !handler ? undefined : (e) => handler(item.id, e);
+}
+
 export function Row({ item, shared, parentId, level, ghosted, selected, open, childId, onPointerDown }: RowProps) {
   const { props } = shared;
   const branch = (item.children?.length ?? 0) > 0;
@@ -31,9 +38,7 @@ export function Row({ item, shared, parentId, level, ghosted, selected, open, ch
       data-selected={selected ? 'true' : undefined}
       data-locked={item.locked ? 'true' : undefined}
       onPointerDown={onPointerDown}
-      onContextMenu={
-        ghosted || !props.onRowContextMenu ? undefined : (e) => props.onRowContextMenu?.(item.id, e)
-      }
+      onContextMenu={rowContextMenu(shared, item, ghosted)}
       {...(ghosted
         ? {}
         : {
