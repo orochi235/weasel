@@ -18,7 +18,7 @@ adopted.
 | Marquee-select anchors | `marqueeAnchors` | Selects anchors in a box | Drag on empty canvas | main |
 | Handle locks | `handleLock.angle`, `handleLock.length` | Hold a handle's angle or length during a drag | Toggles; Mod while dragging holds length | main |
 | Balance handles | `balanceHandles` | Scales a segment's two handles together from a grip on its balance line; a length lock holds it still | Drag a balance grip, shown under `path-edit.balance` | main |
-| Path constraints | `constrainAnchors`, `unconstrainAnchors` | Keep geometric relations (parallel, level, fixed) during any anchor drag | C / Shift+C in its lab only | landing |
+| Path constraints | `constrainAnchors`, `unconstrainAnchors` | Keep geometric relations (parallel, level, fixed) during any anchor drag | C / Shift+C in its lab only | main |
 | Soft selection | — | Moves nearby anchors with falling weight | Drag an anchor | audition |
 | Handle snap | — | Snaps a handle's angle to steps and to its partner | Drag a handle | audition |
 | Lengthen | — | Grows an open end along its tangent or curvature | Drag an end anchor | audition |
@@ -42,14 +42,14 @@ adopted.
 |---|---|---|---|---|
 | Simplify brush | `simplifyBrush` | Removes anchors it passes over, refitting the curve | Drag with the brush | main |
 | Smudge brush | `smudgeBrush` | Pushes the outline along with the pointer | Drag with the Smudge tool (S) | main |
-| Puppet warp | `puppet.drag`, `puppet.addPin`, `puppet.removePin` | Pins the path and bends it when a pin is dragged | Puppet warp tool (B): click pins, Alt+click a pin takes it out, drag a pin bends | landing |
+| Puppet warp | `puppet.drag`, `puppet.addPin`, `puppet.removePin` | Pins the path and bends it when a pin is dragged | Puppet warp tool (B): click pins, Alt+click a pin takes it out, drag a pin bends | main |
 
 ## Handles on the box around a selection
 
 | Operation | Action id | What the handles do | Default binding | Status |
 |---|---|---|---|---|
-| Perspective and free distort | `distort.drag` | Corner pins warp the selected paths | Drag a corner with the Distort tool (F) | landing |
-| Envelope mesh (to be renamed Cloth warp) | `envelope.drag` | A grid of control points warps the selection | Drag a mesh point with the Envelope tool (M) | landing |
+| Perspective and free distort | `distort.drag` | Corner pins warp the selected paths | Drag a corner with the Distort tool (F) | main |
+| Envelope mesh (to be renamed Cloth warp) | `envelope.drag` | A grid of control points warps the selection | Drag a mesh point with the Envelope tool (M) | main |
 
 ## Commands on the selection
 
@@ -70,8 +70,8 @@ adopted.
 | Blend | `blend` | Live steps between two shapes | — | main |
 | Bend along a path | `bendAlong` | Lays a shape along a spine | — | main |
 | Repeat along a path | `repeatAlong` | Live copies placed along a path | — | main |
-| Expand warp | `expandWarp` | Drops a held distort, envelope, or puppet warp, keeping its geometry | — | landing |
-| Warp settings | `configureWarp` | Remakes a held warp with new settings | — | landing |
+| Expand warp | `expandWarp` | Drops a held distort, envelope, or puppet warp, keeping its geometry | — | main |
+| Warp settings | `configureWarp` | Remakes a held warp with new settings | — | main |
 | Resample | — | Spreads anchors evenly by arc length | — | audition |
 | Add extremes | — | Adds anchors at each curve's leftmost, rightmost, top, and bottom | — | audition |
 | Grow, shrink, and every-Nth selection | — | Selects anchors along the path | — | audition |
