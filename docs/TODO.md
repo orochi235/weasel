@@ -648,6 +648,11 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   closes only when HUD focus moves, so a wheel over the canvas zooms under an open menu and a
   resize leaves it where the old canvas put it.
 
+- **(P3) The WebGL context menu draws no icons, shortcut chips or check marks.** `drawPanel` draws
+  each row's label and a submenu caret; the DOM rows also show the action's icon, its shortcut and a
+  check for a row whose action is `active`. So a toggle action's state cannot be seen in the WebGL
+  menu at all.
+
 - **(P4) The WebGL context menu has square corners and no shadow.** The DOM panel takes
   `--wzl-radius-md` and `--wzl-bevel-raised`; `drawPanel` draws a plain bordered rect.
 

@@ -32,18 +32,16 @@ second copy of the model's that would drift from the WebGL menu's.
 Declare menus as data, mount one host, and open one from chrome:
 
 ```tsx
-import { useMemo } from 'react';
-import { useMenus, type MenuDef } from '@weasel-js/core';
+import { ActionsProvider, useMenus, type MenuDef } from '@weasel-js/core';
 import { ContextMenuHost, useContextMenu } from '@weasel-js/ui';
 
 const MENUS: MenuDef[] = [
-  { id: 'row', sections: [[{ action: 'duplicate' }, { action: 'delete' }]] },
+  { id: 'edit', sections: [[{ action: 'duplicate' }, { action: 'delete' }]] },
 ];
 
-function Row({ id }: { id: string }) {
-  const params = useMemo(() => ({ id }), [id]);
-  const onContextMenu = useContextMenu('row', { params });
-  return <div onContextMenu={onContextMenu}>{id}</div>;
+function EditButton() {
+  const onContextMenu = useContextMenu('edit');
+  return <button onContextMenu={onContextMenu}>Edit</button>;
 }
 
 function Chrome() {
@@ -51,11 +49,11 @@ function Chrome() {
   return <ContextMenuHost />;
 }
 
-// <ActionsProvider><Chrome /><Row id="a" /></ActionsProvider>
+// <ActionsProvider><Chrome /><EditButton /></ActionsProvider>
 ```
 
-Rows name registered actions (`duplicate`, `delete`), and `Row` and `Chrome` must sit under an
-`<ActionsProvider>`. Any menu opens by id; one with a `when` (`{ bodyTarget, bodyKind }`) also
+Rows name registered actions (`duplicate`, `delete`, which act on the selection), and
+`EditButton` and `Chrome` must sit under an `<ActionsProvider>`. Any menu opens by id; one with a `when` (`{ bodyTarget, bodyKind }`) also
 opens on a right-click of a matching canvas body.
 
 ## License
