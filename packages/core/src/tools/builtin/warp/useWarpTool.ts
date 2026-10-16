@@ -80,6 +80,9 @@ function createWarpToolState() {
     live,
     active: () => active,
     scene: () => deps?.get('scene') as never,
+    /** What an invocation of `actionId` passing `given` starts with here,
+     *  its tunings included. */
+    paramsOf: (actionId: string, given: Record<string, unknown>) => deps?.get('actionParams')?.(actionId, given) ?? given,
     setActive(next: boolean): void {
       active = next;
       api?.requestRedraw();
@@ -100,7 +103,7 @@ function useWarpTool(kind: WarpKind, options: WarpToolOptions, settings: WarpSet
     const layer = createWarpHandleLayer({
       kind,
       active: state.active,
-      settings: () => settingsRef.current,
+      settings: () => state.paramsOf(`${kind}.drag`, definedOf(settingsRef.current)) as WarpSettings,
       scene: state.scene,
       live: state.live,
     });
