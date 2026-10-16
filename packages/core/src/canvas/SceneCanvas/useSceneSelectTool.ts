@@ -149,10 +149,9 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
 
   const pickEveryProp = geometry?.pickEvery;
   const boundsOfProp = geometry?.boundsOf;
-  // Default. The pose rect is the wrong answer for anything that isn't a
-  // rectangle, so `'pose'` is the opt-out rather than the baseline. Cheap to
-  // leave on: the rect pre-filter runs first and rejects every node the
-  // pointer isn't over, and the survivors' silhouettes are memoized per node.
+  // Default. The pose rect is the wrong answer for anything that isn't a rectangle, so `'pose'`
+  // is the opt-out rather than the baseline. Cheap to leave on: the rect pre-filter rejects every
+  // node the pointer isn't over first, and the survivors' silhouettes are memoized per node.
   const shapePicking = (geometry?.picking ?? 'shape') === 'shape';
   const kitPickTolerancePx = useKitSetting('targets.pickTolerancePx');
   const pickTolerancePx = geometry?.pickTolerancePx ?? kitPickTolerancePx ?? DEFAULT_PICK_TOLERANCE_PX;

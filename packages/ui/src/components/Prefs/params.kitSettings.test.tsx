@@ -31,7 +31,7 @@ describe('useParamsPolicy', () => {
 });
 
 describe('params.form.settles', () => {
-  // A form writes text as it is typed; told to settle it, it writes on blur.
+  // A form settles typed text; told not to, it writes it as typed.
   const typed = (settings: KitSettingsOverrides | undefined) => {
     const onChange = vi.fn();
     render(under(settings, <PrefsForm schema={schema} values={{}} onChange={onChange} />));
@@ -39,24 +39,24 @@ describe('params.form.settles', () => {
     return onChange.mock.calls.length;
   };
 
-  it('writes text as typed with no provider, and only once settled under one', () => {
-    expect(typed(undefined)).toBe(1);
+  it('settles text with no provider, and writes it as typed under one', () => {
+    expect(typed(undefined)).toBe(0);
     cleanup();
-    expect(typed({ params: { form: { settles: { string: true } } } })).toBe(0);
+    expect(typed({ params: { form: { settles: { string: false } } } })).toBe(1);
   });
 
   it("reaches PrefControl's leaf too", () => {
     const onChange = vi.fn();
-    render(under({ params: { form: { settles: { string: true } } } }, (
+    render(under({ params: { form: { settles: { string: false } } } }, (
       <PrefControl pref={{ ...schema.children.title, name: 'Title' }} value="" onChange={onChange} />
     )));
     fireEvent.change(screen.getByRole('textbox'), { target: { value: 'Hi' } });
-    expect(onChange).not.toHaveBeenCalled();
+    expect(onChange).toHaveBeenCalledWith('Hi');
   });
 });
 
 describe('params.panel.settles', () => {
-  // A panel settles text; told not to, it writes each change.
+  // A panel settles text; told not to, it drafts each change into the scene.
   const labelAfterTyping = (settings: KitSettingsOverrides | undefined) => {
     const scene = makeScene();
     render(under(settings, <SelectionPanel scene={scene} selection={selectionOf(['a'])} properties={properties} routing={routing} />));
@@ -66,7 +66,7 @@ describe('params.panel.settles', () => {
     return (scene.get(asNodeId('a')) as { data: Data }).data.label;
   };
 
-  it('settles text with no provider, and writes it as typed under one', () => {
+  it('settles text with no provider, and drafts it as typed under one', () => {
     expect(labelAfterTyping(undefined)).toBe('hello');
     cleanup();
     expect(labelAfterTyping({ params: { panel: { settles: { string: false } } } })).toBe('world');

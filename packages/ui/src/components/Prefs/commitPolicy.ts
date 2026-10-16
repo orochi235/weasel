@@ -46,8 +46,11 @@ export function withDrafts(
 ): PropertyControlProps {
   const live = liveControl(field);
   if (live === null || settles[live] || drafts === null) return field;
-  if (field.kind === 'number' && drafts.kind === 'number') return { ...field, onInput: drafts.onChange };
-  if (field.kind === 'string' && drafts.kind === 'string') return { ...field, onInput: drafts.onChange };
+  // A typed field `withCommitPolicy` left live has its writer moved to `onInput`; the drafts take that, so it goes back.
+  const writerOf = <F extends { onChange: unknown; onInput?: unknown }>(f: F): F['onChange'] =>
+    (f.onChange === settledOnly ? f.onInput : f.onChange) as F['onChange'];
+  if (field.kind === 'number' && drafts.kind === 'number') return { ...field, onChange: writerOf(field), onInput: writerOf(drafts) };
+  if (field.kind === 'string' && drafts.kind === 'string') return { ...field, onChange: writerOf(field), onInput: writerOf(drafts) };
   if (field.kind === 'color' && drafts.kind === 'color') return { ...field, onInput: drafts.onChange };
   return field;
 }
