@@ -8,6 +8,7 @@ import { ActionDisabledReason } from '@weasel-js/routing';
 import { makeHandlesSymmetric, retractHandles, type AnchorSet } from '@weasel-js/geom';
 import { anchorEditWouldChange, commitAnchorEdit, depOf, requiresAnchorSelection } from './anchorEditing';
 import { RetractHandlesIcon, SymmetricHandlesIcon } from './icons/anchorIcons';
+import { pathOperationTags } from '../pathGestureTags';
 
 /** An edit of the handles of the anchors at `flatIndexes`; absent means
  *  every anchor of the path. */
@@ -31,6 +32,7 @@ export function makeHandleCommand(
     label,
     icon,
     group: 'anchors',
+    tags: pathOperationTags('command'),
     eligible: { capability: 'edits-anchors' },
     requires: ['editAnchors'],
     invoker: {

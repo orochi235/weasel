@@ -13,7 +13,7 @@ import {
   type PathConstraintKind,
   type PolygonPath,
 } from '@weasel-js/geom';
-import { depOf, deleteSelectedMark, type EditAnchorsDep } from '@weasel-js/core';
+import { depOf, deleteSelectedMark, type EditAnchorsDep, pathOperationTags } from '@weasel-js/core';
 import { constraintsOf } from './pathConstraints';
 import { editedPath, selectedConstraintOf, setConstraints } from './constraintsExtension';
 
@@ -100,6 +100,7 @@ function constraintCommand(
     id,
     label,
     group: 'anchors',
+    tags: pathOperationTags('drag'),
     eligible: { capability: 'edits-anchors' },
     requires: ['editAnchors'],
     invoker: {

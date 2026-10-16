@@ -11,7 +11,7 @@ import { createEmitter } from '@weasel-js/registry';
 import {
   applyToPoint, invert, moveWarpControl, pathWarpMap, unwarpPoint, warpControls, type Point,
 } from '@weasel-js/geom';
-import { commitOps, createSetDataOp, type Op, reshapeTo, selectedPathNodes } from '@weasel-js/core';
+import { commitOps, createSetDataOp, type Op, reshapeTo, selectedPathNodes, pathOperationTags } from '@weasel-js/core';
 import { heldPathWarpOf, resolvePathWarp, withoutPathWarp } from './pathWarp';
 import {
   storeWarp, WARP_LABELS, warpTargets, withWarpSettings, type WarpKind, type WarpSettings, type WarpTarget,
@@ -73,6 +73,7 @@ export function createWarpDragAction(kind: WarpKind, live?: WarpLive): Action {
   return {
     id: `${kind}.drag`,
     label: `${label} — drag control`,
+    tags: pathOperationTags(kind === 'puppet' ? 'brush' : 'box'),
     requires: REQUIRES,
     invoker: {
       timing: 'ongoing',
@@ -138,6 +139,7 @@ export function createAddPinAction(): Action {
   return {
     id: 'puppet.addPin',
     label: `${WARP_LABELS.puppet} — add pin`,
+    tags: pathOperationTags('brush'),
     requires: REQUIRES,
     invoker: {
       timing: 'immediate',
@@ -168,6 +170,7 @@ export function createRemovePinAction(): Action {
   return {
     id: 'puppet.removePin',
     label: `${WARP_LABELS.puppet} — remove pin`,
+    tags: pathOperationTags('brush'),
     requires: REQUIRES,
     invoker: {
       timing: 'immediate',
@@ -205,6 +208,7 @@ export function createWarpGrabAction(kind: WarpKind): Action {
 export const expandWarpAction: Action = {
   id: 'expandWarp',
   label: 'Expand Warp',
+  tags: pathOperationTags('command'),
   group: 'path',
   requires: REQUIRES,
   invoker: {
@@ -232,6 +236,7 @@ export const expandWarpAction: Action = {
 export const configureWarpAction: Action = {
   id: 'configureWarp',
   label: 'Warp Settings',
+  tags: pathOperationTags('command'),
   group: 'path',
   requires: REQUIRES,
   invoker: {

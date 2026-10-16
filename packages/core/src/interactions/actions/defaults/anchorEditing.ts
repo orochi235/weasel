@@ -45,6 +45,7 @@ import { deleteSelectedMark, markUnder } from './pathEditMarks';
 import { inPlane, editingLayer } from '../planeInput';
 import { NUDGE_KEY, NUDGE_LABEL, nudgeDelta, type NudgeDirection } from './nudgeSteps';
 import { pathEditToolActive } from './pathEditTools';
+import { pathOperationTags } from '../pathGestureTags';
 
 /** Screen-pixel radius for "this click landed on an anchor". */
 export const ANCHOR_CLICK_PX = 10;
@@ -133,6 +134,7 @@ export function requiresAnchorSelection(deps?: ActionDeps): true | ActionDisable
 export const selectAnchorAction: Action & { requires: string[] } = inPlane({
   id: 'selectAnchor',
   label: 'Select anchor',
+  tags: pathOperationTags('click'),
   defaultBinding: [
     { spec: { kind: 'click', mods: {} },              opts: { params: { additive: false } } },
     { spec: { kind: 'click', mods: { shift: true } }, opts: { params: { additive: true } } },
@@ -221,6 +223,7 @@ export const nudgeAnchorsRightAction = makeNudgeAnchorsAction('right');
 export const deleteAnchorsAction: Action & { requires: string[] } = {
   id: 'deleteAnchors',
   label: 'Delete Anchors',
+  tags: pathOperationTags('command'),
   defaultBinding: {
     kind: 'key',
     key: ['Delete', 'Backspace'],
@@ -255,6 +258,7 @@ export const deleteAnchorsAction: Action & { requires: string[] } = {
 export const cutPathAtAnchorAction: Action & { requires: string[] } = inPlane({
   id: 'cutPathAtAnchor',
   label: 'Cut path at anchor',
+  tags: pathOperationTags('click'),
   defaultBinding: { kind: 'click', mods: { alt: true, shift: true } },
   eligible: { capability: 'edits-anchors' },
   requires: ['editAnchors', 'view', 'kitSettings'],
@@ -319,6 +323,7 @@ function nearestAnchorIndex(
 export const marqueeAnchorsAction: Action & { requires: string[] } = inPlane({
   id: 'marqueeAnchors',
   label: 'Marquee-select anchors',
+  tags: pathOperationTags('drag'),
   defaultBinding: { kind: 'drag', target: 'empty' },
   eligible: { capability: 'edits-anchors' },
   requires: ['editAnchors'],

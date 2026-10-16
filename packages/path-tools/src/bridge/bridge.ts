@@ -5,7 +5,7 @@
  */
 import { type Action, ActionDisabledReason, type ImmediateInvoker } from '@weasel-js/routing';
 import {
-  anchorEditWouldChange, BridgeIcon, commitAnchorEdit, depOf, joinPathsCommand, joinSelectedAnchors,
+  anchorEditWouldChange, BridgeIcon, commitAnchorEdit, depOf, joinPathsCommand, joinSelectedAnchors, pathOperationTags,
 } from '@weasel-js/core';
 
 /** How long Bridge makes each handle, as a fraction of the gap, when its
@@ -48,6 +48,7 @@ const join = joinSelectedAnchors({});
 export const bridgeAnchorsAction: Action & { requires: string[] } = {
   id: 'bridgeAnchors',
   label: 'Bridge anchors',
+  tags: pathOperationTags('command'),
   icon: BridgeIcon,
   group: 'anchors',
   defaultBinding: { kind: 'key', key: 'j', code: 'KeyJ', mods: { mod: true, shift: true } },

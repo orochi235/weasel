@@ -355,6 +355,16 @@ variant gathers only that one. Prefs carry `tags` the same way, and one matcher
 (`matchQuery`, `@weasel-js/registry`) serves both searches. See
 `packages/routing/src/interactions/actions/actionTags.ts`.
 
+The path operations share one tag vocabulary, `PATH_GESTURE_TAGS` (core,
+`pathOperationTags(family)` to apply it): each carries `path` and one tag
+naming the gesture that drives it — `path-drag` (a drag on a path's anchors,
+handles, or segments), `path-click`, `path-brush`, `path-box` (handles on the
+selection's box), or `path-command` (a command on the selection). Operations
+sharing a tag are the candidates for one tool's variants. The family tags carry
+the `path-` prefix because gathering matches one tag exactly: a bare `brush` or
+`command` would gather any other feature's actions that chose the same word.
+`docs/path-operations.md` lists each family.
+
 An action may declare an optional `cursor` — the hover hint shown while the
 pointer rests where a drag would route to that action. The hover-cursor pump
 predicts the route via `Dispatcher.resolveOnly` (the same match walk a real

@@ -19,12 +19,14 @@ import type { CursorSpec } from '@weasel-js/cursor';
 import { editAnchorSetTracked, insertAnchorOnSegment } from '@weasel-js/geom';
 import { inPlane, editingLayer } from '../planeInput';
 import { segmentUnder } from './segmentUnder';
+import { pathOperationTags } from '../pathGestureTags';
 
 const INSERT_CURSOR: CursorSpec = { glyph: 'penPlus', fallback: 'crosshair' };
 
 export const insertPathAnchorAction: Action & { requires: string[] } = inPlane({
   id: 'insertPathAnchor',
   label: 'Insert anchor',
+  tags: pathOperationTags('click'),
   defaultBinding: { kind: 'click', mods: { alt: true } },
   cursor: INSERT_CURSOR,
   eligible: { capability: 'edits-anchors' },

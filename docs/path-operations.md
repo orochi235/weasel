@@ -10,7 +10,14 @@ or removes one.
 adopted. **Package:** *core* ships with `@weasel-js/core`'s `paths` preset; *path-tools* is in
 `@weasel-js/path-tools`, registered by its family's preset (see that package's README).
 
+**Tags:** every operation listed here carries the tag `path` and its section's tag, from
+`PATH_GESTURE_TAGS` in `@weasel-js/core`, so `actionsTagged(actions, 'path-click')` gathers a
+section. `pathOperationTags.test.ts` in `@weasel-js/path-tools` reads this file and fails when a
+section's ids and its tag's actions disagree, so tag a new operation where it is listed.
+
 ## Drag on a path's own parts (path edit)
+
+Tag: `path-drag`
 
 | Operation | Action id | What the drag does | Default binding | Status | Package |
 |---|---|---|---|---|---|
@@ -27,6 +34,8 @@ adopted. **Package:** *core* ships with `@weasel-js/core`'s `paths` preset; *pat
 
 ## Click on a path
 
+Tag: `path-click`
+
 | Operation | Action id | What the click does | Default binding | Status | Package |
 |---|---|---|---|---|---|
 | Select anchor | `selectAnchor` | Selects an anchor | Click | main | core |
@@ -39,6 +48,8 @@ adopted. **Package:** *core* ships with `@weasel-js/core`'s `paths` preset; *pat
 
 ## Brush strokes over a path
 
+Tag: `path-brush`
+
 | Operation | Action id | What the brush does | Default binding | Status | Package |
 |---|---|---|---|---|---|
 | Simplify brush | `simplifyBrush` | Removes anchors it passes over, refitting the curve | Drag with the brush | main | path-tools |
@@ -47,12 +58,16 @@ adopted. **Package:** *core* ships with `@weasel-js/core`'s `paths` preset; *pat
 
 ## Handles on the box around a selection
 
+Tag: `path-box`
+
 | Operation | Action id | What the handles do | Default binding | Status | Package |
 |---|---|---|---|---|---|
 | Perspective and free distort | `distort.drag` | Corner pins warp the selected paths | Drag a corner with the Distort tool (F) | main | path-tools |
 | Envelope mesh (to be renamed Cloth warp) | `envelope.drag` | A grid of control points warps the selection | Drag a mesh point with the Envelope tool (M) | main | path-tools |
 
 ## Commands on the selection
+
+Tag: `path-command`
 
 | Operation | Action id | What it does | Default binding | Status | Package |
 |---|---|---|---|---|---|

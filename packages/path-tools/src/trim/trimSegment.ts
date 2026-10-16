@@ -1,7 +1,7 @@
 /** Trim segment: cut a stroke back to the crossings on either side of a click. */
 import type { Action, ActionDeps, ImmediateInvoker } from '@weasel-js/routing';
 import { trimPathAt, type TrimResult } from '@weasel-js/geom';
-import { commitOps, deleteNode, reshapeOps, type PathNode } from '@weasel-js/core';
+import { commitOps, deleteNode, reshapeOps, type PathNode, pathOperationTags } from '@weasel-js/core';
 import { pressOf, scenePathNodes, strokesBesides } from '../shared/scenePaths';
 
 const TRIM_LABEL = 'Trim segment';
@@ -36,6 +36,7 @@ export function planTrim(
 export const trimPathAction: Action & { requires: string[] } = {
   id: 'trimPath',
   label: TRIM_LABEL,
+  tags: pathOperationTags('click'),
   group: 'path',
   eligible: { capability: 'creates-shapes' },
   requires: ['scene', 'applyOps', 'selection', 'view'],

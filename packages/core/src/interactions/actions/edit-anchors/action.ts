@@ -54,6 +54,7 @@ import { locksOf, type EditAnchorsParams } from './params';
 import { pathEditPreview } from './preview';
 import { pathEditToolActive } from '../defaults/pathEditTools';
 import { editedPathSymmetries } from './symmetry';
+import { pathOperationTags } from '../pathGestureTags';
 
 /**
  * Parse an anchor affordance kind — `'anchor:N'` | `'controlIn:N'` |
@@ -147,6 +148,7 @@ function handlePressOf(
 export const editAnchorsAction: Action & { requires: string[] } = inPlane({
   id: 'editAnchors',
   label: 'Edit Anchors',
+  tags: pathOperationTags('drag'),
   defaultBinding: {
     kind: 'drag',
     // Only matches drags whose pointerdown hit an anchor or control handle.
