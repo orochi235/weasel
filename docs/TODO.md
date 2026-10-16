@@ -23,15 +23,16 @@ Priority tags:
   moving, Alt-hover distance readouts between the selection and the shape under the pointer) go in
   as part of a pass over every guide and snap at once, not alone. The pieces today don't share a
   pipeline: `@weasel-js/guides` has ruler guides, alignment guides, and equal-spacing snaps
-  (`packages/guides/src/guides/alignment/spacing.ts`), none of them wired into draw; the select
+  (`packages/guides/src/guides/alignment/spacing.ts`), and only equal spacing is wired into draw, by
+  `apps/draw/src/useSpacingHints.ts` behind the Spacing hints preference; the select
   tool's move snaps only through `gridSnapStrategy`, so it ignores measurement ends; path snapping
   just landed with its own `snapPoint` ranking (`packages/core/src/features/paths/pathSnap/`); and
   the tolerances are fixed constants (`DEFAULT_GUIDE_TOLERANCE_PX`). The arc settles one snap
   pipeline every gesture uses — which targets compete, how ties are ranked, how a modifier
   suspends them mid-gesture — and one readout layer for gaps, distances, and guide labels. The
-  `spacing-hints` audition branch is source material: an Alt-hover distance readout
+  `spacing-hints` branch has landed as source material for it: an Alt-hover distance readout
   (`distanceReadout.ts`), a hover dispatched when a modifier changes, and draw's move snapping to
-  equal sibling spacing. The P3 "Moving a shape does not snap to measurement ends" folds into it.
+  equal sibling spacing, each still on its own path. The P3 "Moving a shape does not snap to measurement ends" folds into it.
 
 - **(P3) A `contextmenu` with no preceding press resolves against the wrong input scope.** The
   keyboard ContextMenu key sends one with no press before it, so it falls to the active or newest
