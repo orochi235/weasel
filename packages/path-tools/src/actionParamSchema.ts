@@ -5,6 +5,7 @@
 import type { CornerShape, PathConstraintKind, SegmentType } from '@weasel-js/geom';
 import type { BendAlongEffect, BlendEffect, RepeatAlongEffect } from '@weasel-js/core';
 import type { ConstrainAnchorsParams } from './constraints/anchorConstraints';
+import type { LengthenPathParams } from './lengthen/lengthenPath';
 import type { ResamplePathParams } from './resample/resample';
 import type { SimplifyBrushParams } from './simplifyBrush/simplifyBrush';
 import type { SmudgeBrushParams } from './smudge/smudgeBrush';
@@ -27,6 +28,7 @@ declare module '@weasel-js/routing' {
     editPathEffect: EditPathEffectParams;
     simplifyBrush: SimplifyBrushParams;
     smudgeBrush: SmudgeBrushParams;
+    lengthenPath: LengthenPathParams;
     bridgePaths: { tension?: number };
     bridgeAnchors: { tension?: number };
     constrainAnchors: ConstrainAnchorsParams;

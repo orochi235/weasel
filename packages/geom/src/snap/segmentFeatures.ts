@@ -6,45 +6,12 @@
 
 import type { Point } from '../paths/cubicMath';
 import { evalSeg, derivSeg, type Seg } from '../booleans/contourSegments';
-
-const GL_X = [-0.9602898564975363, -0.7966664774136267, -0.5255324099163290, -0.1834346424956498,
-  0.1834346424956498, 0.5255324099163290, 0.7966664774136267, 0.9602898564975363];
-const GL_W = [0.1012285362903763, 0.2223810344533745, 0.3137066458778873, 0.3626837833783620,
-  0.3626837833783620, 0.3137066458778873, 0.2223810344533745, 0.1012285362903763];
-
-const speed = (s: Seg, t: number): number => {
-  const d = derivSeg(s, t);
-  return Math.hypot(d.x, d.y);
-};
-
-/** Length of `s` between parameters `a` and `b`, by Gauss–Legendre over
- *  eight panels. */
-function lengthBetween(s: Seg, a: number, b: number): number {
-  if (s.length === 2) return speed(s, 0) * (b - a);
-  const panels = 8, h = (b - a) / panels;
-  let sum = 0;
-  for (let k = 0; k < panels; k++) {
-    const mid = a + (k + 0.5) * h;
-    for (let i = 0; i < GL_X.length; i++) sum += GL_W[i] * speed(s, mid + GL_X[i] * h / 2);
-  }
-  return sum * h / 2;
-}
+import { segmentLength, segmentTAtLength } from '../paths/segmentLength';
 
 /** The parameter at the middle of `s` by arc length. */
 export function segmentMidT(s: Seg): number {
   if (s.length === 2) return 0.5;
-  const half = lengthBetween(s, 0, 1) / 2;
-  let lo = 0, hi = 1, t = 0.5;
-  for (let i = 0; i < 30; i++) {
-    const err = lengthBetween(s, 0, t) - half;
-    if (Math.abs(err) < 1e-10) break;
-    if (err > 0) hi = t; else lo = t;
-    const v = speed(s, t);
-    let next = v > 0 ? t - err / v : NaN;
-    if (!(next > lo && next < hi)) next = (lo + hi) / 2;
-    t = next;
-  }
-  return t;
+  return segmentTAtLength(s, segmentLength(s) / 2);
 }
 
 /** Roots of a quadratic a t² + b t + c in [0, 1]. */

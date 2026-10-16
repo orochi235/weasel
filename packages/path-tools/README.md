@@ -30,6 +30,7 @@ that imports only some never loads the others:
 | `simplifyBrushPreset` | The Simplify brush, a path-edit tool that refits the curve it passes over |
 | `handleLocksPreset` | The `handleLock.angle` and `handleLock.length` toggles |
 | `bridgePreset` | Bridge: join open ends with a curve along each end's heading, on paths or on two anchors |
+| `lengthenPreset` | Lengthen, a path-edit tool whose drag on an open end grows the path along its end tangent or curvature, or trims it back |
 | `trimPreset`, `extendPreset`, `smudgePreset` | The actions `useTrimTool`, `useExtendTool`, and `useSmudgeBrushTool` bind |
 | `harmonizePreset` | Harmonize curvature |
 | `anchorSelectionPreset` | Grow and shrink the anchor selection along the path, or select every Nth anchor, the corners, the smooth anchors, or the rest |

@@ -31,7 +31,7 @@ Tag: `path-drag`
 | Path snapping | — | Locks a dragged anchor to other shapes' anchors, crossings, tangent and perpendicular points, midpoints, extremes, and strokes, and to the parts of its own path the drag leaves still; the pen, the insert tools, and a move snap the same way | Any anchor drag, while `toolOptions.pathSnap` is set | main | core |
 | Soft selection | — | Moves nearby anchors with falling weight | Drag an anchor | audition | — |
 | Handle snap | — | Snaps a handle's angle to steps and to its partner | Drag a handle | audition | — |
-| Lengthen | — | Grows an open end along its tangent or curvature | Drag an end anchor | audition | — |
+| Lengthen | `lengthenPath` | Grows an open end along its tangent or curvature, or trims it back along itself | Drag an end anchor with the Lengthen path-edit tool on | main | path-tools |
 
 ## Click on a path
 

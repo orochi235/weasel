@@ -174,6 +174,22 @@ export function EqualizeHandlesIcon() {
 }
 
 /**
+ * Lengthen: an open path's end anchor, and the run it grows along dashed
+ * on past it.
+ *
+ * @experimental
+ */
+export function LengthenIcon() {
+  return (
+    <svg {...SVG_BASE}>
+      <path d="M2.5 17 C6.5 17 8.5 15.5 11 13" />
+      <path d="M13 11 L16.5 7.5" strokeDasharray="1 3" />
+      {anchor(11, 13)}
+    </svg>
+  );
+}
+
+/**
  * Trim segment: a stroke between two crossings, its middle piece gone.
  *
  * @experimental

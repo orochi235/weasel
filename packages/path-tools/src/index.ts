@@ -24,6 +24,7 @@ export {
   curvatureCombPreset,
   extendPreset,
   handleLocksPreset,
+  lengthenPreset,
   harmonizePreset,
   pathEffectsPreset,
   pathStructurePreset,
@@ -48,6 +49,9 @@ export {
 } from './bridge/bridge';
 export { planTrim, trimPathAction } from './trim/trimSegment';
 export { extendToMeetAction } from './extend/extendToMeet';
+export {
+  LENGTHEN_TOOL, lengthenPathAction, lengthenToolAction, type LengthenPathParams,
+} from './lengthen/lengthenPath';
 export {
   DEFAULT_SMUDGE_RADIUS_PX, DEFAULT_SMUDGE_STRENGTH, smudgeBrushAction, type SmudgeBrushParams,
 } from './smudge/smudgeBrush';
@@ -93,7 +97,7 @@ export {
 // ─── Icons ─────────────────────────────────────────────────────────────────
 export {
   BalanceHandlesIcon, BendAlongIcon, BlendIcon, DistortIcon, EnvelopeIcon, EqualizeHandlesIcon, ExpandIcon, ExtendIcon,
-  GirthIcon, PuppetWarpIcon, RepeatAlongIcon, SmudgeBrushIcon, TrimIcon,
+  GirthIcon, LengthenIcon, PuppetWarpIcon, RepeatAlongIcon, SmudgeBrushIcon, TrimIcon,
 } from './icons';
 export {
   ConvertSegmentIcon, CornerRadiusIcon, CornerShapeIcon, CurveSegmentIcon, ExtremeAnchorsIcon, ReversePathIcon,

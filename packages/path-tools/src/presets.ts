@@ -17,6 +17,7 @@ import { createConstraintsExtension } from './constraints/constraintsExtension';
 import { extendToMeetAction } from './extend/extendToMeet';
 import { handleLockAngleAction, handleLockLengthAction } from './handleLocks/handleLocks';
 import { harmonizeAnchorsAction } from './harmonize/harmonize';
+import { lengthenPathAction, lengthenToolAction } from './lengthen/lengthenPath';
 import { createDirectionExtension, PATH_DIRECTION_CHROME_ID, type PathDirectionStyle } from './pathStructure/directionMarks';
 import { reversePathAction, setPathStartAction } from './pathStructure/pathStructure';
 import { convertSegmentAtAction, convertSegmentsAction } from './segmentType/convertSegments';
@@ -57,6 +58,13 @@ export const trimPreset: FeaturePreset = { id: 'trim', actions: [trimPathAction]
 
 /** `extendToMeet`, which `useExtendTool` binds. */
 export const extendPreset: FeaturePreset = { id: 'extend', actions: [extendToMeetAction] };
+
+/** Lengthen, a path-edit tool whose drag on an open end grows or trims the
+ *  path from that end, and its toggle. */
+export const lengthenPreset: FeaturePreset = {
+  id: 'lengthen',
+  actions: [lengthenPathAction, lengthenToolAction],
+};
 
 /** `smudgeBrush`, which `useSmudgeBrushTool` binds. */
 export const smudgePreset: FeaturePreset = { id: 'smudge', actions: [smudgeBrushAction] };
@@ -188,7 +196,7 @@ export const warpPreset: FeaturePreset = {
 export const pathTools: FeaturePreset = {
   id: 'pathTools',
   includes: [
-    simplifyBrushPreset, handleLocksPreset, bridgePreset, trimPreset, extendPreset, smudgePreset,
+    simplifyBrushPreset, handleLocksPreset, bridgePreset, trimPreset, extendPreset, lengthenPreset, smudgePreset,
     harmonizePreset, anchorSelectionPreset, resamplePreset, addExtremesPreset,
     curvatureCombPreset, balancePreset, constraintsPreset, pathStructurePreset, segmentTypePreset,
     cornerShapePreset, pathEffectsPreset, warpPreset,
