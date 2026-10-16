@@ -2,7 +2,7 @@ import '@weasel-js/theme/tokens.css';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, expect, it } from 'vitest';
 import { page } from 'vitest/browser';
-import { ActionsProvider, useAction, useMenuHost, useMenus, type MenuDef, type MenuHost } from '@weasel-js/core';
+import { ActionDisabledReason, ActionsProvider, useAction, useMenuHost, useMenus, type MenuDef, type MenuHost } from '@weasel-js/core';
 import { lineContrast } from '../../testing/paintedContrast';
 import { ContextMenuHost } from './ContextMenuHost';
 
@@ -51,7 +51,7 @@ it('keeps the menu and its submenu on screen when opened in the bottom-right cor
 const MUTED: MenuDef[] = [{ id: 'muted', sections: [[{ action: 'cut' }, { action: 'off' }]] }];
 function MutedSetup() {
   useAction(act1('cut'));
-  useAction({ ...act1('off'), enabled: () => false });
+  useAction({ ...act1('off'), enabled: () => ActionDisabledReason.NotApplicable });
   useMenus(MUTED);
   host = useMenuHost();
   return <ContextMenuHost />;
