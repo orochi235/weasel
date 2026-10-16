@@ -615,15 +615,12 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 ## Selection, actions & UI panels
 
-- **(P1) The kit has no settings of its own.** Behavior a user would set once for every
-  component — how long a typed field waits idle before it commits, the stepper's repeat delay
-  and rate, typeahead and hover-open delays, a toast's lifetime — is a module constant in each
-  component (`REPEAT_DELAY_MS` in `NumberField/UnitField.tsx`, `TYPEAHEAD_MS` in `Tree/Tree.tsx`,
-  `HOVER_EXPAND_MS`, `DEFAULT_TTL_MS`, and others; `grep -rn "_MS = "`). `@weasel-js/prefs`
-  stores an app's prefs and has no schema for the kit's. Wanted: one kit settings schema, read
-  through one context with these numbers as defaults, that an app can show in its own `Prefs`
-  and persist with its store. Core's gesture timings (drag threshold, double-click interval)
-  belong in the same place.
+- **(P2) Kit settings that do not reach their readers yet.** `history.coalesceMs` is read once,
+  when `PrefSchemaEditor` mounts, because `createHistory` (`@weasel-js/history`) fixes its window
+  at creation; a later change waits for a remount. Not yet settings at all: `guides`'
+  `DEFAULT_GUIDE_TOLERANCE_PX`, the pen and slice tools' close and snap radii (written as a bare
+  `8`), and `thresholdDrag`, a plain function with no store in reach. `view.animationMs` ignores
+  `prefers-reduced-motion`. See `docs/conventions.md` ("Kit settings").
 
 - **(P2) Every standard action ships with `<SceneCanvas>`, used or not.**
   `StandardActionsRegistrar` calls `useStandardActions`, which imports every standard action

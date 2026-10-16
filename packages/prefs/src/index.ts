@@ -120,3 +120,4 @@ export {
   type PrefString,
   type PrefStringControl,
 } from './schema';
+export { mergePrefGroups } from './merge';

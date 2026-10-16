@@ -57,6 +57,11 @@ function lensShown(over: boolean, enabled: boolean, peeking: boolean): boolean {
   return over && (enabled || peeking);
 }
 
+/** Walk `model`'s factor by one wheel notch of `deltaY` at `rate`. */
+function magnify(model: LoupeModel | null, deltaY: number, rate: number): void {
+  if (model) model.setFactor(model.factor * Math.exp(-deltaY * rate));
+}
+
 /**
  * Binds `@weasel-js/loupe`'s model to a host element and tracks the pointer
  * across it.
@@ -67,11 +72,6 @@ function lensShown(over: boolean, enabled: boolean, peeking: boolean): boolean {
  * because the lens follows a pressed pointer too, and a `hover` binding stands
  * down while one is held.
  */
-/** Walk `model`'s factor by one wheel notch of `deltaY` at `rate`. */
-function magnify(model: LoupeModel | null, deltaY: number, rate: number): void {
-  if (model) model.setFactor(model.factor * Math.exp(-deltaY * rate));
-}
-
 export function useLoupe({
   options,
   hostRef,
