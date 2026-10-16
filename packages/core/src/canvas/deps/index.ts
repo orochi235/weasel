@@ -16,6 +16,8 @@ export { paletteInsertPaint, useInsertDepSource, type InsertNodeFactory, type In
 export { useSnapDepSource } from './snap';
 export { useSliceDep, useSliceDepSource } from './slice';
 export { useDebugDepSource } from './debug';
+export { useSurfaceDepSources } from './surface';
+export { useKitSettingsDepSource } from './kitSettings';
 export { useDepChangeNotices } from './changes';
 export { useDispatcherDepSource } from './dispatcher';
 export {

@@ -33,7 +33,7 @@ function formatRelativeOrIso(iso: string): string {
   return new Date(iso).toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
 }
 import { ColorModeControl, CommandPalette, InlineMarkdown } from '@weasel-js/ui';
-import { useSiteColorMode } from './colorMode';
+import { SiteColorModeContext, useSiteColorMode } from './colorMode';
 import { useCommandPaletteShortcut } from './CommandPalette/useCommandPaletteShortcut';
 import logoUrl from './assets/weasel-logo.svg';
 
@@ -109,7 +109,11 @@ export function WeaselDemos() {
 
       <main className="ckd-main" ref={mainRef}>
         <PageBoundary key={activeId} reload={() => window.location.reload()} store={sessionStore()}>
-          {active ? <DemoView entry={active} key={active.id} /> : null}
+          {active ? (
+            <SiteColorModeContext.Provider value={colorMode.mode}>
+              <DemoView entry={active} key={active.id} />
+            </SiteColorModeContext.Provider>
+          ) : null}
           <Suspense fallback={null}>
             {!active && activeId === GET_STARTED_ID ? <GetStarted /> : null}
             {!active && activeId === RELEASES_ID ? <Releases /> : null}

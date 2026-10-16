@@ -69,6 +69,14 @@ export const isAnchorOrControl = hitPredicate((target) =>
 /** The outline of the path being edited, between its anchors. */
 export const isSegment = hitPredicate((target) => kindOf(target) === 'segment');
 
-/** Anything path edit puts on the path: an anchor, a control, or a segment. */
+/** The grip midway along a curved segment's balance line, `balance:N`, where
+ *  N is the flat index of the anchor the segment starts at. */
+export const isBalanceGrip = hitPredicate((target) => {
+  const k = kindOf(target);
+  return k !== undefined && /^balance:\d+$/.test(k);
+});
+
+/** Anything path edit puts on the path: an anchor, a control, a segment, or a
+ *  segment's balance grip. */
 export const isPathEditPart = hitPredicate((target) =>
-  isAnchorOrControl(target) || isSegment(target));
+  isAnchorOrControl(target) || isSegment(target) || isBalanceGrip(target));

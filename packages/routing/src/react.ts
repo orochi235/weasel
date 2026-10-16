@@ -15,6 +15,7 @@ export type {
 } from './interactions/dispatcher/useGestureDispatcher';
 
 export { ActionsProvider, useActionsRegistry, useAction } from './interactions/actions/ActionsProvider';
+export { useMenuHost, useMenus } from './menus/MenuHostContext';
 export { InputScope, useYoke, Yoke } from './interactions/actions/inputScope';
 export type { InputScopeProps, YokeProps } from './interactions/actions/inputScope';
 export { useOngoingAction } from './interactions/actions/useOngoingAction';

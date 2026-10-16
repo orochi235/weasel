@@ -8,6 +8,7 @@ import {
 } from '@weasel-js/core';
 import type { PrefAction } from '@weasel-js/prefs';
 import { namedGlyph } from '../../icons/namedGlyph';
+import { actionIcon } from '../../icons/actionIcon';
 import { formatShortcut } from '../ToolPalette/formatShortcut';
 import { useActionStates } from '../ActionBar/useActionStates';
 
@@ -63,7 +64,7 @@ export function useLeafAction(leaf: PrefAction, path: string, disabled = false):
   }, []);
 
   const label = leaf.label ?? (leaf.name !== '' ? leaf.name : (item?.label ?? ''));
-  const icon = namedGlyph(leaf.icon, 16) ?? (item ? itemIcon(item) : undefined);
+  const icon = namedGlyph(leaf.icon, 16) ?? (item ? actionIcon(item.icon) : undefined);
 
   if (key !== undefined) {
     return {
@@ -95,8 +96,4 @@ export function useLeafAction(leaf: PrefAction, path: string, disabled = false):
     active: undefined,
     missing: undefined,
   };
-}
-
-function itemIcon(item: ActionItem): ReactNode {
-  return typeof item.icon === 'function' ? item.icon() : item.icon;
 }

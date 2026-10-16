@@ -11,6 +11,7 @@ import type { NodeAtPointDep } from '../depSchema';
 import { buildDepsFromRequires } from '@weasel-js/routing';
 import type { DepRegistry } from '@weasel-js/routing/react';
 import { RECT_POSE_COMPOSITION } from 'core/scene/composePose';
+import { createKitSettingsStore } from '@weasel-js/react';
 
 /** The reparentOnDrop tests below assert LOCAL rebasing (world pose → local
  *  under the new parent), so their scenes compose. Under the IDENTITY default
@@ -275,6 +276,26 @@ describe('moveAction descriptor', () => {
     handle.onMove!(frame(6, 3));
     handle.onEnd!(frame(6, 3), 'commit');
     expect(scene.poses.get('a')).toEqual({ x: 3, y: 0, width: 10, height: 10 });
+  });
+
+  it('takes the threshold from the gestures.dragPx kit setting, and params.dragThresholdPx wins over it', () => {
+    const held = (params: Record<string, unknown> | undefined, dragPx: number) => {
+      const invoker = getOngoingInvoker(moveAction);
+      const { scene: _scene, ...ctx } = makeCtx({
+        selectionIds: ['a'],
+        sceneNodes: { a: { pose: { x: 0, y: 0, width: 10, height: 10 } } },
+      });
+      const withKit = { ...ctx, deps: { ...ctx.deps, kitSettings: createKitSettingsStore({ gestures: { dragPx } }) } };
+      const handle = invoker.start(withKit as InvocationCtx, params ? { params } : undefined);
+      handle.onMove!({
+        ...withKit,
+        drag: { start: { x: 0, y: 0 }, current: { x: 12, y: 0 }, delta: { x: 12, y: 0 }, screenDelta: { x: 12, y: 0 } },
+      } as InvocationCtx);
+      return Array.from(handle.previewIds!() ?? []).length === 0;
+    };
+    expect(held(undefined, 20)).toBe(true);
+    expect(held(undefined, 10)).toBe(false);
+    expect(held({ dragThresholdPx: 5 }, 20)).toBe(false);
   });
 
   it('a release that never reached params.dragThresholdPx commits nothing', () => {

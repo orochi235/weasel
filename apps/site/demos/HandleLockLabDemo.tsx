@@ -1,10 +1,13 @@
 import { defineInstrument, Lab, type RenderContext, TrialSceneCanvas } from '@weasel-js/labkit';
+import { handleLocksPreset } from '@weasel-js/path-tools';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { Bar, SelectIcon } from '@weasel-js/ui';
 import s from './HandleLockLabDemo.module.css';
 import { BLOB, type PathLabState, usePathEditTrial } from './pathEditLabScene';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
+
+const FEATURES = ['pick', 'move', 'paths', handleLocksPreset] as const;
 
 /** The two handle-lock toggles, drawn from the actions registry. */
 const LOCK_BAR: PrefGroup = {
@@ -20,7 +23,7 @@ function HandleLockTrial({ ctx }: { ctx: RenderContext<PathLabState, Record<stri
   return (
     <div className={s.trial}>
       <TrialSceneCanvas
-        features={['pick', 'move', 'paths']}
+        features={FEATURES}
         scene={scene}
         selection={selection}
         pathEdit={pathEdit}

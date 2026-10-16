@@ -31,6 +31,7 @@ const ENABLED_BUDGET_MS = 4;
 export function evaluateEnabled(
   action: Action,
   deps?: ActionDeps,
+  at?: { x: number; y: number },
 ): ActionEnabledResult {
   if (!action.enabled) return { enabled: true };
   const dev = isDev();
@@ -39,7 +40,7 @@ export function evaluateEnabled(
     : () => Date.now();
   const start = dev ? now() : 0;
   try {
-    const result = action.enabled(deps);
+    const result = action.enabled(deps, at);
     if (dev) {
       const elapsed = now() - start;
       if (elapsed > ENABLED_BUDGET_MS && !enabledSlowWarned.has(action.id)) {

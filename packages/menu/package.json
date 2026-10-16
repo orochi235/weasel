@@ -1,0 +1,43 @@
+{
+  "name": "@weasel-js/menu",
+  "version": "1.10.1",
+  "description": "Headless menu model: entries, keyboard and pointer behavior, placement. No React, no DOM.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./package.json": "./package.json"
+  },
+  "author": "orochi235",
+  "homepage": "https://orochi235.github.io/weasel/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/orochi235/weasel.git",
+    "directory": "packages/menu"
+  },
+  "bugs": {
+    "url": "https://github.com/orochi235/weasel/issues"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsup"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  }
+}

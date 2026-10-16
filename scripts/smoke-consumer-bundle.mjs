@@ -370,6 +370,7 @@ await writeFile(
     `import * as curves from '@weasel-js/geom/curves';\n` +
     `import * as tessellate from '@weasel-js/geom/tessellate';\n` +
     `import * as history from '@weasel-js/history';\n` +
+    `import * as menu from '@weasel-js/menu';\n` +
     `import * as select from '@weasel-js/select';\n` +
     `import * as svg from '@weasel-js/svg';\n` +
     // guides and its per-action subpaths, built on core. Whether core still
@@ -403,7 +404,7 @@ await writeFile(
     `import { registerFont as coreFont } from '@weasel-js/core/renderer';\n` +
     `import { registerFont as directFont } from '@weasel-js/font';\n` +
     `void coreFont; void directFont;\n` +
-    `const mods = { weasel, geom, booleans, curves, tessellate, history, select, svg, theme, ui, hud,\n` +
+    `const mods = { weasel, geom, booleans, curves, tessellate, history, menu, select, svg, theme, ui, hud,\n` +
     `  guides, guidesMove, guidesResize, guidesInsert,\n` +
     `  toolPalette, prefs, callout, toastSub };\n` +
     `for (const [n, m] of Object.entries(mods)) {\n` +
@@ -546,6 +547,16 @@ await writeFile(
     `  // @ts-expect-error an overlay that is not the kernel's must not fit\n` +
     `  foreign: routingDefineTool<number>({ id: 'smoke-foreign', overlay: 1 }),\n` +
     `};\n` +
+    // Routing, core and ui each augment `@weasel-js/react`'s `KitSettings`, and
+    // ui and core both add to `KitTargetSettings`. If a merge is lost in the
+    // published .d.ts the path types read `never`, and these fail TS2322.
+    `import type { KitSettingAt, KitSettingPath } from '@weasel-js/react';\n` +
+    `const _kitTree: KitSettingAt<'tree.typeaheadMs'> = 500;\n` +
+    `const _kitGesture: KitSettingAt<'gestures.doubleClickMs'> = 600;\n` +
+    `const _kitTargets: KitSettingPath[] = ['targets.handlePx', 'targets.curveKeyHitPx'];\n` +
+    `// @ts-expect-error no such kit setting\n` +
+    `const _kitWrong: KitSettingPath = 'tree.nope';\n` +
+    `export const _kit = [_kitTree, _kitGesture, _kitTargets, _kitWrong];\n` +
     `export const _t = _tools;\n` +
     `export type { _Sel, _View, _Scene, _Hist, _Tool, _M, _G, _S, _O, _Ui, _Hud, _UiSubpath, _Augmented };\n` +
     `export const _key = _k;\n` +

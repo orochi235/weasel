@@ -50,5 +50,6 @@ export function prefAliasedLeaf(alias: PrefAlias, target: PrefLeaf): PrefLeaf {
     ...target,
     name: prefAliasName(alias, target),
     description: alias.description === '' ? target.description : alias.description,
+    ...(alias.tags ? { tags: [...(target.tags ?? []), ...alias.tags] } : {}),
   };
 }

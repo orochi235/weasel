@@ -18,16 +18,18 @@ import { inPlane, editingLayer } from '../planeInput';
 import { pathEditPreview } from '../edit-anchors/preview';
 import { segmentUnder } from './segmentUnder';
 import { pathEditToolActive } from './pathEditTools';
+import { pathOperationTags } from '../pathGestureTags';
 
 const BEND_CURSOR: CursorSpec = 'grab';
 
 export const bendSegmentAction: Action & { requires: string[] } = inPlane({
   id: 'bendSegment',
   label: 'Bend segment',
+  tags: pathOperationTags('drag'),
   defaultBinding: { kind: 'drag', target: { kindOf: isSegment } },
   cursor: BEND_CURSOR,
   eligible: { capability: 'edits-anchors' },
-  requires: ['editAnchors', 'view'],
+  requires: ['editAnchors', 'view', 'kitSettings'],
   invoker: {
     timing: 'ongoing',
     start(ctx: InvocationCtx): OngoingHandle {

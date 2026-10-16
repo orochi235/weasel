@@ -2,7 +2,6 @@ import type { RenderLayer } from '../core/layers/render';
 import type { SelectionOverlayLayerOpts } from 'features/selection/overlay';
 import type { SceneSlotConfig } from './buildSceneLayer';
 import type { PathEditingOverlayStyle } from 'features/paths/pathEditingOverlayLayer';
-import type { PathEditCombOptions } from 'features/paths/pathEditComb';
 
 /** Standard slot names — render in this canonical order.
  *  `cellHighlight` is not an anchor for custom layers: it sits between the
@@ -47,9 +46,6 @@ export type SelectionOverlaySlotConfig<TPose> = Omit<
 export interface PathEditingOverlaySlotConfig {
   /** Anchor and handle marker overrides. */
   style?: PathEditingOverlayStyle;
-  /** How the curvature comb is drawn. Whether it shows at all is
-   *  chrome-caps' call (`path-edit.comb`). */
-  comb?: PathEditCombOptions;
 }
 
 /** Per-slot config union. The key narrows it in practice. */

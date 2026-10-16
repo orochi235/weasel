@@ -1,5 +1,7 @@
 import { type Action, actionBindings, type GestureSpec, keySpecShortcut } from '@weasel-js/core';
 import {
+  actionIcon,
+  type ActionIconSource,
   Code,
   DataGrid,
   type DataGridColumn,
@@ -9,7 +11,7 @@ import {
   type LogicalModSpec,
   PropertyPanel,
 } from '@weasel-js/ui';
-import { isValidElement, type ReactElement, type ReactNode } from 'react';
+import type { ReactElement, ReactNode } from 'react';
 import s from '../ToolkitBuilder.module.css';
 
 export function ActionsWidget({ actions }: { actions: readonly Action[] }): ReactElement {
@@ -92,13 +94,9 @@ function renderSpec(spec: GestureSpec): ReactNode {
   );
 }
 
+/** One icon thunk that throws must not take the whole table down. */
 function renderIcon(icon: Action['icon']): ReactNode {
-  if (icon === undefined || icon === null) return null;
-  if (typeof icon === 'function') {
-    try { return (icon as () => ReactNode)(); } catch { return null; }
-  }
-  if (isValidElement(icon)) return icon;
-  return icon as ReactNode;
+  try { return actionIcon(icon as ActionIconSource) ?? null; } catch { return null; }
 }
 
 function snapshotEnabled(a: Action): ReactNode {

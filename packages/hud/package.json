@@ -30,6 +30,7 @@
   "dependencies": {
     "@weasel-js/geom": "1.10.1",
     "@weasel-js/loupe": "1.10.1",
+    "@weasel-js/menu": "1.10.1",
     "@weasel-js/paint": "1.10.1",
     "@weasel-js/registry": "1.10.1",
     "@weasel-js/theme": "1.10.1"

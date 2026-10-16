@@ -25,18 +25,16 @@ export {
   nudgeAnchorsUpAction, nudgeAnchorsDownAction,
   nudgeAnchorsLeftAction, nudgeAnchorsRightAction,
   deleteAnchorsAction, cutPathAtAnchorAction, marqueeAnchorsAction, selectAnchorAction,
+  anchorEditWouldChange, commitAnchorEdit, depOf, requiresAnchorSelection,
 } from './anchorEditing';
-export {
-  simplifyBrushAction, simplifyBrushToolAction, brushRingCursor,
-  SIMPLIFY_BRUSH_RADIUS_PX, SIMPLIFY_BRUSH_TOOL, type SimplifyBrushParams,
-} from './simplifyBrush';
 export { exitPathEditToolAction, pathEditToolAction, pathEditToolActive } from './pathEditTools';
-export { retractHandlesAction, makeHandlesSymmetricAction } from './anchorHandles';
-export { handleLockAngleAction, handleLockLengthAction } from './handleLocks';
-export { averageAnchorsAction, bridgeAnchorsAction, joinAnchorsAction } from './anchorJoin';
 export {
-  simplifyPathAction, offsetPathAction, snipAtCrossingsAction, joinPathsAction, bridgePathsAction,
-  DEFAULT_BRIDGE_TENSION,
+  retractHandlesAction, makeHandlesSymmetricAction, makeHandleCommand, type HandleEdit, type HandleScope,
+} from './anchorHandles';
+export { averageAnchorsAction, joinAnchorsAction, joinSelectedAnchors } from './anchorJoin';
+export { editTargetOf } from './pathEditMarks';
+export {
+  simplifyPathAction, offsetPathAction, snipAtCrossingsAction, joinPathsAction, joinPathsCommand, planJoin,
 } from '../pathCommands';
 export { undoAction, redoAction } from './undoRedo';
 export { clipboardCopyAction, clipboardCutAction, clipboardPasteAction, clipboardPasteEventAction } from '../clipboard/action';

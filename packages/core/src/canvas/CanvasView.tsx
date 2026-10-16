@@ -23,6 +23,7 @@ import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import { useViewHelpers } from './useViewHelpers';
 import { useCanvasView } from './useCanvasView';
+import { hitAtOf } from './deps/dispatchSources';
 import { anchorStateFrom, buildAffordanceAt, buildClassifyTarget, layerAffordance } from './affordanceAt';
 import { pathFromPlane } from './planeClips';
 import { useOptionalDepRegistry } from '@weasel-js/routing/react';
@@ -373,8 +374,7 @@ export function CanvasView(props: CanvasViewProps): null {
       classifyTarget,
       clientToWorld: clientToWorldHere,
       deps: () => ({
-        view: viewApi,
-        ingestion: ingestionApi,
+        view: viewApi, ingestion: ingestionApi, hitAt: hitAtOf(classifyTarget),
         // An Escape here cancels what is in flight here.
         dispatcher: { cancelAll: (reason) => dispatcherRef.current!.cancelAll(reason) },
         // Only a view with its own selection overlays that one; otherwise the

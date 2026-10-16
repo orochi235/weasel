@@ -1,4 +1,6 @@
+import type { PointOrigin } from '@weasel-js/geom';
 import type { Op } from 'core/ops/types';
+import type { PathEditExtension, PathEditMark, PathEditStore } from 'features/paths/pathEditExtension';
 import type { HandleLocks } from './edit-anchors/params';
 
 /**
@@ -34,14 +36,17 @@ export interface EditAnchorsDep {
   /** Commit `worldPath` as the new value for `id`, as one history entry
    *  labeled `label`: a setPose when the pose IS the polygon, a batched
    *  setPose+update when it lives on data.path. Given `origins` (from
-   *  `editAnchorSetTracked`), a `data.skin` is renumbered in that entry. */
-  applyEdit(id: string, worldPath: unknown, label: string, origins?: readonly (import('@weasel-js/geom').PointOrigin | null)[]): void;
+   *  `editAnchorSetTracked`), a `data.skin` is renumbered in that entry.
+   *  The edit is finished first (see `finishEdit`); one an extension cannot
+   *  finish commits nothing. */
+  applyEdit(id: string, worldPath: unknown, label: string, origins?: readonly (PointOrigin | null)[]): void;
   /** The ops `applyEdit` would commit for the same arguments, unapplied, so
    *  a caller can make the edit part of a larger batch — the pen joining
    *  two paths edits one node and deletes the other in one undo step.
    *  Optional; a caller that needs it declines the composite edit without
-   *  it. Returns `[]` when `id` has no editable polygon. */
-  editOps?(id: string, worldPath: unknown, label: string, origins?: readonly (import('@weasel-js/geom').PointOrigin | null)[]): Op[];
+   *  it. Returns `[]` when `id` has no editable polygon, or when an
+   *  extension cannot finish the edit. */
+  editOps?(id: string, worldPath: unknown, label: string, origins?: readonly (PointOrigin | null)[]): Op[];
 
   /**
    * Anchors currently selected within the edited path, as **flat anchor
@@ -78,4 +83,30 @@ export interface EditAnchorsDep {
   handleLocks?: HandleLocks;
   /** Replace the held handle locks. Absent, the toggles are unavailable. */
   setHandleLocks?(next: HandleLocks): void;
+
+  /**
+   * `worldPath`, an edit of `id`'s committed path, finished by every
+   * extension's `finishEdit` in turn — path constraints made to hold, say.
+   * Null when one cannot finish it, and the edit should then not happen.
+   * `applyEdit` and `editOps` run it themselves; an ongoing edit calls it
+   * each frame so its preview is what they will commit. Optional: absent,
+   * edits stand as they are.
+   */
+  finishEdit?(id: string, worldPath: unknown, origins?: readonly (PointOrigin | null)[]): unknown;
+  /**
+   * Commit `worldPath` for `id` with `data` laid over its data, as one
+   * history entry, finished by no extension: what an extension writing its
+   * own data with a path it already solved commits through. Optional.
+   */
+  store?: PathEditStore;
+  /** The canvas's path-edit extensions, in order. */
+  extensions?: readonly PathEditExtension[];
+  /**
+   * The extension mark selected in place of anchors, or null. Selecting one
+   * clears the anchor selection and selecting anchors clears it, so Delete
+   * acts on one or the other. Optional.
+   */
+  selectedMark?: PathEditMark | null;
+  /** Select an extension's mark, or pass null to clear. */
+  setSelectedMark?(mark: PathEditMark | null): void;
 }

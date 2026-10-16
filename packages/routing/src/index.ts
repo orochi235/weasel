@@ -41,6 +41,8 @@ import type { ActionTuning } from './interactions/actions/tuning';
 export interface DepSchema {
   /** Currently active tool id + hotkey-hold stack. */
   activeTool: ActiveToolContextValue;
+  /** The menu host of the `ActionsProvider` in scope. */
+  menuHost?: import('./menus/menuHost').MenuHost;
 }
 
 /** Every dep name declared by anything that has merged into {@link DepSchema}. */
@@ -106,6 +108,9 @@ export type {
 } from './interactions/actions/action';
 export { actionItems } from './interactions/actions/actionItems';
 export type { ActionItem } from './interactions/actions/actionItems';
+export { actionShortcuts, keySpecShortcut } from './interactions/actions/actionShortcuts';
+export type { ActionShortcut } from './interactions/actions/actionShortcuts';
+export { actionsTagged, taggedActionItems, matchActionItem } from './interactions/actions/actionTags';
 // Both a const table and the union of its values, under one name.
 export { actionCursor, ActionDisabledReason } from './interactions/actions/action';
 export type { ActionDisabledReason as ActionDisabledReasonValue } from './interactions/actions/action';
@@ -147,6 +152,7 @@ export type {
   PendingLongPress, LongPressState, LongPressStore, LongPressOptions,
 } from './interactions/dispatcher/longPressState';
 export { DRAG_THRESHOLD_PX, pastDragThreshold, CONTROL_SELECTOR, isInControlWithin } from '@weasel-js/gestures';
+export type { GestureKitSettings } from './kitSettings';
 export { openPointerSession } from './interactions/pointerSession';
 export type {
   PointerSession, PointerSessionOptions, PointerSessionCallbacks, PointerSessionCancelReason,
@@ -183,6 +189,7 @@ export { reportRouteConflicts, type ToolScopes } from './tools/routing/reflectio
 // ─── input plumbing ───────────────────────────────────────────────────────
 export { activatesFocusedControl, focusedControlOwnsKey, historyKey, isEditableTarget, matchesKeyBinding } from './interactions/keyHelpers';
 export type { KeyBinding } from './interactions/keyHelpers';
+export { BROWSER_RESERVED_CHORDS, browserReservedChord, type ReservedChord } from './interactions/browserReservedKeys';
 export { scratchKey, getScratch, setScratch, deleteScratch } from './interactions/scratchKey';
 export type { ScratchKey, ScratchStore } from './interactions/scratchKey';
 export {
@@ -191,3 +198,11 @@ export {
 export type { IngestItem } from '@weasel-js/gestures';
 export { clientToCanvas, clientToCanvasRect } from './viewport/clientToCanvas';
 export { dlog, dwarn, isDebugEnabled } from './dlog';
+
+// ─── menus ────────────────────────────────────────────────────────────────
+export type { MenuDef, MenuDefEntry, MenuWhen, MenuHit, OwnedMenuDef } from './menus/types';
+export { mergeMenuDefs, pickMenu } from './menus/pickMenu';
+export { resolveMenu } from './menus/resolveMenu';
+export { createMenuHost } from './menus/menuHost';
+export type { MenuHost, MenuOpenRequest, OpenMenu } from './menus/menuHost';
+export type { MenuSources } from './menus/resolveMenu';

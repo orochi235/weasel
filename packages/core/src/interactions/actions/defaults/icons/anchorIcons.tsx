@@ -97,3 +97,36 @@ export function SimplifyBrushIcon() {
     </svg>
   );
 }
+
+/**
+ * Harmonize curvature: a smooth arch through its anchor, with comb teeth of
+ * one length standing out of it.
+ *
+ * @experimental
+ */
+export function HarmonizeIcon() {
+  return (
+    <svg {...SVG_BASE}>
+      <path d="M3 16 C3 9 6.5 6 10 6 S17 9 17 16" />
+      <path d="M4.02 7.43 L2.47 6.18 M10 3.5 V1.5 M15.98 7.43 L17.53 6.18" strokeWidth={1} />
+      <rect x="8.5" y="4.5" width="3" height="3" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+/**
+ * Average anchors: three anchors with spokes in to the anchor at their mean.
+ *
+ * @experimental
+ */
+export function AverageAnchorsIcon() {
+  return (
+    <svg {...SVG_BASE}>
+      <path d="M5.6 5.6 L7.6 7.6 M14.4 5.6 L12.4 7.6 M10 14.4 V12.5" strokeWidth={1.25} />
+      <rect x="2.875" y="2.875" width="3" height="3" fill="currentColor" stroke="none" />
+      <rect x="14.125" y="2.875" width="3" height="3" fill="currentColor" stroke="none" />
+      <rect x="8.5" y="14.125" width="3" height="3" fill="currentColor" stroke="none" />
+      <rect x="8.125" y="8.125" width="3.75" height="3.75" strokeWidth={1.25} />
+    </svg>
+  );
+}

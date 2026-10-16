@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   isBody, isSelectedBody, isUnselectedBody, isEmpty,
   isResizeHandle, isRotateHandle, isAnchor, isControlHandle, isAnchorOrControl,
+  isBalanceGrip, isPathEditPart,
 } from './predicates';
 
 describe('body predicates', () => {
@@ -47,5 +48,11 @@ describe('affordance-kind predicates', () => {
     expect(isAnchorOrControl({ kind: 'controlIn:0' })).toBe(true);
     expect(isAnchorOrControl({ kind: 'controlOut:0' })).toBe(true);
     expect(isAnchorOrControl({ kind: 'handle:top-left' })).toBe(false);
+  });
+  it('isBalanceGrip matches balance:N, and counts as a path-edit part', () => {
+    expect(isBalanceGrip({ kind: 'balance:3' })).toBe(true);
+    expect(isBalanceGrip({ kind: 'balance:' })).toBe(false);
+    expect(isBalanceGrip({ kind: 'anchor:3' })).toBe(false);
+    expect(isPathEditPart({ kind: 'balance:3' })).toBe(true);
   });
 });

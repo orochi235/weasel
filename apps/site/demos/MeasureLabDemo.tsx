@@ -1,0 +1,140 @@
+import {
+  asNodeId,
+  createMeasurements,
+  createScene,
+  measureNode,
+  measurementsContribution,
+  nearestMeasureEnd,
+  type RectPose,
+  solid,
+  useMeasureTool,
+} from '@weasel-js/core';
+import { createGridLayer, gridSnapStrategy, roundToCell } from '@weasel-js/guides';
+import {
+  type ConfigOf,
+  defineInstrument,
+  f,
+  Lab,
+  type RenderContext,
+  type SceneTrialState,
+  TrialSceneCanvas,
+  useTrialScene,
+} from '@weasel-js/labkit';
+import { MeasureIcon, MeasureReadout, RectIcon, SelectIcon } from '@weasel-js/ui';
+import { useMemo, useState } from 'react';
+import '@weasel-js/labkit/styles.css';
+import 'windease/styles.css';
+import s from './MeasureLabDemo.module.css';
+
+const config = f.schema({
+  snap: f.boolean(true).label('Snap to grid'),
+  spacing: f.number(20).range(5, 80).step(5).suffix('px').label('Grid spacing'),
+  angleStep: f.number(15).range(5, 90).step(5).suffix('°').label('Shift angle step'),
+});
+type Config = ConfigOf<typeof config>;
+type Layer = 'default' | 'annotations';
+type State = SceneTrialState<unknown, Layer, RectPose>;
+
+const ANNOTATIONS: Layer = 'annotations';
+/** Screen-px radius within which a drawing tool snaps to a measurement's end. */
+const END_SNAP_PX = 6;
+
+const shape = (id: string, x: number, y: number, width: number, height: number, color: string) => ({
+  id: asNodeId(id),
+  kind: 'leaf' as const,
+  layer: 'default' as const,
+  pose: { x, y, width, height },
+  data: { fill: { paint: solid(color) } },
+});
+
+/** The green square's corner to the gray target's: Move by lands one on the other. */
+const OFFSET = { start: { x: 60, y: 60 }, end: { x: 300, y: 180 } };
+/** A line rising at 30°: Rotate by turns the selection the same way. */
+const RISE = { start: { x: 440, y: 300 }, end: { x: 440 + 100 * Math.cos(Math.PI / 6), y: 300 - 100 * Math.sin(Math.PI / 6) } };
+
+// The offset is added last, so with nothing picked it is the one the commands use.
+const createLabScene = () =>
+  createScene<unknown, Layer, RectPose>({
+    systemLayers: [{ id: 'default' }, { id: ANNOTATIONS, annotation: true }],
+    initial: [
+      shape('target', 300, 180, 80, 80, '#d4d4d4'),
+      shape('mover', 60, 60, 80, 80, '#7fb069'),
+      shape('bar', 440, 60, 140, 40, '#a48bd4'),
+      measureNode(asNodeId('rise'), ANNOTATIONS, RISE.start, RISE.end) as never,
+      measureNode(asNodeId('offset'), ANNOTATIONS, OFFSET.start, OFFSET.end) as never,
+    ],
+  });
+
+function MeasureTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
+  const scene = useTrialScene(ctx, createLabScene);
+  const { snap, spacing, angleStep } = ctx.config;
+  const [measurements] = useState(() => createMeasurements({ layer: ANNOTATIONS }));
+  const measure = useMeasureTool({ measurements, angleStep: (angleStep * Math.PI) / 180 });
+  const tools = useMemo(() => ({ measure }), [measure]);
+  const ambient = useMemo(() => [measurementsContribution(scene as never, measurements)], [scene, measurements]);
+
+  const selectTool = useMemo(
+    () => ({ snap: snap ? gridSnapStrategy<RectPose>(spacing) : undefined }),
+    [snap, spacing],
+  );
+  // A measurement's ends snap first, then the grid.
+  const toolOptions = useMemo(
+    () => ({
+      snapPoint: (p: { x: number; y: number }) => nearestMeasureEnd(scene as never, measurements, p, END_SNAP_PX)
+        ?? (snap ? { x: roundToCell(p.x, spacing), y: roundToCell(p.y, spacing) } : p),
+    }),
+    [scene, measurements, snap, spacing],
+  );
+  const layers = useMemo(
+    () => ({
+      grid: {
+        layer: createGridLayer({
+          spacing,
+          bounds: () => ({ x: -2000, y: -2000, width: 4000, height: 4000 }),
+          accentEvery: 5,
+        }),
+      },
+    }),
+    [spacing],
+  );
+
+  return (
+    <div className={s.stage}>
+      <TrialSceneCanvas
+        features={['draw']}
+        defaultTools={['rect']}
+        tools={tools}
+        ambient={ambient}
+        scene={scene}
+        trial={ctx.trial}
+        selectTool={selectTool}
+        toolOptions={toolOptions}
+        layers={layers}
+      />
+      <MeasureReadout scene={scene as never} measurements={measurements} />
+    </div>
+  );
+}
+
+const measureInstrument = defineInstrument<State, Config>({
+  name: 'Measure',
+  config,
+  initialState: () => ({ scene: null }),
+  undo: {},
+  tools: {
+    tools: [
+      { id: 'select', label: 'Select', icon: SelectIcon, shortcut: 'V' },
+      { id: 'measure', label: 'Measure', icon: MeasureIcon, shortcut: 'M' },
+      { id: 'rect', label: 'Rectangle', icon: RectIcon, shortcut: 'R' },
+    ],
+  },
+  render: (ctx) => <MeasureTrial ctx={ctx} />,
+});
+
+export function MeasureLabDemo() {
+  return (
+    <div className="ckd-lab-frame">
+      <Lab title="Measure, then transform" instruments={[measureInstrument]} defaultInstrument="Measure" />
+    </div>
+  );
+}

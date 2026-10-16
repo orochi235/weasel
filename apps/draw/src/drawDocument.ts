@@ -6,11 +6,12 @@ import type {
   TextStyle,
   TextVerticalAlign,
   Fill,
+  PathEffect,
   Scene,
   SceneRegistry,
   ShapeGenerator,
 } from '@weasel-js/core';
-import { UNION_OF_CHILDREN, unionOfChildren } from '@weasel-js/core';
+import { UNION_OF_CHILDREN, unionOfChildren, withPathEffectsRegistry } from '@weasel-js/core';
 import { symmetryRegistry } from '@weasel-js/symmetry';
 
 // ─── Document / scene shapes ────────────────────────────────────────────────
@@ -51,16 +52,20 @@ export interface WeaselDrawData {
   /** The parameters a polygon or star was drawn with, which the sidebar
    *  edits and `path` is made again from. */
   generator?: ShapeGenerator;
+  /** A live blend, bend or repeat: what this node derives from its sources. */
+  pathEffect?: PathEffect;
   label?: string;
 }
 
 /** The functions a draw document's nodes name by key, for the scene and for
- *  reading a saved document back: a group's hug of its members, and a
- *  symmetry group's copies. */
-export const DRAW_REGISTRY: SceneRegistry<WeaselDrawPose, WeaselDrawData, WeaselDrawLayer> = {
-  ...(symmetryRegistry as SceneRegistry<WeaselDrawPose, WeaselDrawData, WeaselDrawLayer>),
-  derivePose: { [UNION_OF_CHILDREN]: unionOfChildren as never },
-};
+ *  reading a saved document back: a group's hug of its members, a symmetry
+ *  group's copies, and the kit's path effects, so Blend, Bend Along Path and
+ *  Repeat Along Path work and a document holding one saves and reopens. */
+export const DRAW_REGISTRY: SceneRegistry<WeaselDrawPose, WeaselDrawData, WeaselDrawLayer> =
+  withPathEffectsRegistry<WeaselDrawPose, WeaselDrawData, WeaselDrawLayer>({
+    ...(symmetryRegistry as SceneRegistry<WeaselDrawPose, WeaselDrawData, WeaselDrawLayer>),
+    derivePose: { [UNION_OF_CHILDREN]: unionOfChildren as never },
+  });
 
 const CONTENT_KEYS: ReadonlySet<string> = new Set<keyof WeaselDrawData>([
   'path', 'generator', 'text', 'style', 'runs', 'verticalAlign', 'fill', 'stroke', 'image',
@@ -73,6 +78,17 @@ export function carriedData(data: WeaselDrawData | undefined): WeaselDrawData {
   return Object.fromEntries(Object.entries(data).filter(([key]) => !CONTENT_KEYS.has(key)));
 }
 
-export type WeaselDrawLayer = 'default';
+/** The layer content goes on, and the non-printing one measurements go on. */
+export type WeaselDrawLayer = 'default' | 'annotations';
+
+/** Where measurements are kept: drawn on the canvas and saved with the
+ *  document, left out of export and of content picking. */
+export const ANNOTATION_LAYER: WeaselDrawLayer = 'annotations';
+
+/** The document's layers, content first. */
+export const DRAW_LAYERS = [{ id: 'default' }, { id: ANNOTATION_LAYER, annotation: true }] as const satisfies readonly {
+  id: WeaselDrawLayer;
+  annotation?: boolean;
+}[];
 
 export type DrawScene = Scene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>;

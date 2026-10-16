@@ -71,6 +71,7 @@ function fieldContext({ ctx, held, eachObject }: Pick<ObjectFieldOwner, 'ctx' | 
     hidden: ctx.hidden === true || ctx.hiddenAt?.(childPath) === true,
     hiddenAt: ctx.hiddenAt,
     entryAt: ctx.entryAt,
+    settles: ctx.settles,
   };
 }
 

@@ -1,7 +1,5 @@
-import {
-  type ActionTunings, asNodeId, boundsOfPath, createScene, type PathEditHost, pathFromD, type RectPose,
-  SIMPLIFY_BRUSH_TOOL, SimplifyBrushIcon, solid, useLatest,
-} from '@weasel-js/core';
+import { type ActionTunings, asNodeId, boundsOfPath, createScene, type PathEditHost, pathFromD, type RectPose, SimplifyBrushIcon, solid, useLatest } from '@weasel-js/core';
+import { SIMPLIFY_BRUSH_TOOL, simplifyBrushPreset } from '@weasel-js/path-tools';
 import {
   type ConfigOf, defineInstrument, f, Lab, type RenderContext, type SceneTrialState,
   TrialSceneCanvas, useTrialScene,
@@ -11,6 +9,8 @@ import { SelectIcon } from '@weasel-js/ui';
 import { useMemo, useState } from 'react';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
+
+const FEATURES = ['draw', simplifyBrushPreset] as const;
 
 const config = f.schema({
   radiusPx: f.number(16).range(4, 60).step(1).suffix('px').label('Brush radius'),
@@ -119,7 +119,7 @@ function BrushTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
 
   return (
     <TrialSceneCanvas
-      features={['draw']}
+      features={FEATURES}
       scene={scene}
       trial={ctx.trial}
       modes={modes}

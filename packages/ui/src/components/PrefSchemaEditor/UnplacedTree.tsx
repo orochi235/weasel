@@ -2,7 +2,8 @@ import { useMemo } from 'react';
 import { isPrefLeaf, type PrefGroup } from '@weasel-js/prefs';
 import { Icon } from '../../icons';
 import { PrefKindBadge } from '../Prefs/PrefKindBadge';
-import { filterTree, Tree, treeBranchIds, type TreeNode } from '../Tree';
+import { Tree, treeBranchIds, type TreeNode } from '../Tree';
+import { seekRows, soughtRow } from './rowSearch';
 import { GROUP_ICON, type PaletteDrag } from './Palette';
 import { keyOf, type SchemaNode } from './schemaEdit';
 import { unplacedAt } from './unplaced';
@@ -17,7 +18,7 @@ function toRows(group: PrefGroup, path: string): TreeNode[] {
   return Object.entries(group.children).map(([key, child]) => {
     const id = `${path}${path === NEW ? '' : SEP}${key}`;
     const label = nodeLabel(child.name, key);
-    const row = { id, label, textValue: `${child.name} ${key}`, ...(child.description ? { tooltip: child.description } : {}) };
+    const row = soughtRow({ id, label, ...(child.description ? { tooltip: child.description } : {}) }, { text: [child.name, key], tags: child.tags });
     return isPrefLeaf(child)
       ? { ...row, label: leafLabel(label), trailing: <PrefKindBadge kind={child.kind} /> }
       : { ...row, leading: <Icon size={16} name={GROUP_ICON[child.as ?? 'section']} />, children: toRows(child, id) };
@@ -36,7 +37,7 @@ export function UnplacedTree({ loose, looseAt, waiting, sought, selected, onPick
   looseAt(path: string): SchemaNode | undefined;
   /** What the schema does not hold yet; `null` when nothing is left. */
   waiting: PrefGroup | null;
-  /** What the structure's filter holds, lowercased: only rows whose name or key has it are listed. Empty for all. */
+  /** What the structure's filter holds, lowercased: only rows whose name, key, or a tag has it are listed. Empty for all. */
   sought: string;
   /** The tree paths selected in the editor, each marked here when it is one of these rows. */
   selected: readonly string[];
@@ -50,7 +51,7 @@ export function UnplacedTree({ loose, looseAt, waiting, sought, selected, onPick
 }) {
   const all = useMemo(() => [...loose, ...(waiting ? toRows(waiting, NEW) : [])], [loose, waiting]);
   const rows = useMemo(
-    () => (sought === '' ? all : filterTree(all, (n) => (n.textValue ?? '').toLowerCase().includes(sought))),
+    () => seekRows(all, sought),
     [all, sought],
   );
   const open = useMemo(() => treeBranchIds(all), [all]);

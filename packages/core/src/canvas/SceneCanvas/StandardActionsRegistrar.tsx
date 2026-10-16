@@ -1,6 +1,6 @@
-import type { ActionsProp, ActionTunings } from '@weasel-js/routing';
+import type { Action, ActionsProp, ActionTunings } from '@weasel-js/routing';
 import type { Dispatcher } from '@weasel-js/routing';
-import { useActionsRegistry, useDepSource, usePointerContext } from '@weasel-js/routing/react';
+import { useActionsRegistry, useDepSource } from '@weasel-js/routing/react';
 import type { Scene } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import { useDecayLoop } from 'core/viewport/useDecayLoop';
@@ -13,7 +13,7 @@ import type { ClipboardIngestCtx, SvgIngestOptions } from 'interactions/actions/
 import type { GeometryProjection } from 'interactions/actions/geometryProjection';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import type { UseResizeOptions } from 'interactions/actions/resize/options';
-import { useStandardActions } from 'interactions/actions/useStandardActions';
+import { useActionSet, useStandardDeps } from 'interactions/actions/useActionSet';
 import type React from 'react';
 import { useEffect } from 'react';
 import type { LayoutDropTargetMode, ReflowTransition } from '../../layout/types';
@@ -32,6 +32,7 @@ import {
   usePoseDescriptorDepSource,
   useSliceDepSource,
   useSnapDepSource,
+  useSurfaceDepSources,
   useTextEditDepSource,
   useViewDepSource,
   type InsertNodeFactory,
@@ -50,8 +51,9 @@ export interface StandardActionsRegistrarProps {
   adapter: BridgeAdapter;
   actions?: ActionsProp;
   tune?: ActionTunings;
-  /** Kit-standard action ids this canvas's presets and tools leave out. */
-  excludeActions: readonly string[];
+  /** The standard actions this canvas registers: its presets' and the ones
+   *  its tools bind, in registration order. */
+  standardActions: readonly Action[];
   currentViewRef: React.RefObject<View>;
   onViewChange: (v: View) => void;
   /** Forwarded from `selectTool.resize` — wires the `resizePolicy` dep
@@ -127,21 +129,15 @@ export interface StandardActionsRegistrarProps {
 }
 
 /**
- * Registers the kit's default action set into this canvas's input scope.
- *
- * For `delete`, `duplicate`, `group`, and `ungroup` the descriptor's
- * invoker is a stub (those deps aren't in `DepSchema` yet — Phase 4 T8
- * TODO). This component registers legacy bridge overrides for them so the
- * consumer-facing `run` path is functional. The overrides land after the
- * descriptor registrations (last-writer-wins) and use the same id, so the
- * dispatcher and keybinding system see a real `run` body.
+ * Registers this canvas's standard actions, and the deps they read, into its
+ * input scope, then applies the `actions` prop and `tune` over them.
  */
 export function StandardActionsRegistrar({
   selection,
   scene,
   adapter,
   actions, tune,
-  excludeActions,
+  standardActions,
   currentViewRef,
   onViewChange,
   resizeOptions,
@@ -184,8 +180,8 @@ export function StandardActionsRegistrar({
   const decayLoop = useDecayLoop();
 
   // Build the ViewApi (stable identity, refreshed closures) and hand it to
-  // useStandardActions (which publishes the `view` dep along with selection,
-  // scene, history, pointer, activeTool). `hostSize` reads the live canvas
+  // useStandardDeps (which publishes the `view` dep along with selection,
+  // scene, history, activeTool). `hostSize` reads the live canvas
   // element so keyboard zoom (Cmd+=/-) can anchor at the visible center.
   const view = useViewDepSource(
     currentViewRef,
@@ -199,11 +195,12 @@ export function StandardActionsRegistrar({
     decayLoop,
     layerIsPainted,
   );
-  useStandardActions({ selection, scene, view, history: scene.history, exclude: excludeActions });
+  useStandardDeps({ selection, scene, view, history: scene.history });
+  useActionSet(standardActions);
   // A view overlays `view` with its own camera; this name it leaves alone.
   useDepSource('rootView', () => view);
-  const pointer = usePointerContext();
-  useDepSource('pointer', () => pointer ?? undefined);
+  useSurfaceDepSources(canvasRef, currentViewRef);
+  useDepSource('actionParams', () => registry?.paramsOf);
 
   // viewport.pan / viewport.zoom are SceneCanvas-coupled (need the `view` dep
   // published just above), so they're registered here rather than in
@@ -229,9 +226,9 @@ export function StandardActionsRegistrar({
   usePoseDescriptorDepSource(poseDescriptor);
   useDepSource('boundsIncludeStroke', () => boundsIncludeStroke);
 
-  // Keyed on the exclusion too: a re-registration of the standard set would
-  // otherwise land over the overrides applied on top of it.
-  useActionsPropResolver(actions, excludeActions.join('|'));
+  // Keyed on the set too: a re-registration of it would otherwise land over
+  // the overrides applied on top of it.
+  useActionsPropResolver(actions, standardActions.map((a) => a.id).join('|'));
   useActionTunings(tune);
 
   // Mounted only when passed: an empty default registered here would land

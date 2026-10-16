@@ -1,5 +1,8 @@
 import {
   BUILTIN_TOOL_IDS,
+  type Measurements,
+  measurementsContribution,
+  nearestMeasureEnd,
   SceneCanvas,
   type SceneCanvasApi,
   type SelectionApi,
@@ -7,12 +10,14 @@ import {
   transformPath,
   useCanvasSize,
   type UseSceneTextEditReturn,
+  useMeasureTool,
   useSliceTool,
   type View,
   workspaceTintLayer
 } from '@weasel-js/core';
+import { pathTools } from '@weasel-js/path-tools';
 import { unpackSvgFiles } from '@weasel-js/svg';
-import { SceneGradientHandles, ToastRegion } from '@weasel-js/ui';
+import { MeasureReadout, SceneGradientHandles, ToastRegion } from '@weasel-js/ui';
 import { type ReactElement, type RefObject, useCallback, useMemo } from 'react';
 import { BooleansAdapterPublisher, CreateOutlinesAdapterPublisher } from './adapterPublishers';
 import { PAPER_PRESETS } from './docPersistence';
@@ -35,6 +40,9 @@ import { useGrid } from './useGrid';
 import { useSymmetry } from './useSymmetry';
 import { usePageFit } from './usePageFit';
 
+/** Screen-px radius within which a drawing tool snaps to a measurement's end. */
+const END_SNAP_PX = 6;
+
 // OS-dropped and pasted SVG files unpack into real scene nodes rather than one embedded-image
 // node. `clipboard.reviver` revives typed-array node data carried by weasel-JSON clipboard
 // payloads. Module const: SceneCanvas keys its dep wiring off the prop identity.
@@ -46,6 +54,8 @@ const DRAW_INGESTION = {
 export interface WorkspaceProps {
   scene: DrawScene;
   selection: SelectionApi;
+  /** Which measurement is picked; the measurements are nodes on the annotation layer. */
+  measurements: Measurements;
   modality: UseModalityReturn;
   /** The `.wd-canvas-host` element, which the text-edit overlay and the toasts mount in. */
   hostRef: RefObject<HTMLDivElement | null>;
@@ -98,6 +108,20 @@ export function Workspace(props: WorkspaceProps): ReactElement {
   });
   const insertPaint = useInsertPaint();
   const sliceTool = useSliceTool();
+  const { measurements } = props;
+  const measureTool = useMeasureTool({ measurements });
+  const measureEntry = useMemo(
+    () => measurementsContribution(scene as never, measurements),
+    [scene, measurements],
+  );
+  const ambientEntries = useMemo(() => [...ambient, measureEntry], [ambient, measureEntry]);
+  // Measurement ends snap first, within a few screen pixels, then the grid.
+  const gridSnap = grid.snapPoint;
+  const perPx = 1 / (view.scale.x || 1);
+  const toolOptions = useMemo(() => ({
+    snapPoint: (p: { x: number; y: number }) =>
+      nearestMeasureEnd(scene as never, measurements, p, END_SNAP_PX * perPx) ?? (gridSnap ? gridSnap(p) : p),
+  }), [scene, measurements, gridSnap, perPx]);
   const { tool: opacityScrubTool, percent: opacityScrubPercent } = useOpacityScrub({
     scene: scene as unknown as Parameters<typeof useOpacityScrub>[0]['scene'],
     selection,
@@ -127,6 +151,7 @@ export function Workspace(props: WorkspaceProps): ReactElement {
       data-mode={modeId}
     >
       <OpacityHud percent={opacityScrubPercent} />
+      <MeasureReadout scene={scene as never} measurements={measurements} />
       <ModeBreadcrumb
         mode={machine.registry.byId(modeId)}
         targetLabel={targetLabel}
@@ -135,10 +160,10 @@ export function Workspace(props: WorkspaceProps): ReactElement {
         onCancel={() => machine.cancelMode()}
       />
       {hostDims.width > 0 && hostDims.height > 0 && (
-        <SceneCanvas<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose> features={['draw']}
+        <SceneCanvas<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose> features={['draw', pathTools]}
           claimKeys
           ref={props.onCanvas}
-          ambient={ambient}
+          ambient={ambientEntries}
           width={hostDims.width}
           height={hostDims.height}
           view={view}
@@ -146,7 +171,7 @@ export function Workspace(props: WorkspaceProps): ReactElement {
           scene={scene}
           selection={selection}
           defaultTools={BUILTIN_TOOL_IDS}
-          tools={{ slice: sliceTool, opacityScrub: opacityScrubTool }}
+          tools={{ slice: sliceTool, measure: measureTool, opacityScrub: opacityScrubTool }}
           ingestion={DRAW_INGESTION}
           insertPaint={insertPaint}
           // Pick on the drawn shape, not the bounding box: clicking the blank right half of a
@@ -158,7 +183,7 @@ export function Workspace(props: WorkspaceProps): ReactElement {
           modalityHud
           onToolsCreated={props.onToolsCreated}
           selectTool={grid.snap ? { snap: grid.snap } : undefined}
-          toolOptions={grid.snapPoint ? { snapPoint: grid.snapPoint } : undefined}
+          toolOptions={toolOptions}
           layers={{
             paper: { layer: paperLayer, before: 'grid' },
             ...(grid.layer ? { grid: { layer: grid.layer } } : {}),
