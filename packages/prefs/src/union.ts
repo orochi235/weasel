@@ -1,4 +1,4 @@
-import type { PrefBase, PrefObject } from './schema';
+import type { PrefValueBase, PrefObject } from './schema';
 
 /**
  * A leaf whose value is one of several object shapes, told apart by the
@@ -10,7 +10,7 @@ import type { PrefBase, PrefObject } from './schema';
  * its `default` (without the tag) is what the value becomes when they choose
  * it. A stored value whose tag names no variant reads as the leaf's default.
  */
-export interface PrefUnion extends PrefBase<'union', unknown> {
+export interface PrefUnion extends PrefValueBase<'union', unknown> {
   /** The field of the value that names its variant. Not one of `tags`. */
   tag: string;
   variants: Record<string, PrefObject>;

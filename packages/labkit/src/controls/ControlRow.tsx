@@ -84,6 +84,8 @@ export function ControlRow<TC extends Record<string, unknown>>(props: ControlRow
       </div>
     );
   }
+  // No panel draws an `actions` run yet, and a row with no control would be a stray label.
+  if (leaf.kind === 'actions' && !drawn && !renderers?.[leaf.kind]) return null;
   if (leaf.kind !== 'alias' || drawn) return <LeafRow {...props} />;
   const alias = leaf as PrefAlias;
   const targets = aliasTargetsOf(resolved, props.config, props.over);

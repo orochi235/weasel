@@ -193,7 +193,7 @@ export function BarLayout(props: BarLayoutProps) {
 /**
  * A group's children as a bar holds them. A leaf is a cell. A `section`, a
  * nested `bar`, a `fragment`, and a group that says nothing are runs. A
- * `page`, a `tab`, and a `panel` are too much for a line, and open from a
+ * `page`, a `tab`, a `panel`, and a `menu` are too much for a line, and open from a
  * button through `open`.
  */
 export function groupBarNodes(
@@ -215,7 +215,8 @@ export function groupBarNodes(
   return out;
 }
 
-/** True for a group form a bar opens from a button, having no line to draw it on. */
+/** True for a group form a bar opens from a button, having no line to draw it on. A `menu` opens in the popover a
+ *  `panel` does until a bar opens it as a menu. */
 export function opensFromBar(as: string | undefined): boolean {
-  return as === 'page' || as === 'tab' || as === 'panel';
+  return as === 'page' || as === 'tab' || as === 'panel' || as === 'menu';
 }

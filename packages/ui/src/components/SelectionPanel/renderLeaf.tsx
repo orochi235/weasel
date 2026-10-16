@@ -52,6 +52,23 @@ function mapEntryContext(
   };
 }
 
+/** A built-in leaf's bar form, with its row form for what a bar opens it in. */
+function renderBuiltinInBar(
+  ctx: PropertyRenderContext,
+  ariaLabel: string,
+  renderers: Record<string, PropertyRenderer> | undefined,
+  row: RenderBuiltinOptions,
+): ReactNode {
+  return renderBarLeaf({
+    leaf: ctx.pref,
+    path: ctx.path,
+    name: ariaLabel,
+    field: leafField(ctx, row.nested ?? false),
+    disabled: ctx.disabled,
+    row: () => renderBuiltin(ctx, ariaLabel, renderers, row),
+  });
+}
+
 export function renderBuiltin(
   ctx: PropertyRenderContext,
   ariaLabel: string,
@@ -59,16 +76,7 @@ export function renderBuiltin(
   { selectionKey = '', nested = false, surface = 'row' }: RenderBuiltinOptions = {},
 ): ReactNode {
   const { pref, value, mixed, setValue } = ctx;
-  if (surface === 'bar') {
-    return renderBarLeaf({
-      leaf: pref,
-      path: ctx.path,
-      name: ariaLabel,
-      field: leafField(ctx, nested),
-      disabled: ctx.disabled,
-      row: () => renderBuiltin(ctx, ariaLabel, renderers, { selectionKey, nested }),
-    });
-  }
+  if (surface === 'bar') return renderBuiltinInBar(ctx, ariaLabel, renderers, { selectionKey, nested });
   // A leaf drawn inside this one's value is a field of it.
   const within: RenderBuiltinOptions = { selectionKey, nested: true };
   if (pref.kind === 'object') {
@@ -131,6 +139,7 @@ export function renderBuiltin(
     );
   }
   if (pref.kind === 'action') return <PrefActionButton pref={pref as PrefAction} path={ctx.path} disabled={ctx.disabled} />;
+  if (pref.kind === 'actions') return null;
   if (prefDrawsNoControl(pref)) return <PrefWords pref={pref} />;
   if (pref.kind === 'alias') {
     // The panel draws a resolved alias as its target, so one that reaches here points at nothing.

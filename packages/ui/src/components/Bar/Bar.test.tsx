@@ -97,6 +97,25 @@ describe('Bar', () => {
     expect(onChange).toHaveBeenCalledWith('spacing.leading', 2);
   });
 
+  it('opens a menu group from a button too, and draws nothing for an actions leaf', () => {
+    const menu: PrefGroup = {
+      name: 'Tools',
+      as: 'bar',
+      children: {
+        arrange: {
+          name: 'Arrange',
+          as: 'menu',
+          children: { gap: { kind: 'number', name: 'Gap', description: '', default: 4 } },
+        },
+        more: { kind: 'actions', name: 'More', description: '', default: undefined, group: 'arrange' },
+      },
+    };
+    render(<Bar schema={menu} values={{}} />);
+    expect(screen.queryByText('More')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Arrange' }));
+    expect(screen.getByLabelText('Gap')).toBeDefined();
+  });
+
   it('fires an action leaf by key', () => {
     const run = vi.fn();
     render(

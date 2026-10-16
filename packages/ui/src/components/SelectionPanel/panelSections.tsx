@@ -3,7 +3,7 @@
  * one strip, a `panel` in a box, and the rest as rows under their headings.
  */
 import { Fragment, type ReactNode } from 'react';
-import { prefTabRuns } from '@weasel-js/prefs';
+import { prefAsBox, prefTabRuns } from '@weasel-js/prefs';
 import { BarLayout } from '../Bar/BarLayout';
 import { HiddenBadge, hiddenAttrs } from '../Prefs/hidden';
 import { prefDrawsNoControl } from '../Prefs/PrefWords';
@@ -120,7 +120,7 @@ function placed(sections: readonly DrawnSection[], marks: PanelMarks): ReactNode
   for (const step of prefTabRuns(sections, (drawn) => drawn.section.as === 'tab')) {
     if (!step.tabs) {
       const { section, content, hidden } = step.item;
-      const cls = section.as === 'panel' ? `${s.section} ${s.sectionPanel}` : s.section;
+      const cls = prefAsBox(section.as) ? `${s.section} ${s.sectionPanel}` : s.section;
       out.push(
         <section key={section.key} className={cls} {...(sectionNamed(section) ? selectionAttrs(section.key, selectedOnly(marks)) : {})}
           {...hiddenAttrs(hidden === true)}>

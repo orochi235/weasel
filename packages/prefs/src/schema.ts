@@ -3,7 +3,7 @@
 // compose those into one registry, which `PrefsForm` renders and `openPrefs`
 // stores.
 
-import type { PrefAction } from './action';
+import type { PrefAction, PrefActions } from './action';
 import type { PrefAlias } from './alias';
 import type { PrefCondition } from './condition';
 import type { PrefSection } from './groups';
@@ -17,7 +17,7 @@ import type { Display, InfinityText } from '@weasel-js/quantity';
 
 /** The value types a built-in pref leaf can hold. */
 export type PrefKind =
-  | 'number' | 'boolean' | 'string' | 'enum' | 'color' | 'paint' | 'object' | 'list' | 'map' | 'union' | 'field' | 'action' | 'alias' | 'label' | 'separator';
+  | 'number' | 'boolean' | 'string' | 'enum' | 'color' | 'paint' | 'object' | 'list' | 'map' | 'union' | 'field' | 'action' | 'actions' | 'alias' | 'label' | 'separator';
 
 /** Leaves that share one row in a compact property UI, declared on the first
  *  of them. Purely presentational. */
@@ -109,6 +109,12 @@ export interface PrefBase<K extends string, Value> {
   defaultLocus?: PrefLocus;
 }
 
+/** The fields every leaf holding a value shares, besides {@link PrefBase}'s. */
+export interface PrefValueBase<K extends string, Value> extends PrefBase<K, Value> {
+  /** Drawn showing its value but not editable. */
+  readout?: boolean;
+}
+
 /** How a schema-driven UI should present a number pref. */
 export type PrefNumberControl = 'input' | 'slider';
 /** How a schema-driven UI should present a boolean pref. */
@@ -120,7 +126,7 @@ export type PrefEnumControl = 'select' | 'radio' | 'toggle' | 'menu';
 
 /** A numeric pref, optionally bounded and stepped, and optionally stored in a
  *  different unit from the one shown. */
-export interface PrefNumber extends PrefBase<'number', number> {
+export interface PrefNumber extends PrefValueBase<'number', number> {
   min?: number;
   max?: number;
   step?: number;
@@ -147,12 +153,12 @@ export interface PrefBooleanEncoding {
 }
 
 /** An on/off pref. */
-export interface PrefBoolean extends PrefBase<'boolean', boolean> {
+export interface PrefBoolean extends PrefValueBase<'boolean', boolean> {
   control?: PrefBooleanControl;
   encoding?: PrefBooleanEncoding;
 }
 /** A free-text pref. */
-export interface PrefString extends PrefBase<'string', string> {
+export interface PrefString extends PrefValueBase<'string', string> {
   control?: PrefStringControl;
 }
 /**
@@ -179,7 +185,7 @@ export interface PrefEnumEncoding<T extends string = string> {
 
 /** What every enum leaf carries; {@link PrefEnum} adds `clearable`. */
 export interface PrefEnumBase<T extends string = string>
-  extends PrefBase<'enum', T | undefined> {
+  extends PrefValueBase<'enum', T | undefined> {
   /** `short` holds shorter forms of `label`, longest first, for a segmented
    *  control too narrow for the full one — down to a capital or two. `icon`
    *  names a glyph in the host UI's set (weasel-ui resolves it against
@@ -220,7 +226,7 @@ export type PrefEnum<T extends string = string> = PrefEnumBase<T> & (
 
 /** A single color, stored as a hex string. For a value that may also be a
  *  gradient or a pattern, use {@link PrefPaint} instead. */
-export interface PrefColor extends PrefBase<'color', string> {
+export interface PrefColor extends PrefValueBase<'color', string> {
   /** Value is `#rrggbb`, or `#rrggbbaa` when `alpha` is set (UIs then
    *  offer an opacity control). */
   alpha?: boolean;
@@ -231,7 +237,7 @@ export interface PrefColor extends PrefBase<'color', string> {
  * UIs dispatch it to an app-supplied renderer. Deliberately NOT
  * index-signatured so concrete app interfaces stay assignable.
  */
-export type PrefCustom = PrefBase<string, unknown>;
+export type PrefCustom = PrefValueBase<string, unknown>;
 
 /**
  * A whole `Paint`, not a color inside one. Use it wherever the value is
@@ -244,7 +250,7 @@ export type PrefCustom = PrefBase<string, unknown>;
  * `'color' in paint` checks then paint flat solid. The union has to be
  * edited as a union.
  */
-export interface PrefPaint extends PrefBase<'paint', unknown> {
+export interface PrefPaint extends PrefValueBase<'paint', unknown> {
   /** Offer an opacity control alongside the color. */
   alpha?: boolean;
 }
@@ -261,7 +267,7 @@ export interface PrefPaint extends PrefBase<'paint', unknown> {
  * edits that union. A child may also be a {@link PrefSection}, which
  * organizes the fields under a heading without contributing to the path.
  */
-export interface PrefObject extends PrefBase<'object', unknown> {
+export interface PrefObject extends PrefValueBase<'object', unknown> {
   children: Record<string, PrefLeaf | PrefSection>;
   /**
    * Lift a non-object value into the object form, for a consumer field that
@@ -277,7 +283,7 @@ export interface PrefObject extends PrefBase<'object', unknown> {
  * value is read and written at (`'camera.type'`) — the currency fields refer
  * to each other in. A surface offers the fields it draws as the choices.
  */
-export interface PrefField extends PrefBase<'field', string> {
+export interface PrefField extends PrefValueBase<'field', string> {
   /** Only fields of these kinds may be named. Default: any leaf. */
   kinds?: readonly string[];
 }
@@ -297,6 +303,7 @@ export type BuiltinPref =
   | PrefUnion
   | PrefField
   | PrefAction
+  | PrefActions
   | PrefAlias
   | PrefLabel
   | PrefSeparator;
@@ -328,6 +335,7 @@ export const PREF_KINDS: Record<PrefKind, true> = {
   union: true,
   field: true,
   action: true,
+  actions: true,
   alias: true,
   label: true,
   separator: true,

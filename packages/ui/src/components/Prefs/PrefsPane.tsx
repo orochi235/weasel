@@ -1,5 +1,5 @@
 import { Fragment, type ReactNode, type RefObject } from 'react';
-import { isPrefLeaf, prefTabRuns, type PrefAlias, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
+import { isPrefLeaf, prefAsBox, prefTabRuns, type PrefAlias, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
 import { groupHeading } from './groupHeading';
 import { GroupTabs } from './GroupTabs';
 import { BarLayout, groupBarNodes, shownBarNodes, type BarLeafNode, type BarOrientation } from '../Bar/BarLayout';
@@ -112,7 +112,7 @@ export function paneChildren(
       out.push(<PaneSection key={key} ctx={ctx} group={child} path={p} depth={Math.max(depth, box ? 1 : 0)} box={box} />);
     } else if (box) {
       out.push(box(key, child, p));
-    } else if (child.as === 'panel') {
+    } else if (prefAsBox(child.as)) {
       out.push(<PanePanel key={key} ctx={ctx} group={child} path={p} depth={depth} />);
     } else {
       out.push(<PaneSection key={key} ctx={ctx} group={child} path={p} depth={depth} />);

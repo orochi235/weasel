@@ -205,6 +205,8 @@ function LeafRow({ ctx, path: own, pref, at }: { ctx: WalkCtx; path: string; pre
       </div>
     );
   }
+  // No panel draws an `actions` run yet, and a row with no control would be a stray label.
+  if (pref.kind === 'actions' && !custom) return null;
   const control = custom ? custom(renderCtx) : renderBuiltin(renderCtx, ctx.renderers);
   if (custom && control === null) return null;
 
@@ -326,6 +328,7 @@ function renderBuiltin(
     );
   }
   if (pref.kind === 'action') return <PrefActionButton pref={pref as PrefAction} path={ctx.path} disabled={ctx.disabled} />;
+  if (pref.kind === 'actions') return null;
   const field = leafField(ctx, siblings);
   if (field === null) {
     // App-defined kind with no `renderers` entry: labeled placeholder, not a

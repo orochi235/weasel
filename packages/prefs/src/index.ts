@@ -18,7 +18,7 @@ export {
   VERSION_RECORD,
   visiblePrefSubtree,
 } from './helpers';
-export type { PrefAction, PrefActionContext, PrefActionControl } from './action';
+export type { PrefAction, PrefActionContext, PrefActionControl, PrefActions } from './action';
 export { prefTabRuns, type PrefTabRun } from './tabRuns';
 export { prefLeavesTagged, prefLeafTags } from './tags';
 export {
@@ -76,7 +76,7 @@ export type { PrefList } from './list';
 export type { PrefMap } from './map';
 export { prefVariantDefault, prefVariantOf, type PrefUnion } from './union';
 export { prefType } from './type';
-export { prefGroupIsPage } from './groups';
+export { prefAsBox, prefGroupIsPage } from './groups';
 export { prefFitsHeading, prefHeadingKey } from './heading';
 export type { PrefBarOverflow, PrefGroup, PrefGroupAs, PrefSection, PrefSectionAs } from './groups';
 export type { PrefAtPath, PrefPath, PrefValueAt, PrefValueOf } from './paths';
@@ -101,6 +101,7 @@ export {
   pairRowsOf,
   type BuiltinPref,
   type PrefBase,
+  type PrefValueBase,
   type PrefBoolean,
   type PrefBooleanControl,
   type PrefBooleanEncoding,
