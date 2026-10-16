@@ -193,13 +193,14 @@ export interface RegisteredAction {
   key: string;
   label: string;
   group?: string;
+  tags?: readonly string[];
   shortcut?: string;
 }
 
 /** What the registry says of the action a pref fires, which the pref does not hold and no row edits. */
 function registeredFacts(action: RegisteredAction | undefined): Array<[string, unknown]> {
   if (!action) return [];
-  const facts: Array<[string, unknown]> = [['registered as', action.label], ['registered group', action.group], ['shortcut', action.shortcut]];
+  const facts: Array<[string, unknown]> = [['registered as', action.label], ['registered group', action.group], ['registered tags', action.tags?.join(', ')], ['shortcut', action.shortcut]];
   return facts.filter(([, value]) => value !== undefined && value !== '');
 }
 

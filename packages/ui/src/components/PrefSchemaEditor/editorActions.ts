@@ -11,6 +11,8 @@ export interface EditorAction {
   label: string;
   /** What the list files it under. */
   group?: string;
+  /** Words its filter also finds it by: the action's tags, then its variant's. */
+  tags?: readonly string[];
   icon?: ReactNode;
   shortcut?: string;
 }
@@ -37,6 +39,7 @@ export function useEditorActions(given: readonly EditorAction[] | undefined): re
       key: item.key,
       label: item.label,
       ...(item.action.group !== undefined ? { group: item.action.group } : {}),
+      ...(item.tags.length > 0 ? { tags: item.tags } : {}),
       icon: typeof item.icon === 'function' ? item.icon() : item.icon,
       shortcut: item.action.shortcut ?? formatShortcut(actionShortcuts(item.action, item.params)[0]),
     }));

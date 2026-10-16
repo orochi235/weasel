@@ -193,10 +193,6 @@ Priority tags:
   operations in `docs/path-operations.md` is tagged: the adopted branches were landing when tags
   went in, and a mass edit would have collided with them. Tag each once its branch has landed, so
   the operations sharing a gesture can be gathered into one tool's variants by tag.
-- **(P3) The schema editor's trees do not search tags.** `PrefSchemaEditor`'s structure,
-  settings, unplaced, and action trees filter on each row's `textValue` (name and key), so a tag
-  a pref or a group carries finds nothing there, where `PrefsForm` and the command palette match
-  it through `matchQuery`. Its `RegisteredAction` has no `tags` to search either.
 - **(P2) Tune the Simplify brush hands-on, with the maintainer driving.** It went in from its
   audition lab with first-draft behavior and keys: brush size and its key, the tolerance it
   applies, and how it shows what it will remove (`defaults/simplifyBrush.ts`).

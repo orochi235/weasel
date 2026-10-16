@@ -7,6 +7,12 @@ import { STUB } from './schemaExport';
 const num: PrefLeaf = { kind: 'number', name: 'N', description: '', default: 3, min: 0, max: 10, unit: { toDisplay: (v: number) => v } as never } as PrefLeaf;
 
 describe('kindSchemas', () => {
+  it('names the tags of the action a pref fires among what the registry says of it', () => {
+    const leaf = { kind: 'action', name: 'Copy', description: '', default: undefined, action: 'copy' } as PrefLeaf;
+    const { readOnly } = attributeSchema(leaf, {}, [{ key: 'copy', label: 'Copy', tags: ['clipboard', 'edit'] }]);
+    expect(readOnly).toContainEqual(['registered tags', 'clipboard, edit']);
+  });
+
   it('describes a number leaf with base, default and number attributes', () => {
     const { shared, own, readOnly } = attributeSchema(num);
     expect(Object.keys(shared)).toEqual(expect.arrayContaining(['name', 'description', 'tags', 'hidden']));
