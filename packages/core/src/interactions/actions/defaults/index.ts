@@ -38,6 +38,9 @@ export {
   simplifyPathAction, offsetPathAction, snipAtCrossingsAction, joinPathsAction, bridgePathsAction, trimPathAction, extendToMeetAction,
   DEFAULT_BRIDGE_TENSION,
 } from '../pathCommands';
+export {
+  blendAction, bendAlongAction, repeatAlongAction, editPathEffectAction, expandPathEffectAction,
+} from '../pathEffects';
 export { undoAction, redoAction } from './undoRedo';
 export { clipboardCopyAction, clipboardCutAction, clipboardPasteAction, clipboardPasteEventAction } from '../clipboard/action';
 export { makeToolOffhandAction, buildToolOffhandBindings, TOOL_OFFHAND_ID, type ToolOffhandBindingSpec } from '@weasel-js/routing';
