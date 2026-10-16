@@ -54,7 +54,7 @@ function ProbeDepSelection({ onValue }: { onValue: (v: unknown) => void }) {
 // Kit-standard descriptor IDs
 // ---------------------------------------------------------------------------
 const KIT_IDS = [
-  'escape', 'cancelGesture', 'selectAll', 'delete', 'duplicate', 'transformAgain',
+  'escape', 'menu.context', 'cancelGesture', 'selectAll', 'delete', 'duplicate', 'transformAgain',
   'group', 'ungroup',
   'undo', 'redo',
   'flip',
@@ -70,7 +70,7 @@ const KIT_IDS = [
   'resize', 'rotate', 'areaSelect', 'insert', 'insert.adjustRotation', 'insert.reposition', 'clone',
   'editAnchors', 'editCorner', 'enterPathEdit', 'exitPathEdit', 'insertPathAnchor', 'bendSegment',
   'nudgeAnchors.up', 'nudgeAnchors.down', 'nudgeAnchors.left', 'nudgeAnchors.right',
-  'deleteAnchors', 'cutPathAtAnchor', 'retractHandles', 'makeHandlesSymmetric', 'cycleCornerShape', 'setCorners',
+  'deleteAnchors', 'cutPathAtAnchor', 'pathEditTool.exit', 'retractHandles', 'makeHandlesSymmetric',
   'averageAnchors', 'joinAnchors', 'simplifyPath', 'offsetPath', 'snipAtCrossings', 'joinPaths',
   'marqueeAnchors', 'selectAnchor',
   'lassoSelect', 'viewport.pinchZoom',

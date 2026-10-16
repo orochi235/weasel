@@ -33,7 +33,15 @@ export function moveEnd(translateOps: MoveEnd['translateOps'] = () => []): MoveE
 export function makeEditAnchorsDep(over: Partial<EditAnchorsDep> = {}): EditAnchorsDep {
   let selected: ReadonlySet<number> = new Set();
   let marquee: EditAnchorsDep['marquee'] = null;
+  let handleLocks: EditAnchorsDep['handleLocks'];
+  let tool: string | null = null;
   const base: EditAnchorsDep = {
+    get handleLocks() {
+      return handleLocks;
+    },
+    setHandleLocks(next) {
+      handleLocks = next;
+    },
     editingId: 'node-a',
     setEditingId: () => {},
     getStorageKind: () => 'pose',
@@ -51,6 +59,12 @@ export function makeEditAnchorsDep(over: Partial<EditAnchorsDep> = {}): EditAnch
     },
     setMarquee(rect) {
       marquee = rect;
+    },
+    get tool() {
+      return tool;
+    },
+    setTool(id) {
+      tool = id;
     },
   };
   // Spread order matters: an explicit `selectedAnchors` / `marquee`

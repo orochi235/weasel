@@ -1,6 +1,6 @@
 import { useLatest } from '@weasel-js/react';
 import { createLongPressStore, type Dispatcher } from '@weasel-js/routing';
-import { useActionsRegistry, useDepRegistry, useDepSource, useGestureDispatcher } from '@weasel-js/routing/react';
+import { useActionsRegistry, useDepRegistry, useGestureDispatcher } from '@weasel-js/routing/react';
 import type { Affordance } from 'affordances/types';
 import { EMPTY_CHROME_STATE } from 'core/selection/chromeState';
 import type { View } from 'core/viewport/view';
@@ -9,8 +9,11 @@ import type React from 'react';
 import { useCallback, useInsertionEffect, useMemo, useState } from 'react';
 import type { Contribution } from '../../tools/overlayBinding';
 import type { ToolsApi } from '../../tools/overlayBinding';
-import { anchorStateFrom, buildAffordanceAt, buildClassifyTarget, chromeAffordances, layerAffordance } from '../affordanceAt';
+import { useDispatchDepSources } from '../deps/dispatchSources';
+import { anchorStateFrom, buildAffordanceAt, buildClassifyTarget, layerAffordance } from '../affordanceAt';
+import { useChromeAffordances } from './useChromeAffordances';
 import type { CanvasExtensionApi } from '../canvasExtension';
+import { useKitSettingsDepSource } from '../deps/kitSettings';
 import { pathFromPlane } from '../planeClips';
 import { useOptionalViewRegistry } from '../viewRegistry';
 import { traceConversion } from './coordTrace';
@@ -137,12 +140,7 @@ export function GestureDispatcherMounter({
 
   // Build the `affordanceAt` thunk. Takes world coords and delegates to
   // `buildAffordanceAt` for handle hit-testing.
-  const affordances = useMemo(() => chromeAffordances({
-    ...(targetScale !== undefined ? { targetScale } : {}),
-    ...(handleHitRadius !== undefined ? { handleHitRadius } : {}),
-    rotationBadge,
-    getAnchorState,
-  }), [targetScale, handleHitRadius, rotationBadge, getAnchorState]);
+  const affordances = useChromeAffordances({ targetScale, handleHitRadius, rotationBadge, getAnchorState });
   useInsertionEffect(() => {
     if (chromeAffordancesRef) chromeAffordancesRef.current = affordances;
   });
@@ -266,6 +264,7 @@ export function GestureDispatcherMounter({
     longPress,
     ...(views ? { views } : {}),
   });
-  useDepSource('longPress', () => longPressState);
+  useDispatchDepSources(longPressState, classifyTarget, kindOfNodeRef);
+  useKitSettingsDepSource();
   return null;
 }

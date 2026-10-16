@@ -2,7 +2,13 @@ import { describe, expect, it } from 'vitest';
 import { createHistory } from '@weasel-js/history';
 import type { SerializedHistory } from '@weasel-js/history';
 import type { Op, SerializedScene } from '@weasel-js/core';
-import { asNodeId, buildWeaselClipboardText, parseWeaselClipboardText } from '@weasel-js/core';
+import {
+  asNodeId, buildWeaselClipboardText, createScene, effectivePose, isAnnotationNode, measureNode, measurementOf,
+  parseWeaselClipboardText,
+} from '@weasel-js/core';
+import {
+  ANNOTATION_LAYER, DRAW_LAYERS, DRAW_REGISTRY, type WeaselDrawData, type WeaselDrawLayer, type WeaselDrawPose,
+} from './drawDocument';
 import { clipboardJsonReviver, nodeSpecsFromSnapshot, reviveSnapshot, reviveTypedArrays, serializeReplacer } from './persistence';
 
 // These cover the new bit of App's localStorage autosave: the undo history is
@@ -150,6 +156,20 @@ describe('persistence — scene snapshot → node specs', () => {
     expect(specs.find((s) => s.id === asNodeId('a'))!.parent).toBe(asNodeId('g'));
     // The root leaf has no parent.
     expect(specs.find((s) => s.id === asNodeId('b'))!.parent ?? null).toBeNull();
+  });
+
+  it('saves measurements with the document and loads them back on the annotation layer', () => {
+    const scene = createScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>({ systemLayers: DRAW_LAYERS });
+    scene.add(measureNode(asNodeId('m'), ANNOTATION_LAYER, { x: 0, y: 0 }, { x: 30, y: 40 }) as never);
+    const saved = JSON.parse(JSON.stringify(scene.toJSON(), serializeReplacer)) as SerializedScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>;
+    const back = createScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>({
+      systemLayers: DRAW_LAYERS,
+      initial: nodeSpecsFromSnapshot(saved),
+    });
+    const node = back.get(asNodeId('m'));
+    expect(node?.layer).toBe(ANNOTATION_LAYER);
+    expect(isAnnotationNode(back, 'm')).toBe(true);
+    expect(measurementOf(node)).toMatchObject({ dx: 30, dy: 40, distance: 50 });
   });
 
   it('revives typed arrays inside node data', () => {
@@ -323,5 +343,26 @@ describe('persistence — corner shape', () => {
     const revived = reviveTypedArrays(JSON.parse(wire) as { path: typeof path });
     expect(revived.path.corners).toEqual([null, { shape: 'bevel', radius: 3 }]);
     expect(revived.path.coords).toBeInstanceOf(Float32Array);
+  });
+});
+
+describe('persistence — a group reopens tracking its members', () => {
+  it('restores dependsOn and the derived pose, so moving a member moves the group', () => {
+    const make = (initial?: Parameters<typeof createScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>>[0]['initial']) =>
+      createScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>({
+        systemLayers: [{ id: 'default' }], registry: DRAW_REGISTRY, ...(initial ? { initial } : {}),
+      });
+    const scene = make();
+    const g = scene.add({
+      kind: 'container', layer: 'default', pose: { x: 0, y: 0, width: 0, height: 0 }, data: {},
+      dependsOn: 'children', derivePose: DRAW_REGISTRY.derivePose!['kit:unionOfChildren'],
+    });
+    const a = scene.add({ kind: 'leaf', layer: 'default', pose: { x: 10, y: 10, width: 20, height: 20 }, data: {}, parent: g });
+
+    const json = JSON.parse(JSON.stringify(scene.toJSON(), serializeReplacer)) as SerializedScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>;
+    const reopened = make(nodeSpecsFromSnapshot(json, DRAW_REGISTRY));
+    reopened.setPose(a, { x: 100, y: 10, width: 20, height: 20 });
+
+    expect(effectivePose(reopened, reopened.get(g)!)).toMatchObject({ x: 100, y: 10, width: 20, height: 20 });
   });
 });

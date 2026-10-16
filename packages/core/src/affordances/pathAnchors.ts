@@ -1,11 +1,11 @@
-/** Path anchor, control-handle, and segment affordances. */
+/** Path anchor, control-handle, and segment affordances, and the parts path-edit extensions add. */
 
 import type { CursorSpec } from '@weasel-js/cursor';
 import type { Affordance, AffordanceBinding, AffordanceRegion, CommonAffordanceScratch } from './types';
 import type { ChromeState } from 'core/selection/chromeState';
-import type { PolygonPath } from '@weasel-js/geom';
+import { pathToAnchors, type AnchorSet, type PolygonPath } from '@weasel-js/geom';
 import { enumerateAnchors } from 'interactions/actions/edit-anchors/geometry';
-import { createPathCornerAffordance } from './pathCorners';
+import type { PathEditExtension } from 'features/paths/pathEditExtension';
 
 /**
  * Live anchor-editing state. The thunk that returns it is called on every
@@ -17,6 +17,10 @@ export interface AnchorState {
   editingId: string | null;
   /** Current editable path for a node id. Non-polygon values are ignored. */
   getPose(id: string): unknown;
+  /** The committed pose and data of a node, which extensions' parts read. */
+  getNode?(id: string): { pose: unknown; data: unknown } | null;
+  /** The path-edit extensions whose parts are pressed, in order. */
+  extensions?: readonly PathEditExtension[];
 }
 
 /** Options for the path-anchor affordances. */
@@ -33,24 +37,25 @@ export interface AnchorScratch extends CommonAffordanceScratch {
   targetId: string;
   /** Sequential anchor index in path walk order. */
   anchorIndex: number;
-  /** Which of the anchor's grabbable points this is: the anchor, a control,
-   *  or the widget that cuts its corner. */
-  part: 'anchor' | 'controlIn' | 'controlOut' | 'corner';
+  /** Which of the anchor's three grabbable points this is. */
+  part: 'anchor' | 'controlIn' | 'controlOut';
 }
 
-/** Chrome-caps id gating every returned affordance. */
+/** Chrome-caps id gating the anchor, control, and segment affordances. */
 export const PATH_ANCHOR_CHROME_ID = 'path-edit.anchors';
 
 /**
- * Segment, corner-widget, anchor, and control affordances for the selected
+ * Segment, extension-part, anchor, and control affordances for the selected
  * paths, bottom → top.
  *
- * Separate affordances rather than one, so that a control handle beats an
- * anchor regardless of which is nearer, the way controls draw on top, and both
- * beat the corner widgets and the segment they sit on. Within each, nearest wins. A press on the edited
+ * Three affordances rather than one, so that a control handle beats an anchor
+ * regardless of which is nearer, the way controls draw on top, and both beat
+ * the segment they sit on. Within each, nearest wins. A press on the edited
  * path's outline is a `segment` hit, which the segment bend binds to and a
- * selection move turns down. They deliberately share one id: chrome-caps
- * gates anchor editing as a single piece of chrome.
+ * selection move turns down. Anchors, controls, and segments share one id:
+ * chrome-caps gates anchor editing as a single piece of chrome. A part a
+ * path-edit extension adds (`PathEditExtension.parts`) may name a chrome id of
+ * its own as well, so it can be shown apart from the anchors.
  *
  * Order matters — spread this into an affordance list in the returned order.
  */
@@ -147,28 +152,56 @@ export function createPathAnchorAffordances(
     },
   };
 
-  const edited = (state: ChromeState): { id: string; path: PolygonPath } | null => {
-    const editingId = getAnchorState()?.editingId ?? null;
-    if (editingId === null) return null;
-    return editablePaths(state).find(({ id }) => id === editingId) ?? null;
-  };
-  const corners = createPathCornerAffordance(PATH_ANCHOR_CHROME_ID, edited, hitRadius * 0.75, cursor);
-
   const segments: Affordance = {
     id: PATH_ANCHOR_CHROME_ID,
     regions(state) {
-      const target = edited(state);
-      if (!target) return [];
-      const editingId = target.id;
+      const editingId = getAnchorState()?.editingId ?? null;
+      if (editingId === null) return [];
+      const edited = editablePaths(state).find(({ id }) => id === editingId);
+      if (!edited) return [];
       return [{
         id: `${editingId}:segment`,
         targetId: null,
-        shape: { kind: 'outline', path: target.path, hitRadiusPx: hitRadius },
+        shape: { kind: 'outline', path: edited.path, hitRadiusPx: hitRadius },
         hitKind: 'segment',
         bind: (): AffordanceBinding => ({ initialScratch: { targetId: editingId } }),
       }];
     },
   };
 
-  return [segments, corners, anchors, controls];
+  return [segments, extensionParts(getAnchorState, hitRadius, cursor), anchors, controls];
+}
+
+/** The parts path-edit extensions add to the path in edit mode while it is
+ *  selected, each pressed as its own `hitKind`. */
+function extensionParts(
+  getAnchorState: () => AnchorState | null,
+  hitRadius: number,
+  cursor: CursorSpec,
+): Affordance {
+  return {
+    id: PATH_ANCHOR_CHROME_ID,
+    regions(state) {
+      const anchorState = getAnchorState();
+      const editingId = anchorState?.editingId ?? null;
+      const extensions = anchorState?.extensions?.filter((e) => e.parts) ?? [];
+      if (editingId === null || extensions.length === 0) return [];
+      if (!(state.selection as readonly string[]).includes(editingId)) return [];
+      const pose = anchorState!.getPose(editingId);
+      const node = anchorState!.getNode?.(editingId);
+      if (!node || !pose || (pose as { kind?: string }).kind !== 'polygon') return [];
+      const target = {
+        id: editingId, node, path: pose as PolygonPath, anchors: pathToAnchors(pose as PolygonPath) as AnchorSet,
+      };
+      return extensions.flatMap((ext) => ext.parts!(target).map((part): AffordanceRegion => ({
+        id: `${editingId}:${part.hitKind}`,
+        targetId: null,
+        shape: { kind: 'point', x: part.x, y: part.y, hitRadiusPx: hitRadius },
+        hitKind: part.hitKind,
+        ...(part.chromeId ? { chromeId: part.chromeId } : {}),
+        cursor,
+        bind: (): AffordanceBinding => ({ initialScratch: { targetId: editingId } }),
+      })));
+    },
+  };
 }

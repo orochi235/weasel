@@ -64,7 +64,8 @@ tessellation, polylines, trim), `booleans/splitBySegment.ts` (`./booleans`).
 
 **Editing** — in `@weasel-js/geom`: `paths/anchorEdits.ts` (the anchor-set
 mutations: translate, handle-drag with smooth mirroring, insert-on-segment,
-delete-with-refit, scissors, rect select) and the anchor model itself
+delete-with-refit, scissors, rect select), the curvature comb
+(`paths/curvature.ts`), the balance-handle edits (`paths/balanceHandles.ts`), and the anchor model itself
 (`pathToAnchors` / `anchorsToPath`, `PenAnchor`, `nearestSegmentT`). Its
 invariant test, `anchorEdits.test.ts`, stays here because it reads an action's
 anchor walker.
@@ -72,7 +73,10 @@ anchor walker.
 **Rendering** — `pathLayer.ts`, `markerCommands.ts` (marker heads as draw
 commands; the ribbon, the marker registry and `strokeToPath` are in
 `@weasel-js/stroke`), plus `penPreviewLayer.ts` (the pen's
-in-progress path) and `pathEditingOverlayLayer.ts` (anchor-edit chrome)
+in-progress path) and `pathEditingOverlayLayer.ts` (anchor-edit chrome, with
+the curvature comb from `pathEditComb.ts` and the balance lines from
+`pathEditBalance.ts` drawn under chrome-caps' `path-edit.comb` and
+`path-edit.balance`, both off by default)
 
 ## Anchors are a view, not the storage
 
@@ -115,6 +119,39 @@ by `editCornerAction`; `cycleCornerShapeAction` and `setCornersAction` change
 the selected corners, and `cornerControls.ts` / `useCornerControls` are the
 panel over them.
 
+## Constraints
+
+A node's `data.constraints` is a list of `PathConstraint`s (`@weasel-js/geom`),
+numbered by flat anchor index. The `editAnchors` dep makes them hold through
+every path edit: `editOps` runs `constrainPathEdit` before it stores the path,
+and renumbers the list through the edit's origins, so a delete or an insert
+keeps each constraint on the anchors it named. The anchor drag calls the dep's
+`constrainEdit` each frame, so the preview is what the commit will store; a
+frame the constraints cannot hold in is dropped. A constraint that does not
+hold when an edit starts conflicts with the rest: it is left out of the solve,
+and the overlay draws its mark (`constraintGlyphs.ts`) in the conflict color.
+`constrainAnchors` and `unconstrainAnchors` add and remove constraints on the
+selected anchors through the dep's `setConstraints`. Horizontal and vertical
+read a `data.path` node's rotation as their frame (`pathConstraints.ts`).
+
+A click on a mark selects that constraint (the anchor selection and the
+constraint selection exclude each other), and Delete removes it
+(`deleteConstraint`). A solve that holds only by shrinking a named segment to a
+point — horizontal and vertical on one segment — counts as a conflict.
+
+A whole-shape transform — resize, rotate, flip — does not solve. It carries
+the list unchanged: a rigid move keeps every constraint, a scale or a flip keeps
+all but a set length (and, when non-uniform, equal lengths and angles off the
+scale's axes), and a rotation of a `data.path` node turns the frame its
+horizontal and vertical read. What a transform breaks is reported by
+`constraintConflictsOf`, the same report a conflicting add gets, and later edits
+leave it out of the solve.
+
+The whole-path commands — Simplify, Offset, Trim segment, Extend to next path,
+and the rest built on `pathCommands/pathNodes.ts` — rebuild the anchor list
+without origins to renumber it through, so they drop the constraints, as they
+drop a skin.
+
 ## Generated shapes
 
 A drawn polygon or star keeps the parameters it was made from in
@@ -124,3 +161,15 @@ the properties panel does through the entry's `settle` when Sides, Points or
 Inner changes. Editing the path by hand turns the shape into plain geometry:
 `editAnchors` drops the generator, and a generator whose path no longer matches
 it is dropped on the next parameter change rather than overwriting the edit.
+
+## Warps
+
+A distorted, enveloped or puppet-warped path keeps the warp beside its geometry
+in `data.warp` (`pathWarp.ts`): the unwarped source, the warp as data
+(`PathWarp`, from `@weasel-js/geom`), the refit tolerance, and `frame`, the map
+from the warp's own frame to where the node stores its path. The geometry is
+still what every reader uses. Moving, resizing or rotating the node leaves the
+stored path alone, so the warp stays valid without being rewritten; anything
+that rewrites the path drops the warp, as it drops a generator, and a warp whose
+result no longer matches the path is ignored. The tools are in
+`tools/builtin/warp/`, the actions in `interactions/actions/warp/`.

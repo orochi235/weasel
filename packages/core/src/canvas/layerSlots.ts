@@ -1,6 +1,7 @@
 import type { RenderLayer } from '../core/layers/render';
 import type { SelectionOverlayLayerOpts } from 'features/selection/overlay';
 import type { SceneSlotConfig } from './buildSceneLayer';
+import type { PathEditingOverlayStyle } from 'features/paths/pathEditingOverlayLayer';
 
 /** Standard slot names — render in this canonical order.
  *  `cellHighlight` is not an anchor for custom layers: it sits between the
@@ -40,10 +41,18 @@ export type SelectionOverlaySlotConfig<TPose> = Omit<
   poseById?: (id: string) => TPose | null;
 };
 
+/** Path-edit overlay slot config: how `<SceneCanvas>` draws the chrome of the
+ *  path whose anchors are being edited. */
+export interface PathEditingOverlaySlotConfig {
+  /** Anchor and handle marker overrides. */
+  style?: PathEditingOverlayStyle;
+}
+
 /** Per-slot config union. The key narrows it in practice. */
 export type StandardSlotConfig<TNode extends { id: string }, TPose> =
   | SceneSlotConfig<TNode, TPose>
-  | SelectionOverlaySlotConfig<TPose>;
+  | SelectionOverlaySlotConfig<TPose>
+  | PathEditingOverlaySlotConfig;
 
 /** What may fill one of the canvas's named layer slots: a config the canvas
  *  builds the layer from, a pre-built layer, or `null` to leave the slot
@@ -79,6 +88,9 @@ export type LayersMap<
    *  pre-built layer (`{ layer }`) — e.g. `createCellHighlightLayer` from
    *  `@weasel-js/guides` — or `null`. */
   cellHighlight?: CustomLayerEntry | null;
+  /** `<SceneCanvas>`'s anchor-editing overlay, above the selection overlay:
+   *  the config it builds the layer from, a pre-built layer, or `null`. */
+  pathEditingOverlay?: PathEditingOverlaySlotConfig | CustomLayerEntry | null;
 } & {
   [customKey: string]: LayerSlotValue<TNode, TPose> | TSceneSlot | undefined;
 };

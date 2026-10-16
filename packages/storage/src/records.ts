@@ -1,3 +1,4 @@
+import { createEmitter } from '@weasel-js/registry';
 import type { StorageAdapter, StorageChange, SyncStorageAdapter } from './types';
 import { DELETED, createWriteQueue } from './writeQueue';
 
@@ -98,8 +99,8 @@ function buildCache(
   const retryMs = options.retryMs ?? 1000;
   const retryMaxMs = options.retryMaxMs ?? 30_000;
   const values = new Map<string, unknown>(options.initial ?? []);
-  const listeners = new Set<(changes: RecordChange[]) => void>();
-  const overruledListeners = new Set<(changes: [string, unknown][]) => void>();
+  const changed = createEmitter<[RecordChange[]]>();
+  const overruledEmitter = createEmitter<[[string, unknown][]]>();
   // Two reasons writing is off. A read landing clears `unread`; nothing
   // clears `stopped`, which is the opener's choice.
   let unread = startUnread;
@@ -116,9 +117,7 @@ function buildCache(
     else resolve();
   });
 
-  const emit = (changes: RecordChange[]): void => {
-    for (const listener of [...listeners]) listener(changes);
-  };
+  const emit = changed.emit;
 
   const queue = createWriteQueue({
     storage,
@@ -150,7 +149,7 @@ function buildCache(
       }
       applied.push({ name, value, origin: 'remote' });
     }
-    if (overruled.length > 0) for (const listener of [...overruledListeners]) listener(overruled);
+    if (overruled.length > 0) overruledEmitter.emit(overruled);
     if (applied.length > 0) emit(applied);
   };
 
@@ -248,12 +247,7 @@ function buildCache(
       queue.schedule();
     },
     delete: remove,
-    subscribe: (listener) => {
-      listeners.add(listener);
-      return () => {
-        listeners.delete(listener);
-      };
-    },
+    subscribe: changed.subscribe,
     flush: queue.flush,
     read,
     whenRead: () => hasRead,
@@ -269,12 +263,7 @@ function buildCache(
         document.removeEventListener('visibilitychange', onVisibility);
       }
     },
-    onOverruled: (listener) => {
-      overruledListeners.add(listener);
-      return () => {
-        overruledListeners.delete(listener);
-      };
-    },
+    onOverruled: overruledEmitter.subscribe,
     seed: (entries) => {
       for (const [name, value] of entries) values.set(name, value);
     },

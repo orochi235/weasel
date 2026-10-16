@@ -1,17 +1,18 @@
 import {
   ActiveToolContextProvider,
+  createMeasurements,
   type SceneCanvasApi,
   type SelectionApi,
   type ToolsApi,
   useActionsRegistry,
   type View
 } from '@weasel-js/core';
-import { CharacterOptions, CommandPalette, ResizeHandle, Sidebar, ToolPalette } from '@weasel-js/ui';
+import { CharacterOptions, CommandPalette, ContextMenuHost, ResizeHandle, Sidebar, ToolPalette } from '@weasel-js/ui';
 import { type CSSProperties, type ReactElement, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActiveSwatches } from './ActiveSwatches';
 import { lookupShortcutByToolId } from './dev/keybindingsView';
 import { PAPER_PRESETS } from './docPersistence';
-import type { DrawScene } from './drawDocument';
+import { ANNOTATION_LAYER, type DrawScene } from './drawDocument';
 import { EditorStatusBar } from './EditorStatusBar';
 import { showFirstRunNotice } from './firstRunNotice';
 import { LoupeControls } from './LoupeControls';
@@ -51,6 +52,8 @@ export function Editor({ scene, selection, modality }: EditorProps): ReactElemen
   const doc = useDocumentState(selection.current.length > 0);
   const rightSidebar = useRightSidebarWidth();
   const [view, setView] = useState<View>({ x: 0, y: 0, scale: { x: 1, y: 1 } });
+  // Measurements are nodes on the annotation layer; this is which one is picked.
+  const [measurements] = useState(() => createMeasurements({ layer: ANNOTATION_LAYER }));
 
   // `useHud` and `createLoupe` both read the canvas handle in a mount effect
   // and neither retries, so the loupe chrome can only mount once the handle
@@ -86,6 +89,7 @@ export function Editor({ scene, selection, modality }: EditorProps): ReactElemen
         />
         <PreferencesModal open={prefsOpen} onClose={() => setPrefsOpen(false)} registryEnumSources={prefSources} />
         <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
+        <ContextMenuHost />
         {/* Permanently reserved, never mounted on demand: the canvas is sized
             to the workspace, so appearing mid-edit would resize it under the
             caret. Empty until a text edit is in progress. */}
@@ -109,6 +113,7 @@ export function Editor({ scene, selection, modality }: EditorProps): ReactElemen
           <Workspace
             scene={scene}
             selection={selection}
+            measurements={measurements}
             modality={modality}
             hostRef={hostRef}
             textEdit={textEdit}
@@ -141,6 +146,7 @@ export function Editor({ scene, selection, modality }: EditorProps): ReactElemen
             <RightSidebar
               scene={scene}
               selection={selection}
+              measurements={measurements}
               filename={doc.filename}
               setFilename={doc.setFilename}
               backgroundColor={doc.backgroundColor}

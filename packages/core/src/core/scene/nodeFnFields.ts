@@ -18,7 +18,7 @@ export type FnBearingNode = { id: NodeId; kind: 'leaf' | 'container' } & {
   [K in NodeFnFieldName]?: NodeFn;
 };
 
-export type NodeFnFieldName = 'clipFromPose' | 'derivePath' | 'derivePose' | 'layout';
+export type NodeFnFieldName = 'clipFromPose' | 'copiesFromPose' | 'derivePath' | 'derivePose' | 'layout';
 
 export interface NodeFnFieldSpec {
   /** The field's name on `Node` — and, deliberately, its name in
@@ -42,6 +42,13 @@ export const NODE_FN_FIELDS: readonly NodeFnFieldSpec[] = [
     jsonKey: 'clipFromPoseKey',
     containersOnly: true,
     lost: 'clip',
+  },
+  {
+    field: 'copiesFromPose',
+    opKey: 'copiesKey',
+    jsonKey: 'copiesFromPoseKey',
+    containersOnly: true,
+    lost: 'copies',
   },
   {
     field: 'derivePath',

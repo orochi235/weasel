@@ -57,6 +57,7 @@ export function hitAffordanceRegions(
     let best: { region: AffordanceRegion; d2: number } | null = null;
     for (let j = 0; j < regions.length; j++) {
       const region = regions[j];
+      if (isVisible && region.chromeId && !isVisible(region.chromeId)) continue;
       const xf = transformOf(state, region.targetId);
       if (!hitRegion(region, wx, wy, xf, view)) continue;
       const d2 = regionDistance2(region, wx, wy, xf, view);

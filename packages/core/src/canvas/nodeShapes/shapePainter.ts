@@ -13,6 +13,7 @@ import { DEFAULT_SHAPE_FILL } from '../../util/paint';
 import { PAINT_SLOT } from './memo';
 import { inkReach, withAnimatedVertexColors, resolveNodeFill, resolveNodeStroke } from './nodePaint';
 import { paintsPose, poseBoxBounds } from './poseBox';
+import { outsetPoseBox, strokedPoseBox } from './strokedBounds';
 
 // ─── Built-in painters ─────────────────────────────────────────────────
 /** Built-in shape dispatcher — matches when `data.shape` names a kit-known
@@ -60,6 +61,15 @@ export const SHAPE_PAINTER: NodeShapeEntry<unknown, RectPose> = {
   // Every shape kind is inscribed in the pose box.
   bounds: (node, pose, ctx) =>
     poseBoxBounds(pose, resolveNodeStroke((node.data as { stroke?: Stroke | null }).stroke), ctx),
+  // A rect's or an ellipse's stroke reaches its box evenly; a polygon's or a
+  // star's corners are sharper than a right angle, so their miters are measured.
+  drawnBounds: (node, pose, ctx) => {
+    const d = node.data as { shape: string; stroke?: Stroke | null; sides?: number; points?: number };
+    const stroke = resolveNodeStroke(d.stroke);
+    return d.shape === 'polygon' || d.shape === 'star'
+      ? strokedPoseBox(node, pose, stroke, ctx, (at) => pathForShape(d, at))
+      : outsetPoseBox(pose, stroke, ctx);
+  },
 };
 
 export const SHAPE_KINDS = new Set(['rect', 'ellipse', 'polygon', 'star']);

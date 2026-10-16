@@ -53,6 +53,18 @@ describe('buildGraph', () => {
     expect(graph.incoming('a')).toHaveLength(0);
   });
 
+  it('reads the ports a node declares and the ports an edge names', () => {
+    const ports = [{ id: 'in', at: { u: 0, v: 0.25 } }];
+    const graph = buildGraph(source([
+      { node: participant('a'), pose: box(0, 0) },
+      { node: participant('b', { diagram: { ports } }), pose: box(200, 0) },
+      { node: { ...edge('e1', 'a', 'b'), data: { diagram: { from: {}, to: { port: 'in' } } } }, pose: degenerate },
+    ]));
+    expect(graph.node('a')!.ports).toBeUndefined();
+    expect(graph.node('b')!.ports).toEqual(ports);
+    expect(graph.edges).toEqual([{ id: 'e1', from: 'a', to: 'b', toPort: 'in' }]);
+  });
+
   it('is not fooled into treating an edge as a participant', () => {
     const graph = buildGraph(source([
       { node: participant('a'), pose: box(0, 0) },

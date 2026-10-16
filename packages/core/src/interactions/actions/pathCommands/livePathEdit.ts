@@ -2,12 +2,15 @@ import type { Action, BindingOpts, InvocationCtx, OngoingHandle } from '@weasel-
 import { ActionDisabledReason } from '@weasel-js/routing';
 import type { PolygonPath } from '@weasel-js/geom';
 import type { Op } from 'core/ops/types';
-import { commitOps, selectedPathNodes, withPath, type AnyNode, type PathNode } from './pathNodes';
+import { selectedPathNodes, withPath, type AnyNode, type PathNode } from './pathNodes';
+import { commitOps } from '../defaultCommitAdapter';
+import { pathOperationTags } from '../pathGestureTags';
 
 /** What one live path command does with its parameter. */
 export interface LivePathEditSpec {
   id: string;
   label: string;
+  icon?: Action['icon'];
   /** The param the UI drives, and its value when none is given. */
   param: string;
   initial: number;
@@ -31,6 +34,8 @@ export function livePathEdit(spec: LivePathEditSpec): Action & { requires: strin
   return {
     id: spec.id,
     label: spec.label,
+    icon: spec.icon,
+    tags: pathOperationTags('command'),
     eligible: { capability: 'creates-shapes' },
     requires: ['selection', 'scene', 'applyOps'],
     invoker: {

@@ -50,12 +50,30 @@ describe('labelDerivePose', () => {
     expect(poseOf({ at: 'end' }, edgeDep(elbow))).toEqual(box(90, 96));
   });
 
+  it('sits between two of its edge\'s waypoints, beside the run joining them', () => {
+    const dep = { ...edgeDep(elbow), node: { ...edgeDep(elbow).node, data: { diagram: { from: {}, to: {}, waypoints: [{ x: 50, y: 0 }, { x: 50, y: 100 }] } } } } as DerivedDep<RectPose>;
+    expect(poseOf({ at: { waypoint: 0.5 } }, dep)).toEqual(box(40, 46));
+    // Running down, left of travel is +x: its near side 10 right of the run.
+    expect(poseOf({ at: { waypoint: 0.5 }, offset: 10 }, dep)).toEqual(box(60, 46));
+  });
+
+  it('falls back to the middle of the route for a waypoint its edge does not have', () => {
+    expect(poseOf({ at: { waypoint: 3 } }, edgeDep(elbow))).toEqual(box(90, -4));
+  });
+
   it('offsets to the left of travel, which is above a rightward edge', () => {
-    expect(poseOf({ at: 'mid', offset: 10 }, edgeDep(line))).toEqual(box(40, -14));
+    // Its bottom side, not its center, 10 above the line.
+    expect(poseOf({ at: 'mid', offset: 10 }, edgeDep(line))).toEqual(box(40, -18));
   });
 
   it('offsets the other way for a negative offset', () => {
-    expect(poseOf({ at: 'mid', offset: -10 }, edgeDep(line))).toEqual(box(40, 6));
+    expect(poseOf({ at: 'mid', offset: -10 }, edgeDep(line))).toEqual(box(40, 10));
+  });
+
+  it('clears its own width beside an edge running down', () => {
+    // Down's left is +x, so its left side lands 10 right of the line at x = 0.
+    const down = polylineFromPoints([{ x: 0, y: 0 }, { x: 0, y: 100 }]);
+    expect(poseOf({ at: 'mid', offset: 10 }, edgeDep(down))).toEqual(box(10, 46));
   });
 
   it('keeps its own size wherever it lands', () => {

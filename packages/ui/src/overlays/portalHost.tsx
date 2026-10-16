@@ -74,6 +74,8 @@ export interface OverlayPortalTarget {
 export function useOverlayPortal(explicit?: Element | null): {
   anchor: ReactElement;
   portalProps: OverlayPortalTarget;
+  /** The resolved portal container, for code that portals by itself rather than through React Aria. */
+  container: Element | undefined;
   ready: boolean;
 } {
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
@@ -83,6 +85,7 @@ export function useOverlayPortal(explicit?: Element | null): {
   return {
     anchor: <span hidden ref={setAnchorEl} />,
     portalProps: { UNSTABLE_portalContainer: resolved ?? undefined },
+    container: resolved ?? undefined,
     ready: assigned !== undefined || anchorEl !== null,
   };
 }

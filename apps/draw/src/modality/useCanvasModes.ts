@@ -7,7 +7,7 @@ import {
   useLatest,
 } from '@weasel-js/core';
 import { useCallback, useMemo } from 'react';
-import type { DrawScene } from '../drawDocument';
+import type { DrawScene, WeaselDrawData } from '../drawDocument';
 import { dispatchDoubleClickEntry } from './doubleClickEntry';
 import type { ModeMachine } from './machine';
 import { modalityShortcuts } from './shortcuts';
@@ -41,9 +41,14 @@ export function useCanvasModes(
     selection: () => entry.current.selection(),
   }), [machine, entry]);
 
+  const hasAnchors = useCallback(
+    (id: string) => (scene.get(asNodeId(id))?.data as WeaselDrawData | undefined)?.path?.kind === 'polygon',
+    [scene],
+  );
+
   const onDoubleClick = useCallback((hit: SceneCanvasHit | null) => {
-    dispatchDoubleClickEntry(hit, machine);
-  }, [machine]);
+    dispatchDoubleClickEntry(hit, machine, hasAnchors);
+  }, [machine, hasAnchors]);
 
   return { keys, pathEdit, onDoubleClick };
 }

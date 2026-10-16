@@ -76,6 +76,7 @@ export type {
   AddNodeSpec,
   Bivariant,
   ClipFromPoseFn,
+  CopiesFromPoseFn,
   DerivedDep,
   DerivePathFn,
   DerivePoseFn,
@@ -114,3 +115,7 @@ export {
   canSendBackward,
 } from '../core/ops/reorder';
 export type { ReorderDirection } from '../core/ops/reorder';
+
+// ─── Annotation layers, and the measurements kept on them ───────────────────
+export { isAnnotationLayer, isAnnotationNode, annotationLayerIds } from 'core/scene/annotation';
+export * from '../features/measure';

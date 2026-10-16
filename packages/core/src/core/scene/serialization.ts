@@ -36,6 +36,7 @@ export function layerFromSerialized<TLayer extends string>(
     visible: spec.visible ?? true,
     locked: spec.locked ?? false,
     ...(spec.parallax ? { parallax: spec.parallax } : {}),
+    ...(spec.annotation ? { annotation: true } : {}),
   };
   return spec.kind === 'user'
     ? { ...base, kind: 'user', name: spec.name ?? spec.id }
@@ -79,6 +80,7 @@ export function serializeScene<TData, TLayer extends string, TPose>(
     if (l.visible === false) layer.visible = false;
     if (l.locked === true) layer.locked = true;
     if (l.parallax) layer.parallax = l.parallax;
+    if (l.annotation) layer.annotation = true;
     if (l.kind === 'user') {
       layer.kind = 'user';
       layer.name = l.name;

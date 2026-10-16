@@ -12,6 +12,8 @@
  *   `<SceneCanvas ingestion={{ svg: { unpack: unpackSvgFiles } }}>`.
  *
  * See README for the supported element / attribute matrix.
+ *
+ * @packageDocumentation
  */
 
 export { parseSvg } from './parse';

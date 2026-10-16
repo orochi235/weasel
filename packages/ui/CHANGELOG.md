@@ -1,5 +1,174 @@
 # @weasel-js/ui
 
+## 1.10.1
+
+### Patch Changes
+
+- b6e04e2: `ActionBar` is a `Bar` of `action` leaves, one per registered action in its group, so it draws its buttons, tooltips, and disabled and pressed states the way every other bar does. Breaking: its `icons` prop takes icon names (`Record<string, string>`, glyphs of the kit's icon set, as a leaf's `icon`) where it took `ReactNode`s, and its buttons no longer carry `data-testid="action-bar-item-<key>"`; find one by its role and name. `Bar`'s gap reads `--bar-gap`, which `ActionBar` sets to keep its buttons close.
+  
+  A group or a section drawn `as: 'bar'` says what happens to the cells its line has no room for. Additive: `PrefGroup` and `PrefSection` gain `overflow` (`'scroll'`, the default, or `'menu'`), typed `PrefBarOverflow`, and every surface that draws such a bar reads it: `Bar` (under its own `overflow` prop), `PrefsForm`, `SelectionPanel`, an object leaf's rows, and labkit's `ControlPanel`, whose builder gains `.overflow()`. `PrefSchemaEditor` offers it as "Overflow" on a node drawn as a bar. A form that takes drops, as the schema editor's preview does, keeps every cell on the line whatever the group says, so each stays a place to drop beside. `scroll` stays the default because a bar set to `menu` takes all the room its host has along the line.
+- 2445052: The schema editor's Actions list is a catalog: a schema of `action` prefs, the node a toolbar already holds. A row picked there shows its attributes in the Attributes pane, where its name, description, icon, button text, and control are edited and its action key, shortcut, and what the registry calls it are listed. An `action` pref picked in the structure lists the same registry rows. A pref dragged out of the list is a copy of the catalog's, so it lands with what was edited there.
+  
+  `AssetEditor` keeps the catalog in a new kind of asset, `{ kind: 'actions' }`, which `actionCatalog(actions)` starts. Its rows are dragged to sort and group them, the pane's header adds a group and removes one, and an edit is a step of the workspace's history, drafted and submitted with the rest. The asset list leaves it out. With no such asset, and in `PrefSchemaEditor`, the list is the host's actions with nothing to sort them.
+  
+  Breaking: actions are filed by their key's path and no longer by `group`. `edit.undo` sits under a group `edit` and its row reads `undo`; a group shows the part of the key its actions share, and a row the rest. `Asset` gains the `actions` member, `headingOf` takes a `ShownAsset`, and a host that reads `workspace.assets[0]` as a dialog should use one it knows is shown.
+- 1fe1c2b: An asset another editor holds can be listed as changed. `ListedAsset` takes `changed`, which draws its row in `AssetEditor`'s list as a changed asset of the editor's own is drawn, and `AssetEditor` takes `onChangedAssets`, called with the ids of the assets that differ from the baseline when it mounts and whenever that set changes. A host showing one editor at a time keeps what each reported and marks it in the others' `elsewhere`; until now an asset lost its mark the moment the reader picked one held by another editor.
+- 3d15a20: A `Badge` on a fitted base (`puzzle`, `quatrefoil`, `octant-spline`, `octant-bspline`) keeps its label clear of `scallops` and `spikes`. Those effects move the outline outward, and where the base has a notch narrower than the distance they move it, the far side of the notch landed on the label. The base now pads for any point an effect or `bloat` moves onto the label, whichever way it moved.
+- a7bd356: `ColorField` reads a value written as `rgba()`, `hsl()`, or a color name, and shows it in the picker and the opacity slider as the color it names. It used to hand the native input the first seven characters of the string (`rgba(20`), which the browser refused with a console warning and drew as black. A color it cannot read, such as `rgb(from …)` or `oklch()`, is shown as black with no warning.
+- 88b8840: `colorSourceCss` writes a palette entry or a function source that only names a theme color as that color's custom property, so it follows a mode change through the cascade with no `<ThemeProvider>`. It used to write the literal the name resolved to. This changes the string returned for such a source, from a hex color to `var(--wzl-…)`. A function that reads a color through `resolve` to compute its own is still written as the literal it resolves to.
+  
+  Additive: a `CurveLayer`'s render context carries `colorCss`, which writes a `ColorSource` as CSS under the theme, tones, and palette in force. A custom layer no longer needs a component of its own to call `useColorCss`.
+- 6e99dbd: `PrefConditionEditor` has Copy and Paste on its first line. Copy puts the whole condition on the system clipboard as JSON; Paste replaces the condition with one read from there, which is how a `showIf` or an `enableIf` gets from one pref to another. A pasted test that reads a pref the schema lacks says so on its row, and a clipboard that holds no condition changes nothing and says so. Neither button is drawn on a page with no clipboard.
+- 19da739: `PrefConditionEditor` composes conditions. A group among the rows holds rows of its own under its own quantifier, to any depth, so an `all` inside an `any` is edited in place where it was a line of read-only text. The quantifier is all of, any of, none of, or not all of, which is how a `not` around a group is drawn. A row says is not set and is none of as comparisons, and a number's row takes a second bound to make a range, each comparison on its own line under the pref. Any other `not` of a test is drawn as none of that one row.
+  
+  A row reads across in three columns, the pref, the comparison, and the value, which line up down a group; in a group too narrow for that the pref takes a line of its own. The pref's path is shown in the list it is picked from and not on the row.
+- d8c9a75: `prefConditionFlow(condition, schema)` turns a `PrefCondition` into a flow of boxes, paths, and groups, in the plain shape `diagramScene` from `@weasel-js/diagram` takes, so a `showIf` or an `enableIf` can be drawn as a diagram. The condition holds where a path runs from the first box to the last through tests that hold: the parts of an `all` stand in a line, the parts of an `any` side by side, and a `not` is a group round what it wraps. Each test's box names its pref and says its comparisons in the words `PrefConditionEditor`'s rows use.
+- a713caa: `Slider`'s readouts, `BandEditor`'s tick and range-end labels, and `Transport`'s rate are drawn by `QuantityText`, so each is a `<data value>` with its unit, percent sign, and label marked by `data-part` and dimmed as `QuantityText` dims them. A readout handed to `renderReadout`, a tick with a `label`, and a rate under `formatRate` are drawn as before. Additive: `QuantityText` takes `mute`, which leaves out the copy it writes for a screen reader, for use inside a control that speaks the value itself.
+- 63fff44: Additive: `draftChangedAssets(key, original, codec, storage?)` reads a stored `AssetEditor` draft and returns the ids of the assets it changes from `original`, which is what the editor reports through `onChangedAssets` once it mounts. A host that shows one editor at a time can mark another editor's assets `changed` in `elsewhere` before that editor has been opened. It only reads: a draft the source has caught up with stays in storage for the editor to drop.
+- 1d3ca5c: A drawn polygon or star stays editable as one. The `insert` dep stores the parameters it was drawn with on the node as `data.generator` (`{ kind: 'polygon', sides, rotation }` or `{ kind: 'star', points, innerRadiusRatio, rotation }`) beside `data.path`, which stays the geometry every reader uses. The `polygon`, `star`, and inferred `path` entries of `defaultNodeProperties` / `inferredNodeProperties` show Sides, or Points and Inner, for a node holding one, and changing one makes the shape again on the same circle, under the same rotation, in the same undo step.
+  
+  Editing the path in path edit drops the generator, leaving plain geometry; so does changing a parameter of a shape whose path no longer matches its generator.
+  
+  `NodePropertiesEntry` gains `settle(next, prev)`: what a property write stores, given the node as the write left it and as it was. `SelectionPanel` applies it to commits and to slider drafts. Core exports the generator helpers: `regenerateShape`, `settleShapeGenerator`, `shapeGeneratorOf`, `shapeGeneratorPath`, `clampShapeGenerator`, `isShapeGenerator`, `withoutShapeGenerator`, `SHAPE_COUNT_RANGE`, `STAR_RATIO_RANGE`, and the `ShapeGenerator` types.
+  
+  A committed polygon or star is no longer stretched: its pose was the box of its circle, and the stored path's own box was stretched to fill it, so a five-point star came out stretched 5% along one axis and 10% along the other, unlike its preview. The pose, and the insert's reported bounds, are now the box of the shape itself.
+- fa20203: The schema editor's Unplaced, Settings, and Actions lists keep their headers in place while their rows scroll, the lists sit before Literal and Changes on the shelf, and an action's shortcut is drawn as outlined keycaps in the UI font. `ShortcutKeys` draws a written-out shortcut that way anywhere.
+- e88b291: Forty more glyphs, each with a named component:
+  
+  - Arrows: `arrowLeft`, `arrowRight`, `arrowUp`, `arrowDown`.
+  - Paging: `pagePrev` and `pageNext`, the chevron twice.
+  - Playback: `rewind`, `fastForward`, `live`, `record`, `loop`, `speed`.
+  - Camera moves: `dollyIn`, `dollyOut`, `turnLeft`, `turnRight`, `pitchUp`, `pitchDown`, `rise`, `sink`, `orbit`, `home`.
+  - Hierarchy: `enter`, `leave`.
+  - Size: `taller`, `shorter`, `wider`, `narrower`, `tallest`, `shortest`.
+  - App chrome: `settings`, `sidebar`, `legend`, `keyboard`, `help`, `menu`, `external`.
+  - Files: `import`, `save`, `open`.
+  
+  `markDelete` is redrawn as an open can under a lid with a knob, and `markStop` and `markPause` are smaller.
+- a05096a: `GradientEditor` edits one stop at a time. Each stop is a handle on the track drawn in its own color, over a checker where the color is translucent, and the ramp is painted over the same checker. One stop is selected, by a press or by focus, and a single row under the track edits it: position as a percentage, color, opacity, and a remove button. The editor is the same height at nine stops as at two. A press on bare track adds a stop and selects it; the arrow keys move a focused handle, and Delete or Backspace removes it.
+  
+  Breaking: the row of one `ColorField` per stop is gone, and with it the `Stop N at X%` labels. The selected stop's color input is labeled `Stop N`, its opacity `Stop N opacity`, and its position `Stop N position`; each handle is the slider `Gradient stop N`. The blend-space switch now sits under the stop row.
+  
+  Additive: `selectedStop` and `onSelectedStopChange` let a caller own the selection, as an index into `value.stops`, and `disabled` draws the editor dimmed and inert.
+- 7810d7c: `InlineMarkdown` draws `<kbd>Mod+Shift+Z</kbd>` as a `KeySequence`, in the reader's own legend: `Mod` is `⌘` on macOS and `Ctrl` elsewhere. `Tooltip` reads its string children the same way, so a tooltip can name a shortcut. `keySpecsFromChord` is the reading on its own, and `parseInline` returns the span as a `keys` token. Additive.
+- 88322e8: labkit's `LabSwitcher` is a `MenuButton`, so its menu wears the popover skin `MenuButton`, `Select`, and `ComboBox` share and its own copy of that skin is gone. Breaking for a host that styled it: the `lk-switcher`, `lk-switcher-trigger`, `lk-switcher-caret`, `lk-switcher-menu`, and `lk-switcher-item` classes no longer exist, a `className` lands on the `<h1>`, and the menu renders in the overlay portal instead of under the title.
+  
+  Additive in `@weasel-js/ui`: a `MenuButton` row takes `href`, which makes it a link, and `isCurrent`, which marks it `aria-current="page"` and draws it bold; `bare` draws the trigger as its label and a caret in the type around it, with no field frame; and `onAction` is optional.
+- e41f61f: A list of plain text entries in a lab's control panel now disables each entry by the item's own `enableIf`, where that condition reads the entry (`{ from: 'item' }`), as `PrefsForm` and `SelectionPanel` already did. Additive: `@weasel-js/ui` exports `entriesDisabled` and `entryDisabledAt`, the two questions a surface asks about a list's entries.
+- ff35a6d: `PrefSchemaEditor`'s preview of a properties layout seeds its node with the default of each leaf a pointer shows in the layout's dialog, so a pointer's row draws that default where it drew unset. An edit to such a row stays in the preview and is not made a default, as in a toolbar's or a panel's preview.
+- b3b5ccd: `<Icon mark>` takes sixteen more marks: `markDelete`, `markSort`, `markFilter`, `markUndo`, `markRedo`, `markExport` and `markSnapshot` for the actions that had a full-size glyph and no mark, `markPlay`, `markPause`, `markStop`, `markStepBack` and `markStepForward` for playback, and `markFirst`, `markPrev`, `markNext` and `markLast` for paging. Paging also gets full-size glyphs: `first`, `prev`, `next` and `last`, with `FirstIcon`, `PrevIcon`, `NextIcon` and `LastIcon`.
+  
+  A marked glyph is now cleared along the mark's own outline, in a band of even width, where it used to be cleared in a circle around the slot.
+- 784e255: `size` now sets the font size of a `minimal` `ToggleBar`, `ButtonBar`, and `OptionsBar`, as it does under the other variants. Breaking in appearance: a `minimal` bar given no `size`, or `md`, draws its labels at the UI font size where it drew them at the `sm` size. Pass `size="sm"` to keep the old look.
+- 40cbb3b: With several nodes selected in `PrefSchemaEditor`, every attribute they differ on is drawn and can be overwritten. A condition, a list, a map, a union, and an enum's options used to be listed as `mixed` with no control; each is now drawn holding nothing, and the first edit is written over every selected node. An object attribute is still split, so the fields that agree keep their values.
+  
+  A row that stands for values that differ draws its label in the warning color: `PropertyRow` takes `mixed`, and `PrefsForm` sets it from its own `mixed` paths. Where a form draws `Mixed` in place of a list's or a map's editor it offers Replace all, which starts every one over from nothing so the editor can be drawn; `PrefMixed` takes `onReplace` for that.
+- 886380f: Each README's "API reference" link now opens the package's page on the site, `https://orochi235.github.io/weasel/#pkg/<name>`, where it used to open the TypeDoc site at `/weasel/api/`, which is no longer built. A file comment that sat on an `export { … }` list is now marked as the file's, so an entry's description no longer shows up as the summary of each function the entry re-exports. No code changed. `@weasel-js/labkit` drops `vitepress` from its devDependencies, which nothing used.
+- e771f58: The two rows of a pair set their labels on one line. In `<PropertyList pack="pairs">` and `<PropertyGroup pack="pairs">` a row beside a taller one, such as a color row beside a slider, was stretched to the pair's height and sank its label under the other's; each row now aligns on its first baseline, so a row is as tall as its own content.
+- 5b890ad: A slider dragged in a `SelectionPanel` or a selection `Bar` leaves one undo step, back to where each node was before the drag. Every move used to be a step of its own. The moves are still written to the scene as they happen, through `scene.untracked`, so the canvas follows the thumb.
+  
+  Additive: a `PropertyRenderContext` carries `drafts`, a `setValue` and `update` for the values on the way to the one an edit settles on, which a custom renderer with a drag of its own can write through; `withDrafts` and `liveControl` sit beside `withCommitPolicy`. `PARAMS_TEXT_WAIT_MS` says how long typed text waits before a live write on each surface, and labkit's `ControlPanel` reads its 150 ms from it.
+- d30823f: A leaf marked `heading` is drawn in the heading of the group holding it, in place of a row of its own. Additive: `PrefLeaf` gains `heading`, which labkit's `.heading()` already wrote and only `ControlPanel` read; `@weasel-js/prefs` exports `prefHeadingKey` and `prefFitsHeading`, which say which leaf a heading carries and whether a control fits there (a built-in `boolean` or `enum`). `PrefsForm` draws it in a page's, a section's, a panel's, and a column's heading, under the group's name, and `PrefSchemaEditor` lists the attribute as "In heading".
+  
+  labkit's `sectionTree` marks the leaf a control panel would lift, so a form drawn from it shows the same control in the same heading, including a first row that only repeats its heading. Its warning for that row now says the row is drawn in the heading, as the panel's does.
+- 815a447: A `PrefsForm` rail lists pages only. A section is drawn on its page under its heading and no longer has a rail entry that scrolls the page to it, so the rail drops the mark for the section in view and the lighter weight it set section entries in. A page nested inside a section nests under the nearest page above it.
+  
+  Breaking: `PrefRailItem` has no `page`, since every entry opens its own page, and `prefRailItems` returns no section entries. `PrefsRail` takes neither `current` nor `onScrollTo`, marks only the open page (`aria-current="page"`, `data-rail-mark="current"`), and no longer sets `data-rail-mark="open"` or `aria-current="location"`. A pane's sections no longer carry `data-spy-section`.
+  
+  The rail and the pane keep 16px clear on their right, so a scrollbar laid over either one no longer covers the edges of the fields.
+- 42db2c4: A prefs rail sets a page under another entry in the weight of the top entries, and only a section under one lighter. A page's own title in the pane is a step larger (`--wzl-font-size-xl`).
+- 0be7a53: A leaf's value can be split by another setting. Additive: a leaf lists the `enum` leaves it may be split by in `splitBy`, and its stored value may then be a locus, `{ $by, $of }`, holding one member per option of that leaf, nested for a second one. `store.get` reads the member the selectors are set to, `store.set` writes it, and `store.split`, `store.join`, and `store.locus` turn a value into a locus, back, and read it. `store.get(path, { weights })` folds the members by weight, a number linearly and a color in OKLCH, and every other kind takes its heaviest; `blends` in the open options gives a kind its own. `store.values({ at })` is the tree under a stated choice of selectors, `store.set(path, value, { at })` writes the member such a choice names, and `store.loci()` is every split leaf's locus by path. A selector changing is reported to subscribers as a change to every leaf split by it. `@weasel-js/prefs` now depends on `@weasel-js/paint`, for the color blend.
+  
+  `PrefsForm` draws and edits split values. Additive: given `loci`, `onSplit`, `onJoin`, and `onChangeAt`, which `usePrefsValues` now returns as `loci`, `split`, `join`, and `setAt`, a leaf that lists `splitBy` marks the option each selector is set to beside its name and opens, under its row, to its own control for every option and to a Split or a Join for each selector. `defaultSplitOpen` names the rows open at first. A row that offers any of this is a group and no `<label>`, so an app renderer's control on such a leaf has to carry its own accessible name.
+- f51ecce: `<PropertyRow hug>` and `<PropertyField hug>`: the row takes only the width its label and control need, at the leading edge of its grid cell, so a checkbox sits beside its label and not at the far edge of the column. `span` outranks it.
+- 85d4035: `PrefSchemaEditor`'s shelf sets its panes 12px apart, where they stood 6px apart.
+- b8fbcc5: The schema editor's shelf has a drag handle after its Settings list and after its Actions list. Each list stands at the width it was dragged to, kept in the editor's prefs as `layout.shelfSettingsWidth` and `layout.shelfActionsWidth`, and the export takes what they leave. They used to split the shelf one to one to two.
+- 5485d35: The slice tool declares a palette icon: `SliceIcon`, a knife, exported from `@weasel-js/core` and `@weasel-js/ui` beside the other tool icons. A `ToolPalette` drew its placeholder `?` for the tool before. Additive.
+- 7a9d331: The text in `PrefSchemaEditor`'s structure pane starts at one edge. A pane's title, the filter's text, a top-level leaf's name, and the line an empty list shows now start where a group's name does, past the glyph that folds it; they stood at four different insets.
+  
+  `Tree` reads `--wzl-tree-root-leaf-indent`, the `--wzl-tree-leaf-indent` of a leaf no branch holds, for a host whose own text stands at another edge.
+- 22f129f: `PrefSchemaEditor`'s structure tree sets a row with no glyph, which is every pref, 2px further in.
+- 1e6d23f: `ToggleBar`'s `minimal` variant draws what `ButtonBar`'s and `OptionsBar`'s draw: bare rounded segments with a gap between them. It used to add a bordered box with square corners and a rule between neighbors, which no other bar had. Breaking for anything that relied on that box; a bar that should read as one outlined group is the `flat` variant.
+- 1f32358: A `Tree` can hang a leaf's glyph in its gutter. Additive: `TreeProps` gains `hang`, under which a leaf's `leading` stands where a branch has its fold mark, so a leaf's label starts at the same x with a glyph or without. It has no effect under `guides`. `PrefSchemaEditor`'s action list sets it.
+  
+  `ShortcutKeys` letters its keycaps at the UI font's normal weight, where they were bold.
+- 52f488f: `PrefSchemaEditor`'s trees (structure, unplaced, settings, and actions) show a node's key after its name with no parentheses and a size smaller, and set a leaf's label in the plain weight under a group's bolder one. Each row's leading glyph sits in a 16px square.
+  
+  `Tree` reads `--wzl-tree-leading-size`: set, every `leading` sits centered in a square of that side, and a glyph of another shape is scaled to fit it.
+- Updated dependencies [b6e04e2]
+- Updated dependencies [113c088]
+- Updated dependencies [cbd5b4d]
+- Updated dependencies [d3b73b9]
+- Updated dependencies [aaa2b4f]
+- Updated dependencies [c7b7ed5]
+- Updated dependencies [faf8ff3]
+- Updated dependencies [8bee821]
+- Updated dependencies [3fda6e6]
+- Updated dependencies [88b8840]
+- Updated dependencies [67a7de8]
+- Updated dependencies [f6e3e90]
+- Updated dependencies [74ba77e]
+- Updated dependencies [a8e8048]
+- Updated dependencies [755b7ff]
+- Updated dependencies [1d3ca5c]
+- Updated dependencies [566f15e]
+- Updated dependencies [ee59ccd]
+- Updated dependencies [f22f5ce]
+- Updated dependencies [789e80d]
+- Updated dependencies [92e6291]
+- Updated dependencies [b8bfb2d]
+- Updated dependencies [2216d1b]
+- Updated dependencies [a7144f4]
+- Updated dependencies [35c4879]
+- Updated dependencies [9eefcc7]
+- Updated dependencies [886380f]
+- Updated dependencies [f8faa63]
+- Updated dependencies [3bc85c9]
+- Updated dependencies [d8b51a4]
+- Updated dependencies [d0c3896]
+- Updated dependencies [3448831]
+- Updated dependencies [10449af]
+- Updated dependencies [e05a5f9]
+- Updated dependencies [d30823f]
+- Updated dependencies [0be7a53]
+- Updated dependencies [27fe0fb]
+- Updated dependencies [8bbf878]
+- Updated dependencies [b5267f9]
+- Updated dependencies [62e766c]
+- Updated dependencies [5485d35]
+- Updated dependencies [690ea72]
+- Updated dependencies [ab9ea7a]
+- Updated dependencies [a9cbaa7]
+- Updated dependencies [0b5ff3b]
+- Updated dependencies [a3c34b4]
+- Updated dependencies [e962494]
+- Updated dependencies [bad37cf]
+- Updated dependencies [9e84e5d]
+- Updated dependencies [c56fc4a]
+- Updated dependencies [bd6c203]
+- Updated dependencies [ef29364]
+- Updated dependencies [2f48645]
+- Updated dependencies [92c2e8e]
+- Updated dependencies [711ae46]
+- Updated dependencies [365eae0]
+- Updated dependencies [781a15e]
+- Updated dependencies [10c5d41]
+- Updated dependencies [a092978]
+  - @weasel-js/prefs@1.10.1
+  - @weasel-js/core@1.10.1
+  - @weasel-js/geom@1.10.1
+  - @weasel-js/svg@1.10.1
+  - @weasel-js/animator@1.10.1
+  - @weasel-js/theme@1.10.1
+  - @weasel-js/gestures@1.10.1
+  - @weasel-js/select@1.10.1
+  - @weasel-js/react@1.10.1
+  - @weasel-js/font@1.10.1
+  - @weasel-js/modes@1.10.1
+  - @weasel-js/paint@1.10.1
+  - @weasel-js/quantity@1.10.1
+  - @weasel-js/registry@1.10.1
+
 ## 1.10.0
 
 ### Patch Changes

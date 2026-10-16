@@ -45,7 +45,7 @@ export function startCloneBehaviors(
     pointer: pointerStateOf(ctx.world, ctx),
     view: readers.view(),
     plane: readers.plane(),
-    frames: sceneGestureFrames(scene, ctx.deps.view),
+    frames: sceneGestureFrames(scene, ctx.deps),
     adapter: defaultCommitAdapter(scene, ctx.deps.selection?.adapterMethods) as unknown as GestureContext<unknown>['adapter'],
     scratch: {},
   };

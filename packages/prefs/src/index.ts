@@ -1,6 +1,8 @@
 /**
  * @weasel-js/prefs — the preferences schema and the store over it. No React:
  * the hooks live behind `@weasel-js/prefs/react`.
+ *
+ * @packageDocumentation
  */
 export {
   filterPrefSubtree,
@@ -18,6 +20,7 @@ export {
 } from './helpers';
 export type { PrefAction, PrefActionContext, PrefActionControl } from './action';
 export { prefTabRuns, type PrefTabRun } from './tabRuns';
+export { prefLeavesTagged, prefLeafTags } from './tags';
 export {
   isPrefCondition,
   mapPrefConditionPaths,
@@ -62,6 +65,8 @@ export { PREF_BLENDS, type PrefBlend } from './blend';
 export { checkPrefSplits, type PrefSplitProblem } from './splitCheck';
 export { pref } from './build';
 export { prefsCss, prefsCssAttributes, type PrefsCssOptions, type PrefsCssSource } from './css';
+export { prefsDefaultsSource } from './defaultsSource';
+export { kitSettingsCssOptions } from './kitCss';
 export { prefSchemaHolding } from './holding';
 export { prefAliasedLeaf, prefAliasName, prefAliasTarget, type PrefAlias } from './alias';
 export { prefAliasTargets, type PrefAliasTargets, type PrefAliasTargetsOptions } from './aliasTargets';
@@ -116,3 +121,4 @@ export {
   type PrefString,
   type PrefStringControl,
 } from './schema';
+export { mergePrefGroups } from './merge';

@@ -3,6 +3,8 @@
  * ranking and walk a real dispatch takes. `engaged` is the ids of the entries
  * that own a gesture in flight.
  */
+import type { GestureBinding } from '../actions/binding';
+import { resolveParams } from '../actions/invoker';
 import { buildDispatchRecord } from './buildDispatchRecord';
 import type { DispatcherContext, ResolveAllOptions, ResolveOnlyResult, ResolvedCandidate } from './dispatcherApi';
 import type { DispatchRecord } from './dispatchRecord';
@@ -34,7 +36,13 @@ export function resolveOnly(
     action: winner.action,
     scope: winner.match.scope,
     ownerId: winner.match.ownerId,
+    ...paramsOf(winner.match.binding),
   };
+}
+
+function paramsOf(binding: GestureBinding): { params?: Record<string, unknown> } {
+  const params = resolveParams(binding.opts?.params);
+  return params ? { params } : {};
 }
 
 export function explain(

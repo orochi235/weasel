@@ -1,25 +1,29 @@
 /**
  * The behavior presets `<SceneCanvas features>` composes. A bare canvas renders
  * its scene and keeps a selection nothing sets; every behavior beyond that is
- * turned on by naming a preset here.
+ * turned on by a preset.
+ *
+ * A preset is a {@link FeaturePreset} object: the actions, tools, bindings,
+ * chrome, and contributions one behavior brings. Core's own are named
+ * (`'select'`, `'draw'`) and live in `namedPresets.ts`; a package ships its
+ * own the same way and an app passes the object. Nothing here imports an
+ * action, so a canvas reaches only the presets it is handed.
  *
  * A preset is not one of the `packages/core/src/features/<name>/` source
  * directories that `docs/taxonomy.md` calls a feature; the two share a word
  * and nothing else.
  */
+import type { Action } from '@weasel-js/routing';
 import { never } from 'features/chrome-caps/conditions';
 import type { ChromeId, VisibilityRules } from 'features/chrome-caps/types';
 import type { UseMoveOptions } from 'interactions/actions/move/options';
 import type { UseRotateOptions } from 'interactions/actions/rotate/options';
-import {
-  selectionMoveContribution,
-  selectionResizeContribution,
-  selectionRotateContribution,
-} from 'tools/builtin/select/selectionContributions';
-import type { Contribution } from 'tools/overlayBinding';
+import type { Contribution, Tool } from 'tools/overlayBinding';
+import type { PathEditExtension } from 'features/paths/pathEditExtension';
+import type { SurfaceContribution } from '../surfaceContribution';
 import type { BuiltinToolId } from './props';
 
-/** A preset that names one behavior and abbreviates nothing. */
+/** A core preset that names one behavior and abbreviates nothing. */
 export type BaseFeature =
   | 'view'
   | 'select'
@@ -32,14 +36,14 @@ export type BaseFeature =
   | 'paths'
   | 'ingest';
 
-/** A preset that abbreviates others: `pick` is `select` + `outline`,
+/** A core preset that abbreviates others: `pick` is `select` + `outline`,
  *  `transform` is `resize` + `rotate`, and `draw` is every base preset. */
 export type CompositeFeature = 'pick' | 'transform' | 'draw';
 
-/** A behavior preset for `<SceneCanvas features>`. */
+/** A core preset's name, as `<SceneCanvas features>` takes it. */
 export type Feature = BaseFeature | CompositeFeature;
 
-/** Every preset `<SceneCanvas features>` accepts, each composite after the
+/** Every name `<SceneCanvas features>` accepts, each composite after the
  *  presets it names. */
 export const SCENE_CANVAS_FEATURES: readonly Feature[] = [
   'view', 'select', 'outline', 'pick', 'move', 'resize', 'rotate', 'transform',
@@ -53,173 +57,148 @@ export interface FeatureBindingOptions {
   rotate?: UseRotateOptions<unknown>;
 }
 
-/** Everything turning one preset on means. */
+/**
+ * Everything turning one preset on means. Every role is optional.
+ *
+ * A package's preset is the unit an app opts into: the app imports it and
+ * passes it to `features`, and an app that does not never loads its code.
+ */
 export interface FeaturePreset {
-  /** The kit-standard actions it registers. */
-  actions: readonly string[];
-  /** The built-in tools it mounts. */
-  tools?: readonly BuiltinToolId[];
+  /** Unique per canvas. `refines` names presets by it, and two different
+   *  presets with one id on one canvas throw. */
+  readonly id: string;
+  /** The action descriptors it registers, in the order they register. They
+   *  are standard actions: `<SceneCanvas actions>` overrides and mutes them,
+   *  and `tune` reaches them. */
+  readonly actions?: readonly Action[];
+  /** Tools it mounts: a built-in by id, or a tool of its own. */
+  readonly tools?: readonly (BuiltinToolId | Tool)[];
   /** Its ambient bindings: an always-live entry routing a gesture to its
    *  actions under any tool that does not claim the gesture itself. */
-  ambient?: (options: FeatureBindingOptions) => Contribution;
+  readonly ambient?: (options: FeatureBindingOptions) => Contribution;
   /** The selection chrome that is drawn, and can be grabbed, only while it is on. */
-  chrome?: readonly ChromeId[];
+  readonly chrome?: readonly ChromeId[];
+  /** Default chrome-caps rules for chrome of its own, under the consumer's
+   *  `chromeVisibility`: a mark it draws only on request, say. */
+  readonly chromeRules?: VisibilityRules;
+  /** What it adds to path edit: marks, grabbable parts, what an edit keeps
+   *  true. Consulted in preset order. */
+  readonly pathEdit?: readonly PathEditExtension[];
+  /** Entries installed beside `<SceneCanvas ambient>`, with every role they
+   *  declare: deps, overlays, `attach`, views, frame hooks. A `tools` takeover
+   *  brings its own ambient and leaves them out. */
+  readonly contributions?: readonly SurfaceContribution[];
+  /** Ids of presets whose actions this one's register ahead of, so that where
+   *  both bind one gesture, this one's is tried first: anchor nudging ahead of
+   *  node nudging. A preset named here that is not on is ignored. */
+  readonly refines?: readonly string[];
+  /** Presets it turns on with itself, ahead of its own place in the order. */
+  readonly includes?: readonly FeaturePreset[];
+}
+
+/** What `<SceneCanvas features>` takes: a core preset's name or any preset. */
+export type FeatureEntry = Feature | FeaturePreset;
+
+/** The names a canvas resolves: one preset each, or the presets a composite
+ *  abbreviates. */
+export interface NamedPresets {
+  readonly base: Readonly<Record<BaseFeature, FeaturePreset>>;
+  readonly composite: Readonly<Record<CompositeFeature, readonly BaseFeature[]>>;
+}
+
+/** Where a canvas finds presets beyond the objects it is handed: the names it
+ *  resolves, if any, and the actions it registers once a tool binds them. */
+export interface PresetSource {
+  readonly named: NamedPresets | null;
+  /** Actions registered only when a tool or contribution binds them. */
+  readonly pool: readonly Action[];
+}
+
+/** The presets a canvas runs with, in the order their actions register. */
+export interface EnabledPresets {
+  readonly presets: readonly FeaturePreset[];
+  /** Their path-edit extensions, in order. */
+  readonly pathEdit: readonly PathEditExtension[];
+  /** Whether a preset with this id is on. */
+  has(id: string): boolean;
 }
 
 /**
- * What each preset turns on.
- *
- * Row order is the order ambient bindings are matched in, and a tie goes to
- * the first: a handle sits over the selected body, so `resize` and `rotate`
- * come before `move`, whose binding matches a handle drag too.
- *
- * Every id `useStandardActions` knows appears under exactly one preset, except
- * the ones in {@link TOOL_DRIVEN_ACTION_IDS}.
- *
- * Cmd/Ctrl+V arrives as a DOM `paste` event, and two presets answer it.
- * `edit` brings `clipboard.pasteEvent`, which pastes nodes a kit canvas
- * copied and nothing else; `ingest` brings `ingest`, which takes those plus
- * images, SVG, files, consumer content handlers, and every OS drop. With both
- * on, `ingest` answers alone: `useStandardActions` holds
- * `clipboard.pasteEvent` back wherever `ingest` is registered.
- */
-export const FEATURE_PRESETS: Readonly<Record<BaseFeature, FeaturePreset>> = {
-  view: {
-    actions: ['viewport.dragPan', 'viewport.pinchZoom'],
-    tools: ['hand'],
-  },
-  select: {
-    actions: ['areaSelect', 'clearSelection', 'lassoSelect'],
-    tools: ['select'],
-  },
-  outline: {
-    actions: [],
-    chrome: ['selection.outline'],
-  },
-  resize: {
-    actions: ['resize'],
-    ambient: () => selectionResizeContribution(),
-    chrome: ['selection.resize-handles'],
-  },
-  rotate: {
-    actions: ['rotate'],
-    ambient: ({ rotate }) => selectionRotateContribution({ rotate }),
-    chrome: ['selection.rotation-handle'],
-  },
-  move: {
-    actions: ['move', 'clone'],
-    ambient: ({ move }) => selectionMoveContribution({ move }),
-  },
-  edit: {
-    actions: [
-      'escape', 'cancelGesture', 'selectAll', 'duplicate', 'transformAgain', 'delete',
-      'group', 'ungroup', 'undo', 'redo',
-      'nudge.up', 'nudge.down', 'nudge.left', 'nudge.right',
-      'clipboard.cut', 'clipboard.copy', 'clipboard.paste', 'clipboard.pasteEvent',
-      'setFill', 'setStroke', 'setFillOpacity', 'setStrokeOpacity',
-    ],
-  },
-  arrange: {
-    actions: [
-      'flip',
-      'reorder.forward', 'reorder.backward',
-      'align.left', 'align.centerX', 'align.right',
-      'align.top', 'align.centerY', 'align.bottom',
-      'distribute.horizontal', 'distribute.vertical',
-    ],
-  },
-  paths: {
-    actions: [
-      'pathfinder.union', 'pathfinder.subtract', 'pathfinder.intersect',
-      'pathfinder.exclude', 'pathfinder.divide', 'pathfinder.crop', 'pathfinder.trim', 'pathfinder.merge',
-      'createOutlines', 'outlineStroke',
-      'editAnchors', 'editCorner', 'enterPathEdit', 'exitPathEdit', 'insertPathAnchor', 'bendSegment',
-      'nudgeAnchors.up', 'nudgeAnchors.down', 'nudgeAnchors.left', 'nudgeAnchors.right',
-      'deleteAnchors', 'cutPathAtAnchor', 'marqueeAnchors', 'selectAnchor',
-      'retractHandles', 'makeHandlesSymmetric', 'cycleCornerShape', 'setCorners', 'averageAnchors', 'joinAnchors',
-      'simplifyPath', 'offsetPath', 'snipAtCrossings', 'joinPaths',
-    ],
-  },
-  ingest: {
-    actions: ['ingest'],
-  },
-};
-
-const BASE_FEATURES = Object.keys(FEATURE_PRESETS) as BaseFeature[];
-
-/** The base presets each composite preset turns on. */
-export const COMPOSITE_FEATURES: Readonly<Record<CompositeFeature, readonly BaseFeature[]>> = {
-  pick: ['select', 'outline'],
-  transform: ['resize', 'rotate'],
-  draw: BASE_FEATURES,
-};
-
-/** The kit-standard actions each preset registers. */
-export const FEATURE_ACTION_IDS = Object.fromEntries(
-  BASE_FEATURES.map((f) => [f, FEATURE_PRESETS[f].actions]),
-) as Readonly<Record<BaseFeature, readonly string[]>>;
-
-/**
- * Kit-standard actions no preset registers: they belong to the tools that bind
- * them. A canvas registers each one whenever a tool it carries names it in a
- * binding — `insert` with any shape tool, `enterTextEdit` with the text tool.
- */
-export const TOOL_DRIVEN_ACTION_IDS: readonly string[] = ['insert', 'insert.adjustRotation', 'insert.reposition', 'enterTextEdit'];
-
-/**
- * The base presets a canvas runs with: `features` with every composite
- * expanded, plus `view` whenever the canvas was handed a `viewport` config,
- * since that prop only configures what `view` turns on.
+ * The presets a canvas runs with: names expanded, `includes` pulled in, each
+ * preset once, and every one placed ahead of the presets it `refines`. Ties
+ * keep the order given. Where names resolve, a `viewport` config turns on the
+ * `view` preset, since that prop only configures what `view` turns on.
  */
 export function resolveFeatures(
-  features: readonly Feature[] | undefined,
+  features: readonly FeatureEntry[] | undefined,
+  named: NamedPresets | null,
   opts: { viewport?: boolean } = {},
-): ReadonlySet<BaseFeature> {
-  const out = new Set<BaseFeature>();
+): EnabledPresets {
+  const listed: FeaturePreset[] = [];
+  const byId = new Map<string, FeaturePreset>();
+  const add = (p: FeaturePreset): void => {
+    const held = byId.get(p.id);
+    if (held === p) return;
+    if (held) throw new Error(`[SceneCanvas] two different presets have the id "${p.id}"`);
+    byId.set(p.id, p);
+    for (const inner of p.includes ?? []) add(inner);
+    listed.push(p);
+  };
   for (const f of features ?? []) {
-    if (f in COMPOSITE_FEATURES) {
-      for (const b of COMPOSITE_FEATURES[f as CompositeFeature]) out.add(b);
-    } else {
-      out.add(f as BaseFeature);
-    }
+    if (typeof f !== 'string') add(f);
+    else if (!named) throw new Error(`[SceneCanvas] this canvas resolves no preset names; pass the preset for "${f}"`);
+    else if (f in named.composite) for (const b of named.composite[f as CompositeFeature]) add(named.base[b]);
+    else add(named.base[f as BaseFeature]);
   }
-  if (opts.viewport) out.add('view');
+  if (opts.viewport && named) add(named.base.view);
+
+  const ordered: FeaturePreset[] = [];
+  const placed = new Set<string>();
+  const place = (p: FeaturePreset): void => {
+    if (placed.has(p.id)) return;
+    placed.add(p.id);
+    for (const r of listed) if (r.refines?.includes(p.id)) place(r);
+    ordered.push(p);
+  };
+  for (const p of listed) place(p);
+  return { presets: ordered, pathEdit: ordered.flatMap((p) => p.pathEdit ?? []), has: (id) => byId.has(id) };
+}
+
+/** The actions the given presets register, in registration order. */
+export function presetActions(enabled: EnabledPresets): Action[] {
+  return enabled.presets.flatMap((p) => p.actions ?? []);
+}
+
+/** The built-in tool ids the given presets mount. */
+export function presetBuiltinTools(enabled: EnabledPresets): Set<BuiltinToolId> {
+  const ids = new Set<BuiltinToolId>();
+  for (const p of enabled.presets) for (const t of p.tools ?? []) if (typeof t === 'string') ids.add(t);
+  return ids;
+}
+
+/** The tools of their own the given presets mount, by id. */
+export function presetOwnTools(enabled: EnabledPresets): Record<string, Tool> {
+  const out: Record<string, Tool> = {};
+  for (const p of enabled.presets) for (const t of p.tools ?? []) if (typeof t !== 'string') out[t.id] = t;
   return out;
 }
 
-/** The kit-standard action ids the given presets register. */
-export function featureActionIds(features: ReadonlySet<BaseFeature>): Set<string> {
-  const ids = new Set<string>();
-  for (const f of features) for (const id of FEATURE_PRESETS[f].actions) ids.add(id);
-  return ids;
+/** The given presets' ambient entries and contributions, in the order they are matched. */
+export function presetAmbient(enabled: EnabledPresets, options: FeatureBindingOptions): Contribution[] {
+  return enabled.presets.flatMap((p) => (p.ambient ? [p.ambient(options)] : []));
 }
 
-/** The built-in tools the given presets mount. */
-export function featureToolIds(features: ReadonlySet<BaseFeature>): Set<BuiltinToolId> {
-  const ids = new Set<BuiltinToolId>();
-  for (const f of features) for (const id of FEATURE_PRESETS[f].tools ?? []) ids.add(id);
-  return ids;
+/** The given presets' contributions, in preset order. */
+export function presetContributions(enabled: EnabledPresets): SurfaceContribution[] {
+  return enabled.presets.flatMap((p) => p.contributions ?? []);
 }
 
-/** The given presets' ambient entries, in the order they are matched. */
-export function featureAmbient(
-  features: ReadonlySet<BaseFeature>,
-  options: FeatureBindingOptions,
-): Contribution[] {
-  return BASE_FEATURES.flatMap((f) => {
-    const ambient = features.has(f) ? FEATURE_PRESETS[f].ambient : undefined;
-    return ambient ? [ambient(options)] : [];
-  });
-}
-
-/** Rules hiding the chrome of every preset that is not among `features`.
- *  `never` also takes a handle out of hit-testing, so a hidden one cannot be
- *  grabbed. */
-export function featureChromeRules(features: ReadonlySet<BaseFeature>): VisibilityRules {
-  const rules: VisibilityRules = {};
-  for (const f of BASE_FEATURES) {
-    if (features.has(f)) continue;
-    for (const id of FEATURE_PRESETS[f].chrome ?? []) rules[id] = never;
-  }
+/** The enabled presets' own `chromeRules`, then rules hiding each chrome id
+ *  in `owned` that no enabled preset turns on. `never` also takes a handle out
+ *  of hit-testing, so a hidden one cannot be grabbed. */
+export function presetChromeRules(enabled: EnabledPresets, owned: readonly ChromeId[]): VisibilityRules {
+  const on = new Set(enabled.presets.flatMap((p) => p.chrome ?? []));
+  const rules: VisibilityRules = Object.assign({}, ...enabled.presets.map((p) => p.chromeRules ?? {}));
+  for (const id of owned) if (!on.has(id)) rules[id] = never;
   return rules;
 }

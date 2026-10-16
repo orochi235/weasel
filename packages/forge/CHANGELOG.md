@@ -1,5 +1,105 @@
 # @weasel-js/forge
 
+## 1.10.1
+
+### Patch Changes
+
+- fb213d2: The CSS Vars panel's Theme tab opens on the values the theme gives each token under the trial's globals. It used to show the manifest's defaults, which are dark mode's, until the story first reported, so a light story's palettes changed color a moment after load.
+- f42b2d5: The CSS Vars panel saves a token that differs by mode while the trial's mode is Auto. The save writes the branch for the OS color scheme, the one the story is showing; it used to offer no save for such a token until the mode was set to Light or Dark.
+- 64e5dff: The workshop's story tree scrolls under its own head. The view switch, the package filter, and the search field stay where they are, and only the list of stories moves.
+- d238e07: An isolated story whose viewport the index cannot read, a computed size or a CSF story's `parameters.viewport`, no longer reloads its frame when first opened. The viewport arrives with the frame's `ready` and puts the story in a stage; the loaded frame now moves into it. A browser without `Element.moveBefore` still reloads the frame once.
+- 6144e72: Additive: `watchProbe()` from `@weasel-js/forge/vite` is a plugin that gives any vite dev server the warning forge's own prints when the OS reports no file changes, so a server that is serving stale modules says why. The warning's prefix is now `[watch]`.
+- Updated dependencies [b6e04e2]
+- Updated dependencies [2445052]
+- Updated dependencies [113c088]
+- Updated dependencies [cbd5b4d]
+- Updated dependencies [d3b73b9]
+- Updated dependencies [aaa2b4f]
+- Updated dependencies [1fe1c2b]
+- Updated dependencies [3d15a20]
+- Updated dependencies [c7b7ed5]
+- Updated dependencies [faf8ff3]
+- Updated dependencies [8bee821]
+- Updated dependencies [a7bd356]
+- Updated dependencies [88b8840]
+- Updated dependencies [6e99dbd]
+- Updated dependencies [19da739]
+- Updated dependencies [d8c9a75]
+- Updated dependencies [67a7de8]
+- Updated dependencies [a713caa]
+- Updated dependencies [f6e3e90]
+- Updated dependencies [74ba77e]
+- Updated dependencies [a8e8048]
+- Updated dependencies [63fff44]
+- Updated dependencies [755b7ff]
+- Updated dependencies [1d3ca5c]
+- Updated dependencies [fa20203]
+- Updated dependencies [566f15e]
+- Updated dependencies [ee59ccd]
+- Updated dependencies [e88b291]
+- Updated dependencies [a05096a]
+- Updated dependencies [f22f5ce]
+- Updated dependencies [7810d7c]
+- Updated dependencies [88322e8]
+- Updated dependencies [e41f61f]
+- Updated dependencies [ddfa72f]
+- Updated dependencies [f7827d4]
+- Updated dependencies [09b0bf2]
+- Updated dependencies [947ced3]
+- Updated dependencies [92e6291]
+- Updated dependencies [ff35a6d]
+- Updated dependencies [b3b5ccd]
+- Updated dependencies [2216d1b]
+- Updated dependencies [784e255]
+- Updated dependencies [40cbb3b]
+- Updated dependencies [a7144f4]
+- Updated dependencies [35c4879]
+- Updated dependencies [886380f]
+- Updated dependencies [e771f58]
+- Updated dependencies [f8faa63]
+- Updated dependencies [5b890ad]
+- Updated dependencies [3bc85c9]
+- Updated dependencies [d0c3896]
+- Updated dependencies [3448831]
+- Updated dependencies [d30823f]
+- Updated dependencies [815a447]
+- Updated dependencies [42db2c4]
+- Updated dependencies [0be7a53]
+- Updated dependencies [f51ecce]
+- Updated dependencies [27fe0fb]
+- Updated dependencies [8bbf878]
+- Updated dependencies [b5267f9]
+- Updated dependencies [85d4035]
+- Updated dependencies [b8fbcc5]
+- Updated dependencies [62e766c]
+- Updated dependencies [5485d35]
+- Updated dependencies [690ea72]
+- Updated dependencies [7a9d331]
+- Updated dependencies [22f129f]
+- Updated dependencies [e962494]
+- Updated dependencies [bad37cf]
+- Updated dependencies [9e84e5d]
+- Updated dependencies [c56fc4a]
+- Updated dependencies [1e6d23f]
+- Updated dependencies [ef29364]
+- Updated dependencies [2f48645]
+- Updated dependencies [1f32358]
+- Updated dependencies [52f488f]
+- Updated dependencies [15dede7]
+- Updated dependencies [14f6571]
+- Updated dependencies [0c4a384]
+- Updated dependencies [92c2e8e]
+- Updated dependencies [711ae46]
+- Updated dependencies [365eae0]
+- Updated dependencies [fd4520a]
+- Updated dependencies [781a15e]
+- Updated dependencies [a092978]
+  - @weasel-js/ui@1.10.1
+  - @weasel-js/labkit@1.10.1
+  - @weasel-js/core@1.10.1
+  - @weasel-js/theme@1.10.1
+  - @weasel-js/registry@1.10.1
+
 ## 1.10.0
 
 ### Patch Changes

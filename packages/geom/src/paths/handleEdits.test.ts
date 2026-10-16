@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { handleAlongItsAngle, makeHandlesSymmetric, retractHandles } from './handleEdits';
+import { handleAlongItsAngle, handleAtItsLength, makeHandlesSymmetric, retractHandles } from './handleEdits';
 import { anchorsToPath, isAnchorSmooth, pathToAnchors } from './anchors';
 import { PATH_L } from '../commands';
 import type { AnchorSet } from './anchorEdits';
@@ -108,5 +108,17 @@ describe('handleAlongItsAngle', () => {
 
   it('lets a handle with no length follow the pointer', () => {
     expect(handleAlongItsAngle({ x: 5, y: 5 }, { x: 5, y: 5 }, { x: 9, y: 1 })).toEqual({ x: 9, y: 1 });
+  });
+});
+
+describe('handleAtItsLength', () => {
+  it('keeps the length and aims at the pointer', () => {
+    const p = handleAtItsLength({ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 0, y: 50 });
+    expect(p.x).toBeCloseTo(0);
+    expect(p.y).toBeCloseTo(10);
+  });
+
+  it('stays put when the pointer sits on the anchor', () => {
+    expect(handleAtItsLength({ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 0, y: 0 })).toEqual({ x: 10, y: 0 });
   });
 });

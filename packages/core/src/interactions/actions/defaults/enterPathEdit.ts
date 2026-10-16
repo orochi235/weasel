@@ -27,13 +27,21 @@ export const enterPathEditAction: Action & { requires: string[] } = {
     target: { kindOf: isBody },
   },
   eligible: { mode: { in: ['normal', 'isolation'] } },
-  requires: ['editAnchors', 'selection'],
+  requires: ['editAnchors', 'selection', 'nodeAtPoint'],
   invoker: {
     timing: 'immediate',
-    run(deps) {
+    run(deps, params) {
       const editAnchors = deps.editAnchors;
       const selection = deps.selection;
       if (!editAnchors || !selection) return;
+      // The path under the pointer wins: with several selected, the first may not be the one
+      // double-clicked.
+      const x = params?.worldX, y = params?.worldY;
+      const under = typeof x === 'number' && typeof y === 'number' ? deps.nodeAtPoint?.({ x, y }) : null;
+      if (under && editAnchors.getEditablePath(under)) {
+        editAnchors.setEditingId(under);
+        return;
+      }
       const ids = selection.get() as NodeId[];
       // Use the dep's editability check rather than poking at node.pose
       // directly — the dep knows whether a node has an editable polygon

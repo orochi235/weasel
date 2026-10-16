@@ -15,6 +15,7 @@ the common extension points, and mounting tools in a host of your own.
 | **View** | A second camera over a rect of the surface, with input routed to it | A contribution's `views`, the `views` prop, or `<CanvasView>` |
 | **Tool** | A contribution the user switches into (`eligibility.focus`), with scratch and previews | `useTools` / the `tools` prop |
 | **Contribution** | A whole feature: any of the roles above, plus `attach`, frame hooks and `requires` | `<SceneCanvas ambient>` |
+| **Preset** | What an app opts into: standard actions, tools, ambient bindings, selection chrome and contributions together | `<SceneCanvas features>` |
 
 `SurfaceContribution` is the unit a feature ships as. Every role is optional,
 installing the entry installs every role it declares, and removing the entry
@@ -38,6 +39,43 @@ interface SurfaceContribution {
 
 `mergeContributions(...bundles)` concatenates several features' entries and
 throws on a duplicate entry id, dep name or view id.
+
+### Presets
+
+A package ships its behavior as a `FeaturePreset`, and an app turns it on by
+passing the object beside core's names: `features={['draw', pathTools]}`. An
+app that does not import a preset never loads its code.
+
+```ts
+interface FeaturePreset {
+  id: string;
+  actions?: Action[];                  // standard actions: `actions` and `tune` reach them
+  tools?: (BuiltinToolId | Tool)[];    // mounted in the canvas's registry
+  ambient?: (options) => Contribution; // always-live bindings, under a takeover too
+  chrome?: ChromeId[];                 // selection chrome drawn only while it is on
+  chromeRules?: VisibilityRules;       // default visibility for chrome of its own
+  pathEdit?: PathEditExtension[];      // what it adds to path edit
+  contributions?: SurfaceContribution[]; // installed beside `ambient`
+  refines?: string[];                  // preset ids whose actions its own go ahead of
+  includes?: FeaturePreset[];          // presets it turns on with itself
+}
+```
+
+Actions register in preset order, and a preset goes ahead of the presets it
+`refines`: core's `paths` refines `edit`, so anchor nudging is tried before
+node nudging on the same arrow key. Core's own presets are exported too
+(`selectPreset`, `editPreset`, `pathsPreset`, …), and `<SceneCanvas>` resolves
+its names through them. `<SceneCanvas>` itself loads every core preset to
+resolve those names; `<LeanSceneCanvas>` takes objects only, so a bundle
+holds just the presets it was handed.
+
+A `PathEditExtension` is how a package adds to path edit without core knowing
+it: `marks` draws on the open path under its anchors, `parts` adds points to
+press (each a hit kind, optionally under a chrome id of its own), `markAt` and
+`deleteMark` let a click select one of its marks and Delete remove it, and
+`finishEdit` finishes every edit of a path so what it keeps true holds.
+`@weasel-js/path-tools` builds its curvature comb, balance grips, and path
+constraints this way.
 
 ### Frame hooks
 
@@ -489,6 +527,17 @@ The built-in `kit:derived` painter draws whatever `derivePath` returns, reading
 **world** coordinates, not the pose frame: the pose above is a zero-sized
 placeholder, and all it still contributes is rotation. A bounds-relative fill
 resolves against the derived path's own box.
+
+A derivation that paints several pieces in different paints — the steps of a
+blend, copies along a path — returns `pathFromParts([{ path, fill, stroke },
+…])`. Picking, bounds and every `dep.path` reader see one path holding every
+part's outline; the painter draws each part with its own `fill` and `stroke`,
+falling back to the node's `data` where a part names none. The kit's path
+effects (`pathEffectNode`: blend, bend along a path, repeat along a path) are
+built this way. They read a source's outline through its painter, so a scene
+holds them only when it registers them: `createScene({ registry:
+withPathEffectsRegistry() })`. Without that the actions that make one are
+disabled, and a document holding one does not load.
 
 `derivePath` receives each dependency in `dependsOn` order as
 `{ node, pose }` — the node itself, and its **effective** pose: its ephemeral

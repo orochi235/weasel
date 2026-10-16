@@ -58,10 +58,10 @@ export function packageDocs(opts: { root?: string } = {}): PluginOption {
       return null;
     },
     configureServer(server) {
-      // A README, a guide, a manifest, or a demo's imports: any of them changes what these modules say.
+      // A README, a changelog, a guide, a manifest, or a demo's imports: any of them changes what these modules say.
       server.watcher.on('all', (_event, file) => {
         const rel = relative(root, file).replace(/\\/g, '/');
-        const pkg = /^packages\/([^/]+)\/(?:README\.md|package\.json|docs\/guides\/)/.exec(rel)?.[1];
+        const pkg = /^packages\/([^/]+)\/(?:README\.md|CHANGELOG\.md|package\.json|docs\/guides\/)/.exec(rel)?.[1];
         if (!pkg && !rel.startsWith(`${DEMOS_DIR}/`)) return;
         const ids = pkg ? [RESOLVED_INDEX, RESOLVED_DOC_PREFIX + pkg + DOC_SUFFIX] : [RESOLVED_INDEX];
         for (const modId of ids) {
@@ -71,6 +71,14 @@ export function packageDocs(opts: { root?: string } = {}): PluginOption {
       });
     },
   };
+}
+
+/** The oldest version a package's changelog has a section for, or null with no changelog. */
+export function firstRelease(dir: string): string | null {
+  const file = join(dir, 'CHANGELOG.md');
+  if (!existsSync(file)) return null;
+  const versions = [...readFileSync(file, 'utf8').matchAll(/^##\s+\[?v?(\d+\.\d+\.\d+[^\]\s]*)/gm)].map((m) => m[1]!);
+  return versions.at(-1) ?? null;
 }
 
 /** Every published package's facts, by name. */
@@ -84,6 +92,7 @@ export function packageInfos(root: string): PackageInfo[] {
         name,
         specifier: manifest.name,
         version: manifest.version,
+        since: firstRelease(dir),
         description: typeof manifest.description === 'string' ? manifest.description : '',
         entries: publicEntries(dir).map((entry: { specifier: string }) => entry.specifier),
         uses: Object.keys(deps).filter((dep) => dep.startsWith(SCOPE)).map((dep) => dep.slice(SCOPE.length)).sort(),

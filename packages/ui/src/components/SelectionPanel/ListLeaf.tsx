@@ -56,6 +56,7 @@ export function ListLeaf({
             update: (fn) => set(fn(entry)),
             valueAt: ctx.valueAt,
             selectionKey: ctx.selectionKey,
+            settles: ctx.settles,
             ...conditions,
           },
           name,
