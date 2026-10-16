@@ -6,6 +6,7 @@ import { carryCorners, flatAnchorIndices } from './cornerCarry';
 import { cornerSpecAt, withCorner, type CornerSpec } from './cornerSpec';
 import { pathToCubicContours } from './cubicContours';
 import { pathFromD } from './pathFromD';
+import { resamplePath } from './resamplePath';
 import { simplifyPath } from './simplifyPath';
 import { splitByClosure } from './splitByClosure';
 import { splitSubpaths } from './splitSubpaths';
@@ -67,6 +68,13 @@ describe('corner specs through path rewrites', () => {
     const simple = simplifyPath(path, 0.1);
     expect(pathToAnchors(simple).anchors[0]).toHaveLength(4);
     expect(cornersByPoint(simple)).toEqual({ '10,0': ROUND, '0,10': BEVEL });
+  });
+
+  it('resamplePath keeps the spec on each corner it holds in place', () => {
+    const path = withCorners('M0 0 L10 0 L10 10 L0 10 Z', { 1: ROUND, 3: BEVEL });
+    const resampled = resamplePath(path, { count: 8 });
+    expect(pathToAnchors(resampled).anchors[0]).toHaveLength(8);
+    expect(cornersByPoint(resampled)).toEqual({ '10,0': ROUND, '0,10': BEVEL });
   });
 
   it('warpPath keeps each spec on the anchor it maps', () => {
