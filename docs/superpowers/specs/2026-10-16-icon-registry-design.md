@@ -48,7 +48,9 @@ sits below core and prefs.
 | `scopedIcon(ns)` | Builds a package's `icon()`. At run time it qualifies a bare name and returns it. |
 | `IconTable` | `{ namespace, icons: Record<name, { body, fill?, group, tags }> }` |
 | `createIconRegistry()` | Built on `createReflectable`. Enforces the namespace rules above, and loads variants (below) on request. |
-| `./vite` | The `weaselIcons()` plugin. |
+| `./vite` | The `weaselIcons()` plugin, for vite and vitest. |
+| `./esbuild` | The same rewrite as an esbuild plugin, for tsup library builds, which run no vite plugins. |
+| `./virtual` | `declare module` types for `virtual:weasel-icons` and its variants, so the import typechecks. |
 
 The package holds no module-level state, so having two copies installed breaks nothing
 (compare `docs/proposals/2026-08-31-singleton-packages-as-peers.md`).
@@ -111,7 +113,7 @@ Presets carry no icons. Icons are settled when the app is built, not when a canv
 
 `weaselIcons()` from `@weasel-js/icons/vite`, in two modes.
 
-**Library mode** (each kit package's tsup or vite build) rewrites `icon('undo')` to
+**Library mode** (each kit package's build: the esbuild plugin under tsup, the vite one under vite) rewrites `icon('undo')` to
 `/* @icon */ 'core:undo'`. `dist` ships the qualified, annotated literal and no call.
 
 **App mode** (the consumer's vite build, apps/draw, the site):
