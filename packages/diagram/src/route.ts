@@ -31,7 +31,8 @@ export interface LayeredRoute {
 /** What {@link layeredRoutes} reads: where `layeredPlan` put things. */
 export interface LayeredRouteInput {
   edges: readonly RouteEdge[];
-  /** Each node's rank, from `layeredPlan`. */
+  /** Each node's rank, from `layeredPlan`. Empty for a layout with none,
+   *  which names no ports. */
   ranks: ReadonlyMap<string, number>;
   /** Each spanning edge's waypoints, from `layeredPlan`. */
   waypoints: ReadonlyMap<string, readonly Vec2[]>;
@@ -68,12 +69,14 @@ export function layeredRoutes(input: LayeredRouteInput): Map<string, LayeredRout
   for (const edge of input.edges) {
     const from = span(edge.from);
     const to = span(edge.to);
-    if (from === null || to === null) continue;
-    const ahead = from[1] < to[0];
-    if (!ahead && to[1] >= from[0]) continue;
     const route: LayeredRoute = {};
-    if (compass.has(edge.from)) route.fromPort = ahead ? faces.out : faces.in;
-    if (compass.has(edge.to)) route.toPort = ahead ? faces.in : faces.out;
+    // Ports face the next rank only for an edge between two ranks; a plan
+    // with no ranks routes through its waypoints alone.
+    if (from !== null && to !== null && (from[1] < to[0] || to[1] < from[0])) {
+      const ahead = from[1] < to[0];
+      if (compass.has(edge.from)) route.fromPort = ahead ? faces.out : faces.in;
+      if (compass.has(edge.to)) route.toPort = ahead ? faces.in : faces.out;
+    }
     const waypoints = input.waypoints.get(edge.id);
     if (waypoints !== undefined && waypoints.length > 0) {
       route.waypoints = waypoints;

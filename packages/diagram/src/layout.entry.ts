@@ -47,6 +47,7 @@ export type {
   LayoutDirection,
   LayoutFn,
   LayoutOptions,
+  LayoutPlan,
   LayoutResult,
   Slot,
 } from './layout';
@@ -58,6 +59,7 @@ export {
   graphOrder,
   packAcross,
   pinnedSet,
+  planOf,
   seededOrder,
   settle,
   translated,

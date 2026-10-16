@@ -95,15 +95,13 @@ export function alignMoveBehavior<TPose>(given: AlignMoveArgs<TPose>): MoveBehav
       const args = alignmentOnPlane(given, ctx.plane);
       if (args.bypassKey && ctx.modifiers[args.bypassKey]) { publish(args, null); return; }
       if (transform.kind !== 'translate') return;
-      // Union of every dragged id's visual box at its proposed position.
+      // Union of every dragged id's box as drawn at its proposed position.
       const boxes: Bounds[] = [];
       for (const id of ctx.draggedIds) {
         const originPose = ctx.origin.get(id);
         if (originPose === undefined) continue;
-        boxes.push(visualBoundsViaDescriptor(
-          translatePoseViaDescriptor(originPose, transform.dx, transform.dy, d),
-          d,
-        ));
+        const moved = translatePoseViaDescriptor(originPose, transform.dx, transform.dy, d);
+        boxes.push(ctx.frames?.drawnBounds?.(id, moved) ?? visualBoundsViaDescriptor(moved, d));
       }
       const union = unionBounds(boxes);
       if (union === null) return;

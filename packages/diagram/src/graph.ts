@@ -6,10 +6,11 @@
  * every add, delete, reparent, and `dependsOn` edit, and layout is not on the
  * hot path.
  */
-import { AUTO_POSE_DESCRIPTOR, type PoseDescriptor } from '@weasel-js/core/math';
+import { AUTO_POSE_DESCRIPTOR, type PoseDescriptor, type Vec2 } from '@weasel-js/core/math';
 import { expandGroupEdges, insetOf, type GroupInset } from './cluster';
-import { diagramEdgeOf } from './edge';
+import { diagramEdgeOf, layoutOwnsRoute } from './edge';
 import { nestGroups } from './groupTree';
+import { diagramLabelOf, type DiagramLabel } from './label';
 import type { Bounds } from './outline';
 import { diagramNodeOf, type DiagramNodeLike, type DiagramNodeReader } from './trait';
 import type { PortSpec } from './types';
@@ -69,6 +70,13 @@ export interface GraphEdge {
    *  from the wire (`DiagramLabel.offset`). `layered` sets the label beside
    *  its wire in a rank of its own. */
   label?: EdgeLabelRoom;
+  /** Where its route runs now, from `from` to `to`. `layered` starts each
+   *  placeholder where the route already crosses that rank, so a re-run keeps
+   *  the order the last one settled on. */
+  waypoints?: readonly Vec2[];
+  /** Its route is someone's own: layout leaves it, and keeps no room for it
+   *  in the ranks it crosses. */
+  authored?: boolean;
   /** The edge as drawn, when this one stands in for an edge to or from a
    *  group (see `expandGroupEdges`). */
   origin?: { id: string; from: string; to: string };
@@ -128,6 +136,8 @@ export function buildGraph<TPose>(
   const byId = new Map<string, GraphNode>();
   const candidates: GraphEdge[] = [];
   const groupNodes: { id: string; members: readonly string[]; inset: GroupInset; minWidth?: number }[] = [];
+  const routed = new Set<string>();
+  const rooms = new Map<string, EdgeLabelRoom>();
 
   for (const { node, pose } of source()) {
     const edge = diagramEdgeOf(node);
@@ -140,7 +150,19 @@ export function buildGraph<TPose>(
           to: deps[1]!,
           ...(edge.from.port !== undefined ? { fromPort: edge.from.port } : {}),
           ...(edge.to.port !== undefined ? { toPort: edge.to.port } : {}),
+          ...(edge.waypoints !== undefined && edge.waypoints.length > 0 ? { waypoints: edge.waypoints } : {}),
+          ...(layoutOwnsRoute(edge) ? {} : { authored: true }),
         });
+        if (layoutOwnsRoute(edge)) routed.add(node.id);
+      }
+      continue;
+    }
+    const label = diagramLabelOf(node);
+    if (label !== null) {
+      const deps = node.dependsOn;
+      if (Array.isArray(deps) && deps.length === 1 && labelFollowsLayout(label.at) && !rooms.has(deps[0]!)) {
+        const { width, height } = geometry.getBounds(pose);
+        rooms.set(deps[0]!, { width, height, ...(label.offset ? { offset: label.offset } : {}) });
       }
       continue;
     }
@@ -181,7 +203,13 @@ export function buildGraph<TPose>(
     };
   });
   const known = (id: string) => byId.has(id) || live.some((g) => g.id === id);
-  const edges = expandGroupEdges(candidates.filter((e) => known(e.from) && known(e.to)), live);
+  // Room beside layout's own route only: an author's waypoints say where the
+  // wire goes, and the label goes with it.
+  const roomed = candidates.map((e) => {
+    const room = rooms.get(e.id);
+    return room !== undefined && routed.has(e.id) ? { ...e, label: room } : e;
+  });
+  const edges = expandGroupEdges(roomed.filter((e) => known(e.from) && known(e.to)), live);
   const out = new Map<string, GraphEdge[]>();
   const into = new Map<string, GraphEdge[]>();
   for (const edge of edges) {
@@ -198,6 +226,13 @@ export function buildGraph<TPose>(
     outgoing: (id) => out.get(id) ?? NONE,
     incoming: (id) => into.get(id) ?? NONE,
   };
+}
+
+/** Whether layout stations a label stationed at `at`: the default middle, or a
+ *  place among its edge's waypoints, which only layout hands out. A label put
+ *  at an end or a fraction stays there. */
+export function labelFollowsLayout(at: DiagramLabel['at']): boolean {
+  return at === 'mid' || typeof at === 'object';
 }
 
 function push(index: Map<string, GraphEdge[]>, key: string, edge: GraphEdge): void {

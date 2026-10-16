@@ -48,6 +48,23 @@ export interface DiagramEdge {
   /** Points in world coordinates the route must pass through, in order. The
    *  author owns these; the router owns everything between them. */
   waypoints?: readonly Vec2[];
+  /** The waypoints layout last wrote here. While `waypoints` still equals
+   *  them, layout owns the route and rewrites it on its next run; once anyone
+   *  edits them, they are the author's and layout leaves them alone. */
+  laidOut?: readonly Vec2[];
+}
+
+/** Whether layout may rewrite this edge's route: it has no waypoints, or only
+ *  the ones layout last wrote. */
+export function layoutOwnsRoute(edge: DiagramEdge): boolean {
+  const points = edge.waypoints ?? [];
+  if (points.length === 0) return true;
+  return edge.laidOut !== undefined && samePoints(points, edge.laidOut);
+}
+
+/** Two point lists the same, point for point. */
+export function samePoints(a: readonly Vec2[], b: readonly Vec2[]): boolean {
+  return a.length === b.length && a.every((p, i) => p.x === b[i]!.x && p.y === b[i]!.y);
 }
 
 /** What a router is given: the two resolved ends, and the author's waypoints

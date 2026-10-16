@@ -107,6 +107,7 @@ export type {
   OffsetPathOptions,
   SimplifyPathOptions,
   AverageAxis,
+  JoinOptions,
   PoseRotation,
   PoseLinear,
 } from '../features/paths';
@@ -125,6 +126,7 @@ export {
   type ShapeGenerator,
   type StarGenerator,
 } from '../features/paths/shapeGenerator';
+export { DEFAULT_BRIDGE_TENSION } from '../interactions/actions/pathCommands';
 
 // ─── Curves: alternate path representations (Bezier, NURBS, Spiro) ──────────
 export {

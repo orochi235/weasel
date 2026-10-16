@@ -57,6 +57,9 @@ jobs:
       # No source file or function grows past its cap; the allowlist's entries
       # only come down.
       - run: npm run check:size
+      # The README's package marks (React, DOM, WebGL2, Web Audio) match what
+      # each main entry's import graph measures. See scripts/package-traits.mjs.
+      - run: npm run check:needs
       # Every `var(--wzl-*)` names a theme token or a declared override hook;
       # a read of a name nothing declares drops its declaration silently.
       - run: npm run check:token-reads

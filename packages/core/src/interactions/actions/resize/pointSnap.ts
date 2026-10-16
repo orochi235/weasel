@@ -13,6 +13,7 @@ import { boxFrame } from './boxFrame';
 import type { ResizeBox } from './session';
 import type { PoseDescriptor } from './geometry';
 import { boundsForRules } from './ruleBounds';
+import { insetBox, outsetBox } from 'core/geometry/inkExtents';
 
 function buildPointSnapContext<TPose extends Bounds>(
   pose: TPose,
@@ -116,13 +117,15 @@ export function snapPose(
   rules: readonly PointSnapBehavior<Bounds>[],
   g: PoseDescriptor<unknown>,
   pose: unknown,
-  box: Pick<ResizeBox, 'rotation' | 'transform'>,
+  box: Pick<ResizeBox, 'rotation' | 'transform' | 'extents'>,
   anchor: ResizeAnchor,
   modifiers: ModifierState,
   plane: PlaneMap | null,
 ): unknown {
   if (rules.length === 0) return pose;
-  const poseAsRect = boundsForRules(g, pose);
+  const geometric = boundsForRules(g, pose);
+  // A rule snaps the box as drawn; the stroke's extents come back off after.
+  const poseAsRect = outsetBox(geometric, box.extents);
   const frame = boxFrame(box, poseAsRect);
   const psCtx = buildPointSnapContext(poseAsRect, frame, box.rotation, anchor, modifiers);
   // Point snaps are the surface's rules over the camera's world, so
@@ -132,8 +135,8 @@ export function snapPose(
       ? pointSnapFromPlane(rule.onMove(pointSnapToCamera(psCtx, plane)), plane)
       : rule.onMove(psCtx);
     if (!result) continue;
-    const snapped = applyPointSnap(poseAsRect, frame, result, psCtx);
-    return isRectPose(pose) ? snapped : g.remapBounds(pose, poseAsRect, snapped);
+    const snapped = insetBox(applyPointSnap(poseAsRect, frame, result, psCtx), box.extents);
+    return isRectPose(pose) ? snapped : g.remapBounds(pose, geometric, snapped);
   }
   return pose;
 }

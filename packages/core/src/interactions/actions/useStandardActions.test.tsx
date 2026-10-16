@@ -72,7 +72,8 @@ const KIT_IDS = [
   'nudgeAnchors.up', 'nudgeAnchors.down', 'nudgeAnchors.left', 'nudgeAnchors.right',
   'deleteAnchors', 'cutPathAtAnchor', 'simplifyBrush', 'pathEditTool.simplifyBrush', 'pathEditTool.exit', 'retractHandles', 'makeHandlesSymmetric',
   'handleLock.angle', 'handleLock.length',
-  'averageAnchors', 'joinAnchors', 'simplifyPath', 'offsetPath', 'snipAtCrossings', 'joinPaths',
+  'averageAnchors', 'joinAnchors', 'bridgeAnchors', 'simplifyPath', 'offsetPath', 'snipAtCrossings', 'joinPaths',
+  'bridgePaths',
   'marqueeAnchors', 'selectAnchor',
   'lassoSelect', 'viewport.pinchZoom',
   // viewport.pan / viewport.zoom are registered conditionally by SceneCanvas's

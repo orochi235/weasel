@@ -146,6 +146,8 @@ export const ICON_GROUPS: readonly { label: string; names: readonly IconName[] }
     'bolt',
     'visible',
     'hidden',
+    'broadcast',
+    'flag',
     'pin',
     'bookmark',
     'info',

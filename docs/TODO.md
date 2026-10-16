@@ -178,6 +178,19 @@ Priority tags:
 
 ### Path editing tricks
 
+- **(P2) Tune the Simplify brush hands-on, with the maintainer driving.** It went in from its
+  audition lab with first-draft behavior and keys: brush size and its key, the tolerance it
+  applies, and how it shows what it will remove (`defaults/simplifyBrush.ts`).
+- **(P2) Tune the curvature comb hands-on, with the maintainer driving.** First-draft default
+  scale and density, when it shows, and no key to toggle it (`features/paths/pathEditComb.ts`).
+- **(P2) Tune handle locks hands-on, with the maintainer driving.** Which locks deserve keys, and
+  whether a lock holds through a modifier drag (`handleLock.*`, `defaults/handleLocks.tsx`).
+- **(P2) Tune Bridge hands-on, with the maintainer driving.** First-draft default Tension (0.4,
+  `DEFAULT_BRIDGE_TENSION`), how Tension is reached outside the lab, and the Mod+Shift+J binding
+  it shares with Bridge anchors (`pathCommands/cutJoin.ts`, `defaults/anchorJoin.ts`).
+- **(P2) Tune draw's Symmetry toggle hands-on, with the maintainer driving.** Its key, the default
+  kind and copy count, and where a new group's center lands (`toggleSymmetry`,
+  `apps/draw/src/useSymmetry.ts`).
 - **(P2) A rectangle has no anchors in path edit.** Draw stores a drawn rectangle's `data.path`
   as a `RectPath` (`kind: 'rect'`), and `classifyPathStorage`
   (`packages/core/src/features/paths/editablePath.ts`) accepts only a polygon, so double-clicking
@@ -200,7 +213,8 @@ Priority tags:
   drag steps in a different direction from the drag. Recording the move in world space and
   mapping it through each node's parent on replay would make the two agree.
 - **(P3) The path commands have no icons.** `simplifyPath`, `offsetPath`, `snipAtCrossings`,
-  `joinPaths`, `joinAnchors`, and `averageAnchors` show as text in draw's bar.
+  `joinPaths`, `bridgePaths`, `joinAnchors`, `bridgeAnchors`, and `averageAnchors` show as text
+  in draw's bar.
   `RetractHandlesIcon`, `SymmetricHandlesIcon`, and `SimplifyBrushIcon`
   (`defaults/icons/anchorIcons.tsx`) are first drafts, not proofed at high resolution.
 - **(P2) Spacing hints.** Equal-spacing markers between siblings while moving, and Alt-hover
@@ -450,13 +464,26 @@ Priority tags:
   label at the run between two of its edge's waypoints by index
   (`packages/diagram/src/label.ts`). Edit the edge's waypoints in a live scene and the label sits
   on whichever run now has that index; remove enough and it falls back to the middle of the route.
-- **(P3) A live scene's `layered` layout gets no placeholders, waypoints or label room.** Under
-  `order: 'seeded'`, which `layoutAction` uses, a spanning edge gets no room in the ranks it
-  crosses, a labeled edge no rank for its label, and the scene's edges get no waypoints, so a long
-  edge can run through a node and a label can land on one. A
-  placeholder's seed order would come from wire ends layout moves, so two could trade places
-  between runs and break "a second run moves nothing"; and a scene's waypoints belong to whoever
-  drew them, so writing them is a decision of its own (`packages/diagram/src/layered/plan.ts`).
+- **(P3) A live `layered` run draws its long edges through the old bends while it eases.** The
+  run moves nodes frame by frame but writes routes only when it arrives, so for its 24 frames an
+  edge layout routed last time still runs through those waypoints while its ends move away from
+  them (`useLiveLayout`, `packages/diagram/src/live.ts`). Easing each layout-owned waypoint from
+  where it was to where the plan puts it would need waypoints on the override channel, which
+  carries poses only.
+- **(P3) The ports `diagramScene` picks read as the author's on a live scene.** Under `layered`,
+  `layeredRoutes` names each edge's compass ports from which way it runs between ranks, and
+  `edgeSpecs` writes them as `from.port`/`to.port` with nothing like `laidOut` marking them
+  (`packages/diagram/src/dataEdges.ts`). A later live layout reads them as named by the author and
+  never revisits them, so an edit that turns which edge runs back up the ranks leaves a wire
+  leaving by the old face. Found in review, not reproduced.
+- **(P3) A long edge to a pinned node off its slot can reorder a second seeded run.** `layeredPlan`
+  gives such an edge no waypoints (`displaced`, `packages/diagram/src/layered/plan.ts`), so the
+  next run seeds its placeholders between its ends' new centers rather than where the last run
+  put them, and the rank's order can change. Found in review, not reproduced.
+- **(P3) `DiagramView`'s `onMove` reports nodes, not routes.** A layout run writes each long
+  edge's waypoints into the view's scene, but a consumer keeping the diagram as data hears only
+  the node moves, so the routes go whenever the data is laid into a scene again, or an edge's
+  spec changes and `reconcileSpecs` replaces its data (`packages/diagram/src/DiagramView.tsx`).
 - **(P3) A second pinned node can sit on a long edge's route.** `layeredPlan` anchors the layout
   on the first pinned node; any other pinned node stays where its author put it, not in its slot.
   A wire with that node as an end gets no waypoints, but a wire passing near it keeps the
@@ -627,6 +654,39 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   to whatever held it when the menu opened (`useReturnFocus`); `attachMenuHost` leaves the HUD with
   nothing focused, so a keyboard user loses their place among the widgets.
 
+- **(P3) Some boxes still leave the stroke out.** `drawnBoundsOf` (`canvas/drawnBounds.ts`) is the
+  box a stroked shape is shown and measured with, and `<SceneCanvas>`'s chrome, resize, rotate,
+  flip, align, distribute, and `alignMoveBehavior` read it. Paths with no node or painter behind
+  them still measure the pose box: the selection overlay given its own `poseById`,
+  `composeSelectionPose`, the adapter-only `useAlign` hook, a bare `<Canvas>`, and the guides
+  package's origin snaps (`snapToGuides`, `snapToGrid`), which move a point rather than a box.
+  Text has no `drawnBounds` either, so a stroked glyph that spills past its layout box is not
+  covered. A `{ px }` stroke under a skewing or stretching `transform` is outset by its width at
+  the mean scale, which only approximates the screen-exact ribbon.
+
+- **(P2) Labs still tune actions through the experimental `actions` prop.** The extend-path-end
+  and dynamic-corners labs (on their own branches when `tune` landed) set `mode` and a K binding
+  by restating whole descriptors through `actions`. Move each to `<SceneCanvas tune>` as it
+  merges, drop the restated gestures, and give its actions (`extendPathEnd`, …) entries in core's
+  `ActionParamSchema` (`interactions/actions/actionParamSchema.ts`).
+
+- **(P1) The kit has no settings of its own.** Behavior a user would set once for every
+  component — how long a typed field waits idle before it commits, the stepper's repeat delay
+  and rate, typeahead and hover-open delays, a toast's lifetime — is a module constant in each
+  component (`REPEAT_DELAY_MS` in `NumberField/UnitField.tsx`, `TYPEAHEAD_MS` in `Tree/Tree.tsx`,
+  `HOVER_EXPAND_MS`, `DEFAULT_TTL_MS`, and others; `grep -rn "_MS = "`). `@weasel-js/prefs`
+  stores an app's prefs and has no schema for the kit's. Wanted: one kit settings schema, read
+  through one context with these numbers as defaults, that an app can show in its own `Prefs`
+  and persist with its store. Core's gesture timings (drag threshold, double-click interval)
+  belong in the same place.
+
+- **(P2) Every standard action ships with `<SceneCanvas>`, used or not.**
+  `StandardActionsRegistrar` calls `useStandardActions`, which imports every standard action
+  statically, and `excludeActions` drops them only at runtime, so a bundler cannot shake out one
+  the app never registers. Each specialty action added to the set (path tricks, type-design
+  tools) grows every consumer's bundle. Make the set composable at import time: the consumer
+  passes the action groups it wants, and the default import stays the current set.
+
 - **(P3) `PrefsRail`'s scroll-to-section browser test fails now and then.** "leaves a nested page
   off the page that holds it and scrolls to a section that follows it"
   (`packages/ui/src/components/Prefs/PrefsRail.marks.browser.test.tsx:91`) failed once on a fleet
@@ -634,13 +694,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   rail marked `canvas.grid` current where the test expects `canvas.rulers`. A guess, not
   confirmed: the section is polled into view and the marks are then read once, so a scroll spy
   that settles a frame later would still name the section above.
-
-- **(P2) Labs still tune actions through the experimental `actions` prop.** The smart remove
-  brush, extend-path-end, and dynamic-corners labs (on their own branches when `tune` landed) set
-  `radiusPx`, `mode`, and a K binding by restating whole descriptors through `actions`. Move each
-  to `<SceneCanvas tune>` as it merges, drop the restated gestures, and give its actions
-  (`brushDeleteAnchors`, `extendPathEnd`, …) entries in core's `ActionParamSchema`
-  (`interactions/actions/actionParamSchema.ts`).
 
 - **(P3) Nothing puts `prefsCss` on a page.** `prefsCss(store)` writes the text and
   `prefsCssAttributes(store)` the attributes (`packages/prefs/README.md`, "As CSS custom
