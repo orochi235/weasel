@@ -38,19 +38,23 @@ describe('switch field', () => {
 });
 
 describe('text field', () => {
-  it('emits the new text on change', () => {
+  it('emits the new text once the edit settles', () => {
     const onChange = vi.fn();
     render(<PropertyField kind="string" label="Name" value="foo" onChange={onChange} />);
-    fireEvent.change(screen.getByDisplayValue('foo'), { target: { value: 'bar' } });
+    const field = screen.getByDisplayValue('foo');
+    fireEvent.change(field, { target: { value: 'bar' } });
+    fireEvent.blur(field);
     expect(onChange).toHaveBeenCalledWith('bar');
   });
 });
 
 describe('number field', () => {
-  it('emits a number on change', () => {
+  it('emits a number once the edit settles', () => {
     const onChange = vi.fn();
     render(<PropertyField kind="number" label="N" value={1} onChange={onChange} />);
-    fireEvent.change(screen.getByRole('spinbutton'), { target: { value: '42' } });
+    const field = screen.getByRole('spinbutton');
+    fireEvent.change(field, { target: { value: '42' } });
+    fireEvent.blur(field);
     expect(onChange).toHaveBeenCalledWith(42);
   });
 

@@ -25,6 +25,8 @@ export interface SidebarPanelProps {
    * conditionally unmounts the panel from the parent.
    */
   onHide?(): void;
+  /** Controls drawn in the header row at its trailing edge, before the close button. */
+  actions?: ReactNode;
   children?: ReactNode;
   className?: string;
 }
@@ -38,7 +40,7 @@ export interface SidebarPanelProps {
  * Pair with `<Sidebar>` for the docked column layout.
  */
 export function SidebarPanel(props: SidebarPanelProps) {
-  const { title, collapsed, onToggleCollapse, onHide, children, className } = props;
+  const { title, collapsed, onToggleCollapse, onHide, actions, children, className } = props;
   const cls = [s.panel, collapsed && s.collapsed, className].filter(Boolean).join(' ');
   const headerInteractive = onToggleCollapse !== undefined;
   return (
@@ -58,6 +60,7 @@ export function SidebarPanel(props: SidebarPanelProps) {
           ) : (
             <span className={`${s.title} ${s.titleBox}`}>{title}</span>
           )}
+          {actions !== undefined && <div className={s.actions}>{actions}</div>}
           {onHide !== undefined && (
             <CloseButton
               className={s.hideButton}

@@ -1,0 +1,9 @@
+.panel {
+  width: 300px;
+}
+
+.prompt {
+  margin: 0 0 var(--wzl-space-2);
+  font-size: var(--wzl-font-size-sm);
+  color: var(--wzl-fg-muted);
+}

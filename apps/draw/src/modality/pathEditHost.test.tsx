@@ -7,12 +7,13 @@ import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { act, cleanup } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import {
-  ActionsProvider, DepRegistryProvider, SceneCanvas, asNodeId, createScene, pathFromD,
-  useActionsRegistry, useDepRegistry, type PolygonPath,
+  ActionsProvider, DepRegistryProvider, SceneCanvas, asNodeId, createScene, hasEditablePath, pathFromD,
+  rectPath, useActionsRegistry, useDepRegistry, type Path, type PolygonPath,
 } from '@weasel-js/core';
 import { useMemo } from 'react';
 import { DEFAULT_MODES } from '@weasel-js/modes';
 import { createModeMachine } from './machine';
+import { createAnchorSelection } from './anchorSelection';
 import { modePathEdit } from './pathEditHost';
 
 beforeAll(() => {
@@ -30,15 +31,21 @@ function fakeHistory() {
 
 const A = asNodeId('a');
 const B = asNodeId('b');
-type EditAnchors = { editingId: string; setEditingId(id: string | null): void };
+type EditAnchors = {
+  editingId: string;
+  setEditingId(id: string | null): void;
+  getEditablePath(id: string): PolygonPath | null;
+  applyEdit(id: string, worldPath: PolygonPath, label: string): void;
+};
 
-function setup() {
+function setup(pathOfA: Path = pathFromD('M 0 0 L 10 0 L 10 10') as PolygonPath) {
   const machine = createModeMachine({ modes: DEFAULT_MODES, history: fakeHistory() as never });
-  const scene = createScene<{ path: PolygonPath }, 'main', { x: number; y: number; width: number; height: number }>(
+  const scene = createScene<{ path: Path }, 'main', { x: number; y: number; width: number; height: number }>(
     { systemLayers: [{ id: 'main' }] },
   );
   for (const id of [A, B]) {
-    scene.add({ id, kind: 'leaf', data: { path: pathFromD('M 0 0 L 10 0 L 10 10') as PolygonPath }, layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 } });
+    const path = id === A ? pathOfA : pathFromD('M 0 0 L 10 0 L 10 10');
+    scene.add({ id, kind: 'leaf', data: { path }, layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 } });
   }
   scene.setSelection([A]);
   const grabbed: { trigger?: (id: string) => void; editAnchors?: () => EditAnchors } = {};
@@ -47,7 +54,7 @@ function setup() {
     const deps = useDepRegistry();
     grabbed.trigger = (id) => { actions?.trigger(id); };
     grabbed.editAnchors = () => (deps.get as (k: string) => EditAnchors)('editAnchors');
-    const pathEdit = useMemo(() => modePathEdit(machine, () => true), []);
+    const pathEdit = useMemo(() => modePathEdit(machine, (id) => hasEditablePath(scene.get(asNodeId(id)))), []);
     return (
       <SceneCanvas features={['draw']} scene={scene} layers={{}} width={64} height={64}
         modes={machine.registry} pathEdit={pathEdit} />
@@ -90,6 +97,23 @@ describe('path editing owned by the mode machine', () => {
     expect(t.editAnchors().editingId).toBe(B);
   });
 
+  it('edits a drawn rectangle by its corners, and stores a polygon from the first edit', () => {
+    const t = setup(rectPath(0, 0, 10, 10));
+    t.trigger('enterPathEdit');
+    expect(t.editAnchors().editingId).toBe(A);
+    const corners = t.editAnchors().getEditablePath(A)!;
+    expect(Array.from(corners.coords)).toEqual([0, 0, 10, 0, 10, 10, 0, 10]);
+    expect(t.scene.get(A)!.data.path.kind).toBe('rect');
+
+    const moved = Float32Array.from(corners.coords);
+    moved[4] = 20;
+    act(() => t.editAnchors().applyEdit(A, { ...corners, coords: moved }, 'Move anchor'));
+    const node = t.scene.get(A)!;
+    expect(node.data.path.kind).toBe('polygon');
+    expect(node.pose).toMatchObject({ x: 0, y: 0, width: 20, height: 10 });
+    expect(Array.from(t.editAnchors().getEditablePath(A)!.coords)).toEqual([0, 0, 10, 0, 20, 10, 0, 10]);
+  });
+
   it('leaves isolation for the path the canvas opens', () => {
     const t = setup();
     act(() => t.machine.enterMode('isolation', { targetId: 'g' }));
@@ -126,5 +150,13 @@ describe('modePathEdit', () => {
     host.setEditingId('a');
     expect(history.beginJournal).toHaveBeenCalledTimes(1);
     expect(host.editingId()).toBe('a');
+  });
+
+  it('owns the anchor selection when handed one, for the corner controls to read', () => {
+    const anchors = createAnchorSelection();
+    const host = modePathEdit(machine(), () => true, anchors);
+    host.setSelectedAnchors!(new Set([2]));
+    expect([...anchors.get()]).toEqual([2]);
+    expect(host.selectedAnchors!()).toBe(anchors.get());
   });
 });

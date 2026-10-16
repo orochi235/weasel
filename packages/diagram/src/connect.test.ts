@@ -123,6 +123,15 @@ describe('createConnectAction', () => {
     expect(commit).not.toHaveBeenCalled();
   });
 
+  it('will not snap to or commit on a port `showsPort` hides', () => {
+    const commit = vi.fn();
+    const handle = open({ participants: PARTICIPANTS, commit, showsPort: (port) => port.id !== 'w' });
+    handle.onMove!(ctxAt(295, 22));
+    expect(previewEnd(handle)).toEqual({ x: 295, y: 22 });
+    handle.onEnd!(ctxAt(300, 20), 'commit');
+    expect(commit).not.toHaveBeenCalled();
+  });
+
   it('joins two ports that declare the same type', () => {
     const commit = vi.fn();
     const same = () => [

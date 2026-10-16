@@ -1,0 +1,55 @@
+.panel {
+  composes: surface from '../listbox.module.css';
+  position: fixed;
+  z-index: var(--wzl-z-popover);
+  min-width: 180px;
+  padding: var(--wzl-space-2);
+  color: var(--wzl-fg);
+  user-select: none;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1.25em 1fr auto;
+  align-items: center;
+  gap: var(--wzl-space-2);
+  padding: var(--wzl-space-1) var(--wzl-space-2);
+  border-radius: var(--wzl-radius-sm);
+  color: var(--wzl-fg);
+  cursor: default;
+}
+
+.row[data-highlighted] {
+  background: var(--wzl-surface-hover);
+}
+
+.row[aria-disabled='true'] {
+  color: var(--wzl-fg-muted);
+}
+
+.icon {
+  display: inline-flex;
+  justify-content: center;
+}
+
+.label {
+  white-space: nowrap;
+}
+
+.shortcut {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
+  color: var(--wzl-fg-muted);
+}
+
+.caret {
+  justify-self: end;
+  width: 10px;
+  height: 10px;
+  transform: rotate(-90deg);
+}
+
+.separator {
+  height: 1px;
+  margin: var(--wzl-space-1) 0;
+  background: var(--wzl-border);
+}

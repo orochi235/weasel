@@ -29,9 +29,9 @@ export function elevateQuadraticToCubic(
   ];
 }
 
-/** Axis-aligned extrema parameters of one cubic component (the 0,1 ends plus
- *  any derivative roots in (0,1)). Used by cubicBounds. */
-function componentExtremaTs(p0: number, p1: number, p2: number, p3: number): number[] {
+/** The parameters in (0, 1) where one coordinate of a cubic, with control
+ *  values `p0..p3`, turns: the roots of its derivative. */
+export function cubicAxisExtremaTs(p0: number, p1: number, p2: number, p3: number): number[] {
   // B'(t)=0 → quadratic a t² + b t + c = 0 with:
   const a = -p0 + 3 * p1 - 3 * p2 + p3;
   const b = 2 * (p0 - 2 * p1 + p2);
@@ -58,12 +58,12 @@ export function cubicBounds(
 ): Box {
   let minX = Math.min(x0, x3), maxX = Math.max(x0, x3);
   let minY = Math.min(y0, y3), maxY = Math.max(y0, y3);
-  for (const t of componentExtremaTs(x0, x1, x2, x3)) {
+  for (const t of cubicAxisExtremaTs(x0, x1, x2, x3)) {
     const [ex] = cubicEvalAt(x0, y0, x1, y1, x2, y2, x3, y3, t);
     if (ex < minX) minX = ex;
     if (ex > maxX) maxX = ex;
   }
-  for (const t of componentExtremaTs(y0, y1, y2, y3)) {
+  for (const t of cubicAxisExtremaTs(y0, y1, y2, y3)) {
     const [, ey] = cubicEvalAt(x0, y0, x1, y1, x2, y2, x3, y3, t);
     if (ey < minY) minY = ey;
     if (ey > maxY) maxY = ey;

@@ -62,3 +62,13 @@ describe('pref builders', () => {
     expect([path, wrong, mode, gap]).toEqual(['look.mode', 'look.nope', 'dark', 4]);
   });
 });
+
+describe('valueless builders', () => {
+  it('return what the literal would hold', () => {
+    expect(pref.action('cut')).toEqual({ kind: 'action', name: '', description: '', default: undefined, action: 'cut' });
+    expect(pref.action('cut', { name: 'Snip' })).toMatchObject({ name: 'Snip', action: 'cut' });
+    expect(pref.actions('arrange')).toEqual({ kind: 'actions', name: '', description: '', default: undefined, group: 'arrange' });
+    expect(pref.label('Note')).toEqual({ kind: 'label', name: 'Note', description: '', default: undefined });
+    expect(pref.separator()).toEqual({ kind: 'separator', name: '', description: '', default: undefined });
+  });
+});

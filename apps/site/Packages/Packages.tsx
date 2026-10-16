@@ -32,7 +32,10 @@ function PackageIndex() {
         {PACKAGES.map((pkg) => (
           <li key={pkg.name}>
             <a className={s.indexName} href={`#${packageRoute(pkg.name)}`}>{pkg.specifier}</a>
-            <span className={s.indexAbout}><InlineMarkdown text={pkg.description} links="text" /></span>
+            <span className={s.indexAbout}>
+              {pkg.since && <strong className={s.since}>since {pkg.since}</strong>}
+              <InlineMarkdown text={pkg.description} links="text" />
+            </span>
           </li>
         ))}
       </ul>

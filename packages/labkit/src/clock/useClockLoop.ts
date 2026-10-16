@@ -9,7 +9,7 @@ import type { ClockRegistry } from './clockRegistry';
  */
 export function useClockLoop(registry: ClockRegistry): void {
   const loop = useVisibleRaf(
-    (timestamp) => {
+    (timestamp, loop) => {
       let live = false;
       for (const { clock } of registry.all()) {
         if (clock.inert) continue;

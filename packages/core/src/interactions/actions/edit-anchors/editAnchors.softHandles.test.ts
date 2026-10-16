@@ -94,7 +94,7 @@ describe('editAnchors soft selection', () => {
   });
 });
 
-describe('editAnchors handle snapping and locks', () => {
+describe('editAnchors handle snapping', () => {
   const out = (a: ReturnType<ReturnType<typeof start>['end']>) => a[0]!.outHandle!;
 
   it('snaps the handle angle to a step and shows the snap', () => {
@@ -112,20 +112,10 @@ describe('editAnchors handle snapping and locks', () => {
     expect(out(drag.end())).toEqual({ x: 20, y: 19 });
   });
 
-  it('holds the length while Mod is down, and shows the circle it keeps to', () => {
-    const drag = start(curve(), 'controlOut:0', { x: 10, y: 0 });
-    drag.move({ x: 0, y: 50 }, { ...NO_MODS, meta: true });
+  it('leaves a locked angle unsnapped', () => {
+    const drag = start(curve(), 'controlOut:0', { x: 10, y: 0 }, { handleSnap: { stepDeg: 45, toleranceDeg: 6 } });
+    drag.move({ x: 20, y: 19 }, { ...NO_MODS, shift: true });
     expect(overlaysOf(drag.handle)).toEqual([expect.objectContaining({ role: 'lock' })]);
-    const h = out(drag.end());
-    expect(h.x).toBeCloseTo(0, 4);
-    expect(h.y).toBeCloseTo(10, 4);
-  });
-
-  it('holds a lock the params force, without a modifier', () => {
-    const drag = start(curve(), 'controlOut:0', { x: 10, y: 0 }, { handleLock: 'angle' });
-    drag.move({ x: 30, y: 12 });
-    const h = out(drag.end());
-    expect(h.x).toBeCloseTo(30, 4);
-    expect(h.y).toBeCloseTo(0, 4);
+    expect(out(drag.end())).toEqual({ x: 20, y: 0 });
   });
 });

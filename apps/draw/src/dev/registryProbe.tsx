@@ -16,7 +16,8 @@ import {
   type Fill,
 } from '@weasel-js/core';
 import { routesForSpec } from '@weasel-js/core/routing';
-import { isValidElement, type ReactNode } from 'react';
+import { actionIcon, type ActionIconSource } from '@weasel-js/ui';
+import type { ReactNode } from 'react';
 import type { DeclaredRoute, ToolSurface, ToolEntry, ActionEntry, CallbackRef, CallbackSource } from './registryEntries';
 import s from './RegistryInspector.module.css';
 
@@ -270,15 +271,10 @@ function snapshotEnabled(
   }
 }
 
+/** The probe lists every action, so one icon thunk that throws must not take the panel down. */
 function renderPresentationIcon(icon: unknown): ReactNode | undefined {
-  if (icon === undefined || icon === null) return undefined;
-  if (typeof icon === 'function') {
-    try { return (icon as () => ReactNode)(); }
-    catch { return undefined; }
-  }
-  if (isValidElement(icon)) return icon;
-  // Strings / numbers / arrays are also valid ReactNodes.
-  return icon as ReactNode;
+  try { return actionIcon(icon as ActionIconSource) ?? undefined; }
+  catch { return undefined; }
 }
 
 /** Reads `__source` attached to a function value by the dev-only

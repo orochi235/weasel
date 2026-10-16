@@ -68,6 +68,7 @@ export function prefToField(path: string, leaf: PrefLeaf): ConfigField | null {
     case 'map':
     case 'union':
     case 'action':
+    case 'actions':
     case 'alias':
     case 'label':
     case 'separator':

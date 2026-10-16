@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react';
 import { isPrefLeaf, prefAliasName, type PrefAlias, type PrefBarOverflow, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
+import { BarMenu, type BarMenuSources } from './BarMenu';
+import { barMenuRoot } from './barMenuRoot';
 import { BarOverflow } from './BarOverflow';
 import { BarPopover } from './BarPopover';
 import { BAR_ITEM, BAR_MORE, useBarOverflow } from './useBarOverflow';
@@ -43,7 +45,8 @@ export type BarNode =
   | ({ kind: 'leaf' } & BarLeafNode)
   | ({ kind: 'cell' } & BarCell)
   | { kind: 'run'; path: string; nodes: readonly BarNode[] }
-  | { kind: 'opens'; path: string; name: string; body: () => ReactNode };
+  | { kind: 'opens'; path: string; name: string; body: () => ReactNode }
+  | { kind: 'menu'; path: string; name: string; group: PrefGroup; sources: BarMenuSources };
 
 /** A cell a surface drew for one leaf, or for several it fused into one control. */
 export interface BarCell {
@@ -68,8 +71,9 @@ export interface BarLayoutProps {
   /** Names the bar, and makes it a `toolbar`. Leave unset inside one. */
   label?: string;
   /** Draw the strip the bar sits on, for a bar set among other things with
-   *  no strip of the host's under it. */
-  framed?: boolean;
+   *  no strip of the host's under it. `'segmented'` is a compact strip with
+   *  the cells almost touching. */
+  framed?: boolean | 'segmented';
   /**
    * What happens to cells the line has no room for. `'scroll'` keeps every
    * cell on the line, which a framed bar scrolls. `'menu'` keeps the cells
@@ -108,7 +112,7 @@ export function BarLayout(props: BarLayoutProps) {
       // A vertical bar has no room beside a field, so only a button stays on it.
       const drawn = vertical
         ? pending.flatMap((node): readonly BarCell[] => {
-            if (node.leaf.kind === 'action') return cells([node]);
+            if (node.leaf.kind === 'action' || node.leaf.kind === 'actions') return cells([node]);
             const body = row(node);
             if (body == null) return [];
             return [{ path: node.path, content: <BarPopover label={barLeafName(node.leaf)}>{body}</BarPopover> }];
@@ -135,6 +139,11 @@ export function BarLayout(props: BarLayoutProps) {
       }
       if (node.kind === 'opens') {
         items.push({ path: node.path, leaf: false, content: <BarPopover label={node.name}>{node.body()}</BarPopover> });
+        continue;
+      }
+      if (node.kind === 'menu') {
+        const menu = <BarMenu label={node.name} schema={barMenuRoot(node.group, node.path)} {...node.sources} />;
+        items.push({ path: node.path, leaf: false, content: menu });
         continue;
       }
       items.push({ divider: true });
@@ -173,7 +182,7 @@ export function BarLayout(props: BarLayoutProps) {
     <div
       {...rootAttrs}
       ref={bar}
-      className={[s.bar, framed && s.framed, className].filter(Boolean).join(' ')}
+      className={[s.bar, framed === 'segmented' ? s.segmented : framed && s.framed, className].filter(Boolean).join(' ')}
       data-orientation={orientation}
       data-overflow={menu ? 'menu' : undefined}
       role={label === undefined ? undefined : 'toolbar'}
@@ -194,22 +203,26 @@ export function BarLayout(props: BarLayoutProps) {
  * A group's children as a bar holds them. A leaf is a cell. A `section`, a
  * nested `bar`, a `fragment`, and a group that says nothing are runs. A
  * `page`, a `tab`, and a `panel` are too much for a line, and open from a
- * button through `open`.
+ * button through `open`. A `menu` opens from a button as a menu reading and
+ * writing through `menu`, or as `open` does where a surface has no values to hand one.
  */
 export function groupBarNodes(
   group: PrefGroup,
   path: string,
   open: (group: PrefGroup, path: string) => ReactNode,
+  menu?: BarMenuSources,
 ): BarNode[] {
   const out: BarNode[] = [];
   for (const [key, child] of Object.entries(group.children)) {
     const at = path === '' ? key : `${path}.${key}`;
     if (isPrefLeaf(child)) {
       if (child.hidden !== true) out.push({ kind: 'leaf', path: at, leaf: child });
+    } else if (child.as === 'menu' && menu) {
+      out.push({ kind: 'menu', path: at, name: child.name, group: child, sources: menu });
     } else if (opensFromBar(child.as)) {
       out.push({ kind: 'opens', path: at, name: child.name, body: () => open(child, at) });
     } else {
-      out.push({ kind: 'run', path: at, nodes: groupBarNodes(child, at, open) });
+      out.push({ kind: 'run', path: at, nodes: groupBarNodes(child, at, open, menu) });
     }
   }
   return out;
@@ -217,5 +230,5 @@ export function groupBarNodes(
 
 /** True for a group form a bar opens from a button, having no line to draw it on. */
 export function opensFromBar(as: string | undefined): boolean {
-  return as === 'page' || as === 'tab' || as === 'panel';
+  return as === 'page' || as === 'tab' || as === 'panel' || as === 'menu';
 }

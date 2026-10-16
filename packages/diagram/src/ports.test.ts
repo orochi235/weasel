@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { RECT_POSE_DESCRIPTOR, type PoseDescriptor } from '@weasel-js/core';
-import { COMPASS, DEFAULT_PORTS, portOf, portsOf } from './ports';
+import { COMPASS, DEFAULT_PORTS, portOf, portSitesOf, portsOf } from './ports';
 import { createDiagramNodes } from './trait';
 import type { DiagramNodeLike } from './trait';
 
@@ -170,6 +170,26 @@ describe('portOf', () => {
 
   it('answers undefined for a port the node does not have', () => {
     expect(portOf(node({ diagram: {} }), POSE, 'nope')).toBeUndefined();
+  });
+});
+
+describe('portSitesOf', () => {
+  const exit = node({ diagram: { ports: [{ id: 'no', at: COMPASS.s, normal: { x: 1, y: 0 }, sites: [COMPASS.n] }] } });
+
+  it('puts the port at its anchor first, then at each other place it may sit', () => {
+    expect(portSitesOf(exit, POSE, 'no').map((p) => p.point)).toEqual([{ x: 50, y: 40 }, { x: 50, y: 0 }]);
+  });
+
+  it('keeps a declared facing at the anchor and faces a site away from the center', () => {
+    expect(portSitesOf(exit, POSE, 'no').map((p) => p.normal)).toEqual([{ x: 1, y: 0 }, { x: 0, y: -1 }]);
+  });
+
+  it('shows the port at its anchor everywhere else', () => {
+    expect(portsOf(exit, POSE).map((p) => p.point)).toEqual([{ x: 50, y: 40 }]);
+  });
+
+  it('is empty for a port the node does not have', () => {
+    expect(portSitesOf(exit, POSE, 'nope')).toEqual([]);
   });
 });
 

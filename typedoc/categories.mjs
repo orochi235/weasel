@@ -51,6 +51,7 @@ export const RULES = [
   ['packages/geom/src', 'Paths & geometry'],
   ['packages/gestures/src', 'Tools & gestures'],
   ['packages/history/src', 'History'],
+  ['packages/menu/src', 'Menu'],
   ['packages/paint/src', 'Paint & fills'],
   ['packages/quantity/src', 'Scene'],
   ['packages/simulation/src', 'Rendering'],

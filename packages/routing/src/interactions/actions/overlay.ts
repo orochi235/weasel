@@ -20,7 +20,7 @@ export type OverlayRole =
   | 'falloff'
   /** A line a dragged point has snapped to. */
   | 'snap'
-  /** What a held constraint keeps the dragged point on. */
+  /** What a lock holds a dragged point to — a line, a circle. */
   | 'lock'
   | (string & {});
 
@@ -61,6 +61,17 @@ export type OngoingOverlay =
     }
   | {
       /**
+       * A round brush dragged through world points: the area it has swept so
+       * far, and its footprint at the last point. The radius is in screen
+       * pixels, so the footprint keeps its size at every zoom.
+       */
+      kind: 'brush';
+      /** The brush's path so far, at least one point; the last is where it is now. */
+      points: ReadonlyArray<{ x: number; y: number }>;
+      radiusPx: number;
+    }
+  | {
+      /**
        * Live insert-drag preview. Pre-commit there is no scene node to ghost
        * via `previewIds()`/`previewPose()`, so insert paints its preview
        * through the overlay instead.
@@ -81,6 +92,9 @@ export type OngoingOverlay =
        *  click point — for radial shapes (polygon/star), where no vertex
        *  sits on it, and for any shape in center mode. */
       anchorPoint?: { x: number; y: number };
+      /** World affines the shape will also be drawn under once it lands, by
+       *  the container it is drawn into: the preview is painted under each. */
+      copies?: readonly (readonly [number, number, number, number, number, number])[];
     };
 
 /** A handle's overlays as a list: empty when it has none. */

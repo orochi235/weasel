@@ -9,11 +9,11 @@ interface PlayheadSyncProps {
   trialId: string;
   route: string;
   /** The route whose opening `t` has been applied, so a trial taking the URL over later does not adopt another's. */
-  applied: RefObject<string | null>;
+  appliedRef: RefObject<string | null>;
 }
 
 /** Ties one trial's clock to the URL's `t`. */
-function PlayheadSync({ trialId, route, applied }: PlayheadSyncProps) {
+function PlayheadSync({ trialId, route, appliedRef }: PlayheadSyncProps) {
   const clock = useTrialClock(trialId);
   useEffect(() => {
     if (!clock) return;
@@ -33,8 +33,8 @@ function PlayheadSync({ trialId, route, applied }: PlayheadSyncProps) {
       held = next;
       writePlayheadParam(next);
     };
-    if (applied.current !== route) {
-      applied.current = route;
+    if (appliedRef.current !== route) {
+      appliedRef.current = route;
       fromUrl();
     }
     toUrl();
@@ -51,7 +51,7 @@ function PlayheadSync({ trialId, route, applied }: PlayheadSyncProps) {
       off();
       window.removeEventListener('hashchange', onHashChange);
     };
-  }, [clock, route, applied]);
+  }, [clock, route, appliedRef]);
   return null;
 }
 
@@ -65,5 +65,5 @@ export function RoutePlayhead() {
   const applied = useRef<string | null>(null);
   const trial = route === null ? undefined : routedTrial(lab.trials, lab.focusedTrialId, route);
   if (!trial || route === null) return null;
-  return <PlayheadSync key={`${trial.id} ${route}`} trialId={trial.id} route={route} applied={applied} />;
+  return <PlayheadSync key={`${trial.id} ${route}`} trialId={trial.id} route={route} appliedRef={applied} />;
 }

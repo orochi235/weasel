@@ -8,6 +8,8 @@
  * document's poses and nodes, and the selection. Known exclusions from the op
  * factory roster — surfaces the scene doesn't own: `setPath` and `setText`.
  */
+import type { ActionDeps } from '@weasel-js/routing';
+import type { Op } from 'core/ops/types';
 import { documentReads, sceneMutators } from 'core/scene/sceneMutators';
 import type { Scene } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
@@ -34,4 +36,17 @@ export function defaultCommitAdapter<TPose>(
       else scene.setSelection(ids.map(asNodeId));
     },
   };
+}
+
+/** Commit `ops` as one undo entry, through the consumer's `applyOps` when
+ *  there is one, else straight to the `scene` dep. */
+export function commitOps(deps: ActionDeps, ops: Op[], label: string): void {
+  if (ops.length === 0) return;
+  if (deps.applyOps) {
+    deps.applyOps(ops, label);
+    return;
+  }
+  const scene = deps.scene as Scene<unknown, string, unknown> | undefined;
+  if (!scene) return;
+  scene.applyBatch(ops, label, defaultCommitAdapter(scene, deps.selection?.adapterMethods));
 }

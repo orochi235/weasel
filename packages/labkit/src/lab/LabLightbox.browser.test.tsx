@@ -151,7 +151,11 @@ async function drawRect(box: DOMRect): Promise<void> {
   await new Promise((r) => requestAnimationFrame(r));
 }
 
-test('an expanded trial keeps its marks over it and takes new ones', async () => {
+// About 0.9 s alone; beside the rest of the browser project it took 12 to 19 s on fleet nodes, so the
+// limit covers that wait, not the work.
+test('an expanded trial keeps its marks over it and takes new ones', {
+  timeout: 45_000,
+}, async () => {
   render(
     <div className="lk-lightbox-lab-host">
       <Lab instruments={[Marked]} defaultInstrument="Marked" />

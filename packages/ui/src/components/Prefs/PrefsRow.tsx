@@ -3,6 +3,7 @@ import {
   prefAliasName,
   prefValueAtPath,
   type PrefAction,
+  type PrefActions,
   type PrefAlias,
   type PrefAliasTargets,
   type PrefLeaf,
@@ -11,7 +12,8 @@ import {
   prefDrawsSeveral,
 } from '@weasel-js/prefs';
 import { renderBarLeaf, withBarLabel, type LeafSurface } from '../Bar/renderBarLeaf';
-import { PrefActionButton } from './PrefActionButton';
+import { PrefActionButton, PrefActionRows } from './PrefActionButton';
+import { prefDrawsActionRow } from './registeredActions';
 import { PrefMixed } from './PrefMixed';
 import { aliasOfNothing, prefDrawsNoControl, PrefWords } from './PrefWords';
 import { rowWidthOf } from './compound';
@@ -22,6 +24,7 @@ import { ObjectLeaf } from './ObjectLeaf';
 import { UnionPicker } from './UnionPicker';
 import { controlIsGroup, PropertyControl, type PropertyControlProps } from '../Properties/PropertyField';
 import { PropertyRow } from '../Properties/PropertyRow';
+import type { LiveControl } from './commitPolicy';
 import { prefFieldProps } from './prefField';
 import type { PrefFieldChoice } from './schema';
 import { dropValuePath, type PrefDrop } from './drop';
@@ -64,6 +67,9 @@ export interface PrefRenderContext {
   hiddenAt?: (path: string) => boolean;
   /** An entry of a list or a map under this leaf, as the conditions that read the entry leave it. */
   entryAt?: EntryAt;
+  /** Which live controls write only the value an edit settles on, as the form's kit settings have it. Absent, the
+   *  form's defaults. */
+  settles?: Readonly<Record<LiveControl, boolean>>;
 }
 
 /**
@@ -107,6 +113,8 @@ export interface WalkCtx {
   hidden?: ReadonlySet<string>;
   /** Answers the conditions that read an entry of a list or a map, for that entry. */
   entryAt?: EntryAt;
+  /** Which live controls write only the value an edit settles on. */
+  settles?: Readonly<Record<LiveControl, boolean>>;
   /** What the form was given to split values with, and which rows are open. */
   split?: SplitCtx;
 }
@@ -171,6 +179,7 @@ export function prefRenderContext(
     disabledAt: inside?.disabledAt ?? ((at) => ctx.disabled?.has(at) ?? false),
     ...(ctx.hidden ? { hidden: ctx.hidden.has(own), hiddenAt: inside?.hiddenAt ?? ((at: string) => ctx.hidden!.has(at)) } : {}),
     ...(entryAt ? { entryAt } : {}),
+    ...(ctx.settles ? { settles: ctx.settles } : {}),
   };
   return { renderCtx, toggles };
 }
@@ -212,8 +221,8 @@ function LeafRow({ ctx, path: own, pref, at }: { ctx: WalkCtx; path: string; pre
   );
 
   // `block` leaves own their chrome (embedded editors with their own
-  // header) — no label/tooltip row.
-  if (pref.block) {
+  // header), and an action's button reads its own label — no label/tooltip row.
+  if (pref.block || (!custom && prefDrawsActionRow(pref))) {
     return (
       <div className={s.rowSlot} data-wide="" {...selectionAttrs(own, ctx, true)}>
         {marked && <HiddenBadge lead />}
@@ -319,6 +328,7 @@ function renderBuiltin(
     );
   }
   if (pref.kind === 'action') return <PrefActionButton pref={pref as PrefAction} path={ctx.path} disabled={ctx.disabled} />;
+  if (pref.kind === 'actions') return <PrefActionRows pref={pref as PrefActions} path={ctx.path} disabled={ctx.disabled} />;
   const field = leafField(ctx, siblings);
   if (field === null) {
     // App-defined kind with no `renderers` entry: labeled placeholder, not a
@@ -350,5 +360,6 @@ function leafField(ctx: PrefRenderContext, siblings: Record<string, unknown> | u
     ctx.pref,
     { value: ctx.value, mixed: ctx.mixed, siblings, setValue: ctx.setValue, fields: ctx.fields, disabled: ctx.disabled },
     'form',
+    ctx.settles,
   );
 }

@@ -1,13 +1,13 @@
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import type { PrefRenderContext } from '@weasel-js/ui';
-import { PanelsEditor } from './PreferencesModal';
+import { SurfacesEditor } from './PreferencesModal';
 import { PREFS } from './prefs';
 
 function ctxFor(value: unknown, setValue = vi.fn()): PrefRenderContext {
   return {
-    path: 'ui.panels',
-    pref: PREFS.children.ui.children.panels as PrefRenderContext['pref'],
+    path: 'ui.surfaces',
+    pref: PREFS.children.ui.children.surfaces as PrefRenderContext['pref'],
     value,
     setValue,
     auto: false,
@@ -15,17 +15,23 @@ function ctxFor(value: unknown, setValue = vi.fn()): PrefRenderContext {
   };
 }
 
-describe('PanelsEditor', () => {
+describe('SurfacesEditor', () => {
   it('shows each panel flag from the stored value', () => {
-    render(<PanelsEditor ctx={ctxFor({ layers: { collapsed: true } })} />);
-    expect((screen.getByLabelText('Collapse Layers panel') as HTMLInputElement).checked).toBe(true);
-    expect((screen.getByLabelText('Hide Layers panel') as HTMLInputElement).checked).toBe(false);
+    render(<SurfacesEditor ctx={ctxFor({ layers: { collapsed: true } })} />);
+    expect((screen.getByLabelText('Collapse Layers') as HTMLInputElement).checked).toBe(true);
+    expect((screen.getByLabelText('Hide Layers') as HTMLInputElement).checked).toBe(false);
   });
 
   it('writes one flag and keeps the rest of the map', () => {
     const setValue = vi.fn();
-    render(<PanelsEditor ctx={ctxFor({ layers: { collapsed: true } }, setValue)} />);
-    fireEvent.click(screen.getByLabelText('Hide Layers panel'));
+    render(<SurfacesEditor ctx={ctxFor({ layers: { collapsed: true } }, setValue)} />);
+    fireEvent.click(screen.getByLabelText('Hide Layers'));
     expect(setValue).toHaveBeenCalledWith({ layers: { collapsed: true, hidden: true } });
+  });
+
+  it('offers a surface choice only for an asset that allows more than one', () => {
+    render(<SurfacesEditor ctx={ctxFor({ path: { surface: 'menu' } })} />);
+    expect(screen.getByRole('button', { name: /Show Path as/ }).textContent).toMatch(/Menu/);
+    expect(screen.queryByRole('button', { name: /Show Layers as/ })).toBeNull();
   });
 });

@@ -68,6 +68,12 @@
   white-space: nowrap;
 }
 
+.tag {
+  font-size: var(--wzl-font-size-sm);
+  color: var(--wzl-fg-subtle);
+  flex-shrink: 0;
+}
+
 .reason {
   font-size: var(--wzl-font-size-sm);
   color: var(--wzl-fg-muted);

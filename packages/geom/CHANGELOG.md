@@ -1,5 +1,44 @@
 # @weasel-js/geom
 
+## 1.10.1
+
+### Patch Changes
+
+- cbd5b4d: `@weasel-js/geom`'s six-number affine type is `Affine`, no longer `Mat3`. It sat one capital letter from `mat3`, the namespace over the nine-element column-major `GlMat3` a GL uniform takes, and the two are different matrices. `mat3.toAffine` and `mat3.fromAffine` already named the conversion this way.
+  
+  Breaking: `import type { Mat3 } from '@weasel-js/geom'` becomes `import type { Affine }`. The values are unchanged, and so are the free functions beside the type (`identity`, `multiply`, `invert`, and the rest).
+- aaa2b4f: Path edit has two commands for the selected anchors' handles. `retractHandles` collapses them onto their anchors, making sharp corners; a segment whose ends both lose their handles turns straight. `makeHandlesSymmetric` gives each anchor two handles of equal length pointing opposite ways, making it smooth: the shared direction splits the difference between the two handles' own, the shared length is their mean, and an anchor with one handle mirrors it. The ends of an open path are skipped. Both are in the standard actions and the `paths` feature preset, in the `anchors` group, with icons `RetractHandlesIcon` and `SymmetricHandlesIcon`, and are disabled when they would change nothing.
+  
+  Dragging a control handle with Shift held keeps it at the angle it had at the press and changes only its length; it can shrink onto its anchor but not flip through it.
+  
+  `@weasel-js/geom` adds the edits underneath: `retractHandles(set, flatIndexes)`, `makeHandlesSymmetric(set, flatIndexes)`, and `handleAlongItsAngle(anchor, handle, to)`.
+- c7b7ed5: In path edit, dragging a segment bends it: the point pressed follows the pointer and the segment's two handles move to carry it, and a straight segment becomes a curve. An end anchor that was smooth stays smooth, its other handle turning at its own length. It is the `bendSegment` action, in the standard actions and the `paths` feature preset. A drag that starts on an anchor or off the path still moves anchors or draws the marquee, and on a canvas with no mode registry a drag that starts on the edge no longer moves the shape.
+  
+  Path edit now lays a `segment` affordance along the edited path's outline, under its anchors and controls, and `bendSegment` binds to it. Affordance regions take a new shape for it, `{ kind: 'outline', path, hitRadiusPx }`: hit within that many screen pixels of the path's outline. `@weasel-js/routing` adds `isSegment` for that hit and `isPathEditPart` for any anchor, control, or segment hit; `move` turns down a press on any of them.
+  
+  `bendSegment(set, grip, dx, dy)` (`@weasel-js/geom`) is the edit underneath, taking the `{ sub, segIdx, t }` that `segmentAt` reports.
+- ee59ccd: Deleting an anchor keeps the curve's shape. The segment that replaces the two either side of it keeps the directions they left and arrived with, and its handle lengths are now fitted to them rather than set to a third of the chord, so deleting one anchor of a circle leaves a round arc instead of a flat lobe. An anchor that was inserted on a curve and then deleted gives back the original curve. A gap between two straight segments closes with a straight one.
+  
+  `fitCubicWithTangents` (`@weasel-js/geom`) is the fit underneath: the one cubic through a run of samples whose control points keep given end tangents.
+  
+  Breaking: `fitCubicThroughDeletion(prev, next)` becomes `fitCubicThroughDeletion(prev, removed, next)`, since the fit needs the anchor being removed.
+- 9eefcc7: The READMEs of `@weasel-js/geom` and `@weasel-js/gestures` are overviews now: what is in the package, how its parts relate, and examples, where each used to be an install line and an empty import. Each links to its page on the site, `https://orochi235.github.io/weasel/#pkg/<name>`, which shows the README beside the package's guides, API reference, and demos. No code changed in either.
+- 886380f: Each README's "API reference" link now opens the package's page on the site, `https://orochi235.github.io/weasel/#pkg/<name>`, where it used to open the TypeDoc site at `/weasel/api/`, which is no longer built. A file comment that sat on an `export { … }` list is now marked as the file's, so an entry's description no longer shows up as the summary of each function the entry re-exports. No code changed. `@weasel-js/labkit` drops `vitepress` from its devDependencies, which nothing used.
+- d8b51a4: Geometry for the path commands. `simplifyPath(path, tolerance)` refits a path with as few anchors as hold it within the tolerance, keeping corners, the ends of open subpaths, and long flats between curves. `snipPathsAtCrossings(paths)` (in `@weasel-js/geom/booleans`) cuts each path's stroke wherever another of them crosses it. `averageAnchorsAt` moves anchors to their mean position on one or both axes, and `joinAnchorsAt` / `joinSubpathEnds` join two open-subpath ends, closing a subpath or merging two, with `subpathEndAt` and `closestOpenEnds` to find them. In `@weasel-js/stroke`, `offsetPath(path, distance)` grows or shrinks the region a path fills, taking a stroke's miter, round, or bevel joins, and refits the result as curves.
+- 62e766c: Editing the points of a skinned path keeps its weights with its points. Inserting, deleting, cutting, nudging, and dragging anchors, and continuing or joining the path with the pen, now write the node's `data.skin` in the same undo entry as its path, so one undo restores both. Before, the weight arrays kept their old numbering and every point after the edit followed the wrong joints. A new point takes weights between those of the anchors either side of it, by its distance to each; a point drawn past an end takes the end's. Hand-painted weights are kept: nothing is weighed again from the bones.
+  
+  Adds API: `editAnchorSetTracked(path, edit)` is `editAnchorSet` that also answers `origins`, where each point of the new path came from in the old one, and `remapPointValues(values, origins)` carries an array kept per point through that edit. `remapSkin(skin, origins)` does the same for a skin. `EditAnchorsDep.applyEdit` and `editOps` take `origins` as an optional fourth argument; a dep of your own that ignores it leaves a skin as it was.
+- ab9ea7a: A stroke more than twice as wide as the flatten tolerance now flattens its curves in steps of at most 10°. Before, a tight bend under a thick stroke took steps of 40° or more and showed visible facets on the stroke's edges. Thinner strokes still flatten on the same vertices as their fill. `extractPolylines` takes a new `maxTurn` option, and `flattenCubicWithArcLen` and `flattenQuadraticWithArcLen` take a trailing `maxTurn` argument.
+- e962494: New package, `@weasel-js/symmetry`: live symmetry groups. A group's copies (a mirror at any angle, both axes, a point, radial, kaleidoscope, or a repeat with an optional glide) are drawn from its real children. Every edit to a child therefore reaches every copy, a click on a copy selects the child it copies, and `bakeSymmetry` turns the copies into real nodes. `createSymmetry(scene).contribution` draws the guide with draggable center, axis, and step handles, sends every tool's shapes into the active group, and keeps a path that is its own image under its group symmetric while its anchors are dragged or nudged.
+  
+  Core gains what the package is built on, and each piece is usable on its own:
+  
+  - `ContainerNode.copiesFromPose`: a container draws its subtree again under each affine it returns. Hit tests reach into the copies, and the clip travels with each one. Additive.
+  - The `insertInto` dep: the container the `insert` dep puts new nodes into.
+  - The `pathSymmetry` dep: transforms that anchor drags and nudges keep a path symmetric under.
+  
+  `@weasel-js/geom` adds `anchorSymmetry`, `anchorSymmetries`, `translateAnchorsSymmetric`, and `moveHandleSymmetric`. `@weasel-js/svg` writes a container's copies as transformed groups.
+
 ## 1.10.0
 
 ### Patch Changes

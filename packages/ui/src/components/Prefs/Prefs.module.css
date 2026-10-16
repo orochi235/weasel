@@ -592,3 +592,10 @@
   letter-spacing: var(--wzl-params-label-tracking, var(--wzl-tracking-wide));
   text-transform: var(--wzl-params-label-case, uppercase);
 }
+
+/* An `actions` leaf's rows, one under another. */
+.actionRows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-2);
+}

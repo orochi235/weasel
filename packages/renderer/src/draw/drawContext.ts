@@ -16,8 +16,13 @@ export interface DrawContext {
   gl: WebGL2RenderingContext;
   pathFill: ShaderProgram;
   pathFillVColor: ShaderProgram;
-  /** The one program a batch flush draws with — `shaders/batchFill.ts`. */
+  /** The program a batch flush draws a run under one color matrix with —
+   *  `shaders/batchFill.ts`. */
   batchFill: ShaderProgram;
+  /** The same for a run under more than one. Absent where a caller drives the
+   *  draw functions without a renderer behind them, which then draws every run
+   *  with `batchFill`. */
+  readonly batchFillMatrices?: ShaderProgram;
   gradFill: ShaderProgram;
   patternFill: ShaderProgram;
   meshCache: GLMeshCache;

@@ -11,6 +11,7 @@ import {
   nudgeAnchorsRightAction,
   selectAnchorAction,
 } from './anchorEditing';
+import { createKitSettingsStore } from '@weasel-js/react';
 
 /** Closed triangle at (0,0)-(10,0)-(10,10). Three anchors, flat 0..2. */
 function triangle(): PolygonPath {
@@ -273,6 +274,15 @@ describe('anchor click slop is in screen pixels', () => {
     expect([...dep.selectedAnchors]).toEqual([]);
     immediate(cutPathAtAnchorAction).run(deps, { worldX: 15, worldY: 0 });
     expect(commits).toHaveLength(0);
+  });
+
+  it('takes its radius from targets.anchorClickPx', () => {
+    const { dep } = depOverPath(triangle());
+    const kitSettings = createKitSettingsStore({ targets: { anchorClickPx: 45 } });
+    immediate(selectAnchorAction).run(
+      depsWith({ editAnchors: dep, view: viewAt(8), kitSettings }), { worldX: 15, worldY: 0, additive: false },
+    );
+    expect([...dep.selectedAnchors]).toEqual([1]);
   });
 
   it('zoomed out, a click 50 world units (5 px) from an anchor hits it', () => {

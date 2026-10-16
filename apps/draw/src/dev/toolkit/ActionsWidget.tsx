@@ -1,5 +1,7 @@
 import { type Action, actionBindings, type GestureSpec, keySpecShortcut } from '@weasel-js/core';
 import {
+  actionIcon,
+  type ActionIconSource,
   Code,
   DataGrid,
   type DataGridColumn,
@@ -9,7 +11,7 @@ import {
   type LogicalModSpec,
   PropertyPanel,
 } from '@weasel-js/ui';
-import { isValidElement, type ReactElement, type ReactNode } from 'react';
+import type { ReactElement, ReactNode } from 'react';
 import s from '../ToolkitBuilder.module.css';
 
 export function ActionsWidget({ actions }: { actions: readonly Action[] }): ReactElement {
@@ -63,7 +65,7 @@ const MOD_ORDER = ['mod', 'ctrl', 'meta', 'shift', 'alt'] as const;
 
 function renderSpec(spec: GestureSpec): ReactNode {
   const shortcut = keySpecShortcut(spec);
-  if (shortcut) return <KeySequence keys={keySpecsFromShortcut(shortcut)} />;
+  if (shortcut) return <KeySequence keys={keySpecsFromShortcut(shortcut)} variant="inverse" />;
   const mods: LogicalModSpec[] = [];
   if ('mods' in spec && spec.mods) {
     for (const name of MOD_ORDER) {
@@ -85,20 +87,16 @@ function renderSpec(spec: GestureSpec): ReactNode {
       {mods.length > 0 && (
         <>
           <span className={s.bindingSep}>+</span>
-          <KeySequence keys={keySpecsFromMods(mods)} />
+          <KeySequence keys={keySpecsFromMods(mods)} variant="inverse" />
         </>
       )}
     </>
   );
 }
 
+/** One icon thunk that throws must not take the whole table down. */
 function renderIcon(icon: Action['icon']): ReactNode {
-  if (icon === undefined || icon === null) return null;
-  if (typeof icon === 'function') {
-    try { return (icon as () => ReactNode)(); } catch { return null; }
-  }
-  if (isValidElement(icon)) return icon;
-  return icon as ReactNode;
+  try { return actionIcon(icon as ActionIconSource) ?? null; } catch { return null; }
 }
 
 function snapshotEnabled(a: Action): ReactNode {

@@ -5,13 +5,13 @@ import { poseDescriptorOf } from '../poseDescriptorDep';
 import {
   alignDeltaFor,
   alignTargetBounds,
-  visualBoundsViaDescriptor,
   type AlignEdge,
   type AlignReference,
 } from './align';
 import { actionReferenceSources } from '../spatialReference';
 import type { PointerContextValue } from '@weasel-js/routing/react';
-import { scenePoseFrame } from '../poseFrame';
+import { scenePoseFrame, type PoseFrame } from '../poseFrame';
+import { drawnBoxes, type DrawnBoxes } from '../drawnBoxes';
 import { translateEach } from '../selectionSubtree';
 import type { Action } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
@@ -70,15 +70,17 @@ function alignSelection(
   geom: PoseDescriptor<unknown>,
   params: Record<string, unknown> | undefined,
   pointer: PointerContextValue | undefined,
+  boxesOver: (frame: PoseFrame<unknown>) => DrawnBoxes,
 ): void {
   const ids = selection.get();
   const frame = scenePoseFrame(scene);
+  const boxes = boxesOver(frame);
   const poses = ids.map((id) => frame.world(id));
-  const bounds = poses.map((p) => visualBoundsViaDescriptor(p, geom));
+  const bounds = poses.map((p, i) => boxes.aabb(ids[i]!, p));
   const target = alignTargetBounds(
     bounds,
     params?.to as AlignReference | undefined,
-    actionReferenceSources(params, pointer, scene, frame, geom),
+    actionReferenceSources(params, pointer, scene, frame, boxes),
   );
   if (target === null) return;
   const moves = ids.map((id, i) => ({ id, ...alignDeltaFor(bounds[i], target, edge) }));
@@ -96,7 +98,7 @@ function makeAlignAction(edge: AlignEdge): Action {
     icon: ICON_FOR[edge],
     group: 'align',
     eligible: { capability: 'transforms-selection' },
-    requires: ['selection', 'scene', 'poseDescriptor', 'pointer'],
+    requires: ['selection', 'scene', 'poseDescriptor', 'pointer', 'view', 'boundsIncludeStroke'],
     // No default keybindings — six edges/centers don't fit a clean default
     // chord set. Wire bindings explicitly via the actions registry override map.
     invoker: {
@@ -107,7 +109,7 @@ function makeAlignAction(edge: AlignEdge): Action {
         if (!selection || !scene) return;
         alignSelection(
           selection, scene, edge, poseDescriptorOf(deps.poseDescriptor),
-          params, deps.pointer,
+          params, deps.pointer, (frame) => drawnBoxes(deps, frame),
         );
       },
     } satisfies ImmediateInvoker,

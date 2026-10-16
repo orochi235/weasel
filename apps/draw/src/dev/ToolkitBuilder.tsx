@@ -1,10 +1,12 @@
 /**
- * Toolkit Builder — assemble a canvas from a bundle preset and inspect the
- * resulting live registry, route table, conflicts, and dispatch trace. Mounted
+ * Toolkit Builder — assemble a canvas from a bundle preset, with or without
+ * `@weasel-js/path-tools`, and inspect the resulting live registry, route
+ * table, conflicts, and dispatch trace. Mounted
  * under `#/dev/toolkits` (sibling to `RegistryInspector` at `#/dev/registry`).
  */
 import { asNodeId, type Fill, SceneCanvas, solid, useScene } from '@weasel-js/core';
-import { Select } from '@weasel-js/ui';
+import { pathTools } from '@weasel-js/path-tools';
+import { Select, Switch } from '@weasel-js/ui';
 import { type ReactElement, useEffect, useState } from 'react';
 import { DevShell } from './DevShell';
 import { BUNDLE_DEFAULT_TOOLS } from './registryData';
@@ -14,6 +16,7 @@ import { DispatchTraceWidget } from './toolkit/DispatchTraceWidget';
 import { ResolutionWidget } from './toolkit/ResolutionWidget';
 import { RoutesWidget } from './toolkit/RoutesWidget';
 import { ToolsWidget } from './toolkit/ToolsWidget';
+import { usePathToolsTools } from '../usePathToolsTools';
 import { useLiveActions, useToolReflection } from './toolkit/useToolReflection';
 import s from './ToolkitBuilder.module.css';
 
@@ -21,16 +24,20 @@ type ToolBundle = keyof typeof BUNDLE_DEFAULT_TOOLS;
 const BUNDLE_IDS: readonly ToolBundle[] = ['minimal', 'standard', 'exhaustive'];
 const DEFAULT_BUNDLE: ToolBundle = 'standard';
 
-function parseBundle(hash: string): ToolBundle {
+interface Setup { bundle: ToolBundle; paths: boolean }
+
+function parseSetup(hash: string): Setup {
   const q = hash.includes('?') ? hash.slice(hash.indexOf('?') + 1) : '';
   const params = new URLSearchParams(q);
   const b = params.get('bundle');
-  if (b && (BUNDLE_IDS as readonly string[]).includes(b)) return b as ToolBundle;
-  return DEFAULT_BUNDLE;
+  return {
+    bundle: b && (BUNDLE_IDS as readonly string[]).includes(b) ? b as ToolBundle : DEFAULT_BUNDLE,
+    paths: params.get('paths') !== '0',
+  };
 }
 
-function writeBundle(b: ToolBundle): void {
-  const next = `#/dev/toolkits?bundle=${b}`;
+function writeSetup({ bundle, paths }: Setup): void {
+  const next = `#/dev/toolkits?bundle=${bundle}${paths ? '' : '&paths=0'}`;
   if (window.location.hash !== next) window.history.replaceState(null, '', next);
 }
 
@@ -43,23 +50,25 @@ const INITIAL_NODES = [
   { kind: 'leaf' as const, id: asNodeId('r3'), layer: 'default' as const, data: { fill: { paint: solid('#5a8bd0') } }, pose: { x: 140, y: 220, width: 160, height: 60 } },
 ];
 
-function ToolkitForBundle({ bundle }: { bundle: ToolBundle }): ReactElement {
+function ToolkitForSetup({ bundle, paths }: Setup): ReactElement {
   const scene = useScene<ShapeData, 'default', ShapePose>({
     systemLayers: [{ id: 'default' }],
     initial: INITIAL_NODES,
   });
   const reflection = useToolReflection();
   const actions = useLiveActions();
+  const pathToolsTools = usePathToolsTools();
 
   return (
     <div className={s.layout}>
       {/* Left column: canvas. */}
       <section className={s.canvas}>
-        <SceneCanvas features={['draw']}
+        <SceneCanvas features={paths ? ['draw', pathTools] : ['draw']}
           scene={scene}
           width={520}
           height={360}
           defaultTools={BUNDLE_DEFAULT_TOOLS[bundle]}
+          {...(paths ? { tools: pathToolsTools } : {})}
           onToolsCreated={reflection.onToolsCreated}
           className={s.scene}
         />
@@ -96,14 +105,15 @@ function ToolkitForBundle({ bundle }: { bundle: ToolBundle }): ReactElement {
 }
 
 export function ToolkitBuilder(): ReactElement {
-  const [bundle, setBundle] = useState<ToolBundle>(() => parseBundle(window.location.hash));
+  const [setup, setSetup] = useState<Setup>(() => parseSetup(window.location.hash));
+  const { bundle, paths } = setup;
 
-  // Sync hash on bundle change + react to back/forward.
-  useEffect(() => { writeBundle(bundle); }, [bundle]);
+  // Sync hash on a change + react to back/forward.
+  useEffect(() => { writeSetup({ bundle, paths }); }, [bundle, paths]);
   useEffect(() => {
     const onHash = () => {
-      const next = parseBundle(window.location.hash);
-      setBundle((prev) => (prev === next ? prev : next));
+      const next = parseSetup(window.location.hash);
+      setSetup((prev) => (prev.bundle === next.bundle && prev.paths === next.paths ? prev : next));
     };
     window.addEventListener('hashchange', onHash);
     return () => window.removeEventListener('hashchange', onHash);
@@ -113,23 +123,29 @@ export function ToolkitBuilder(): ReactElement {
     <DevShell
       title="Toolkit Builder"
       header={
-        <Select<ToolBundle>
-          label="bundle"
-          orientation="row"
-          width="fit"
-          options={BUNDLE_IDS.map((id) => ({ value: id, label: id }))}
-          selectedKey={bundle}
-          onSelectionChange={setBundle}
-        />
+        <>
+          <Select<ToolBundle>
+            label="bundle"
+            orientation="row"
+            width="fit"
+            options={BUNDLE_IDS.map((id) => ({ value: id, label: id }))}
+            selectedKey={bundle}
+            onSelectionChange={(next) => setSetup((prev) => ({ ...prev, bundle: next }))}
+          />
+          <Switch isSelected={paths} onChange={(next) => setSetup((prev) => ({ ...prev, paths: next }))}>
+            path-tools
+          </Switch>
+        </>
       }
     >
       <div className={s.root}>
         <p className={s.subtitle}>
-          Mount a SceneCanvas with the chosen bundle, then inspect the live tool
-          set, action registry, route table, and dispatch trace it produces.
+          Mount a SceneCanvas with the chosen bundle, and with path-tools' presets
+          and tools when it is on, then inspect the live tool set, action
+          registry, route table, and dispatch trace it produces.
         </p>
-        {/* Key by bundle so SceneCanvas rebuilds cleanly when it changes. */}
-        <ToolkitForBundle key={bundle} bundle={bundle} />
+        {/* Key by the setup so SceneCanvas rebuilds cleanly when it changes. */}
+        <ToolkitForSetup key={`${bundle}:${paths}`} bundle={bundle} paths={paths} />
       </div>
     </DevShell>
   );

@@ -1,14 +1,14 @@
 /**
- * The constraints on a control-handle drag — the angle and length locks, and
- * angle snapping — and the guides that show which one is holding.
+ * The locks on a control-handle drag — its angle, its length, or both —
+ * angle snapping, and the guides that show which one is holding.
  */
 import type { ModifierState, OngoingOverlay } from '@weasel-js/routing';
 import { handleAlongItsAngle, handleAtItsLength, snapHandleAngle } from '@weasel-js/geom';
-import type { HandleLock, HandleSnapParams } from './params';
+import type { HandleLocks, HandleSnapParams } from './params';
 
 type Point = { x: number; y: number };
 
-/** What the handle drag read at press: where the anchor and both its handles sat. */
+/** Where a handle drag's anchor and both its handles sat at the press. */
 export interface HandlePress {
   anchor: Point;
   handle: Point;
@@ -16,70 +16,78 @@ export interface HandlePress {
   opposite: Point | null;
 }
 
-/** Where the handle goes this move, and the guides to draw for it. */
-export interface ConstrainedHandle {
+/** Where the handle goes this move, and the guide its lock draws. */
+export interface LockedHandle {
   to: Point;
-  /** Which locks held: Shift or a forced `'angle'` holds the angle, Mod
-   *  (Cmd or Ctrl) or a forced `'length'` the length. */
-  locks: { angle: boolean; length: boolean };
-  guides: OngoingOverlay[];
+  /** The line or circle the handle is held to; null with no lock held. */
+  guide: OngoingOverlay | null;
 }
 
+const CIRCLE_SEGMENTS = 64;
 const DEFAULT_STEP_DEG = 45;
 const DEFAULT_TOLERANCE_DEG = 6;
-const CIRCLE_SEGMENTS = 64;
+/** How far past the handle the angle guide reaches, as a share of its length. */
+const LINE_OVERSHOOT = 1.25;
 
-/** Constrain a handle dragged to `pointer` by the locks and snapping in force. */
+/** The locks in force: those `held` names, plus Shift for the angle and Mod
+ *  (Cmd or Ctrl) for the length. */
+export function locksInForce(held: HandleLocks, modifiers: ModifierState): HandleLocks {
+  return {
+    angle: held.angle || modifiers.shift,
+    length: held.length || modifiers.meta || modifiers.ctrl,
+  };
+}
+
+/** The handle dragged toward `pointer` under `locks`. */
+export function lockHandle(press: HandlePress, pointer: Point, locks: HandleLocks): LockedHandle {
+  const { anchor, handle } = press;
+  const len = dist(anchor, handle);
+  if (locks.angle && locks.length) return { to: { ...handle }, guide: lineGuide(anchor, handle, len) };
+  if (locks.angle) {
+    const to = handleAlongItsAngle(anchor, handle, pointer);
+    return { to, guide: lineGuide(anchor, handle, Math.max(len, dist(anchor, to))) };
+  }
+  if (locks.length) return { to: handleAtItsLength(anchor, handle, pointer), guide: circleGuide(anchor, len) };
+  return { to: pointer, guide: null };
+}
+
+/** The handle dragged toward `pointer` under `locks`, then snapped by `snap`
+ *  unless its angle is locked, with every guide that holds it. */
 export function constrainHandle(
   press: HandlePress,
   pointer: Point,
-  modifiers: ModifierState,
-  lock: HandleLock | null | undefined,
+  locks: HandleLocks,
   snap: HandleSnapParams | null | undefined,
-): ConstrainedHandle {
-  const locks = {
-    angle: lock === 'angle' || modifiers.shift,
-    length: lock === 'length' || modifiers.meta || modifiers.ctrl,
-  };
-  const { anchor, handle } = press;
-  const guides: OngoingOverlay[] = [];
-  const len = Math.hypot(handle.x - anchor.x, handle.y - anchor.y);
-
-  if (locks.angle && locks.length) return { to: { ...handle }, locks, guides: [axisGuide(anchor, handle, len, 'lock')] };
-  if (locks.angle) {
-    const to = handleAlongItsAngle(anchor, handle, pointer);
-    return { to, locks, guides: [axisGuide(anchor, handle, Math.max(len, dist(anchor, to)), 'lock')] };
+): { to: Point; guides: OngoingOverlay[] } {
+  const locked = lockHandle(press, pointer, locks);
+  const guides = locked.guide ? [locked.guide] : [];
+  if (!snap || locks.angle) return { to: locked.to, guides };
+  const { anchor, opposite } = press;
+  const snapped = snapHandleAngle(anchor, locked.to, {
+    stepDeg: snap.stepDeg ?? DEFAULT_STEP_DEG,
+    toleranceDeg: snap.toleranceDeg ?? DEFAULT_TOLERANCE_DEG,
+    opposite: snap.opposite === false ? null : opposite,
+  });
+  const to = snapped.point;
+  if (snapped.snapped) {
+    const reach = dist(anchor, to);
+    guides.push(snapped.snapped.kind === 'opposite' && opposite
+      ? { kind: 'polyline', points: [opposite, anchor, extend(anchor, to, reach * 0.25)], role: 'snap' }
+      : lineGuide(anchor, to, reach, 'snap'));
   }
-
-  let to = locks.length ? handleAtItsLength(anchor, handle, pointer) : pointer;
-  if (locks.length) guides.push(circleGuide(anchor, len));
-  if (snap) {
-    const snapped = snapHandleAngle(anchor, to, {
-      stepDeg: snap.stepDeg ?? DEFAULT_STEP_DEG,
-      toleranceDeg: snap.toleranceDeg ?? DEFAULT_TOLERANCE_DEG,
-      opposite: snap.opposite === false ? null : press.opposite,
-    });
-    to = snapped.point;
-    if (snapped.snapped) {
-      const reach = dist(anchor, to);
-      guides.push(snapped.snapped.kind === 'opposite' && press.opposite
-        ? { kind: 'polyline', points: [press.opposite, anchor, extend(anchor, to, reach * 0.25)], role: 'snap' }
-        : axisGuide(anchor, to, reach, 'snap'));
-    }
-  }
-  return { to, locks, guides };
+  return { to, guides };
 }
 
-/** The line through `anchor` toward `toward`, reaching past it on both sides. */
-function axisGuide(anchor: Point, toward: Point, reach: number, role: 'snap' | 'lock'): OngoingOverlay {
+/** The line through `anchor` toward `toward`, reaching past `reach` on both sides. */
+function lineGuide(anchor: Point, toward: Point, reach: number, role: 'lock' | 'snap' = 'lock'): OngoingOverlay {
   const d = dist(anchor, toward);
   if (d === 0) return { kind: 'polyline', points: [anchor, anchor], role };
-  const ux = (toward.x - anchor.x) / d;
-  const uy = (toward.y - anchor.y) / d;
-  const span = reach * 1.25;
+  const span = reach * LINE_OVERSHOOT;
+  const ux = ((toward.x - anchor.x) / d) * span;
+  const uy = ((toward.y - anchor.y) / d) * span;
   return {
     kind: 'polyline',
-    points: [{ x: anchor.x - ux * span, y: anchor.y - uy * span }, { x: anchor.x + ux * span, y: anchor.y + uy * span }],
+    points: [{ x: anchor.x - ux, y: anchor.y - uy }, { x: anchor.x + ux, y: anchor.y + uy }],
     role,
   };
 }

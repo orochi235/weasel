@@ -1,0 +1,115 @@
+import { createMenuController, type Rect } from '@weasel-js/menu';
+import { faceGeneration } from '@weasel-js/font';
+import type { ClaimableGesture, OpenMenu } from '@weasel-js/core';
+import { createRevision, type HudKeyEvent, type HudPointerEvent, type Widget, type WidgetBounds } from '../widget';
+import { DEFAULT_MENU_METRICS, drawPanel, rowAt, type MenuMetrics } from './drawPanel';
+import { measureLabel } from './measureLabel';
+import { createPlacer } from './placePanels';
+
+type XY = { x: number; y: number };
+const CLAIMS: readonly ClaimableGesture[] = ['pointer', 'doubleClick', 'contextMenu', 'longPress', 'wheel'];
+
+/** What {@link createMenuWidget} needs: the open menu, how to close it, and the canvas it draws on. */
+export interface MenuWidgetOptions {
+  open: OpenMenu;
+  /** The menu is done: an item was chosen, or it was dismissed. */
+  close(): void;
+  /** Viewport point to canvas CSS pixels, for `open.client`. */
+  toCanvas(client: XY): XY;
+  canvasSize(): { width: number; height: number };
+  /** Width of a label in the family the hud draws with. Defaults to the
+   *  registered face's own advances, which is what the text is laid out with. */
+  measure?(text: string, fontSize: number, fontFamily: string): number;
+  metrics?: MenuMetrics;
+  onChange(): void;
+}
+
+/** A widget that draws `open` as one panel per open level, driven by a menu controller it owns. */
+export function createMenuWidget(opts: MenuWidgetOptions): Widget {
+  const m = opts.metrics ?? DEFAULT_MENU_METRICS;
+  const rev = createRevision(opts.onChange);
+  const c = createMenuController({
+    entries: opts.open.entries, highlightFirst: opts.open.source === 'keyboard', onClose: opts.close,
+  });
+  const place = createPlacer({
+    anchor: opts.toCanvas(opts.open.client), canvasSize: opts.canvasSize,
+    measure: opts.measure ?? measureLabel, metrics: m,
+  });
+  // The hud's font is known only once it draws.
+  let family: string | null = null;
+  let panels: Rect[] = place(c, family);
+  let disposed = false;
+  let armed = false;
+  let under: number | null = null;
+  c.subscribe(() => { panels = place(c, family); rev.changed(); });
+
+  /** The topmost panel under (x, y), or -1. */
+  const levelAt = (x: number, y: number): number => {
+    for (let i = panels.length - 1; i >= 0; i--) {
+      const p = panels[i]!;
+      if (x >= p.x && x < p.x + p.w && y >= p.y && y < p.y + p.h) return i;
+    }
+    return -1;
+  };
+
+  const union = (): WidgetBounds => {
+    const x0 = Math.min(...panels.map((p) => p.x));
+    const y0 = Math.min(...panels.map((p) => p.y));
+    const x1 = Math.max(...panels.map((p) => p.x + p.w));
+    const y1 = Math.max(...panels.map((p) => p.y + p.h));
+    return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
+  };
+
+  /** The pointer is now over `level` (null: no panel). Leaving a panel clears
+   *  its row, as the DOM menu's per-panel `pointerleave` does. */
+  const enter = (level: number | null) => {
+    if (under !== null && under !== level) c.hover(under, null);
+    under = level;
+  };
+
+  const pointer = (evt: HudPointerEvent) => {
+    if (evt.type === 'hoverleave') { enter(null); return; }
+    if (evt.type === 'cancel') { armed = false; return; }
+    if (evt.type === 'down') { armed = true; return; }
+    if (evt.type !== 'hovermove' && evt.type !== 'move' && evt.type !== 'up') return;
+    const level = levelAt(evt.x, evt.y);
+    // Only a release that follows a press here chooses: the release of the
+    // right-click or long-press that opened the menu must not.
+    const choose = evt.type === 'up' && armed;
+    if (evt.type === 'up') armed = false;
+    if (!choose) enter(level < 0 ? null : level);
+    if (level < 0) return;
+    const index = rowAt(c.entriesAt(level), m, evt.y - panels[level]!.y);
+    if (!choose) c.hover(level, index, { x: evt.x, y: evt.y });
+    else if (index !== null) c.press(level, index);
+  };
+
+  const key = (evt: HudKeyEvent): boolean => {
+    if (evt.type !== 'keydown') return false;
+    if (!evt.ctrlKey && !evt.metaKey && !evt.altKey) c.key(evt.key);
+    // Every key belongs to the open menu, so no canvas binding fires under it.
+    return true;
+  };
+
+  return {
+    id: `weasel-menu-${opts.open.seq}`,
+    get bounds() { return union(); },
+    hidden: false,
+    get disposed() { return disposed; },
+    claims: CLAIMS,
+    focusable: true,
+    focusRing: false,
+    accessibleName: 'Context menu',
+    deps: (ctx) => [...rev.deps(), ctx.defaultFont, faceGeneration()],
+    draw: (ctx) => {
+      family = ctx.defaultFont;
+      panels = place(c, family);
+      return panels.flatMap((p, level) => drawPanel(ctx, p, c.entriesAt(level), c.stack()[level] ?? null, m));
+    },
+    hitTest: (x, y) => levelAt(x, y) >= 0,
+    cursorAt: () => 'default',
+    onPointer: pointer,
+    onKey: key,
+    dispose() { disposed = true; c.dispose(); },
+  };
+}

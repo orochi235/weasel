@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState, type ReactNode } from 'react';
 import { ActionsProvider, useAction, type Action } from '@weasel-js/core';
-import type { PrefGroup } from '@weasel-js/prefs';
+import { pref, type PrefGroup } from '@weasel-js/prefs';
 import { Bar, type BarProps } from './Bar';
 import s from './Bar.stories.module.css';
 
@@ -178,3 +178,49 @@ export const AliasesIntoAnotherSchema: Story = {
     );
   },
 };
+
+const ARRANGE_ACTIONS: Action[] = [
+  { id: 'arrange.front', label: 'Bring to front', group: 'arrange', icon: '⤒', invoker: { timing: 'immediate', run: () => {} } },
+  { id: 'arrange.back', label: 'Send to back', group: 'arrange', icon: '⤓', invoker: { timing: 'immediate', run: () => {} } },
+  {
+    id: 'arrange.flip',
+    label: 'Flip',
+    group: 'arrange',
+    invoker: { timing: 'immediate', run: () => {} },
+    variants: [
+      { key: 'x', label: 'Flip horizontally', icon: '⇋', params: { axis: 'x' } },
+      { key: 'y', label: 'Flip vertically', icon: '⇵', params: { axis: 'y' } },
+    ],
+  },
+];
+
+const ARRANGE: PrefGroup = pref.group('Arrange', {
+  order: pref.actions('arrange'),
+  zoom: { ...pref.number('Zoom', 100, { description: 'A readout: the value, with nothing to edit it.' }), readout: true },
+  snap: { ...pref.boolean('Snap', true, { control: 'toggle' }), readout: true },
+  view: pref.group('View', {
+    grid: pref.boolean('Grid', true),
+    rulers: pref.boolean('Rulers', false),
+    units: pref.enum('Units', 'px', ['px', 'mm', 'in']),
+    more: pref.actions('arrange'),
+  }, { as: 'menu' }),
+}, { as: 'bar' });
+
+function ArrangeBar(args: BarProps) {
+  const [values, setValues] = useState<Record<string, unknown>>({ zoom: 150, snap: true, 'view.grid': true, 'view.units': 'px' });
+  return (
+    <ActionsProvider>
+      {ARRANGE_ACTIONS.map((a) => (
+        <Register key={a.id} action={a} />
+      ))}
+      <div className={args.orientation === 'vertical' ? s.rail : s.strip}>
+        <Bar {...args} schema={ARRANGE} values={values} onChange={(path, value) => setValues((v) => ({ ...v, [path]: value }))} />
+      </div>
+    </ActionsProvider>
+  );
+}
+
+/** An `actions` leaf draws one button per action registered in its group, a variant each; Zoom and Snap are
+ *  `readout` leaves, shown as values; View is a group `as: 'menu'`, which opens as a menu of checked items, radio
+ *  rows, and the same actions. */
+export const ActionsReadoutsAndMenus: Story = { args: { label: 'Arrange' }, render: (args) => <ArrangeBar {...args} /> };

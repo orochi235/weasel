@@ -1,4 +1,4 @@
-import type { PrefBase, PrefLeaf } from './schema';
+import type { PrefValueBase, PrefLeaf } from './schema';
 
 /**
  * A leaf whose value is an array, every entry described by `item`.
@@ -9,7 +9,7 @@ import type { PrefBase, PrefLeaf } from './schema';
  * `default` is what a new entry starts as, and its `name` names one entry
  * (`'Phase'` under a list named `'Phases'`).
  */
-export interface PrefList extends PrefBase<'list', readonly unknown[]> {
+export interface PrefList extends PrefValueBase<'list', readonly unknown[]> {
   item: PrefLeaf;
   /** A stored list shorter than this reads as the default, and a UI stops removing at it. */
   minItems?: number;

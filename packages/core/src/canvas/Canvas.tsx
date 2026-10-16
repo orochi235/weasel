@@ -38,7 +38,6 @@ import {
 } from 'core/layers/render';
 import { viewToMat3, type ShaderProgramHandle } from '@weasel-js/renderer';
 import { createBackgroundFillLayer } from 'core/layers/backgroundFill';
-import { shaderKeyOf } from './canvasRenderer';
 import { SurfaceCanvas } from './SurfaceCanvas';
 import {
   type SelectionApi,
@@ -367,12 +366,13 @@ function CanvasInner<TPose>(
   // paint and by every hit-test.
   const gateRef = useLatest({ getIsVisible, layerVisibility, layerOrder });
 
-  // React does not drive the paint; the frame loop does. The thunk defers to
+  // The frame loop paints; a committed render only marks the surface dirty, so
+  // no prop can reach the paint without repainting it. The thunk defers to
   // `paint` below, which needs inputs this render has not computed yet.
   const paintRef = useRef<() => boolean>(() => false);
   const { lease, requestRedraw, subscribeFrame, subscribeBeforePaint, subscribeResume } = useCanvasSurface(
     useCallback(() => paintRef.current(), []),
-    { syncPaint, target: canvasRef, dpr: dprProp, redrawOn, shaders },
+    { syncPaint, target: canvasRef, dpr: dprProp, redrawOn, shaders, onCommit: 'redraw' },
   );
 
   const contentVersionRef = useLatest(contentVersion);
@@ -419,7 +419,7 @@ function CanvasInner<TPose>(
   }, [gateRef]);
 
   const {
-    viewRef, controlled: controlledView, setView, getView, subscribeView,
+    viewRef, setView, getView, subscribeView,
     adoptControlled, announceControlled, clearSubscribers,
   } = viewState;
 
@@ -515,7 +515,7 @@ function CanvasInner<TPose>(
 
   // One view's overlay-aware state. A hook, so N views are N components each
   // calling it once — not a loop in this body.
-  const { helpers: viewHelpers, chromeState: viewChromeState } = useViewHelpers<TPose>({
+  const { helpers: viewHelpers } = useViewHelpers<TPose>({
     adapter,
     geometry,
     boundsOf,
@@ -605,8 +605,6 @@ function CanvasInner<TPose>(
     return () => { for (const off of offs) off(); };
   }, [layersWithDebug, requestRedraw]);
 
-  const shaderIdKey = shaderKeyOf(shaders);
-
   // Everything the paint, hit-testing and the view registry read that a React
   // render owns. `useLatest` and the insertion effect below publish committed
   // renders only, ahead of every layout effect in the commit, any of which may
@@ -671,21 +669,6 @@ function CanvasInner<TPose>(
   useInsertionEffect(() => {
     paintRef.current = paint;
   });
-
-  // A tripwire, not a list of values this effect uses: every paint input that
-  // arrives on a render must appear here, or changing it paints stale.
-  // `viewChromeState` stands in for the whole overlay-aware set the layer
-  // helpers expose — it re-memoizes on exactly the selection, bounds and
-  // preview inputs they read. What moves between renders instead (a scene
-  // write, a gesture pump, a late image decode) pushes its own redraw.
-  // Layout, not passive, so a `syncPaint` surface lands its pixels in the same
-  // commit as the DOM.
-  useLayoutEffect(() => {
-    requestRedraw();
-  }, [layersWithDebug, width, height, debugSink, dprProp, flattenTolerance,
-      controlledView?.x, controlledView?.y, controlledView?.scale.x, controlledView?.scale.y,
-      layerVisibility, layerOrder, layerGroups, shaderIdKey, syncPaint,
-      viewChromeState, getIsVisible, paintTarget, paintRect?.x, paintRect?.y, requestRedraw]);
 
   useEffect(() => {
     const layerCache = layerCacheRef.current;

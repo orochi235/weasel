@@ -58,7 +58,7 @@ describe('buildAffordanceAt visibility gating', () => {
     expect(hit).toBeNull();
   });
 
-  it('does not test anchors when path-edit.anchors is NOT visible', () => {
+  it('does not read the edited path while path-edit.anchors is hidden, extension parts included', () => {
     const anchorStateThunk = vi.fn(() => ({
       editingId: 'n1',
       getPose: () => ({

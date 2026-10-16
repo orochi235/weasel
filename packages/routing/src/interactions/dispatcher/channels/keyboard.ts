@@ -17,6 +17,9 @@ function typedWithAltGraph(e: KeyboardEvent): boolean {
   return base === undefined || base.toLowerCase() !== e.key.toLowerCase();
 }
 
+/** True inside an open ARIA menu, which owns every key typed in it. */
+const inMenu = (t: EventTarget | null): boolean => t instanceof Element && t.closest('[role="menu"]') !== null;
+
 export function keyboardInput(core: DispatchCore): {
   onKeyDown: (e: KeyboardEvent) => void;
   onKeyUp: (e: KeyboardEvent) => void;
@@ -33,7 +36,7 @@ export function keyboardInput(core: DispatchCore): {
   const physicalKey = (e: KeyboardEvent): string => e.code || e.key.toLowerCase();
 
   const onKeyDown = (e: KeyboardEvent) => {
-    if (e.defaultPrevented || isEditableTarget(e.target) || focusedControlOwnsKey(e)) return;
+    if (e.defaultPrevented || isEditableTarget(e.target) || inMenu(e.target) || focusedControlOwnsKey(e)) return;
     // Every dispatcher hears keys on window; only the one holding them acts.
     if (!core.holdsKeys()) return;
 

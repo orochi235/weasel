@@ -37,9 +37,9 @@ const MATRICES = new Float32Array(16 * BATCH_MATRIX_SLOTS);
 const BIASES = new Float32Array(4 * BATCH_MATRIX_SLOTS);
 const ALPHAS = new Float32Array(BATCH_MATRIX_SLOTS);
 
-/** What the batch program holds this frame. Keyed on the `DrawContext`, which
+/** What each batch program holds this frame. Keyed on the `DrawContext`, which
  *  is built per frame, so it cannot go stale against GL state. */
-const UPLOADED = new WeakMap<DrawContext, readonly BatchMatrix[]>();
+const UPLOADED = new WeakMap<DrawContext, WeakMap<ShaderProgram, readonly BatchMatrix[]>>();
 
 /** Whether `held` already starts with `matrices`. Entries past a run's own are
  *  ones no vertex of it names. */
@@ -57,11 +57,17 @@ function holds(held: readonly BatchMatrix[], matrices: readonly BatchMatrix[]): 
 /**
  * `u_colorMatrix`, `u_colorBias`, and `u_alpha` for a run, skipped when the
  * batch program already holds them. Nothing else may write these three.
+ * `prog` must declare as many entries as the run has.
  */
 export function uploadBatchMatrices(
   ctx: DrawContext, prog: ShaderProgram, matrices: readonly BatchMatrix[],
 ): void {
-  const held = UPLOADED.get(ctx);
+  let byProgram = UPLOADED.get(ctx);
+  if (!byProgram) {
+    byProgram = new WeakMap();
+    UPLOADED.set(ctx, byProgram);
+  }
+  const held = byProgram.get(prog);
   if (held !== undefined && holds(held, matrices)) return;
   const n = matrices.length;
   for (let i = 0; i < n; i++) {
@@ -79,5 +85,5 @@ export function uploadBatchMatrices(
   gl.uniformMatrix4fv(prog.uniform('u_colorMatrix')!, false, MATRICES.subarray(0, 16 * n));
   gl.uniform4fv(prog.uniform('u_colorBias')!, BIASES.subarray(0, 4 * n));
   gl.uniform1fv(prog.uniform('u_alpha')!, ALPHAS.subarray(0, n));
-  UPLOADED.set(ctx, matrices.slice());
+  byProgram.set(prog, matrices.slice());
 }

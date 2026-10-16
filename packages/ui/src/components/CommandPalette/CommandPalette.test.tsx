@@ -28,6 +28,7 @@ function Actions() {
   useAction({
     id: 'group',
     label: 'Group',
+    tags: ['container', 'structure'],
     invoker: { timing: 'immediate' as const, run: () => { runs.group(); } },
   });
   return null;
@@ -84,6 +85,16 @@ describe('CommandPalette', () => {
     expect(options()[0].textContent).toContain('Group');
     fireEvent.change(search(), { target: { value: 'zzz' } });
     expect(screen.getByText('No matching actions.')).toBeTruthy();
+  });
+
+  it('finds an action by a tag, and names the tag only on a row the tag alone found', () => {
+    openPalette();
+    fireEvent.change(search(), { target: { value: 'STRUCT' } });
+    expect(options()).toHaveLength(1);
+    expect(within(options()[0]).getByText('Group')).toBeTruthy();
+    expect(within(options()[0]).getByText('structure')).toBeTruthy();
+    fireEvent.change(search(), { target: { value: 'gro' } });
+    expect(options()[0].textContent).toBe('Group');
   });
 
   it('draws a shortcut as keycaps', () => {

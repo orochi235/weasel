@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useReducer, useState, type ReactElement } from 'react';
-import { useLatest, useVisibleRaf } from '@weasel-js/core';
+import { useVisibleRaf } from '@weasel-js/core';
 import { type TimelineHandle, type Track } from '@weasel-js/animator';
 import { Timeline, type TimelineProps } from './Timeline';
 
@@ -42,11 +42,10 @@ export function AnimatedTimeline(props: AnimatedTimelineProps): ReactElement {
   // inside its own frame, and nothing runs until something calls `request`.
   // No `onResume` here: this loop measures no elapsed time of its own, it only
   // reads the playhead the animator already advanced.
-  const raf = useVisibleRaf(() => {
+  const raf = useVisibleRaf((_time, raf) => {
     bump();
-    if (isAdvancing(handle)) rafRef.current.request();
+    if (isAdvancing(handle)) raf.request();
   });
-  const rafRef = useLatest(raf);
   // Every render, not only mount: an edit can lengthen a finished timeline and
   // set it running again, and `request` does nothing while a frame is pending.
   useEffect(() => {

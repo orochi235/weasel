@@ -5,6 +5,8 @@
  *
  * Extracted from the deleted singular `useKeybinding` hook so the remaining
  * consumers don't depend on its disappearance.
+ *
+ * @packageDocumentation
  */
 
 export { activatesFocusedControl, focusedControlOwnsKey, isEditableTarget } from '@weasel-js/gestures';

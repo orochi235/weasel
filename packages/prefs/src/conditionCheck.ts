@@ -88,7 +88,7 @@ function leafProblems(test: PrefTest, schema: Schema, site: PrefConditionSite, o
   if (held === UNSEEN) return [];
   const { leaf } = held;
   const named = inEntry ? (path === '' ? 'the entry' : `the entry's "${path}"`) : `"${path}"`;
-  if (!prefHoldsValue(leaf)) return [{ code: 'no-value', path, problem: `${named} is a${leaf.kind === 'separator' || leaf.kind === 'label' ? '' : 'n'} ${leaf.kind}, which holds no value` }];
+  if (!prefHoldsValue(leaf)) return [{ code: 'no-value', path, problem: `${named} is a${leaf.kind === 'separator' || leaf.kind === 'label' ? '' : 'n'} ${leaf.kind === 'actions' ? 'actions leaf' : leaf.kind}, which holds no value` }];
   const out: PrefConditionProblem[] = [];
   const compared = [test.is, test.isNot, ...(test.in ?? [])].filter((value) => value !== undefined);
   for (const value of compared) {

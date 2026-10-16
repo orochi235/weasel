@@ -63,6 +63,27 @@ describe('ActionBar', () => {
     expect(toolbar.querySelectorAll('button').length).toBe(0);
   });
 
+  it('draws a bar from a tag: the actions carrying it, and the variants that do', () => {
+    render(
+      <Harness
+        actions={[
+          makeAction({ id: 'union', tags: ['boolean'] }),
+          makeAction({ id: 'paste' }),
+          makeAction({
+            id: 'flip',
+            variants: [
+              { key: 'x', label: 'Flip H', params: { axis: 'x' }, tags: ['boolean'] },
+              { key: 'y', label: 'Flip V', params: { axis: 'y' } },
+            ],
+          }),
+        ]}
+        bar={<ActionBar tag="boolean" />}
+      />,
+    );
+    expect(screen.getAllByRole('button').map((b) => b.getAttribute('aria-label'))).toEqual(['union', 'Flip H']);
+    expect(screen.getByRole('toolbar', { name: 'boolean actions' })).toBeTruthy();
+  });
+
   it('renders one button per action in the group', () => {
     render(
       <Harness
@@ -277,6 +298,17 @@ describe('ActionBar', () => {
       />,
     );
     expect(screen.getByTestId('fn-icon')).toBeTruthy();
+  });
+
+  it('keeps only the entries `only` names, by action id or by variant key', () => {
+    const variants = [{ key: 'x', label: 'Flip X', params: {} }, { key: 'y', label: 'Flip Y', params: {} }];
+    render(
+      <Harness
+        actions={[makeAction({ id: 'a' }), makeAction({ id: 'b' }), makeAction({ id: 'flip', variants })]}
+        bar={<ActionBar group="demo" only={['b', 'flip:y']} />}
+      />,
+    );
+    expect(screen.getAllByRole('button').map((b) => b.getAttribute('aria-label'))).toEqual(['b', 'Flip Y']);
   });
 
   it('renders one button per variant and triggers with its params', () => {

@@ -49,6 +49,6 @@ const TOOL_COLUMNS: readonly DataGridColumn<ToolRow>[] = [
     id: 'shortcut',
     header: 'Switch',
     sortable: false,
-    render: (r) => <KeySequence keys={keySpecsFromShortcut(r.shortcut)} />,
+    render: (r) => <KeySequence keys={keySpecsFromShortcut(r.shortcut)} variant="inverse" />,
   },
 ];

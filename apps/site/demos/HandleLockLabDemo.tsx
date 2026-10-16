@@ -1,47 +1,42 @@
-import { type ActionTunings, useLatest } from '@weasel-js/core';
-import { type ConfigOf, defineInstrument, f, Lab, type RenderContext, TrialSceneCanvas } from '@weasel-js/labkit';
-import { SelectIcon } from '@weasel-js/ui';
-import { useMemo } from 'react';
+import { defineInstrument, Lab, type RenderContext, TrialSceneCanvas } from '@weasel-js/labkit';
+import { handleLocksPreset } from '@weasel-js/path-tools';
+import type { PrefGroup } from '@weasel-js/prefs';
+import { Bar, SelectIcon } from '@weasel-js/ui';
+import s from './HandleLockLabDemo.module.css';
 import { BLOB, type PathLabState, usePathEditTrial } from './pathEditLabScene';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 
-const config = f.schema({
-  lock: f.enum<'none' | 'angle' | 'length'>('length', [
-    { value: 'none', label: 'Modifiers only' },
-    { value: 'angle', label: 'Angle (Shift)' },
-    { value: 'length', label: 'Length (Mod)' },
-  ]).label('Hold handle'),
-});
-type Config = ConfigOf<typeof config>;
+const FEATURES = ['pick', 'move', 'paths', handleLocksPreset] as const;
 
-function HandleLockTrial({ ctx }: { ctx: RenderContext<PathLabState, Config> }) {
+/** The two handle-lock toggles, drawn from the actions registry. */
+const LOCK_BAR: PrefGroup = {
+  name: '',
+  children: Object.fromEntries(['handleLock.angle', 'handleLock.length'].map((action, i) => [
+    `lock${i}`,
+    { kind: 'action', name: '', description: '', default: undefined, action },
+  ])),
+};
+
+function HandleLockTrial({ ctx }: { ctx: RenderContext<PathLabState, Record<string, never>> }) {
   const { scene, selection, pathEdit } = usePathEditTrial(ctx, BLOB, '#a48bd4');
-  const live = useLatest(ctx.config);
-  const tune = useMemo<ActionTunings>(() => ({
-    editAnchors: {
-      params: () => {
-        const { lock } = live.current;
-        return { handleLock: lock === 'none' ? null : lock };
-      },
-    },
-  }), [live]);
-
   return (
-    <TrialSceneCanvas
-      features={['pick', 'move', 'paths']}
-      scene={scene}
-      selection={selection}
-      pathEdit={pathEdit}
-      trial={ctx.trial}
-      tune={tune}
-    />
+    <div className={s.trial}>
+      <TrialSceneCanvas
+        features={FEATURES}
+        scene={scene}
+        selection={selection}
+        pathEdit={pathEdit}
+        trial={ctx.trial}
+      />
+      <Bar schema={LOCK_BAR} label="Handle locks" className={s.locks} />
+    </div>
   );
 }
 
-const lockInstrument = defineInstrument<PathLabState, Config>({
+const lockInstrument = defineInstrument<PathLabState, Record<string, never>>({
   name: 'Handle locks',
-  config,
+  defaultConfig: () => ({}),
   initialState: () => ({ scene: null }),
   undo: {},
   tools: { tools: [{ id: 'select', label: 'Select', icon: SelectIcon, shortcut: 'V' }] },

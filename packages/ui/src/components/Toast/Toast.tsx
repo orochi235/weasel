@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useMemo, useRef, useSyncExternalStore, type FocusEvent, type ReactElement } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useSyncExternalStore, type FocusEvent, type ReactElement } from 'react';
 import { createPortal } from 'react-dom';
+import { useKitSettings } from '@weasel-js/react';
 import {
   UNSTABLE_ToastRegion as RACToastRegion,
   UNSTABLE_ToastList as RACToastList,
@@ -11,7 +12,7 @@ import {
 } from 'react-aria-components';
 import { useAssignedPortalContainer, type OverlayPortalProps } from '../../overlays/portalHost';
 import { CloseButton } from '../CloseButton';
-import { defaultToastQueue, racQueueOf, type ToastContent, type ToastQueue, type ToastTone } from './queue';
+import { defaultToastQueue, racQueueOf, readDefaultTtl, type ToastContent, type ToastQueue, type ToastTone } from './queue';
 import s from './Toast.module.css';
 import './toastViewTransitions.css';
 
@@ -58,6 +59,8 @@ const toneClass: Record<ToastTone, string> = {
 export function ToastRegion(props: ToastRegionProps) {
   const { queue = defaultToastQueue, placement = 'bottom-right', className, portalContainer } = props;
   const assigned = useAssignedPortalContainer(portalContainer);
+  const settings = useKitSettings();
+  useLayoutEffect(() => readDefaultTtl(queue, () => settings.get('toast.ttlMs')), [queue, settings]);
   const classes = [s.region, placementClass[placement], className];
 
   const renderToast = (t: QueuedToast<ToastContent>) => (

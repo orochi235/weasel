@@ -80,6 +80,13 @@ What operates on a path:
 - **Editing.** `pathToAnchors` and `anchorsToPath` convert between the command
   stream and a list of anchors with control handles, the form a pen tool
   edits. `splitSubpaths` and `splitByClosure` take a compound path apart.
+- **Constraining.** A `PathConstraint` holds anchors in a relation: fixed,
+  horizontal, vertical, parallel, perpendicular, equal length, a set length,
+  or coincident. `solvePathConstraints` moves a path's anchors the least that
+  makes a list of them hold, and `constrainPathEdit` finishes an edit so they
+  hold again: the anchors the edit moved stay put where they can, and a
+  constraint that already failed before the edit is reported rather than
+  solved.
 - **Walking the stream.** `forEachSegment` visits each command with its
   coordinate offset and the pen position before it.
 

@@ -11,6 +11,22 @@ describe('SidebarPanel', () => {
     expect(screen.queryByRole('button')).toBeNull();
   });
 
+  it('draws its actions in the header, before the close button, and keeps them while collapsed', () => {
+    const { rerender } = render(
+      <SidebarPanel title="Path" onToggleCollapse={() => {}} onHide={() => {}} actions={<button type="button">Switch</button>}>
+        body
+      </SidebarPanel>,
+    );
+    const names = screen.getAllByRole('button').map((b) => b.getAttribute('aria-label') ?? b.textContent);
+    expect(names).toEqual(['Path', 'Switch', 'Hide panel']);
+    rerender(
+      <SidebarPanel title="Path" collapsed onToggleCollapse={() => {}} actions={<button type="button">Switch</button>}>
+        body
+      </SidebarPanel>,
+    );
+    expect(screen.getByRole('button', { name: 'Switch' })).toBeTruthy();
+  });
+
   it('renders the collapse toggle as a button reporting aria-expanded', () => {
     const onToggleCollapse = vi.fn();
     const { rerender } = render(
