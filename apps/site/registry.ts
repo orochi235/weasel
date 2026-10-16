@@ -200,6 +200,15 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/PathAnchorEditDemo.tsx',
   },
   {
+    id: 'lab-rect-path-edit',
+    title: 'Rectangle path edit',
+    category: 'Geometry',
+    description: "A drawn rectangle stores its outline as a rect path, which path edit opens on its four corners. The first rectangle opens already in path edit. Opening and closing one writes nothing: the panel's readout still says `rect`. The first edit stores the equivalent polygon in the same undo step as the edit, and the readout switches to `polygon`; from then on it is an ordinary path. The second rectangle is rotated, and keeps its rotation through the conversion. A rectangle drawn with the Rectangle tool converts the same way.",
+    hint: 'Drag a corner of the green rectangle and watch the readout switch from rect to polygon, then undo with <kbd>Mod+Z</kbd>. Select another rectangle and press Edit path, or double-click it; Done or <kbd>Escape</kbd> to finish.',
+    load: () => import('./demos/RectPathEditLabDemo').then((m) => m.RectPathEditLabDemo),
+    path: 'apps/site/demos/RectPathEditLabDemo.tsx',
+  },
+  {
     id: 'lab-corner-shape',
     title: 'Corner shape',
     category: 'Geometry',

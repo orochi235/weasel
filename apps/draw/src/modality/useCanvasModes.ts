@@ -1,5 +1,6 @@
 import {
   asNodeId,
+  hasEditablePath,
   type Contribution,
   type PathEditHost,
   type SceneCanvasHit,
@@ -7,7 +8,7 @@ import {
   useLatest,
 } from '@weasel-js/core';
 import { useCallback, useMemo } from 'react';
-import type { DrawScene, WeaselDrawData } from '../drawDocument';
+import type { DrawScene } from '../drawDocument';
 import { dispatchDoubleClickEntry } from './doubleClickEntry';
 import type { ModeMachine } from './machine';
 import { modalityShortcuts } from './shortcuts';
@@ -42,7 +43,7 @@ export function useCanvasModes(
   }), [machine, entry]);
 
   const hasAnchors = useCallback(
-    (id: string) => (scene.get(asNodeId(id))?.data as WeaselDrawData | undefined)?.path?.kind === 'polygon',
+    (id: string) => hasEditablePath(scene.get(asNodeId(id))),
     [scene],
   );
 
