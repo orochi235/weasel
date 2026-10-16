@@ -1,14 +1,14 @@
 import { useMemo } from 'react';
 import { useLatest } from '@weasel-js/react';
 import type { DistortMode, EnvelopeMapping } from '@weasel-js/geom';
-import type { Action, GestureBinding } from '@weasel-js/routing';
+import type { Action, GestureBinding, ToolKeybinding } from '@weasel-js/routing';
 import { defineTool, type Tool } from '../../overlayBinding';
 import type { CanvasExtensionApi } from 'canvas/canvasExtension';
 import type { ContributionDepReader, SurfaceContribution } from 'canvas/surfaceContribution';
 import {
   createAddPinAction, createRemovePinAction, createWarpDragAction, createWarpGrabAction, createWarpLive,
 } from 'interactions/actions/warp/warpActions';
-import type { WarpKind, WarpSettings } from 'interactions/actions/warp/warpTargets';
+import { WARP_LABELS, type WarpKind, type WarpSettings } from 'interactions/actions/warp/warpTargets';
 import { createWarpHandleLayer, warpLayerId } from './warpHandles';
 
 /** A warp tool: a `Tool` that also registers the layer showing its controls. */
@@ -18,6 +18,9 @@ export type WarpTool = Tool & Pick<SurfaceContribution, 'attach'>;
 interface WarpToolOptions {
   /** Palette label. */
   label?: string;
+  /** Override the default keybinding (Distort `F`, Envelope `M`, Puppet Warp
+   *  `B`). Pass `null` to omit. */
+  keybinding?: ToolKeybinding | null;
   /** How far, in world units, a warped path's refitted curves may stray from
    *  the exact warp. Default 0.5. */
   tolerance?: number;
@@ -59,35 +62,56 @@ function bindingsFor(kind: WarpKind, settings: () => Record<string, unknown>): G
   return out;
 }
 
-const LABELS: Record<WarpKind, string> = { distort: 'Distort', envelope: 'Envelope', puppet: 'Puppet Warp' };
+/** `settings` without its unset keys, so `<SceneCanvas tune>` params fill them in. */
+function definedOf(settings: WarpSettings): Record<string, unknown> {
+  return Object.fromEntries(Object.entries(settings).filter(([, v]) => v !== undefined));
+}
 
-function useWarpTool(kind: WarpKind, label: string | undefined, settings: WarpSettings): WarpTool {
+const KEYS: Record<WarpKind, ToolKeybinding> = { distort: { key: 'F' }, envelope: { key: 'M' }, puppet: { key: 'B' } };
+
+/** What a warp tool keeps between renders: whether it is active, the canvas
+ *  it is attached to, and the in-flight drag its controls follow. */
+function createWarpToolState() {
+  let active = false;
+  let api: CanvasExtensionApi | null = null;
+  let deps: ContributionDepReader | null = null;
+  const live = createWarpLive();
+  return {
+    live,
+    active: () => active,
+    scene: () => deps?.get('scene') as never,
+    setActive(next: boolean): void {
+      active = next;
+      api?.requestRedraw();
+    },
+    attachTo(nextApi: CanvasExtensionApi | null, nextDeps: ContributionDepReader | null): void {
+      api = nextApi;
+      deps = nextDeps;
+    },
+  };
+}
+
+function useWarpTool(kind: WarpKind, options: WarpToolOptions, settings: WarpSettings): WarpTool {
+  const { label, keybinding = KEYS[kind] } = options;
   const settingsRef = useLatest(settings);
-  const state = useMemo(() => ({
-    active: false,
-    api: null as CanvasExtensionApi | null,
-    deps: null as ContributionDepReader | null,
-    live: createWarpLive(),
-  }), []);
+  const state = useMemo(() => createWarpToolState(), []);
 
   const attach = useMemo(() => {
     const layer = createWarpHandleLayer({
       kind,
-      active: () => state.active,
+      active: state.active,
       settings: () => settingsRef.current,
-      scene: () => state.deps?.get('scene') as never,
+      scene: state.scene,
       live: state.live,
     });
     return (api: CanvasExtensionApi, deps: ContributionDepReader) => {
-      state.api = api;
-      state.deps = deps;
+      state.attachTo(api, deps);
       const unregister = api.registerLayer(layer);
       const unlisten = state.live.subscribe(() => api.requestRedraw());
       return () => {
         unlisten();
         unregister();
-        state.api = null;
-        state.deps = null;
+        state.attachTo(null, null);
       };
     };
   }, [kind, settingsRef, state]);
@@ -101,17 +125,18 @@ function useWarpTool(kind: WarpKind, label: string | undefined, settings: WarpSe
   return useMemo(() => {
     const tool = defineTool({
       id: kind,
+      ...(keybinding ? { keybinding } : {}),
       hookName: `use${kind[0].toUpperCase()}${kind.slice(1)}Tool`,
       capabilities: ['creates-shapes'],
       cursor: kind === 'puppet' ? 'crosshair' : 'default',
       actions,
-      presentation: { label: label ?? LABELS[kind], group: 'warp' },
-      onActivate: () => { state.active = true; state.api?.requestRedraw(); },
-      onDeactivate: () => { state.active = false; state.api?.requestRedraw(); },
-      bindings: bindingsFor(kind, () => ({ ...settingsRef.current })),
+      presentation: { label: label ?? WARP_LABELS[kind], group: 'warp' },
+      onActivate: () => state.setActive(true),
+      onDeactivate: () => state.setActive(false),
+      bindings: bindingsFor(kind, () => definedOf(settingsRef.current)),
     });
     return Object.assign(tool, { attach });
-  }, [actions, attach, kind, label, settingsRef, state]);
+  }, [actions, attach, keybinding, kind, label, settingsRef, state]);
 }
 
 /**
@@ -122,8 +147,8 @@ function useWarpTool(kind: WarpKind, label: string | undefined, settings: WarpSe
  * switches a held distort between free and perspective.
  */
 export function useDistortTool(options: UseDistortToolOptions = {}): WarpTool {
-  const { label, mode, tolerance } = options;
-  return useWarpTool('distort', label, { mode, tolerance });
+  const { mode, tolerance } = options;
+  return useWarpTool('distort', options, { mode, tolerance });
 }
 
 /**
@@ -133,8 +158,8 @@ export function useDistortTool(options: UseDistortToolOptions = {}): WarpTool {
  * interpolation.
  */
 export function useEnvelopeTool(options: UseEnvelopeToolOptions = {}): WarpTool {
-  const { label, rows, cols, mapping, tolerance } = options;
-  return useWarpTool('envelope', label, { rows, cols, mapping, tolerance });
+  const { rows, cols, mapping, tolerance } = options;
+  return useWarpTool('envelope', options, { rows, cols, mapping, tolerance });
 }
 
 /**
@@ -144,6 +169,5 @@ export function useEnvelopeTool(options: UseEnvelopeToolOptions = {}): WarpTool 
  * each path until it is expanded.
  */
 export function usePuppetTool(options: UsePuppetToolOptions = {}): WarpTool {
-  const { label, tolerance } = options;
-  return useWarpTool('puppet', label, { tolerance });
+  return useWarpTool('puppet', options, { tolerance: options.tolerance });
 }

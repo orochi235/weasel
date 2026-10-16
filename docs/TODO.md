@@ -198,6 +198,21 @@ Priority tags:
   `packages/geom/src/paths/extendPath.ts`), no preview of where an end will land, its tool key, U
   (`tools/builtin/extend/useExtendTool.ts`), and no default key for the `extendToMeet` action; the
   lab binds E through `tune`.
+- **(P2) Tune Perspective and free distort hands-on, with the maintainer driving.** First-draft
+  corner handles (8 screen px squares, 8 px hit reach, `tools/builtin/warp/warpHandles.ts`), that a
+  new distort starts Free rather than Perspective, the refit tolerance (0.5,
+  `DEFAULT_WARP_TOLERANCE` in `interactions/actions/warp/warpTargets.ts`), and its tool key, F
+  (`KEYS` in `tools/builtin/warp/useWarpTool.ts`). Its label lives in `WARP_LABELS` beside it; the
+  name may change.
+- **(P2) Tune Envelope mesh hands-on, with the maintainer driving.** First-draft 3 by 3 Bicubic
+  mesh (`DEFAULT_ENVELOPE_SIZE`, `interactions/actions/warp/warpTargets.ts`), the grid lines drawn
+  between mesh points (`tools/builtin/warp/warpHandles.ts`), that Rows and Columns change only
+  through `configureWarp`, and its tool key, M (`tools/builtin/warp/useWarpTool.ts`).
+- **(P2) Tune Puppet warp hands-on, with the maintainer driving.** First-draft pin falloff (1, so
+  weights go as 1/d², `rigidPuppetMap` in `packages/geom/src/warp/puppet.ts`), that a click on the
+  selection adds a pin and Alt-click on a pin takes it out, the pin dots (5 screen px radius,
+  `tools/builtin/warp/warpHandles.ts`), and its tool key, B
+  (`tools/builtin/warp/useWarpTool.ts`).
 - **(P2) Two helpers grow an open end along its tangent.** `lengthenOpenEnd` in
   `packages/geom/src/paths/extendPath.ts` serves Extend to next path, and the unmerged
   `extend-path-end` branch (Lengthen) has `lengthenPathEnd` of its own. Whichever lands second
@@ -234,7 +249,9 @@ Priority tags:
 - **(P3) The path commands have no icons.** `simplifyPath`, `offsetPath`, `snipAtCrossings`,
   `joinPaths`, `bridgePaths`, `joinAnchors`, `bridgeAnchors`, `averageAnchors`, and
   `extendToMeet` show as text in draw's bar, and `useTrimTool` and `useExtendTool` borrow
-  `SliceIcon`.
+  `SliceIcon`. `expandWarp` and `configureWarp` have none either, and `useDistortTool`,
+  `useEnvelopeTool`, and `usePuppetTool` give no `presentation.icon`: their labs borrow
+  `FitStretchIcon`, `GridIcon`, and `PinIcon` from `@weasel-js/ui`.
   `RetractHandlesIcon`, `SymmetricHandlesIcon`, and `SimplifyBrushIcon`
   (`defaults/icons/anchorIcons.tsx`) are first drafts, not proofed at high resolution.
 - **(P2) Spacing hints.** Equal-spacing markers between siblings while moving, and Alt-hover

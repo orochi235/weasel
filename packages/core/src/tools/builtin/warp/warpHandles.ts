@@ -16,6 +16,7 @@ import type { ChromeState } from 'core/selection/chromeState';
 import type { Scene } from 'core/scene/types';
 import { viewToTransform, type View } from 'core/viewport/view';
 import { worldToScreen } from 'core/viewport/viewTransform';
+import { DEFAULT_OVERLAY_STYLE } from 'features/paths/anchorMarkers';
 import { pathNodesOf } from 'interactions/actions/pathCommands/pathNodes';
 import type { WarpHandleScratch, WarpLive } from 'interactions/actions/warp/warpActions';
 import {
@@ -44,9 +45,9 @@ interface ControlGroup {
 }
 
 const HIT_PX = 8;
-const SIZE_PX = 8;
-const PIN_RADIUS_PX = 5;
-const ACCENT = '#3478f6';
+const SIZE_PX = DEFAULT_OVERLAY_STYLE.anchorSizePx;
+const PIN_RADIUS_PX = DEFAULT_OVERLAY_STYLE.handleDotRadiusPx;
+const ACCENT = DEFAULT_OVERLAY_STYLE.anchorStroke;
 const LINE = { paint: { kind: 'solid' as const, color: ACCENT }, width: 1 };
 const LINE_SAMPLES = 12;
 const IDENTITY: Affine = [1, 0, 0, 1, 0, 0];

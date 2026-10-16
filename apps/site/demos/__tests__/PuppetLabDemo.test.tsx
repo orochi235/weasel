@@ -4,11 +4,11 @@ import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { StrictMode } from 'react';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { PuppetLabDemo } from '../PuppetLabDemo';
-import { installResizeObserver, pointerClick, pointerDrag } from './warpLabTesting';
+import { click, drag, sceneCanvas, stubResizeObserver } from './pathEditLabHarness';
 
 beforeAll(() => {
   window.history.replaceState(null, '', '/?test=1');
-  installResizeObserver();
+  stubResizeObserver();
 });
 afterEach(() => {
   cleanup();
@@ -27,12 +27,11 @@ const worldCoords = () => Array.from(
 describe('PuppetLabDemo', () => {
   it('bends the eel by its head pin while the tail pin holds, adds a pin on a click and takes it out on an Alt-click', async () => {
     const { container } = await renderSettled(<StrictMode><PuppetLabDemo /></StrictMode>);
-    const canvas = container.querySelector('.lk-trial-scene canvas');
-    if (!canvas) throw new Error('no scene canvas in the trial');
+    const canvas = sceneCanvas(container);
     expect(pinsOf()).toHaveLength(3);
     const tail = worldCoords().slice(0, 2);
 
-    pointerDrag(canvas, [480, 195], [440, 320]);
+    drag(canvas, [480, 195], [440, 320]);
 
     expect(pinsOf()[2].to).toEqual({ x: 440, y: 320 });
     const after = worldCoords();
@@ -41,9 +40,9 @@ describe('PuppetLabDemo', () => {
     expect(Math.hypot(after[0] - tail[0], after[1] - tail[1])).toBeLessThan(10);
     expect(after.some((v, i) => i % 2 === 1 && v > 280)).toBe(true);
 
-    pointerClick(canvas, 200, 195);
+    click(canvas, 200, 195);
     expect(pinsOf()).toHaveLength(4);
-    pointerClick(canvas, 200, 195, true);
+    click(canvas, 200, 195, true);
     expect(pinsOf()).toHaveLength(3);
   });
 });

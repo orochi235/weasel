@@ -741,16 +741,6 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/ExtendLabDemo.tsx',
   },
   {
-    id: 'symmetry-lab',
-    title: 'Symmetry',
-    package: 'symmetry',
-    description:
-      'A live symmetry group: its copies are drawn from the shapes inside it, never stored, so moving or reshaping a shape moves every copy with it, and a click on a copy selects the shape it copies. Anything drawn with the tools lands in the group. The petal is open in path edit, and it is its own mirror image across the axis it sits on, so dragging one of its anchors or handles moves the mirrored one too. On the canvas, drag the round center to move the group, the white knob to turn the axis, and, for Repeat, the white handle to set the step.',
-    hint: 'Drag a petal anchor, then draw an ellipse anywhere. Switch Kind between Mirror, Radial and Repeat, change Count, and drag the white knob with <kbd>Shift</kbd> held.',
-    load: () => import('./demos/SymmetryLabDemo').then((m) => m.SymmetryLabDemo),
-    path: 'apps/site/demos/SymmetryLabDemo.tsx',
-  },
-  {
     id: 'lab-distort',
     title: 'Perspective and free distort',
     category: 'Geometry',
@@ -779,6 +769,16 @@ const DEMO_META: DemoMeta[] = [
     hint: 'Drag the pin at the eel\'s head and the tail holds. Click on the eel to add a pin, <kbd>Alt</kbd>-click a pin to take it out. Press Expand warp in the palette to keep the bent shape as a plain path.',
     load: () => import('./demos/PuppetLabDemo').then((m) => m.PuppetLabDemo),
     path: 'apps/site/demos/PuppetLabDemo.tsx',
+  },
+  {
+    id: 'symmetry-lab',
+    title: 'Symmetry',
+    package: 'symmetry',
+    description:
+      'A live symmetry group: its copies are drawn from the shapes inside it, never stored, so moving or reshaping a shape moves every copy with it, and a click on a copy selects the shape it copies. Anything drawn with the tools lands in the group. The petal is open in path edit, and it is its own mirror image across the axis it sits on, so dragging one of its anchors or handles moves the mirrored one too. On the canvas, drag the round center to move the group, the white knob to turn the axis, and, for Repeat, the white handle to set the step.',
+    hint: 'Drag a petal anchor, then draw an ellipse anywhere. Switch Kind between Mirror, Radial and Repeat, change Count, and drag the white knob with <kbd>Shift</kbd> held.',
+    load: () => import('./demos/SymmetryLabDemo').then((m) => m.SymmetryLabDemo),
+    path: 'apps/site/demos/SymmetryLabDemo.tsx',
   },
   {
     id: 'bidi',

@@ -17,7 +17,7 @@ import { heldPathWarpOf, resolvePathWarp, withoutPathWarp } from 'features/paths
 import { createSetDataOp } from 'core/ops/setData';
 import { commitOps, reshapeTo, selectedPathNodes } from '../pathCommands/pathNodes';
 import {
-  storeWarp, warpTargets, withWarpSettings, type WarpKind, type WarpSettings, type WarpTarget,
+  storeWarp, WARP_LABELS, warpTargets, withWarpSettings, type WarpKind, type WarpSettings, type WarpTarget,
 } from './warpTargets';
 
 /** What a press on a warp control hands the drag that follows. */
@@ -56,8 +56,6 @@ export function warpHandleScratchOf(hit: unknown): WarpHandleScratch | null {
     : null;
 }
 
-const LABELS: Record<WarpKind, string> = { distort: 'Distort', envelope: 'Envelope', puppet: 'Puppet Warp' };
-
 const REQUIRES: ('selection' | 'scene' | 'applyOps')[] = ['selection', 'scene', 'applyOps'];
 
 function commitTargets(deps: ActionDeps, next: ReadonlyMap<string, { target: WarpTarget; shape: { pose: unknown; data: unknown } }>, label: string): void {
@@ -74,7 +72,7 @@ function commitTargets(deps: ActionDeps, next: ReadonlyMap<string, { target: War
  * ({@link WarpSettings}), and the drag is its first edit. One undo step.
  */
 export function createWarpDragAction(kind: WarpKind, live?: WarpLive): Action {
-  const label = LABELS[kind];
+  const label = WARP_LABELS[kind];
   return {
     id: `${kind}.drag`,
     label: `${label} — drag control`,
@@ -142,7 +140,7 @@ function clickPoint(params: Record<string, unknown> | undefined): Point | null {
 export function createAddPinAction(): Action {
   return {
     id: 'puppet.addPin',
-    label: 'Puppet Warp — add pin',
+    label: `${WARP_LABELS.puppet} — add pin`,
     requires: REQUIRES,
     invoker: {
       timing: 'immediate',
@@ -172,7 +170,7 @@ export function createAddPinAction(): Action {
 export function createRemovePinAction(): Action {
   return {
     id: 'puppet.removePin',
-    label: 'Puppet Warp — remove pin',
+    label: `${WARP_LABELS.puppet} — remove pin`,
     requires: REQUIRES,
     invoker: {
       timing: 'immediate',
@@ -198,7 +196,7 @@ export function createRemovePinAction(): Action {
 export function createWarpGrabAction(kind: WarpKind): Action {
   return {
     id: `${kind}.grab`,
-    label: `${LABELS[kind]} — grab control`,
+    label: `${WARP_LABELS[kind]} — grab control`,
     invoker: { timing: 'immediate', run: () => {} },
   };
 }

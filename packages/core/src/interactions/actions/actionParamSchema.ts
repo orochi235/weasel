@@ -8,6 +8,7 @@ import type { DistributeMode } from './distribute/distribute';
 import type { FlipAxis, FlipPivot } from './flip/helpers';
 import type { EditAnchorsParams } from './edit-anchors/params';
 import type { SimplifyBrushParams } from './defaults/simplifyBrush';
+import type { WarpKind, WarpSettings } from './warp/warpTargets';
 
 /** A point a spatial reference of `'pointer'` resolves to in place of the
  *  pointer dep, when the invocation has one of its own. */
@@ -41,6 +42,11 @@ declare module '@weasel-js/routing' {
     simplifyBrush: SimplifyBrushParams;
     bridgePaths: { tension?: number };
     bridgeAnchors: { tension?: number };
+    'distort.drag': WarpSettings;
+    'envelope.drag': WarpSettings;
+    'puppet.drag': WarpSettings;
+    'puppet.addPin': WarpSettings;
+    configureWarp: WarpSettings & { kind?: WarpKind };
   }
 }
 

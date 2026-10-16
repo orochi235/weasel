@@ -77,7 +77,7 @@ const puppetInstrument = defineInstrument<State, Config>({
   tools: {
     tools: [
       { id: 'select', label: 'Select', icon: SelectIcon, shortcut: 'V' },
-      { id: 'puppet', label: 'Puppet Warp', icon: PinIcon },
+      { id: 'puppet', label: 'Puppet Warp', icon: PinIcon, shortcut: 'B' },
     ],
     initial: 'puppet',
   },

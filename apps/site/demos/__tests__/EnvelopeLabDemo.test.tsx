@@ -4,11 +4,11 @@ import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { StrictMode } from 'react';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { EnvelopeLabDemo } from '../EnvelopeLabDemo';
-import { installResizeObserver, pointerDrag } from './warpLabTesting';
+import { drag, sceneCanvas, stubResizeObserver } from './pathEditLabHarness';
 
 beforeAll(() => {
   window.history.replaceState(null, '', '/?test=1');
-  installResizeObserver();
+  stubResizeObserver();
 });
 afterEach(() => {
   cleanup();
@@ -20,11 +20,10 @@ const node = (id: string) => window.__weaselTest!.getScene().nodes.find((n) => n
 describe('EnvelopeLabDemo', () => {
   it('bends the banner through a dragged mesh point', async () => {
     const { container } = await renderSettled(<StrictMode><EnvelopeLabDemo /></StrictMode>);
-    const canvas = container.querySelector('.lk-trial-scene canvas');
-    if (!canvas) throw new Error('no scene canvas in the trial');
+    const canvas = sceneCanvas(container);
 
     // A 3 × 3 mesh over (100, 100)–(400, 280): an inner point sits at (200, 160).
-    pointerDrag(canvas, [200, 160], [230, 110]);
+    drag(canvas, [200, 160], [230, 110]);
 
     const banner = node('banner');
     const held = heldPathWarpOf(banner.data);

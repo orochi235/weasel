@@ -27,6 +27,9 @@ import { selectedPathNodes, withPath, type AnyNode, type PathNode } from '../pat
 /** Which warp a tool or action works with. */
 export type WarpKind = PathWarp['kind'];
 
+/** Each kind's name, as its tool and its actions are labeled. */
+export const WARP_LABELS: Record<WarpKind, string> = { distort: 'Distort', envelope: 'Envelope', puppet: 'Puppet Warp' };
+
 /** The settings a warp is made or remade with. Each applies only to the kinds
  *  it names; absent ones leave a held warp as it is. */
 export interface WarpSettings {

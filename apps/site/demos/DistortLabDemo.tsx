@@ -85,7 +85,7 @@ const distortInstrument = defineInstrument<State, Config>({
   tools: {
     tools: [
       { id: 'select', label: 'Select', icon: SelectIcon, shortcut: 'V' },
-      { id: 'distort', label: 'Distort', icon: FitStretchIcon },
+      { id: 'distort', label: 'Distort', icon: FitStretchIcon, shortcut: 'F' },
     ],
     initial: 'distort',
   },

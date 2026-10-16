@@ -5,11 +5,11 @@ import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { StrictMode } from 'react';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { DistortLabDemo } from '../DistortLabDemo';
-import { installResizeObserver, pointerDrag } from './warpLabTesting';
+import { drag, sceneCanvas, stubResizeObserver } from './pathEditLabHarness';
 
 beforeAll(() => {
   window.history.replaceState(null, '', '/?test=1');
-  installResizeObserver();
+  stubResizeObserver();
 });
 afterEach(() => {
   cleanup();
@@ -21,12 +21,11 @@ const node = (id: string) => window.__weaselTest!.getScene().nodes.find((n) => n
 describe('DistortLabDemo', () => {
   it('drags a corner of the selection box and distorts both shapes, which Expand turns to plain paths', async () => {
     const { container } = await renderSettled(<StrictMode><DistortLabDemo /></StrictMode>);
-    const canvas = container.querySelector('.lk-trial-scene canvas');
-    if (!canvas) throw new Error('no scene canvas in the trial');
+    const canvas = sceneCanvas(container);
     const before = node('board').data;
 
     // The box around the board and the disc runs (80, 80) to (460, 240).
-    pointerDrag(canvas, [460, 240], [520, 300]);
+    drag(canvas, [460, 240], [520, 300]);
 
     for (const id of ['board', 'disc']) {
       const warp = heldPathWarpOf(node(id).data);
