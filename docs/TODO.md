@@ -198,6 +198,16 @@ Priority tags:
   `packages/geom/src/paths/extendPath.ts`), no preview of where an end will land, its tool key, U
   (`tools/builtin/extend/useExtendTool.ts`), and no default key for the `extendToMeet` action; the
   lab binds E through `tune`.
+- **(P2) Tune path constraints hands-on, with the maintainer driving.** First-draft behavior and
+  keys: `constrainAnchors` and `unconstrainAnchors` have no default keys (the lab binds C and
+  Shift+C through `tune`), and which kind C adds is a param with no UI outside the lab
+  (`defaults/anchorConstraints.ts`); the marks' look, their 12 px offset and 8 px click reach, and
+  their teal and red (`features/paths/constraintGlyphs.ts`, `defaults/constraintMarks.ts`,
+  `features/paths/anchorMarkers.ts`); a drag frame the constraints cannot hold in is dropped, so
+  the path sticks rather than giving way (`edit-anchors/action.ts`); how far a dragged anchor
+  yields to the rest (`HELD_MOBILITY` in `packages/geom/src/constraints/solve.ts`); and that the
+  whole-path commands drop the list rather than keep what still applies
+  (`pathCommands/pathNodes.ts`).
 - **(P2) Two helpers grow an open end along its tangent.** `lengthenOpenEnd` in
   `packages/geom/src/paths/extendPath.ts` serves Extend to next path, and the unmerged
   `extend-path-end` branch (Lengthen) has `lengthenPathEnd` of its own. Whichever lands second
