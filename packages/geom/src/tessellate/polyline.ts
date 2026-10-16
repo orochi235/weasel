@@ -18,6 +18,11 @@ export interface Polyline {
   /** Per-point stroke width, populated by the tessellator when the Stroke
    *  carries `vertexWidths`. Undefined means uniform `Stroke.width`. */
   widths?: Float32Array;
+  /** Per-point distance the ribbon's middle sits off the path toward the
+   *  normal `(−dy, dx)` of the direction of travel: half the right edge's
+   *  distance less the left's. Set alongside `widths` only when the two sides
+   *  differ somewhere; undefined means centered. */
+  offsets?: Float32Array;
 }
 
 /** Options for `extractPolylines`. */

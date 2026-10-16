@@ -10,6 +10,8 @@ import type {
   Path, Paint, MarkerEntry, MarkerRef, PoseLinear, ScreenLength, Stroke, StrokeAlign, StyledRun, TextStyle,
   TextVerticalAlign,
   Fill,
+  StrokeNib,
+  VertexWidth,
 } from '@weasel-js/core';
 
 /**
@@ -92,6 +94,13 @@ export interface SvgStroke {
   markerStart?: MarkerRef;
   markerMid?: MarkerRef;
   markerEnd?: MarkerRef;
+  /** The kit stroke's `vertexWidths` and `nib`. SVG has no variable width, so
+   *  the serializer writes such a stroke's outline as a filled shape after the
+   *  path, and keeps these in the private namespace for the parser. An entry
+   *  of `vertexWidths`, or one side of a pair, that is not a number of zero or
+   *  more takes `width`. */
+  vertexWidths?: VertexWidth[];
+  nib?: StrokeNib;
 }
 
 /**

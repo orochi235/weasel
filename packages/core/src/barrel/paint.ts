@@ -27,8 +27,12 @@ export {
   lerpStroke,
   parseHexBytes,
   resolveScreenLength,
+  scaleVertexWidth,
   strokeDashStyleOf,
   STROKE_DASH_RATIOS,
+  vertexHalfWidths,
+  vertexWidthFromSides,
+  widestHalfWidth,
 } from '@weasel-js/paint';
 export { resolveStrokeWidth } from '@weasel-js/stroke';
 export type {
@@ -56,6 +60,10 @@ export type {
   Stroke,
   StrokeAlign,
   StrokeDashStyle,
+  StrokeNib,
+  HalfWidths,
+  VertexWidth,
+  VertexWidthSides,
   Region,
   KitMarkerKey,
   MarkerKey,

@@ -27,6 +27,7 @@ describe('built-in tool capabilities', () => {
     }, ['creates-paths']],
     ['pencil', () => builtins.usePencilTool(), ['creates-paths']],
     ['slice', () => builtins.useSliceTool(), ['edits-page']],
+    ['width', () => builtins.useWidthTool(), ['edits-page']],
     ['measure', () => builtins.useMeasureTool({ measurements: createMeasurements({ layer: 'notes' }) }), ['navigation']],
     ['weight', () => builtins.useWeightTool({ scene: {} as never, rig: () => null }), ['edits-page']],
     ['bone', () => builtins.useBoneTool({ scene: {} as never, rig: () => null }), ['edits-page']],
