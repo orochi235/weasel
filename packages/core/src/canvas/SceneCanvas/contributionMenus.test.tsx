@@ -1,6 +1,6 @@
 /** A `menus` list on an ambient contribution is defined on the surface's menu host. */
 import { describe, it, expect, vi, beforeAll } from 'vitest';
-import { render } from '@testing-library/react';
+import { act, render } from '@testing-library/react';
 import { useEffect } from 'react';
 import { ActionsProvider, useMenuHost, useOptionalDepRegistry, type DepRegistry } from '@weasel-js/routing/react';
 import type { MenuHost } from '@weasel-js/routing';
@@ -53,5 +53,25 @@ describe('contributed menus', () => {
     expect(deps!.get('menuHost')).toBe(host);
     expect(deps!.get('worldToClient')!(0, 0)).not.toBeUndefined();
     r.unmount();
+  });
+
+  it('reach a bare canvas, which makes its own menu host, and open on a right-click', () => {
+    const scene = createScene<D, 'main', P>({ systemLayers: [{ id: 'main' }] });
+    scene.add({ kind: 'leaf', data: { kind: 'rect' }, layer: 'main', pose: { x: 10, y: 10, width: 100, height: 100 } });
+    const onBody = {
+      ...contrib,
+      menus: [{ id: 'body', when: { bodyTarget: ['selected-body', 'empty'] }, sections: [[{ action: 'cut' }]] }],
+    } as unknown as SurfaceContribution;
+    const { container, unmount } = render(
+      <SceneCanvas features={['pick', 'edit']} scene={scene} layers={{}} width={300} height={200} ambient={[onBody]}>
+        <Probe />
+      </SceneCanvas>,
+    );
+    const canvas = container.querySelector('canvas')!;
+    act(() => {
+      canvas.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 50, clientY: 50 }));
+    });
+    expect(host?.current()?.entries.map((e) => e.kind === 'item' && e.label)).toEqual(['Cut']);
+    unmount();
   });
 });

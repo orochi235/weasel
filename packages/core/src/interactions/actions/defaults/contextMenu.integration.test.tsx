@@ -82,7 +82,7 @@ function setup(declare = true, menus: unknown[] = defs, seed?: Seed, pickEvery?:
   const shiftF10 = () => act(() => {
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'F10', code: 'F10', shiftKey: true, bubbles: true }));
   });
-  return { ids, rightClick, touchTap, shiftF10, host: () => host!, selection: () => selection! };
+  return { scene, ids, rightClick, touchTap, shiftF10, host: () => host!, selection: () => selection! };
 }
 
 describe('menu.context', () => {
@@ -154,5 +154,15 @@ describe('menu.context', () => {
     t.shiftF10();
     expect(t.host().current()).toMatchObject({ source: 'keyboard' });
     expect(t.host().current()?.entries).toHaveLength(1);
+  });
+
+  it('resolves and runs a row from the canvas scope with no dep registry above the provider', () => {
+    const dup = [{ id: 'dup', when: { bodyTarget: 'selected-body' }, sections: [[{ action: 'duplicate' }]] }];
+    const t = setup(true, dup);
+    t.rightClick(240, 130);
+    const row = t.host().current()?.entries[0];
+    expect(row).toMatchObject({ kind: 'item', label: 'Duplicate', disabled: false });
+    act(() => { if (row?.kind === 'item') row.run(); });
+    expect(t.scene.nodes.size).toBe(3);
   });
 });

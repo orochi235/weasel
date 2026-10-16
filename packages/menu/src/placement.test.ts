@@ -20,6 +20,9 @@ describe('placeMenu', () => {
   it('pins to the near edge when the menu is larger than the bounds', () => {
     expect(placeMenu({ w: 200, h: 900 }, { x: 100, y: 300 }, bounds)).toEqual({ x: 100, y: 0 });
   });
+  it('stays inside when the anchor is past the far edge', () => {
+    expect(placeMenu(size, { x: 1000, y: 700 }, bounds)).toEqual({ x: 600, y: 300 });
+  });
   it('respects a bounds origin that is not zero', () => {
     expect(placeMenu(size, { x: 950, y: 150 }, { x: 100, y: 100, w: 900, h: 600 }))
       .toEqual({ x: 750, y: 150 });
