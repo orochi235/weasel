@@ -117,8 +117,10 @@ export interface ActionDispatch extends BindingSource {
    * click, a press, a long-press. An action that only applies somewhere
    * (on a path segment, say) refuses other points here, so the dispatcher
    * falls through to the next binding and hover prediction shows the
-   * action's `cursor` only where it would act. Palettes and keystrokes
-   * pass no point; treat absent as "anywhere".
+   * action's `cursor` only where it would act. `trigger` passes the
+   * `worldX`/`worldY` its params carry, so a menu row is run under the
+   * question it was shown enabled for. Palettes and keystrokes pass no
+   * point; treat absent as "anywhere".
    *
    * `carried` is what a drop or a paste being routed brings: its items. For
    * a drag still in flight they hold a MIME and nothing else, since a

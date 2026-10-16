@@ -4,7 +4,8 @@ import type { MenuDef } from './types';
 
 export const MenuHostContext = createContext<MenuHost | null>(null);
 
-/** The menu host of the nearest `<ActionsProvider>`, or null outside one. */
+/** The menu host in scope: the nearest `<ActionsProvider>`'s, else the one a
+ *  canvas with no provider above it makes. Null outside both. */
 export function useMenuHost(): MenuHost | null {
   return useContext(MenuHostContext);
 }

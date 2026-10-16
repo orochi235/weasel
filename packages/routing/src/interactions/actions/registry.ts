@@ -57,7 +57,9 @@ export interface ActionsRegistry {
    *  parametric actions (e.g. `trigger('tool.activate', { toolId: 'rect' })`).
    *  Returns whether it ran one: `false` for an unknown id, for an action
    *  whose `enabled` refuses, and for an ongoing-invoker action, which
-   *  `trigger` cannot reach (see `begin`). `enabled` is asked with no point. */
+   *  `trigger` cannot reach (see `begin`). `enabled` is asked at
+   *  `{ x: params.worldX, y: params.worldY }` when both are numbers, and with
+   *  no point otherwise. */
   trigger(id: string, params?: Record<string, unknown>): boolean;
   /**
    * Subscribe to registry mutations. The callback fires after any

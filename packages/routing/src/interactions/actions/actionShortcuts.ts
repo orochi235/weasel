@@ -3,18 +3,14 @@
  * renders from (`formatShortcut` / `formatShortcutParts` in `@weasel-js/ui`).
  */
 import type { GestureSpec } from '@weasel-js/gestures';
+import type { MenuShortcut } from '@weasel-js/menu';
 import type { Action } from './action';
 import { actionBindings } from './binding';
 
-/** One keyboard shortcut, flattened for display. Structurally the
- *  `ShortcutInput` weasel-ui formats — kept local so core doesn't depend on
- *  the UI package. */
-export interface ActionShortcut {
-  key: string;
-  mod: boolean;
-  alt: boolean;
-  shift: boolean;
-}
+/** One keyboard shortcut, flattened for display: the chip a menu row draws
+ *  (`MenuShortcut` in `@weasel-js/menu`), and the `ShortcutInput` weasel-ui
+ *  formats. */
+export type ActionShortcut = MenuShortcut;
 
 /**
  * The chip form of a single gesture spec, or `undefined` when the spec has

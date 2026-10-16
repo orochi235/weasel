@@ -13,7 +13,6 @@ export interface MenuOpenRequest {
   client: XY;
   /** World point, passed to `enabled` and to every item. */
   world?: XY;
-  viewId?: string | null;
   params?: Record<string, unknown>;
   source?: 'pointer' | 'keyboard';
 }
@@ -24,7 +23,6 @@ export interface OpenMenu {
   entries: readonly MenuEntry[];
   client: XY;
   world?: XY;
-  viewId?: string | null;
   source: 'pointer' | 'keyboard';
 }
 
@@ -79,7 +77,7 @@ export function createMenuHost(src: MenuSources & { activeTool(): string | null 
         return false;
       }
       open = {
-        seq: ++seq, entries, client: req.client, world: req.world, viewId: req.viewId,
+        seq: ++seq, entries, client: req.client, world: req.world,
         source: req.source ?? 'pointer',
       };
       emit();
