@@ -26,7 +26,7 @@ const mine: FeaturePreset = {
   id: 'mine',
   actions: [go],
   tools: [own],
-  contributions: [{ id: 'mine.deps', deps: { mineValue: () => 42 } as never }],
+  contributions: [{ id: 'mine.deps', eligibility: { always: true }, deps: { mineValue: () => 42 } as never }],
 };
 
 interface Seen { actionIds: string[]; dep: unknown }
