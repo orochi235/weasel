@@ -278,6 +278,12 @@ Priority tags:
   keys: Shift+W in draw; how near an edge a press must land to grab it; Alt moving one edge alone
   and Alt-click clearing a width point; and whether a press between anchors should insert one
   (`packages/core/src/tools/builtin/width/`).
+- **(P2) Tune path snapping hands-on, with the maintainer driving.** First-draft behavior and
+  keys: an 8px radius with every kind on, `nearest` included; that a path target beats
+  `snapPoint`, so in range it wins over the grid and measurement ends; that a move and an anchor
+  drag snap to path targets only, never the grid; no key or modifier to turn it off mid-gesture;
+  the marker's glyphs, its fixed orange, and where its label sits; and that draw does not turn it
+  on yet (`packages/core/src/features/paths/pathSnap/`, `packages/geom/src/snap/`).
 - **(P2) A rectangle has no anchors in path edit.** Draw stores a drawn rectangle's `data.path`
   as a `RectPath` (`kind: 'rect'`), and `classifyPathStorage`
   (`packages/core/src/features/paths/editablePath.ts`) accepts only a polygon, so double-clicking
