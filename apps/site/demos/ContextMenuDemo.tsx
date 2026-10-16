@@ -36,7 +36,7 @@ function Demo() {
   });
   const selection = useSelection({ scene, mode: 'single' });
   useMenus(MENUS);
-  useSyncExternalStore(scene.subscribe, scene.getVersion);
+  useSyncExternalStore(scene.subscribe, scene.getVersion, scene.getVersion);
 
   const openRowMenu = useContextMenu('demo.row');
   const onRowMenu = useCallback((id: NodeId, e: MouseEvent) => {
