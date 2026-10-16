@@ -1,9 +1,7 @@
 import { ellipsePath, polylineFromPoints } from '@weasel-js/geom';
 import { vertexHalfWidths } from '@weasel-js/paint';
 import type { DrawCommand } from '@weasel-js/renderer';
-import type { RenderLayer } from 'core/layers/render';
-import { viewToTransform } from 'core/viewport/view';
-import { worldToScreen } from 'core/viewport/viewTransform';
+import { viewToTransform, worldToScreen, type RenderLayer } from '@weasel-js/core';
 import type { WidthFocus } from './widthActions';
 import { isWidthSet } from './widthEdit';
 

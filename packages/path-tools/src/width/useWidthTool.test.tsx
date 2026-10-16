@@ -5,11 +5,9 @@ import { boundsOfPath, countPathAnchors, PathBuilder, pathDistanceToPoint, polyl
 import type { Stroke } from '@weasel-js/paint';
 import type { DrawCommand } from '@weasel-js/renderer';
 import type { Action, ActionDeps, InvocationCtx, OngoingHandle } from '@weasel-js/routing';
-import { defaultPaintBounds } from 'canvas/defaultDrawOne';
-import type { RenderLayer } from 'core/layers/render';
-import { createScene } from 'core/scene/scene';
-import type { RectPose } from 'core/scene/types';
-import { resolveEditablePathOf } from 'features/paths/editablePath';
+import {
+  createScene, defaultPaintBounds, resolveEditablePathOf, type RectPose, type RenderLayer,
+} from '@weasel-js/core';
 import { useWidthTool } from './useWidthTool';
 
 type Data = { path?: Path; stroke?: Stroke };
@@ -77,6 +75,11 @@ function setup(path: Path = LINE, stroke: Stroke = { paint: { color: '#000' }, w
 }
 
 describe('useWidthTool', () => {
+  it('declares edits-page', () => {
+    const { result } = renderHook(() => useWidthTool());
+    expect(result.current.eligibility?.capabilities).toEqual(['edits-page']);
+  });
+
   it('drags an edge along the normal, the other edge mirroring it, as one undo entry', () => {
     const t = setup();
     // The right edge sits 2 below the path; pull it to 10, 3 along the way:

@@ -337,7 +337,7 @@ Priority tags:
 - **(P2) Tune the Width tool hands-on, with the maintainer driving.** First-draft behavior and
   keys: Shift+W in draw; how near an edge a press must land to grab it; Alt moving one edge alone
   and Alt-click clearing a width point; and whether a press between anchors should insert one
-  (`packages/core/src/tools/builtin/width/`).
+  (`packages/path-tools/src/width/`).
 - **(P2) Tune path snapping hands-on, with the maintainer driving.** First-draft behavior and
   keys: an 8px radius with every kind on, `nearest` included; that a path target beats
   `snapPoint`, so in range it wins over the grid and measurement ends; that a move and an anchor

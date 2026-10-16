@@ -1,13 +1,8 @@
 import type { Action, ActionDeps, InvocationCtx } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
-import { pathToAnchors, type PolygonPath } from '@weasel-js/geom';
+import { meanScale, pathToAnchors, pxExtent, type PolygonPath } from '@weasel-js/geom';
 import type { VertexWidth } from '@weasel-js/paint';
-import type { Op } from 'core/ops/types';
-import { createSetDataOp } from 'core/ops/setData';
-import { createTransformOp } from 'core/ops/transform';
-import type { Scene } from 'core/scene/types';
-import { commitOps } from 'interactions/actions/defaultCommitAdapter';
-import { sceneReach } from '../bone/placedRig';
+import { commitOps, reshapeTo, type Scene } from '@weasel-js/core';
 import {
   anchorNormals, draggedWidth, gripAt, isWidthSet, movedSide, storedWith, widthEdgeAt, widthPointNear, widthsOf,
   widthTargetAt, type WidthGrip, type WidthTarget,
@@ -49,14 +44,12 @@ export const WIDTH_UNHOVER_ID = 'width.unhover';
 const LABEL = 'Stroke width';
 const REQUIRES = ['scene', 'view', 'selection', 'applyOps'] as const;
 
-const meanScale = (deps: ActionDeps): number => {
-  const s = deps.view?.get().scale ?? { x: 1, y: 1 };
-  return (Math.abs(s.x) + Math.abs(s.y)) / 2;
-};
-
 const found = (deps: ActionDeps, env: WidthEnv) => {
   const scene = deps.scene as AnyScene | undefined;
-  return scene ? { scene, scale: meanScale(deps), reach: sceneReach(deps, env.reachPx()) } : null;
+  if (!scene) return null;
+  const s = deps.view?.get().scale ?? { x: 1, y: 1 };
+  const e = pxExtent(env.reachPx(), s);
+  return { scene, scale: meanScale(s), reach: Math.max(e.x, e.y) };
 };
 
 const focusOf = (path: PolygonPath, widths: readonly VertexWidth[], fallback: number, grab?: WidthFocus['grab']): WidthFocus => ({
@@ -81,12 +74,7 @@ function dropGrab(env: WidthEnv): void {
 
 function commit(deps: ActionDeps, grip: WidthGrip, widths: readonly VertexWidth[]): void {
   const next = storedWith(grip, widths);
-  if (!next) return;
-  const { id, node } = grip.target;
-  const ops: Op[] = [];
-  if (next.pose !== node.pose) ops.push(createTransformOp({ id, from: node.pose, to: next.pose, label: LABEL }));
-  ops.push(createSetDataOp({ id, from: node.data, to: next.data, label: LABEL }));
-  commitOps(deps, ops, LABEL);
+  if (next) commitOps(deps, reshapeTo(grip.target.node, next, LABEL), LABEL);
 }
 
 const edgeOf = (grip: WidthGrip, moved: number): Point => ({

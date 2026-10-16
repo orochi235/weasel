@@ -2,8 +2,7 @@ import { useMemo } from 'react';
 import { useLatest } from '@weasel-js/react';
 import { createEmitter } from '@weasel-js/registry';
 import type { ToolKeybinding } from '@weasel-js/routing';
-import { defineTool } from '../../overlayBinding';
-import type { Tool } from '../../overlayBinding';
+import { defineTool, type Tool } from '@weasel-js/core';
 import {
   createWidthActions, WIDTH_CLEAR_ID, WIDTH_DRAG_ID, WIDTH_HOVER_ID, WIDTH_UNHOVER_ID, type WidthEnv, type WidthFocus,
 } from './widthActions';
