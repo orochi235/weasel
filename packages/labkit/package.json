@@ -129,6 +129,7 @@
     "@weasel-js/minimap": "1.10.1",
     "@weasel-js/prefs": "1.10.1",
     "@weasel-js/quantity": "1.10.1",
+    "@weasel-js/react": "1.10.1",
     "@weasel-js/registry": "1.10.1",
     "@weasel-js/storage": "1.10.1",
     "@weasel-js/svg": "1.10.1",

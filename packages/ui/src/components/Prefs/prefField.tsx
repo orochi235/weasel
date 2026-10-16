@@ -6,7 +6,7 @@ import { stepDisplay } from '../Properties/NumberControls';
 import { namedGlyph } from '../../icons/namedGlyph';
 import { isPaint } from '../paintValue';
 import type { PropertyControlProps } from '../Properties/PropertyField';
-import { type ParamsSurface, withCommitPolicy } from './commitPolicy';
+import { type LiveControl, type ParamsSurface, withCommitPolicy } from './commitPolicy';
 import { prefUnitAccepts, type PrefFieldChoice } from './schema';
 import { withSurfaceControl } from './surfaceControls';
 
@@ -51,17 +51,18 @@ export interface PrefFieldState {
  *
  * Given a `surface`, the control is the one that surface draws for what the
  * leaf asked for ({@link PARAMS_CONTROLS}), and it writes when that surface
- * writes ({@link PARAMS_SETTLES}). A leaf naming no control is left without
- * one; {@link withRowControl} fills in a row's.
+ * writes ({@link PARAMS_SETTLES}, or `settles` where given). A leaf naming no
+ * control is left without one; {@link withRowControl} fills in a row's.
  */
 export function prefFieldProps(
   leaf: PrefLeaf,
   state: PrefFieldState,
   surface?: ParamsSurface,
+  settles?: Readonly<Record<LiveControl, boolean>>,
 ): PropertyControlProps | null {
   const made = enabledFieldProps(leaf, state);
   if (made === null) return null;
-  const field = surface === undefined ? made : withCommitPolicy(withSurfaceControl(made, surface), surface);
+  const field = surface === undefined ? made : withCommitPolicy(withSurfaceControl(made, surface), surface, settles);
   return state.disabled ? { ...field, disabled: true } : field;
 }
 

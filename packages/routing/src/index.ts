@@ -148,6 +148,7 @@ export type {
   PendingLongPress, LongPressState, LongPressStore, LongPressOptions,
 } from './interactions/dispatcher/longPressState';
 export { DRAG_THRESHOLD_PX, pastDragThreshold, CONTROL_SELECTOR, isInControlWithin } from '@weasel-js/gestures';
+export type { GestureKitSettings } from './kitSettings';
 export { openPointerSession } from './interactions/pointerSession';
 export type {
   PointerSession, PointerSessionOptions, PointerSessionCallbacks, PointerSessionCancelReason,

@@ -2,7 +2,10 @@ import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { isValidElement } from 'react';
 import { renderHook, act } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
-import { useSliceTool } from './useSliceTool';
+import { useSliceTool, VERTEX_RADIUS_PX } from './useSliceTool';
+import { boundsOfPath } from '@weasel-js/geom';
+import { KitSettingsProvider, type KitSettingsOverrides } from '@weasel-js/react';
+import type { ReactNode } from 'react';
 import { SliceIcon } from '../../../icons';
 import { reportRouteConflicts, type Action, type ActionDeps, type InvocationCtx } from '@weasel-js/routing';
 import type { RenderLayer } from 'core/layers/render';
@@ -13,8 +16,10 @@ import { createScene } from 'core/scene/scene';
 
 type Pt = { x: number; y: number };
 
-function setup(opts: Parameters<typeof useSliceTool>[0] = {}) {
-  const { result } = renderHook(() => useSliceTool(opts));
+function setup(opts: Parameters<typeof useSliceTool>[0] = {}, settings?: KitSettingsOverrides) {
+  const { result } = renderHook(() => useSliceTool(opts), {
+    ...(settings ? { wrapper: ({ children }: { children: ReactNode }) => <KitSettingsProvider value={settings}>{children}</KitSettingsProvider> } : {}),
+  });
   const commit = vi.fn<(cut: ReadonlyArray<Pt>) => void>();
   const pointer = createPointerStore();
   const deps = {
@@ -49,6 +54,18 @@ describe('useSliceTool — palette presentation', () => {
     const { tool } = setup();
     const icon = tool().presentation?.icon;
     expect(isValidElement(icon) && icon.type).toBe(SliceIcon);
+  });
+});
+
+describe('useSliceTool — vertex dots', () => {
+  it('sizes them from targets.sliceVertexRadiusPx, else VERTEX_RADIUS_PX', () => {
+    const width = (s: ReturnType<typeof setup>) => {
+      s.click(10, 10);
+      const dot = s.paint().find((c) => c.kind === 'path' && c.fill);
+      return dot?.kind === 'path' ? boundsOfPath(dot.path).width : 0;
+    };
+    expect(width(setup())).toBe(2 * VERTEX_RADIUS_PX);
+    expect(width(setup({}, { targets: { sliceVertexRadiusPx: 5 } }))).toBe(10);
   });
 });
 

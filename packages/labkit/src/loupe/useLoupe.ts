@@ -5,6 +5,7 @@ import {
   type LoupeModel,
   type LoupePoint,
 } from '@weasel-js/loupe';
+import { useKitSetting } from '@weasel-js/react';
 import { type RefObject, useCallback, useEffect, useReducer, useRef } from 'react';
 import type { LoupeInputApi } from './loupeActions';
 import { WHEEL_RATE } from './loupeActions';
@@ -54,6 +55,11 @@ export interface LoupeState {
 /** Whether the lens is up: the pointer is over the host, and the loupe is on or peeked. */
 function lensShown(over: boolean, enabled: boolean, peeking: boolean): boolean {
   return over && (enabled || peeking);
+}
+
+/** Walk `model`'s factor by one wheel notch of `deltaY` at `rate`. */
+function magnify(model: LoupeModel | null, deltaY: number, rate: number): void {
+  if (model) model.setFactor(model.factor * Math.exp(-deltaY * rate));
 }
 
 /**
@@ -233,6 +239,7 @@ export function useLoupe({
     return subscribeResample(() => model.resample());
   }, [visible, subscribeResample, model]);
 
+  const wheelRateRef = useLatest(useKitSetting('loupe.wheelRate') ?? WHEEL_RATE);
   const inputRef = useRef<LoupeInputApi | null>(null);
   if (inputRef.current === null) {
     inputRef.current = {
@@ -243,10 +250,7 @@ export function useLoupe({
         if (on) aimAtPointer();
         bump();
       },
-      magnifyBy: (deltaY) => {
-        const m = modelRef.current;
-        if (m) m.setFactor(m.factor * Math.exp(-deltaY * WHEEL_RATE));
-      },
+      magnifyBy: (deltaY) => magnify(modelRef.current, deltaY, wheelRateRef.current),
     };
   }
 

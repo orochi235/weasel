@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react';
-import { useLatest } from '@weasel-js/react';
+import { useKitSettings, useLatest } from '@weasel-js/react';
 import { fixedSeat, type FixedSeat } from '@weasel-js/gestures';
 import { openPointerSession, pastDragThreshold, type PointerSession } from '@weasel-js/routing';
 
@@ -161,6 +161,7 @@ export function useDragHandle(
   options?: DragHandleOptions,
 ) {
   const optsRef = useLatest(options);
+  const kitSettingsRef = useLatest(useKitSettings());
   // One session spans the whole press, threshold and all, so a release that
   // never arrives — the row unmounts under the pointer — cannot strand the
   // ghost or its listeners. Before, the two phases owned separate listener
@@ -185,7 +186,7 @@ export function useDragHandle(
       onMove: (ev) => {
         if (ghost) { ghost.move(ev); return; }
         if (past) return;
-        if (!pastDragThreshold(start, ev)) return;
+        if (!pastDragThreshold(start, ev, kitSettingsRef.current.get('gestures.dragPx'))) return;
         past = true;
         const payload = getPayload();
         if (!payload) return;
@@ -214,7 +215,7 @@ export function useDragHandle(
         else dropClickGuard();
       },
     }, { capture: false });
-  }, [getPayload, optsRef]);
+  }, [getPayload, optsRef, kitSettingsRef]);
 
   return { onPointerDown, style: { touchAction: 'none' as const } };
 }

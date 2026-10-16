@@ -25,6 +25,13 @@ describe('withDrafts', () => {
     expect(field).toMatchObject({ onChange, onInput: drafted.onChange });
   });
 
+  it('drafts typed text a panel leaves live, and commits it through its own writer once the edit settles', () => {
+    const live = { ...PARAMS_SETTLES.panel, string: false };
+    const drafted = drafts(text);
+    const field = withDrafts(withCommitPolicy(text, 'panel', live), withCommitPolicy(drafted, 'panel', live), 'panel', live);
+    expect(field).toMatchObject({ onChange, onInput: drafted.onChange });
+  });
+
   it('leaves a control the surface settles, and one with one write per edit, as it is', () => {
     for (const field of [number, text, color, flag]) {
       const settled = withCommitPolicy(field, 'panel');

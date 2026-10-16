@@ -36,29 +36,39 @@ export function liveControl(field: PropertyControlProps): LiveControl | null {
  * `field` where `surface` leaves its control live, sending the values on the way through `drafts`' writer and
  * the one the edit settles on through its own. `drafts` is the same leaf's field built over a writer that keeps
  * its writes out of undo. A control the surface settles, and one that is not live, come back as they are.
+ * `settles` stands in for the surface's defaults: what `useParamsPolicy` resolves from the kit settings.
  */
 export function withDrafts(
   field: PropertyControlProps,
   drafts: PropertyControlProps | null,
   surface: ParamsSurface,
+  settles: Readonly<Record<LiveControl, boolean>> = PARAMS_SETTLES[surface],
 ): PropertyControlProps {
   const live = liveControl(field);
-  if (live === null || PARAMS_SETTLES[surface][live] || drafts === null) return field;
-  if (field.kind === 'number' && drafts.kind === 'number') return { ...field, onInput: drafts.onChange };
-  if (field.kind === 'string' && drafts.kind === 'string') return { ...field, onInput: drafts.onChange };
+  if (live === null || settles[live] || drafts === null) return field;
+  // A typed field `withCommitPolicy` left live has its writer moved to `onInput`; the drafts take that, so it goes back.
+  const writerOf = <F extends { onChange: unknown; onInput?: unknown }>(f: F): F['onChange'] =>
+    (f.onChange === settledOnly ? f.onInput : f.onChange) as F['onChange'];
+  if (field.kind === 'number' && drafts.kind === 'number') return { ...field, onChange: writerOf(field), onInput: writerOf(drafts) };
+  if (field.kind === 'string' && drafts.kind === 'string') return { ...field, onChange: writerOf(field), onInput: writerOf(drafts) };
   if (field.kind === 'color' && drafts.kind === 'color') return { ...field, onInput: drafts.onChange };
   return field;
 }
 
 /**
- * `field` writing when `surface` writes it. A control given an `onInput` drafts through it and commits through
- * `onChange`, so one that swallows the drafts is what makes a control write settled values only. A typed number
- * or text field commits only once its edit settles, so one the surface leaves live writes through `onInput`.
+ * `field` writing when `surface` writes it, or as `settles` says. A control given an `onInput` drafts through it and
+ * commits through `onChange`, so one that swallows the drafts is what makes a control write settled values only. A
+ * typed number or text field commits only once its edit settles, so one the surface leaves live writes through
+ * `onInput`.
  */
-export function withCommitPolicy(field: PropertyControlProps, surface: ParamsSurface): PropertyControlProps {
+export function withCommitPolicy(
+  field: PropertyControlProps,
+  surface: ParamsSurface,
+  settles: Readonly<Record<LiveControl, boolean>> = PARAMS_SETTLES[surface],
+): PropertyControlProps {
   const live = liveControl(field);
   if (live === null) return field;
-  if (PARAMS_SETTLES[surface][live]) {
+  if (settles[live]) {
     if (field.kind === 'number') return { ...field, onInput: settledOnly };
     return field.kind === 'string' || field.kind === 'color' ? { ...field, onInput: settledOnly } : field;
   }

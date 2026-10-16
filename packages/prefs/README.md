@@ -156,3 +156,24 @@ come later. A number is written in its display unit where the unit's suffix is
 a CSS unit, a boolean as `1` or `0`, an enum's option as an identifier, and a
 string quoted; a leaf of any other kind is left out unless the `value` option
 writes it. `root`, `property`, and `attribute` rename what it writes.
+
+`prefsDefaultsSource(schema)` stands in for a store at its defaults, so
+`prefsCss(prefsDefaultsSource(schema))` is a schema's stylesheet with no store.
+The Vite plugin in `@weasel-js/prefs/vite` serves that sheet for every schema
+you name, by module and export, and rewrites it when a schema changes:
+
+```ts
+// vite.config.ts
+import { weaselPrefsCss } from '@weasel-js/prefs/vite';
+export default { plugins: [weaselPrefsCss({ schemas: { './src/prefs.ts': 'SCHEMA' } })] };
+
+// main.ts
+import 'virtual:weasel-prefs.css';
+```
+
+For the kit's own settings, `<KitSettingsFromPrefs store at="kit">` in
+`@weasel-js/prefs/react` hands the store's values under `kit` to
+`KitSettingsProvider`, so `useKitSetting('tree.typeaheadMs')` reads the user's
+value. With `css`, it also writes that subtree as `--wzl-kit-*` properties into
+the document or shadow root it renders in, and keeps them current as the store
+changes; `kitSettingsCssOptions(at)` is the naming it uses.
