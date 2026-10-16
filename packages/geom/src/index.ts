@@ -28,6 +28,19 @@ export {
   ellipsePath, regularPolygonPath, starPath, linePath,
 } from './paths/builder';
 export { boundsOfPath } from './paths/bounds';
+export {
+  cornerFrameAt, cornerFrames, remapPerAnchor, resolveCorners,
+  resolveCornersWithSources, type CornerFrame, type ResolvedCorners,
+} from './paths/corners';
+export {
+  compactCorners, cornerAt, cornerSpecAt, hasCorners, lerpCorners, scaleCorners, withCorner,
+  withoutCorners, type CornerSpec,
+} from './paths/cornerSpec';
+export {
+  CORNER_FIT_TOLERANCE, CORNER_KEYWORDS, cornerCenter, cornerKeywordOf, cornerShapeK, cornerShapePieces,
+  cornerShapePoint, isCornerShape, nextCornerShape, type CornerKeyword, type CornerPiece, type CornerShape,
+  type CornerShapeFrame,
+} from './paths/cornerShape';
 export { unionBoundsPath } from './paths/unionBoundsPath';
 export { translatePath, scalePathToBounds } from './paths/transform';
 export { transformPath } from './paths/transformPath';

@@ -14,6 +14,7 @@ import { useState, useEffect, type ReactElement } from 'react';
 
 import { createModeMachine } from './machine';
 import { ModeBreadcrumb } from './chrome/ModeBreadcrumb';
+import { modePathEdit } from './pathEditHost';
 import { useCanvasModes } from './useCanvasModes';
 import { DEFAULT_MODES } from '@weasel-js/modes';
 import { SceneCanvas, asNodeId, createScene, pathFromD, useSelection, type PolygonPath } from '@weasel-js/core';
@@ -63,7 +64,8 @@ function MachineHarness({
     return s as unknown as DrawScene;
   });
   const selection = useSelection({ mode: 'multi', scene });
-  const modes = useCanvasModes(machine, scene, selection);
+  const [pathEdit] = useState(() => modePathEdit(machine, (id) => scene.get(asNodeId(id))?.data.path?.kind === 'polygon'));
+  const modes = useCanvasModes(machine, scene, selection, pathEdit);
   const [ambient] = useState(() => [modes.keys]);
 
   // Subscribe to registry changes — same pattern as App's useModeId helper.

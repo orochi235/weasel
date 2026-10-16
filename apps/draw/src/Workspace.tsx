@@ -97,7 +97,7 @@ export function Workspace(props: WorkspaceProps): ReactElement {
 
   const modeId = useModeId(machine);
   const targetLabel = useModeTargetLabel(machine, scene);
-  const modes = useCanvasModes(machine, scene, selection);
+  const modes = useCanvasModes(machine, scene, selection, modality.pathEdit);
   const ambient = useEditorAmbient({
     scene,
     selection,
@@ -140,7 +140,7 @@ export function Workspace(props: WorkspaceProps): ReactElement {
     (id: string) => (id === editingId ? 0 : scopingAlphaFor(id)),
     [editingId, scopingAlphaFor],
   );
-  const redrawOnScoping = useMemo(() => [modality.scopingDim], [modality.scopingDim]);
+  const redrawOnScoping = useMemo(() => [modality.scopingDim, modality.anchors], [modality.scopingDim, modality.anchors]);
 
   // On-canvas gradient handles edit one node's one paint; which paint is the side the swatches
   // have focus on.

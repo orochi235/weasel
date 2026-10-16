@@ -8,6 +8,8 @@
  * step both arrays in lockstep.
  */
 
+import type { CornerSpec } from './paths/cornerSpec';
+
 /** Fill rule used by polygon path hit-testing and `ctx.fill()`. */
 export type PathFillRule = 'nonzero' | 'evenodd';
 
@@ -28,6 +30,13 @@ export interface PolygonPath {
   fillRule: PathFillRule;
   /** Absent, the engine default: see `setDefaultOpenFill`. */
   openFill?: PathOpenFill;
+  /**
+   * Corner shapes, indexed by flat anchor index (`enumerateAnchors` order):
+   * the anchor at each non-null slot is cut in a `corner-shape`
+   * (`cornerShape.ts`). The commands and coords hold the bare anchors; `resolveCorners`
+   * expands the specs into the geometry everything draws, hits, and bounds.
+   */
+  corners?: readonly (CornerSpec | null)[];
 }
 
 /**

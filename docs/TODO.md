@@ -235,6 +235,21 @@ Priority tags:
   Alt+X adds to segments whose two ends are both selected, or to the whole path while no anchor
   is, so a selection reaching no whole segment does nothing; the new anchors join the selection
   (`packages/path-tools/src/extremes/addExtremes.ts`, `packages/geom/src/paths/extremaAnchors.ts`).
+- **(P2) Tune corner shape hands-on, with the maintainer driving.** First-draft behavior and keys:
+  a widget sits 14 screen px inside each corner anchor, past the middle of its cut, and is hit
+  within 6px; anchors within 0.05 rad of straight get none. A widget drag sets the radius from the
+  pointer's travel along the bisector, every selected corner's when its anchor is selected, and a
+  corner with no spec takes `round`. Giving a sharp corner a shape cuts a quarter of its room
+  (`DEFAULT_CORNER_TRIM_SHARE`). `cycleCornerShape` has no key of its own (its lab tunes K onto it, the
+  Slice tool's key elsewhere), `setCorners` is reached only through the panel, the
+  panel's curvature slider spans -4 to 4, and the widgets show by default under
+  `path-edit.corners` with no key to hide them (`packages/path-tools/src/cornerShape/`,
+  `packages/geom/src/paths/cornerShape.ts`, `apps/site/demos/CornerShapeLabDemo.tsx`).
+- **(P3) Booleans, Trim segment, Extend to next path, Cut at crossings, and Offset path drop
+  corner specs.** Each expands a path's corners before it rebuilds the geometry, so the rounded
+  shape survives as plain anchors but the corners can no longer be edited as corners
+  (they read paths through `resolveCorners` or a reader that calls it, such as
+  `packages/geom/src/booleans/contours.ts` and `packages/stroke/src/offsetPath.ts`).
 - **(P2) Tune Blend, Bend along a path, and Repeat along a path hands-on, with the maintainer
   driving.** First-draft step counts, spacing, and turn defaults, their keys, and how an effect is
   re-edited and expanded (`packages/path-tools/src/pathEffects/`, and core's `features/pathEffects/`).
@@ -326,9 +341,6 @@ Priority tags:
   they reshape comes from `scenePathNodes` (`pathCommands/scenePaths.ts`), which reads
   `resolveEditablePathOf`: a rect-pose rectangle cannot itself be trimmed or extended, which waits
   on "A rectangle has no anchors in path edit" above.
-- **(P2) Dynamic corners.** Round, chamfer, or invert any corner anchor by dragging a widget at
-  it, and change the radius later. Needs a corner radius per anchor in the path data, expanded
-  into geometry when it renders and on export.
 - **(P2) Extend a path from its end.** Drag an open path's endpoint outward to grow it along its
   end tangent, or along its end curvature.
 - **(P2) Shape builder.** Drag across overlapping regions to merge them, Alt-drag to delete them.
@@ -860,10 +872,9 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   the mean scale, which only approximates the screen-exact ribbon.
 
 - **(P2) Labs still tune actions through the experimental `actions` prop.** The extend-path-end
-  and dynamic-corners labs (on their own branches when `tune` landed) set `mode` and a K binding
-  by restating whole descriptors through `actions`. Move each to `<SceneCanvas tune>` as it
-  merges, drop the restated gestures, and give its actions (`extendPathEnd`, …) entries in core's
-  `ActionParamSchema` (`interactions/actions/actionParamSchema.ts`).
+  lab (on its own branch when `tune` landed) sets `mode` by restating whole descriptors through
+  `actions`. Move it to `<SceneCanvas tune>` as it merges, drop the restated gestures, and give
+  `extendPathEnd` an entry in core's `ActionParamSchema` (`interactions/actions/actionParamSchema.ts`).
 
 - **(P2) Kit settings that do not reach their readers yet.** `history.coalesceMs` is read once,
   when `PrefSchemaEditor` mounts, because `createHistory` (`@weasel-js/history`) fixes its window

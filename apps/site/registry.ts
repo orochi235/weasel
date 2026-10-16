@@ -200,6 +200,15 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/PathAnchorEditDemo.tsx',
   },
   {
+    id: 'lab-corner-shape',
+    title: 'Corner shape',
+    category: 'Geometry',
+    description: "Any corner anchor of a path takes a shape from CSS `corner-shape`: one curve, `superellipse(k)`, with the keywords as points on its parameter: `square` is k = ∞, `squircle` 2, `round` 1, `bevel` 0, `scoop` -1, and `notch` -∞. The path stores a `CornerSpec` (a keyword or a number, and a radius: how far along each edge the cut starts) per anchor in `PolygonPath.corners`, and `resolveCorners` expands it into plain geometry wherever the path is drawn, hit, bounded, or exported, fitting the superellipse with cubics and clamping each cut so neighbors never overlap. With `@weasel-js/path-tools`' `cornerShapePreset` on, every corner anchor shows a widget just inside it in path edit, a small tile cut in that corner's shape: dragging one runs `editCorner`, which sets the radius live and commits one undo step. The lab is the `pathEdit` host, owning which path is open and which of its anchors are selected, so the panel over the canvas (path-tools' `CORNER_CONTROLS` through `useCornerControls`) shows the selected corners' keyword, curvature, and radius, mixed where they differ, and edits them through `setCorners`; giving a sharp corner a shape also gives it a radius. <kbd>K</kbd> is tuned onto `cycleCornerShape`. The tile opens with its sharp right-hand corner selected; the petal's squircle sits between a curve and a line, and the prism carries per-anchor colors, which a cut corner keeps.",
+    hint: 'Pick a shape in the panel to cut the selected corner, slide Curvature between them, then change its Radius, or drag the tile inside any corner toward its middle. Click another anchor (<kbd>Shift</kbd>-click for more) and the panel shows what it holds; <kbd>K</kbd> steps through the keywords. Double-click the petal or the prism to edit it instead, and undo with the button or <kbd>Mod+Z</kbd>.',
+    load: () => import('./demos/CornerShapeLabDemo').then((m) => m.CornerShapeLabDemo),
+    path: 'apps/site/demos/CornerShapeLabDemo.tsx',
+  },
+  {
     id: 'lab-anchor-select',
     title: 'Anchor selection along a path',
     category: 'Geometry',

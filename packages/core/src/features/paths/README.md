@@ -107,6 +107,23 @@ structure matters. The two orders agree only because `pathToAnchors` and
 you touch either walker, `anchorEdits.test.ts` has the invariant test that
 catches the divergence.
 
+## Corner shape
+
+`PolygonPath.corners` holds an optional `CornerSpec` per flat anchor index: a
+shape and a radius, the setback along each edge. The shape is a CSS
+`corner-shape` keyword or a `superellipse()` parameter k, and every keyword is
+a point on k (`square` ∞, `squircle` 2, `round` 1, `bevel` 0, `scoop` -1,
+`notch` -∞); `cornerShapePieces` (`@weasel-js/geom`, `paths/cornerShape.ts`)
+draws any k. The command stream keeps the bare anchors, so editing still works
+on them; `resolveCorners` (`paths/corners.ts`) expands the specs into plain
+geometry, and the readers that draw, hit, bound, and export a path —
+tessellation, `extractPolylines`, `flatSubpaths`, `boundsOfPath`, the booleans'
+contour parser, the renderer's `drawPath`, and `serializePathD` — call it
+first. A spec rides on its anchor through the anchor model (`PenAnchor.corner`),
+so an insert or delete keeps each corner on its anchor. The widgets and
+commands that edit corners in path edit are `@weasel-js/path-tools`'
+`cornerShapePreset`.
+
 ## Constraints
 
 A node's `data.constraints` is a list of `PathConstraint`s (`@weasel-js/geom`),

@@ -10,6 +10,7 @@
  */
 
 import { nearestOnPath } from '../nearest';
+import { resolveCorners } from './corners';
 import type { Path } from '../path';
 
 /** Distance from (px, py) to the perimeter of an axis-aligned rectangle.
@@ -38,5 +39,6 @@ export function pathDistanceToPoint(path: Path, px: number, py: number): number 
   if (path.kind === 'rect') {
     return pointToRectPerimeterDist(px, py, path.x, path.y, path.width, path.height);
   }
-  return nearestOnPath(path.commands, path.coords, px, py)?.dist ?? Infinity;
+  const drawn = resolveCorners(path);
+  return nearestOnPath(drawn.commands, drawn.coords, px, py)?.dist ?? Infinity;
 }

@@ -1,4 +1,4 @@
-import type { Path } from '@weasel-js/geom';
+import { remapPerAnchor, resolveCornersWithSources, type Path } from '@weasel-js/geom';
 import type { ScreenLength, Stroke } from '@weasel-js/paint';
 import { alignedStrokeRect, resolveScreenLength } from '@weasel-js/paint';
 import { type Mesh, extractPolylines, type Polyline } from '@weasel-js/geom/tessellate';
@@ -89,7 +89,12 @@ export function tessellateStroke(
 
   // Per-point widths come first, in the space the points are in, so a trim
   // interpolates them rather than re-reading an anchor's.
-  const vertexWidths = stroke.vertexWidths && stroke.vertexWidths.length > 0 ? stroke.vertexWidths : null;
+  // Expanded here rather than inside `extractPolylines`, so each width moves
+  // to the anchors its corner's cut leaves.
+  const resolved = workingPath.kind === 'polygon' ? resolveCornersWithSources(workingPath) : null;
+  if (resolved) workingPath = resolved.path;
+  const given = stroke.vertexWidths && stroke.vertexWidths.length > 0 ? stroke.vertexWidths : null;
+  const vertexWidths = given && resolved?.anchorSources ? remapPerAnchor(given, resolved.anchorSources, 1) : given;
   const polylines = extractPolylines(workingPath, strokeFlattening(opts.flattenTolerance, width, vertexWidths ?? undefined));
   const scale: WidthScale | undefined = !metric ? undefined
     : rectInMetric ? (tx, ty) => worldWidthInMetric(metric, tx, ty)

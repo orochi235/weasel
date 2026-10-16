@@ -1,7 +1,7 @@
 import type { PolygonPath } from '../path';
 import { anchorsToPath, pathToAnchors, type PenAnchor } from '../paths/anchors';
 import { cubicPointAt, type Point } from '../paths/cubicMath';
-import { fitPointRun } from '../paths/fitRun';
+import { fitPointRun, keepCorner } from '../paths/fitRun';
 
 /** Options for {@link warpPath}. */
 export interface WarpPathOptions {
@@ -54,11 +54,13 @@ function warpSubpath(sub: PenAnchor[], closed: boolean, map: (p: Point) => Point
     const closing = closed && i === segments - 1;
     if (run.length < 2) {
       if (out.length === 0) out.push({ x: start.x, y: start.y });
-      if (!closing) out.push({ x: end.x, y: end.y });
+      if (!closing) { out.push({ x: end.x, y: end.y }); keepCorner(out[out.length - 1], b); }
       continue;
     }
     fitPointRun(run, tStart, tEnd, tol, out, closing);
+    if (!closing) keepCorner(out[out.length - 1], b);
   }
+  keepCorner(out[0], sub[0]);
   return out;
 }
 

@@ -5,6 +5,7 @@
 import type { PolygonPath } from '../path';
 import { nearestOnCubic, nearestOnLine } from '../nearest';
 import { anchorsToPath, isAnchorSmooth, pathToAnchors, type PenAnchor } from './anchors';
+import { keepCorner } from './fitRun';
 import { arcRun, type ArcRun } from './arcRun';
 import type { Point } from './cubicMath';
 import { fitCubicWithTangents } from './schneiderFit';
@@ -59,11 +60,14 @@ export function resamplePath(path: PolygonPath, opts: ResamplePathOptions = {}):
       out.push(sub);
       return;
     }
-    const first = sub[fixedBySub[s][0]];
+    const fixed = fixedBySub[s];
+    const first = sub[fixed[0]];
     const result: PenAnchor[] = [{ x: first.x, y: first.y }];
+    keepCorner(result[0], first);
     spansBySub[s].forEach((span, k) => {
       const closing = closed[s] && k === spansBySub[s].length - 1;
       appendSpan(span, tol, result, closing);
+      if (!closing) keepCorner(result[result.length - 1], sub[fixed[k + 1]]);
     });
     out.push(result);
   });

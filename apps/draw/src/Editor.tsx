@@ -85,6 +85,7 @@ export function Editor({ scene, selection, modality }: EditorProps): ReactElemen
           setFilename={doc.setFilename}
           backgroundColor={doc.backgroundColor}
           setBackgroundColor={doc.setBackgroundColor}
+          cornerSelection={modality.cornerSelection}
         />
         <PreferencesModal open={prefsOpen} onClose={() => setPrefsOpen(false)} registryEnumSources={prefSources} />
         <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />

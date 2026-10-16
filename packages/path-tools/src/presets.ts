@@ -8,6 +8,9 @@ import { balanceHandlesAction, equalizeHandlesAction } from './balance/handleBal
 import { createBalanceExtension, PATH_BALANCE_CHROME_ID, type PathEditBalanceStyle } from './balance/balanceMarks';
 import { bridgeAnchorsAction, bridgePathsAction } from './bridge/bridge';
 import { createCombExtension, PATH_COMB_CHROME_ID, type PathEditCombOptions } from './comb/comb';
+import { cycleCornerShapeAction, setCornersAction } from './cornerShape/cornerCommands';
+import { createCornerWidgetsExtension, type CornerWidgetStyle } from './cornerShape/cornerWidgets';
+import { editCornerAction } from './cornerShape/editCorner';
 import { constrainAnchorsAction, deleteConstraintAction, unconstrainAnchorsAction } from './constraints/anchorConstraints';
 import type { ConstraintGlyphStyle } from './constraints/constraintGlyphs';
 import { createConstraintsExtension } from './constraints/constraintsExtension';
@@ -123,6 +126,25 @@ export function createConstraintsPreset(style: Partial<ConstraintGlyphStyle> = {
 export const constraintsPreset: FeaturePreset = createConstraintsPreset();
 
 /**
+ * Corner shape: a widget inside each corner anchor of the open path, drawn in
+ * `style`, whose drag sets the corner's radius (`editCorner`), and the
+ * commands on the selected corners (`setCorners`, `cycleCornerShape`). The
+ * widgets show while chrome-caps shows `path-edit.corners`, which is on by
+ * default. It refines `paths`, so a widget's drag goes ahead of the marquee.
+ */
+export function createCornerShapePreset(style: CornerWidgetStyle = {}): FeaturePreset {
+  return {
+    id: 'cornerShape',
+    refines: ['paths'],
+    actions: [editCornerAction, setCornersAction, cycleCornerShapeAction],
+    pathEdit: [createCornerWidgetsExtension(style)],
+  };
+}
+
+/** Corner shape with path edit's anchor colors. */
+export const cornerShapePreset: FeaturePreset = createCornerShapePreset();
+
+/**
  * Where a path starts and which way it runs: `setPathStart` and
  * `reversePath`, and arrows and start rings over the open path, drawn in
  * `style`. The marks are off until chrome-caps shows `path-edit.direction`.
@@ -161,13 +183,14 @@ export const warpPreset: FeaturePreset = {
   actions: [expandWarpAction, configureWarpAction],
 };
 
-/** Every preset above, the comb, balance, constraints, and path direction with their defaults. */
+/** Every preset above, the comb, balance, constraints, path direction, and
+ *  corner shape with their defaults. */
 export const pathTools: FeaturePreset = {
   id: 'pathTools',
   includes: [
     simplifyBrushPreset, handleLocksPreset, bridgePreset, trimPreset, extendPreset, smudgePreset,
     harmonizePreset, anchorSelectionPreset, resamplePreset, addExtremesPreset,
     curvatureCombPreset, balancePreset, constraintsPreset, pathStructurePreset, segmentTypePreset,
-    pathEffectsPreset, warpPreset,
+    cornerShapePreset, pathEffectsPreset, warpPreset,
   ],
 };

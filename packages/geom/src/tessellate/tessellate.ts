@@ -1,5 +1,6 @@
 import earcut from 'earcut';
 import { forEachSegment, PATH_M, PATH_L, PATH_Z, PATH_C, PATH_Q } from '../commands';
+import { resolveCorners } from '../paths/corners';
 import { pointInPolygon } from '../polyline';
 import { rectToContour } from '../box';
 import type { Path, PolygonPath, RectPath } from '../path';
@@ -23,7 +24,7 @@ export interface TessellateOptions {
  *  line segments, then the resulting polygon triangulated. */
 export function tessellate(path: Path, opts: TessellateOptions = {}): Mesh {
   if (path.kind === 'rect') return tessellateRect(path);
-  return tessellatePolygon(path, opts);
+  return tessellatePolygon(resolveCorners(path), opts);
 }
 
 function tessellateRect(p: RectPath): Mesh {

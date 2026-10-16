@@ -5,7 +5,8 @@
  * stores it.
  *
  * `tool` and `params` ride on `meta.wd.attrs` under the local names `tool`, `params-sides`,
- * `params-points`, `params-ratio`, `params-rotation`.
+ * `params-points`, `params-ratio`, `params-rotation`; a path's corner shapes under `corners`
+ * and `corner-anchors` (`svgCorners.ts`).
  */
 
 import type { Fill, TextStyle } from '@weasel-js/core';
@@ -30,6 +31,7 @@ import type {
 import { downloadBlob, pickFile } from './fileIO';
 import { isPaperSize, type PaperSizeKey } from './paperSizes';
 import type { ImageObj, Obj, PathObj, PathParams, PathToolKind, TextObj } from './svgObj';
+import { cornerAttrs, pathWithCorners } from './svgCorners';
 
 /**
  * The `wd:` XML namespace, carrying WeaselDraw-specific metadata on top of standard SVG.
@@ -189,7 +191,7 @@ export function objToSvgNode(o: Obj): SvgNode {
   };
   const stroke = svgStrokeFromKit(o.stroke, o);
   if (stroke) node.stroke = stroke;
-  node.meta = { wd: { attrs: encodeWdAttrs(o) } };
+  node.meta = { wd: { attrs: { ...encodeWdAttrs(o), ...cornerAttrs(o.path) } } };
   if (o.rotation) node.rotation = o.rotation;
   return node;
 }
@@ -249,7 +251,7 @@ function kitLeafToObj(
     id,
     tool,
     ...box,
-    path: data.path,
+    path: pathWithCorners(data.path, attrs),
     fill: data.fill === undefined ? DEFAULT_IMPORT_FILL : data.fill,
     stroke: data.stroke ?? null,
     ...(params ? { params } : {}),

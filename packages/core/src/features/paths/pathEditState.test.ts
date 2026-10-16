@@ -46,6 +46,21 @@ describe('createPathEditState', () => {
     expect(heard).toHaveBeenCalledTimes(2);
   });
 
+  it('reads and writes the anchor selection through a host that owns it', () => {
+    let held: ReadonlySet<number> = new Set([3]);
+    const state = createPathEditState({
+      host: () => ({
+        editingId: () => 'a',
+        setEditingId: () => {},
+        selectedAnchors: () => held,
+        setSelectedAnchors: (next) => { held = next; },
+      }),
+    });
+    expect([...state.getSelectedAnchors()]).toEqual([3]);
+    state.setSelectedAnchors(new Set([1, 2]));
+    expect([...held]).toEqual([1, 2]);
+  });
+
   it('reads an id as empty while the mode forbids anchor editing, and keeps it for when it is allowed again', () => {
     let allowed = true;
     const state = createPathEditState({ isAllowed: () => allowed });

@@ -13,6 +13,7 @@ import {
 import { useMemo } from 'react';
 import { DEFAULT_MODES } from '@weasel-js/modes';
 import { createModeMachine } from './machine';
+import { createAnchorSelection } from './anchorSelection';
 import { modePathEdit } from './pathEditHost';
 
 beforeAll(() => {
@@ -126,5 +127,13 @@ describe('modePathEdit', () => {
     host.setEditingId('a');
     expect(history.beginJournal).toHaveBeenCalledTimes(1);
     expect(host.editingId()).toBe('a');
+  });
+
+  it('owns the anchor selection when handed one, for the corner controls to read', () => {
+    const anchors = createAnchorSelection();
+    const host = modePathEdit(machine(), () => true, anchors);
+    host.setSelectedAnchors!(new Set([2]));
+    expect([...anchors.get()]).toEqual([2]);
+    expect(host.selectedAnchors!()).toBe(anchors.get());
   });
 });

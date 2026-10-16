@@ -10,6 +10,7 @@ import {
   type SelectionApi,
   WEASEL_CLIPBOARD_MIME
 } from '@weasel-js/core';
+import type { CornerControlsSelection } from '@weasel-js/path-tools';
 import {
   type ReactElement,
   useCallback,
@@ -35,12 +36,14 @@ export interface ToolbarProps {
   setFilename: (name: string) => void;
   backgroundColor: string;
   setBackgroundColor: (color: string) => void;
+  /** The open path and its selected anchors, for the Corner shape controls. */
+  cornerSelection?: CornerControlsSelection;
 }
 
 export function Toolbar({
   scene, selection,
   paperSize, setPaperSize,
-  filename, setFilename, backgroundColor, setBackgroundColor,
+  filename, setFilename, backgroundColor, setBackgroundColor, cornerSelection,
 }: ToolbarProps): ReactElement {
   const adapter = useSceneAdapter(scene, {});
   // Only its setter is read: a copy re-renders the bar so Paste re-evaluates.
@@ -95,6 +98,7 @@ export function Toolbar({
   return (
     <>
       <CommandBar
+        {...(cornerSelection ? { corners: { scene, selection: cornerSelection } } : {})}
         onSaveSvg={() => {
           void saveSvgFile(scene, { filename, paperSize, backgroundColor });
         }}

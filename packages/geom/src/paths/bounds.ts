@@ -1,16 +1,17 @@
 import { cubicBounds, elevateQuadraticToCubic } from '../curve';
 import { forEachSegment, PATH_C, PATH_L, PATH_M, PATH_Q, PATH_Z } from '../commands';
 import type { Path, RectPath } from '../path';
+import { resolveCorners } from './corners';
 
 /**
  * AABB of a `Path`, returned as a `RectPath` for direct reuse with rect-fast-path machinery.
  * Control points are NOT included directly; they're used only to compute extrema that actually
- * lie on the curve. Empty paths (no commands) return a zero-size rect anchored at the origin.
+ * lie on the curve. Corner shapes are bounded as they are drawn, expanded. Empty paths (no commands) return a zero-size rect anchored at the origin.
  */
 export function boundsOfPath(path: Path): RectPath {
   if (path.kind === 'rect') return path;
 
-  const { commands, coords } = path;
+  const { commands, coords } = resolveCorners(path);
   if (commands.length === 0) {
     return { kind: 'rect', x: 0, y: 0, width: 0, height: 0 };
   }

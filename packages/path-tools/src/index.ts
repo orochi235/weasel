@@ -15,8 +15,10 @@ export {
   balancePreset,
   bridgePreset,
   constraintsPreset,
+  cornerShapePreset,
   createBalancePreset,
   createConstraintsPreset,
+  createCornerShapePreset,
   createCurvatureCombPreset,
   createPathStructurePreset,
   curvatureCombPreset,
@@ -70,6 +72,8 @@ export {
 export {
   configureWarpAction, expandWarpAction, warpHandleScratchOf, type WarpHandleScratch,
 } from './warp/warpActions';
+export { DEFAULT_CORNER_SHAPE, editCornerAction } from './cornerShape/editCorner';
+export { cycleCornerShapeAction, DEFAULT_CORNER_TRIM_SHARE, setCornersAction } from './cornerShape/cornerCommands';
 
 // ─── Tools ─────────────────────────────────────────────────────────────────
 export { useTrimTool, type UseTrimToolOptions } from './trim/useTrimTool';
@@ -98,8 +102,20 @@ export {
 } from './constraints/constraintsExtension';
 export type { ConstraintGlyphStyle } from './constraints/constraintGlyphs';
 export {
+  CORNER_WIDGET_STANDOFF_PX, cornerWidgetCommands, cornerWidgetFrames, createCornerWidgetsExtension,
+  PATH_CORNERS_CHROME_ID, type CornerWidgetStyle,
+} from './cornerShape/cornerWidgets';
+export {
   createDirectionExtension, directionCommands, PATH_DIRECTION_CHROME_ID, type PathDirectionStyle,
 } from './pathStructure/directionMarks';
+
+// ─── Panels ────────────────────────────────────────────────────────────────
+export {
+  CORNER_CONTROLS, CORNER_CONTROLS_PROMPT, CORNER_K_SLIDER_RANGE, cornerControlsParams, cornerControlsState, type CornerControlsState,
+} from './cornerShape/cornerControls';
+export {
+  useCornerControls, type CornerControlsScene, type CornerControlsSelection, type UseCornerControlsReturn,
+} from './cornerShape/useCornerControls';
 
 // ─── Data the tools keep on a node ─────────────────────────────────────────
 export { constraintAxisOf, constraintConflictsOf, constraintsOf } from './constraints/pathConstraints';

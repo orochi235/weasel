@@ -117,7 +117,7 @@ A tuning applies to whichever descriptor holds the id, whether a preset or a too
 const radius = useRef(8);
 const tune = useMemo<ActionTunings>(() => ({
   simplifyBrush: { params: () => ({ radiusPx: radius.current }) },
-  cycleCornerStyle: { bindings: [{ kind: 'key', key: 'k' }] },
+  cycleCornerShape: { bindings: [{ kind: 'key', key: 'k' }] },
 }), []);
 
 <SceneCanvas scene={scene} features={['paths']} tune={tune} />

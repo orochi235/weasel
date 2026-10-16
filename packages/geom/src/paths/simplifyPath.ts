@@ -1,7 +1,7 @@
 import type { PolygonPath } from '../path';
 import { anchorsToPath, pathToAnchors, type PenAnchor } from './anchors';
 import { cubicPointAt, type Point } from './cubicMath';
-import { fitPointRun } from './fitRun';
+import { fitPointRun, keepCorner } from './fitRun';
 
 /** Options for {@link simplifyPath}. */
 export interface SimplifyPathOptions {
@@ -58,6 +58,7 @@ export function simplifySubpath(
     const pts = sampleRun(sub, 0, n, tol);
     const t = unit(sub2(pts[1], pts[pts.length - 2]));
     fitPointRun(pts, t, neg(t), tol, result, true);
+    keepCorner(result[0], sub[0]);
     return result;
   }
   fitStops(sub, closed ? [...corners, corners[0] + n] : corners, tol, result, closed);
@@ -89,6 +90,7 @@ export function simplifySpan(
   stops.push(to);
   const first = sub[from % n];
   const result: PenAnchor[] = [{ x: first.x, y: first.y, ...(first.inHandle ? { inHandle: { ...first.inHandle } } : {}) }];
+  keepCorner(result[0], first);
   fitStops(sub, stops, tol, result, false);
   const lastOut = sub[to % n].outHandle;
   if (lastOut) result[result.length - 1].outHandle = { ...lastOut };
@@ -119,10 +121,14 @@ function breaksOf(sub: PenAnchor[], closed: boolean, cosCorner: number): Set<num
 /** Fit each run between consecutive `stops` and append it to `out`. With
  *  `closing`, the last run ends on the subpath's first anchor. */
 function fitStops(sub: PenAnchor[], stops: readonly number[], tol: number, out: PenAnchor[], closing: boolean): void {
+  const n = sub.length;
   for (let k = 0; k + 1 < stops.length; k++) {
     const pts = sampleRun(sub, stops[k], stops[k + 1], tol);
     const last = closing && k + 2 === stops.length;
+    const fresh = out.length === 0;
     fitPointRun(pts, unit(sub2(pts[1], pts[0])), unit(sub2(pts[pts.length - 2], pts[pts.length - 1])), tol, out, last);
+    if (fresh) keepCorner(out[0], sub[stops[k] % n]);
+    if (!last) keepCorner(out[out.length - 1], sub[stops[k + 1] % n]);
   }
 }
 

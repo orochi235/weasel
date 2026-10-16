@@ -48,6 +48,11 @@ export interface PathEditPart {
   hitKind: string;
   /** Chrome-caps id it is hit-tested under, beside `path-edit.anchors`. */
   chromeId?: string;
+  /** Hit radius in screen px; path edit's anchor radius when left out. */
+  hitRadiusPx?: number;
+  /** Pushes the part `px` screen pixels from (x, y) along the world-space
+   *  `normal`, so it keeps its distance at any zoom. */
+  standoff?: { px: number; normal: { x: number; y: number } };
 }
 
 /** What an edit commits once an extension has finished it. */

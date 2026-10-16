@@ -10,7 +10,6 @@ import { useCallback, useMemo } from 'react';
 import type { DrawScene, WeaselDrawData } from '../drawDocument';
 import { dispatchDoubleClickEntry } from './doubleClickEntry';
 import type { ModeMachine } from './machine';
-import { modePathEdit } from './pathEditHost';
 import { modalityShortcuts } from './shortcuts';
 import { useModeId } from './useModeId';
 
@@ -23,7 +22,12 @@ export interface CanvasModes {
   onDoubleClick: (hit: SceneCanvasHit | null) => void;
 }
 
-export function useCanvasModes(machine: ModeMachine, scene: DrawScene, selection: SelectionApi): CanvasModes {
+export function useCanvasModes(
+  machine: ModeMachine,
+  scene: DrawScene,
+  selection: SelectionApi,
+  pathEdit: PathEditHost,
+): CanvasModes {
   const entry = useLatest({
     pathToEdit: (): string | null => {
       const [id, ...rest] = selection.get();
@@ -41,7 +45,6 @@ export function useCanvasModes(machine: ModeMachine, scene: DrawScene, selection
     (id: string) => (scene.get(asNodeId(id))?.data as WeaselDrawData | undefined)?.path?.kind === 'polygon',
     [scene],
   );
-  const pathEdit = useMemo(() => modePathEdit(machine, hasAnchors), [machine, hasAnchors]);
 
   const onDoubleClick = useCallback((hit: SceneCanvasHit | null) => {
     dispatchDoubleClickEntry(hit, machine, hasAnchors);

@@ -330,6 +330,22 @@ describe('persistence — legacy string paint migration', () => {
   });
 });
 
+describe('persistence — corner shape', () => {
+  it("keeps a path's corner specs through the JSON hop", () => {
+    const path = {
+      kind: 'polygon',
+      commands: new Uint8Array([0, 1, 1, 1, 4]),
+      coords: new Float32Array([0, 0, 10, 0, 10, 10, 0, 10]),
+      fillRule: 'nonzero',
+      corners: [null, { shape: 'bevel', radius: 3 }],
+    };
+    const wire = JSON.stringify({ path }, serializeReplacer);
+    const revived = reviveTypedArrays(JSON.parse(wire) as { path: typeof path });
+    expect(revived.path.corners).toEqual([null, { shape: 'bevel', radius: 3 }]);
+    expect(revived.path.coords).toBeInstanceOf(Float32Array);
+  });
+});
+
 describe('persistence — a group reopens tracking its members', () => {
   it('restores dependsOn and the derived pose, so moving a member moves the group', () => {
     const make = (initial?: Parameters<typeof createScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>>[0]['initial']) =>
