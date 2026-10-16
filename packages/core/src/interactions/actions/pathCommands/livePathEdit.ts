@@ -1,18 +1,23 @@
 import type { Action, BindingOpts, InvocationCtx, OngoingHandle } from '@weasel-js/routing';
-import { ActionDisabledReason } from '@weasel-js/routing';
+import { ActionDisabledReason, resolveParams } from '@weasel-js/routing';
 import type { PolygonPath } from '@weasel-js/geom';
 import type { Op } from 'core/ops/types';
-import { commitOps, selectedPathNodes, withPath, type AnyNode, type PathNode } from './pathNodes';
+import { selectedPathNodes, withPath, type AnyNode, type PathNode } from './pathNodes';
+import { commitOps } from '../defaultCommitAdapter';
+import { pathOperationTags } from '../pathGestureTags';
 
 /** What one live path command does with its parameter. */
 export interface LivePathEditSpec {
   id: string;
   label: string;
+  icon?: Action['icon'];
   /** The param the UI drives, and its value when none is given. */
   param: string;
   initial: number;
-  /** The geometry `node` takes at `value`, or null for none. */
-  edit(node: PathNode, value: number): PolygonPath | null;
+  /** The geometry `node` takes at `value`, or null for none. `params` is
+   *  every param the edit was last given, for a command that reads more than
+   *  `param`. */
+  edit(node: PathNode, value: number, params: Readonly<Record<string, unknown>>): PolygonPath | null;
   /** The ops committing `next`, made at `value`, for the edited nodes. */
   commit(deps: InvocationCtx['deps'], next: ReadonlyMap<string, { node: PathNode; path: PolygonPath }>, value: number): Op[];
   /** Ids to select after the commit; the selection stands when absent. */
@@ -21,16 +26,24 @@ export interface LivePathEditSpec {
   overlaysSource?: boolean;
 }
 
+function sameParams(a: Readonly<Record<string, unknown>>, b: Readonly<Record<string, unknown>>): boolean {
+  const keys = Object.keys(a);
+  return keys.length === Object.keys(b).length && keys.every((k) => Object.is(a[k], b[k]));
+}
+
 /**
  * An ongoing action over the selected path nodes driven by one number — a
- * slider's tolerance or distance. `begin` with the param shows the result as
- * a preview; each update recomputes it; committing writes it as one undo
+ * slider's tolerance or distance — and by any other params it reads. `begin`
+ * with the params shows the result as a preview; each update that changes
+ * one recomputes it; committing writes it as one undo
  * entry, and canceling leaves the scene untouched.
  */
 export function livePathEdit(spec: LivePathEditSpec): Action & { requires: string[] } {
   return {
     id: spec.id,
     label: spec.label,
+    icon: spec.icon,
+    tags: pathOperationTags('command'),
     eligible: { capability: 'creates-shapes' },
     requires: ['selection', 'scene', 'applyOps'],
     invoker: {
@@ -42,12 +55,14 @@ export function livePathEdit(spec: LivePathEditSpec): Action & { requires: strin
           const v = params?.[spec.param];
           return typeof v === 'number' && Number.isFinite(v) ? v : null;
         };
-        let value = read(ctx.params) ?? read(opts?.params as Record<string, unknown> | undefined) ?? spec.initial;
+        const given = resolveParams(opts?.params);
+        let params: Readonly<Record<string, unknown>> = { ...given, ...ctx.params };
+        let value = read(ctx.params) ?? read(given) ?? spec.initial;
         let current = new Map<string, { node: PathNode; path: PolygonPath }>();
         const recompute = () => {
           current = new Map();
           for (const node of nodes) {
-            const path = spec.edit(node, value);
+            const path = spec.edit(node, value, params);
             if (path) current.set(node.id, { node, path });
           }
         };
@@ -59,9 +74,13 @@ export function livePathEdit(spec: LivePathEditSpec): Action & { requires: strin
         return {
           kind: spec.id,
           onMove(moveCtx: InvocationCtx): void {
-            const next = read(moveCtx.params);
-            if (next === null || next === value) return;
+            const moved = moveCtx.params;
+            if (!moved) return;
+            const next = read(moved) ?? value;
+            const merged = { ...params, ...moved };
+            if (next === value && sameParams(merged, params)) return;
             value = next;
+            params = merged;
             recompute();
           },
           onEnd(endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {

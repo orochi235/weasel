@@ -24,7 +24,10 @@
  * fragment takes a `length` or an `atan` of it behind a branch on the flat
  * mode. That branch carries the sample itself, not just the coordinate: a
  * fetch from a varying is one the hardware schedules ahead, and one from a
- * computed coordinate is not.
+ * computed coordinate is not. The ramp atlas always sits at `RAMP_SLOT`, so
+ * that arm is one fetch rather than a second copy of the slot tree, which
+ * cost a software rasterizer (SwiftShader) about a third of the program's
+ * build.
  *
  * **Mode, slot, and matrix share one attribute**, as `slot + 16 * mode +
  * 128 * matrix`, because every extra float widens the buffer write for every
@@ -72,6 +75,10 @@ export const BATCH_TEXTURE_SLOTS = 16;
 
 /** Slot every solid vertex carries — the white texel, bound by `flushBatch`. */
 export const WHITE_SLOT = 0;
+
+/** Slot the ramp atlas takes in every run that samples it. The others fill
+ *  from slot 1 up, so it is the last one any of them reaches. */
+export const RAMP_SLOT = BATCH_TEXTURE_SLOTS - 1;
 
 /**
  * Color matrices, each with a group alpha, that one run can draw under. A
@@ -184,7 +191,15 @@ void main() {
 }
 `;
 
-export const BATCH_FRAG_SRC = /* glsl */ `#version 300 es
+/**
+ * The fragment stage for runs under `matrices` color matrices. Under one, every
+ * vertex names entry 0, so the default program indexes it as a constant: a
+ * software rasterizer (SwiftShader) took about a quarter of the program's
+ * build to index the arrays by a varying.
+ */
+function batchFragSrc(matrices: number): string {
+  const m = matrices === 1 ? '0' : 'v_matrix';
+  return /* glsl */ `#version 300 es
 precision highp float;
 in vec4 v_vertexColor;
 in vec2 v_uv;
@@ -194,10 +209,10 @@ flat in float v_paintMode;
 flat in int v_matrix;
 uniform sampler2D u_samplers[${BATCH_TEXTURE_SLOTS}];
 uniform vec4 u_color;
-uniform float u_alpha[${BATCH_MATRIX_SLOTS}];
+uniform float u_alpha[${matrices}];
 uniform vec2 u_fieldScale[${BATCH_TEXTURE_SLOTS}];
-uniform mat4 u_colorMatrix[${BATCH_MATRIX_SLOTS}];
-uniform vec4 u_colorBias[${BATCH_MATRIX_SLOTS}];
+uniform mat4 u_colorMatrix[${matrices}];
+uniform vec4 u_colorBias[${matrices}];
 out vec4 outColor;
 
 vec4 sampleSlot(int slot, vec2 uv) {
@@ -226,7 +241,7 @@ void main() {
     float t = v_paintMode > ${PAINT_MODE_CONIC - 0.5}
       ? fract(atan(v_uv.y, v_uv.x) * ${INV_TAU})
       : length(v_uv);
-    texel = sampleSlot(v_texSlot, vec2(t, v_post));
+    texel = texture(u_samplers[${RAMP_SLOT}], vec2(t, v_post));
   } else {
     texel = sampleSlot(v_texSlot, v_uv);
   }
@@ -239,11 +254,20 @@ void main() {
   // A glyph's texel is a distance field, so it takes no part in the color; a
   // plain vertex multiplies its texel in as it always did.
   vec4 src = mix(texel, vec4(1.0), isGlyph) * u_color * v_vertexColor;
-  vec4 mapped = clamp(u_colorMatrix[v_matrix] * src + u_colorBias[v_matrix], 0.0, 1.0);
-  float a = mapped.a * u_alpha[v_matrix] * mix(v_post, 1.0, max(isGrad, isGlyph)) * mix(1.0, coverage, isGlyph);
+  vec4 mapped = clamp(u_colorMatrix[${m}] * src + u_colorBias[${m}], 0.0, 1.0);
+  float a = mapped.a * u_alpha[${m}] * mix(v_post, 1.0, max(isGrad, isGlyph)) * mix(1.0, coverage, isGlyph);
   outColor = vec4(mapped.rgb * a, a);
 }
 `;
+}
+
+/** The batch program's fragment stage for a run under one color matrix — nearly
+ *  every run. */
+export const BATCH_FRAG_SRC = batchFragSrc(1);
+
+/** The same for a run under up to `BATCH_MATRIX_SLOTS`, built the first time
+ *  one is drawn. */
+export const BATCH_MATRICES_FRAG_SRC = batchFragSrc(BATCH_MATRIX_SLOTS);
 
 export const BATCH_FILL_UNIFORMS = [
   'u_proj', 'u_model', 'u_samplers', 'u_color', 'u_alpha', 'u_fieldScale',

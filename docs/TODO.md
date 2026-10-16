@@ -19,6 +19,25 @@ Priority tags:
 
 ## Tools & gestures
 
+- **(P1) Guides and snapping, designed as one arc.** Spacing hints (equal-gap markers while
+  moving, Alt-hover distance readouts between the selection and the shape under the pointer) go in
+  as part of a pass over every guide and snap at once, not alone. The pieces today don't share a
+  pipeline: `@weasel-js/guides` has ruler guides, alignment guides, and equal-spacing snaps
+  (`packages/guides/src/guides/alignment/spacing.ts`), none of them wired into draw; the select
+  tool's move snaps only through `gridSnapStrategy`, so it ignores measurement ends; path snapping
+  just landed with its own `snapPoint` ranking (`packages/core/src/features/paths/pathSnap/`); and
+  the tolerances are fixed constants (`DEFAULT_GUIDE_TOLERANCE_PX`). The arc settles one snap
+  pipeline every gesture uses — which targets compete, how ties are ranked, how a modifier
+  suspends them mid-gesture — and one readout layer for gaps, distances, and guide labels. The
+  `spacing-hints` audition branch is source material: an Alt-hover distance readout
+  (`distanceReadout.ts`), a hover dispatched when a modifier changes, and draw's move snapping to
+  equal sibling spacing. The P3 "Moving a shape does not snap to measurement ends" folds into it.
+
+- **(P3) A `contextmenu` with no preceding press resolves against the wrong input scope.** The
+  keyboard ContextMenu key sends one with no press before it, so it falls to the active or newest
+  input scope; with several sibling canvases and no press yet, that may not be the canvas the
+  event came from. Shift+F10 goes through the key holder and is unaffected.
+
 - **(P2) `features` names two things.** The `<SceneCanvas features>` prop composes behavior presets
   (`canvas/SceneCanvas/features.ts`); `packages/core/src/features/<name>/` is a source directory
   bundling one domain's primitives, and `docs/taxonomy.md` calls each of those a "feature" too.
@@ -26,13 +45,32 @@ Priority tags:
   `features`; the new word is not chosen yet. That leaves choosing it, then renaming the one path,
   its imports, and the section of the taxonomy.
 
-- **(P3) Nothing reads a mode's `entry.trigger`.** Draw enters path-edit and isolation from
-  `SceneCanvas`'s `onDoubleClick` observer through a kind-to-mode table of its own
-  (`apps/draw/src/modality/doubleClickEntry.ts`), not from the `'double-click-target'` the
-  definitions in `packages/modes/src/presets/default.ts` declare. Text-edit is entered by the
-  edit itself (`useTextEditSession`), so its trigger is unread by design. Binding the other two
-  means a double-click entry beside the kit's own `enterPathEdit` binding, and a definition does
-  not say which hits it takes (draw's table does).
+- **(P2) Path edit's in-gesture modifiers are hard-coded inside the actions.** A consumer can see
+  and remap a binding's `mods`, but not a modifier an action reads off `ctx.modifiers` once it is
+  running, and path edit reads most of its own that way. `editAnchors`
+  (`interactions/actions/edit-anchors/action.ts`) reads Shift at the press to toggle an anchor in
+  the selection, and Alt on every handle move to break the smooth mirror; `locksInForce` in
+  `edit-anchors/handleDrag.ts` reads Shift as the angle lock and Meta or Ctrl as the length lock.
+  `marqueeAnchors` (`defaults/anchorEditing.ts`) reads Shift at the press to add to the anchor
+  selection. The pen (`tools/builtin/pen/usePenTool.ts`) reads Alt to break a handle and Shift to
+  constrain it, at the press, on each move, and at the release. None of these shows in a binding
+  list, a keymap editor, or the command palette, and a host that wants Alt to lock the length
+  instead has to fork the action. `selectAnchor` is the model: its Shift-click is a second
+  binding whose params say `additive: true`. A declared form needs each ongoing action to name its
+  in-gesture modifiers as data — a role (`mirror.break`, `handle.holdAngle`, `handle.holdLength`,
+  `selection.add`) and its default modifier — that bindings or `tune` can rebind, with the
+  dispatcher resolving them into the ctx on every move rather than each action testing raw keys.
+  Modifiers that change mid-gesture are the part no binding models today, since a binding's `mods`
+  are matched once, at the press.
+
+- **(P3) Nothing reads a mode's `entry.trigger`.** The `'double-click-target'` the definitions
+  in `packages/modes/src/presets/default.ts` declare is unread. A path with anchors is put in
+  path-edit by the kit's `enterPathEdit` binding, through draw's `PathEditHost`
+  (`apps/draw/src/modality/pathEditHost.ts`), and text-edit is entered by the edit itself
+  (`useTextEditSession`). Draw still enters isolation, and path-edit on a path with no anchors (a
+  rect), from `SceneCanvas`'s `onDoubleClick` observer through a kind-to-mode table of its own
+  (`apps/draw/src/modality/doubleClickEntry.ts`). Binding those means a double-click entry beside
+  `enterPathEdit`, and a definition does not say which hits it takes (draw's table does).
 
 - **(P3) External-content ingestion — follow-ups.** The pipeline is in
   `packages/core/src/features/ingestion/` (its README is the map). Left:
@@ -159,32 +197,231 @@ Priority tags:
 
 ### Path editing tricks
 
-- **(P2) Smart remove brush.** Brush along a path in edit mode to delete the anchors under the
-  brush, each gap refit to the shape it replaces the way `deleteAnchorsAt` refits one.
-- **(P2) Dynamic corners.** Round, chamfer, or invert any corner anchor by dragging a widget at
-  it, and change the radius later. Needs a corner radius per anchor in the path data, expanded
-  into geometry when it renders and on export.
+- **(P2) Measurement rows in draw's Layers panel cannot be renamed, or hidden or locked one at a
+  time.** `LayerList` has no rename, and the scene has no per-node visibility or lock, so a
+  measurement row offers select and remove only; the annotation layer's own row can be hidden,
+  and shows its lock without toggling it. A measurement's `data.label` is what a rename would write.
+- **(P3) Moving a shape does not snap to measurement ends.** `nearestMeasureEnd` reaches the
+  insert tools through the `snap` dep; the select tool's move snaps through its own `snap`
+  strategy (`gridSnapStrategy`), which knows nothing of measurements.
+- **(P3) `renderSceneToPixels` draws annotation layers.** The SVG export leaves them out through
+  `isAnnotationNode`; a headless raster draws whatever the scene holds. Undecided: whether a raster
+  is an export, and so skips them, or a view of the canvas, and so keeps them.
+- **(P1) Rename the path tools the maintainer deferred to the end of the adoption pass.**
+  Envelope mesh becomes Cloth warp, among others. They live in `@weasel-js/path-tools` now
+  (`packages/path-tools/README.md`); the move kept every name.
+- **(P2) Tune the Simplify brush hands-on, with the maintainer driving.** It went in from its
+  audition lab with first-draft behavior and keys: brush size and its key, the tolerance it
+  applies, and how it shows what it will remove (`packages/path-tools/src/simplifyBrush/simplifyBrush.ts`).
+- **(P2) Tune the curvature comb hands-on, with the maintainer driving.** First-draft default
+  scale and density, when it shows, and no key to toggle it (`packages/path-tools/src/comb/comb.ts`).
+- **(P2) Tune Balance handles hands-on, with the maintainer driving.** First-draft behavior: a
+  grip drag scales both handles by one factor, read off the pointer's projection onto the line the
+  grip slides along, and a length lock (`handleLock.length`, or Mod) holds it still
+  (`packages/geom/src/paths/balanceHandles.ts`, `packages/path-tools/src/balance/handleBalance.ts`). Its look: a purple
+  line between the handle tips and a 4px hollow grip, drawn under the anchor markers and beaten by
+  them on a press (`packages/path-tools/src/balance/balanceMarks.ts`). Off by
+  default under `path-edit.balance`, with no key to show it, and Equalize handles has only the
+  grip's double-click (`apps/site/demos/BalanceHandlesLabDemo.tsx`).
+- **(P2) Tune handle locks hands-on, with the maintainer driving.** Which locks deserve keys, and
+  whether a lock holds through a modifier drag (`handleLock.*`, `packages/path-tools/src/handleLocks/handleLocks.tsx`).
+- **(P2) Tune Bridge hands-on, with the maintainer driving.** First-draft default Tension (0.4,
+  `DEFAULT_BRIDGE_TENSION`), how Tension is reached outside the lab, and the Mod+Shift+J binding
+  it shares with Bridge anchors (`packages/path-tools/src/bridge/bridge.ts`).
+- **(P2) Tune Harmonize curvature hands-on, with the maintainer driving.** First-draft behavior:
+  it keeps the product of each anchor's two handle lengths, takes every smooth anchor when none is
+  selected, and skips anchors the curve inflects through (`packages/geom/src/paths/harmonize.ts`,
+  `packages/path-tools/src/harmonize/harmonize.tsx`). It has no key of its own; its lab tunes H onto it,
+  which the Hand tool also answers wherever that tool is mounted
+  (`apps/site/demos/HarmonizeLabDemo.tsx`).
+- **(P2) Tune anchor selection along the path hands-on, with the maintainer driving.**
+  First-draft behavior and keys: `]` grows and `[` shrinks by one anchor, Alt+N selects every Nth
+  (N defaults to 2, counted from the first selected anchor, with no UI for N outside the lab's
+  `tune`), Alt+C corners, Alt+M smooth anchors, and Alt+I the complement; grow and shrink stay
+  within a subpath, and none of them is an undo step
+  (`packages/path-tools/src/anchorSelect/anchorSelect.ts`, `packages/geom/src/paths/anchorSelection.ts`).
+- **(P2) Tune Resample hands-on, with the maintainer driving.** First-draft behavior: no key,
+  driven only as an ongoing action; a count of 0 keeps the path's anchor count, corners are held
+  by default, the refit tolerance is 0.5 and a piece that misses it is halved up to six times, so
+  the result can hold more anchors than asked for (`packages/path-tools/src/resample/resample.ts`,
+  `packages/geom/src/paths/resamplePath.ts`).
+- **(P2) Tune Add extremes hands-on, with the maintainer driving.** First-draft behavior and key:
+  Alt+X adds to segments whose two ends are both selected, or to the whole path while no anchor
+  is, so a selection reaching no whole segment does nothing; the new anchors join the selection
+  (`packages/path-tools/src/extremes/addExtremes.ts`, `packages/geom/src/paths/extremaAnchors.ts`).
+- **(P2) Tune corner shape hands-on, with the maintainer driving.** First-draft behavior and keys:
+  a widget sits 14 screen px inside each corner anchor, past the middle of its cut, and is hit
+  within 6px; anchors within 0.05 rad of straight get none. A widget drag sets the radius from the
+  pointer's travel along the bisector, every selected corner's when its anchor is selected, and a
+  corner with no spec takes `round`. Giving a sharp corner a shape cuts a quarter of its room
+  (`DEFAULT_CORNER_TRIM_SHARE`). `cycleCornerShape` has no key of its own (its lab tunes K onto it, the
+  Slice tool's key elsewhere), `setCorners` is reached only through the panel, the
+  panel's curvature slider spans -4 to 4, and the widgets show by default under
+  `path-edit.corners` with no key to hide them (`packages/path-tools/src/cornerShape/`,
+  `packages/geom/src/paths/cornerShape.ts`, `apps/site/demos/CornerShapeLabDemo.tsx`).
+- **(P3) Booleans, Trim segment, Extend to next path, Cut at crossings, and Offset path drop
+  corner specs.** Each expands a path's corners before it rebuilds the geometry, so the rounded
+  shape survives as plain anchors but the corners can no longer be edited as corners
+  (they read paths through `resolveCorners` or a reader that calls it, such as
+  `packages/geom/src/booleans/contours.ts` and `packages/stroke/src/offsetPath.ts`).
+- **(P2) Tune Blend, Bend along a path, and Repeat along a path hands-on, with the maintainer
+  driving.** First-draft step counts, spacing, and turn defaults, their keys, and how an effect is
+  re-edited and expanded (`packages/path-tools/src/pathEffects/`, and core's `features/pathEffects/`).
+- **(P2) Tune Trim segment hands-on, with the maintainer driving.** First-draft click reach (6
+  screen px, `DEFAULT_STROKE_REACH_PX` in `packages/path-tools/src/shared/scenePaths.ts`), the preview's look (the
+  `cut` overlay role's red dash at width 3, `packages/path-tools/src/trim/piecePreview.ts`), and its tool key,
+  Y (`packages/path-tools/src/trim/useTrimTool.ts`). The `trimPath` action itself has no key.
+- **(P2) Tune Extend to next path hands-on, with the maintainer driving.** First-draft click reach
+  (the same 6 screen px as Trim segment, `packages/path-tools/src/shared/scenePaths.ts`), that a curved end grows a
+  straight run rather than following its curvature (`lengthenOpenEnd`,
+  `packages/geom/src/paths/extendPath.ts`), no preview of where an end will land, its tool key, U
+  (`packages/path-tools/src/extend/useExtendTool.ts`), and no default key for the `extendToMeet` action; the
+  lab binds E through `tune`.
+- **(P2) Tune the Smudge brush hands-on, with the maintainer driving.** First-draft brush radius
+  (40 screen px) and strength (0.6) (`DEFAULT_SMUDGE_RADIUS_PX`, `DEFAULT_SMUDGE_STRENGTH` in
+  `packages/path-tools/src/smudge/smudgeBrush.ts`), the falloff `(1 − (d/r)²)²` and the subdivision threshold of a
+  third of the radius (`packages/geom/src/paths/smudgePath.ts`), how radius and strength are
+  reached outside the lab, and its tool key, S (`packages/path-tools/src/smudge/useSmudgeBrushTool.ts`).
+- **(P2) Tune path constraints hands-on, with the maintainer driving.** First-draft behavior and
+  keys: `constrainAnchors` and `unconstrainAnchors` have no default keys (the lab binds C and
+  Shift+C through `tune`), and which kind C adds is a param with no UI outside the lab
+  (`packages/path-tools/src/constraints/anchorConstraints.ts`); the marks' look, their 12 px offset and 8 px click
+  reach, and their teal and red (`packages/path-tools/src/constraints/constraintGlyphs.ts`,
+  `packages/path-tools/src/constraints/constraintsExtension.ts`); a drag frame the constraints cannot hold in is dropped, so
+  the path sticks rather than giving way (`edit-anchors/action.ts`); how far a dragged anchor
+  yields to the rest (`HELD_MOBILITY` in `packages/geom/src/constraints/solve.ts`); and that the
+  whole-path commands drop the list rather than keep what still applies
+  (`pathCommands/pathNodes.ts`).
+- **(P2) Tune Perspective and free distort hands-on, with the maintainer driving.** First-draft
+  corner handles (8 screen px squares, 8 px hit reach, `packages/path-tools/src/warp/warpHandles.ts`), that a
+  new distort starts Free rather than Perspective, the refit tolerance (0.5,
+  `DEFAULT_WARP_TOLERANCE` in `packages/path-tools/src/warp/warpTargets.ts`), and its tool key, F
+  (`KEYS` in `packages/path-tools/src/warp/useWarpTool.ts`). Its label lives in `WARP_LABELS` beside it; the
+  name may change.
+- **(P2) Tune Envelope mesh hands-on, with the maintainer driving.** First-draft 3 by 3 Bicubic
+  mesh (`DEFAULT_ENVELOPE_SIZE`, `packages/path-tools/src/warp/warpTargets.ts`), the grid lines drawn
+  between mesh points (`packages/path-tools/src/warp/warpHandles.ts`), that Rows and Columns change only
+  through `configureWarp`, and its tool key, C (`packages/path-tools/src/warp/useWarpTool.ts`).
+- **(P2) Tune Puppet warp hands-on, with the maintainer driving.** First-draft pin falloff (1, so
+  weights go as 1/d², `rigidPuppetMap` in `packages/geom/src/warp/puppet.ts`), that a click on the
+  selection adds a pin and Alt-click on a pin takes it out, the pin dots (5 screen px radius,
+  `packages/path-tools/src/warp/warpHandles.ts`), and its tool key, B
+  (`packages/path-tools/src/warp/useWarpTool.ts`).
+- **(P2) Two helpers grow an open end along its tangent.** `lengthenOpenEnd` in
+  `packages/geom/src/paths/extendPath.ts` serves Extend to next path, and the unmerged
+  `extend-path-end` branch (Lengthen) has `lengthenPathEnd` of its own. Whichever lands second
+  folds its callers onto the other's, so one rule decides whether a curved end grows a straight run.
+- **(P2) Tune draw's Symmetry toggle hands-on, with the maintainer driving.** Its key, the default
+  kind and copy count, and where a new group's center lands (`toggleSymmetry`,
+  `apps/draw/src/useSymmetry.ts`).
+- **(P2) Tune the Measure tool hands-on, with the maintainer driving.** First-draft behavior and
+  keys: its tool key, M, which moved Envelope mesh to C when the two met in draw; the Shift angle
+  step; that Move by and Rotate by fall back to the newest measurement when none is picked; and the
+  readout's look (`packages/core/src/tools/builtin/measure/`, `<MeasureReadout>` in `@weasel-js/ui`).
+- **(P2) Tune path start and direction hands-on, with the maintainer driving.** First-draft
+  behavior and keys: `setPathStart` and `reversePath` have no default keys, an open subpath's
+  interior anchor cannot become its start, and the direction marks' look (a 9 px orange arrow per
+  segment and an 8 px start ring, `DIRECTION_DEFAULTS`), off by default under
+  `path-edit.direction` with draw's View toggle as the only switch
+  (`packages/path-tools/src/pathStructure/`, `apps/draw/src/usePathDirection.ts`).
+- **(P2) Tune segment type hands-on, with the maintainer driving.** First-draft behavior and keys:
+  a curved segment's handles start at its thirds, Shift+C with no `to` flips the lot by whether
+  any is straight, and Shift+double-click flips one segment
+  (`packages/path-tools/src/segmentType/convertSegments.ts`). Shift+C is also what the path
+  constraints lab tunes onto `unconstrainAnchors`, and C is Envelope mesh's tool key.
+- **(P2) Tune anchor fields hands-on, with the maintainer driving.** First-draft behavior: the
+  panel shows X and Y for any selection and handles only for a lone anchor, a typed handle mirrors
+  on a smooth anchor, `+=`/`-=` offsets each anchor by its own amount, and draw shows it at the
+  top of Properties in points (`packages/ui/src/components/AnchorFields/`,
+  `packages/geom/src/paths/anchorFields.ts`, `apps/draw/src/RightSidebar.tsx`).
+- **(P2) Tune the Width tool hands-on, with the maintainer driving.** First-draft behavior and
+  keys: Shift+W in draw; how near an edge a press must land to grab it; Alt moving one edge alone
+  and Alt-click clearing a width point; and whether a press between anchors should insert one
+  (`packages/core/src/tools/builtin/width/`).
+- **(P2) Tune path snapping hands-on, with the maintainer driving.** First-draft behavior and
+  keys: an 8px radius with every kind on, `nearest` included; that a path target beats
+  `snapPoint`, so in range it wins over the grid and measurement ends; that a move and an anchor
+  drag snap to path targets only, never the grid; no key or modifier to turn it off mid-gesture;
+  the marker's glyphs, its fixed orange, and where its label sits; and that draw does not turn it
+  on yet (`packages/core/src/features/paths/pathSnap/`, `packages/geom/src/snap/`).
+- **(P3) Trim segment and Extend to next path change editable polygon paths only.** Any node's
+  drawn outline cuts or stops them (`nodeOutline`, `features/paths/strokeOutline.ts`), but what
+  they reshape comes from `scenePathNodes` (`pathCommands/scenePaths.ts`), which reads
+  `resolveEditablePathOf`, which answers a polygon or a rect `data.path` only: a node whose
+  geometry is its rect pose alone, with no `data.path`, cannot itself be trimmed or extended.
 - **(P2) Extend a path from its end.** Drag an open path's endpoint outward to grow it along its
   end tangent, or along its end curvature.
-- **(P2) Measure, then transform by the measurement.** A measure tool reads distance and angle
-  between two points, and the readout can move or rotate the selection by exactly that amount.
 - **(P2) Shape builder.** Drag across overlapping regions to merge them, Alt-drag to delete them.
   `previewBooleanOp` already answers the pieces; the tool draws and picks among them. Building it
   also gives "Live preview of a Boolean operation" below its display.
+- **(P2) Two kit key bindings are chords a browser takes first.** `createOutlines` is on
+  Mod+Shift+O (Chrome's bookmark manager) and `averageAnchors` on Mod+Alt+J (Chrome's console),
+  so neither fires there. `browserReservedBindings.test.ts` pins the pair, so a new collision
+  fails it; moving these two is a choice of new keys.
+- **(P3) A path effect reopens from draw's SVG as plain paths.** Export writes an effect as a
+  group of the paths it shows (`apps/draw/src/svgExport.ts`), so the file looks right, but the
+  blend, bend or repeat is no longer live once reopened. Carrying it needs its sources named by
+  id, and an imported leaf takes a fresh id (`svgNodesToSceneDrafts` keeps ids for groups only,
+  through `wd:group-id`); with a leaf id carried the same way, the effect's `data.pathEffect`
+  and `dependsOn` can ride as `wd:` attributes on its group.
+- **(P3) A path effect inside a container that composes frames is untried.** An effect paints in
+  the frame its sources are painted in (`core/scene/pathEffects/`); the actions only make one
+  over two leaves, inserted beside the first.
+- **(P3) A blend has no spine, and its steps no spacing by distance.** `BlendEffect` places
+  `steps` shapes evenly in `t` on the straight run between its sources; laying them along a
+  third path, or spacing them so neighboring shapes sit a fixed distance apart, is not offered.
 - **(P3) A move under a rotated parent repeats in the parent's axes.** Nudge, duplicate, and
   Transform Again (`interactions/actions/transform-again/`) offset a node along its parent's axes;
   a drag and an Alt-drag clone measure on screen. So inside a group drawn turned, Cmd+D after a
   drag steps in a different direction from the drag. Recording the move in world space and
   mapping it through each node's parent on replay would make the two agree.
 - **(P3) The path commands have no icons.** `simplifyPath`, `offsetPath`, `snipAtCrossings`,
-  `joinPaths`, `joinAnchors`, and `averageAnchors` show as text in draw's bar.
-  `RetractHandlesIcon` and `SymmetricHandlesIcon` (`defaults/icons/anchorIcons.tsx`) are first
-  drafts, not proofed at high resolution.
-- **(P2) Spacing hints.** Equal-spacing markers between siblings while moving, and Alt-hover
-  distance readouts between the selection and the shape under the pointer.
-- **(P2) Live symmetry.** Draw on one side of an axis and the mirrored half follows.
-- **(P2) Variable-width strokes.** A width profile along a stroke's length, edited by dragging
-  on the stroke. `strokeToPath` handles a fixed width only.
+  `joinPaths`, `bridgePaths`, `joinAnchors`, `bridgeAnchors`, `averageAnchors`, `resamplePath`,
+  `addExtremeAnchors`, the anchor selection commands, and `extendToMeet` show as text in draw's
+  bar, as do `setPathStart`, `reversePath`, `convertSegments`, and draw's own
+  `view.pathDirection` toggle; `useTrimTool` and `useExtendTool` borrow `SliceIcon`, and
+  `useSmudgeBrushTool` has none. `expandWarp` and `configureWarp` have none
+  either, and `useDistortTool`, `useEnvelopeTool`, and `usePuppetTool` give no
+  `presentation.icon`: their labs borrow `FitStretchIcon`, `GridIcon`, and `PinIcon` from
+  `@weasel-js/ui`.
+  `RetractHandlesIcon`, `SymmetricHandlesIcon`, `SimplifyBrushIcon`, and `HarmonizeIcon`
+  (`defaults/icons/anchorIcons.tsx`) are first drafts, not proofed at high resolution.
+- **(P2) Puppet warp bends by straight-line distance, not through the shape.** `rigidPuppetMap`
+  (`packages/geom/src/warp/puppet.ts`) weights each pin by its distance across the plane, so two
+  limbs that nearly touch move together when a pin on one is dragged. As-rigid-as-possible over
+  a triangulation of the filled region (`tessellate` already triangulates it) would weigh
+  distance through the shape; it needs a mesh solve per drag frame and a way to map the path's
+  sample points through the deformed triangles.
+- **(P3) Paths warped together drift apart once one is moved alone.** Each path holds its own
+  copy of a shared warp, matched by `HeldPathWarp.id`; the warp tools show the controls of the
+  first path holding an id, and a drag moves every path with it by the same world delta. After
+  one of them is moved on its own, its controls no longer sit under the ones shown.
+- **(P3) A polygon-pose node rotated after a warp drops the warp.** `resolvePathWarp`
+  (`packages/path-tools/src/warp/pathWarp.ts`) recovers a move or a resize of a polygon pose
+  as a box-to-box map, but a rotation rewrites the coordinates in a way no such map undoes, so the
+  warp stops resolving and the warp tools start a fresh one. A `data.path` node keeps its warp
+  through a rotation.
+- **(P3) The width tool has no icon, and is untried on rectangles.** `useWidthTool` shows the
+  unknown-tool glyph in draw's palette and the lab's. It edits the nodes `resolveEditablePathOf`
+  answers a path for, which since rectangle path edit includes a drawn rectangle's rect
+  `data.path`, but nothing has shaped a rectangle's stroke with it yet. `strokeEdgeNear`, which it hit-tests with, measures every stroke as centered, so on an
+  inner- or outer-aligned stroke the grab point sits off the edge that is drawn.
+- **(P2) Tangent (G1) at an anchor.** The solver's variables are anchor positions only; handles
+  ride along with their anchor. G1 needs each handle as a variable of its own (direction, or
+  both handle points), and the handle drag to call `constrainEdit` the way the anchor drag does.
+- **(P2) Point on a path.** An anchor held on a segment of its own path or another node's needs
+  a parameter variable `t` per constraint and a residual from `nearestOnPath`-style evaluation.
+  Constraints between two nodes also need a home other than one node's `data.constraints`, and
+  both nodes solved in one edit.
+- **(P3) A conflict names only the constraints that fail, not the set that conflicts.** Adding
+  one that cannot hold keeps it unsolved and marks it; the overlay, `constraintConflictsOf` and
+  `setConstraints`' return value are the only reports. Finding the minimal conflicting set needs
+  the Jacobian's rank, which the damped solve does not compute.
+- **(P3) The solve is dense.** The Jacobian is a full `m × 2n` matrix built by central
+  differences; fine at a few hundred anchors, but a large constrained path wants sparse rows and
+  analytic derivatives.
+- **(P3) WeaselDraw binds no constraint action.** It needs keys or a bar group for
+  `constrainAnchors` and `unconstrainAnchors`, and icons for them.
 
 ### Pathfinder follow-ups (post-v1)
 
@@ -324,6 +561,19 @@ Priority tags:
   (`apps/draw/src/modality/machine.ts`), so the change moves where every direct call made during
   a mode lands.
 
+### Symmetry follow-ups
+
+- **(P3) Wallpaper tilings.** A new kind is a row in `SYMMETRY_KINDS`
+  (`packages/symmetry/src/kinds.ts`), but a lattice has no last copy: `copiesFromPose` sees only
+  the container's pose, so it would need an extent to tile within, which the spec would carry.
+- **(P3) Bake copies only path leaves.** `bakeSymmetry` reports text and image leaves in
+  `skipped` and leaves them uncopied. It also copies a paint laid out in the shape's own box, a
+  gradient say, without carrying it through the copy's mirror or turn.
+- **(P3) Symmetry in a scene that composes frames.** A group's center is its pose, so dragging the
+  center in such a scene moves its children too, and bake writes absolute poses.
+- **(P3) The angle knob sits on the shapes it turns.** It is fixed 64px out along the axis, where
+  the lab's petal is, and can cover a path-edit handle there.
+
 ### Derived geometry follow-ups
 
 - **(P3) The preview channel still carries pose twice.** `move` / `resize` / `rotate` publish each
@@ -383,6 +633,99 @@ Priority tags:
   system (`prefUnit` in `packages/prefs/src/unit.ts`), whichever node it is showing. And a scope's
   `scale` only converts values: `RIGID_POSE_COMPOSITION` does not scale a container's frame by it,
   so whether a scoped container's children are also stored in its units is undecided.
+
+### Diagram follow-ups
+
+- **(P3) An `EffectRun` shows values as text, not previews.** A run's `values` are strings in a
+  row `showValues` keeps (`paintRun`, `packages/diagram/src/effect/run.ts`). An image preview on
+  an output would need a `slot` row sized for it and an image node a run fills, with a cache so a
+  frame's preview does not re-upload. The `switch` symbol's lever also stays where it was drawn
+  rather than thrown to the output a run took, and port dots, which the port layer draws outside
+  the scene, do not fade with a stage the run never reached.
+- **(P3) EffectChart: more looks.** One lane per value type, with a stage as tall as the lanes it
+  touches; and a compact look with one-line stages and no ports drawn, for pipelines too big for
+  the node graph. Branch symbols sketched and not built: hexagon, step glyph, comparator,
+  crossover, and a bare fork with the conditions on its wires.
+- **(P3) A custom `Path` outline does not follow its node.** `outlinePath` returns a consumer's
+  path unchanged, in world coordinates, so `diagramScene`'s layout moves the box and leaves the
+  outline behind. Marks solve the same problem with path data in a unit square
+  (`packages/diagram/src/marks.ts`); an outline could take the same form.
+- **(P3) `layered` orders and places a port with several places at their mean.** A port's
+  `sites` are chosen per wire, by the router, once everything is placed, so ordering and placement
+  read the port at the mean of its places (`portAt` in `packages/diagram/src/layered/expand.ts`).
+  A wire whose port then turns to face it can cross a neighbor ordering thought it cleared. Picking
+  the place during ordering, from where the other end sits in the current order, would fix it.
+  `portAt` also reads a port at its anchor, where `portsOf` slides it onto a non-rectangular
+  outline: a diamond's anchor at `{ u: 0.75, v: 0 }` sits at about 0.667 (found in review, not
+  measured on a drawn diagram).
+- **(P3) A long label on a wire inside a group spills out of the group's box.** `layered` leaves
+  the label room inside the group's column, but the box is drawn around the members alone
+  (`GROUP_DERIVE_POSE`, `packages/diagram/src/group.ts`), so a label wider than the members'
+  overhang crosses the dashed edge. The box would need to know the room its members' wires took.
+- **(P3) A label stationed `{ waypoint }` follows an index, not a place.** `layeredPlan` points a
+  label at the run between two of its edge's waypoints by index
+  (`packages/diagram/src/label.ts`). Edit the edge's waypoints in a live scene and the label sits
+  on whichever run now has that index; remove enough and it falls back to the middle of the route.
+- **(P3) A live `layered` run draws its long edges through the old bends while it eases.** The
+  run moves nodes frame by frame but writes routes only when it arrives, so for its 24 frames an
+  edge layout routed last time still runs through those waypoints while its ends move away from
+  them (`useLiveLayout`, `packages/diagram/src/live.ts`). Easing each layout-owned waypoint from
+  where it was to where the plan puts it would need waypoints on the override channel, which
+  carries poses only.
+- **(P3) The ports `diagramScene` picks read as the author's on a live scene.** Under `layered`,
+  `layeredRoutes` names each edge's compass ports from which way it runs between ranks, and
+  `edgeSpecs` writes them as `from.port`/`to.port` with nothing like `laidOut` marking them
+  (`packages/diagram/src/dataEdges.ts`). A later live layout reads them as named by the author and
+  never revisits them, so an edit that turns which edge runs back up the ranks leaves a wire
+  leaving by the old face. Found in review, not reproduced.
+- **(P3) A long edge to a pinned node off its slot can reorder a second seeded run.** `layeredPlan`
+  gives such an edge no waypoints (`displaced`, `packages/diagram/src/layered/plan.ts`), so the
+  next run seeds its placeholders between its ends' new centers rather than where the last run
+  put them, and the rank's order can change. Found in review, not reproduced.
+- **(P3) `DiagramView`'s `onMove` reports nodes, not routes.** A layout run writes each long
+  edge's waypoints into the view's scene, but a consumer keeping the diagram as data hears only
+  the node moves, so the routes go whenever the data is laid into a scene again, or an edge's
+  spec changes and `reconcileSpecs` replaces its data (`packages/diagram/src/DiagramView.tsx`).
+- **(P3) A second pinned node can sit on a long edge's route.** `layeredPlan` anchors the layout
+  on the first pinned node; any other pinned node stays where its author put it, not in its slot.
+  A wire with that node as an end gets no waypoints, but a wire passing near it keeps the
+  waypoints laid out around the slot, and can run through the node
+  (`packages/diagram/src/layered/plan.ts`). Found by reading the code; no case reproduced yet.
+- **(P4) An ELK layout adapter.** elkjs (the Eclipse Layout Kernel) lays out ports, labels and
+  nested groups well, but answers asynchronously and is large (around 1.5 MB; not measured), so it cannot sit behind
+  the synchronous `LayoutFn`. An adapter in a package of its own, for laying out a generated
+  diagram once, would let a diagram be checked against it.
+- **(P3) `DiagramView` fits its view once, at mount.** `defaultView` only seeds the canvas's
+  view, so when `width` or `height` changes the canvas resizes and the view does not refit; a
+  diagram fitted for a wide box is clipped in a narrower one. The EffectChart lab shows it when
+  its frame is resized.
+- **(P3) Two wires can share an `edgeIdOf`.** Ids containing `.`, `->` or `:` build the same
+  edge id from different stages and ports. `diagramScene` keeps the first such edge, while the
+  looks keep one style per id, last one winning (`sceneStyles` in
+  `packages/diagram/src/effect/draw.ts`, `packages/diagram/src/fromData.ts`).
+- **(P3) The `rack` look overlaps side ports.** A stage's side ports are spread evenly along one
+  edge of a box sized by its text, however many there are, so a stage with many side inputs draws
+  them on top of one another (`spreadAt` in `packages/diagram/src/effect/rack.ts`).
+- **(P3) Branch symbols put control inputs on top whatever the rack's `side` is.** With the
+  default `side: 'below'`, the stage driving a decision hangs below it and its wire climbs to the
+  top edge (`inputs` in `packages/diagram/src/effect/symbols.ts`).
+- **(P3) A list of looks with different options needs a cast.** `EffectLook`'s options parameter
+  defaults to `unknown`, and `EffectLook<NodeGraphOptions>` is not assignable to it, so a list
+  holding `nodeGraph` and `rack` together is cast by hand (`packages/diagram/src/effect/draw.ts`;
+  the EffectChart lab story does it).
+- **(P3) `EffectChart` has no floor on its opening scale.** It opens every chart fitted whole and
+  passes no `minScale`, so a chart of hundreds of stages opens too small to read
+  (`packages/diagram/src/effect/EffectChart.tsx`; `DiagramView` already takes `minScale`).
+- **(P3) A branch symbol's drawn marks have fixed colors.** The `bar`'s bands and ticks and the
+  `switch`'s lever and contacts are color literals, so they stay bright on a bypassed decision
+  and a look cannot restyle them; only the titles follow the node style
+  (`packages/diagram/src/effect/symbols.ts`).
+- **(P3) Marks are only tested in jsdom.** No browser test moves a node that carries marks, so a
+  text mark following its node is unpinned, and so is a drawn mark's `opacity`
+  (`packages/diagram/src/marks.test.ts`).
+- **(P3) A mark whose path data does not parse fails when it is painted.** `diagramScene` passes
+  `d` through as given and `markShape` parses it on first paint, so a typo surfaces in the
+  renderer rather than where the data was built (`packages/diagram/src/marks.ts`).
 
 ---
 
@@ -487,16 +830,72 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 ## Selection, actions & UI panels
 
-- **(P3) Nothing puts `prefsCss` on a page.** `prefsCss(store)` writes the text and
-  `prefsCssAttributes(store)` the attributes (`packages/prefs/README.md`, "As CSS custom
-  properties"); a host adopts the one and sets the other by hand, and again on every change. The
-  kit adopts a rule in two places already, `holdRule` in `@weasel-js/theme` and core's own for a
-  canvas's size rule, which neither prefs nor a third copy should join: fold those into one
-  first, somewhere prefs can reach. Two more things it does not write: a color held as a
-  `ColorSource`, which the `value` option can hand to `colorSourceCss`, and a blend between two
-  options as `color-mix()` driven by a weight property, which would let a mode change crossfade
-  with no script. It must not become a third way a theme token reaches CSS: the build-time
-  emitter behind `tokens.css` and `applyTheme` are the two there are.
+- **(P3) ui's `ShortcutInput` is a third copy of the shortcut shape.**
+  `packages/ui/src/components/ToolPalette/formatShortcut.ts` describes what `@weasel-js/menu`'s
+  `MenuShortcut` and routing's `ActionShortcut` (now an alias of it) already do. Fold it into
+  `MenuShortcut`.
+
+- **(P3) Shift+F10 / the ContextMenu key may open the menu twice in Chrome on Windows/Linux.**
+  The `menu.context` key binding opens it at the selection, and those platforms also send a
+  native `contextmenu` event to the focused canvas, which would reopen it at that event's point.
+  Headless Playwright sends no such event, so this is unverified. Check on a real Windows or
+  Linux Chrome; if it reproduces, the likely fix is for the keydown to suppress the native event.
+
+- **(P4) A headless-component layer shared by DOM and WebGL chrome.** The context-menu model
+  splits state, keyboard and placement from drawing so one menu renders in both. Generalize that
+  split (focus, roving highlight, placement, a measure/draw contract) so buttons, lists and other
+  chrome can draw on either substrate from one behavior.
+
+- **(P4) The WebGL context menu has no screen-reader surface.** `attachMenuHost` draws into the
+  canvas and exposes only `accessibleName`. Mirror the open menu as hidden DOM with menu roles,
+  kept in step with the model's highlight.
+
+- **(P3) The WebGL context menu stays open through a wheel or resize elsewhere.** The DOM menu's
+  `useDismiss` closes on a wheel outside its panels, on window blur and on resize; `attachMenuHost`
+  closes only when HUD focus moves, so a wheel over the canvas zooms under an open menu and a
+  resize leaves it where the old canvas put it.
+
+- **(P3) The WebGL context menu draws no icons, shortcut chips or check marks.** `drawPanel` draws
+  each row's label and a submenu caret; the DOM rows also show the action's icon, its shortcut and a
+  check for a row whose action is `active`. So a toggle action's state cannot be seen in the WebGL
+  menu at all.
+
+- **(P4) The WebGL context menu has square corners and no shadow.** The DOM panel takes
+  `--wzl-radius-md` and `--wzl-bevel-raised`; `drawPanel` draws a plain bordered rect.
+
+- **(P3) The WebGL context menu does not return HUD focus on close.** The DOM host gives focus back
+  to whatever held it when the menu opened (`useReturnFocus`); `attachMenuHost` leaves the HUD with
+  nothing focused, so a keyboard user loses their place among the widgets.
+
+- **(P3) Some boxes still leave the stroke out.** `drawnBoundsOf` (`canvas/drawnBounds.ts`) is the
+  box a stroked shape is shown and measured with, and `<SceneCanvas>`'s chrome, resize, rotate,
+  flip, align, distribute, and `alignMoveBehavior` read it. Paths with no node or painter behind
+  them still measure the pose box: the selection overlay given its own `poseById`,
+  `composeSelectionPose`, the adapter-only `useAlign` hook, a bare `<Canvas>`, and the guides
+  package's origin snaps (`snapToGuides`, `snapToGrid`), which move a point rather than a box.
+  Text has no `drawnBounds` either, so a stroked glyph that spills past its layout box is not
+  covered. A `{ px }` stroke under a skewing or stretching `transform` is outset by its width at
+  the mean scale, which only approximates the screen-exact ribbon.
+
+- **(P2) Labs still tune actions through the experimental `actions` prop.** The extend-path-end
+  lab (on its own branch when `tune` landed) sets `mode` by restating whole descriptors through
+  `actions`. Move it to `<SceneCanvas tune>` as it merges, drop the restated gestures, and give
+  `extendPathEnd` an entry in core's `ActionParamSchema` (`interactions/actions/actionParamSchema.ts`).
+
+- **(P2) Kit settings that do not reach their readers yet.** `history.coalesceMs` is read once,
+  when `PrefSchemaEditor` mounts, because `createHistory` (`@weasel-js/history`) fixes its window
+  at creation; a later change waits for a remount. Not yet settings at all: `guides`'
+  `DEFAULT_GUIDE_TOLERANCE_PX`, the pen and slice tools' close and snap radii (written as a bare
+  `8`), and `thresholdDrag`, a plain function with no store in reach. `view.animationMs` ignores
+  `prefers-reduced-motion`. See `docs/conventions.md` ("Kit settings").
+
+- **(P3) `PrefsRail`'s scroll-to-section browser test fails now and then.** "leaves a nested page
+  off the page that holds it and scrolls to a section that follows it"
+  (`packages/ui/src/components/Prefs/PrefsRail.marks.browser.test.tsx:91`) failed once on a fleet
+  run of 2026-10-14 and passed on the run before it, with no `packages/ui` change between: the
+  rail marked `canvas.grid` current where the test expects `canvas.rulers`. A guess, not
+  confirmed: the section is polled into view and the marks are then read once, so a scroll spy
+  that settles a frame later would still name the section above.
 
 - **(P3) Nobody has seen a theme's prefs schema in a form.** `themePrefsSchema`
   (`@weasel-js/theme/prefs`) is tested as data and through a store, and no page draws it in
@@ -831,22 +1230,43 @@ only story runner in the repo.
 
 ## Demos & visual regression
 
+- **(P3) The older hud demos draw in dark mode whatever the site shows.** The hud reads its colors
+  from a `ThemeProvider`, not the cascade, and the demo shell provides none, so `hud`, `hud-gallery`
+  and `loupe` keep the theme's default mode when the site is switched to light.
+  `HudContextMenuDemo` follows the site by putting `SiteColorModeContext` (`apps/site/colorMode.ts`)
+  into its own `ThemeProvider`; the others can do the same. A provider around every demo would
+  reach the lab demos too: `LabRoot` (`packages/labkit/src/lab/LabRoot.tsx`) applies
+  `interstellarTheme` only when `useThemeOptional()` finds no outer theme.
+
+- **(P3) EffectChart visual baselines are not captured.** `tests/visual/effect-chart.spec.ts`
+  names `effect-chart.png` and `effect-chart-rack.png`; the update-baselines workflow has to
+  write them. Its `maxDiffRatio` of 0.004 was copied from `diagram.spec.ts`; set it
+  from the first captured baselines.
+
 - **(P3) A dev server on orochi has missed a file write.** A site dev server there served a file
   as it was before an edit on 2026-10-12, and a `touch` did not wake it. Seen once and not
   reproduced. `forge/src/vite/plugin.test.ts` lost file events for its temp directory the same way,
   7 of 26 tests in one run on 2026-10-13, and polls now; whether a checkout loses them too is not
   measured.
 
-- **(P2) Package pages: check the reference against a real build, then retire `/api/`.** Every
-  published package has a page at `#pkg/<name>` (overview, guides, reference, demos; how each is
-  fed is in `CONTRIBUTING.md`, "Package pages"). The reference half has only ever read a
-  hand-written TypeDoc project (`scripts/lib/reference/fixture.ts`): `npm run build:api` has not
-  been run since it began writing `dist-demo/reference/`, and no page has been seen in a browser.
-  Run it, open `#pkg/core/reference` and a subpath entry such as `#pkg/geom/reference/booleans`,
-  and fix what TypeDoc's real output shows the reader got wrong. Then drop the TypeDoc HTML site:
-  `out` in `typedoc.config.mjs`, the sidebar's "API reference" link, the `/api/` half of
-  `serveApiDocsInDev`, and the `/weasel/api/` links in the package READMEs. `vitepress` is still
-  in labkit's `devDependencies` with nothing using it. Only geom, gestures, and labkit have guides.
+- **(P3) A freshly started site dev server's first page load can come up blank.** Started from a
+  worktree with `WAKE_EXTRA=<port> npx vite --port <port>`, the first one or two loads of a demo
+  show an empty page with wake's "dev server unreachable" pill, and a reload renders it. Seen on
+  every one of a dozen servers on 2026-10-14. The server logs no dependency re-optimization or
+  reload, so the cause isn't known; the first load after an agent edits a lab once threw
+  `instrument.defaultConfig is not a function` before a reload fixed it. A visual spec run on its
+  own meets it too: `hud-context-menu`'s first test waited 30s for a canvas, twice on teitou on
+  2026-10-15, and passed in 2s on the next try; `--timeout 90000` gets a lone spec through.
+
+- **(P3) Package pages: a public signature names types the reference has no page for.** Every
+  published package has a page at `#pkg/<name>` (how each tab is fed is in `CONTRIBUTING.md`,
+  "Package pages"), and only geom, gestures, and labkit have guides. `npm run build:api` warns for
+  each type a public signature names that its package does not export, and the page writes that
+  name unlinked: symmetry's `Pt` and `AnyScene`, geom's `Side` and `Anchors`, prefs'
+  `SyncOptions`, diagram's `Rect`, and core's `ViewPoseAdapter`, among others. About 420 exports
+  have no doc comment, so their row in a module's list has no description. A page's "Declared in"
+  line links to GitHub only where TypeDoc found the repository, which it cannot from a git
+  worktree (it looks for a `.git` directory); the deployed build has not been checked for links.
 
 - **(P3) SVG export writes wrapped text unwrapped.** `data-weasel-wrap` round-trips
   `TextStyle.wrap` for weasel's own reader, but SVG `<text>` never wraps, so any other reader draws
@@ -870,13 +1290,6 @@ only story runner in the repo.
   hands `useLayoutDepSource` each move with the pose it left, and the transition glides what is
   shown from there through a pose override, writing nothing. A removal cannot follow it, since
   the node is gone by the time a report arrives.
-
-- **(P3) draw: a double-click on a path is acted on twice.** The kit's `enterPathEdit` binding
-  and the app's `onDoubleClick` observer (`apps/draw/src/modality/doubleClickEntry.ts`) both take
-  it; they reach the same machine call and the second is a no-op. Text has one way in: the edit
-  owns its mode, which `useTextEditSession` enters and leaves from the hook's `onStart` and
-  `onEnd`, so `text-edit`'s `entry.trigger` stays unread ("Nothing reads a mode's
-  `entry.trigger`" under Tools).
 
 ---
 
@@ -907,33 +1320,18 @@ only story runner in the repo.
 
 ---
 
-## Lint
-
-- **(P3) eslint-plugin-react-hooks v7's `immutability` rule is off.** It is the
-  last compiler rule that could come on: 51 reports in 37 files on 2026-10-12.
-  26 are tests assigning to a prop or an outer variable from inside a probe
-  component, which the test override in `eslint.config.js` that already turns
-  `react-hooks/globals` off would cover. The rest are `useVisibleRaf` loops
-  re-requesting themselves, and writes to forwarded refs, DOM nodes, and
-  mutable engine objects: each to be restructured or shown to be the point.
-
----
-
 ## Release-gate & build hygiene
 
-- **(P2) Confirm on a fleet node that a new dependency in browser-tested code no longer fails the
-  first run that meets it.** A node keeps its vite dep cache between runs, and a warm cache skips
-  the scan that finds dependencies, so one first imported since then was met mid-run and vite
-  reloaded the page under the suites ("Vitest failed to find the runner", 12 suites on 2026-10-13).
-  The `browser` project's `optimizeDeps.include` is now computed from what its tests import
-  (`scripts/vitest-browser-deps.ts`), and vite keys the cache on that list, so a new import
-  discards the cache before a test loads. Tested against vite alone; not yet run on a node with a
-  stale cache. To confirm: on a node that has run the suite, start a fleet run of a commit that
-  adds an import of an installed, not yet imported dependency to a module a browser test loads.
-  The log should read "Re-optimizing dependencies because vite config has changed" and no suite
-  should fail to find the runner. Two things it does not cover: a dependency reached only through
-  `import.meta.glob` or a computed `import()`, and the opt-in `forge-stories` project, which has
-  no such list.
+- **(P3) Two ways a new dependency can still reach a browser test unannounced.** The `browser`
+  project's `optimizeDeps.include` is computed from what its tests import
+  (`scripts/vitest-browser-deps.ts`), so a newly imported dependency changes vite's config hash and
+  a warm dep cache on a fleet node is rebuilt before any test loads; confirmed on studio and teitou
+  on 2026-10-15. The scan cannot see a dependency reached only through `import.meta.glob` or a
+  computed `import()`, and the opt-in `forge-stories` project has no such list. Either one met
+  mid-run reloads the page under the suites, which fails them with "Vitest failed to find the
+  runner". Vitest drops vite's info lines at its default `logLevel` of `warn`, so a fleet log shows
+  "Re-optimizing dependencies because vite config has changed" only with `logLevel: 'info'` set on
+  the project.
 
 - **(P3) `onto test --spread` fails a run whose tree moved, where the other commands sync again.**
   onto `f621d8b` makes a launch carry the stamp its own sync was answered with, so a suite can no
@@ -943,76 +1341,44 @@ only story runner in the repo.
   is rebuilt, and a node's agent refuses a launch against a tree that lost its stamp only after
   `onto push <node>`.
 
-- **(P3) `Callout.reanchor.browser.test.tsx` heard a window `resize` it did not expect, once.** "a
-  callout follows an anchor rect that only moves, each time, without a resize event on the window"
-  failed in one fleet run on teitou at `80b0a8314`: its `resize` listener was called once. It
-  passed in the six fleet runs before that the same day and passes alone. The listener is on the
-  window every browser test shares, so a resize from anywhere fails it; what resized the window
-  was not found.
-
-- **(P3) rolldown could not write a dependency map during `packages/forge/src/vite/plugin.test.ts`,
-  once.** One fleet run at `65c06d7c2` passed every file and exited 1 on an unhandled error:
+- **(P3) rolldown could not write a dependency file during `packages/forge/src/vite/plugin.test.ts`,
+  twice.** A fleet run at `65c06d7c2` passed every file and exited 1 on an unhandled error:
   `Failed to write file in …/T/forge-plugin-*/.vite/deps_temp_*/polygon-clipping.js.map`, `Invalid
   argument (os error 22)`, after "serves the component graph from source, and pushes it again when
-  a component file changes". The test makes that directory and removes it when it ends, so the
+  a component file changes". A run on teitou at `f4100e96c` (2026-10-15) did the same after the
+  same test, on `react-dom.js`. The test makes that directory and removes it when it ends, so the
   dev server's dependency scan may have still been writing; not confirmed.
 
-- **(P2) Browser tests time out under fleet load, inside a Playwright action.** A click, a key, or
-  a screenshot that takes a fraction of a second alone stalls for seconds in a full run on studio,
-  teitou, or msb-uai, a different handful of tests each run, and the test hits its 15 s limit or
-  the action's own. Every one passes alone, and nobody has confirmed load is the cause. Two stalls
-  were timed: 14.5 s in `userEvent.click` after the row was found and scrolled to
-  (`PrefSchemaEditor.types.browser.test.tsx`, 0.3 s alone), and 7.8 s in `page.screenshot` waiting
-  for a `position: fixed` element that never moves to be stable
-  (`core/src/features/text/overlayAlignment.browser.test.tsx`, "sans-serif 16px lands on the canvas
-  glyphs").
-  - **Still exposed**, because the action is what the test is about and nothing in it sleeps or
-    animates: `overlayAlignment` (a screenshot a test, 0.55 s each alone),
-    `labkit/src/lightbox/Lightbox.browser.test.tsx`,
-    `SelectionPanel/SelectionPanel.selection.browser.test.tsx`,
-    `PatternPicker/PatternPicker.browser.test.tsx`, and the full-page screenshot in
-    `labkit/src/lab/LabLightbox.browser.test.tsx`.
-  - **Changed on 2026-10-13, none of it confirmed by a fleet run.** `PrefSchemaEditor.types`,
-    `labkit/src/controls/compoundRows.browser.test.tsx`, and `LabLightbox`'s toolbar buttons click
-    through the DOM, since the click is not what they test; `compoundRows` is one test a dialog and
-    no longer waits for each to close. Testing Library's `waitFor` and `findBy*` wait 5 s in the
-    `browser` project, as `expect.poll` already did; they waited 1 s, in `LabLightbox` and in
-    `forge/src/timeline/timeline.browser.test.tsx` ("plays on real frames") among others. Two
-    timeouts were raised for tests that do the work: the sweeps in
-    `Prefs/PrefsForm.drop.browser.test.tsx` take 3.1 to 3.6 s each alone and have 60 s, and
-    `AssetEditor.steps.test.tsx`, a jsdom test that timed out at 5 s, takes 0.9 to 1.4 s alone and
-    has 20 s.
-  - **Running `browser` after the other projects** (`sequence.groupOrder` in `vitest.config.ts`),
-    measured 2026-10-12 over nine full runs at one commit, three on each node: none of six runs
-    had a timeout, and one of three baseline runs did (`overlayAlignment`, on studio). That is
-    suggestive and no more: at a one in three rate six clean runs come up about 9% of the time. It
-    cost 12 to 52 s a run on teitou and msb-uai and nothing on studio, which takes about 175 s
-    either way against 100 to 115 s on the others and hosts a long-running render service; both
-    failing runs were there. A 15 s `browser` timeout in a run made since would mean running beside
-    the other projects was not the cause, and the `groupOrder` line should come out. Not measured:
-    fewer workers for `browser`, and whether studio's own load is the cause.
-  - **Three runs on teitou on 2026-10-13 failed the same three `browser` tests, which none of the
-    commits touch**: `8777d97f0`, then `2445052c6` and `a06b02902`, whose trees differ from it only
-    in `PrefSchemaEditor`. Each is the only failure in its file: 15 s timeouts in
-    `core/src/canvas/glyphCoverage.browser.test.ts` ("keeps both stems of a 7.2px H at every
-    sub-pixel offset") and `core/src/canvas/rasterSession.browser.test.ts` ("do not push a canvas
-    already on the page out of its context"), neither of which makes a Playwright action, and
-    `frame.evaluate: Frame was detached` under `userEvent.keyboard` in
-    `text-dom/src/overlayTyping.browser.test.tsx`. All three passed on the run before the first,
-    whose tree differed only in `PrefSchemaEditor`'s shelf. It is not teitou: a run of `a06b02902`
-    on studio failed `glyphCoverage` and `rasterSession` the same way, and `labkit`'s
-    `presentation.browser.test.tsx` ("entering refits the view…") in place of `overlayTyping`. Both
-    `core` files pass alone at that commit on orochi, in 7 s.
-  - **Still failing on 2026-10-14**, branch `path-edit-commands`, which touches no renderer, font,
-    or labkit code: `glyphCoverage` and `rasterSession` timed out on teitou and again on studio, and
-    on studio so did `glyphCoverage`'s "puts down the same ink wherever a 7.2px H lands" and
-    `LabLightbox`'s "an expanded trial keeps its marks over it". Also on studio, not a timeout:
-    `ui/src/components/Prefs/PrefsRail.rootSection.browser.test.tsx` ("scrolls the root's page to a
-    section from its entry") saw `tools` as the current section where it expected `files`. It
-    passed on teitou at a commit whose `ui` tree was the same. Later the same day, branch
-    `soft-mode-history` (history and cursor code only) failed `glyphCoverage`'s "keeps both stems"
-    on teitou, then both `glyphCoverage` tests and `rasterSession` on studio, as did `main` at
-    `b1bcafb7d` on studio; both files pass alone on orochi at the branch head, in 12.7 s.
+- **(P2) What is left of the `browser` project's fleet failures.** Measured on 2026-10-15 from the
+  logs of 136 fleet runs (2026-10-11 to 10-15) and from runs of the `browser` project alone on
+  teitou, msb-uai and studio. Running it after the other projects (`sequence.groupOrder`) ended the
+  timeouts in Playwright actions: 8 of 18 fleet runs before that change had one; after it only
+  `LabLightbox`, which also builds WebGL contexts, did (3 of 118). The timeouts that followed, from
+  2026-10-13, were the project's own: it failed the same tests alone as in a full run, and sixteen
+  busy cores beside it changed nothing. Its tabs share one Chromium, and on teitou 17 of them took
+  the same 72 to 78 s as six while tests making WebGL contexts ran three to five times as long, so
+  it now runs six (`maxWorkers`). A tab that lost its connection mid-run ("Browser connection was
+  closed while running tests", every file after it left unrun; at six workers too, on
+  `17bd67dea`'s first fleet run) had a renderer full of Mach ports, which a removed test frame
+  holds until a full GC; `vitest.browser.setup.ts` now collects garbage at each file's start.
+  Measured on teitou, one or two workers: before, 11 of 11 runs lost a tab, 36 to 78 files in, and
+  in the 5 runs sampling ports each second its renderer held 14,086 to 16,661 when it went; with a
+  full GC between files, 8 of 8 kept every tab, the 5 sampled peaking at 414 ports, and a lone
+  tab ran all 176 files twice. That the port count is what closes the sockets is inferred from this,
+  not traced inside Chromium: every socket and request of that page closes at once from the
+  browser's side (a net log shows it), the page itself lives on, and no crash is reported. Left
+  open:
+  - **`text-dom/src/overlayTyping.browser.test.tsx`'s first test fails `frame.evaluate: Frame was
+    detached` under `userEvent.keyboard`**: 8 runs, all at the old worker count. One suspect is
+    Playwright's `page.frame('vitest-iframe')` returning the previous file's frame, since every
+    test frame has that name; in 18 runs a check at each file's start never found a second or a
+    detached one, but none of those runs had the failure, so that is unlikely, not ruled out.
+  - **`labkit/src/lab/presentation.browser.test.tsx` ("entering refits the view…") saw a pan off
+    on one axis** in 2 fleet runs at the old worker count, and in 6 of 19 runs of the project
+    alone at one or two workers on teitou, with and without the garbage collection. Run as the
+    only file on an idle teitou on 2026-10-16 it failed 5 of 10 on `main` (`9741e1af3`), the pan
+    coming back 1.7 or 5.2 px short in y, so load is not the cause. Unverified guess: the test
+    keeps the tile's first non-null view, before the tile's height settles.
   - `forge/src/vite/plugin.test.ts` has its own entry under "Demos & visual regression".
 
 - **(P2) HUD vs DOM text: what the idle rerun left open.** `tests/perf/hud-vs-dom.spec.ts` prices
@@ -1244,22 +1610,21 @@ only story runner in the repo.
   backend only. Result files: `tests/perf/recorded/layer-dispatch-2026-10-07/` and
   `tests/perf/recorded/layer-dispatch-dirty-2026-10-07/`.
 
-- **(P3) The pull request benchmark job has never run.** `.github/workflows/perf-pr.yml` runs
-  `perf:bench` and `test:perf` on a pull request's merge base and head and posts the `perf:compare`
-  table as a comment, without gating. The comment and directory-compare scripts are tested; the
-  workflow steps have only been read. `perf:bench` has never run on the runner at all, since
-  `perf.yml` runs `test:perf` alone. Unmeasured: how long two full runs take on the one self-hosted
-  machine (the job allows 100 minutes), and whether the base, measured first, reads differently
-  from the head for that reason alone.
-
-- **(P3) Five leaf packages keep their own listener sets.** Every other store notifies through
-  `createEmitter()` in `@weasel-js/registry` (a pass walks the listeners held when it began; a
-  throwing listener is logged and the rest run). These still hold a `Set` and a loop, because each
-  is in a package that depends on nothing else in weasel, and the move would give it its first
-  sibling dependency: history and its journal, `select/store.ts`, storage's records (two sets),
-  cursor's `paintedCursorState`, and react's `useFrameClock`. A throw from one of their listeners
-  still reaches whatever caused the notify. Moving them means either that dependency or the
-  emitter living somewhere all five can reach.
+- **(P3) The pull request benchmark job does not fit its time limit, and its comment shows
+  seven of fifteen benchmarks.** Its steps ran on keiei (Apple M2, 8 cores, load about 6.9) on
+  2026-10-15, outside GitHub: base checkout, `npm ci`, `perf:bench` and `test:perf` on each side,
+  `compare.mjs`, and `pr-comment.mjs --dry-run`. Every step worked. Measured:
+  - **Time.** `test:perf` took 53.8 min on the base and 51.1 on the head, and `perf:bench` about 4
+    min each; checkout to comment was 113 min against the job's `timeout-minutes: 100`.
+    `hud-vs-dom` alone is 27.2 min a run. One full `test:perf` also outruns `perf.yml`'s 45
+    minutes. Not measured on the runner itself (studio, M1 Max), so the overrun there is inferred.
+    Which to change is open: the limits, `hud-vs-dom`'s rounds, or which specs a pull request runs.
+  - **The comment.** `compare.txt` was 536,682 characters; `MAX_COMMENT_CHARS` keeps 60,000, which
+    is `animation-stress` through `flush-noise` in file order. Everything after, `image-quad` and
+    `layer-dispatch` among them, never reaches the pull request. What the comment should hold
+    instead (the largest ratios, one summary line per benchmark) is undecided.
+  - Still unmeasured: whether the base, measured first, reads differently from the head for that
+    reason alone. Result files and logs from that run were not kept.
 
 - **(P3) `SceneCanvasInner` is one 386-line function.** It is most of the 508-line
   `canvas/SceneCanvas.tsx`. What is left in it is the prop destructure and the JSX, most of that

@@ -4,6 +4,8 @@
  * The pure half: no React, no DOM. The React seam that pumps browser events
  * into the dispatcher, and the providers that feed it, live behind
  * `@weasel-js/routing/react`.
+ *
+ * @packageDocumentation
  */
 
 // ─── vocabulary ───────────────────────────────────────────────────────────
@@ -16,6 +18,7 @@ export type {
 
 // ─── dependency schema ────────────────────────────────────────────────────
 import type { ActiveToolContextValue } from './interactions/actions/activeToolContext';
+import type { ActionTuning } from './interactions/actions/tuning';
 
 /**
  * The dependency schema — the map of dep name → value type that
@@ -38,6 +41,8 @@ import type { ActiveToolContextValue } from './interactions/actions/activeToolCo
 export interface DepSchema {
   /** Currently active tool id + hotkey-hold stack. */
   activeTool: ActiveToolContextValue;
+  /** The menu host of the `ActionsProvider` in scope. */
+  menuHost?: import('./menus/menuHost').MenuHost;
 }
 
 /** Every dep name declared by anything that has merged into {@link DepSchema}. */
@@ -51,6 +56,30 @@ export type DepName = keyof DepSchema;
 // `'@weasel-js/core'`, core re-exports from here, and that is one hop too many
 // unless the declaration sits at the export site.
 
+
+// ─── action param schema ──────────────────────────────────────────────────
+/**
+ * The params each action reads, by action id — what types a tuning's
+ * `params` and the params on the bindings it adds. Whoever ships an action
+ * merges its entry in, as with {@link DepSchema}:
+ *
+ * ```ts
+ * declare module '@weasel-js/core' {
+ *   interface ActionParamSchema { simplifyBrush: { radiusPx: number } }
+ * }
+ * ```
+ *
+ * Declare an entry as a type literal, not an interface: an interface has no
+ * index signature, so it is not a `Record<string, unknown>`.
+ */
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export interface ActionParamSchema {}
+
+/** Tunings keyed by action id: typed by {@link ActionParamSchema} for an id it
+ *  declares, `Record<string, unknown>` params for any other. */
+export type ActionTunings =
+  & { readonly [K in keyof ActionParamSchema]?: ActionTuning<ActionParamSchema[K]> }
+  & { readonly [id: string]: ActionTuning | undefined };
 
 // ─── overlay schema ───────────────────────────────────────────────────────
 /**
@@ -79,8 +108,11 @@ export type {
 } from './interactions/actions/action';
 export { actionItems } from './interactions/actions/actionItems';
 export type { ActionItem } from './interactions/actions/actionItems';
+export { actionShortcuts, keySpecShortcut } from './interactions/actions/actionShortcuts';
+export type { ActionShortcut } from './interactions/actions/actionShortcuts';
+export { actionsTagged, taggedActionItems, matchActionItem } from './interactions/actions/actionTags';
 // Both a const table and the union of its values, under one name.
-export { ActionDisabledReason } from './interactions/actions/action';
+export { actionCursor, ActionDisabledReason } from './interactions/actions/action';
 export type { ActionDisabledReason as ActionDisabledReasonValue } from './interactions/actions/action';
 export { actionBindings } from './interactions/actions/binding';
 export type { GestureBinding, BoundGesture, BindingSource } from './interactions/actions/binding';
@@ -92,6 +124,9 @@ export type { DepRegistry } from './interactions/actions/depNode';
 export { validateActionId, validateActionDefaultBinding } from './interactions/actions/registry';
 export type { ActionsRegistry, ActionEntry, ActionsProp } from './interactions/actions/registry';
 export { resolveParams } from './interactions/actions/invoker';
+export { tuneAction } from './interactions/actions/tuning';
+export type { ActionParams, ActionTuning, TunedBinding } from './interactions/actions/tuning';
+
 export type {
   Point2, AffordanceHit, DragSample, InvocationCtx, BindingOpts, ActionDeps,
   OverlayRole, OngoingOverlay, OngoingHandle, ImmediateInvoker, OngoingInvoker, Invoker,
@@ -117,6 +152,7 @@ export type {
   PendingLongPress, LongPressState, LongPressStore, LongPressOptions,
 } from './interactions/dispatcher/longPressState';
 export { DRAG_THRESHOLD_PX, pastDragThreshold, CONTROL_SELECTOR, isInControlWithin } from '@weasel-js/gestures';
+export type { GestureKitSettings } from './kitSettings';
 export { openPointerSession } from './interactions/pointerSession';
 export type {
   PointerSession, PointerSessionOptions, PointerSessionCallbacks, PointerSessionCancelReason,
@@ -153,6 +189,7 @@ export { reportRouteConflicts, type ToolScopes } from './tools/routing/reflectio
 // ─── input plumbing ───────────────────────────────────────────────────────
 export { activatesFocusedControl, focusedControlOwnsKey, historyKey, isEditableTarget, matchesKeyBinding } from './interactions/keyHelpers';
 export type { KeyBinding } from './interactions/keyHelpers';
+export { BROWSER_RESERVED_CHORDS, browserReservedChord, type ReservedChord } from './interactions/browserReservedKeys';
 export { scratchKey, getScratch, setScratch, deleteScratch } from './interactions/scratchKey';
 export type { ScratchKey, ScratchStore } from './interactions/scratchKey';
 export {
@@ -161,3 +198,11 @@ export {
 export type { IngestItem } from '@weasel-js/gestures';
 export { clientToCanvas, clientToCanvasRect } from './viewport/clientToCanvas';
 export { dlog, dwarn, isDebugEnabled } from './dlog';
+
+// ─── menus ────────────────────────────────────────────────────────────────
+export type { MenuDef, MenuDefEntry, MenuWhen, MenuHit, OwnedMenuDef } from './menus/types';
+export { mergeMenuDefs, pickMenu } from './menus/pickMenu';
+export { resolveMenu } from './menus/resolveMenu';
+export { createMenuHost } from './menus/menuHost';
+export type { MenuHost, MenuOpenRequest, OpenMenu } from './menus/menuHost';
+export type { MenuSources } from './menus/resolveMenu';

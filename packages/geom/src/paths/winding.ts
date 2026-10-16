@@ -8,6 +8,7 @@
 import { PATH_C, PATH_L, PATH_M, PATH_Q, PATH_Z, forEachSegment } from '../commands';
 import type { Path, PolygonPath } from '../path';
 import { fillsOpenSubpaths } from '../openFill';
+import { carryCorners } from './cornerCarry';
 
 // Three-point Gauss-Legendre: exact for polynomials up to degree 5, and the
 // Green's-theorem integrand of a cubic is degree 5.
@@ -84,19 +85,23 @@ interface Segment {
   args: number[];
   fromX: number;
   fromY: number;
+  /** The anchor command the segment starts from, or -1 for an implicit start. */
+  from: number;
 }
 
 /**
  * `path` with every contour traversed backwards: same region, same curves,
  * opposite winding. A closed contour keeps its starting point; an open one
- * starts from where it used to end.
+ * starts from where it used to end. Corner specs stay on their anchors.
  */
 export function reversePath(path: PolygonPath): PolygonPath {
   const cmds: number[] = [];
   const out: number[] = [];
   let segs: Segment[] = [];
+  const sources: number[] = [];
   let sx = 0, sy = 0;
   let started = false;
+  let anchor = -1, start = -1;
 
   const flush = (closed: boolean) => {
     if (!started) return;
@@ -104,10 +109,10 @@ export function reversePath(path: PolygonPath): PolygonPath {
     const ex = last ? last.args[last.args.length - 2] : sx;
     const ey = last ? last.args[last.args.length - 1] : sy;
     if (closed) {
-      cmds.push(PATH_M); out.push(sx, sy);
-      if (ex !== sx || ey !== sy) { cmds.push(PATH_L); out.push(ex, ey); }
+      cmds.push(PATH_M); out.push(sx, sy); sources.push(start);
+      if (ex !== sx || ey !== sy) { cmds.push(PATH_L); out.push(ex, ey); sources.push(last ? anchor : start); }
     } else {
-      cmds.push(PATH_M); out.push(ex, ey);
+      cmds.push(PATH_M); out.push(ex, ey); sources.push(last ? anchor : start);
     }
     for (let i = segs.length - 1; i >= 0; i--) {
       const s = segs[i];
@@ -115,6 +120,7 @@ export function reversePath(path: PolygonPath): PolygonPath {
       if (s.cmd === PATH_C) out.push(s.args[2], s.args[3], s.args[0], s.args[1]);
       else if (s.cmd === PATH_Q) out.push(s.args[0], s.args[1]);
       out.push(s.fromX, s.fromY);
+      sources.push(s.from);
     }
     if (closed) cmds.push(PATH_Z);
     segs = [];
@@ -126,15 +132,19 @@ export function reversePath(path: PolygonPath): PolygonPath {
     if (cmd === PATH_M) {
       flush(false);
       sx = coords[ci]; sy = coords[ci + 1];
+      start = ++anchor;
       started = true;
       return;
     }
     if (cmd === PATH_Z) { flush(true); return; }
-    if (!started) { sx = px; sy = py; started = true; }
+    if (!started) { sx = px; sy = py; start = -1; started = true; }
     const n = cmd === PATH_C ? 6 : cmd === PATH_Q ? 4 : 2;
-    segs.push({ cmd, args: Array.from(coords.subarray(ci, ci + n)), fromX: px, fromY: py });
+    const from = segs.length > 0 ? anchor : start;
+    segs.push({ cmd, args: Array.from(coords.subarray(ci, ci + n)), fromX: px, fromY: py, from });
+    anchor++;
   });
   flush(false);
 
-  return { ...path, commands: new Uint8Array(cmds), coords: new Float32Array(out) };
+  const reversed = { ...path, commands: new Uint8Array(cmds), coords: new Float32Array(out) };
+  return path.corners ? carryCorners(path, reversed, sources) : reversed;
 }

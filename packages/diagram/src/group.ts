@@ -85,16 +85,24 @@ export function groupDerivePose<TPose>(opts: GroupPoseOptions<TPose> = {}): Diag
       y1 = Math.max(y1, b.y + b.height);
     }
     if (!Number.isFinite(x0)) return null;
-    const inset = insetOf(group.inset);
-    return geometry.fromBounds(
-      {
-        x: x0 - inset.left,
-        y: y0 - inset.top,
-        width: x1 - x0 + inset.left + inset.right,
-        height: y1 - y0 + inset.top + inset.bottom,
-      },
-      node.pose,
-    );
+    return geometry.fromBounds(boxAround({ x: x0, y: y0, width: x1 - x0, height: y1 - y0 }, group), node.pose);
+  };
+}
+
+/** A group's box around the union of its members: grown by its inset, and
+ *  widened evenly to its `minWidth`. */
+export function boxAround(
+  union: { x: number; y: number; width: number; height: number },
+  group: DiagramGroup,
+): { x: number; y: number; width: number; height: number } {
+  const inset = insetOf(group.inset);
+  const width = union.width + inset.left + inset.right;
+  const grow = Math.max(0, (group.minWidth ?? 0) - width);
+  return {
+    x: union.x - inset.left - grow / 2,
+    y: union.y - inset.top,
+    width: width + grow,
+    height: union.height + inset.top + inset.bottom,
   };
 }
 

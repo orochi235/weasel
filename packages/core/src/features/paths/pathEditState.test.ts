@@ -46,6 +46,21 @@ describe('createPathEditState', () => {
     expect(heard).toHaveBeenCalledTimes(2);
   });
 
+  it('reads and writes the anchor selection through a host that owns it', () => {
+    let held: ReadonlySet<number> = new Set([3]);
+    const state = createPathEditState({
+      host: () => ({
+        editingId: () => 'a',
+        setEditingId: () => {},
+        selectedAnchors: () => held,
+        setSelectedAnchors: (next) => { held = next; },
+      }),
+    });
+    expect([...state.getSelectedAnchors()]).toEqual([3]);
+    state.setSelectedAnchors(new Set([1, 2]));
+    expect([...held]).toEqual([1, 2]);
+  });
+
   it('reads an id as empty while the mode forbids anchor editing, and keeps it for when it is allowed again', () => {
     let allowed = true;
     const state = createPathEditState({ isAllowed: () => allowed });
@@ -116,5 +131,55 @@ describe('createPathEditState', () => {
     expect(heard).toHaveBeenCalledTimes(1);
     expect(logged).toHaveBeenCalledTimes(1);
     logged.mockRestore();
+  });
+});
+
+describe('path-edit tools', () => {
+  it('holds one active tool while a path is open, and notifies on a change', () => {
+    const state = createPathEditState();
+    const heard = vi.fn();
+    state.setEditingId('a');
+    state.subscribe(heard);
+    state.setTool('simplifyBrush');
+    state.setTool('simplifyBrush');
+    expect(state.getTool()).toBe('simplifyBrush');
+    state.setTool('lengthen');
+    expect(state.getTool()).toBe('lengthen');
+    expect(heard).toHaveBeenCalledTimes(2);
+    state.setTool(null);
+    expect(state.getTool()).toBeNull();
+  });
+
+  it('has no tool with no path open, and drops it when the path closes', () => {
+    const state = createPathEditState();
+    state.setTool('simplifyBrush');
+    expect(state.getTool()).toBeNull();
+    state.setEditingId('a');
+    state.setTool('simplifyBrush');
+    state.setEditingId(null);
+    state.setEditingId('a');
+    expect(state.getTool()).toBeNull();
+  });
+
+  it('drops the tool when the mode stops allowing anchor editing', () => {
+    let allowed = true;
+    const state = createPathEditState({ isAllowed: () => allowed });
+    state.setEditingId('a');
+    state.setTool('simplifyBrush');
+    allowed = false;
+    expect(state.getTool()).toBeNull();
+    allowed = true;
+    expect(state.getTool()).toBeNull();
+  });
+
+  it('defers to a host that owns the tool', () => {
+    let tool: string | null = 'simplifyBrush';
+    const state = createPathEditState({
+      host: () => ({ editingId: () => 'a', setEditingId: () => {}, tool: () => tool, setTool: (t) => { tool = t; } }),
+    });
+    expect(state.getTool()).toBe('simplifyBrush');
+    state.setTool(null);
+    expect(tool).toBeNull();
+    expect(state.getTool()).toBeNull();
   });
 });

@@ -4,6 +4,7 @@ import { DRAG_THRESHOLD_PX } from '@weasel-js/routing';
 import { useDragHandle, useDropZone } from './pointerDrag';
 import { createElement } from 'react';
 import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
+import { KitSettingsProvider } from '@weasel-js/react';
 
 beforeAll(() => {
   // jsdom doesn't implement elementFromPoint; default to null so findZone returns null
@@ -155,6 +156,25 @@ describe('useDragHandle', () => {
     firePointer('pointermove', { clientX: 100, clientY: 100 });
     firePointer('pointerup', { clientX: 100, clientY: 100 });
     expect(getPayload).toHaveBeenCalledTimes(1);
+    document.body.removeChild(target);
+  });
+
+  it('takes the threshold from gestures.dragPx under a KitSettingsProvider', () => {
+    const getPayload = vi.fn(() => ({ kind: 'item', ids: ['a'] }));
+    const { result } = renderHook(() => useDragHandle(getPayload), {
+      wrapper: ({ children }) => createElement(KitSettingsProvider, { value: { gestures: { dragPx: 20 } } }, children),
+    });
+    const target = document.createElement('div');
+    document.body.appendChild(target);
+    result.current.onPointerDown({
+      pointerType: 'mouse', button: 0, pointerId: 1, clientX: 0, clientY: 0, currentTarget: target, target,
+    } as unknown as React.PointerEvent<HTMLElement>);
+
+    firePointer('pointermove', { clientX: 19, clientY: 0 });
+    expect(getPayload).not.toHaveBeenCalled();
+    firePointer('pointermove', { clientX: 20, clientY: 0 });
+    expect(getPayload).toHaveBeenCalledTimes(1);
+    firePointer('pointerup', { clientX: 20, clientY: 0 });
     document.body.removeChild(target);
   });
 

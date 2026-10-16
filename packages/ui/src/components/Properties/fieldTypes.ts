@@ -66,10 +66,10 @@ export interface PropertyNumberFieldProps extends FieldBase {
   /** Absent reads as an empty field. */
   value: number | null | undefined;
   /**
-   * The committed value. Given `onInput` as well, it fires once a drag ends,
-   * or on blur, Enter or a step in a typed field; on its own it fires on every
-   * move, keystroke and step. A caller wanting settled values only passes a
-   * no-op `onInput`.
+   * The committed value. A typed field fires it on blur, Enter, or a step,
+   * never per keystroke. A slider given `onInput` as well fires it once a drag
+   * ends; on its own it fires on every move, and a caller wanting settled
+   * values only passes a no-op `onInput`.
    */
   onChange: (next: number) => void;
   /** The live value, fired continuously. Pass it alongside `onChange` when the
@@ -79,6 +79,9 @@ export interface PropertyNumberFieldProps extends FieldBase {
    *  read. A field showing a value has already sent that value back through
    *  the live callback; a mixed one has none to send, so this is all it says. */
   onCancel?: () => void;
+  /** A typed field's `+=` or `-=` entry, as an amount rather than a value:
+   *  what a mixed field takes, for each value it stands for to move by. */
+  onOffset?: (delta: number) => void;
   /** A slider's track runs 0..100 where these are omitted. */
   min?: number;
   max?: number;
@@ -116,9 +119,8 @@ export interface PropertyStringFieldProps extends FieldBase {
   /** Absent reads as an empty field. */
   value: string | null | undefined;
   /**
-   * The committed text. On its own it fires on every keystroke. Given
-   * `onInput` as well, the field drafts: `onInput` gets each keystroke and
-   * this fires once, on blur or Enter, and only if the text changed.
+   * The committed text: fires once, on blur or Enter, and only if the text
+   * changed. `onInput` gets each keystroke.
    */
   onChange: (next: string) => void;
   onInput?: (next: string) => void;

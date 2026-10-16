@@ -250,6 +250,15 @@ describe('focus ring', () => {
     expect(rings()).toHaveLength(0);
   });
 
+  it('paints nothing around a widget that declines it, even after a key', () => {
+    const a = box('a', 40, [], { focusRing: false });
+    hud.add(a.w);
+    hud.focus(a.w);
+    key(el, 'x');
+    expect(hud.focusVisible).toBe(true);
+    expect(rings()).toHaveLength(0);
+  });
+
   it('paints above every widget frame', () => {
     const a = box('a', 0, [], {
       draw: () => [{ kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 20, height: 20 }, fill: { paint: { kind: 'solid', color: '#123456' } } }],

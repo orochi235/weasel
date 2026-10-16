@@ -32,6 +32,12 @@ describe('measureBody', () => {
     ], { gap: 6 }), measure).minHeight).toBe(46);
   });
 
+  it('measures a field at least as wide as its room, whatever its value', () => {
+    const roomy = (value: string) => measureBody(spec([{ kind: 'field', label: 'ab', value, room: 'xxxxx' }]), measure).minWidth;
+    expect(roomy('c')).toBe(roomy('cdefg'));
+    expect(roomy('cdefgh')).toBeGreaterThan(roomy('c'));
+  });
+
   it('lays a field out on one line', () => {
     const floor = measureBody(spec([{ kind: 'field', label: 'ab', value: 'cd' }]), measure);
     expect(floor.minHeight).toBe(20);
@@ -262,6 +268,11 @@ describe('buildBody', () => {
   it('formats a field row as one string', () => {
     const { specs } = body([{ kind: 'field', label: 'by', value: '2.0' }]);
     expect(specs[1]!.data).toEqual({ text: 'by: 2.0' });
+  });
+
+  it('names a row with an id under the body, and leaves the rest to the caller', () => {
+    const { specs } = body([{ kind: 'label', text: 'op' }, { kind: 'field', id: 'gain', label: 'gain', value: '2' }]);
+    expect(specs.map((s) => s.id)).toEqual(['step', undefined, 'step/gain']);
   });
 
   it('leaves out a row the consumer declines', () => {

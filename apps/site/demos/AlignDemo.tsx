@@ -1,5 +1,5 @@
 import { asNodeId, SceneCanvas } from '@weasel-js/core';
-import type { ActionsProp, BoundGesture } from '@weasel-js/core';
+import type { ActionParamSchema, ActionTunings, TunedBinding } from '@weasel-js/core';
 
 const W = 400, H = 300;
 
@@ -18,7 +18,7 @@ const SCENE = {
 };
 
 /** A letter aligns to the selection's own union; with Shift, to the cursor. */
-function alignKeys(key: string): BoundGesture[] {
+function alignKeys(key: string): TunedBinding<ActionParamSchema['align.left']>[] {
   const keys = [key, key.toUpperCase()];
   return [
     { spec: { kind: 'key', key: keys }, opts: { params: { to: 'union' } } },
@@ -27,19 +27,15 @@ function alignKeys(key: string): BoundGesture[] {
 }
 
 /**
- * The `arrange` preset registers align and flip with no keys of their own;
- * `actions` gives them bindings, and a binding's params pick what the
- * selection lines up against.
+ * The `arrange` preset registers align with no keys of its own; `tune` adds
+ * bindings to it and to flip, and a binding's params pick what the selection
+ * lines up against.
  */
-const ACTIONS: ActionsProp = {
-  'align.left': { defaultBinding: alignKeys('l') },
-  'align.top': { defaultBinding: alignKeys('t') },
-  'align.centerX': { defaultBinding: alignKeys('c') },
-  'flip': {
-    defaultBinding: [
-      { spec: { kind: 'key', key: ['f', 'F'] }, opts: { params: { axis: 'x', pivot: 'pointer' } } },
-    ],
-  },
+const TUNE: ActionTunings = {
+  'align.left': { bindings: alignKeys('l') },
+  'align.top': { bindings: alignKeys('t') },
+  'align.centerX': { bindings: alignKeys('c') },
+  flip: { bindings: [{ spec: { kind: 'key', key: ['f', 'F'] }, opts: { params: { axis: 'x', pivot: 'pointer' } } }] },
 };
 
 export function AlignDemo() {
@@ -50,7 +46,7 @@ export function AlignDemo() {
       className="ckd-canvas"
       scene={SCENE}
       features={['pick', 'move', 'transform', 'arrange']}
-      actions={ACTIONS}
+      tune={TUNE}
       claimKeys
       selectionOptions={{ mode: 'multi', initial: RECTS.map((r) => asNodeId(r.id)) }}
     />

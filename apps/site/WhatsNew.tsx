@@ -8,7 +8,7 @@ interface Props {
   onSelect: (id: string) => void;
 }
 
-/** "What's new" view — a sortable table of every demo with creation +
+/** "Demo updates" view — a sortable table of every demo with creation +
  *  last-modified dates. Linked from the sidebar at the top of the nav.
  *  Default sort: `lastModified` descending, so the latest changes top
  *  the list. Click any column header to re-sort. */
@@ -31,7 +31,7 @@ export function WhatsNew({ onSelect }: Props) {
     <article className="ckd-demo ckd-whatsnew">
       <header>
         <div className="ckd-eyebrow">Index</div>
-        <h2>What's new</h2>
+        <h2>Demo updates</h2>
         <p className="ckd-desc">Every demo in this kit, sortable by creation or last-modified date.</p>
       </header>
 

@@ -1,5 +1,5 @@
 import {
-  anchorsToPath, pathToAnchors, simplifyPath, type Path, type PolygonPath,
+  anchorsToPath, pathToAnchors, resolveCorners, simplifyPath, type Path, type PolygonPath,
 } from '@weasel-js/geom';
 import { pathSubtract, pathUnion } from '@weasel-js/geom/booleans';
 import { strokeToPath } from './strokeToPath';
@@ -27,7 +27,7 @@ export interface OffsetPathOptions {
  * Returns an empty path when nothing is left.
  */
 export function offsetPath(path: Path, distance: number, opts: OffsetPathOptions = {}): PolygonPath {
-  const region = closedRegion(path);
+  const region = closedRegion(resolveCorners(path));
   if (distance === 0) return region;
   const tolerance = opts.tolerance ?? 0.1;
   const band = strokeToPath(region, {

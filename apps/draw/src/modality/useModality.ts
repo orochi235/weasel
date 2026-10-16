@@ -3,12 +3,16 @@
  * dim for WeaselDraw. Wires them together and exposes the pieces that
  * the app plumbs into <SceneCanvas>.
  */
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
+  asNodeId,
+  hasEditablePath,
   modeDecorationLayer,
+  type PathEditHost,
   type RenderLayer,
   type Scene,
 } from '@weasel-js/core';
+import type { CornerControlsSelection } from '@weasel-js/path-tools';
 import type { History } from '@weasel-js/history';
 import {
   createModeDecorations,
@@ -22,6 +26,8 @@ import {
   type ModeMachine,
 } from './index';
 import { drawPrefs } from '../prefs';
+import { createAnchorSelection, type AnchorSelection } from './anchorSelection';
+import { modePathEdit } from './pathEditHost';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -32,6 +38,12 @@ export interface UseModalityReturn {
   decorationLayer: RenderLayer<unknown>;
   /** The scene's history, which the mode machine opens its journals on. */
   history: History;
+  /** The selected anchors of the path open in path edit. */
+  anchors: AnchorSelection;
+  /** The path being anchor-edited is the path-edit mode's target, read from the machine. */
+  pathEdit: PathEditHost;
+  /** The open path and its selected anchors, as the corner controls read them. */
+  cornerSelection: CornerControlsSelection;
 }
 
 // ─── Hook ────────────────────────────────────────────────────────────────────
@@ -95,5 +107,21 @@ export function useModality(
 
   const decorationLayer = useMemo(() => modeDecorationLayer(decorations), [decorations]);
 
-  return { machine, decorations, scopingDim, decorationLayer, history };
+  const [anchors] = useState(createAnchorSelection);
+  const pathEdit = useMemo(() => modePathEdit(
+    machine,
+    (id) => hasEditablePath(scene.get(asNodeId(id))),
+    anchors,
+  ), [machine, scene, anchors]);
+  const cornerSelection = useMemo<CornerControlsSelection>(() => ({
+    editingId: pathEdit.editingId,
+    selectedAnchors: anchors.get,
+    subscribe: (l) => {
+      const offAnchors = anchors.subscribe(l);
+      const offModes = machine.registry.subscribe(l);
+      return () => { offAnchors(); offModes(); };
+    },
+  }), [pathEdit, anchors, machine]);
+
+  return { machine, decorations, scopingDim, decorationLayer, history, anchors, pathEdit, cornerSelection };
 }

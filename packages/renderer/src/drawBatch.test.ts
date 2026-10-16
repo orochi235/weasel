@@ -26,7 +26,7 @@ import {
   MAX_VERTICES_PER_BATCH, SOLID_LARGE_RING_SIZE, SOLID_RING_SIZE,
   SOLID_RING_SLOT_VERTICES, FLOATS_PER_VERTEX, TEX_SLOT_OFFSET,
 } from './drawBatch';
-import { paintModeOf } from './shaders/batchFill';
+import { RAMP_SLOT, paintModeOf } from './shaders/batchFill';
 
 const ARRAY_BUFFER = 0x8892;
 const ELEMENT_ARRAY_BUFFER = 0x8893;
@@ -255,15 +255,15 @@ describe('renderer — consecutive solid-fill batching', () => {
       expect(verts.map((v) => v[0])).toEqual([2, 3, 3, 2]);
       // One ramp in a 16-row atlas: the center of row 0.
       expect(new Set(verts.map((v) => v[1]))).toEqual(new Set([0.5 / 16]));
-      // Slot 1 at the plain paint mode — no mode of its own.
-      expect(new Set(verts.map((v) => v[2]))).toEqual(new Set([1]));
+      // The ramp slot at the plain paint mode — no mode of its own.
+      expect(new Set(verts.map((v) => v[2]))).toEqual(new Set([RAMP_SLOT]));
     });
 
     it('gives every gradient in a run the same slot and a row of its own', () => {
       r.render(distinctLinears(4));
       expect(draws()).toEqual([24]);
       const verts = rampVertices();
-      expect(new Set(verts.map((v) => v[2]))).toEqual(new Set([1]));
+      expect(new Set(verts.map((v) => v[2]))).toEqual(new Set([RAMP_SLOT]));
       expect(new Set(verts.map((v) => v[1])).size).toBe(4);
       expect(verts.every((v) => paintModeOf(v[2]) === 0)).toBe(true);
     });

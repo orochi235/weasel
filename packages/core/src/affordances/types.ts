@@ -38,6 +38,9 @@ export interface AffordanceRegion<TScratch = unknown> {
   /** Stable id, e.g. `corner-min-min`. Used for debug overlays + a11y. */
   id: string;
 
+  /** A chrome-caps id gating this region on top of its affordance's. */
+  chromeId?: string;
+
   /** Target id whose `state.boundsOf(targetId)` defines this region's
    *  local frame: the bounds' `rotation` and `transform`, as `poseFrameOf`
    *  composes them about the box center. Pass

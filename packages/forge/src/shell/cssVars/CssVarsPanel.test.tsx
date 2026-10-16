@@ -161,8 +161,8 @@ describe('CssVarsPanel', () => {
     frame.send({
       type: 'vars',
       vars: [
-        { name: '--gap', value: '4px', overridden: false },
-        { name: '--ink', value: 'rgb(255, 0, 0)', overridden: false },
+        { name: '--gap', value: '4px', overridden: false, used: true },
+        { name: '--ink', value: 'rgb(255, 0, 0)', overridden: false, used: true },
       ],
     });
     await flush();
@@ -175,6 +175,27 @@ describe('CssVarsPanel', () => {
     fireEvent.change(swatch, { target: { value: '#00ff00' } });
     await flush();
     expect(setsOf(received)).toEqual([{ type: 'vars.set', name: '--ink', value: '#00ff00' }]);
+  });
+
+  it('lists only the vars the story uses until asked for the rest', async () => {
+    location.hash = '#/x--a';
+    render(<Workshop index={[a]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
+    const { frame } = await openTrial('A');
+    const panel = vars();
+    fireEvent.click(panel.getByRole('radio', { name: 'Story' }));
+    frame.send({
+      type: 'vars',
+      vars: [
+        { name: '--gap', value: '4px', overridden: false, used: true },
+        { name: '--noise', value: '1px', overridden: false, used: false },
+      ],
+    });
+    await flush();
+    expect(panel.queryByRole('group', { name: '--gap' })).toBeInTheDocument();
+    expect(panel.queryByRole('group', { name: '--noise' })).toBeNull();
+    fireEvent.click(panel.getByRole('checkbox', { name: 'Show variables the story doesn’t use' }));
+    await flush();
+    expect(panel.queryByRole('group', { name: '--noise' })).toBeInTheDocument();
   });
 
   it('follows the focused trial, keeping each trial’s overrides to it and sending them again when its frame reloads', async () => {

@@ -15,6 +15,9 @@ export interface BarActionButtonProps {
   labeled?: boolean;
   /** It cannot be pressed now. */
   disabled?: boolean;
+  /** Why it cannot be pressed. Given, a disabled button keeps its tooltip and
+   *  stays focusable, so the reason can be read. */
+  disabledReason?: string;
   /** Held down. Leave unset for an action with no pressed state. */
   active?: boolean;
   /** Nothing answers to this key. The button is dead, and its tooltip says why. */
@@ -29,21 +32,26 @@ export interface BarActionButtonProps {
  * entry.
  */
 export function BarActionButton(props: BarActionButtonProps) {
-  const { label, icon, shortcut, labeled = false, disabled = false, active, missing, onPress } = props;
+  const { label, icon, shortcut, labeled = false, disabled = false, active, missing, onPress, disabledReason } = props;
   const dead = missing !== undefined;
-  const tip = dead ? `${label}: no action “${missing}”` : shortcut ? `${label} (${shortcut})` : label;
+  const explained = dead || (disabled && disabledReason !== undefined);
+  const tip = dead
+    ? `${label}: no action “${missing}”`
+    : disabled && disabledReason !== undefined ? `${label}: ${disabledReason}`
+    : shortcut ? `${label} (${shortcut})` : label;
   const words = labeled || icon == null;
   return (
-    // A dead button keeps its tooltip, which is the only thing that says why it is dead.
-    <TooltipTrigger isDisabled={disabled && !dead}>
-      <Focusable isDisabled={disabled && !dead}>
+    // A dead or explained button keeps its tooltip, which is the only thing that says why.
+    <TooltipTrigger isDisabled={disabled && !explained}>
+      <Focusable isDisabled={disabled && !explained}>
         <button
           type="button"
           data-testid={props['data-testid']}
           aria-label={label}
           aria-disabled={disabled || dead || undefined}
+          {...(disabled && disabledReason !== undefined ? { 'aria-description': disabledReason } : {})}
           aria-pressed={active}
-          disabled={disabled && !dead}
+          disabled={disabled && !explained}
           className={words ? `${s.action} ${s.actionLabeled}` : s.action}
           {...(dead ? { 'data-missing': missing } : {})}
           onClick={() => {

@@ -73,15 +73,18 @@ describe('raster session in a real browser', () => {
 describe('one-shot renders in a loop', () => {
   // Chromium keeps 16 live contexts per page and loses the oldest for a 17th.
   // Fourteen idle ones stand in for a longer loop, which compiles every
-  // program again on each pass.
-  it('do not push a canvas already on the page out of its context', () => {
+  // program again on each pass: with the canvas on the page that is 16, so a
+  // second pass is the 17th if the first kept its context.
+  // Alone this takes about 0.5 s; beside the rest of the browser project it took
+  // 15 to 19 s on fleet nodes, so the limit covers that wait, not the work.
+  it('do not push a canvas already on the page out of its context', { timeout: 45_000 }, () => {
     const onPage = document.createElement('canvas');
     document.body.appendChild(onPage);
     const gl = onPage.getContext('webgl2')!;
     const idle = Array.from({ length: 14 }, () => document.createElement('canvas').getContext('webgl2')!);
     const scene = sceneOf([{ x: 0, y: 0, width: 4, height: 4, color: '#ff0000' }]);
     try {
-      for (let i = 0; i < 3; i++) {
+      for (let i = 0; i < 2; i++) {
         renderSceneToPixels({
           scene, drawOne: drawOne as never, sourceRect: { x: 0, y: 0, width: 4, height: 4 }, scale: { x: 1, y: 1 },
         });

@@ -1,5 +1,5 @@
 /**
- * WeaselDraw's own commands (the grid and snap toggles, Release compound
+ * WeaselDraw's own commands (the grid, snap, symmetry, and path direction toggles, Release compound
  * path, Preferences, the command palette) as actions the gesture dispatcher routes and the command
  * bar draws from the registry. Each reads the live `appCommands` dep.
  */
@@ -9,7 +9,7 @@ import './depSchemaAugmentation';
 
 import { ActionDisabledReason, type Action, type ActionDeps } from '@weasel-js/core';
 import { GridIcon, SearchIcon, SnapIcon } from '@weasel-js/ui';
-import { ReleaseCompoundIcon, SettingsIcon } from '../actionIcons';
+import { ReleaseCompoundIcon, SettingsIcon, SymmetryIcon } from '../actionIcons';
 
 /** What the app's own commands read and do. */
 export interface AppCommands {
@@ -17,6 +17,12 @@ export interface AppCommands {
   toggleGrid(): void;
   snapToGrid: boolean;
   toggleSnap(): void;
+  /** Whether path edit draws the edited path's direction arrows. */
+  pathDirection: boolean;
+  togglePathDirection(): void;
+  /** Whether live symmetry is on. */
+  symmetryOn: boolean;
+  toggleSymmetry(): void;
   /** Whether any selected path has more than one subpath. */
   canReleaseCompound: boolean;
   releaseCompound(): void;
@@ -48,6 +54,25 @@ export const toggleSnapAction: AppAction = {
   requires: ['appCommands'],
   active: (deps) => read(deps)?.snapToGrid === true,
   invoker: { timing: 'immediate', run: (deps) => read(deps)?.toggleSnap() },
+};
+
+export const togglePathDirectionAction: AppAction = {
+  id: 'view.pathDirection',
+  label: 'Show path direction',
+  group: 'view',
+  requires: ['appCommands'],
+  active: (deps) => read(deps)?.pathDirection === true,
+  invoker: { timing: 'immediate', run: (deps) => read(deps)?.togglePathDirection() },
+};
+
+export const toggleSymmetryAction: AppAction = {
+  id: 'view.symmetry',
+  label: 'Symmetry',
+  icon: () => <SymmetryIcon />,
+  group: 'view',
+  requires: ['appCommands'],
+  active: (deps) => read(deps)?.symmetryOn === true,
+  invoker: { timing: 'immediate', run: (deps) => read(deps)?.toggleSymmetry() },
 };
 
 export const releaseCompoundAction: AppAction = {
@@ -90,6 +115,8 @@ export const commandsAction: AppAction = {
 export const appActions: Action[] = [
   toggleGridAction,
   toggleSnapAction,
+  togglePathDirectionAction,
+  toggleSymmetryAction,
   releaseCompoundAction,
   preferencesAction,
   commandsAction,

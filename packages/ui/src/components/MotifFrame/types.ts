@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode } from 'react';
+import type { CSSProperties, MouseEventHandler, ReactNode } from 'react';
 import type { StanceProps } from '../stance';
 
 /** The parts of a frame's heading, which a motif places as it sees fit. */
@@ -22,6 +22,7 @@ export interface RootProps {
   'data-motif': string;
   'data-stance'?: string;
   'data-tone'?: string;
+  onContextMenu?: MouseEventHandler;
   style?: CSSProperties;
 }
 
@@ -60,4 +61,6 @@ export interface MotifFrameProps extends StanceProps {
   hidden?: boolean;
   children?: ReactNode;
   className?: string;
+  /** A right-click anywhere on the frame. */
+  onContextMenu?: MouseEventHandler;
 }

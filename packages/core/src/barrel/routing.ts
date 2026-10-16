@@ -1,27 +1,42 @@
-/** Part of the `@weasel-js/core` barrel. Actions, deps, the gesture dispatcher, and tools. */
+/**
+ * Part of the `@weasel-js/core` barrel. Actions, deps, the gesture dispatcher, and tools.
+ *
+ * @packageDocumentation
+ */
 
 // --- @experimental Actions Registry (2026-05-09) ----------------------------
 export { ActionsProvider, InputScope, useYoke, Yoke, useActionsRegistry, useAction, useOngoingAction } from '@weasel-js/routing/react';
 export { useLatest } from '@weasel-js/react';
 export type { OngoingAction } from '@weasel-js/routing/react';
+export { useMenuHost, useMenus } from '@weasel-js/routing/react';
+export type { MenuDef, MenuHit, MenuHost, MenuOpenRequest, OpenMenu } from '@weasel-js/routing';
 export type { ActionEntry, ActionsProp, ActionsRegistry, UiOngoingControl } from '@weasel-js/routing';
-export { ActionDisabledReason } from '@weasel-js/routing';
+export { actionCursor, ActionDisabledReason } from '@weasel-js/routing';
 export type { Action, ActionDispatch, ActionPresentation, ActionVariant } from '@weasel-js/routing';
-export { actionBindings, actionItems } from '@weasel-js/routing';
+export { actionBindings, actionItems, actionsTagged, taggedActionItems, matchActionItem } from '@weasel-js/routing';
+export { PATH_GESTURE_TAGS, pathOperationTags, type PathGestureFamily } from '../interactions/actions/pathGestureTags';
 export { heldKeySpec } from '@weasel-js/routing';
 export type { ActionItem } from '@weasel-js/routing';
+export type { QueryMatch } from '@weasel-js/registry';
 export type { BoundGesture, BindingSource } from '@weasel-js/routing';
+export type { ActionParams, ActionTuning, TunedBinding } from '@weasel-js/routing';
+export { tuneAction } from '@weasel-js/routing';
+export type { ActionParamSchema, ActionTunings } from '../interactions/actions/actionParamSchema';
 export { evaluateActive, evaluateEnabled, buildDepsFromRequires } from '@weasel-js/routing';
 export type { ActionEnabledResult } from '@weasel-js/routing';
-export { actionShortcuts, keySpecShortcut } from '../interactions/actions/actionShortcuts';
-export type { ActionShortcut } from '../interactions/actions/actionShortcuts';
+export { actionShortcuts, keySpecShortcut } from '@weasel-js/routing';
+export type { ActionShortcut } from '@weasel-js/routing';
 export { moveAction } from '../interactions/actions/move/action';
+export { flipAction } from '../interactions/actions/flip/action';
 export { resizeAction } from '../interactions/actions/resize/action';
 export { rotateAction } from '../interactions/actions/rotate/action';
 export { areaSelectAction } from '../interactions/actions/defaults/areaSelect';
 export { insertAction } from '../interactions/actions/insert/action';
 export { insertRepositionAction, INSERT_REPOSITION_BINDING } from '../interactions/actions/insert/repositionAction';
 export { clearSelectionAction } from '../interactions/actions/defaults/clearSelection';
+export {
+  exitPathEditToolAction, pathEditToolAction, pathEditToolActive,
+} from '../interactions/actions/defaults/pathEditTools';
 export { cloneAction } from '../interactions/actions/clone/action';
 export { inPlane, selectionLayer, insertLayer, editingLayer } from '../interactions/actions/planeInput';
 export type { EditedLayerOf } from '../interactions/actions/planeInput';
@@ -39,6 +54,10 @@ export {
   type WheelPanOptions,
 } from '../interactions/actions/defaults/viewportWheelPan';
 export { editAnchorsAction } from '../interactions/actions/edit-anchors/action';
+export {
+  deleteAnchorsAction, nudgeAnchorsDownAction, nudgeAnchorsLeftAction, nudgeAnchorsRightAction, nudgeAnchorsUpAction,
+  selectAnchorAction,
+} from '../interactions/actions/defaults/anchorEditing';
 export { lassoSelectAction } from '../interactions/actions/lasso-select/action';
 export { sliceAction } from '../interactions/actions/defaults/slice';
 export {
@@ -83,8 +102,12 @@ export type {
   EditAnchorsDep,
   IngestionDep,
   InsertDep,
+  InsertIntoDep,
+  PathSymmetryDep,
   InsertLive,
   SnapDep,
+  SnapQuery,
+  SnapGeometry,
   InsertExtras,
   LassoSelectDep,
   LayoutDep,

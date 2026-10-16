@@ -16,9 +16,9 @@ export type Platform = 'macos' | 'windows' | 'linux';
  *    Apple glyphs (⌘ ⌥ ⌃ ⇧ ⎋ ↵ ⇥). Windows keys mostly show text
  *    (Ctrl, Alt, Shift) BUT the Win key shows its logo (⊞) and the
  *    context-menu key shows ▤. Linux mirrors Windows with Super (⊞).
- *  - `'symbol'` forces the Apple-style glyph everywhere a symbolic form
- *    exists. Entries without a widely-recognized symbol still fall
- *    back to text.
+ *  - `'symbol'` forces a glyph wherever the key has one: Apple's on macOS,
+ *    ISO/IEC 9995-7's elsewhere (⎈ Ctrl, ⎇ Alt, ⎋ Esc). A key with no
+ *    symbol still falls back to text.
  *  - `'text'` always spells the label out (Cmd / Option / Esc / Enter). */
 export type LegendStyle = 'auto' | 'symbol' | 'text';
 
@@ -37,28 +37,37 @@ export interface KeySpecsFromModsOptions {
   /** Defaults to `'auto'`. Pass `'symbol'` or `'text'` to force a specific
    *  style regardless of platform. */
   legend?: LegendStyle;
+  /** Labels that replace the platform and legend tables', by a modifier's
+   *  logical name (`mod`, `shift`, `alt`, `ctrl`, `meta`) or a key's
+   *  `KeyboardEvent.key` (`Escape`, `Home`, `z`): a whole keyboard's worth
+   *  for a layout, a locale, or a keyboard of one's own. */
+  labels?: KeyLabels;
 }
+
+/** Key labels by modifier name or `KeyboardEvent.key`. See {@link KeySpecsFromModsOptions.labels}. */
+export type KeyLabels = Readonly<Record<string, string>>;
 
 const MOD_BY_PLATFORM: Record<LogicalMod, Record<Platform, Record<LegendStyle, string>>> = {
   mod: {
-    macos:   { auto: '⌘',    symbol: '⌘',    text: 'Cmd' },
-    windows: { auto: 'Ctrl', symbol: 'Ctrl', text: 'Ctrl' },
-    linux:   { auto: 'Ctrl', symbol: 'Ctrl', text: 'Ctrl' },
+    macos:   { auto: '⌘',    symbol: '⌘', text: 'Cmd' },
+    windows: { auto: 'Ctrl', symbol: '⎈', text: 'Ctrl' },
+    linux:   { auto: 'Ctrl', symbol: '⎈', text: 'Ctrl' },
   },
   shift: {
     macos:   { auto: '⇧', symbol: '⇧', text: 'Shift' },
     windows: { auto: '⇧', symbol: '⇧', text: 'Shift' },
     linux:   { auto: '⇧', symbol: '⇧', text: 'Shift' },
   },
+  // Off macOS the symbols are ISO/IEC 9995-7's: ⎈ for Control, ⎇ for Alt.
   alt: {
-    macos:   { auto: '⌥',   symbol: '⌥',   text: 'Option' },
-    windows: { auto: 'Alt', symbol: 'Alt', text: 'Alt' },
-    linux:   { auto: 'Alt', symbol: 'Alt', text: 'Alt' },
+    macos:   { auto: '⌥',   symbol: '⌥', text: 'Option' },
+    windows: { auto: 'Alt', symbol: '⎇', text: 'Alt' },
+    linux:   { auto: 'Alt', symbol: '⎇', text: 'Alt' },
   },
   ctrl: {
-    macos:   { auto: '⌃',    symbol: '⌃',    text: 'Control' },
-    windows: { auto: 'Ctrl', symbol: 'Ctrl', text: 'Ctrl' },
-    linux:   { auto: 'Ctrl', symbol: 'Ctrl', text: 'Ctrl' },
+    macos:   { auto: '⌃',    symbol: '⌃', text: 'Control' },
+    windows: { auto: 'Ctrl', symbol: '⎈', text: 'Ctrl' },
+    linux:   { auto: 'Ctrl', symbol: '⎈', text: 'Ctrl' },
   },
   // Windows/Linux Meta has a recognized symbol on the physical key (⊞ Win
   // logo / Super logo), so `auto` shows it. Use `text` for Win / Super.
@@ -108,7 +117,7 @@ export function keySpecsFromMods(
   const platform = opts.platform ?? detectPlatform();
   const legend = opts.legend ?? 'auto';
   return mods.map((m) => {
-    const label = MOD_BY_PLATFORM[m.name][platform][legend];
+    const label = opts.labels?.[m.name] ?? MOD_BY_PLATFORM[m.name][platform][legend];
     return m.optional ? { label, optional: true } : { label };
   });
 }
@@ -117,17 +126,27 @@ export function keySpecsFromMods(
  *  is whatever's printed on the physical key for that platform. Arrows
  *  are universal symbols on every platform. */
 const NAMED_KEY: Record<string, Record<Platform, Record<LegendStyle, string>>> = {
-  Escape:      { macos: { auto: '⎋',    symbol: '⎋',        text: 'Esc' },       windows: { auto: 'Esc',       symbol: 'Esc',       text: 'Esc' },       linux: { auto: 'Esc',       symbol: 'Esc',       text: 'Esc' } },
-  Enter:       { macos: { auto: '↵',    symbol: '↵',        text: 'Return' },    windows: { auto: 'Enter',     symbol: 'Enter',     text: 'Enter' },     linux: { auto: 'Enter',     symbol: 'Enter',     text: 'Enter' } },
-  Return:      { macos: { auto: '↵',    symbol: '↵',        text: 'Return' },    windows: { auto: 'Enter',     symbol: 'Enter',     text: 'Enter' },     linux: { auto: 'Enter',     symbol: 'Enter',     text: 'Enter' } },
-  Tab:         { macos: { auto: '⇥',    symbol: '⇥',        text: 'Tab' },       windows: { auto: 'Tab',       symbol: 'Tab',       text: 'Tab' },       linux: { auto: 'Tab',       symbol: 'Tab',       text: 'Tab' } },
-  Space:       { macos: { auto: '␣',    symbol: '␣',        text: 'Space' },     windows: { auto: 'Space',     symbol: 'Space',     text: 'Space' },     linux: { auto: 'Space',     symbol: 'Space',     text: 'Space' } },
-  ' ':         { macos: { auto: '␣',    symbol: '␣',        text: 'Space' },     windows: { auto: 'Space',     symbol: 'Space',     text: 'Space' },     linux: { auto: 'Space',     symbol: 'Space',     text: 'Space' } },
-  Backspace:   { macos: { auto: '⌫',    symbol: '⌫',        text: 'Backspace' }, windows: { auto: 'Backspace', symbol: 'Backspace', text: 'Backspace' }, linux: { auto: 'Backspace', symbol: 'Backspace', text: 'Backspace' } },
-  Delete:      { macos: { auto: '⌦',    symbol: '⌦',        text: 'Delete' },    windows: { auto: 'Delete',    symbol: 'Delete',    text: 'Delete' },    linux: { auto: 'Delete',    symbol: 'Delete',    text: 'Delete' } },
+  Escape:      { macos: { auto: '⎋',    symbol: '⎋',        text: 'Esc' },       windows: { auto: 'Esc',       symbol: '⎋',       text: 'Esc' },       linux: { auto: 'Esc',       symbol: '⎋',       text: 'Esc' } },
+  Enter:       { macos: { auto: '↵',    symbol: '↵',        text: 'Return' },    windows: { auto: 'Enter',     symbol: '↵',     text: 'Enter' },     linux: { auto: 'Enter',     symbol: '↵',     text: 'Enter' } },
+  Return:      { macos: { auto: '↵',    symbol: '↵',        text: 'Return' },    windows: { auto: 'Enter',     symbol: '↵',     text: 'Enter' },     linux: { auto: 'Enter',     symbol: '↵',     text: 'Enter' } },
+  Tab:         { macos: { auto: '⇥',    symbol: '⇥',        text: 'Tab' },       windows: { auto: 'Tab',       symbol: '⇥',       text: 'Tab' },       linux: { auto: 'Tab',       symbol: '⇥',       text: 'Tab' } },
+  Space:       { macos: { auto: '␣',    symbol: '␣',        text: 'Space' },     windows: { auto: 'Space',     symbol: '␣',     text: 'Space' },     linux: { auto: 'Space',     symbol: '␣',     text: 'Space' } },
+  ' ':         { macos: { auto: '␣',    symbol: '␣',        text: 'Space' },     windows: { auto: 'Space',     symbol: '␣',     text: 'Space' },     linux: { auto: 'Space',     symbol: '␣',     text: 'Space' } },
+  Backspace:   { macos: { auto: '⌫',    symbol: '⌫',        text: 'Backspace' }, windows: { auto: 'Backspace', symbol: '⟵', text: 'Backspace' }, linux: { auto: 'Backspace', symbol: '⟵', text: 'Backspace' } },
+  Delete:      { macos: { auto: '⌦',    symbol: '⌦',        text: 'Delete' },    windows: { auto: 'Delete',    symbol: '⌦',    text: 'Delete' },    linux: { auto: 'Delete',    symbol: '⌦',    text: 'Delete' } },
   // Context-menu key (the right-Ctrl-area key on Windows / Linux keyboards
   // with a ▤ icon). Mac has no equivalent; falls back to text 'Menu'.
   ContextMenu: { macos: { auto: 'Menu', symbol: 'Menu',     text: 'Menu' },      windows: { auto: '▤',         symbol: '▤',         text: 'Menu' },      linux: { auto: '▤',         symbol: '▤',         text: 'Menu' } },
+  // Symbol mode only: Apple's arrows for Home, End, and the page keys, and
+  // ISO/IEC 9995-7's symbols for the rest.
+  Home:        { macos: { auto: 'Home',     symbol: '↖', text: 'Home' },   windows: { auto: 'Home',  symbol: '↖', text: 'Home' },   linux: { auto: 'Home',  symbol: '↖', text: 'Home' } },
+  End:         { macos: { auto: 'End',     symbol: '↘', text: 'End' },    windows: { auto: 'End',   symbol: '↘', text: 'End' },    linux: { auto: 'End',   symbol: '↘', text: 'End' } },
+  PageUp:      { macos: { auto: 'PgUp',     symbol: '⇞', text: 'PgUp' },   windows: { auto: 'PgUp',  symbol: '⇞', text: 'PgUp' },   linux: { auto: 'PgUp',  symbol: '⇞', text: 'PgUp' } },
+  PageDown:    { macos: { auto: 'PgDn',     symbol: '⇟', text: 'PgDn' },   windows: { auto: 'PgDn',  symbol: '⇟', text: 'PgDn' },   linux: { auto: 'PgDn',  symbol: '⇟', text: 'PgDn' } },
+  PrintScreen: { macos: { auto: 'PrtSc', symbol: '⎙', text: 'PrtSc' },  windows: { auto: 'PrtSc', symbol: '⎙', text: 'PrtSc' },  linux: { auto: 'PrtSc', symbol: '⎙', text: 'PrtSc' } },
+  Insert:      { macos: { auto: 'Ins',   symbol: '⎀', text: 'Insert' }, windows: { auto: 'Ins',   symbol: '⎀', text: 'Insert' }, linux: { auto: 'Ins',   symbol: '⎀', text: 'Insert' } },
+  ScrollLock:  { macos: { auto: 'ScrLk', symbol: '⇳', text: 'ScrLk' },  windows: { auto: 'ScrLk', symbol: '⇳', text: 'ScrLk' },  linux: { auto: 'ScrLk', symbol: '⇳', text: 'ScrLk' } },
+  Pause:       { macos: { auto: 'Pause', symbol: '⎉', text: 'Pause' },  windows: { auto: 'Pause', symbol: '⎉', text: 'Pause' },  linux: { auto: 'Pause', symbol: '⎉', text: 'Pause' } },
   ArrowUp:     { macos: { auto: '↑',    symbol: '↑',        text: '↑' },         windows: { auto: '↑',         symbol: '↑',         text: '↑' },         linux: { auto: '↑',         symbol: '↑',         text: '↑' } },
   ArrowDown:   { macos: { auto: '↓',    symbol: '↓',        text: '↓' },         windows: { auto: '↓',         symbol: '↓',         text: '↓' },         linux: { auto: '↓',         symbol: '↓',         text: '↓' } },
   ArrowLeft:   { macos: { auto: '←',    symbol: '←',        text: '←' },         windows: { auto: '←',         symbol: '←',         text: '←' },         linux: { auto: '←',         symbol: '←',         text: '←' } },
@@ -146,9 +165,8 @@ const NAMED_KEY: Record<string, Record<Platform, Record<LegendStyle, string>>> =
  * keySpecFromKey('p')                               // { label: 'P' }
  * ```
  *
- * Symbol mode is only meaningful on macOS — Windows / Linux keyboards
- * print the text form on the physical key, so symbol mode there falls
- * back to text.
+ * Symbol mode off macOS draws ISO/IEC 9995-7's symbols where the key
+ * has one, though Windows and Linux keyboards print the text form.
  */
 export function keySpecFromKey(
   raw: string,
@@ -157,6 +175,7 @@ export function keySpecFromKey(
   const platform = opts.platform ?? detectPlatform();
   const legend = opts.legend ?? 'auto';
   const entry = NAMED_KEY[raw];
-  const label = entry ? entry[platform][legend] : raw.length === 1 ? raw.toUpperCase() : raw;
+  const override = opts.labels?.[raw] ?? (raw.length === 1 ? opts.labels?.[raw.toUpperCase()] : undefined);
+  const label = override ?? (entry ? entry[platform][legend] : raw.length === 1 ? raw.toUpperCase() : raw);
   return opts.optional ? { label, optional: true } : { label };
 }

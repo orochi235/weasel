@@ -36,6 +36,9 @@ export interface SerializedNode<TData, TLayer extends string, TPose> {
   /** Registry key for the container's clip-path factory.
    *  Containers only; omitted when the container has no clip. */
   clipFromPoseKey?: string;
+  /** Registry key for the container's `copiesFromPose`. Containers only;
+   *  omitted when it draws no copies. */
+  copiesFromPoseKey?: string;
   /** Ids this node's geometry derives from, or `'children'`. Omitted when it
    *  derives from nothing. */
   dependsOn?: readonly string[] | 'children';

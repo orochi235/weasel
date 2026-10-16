@@ -11,7 +11,6 @@ import { useCallback, useMemo } from 'react';
 import type { DrawScene } from '../drawDocument';
 import { dispatchDoubleClickEntry } from './doubleClickEntry';
 import type { ModeMachine } from './machine';
-import { modePathEdit } from './pathEditHost';
 import { modalityShortcuts } from './shortcuts';
 import { useModeId } from './useModeId';
 
@@ -24,7 +23,12 @@ export interface CanvasModes {
   onDoubleClick: (hit: SceneCanvasHit | null) => void;
 }
 
-export function useCanvasModes(machine: ModeMachine, scene: DrawScene, selection: SelectionApi): CanvasModes {
+export function useCanvasModes(
+  machine: ModeMachine,
+  scene: DrawScene,
+  selection: SelectionApi,
+  pathEdit: PathEditHost,
+): CanvasModes {
   const entry = useLatest({
     pathToEdit: (): string | null => {
       const [id, ...rest] = selection.get();
@@ -38,14 +42,14 @@ export function useCanvasModes(machine: ModeMachine, scene: DrawScene, selection
     selection: () => entry.current.selection(),
   }), [machine, entry]);
 
-  const pathEdit = useMemo(
-    () => modePathEdit(machine, (id) => hasEditablePath(scene.get(asNodeId(id)))),
-    [machine, scene],
+  const hasAnchors = useCallback(
+    (id: string) => hasEditablePath(scene.get(asNodeId(id))),
+    [scene],
   );
 
   const onDoubleClick = useCallback((hit: SceneCanvasHit | null) => {
-    dispatchDoubleClickEntry(hit, machine);
-  }, [machine]);
+    dispatchDoubleClickEntry(hit, machine, hasAnchors);
+  }, [machine, hasAnchors]);
 
   return { keys, pathEdit, onDoubleClick };
 }

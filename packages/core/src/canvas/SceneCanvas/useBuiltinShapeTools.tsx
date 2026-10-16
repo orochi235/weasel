@@ -20,6 +20,7 @@ import type { Tool } from 'tools/overlayBinding';
 import type { InsertToolOptions } from 'tools/builtin/shared/insertToolOptions';
 import type { LassoHitMode } from 'core/adapters/types';
 import type { BuiltinShapeToolId } from 'core/shapeKinds';
+import type { PathSnapOptions } from 'features/paths/pathSnap/pathSnapper';
 
 /** Per-tool option overrides for the built-in shape/lasso tools.
  *  Each entry is a narrow subset of the underlying hook's options surface
@@ -38,8 +39,14 @@ export interface BuiltinToolOptions {
    *  geometry agree — and which the pen tool reads for its own anchor
    *  placement. Covers every drag-to-insert tool (rect / ellipse / line /
    *  polygon / star / text); freehand pencil samples are deliberately left
-   *  unsnapped. */
+   *  unsnapped. A path target in range (`pathSnap`) wins over it. */
   snapPoint?: (p: { x: number; y: number }) => { x: number; y: number };
+  /** Snap to the geometry of the scene's paths: crossings, tangent and
+   *  perpendicular points from where the line being drawn starts, segment
+   *  midpoints, curve extremes and quadrant points, and the nearest point on
+   *  a stroke. Applies to the drawing tools as `snapPoint` does, and also to
+   *  a move's base point and to a dragged anchor. Absent, off. */
+  pathSnap?: PathSnapOptions;
 }
 
 // `BuiltinShapeToolId` / `KIT_SHAPE_KINDS` derive from the `core/shapeKinds`
@@ -61,7 +68,6 @@ export type BuiltinShapeTools = Record<BuiltinShapeToolId, Tool>;
 export function useBuiltinShapeTools(args: UseBuiltinShapeToolsArgs = {}): BuiltinShapeTools {
   const { options } = args;
 
-  const snapPoint = options?.snapPoint;
   // Every tool here is a declarative shell: the `insert` dep
   // (`useInsertDepSource`) mints the node, so a consumer wanting its own node
   // shape overrides the dep, not the tool.
@@ -72,7 +78,8 @@ export function useBuiltinShapeTools(args: UseBuiltinShapeToolsArgs = {}): Built
   const polygon = usePolygonTool(insert);
   const star = useStarTool(insert);
   const pencil = usePencilTool(insert);
-  const pen = usePenTool({ snapPoint });
+  // The pen reads `snapPoint` and `pathSnap` through the `snap` dep.
+  const pen = usePenTool();
   const lasso = useLassoTool(options?.lasso ?? {});
   const text = useTextTool(insert);
   return { rect, ellipse, line, polygon, star, pen, pencil, lasso, text };

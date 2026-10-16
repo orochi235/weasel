@@ -33,6 +33,8 @@ export interface ToolDef<TOverlay = KernelOverlay> {
    * binding that points at an action id nothing registered.
    */
   actions?: import('../interactions/actions/action').Action[];
+  /** Menus this tool adds while it is active. */
+  menus?: import('../menus/types').MenuDef[];
 
   /** Hook name as exported from the kit barrel (e.g. `'useHandTool'`).
    *  Set by built-in hooks for inspector / debugging. Consumer-authored

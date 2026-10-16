@@ -44,6 +44,12 @@ export interface ActionPresentation {
    *  ships defaults for `'align'` (six edges/centers), `'distribute'`
    *  (two axes), and recommends `'pathfinder'` for boolean ops. */
   group?: string;
+  /** Words the action is also found by and gathered under. Where `group` is
+   *  the one place an action sits, an action carries any number of tags: a
+   *  palette search matches them as it matches the label, and
+   *  `actionsTagged` / `taggedActionItems` gather every action or entry
+   *  carrying one, for a bar or a menu built from a tag. */
+  tags?: readonly string[];
   /** Display override for the keyboard shortcut. When omitted, palette
    *  surfaces derive a label from `defaultBinding` via their own
    *  formatter. */
@@ -66,6 +72,8 @@ export interface ActionVariant {
   label: string;
   /** Falls back to the action's own `icon`. */
   icon?: ReactNode | (() => ReactNode);
+  /** Tags this variant carries besides its action's, which it carries too. */
+  tags?: readonly string[];
   /** Passed to `trigger`, and matched against each binding's
    *  `opts.params` to find the variant's shortcuts. */
   params: Readonly<Record<string, unknown>>;
@@ -100,8 +108,9 @@ export interface ActionDispatch extends BindingSource {
    * command palette greys out a disabled row, skips it in keyboard nav,
    * ignores clicks, and shows the reason next to the label. The dispatcher
    * skips a disabled action too, on a key as on a pointer, and falls through
-   * to the next binding that matches. `ActionsRegistry.trigger` does not ask,
-   * so the action's own `run` should still self-guard.
+   * to the next binding that matches. `ActionsRegistry.trigger` asks too, but
+   * with no point, so a `run` whose answer depends on `at` should still
+   * self-guard.
    *
    * **Contract:** must be pure (no side effects), fast (< 4ms in dev), and
    * must not throw. A throw is caught and treated as disabled with reason
@@ -116,8 +125,10 @@ export interface ActionDispatch extends BindingSource {
    * click, a press, a long-press. An action that only applies somewhere
    * (on a path segment, say) refuses other points here, so the dispatcher
    * falls through to the next binding and hover prediction shows the
-   * action's `cursor` only where it would act. Palettes and keystrokes
-   * pass no point; treat absent as "anywhere".
+   * action's `cursor` only where it would act. `trigger` passes the
+   * `worldX`/`worldY` its params carry, so a menu row is run under the
+   * question it was shown enabled for. Palettes and keystrokes pass no
+   * point; treat absent as "anywhere".
    *
    * `carried` is what a drop or a paste being routed brings: its items. For
    * a drag still in flight they hold a MIME and nothing else, since a
@@ -165,12 +176,14 @@ export interface ActionDispatch extends BindingSource {
    * resolved earlier in the pump via `AffordanceRegion.cursor` and never
    * reach this field.
    *
-   * Static value only. Prediction runs `enabled()` but cannot run the
-   * invoker, so an action that matches yet bails at `start()` (empty
-   * handle) may still show its cursor — keep `enabled` accurate for
-   * actions that declare one.
+   * A function is asked each time with the params the winning binding would
+   * start the action with, tunings included, so a cursor can follow them — a
+   * brush ring as wide as the brush. Read it through {@link actionCursor}.
+   * Prediction runs `enabled()` but cannot run the invoker, so an action that
+   * matches yet bails at `start()` (empty handle) may still show its cursor —
+   * keep `enabled` accurate for actions that declare one.
    */
-  cursor?: CursorSpec;
+  cursor?: CursorSpec | ((params: Record<string, unknown> | undefined) => CursorSpec | undefined);
   /**
    * CSS cursor shown while THIS action's ongoing handle is in flight —
    * grabbing while panning, `move` while dragging a selection, `crosshair`
@@ -200,4 +213,14 @@ export interface Action extends ActionDispatch, ActionPresentation {}
  */
 export interface ActionSource {
   list(): readonly Action[];
+}
+
+/** `action`'s hover cursor for an invocation given `params`: its `cursor`,
+ *  asked when it is a function. */
+export function actionCursor(
+  action: Pick<Action, 'cursor'> | undefined,
+  params?: Record<string, unknown>,
+): CursorSpec | undefined {
+  const c = action?.cursor;
+  return typeof c === 'function' ? c(params) : c;
 }

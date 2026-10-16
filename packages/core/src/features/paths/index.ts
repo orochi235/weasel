@@ -5,6 +5,8 @@
  * The path data model and the math over it live in `@weasel-js/geom`;
  * re-exported by name (never `export *`, which esbuild cannot enumerate
  * across a package boundary).
+ *
+ * @packageDocumentation
  */
 
 export {
@@ -45,6 +47,19 @@ export {
   pointAlongPath,
   type PathStation,
   type PointAlongPathOptions,
+  measurePath,
+  type MeasurePathOptions,
+  type PathMeasure,
+  blendPaths,
+  prepareBlend,
+  type BlendPathsOptions,
+  type PathBlend,
+  bendAlongPath,
+  type BendAlongPathOptions,
+  repeatAlongPath,
+  stationsAlongPath,
+  type RepeatAlongPathOptions,
+  type RepeatStation,
   translatePath,
   scalePathToBounds,
   transformPath,
@@ -62,6 +77,30 @@ export {
   unionBoundsPath,
   pathSignedArea,
   reversePath,
+  resolveCorners,
+  resolveCornersWithSources,
+  remapPerAnchor,
+  type ResolvedCorners,
+  cornerFrames,
+  cornerFrameAt,
+  type CornerFrame,
+  cornerAt,
+  cornerSpecAt,
+  hasCorners,
+  withCorner,
+  withoutCorners,
+  type CornerSpec,
+  CORNER_KEYWORDS,
+  CORNER_FIT_TOLERANCE,
+  cornerShapeK,
+  cornerKeywordOf,
+  cornerShapePieces,
+  isCornerShape,
+  nextCornerShape,
+  type CornerKeyword,
+  type CornerPiece,
+  type CornerShape,
+  type CornerShapeFrame,
 } from '@weasel-js/geom';
 export {
   splitPathBySegment,
@@ -90,11 +129,13 @@ export {
   anchorAt,
   anchorCount,
   anchorsInRect,
+  anchorsUnderBrush,
   deleteAnchorsAt,
   editAnchorSet,
   editAnchorSetTracked,
   flatAnchorIndex,
   handleAlongItsAngle,
+  handleAtItsLength,
   insertAnchorOnSegment,
   locateAnchor,
   makeHandlesSymmetric,
@@ -110,14 +151,29 @@ export {
   type SegmentHit,
 } from '@weasel-js/geom';
 export {
-  averageAnchorsAt, closestOpenEnds, joinAnchorsAt, joinSubpathEnds, simplifyPath, subpathEndAt,
-  type AverageAxis, type SimplifyPathOptions, type SubpathEnd,
+  averageAnchorsAt, closestOpenEnds, joinAnchorsAt, joinSubpathEnds, simplifyAnchorsAt, simplifyPath,
+  simplifySpan, simplifySubpath, subpathEndAt,
+  type AverageAxis, type JoinOptions, type SimplifyPathOptions, type SubpathEnd,
 } from '@weasel-js/geom';
 export { pathInPoseFrame, pathInWorld, worldEditToStorage, type PathInWorldPose } from '@weasel-js/geom';
 export { poseRotationOf, rotatePathAround, type PoseRotation } from '@weasel-js/geom';
 export {
   poseFrameOf, poseFrameInverseOf, poseLinearOf, pathThroughPoseFrame, type PoseLinear,
 } from '@weasel-js/geom';
+export {
+  extendToMeet, smudgePath, type SmudgePathOptions, intersectSegments, lengthenOpenEnd, openEndRay, openPathEnds, pathCrossings, pathSegments, trimPathAt,
+  type ExtendToMeetOptions, type OpenPathEnd, type PathCrossing, type PathSegment, type PathStop, type SegmentCrossing, type TrimPathOptions, type TrimResult,
+} from '@weasel-js/geom';
+export {
+  createPathSnapIndex, findPathSnap, PATH_SNAP_KINDS,
+  type PathSnapHit, type PathSnapIndex, type PathSnapKind, type PathSnapQuery,
+} from '@weasel-js/geom';
+export {
+  createPathSnapper, DEFAULT_PATH_SNAP_RADIUS, type PathSnapMark, type PathSnapOptions, type PathSnapper,
+} from './pathSnap/pathSnapper';
+export {
+  createPathSnapMarkerLayer, pathSnapGlyph, PATH_SNAP_LABELS, type PathSnapMarkerStyle,
+} from './pathSnap/pathSnapMarkerLayer';
 export { createPathLayer, type CreatePathLayerOpts } from './pathLayer';
 export { pathPoseDescriptor } from 'core/geometry/pathPoseDescriptor';
 export { pathOriginProjection } from './originProjection';
@@ -131,6 +187,17 @@ export {
   type CreatePathEditingOverlayLayerOptions,
   type PathEditingOverlayStyle,
 } from './pathEditingOverlayLayer';
+export {
+  GEOMETRY_BOUND_DATA,
+  withoutGeometryBoundData,
+  type FinishedPathEdit,
+  type PathEditExtension,
+  type PathEditMark,
+  type PathEditMarksCtx,
+  type PathEditPart,
+  type PathEditStore,
+  type PathEditTarget,
+} from './pathEditExtension';
 export {
   pathUnion,
   pathIntersect,
