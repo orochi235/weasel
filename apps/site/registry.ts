@@ -841,7 +841,7 @@ const DEMO_META: DemoMeta[] = [
     id: 'context-menu',
     title: 'Context menus',
     category: 'Selection & actions',
-    description: "Right-click a shape and it is selected, and a menu of Duplicate, Delete and the two reorder actions opens. Right-click empty canvas and a different menu opens: Select All, Undo and Redo. Right-clicking a name in the list beside the canvas selects that shape and opens the same shape menu, from ordinary HTML with useContextMenu. Each menu row is a registered action, the same one its keyboard shortcut runs, so every row shows that shortcut and grays out when the action cannot run.",
+    description: "Right-click a shape and it is selected, and a menu of Duplicate, Delete and the two reorder actions opens. Right-click empty canvas and a different menu opens: Select All, Undo and Redo. Right-clicking a name in the list beside the canvas selects that shape and opens the same shape menu, from ordinary HTML with useContextMenu. Each menu row is a registered action, the same one its keyboard shortcut runs.",
     hint: 'Right-click a shape, the canvas, or a row in the list. With a shape selected, press <kbd>Shift</kbd>+<kbd>F10</kbd> on the canvas.',
     load: () => import('./demos/ContextMenuDemo').then((m) => m.ContextMenuDemo),
     path: 'apps/site/demos/ContextMenuDemo.tsx',
