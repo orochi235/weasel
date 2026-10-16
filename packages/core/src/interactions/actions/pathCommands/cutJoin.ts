@@ -12,8 +12,9 @@ import {
 import { snipPathsAtCrossings } from '@weasel-js/geom/booleans';
 import type { Op } from 'core/ops/types';
 import {
-  commitOps, deleteNode, insertAt, pathCopy, reshapeOps, selectedPathNodes, slotOf, type PathNode,
+  deleteNode, insertAt, pathCopy, reshapeOps, selectedPathNodes, slotOf, type PathNode,
 } from './pathNodes';
+import { commitOps } from '../defaultCommitAdapter';
 import { pathOperationTags } from '../pathGestureTags';
 import { CutAtCrossingsIcon, JoinIcon } from '../defaults/icons/pathIcons';
 

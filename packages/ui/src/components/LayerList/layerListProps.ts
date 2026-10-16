@@ -23,6 +23,15 @@ export interface LayerListItem {
   /** Shown or not, when the list has `onVisibilityChange`. Default true. */
   visible?: boolean;
   children?: LayerListItem[];
+  /** Not printed: an annotation — a measurement, a note — rather than
+   *  content. Drawn dimmed, with a marker. */
+  nonPrinting?: boolean;
+  /** Whether the row offers a visibility checkbox, when the list has
+   *  `onVisibilityChange`. Default true. */
+  hideable?: boolean;
+  /** Whether the row offers a remove button, when the list has `onRemove`.
+   *  Default true. */
+  removable?: boolean;
   /** Folds the body and children away until the user opens them.
    *  `collapsedIds` overrides it. */
   defaultCollapsed?: boolean;

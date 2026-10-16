@@ -7,25 +7,15 @@ import {
 } from 'react';
 import {
   actionShortcuts,
-  ActionDisabledReason,
   useSelectionContext,
   type ActionItem,
 } from '@weasel-js/core';
 import { Dialog } from '../Dialog';
+import { DEFAULT_REASON_LABELS } from '../ActionBar/reasonLabels';
 import { KeySequence, keySpecFromKey, keySpecsFromShortcut } from '../Keycaps';
 import { describeSelection } from './selectionSummary';
 import { usePaletteItems, type PaletteItems } from './usePaletteItems';
 import styles from './CommandPalette.module.css';
-
-/** Display strings for the closed `ActionDisabledReason` enum. Defined here
- *  (not in the kit) so localization and theming stay in app code; consumers
- *  can override by passing `reasonLabels`. */
-const DEFAULT_REASON_LABELS: Record<string, string> = {
-  [ActionDisabledReason.SelectionRequired]: 'Selection required',
-  [ActionDisabledReason.SceneEmpty]: 'Scene is empty',
-  [ActionDisabledReason.NotApplicable]: 'Not applicable here',
-  [ActionDisabledReason.PredicateThrew]: '(predicate threw)',
-};
 
 /** Every shortcut an entry answers to, as chip groups. An entry can be
  *  bound more than once — Bring to Front has two — so each binding gets its

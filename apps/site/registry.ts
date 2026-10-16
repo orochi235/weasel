@@ -720,6 +720,16 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/SceneLabDemo.tsx',
   },
   {
+    id: 'lab-measure-tool',
+    title: 'Measure, then transform',
+    category: 'Tools',
+    description:
+      "Measurements as non-printing annotations, the way ruler guides are: each one is a node on an annotation layer (`annotation: true` on the layer), so it saves and undoes with the scene while export and content picking leave it out. `useMeasureTool` adds one per drag, both ends through the `snap` dep and Shift holding the angle to the tool's `angleStep`. `measurementsContribution` keeps them live under every tool: a click on one picks it without touching the selection, a drag on the picked one's end moves that end, a drag anywhere else on one carries it, and its commands are what `<MeasureReadout>` draws: Move by and Rotate by carry the content selection by the picked measurement, or by the newest when none is picked, and say why when they cannot run. The snap rule offers measurement ends to the other tools before the grid. The trial opens with two measurements and nothing selected.",
+    hint: 'With Select active, click the green square, then Move by: it lands on the gray one. Undo, click the short line rising at 30° to pick it, and press Rotate by. Press <kbd>M</kbd> and drag to add a measurement, starting on an existing end to snap to it, or drag the picked one\'s end to adjust it. Under <kbd>M</kbd>, <kbd>Escape</kbd> drops the pick and <kbd>Delete</kbd> removes it. Change Shift angle step or Snap to grid in the control panel.',
+    load: () => import('./demos/MeasureLabDemo').then((m) => m.MeasureLabDemo),
+    path: 'apps/site/demos/MeasureLabDemo.tsx',
+  },
+  {
     id: 'lab-path-constraints',
     title: 'Path constraints',
     category: 'Geometry',

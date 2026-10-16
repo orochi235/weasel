@@ -63,7 +63,7 @@ Tag: `path-box`
 | Operation | Action id | What the handles do | Default binding | Status | Package |
 |---|---|---|---|---|---|
 | Perspective and free distort | `distort.drag` | Corner pins warp the selected paths | Drag a corner with the Distort tool (F) | main | path-tools |
-| Envelope mesh (to be renamed Cloth warp) | `envelope.drag` | A grid of control points warps the selection | Drag a mesh point with the Envelope tool (M) | main | path-tools |
+| Envelope mesh (to be renamed Cloth warp) | `envelope.drag` | A grid of control points warps the selection | Drag a mesh point with the Envelope tool (C) | main | path-tools |
 
 ## Commands on the selection
 

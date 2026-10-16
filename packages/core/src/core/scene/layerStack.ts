@@ -21,6 +21,7 @@ export function systemLayerRecord<TLayer extends string>(
     visible: spec.visible ?? true,
     locked: spec.locked ?? false,
     ...(spec.parallax ? { parallax: spec.parallax } : {}),
+    ...(spec.annotation ? { annotation: true } : {}),
   };
 }
 
@@ -168,6 +169,7 @@ export function createLayerEdits<TData, TLayer extends string, TPose>(
         visible: spec.visible ?? true,
         locked: spec.locked ?? false,
         ...(spec.parallax ? { parallax: spec.parallax } : {}),
+        ...(spec.annotation ? { annotation: true } : {}),
       };
       record('kit:addLayer', { record: layer, index }, 'addLayer');
     },

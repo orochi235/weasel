@@ -42,7 +42,7 @@ function controlsDrawn(options: UseEnvelopeToolOptions, tune: ActionTunings = {}
       tune={tune}
     />,
   );
-  act(() => { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'm', bubbles: true })); });
+  act(() => { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'c', bubbles: true })); });
   const state = { selection: [asNodeId('a')], multiActive: false, boundsOf: () => null, unionBounds: null, modifiers: {} } as unknown as ChromeState;
   return (layer as RenderLayer<unknown> | null)?.draw(state, VIEW as never, { width: 64, height: 64 }).length ?? 0;
 }

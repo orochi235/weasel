@@ -17,7 +17,7 @@ export type { IconName } from './generated/paths';
 export {
   SelectIcon, LassoIcon, RectIcon, EllipseIcon, ImageIcon, EyedropperIcon,
   LineIcon, ArrowIcon, PolygonIcon, StarIcon, PencilIcon, TextIcon, PenIcon, HandIcon,
-  SliceIcon, UnknownIcon,
+  SliceIcon, MeasureIcon, UnknownIcon,
 } from '@weasel-js/core';
 // The standard edit actions' glyphs live beside those actions in core, for the
 // same reason.
@@ -207,8 +207,6 @@ export const TuneIcon = (p: IconProps) => <Icon name="tune" {...p} />;
 export const GridIcon = (p: IconProps) => <Icon name="grid" {...p} />;
 /** Snap: a horseshoe magnet. */
 export const SnapIcon = (p: IconProps) => <Icon name="snap" {...p} />;
-/** Measure: a ruler. */
-export const MeasureIcon = (p: IconProps) => <Icon name="measure" {...p} />;
 /** Randomize: a die showing three. */
 export const RandomizeIcon = (p: IconProps) => <Icon name="randomize" {...p} />;
 /** Refresh: two arcs chasing each other around a circle. */

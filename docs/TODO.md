@@ -183,6 +183,16 @@ Priority tags:
 
 ### Path editing tricks
 
+- **(P2) Measurement rows in draw's Layers panel cannot be renamed, or hidden or locked one at a
+  time.** `LayerList` has no rename, and the scene has no per-node visibility or lock, so a
+  measurement row offers select and remove only; the annotation layer's own row can be hidden,
+  and shows its lock without toggling it. A measurement's `data.label` is what a rename would write.
+- **(P3) Moving a shape does not snap to measurement ends.** `nearestMeasureEnd` reaches the
+  insert tools through the `snap` dep; the select tool's move snaps through its own `snap`
+  strategy (`gridSnapStrategy`), which knows nothing of measurements.
+- **(P3) `renderSceneToPixels` draws annotation layers.** The SVG export leaves them out through
+  `isAnnotationNode`; a headless raster draws whatever the scene holds. Undecided: whether a raster
+  is an export, and so skips them, or a view of the canvas, and so keeps them.
 - **(P1) Rename the path tools the maintainer deferred to the end of the adoption pass.**
   Envelope mesh becomes Cloth warp, among others. They live in `@weasel-js/path-tools` now
   (`packages/path-tools/README.md`); the move kept every name.
@@ -247,7 +257,7 @@ Priority tags:
 - **(P2) Tune Envelope mesh hands-on, with the maintainer driving.** First-draft 3 by 3 Bicubic
   mesh (`DEFAULT_ENVELOPE_SIZE`, `packages/path-tools/src/warp/warpTargets.ts`), the grid lines drawn
   between mesh points (`packages/path-tools/src/warp/warpHandles.ts`), that Rows and Columns change only
-  through `configureWarp`, and its tool key, M (`packages/path-tools/src/warp/useWarpTool.ts`).
+  through `configureWarp`, and its tool key, C (`packages/path-tools/src/warp/useWarpTool.ts`).
 - **(P2) Tune Puppet warp hands-on, with the maintainer driving.** First-draft pin falloff (1, so
   weights go as 1/d², `rigidPuppetMap` in `packages/geom/src/warp/puppet.ts`), that a click on the
   selection adds a pin and Alt-click on a pin takes it out, the pin dots (5 screen px radius,
@@ -260,6 +270,10 @@ Priority tags:
 - **(P2) Tune draw's Symmetry toggle hands-on, with the maintainer driving.** Its key, the default
   kind and copy count, and where a new group's center lands (`toggleSymmetry`,
   `apps/draw/src/useSymmetry.ts`).
+- **(P2) Tune the Measure tool hands-on, with the maintainer driving.** First-draft behavior and
+  keys: its tool key, M, which moved Envelope mesh to C when the two met in draw; the Shift angle
+  step; that Move by and Rotate by fall back to the newest measurement when none is picked; and the
+  readout's look (`packages/core/src/tools/builtin/measure/`, `<MeasureReadout>` in `@weasel-js/ui`).
 - **(P2) A rectangle has no anchors in path edit.** Draw stores a drawn rectangle's `data.path`
   as a `RectPath` (`kind: 'rect'`), and `classifyPathStorage`
   (`packages/core/src/features/paths/editablePath.ts`) accepts only a polygon, so double-clicking
@@ -276,8 +290,6 @@ Priority tags:
   into geometry when it renders and on export.
 - **(P2) Extend a path from its end.** Drag an open path's endpoint outward to grow it along its
   end tangent, or along its end curvature.
-- **(P2) Measure, then transform by the measurement.** A measure tool reads distance and angle
-  between two points, and the readout can move or rotate the selection by exactly that amount.
 - **(P2) Shape builder.** Drag across overlapping regions to merge them, Alt-drag to delete them.
   `previewBooleanOp` already answers the pieces; the tool draws and picks among them. Building it
   also gives "Live preview of a Boolean operation" below its display.

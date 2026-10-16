@@ -78,6 +78,17 @@ export function carriedData(data: WeaselDrawData | undefined): WeaselDrawData {
   return Object.fromEntries(Object.entries(data).filter(([key]) => !CONTENT_KEYS.has(key)));
 }
 
-export type WeaselDrawLayer = 'default';
+/** The layer content goes on, and the non-printing one measurements go on. */
+export type WeaselDrawLayer = 'default' | 'annotations';
+
+/** Where measurements are kept: drawn on the canvas and saved with the
+ *  document, left out of export and of content picking. */
+export const ANNOTATION_LAYER: WeaselDrawLayer = 'annotations';
+
+/** The document's layers, content first. */
+export const DRAW_LAYERS = [{ id: 'default' }, { id: ANNOTATION_LAYER, annotation: true }] as const satisfies readonly {
+  id: WeaselDrawLayer;
+  annotation?: boolean;
+}[];
 
 export type DrawScene = Scene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>;

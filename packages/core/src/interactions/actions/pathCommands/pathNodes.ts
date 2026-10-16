@@ -16,7 +16,6 @@ import { createDeleteOp } from 'core/ops/delete';
 import { resolveEditablePathOf, storeEditablePath } from 'features/paths/editablePath';
 import { withoutShapeGenerator } from 'features/paths/shapeGenerator';
 import { withoutGeometryBoundData } from 'features/paths/pathEditExtension';
-import { defaultCommitAdapter } from '../defaultCommitAdapter';
 
 type AnyScene = Scene<unknown, string, unknown>;
 export type AnyNode = Node<unknown, string, unknown>;
@@ -97,17 +96,4 @@ export function insertAt(node: AnyNode, index: number, label: string): Op {
 /** Delete `node`, remembering its slot for undo. */
 export function deleteNode(scene: AnyScene, node: AnyNode, label: string): Op {
   return createDeleteOp({ node, index: slotOf(scene, node.id), label });
-}
-
-/** Commit `ops` as one undo entry, through the consumer's `applyOps` when
- *  there is one. */
-export function commitOps(deps: ActionDeps, ops: Op[], label: string): void {
-  if (ops.length === 0) return;
-  if (deps.applyOps) {
-    deps.applyOps(ops, label);
-    return;
-  }
-  const scene = deps.scene as AnyScene | undefined;
-  if (!scene) return;
-  scene.applyBatch(ops, label, defaultCommitAdapter(scene, deps.selection?.adapterMethods));
 }

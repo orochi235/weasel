@@ -4,7 +4,7 @@ import { ACTION_GLYPHS } from './actionGlyphs';
 
 /**
  * @experimental
- * Props for the undo, redo and delete glyphs — the same shape as
+ * Props for the glyphs drawn from `ACTION_GLYPHS` — the same shape as
  * `@weasel-js/ui`'s `IconProps`, which re-exports these components.
  */
 export interface ActionGlyphProps extends IconProps {
@@ -32,6 +32,7 @@ const MARKUP = {
   delete: { __html: ACTION_GLYPHS.delete },
   undo: { __html: ACTION_GLYPHS.undo },
   redo: { __html: ACTION_GLYPHS.redo },
+  measure: { __html: ACTION_GLYPHS.measure },
 };
 
 function renderGlyph(name: keyof typeof MARKUP, { className, size = 20, label }: ActionGlyphProps) {
@@ -62,4 +63,9 @@ export function RedoIcon(p: ActionGlyphProps) {
 /** @experimental Delete: a lidded trash can. */
 export function DeleteIcon(p: ActionGlyphProps) {
   return renderGlyph('delete', p);
+}
+
+/** @experimental Measure: a ruler, with hairline ticks hanging from its upper edge. Used for `useMeasureTool`. */
+export function MeasureIcon(p: ActionGlyphProps) {
+  return renderGlyph('measure', p);
 }

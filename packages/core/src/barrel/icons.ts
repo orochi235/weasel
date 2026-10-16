@@ -25,6 +25,7 @@ export {
   PenIcon,
   HandIcon,
   SliceIcon,
+  MeasureIcon,
   UnknownIcon,
 } from '../icons';
 export type { IconProps } from '../icons';

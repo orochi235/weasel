@@ -166,8 +166,8 @@ export {
 } from '../features/paths/shapeGenerator';
 
 // ─── Building path commands and path-edit features on core ─────────────────
+export { commitOps } from '../interactions/actions/defaultCommitAdapter';
 export {
-  commitOps,
   deleteNode,
   insertAt,
   pathCopy,
