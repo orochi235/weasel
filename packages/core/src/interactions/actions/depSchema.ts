@@ -306,7 +306,7 @@ export interface TextEditDep {
  */
 export interface ClipboardDep {
   copy(): void;
-  paste(): void;
+  paste(at?: { worldX: number; worldY: number }): void;
   isEmpty(): boolean;
 }
 
