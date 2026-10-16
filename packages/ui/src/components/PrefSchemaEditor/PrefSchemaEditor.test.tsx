@@ -5,6 +5,12 @@ import type { PrefGroup, PrefSection } from '@weasel-js/prefs';
 import { PrefSchemaEditor } from './PrefSchemaEditor';
 import { keyedRow, rowKey } from './treeRows.fixture';
 
+/** Types `value` and leaves the field, which is when a typed field commits. */
+const settle = (el: HTMLElement, value: string): void => {
+  fireEvent.change(el, { target: { value } });
+  fireEvent.blur(el);
+};
+
 afterEach(cleanup);
 
 const START: PrefGroup = {
@@ -53,7 +59,7 @@ describe('PrefSchemaEditor', () => {
     render(<Live />);
     fireEvent.click(row('grid'));
     const name = within(screen.getByRole('region', { name: 'Attributes' })).getByRole('textbox', { name: 'Name' });
-    fireEvent.change(name, { target: { value: 'Grid on' } });
+    settle(name, 'Grid on');
     expect(within(preview()).getByText('Grid on')).toBeInTheDocument();
   });
 
@@ -85,7 +91,7 @@ describe('PrefSchemaEditor', () => {
     render(<Live />);
     fireEvent.click(row('view'));
     const dialog = openAdd('Add pref');
-    fireEvent.change(within(dialog).getByRole('textbox', { name: 'Name' }), { target: { value: 'Line width' } });
+    settle(within(dialog).getByRole('textbox', { name: 'Name' }), 'Line width');
     expect(within(dialog).getByRole('textbox', { name: 'Id' })).toHaveValue('lineWidth');
     pickKind(dialog, 'number');
     fireEvent.click(within(dialog).getByRole('button', { name: 'Add' }));
@@ -101,18 +107,18 @@ describe('PrefSchemaEditor', () => {
     const dialog = openAdd('Add pref');
     const add = within(dialog).getByRole('button', { name: 'Add' });
     expect(add).toBeDisabled();
-    fireEvent.change(within(dialog).getByRole('textbox', { name: 'Name' }), { target: { value: 'Snap' } });
+    settle(within(dialog).getByRole('textbox', { name: 'Name' }), 'Snap');
     pickKind(dialog, 'boolean');
     expect(within(dialog).getByText(/"snap" is taken here/)).toBeInTheDocument();
     expect(add).toBeDisabled();
-    fireEvent.change(within(dialog).getByRole('textbox', { name: 'Id' }), { target: { value: 'snapAngle' } });
+    settle(within(dialog).getByRole('textbox', { name: 'Id' }), 'snapAngle');
     expect(add).toBeEnabled();
   });
 
   it('adds a group with no name, keyed by the id given', () => {
     render(<Live />);
     const dialog = openAdd('Add group');
-    fireEvent.change(within(dialog).getByRole('textbox', { name: 'Id' }), { target: { value: 'misc' } });
+    settle(within(dialog).getByRole('textbox', { name: 'Id' }), 'misc');
     fireEvent.click(within(dialog).getByRole('button', { name: 'Add' }));
     expect(within(structure()).getByText('misc')).toBeInTheDocument();
   });
@@ -155,7 +161,7 @@ describe('PrefSchemaEditor', () => {
 
   it('narrows the tree to the rows a filter matches, under the branches that hold them', () => {
     render(<Live />);
-    fireEvent.change(screen.getByRole('textbox', { name: 'Filter structure' }), { target: { value: 'dock' } });
+    settle(screen.getByRole('textbox', { name: 'Filter structure' }), 'dock');
     expect(keyedRow(structure(), 'dock')).toBeInTheDocument();
     expect(keyedRow(structure(), 'panels')).toBeInTheDocument();
     expect(keyedRow(structure(), 'view')).toBeNull();
@@ -181,7 +187,7 @@ describe('PrefSchemaEditor', () => {
     const waiting: PrefGroup = { name: '', children: { glow: { kind: 'boolean', name: 'Glow', description: '', default: false } } };
     render(<PrefSchemaEditor schema={start} onChange={() => {}} unplaced={waiting} />);
     const unplaced = screen.getByRole('tree', { name: 'Unplaced' });
-    fireEvent.change(screen.getByRole('textbox', { name: 'Filter structure' }), { target: { value: 'glo' } });
+    settle(screen.getByRole('textbox', { name: 'Filter structure' }), 'glo');
     expect(keyedRow(unplaced, 'glow')).toBeInTheDocument();
     expect(keyedRow(unplaced, 'author')).toBeNull();
   });
@@ -254,7 +260,7 @@ describe('PrefSchemaEditor', () => {
     const undo = screen.getByRole('button', { name: 'Undo' });
     expect(undo).toBeDisabled();
     const name = () => within(screen.getByRole('region', { name: 'Attributes' })).getByRole('textbox', { name: 'Name' });
-    fireEvent.change(name(), { target: { value: 'Grid on' } });
+    settle(name(), 'Grid on');
     fireEvent.click(undo);
     expect(within(preview()).getByText('Show grid')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Redo' }));
@@ -269,7 +275,7 @@ describe('PrefSchemaEditor', () => {
     render(<Live />);
     fireEvent.click(row('grid'));
     const name = () => within(screen.getByRole('region', { name: 'Attributes' })).getByRole('textbox', { name: 'Name' });
-    for (const typed of ['G', 'Gr', 'Gri', 'Grid']) fireEvent.change(name(), { target: { value: typed } });
+    for (const typed of ['G', 'Gr', 'Gri', 'Grid']) settle(name(), typed);
     fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
     expect(within(preview()).getByText('Show grid')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Undo' })).toBeDisabled();
@@ -508,7 +514,7 @@ describe('PrefSchemaEditor', () => {
     const attrs = screen.getByRole('region', { name: 'Attributes' });
     fireEvent.click(within(attrs).getByRole('button', { name: /Add a paired field/ }));
     fireEvent.click(screen.getByRole('option', { name: 'Snap (view.snap)' }));
-    fireEvent.change(within(attrs).getByRole('textbox', { name: 'Row label' }), { target: { value: 'Grid' } });
+    settle(within(attrs).getByRole('textbox', { name: 'Row label' }), 'Grid');
     expect(screen.getByTestId('schema-literal').textContent).toMatch(/pair: \{\s*with: 'view\.snap',\s*label: 'Grid',\s*\}/);
   });
 
@@ -531,7 +537,7 @@ describe('PrefSchemaEditor', () => {
     render(<Live />);
     fireEvent.click(row('grid'));
     const name = within(screen.getByRole('region', { name: 'Attributes' })).getByRole('textbox', { name: 'Name' });
-    fireEvent.change(name, { target: { value: 'Grid on' } });
+    settle(name, 'Grid on');
     expect(screen.getByTestId('schema-literal').textContent).toContain("name: 'Grid on',");
   });
 
@@ -547,7 +553,7 @@ describe('PrefSchemaEditor', () => {
   const rekey = (from: string, to: string) => {
     fireEvent.click(row(from));
     const key = screen.getByRole('textbox', { name: 'Key' });
-    fireEvent.change(key, { target: { value: to } });
+    settle(key, to);
     fireEvent.blur(key);
   };
 
@@ -638,7 +644,7 @@ describe('PrefSchemaEditor', () => {
       fireEvent.click(row('pose.x'));
       const attrs = screen.getByRole('region', { name: 'Attributes' });
       expect(within(attrs).getByRole('textbox', { name: 'Key' })).toHaveValue('pose.x');
-      fireEvent.change(within(attrs).getByRole('textbox', { name: 'Name' }), { target: { value: 'Left' } });
+      settle(within(attrs).getByRole('textbox', { name: 'Name' }), 'Left');
       expect(within(structure()).getByText('Left')).toBeInTheDocument();
       expect(within(preview()).getByRole('heading', { name: 'Layout' })).toBeInTheDocument();
       expect(within(preview()).getByRole('textbox', { name: 'Text' })).toHaveValue('hello');
@@ -648,7 +654,7 @@ describe('PrefSchemaEditor', () => {
     it('writes a value typed in the preview as that property\'s default', () => {
       render(<LiveNode />);
       const text = () => within(preview()).getByRole('textbox', { name: 'Text' });
-      fireEvent.change(text(), { target: { value: 'typed' } });
+      settle(text(), 'typed');
       fireEvent.blur(text());
       expect(text()).toHaveValue('typed');
       expect(screen.getByTestId('schema-literal')).toHaveTextContent(/default: 'typed'/);
@@ -660,14 +666,14 @@ describe('PrefSchemaEditor', () => {
       expect(screen.queryByRole('button', { name: 'Add group' })).toBeNull();
       fireEvent.click(row('layout'));
       const dialog = openAdd('Add pref');
-      fireEvent.change(within(dialog).getByRole('textbox', { name: 'Name' }), { target: { value: 'Width' } });
-      fireEvent.change(within(dialog).getByRole('textbox', { name: 'Id' }), { target: { value: 'pose.width' } });
+      settle(within(dialog).getByRole('textbox', { name: 'Name' }), 'Width');
+      settle(within(dialog).getByRole('textbox', { name: 'Id' }), 'pose.width');
       pickKind(dialog, 'number');
       fireEvent.click(within(dialog).getByRole('button', { name: 'Add' }));
       expect(row('pose.width')).toBeInTheDocument();
       fireEvent.click(row('layout'));
       const section = openAdd('Add section');
-      fireEvent.change(within(section).getByRole('textbox', { name: 'Id' }), { target: { value: 'more' } });
+      settle(within(section).getByRole('textbox', { name: 'Id' }), 'more');
       fireEvent.click(within(section).getByRole('button', { name: 'Add' }));
       expect(screen.getByTestId('schema-literal')).toHaveTextContent(/more: \{[^}]*members: \{\}/);
     });
@@ -682,7 +688,7 @@ describe('PrefSchemaEditor changed fields and aliases', () => {
     render(<Live />);
     fireEvent.click(row('grid'));
     expect(marked('Description')).toBe(false);
-    fireEvent.change(within(attrs()).getByRole('textbox', { name: 'Description' }), { target: { value: 'Other.' } });
+    settle(within(attrs()).getByRole('textbox', { name: 'Description' }), 'Other.');
     expect(marked('Description')).toBe(true);
     expect(marked('Name')).toBe(false);
   });

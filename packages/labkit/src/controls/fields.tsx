@@ -80,7 +80,7 @@ export function BareControl({
   if (field === null) return null;
   switch (field.kind) {
     case 'string':
-      return <PropertyControl {...field} name={name} value={text.local} onChange={text.type} />;
+      return <PropertyControl {...field} name={name} value={text.local} onInput={text.type} />;
     case 'number':
       // The pair names the row, so a cell has no room for a unit.
       return <PropertyControl {...field} name={name} control="input" unit={undefined} />;

@@ -75,6 +75,12 @@ export {
   pathIntersectsPolygon,
   pathDistanceToPoint,
   pointAlongPath,
+  measurePath,
+  blendPaths,
+  prepareBlend,
+  bendAlongPath,
+  repeatAlongPath,
+  stationsAlongPath,
   splitPathBySegment,
   splitPathByPolyline,
   snipPathByPolyline,
@@ -90,6 +96,7 @@ export {
   pathSegments,
   trimPathAt,
   extendToMeet,
+  smudgePath,
   lengthenOpenEnd,
   openEndRay,
   openPathEnds,
@@ -110,6 +117,13 @@ export type {
   PathInWorldPose,
   PathStation,
   PointAlongPathOptions,
+  MeasurePathOptions,
+  PathMeasure,
+  BlendPathsOptions,
+  PathBlend,
+  BendAlongPathOptions,
+  RepeatAlongPathOptions,
+  RepeatStation,
   SplitBySegmentOptions,
   SnipAtCrossingsOptions,
   OffsetPathOptions,
@@ -125,6 +139,7 @@ export type {
   TrimPathOptions,
   TrimResult,
   ExtendToMeetOptions,
+  SmudgePathOptions,
   OpenPathEnd,
 } from '../features/paths';
 export {
@@ -142,7 +157,33 @@ export {
   type ShapeGenerator,
   type StarGenerator,
 } from '../features/paths/shapeGenerator';
-export { DEFAULT_BRIDGE_TENSION } from '../interactions/actions/pathCommands';
+export {
+  DEFAULT_BRIDGE_TENSION, DEFAULT_SMUDGE_RADIUS_PX, DEFAULT_SMUDGE_STRENGTH, type SmudgeBrushParams,
+} from '../interactions/actions/pathCommands';
+
+// ─── Path effects: live blend, bend along, and repeat along ────────────────
+export {
+  createPathEffectDerivations,
+  PATH_EFFECT,
+  pathEffectNode,
+  pathEffectOf,
+  pathEffectParts,
+  registeredPathEffects,
+  derivedPartsOf,
+  pathFromParts,
+} from '../core/scene/pathEffects';
+export type {
+  BendAlongEffect,
+  BlendEffect,
+  DerivedPart,
+  EffectSource,
+  EffectSourceReader,
+  PathEffectDerivations,
+  PathEffect,
+  RepeatAlongEffect,
+} from '../core/scene/pathEffects';
+export { PATH_EFFECT_DERIVATIONS, readEffectSource, withPathEffectsRegistry } from '../features/pathEffects';
+export { PATH_EFFECTS_GROUP } from '../interactions/actions/pathEffects';
 
 // ─── Curves: alternate path representations (Bezier, NURBS, Spiro) ──────────
 export {

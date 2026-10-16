@@ -40,7 +40,7 @@ adopted.
 | Operation | Action id | What the brush does | Default binding | Status |
 |---|---|---|---|---|
 | Simplify brush | `simplifyBrush` | Removes anchors it passes over, refitting the curve | Drag with the brush | main |
-| Smudge brush | `smudgeBrush` | Pushes the outline along with the pointer | Drag with the Smudge tool (S) | landing |
+| Smudge brush | `smudgeBrush` | Pushes the outline along with the pointer | Drag with the Smudge tool (S) | main |
 | Puppet warp | — | Pins the path and bends it when a pin is dragged | Puppet tool | landing |
 
 ## Handles on the box around a selection
@@ -65,10 +65,10 @@ adopted.
 | Retract handles | `retractHandles` | Collapses selected anchors' handles | — | main |
 | Make handles symmetric | `makeHandlesSymmetric` | Equal length, opposite direction | — | main |
 | Delete anchors | `deleteAnchors` | Removes selected anchors | Delete | main |
-| Harmonize curvature | `harmonizeAnchors` | Rescales a smooth anchor's handles so curvature is continuous | H in its lab only | landing |
-| Blend | `blend` | Live steps between two shapes | — | landing |
-| Bend along a path | `bendAlong` | Lays a shape along a spine | — | landing |
-| Repeat along a path | `repeatAlong` | Live copies placed along a path | — | landing |
+| Harmonize curvature | `harmonizeAnchors` | Rescales a smooth anchor's handles so curvature is continuous | H in its lab only | main |
+| Blend | `blend` | Live steps between two shapes | — | main |
+| Bend along a path | `bendAlong` | Lays a shape along a spine | — | main |
+| Repeat along a path | `repeatAlong` | Live copies placed along a path | — | main |
 | Resample | — | Spreads anchors evenly by arc length | — | audition |
 | Add extremes | — | Adds anchors at each curve's leftmost, rightmost, top, and bottom | — | audition |
 | Grow, shrink, and every-Nth selection | — | Selects anchors along the path | — | audition |

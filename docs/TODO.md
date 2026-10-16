@@ -203,6 +203,15 @@ Priority tags:
 - **(P2) Tune Bridge hands-on, with the maintainer driving.** First-draft default Tension (0.4,
   `DEFAULT_BRIDGE_TENSION`), how Tension is reached outside the lab, and the Mod+Shift+J binding
   it shares with Bridge anchors (`pathCommands/cutJoin.ts`, `defaults/anchorJoin.ts`).
+- **(P2) Tune Harmonize curvature hands-on, with the maintainer driving.** First-draft behavior:
+  it keeps the product of each anchor's two handle lengths, takes every smooth anchor when none is
+  selected, and skips anchors the curve inflects through (`packages/geom/src/paths/harmonize.ts`,
+  `defaults/anchorHandles.tsx`). It has no key of its own; its lab tunes H onto it,
+  which the Hand tool also answers wherever that tool is mounted
+  (`apps/site/demos/HarmonizeLabDemo.tsx`).
+- **(P2) Tune Blend, Bend along a path, and Repeat along a path hands-on, with the maintainer
+  driving.** First-draft step counts, spacing, and turn defaults, their keys, and how an effect is
+  re-edited and expanded (`interactions/actions/pathEffects/`, `features/pathEffects/`).
 - **(P2) Tune Trim segment hands-on, with the maintainer driving.** First-draft click reach (6
   screen px, `DEFAULT_STROKE_REACH_PX` in `pathCommands/scenePaths.ts`), the preview's look (the
   `cut` overlay role's red dash at width 3, `tools/builtin/trim/piecePreview.ts`), and its tool key,
@@ -213,6 +222,11 @@ Priority tags:
   `packages/geom/src/paths/extendPath.ts`), no preview of where an end will land, its tool key, U
   (`tools/builtin/extend/useExtendTool.ts`), and no default key for the `extendToMeet` action; the
   lab binds E through `tune`.
+- **(P2) Tune the Smudge brush hands-on, with the maintainer driving.** First-draft brush radius
+  (40 screen px) and strength (0.6) (`DEFAULT_SMUDGE_RADIUS_PX`, `DEFAULT_SMUDGE_STRENGTH` in
+  `pathCommands/smudgeBrush.ts`), the falloff `(1 − (d/r)²)²` and the subdivision threshold of a
+  third of the radius (`packages/geom/src/paths/smudgePath.ts`), how radius and strength are
+  reached outside the lab, and its tool key, S (`tools/builtin/smudge/useSmudgeBrushTool.ts`).
 - **(P2) Two helpers grow an open end along its tangent.** `lengthenOpenEnd` in
   `packages/geom/src/paths/extendPath.ts` serves Extend to next path, and the unmerged
   `extend-path-end` branch (Lengthen) has `lengthenPathEnd` of its own. Whichever lands second
@@ -241,6 +255,22 @@ Priority tags:
 - **(P2) Shape builder.** Drag across overlapping regions to merge them, Alt-drag to delete them.
   `previewBooleanOp` already answers the pieces; the tool draws and picks among them. Building it
   also gives "Live preview of a Boolean operation" below its display.
+- **(P2) Two kit key bindings are chords a browser takes first.** `createOutlines` is on
+  Mod+Shift+O (Chrome's bookmark manager) and `averageAnchors` on Mod+Alt+J (Chrome's console),
+  so neither fires there. `browserReservedBindings.test.ts` pins the pair, so a new collision
+  fails it; moving these two is a choice of new keys.
+- **(P3) A path effect reopens from draw's SVG as plain paths.** Export writes an effect as a
+  group of the paths it shows (`apps/draw/src/svgExport.ts`), so the file looks right, but the
+  blend, bend or repeat is no longer live once reopened. Carrying it needs its sources named by
+  id, and an imported leaf takes a fresh id (`svgNodesToSceneDrafts` keeps ids for groups only,
+  through `wd:group-id`); with a leaf id carried the same way, the effect's `data.pathEffect`
+  and `dependsOn` can ride as `wd:` attributes on its group.
+- **(P3) A path effect inside a container that composes frames is untried.** An effect paints in
+  the frame its sources are painted in (`core/scene/pathEffects/`); the actions only make one
+  over two leaves, inserted beside the first.
+- **(P3) A blend has no spine, and its steps no spacing by distance.** `BlendEffect` places
+  `steps` shapes evenly in `t` on the straight run between its sources; laying them along a
+  third path, or spacing them so neighboring shapes sit a fixed distance apart, is not offered.
 - **(P3) A move under a rotated parent repeats in the parent's axes.** Nudge, duplicate, and
   Transform Again (`interactions/actions/transform-again/`) offset a node along its parent's axes;
   a drag and an Alt-drag clone measure on screen. So inside a group drawn turned, Cmd+D after a
@@ -248,9 +278,9 @@ Priority tags:
   mapping it through each node's parent on replay would make the two agree.
 - **(P3) The path commands have no icons.** `simplifyPath`, `offsetPath`, `snipAtCrossings`,
   `joinPaths`, `bridgePaths`, `joinAnchors`, `bridgeAnchors`, `averageAnchors`, and
-  `extendToMeet` show as text in draw's bar, and `useTrimTool` and `useExtendTool` borrow
-  `SliceIcon`.
-  `RetractHandlesIcon`, `SymmetricHandlesIcon`, and `SimplifyBrushIcon`
+  `extendToMeet` show as text in draw's bar, `useTrimTool` and `useExtendTool` borrow
+  `SliceIcon`, and `useSmudgeBrushTool` has none.
+  `RetractHandlesIcon`, `SymmetricHandlesIcon`, `SimplifyBrushIcon`, and `HarmonizeIcon`
   (`defaults/icons/anchorIcons.tsx`) are first drafts, not proofed at high resolution.
 - **(P2) Spacing hints.** Equal-spacing markers between siblings while moving, and Alt-hover
   distance readouts between the selection and the shape under the pointer.

@@ -226,6 +226,36 @@ const DEMO_META: DemoMeta[] = [
     load: () => import('./demos/StrokeMarkersDemo').then((m) => m.StrokeMarkersDemo),
     path: 'apps/site/demos/StrokeMarkersDemo.tsx',
   },
+  {
+    id: 'lab-blend',
+    title: 'Blend',
+    category: 'Geometry',
+    description:
+      "Steps between two shapes, live. The blend is one scene node whose `dependsOn` names its two sources and whose `derivePath` interpolates them: anchors matched contour to contour, the shape with fewer split at its longest segments until the counts agree, and the second shape's start point picked to keep matched anchors closest. Fill and stroke mix through OKLab, and a turned source turns its neighbors rather than squashing them. Each step paints in its own color because the derived path is built with `pathFromParts`. Its pose derives too — the bounds of its steps — so it selects like any shape, and Expand to Paths swaps it for ordinary paths in one undo step.",
+    hint: 'Drag either end shape and the steps follow, or drag the blend itself to carry both; double-click an end shape to edit its anchors. The panel sets the step count, the start point and direction, and whether rotation turns. Select two shapes and press Blend (<kbd>Alt+Shift+B</kbd>) for a new blend; select a blend and press Expand to Paths (<kbd>Alt+Shift+E</kbd>) to make its steps real.',
+    load: () => import('./demos/BlendLabDemo').then((m) => m.BlendLabDemo),
+    path: 'apps/site/demos/BlendLabDemo.tsx',
+  },
+  {
+    id: 'lab-bend-along',
+    title: 'Bend along a path',
+    category: 'Geometry',
+    description:
+      "A shape laid along a spine: its x becomes distance along the spine and its y distance off it, along the spine's normal. Every segment is sampled through the bend and refit to cubics within the tolerance, one segment at a time, so a corner of the shape stays a corner. The bent copy is a derived node over the shape and the spine, painted in the shape's own fill and stroke, so editing either one re-bends it.",
+    hint: 'The spine opens in path edit: drag its anchors and handles and the ribbon follows. Double-click the ribbon to reshape it instead. The panel switches between stretching the ribbon over the whole spine and keeping its width, moves where across it the spine runs, flips it, and sets the refit tolerance. Select a shape then a path and press Bend Along Path (<kbd>Alt+Shift+W</kbd>) for a new one; select the bent copy and press Expand to Paths (<kbd>Alt+Shift+E</kbd>) to keep it as a path.',
+    load: () => import('./demos/BendAlongLabDemo').then((m) => m.BendAlongLabDemo),
+    path: 'apps/site/demos/BendAlongLabDemo.tsx',
+  },
+  {
+    id: 'lab-repeat-along',
+    title: 'Repeat along a path',
+    category: 'Geometry',
+    description:
+      'Copies of a shape placed along a path, live: a derived node over the shape and the path that paints one copy per station, each centered on the path and, with Turn to the path on, turned to its heading there. With no spacing the copies spread evenly end to end, or evenly round a closed path; with a spacing they sit that far apart, as many as fit up to the count, and the run lines up at the start, middle or end of the path.',
+    hint: 'The track opens in path edit: drag its anchors and the copies follow. The panel sets the count, the spacing (0 spreads them over the whole track), where a spaced run sits, a slide along the track, and whether copies turn with it. Select a shape then a path and press Repeat Along Path (<kbd>Alt+Shift+R</kbd>) for a new run; select the copies and press Expand to Paths (<kbd>Alt+Shift+E</kbd>) to make them separate paths.',
+    load: () => import('./demos/RepeatAlongLabDemo').then((m) => m.RepeatAlongLabDemo),
+    path: 'apps/site/demos/RepeatAlongLabDemo.tsx',
+  },
 
   // ─── Animation ────────────────────────────────────────────────────────────
   {
@@ -701,6 +731,16 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/CurvatureCombLabDemo.tsx',
   },
   {
+    id: 'lab-harmonize',
+    title: 'Harmonize curvature',
+    category: 'Geometry',
+    description:
+      "The `harmonizeAnchors` command makes a smooth anchor curvature-continuous: it changes only the lengths of the anchor's two handles, along the directions they already have, until the curve bends as tightly just after the anchor as just before it, keeping the product of the two lengths. Fixing one anchor shifts the curvature at its neighbors, so it repeats over the anchors until they settle. With anchors selected it harmonizes those; with none, every smooth anchor of the path. Corners, open ends, and anchors the curve inflects through are left alone, since lengths alone cannot join them. The blob opens with lopsided handles at all four anchors and the comb on, so the steps in the comb show what it fixes.",
+    hint: 'Press Harmonize curvature in the bar, or <kbd>H</kbd>, and watch the comb join up at each anchor; undo with the button or <kbd>Mod+Z</kbd> to compare. Click an anchor first, or <kbd>Shift</kbd>-click several, to harmonize only those.',
+    load: () => import('./demos/HarmonizeLabDemo').then((m) => m.HarmonizeLabDemo),
+    path: 'apps/site/demos/HarmonizeLabDemo.tsx',
+  },
+  {
     id: 'lab-simplify-brush',
     title: 'Simplify brush',
     package: 'core',
@@ -739,6 +779,16 @@ const DEMO_META: DemoMeta[] = [
     hint: 'With the Extend tool, click near the right end of the short orange line: it grows to the green wall. The curve carries on in a straight line from its end. Or pick Select, select strokes, and press <kbd>E</kbd>. Undo with <kbd>Mod+Z</kbd>.',
     load: () => import('./demos/ExtendLabDemo').then((m) => m.ExtendLabDemo),
     path: 'apps/site/demos/ExtendLabDemo.tsx',
+  },
+  {
+    id: 'lab-smudge-brush',
+    title: 'Smudge brush',
+    category: 'Geometry',
+    description:
+      "A round brush that pushes the outline of the selected paths along with the pointer, through `smudgePath` in `@weasel-js/geom`. Points under the brush move with it, most at its center and not at all at its rim, and a segment the brush meets that is longer than a third of its radius gets anchors added at its middle until it can bend there, so a straight edge dents instead of swinging about its corners. `useSmudgeBrushTool` only binds a drag to the `smudgeBrush` action, which owns the stroke and commits it as one undo step. The brush's radius is in screen pixels, so it covers the same part of the canvas at any zoom; it and the strength are the action's params, set here with `<SceneCanvas tune>` from the control panel. The cursor is a ring the size of the brush, the same one the Simplify brush draws, shown wherever a drag would smudge.",
+    hint: 'The Smudge brush is active and both shapes are selected: the ring under the pointer is the brush. Drag across an edge to push it. Change Brush radius and Strength in the control panel. Each stroke is one undo step, with the button or <kbd>Mod+Z</kbd>. Press <kbd>V</kbd> to select a single shape, then <kbd>S</kbd> to smudge again.',
+    load: () => import('./demos/SmudgeBrushLabDemo').then((m) => m.SmudgeBrushLabDemo),
+    path: 'apps/site/demos/SmudgeBrushLabDemo.tsx',
   },
   {
     id: 'symmetry-lab',

@@ -39,6 +39,13 @@ export function drag(canvas: Element, [x0, y0]: number[], [x1, y1]: number[]): v
   });
 }
 
+export function click(canvas: Element, x: number, y: number): void {
+  act(() => {
+    pointer(canvas, 'pointerdown', x, y);
+    pointer(canvas, 'pointerup', x, y);
+  });
+}
+
 /** The anchors of the lab's one path, in world space. */
 export function editedAnchors(): PenAnchor[] {
   const node = window.__weaselTest!.getScene().nodes[0];

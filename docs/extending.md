@@ -490,6 +490,17 @@ The built-in `kit:derived` painter draws whatever `derivePath` returns, reading
 placeholder, and all it still contributes is rotation. A bounds-relative fill
 resolves against the derived path's own box.
 
+A derivation that paints several pieces in different paints — the steps of a
+blend, copies along a path — returns `pathFromParts([{ path, fill, stroke },
+…])`. Picking, bounds and every `dep.path` reader see one path holding every
+part's outline; the painter draws each part with its own `fill` and `stroke`,
+falling back to the node's `data` where a part names none. The kit's path
+effects (`pathEffectNode`: blend, bend along a path, repeat along a path) are
+built this way. They read a source's outline through its painter, so a scene
+holds them only when it registers them: `createScene({ registry:
+withPathEffectsRegistry() })`. Without that the actions that make one are
+disabled, and a document holding one does not load.
+
 `derivePath` receives each dependency in `dependsOn` order as
 `{ node, pose }` — the node itself, and its **effective** pose: its ephemeral
 override when it has one, else its own derived pose, else the pose the scene
