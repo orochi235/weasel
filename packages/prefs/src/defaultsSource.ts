@@ -13,14 +13,13 @@ import { prefSelectors } from './splitCheck';
 export function prefsDefaultsSource(schema: PrefGroup): PrefsCssSource {
   const leaves = new Map([...prefLeaves(schema)].filter(([, leaf]) => prefHoldsValue(leaf)));
   const selectors = prefSelectors(leaves);
-  const source = { selectors };
-  const held = new Map([...leaves].map(([path, leaf]) => [path, leaf.defaultLocus === undefined ? leaf.default : readStored(source, leaf, leaf.defaultLocus)]));
+  const held = new Map([...leaves].map(([path, leaf]) => [path, leaf.defaultLocus === undefined ? leaf.default : readStored({ selectors }, leaf, leaf.defaultLocus)]));
   const own: PrefSelection = Object.fromEntries([...selectors.keys()].map((path) => [path, held.get(path) as string]));
 
   const read = (path: string, selection: PrefSelection): unknown => {
     const leaf = leaves.get(path);
     if (!leaf) return undefined;
-    return selectors.has(path) ? selection[path] : resolveHeld(source, leaf, held.get(path), selectionWeights(selection));
+    return selectors.has(path) ? selection[path] : resolveHeld({}, leaf, held.get(path), selectionWeights(selection));
   };
 
   return {

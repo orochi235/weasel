@@ -123,7 +123,7 @@ export default defineConfig({
           // core runs in the `core` project above — it lived at the repo root
           // until the move into packages/, and this glob would otherwise
           // swallow its entire suite and run it twice.
-          exclude: ['packages/labkit/**', 'packages/forge/**', 'packages/core/**', '**/*.browser.test.{ts,tsx}', '**/node_modules/**'],
+          exclude: ['packages/labkit/**', 'packages/forge/**', 'packages/core/**', ...VITE_SERVER_TESTS, '**/*.browser.test.{ts,tsx}', '**/node_modules/**'],
         },
       },
       {
