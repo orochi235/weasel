@@ -250,9 +250,7 @@ export function useLoupe({
         if (on) aimAtPointer();
         bump();
       },
-      magnifyBy: (deltaY) => {
-        magnify(modelRef.current, deltaY, wheelRateRef.current);
-      },
+      magnifyBy: (deltaY) => magnify(modelRef.current, deltaY, wheelRateRef.current),
     };
   }
 
