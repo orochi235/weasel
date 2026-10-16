@@ -80,6 +80,7 @@ export {
   type OklchDeg,
 } from './colorSpaces';
 export { contrastLineColor } from './contrast';
+export { lerpFill, lerpPaint, lerpStroke } from './lerpPaint';
 export { parseHexBytes, hexToRgbBytes } from './hex';
 export {
   parseColor,

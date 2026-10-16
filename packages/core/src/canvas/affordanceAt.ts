@@ -107,6 +107,8 @@ export function anchorStateFrom(
       // `getEditablePath`: both pose-as-polygon and `data.path` consumers
       // resolve correctly.
       getPose: (id) => (toCamera ? toCamera(id, dep.getEditablePath(id)) : dep.getEditablePath(id)),
+      getNode: (id) => dep.getNodeShape(id),
+      ...(dep.extensions ? { extensions: dep.extensions } : {}),
     };
   };
 }
@@ -174,6 +176,7 @@ export function buildClassifyTarget(
     return {
       body: sel.includes(hitId) ? 'selected-body' : 'unselected-body',
       kind: kindOfNode?.(hitId),
+      id: hitId,
     };
   };
 }

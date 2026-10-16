@@ -2,14 +2,16 @@
  * The path-edit state and its anchor overlay for one canvas surface.
  */
 import { useLatest } from '@weasel-js/react';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { PathEditHost } from 'canvas/SceneCanvas/pathEditHost';
 import type { RenderLayer } from 'core/layers/render';
 import { rectFromPlane, type PlaneMap } from 'core/viewport/parallax';
 import type { View } from 'core/viewport/view';
 import { liveEditablePath, type EditableShape } from './editablePath';
 import { createPathEditingOverlayLayer } from './pathEditingOverlayLayer';
+import type { PathEditingOverlaySlotConfig } from 'canvas/layerSlots';
 import { createPathEditState, type PathEditState } from './pathEditState';
+import type { PathEditExtension } from './pathEditExtension';
 
 export interface UsePathEditStateOptions {
   /** `<SceneCanvas pathEdit>`. */
@@ -17,6 +19,8 @@ export interface UsePathEditStateOptions {
   /** See `PathEditSource.isAllowed`; absent when no mode registry is wired. */
   isAllowed: (() => boolean) | undefined;
   isSelectedNode: (id: string) => boolean;
+  /** The path-edit extensions the canvas's presets bring. */
+  extensions: readonly PathEditExtension[];
 }
 
 /** One state object for the life of the component, answering from the
@@ -27,7 +31,9 @@ export function usePathEditState(options: UsePathEditStateOptions): PathEditStat
     host: () => live.current.host,
     isAllowed: () => live.current.isAllowed?.() ?? true,
     isSelectedNode: (id) => live.current.isSelectedNode(id),
+    extensions: options.extensions,
   }));
+  useEffect(() => state.setExtensions(options.extensions), [state, options.extensions]);
   return state;
 }
 
@@ -38,27 +44,32 @@ export interface PathEditOverlayInputs {
   planeOfNode: (id: string, view: View) => PlaneMap | null;
 }
 
-/** The anchor overlay for `state`. Built once: it reads `inputs` as of the
- *  last commit and repaints itself when the state changes. */
+/** The anchor overlay for `state`, drawn as `config` says. Rebuilt when
+ *  `config` changes, so pass a stable one; otherwise it reads `inputs` as of
+ *  the last commit and repaints itself when the state changes. */
 export function usePathEditOverlayLayer(
   state: PathEditState,
   inputs: PathEditOverlayInputs,
+  config?: PathEditingOverlaySlotConfig,
 ): RenderLayer<unknown> {
   const live = useLatest(inputs);
-  const [layer] = useState<RenderLayer<unknown>>(() => ({
+  return useMemo<RenderLayer<unknown>>(() => ({
     ...createPathEditingOverlayLayer({
       getEditingId: () => state.getEditingId() || null,
       getPose: (id, previews, view) =>
         liveEditablePath(id, live.current.nodeOf(id), previews, live.current.planeOfNode(id, view)),
       getSelectedAnchors: state.getSelectedAnchors,
+      getSelectedMark: state.getSelectedMark,
+      getExtensions: state.getExtensions,
+      getNode: (id) => live.current.nodeOf(id) ?? null,
       // Drawn by an action that ran in the edited path's plane.
       getMarquee: (view) => {
         const rect = state.getMarquee();
         const plane = rect ? live.current.planeOfNode(state.getEditingId(), view) : null;
         return rect && plane ? rectFromPlane(plane, rect) : rect;
       },
+      ...(config?.style ? { style: config.style } : {}),
     }),
     subscribe: state.subscribe,
-  }));
-  return layer;
+  }), [state, live, config]);
 }

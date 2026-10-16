@@ -134,14 +134,24 @@ export type {
   CanvasLayers,
   SceneSlotLayers,
   SelectionOverlaySlotConfig,
+  PathEditingOverlaySlotConfig,
   LayerSlotValue,
   StandardSlotConfig,
 } from '../canvas/layerSlots';
 export type { SceneSlotConfig } from '../canvas/buildSceneLayer';
 export type { BuiltinToolId, Feature } from '../canvas/SceneCanvas';
-export type { BaseFeature, CompositeFeature } from '../canvas/SceneCanvas/features';
+export type {
+  BaseFeature, CompositeFeature, FeatureBindingOptions, FeatureEntry, FeaturePreset,
+} from '../canvas/SceneCanvas/features';
 export { BUILTIN_TOOL_IDS, SCENE_CANVAS_FEATURES, rotateAroundAABBCenter } from '../canvas/SceneCanvas';
-export { COMPOSITE_FEATURES, FEATURE_ACTION_IDS, TOOL_DRIVEN_ACTION_IDS } from '../canvas/SceneCanvas/features';
+export { COMPOSITE_FEATURES, FEATURE_ACTION_IDS, TOOL_DRIVEN_ACTION_IDS } from '../canvas/SceneCanvas/namedPresets';
+export { viewPreset } from '../canvas/SceneCanvas/presets/view';
+export { selectPreset } from '../canvas/SceneCanvas/presets/select';
+export { movePreset, outlinePreset, resizePreset, rotatePreset } from '../canvas/SceneCanvas/presets/transform';
+export { editPreset } from '../canvas/SceneCanvas/presets/edit';
+export { arrangePreset } from '../canvas/SceneCanvas/presets/arrange';
+export { pathsPreset } from '../canvas/SceneCanvas/presets/paths';
+export { ingestPreset } from '../canvas/SceneCanvas/presets/ingest';
 export { KIT_SHAPE_KINDS, SHAPE_KINDS } from '../core/shapeKinds';
 export type {
   BuiltinShapeToolId, KitInsertShape, ShapeKind, ShapeKindDescriptor, ShapeKindsWhere,

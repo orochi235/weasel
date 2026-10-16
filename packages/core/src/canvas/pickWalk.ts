@@ -20,6 +20,8 @@ import { invert, type Affine, type Path } from '@weasel-js/geom';
 import { findShapeSilhouette } from 'canvas/NodeShape';
 import type { ClipFromPoseFn, CopiesFromPoseFn, DerivedDep, Node, NodeId, Scene } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
+import { unpickedLayerIds } from './pickLayers';
+export { hiddenLayerIds } from './pickLayers';
 import { resolveDerivedPath, sceneDerivedPathOf, scenePaintedPoseOf, showsComputedPath } from './derivedPath';
 import { planeMap, type ParallaxOpts, type PlaneMap } from 'core/viewport/parallax';
 import type { View } from 'core/viewport/view';
@@ -228,18 +230,6 @@ function lockedNodeTest(
   };
 }
 
-/** Layer ids the scene reports as hidden. Only an explicit `false` hides a
- *  layer: a partial scene stand-in that omits the flag stays pickable. */
-export function hiddenLayerIds(
-  layers: readonly { id: string; visible?: boolean }[] | undefined,
-): Set<string> {
-  const out = new Set<string>();
-  for (const layer of layers ?? []) {
-    if (layer.visible === false) out.add(layer.id);
-  }
-  return out;
-}
-
 /**
  * The two answers a pick needs from the view it is asked for rather than from
  * the data behind it: how that view paints a node, and whether it paints a
@@ -280,7 +270,7 @@ export function scenePickSource<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,
   opts: ScenePickSourceOptions<TPose> = {},
 ): PickSource<TPose> {
-  const hidden = hiddenLayerIds(scene.layers);
+  const hidden = unpickedLayerIds(scene.layers);
   const locked = lockedNodeTest(scene as never);
   const { getPose, alphaOf, layerIsPainted } = opts;
 

@@ -6,7 +6,7 @@ import type { Op } from 'core/ops/types';
 import { createSetDataOp } from 'core/ops/setData';
 import { createTransformOp } from 'core/ops/transform';
 import type { Scene } from 'core/scene/types';
-import { commitOps } from 'interactions/actions/pathCommands/pathNodes';
+import { commitOps } from 'interactions/actions/defaultCommitAdapter';
 import { sceneReach } from '../bone/placedRig';
 import {
   anchorNormals, draggedWidth, gripAt, isWidthSet, movedSide, storedWith, widthEdgeAt, widthPointNear, widthsOf,

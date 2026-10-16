@@ -10,3 +10,5 @@ export type {
 } from './reflectable';
 export { MIXED } from './mixed';
 export type { Mixed } from './mixed';
+export { matchQuery, hasTag } from './match';
+export type { Findable, QueryMatch } from './match';

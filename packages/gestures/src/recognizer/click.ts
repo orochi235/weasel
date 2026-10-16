@@ -26,6 +26,12 @@ export interface ReleaseOutcome {
   doubleClick?: 'handled' | 'unhandled';
 }
 
+/** How close in time and place two clicks land to make a double click. */
+export interface DoubleClickLimits {
+  maxMs: number;
+  maxPx: number;
+}
+
 export function composeClick(
   down: PressFacts,
   up: ReleaseFacts,
@@ -33,6 +39,7 @@ export function composeClick(
   now: () => number,
   dispatch: (ev: InputEvent) => 'handled' | 'unhandled',
   observer: ClickObserver,
+  limits: DoubleClickLimits = { maxMs: DOUBLE_CLICK_MAX_MS, maxPx: DOUBLE_CLICK_MAX_PX },
 ): ReleaseOutcome {
   const evs = clickEvents(down, up);
   const world = { x: up.worldX, y: up.worldY };
@@ -42,8 +49,8 @@ export function composeClick(
   const t = now();
   const prev = clicks.last;
   const follows = prev !== null
-    && t - prev.t < DOUBLE_CLICK_MAX_MS
-    && Math.hypot(up.clientX - prev.clientX, up.clientY - prev.clientY) < DOUBLE_CLICK_MAX_PX;
+    && t - prev.t < limits.maxMs
+    && Math.hypot(up.clientX - prev.clientX, up.clientY - prev.clientY) < limits.maxPx;
   if (!follows) {
     clicks.last = { t, clientX: up.clientX, clientY: up.clientY };
     return {};

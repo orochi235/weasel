@@ -63,6 +63,27 @@ describe('ActionBar', () => {
     expect(toolbar.querySelectorAll('button').length).toBe(0);
   });
 
+  it('draws a bar from a tag: the actions carrying it, and the variants that do', () => {
+    render(
+      <Harness
+        actions={[
+          makeAction({ id: 'union', tags: ['boolean'] }),
+          makeAction({ id: 'paste' }),
+          makeAction({
+            id: 'flip',
+            variants: [
+              { key: 'x', label: 'Flip H', params: { axis: 'x' }, tags: ['boolean'] },
+              { key: 'y', label: 'Flip V', params: { axis: 'y' } },
+            ],
+          }),
+        ]}
+        bar={<ActionBar tag="boolean" />}
+      />,
+    );
+    expect(screen.getAllByRole('button').map((b) => b.getAttribute('aria-label'))).toEqual(['union', 'Flip H']);
+    expect(screen.getByRole('toolbar', { name: 'boolean actions' })).toBeTruthy();
+  });
+
   it('renders one button per action in the group', () => {
     render(
       <Harness

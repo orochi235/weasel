@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { createHistory, useLatest } from '@weasel-js/core';
+import { useKitSetting } from '@weasel-js/react';
 import { SWAP, swapOp, type DocumentCodec, type DraftStorage, type OpenedDocument } from './document';
 
 /** Edits this close together under one coalesce key undo as one, so typing a name is one step. */
-const COALESCE_MS = 800;
+export const COALESCE_MS = 800;
 
 export interface DocumentOptions<V> {
   value: V;
@@ -44,13 +45,15 @@ export function useDocument<V>(options: DocumentOptions<V>): EditorDocument<V> {
   const { value, base, codec, opened, draftKey, draftStorage, taken, same = Object.is } = options;
   const latest = useLatest(options);
   const emitted = useRef(value);
+  // Read once: the history takes its window when it is made.
+  const coalesceMs = useKitSetting('history.coalesceMs') ?? COALESCE_MS;
   const hand = (next: V) => {
     emitted.current = next;
     latest.current.onChange(next);
   };
   const [history] = useState(() =>
     createHistory(null, {
-      coalesceWindowMs: COALESCE_MS,
+      coalesceWindowMs: coalesceMs,
       selection: {
         get: () => latest.current.selection.get(),
         set: (ids) => latest.current.selection.set(ids),

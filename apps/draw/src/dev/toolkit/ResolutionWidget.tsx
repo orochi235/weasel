@@ -51,6 +51,7 @@ function stubActionsRegistry(actions: readonly Action[]): ActionsRegistry {
     unregister: () => {},
     mute: () => () => {},
     tune: () => () => {},
+    paramsOf: (_id, given) => ({ ...given }),
     list: () => actions,
     trigger: () => false,
     subscribe: () => () => {},

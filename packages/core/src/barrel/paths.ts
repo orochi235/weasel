@@ -59,6 +59,8 @@ export {
   pathOriginProjection,
   createPenPreviewLayer,
   createPathEditingOverlayLayer,
+  GEOMETRY_BOUND_DATA,
+  withoutGeometryBoundData,
   pathUnion,
   pathIntersect,
   pathSubtract,
@@ -74,15 +76,31 @@ export {
   pathIntersectsPolygon,
   pathDistanceToPoint,
   pointAlongPath,
+  measurePath,
+  blendPaths,
+  prepareBlend,
+  bendAlongPath,
+  repeatAlongPath,
+  stationsAlongPath,
   splitPathBySegment,
   splitPathByPolyline,
   snipPathByPolyline,
   snipPathsAtCrossings,
   offsetPath,
   simplifyPath,
+  simplifyAnchorsAt,
   averageAnchorsAt,
   joinAnchorsAt,
   transformPath,
+  intersectSegments,
+  pathCrossings,
+  pathSegments,
+  trimPathAt,
+  extendToMeet,
+  smudgePath,
+  lengthenOpenEnd,
+  openEndRay,
+  openPathEnds,
 } from '../features/paths';
 export type {
   Path,
@@ -96,16 +114,40 @@ export type {
   PenPreviewStyle,
   CreatePathEditingOverlayLayerOptions,
   PathEditingOverlayStyle,
+  FinishedPathEdit,
+  PathEditExtension,
+  PathEditMark,
+  PathEditMarksCtx,
+  PathEditPart,
+  PathEditStore,
+  PathEditTarget,
   PathInWorldPose,
   PathStation,
   PointAlongPathOptions,
+  MeasurePathOptions,
+  PathMeasure,
+  BlendPathsOptions,
+  PathBlend,
+  BendAlongPathOptions,
+  RepeatAlongPathOptions,
+  RepeatStation,
   SplitBySegmentOptions,
   SnipAtCrossingsOptions,
   OffsetPathOptions,
   SimplifyPathOptions,
   AverageAxis,
+  JoinOptions,
   PoseRotation,
   PoseLinear,
+  PathCrossing,
+  PathSegment,
+  PathStop,
+  SegmentCrossing,
+  TrimPathOptions,
+  TrimResult,
+  ExtendToMeetOptions,
+  SmudgePathOptions,
+  OpenPathEnd,
 } from '../features/paths';
 export {
   SHAPE_COUNT_RANGE,
@@ -122,6 +164,80 @@ export {
   type ShapeGenerator,
   type StarGenerator,
 } from '../features/paths/shapeGenerator';
+
+// ─── Building path commands and path-edit features on core ─────────────────
+export { commitOps } from '../interactions/actions/defaultCommitAdapter';
+export {
+  deleteNode,
+  insertAt,
+  pathCopy,
+  pathNodesOf,
+  reshapeOps,
+  reshapeTo,
+  selectedPathNodes,
+  slotOf,
+  withPath,
+  type PathNode,
+} from '../interactions/actions/pathCommands/pathNodes';
+export { joinPathsCommand, planJoin } from '../interactions/actions/pathCommands/cutJoin';
+export { DEFAULT_SIMPLIFY_TOLERANCE } from '../interactions/actions/pathCommands/simplifyOffset';
+export {
+  anchorEditWouldChange, commitAnchorEdit, depOf, requiresAnchorSelection,
+} from '../interactions/actions/defaults/anchorEditing';
+export { makeHandleCommand, type HandleEdit, type HandleScope } from '../interactions/actions/defaults/anchorHandles';
+export { joinSelectedAnchors } from '../interactions/actions/defaults/anchorJoin';
+export { deleteSelectedMark, editTargetOf, markUnder } from '../interactions/actions/defaults/pathEditMarks';
+export { pathEditPreview } from '../interactions/actions/edit-anchors/preview';
+export { editedPathSymmetries } from '../interactions/actions/edit-anchors/symmetry';
+export { locksInForce } from '../interactions/actions/edit-anchors/handleDrag';
+export {
+  classifyPathStorage, resolveEditablePathOf, storeEditablePath, type EditableShape,
+} from '../features/paths/editablePath';
+export { nodeOutline } from '../features/paths/strokeOutline';
+export { DEFAULT_OVERLAY_STYLE } from '../features/paths/anchorMarkers';
+
+// ─── Path effects: live blend, bend along, and repeat along ────────────────
+export {
+  createPathEffectDerivations,
+  PATH_EFFECT,
+  pathEffectNode,
+  pathEffectOf,
+  pathEffectParts,
+  registeredPathEffects,
+  derivedPartsOf,
+  pathFromParts,
+} from '../core/scene/pathEffects';
+export type {
+  BendAlongEffect,
+  BlendEffect,
+  DerivedPart,
+  EffectSource,
+  EffectSourceReader,
+  PathEffectDerivations,
+  PathEffect,
+  RepeatAlongEffect,
+} from '../core/scene/pathEffects';
+export { PATH_EFFECT_DERIVATIONS, readEffectSource, withPathEffectsRegistry } from '../features/pathEffects';
+
+// ─── Geometric constraints on a path's anchors ──────────────────────────────
+export {
+  constrainPathEdit,
+  constraintAnchors,
+  pathAnchorPoints,
+  solveConstraints,
+  solvePathConstraints,
+  unsatisfiedConstraints,
+  CONSTRAINT_TOLERANCE,
+} from '@weasel-js/geom';
+export type {
+  AnchorPair,
+  ConstrainedPathEdit,
+  ConstraintPoint,
+  PathConstraint,
+  PathConstraintKind,
+  SolveConstraintsOptions,
+  SolveConstraintsResult,
+} from '@weasel-js/geom';
 
 // ─── Curves: alternate path representations (Bezier, NURBS, Spiro) ──────────
 export {

@@ -39,13 +39,15 @@ export {
 } from './body';
 export type { ForceBody, ForceOptions, ForceRelaxation } from './force';
 export { force, forceRelaxation } from './force';
-export type { Graph, GraphEdge, GraphNode } from './graph';
-export { backEdges, layered, ranksOf } from './layered';
+export type { EdgeLabelRoom, Graph, GraphEdge, GraphNode } from './graph';
+export { chain } from './chain';
+export { backEdges, layered, layeredPlan, ranksByLength, ranksOf, type LayeredPlan } from './layered';
 export type {
   LayoutAxes,
   LayoutDirection,
   LayoutFn,
   LayoutOptions,
+  LayoutPlan,
   LayoutResult,
   Slot,
 } from './layout';
@@ -57,6 +59,7 @@ export {
   graphOrder,
   packAcross,
   pinnedSet,
+  planOf,
   seededOrder,
   settle,
   translated,
@@ -66,6 +69,6 @@ export { outlinePolyline, portsOnOutline, rayHit } from './onOutline';
 export type { Bounds, Outline } from './outline';
 export { boxForContent, contentBox, outlinePath } from './outline';
 export type { PortsOptions } from './ports';
-export { COMPASS, DEFAULT_PORTS, portOf, portsOf } from './ports';
+export { COMPASS, DEFAULT_PORTS, portOf, portSitesOf, portsOf } from './ports';
 export { forestOf, tree } from './tree';
 export type { DiagramNode, Port, PortAnchor, PortSpec } from './types';

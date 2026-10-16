@@ -99,7 +99,7 @@ export const cloneAction: Action & { requires: string[] } = inPlane({
   cursor: 'copy',
   activeCursor: 'copy',
   eligible: { capability: ['edits-page', 'creates-selection'] },
-  requires: ['selection', 'scene', 'applyOps', 'poseDescriptor'],
+  requires: ['selection', 'scene', 'applyOps', 'poseDescriptor', 'boundsIncludeStroke'],
   invoker: {
     timing: 'ongoing',
     start(ctx: InvocationCtx, opts?: BindingOpts): OngoingHandle {

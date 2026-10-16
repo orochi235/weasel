@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { KIT_SHAPE_KINDS } from 'core/shapeKinds';
-import type { BaseFeature } from './features';
+import { resolveFeatures, type BaseFeature } from './features';
+import { CORE_NAMED_PRESETS } from './namedPresets';
 import { BUILTIN_TOOL_IDS, type BuiltinToolId } from './props';
 import { resolveToolRegistry, type BuiltinTools } from './toolRegistry';
 import type { Tool } from 'tools/overlayBinding';
@@ -15,7 +16,7 @@ vi.mock('core/shapeKinds', async (importOriginal) => {
 
 const tool = (id: string): Tool => ({ id, eligibility: { focus: true } }) as Tool;
 const builtins = Object.fromEntries(BUILTIN_TOOL_IDS.map((id) => [id, tool(id)])) as BuiltinTools;
-const presets = (...on: BaseFeature[]): ReadonlySet<BaseFeature> => new Set(on);
+const presets = (...on: BaseFeature[]) => resolveFeatures(on, CORE_NAMED_PRESETS);
 const NONE = presets();
 
 afterEach(() => { vi.restoreAllMocks(); });
@@ -42,6 +43,13 @@ describe('resolveToolRegistry', () => {
   it('brings the select tool with the select preset and the hand with view', () => {
     expect(Object.keys(resolveToolRegistry({ builtins, enabled: presets('select'), patch: null }))).toEqual(['select']);
     expect(Object.keys(resolveToolRegistry({ builtins, enabled: presets('view'), patch: null }))).toEqual(['hand']);
+  });
+
+  it("mounts a preset's own tool after the built-ins, and a patch's false drops it", () => {
+    const own = tool('own');
+    const enabled = resolveFeatures(['select', { id: 'mine', tools: ['hand', own] }], CORE_NAMED_PRESETS);
+    expect(Object.keys(resolveToolRegistry({ builtins, enabled, patch: null }))).toEqual(['select', 'hand', 'own']);
+    expect(Object.keys(resolveToolRegistry({ builtins, enabled, patch: { own: false } }))).toEqual(['select', 'hand']);
   });
 
   it('orders built-ins select, hand, then the shape kinds, whatever order they were asked in', () => {

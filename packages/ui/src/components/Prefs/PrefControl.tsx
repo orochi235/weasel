@@ -1,6 +1,7 @@
 import type { PrefLeaf } from '@weasel-js/prefs';
 import type { EntryAt } from './entry';
 import { renderPrefControl, type PrefRenderer } from './PrefsRow';
+import { useParamsPolicy } from './useParamsPolicy';
 import type { PrefFieldChoice } from './schema';
 
 /** Props for {@link PrefControl}. */
@@ -32,6 +33,7 @@ export interface PrefControlProps {
  * others' (an `object`, a `list`, a `map`, a `union`) to put in one.
  */
 export function PrefControl({ pref, path = '', value, onChange, renderers, fields, disabled, disabledAt, entryAt }: PrefControlProps) {
+  const { settles } = useParamsPolicy('form');
   return renderPrefControl(
     {
       path,
@@ -44,6 +46,7 @@ export function PrefControl({ pref, path = '', value, onChange, renderers, field
       disabled,
       disabledAt,
       ...(entryAt ? { entryAt } : {}),
+      settles,
     },
     renderers,
   );

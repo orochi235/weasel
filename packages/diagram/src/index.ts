@@ -52,6 +52,7 @@ export {
   bezier,
   diagramEdgeOf,
   edgeDerivePath,
+  layoutOwnsRoute,
   orthogonal,
   resolveEnd,
   straight,
@@ -63,6 +64,7 @@ export type { SelfLoop } from './selfLoop';
 export { buildGraph } from './graph';
 export type {
   BuildGraphOptions,
+  EdgeLabelRoom,
   Graph,
   GraphEdge,
   GraphGroup,
@@ -100,6 +102,8 @@ export type {
   EdgeStyle,
   NodeStyle,
 } from './fromData';
+export { diagramMarkOf, markShape, registerMarkShape } from './marks';
+export type { DataMark, DiagramMark } from './marks';
 export { force, forceRelaxation } from './force';
 export type { ForceBody, ForceOptions, ForceRelaxation } from './force';
 export { EASED_LAYOUTS, easedProducer, forceProducer, useLiveLayout } from './live';
@@ -112,7 +116,8 @@ export type {
   LiveLayoutProducer,
   UseLiveLayoutOptions,
 } from './live';
-export { backEdges, layered, ranksOf } from './layered';
+export { chain } from './chain';
+export { backEdges, layered, layeredPlan, ranksByLength, ranksOf, type LayeredPlan } from './layered';
 export { layeredRoutes } from './route';
 export type { LayeredRoute, LayeredRouteInput, RouteEdge } from './route';
 export {
@@ -122,6 +127,7 @@ export {
   graphOrder,
   packAcross,
   pinnedSet,
+  planOf,
   seededOrder,
   settle,
   translated,
@@ -132,6 +138,7 @@ export type {
   LayoutDirection,
   LayoutFn,
   LayoutOptions,
+  LayoutPlan,
   LayoutResult,
   Slot,
 } from './layout';
@@ -143,6 +150,7 @@ export {
   createLayoutAction,
 } from './layoutAction';
 export type { ApplyLayoutOptions, LayoutActionOptions } from './layoutAction';
+export { routeWrites, routesOf, type LayoutRoutes } from './routeWrites';
 export { forestOf, tree, type Forest } from './tree';
 export { outlinePolyline, portsOnOutline, rayHit } from './onOutline';
 export {
@@ -163,7 +171,7 @@ export { boxForContent, contentBox, outlinePath } from './outline';
 export { diagramShape, registerDiagramShape } from './shape';
 export type { DiagramShapeOptions } from './shape';
 export type { Bounds, Outline } from './outline';
-export { COMPASS, DEFAULT_PORTS, portOf, portsOf } from './ports';
+export { COMPASS, DEFAULT_PORTS, portOf, portSitesOf, portsOf } from './ports';
 export type { PortsOptions } from './ports';
 export {
   DIAGRAM_TRAIT_KEY,

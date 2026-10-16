@@ -1,9 +1,11 @@
+import type { MouseEventHandler } from 'react';
 import { LockIcon } from '../../icons';
 import { CloseButton } from '../CloseButton';
 import { Disclosure } from '../Disclosure';
 import { DragGrip } from '../DragGrip';
 import rows from '../ItemList/ItemList.module.css';
-import type { LayerListItem, Shared } from './LayerList';
+import type { Shared } from './LayerList';
+import type { LayerListItem } from './layerListProps';
 import s from './LayerList.module.css';
 
 interface RowProps {
@@ -21,16 +23,24 @@ interface RowProps {
   onPointerDown: ((e: React.PointerEvent) => void) | undefined;
 }
 
+/** The right-click handler for a layer's root element, none for a ghost or when the list has no handler. */
+export function rowContextMenu(shared: Shared, item: LayerListItem, ghosted: boolean): MouseEventHandler | undefined {
+  const handler = shared.props.onRowContextMenu;
+  return ghosted || !handler ? undefined : (e) => handler(item.id, e);
+}
+
 /** A layer with no body: one line, and one row of its treegrid. */
 export function Row({ item, shared, parentId, level, ghosted, selected, open, childId, onPointerDown }: RowProps) {
   const { props } = shared;
   const branch = (item.children?.length ?? 0) > 0;
   return (
     <div
-      className={[rows.row, s.row, selected ? rows.selected : ''].filter(Boolean).join(' ')}
+      className={[rows.row, s.row, selected ? rows.selected : '', item.nonPrinting ? s.nonPrinting : ''].filter(Boolean).join(' ')}
       data-selected={selected ? 'true' : undefined}
+      data-non-printing={item.nonPrinting ? 'true' : undefined}
       data-locked={item.locked ? 'true' : undefined}
       onPointerDown={onPointerDown}
+      onContextMenu={rowContextMenu(shared, item, ghosted)}
       {...(ghosted
         ? {}
         : {
@@ -60,7 +70,7 @@ export function Row({ item, shared, parentId, level, ghosted, selected, open, ch
           ))}
         <Grip item={item} reorder={props.onReorder !== undefined} />
         {props.onVisibilityChange &&
-          (item.locked ? (
+          (item.locked || item.hideable === false ? (
             <span className={s.check} />
           ) : (
             <input
@@ -74,9 +84,17 @@ export function Row({ item, shared, parentId, level, ghosted, selected, open, ch
           ))}
         {item.leading}
         <span className={rows.label}>{item.title ?? item.label}</span>
+        {item.nonPrinting && <NonPrintingMark />}
         {ghosted ? null : <Remove item={item} shared={shared} />}
       </div>
     </div>
+  );
+}
+
+/** Marks a row that export leaves out. */
+function NonPrintingMark() {
+  return (
+    <span className={s.nonPrintingMark}>Not printed</span>
   );
 }
 
@@ -136,7 +154,7 @@ export function Controls({ item, shared }: { item: LayerListItem; shared: Shared
   const { onVisibilityChange } = shared.props;
   return (
     <>
-      {onVisibilityChange && !item.locked && (
+      {onVisibilityChange && !item.locked && item.hideable !== false && (
         <input
           className={s.check}
           type="checkbox"
@@ -153,7 +171,7 @@ export function Controls({ item, shared }: { item: LayerListItem; shared: Shared
 
 function Remove({ item, shared }: { item: LayerListItem; shared: Shared }) {
   const { onRemove } = shared.props;
-  if (!onRemove || item.locked) return null;
+  if (!onRemove || item.locked || item.removable === false) return null;
   return (
     <span className={s.stop} onPointerDown={stop}>
       <CloseButton

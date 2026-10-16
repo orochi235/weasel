@@ -78,6 +78,13 @@ export function inkReach(
   return { outset: world.outset, inset: world.inset, outsetPx: px.outset, insetPx: px.inset };
 }
 
+/** How far `stroke` reaches outside its outline on every side, world units at
+ *  `scale`: {@link inkReach}'s outset with its screen part resolved. */
+export function strokeOutset(stroke: Stroke | null, scale: number): number {
+  const r = inkReach(stroke, scale);
+  return r.outset + (r.outsetPx ?? 0) / (scale > 0 ? scale : 1);
+}
+
 /** Apply {@link NodePaintCtx.vertexColors} to a path painter's body — its first
  *  command. Applied outside the paint memo, whose key
  *  cannot see an override: `cmds` comes back as-is when nothing changes, and

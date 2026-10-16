@@ -64,6 +64,7 @@ export function ListLeaf({
           auto: ctx.auto,
           setAuto: ctx.setAuto,
           ...(ctx.fields ? { fields: ctx.fields } : {}),
+          ...(ctx.settles ? { settles: ctx.settles } : {}),
         });
       }}
     />

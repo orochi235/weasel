@@ -3,58 +3,61 @@
  * onto their anchors, or make each anchor's pair symmetric.
  */
 
-import type { Action, ActionDeps, ImmediateInvoker } from '@weasel-js/routing';
+import type { Action, ImmediateInvoker } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
-import {
-  editAnchorSetTracked,
-  makeHandlesSymmetric,
-  retractHandles,
-  type AnchorSet,
-  type PolygonPath,
-} from '@weasel-js/geom';
-import { commitAnchorEdit, depOf, requiresAnchorSelection } from './anchorEditing';
+import { makeHandlesSymmetric, retractHandles, type AnchorSet } from '@weasel-js/geom';
+import { anchorEditWouldChange, commitAnchorEdit, depOf, requiresAnchorSelection } from './anchorEditing';
 import { RetractHandlesIcon, SymmetricHandlesIcon } from './icons/anchorIcons';
+import { pathOperationTags } from '../pathGestureTags';
 
-type HandleEdit = (set: AnchorSet, flatIndexes: Iterable<number>) => boolean;
+/** An edit of the handles of the anchors at `flatIndexes`; absent means
+ *  every anchor of the path. */
+export type HandleEdit = (set: AnchorSet, flatIndexes?: Iterable<number>) => boolean;
 
-function makeHandleCommand(
+/** Which anchors a command edits: the selected ones, or every anchor of the
+ *  path while none is selected. */
+export type HandleScope = 'selected' | 'selectedOrAll';
+
+/** A path-edit command running `edit` on the anchors `scope` names, as one
+ *  history entry labeled `label`. Enabled only where it would change the path. */
+export function makeHandleCommand(
   id: string,
   label: string,
   icon: Action['icon'],
   edit: HandleEdit,
+  scope: HandleScope = 'selected',
 ): Action & { requires: string[] } {
   return {
     id,
     label,
     icon,
     group: 'anchors',
+    tags: pathOperationTags('command'),
     eligible: { capability: 'edits-anchors' },
     requires: ['editAnchors'],
     invoker: {
       timing: 'immediate',
       run: (deps) => {
         const dep = depOf(deps);
-        if (!dep || dep.selectedAnchors.size === 0) return;
-        const selected = [...dep.selectedAnchors];
+        if (!dep) return;
+        const selected = selectedOrAll(dep.selectedAnchors);
+        if (!selected && scope === 'selected') return;
         commitAnchorEdit(dep, label, (set) => edit(set, selected));
       },
     } as ImmediateInvoker,
     enabled: (deps) => {
-      const selection = requiresAnchorSelection(deps);
-      if (selection !== true) return selection;
-      return wouldChange(deps, edit) ? true : ActionDisabledReason.NotApplicable;
+      const ready = scope === 'selected'
+        ? requiresAnchorSelection(deps)
+        : depOf(deps) ? true : ActionDisabledReason.SelectionRequired;
+      if (ready !== true) return ready;
+      const selected = selectedOrAll(depOf(deps)!.selectedAnchors);
+      return anchorEditWouldChange(deps, (set) => edit(set, selected)) ? true : ActionDisabledReason.NotApplicable;
     },
   };
 }
 
-/** Whether `edit` would change the edited path, tried on a scratch decode. */
-function wouldChange(deps: ActionDeps | undefined, edit: HandleEdit): boolean {
-  const dep = depOf(deps);
-  if (!dep) return false;
-  const path = dep.getEditablePath(dep.editingId) as PolygonPath | undefined;
-  if (!path || path.kind !== 'polygon') return false;
-  const selected = [...dep.selectedAnchors];
-  return editAnchorSetTracked(path, (set) => edit(set, selected)) !== null;
+function selectedOrAll(selected: ReadonlySet<number>): number[] | undefined {
+  return selected.size > 0 ? [...selected] : undefined;
 }
 
 /** Collapse the selected anchors' handles onto them, making sharp corners. */
@@ -62,7 +65,7 @@ export const retractHandlesAction = makeHandleCommand(
   'retractHandles',
   'Retract handles',
   <RetractHandlesIcon />,
-  retractHandles,
+  (set, flat) => retractHandles(set, flat ?? []),
 );
 
 /** Give each selected anchor equal, opposite handles, making it smooth. */
@@ -70,5 +73,6 @@ export const makeHandlesSymmetricAction = makeHandleCommand(
   'makeHandlesSymmetric',
   'Make handles symmetric',
   <SymmetricHandlesIcon />,
-  makeHandlesSymmetric,
+  (set, flat) => makeHandlesSymmetric(set, flat ?? []),
 );
+

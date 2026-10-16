@@ -5,8 +5,14 @@
   --key-font-size: var(--wzl-font-size-sm);
 }
 
-/* Function-key legends print smaller, as on a real keyboard. */
-.key[data-fn] {
+/* A KeyBank's own box stays out of the layout unless a class gives it one. */
+:where(.bank) {
+  display: contents;
+}
+
+/* Function-key legends print smaller, as on a real keyboard — except in a
+   KeyBank, where every single-line legend prints at one size. */
+.key[data-fn]:not([data-banked]) {
   --key-font-size: calc(var(--wzl-font-size-sm) * 0.85);
 }
 
@@ -60,17 +66,30 @@
      key legends. Consumers wanting a specific face per chip pass the
      `font` prop on KeyCap. */
   font-family: ui-sans-serif, system-ui, sans-serif;
-  font-size: var(--key-font-size);
+  /* --key-legend-scale is set by a KeyBank, or by a key printing two lines. */
+  --key-legend-size: calc(var(--key-font-size) * var(--key-legend-scale, 1));
+  --key-wrap-line-height: 0.85;
+  font-size: var(--key-legend-size);
   font-weight: var(--wzl-font-weight-bold);
   line-height: 1;
+}
+
+/* A two-line legend, as keycaps print Pg / Up: centered, tight enough for both
+   lines to fit a short key. Bottom-aligned so its first line's baseline cannot
+   make a line box taller than the key. */
+.key[data-wrapped] {
+  white-space: pre-line;
+  text-align: center;
+  line-height: var(--key-wrap-line-height);
+  vertical-align: bottom;
 }
 
 /* A symbol legend drawn as an icon, a little larger than the letters beside it
    so its strokes stay whole at legend sizes. */
 .legendIcon {
   flex: none;
-  width: calc(var(--key-font-size) * 1.25);
-  height: calc(var(--key-font-size) * 1.25);
+  width: calc(var(--key-legend-size) * 1.25);
+  height: calc(var(--key-legend-size) * 1.25);
 }
 
 /* The symbol's own character, for a screen reader and for copied text. */

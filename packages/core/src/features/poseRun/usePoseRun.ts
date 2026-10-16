@@ -44,6 +44,10 @@ export interface UsePoseRunOptions<TPose> {
   label?: string;
   /** How many nodes the commit wrote. Fires after the ops land. */
   onCommit?: (moved: number) => void;
+  /** Writes of the caller's own, made inside the commit's batch so they
+   *  share its undo entry. `finished` is false when `stop` cut the run short
+   *  of where `step` was taking it. */
+  commitWith?: (finished: boolean) => void;
   /** Clock injection, for tests. Defaults to `requestAnimationFrame`. */
   requestFrame?: (cb: (t: number) => void) => number;
   cancelFrame?: (handle: number) => void;
@@ -92,17 +96,19 @@ export function usePoseRun<TPose>(opts: UsePoseRunOptions<TPose>): PoseRun {
     previews.current.clear();
   }, []);
 
-  const commit = (): void => {
+  const commit = (finished: boolean): void => {
     const scene = optsRef.current.scene;
+    const also = optsRef.current.commitWith;
     let moved = 0;
     try {
-      if (previews.current.size > 0) {
+      if (previews.current.size > 0 || also !== undefined) {
         scene.batch(optsRef.current.label ?? 'Layout', () => {
           for (const [id, pose] of previews.current) {
             if (scene.get(id) === undefined || scene.isLocked(id)) continue;
             scene.setPose(id, pose);
             moved++;
           }
+          also?.(finished);
         });
       }
     } finally {
@@ -130,7 +136,7 @@ export function usePoseRun<TPose>(opts: UsePoseRunOptions<TPose>): PoseRun {
     hold.set(previews.current);
     if (done) {
       halt(loop);
-      commit();
+      commit(true);
       return;
     }
     loop.request();
@@ -164,7 +170,7 @@ export function usePoseRun<TPose>(opts: UsePoseRunOptions<TPose>): PoseRun {
     stop() {
       if (!running.current) return;
       halt(loop);
-      commit();
+      commit(false);
     },
     cancel() {
       halt(loop);

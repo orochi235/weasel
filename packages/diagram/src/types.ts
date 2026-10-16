@@ -21,11 +21,18 @@ export interface PortSpec {
   /** Unique within the node. Edges name this, so it outlives a re-layout. */
   id: string;
   at: PortAnchor;
+  /** Other places the port may sit. An edge meeting the port takes whichever
+   *  of `at` and these faces the edge's next point most directly, so a
+   *  diamond's second exit can leave by its top or its bottom vertex, toward
+   *  wherever its wire goes. Everything else that shows a port where it is —
+   *  the connect affordance, `portsOf` — reads `at`. */
+  sites?: readonly PortAnchor[];
   /** Consulted by a connect gesture's validity predicate. Uninterpreted here. */
   type?: string;
   /** The direction an edge leaves along, overriding the one the anchor
    *  implies. `null` means "no preferred direction" — a router goes straight
-   *  at it. */
+   *  at it. Applies at `at`; a port at one of its `sites` faces away from
+   *  the node's center. */
   normal?: Vec2 | null;
 }
 

@@ -401,3 +401,25 @@ describe('useDispatcherOverlayLayer — a render React abandons', () => {
     expect(path.stroke?.paint).toEqual({ color: '#aaaaaa' });
   });
 });
+
+describe('useDispatcherOverlayLayer — brush overlay', () => {
+  it('projects the brush path to screen and keeps its radius in pixels', () => {
+    const dispatcher = makeDispatcher([{
+      overlay: (): OngoingOverlay => ({ kind: 'brush', points: [{ x: 0, y: 0 }, { x: 10, y: 0 }], radiusPx: 6 }),
+    }]);
+    const { result } = renderHook(() => useDispatcherOverlayLayer({ dispatcher }));
+    const zoomed: View = { x: 0, y: 0, scale: { x: 3, y: 3 } };
+    const [band, rim] = collectPaths(result.current.draw(env(dispatcher), zoomed, DIMS));
+    expect(band.path).toEqual(polylineFromPoints([{ x: 0, y: 0 }, { x: 30, y: 0 }]));
+    expect(band.stroke?.width).toBe(12);
+    expect(rim.stroke?.width).toBe(1);
+  });
+
+  it('obeys its chrome-caps id', () => {
+    const dispatcher = makeDispatcher([{
+      overlay: (): OngoingOverlay => ({ kind: 'brush', points: [{ x: 0, y: 0 }], radiusPx: 6 }),
+    }]);
+    const { result } = renderHook(() => useDispatcherOverlayLayer({ dispatcher }));
+    expect(collectPaths(result.current.draw(env(dispatcher, () => false), VIEW, DIMS))).toHaveLength(0);
+  });
+});
