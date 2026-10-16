@@ -44,6 +44,8 @@ function rgba(png: Buffer, { x, y }: { x: number; y: number }): number[] {
 
 for (const mode of ['light', 'dark'] as const) {
   test(`${DEMO_ID} — ${mode}: the open menu highlights the hovered row`, async ({ page }) => {
+    // A cold vite server's first load takes ~30s on a node (docs/TODO.md, "first page load").
+    test.setTimeout(90_000);
     await page.addInitScript((m) => window.localStorage.setItem('ckd-mode', m), mode);
     await page.goto(`/#${DEMO_ID}`);
     const canvas = page.locator('canvas').first();
