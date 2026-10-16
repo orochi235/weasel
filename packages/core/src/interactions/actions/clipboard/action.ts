@@ -88,8 +88,10 @@ export const clipboardPasteAction: Action & { requires: string[] } = {
   requires: ['clipboard'],
   invoker: {
     timing: 'immediate',
-    run: (deps) => {
-      deps.clipboard?.paste();
+    run: (deps, params) => {
+      const x = params?.worldX;
+      const y = params?.worldY;
+      deps.clipboard?.paste(typeof x === 'number' && typeof y === 'number' ? { worldX: x, worldY: y } : undefined);
     },
   },
   enabled: (deps) => {

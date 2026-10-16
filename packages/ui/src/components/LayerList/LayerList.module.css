@@ -182,3 +182,15 @@
   outline: 2px solid var(--wzl-accent);
   outline-offset: -1px;
 }
+
+/* An annotation row: dimmed, so content reads first, and marked as left out of export. */
+.nonPrinting {
+  color: var(--wzl-fg-muted);
+}
+
+.nonPrintingMark {
+  flex: none;
+  margin-inline-start: auto;
+  color: var(--wzl-fg-subtle);
+  font-size: var(--wzl-font-size-xs);
+}

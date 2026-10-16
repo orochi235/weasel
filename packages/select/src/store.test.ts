@@ -27,4 +27,16 @@ describe('createSelectionStore', () => {
     store.setSelection(['x']);
     expect(seen).toEqual(['x']);
   });
+
+  it('runs every listener past one that throws, and does not throw into the setter', () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const store = createSelectionStore<string>();
+    const after = vi.fn();
+    store.subscribe(() => { throw new Error('boom'); });
+    store.subscribe(after);
+    expect(() => store.setSelection(['a'])).not.toThrow();
+    expect(after).toHaveBeenCalledTimes(1);
+    expect(error).toHaveBeenCalled();
+    error.mockRestore();
+  });
 });

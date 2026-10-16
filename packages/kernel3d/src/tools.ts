@@ -13,20 +13,22 @@ import { defineTool, type Action, type Tool } from '@weasel-js/core';
 import { dollyBy, orbitBy, type Camera3d } from './camera';
 
 /** Radians per CSS pixel of drag. A full pane width is a bit over half a turn. */
-const ORBIT_RATE = 0.006;
-const DOLLY_RATE = 0.0015;
+export const ORBIT_RATE = 0.006;
+/** Dolly exponent per unit of wheel `deltaY`. */
+export const DOLLY_RATE = 0.0015;
 
 /** `camera.orbit`: an ongoing drag that turns the `camera3d` dep about its
  *  target, relative to the camera as it was when the drag began. */
 export const orbitAction: Action = {
   id: 'camera.orbit',
   label: 'Orbit',
-  requires: ['camera3d'],
+  requires: ['camera3d', 'kitSettings'],
   invoker: {
     timing: 'ongoing',
     start(ctx) {
       const dep = ctx.deps.camera3d;
       const origin: Camera3d | undefined = dep?.get();
+      const rate = ctx.deps.kitSettings?.get('orbit3d.orbitRate') ?? ORBIT_RATE;
       return {
         kind: 'orbit',
         onMove(move) {
@@ -40,7 +42,7 @@ export const orbitAction: Action = {
           // the two spaces differ by the zoom.
           const delta = move.drag?.screenDelta ?? move.drag?.delta;
           if (!delta) return;
-          dep.set(orbitBy(origin, -delta.x * ORBIT_RATE, delta.y * ORBIT_RATE));
+          dep.set(orbitBy(origin, -delta.x * rate, delta.y * rate));
         },
       };
     },
@@ -55,14 +57,14 @@ export const dollyAction: Action = {
   group: 'viewport',
   // Wheel, in any tool — the dispatcher merges the event's deltas into params.
   defaultBinding: [{ spec: { kind: 'wheel' }, opts: {} }],
-  requires: ['camera3d'],
+  requires: ['camera3d', 'kitSettings'],
   invoker: {
     timing: 'immediate',
     run(deps, params) {
       const dep = deps.camera3d;
       if (!dep) return;
       const amount = typeof params?.deltaY === 'number' ? params.deltaY : 0;
-      dep.set(dollyBy(dep.get(), Math.exp(amount * DOLLY_RATE)));
+      dep.set(dollyBy(dep.get(), Math.exp(amount * (deps.kitSettings?.get('orbit3d.dollyRate') ?? DOLLY_RATE))));
     },
   },
 };

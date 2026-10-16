@@ -70,10 +70,19 @@ export function inkReach(
     }
   };
   const width = stroke.width ?? 1;
-  const world = sides(typeof width === 'object' ? 0 : resolveStrokeWidth(width, scale ?? 1), heads.world);
+  // A variable-width stroke reaches as far as its widest vertex.
+  const widest = Math.max(0, ...(stroke.vertexWidths ?? []));
+  const world = sides(Math.max(widest, typeof width === 'object' ? 0 : resolveStrokeWidth(width, scale ?? 1)), heads.world);
   if (typeof width !== 'object' && !(heads.px > 0)) return world;
   const px = sides(typeof width === 'object' ? width.px : 0, heads.px);
   return { outset: world.outset, inset: world.inset, outsetPx: px.outset, insetPx: px.inset };
+}
+
+/** How far `stroke` reaches outside its outline on every side, world units at
+ *  `scale`: {@link inkReach}'s outset with its screen part resolved. */
+export function strokeOutset(stroke: Stroke | null, scale: number): number {
+  const r = inkReach(stroke, scale);
+  return r.outset + (r.outsetPx ?? 0) / (scale > 0 ? scale : 1);
 }
 
 /** Apply {@link NodePaintCtx.vertexColors} to a path painter's body — its first

@@ -28,8 +28,9 @@ export interface KeySequenceProps {
    *    Modifiers stay unjoined, so `⌘ ⇧` gets none.
    *  - `'none'`: never. */
   joins?: KeySequenceJoins;
-  /** Forwarded to every `KeyCap` in the sequence. `'minimal'` renders
-   *  unfilled chips whose border + legend are `currentColor`. */
+  /** Forwarded to every `KeyCap` in the sequence. `'default'` renders
+   *  unfilled chips whose border + legend are `currentColor`; `'inverse'`
+   *  renders filled ones. */
   variant?: KeyCapVariant;
   /** Forwarded to every `KeyCap` in the sequence. Overrides the design-
    *  system UI font for that chip only. */

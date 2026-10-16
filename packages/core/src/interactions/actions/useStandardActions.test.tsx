@@ -54,7 +54,7 @@ function ProbeDepSelection({ onValue }: { onValue: (v: unknown) => void }) {
 // Kit-standard descriptor IDs
 // ---------------------------------------------------------------------------
 const KIT_IDS = [
-  'escape', 'cancelGesture', 'selectAll', 'delete', 'duplicate', 'transformAgain',
+  'escape', 'menu.context', 'cancelGesture', 'selectAll', 'delete', 'duplicate', 'transformAgain',
   'group', 'ungroup',
   'undo', 'redo',
   'flip',
@@ -70,11 +70,8 @@ const KIT_IDS = [
   'resize', 'rotate', 'areaSelect', 'insert', 'insert.adjustRotation', 'insert.reposition', 'clone',
   'editAnchors', 'enterPathEdit', 'exitPathEdit', 'insertPathAnchor', 'bendSegment',
   'nudgeAnchors.up', 'nudgeAnchors.down', 'nudgeAnchors.left', 'nudgeAnchors.right',
-  'deleteAnchors', 'cutPathAtAnchor', 'retractHandles', 'makeHandlesSymmetric',
-  'averageAnchors', 'joinAnchors', 'addExtremeAnchors',
-  'growAnchorSelection', 'shrinkAnchorSelection', 'selectEveryNthAnchor',
-  'selectCornerAnchors', 'selectSmoothAnchors', 'invertAnchorSelection',
-  'simplifyPath', 'resamplePath', 'offsetPath', 'snipAtCrossings', 'joinPaths',
+  'deleteAnchors', 'cutPathAtAnchor', 'pathEditTool.exit', 'retractHandles', 'makeHandlesSymmetric',
+  'averageAnchors', 'joinAnchors', 'simplifyPath', 'offsetPath', 'snipAtCrossings', 'joinPaths',
   'marqueeAnchors', 'selectAnchor',
   'lassoSelect', 'viewport.pinchZoom',
   // viewport.pan / viewport.zoom are registered conditionally by SceneCanvas's

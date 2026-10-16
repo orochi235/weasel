@@ -1,9 +1,8 @@
 import type { NodeId, Scene } from 'core/scene/types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { PointerContextValue } from '@weasel-js/routing/react';
-import type { PoseDescriptor } from './resize/geometry';
-import { visualBoundsViaDescriptor } from './resize/geometry';
 import type { PoseFrame } from './poseFrame';
+import type { DrawnBoxes } from './drawnBoxes';
 
 /**
  * @experimental
@@ -14,7 +13,7 @@ import type { PoseFrame } from './poseFrame';
  *   invoked the action, otherwise the latest position in the `pointer` dep.
  * - `{ x, y, width?, height? }` — a world point, or a world rect when it has
  *   extent.
- * - `{ node }` — that node's visual bounds (a key object; it does not move).
+ * - `{ node }` — that node's box as drawn (a key object; it does not move).
  */
 export type SpatialReference =
   | 'pointer'
@@ -25,7 +24,7 @@ export type SpatialReference =
 export interface SpatialReferenceSources {
   /** The pointer's world position, or `null` when it is over no canvas. */
   pointer(): { x: number; y: number } | null;
-  /** A node's world visual bounds, or `null` when it is not in the scene. */
+  /** A node's world box as drawn, or `null` when it is not in the scene. */
   nodeBounds(id: NodeId): Bounds | null;
 }
 
@@ -62,7 +61,7 @@ export function actionReferenceSources(
   pointer: PointerContextValue | undefined,
   scene: Scene<unknown, string, unknown>,
   frame: PoseFrame<unknown>,
-  geom: PoseDescriptor<unknown>,
+  boxes: DrawnBoxes,
 ): SpatialReferenceSources {
   return {
     pointer: () => {
@@ -74,6 +73,6 @@ export function actionReferenceSources(
     },
     nodeBounds: (id) => (scene.get(id) === undefined
       ? null
-      : visualBoundsViaDescriptor(frame.world(id), geom)),
+      : boxes.aabb(id, frame.world(id))),
   };
 }

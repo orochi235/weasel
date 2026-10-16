@@ -1,6 +1,6 @@
 {
   "name": "@weasel-js/prefs",
-  "version": "1.10.0",
+  "version": "1.10.1",
   "description": "A preferences schema, a store that loads, validates, migrates and persists values against it, and React hooks over the store.",
   "license": "MIT",
   "type": "module",
@@ -16,6 +16,10 @@
     "./react": {
       "import": "./dist/react.js",
       "types": "./dist/react.d.ts"
+    },
+    "./vite": {
+      "import": "./dist/vite.js",
+      "types": "./dist/vite.d.ts"
     },
     "./package.json": "./package.json"
   },
@@ -41,16 +45,21 @@
     "build": "tsup"
   },
   "dependencies": {
-    "@weasel-js/paint": "1.10.0",
-    "@weasel-js/quantity": "1.10.0",
-    "@weasel-js/registry": "1.10.0",
-    "@weasel-js/storage": "1.10.0"
+    "@weasel-js/paint": "1.10.1",
+    "@weasel-js/quantity": "1.10.1",
+    "@weasel-js/react": "1.10.1",
+    "@weasel-js/registry": "1.10.1",
+    "@weasel-js/storage": "1.10.1"
   },
   "peerDependencies": {
-    "react": ">=18"
+    "react": ">=18",
+    "vite": ">=6.1"
   },
   "peerDependenciesMeta": {
     "react": {
+      "optional": true
+    },
+    "vite": {
       "optional": true
     }
   },

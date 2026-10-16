@@ -15,8 +15,12 @@ type Child = Declaration | JSONOutput.ReferenceReflection;
  * @returns `null` for a kind the reference has no page for
  */
 export function readSymbol(child: Child, name: string, links: Links): ReferenceSymbol | null {
-  // A function documents itself on its signatures, and its page shows the first one's summary.
-  const comment = child.comment ?? (child.kind === Kind.Function ? child.signatures?.[0]?.comment : undefined);
+  if (child.variant === 'reference') {
+    const { target } = child as JSONOutput.ReferenceReflection;
+    // Its source is the line that re-exports it, which says nothing the link to the declaration does not.
+    return { name, summary: links.summary(target), doc: [], kind: 'alias', to: links.byId(target) ?? null };
+  }
+  const comment = commentOf(child);
   const source = child.sources?.[0];
   const deprecated = tagProse(comment, '@deprecated', links);
   const base = {
@@ -27,9 +31,6 @@ export function readSymbol(child: Child, name: string, links: Links): ReferenceS
     ...(source ? { source: { file: source.fileName, line: source.line, ...(source.url ? { url: source.url } : {}) } } : {}),
   };
 
-  if (child.variant === 'reference') {
-    return { ...base, kind: 'alias', to: links.byId((child as JSONOutput.ReferenceReflection).target) ?? null };
-  }
   switch (child.kind) {
     case Kind.Function:
       return {
@@ -54,6 +55,11 @@ export function readSymbol(child: Child, name: string, links: Links): ReferenceS
     default:
       return null;
   }
+}
+
+/** The comment an export's summary is read from. A function documents itself on its signatures, so it is the first one's. */
+export function commentOf(child: Child): JSONOutput.Comment | undefined {
+  return child.comment ?? (child.kind === Kind.Function ? (child as Declaration).signatures?.[0]?.comment : undefined);
 }
 
 /** `class Box<T> extends Shape implements Sized`. */

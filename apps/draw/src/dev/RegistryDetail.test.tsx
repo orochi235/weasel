@@ -171,9 +171,9 @@ describe('RouteBadge v3', () => {
     expect(tag?.className).toMatch(/routeMuted/);
   });
 
-  it('renders keyDown arg as a minimal KeyCap with the canonical label (no parens)', () => {
+  it('renders keyDown arg as a default KeyCap with the canonical label (no parens)', () => {
     const { container } = render(<RouteBadge route="[initial] keyDown(Escape)" />);
-    const cap = container.querySelector('kbd[data-variant="minimal"]');
+    const cap = container.querySelector('kbd:not([data-variant])');
     // Compare against keySpecFromKey rather than a literal glyph — the label
     // is platform-dependent (⎋ on macOS, Esc elsewhere), and the detected
     // platform follows the host OS via jsdom's user agent. The contract under
@@ -188,9 +188,9 @@ describe('RouteBadge v3', () => {
     expect(container.textContent).toMatch(/wheel\(up\)/);
   });
 
-  it('renders keyHeld arg as a minimal KeyCap (same path as keyDown)', () => {
+  it('renders keyHeld arg as a default KeyCap (same path as keyDown)', () => {
     const { container } = render(<RouteBadge route="[initial] keyHeld(Space)" />);
-    const cap = container.querySelector('kbd[data-variant="minimal"]');
+    const cap = container.querySelector('kbd:not([data-variant])');
     expect(cap?.textContent).toBe(keySpecFromKey(' ').label);
   });
 });

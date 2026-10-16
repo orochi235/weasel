@@ -1,11 +1,13 @@
 import { describe, it, expect } from 'vitest';
-import { createPenPreviewLayer } from './penPreviewLayer';
+import { ANCHOR_RADIUS_PX, createPenPreviewLayer } from './penPreviewLayer';
+import { createKitSettingsStore } from '@weasel-js/react';
+import { boundsOfPath } from '@weasel-js/geom';
 import type { PenScratch } from 'tools/builtin/pen';
 import { type PolygonPath, anchorsToPath } from '@weasel-js/geom';
 
 const DIMS = { width: 400, height: 400 };
 
-function setup() {
+function setup(kitSettings?: ReturnType<typeof createKitSettingsStore>) {
   const scratch: PenScratch = {
     finishedSubpaths: [],
     current: null,
@@ -14,11 +16,24 @@ function setup() {
     closeHintActive: false,
     continuing: null,
   };
-  const layer = createPenPreviewLayer({ state: scratch });
+  const layer = createPenPreviewLayer({ state: scratch, ...(kitSettings ? { kitSettings: () => kitSettings } : {}) });
   return { scratch, layer };
 }
 
 describe('createPenPreviewLayer', () => {
+  it('sizes its anchor dots by targets.penAnchorRadiusPx, read each frame, else ANCHOR_RADIUS_PX', () => {
+    const kit = createKitSettingsStore({ targets: { penAnchorRadiusPx: 7 } });
+    const { scratch, layer } = setup(kit);
+    scratch.current = { anchors: [{ x: 50, y: 50 }], closed: false };
+    const dotWidth = () => {
+      const dot = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, DIMS).find((c) => c.kind === 'path' && c.fill);
+      return dot?.kind === 'path' ? Math.round(boundsOfPath(dot.path).width) : 0;
+    };
+    expect(dotWidth()).toBe(14);
+    kit.set({});
+    expect(dotWidth()).toBe(2 * ANCHOR_RADIUS_PX);
+  });
+
   it('returns a screen-space RenderLayer with a stable id', () => {
     const { layer } = setup();
     expect(layer.space).toBe('screen');

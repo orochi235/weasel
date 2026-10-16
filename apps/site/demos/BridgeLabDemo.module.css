@@ -1,0 +1,18 @@
+/* The command bars sit inside the trial, over the canvas, because the
+ * actions they draw are registered by the trial's own canvas. */
+.trial {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.actions {
+  position: absolute;
+  top: var(--wzl-space-2);
+  left: var(--wzl-space-2);
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-1);
+  align-items: flex-start;
+}

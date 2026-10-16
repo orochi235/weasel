@@ -102,4 +102,18 @@ describe('useFrameClock', () => {
     const { clock } = mount({ paused: true, start: 2.5 });
     expect(clock().seconds()).toBe(2.5);
   });
+
+  it('runs every subscriber past one that throws, and keeps asking for frames', () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const frames = makeFrames();
+    const { clock } = mount(frames);
+    const after = vi.fn();
+    clock().subscribe(() => { throw new Error('boom'); });
+    clock().subscribe(after);
+    expect(() => act(() => { frames.flush(); })).not.toThrow();
+    expect(after).toHaveBeenCalledTimes(1);
+    expect(frames.pending()).toBe(1);
+    expect(error).toHaveBeenCalled();
+    error.mockRestore();
+  });
 });

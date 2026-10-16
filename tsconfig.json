@@ -50,6 +50,7 @@
       "@weasel-js/d3": ["./packages/d3/src/index.ts"],
       "@weasel-js/diagram": ["./packages/diagram/src/index.ts"],
       "@weasel-js/diagram/layout": ["./packages/diagram/src/layout.entry.ts"],
+      "@weasel-js/diagram/effect": ["./packages/diagram/src/effect.entry.ts"],
       "@weasel-js/font": ["./packages/font/src/index.ts"],
       "@weasel-js/font/test-seams": ["./packages/font/src/test-seams.ts"],
       "@weasel-js/font/testing/*": ["./packages/font/src/testing/*"],
@@ -74,6 +75,7 @@
       "@weasel-js/guides/resize": ["./packages/guides/src/resize.ts"],
       "@weasel-js/guides/insert": ["./packages/guides/src/insert.ts"],
       "@weasel-js/history": ["./packages/history/src/index.ts"],
+      "@weasel-js/menu": ["./packages/menu/src/index.ts"],
       "@weasel-js/hud": ["./packages/hud/src/index.ts"],
       "@weasel-js/hud/react": ["./packages/hud/src/react/index.ts"],
       "@weasel-js/kernel3d": ["./packages/kernel3d/src/index.ts"],
@@ -100,8 +102,10 @@
       "@weasel-js/modes/presets/default": ["./packages/modes/src/presets/default.ts"],
       "@weasel-js/paint": ["./packages/paint/src/index.ts"],
       "@weasel-js/parallax": ["./packages/parallax/src/index.ts"],
+      "@weasel-js/path-tools": ["./packages/path-tools/src/index.ts"],
       "@weasel-js/prefs": ["./packages/prefs/src/index.ts"],
       "@weasel-js/prefs/react": ["./packages/prefs/src/react.ts"],
+      "@weasel-js/prefs/vite": ["./packages/prefs/src/vite.ts"],
       "@weasel-js/quantity": ["./packages/quantity/src/index.ts"],
       "@weasel-js/react": ["./packages/react/src/index.ts"],
       "@weasel-js/react/testing/*": ["./packages/react/src/testing/*"],
@@ -158,7 +162,7 @@
   // core silently breaks them otherwise. The Playwright suites under
   // tests/e2e, the rest of tests/perf and tests/visual drive the app over a wire and
   // don't.
-  "include": ["apps", "tests/perf/bench", "packages/core/src", "packages/animator/src", "packages/ui/src", "packages/hud/src", "packages/theme/src", "packages/svg/src", "packages/geom/src", "packages/font/src", "packages/paint/src", "packages/text/src", "packages/text-dom/src","packages/history/src", "packages/quantity/src", "packages/simulation/src", "packages/stroke/src", "packages/renderer/src", "packages/storage/src", "packages/prefs/src", "packages/registry/src", "packages/react/src", "packages/modes/src", "packages/gestures/src", "packages/d3/src", "packages/diagram/src", "packages/guides/src", "packages/labkit/src", "packages/labkit/examples", "packages/audio/src", "packages/kernel3d/src", "packages/parallax/src", "packages/minimap/src", "packages/symmetry/src", "packages/forge/src", "packages/routing/src", "packages/cursor/src", "packages/bidi/src", "packages/loupe/src"],
+  "include": ["apps", "tests/perf/bench", "packages/core/src", "packages/animator/src", "packages/ui/src", "packages/hud/src", "packages/theme/src", "packages/svg/src", "packages/geom/src", "packages/font/src", "packages/paint/src", "packages/text/src", "packages/text-dom/src","packages/history/src", "packages/menu/src", "packages/quantity/src", "packages/simulation/src", "packages/stroke/src", "packages/renderer/src", "packages/storage/src", "packages/prefs/src", "packages/registry/src", "packages/react/src", "packages/modes/src", "packages/gestures/src", "packages/d3/src", "packages/diagram/src", "packages/guides/src", "packages/labkit/src", "packages/labkit/examples", "packages/audio/src", "packages/kernel3d/src", "packages/parallax/src", "packages/minimap/src", "packages/symmetry/src", "packages/path-tools/src", "packages/forge/src", "packages/routing/src", "packages/cursor/src", "packages/bidi/src", "packages/loupe/src"],
   // Browser tests are typechecked by packages/tsconfig.json, which says why.
   "exclude": ["node_modules", "dist", "**/*.browser.test.ts", "**/*.browser.test.tsx"]
 }

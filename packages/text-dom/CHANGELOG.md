@@ -1,5 +1,23 @@
 # @weasel-js/text-dom
 
+## 1.10.1
+
+### Patch Changes
+
+- 886380f: Each README's "API reference" link now opens the package's page on the site, `https://orochi235.github.io/weasel/#pkg/<name>`, where it used to open the TypeDoc site at `/weasel/api/`, which is no longer built. A file comment that sat on an `export { … }` list is now marked as the file's, so an entry's description no longer shows up as the summary of each function the entry re-exports. No code changed. `@weasel-js/labkit` drops `vitepress` from its devDependencies, which nothing used.
+- 9e84e5d: Additive: `useTextEdit` and `useSceneTextEdit` take `onStart(id)` and `onEnd(id)`. `onStart` is called as an edit opens, whichever way it was started (`startEdit`, a double-click, the `textEdit` dep). `onEnd` is called as it closes, however it does: a commit, a cancel, Escape, a click away, or another edit opening over it, and after any commit has been written. Both are called from the call that changes the edit, not from an effect, so state that follows the edit is never a render behind it. Neither is called when the hook unmounts with an edit open.
+- Updated dependencies [cbd5b4d]
+- Updated dependencies [924edc4]
+- Updated dependencies [b8bfb2d]
+- Updated dependencies [35c4879]
+- Updated dependencies [886380f]
+- Updated dependencies [f5870a4]
+- Updated dependencies [10c5d41]
+  - @weasel-js/text@1.10.1
+  - @weasel-js/react@1.10.1
+  - @weasel-js/font@1.10.1
+  - @weasel-js/paint@1.10.1
+
 ## 1.10.0
 
 ### Patch Changes

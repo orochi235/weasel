@@ -231,6 +231,8 @@ export type OverlayRole =
   | 'cut'
   /** An edge the gesture would author between two points. */
   | 'connector'
+  /** What a lock holds a dragged point to — a line, a circle. */
+  | 'lock'
   | (string & {});
 
 /**
@@ -267,6 +269,17 @@ export type OngoingOverlay =
       points: ReadonlyArray<{ x: number; y: number }>;
       /** What the run means. Omitted reads as {@link OverlayRole} `'chrome'`. */
       role?: OverlayRole;
+    }
+  | {
+      /**
+       * A round brush dragged through world points: the area it has swept so
+       * far, and its footprint at the last point. The radius is in screen
+       * pixels, so the footprint keeps its size at every zoom.
+       */
+      kind: 'brush';
+      /** The brush's path so far, at least one point; the last is where it is now. */
+      points: ReadonlyArray<{ x: number; y: number }>;
+      radiusPx: number;
     }
   | {
       /**

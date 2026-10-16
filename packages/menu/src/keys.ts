@@ -1,0 +1,71 @@
+import { entriesAt, isRow, type MenuEntry } from './entries';
+
+/** The highlighted index at each open level; its length is how many are open. */
+export type MenuStack = readonly (number | null)[];
+
+/** What a key asks the owner of the menu to do beyond moving the highlight. */
+export type KeyEffect =
+  | { kind: 'none' }
+  | { kind: 'choose'; level: number; index: number }
+  | { kind: 'close' };
+
+const NONE: KeyEffect = { kind: 'none' };
+
+/** Index of the first row, or null for a level with none. */
+export function firstRow(entries: readonly MenuEntry[]): number | null {
+  const i = entries.findIndex(isRow);
+  return i < 0 ? null : i;
+}
+
+function step(entries: readonly MenuEntry[], from: number | null, dir: 1 | -1): number | null {
+  const n = entries.length;
+  let i = from ?? (dir === 1 ? -1 : n);
+  for (let k = 0; k < n; k++) {
+    i = (i + dir + n) % n;
+    if (isRow(entries[i]!)) return i;
+  }
+  return null;
+}
+
+function withTop(stack: MenuStack, index: number | null): MenuStack {
+  return [...stack.slice(0, -1), index];
+}
+
+function openSub(root: readonly MenuEntry[], stack: MenuStack): MenuStack | null {
+  const level = stack.length - 1;
+  const at = stack[level];
+  const e = at == null ? undefined : entriesAt(root, stack, level)[at];
+  if (e?.kind !== 'submenu' || e.disabled) return null;
+  return [...stack, firstRow(e.entries)];
+}
+
+/** Apply one key to the menu: the new stack, any effect, and whether the key
+ *  was the menu's (an unhandled key goes on to typeahead). */
+export function keyStep(
+  root: readonly MenuEntry[],
+  stack: MenuStack,
+  key: string,
+): { stack: MenuStack; effect: KeyEffect; handled: boolean } {
+  const level = stack.length - 1;
+  const rows = entriesAt(root, stack, level);
+  const at = stack[level] ?? null;
+  const done = (s: MenuStack, effect: KeyEffect = NONE) => ({ stack: s, effect, handled: true });
+  switch (key) {
+    case 'ArrowDown': return done(withTop(stack, step(rows, at, 1)));
+    case 'ArrowUp': return done(withTop(stack, step(rows, at, -1)));
+    case 'Home': return done(withTop(stack, step(rows, null, 1)));
+    case 'End': return done(withTop(stack, step(rows, null, -1)));
+    case 'ArrowRight': return done(openSub(root, stack) ?? stack);
+    case 'ArrowLeft': return done(level > 0 ? stack.slice(0, -1) : stack);
+    case 'Escape': return level > 0 ? done(stack.slice(0, -1)) : done(stack, { kind: 'close' });
+    case 'Tab': return done(stack, { kind: 'close' });
+    case 'Enter':
+    case ' ': {
+      const e = at == null ? undefined : rows[at];
+      if (e?.kind === 'submenu') return done(openSub(root, stack) ?? stack);
+      if (e?.kind === 'item' && !e.disabled) return done(stack, { kind: 'choose', level, index: at! });
+      return done(stack);
+    }
+    default: return { stack, effect: NONE, handled: false };
+  }
+}

@@ -33,7 +33,7 @@ resume while the browser keeps firing throughout.
 
 ```ts
 const loop = useVisibleRaf(
-  (time) => {
+  (time, loop) => {
     …
     loop.request();   // a continuous loop asks for the next frame from inside
   },

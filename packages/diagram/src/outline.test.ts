@@ -25,7 +25,7 @@ describe('outlinePath', () => {
     expect(outlinePath(custom, BOX)).toBe(custom);
   });
 
-  for (const outline of ['rect', 'diamond', 'stadium', 'parallelogram'] as const) {
+  for (const outline of ['rect', 'diamond', 'stadium', 'parallelogram', 'trapezoid'] as const) {
     it(`keeps a ${outline} inside its bounds`, () => {
       // A cubic's bounds are computed from the curve, not its hull, so a
       // stadium that bulges past its box shows up here.
@@ -113,7 +113,7 @@ describe('contentBox', () => {
     expect(contentBox(rectPath(0, 0, 1, 1), BOX)).toEqual(BOX);
   });
 
-  for (const outline of ['rect', 'diamond', 'parallelogram'] as const) {
+  for (const outline of ['rect', 'diamond', 'parallelogram', 'trapezoid'] as const) {
     it(`boxForContent inverts contentBox for a ${outline}`, () => {
       const want = { width: 60, height: 40 };
       const box = boxForContent(outline, want);
@@ -122,4 +122,20 @@ describe('contentBox', () => {
       expect(got.height).toBeCloseTo(want.height, 6);
     });
   }
+});
+
+describe('trapezoid', () => {
+  const box = { x: 10, y: 20, width: 40, height: 80 };
+
+  it('runs from a half-height left side to a full-height right side', () => {
+    const path = outlinePath('trapezoid', box);
+    expect(path.kind).toBe('polygon');
+    if (path.kind !== 'polygon') return;
+    expect([...path.coords]).toEqual([10, 40, 50, 20, 50, 100, 10, 80]);
+  });
+
+  it('keeps content inside the narrow side, and sizes a box to hold it', () => {
+    expect(contentBox('trapezoid', box)).toEqual({ x: 10, y: 40, width: 40, height: 40 });
+    expect(boxForContent('trapezoid', { width: 40, height: 40 })).toEqual({ width: 40, height: 80 });
+  });
 });

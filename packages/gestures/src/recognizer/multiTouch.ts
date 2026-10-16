@@ -57,7 +57,8 @@ export interface MultiTouchEpisode {
   abandon(): void;
 }
 
-export function createMultiTouchEpisode(): MultiTouchEpisode {
+/** `tapPx` is how far a finger or the centroid may travel and still tap, read as each is measured. */
+export function createMultiTouchEpisode(tapPx: () => number = () => TAP_THRESHOLD_PX): MultiTouchEpisode {
   let episode: Episode | null = null;
   return {
     join(positions, centroid, now) {
@@ -74,7 +75,7 @@ export function createMultiTouchEpisode(): MultiTouchEpisode {
     },
     moved(pointerId, to) {
       const from = episode?.joinedAt.get(pointerId);
-      if (episode && from && Math.hypot(to.x - from.x, to.y - from.y) > TAP_THRESHOLD_PX) episode.moved = true;
+      if (episode && from && Math.hypot(to.x - from.x, to.y - from.y) > tapPx()) episode.moved = true;
     },
     finish(centroid, now, maxHoldMs) {
       const e = episode;
@@ -82,7 +83,7 @@ export function createMultiTouchEpisode(): MultiTouchEpisode {
       if (!e) return null;
       // A hold as long as a long-press is not a tap, for two fingers as for one.
       const brief = now - e.startedAt < maxHoldMs;
-      const still = Math.hypot(centroid.x - e.centroid.x, centroid.y - e.centroid.y) <= TAP_THRESHOLD_PX;
+      const still = Math.hypot(centroid.x - e.centroid.x, centroid.y - e.centroid.y) <= tapPx();
       return brief && !e.moved && still ? e.fingers : null;
     },
     abandon() { episode = null; },

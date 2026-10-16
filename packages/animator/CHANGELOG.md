@@ -1,5 +1,30 @@
 # @weasel-js/animator
 
+## 1.10.1
+
+### Patch Changes
+
+- 3fda6e6: `ClipValue`'s object arm is `object`, so a pose typed by an interface (`RectPose`, a `TaggedTypedArray`) is a clip key's `value` without a cast. It was an index signature, which no interface satisfies. Breaking for code that read a member straight off a `ClipValue`: narrow it to its own type first. `toClip` still refuses a value JSON cannot round-trip.
+- 886380f: Each README's "API reference" link now opens the package's page on the site, `https://orochi235.github.io/weasel/#pkg/<name>`, where it used to open the TypeDoc site at `/weasel/api/`, which is no longer built. A file comment that sat on an `export { … }` list is now marked as the file's, so an entry's description no longer shows up as the summary of each function the entry re-exports. No code changed. `@weasel-js/labkit` drops `vitepress` from its devDependencies, which nothing used.
+- bd6c203: A timeline frame that skips whole laps fires the same events under `loop: n` as under `loop: true`: the tail of the lap it left, then the lap it lands in, and nothing of the laps in between. Under a lap count it used to fire every skipped lap's events in full, and to report one `lap` to `animator.watch` per lap skipped; it now reports one, carrying the lap reached. Breaking for a handler that counted on a late frame replaying each lap.
+- Updated dependencies [cbd5b4d]
+- Updated dependencies [aaa2b4f]
+- Updated dependencies [c7b7ed5]
+- Updated dependencies [ee59ccd]
+- Updated dependencies [b8bfb2d]
+- Updated dependencies [35c4879]
+- Updated dependencies [9eefcc7]
+- Updated dependencies [886380f]
+- Updated dependencies [d8b51a4]
+- Updated dependencies [62e766c]
+- Updated dependencies [ab9ea7a]
+- Updated dependencies [e962494]
+- Updated dependencies [10c5d41]
+  - @weasel-js/geom@1.10.1
+  - @weasel-js/react@1.10.1
+  - @weasel-js/paint@1.10.1
+  - @weasel-js/registry@1.10.1
+
 ## 1.10.0
 
 ### Patch Changes

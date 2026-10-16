@@ -14,7 +14,7 @@ interface StubNode { id: NodeId; kind: 'leaf'; layer: string; pose: unknown; dat
 function setup(paths: Record<string, PolygonPath>, selected: string[], extra: Record<string, unknown> = {}) {
   const nodes = new Map<string, StubNode>();
   for (const [id, path] of Object.entries(paths)) {
-    nodes.set(id, { id: asNodeId(id), kind: 'leaf', layer: 'main', pose: path, data: { tag: id, skin: [1] }, parent: null });
+    nodes.set(id, { id: asNodeId(id), kind: 'leaf', layer: 'main', pose: path, data: { tag: id, skin: [1], constraints: [{ kind: 'fixed', anchor: 0 }] }, parent: null });
   }
   let minted = 0;
   const scene = {

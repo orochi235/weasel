@@ -5,7 +5,7 @@
  * overrides via the `geometry` arg take precedence.
  */
 import { useMemo } from 'react';
-import { useLatest } from '@weasel-js/react';
+import { useKitSetting, useLatest } from '@weasel-js/react';
 import type { SceneCanvasAdapter } from '../sceneAdapter';
 import { pickWalk, scenePickSource, scenePlaneOf, type ViewPickGates } from 'canvas/pickWalk';
 import { rectFromPlane, type PlaneMap } from 'core/viewport/parallax';
@@ -18,10 +18,12 @@ import type { UseMoveOptions } from 'interactions/actions/move/options';
 import type { UseResizeOptions } from 'interactions/actions/resize/options';
 import type { SnapStrategy } from 'interactions/gestures/types';
 import { snap as snapBehavior } from 'interactions/gestures/shared/snap';
-import { poseDescriptorForNode, type PoseDescriptor } from 'interactions/actions/resize/geometry';
-import { framedBounds } from 'core/geometry/poseDescriptor';
+import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
+import { meanScale } from '@weasel-js/geom';
+import { drawnBoundsOf } from 'canvas/drawnBounds';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import { scenePointQuery } from './scenePointQuery';
+import type { SceneCanvasGeometry } from './geometryProps';
 
 /**
  * Default grab slop around a shape's outline, in screen pixels.
@@ -61,18 +63,7 @@ export interface UseSceneSelectToolArgs<TData, TLayer extends string, TPose> {
   adapter: SceneCanvasAdapter<TData, TLayer, TPose>;
   /** How to read and rewrite this scene's poses. Default `AUTO_POSE_DESCRIPTOR`. */
   poseDescriptor?: PoseDescriptor<TPose>;
-  geometry?: {
-    pickEvery?: (worldX: number, worldY: number) => string | string[] | null;
-    boundsOf?: (id: string) => Bounds | null;
-    /** How the default body-pick decides a node covers the pointer. Defaults
-     *  to `'shape'`; `'pose'` opts back down to the bare pose rect. See
-     *  `SceneCanvasProps.geometry.picking`. Ignored when `pickEvery` is
-     *  supplied — that override owns the whole test. */
-    picking?: 'pose' | 'shape';
-    /** Grab slop around a shape's outline, in screen pixels. See
-     *  `SceneCanvasProps.geometry.pickTolerancePx`. */
-    pickTolerancePx?: number;
-  };
+  geometry?: SceneCanvasGeometry;
   /** The surface's camera, for converting the screen-pixel pick tolerance into
    *  world units. A caller picking for another view passes that view's camera
    *  to `pickEvery` / `pickBest` instead. Omitted in tests and non-viewport
@@ -100,6 +91,24 @@ export interface UseSceneSelectToolArgs<TData, TLayer extends string, TPose> {
      *  `UseSelectToolOptions.extendClickLocked`. */
     extendClickLocked?: () => boolean;
   };
+}
+
+/** `id` drawn at `pose`, in world, as the chrome boxes it. */
+function chromeBox<TData, TLayer extends string, TPose>(
+  scene: Scene<TData, TLayer, TPose>,
+  adapter: SceneCanvasAdapter<TData, TLayer, TPose>,
+  descriptor: PoseDescriptor<TPose>,
+  includeStroke: boolean,
+  id: string,
+  pose: TPose,
+  scale: { x: number; y: number } | undefined,
+): Bounds {
+  return drawnBoundsOf(scene as never, asNodeId(id), pose, {
+    descriptor: descriptor as PoseDescriptor<unknown>,
+    worldPoseOf: (m) => adapter.getWorldPose(m),
+    includeStroke,
+    ...(scale ? { scale: meanScale(scale) } : {}),
+  });
 }
 
 export interface UseSceneSelectToolReturn<TData, TLayer extends string, TPose> {
@@ -140,12 +149,13 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
 
   const pickEveryProp = geometry?.pickEvery;
   const boundsOfProp = geometry?.boundsOf;
-  // Default. The pose rect is the wrong answer for anything that isn't a
-  // rectangle, so `'pose'` is the opt-out rather than the baseline. Cheap to
-  // leave on: the rect pre-filter runs first and rejects every node the
-  // pointer isn't over, and the survivors' silhouettes are memoized per node.
+  // Default. The pose rect is the wrong answer for anything that isn't a rectangle, so `'pose'`
+  // is the opt-out rather than the baseline. Cheap to leave on: the rect pre-filter rejects every
+  // node the pointer isn't over first, and the survivors' silhouettes are memoized per node.
   const shapePicking = (geometry?.picking ?? 'shape') === 'shape';
-  const pickTolerancePx = geometry?.pickTolerancePx ?? DEFAULT_PICK_TOLERANCE_PX;
+  const kitPickTolerancePx = useKitSetting('targets.pickTolerancePx');
+  const pickTolerancePx = geometry?.pickTolerancePx ?? kitPickTolerancePx ?? DEFAULT_PICK_TOLERANCE_PX;
+  const includeStroke = geometry?.boundsIncludeStroke ?? true;
   const moveOptions = opts?.move;
   const snap = opts?.snap;
 
@@ -207,15 +217,15 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
 
   const wiredBoundsOfPose = useMemo(() => {
     return (id: string, pose: TPose, view?: Pick<PickView, 'scale' | 'x' | 'y'> | null): Bounds | null => {
-      const n = scene.get(asNodeId(id));
-      if (!n) return null;
-      const own = framedBounds(pose, poseDescriptorForNode(d, n));
+      if (!scene.get(asNodeId(id))) return null;
+      const scale = (view ?? getViewRef.current?.() ?? null)?.scale;
+      const own = chromeBox(scene, adapter, d, includeStroke, id, pose, scale);
       // A plane node is drawn where its plane puts it, and the chrome has to
       // follow it there.
       const plane = wiredPlaneOfNode(id, view);
       return plane ? rectFromPlane(plane, own) : own;
     };
-  }, [scene, d, wiredPlaneOfNode]);
+  }, [scene, adapter, d, includeStroke, getViewRef, wiredPlaneOfNode]);
 
   const wiredBoundsOf = useMemo(() => {
     return (id: string, view?: Pick<PickView, 'scale' | 'x' | 'y'> | null): Bounds | null => {

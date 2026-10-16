@@ -10,7 +10,8 @@ import { resolvePrefUnit } from './unit';
 
 /** How {@link prefsCss} names and writes things. */
 export interface PrefsCssOptions {
-  /** The selector of the element the properties are set on, and the selectors' attributes read from. Default `:root`. */
+  /** The selector of the element the properties are set on, and the selectors' attributes read from. Default `:root`;
+   *  `:host` matches the attributes the way a shadow root's sheet has to, as `:host([…])`. */
   root?: string;
   /** The custom property a leaf is written as, or `null` to leave the leaf out. Default: `--`, then the path with
    *  each `.` and each capital turned into a `-` (`look.gridGap` is `--look-grid-gap`). */
@@ -29,7 +30,8 @@ export interface PrefsCssSource {
   get(path: string): unknown;
 }
 
-const kebab = (path: string): string => path.replace(/\./g, '-').replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
+/** A path as the default names spell it: `look.gridGap` is `look-grid-gap`. */
+export const kebab = (path: string): string => path.replace(/\./g, '-').replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
 
 /** The CSS unit a number leaf's suffix names, for the suffixes that name one. */
 const CSS_UNITS: Readonly<Record<string, string>> = {
@@ -137,7 +139,8 @@ export function prefsCss(store: PrefsCssSource, options: PrefsCssOptions = {}): 
     .sort((a, b) => a.under.length - b.under.length || a.i - b.i)
     .map(({ under, lines }) => {
       const matched = under.map(([selector, option]) => `[${attribute(selector)}=${quoted(option)}]`).join('');
-      return `:where(${root}${matched}) {\n${lines.join('\n')}\n}`;
+      const at = root === ':host' && matched !== '' ? `:host(${matched})` : `${root}${matched}`;
+      return `:where(${at}) {\n${lines.join('\n')}\n}`;
     })
     .join('\n\n');
 }

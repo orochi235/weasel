@@ -93,6 +93,32 @@ describe('filterPrefSubtree', () => {
     ]);
   });
 
+  it('matches a leaf on a tag, and keeps every leaf of a group a tag matches', () => {
+    const schema: PrefGroup = {
+      name: 'Preferences',
+      children: {
+        canvas: {
+          name: 'Canvas',
+          tags: ['workspace'],
+          children: {
+            grid: { kind: 'boolean', name: 'Show grid', description: '', default: true, tags: ['guides'] },
+            ruler: { kind: 'boolean', name: 'Rulers', description: '', default: true },
+          },
+        },
+        quick: {
+          name: 'Quick',
+          children: { grid: { kind: 'alias', name: 'Grid', description: '', default: undefined, of: 'canvas.grid' } },
+        },
+      },
+    };
+    const kept = (query: string) => {
+      const out = filterPrefSubtree(schema, query);
+      return Object.entries(out?.children ?? {}).flatMap(([k, g]) => Object.keys((g as PrefGroup).children).map((c) => `${k}.${c}`));
+    };
+    expect(kept('GUIDE')).toEqual(['canvas.grid', 'quick.grid']);
+    expect(kept('workspace')).toEqual(['canvas.grid', 'canvas.ruler']);
+  });
+
   it('returns the tree unchanged for an empty or blank query', () => {
     expect(filterPrefSubtree(SCHEMA, '')).toBe(SCHEMA);
     expect(filterPrefSubtree(SCHEMA, '   ')).toBe(SCHEMA);

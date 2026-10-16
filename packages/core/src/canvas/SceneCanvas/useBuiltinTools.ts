@@ -1,7 +1,7 @@
 import type { InertiaConfig } from 'core/viewport/useDecayLoop';
 import { useHandTool } from 'tools/builtin/hand';
 import type { Tool } from 'tools/overlayBinding';
-import type { BaseFeature } from './features';
+import type { EnabledPresets } from './features';
 import type { BuiltinToolId } from './props';
 import { resolveToolRegistry, type ToolsPatch } from './toolRegistry';
 import { useBuiltinShapeTools, type BuiltinToolOptions } from './useBuiltinShapeTools';
@@ -9,7 +9,7 @@ import { useBuiltinShapeTools, type BuiltinToolOptions } from './useBuiltinShape
 export interface UseBuiltinToolsArgs {
   /** The canvas's select tool, which is built from its scene and pickers. */
   select: Tool;
-  enabled: ReadonlySet<BaseFeature>;
+  enabled: EnabledPresets;
   defaultTools?: readonly BuiltinToolId[];
   patch: ToolsPatch | null;
   toolOptions?: BuiltinToolOptions;
