@@ -30,6 +30,17 @@
   overflow-x: visible;
 }
 
+/* A run of actions read as one control: a compact strip, its cells almost touching. */
+.segmented {
+  --bar-gap: 1px;
+  background: var(--wzl-surface);
+  border: 1px solid var(--wzl-border);
+  border-radius: var(--wzl-radius-sm);
+  padding: var(--wzl-space-1);
+  box-shadow: var(--wzl-bevel-raised, none);
+  user-select: none;
+}
+
 /* Opening what does not fit, a bar takes its host's room along the line: one only as long as its
    cells could not tell when another fits. */
 .bar[data-overflow='menu'] {

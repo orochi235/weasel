@@ -71,8 +71,9 @@ export interface BarLayoutProps {
   /** Names the bar, and makes it a `toolbar`. Leave unset inside one. */
   label?: string;
   /** Draw the strip the bar sits on, for a bar set among other things with
-   *  no strip of the host's under it. */
-  framed?: boolean;
+   *  no strip of the host's under it. `'segmented'` is a compact strip with
+   *  the cells almost touching. */
+  framed?: boolean | 'segmented';
   /**
    * What happens to cells the line has no room for. `'scroll'` keeps every
    * cell on the line, which a framed bar scrolls. `'menu'` keeps the cells
@@ -181,7 +182,7 @@ export function BarLayout(props: BarLayoutProps) {
     <div
       {...rootAttrs}
       ref={bar}
-      className={[s.bar, framed && s.framed, className].filter(Boolean).join(' ')}
+      className={[s.bar, framed === 'segmented' ? s.segmented : framed && s.framed, className].filter(Boolean).join(' ')}
       data-orientation={orientation}
       data-overflow={menu ? 'menu' : undefined}
       role={label === undefined ? undefined : 'toolbar'}

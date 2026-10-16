@@ -4,7 +4,6 @@ import type { PrefActions, PrefGroup } from '@weasel-js/prefs';
 import { Bar } from '../Bar/Bar';
 import { BarActions } from '../Bar/BarActions';
 import type { PropertyRenderer } from '../SelectionPanel/renderContext';
-import s from './ActionBar.module.css';
 
 /** Which actions an {@link ActionBar} draws: one group's, or every one carrying a tag. */
 export type ActionBarSource =
@@ -78,7 +77,8 @@ export function ActionBar(props: ActionBarProps) {
       renderers={renderers}
       orientation={orientation}
       label={`${tag ?? group} actions`}
-      className={[s.bar, className].filter(Boolean).join(' ')}
+      framed="segmented"
+      className={className}
     />
   );
 }
