@@ -13,7 +13,7 @@ import { decimal, qty } from '@weasel-js/quantity';
 import { Checkbox, LayerList, type LayerListItem, SidebarPanel, useContextMenu, useSceneLayerList } from '@weasel-js/ui';
 import { type CSSProperties, type MouseEvent, type ReactElement, useSyncExternalStore } from 'react';
 import type { DrawScene, WeaselDrawData } from './drawDocument';
-import type { PanelChrome } from './panels';
+import type { PanelChrome } from './surfaces/types';
 import { usePref } from './prefs';
 
 /** Synthetic id for the locked "Background" row in the Layers panel.

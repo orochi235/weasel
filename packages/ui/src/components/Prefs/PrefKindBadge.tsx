@@ -15,6 +15,7 @@ const KIND_CLASS: Record<PrefKind, string | undefined> = {
   union: s.union,
   field: s.field,
   action: s.action,
+  actions: s.action,
   alias: undefined,
   label: undefined,
   separator: undefined,

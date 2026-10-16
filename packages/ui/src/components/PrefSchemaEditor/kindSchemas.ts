@@ -96,6 +96,9 @@ const KIND_ATTRS: Record<PrefKind, KindAttrs> = {
     label: text('Button', 'The button\'s text. Unset: the name.'),
     control: control(['button', 'icon']),
   },
+  actions: {
+    group: symbol('Group', 'The registry action group whose actions it draws, each as an action pref would be, in the order they were registered.'),
+  },
   label: {},
   separator: {},
   alias: { of: { kind: 'field', name: 'Of', description: 'The pref this one shows: its control is drawn here too, over the one stored value.', default: '' } as PrefLeaf },
@@ -107,7 +110,7 @@ const GROUP_ATTRS: KindAttrs = {
   name: LEAF_BASE.name!,
   description: LEAF_BASE.description!,
   tags: strings('Tags', 'Tags every pref under it carries too. A settings search matching one keeps all of them.'),
-  as: choice('Drawn as', 'A page of its own in the rail, a tab beside its neighbors, a bordered panel, a heading over its rows, a fragment: its rows among its neighbors\' with nothing drawn around them, or a bar: its prefs on one line in their bar forms. Unset: a page at the top level, a section inside another group.', ['page', 'tab', 'panel', 'section', 'fragment', 'bar']),
+  as: choice('Drawn as', 'A page of its own in the rail, a tab beside its neighbors, a bordered panel, a heading over its rows, a fragment: its rows among its neighbors\' with nothing drawn around them, a bar: its prefs on one line in their bar forms, or a menu: a button opening it as a menu on a bar, a submenu in a menu, and a panel in a form. Unset: a page at the top level, a section inside another group.', ['page', 'tab', 'panel', 'section', 'fragment', 'bar', 'menu']),
   showIf: SHOW_IF,
   enableIf: ENABLE_IF,
 };
@@ -115,7 +118,7 @@ const SECTION_ATTRS: KindAttrs = {
   name: LEAF_BASE.name!,
   description: LEAF_BASE.description!,
   tags: strings('Tags', 'Tags every pref under it carries too. A settings search matching one keeps all of them.'),
-  as: choice('Drawn as', 'A tab beside its neighbors, a bordered panel, a heading over its rows, a fragment: its rows among its neighbors\' with nothing drawn around them, or a bar: its prefs on one line in their bar forms. Unset: a heading.', ['tab', 'panel', 'section', 'fragment', 'bar']),
+  as: choice('Drawn as', 'A tab beside its neighbors, a bordered panel, a heading over its rows, a fragment: its rows among its neighbors\' with nothing drawn around them, a bar: its prefs on one line in their bar forms, or a menu: a button opening it as a menu on a bar, a submenu in a menu, and a panel in a form. Unset: a heading.', ['tab', 'panel', 'section', 'fragment', 'bar', 'menu']),
   showIf: SHOW_IF,
   enableIf: ENABLE_IF,
 };
@@ -129,13 +132,13 @@ const AUTO_FLAGS: KindAttrs = {
 const AS_GIVEN = new Set(['autoValue']);
 
 /** Written even when empty: a leaf without them is not a leaf. */
-const REQUIRED = new Set(['name', 'description', 'default', 'options', 'tag', 'of']);
+const REQUIRED = new Set(['name', 'description', 'default', 'options', 'tag', 'of', 'group']);
 
 /** Where a node keeps the nodes and leaves inside it, which no attribute row lists. */
 const SLOTS = new Set(['children', 'members', 'variants', 'item']);
 
 /** The fields a leaf made from a type sets where it is used; the rest are its type's. */
-const USE_SITE = new Set(['name', 'description', 'tags', 'default', 'hidden', 'showIf', 'enableIf', 'block', 'heading', 'icon', 'pair', 'short', 'absentIsDefault', 'manual', 'unpinned', 'autoValue']);
+const USE_SITE = new Set(['name', 'description', 'tags', 'default', 'hidden', 'showIf', 'enableIf', 'block', 'heading', 'icon', 'pair', 'short', 'absentIsDefault', 'readout', 'manual', 'unpinned', 'autoValue']);
 
 function valueAttr(leaf: PrefLeaf, base: { name: string; description: string }): PrefLeaf | null {
   switch (leaf.kind) {
@@ -211,12 +214,20 @@ function actionChoice(attr: PrefLeaf, actions: readonly RegisteredAction[], held
   return { kind: 'enum', name: attr.name, description: attr.description, default: undefined, clearable: true, options } as PrefLeaf;
 }
 
-/** The attributes a leaf of `kind` shares with every other, less the ones nothing draws for it: a label is its
- *  name and its description, and a separator neither, and neither has a control to enable. */
-function sharedAttrs(kind: string): KindAttrs {
+const READOUT = flag('Readout', 'Drawn showing its value but not editable.');
+
+/** The attributes a leaf shares with every other, less the ones nothing draws for it: a label is its
+ *  name and its description, and a separator neither, and neither has a control to enable. An actions
+ *  pref is a run of buttons, and only a leaf holding a value can be a readout of it. */
+function sharedAttrs(leaf: PrefLeaf): KindAttrs {
+  const { kind } = leaf;
   if (kind === 'separator') return { hidden: LEAF_BASE.hidden!, showIf: SHOW_IF };
   if (kind === 'label') return { name: LEAF_BASE.name!, description: LEAF_BASE.description!, hidden: LEAF_BASE.hidden!, showIf: SHOW_IF };
-  return { ...LEAF_BASE };
+  if (kind === 'actions') {
+    const { name, description, tags, hidden, showIf, enableIf } = LEAF_BASE;
+    return { name: name!, description: description!, tags: tags!, hidden: hidden!, showIf: showIf!, enableIf: enableIf! };
+  }
+  return prefHoldsValue(leaf) ? { ...LEAF_BASE, readout: READOUT } : { ...LEAF_BASE };
 }
 
 /** What every leaf carries and nothing draws for a separator, so no row lists it. */
@@ -254,7 +265,7 @@ export function attributeSchema(
   const typed = node.type !== undefined;
   const def = defaultAttr(node);
   const item = entryOf(node);
-  const shared: KindAttrs = sharedAttrs(node.kind);
+  const shared: KindAttrs = sharedAttrs(node);
   const own: KindAttrs = { ...(def ? { default: def } : {}), ...(typed ? {} : kindAttrs(node.kind, custom)) };
   if (own.action && node.kind === 'action' && actions && actions.length > 0) own.action = actionChoice(own.action, actions, (node as { action?: string }).action);
   const auto = autoAttrs(node);
@@ -297,6 +308,7 @@ export function blankLeaf(kind: string, custom: CustomKinds = {}): PrefLeaf {
       variants: { a: { kind: 'object', name: 'A', description: '', default: {}, children: {} } },
     } as PrefLeaf;
     case 'action': return { ...base, default: undefined, run: STUB } as PrefLeaf;
+    case 'actions': return { ...base, default: undefined, group: '' } as PrefLeaf;
     case 'label': return { kind, name: 'Label', description: '', default: undefined } as PrefLeaf;
     // A rule has no words: nothing draws a name or a description for one.
     case 'separator': return { kind, name: '', description: '', default: undefined } as PrefLeaf;
@@ -318,7 +330,7 @@ export function blankSection(): PrefSection {
   return { name: 'New section', description: '', members: {} };
 }
 
-const SHARED = ['name', 'description', 'tags', 'hidden', 'showIf', 'enableIf', 'block', 'heading', 'icon', 'pair', 'short', 'absentIsDefault', 'manual', 'unpinned'];
+const SHARED = ['name', 'description', 'tags', 'hidden', 'showIf', 'enableIf', 'block', 'heading', 'icon', 'pair', 'short', 'absentIsDefault', 'readout', 'manual', 'unpinned'];
 
 const PRIMITIVES = new Set(['string', 'number', 'boolean']);
 

@@ -16,6 +16,8 @@ import {
 import { usePref as usePrefOf } from '@weasel-js/prefs/react';
 import { localStorageAdapter, type SyncStorageAdapter } from '@weasel-js/storage';
 import type { RegistryEnumFilter } from './registry/types';
+import { panelsToSurfaces } from './surfaces/prefsMigration';
+import type { SurfacesValue } from './surfaces/types';
 
 // ──────────────────────────────────────────────────────────────────────────
 // Types
@@ -31,7 +33,7 @@ export interface WeaselDrawPrefRegistryEnum extends PrefBase<'registry-enum', st
 }
 
 /** A value other code owns and the form only displays or hands to a bespoke
- *  editor (`ui.panels`). Unlike the built-in `object`, it has no `children`. */
+ *  editor (`ui.surfaces`). Unlike the built-in `object`, it has no `children`. */
 export type WeaselDrawPrefData<T = unknown> = PrefBase<'data', T>;
 
 /**
@@ -46,12 +48,12 @@ function composeToolPrefs<T extends Record<string, PrefGroup>>(t: T): T {
 
 // Declared apart: inline, the schema's open `kind: string` leaf widens the literal
 // `kind` (dropping the path from `DrawPrefPath`) and rejects `source`.
-const PANELS_PREF = {
+const SURFACES_PREF = {
   kind: 'data',
-  name: 'Panel visibility',
-  description: 'Hidden/collapsed state per right-sidebar panel.',
+  name: 'Toolbars, panels, and menus',
+  description: 'Where each one is shown, and whether its panel is hidden or collapsed.',
   block: true,
-  default: {} as Record<string, { hidden?: boolean; collapsed?: boolean }>,
+  default: {} as SurfacesValue,
 } as const satisfies WeaselDrawPrefData;
 
 const LAST_TOOL = {
@@ -93,7 +95,7 @@ export const PREFS = {
           min: 40,
           max: 200,
         },
-        panels: PANELS_PREF,
+        surfaces: SURFACES_PREF,
         showAnnotations: {
           kind: 'boolean',
           name: 'Show annotations in Layers',
@@ -251,9 +253,12 @@ const VALIDATORS: Record<string, PrefValidator> = {
   data: (v, leaf) => (shapeOf(v) === shapeOf(leaf.default) ? v : undefined),
 };
 
+/** `MIGRATIONS[i]` takes stored records from version `i` to `i + 1`. */
+const MIGRATIONS = [panelsToSurfaces];
+
 /** The app's prefs over `storage`. Tests pass a memory adapter. */
 export function openDrawPrefs(storage: SyncStorageAdapter): PrefsStore<typeof PREFS> {
-  return openPrefsSync(PREFS, { storage, prefix: PREFS_PREFIX, validators: VALIDATORS });
+  return openPrefsSync(PREFS, { storage, prefix: PREFS_PREFIX, validators: VALIDATORS, migrations: MIGRATIONS });
 }
 
 let store: PrefsStore<typeof PREFS> | null = null;
@@ -317,6 +322,8 @@ function foldLegacyPrefs(
     parsed = undefined;
   }
   if (parsed !== undefined && (parsed as { version?: unknown } | null)?.version !== 2) return;
+  const ui = (parsed as { ui?: { panels?: unknown; surfaces?: unknown } } | undefined)?.ui;
+  if (ui && typeof ui === 'object' && ui.panels !== undefined) ui.surfaces ??= ui.panels;
   for (const [path, value] of flattenPrefValues(PREFS, parsed)) {
     if (!target.isSet(path as DrawPrefPath)) target.set(path as DrawPrefPath, value as never);
   }

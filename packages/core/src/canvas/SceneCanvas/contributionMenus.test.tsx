@@ -1,5 +1,6 @@
 /** A `menus` list on an ambient contribution is defined on the surface's menu host. */
 import { describe, it, expect, vi, beforeAll } from 'vitest';
+import { pref } from '@weasel-js/prefs';
 import { act, render } from '@testing-library/react';
 import { useEffect } from 'react';
 import { ActionsProvider, useMenuHost, useOptionalDepRegistry, type DepRegistry } from '@weasel-js/routing/react';
@@ -43,7 +44,7 @@ const contrib = {
   id: 'contrib',
   eligibility: { always: true },
   actions: [cut],
-  menus: [{ id: 'contrib.menu', sections: [[{ action: 'cut' }]] }],
+  menus: [{ id: 'contrib.menu', menu: pref.group('', { cut: pref.action('cut') }) }],
 } as unknown as SurfaceContribution;
 
 describe('contributed menus', () => {
@@ -60,7 +61,7 @@ describe('contributed menus', () => {
     scene.add({ kind: 'leaf', data: { kind: 'rect' }, layer: 'main', pose: { x: 10, y: 10, width: 100, height: 100 } });
     const onBody = {
       ...contrib,
-      menus: [{ id: 'body', when: { bodyTarget: ['selected-body', 'empty'] }, sections: [[{ action: 'cut' }]] }],
+      menus: [{ id: 'body', when: { bodyTarget: ['selected-body', 'empty'] }, menu: pref.group('', { cut: pref.action('cut') }) }],
     } as unknown as SurfaceContribution;
     const { container, unmount } = render(
       <SceneCanvas features={['pick', 'edit']} scene={scene} layers={{}} width={300} height={200} ambient={[onBody]}>

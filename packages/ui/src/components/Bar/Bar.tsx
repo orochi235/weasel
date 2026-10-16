@@ -43,8 +43,9 @@ export interface BarProps {
   orientation?: BarOrientation;
   /** Names the bar and makes it a `toolbar`. Leave unset inside one. */
   label?: string;
-  /** Draw the strip the bar sits on. Unset, the host's strip is under it. */
-  framed?: boolean;
+  /** Draw the strip the bar sits on. Unset, the host's strip is under it. `'segmented'` is a compact strip
+   *  whose buttons sit almost touching, so a run of actions reads as one control. */
+  framed?: boolean | 'segmented';
   /** What happens to cells the line has no room for: `'scroll'` keeps them all on it, and `'menu'` opens the
    *  ones past its end from a button there, taking all the room the host has along the line. Default: what
    *  `schema` says in its own `overflow`, else `'scroll'`. */
@@ -72,7 +73,7 @@ export function Bar(props: BarProps) {
   const draw: Draw = { values, mixed, renderers, onChange, fields, disabled, entryAt, targets, settles };
   return (
     <BarLayout
-      nodes={shown === null ? [] : shownBarNodes(groupBarNodes(shown, '', (group, path) => <GroupRows draw={draw} group={group} path={path} />), (node) => shownNode(node, draw))}
+      nodes={shown === null ? [] : shownBarNodes(groupBarNodes(shown, '', (group, path) => <GroupRows draw={draw} group={group} path={path} />, { values: read, onChange, over: props.over && 'children' in props.over ? props.over : schema }), (node) => shownNode(node, draw))}
       orientation={orientation}
       label={label}
       framed={framed}

@@ -1,4 +1,5 @@
 import '@weasel-js/theme/tokens.css';
+import { pref } from '@weasel-js/prefs';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, expect, it } from 'vitest';
 import { page } from 'vitest/browser';
@@ -13,7 +14,10 @@ const act1 = (id: string) => ({
 });
 const MENUS: MenuDef[] = [{
   id: 'm',
-  sections: [[{ action: 'cut' }, { action: 'copy' }], [{ submenu: 'arr', label: 'Arrange', sections: [[{ action: 'forward' }]] }]],
+  menu: pref.group('', {
+    edit: pref.group('', { cut: pref.action('cut'), copy: pref.action('copy') }),
+    arr: pref.group('Arrange', { forward: pref.action('forward') }, { as: 'menu' }),
+  }),
 }];
 
 let host: MenuHost | null = null;
@@ -48,7 +52,7 @@ it('keeps the menu and its submenu on screen when opened in the bottom-right cor
   expect(s.left).toBeLessThan(parent!.getBoundingClientRect().left);
 });
 
-const MUTED: MenuDef[] = [{ id: 'muted', sections: [[{ action: 'cut' }, { action: 'off' }]] }];
+const MUTED: MenuDef[] = [{ id: 'muted', menu: pref.group('', { cut: pref.action('cut'), off: pref.action('off') }) }];
 function MutedSetup() {
   useAction(act1('cut'));
   useAction({ ...act1('off'), enabled: () => ActionDisabledReason.NotApplicable });

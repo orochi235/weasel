@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
+import { pref } from '@weasel-js/prefs';
 import { render } from '@testing-library/react';
 import { ActionsProvider, useAction } from '../interactions/actions/ActionsProvider';
 import { useMenuHost, useMenus } from './MenuHostContext';
 import type { MenuHost } from './menuHost';
 
 const cut = { id: 'cut', label: 'Cut', invoker: { timing: 'immediate' as const, run: () => {} } };
-const defs = [{ id: 'row', sections: [[{ action: 'cut' }]] }];
+const defs = [{ id: 'row', menu: pref.group('', { cut: pref.action('cut') }) }];
 
 describe('useMenus', () => {
   it('registers defs on the host ActionsProvider created, for its lifetime', () => {

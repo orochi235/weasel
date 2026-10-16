@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { prefObjectWithField, type PrefLeaf, type PrefObject } from '@weasel-js/prefs';
+import { prefAsBox, prefObjectWithField, type PrefLeaf, type PrefObject } from '@weasel-js/prefs';
 import type { LeafSurface } from '../Bar/renderBarLeaf';
 import { PropertyRow } from '../Properties/PropertyRow';
 import { rowWidthOf, type RowWidth } from './compound';
@@ -93,7 +93,7 @@ export function ObjectLeaf({
       if (section.as === 'fragment') return inner;
       const note = parts.lead!(key, section);
       const heading = labeled ? [<h4 key={`group:${key}`} className={s.objectGroup}>{section.name}</h4>] : [];
-      if (section.as === 'panel') return [<div key={`panel:${key}`} className={s.panePanel}>{heading}{note}{inner}</div>];
+      if (prefAsBox(section.as)) return [<div key={`panel:${key}`} className={s.panePanel}>{heading}{note}{inner}</div>];
       return [...heading, ...note, ...inner];
     },
   };

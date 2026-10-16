@@ -1,11 +1,15 @@
 import { describe, expect, it } from 'vitest';
+import { pref } from '@weasel-js/prefs';
 import { mergeMenuDefs, pickMenu } from './pickMenu';
+import { resolveMenu, type MenuSources } from './resolveMenu';
 import type { MenuDef } from './types';
+import type { Action } from '../interactions/actions/action';
 
-const sel: MenuDef = { id: 'sel', when: { bodyTarget: ['selected-body'] }, sections: [[{ action: 'cut' }]] };
-const text: MenuDef = { id: 'text', when: { bodyTarget: 'selected-body', bodyKind: 'text' }, sections: [[{ action: 'editText' }]] };
-const empty: MenuDef = { id: 'canvas', when: { bodyTarget: 'empty' }, sections: [[{ action: 'paste' }]] };
-const chrome: MenuDef = { id: 'row', sections: [[{ action: 'delete' }]] };
+const one = (id: string) => pref.group('', { [id]: pref.action(id) });
+const sel: MenuDef = { id: 'sel', when: { bodyTarget: ['selected-body'] }, menu: one('cut') };
+const text: MenuDef = { id: 'text', when: { bodyTarget: 'selected-body', bodyKind: 'text' }, menu: one('editText') };
+const empty: MenuDef = { id: 'canvas', when: { bodyTarget: 'empty' }, menu: one('paste') };
+const chrome: MenuDef = { id: 'row', menu: one('delete') };
 
 describe('pickMenu', () => {
   it('takes the first def whose when matches', () => {
@@ -19,16 +23,27 @@ describe('pickMenu', () => {
 });
 
 describe('mergeMenuDefs', () => {
-  it('joins same-id defs section by section, ambient before the active tool', () => {
-    const tool: MenuDef = { id: 'sel', sections: [[{ action: 'toolA' }], [{ action: 'toolB' }]] };
+  const immediate = { timing: 'immediate' as const, run: () => {} };
+  const actions: Action[] = ['cut', 'toolA', 'toolB'].map((id) => ({ id, label: id, invoker: immediate }));
+  const src: MenuSources = { actions: () => actions, depsFor: () => undefined, trigger: () => true };
+  const labels = (def: MenuDef) => resolveMenu(def, src).map((e) => (e.kind === 'item' ? e.label : e.kind));
+
+  it('joins same-id defs in contribution order, ambient before the active tool, with a separator between', () => {
+    const tool: MenuDef = { id: 'sel', menu: pref.group('', { toolA: pref.action('toolA'), toolB: pref.action('toolB') }) };
     const merged = mergeMenuDefs([{ def: tool, owner: 'pen' }, { def: sel, owner: null }], 'pen');
     expect(merged).toHaveLength(1);
     expect(merged[0]!.when).toEqual(sel.when);
-    expect(merged[0]!.sections).toEqual([[{ action: 'cut' }, { action: 'toolA' }], [{ action: 'toolB' }]]);
+    expect(labels(merged[0]!)).toEqual(['cut', 'separator', 'toolA', 'toolB']);
+  });
+  it('keeps a key two contributions share, under a new one, without touching the originals', () => {
+    const again: MenuDef = { id: 'sel', menu: one('cut') };
+    const merged = mergeMenuDefs([{ def: sel, owner: null }, { def: again, owner: null }], null);
+    expect(labels(merged[0]!)).toEqual(['cut', 'separator', 'cut']);
+    expect(new Set(resolveMenu(merged[0]!, src).map((e) => e.key)).size).toBe(3);
+    expect(Object.keys(sel.menu.children)).toEqual(['cut']);
   });
   it('drops a tool def while another tool is active', () => {
-    const tool: MenuDef = { id: 'sel', sections: [[{ action: 'toolA' }]] };
-    expect(mergeMenuDefs([{ def: sel, owner: null }, { def: tool, owner: 'pen' }], 'select')[0]!.sections)
-      .toEqual([[{ action: 'cut' }]]);
+    const tool: MenuDef = { id: 'sel', menu: one('toolA') };
+    expect(labels(mergeMenuDefs([{ def: sel, owner: null }, { def: tool, owner: 'pen' }], 'select')[0]!)).toEqual(['cut']);
   });
 });

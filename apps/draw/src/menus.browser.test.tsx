@@ -84,7 +84,7 @@ describe('WeaselDraw context menus', () => {
     // An id draw does not register drops out of the menu silently.
     expect(menuItems().map((t) => t.replace(/[⌘⇧⌥⌃⌦].*$/, ''))).toEqual([
       'Cut', 'Copy', 'Paste', 'Duplicate', 'Delete', 'Group', 'Ungroup',
-      'Bring Forward', 'Send Backward', 'Edit path anchors', 'Enter text edit',
+      'Bring Forward', 'Bring to Front', 'Send Backward', 'Send to Back', 'Edit path anchors', 'Enter text edit',
     ]);
     menuItem('Duplicate')!.click();
     await expect.poll(savedNodeCount).toBe(2);

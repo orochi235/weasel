@@ -34,9 +34,9 @@ export function isPrefLeaf(node: PrefLeaf | PrefGroup | PrefSection): node is Pr
   return 'kind' in node;
 }
 
-const VALUELESS: ReadonlySet<string> = new Set(['action', 'alias', 'label', 'separator']);
+const VALUELESS: ReadonlySet<string> = new Set(['action', 'actions', 'alias', 'label', 'separator']);
 
-/** Whether a leaf has a value to store: an `action` is a button and holds none, an `alias` shows another leaf's,
+/** Whether a leaf has a value to store: an `action` is a button and holds none, nor does an `actions` run of them, an `alias` shows another leaf's,
  *  and a `label` and a `separator` are text and a rule. */
 export function prefHoldsValue(leaf: PrefLeaf): boolean {
   return !VALUELESS.has(leaf.kind);

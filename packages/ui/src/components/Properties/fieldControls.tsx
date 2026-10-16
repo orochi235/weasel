@@ -14,10 +14,12 @@ import type {
 } from './fieldTypes';
 import { ColorControl, PaintControl } from './ColorControls';
 import { EnumControl } from './EnumControl';
+import { PropertyReadout } from './PropertyReadout';
 import s from './Properties.module.css';
 
 /** The control a field's `kind` and `control` choose, for every kind but a slider. */
 export function ControlBody(props: PropertyControlProps) {
+  if (props.readOnly) return <PropertyReadout {...props} />;
   switch (props.kind) {
     case 'boolean':
       return <BooleanControl {...props} />;

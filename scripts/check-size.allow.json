@@ -329,14 +329,14 @@
     "longestFunction": 189
   },
   "packages/ui/src/components/Prefs/prefField.tsx": {
-    "longestFunction": 167
+    "longestFunction": 161
   },
   "packages/ui/src/components/Select/Select.tsx": {
     "lines": 496,
     "longestFunction": 127
   },
   "packages/ui/src/components/SelectionPanel/renderLeaf.tsx": {
-    "longestFunction": 140
+    "longestFunction": 132
   },
   "packages/ui/src/components/Slider/SliderBody.tsx": {
     "longestFunction": 239

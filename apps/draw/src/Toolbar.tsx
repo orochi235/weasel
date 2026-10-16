@@ -22,6 +22,7 @@ import { importSvgFile, openSvgFile } from './openSvg';
 import type { DrawScene } from './drawDocument';
 import { reportPasteOmissions } from './pasteOmissions';
 import { serializeReplacer } from './persistence';
+import { StripSurfaces } from './surfaces/StripSurfaces';
 import { saveSvgFile } from './saveSvg';
 import { clipboardSnapshotRootIds, selectionToClipboardSvgString } from './svgExport';
 
@@ -98,6 +99,7 @@ export function Toolbar({
   return (
     <>
       <CommandBar
+        surfaces={<StripSurfaces />}
         {...(cornerSelection ? { corners: { scene, selection: cornerSelection } } : {})}
         onSaveSvg={() => {
           void saveSvgFile(scene, { filename, paperSize, backgroundColor });

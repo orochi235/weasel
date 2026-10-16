@@ -46,7 +46,16 @@ describe('kindSchemas', () => {
     expect(own).toEqual({});
     const section = attributeSchema({ name: 'S', members: {} }).shared;
     expect(Object.keys(section)).toEqual(['name', 'description', 'tags', 'as', 'showIf', 'enableIf']);
-    expect((section.as as unknown as { options: Array<{ value: string }> }).options.map((o) => o.value)).toEqual(['tab', 'panel', 'section', 'fragment', 'bar']);
+    expect((section.as as unknown as { options: Array<{ value: string }> }).options.map((o) => o.value)).toEqual(['tab', 'panel', 'section', 'fragment', 'bar', 'menu']);
+  });
+
+  it('offers readout on a leaf holding a value, and an actions leaf only its group and what it shares with buttons', () => {
+    expect(attributeSchema(num).shared.readout).toBeDefined();
+    expect(attributeSchema(blankLeaf('action')).shared.readout).toBeUndefined();
+    const actions = attributeSchema(blankLeaf('actions'));
+    expect(Object.keys(actions.shared)).toEqual(['name', 'description', 'tags', 'hidden', 'showIf', 'enableIf']);
+    expect(Object.keys(actions.own)).toEqual(['group']);
+    expect((convertLeaf({ ...num, readout: true } as PrefLeaf, 'string').leaf as { readout?: boolean }).readout).toBe(true);
   });
 
   it('offers what a bar does with cells it has no room for, and offers it of nothing else', () => {

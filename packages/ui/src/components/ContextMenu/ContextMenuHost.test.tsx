@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { pref } from '@weasel-js/prefs';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { StrictMode } from 'react';
 import {
@@ -15,9 +16,12 @@ const act1 = (id: string, extra = {}) => ({
 });
 const MENUS: MenuDef[] = [{
   id: 'm',
-  sections: [[{ action: 'cut' }, { action: 'copy' }], [{ submenu: 'arr', label: 'Arrange', sections: [[{ action: 'forward' }]] }]],
+  menu: pref.group('', {
+    edit: pref.group('', { cut: pref.action('cut'), copy: pref.action('copy') }),
+    arr: pref.group('Arrange', { forward: pref.action('forward') }, { as: 'menu' }),
+  }),
 }];
-const GATED: MenuDef[] = [{ id: 'g', sections: [[{ action: 'gated' }]] }];
+const GATED: MenuDef[] = [{ id: 'g', menu: pref.group('', { gated: pref.action('gated') }) }];
 
 let host: MenuHost | null = null;
 function Setup() {

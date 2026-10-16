@@ -837,16 +837,13 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 ## Selection, actions & UI panels
 
-- **(P2) Menus as layout assets, and a menu bar built from them.** Decided 2026-10-16: a menu is
-  one shape, a prefs group drawn `as: 'menu'`. In a bar it opens from a button like an `opens`
-  group, but draws with the context-menu renderer (`MenuPanel` and the `@weasel-js/menu`
-  controller): an action leaf is a row, a boolean leaf or an action with `active` is a check row,
-  a section is a separator, a nested menu group is a submenu. A menu bar is a layout asset whose
-  root is a bar of menu groups. Routing's `MenuDef` becomes a `when` around such a group, so
-  context menus are assets too and one resolver serves both, and `MenuButton` moves off React
-  Aria's `Menu` onto the same renderer. New beside that: `MenuHost.open` anchored to a button's
-  rect rather than a point, and menu-bar keys (Left/Right between sibling menus, hover switching
-  while one is open). Unbuilt; needs a design pass first.
+- **(P2) Menus as layout assets, and a menu bar built from them.** Half built. Landed 2026-10-16: a
+  menu is a prefs group drawn `as: 'menu'`, `MenuDef` is a `when` around one, and
+  `resolveSchemaMenu` serves context menus and a bar's menu groups alike. Left: the menu bar itself
+  (a layout asset whose root is a bar of menu groups, with its keys), access letters,
+  `MenuHost.open` anchored to a rect, `MenuButton` onto the context-menu renderer, `useCommand`,
+  and the asset editor's remaining `menu` cases
+  (`docs/superpowers/specs/2026-10-16-menus-as-layout-assets-design.md`).
 
 - **(P3) ui's `ShortcutInput` is a third copy of the shortcut shape.**
   `packages/ui/src/components/ToolPalette/formatShortcut.ts` describes what `@weasel-js/menu`'s
@@ -1111,6 +1108,30 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   way for an instrument to declare its config as a pref schema.
 
 ### WeaselDraw app follow-ups (defer)
+
+- **(P2) Tune draw's surface assets hands-on, with the maintainer driving.** Which groups form which
+  asset, each one's default surface, and where switching lives were picked without anyone using
+  them (`apps/draw/src/surfaces/assets.tsx`). Today Arrange (reorder, align, distribute, flip),
+  Pathfinder, and Path (path, anchors) default to toolbars in the command strip; a panel's header
+  switches it from a menu button showing its surface, and a toolbar or menu button switches from its
+  context menu and, for a menu, from the menu's last rows. Preferences lists every asset with its
+  surface and flags.
+- **(P3) Draw's Properties, Colors, Layers, and History panels are code, not schemas,** so they can
+  only be panels: each is a `render` asset that allows `'panel'` alone. Each moves to a schema once
+  what it shows can be one: the selection's properties already are, while the swatch strip, the
+  layer list, and the history list need leaf kinds of their own.
+- **(P3) The rest of draw's command strip is not surface assets.** File, history, clipboard, edit,
+  structure, view, text, compound, record, and app stay `ActionBar`s in `CommandBar.tsx`, and
+  Simplify, Offset, Corner shape, and the paper size are draw's own controls with no pref form: each
+  needs a custom pref kind before it can sit in a schema asset.
+- **(P3) New and Debug are not menu assets.** Their rows are not registered actions: New hands a
+  paper size to `onNew`, and Debug opens a dev route in a new tab. A `file.new` action with a
+  variant per paper size would make New an `actions` leaf, with a key binding besides; the debug
+  routes could be `run` leaves.
+- **(P3) A schema bar has no strip of its own to match `ActionBar`'s.** `ActionBar.module.css` draws
+  the bordered strip under its buttons, and draw's `SchemaSurfaces.module.css` restates it for a
+  `Bar` drawn from a surface asset. `Bar`'s `framed` is a different strip (margin, height). One strip
+  form on `Bar` would serve both.
 
 - **(P3) Multi-page documents.** A document's pages are rects in one world space over one scene,
   so one view, history, and selection serve all of them, and an object is on the page it overlaps

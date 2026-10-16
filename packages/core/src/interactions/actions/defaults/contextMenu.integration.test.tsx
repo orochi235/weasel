@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest';
+import { pref } from '@weasel-js/prefs';
 import { render, act } from '@testing-library/react';
 import { useEffect, useRef } from 'react';
 import { ActionsProvider, useMenuHost, useMenus } from '@weasel-js/routing/react';
@@ -18,7 +19,7 @@ beforeAll(() => {
   proto.releasePointerCapture = vi.fn();
 });
 
-const defs = [{ id: 'sel', when: { bodyTarget: 'selected-body' }, sections: [[{ action: 'delete' }]] }];
+const defs = [{ id: 'sel', when: { bodyTarget: 'selected-body' }, menu: pref.group('', { delete: pref.action('delete') }) }];
 
 const clicked = vi.fn();
 const clickProbe = {
@@ -128,7 +129,7 @@ describe('menu.context', () => {
   });
 
   const rectMenu = [{
-    id: 'rect', when: { bodyTarget: 'selected-body', bodyKind: 'rect' }, sections: [[{ action: 'delete' }]],
+    id: 'rect', when: { bodyTarget: 'selected-body', bodyKind: 'rect' }, menu: pref.group('', { delete: pref.action('delete') }),
   }];
 
   it('opens a menu declared for a routing kind, not the structural node kind', () => {
@@ -157,7 +158,7 @@ describe('menu.context', () => {
   });
 
   it('resolves and runs a row from the canvas scope with no dep registry above the provider', () => {
-    const dup = [{ id: 'dup', when: { bodyTarget: 'selected-body' }, sections: [[{ action: 'duplicate' }]] }];
+    const dup = [{ id: 'dup', when: { bodyTarget: 'selected-body' }, menu: pref.group('', { duplicate: pref.action('duplicate') }) }];
     const t = setup(true, dup);
     t.rightClick(240, 130);
     const row = t.host().current()?.entries[0];

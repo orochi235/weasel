@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   ActionDisabledReason, ActionsProvider, useAction, useMenuHost, useMenus, type Action, type MenuDef,
 } from '@weasel-js/core';
+import { pref } from '@weasel-js/prefs';
 import { ContextMenuHost } from './ContextMenuHost';
 import { useContextMenu } from './useContextMenu';
 import s from './ContextMenuHost.stories.module.css';
@@ -47,15 +48,17 @@ function useEditActions(log: (id: string) => void): readonly Action[] {
 
 const MENUS: MenuDef[] = [{
   id: 'edit',
-  sections: [
-    [{ action: 'cut' }, { action: 'copy' }, { action: 'paste' }, { action: 'duplicate' }],
-    [{
-      submenu: 'arrange', label: 'Arrange',
-      sections: [[{ action: 'front' }, { action: 'forward' }], [{ action: 'backward' }, { action: 'back' }]],
-    }],
-    [{ action: 'snap' }],
-    [{ action: 'delete' }],
-  ],
+  menu: pref.group('', {
+    edit: pref.group('', {
+      cut: pref.action('cut'), copy: pref.action('copy'), paste: pref.action('paste'), duplicate: pref.action('duplicate'),
+    }),
+    arrange: pref.group('Arrange', {
+      ahead: pref.group('', { front: pref.action('front'), forward: pref.action('forward') }),
+      behind: pref.group('', { backward: pref.action('backward'), back: pref.action('back') }),
+    }, { as: 'menu' }),
+    snap: pref.group('', { snap: pref.action('snap') }),
+    remove: pref.group('', { delete: pref.action('delete') }),
+  }),
 }];
 
 function Target({ openOnMount }: { openOnMount?: boolean }) {

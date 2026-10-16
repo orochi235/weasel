@@ -1,11 +1,9 @@
-import { useMemo, useSyncExternalStore } from 'react';
-import { useActionsRegistry, actionItems, taggedActionItems, type Action } from '@weasel-js/core';
-import type { PrefAction, PrefGroup } from '@weasel-js/prefs';
+import { useMemo } from 'react';
+import { taggedActionItems } from '@weasel-js/core';
+import type { PrefActions, PrefGroup } from '@weasel-js/prefs';
 import { Bar } from '../Bar/Bar';
-import s from './ActionBar.module.css';
-
-const EMPTY_LIST: readonly Action[] = Object.freeze([]);
-const noopSubscribe = (): (() => void) => () => {};
+import { BarActions } from '../Bar/BarActions';
+import type { PropertyRenderer } from '../SelectionPanel/renderContext';
 
 /** Which actions an {@link ActionBar} draws: one group's, or every one carrying a tag. */
 export type ActionBarSource =
@@ -48,50 +46,39 @@ export interface ActionBarOptions {
 }
 
 /**
- * Generic action toolbar. Reads the parent `ActionsRegistry`, filters to
- * actions whose `group` matches `props.group` — or to the entries carrying
- * `props.tag` — and draws them as a
- * {@link Bar} of `action` leaves: one icon button per match — or per variant,
- * for an action that declares `variants`. A button whose action's `enabled`
- * predicate fails greys out and swallows clicks, while the keybinding — if
- * any — still fires through the registry's keydown listener. No keyboard
- * navigation (roving tabindex).
+ * Generic action toolbar: a {@link Bar} over one `actions` leaf for `group`,
+ * so it draws one icon button per action in that group — or per variant, for
+ * an action that declares `variants` — in registry order. `tag`, `only`,
+ * `icons`, and `labels` have no form in a schema, and reach the leaf's
+ * buttons as a filter over what it expands to. A button whose action's
+ * `enabled` predicate fails greys out and swallows clicks, while the
+ * keybinding — if any — still fires through the registry's keydown listener.
+ * No keyboard navigation (roving tabindex).
  */
 export function ActionBar(props: ActionBarProps) {
   const { group, tag, orientation = 'horizontal', icons, labels, only, className } = props;
-  const registry = useActionsRegistry();
-  const all = useSyncExternalStore(
-    registry ? registry.subscribe : noopSubscribe,
-    registry ? registry.list : () => EMPTY_LIST,
-    registry ? registry.list : () => EMPTY_LIST,
-  );
   const schema = useMemo((): PrefGroup => {
-    const items = tag !== undefined ? taggedActionItems(all, tag) : all.filter((a) => a.group === group).flatMap(actionItems);
-    const keys = items
-      .filter((item) => !only || only.includes(item.key) || only.includes(item.action.id))
-      .map((item) => item.key);
-    const leaf = (key: string): PrefAction => {
-      const icon = icons?.[key];
-      return {
-        kind: 'action',
-        // Empty, the button reads the registered action's own label.
-        name: labels?.[key] ?? '',
-        description: '',
-        default: undefined,
-        action: key,
-        ...(icon === undefined ? {} : { icon }),
-      };
+    const leaf: PrefActions = { kind: 'actions', name: '', description: '', default: undefined, group: group ?? '' };
+    return { name: '', children: { actions: leaf } };
+  }, [group]);
+  const renderers = useMemo((): Record<string, PropertyRenderer> | undefined => {
+    if (tag === undefined && !only && !icons && !labels) return undefined;
+    const pick = tag === undefined ? undefined : (all: Parameters<typeof taggedActionItems>[0]) => taggedActionItems(all, tag);
+    return {
+      actions: (ctx) => (
+        <BarActions leaf={ctx.pref as PrefActions} path={ctx.path} disabled={ctx.disabled} pick={pick} only={only} icons={icons} labels={labels} />
+      ),
     };
-    // An action's key may hold a dot, which a schema key may not, and a key that reads as an index would sort first.
-    return { name: '', children: Object.fromEntries(keys.map((key, i) => [`action${i}`, leaf(key)])) };
-  }, [all, group, tag, icons, labels, only]);
+  }, [tag, only, icons, labels]);
 
   return (
     <Bar
       schema={schema}
+      renderers={renderers}
       orientation={orientation}
       label={`${tag ?? group} actions`}
-      className={[s.bar, className].filter(Boolean).join(' ')}
+      framed="segmented"
+      className={className}
     />
   );
 }

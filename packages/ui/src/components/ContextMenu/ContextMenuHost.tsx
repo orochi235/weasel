@@ -44,7 +44,8 @@ function useReturnFocus(host: MenuHost | null): void {
   }, [host]);
 }
 
-function OpenPanels({ open, close }: { open: OpenMenu; close: () => void }) {
+/** One open menu's panels, with the controller that runs them. What the host draws, and a bar's menu button. */
+export function OpenPanels({ open, close }: { open: OpenMenu; close: () => void }) {
   const [controller, setController] = useState<MenuController | null>(null);
   // Built where it is disposed, so StrictMode's rerun of this effect gets a live one.
   useLayoutEffect(() => {

@@ -1,5 +1,6 @@
 // The menu widget behind the real dispatcher: what reaches it from a mouse, not from a hand-built event.
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { pref } from '@weasel-js/prefs';
 import { act, render } from '@testing-library/react';
 import React from 'react';
 import { ActionsProvider, SceneCanvas, useScene, useSelection } from '@weasel-js/core';
@@ -16,7 +17,7 @@ const probe: SurfaceContribution = {
   id: 'menu-widget-probe',
   eligibility: { always: true },
   actions: [{ id: 'probe.cut', label: 'Cut', invoker: { timing: 'immediate', run: cut } }],
-  menus: [{ id: 'probe.menu', sections: [[{ action: 'probe.cut' }]] }],
+  menus: [{ id: 'probe.menu', menu: pref.group('', { probe_cut: pref.action('probe.cut') }) }],
   attach: (_api, deps) => { depGet = (name) => deps.get(name as never); return () => {}; },
 };
 

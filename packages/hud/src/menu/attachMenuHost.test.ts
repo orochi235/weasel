@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { pref } from '@weasel-js/prefs';
 import { createMenuHost, type MenuHost } from '@weasel-js/routing';
 import { createPaintedCursorState, type CanvasExtensionApi, type RenderLayer } from '@weasel-js/core';
 import { FIXTURE_FONT, registerFont } from '@weasel-js/font';
@@ -17,7 +18,7 @@ function makeHost(): MenuHost {
     actions: () => [{ id: 'cut', label: 'Cut', invoker: immediate }],
     depsFor: () => undefined, trigger, activeTool: () => null,
   });
-  h.define({ id: 'row', sections: [[{ action: 'cut' }]] });
+  h.define({ id: 'row', menu: pref.group('', { cut: pref.action('cut') }) });
   return h;
 }
 
@@ -219,7 +220,7 @@ describe('attachMenuHost with a hud drawing in another font', () => {
       actions: () => [{ id: 'a', label, invoker: immediate }],
       depsFor: () => undefined, trigger, activeTool: () => null,
     });
-    wide.define({ id: 'wide', sections: [[{ action: 'a' }]] });
+    wide.define({ id: 'wide', menu: pref.group('', { a: pref.action('a') }) });
     const el = document.createElement('canvas');
     const own = createHud();
     const unhud = attachHud(makeApi(el), own, { font: 'Fixture Face', theme: resolveTheme(weaselTheme) });
