@@ -135,6 +135,7 @@ export {
 } from './paths/balanceHandles';
 export { harmonizeAnchors } from './paths/harmonize';
 export { editAnchorSetTracked, remapPointValues, type PointOrigin } from './paths/anchorOrigins';
+export { anchorOriginsOf, remapAnchorValues } from './paths/anchorValues';
 export {
   anchorsBefore, constrainPathEdit, constraintAnchors, constraintFits, mapConstraintAnchors, pathAnchorPoints,
   remapConstraints, solveConstraints, solvePathConstraints, unsatisfiedConstraints, CONSTRAINT_TOLERANCE,
@@ -142,6 +143,17 @@ export {
   type PathConstraint, type PathConstraintKind, type SolveConstraintsOptions, type SolveConstraintsResult,
   type SolvePathConstraintsResult, type UnsatisfiedConstraintsOptions,
 } from './constraints';
+export {
+  directionMarks, flatIndexesAfterReverse, reverseSubpaths, setSubpathStart, subpathsOfAnchors,
+  type DirectionMark,
+} from './paths/pathStructure';
+export {
+  convertSegments, isSegmentStraight, segmentsBetweenAnchors, type SegmentRef, type SegmentType,
+} from './paths/segmentType';
+export {
+  ANCHOR_FIELDS, readAnchorFields, writeAnchorField,
+  type AnchorField, type AnchorFieldValues, type NumberEntry,
+} from './paths/anchorFields';
 export { nearestPathAnchor, reverseAnchors, type PathAnchorHit } from './paths/nearestAnchor';
 export { pathInPoseFrame, pathInWorld, worldEditToStorage, type PathInWorldPose } from './paths/pathInWorld';
 export {

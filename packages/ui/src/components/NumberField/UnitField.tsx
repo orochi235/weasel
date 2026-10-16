@@ -16,6 +16,13 @@ export interface UnitFieldProps {
    *  Typing that ends in Escape, or in text the field cannot read, sends the
    *  value it began from, so a caller holding the live value gets it back. */
   onInput?: (value: number) => void;
+  /**
+   * An amount typed as `+=` or `-=` and a number — `+=5`, `-=2mm` — committed
+   * as an offset rather than a value: for a field standing for several values
+   * at once, each moved by its own amount. Without it the offset applies to
+   * `value` and commits through `onChange`.
+   */
+  onOffset?: (delta: number) => void;
   /** Typing that reached `onInput` was abandoned: it ended in Escape, or in
    *  text the field cannot read. Comes after the `onInput` that gives the
    *  starting value back, and alone when the field began at NaN, which is no
@@ -68,6 +75,7 @@ export function UnitField({
   onChange,
   onInput,
   onCancel,
+  onOffset,
   minValue,
   maxValue,
   step = 1,
@@ -115,6 +123,17 @@ export function UnitField({
     return true;
   };
 
+  /** Commit a typed `n`, or give back the value typing began from when `n` is no number. */
+  const commit = (n: number) => {
+    if (!Number.isNaN(n)) {
+      const next = clampToBounds(n, bounds);
+      if (next !== value) onChange(next);
+    } else if (typing.current?.sent) {
+      if (!Number.isNaN(typing.current.from)) onInput?.(typing.current.from);
+      onCancel?.();
+    }
+  };
+
   /** Whether `key` has nowhere left to step to. */
   const spent = (key: string): boolean => spinKey(key, from(), bounds) === from();
 
@@ -142,27 +161,14 @@ export function UnitField({
 
   const repeat = useStepRepeat(latestSpin, latestSpent);
   const stepper = (key: 'ArrowUp' | 'ArrowDown', label: string, glyph: string, atBound: boolean) => (
-    <button
-      type="button"
-      className={s.stepper}
-      aria-label={label}
-      tabIndex={-1}
+    <Stepper
+      label={label}
+      glyph={glyph}
       disabled={atBound || disabled}
-      // Keeps focus in the input, where a press on the button would take it.
-      onPointerDown={(e) => {
-        e.preventDefault();
-        repeat.start(key);
-      }}
-      onPointerUp={repeat.stop}
-      onPointerLeave={repeat.stop}
-      onPointerCancel={repeat.stop}
-      // A click with no pointer down before it — assistive tech, or a test.
-      onClick={(e) => {
-        if (e.detail === 0) latestSpin.current(key);
-      }}
-    >
-      {glyph}
-    </button>
+      onHold={() => repeat.start(key)}
+      onRelease={repeat.stop}
+      onTap={() => latestSpin.current(key)}
+    />
   );
 
   return (
@@ -205,17 +211,10 @@ export function UnitField({
             canceled.current = false;
           }}
           onBlur={() => {
-            const n = canceled.current || draft === null ? Number.NaN : read(draft);
-            if (!Number.isNaN(n)) {
-              const next = clampToBounds(n, bounds);
-              if (next !== value) onChange(next);
-            } else {
-              const typed = typing.current;
-              if (typed?.sent) {
-                if (!Number.isNaN(typed.from)) onInput?.(typed.from);
-                onCancel?.();
-              }
-            }
+            const typedText = canceled.current ? null : draft;
+            const by = typedText === null ? null : offsetIn(typedText, read);
+            if (by !== null && Number.isFinite(by) && onOffset) onOffset(by);
+            else commit(typedText === null ? Number.NaN : by !== null ? value + by : read(typedText));
             typing.current = null;
             setDraft(null);
           }}
@@ -238,5 +237,49 @@ export function UnitField({
         )}
       </div>
     </div>
+  );
+}
+
+/** What `typed` offsets by when it reads as `+=` or `-=` and a number: NaN
+ *  when the number does not read, and null for text that is no offset. */
+function offsetIn(typed: string, read: (text: string) => number): number | null {
+  const m = /^\s*([+-])=\s*(.*)$/.exec(typed);
+  if (!m) return null;
+  const n = read(m[2]);
+  return m[1] === '-' ? -n : n;
+}
+
+interface StepperProps {
+  label: string;
+  glyph: string;
+  disabled: boolean;
+  onHold: () => void;
+  onRelease: () => void;
+  onTap: () => void;
+}
+
+function Stepper({ label, glyph, disabled, onHold, onRelease, onTap }: StepperProps) {
+  return (
+    <button
+      type="button"
+      className={s.stepper}
+      aria-label={label}
+      tabIndex={-1}
+      disabled={disabled}
+      // Keeps focus in the input, where a press on the button would take it.
+      onPointerDown={(e) => {
+        e.preventDefault();
+        onHold();
+      }}
+      onPointerUp={onRelease}
+      onPointerLeave={onRelease}
+      onPointerCancel={onRelease}
+      // A click with no pointer down before it — assistive tech, or a test.
+      onClick={(e) => {
+        if (e.detail === 0) onTap();
+      }}
+    >
+      {glyph}
+    </button>
   );
 }

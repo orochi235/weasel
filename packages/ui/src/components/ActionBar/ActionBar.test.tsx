@@ -300,6 +300,17 @@ describe('ActionBar', () => {
     expect(screen.getByTestId('fn-icon')).toBeTruthy();
   });
 
+  it('keeps only the entries `only` names, by action id or by variant key', () => {
+    const variants = [{ key: 'x', label: 'Flip X', params: {} }, { key: 'y', label: 'Flip Y', params: {} }];
+    render(
+      <Harness
+        actions={[makeAction({ id: 'a' }), makeAction({ id: 'b' }), makeAction({ id: 'flip', variants })]}
+        bar={<ActionBar group="demo" only={['b', 'flip:y']} />}
+      />,
+    );
+    expect(screen.getAllByRole('button').map((b) => b.getAttribute('aria-label'))).toEqual(['b', 'Flip Y']);
+  });
+
   it('renders one button per variant and triggers with its params', () => {
     const run = vi.fn();
     render(

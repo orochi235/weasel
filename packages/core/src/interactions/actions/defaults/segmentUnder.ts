@@ -1,5 +1,5 @@
 import type { ActionDeps } from '@weasel-js/routing';
-import type { EditAnchorsDep } from '../depSchema';
+import type { EditAnchorsDep } from '../editAnchorsDep';
 import { pathToAnchors, segmentAt, type AnchorSet, type PolygonPath, type SegmentHit } from '@weasel-js/geom';
 
 /** Screen-px reach of a segment, and the radius around each anchor that
@@ -7,8 +7,9 @@ import { pathToAnchors, segmentAt, type AnchorSet, type PolygonPath, type Segmen
  *  radius, so the two regions meet without a gap. */
 export const SEGMENT_HIT_PX = 8;
 
-/** The segment of the path being edited under world point `(x, y)`, or null
- *  off every segment, on an anchor, or with no path in edit mode. */
+/** @experimental The segment of the path being edited under world point
+ *  `(x, y)`, or null off every segment, on an anchor, or with no path in edit
+ *  mode. Its reach is the `targets.segmentHitPx` kit setting. */
 export function segmentUnder(
   deps: ActionDeps | undefined,
   x: number,

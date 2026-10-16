@@ -1,5 +1,5 @@
 /**
- * WeaselDraw's own commands (the grid, snap, and symmetry toggles, Release compound
+ * WeaselDraw's own commands (the grid, snap, symmetry, and path direction toggles, Release compound
  * path, Preferences, the command palette) as actions the gesture dispatcher routes and the command
  * bar draws from the registry. Each reads the live `appCommands` dep.
  */
@@ -17,6 +17,9 @@ export interface AppCommands {
   toggleGrid(): void;
   snapToGrid: boolean;
   toggleSnap(): void;
+  /** Whether path edit draws the edited path's direction arrows. */
+  pathDirection: boolean;
+  togglePathDirection(): void;
   /** Whether live symmetry is on. */
   symmetryOn: boolean;
   toggleSymmetry(): void;
@@ -51,6 +54,15 @@ export const toggleSnapAction: AppAction = {
   requires: ['appCommands'],
   active: (deps) => read(deps)?.snapToGrid === true,
   invoker: { timing: 'immediate', run: (deps) => read(deps)?.toggleSnap() },
+};
+
+export const togglePathDirectionAction: AppAction = {
+  id: 'view.pathDirection',
+  label: 'Show path direction',
+  group: 'view',
+  requires: ['appCommands'],
+  active: (deps) => read(deps)?.pathDirection === true,
+  invoker: { timing: 'immediate', run: (deps) => read(deps)?.togglePathDirection() },
 };
 
 export const toggleSymmetryAction: AppAction = {
@@ -103,6 +115,7 @@ export const commandsAction: AppAction = {
 export const appActions: Action[] = [
   toggleGridAction,
   toggleSnapAction,
+  togglePathDirectionAction,
   toggleSymmetryAction,
   releaseCompoundAction,
   preferencesAction,

@@ -13,6 +13,7 @@ export interface EditorAmbientArgs {
   /** The mode shortcuts, from `useCanvasModes`. */
   modeKeys: Contribution;
   grid: Pick<AppCommands, 'gridVisible' | 'toggleGrid' | 'snapToGrid' | 'toggleSnap'>;
+  pathDirection: Pick<AppCommands, 'pathDirection' | 'togglePathDirection'>;
   /** Live symmetry, from `useSymmetry`: its canvas entry and its toggle. */
   symmetry: {
     contribution: SurfaceContribution;
@@ -35,6 +36,7 @@ export function useEditorAmbient(args: EditorAmbientArgs): readonly SurfaceContr
 
   const appCommands: AppCommands = {
     ...args.grid,
+    ...args.pathDirection,
     ...args.symmetry.commands,
     canReleaseCompound: hasCompoundPath(scene, selection.current),
     releaseCompound: () => selection.set(releaseCompoundPaths(scene, selection.current)),

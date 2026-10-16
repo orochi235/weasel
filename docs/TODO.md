@@ -289,6 +289,22 @@ Priority tags:
   keys: its tool key, M, which moved Envelope mesh to C when the two met in draw; the Shift angle
   step; that Move by and Rotate by fall back to the newest measurement when none is picked; and the
   readout's look (`packages/core/src/tools/builtin/measure/`, `<MeasureReadout>` in `@weasel-js/ui`).
+- **(P2) Tune path start and direction hands-on, with the maintainer driving.** First-draft
+  behavior and keys: `setPathStart` and `reversePath` have no default keys, an open subpath's
+  interior anchor cannot become its start, and the direction marks' look (a 9 px orange arrow per
+  segment and an 8 px start ring, `DIRECTION_DEFAULTS`), off by default under
+  `path-edit.direction` with draw's View toggle as the only switch
+  (`packages/path-tools/src/pathStructure/`, `apps/draw/src/usePathDirection.ts`).
+- **(P2) Tune segment type hands-on, with the maintainer driving.** First-draft behavior and keys:
+  a curved segment's handles start at its thirds, Shift+C with no `to` flips the lot by whether
+  any is straight, and Shift+double-click flips one segment
+  (`packages/path-tools/src/segmentType/convertSegments.ts`). Shift+C is also what the path
+  constraints lab tunes onto `unconstrainAnchors`, and C is Envelope mesh's tool key.
+- **(P2) Tune anchor fields hands-on, with the maintainer driving.** First-draft behavior: the
+  panel shows X and Y for any selection and handles only for a lone anchor, a typed handle mirrors
+  on a smooth anchor, `+=`/`-=` offsets each anchor by its own amount, and draw shows it at the
+  top of Properties in points (`packages/ui/src/components/AnchorFields/`,
+  `packages/geom/src/paths/anchorFields.ts`, `apps/draw/src/RightSidebar.tsx`).
 - **(P2) Tune the Width tool hands-on, with the maintainer driving.** First-draft behavior and
   keys: Shift+W in draw; how near an edge a press must land to grab it; Alt moving one edge alone
   and Alt-click clearing a width point; and whether a press between anchors should insert one
@@ -341,8 +357,10 @@ Priority tags:
   mapping it through each node's parent on replay would make the two agree.
 - **(P3) The path commands have no icons.** `simplifyPath`, `offsetPath`, `snipAtCrossings`,
   `joinPaths`, `bridgePaths`, `joinAnchors`, `bridgeAnchors`, `averageAnchors`, `resamplePath`,
-  `addExtremeAnchors`, the anchor selection commands, and `extendToMeet` show as text in draw's bar, `useTrimTool` and `useExtendTool` borrow
-  `SliceIcon`, and `useSmudgeBrushTool` has none. `expandWarp` and `configureWarp` have none
+  `addExtremeAnchors`, the anchor selection commands, and `extendToMeet` show as text in draw's
+  bar, as do `setPathStart`, `reversePath`, `convertSegments`, and draw's own
+  `view.pathDirection` toggle; `useTrimTool` and `useExtendTool` borrow `SliceIcon`, and
+  `useSmudgeBrushTool` has none. `expandWarp` and `configureWarp` have none
   either, and `useDistortTool`, `useEnvelopeTool`, and `usePuppetTool` give no
   `presentation.icon`: their labs borrow `FitStretchIcon`, `GridIcon`, and `PinIcon` from
   `@weasel-js/ui`.
@@ -371,13 +389,6 @@ Priority tags:
   like any other, cannot be shaped with it; that waits on "A rectangle has no anchors in path edit"
   above. `strokeEdgeNear`, which it hit-tests with, measures every stroke as centered, so on an
   inner- or outer-aligned stroke the grab point sits off the edge that is drawn.
-
-### Path constraints
-
-The solver and the first kinds are in: fixed, horizontal, vertical, parallel, perpendicular,
-equal length, length, and coincident (`packages/geom/src/constraints/`), held through path edit
-by the `editAnchors` dep and added with `constrainAnchors` (lab: `lab-path-constraints`).
-
 - **(P2) Tangent (G1) at an anchor.** The solver's variables are anchor positions only; handles
   ride along with their anchor. G1 needs each handle as a variable of its own (direction, or
   both handle points), and the handle drag to call `constrainEdit` the way the anchor drag does.

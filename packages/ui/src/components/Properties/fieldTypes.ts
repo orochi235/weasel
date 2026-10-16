@@ -79,6 +79,9 @@ export interface PropertyNumberFieldProps extends FieldBase {
    *  read. A field showing a value has already sent that value back through
    *  the live callback; a mixed one has none to send, so this is all it says. */
   onCancel?: () => void;
+  /** A typed field's `+=` or `-=` entry, as an amount rather than a value:
+   *  what a mixed field takes, for each value it stands for to move by. */
+  onOffset?: (delta: number) => void;
   /** A slider's track runs 0..100 where these are omitted. */
   min?: number;
   max?: number;

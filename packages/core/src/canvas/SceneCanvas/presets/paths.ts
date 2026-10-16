@@ -4,6 +4,7 @@ import {
   selectAnchorAction,
 } from 'interactions/actions/defaults/anchorEditing';
 import { makeHandlesSymmetricAction, retractHandlesAction } from 'interactions/actions/defaults/anchorHandles';
+import { setAnchorFieldAction } from 'interactions/actions/defaults/anchorFields';
 import { averageAnchorsAction, joinAnchorsAction } from 'interactions/actions/defaults/anchorJoin';
 import { bendSegmentAction } from 'interactions/actions/defaults/bendSegment';
 import { enterPathEditAction } from 'interactions/actions/defaults/enterPathEdit';
@@ -42,7 +43,7 @@ export const pathsPreset: FeaturePreset = {
     enterPathEditAction, exitPathEditAction, insertPathAnchorAction, bendSegmentAction,
     cutPathAtAnchorAction, exitPathEditToolAction,
     retractHandlesAction, makeHandlesSymmetricAction,
-    averageAnchorsAction, joinAnchorsAction,
+    averageAnchorsAction, joinAnchorsAction, setAnchorFieldAction,
     simplifyPathAction, offsetPathAction, snipAtCrossingsAction, joinPathsAction,
     marqueeAnchorsAction, selectAnchorAction,
   ],

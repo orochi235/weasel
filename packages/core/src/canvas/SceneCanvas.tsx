@@ -110,7 +110,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     onClick,
     chromeVisibility,
     modes,
-    pathEdit, getFocused: getFocusedProp,
+    pathEdit, defaultPathEdit, getFocused: getFocusedProp,
     cursorCoordsHud, pickHud, modalityHud,
     view, onViewChange, defaultView, viewBounds, redrawOn: redrawOnProp,
     ...restProps
@@ -162,7 +162,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const enabled = useEnabledFeatures(features, presetSource.named, viewport !== undefined);
   // `isAllowed` is absent, not a predicate, when no mode registry is wired: see `PathEditSource.isAllowed`.
   const pathEditState = usePathEditState({
-    host: pathEdit,
+    host: pathEdit, opening: defaultPathEdit,
     isAllowed: getActiveMode
       ? () => getActiveMode().allowedCapabilities.has('edits-anchors')
       : undefined,

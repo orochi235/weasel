@@ -133,7 +133,7 @@ from the `resize`, `rotate` and `move` presets' selection contributions.
 `.top` / `.bottom` / `.centerX` / `.centerY`, `distribute.horizontal` /
 `.vertical`, `pathfinder.union` / `.subtract` / `.intersect` / `.exclude` /
 `.divide` / `.crop`, `setFill`, `setStroke`, `setFillOpacity`,
-`setStrokeOpacity` — all UI-driven.
+`setStrokeOpacity`, `setAnchorField` — all UI-driven.
 
 The `align.*` actions take a `to` param and `flip` a `pivot` param naming what
 the selection lines up against: `'union'` (the selection itself — align's

@@ -14,6 +14,9 @@ import { createConstraintsExtension } from './constraints/constraintsExtension';
 import { extendToMeetAction } from './extend/extendToMeet';
 import { handleLockAngleAction, handleLockLengthAction } from './handleLocks/handleLocks';
 import { harmonizeAnchorsAction } from './harmonize/harmonize';
+import { createDirectionExtension, PATH_DIRECTION_CHROME_ID, type PathDirectionStyle } from './pathStructure/directionMarks';
+import { reversePathAction, setPathStartAction } from './pathStructure/pathStructure';
+import { convertSegmentAtAction, convertSegmentsAction } from './segmentType/convertSegments';
 import {
   growAnchorSelectionAction, invertAnchorSelectionAction, selectCornerAnchorsAction, selectEveryNthAnchorAction,
   selectSmoothAnchorsAction, shrinkAnchorSelectionAction,
@@ -119,6 +122,32 @@ export function createConstraintsPreset(style: Partial<ConstraintGlyphStyle> = {
 /** Path constraints with their default colors. */
 export const constraintsPreset: FeaturePreset = createConstraintsPreset();
 
+/**
+ * Where a path starts and which way it runs: `setPathStart` and
+ * `reversePath`, and arrows and start rings over the open path, drawn in
+ * `style`. The marks are off until chrome-caps shows `path-edit.direction`.
+ */
+export function createPathStructurePreset(style: PathDirectionStyle = {}): FeaturePreset {
+  return {
+    id: 'pathStructure',
+    actions: [setPathStartAction, reversePathAction],
+    chromeRules: { [PATH_DIRECTION_CHROME_ID]: never },
+    pathEdit: [createDirectionExtension(style)],
+  };
+}
+
+/** Path start and direction with the marks' default look. */
+export const pathStructurePreset: FeaturePreset = createPathStructurePreset();
+
+/** `convertSegments` and `convertSegmentAt`, turning segments straight or
+ *  curved. It refines `paths`, so a segment's Shift+double-click goes ahead
+ *  of entering path edit. */
+export const segmentTypePreset: FeaturePreset = {
+  id: 'segmentType',
+  refines: ['paths'],
+  actions: [convertSegmentsAction, convertSegmentAtAction],
+};
+
 /** Blend, Bend along, and Repeat along, live, and the actions that edit and
  *  expand them. The scene must hold `withPathEffectsRegistry`'s derivations. */
 export const pathEffectsPreset: FeaturePreset = {
@@ -132,12 +161,13 @@ export const warpPreset: FeaturePreset = {
   actions: [expandWarpAction, configureWarpAction],
 };
 
-/** Every preset above, the comb, balance, and constraints with their defaults. */
+/** Every preset above, the comb, balance, constraints, and path direction with their defaults. */
 export const pathTools: FeaturePreset = {
   id: 'pathTools',
   includes: [
     simplifyBrushPreset, handleLocksPreset, bridgePreset, trimPreset, extendPreset, smudgePreset,
     harmonizePreset, anchorSelectionPreset, resamplePreset, addExtremesPreset,
-    curvatureCombPreset, balancePreset, constraintsPreset, pathEffectsPreset, warpPreset,
+    curvatureCombPreset, balancePreset, constraintsPreset, pathStructurePreset, segmentTypePreset,
+    pathEffectsPreset, warpPreset,
   ],
 };
