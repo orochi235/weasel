@@ -4,6 +4,7 @@ import {
 } from '@weasel-js/core';
 import type { Fill, MenuDef, NodeId, Path, SceneCanvasApi } from '@weasel-js/core';
 import { attachMenuHost } from '@weasel-js/hud';
+import { pref } from '@weasel-js/prefs';
 import { useHud, useHudContribution } from '@weasel-js/hud/react';
 import { ThemeProvider } from '@weasel-js/theme/react';
 import { SiteColorModeContext } from '../colorMode';
@@ -20,12 +21,16 @@ const rect = (id: string, pose: Pose, color: string) => ({
 
 const MENUS: MenuDef[] = [
   {
-    id: 'demo.selection', when: { bodyTarget: 'selected-body' }, sections: [
-      [{ action: 'duplicate' }, { action: 'delete' }],
-      [{ action: 'reorder.forward' }, { action: 'reorder.backward' }],
-    ],
+    id: 'demo.selection', when: { bodyTarget: 'selected-body' }, schema: pref.group('', {
+      edit: pref.group('', { duplicate: pref.action('duplicate'), delete: pref.action('delete') }),
+      order: pref.group('', { forward: pref.action('reorder.forward'), backward: pref.action('reorder.backward') }),
+    }),
   },
-  { id: 'demo.canvas', when: { bodyTarget: 'empty' }, sections: [[{ action: 'selectAll' }, { action: 'undo' }, { action: 'redo' }]] },
+  {
+    id: 'demo.canvas', when: { bodyTarget: 'empty' }, schema: pref.group('', {
+      selectAll: pref.action('selectAll'), undo: pref.action('undo'), redo: pref.action('redo'),
+    }),
+  },
 ];
 
 function Demo() {

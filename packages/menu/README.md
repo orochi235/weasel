@@ -19,7 +19,7 @@ npm install @weasel-js/menu
 | Package | Role |
 |---|---|
 | `@weasel-js/menu` | The model: entries, `createMenuController`, `placeMenu` / `placeSubmenu`. |
-| `@weasel-js/routing` | Declared menus (`MenuDef`: sections of action references) and `MenuHost`, which holds the open menu. |
+| `@weasel-js/routing` | Declared menus (`MenuDef`: a prefs schema drawn as a menu, by `resolveSchemaMenu`) and `MenuHost`, which holds the open menu. |
 | `@weasel-js/core` | The `menu.context` action, which opens a menu from a right-click or the ContextMenu key; re-exports `useMenus`. |
 | `@weasel-js/ui` | `<ContextMenuHost>`, the DOM renderer, and `useContextMenu` for opening a menu from chrome. |
 | `@weasel-js/hud` | `attachMenuHost`, the WebGL renderer. |
@@ -33,10 +33,11 @@ Declare menus as data, mount one host, and open one from chrome:
 
 ```tsx
 import { ActionsProvider, useMenus, type MenuDef } from '@weasel-js/core';
+import { pref } from '@weasel-js/prefs';
 import { ContextMenuHost, useContextMenu } from '@weasel-js/ui';
 
 const MENUS: MenuDef[] = [
-  { id: 'edit', sections: [[{ action: 'duplicate' }, { action: 'delete' }]] },
+  { id: 'edit', schema: pref.group('', { duplicate: pref.action('duplicate'), delete: pref.action('delete') }) },
 ];
 
 function EditButton() {
@@ -52,7 +53,8 @@ function Chrome() {
 // <ActionsProvider><Chrome /><EditButton /></ActionsProvider>
 ```
 
-Rows name registered actions (`duplicate`, `delete`, which act on the selection), and
+Action leaves name registered actions (`duplicate`, `delete`, which act on the selection); a
+group drawn `as: 'menu'` is a submenu, and any other group sits inline between separators. And
 `EditButton` and `Chrome` must sit under an `<ActionsProvider>`. Any menu opens by id; one with a `when` (`{ bodyTarget, bodyKind }`) also
 opens on a right-click of a matching canvas body.
 

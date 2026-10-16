@@ -1,5 +1,6 @@
 // A right-click on a HUD widget stays the widget's: the kit's `menu.context` action must not open a menu.
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { pref } from '@weasel-js/prefs';
 import { render, act } from '@testing-library/react';
 import React from 'react';
 import { ActionsProvider, SceneCanvas, useScene, useSelection } from '@weasel-js/core';
@@ -16,7 +17,7 @@ const probe: SurfaceContribution = {
   id: 'menu-host-probe',
   eligibility: { always: true },
   actions: [{ id: 'probe.cut', label: 'Cut', invoker: { timing: 'immediate', run: () => {} } }],
-  menus: [{ id: 'probe.menu', when: { bodyTarget: 'empty' }, sections: [[{ action: 'probe.cut' }]] }],
+  menus: [{ id: 'probe.menu', when: { bodyTarget: 'empty' }, schema: pref.group('', { probe_cut: pref.action('probe.cut') }) }],
   attach: (_api, deps) => { depGet = (name) => deps.get(name as never); return () => {}; },
 };
 

@@ -1,7 +1,9 @@
 // Short forms for writing a schema by hand. Each returns the plain data a
 // literal would: nothing reads a schema differently for how it was written.
 
+import type { PrefAction, PrefActions } from './action';
 import type { PrefGroup, PrefSection } from './groups';
+import type { PrefLabel, PrefSeparator } from './label';
 import type { PrefBoolean, PrefColor, PrefEnumBase, PrefLeaf, PrefNumber, PrefString } from './schema';
 
 /** What a builder takes after the leaf's name and default: any of the leaf's other fields. */
@@ -55,4 +57,13 @@ export const pref = {
     const full = options.map((option) => (typeof option === 'string' ? { value: option, label: labeled(option) } : option));
     return { kind: 'enum', name, description: '', default: def, ...rest, options: full };
   },
+
+  /** A button firing the registered action `action` (`id` or `id:variant`). Its name defaults to empty, which shows the action's own label. */
+  action: (action: string, rest?: Partial<Omit<PrefAction, 'kind' | 'default' | 'action'>>): PrefAction =>
+    leaf('action', '', undefined, { action, ...rest }),
+  /** Every action registered in the action group `group`. */
+  actions: (group: string, rest?: Partial<Omit<PrefActions, 'kind' | 'default' | 'group'>>): PrefActions =>
+    leaf('actions', '', undefined, { group, ...rest }),
+  label: (name: string, rest?: Rest<PrefLabel>): PrefLabel => leaf('label', name, undefined, rest),
+  separator: (): PrefSeparator => leaf('separator', '', undefined, undefined),
 };

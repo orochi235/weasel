@@ -4,6 +4,7 @@ import {
   ActionsProvider, SceneCanvas, rectPath, solid, useMenus, useScene, useSelection,
 } from '@weasel-js/core';
 import type { Fill, MenuDef, NodeId, Path } from '@weasel-js/core';
+import { pref } from '@weasel-js/prefs';
 import { ContextMenuHost, useContextMenu } from '@weasel-js/ui';
 
 interface NodeData { path: Path; fill: Fill }
@@ -14,15 +15,19 @@ const rect = (id: string, pose: Pose, color: string) => ({
   data: { path: rectPath(0, 0, pose.width, pose.height), fill: { paint: solid(color) } },
 });
 
-const SELECTION = [
-  [{ action: 'duplicate' }, { action: 'delete' }],
-  [{ action: 'reorder.forward' }, { action: 'reorder.backward' }],
-];
+const SELECTION = pref.group('', {
+  edit: pref.group('', { duplicate: pref.action('duplicate'), delete: pref.action('delete') }),
+  order: pref.group('', { forward: pref.action('reorder.forward'), backward: pref.action('reorder.backward') }),
+});
+
+const CANVAS = pref.group('', {
+  selectAll: pref.action('selectAll'), undo: pref.action('undo'), redo: pref.action('redo'),
+});
 
 const MENUS: MenuDef[] = [
-  { id: 'demo.selection', when: { bodyTarget: 'selected-body' }, sections: SELECTION },
-  { id: 'demo.canvas', when: { bodyTarget: 'empty' }, sections: [[{ action: 'selectAll' }, { action: 'undo' }, { action: 'redo' }]] },
-  { id: 'demo.row', sections: SELECTION },
+  { id: 'demo.selection', when: { bodyTarget: 'selected-body' }, schema: SELECTION },
+  { id: 'demo.canvas', when: { bodyTarget: 'empty' }, schema: CANVAS },
+  { id: 'demo.row', schema: SELECTION },
 ];
 
 function Demo() {

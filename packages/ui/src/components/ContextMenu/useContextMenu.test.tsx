@@ -1,4 +1,5 @@
 import { afterEach, expect, it } from 'vitest';
+import { pref } from '@weasel-js/prefs';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { ActionsProvider, useAction, useMenus } from '@weasel-js/core';
 import { ContextMenuHost } from './ContextMenuHost';
@@ -7,7 +8,7 @@ import { useContextMenu } from './useContextMenu';
 afterEach(cleanup);
 
 const del = { id: 'delete', label: 'Delete', invoker: { timing: 'immediate' as const, run: () => {} } };
-const MENUS = [{ id: 'row', sections: [[{ action: 'delete' }]] }];
+const MENUS = [{ id: 'row', schema: pref.group('', { delete: pref.action('delete') }) }];
 const PARAMS = { nodeId: 'n1' };
 
 function Row({ menu }: { menu: string }) {

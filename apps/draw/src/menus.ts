@@ -1,22 +1,24 @@
 import type { MenuDef } from '@weasel-js/core';
+import { pref } from '@weasel-js/prefs';
 
-const EDIT = [
-  { action: 'clipboard.cut' }, { action: 'clipboard.copy' }, { action: 'clipboard.paste' },
-  { action: 'duplicate' }, { action: 'delete' },
-];
-const SELECTION_SECTIONS = [
-  EDIT,
-  [{ action: 'group' }, { action: 'ungroup' }],
-  [{ action: 'reorder.forward' }, { action: 'reorder.backward' }],
-  [{ action: 'enterPathEdit' }, { action: 'enterTextEdit' }],
-];
+const SELECTION = pref.group('', {
+  edit: pref.group('', {
+    cut: pref.action('clipboard.cut'), copy: pref.action('clipboard.copy'), paste: pref.action('clipboard.paste'),
+    duplicate: pref.action('duplicate'), delete: pref.action('delete'),
+  }),
+  group: pref.group('', { group: pref.action('group'), ungroup: pref.action('ungroup') }),
+  order: pref.group('', { forward: pref.action('reorder.forward'), backward: pref.action('reorder.backward') }),
+  enter: pref.group('', { path: pref.action('enterPathEdit'), text: pref.action('enterTextEdit') }),
+});
+
+const CANVAS = pref.group('', {
+  edit: pref.group('', { paste: pref.action('clipboard.paste'), selectAll: pref.action('selectAll') }),
+  history: pref.group('', { undo: pref.action('undo'), redo: pref.action('redo') }),
+});
 
 /** WeaselDraw's context menus: the selection's, the empty canvas's, and a layer row's. */
 export const DRAW_MENUS: MenuDef[] = [
-  { id: 'draw.selection', when: { bodyTarget: 'selected-body' }, sections: SELECTION_SECTIONS },
-  { id: 'draw.canvas', when: { bodyTarget: 'empty' }, sections: [
-    [{ action: 'clipboard.paste' }, { action: 'selectAll' }],
-    [{ action: 'undo' }, { action: 'redo' }],
-  ] },
-  { id: 'draw.layerRow', sections: SELECTION_SECTIONS },
+  { id: 'draw.selection', when: { bodyTarget: 'selected-body' }, schema: SELECTION },
+  { id: 'draw.canvas', when: { bodyTarget: 'empty' }, schema: CANVAS },
+  { id: 'draw.layerRow', schema: SELECTION },
 ];
