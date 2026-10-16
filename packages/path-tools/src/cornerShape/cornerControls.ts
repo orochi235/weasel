@@ -21,6 +21,9 @@ export const CORNER_K_SLIDER_RANGE = 4;
 
 const ENABLED = { path: 'count', above: 0 };
 
+/** What the corner controls ask for while no corner is selected. */
+export const CORNER_CONTROLS_PROMPT = 'Click a corner anchor (Shift-click for more) to edit it';
+
 /** The corner controls as a prefs schema: the keywords, the parameter, and
  *  the radius, each disabled while no corner is selected. */
 export const CORNER_CONTROLS: PrefGroup = {

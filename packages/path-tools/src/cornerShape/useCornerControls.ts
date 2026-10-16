@@ -6,7 +6,7 @@
 import { useActionsRegistry } from '@weasel-js/routing/react';
 import { useCallback, useMemo, useSyncExternalStore } from 'react';
 import { resolveEditablePathOf, type EditableShape, type NodeId } from '@weasel-js/core';
-import { cornerControlsParams, cornerControlsState } from './cornerControls';
+import { CORNER_CONTROLS, CORNER_CONTROLS_PROMPT, cornerControlsParams, cornerControlsState } from './cornerControls';
 
 /** The part of a scene the controls read. */
 export interface CornerControlsScene {
@@ -23,6 +23,11 @@ export interface CornerControlsSelection {
 }
 
 export interface UseCornerControlsReturn {
+  /** The schema a prefs form draws: `CORNER_CONTROLS`. Its `name` is the
+   *  controls' title. */
+  schema: typeof CORNER_CONTROLS;
+  /** What to show above the form, or null once a corner is selected. */
+  prompt: string | null;
   values: Record<string, unknown>;
   mixed: ReadonlySet<string>;
   /** A prefs form's `onChange` for `CORNER_CONTROLS`. */
@@ -55,5 +60,6 @@ export function useCornerControls(
     const params = cornerControlsParams(field, value);
     if (params) actions?.trigger('setCorners', params);
   }, [actions]);
-  return { ...shown, onChange };
+  const prompt = shown.values.count === 0 ? CORNER_CONTROLS_PROMPT : null;
+  return { schema: CORNER_CONTROLS, prompt, ...shown, onChange };
 }

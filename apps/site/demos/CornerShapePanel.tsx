@@ -3,7 +3,6 @@
  * selected corners of the open path, mixed where they differ.
  */
 import {
-  CORNER_CONTROLS,
   useCornerControls,
   type CornerControlsScene,
   type CornerControlsSelection,
@@ -12,13 +11,11 @@ import { PrefsForm } from '@weasel-js/ui';
 import s from './CornerShapeLabDemo.module.css';
 
 export function CornerPanel({ scene, selection }: { scene: CornerControlsScene; selection: CornerControlsSelection }) {
-  const { values, mixed, onChange } = useCornerControls(scene, selection);
+  const { schema, prompt, values, mixed, onChange } = useCornerControls(scene, selection);
   return (
     <div className={s.panel}>
-      {values.count === 0 && (
-        <p className={s.prompt}>Click a corner anchor (Shift-click for more) to edit it</p>
-      )}
-      <PrefsForm schema={CORNER_CONTROLS} layout="list" values={values} mixed={mixed} onChange={onChange} />
+      {prompt && <p className={s.prompt}>{prompt}</p>}
+      <PrefsForm schema={schema} layout="list" values={values} mixed={mixed} onChange={onChange} />
     </div>
   );
 }

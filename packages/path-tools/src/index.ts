@@ -103,7 +103,7 @@ export {
 
 // ─── Panels ────────────────────────────────────────────────────────────────
 export {
-  CORNER_CONTROLS, CORNER_K_SLIDER_RANGE, cornerControlsParams, cornerControlsState, type CornerControlsState,
+  CORNER_CONTROLS, CORNER_CONTROLS_PROMPT, CORNER_K_SLIDER_RANGE, cornerControlsParams, cornerControlsState, type CornerControlsState,
 } from './cornerShape/cornerControls';
 export {
   useCornerControls, type CornerControlsScene, type CornerControlsSelection, type UseCornerControlsReturn,

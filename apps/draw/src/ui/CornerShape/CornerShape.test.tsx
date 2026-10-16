@@ -8,7 +8,7 @@ import {
   withCorner,
   type PolygonPath,
 } from '@weasel-js/core';
-import type { CornerControlsSelection } from '@weasel-js/path-tools';
+import { CORNER_CONTROLS, CORNER_CONTROLS_PROMPT, type CornerControlsSelection } from '@weasel-js/path-tools';
 import { CornerShape } from './CornerShape';
 
 afterEach(cleanup);
@@ -37,7 +37,7 @@ function setup(selected: number[]) {
       <CornerShape scene={scene} selection={selection} />
     </ActionsProvider>,
   );
-  act(() => { fireEvent.click(screen.getByRole('button', { name: 'Corner shape' })); });
+  act(() => { fireEvent.click(screen.getByRole('button', { name: CORNER_CONTROLS.name })); });
   const select = (next: number[]) => act(() => { anchors = new Set(next); listeners.forEach((l) => l()); });
   return { run, select };
 }
@@ -70,7 +70,7 @@ describe('CornerShape', () => {
 
   it('disables itself and says what to do with no corner selected', () => {
     setup([]);
-    expect(screen.getByText('Click a corner anchor (Shift-click for more) to edit it')).toBeInTheDocument();
+    expect(screen.getByText(CORNER_CONTROLS_PROMPT)).toBeInTheDocument();
     expect(keyword('round')).toBeDisabled();
     expect(curvature()).toBeDisabled();
   });

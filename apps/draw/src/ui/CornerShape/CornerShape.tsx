@@ -4,7 +4,6 @@
  */
 import type { ReactElement } from 'react';
 import {
-  CORNER_CONTROLS,
   useCornerControls,
   type CornerControlsScene,
   type CornerControlsSelection,
@@ -18,15 +17,13 @@ export interface CornerShapeProps {
 }
 
 export function CornerShape({ scene, selection }: CornerShapeProps): ReactElement {
-  const { values, mixed, onChange } = useCornerControls(scene, selection);
+  const { schema, prompt, values, mixed, onChange } = useCornerControls(scene, selection);
   return (
     <div className="wd-commandbar-group">
-      <BarPopover label="Corner shape">
+      <BarPopover label={schema.name}>
         <div className={s.panel}>
-          {values.count === 0 && (
-            <p className={s.prompt}>Click a corner anchor (Shift-click for more) to edit it</p>
-          )}
-          <PrefsForm schema={CORNER_CONTROLS} layout="list" values={values} mixed={mixed} onChange={onChange} />
+          {prompt && <p className={s.prompt}>{prompt}</p>}
+          <PrefsForm schema={schema} layout="list" values={values} mixed={mixed} onChange={onChange} />
         </div>
       </BarPopover>
     </div>

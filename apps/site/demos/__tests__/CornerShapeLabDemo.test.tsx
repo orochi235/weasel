@@ -1,6 +1,7 @@
 import { act, cleanup, fireEvent, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { resolveCorners, type PolygonPath } from '@weasel-js/core';
+import { CORNER_CONTROLS_PROMPT } from '@weasel-js/path-tools';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { CornerShapeLabDemo } from '../CornerShapeLabDemo';
@@ -130,9 +131,9 @@ describe('CornerShapeLabDemo', () => {
 
   it('disables the controls and says what to do with no corner selected', async () => {
     const canvas = await mount();
-    expect(screen.queryByText(/Click a corner anchor/)).toBeNull();
+    expect(screen.queryByText(CORNER_CONTROLS_PROMPT)).toBeNull();
     click(canvas, 140, 130);
-    expect(screen.getByText('Click a corner anchor (Shift-click for more) to edit it')).toBeInTheDocument();
+    expect(screen.getByText(CORNER_CONTROLS_PROMPT)).toBeInTheDocument();
     expect(radiusField()).toBeDisabled();
     expect(styleButton('round')).toBeDisabled();
   });

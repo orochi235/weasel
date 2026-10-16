@@ -20,7 +20,7 @@ import {
   TrialSceneCanvas,
   useTrialScene,
 } from '@weasel-js/labkit';
-import { cornerShapePreset, type CornerControlsSelection } from '@weasel-js/path-tools';
+import { CORNER_CONTROLS, cornerShapePreset, type CornerControlsSelection } from '@weasel-js/path-tools';
 import { PenIcon, SelectIcon } from '@weasel-js/ui';
 import { useMemo, useState } from 'react';
 import { CornerPanel } from './CornerShapePanel';
@@ -138,7 +138,7 @@ const cornersInstrument = defineInstrument<State, Config>({
 export function CornerShapeLabDemo() {
   return (
     <div className="ckd-lab-frame">
-      <Lab title="Corner shape" instruments={[cornersInstrument]} defaultInstrument="Corners" />
+      <Lab title={CORNER_CONTROLS.name} instruments={[cornersInstrument]} defaultInstrument="Corners" />
     </div>
   );
 }
