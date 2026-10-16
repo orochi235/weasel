@@ -19,6 +19,11 @@ Priority tags:
 
 ## Tools & gestures
 
+- **(P3) A `contextmenu` with no preceding press resolves against the wrong input scope.** The
+  keyboard ContextMenu key sends one with no press before it, so it falls to the active or newest
+  input scope; with several sibling canvases and no press yet, that may not be the canvas the
+  event came from. Shift+F10 goes through the key holder and is unaffected.
+
 - **(P2) `features` names two things.** The `<SceneCanvas features>` prop composes behavior presets
   (`canvas/SceneCanvas/features.ts`); `packages/core/src/features/<name>/` is a source directory
   bundling one domain's primitives, and `docs/taxonomy.md` calls each of those a "feature" too.
@@ -627,6 +632,11 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 ---
 
 ## Selection, actions & UI panels
+
+- **(P3) ui's `ShortcutInput` is a third copy of the shortcut shape.**
+  `packages/ui/src/components/ToolPalette/formatShortcut.ts` describes what `@weasel-js/menu`'s
+  `MenuShortcut` and routing's `ActionShortcut` (now an alias of it) already do. Fold it into
+  `MenuShortcut`.
 
 - **(P3) Shift+F10 / the ContextMenu key may open the menu twice in Chrome on Windows/Linux.**
   The `menu.context` key binding opens it at the selection, and those platforms also send a
