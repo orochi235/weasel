@@ -1,10 +1,10 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { WeaselProvider } from '@weasel-js/core';
+import { KitSettingsProvider } from '@weasel-js/react';
 import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import { giveKeys } from '@weasel-js/react/testing/giveKeys';
 import { type RefObject, StrictMode, useRef } from 'react';
 import { describe, expect, it, vi } from 'vitest';
-import { KitSettingsProvider } from '@weasel-js/react';
 import { LoupeGestures } from './LoupeGestures';
 import { WHEEL_RATE } from './loupeActions';
 import { type LoupeOptions, type LoupeShape, resolveLoupe } from './types';
@@ -166,7 +166,13 @@ describe('useLoupe', () => {
   it('walks the factor at loupe.wheelRate, else WHEEL_RATE', () => {
     const afterNotch = (rate?: number): number => {
       const { unmount } = render(
-        rate === undefined ? <Harness /> : <KitSettingsProvider value={{ loupe: { wheelRate: rate } }}><Harness /></KitSettingsProvider>,
+        rate === undefined ? (
+          <Harness />
+        ) : (
+          <KitSettingsProvider value={{ loupe: { wheelRate: rate } }}>
+            <Harness />
+          </KitSettingsProvider>
+        ),
       );
       move(40, 25);
       act(() => {

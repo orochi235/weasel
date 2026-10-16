@@ -11,6 +11,7 @@ export type {
   SourceContext,
 } from '@weasel-js/loupe';
 export { createCanvasSource, loupeExtent, placeBand } from '@weasel-js/loupe';
+export type { LoupeKitSettings } from '../kitSettings';
 export type { CanvasLoupeProps } from './CanvasLoupe';
 export { CanvasLoupe } from './CanvasLoupe';
 export type { LensCamera, SourceRect } from './canvasLens';
@@ -41,4 +42,3 @@ export type {
 export { LOUPE_DEFAULTS, resolveLoupe } from './types';
 export type { LoupeState, UseLoupeOptions } from './useLoupe';
 export { useLoupe } from './useLoupe';
-export type { LoupeKitSettings } from '../kitSettings';

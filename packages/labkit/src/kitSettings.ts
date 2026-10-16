@@ -1,5 +1,5 @@
-import type {} from '@weasel-js/react';
 import { pref } from '@weasel-js/prefs';
+import type {} from '@weasel-js/react';
 import { WHEEL_RATE } from './loupe/loupeActions';
 
 /** The `loupe` kit settings area. */

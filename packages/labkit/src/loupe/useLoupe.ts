@@ -1,11 +1,11 @@
 import { useLatest } from '@weasel-js/core';
-import { useKitSetting } from '@weasel-js/react';
 import {
   createLoupeModel,
   type LoupeMode,
   type LoupeModel,
   type LoupePoint,
 } from '@weasel-js/loupe';
+import { useKitSetting } from '@weasel-js/react';
 import { type RefObject, useCallback, useEffect, useReducer, useRef } from 'react';
 import type { LoupeInputApi } from './loupeActions';
 import { WHEEL_RATE } from './loupeActions';
@@ -250,7 +250,9 @@ export function useLoupe({
         if (on) aimAtPointer();
         bump();
       },
-      magnifyBy: (deltaY) => { magnify(modelRef.current, deltaY, wheelRateRef.current); },
+      magnifyBy: (deltaY) => {
+        magnify(modelRef.current, deltaY, wheelRateRef.current);
+      },
     };
   }
 

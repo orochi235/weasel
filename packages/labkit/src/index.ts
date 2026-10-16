@@ -297,6 +297,7 @@ export type {
 export type { ValidationResult } from './instrument/validateConfigSchema';
 export { validateConfigSchema } from './instrument/validateConfigSchema';
 export * from './job';
+export { type LoupeKitSettings, labkitKitSettingsSchema } from './kitSettings';
 export * from './lab';
 export type { LayerListItem, LayerListProps, LayerMove } from './layers';
 export { LayerList, moveLayers } from './layers';
@@ -341,4 +342,3 @@ export type { ToolCapability, TrialTool } from './tools/types';
 export * from './trial';
 export type { UndoStack } from './undo';
 export { clearUndo, emptyStack, pushSnapshot, redo, undo } from './undo';
-export { labkitKitSettingsSchema, type LoupeKitSettings } from './kitSettings';

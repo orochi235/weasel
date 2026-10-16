@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { WHEEL_RATE } from './loupe/loupeActions';
 import { labkitKitSettingsSchema } from './kitSettings';
+import { WHEEL_RATE } from './loupe/loupeActions';
 
 describe('labkitKitSettingsSchema', () => {
   it('defaults every leaf to its constant', () => {
