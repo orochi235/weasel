@@ -14,6 +14,7 @@ import type { Op } from 'core/ops/types';
 import {
   commitOps, deleteNode, insertAt, pathCopy, reshapeOps, selectedPathNodes, slotOf, type PathNode,
 } from './pathNodes';
+import { pathOperationTags } from '../pathGestureTags';
 
 const CUT_LABEL = 'Cut at Crossings';
 
@@ -26,6 +27,7 @@ export const snipAtCrossingsAction: Action & { requires: string[] } = {
   id: 'snipAtCrossings',
   label: CUT_LABEL,
   group: 'path',
+  tags: pathOperationTags('command'),
   eligible: { capability: 'creates-shapes' },
   requires: ['selection', 'scene', 'applyOps'],
   invoker: {
@@ -105,6 +107,7 @@ export function joinPathsCommand(
   return {
     ...base,
     group: 'path',
+    tags: pathOperationTags('command'),
     eligible: { capability: 'creates-shapes' },
     requires: ['selection', 'scene', 'applyOps', 'editAnchors'],
     invoker: {

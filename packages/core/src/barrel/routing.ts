@@ -12,6 +12,7 @@ export type { ActionEntry, ActionsProp, ActionsRegistry, UiOngoingControl } from
 export { actionCursor, ActionDisabledReason } from '@weasel-js/routing';
 export type { Action, ActionDispatch, ActionPresentation, ActionVariant } from '@weasel-js/routing';
 export { actionBindings, actionItems, actionsTagged, taggedActionItems, matchActionItem } from '@weasel-js/routing';
+export { PATH_GESTURE_TAGS, pathOperationTags, type PathGestureFamily } from '../interactions/actions/pathGestureTags';
 export { heldKeySpec } from '@weasel-js/routing';
 export type { ActionItem } from '@weasel-js/routing';
 export type { QueryMatch } from '@weasel-js/registry';

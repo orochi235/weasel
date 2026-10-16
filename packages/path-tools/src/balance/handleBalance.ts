@@ -33,7 +33,7 @@ import {
   type PolygonPath,
 } from '@weasel-js/geom';
 import {
-  commitAnchorEdit, type EditAnchorsDep, editedPathSymmetries, editingLayer, inPlane, locksInForce, pathEditPreview, pathEditToolActive,
+  commitAnchorEdit, type EditAnchorsDep, editedPathSymmetries, editingLayer, inPlane, locksInForce, pathEditPreview, pathEditToolActive, pathOperationTags,
 } from '@weasel-js/core';
 
 /** The segment a `balance:N` affordance names, on the path being edited. */
@@ -62,6 +62,7 @@ function gripEnabled(deps: ActionDeps | undefined): true | ActionDisabledReason 
 export const balanceHandlesAction: Action & { requires: string[] } = inPlane({
   id: 'balanceHandles',
   label: 'Balance handles',
+  tags: pathOperationTags('drag'),
   // Ties the marquee's `empty` and move's `selected-body` on specificity and
   // registers ahead of the marquee; move turns path-edit presses down itself.
   defaultBinding: { kind: 'drag', target: { kindOf: isBalanceGrip } },
@@ -117,6 +118,7 @@ export const balanceHandlesAction: Action & { requires: string[] } = inPlane({
 export const equalizeHandlesAction: Action & { requires: string[] } = {
   id: 'equalizeHandles',
   label: 'Equalize handles',
+  tags: pathOperationTags('click'),
   defaultBinding: { kind: 'doubleClick', target: { kindOf: isBalanceGrip } },
   eligible: { capability: 'edits-anchors' },
   requires: ['editAnchors'],

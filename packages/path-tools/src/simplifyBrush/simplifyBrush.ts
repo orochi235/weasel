@@ -7,7 +7,7 @@ import {
   type AnchorSet, type PointOrigin, type PolygonPath,
 } from '@weasel-js/geom';
 import {
-  DEFAULT_SIMPLIFY_TOLERANCE, depOf, editingLayer, inPlane, pathEditPreview, pathEditToolAction, SimplifyBrushIcon,
+  DEFAULT_SIMPLIFY_TOLERANCE, depOf, editingLayer, inPlane, pathEditPreview, pathEditToolAction, SimplifyBrushIcon, pathOperationTags,
 } from '@weasel-js/core';
 
 /** The path-edit tool under which a plain drag brushes. */
@@ -57,6 +57,7 @@ function toleranceOf(params: SimplifyBrushParams | undefined): number {
 export const simplifyBrushAction: Action & { requires: string[] } = inPlane({
   id: 'simplifyBrush',
   label: 'Simplify brush',
+  tags: pathOperationTags('brush'),
   // Declines through `enabled` unless its tool is on.
   defaultBinding: [{ spec: { kind: 'drag' }, opts: { yields: true } }],
   cursor: (params) => brushRingCursor(radiusOf(params as SimplifyBrushParams | undefined)),

@@ -5,7 +5,7 @@
 import { type Action, type ActionDeps, ActionDisabledReason, type ImmediateInvoker } from '@weasel-js/routing';
 import { worldEditToStorage } from '@weasel-js/geom';
 import {
-  commitOps, createSetDataOp, deleteNode, derivedDepOf, insertAt, type NodeId, type Op, type PathEffect, pathEffectNode, pathEffectOf, pathEffectParts, registeredPathEffects, type Scene, type SceneNode as Node, slotOf,
+  commitOps, createSetDataOp, deleteNode, derivedDepOf, insertAt, type NodeId, type Op, type PathEffect, pathEffectNode, pathEffectOf, pathEffectParts, registeredPathEffects, type Scene, type SceneNode as Node, slotOf, pathOperationTags,
 } from '@weasel-js/core';
 import { EFFECT_DEFAULTS, withEffectSettings } from './params';
 
@@ -50,6 +50,7 @@ function createEffectAction(spec: CreateSpec): Action & { requires: string[] } {
   return {
     id: spec.id,
     label: spec.label,
+    tags: pathOperationTags('command'),
     group: PATH_EFFECTS_GROUP,
     // Alt+Shift, which no major browser takes for these letters (see
     // `BROWSER_RESERVED_CHORDS`); `code` too, since with Alt held on a Mac the

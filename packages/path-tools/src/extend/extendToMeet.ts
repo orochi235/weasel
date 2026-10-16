@@ -4,7 +4,7 @@ import {
   extendToMeet, locateAnchor, openEndRay, openPathEnds, pathDistanceToPoint, pathToAnchors,
   type AnchorSet, type OpenPathEnd, type PolygonPath,
 } from '@weasel-js/geom';
-import { commitOps, type Op, type PathNode, reshapeOps, selectedPathNodes } from '@weasel-js/core';
+import { commitOps, type Op, type PathNode, reshapeOps, selectedPathNodes, pathOperationTags } from '@weasel-js/core';
 import { pressOf, scenePathNodes, strokesBesides, type StrokePress } from '../shared/scenePaths';
 
 const EXTEND_LABEL = 'Extend to next path';
@@ -69,6 +69,7 @@ function planExtend(deps: ActionDeps | undefined, params?: unknown): Map<string,
 export const extendToMeetAction: Action & { requires: string[] } = {
   id: 'extendToMeet',
   label: EXTEND_LABEL,
+  tags: pathOperationTags('click'),
   group: 'path',
   eligible: { capability: 'creates-shapes' },
   requires: ['selection', 'scene', 'applyOps', 'editAnchors', 'view'],
