@@ -208,9 +208,8 @@ Priority tags:
   `isAnnotationNode`; a headless raster draws whatever the scene holds. Undecided: whether a raster
   is an export, and so skips them, or a view of the canvas, and so keeps them.
 - **(P1) Rename the path tools the maintainer deferred to the end of the adoption pass.**
-  Envelope mesh becomes Cloth warp, and the Width tool becomes Girth (its icon is already
-  `GirthIcon`), among others. They live in `@weasel-js/path-tools` now
-  (`packages/path-tools/README.md`); the move kept every name.
+  Envelope mesh becomes Cloth warp, among others; the Width tool is already Girth. They live in
+  `@weasel-js/path-tools` now (`packages/path-tools/README.md`); the move kept every name.
 - **(P2) Tune the Simplify brush hands-on, with the maintainer driving.** It went in from its
   audition lab with first-draft behavior and keys: brush size and its key, the tolerance it
   applies, and how it shows what it will remove (`packages/path-tools/src/simplifyBrush/simplifyBrush.ts`).
@@ -340,10 +339,10 @@ Priority tags:
   on a smooth anchor, `+=`/`-=` offsets each anchor by its own amount, and draw shows it at the
   top of Properties in points (`packages/ui/src/components/AnchorFields/`,
   `packages/geom/src/paths/anchorFields.ts`, `apps/draw/src/RightSidebar.tsx`).
-- **(P2) Tune the Width tool hands-on, with the maintainer driving.** First-draft behavior and
+- **(P2) Tune the Girth tool hands-on, with the maintainer driving.** First-draft behavior and
   keys: Shift+W in draw; how near an edge a press must land to grab it; Alt moving one edge alone
   and Alt-click clearing a width point; and whether a press between anchors should insert one
-  (`packages/path-tools/src/width/`).
+  (`packages/path-tools/src/girth/`).
 - **(P2) Tune path snapping hands-on, with the maintainer driving.** First-draft behavior and
   keys: an 8px radius with every kind on, `nearest` included; that a path target beats
   `snapPoint`, so in range it wins over the grid and measurement ends; that a move and an anchor
@@ -410,7 +409,7 @@ Priority tags:
   as a box-to-box map, but a rotation rewrites the coordinates in a way no such map undoes, so the
   warp stops resolving and the warp tools start a fresh one. A `data.path` node keeps its warp
   through a rotation.
-- **(P3) The width tool is untried on rectangles.** It edits the nodes `resolveEditablePathOf`
+- **(P3) The Girth tool is untried on rectangles.** It edits the nodes `resolveEditablePathOf`
   answers a path for, which since rectangle path edit includes a drawn rectangle's rect
   `data.path`, but nothing has shaped a rectangle's stroke with it yet. `strokeEdgeNear`, which it hit-tests with, measures every stroke as centered, so on an
   inner- or outer-aligned stroke the grab point sits off the edge that is drawn.
@@ -837,6 +836,17 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 ---
 
 ## Selection, actions & UI panels
+
+- **(P2) Menus as layout assets, and a menu bar built from them.** Decided 2026-10-16: a menu is
+  one shape, a prefs group drawn `as: 'menu'`. In a bar it opens from a button like an `opens`
+  group, but draws with the context-menu renderer (`MenuPanel` and the `@weasel-js/menu`
+  controller): an action leaf is a row, a boolean leaf or an action with `active` is a check row,
+  a section is a separator, a nested menu group is a submenu. A menu bar is a layout asset whose
+  root is a bar of menu groups. Routing's `MenuDef` becomes a `when` around such a group, so
+  context menus are assets too and one resolver serves both, and `MenuButton` moves off React
+  Aria's `Menu` onto the same renderer. New beside that: `MenuHost.open` anchored to a button's
+  rect rather than a point, and menu-bar keys (Left/Right between sibling menus, hover switching
+  while one is open). Unbuilt; needs a design pass first.
 
 - **(P3) ui's `ShortcutInput` is a third copy of the shortcut shape.**
   `packages/ui/src/components/ToolPalette/formatShortcut.ts` describes what `@weasel-js/menu`'s

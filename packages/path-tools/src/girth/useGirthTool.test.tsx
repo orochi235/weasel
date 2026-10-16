@@ -8,7 +8,7 @@ import type { Action, ActionDeps, InvocationCtx, OngoingHandle } from '@weasel-j
 import {
   createScene, defaultPaintBounds, resolveEditablePathOf, type RectPose, type RenderLayer,
 } from '@weasel-js/core';
-import { useWidthTool } from './useWidthTool';
+import { useGirthTool } from './useGirthTool';
 
 type Data = { path?: Path; stroke?: Stroke };
 
@@ -39,7 +39,7 @@ function setup(path: Path = LINE, stroke: Stroke = { paint: { color: '#000' }, w
   const scene = createScene<Data, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
   const pose = path === LINE ? { x: 0, y: 0, width: 100, height: 0 } : { x: 0, y: -45, width: 100, height: 45 };
   const line = scene.add({ kind: 'leaf', layer: 'main', pose, data: { path, stroke } });
-  const { result } = renderHook(() => useWidthTool());
+  const { result } = renderHook(() => useGirthTool());
   const deps = { scene, view: { get: () => VIEW, set: () => {} } } as unknown as ActionDeps;
   const actionOf = (id: string): Action => (result.current.actions ?? []).find((x) => x.id === id)!;
   const ctx = (x: number, y: number, start = { x, y }, alt = false): InvocationCtx => ({
@@ -51,8 +51,8 @@ function setup(path: Path = LINE, stroke: Stroke = { paint: { color: '#000' }, w
     points: [number, number][],
     o: { reason?: 'commit' | 'cancel'; alt?: boolean; peek?: (h: OngoingHandle) => void } = {},
   ) => {
-    const invoker = actionOf('width.drag').invoker;
-    if (invoker?.timing !== 'ongoing') throw new Error('width.drag is not ongoing');
+    const invoker = actionOf('girth.drag').invoker;
+    if (invoker?.timing !== 'ongoing') throw new Error('girth.drag is not ongoing');
     const start = { x: points[0][0], y: points[0][1] };
     const handle = invoker.start(ctx(start.x, start.y, start, o.alt), undefined);
     for (const [x, y] of points.slice(1)) handle.onMove?.(ctx(x, y, start, o.alt));
@@ -64,8 +64,8 @@ function setup(path: Path = LINE, stroke: Stroke = { paint: { color: '#000' }, w
     if (invoker?.timing !== 'immediate') throw new Error(`${id} is not immediate`);
     invoker.run(deps, params);
   };
-  const altClick = (x: number, y: number) => run('width.clear', { pressX: x, pressY: y, mods: { alt: true } });
-  const hover = (x: number, y: number) => run('width.hover', { worldX: x, worldY: y });
+  const altClick = (x: number, y: number) => run('girth.clear', { pressX: x, pressY: y, mods: { alt: true } });
+  const hover = (x: number, y: number) => run('girth.hover', { worldX: x, worldY: y });
   const data = () => scene.get(line)!.data;
   const widths = () => data().stroke?.vertexWidths;
   const overlay = result.current.overlay as RenderLayer<unknown>;
@@ -74,9 +74,9 @@ function setup(path: Path = LINE, stroke: Stroke = { paint: { color: '#000' }, w
   return { scene, line, drag, altClick, hover, run, data, widths, marks, bounds };
 }
 
-describe('useWidthTool', () => {
+describe('useGirthTool', () => {
   it('declares edits-page', () => {
-    const { result } = renderHook(() => useWidthTool());
+    const { result } = renderHook(() => useGirthTool());
     expect(result.current.eligibility?.capabilities).toEqual(['edits-page']);
   });
 
@@ -180,14 +180,14 @@ describe('useWidthTool', () => {
     t.hover(50, 40);
     expect(t.marks().some((m) => Math.hypot(centerOf(m).x - 50, centerOf(m).y - 2) < 0.5)).toBe(false);
     t.hover(100, -3);
-    t.run('width.unhover', {});
+    t.run('girth.unhover', {});
     expect(t.marks().some((m) => Math.hypot(centerOf(m).x - 100, centerOf(m).y + 2) < 0.5)).toBe(false);
   });
 
   it('marks each anchor of the stroke it last touched, and the edges of the ones with a width', () => {
     const t = setup();
     t.drag([[100, 2], [100, 6]]);
-    t.run('width.unhover', {});
+    t.run('girth.unhover', {});
     // A dot per anchor, and a line across the stroke for the one with a width.
     expect(t.marks()).toHaveLength(3);
   });

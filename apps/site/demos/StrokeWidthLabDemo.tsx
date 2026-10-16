@@ -2,12 +2,12 @@ import {
   asNodeId, boundsOfPath, createScene, type Path, PathBuilder, pathInWorld, type RectPose, type RenderLayer, type Scene,
   solid, type Stroke,
 } from '@weasel-js/core';
-import { useWidthTool } from '@weasel-js/path-tools';
+import { GirthIcon, useGirthTool } from '@weasel-js/path-tools';
 import { strokeToPath } from '@weasel-js/stroke';
 import {
   type ConfigOf, defineInstrument, f, Lab, type RenderContext, type SceneTrialState, TrialSceneCanvas, useTrialScene,
 } from '@weasel-js/labkit';
-import { SelectIcon, UnknownIcon } from '@weasel-js/ui';
+import { SelectIcon } from '@weasel-js/ui';
 import { useEffect, useMemo, useRef } from 'react';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
@@ -123,8 +123,8 @@ function useStyleControls(scene: Scene<Data, 'default', RectPose>, style: Style)
 function WidthTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const scene = useTrialScene(ctx, seed);
   useStyleControls(scene, ctx.config);
-  const widthTool = useWidthTool({ reach: ctx.config.reach });
-  const tools = useMemo(() => ({ width: widthTool }), [widthTool]);
+  const girthTool = useGirthTool({ reach: ctx.config.reach });
+  const tools = useMemo(() => ({ girth: girthTool }), [girthTool]);
   const layers = useMemo(
     () => (ctx.config.outline ? { outline: { layer: outlineLayer(scene) } } : {}),
     [ctx.config.outline, scene],
@@ -142,9 +142,9 @@ const widthInstrument = defineInstrument<State, Config>({
   tools: {
     tools: [
       { id: 'select', label: 'Select', icon: SelectIcon, shortcut: 'V' },
-      { id: 'width', label: 'Width', icon: UnknownIcon, shortcut: 'Shift+W' },
+      { id: 'girth', label: 'Girth', icon: GirthIcon, shortcut: 'Shift+W' },
     ],
-    initial: 'width',
+    initial: 'girth',
   },
   render: (ctx) => <WidthTrial ctx={ctx} />,
 });

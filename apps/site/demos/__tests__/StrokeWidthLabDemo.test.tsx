@@ -46,14 +46,14 @@ function drag(canvas: Element, [x0, y0]: number[], [x1, y1]: number[], altKey = 
 }
 
 describe('StrokeWidthLabDemo', () => {
-  it("drags a stroke's edge with the Width tool, both sides or with Alt one, as one undo entry each", async () => {
+  it("drags a stroke's edge with the Girth tool, both sides or with Alt one, as one undo entry each", async () => {
     const { container } = await renderSettled(<StrictMode><StrokeWidthLabDemo /></StrictMode>);
     const canvas = container.querySelector('.lk-trial-scene canvas');
     if (!canvas) throw new Error('no scene canvas in the trial');
     expect(strokes()).toHaveLength(5);
     expect(strokes()[0]?.vertexWidths).toBeUndefined();
 
-    await userEvent.click(screen.getByRole('button', { name: /^Width/ }));
+    await userEvent.click(screen.getByRole('button', { name: /^Girth/ }));
     // The plain stroke, 8 wide, leaves its first anchor at (60, 60) heading
     // along (2, -1): its right edge there is 4 out along (1, 2) / √5. Press on
     // that edge and pull it 6 farther out along the same normal.

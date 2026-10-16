@@ -1,0 +1,10 @@
+.target {
+  display: grid;
+  place-items: center;
+  width: 320px;
+  height: 160px;
+  border: 1px dashed var(--wzl-border);
+  border-radius: var(--wzl-radius-md);
+  color: var(--wzl-fg-muted);
+  user-select: none;
+}

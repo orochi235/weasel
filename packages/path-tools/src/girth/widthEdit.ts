@@ -1,5 +1,5 @@
 /**
- * What the width tool reads and writes: the stroke edge under a point, the
+ * What the Girth tool reads and writes: the stroke edge under a point, the
  * width point a press on it moves — inserting an anchor where the press falls
  * between two — and the per-vertex widths a drag leaves behind.
  */
