@@ -48,8 +48,7 @@ sits below core and prefs.
 | `scopedIcon(ns)` | Builds a package's `icon()`. At run time it qualifies a bare name and returns it. |
 | `IconTable` | `{ namespace, icons: Record<name, { body, fill?, group, tags }> }` |
 | `createIconRegistry()` | Built on `createReflectable`. Enforces the namespace rules above, and loads variants (below) on request. |
-| `./vite` | The `weaselIcons()` plugin, for vite and vitest. |
-| `./esbuild` | The same rewrite as an esbuild plugin, for tsup library builds, which run no vite plugins. |
+| `./plugin` | `weaselIcons()`, written once with `unplugin`: `.vite` for vite and vitest, `.esbuild` for tsup, `.rolldown` for a bare rolldown build. One implementation; a separate adapter only if `unplugin`'s esbuild output fails under tsup. |
 | `./virtual` | `declare module` types for `virtual:weasel-icons` and its variants, so the import typechecks. |
 
 The package holds no module-level state, so having two copies installed breaks nothing
@@ -102,7 +101,9 @@ import used from 'virtual:weasel-icons';
 
 Without the plugin, an app passes tables directly: `icons={[coreIcons, uiIcons]}`.
 
-Library components that browse (PrefSchemaEditor's icon picker) ask for a variant by
+The registry's React context lives in core (`IconRegistryProvider`, `useIconRegistry`). `WeaselProvider` mounts it with its props, and `SceneCanvas` mounts an empty one only when none is in scope, the way it treats every other kit provider. Apps here mount `WeaselProvider` today in none of their roots, so apps/draw, the site and forge's story frame each gain one. A component rendered with no provider in scope (a jsdom unit test, say) finds no glyphs and draws the placeholder; tests that read a glyph wrap themselves in a provider. No glyph table is imported as a fallback, because that import would defeat trimming.
+
+Library components that browse (PrefSchemaEditor's icon picker, which replaces the free-text `icon` field it has today with an `icon` attribute kind, the way `showIf` has `condition`) ask for a variant by
 name — `useIconVariant('all')` — and never import a virtual module. The registry runs the
 app's loader once, adds the tables, and notifies through `subscribe`. A variant with no
 loader falls back to whatever is registered, with a dev warning.
@@ -111,9 +112,9 @@ Presets carry no icons. Icons are settled when the app is built, not when a canv
 
 ## The plugin
 
-`weaselIcons()` from `@weasel-js/icons/vite`, in two modes.
+`weaselIcons()` from `@weasel-js/icons/plugin`, in two modes.
 
-**Library mode** (each kit package's build: the esbuild plugin under tsup, the vite one under vite) rewrites `icon('undo')` to
+**Library mode** (each kit package's build: `weaselIcons.esbuild` under tsup, `weaselIcons.vite` under vite) rewrites `icon('undo')` to
 `/* @icon */ 'core:undo'`. `dist` ships the qualified, annotated literal and no call.
 
 **App mode** (the consumer's vite build, apps/draw, the site):
