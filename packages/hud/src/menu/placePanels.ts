@@ -1,6 +1,7 @@
 import { placeMenu, placeSubmenu, type MenuController, type MenuEntry, type Rect } from '@weasel-js/menu';
 import { faceGeneration } from '@weasel-js/font';
 import { panelSize, rowLayout, type MenuMetrics } from './drawPanel';
+import { estimateWidth } from './measureLabel';
 
 type XY = { x: number; y: number };
 
@@ -21,11 +22,13 @@ interface Placed {
 /**
  * Places each open level once, when it opens: a level keeps its rect for as
  * long as its entries and the parent row it hangs from stay the same. A new
- * font family, or a face landing, re-measures everything.
+ * font family, or a face landing, re-measures everything. With no family yet
+ * — the hud has not drawn — widths are estimated rather than measured in a
+ * guessed family.
  */
-export function createPlacer(opts: PlaceOptions): (c: MenuController, fontFamily: string) => Rect[] {
+export function createPlacer(opts: PlaceOptions): (c: MenuController, fontFamily: string | null) => Rect[] {
   let placed: Placed[] = [];
-  let measured: { family: string; faces: number } | null = null;
+  let measured: { family: string | null; faces: number } | null = null;
 
   return (c, fontFamily) => {
     const faces = faceGeneration();
@@ -48,7 +51,7 @@ export function createPlacer(opts: PlaceOptions): (c: MenuController, fontFamily
         continue;
       }
       kept = false;
-      const size = panelSize(entries, m, (t, s) => opts.measure(t, s, fontFamily));
+      const size = panelSize(entries, m, (t, s) => (fontFamily === null ? estimateWidth(t, s) : opts.measure(t, s, fontFamily)));
       let at: XY;
       if (level === 0) {
         at = placeMenu(size, opts.anchor, bounds);

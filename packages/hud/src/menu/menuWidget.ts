@@ -2,7 +2,6 @@ import { createMenuController, type Rect } from '@weasel-js/menu';
 import { faceGeneration } from '@weasel-js/font';
 import type { ClaimableGesture, OpenMenu } from '@weasel-js/core';
 import { createRevision, type HudKeyEvent, type HudPointerEvent, type Widget, type WidgetBounds } from '../widget';
-import { DEFAULT_FONT_FAMILY } from '../fonts/registerDefaultFont';
 import { DEFAULT_MENU_METRICS, drawPanel, rowAt, type MenuMetrics } from './drawPanel';
 import { measureLabel } from './measureLabel';
 import { createPlacer } from './placePanels';
@@ -36,8 +35,8 @@ export function createMenuWidget(opts: MenuWidgetOptions): Widget {
     anchor: opts.toCanvas(opts.open.client), canvasSize: opts.canvasSize,
     measure: opts.measure ?? measureLabel, metrics: m,
   });
-  // The hud's font is known only once it draws; until then, its default.
-  let family = DEFAULT_FONT_FAMILY;
+  // The hud's font is known only once it draws.
+  let family: string | null = null;
   let panels: Rect[] = place(c, family);
   let disposed = false;
   let armed = false;
