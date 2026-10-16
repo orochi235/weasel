@@ -1,8 +1,9 @@
-import { useMemo } from 'react';
+import { createElement, useMemo } from 'react';
 import { useLatest } from '@weasel-js/react';
 import { createEmitter } from '@weasel-js/registry';
 import type { ToolKeybinding } from '@weasel-js/routing';
 import { defineTool, type Tool } from '@weasel-js/core';
+import { GirthIcon } from '../icons';
 import {
   createWidthActions, WIDTH_CLEAR_ID, WIDTH_DRAG_ID, WIDTH_HOVER_ID, WIDTH_UNHOVER_ID, type WidthEnv, type WidthFocus,
 } from './widthActions';
@@ -56,7 +57,7 @@ export function useWidthTool(options: UseWidthToolOptions = {}): Tool {
     capabilities: ['edits-page'],
     hookName: 'useWidthTool',
     cursor: 'crosshair',
-    presentation: { label: 'Width', group: 'shape' },
+    presentation: { label: 'Width', group: 'shape', icon: createElement(GirthIcon) },
     ...(keybinding === null ? {} : { keybinding: keybinding ?? { key: 'W', shift: true } }),
     actions,
     overlay,
