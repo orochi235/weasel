@@ -32,7 +32,7 @@ import { useTextEditSession } from './useTextEditSession';
 import { Workspace } from './Workspace';
 
 const isCoreTool = (tool: Tool): boolean => !isPathTool(tool);
-/** The path palette's groups: the Width tool, the stroke tools, then the warps. */
+/** The path palette's groups: the Girth tool, the stroke tools, then the warps. */
 const PATH_TOOL_GROUPS = ['shape', 'path', 'warp'] as const;
 
 export interface EditorProps {

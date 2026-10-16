@@ -37,11 +37,11 @@ describe('lookupShortcutByToolId', () => {
       {
         id: 'tool.activate',
         defaultBinding: [
-          { spec: { kind: 'key', key: 'W', mods: { shift: true } }, opts: { params: { toolId: 'width' } } },
+          { spec: { kind: 'key', key: 'W', mods: { shift: true } }, opts: { params: { toolId: 'girth' } } },
         ],
       },
     ];
-    expect(lookupShortcutByToolId('width', actions as never)).toEqual({ key: 'W', shift: true });
+    expect(lookupShortcutByToolId('girth', actions as never)).toEqual({ key: 'W', shift: true });
   });
 
   it('returns undefined when the matched entry is not a key spec', () => {

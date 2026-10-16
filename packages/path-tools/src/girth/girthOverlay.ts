@@ -2,7 +2,7 @@ import { ellipsePath, polylineFromPoints } from '@weasel-js/geom';
 import { vertexHalfWidths } from '@weasel-js/paint';
 import type { DrawCommand } from '@weasel-js/renderer';
 import { viewToTransform, worldToScreen, type RenderLayer } from '@weasel-js/core';
-import type { WidthFocus } from './widthActions';
+import type { GirthFocus } from './girthActions';
 import { isWidthSet } from './widthEdit';
 
 const DOT_RADIUS_PX = 3.5;
@@ -19,14 +19,14 @@ const line = (a: [number, number], b: [number, number]): DrawCommand => ({
 });
 
 /**
- * A screen-space layer marking the width points of the stroke the width tool
+ * A screen-space layer marking the width points of the stroke the Girth tool
  * last touched: a dot on each anchor, white where it has a width of its own,
  * with a line across the stroke from its left edge to its right. Over an
  * edge it adds the grab point on that edge, ringing the width point a press
  * there moves.
  */
-export function createWidthOverlay(source: {
-  focus(): WidthFocus | null;
+export function createGirthOverlay(source: {
+  focus(): GirthFocus | null;
   subscribe(fn: () => void): () => void;
 }): RenderLayer<unknown> {
   return {

@@ -11,11 +11,11 @@ import {
 type AnyScene = Scene<unknown, string, unknown>;
 type Point = { x: number; y: number };
 
-/** What the width tool's overlay shows, in world space: the anchors of the
+/** What the Girth tool's overlay shows, in world space: the anchors of the
  *  stroke last hovered or pressed on, each with its unit normal toward its
  *  right edge and its `vertexWidths` entry (`NaN` for none), and, over an
  *  edge, the grab point on it and the width point a press there moves. */
-export interface WidthFocus {
+export interface GirthFocus {
   anchors: readonly Point[];
   normals: readonly Point[];
   widths: readonly VertexWidth[];
@@ -24,27 +24,27 @@ export interface WidthFocus {
   grab?: { edge: Point; at: Point };
 }
 
-/** The width tool's own state, shared by its actions and its overlay. */
-export interface WidthEnv {
-  focus(): WidthFocus | null;
-  setFocus(next: WidthFocus | null): void;
+/** The Girth tool's own state, shared by its actions and its overlay. */
+export interface GirthEnv {
+  focus(): GirthFocus | null;
+  setFocus(next: GirthFocus | null): void;
   /** Screen px around a stroke's edge within which a press takes hold of it,
    *  and along the path within which it takes the anchor there. */
   reachPx(): number;
 }
 
 /** Id of the action that drags a stroke's edge. */
-export const WIDTH_DRAG_ID = 'width.drag';
+export const GIRTH_DRAG_ID = 'girth.drag';
 /** Id of the action that clears the width point under a click. */
-export const WIDTH_CLEAR_ID = 'width.clear';
+export const GIRTH_CLEAR_ID = 'girth.clear';
 /** Id of the action that marks the edge under a hover. */
-export const WIDTH_HOVER_ID = 'width.hover';
+export const GIRTH_HOVER_ID = 'girth.hover';
 /** Id of the action that drops the hover mark when the pointer leaves. */
-export const WIDTH_UNHOVER_ID = 'width.unhover';
+export const GIRTH_UNHOVER_ID = 'girth.unhover';
 const LABEL = 'Stroke width';
 const REQUIRES = ['scene', 'view', 'selection', 'applyOps'] as const;
 
-const found = (deps: ActionDeps, env: WidthEnv) => {
+const found = (deps: ActionDeps, env: GirthEnv) => {
   const scene = deps.scene as AnyScene | undefined;
   if (!scene) return null;
   const s = deps.view?.get().scale ?? { x: 1, y: 1 };
@@ -52,7 +52,7 @@ const found = (deps: ActionDeps, env: WidthEnv) => {
   return { scene, scale: meanScale(s), reach: Math.max(e.x, e.y) };
 };
 
-const focusOf = (path: PolygonPath, widths: readonly VertexWidth[], fallback: number, grab?: WidthFocus['grab']): WidthFocus => ({
+const focusOf = (path: PolygonPath, widths: readonly VertexWidth[], fallback: number, grab?: GirthFocus['grab']): GirthFocus => ({
   anchors: pathToAnchors(path).anchors.flat().map((a) => ({ x: a.x, y: a.y })),
   normals: anchorNormals(path),
   widths,
@@ -60,11 +60,11 @@ const focusOf = (path: PolygonPath, widths: readonly VertexWidth[], fallback: nu
   ...(grab ? { grab } : {}),
 });
 
-const restingFocus = (target: WidthTarget): WidthFocus =>
+const restingFocus = (target: WidthTarget): GirthFocus =>
   focusOf(target.path, widthsOf(target, pathToAnchors(target.path).anchors.flat().length), target.fallback);
 
 /** The focus as it was, less its grab point. */
-function dropGrab(env: WidthEnv): void {
+function dropGrab(env: GirthEnv): void {
   const last = env.focus();
   if (!last?.grab) return;
   const { grab: _grab, ...rest } = last;
@@ -82,7 +82,7 @@ const edgeOf = (grip: WidthGrip, moved: number): Point => ({
   y: grip.at.y + grip.normal.y * moved * grip.factor,
 });
 
-function dragAction(env: WidthEnv): Action['invoker'] {
+function dragAction(env: GirthEnv): Action['invoker'] {
   return {
     timing: 'ongoing',
     start: ({ deps, drag, world }: InvocationCtx) => {
@@ -96,7 +96,7 @@ function dragAction(env: WidthEnv): Action['invoker'] {
       let preview: { pose: unknown; data: unknown } | null = null;
       env.setFocus(focusOf(grip.path, grip.widths, fallback, { edge: edgeOf(grip, grip.start[grip.side]), at: grip.at }));
       return {
-        kind: WIDTH_DRAG_ID,
+        kind: GIRTH_DRAG_ID,
         onMove: (move: InvocationCtx) => {
           const p = move.drag?.current ?? move.world;
           const moved = movedSide(grip, (p.x - press.x) * grip.normal.x + (p.y - press.y) * grip.normal.y);
@@ -126,25 +126,25 @@ function dragAction(env: WidthEnv): Action['invoker'] {
 }
 
 /**
- * The width tool's actions, which write a stroke's `vertexWidths`.
- * `width.drag` takes hold of the stroke edge under the press, at the anchor
+ * The Girth tool's actions, which write a stroke's `vertexWidths`.
+ * `girth.drag` takes hold of the stroke edge under the press, at the anchor
  * there or at one it inserts, shape kept, between two. The edge follows the
  * pointer along the path's normal, the other edge mirroring it so the width
  * stays centered; with Alt held only the grabbed edge moves, which writes a
- * `{ left, right }` pair. Either is live, and one undo entry. `width.clear`
+ * `{ left, right }` pair. Either is live, and one undo entry. `girth.clear`
  * clears the width point under a click, so it takes the stroke's own width
- * again. `width.hover` and `width.unhover` show and hide the grab point under
+ * again. `girth.hover` and `girth.unhover` show and hide the grab point under
  * the pointer.
  */
-export function createWidthActions(env: WidthEnv): Action[] {
+export function createGirthActions(env: GirthEnv): Action[] {
   const eligible = { capability: 'edits-page' } as const;
   const hasScene = (deps?: ActionDeps) => (deps?.scene ? true : ActionDisabledReason.NotApplicable);
   const base = { eligible, requires: REQUIRES, enabled: hasScene };
   return [
-    { id: WIDTH_DRAG_ID, label: 'Width — drag a stroke\'s edge', ...base, invoker: dragAction(env) },
+    { id: GIRTH_DRAG_ID, label: 'Girth — drag a stroke\'s edge', ...base, invoker: dragAction(env) },
     {
-      id: WIDTH_CLEAR_ID,
-      label: 'Width — clear the width point under the pointer',
+      id: GIRTH_CLEAR_ID,
+      label: 'Girth — clear the width point under the pointer',
       ...base,
       invoker: {
         timing: 'immediate',
@@ -168,8 +168,8 @@ export function createWidthActions(env: WidthEnv): Action[] {
       },
     },
     {
-      id: WIDTH_HOVER_ID,
-      label: 'Width — show the stroke edge under the pointer',
+      id: GIRTH_HOVER_ID,
+      label: 'Girth — show the stroke edge under the pointer',
       ...base,
       invoker: {
         timing: 'immediate',
@@ -192,8 +192,8 @@ export function createWidthActions(env: WidthEnv): Action[] {
       },
     },
     {
-      id: WIDTH_UNHOVER_ID,
-      label: 'Width — hide the grab point',
+      id: GIRTH_UNHOVER_ID,
+      label: 'Girth — hide the grab point',
       ...base,
       invoker: {
         timing: 'immediate',
