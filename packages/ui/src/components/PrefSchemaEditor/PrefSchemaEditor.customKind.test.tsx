@@ -5,6 +5,12 @@ import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 import type { CustomKinds } from './kindSchemas';
 import { PrefSchemaEditor } from './PrefSchemaEditor';
 
+/** Types `value` and leaves the field, which is when a typed field commits. */
+const settle = (el: HTMLElement, value: string): void => {
+  fireEvent.change(el, { target: { value } });
+  fireEvent.blur(el);
+};
+
 afterEach(cleanup);
 
 const KINDS: CustomKinds = {
@@ -39,9 +45,9 @@ describe('PrefSchemaEditor custom kinds', () => {
   it('keeps a required attribute that is emptied, and removes an optional one', () => {
     render(<Live />);
     select('tool');
-    fireEvent.change(attributes().getByRole('textbox', { name: 'Source' }), { target: { value: '' } });
+    settle(attributes().getByRole('textbox', { name: 'Source' }), '');
     expect(leaf('tool').source).toBe('');
-    fireEvent.change(attributes().getByRole('textbox', { name: 'Hint' }), { target: { value: '' } });
+    settle(attributes().getByRole('textbox', { name: 'Hint' }), '');
     expect('hint' in leaf('tool')).toBe(false);
   });
 
@@ -76,10 +82,10 @@ describe('PrefSchemaEditor custom kinds', () => {
     select('one');
     fireEvent.click(within(screen.getByRole('tree', { name: 'Schema structure' })).getByText('two'), { metaKey: true });
     expect(attributes().getByRole('textbox', { name: 'Edge' })).toHaveValue('');
-    fireEvent.change(attributes().getByRole('textbox', { name: 'Fill' }), { target: { value: 'blue' } });
+    settle(attributes().getByRole('textbox', { name: 'Fill' }), 'blue');
     expect(leaf('one').frame).toEqual({ edge: 'thin', fill: 'blue' });
     expect(leaf('two').frame).toEqual({ edge: 'thick', fill: 'blue' });
-    fireEvent.change(attributes().getByRole('textbox', { name: 'Edge' }), { target: { value: 'hair' } });
+    settle(attributes().getByRole('textbox', { name: 'Edge' }), 'hair');
     expect(leaf('one').frame).toEqual({ edge: 'hair', fill: 'blue' });
     expect(leaf('two').frame).toEqual({ edge: 'hair', fill: 'blue' });
   });
