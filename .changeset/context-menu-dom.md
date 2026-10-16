@@ -9,3 +9,5 @@
 The gesture dispatcher leaves a key pressed inside an element with `role="menu"` to that menu, so menu keys never fire canvas bindings, even from a `keyboard: 'first'` dispatcher.
 
 `<LayerList>` takes `onRowContextMenu(id, event)`, called on a right-click on a row, so an app can open a context menu for a layer.
+
+`PropertyGroup` and `MotifFrame` take an `onContextMenu` prop.

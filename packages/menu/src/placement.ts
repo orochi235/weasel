@@ -1,8 +1,8 @@
-/** A position in screen pixels. */
+/** A position in viewport pixels (CSS pixels, as `getBoundingClientRect` reports). */
 export interface Point { x: number; y: number }
 /** A width and height in pixels. */
 export interface Size { w: number; h: number }
-/** A rectangle in screen pixels: top-left corner plus width and height. */
+/** A rectangle in viewport pixels: top-left corner plus width and height. */
 export interface Rect { x: number; y: number; w: number; h: number }
 
 /** Start at `at`, else end there (flip), else slide inside `[lo, lo + span]`. */

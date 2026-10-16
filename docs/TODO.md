@@ -628,10 +628,11 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 ## Selection, actions & UI panels
 
-- **(P2) Context menus.** Designed in `docs/superpowers/specs/2026-10-15-context-menu-design.md`
-  (branch `context-menu`), none of it built: a headless `@weasel-js/menu` model, menus declared
-  as action references, a default `contextMenu` action, DOM and WebGL renderers, and WeaselDraw's
-  canvas and layer-list menus.
+- **(P3) Shift+F10 / the ContextMenu key may open the menu twice in Chrome on Windows/Linux.**
+  The `menu.context` key binding opens it at the selection, and those platforms also send a
+  native `contextmenu` event to the focused canvas, which would reopen it at that event's point.
+  Headless Playwright sends no such event, so this is unverified. Check on a real Windows or
+  Linux Chrome; if it reproduces, have the keydown suppress the native event.
 
 - **(P4) A headless-component layer shared by DOM and WebGL chrome.** The context-menu model
   splits state, keyboard and placement from drawing so one menu renders in both. Generalize that
