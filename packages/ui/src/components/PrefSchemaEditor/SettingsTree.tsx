@@ -2,7 +2,8 @@ import { useMemo } from 'react';
 import { isPrefLeaf, isPrefSection } from '@weasel-js/prefs';
 import { Icon } from '../../icons';
 import { PrefKindBadge } from '../Prefs/PrefKindBadge';
-import { filterTree, Tree, treeBranchIds, type TreeNode } from '../Tree';
+import { Tree, treeBranchIds, type TreeNode } from '../Tree';
+import { seekRows, soughtRow } from './rowSearch';
 import { GROUP_ICON, type PaletteDrag } from './Palette';
 import { childrenOf, joinPath, valuePathOf, type SchemaNode, type SchemaRoot } from './schemaEdit';
 import { pointable, pointedAt, pointersTo } from './settingPointers';
@@ -13,7 +14,7 @@ import s from './PrefSchemaEditor.module.css';
 function toRows(over: SchemaRoot, node: SchemaNode, path: string | null, placed: ReadonlySet<string>): TreeNode[] {
   return Object.entries(childrenOf(node) ?? {}).flatMap(([key, child]): TreeNode[] => {
     const id = joinPath(path, key);
-    const row = { id, textValue: child.name ? `${child.name} ${key}` : key, ...(child.description ? { tooltip: child.description } : {}) };
+    const row = soughtRow({ id, label: key, ...(child.description ? { tooltip: child.description } : {}) }, { text: [child.name, key], tags: child.tags });
     if (isPrefLeaf(child)) {
       if (!pointable(over, id)) return [];
       const label = nodeLabel(child.name, key);
@@ -36,7 +37,7 @@ export function SettingsTree({ over, layout, sought, ghost, onDrag, onDrop }: {
   over: SchemaRoot;
   /** The layout shown, whose pointers say which settings it has. */
   layout: SchemaRoot;
-  /** What the structure's filter holds, lowercased: only rows whose name or key has it are listed. Empty for all. */
+  /** What the structure's filter holds, lowercased: only rows whose name, key, or a tag has it are listed. Empty for all. */
   sought: string;
   /** As `Tree`'s `ghost`. */
   ghost?: boolean;
@@ -47,7 +48,7 @@ export function SettingsTree({ over, layout, sought, ghost, onDrag, onDrop }: {
   const placed = useMemo(() => pointedAt(layout, over), [layout, over]);
   const all = useMemo(() => toRows(over, over, null, placed), [over, placed]);
   const rows = useMemo(
-    () => (sought === '' ? all : filterTree(all, (n) => (n.textValue ?? '').toLowerCase().includes(sought))),
+    () => seekRows(all, sought),
     [all, sought],
   );
   const open = useMemo(() => treeBranchIds(all), [all]);

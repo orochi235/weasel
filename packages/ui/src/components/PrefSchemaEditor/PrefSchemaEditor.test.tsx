@@ -167,6 +167,21 @@ describe('PrefSchemaEditor', () => {
     expect(keyedRow(structure(), 'view')).toBeNull();
   });
 
+  it('narrows the structure and the unplaced rows by a tag as by a name', () => {
+    const start: PrefGroup = { name: 'Prefs', children: {
+      ...START.children,
+      panels: { name: 'Panels', children: { dock: { kind: 'boolean', name: 'Dock', description: '', default: true, tags: ['sidebar'] } } },
+    } };
+    const waiting: PrefGroup = { name: '', children: { glow: { kind: 'boolean', name: 'Glow', description: '', default: false, tags: ['halo'] } } };
+    render(<PrefSchemaEditor schema={start} onChange={() => {}} unplaced={waiting} />);
+    const filter = screen.getByRole('textbox', { name: 'Filter structure' });
+    fireEvent.change(filter, { target: { value: 'Sideb' } });
+    expect(keyedRow(structure(), 'dock')).toBeInTheDocument();
+    expect(keyedRow(structure(), 'view')).toBeNull();
+    fireEvent.change(filter, { target: { value: 'halo' } });
+    expect(keyedRow(screen.getByRole('tree', { name: 'Unplaced' }), 'glow')).toBeInTheDocument();
+  });
+
   it('narrows the unplaced rows by the same filter', () => {
     const start: PrefGroup = { name: '', children: { ...START.children, author: { kind: 'string', name: 'Author', description: '', default: '' } } };
     const waiting: PrefGroup = { name: '', children: { glow: { kind: 'boolean', name: 'Glow', description: '', default: false } } };

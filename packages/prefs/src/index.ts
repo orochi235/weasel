@@ -20,6 +20,7 @@ export {
 } from './helpers';
 export type { PrefAction, PrefActionContext, PrefActionControl } from './action';
 export { prefTabRuns, type PrefTabRun } from './tabRuns';
+export { prefLeavesTagged, prefLeafTags } from './tags';
 export {
   isPrefCondition,
   mapPrefConditionPaths,

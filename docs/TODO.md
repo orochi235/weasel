@@ -189,6 +189,11 @@ Priority tags:
   standard action ships with `<SceneCanvas>`" below asks for. Then the tool renames the
   maintainer deferred to the end of the adoption pass (Envelope mesh becomes Cloth warp, among
   others).
+- **(P2) Tag the path operations by the gesture that drives them.** Actions and prefs carry
+  `tags` now (`actionsTagged`, `taggedActionItems`, `prefLeavesTagged`), but none of the path
+  operations in `docs/path-operations.md` is tagged: the adopted branches were landing when tags
+  went in, and a mass edit would have collided with them. Tag each once its branch has landed, so
+  the operations sharing a gesture can be gathered into one tool's variants by tag.
 - **(P2) Tune the Simplify brush hands-on, with the maintainer driving.** It went in from its
   audition lab with first-draft behavior and keys: brush size and its key, the tolerance it
   applies, and how it shows what it will remove (`defaults/simplifyBrush.ts`).

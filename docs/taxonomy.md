@@ -345,6 +345,16 @@ starts from, and bindings added beside its own (`ActionsRegistry.tune`,
 setting a param never restates the gesture that reaches the action. See
 `packages/routing/src/interactions/actions/tuning.ts`.
 
+An action sits in one `group` and carries any number of `tags`. The group is
+where it lives on a bar or in a menu; a tag is a word it is also found by and
+gathered under. A palette search matches a tag as it matches the label, and
+`actionsTagged` / `taggedActionItems` gather every action or entry carrying one
+(`<ActionBar tag>` draws a bar from them). A variant carries its action's tags
+and its own, so `flip` tagged `mirror` lists both ways, and a tag on only one
+variant gathers only that one. Prefs carry `tags` the same way, and one matcher
+(`matchQuery`, `@weasel-js/registry`) serves both searches. See
+`packages/routing/src/interactions/actions/actionTags.ts`.
+
 An action may declare an optional `cursor` — the hover hint shown while the
 pointer rests where a drag would route to that action. The hover-cursor pump
 predicts the route via `Dispatcher.resolveOnly` (the same match walk a real

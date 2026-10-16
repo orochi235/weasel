@@ -106,6 +106,7 @@ export type {
 } from './interactions/actions/action';
 export { actionItems } from './interactions/actions/actionItems';
 export type { ActionItem } from './interactions/actions/actionItems';
+export { actionsTagged, taggedActionItems, matchActionItem } from './interactions/actions/actionTags';
 // Both a const table and the union of its values, under one name.
 export { actionCursor, ActionDisabledReason } from './interactions/actions/action';
 export type { ActionDisabledReason as ActionDisabledReasonValue } from './interactions/actions/action';

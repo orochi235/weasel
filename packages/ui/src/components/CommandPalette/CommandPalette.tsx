@@ -81,6 +81,7 @@ function PaletteList({ id, items, highlight, reasonLabels, onHighlight, onRun }:
       {items.filtered.map((item, idx) => {
         const { enabled, reason: code } = items.enabledOf(item);
         const reason = code ? reasonLabels[code] : undefined;
+        const tag = items.tagOf(item);
         const cls = [
           styles.row,
           idx === highlight ? styles.rowActive : '',
@@ -100,6 +101,7 @@ function PaletteList({ id, items, highlight, reasonLabels, onHighlight, onRun }:
             title={reason}
           >
             <span className={styles.label}>{item.label}</span>
+            {tag !== undefined && <span className={styles.tag}>{tag}</span>}
             {!enabled && reason && (
               <span className={styles.reason}>{reason}</span>
             )}
@@ -114,9 +116,10 @@ function PaletteList({ id, items, highlight, reasonLabels, onHighlight, onRun }:
 /**
  * @experimental
  * A dialog that lists every action registered with the surrounding
- * `<ActionsProvider>`, filters by label, and runs the chosen one. The host
+ * `<ActionsProvider>`, filters by label or tag, and runs the chosen one. The host
  * owns `open`. The list and each row's `enabled` state are read when it
- * opens and not again while it is open. With a `<SelectionContextProvider>`
+ * opens and not again while it is open. A row found by a tag and not its
+ * label names that tag beside the label. With a `<SelectionContextProvider>`
  * in scope the footer says how much is selected.
  */
 export function CommandPalette({ open, onClose, reasonLabels }: CommandPaletteProps) {

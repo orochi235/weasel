@@ -11,6 +11,7 @@ import type { PrefBase, PrefObject } from './schema';
  * it. A stored value whose tag names no variant reads as the leaf's default.
  */
 export interface PrefUnion extends PrefBase<'union', unknown> {
+  /** The field of the value that names its variant. Not one of `tags`. */
   tag: string;
   variants: Record<string, PrefObject>;
 }

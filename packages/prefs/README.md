@@ -42,6 +42,27 @@ It takes an adapter that reads synchronously, and components naming the same
 `storage` and `prefix` with different schemas each get a store over the same
 records.
 
+## Tags
+
+A leaf, a group, and a section can each carry `tags`: words a settings search
+also finds it by, and that gather it with others. A leaf carries its own and
+every group's above it, so tagging a group tags all it holds:
+
+```ts
+canvas: { name: 'Canvas', tags: ['workspace'], children: {
+  grid: { kind: 'boolean', name: 'Show grid', description: '', default: true, tags: ['guides'] },
+} },
+
+prefLeavesTagged(SCHEMA, 'guides');      // Map { 'canvas.grid' => … }
+prefLeafTags(SCHEMA, 'canvas.grid');     // ['workspace', 'guides']
+filterPrefSubtree(SCHEMA, 'guide');      // keeps canvas.grid, matched by its tag
+```
+
+A search matches a tag as it matches a name, and a group a tag matches keeps
+all its leaves, as one its name matches does. An alias carries its target's
+tags and its own. `tags` is unrelated to a `union` leaf's `tag`, the field its
+value's variant is read from.
+
 ## Ranges
 
 A number leaf's range is one scale: the low end is the least of what its label
