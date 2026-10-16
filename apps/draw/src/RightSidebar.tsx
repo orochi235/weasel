@@ -22,11 +22,12 @@ import {
   SidebarPanel,
   solidColorOf,
   SwatchStrip,
+  useContextMenu,
   useSceneLayerList
 } from '@weasel-js/ui';
 import {
   lazy,
-  type CSSProperties, type ReactElement,
+  type CSSProperties, type MouseEvent, type ReactElement,
   Suspense
 } from 'react';
 import type { ActivePaint } from './ActiveSwatches';
@@ -150,11 +151,18 @@ export function RightSidebar({
       baseLayerListProps.onSelect(ids);
     }
   };
+  const openRowMenu = useContextMenu('draw.layerRow');
+  const onRowContextMenu = (id: string, e: MouseEvent): void => {
+    if (id === BACKGROUND_ROW_ID) return;
+    if (!layerSelectedIds.includes(id)) onLayerSelect([id]);
+    openRowMenu(e);
+  };
   const layerListProps = {
     ...baseLayerListProps,
     items: layerItems,
     selectedIds: layerSelectedIds,
     onSelect: onLayerSelect,
+    onRowContextMenu,
   };
 
   const propertiesPanel = usePanel('properties');
