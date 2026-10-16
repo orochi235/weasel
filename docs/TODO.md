@@ -198,6 +198,12 @@ Priority tags:
 - **(P2) Tune Bridge hands-on, with the maintainer driving.** First-draft default Tension (0.4,
   `DEFAULT_BRIDGE_TENSION`), how Tension is reached outside the lab, and the Mod+Shift+J binding
   it shares with Bridge anchors (`pathCommands/cutJoin.ts`, `defaults/anchorJoin.ts`).
+- **(P2) Tune Harmonize curvature hands-on, with the maintainer driving.** First-draft behavior:
+  it keeps the product of each anchor's two handle lengths, takes every smooth anchor when none is
+  selected, and skips anchors the curve inflects through (`packages/geom/src/paths/harmonize.ts`,
+  `defaults/anchorHandles.tsx`). It has no key of its own; its lab tunes H onto it,
+  which the Hand tool also answers wherever that tool is mounted
+  (`apps/site/demos/HarmonizeLabDemo.tsx`).
 - **(P2) Tune Trim segment hands-on, with the maintainer driving.** First-draft click reach (6
   screen px, `DEFAULT_STROKE_REACH_PX` in `pathCommands/scenePaths.ts`), the preview's look (the
   `cut` overlay role's red dash at width 3, `tools/builtin/trim/piecePreview.ts`), and its tool key,
@@ -245,7 +251,7 @@ Priority tags:
   `joinPaths`, `bridgePaths`, `joinAnchors`, `bridgeAnchors`, `averageAnchors`, and
   `extendToMeet` show as text in draw's bar, and `useTrimTool` and `useExtendTool` borrow
   `SliceIcon`.
-  `RetractHandlesIcon`, `SymmetricHandlesIcon`, and `SimplifyBrushIcon`
+  `RetractHandlesIcon`, `SymmetricHandlesIcon`, `SimplifyBrushIcon`, and `HarmonizeIcon`
   (`defaults/icons/anchorIcons.tsx`) are first drafts, not proofed at high resolution.
 - **(P2) Spacing hints.** Equal-spacing markers between siblings while moving, and Alt-hover
   distance readouts between the selection and the shape under the pointer.
