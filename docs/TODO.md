@@ -632,7 +632,7 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   The `menu.context` key binding opens it at the selection, and those platforms also send a
   native `contextmenu` event to the focused canvas, which would reopen it at that event's point.
   Headless Playwright sends no such event, so this is unverified. Check on a real Windows or
-  Linux Chrome; if it reproduces, have the keydown suppress the native event.
+  Linux Chrome; if it reproduces, the likely fix is for the keydown to suppress the native event.
 
 - **(P4) A headless-component layer shared by DOM and WebGL chrome.** The context-menu model
   splits state, keyboard and placement from drawing so one menu renders in both. Generalize that

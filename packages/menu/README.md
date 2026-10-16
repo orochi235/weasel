@@ -24,8 +24,8 @@ npm install @weasel-js/menu
 | `@weasel-js/ui` | `<ContextMenuHost>`, the DOM renderer, and `useContextMenu` for opening a menu from chrome. |
 | `@weasel-js/hud` | `attachMenuHost`, the WebGL renderer. |
 
-The DOM renderer does not use React Aria's `Menu`: it keeps its own state and keyboard handling,
-which would be a second copy of the model's and would drift from the WebGL menu's.
+The DOM renderer does not use React Aria's `Menu`, which keeps its own state and key handling: a
+second copy of the model's that would drift from the WebGL menu's.
 
 ## Usage
 
@@ -37,7 +37,7 @@ import { useMenus, type MenuDef } from '@weasel-js/core';
 import { ContextMenuHost, useContextMenu } from '@weasel-js/ui';
 
 const MENUS: MenuDef[] = [
-  { id: 'row', sections: [[{ action: 'copy' }, { action: 'delete' }]] },
+  { id: 'row', sections: [[{ action: 'duplicate' }, { action: 'delete' }]] },
 ];
 
 function Row({ id }: { id: string }) {
@@ -50,10 +50,13 @@ function Chrome() {
   useMenus(MENUS);
   return <ContextMenuHost />;
 }
+
+// <ActionsProvider><Chrome /><Row id="a" /></ActionsProvider>
 ```
 
-Both sit under an `<ActionsProvider>`. A menu with a `when` (`{ bodyTarget, bodyKind }`) opens on
-a right-click of a matching canvas body instead of by id.
+Rows name registered actions (`duplicate`, `delete`), and `Row` and `Chrome` must sit under an
+`<ActionsProvider>`. Any menu opens by id; one with a `when` (`{ bodyTarget, bodyKind }`) also
+opens on a right-click of a matching canvas body.
 
 ## License
 
