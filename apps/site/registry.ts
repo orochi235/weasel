@@ -751,6 +751,26 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/BridgeLabDemo.tsx',
   },
   {
+    id: 'lab-trim',
+    title: 'Trim segment',
+    category: 'Geometry',
+    description:
+      'Trim segment cuts a stroke back to where other strokes cross it. While the tool is up, a hover binding asks `planTrim`, the same plan the click commits, for the piece under the pointer, and the tool draws it dashed in red. A click with `useTrimTool` hands the press to the `trimPath` action, which finds the topmost stroke within reach and removes its piece between the nearest crossings on either side, with any other path or with itself, through `trimPathAt` in `@weasel-js/geom`. Curves are split where they are cut and stay curves; a closed shape is opened; a piece with an open end runs back to the first crossing, and a stroke with nothing left is deleted. Each trim is one undo step. Click reach is the binding param the tool passes along.',
+    hint: 'Move over a line: the piece a click would cut shows dashed in red. Click a piece between two crossings to cut it away, or the circle between the two points where the purple line crosses it. Click an end piece to cut back to the first crossing. Undo with the button or <kbd>Mod+Z</kbd>.',
+    load: () => import('./demos/TrimLabDemo').then((m) => m.TrimLabDemo),
+    path: 'apps/site/demos/TrimLabDemo.tsx',
+  },
+  {
+    id: 'lab-extend',
+    title: 'Extend to next path',
+    category: 'Geometry',
+    description:
+      'Extend to next path, the `extendToMeet` command: an open end travels along its tangent until it meets the first stroke in its way, through `extendToMeet` in `@weasel-js/geom`. A straight end grows longer; a curved one gains a straight run, so the tangent carries on unbroken. With `useExtendTool` a click picks the end nearest it; with a selection the command extends every open end of it, and in anchor editing just the selected end anchors. The lab binds the command to <kbd>E</kbd> through `<SceneCanvas tune>`. An end that meets nothing stays put, and each extend is one undo step.',
+    hint: 'With the Extend tool, click near the right end of the short orange line: it grows to the green wall. The curve carries on in a straight line from its end. Or pick Select, select strokes, and press <kbd>E</kbd>. Undo with <kbd>Mod+Z</kbd>.',
+    load: () => import('./demos/ExtendLabDemo').then((m) => m.ExtendLabDemo),
+    path: 'apps/site/demos/ExtendLabDemo.tsx',
+  },
+  {
     id: 'symmetry-lab',
     title: 'Symmetry',
     package: 'symmetry',

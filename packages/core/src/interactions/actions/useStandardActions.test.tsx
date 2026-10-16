@@ -73,7 +73,7 @@ const KIT_IDS = [
   'deleteAnchors', 'cutPathAtAnchor', 'simplifyBrush', 'pathEditTool.simplifyBrush', 'pathEditTool.exit', 'retractHandles', 'makeHandlesSymmetric',
   'handleLock.angle', 'handleLock.length',
   'averageAnchors', 'joinAnchors', 'bridgeAnchors', 'simplifyPath', 'offsetPath', 'snipAtCrossings', 'joinPaths',
-  'bridgePaths',
+  'bridgePaths', 'trimPath', 'extendToMeet',
   'blend', 'bendAlong', 'repeatAlong', 'editPathEffect', 'expandPathEffect',
   'marqueeAnchors', 'selectAnchor',
   'lassoSelect', 'viewport.pinchZoom',

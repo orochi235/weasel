@@ -47,6 +47,13 @@ export {
   repeatAlongPath, stationsAlongPath, type RepeatAlongPathOptions, type RepeatStation,
 } from './paths/repeatAlongPath';
 export { pathDistanceToPoint } from './paths/pathDistance';
+export { intersectSegments, type SegmentCrossing } from './intersect/segmentIntersections';
+export { pathSegments, type PathSegment } from './intersect/pathSegments';
+export { pathCrossings, type PathCrossing, type PathStop } from './intersect/pathCrossings';
+export { trimPathAt, type TrimPathOptions, type TrimResult } from './paths/trimPath';
+export {
+  extendToMeet, lengthenOpenEnd, openEndRay, openPathEnds, type ExtendToMeetOptions, type OpenPathEnd,
+} from './paths/extendPath';
 export { cubicPointAt, splitCubicAtT, type Point } from './paths/cubicMath';
 export { fitCubicThroughDeletion } from './paths/spanFit';
 export { schneiderFit, fitCubicWithTangents } from './paths/schneiderFit';
