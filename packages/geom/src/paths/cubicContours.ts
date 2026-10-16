@@ -8,6 +8,7 @@ import { elevateQuadraticToCubic, splitCubicAt } from '../curve';
 import { forEachSegment, PATH_C, PATH_L, PATH_M, PATH_Q, PATH_Z } from '../commands';
 import type { Path, PathFillRule, PolygonPath } from '../path';
 import { PathBuilder } from './builder';
+import { resolveCorners } from './corners';
 
 /** One cubic segment, `[x0, y0, x1, y1, x2, y2, x3, y3]`, and whether it was
  *  drawn straight. A straight one keeps its controls at its thirds, so it
@@ -34,7 +35,7 @@ export function lineSegment(ax: number, ay: number, bx: number, by: number): Cub
  * `path`'s contours as cubic segments. A closed contour whose last point
  * stops short of its first gains the straight closing edge it is drawn with;
  * zero-length straight segments are dropped. A contour with no segments is a
- * lone point and is left out.
+ * lone point and is left out. Corner specs are expanded first.
  */
 export function pathToCubicContours(path: Path): CubicContour[] {
   if (path.kind === 'rect') {
@@ -62,7 +63,7 @@ export function pathToCubicContours(path: Path): CubicContour[] {
     if (current.segs.length > 0) out.push(current);
     current = null;
   };
-  const { commands, coords } = path;
+  const { commands, coords } = resolveCorners(path);
   forEachSegment(commands, coords, (cmd, ci, px, py, _i, opens) => {
     if (opens) {
       current = { segs: [], closed: false };

@@ -8,6 +8,11 @@ import type { PenAnchor } from './anchors';
 import type { Point } from './cubicMath';
 import { fitCubicWithTangents } from './schneiderFit';
 
+/** Give `to`, an anchor a refit kept where `from` was, `from`'s corner spec. */
+export function keepCorner(to: PenAnchor, from: PenAnchor): void {
+  if (from.corner) to.corner = { ...from.corner };
+}
+
 /**
  * Fit `pts` with cubics held to the end tangents, splitting at the worst
  * sample until every sample is within `tol`, and append the anchors after the
