@@ -161,27 +161,14 @@ export function UnitField({
 
   const repeat = useStepRepeat(latestSpin, latestSpent);
   const stepper = (key: 'ArrowUp' | 'ArrowDown', label: string, glyph: string, atBound: boolean) => (
-    <button
-      type="button"
-      className={s.stepper}
-      aria-label={label}
-      tabIndex={-1}
+    <Stepper
+      label={label}
+      glyph={glyph}
       disabled={atBound || disabled}
-      // Keeps focus in the input, where a press on the button would take it.
-      onPointerDown={(e) => {
-        e.preventDefault();
-        repeat.start(key);
-      }}
-      onPointerUp={repeat.stop}
-      onPointerLeave={repeat.stop}
-      onPointerCancel={repeat.stop}
-      // A click with no pointer down before it — assistive tech, or a test.
-      onClick={(e) => {
-        if (e.detail === 0) latestSpin.current(key);
-      }}
-    >
-      {glyph}
-    </button>
+      onHold={() => repeat.start(key)}
+      onRelease={repeat.stop}
+      onTap={() => latestSpin.current(key)}
+    />
   );
 
   return (
@@ -260,4 +247,39 @@ function offsetIn(typed: string, read: (text: string) => number): number | null 
   if (!m) return null;
   const n = read(m[2]);
   return m[1] === '-' ? -n : n;
+}
+
+interface StepperProps {
+  label: string;
+  glyph: string;
+  disabled: boolean;
+  onHold: () => void;
+  onRelease: () => void;
+  onTap: () => void;
+}
+
+function Stepper({ label, glyph, disabled, onHold, onRelease, onTap }: StepperProps) {
+  return (
+    <button
+      type="button"
+      className={s.stepper}
+      aria-label={label}
+      tabIndex={-1}
+      disabled={disabled}
+      // Keeps focus in the input, where a press on the button would take it.
+      onPointerDown={(e) => {
+        e.preventDefault();
+        onHold();
+      }}
+      onPointerUp={onRelease}
+      onPointerLeave={onRelease}
+      onPointerCancel={onRelease}
+      // A click with no pointer down before it — assistive tech, or a test.
+      onClick={(e) => {
+        if (e.detail === 0) onTap();
+      }}
+    >
+      {glyph}
+    </button>
+  );
 }

@@ -38,7 +38,7 @@
     "longestFunction": 249
   },
   "packages/core/src/canvas/SceneCanvas/props.ts": {
-    "lines": 610
+    "lines": 609
   },
   "packages/core/src/canvas/sceneAdapter.ts": {
     "longestFunction": 156
@@ -311,7 +311,7 @@
     "longestFunction": 204
   },
   "packages/ui/src/components/NumberField/UnitField.tsx": {
-    "longestFunction": 177
+    "longestFunction": 169
   },
   "packages/ui/src/components/PaintInput/PaintInput.tsx": {
     "longestFunction": 138
