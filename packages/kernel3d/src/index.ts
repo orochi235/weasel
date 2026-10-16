@@ -26,6 +26,7 @@ export {
 export { collectOverlayBoxes } from './overlays';
 export { orbitAction, dollyAction, useOrbitTool } from './tools';
 export type { Camera3dDep } from './cameraDep';
+export { kernel3dKitSettingsSchema, type Orbit3dKitSettings } from './kitSettings';
 // Reaches the `declare module '@weasel-js/core'` block that adds `camera3d` to
 // `DepSchema`. Type-only: the module has no runtime side effect, and a bare
 // import would be emitted and then dropped under `sideEffects: false`.
