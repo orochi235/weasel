@@ -28,3 +28,13 @@ export function constraintMarkUnder(dep: EditAnchorsDep, deps: ActionDeps | unde
   const toScreen = (p: { x: number; y: number }) => ({ x: (p.x - view.x) * view.scale.x, y: (p.y - view.y) * view.scale.y });
   return constraintMarkAt(pathAnchorPoints(path).map(toScreen), constraints, toScreen({ x: wx, y: wy }), MARK_CLICK_PX);
 }
+
+/** Delete the constraint selected in path edit. False when none is selected or it is gone. */
+export function deleteSelectedConstraint(dep: EditAnchorsDep): boolean {
+  const index = dep.selectedConstraint;
+  if (!dep.setConstraints || index == null) return false;
+  const current = constraintsOf(dep.getNodeShape(dep.editingId)?.data);
+  if (index >= current.length) return false;
+  dep.setConstraints(dep.editingId, current.filter((_, i) => i !== index), 'Delete constraint');
+  return true;
+}

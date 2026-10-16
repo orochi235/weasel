@@ -17,7 +17,7 @@ import {
 import { constraintsOf } from 'features/paths/pathConstraints';
 import type { EditAnchorsDep } from '../depSchema';
 import { depOf } from './anchorEditing';
-import { editedPath } from './constraintMarks';
+import { deleteSelectedConstraint, editedPath } from './constraintMarks';
 
 /** Params for `constrainAnchors`. */
 export interface ConstrainAnchorsParams {
@@ -117,29 +117,20 @@ function constraintCommand(
 }
 
 /**
- * Delete the constraint whose mark was clicked. Bound to Delete and
- * Backspace beside `deleteAnchors`, which is disabled while a constraint
- * rather than anchors is selected, so each key reaches the one selected.
+ * Delete the constraint selected in path edit, as a command. Delete and
+ * Backspace reach it through `deleteAnchors`, which deletes whichever of the
+ * two is selected, so the keys have one binding.
  */
 export const deleteConstraintAction: Action & { requires: string[] } = {
   id: 'deleteConstraint',
   label: 'Delete constraint',
-  defaultBinding: {
-    kind: 'key',
-    key: ['Delete', 'Backspace'],
-    phase: [{ channel: '*', phase: 'initial' }],
-  },
   eligible: { capability: 'edits-anchors' },
   requires: ['editAnchors'],
   invoker: {
     timing: 'immediate',
     run: (deps) => {
       const dep = depOf(deps);
-      const index = dep?.selectedConstraint;
-      if (!dep?.setConstraints || index == null) return;
-      const current = constraintsOf(dep.getNodeShape(dep.editingId)?.data);
-      if (index >= current.length) return;
-      dep.setConstraints(dep.editingId, current.filter((_, i) => i !== index), 'Delete constraint');
+      if (dep) deleteSelectedConstraint(dep);
     },
   } as ImmediateInvoker,
   enabled: (deps) => {

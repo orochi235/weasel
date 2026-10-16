@@ -165,8 +165,9 @@ describe('constrainAnchors and unconstrainAnchors', () => {
     t.run(selectAnchorAction, { worldX: 50, worldY: 12 });
     expect(t.dep().selectedConstraint).toBe(0);
     expect(t.dep().selectedAnchors.size).toBe(0);
-    expect(deleteAnchorsAction.enabled!(t.deps())).not.toBe(true);
-    t.run(deleteConstraintAction);
+    // Delete and Backspace are bound once, to deleteAnchors, which deletes the selected constraint.
+    expect(deleteAnchorsAction.enabled!(t.deps())).toBe(true);
+    t.run(deleteAnchorsAction);
     expect(t.constraints()).toEqual([{ kind: 'vertical', segment: [1, 2] }]);
     expect(t.dep().selectedConstraint).toBeNull();
     t.scene.undo();
