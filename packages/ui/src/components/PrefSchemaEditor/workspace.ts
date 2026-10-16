@@ -49,6 +49,7 @@ export function headingOf(asset: ShownAsset): AssetHeading {
   if (!('as' in root)) return 'Panels';
   if (root.as === 'menu') return 'Menus';
   if (root.as !== 'bar') return 'Panels';
+  if (isPrefSection(root)) return 'Toolbars';
   const kids = Object.values(root.children);
   const menus = kids.length > 0 && kids.every((kid) => !isPrefLeaf(kid) && !isPrefSection(kid) && kid.as === 'menu');
   return menus ? 'Menus' : 'Toolbars';
