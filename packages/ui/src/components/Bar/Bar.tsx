@@ -72,7 +72,7 @@ export function Bar(props: BarProps) {
   const draw: Draw = { values, mixed, renderers, onChange, fields, disabled, entryAt, targets, settles };
   return (
     <BarLayout
-      nodes={shown === null ? [] : shownBarNodes(groupBarNodes(shown, '', (group, path) => <GroupRows draw={draw} group={group} path={path} />), (node) => shownNode(node, draw))}
+      nodes={shown === null ? [] : shownBarNodes(groupBarNodes(shown, '', (group, path) => <GroupRows draw={draw} group={group} path={path} />, { values: read, onChange, over: props.over && 'children' in props.over ? props.over : schema }), (node) => shownNode(node, draw))}
       orientation={orientation}
       label={label}
       framed={framed}

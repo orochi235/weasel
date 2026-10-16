@@ -1,5 +1,5 @@
 import { Fragment, type ReactNode, type RefObject } from 'react';
-import { isPrefLeaf, prefAsBox, prefTabRuns, type PrefAlias, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
+import { isPrefLeaf, prefAsBox, prefTabRuns, prefValueAtPath, type PrefAlias, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
 import { groupHeading } from './groupHeading';
 import { GroupTabs } from './GroupTabs';
 import { BarLayout, groupBarNodes, shownBarNodes, type BarLeafNode, type BarOrientation } from '../Bar/BarLayout';
@@ -176,7 +176,7 @@ export function PaneBar({ ctx, group, path, depth, orientation }: {
       label={group.name === '' ? undefined : group.name}
       nodes={shownBarNodes(groupBarNodes(group, path, (inner, at) => (
         <div className={s.rows}>{paneChildren(ctx, Object.entries(inner.children), at, depth + 1)}</div>
-      )), shown)}
+      ), { values: (at: string) => prefValueAtPath(ctx.values, at), onChange: ctx.onChange }), shown)}
       cells={(leaves) =>
         leaves.flatMap(({ path: own, leaf, at }): Array<{ path: string; content: ReactNode }> => {
           // An alias still here shows nothing, or is a renderer's to draw.

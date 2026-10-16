@@ -88,3 +88,21 @@ describe('PrefsForm readouts', () => {
     expect(screen.getByRole('status', { name: 'Mode' }).textContent).toBe('B');
   });
 });
+
+describe('PrefsForm bar menus', () => {
+  it('opens a menu group in a bar as a menu writing the form’s values', () => {
+    const onChange = vi.fn();
+    const schema: PrefGroup = {
+      name: 'T',
+      children: {
+        strip: pref.group('Strip', { view: pref.group('View', { grid: pref.boolean('Grid', false) }, { as: 'menu' }) }, { as: 'bar' }),
+      },
+    };
+    render(<PrefsForm schema={schema} values={{ strip: { view: { grid: true } } }} onChange={onChange} />);
+    fireEvent.click(screen.getByRole('button', { name: 'View' }));
+    const grid = screen.getByRole('menuitemcheckbox', { name: /Grid/ });
+    expect(grid).toHaveAttribute('aria-checked', 'true');
+    fireEvent.click(grid);
+    expect(onChange).toHaveBeenCalledWith('strip.view.grid', false);
+  });
+});
