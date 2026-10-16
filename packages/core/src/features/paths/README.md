@@ -78,6 +78,13 @@ the curvature comb from `pathEditComb.ts` and the balance lines from
 `pathEditBalance.ts` drawn under chrome-caps' `path-edit.comb` and
 `path-edit.balance`, both off by default)
 
+**Snapping** — `pathSnap/pathSnapper.ts` indexes what every node offers
+(`pathSnap/snapGeometry.ts`: its drawn outline, or a text or image box) for the
+`snap` dep (`toolOptions.pathSnap`), and `pathSnap/pathSnapMarkerLayer.ts`
+draws the glyph and label on a snapped point. The targets — crossings,
+tangent and perpendicular points, midpoints, extremes, quadrant points, nearest
+— are `findPathSnap` in `@weasel-js/geom` (`snap/`, over `intersect/`).
+
 ## Anchors are a view, not the storage
 
 `pathToAnchors` / `anchorsToPath` convert between the command stream and the

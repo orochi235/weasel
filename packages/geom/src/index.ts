@@ -63,7 +63,13 @@ export { pathDistanceToPoint } from './paths/pathDistance';
 export { intersectSegments, type SegmentCrossing } from './intersect/segmentIntersections';
 export { pathSegments, type PathSegment } from './intersect/pathSegments';
 export { pathCrossings, type PathCrossing, type PathStop } from './intersect/pathCrossings';
+export {
+  createPathSnapIndex, findPathSnap, PATH_SNAP_KINDS,
+  type PathSnapHit, type PathSnapIndex, type PathSnapKind, type PathSnapQuery, type PathSnapTarget,
+  type StaticPathSnapKind,
+} from './snap/pathSnap';
 export { trimPathAt, type TrimPathOptions, type TrimResult } from './paths/trimPath';
+export { pathAwayFromAnchors, type PathAwayFromAnchors } from './paths/pathAwayFromAnchors';
 export {
   extendToMeet, lengthenOpenEnd, openEndRay, openPathEnds, type ExtendToMeetOptions, type OpenPathEnd,
 } from './paths/extendPath';

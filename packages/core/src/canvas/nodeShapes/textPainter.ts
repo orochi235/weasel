@@ -42,6 +42,7 @@ export function textPoseOf(d: TextNodeData, p: RectPose): TextPose {
 
 export const TEXT_PAINTER: NodeShapeEntry<unknown, RectPose> = {
   id: 'kit:text',
+  snapsToBox: true,
   matches: (node) => {
     if (!paintsPose(node.pose)) return false;
     const d = node.data as { text?: string } | null;
