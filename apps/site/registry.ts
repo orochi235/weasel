@@ -801,6 +801,36 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/SmudgeBrushLabDemo.tsx',
   },
   {
+    id: 'lab-distort',
+    title: 'Perspective and free distort',
+    category: 'Geometry',
+    description:
+      "`useDistortTool` puts a handle on each corner of the box around the selected paths. The first drag gives every selected path one shared distort, held on each path as `data.warp` beside the geometry it made, so the corners come back where they were left the next time the paths are selected with the tool — after a move, a resize or a rotation too. Free maps the box bilinearly, so the checkerboard's inner lines bend; Perspective maps it projectively, so every line stays straight and the far side foreshortens. Each segment is carried through the map and refitted as cubics within the refit tolerance, keeping every anchor, and a segment the map keeps straight stays a line. Switching Mode or the tolerance remakes the held warp through `configureWarp`; Expand warp (`expandWarp`) drops it and leaves plain paths.",
+    hint: 'Drag any corner handle. Switch Mode between Free and Perspective to see the same corners remapped. Press Expand warp in the palette to keep the shape as plain paths, then undo with <kbd>Mod+Z</kbd>.',
+    load: () => import('./demos/DistortLabDemo').then((m) => m.DistortLabDemo),
+    path: 'apps/site/demos/DistortLabDemo.tsx',
+  },
+  {
+    id: 'lab-envelope-mesh',
+    title: 'Envelope mesh',
+    category: 'Geometry',
+    description:
+      "`useEnvelopeTool` lays a grid of control points over the box around the selected paths, and dragging any of them warps the shapes through the mesh. Bicubic runs a smooth spline surface through every point, so a pull spreads across neighboring patches; Coons fills each patch from the splines along its four edges alone. Changing Rows or Columns resamples the held mesh at the new resolution where the current one carries an even grid, so the shape changes as little as the new grid allows. The mesh is held on the path as `data.warp` until Expand warp drops it.",
+    hint: 'Drag a mesh point on the striped banner. Change Rows, Columns or Mapping in the control panel and drag again. Press Expand warp in the palette to keep the result as a plain path.',
+    load: () => import('./demos/EnvelopeLabDemo').then((m) => m.EnvelopeLabDemo),
+    path: 'apps/site/demos/EnvelopeLabDemo.tsx',
+  },
+  {
+    id: 'lab-puppet-warp',
+    title: 'Puppet warp',
+    category: 'Geometry',
+    description:
+      "`usePuppetTool` pins a path where it is clicked and bends it when a pin is dragged. The deformation is rigid moving least squares: each point takes the rotation and translation that best carry the pins to where they were dragged, weighting near pins over far ones. It needs no triangulation and no solver, and a point's image is always a rigid motion of it, so nothing can fly off — far from every pin the shape moves as one piece, and a pin left alone holds its place. The cost is that it weighs straight-line distance rather than distance through the shape. The eel opens with three pins placed by `withPathWarp`.",
+    hint: 'Drag the pin at the eel\'s head and the tail holds. Click on the eel to add a pin, <kbd>Alt</kbd>-click a pin to take it out. Press Expand warp in the palette to keep the bent shape as a plain path.',
+    load: () => import('./demos/PuppetLabDemo').then((m) => m.PuppetLabDemo),
+    path: 'apps/site/demos/PuppetLabDemo.tsx',
+  },
+  {
     id: 'symmetry-lab',
     title: 'Symmetry',
     package: 'symmetry',

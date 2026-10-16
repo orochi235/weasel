@@ -66,3 +66,7 @@ export { useTrimTool, type UseTrimToolOptions } from './trim';
 export { useExtendTool, type UseExtendToolOptions } from './extend';
 export { useSmudgeBrushTool, type UseSmudgeBrushToolOptions } from './smudge';
 export type { StrokeClickToolOptions } from './shared/strokeClickTool';
+export {
+  useDistortTool, useEnvelopeTool, usePuppetTool, warpLayerId,
+  type UseDistortToolOptions, type UseEnvelopeToolOptions, type UsePuppetToolOptions, type WarpTool,
+} from './warp';

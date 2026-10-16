@@ -69,6 +69,7 @@ import {
   bridgePathsAction, extendToMeetAction, joinPathsAction, offsetPathAction, simplifyPathAction, snipAtCrossingsAction,
   smudgeBrushAction, trimPathAction,
 } from './pathCommands';
+import { configureWarpAction, expandWarpAction } from './warp/warpActions';
 import {
   bendAlongAction, blendAction, editPathEffectAction, expandPathEffectAction, repeatAlongAction,
 } from './pathEffects';
@@ -205,6 +206,8 @@ const KIT_STANDARD_DESCRIPTORS: Action[] = [
   repeatAlongAction,
   editPathEffectAction,
   expandPathEffectAction,
+  expandWarpAction,
+  configureWarpAction,
   marqueeAnchorsAction,
   selectAnchorAction,
   lassoSelectAction,

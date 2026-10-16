@@ -141,3 +141,15 @@ the properties panel does through the entry's `settle` when Sides, Points or
 Inner changes. Editing the path by hand turns the shape into plain geometry:
 `editAnchors` drops the generator, and a generator whose path no longer matches
 it is dropped on the next parameter change rather than overwriting the edit.
+
+## Warps
+
+A distorted, enveloped or puppet-warped path keeps the warp beside its geometry
+in `data.warp` (`pathWarp.ts`): the unwarped source, the warp as data
+(`PathWarp`, from `@weasel-js/geom`), the refit tolerance, and `frame`, the map
+from the warp's own frame to where the node stores its path. The geometry is
+still what every reader uses. Moving, resizing or rotating the node leaves the
+stored path alone, so the warp stays valid without being rewritten; anything
+that rewrites the path drops the warp, as it drops a generator, and a warp whose
+result no longer matches the path is ignored. The tools are in
+`tools/builtin/warp/`, the actions in `interactions/actions/warp/`.

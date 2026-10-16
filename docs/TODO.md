@@ -232,6 +232,21 @@ Priority tags:
   yields to the rest (`HELD_MOBILITY` in `packages/geom/src/constraints/solve.ts`); and that the
   whole-path commands drop the list rather than keep what still applies
   (`pathCommands/pathNodes.ts`).
+- **(P2) Tune Perspective and free distort hands-on, with the maintainer driving.** First-draft
+  corner handles (8 screen px squares, 8 px hit reach, `tools/builtin/warp/warpHandles.ts`), that a
+  new distort starts Free rather than Perspective, the refit tolerance (0.5,
+  `DEFAULT_WARP_TOLERANCE` in `interactions/actions/warp/warpTargets.ts`), and its tool key, F
+  (`KEYS` in `tools/builtin/warp/useWarpTool.ts`). Its label lives in `WARP_LABELS` beside it; the
+  name may change.
+- **(P2) Tune Envelope mesh hands-on, with the maintainer driving.** First-draft 3 by 3 Bicubic
+  mesh (`DEFAULT_ENVELOPE_SIZE`, `interactions/actions/warp/warpTargets.ts`), the grid lines drawn
+  between mesh points (`tools/builtin/warp/warpHandles.ts`), that Rows and Columns change only
+  through `configureWarp`, and its tool key, M (`tools/builtin/warp/useWarpTool.ts`).
+- **(P2) Tune Puppet warp hands-on, with the maintainer driving.** First-draft pin falloff (1, so
+  weights go as 1/d², `rigidPuppetMap` in `packages/geom/src/warp/puppet.ts`), that a click on the
+  selection adds a pin and Alt-click on a pin takes it out, the pin dots (5 screen px radius,
+  `tools/builtin/warp/warpHandles.ts`), and its tool key, B
+  (`tools/builtin/warp/useWarpTool.ts`).
 - **(P2) Two helpers grow an open end along its tangent.** `lengthenOpenEnd` in
   `packages/geom/src/paths/extendPath.ts` serves Extend to next path, and the unmerged
   `extend-path-end` branch (Lengthen) has `lengthenPathEnd` of its own. Whichever lands second
@@ -284,11 +299,29 @@ Priority tags:
 - **(P3) The path commands have no icons.** `simplifyPath`, `offsetPath`, `snipAtCrossings`,
   `joinPaths`, `bridgePaths`, `joinAnchors`, `bridgeAnchors`, `averageAnchors`, and
   `extendToMeet` show as text in draw's bar, `useTrimTool` and `useExtendTool` borrow
-  `SliceIcon`, and `useSmudgeBrushTool` has none.
+  `SliceIcon`, and `useSmudgeBrushTool` has none. `expandWarp` and `configureWarp` have none
+  either, and `useDistortTool`, `useEnvelopeTool`, and `usePuppetTool` give no
+  `presentation.icon`: their labs borrow `FitStretchIcon`, `GridIcon`, and `PinIcon` from
+  `@weasel-js/ui`.
   `RetractHandlesIcon`, `SymmetricHandlesIcon`, `SimplifyBrushIcon`, and `HarmonizeIcon`
   (`defaults/icons/anchorIcons.tsx`) are first drafts, not proofed at high resolution.
 - **(P2) Spacing hints.** Equal-spacing markers between siblings while moving, and Alt-hover
   distance readouts between the selection and the shape under the pointer.
+- **(P2) Puppet warp bends by straight-line distance, not through the shape.** `rigidPuppetMap`
+  (`packages/geom/src/warp/puppet.ts`) weights each pin by its distance across the plane, so two
+  limbs that nearly touch move together when a pin on one is dragged. As-rigid-as-possible over
+  a triangulation of the filled region (`tessellate` already triangulates it) would weigh
+  distance through the shape; it needs a mesh solve per drag frame and a way to map the path's
+  sample points through the deformed triangles.
+- **(P3) Paths warped together drift apart once one is moved alone.** Each path holds its own
+  copy of a shared warp, matched by `HeldPathWarp.id`; the warp tools show the controls of the
+  first path holding an id, and a drag moves every path with it by the same world delta. After
+  one of them is moved on its own, its controls no longer sit under the ones shown.
+- **(P3) A polygon-pose node rotated after a warp drops the warp.** `resolvePathWarp`
+  (`packages/core/src/features/paths/pathWarp.ts`) recovers a move or a resize of a polygon pose
+  as a box-to-box map, but a rotation rewrites the coordinates in a way no such map undoes, so the
+  warp stops resolving and the warp tools start a fresh one. A `data.path` node keeps its warp
+  through a rotation.
 - **(P2) Variable-width strokes.** A width profile along a stroke's length, edited by dragging
   on the stroke. `strokeToPath` handles a fixed width only.
 

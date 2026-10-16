@@ -204,6 +204,7 @@ export function StandardActionsRegistrar({
   useDepSource('rootView', () => view);
   const pointer = usePointerContext();
   useDepSource('pointer', () => pointer ?? undefined);
+  useDepSource('actionParams', () => registry?.paramsOf);
 
   // viewport.pan / viewport.zoom are SceneCanvas-coupled (need the `view` dep
   // published just above), so they're registered here rather than in

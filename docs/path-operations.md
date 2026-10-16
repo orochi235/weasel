@@ -41,14 +41,14 @@ adopted.
 |---|---|---|---|---|
 | Simplify brush | `simplifyBrush` | Removes anchors it passes over, refitting the curve | Drag with the brush | main |
 | Smudge brush | `smudgeBrush` | Pushes the outline along with the pointer | Drag with the Smudge tool (S) | main |
-| Puppet warp | — | Pins the path and bends it when a pin is dragged | Puppet tool | landing |
+| Puppet warp | `puppet.drag`, `puppet.addPin`, `puppet.removePin` | Pins the path and bends it when a pin is dragged | Puppet warp tool (B): click pins, Alt+click a pin takes it out, drag a pin bends | landing |
 
 ## Handles on the box around a selection
 
 | Operation | Action id | What the handles do | Default binding | Status |
 |---|---|---|---|---|
-| Perspective and free distort | — | Corner pins warp the selected paths | Distort tool | landing |
-| Envelope mesh (to be renamed Cloth warp) | — | A grid of control points warps the selection | Envelope tool | landing |
+| Perspective and free distort | `distort.drag` | Corner pins warp the selected paths | Drag a corner with the Distort tool (F) | landing |
+| Envelope mesh (to be renamed Cloth warp) | `envelope.drag` | A grid of control points warps the selection | Drag a mesh point with the Envelope tool (M) | landing |
 
 ## Commands on the selection
 
@@ -69,6 +69,8 @@ adopted.
 | Blend | `blend` | Live steps between two shapes | — | main |
 | Bend along a path | `bendAlong` | Lays a shape along a spine | — | main |
 | Repeat along a path | `repeatAlong` | Live copies placed along a path | — | main |
+| Expand warp | `expandWarp` | Drops a held distort, envelope, or puppet warp, keeping its geometry | — | landing |
+| Warp settings | `configureWarp` | Remakes a held warp with new settings | — | landing |
 | Resample | — | Spreads anchors evenly by arc length | — | audition |
 | Add extremes | — | Adds anchors at each curve's leftmost, rightmost, top, and bottom | — | audition |
 | Grow, shrink, and every-Nth selection | — | Selects anchors along the path | — | audition |

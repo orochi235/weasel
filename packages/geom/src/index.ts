@@ -59,6 +59,7 @@ export { fitCubicThroughDeletion } from './paths/spanFit';
 export { schneiderFit, fitCubicWithTangents } from './paths/schneiderFit';
 export { simplifyPath, simplifySpan, simplifySubpath, type SimplifyPathOptions } from './paths/simplifyPath';
 export { simplifyAnchorsAt } from './paths/simplifyAnchors';
+export * from './warp';
 export {
   averageAnchorsAt, closestOpenEnds, joinAnchorsAt, joinSubpathEnds, subpathEndAt,
   type AverageAxis, type JoinOptions, type SubpathEnd,

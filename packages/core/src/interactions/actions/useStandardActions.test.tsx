@@ -75,6 +75,7 @@ const KIT_IDS = [
   'averageAnchors', 'joinAnchors', 'bridgeAnchors', 'simplifyPath', 'offsetPath', 'snipAtCrossings', 'joinPaths',
   'bridgePaths', 'trimPath', 'extendToMeet', 'smudgeBrush',
   'blend', 'bendAlong', 'repeatAlong', 'editPathEffect', 'expandPathEffect',
+  'expandWarp', 'configureWarp',
   'marqueeAnchors', 'selectAnchor',
   'lassoSelect', 'viewport.pinchZoom',
   // viewport.pan / viewport.zoom are registered conditionally by SceneCanvas's

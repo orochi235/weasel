@@ -142,6 +142,7 @@ export const FEATURE_PRESETS: Readonly<Record<BaseFeature, FeaturePreset>> = {
       'simplifyPath', 'offsetPath', 'snipAtCrossings', 'joinPaths', 'bridgePaths', 'trimPath', 'extendToMeet',
       'smudgeBrush',
       'blend', 'bendAlong', 'repeatAlong', 'editPathEffect', 'expandPathEffect',
+      'expandWarp', 'configureWarp',
     ],
   },
   ingest: {

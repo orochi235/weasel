@@ -11,6 +11,7 @@ import type { EditAnchorsParams } from './edit-anchors/params';
 import type { SimplifyBrushParams } from './defaults/simplifyBrush';
 import type { PathConstraintKind } from '@weasel-js/geom';
 import type { ConstrainAnchorsParams } from './defaults/anchorConstraints';
+import type { WarpKind, WarpSettings } from './warp/warpTargets';
 import type { SmudgeBrushParams } from './pathCommands/smudgeBrush';
 
 /** A point a spatial reference of `'pointer'` resolves to in place of the
@@ -58,6 +59,11 @@ declare module '@weasel-js/routing' {
     bridgeAnchors: { tension?: number };
     constrainAnchors: ConstrainAnchorsParams;
     unconstrainAnchors: { kind?: PathConstraintKind };
+    'distort.drag': WarpSettings;
+    'envelope.drag': WarpSettings;
+    'puppet.drag': WarpSettings;
+    'puppet.addPin': WarpSettings;
+    configureWarp: WarpSettings & { kind?: WarpKind };
   }
 }
 

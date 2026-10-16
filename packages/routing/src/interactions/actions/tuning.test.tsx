@@ -142,4 +142,19 @@ describe('ActionsRegistry.tune', () => {
     act(() => { release(); release(); });
     expect(listener).toHaveBeenCalledTimes(2);
   });
+
+  it('answers the params an invocation would start with, as the tuned action receives them', () => {
+    const { result } = renderHook(() => useActionsRegistry(), { wrapper: wrap });
+    const reg = result.current!;
+    const run = vi.fn();
+    act(() => {
+      reg.register(immediate(run));
+      reg.tune('flip', { params: { axis: 'y', pivot: 'union' } });
+      reg.tune('flip', { params: () => ({ pivot: 'each' }) });
+    });
+    reg.trigger('flip', { axis: 'x' });
+    expect(reg.paramsOf('flip', { axis: 'x' })).toEqual(run.mock.calls[0][1]);
+    expect(reg.paramsOf('flip')).toEqual({ axis: 'y', pivot: 'each' });
+    expect(reg.paramsOf('untuned', { a: 1 })).toEqual({ a: 1 });
+  });
 });

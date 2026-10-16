@@ -23,6 +23,7 @@ import { remapSkin } from '../../animation/rig/skinBinding';
 import { classifyPathStorage, resolveEditablePathOf, storeEditablePath } from 'features/paths/editablePath';
 import { withoutShapeGenerator } from 'features/paths/shapeGenerator';
 import { constrainNodeEdit, constraintsOf, solveNodeConstraints } from 'features/paths/pathConstraints';
+import { withoutPathWarp } from 'features/paths/pathWarp';
 import { createPathEditState, isSelectedNode, type PathEditState } from 'features/paths/pathEditState';
 import { recordModeSwitch, resolveParams, type ActionTunings } from '@weasel-js/routing';
 import type { Op } from 'core/ops/types';
@@ -196,8 +197,8 @@ function reshapeOps(
   const next = storeEditablePath(node, worldPath);
   if (!next) return [];
   const reshape = createTransformOp({ id, from: node.pose, to: next.pose, label });
-  // A path edited by hand is no longer what its generator makes: it becomes plain geometry.
-  const data = next.data === node.data ? node.data : withoutShapeGenerator(next.data);
+  // A path edited by hand is no longer what its generator or warp makes: it becomes plain geometry.
+  const data = withoutPathWarp(next.data === node.data ? node.data : withoutShapeGenerator(next.data));
   if (data === node.data && !patch) return [reshape];
   return [reshape, createSetDataOp({ id, from: node.data, to: { ...(data as object), ...patch }, label })];
 }
