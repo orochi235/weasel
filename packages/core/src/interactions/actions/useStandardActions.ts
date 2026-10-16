@@ -59,7 +59,7 @@ import { enterPathEditAction } from './defaults/enterPathEdit';
 import { exitPathEditAction } from './defaults/exitPathEdit';
 import { insertPathAnchorAction } from './defaults/insertPathAnchor';
 import { bendSegmentAction } from './defaults/bendSegment';
-import { makeHandlesSymmetricAction, retractHandlesAction } from './defaults/anchorHandles';
+import { harmonizeAnchorsAction, makeHandlesSymmetricAction, retractHandlesAction } from './defaults/anchorHandles';
 import { constrainAnchorsAction, deleteConstraintAction, unconstrainAnchorsAction } from './defaults/anchorConstraints';
 import { handleLockAngleAction, handleLockLengthAction } from './defaults/handleLocks';
 import { averageAnchorsAction, bridgeAnchorsAction, joinAnchorsAction } from './defaults/anchorJoin';
@@ -67,8 +67,11 @@ import { simplifyBrushAction, simplifyBrushToolAction } from './defaults/simplif
 import { exitPathEditToolAction } from './defaults/pathEditTools';
 import {
   bridgePathsAction, extendToMeetAction, joinPathsAction, offsetPathAction, simplifyPathAction, snipAtCrossingsAction,
-  trimPathAction,
+  smudgeBrushAction, trimPathAction,
 } from './pathCommands';
+import {
+  bendAlongAction, blendAction, editPathEffectAction, expandPathEffectAction, repeatAlongAction,
+} from './pathEffects';
 import {
   nudgeAnchorsUpAction,
   nudgeAnchorsDownAction,
@@ -181,6 +184,7 @@ const KIT_STANDARD_DESCRIPTORS: Action[] = [
   exitPathEditToolAction,
   retractHandlesAction,
   makeHandlesSymmetricAction,
+  harmonizeAnchorsAction,
   handleLockAngleAction,
   handleLockLengthAction,
   constrainAnchorsAction,
@@ -195,6 +199,12 @@ const KIT_STANDARD_DESCRIPTORS: Action[] = [
   bridgePathsAction,
   trimPathAction,
   extendToMeetAction,
+  smudgeBrushAction,
+  blendAction,
+  bendAlongAction,
+  repeatAlongAction,
+  editPathEffectAction,
+  expandPathEffectAction,
   marqueeAnchorsAction,
   selectAnchorAction,
   lassoSelectAction,
