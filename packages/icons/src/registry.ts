@@ -1,4 +1,4 @@
-import { createEmitter, createReflectable } from '@weasel-js/registry';
+import { createEmitter } from '@weasel-js/registry';
 import type { IconRef } from './names';
 import type { IconGlyph, IconTable, IconVariantLoader } from './table';
 import { createVariants, type IconVariantState } from './variants';
@@ -38,8 +38,26 @@ export interface IconRegistry {
 
 const OVERRIDE = 'override';
 
+interface Layer {
+  readonly glyph: IconGlyph;
+  readonly owner: string;
+}
+
+interface Slot {
+  /** One layer per live table, oldest first; the newest is what the table side shows. */
+  readonly tables: Map<object, Layer>;
+  /** Explicit overrides, oldest first; the newest covers every table layer. */
+  readonly overrides: Layer[];
+}
+
+const lastOf = <T>(it: Iterable<T>): T | undefined => {
+  let last: T | undefined;
+  for (const v of it) last = v;
+  return last;
+};
+
 export function createIconRegistry(initial?: IconTable | readonly IconTable[]): IconRegistry {
-  const glyphs = createReflectable<IconGlyph>();
+  const slots = new Map<string, Slot>();
   // How many live tables hold each namespace, and whose it is while any do.
   const claims = new Map<string, { owner: string; count: number }>();
   const notify = createEmitter();
@@ -49,61 +67,88 @@ export function createIconRegistry(initial?: IconTable | readonly IconTable[]): 
     version++;
     notify.emit();
   };
-  glyphs.subscribe(changed);
 
-  const claim = (t: IconTable) => {
-    const held = claims.get(t.namespace);
-    if (held && held.owner !== t.owner) throw new IconNamespaceClaimedError(t.namespace, held.owner, t.owner);
-    claims.set(t.namespace, { owner: t.owner, count: (held?.count ?? 0) + 1 });
+  const slotFor = (key: string): Slot => {
+    let slot = slots.get(key);
+    if (!slot) slots.set(key, (slot = { tables: new Map(), overrides: [] }));
+    return slot;
   };
-  const unclaim = (t: IconTable) => {
-    const held = claims.get(t.namespace);
+  const prune = (key: string) => {
+    const slot = slots.get(key);
+    if (slot && slot.tables.size === 0 && slot.overrides.length === 0) slots.delete(key);
+  };
+  const live = (slot: Slot | undefined): Layer | undefined =>
+    slot && (slot.overrides.at(-1) ?? lastOf(slot.tables.values()));
+
+  const unclaim = (namespace: string) => {
+    const held = claims.get(namespace);
     if (!held) return;
-    if (held.count <= 1) claims.delete(t.namespace);
-    else claims.set(t.namespace, { ...held, count: held.count - 1 });
-  };
-
-  const addOne = (t: IconTable): (() => void) => {
-    claim(t);
-    const keys = Object.keys(t.icons).map((name) => `${t.namespace}:${name}`);
-    // `set`, not `push`: a same-owner table re-registering a glyph is a newer copy, not a conflict.
-    for (const key of keys) glyphs.set(key, t.icons[key.slice(t.namespace.length + 1)]!, { source: t.owner });
-    let released = false;
-    return () => {
-      if (released) return;
-      released = true;
-      unclaim(t);
-      if (!claims.has(t.namespace)) for (const key of keys) glyphs.delete(key);
-    };
+    if (held.count <= 1) claims.delete(namespace);
+    else claims.set(namespace, { ...held, count: held.count - 1 });
   };
 
   const add = (tables: IconTable | readonly IconTable[]): (() => void) => {
     const list = Array.isArray(tables) ? tables : [tables as IconTable];
-    // Check every claim before writing any, so a refused batch registers nothing.
+    // Check every claim, those within the batch included, before writing any: a refused batch registers nothing.
+    const pending = new Map<string, string>();
     for (const t of list) {
-      const held = claims.get(t.namespace);
-      if (held && held.owner !== t.owner) throw new IconNamespaceClaimedError(t.namespace, held.owner, t.owner);
+      const owner = claims.get(t.namespace)?.owner ?? pending.get(t.namespace);
+      if (owner !== undefined && owner !== t.owner) throw new IconNamespaceClaimedError(t.namespace, owner, t.owner);
+      pending.set(t.namespace, t.owner);
     }
-    const releases = list.map(addOne);
-    return () => releases.forEach((r) => r());
+    const releases = list.map((t) => {
+      const held = claims.get(t.namespace);
+      claims.set(t.namespace, { owner: t.owner, count: (held?.count ?? 0) + 1 });
+      const token = {};
+      const keys = Object.keys(t.icons).map((name) => `${t.namespace}:${name}`);
+      for (const key of keys) {
+        slotFor(key).tables.set(token, { glyph: t.icons[key.slice(t.namespace.length + 1)]!, owner: t.owner });
+      }
+      let released = false;
+      return () => {
+        if (released) return;
+        released = true;
+        unclaim(t.namespace);
+        for (const key of keys) {
+          slots.get(key)?.tables.delete(token);
+          prune(key);
+        }
+      };
+    });
+    changed();
+    return () => {
+      releases.forEach((r) => r());
+      changed();
+    };
   };
 
   const variants = createVariants((tables) => void add(tables), changed);
   if (initial) add(initial);
 
   return {
-    get: (ref) => glyphs.get(ref),
+    get: (ref) => live(slots.get(ref))?.glyph,
     add,
-    override: (ref, glyph, source = OVERRIDE) => glyphs.push(ref, glyph, { source: `${OVERRIDE}:${source}` }),
+    override(ref, glyph, source = OVERRIDE) {
+      const layer: Layer = { glyph, owner: source };
+      slotFor(ref).overrides.push(layer);
+      changed();
+      return () => {
+        const slot = slots.get(ref);
+        const i = slot ? slot.overrides.indexOf(layer) : -1;
+        if (i === -1) return;
+        slot!.overrides.splice(i, 1);
+        prune(ref);
+        changed();
+      };
+    },
     owner: (namespace) => claims.get(namespace)?.owner,
     entries() {
       if (snapshot?.version === version) return snapshot.entries;
-      const entries = glyphs.entries().map((e) => ({
-        ref: e.key as IconRef,
-        glyph: e.value,
-        owner: e.source?.startsWith(`${OVERRIDE}:`) ? e.source.slice(OVERRIDE.length + 1) : (e.source ?? ''),
-        overridden: e.source?.startsWith(`${OVERRIDE}:`) ?? false,
-      }));
+      const entries: IconEntry[] = [];
+      for (const [key, slot] of slots) {
+        const top = live(slot)!;
+        entries.push({ ref: key as IconRef, glyph: top.glyph, owner: top.owner, overridden: slot.overrides.length > 0 });
+      }
       snapshot = { version, entries: Object.freeze(entries) };
       return snapshot.entries;
     },

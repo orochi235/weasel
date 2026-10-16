@@ -30,7 +30,8 @@ export function createVariants(addTables: (tables: readonly IconTable[]) => void
       const inFlight = pending.get(name);
       if (inFlight) return inFlight;
       set(name, 'loading');
-      const run = loader()
+      const run = Promise.resolve()
+        .then(loader)
         .then((mod) => {
           addTables(mod.default);
           set(name, 'loaded');

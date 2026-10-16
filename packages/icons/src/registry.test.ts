@@ -71,6 +71,65 @@ describe('createIconRegistry', () => {
   });
 });
 
+describe('merged namespaces and overrides', () => {
+  const partial = (icons: string[]) => core(Object.fromEntries(icons.map((n) => [n, n])));
+
+  it.each([
+    ['in order', false],
+    ['reversed', true],
+  ])('leaves nothing behind when two partial tables are released %s', (_l, reversed) => {
+    const r = createIconRegistry();
+    const a = r.add(partial(['undo']));
+    const b = r.add(partial(['redo']));
+    (reversed ? [b, a] : [a, b]).forEach((release) => release());
+    expect(r.entries()).toEqual([]);
+    expect(r.get('core:undo')).toBeUndefined();
+    expect(r.get('core:redo')).toBeUndefined();
+    expect(r.owner('core')).toBeUndefined();
+  });
+
+  it('keeps an override when a same-owner table touching it is added', () => {
+    const r = createIconRegistry(core({ undo: 'u' }));
+    const release = r.override(ref('core:undo'), glyph('mine'), 'app');
+    r.add(core({ undo: 'u2' }));
+    expect(r.get('core:undo')?.body).toBe('mine');
+    expect(r.entries().find((e) => e.ref === 'core:undo')?.overridden).toBe(true);
+    release();
+    expect(r.get('core:undo')?.body).toBe('u2');
+  });
+
+  it('releasing a table while overridden, then the override, leaves nothing', () => {
+    const r = createIconRegistry();
+    const table = r.add(core({ undo: 'u' }));
+    const release = r.override(ref('core:undo'), glyph('mine'));
+    table();
+    expect(r.get('core:undo')?.body).toBe('mine');
+    release();
+    expect(r.get('core:undo')).toBeUndefined();
+  });
+
+  it('releasing the override uncovers the table glyph', () => {
+    const r = createIconRegistry(core({ undo: 'u' }));
+    r.override(ref('core:undo'), glyph('mine'))();
+    expect(r.get('core:undo')?.body).toBe('u');
+  });
+
+  it('does not report the same glyph from two same-owner tables as overridden', () => {
+    const r = createIconRegistry(core({ undo: 'u' }));
+    r.add(core({ undo: 'u' }));
+    expect(r.entries()).toHaveLength(1);
+    expect(r.entries()[0]!.overridden).toBe(false);
+  });
+
+  it('registers nothing when one batch holds rival owners of a namespace', () => {
+    const r = createIconRegistry();
+    const rival: IconTable = { namespace: 'core', owner: '@acme/core', icons: { redo: glyph('x') } };
+    expect(() => r.add([core({ undo: 'u' }), rival])).toThrow(IconNamespaceClaimedError);
+    expect(r.entries()).toEqual([]);
+    expect(r.owner('core')).toBeUndefined();
+  });
+});
+
 describe('variants', () => {
   it('loads a variant once and adds its tables', async () => {
     const r = createIconRegistry();
@@ -105,5 +164,16 @@ describe('variants', () => {
     await r.loadVariant('all');
     expect(r.variantState('all')).toBe('loaded');
     expect(r.get('core:redo')).toBeDefined();
+  });
+
+  it('marks a loader that throws synchronously failed, not stuck loading', async () => {
+    const r = createIconRegistry();
+    r.provideVariants({
+      all: () => {
+        throw new Error('sync');
+      },
+    });
+    await r.loadVariant('all');
+    expect(r.variantState('all')).toBe('failed');
   });
 });
