@@ -33,7 +33,7 @@ export {
   resolveCornersWithSources, type CornerFrame, type ResolvedCorners,
 } from './paths/corners';
 export {
-  compactCorners, cornerAt, cornerSpecAt, hasCorners, scaleCorners, withCorner,
+  compactCorners, cornerAt, cornerSpecAt, hasCorners, lerpCorners, scaleCorners, withCorner,
   withoutCorners, type CornerSpec,
 } from './paths/cornerSpec';
 export {

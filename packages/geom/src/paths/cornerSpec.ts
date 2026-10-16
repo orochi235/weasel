@@ -74,3 +74,27 @@ export function scaleCorners(path: PolygonPath, factor: number): PolygonPath {
     corners: path.corners.map((c) => (c ? { shape: c.shape, radius: c.radius * factor } : null)),
   };
 }
+
+/**
+ * The corners of a path `t` of the way from `a` to `b`, which share their
+ * anchors. A corner whose shape both ends agree on, or that one end leaves
+ * sharp, grows its radius between them; one whose shape changes takes the
+ * nearer end's.
+ */
+export function lerpCorners(
+  a: PolygonPath['corners'],
+  b: PolygonPath['corners'],
+  t: number,
+): (CornerSpec | null)[] | undefined {
+  if (!a && !b) return undefined;
+  const n = Math.max(a?.length ?? 0, b?.length ?? 0);
+  const out: (CornerSpec | null)[] = new Array(n);
+  for (let i = 0; i < n; i++) {
+    const ca = a?.[i] ?? null, cb = b?.[i] ?? null;
+    const either = ca ?? cb;
+    if (!either) out[i] = null;
+    else if (ca && cb && ca.shape !== cb.shape) out[i] = t < 0.5 ? ca : cb;
+    else out[i] = { shape: either.shape, radius: (ca?.radius ?? 0) + ((cb?.radius ?? 0) - (ca?.radius ?? 0)) * t };
+  }
+  return compactCorners(out);
+}

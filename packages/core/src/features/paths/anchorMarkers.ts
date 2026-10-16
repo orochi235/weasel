@@ -4,7 +4,7 @@
  */
 import type { DrawCommand } from '@weasel-js/renderer';
 import {
-  circlePath, linePath, pathToAnchors, squarePath, type PenAnchor, type PolygonPath, type View,
+  circlePath, linePath, pathToAnchors, resolveCorners, squarePath, type PenAnchor, type PolygonPath, type View,
 } from '@weasel-js/geom';
 
 /** Appearance of the outline and of the anchor and handle markers. */
@@ -55,8 +55,10 @@ export function worldToScreen(p: Point, view: View): Point {
   return { x: (p.x - view.x) * view.scale.x, y: (p.y - view.y) * view.scale.y };
 }
 
-/** `path` with every coordinate carried to screen through `view`. */
+/** `path`, its corners expanded, with every coordinate carried to screen
+ *  through `view`: a radius left on it would stay in world units. */
 function onScreen(path: PolygonPath, view: View): PolygonPath {
+  path = resolveCorners(path);
   const coords = new Float32Array(path.coords.length);
   for (let i = 0; i < coords.length; i += 2) {
     coords[i] = (path.coords[i] - view.x) * view.scale.x;

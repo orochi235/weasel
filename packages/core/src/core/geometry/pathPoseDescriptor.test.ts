@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { pathPoseDescriptor } from './pathPoseDescriptor';
-import { polygonFromPoints } from '@weasel-js/geom';
+import { polygonFromPoints, withCorner, type PolygonPath } from '@weasel-js/geom';
 
 describe('pathPoseDescriptor.lerp', () => {
   it('interpolates rect paths linearly', () => {
@@ -9,6 +9,14 @@ describe('pathPoseDescriptor.lerp', () => {
     expect(pathPoseDescriptor.lerp!(a, b, 0.5)).toEqual({
       kind: 'rect', x: 5, y: 5, width: 15, height: 15,
     });
+  });
+
+  it("grows a corner's radius between the ends, and takes the nearer end's shape when it changes", () => {
+    const tri = polygonFromPoints([{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 0, y: 100 }]);
+    const a = withCorner(withCorner(tri, 0, { shape: 'round', radius: 10 }), 1, { shape: 'bevel', radius: 4 });
+    const b = withCorner(withCorner(tri, 0, { shape: 'round', radius: 30 }), 1, { shape: 'scoop', radius: 8 });
+    const mid = pathPoseDescriptor.lerp!(a, b, 0.25) as PolygonPath;
+    expect(mid.corners).toEqual([{ shape: 'round', radius: 15 }, { shape: 'bevel', radius: 4 }]);
   });
 });
 
