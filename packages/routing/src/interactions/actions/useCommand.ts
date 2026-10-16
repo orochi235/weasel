@@ -1,6 +1,6 @@
-import { useMemo, useRef, type ReactNode } from 'react';
+import { useMemo, type ReactNode } from 'react';
 import type { GestureSpec } from '@weasel-js/gestures';
-import { useLatest } from '@weasel-js/react';
+import { useLatest, useStableByContent } from '@weasel-js/react';
 import type { Action, ActionDisabledReason } from './action';
 import { useAction } from './ActionsProvider';
 
@@ -26,8 +26,8 @@ export interface CommandOptions {
  */
 export function useCommand(id: string, label: string, run: () => void, options?: CommandOptions): void {
   const latest = useLatest({ run, options });
-  const keys = useByValue(options?.keys);
-  const tags = useByValue(options?.tags);
+  const keys = useStableByContent(options?.keys, sameValue);
+  const tags = useStableByContent(options?.tags, sameValue);
   const hasEnabled = options?.enabled !== undefined;
   const hasActive = options?.active !== undefined;
   const hasIcon = options?.icon !== undefined;
@@ -51,12 +51,6 @@ export function useCommand(id: string, label: string, run: () => void, options?:
     return a;
   }, [id, label, keys, tags, hasEnabled, hasActive, hasIcon, latest]);
   useAction(action);
-}
-
-function useByValue<T>(value: T): T {
-  const ref = useRef(value);
-  if (!sameValue(ref.current, value)) ref.current = value;
-  return ref.current;
 }
 
 /** Structural equality over plain objects and arrays; functions by reference. */
