@@ -9,7 +9,7 @@
   top: 8px;
   right: 8px;
   width: 300px;
-  padding: 8px 10px;
+  padding: var(--wzl-space-4) var(--wzl-space-5);
   border: 1px solid var(--wzl-border);
   border-radius: 6px;
   background: var(--wzl-surface-raised);
@@ -17,7 +17,7 @@
 }
 
 .prompt {
-  margin: 0 0 6px;
+  margin: 0 0 var(--wzl-space-3);
   font-size: var(--wzl-font-size-sm);
   color: var(--wzl-fg-muted);
 }

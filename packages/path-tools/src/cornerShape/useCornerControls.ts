@@ -22,6 +22,7 @@ export interface CornerControlsSelection {
   subscribe(listener: () => void): () => void;
 }
 
+/** What {@link useCornerControls} gives a corner panel to draw. */
 export interface UseCornerControlsReturn {
   /** The schema a prefs form draws: `CORNER_CONTROLS`. Its `name` is the
    *  controls' title. */
@@ -41,6 +42,11 @@ function snapshot(scene: CornerControlsScene, selection: CornerControlsSelection
   return JSON.stringify({ values, mixed: [...mixed] });
 }
 
+/**
+ * A corner panel over the selected corners of the path open for anchor
+ * editing: their shared shape and radius, kept current as the scene or the
+ * selection changes, and an `onChange` that writes through `setCorners`.
+ */
 export function useCornerControls(
   scene: CornerControlsScene,
   selection: CornerControlsSelection,
