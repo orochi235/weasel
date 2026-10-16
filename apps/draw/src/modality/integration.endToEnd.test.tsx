@@ -17,7 +17,7 @@ import { ModeBreadcrumb } from './chrome/ModeBreadcrumb';
 import { modePathEdit } from './pathEditHost';
 import { useCanvasModes } from './useCanvasModes';
 import { DEFAULT_MODES } from '@weasel-js/modes';
-import { SceneCanvas, asNodeId, createScene, pathFromD, useSelection, type PolygonPath } from '@weasel-js/core';
+import { SceneCanvas, asNodeId, createScene, hasEditablePath, pathFromD, useSelection, type PolygonPath } from '@weasel-js/core';
 import type { DrawScene } from '../drawDocument';
 
 beforeAll(() => {
@@ -64,7 +64,7 @@ function MachineHarness({
     return s as unknown as DrawScene;
   });
   const selection = useSelection({ mode: 'multi', scene });
-  const [pathEdit] = useState(() => modePathEdit(machine, (id) => scene.get(asNodeId(id))?.data.path?.kind === 'polygon'));
+  const [pathEdit] = useState(() => modePathEdit(machine, (id) => hasEditablePath(scene.get(asNodeId(id)))));
   const modes = useCanvasModes(machine, scene, selection, pathEdit);
   const [ambient] = useState(() => [modes.keys]);
 

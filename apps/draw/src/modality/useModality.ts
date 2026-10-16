@@ -6,6 +6,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   asNodeId,
+  hasEditablePath,
   modeDecorationLayer,
   type PathEditHost,
   type RenderLayer,
@@ -109,7 +110,7 @@ export function useModality(
   const [anchors] = useState(createAnchorSelection);
   const pathEdit = useMemo(() => modePathEdit(
     machine,
-    (id) => (scene.get(asNodeId(id))?.data as { path?: { kind?: string } } | undefined)?.path?.kind === 'polygon',
+    (id) => hasEditablePath(scene.get(asNodeId(id))),
     anchors,
   ), [machine, scene, anchors]);
   const cornerSelection = useMemo<CornerControlsSelection>(() => ({

@@ -25,6 +25,7 @@ export {
   polygonFromPoints,
   polylineFromPoints,
   rectPath,
+  asPolygonPath,
   ellipsePath,
   regularPolygonPath,
   starPath,

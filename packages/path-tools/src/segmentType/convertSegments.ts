@@ -8,6 +8,7 @@ import { convertSegments, editAnchorSetTracked, segmentsBetweenAnchors, type Seg
 import {
   anchorEditWouldChange, commitAnchorEdit, depOf, editingLayer, inPlane, pathOperationTags, segmentUnder,
 } from '@weasel-js/core';
+import { ConvertSegmentIcon, CurveSegmentIcon, StraightenSegmentIcon } from '../commandIcons';
 
 const LABEL = 'Convert segments';
 
@@ -23,12 +24,13 @@ const typeOf = (params: Record<string, unknown> | undefined): SegmentType | unde
  */
 export const convertSegmentsAction: Action & { requires: string[] } = {
   id: 'convertSegments',
+  icon: ConvertSegmentIcon,
   label: LABEL,
   tags: pathOperationTags('command'),
   group: 'anchors',
   variants: [
-    { key: 'line', label: 'Make segments straight', params: { to: 'line' } },
-    { key: 'curve', label: 'Make segments curved', params: { to: 'curve' } },
+    { key: 'line', label: 'Make segments straight', icon: StraightenSegmentIcon, params: { to: 'line' } },
+    { key: 'curve', label: 'Make segments curved', icon: CurveSegmentIcon, params: { to: 'curve' } },
   ],
   defaultBinding: { kind: 'key', key: ['c', 'C'], mods: { shift: true } },
   eligible: { capability: 'edits-anchors' },
@@ -56,6 +58,7 @@ export const convertSegmentsAction: Action & { requires: string[] } = {
  */
 export const convertSegmentAtAction: Action & { requires: string[] } = inPlane({
   id: 'convertSegmentAt',
+  icon: ConvertSegmentIcon,
   label: 'Convert segment',
   tags: pathOperationTags('click'),
   defaultBinding: { kind: 'doubleClick', mods: { shift: true } },

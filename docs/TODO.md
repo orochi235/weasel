@@ -19,6 +19,10 @@ Priority tags:
 
 ## Tools & gestures
 
+- **(P2) The Width tool shows no icon.** `GirthIcon` in `@weasel-js/path-tools` is drawn for it
+  but left unwired while the `width-to-path-tools` branch moves the tool out of core and renames
+  it Girth; that change sets the tool's `presentation.icon` to `createElement(GirthIcon)`.
+
 - **(P1) Guides and snapping, designed as one arc.** Spacing hints (equal-gap markers while
   moving, Alt-hover distance readouts between the selection and the shape under the pointer) go in
   as part of a pass over every guide and snap at once, not alone. The pieces today don't share a
@@ -344,17 +348,11 @@ Priority tags:
   drag snap to path targets only, never the grid; no key or modifier to turn it off mid-gesture;
   the marker's glyphs, its fixed orange, and where its label sits; and that draw does not turn it
   on yet (`packages/core/src/features/paths/pathSnap/`, `packages/geom/src/snap/`).
-- **(P2) A rectangle has no anchors in path edit.** Draw stores a drawn rectangle's `data.path`
-  as a `RectPath` (`kind: 'rect'`), and `classifyPathStorage`
-  (`packages/core/src/features/paths/editablePath.ts`) accepts only a polygon, so double-clicking
-  one enters draw's path-edit mode with no anchors to drag, insert, or bend. Undecided: whether
-  editing turns the rectangle into a polygon path on its first edit, and what then happens to
-  anything that reads it as a rectangle.
 - **(P3) Trim segment and Extend to next path change editable polygon paths only.** Any node's
   drawn outline cuts or stops them (`nodeOutline`, `features/paths/strokeOutline.ts`), but what
   they reshape comes from `scenePathNodes` (`pathCommands/scenePaths.ts`), which reads
-  `resolveEditablePathOf`: a rect-pose rectangle cannot itself be trimmed or extended, which waits
-  on "A rectangle has no anchors in path edit" above.
+  `resolveEditablePathOf`, which answers a polygon or a rect `data.path` only: a node whose
+  geometry is its rect pose alone, with no `data.path`, cannot itself be trimmed or extended.
 - **(P2) Extend a path from its end.** Drag an open path's endpoint outward to grow it along its
   end tangent, or along its end curvature.
 - **(P2) Shape builder.** Drag across overlapping regions to merge them, Alt-drag to delete them.
@@ -407,11 +405,10 @@ Priority tags:
   as a box-to-box map, but a rotation rewrites the coordinates in a way no such map undoes, so the
   warp stops resolving and the warp tools start a fresh one. A `data.path` node keeps its warp
   through a rotation.
-- **(P3) The width tool has no icon, and passes over rectangles.** `useWidthTool` shows the
-  unknown-tool glyph in draw's palette and the lab's. It edits only nodes `resolveEditablePathOf`
-  answers a polygon for, so a drawn rectangle's stroke, which renders `vertexWidths` and a `nib`
-  like any other, cannot be shaped with it; that waits on "A rectangle has no anchors in path edit"
-  above. `strokeEdgeNear`, which it hit-tests with, measures every stroke as centered, so on an
+- **(P3) The width tool has no icon, and is untried on rectangles.** `useWidthTool` shows the
+  unknown-tool glyph in draw's palette and the lab's. It edits the nodes `resolveEditablePathOf`
+  answers a path for, which since rectangle path edit includes a drawn rectangle's rect
+  `data.path`, but nothing has shaped a rectangle's stroke with it yet. `strokeEdgeNear`, which it hit-tests with, measures every stroke as centered, so on an
   inner- or outer-aligned stroke the grab point sits off the edge that is drawn.
 - **(P2) Tangent (G1) at an anchor.** The solver's variables are anchor positions only; handles
   ride along with their anchor. G1 needs each handle as a variable of its own (direction, or
