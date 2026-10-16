@@ -621,6 +621,15 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/LoupeDemo.tsx',
   },
   {
+    id: 'hud-context-menu',
+    title: 'Context menu (hud)',
+    package: 'hud',
+    description: "The context menus of the Context menus demo, drawn into the WebGL canvas by attachMenuHost instead of as HTML. Right-click a shape for Duplicate, Delete and the two reorder actions, or empty canvas for Select All, Undo and Redo. The menus, the rows and what each row runs come from the same menu host as the HTML menu; only the drawing differs. The menu follows the page's light or dark mode.",
+    hint: 'Right-click a shape or the empty canvas, then hover or arrow through the rows. With a shape selected, press <kbd>Shift</kbd>+<kbd>F10</kbd> on the canvas.',
+    load: () => import('./demos/HudContextMenuDemo').then((m) => m.HudContextMenuDemo),
+    path: 'apps/site/demos/HudContextMenuDemo.tsx',
+  },
+  {
     id: 'annotation-capture',
     title: 'Annotation capture',
     package: 'labkit',
