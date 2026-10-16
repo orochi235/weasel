@@ -1,5 +1,5 @@
 import { createElement, useMemo, useRef } from 'react';
-import { useLatest } from '@weasel-js/react';
+import { useKitSettings, useLatest } from '@weasel-js/react';
 import { defineTool } from '../../overlayBinding';
 import type { Tool } from '../../overlayBinding';
 import type { RenderLayer } from 'core/layers/render';
@@ -30,7 +30,7 @@ export interface SliceScratch {
   points: { x: number; y: number }[];
 }
 
-const VERTEX_RADIUS_PX = 3;
+export const VERTEX_RADIUS_PX = 3;
 
 /**
  * Knife tool. A drag cuts along a straight line, and an Alt-drag along its
@@ -164,6 +164,7 @@ export function useSliceTool(options: UseSliceToolOptions = {}): Tool {
     ];
   }, [live, optsRef]);
 
+  const kitSettings = useKitSettings();
   const overlay = useMemo<RenderLayer<unknown>>(() => ({
     id: 'slice-pending-cut',
     label: 'Slice — pending cut',
@@ -181,23 +182,19 @@ export function useSliceTool(options: UseSliceToolOptions = {}): Tool {
       const at = live.pointer()?.get();
       if (at) run.push(toScreen({ x: at.worldX, y: at.worldY }));
       const stroke = OVERLAY_ROLE_STROKES['cut'];
+      const r = kitSettings.get('targets.sliceVertexRadiusPx') ?? VERTEX_RADIUS_PX;
       const out: DrawCommand[] = [];
       if (run.length >= 2) out.push({ kind: 'path', path: polylineFromPoints(run), stroke });
       for (const p of pts.map(toScreen)) {
         out.push({
           kind: 'path',
-          path: ellipsePath({
-            x: p.x - VERTEX_RADIUS_PX,
-            y: p.y - VERTEX_RADIUS_PX,
-            width: VERTEX_RADIUS_PX * 2,
-            height: VERTEX_RADIUS_PX * 2,
-          }),
+          path: ellipsePath({ x: p.x - r, y: p.y - r, width: r * 2, height: r * 2 }),
           fill: { paint: stroke.paint },
         });
       }
       return out;
     },
-  }), [live]);
+  }), [live, kitSettings]);
 
   const { keybinding } = options;
   return useMemo(() => defineTool({

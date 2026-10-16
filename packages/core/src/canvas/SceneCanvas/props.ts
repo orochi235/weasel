@@ -21,7 +21,7 @@ import type { SnapStrategy } from 'interactions/gestures/types';
 import type { ReactNode } from 'react';
 import type { Bounds } from 'tools/builtin/select';
 import type { Animator } from '@weasel-js/animator';
-import { HANDLE_BASE_PX, targetSizesPx } from '../../core/device/targets';
+import { HANDLE_BASE_PX, targetSizesPx, type TargetSizesPx } from '../../core/device/targets';
 import type { DeviceProfile } from '../../core/device/types';
 import type { NodeRoutingEntry } from '../../core/scene/NodeRouting';
 import type { DebugConfig } from '../../debug/types';
@@ -89,10 +89,10 @@ export type SceneCanvasLayers<TNode extends { id: string }, TPose> = LayersMap<
 /** Deep-merge user-supplied `layers` with kit defaults. Slots the user
  *  doesn't mention get filled with defaults; slots explicitly set to
  *  `null` are dropped. Partial slot configs are shallow-spread on top of the
- *  default slot config. `targetScale` comes from the resolved {@link DeviceProfile}. */
+ *  default slot config. `targetScale` (from the {@link DeviceProfile}) and `baseSizes` go to `targetSizesPx`. */
 export function mergeLayersWithDefaults<TData, TLayer extends string, TPose>(
   user: SceneCanvasLayers<Node<TData, TLayer, TPose>, TPose> | undefined,
-  targetScale = 1,
+  targetScale = 1, baseSizes: Partial<TargetSizesPx> = {},
 ): LayersMap<Node<TData, TLayer, TPose>, TPose> {
   const defaults = {
     scene: {
@@ -102,7 +102,7 @@ export function mergeLayersWithDefaults<TData, TLayer extends string, TPose>(
       ) => DrawCommand[],
       paintBounds: defaultPaintBounds<TData, TLayer, TPose>,
     },
-    selectionOverlay: { handles: { size: targetSizesPx(targetScale).handle } },
+    selectionOverlay: { handles: { size: targetSizesPx(targetScale, baseSizes).handle } },
   };
 
   if (!user) return defaults as LayersMap<Node<TData, TLayer, TPose>, TPose>;

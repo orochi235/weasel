@@ -1,4 +1,5 @@
 import { useLatest } from '@weasel-js/core';
+import { useKitSetting } from '@weasel-js/react';
 import {
   createLoupeModel,
   type LoupeMode,
@@ -66,6 +67,11 @@ function lensShown(over: boolean, enabled: boolean, peeking: boolean): boolean {
  * because the lens follows a pressed pointer too, and a `hover` binding stands
  * down while one is held.
  */
+/** Walk `model`'s factor by one wheel notch of `deltaY` at `rate`. */
+function magnify(model: LoupeModel | null, deltaY: number, rate: number): void {
+  if (model) model.setFactor(model.factor * Math.exp(-deltaY * rate));
+}
+
 export function useLoupe({
   options,
   hostRef,
@@ -233,6 +239,7 @@ export function useLoupe({
     return subscribeResample(() => model.resample());
   }, [visible, subscribeResample, model]);
 
+  const wheelRateRef = useLatest(useKitSetting('loupe.wheelRate') ?? WHEEL_RATE);
   const inputRef = useRef<LoupeInputApi | null>(null);
   if (inputRef.current === null) {
     inputRef.current = {
@@ -243,10 +250,7 @@ export function useLoupe({
         if (on) aimAtPointer();
         bump();
       },
-      magnifyBy: (deltaY) => {
-        const m = modelRef.current;
-        if (m) m.setFactor(m.factor * Math.exp(-deltaY * WHEEL_RATE));
-      },
+      magnifyBy: (deltaY) => { magnify(modelRef.current, deltaY, wheelRateRef.current); },
     };
   }
 

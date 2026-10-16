@@ -6,6 +6,7 @@ import {
   createPointerRecognizer, isInControlWithin, longPressEvents, stylusOf,
   type ClickMemory, type HeldPress, type PointerSample, type RecognizerClock,
 } from '@weasel-js/gestures';
+import type { KitSettingsStore } from '@weasel-js/react';
 import { openPointerSession, type PointerSession } from '../../pointerSession';
 import type { PointerDispatchCore } from '../dispatchCore';
 import { multiTouchGestureId } from '../dispatcher';
@@ -18,6 +19,8 @@ type WorldObserver = ((world: { x: number; y: number }) => void) | undefined;
 /** Read through thunks, so each answers for the hook's latest render. */
 export interface PointerInputOptions {
   longPress(): LongPressOptions | undefined;
+  /** The kit settings the `gestures` thresholds are read from, at each use. */
+  kitSettings(): KitSettingsStore;
   onClick(): WorldObserver;
   onDoubleClick(): WorldObserver;
   /** Outlives this listener set: a re-bind between two clicks must not drop the double click. */
@@ -119,7 +122,11 @@ export function pointerInput(core: PointerDispatchCore, opts: PointerInputOption
     clock: hold.clock,
     toWorld,
     toSurface: (p) => core.toCanvasLocal(p.x, p.y),
-    longPressMs: () => opts.longPress()?.duration,
+    longPressMs: () => opts.longPress()?.duration ?? opts.kitSettings().get('gestures.longPressMs'),
+    doubleClickMs: () => opts.kitSettings().get('gestures.doubleClickMs'),
+    doubleClickPx: () => opts.kitSettings().get('gestures.doubleClickPx'),
+    tapPx: () => opts.kitSettings().get('gestures.tapPx'),
+    dragPx: () => opts.kitSettings().get('gestures.dragPx'),
     clicks: opts.clicks,
     observer: {
       click: (world) => { opts.onClick()?.(world); },

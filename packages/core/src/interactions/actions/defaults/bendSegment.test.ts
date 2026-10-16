@@ -4,6 +4,7 @@ import type { InvocationCtx, OngoingInvoker } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import { makeEditAnchorsDep } from '../testUtils';
 import { bendSegmentAction } from './bendSegment';
+import { createKitSettingsStore } from '@weasel-js/react';
 
 /** Open straight line from (0, 0) to (100, 0). */
 function line(): PolygonPath {
@@ -61,6 +62,13 @@ describe('bendSegmentAction', () => {
     handle.onEnd!(at(deps, 50, 20), 'cancel');
     expect(commits).toHaveLength(0);
     expect(handle.previewIds!()).toBeNull();
+  });
+
+  it('reaches a segment as far as targets.segmentHitPx', () => {
+    const { deps } = setup();
+    expect(bendSegmentAction.enabled!(deps, { x: 50, y: 12 })).toBe(ActionDisabledReason.NotApplicable);
+    const kitSettings = createKitSettingsStore({ targets: { segmentHitPx: 16 } });
+    expect(bendSegmentAction.enabled!({ ...deps, kitSettings }, { x: 50, y: 12 })).toBe(true);
   });
 
   it('claims a press on a segment and leaves the rest to other drags', () => {

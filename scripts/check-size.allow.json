@@ -35,7 +35,7 @@
     "longestFunction": 383
   },
   "packages/core/src/canvas/SceneCanvas/GestureDispatcherMounter.tsx": {
-    "longestFunction": 253
+    "longestFunction": 249
   },
   "packages/core/src/canvas/SceneCanvas/StandardActionsRegistrar.tsx": {
     "longestFunction": 183
@@ -87,7 +87,7 @@
     "longestFunction": 209
   },
   "packages/core/src/tools/builtin/slice/useSliceTool.ts": {
-    "longestFunction": 188
+    "longestFunction": 185
   },
   "packages/d3/src/bind.ts": {
     "longestFunction": 140
@@ -203,7 +203,7 @@
     "longestFunction": 214
   },
   "packages/labkit/src/loupe/useLoupe.ts": {
-    "longestFunction": 198
+    "longestFunction": 196
   },
   "packages/labkit/src/primitives/FloatingPanel.tsx": {
     "longestFunction": 149
