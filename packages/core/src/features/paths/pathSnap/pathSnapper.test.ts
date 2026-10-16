@@ -11,7 +11,7 @@ function sceneOf(paths: Record<string, string>) {
   const nodes = new Map(Object.entries(paths).map(([id, d]) => [
     asNodeId(id), { id: asNodeId(id), kind: 'leaf' as const, layer: 'default', parent: null, pose: pathFromD(d), data: {} },
   ]));
-  return { nodes, getVersion: () => version, bump: () => { version++; } };
+  return { nodes, layers: [{ id: 'default' }], getVersion: () => version, bump: () => { version++; } };
 }
 
 describe('createPathSnapper', () => {
@@ -52,6 +52,15 @@ describe('createPathSnapper', () => {
     live.nodes.set(asNodeId('b'), { ...live.nodes.get(asNodeId('a'))!, id: asNodeId('b'), pose: pathFromD('M0 100 L100 0') });
     live.bump();
     expect(s.snap({ x: 50, y: 50 }, undefined, ONE)).toEqual({ x: 50, y: 50 });
+  });
+
+  it('offers nothing on a hidden or an annotation layer', () => {
+    const s = createPathSnapper({ ...scene, layers: [{ id: 'default', visible: false }] } as never);
+    s.configure({});
+    expect(s.snap({ x: 51, y: 50 }, undefined, ONE)).toBeNull();
+    const notes = createPathSnapper({ ...scene, layers: [{ id: 'default', annotation: true }] } as never);
+    notes.configure({});
+    expect(notes.snap({ x: 51, y: 50 }, undefined, ONE)).toBeNull();
   });
 
   it('tells subscribers when the mark changes, and release clears it', () => {
@@ -96,7 +105,7 @@ describe('what a node offers to snap to', () => {
 
   it("gives a text node's box: its corners and its center", () => {
     const nodes = new Map([leaf('t', { x: 0, y: 0, width: 100, height: 40 }, { text: 'hi' })]);
-    const s = createPathSnapper({ nodes, getVersion: () => 1 } as never);
+    const s = createPathSnapper({ nodes, layers: [{ id: 'default' }], getVersion: () => 1 } as never);
     s.configure({ kinds: { nearest: false, midpoint: false } });
     expect(s.snap({ x: 51, y: 21 }, undefined, ONE)).toEqual({ x: 50, y: 20 });
     expect(s.mark()?.kind).toBe('center');
@@ -106,7 +115,7 @@ describe('what a node offers to snap to', () => {
 
   it("gives a filled rectangle its drawn outline", () => {
     const nodes = new Map([leaf('r', { x: 10, y: 10, width: 50, height: 30 }, { fill: { paint: { color: '#000' } } })]);
-    const s = createPathSnapper({ nodes, getVersion: () => 1 } as never);
+    const s = createPathSnapper({ nodes, layers: [{ id: 'default' }], getVersion: () => 1 } as never);
     s.configure({ kinds: { nearest: false } });
     expect(s.snap({ x: 58, y: 38 }, undefined, ONE)).toEqual({ x: 60, y: 40 });
     expect(s.snap({ x: 35, y: 12 }, undefined, ONE)).toEqual({ x: 35, y: 10 });

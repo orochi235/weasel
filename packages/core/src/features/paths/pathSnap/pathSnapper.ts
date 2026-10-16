@@ -8,6 +8,7 @@ import {
   type Path, type PathSnapIndex, type PathSnapKind, type PathSnapTarget,
 } from '@weasel-js/geom';
 import type { Scene } from 'core/scene/types';
+import { isAnnotationLayer } from 'core/scene/annotation';
 import type { SnapGeometry, SnapQuery } from 'interactions/actions/snapDep';
 import { nodeSnapGeometry } from './snapGeometry';
 
@@ -53,22 +54,28 @@ export interface PathSnapper {
 export const DEFAULT_PATH_SNAP_RADIUS = 8;
 
 /** A snapper over every leaf of `scene` with geometry (`nodeSnapGeometry`),
- *  indexed once per scene version, and again when a query brings geometry of
- *  its own. */
-export function createPathSnapper(scene: Pick<Scene<unknown, string, unknown>, 'nodes' | 'getVersion'>): PathSnapper {
+ *  but those on a hidden or an annotation layer, indexed once per scene
+ *  version, and again when a query brings geometry of its own. */
+export function createPathSnapper(
+  scene: Pick<Scene<unknown, string, unknown>, 'nodes' | 'layers' | 'getVersion'>,
+): PathSnapper {
   const changed = createEmitter();
   let options: PathSnapOptions | undefined;
   let current: PathSnapMark | null = null;
-  let cached: { version: number; also: SnapGeometry | undefined; ids: (string | null)[]; index: PathSnapIndex } | null = null;
+  let cached: {
+    version: number; layers: unknown; also: SnapGeometry | undefined; ids: (string | null)[]; index: PathSnapIndex;
+  } | null = null;
 
   const indexed = (also: SnapGeometry | undefined) => {
     const version = scene.getVersion();
-    if (cached?.version === version && cached.also === also) return cached;
+    const layers = scene.layers;
+    if (cached?.version === version && cached.layers === layers && cached.also === also) return cached;
+    const off = new Set(layers.filter((l) => l.visible === false || isAnnotationLayer(l)).map((l) => l.id));
     const ids: (string | null)[] = [];
     const paths: Path[] = [];
     const extra: PathSnapTarget[] = [];
     for (const node of scene.nodes.values()) {
-      if (node.kind !== 'leaf') continue;
+      if (node.kind !== 'leaf' || off.has(node.layer)) continue;
       const g = nodeSnapGeometry(node);
       if (!g) continue;
       for (const p of g.points) extra.push({ ...p, paths: [paths.length] });
@@ -81,7 +88,7 @@ export function createPathSnapper(scene: Pick<Scene<unknown, string, unknown>, '
       for (const p of also.anchors) extra.push({ kind: 'anchor', x: p.x, y: p.y, paths: [paths.length] });
       paths.push({ kind: 'polygon', commands: new Uint8Array(), coords: new Float32Array(), fillRule: 'nonzero' });
     }
-    cached = { version, also, ids, index: createPathSnapIndex(paths, extra) };
+    cached = { version, layers, also, ids, index: createPathSnapIndex(paths, extra) };
     return cached;
   };
   const setMark = (next: PathSnapMark | null) => {

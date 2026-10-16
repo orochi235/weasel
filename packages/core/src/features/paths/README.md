@@ -83,9 +83,7 @@ the curvature comb from `pathEditComb.ts` and the balance lines from
 `snap` dep (`toolOptions.pathSnap`), and `pathSnap/pathSnapMarkerLayer.ts`
 draws the glyph and label on a snapped point. The targets — crossings,
 tangent and perpendicular points, midpoints, extremes, quadrant points, nearest
-— are `findPathSnap` in `@weasel-js/geom` (`snap/`, over `intersect/`), which
-also holds `trimPathAt` and `extendToMeet` (`paths/trimPath.ts`,
-`paths/extendPath.ts`).
+— are `findPathSnap` in `@weasel-js/geom` (`snap/`, over `intersect/`).
 
 ## Anchors are a view, not the storage
 

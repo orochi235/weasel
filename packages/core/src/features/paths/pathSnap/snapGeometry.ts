@@ -1,8 +1,9 @@
 import type { Path, PathSnapTarget } from '@weasel-js/geom';
 import { isRectPose } from 'core/geometry/autoPoseDescriptor';
-import { isSilhouettePose, poseOutline } from 'core/geometry/regionHit';
+import { poseOutline } from 'core/geometry/regionHit';
 import type { Node } from 'core/scene/types';
-import { findNodeShape, findShapeSilhouette } from 'canvas/NodeShape';
+import { findNodeShape } from 'canvas/NodeShape';
+import { nodeOutline } from '../strokeOutline';
 
 /** What a node offers path snapping: the outline it is drawn with, in world
  *  coords, and any point of its own that the outline does not carry. */
@@ -15,8 +16,7 @@ export interface NodeSnapGeometry {
 /**
  * The geometry `node` snaps to. A painter that `snapsToBox` — text, an image
  * — gives its pose box through the pose's frame, and the box's center. Any
- * other node gives the outline it is drawn with: its pose when the pose is a
- * polygon, else its painter's silhouette. Null for a node with neither.
+ * other node gives its `nodeOutline`. Null for a node with neither.
  */
 export function nodeSnapGeometry(node: Node<unknown, string, unknown>): NodeSnapGeometry | null {
   const pose = node.pose;
@@ -25,8 +25,7 @@ export function nodeSnapGeometry(node: Node<unknown, string, unknown>): NodeSnap
     const c = boxCenter(path);
     return { path, points: c ? [{ kind: 'center', ...c }] : [] };
   }
-  if (isSilhouettePose(pose)) return { path: pose, points: [] };
-  const path = findShapeSilhouette(node, pose);
+  const path = nodeOutline(node);
   return path ? { path, points: [] } : null;
 }
 

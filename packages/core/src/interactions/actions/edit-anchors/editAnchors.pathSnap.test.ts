@@ -12,6 +12,7 @@ const square = pathFromD('M0 0 H100 V100 H0 Z') as PolygonPath;
 function dragAnchor2To(to: { x: number; y: number }): PolygonPath | null {
   const scene = {
     nodes: new Map([[asNodeId('node-a'), { id: asNodeId('node-a'), kind: 'leaf' as const, layer: 'default', parent: null, pose: square, data: {} }]]),
+    layers: [{ id: 'default' }],
     getVersion: () => 1,
   };
   const snapper = createPathSnapper(scene as never);
