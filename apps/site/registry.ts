@@ -594,6 +594,15 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/EffectChartDemo.tsx',
   },
   {
+    id: 'effect-chart-run',
+    title: 'Effect chart, running',
+    package: 'diagram',
+    description: "The same pipeline with a run drawn over it, a new one every frame. A run sits beside the pipeline as its own prop, keyed by stage id: how long each stage took, which output a decision chose, and the value on each output. The chart fades a stage the run never reached and a branch it did not take, writes each cost above its stage's corner, and fills in the value rows showValues keeps on each stage. A run never lays the chart out again: it edits the scene in place, so only what changed repaints.",
+    hint: 'Every two seconds the quality check flips and the blur drops out of the run; watch the oscillator\'s value and the blur\'s cost swing.',
+    load: () => import('./demos/EffectChartDemo').then((m) => m.EffectChartRunDemo),
+    path: 'apps/site/demos/EffectChartDemo.tsx',
+  },
+  {
     id: 'hud',
     title: 'HUD widgets',
     package: 'hud',

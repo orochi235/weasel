@@ -20,6 +20,10 @@ export interface RackOptions {
   /** Whether a stage lists its `params`. Default true. A decision's symbol
    *  does not show params either way. */
   showParams?: boolean;
+  /** Whether a stage keeps a row per output for the value an `EffectRun`
+   *  shows there. Default false. Kept from the start, so a run fills it in
+   *  without the chart laying out again. */
+  showValues?: boolean;
   /** Default `'auto'`. */
   branch?: BranchChoice;
   /** Draw a decision that only skips ahead as an arc over what it skips. Default true. */
@@ -125,7 +129,10 @@ export const rack: EffectLook<RackOptions> = (pipeline, options = {}) => {
   const kept = stages.filter((s) => !gone.has(s.id));
   const nodes = kept.map((stage) => (kindOf(stage) === 'decision'
     ? { id: stage.id, ...branchNode(stage, pipeline, options.branch) }
-    : boxNode(stage, { showParams: options.showParams !== false, rowPorts: false, ports: portsOf(stage, line, wires, near, far) })));
+    : boxNode(stage, {
+      showParams: options.showParams !== false, rowPorts: false, ports: portsOf(stage, line, wires, near, far),
+      showValues: options.showValues === true,
+    })));
 
   const byId = new Map(kept.map((s) => [s.id, s]));
   const edges = wires.map((wire) => {

@@ -55,6 +55,23 @@ export interface EffectGroup {
   members: readonly string[];
 }
 
+/** One run of a pipeline: what happened, beside the pipeline rather than in
+ *  it, so it can change every frame while the pipeline and its layout stay
+ *  put. A stage the run has no entry for is one it never reached. */
+export interface EffectRun {
+  stages: Readonly<Record<string, EffectStageRun>>;
+}
+
+/** What one stage did in a run. */
+export interface EffectStageRun {
+  /** How long it took, in milliseconds. */
+  cost?: number;
+  /** For a decision: the output it chose. */
+  taken?: string;
+  /** What each output carried, by port id, as text to show. */
+  values?: Readonly<Record<string, string>>;
+}
+
 /** What a value type means, as `EffectPipeline.types` records it. */
 export interface EffectType {
   /** A control value: a condition, a gate, a modulation source. Looks draw

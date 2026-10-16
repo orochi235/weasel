@@ -1,5 +1,6 @@
-import { useState } from 'react';
-import { EffectChart, rack, type EffectLook, type EffectPipeline } from '@weasel-js/diagram/effect';
+import { useEffect, useState } from 'react';
+import { useVisibleRaf } from '@weasel-js/core';
+import { EffectChart, rack, type EffectLook, type EffectPipeline, type EffectRun } from '@weasel-js/diagram/effect';
 
 const image = (id: string, label?: string) => ({ id, type: 'image', ...(label ? { label } : {}) });
 
@@ -54,6 +55,52 @@ function Demo<TOptions>({ look }: { look?: EffectLook<TOptions> }) {
 
 export function EffectChartDemo() {
   return <Demo />;
+}
+
+/** Kept steady, so the chart lays out once. */
+const SHOW_VALUES = { showValues: true };
+
+/** The pipeline's run `frame` frames in: the oscillator swings the blur
+ *  radius, and every two seconds the quality check flips, skipping the blur. */
+export function runAt(frame: number): EffectRun {
+  const t = frame / 60;
+  const radius = 6 + 4 * Math.sin(t * 2);
+  const high = Math.floor(t / 2) % 2 === 0;
+  return {
+    stages: {
+      src: { cost: 0.3, values: { out: '1920×1080' } },
+      q: { cost: 0.01, taken: high ? 'yes' : 'no' },
+      ...(high ? { blur: { cost: 1.5 + radius * 0.4, values: { out: `${radius.toFixed(1)} px` } } } : {}),
+      osc: { cost: 0.02, values: { value: radius.toFixed(2) } },
+      beams: { cost: 0.8, values: { out: 'rays' } },
+      cutout: { cost: 0.1, values: { out: 'circle' } },
+      mix: { cost: 1.1, values: { out: high ? 'soft' : 'sharp' } },
+      out: {},
+    },
+  };
+}
+
+export function EffectChartRunDemo() {
+  const [frame, setFrame] = useState(0);
+  const loop = useVisibleRaf((_now, loop) => {
+    loop.request();
+    setFrame((f) => f + 1);
+  });
+  useEffect(() => {
+    loop.request();
+    return () => loop.cancel();
+  }, [loop]);
+  return (
+    <EffectChart
+      pipeline={PIPELINE}
+      run={runAt(frame)}
+      options={SHOW_VALUES}
+      background={GROUND}
+      width={820}
+      height={420}
+      className="ckd-canvas"
+    />
+  );
 }
 
 export function EffectChartRackDemo() {
