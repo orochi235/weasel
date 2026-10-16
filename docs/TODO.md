@@ -235,6 +235,16 @@ Priority tags:
   Alt+X adds to segments whose two ends are both selected, or to the whole path while no anchor
   is, so a selection reaching no whole segment does nothing; the new anchors join the selection
   (`packages/path-tools/src/extremes/addExtremes.ts`, `packages/geom/src/paths/extremaAnchors.ts`).
+- **(P2) Tune corner shape hands-on, with the maintainer driving.** First-draft behavior and keys:
+  a widget sits 14 screen px inside each corner anchor, past the middle of its cut, and is hit
+  within 6px; anchors within 0.05 rad of straight get none. A widget drag sets the radius from the
+  pointer's travel along the bisector, every selected corner's when its anchor is selected, and a
+  corner with no spec takes `round`. Giving a sharp corner a shape cuts a quarter of its room
+  (`DEFAULT_CORNER_TRIM_SHARE`). `cycleCornerShape` has no key of its own (its lab tunes K onto it, the
+  Slice tool's key elsewhere), `setCorners` is reached only through the panel, the
+  panel's curvature slider spans -4 to 4, and the widgets show by default under
+  `path-edit.corners` with no key to hide them (`packages/path-tools/src/cornerShape/`,
+  `packages/geom/src/paths/cornerShape.ts`, `apps/site/demos/CornerShapeLabDemo.tsx`).
 - **(P2) Tune Blend, Bend along a path, and Repeat along a path hands-on, with the maintainer
   driving.** First-draft step counts, spacing, and turn defaults, their keys, and how an effect is
   re-edited and expanded (`packages/path-tools/src/pathEffects/`, and core's `features/pathEffects/`).
