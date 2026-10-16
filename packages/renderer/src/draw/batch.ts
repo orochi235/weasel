@@ -183,12 +183,18 @@ function stageRamps(
   };
 }
 
+/** Straight-alpha rgba for a solid paint, its `opacity` taken into the alpha. */
+export function solidColor(paint: { color: string; opacity?: number }): [number, number, number, number] {
+  const [r, g, b, a] = resolveColor(paint.color);
+  return [r, g, b, a * (paint.opacity ?? 1)];
+}
+
 /** Straight-alpha rgba for a solid paint under the live group state. */
 function stagedColor(
   ctx: DrawContext, paint: { color: string; opacity?: number },
 ): [number, number, number, number] {
-  const [r, g, b, a] = resolveColor(paint.color);
-  return foldColor(ctx, r, g, b, a * (paint.opacity ?? 1));
+  const [r, g, b, a] = solidColor(paint);
+  return foldColor(ctx, r, g, b, a);
 }
 
 export function pushRect(
