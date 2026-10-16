@@ -3,18 +3,14 @@ import {
   nudgeAnchorsDownAction, nudgeAnchorsLeftAction, nudgeAnchorsRightAction, nudgeAnchorsUpAction,
   selectAnchorAction,
 } from 'interactions/actions/defaults/anchorEditing';
-import { constrainAnchorsAction, deleteConstraintAction, unconstrainAnchorsAction } from 'interactions/actions/defaults/anchorConstraints';
-import { harmonizeAnchorsAction, makeHandlesSymmetricAction, retractHandlesAction } from 'interactions/actions/defaults/anchorHandles';
-import { averageAnchorsAction, bridgeAnchorsAction, joinAnchorsAction } from 'interactions/actions/defaults/anchorJoin';
+import { makeHandlesSymmetricAction, retractHandlesAction } from 'interactions/actions/defaults/anchorHandles';
+import { averageAnchorsAction, joinAnchorsAction } from 'interactions/actions/defaults/anchorJoin';
 import { bendSegmentAction } from 'interactions/actions/defaults/bendSegment';
 import { enterPathEditAction } from 'interactions/actions/defaults/enterPathEdit';
 import { exitPathEditAction } from 'interactions/actions/defaults/exitPathEdit';
 import { editAnchorsAction } from 'interactions/actions/edit-anchors/action';
-import { balanceHandlesAction, equalizeHandlesAction } from 'interactions/actions/defaults/handleBalance';
-import { handleLockAngleAction, handleLockLengthAction } from 'interactions/actions/defaults/handleLocks';
 import { insertPathAnchorAction } from 'interactions/actions/defaults/insertPathAnchor';
 import { exitPathEditToolAction } from 'interactions/actions/defaults/pathEditTools';
-import { simplifyBrushAction, simplifyBrushToolAction } from 'interactions/actions/defaults/simplifyBrush';
 import {
   pathfinderCropAction, pathfinderDivideAction, pathfinderExcludeAction, pathfinderIntersectAction,
   pathfinderMergeAction, pathfinderSubtractAction, pathfinderTrimAction, pathfinderUnionAction,
@@ -22,13 +18,8 @@ import {
 import { createOutlinesAction } from 'interactions/actions/outlines/createOutlinesAction';
 import { outlineStrokeAction } from 'interactions/actions/outlines/outlineStrokeAction';
 import {
-  bridgePathsAction, extendToMeetAction, joinPathsAction, offsetPathAction, simplifyPathAction, smudgeBrushAction,
-  snipAtCrossingsAction, trimPathAction,
+  joinPathsAction, offsetPathAction, simplifyPathAction, snipAtCrossingsAction,
 } from 'interactions/actions/pathCommands';
-import {
-  bendAlongAction, blendAction, editPathEffectAction, expandPathEffectAction, repeatAlongAction,
-} from 'interactions/actions/pathEffects';
-import { configureWarpAction, expandWarpAction } from 'interactions/actions/warp/warpActions';
 import type { FeaturePreset } from '../features';
 
 /**
@@ -43,25 +34,16 @@ export const pathsPreset: FeaturePreset = {
   refines: ['edit'],
   actions: [
     nudgeAnchorsUpAction, nudgeAnchorsDownAction, nudgeAnchorsLeftAction, nudgeAnchorsRightAction,
-    deleteAnchorsAction, deleteConstraintAction,
+    deleteAnchorsAction,
     pathfinderUnionAction, pathfinderSubtractAction, pathfinderIntersectAction, pathfinderExcludeAction,
     pathfinderDivideAction, pathfinderCropAction, pathfinderTrimAction, pathfinderMergeAction,
     createOutlinesAction, outlineStrokeAction,
     editAnchorsAction,
-    // Ahead of enterPathEdit: a balance grip inside the path's body ties its
-    // double-click on specificity.
-    equalizeHandlesAction,
     enterPathEditAction, exitPathEditAction, insertPathAnchorAction, bendSegmentAction,
-    balanceHandlesAction, cutPathAtAnchorAction,
-    simplifyBrushAction, simplifyBrushToolAction, exitPathEditToolAction,
-    retractHandlesAction, makeHandlesSymmetricAction, harmonizeAnchorsAction,
-    handleLockAngleAction, handleLockLengthAction,
-    constrainAnchorsAction, unconstrainAnchorsAction,
-    averageAnchorsAction, joinAnchorsAction, bridgeAnchorsAction,
-    simplifyPathAction, offsetPathAction, snipAtCrossingsAction, joinPathsAction, bridgePathsAction,
-    trimPathAction, extendToMeetAction, smudgeBrushAction,
-    blendAction, bendAlongAction, repeatAlongAction, editPathEffectAction, expandPathEffectAction,
-    expandWarpAction, configureWarpAction,
+    cutPathAtAnchorAction, exitPathEditToolAction,
+    retractHandlesAction, makeHandlesSymmetricAction,
+    averageAnchorsAction, joinAnchorsAction,
+    simplifyPathAction, offsetPathAction, snipAtCrossingsAction, joinPathsAction,
     marqueeAnchorsAction, selectAnchorAction,
   ],
 };

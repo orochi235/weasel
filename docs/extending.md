@@ -53,6 +53,8 @@ interface FeaturePreset {
   tools?: (BuiltinToolId | Tool)[];    // mounted in the canvas's registry
   ambient?: (options) => Contribution; // always-live bindings, under a takeover too
   chrome?: ChromeId[];                 // selection chrome drawn only while it is on
+  chromeRules?: VisibilityRules;       // default visibility for chrome of its own
+  pathEdit?: PathEditExtension[];      // what it adds to path edit
   contributions?: SurfaceContribution[]; // installed beside `ambient`
   refines?: string[];                  // preset ids whose actions its own go ahead of
   includes?: FeaturePreset[];          // presets it turns on with itself
@@ -66,6 +68,14 @@ node nudging on the same arrow key. Core's own presets are exported too
 its names through them. `<SceneCanvas>` itself loads every core preset to
 resolve those names; `<LeanSceneCanvas>` takes objects only, so a bundle
 holds just the presets it was handed.
+
+A `PathEditExtension` is how a package adds to path edit without core knowing
+it: `marks` draws on the open path under its anchors, `parts` adds points to
+press (each a hit kind, optionally under a chrome id of its own), `markAt` and
+`deleteMark` let a click select one of its marks and Delete remove it, and
+`finishEdit` finishes every edit of a path so what it keeps true holds.
+`@weasel-js/path-tools` builds its curvature comb, balance grips, and path
+constraints this way.
 
 ### Frame hooks
 

@@ -1,4 +1,5 @@
 import { type ActionTunings, editingAnchors, never, type RectPose } from '@weasel-js/core';
+import { createCurvatureCombPreset, harmonizePreset } from '@weasel-js/path-tools';
 import {
   type ConfigOf,
   defineInstrument,
@@ -39,7 +40,9 @@ function HarmonizeTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const { comb, scale } = ctx.config;
 
   const chromeVisibility = useMemo(() => ({ 'path-edit.comb': comb ? editingAnchors : never }), [comb]);
-  const layers = useMemo(() => ({ pathEditingOverlay: { comb: { scale } } }), [scale]);
+  const features = useMemo(() => [
+    'pick', 'move', 'paths', harmonizePreset, createCurvatureCombPreset(() => ({ scale })),
+  ] as const, [scale]);
 
   return (
     <div className={s.trial}>
@@ -47,14 +50,13 @@ function HarmonizeTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
         <ActionBar group="anchors" />
       </div>
       <TrialSceneCanvas
-        features={['pick', 'move', 'paths']}
+        features={features}
         scene={scene}
         trial={ctx.trial}
         selection={selection}
         pathEdit={pathEdit}
         redrawOn={redrawOn}
         chromeVisibility={chromeVisibility}
-        layers={layers}
         tune={tune}
       />
     </div>

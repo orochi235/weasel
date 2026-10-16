@@ -15,9 +15,8 @@
  *     `handleLock` param ({@link EditAnchorsParams}), holds a lock with no
  *     modifier. The lock in force draws its guide as a `polyline` overlay
  *     of role `lock`: the line, or the circle round the anchor.
- *   - **Constraints** on the node hold every frame: the dragged anchors go
- *     where the pointer puts them and the dep's `constrainEdit` moves the
- *     rest.
+ *   - **Every frame is finished** by the dep's `finishEdit`, so what a
+ *     path-edit extension keeps true holds while the drag runs.
  *   - **Under a `pathSymmetry` dep**, on a path that is its own image under
  *     some of its transforms, every image of what is dragged follows it.
  *
@@ -124,12 +123,12 @@ interface EditAnchorsScratch {
 const paramsOf = (opts: BindingOpts | undefined): EditAnchorsParams =>
   (resolveParams(opts?.params) ?? {}) as EditAnchorsParams;
 
-/** Take `next` as the frame to show, with the node's constraints made to hold. A frame they
- *  cannot hold in is dropped, so the path stays at the last one they could. */
+/** Take `next` as the frame to show, finished by the dep. A frame it cannot
+ *  finish is dropped, so the path stays at the last one it could. */
 function track(scratch: EditAnchorsScratch, next: ReturnType<typeof editAnchorSetTracked>): void {
   if (!next) return;
   const { dep, id } = scratch;
-  const path = dep.constrainEdit ? dep.constrainEdit(id, next.path, next.origins) : next.path;
+  const path = dep.finishEdit ? dep.finishEdit(id, next.path, next.origins) : next.path;
   if (!path) return;
   scratch.currentPose = path as PolygonPath;
   scratch.origins = next.origins;

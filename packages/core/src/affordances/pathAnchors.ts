@@ -1,10 +1,11 @@
-/** Path anchor, control-handle, segment, and balance-grip affordances. */
+/** Path anchor, control-handle, and segment affordances, and the parts path-edit extensions add. */
 
 import type { CursorSpec } from '@weasel-js/cursor';
 import type { Affordance, AffordanceBinding, AffordanceRegion, CommonAffordanceScratch } from './types';
 import type { ChromeState } from 'core/selection/chromeState';
-import { handleBalances, pathToAnchors, type AnchorSet, type PolygonPath } from '@weasel-js/geom';
+import { pathToAnchors, type AnchorSet, type PolygonPath } from '@weasel-js/geom';
 import { enumerateAnchors } from 'interactions/actions/edit-anchors/geometry';
+import type { PathEditExtension } from 'features/paths/pathEditExtension';
 
 /**
  * Live anchor-editing state. The thunk that returns it is called on every
@@ -16,6 +17,10 @@ export interface AnchorState {
   editingId: string | null;
   /** Current editable path for a node id. Non-polygon values are ignored. */
   getPose(id: string): unknown;
+  /** The committed pose and data of a node, which extensions' parts read. */
+  getNode?(id: string): { pose: unknown; data: unknown } | null;
+  /** The path-edit extensions whose parts are pressed, in order. */
+  extensions?: readonly PathEditExtension[];
 }
 
 /** Options for the path-anchor affordances. */
@@ -39,12 +44,8 @@ export interface AnchorScratch extends CommonAffordanceScratch {
 /** Chrome-caps id gating the anchor, control, and segment affordances. */
 export const PATH_ANCHOR_CHROME_ID = 'path-edit.anchors';
 
-/** Chrome-caps id gating the balance grips, which the path-edit overlay draws
- *  under the same id. Off by default. */
-export const PATH_BALANCE_CHROME_ID = 'path-edit.balance';
-
 /**
- * Segment, balance-grip, anchor, and control affordances for the selected
+ * Segment, extension-part, anchor, and control affordances for the selected
  * paths, bottom → top.
  *
  * Three affordances rather than one, so that a control handle beats an anchor
@@ -52,9 +53,9 @@ export const PATH_BALANCE_CHROME_ID = 'path-edit.balance';
  * the segment they sit on. Within each, nearest wins. A press on the edited
  * path's outline is a `segment` hit, which the segment bend binds to and a
  * selection move turns down. Anchors, controls, and segments share one id:
- * chrome-caps gates anchor editing as a single piece of chrome. Balance grips,
- * `balance:N` at the middle of each curved segment's handle-to-handle line,
- * have an id of their own so they can be shown apart from it.
+ * chrome-caps gates anchor editing as a single piece of chrome. A part a
+ * path-edit extension adds (`PathEditExtension.parts`) may name a chrome id of
+ * its own as well, so it can be shown apart from the anchors.
  *
  * Order matters — spread this into an affordance list in the returned order.
  */
@@ -168,33 +169,39 @@ export function createPathAnchorAffordances(
     },
   };
 
-  return [segments, balanceGrips(getAnchorState, hitRadius, cursor), anchors, controls];
+  return [segments, extensionParts(getAnchorState, hitRadius, cursor), anchors, controls];
 }
 
-/** A grip at the middle of each curved segment's balance line, on the path in
- *  edit mode while it is selected: `balance:N`, N the flat index of the
- *  segment's first anchor. */
-function balanceGrips(
+/** The parts path-edit extensions add to the path in edit mode while it is
+ *  selected, each pressed as its own `hitKind`. */
+function extensionParts(
   getAnchorState: () => AnchorState | null,
   hitRadius: number,
   cursor: CursorSpec,
 ): Affordance {
   return {
-    id: PATH_BALANCE_CHROME_ID,
+    id: PATH_ANCHOR_CHROME_ID,
     regions(state) {
       const anchorState = getAnchorState();
       const editingId = anchorState?.editingId ?? null;
-      if (editingId === null || !(state.selection as readonly string[]).includes(editingId)) return [];
+      const extensions = anchorState?.extensions?.filter((e) => e.parts) ?? [];
+      if (editingId === null || extensions.length === 0) return [];
+      if (!(state.selection as readonly string[]).includes(editingId)) return [];
       const pose = anchorState!.getPose(editingId);
-      if (!pose || (pose as { kind?: string }).kind !== 'polygon') return [];
-      return handleBalances(pathToAnchors(pose as PolygonPath) as AnchorSet).map((line) => ({
-        id: `${editingId}:balance:${line.flat}`,
+      const node = anchorState!.getNode?.(editingId);
+      if (!node || !pose || (pose as { kind?: string }).kind !== 'polygon') return [];
+      const target = {
+        id: editingId, node, path: pose as PolygonPath, anchors: pathToAnchors(pose as PolygonPath) as AnchorSet,
+      };
+      return extensions.flatMap((ext) => ext.parts!(target).map((part): AffordanceRegion => ({
+        id: `${editingId}:${part.hitKind}`,
         targetId: null,
-        shape: { kind: 'point', x: line.grip.x, y: line.grip.y, hitRadiusPx: hitRadius },
-        hitKind: `balance:${line.flat}`,
+        shape: { kind: 'point', x: part.x, y: part.y, hitRadiusPx: hitRadius },
+        hitKind: part.hitKind,
+        ...(part.chromeId ? { chromeId: part.chromeId } : {}),
         cursor,
         bind: (): AffordanceBinding => ({ initialScratch: { targetId: editingId } }),
-      }));
+      })));
     },
   };
 }

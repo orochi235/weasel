@@ -160,14 +160,15 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     scene, supplied: selectionProp, options: selectionOptions, selectable, describeKind,
   });
 
-  // `isAllowed` is absent, not a predicate, when no mode registry is wired:
-  // see `PathEditSource.isAllowed`.
+  const enabled = useEnabledFeatures(features, presetSource.named, viewport !== undefined);
+  // `isAllowed` is absent, not a predicate, when no mode registry is wired: see `PathEditSource.isAllowed`.
   const pathEditState = usePathEditState({
     host: pathEdit,
     isAllowed: getActiveMode
       ? () => getActiveMode().allowedCapabilities.has('edits-anchors')
       : undefined,
     isSelectedNode: (id) => isSelectedNode(scene, selection, id),
+    extensions: enabled.pathEdit,
   });
 
   const selectToolWithDefaults = useMemo(() => ({
@@ -218,7 +219,6 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     pickBest: internalPickBest, nodes: adapter, kindOfData, isPointerInteractive,
   });
 
-  const enabled = useEnabledFeatures(features, presetSource.named, viewport !== undefined);
   const { tools, internal: internalTools, takeover: toolsTakeover } = useCanvasTools({
     select: internalSelect,
     enabled,

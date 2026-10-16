@@ -1,0 +1,208 @@
+/**
+ * The path-effect actions: make a live blend, bend, or repeat from the
+ * selection; change one's settings; and expand one into ordinary paths.
+ */
+import { type Action, type ActionDeps, ActionDisabledReason, type ImmediateInvoker } from '@weasel-js/routing';
+import { worldEditToStorage } from '@weasel-js/geom';
+import {
+  commitOps, createSetDataOp, deleteNode, derivedDepOf, insertAt, type NodeId, type Op, type PathEffect, pathEffectNode, pathEffectOf, pathEffectParts, registeredPathEffects, type Scene, type SceneNode as Node, slotOf,
+} from '@weasel-js/core';
+import { EFFECT_DEFAULTS, withEffectSettings } from './params';
+
+type AnyScene = Scene<unknown, string, unknown>;
+type AnyNode = Node<unknown, string, unknown>;
+
+/** The `group` every path-effect action is in, for an `<ActionBar>`. */
+export const PATH_EFFECTS_GROUP = 'pathEffects';
+
+/** The first two selected leaves, in the order they were selected. `null`
+ *  too in a scene whose registry holds no path effects, which could not save
+ *  one. */
+function selectedPair(deps: ActionDeps | undefined): [AnyNode, AnyNode] | null {
+  const scene = deps?.scene as AnyScene | undefined;
+  if (!scene || registeredPathEffects(scene.registry) === null) return null;
+  const leaves = (deps?.selection?.get() ?? [])
+    .map((id) => scene.get(id as NodeId))
+    .filter((n): n is AnyNode => n !== undefined && n.kind === 'leaf');
+  return leaves.length >= 2 ? [leaves[0]!, leaves[1]!] : null;
+}
+
+/** The selected nodes holding a path effect. */
+function selectedEffects(deps: ActionDeps | undefined, ids?: readonly string[]): AnyNode[] {
+  const scene = deps?.scene as AnyScene | undefined;
+  if (!scene) return [];
+  return (ids ?? deps?.selection?.get() ?? [])
+    .map((id) => scene.get(id as NodeId))
+    .filter((n): n is AnyNode => n !== undefined && pathEffectOf(n) !== null);
+}
+
+interface CreateSpec {
+  id: string;
+  label: string;
+  kind: PathEffect['kind'];
+  key: string;
+  code: string;
+  /** Where the new node goes: between its two sources, or over both. */
+  between: boolean;
+}
+
+function createEffectAction(spec: CreateSpec): Action & { requires: string[] } {
+  return {
+    id: spec.id,
+    label: spec.label,
+    group: PATH_EFFECTS_GROUP,
+    // Alt+Shift, which no major browser takes for these letters (see
+    // `BROWSER_RESERVED_CHORDS`); `code` too, since with Alt held on a Mac the
+    // key reads as another glyph.
+    defaultBinding: { kind: 'key', key: spec.key, code: spec.code, mods: { alt: true, shift: true } },
+    eligible: { capability: 'creates-shapes' },
+    requires: ['selection', 'scene', 'applyOps'],
+    invoker: {
+      timing: 'immediate',
+      run: (deps, params) => {
+        const scene = deps.scene as AnyScene | undefined;
+        const pair = selectedPair(deps);
+        if (!scene || !pair) return;
+        const derivations = registeredPathEffects(scene.registry)!;
+        const [a, b] = pair;
+        const effect = withEffectSettings(EFFECT_DEFAULTS[spec.kind], params as Record<string, unknown> | undefined);
+        const sameParent = a.parent === b.parent;
+        const slots = [slotOf(scene, a.id), slotOf(scene, b.id)];
+        // Inserting at the upper source's slot puts the steps just under it.
+        const index = !sameParent ? -1 : spec.between ? Math.max(...slots) : Math.max(...slots) + 1;
+        const node = {
+          ...pathEffectNode(effect, [a.id, b.id], a.layer, derivations),
+          id: scene.mintId(),
+          parent: sameParent ? a.parent : null,
+        } as unknown as AnyNode;
+        commitOps(deps, [insertAt(node, index, spec.label)], spec.label);
+        deps.selection?.set([node.id] as never);
+      },
+    } satisfies ImmediateInvoker,
+    enabled: (deps) => {
+      const scene = deps?.scene as AnyScene | undefined;
+      if (scene && registeredPathEffects(scene.registry) === null) return ActionDisabledReason.NotApplicable;
+      return selectedPair(deps) ? true : ActionDisabledReason.SelectionRequired;
+    },
+  };
+}
+
+/**
+ * Steps between the first two selected shapes, in the order they were
+ * selected: `params.steps` of them, each shape, fill, stroke and turn
+ * interpolated. The blend is live — editing either source moves its steps —
+ * and goes just under the upper source. Its other params are
+ * `BlendEffect`'s.
+ */
+export const blendAction = createEffectAction({
+  id: 'blend', label: 'Blend', kind: 'blend', key: 'b', code: 'KeyB', between: true,
+});
+
+/**
+ * The first selected shape bent along the second, live: editing the spine
+ * re-bends it. Params are `BendAlongEffect`'s.
+ */
+export const bendAlongAction = createEffectAction({
+  id: 'bendAlong', label: 'Bend Along Path', kind: 'bendAlong', key: 'w', code: 'KeyW', between: false,
+});
+
+/**
+ * Copies of the first selected shape along the second, live. Params are
+ * `RepeatAlongEffect`'s.
+ */
+export const repeatAlongAction = createEffectAction({
+  id: 'repeatAlong', label: 'Repeat Along Path', kind: 'repeatAlong', key: 'r', code: 'KeyR', between: false,
+});
+
+const EDIT_LABEL = 'Edit Path Effect';
+
+/**
+ * Change the settings of path effects: `params.ids` when given, else the
+ * selected ones. Every other param is a setting, laid over each effect's
+ * own, and one that would change nothing commits nothing. Consecutive edits
+ * of one effect coalesce, so a slider dragged through many values is one
+ * undo step where the scene coalesces.
+ */
+export const editPathEffectAction: Action & { requires: string[] } = {
+  id: 'editPathEffect',
+  label: EDIT_LABEL,
+  requires: ['scene', 'applyOps'],
+  invoker: {
+    timing: 'immediate',
+    run: (deps, params) => {
+      const p = params as Record<string, unknown> | undefined;
+      const ids = Array.isArray(p?.ids) ? (p.ids as string[]) : undefined;
+      const ops: Op[] = [];
+      for (const node of selectedEffects(deps, ids)) {
+        const effect = pathEffectOf(node)!;
+        const next = withEffectSettings(effect, p);
+        if (sameEffect(effect, next)) continue;
+        ops.push(createSetDataOp({
+          id: node.id,
+          from: node.data,
+          to: { ...(node.data as object), pathEffect: next },
+          label: EDIT_LABEL,
+          coalesceKey: `${EDIT_LABEL}:${node.id}`,
+        }));
+      }
+      commitOps(deps, ops, EDIT_LABEL);
+    },
+  } satisfies ImmediateInvoker,
+};
+
+function sameEffect(a: PathEffect, b: PathEffect): boolean {
+  const keys = new Set([...Object.keys(a), ...Object.keys(b)]);
+  for (const k of keys) {
+    if ((a as unknown as Record<string, unknown>)[k] !== (b as unknown as Record<string, unknown>)[k]) return false;
+  }
+  return true;
+}
+
+const EXPAND_LABEL = 'Expand to Paths';
+
+/**
+ * Turn each selected path effect into the ordinary paths it shows, in its
+ * slot and in its paint, and select them. Its sources stay; the paths no
+ * longer follow them.
+ */
+export const expandPathEffectAction: Action & { requires: string[] } = {
+  id: 'expandPathEffect',
+  label: EXPAND_LABEL,
+  group: PATH_EFFECTS_GROUP,
+  defaultBinding: { kind: 'key', key: 'e', code: 'KeyE', mods: { alt: true, shift: true } },
+  eligible: { capability: 'creates-shapes' },
+  requires: ['selection', 'scene', 'applyOps'],
+  invoker: {
+    timing: 'immediate',
+    run: (deps) => {
+      const scene = deps.scene as AnyScene | undefined;
+      if (!scene) return;
+      // Top slot first, so a delete cannot shift a later one's index.
+      const effects = selectedEffects(deps)
+        .map((node) => ({ node, at: slotOf(scene, node.id) }))
+        .sort((x, y) => y.at - x.at);
+      const ops: Op[] = [];
+      const made: string[] = [];
+      for (const { node, at } of effects) {
+        const sources = (Array.isArray(node.dependsOn) ? node.dependsOn : []).map((id) => derivedDepOf(scene, id));
+        const parts = pathEffectParts(node, sources) ?? [];
+        ops.push(deleteNode(scene, node, EXPAND_LABEL));
+        parts.forEach((part, k) => {
+          const { pose, path } = worldEditToStorage({ x: 0, y: 0, width: 0, height: 0 }, part.path);
+          const data = {
+            path,
+            ...(part.fill === undefined ? {} : { fill: part.fill }),
+            ...(part.stroke === undefined ? {} : { stroke: part.stroke }),
+          };
+          const copy = { id: scene.mintId(), kind: 'leaf', layer: node.layer, parent: node.parent, pose, data } as AnyNode;
+          ops.push(insertAt(copy, at < 0 ? at : at + k, EXPAND_LABEL));
+          made.push(copy.id);
+        });
+      }
+      if (ops.length === 0) return;
+      commitOps(deps, ops, EXPAND_LABEL);
+      deps.selection?.set(made as never);
+    },
+  } satisfies ImmediateInvoker,
+  enabled: (deps) => (selectedEffects(deps).length > 0 ? true : ActionDisabledReason.SelectionRequired),
+};

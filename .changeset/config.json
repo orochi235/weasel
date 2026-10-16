@@ -39,6 +39,7 @@
       "@weasel-js/animator",
       "@weasel-js/minimap",
       "@weasel-js/symmetry",
+      "@weasel-js/path-tools",
       "@weasel-js/forge",
       "@weasel-js/routing"
     ]

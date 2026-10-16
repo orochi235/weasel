@@ -19,6 +19,7 @@ import type { ChromeId, VisibilityRules } from 'features/chrome-caps/types';
 import type { UseMoveOptions } from 'interactions/actions/move/options';
 import type { UseRotateOptions } from 'interactions/actions/rotate/options';
 import type { Contribution, Tool } from 'tools/overlayBinding';
+import type { PathEditExtension } from 'features/paths/pathEditExtension';
 import type { SurfaceContribution } from '../surfaceContribution';
 import type { BuiltinToolId } from './props';
 
@@ -77,6 +78,12 @@ export interface FeaturePreset {
   readonly ambient?: (options: FeatureBindingOptions) => Contribution;
   /** The selection chrome that is drawn, and can be grabbed, only while it is on. */
   readonly chrome?: readonly ChromeId[];
+  /** Default chrome-caps rules for chrome of its own, under the consumer's
+   *  `chromeVisibility`: a mark it draws only on request, say. */
+  readonly chromeRules?: VisibilityRules;
+  /** What it adds to path edit: marks, grabbable parts, what an edit keeps
+   *  true. Consulted in preset order. */
+  readonly pathEdit?: readonly PathEditExtension[];
   /** Entries installed beside `<SceneCanvas ambient>`, with every role they
    *  declare: deps, overlays, `attach`, views, frame hooks. A `tools` takeover
    *  brings its own ambient and leaves them out. */
@@ -110,6 +117,8 @@ export interface PresetSource {
 /** The presets a canvas runs with, in the order their actions register. */
 export interface EnabledPresets {
   readonly presets: readonly FeaturePreset[];
+  /** Their path-edit extensions, in order. */
+  readonly pathEdit: readonly PathEditExtension[];
   /** Whether a preset with this id is on. */
   has(id: string): boolean;
 }
@@ -152,7 +161,7 @@ export function resolveFeatures(
     ordered.push(p);
   };
   for (const p of listed) place(p);
-  return { presets: ordered, has: (id) => byId.has(id) };
+  return { presets: ordered, pathEdit: ordered.flatMap((p) => p.pathEdit ?? []), has: (id) => byId.has(id) };
 }
 
 /** The actions the given presets register, in registration order. */
@@ -184,12 +193,12 @@ export function presetContributions(enabled: EnabledPresets): SurfaceContributio
   return enabled.presets.flatMap((p) => p.contributions ?? []);
 }
 
-/** Rules hiding each chrome id in `owned` that no enabled preset turns on.
- *  `never` also takes a handle out of hit-testing, so a hidden one cannot be
- *  grabbed. */
+/** The enabled presets' own `chromeRules`, then rules hiding each chrome id
+ *  in `owned` that no enabled preset turns on. `never` also takes a handle out
+ *  of hit-testing, so a hidden one cannot be grabbed. */
 export function presetChromeRules(enabled: EnabledPresets, owned: readonly ChromeId[]): VisibilityRules {
   const on = new Set(enabled.presets.flatMap((p) => p.chrome ?? []));
-  const rules: VisibilityRules = {};
+  const rules: VisibilityRules = Object.assign({}, ...enabled.presets.map((p) => p.chromeRules ?? {}));
   for (const id of owned) if (!on.has(id)) rules[id] = never;
   return rules;
 }

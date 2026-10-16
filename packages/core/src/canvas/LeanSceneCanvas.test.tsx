@@ -27,9 +27,10 @@ const mine: FeaturePreset = {
   actions: [go],
   tools: [own],
   contributions: [{ id: 'mine.deps', eligibility: { always: true }, deps: { mineValue: () => 42 } as never }],
+  pathEdit: [{ id: 'mine.marks', marks: () => [] }],
 };
 
-interface Seen { actionIds: string[]; dep: unknown }
+interface Seen { actionIds: string[]; dep: unknown; extensions?: readonly { id: string }[] }
 
 function Probe({ into }: { into: Seen }) {
   const reg = useActionsRegistry();
@@ -37,6 +38,7 @@ function Probe({ into }: { into: Seen }) {
   useEffect(() => {
     into.actionIds = reg ? reg.list().map((a) => a.id) : [];
     into.dep = deps.get('mineValue' as never);
+    into.extensions = (deps.get('editAnchors' as never) as { extensions?: readonly { id: string }[] } | undefined)?.extensions;
   });
   return null;
 }
@@ -44,7 +46,7 @@ function Probe({ into }: { into: Seen }) {
 const scene = () => createScene<unknown, 'main', unknown>({ systemLayers: [{ id: 'main' }] });
 
 describe('a preset object', () => {
-  it("registers its actions and tools and installs its contributions' deps", () => {
+  it("registers its actions and tools, installs its contributions' deps, and hands path edit its extensions", () => {
     const seen: Seen = { actionIds: [], dep: undefined };
     let tools: ToolsApi | null = null;
     render(
@@ -56,6 +58,7 @@ describe('a preset object', () => {
     expect(seen.actionIds).toContain('areaSelect');
     expect(Object.keys(tools!.registry)).toEqual(['select', 'mine.tool']);
     expect(seen.dep).toBe(42);
+    expect(seen.extensions?.map((e) => e.id)).toEqual(['mine.marks']);
   });
 });
 

@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import { actionBindings, browserReservedChord } from '@weasel-js/routing';
 import type { KeySpec } from '@weasel-js/gestures';
 import * as defaults from './defaults';
-import { bendAlongAction, blendAction, expandPathEffectAction, repeatAlongAction } from './pathEffects';
 
 import type { Action } from '@weasel-js/routing';
 
@@ -20,10 +19,6 @@ function reserved(actions: readonly AnyAction[]): string[] {
 }
 
 describe('kit key bindings a browser reserves', () => {
-  it('leaves the path-effect commands on chords every browser hands the page', () => {
-    expect(reserved([blendAction, bendAlongAction, repeatAlongAction, expandPathEffectAction])).toEqual([]);
-  });
-
   it('has no collision but the two known ones', () => {
     const actions = (Object.values(defaults) as unknown[]).filter(
       (v): v is AnyAction => typeof v === 'object' && v !== null && 'id' in v && 'invoker' in v,

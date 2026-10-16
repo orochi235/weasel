@@ -6,8 +6,8 @@
  * `getEditablePath` returns it in **world coords** either way, and `applyEdit` commits in the
  * correct storage shape as one undoable batch, preserving the render invariant
  * `pathInWorld(stored, pose) === world`. A node with a `data.skin` has it renumbered in that
- * batch when the caller says where the points came from, and its `data.constraints` made to hold and
- * renumbered the same way. Live previews ride the standard
+ * batch when the caller says where the points came from, and each path-edit extension finishes
+ * the edit first (`PathEditExtension.finishEdit`). Live previews ride the standard
  * `OngoingHandle.previewIds/Pose/Data` triple — this dep doesn't own preview state.
  */
 import { useState } from 'react';
@@ -17,13 +17,12 @@ import type { EditAnchorsDep } from 'interactions/actions/depSchema';
 import { locksOf, type EditAnchorsParams } from 'interactions/actions/edit-anchors/params';
 import type { Scene, NodeId } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
-import type { PathConstraint, PointOrigin, PolygonPath } from '@weasel-js/geom';
+import type { PointOrigin, PolygonPath } from '@weasel-js/geom';
 import type { Skin } from '@weasel-js/animator';
 import { remapSkin } from '../../animation/rig/skinBinding';
 import { classifyPathStorage, resolveEditablePathOf, storeEditablePath } from 'features/paths/editablePath';
 import { withoutShapeGenerator } from 'features/paths/shapeGenerator';
-import { constrainNodeEdit, constraintsOf, solveNodeConstraints } from 'features/paths/pathConstraints';
-import { withoutPathWarp } from 'features/paths/pathWarp';
+import { withoutGeometryBoundData, type PathEditExtension } from 'features/paths/pathEditExtension';
 import { createPathEditState, isSelectedNode, type PathEditState } from 'features/paths/pathEditState';
 import { recordModeSwitch, resolveParams, type ActionTunings } from '@weasel-js/routing';
 import type { Op } from 'core/ops/types';
@@ -35,7 +34,7 @@ interface OpsApplier {
 }
 
 /** The part of a `PathEditState` the dep reads and writes. */
-export type EditAnchorsStateRef = Omit<PathEditState, 'subscribe' | 'getEditingIds'>;
+export type EditAnchorsStateRef = Omit<PathEditState, 'subscribe' | 'getEditingIds' | 'setExtensions'>;
 /** The same, with the change notice chrome reading the dep waits on. */
 export type EditAnchorsStateSource = EditAnchorsStateRef & Partial<Pick<PathEditState, 'subscribe'>>;
 
@@ -92,7 +91,7 @@ export function useEditAnchorsDepSource(
           );
           // Anchor indices only mean something relative to one path.
           state.setSelectedAnchors(EMPTY_ANCHOR_SELECTION);
-          state.setSelectedConstraint(null);
+          state.setSelectedMark(null);
           state.setMarquee(null);
         }
         stateRef.current.setEditingId(id);
@@ -101,15 +100,16 @@ export function useEditAnchorsDepSource(
       setSelectedAnchors(next: Iterable<number>) {
         if (!effectiveId) return;
         const set = new Set(next);
-        if (set.size > 0) state.setSelectedConstraint(null);
+        if (set.size > 0) state.setSelectedMark(null);
         state.setSelectedAnchors(set);
       },
-      selectedConstraint: effectiveId ? state.getSelectedConstraint() : null,
-      setSelectedConstraint(index: number | null) {
+      selectedMark: effectiveId ? state.getSelectedMark() : null,
+      setSelectedMark(mark) {
         if (!effectiveId) return;
-        if (index !== null) state.setSelectedAnchors(EMPTY_ANCHOR_SELECTION);
-        state.setSelectedConstraint(index);
+        if (mark !== null) state.setSelectedAnchors(EMPTY_ANCHOR_SELECTION);
+        state.setSelectedMark(mark);
       },
+      extensions: state.getExtensions(),
       marquee,
       setMarquee(rect) {
         if (!effectiveId) return;
@@ -125,28 +125,45 @@ export function useEditAnchorsDepSource(
         if (!effectiveId) return;
         state.setTool(id);
       },
-      ...pathAccess(sc, ad, state),
+      ...pathAccess(sc, ad, state.getExtensions()),
     };
   });
+}
+
+/** `worldPath` finished by each of `extensions` in turn, and the data they
+ *  set beside it; null when one cannot finish it. */
+function finish(
+  extensions: readonly PathEditExtension[],
+  node: EditableNode,
+  worldPath: PolygonPath,
+  origins?: readonly (PointOrigin | null)[],
+): { path: PolygonPath; data: Record<string, unknown> | null } | null {
+  let path = worldPath;
+  let data: Record<string, unknown> | null = null;
+  for (const ext of extensions) {
+    if (!ext.finishEdit) continue;
+    const done = ext.finishEdit(node, path, origins);
+    if (!done) return null;
+    path = done.path;
+    if (done.data) data = { ...(data ?? {}), ...done.data };
+  }
+  return { path, data };
 }
 
 /** The members of the dep that read the scene and commit to it. */
 function pathAccess(
   sc: Scene<unknown, string, unknown>,
   ad: OpsApplier,
-  state: Pick<EditAnchorsStateRef, 'setSelectedConstraint'>,
-): Pick<EditAnchorsDep, 'getEditablePath' | 'getStorageKind' | 'getNodeShape' | 'applyEdit' | 'editOps' | 'constrainEdit' | 'setConstraints'> {
+  extensions: readonly PathEditExtension[],
+): Pick<EditAnchorsDep, 'getEditablePath' | 'getStorageKind' | 'getNodeShape' | 'applyEdit' | 'editOps' | 'finishEdit' | 'store'> {
   const editOps = (id: string, worldPath: unknown, label: string, origins?: readonly (PointOrigin | null)[]): Op[] => {
     const node = sc.get(id as NodeId) as EditableNode | undefined;
     if (!node) return [];
-    const solved = constrainNodeEdit(node, worldPath as PolygonPath, origins);
-    if (!solved) return [];
+    const done = finish(extensions, node, worldPath as PolygonPath, origins);
+    if (!done) return [];
     const skin = (node.data as { skin?: Skin } | null)?.skin;
-    const patch = {
-      ...(skin && origins ? { skin: remapSkin(skin, origins) } : {}),
-      ...(solved.constraints !== constraintsOf(node.data) ? { constraints: solved.constraints } : {}),
-    };
-    return reshapeOps(id, node, solved.path, label, Object.keys(patch).length > 0 ? patch : null);
+    const patch = { ...(skin && origins ? { skin: remapSkin(skin, origins) } : {}), ...done.data };
+    return reshapeOps(id, node, done.path, label, Object.keys(patch).length > 0 ? patch : null);
   };
   return {
     getEditablePath(id: string): PolygonPath | null {
@@ -168,18 +185,15 @@ function pathAccess(
       if (ops.length > 0) ad.applyOps(ops, label);
     },
     editOps,
-    constrainEdit(id: string, worldPath: unknown, origins?: readonly (PointOrigin | null)[]) {
+    finishEdit(id: string, worldPath: unknown, origins?: readonly (PointOrigin | null)[]) {
       const node = sc.get(id as NodeId) as EditableNode | undefined;
-      return constrainNodeEdit(node, worldPath as PolygonPath, origins)?.path ?? null;
+      if (!node) return worldPath;
+      return finish(extensions, node, worldPath as PolygonPath, origins)?.path ?? null;
     },
-    setConstraints(id: string, constraints: readonly PathConstraint[], label: string) {
+    store(id, worldPath, label, data) {
       const node = sc.get(id as NodeId) as EditableNode | undefined;
-      const solved = solveNodeConstraints(node, constraints);
-      if (!node || !solved) return [];
-      const ops = reshapeOps(id, node, solved.path, label, { constraints: [...constraints] });
-      state.setSelectedConstraint(null);
+      const ops = node ? reshapeOps(id, node, worldPath, label, data ?? null) : [];
       if (ops.length > 0) ad.applyOps(ops, label);
-      return solved.unsatisfied;
     },
   };
 }
@@ -198,7 +212,10 @@ function reshapeOps(
   if (!next) return [];
   const reshape = createTransformOp({ id, from: node.pose, to: next.pose, label });
   // A path edited by hand is no longer what its generator or warp makes: it becomes plain geometry.
-  const data = withoutPathWarp(next.data === node.data ? node.data : withoutShapeGenerator(next.data));
+  // Its skin and constraints stay, renumbered by the caller's patch where it has one.
+  const data = withoutGeometryBoundData(
+    next.data === node.data ? node.data : withoutShapeGenerator(next.data), ['skin', 'constraints'],
+  );
   if (data === node.data && !patch) return [reshape];
   return [reshape, createSetDataOp({ id, from: node.data, to: { ...(data as object), ...patch }, label })];
 }

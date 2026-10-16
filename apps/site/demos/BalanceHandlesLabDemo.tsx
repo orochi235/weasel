@@ -1,4 +1,5 @@
 import { editingAnchors, never, type RectPose } from '@weasel-js/core';
+import { balancePreset, createCurvatureCombPreset } from '@weasel-js/path-tools';
 import {
   type ConfigOf,
   defineInstrument,
@@ -36,18 +37,19 @@ function BalanceTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
     'path-edit.balance': balance ? editingAnchors : never,
     'path-edit.comb': comb ? editingAnchors : never,
   }), [balance, comb]);
-  const layers = useMemo(() => ({ pathEditingOverlay: { comb: { scale } } }), [scale]);
+  const features = useMemo(() => [
+    'pick', 'move', 'paths', balancePreset, createCurvatureCombPreset(() => ({ scale })),
+  ] as const, [scale]);
 
   return (
     <TrialSceneCanvas
-      features={['pick', 'move', 'paths']}
+      features={features}
       scene={scene}
       trial={ctx.trial}
       selection={selection}
       pathEdit={pathEdit}
       redrawOn={redrawOn}
       chromeVisibility={chromeVisibility}
-      layers={layers}
     />
   );
 }

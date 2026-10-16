@@ -10,6 +10,7 @@ import {
   useSelection,
   withPathEffectsRegistry,
 } from '@weasel-js/core';
+import { pathEffectsPreset } from '@weasel-js/path-tools';
 import {
   type ConfigOf,
   defineInstrument,
@@ -26,6 +27,8 @@ import { useMemo } from 'react';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { PathEffectFrame, pathNode, usePathEffectProbe, usePathEffectSettings } from './pathEffectLab';
+
+const FEATURES = ['draw', pathEffectsPreset] as const;
 
 const config = f.schema({
   steps: f.number(5).range(0, 24).step(1).label('Steps'),
@@ -83,7 +86,7 @@ function BlendTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   return (
     <PathEffectFrame>
       <TrialSceneCanvas
-        features={['draw']}
+        features={FEATURES}
         defaultTools={['rect', 'pen']}
         scene={scene}
         selection={selection}

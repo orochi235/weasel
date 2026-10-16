@@ -2,7 +2,7 @@
  * The path-edit state and its anchor overlay for one canvas surface.
  */
 import { useLatest } from '@weasel-js/react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { PathEditHost } from 'canvas/SceneCanvas/pathEditHost';
 import type { RenderLayer } from 'core/layers/render';
 import { rectFromPlane, type PlaneMap } from 'core/viewport/parallax';
@@ -10,8 +10,8 @@ import type { View } from 'core/viewport/view';
 import { liveEditablePath, type EditableShape } from './editablePath';
 import { createPathEditingOverlayLayer } from './pathEditingOverlayLayer';
 import type { PathEditingOverlaySlotConfig } from 'canvas/layerSlots';
-import { constraintAxisOf, constraintsOf } from './pathConstraints';
 import { createPathEditState, type PathEditState } from './pathEditState';
+import type { PathEditExtension } from './pathEditExtension';
 
 export interface UsePathEditStateOptions {
   /** `<SceneCanvas pathEdit>`. */
@@ -19,6 +19,8 @@ export interface UsePathEditStateOptions {
   /** See `PathEditSource.isAllowed`; absent when no mode registry is wired. */
   isAllowed: (() => boolean) | undefined;
   isSelectedNode: (id: string) => boolean;
+  /** The path-edit extensions the canvas's presets bring. */
+  extensions: readonly PathEditExtension[];
 }
 
 /** One state object for the life of the component, answering from the
@@ -29,7 +31,9 @@ export function usePathEditState(options: UsePathEditStateOptions): PathEditStat
     host: () => live.current.host,
     isAllowed: () => live.current.isAllowed?.() ?? true,
     isSelectedNode: (id) => live.current.isSelectedNode(id),
+    extensions: options.extensions,
   }));
+  useEffect(() => state.setExtensions(options.extensions), [state, options.extensions]);
   return state;
 }
 
@@ -55,11 +59,9 @@ export function usePathEditOverlayLayer(
       getPose: (id, previews, view) =>
         liveEditablePath(id, live.current.nodeOf(id), previews, live.current.planeOfNode(id, view)),
       getSelectedAnchors: state.getSelectedAnchors,
-      getSelectedConstraint: state.getSelectedConstraint,
-      getConstraints: (id) => {
-        const node = live.current.nodeOf(id);
-        return node ? { constraints: constraintsOf(node.data), axisAngle: constraintAxisOf(node) } : null;
-      },
+      getSelectedMark: state.getSelectedMark,
+      getExtensions: state.getExtensions,
+      getNode: (id) => live.current.nodeOf(id) ?? null,
       // Drawn by an action that ran in the edited path's plane.
       getMarquee: (view) => {
         const rect = state.getMarquee();
@@ -67,8 +69,6 @@ export function usePathEditOverlayLayer(
         return rect && plane ? rectFromPlane(plane, rect) : rect;
       },
       ...(config?.style ? { style: config.style } : {}),
-      getComb: () => config?.comb,
-      getBalance: () => config?.balance,
     }),
     subscribe: state.subscribe,
   }), [state, live, config]);

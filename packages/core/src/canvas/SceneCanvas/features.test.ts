@@ -114,6 +114,14 @@ describe('resolveFeatures', () => {
     expect(resolveFeatures([], null, { viewport: true }).presets).toEqual([]);
   });
 
+  it("gathers the presets' path-edit extensions in preset order, and lays their chrome rules under the owned ones", () => {
+    const a = { id: 'a.marks' };
+    const b = { id: 'b.marks' };
+    const on = resolve([{ id: 'a', pathEdit: [a] }, { id: 'b', pathEdit: [b], chromeRules: { 'b.chrome': never } }]);
+    expect(on.pathEdit).toEqual([a, b]);
+    expect(presetChromeRules(on, ['selection.outline'])).toEqual({ 'b.chrome': never, 'selection.outline': never });
+  });
+
   it('answers whether a preset is on by id', () => {
     const on = resolve(['pick']);
     expect(on.has('select')).toBe(true);

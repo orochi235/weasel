@@ -7,6 +7,7 @@
 import { createEmitter } from '@weasel-js/registry';
 import type { PathEditHost } from 'canvas/SceneCanvas/pathEditHost';
 import type { HandleLocks } from 'interactions/actions/edit-anchors/params';
+import type { PathEditExtension, PathEditMark } from './pathEditExtension';
 
 /** A world-coord rect. */
 export interface AnchorMarquee {
@@ -36,6 +37,8 @@ export interface PathEditSource {
    * set would revoke edit mode instantly.
    */
   isAllowed?(): boolean;
+  /** The extensions it starts with; `setExtensions` replaces them. */
+  extensions?: readonly PathEditExtension[];
 }
 
 export interface PathEditState {
@@ -56,9 +59,13 @@ export interface PathEditState {
   /** The in-flight anchor-marquee rect, in the edited path's world. */
   getMarquee(): AnchorMarquee | null;
   setMarquee(rect: AnchorMarquee | null): void;
-  /** Index into the edited node's `data.constraints` of the selected constraint mark, or null. */
-  getSelectedConstraint(): number | null;
-  setSelectedConstraint(index: number | null): void;
+  /** The extension mark selected in place of anchors, or null. */
+  getSelectedMark(): PathEditMark | null;
+  setSelectedMark(mark: PathEditMark | null): void;
+  /** The canvas's path-edit extensions, in order. */
+  getExtensions(): readonly PathEditExtension[];
+  /** Replace the extensions; the overlay repaints when they change. */
+  setExtensions(next: readonly PathEditExtension[]): void;
   /** The handle locks the `handleLock.*` toggles set; null until one is
    *  pressed. Not tied to the edited path, so they outlast a change of it. */
   getHandleLocks(): HandleLocks | null;
@@ -79,6 +86,7 @@ export interface PathEditState {
 }
 
 const NO_IDS: ReadonlySet<string> = new Set();
+const NO_EXTENSIONS: readonly PathEditExtension[] = [];
 const NO_ANCHORS: ReadonlySet<number> = new Set();
 
 /** Whether `id` names a node `scene` holds and `selection` includes. */
@@ -97,7 +105,8 @@ export function createPathEditState(source: PathEditSource = {}): PathEditState 
   let handleLocks: HandleLocks | null = null;
   let ownTool: { id: string; on: string } | null = null;
   let idSet = NO_IDS;
-  let selectedConstraint: number | null = null;
+  let selectedMark: PathEditMark | null = null;
+  let extensions = source.extensions ?? NO_EXTENSIONS;
   const changed = createEmitter();
   const notify = changed.emit;
 
@@ -137,10 +146,16 @@ export function createPathEditState(source: PathEditSource = {}): PathEditState 
       marquee = rect;
       notify();
     },
-    getSelectedConstraint: () => selectedConstraint,
-    setSelectedConstraint(index) {
-      if (index === selectedConstraint) return;
-      selectedConstraint = index;
+    getSelectedMark: () => selectedMark,
+    setSelectedMark(mark) {
+      if (mark?.owner === selectedMark?.owner && mark?.index === selectedMark?.index) return;
+      selectedMark = mark;
+      notify();
+    },
+    getExtensions: () => extensions,
+    setExtensions(next) {
+      if (next === extensions) return;
+      extensions = next;
       notify();
     },
     getHandleLocks: () => handleLocks,

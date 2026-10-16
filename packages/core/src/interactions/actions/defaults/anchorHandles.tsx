@@ -1,30 +1,25 @@
 /**
  * Commands on the handles of the anchors selected in path edit: retract them
- * onto their anchors, make each anchor's pair symmetric, or harmonize their
- * lengths so the curvature runs on unbroken.
+ * onto their anchors, or make each anchor's pair symmetric.
  */
 
-import type { Action, ActionDeps, ImmediateInvoker } from '@weasel-js/routing';
+import type { Action, ImmediateInvoker } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
-import {
-  editAnchorSetTracked,
-  harmonizeAnchors,
-  makeHandlesSymmetric,
-  retractHandles,
-  type AnchorSet,
-  type PolygonPath,
-} from '@weasel-js/geom';
-import { commitAnchorEdit, depOf, requiresAnchorSelection } from './anchorEditing';
-import { HarmonizeIcon, RetractHandlesIcon, SymmetricHandlesIcon } from './icons/anchorIcons';
+import { makeHandlesSymmetric, retractHandles, type AnchorSet } from '@weasel-js/geom';
+import { anchorEditWouldChange, commitAnchorEdit, depOf, requiresAnchorSelection } from './anchorEditing';
+import { RetractHandlesIcon, SymmetricHandlesIcon } from './icons/anchorIcons';
 
-/** `flatIndexes` absent means every anchor of the path. */
-type HandleEdit = (set: AnchorSet, flatIndexes?: Iterable<number>) => boolean;
+/** An edit of the handles of the anchors at `flatIndexes`; absent means
+ *  every anchor of the path. */
+export type HandleEdit = (set: AnchorSet, flatIndexes?: Iterable<number>) => boolean;
 
 /** Which anchors a command edits: the selected ones, or every anchor of the
  *  path while none is selected. */
-type HandleScope = 'selected' | 'selectedOrAll';
+export type HandleScope = 'selected' | 'selectedOrAll';
 
-function makeHandleCommand(
+/** A path-edit command running `edit` on the anchors `scope` names, as one
+ *  history entry labeled `label`. Enabled only where it would change the path. */
+export function makeHandleCommand(
   id: string,
   label: string,
   icon: Action['icon'],
@@ -53,19 +48,10 @@ function makeHandleCommand(
         ? requiresAnchorSelection(deps)
         : depOf(deps) ? true : ActionDisabledReason.SelectionRequired;
       if (ready !== true) return ready;
-      return wouldChange(deps, edit) ? true : ActionDisabledReason.NotApplicable;
+      const selected = selectedOrAll(depOf(deps)!.selectedAnchors);
+      return anchorEditWouldChange(deps, (set) => edit(set, selected)) ? true : ActionDisabledReason.NotApplicable;
     },
   };
-}
-
-/** Whether `edit` would change the edited path, tried on a scratch decode. */
-function wouldChange(deps: ActionDeps | undefined, edit: HandleEdit): boolean {
-  const dep = depOf(deps);
-  if (!dep) return false;
-  const path = dep.getEditablePath(dep.editingId) as PolygonPath | undefined;
-  if (!path || path.kind !== 'polygon') return false;
-  const selected = selectedOrAll(dep.selectedAnchors);
-  return editAnchorSetTracked(path, (set) => edit(set, selected)) !== null;
 }
 
 function selectedOrAll(selected: ReadonlySet<number>): number[] | undefined {
@@ -88,14 +74,3 @@ export const makeHandlesSymmetricAction = makeHandleCommand(
   (set, flat) => makeHandlesSymmetric(set, flat ?? []),
 );
 
-/**
- * Make the selected smooth anchors curvature-continuous by adjusting their
- * handle lengths, or every smooth anchor of the path while none is selected.
- */
-export const harmonizeAnchorsAction = makeHandleCommand(
-  'harmonizeAnchors',
-  'Harmonize curvature',
-  <HarmonizeIcon />,
-  harmonizeAnchors,
-  'selectedOrAll',
-);

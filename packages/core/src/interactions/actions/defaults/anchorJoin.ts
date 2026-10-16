@@ -1,28 +1,13 @@
 /**
- * Average, Join and Bridge on the anchors selected in path edit.
+ * Average and Join on the anchors selected in path edit.
  */
 
-import type { Action, ActionDeps, ImmediateInvoker } from '@weasel-js/routing';
+import type { Action, ImmediateInvoker } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
-import {
-  averageAnchorsAt, editAnchorSetTracked, joinAnchorsAt, type AnchorSet, type AverageAxis, type JoinOptions,
-  type PolygonPath,
-} from '@weasel-js/geom';
-import { commitAnchorEdit, depOf } from './anchorEditing';
-import { bridgeTensionOf } from '../pathCommands/cutJoin';
-import { BridgeIcon } from './icons/anchorIcons';
+import { averageAnchorsAt, joinAnchorsAt, type AnchorSet, type AverageAxis, type JoinOptions } from '@weasel-js/geom';
+import { anchorEditWouldChange, commitAnchorEdit, depOf } from './anchorEditing';
 
 type AnchorEdit = (set: AnchorSet, selected: number[]) => boolean;
-
-/** Whether `edit` would change the edited path, tried on a scratch decode. */
-function wouldChange(deps: ActionDeps | undefined, edit: AnchorEdit): boolean {
-  const dep = depOf(deps);
-  if (!dep) return false;
-  const path = dep.getEditablePath(dep.editingId) as PolygonPath | undefined;
-  if (!path || path.kind !== 'polygon') return false;
-  const selected = [...dep.selectedAnchors];
-  return editAnchorSetTracked(path, (set) => edit(set, selected)) !== null;
-}
 
 const axisOf = (params: Record<string, unknown> | undefined): AverageAxis => {
   const axis = params?.axis;
@@ -66,9 +51,11 @@ export const averageAnchorsAction: Action & { requires: string[] } = {
   },
 };
 
-const joinWith = (options: JoinOptions): AnchorEdit => (set, selected) =>
+/** An edit joining the two selected end anchors, spanning the gap as
+ *  `options` says (`joinAnchorsAt`). */
+export const joinSelectedAnchors = (options: JoinOptions): AnchorEdit => (set, selected) =>
   selected.length === 2 && joinAnchorsAt(set, selected[0], selected[1], options);
-const join = joinWith({});
+const join = joinSelectedAnchors({});
 
 /**
  * @experimental Join the two selected anchors, each the end of an open
@@ -95,38 +82,7 @@ export const joinAnchorsAction: Action & { requires: string[] } = {
   enabled: (deps) => {
     const dep = depOf(deps);
     if (!dep || dep.selectedAnchors.size !== 2) return ActionDisabledReason.SelectionRequired;
-    return wouldChange(deps, join) ? true : ActionDisabledReason.NotApplicable;
-  },
-};
-
-/**
- * @experimental Bridge the two selected anchors, each the end of an open
- * subpath, as `joinAnchors` does, but with a curve leaving each end along the
- * direction its path was heading, each handle `params.tension` times the gap
- * long (`bridgePaths`'s default when absent). The anchor selection is
- * cleared.
- */
-export const bridgeAnchorsAction: Action & { requires: string[] } = {
-  id: 'bridgeAnchors',
-  label: 'Bridge anchors',
-  icon: BridgeIcon,
-  group: 'anchors',
-  defaultBinding: { kind: 'key', key: 'j', code: 'KeyJ', mods: { mod: true, shift: true } },
-  eligible: { capability: 'edits-anchors' },
-  requires: ['editAnchors'],
-  invoker: {
-    timing: 'immediate',
-    run: (deps, params) => {
-      const dep = depOf(deps);
-      if (!dep || dep.selectedAnchors.size !== 2) return;
-      const selected = [...dep.selectedAnchors];
-      const bridge = joinWith({ tension: bridgeTensionOf(params) });
-      if (commitAnchorEdit(dep, 'Bridge anchors', (set) => bridge(set, selected))) dep.setSelectedAnchors([]);
-    },
-  } as ImmediateInvoker,
-  enabled: (deps) => {
-    const dep = depOf(deps);
-    if (!dep || dep.selectedAnchors.size !== 2) return ActionDisabledReason.SelectionRequired;
-    return wouldChange(deps, join) ? true : ActionDisabledReason.NotApplicable;
+    return anchorEditWouldChange(deps, (set) => join(set, [...depOf(deps)!.selectedAnchors]))
+      ? true : ActionDisabledReason.NotApplicable;
   },
 };

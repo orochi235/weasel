@@ -59,7 +59,8 @@ export {
   pathOriginProjection,
   createPenPreviewLayer,
   createPathEditingOverlayLayer,
-  PATH_COMB_CHROME_ID,
+  GEOMETRY_BOUND_DATA,
+  withoutGeometryBoundData,
   pathUnion,
   pathIntersect,
   pathSubtract,
@@ -113,8 +114,13 @@ export type {
   PenPreviewStyle,
   CreatePathEditingOverlayLayerOptions,
   PathEditingOverlayStyle,
-  PathEditCombOptions,
-  PathEditBalanceStyle,
+  FinishedPathEdit,
+  PathEditExtension,
+  PathEditMark,
+  PathEditMarksCtx,
+  PathEditPart,
+  PathEditStore,
+  PathEditTarget,
   PathInWorldPose,
   PathStation,
   PointAlongPathOptions,
@@ -158,9 +164,37 @@ export {
   type ShapeGenerator,
   type StarGenerator,
 } from '../features/paths/shapeGenerator';
+
+// ─── Building path commands and path-edit features on core ─────────────────
 export {
-  DEFAULT_BRIDGE_TENSION, DEFAULT_SMUDGE_RADIUS_PX, DEFAULT_SMUDGE_STRENGTH, type SmudgeBrushParams,
-} from '../interactions/actions/pathCommands';
+  commitOps,
+  deleteNode,
+  insertAt,
+  pathCopy,
+  pathNodesOf,
+  reshapeOps,
+  reshapeTo,
+  selectedPathNodes,
+  slotOf,
+  withPath,
+  type PathNode,
+} from '../interactions/actions/pathCommands/pathNodes';
+export { joinPathsCommand, planJoin } from '../interactions/actions/pathCommands/cutJoin';
+export { DEFAULT_SIMPLIFY_TOLERANCE } from '../interactions/actions/pathCommands/simplifyOffset';
+export {
+  anchorEditWouldChange, commitAnchorEdit, depOf, requiresAnchorSelection,
+} from '../interactions/actions/defaults/anchorEditing';
+export { makeHandleCommand, type HandleEdit, type HandleScope } from '../interactions/actions/defaults/anchorHandles';
+export { joinSelectedAnchors } from '../interactions/actions/defaults/anchorJoin';
+export { deleteSelectedMark, editTargetOf, markUnder } from '../interactions/actions/defaults/pathEditMarks';
+export { pathEditPreview } from '../interactions/actions/edit-anchors/preview';
+export { editedPathSymmetries } from '../interactions/actions/edit-anchors/symmetry';
+export { locksInForce } from '../interactions/actions/edit-anchors/handleDrag';
+export {
+  classifyPathStorage, resolveEditablePathOf, storeEditablePath, type EditableShape,
+} from '../features/paths/editablePath';
+export { nodeOutline } from '../features/paths/strokeOutline';
+export { DEFAULT_OVERLAY_STYLE } from '../features/paths/anchorMarkers';
 
 // ─── Path effects: live blend, bend along, and repeat along ────────────────
 export {
@@ -184,7 +218,6 @@ export type {
   RepeatAlongEffect,
 } from '../core/scene/pathEffects';
 export { PATH_EFFECT_DERIVATIONS, readEffectSource, withPathEffectsRegistry } from '../features/pathEffects';
-export { PATH_EFFECTS_GROUP } from '../interactions/actions/pathEffects';
 
 // ─── Geometric constraints on a path's anchors ──────────────────────────────
 export {
@@ -205,8 +238,6 @@ export type {
   SolveConstraintsOptions,
   SolveConstraintsResult,
 } from '@weasel-js/geom';
-export { constraintAxisOf, constraintConflictsOf, constraintsOf } from '../features/paths/pathConstraints';
-export { constraintsForAnchors, type ConstrainAnchorsParams } from '../interactions/actions/defaults/anchorConstraints';
 
 // ─── Curves: alternate path representations (Bezier, NURBS, Spiro) ──────────
 export {
@@ -244,25 +275,3 @@ export type {
   UseBooleansOptions,
   UseBooleansReturn,
 } from '../interactions/actions/booleans';
-
-// ─── Warps: distort, envelope and puppet, held on a path until expanded ─────
-export {
-  heldPathWarpOf,
-  resolvePathWarp,
-  withoutPathWarp,
-  type HeldPathWarp,
-  type ResolvedPathWarp,
-} from '../features/paths/pathWarp';
-export {
-  configureWarpAction,
-  expandWarpAction,
-  warpHandleScratchOf,
-  type WarpHandleScratch,
-} from '../interactions/actions/warp/warpActions';
-export {
-  DEFAULT_ENVELOPE_SIZE,
-  DEFAULT_WARP_TOLERANCE,
-  withPathWarp,
-  type WarpKind,
-  type WarpSettings,
-} from '../interactions/actions/warp/warpTargets';

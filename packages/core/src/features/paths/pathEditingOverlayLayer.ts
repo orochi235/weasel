@@ -1,25 +1,21 @@
 /**
  * Screen-space render layer for path-editing chrome — the open path's
  * outline, anchor markers, tangent lines, and control-point dots for a
- * polygon path that is the current edit target, and its curvature comb and
- * balance lines when chrome-caps shows them. Marker sizes stay constant regardless of zoom.
+ * polygon path that is the current edit target, under them whatever marks
+ * its path-edit extensions draw. Marker sizes stay constant regardless of zoom.
  */
 
 import type { DrawCommand } from '@weasel-js/renderer';
 import type { RenderLayer } from 'core/layers/render';
 import {
-  type AnchorSet, type Path, type PathConstraint, type PolygonPath, type View,
-  pathAnchorPoints, pathToAnchors, rectMarkerPath, unsatisfiedConstraints,
+  type AnchorSet, type Path, type PolygonPath, type View, pathToAnchors, rectMarkerPath,
 } from '@weasel-js/geom';
 import type { GesturePreviewSource } from 'canvas/gestureBounds';
 import { previewSourcesFrom, isVisibleFrom } from 'canvas/drawEnvelope';
 import {
   anchorMarkerCommands, DEFAULT_OVERLAY_STYLE, worldToScreen, type PathEditingOverlayStyle,
 } from './anchorMarkers';
-import { constraintGlyphs } from './constraintGlyphs';
-import { combCommands, PATH_COMB_CHROME_ID, type PathEditCombOptions } from './pathEditComb';
-import { balanceCommands, type PathEditBalanceStyle } from './pathEditBalance';
-import { PATH_BALANCE_CHROME_ID } from 'affordances/pathAnchors';
+import type { PathEditExtension, PathEditMark } from './pathEditExtension';
 
 export type { PathEditingOverlayStyle } from './anchorMarkers';
 
@@ -47,41 +43,18 @@ export interface CreatePathEditingOverlayLayerOptions {
   /** In-flight anchor-marquee rect in world coords, or null. Drawn as a
    *  rubber band while `marqueeAnchorsAction` is dragging. */
   getMarquee?(view: View): { x: number; y: number; width: number; height: number } | null;
-  /** The edited node's constraints, and the radians their frame is turned
-   *  from the world's, to mark on its anchors. Each is drawn in
-   *  `constraintStroke` while it holds and `constraintConflictStroke` while
-   *  it does not. */
-  getConstraints?(id: string): { constraints: readonly PathConstraint[]; axisAngle: number } | null;
-  /** Index of the selected constraint, whose mark is drawn heavier, or null. */
-  getSelectedConstraint?(): number | null;
+  /** The edited node's committed pose and data, which extensions' marks read. */
+  getNode?(id: string): { pose: unknown; data: unknown } | null;
+  /** The path-edit extensions whose marks are drawn, in order. */
+  getExtensions?(): readonly PathEditExtension[];
+  /** The selected extension mark, or null. */
+  getSelectedMark?(): PathEditMark | null;
   /** Optional styling overrides. */
   style?: PathEditingOverlayStyle;
-  /** How the curvature comb is drawn, read per frame. Whether it shows is
-   *  chrome-caps' call (`path-edit.comb`). */
-  getComb?(): PathEditCombOptions | undefined;
-  /** How the balance lines are drawn, read per frame. Whether they show is
-   *  chrome-caps' call (`path-edit.balance`). */
-  getBalance?(): PathEditBalanceStyle | undefined;
 }
 
 const EMPTY_SELECTION: ReadonlySet<number> = new Set();
-
-/** The marks for `path`'s constraints. */
-function constraintMarks(
-  marked: { constraints: readonly PathConstraint[]; axisAngle: number } | null | undefined,
-  selected: number | null,
-  path: PolygonPath,
-  view: View,
-  style: Required<PathEditingOverlayStyle>,
-): DrawCommand[] {
-  if (!marked || marked.constraints.length === 0) return [];
-  const world = pathAnchorPoints(path);
-  const unsatisfied = new Set(unsatisfiedConstraints(world, marked.constraints, { axisAngle: marked.axisAngle }));
-  return constraintGlyphs(world.map((p) => worldToScreen(p, view)), marked.constraints, unsatisfied, {
-    stroke: style.constraintStroke,
-    conflictStroke: style.constraintConflictStroke,
-  }, selected);
-}
+const ALWAYS = (): boolean => true;
 
 /** Render layer that draws the outline and the anchors and control handles
  *  of the path currently being anchor-edited. Draws nothing when no path is
@@ -107,15 +80,22 @@ export function createPathEditingOverlayLayer(
       if (!pose || pose.kind !== 'polygon') return [];
 
       const selected = opts.getSelectedAnchors?.() ?? EMPTY_SELECTION;
-      const set = pathToAnchors(pose as PolygonPath) as AnchorSet;
-      // Comb, balance lines, then constraint marks, under the markers, which are what a press reaches first.
-      const out: DrawCommand[] = [
-        ...(!isVisible || isVisible(PATH_COMB_CHROME_ID) ? combCommands(set, view, opts.getComb?.()) : []),
-        ...(!isVisible || isVisible(PATH_BALANCE_CHROME_ID) ? balanceCommands(set, view, opts.getBalance?.()) : []),
-      ];
-      out.push(...constraintMarks(
-        opts.getConstraints?.(id), opts.getSelectedConstraint?.() ?? null, pose as PolygonPath, view, style,
-      ));
+      // Extensions' marks under the markers, which are what a press reaches first.
+      const out: DrawCommand[] = [];
+      const node = opts.getNode?.(id);
+      if (node) {
+        const mark = opts.getSelectedMark?.() ?? null;
+        const anchors = pathToAnchors(pose as PolygonPath) as AnchorSet;
+        const toScreen = (p: { x: number; y: number }) => worldToScreen(p, view);
+        for (const ext of opts.getExtensions?.() ?? []) {
+          if (!ext.marks) continue;
+          out.push(...ext.marks({
+            id, node, path: pose as PolygonPath, anchors, view, toScreen,
+            isVisible: isVisible ?? ALWAYS,
+            selected: mark?.owner === ext.id ? mark.index : null,
+          }));
+        }
+      }
       out.push(...anchorMarkerCommands(pose as PolygonPath, view, selected, style));
 
       // Marquee rubber band, on top of everything.

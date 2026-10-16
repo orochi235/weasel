@@ -1,4 +1,5 @@
-import { createScene, ellipsePath, pathFromD, useTrimTool } from '@weasel-js/core';
+import { createScene, ellipsePath, pathFromD } from '@weasel-js/core';
+import { trimPreset, useTrimTool } from '@weasel-js/path-tools';
 import {
   type ConfigOf,
   defineInstrument,
@@ -14,6 +15,8 @@ import { useMemo } from 'react';
 import { strokeNode } from './pathEditLabScene';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
+
+const FEATURES = ['draw', trimPreset] as const;
 
 const config = f.schema({
   reach: f.number(6).range(2, 20).step(1).suffix('px').label('Click reach'),
@@ -40,7 +43,7 @@ function TrimTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const tools = useMemo(() => ({ trim }), [trim]);
   return (
     <TrialSceneCanvas
-      features={['draw']}
+      features={FEATURES}
       scene={scene}
       trial={ctx.trial}
       tools={tools}

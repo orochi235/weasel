@@ -1,7 +1,7 @@
 /**
- * Cut at Crossings, Join, and Bridge: the path commands that change how many
- * paths there are. Join spans a gap straight; Bridge with a curve that meets
- * each end along its path's heading.
+ * Cut at Crossings and Join: the path commands that change how many paths
+ * there are. Join spans a gap straight; `joinPathsCommand` builds a join that
+ * spans it some other way.
  */
 import type { Action, ActionDeps, ImmediateInvoker } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
@@ -14,7 +14,6 @@ import type { Op } from 'core/ops/types';
 import {
   commitOps, deleteNode, insertAt, pathCopy, reshapeOps, selectedPathNodes, slotOf, type PathNode,
 } from './pathNodes';
-import { BridgeIcon } from '../defaults/icons/anchorIcons';
 
 const CUT_LABEL = 'Cut at Crossings';
 
@@ -96,8 +95,9 @@ export function planJoin(nodes: readonly PathNode[], options: JoinOptions = {}):
 type Params = Record<string, unknown> | undefined;
 
 /** A command joining the selected paths by {@link planJoin} as one undo step,
- *  spanning gaps as `options` reads from its params. */
-function joinPathsCommand(
+ *  spanning gaps as `options` reads from its params. Disabled in path edit,
+ *  where joins act on the selected anchors. */
+export function joinPathsCommand(
   base: Pick<Action, 'id' | 'label' | 'icon' | 'defaultBinding'>,
   options: (params: Params) => JoinOptions,
 ): Action & { requires: string[] } {
@@ -129,16 +129,6 @@ function joinPathsCommand(
   };
 }
 
-/** How long Bridge makes each handle, as a fraction of the gap, when its
- *  params name no `tension`. */
-export const DEFAULT_BRIDGE_TENSION = 0.4;
-
-/** A bridge's `params.tension`, or the default. Negative reads as `0`. */
-export function bridgeTensionOf(params: Params): number {
-  const t = params?.tension;
-  return typeof t === 'number' && Number.isFinite(t) ? Math.max(0, t) : DEFAULT_BRIDGE_TENSION;
-}
-
 /**
  * @experimental Join open paths: close a selected path's open end to its
  * start, or connect two selected paths at their nearest open ends into one
@@ -151,20 +141,3 @@ export const joinPathsAction = joinPathsCommand(
   () => ({}),
 );
 
-/**
- * @experimental Bridge open paths: as `joinPaths`, but the gap is spanned by
- * a curve leaving each end along the direction its path was heading, each
- * handle `params.tension` times the gap long (default
- * {@link DEFAULT_BRIDGE_TENSION}). Two paths become one. In path edit,
- * `bridgeAnchors` bridges the two selected anchors instead.
- */
-export const bridgePathsAction = joinPathsCommand(
-  {
-    id: 'bridgePaths',
-    label: 'Bridge',
-    icon: BridgeIcon,
-    // `code` too: with Shift held the key reads as `J`.
-    defaultBinding: { kind: 'key', key: 'j', code: 'KeyJ', mods: { mod: true, shift: true } },
-  },
-  (params) => ({ tension: bridgeTensionOf(params) }),
-);
