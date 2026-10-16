@@ -9,7 +9,7 @@ export interface Rect { x: number; y: number; w: number; h: number }
 function flipOrShift(at: number, len: number, lo: number, span: number): number {
   const hi = lo + span;
   if (at + len <= hi) return Math.max(lo, at);
-  if (at - len >= lo) return at - len;
+  if (at - len >= lo) return Math.max(lo, Math.min(at - len, hi - len));
   return Math.max(lo, hi - len);
 }
 
