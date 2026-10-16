@@ -10,7 +10,7 @@ export { identity, translate, scale, rotate, multiply, invert, applyToPoint, box
 export { boundsOfCoords, unionBox, boxContainsPoint, boxContainsBox, rectToContour, type Box, type Rect } from './box';
 export { PATH_COMMANDS, PATH_M, PATH_L, PATH_C, PATH_Q, PATH_Z, PATH_CMD_LENGTHS, pathCommandCoordCount, forEachSegment, type PathCommandName, type PathCommandCode } from './commands';
 export {
-  cubicEvalAt, quadraticEvalAt, elevateQuadraticToCubic, cubicBounds,
+  cubicEvalAt, quadraticEvalAt, elevateQuadraticToCubic, cubicBounds, cubicAxisExtremaTs,
   splitCubicAt, splitQuadraticAt, splitLineAt,
   type LineCoords, type QuadraticCoords, type CubicCoords,
 } from './curve';
@@ -50,7 +50,13 @@ export { pathDistanceToPoint } from './paths/pathDistance';
 export { intersectSegments, type SegmentCrossing } from './intersect/segmentIntersections';
 export { pathSegments, type PathSegment } from './intersect/pathSegments';
 export { pathCrossings, type PathCrossing, type PathStop } from './intersect/pathCrossings';
+export {
+  createPathSnapIndex, findPathSnap, PATH_SNAP_KINDS,
+  type PathSnapHit, type PathSnapIndex, type PathSnapKind, type PathSnapQuery, type PathSnapTarget,
+  type StaticPathSnapKind,
+} from './snap/pathSnap';
 export { trimPathAt, type TrimPathOptions, type TrimResult } from './paths/trimPath';
+export { pathAwayFromAnchors, type PathAwayFromAnchors } from './paths/pathAwayFromAnchors';
 export {
   extendToMeet, lengthenOpenEnd, openEndRay, openPathEnds, type ExtendToMeetOptions, type OpenPathEnd,
 } from './paths/extendPath';
@@ -60,6 +66,12 @@ export { schneiderFit, fitCubicWithTangents } from './paths/schneiderFit';
 export { simplifyPath, simplifySpan, simplifySubpath, type SimplifyPathOptions } from './paths/simplifyPath';
 export { simplifyAnchorsAt } from './paths/simplifyAnchors';
 export * from './warp';
+export { resamplePath, type ResamplePathOptions } from './paths/resamplePath';
+export { addExtremaAnchors, segmentExtremaTs } from './paths/extremaAnchors';
+export {
+  anchorsWhere, cornerAnchors, everyNthAnchor, growAnchorSelection, invertAnchorSelection,
+  shrinkAnchorSelection, smoothAnchors,
+} from './paths/anchorSelection';
 export {
   averageAnchorsAt, closestOpenEnds, joinAnchorsAt, joinSubpathEnds, subpathEndAt,
   type AverageAxis, type JoinOptions, type SubpathEnd,

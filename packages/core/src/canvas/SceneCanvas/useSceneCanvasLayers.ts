@@ -19,6 +19,8 @@ import { useDispatcherOverlayLayer } from './useDispatcherOverlayLayer';
 import { usePreviewGhostLayer } from './usePreviewGhostLayer';
 import { useSceneSlotLayers } from './useSceneSlotLayers';
 import { useSelectionOverlayLayer } from './useSelectionOverlayLayer';
+import type { PathSnapper } from 'features/paths/pathSnap/pathSnapper';
+import { createPathSnapMarkerLayer } from 'features/paths/pathSnap/pathSnapMarkerLayer';
 
 /**
  * The layer map `<SceneCanvas>` hands `<Canvas>`: the caller's `layers` over
@@ -42,6 +44,8 @@ export function useSceneCanvasLayers<TData, TLayer extends string, TPose>(args: 
   /** Ids an in-flight gesture is ghosting. */
   previewIds: () => Iterable<string> | null;
   dispatcher: Dispatcher;
+  /** Whose mark the snap-marker layer draws. */
+  pathSnapper: PathSnapper;
   pathEditState: PathEditState;
   /** `debug.slops`: paint the hit regions of the chrome affordances. */
   slops: boolean;
@@ -53,7 +57,7 @@ export function useSceneCanvasLayers<TData, TLayer extends string, TPose>(args: 
    *  so the slops halos are the hit regions rather than a copy of them. */
   chromeAffordancesRef: MutableRefObject<readonly Affordance[]>;
 } {
-  const { scene, adapter, poseDescriptor, alphaFor, dispatcher, pathEditState, slops, targetScale } = args;
+  const { scene, adapter, poseDescriptor, alphaFor, dispatcher, pathEditState, slops, targetScale, pathSnapper } = args;
 
   const baseSizes = useTargetBasePx();
   const merged = useMemo(
@@ -80,6 +84,7 @@ export function useSceneCanvasLayers<TData, TLayer extends string, TPose>(args: 
     [],
   );
 
+  const snapMarkerLayer = useMemo(() => createPathSnapMarkerLayer(pathSnapper), [pathSnapper]);
   const overlaySlot = merged.pathEditingOverlay;
   const overlayConfig = overlaySlot && !isCustomEntry(overlaySlot) ? overlaySlot : undefined;
   const pathEditingOverlayLayer = usePathEditOverlayLayer(pathEditState, {
@@ -102,8 +107,12 @@ export function useSceneCanvasLayers<TData, TLayer extends string, TPose>(args: 
     pathEditingOverlay: overlaySlot === null || isCustomEntry(overlaySlot)
       ? overlaySlot
       : { layer: pathEditingOverlayLayer, after: 'selectionOverlay' },
-    ...(slops ? { slopsDebug: { layer: slopsLayer, after: 'pathEditingOverlay' } } : {}),
-  }), [merged, sceneLayers, selectionOverlayLayer, previewLayer, dispatcherOverlay, pathEditingOverlayLayer, overlaySlot, slops, slopsLayer]);
+    pathSnapMarker: { layer: snapMarkerLayer, after: overlaySlot === null ? 'dispatcherOverlay' : 'pathEditingOverlay' },
+    ...(slops ? { slopsDebug: { layer: slopsLayer, after: 'pathSnapMarker' } } : {}),
+  }), [
+    merged, sceneLayers, selectionOverlayLayer, previewLayer, dispatcherOverlay, pathEditingOverlayLayer, overlaySlot,
+    snapMarkerLayer, slops, slopsLayer,
+  ]);
 
   return { layers, rotationBadge, chromeAffordancesRef };
 }

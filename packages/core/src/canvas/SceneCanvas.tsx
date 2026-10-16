@@ -50,6 +50,7 @@ import { useChromeRules, useSceneHover, useSurfaceChromeCaps } from './SceneCanv
 import { useSceneRedrawSources } from './SceneCanvas/useSceneRedrawSources';
 import { useSceneSelectTool } from './SceneCanvas/useSceneSelectTool';
 import { useViewLayerGate } from './SceneCanvas/useViewLayerGate';
+import { usePathSnapper } from './SceneCanvas/usePathSnapper';
 import { viewportZoomOption } from './SceneCanvas/useViewportActions';
 import type { CanvasExtensionApi, SceneCanvasApi } from './canvasExtension';
 import { useSceneAdapter } from './useSceneAdapter';
@@ -57,8 +58,7 @@ import { composeAlphaFor } from './sceneSlotWiring';
 import { useHitObserver } from './useHitObserver';
 import { ViewInputsProvider, type SurfaceViewInputs } from './viewInputs';
 import { ViewRegistryProvider } from './viewRegistry';
-export { SCENE_CANVAS_FEATURES } from './SceneCanvas/features';
-export type { Feature } from './SceneCanvas/features';
+export { SCENE_CANVAS_FEATURES, type Feature } from './SceneCanvas/features';
 export type { BuiltinToolOptions } from './SceneCanvas/useBuiltinShapeTools';
 export { defaultDrawOne } from './defaultDrawOne';
 export { rotateAroundAABBCenter } from './poseRotation';
@@ -258,6 +258,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const actionsRegistry = useActionsRegistry();
   const { dispatcher, gestureSource, previewIdsExtra, previewPoseExtra } = useCanvasDispatcher(actionsRegistry);
 
+  const pathSnapper = usePathSnapper(scene as Scene<unknown, string, unknown>, toolOptions?.pathSnap);
   const { layers: wiredLayers, rotationBadge, chromeAffordancesRef } = useSceneCanvasLayers({
     layers,
     targetScale: deviceProfile.targetScale,
@@ -269,7 +270,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     boundsOf: internalBoundsOf,
     planeOfNode: internalPlaneOfNode,
     previewIds: previewIdsExtra,
-    dispatcher,
+    dispatcher, pathSnapper,
     pathEditState,
     slops: debug !== undefined && debug !== false && debug.slops === true,
   });
@@ -393,7 +394,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
           reflowTransition={reflowTransition as ReflowTransition<unknown> | null | undefined}
           insertNodeFactories={insertNodeFactories}
           insertPaint={insertPaint}
-          snapPoint={toolOptions?.snapPoint}
+          snap={{ snapPoint: toolOptions?.snapPoint, paths: pathSnapper }}
           canvasRef={internalCanvasRef}
           canvasApiRef={canvasApiRef}
           ingestionResolveSrc={ingestion?.resolveSrc}

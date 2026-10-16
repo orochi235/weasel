@@ -3,6 +3,7 @@ import {
   boundsOfPath,
   createScene,
   type NodeId,
+  type Path,
   type PathEditHost,
   pathFromD,
   type RectPose,
@@ -15,10 +16,11 @@ import { useState } from 'react';
 /** The one path each path-edit lab opens with its anchors already editable. */
 export const EDITED_ID: NodeId = asNodeId('curve');
 
-/** A scene holding one stroked open path, in the node shape the kit's shape
- *  tools produce: `data.path` under a rect pose. */
-export function createPathLabScene(d: string) {
-  const path = pathFromD(d);
+/** A scene holding one stroked path, `d` or a built one, filled with `fill`
+ *  when given, in the node shape the kit's shape tools produce: `data.path`
+ *  under a rect pose. */
+export function createPathLabScene(d: string | Path, fill?: string) {
+  const path = typeof d === 'string' ? pathFromD(d) : d;
   const { x, y, width, height } = boundsOfPath(path);
   return createScene<unknown, 'default', RectPose>({
     systemLayers: [{ id: 'default' }],
@@ -27,7 +29,7 @@ export function createPathLabScene(d: string) {
       id: EDITED_ID,
       layer: 'default',
       pose: { x, y, width, height },
-      data: { path, stroke: { paint: solid('#3b4252'), width: 2 } },
+      data: { path, ...(fill ? { fill: { paint: solid(fill) } } : {}), stroke: { paint: solid('#3b4252'), width: 2 } },
     }],
   });
 }

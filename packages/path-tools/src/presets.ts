@@ -18,6 +18,12 @@ import { createDirectionExtension, PATH_DIRECTION_CHROME_ID, type PathDirectionS
 import { reversePathAction, setPathStartAction } from './pathStructure/pathStructure';
 import { convertSegmentAtAction, convertSegmentsAction } from './segmentType/convertSegments';
 import {
+  growAnchorSelectionAction, invertAnchorSelectionAction, selectCornerAnchorsAction, selectEveryNthAnchorAction,
+  selectSmoothAnchorsAction, shrinkAnchorSelectionAction,
+} from './anchorSelect/anchorSelect';
+import { addExtremeAnchorsAction } from './extremes/addExtremes';
+import { resamplePathAction } from './resample/resample';
+import {
   bendAlongAction, blendAction, editPathEffectAction, expandPathEffectAction, repeatAlongAction,
 } from './pathEffects/actions';
 import { simplifyBrushAction, simplifyBrushToolAction } from './simplifyBrush/simplifyBrush';
@@ -54,6 +60,22 @@ export const smudgePreset: FeaturePreset = { id: 'smudge', actions: [smudgeBrush
 
 /** Harmonize curvature. */
 export const harmonizePreset: FeaturePreset = { id: 'harmonize', actions: [harmonizeAnchorsAction] };
+
+/** Anchor selection along the path: grow, shrink, every Nth, corners, smooth
+ *  anchors, and the complement. */
+export const anchorSelectionPreset: FeaturePreset = {
+  id: 'anchorSelection',
+  actions: [
+    growAnchorSelectionAction, shrinkAnchorSelectionAction, selectEveryNthAnchorAction,
+    selectCornerAnchorsAction, selectSmoothAnchorsAction, invertAnchorSelectionAction,
+  ],
+};
+
+/** Resample, which spreads anchors evenly by arc length. */
+export const resamplePreset: FeaturePreset = { id: 'resample', actions: [resamplePathAction] };
+
+/** Add extremes, an anchor at each curve's leftmost, rightmost, top, and bottom. */
+export const addExtremesPreset: FeaturePreset = { id: 'addExtremes', actions: [addExtremeAnchorsAction] };
 
 /** The curvature comb over the open path, drawn as `options` says, read every
  *  frame. Off until chrome-caps shows `path-edit.comb`. */
@@ -144,7 +166,8 @@ export const pathTools: FeaturePreset = {
   id: 'pathTools',
   includes: [
     simplifyBrushPreset, handleLocksPreset, bridgePreset, trimPreset, extendPreset, smudgePreset,
-    harmonizePreset, curvatureCombPreset, balancePreset, constraintsPreset, pathStructurePreset, segmentTypePreset,
+    harmonizePreset, anchorSelectionPreset, resamplePreset, addExtremesPreset,
+    curvatureCombPreset, balancePreset, constraintsPreset, pathStructurePreset, segmentTypePreset,
     pathEffectsPreset, warpPreset,
   ],
 };

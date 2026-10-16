@@ -200,6 +200,36 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/PathAnchorEditDemo.tsx',
   },
   {
+    id: 'lab-anchor-select',
+    title: 'Anchor selection along a path',
+    category: 'Geometry',
+    description:
+      'Selections that walk the path in path edit. Grow adds each selected anchor’s neighbors along its subpath and Shrink drops the anchors at the ends of each selected run, wrapping round a closed subpath. Every Nth counts from the first selected anchor, or from each subpath’s start when none is. Corners and Smooth select by anchor kind, and Invert takes the complement. They come from `@weasel-js/path-tools`’s `anchorSelectionPreset`, all in the `ANCHOR_SELECTION_GROUP` group, so the bar over the canvas is an `<ActionBar>` of that group, and the panel’s N reaches Every Nth through `<SceneCanvas tune>`. They change only which anchors are selected, so none is an undo step.',
+    hint: 'The flower opens in path edit with every 4th anchor selected. Press <kbd>]</kbd> to grow the selection and <kbd>[</kbd> to shrink it, <kbd>Alt+N</kbd> for every Nth, <kbd>Alt+C</kbd> for corners, <kbd>Alt+M</kbd> for smooth anchors, <kbd>Alt+I</kbd> to invert, or use the bar. Change N in the panel, then press <kbd>Alt+N</kbd> again.',
+    load: () => import('./demos/AnchorSelectLabDemo').then((m) => m.AnchorSelectLabDemo),
+    path: 'apps/site/demos/AnchorSelectLabDemo.tsx',
+  },
+  {
+    id: 'lab-resample',
+    title: 'Resample a path',
+    category: 'Geometry',
+    description:
+      'Resample spreads a path’s anchors evenly along it by arc length, to a count or at a spacing, and refits the curves through them. Corner anchors stay where they are unless Keep corners is off, so each run between them is resampled on its own. Each new anchor heads the way the original does there, so it is smooth, and a piece that cannot follow the original within Tolerance is halved, which can add anchors past the count. The `resamplePath` action, from `@weasel-js/path-tools`’s `resamplePreset`, is ongoing: the panel drives it through `useOngoingAction`, every change previews on the canvas, Apply commits one undo step, and Cancel drops the preview.',
+    hint: 'The wave opens previewing 12 anchors. Drag Anchors, switch Resample by to spacing, or turn Keep corners off, and watch the anchors move. Press Apply to keep it, or Cancel; <kbd>Mod+Z</kbd> undoes an Apply.',
+    load: () => import('./demos/ResampleLabDemo').then((m) => m.ResampleLabDemo),
+    path: 'apps/site/demos/ResampleLabDemo.tsx',
+  },
+  {
+    id: 'lab-add-extremes',
+    title: 'Add extremes',
+    category: 'Geometry',
+    description:
+      'Add extremes splits each curved segment where it turns in x or in y, so every leftmost, rightmost, top, and bottom point gets an anchor with a level or upright tangent, and the shape does not move. It works on the segments whose two ends are selected, or on the whole path while no anchor is. The blob’s anchors sit at none of its extremes; it opens in path edit with the segment that closes it selected. The action is `addExtremeAnchors`, from `@weasel-js/path-tools`’s `addExtremesPreset`, and the bar is the `anchors` group it joins.',
+    hint: 'Press <kbd>Alt+X</kbd> or Add extremes in the bar to add extremes to the selected segment, then click away from the anchors to clear the selection and press it again for the whole path. <kbd>Mod+Z</kbd> undoes each.',
+    load: () => import('./demos/AddExtremesLabDemo').then((m) => m.AddExtremesLabDemo),
+    path: 'apps/site/demos/AddExtremesLabDemo.tsx',
+  },
+  {
     id: 'boolean-ops',
     title: 'Boolean ops',
     category: 'Geometry',
@@ -748,6 +778,16 @@ const DEMO_META: DemoMeta[] = [
     hint: 'Both anchors open selected, so X reads Mixed: type <kbd>+=20</kbd> into X and press Enter, then <kbd>2in</kbd> into Y. Click one anchor to see its handles, and switch Handles as to angle and length.',
     load: () => import('./demos/AnchorFieldsLabDemo').then((m) => m.AnchorFieldsLabDemo),
     path: 'apps/site/demos/AnchorFieldsLabDemo.tsx',
+  },
+  {
+    id: 'lab-path-snap',
+    title: 'Path snapping',
+    category: 'Geometry',
+    description:
+      "Geometric snapping onto the scene's paths, turned on by `toolOptions.pathSnap` and served through the `snap` dep, so the line tool, the pen, a move and an anchor drag all lock to the same targets on anything with geometry — a path, a rectangle, an ellipse or star by its drawn outline, and a text or image box by its edges, corners and center: anchors and corners, where two strokes cross, the tangent and perpendicular points from where the line being drawn starts, the middle of each segment, the extremes and quadrant points of a curve, and failing all of those the nearest point on a stroke. A dragged anchor also locks to its own path's other anchors and segments, leaving out the two segments that move with it. Every kind competes on distance within the snap radius, measured in screen pixels, and the snapped point wears a glyph and a label naming its kind. Each kind has its own switch in the control panel. The targets come from `findPathSnap` in `@weasel-js/geom`, over an index rebuilt only when the scene changes.",
+    hint: "With Line, drag from empty canvas toward where the two green diagonals cross: the end locks there and the marker says <em>intersection</em>. Start a line below the circle and pull its end to the circle's side for a <em>tangent</em>, or toward a diagonal for a <em>perpendicular</em>. Pull a line's end to the text box or the blue card for its <em>center</em> or a corner. Switch kinds off in the control panel. Pen clicks snap the same way, and with Select, dragging a shape or one of its anchors (double-click to edit anchors) locks to the other shapes.",
+    load: () => import('./demos/PathSnapLabDemo').then((m) => m.PathSnapLabDemo),
+    path: 'apps/site/demos/PathSnapLabDemo.tsx',
   },
   {
     id: 'lab-stroke-width',

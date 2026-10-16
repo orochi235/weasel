@@ -13,7 +13,7 @@ export { useLassoSelectDepSource } from './lassoSelect';
 export { useTextEditDepSource } from './textEdit';
 export { useEditAnchorsDepSource } from './editAnchors';
 export { paletteInsertPaint, useInsertDepSource, type InsertNodeFactory, type InsertPaint } from './insert';
-export { useSnapDepSource } from './snap';
+export { useSnapDepSource, type SnapSources } from './snap';
 export { useSliceDep, useSliceDepSource } from './slice';
 export { useDebugDepSource } from './debug';
 export { useSurfaceDepSources } from './surface';

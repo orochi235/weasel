@@ -101,6 +101,14 @@ export {
   lengthenOpenEnd,
   openEndRay,
   openPathEnds,
+  createPathSnapIndex,
+  findPathSnap,
+  PATH_SNAP_KINDS,
+  createPathSnapper,
+  createPathSnapMarkerLayer,
+  pathSnapGlyph,
+  PATH_SNAP_LABELS,
+  DEFAULT_PATH_SNAP_RADIUS,
 } from '../features/paths';
 export type {
   Path,
@@ -148,6 +156,14 @@ export type {
   ExtendToMeetOptions,
   SmudgePathOptions,
   OpenPathEnd,
+  PathSnapHit,
+  PathSnapIndex,
+  PathSnapKind,
+  PathSnapQuery,
+  PathSnapMark,
+  PathSnapOptions,
+  PathSnapper,
+  PathSnapMarkerStyle,
 } from '../features/paths';
 export {
   SHAPE_COUNT_RANGE,
@@ -184,6 +200,7 @@ export {
 } from '../interactions/actions/pathCommands/pathNodes';
 export { joinPathsCommand, planJoin } from '../interactions/actions/pathCommands/cutJoin';
 export { DEFAULT_SIMPLIFY_TOLERANCE } from '../interactions/actions/pathCommands/simplifyOffset';
+export { livePathEdit, type LivePathEditSpec } from '../interactions/actions/pathCommands/livePathEdit';
 export {
   anchorEditWouldChange, commitAnchorEdit, depOf, requiresAnchorSelection,
 } from '../interactions/actions/defaults/anchorEditing';

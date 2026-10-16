@@ -15,6 +15,7 @@ import { layoutDrop } from './behaviors/layoutDrop';
 import { reparentOnDrop } from './behaviors/reparentOnDrop';
 import { buildGestureContext, captureFrames, capturePlaneRefs, captureStartPoses } from './capture';
 import { moveGestureAdapter, type MoveGestureAdapter } from './gestureAdapter';
+import { captureMovePathSnap, type MovePathSnap } from './pathSnap';
 
 /** Allowed values for the `reparentOnDrop` binding param. `'off'` (the
  *  default) preserves the legacy translate-only commit. `'top'` lands the
@@ -59,6 +60,9 @@ export interface MoveSession {
   /** Read at release: a binding's params may be a thunk. */
   readonly reparentOnDrop: () => ReparentOnDrop;
   readonly dragThresholdPx: number;
+  /** Path snapping for the drag's base point; null when the `snap` dep
+   *  snaps to no paths. */
+  readonly pathSnap: MovePathSnap | null;
 }
 
 /** What one `onMove` produced. Replaced, not mutated, by the next. */
@@ -155,6 +159,7 @@ export function beginMove(
     nodeAtPoint: ctx.deps.nodeAtPoint,
     reparentOnDrop: () => (resolveParams(opts?.params)?.['reparentOnDrop'] as ReparentOnDrop | undefined) ?? 'off',
     dragThresholdPx,
+    pathSnap: captureMovePathSnap(ctx.deps.snap, ctx.drag?.start ?? ctx.world, [...startPoses.keys()]),
   };
   return { session, readers };
 }

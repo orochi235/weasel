@@ -34,13 +34,14 @@
 
 import type { Action } from '@weasel-js/routing';
 import type { BindingOpts, InvocationCtx, OngoingHandle, OngoingOverlay } from '@weasel-js/routing';
-import type { EditAnchorsDep } from '../depSchema';
+import type { EditAnchorsDep, SnapDep, SnapGeometry } from '../depSchema';
 import { ActionDisabledReason, isAnchorOrControl, resolveParams } from '@weasel-js/routing';
 import {
   anchorAt,
   editAnchorSetTracked,
   moveHandleSymmetric,
   moveHandleTo,
+  pathAwayFromAnchors,
   translateAnchorsSymmetric,
   type AnchorSet,
   type AnchorSymmetry,
@@ -121,6 +122,31 @@ interface EditAnchorsScratch {
   origins?: readonly (PointOrigin | null)[];
 }
 
+type Point = { x: number; y: number };
+
+/**
+ * An anchor drag's snap, from the press: where the pressed anchor goes for a
+ * pointer at `world` — onto a path target in range, on another shape or on
+ * the edited path's own anchors and segments that the drag leaves still.
+ * Identity without a path snapper.
+ */
+function anchorDragSnap(
+  snap: SnapDep | undefined,
+  press: { id: string; origin: Point; originPose: PolygonPath; dragging: readonly number[] },
+): (world: Point) => Point {
+  const toPaths = snap?.toPaths;
+  if (!toPaths) return (world) => world;
+  // Built on the first move, and the same object after, so the snapper indexes it once.
+  let still: SnapGeometry | undefined;
+  return (world) => {
+    if (!still) {
+      const { path, anchors } = pathAwayFromAnchors(press.originPose, press.dragging);
+      still = { paths: [path], anchors };
+    }
+    return toPaths(world, { origin: press.origin, exclude: [press.id], also: still }) ?? world;
+  };
+}
+
 const paramsOf = (opts: BindingOpts | undefined): EditAnchorsParams =>
   (resolveParams(opts?.params) ?? {}) as EditAnchorsParams;
 
@@ -157,7 +183,7 @@ export const editAnchorsAction: Action & { requires: string[] } = inPlane({
     target: { kindOf: isAnchorOrControl },
   },
   eligible: { capability: 'edits-anchors' },
-  requires: ['selection', 'editAnchors', 'pathSymmetry'],
+  requires: ['selection', 'editAnchors', 'pathSymmetry', 'snap'],
   invoker: {
     timing: 'ongoing',
     start(ctx: InvocationCtx, opts): OngoingHandle {
@@ -228,14 +254,18 @@ export const editAnchorsAction: Action & { requires: string[] } = inPlane({
         currentPose: worldPath,
         symmetries: editedPathSymmetries(ctx.deps.pathSymmetry, editingId, decoded),
       };
+      const snapAnchor = anchorDragSnap(ctx.deps.snap, {
+        id: editingId, origin: scratch.anchorOrigin, originPose: worldPath, dragging,
+      });
 
       return {
         kind: 'edit-anchors',
         onMove(moveCtx: InvocationCtx): void {
           if (scratch.part === 'anchor') {
             if (scratch.dragging.length === 0) return;
-            const dx = moveCtx.world.x - scratch.anchorOrigin.x;
-            const dy = moveCtx.world.y - scratch.anchorOrigin.y;
+            const to = snapAnchor(moveCtx.world);
+            const dx = to.x - scratch.anchorOrigin.x;
+            const dy = to.y - scratch.anchorOrigin.y;
             track(scratch, editAnchorSetTracked(scratch.originPose, (set) => {
               translateAnchorsSymmetric(set, scratch.dragging, dx, dy, scratch.symmetries);
             }));
@@ -259,6 +289,7 @@ export const editAnchorsAction: Action & { requires: string[] } = inPlane({
         overlay: () => (active ? scratch.guide : null),
         onEnd(_endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
           active = false;
+          ctx.deps.snap?.release?.();
           if (reason === 'cancel') return;
           if (scratch.originPose === scratch.currentPose) return;
           scratch.dep.applyEdit(scratch.id, scratch.currentPose, 'Edit anchors', scratch.origins);

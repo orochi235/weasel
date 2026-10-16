@@ -27,6 +27,7 @@ Tag: `path-drag`
 | Handle locks | `handleLock.angle`, `handleLock.length` | Hold a handle's angle or length during a drag | Toggles; Mod while dragging holds length | main | path-tools |
 | Balance handles | `balanceHandles` | Scales a segment's two handles together from a grip on its balance line; a length lock holds it still | Drag a balance grip, shown under `path-edit.balance` | main | path-tools |
 | Path constraints | `constrainAnchors`, `unconstrainAnchors` | Keep geometric relations (parallel, level, fixed) during any anchor drag | C / Shift+C in its lab only | main | path-tools |
+| Path snapping | — | Locks a dragged anchor to other shapes' anchors, crossings, tangent and perpendicular points, midpoints, extremes, and strokes, and to the parts of its own path the drag leaves still; the pen, the insert tools, and a move snap the same way | Any anchor drag, while `toolOptions.pathSnap` is set | main | core |
 | Soft selection | — | Moves nearby anchors with falling weight | Drag an anchor | audition | — |
 | Handle snap | — | Snaps a handle's angle to steps and to its partner | Drag a handle | audition | — |
 | Lengthen | — | Grows an open end along its tangent or curvature | Drag an end anchor | audition | — |
@@ -88,22 +89,22 @@ Tag: `path-command`
 | Make handles symmetric | `makeHandlesSymmetric` | Equal length, opposite direction | — | main | core |
 | Delete anchors | `deleteAnchors` | Removes selected anchors | Delete | main | core |
 | Harmonize curvature | `harmonizeAnchors` | Rescales a smooth anchor's handles so curvature is continuous | H in its lab only | main | path-tools |
+| Resample | `resamplePath` | Spreads anchors evenly by arc length, to a count or a spacing, holding corners | — | main | path-tools |
+| Add extremes | `addExtremeAnchors` | Adds anchors at each curve's leftmost, rightmost, top, and bottom, on segments with both ends selected, or the whole path while none is | Alt+X in path edit | main | path-tools |
+| Grow, shrink, and every-Nth selection | `growAnchorSelection`, `shrinkAnchorSelection`, `selectEveryNthAnchor`, `selectCornerAnchors`, `selectSmoothAnchors`, `invertAnchorSelection` | Selects anchors along the path: one further each way, one fewer, every Nth, the corners, the smooth ones, or the rest | ] / [, Alt+N, Alt+C, Alt+M, Alt+I in path edit | main | path-tools |
 | Blend | `blend` | Live steps between two shapes | — | main | path-tools |
 | Bend along a path | `bendAlong` | Lays a shape along a spine | — | main | path-tools |
 | Repeat along a path | `repeatAlong` | Live copies placed along a path | — | main | path-tools |
 | Expand warp | `expandWarp` | Drops a held distort, envelope, or puppet warp, keeping its geometry | — | main | path-tools |
 | Warp settings | `configureWarp` | Remakes a held warp with new settings | — | main | path-tools |
-| Resample | — | Spreads anchors evenly by arc length | — | audition | — |
-| Add extremes | — | Adds anchors at each curve's leftmost, rightmost, top, and bottom | — | audition | — |
-| Grow, shrink, and every-Nth selection | — | Selects anchors along the path | — | audition | — |
 
 ## Gestures shared today
 
 Places where one gesture already reaches several operations, which a variant set would make
 explicit:
 
-- **A drag on an anchor or handle** runs `editAnchors`, with handle locks, constraints, and (in
-  audition) soft selection and handle snap all shaping the same drag.
+- **A drag on an anchor or handle** runs `editAnchors`, with handle locks, constraints, path snapping,
+  and (in audition) soft selection and handle snap all shaping the same drag.
 - **A click on a stroke** trims or extends depending on the tool held; Insert and Cut add a
   modifier to the same click.
 - **A brush drag** simplifies or smudges depending on the tool.
