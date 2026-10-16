@@ -1,6 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createMenuHost, type MenuHost } from '@weasel-js/routing';
-import { createPaintedCursorState, type CanvasExtensionApi } from '@weasel-js/core';
+import { createPaintedCursorState, type CanvasExtensionApi, type RenderLayer } from '@weasel-js/core';
+import { FIXTURE_FONT, registerFont } from '@weasel-js/font';
+import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 import { resolveTheme, weaselTheme } from '@weasel-js/theme';
 import { attachHud } from '../attach';
 import { createHud, type Hud } from '../hud';
@@ -91,6 +93,16 @@ describe('attachMenuHost', () => {
     expect(host.current()).not.toBeNull();
   });
 
+  it('closes the host when the menu cannot take focus', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    hud.bind({ requestRedraw() {}, registerLayer: () => () => {}, subscribeFrame: () => () => {} });
+    hud.unbind();
+    host.open({ menu: 'row', client: { x: 10, y: 10 } });
+    expect(hud.widgets()).toHaveLength(0);
+    expect(host.current()).toBeNull();
+    warn.mockRestore();
+  });
+
   it('detaching removes the widget and stops following the host', () => {
     host.open({ menu: 'row', client: { x: 10, y: 10 } });
     detach();
@@ -100,6 +112,8 @@ describe('attachMenuHost', () => {
     detach = () => {};
   });
 });
+
+let layer: RenderLayer<unknown> | undefined;
 
 function makeApi(element: HTMLElement): CanvasExtensionApi {
   return {
@@ -112,7 +126,7 @@ function makeApi(element: HTMLElement): CanvasExtensionApi {
     subscribeBeforePaint: vi.fn(() => () => {}),
     subscribeResume: vi.fn(() => () => {}),
     hitTestExtras: vi.fn(() => null),
-    registerLayer: vi.fn(() => () => {}),
+    registerLayer: vi.fn((l: RenderLayer<unknown>) => { layer = l; return () => {}; }),
     getView: vi.fn(() => ({ x: 0, y: 0, scale: { x: 1, y: 1 } })),
     setView: vi.fn(),
     subscribeView: vi.fn(() => () => {}),
@@ -182,5 +196,39 @@ describe('attachMenuHost on an attached hud', () => {
     const ev = keydown(el, 'z', { ctrlKey: true });
     expect(ev.defaultPrevented).toBe(true);
     expect(host.current()).not.toBeNull();
+  });
+});
+
+describe('attachMenuHost with a hud drawing in another font', () => {
+  const realFetch = global.fetch;
+  const realBitmap = global.createImageBitmap;
+  afterEach(() => {
+    _resetFontRegistryForTests();
+    global.fetch = realFetch;
+    global.createImageBitmap = realBitmap;
+  });
+
+  it('measures its labels in the hud\'s font', async () => {
+    global.fetch = vi.fn(async (url: string) => (url.endsWith('.json')
+      ? { ok: true, json: async () => FIXTURE_FONT }
+      : { ok: true, blob: async () => new Blob(['PNG'], { type: 'image/png' }) })) as never;
+    global.createImageBitmap = vi.fn(async () => ({ width: 512, height: 512, close() {} })) as never;
+    await registerFont('Fixture Face', {}, '/fixture.json', '/fixture.png');
+    const label = 'A'.repeat(20);
+    const wide = createMenuHost({
+      actions: () => [{ id: 'a', label, invoker: immediate }],
+      depsFor: () => undefined, trigger, activeTool: () => null,
+    });
+    wide.define({ id: 'wide', sections: [[{ action: 'a' }]] });
+    const el = document.createElement('canvas');
+    const own = createHud();
+    const unhud = attachHud(makeApi(el), own, { font: 'Fixture Face', theme: resolveTheme(weaselTheme) });
+    const off = attachMenuHost(own, wide, { toCanvas: (p) => p, canvasSize: () => ({ width: 800, height: 600 }) });
+    wide.open({ menu: 'wide', client: { x: 10, y: 10 } });
+    layer!.draw(null, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 800, height: 600 });
+    const advance = FIXTURE_FONT.chars[0]!.xadvance;
+    expect(own.widgets()[0]!.bounds.w).toBe(Math.ceil(20 * advance * 13 / FIXTURE_FONT.info.size) + 16 + 48);
+    off();
+    unhud();
   });
 });

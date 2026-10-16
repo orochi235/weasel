@@ -136,6 +136,58 @@ describe('createMenuWidget', () => {
     }
   });
 
+  it('asks the hud not to ring it', () => {
+    expect(widget().w.focusRing).toBe(false);
+  });
+
+  it('clears a submenu row when the pointer moves back onto its parent', () => {
+    const { w } = widget({
+      ...open,
+      entries: [
+        { kind: 'submenu', key: 'more', label: 'More', entries: [{ kind: 'item', key: 'x', label: 'Inner', run }] },
+      ],
+    });
+    const highlights = () => w.draw(ctx).filter((c) => c.kind === 'path' && c.fill?.paint?.kind === 'solid'
+      && c.fill.paint.color === '#333').length;
+    w.onPointer({ type: 'down', x: 110, y: 110, native: null });
+    w.onPointer({ type: 'up', x: 110, y: 110, native: null });
+    w.onPointer({ type: 'hovermove', x: 290, y: 110, native: null });
+    expect(highlights()).toBe(2);
+    w.onPointer({ type: 'hovermove', x: 110, y: 110, native: null });
+    expect(highlights()).toBe(1);
+  });
+
+  it('measures each level once, not on every highlight change', () => {
+    const measure = vi.fn((t: string) => t.length * 7);
+    const w = createMenuWidget({
+      open: {
+        ...open,
+        entries: [
+          { kind: 'submenu', key: 'more', label: 'More', entries: [
+            { kind: 'item', key: 'x', label: 'Inner', run },
+            { kind: 'item', key: 'y', label: 'Other', run },
+          ] },
+          { kind: 'item', key: 'cut', label: 'Cut', run },
+        ],
+      },
+      close: () => {}, toCanvas: (p) => p, canvasSize: () => ({ width: 800, height: 600 }), measure, onChange: () => {},
+    });
+    w.draw(ctx);
+    const root = measure.mock.calls.length;
+    w.onPointer({ type: 'hovermove', x: 110, y: 110 + 24, native: null });
+    w.onPointer({ type: 'hovermove', x: 110, y: 110, native: null });
+    w.draw(ctx);
+    expect(measure.mock.calls.length).toBe(root);
+    w.onPointer({ type: 'down', x: 110, y: 110, native: null });
+    w.onPointer({ type: 'up', x: 110, y: 110, native: null });
+    const opened = measure.mock.calls.length;
+    expect(opened).toBeGreaterThan(root);
+    w.onPointer({ type: 'hovermove', x: 290, y: 110, native: null });
+    w.onPointer({ type: 'hovermove', x: 290, y: 110 + 24, native: null });
+    w.draw(ctx);
+    expect(measure.mock.calls.length).toBe(opened);
+  });
+
   it('stops answering once disposed', () => {
     const { w, close } = widget();
     w.dispose();
