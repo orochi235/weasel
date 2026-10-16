@@ -226,6 +226,11 @@ Priority tags:
   `packages/geom/src/paths/extendPath.ts`), no preview of where an end will land, its tool key, U
   (`tools/builtin/extend/useExtendTool.ts`), and no default key for the `extendToMeet` action; the
   lab binds E through `tune`.
+- **(P2) Tune the Smudge brush hands-on, with the maintainer driving.** First-draft brush radius
+  (40 screen px) and strength (0.6) (`DEFAULT_SMUDGE_RADIUS_PX`, `DEFAULT_SMUDGE_STRENGTH` in
+  `pathCommands/smudgeBrush.ts`), the falloff `(1 − (d/r)²)²` and the subdivision threshold of a
+  third of the radius (`packages/geom/src/paths/smudgePath.ts`), how radius and strength are
+  reached outside the lab, and its tool key, S (`tools/builtin/smudge/useSmudgeBrushTool.ts`).
 - **(P2) Two helpers grow an open end along its tangent.** `lengthenOpenEnd` in
   `packages/geom/src/paths/extendPath.ts` serves Extend to next path, and the unmerged
   `extend-path-end` branch (Lengthen) has `lengthenPathEnd` of its own. Whichever lands second
@@ -277,8 +282,8 @@ Priority tags:
   mapping it through each node's parent on replay would make the two agree.
 - **(P3) The path commands have no icons.** `simplifyPath`, `offsetPath`, `snipAtCrossings`,
   `joinPaths`, `bridgePaths`, `joinAnchors`, `bridgeAnchors`, `averageAnchors`, and
-  `extendToMeet` show as text in draw's bar, and `useTrimTool` and `useExtendTool` borrow
-  `SliceIcon`.
+  `extendToMeet` show as text in draw's bar, `useTrimTool` and `useExtendTool` borrow
+  `SliceIcon`, and `useSmudgeBrushTool` has none.
   `RetractHandlesIcon`, `SymmetricHandlesIcon`, `SimplifyBrushIcon`, and `HarmonizeIcon`
   (`defaults/icons/anchorIcons.tsx`) are first drafts, not proofed at high resolution.
 - **(P2) Spacing hints.** Equal-spacing markers between siblings while moving, and Alt-hover
@@ -708,15 +713,12 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   merges, drop the restated gestures, and give its actions (`extendPathEnd`, …) entries in core's
   `ActionParamSchema` (`interactions/actions/actionParamSchema.ts`).
 
-- **(P1) The kit has no settings of its own.** Behavior a user would set once for every
-  component — how long a typed field waits idle before it commits, the stepper's repeat delay
-  and rate, typeahead and hover-open delays, a toast's lifetime — is a module constant in each
-  component (`REPEAT_DELAY_MS` in `NumberField/UnitField.tsx`, `TYPEAHEAD_MS` in `Tree/Tree.tsx`,
-  `HOVER_EXPAND_MS`, `DEFAULT_TTL_MS`, and others; `grep -rn "_MS = "`). `@weasel-js/prefs`
-  stores an app's prefs and has no schema for the kit's. Wanted: one kit settings schema, read
-  through one context with these numbers as defaults, that an app can show in its own `Prefs`
-  and persist with its store. Core's gesture timings (drag threshold, double-click interval)
-  belong in the same place.
+- **(P2) Kit settings that do not reach their readers yet.** `history.coalesceMs` is read once,
+  when `PrefSchemaEditor` mounts, because `createHistory` (`@weasel-js/history`) fixes its window
+  at creation; a later change waits for a remount. Not yet settings at all: `guides`'
+  `DEFAULT_GUIDE_TOLERANCE_PX`, the pen and slice tools' close and snap radii (written as a bare
+  `8`), and `thresholdDrag`, a plain function with no store in reach. `view.animationMs` ignores
+  `prefers-reduced-motion`. See `docs/conventions.md` ("Kit settings").
 
 - **(P2) Every standard action ships with `<SceneCanvas>`, used or not.**
   `StandardActionsRegistrar` calls `useStandardActions`, which imports every standard action
@@ -732,17 +734,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   rail marked `canvas.grid` current where the test expects `canvas.rulers`. A guess, not
   confirmed: the section is polled into view and the marks are then read once, so a scroll spy
   that settles a frame later would still name the section above.
-
-- **(P3) Nothing puts `prefsCss` on a page.** `prefsCss(store)` writes the text and
-  `prefsCssAttributes(store)` the attributes (`packages/prefs/README.md`, "As CSS custom
-  properties"); a host adopts the one and sets the other by hand, and again on every change. The
-  kit adopts a rule in two places already, `holdRule` in `@weasel-js/theme` and core's own for a
-  canvas's size rule, which neither prefs nor a third copy should join: fold those into one
-  first, somewhere prefs can reach. Two more things it does not write: a color held as a
-  `ColorSource`, which the `value` option can hand to `colorSourceCss`, and a blend between two
-  options as `color-mix()` driven by a weight property, which would let a mode change crossfade
-  with no script. It must not become a third way a theme token reaches CSS: the build-time
-  emitter behind `tokens.css` and `applyTheme` are the two there are.
 
 - **(P3) Nobody has seen a theme's prefs schema in a form.** `themePrefsSchema`
   (`@weasel-js/theme/prefs`) is tested as data and through a store, and no page draws it in

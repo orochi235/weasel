@@ -35,7 +35,7 @@
     "longestFunction": 383
   },
   "packages/core/src/canvas/SceneCanvas/GestureDispatcherMounter.tsx": {
-    "longestFunction": 253
+    "longestFunction": 249
   },
   "packages/core/src/canvas/SceneCanvas/props.ts": {
     "lines": 610
@@ -84,7 +84,7 @@
     "longestFunction": 209
   },
   "packages/core/src/tools/builtin/slice/useSliceTool.ts": {
-    "longestFunction": 188
+    "longestFunction": 185
   },
   "packages/d3/src/bind.ts": {
     "longestFunction": 140
@@ -200,7 +200,7 @@
     "longestFunction": 214
   },
   "packages/labkit/src/loupe/useLoupe.ts": {
-    "longestFunction": 198
+    "longestFunction": 196
   },
   "packages/labkit/src/primitives/FloatingPanel.tsx": {
     "longestFunction": 149
@@ -298,8 +298,8 @@
     "longestFunction": 174
   },
   "packages/ui/src/components/CurveEditor/LayeredCurveEditor.tsx": {
-    "lines": 464,
-    "longestFunction": 345
+    "lines": 452,
+    "longestFunction": 334
   },
   "packages/ui/src/components/CurveEditor/createFunctionLayer.tsx": {
     "lines": 414,
@@ -320,7 +320,7 @@
     "longestFunction": 204
   },
   "packages/ui/src/components/NumberField/UnitField.tsx": {
-    "longestFunction": 196
+    "longestFunction": 177
   },
   "packages/ui/src/components/PaintInput/PaintInput.tsx": {
     "longestFunction": 138
@@ -363,7 +363,7 @@
     "lines": 425
   },
   "packages/ui/src/components/Tree/Tree.tsx": {
-    "longestFunction": 289
+    "longestFunction": 286
   },
   "packages/ui/src/components/Tree/useTreeDrag.ts": {
     "longestFunction": 143

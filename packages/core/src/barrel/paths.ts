@@ -96,6 +96,7 @@ export {
   pathSegments,
   trimPathAt,
   extendToMeet,
+  smudgePath,
   lengthenOpenEnd,
   openEndRay,
   openPathEnds,
@@ -139,6 +140,7 @@ export type {
   TrimPathOptions,
   TrimResult,
   ExtendToMeetOptions,
+  SmudgePathOptions,
   OpenPathEnd,
 } from '../features/paths';
 export {
@@ -156,7 +158,9 @@ export {
   type ShapeGenerator,
   type StarGenerator,
 } from '../features/paths/shapeGenerator';
-export { DEFAULT_BRIDGE_TENSION } from '../interactions/actions/pathCommands';
+export {
+  DEFAULT_BRIDGE_TENSION, DEFAULT_SMUDGE_RADIUS_PX, DEFAULT_SMUDGE_STRENGTH, type SmudgeBrushParams,
+} from '../interactions/actions/pathCommands';
 
 // ─── Path effects: live blend, bend along, and repeat along ────────────────
 export {

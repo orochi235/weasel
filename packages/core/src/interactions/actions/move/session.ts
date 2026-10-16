@@ -122,7 +122,7 @@ export function beginMove(
     reparentOnDrop(gesture),
   ];
   const dragThresholdPx = (params?.['dragThresholdPx'] as number | undefined)
-    ?? DRAG_THRESHOLD_PX;
+    ?? ctx.deps.kitSettings?.get('gestures.dragPx') ?? DRAG_THRESHOLD_PX;
   const lifecycle = readGestureLifecycle(params, 'Move', behaviors);
   // A behavior that commits after the gesture has ended, a coast coming to
   // rest, lands its batch the way the gesture's own commit does.

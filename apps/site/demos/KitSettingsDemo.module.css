@@ -1,0 +1,39 @@
+.demo {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 24px;
+  width: 820px;
+  height: 560px;
+  align-items: stretch;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-4);
+  min-height: 0;
+  overflow: auto;
+}
+
+.side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-6);
+  min-height: 0;
+}
+
+.specimens {
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  gap: var(--wzl-space-4);
+  align-items: start;
+}
+
+.css {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  margin: 0;
+  font-size: 11px;
+  color: var(--wzl-fg-muted);
+}

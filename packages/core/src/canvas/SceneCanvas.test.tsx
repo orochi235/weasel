@@ -1,5 +1,6 @@
 import { describe, expect, it, vi, beforeAll } from 'vitest';
 import { render, act } from '@testing-library/react';
+import { KitSettingsProvider } from '@weasel-js/react';
 import { SceneCanvas } from './SceneCanvas';
 import { useScene } from 'core/scene/useScene';
 import { createScene } from 'core/scene/scene';
@@ -89,6 +90,38 @@ describe('SceneCanvas', () => {
 
     expect(dragNearCorner()).toEqual(START);
     expect(dragNearCorner(16)).toEqual({ x: 80, y: 80, width: 100, height: 80 });
+  });
+
+  it('targets.handlePx widens the corner handle, and selectTool.handleHitRadius wins over it', () => {
+    type Pose = { x: number; y: number; width: number; height: number };
+    const START: Pose = { x: 100, y: 100, width: 80, height: 60 };
+    function dragNearCorner(handlePx: number, handleHitRadius?: number): Pose {
+      const scene = createScene<{ kind: 'rect' }, 'main', Pose>({ systemLayers: [{ id: 'main' }] });
+      const id = scene.add({ kind: 'leaf', layer: 'main', pose: START, data: { kind: 'rect' } });
+      scene.setSelection([id]);
+      const { container, unmount } = render(
+        <KitSettingsProvider value={{ targets: { handlePx } }}>
+          <SceneCanvas
+            features={['pick', 'resize']} width={400} height={400} scene={scene}
+            {...(handleHitRadius === undefined ? {} : { selectTool: { handleHitRadius } })}
+          />
+        </KitSettingsProvider>,
+      );
+      const canvas = container.querySelector('canvas')!;
+      const fire = (type: string, x: number, y: number) =>
+        canvas.dispatchEvent(new PointerEvent(type, { bubbles: true, clientX: x, clientY: y, pointerId: 1 }));
+      act(() => {
+        fire('pointerdown', 88, 100);
+        fire('pointermove', 68, 80);
+        fire('pointerup', 68, 80);
+      });
+      const pose = scene.get(id)!.pose;
+      unmount();
+      return pose;
+    }
+
+    expect(dragNearCorner(16)).toEqual({ x: 80, y: 80, width: 100, height: 80 });
+    expect(dragNearCorner(16, 6)).toEqual(START);
   });
 });
 

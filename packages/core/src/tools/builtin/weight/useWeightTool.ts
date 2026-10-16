@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useLatest } from '@weasel-js/react';
+import { useKitSettings, useLatest } from '@weasel-js/react';
 import type { ToolKeybinding } from '@weasel-js/routing';
 import type { NodeId, Scene } from 'core/scene/types';
 import { defineTool } from '../../overlayBinding';
@@ -51,20 +51,23 @@ export function useWeightTool(options: UseWeightToolOptions): Tool {
   }), [opts, state]);
 
   const actions = useMemo(() => createWeightActions(env), [env]);
+  const kitSettings = useKitSettings();
   const overlay = useMemo(() => [
     createWeightOverlay({
       id: 'weight-tool-points',
       paths: () => weighedPaths(env),
       active: state.active,
       subscribe: state.listen,
+      pointRadiusPx: () => kitSettings.get('targets.weightPointRadiusPx'),
     }),
     createBoneOverlay({
       id: 'weight-tool-skeleton',
       skeleton: () => env.placed()?.skeleton ?? null,
       active: state.active,
       subscribe: state.listen,
+      jointRadiusPx: () => kitSettings.get('targets.boneJointRadiusPx'),
     }),
-  ], [env, state]);
+  ], [env, state, kitSettings]);
 
   const { keybinding } = options;
   return useMemo(() => defineTool({

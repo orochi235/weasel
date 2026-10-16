@@ -41,7 +41,7 @@ adopted.
 | Operation | Action id | What the brush does | Default binding | Status |
 |---|---|---|---|---|
 | Simplify brush | `simplifyBrush` | Removes anchors it passes over, refitting the curve | Drag with the brush | main |
-| Smudge brush | `smudgeBrush` | Pushes the outline along with the pointer | Drag with the Smudge tool (S) | landing |
+| Smudge brush | `smudgeBrush` | Pushes the outline along with the pointer | Drag with the Smudge tool (S) | main |
 | Puppet warp | — | Pins the path and bends it when a pin is dragged | Puppet tool | landing |
 
 ## Handles on the box around a selection

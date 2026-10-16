@@ -27,7 +27,7 @@ export const bendSegmentAction: Action & { requires: string[] } = inPlane({
   defaultBinding: { kind: 'drag', target: { kindOf: isSegment } },
   cursor: BEND_CURSOR,
   eligible: { capability: 'edits-anchors' },
-  requires: ['editAnchors', 'view'],
+  requires: ['editAnchors', 'view', 'kitSettings'],
   invoker: {
     timing: 'ongoing',
     start(ctx: InvocationCtx): OngoingHandle {

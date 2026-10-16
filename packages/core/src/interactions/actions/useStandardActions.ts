@@ -67,7 +67,7 @@ import { simplifyBrushAction, simplifyBrushToolAction } from './defaults/simplif
 import { exitPathEditToolAction } from './defaults/pathEditTools';
 import {
   bridgePathsAction, extendToMeetAction, joinPathsAction, offsetPathAction, simplifyPathAction, snipAtCrossingsAction,
-  trimPathAction,
+  smudgeBrushAction, trimPathAction,
 } from './pathCommands';
 import {
   bendAlongAction, blendAction, editPathEffectAction, expandPathEffectAction, repeatAlongAction,
@@ -200,6 +200,7 @@ const KIT_STANDARD_DESCRIPTORS: Action[] = [
   bridgePathsAction,
   trimPathAction,
   extendToMeetAction,
+  smudgeBrushAction,
   blendAction,
   bendAlongAction,
   repeatAlongAction,
