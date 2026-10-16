@@ -7,7 +7,7 @@ import {
 } from '@weasel-js/ui';
 import type { ReactNode } from 'react';
 import { valueAtPath } from '../config/path';
-import { BareControl, extra, textWaitMs, useDebouncedText } from './fields';
+import { BareControl, extra, useDebouncedText, useTextWaitMs } from './fields';
 
 /** A leaf this panel has no control for is named rather than dropped: a silent
  *  gap reads as "this control does not exist". */
@@ -44,11 +44,7 @@ export function DebouncedTextRow({
   onAutoChange?: (next: boolean) => void;
 }) {
   // The lab's policy leaves text live, so its writer is `onInput`.
-  const text = useDebouncedText(
-    field.value ?? '',
-    field.onInput ?? field.onChange,
-    textWaitMs(leaf),
-  );
+  const text = useDebouncedText(field.value ?? '', field.onInput ?? field.onChange, useTextWaitMs(leaf));
   return <PropertyField {...field} {...row} value={text.local} onInput={text.type} />;
 }
 

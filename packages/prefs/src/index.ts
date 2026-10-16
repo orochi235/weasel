@@ -64,6 +64,8 @@ export { PREF_BLENDS, type PrefBlend } from './blend';
 export { checkPrefSplits, type PrefSplitProblem } from './splitCheck';
 export { pref } from './build';
 export { prefsCss, prefsCssAttributes, type PrefsCssOptions, type PrefsCssSource } from './css';
+export { prefsDefaultsSource } from './defaultsSource';
+export { kitSettingsCssOptions } from './kitCss';
 export { prefSchemaHolding } from './holding';
 export { prefAliasedLeaf, prefAliasName, prefAliasTarget, type PrefAlias } from './alias';
 export { prefAliasTargets, type PrefAliasTargets, type PrefAliasTargetsOptions } from './aliasTargets';
@@ -118,3 +120,4 @@ export {
   type PrefString,
   type PrefStringControl,
 } from './schema';
+export { mergePrefGroups } from './merge';

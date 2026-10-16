@@ -114,6 +114,13 @@ describe('prefsCss', () => {
   });
 });
 
+describe('prefsCss at a shadow root', () => {
+  it('matches the attributes inside `:host()`', () => {
+    const heads = Object.keys(blocksOf(prefsCss(make(), { root: ':host' })));
+    expect(heads.slice(0, 2)).toEqual([':where(:host)', ":where(:host([data-look-mode='dark']))"]);
+  });
+});
+
 describe('prefsCssAttributes', () => {
   it('names each selector with the option the store has it at', () => {
     const store = make([[MODE, 'light']]);
