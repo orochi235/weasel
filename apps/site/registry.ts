@@ -1045,6 +1045,16 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/PrefsDemo.tsx',
   },
   {
+    id: 'kit-settings',
+    title: 'Kit settings',
+    package: 'prefs',
+    description:
+      "Behavior a user sets once for every component — typeahead and hover-open delays, a stepper's repeat, the double-click interval, the drag threshold, hit-target sizes — read through `useKitSetting` with each component's own constant as the default. `ui` and `core` each export a schema group for theirs, `mergePrefGroups` composes them into one, and `<KitSettingsFromPrefs>` hands a prefs store's values to everything inside. With `css`, the same values are written as `--wzl-kit-*` custom properties; the panel under the specimens shows that sheet.",
+    hint: 'Set Trees → Typeahead to 2000 and type "ap" slowly into the tree, or raise Targets → Selection handle and select a rectangle. Values persist across a reload; Reset puts them back.',
+    load: () => import('./demos/KitSettingsDemo').then((m) => m.KitSettingsDemo),
+    path: 'apps/site/demos/KitSettingsDemo.tsx',
+  },
+  {
     id: 'registry',
     title: 'Reflectable registry',
     package: 'registry',

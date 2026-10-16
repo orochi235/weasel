@@ -37,12 +37,13 @@ export interface TargetSizesPx {
  * How big is grabbable chrome, in CSS pixels, for this pointer type?
  *
  * `targetScale` comes from the live {@link DeviceProfile} — 1 for a mouse,
- * {@link COARSE_TARGET_SCALE} for touch.
+ * {@link COARSE_TARGET_SCALE} for touch. `base` replaces any of the unscaled
+ * sizes, as the `targets` kit settings do; the scale multiplies onto it.
  */
-export function targetSizesPx(targetScale = 1): TargetSizesPx {
+export function targetSizesPx(targetScale = 1, base: Partial<TargetSizesPx> = {}): TargetSizesPx {
   return {
-    handle: BASE_PX.handle * targetScale,
-    anchor: BASE_PX.anchor * targetScale,
-    rotationDistance: BASE_PX.rotationDistance * targetScale,
+    handle: (base.handle ?? BASE_PX.handle) * targetScale,
+    anchor: (base.anchor ?? BASE_PX.anchor) * targetScale,
+    rotationDistance: (base.rotationDistance ?? BASE_PX.rotationDistance) * targetScale,
   };
 }

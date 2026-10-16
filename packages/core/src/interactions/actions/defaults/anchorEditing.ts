@@ -47,14 +47,15 @@ import { NUDGE_KEY, NUDGE_LABEL, nudgeDelta, type NudgeDirection } from './nudge
 import { pathEditToolActive } from './pathEditTools';
 
 /** Screen-pixel radius for "this click landed on an anchor". */
-const ANCHOR_CLICK_PX = 10;
+export const ANCHOR_CLICK_PX = 10;
 
-/** `ANCHOR_CLICK_PX` in world units through the view; with no view, one
+/** `targets.anchorClickPx`, else `ANCHOR_CLICK_PX`, in world units through the view; with no view, one
  *  pixel is one unit. */
 function anchorClickSlop(deps: ActionDeps | undefined): number {
+  const px = deps?.kitSettings?.get('targets.anchorClickPx') ?? ANCHOR_CLICK_PX;
   const scale = deps?.view?.get().scale;
-  if (!scale) return ANCHOR_CLICK_PX;
-  const extent = pxExtent(ANCHOR_CLICK_PX, scale);
+  if (!scale) return px;
+  const extent = pxExtent(px, scale);
   return Math.max(extent.x, extent.y);
 }
 
@@ -129,7 +130,7 @@ export const selectAnchorAction: Action & { requires: string[] } = inPlane({
     { spec: { kind: 'click', mods: { shift: true } }, opts: { params: { additive: true } } },
   ],
   eligible: { capability: 'edits-anchors' },
-  requires: ['editAnchors', 'view'],
+  requires: ['editAnchors', 'view', 'kitSettings'],
   invoker: {
     timing: 'immediate',
     run: (deps, params) => {
@@ -244,7 +245,7 @@ export const cutPathAtAnchorAction: Action & { requires: string[] } = inPlane({
   label: 'Cut path at anchor',
   defaultBinding: { kind: 'click', mods: { alt: true, shift: true } },
   eligible: { capability: 'edits-anchors' },
-  requires: ['editAnchors', 'view'],
+  requires: ['editAnchors', 'view', 'kitSettings'],
   invoker: {
     timing: 'immediate',
     run: (deps, params) => {

@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react';
 import { applyPrefConditions, isPrefLeaf, prefAliasTargets, prefJudge, prefValueAtPath, type PrefAlias, type PrefAliasTargets, type PrefEntry, type PrefGroup, type PrefLeaf, type PrefSection } from '@weasel-js/prefs';
+import type { LiveControl } from '../Prefs/commitPolicy';
 import { entryApplier, type EntryAt } from '../Prefs/entry';
+import { useParamsPolicy } from '../Prefs/useParamsPolicy';
 import { prefFieldChoices, type PrefFieldChoice } from '../Prefs/schema';
 import { PropertyList } from '../Properties/PropertyList';
 import { PropertyRow } from '../Properties/PropertyRow';
@@ -66,7 +68,8 @@ export function Bar(props: BarProps) {
   const judge = (entry?: PrefEntry) => prefJudge(schema, read, entry, props.over);
   const { shown, disabled } = applyPrefConditions(schema, judge(), { aliasOver: over, aliasHolds: targets.holds });
   const entryAt = entryApplier(judge);
-  const draw: Draw = { values, mixed, renderers, onChange, fields, disabled, entryAt, targets };
+  const { settles } = useParamsPolicy('panel');
+  const draw: Draw = { values, mixed, renderers, onChange, fields, disabled, entryAt, targets, settles };
   return (
     <BarLayout
       nodes={shown === null ? [] : shownBarNodes(groupBarNodes(shown, '', (group, path) => <GroupRows draw={draw} group={group} path={path} />), (node) => shownNode(node, draw))}
@@ -94,6 +97,7 @@ interface Draw {
   entryAt: EntryAt;
   /** The schema the bar's aliases point into, as its conditions leave it: what an alias is drawn from. */
   targets: PrefAliasTargets;
+  settles: Readonly<Record<LiveControl, boolean>>;
 }
 
 /** `node` as the bar draws it: an alias as the leaf it shows, unless a renderer of the kind draws aliases itself. */
@@ -146,6 +150,7 @@ function leafCell({ path: own, leaf, at }: BarLeafNode, surface: LeafSurface, dr
     // The cell answers by the bar's own schema, at its own path; what is inside an alias's by its target's.
     disabledAt: at === undefined ? (under) => draw.disabled.has(under) : draw.targets.disabledAt,
     entryAt: at === undefined ? draw.entryAt : draw.targets.entryAt,
+    settles: draw.settles,
   };
   return {
     key: own,
