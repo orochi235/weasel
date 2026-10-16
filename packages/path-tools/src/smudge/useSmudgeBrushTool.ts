@@ -1,6 +1,7 @@
-import { useMemo } from 'react';
+import { createElement, useMemo } from 'react';
 import type { ToolKeybinding } from '@weasel-js/routing';
 import { defineTool, type Tool } from '@weasel-js/core';
+import { SmudgeBrushIcon } from '../icons';
 
 /** Options for `useSmudgeBrushTool`. */
 export interface UseSmudgeBrushToolOptions {
@@ -25,7 +26,7 @@ export function useSmudgeBrushTool(options: UseSmudgeBrushToolOptions = {}): Too
     capabilities: ['creates-shapes'],
     hookName: 'useSmudgeBrushTool',
     cursor: 'crosshair',
-    presentation: { label: 'Smudge brush', group: 'path' },
+    presentation: { label: 'Smudge brush', group: 'path', icon: createElement(SmudgeBrushIcon) },
     bindings: [{ spec: { kind: 'drag' }, actionId: 'smudgeBrush' }],
   }), [keybinding]);
 }

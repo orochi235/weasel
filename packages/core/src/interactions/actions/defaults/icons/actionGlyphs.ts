@@ -4,7 +4,7 @@
 /**
  * @experimental
  * SVG bodies of the glyphs core's actions and tools ship as their icons —
- * undo, redo, delete, and the measure tool's ruler: 20x20 viewBox, stroked
+ * undo, redo, delete, the measure tool's ruler, and the settings sliders: 20x20 viewBox, stroked
  * in currentColor at stroke-width 1.5 with round caps and joins.
  * `<Icon name="undo" />` in `@weasel-js/ui` draws the same one.
  */
@@ -13,4 +13,5 @@ export const ACTION_GLYPHS = {
   undo: `<path d="M4.4 8.4h6.8a3.6 3.6 0 0 1 0 7.2H8.6"/><path d="M6.47 10.14 4.4 8.4 6.47 6.66"/>`,
   redo: `<path d="M15.6 8.4H8.8a3.6 3.6 0 0 0 0 7.2H11.4"/><path d="M13.53 6.66 15.6 8.4 13.53 10.14"/>`,
   measure: `<rect x="2.6" y="7.4" width="14.8" height="5.2" rx="1.2"/><path d="M6 7.4v2.2M9.4 7.4v3M12.8 7.4v2.2" stroke-width="1"/>`,
+  tune: `<path d="M3.4 6h13.2M3.4 10h13.2M3.4 14h13.2" stroke-width="1.25"/><circle cx="7" cy="6" r="1.8"/><circle cx="12.6" cy="10" r="1.8"/><circle cx="9" cy="14" r="1.8"/>`,
 } as const;

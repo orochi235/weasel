@@ -91,6 +91,7 @@ export {
   UndoIcon,
   RedoIcon,
   DeleteIcon,
+  TuneIcon,
   type ActionGlyphProps,
 } from '../interactions/actions/defaults/icons/actionGlyphIcons';
 export { ACTION_GLYPHS } from '../interactions/actions/defaults/icons/actionGlyphs';

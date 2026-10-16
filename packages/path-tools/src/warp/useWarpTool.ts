@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { createElement, useMemo } from 'react';
 import { useLatest } from '@weasel-js/react';
 import type { DistortMode, EnvelopeMapping } from '@weasel-js/geom';
 import type { Action, GestureBinding, ToolKeybinding } from '@weasel-js/routing';
@@ -10,6 +10,9 @@ import {
 } from './warpActions';
 import { WARP_LABELS, type WarpKind, type WarpSettings } from './warpTargets';
 import { createWarpHandleLayer, warpLayerId } from './warpHandles';
+import { DistortIcon, EnvelopeIcon, PuppetWarpIcon } from '../icons';
+
+const WARP_ICONS = { distort: DistortIcon, envelope: EnvelopeIcon, puppet: PuppetWarpIcon } satisfies Record<WarpKind, unknown>;
 
 /** A warp tool: a `Tool` that also registers the layer showing its controls. */
 export type WarpTool = Tool & Pick<SurfaceContribution, 'attach'>;
@@ -133,7 +136,7 @@ function useWarpTool(kind: WarpKind, options: WarpToolOptions, settings: WarpSet
       capabilities: ['creates-shapes'],
       cursor: kind === 'puppet' ? 'crosshair' : 'default',
       actions,
-      presentation: { label: label ?? WARP_LABELS[kind], group: 'warp' },
+      presentation: { label: label ?? WARP_LABELS[kind], group: 'warp', icon: createElement(WARP_ICONS[kind]) },
       onActivate: () => state.setActive(true),
       onDeactivate: () => state.setActive(false),
       bindings: bindingsFor(kind, () => definedOf(settingsRef.current)),

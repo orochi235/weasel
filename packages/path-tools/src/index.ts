@@ -68,6 +68,12 @@ export {
 } from './warp/useWarpTool';
 export { warpLayerId } from './warp/warpHandles';
 
+// ─── Icons ─────────────────────────────────────────────────────────────────
+export {
+  BalanceHandlesIcon, BendAlongIcon, BlendIcon, DistortIcon, EnvelopeIcon, EqualizeHandlesIcon, ExpandIcon,
+  PuppetWarpIcon, RepeatAlongIcon, SmudgeBrushIcon,
+} from './icons';
+
 // ─── Path-edit chrome ──────────────────────────────────────────────────────
 export { combCommands, createCombExtension, PATH_COMB_CHROME_ID, type PathEditCombOptions } from './comb/comb';
 export {

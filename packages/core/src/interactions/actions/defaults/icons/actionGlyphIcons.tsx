@@ -33,6 +33,7 @@ const MARKUP = {
   undo: { __html: ACTION_GLYPHS.undo },
   redo: { __html: ACTION_GLYPHS.redo },
   measure: { __html: ACTION_GLYPHS.measure },
+  tune: { __html: ACTION_GLYPHS.tune },
 };
 
 function renderGlyph(name: keyof typeof MARKUP, { className, size = 20, label }: ActionGlyphProps) {
@@ -68,4 +69,9 @@ export function DeleteIcon(p: ActionGlyphProps) {
 /** @experimental Measure: a ruler, with hairline ticks hanging from its upper edge. Used for `useMeasureTool`. */
 export function MeasureIcon(p: ActionGlyphProps) {
   return renderGlyph('measure', p);
+}
+
+/** @experimental Tune: three slider rails, each with its knob. Used for the settings of a live effect or warp. */
+export function TuneIcon(p: ActionGlyphProps) {
+  return renderGlyph('tune', p);
 }
