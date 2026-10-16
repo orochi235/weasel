@@ -53,7 +53,7 @@ describe('StrokeWidthLabDemo', () => {
     expect(strokes()).toHaveLength(5);
     expect(strokes()[0]?.vertexWidths).toBeUndefined();
 
-    await userEvent.click(screen.getByRole('button', { name: /^Width/ }));
+    await userEvent.click(screen.getByRole('button', { name: /^Girth/ }));
     // The plain stroke, 8 wide, leaves its first anchor at (60, 60) heading
     // along (2, -1): its right edge there is 4 out along (1, 2) / √5. Press on
     // that edge and pull it 6 farther out along the same normal.
