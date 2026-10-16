@@ -1,8 +1,8 @@
 /**
  * Screen-space render layer for path-editing chrome — the open path's
  * outline, anchor markers, tangent lines, and control-point dots for a
- * polygon path that is the current edit target, and its curvature comb when
- * chrome-caps shows it. Marker sizes stay constant regardless of zoom.
+ * polygon path that is the current edit target, and its curvature comb and
+ * balance lines when chrome-caps shows them. Marker sizes stay constant regardless of zoom.
  */
 
 import type { DrawCommand } from '@weasel-js/renderer';
@@ -18,6 +18,8 @@ import {
 } from './anchorMarkers';
 import { constraintGlyphs } from './constraintGlyphs';
 import { combCommands, PATH_COMB_CHROME_ID, type PathEditCombOptions } from './pathEditComb';
+import { balanceCommands, type PathEditBalanceStyle } from './pathEditBalance';
+import { PATH_BALANCE_CHROME_ID } from 'affordances/pathAnchors';
 
 export type { PathEditingOverlayStyle } from './anchorMarkers';
 
@@ -57,6 +59,9 @@ export interface CreatePathEditingOverlayLayerOptions {
   /** How the curvature comb is drawn, read per frame. Whether it shows is
    *  chrome-caps' call (`path-edit.comb`). */
   getComb?(): PathEditCombOptions | undefined;
+  /** How the balance lines are drawn, read per frame. Whether they show is
+   *  chrome-caps' call (`path-edit.balance`). */
+  getBalance?(): PathEditBalanceStyle | undefined;
 }
 
 const EMPTY_SELECTION: ReadonlySet<number> = new Set();
@@ -102,10 +107,12 @@ export function createPathEditingOverlayLayer(
       if (!pose || pose.kind !== 'polygon') return [];
 
       const selected = opts.getSelectedAnchors?.() ?? EMPTY_SELECTION;
-      // Comb, then constraint marks, under the markers, which are what a press reaches first.
-      const out: DrawCommand[] = !isVisible || isVisible(PATH_COMB_CHROME_ID)
-        ? combCommands(pathToAnchors(pose as PolygonPath) as AnchorSet, view, opts.getComb?.())
-        : [];
+      const set = pathToAnchors(pose as PolygonPath) as AnchorSet;
+      // Comb, balance lines, then constraint marks, under the markers, which are what a press reaches first.
+      const out: DrawCommand[] = [
+        ...(!isVisible || isVisible(PATH_COMB_CHROME_ID) ? combCommands(set, view, opts.getComb?.()) : []),
+        ...(!isVisible || isVisible(PATH_BALANCE_CHROME_ID) ? balanceCommands(set, view, opts.getBalance?.()) : []),
+      ];
       out.push(...constraintMarks(
         opts.getConstraints?.(id), opts.getSelectedConstraint?.() ?? null, pose as PolygonPath, view, style,
       ));

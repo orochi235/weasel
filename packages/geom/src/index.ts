@@ -118,6 +118,9 @@ export {
   combTeeth, cubicCurvatureAt, cubicCurvatureSource, cubicDerivativeAt, curvatureComb,
   type CombTooth, type CurvatureCombOptions, type CurvatureSource, type SegmentComb,
 } from './paths/curvature';
+export {
+  balanceFactorToward, equalizeSegmentHandles, handleBalances, scaleSegmentHandles, type HandleBalance,
+} from './paths/balanceHandles';
 export { harmonizeAnchors } from './paths/harmonize';
 export { editAnchorSetTracked, remapPointValues, type PointOrigin } from './paths/anchorOrigins';
 export {

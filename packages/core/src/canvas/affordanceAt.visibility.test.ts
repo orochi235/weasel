@@ -58,7 +58,7 @@ describe('buildAffordanceAt visibility gating', () => {
     expect(hit).toBeNull();
   });
 
-  it('does not test anchors when path-edit.anchors is NOT visible', () => {
+  it('does not read the edited path when neither path-edit.anchors nor path-edit.balance is visible', () => {
     const anchorStateThunk = vi.fn(() => ({
       editingId: 'n1',
       getPose: () => ({
@@ -67,7 +67,7 @@ describe('buildAffordanceAt visibility gating', () => {
         coords: new Float32Array([0, 0]),
       }),
     }));
-    const isVisible = vi.fn((id: string) => id !== 'path-edit.anchors');
+    const isVisible = vi.fn((id: string) => id !== 'path-edit.anchors' && id !== 'path-edit.balance');
     const fn = buildAffordanceAt({
       // Bounds far from the click point so corner/rotate gates don't match.
       getChromeState: () => makeState({ bounds: { x: 1000, y: 1000, width: 10, height: 10 } }),
@@ -79,5 +79,20 @@ describe('buildAffordanceAt visibility gating', () => {
     expect(hit).toBeNull();
     // The anchor-state thunk should NOT have been called: the gate fires first.
     expect(anchorStateThunk).not.toHaveBeenCalled();
+  });
+
+  it('reads the edited path for balance grips shown without the anchors', () => {
+    const anchorStateThunk = vi.fn(() => ({
+      editingId: 'n1',
+      getPose: () => ({ kind: 'polygon' as const, commands: new Uint8Array([0]), coords: new Float32Array([0, 0]) }),
+    }));
+    const fn = buildAffordanceAt({
+      getChromeState: () => makeState({ bounds: { x: 1000, y: 1000, width: 10, height: 10 } }),
+      getView: () => VIEW,
+      getAnchorState: anchorStateThunk,
+      getIsVisible: () => (id: string) => id !== 'path-edit.anchors',
+    });
+    expect(fn({ x: 0, y: 0 })).toBeNull();
+    expect(anchorStateThunk).toHaveBeenCalled();
   });
 });

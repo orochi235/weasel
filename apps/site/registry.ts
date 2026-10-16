@@ -731,6 +731,16 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/HandleLockLabDemo.tsx',
   },
   {
+    id: 'lab-balance-handles',
+    title: 'Balance handles',
+    category: 'Geometry',
+    description:
+      "Each curved segment of the edited path shows its balance line, from the tip of its first handle to the tip of its second, with a grip at the middle. Dragging the grip scales both handles together, each along its own direction, so the segment fills out toward the corner its handle lines meet at or flattens toward its chord, with neither end turning. Double-clicking it gives the two handles one proportion: each reaches the same fraction of the way to that corner, the mean of the two fractions they had. The lines and grips are part of the path-edit overlay, shown and hit-tested while chrome-caps shows `path-edit.balance`, and the `balanceHandles` and `equalizeHandles` actions bind to the `balance:N` grips. A grip drag keeps every handle's angle, so an angle lock holds through it; a length lock, from `handleLock.length` or Mod held, holds it still.",
+    hint: 'Drag a grip, the hollow dot midway along a line between two handle tips, to scale both handles at once; hold <kbd>Mod</kbd> and the drag holds still. Double-click a grip to even out its handles. Turn on Show comb to watch the curvature change as you drag.',
+    load: () => import('./demos/BalanceHandlesLabDemo').then((m) => m.BalanceHandlesLabDemo),
+    path: 'apps/site/demos/BalanceHandlesLabDemo.tsx',
+  },
+  {
     id: 'lab-curvature-comb',
     title: 'Curvature comb',
     category: 'Geometry',

@@ -59,6 +59,7 @@ import { enterPathEditAction } from './defaults/enterPathEdit';
 import { exitPathEditAction } from './defaults/exitPathEdit';
 import { insertPathAnchorAction } from './defaults/insertPathAnchor';
 import { bendSegmentAction } from './defaults/bendSegment';
+import { balanceHandlesAction, equalizeHandlesAction } from './defaults/handleBalance';
 import { harmonizeAnchorsAction, makeHandlesSymmetricAction, retractHandlesAction } from './defaults/anchorHandles';
 import { constrainAnchorsAction, deleteConstraintAction, unconstrainAnchorsAction } from './defaults/anchorConstraints';
 import { handleLockAngleAction, handleLockLengthAction } from './defaults/handleLocks';
@@ -175,10 +176,14 @@ const KIT_STANDARD_DESCRIPTORS: Action[] = [
   insertRepositionAction,
   cloneAction,
   editAnchorsAction,
+  // Ahead of enterPathEdit: a balance grip inside the path's body ties its
+  // double-click on specificity.
+  equalizeHandlesAction,
   enterPathEditAction,
   exitPathEditAction,
   insertPathAnchorAction,
   bendSegmentAction,
+  balanceHandlesAction,
   cutPathAtAnchorAction,
   simplifyBrushAction,
   simplifyBrushToolAction,

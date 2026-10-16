@@ -53,3 +53,12 @@ export function editedAnchors(): PenAnchor[] {
   const world = pathInWorld((node.data as { path: Path }).path, node.pose as never);
   return pathToAnchors(world as never).anchors[0];
 }
+
+export function doubleClick(canvas: Element, x: number, y: number): void {
+  act(() => {
+    for (let i = 0; i < 2; i++) {
+      pointer(canvas, 'pointerdown', x, y);
+      pointer(canvas, 'pointerup', x, y);
+    }
+  });
+}

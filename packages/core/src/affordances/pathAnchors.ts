@@ -1,9 +1,9 @@
-/** Path anchor, control-handle, and segment affordances. */
+/** Path anchor, control-handle, segment, and balance-grip affordances. */
 
 import type { CursorSpec } from '@weasel-js/cursor';
 import type { Affordance, AffordanceBinding, AffordanceRegion, CommonAffordanceScratch } from './types';
 import type { ChromeState } from 'core/selection/chromeState';
-import type { PolygonPath } from '@weasel-js/geom';
+import { handleBalances, pathToAnchors, type AnchorSet, type PolygonPath } from '@weasel-js/geom';
 import { enumerateAnchors } from 'interactions/actions/edit-anchors/geometry';
 
 /**
@@ -36,19 +36,25 @@ export interface AnchorScratch extends CommonAffordanceScratch {
   part: 'anchor' | 'controlIn' | 'controlOut';
 }
 
-/** Chrome-caps id gating every returned affordance. */
+/** Chrome-caps id gating the anchor, control, and segment affordances. */
 export const PATH_ANCHOR_CHROME_ID = 'path-edit.anchors';
 
+/** Chrome-caps id gating the balance grips, which the path-edit overlay draws
+ *  under the same id. Off by default. */
+export const PATH_BALANCE_CHROME_ID = 'path-edit.balance';
+
 /**
- * Segment, anchor, and control affordances for the selected paths, bottom →
- * top.
+ * Segment, balance-grip, anchor, and control affordances for the selected
+ * paths, bottom → top.
  *
  * Three affordances rather than one, so that a control handle beats an anchor
  * regardless of which is nearer, the way controls draw on top, and both beat
  * the segment they sit on. Within each, nearest wins. A press on the edited
  * path's outline is a `segment` hit, which the segment bend binds to and a
- * selection move turns down. They deliberately share one id: chrome-caps
- * gates anchor editing as a single piece of chrome.
+ * selection move turns down. Anchors, controls, and segments share one id:
+ * chrome-caps gates anchor editing as a single piece of chrome. Balance grips,
+ * `balance:N` at the middle of each curved segment's handle-to-handle line,
+ * have an id of their own so they can be shown apart from it.
  *
  * Order matters — spread this into an affordance list in the returned order.
  */
@@ -162,5 +168,33 @@ export function createPathAnchorAffordances(
     },
   };
 
-  return [segments, anchors, controls];
+  return [segments, balanceGrips(getAnchorState, hitRadius, cursor), anchors, controls];
+}
+
+/** A grip at the middle of each curved segment's balance line, on the path in
+ *  edit mode while it is selected: `balance:N`, N the flat index of the
+ *  segment's first anchor. */
+function balanceGrips(
+  getAnchorState: () => AnchorState | null,
+  hitRadius: number,
+  cursor: CursorSpec,
+): Affordance {
+  return {
+    id: PATH_BALANCE_CHROME_ID,
+    regions(state) {
+      const anchorState = getAnchorState();
+      const editingId = anchorState?.editingId ?? null;
+      if (editingId === null || !(state.selection as readonly string[]).includes(editingId)) return [];
+      const pose = anchorState!.getPose(editingId);
+      if (!pose || (pose as { kind?: string }).kind !== 'polygon') return [];
+      return handleBalances(pathToAnchors(pose as PolygonPath) as AnchorSet).map((line) => ({
+        id: `${editingId}:balance:${line.flat}`,
+        targetId: null,
+        shape: { kind: 'point', x: line.grip.x, y: line.grip.y, hitRadiusPx: hitRadius },
+        hitKind: `balance:${line.flat}`,
+        cursor,
+        bind: (): AffordanceBinding => ({ initialScratch: { targetId: editingId } }),
+      }));
+    },
+  };
 }

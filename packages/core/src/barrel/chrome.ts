@@ -57,6 +57,7 @@ export {
   createRotationAffordance,
   createPathAnchorAffordances,
   PATH_ANCHOR_CHROME_ID,
+  PATH_BALANCE_CHROME_ID,
   type Affordance,
   type AffordanceBinding,
   type AffordanceRegion,

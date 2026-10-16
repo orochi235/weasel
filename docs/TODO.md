@@ -182,17 +182,26 @@ Priority tags:
   2026-10-15, to start once the adopted audition branches have landed. Core keeps basic path
   edit (anchors, handles, Join, Cut at crossings, Simplify, Offset) and `@weasel-js/geom` keeps
   the pure math; the package takes the actions, tools, and their chrome built on core: Simplify
-  brush, handle locks, Bridge, Trim segment, Extend to next path, Harmonize curvature, Smudge
-  brush, path constraints, Blend / Bend along / Repeat along, and the distort tools. An app turns
-  it on as a preset. First the foundation it needs: a way for a package to contribute actions to
-  the standard set and to a `features` preset, which is also what "Every standard action ships
-  with `<SceneCanvas>`" below asks for. Then the tool renames the maintainer deferred to the end
-  of the adoption pass (Envelope mesh becomes Cloth warp, among others).
+  brush, handle locks, Bridge, Trim segment, Extend to next path, Harmonize curvature, Balance
+  handles, Smudge brush, path constraints, Blend / Bend along / Repeat along, and the distort
+  tools. An app turns it on as a preset. First the foundation it needs: a way for a package to
+  contribute actions to the standard set and to a `features` preset, which is also what "Every
+  standard action ships with `<SceneCanvas>`" below asks for. Then the tool renames the
+  maintainer deferred to the end of the adoption pass (Envelope mesh becomes Cloth warp, among
+  others).
 - **(P2) Tune the Simplify brush hands-on, with the maintainer driving.** It went in from its
   audition lab with first-draft behavior and keys: brush size and its key, the tolerance it
   applies, and how it shows what it will remove (`defaults/simplifyBrush.ts`).
 - **(P2) Tune the curvature comb hands-on, with the maintainer driving.** First-draft default
   scale and density, when it shows, and no key to toggle it (`features/paths/pathEditComb.ts`).
+- **(P2) Tune Balance handles hands-on, with the maintainer driving.** First-draft behavior: a
+  grip drag scales both handles by one factor, read off the pointer's projection onto the line the
+  grip slides along, and a length lock (`handleLock.length`, or Mod) holds it still
+  (`packages/geom/src/paths/balanceHandles.ts`, `defaults/handleBalance.ts`). Its look: a purple
+  line between the handle tips and a 4px hollow grip, drawn under the anchor markers and beaten by
+  them on a press (`features/paths/pathEditBalance.ts`, `affordances/pathAnchors.ts`). Off by
+  default under `path-edit.balance`, with no key to show it, and Equalize handles has only the
+  grip's double-click (`apps/site/demos/BalanceHandlesLabDemo.tsx`).
 - **(P2) Tune handle locks hands-on, with the maintainer driving.** Which locks deserve keys, and
   whether a lock holds through a modifier drag (`handleLock.*`, `defaults/handleLocks.tsx`).
 - **(P2) Tune Bridge hands-on, with the maintainer driving.** First-draft default Tension (0.4,

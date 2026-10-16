@@ -114,6 +114,7 @@ export type {
   CreatePathEditingOverlayLayerOptions,
   PathEditingOverlayStyle,
   PathEditCombOptions,
+  PathEditBalanceStyle,
   PathInWorldPose,
   PathStation,
   PointAlongPathOptions,

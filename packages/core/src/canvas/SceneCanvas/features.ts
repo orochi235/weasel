@@ -134,6 +134,7 @@ export const FEATURE_PRESETS: Readonly<Record<BaseFeature, FeaturePreset>> = {
       'pathfinder.exclude', 'pathfinder.divide', 'pathfinder.crop', 'pathfinder.trim', 'pathfinder.merge',
       'createOutlines', 'outlineStroke',
       'editAnchors', 'enterPathEdit', 'exitPathEdit', 'insertPathAnchor', 'bendSegment',
+      'balanceHandles', 'equalizeHandles',
       'nudgeAnchors.up', 'nudgeAnchors.down', 'nudgeAnchors.left', 'nudgeAnchors.right',
       'deleteAnchors', 'deleteConstraint', 'cutPathAtAnchor', 'simplifyBrush', 'pathEditTool.simplifyBrush', 'pathEditTool.exit', 'marqueeAnchors', 'selectAnchor',
       'retractHandles', 'makeHandlesSymmetric', 'harmonizeAnchors', 'handleLock.angle', 'handleLock.length',
