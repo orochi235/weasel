@@ -986,6 +986,13 @@ only story runner in the repo.
 
 ## Demos & visual regression
 
+- **(P3) The older hud demos draw in dark mode whatever the site shows.** The hud reads its colors
+  from a `ThemeProvider`, not the cascade, and the demo shell provides none, so `hud`, `hud-gallery`
+  and `loupe` keep the theme's default mode when the site is switched to light.
+  `HudContextMenuDemo` follows the site by putting `SiteColorModeContext` (`apps/site/colorMode.ts`)
+  into its own `ThemeProvider`; the others can do the same. A provider around every demo would
+  instead change `LabRoot`, which skips its own theme under an outer one.
+
 - **(P3) EffectChart visual baselines are not captured.** `tests/visual/effect-chart.spec.ts`
   names `effect-chart.png` and `effect-chart-rack.png`; the update-baselines workflow has to
   write them. Its `maxDiffRatio` of 0.004 was copied from `diagram.spec.ts`; set it
@@ -1002,7 +1009,9 @@ only story runner in the repo.
   show an empty page with wake's "dev server unreachable" pill, and a reload renders it. Seen on
   every one of a dozen servers on 2026-10-14. The server logs no dependency re-optimization or
   reload, so the cause isn't known; the first load after an agent edits a lab once threw
-  `instrument.defaultConfig is not a function` before a reload fixed it.
+  `instrument.defaultConfig is not a function` before a reload fixed it. A visual spec run on its
+  own meets it too: `hud-context-menu`'s first test waited 30s for a canvas, twice on teitou on
+  2026-10-15, and passed in 2s on the next try; `--timeout 90000` gets a lone spec through.
 
 - **(P3) Package pages: a public signature names types the reference has no page for.** Every
   published package has a page at `#pkg/<name>` (how each tab is fed is in `CONTRIBUTING.md`,
