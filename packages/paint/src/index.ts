@@ -22,6 +22,7 @@ export type {
   Fill,
   Stroke,
   StrokeDashStyle,
+  StrokeNib,
   Region,
   ScreenLength,
 } from './paint';
@@ -45,6 +46,8 @@ export {
   type PatternTransform,
   type PatternTransformParts,
 } from './patternTransform';
+export { scaleVertexWidth, vertexHalfWidths, vertexWidthFromSides, widestHalfWidth } from './vertexWidth';
+export type { HalfWidths, VertexWidth, VertexWidthSides } from './vertexWidth';
 export {
   alignedStrokeRect,
   resolveScreenLength,

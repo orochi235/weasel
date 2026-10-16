@@ -7,7 +7,7 @@
  */
 
 import { type DrawCommand } from '@weasel-js/renderer';
-import { type CommandStroke, type CommandFill } from '@weasel-js/paint';
+import { type CommandStroke, type CommandFill, type VertexWidth } from '@weasel-js/paint';
 import type { RenderLayer } from 'core/layers/render';
 import { type Path, countPathAnchors } from '@weasel-js/geom';
 import type { ColorOverrideRegistry } from '@weasel-js/animator';
@@ -45,13 +45,14 @@ export interface CreatePathLayerOpts<T> {
    */
   getStrokeVertexColors?: (node: T) => number[] | null | undefined;
   /**
-   * Per-node stroke vertex-width array (one width per anchor).
+   * Per-node stroke vertex-width array (one `VertexWidth` per anchor: a
+   * width, or a `{ left, right }` pair).
    * Length must be `countPathAnchors(getPath(node))`. The tessellator
    * interpolates half-widths along each segment for tapered strokes.
    * When set and `getStroke` returns null/undefined, a 1px placeholder
    * stroke is synthesized so the per-anchor widths take effect.
    */
-  getStrokeVertexWidths?: (node: T) => number[] | null | undefined;
+  getStrokeVertexWidths?: (node: T) => VertexWidth[] | null | undefined;
   /**
    * Optional color override registry, typically `animator.colorOverrides`.
    * When set, the renderer consults it before falling back to
@@ -145,7 +146,7 @@ export function createPathLayer<T>(opts: CreatePathLayerOpts<T>): RenderLayer<un
           fillFromHook != null ? fillFromHook
           : (useVColors != null ? PLACEHOLDER_FILL : undefined);
 
-        let useStrokeVWidths: number[] | null = null;
+        let useStrokeVWidths: VertexWidth[] | null = null;
         if (strokeVWidths != null) {
           if (strokeVWidths.length === anchorCount) {
             useStrokeVWidths = strokeVWidths;

@@ -290,6 +290,10 @@ Priority tags:
   on a smooth anchor, `+=`/`-=` offsets each anchor by its own amount, and draw shows it at the
   top of Properties in points (`packages/ui/src/components/AnchorFields/`,
   `packages/geom/src/paths/anchorFields.ts`, `apps/draw/src/RightSidebar.tsx`).
+- **(P2) Tune the Width tool hands-on, with the maintainer driving.** First-draft behavior and
+  keys: Shift+W in draw; how near an edge a press must land to grab it; Alt moving one edge alone
+  and Alt-click clearing a width point; and whether a press between anchors should insert one
+  (`packages/core/src/tools/builtin/width/`).
 - **(P2) A rectangle has no anchors in path edit.** Draw stores a drawn rectangle's `data.path`
   as a `RectPath` (`kind: 'rect'`), and `classifyPathStorage`
   (`packages/core/src/features/paths/editablePath.ts`) accepts only a polygon, so double-clicking
@@ -357,8 +361,12 @@ Priority tags:
   as a box-to-box map, but a rotation rewrites the coordinates in a way no such map undoes, so the
   warp stops resolving and the warp tools start a fresh one. A `data.path` node keeps its warp
   through a rotation.
-- **(P2) Variable-width strokes.** A width profile along a stroke's length, edited by dragging
-  on the stroke. `strokeToPath` handles a fixed width only.
+- **(P3) The width tool has no icon, and passes over rectangles.** `useWidthTool` shows the
+  unknown-tool glyph in draw's palette and the lab's. It edits only nodes `resolveEditablePathOf`
+  answers a polygon for, so a drawn rectangle's stroke, which renders `vertexWidths` and a `nib`
+  like any other, cannot be shaped with it; that waits on "A rectangle has no anchors in path edit"
+  above. `strokeEdgeNear`, which it hit-tests with, measures every stroke as centered, so on an
+  inner- or outer-aligned stroke the grab point sits off the edge that is drawn.
 
 ### Path constraints
 

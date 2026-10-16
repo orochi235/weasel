@@ -12,6 +12,7 @@ import {
   type UseSceneTextEditReturn,
   useMeasureTool,
   useSliceTool,
+  useWidthTool,
   type View,
   workspaceTintLayer
 } from '@weasel-js/core';
@@ -111,6 +112,7 @@ export function Workspace(props: WorkspaceProps): ReactElement {
   });
   const insertPaint = useInsertPaint();
   const sliceTool = useSliceTool();
+  const widthTool = useWidthTool();
   const { measurements } = props;
   const measureTool = useMeasureTool({ measurements });
   const measureEntry = useMemo(
@@ -174,7 +176,7 @@ export function Workspace(props: WorkspaceProps): ReactElement {
           scene={scene}
           selection={selection}
           defaultTools={BUILTIN_TOOL_IDS}
-          tools={{ slice: sliceTool, measure: measureTool, opacityScrub: opacityScrubTool }}
+          tools={{ slice: sliceTool, width: widthTool, measure: measureTool, opacityScrub: opacityScrubTool }}
           ingestion={DRAW_INGESTION}
           insertPaint={insertPaint}
           // Pick on the drawn shape, not the bounding box: clicking the blank right half of a
