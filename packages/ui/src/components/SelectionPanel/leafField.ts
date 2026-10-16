@@ -29,8 +29,11 @@ export function leafField(ctx: PropertyRenderContext, nested: boolean): Property
     },
     fontFamily: ctx.valueAt(siblingPath(ctx.path, 'fontFamily')).value,
   };
-  const settled = prefFieldProps(ctx.pref, state, 'panel');
-  const field = settled && ctx.drafts ? withDrafts(settled, prefFieldProps(ctx.pref, drafting(state, ctx.drafts), 'panel'), 'panel') : settled;
+  const { settles } = ctx;
+  const settled = prefFieldProps(ctx.pref, state, 'panel', settles);
+  const field = settled && ctx.drafts
+    ? withDrafts(settled, prefFieldProps(ctx.pref, drafting(state, ctx.drafts), 'panel', settles), 'panel', settles)
+    : settled;
   return field?.kind === 'paint' && nested ? nestedPaint(ctx, field) : field;
 }
 

@@ -36,25 +36,31 @@ export function liveControl(field: PropertyControlProps): LiveControl | null {
  * `field` where `surface` leaves its control live, sending the values on the way through `drafts`' writer and
  * the one the edit settles on through its own. `drafts` is the same leaf's field built over a writer that keeps
  * its writes out of undo. A control the surface settles, and one that is not live, come back as they are.
+ * `settles` stands in for the surface's defaults: what `useParamsPolicy` resolves from the kit settings.
  */
 export function withDrafts(
   field: PropertyControlProps,
   drafts: PropertyControlProps | null,
   surface: ParamsSurface,
+  settles: Readonly<Record<LiveControl, boolean>> = PARAMS_SETTLES[surface],
 ): PropertyControlProps {
   const live = liveControl(field);
-  if (live === null || PARAMS_SETTLES[surface][live] || drafts === null) return field;
+  if (live === null || settles[live] || drafts === null) return field;
   if (field.kind === 'number' && drafts.kind === 'number') return { ...field, onInput: drafts.onChange };
   if (field.kind === 'string' && drafts.kind === 'string') return { ...field, onInput: drafts.onChange };
   if (field.kind === 'color' && drafts.kind === 'color') return { ...field, onInput: drafts.onChange };
   return field;
 }
 
-/** `field` writing when `surface` writes it. A control given an `onInput` drafts through it and commits through
- *  `onChange`, so one that swallows the drafts is what makes a control write settled values only. */
-export function withCommitPolicy(field: PropertyControlProps, surface: ParamsSurface): PropertyControlProps {
+/** `field` writing when `surface` writes it, or as `settles` says. A control given an `onInput` drafts through it
+ *  and commits through `onChange`, so one that swallows the drafts is what makes a control write settled values only. */
+export function withCommitPolicy(
+  field: PropertyControlProps,
+  surface: ParamsSurface,
+  settles: Readonly<Record<LiveControl, boolean>> = PARAMS_SETTLES[surface],
+): PropertyControlProps {
   const live = liveControl(field);
-  if (live === null || !PARAMS_SETTLES[surface][live]) return field;
+  if (live === null || !settles[live]) return field;
   if (field.kind === 'number') return { ...field, onInput: settledOnly };
   return field.kind === 'string' || field.kind === 'color' ? { ...field, onInput: settledOnly } : field;
 }

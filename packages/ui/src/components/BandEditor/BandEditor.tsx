@@ -16,7 +16,7 @@ import { focusedControlOwnsKey, isEditableTarget } from '@weasel-js/gestures';
 import { decimal, type Display, type Quantity } from '@weasel-js/quantity';
 import s from './BandEditor.module.css';
 import { QuantityText } from '../QuantityText';
-import { SNAP_RADIUS_PX, snapToNearest } from '../../snap';
+import { snapToNearest, useSnapRadiusPx } from '../../snap';
 import { clamp01, resolveScale, type BandScale } from './scale';
 import { bandName, retagBands, untag } from './retag';
 import { pct } from './track';
@@ -160,6 +160,7 @@ export function BandEditor<T, F extends Quantity = number>(props: BandEditorProp
   const toUnit = (v: number): number => clamp01(sc.toUnit(v, axisMin, axisMax));
   const fromUnit = (u: number): number => sc.fromUnit(clamp01(u), axisMin, axisMax);
 
+  const snapRadiusPx = useSnapRadiusPx();
   const trackWidth = (): number => trackRef.current?.getBoundingClientRect().width ?? 0;
 
   /** Unclamped: an edge drag reads the pointer past either end of the track. */
@@ -173,8 +174,7 @@ export function BandEditor<T, F extends Quantity = number>(props: BandEditorProp
   const snapped = (unit: number, altKey: boolean): number => {
     if (!snap || altKey || !ticks || ticks.length === 0) return unit;
     const width = trackWidth();
-    if (width === 0) return unit;
-    return snapToNearest(unit, ticks.map((tick) => toUnit(tick.at)), SNAP_RADIUS_PX / width);
+    return width === 0 ? unit : snapToNearest(unit, ticks.map((tick) => toUnit(tick.at)), snapRadiusPx / width);
   };
 
   // No pointer capture: a band body is a `<button>` whose content the consumer

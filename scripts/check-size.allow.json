@@ -301,8 +301,8 @@
     "longestFunction": 174
   },
   "packages/ui/src/components/CurveEditor/LayeredCurveEditor.tsx": {
-    "lines": 464,
-    "longestFunction": 345
+    "lines": 452,
+    "longestFunction": 334
   },
   "packages/ui/src/components/CurveEditor/createFunctionLayer.tsx": {
     "lines": 414,
@@ -323,7 +323,7 @@
     "longestFunction": 204
   },
   "packages/ui/src/components/NumberField/UnitField.tsx": {
-    "longestFunction": 196
+    "longestFunction": 177
   },
   "packages/ui/src/components/PaintInput/PaintInput.tsx": {
     "longestFunction": 138
@@ -366,7 +366,7 @@
     "lines": 425
   },
   "packages/ui/src/components/Tree/Tree.tsx": {
-    "longestFunction": 289
+    "longestFunction": 286
   },
   "packages/ui/src/components/Tree/useTreeDrag.ts": {
     "longestFunction": 143
