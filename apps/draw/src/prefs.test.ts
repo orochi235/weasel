@@ -34,8 +34,8 @@ beforeAll(() => {
 });
 
 describe('PREFS', () => {
-  it('stores the panel map under the custom data kind', () => {
-    expect(PREFS.children.ui.children.panels.kind).toBe('data');
+  it('stores the surface map under the custom data kind', () => {
+    expect(PREFS.children.ui.children.surfaces.kind).toBe('data');
   });
 });
 
@@ -47,13 +47,36 @@ describe('openDrawPrefs', () => {
     expect(store.get('view.gridVisible')).toBe(false);
   });
 
-  it('reads a stored panel map that is not a map as its default', () => {
+  it('reads a stored surface map that is not a map as its default', () => {
     for (const stored of [null, 'x', 3, [1]]) {
-      const backing = new Map<string, unknown>([[`${PREFS_PREFIX}ui.panels`, stored]]);
-      expect(openDrawPrefs(createMemoryAdapter(backing)).get('ui.panels')).toEqual({});
+      const backing = new Map<string, unknown>([[`${PREFS_PREFIX}ui.surfaces`, stored]]);
+      expect(openDrawPrefs(createMemoryAdapter(backing)).get('ui.surfaces')).toEqual({});
     }
-    const backing = new Map<string, unknown>([[`${PREFS_PREFIX}ui.panels`, { layers: { hidden: true } }]]);
-    expect(openDrawPrefs(createMemoryAdapter(backing)).get('ui.panels')).toEqual({ layers: { hidden: true } });
+    const backing = new Map<string, unknown>([[`${PREFS_PREFIX}ui.surfaces`, { layers: { hidden: true } }]]);
+    expect(openDrawPrefs(createMemoryAdapter(backing)).get('ui.surfaces')).toEqual({ layers: { hidden: true } });
+  });
+
+  it('carries the old panel map forward as the surface map', async () => {
+    const backing = new Map<string, unknown>([[`${PREFS_PREFIX}ui.panels`, { layers: { hidden: true }, history: { collapsed: true } }]]);
+    const store = openDrawPrefs(createMemoryAdapter(backing));
+    expect(store.get('ui.surfaces')).toEqual({ layers: { hidden: true }, history: { collapsed: true } });
+    await store.flush();
+    expect(backing.has(`${PREFS_PREFIX}ui.panels`)).toBe(false);
+  });
+
+  it('keeps a surface map already stored over an old panel map', () => {
+    const backing = new Map<string, unknown>([
+      [`${PREFS_PREFIX}ui.panels`, { layers: { hidden: true } }],
+      [`${PREFS_PREFIX}ui.surfaces`, { path: { surface: 'menu' } }],
+    ]);
+    expect(openDrawPrefs(createMemoryAdapter(backing)).get('ui.surfaces')).toEqual({ path: { surface: 'menu' } });
+  });
+
+  it('carries a v2 blob’s panel map forward as the surface map', () => {
+    window.localStorage.setItem(LEGACY_PREFS_KEY, JSON.stringify({ version: 2, ui: { panels: { colors: { hidden: true } } } }));
+    const store = openDrawPrefs(createMemoryAdapter());
+    importLegacyPrefs(store, window.localStorage);
+    expect(store.get('ui.surfaces')).toEqual({ colors: { hidden: true } });
   });
 
   it('round-trips a tool-contributed pref at its composed path', async () => {
@@ -61,7 +84,7 @@ describe('openDrawPrefs', () => {
     const store = openDrawPrefs(createMemoryAdapter(backing));
     store.set('tools.pen.autoCommitOnClose', false);
     await store.flush();
-    expect(backing.get(`${PREFS_PREFIX}tools.pen.autoCommitOnClose`)).toEqual({ $at: 0, value: false });
+    expect(backing.get(`${PREFS_PREFIX}tools.pen.autoCommitOnClose`)).toEqual({ $at: 1, value: false });
   });
 
   it('holds any tool id as the last tool', () => {
@@ -78,14 +101,14 @@ describe('importLegacyPrefs', () => {
     expect(LEGACY_PREFS_KEY.startsWith(PREFS_PREFIX)).toBe(false);
   });
 
-  it('leaves only leaf records under the prefix after import', async () => {
+  it('leaves only leaf records and the version under the prefix after import', async () => {
     window.localStorage.setItem(LEGACY_PREFS_KEY, JSON.stringify({ version: 2, view: { gridDensity: 40 } }));
     const backing = new Map<string, unknown>([[LEGACY_PREFS_KEY, { version: 2 }]]);
     const store = openDrawPrefs(createMemoryAdapter(backing));
     importLegacyPrefs(store, window.localStorage);
     await store.flush();
     const records = [...backing.keys()].filter((k) => k.startsWith(PREFS_PREFIX));
-    expect(records).toEqual([`${PREFS_PREFIX}view.gridDensity`]);
+    expect(records.sort()).toEqual([`${PREFS_PREFIX}$version`, `${PREFS_PREFIX}view.gridDensity`]);
   });
 
   it('copies every leaf of the v2 blob into the store', () => {
@@ -106,7 +129,7 @@ describe('importLegacyPrefs', () => {
     importLegacyPrefs(store, window.localStorage);
     expect(window.localStorage.getItem(LEGACY_PREFS_KEY)).not.toBeNull();
     await vi.waitFor(() => expect(window.localStorage.getItem(LEGACY_PREFS_KEY)).toBeNull());
-    expect(backing.get(`${PREFS_PREFIX}view.gridDensity`)).toEqual({ $at: 0, value: 40 });
+    expect(backing.get(`${PREFS_PREFIX}view.gridDensity`)).toEqual({ $at: 1, value: 40 });
   });
 
   it('leaves the blob in place when the store cannot persist', async () => {
@@ -141,7 +164,7 @@ describe('importLegacyPrefs', () => {
     away = false;
     await store.read();
     await vi.waitFor(() => expect(window.localStorage.getItem(LEGACY_PREFS_KEY)).toBeNull());
-    expect(backing.get(`${PREFS_PREFIX}view.gridDensity`)).toEqual({ $at: 0, value: 40 });
+    expect(backing.get(`${PREFS_PREFIX}view.gridDensity`)).toEqual({ $at: 1, value: 40 });
     await store.close();
     warn.mockRestore();
   });

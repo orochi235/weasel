@@ -1102,6 +1102,30 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 ### WeaselDraw app follow-ups (defer)
 
+- **(P2) Tune draw's surface assets hands-on, with the maintainer driving.** Which groups form which
+  asset, each one's default surface, and where switching lives were picked without anyone using
+  them (`apps/draw/src/surfaces/assets.tsx`). Today Arrange (reorder, align, distribute, flip),
+  Pathfinder, and Path (path, anchors) default to toolbars in the command strip; a panel's header
+  switches it from a menu button showing its surface, and a toolbar or menu button switches from its
+  context menu and, for a menu, from the menu's last rows. Preferences lists every asset with its
+  surface and flags.
+- **(P3) Draw's Properties, Colors, Layers, and History panels are code, not schemas,** so they can
+  only be panels: each is a `render` asset that allows `'panel'` alone. Each moves to a schema once
+  what it shows can be one: the selection's properties already are, while the swatch strip, the
+  layer list, and the history list need leaf kinds of their own.
+- **(P3) The rest of draw's command strip is not surface assets.** File, history, clipboard, edit,
+  structure, view, text, compound, record, and app stay `ActionBar`s in `CommandBar.tsx`, and
+  Simplify, Offset, Corner shape, and the paper size are draw's own controls with no pref form: each
+  needs a custom pref kind before it can sit in a schema asset.
+- **(P3) New and Debug are not menu assets.** Their rows are not registered actions: New hands a
+  paper size to `onNew`, and Debug opens a dev route in a new tab. A `file.new` action with a
+  variant per paper size would make New an `actions` leaf, with a key binding besides; the debug
+  routes could be `run` leaves.
+- **(P3) A schema bar has no strip of its own to match `ActionBar`'s.** `ActionBar.module.css` draws
+  the bordered strip under its buttons, and draw's `SchemaSurfaces.module.css` restates it for a
+  `Bar` drawn from a surface asset. `Bar`'s `framed` is a different strip (margin, height). One strip
+  form on `Bar` would serve both.
+
 - **(P3) Multi-page documents.** A document's pages are rects in one world space over one scene,
   so one view, history, and selection serve all of them, and an object is on the page it overlaps
   most. Core has the geometry (`packages/core/src/core/pages/`): `layoutPages` places a page list,

@@ -10,6 +10,7 @@ import {
   useStandardActions,
 } from '@weasel-js/core';
 import { CommandBar, type CommandBarProps } from './CommandBar';
+import { StripSurfaces } from './surfaces/StripSurfaces';
 import {
   preferencesAction,
   releaseCompoundAction,
@@ -20,7 +21,7 @@ import {
 } from './appCommands/actions';
 import './app.css';
 
-// Every strip but the file buttons is the kit's registry-driven `<ActionBar>`,
+// Every strip but the file buttons is drawn from the action registry,
 // so the story registers the kit actions and the app's own itself, the way
 // `<SceneCanvas>` does in the app. Only a selection is published for the kit's:
 // enough to light up the selection-gated buttons; undo, paste and ungroup read
@@ -64,6 +65,7 @@ const baseArgs: CommandBarProps = {
   onOpenSvg: noop,
   onImportSvg: noop,
   onNew: noop,
+  surfaces: <StripSurfaces />,
 };
 
 const withActions = (selected: number, compound = false) => (Story: ComponentType) => (

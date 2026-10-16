@@ -1,11 +1,12 @@
 /** Top action bar for WeaselDraw — buttons that aren't tools.
  *
- *  Every editing command (history, clipboard, reorder, group, align,
- *  distribute, flip, booleans, create outlines, anchor handles) is a kit action, rendered by
+ *  Every editing command (history, clipboard, group, create outlines) is a kit action, rendered by
  *  the kit's `<ActionBar group=…/>` from the registry `<SceneCanvas>` fills,
- *  glyphs included. The app's own view toggles, Release compound path, and
+ *  glyphs included. Arrange, Pathfinder, and Path are surface assets, drawn in the
+ *  `surfaces` slot when they are shown as toolbars or menus. The app's own view toggles, Release compound path, and
  *  Preferences are actions too (`appCommands`), as are Record and Play
  *  (`recording`), so a button's shortcut is the binding that fires it. The buttons built here are the file ones. */
+import type { ReactNode } from 'react';
 import { ActionBar as KitActionBar, ButtonBar, MenuButton } from '@weasel-js/ui';
 import { PAPER_OPTIONS, type PaperSizeKey } from './paperSizes';
 import { CornerShape, type CornerShapeProps } from './ui/CornerShape';
@@ -25,11 +26,11 @@ export interface CommandBarProps {
   onNew(size: PaperSizeKey): void;
   /** What the Corner shape controls read; without it they are left out. */
   corners?: CornerShapeProps;
+  /** The surface assets drawn in the strip, after the view toggles. */
+  surfaces?: ReactNode;
 }
 
-const KIT_GROUPS = [
-  'history', 'clipboard', 'edit', 'reorder', 'structure', 'align', 'distribute', 'flip',
-] as const;
+const KIT_GROUPS = ['history', 'clipboard', 'edit', 'structure'] as const;
 
 /** The in-repo dev surfaces, hash-routed in main.tsx; each opens in a new tab. */
 const DEBUG_ROUTES: ReadonlyArray<{ value: string; label: string }> = [
@@ -60,9 +61,8 @@ export function CommandBar(p: CommandBarProps) {
       </div>
       {KIT_GROUPS.map((group) => <KitActionBar key={group} group={group} />)}
       <KitActionBar group="view" />
-      <KitActionBar group="pathfinder" />
+      {p.surfaces}
       <PathCommands />
-      <KitActionBar group="anchors" />
       {p.corners && <CornerShape {...p.corners} />}
       <KitActionBar group="text" />
       <KitActionBar group="compound" />

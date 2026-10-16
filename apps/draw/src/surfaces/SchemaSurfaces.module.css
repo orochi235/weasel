@@ -1,0 +1,14 @@
+.slot {
+  display: inline-flex;
+}
+
+/* The strip under a bar's buttons, matching the kit's ActionBar beside it. */
+.bar {
+  --bar-gap: 1px;
+  background: var(--wzl-surface);
+  border: 1px solid var(--wzl-border);
+  border-radius: var(--wzl-radius-sm);
+  padding: var(--wzl-space-1);
+  box-shadow: var(--wzl-bevel-raised, none);
+  user-select: none;
+}
