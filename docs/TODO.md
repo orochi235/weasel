@@ -367,6 +367,13 @@ Priority tags:
   like any other, cannot be shaped with it; that waits on "A rectangle has no anchors in path edit"
   above. `strokeEdgeNear`, which it hit-tests with, measures every stroke as centered, so on an
   inner- or outer-aligned stroke the grab point sits off the edge that is drawn.
+- **(P2) An anchor edit leaves a stroke's `vertexWidths` where they were.** The editAnchors dep
+  renumbers a node's skin and vertex colors through an edit (`anchorDataPatch`,
+  `features/paths/anchorData.ts`), but not `data.stroke.vertexWidths`: inserting or deleting an
+  anchor changes the count and `createPathLayer` drops the widths with a warning, and Make start
+  point or Reverse path direction keeps the count and leaves each width on the wrong anchor. A
+  carry needs the colors' blend for an inserted anchor, and for a two-sided entry also to swap
+  `left` and `right` on a subpath the edit reversed, which the edit's origins do not say.
 
 ### Path constraints
 
