@@ -41,3 +41,4 @@ export type {
 export { LOUPE_DEFAULTS, resolveLoupe } from './types';
 export type { LoupeState, UseLoupeOptions } from './useLoupe';
 export { useLoupe } from './useLoupe';
+export type { LoupeKitSettings } from '../kitSettings';

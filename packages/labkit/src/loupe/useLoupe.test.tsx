@@ -4,7 +4,9 @@ import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import { giveKeys } from '@weasel-js/react/testing/giveKeys';
 import { type RefObject, StrictMode, useRef } from 'react';
 import { describe, expect, it, vi } from 'vitest';
+import { KitSettingsProvider } from '@weasel-js/react';
 import { LoupeGestures } from './LoupeGestures';
+import { WHEEL_RATE } from './loupeActions';
 import { type LoupeOptions, type LoupeShape, resolveLoupe } from './types';
 import { type LoupeState, useLoupe } from './useLoupe';
 
@@ -159,6 +161,23 @@ describe('useLoupe', () => {
       fireEvent.wheel(screen.getByTestId('host'), { deltaY: -100 });
     });
     expect(Number(read('factor'))).toBeGreaterThan(6);
+  });
+
+  it('walks the factor at loupe.wheelRate, else WHEEL_RATE', () => {
+    const afterNotch = (rate?: number): number => {
+      const { unmount } = render(
+        rate === undefined ? <Harness /> : <KitSettingsProvider value={{ loupe: { wheelRate: rate } }}><Harness /></KitSettingsProvider>,
+      );
+      move(40, 25);
+      act(() => {
+        fireEvent.wheel(screen.getByTestId('host'), { deltaY: -50 });
+      });
+      const factor = Number(read('factor'));
+      unmount();
+      return factor;
+    };
+    expect(afterNotch()).toBeCloseTo(6 * Math.exp(50 * WHEEL_RATE));
+    expect(afterNotch(0.004)).toBeCloseTo(6 * Math.exp(0.2));
   });
 
   it('keeps the wheel from the host’s own listeners while the lens is up', () => {

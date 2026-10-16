@@ -341,3 +341,4 @@ export type { ToolCapability, TrialTool } from './tools/types';
 export * from './trial';
 export type { UndoStack } from './undo';
 export { clearUndo, emptyStack, pushSnapshot, redo, undo } from './undo';
+export { labkitKitSettingsSchema, type LoupeKitSettings } from './kitSettings';
