@@ -3,7 +3,7 @@ import {
   anchorsToPath, cubicPointAt, pathToAnchors, type AnchorSet, type PenAnchor, type PolygonPath,
 } from '@weasel-js/geom';
 import { actionCursor, tuneAction, type InvocationCtx, type OngoingHandle, type OngoingInvoker } from '@weasel-js/routing';
-import { makeEditAnchorsDep } from '@weasel-js/core/test-seams';
+import { makeEditAnchorsDepForTests as makeEditAnchorsDep } from '@weasel-js/core/test-seams';
 import {
   brushRingCursor, simplifyBrushAction, SIMPLIFY_BRUSH_RADIUS_PX, SIMPLIFY_BRUSH_TOOL,
 } from './simplifyBrush';

@@ -51,6 +51,10 @@ export {
   type WheelPanOptions,
 } from '../interactions/actions/defaults/viewportWheelPan';
 export { editAnchorsAction } from '../interactions/actions/edit-anchors/action';
+export {
+  deleteAnchorsAction, nudgeAnchorsDownAction, nudgeAnchorsLeftAction, nudgeAnchorsRightAction, nudgeAnchorsUpAction,
+  selectAnchorAction,
+} from '../interactions/actions/defaults/anchorEditing';
 export { lassoSelectAction } from '../interactions/actions/lasso-select/action';
 export { sliceAction } from '../interactions/actions/defaults/slice';
 export {

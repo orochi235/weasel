@@ -32,6 +32,7 @@ export interface PathEditingOverlayStyle {
   marqueeFill?: string;
 }
 
+/** The path-edit overlay's look where a {@link PathEditingOverlayStyle} leaves a field out. */
 export const DEFAULT_OVERLAY_STYLE: Required<PathEditingOverlayStyle> = {
   anchorSizePx: 8,
   handleDotRadiusPx: 5,

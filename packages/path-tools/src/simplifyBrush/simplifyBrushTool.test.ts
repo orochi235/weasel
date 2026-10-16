@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ImmediateInvoker } from '@weasel-js/routing';
-import { makeEditAnchorsDep } from '@weasel-js/core/test-seams';
+import { makeEditAnchorsDepForTests as makeEditAnchorsDep } from '@weasel-js/core/test-seams';
 import { balanceHandlesAction, equalizeHandlesAction } from '../balance/handleBalance';
 import { SIMPLIFY_BRUSH_TOOL, simplifyBrushToolAction } from './simplifyBrush';
 

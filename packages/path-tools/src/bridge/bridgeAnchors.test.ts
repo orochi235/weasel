@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { PathBuilder, pathToAnchors, type PolygonPath } from '@weasel-js/geom';
 import type { ImmediateInvoker } from '@weasel-js/routing';
-import { makeEditAnchorsDep } from '@weasel-js/core/test-seams';
+import { makeEditAnchorsDepForTests as makeEditAnchorsDep } from '@weasel-js/core/test-seams';
 import { bridgeAnchorsAction } from './bridge';
 
 /** Two open lines in one path: (0,0)→(10,0) and (20,10)→(30,10). Flat 0..3. */

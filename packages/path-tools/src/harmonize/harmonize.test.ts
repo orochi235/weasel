@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { PathBuilder, pathToAnchors, type PolygonPath } from '@weasel-js/geom';
 import { ActionDisabledReason, type ActionDeps, type ImmediateInvoker } from '@weasel-js/routing';
-import { makeEditAnchorsDep } from '@weasel-js/core/test-seams';
+import { makeEditAnchorsDepForTests as makeEditAnchorsDep } from '@weasel-js/core/test-seams';
 import { harmonizeAnchorsAction } from './harmonize';
 
 function lopsidedArch(): PolygonPath {

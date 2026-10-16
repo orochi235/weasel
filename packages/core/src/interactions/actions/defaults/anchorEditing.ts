@@ -59,6 +59,7 @@ function anchorClickSlop(deps: ActionDeps | undefined): number {
   return Math.max(extent.x, extent.y);
 }
 
+/** The `editAnchors` dep while a path is open, or null. */
 export function depOf(deps: ActionDeps | undefined): EditAnchorsDep | null {
   const dep = deps?.editAnchors;
   if (!dep || !dep.editingId) return null;
@@ -199,9 +200,13 @@ function makeNudgeAnchorsAction(dir: NudgeDirection): Action & { requires: strin
   };
 }
 
+/** Move the selected anchors up one step; Shift for a big step. */
 export const nudgeAnchorsUpAction    = makeNudgeAnchorsAction('up');
+/** Move the selected anchors down one step; Shift for a big step. */
 export const nudgeAnchorsDownAction  = makeNudgeAnchorsAction('down');
+/** Move the selected anchors left one step; Shift for a big step. */
 export const nudgeAnchorsLeftAction  = makeNudgeAnchorsAction('left');
+/** Move the selected anchors right one step; Shift for a big step. */
 export const nudgeAnchorsRightAction = makeNudgeAnchorsAction('right');
 
 /**

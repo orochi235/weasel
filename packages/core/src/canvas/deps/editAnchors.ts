@@ -47,6 +47,11 @@ function tunedHandleLock(tune: ActionTunings | undefined): EditAnchorsParams['ha
 
 const EMPTY_ANCHOR_SELECTION: ReadonlySet<number> = new Set<number>();
 
+/**
+ * Publish the `editAnchors` dep for `scene`: its path access and commits
+ * through `adapter`, and the edit state of `externalState` (or one of its
+ * own), with the extensions that state holds finishing every edit.
+ */
 export function useEditAnchorsDepSource(
   scene: Scene<unknown, string, unknown>,
   selection: SelectionApi,

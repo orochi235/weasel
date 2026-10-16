@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { PathBuilder, pathFromD, pathToAnchors, type Affine, type PolygonPath } from '@weasel-js/geom';
 import type { ImmediateInvoker, InvocationCtx, OngoingInvoker } from '@weasel-js/routing';
-import { makeEditAnchorsDep } from '@weasel-js/core/test-seams';
+import { makeEditAnchorsDepForTests as makeEditAnchorsDep } from '@weasel-js/core/test-seams';
 import { balanceHandlesAction, equalizeHandlesAction } from './handleBalance';
 
 /** One segment from (0, 0) to (100, 0) whose handles lean toward a corner at
