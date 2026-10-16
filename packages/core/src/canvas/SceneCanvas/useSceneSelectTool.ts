@@ -5,7 +5,7 @@
  * overrides via the `geometry` arg take precedence.
  */
 import { useMemo } from 'react';
-import { useLatest } from '@weasel-js/react';
+import { useKitSetting, useLatest } from '@weasel-js/react';
 import type { SceneCanvasAdapter } from '../sceneAdapter';
 import { pickWalk, scenePickSource, scenePlaneOf, type ViewPickGates } from 'canvas/pickWalk';
 import { rectFromPlane, type PlaneMap } from 'core/viewport/parallax';
@@ -145,7 +145,8 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
   // leave on: the rect pre-filter runs first and rejects every node the
   // pointer isn't over, and the survivors' silhouettes are memoized per node.
   const shapePicking = (geometry?.picking ?? 'shape') === 'shape';
-  const pickTolerancePx = geometry?.pickTolerancePx ?? DEFAULT_PICK_TOLERANCE_PX;
+  const kitPickTolerancePx = useKitSetting('targets.pickTolerancePx');
+  const pickTolerancePx = geometry?.pickTolerancePx ?? kitPickTolerancePx ?? DEFAULT_PICK_TOLERANCE_PX;
   const moveOptions = opts?.move;
   const snap = opts?.snap;
 

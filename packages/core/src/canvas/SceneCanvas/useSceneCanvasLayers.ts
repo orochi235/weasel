@@ -13,6 +13,7 @@ import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import type { HierarchicalAdapter } from '../buildSceneTree';
 import { builtLayersOf, isCustomEntry, type CanvasLayers } from '../layerSlots';
 import { createSlopsDebugLayer } from '../slopsDebugLayer';
+import { useTargetBasePx } from 'core/device/useTargetBasePx';
 import { mergeLayersWithDefaults, type SceneCanvasLayers } from './props';
 import { useDispatcherOverlayLayer } from './useDispatcherOverlayLayer';
 import { usePreviewGhostLayer } from './usePreviewGhostLayer';
@@ -54,9 +55,10 @@ export function useSceneCanvasLayers<TData, TLayer extends string, TPose>(args: 
 } {
   const { scene, adapter, poseDescriptor, alphaFor, dispatcher, pathEditState, slops, targetScale } = args;
 
+  const baseSizes = useTargetBasePx();
   const merged = useMemo(
-    () => mergeLayersWithDefaults(args.layers, targetScale),
-    [args.layers, targetScale],
+    () => mergeLayersWithDefaults(args.layers, targetScale, baseSizes),
+    [args.layers, targetScale, baseSizes],
   );
 
   const { config: sceneSlot, layers: sceneLayers } = useSceneSlotLayers({
