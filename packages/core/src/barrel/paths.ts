@@ -101,6 +101,14 @@ export {
   lengthenOpenEnd,
   openEndRay,
   openPathEnds,
+  createPathSnapIndex,
+  findPathSnap,
+  PATH_SNAP_KINDS,
+  createPathSnapper,
+  createPathSnapMarkerLayer,
+  pathSnapGlyph,
+  PATH_SNAP_LABELS,
+  DEFAULT_PATH_SNAP_RADIUS,
 } from '../features/paths';
 export type {
   Path,
@@ -148,6 +156,14 @@ export type {
   ExtendToMeetOptions,
   SmudgePathOptions,
   OpenPathEnd,
+  PathSnapHit,
+  PathSnapIndex,
+  PathSnapKind,
+  PathSnapQuery,
+  PathSnapMark,
+  PathSnapOptions,
+  PathSnapper,
+  PathSnapMarkerStyle,
 } from '../features/paths';
 export {
   SHAPE_COUNT_RANGE,

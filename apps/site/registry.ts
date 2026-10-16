@@ -750,6 +750,16 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/SceneLabDemo.tsx',
   },
   {
+    id: 'lab-path-snap',
+    title: 'Path snapping',
+    category: 'Geometry',
+    description:
+      "Geometric snapping onto the scene's paths, turned on by `toolOptions.pathSnap` and served through the `snap` dep, so the line tool, the pen, a move and an anchor drag all lock to the same targets on anything with geometry — a path, a rectangle, an ellipse or star by its drawn outline, and a text or image box by its edges, corners and center: anchors and corners, where two strokes cross, the tangent and perpendicular points from where the line being drawn starts, the middle of each segment, the extremes and quadrant points of a curve, and failing all of those the nearest point on a stroke. A dragged anchor also locks to its own path's other anchors and segments, leaving out the two segments that move with it. Every kind competes on distance within the snap radius, measured in screen pixels, and the snapped point wears a glyph and a label naming its kind. Each kind has its own switch in the control panel. The targets come from `findPathSnap` in `@weasel-js/geom`, over an index rebuilt only when the scene changes.",
+    hint: "With Line, drag from empty canvas toward where the two green diagonals cross: the end locks there and the marker says <em>intersection</em>. Start a line below the circle and pull its end to the circle's side for a <em>tangent</em>, or toward a diagonal for a <em>perpendicular</em>. Pull a line's end to the text box or the blue card for its <em>center</em> or a corner. Switch kinds off in the control panel. Pen clicks snap the same way, and with Select, dragging a shape or one of its anchors (double-click to edit anchors) locks to the other shapes.",
+    load: () => import('./demos/PathSnapLabDemo').then((m) => m.PathSnapLabDemo),
+    path: 'apps/site/demos/PathSnapLabDemo.tsx',
+  },
+  {
     id: 'lab-stroke-width',
     title: 'Stroke width and nib',
     package: 'stroke',
