@@ -15,6 +15,7 @@ import {
   commitOps, deleteNode, insertAt, pathCopy, reshapeOps, selectedPathNodes, slotOf, type PathNode,
 } from './pathNodes';
 import { pathOperationTags } from '../pathGestureTags';
+import { CutAtCrossingsIcon, JoinIcon } from '../defaults/icons/pathIcons';
 
 const CUT_LABEL = 'Cut at Crossings';
 
@@ -26,6 +27,7 @@ const CUT_LABEL = 'Cut at Crossings';
 export const snipAtCrossingsAction: Action & { requires: string[] } = {
   id: 'snipAtCrossings',
   label: CUT_LABEL,
+  icon: CutAtCrossingsIcon,
   group: 'path',
   tags: pathOperationTags('command'),
   eligible: { capability: 'creates-shapes' },
@@ -140,7 +142,7 @@ export function joinPathsCommand(
  * instead.
  */
 export const joinPathsAction = joinPathsCommand(
-  { id: 'joinPaths', label: 'Join', defaultBinding: { kind: 'key', key: 'j', mods: { mod: true } } },
+  { id: 'joinPaths', label: 'Join', icon: JoinIcon, defaultBinding: { kind: 'key', key: 'j', mods: { mod: true } } },
   () => ({}),
 );
 

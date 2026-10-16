@@ -7,6 +7,8 @@ import { ActionDisabledReason } from '@weasel-js/routing';
 import { averageAnchorsAt, joinAnchorsAt, type AnchorSet, type AverageAxis, type JoinOptions } from '@weasel-js/geom';
 import { anchorEditWouldChange, commitAnchorEdit, depOf } from './anchorEditing';
 import { pathOperationTags } from '../pathGestureTags';
+import { AverageAnchorsIcon } from './icons/anchorIcons';
+import { JoinIcon } from './icons/pathIcons';
 
 type AnchorEdit = (set: AnchorSet, selected: number[]) => boolean;
 
@@ -23,6 +25,7 @@ const axisOf = (params: Record<string, unknown> | undefined): AverageAxis => {
 export const averageAnchorsAction: Action & { requires: string[] } = {
   id: 'averageAnchors',
   label: 'Average anchors',
+  icon: AverageAnchorsIcon,
   tags: pathOperationTags('command'),
   group: 'anchors',
   variants: [
@@ -68,6 +71,7 @@ const join = joinSelectedAnchors({});
 export const joinAnchorsAction: Action & { requires: string[] } = {
   id: 'joinAnchors',
   label: 'Join anchors',
+  icon: JoinIcon,
   tags: pathOperationTags('command'),
   group: 'anchors',
   defaultBinding: { kind: 'key', key: 'j', mods: { mod: true } },
