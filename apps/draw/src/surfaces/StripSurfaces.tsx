@@ -1,13 +1,13 @@
 import { SchemaBar, SchemaMenu } from './SchemaSurfaces';
-import { useSwitchMenus } from './surfaceSwitch';
+import { SwitchMenus } from './surfaceSwitch';
 import { useSurfaces } from './surfaceState';
 import { isSchemaAsset } from './types';
 
 /** The command strip's surface assets: each one on a bar or a menu, in list order. */
 export function StripSurfaces() {
-  useSwitchMenus();
   return (
     <>
+      <SwitchMenus />
       {useSurfaces().map(({ asset, surface, chrome }) => {
         if (!isSchemaAsset(asset) || chrome.hidden) return null;
         if (surface === 'bar') return <SchemaBar key={asset.id} asset={asset} />;

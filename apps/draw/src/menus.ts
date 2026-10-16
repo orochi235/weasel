@@ -18,7 +18,7 @@ const CANVAS = pref.group('', {
 
 /** WeaselDraw's context menus: the selection's, the empty canvas's, and a layer row's. */
 export const DRAW_MENUS: MenuDef[] = [
-  { id: 'draw.selection', when: { bodyTarget: 'selected-body' }, schema: SELECTION },
-  { id: 'draw.canvas', when: { bodyTarget: 'empty' }, schema: CANVAS },
-  { id: 'draw.layerRow', schema: SELECTION },
+  { id: 'draw.selection', when: { bodyTarget: 'selected-body' }, menu: SELECTION },
+  { id: 'draw.canvas', when: { bodyTarget: 'empty' }, menu: CANVAS },
+  { id: 'draw.layerRow', menu: SELECTION },
 ];

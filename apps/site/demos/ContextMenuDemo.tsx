@@ -25,9 +25,9 @@ const CANVAS = pref.group('', {
 });
 
 const MENUS: MenuDef[] = [
-  { id: 'demo.selection', when: { bodyTarget: 'selected-body' }, schema: SELECTION },
-  { id: 'demo.canvas', when: { bodyTarget: 'empty' }, schema: CANVAS },
-  { id: 'demo.row', schema: SELECTION },
+  { id: 'demo.selection', when: { bodyTarget: 'selected-body' }, menu: SELECTION },
+  { id: 'demo.canvas', when: { bodyTarget: 'empty' }, menu: CANVAS },
+  { id: 'demo.row', menu: SELECTION },
 ];
 
 function Demo() {

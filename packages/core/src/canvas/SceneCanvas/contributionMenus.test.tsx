@@ -44,7 +44,7 @@ const contrib = {
   id: 'contrib',
   eligibility: { always: true },
   actions: [cut],
-  menus: [{ id: 'contrib.menu', schema: pref.group('', { cut: pref.action('cut') }) }],
+  menus: [{ id: 'contrib.menu', menu: pref.group('', { cut: pref.action('cut') }) }],
 } as unknown as SurfaceContribution;
 
 describe('contributed menus', () => {
@@ -61,7 +61,7 @@ describe('contributed menus', () => {
     scene.add({ kind: 'leaf', data: { kind: 'rect' }, layer: 'main', pose: { x: 10, y: 10, width: 100, height: 100 } });
     const onBody = {
       ...contrib,
-      menus: [{ id: 'body', when: { bodyTarget: ['selected-body', 'empty'] }, schema: pref.group('', { cut: pref.action('cut') }) }],
+      menus: [{ id: 'body', when: { bodyTarget: ['selected-body', 'empty'] }, menu: pref.group('', { cut: pref.action('cut') }) }],
     } as unknown as SurfaceContribution;
     const { container, unmount } = render(
       <SceneCanvas features={['pick', 'edit']} scene={scene} layers={{}} width={300} height={200} ambient={[onBody]}>

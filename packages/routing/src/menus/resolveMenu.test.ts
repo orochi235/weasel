@@ -83,11 +83,15 @@ describe('resolveSchemaMenu: action leaves', () => {
     run(es[0]);
     expect(src.trigger).toHaveBeenCalledWith('align', { edge: 'right' });
   });
-  it('runs a leaf naming no action through its own run', () => {
+  it('draws a leaf naming no action as a dead row, never calling its run', () => {
     const fn = vi.fn();
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const es = resolveSchemaMenu(menu({ go: { kind: 'action', name: 'Go', description: '', default: undefined, run: fn } }), sources());
+    expect(es[0]).toMatchObject({ kind: 'item', label: 'Go', disabled: true });
     run(es[0]);
-    expect(fn).toHaveBeenCalledWith({ path: 'go' });
+    expect(fn).not.toHaveBeenCalled();
+    expect(warn).toHaveBeenCalled();
+    warn.mockRestore();
   });
   it('gives the same action listed twice distinct keys', () => {
     const keys = resolveSchemaMenu(menu({ a: act('align'), b: act('align'), c: act('cut') }), sources()).map((e) => e.key);
@@ -228,6 +232,6 @@ describe('resolveSchemaMenu: conditions', () => {
 
 describe('resolveMenu', () => {
   it('resolves the def schema', () => {
-    expect(labels(resolveMenu({ id: 'm', schema: menu({ cut: act('cut') }) }, sources()))).toEqual(['Cut']);
+    expect(labels(resolveMenu({ id: 'm', menu: menu({ cut: act('cut') }) }, sources()))).toEqual(['Cut']);
   });
 });

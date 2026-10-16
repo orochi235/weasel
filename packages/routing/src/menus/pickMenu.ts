@@ -8,7 +8,7 @@ function matches(when: MenuWhen, hit: MenuHit): boolean {
 }
 
 /** The menus live now: ambient defs, then the active tool's. Defs that share
- *  an id become one schema: each contribution's children in turn, with a
+ *  an id become one menu: each contribution's children in turn, with a
  *  separator between contributions. Children stay at their own keys, so the
  *  paths their values are read at do not move; a key a previous contribution
  *  took gets `~n` appended. The first def of an id supplies the schema's
@@ -22,13 +22,13 @@ export function mergeMenuDefs(defs: readonly OwnedMenuDef[], activeTool: string 
   for (const { def } of live) {
     const prev = byId.get(def.id);
     if (!prev) {
-      byId.set(def.id, { def: { ...def, schema: { ...def.schema, children: { ...def.schema.children } } }, parts: 1 });
+      byId.set(def.id, { def: { ...def, menu: { ...def.menu, children: { ...def.menu.children } } }, parts: 1 });
       continue;
     }
     const n = prev.parts++;
-    const children = prev.def.schema.children;
+    const children = prev.def.menu.children;
     children[`~sep${n}`] = { kind: 'separator', name: '', description: '', default: undefined };
-    for (const [k, node] of Object.entries(def.schema.children)) {
+    for (const [k, node] of Object.entries(def.menu.children)) {
       children[Object.hasOwn(children, k) ? `${k}~${n}` : k] = node;
     }
     if (!prev.def.when && def.when) prev.def.when = def.when;

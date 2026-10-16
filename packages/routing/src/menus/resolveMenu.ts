@@ -9,6 +9,7 @@ import type { ActionDeps } from '../interactions/actions/invoker';
 import { actionItems, type ActionItem } from '../interactions/actions/actionItems';
 import { actionShortcuts } from '../interactions/actions/actionShortcuts';
 import { evaluateActive, evaluateEnabled } from '../interactions/actions/actionEnabled';
+import { isDev } from '../devFlag';
 import type { MenuDef } from './types';
 
 /** What resolving reads: the registered actions, each one's deps, how to run
@@ -69,9 +70,10 @@ function itemsNamed(ctx: Ctx, name: string): ActionItem[] {
 function actionRows(ctx: Ctx, leaf: PrefAction, key: string, off: boolean): MenuEntry[] {
   const own = leaf.label || leaf.name;
   if (leaf.action === undefined) {
-    const run = leaf.run;
-    if (!run || !own) return [];
-    return [{ kind: 'item', key, label: own, disabled: off, run: () => { void run({ path: key }); } }];
+    // A menu holds no code, so it can be saved as data: a leaf with only `run` is a dead row.
+    if (!own) return [];
+    if (isDev()) console.warn(`weasel: menu row "${key}" names no registered action, so it does nothing`);
+    return [{ kind: 'item', key, label: own, disabled: true, run: noop }];
   }
   const items = itemsNamed(ctx, leaf.action);
   if (items.length === 1) return [itemOf(ctx, items[0]!, key, own || items[0]!.label, off)];
@@ -204,5 +206,5 @@ export function resolveMenu(
   at?: XY,
   params?: Record<string, unknown>,
 ): MenuEntry[] {
-  return resolveSchemaMenu(def.schema, src, at, params);
+  return resolveSchemaMenu(def.menu, src, at, params);
 }

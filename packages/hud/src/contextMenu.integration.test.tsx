@@ -17,7 +17,7 @@ const probe: SurfaceContribution = {
   id: 'menu-host-probe',
   eligibility: { always: true },
   actions: [{ id: 'probe.cut', label: 'Cut', invoker: { timing: 'immediate', run: () => {} } }],
-  menus: [{ id: 'probe.menu', when: { bodyTarget: 'empty' }, schema: pref.group('', { probe_cut: pref.action('probe.cut') }) }],
+  menus: [{ id: 'probe.menu', when: { bodyTarget: 'empty' }, menu: pref.group('', { probe_cut: pref.action('probe.cut') }) }],
   attach: (_api, deps) => { depGet = (name) => deps.get(name as never); return () => {}; },
 };
 

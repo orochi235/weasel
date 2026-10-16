@@ -8,7 +8,7 @@ import { useContextMenu } from './useContextMenu';
 afterEach(cleanup);
 
 const del = { id: 'delete', label: 'Delete', invoker: { timing: 'immediate' as const, run: () => {} } };
-const MENUS = [{ id: 'row', schema: pref.group('', { delete: pref.action('delete') }) }];
+const MENUS = [{ id: 'row', menu: pref.group('', { delete: pref.action('delete') }) }];
 const PARAMS = { nodeId: 'n1' };
 
 function Row({ menu }: { menu: string }) {

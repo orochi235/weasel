@@ -21,13 +21,13 @@ const rect = (id: string, pose: Pose, color: string) => ({
 
 const MENUS: MenuDef[] = [
   {
-    id: 'demo.selection', when: { bodyTarget: 'selected-body' }, schema: pref.group('', {
+    id: 'demo.selection', when: { bodyTarget: 'selected-body' }, menu: pref.group('', {
       edit: pref.group('', { duplicate: pref.action('duplicate'), delete: pref.action('delete') }),
       order: pref.group('', { forward: pref.action('reorder.forward'), backward: pref.action('reorder.backward') }),
     }),
   },
   {
-    id: 'demo.canvas', when: { bodyTarget: 'empty' }, schema: pref.group('', {
+    id: 'demo.canvas', when: { bodyTarget: 'empty' }, menu: pref.group('', {
       selectAll: pref.action('selectAll'), undo: pref.action('undo'), redo: pref.action('redo'),
     }),
   },

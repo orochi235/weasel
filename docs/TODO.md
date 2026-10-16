@@ -837,16 +837,13 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 ## Selection, actions & UI panels
 
-- **(P2) Menus as layout assets, and a menu bar built from them.** Decided 2026-10-16: a menu is
-  one shape, a prefs group drawn `as: 'menu'`. In a bar it opens from a button like an `opens`
-  group, but draws with the context-menu renderer (`MenuPanel` and the `@weasel-js/menu`
-  controller): an action leaf is a row, a boolean leaf or an action with `active` is a check row,
-  a section is a separator, a nested menu group is a submenu. A menu bar is a layout asset whose
-  root is a bar of menu groups. Routing's `MenuDef` becomes a `when` around such a group, so
-  context menus are assets too and one resolver serves both, and `MenuButton` moves off React
-  Aria's `Menu` onto the same renderer. New beside that: `MenuHost.open` anchored to a button's
-  rect rather than a point, and menu-bar keys (Left/Right between sibling menus, hover switching
-  while one is open). Unbuilt; needs a design pass first.
+- **(P2) Menus as layout assets, and a menu bar built from them.** Half built. Landed 2026-10-16: a
+  menu is a prefs group drawn `as: 'menu'`, `MenuDef` is a `when` around one, and
+  `resolveSchemaMenu` serves context menus and a bar's menu groups alike. Left: the menu bar itself
+  (a layout asset whose root is a bar of menu groups, with its keys), access letters,
+  `MenuHost.open` anchored to a rect, `MenuButton` onto the context-menu renderer, `useCommand`,
+  and the asset editor's remaining `menu` cases
+  (`docs/superpowers/specs/2026-10-16-menus-as-layout-assets-design.md`).
 
 - **(P3) ui's `ShortcutInput` is a third copy of the shortcut shape.**
   `packages/ui/src/components/ToolPalette/formatShortcut.ts` describes what `@weasel-js/menu`'s

@@ -12,7 +12,7 @@ export interface MenuWhen {
 export interface MenuDef {
   id: string;
   when?: MenuWhen;
-  schema: PrefGroup;
+  menu: PrefGroup;
 }
 
 /** What a right-click landed on. */

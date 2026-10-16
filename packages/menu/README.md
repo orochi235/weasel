@@ -37,7 +37,7 @@ import { pref } from '@weasel-js/prefs';
 import { ContextMenuHost, useContextMenu } from '@weasel-js/ui';
 
 const MENUS: MenuDef[] = [
-  { id: 'edit', schema: pref.group('', { duplicate: pref.action('duplicate'), delete: pref.action('delete') }) },
+  { id: 'edit', menu: pref.group('', { duplicate: pref.action('duplicate'), delete: pref.action('delete') }) },
 ];
 
 function EditButton() {

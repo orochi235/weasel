@@ -16,12 +16,12 @@ const act1 = (id: string, extra = {}) => ({
 });
 const MENUS: MenuDef[] = [{
   id: 'm',
-  schema: pref.group('', {
+  menu: pref.group('', {
     edit: pref.group('', { cut: pref.action('cut'), copy: pref.action('copy') }),
     arr: pref.group('Arrange', { forward: pref.action('forward') }, { as: 'menu' }),
   }),
 }];
-const GATED: MenuDef[] = [{ id: 'g', schema: pref.group('', { gated: pref.action('gated') }) }];
+const GATED: MenuDef[] = [{ id: 'g', menu: pref.group('', { gated: pref.action('gated') }) }];
 
 let host: MenuHost | null = null;
 function Setup() {

@@ -48,7 +48,7 @@ function useEditActions(log: (id: string) => void): readonly Action[] {
 
 const MENUS: MenuDef[] = [{
   id: 'edit',
-  schema: pref.group('', {
+  menu: pref.group('', {
     edit: pref.group('', {
       cut: pref.action('cut'), copy: pref.action('copy'), paste: pref.action('paste'), duplicate: pref.action('duplicate'),
     }),

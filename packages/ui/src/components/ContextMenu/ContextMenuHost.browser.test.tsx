@@ -14,7 +14,7 @@ const act1 = (id: string) => ({
 });
 const MENUS: MenuDef[] = [{
   id: 'm',
-  schema: pref.group('', {
+  menu: pref.group('', {
     edit: pref.group('', { cut: pref.action('cut'), copy: pref.action('copy') }),
     arr: pref.group('Arrange', { forward: pref.action('forward') }, { as: 'menu' }),
   }),
@@ -52,7 +52,7 @@ it('keeps the menu and its submenu on screen when opened in the bottom-right cor
   expect(s.left).toBeLessThan(parent!.getBoundingClientRect().left);
 });
 
-const MUTED: MenuDef[] = [{ id: 'muted', schema: pref.group('', { cut: pref.action('cut'), off: pref.action('off') }) }];
+const MUTED: MenuDef[] = [{ id: 'muted', menu: pref.group('', { cut: pref.action('cut'), off: pref.action('off') }) }];
 function MutedSetup() {
   useAction(act1('cut'));
   useAction({ ...act1('off'), enabled: () => ActionDisabledReason.NotApplicable });

@@ -1,7 +1,8 @@
 # Menus as layout assets, and a menu bar
 
-**Status: designed 2026-10-16, unbuilt.** Carried in `docs/TODO.md` ("Menus as layout assets")
-until it lands. Delete this file when the work merges.
+**Status: half built.** The shape, the resolver, and `MenuDef` folded in landed on 2026-10-16
+(branch `surfaces`); everything from "Renderer and placement" down is unbuilt. Carried in `docs/TODO.md`
+("Menus as layout assets") until it lands. Delete this file when the rest merges.
 
 For whoever builds it: the decisions here were made with Mike in conversation; the ones marked
 *(builder's call, made in drafting)* were not, and can be revisited.
@@ -48,61 +49,23 @@ context menus and `MenuButton`.
 - **Code in a menu.** A menu row that carries a callback. That splits menus into saveable and
   unsaveable ones; the sugar below exists so nothing needs to.
 
-## The shape
+## Landed
 
-`PrefGroupAs` (`packages/prefs/src/groups.ts`) gains `'menu'`, and so does `PrefSectionAs`, which
-derives from it. The children of a menu group become rows:
+These are built, so the code is the reference:
 
-| Child | Row |
-|---|---|
-| `action` leaf naming a registered action | an item: the action's label (or the leaf's `label`), icon, shortcut chip from its bindings, disabled from `enabled`, checked from `active` |
-| `action` leaf naming a parametric action's variant (`id:variant`) | an item for that variant |
-| `alias` leaf to a boolean setting | a check row that toggles the setting |
-| `alias` leaf to an enum setting | a submenu named by the leaf, one row per option, the current one checked *(builder's call, made in drafting)* |
-| group or section drawn `as: 'section'` | its rows, with a separator before and after; its name is not drawn *(builder's call, made in drafting)* |
-| group drawn `as: 'menu'` | a submenu |
+- `as: 'menu'` on groups and sections (`packages/prefs/src/groups.ts`), plus `readout` on value
+  leaves and an `actions` leaf that stands for every action in one registry group.
+- One resolver, `resolveSchemaMenu` (`packages/routing/src/menus/resolveMenu.ts`), serving context
+  menus and a bar's menu groups (`BarMenu` in ui).
+- `MenuDef` is `{ id, when?, menu }`; `sections`, `submenu`, and `actionVariants` are gone. An
+  action leaf naming a parametric action lists every variant; one naming `id:variant` lists that one.
+- An action leaf with only `run` is a dead row that warns in development.
+- Context menus hold actions only: the menu host passes no values, so boolean and enum leaves
+  drop out there, while a bar's menu group resolves them through the bar's `values`/`onChange`.
 
-An `action` leaf with `run` and no `action` key draws as a dead row and warns in development,
-the way `BarActionButton` treats a missing action *(builder's call, made in drafting)*. Leaves of
-other kinds are skipped.
-
-`showIf` and `enableIf` on a group or leaf apply as they do in a bar. A group's `hidden` leaves
-are skipped.
-
-Both a menu group and a leaf may carry an access letter: an optional `access: string` of one
-character, rather than an `&` in the name *(builder's call, made in drafting)*.
-
-`overflow: 'menu'` on a bar already exists and means something unrelated (the cells past the end
-of the line open from a button). The two coexist; the docs for each should say which is which.
-
-## One resolver
-
-`resolveMenu` (`packages/routing/src/menus/resolveMenu.ts`) turns a `MenuDef` into `MenuEntry[]`
-today. It becomes the one resolver from a menu group, its `over` schema and its values to
-`MenuEntry[]`, for every caller. Resolving alias leaves needs `@weasel-js/prefs`, so routing gains
-that dependency; prefs depends on nothing in routing, so there is no cycle.
-
-## Context menus
-
-A `MenuDef` becomes `{ id, when?, menu }`, where `menu` is a group drawn `as: 'menu'`.
-`sections: MenuDefEntry[][]` and the `{ submenu }` and `{ actionVariants }` entries go.
-`actionVariants` becomes a section of `id:variant` action leaves, or stays as an action leaf
-option that expands to every variant *(builder's call)*. Contributions' `menus:`, `useMenus`,
-`MenuHost`, `pickMenu` and the `menu.context` action keep working against the new def. Every
-existing `MenuDef` (WeaselDraw's `DRAW_MENUS`, the site demos, tests) is rewritten in the same
-change.
-
-**Merging.** Today `mergeMenuDefs` (`pickMenu.ts`) joins defs sharing an id section by section,
-by position, so a tool can add rows to an ambient menu. With keyed children, defs merge by key:
-a child whose key the earlier def already has merges into it (a section's rows append), and a new
-key appends at the end *(builder's call, made in drafting)*. A contribution aims at a section by
-naming its key.
-
-**Context menus hold actions only.** The menu host sees actions and nothing else: no `over`, no
-values, no writes. A setting worth toggling from a context menu goes through an action with
-`active`, as `view.grid` already does. An alias leaf in a context menu is skipped, with a
-development warning. So a context-menu asset needs no `over`: `LayoutAsset.over` becomes optional
-for a layout whose root is a menu *(builder's call, made in drafting)*.
+Two builder's calls went differently from the draft: an enum draws as radio rows between
+separators, not a submenu, and contributions sharing a menu id append their children in order
+with a separator between, keeping keys (a later duplicate key gets `~n`), not merge by key.
 
 ## Renderer and placement
 
@@ -239,7 +202,8 @@ context menus.
 
 Each is its own arc, landing before the next starts:
 
-1. The shape, the resolver, `MenuDef` folded in, the rect anchor, `useCommand`, the asset editor.
+1. The rect anchor, `useCommand`, and the rest of the asset editor (`as: 'menu'` is already in
+   `kindSchemas.ts` and `Palette.tsx`).
 2. `MenuBar` and access letters; `MenuButton` onto the renderer.
 3. WeaselDraw: file actions, then its menu bar.
 4. labkit: the lab-wide registry and its lab-level commands, then its menu bar.
@@ -248,5 +212,4 @@ Each is its own arc, landing before the next starts:
 
 - Package placement of `MenuBar` and `useCommand`.
 - How an enum pointer and a variant list draw, within the table above.
-- Whether `actionVariants` survives as a leaf option.
 - The default access chord, after checking Chrome on Windows.

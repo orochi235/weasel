@@ -2,7 +2,6 @@ import { useMemo } from 'react';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { Bar, BarMenu, PrefsForm, SidebarPanel, useContextMenu } from '@weasel-js/ui';
 import { switchMenuId, switchSchema, SurfaceSwitchButton } from './surfaceSwitch';
-import { useSetSurface } from './surfaceState';
 import type { PanelChrome, SchemaAsset } from './types';
 import s from './SchemaSurfaces.module.css';
 
@@ -60,13 +59,12 @@ export function SchemaBar({ asset, values, onChange }: { asset: SchemaAsset } & 
  *  from the button's context menu. */
 export function SchemaMenu({ asset, values, onChange }: { asset: SchemaAsset } & SchemaBinding) {
   const openSwitch = useContextMenu(switchMenuId(asset.id));
-  const setSurface = useSetSurface();
   const schema = useMemo(
     (): PrefGroup => ({
       ...asset.schema,
-      children: { ...asset.schema.children, [SWITCH_KEY]: switchSchema(asset, 'menu', setSurface) },
+      children: { ...asset.schema.children, [SWITCH_KEY]: switchSchema(asset, 'menu') },
     }),
-    [asset, setSurface],
+    [asset],
   );
   return (
     <div className={s.slot} onContextMenu={openSwitch}>
