@@ -150,8 +150,8 @@ export function resolveCorners(path: Path): Path {
 
 /** `values`, `stride` numbers per source anchor, as `stride` per anchor of
  *  the expanded path that `sources` describes. */
-export function remapPerAnchor(values: readonly number[], sources: Uint32Array, stride: number): number[] {
-  const out = new Array<number>(sources.length * stride);
+export function remapPerAnchor<T>(values: readonly T[], sources: Uint32Array, stride: number): T[] {
+  const out = new Array<T>(sources.length * stride);
   for (let i = 0; i < sources.length; i++) {
     for (let k = 0; k < stride; k++) out[i * stride + k] = values[sources[i] * stride + k];
   }
