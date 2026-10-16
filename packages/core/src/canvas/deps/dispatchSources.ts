@@ -12,9 +12,9 @@ import { useDepSource } from '@weasel-js/routing/react';
 declare module '@weasel-js/routing' {
   interface DepSchema {
     /** What the dispatcher classifies a world point as: empty, or a body that
-     *  is or is not selected, with its routing kind. Sourced by `<SceneCanvas>`;
-     *  absent when it has no selection or picker to classify with. */
-    hitAt?: (world: { x: number; y: number }) => { bodyTarget: BodyTarget; bodyKind?: string };
+     *  is or is not selected, with its routing kind and id. Sourced by
+     *  `<SceneCanvas>`; absent when it has no selection or picker to classify with. */
+    hitAt?: (world: { x: number; y: number }) => { bodyTarget: BodyTarget; bodyKind?: string; id?: string };
     /** A node's routing kind (`'rect'`, `'text'`), as `kind:` targets read it.
      *  Sourced by `<SceneCanvas>`; absent under `routing={[]}`. */
     kindOfNode?: (id: string) => string | undefined;
@@ -27,7 +27,7 @@ type Classify = (world: { x: number; y: number }) => BodyClassification;
 export function hitAtOf(classifyTarget: Classify): NonNullable<DepSchema['hitAt']> {
   return (world) => {
     const c = classifyTarget(world);
-    return { bodyTarget: c.body, bodyKind: c.kind };
+    return { bodyTarget: c.body, bodyKind: c.kind, ...(c.id !== undefined ? { id: c.id } : {}) };
   };
 }
 

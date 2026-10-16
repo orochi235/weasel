@@ -28,12 +28,15 @@ const clickProbe = {
   bindings: [{ spec: { kind: 'click' }, actionId: 'test.click' }],
 };
 
-function setup(declare = true, menus: unknown[] = defs) {
+type Seed = (scene: ReturnType<typeof createScene<D, 'main', P>>) => void;
+
+function setup(declare = true, menus: unknown[] = defs, seed?: Seed, pickEvery?: (x: number, y: number) => string[]) {
   const scene = createScene<D, 'main', P>({ systemLayers: [{ id: 'main' }] });
   const ids = {} as Record<'a' | 'b', NodeId>;
   scene.batch('seed', () => {
     ids.a = scene.add({ kind: 'leaf', data: { kind: 'rect' }, layer: 'main', pose: { x: 10, y: 10, width: 50, height: 50 } });
     ids.b = scene.add({ kind: 'leaf', data: { kind: 'rect' }, layer: 'main', pose: { x: 200, y: 100, width: 80, height: 60 } });
+    seed?.(scene);
   });
   let host: MenuHost | null = null;
   let selection: SelectionApi | null = null;
@@ -57,6 +60,7 @@ function setup(declare = true, menus: unknown[] = defs) {
         <SceneCanvas
           features={['pick', 'edit']} claimKeys scene={scene} selection={sel} layers={{}} width={400} height={300}
           ambient={[clickProbe as never]}
+          {...(pickEvery ? { geometry: { pickEvery } } : {})}
           routing={[{ name: 'rect', matches: (d: unknown) => (d as D).kind === 'rect' }]}
         >
           <Menus />
@@ -87,6 +91,21 @@ describe('menu.context', () => {
     t.rightClick(240, 130);
     expect(t.selection().get()).toEqual([t.ids.b]);
     expect(t.host().current()?.entries.map((e) => e.kind === 'item' && e.label)).toEqual(['Delete']);
+  });
+
+  it('selects the node the dispatcher classified, not the last one the picker walked', () => {
+    let box = '' as NodeId;
+    let child = '' as NodeId;
+    // The picker lists the container last; the classifier collapses a parent
+    // under its own child, so the two disagree about what is on top.
+    const pickEvery = (x: number, y: number) => (x >= 20 && x <= 100 && y >= 200 && y <= 280 ? [child, box] : []);
+    const t = setup(true, defs, (scene) => {
+      box = scene.add({ kind: 'container', data: { kind: 'group' }, layer: 'main', pose: { x: 20, y: 200, width: 80, height: 80 } });
+      child = scene.add({ kind: 'leaf', data: { kind: 'rect' }, layer: 'main', parent: box, pose: { x: 40, y: 220, width: 30, height: 30 } });
+    }, pickEvery);
+    t.rightClick(55, 235);
+    expect(t.selection().get()).toEqual([child]);
+    expect(t.host().current()).not.toBeNull();
   });
 
   it('leaves the selection alone on a right-click when no menu is declared', () => {

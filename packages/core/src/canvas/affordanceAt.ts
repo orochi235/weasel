@@ -174,6 +174,7 @@ export function buildClassifyTarget(
     return {
       body: sel.includes(hitId) ? 'selected-body' : 'unselected-body',
       kind: kindOfNode?.(hitId),
+      id: hitId,
     };
   };
 }

@@ -6,6 +6,7 @@ import { visualBoundsViaDescriptor } from '../resize/geometry';
 import { unionAABB } from 'core/geometry/unionBounds';
 import { screenToWorld } from 'core/viewport/viewTransform';
 import { viewToTransform } from 'core/viewport/view';
+import { asNodeId } from 'core/scene/types';
 
 type XY = { x: number; y: number };
 
@@ -25,20 +26,27 @@ export function keyboardAnchor(deps: ActionDeps): XY | null {
   return { x, y };
 }
 
+type MenuHit = { bodyTarget?: BodyTarget; bodyKind?: string };
+
 /**
  * The hit a menu is picked for, from the dispatcher's own classifier (the
  * `hitAt` and `kindOfNode` deps). A shape under `at` counts as selected, since
- * opening selects it first; with no `at`, the current selection. Without a
- * classifier wired, a pointer hit names no body at all.
+ * opening selects it first, and `select` names it when it is not yet; with no
+ * `at`, the current selection. Without a classifier wired, a pointer hit names
+ * no body at all.
  */
-export function menuHitFor(deps: ActionDeps, at?: XY): { bodyTarget?: BodyTarget; bodyKind?: string } {
+export function menuHitFor(deps: ActionDeps, at?: XY): { hit: MenuHit; select?: string } {
   if (at) {
     const hit = deps.hitAt?.(at);
-    if (!hit) return {};
-    return hit.bodyTarget === 'empty' ? { bodyTarget: 'empty' } : { bodyTarget: 'selected-body', bodyKind: hit.bodyKind };
+    if (!hit) return { hit: {} };
+    if (hit.bodyTarget === 'empty') return { hit: { bodyTarget: 'empty' } };
+    return {
+      hit: { bodyTarget: 'selected-body', bodyKind: hit.bodyKind },
+      ...(hit.bodyTarget === 'unselected-body' && hit.id !== undefined ? { select: hit.id } : {}),
+    };
   }
   const ids = deps.selection?.get() ?? [];
-  return { bodyTarget: ids.length ? 'selected-body' : 'empty', bodyKind: ids.length === 1 ? deps.kindOfNode?.(ids[0]!) : undefined };
+  return { hit: { bodyTarget: ids.length ? 'selected-body' : 'empty', bodyKind: ids.length === 1 ? deps.kindOfNode?.(ids[0]!) : undefined } };
 }
 
 /** Open the menu for a right-click, or for Shift+F10 when `params` carry no client point. */
@@ -52,19 +60,17 @@ export function openContextMenu(
   const p = params ?? {};
   if (typeof p.clientX === 'number' && typeof p.worldX === 'number') {
     const world = { x: p.worldX, y: p.worldY as number };
-    if (deps.hitAt?.(world)?.bodyTarget === 'unselected-body') {
-      const id = deps.nodeAtPoint?.(world);
-      if (id) deps.selection?.set([id]);
-    }
+    const { hit, select } = menuHitFor(deps, world);
+    if (select) deps.selection?.set([asNodeId(select)]);
     return host.open({
-      hit: menuHitFor(deps, world),
+      hit,
       client: { x: p.clientX, y: p.clientY as number }, world, source: 'pointer',
     });
   }
   const world = anchorOf(deps);
   const client = world && deps.worldToClient?.(world.x, world.y);
   if (!world || !client) return false;
-  return host.open({ hit: menuHitFor(deps), client, world, source: 'keyboard' });
+  return host.open({ hit: menuHitFor(deps).hit, client, world, source: 'keyboard' });
 }
 
 const INITIAL = [{ channel: '*', phase: 'initial' }] as const;
@@ -83,9 +89,9 @@ export const contextMenuAction: Action & { requires: string[] } = {
     { kind: 'key', key: 'F10', mods: { shift: true }, phase: [...INITIAL] },
     { kind: 'key', key: 'ContextMenu', phase: [...INITIAL] },
   ],
-  requires: ['menuHost', 'selection', 'nodeAtPoint', 'scene', 'poseDescriptor', 'view', 'worldToClient', 'hitAt', 'kindOfNode'],
+  requires: ['menuHost', 'selection', 'scene', 'poseDescriptor', 'view', 'worldToClient', 'hitAt', 'kindOfNode'],
   // Disabled when no menu would open, so the dispatcher leaves the press, click and drag to whatever else is bound.
-  enabled: (deps, at) => (deps?.menuHost?.has({ hit: menuHitFor(deps, at), client: { x: 0, y: 0 }, world: at })
+  enabled: (deps, at) => (deps?.menuHost?.has({ hit: menuHitFor(deps, at).hit, client: { x: 0, y: 0 }, world: at })
     ? true
     : ActionDisabledReason.NotApplicable),
   invoker: { timing: 'immediate', run: (deps, params) => { openContextMenu(deps, params); } },

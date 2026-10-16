@@ -47,6 +47,6 @@ describe('CanvasView hitAt dep', () => {
     );
 
     const hitAt = registry.list()[0]!.target.deps!().hitAt!;
-    expect(hitAt({ x: 150, y: 10 })).toEqual({ bodyTarget: 'unselected-body', bodyKind: 'rect' });
+    expect(hitAt({ x: 150, y: 10 })).toEqual({ bodyTarget: 'unselected-body', bodyKind: 'rect', id: 'n' });
   });
 });

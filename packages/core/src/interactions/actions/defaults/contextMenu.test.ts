@@ -7,8 +7,7 @@ function deps(over: Record<string, unknown> = {}) {
   return {
     menuHost: { open: vi.fn(() => true) },
     selection: { get: () => selected, set: vi.fn((ids: string[]) => { selected.splice(0, selected.length, ...ids); }) },
-    nodeAtPoint: vi.fn(() => 'b'),
-    hitAt: vi.fn(() => ({ bodyTarget: 'unselected-body', bodyKind: 'rect' })),
+    hitAt: vi.fn(() => ({ bodyTarget: 'unselected-body', bodyKind: 'rect', id: 'b' })),
     kindOfNode: (id: string) => (id === 'a' ? 'text' : 'rect'),
     worldToClient: (x: number, y: number) => ({ x: x + 1000, y: y + 1000 }),
     scene: { get: (id: string) => ({ id, kind: id === 'a' ? 'text' : 'rect' }) },
@@ -61,6 +60,12 @@ describe('keyboardAnchor', () => {
 
 describe('menuHitFor', () => {
   it('names no body for a pointer hit when no classifier is wired', () => {
-    expect(menuHitFor({ selection: { get: () => ['a'] } } as never, { x: 1, y: 2 })).toEqual({});
+    expect(menuHitFor({ selection: { get: () => ['a'] } } as never, { x: 1, y: 2 })).toEqual({ hit: {} });
+  });
+  it('names the classified node to select when it is not yet selected', () => {
+    const hitAt = () => ({ bodyTarget: 'unselected-body', bodyKind: 'rect', id: 'b' });
+    expect(menuHitFor({ hitAt } as never, { x: 1, y: 2 })).toEqual({
+      hit: { bodyTarget: 'selected-body', bodyKind: 'rect' }, select: 'b',
+    });
   });
 });
