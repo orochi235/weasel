@@ -284,7 +284,9 @@ export function svgNodesToSceneDrafts(
  * layer, which is skipped along with everything under it.
  */
 export interface SceneSource extends SvgKitTree<string> {
-  objOf(id: string): Obj | undefined;
+  /** The leaf as one object, or as several — a live path effect, which
+   *  exports as a group of the paths it shows. */
+  objOf(id: string): Obj | readonly Obj[] | undefined;
   isPainted?(id: string): boolean;
 }
 
@@ -303,7 +305,9 @@ export function sceneToSvgNodes(source: SceneSource, roots?: readonly string[]):
     ...(source.isPainted ? { include: (id: string) => source.isPainted!(id) } : {}),
     leaf: (id) => {
       const obj = source.objOf(id);
-      return obj ? objToSvgNode(obj) : null;
+      if (obj === undefined) return null;
+      if (!Array.isArray(obj)) return objToSvgNode(obj as Obj);
+      return { kind: 'group', children: obj.map(objToSvgNode) };
     },
     group: (id, g) => ({ ...g, meta: { wd: { attrs: { 'group-id': id } } } }),
   });

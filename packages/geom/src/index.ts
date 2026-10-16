@@ -37,6 +37,15 @@ export { hasOpenSubpath, splitByClosure } from './paths/splitByClosure';
 export { pathSignedArea, reversePath } from './paths/winding';
 export { pathFromD } from './paths/pathFromD';
 export { pointAlongPath, type PathStation, type PointAlongPathOptions } from './paths/pathAt';
+export { measurePath, type MeasurePathOptions, type PathMeasure } from './paths/pathMeasure';
+export {
+  pathToCubicContours, cubicContoursToPath, type CubicContour, type CubicSegment,
+} from './paths/cubicContours';
+export { blendPaths, prepareBlend, type BlendPathsOptions, type PathBlend } from './paths/blendPaths';
+export { bendAlongPath, type BendAlongPathOptions } from './paths/bendAlongPath';
+export {
+  repeatAlongPath, stationsAlongPath, type RepeatAlongPathOptions, type RepeatStation,
+} from './paths/repeatAlongPath';
 export { pathDistanceToPoint } from './paths/pathDistance';
 export { intersectSegments, type SegmentCrossing } from './intersect/segmentIntersections';
 export { pathSegments, type PathSegment } from './intersect/pathSegments';
@@ -108,6 +117,7 @@ export {
   combTeeth, cubicCurvatureAt, cubicCurvatureSource, cubicDerivativeAt, curvatureComb,
   type CombTooth, type CurvatureCombOptions, type CurvatureSource, type SegmentComb,
 } from './paths/curvature';
+export { harmonizeAnchors } from './paths/harmonize';
 export { editAnchorSetTracked, remapPointValues, type PointOrigin } from './paths/anchorOrigins';
 export { nearestPathAnchor, reverseAnchors, type PathAnchorHit } from './paths/nearestAnchor';
 export { pathInPoseFrame, pathInWorld, worldEditToStorage, type PathInWorldPose } from './paths/pathInWorld';
