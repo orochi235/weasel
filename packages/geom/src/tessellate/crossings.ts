@@ -1,4 +1,4 @@
-/** Rebuilding crossing outlines as the non-crossing boundary of their nonzero fill. */
+/** Rebuilding outlines as the non-crossing boundary of their nonzero fill. */
 
 /** Flattened contours with each vertex's anchor parameterization. */
 export interface FlattenedContours {
@@ -33,12 +33,12 @@ const keyOf = (n: Node): string => `${n.x},${n.y}`;
 
 /**
  * The boundary of `flat`'s nonzero fill as loops that do not cross, each with
- * the fill on its left (positive signed area), or `null` when no two edges
- * cross and `flat` can be triangulated as it is.
+ * the fill on its left, or `null` when no two edges cross and `always` is
+ * not set.
  */
-export function resolveCrossings(flat: FlattenedContours): FlattenedContours | null {
+export function resolveCrossings(flat: FlattenedContours, always = false): FlattenedContours | null {
   const edges = edgesOf(flat);
-  if (!cutAtCrossings(edges)) return null;
+  if (!cutAtCrossings(edges) && !always) return null;
   const pieces = boundaryPieces(edges);
   return loopsToContours(chainLoops(pieces));
 }

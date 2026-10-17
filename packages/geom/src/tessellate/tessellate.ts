@@ -1,7 +1,6 @@
 import earcut from 'earcut';
 import { forEachSegment, PATH_M, PATH_L, PATH_Z, PATH_C, PATH_Q } from '../commands';
 import { resolveCorners } from '../paths/corners';
-import { pointInPolygon } from '../polyline';
 import { rectToContour } from '../box';
 import type { Path, PolygonPath, RectPath } from '../path';
 import { fillsOpenSubpaths } from '../openFill';
@@ -12,6 +11,7 @@ import {
 } from '../flatten';
 import type { Mesh } from './mesh';
 import { resolveCrossings, type FlattenedContours } from './crossings';
+import { nestRings, type Ring } from './nesting';
 
 /** Options for `tessellate`. A smaller tolerance means more triangles and
  *  smoother curves; it is in path-local units, so callers rendering at a
@@ -162,32 +162,31 @@ function tessellatePolygon(p: PolygonPath, opts: TessellateOptions): Mesh {
     const { coords, contourStarts, anchorA, anchorB, anchorT } = flat;
     return tessellateEvenoddWithAnchors(coords, contourStarts, anchorA, anchorB, anchorT);
   }
-  const resolved = resolveCrossings(flat);
-  return resolved ? tessellateNonzero(resolved, 1) : tessellateNonzero(flat);
+  const crossed = resolveCrossings(flat);
+  if (crossed) return tessellateNonzero(crossed, nestRings(crossed));
+  const rings = nestRings(flat);
+  if (rings.every((r) => Math.abs(r.winding) <= 1)) return tessellateNonzero(flat, rings);
+  // Nested same-wound rings would cover the region they share twice.
+  const rebuilt = resolveCrossings(flat, true)!;
+  return tessellateNonzero(rebuilt, nestRings(rebuilt));
 }
 
-/** Triangulate contours that do not cross. `refSign` is the signed-area sign
- *  of a filled outline, when known; otherwise the first contour sets it. */
-function tessellateNonzero(flat: FlattenedContours, refSign?: number): Mesh {
+/** Triangulate rings that do not cross and wind at most once anywhere: each
+ *  ring with fill inside it, less the rings directly inside it, which are its
+ *  holes. */
+function tessellateNonzero(flat: FlattenedContours, rings: Ring[]): Mesh {
   const { coords, contourStarts, anchorA, anchorB, anchorT } = flat;
+  const shapes: number[] = [];
+  const holesByShape = new Map<number, number[]>();
+  rings.forEach((r, i) => {
+    if (r.area === 0) return;
+    if (r.winding !== 0) shapes.push(i);
+    else if (holesByShape.has(r.parent)) holesByShape.get(r.parent)!.push(i);
+    else holesByShape.set(r.parent, [i]);
+  });
 
-  // nonzero compound-path tessellation:
-  //   - The first contour establishes the reference winding direction.
-  //   - Subsequent contours with the SAME winding as the first are positives
-  //     (filled, disjoint shapes).
-  //   - Subsequent contours with OPPOSITE winding are holes; each is grouped
-  //     with the smallest positive whose polygon contains its first vertex.
-  //   - Each (positive, [its holes]) group is earcut'd independently;
-  //     triangles concatenated.
-  // Using shoelace sign relative to the first contour avoids guessing about
-  // screen-down vs math-up axis conventions.
-
-  const totalVerts = coords.length / 2;
-  const contourEnd = (i: number): number =>
-    i + 1 < contourStarts.length ? contourStarts[i + 1] : totalVerts;
-
-  if (contourStarts.length <= 1) {
-    const tri = earcut(coords);
+  if (shapes.length <= 1 && (shapes[0] ?? 0) === 0) {
+    const tri = earcut(coords, contourStarts.length > 1 ? contourStarts.slice(1) : undefined);
     return {
       vertices: new Float32Array(coords),
       indices: new Uint32Array(tri),
@@ -196,70 +195,18 @@ function tessellateNonzero(flat: FlattenedContours, refSign?: number): Mesh {
       anchorT: new Float32Array(anchorT),
     };
   }
-
-  const areas: number[] = contourStarts.map((s, i) => signedArea(coords, s, contourEnd(i)));
-  const filledSign = refSign ?? (Math.sign(areas[0]) || 1);
-
-  const positives: number[] = [];
-  const negatives: number[] = [];
-  for (let i = 0; i < contourStarts.length; i++) {
-    if (areas[i] === 0) continue;
-    if (Math.sign(areas[i]) === filledSign) positives.push(i);
-    else negatives.push(i);
-  }
-
-  if (positives.length === 1 && positives[0] === 0 && negatives.length > 0) {
-    // Classic outer-with-holes pattern; pass directly to earcut.
-    const holeIndices = contourStarts.slice(1);
-    const tri = earcut(coords, holeIndices);
-    return {
-      vertices: new Float32Array(coords),
-      indices: new Uint32Array(tri),
-      anchorA: new Uint32Array(anchorA),
-      anchorB: new Uint32Array(anchorB),
-      anchorT: new Float32Array(anchorT),
-    };
-  }
-
-  // Orphans (opposite-wound but not inside any positive) get promoted to
-  // independent positives — author probably intended them as separate shapes
-  // with inconsistent winding.
-  const holesByPositive = new Map<number, number[]>();
-  const orphanPositives: number[] = [];
-  for (const n of negatives) {
-    const px = coords[contourStarts[n] * 2];
-    const py = coords[contourStarts[n] * 2 + 1];
-    let bestPos = -1;
-    let bestAbsArea = Infinity;
-    for (const pos of positives) {
-      const absArea = Math.abs(areas[pos]);
-      if (absArea < bestAbsArea && pointInPolygon(coords, px, py, contourStarts[pos], contourEnd(pos))) {
-        bestAbsArea = absArea;
-        bestPos = pos;
-      }
-    }
-    if (bestPos >= 0) {
-      const arr = holesByPositive.get(bestPos) ?? [];
-      arr.push(n);
-      holesByPositive.set(bestPos, arr);
-    } else {
-      orphanPositives.push(n);
-    }
-  }
-
-  const allPositives = [...positives, ...orphanPositives];
 
   const finalCoords: number[] = [];
   const finalAnchorA: number[] = [];
   const finalAnchorB: number[] = [];
   const finalAnchorT: number[] = [];
   const finalIndices: number[] = [];
-  for (const pos of allPositives) {
-    const holes = holesByPositive.get(pos) ?? [];
+  for (const pos of shapes) {
+    const holes = holesByShape.get(pos) ?? [];
     const offset = finalCoords.length / 2;
     const groupCoords: number[] = [];
     const groupStarts: number[] = [0];
-    for (let i = contourStarts[pos]; i < contourEnd(pos); i++) {
+    for (let i = rings[pos].start; i < rings[pos].end; i++) {
       groupCoords.push(coords[i * 2], coords[i * 2 + 1]);
       finalAnchorA.push(anchorA[i]);
       finalAnchorB.push(anchorB[i]);
@@ -267,7 +214,7 @@ function tessellateNonzero(flat: FlattenedContours, refSign?: number): Mesh {
     }
     for (const h of holes) {
       groupStarts.push(groupCoords.length / 2);
-      for (let i = contourStarts[h]; i < contourEnd(h); i++) {
+      for (let i = rings[h].start; i < rings[h].end; i++) {
         groupCoords.push(coords[i * 2], coords[i * 2 + 1]);
         finalAnchorA.push(anchorA[i]);
         finalAnchorB.push(anchorB[i]);
@@ -312,13 +259,4 @@ function tessellateEvenoddWithAnchors(
     anchorB: new Uint32Array(anchorB),
     anchorT: new Float32Array(anchorT),
   };
-}
-
-function signedArea(coords: number[], start: number, end: number): number {
-  let a = 0;
-  for (let i = start; i < end; i++) {
-    const j = i + 1 === end ? start : i + 1;
-    a += coords[i * 2] * coords[j * 2 + 1] - coords[j * 2] * coords[i * 2 + 1];
-  }
-  return a * 0.5;
 }
