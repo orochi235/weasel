@@ -6,6 +6,7 @@ import {
   type Action,
 } from '@weasel-js/core';
 import { ActionBar } from './ActionBar';
+import { icon } from '../../icons.gen';
 
 // Inline placeholder glyphs keep the story self-contained.
 function Glyph({ char }: { char: string }) {
@@ -116,7 +117,7 @@ export const WithIconAndLabelOverrides: Story = {
       ))}
       <ActionBar
         group="align"
-        icons={{ 'align.center': 'fit' }}
+        icons={{ 'align.center': icon('fit') }}
         labels={{ 'align.center': 'Center on canvas' }}
       />
     </ActionsProvider>

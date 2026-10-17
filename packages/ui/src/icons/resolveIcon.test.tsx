@@ -1,14 +1,22 @@
 import { render } from '@testing-library/react';
 import { expect, it } from 'vitest';
-import { namedGlyph } from './namedGlyph';
+import { withIcons } from '../testing/withIcons';
+import { icon } from '../icons.gen';
+import { resolveIcon } from './resolveIcon';
 
-it('draws a name the icon set holds, at the size asked for', () => {
-  const { container } = render(<>{namedGlyph('bold', 16)}</>);
+it('draws a qualified name, at the size asked for', () => {
+  const { container } = render(<>{resolveIcon(icon('bold'), 16)}</>, { wrapper: withIcons });
   expect(container.querySelector('svg')).toHaveAttribute('width', '16');
 });
 
-it('draws nothing for a name the set lacks, a name from Object.prototype among them', () => {
-  expect(namedGlyph(undefined)).toBeUndefined();
-  expect(namedGlyph('no-such-glyph')).toBeUndefined();
-  expect(namedGlyph('toString')).toBeUndefined();
+it('takes a qualified string read from data', () => {
+  const { container } = render(<>{resolveIcon('ui:bold')}</>, { wrapper: withIcons });
+  expect(container.querySelector('svg')).toHaveAttribute('width', '14');
+});
+
+it('draws nothing for a bare or malformed string', () => {
+  expect(resolveIcon(undefined)).toBeUndefined();
+  expect(resolveIcon('bold')).toBeUndefined();
+  expect(resolveIcon('toString')).toBeUndefined();
+  expect(resolveIcon('ui:a:b')).toBeUndefined();
 });

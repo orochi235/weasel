@@ -5,6 +5,7 @@ import { PropertyField } from '../Properties/PropertyField';
 import { PropertyList } from '../Properties/PropertyList';
 import { BarPopover } from './BarPopover';
 import s from './Bar.stories.module.css';
+import { icon } from '../../icons.gen';
 
 const meta: Meta<typeof BarPopover> = {
   title: 'ui/Bar/BarPopover',
@@ -37,6 +38,6 @@ export const Rows: Story = {
 };
 
 export const WithIcon: Story = {
-  args: { label: 'Margins', icon: <Icon name="chevron" size={14} /> },
+  args: { label: 'Margins', icon: <Icon name={icon('chevron')} size={14} /> },
   render: Rows.render,
 };

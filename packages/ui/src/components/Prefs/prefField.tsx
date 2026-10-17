@@ -3,7 +3,7 @@ import { endless as withInfinity } from '@weasel-js/quantity';
 import { isBuiltinPref, prefDisplayBounds, resolvePrefUnit, type PrefField, type PrefLeaf, type PrefValueBase } from '@weasel-js/prefs';
 import { endlessAllows } from '../../endless';
 import { stepDisplay } from '../Properties/NumberControls';
-import { namedGlyph } from '../../icons/namedGlyph';
+import { resolveIcon } from '../../icons/resolveIcon';
 import { isPaint } from '../paintValue';
 import type { PropertyControlProps } from '../Properties/PropertyField';
 import { type LiveControl, type ParamsSurface, withCommitPolicy } from './commitPolicy';
@@ -115,7 +115,7 @@ function enabledFieldProps(leaf: PrefLeaf, state: PrefFieldState): PropertyContr
         value: coded ? coded.value : typeof value === 'boolean' ? value : undefined,
         mixed: coded ? coded.mixed : mixed,
         unset,
-        glyph: namedGlyph(leaf.icon),
+        glyph: resolveIcon(leaf.icon),
         short: leaf.short,
         onChange: coded ? coded.write : setValue,
       };
@@ -180,7 +180,7 @@ function enabledFieldProps(leaf: PrefLeaf, state: PrefFieldState): PropertyContr
         options: leaf.options.map((o) => ({
           value: o.value,
           label: o.label,
-          glyph: namedGlyph(o.icon),
+          glyph: resolveIcon(o.icon),
           short: o.short,
           disabled: o.disabled,
         })),

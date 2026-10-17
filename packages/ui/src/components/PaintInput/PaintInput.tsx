@@ -15,7 +15,7 @@ import {
   type PaintKindEntry,
 } from '@weasel-js/core';
 import { Icon } from '../../icons/Icon';
-import { isIconName } from '../../icons/namedGlyph';
+import { toIconRef } from '@weasel-js/icons';
 import { ColorField } from '../ColorField';
 import { OpacityRange } from '../ColorField/OpacityRange';
 import { GradientEditor } from '../GradientEditor';
@@ -56,10 +56,11 @@ function kindOf(paint: Paint | null | undefined): PaintKind | null {
 }
 
 function segment(id: string, label: string, icon: string | undefined): ToggleBarItem<PaintKind> {
-  return isIconName(icon)
+  const ref = toIconRef(icon);
+  return ref
     // Icon-only: the full label stays the accessible name. 14, not 15: a
     // `sm` bar is 17px tall over 1px of padding, so 15 fills the segment box.
-    ? { value: id, label: <Icon name={icon} size={14} />, ariaLabel: label }
+    ? { value: id, label: <Icon name={ref} size={14} />, ariaLabel: label }
     : { value: id, label };
 }
 

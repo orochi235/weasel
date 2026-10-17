@@ -1,8 +1,8 @@
 import { useId, useMemo, type SVGProps } from 'react';
+import { useIconGlyph } from '@weasel-js/core';
+import type { IconGlyph, IconRef } from '@weasel-js/icons';
 import { ICON_SLOTS, inset } from './layers';
-import type { MarkIconName } from './generated/groups';
-import { ICON_FILLS, type FillableIconName } from './generated/fills';
-import { ICON_PATHS, type IconName } from './generated/paths';
+import { IS_DEV, PLACEHOLDER_BODY, warnMissing } from './placeholder';
 
 /** Shared prop shape for the icon set. Color comes from the surrounding
  *  `color` CSS property — every glyph strokes in `currentColor`. */
@@ -21,11 +21,11 @@ export interface IconProps {
   fillOpacity?: number;
   /** A second, small glyph set in the lower right corner, with this one cleared from around it: a plus on what a
    *  press adds, a minus on what it takes away. */
-  mark?: MarkIconName;
+  mark?: IconRef;
 }
 
 /** True when `filled` will shade this glyph. */
-export const isFillable = (name: IconName): name is FillableIconName => name in ICON_FILLS;
+export const isFillable = (glyph: IconGlyph | undefined): boolean => glyph?.fill !== undefined;
 
 const SVG_BASE: SVGProps<SVGSVGElement> = {
   viewBox: '0 0 20 20',
@@ -36,8 +36,8 @@ const SVG_BASE: SVGProps<SVGSVGElement> = {
   strokeLinejoin: 'round',
 };
 
-/** Renders one glyph by name. The named components below are the usual way
- *  in; reach for this when the glyph is chosen at runtime. */
+/** Renders the glyph the icon registry in scope holds for `name`. A name it lacks draws `UnknownIcon`'s
+ *  placeholder in dev, warning once, and nothing in production. */
 export function Icon({
   name,
   className,
@@ -46,14 +46,19 @@ export function Icon({
   filled = false,
   fillOpacity = 0.16,
   mark,
-}: IconProps & { name: IconName }) {
-  const shade = filled && isFillable(name) ? ICON_FILLS[name] : '';
+}: IconProps & { name: IconRef }) {
+  const glyph = useIconGlyph(name);
+  const markGlyph = useIconGlyph(mark);
   const maskId = useId();
-  const body = shade + ICON_PATHS[name];
-  const html = mark ? inset(body, ICON_PATHS[mark], ICON_SLOTS.mark, maskId) : body;
+  if (!glyph) warnMissing(name);
+  if (mark && !markGlyph) warnMissing(mark);
+  const shade = filled && glyph?.fill ? glyph.fill : '';
+  const body = glyph ? shade + glyph.body : PLACEHOLDER_BODY;
+  const html = markGlyph ? inset(body, markGlyph.body, ICON_SLOTS.mark, maskId) : body;
   // React 19 rewrites innerHTML whenever this object's identity changes, and a
   // rewrite during a press removes the node pointerdown hit, so no click follows.
   const markup = useMemo(() => ({ __html: html }), [html]);
+  if (!glyph && !IS_DEV) return null;
   return (
     <svg
       {...SVG_BASE}
@@ -67,8 +72,8 @@ export function Icon({
       role={label ? 'img' : undefined}
       aria-label={label}
       aria-hidden={label ? undefined : true}
-      // Glyph bodies are generated from scripts/icons/ and contain no
-      // interpolated input.
+      // Glyph bodies come from the registered tables, which gen:icons writes
+      // from each package's icons/ definitions.
       dangerouslySetInnerHTML={markup}
     />
   );

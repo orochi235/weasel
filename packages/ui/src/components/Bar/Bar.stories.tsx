@@ -4,6 +4,8 @@ import { ActionsProvider, useAction, type Action } from '@weasel-js/core';
 import { pref, type PrefGroup } from '@weasel-js/prefs';
 import { Bar, type BarProps } from './Bar';
 import s from './Bar.stories.module.css';
+import type { IconRef } from '@weasel-js/icons';
+import { icon } from '../../icons.gen';
 
 const meta: Meta<typeof Bar> = {
   title: 'ui/Bar/Bar',
@@ -12,13 +14,13 @@ const meta: Meta<typeof Bar> = {
 export default meta;
 type Story = StoryObj<typeof Bar>;
 
-const action = (name: string, key: string, icon?: string): PrefGroup['children'][string] => ({
+const action = (name: string, key: string, glyph?: IconRef): PrefGroup['children'][string] => ({
   kind: 'action',
   name,
   description: '',
   default: undefined,
   action: key,
-  ...(icon ? { icon } : {}),
+  ...(glyph ? { icon: glyph } : {}),
 });
 
 const TEXT: PrefGroup = {
@@ -28,7 +30,7 @@ const TEXT: PrefGroup = {
     history: {
       name: 'History',
       as: 'section',
-      children: { undo: action('Undo', 'edit.undo', 'undo'), redo: action('Redo', 'edit.redo', 'redo') },
+      children: { undo: action('Undo', 'edit.undo', icon('core:undo')), redo: action('Redo', 'edit.redo', icon('core:redo')) },
     },
     size: { kind: 'number', name: 'Size', description: 'Type size.', default: 12, min: 1 },
     style: {

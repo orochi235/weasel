@@ -6,6 +6,7 @@ import { headingOf, type AssetHeading, type ListedAsset, type ShownAsset } from 
 
 const NONE: readonly ListedAsset[] = [];
 import s from './AssetList.module.css';
+import { icon } from '../../icons.gen';
 
 /** The headings the assets are listed under, in order. */
 const HEADINGS: readonly AssetHeading[] = ['Dialogs', 'Panels', 'Toolbars'];
@@ -56,7 +57,7 @@ export function AssetList({ assets, elsewhere = NONE, order, selected, changed, 
                 <ListBoxItem key={row.id} id={row.id} textValue={row.label} data-changed={row.changed || undefined}
                   data-rail-mark={row.id === selected ? 'current' : undefined} className={s.row}>
                   <span className={row.changed ? `${s.label} ${s.changed}` : s.label}>{row.label}</span>
-                  {row.readOnly && <Icon name="bolt" size={16} label="Dynamic" className={s.dynamic} />}
+                  {row.readOnly && <Icon name={icon('bolt')} size={16} label="Dynamic" className={s.dynamic} />}
                 </ListBoxItem>
               ))}
             </ListBoxSection>

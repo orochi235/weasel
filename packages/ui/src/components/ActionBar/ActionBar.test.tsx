@@ -14,6 +14,7 @@ import {
   type Action,
 } from '@weasel-js/core';
 import { ActionBar } from './ActionBar';
+import { icon } from '../../icons.gen';
 
 /**
  * Test harness: registers a set of `Action` descriptors on mount via
@@ -207,7 +208,7 @@ describe('ActionBar', () => {
           makeAction({ id: 'a', icon: <DefaultIcon /> }),
           makeAction({ id: 'b', icon: <span data-testid="default-icon-b">B</span> }),
         ]}
-        bar={<ActionBar group="demo" icons={{ a: 'close' }} />}
+        bar={<ActionBar group="demo" icons={{ a: icon('close') }} />}
       />,
     );
     expect(item('a').querySelector('svg')).not.toBeNull();

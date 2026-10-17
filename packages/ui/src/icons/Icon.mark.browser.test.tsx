@@ -1,16 +1,16 @@
 import { cleanup, render } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
+import { icon, type UiIconName } from '../icons.gen';
+import { withIcons } from '../testing/withIcons';
 import { Icon } from './Icon';
-import type { MarkIconName } from './generated/groups';
-import type { IconName } from './generated/paths';
 
 afterEach(cleanup);
 
 const SIZE = 200;
 
 /** The alpha a browser paints at a point on the 20x20 frame. */
-async function alphaAt(mark: MarkIconName | undefined, x: number, y: number, name: IconName = 'formPage'): Promise<number> {
-  const { container } = render(<Icon name={name} mark={mark} size={SIZE} />);
+async function alphaAt(mark: UiIconName | undefined, x: number, y: number, name: UiIconName = 'formPage'): Promise<number> {
+  const { container } = render(<Icon name={icon(name)} mark={mark && icon(mark)} size={SIZE} />, { wrapper: withIcons });
   const svg = container.querySelector('svg')!;
   svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
   // An image has no surrounding text color for currentColor to take.

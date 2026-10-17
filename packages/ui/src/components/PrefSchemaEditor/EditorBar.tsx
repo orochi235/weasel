@@ -3,6 +3,7 @@ import { Icon } from '../../icons';
 import { ToolButton } from '../ToolButton';
 import { ToolGroup } from '../ToolGroup';
 import s from './PrefSchemaEditor.module.css';
+import { icon } from '../../icons.gen';
 
 const DRAFT_TIME = new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' });
 
@@ -31,9 +32,9 @@ export function EditorBar({ lead, toolSlot, canUndo, canRedo, onStep, draftSaved
       <div className={s.barEnd}>
         <div className={s.palette}>
           <ToolGroup orientation="horizontal" ariaLabel="History and settings">
-            <ToolButton icon={<Icon name="undo" />} label="Undo" disabled={!canUndo} onClick={() => onStep('undo')} />
-            <ToolButton icon={<Icon name="redo" />} label="Redo" disabled={!canRedo} onClick={() => onStep('redo')} />
-            {draftSavedAt !== null && <ToolButton icon={<Icon name="reset" />} label="Discard draft" title="Go back to the schema in source" onClick={onDiscard} />}
+            <ToolButton icon={<Icon name={icon('core:undo')} />} label="Undo" disabled={!canUndo} onClick={() => onStep('undo')} />
+            <ToolButton icon={<Icon name={icon('core:redo')} />} label="Redo" disabled={!canRedo} onClick={() => onStep('redo')} />
+            {draftSavedAt !== null && <ToolButton icon={<Icon name={icon('reset')} />} label="Discard draft" title="Go back to the schema in source" onClick={onDiscard} />}
             {prefs}
           </ToolGroup>
         </div>

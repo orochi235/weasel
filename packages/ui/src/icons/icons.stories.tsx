@@ -1,7 +1,6 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { Icon } from './Icon';
-import { ICON_GROUPS, MARK_ICONS } from './generated/groups';
-import type { IconName } from './generated/paths';
+import { ICON_GROUPS, icon } from '../icons.gen';
 import {
   SelectIcon, LassoIcon, RectIcon, EllipseIcon, ImageIcon, EyedropperIcon,
   LineIcon, ArrowIcon, PolygonIcon, StarIcon, PencilIcon, TextIcon, PenIcon,
@@ -16,7 +15,7 @@ export default meta;
  * The tool glyphs, which live in `@weasel-js/core` because core needs them for
  * `Tool.presentation.icon` defaults and cannot depend on this package. They
  * are re-exported here as one import site for the whole set, so a catalog that
- * showed only `ICON_PATHS` would be showing half of it.
+ * showed only ui's own table would be showing half of it.
  */
 const TOOL_ICONS = {
   SelectIcon, LassoIcon, RectIcon, EllipseIcon, ImageIcon, EyedropperIcon,
@@ -46,7 +45,7 @@ function Sheet({ size, proof }: { size: number; proof?: boolean }) {
           <div className={proof ? `${s.sheet} ${s.proof}` : s.sheet}>
             {names.map((n) => (
               <figure key={n}>
-                <Icon name={n} size={size} label={n} />
+                <Icon name={icon(n)} size={size} label={n} />
                 <figcaption>{n}</figcaption>
               </figure>
             ))}
@@ -57,12 +56,13 @@ function Sheet({ size, proof }: { size: number; proof?: boolean }) {
   );
 }
 
-const MARKED: readonly IconName[] = ['formPage', 'formSection', 'tune', 'layers', 'shapeHexagon'];
+const MARKED = [icon('formPage'), icon('formSection'), icon('core:tune'), icon('layers'), icon('shapeHexagon')];
+const MARKS = ICON_GROUPS.find((g) => g.label === 'Marks')?.names.map((n) => icon(n)) ?? [];
 
 function MarkedSheet({ size, proof }: { size: number; proof?: boolean }) {
   return (
     <div className={proof ? `${s.sheet} ${s.proof}` : s.sheet}>
-      {MARKED.flatMap((name) => MARK_ICONS.map((mark) => (
+      {MARKED.flatMap((name) => MARKS.map((mark) => (
         <figure key={name + mark}>
           <Icon name={name} mark={mark} size={size} label={`${name}, ${mark}`} />
           <figcaption>{name} + {mark}</figcaption>

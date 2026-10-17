@@ -4,6 +4,7 @@ import type { Meta, StoryObj } from '@weasel-js/forge';
 import { prefType, type PrefGroup, type PrefObject } from '@weasel-js/prefs';
 import { PrefSchemaEditor } from './PrefSchemaEditor';
 import s from './PrefSchemaEditor.stories.module.css';
+import { icon } from '../../icons.gen';
 
 const meta: Meta<typeof PrefSchemaEditor> = {
   title: 'Primitives/PrefSchemaEditor',
@@ -160,8 +161,8 @@ const TOOLBAR: PrefGroup = {
       name: 'History',
       as: 'section',
       children: {
-        undo: { kind: 'action', name: 'Undo', description: '', default: undefined, icon: 'undo', action: 'edit.undo' },
-        redo: { kind: 'action', name: 'Redo', description: '', default: undefined, icon: 'redo', action: 'edit.redo' },
+        undo: { kind: 'action', name: 'Undo', description: '', default: undefined, icon: icon('core:undo'), action: 'edit.undo' },
+        redo: { kind: 'action', name: 'Redo', description: '', default: undefined, icon: icon('core:redo'), action: 'edit.redo' },
       },
     },
     size: { kind: 'number', name: 'Size', description: 'Type size.', default: 12, min: 1 },
