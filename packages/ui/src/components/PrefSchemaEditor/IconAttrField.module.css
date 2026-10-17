@@ -13,5 +13,9 @@
 .grid { display: grid; grid-template-columns: repeat(auto-fill, 2rem); gap: var(--wzl-space-1); }
 .cell { display: grid; place-items: center; block-size: 2rem; inline-size: 2rem; cursor: pointer; }
 .cell:hover { background: color-mix(in srgb, var(--wzl-accent) 15%, transparent); }
-.chosen, .chosen:hover { background: var(--wzl-accent); color: var(--wzl-fg-on-accent); }
+.chosen, .chosen:hover {
+  --wzl-fg-muted: var(--wzl-fg-muted-on-accent);
+  --wzl-fg-subtle: var(--wzl-fg-subtle-on-accent);
+  background: var(--wzl-accent); color: var(--wzl-fg-on-accent);
+}
 .list:focus-visible .active { outline: 2px solid var(--wzl-accent); outline-offset: -2px; }
