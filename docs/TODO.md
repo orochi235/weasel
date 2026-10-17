@@ -374,6 +374,11 @@ Priority tags:
   id, and an imported leaf takes a fresh id (`svgNodesToSceneDrafts` keeps ids for groups only,
   through `wd:group-id`); with a leaf id carried the same way, the effect's `data.pathEffect`
   and `dependsOn` can ride as `wd:` attributes on its group.
+- **(P3) Roughen, zigzag and pucker/bloat exist only on the `pel-effects-push` branch.** That
+  branch stored effects as a `data.effects` list on the path itself, a design main did not take
+  (`f082c838e` adopted its push brush as Smudge and left the rest). Its math is in
+  `packages/geom/src/effects/` there; carrying the three over means rebuilding each as a derived
+  effect node beside blend, bend and repeat. Undecided whether to; the branch is kept until then.
 - **(P3) A path effect inside a container that composes frames is untried.** An effect paints in
   the frame its sources are painted in (`core/scene/pathEffects/`); the actions only make one
   over two leaves, inserted beside the first.
