@@ -3,10 +3,8 @@ import { renderHook } from '@testing-library/react';
 import { boundsOfPath, type Path } from '@weasel-js/geom';
 import type { PathDrawCommand } from '@weasel-js/renderer';
 import { reportRouteConflicts, type Action, type ActionDeps, type InvocationCtx, type OngoingHandle } from '@weasel-js/routing';
-import type { RenderLayer } from 'core/layers/render';
-import type { NodeId } from 'core/scene/types';
-import type { BooleansAdapter } from 'interactions/actions/booleans/booleans';
-import { rootsTree } from 'core/adapters/testing/rootsTree';
+import type { BooleansAdapter, NodeId, RenderLayer } from '@weasel-js/core';
+import { rootsTreeForTests as rootsTree } from '@weasel-js/core/test-seams';
 import { useShapeBuilderTool } from './useShapeBuilderTool';
 
 const rect = (x: number, y: number, width: number, height: number): Path => ({ kind: 'rect', x, y, width, height });
@@ -64,6 +62,10 @@ function setup(ids: string[] = ['a', 'b'], opts: Parameters<typeof useShapeBuild
 }
 
 describe('useShapeBuilderTool', () => {
+  it('declares capabilities: [edits-page]', () => {
+    expect(setup().tool().eligibility.capabilities).toEqual(['edits-page']);
+  });
+
   it('shows the face under the pointer, red while Alt is held, and nothing off every face', () => {
     const s = setup();
     s.fire('shapeBuilder.hover', { worldX: 7, worldY: 5, mods: noMods });

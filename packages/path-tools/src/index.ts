@@ -90,6 +90,10 @@ export {
 } from './warp/useWarpTool';
 export { warpLayerId } from './warp/warpHandles';
 export {
+  facesAlong, planShapeBuilder, useShapeBuilderTool,
+  type ShapeBuilderFace, type ShapeBuilderMode, type ShapeBuilderPlan, type UseShapeBuilderToolOptions,
+} from './shapeBuilder';
+export {
   useGirthTool, createGirthOverlay, createGirthActions, GIRTH_CLEAR_ID, GIRTH_DRAG_ID, GIRTH_HOVER_ID, GIRTH_UNHOVER_ID,
   type UseGirthToolOptions, type WidthEdgeHit, type GirthEnv, type GirthFocus, type WidthGrip, type WidthTarget,
 } from './girth';

@@ -1,7 +1,7 @@
 import {
   asNodeId, createScene, ellipsePath, type Path, type RectPose, solid, useLatest, useSelection,
-  useShapeBuilderTool,
 } from '@weasel-js/core';
+import { useShapeBuilderTool } from '@weasel-js/path-tools';
 import {
   type ConfigOf,
   defineInstrument,

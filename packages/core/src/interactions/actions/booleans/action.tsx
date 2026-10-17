@@ -39,7 +39,8 @@ const ICON_FOR: Record<BooleanOp, IconRef> = {
   merge: icon('merge'),
 };
 
-/** What a stroked operand gives the built-in Pathfinder actions and the shape builder. */
+/** What a stroked operand gives the built-in Pathfinder actions, and a tool
+ *  that should count strokes as they do. */
 export const PATHFINDER_STROKES: BooleanStrokes = 'unfilled';
 
 // ---------------------------------------------------------------------------
