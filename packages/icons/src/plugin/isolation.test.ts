@@ -27,6 +27,6 @@ describe('the package barrel', () => {
     const { files, bare } = closure(resolve(src, 'index.ts'));
     expect(files.length).toBeGreaterThan(1);
     expect(files.filter((f) => f.includes('/plugin/'))).toEqual([]);
-    expect(bare.filter((s) => s.startsWith('node:') || s === 'unplugin' || s === 'magic-string')).toEqual([]);
+    expect(bare.filter((s) => s.startsWith('node:') || ['unplugin', 'magic-string', 'oxc-parser'].includes(s))).toEqual([]);
   });
 });

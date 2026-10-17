@@ -20,7 +20,7 @@
   "engines": { "node": ">=22" },
   "files": ["dist", "virtual.d.ts", "README.md", "LICENSE"],
   "scripts": { "build": "tsup" },
-  "dependencies": { "@weasel-js/registry": "1.10.1", "magic-string": "1.4.3", "unplugin": "3.4.0" },
+  "dependencies": { "@weasel-js/registry": "1.10.1", "magic-string": "1.4.3", "oxc-parser": "0.154.0", "unplugin": "3.4.0" },
   "peerDependencies": { "vite": "^8.0.0" },
   "peerDependenciesMeta": { "vite": { "optional": true } },
   "publishConfig": { "access": "public", "provenance": true }

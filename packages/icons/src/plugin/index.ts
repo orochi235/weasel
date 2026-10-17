@@ -94,13 +94,18 @@ export const weaselIcons: UnpluginInstance<WeaselIconsOptions, false> = createUn
     transformInclude: (id) => !id.startsWith('\0') && SOURCE.test(id.split('?')[0]!),
     transform(code, id) {
       const file = id.split('?')[0]!;
-      const out = rewriteIconCalls(code, file, (spec) => {
-        const gen = genFile(spec, file);
-        if (!gen) return undefined;
-        const table = app ? tableBeside(gen) : undefined;
-        if (table) addTable(this, table);
-        return namespaceIn(gen);
-      });
+      const out = rewriteIconCalls(
+        code,
+        file,
+        (spec) => {
+          const gen = genFile(spec, file);
+          if (!gen) return undefined;
+          const table = app ? tableBeside(gen) : undefined;
+          if (table) addTable(this, table);
+          return namespaceIn(gen);
+        },
+        (message) => this.warn(message),
+      );
       if (out && out.dynamic > 0) {
         this.warn(`${file}: ${out.dynamic} icon() call(s) with a computed name resolve only from a loaded variant`);
       }
@@ -111,7 +116,7 @@ export const weaselIcons: UnpluginInstance<WeaselIconsOptions, false> = createUn
           const table = declaredTable(dir);
           if (table) addTable(this, table);
         }
-        for (const ref of collectIconRefs(out?.code ?? code)) if (!refs.has(ref)) refs.set(ref, file);
+        for (const ref of collectIconRefs(out?.code ?? code, file)) if (!refs.has(ref)) refs.set(ref, file);
       }
       return out ? { code: out.code, map: out.map } : null;
     },

@@ -64,6 +64,42 @@ describe('rewriteIconCalls in comments and strings', () => {
     for (const kept of [`/** @example icon('inBlock') */`, `// icon('inLine')`, `"icon('inDouble')"`, `'icon("inSingle")'`, "`icon('inTemplate') "]) {
       expect(code).toContain(kept);
     }
-    expect(collectIconRefs(code).sort()).toEqual(['core:inBraces', 'core:inExpr', 'core:real']);
+    expect(collectIconRefs(code, 'h.ts').sort()).toEqual(['core:inBraces', 'core:inExpr', 'core:real']);
+  });
+});
+
+describe('rewriteIconCalls on syntax a hand lexer misreads', () => {
+  const refs = (src: string, id: string) => collectIconRefs(rewriteIconCalls(src, id, ns)!.code, id).sort();
+  const head = `import { icon } from './icons.gen';\n`;
+
+  it('rewrites calls on either side of a JSX closing tag', () => {
+    const src = `${head}export const L = () => <ul><li>{icon('a')}</li><li>{icon('b')}</li></ul>;\n`;
+    expect(refs(src, 'l.tsx')).toEqual(['core:a', 'core:b']);
+  });
+
+  it('rewrites a call after an apostrophe in JSX text', () => {
+    const src = `${head}export const P = () => <p>Don't {icon('x')}</p>;\n`;
+    expect(refs(src, 'p.tsx')).toEqual(['core:x']);
+  });
+
+  it('rewrites a call after a division that follows an increment', () => {
+    const src = `${head}let i = 0;\nconst h = i++ / 2, k = icon('afterDivide'), z = h / 3;\n`;
+    expect(refs(src, 'q.ts')).toEqual(['core:afterDivide']);
+  });
+
+  it('rewrites a call passed to a function with a type argument', () => {
+    const src = `${head}declare function f<T>(x: unknown): void;\ntype T = 1;\nf<T>(icon('generic'));\n`;
+    expect(refs(src, 'r.ts')).toEqual(['core:generic']);
+  });
+
+  it('places the rewrite correctly after non-ASCII text', () => {
+    const src = `${head}const s = 'é — ✓';\nconst u = icon('u');\n`;
+    expect(rewriteIconCalls(src, 's.ts', ns)!.code).toContain(`const u = /* @icon */ 'core:u';`);
+  });
+
+  it('leaves a module that does not parse alone, and says so', () => {
+    const warnings: string[] = [];
+    expect(rewriteIconCalls(`${head}const = icon('x');\n`, 'bad.ts', ns, (m) => warnings.push(m))).toBeNull();
+    expect(warnings.join()).toMatch(/bad\.ts/);
   });
 });
