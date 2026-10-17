@@ -18,6 +18,7 @@ import { THEME_SOURCES, TOKEN_MANIFEST } from '@weasel-js/theme';
 import { scale as generateScale, type ThemeApi } from '@weasel-js/theme/engine';
 import { historyKey } from '@weasel-js/core';
 import { Button, Checkbox, Icon, SearchIcon } from '@weasel-js/ui';
+import { icon } from '../../icon';
 import { useCallback, useContext, useMemo, useState } from 'react';
 import type { Globals } from '../../protocol/messages';
 import { effectiveGlobals, GLOBALS_KEY } from '../globals';
@@ -230,10 +231,10 @@ export function CssVarsPanel({ globals = NO_GLOBALS, themeApi }: CssVarsPanelPro
           />
           <div className="fg-css-vars__steps" role="group" aria-label="History">
             <Button iconOnly ariaLabel="Undo" variant="ghost" size="sm" disabled={!history.canUndo} onClick={() => history.step('undo')}>
-              <Icon name="undo" size={14} />
+              <Icon name={icon('core:undo')} size={14} />
             </Button>
             <Button iconOnly ariaLabel="Redo" variant="ghost" size="sm" disabled={!history.canRedo} onClick={() => history.step('redo')}>
-              <Icon name="redo" size={14} />
+              <Icon name={icon('core:redo')} size={14} />
             </Button>
           </div>
         </div>

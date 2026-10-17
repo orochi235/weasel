@@ -1,13 +1,15 @@
-import { Icon, type IconName, TOKEN_CATEGORIES, type TokenCategory, ToggleBar, type ToggleBarItem } from '@weasel-js/ui';
+import type { IconRef } from '@weasel-js/icons';
+import { Icon, TOKEN_CATEGORIES, type TokenCategory, ToggleBar, type ToggleBarItem } from '@weasel-js/ui';
 import { useEffect, useRef, useState } from 'react';
+import { icon } from '../../icon';
 
-const ICONS: Record<TokenCategory, IconName> = {
-  color: 'drop',
-  type: 'type',
-  size: 'measure',
-  motion: 'curveEaseInOut',
-  depth: 'layers',
-  other: 'more',
+const ICONS: Record<TokenCategory, IconRef> = {
+  color: icon('ui:drop'),
+  type: icon('ui:type'),
+  size: icon('core:measure'),
+  motion: icon('ui:curveEaseInOut'),
+  depth: icon('ui:layers'),
+  other: icon('ui:more'),
 };
 
 const PANEL = '.fg-css-vars';

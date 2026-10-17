@@ -24,7 +24,7 @@ export type ControlRenderer = PrefRenderer;
 export interface ConfigOption {
   value: string;
   label: string;
-  /** A glyph in weasel-ui's icon set (`IconName`). A segmented row draws it in
+  /** A qualified icon ref (`ui:statusSuccess`) in the registry in scope. A segmented row draws it in
    *  place of `label`, which stays the accessible name and becomes the tooltip;
    *  a select draws it beside `label`. */
   icon?: string;

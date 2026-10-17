@@ -22,7 +22,7 @@ export interface ArgType {
         min?: number;
         max?: number;
         step?: number;
-        /** forge's own: an icon (weasel-ui `IconName`) per option, drawn in place of its label. */
+        /** forge's own: a qualified icon ref (`ui:variantSolid`) per option, drawn in place of its label. */
         icons?: Readonly<Record<string, string>>;
       };
   options?: readonly unknown[];

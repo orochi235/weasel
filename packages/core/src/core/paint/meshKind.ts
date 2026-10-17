@@ -14,7 +14,8 @@ const asFill = (mesh: MeshGradientPaint): Paint => mesh as unknown as Paint;
 export const meshGradientKind: PaintKindEntry = {
   ...meshDrawKind,
   label: 'Mesh',
-  icon: 'paintMesh',
+  // Written as library mode emits `icon('ui:paintMesh')`: the call would pull the icons package into meshKindLazy.
+  icon: /* @icon */ 'ui:paintMesh',
   seed: (color) => asFill(seedMeshPatch(color)),
   // The first corner of the first patch: a mesh has no single color, and this
   // is the one a fallback swatch and an SVG paint fallback both read.
