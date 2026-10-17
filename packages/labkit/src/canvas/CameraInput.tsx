@@ -33,8 +33,10 @@ import {
   useRef,
 } from 'react';
 import type { Point, ViewTransform } from '../instrument/types';
+import { LabContextMenusContext } from '../lab/labContextMenus';
 import { normalize2DView } from '../state/view';
 import { CameraWheelContext } from './CameraWheelContext';
+import { cameraContextMenuAction } from './cameraContextMenu';
 import { type CameraGestures, resolveGestures } from './cameraGestures';
 import { usePublishCamera } from './cameraRegistry';
 import { clampZoomAbout, frameLocalToWorld, fromCameraView, toCameraView } from './cameraView';
@@ -166,6 +168,7 @@ export function useCameraView({
 const TAP_ID = 'camera.tap';
 const NO_TOOLS: ReadonlyMap<string, Tool> = new Map();
 const CHANNELS = { contextMenu: false, ingest: false } as const;
+const CHANNELS_WITH_MENU = { ingest: false } as const;
 
 /** Props for `<CameraInput>`. */
 export interface CameraInputProps {
@@ -203,6 +206,7 @@ function CameraDispatch({
   const frameRef = useLatest(frame);
   const onTapRef = useLatest(onTap);
   const { pan, wheel, pinch, tap: taps } = resolveGestures(gestures);
+  const labMenu = useContext(LabContextMenusContext);
 
   useDepSource('view', () => camera);
   useDepSource('rootView', () => camera);
@@ -232,7 +236,9 @@ function CameraDispatch({
         },
       },
     };
+    const menu = labMenu && cameraContextMenuAction(labMenu);
     return [
+      ...(menu ? [menu] : []),
       // A trial pans on a plain drag; the kit action binds none of its own.
       ...(pan ? [{ ...viewportDragPanAction, defaultBinding: { kind: 'drag' } } as Action] : []),
       ...(zoomBindings.length > 0
@@ -241,7 +247,7 @@ function CameraDispatch({
       ...(pinch ? [makePinchZoomAction(unclamped)] : []),
       ...(taps ? [tap] : []),
     ];
-  }, [frameRef, onTapRef, pan, wheel, pinch, taps]);
+  }, [frameRef, onTapRef, pan, wheel, pinch, taps, labMenu]);
 
   useEffect(() => {
     const offs = actions.map((a) => registry.register(a));
@@ -267,7 +273,7 @@ function CameraDispatch({
     actions: registry,
     entriesById: NO_TOOLS,
     clientToWorld,
-    channels: CHANNELS,
+    channels: labMenu ? CHANNELS_WITH_MENU : CHANNELS,
   });
 
   usePublishPointer(hostRef, clientToWorld, frame, STAGE_VIEW_ID);

@@ -1,3 +1,4 @@
+import type { MenuDef } from '@weasel-js/core';
 import type { StorageAdapter } from '@weasel-js/storage';
 import type { ColorList, Theme } from '@weasel-js/theme';
 import type { ReactNode } from 'react';
@@ -91,6 +92,10 @@ export interface LabBaseProps {
   /** Draw the lab's menu bar above its header. Default `true`. Dropped with the header
    *  (`header={false}`) and while presenting. */
   menuBar?: boolean;
+  /** Menus a right-click over a trial's camera opens, picked by each def's `when` (a camera
+   *  reports no body, so `when: {}` matches anywhere on it). Rows name commands registered in
+   *  the lab. Memoize or hoist. */
+  contextMenus?: readonly MenuDef[];
   /** Tools offered lab-wide. A trial whose instrument declares none of its own
    *  reflects and writes this slot. */
   tools?: readonly TrialTool[];

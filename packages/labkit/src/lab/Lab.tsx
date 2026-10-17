@@ -147,6 +147,7 @@ function LabRuntime({
   header = true,
   menus,
   menuBar = true,
+  contextMenus,
   tools,
   configRules,
   controls,
@@ -158,7 +159,6 @@ function LabRuntime({
   start,
 }: LabProps & { opened: OpenedLab; start: PresentationStart }) {
   const { store } = opened;
-
   // The store opened against the list <Lab> mounted with; a later list reaches
   // it here, before paint.
   useLayoutEffect(() => {
@@ -243,7 +243,7 @@ function LabRuntime({
   );
 
   return (
-    <LabProviders store={store} commands={commands}>
+    <LabProviders store={store} commands={commands} contextMenus={contextMenus}>
       <LabCommands contributions={labChromeAll} addTrial={addTrial ?? true} />
       <PersistenceContext.Provider value={opened.records}>
         <AnnotationPreloadContext.Provider value={opened.marks}>

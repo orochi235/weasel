@@ -1,3 +1,4 @@
+import type { MenuDef } from '@weasel-js/core';
 import { type ReactNode, useMemo } from 'react';
 import { useStore } from 'zustand/react';
 import { LabStoreProvider } from '../state/context';
@@ -9,6 +10,7 @@ import { type LabCommands, LabCommandsContext, LabContext } from './LabContext';
 export interface LabProvidersProps {
   store: LabStore;
   commands: LabCommands;
+  contextMenus?: readonly MenuDef[];
   children: ReactNode;
 }
 
@@ -19,14 +21,14 @@ export interface LabProvidersProps {
  * not re-render then.
  * This is the lab's one subscriber to the trials' records.
  */
-export function LabProviders({ store, commands, children }: LabProvidersProps) {
+export function LabProviders({ store, commands, contextMenus, children }: LabProvidersProps) {
   const trials = useStore(store, (s) => s.trials);
   const lab = useMemo(() => ({ ...commands, trials }), [commands, trials]);
   return (
     <LabStoreProvider store={store}>
       <LabCommandsContext.Provider value={commands}>
         <LabContext.Provider value={lab}>
-          <LabActions>{children}</LabActions>
+          <LabActions contextMenus={contextMenus}>{children}</LabActions>
         </LabContext.Provider>
       </LabCommandsContext.Provider>
     </LabStoreProvider>
