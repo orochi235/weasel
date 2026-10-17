@@ -198,3 +198,36 @@ describe('costText', () => {
     expect([costText(0.4213), costText(12.345), costText(1234.5)]).toEqual(['0.421 ms', '12.3 ms', '1235 ms']);
   });
 });
+
+describe('a cost over a symbol whose title sits above it', () => {
+  it('stands above the title, not on it', () => {
+    // rack's default `side: 'below'` brings control in at the bottom, which moves a symbol's title above it.
+    const P: EffectPipeline = {
+      types: { bool: { control: true } },
+      stages: [
+        { id: 'src', title: 'Source', kind: 'source', outputs: [{ id: 'out', type: 'image' }] },
+        { id: 'gate', title: 'Gate', outputs: [{ id: 'on', type: 'bool' }] },
+        {
+          id: 'q', title: 'Loudness', kind: 'decision',
+          inputs: [{ id: 'in', type: 'image' }, { id: 'when', type: 'bool' }],
+          outputs: [{ id: 'yes', type: 'image' }, { id: 'no', type: 'image' }],
+        },
+        { id: 'out', title: 'Out', kind: 'sink', inputs: [{ id: 'a', type: 'image' }, { id: 'b', type: 'image' }] },
+      ],
+      wires: [
+        { from: { stage: 'src', port: 'out' }, to: { stage: 'q', port: 'in' } },
+        { from: { stage: 'gate', port: 'on' }, to: { stage: 'q', port: 'when' } },
+        { from: { stage: 'q', port: 'yes' }, to: { stage: 'out', port: 'a' } },
+        { from: { stage: 'q', port: 'no' }, to: { stage: 'out', port: 'b' } },
+      ],
+    };
+    const drawn = rack(P, { branch: 'switch', collapseSkips: false });
+    const specs = paintRun(P, diagramScene(drawn.data, drawn.scene), { stages: { src: {}, gate: {}, q: { cost: 1.2, taken: 'yes' }, out: {} } });
+    const pose = (s: DiagramSpec) => s.pose as { y: number; height: number };
+    const title = specs.find((s) => (s.data as { text?: string }).text === 'Loudness')!;
+    const box = specs.find((s) => s.id === 'q')!;
+    expect(pose(title).y + pose(title).height).toBeLessThanOrEqual(pose(box).y);
+    const cost = specs.find((s) => s.id === 'q/cost')!;
+    expect(pose(cost).y + pose(cost).height).toBeLessThanOrEqual(pose(title).y);
+  });
+});

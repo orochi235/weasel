@@ -149,12 +149,17 @@ function costSpec(stage: DiagramSpec, own: readonly DiagramSpec[], of: EffectSta
   const width = text.length * fontSize * 0.6;
   const height = Math.ceil(fontSize * 1.2);
   const box = stage.pose as { x: number; y: number; width: number };
+  // Above the stage's own text standing over the box too, as a symbol's title does with control from below.
+  const top = Math.min(box.y, ...own.flatMap((s) => {
+    const p = s.pose as { y: number; height: number } | undefined;
+    return s !== stage && p !== undefined && p.y + p.height <= box.y ? [p.y] : [];
+  }));
   return {
     id: `${stage.id as string}/cost` as never,
     kind: 'leaf',
     layer: 'main',
     pickable: false,
-    pose: { x: box.x + box.width - width, y: box.y - height - COST_GAP, width, height },
+    pose: { x: box.x + box.width - width, y: top - height - COST_GAP, width, height },
     data: { text, style, fill } as DiagramSpec['data'],
   };
 }

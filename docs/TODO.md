@@ -667,6 +667,11 @@ Priority tags:
   lane passes over any stage between its ends that also touches that lane, and its label can sit
   on that stage's title (`packages/diagram/src/effect/lanes.ts`). Clicking a lane band reports
   `null` to `onSelect` but the canvas still highlights the band.
+- **(P3) An eased edge may switch faces on a live run's last frame.** Each eased frame draws
+  the route through the edge's current `from`/`to` ports, but the ports layout renames reach the
+  scene only at commit (`routeWrites`), so a run that changes the face an edge leaves by eases
+  along the old face and jumps on arrival (`easedPaths` in `packages/diagram/src/liveRoutes.ts`).
+  Found in review, not reproduced.
 - **(P3) A live run eases routes for `layered` only.** `force` runs still draw long edges through
   the old bends while they ease, and an edge to a group reads the group's box a frame late
   (`packages/diagram/src/liveRoutes.ts`).
