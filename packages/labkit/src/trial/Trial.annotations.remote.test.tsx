@@ -5,6 +5,7 @@
 import { act, waitFor } from '@testing-library/react';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { createMemoryAdapter } from '@weasel-js/storage';
+import { withIcons } from '@weasel-js/ui/testing/withIcons';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAnnotations } from '../annotations/AnnotationsContext';
 import type { AnnotationsApi } from '../annotations/types';
@@ -49,6 +50,7 @@ async function mount(backing: Map<string, unknown>) {
       storage={createMemoryAdapter(backing)}
       storageKey="remote-test"
     />,
+    { wrapper: withIcons },
   );
   await waitFor(() => expect(api).not.toBeNull());
   return view;

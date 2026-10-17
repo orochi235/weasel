@@ -76,9 +76,10 @@ draws nothing in production. Development is `isDev()` from `@weasel-js/registry`
 `@weasel-js/react`), which reads `process.env.NODE_ENV` inside a `try`, so a production bundle
 folds it to `false`.
 
-A unit test that reads a glyph mounts a registry: `withIcons` in
-`packages/ui/src/testing/withIcons.tsx` registers core's and ui's tables. jsdom cannot show that a
-glyph drew, so a check of the drawing is a `*.browser.test.tsx`.
+A unit test that draws a glyph mounts a registry holding `kitIcons`, core's and ui's tables
+(`@weasel-js/ui/kit-icons`): `renderWithIcons` in `packages/ui/src/testing/withIcons.tsx` in
+place of `render`, or its `withIcons` as the `wrapper` of `renderSettled`. jsdom cannot show
+that a glyph drew, so a check of the drawing is a `*.browser.test.tsx`.
 
 ## The registry
 
@@ -122,6 +123,8 @@ const ICONS = [coreIcons, uiIcons];
   <App />
 </IconRegistryProvider>
 ```
+
+`kitIcons` from `@weasel-js/ui/kit-icons` is that list of core's and ui's tables, whole.
 
 A component that lists glyphs rather than naming them asks for a variant by name:
 `useIconVariant('all')` runs the app's loader once, adds its tables, and returns
@@ -202,7 +205,7 @@ gen:icons, and `packages/icons/scripts/gen-icons.test.ts` fails on a hand-writte
 | A table generated after the dev server started | Served after a restart |
 | A `.vue` or `.svelte` module | Not transformed; only `.js`, `.ts`, `.jsx`, `.tsx` and their `m`/`c` forms are |
 
-Forge registers core's and ui's tables whole, plus whatever `FrameSetup.icons` passes
+Forge registers `kitIcons` whole, plus whatever `FrameSetup.icons` passes
 (`apps/forge/forge.frame.tsx` passes path-tools' and draw's), so forge's frames are never trimmed.
 
 ## Guards

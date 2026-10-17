@@ -1,4 +1,5 @@
-import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
+import { renderWithIcons } from '../../testing/withIcons';
 import { Profiler, useState } from 'react';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { ActionDisabledReason, ActionsProvider, useAction } from '@weasel-js/core';
@@ -63,7 +64,7 @@ const selected = () => options().find((o) => o.getAttribute('aria-selected') ===
 // The palette snapshots the registry when it opens, so open it the way a
 // user does: after the actions have registered.
 const openPalette = (sizes = false) => {
-  render(<Harness sizes={sizes} />);
+  renderWithIcons(<Harness sizes={sizes} />);
   fireEvent.click(screen.getByText('open'));
 };
 const flush = () => act(async () => { await Promise.resolve(); });
@@ -151,7 +152,7 @@ describe('CommandPalette', () => {
         </ActionsProvider>
       );
     }
-    render(<Host />);
+    renderWithIcons(<Host />);
     fireEvent.click(screen.getByText('open'));
     expect(selected()!.textContent).toBe('Group');
     fireEvent.keyDown(search(), { key: 'Enter' });
@@ -193,7 +194,7 @@ describe('CommandPalette', () => {
 
   it('never commits a reopened palette still holding the last search', () => {
     const seen: string[] = [];
-    render(
+    renderWithIcons(
       <Profiler
         id="palette"
         onRender={() => {

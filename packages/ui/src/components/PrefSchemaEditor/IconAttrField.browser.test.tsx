@@ -3,10 +3,9 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-li
 import { afterEach, expect, test, vi } from 'vitest';
 import { page } from 'vitest/browser';
 import { IconRegistryProvider } from '@weasel-js/core';
-import { icons as coreIcons } from '@weasel-js/core/icons';
 import type { IconTable } from '@weasel-js/icons';
 import type { PrefGroup } from '@weasel-js/prefs';
-import { icons as uiIcons } from '../../icons.table';
+import { kitIcons } from '../../kitIcons';
 import { PrefSchemaEditor } from './PrefSchemaEditor';
 
 // Whether the grid scrolls in its own pane, and whether a glyph occupies any space, is the browser's to say.
@@ -28,7 +27,7 @@ const mount = async (onChange: (next: PrefGroup) => void = () => {}) => {
   await page.viewport(1300, 720);
   const loader = vi.fn(async () => ({ default: [big] }));
   const out = render(
-    <IconRegistryProvider icons={[coreIcons, uiIcons]} variants={{ all: loader }}>
+    <IconRegistryProvider icons={kitIcons} variants={{ all: loader }}>
       <div style={{ width: 1280, height: 700 }}>
         <PrefSchemaEditor schema={SCHEMA} onChange={onChange} />
       </div>

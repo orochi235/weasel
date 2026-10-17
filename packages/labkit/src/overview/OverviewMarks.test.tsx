@@ -5,6 +5,7 @@
  */
 import { act } from '@testing-library/react';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
+import { withIcons } from '@weasel-js/ui/testing/withIcons';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { useAnnotations } from '../annotations/AnnotationsContext';
 import type { AnnotationsApi } from '../annotations/types';
@@ -69,7 +70,9 @@ async function mount() {
   restore = () => {
     HTMLElement.prototype.getBoundingClientRect = original;
   };
-  const r = await renderSettled(<Lab instruments={[marked]} defaultInstrument="Marked" />);
+  const r = await renderSettled(<Lab instruments={[marked]} defaultInstrument="Marked" />, {
+    wrapper: withIcons,
+  });
   return { ...r, api: () => api as AnnotationsApi };
 }
 

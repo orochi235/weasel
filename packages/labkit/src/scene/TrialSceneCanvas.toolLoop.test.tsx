@@ -2,6 +2,7 @@
 import { act, renderHook, screen } from '@testing-library/react';
 import { createScene, type ToolsApi, useEllipseTool, useLatest } from '@weasel-js/core';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
+import { withIcons } from '@weasel-js/ui/testing/withIcons';
 import { StrictMode, useEffect } from 'react';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { icon } from '../icons.gen';
@@ -80,6 +81,7 @@ async function mount(pick: string, everyRender = false) {
     <StrictMode>
       <Lab instruments={[instrument(pick, everyRender)]} defaultInstrument="Scene" />
     </StrictMode>,
+    { wrapper: withIcons },
   );
   const settled = live.renders;
   await act(async () => {});

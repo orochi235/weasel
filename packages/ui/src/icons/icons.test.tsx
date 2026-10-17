@@ -1,11 +1,11 @@
 import { render } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { icons as coreIcons } from '@weasel-js/core/icons';
 import { Icon } from './Icon';
 import { isFillable } from './Icon';
 import { ICON_GROUPS, icon, type UiIconName } from '../icons.gen';
 import { icons as uiIcons } from '../icons.table';
-import { withIcons } from '../testing/withIcons';
+import { renderWithIcons } from '../testing/withIcons';
 
 const NAMES = Object.keys(uiIcons.icons) as UiIconName[];
 const body = (name: string) => uiIcons.icons[name]!.body;
@@ -16,7 +16,7 @@ const parsed = (name: string) => {
   return svg.innerHTML;
 };
 const MARKS = ICON_GROUPS.find((g) => g.label === 'Marks')!.names;
-const draw = (ui: Parameters<typeof render>[0]) => render(ui, { wrapper: withIcons });
+const draw = renderWithIcons;
 
 describe('icon set', () => {
   it('renders every glyph with drawable content', () => {
@@ -41,9 +41,12 @@ describe('icon set', () => {
     expect(svg?.getAttribute('aria-label')).toBe('Close trial');
   });
 
-  it('draws the placeholder for a name no registry in scope holds', () => {
+  it('draws the placeholder for a name no registry in scope holds, and says so', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const { container } = render(<Icon name={icon('close')} />);
     expect(container.querySelector('svg circle')).not.toBeNull();
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('no icon "ui:close" is registered'));
+    warn.mockRestore();
   });
 
   // Guards the emitter bug that fused `d="…"` to a following attribute.

@@ -12,6 +12,7 @@ import {
 } from '@weasel-js/core';
 import { isApplePlatform } from '@weasel-js/gestures';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
+import { withIcons } from '@weasel-js/ui/testing/withIcons';
 import { useEffect, useRef } from 'react';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import type { CameraView } from '../canvas/CameraInput';
@@ -95,6 +96,7 @@ describe('a lab’s actions registry', () => {
         <Lab instruments={[binds]} defaultInstrument="Binds" />
         <ElsewhereCanvas />
       </>,
+      { wrapper: withIcons },
     );
     // Press the trial, then a canvas in another tree, and send the key to the
     // window: the key reaches neither the trial's scope nor the lab's.
@@ -114,6 +116,7 @@ describe('a lab’s actions registry', () => {
           <BindsX run={run} />
         </InputScope>
       </LabActions>,
+      { wrapper: withIcons },
     );
     await act(async () => {
       fireEvent.keyDown(window, { key: 'x' });
@@ -137,6 +140,7 @@ describe('a lab’s actions registry', () => {
       <Lab instruments={[plain]} defaultInstrument="Plain">
         <Cmd />
       </Lab>,
+      { wrapper: withIcons },
     );
     await act(async () => {
       fireEvent.keyDown(window, { key: 'k', ...MOD });
@@ -174,6 +178,7 @@ describe('a lab’s actions registry', () => {
           </CameraRegistryContext.Provider>
         </LabCommandsContext.Provider>
       </LabStoreProvider>,
+      { wrapper: withIcons },
     );
     await act(async () => {
       fireEvent.keyDown(window, { key: '=', ...MOD });
@@ -199,6 +204,7 @@ describe('a lab’s actions registry', () => {
       <Lab instruments={[staged]} defaultInstrument="Staged">
         <Grab />
       </Lab>,
+      { wrapper: withIcons },
     );
     const zoom = (registry as ActionsRegistry | null)?.list().find((a) => a.id === 'lab.zoom');
     expect(zoom?.variants?.map((v) => v.key)).toEqual(['in', 'out', 'reset']);

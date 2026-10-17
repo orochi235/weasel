@@ -2,6 +2,7 @@ import { act, fireEvent } from '@testing-library/react';
 import { type ActionsRegistry, evaluateActive, useActionsRegistry } from '@weasel-js/core';
 import { isApplePlatform } from '@weasel-js/gestures';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
+import { withIcons } from '@weasel-js/ui/testing/withIcons';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import type { LabContribution } from '../chrome';
 import { icon } from '../icons.gen';
@@ -46,6 +47,7 @@ describe('a lab’s header commands', () => {
       <Lab instruments={[Staged, Plain]} defaultInstrument="Staged">
         <Grab />
       </Lab>,
+      { wrapper: withIcons },
     );
     expect(ids()).toEqual(expect.arrayContaining(['lab.add.Staged', 'lab.add.Plain']));
     const before = lab?.trials.length ?? 0;
@@ -59,6 +61,7 @@ describe('a lab’s header commands', () => {
       <Lab instruments={[Staged]} defaultInstrument="Staged">
         <Grab />
       </Lab>,
+      { wrapper: withIcons },
     );
     expect(registry?.list().find((a) => a.id === 'lab.add.Staged')?.label).toBe('Add trial');
   });
@@ -68,6 +71,7 @@ describe('a lab’s header commands', () => {
       <Lab instruments={[Staged, Plain]} defaultInstrument="Staged" addTrial={false}>
         <Grab />
       </Lab>,
+      { wrapper: withIcons },
     );
     expect(ids().filter((id) => id.startsWith('lab.add.'))).toEqual([]);
   });
@@ -77,6 +81,7 @@ describe('a lab’s header commands', () => {
       <Lab instruments={[Staged, Plain]} defaultInstrument="Staged">
         <Grab />
       </Lab>,
+      { wrapper: withIcons },
     );
     expect(ids()).not.toContain('lab.add.Third');
     await act(async () => {
@@ -94,6 +99,7 @@ describe('a lab’s header commands', () => {
       <Lab instruments={[Staged]} defaultInstrument="Staged">
         <Grab />
       </Lab>,
+      { wrapper: withIcons },
     );
     await trigger('lab.mode.dark');
     expect(lab?.mode).toBe('dark');
@@ -118,6 +124,7 @@ describe('a lab’s header commands', () => {
       <Lab instruments={[Staged]} defaultInstrument="Staged" labChrome={labChrome}>
         <Grab />
       </Lab>,
+      { wrapper: withIcons },
     );
     await trigger('lab.item.x-hello');
     expect(onActivate).toHaveBeenCalledTimes(1);
@@ -142,6 +149,7 @@ describe('a lab’s header commands', () => {
       <Lab instruments={[Staged]} defaultInstrument="Staged" labChrome={labChrome}>
         <input data-testid="field" />
       </Lab>,
+      { wrapper: withIcons },
     );
     await act(async () => {
       fireEvent.keyDown(window, { key: 'j', ...MOD });
@@ -162,6 +170,7 @@ describe('a lab’s header commands', () => {
       <Lab instruments={[Staged]} defaultInstrument="Staged" labChrome={labChrome}>
         <Grab />
       </Lab>,
+      { wrapper: withIcons },
     );
     expect(ids().filter((id) => id.includes('x-render'))).toEqual([]);
   });
@@ -175,6 +184,7 @@ describe('a lab’s header commands', () => {
       <Lab instruments={[Staged]} defaultInstrument="Staged" labChrome={labChrome}>
         <Grab />
       </Lab>,
+      { wrapper: withIcons },
     );
     expect(registry?.list().find((a) => a.id === 'lab.zoom')?.label).not.toBe('Mine');
     expect(registry?.list().find((a) => a.id === 'lab.item.zoom')?.label).toBe('Mine');
@@ -199,6 +209,7 @@ describe('a lab’s header commands', () => {
     ];
     await renderSettled(
       <Lab instruments={[Staged]} defaultInstrument="Staged" labChrome={labChrome} {...props} />,
+      { wrapper: withIcons },
     );
     await act(async () => {
       fireEvent.keyDown(window, { key: 'i', ...MOD });

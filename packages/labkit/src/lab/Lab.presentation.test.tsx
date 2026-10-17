@@ -1,6 +1,7 @@
-import { act, fireEvent, render, waitFor } from '@testing-library/react';
+import { act, fireEvent, waitFor } from '@testing-library/react';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { createMemoryAdapter } from '@weasel-js/storage';
+import { renderWithIcons, withIcons } from '@weasel-js/ui/testing/withIcons';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Instrument } from '../instrument/types';
 import { labPrefix } from '../state/labRecords';
@@ -35,6 +36,7 @@ function mountLab(props: Partial<LabProps> = {}) {
     <Lab {...({ instruments: [stub], defaultInstrument: 'Stub', ...props } as LabProps)}>
       <Capture />
     </Lab>,
+    { wrapper: withIcons },
   );
 }
 
@@ -135,6 +137,6 @@ describe('usePresentation', () => {
 
   it('throws outside <Lab>', () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
-    expect(() => render(<Capture />)).toThrow(/inside <Lab>/);
+    expect(() => renderWithIcons(<Capture />)).toThrow(/inside <Lab>/);
   });
 });

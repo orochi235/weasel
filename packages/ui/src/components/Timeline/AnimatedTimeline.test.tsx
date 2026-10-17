@@ -1,5 +1,6 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
-import { act, render, fireEvent, screen } from '@testing-library/react';
+import { act, fireEvent, screen } from '@testing-library/react';
+import { renderWithIcons } from '../../testing/withIcons';
 import type { SampledTrack, TimelineHandle, Track } from '@weasel-js/animator';
 import { AnimatedTimeline } from './AnimatedTimeline';
 
@@ -51,14 +52,14 @@ function fakeHandle(over: Partial<TimelineHandle> = {}): TimelineHandle & { live
 
 describe('AnimatedTimeline', () => {
   it('renders the handle’s tracks', () => {
-    render(<AnimatedTimeline handle={fakeHandle()} />);
+    renderWithIcons(<AnimatedTimeline handle={fakeHandle()} />);
     expect(screen.getAllByTestId('timeline-key')).toHaveLength(2);
   });
 
   it('routes an edit through edit(), mutating the live array in place', () => {
     const h = fakeHandle();
     const before = h.tracks();
-    render(<AnimatedTimeline handle={h} />);
+    renderWithIcons(<AnimatedTimeline handle={h} />);
     fireEvent.pointerDown(screen.getAllByTestId('timeline-key')[1], { clientX: 250, clientY: 10, button: 0 });
     fireEvent.pointerUp(document, { clientX: 400, clientY: 10 });
     expect(h.edit).toHaveBeenCalledTimes(1);
@@ -67,7 +68,7 @@ describe('AnimatedTimeline', () => {
   });
 
   it('redraws a key where an edit left it', () => {
-    render(<AnimatedTimeline handle={fakeHandle()} />);
+    renderWithIcons(<AnimatedTimeline handle={fakeHandle()} />);
     fireEvent.pointerDown(screen.getAllByTestId('timeline-key')[1], { clientX: 250, clientY: 10, button: 0 });
     fireEvent.pointerUp(document, { clientX: 400, clientY: 10 });
     expect(screen.getAllByTestId('timeline-key')[1].style.left).toBe('80%');
@@ -75,14 +76,14 @@ describe('AnimatedTimeline', () => {
 
   it('scrubs through seek', () => {
     const h = fakeHandle();
-    render(<AnimatedTimeline handle={h} />);
+    renderWithIcons(<AnimatedTimeline handle={h} />);
     fireEvent.pointerDown(screen.getByTestId('timeline-ruler'), { clientX: 250, clientY: 5, button: 0 });
     expect(h.seek).toHaveBeenCalledWith(500);
   });
 
   it('follows a resume, a pause, and a seek made on the handle from elsewhere', () => {
     const h = fakeHandle();
-    render(<AnimatedTimeline handle={h} />);
+    renderWithIcons(<AnimatedTimeline handle={h} />);
     expect(screen.getByRole('button', { name: /play/i })).toBeInTheDocument();
 
     act(() => h.resume());
@@ -100,20 +101,20 @@ describe('AnimatedTimeline', () => {
     const h = fakeHandle();
     const off = vi.fn();
     h.subscribePlayback = () => off;
-    render(<AnimatedTimeline handle={h} />).unmount();
+    renderWithIcons(<AnimatedTimeline handle={h} />).unmount();
     expect(off).toHaveBeenCalledTimes(1);
   });
 
   it('resumes on play', () => {
     const h = fakeHandle();
-    render(<AnimatedTimeline handle={h} />);
+    renderWithIcons(<AnimatedTimeline handle={h} />);
     fireEvent.click(screen.getByRole('button', { name: /play/i }));
     expect(h.resume).toHaveBeenCalledTimes(1);
   });
 
   it('rewinds before resuming a timeline parked at its duration', () => {
     const h = fakeHandle({ time: () => 1000 });
-    render(<AnimatedTimeline handle={h} />);
+    renderWithIcons(<AnimatedTimeline handle={h} />);
     fireEvent.click(screen.getByRole('button', { name: /play/i }));
     expect(h.seek).toHaveBeenCalledWith(0);
     expect(h.resume).toHaveBeenCalledTimes(1);
@@ -121,35 +122,35 @@ describe('AnimatedTimeline', () => {
 
   it('does not rewind a timeline mid-run', () => {
     const h = fakeHandle({ time: () => 400 });
-    render(<AnimatedTimeline handle={h} />);
+    renderWithIcons(<AnimatedTimeline handle={h} />);
     fireEvent.click(screen.getByRole('button', { name: /play/i }));
     expect(h.seek).not.toHaveBeenCalled();
   });
 
   it('pauses on pause', () => {
     const h = fakeHandle({ isPaused: () => false });
-    render(<AnimatedTimeline handle={h} />);
+    renderWithIcons(<AnimatedTimeline handle={h} />);
     fireEvent.click(screen.getByRole('button', { name: /pause/i }));
     expect(h.pause).toHaveBeenCalledTimes(1);
   });
 
   it('routes the loop toggle to setLoop', () => {
     const h = fakeHandle();
-    render(<AnimatedTimeline handle={h} />);
+    renderWithIcons(<AnimatedTimeline handle={h} />);
     fireEvent.click(screen.getByRole('switch', { name: /loop/i }));
     expect(h.setLoop).toHaveBeenCalledWith(true);
   });
 
   it('routes the rate control to setTimeScale', () => {
     const h = fakeHandle();
-    render(<AnimatedTimeline handle={h} />);
+    renderWithIcons(<AnimatedTimeline handle={h} />);
     fireEvent.keyDown(screen.getByRole('slider', { name: /rate/i }), { key: 'ArrowRight' });
     expect(h.setTimeScale).toHaveBeenCalledWith(2);
   });
 
   it('shows the loop and rate the handle reports, not what the transport set', () => {
     const h = fakeHandle({ loop: () => 3, timeScale: () => 4 });
-    render(<AnimatedTimeline handle={h} />);
+    renderWithIcons(<AnimatedTimeline handle={h} />);
     expect(screen.getByRole('switch', { name: /loop/i })).toHaveAttribute('aria-checked', 'true');
     expect(screen.getByRole('slider', { name: /rate/i })).toHaveAttribute('aria-valuetext', '4 times');
   });
@@ -158,7 +159,7 @@ describe('AnimatedTimeline', () => {
   // these, and the transport has to show the handle's answer, not its own.
   it('picks up a loop or rate set off the component', () => {
     const h = fakeHandle();
-    const { rerender } = render(<AnimatedTimeline handle={h} />);
+    const { rerender } = renderWithIcons(<AnimatedTimeline handle={h} />);
     h.setLoop(true);
     h.setTimeScale(2);
     rerender(<AnimatedTimeline handle={h} />);
@@ -182,7 +183,7 @@ describe('AnimatedTimeline', () => {
 
     it('keeps running while the timeline plays', () => {
       const frames = manualFrames();
-      render(<AnimatedTimeline handle={fakeHandle({ isPaused: () => false, time: () => 400 })} />);
+      renderWithIcons(<AnimatedTimeline handle={fakeHandle({ isPaused: () => false, time: () => 400 })} />);
       frames.turn();
       frames.turn();
       expect(frames.queued()).toBe(1);
@@ -190,7 +191,7 @@ describe('AnimatedTimeline', () => {
 
     it('stops once a timeline that does not loop reaches its end', () => {
       const frames = manualFrames();
-      render(<AnimatedTimeline handle={fakeHandle({ isPaused: () => false, time: () => 1000 })} />);
+      renderWithIcons(<AnimatedTimeline handle={fakeHandle({ isPaused: () => false, time: () => 1000 })} />);
       frames.turn();
       frames.turn();
       expect(frames.queued()).toBe(0);
@@ -199,7 +200,7 @@ describe('AnimatedTimeline', () => {
 
     it('keeps running at the end of a timeline that loops', () => {
       const frames = manualFrames();
-      render(<AnimatedTimeline handle={fakeHandle({ isPaused: () => false, time: () => 1000, loop: () => true })} />);
+      renderWithIcons(<AnimatedTimeline handle={fakeHandle({ isPaused: () => false, time: () => 1000, loop: () => true })} />);
       frames.turn();
       expect(frames.queued()).toBe(1);
     });

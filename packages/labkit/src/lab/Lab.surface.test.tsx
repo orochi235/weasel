@@ -10,6 +10,7 @@
  */
 import { act } from '@testing-library/react';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
+import { withIcons } from '@weasel-js/ui/testing/withIcons';
 import type { ReactNode } from 'react';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { defineInstrument } from '../instrument/defineInstrument';
@@ -79,7 +80,9 @@ const probeInstrument = defineInstrument<Record<string, never>, Record<string, n
 describe('<Lab> surface provider', () => {
   it('puts a surface handle in reach of an instrument', async () => {
     seen = 'not-rendered';
-    await renderSettled(<Lab instruments={[probeInstrument]} defaultInstrument="Probe" />);
+    await renderSettled(<Lab instruments={[probeInstrument]} defaultInstrument="Probe" />, {
+      wrapper: withIcons,
+    });
     expect(seen).not.toBe('not-rendered');
     expect(seen).not.toBeNull();
     expect(typeof (seen as unknown as SurfaceHandle).registerTile).toBe('function');
@@ -88,6 +91,7 @@ describe('<Lab> surface provider', () => {
   it('stacks an under and an over buffer, each in its own layer of the lab body', async () => {
     const { container } = await renderSettled(
       <Lab instruments={[probeInstrument]} defaultInstrument="Probe" />,
+      { wrapper: withIcons },
     );
     const layers = container.querySelectorAll('.lk-lab__body > .lk-lab__layer');
     // Source order, because the z-index that separates them is in a stylesheet
@@ -104,6 +108,7 @@ describe('<Lab> surface provider', () => {
   it('measures tile rects against the over layer', async () => {
     const { container } = await renderSettled(
       <Lab instruments={[probeInstrument]} defaultInstrument="Probe" />,
+      { wrapper: withIcons },
     );
     expect((seen as SurfaceHandle).getContainer()).toBe(
       container.querySelector('.lk-lab__layer--over'),
@@ -113,6 +118,7 @@ describe('<Lab> surface provider', () => {
   it('hands a tenant whichever of the two it asks for', async () => {
     const { container } = await renderSettled(
       <Lab instruments={[probeInstrument]} defaultInstrument="Probe" />,
+      { wrapper: withIcons },
     );
     const [underEl, overEl] = [...container.querySelectorAll('canvas.lk-lab__surface')];
     expect(seenCanvases.over).toBe(overEl);
@@ -125,6 +131,7 @@ describe('<Lab> surface provider', () => {
     // built for marks that annotate an instrument.
     const { container } = await renderSettled(
       <Lab instruments={[probeInstrument]} defaultInstrument="Probe" />,
+      { wrapper: withIcons },
     );
     const [underEl, overEl] = [...container.querySelectorAll('canvas.lk-lab__surface')];
     expect(seenCanvases.byDefault).toBe(overEl);
@@ -144,6 +151,7 @@ describe('<Lab> surface provider', () => {
       <Host>
         <Lab instruments={[probeInstrument]} defaultInstrument="Probe" />
       </Host>,
+      { wrapper: withIcons },
     );
     expect(container.querySelectorAll('canvas.lk-lab__surface')).toHaveLength(0);
   });
@@ -154,6 +162,7 @@ describe('<Lab> surface provider', () => {
     // drops it, and jsdom cannot see the overflow that follows.
     const { container } = await renderSettled(
       <Lab instruments={[probeInstrument]} defaultInstrument="Probe" />,
+      { wrapper: withIcons },
     );
     const body = container.querySelector('.lk-lab__body');
     expect(body).not.toBeNull();
@@ -201,6 +210,7 @@ describe('<Lab> tile round trip', () => {
       <Host>
         <Lab instruments={[probeInstrument]} defaultInstrument="Probe" />
       </Host>,
+      { wrapper: withIcons },
     );
 
     // The instrument's own div is the tile. Give it a box the container did
@@ -240,6 +250,7 @@ describe('<Lab> pages', () => {
           { href: '/stats', label: 'corpus stats' },
         ]}
       />,
+      { wrapper: withIcons },
     );
     // A switcher, not a bare heading: the lab it came from has to be reachable.
     expect(getByRole('button', { name: /kliegsminister/ })).toBeTruthy();
@@ -248,6 +259,7 @@ describe('<Lab> pages', () => {
   it('leaves the title a plain heading when there are no other labs', async () => {
     const { getByRole, queryByRole } = await renderSettled(
       <Lab instruments={[probeInstrument]} defaultInstrument="Probe" title="solo" />,
+      { wrapper: withIcons },
     );
     expect(getByRole('heading', { name: 'solo' })).toBeTruthy();
     expect(queryByRole('button', { name: /solo/ })).toBeNull();
