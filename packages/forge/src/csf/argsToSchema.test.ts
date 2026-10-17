@@ -1,6 +1,6 @@
 import type { ConfigNode } from '@weasel-js/labkit/config';
 import { createElement } from 'react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { argsToSchema } from './argsToSchema';
 
 const leaf = (args: Record<string, unknown>, argTypes: Parameters<typeof argsToSchema>[1], key: string) =>
@@ -59,6 +59,18 @@ describe('argsToSchema', () => {
       { value: 'bad', label: 'bad', icon: 'ui:error' },
       { value: 'meh', label: 'meh' },
     ]);
+  });
+
+  it('drops a bare icon name and warns once', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const argTypes = { tone: { control: { type: 'radio', icons: { ok: 'statusOkBare', bad: 'statusOkBare' } }, options: ['ok', 'bad'] } };
+    expect(leaf({ tone: 'ok' }, argTypes, 'tone')?.annotations.options).toEqual([
+      { value: 'ok', label: 'ok' },
+      { value: 'bad', label: 'bad' },
+    ]);
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn.mock.calls[0]![0]).toContain('"statusOkBare" is not qualified');
+    warn.mockRestore();
   });
 
   it("maps 'radio' to a radio enum", () => {

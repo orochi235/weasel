@@ -1,6 +1,6 @@
 import { type ConfigNode, type ConfigSchema, type ConfigShape, f } from '@weasel-js/labkit/config';
 import { isPlainObject } from '@weasel-js/core';
-import { toIconRef } from '@weasel-js/icons';
+import { iconFromData } from '@weasel-js/ui';
 import { portSafePart } from './portSafe';
 
 /** Storybook's conditional control: shown only while an arg, or a global, meets the test. */
@@ -106,7 +106,7 @@ function controlled(control: Control, argType: ArgType, has: boolean, value: unk
       const node = f.enum(
         def<string>(),
         icons ? options.map((value) => {
-          const ref = toIconRef(icons[value]);
+          const ref = iconFromData(icons[value]);
           return { value, label: value, ...(ref ? { icon: ref } : {}) };
         }) : options,
       );
