@@ -68,6 +68,7 @@ export function BarMenu({ label, schema, values, onChange, over, defaultOpen }: 
       {trigger.anchor}
       <button
         ref={trigger.button}
+        id={trigger.id}
         type="button"
         className={`${f.frame} ${s.popTrigger}`}
         aria-haspopup="menu"

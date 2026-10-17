@@ -81,6 +81,7 @@ export function MenuButton<T extends string = string>({
       >
         <button
           ref={trigger.button}
+          id={trigger.id}
           type="button"
           className={[bare ? s.bare : f.frame, s.trigger, className].filter(Boolean).join(' ')}
           disabled={isDisabled}

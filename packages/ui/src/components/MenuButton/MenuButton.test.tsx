@@ -51,7 +51,8 @@ describe('MenuButton', () => {
     expect(trigger('Load snapshot')).toBeTruthy();
   });
 
-  it('opens from the keyboard with the first row highlighted', () => {
+  // Proxy: jsdom does not turn Enter into a click, so this sends the `detail: 0` click a browser sends for Enter.
+  it('opens as the keyboard does, with the first row highlighted', () => {
     render(<MenuButton label="Add trial…" items={ITEMS} onAction={() => {}} />);
     fireEvent.click(trigger(/Add trial…/));
     const menu = screen.getByRole('menu');
@@ -77,6 +78,23 @@ describe('MenuButton', () => {
     fireEvent.pointerDown(btn);
     press(btn);
     expect(screen.queryByRole('menu')).toBeNull();
+  });
+
+  it('lets a press that ended off the button go, so the next click opens', () => {
+    render(<MenuButton label="Add trial…" items={ITEMS} onAction={() => {}} />);
+    const btn = trigger(/Add trial…/);
+    press(btn);
+    fireEvent.pointerDown(btn);
+    fireEvent.pointerDown(document.body);
+    press(btn);
+    expect(screen.getByRole('menu')).toBeDefined();
+  });
+
+  it('names its menu by the button and marks its rows as inside an overlay', () => {
+    render(<MenuButton label="Add trial…" items={ITEMS} onAction={() => {}} />);
+    press(trigger(/Add trial…/));
+    expect(screen.getByRole('menu', { name: /Add trial…/ })).toBeDefined();
+    expect(screen.getByRole('menuitem', { name: 'Garden' }).closest('[data-weasel-overlay]')).not.toBeNull();
   });
 
   it('returns focus to the button on Escape', () => {

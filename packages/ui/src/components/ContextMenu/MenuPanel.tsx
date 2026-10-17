@@ -52,6 +52,7 @@ export function MenuPanel(props: {
       ref={(el) => { ref.current = el; props.register(el); }}
       id={`${idBase}-panel-${level}`}
       role="menu"
+      data-weasel-overlay=""
       tabIndex={-1}
       aria-labelledby={props.labelledBy}
       className={s.panel}

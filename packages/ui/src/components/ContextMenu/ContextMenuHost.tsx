@@ -46,10 +46,11 @@ function useReturnFocus(host: MenuHost | null): void {
 
 /** One open menu's panels, with the controller that runs them. What the host draws, and a bar's menu button.
  *  With `takeFocus` false a panel takes focus only once focus is already inside the menu.
+ *  `labelledBy` names the element that labels the first panel,
  *  `inside` names extra targets that do not dismiss, `onEdge` hears Left or Right with nothing to open or close,
  *  and while `releaseRuns` is true a pointerup over a row presses it, until the first pointerup anywhere. */
-export function OpenPanels({ open, close, takeFocus = true, inside, onEdge, releaseRuns = false }: {
-  open: OpenMenu; close: () => void; takeFocus?: boolean;
+export function OpenPanels({ open, close, takeFocus = true, labelledBy, inside, onEdge, releaseRuns = false }: {
+  open: OpenMenu; close: () => void; takeFocus?: boolean; labelledBy?: string;
   inside?: (target: EventTarget | null) => boolean;
   onEdge?: (dir: -1 | 1) => void;
   releaseRuns?: boolean;
@@ -82,12 +83,12 @@ export function OpenPanels({ open, close, takeFocus = true, inside, onEdge, rele
     return () => c.dispose();
   }, [open, close]);
   return controller
-    ? <Panels controller={controller} open={open} close={close} takeFocus={takeFocus} inside={inside} release={release} />
+    ? <Panels controller={controller} open={open} close={close} takeFocus={takeFocus} labelledBy={labelledBy} inside={inside} release={release} />
     : null;
 }
 
-function Panels({ controller, open, close, takeFocus, inside, release }: {
-  controller: MenuController; open: OpenMenu; close: () => void; takeFocus: boolean;
+function Panels({ controller, open, close, takeFocus, labelledBy, inside, release }: {
+  controller: MenuController; open: OpenMenu; close: () => void; takeFocus: boolean; labelledBy: string | undefined;
   inside: ((target: EventTarget | null) => boolean) | undefined;
   release: { readonly current: boolean };
 }) {
@@ -123,7 +124,7 @@ function Panels({ controller, open, close, takeFocus, inside, release }: {
           highlight={highlight}
           childOpen={stack.length > level + 1}
           idBase={idBase}
-          labelledBy={level === 0 ? undefined : rowId(level - 1)}
+          labelledBy={level === 0 ? labelledBy : rowId(level - 1)}
           anchor={level === 0 ? root : null}
           parentRow={() => (level === 0 ? null : rowRect(level - 1))}
           focus={focusable && level === stack.length - 1}

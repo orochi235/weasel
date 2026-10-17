@@ -32,7 +32,7 @@
   color: inherit;
 }
 
-.bare:hover {
+.bare:hover:not(:disabled) {
   color: var(--wzl-accent-fg);
 }
 

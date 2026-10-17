@@ -1,4 +1,4 @@
-/* Shared by MenuButton, Select and ComboBox (`surface` + `list`) and by
+/* Shared by Select and ComboBox (`surface` + `list`) and by
    PaintField's popover (`surface` alone). */
 .surface {
   background: var(--wzl-surface-popover);

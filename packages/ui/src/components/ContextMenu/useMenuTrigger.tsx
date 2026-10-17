@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type MouseEvent, type ReactElement, type ReactNode, type RefObject } from 'react';
+import { useCallback, useEffect, useId, useRef, useState, type MouseEvent, type ReactElement, type ReactNode, type RefObject } from 'react';
 import { createPortal } from 'react-dom';
 import { useLatest, type OpenMenu } from '@weasel-js/core';
 import type { MenuEntry } from '@weasel-js/menu';
@@ -9,6 +9,8 @@ import { OpenPanels } from './ContextMenuHost';
 export interface MenuTrigger {
   /** Goes on the `<button>` that opens the menu. */
   button: RefObject<HTMLButtonElement | null>;
+  /** Goes on the button too: it names the menu. */
+  id: string;
   /** The menu is open. */
   open: boolean;
   /** Open `entries` under the button. With `silent` the panel takes focus only once focus is already inside it.
@@ -32,13 +34,14 @@ export function useMenuTrigger(portalContainer?: Element | null): MenuTrigger {
   const [quiet, setQuiet] = useState(false);
   const quietNow = useRef(false);
   const button = useRef<HTMLButtonElement>(null);
+  const id = useId();
   const isOpen = useLatest(open !== null);
   // The menu's dismiss listener has closed it by the time the button's click runs, so a window listener
   // registered before that one reads whether the press found it open.
   const wasOpen = useRef(false);
   useEffect(() => {
     const press = (e: PointerEvent) => {
-      if (e.target instanceof Node && button.current?.contains(e.target)) wasOpen.current = isOpen.current;
+      wasOpen.current = e.target instanceof Node && button.current?.contains(e.target) === true && isOpen.current;
     };
     window.addEventListener('pointerdown', press, true);
     return () => window.removeEventListener('pointerdown', press, true);
@@ -70,7 +73,7 @@ export function useMenuTrigger(portalContainer?: Element | null): MenuTrigger {
   }, [show]);
 
   const portal = open && ready && target
-    ? createPortal(<OpenPanels key={open.seq} open={open} close={close} takeFocus={!quiet} />, target)
+    ? createPortal(<OpenPanels key={open.seq} open={open} close={close} takeFocus={!quiet} labelledBy={id} />, target)
     : null;
-  return { button, open: open !== null, show, close, click, anchor, portal };
+  return { button, id, open: open !== null, show, close, click, anchor, portal };
 }
