@@ -896,9 +896,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   Its tooltip says "no action", though the action exists and only needs a variant. Expand the leaf
   into its variants, or word the tooltip as "pick a variant".
 
-- **(P3) Should the command palette prefix a variant's label with its action's?** New's paper sizes
-  list as "US Letter", "A4" and "Legal"; "New: A4" would say what they do. The owner's call.
-
 - **(P4) A `BarMenu` that opened itself can pull focus out of another menu when it closes.** Its
   `close` gives focus to its button only when focus is inside a menu, but it checks with
   `closest('[role="menu"]')`, which matches any menu on the page. Scope the check to this menu's

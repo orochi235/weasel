@@ -34,11 +34,22 @@ function Actions() {
   return null;
 }
 
-function Harness() {
+function Sizes() {
+  useAction({
+    id: 'new',
+    label: 'New',
+    variants: [{ key: 'a4', label: 'A4', params: { size: 'a4' } }, { key: 'legal', label: 'Legal', params: { size: 'legal' } }],
+    invoker: { timing: 'immediate' as const, run: () => {} },
+  });
+  return null;
+}
+
+function Harness({ sizes = false }: { sizes?: boolean }) {
   const [open, setOpen] = useState(false);
   return (
     <ActionsProvider>
       <Actions />
+      {sizes && <Sizes />}
       <button type="button" onClick={() => setOpen(true)}>open</button>
       <CommandPalette open={open} onClose={() => setOpen(false)} />
     </ActionsProvider>
@@ -51,13 +62,19 @@ const options = () => screen.getAllByRole('option');
 const selected = () => options().find((o) => o.getAttribute('aria-selected') === 'true');
 // The palette snapshots the registry when it opens, so open it the way a
 // user does: after the actions have registered.
-const openPalette = () => {
-  render(<Harness />);
+const openPalette = (sizes = false) => {
+  render(<Harness sizes={sizes} />);
   fireEvent.click(screen.getByText('open'));
 };
 const flush = () => act(async () => { await Promise.resolve(); });
 
 describe('CommandPalette', () => {
+  it('titles a variant with its action, and a search for the action finds it by label', () => {
+    openPalette(true);
+    fireEvent.change(search(), { target: { value: 'new' } });
+    expect(options().map((o) => o.textContent)).toEqual(['New: A4', 'New: Legal']);
+  });
+
   it('tells assistive tech which action Enter will run, as the highlight moves', () => {
     openPalette();
     const input = screen.getByRole('combobox', { name: 'Search actions' });

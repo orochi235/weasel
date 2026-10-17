@@ -7,11 +7,13 @@
 // --- Commands ----------------------------------------------------------------
 export { useCommand } from '@weasel-js/routing/react';
 export type { CommandOptions } from '@weasel-js/routing/react';
-export { ActionDisabledReason } from '@weasel-js/routing';
-export type { ActionVariant } from '@weasel-js/routing';
 
 // --- Context menu --------------------------------------------------------------
 export { contextMenuAction, openContextMenu } from '../interactions/actions/defaults/contextMenu';
+
+// --- Action types -----------------------------------------------------------
+export { ActionDisabledReason } from '@weasel-js/routing';
+export type { ActionDisabledReasonValue, ActionVariant } from '@weasel-js/routing';
 
 // --- @experimental Actions Registry (2026-05-09) ----------------------------
 export { ActionsProvider, InputScope, useYoke, Yoke, useActionsRegistry, useAction, useOngoingAction } from '@weasel-js/routing/react';
@@ -23,7 +25,7 @@ export { resolveSchemaMenu } from '@weasel-js/routing';
 export type { ActionEntry, ActionsProp, ActionsRegistry, UiOngoingControl } from '@weasel-js/routing';
 export { actionCursor } from '@weasel-js/routing';
 export type { Action, ActionDispatch, ActionPresentation } from '@weasel-js/routing';
-export { actionBindings, actionItems, actionsTagged, taggedActionItems, matchActionItem } from '@weasel-js/routing';
+export { actionBindings, actionItems, actionItemTitle, actionsTagged, taggedActionItems, matchActionItem } from '@weasel-js/routing';
 export { PATH_GESTURE_TAGS, pathOperationTags, type PathGestureFamily } from '../interactions/actions/pathGestureTags';
 export { heldKeySpec } from '@weasel-js/routing';
 export type { ActionItem } from '@weasel-js/routing';

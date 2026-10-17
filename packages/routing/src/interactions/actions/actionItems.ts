@@ -38,3 +38,15 @@ export function actionItems(action: Action): ActionItem[] {
     params: v.params,
   }));
 }
+
+/** @experimental How a palette titles `item`: a variant reads as its action's
+ *  label and its own ("New: A4"), unless its label already opens with the
+ *  action's as a whole word ("Zoom In"). */
+export function actionItemTitle(item: ActionItem): string {
+  if (item.key === item.action.id) return item.label;
+  const head = item.action.label.toLowerCase();
+  const label = item.label.toLowerCase();
+  const next = label.charAt(head.length);
+  if (label.startsWith(head) && !/[\p{L}\p{N}]/u.test(next)) return item.label;
+  return `${item.action.label}: ${item.label}`;
+}

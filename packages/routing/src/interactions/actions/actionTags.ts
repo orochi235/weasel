@@ -5,7 +5,7 @@
  */
 import { hasTag, matchQuery, type QueryMatch } from '@weasel-js/registry';
 import type { Action } from './action';
-import { actionItems, type ActionItem } from './actionItems';
+import { actionItems, actionItemTitle, type ActionItem } from './actionItems';
 
 /** @experimental The actions carrying `tag`, themselves or on any variant, in
  *  the order given. Drags included, which have no entries to show. */
@@ -19,8 +19,8 @@ export function taggedActionItems(actions: readonly Action[], tag: string): Acti
   return actionsTagged(actions, tag).flatMap(actionItems).filter((i) => hasTag(i.tags, tag));
 }
 
-/** @experimental Whether `item` answers a search for `query`, by its label or
+/** @experimental Whether `item` answers a search for `query`, by its palette title or
  *  by a tag, and which. */
 export function matchActionItem(item: ActionItem, query: string): QueryMatch | null {
-  return matchQuery(query, { text: [item.label], tags: item.tags });
+  return matchQuery(query, { text: [actionItemTitle(item)], tags: item.tags });
 }
