@@ -9,7 +9,7 @@ import { paintRun } from './run';
 import type { EffectPipeline, EffectRun } from './types';
 
 /** Props for `EffectChart`. */
-export interface EffectChartProps<TOptions = unknown> {
+export interface EffectChartProps<TOptions = never> {
   /** Compared by its JSON, so it may be rebuilt on every render: the chart
    *  lays out again only when that changes. A value JSON drops or flattens
    *  in a stage's `data` (a function, a `Map`) is not seen changing. */
@@ -78,7 +78,7 @@ function useSameContent<T>(value: T): T {
 /** A chart of an effects pipeline: pan, zoom, and pick a stage. Text paints
  *  only in a registered font family, so call `registerCanvasFont('sans-serif')`
  *  once before mounting one. */
-export function EffectChart<TOptions = unknown>({
+export function EffectChart<TOptions = never>({
   pipeline: given, run, look, options, width, height, background, selected, onSelect, onProblems, className,
 }: EffectChartProps<TOptions>) {
   const pipeline = useSameContent(given);

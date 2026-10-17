@@ -424,6 +424,10 @@ the stage driving it. A symbol's lines, dots and ticks are drawn in the `text` c
 `'bar'`'s bands in `{ tints }`, lowest first; a bypassed bar's bands default to its
 style's `stroke`.
 
+A look is an `EffectLook<TOptions>`. Plain `EffectLook` is a look whose options
+are not known, so a list of looks with different options, such as
+`[nodeGraph, rack]`, is an `EffectLook[]`; such a look is called with no options.
+
 To write a look, return `{ data, scene, color }`, and `exits` if it draws a
 decision as something other than itself; `scene` takes any
 `diagramScene` option. The shipped looks are built from these, which are

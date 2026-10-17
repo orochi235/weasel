@@ -21,8 +21,9 @@ export interface EffectLookResult {
   exits?: ReadonlyMap<string, { stage: string; port: string }>;
 }
 
-/** One way of drawing a pipeline. */
-export type EffectLook<TOptions = unknown> = (pipeline: EffectPipeline, options?: TOptions) => EffectLookResult;
+/** One way of drawing a pipeline. Unparameterized, a look whose options are
+ *  not known: any look fits it, and it is called with none. */
+export type EffectLook<TOptions = never> = (pipeline: EffectPipeline, options?: TOptions) => EffectLookResult;
 
 const PALETTE = ['#6fb3ff', '#c58bff', '#f2c14e', '#5ad07f', '#ff8a6b', '#4fd1c5', '#e58fb8', '#b0bec5'];
 const UNTYPED = '#8aa2b5';
