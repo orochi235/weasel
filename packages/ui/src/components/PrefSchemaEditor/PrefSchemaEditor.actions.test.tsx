@@ -97,6 +97,14 @@ describe('PrefSchemaEditor actions', () => {
       'Snap (view.snap)',
     ]);
   });
+
+  it('holds a row under an actions pref for each action of its group, which takes no selection', () => {
+    const run: PrefGroup = { name: 'Run', as: 'bar', children: { edit: { kind: 'actions', name: '', description: '', default: undefined, group: 'Edit' } } };
+    render(<PrefSchemaEditor schema={run} onChange={() => {}} actions={ACTIONS} />);
+    const under = structure().querySelectorAll('[data-tree-id^="edit#"]');
+    expect([...under].map((row) => row.getAttribute('data-tree-id'))).toEqual(['edit#edit.undo', 'edit#edit.redo']);
+    expect(under[0]).toHaveAttribute('aria-disabled', 'true');
+  });
 });
 
 describe('an action as a pref', () => {

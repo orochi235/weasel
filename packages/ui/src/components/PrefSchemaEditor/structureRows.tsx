@@ -1,10 +1,11 @@
 import type { ReactNode } from 'react';
-import { isPrefLeaf, isPrefSection, type PrefAlias } from '@weasel-js/prefs';
+import { isPrefLeaf, isPrefSection, type PrefActions, type PrefAlias } from '@weasel-js/prefs';
 import { Icon } from '../../icons';
 import { Badge } from '../Badge';
 import { PrefKindBadge } from '../Prefs/PrefKindBadge';
 import type { TreeNode } from '../Tree';
 import { GROUP_ICON } from './Palette';
+import type { EditorAction } from './editorActions';
 import { drawnLeaf } from './pointers';
 import { childrenOf, joinPath, type SchemaNode, type SchemaRoot } from './schemaEdit';
 import { soughtRow } from './rowSearch';
@@ -23,8 +24,22 @@ export const leafLabel = (label: ReactNode): ReactNode => <span className={s.tre
 
 const countBadge = (n: number) => <Badge size="xs" status="muted" variant="subtle" className={s.treeCount}>{n}</Badge>;
 
-/** The structure tree's rows for what `node` holds: each child's name before its key, a group's glyph and count, a leaf's kind, and the host's mark. `over` is the dialog a layout's pointers name settings in. */
-export function toTreeNodes(node: SchemaNode, path: string | null, changed: ReadonlySet<string>, mark?: (path: string) => ReactNode, over?: SchemaRoot): TreeNode[] {
+/** The actions an `actions` leaf draws, each a row under it that names one and takes no edit: the leaf holds none
+ *  of them, so they are shown and never selected. */
+function drawnActionRows(path: string, leaf: PrefActions, actions: readonly EditorAction[]): TreeNode[] {
+  return actions.filter((a) => a.group === leaf.group).map((a) => soughtRow({
+    id: `${path}${DRAWN_ACTION}${a.key}`,
+    label: leafLabel(nodeLabel(a.label, a.key)),
+    ...(a.icon ? { leading: a.icon } : {}),
+    disabled: true,
+  }, { text: [a.label, a.key], tags: a.tags }));
+}
+
+/** Sets a drawn action's row id apart from every tree path, which holds no `#`. */
+const DRAWN_ACTION = '#';
+
+/** The structure tree's rows for what `node` holds: each child's name before its key, a group's glyph and count, a leaf's kind, and the host's mark. `over` is the dialog a layout's pointers name settings in. An `actions` leaf holds a row for each of `actions` it draws. */
+export function toTreeNodes(node: SchemaNode, path: string | null, changed: ReadonlySet<string>, mark?: (path: string) => ReactNode, over?: SchemaRoot, actions?: readonly EditorAction[]): TreeNode[] {
   return Object.entries(childrenOf(node) ?? {}).map(([key, child]) => {
     const p = joinPath(path, key);
     const kids = childrenOf(child);
@@ -43,7 +58,8 @@ export function toTreeNodes(node: SchemaNode, path: string | null, changed: Read
         ? <>{mark?.(p)}<PrefKindBadge kind={child.type ?? child.kind} /></>
         // Its glyph says how a group is drawn, so it carries no badge to say it again.
         : <>{mark?.(p)}{countBadge(leafCount([child]))}</>,
-      ...(kids ? { children: toTreeNodes(child, p, changed, mark, over) } : {}),
+      ...(kids ? { children: toTreeNodes(child, p, changed, mark, over, actions) } : {}),
+      ...(actions && isPrefLeaf(child) && child.kind === 'actions' ? { children: drawnActionRows(p, child as PrefActions, actions) } : {}),
     }, { text: [name, key], tags: drawn?.tags ?? child.tags });
   });
 }
