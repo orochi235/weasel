@@ -1,7 +1,7 @@
 import { type PrefGroup, pref } from '@weasel-js/prefs';
-import { icon } from '../icons.gen';
 import { describe, expect, it } from 'vitest';
 import type { LabContribution } from '../chrome/labTypes';
+import { icon } from '../icons.gen';
 import type { InstrumentList } from '../instrument/types';
 import { labMenuBar } from './labMenus';
 

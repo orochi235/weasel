@@ -1,9 +1,9 @@
 import { act, fireEvent, screen } from '@testing-library/react';
 import { pref } from '@weasel-js/prefs';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
-import { icon } from '../icons.gen';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import type { LabContribution } from '../chrome';
+import { icon } from '../icons.gen';
 import { defineInstrument } from '../instrument/defineInstrument';
 import { Lab } from './Lab';
 import { type LabContextValue, useLabContext } from './LabContext';
