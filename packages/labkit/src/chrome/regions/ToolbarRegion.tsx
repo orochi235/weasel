@@ -43,16 +43,8 @@ function groupsOf<TCtx>(contributions: readonly RegionContribution<TCtx>[]): Gro
 function renderEntry<TCtx>(c: RegionContribution<TCtx>, ctx: TCtx, region: string): ReactNode {
   if (c.render) return <span key={c.id}>{c.render(ctx)}</span>;
   if (c.region !== region || !c.item) return null;
-  const {
-    icon,
-    label,
-    shortcut,
-    disabled,
-    danger,
-    showLabel,
-    pressed,
-    onActivate,
-  } = c.item as ToolbarItem<TCtx>;
+  const { icon, label, shortcut, disabled, danger, showLabel, pressed, onActivate } =
+    c.item as ToolbarItem<TCtx>;
   return (
     <Toolbar.Button
       key={c.id}

@@ -1,10 +1,10 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import { icon } from '../../icon';
 import type { TrialChromeContext, TrialContribution } from '../types';
 import { SidebarRegion } from './SidebarRegion';
 import { StatusRegion } from './StatusRegion';
 import { ViewportRegion } from './ViewportRegion';
-import { icon } from '../../icon';
 
 const Glyph = icon('ui:add');
 const ctx = {

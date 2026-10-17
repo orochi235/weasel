@@ -289,8 +289,8 @@ describe('inferredNodeProperties', () => {
     const style = ((entry.schema.members.text as PrefSection).members['data.style']) as PrefObject;
     const align = (style.children.paragraph as PrefSection).members.align as PrefEnum;
     expect(align.options.map((o) => [o.value, o.icon])).toEqual([
-      ['left', 'ui:textAlignLeft'], ['center', 'ui:textAlignCenter'], ['right', 'ui:textAlignRight'],
-      ['justify', 'ui:textAlignJustify'],
+      ['left', 'core:textAlignLeft'], ['center', 'core:textAlignCenter'], ['right', 'core:textAlignRight'],
+      ['justify', 'core:textAlignJustify'],
     ]);
     expect(align.encoding!.read('justify', { direction: 'rtl' })).toBe('justify');
     expect(align.encoding!.read('start', { direction: 'rtl' })).toBe('right');
@@ -327,10 +327,10 @@ describe('inferredNodeProperties', () => {
       (k) => character.members[k] as PrefBoolean,
     );
     expect(flags.map((d) => d.control)).toEqual(['toggle', 'toggle', 'toggle', 'toggle']);
-    expect(flags.map((d) => d.icon)).toEqual(['ui:italic', 'ui:underline', 'ui:strikethrough', 'ui:overline']);
+    expect(flags.map((d) => d.icon)).toEqual(['core:italic', 'core:underline', 'core:strikethrough', 'core:overline']);
     const script = character.members.script as PrefEnum;
     expect(script).toMatchObject({ control: 'toggle', clearable: true });
-    expect(script.options.map((o) => o.icon)).toEqual(['ui:superscript', 'ui:subscript']);
+    expect(script.options.map((o) => o.icon)).toEqual(['core:superscript', 'core:subscript']);
     expect(flags[0]!.pair).toEqual({
       with: ['data.style.underline', 'data.style.strikethrough', 'data.style.overline', 'data.style.script'],
       label: 'Style',

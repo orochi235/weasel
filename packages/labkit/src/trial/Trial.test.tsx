@@ -4,6 +4,7 @@ import { type ReactNode, useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { useStore } from 'zustand/react';
 import { f } from '../config/builder';
+import { icon } from '../icon';
 import type { Instrument } from '../instrument/types';
 import { Lab } from '../lab/Lab';
 import { LabContext, type LabContextValue } from '../lab/LabContext';
@@ -11,7 +12,6 @@ import { LabStoreContext } from '../state/context';
 import { createLabStore } from '../state/store';
 import type { SavedSnapshot, TrialRecord } from '../state/types';
 import { TrialChrome } from './TrialChrome';
-import { icon } from '../icon';
 
 const Glyph = icon('ui:add');
 

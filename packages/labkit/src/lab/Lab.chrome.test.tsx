@@ -2,9 +2,9 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { describe, expect, it, vi } from 'vitest';
 import type { TrialContribution } from '../chrome/types';
+import { icon } from '../icon';
 import type { Instrument } from '../instrument/types';
 import { Lab } from './Lab';
-import { icon } from '../icon';
 
 const Glyph = icon('ui:add');
 const bare: Instrument = {

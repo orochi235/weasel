@@ -1,4 +1,5 @@
 import { useLatest } from '@weasel-js/core';
+import { Icon } from '@weasel-js/ui';
 import {
   type MouseEvent,
   type ReactNode,
@@ -9,12 +10,11 @@ import {
   useRef,
   useState,
 } from 'react';
+import { icon } from '../icon';
 import { useSurfaceOptional } from '../surface/useSurfaceTile';
 import { LightboxContext, type LightboxContextValue } from './LightboxContext';
 import { useLightboxLayers } from './LightboxLayers';
 import { inertOutside, liftStack, opensLightbox } from './modal';
-import { icon } from '../icon';
-import { Icon } from '@weasel-js/ui';
 
 /** Props for `<Lightbox>`. */
 export interface LightboxProps {

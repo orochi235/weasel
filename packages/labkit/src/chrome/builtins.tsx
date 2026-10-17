@@ -2,13 +2,13 @@ import { ExportMenu } from '../annotations/ExportMenu';
 import { MarkList } from '../annotations/MarkList';
 import type { ControlRenderer } from '../config/types';
 import { ControlPanel } from '../controls/ControlPanel';
+import { icon } from '../icon';
 import type { Instrument } from '../instrument/types';
 import { MenuButton } from '../passthrough/weasel-ui';
 import { FpsMeter } from '../primitives/FpsMeter';
 import { ScaleIndicator } from '../primitives/ScaleIndicator';
 import { ZoomControl } from '../primitives/ZoomControl';
 import type { TrialChromeContext, TrialContribution } from './types';
-import { icon } from '../icon';
 
 const ZOOM_STEP = 1.25;
 

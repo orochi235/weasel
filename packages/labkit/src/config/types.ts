@@ -1,3 +1,4 @@
+import type { IconRef } from '@weasel-js/icons';
 import type {
   PrefAction,
   PrefBarOverflow,
@@ -12,7 +13,6 @@ import type {
 import type { Display, InfinityText } from '@weasel-js/quantity';
 import type { PrefRenderer } from '@weasel-js/ui';
 import type { ReactNode } from 'react';
-import type { IconRef } from '@weasel-js/icons';
 
 /**
  * Renders the control cell for one config leaf. Identical to weasel-ui's

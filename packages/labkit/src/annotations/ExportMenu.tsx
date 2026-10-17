@@ -1,10 +1,10 @@
+import { Icon } from '@weasel-js/ui';
 import { useId, useState } from 'react';
+import { icon } from '../icon';
 import { Callout } from '../passthrough/weasel-ui';
 import { Toolbar } from '../primitives/Toolbar';
 import { useAnnotationsOptional } from './AnnotationsContext';
 import type { CaptureResult } from './types';
-import { icon } from '../icon';
-import { Icon } from '@weasel-js/ui';
 
 const SCALES = [1, 2, 4] as const;
 const FORMATS = [

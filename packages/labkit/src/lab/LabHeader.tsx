@@ -1,7 +1,7 @@
+import { Icon } from '@weasel-js/ui';
+import { icon } from '../icon';
 import { MenuButton, ThemeSwitcher } from '../passthrough/weasel-ui';
 import { useLabContext } from './LabContext';
-import { icon } from '../icon';
-import { Icon } from '@weasel-js/ui';
 
 /** The control `<Lab>` puts at the start of its header: add a trial. It drives
  *  `LabContext`, which carried it with no UI at all — so every consumer rebuilt

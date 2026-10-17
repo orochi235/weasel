@@ -1,8 +1,8 @@
 import type { BuiltinToolId } from '@weasel-js/core';
+import { icon } from '../icon';
 import type { InstrumentList } from '../instrument/types';
 import type { TrialTool } from '../tools/types';
 import type { AnnotationKind } from './types';
-import { icon } from '../icon';
 
 /** Which weasel tool an annotation tool drives, and what kind of mark that
  *  makes. `select` makes none. */

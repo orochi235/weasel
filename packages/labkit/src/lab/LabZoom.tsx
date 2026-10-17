@@ -13,18 +13,18 @@ import {
   useLatest,
   type ViewApi,
 } from '@weasel-js/core';
+import { Icon } from '@weasel-js/ui';
 import { useContext, useEffect, useMemo, useSyncExternalStore } from 'react';
 import { useStore } from 'zustand/react';
 import type { CameraView } from '../canvas/CameraInput';
 import { CameraRegistryContext } from '../canvas/cameraRegistry';
 import { atScale, viewMiddle } from '../canvas/cameraZoom';
+import { icon } from '../icon';
 import { formatShortcut } from '../passthrough/weasel-ui';
 import { Toolbar } from '../primitives/Toolbar';
 import { LabStoreContext } from '../state/context';
 import { as2DView } from '../state/view';
 import { useLabCommands } from './LabContext';
-import { icon } from '../icon';
-import { Icon } from '@weasel-js/ui';
 
 const ZOOM_ID = 'viewport.zoom';
 const NO_TOOLS: ReadonlyMap<string, Tool> = new Map();

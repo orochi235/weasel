@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { icon } from '../icon';
 import { mergeContributions, suppressContributions } from './merge';
 import type { TrialContribution } from './types';
-import { icon } from '../icon';
 
 const Glyph = icon('ui:add');
 

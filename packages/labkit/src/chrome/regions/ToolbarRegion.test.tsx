@@ -1,8 +1,8 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import { icon } from '../../icon';
 import type { TrialChromeContext, TrialContribution } from '../types';
 import { ToolbarRegion } from './ToolbarRegion';
-import { icon } from '../../icon';
 
 const Glyph = icon('ui:add');
 
