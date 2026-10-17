@@ -1,6 +1,5 @@
 import { useId, useRef, useState, type KeyboardEvent } from 'react';
 import { useIconVariant } from '@weasel-js/core';
-import { toIconRef } from '@weasel-js/icons';
 import { Button } from '../Button';
 import { Input } from '../Input';
 import { Icon } from '../../icons/Icon';
@@ -53,7 +52,7 @@ export function IconAttrField({ value, onChange }: { value: string | undefined; 
                       aria-selected={e.ref === value}
                       className={`${s.cell} ${e.ref === value ? s.chosen : ''} ${e.ref === current?.ref ? s.active : ''}`}
                       onClick={() => { setActive(e.ref); onChange(e.ref); }}>
-                      <Icon name={toIconRef(e.ref)} size={20} />
+                      <Icon name={e.ref} size={20} />
                     </div>
                   ))}
                 </div>
