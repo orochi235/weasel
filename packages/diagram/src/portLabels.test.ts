@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { bodyTrait, buildBody, type BodySpec, type MeasureRowText } from './body';
-import { diagramScene, type DiagramSpec } from './fromData';
+import { createScene, effectivePose, type RectPose } from '@weasel-js/core';
+import { withDiagramRegistry } from './edge';
+import { diagramScene, type DiagramData, type DiagramSpec } from './fromData';
 import { layered } from './layered';
 import { planOf } from './layout';
 import { footprintNode } from './footprint';
 import { portLabelBox, PORT_LABEL_GAP } from './portLabels';
-import { COMPASS, portsOf } from './ports';
+import { COMPASS, portSitesOf, portsOf } from './ports';
 import type { Graph, GraphNode } from './graph';
 
 const G = PORT_LABEL_GAP;
@@ -125,6 +127,15 @@ describe('a node\'s margin under layout', () => {
       expect(after[i]!.point.y).toBeCloseTo(p.point.y);
       expect(after[i]!.normal).toEqual(p.normal);
     }
+    const sites = (bounds: typeof n.bounds, read: () => object) =>
+      portSitesOf({ id: 'a', kind: 'leaf', data: null }, bounds, 'p', { read: read as never });
+    const was = sites(n.bounds, () => ({ ports: n.ports!, outline: n.outline! }));
+    const now = sites(foot.bounds, () => ({ ports: foot.ports! }));
+    expect(now).toHaveLength(2);
+    expect(now[1]!.point.x).toBeCloseTo(was[1]!.point.x);
+    expect(now[1]!.point.y).toBeCloseTo(was[1]!.point.y);
+    expect(now[1]!.normal!.x).toBeCloseTo(was[1]!.normal!.x);
+    expect(now[1]!.normal!.y).toBeCloseTo(was[1]!.normal!.y);
   });
 });
 
@@ -152,5 +163,29 @@ describe('diagramScene port labels', () => {
       p.x < q.x + q.width && q.x < p.x + p.width && p.y < q.y + q.height && q.y < p.y + p.height;
     expect(overlaps(label, b)).toBe(false);
     expect(overlaps(label, boxOf(specs, 'r'))).toBe(false);
+  });
+});
+
+describe('a group around a member with port labels', () => {
+  const DATA: DiagramData = {
+    nodes: [{ id: 'a', lines: ['a'], portLabels: { e: 'a long east label', s: 'south' } }, { id: 'b', lines: ['b'] }],
+    edges: [{ from: 'a', to: 'b' }],
+    groups: [{ id: 'G', members: ['a'] }],
+  };
+  const contains = (o: RectPose, i: RectPose) =>
+    i.x >= o.x && i.y >= o.y && i.x + i.width <= o.x + o.width && i.y + i.height <= o.y + o.height;
+
+  it('fits the labels inside the box, as built and as the scene derives it', () => {
+    const specs = diagramScene(DATA, { layoutOptions: { direction: 'right' } });
+    const built = (id: string) => specs.find((s) => s.id === id)!.pose;
+    const labels = specs.filter((s) => s.data.text === 'a long east label' || s.data.text === 'south');
+    expect(labels).toHaveLength(2);
+    for (const l of labels) expect(contains(built('G'), l.pose)).toBe(true);
+
+    const scene = createScene<unknown, 'main', RectPose>({
+      systemLayers: [{ id: 'main' }], initial: specs as never, registry: withDiagramRegistry(),
+    });
+    const box = effectivePose(scene as never, scene.get('G' as never)! as never) as RectPose;
+    for (const l of labels) expect(contains(box, l.pose)).toBe(true);
   });
 });

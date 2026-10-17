@@ -104,7 +104,7 @@ export function portSitesOf<TPose>(
   const placer = placerOf(node, pose, opts);
   const spec = placer?.specs.find((s) => s.id === portId);
   if (placer === null || spec === undefined) return [];
-  return [placer.place(spec, spec.at, spec.normal), ...(spec.sites ?? []).map((at) => placer.place(spec, at, undefined))];
+  return [placer.place(spec, spec.at, spec.normal), ...(spec.sites ?? []).map((at) => placer.place(spec, at, at.normal))];
 }
 
 /** A node's port specs, and how to put one at an anchor in world coordinates. */

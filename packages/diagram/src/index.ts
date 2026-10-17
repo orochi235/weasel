@@ -188,7 +188,7 @@ export {
   isPinned,
 } from './trait';
 export type { DiagramNodeEntry, DiagramNodeLike, DiagramNodeReader } from './trait';
-export type { DiagramGroup, DiagramNode, Port, PortAnchor, PortSpec } from './types';
+export type { DiagramGroup, DiagramNode, Port, PortAnchor, PortSite, PortSpec } from './types';
 export { DiagramView } from './DiagramView';
 export type { DiagramViewApi, DiagramViewProps, EdgeRoute, NodeMove } from './DiagramView';
 export { diagramLayoutOf } from './sceneSync';

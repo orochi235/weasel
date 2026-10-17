@@ -16,6 +16,11 @@ export interface PortAnchor {
   v: number;
 }
 
+/** One more place a port may sit, and optionally the direction it faces there. */
+export interface PortSite extends PortAnchor {
+  normal?: Vec2 | null;
+}
+
 /** One attachment point declared on a node. */
 export interface PortSpec {
   /** Unique within the node. Edges name this, so it outlives a re-layout. */
@@ -25,8 +30,9 @@ export interface PortSpec {
    *  of `at` and these faces the edge's next point most directly, so a
    *  diamond's second exit can leave by its top or its bottom vertex, toward
    *  wherever its wire goes. Everything else that shows a port where it is —
-   *  the connect affordance, `portsOf` — reads `at`. */
-  sites?: readonly PortAnchor[];
+   *  the connect affordance, `portsOf` — reads `at`. A site faces away from
+   *  the node's center unless it gives a `normal` of its own. */
+  sites?: readonly PortSite[];
   /** Consulted by a connect gesture's validity predicate. Uninterpreted here. */
   type?: string;
   /** What the port is for, drawn beside it outside the node: beside the
@@ -35,8 +41,7 @@ export interface PortSpec {
   label?: string;
   /** The direction an edge leaves along, overriding the one the anchor
    *  implies. `null` means "no preferred direction" — a router goes straight
-   *  at it. Applies at `at`; a port at one of its `sites` faces away from
-   *  the node's center. */
+   *  at it. Applies at `at`; each of `sites` says its own. */
   normal?: Vec2 | null;
 }
 

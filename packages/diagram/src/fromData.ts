@@ -13,6 +13,7 @@ import { bodyTrait, buildBody, measureBody, sizeToBody, type BodySpec, type Meas
 import { edgeSpecs, labelStyleOf, wireLabels } from './dataEdges';
 import type { DiagramEdge } from './edgeTrait';
 import { force } from './force';
+import { grownBy } from './footprint';
 import { labelFollowsLayout, type EdgeLabelRoom, type Graph, type GraphEdge, type GraphGroup, type GraphNode } from './graph';
 import type { DiagramAnchor } from './group';
 import type { DiagramLabel } from './labelTrait';
@@ -375,18 +376,18 @@ export function diagramScene(data: DiagramData, opts: DiagramSceneOptions = {}):
     : opts.layout === 'none' ? null
     : LAYOUTS[opts.layout ?? 'layered'];
   const layoutOptions: LayoutOptions = { order: 'barycenter', ...opts.layoutOptions };
-  const run = layout === null ? null : planOf(layout, graph, layoutOptions);
-  const plan = layout?.plan === undefined ? null : run;
-  const moved = run?.moves ?? new Map();
+  const plan = layout === null ? null : planOf(layout, graph, layoutOptions);
+  const moved = plan?.moves ?? new Map();
 
   const specs: DiagramSpec[] = [];
   const placedAt = placed(data, seeds, moved);
   // The author's own ports and waypoints win over the plan's.
-  const routes = plan === null ? null : authoredOver(edges.map((e) => ({ ...e, id: edgeIdOf(e) })), plan);
+  const routes = plan === null || layout?.plan === undefined ? null : authoredOver(edges.map((e) => ({ ...e, id: edgeIdOf(e) })), plan);
   // Behind every node, so a box never paints over what it holds.
   const edgeCtx = { idOf: edgeIdOf, font, measure, fallback: EDGE, labelPlacement: LABEL_PLACEMENT, routes, opts };
   const groupLook = (g: DataGroup) => ({ style: opts.groupStyle?.(g) ?? GROUP, text: styleOf(titleStyle) });
-  specs.push(...groupSpecs(groups, placedAt, groupLook, wireLabels(edges, edgeCtx)));
+  const footprints = new Map(seeds.map((s) => [s.id, grownBy(placedAt.get(s.id)!, s.margin)]));
+  specs.push(...groupSpecs(groups, footprints, groupLook, wireLabels(edges, edgeCtx)));
   for (const [i, n] of data.nodes.entries()) {
     const seed = seeds[i]!.bounds;
     const at = placedAt.get(n.id)!;

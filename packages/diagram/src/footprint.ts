@@ -8,6 +8,7 @@
  * every port where it really is.
  */
 import type { Vec2 } from '@weasel-js/core/math';
+import type { GroupInset } from './cluster';
 import type { Graph, GraphNode } from './graph';
 import type { LayoutPlan } from './layout';
 import type { Bounds } from './outline';
@@ -21,12 +22,24 @@ function anchorIn(box: Bounds, p: Vec2): PortAnchor {
   };
 }
 
+/** `bounds` grown by `margin`: what a node takes up, labels and all. Layout
+ *  spaces nodes by it, and a group's box is fitted around it. */
+export function grownBy(bounds: Bounds, margin: GroupInset | undefined): Bounds {
+  if (margin === undefined) return bounds;
+  return {
+    x: bounds.x - margin.left,
+    y: bounds.y - margin.top,
+    width: bounds.width + margin.left + margin.right,
+    height: bounds.height + margin.top + margin.bottom,
+  };
+}
+
 /** `node` as layout sees it: bounds grown by its margin, ports where they were. */
 export function footprintNode(node: GraphNode): GraphNode {
   const m = node.margin;
   if (m === undefined) return node;
   const b = node.bounds;
-  const bounds = { x: b.x - m.left, y: b.y - m.top, width: b.width + m.left + m.right, height: b.height + m.top + m.bottom };
+  const bounds = grownBy(b, m);
   const specs = node.ports ?? DEFAULT_PORTS;
   const trait = { ports: specs, ...(node.outline !== undefined ? { outline: node.outline } : {}) };
   const ports = specs.map((spec): PortSpec => {
@@ -36,7 +49,7 @@ export function footprintNode(node: GraphNode): GraphNode {
       ...spec,
       at: anchorIn(bounds, at.point),
       normal: at.normal,
-      ...(spec.sites !== undefined ? { sites: sites.map((s) => anchorIn(bounds, s.point)) } : {}),
+      ...(spec.sites !== undefined ? { sites: sites.map((s) => ({ ...anchorIn(bounds, s.point), normal: s.normal })) } : {}),
     };
   });
   const { outline: _o, margin: _m, ...kept } = node;
