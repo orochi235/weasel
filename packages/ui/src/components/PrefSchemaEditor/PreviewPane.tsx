@@ -69,7 +69,7 @@ function MenuPreview({ schema, over }: { schema: PrefGroup; over?: SchemaRoot })
     <section className={`${s.pane} ${s.previewPane}`} aria-label="Live preview">
       <PaneHeader title="Live preview" />
       <div className={s.previewStage}>
-        <BarMenu label={schema.name || 'Menu'} schema={schema} values={() => undefined} defaultOpen {...(over && 'children' in over ? { over } : {})} />
+        <BarMenu key={JSON.stringify(schema)} label={schema.name || 'Menu'} schema={schema} values={() => undefined} defaultOpen {...(over && 'children' in over ? { over } : {})} />
       </div>
     </section>
   );

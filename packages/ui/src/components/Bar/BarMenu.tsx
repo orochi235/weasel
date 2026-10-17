@@ -57,12 +57,15 @@ export function BarMenu({ label, schema, values, onChange, over, defaultOpen }: 
   const { anchor, container, ready } = useOverlayPortal();
   const target = container ?? (typeof document !== 'undefined' ? document.body : null);
 
+  // `defaultOpen` holds until the menu has opened once or the reader has touched it.
+  const pending = useRef(defaultOpen === true);
   const close = useCallback(() => {
+    pending.current = false;
     setOpen(null);
     button.current?.focus();
   }, []);
 
-  const show = (source: OpenMenu['source']): void => {
+  const show = (source: OpenMenu['source']): boolean => {
     const entries = resolveSchemaMenu(schema, {
       actions: () => registry?.list() ?? [],
       depsFor: (action) => (depReg ? buildDepsFromRequires(action, depReg) : undefined),
@@ -71,17 +74,23 @@ export function BarMenu({ label, schema, values, onChange, over, defaultOpen }: 
       ...(onChange ? { onChange } : {}),
       ...(over ? { over } : {}),
     });
-    if (entries.length === 0) return;
+    if (entries.length === 0) return false;
     const rect = button.current!.getBoundingClientRect();
     const under = { x: rect.left, y: rect.top, w: rect.width, h: rect.height };
     setOpen((prev) => ({ seq: (prev?.seq ?? 0) + 1, entries, client: { x: rect.left, y: rect.bottom }, under, source }));
+    return true;
   };
+  const showNow = useLatest(show);
 
+  // An action registered after this mounts can be what makes the menu non-empty, so a shut default retries on each change.
   useEffect(() => {
-    if (defaultOpen) show('pointer');
-    // Once, on mount: `defaultOpen` is an initial state, not a controlled one.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    if (!pending.current) return;
+    const attempt = () => {
+      if (pending.current && showNow.current('pointer')) pending.current = false;
+    };
+    attempt();
+    return registry?.subscribe(attempt);
+  }, [registry, showNow]);
 
   return (
     <>
@@ -93,6 +102,7 @@ export function BarMenu({ label, schema, values, onChange, over, defaultOpen }: 
         aria-haspopup="menu"
         aria-expanded={open !== null}
         onClick={(e) => {
+          pending.current = false;
           if (wasOpen.current) {
             wasOpen.current = false;
             return;
