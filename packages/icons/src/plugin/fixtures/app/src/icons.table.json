@@ -1,0 +1,8 @@
+{
+  "namespace": "fx",
+  "owner": "fixture-app",
+  "icons": {
+    "dot": { "body": "<path data-id=\"fx-dot-body\"/>", "group": "Marks", "tags": [] },
+    "ring": { "body": "<path data-id=\"fx-ring-body\"/>", "group": "Marks", "tags": ["round"] }
+  }
+}
