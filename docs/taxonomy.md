@@ -389,8 +389,8 @@ A registration lands in the innermost tier around the registering component. A
 lookup made through a scope answers from that scope first, then its yoke, then
 the root; another scope's entries are never visible. A lookup made through a
 root or a yoke — chrome's `trigger`, `begin`, `list`, `useActiveToolContext` —
-answers from the **active scope**: the one that last took a pointerdown or wheel,
-or the newest where none has. Keys are stricter. A key that reaches the page
+answers from the **active scope**: the one that last took a pointerdown, wheel or
+contextmenu, or the newest where none has. Keys are stricter. A key that reaches the page
 goes to the canvas last pressed or scrolled in, across every root on the page,
 and to no canvas before the first such interaction, so a canvas in a side panel
 takes no keys from a page that wants them. `<SceneCanvas claimKeys>` takes them

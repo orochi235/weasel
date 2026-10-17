@@ -33,11 +33,6 @@ Priority tags:
   (`distanceReadout.ts`), a hover dispatched when a modifier changes, and draw's move snapping to
   equal sibling spacing. The P3 "Moving a shape does not snap to measurement ends" folds into it.
 
-- **(P3) A `contextmenu` with no preceding press resolves against the wrong input scope.** The
-  keyboard ContextMenu key sends one with no press before it, so it falls to the active or newest
-  input scope; with several sibling canvases and no press yet, that may not be the canvas the
-  event came from. Shift+F10 goes through the key holder and is unaffected.
-
 - **(P2) `features` names two things.** The `<SceneCanvas features>` prop composes behavior presets
   (`canvas/SceneCanvas/features.ts`); `packages/core/src/features/<name>/` is a source directory
   bundling one domain's primitives, and `docs/taxonomy.md` calls each of those a "feature" too.
@@ -133,12 +128,6 @@ Priority tags:
 
 - **(P3) `BASELINE.md`'s text layout numbers include grouping.**
   `tests/perf/bench/text-layout.bench.ts` times layout alone now, so they need re-recording.
-
-- **(P3) The dispatcher's canvas-local point ignores a `clientToWorld` override.** `toCanvasLocal`
-  in `packages/routing/src/interactions/dispatcher/dispatchCore.ts` subtracts the element's rect,
-  so on a canvas under a CSS transform the painted cursor, a wheel or pinch's `local`, and the
-  long-press state's `local` are off. Core's `surfaceLocal` puts the override's world point back
-  through the camera; the dispatcher holds no camera to do the same with.
 
 - **(P3) What moving the Badge lab out of its stories file left.** The lab is
   `packages/ui/src/components/Badge/lab/` now.

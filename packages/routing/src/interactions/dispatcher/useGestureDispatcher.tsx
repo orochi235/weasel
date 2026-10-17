@@ -28,7 +28,7 @@ export type {
  * mounted inside `<SceneCanvas>`'s providers.
  */
 export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
-  const { canvasRef, actions, entriesById, enabled = true, keyboard = true, affordanceAt, classifyTarget, dispatcher: dispatcherOpt, clientToWorld, requestRedraw, paintedCursor, cursorSink, getRuleCtx, onClick, onDoubleClick, views, channels, longPress, claimKeys = false, hears = 'scope' } = opts;
+  const { canvasRef, actions, entriesById, enabled = true, keyboard = true, affordanceAt, classifyTarget, dispatcher: dispatcherOpt, clientToWorld, clientToLocal, requestRedraw, paintedCursor, cursorSink, getRuleCtx, onClick, onDoubleClick, views, channels, longPress, claimKeys = false, hears = 'scope' } = opts;
   // Read out as booleans, not the object: the attach effect depends on
   // them, and an inline `channels={{...}}` would re-bind every listener on
   // every render.
@@ -70,6 +70,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     getRuleCtx,
   });
   const viewsRef = useLatest(views);
+  const clientToLocalRef = useLatest(clientToLocal);
 
   /** Every live dispatcher — what a cancel-everything has to reach. */
   const allDispatchers = useCallback((): Dispatcher[] => [
@@ -102,6 +103,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     return attachInput(canvasRef.current, {
       root: () => rootTargetRef.current,
       views: () => viewsRef.current,
+      clientToLocal: () => clientToLocalRef.current,
       context: () => ctxRef.current,
       actions: () => registryRef.current,
       dispatchers: allDispatchers,
@@ -122,5 +124,5 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       ingest: ingestChannel,
     });
   }, [enabled, keyboard, canvasRef, pointerChannel, wheelChannel, pinchChannel, contextMenuChannel, ingestChannel,
-    allDispatchers, ctxRef, kitSettingsRef, longPressRef, onClickRef, onDoubleClickRef, cursorRef, registryRef, requestRedrawRef, rootTargetRef, viewsRef]);
+    allDispatchers, clientToLocalRef, ctxRef, kitSettingsRef, longPressRef, onClickRef, onDoubleClickRef, cursorRef, registryRef, requestRedrawRef, rootTargetRef, viewsRef]);
 }

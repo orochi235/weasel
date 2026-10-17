@@ -59,6 +59,8 @@ export interface DispatchCoreSources {
   /** The record the hook's flat options describe: view zero. */
   root(): DispatcherViewTarget;
   views(): UseGestureDispatcherOptions['views'];
+  /** The host's client-to-canvas-local mapping, if it supplies one. */
+  clientToLocal(): UseGestureDispatcherOptions['clientToLocal'];
   /** The dispatcher context, less the parts that depend on the routed view. */
   context(): DispatcherContext;
   actions(): ActionsRegistry;
@@ -106,6 +108,8 @@ export function createDispatchCore(src: DispatchCoreSources): PointerDispatchCor
       return fn ? fn(cx, cy) : { x: cx, y: cy };
     },
     toCanvasLocal: (cx, cy) => {
+      const own = src.clientToLocal();
+      if (own) return own(cx, cy);
       if (!canvas) return { x: cx, y: cy };
       const [x, y] = clientToCanvas(canvas, cx, cy);
       return { x, y };
