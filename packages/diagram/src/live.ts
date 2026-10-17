@@ -31,6 +31,7 @@ import { chain } from './chain';
 import { layered } from './layered';
 import { LAYOUTS, layoutPoses } from './layoutAction';
 import { center, planOf, type LayoutFn, type LayoutOptions, type LayoutResult } from './layout';
+import { routeEasings, useEasedRoutes } from './liveRoutes';
 import { routeWrites, routesOf, type LayoutRoutes } from './routeWrites';
 import { tree } from './tree';
 import type { DiagramNodeReader } from './trait';
@@ -61,6 +62,12 @@ const EASE_FRAMES = 24;
 /** Smooth start and end. Inlined rather than pulled from the animator, which
  *  is a registry of running tweens, not a curve library. */
 const easeInOut: EasingFn = (t) => (t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2);
+
+/** How far along an eased run is at `frame`, before and after its easing. */
+function progress(frame: number, frames: number, easing: EasingFn): { t: number; u: number } {
+  const t = Math.min((frame + 1) / frames, 1);
+  return { t, u: easing(t) };
+}
 
 /** Options for {@link forceProducer}. */
 export interface ForceProducerOptions<TPose> extends ForceOptions {
@@ -164,8 +171,7 @@ export function easedProducer<TPose>(
   for (const node of graph.nodes) from.set(node.id, { x: node.bounds.x, y: node.bounds.y });
 
   return ({ pinned, frame }) => {
-    const t = Math.min((frame + 1) / frames, 1);
-    const u = easing(t);
+    const { t, u } = progress(frame, frames, easing);
     const result = new Map<string, { x: number; y: number }>();
     for (const [id, to] of target) {
       if (pinned.has(id as NodeId)) continue;
@@ -247,6 +253,7 @@ export function useLiveLayout<TPose>(opts: UseLiveLayoutOptions<TPose>): LiveLay
   /** Whether a gesture held a participant during the run: the routes were
    *  laid out around where it was going, not where it was put. */
   const held = useRef(false);
+  const eased = useEasedRoutes<TPose>();
 
   const build = useCallback((): void => {
     const o = optsRef.current;
@@ -258,6 +265,7 @@ export function useLiveLayout<TPose>(opts: UseLiveLayoutOptions<TPose>): LiveLay
     producerFrame.current = 0;
     routes.current = undefined;
     held.current = false;
+    eased.set([]);
     const algorithm = o.algorithm ?? 'force';
     if (algorithm === 'force') {
       routes.current = routesOf(graph, { moves: new Map() });
@@ -270,21 +278,20 @@ export function useLiveLayout<TPose>(opts: UseLiveLayoutOptions<TPose>): LiveLay
     const fn = typeof algorithm === 'function' ? algorithm : LAYOUTS[algorithm] ?? layered;
     const plan = planOf(fn, graph, o.layout);
     routes.current = routesOf(graph, plan);
+    eased.set(routeEasings(o.scene, graph, plan.moves, routes.current));
     producer.current = easedProducer<TPose>(graph, () => plan.moves, {
       ...(o.layout ? { layout: o.layout } : {}),
       ...(o.frames === undefined ? {} : { frames: o.frames }),
       ...(o.easing ? { easing: o.easing } : {}),
     });
-  }, [optsRef]);
+  }, [optsRef, eased]);
 
   const step = useCallback((ctx: PoseRunCtx<TPose>): PoseRunStep<TPose> => {
     const o = optsRef.current;
     if (producer.current === null) return { poses: [], done: true };
     if (ctx.pinned.size > 0) held.current = true;
-    const { result, done } = producer.current({
-      pinned: ctx.pinned,
-      frame: producerFrame.current++,
-    });
+    const frame = producerFrame.current++;
+    const { result, done } = producer.current({ pinned: ctx.pinned, frame });
     // A pinned participant takes its subtree out of the frame with it: its
     // rows and labels are ids of their own, and left in they would be
     // published from the pose the document still holds.
@@ -295,13 +302,17 @@ export function useLiveLayout<TPose>(opts: UseLiveLayoutOptions<TPose>): LiveLay
       placed = held;
     }
     const poses = layoutPoses(o.scene, placed, o.geometry);
+    // Routes ease only toward where they will be written, which a held run never writes.
+    const { u } = progress(frame, o.frames ?? EASE_FRAMES, o.easing ?? easeInOut);
+    eased.show(o.scene, held.current ? null : u, (id) => poses.get(id) ?? ctx.pinned.get(id as NodeId));
     return { poses: [...poses] as [NodeId, TPose][], done };
-  }, [optsRef]);
+  }, [optsRef, eased]);
 
   const run = usePoseRun<TPose>({
     scene: opts.scene,
     step,
-    onCommit: (moved) => optsRef.current.onSettle?.(moved),
+    // Eased routes go once the routes are in the document, so no frame shows the old ones.
+    onCommit: (moved) => { eased.drop(); optsRef.current.onSettle?.(moved); },
     // Routes match where the layout was going, so only a run that got there
     // with nothing held along the way writes them.
     commitWith: (finished) => {
@@ -337,14 +348,14 @@ export function useLiveLayout<TPose>(opts: UseLiveLayoutOptions<TPose>): LiveLay
       run.start();
     },
     stop: () => { run.stop(); },
-    cancel: () => { run.cancel(); },
+    cancel: () => { run.cancel(); eased.drop(); },
     restart() {
       run.cancel();
       build();
       run.start();
     },
     isRunning: () => run.isRunning(),
-  }), [run, build]);
+  }), [run, build, eased]);
 }
 
 /** The layouts that ease rather than relax, for a consumer choosing one. */
