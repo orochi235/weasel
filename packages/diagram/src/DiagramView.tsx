@@ -35,6 +35,9 @@ export interface DiagramViewProps {
    *  selection and anything moved since stay put unless the new specs change
    *  them. Pass a new `key` to start over instead. */
   specs: readonly DiagramSpec[];
+  /** The view opens fitted to the diagram, and fits again when the size or a
+   *  fit option changes, until the user pans or zooms; from then on the view
+   *  is theirs. */
   width: number;
   height: number;
   /** A participant id, or null for none. */
@@ -71,24 +74,24 @@ export interface DiagramViewProps {
   /** How a layout run from {@link DiagramViewApi.layout} behaves: its forces,
    *  how many frames an eased layout takes, its easing. */
   live?: Omit<UseLiveLayoutOptions<RectPose>, 'scene' | 'source' | 'algorithm'>;
-  /** The smallest scale the initial fit may use. Unset, the whole diagram fits
+  /** The smallest scale the fit may use. Unset, the whole diagram fits
    *  however small that makes it; set, it stops here and the rest is a pan away. */
   minScale?: number;
-  /** The largest scale the initial fit may use. Default 1, so a small
+  /** The largest scale the fit may use. Default 1, so a small
    *  diagram opens at its own size rather than blown up. */
   maxScale?: number;
   /** Which part of a diagram too big for the box it opens on: its middle
    *  (default) or its top-left, where a layered flow begins. */
   anchor?: 'center' | 'start';
-  /** Space kept clear around the diagram by the initial fit, in CSS pixels.
+  /** Space kept clear around the diagram by the fit, in CSS pixels.
    *  Default 16. */
   fitPadding?: number;
   /** What the canvas paints behind the diagram. Unset, it is transparent. */
   background?: Paint;
-  /** The view, controlled. Set it and the initial fit is skipped; pair it
+  /** The view, controlled. Set it and the fit is skipped; pair it
    *  with `onViewChange` or panning does nothing. */
   view?: View;
-  /** Every view change, from a pan, a zoom or the initial fit. */
+  /** Every view change, from a pan, a zoom or a refit. */
   onViewChange?: (view: View) => void;
   className?: string;
 }
@@ -104,6 +107,9 @@ export interface DiagramViewApi {
 }
 
 const AMBIENT = [dragPanContribution()];
+const IDENTITY: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
+const sameView = (a: View, b: View) =>
+  a.x === b.x && a.y === b.y && a.scale.x === b.scale.x && a.scale.y === b.scale.y;
 const NO_MARQUEE = { areaSelect: null };
 
 /** A diagram: drag or wheel to pan, zoom, and pick a node; drag nodes with
@@ -213,10 +219,20 @@ function Inner({
     () => controlled
       ? undefined
       : fitDiagram(specs, { width, height }, { minScale, maxScale, anchor, padding: fitPadding }),
-    // The fit is where the view opens; a later `specs` keeps the view it has.
+    // A later `specs` keeps the view it has.
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [controlled, width, height, minScale, maxScale, anchor, fitPadding],
   );
+  const fitted = useRef(defaultView);
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const was = fitted.current;
+    if (canvas === null || defaultView === undefined || was === defaultView) return;
+    // A view the user has panned or zoomed off its fit is theirs to keep.
+    if (!sameView(canvas.getView(), was ?? IDENTITY)) return;
+    fitted.current = defaultView;
+    canvas.setView(defaultView);
+  }, [defaultView]);
   return (
     <SceneCanvas
       ref={canvasRef}
