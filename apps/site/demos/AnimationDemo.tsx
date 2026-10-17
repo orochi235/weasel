@@ -13,7 +13,7 @@ import {
   useSelection,
   useVelocityTracker,
 } from '@weasel-js/core';
-import { useAnimator } from '@weasel-js/animator';
+import { useAnimator } from '@weasel-js/animator/react';
 import { createGridLayer } from '@weasel-js/guides';
 import type { MoveBehavior } from '@weasel-js/core';
 import type { AnimationInfo, Animator, LiveAnimation, PhysicsHandle } from '@weasel-js/animator';

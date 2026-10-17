@@ -1,7 +1,7 @@
 {
   "name": "@weasel-js/animator",
   "version": "1.10.1",
-  "description": "The weasel animator: tweens, springs, holds, staggers, and timelines that combine on targets, run by one frame loop. Needs no scene.",
+  "description": "The weasel animator: tweens, springs, holds, staggers, and timelines that combine on targets, run by one frame loop. Needs no scene; the root entry has no React, and the hook is under /react.",
   "license": "MIT",
   "type": "module",
   "sideEffects": false,
@@ -12,6 +12,10 @@
     ".": {
       "import": "./dist/index.js",
       "types": "./dist/index.d.ts"
+    },
+    "./react": {
+      "import": "./dist/react.js",
+      "types": "./dist/react.d.ts"
     },
     "./package.json": "./package.json"
   },
@@ -45,6 +49,9 @@
   },
   "peerDependencies": {
     "react": ">=18"
+  },
+  "peerDependenciesMeta": {
+    "react": { "optional": true }
   },
   "publishConfig": {
     "access": "public",

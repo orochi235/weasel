@@ -6,7 +6,7 @@ import {
   useScene,
   easeInOutCubic,
 } from '@weasel-js/core';
-import { useAnimator } from '@weasel-js/animator';
+import { useAnimator } from '@weasel-js/animator/react';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 
 const W = 600, H = 400;

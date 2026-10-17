@@ -9,7 +9,8 @@ import {
   textCommandFromRuns,
   useScene,
 } from '@weasel-js/core';
-import { createSlew, useAnimator } from '@weasel-js/animator';
+import { createSlew } from '@weasel-js/animator';
+import { useAnimator } from '@weasel-js/animator/react';
 import { createParallaxLayer } from '@weasel-js/parallax';
 import type { Dims, DrawCommand, Effect, LayerGroup, RectPose, RenderLayer, SceneCanvasApi } from '@weasel-js/core';
 import { CAM_SCALE, cameraView, followCamera } from './platformer/camera';

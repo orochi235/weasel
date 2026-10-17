@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { bindClip, toClip, useAnimator } from '@weasel-js/animator';
+import { bindClip, toClip } from '@weasel-js/animator';
+import { useAnimator } from '@weasel-js/animator/react';
 import type { Clip, TimelineHandle } from '@weasel-js/animator';
 import { asNodeId, SceneCanvas, sceneClipTargets, solid, useScene } from '@weasel-js/core';
 import type { RectPose, Fill } from '@weasel-js/core';

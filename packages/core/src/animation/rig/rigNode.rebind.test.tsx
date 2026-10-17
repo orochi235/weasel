@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { act, render } from '@testing-library/react';
 import { linear, type Path } from '@weasel-js/geom';
-import { useAnimator, type Animator, type Skeleton, type Skin } from '@weasel-js/animator';
+import { type Animator, type Skeleton, type Skin } from '@weasel-js/animator';
+import { useAnimator } from '@weasel-js/animator/react';
 import { createScene } from '../../core/scene/scene';
 import type { RectPose } from '../../core/scene/types';
 import type { Rig } from './bindRig';

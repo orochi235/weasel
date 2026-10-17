@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { autoSkin, useAnimator } from '@weasel-js/animator';
+import { autoSkin } from '@weasel-js/animator';
+import { useAnimator } from '@weasel-js/animator/react';
 import type { Pose, SampledTrack, Skeleton } from '@weasel-js/animator';
 import {
   asNodeId,

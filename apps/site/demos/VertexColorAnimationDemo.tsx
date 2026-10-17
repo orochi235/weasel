@@ -15,8 +15,8 @@ import {
   solidVertexColors,
   staggerVertexColors,
   tweenVertexColors,
-  useAnimator,
 } from '@weasel-js/animator';
+import { useAnimator } from '@weasel-js/animator/react';
 
 const W = 440, H = 240;
 const ANCHORS = 7;

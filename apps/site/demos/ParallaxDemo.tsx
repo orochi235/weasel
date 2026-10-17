@@ -9,7 +9,7 @@ import {
   rectPath,
   solid,
 } from '@weasel-js/core';
-import { useAnimator } from '@weasel-js/animator';
+import { useAnimator } from '@weasel-js/animator/react';
 import { createParallaxLayer, createParallaxPlane, createTiledLayer } from '@weasel-js/parallax';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import type { ParallaxOpts, Path, View, RenderLayer, Fill } from '@weasel-js/core';

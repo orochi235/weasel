@@ -1,5 +1,5 @@
 import { useInsertionEffect, useMemo, useRef } from 'react';
-import { useAnimator } from '@weasel-js/animator';
+import { useAnimator } from '@weasel-js/animator/react';
 import { useLatest } from '@weasel-js/react';
 import { useViewAnimationOn, type ViewAnimationApi } from 'core/viewport/useViewAnimation';
 import { sameView, type View } from 'core/viewport/view';

@@ -31,7 +31,8 @@ import { renderHook } from '@testing-library/react';
 import { easeOut } from '@weasel-js/geom';
 import * as blits from '@msb235/blits';
 import { keys, kit, mix, patch, spring, sum, vec, type Mix } from '@msb235/blits';
-import { createTarget, useAnimator, type Animator } from '@weasel-js/animator';
+import { createTarget, type Animator } from '@weasel-js/animator';
+import { useAnimator } from '@weasel-js/animator/react';
 import { group } from './group';
 
 type Pt = { x: number; y: number };

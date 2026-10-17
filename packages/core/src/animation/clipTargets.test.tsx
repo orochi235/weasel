@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
-import { bindClip, toClip, useAnimator, type Clip, type Skeleton } from '@weasel-js/animator';
+import { bindClip, toClip, type Clip, type Skeleton } from '@weasel-js/animator';
+import { useAnimator } from '@weasel-js/animator/react';
 import { createScene } from '../core/scene/scene';
 import { effectivePose } from '../core/scene/effectivePose';
 import type { RectPose } from '../core/scene/types';
