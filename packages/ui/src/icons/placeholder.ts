@@ -10,5 +10,5 @@ const warned = new Set<string>();
 export function warnMissing(ref: string | undefined): void {
   if (!isDev() || !ref || warned.has(ref)) return;
   warned.add(ref);
-  console.warn(`weasel: no icon "${ref}" is registered. Is its package's table in <WeaselProvider icons>, or its variant loaded?`);
+  console.warn(`weasel: no icon "${ref}" is registered. Is its package's table in <IconRegistryProvider icons> (or <WeaselProvider icons>), or its variant loaded?`);
 }
