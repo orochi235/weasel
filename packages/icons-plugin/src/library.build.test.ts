@@ -58,7 +58,7 @@ describe('weaselIcons library mode', () => {
   });
 
   it('fails a vite library build that strips every annotation', async () => {
-    await expect(viteLibrary(true)).rejects.toThrow(/stripped every @icon annotation/);
+    await expect(viteLibrary(true)).rejects.toThrow(/stripped the @icon annotation from lib:star/);
   });
 });
 

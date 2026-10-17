@@ -593,15 +593,6 @@ How the registry and the build plugin work is in `docs/icons.md`.
   A namespace import (`g.icon('x')`), a default import, or a module that re-exports `icon` leaves
   its calls unrewritten, so their glyphs miss a trimmed build. Warn on each of those forms.
 
-- **(P3) Library mode re-annotates only the refs of a chunk's own modules.** `annotate.ts`
-  (`packages/icons-plugin/src/annotate.ts`) matches a chunk's literals against refs recorded for
-  the modules in that chunk. If rolldown inlines a constant into another chunk, that literal ships
-  unannotated and an app build drops its glyph. Match against every ref the build recorded.
-
-- **(P3) Library mode's lost-annotation check fires only when every annotation is gone.**
-  `stripped()` in `packages/icons-plugin/src/annotate.ts` fails a build whose output holds no
-  `@icon` at all. Check each recorded ref instead, so losing some of them fails too.
-
 - **(P3) PrefSchemaEditor's icon picker is missing keyboard and state handling.** `IconAttrField`
   (`packages/ui/src/components/PrefSchemaEditor/IconAttrField.tsx`) has no Home, End, PageUp or
   PageDown; a click on a cell moves focus off the listbox, so the arrows stop working; it ignores

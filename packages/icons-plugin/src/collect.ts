@@ -4,12 +4,16 @@ import { parseModule } from './parse';
 const ANNOTATED = /\/\*\s*@icon\s*\*\/\s*(['"])([^'"]+)\1/g;
 const ANNOTATION = /^\s*@icon\s*$/;
 
-/** Every string literal in a parsed module, by start offset. */
+/** Every string literal in a parsed module, a template with no substitution included, by start offset. */
 export function stringLiterals(parsed: ParseResult): Map<number, string> {
   const literals = new Map<number, string>();
   new Visitor({
     Literal(node) {
       if (typeof node.value === 'string') literals.set(node.start, node.value);
+    },
+    TemplateLiteral(node) {
+      const cooked = node.expressions.length === 0 ? node.quasis[0]?.value.cooked : undefined;
+      if (typeof cooked === 'string') literals.set(node.start, cooked);
     },
   }).visit(parsed.program);
   return literals;
