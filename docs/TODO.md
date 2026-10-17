@@ -873,9 +873,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   Headless Playwright sends no such event, so this is unverified. Check on a real Windows or
   Linux Chrome; if it reproduces, the likely fix is for the keydown to suppress the native event.
 
-- **(P3) `useCommand` cannot give a variant its own shortcut.** `keys` takes one `GestureSpec`, not
-  `{ spec, opts: { params } }`, so `viewport.zoom:in` can carry a key through `useAction` only.
-
 - **(P3) A bar `action` leaf naming a bare parametric id draws a dead button that misreports itself.**
   Its tooltip says "no action", though the action exists and only needs a variant. Expand the leaf
   into its variants, or word the tooltip as "pick a variant".

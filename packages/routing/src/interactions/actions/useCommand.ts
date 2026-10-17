@@ -1,9 +1,9 @@
 import { useMemo } from 'react';
-import type { GestureSpec } from '@weasel-js/gestures';
 import type { IconRef } from '@weasel-js/icons';
 import { useLatest, useStableByContent } from '@weasel-js/react';
 import { deepEqual } from '@weasel-js/registry';
 import type { Action, ActionDisabledReason, ActionVariant } from './action';
+import type { BoundGesture } from './binding';
 import { useAction } from './ActionsProvider';
 
 /** What a command offers besides its id, label and callback. */
@@ -12,8 +12,8 @@ export interface CommandOptions {
   enabled?: () => true | ActionDisabledReason;
   /** Whether it reads as held down. Read each time it is asked. */
   active?: () => boolean;
-  /** The gestures that run it. */
-  keys?: GestureSpec | readonly GestureSpec[];
+  /** The gestures that run it. The `{ spec, opts: { params } }` form gives one variant its own key. */
+  keys?: BoundGesture | readonly BoundGesture[];
   /** Shown beside the label. */
   icon?: IconRef;
   /** Words a palette finds it by and a tagged bar or menu gathers it under. */
@@ -49,7 +49,7 @@ export function useCommand(
       label,
       invoker: { timing: 'immediate', run: (_deps, params) => latest.current.run(params) },
     };
-    if (keys !== undefined) a.defaultBinding = Array.isArray(keys) ? [...keys] : (keys as GestureSpec);
+    if (keys !== undefined) a.defaultBinding = bindingOf(keys);
     if (tags !== undefined) a.tags = tags;
     if (variants !== undefined) a.variants = variants;
     if (hasEnabled) a.enabled = () => read()?.enabled?.() ?? true;
@@ -59,3 +59,10 @@ export function useCommand(
   }, [id, label, icon, keys, tags, variants, hasEnabled, hasActive, latest]);
   useAction(action);
 }
+
+function bindingOf(keys: BoundGesture | readonly BoundGesture[]): Action['defaultBinding'] {
+  if (isList(keys)) return [...keys];
+  return 'spec' in keys ? [keys] : keys;
+}
+
+const isList = (keys: BoundGesture | readonly BoundGesture[]): keys is readonly BoundGesture[] => Array.isArray(keys);
