@@ -2,13 +2,16 @@
  * `DiagramView`'s two-way sync with the data it was built from: new specs are
  * reconciled into the scene, and what a drag or a layout run changed is
  * reported back, so a consumer keeping the diagram as data can store it.
+ * `diagramLayoutOf` reads the same report off a `diagramScene` build.
  */
 import { reconcileSpecs, useLatest, type RectPose, type Scene } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
 import { useEffect, useRef } from 'react';
-import { diagramEdgeOf, samePoints, type EdgeEnd } from './edgeTrait';
+import { diagramEdgeOf, layoutOwnsRoute, samePoints, type DiagramEdge, type EdgeEnd } from './edgeTrait';
 import type { DiagramSceneData, DiagramSpec } from './fromData';
+import { diagramGroupOf } from './group';
 import type { LayoutPorts } from './layout';
+import { isPinned } from './trait';
 
 /** Where a moved node now stands. */
 export interface NodeMove { id: string; x: number; y: number }
@@ -43,6 +46,8 @@ function portsOf(from: EdgeEnd, to: EdgeEnd): LayoutPorts {
 
 const samePorts = (a: LayoutPorts, b: LayoutPorts) => a.from === b.from && a.to === b.to;
 
+const routeOf = (edge: DiagramEdge): Route => ({ waypoints: edge.waypoints ?? NONE, ports: portsOf(edge.from, edge.to) });
+
 function readScene(scene: DiagramScene): Standing {
   const nodes = new Map<string, { x: number; y: number }>();
   const routes = new Map<string, Route>();
@@ -52,9 +57,34 @@ function readScene(scene: DiagramScene): Standing {
       continue;
     }
     const edge = diagramEdgeOf(n);
-    if (edge !== null) routes.set(n.id, { waypoints: edge.waypoints ?? NONE, ports: portsOf(edge.from, edge.to) });
+    if (edge !== null) routes.set(n.id, routeOf(edge));
   }
   return { nodes, routes };
+}
+
+/** What layout placed in a `diagramScene` build, in the shape `DiagramView`'s
+ *  `onMove` reports: every node not pinned, where it stands, and every edge
+ *  whose route or ports layout wrote. Store them the way `onMove` says and
+ *  the next build leaves those nodes where they are. */
+export function diagramLayoutOf(specs: readonly DiagramSpec[]): { moves: NodeMove[]; routes: EdgeRoute[] } {
+  const moves: NodeMove[] = [];
+  const routes: EdgeRoute[] = [];
+  for (const s of specs) {
+    const id = s.id;
+    if (id === undefined) continue;
+    if (s.kind === 'container') {
+      if (diagramGroupOf(s) === null && !isPinned({ id, kind: s.kind, data: s.data })) moves.push({ id, x: s.pose.x, y: s.pose.y });
+      continue;
+    }
+    const edge = diagramEdgeOf(s);
+    if (edge === null) continue;
+    const route = routeOf(edge);
+    const laid = edge.laidOut !== undefined && route.waypoints.length > 0 && layoutOwnsRoute(edge);
+    if (laid || route.ports.from !== undefined || route.ports.to !== undefined) {
+      routes.push({ id, waypoints: laid ? route.waypoints : NONE, ports: route.ports });
+    }
+  }
+  return { moves, routes };
 }
 
 function changes(was: Standing, now: Standing): { moves: NodeMove[]; routes: EdgeRoute[] } {

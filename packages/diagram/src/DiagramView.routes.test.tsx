@@ -4,6 +4,7 @@ import { createRef } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DiagramView, type DiagramViewApi, type EdgeRoute, type NodeMove } from './DiagramView';
 import { diagramScene, edgeIdOf, type DiagramData } from './fromData';
+import { diagramLayoutOf } from './sceneSync';
 
 afterEach(() => { cleanup(); });
 
@@ -103,6 +104,26 @@ describe('DiagramView onMove routes', () => {
     const { rerender } = render(<DiagramView specs={diagramScene(DATA, { layout: 'none' })} width={300} height={300} onMove={onMove} />);
     await act(async () => {
       rerender(<DiagramView specs={laid} width={300} height={300} onMove={onMove} />);
+    });
+    expect(onMove).not.toHaveBeenCalled();
+  });
+
+  it('reports nothing when a host stores what the build laid out and rebuilds', async () => {
+    const onMove = vi.fn();
+    const first = diagramScene(DATA);
+    const { moves, routes } = diagramLayoutOf(first);
+    const at = new Map(moves.map((m) => [m.id, { x: m.x, y: m.y }]));
+    const by = new Map(routes.map((r) => [r.id, r]));
+    const kept: DiagramData = {
+      nodes: DATA.nodes.map((n) => ({ ...n, at: at.get(n.id)!, pinned: true })),
+      edges: DATA.edges.map((e) => {
+        const r = by.get(edgeIdOf(e))!;
+        return { ...e, routed: r.waypoints, routedPorts: r.ports };
+      }),
+    };
+    const { rerender } = render(<DiagramView specs={first} width={300} height={300} onMove={onMove} />);
+    await act(async () => {
+      rerender(<DiagramView specs={diagramScene(kept)} width={300} height={300} onMove={onMove} />);
     });
     expect(onMove).not.toHaveBeenCalled();
   });

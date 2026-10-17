@@ -188,4 +188,5 @@ export type { DiagramNodeEntry, DiagramNodeLike, DiagramNodeReader } from './tra
 export type { DiagramGroup, DiagramNode, Port, PortAnchor, PortSpec } from './types';
 export { DiagramView } from './DiagramView';
 export type { DiagramViewApi, DiagramViewProps, EdgeRoute, NodeMove } from './DiagramView';
+export { diagramLayoutOf } from './sceneSync';
 export { useMirroredSelection } from './mirrorSelection';
