@@ -559,6 +559,63 @@ Priority tags:
 
 ---
 
+## Icons
+
+How the registry and the build plugin work is in `docs/icons.md`.
+
+- **(P3) A variant that fails to load says nothing about why.** `createVariants` in
+  `packages/icons/src/variants.ts` catches the loader's rejection and only sets `failed`. Log the
+  error with `console.error` in development before setting the state.
+
+- **(P3) Changing `IconRegistryProvider`'s `icons` only ever adds.** The tables given on mount
+  seed the registry in its constructor and are never released, so a new `icons` array registers
+  alongside them instead of replacing them
+  (`packages/core/src/iconRegistry/IconRegistryProvider.tsx`). Register the first tables through
+  the same effect that registers later ones, so each change releases what it replaces.
+
+- **(P3) `WeaselProvider` remounts its whole tree when `icons` or `iconVariants` comes or goes.**
+  It wraps the tree in `IconRegistryProvider` when either is set and in
+  `IconRegistryProviderIfRoot` otherwise (`packages/core/src/WeaselProvider.tsx`), so the element
+  type above the tree changes. Keep one wrapper that decides inside whether to mount a registry.
+
+- **(P3) The build plugin never forgets refs or tables between watch builds.** `refs` and `tables`
+  in `packages/icons-plugin/src/index.ts` live for the plugin's lifetime, so under `vite build
+  --watch` a name deleted from the source still ships, and one deleted from both the source and its
+  table fails the rebuild. Clear both in `buildStart` outside dev.
+
+- **(P3) The build plugin skips some imports of `icon()` without a warning.** `rewriteIconCalls`
+  (`packages/icons-plugin/src/rewrite.ts`) follows only a named import from an `icons.gen` module.
+  A namespace import (`g.icon('x')`), a default import, or a module that re-exports `icon` leaves
+  its calls unrewritten, so their glyphs miss a trimmed build. Warn on each of those forms.
+
+- **(P3) The build plugin takes a `dist/package.json` stub for a package root.** `packageDirFinder`
+  (`packages/icons-plugin/src/tables.ts`) stops at the nearest `package.json`. A package that
+  ships `{ "type": "module" }` in `dist` has no `weaselIcons` field there, so its table is never
+  read. Keep walking up past a manifest with no `name`.
+
+- **(P3) Library mode re-annotates only the refs of a chunk's own modules.** `annotate.ts`
+  (`packages/icons-plugin/src/annotate.ts`) matches a chunk's literals against refs recorded for
+  the modules in that chunk. If rolldown inlines a constant into another chunk, that literal ships
+  unannotated and an app build drops its glyph. Match against every ref the build recorded.
+
+- **(P3) Library mode's lost-annotation check fires only when every annotation is gone.**
+  `stripped()` in `packages/icons-plugin/src/annotate.ts` fails a build whose output holds no
+  `@icon` at all. Check each recorded ref instead, so losing some of them fails too.
+
+- **(P3) PrefSchemaEditor's icon picker is missing keyboard and state handling.** `IconAttrField`
+  (`packages/ui/src/components/PrefSchemaEditor/IconAttrField.tsx`) has no Home, End, PageUp or
+  PageDown; a click on a cell moves focus off the listbox, so the arrows stop working; it ignores
+  `ctx.mixed` across a multi-selection; and a value no table holds shows with no mark. Add the
+  keys, keep focus on the listbox, show the mixed state, and mark an unregistered value.
+
+- **(P3) Tests that draw icons mount registries in different ways, or not at all.** Many ui and
+  labkit tests render with no registry and print missing-icon warnings. Forge's
+  `packages/forge/src/kitIcons.tsx` and ui's `packages/ui/src/testing/withIcons.tsx` each list
+  core's and ui's tables, and several tests list them again. Make one helper that holds the list,
+  and wrap those tests in it.
+
+---
+
 ## Scene, adapters & layout
 
 - **(P3) A direct scene call made while a journal is open lands on the scene's own stack.**
