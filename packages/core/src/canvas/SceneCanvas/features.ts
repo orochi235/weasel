@@ -16,6 +16,7 @@
 import type { Action } from '@weasel-js/routing';
 import { never } from 'features/chrome-caps/conditions';
 import type { ChromeId, VisibilityRules } from 'features/chrome-caps/types';
+import type { MoveBehavior } from 'interactions/gestures/types';
 import type { UseMoveOptions } from 'interactions/actions/move/options';
 import type { UseRotateOptions } from 'interactions/actions/rotate/options';
 import type { Contribution, Tool } from 'tools/overlayBinding';
@@ -76,6 +77,10 @@ export interface FeaturePreset {
   /** Its ambient bindings: an always-live entry routing a gesture to its
    *  actions under any tool that does not claim the gesture itself. */
   readonly ambient?: (options: FeatureBindingOptions) => Contribution;
+  /** Behaviors folded into every move the presets' ambient bindings run,
+   *  after the select tool's own: a snap, a readout of the drag. They reach
+   *  only a move some enabled preset binds, `move` or `draw`'s. */
+  readonly moveBehaviors?: readonly MoveBehavior<unknown>[];
   /** The selection chrome that is drawn, and can be grabbed, only while it is on. */
   readonly chrome?: readonly ChromeId[];
   /** Default chrome-caps rules for chrome of its own, under the consumer's
@@ -183,9 +188,15 @@ export function presetOwnTools(enabled: EnabledPresets): Record<string, Tool> {
   return out;
 }
 
-/** The given presets' ambient entries and contributions, in the order they are matched. */
+/** The given presets' ambient entries and contributions, in the order they are
+ *  matched. Their `moveBehaviors` follow the ones `options.move` brings. */
 export function presetAmbient(enabled: EnabledPresets, options: FeatureBindingOptions): Contribution[] {
-  return enabled.presets.flatMap((p) => (p.ambient ? [p.ambient(options)] : []));
+  const extra = enabled.presets.flatMap((p) => p.moveBehaviors ?? []);
+  const move = extra.length === 0
+    ? options.move
+    : { ...options.move, behaviors: [...(options.move?.behaviors ?? []), ...extra] };
+  const opts = { ...options, move };
+  return enabled.presets.flatMap((p) => (p.ambient ? [p.ambient(opts)] : []));
 }
 
 /** The given presets' contributions, in preset order. */
