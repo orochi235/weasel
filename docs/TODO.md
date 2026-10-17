@@ -33,11 +33,6 @@ Priority tags:
   (`distanceReadout.ts`), a hover dispatched when a modifier changes, and draw's move snapping to
   equal sibling spacing. The P3 "Moving a shape does not snap to measurement ends" folds into it.
 
-- **(P3) A `contextmenu` with no preceding press resolves against the wrong input scope.** The
-  keyboard ContextMenu key sends one with no press before it, so it falls to the active or newest
-  input scope; with several sibling canvases and no press yet, that may not be the canvas the
-  event came from. Shift+F10 goes through the key holder and is unaffected.
-
 - **(P2) `features` names two things.** The `<SceneCanvas features>` prop composes behavior presets
   (`canvas/SceneCanvas/features.ts`); `packages/core/src/features/<name>/` is a source directory
   bundling one domain's primitives, and `docs/taxonomy.md` calls each of those a "feature" too.
