@@ -1,5 +1,5 @@
 import { existsSync, lstatSync, readdirSync, readFileSync, realpathSync } from 'node:fs';
-import { dirname, join, parse } from 'node:path';
+import { dirname, join, parse, resolve } from 'node:path';
 import type { IconTable } from '../table';
 
 const read = (file: string): IconTable => JSON.parse(readFileSync(file, 'utf8')) as IconTable;
@@ -85,4 +85,10 @@ export function reachableTables(root: string): IconTable[] {
     }
     if (dir === parse(dir).root) return out;
   }
+}
+
+/** The icons.gen source file an import specifier names, relative to its importer. */
+export function genFile(specifier: string, importer: string): string | undefined {
+  const base = resolve(dirname(importer), specifier);
+  return ['.ts', '.js', ''].map((e) => base + e).find((f) => existsSync(f) && /\.[cm]?[jt]sx?$/.test(f));
 }

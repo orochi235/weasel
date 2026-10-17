@@ -20,3 +20,23 @@ export function annotateRefs(code: string, id: string, refs: ReadonlySet<string>
   if (!s.hasChanged()) return null;
   return { code: s.toString(), map: s.generateMap({ hires: true }).toString() };
 }
+
+/** Library mode's bookkeeping: the refs each module was left naming, annotated again in its chunk. */
+export function libraryAnnotations() {
+  const moduleRefs = new Map<string, string[]>();
+  return {
+    record(id: string, refs: string[]) {
+      if (refs.length > 0) moduleRefs.set(id, refs);
+    },
+    renderChunk(code: string, chunk: { fileName: string; moduleIds: readonly string[] }) {
+      const named = new Set(chunk.moduleIds.flatMap((m) => moduleRefs.get(m) ?? []));
+      return named.size > 0 ? annotateRefs(code, chunk.fileName, named) : null;
+    },
+    /** Why the bundle is wrong, when its modules named refs and none of its chunks kept an annotation. */
+    stripped(bundle: Record<string, { type: string; code?: string }>): string | undefined {
+      if (moduleRefs.size === 0) return undefined;
+      if (Object.values(bundle).some((c) => c.type === 'chunk' && c.code?.includes('@icon'))) return undefined;
+      return `the library build stripped every @icon annotation from ${moduleRefs.size} module(s); set both build.minify and the bundler output's minify to false`;
+    },
+  };
+}

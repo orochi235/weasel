@@ -1,13 +1,11 @@
-import { existsSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
 import MagicString from 'magic-string';
 import { createUnplugin, type UnpluginInstance } from 'unplugin';
-import { annotateRefs } from './annotate';
+import { libraryAnnotations } from './annotate';
 import { splitIconRef } from '../names';
 import type { IconTable } from '../table';
 import { collectIconRefs } from './collect';
 import { rewriteIconCalls } from './rewrite';
-import { declaredTable, namespaceIn, packageDirFinder, reachableTables, tableBeside } from './tables';
+import { declaredTable, genFile, namespaceIn, packageDirFinder, reachableTables, tableBeside } from './tables';
 import { MARKER, PREFIX, USED, admits, moduleFor, subset, variantOf, type VariantFilter } from './virtual';
 
 export type { VariantFilter } from './virtual';
@@ -50,8 +48,7 @@ export const weaselIcons: UnpluginInstance<WeaselIconsOptions, false> = createUn
   const tables = new Map<string, IconTable>();
   const packageDir = packageDirFinder();
   const seenPackages = new Set<string>();
-  /** Library mode: the refs each module was left naming, to annotate again in its chunk. */
-  const moduleRefs = new Map<string, string[]>();
+  const library = libraryAnnotations();
   let dev = false;
 
   const addTable = (ctx: object, table: IconTable) => {
@@ -63,10 +60,6 @@ export const weaselIcons: UnpluginInstance<WeaselIconsOptions, false> = createUn
       fail(ctx, `the custom icon variant "${table.namespace}" has the name of ${table.owner}'s icon namespace`);
     }
     tables.set(table.namespace, held ? { ...table, icons: { ...held.icons, ...table.icons } } : table);
-  };
-  const genFile = (specifier: string, importer: string) => {
-    const base = resolve(dirname(importer), specifier);
-    return ['.ts', '.js', ''].map((e) => base + e).find((f) => existsSync(f) && SOURCE.test(f));
   };
   const variantTables = (ctx: object, variant: string): IconTable[] => {
     const all = [...tables.values()];
@@ -88,10 +81,7 @@ export const weaselIcons: UnpluginInstance<WeaselIconsOptions, false> = createUn
   };
   // Runs after every module is transformed, so `refs` and `tables` are complete.
   function renderChunk(this: object, code: string, chunk: { fileName: string; moduleIds: readonly string[] }) {
-    if (!app) {
-      const named = new Set(chunk.moduleIds.flatMap((m) => moduleRefs.get(m) ?? []));
-      return named.size > 0 ? annotateRefs(code, chunk.fileName, named) : null;
-    }
+    if (!app) return library.renderChunk(code, chunk);
     if (!code.includes('__WEASEL_ICONS__')) return null;
     const s = new MagicString(code);
     for (const m of code.matchAll(MARKER)) {
@@ -105,9 +95,8 @@ export const weaselIcons: UnpluginInstance<WeaselIconsOptions, false> = createUn
   // minify, even its default dead-code pass, runs later still and drops them again.
   const lastRenderChunk = { order: 'post' as const, handler: renderChunk };
   function generateBundle(this: object, _: unknown, bundle: Record<string, { type: string; code?: string }>) {
-    if (app || moduleRefs.size === 0) return;
-    if (Object.values(bundle).some((c) => c.type === 'chunk' && c.code?.includes('@icon'))) return;
-    fail(this, `the library build stripped every @icon annotation from ${moduleRefs.size} module(s); set both build.minify and the bundler output's minify to false`);
+    const stripped = app ? undefined : library.stripped(bundle);
+    if (stripped) fail(this, stripped);
   }
 
   return {
@@ -132,8 +121,7 @@ export const weaselIcons: UnpluginInstance<WeaselIconsOptions, false> = createUn
         this.warn(`${file}: ${out.dynamic} icon() call(s) with a computed name resolve only from a loaded variant`);
       }
       if (!app) {
-        const named = collectIconRefs(out?.code ?? code, file);
-        if (named.length > 0) moduleRefs.set(id, named);
+        library.record(id, collectIconRefs(out?.code ?? code, file));
       } else {
         const dir = packageDir(file);
         if (dir && !seenPackages.has(dir)) {
