@@ -377,8 +377,40 @@ throws on an id that is not there. A suppressed button takes its shortcut with
 it: with `snapshot` gone, Mod+S is the browser's again.
 
 `header={false}` drops the lab's own header bar — title, add-trial, zoom, and
-theme switcher — and the zoom keys with it, for a lab embedded in a page that
-frames it.
+theme switcher — the menu bar, and the zoom keys with them, for a lab embedded in
+a page that frames it.
+
+A lab also draws a menu bar above its header: Lab (add a trial, the header's
+items), then the menus you declare with `menus`, then View (zoom, color mode).
+It adds to the header and takes nothing from it. A row names a command by id, and
+any child of `<Lab>` registers one with `useCommand`:
+
+```tsx
+const menus = {
+  schema: pref.group('', {
+    tools: pref.group('Tools', { reseed: pref.action('app.reseed') }, { as: 'menu' }),
+  }),
+};
+
+function Reseed() {
+  useCommand('app.reseed', 'Reseed', () => setSeed(Math.random()), {
+    keys: [{ key: 'r', mod: true, shift: true }],
+  });
+  return null;
+}
+
+<Lab menus={menus}>
+  <Reseed />
+</Lab>;
+```
+
+A menu keyed `lab` or `view` adds its rows to that built-in menu. `menus` also
+takes `values` and `onChange` for boolean and enum rows. `menuBar={false}` drops
+the bar; presenting hides it too. The header's own items are commands as well,
+`lab.item.<id>`, and an item's `keys` binds one wherever focus is in the lab, so
+a key typed in a text field still types. `contextMenus` takes `MenuDef`s that a
+right-click, Shift+F10 or the ContextMenu key opens over a trial's camera; a lab
+that declares none keeps the browser's own menu.
 
 A sidebar section can be torn out of the trial into the workspace — as a tile
 beside the trials, or as a floating panel — with the trial still rendering into

@@ -1,10 +1,10 @@
 # Menus as layout assets, and a menu bar
 
-**Status: the menu bar is built; WeaselDraw's menu bar, then labkit's, are not.** The shape, the
-resolver, `MenuDef` folded in, rect placement, `useCommand`, the asset editor's menu cases, access
-letters, `MenuButton` on the renderer and `MenuBar` are built; "Consumers" below is what remains.
-Carried in `docs/TODO.md` ("Menus as layout assets") until it lands. Delete this file when the rest
-merges.
+**Status: labkit's menu bar is built; WeaselDraw's menu bar is not.** The shape, the resolver,
+`MenuDef` folded in, rect placement, `useCommand`, the asset editor's menu cases, access letters,
+`MenuButton` on the renderer, `MenuBar` and labkit's menu bar are built; "Consumers" below is what
+remains. Carried in `docs/TODO.md` ("Menus as layout assets") until it lands. Delete this file
+when the rest merges.
 
 For whoever builds it: the decisions here were made with Mike in conversation; the ones marked
 *(builder's call, made in drafting)* were not, and can be revisited.
@@ -87,6 +87,22 @@ These are built, so the code is the reference:
   dispatcher of the bar's own, as `LabZoom.tsx` runs one; `menu.open` takes `scope: 'hotkey'`.
   A focused text input blocks both.
 
+- labkit's menu bar. `<Lab>` runs on one actions registry (`LabActions.tsx`) with `LabZoom`'s
+  provider and dispatcher folded in as `lab.zoom` (variants `in`, `out`, `reset`). The dispatcher
+  option `hears: 'own'` makes a dispatcher run only its own node's actions. Lab commands:
+  `lab.add.<instrument>`, `lab.mode.auto|light|dark`, `lab.item.<id>` for a header item
+  (`LabHeaderItem.keys` binds one; forge's ⌘I listener is `lab.item.fg-info`'s key). `<Lab menus>`
+  declares menus between the built-in Lab and View, `menuBar` turns the bar off (it is also off
+  with `header={false}` and while presenting), and `<Lab contextMenus>` mounts one lab-level
+  `ContextMenuHost` that a right-click, Shift+F10 or the ContextMenu key over a trial's camera
+  opens. Per-trial commands and `useTrialKeys` are untouched.
+- Trials stay separate roots (each `Trial` is `<WeaselProvider isolate>`); the lab's dispatcher
+  still uses `hears: 'own'`, as a guard in case trials ever nest.
+- labkit's camera context-menu action (`canvas/cameraContextMenu.ts`) is a second copy of core's
+  opener, kept because core's is `@experimental` and unexported; filed in `docs/TODO.md`.
+- forge's globals are values, not commands: a Globals menu of enum rows through the bar's
+  `values`/`onChange`.
+
 The default chord is unverified: Chrome on Windows is said to open its own menu on Alt+F, and on
 macOS Option plus a letter types a character (matched by `code`, so it still opens the menu). Nobody
 has checked Chrome on Windows; do that before relying on Alt there.
@@ -120,27 +136,12 @@ variants instead: `viewport.zoom`'s in, out and reset (today params of one actio
 paper sizes (today `PAPER_OPTIONS` passed to `onNew(size)` in `CommandBar.tsx`)
 *(builder's call, made in drafting)*.
 
-**labkit.** A lab declares menus the way it declares controls, and labkit draws them as a menu
-bar across the top of the lab. It holds what the lab header holds today — add trial, theme, the
-"Lab actions" contributions such as forge's globals and Info — and what a lab declares at lab
-level. Per-trial commands stay on the trial windows.
-
-labkit's commands are plain callbacks (`CommandItem.onActivate`), and only header zoom is a
-registered action. It gains one lab-wide `ActionsProvider`, and `LabZoom`'s provider and
-dispatcher fold into it. Lab-level commands — the header's, and what a lab declares for its menu
-bar — register there through `useCommand`; forge's ⌘I `window` listener becomes one. Per-trial
-commands and their keys are untouched: `useTrialKeys.ts` keeps routing a key to the focused
-trial *(builder's call, made in drafting, following the anti-goal above)*. Mounting
-`ContextMenuHost` and turning `contextMenu` back on in labkit's dispatchers then gives labs
-context menus.
-
 ## Order
 
-Each is its own arc, landing before the next starts. `MenuBar`, access letters, and `MenuButton`
-onto the renderer have landed; these remain, in this order:
+`MenuBar`, access letters, `MenuButton` onto the renderer, and labkit's menu bar have landed; what
+remains:
 
 - WeaselDraw: file actions, then its menu bar.
-- labkit: the lab-wide registry and its lab-level commands, then its menu bar.
 
 ## Left to the builder
 
