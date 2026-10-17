@@ -76,6 +76,7 @@ describe('rack', () => {
     expect(ports.in).toEqual({ u: 0, v: 0.5 });
     expect(ports.out).toEqual({ u: 1, v: 0.5 });
     expect(ports.radius!.v).toBe(1);
+    expect(node('blur').ports!.find((p) => p.id === 'radius')!.normal).toEqual({ x: 0, y: 1 });
   });
 
   it('labels a wire into a side input with the input\'s name', () => {

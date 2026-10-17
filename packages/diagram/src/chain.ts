@@ -6,6 +6,7 @@
  * them. Each chain node owns a column as long as the widest row hung on it, so
  * two neighbors' hangers never share space. Groups are ignored.
  */
+import { inPortOrder, sideRoutes, type Hanging } from './chainRoutes';
 import type { Graph, GraphNode } from './graph';
 import { backEdges, ranksOf } from './layered';
 import {
@@ -16,6 +17,8 @@ import {
   settle,
   type LayoutAxes,
   type LayoutFn,
+  type LayoutOptions,
+  type LayoutPlan,
   type Slot,
 } from './layout';
 
@@ -44,11 +47,6 @@ function lineOf(graph: Graph, ids: readonly string[] | undefined): GraphNode[] {
     at = edge === undefined ? undefined : graph.node(edge.from);
   }
   return line;
-}
-
-interface Hanging {
-  owner: Map<string, string>;
-  level: Map<string, number>;
 }
 
 /** Breadth-first from the line, so a node hangs on the chain node it is
@@ -81,14 +79,22 @@ function hangFrom(graph: Graph, line: readonly GraphNode[]): Hanging {
 
 /** The chain layout: the nodes `opts.chain` names (or the longest path) on
  *  one line in order, and every other node hung beside the chain node it is
- *  fewest edges from, on the `opts.chainSide` side. */
-export const chain: LayoutFn = (graph, opts = {}) => {
+ *  fewest edges from, on the `opts.chainSide` side. Its `plan` also routes
+ *  each edge between a chain node and a node hung beside it through a track
+ *  of its own, so a fan of them into one node does not cross itself. */
+export const chain: LayoutFn = Object.assign(
+  (graph: Graph, opts: LayoutOptions = {}) => chainPlan(graph, opts).moves,
+  { plan: chainPlan },
+);
+
+function chainPlan(graph: Graph, opts: LayoutOptions = {}): LayoutPlan {
   const axes = axesFor(opts.direction);
   const nodeGap = opts.nodeGap ?? DEFAULT_NODE_GAP;
   const rankGap = opts.rankGap ?? DEFAULT_RANK_GAP;
   const line = lineOf(graph, opts.chain);
-  if (line.length === 0) return new Map();
-  const { owner, level } = hangFrom(graph, line);
+  if (line.length === 0) return { moves: new Map() };
+  const hanging = hangFrom(graph, line);
+  const { owner, level } = hanging;
 
   const rows = new Map<string, GraphNode[][]>(line.map((n) => [n.id, []]));
   const levelSize: number[] = [Math.max(...line.map((n) => extent(n.bounds, axes.cross)))];
@@ -99,9 +105,11 @@ export const chain: LayoutFn = (graph, opts = {}) => {
     (column[at] ??= []).push(node);
     levelSize[at] = Math.max(levelSize[at] ?? 0, extent(node.bounds, axes.cross));
   }
-  const slots = slotsFor(line, rows, levelSize, axes, nodeGap, rankGap, opts.chainSide === 'before');
-  return settle(graph, slots, opts);
-};
+  for (const [id, column] of rows) if (column[1]) column[1] = inPortOrder(graph, id, column[1], axes);
+  const before = opts.chainSide === 'before';
+  const moves = settle(graph, slotsFor(line, rows, levelSize, axes, nodeGap, rankGap, before), opts);
+  return { moves, waypoints: sideRoutes(graph, hanging, moves, axes, before) };
+}
 
 function slotsFor(
   line: readonly GraphNode[],
