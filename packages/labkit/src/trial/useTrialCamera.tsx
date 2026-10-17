@@ -1,6 +1,5 @@
-import { useLatest } from '@weasel-js/core';
 import { type Camera3d, clampCamera, createCamera } from '@weasel-js/kernel3d';
-import { type ReactNode, type RefObject, useContext, useMemo, useRef } from 'react';
+import { type ReactNode, type RefObject, useContext, useRef } from 'react';
 import { type CameraGestures, CameraGesturesContext } from '../canvas/cameraGestures';
 import { Orbit } from '../canvas/Orbit';
 import { orbitZoomView } from '../canvas/orbitZoom';
@@ -86,21 +85,18 @@ export function useTrialCamera({
       })
     : null;
 
-  const writes = useLatest({ setView, orbitHome });
-  const orbit = useMemo<TrialOrbit | null>(
-    () =>
-      orbitCap
-        ? {
-            camera: view3d,
-            setCamera: (next) => writes.current.setView(clampCamera(next, orbitCap.limits)),
-            home: () => {
-              const placed = writes.current.orbitHome();
-              if (placed) writes.current.setView(placed);
-            },
-          }
-        : null,
-    [orbitCap, view3d, writes],
-  );
+  // Rebuilt each render: whatever reads it renders inside the trial, which
+  // renders again on every change to the view anyway.
+  const orbit: TrialOrbit | null = orbitCap
+    ? {
+        camera: view3d,
+        setCamera: (next) => setView(clampCamera(next, orbitCap.limits)),
+        home: () => {
+          const placed = orbitHome();
+          if (placed) setView(placed);
+        },
+      }
+    : null;
 
   return {
     camera,
