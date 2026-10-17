@@ -1,13 +1,11 @@
 import { ActionsProvider, IconRegistryProvider, SelectionContextProvider } from '@weasel-js/core';
-import { icons as coreIcons } from '@weasel-js/core/icons';
-import { icons as pathToolsIcons } from '@weasel-js/path-tools/icons';
-import { icons as uiIcons } from '@weasel-js/ui/icons';
+import icons from 'virtual:weasel-icons';
 import { registerDefaultFont } from '../shared/defaultFont';
 import { WeaselDemos } from './WeaselDemos';
 
 registerDefaultFont('weasel demo');
 
-const ICONS = [coreIcons, uiIcons, pathToolsIcons];
+const ICON_VARIANTS = { all: () => import('virtual:weasel-icons/all') };
 
 // Top-level <ActionsProvider> consolidates standalone hooks
 // (useSelectAll / useEscape / etc.) onto a single keydown listener.
@@ -16,7 +14,7 @@ const ICONS = [coreIcons, uiIcons, pathToolsIcons];
 // document keydown listener (back-compat path lives in each hook).
 export default function Shell() {
   return (
-    <IconRegistryProvider icons={ICONS}>
+    <IconRegistryProvider icons={icons} variants={ICON_VARIANTS}>
       <ActionsProvider>
         <SelectionContextProvider>
           <WeaselDemos />

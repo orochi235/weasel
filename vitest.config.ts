@@ -11,6 +11,7 @@ import { demoSources } from './scripts/vite-demo-sources.ts';
 import { changelogs } from './scripts/vite-changelogs.ts';
 import { getStarted } from './scripts/vite-get-started.ts';
 import { packageDocs } from './scripts/vite-package-docs.ts';
+import { weaselIcons } from './packages/icons/src/plugin/index.ts';
 import { browserCommands } from './scripts/vitest-browser-commands.ts';
 import { browserDeps } from './scripts/vitest-browser-deps.ts';
 
@@ -81,6 +82,7 @@ export default defineConfig({
           changelogs({ root: import.meta.dirname }),
           getStarted({ root: import.meta.dirname }),
           packageDocs({ root: import.meta.dirname }),
+          weaselIcons.vite({ mode: 'app' }),
         ],
         test: {
           name: 'site',
@@ -182,7 +184,7 @@ export default defineConfig({
         // doesn't inherit that config, so the plugin has to be added
         // here too or any test that imports a Bundle Inspector module
         // fails to resolve the virtual id at load time.
-        plugins: [react(), traitSchemasPlugin({ repoRoot: import.meta.dirname })],
+        plugins: [react(), traitSchemasPlugin({ repoRoot: import.meta.dirname }), weaselIcons.vite({ mode: 'app' })],
         test: {
           name: 'draw',
           environment: 'jsdom',
