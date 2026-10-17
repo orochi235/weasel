@@ -2,6 +2,7 @@ import { existsSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import MagicString from 'magic-string';
 import { createUnplugin, type UnpluginInstance } from 'unplugin';
+import { annotateRefs } from './annotate';
 import { splitIconRef } from '../names';
 import type { IconTable } from '../table';
 import { collectIconRefs } from './collect';
@@ -14,7 +15,10 @@ export { collectIconRefs } from './collect';
 
 /** How {@link weaselIcons} treats the build it runs in. */
 export interface WeaselIconsOptions {
-  /** `library` only rewrites `icon()` calls; `app` also emits `virtual:weasel-icons` and its variants. */
+  /**
+   * `library` only rewrites `icon()` calls; `app` also emits `virtual:weasel-icons` and its variants,
+   * and needs vite, rollup or rolldown, since esbuild has no hook to fill them in once every module is seen.
+   */
   mode: 'library' | 'app';
   /** Extra variants, each loadable as `virtual:weasel-icons/<name>`. */
   variants?: Record<string, VariantFilter>;
@@ -33,7 +37,10 @@ function fail(ctx: object, message: string): never {
  * literal. In `app` mode it also emits `virtual:weasel-icons`, holding only the glyphs the build
  * names, plus `/all`, `/<namespace>` and each custom variant, every one its own chunk.
  */
-export const weaselIcons: UnpluginInstance<WeaselIconsOptions, false> = createUnplugin((options: WeaselIconsOptions) => {
+export const weaselIcons: UnpluginInstance<WeaselIconsOptions, false> = createUnplugin((options: WeaselIconsOptions, meta) => {
+  if (options.mode === 'app' && meta.framework === 'esbuild') {
+    throw new Error("weaselIcons: app mode needs vite, rollup or rolldown; under esbuild its placeholders would ship unfilled");
+  }
   const variants = options.variants ?? {};
   for (const name of Object.keys(variants)) {
     if (name === 'all' || name === '') throw new Error(`weaselIcons: a custom variant cannot be named "${name}"`);
@@ -43,6 +50,8 @@ export const weaselIcons: UnpluginInstance<WeaselIconsOptions, false> = createUn
   const tables = new Map<string, IconTable>();
   const packageDir = packageDirFinder();
   const seenPackages = new Set<string>();
+  /** Library mode: the refs each module was left naming, to annotate again in its chunk. */
+  const moduleRefs = new Map<string, string[]>();
   let dev = false;
 
   const addTable = (ctx: object, table: IconTable) => {
@@ -78,7 +87,11 @@ export const weaselIcons: UnpluginInstance<WeaselIconsOptions, false> = createUn
     }
   };
   // Runs after every module is transformed, so `refs` and `tables` are complete.
-  function renderChunk(this: object, code: string) {
+  function renderChunk(this: object, code: string, chunk: { fileName: string; moduleIds: readonly string[] }) {
+    if (!app) {
+      const named = new Set(chunk.moduleIds.flatMap((m) => moduleRefs.get(m) ?? []));
+      return named.size > 0 ? annotateRefs(code, chunk.fileName, named) : null;
+    }
     if (!code.includes('__WEASEL_ICONS__')) return null;
     const s = new MagicString(code);
     for (const m of code.matchAll(MARKER)) {
@@ -87,6 +100,14 @@ export const weaselIcons: UnpluginInstance<WeaselIconsOptions, false> = createUn
     }
     // A string map: magic-string's object form types `sourcesContent` wider than rollup accepts.
     return { code: s.toString(), map: s.generateMap({ hires: true }).toString() };
+  }
+  // After the bundler's own renderChunk work, which drops plain comments. rolldown's output
+  // minify, even its default dead-code pass, runs later still and drops them again.
+  const lastRenderChunk = { order: 'post' as const, handler: renderChunk };
+  function generateBundle(this: object, _: unknown, bundle: Record<string, { type: string; code?: string }>) {
+    if (app || moduleRefs.size === 0) return;
+    if (Object.values(bundle).some((c) => c.type === 'chunk' && c.code?.includes('@icon'))) return;
+    fail(this, `the library build stripped every @icon annotation from ${moduleRefs.size} module(s); set both build.minify and the bundler output's minify to false`);
   }
 
   return {
@@ -110,7 +131,10 @@ export const weaselIcons: UnpluginInstance<WeaselIconsOptions, false> = createUn
       if (out && out.dynamic > 0) {
         this.warn(`${file}: ${out.dynamic} icon() call(s) with a computed name resolve only from a loaded variant`);
       }
-      if (app) {
+      if (!app) {
+        const named = collectIconRefs(out?.code ?? code, file);
+        if (named.length > 0) moduleRefs.set(id, named);
+      } else {
         const dir = packageDir(file);
         if (dir && !seenPackages.has(dir)) {
           seenPackages.add(dir);
@@ -136,9 +160,10 @@ export const weaselIcons: UnpluginInstance<WeaselIconsOptions, false> = createUn
         dev = config.command === 'serve' || config.mode === 'test';
         if (app && dev) for (const t of reachableTables(config.root)) addTable(this, t);
       },
-      renderChunk,
+      renderChunk: lastRenderChunk,
+      generateBundle,
     },
-    rollup: { renderChunk },
-    rolldown: { renderChunk },
+    rollup: { renderChunk: lastRenderChunk, generateBundle },
+    rolldown: { renderChunk: lastRenderChunk, generateBundle },
   };
 });
