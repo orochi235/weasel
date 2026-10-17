@@ -38,3 +38,8 @@ page, and Safari's pinch. `useOrbitTool` binds Shift+drag to `camera.pan`.
 **routing.** A wheel reported in lines or pages — Firefox's mouse wheel — is
 converted to pixels before it reaches an action, so per-pixel rates are no
 longer about a sixteenth as fast there.
+
+**Icons.** labkit draws its glyphs from the app's icon registry, which it does
+not mount: a lab with none draws placeholders and warns. Mount
+`<IconRegistryProvider icons={kitIcons}>` (`@weasel-js/ui/kit-icons`) or the
+trimmed `virtual:weasel-icons` set at the app root; labkit's examples now do.

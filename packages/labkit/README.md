@@ -29,6 +29,20 @@ the `@weasel-js/ui` components it passes through:
 import '@weasel-js/labkit/styles.css';
 ```
 
+Its glyphs come from the app's icon registry, which labkit does not mount: with
+none, every button in the lab draws a placeholder and warns. Mount one at the
+root — the whole kit's tables, or the trimmed set `virtual:weasel-icons` builds
+(`docs/icons.md` in the weasel repo):
+
+```tsx
+import { IconRegistryProvider } from '@weasel-js/core';
+import { kitIcons } from '@weasel-js/ui/kit-icons';
+
+<IconRegistryProvider icons={kitIcons}>
+  <App />
+</IconRegistryProvider>
+```
+
 ## A lab
 
 ```tsx
