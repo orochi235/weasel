@@ -861,10 +861,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 - **(P3) The menu bar's default access chord, Alt, is unverified in Chrome on Windows, which may
   open its own menu on Alt+F; check there before relying on it.**
 
-- **(P3) A menu bar title made disabled or hidden while its menu is open leaves the menu open.**
-  `MenuBar` checks a title's `enableIf` and `showIf` only when the menu opens; close the menu when
-  its title stops being openable.
-
 - **(P2) A bar can lead with an icon, not only its label.** `lead: 'label'` landed 2026-10-16
   (`PrefBarLead` in `packages/prefs/src/groups.ts`). The icon form needs the group to name a glyph
   as data: add `icon?: IconRef` to `PrefGroup`/`PrefSection`, as a pref leaf's `icon` already is

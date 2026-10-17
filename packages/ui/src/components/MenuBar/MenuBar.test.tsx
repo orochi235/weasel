@@ -245,4 +245,28 @@ describe('MenuBar conditions', () => {
     for (const key of ['ArrowDown', 'Enter', ' ']) fireEvent.keyDown(edit, { key });
     expect(screen.queryByRole('menu')).toBeNull();
   });
+
+  const openThenFlip = (title: 'File' | 'Edit') => {
+    const tree = (on: boolean) => (
+      <ActionsProvider>
+        {ACTIONS.map((a) => <Register key={a.id} action={a} />)}
+        <MenuBar schema={GATED} values={{ on }} />
+      </ActionsProvider>
+    );
+    const { rerender } = render(tree(true));
+    fireEvent.pointerDown(screen.getByRole('menuitem', { name: title }));
+    expect(screen.getByRole('menu')).toBeDefined();
+    rerender(tree(false));
+  };
+
+  it('closes an open menu whose title becomes hidden', () => {
+    openThenFlip('File');
+    expect(screen.queryByRole('menu')).toBeNull();
+  });
+
+  it('closes an open menu whose title becomes disabled', () => {
+    openThenFlip('Edit');
+    expect(screen.queryByRole('menu')).toBeNull();
+    expect(screen.getByRole('menuitem', { name: 'Edit' }).getAttribute('aria-expanded')).not.toBe('true');
+  });
 });
