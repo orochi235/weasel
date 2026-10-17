@@ -76,3 +76,28 @@ it('switches to another title’s menu when the pointer moves onto it', async ()
   await userEvent.hover(screen.getByRole('menuitem', { name: 'Edit' }));
   expect(rows()).toEqual(['Undo']);
 });
+
+function setupTitle(access?: string) {
+  const schema = pref.group('', { file: pref.group('File', { new: pref.action('file.new') }, { as: 'menu', access }) });
+  render(
+    <ActionsProvider>
+      {ACTIONS.map((a) => <Register key={a.id} action={a} />)}
+      <MenuBar schema={schema} />
+    </ActionsProvider>,
+  );
+  return screen.getByRole('menuitem', { name: 'File' });
+}
+
+it('names a title by its whole label when it underlines an access letter', () => {
+  const title = setupTitle('f');
+  expect(page.getByRole('menuitem', { name: 'File', exact: true }).elements()).toHaveLength(1);
+  const underlined = title.querySelectorAll('span span');
+  expect(underlined).toHaveLength(1);
+  expect(underlined[0]?.textContent).toBe('F');
+});
+
+it('names a title by its label, underlining nothing, when its access letter is not in it', () => {
+  const title = setupTitle('z');
+  expect(title.querySelectorAll('span span')).toHaveLength(0);
+  expect(title.textContent).toBe('File');
+});

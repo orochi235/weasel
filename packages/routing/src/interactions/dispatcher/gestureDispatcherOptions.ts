@@ -96,6 +96,13 @@ export interface UseGestureDispatcherOptions {
   canvasRef: RefObject<HTMLElement | null>;
   /** Action registry (ActionsRegistry from registry.tsx). */
   actions: ActionsRegistry;
+  /**
+   * Which actions this dispatcher matches. `'scope'` (default): every action a
+   * read from `actions` reaches, down its active scope. `'own'`: only those
+   * registered at `actions`' own node — for chrome on a root that canvases
+   * nest under.
+   */
+  hears?: 'scope' | 'own';
   /** Every entry in play, keyed by id: tools and any other contribution
    *  whose bindings this dispatcher routes. */
   entriesById: ReadonlyMap<string, Contribution<unknown>>;

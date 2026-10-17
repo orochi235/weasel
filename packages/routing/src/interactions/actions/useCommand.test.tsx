@@ -1,8 +1,10 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, expectTypeOf, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { ActionsProvider, useActionsRegistry } from './ActionsProvider';
+import { actionItems } from './actionItems';
 import { evaluateActive, evaluateEnabled } from './actionEnabled';
+import type { ActionVariant } from './action';
 import { useCommand, type CommandOptions } from './useCommand';
 
 function wrap({ children }: { children: ReactNode }) {
@@ -11,7 +13,7 @@ function wrap({ children }: { children: ReactNode }) {
 
 interface Props {
   label: string;
-  run: () => void;
+  run: (params?: Readonly<Record<string, unknown>>) => void;
   options?: CommandOptions;
 }
 
@@ -73,6 +75,45 @@ describe('useCommand', () => {
     expect(evaluateActive(action)).toBe(true);
   });
 
+  const variants = () => [
+    { key: 'a', label: 'A', params: { n: 1 } },
+    { key: 'b', label: 'B', params: { n: 2 } },
+  ];
+
+  it('registers one entry per variant', () => {
+    const { found } = mount({ label: 'X', run: vi.fn(), options: { variants: variants() } });
+    expect(actionItems(found()!).map((i) => [i.key, i.label, i.params]))
+      .toEqual([['cmd.a:a', 'A', { n: 1 }], ['cmd.a:b', 'B', { n: 2 }]]);
+  });
+
+  it('runs with the params it was triggered with', () => {
+    const run = vi.fn();
+    const { registry } = mount({ label: 'X', run, options: { variants: variants() } });
+    registry.trigger('cmd.a', { n: 2 });
+    expect(run).toHaveBeenLastCalledWith({ n: 2 });
+    registry.trigger('cmd.a');
+    expect(run).toHaveBeenLastCalledWith(undefined);
+  });
+
+  it('does not re-register for variants equal by value', () => {
+    const run = vi.fn();
+    const { found, rerender } = mount({ label: 'X', run, options: { variants: variants() } });
+    const before = found();
+    rerender({ label: 'X', run, options: { variants: variants() } });
+    expect(found()).toBe(before);
+  });
+
+  it('re-registers when a variant changes', () => {
+    const run = vi.fn();
+    const { found, rerender } = mount({ label: 'X', run, options: { variants: variants() } });
+    const before = found();
+    const changed = variants();
+    changed[1] = { key: 'b', label: 'B', params: { n: 3 } };
+    rerender({ label: 'X', run, options: { variants: changed } });
+    expect(found()).not.toBe(before);
+    expect(actionItems(found()!).map((i) => i.params)).toEqual([{ n: 1 }, { n: 3 }]);
+  });
+
   it('leaves the registry on unmount', () => {
     const run = vi.fn();
     const { registry, unmount } = mount({ label: 'A', run });
@@ -80,5 +121,14 @@ describe('useCommand', () => {
     expect(registry.list().some((a) => a.id === 'cmd.a')).toBe(false);
     expect(registry.trigger('cmd.a')).toBe(false);
     expect(run).not.toHaveBeenCalled();
+  });
+});
+
+describe('CommandOptions.variants', () => {
+  it('takes ActionVariants, tags included', () => {
+    expectTypeOf<CommandOptions['variants']>().toEqualTypeOf<readonly ActionVariant[] | undefined>();
+    const tagged: ActionVariant = { key: 'a4', label: 'A4', tags: ['paper'], params: { size: 'a4' } };
+    const options: CommandOptions = { variants: [tagged] };
+    expect(options.variants).toHaveLength(1);
   });
 });

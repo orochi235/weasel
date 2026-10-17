@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { ActionsProvider, useAction, type Action } from '@weasel-js/core';
 import { pref, type PrefGroup } from '@weasel-js/prefs';
 import { barMenuRoot } from './barMenuRoot';
@@ -71,6 +71,18 @@ describe('Bar menu group', () => {
     render(<Bar schema={schema} label="Tools" />);
     fireEvent.click(screen.getByRole('button', { name: 'Arrange' }));
     expect(screen.queryByRole('menu')).toBeNull();
+  });
+});
+
+describe('Bar menu tooltip', () => {
+  it('reads the group’s description', () => {
+    const described: PrefGroup = pref.group('Tools', {
+      file: pref.group('New', { order: pref.actions('arrange') }, { as: 'menu', description: 'New document' }),
+    });
+    render(<ActionsProvider><Bar schema={described} label="Tools" /></ActionsProvider>);
+    fireEvent.keyDown(document.body, { key: 'Tab' });
+    act(() => screen.getByRole('button', { name: 'New' }).focus());
+    expect(screen.getByRole('tooltip').textContent).toBe('New document');
   });
 });
 

@@ -8,7 +8,7 @@ describe('AccessLabel', () => {
   it('wraps the first matching letter, ignoring case, and keeps the text', () => {
     const { container } = render(<AccessLabel label="File" access="f" />);
     expect(container.textContent).toBe('File');
-    const spans = container.querySelectorAll('span');
+    const spans = container.querySelectorAll('span span');
     expect(spans).toHaveLength(1);
     expect(spans[0]!.textContent).toBe('F');
   });
@@ -16,18 +16,18 @@ describe('AccessLabel', () => {
   it('wraps the first occurrence only, mid-label', () => {
     const { container } = render(<AccessLabel label="Export" access="x" />);
     expect(container.textContent).toBe('Export');
-    expect(container.querySelector('span')!.textContent).toBe('x');
+    expect(container.querySelector('span span')!.textContent).toBe('x');
   });
 
   it('underlines only the first character of a longer declaration', () => {
     const { container } = render(<AccessLabel label="Edit" access="ex" />);
-    expect(container.querySelector('span')!.textContent).toBe('E');
+    expect(container.querySelector('span span')!.textContent).toBe('E');
   });
 
   it('draws the plain label when the letter is absent or none is declared', () => {
     for (const access of ['q', undefined]) {
       const { container, unmount } = render(<AccessLabel label="File" access={access} />);
-      expect(container.querySelector('span')).toBeNull();
+      expect(container.querySelector('span span')).toBeNull();
       expect(container.textContent).toBe('File');
       unmount();
     }

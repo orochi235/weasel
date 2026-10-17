@@ -8,7 +8,8 @@ import { followApp, type GlobalDeclaration, type GlobalDeclarations, labGlobals,
 
 const RECORD = 'fg-globals';
 
-function useLabGlobals(declarations: GlobalDeclarations): [Globals, (key: string, value: string) => void] {
+/** The lab's global values, as persisted in the lab, and a setter for one. */
+export function useLabGlobals(declarations: GlobalDeclarations): [Globals, (key: string, value: string) => void] {
   const [stored, setStored] = usePersistedState<unknown>(RECORD, null, { scope: 'lab' });
   const values = useMemo(() => labGlobals(declarations, stored), [declarations, stored]);
   const set = useCallback(

@@ -50,7 +50,7 @@ export function MenuRow(props: {
   const content = (
     <>
       <span className={s.icon} aria-hidden="true">{e.kind === 'item' && e.checked ? '✓' : resolveIcon(typeof e.icon === 'string' ? e.icon : undefined, 16)}</span>
-      <span className={s.label}><AccessLabel label={e.label} access={e.access} /></span>
+      <AccessLabel label={e.label} access={e.access} />
       {e.kind === 'item' && e.shortcut && <span className={s.shortcut}>{formatShortcut(e.shortcut)}</span>}
       {e.kind === 'submenu' && <Caret className={s.caret} />}
     </>

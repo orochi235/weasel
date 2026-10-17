@@ -13,7 +13,6 @@ import type { DepName } from '../../index';
 import type { IngestItem } from '@weasel-js/gestures';
 
 /**
- * @experimental
  * Closed enum of reasons an action might report itself as disabled. The
  * consumer (palette, menu, etc.) maps these symbolic values to display
  * strings via its own label map.
@@ -61,7 +60,6 @@ export interface ActionPresentation {
 }
 
 /**
- * @experimental
  * One entry a parametric action contributes to a bar, menu or palette.
  */
 export interface ActionVariant {

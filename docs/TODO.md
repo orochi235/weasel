@@ -908,10 +908,11 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 ## Selection, actions & UI panels
 
-- **(P2) Menus as layout assets, and a menu bar built from them.** `MenuBar`, access letters and
-  `MenuButton` on the context-menu renderer have landed. Left: WeaselDraw's menu bar (file actions
-  first), then labkit's (a lab-wide registry first)
-  (`docs/superpowers/specs/2026-10-16-menus-as-layout-assets-design.md`, "Consumers").
+- **(P3) The asset editor's preview of the menu bar shows fewer rows than the app.**
+  `RegistryProbe` mounts `<SceneCanvas features={['draw']}>` with no `ambient` and no
+  `useFileCommands`, so `file.*` and the app's `view.*` toggles are never registered and File, and
+  View's four toggles, preview without them. Register the same set the
+  app does, or have the probe take it as a prop.
 
 - **(P3) The menu bar's default access chord, Alt, is unverified in Chrome on Windows, which may
   open its own menu on Alt+F; check there before relying on it.**
@@ -950,6 +951,13 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   opens the menu on mount, but a menu with no rows resolves to nothing and stays shut, so a new
   menu asset — the first thing anyone sees after making one — shows a lone button. Say in the
   preview that the menu is empty and how to give it rows.
+
+- **(P3) `useCommand` cannot give a variant its own shortcut.** `keys` takes one `GestureSpec`, not
+  `{ spec, opts: { params } }`, so `viewport.zoom:in` can carry a key through `useAction` only.
+
+- **(P3) A bar `action` leaf naming a bare parametric id draws a dead button that misreports itself.**
+  Its tooltip says "no action", though the action exists and only needs a variant. Expand the leaf
+  into its variants, or word the tooltip as "pick a variant".
 
 - **(P4) A `BarMenu` that opened itself can pull focus out of another menu when it closes.** Its
   `close` gives focus to its button only when focus is inside a menu, but it checks with
@@ -1507,15 +1515,24 @@ only story runner in the repo.
     Playwright's `page.frame('vitest-iframe')` returning the previous file's frame, since every
     test frame has that name; in 18 runs a check at each file's start never found a second or a
     detached one, but none of those runs had the failure, so that is unlikely, not ruled out.
-  - **`labkit/src/lab/presentation.browser.test.tsx` ("entering refits the view…") saw a pan off
-    on one axis** in 2 fleet runs at the old worker count, and in 6 of 19 runs of the project
-    alone at one or two workers on teitou, with and without the garbage collection. Run as the
-    only file on an idle teitou on 2026-10-16 it failed 5 of 10 on `main` (`9741e1af3`), the pan
-    coming back 1.7 or 5.2 px short in y, so load is not the cause. Unverified guess: the test
-    keeps the tile's first non-null view, before the tile's height settles.
+  - **A trial's canvas fits twice on first layout.** It is measured before the trial's status
+    strip takes its 30 px, placed at that height, then refit when the strip arrives. This made
+    `labkit/src/lab/presentation.browser.test.tsx` ("entering refits the view…") fail 3 of 6 runs
+    on main's code on teitou: it captured the tile's view between the two fits, and the pan came
+    back 5.2 px short. The test now waits for the settled box (10 of 10 passing, 2026-10-17); the
+    double fit itself is still there. Reserving the strip's room on first layout would remove it.
   - **`labkit/src/lab/Lab.messages.test.tsx` ("starts an ended run over on play") failed once** in
     the fleet run of `main` at `e167efc7c` (2026-10-16), and passed 13 of 13 run alone on orochi.
-    One sighting, nothing changed near it; cause not looked into.
+    It failed again in a fleet run of the `menus-draw` branch (`6cc0ae6a2`, 2026-10-17), which
+    changed nothing in labkit. Two sightings; cause not looked into.
+  - **`ui/src/components/Keycaps/KeyBank.perf.browser.test.tsx` ("fits a workshop page…") took
+    545.6 ms against its 500 ms budget** in a fleet run of `menus-draw` (`f5fb7d108`, 2026-10-17),
+    which changed nothing in Keycaps, while another job's tests ran on the same node. A wall-clock
+    budget in the suite fails whenever the node is shared.
+  - **`site/demos/__tests__/ScoreDemo.browser.test.tsx` ("a playing score shows the bar in force…")
+    read the next bar's cue where it expected the current one** in a fleet run of `menus-draw`
+    (`09bbde42a`, 2026-10-17), which changed nothing in the site or audio. The check right after
+    the click assumes no bar line passes in between, and the score runs on a real clock.
   - `forge/src/vite/plugin.test.ts` has its own entry under "Demos & visual regression".
 
 - **(P2) HUD vs DOM text: what the idle rerun left open.** `tests/perf/hud-vs-dom.spec.ts` prices

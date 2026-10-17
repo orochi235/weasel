@@ -89,7 +89,7 @@ export interface StatusReadout {
 export interface ContributionBase {
   id: string;
   /** Groups sort by first appearance; items sort within a group by
-   *  declaration order. Contributions with no group sort after grouped ones. */
+   *  declaration order. A contribution with no group keeps its own place. */
   group?: string;
   /** Pushes this contribution, and its group, to the far end of the region. */
   end?: boolean;
