@@ -12,14 +12,14 @@ const FILE: PrefGroup = {
   children: { open: { kind: 'action', action: 'file.open', name: '', description: '', default: undefined } },
 };
 
-function Setup() {
+function Command() {
   useCommand('file.open', 'Open', () => {});
-  return <BarMenu label="File" schema={FILE} values={() => undefined} defaultOpen />;
+  return null;
 }
 
 describe('BarMenu', () => {
   it('opens on mount with defaultOpen', async () => {
-    await renderSettled(<ActionsProvider><Setup /></ActionsProvider>);
+    await renderSettled(<ActionsProvider><Command /><BarMenu label="File" schema={FILE} values={() => undefined} defaultOpen /></ActionsProvider>);
     expect(screen.getByRole('menuitem', { name: 'Open' })).toBeDefined();
   });
 });
