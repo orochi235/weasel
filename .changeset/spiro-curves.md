@@ -1,0 +1,12 @@
+---
+'@weasel-js/geom': patch
+'@weasel-js/core': patch
+'@weasel-js/path-tools': patch
+---
+
+Spiro curves: a curve drawn by its on-curve points alone. `@weasel-js/geom` solves one with `solveSpiro(points, closed)`: an Euler-spiral segment, whose curvature changes evenly along it, runs between each pair of points, and the segments are solved together so tangent and curvature carry straight through every `smooth` point. A `corner` lets its two sides turn independently, `left` continues the straight segment arriving at it, and `right` runs the curve into the straight segment leaving it. `spiroToPath(contours)` writes the solved curve as cubics, splitting a segment wherever one cubic would stray more than a ten-thousandth of its length, and reports which anchor each point became; `spiroContoursOf`, `spiroControlPath` and `spiroContoursFromControl` read the points back out of such a path and in from an edited control path. The `spiro` curve representation in `@weasel-js/geom/curves` now uses the solver.
+
+Breaking: `SharedAnchor.spiroType` takes a `SpiroKind` (`'smooth' | 'corner' | 'left' | 'right'`) where it took `'g2-smooth' | 'g4-smooth' | 'corner'`. G4 points were never solved as such.
+
+`@weasel-js/core` stores a spiro curve on a path node as `data.path` plus `data.spiro` (`spiroNodeData`, `spiroOf`, `withoutSpiro`). Path edit edits such a node's points through its straight-sided control path: `getEditablePath` returns that path, and every edit solves the curve again, the live drag preview included. The new spiro tool (`useSpiroTool`, built-in tool id `spiro`, Shift+P) places points by clicking, each of the kind its `spiro.placePoint` action's `params.kind` names, Alt-click for a corner, and inserts the curve through the `insert` dep as kind `'spiro'`. `@weasel-js/path-tools`' `spiroPreset`, in `pathTools`, brings `setSpiroKind`, which sets the kind of the points selected in path edit, and `releaseSpiro` ("Convert to path"), which turns a spiro curve into an ordinary path. In path edit each point draws by its kind: a circle for smooth, a square for a corner, a half-disc facing away from the line for `left` and `right`. Dragging the curve between two points adds a smooth point there and drags it; the segment affordance hit-tests the curve itself, which the `editAnchors` dep's new optional `getOutlinePath` supplies. Path commands that rewrite a node's geometry, such as Join and Simplify, leave plain geometry.
+

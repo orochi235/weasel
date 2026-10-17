@@ -3,7 +3,7 @@ import { PathBuilder, pathToAnchors, type PolygonPath } from '@weasel-js/geom';
 import type { ImmediateInvoker } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import { makeEditAnchorsDep } from '../testUtils';
-import { averageAnchorsAction, bridgeAnchorsAction, joinAnchorsAction } from './anchorJoin';
+import { averageAnchorsAction, joinAnchorsAction } from './anchorJoin';
 
 /** Two open lines in one path: (0,0)→(10,0) and (20,10)→(30,10). Flat 0..3. */
 function twoLines(): PolygonPath {
@@ -80,20 +80,5 @@ describe('joinAnchorsAction', () => {
     const open = new PathBuilder().moveTo(0, 0).lineTo(10, 0).lineTo(10, 10).build();
     expect(joinAnchorsAction.enabled!(setup(open, [0, 1]).deps)).toBe(ActionDisabledReason.NotApplicable);
     expect(joinAnchorsAction.enabled!(setup(open, [0]).deps)).toBe(ActionDisabledReason.SelectionRequired);
-  });
-});
-
-describe('bridgeAnchorsAction', () => {
-  it('bridges the selected ends with a curve of the tension asked for, in one commit', () => {
-    const { deps, dep, commits } = setup(twoLines(), [1, 2]);
-    expect(bridgeAnchorsAction.enabled!(deps)).toBe(true);
-    run(bridgeAnchorsAction, deps, { tension: 0.25 });
-    expect(commits).toHaveLength(1);
-    expect(commits[0].label).toBe('Bridge anchors');
-    const [joined] = pathToAnchors(commits[0].path).anchors;
-    const gap = Math.hypot(10, 10);
-    expect(joined[1].outHandle!.x).toBeCloseTo(10 + gap / 4, 4);
-    expect(joined[2].inHandle!.x).toBeCloseTo(20 - gap / 4, 4);
-    expect(dep.selectedAnchors.size).toBe(0);
   });
 });

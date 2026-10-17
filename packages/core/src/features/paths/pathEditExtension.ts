@@ -1,0 +1,115 @@
+/**
+ * What a feature adds to path edit without path edit knowing it: marks drawn
+ * on the open path, parts of it to press, marks a click selects and Delete
+ * removes, and what an edit must keep true when it commits. A preset carries
+ * its extensions as `FeaturePreset.pathEdit`; core consults them in preset
+ * order.
+ */
+import type { DrawCommand } from '@weasel-js/renderer';
+import type { AnchorSet, PointOrigin, PolygonPath, View } from '@weasel-js/geom';
+
+/** A mark an extension drew that is selected in place of anchors: Delete
+ *  acts on it, and selecting anchors clears it. */
+export interface PathEditMark {
+  /** The extension that drew it. */
+  owner: string;
+  /** Which of its marks, in the extension's own numbering. */
+  index: number;
+}
+
+/** The open path as an extension's marks and parts read it. */
+export interface PathEditTarget {
+  /** The node being edited. */
+  id: string;
+  /** Its committed pose and data. */
+  node: { pose: unknown; data: unknown };
+  /** The path as drawn now, in-flight edits included, in world space. */
+  path: PolygonPath;
+  /** `path`'s anchors. */
+  anchors: AnchorSet;
+}
+
+/** What {@link PathEditExtension.marks} draws with. */
+export interface PathEditMarksCtx extends PathEditTarget {
+  view: View;
+  /** World space to the screen space the marks are drawn in. */
+  toScreen(p: { x: number; y: number }): { x: number; y: number };
+  /** Chrome-caps' answer for a chrome id; marks gated by one ask it. */
+  isVisible(chromeId: string): boolean;
+  /** The selected mark's index when this extension owns it, else null. */
+  selected: number | null;
+}
+
+/** A grabbable point an extension adds to the open path. A press on it
+ *  routes as an affordance hit of kind `hitKind`. */
+export interface PathEditPart {
+  x: number;
+  y: number;
+  hitKind: string;
+  /** Chrome-caps id it is hit-tested under, beside `path-edit.anchors`. */
+  chromeId?: string;
+  /** Hit radius in screen px; path edit's anchor radius when left out. */
+  hitRadiusPx?: number;
+  /** Pushes the part `px` screen pixels from (x, y) along the world-space
+   *  `normal`, so it keeps its distance at any zoom. */
+  standoff?: { px: number; normal: { x: number; y: number } };
+}
+
+/** What an edit commits once an extension has finished it. */
+export interface FinishedPathEdit {
+  path: PolygonPath;
+  /** Data fields to set beside the path. */
+  data?: Record<string, unknown>;
+}
+
+/** One feature's share of path edit. Every member is optional. */
+export interface PathEditExtension {
+  /** Names it as a {@link PathEditMark}'s owner. Unique per canvas. */
+  readonly id: string;
+  /** Draw commands for the open path, in screen space, under its anchor
+   *  markers. Called every frame the overlay paints. */
+  marks?(ctx: PathEditMarksCtx): DrawCommand[];
+  /** Grabbable points on the open path, pressed ahead of its segments and
+   *  behind its anchors. */
+  parts?(target: PathEditTarget): readonly PathEditPart[];
+  /** The index of this extension's mark a click at `screen` (in the
+   *  overlay's screen space) lands on, or -1. Asked when a click misses
+   *  every anchor. */
+  markAt?(target: PathEditTarget, toScreen: PathEditMarksCtx['toScreen'], screen: { x: number; y: number }): number;
+  /** Remove mark `index` of the node `target` names, committing through
+   *  `store`. Delete in path edit calls it on the selected mark. */
+  deleteMark?(target: PathEditTarget, index: number, store: PathEditStore): void;
+  /**
+   * `worldPath`, an edit of `node`'s committed path, finished so whatever
+   * this extension keeps true holds — the path, and any data fields that
+   * change with it. Null when it cannot hold, and the edit should then not
+   * happen. Runs on every commit of an edit and every frame of one in flight.
+   */
+  finishEdit?(
+    node: { pose: unknown; data: unknown },
+    worldPath: PolygonPath,
+    origins?: readonly (PointOrigin | null)[],
+  ): FinishedPathEdit | null;
+}
+
+/** Commits a node's new path and data as one history entry, with no
+ *  extension finishing it. */
+export type PathEditStore = (id: string, worldPath: PolygonPath, label: string, data?: Record<string, unknown>) => void;
+
+/**
+ * Data fields that describe how a node's geometry was made, or name its
+ * anchors, and so mean nothing once the geometry is replaced some other way.
+ * A writer replacing a node's path drops them: a held warp, path
+ * constraints, a skin.
+ */
+export const GEOMETRY_BOUND_DATA: readonly string[] = ['skin', 'constraints', 'warp'];
+
+/** `data` without the fields in {@link GEOMETRY_BOUND_DATA}, other than `keep`. */
+export function withoutGeometryBoundData<T>(data: T, keep: readonly string[] = []): T {
+  if (data === null || typeof data !== 'object') return data;
+  const drop = GEOMETRY_BOUND_DATA.filter((k) => k in (data as object) && !keep.includes(k));
+  if (drop.length === 0) return data;
+  const out = { ...(data as Record<string, unknown>) };
+  for (const k of drop) delete out[k];
+  return out as T;
+}

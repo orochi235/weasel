@@ -34,15 +34,15 @@ type Params = BindingOpts['params'];
 const WRAPS = new WeakMap<Invoker, { inner: Invoker; params: ActionParams }>();
 
 function layered(under: ActionParams, over: Params): Params {
-  if (typeof under !== 'function' && typeof over !== 'function') return { ...under, ...over };
-  return () => ({ ...resolveParams(under as Params), ...resolveParams(over) });
+  if (typeof under !== 'function' && typeof over !== 'function') return tunedParams([{ params: under }], over);
+  return () => tunedParams([{ params: under }], resolveParams(over));
 }
 
 function wrapInvoker(invoker: Invoker, params: ActionParams): Invoker {
   for (let w: Invoker | undefined = invoker; w; w = WRAPS.get(w)?.inner) {
     if (WRAPS.get(w)?.params === params) return invoker;
   }
-  const base = (given: Record<string, unknown> | undefined) => ({ ...resolveParams(params as Params), ...given });
+  const base = (given: Record<string, unknown> | undefined) => tunedParams([{ params }], given);
   const wrapped: Invoker = invoker.timing === 'immediate'
     ? { timing: 'immediate', run: (deps, given) => invoker.run(deps, base(given)) }
     : {
@@ -64,15 +64,41 @@ function withBindings(
   return [...base, ...(added as readonly BoundGesture[]).filter((b) => !base.includes(b))];
 }
 
+const CURSOR_WRAPS = new WeakMap<object, { inner: Action['cursor']; params: ActionParams }>();
+
+/** A cursor that reads params, handed the tuning's under the call's. */
+function wrapCursor(cursor: Action['cursor'], params: ActionParams): Action['cursor'] {
+  if (typeof cursor !== 'function') return cursor;
+  for (let w: Action['cursor'] = cursor; typeof w === 'function'; w = CURSOR_WRAPS.get(w)?.inner) {
+    if (CURSOR_WRAPS.get(w)?.params === params) return cursor;
+  }
+  const wrapped = (given: Record<string, unknown> | undefined) => cursor(tunedParams([{ params }], given));
+  CURSOR_WRAPS.set(wrapped, { inner: cursor, params });
+  return wrapped;
+}
+
 function tuneOnce(action: Action, tuning: ActionTuning): Action {
   const invoker = tuning.params && action.invoker ? wrapInvoker(action.invoker, tuning.params) : action.invoker;
+  const cursor = tuning.params ? wrapCursor(action.cursor, tuning.params) : action.cursor;
   const bindings = tuning.bindings?.length ? withBindings(action.defaultBinding, tuning.bindings) : null;
-  if (invoker === action.invoker && bindings === null) return action;
+  if (invoker === action.invoker && cursor === action.cursor && bindings === null) return action;
   return {
     ...action,
     ...(invoker ? { invoker } : {}),
+    ...(cursor ? { cursor } : {}),
     ...(bindings ? { defaultBinding: bindings } : {}),
   };
+}
+
+/** The params an invocation passing `given` starts with under `tunings`:
+ *  each tuning's params over the one before, and `given` over them all. */
+export function tunedParams(
+  tunings: readonly ActionTuning[],
+  given?: Record<string, unknown>,
+): Record<string, unknown> {
+  let out: Record<string, unknown> = {};
+  for (const t of tunings) out = { ...out, ...resolveParams(t.params as Params) };
+  return { ...out, ...given };
 }
 
 /** `action` with each tuning applied in turn, a later one's params over an

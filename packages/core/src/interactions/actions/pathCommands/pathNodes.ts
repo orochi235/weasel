@@ -1,9 +1,9 @@
 /**
  * What the path commands share: reading the selected path nodes, and writing
  * new geometry back into a node or into a copy of one. A node's geometry is
- * stored where it already lives (`storeEditablePath`); a skin, whose weights
- * follow anchors the new geometry no longer has, is dropped, and so are a
- * shape generator and a spiro, which no longer make it.
+ * stored where it already lives (`storeEditablePath`); a shape generator, a
+ * spiro, and the data in `GEOMETRY_BOUND_DATA`, which no longer make it or
+ * name anchors it no longer has, are dropped.
  */
 import type { ActionDeps } from '@weasel-js/routing';
 import type { PolygonPath } from '@weasel-js/geom';
@@ -16,7 +16,7 @@ import { createDeleteOp } from 'core/ops/delete';
 import { resolveEditablePathOf, storeEditablePath } from 'features/paths/editablePath';
 import { withoutShapeGenerator } from 'features/paths/shapeGenerator';
 import { withoutSpiro } from 'features/paths/spiroShape';
-import { defaultCommitAdapter } from '../defaultCommitAdapter';
+import { withoutGeometryBoundData } from 'features/paths/pathEditExtension';
 
 type AnyScene = Scene<unknown, string, unknown>;
 export type AnyNode = Node<unknown, string, unknown>;
@@ -31,12 +31,23 @@ export interface PathNode {
 /** The selected leaves that hold an editable polygon, in selection order. */
 export function selectedPathNodes(deps: ActionDeps | undefined): PathNode[] {
   const scene = deps?.scene as AnyScene | undefined;
-  const ids = deps?.selection?.get() ?? [];
-  if (!scene) return [];
+  return scene ? pathNodesOf(scene, deps?.selection?.get() ?? []) : [];
+}
+
+/** The leaves among `ids` that hold an editable polygon, in the order given.
+ *  `shapeOf` stands in a node's pose and data, as an in-flight gesture would
+ *  leave them, for its own. */
+export function pathNodesOf(
+  scene: Pick<AnyScene, 'get'>,
+  ids: readonly string[],
+  shapeOf?: (id: string) => { pose: unknown; data: unknown } | undefined,
+): PathNode[] {
   const out: PathNode[] = [];
   for (const id of ids) {
-    const node = scene.get(id as NodeId);
-    if (!node || node.kind !== 'leaf') continue;
+    const found = scene.get(id as NodeId);
+    if (!found || found.kind !== 'leaf') continue;
+    const shape = shapeOf?.(id);
+    const node = shape ? ({ ...found, pose: shape.pose, data: shape.data } as AnyNode) : found;
     const path = resolveEditablePathOf(node);
     if (path) out.push({ id: id as NodeId, node, path });
   }
@@ -48,23 +59,17 @@ export function selectedPathNodes(deps: ActionDeps | undefined): PathNode[] {
 export function withPath(node: AnyNode, worldPath: PolygonPath): { pose: unknown; data: unknown } | null {
   const stored = storeEditablePath({ pose: node.pose, data: withoutSpiro(node.data) }, worldPath);
   if (!stored) return null;
-  const data = withoutShapeGenerator(stored.data) as { skin?: unknown } | null;
-  if (data && typeof data === 'object' && 'skin' in data) {
-    const { skin: _orphaned, ...rest } = data;
-    void _orphaned;
-    return { pose: stored.pose, data: rest };
-  }
-  return { pose: stored.pose, data };
+  return { pose: stored.pose, data: withoutGeometryBoundData(withoutShapeGenerator(stored.data)) };
 }
 
 /** The ops that give `node` the geometry `worldPath`, labeled `label`. */
 export function reshapeOps(node: AnyNode, worldPath: PolygonPath, label: string): Op[] {
   const next = withPath(node, worldPath);
-  return next ? nodeShapeOps(node, next, label) : [];
+  return next ? reshapeTo(node, next, label) : [];
 }
 
-/** The ops that give `node` the pose and data of `next`, labeled `label`. */
-export function nodeShapeOps(node: AnyNode, next: { pose: unknown; data: unknown }, label: string): Op[] {
+/** The ops taking `node` from what it is to `next`, labeled `label`. */
+export function reshapeTo(node: AnyNode, next: { pose: unknown; data: unknown }, label: string): Op[] {
   const ops: Op[] = [];
   if (next.pose !== node.pose) ops.push(createTransformOp({ id: node.id, from: node.pose, to: next.pose, label }));
   if (next.data !== node.data) ops.push(createSetDataOp({ id: node.id, from: node.data, to: next.data, label }));
@@ -93,17 +98,4 @@ export function insertAt(node: AnyNode, index: number, label: string): Op {
 /** Delete `node`, remembering its slot for undo. */
 export function deleteNode(scene: AnyScene, node: AnyNode, label: string): Op {
   return createDeleteOp({ node, index: slotOf(scene, node.id), label });
-}
-
-/** Commit `ops` as one undo entry, through the consumer's `applyOps` when
- *  there is one. */
-export function commitOps(deps: ActionDeps, ops: Op[], label: string): void {
-  if (ops.length === 0) return;
-  if (deps.applyOps) {
-    deps.applyOps(ops, label);
-    return;
-  }
-  const scene = deps.scene as AnyScene | undefined;
-  if (!scene) return;
-  scene.applyBatch(ops, label, defaultCommitAdapter(scene, deps.selection?.adapterMethods));
 }

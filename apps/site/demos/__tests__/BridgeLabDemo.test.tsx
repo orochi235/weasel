@@ -1,28 +1,14 @@
 import { cleanup, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { DEFAULT_BRIDGE_TENSION, pathToAnchors, type PolygonPath } from '@weasel-js/core';
+import { pathToAnchors, type PolygonPath } from '@weasel-js/core';
+import { DEFAULT_BRIDGE_TENSION } from '@weasel-js/path-tools';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { StrictMode } from 'react';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { BridgeLabDemo } from '../BridgeLabDemo';
+import { installLabEnvironment } from './pathLabHarness';
 
-// windease lays a lab's tiles out only once something measures them, and
-// jsdom ships no ResizeObserver.
-beforeAll(() => {
-  window.history.replaceState(null, '', '/?test=1');
-  if (typeof globalThis.ResizeObserver !== 'undefined') return;
-  globalThis.ResizeObserver = class {
-    #cb: ResizeObserverCallback;
-    constructor(cb: ResizeObserverCallback) {
-      this.#cb = cb;
-    }
-    observe(target: Element) {
-      this.#cb([{ target, contentRect: { width: 800, height: 600, x: 0, y: 0, top: 0, left: 0 } } as ResizeObserverEntry], this);
-    }
-    unobserve() {}
-    disconnect() {}
-  } as unknown as typeof ResizeObserver;
-});
+beforeAll(installLabEnvironment);
 afterEach(() => {
   cleanup();
   delete window.__weaselTest;

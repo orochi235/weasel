@@ -1,5 +1,27 @@
 # @weasel-js/theme
 
+## 1.10.1
+
+### Patch Changes
+
+- 88b8840: `colorSourceCss` writes a palette entry or a function source that only names a theme color as that color's custom property, so it follows a mode change through the cascade with no `<ThemeProvider>`. It used to write the literal the name resolved to. This changes the string returned for such a source, from a hex color to `var(--wzl-…)`. A function that reads a color through `resolve` to compute its own is still written as the literal it resolves to.
+  
+  Additive: a `CurveLayer`'s render context carries `colorCss`, which writes a `ColorSource` as CSS under the theme, tones, and palette in force. A custom layer no longer needs a component of its own to call `useColorCss`.
+- 886380f: Each README's "API reference" link now opens the package's page on the site, `https://orochi235.github.io/weasel/#pkg/<name>`, where it used to open the TypeDoc site at `/weasel/api/`, which is no longer built. A file comment that sat on an `export { … }` list is now marked as the file's, so an entry's description no longer shows up as the summary of each function the entry re-exports. No code changed. `@weasel-js/labkit` drops `vitepress` from its devDependencies, which nothing used.
+- c56fc4a: A theme as a prefs schema, on a new `@weasel-js/theme/prefs` entry. `themePrefsSchema(theme)` holds an `enum` for each axis under `axis` and a leaf for every token and override hook at `<group>.<token>`: a `color`, a `number` in the token's unit, or a `string` of CSS text. Each leaf may be split by every axis, and its default is what the theme resolves to, split along the axes the token differs by. `themePrefsPins(store)` reads the leaves that were set back as `pins`, a split value in `{ by, … }` form; `themeFromPrefs(store, base)` is `base` with those pins; `themePrefsSelection(store)` is the selection the axes are set to; and `themePrefsValues(store, base)` gives a form its values with each unset leaf read from the pinned theme. `@weasel-js/theme` now depends on `@weasel-js/prefs`, which only that entry loads.
+  
+  `blendTheme(theme, weights, selection?)` resolves a theme partway between values of its axes: it resolves each weighted selection and mixes what every token resolved to, a color in OKLCH and a number with one unit linearly. `applyTheme` takes `{ weights }` as a fourth argument and holds that blend.
+- Updated dependencies [b6e04e2]
+- Updated dependencies [886380f]
+- Updated dependencies [10449af]
+- Updated dependencies [e05a5f9]
+- Updated dependencies [d30823f]
+- Updated dependencies [0be7a53]
+- Updated dependencies [365eae0]
+  - @weasel-js/prefs@1.10.1
+  - @weasel-js/paint@1.10.1
+  - @weasel-js/registry@1.10.1
+
 ## 1.10.0
 
 ### Patch Changes

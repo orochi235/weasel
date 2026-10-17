@@ -28,6 +28,7 @@ export const GROUP_ICON: Record<NonNullable<PrefGroup['as']>, IconName> = {
   section: 'formSection',
   fragment: 'code',
   bar: 'formBar',
+  menu: 'menu',
 };
 
 const group = (name: string, as: PrefGroup['as']): PrefGroup => ({ name, description: '', as, children: {} });

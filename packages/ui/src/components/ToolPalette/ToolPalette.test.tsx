@@ -40,6 +40,13 @@ describe('ToolPalette', () => {
     expect(screen.queryByText('Scrub')).toBeNull();
   });
 
+  it('shows only the tools include accepts, under its own name', () => {
+    const tools = fakeTools([fakeTool('select'), fakeTool('trim', undefined, 'Trim')]);
+    render(<ToolPalette tools={tools} include={(t) => t.id === 'trim'} ariaLabel="Path tools" />);
+    expect(screen.getAllByRole('button')).toHaveLength(1);
+    expect(screen.getByRole('toolbar', { name: 'Path tools' })).toBeTruthy();
+  });
+
   it('shows the tool label from presentation', () => {
     const tools = fakeTools([fakeTool('select', undefined, 'Select')]);
     render(<ToolPalette tools={tools} />);

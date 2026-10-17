@@ -1,11 +1,11 @@
-import { isSolidPaint, resolveColor } from '@weasel-js/paint';
+import { isSolidPaint } from '@weasel-js/paint';
 import { colorPageTextureId, syncColorPageTexture } from '@weasel-js/font';
 import type { LaidOutGroup } from '@weasel-js/text';
 import type { ClipRect } from '../batchClip';
 import type { DrawContext } from './drawContext';
 import { enterUncut, leaveUncut } from './clip';
 import { flushBatch } from './flushBatch';
-import { stageColorGlyphs } from './batch';
+import { solidColor, stageColorGlyphs } from './batch';
 
 /**
  * Stage one group of color glyphs: emoji, each a quad off a page of the
@@ -17,7 +17,7 @@ export function drawColorGlyphs(ctx: DrawContext, group: LaidOutGroup, dx: numbe
   const fill = group.fill?.paint;
   if (fill === undefined || group.quads.length === 0) return;
   if (!syncColorPageTexture(ctx.textureCache, group.page)) return;
-  const opacity = isSolidPaint(fill) ? resolveColor(fill.color)[3] : 1;
+  const opacity = isSolidPaint(fill) ? solidColor(fill)[3] : 1;
   const atlasId = colorPageTextureId(group.page);
 
   const batch = ctx.drawBatch;

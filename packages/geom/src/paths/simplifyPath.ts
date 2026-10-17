@@ -1,8 +1,7 @@
 import type { PolygonPath } from '../path';
-import { nearestOnCubic, nearestOnLine } from '../nearest';
 import { anchorsToPath, pathToAnchors, type PenAnchor } from './anchors';
 import { cubicPointAt, type Point } from './cubicMath';
-import { fitCubicWithTangents } from './schneiderFit';
+import { fitPointRun, keepCorner } from './fitRun';
 
 /** Options for {@link simplifyPath}. */
 export interface SimplifyPathOptions {
@@ -32,20 +31,81 @@ export function simplifyPath(
   tolerance: number,
   opts: SimplifyPathOptions = {},
 ): PolygonPath {
-  const tol = Math.max(tolerance, 1e-6);
-  const cosCorner = Math.cos(((opts.cornerAngle ?? 40) * Math.PI) / 180);
   const { anchors, closed } = pathToAnchors(path);
   const out: PenAnchor[][] = [];
   const outClosed: boolean[] = [];
   anchors.forEach((sub, s) => {
     if (sub.length < 2) return;
-    out.push(simplifySubpath(sub, closed[s], tol, cosCorner));
+    out.push(simplifySubpath(sub, closed[s], tolerance, opts));
     outClosed.push(closed[s]);
   });
   return anchorsToPath(out, outClosed, path);
 }
 
-function simplifySubpath(sub: PenAnchor[], closed: boolean, tol: number, cosCorner: number): PenAnchor[] {
+/** One subpath of {@link simplifyPath}: its anchors refitted, corners and
+ *  open ends kept. */
+export function simplifySubpath(
+  sub: PenAnchor[],
+  closed: boolean,
+  tolerance: number,
+  opts: SimplifyPathOptions = {},
+): PenAnchor[] {
+  const { tol, cosCorner } = fitParams(tolerance, opts);
+  const n = sub.length;
+  const corners = [...breaksOf(sub, closed, cosCorner)].sort((a, b) => a - b);
+  const result: PenAnchor[] = [];
+  if (closed && corners.length === 0) {
+    const pts = sampleRun(sub, 0, n, tol);
+    const t = unit(sub2(pts[1], pts[pts.length - 2]));
+    fitPointRun(pts, t, neg(t), tol, result, true);
+    keepCorner(result[0], sub[0]);
+    return result;
+  }
+  fitStops(sub, closed ? [...corners, corners[0] + n] : corners, tol, result, closed);
+  return result;
+}
+
+/**
+ * The anchors of `sub` from index `from` to `to`, refitted the way
+ * {@link simplifyPath} refits a subpath: as few as hold the span within
+ * `tolerance`, corners inside it kept. Indices run modulo the subpath's
+ * length, so on a closed subpath `to` may pass its end and wrap; the span is
+ * shorter than one full turn. The two end anchors stay where they are and
+ * keep their handles facing out of the span. Answers the anchors from `from`
+ * to `to`, both included, to splice in place of the originals.
+ */
+export function simplifySpan(
+  sub: PenAnchor[],
+  closed: boolean,
+  from: number,
+  to: number,
+  tolerance: number,
+  opts: SimplifyPathOptions = {},
+): PenAnchor[] {
+  const { tol, cosCorner } = fitParams(tolerance, opts);
+  const n = sub.length;
+  const breaks = breaksOf(sub, closed, cosCorner);
+  const stops = [from];
+  for (let k = from + 1; k < to; k++) if (breaks.has(k % n)) stops.push(k);
+  stops.push(to);
+  const first = sub[from % n];
+  const result: PenAnchor[] = [{ x: first.x, y: first.y, ...(first.inHandle ? { inHandle: { ...first.inHandle } } : {}) }];
+  keepCorner(result[0], first);
+  fitStops(sub, stops, tol, result, false);
+  const lastOut = sub[to % n].outHandle;
+  if (lastOut) result[result.length - 1].outHandle = { ...lastOut };
+  return result;
+}
+
+function fitParams(tolerance: number, opts: SimplifyPathOptions): { tol: number; cosCorner: number } {
+  return {
+    tol: Math.max(tolerance, 1e-6),
+    cosCorner: Math.cos(((opts.cornerAngle ?? 40) * Math.PI) / 180),
+  };
+}
+
+/** The anchors a refit must keep: corners, and both ends of a long straight. */
+function breaksOf(sub: PenAnchor[], closed: boolean, cosCorner: number): Set<number> {
   const n = sub.length;
   const breaks = new Set<number>();
   for (let i = 0; i < n; i++) {
@@ -55,21 +115,21 @@ function simplifySubpath(sub: PenAnchor[], closed: boolean, tol: number, cosCorn
       breaks.add((i + 1) % n);
     }
   }
-  const corners = [...breaks].sort((a, b) => a - b);
-  const result: PenAnchor[] = [];
-  if (closed && corners.length === 0) {
-    const pts = sampleRun(sub, 0, n, tol);
-    const t = unit(sub2(pts[1], pts[pts.length - 2]));
-    fitRun(pts, t, neg(t), tol, result, true);
-    return result;
-  }
-  const stops = closed ? [...corners, corners[0] + n] : corners;
+  return breaks;
+}
+
+/** Fit each run between consecutive `stops` and append it to `out`. With
+ *  `closing`, the last run ends on the subpath's first anchor. */
+function fitStops(sub: PenAnchor[], stops: readonly number[], tol: number, out: PenAnchor[], closing: boolean): void {
+  const n = sub.length;
   for (let k = 0; k + 1 < stops.length; k++) {
     const pts = sampleRun(sub, stops[k], stops[k + 1], tol);
-    const last = closed && k + 2 === stops.length;
-    fitRun(pts, unit(sub2(pts[1], pts[0])), unit(sub2(pts[pts.length - 2], pts[pts.length - 1])), tol, result, last);
+    const last = closing && k + 2 === stops.length;
+    const fresh = out.length === 0;
+    fitPointRun(pts, unit(sub2(pts[1], pts[0])), unit(sub2(pts[pts.length - 2], pts[pts.length - 1])), tol, out, last);
+    if (fresh) keepCorner(out[0], sub[stops[k] % n]);
+    if (!last) keepCorner(out[out.length - 1], sub[stops[k + 1] % n]);
   }
-  return result;
 }
 
 /** Whether the path turns at `sub[i]` by more than the corner angle. */
@@ -123,68 +183,6 @@ function sampleRun(sub: PenAnchor[], from: number, to: number, tol: number): Poi
     }
   }
   return dedupe(pts);
-}
-
-/**
- * Fit `pts` with cubics held to the end tangents, splitting at the worst
- * sample until every sample is within `tol`, and append the anchors after the
- * first to `out` (the first too when `out` is empty). `closing` folds the
- * final anchor, which lands on the subpath's first, into that first one.
- */
-function fitRun(pts: Point[], tStart: Point, tEnd: Point, tol: number, out: PenAnchor[], closing: boolean): void {
-  if (out.length === 0) out.push({ x: pts[0].x, y: pts[0].y });
-  const segs: Array<{ c1?: Point; c2?: Point; end: Point }> = [];
-  fitRecursive(pts, tStart, tEnd, tol, segs);
-  segs.forEach((seg, i) => {
-    const prev = out[out.length - 1];
-    if (seg.c1) prev.outHandle = seg.c1;
-    const isLast = i === segs.length - 1;
-    if (closing && isLast) {
-      if (seg.c2) out[0].inHandle = seg.c2;
-      return;
-    }
-    out.push(seg.c2 ? { x: seg.end.x, y: seg.end.y, inHandle: seg.c2 } : { x: seg.end.x, y: seg.end.y });
-  });
-}
-
-function fitRecursive(
-  pts: Point[], tStart: Point, tEnd: Point, tol: number,
-  out: Array<{ c1?: Point; c2?: Point; end: Point }>,
-): void {
-  const a = pts[0];
-  const e = pts[pts.length - 1];
-  if (pts.length <= 2 || worstFromLine(pts, a, e).dist <= tol) {
-    out.push({ end: e });
-    return;
-  }
-  const { cp1, cp2 } = fitCubicWithTangents(pts, tStart, tEnd);
-  const worst = worstFromCubic(pts, a, cp1, cp2, e);
-  if (worst.dist <= tol) {
-    out.push({ c1: cp1, c2: cp2, end: e });
-    return;
-  }
-  const k = worst.index;
-  const center = unit(sub2(pts[k + 1], pts[k - 1]));
-  fitRecursive(pts.slice(0, k + 1), tStart, neg(center), tol, out);
-  fitRecursive(pts.slice(k), center, tEnd, tol, out);
-}
-
-function worstFromLine(pts: Point[], a: Point, e: Point): { index: number; dist: number } {
-  let index = 1, dist = 0;
-  for (let i = 1; i < pts.length - 1; i++) {
-    const d = nearestOnLine(pts[i].x, pts[i].y, a.x, a.y, e.x, e.y).dist;
-    if (d > dist) { dist = d; index = i; }
-  }
-  return { index, dist };
-}
-
-function worstFromCubic(pts: Point[], a: Point, c1: Point, c2: Point, e: Point): { index: number; dist: number } {
-  let index = 1, dist = 0;
-  for (let i = 1; i < pts.length - 1; i++) {
-    const d = nearestOnCubic(pts[i].x, pts[i].y, a.x, a.y, c1.x, c1.y, c2.x, c2.y, e.x, e.y).dist;
-    if (d > dist) { dist = d; index = i; }
-  }
-  return { index, dist };
 }
 
 function dedupe(pts: Point[]): Point[] {

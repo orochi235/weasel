@@ -127,6 +127,7 @@ describe('<SemanticsLayer>', () => {
     await userEvent.clear(field);
     await userEvent.type(field, 'surface, surface-raised');
     expect(field).toHaveValue('surface, surface-raised');
+    await userEvent.tab();
     expect(lastDef(onChange).semantics!['fg-muted']).toMatchObject({ contrast: { against: ['surface', 'surface-raised'] } });
   });
 

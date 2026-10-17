@@ -1,5 +1,5 @@
 import { describe, expect, expectTypeOf, it } from 'vitest';
-import type { PrefGroup, PrefSection } from './groups';
+import { prefAsBox, prefGroupIsPage, type PrefGroup, type PrefSection } from './groups';
 import { isPrefLeaf, isPrefSection, prefLeaves, prefSectionLeaves } from './helpers';
 import type { PrefObject } from './schema';
 
@@ -57,5 +57,15 @@ describe('PrefGroup and PrefSection', () => {
       children: { view: NESTED.children.view },
     };
     expectTypeOf(style).toEqualTypeOf<PrefObject>();
+  });
+});
+
+describe('as: menu', () => {
+  it('is how a group or a section may be drawn, in a box wherever a panel draws it', () => {
+    const group: PrefGroup = { name: 'Arrange', as: 'menu', children: { x } };
+    const section: PrefSection = { name: 'Arrange', as: 'menu', members: { x } };
+    expect([prefAsBox(group.as), prefAsBox(section.as), prefAsBox('panel')]).toEqual([true, true, true]);
+    expect([prefAsBox('section'), prefAsBox('bar'), prefAsBox(undefined)]).toEqual([false, false, false]);
+    expect(prefGroupIsPage(group)).toBe(false);
   });
 });

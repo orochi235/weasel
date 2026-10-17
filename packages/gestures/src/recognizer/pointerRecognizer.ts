@@ -16,7 +16,8 @@ import {
   modifiersOf, pointerDownEvent, pointerMoveEvent, pointerUpEvent, pressFactsOf,
   type PointerSample, type PressSample,
 } from './samples';
-import { LONG_PRESS_MS } from './thresholds';
+import { DRAG_THRESHOLD_PX } from '../ui/dragThreshold';
+import { DOUBLE_CLICK_MAX_MS, DOUBLE_CLICK_MAX_PX, LONG_PRESS_MS, TAP_THRESHOLD_PX } from './thresholds';
 
 /** Where recognized events go. */
 export interface RecognizerSink {
@@ -47,6 +48,14 @@ export interface PointerRecognizerOptions {
   toSurface?: (client: Point) => Point;
   /** Long-press hold time in ms, read at each press. Default `LONG_PRESS_MS`. */
   longPressMs?: () => number | undefined;
+  /** Longest gap in ms between two clicks of a double click, read at each click. Default `DOUBLE_CLICK_MAX_MS`. */
+  doubleClickMs?: () => number | undefined;
+  /** Farthest two clicks of a double click may land apart, in CSS px. Default `DOUBLE_CLICK_MAX_PX`. */
+  doubleClickPx?: () => number | undefined;
+  /** Farthest a multitouch tap's fingers may travel, in CSS px. Default `TAP_THRESHOLD_PX`. */
+  tapPx?: () => number | undefined;
+  /** Travel in CSS px that makes a press a drag, read at each move. Default `DRAG_THRESHOLD_PX`. */
+  dragPx?: () => number | undefined;
   clicks?: ClickMemory;
   observer?: RecognizerObserver;
 }
@@ -115,15 +124,28 @@ function fireLongPress(rec: Held | undefined, sink: RecognizerSink, observer: Re
   if (rec.holdType) observer.longPress?.(rec.holdType);
 }
 
+/** Each threshold as its option says at the moment of reading, else its constant. */
+function thresholdsOf(opts: PointerRecognizerOptions) {
+  return {
+    longPressMs: (): number => opts.longPressMs?.() ?? LONG_PRESS_MS,
+    tapPx: (): number => opts.tapPx?.() ?? TAP_THRESHOLD_PX,
+    dragPx: (): number => opts.dragPx?.() ?? DRAG_THRESHOLD_PX,
+    doubleClick: () => ({
+      maxMs: opts.doubleClickMs?.() ?? DOUBLE_CLICK_MAX_MS,
+      maxPx: opts.doubleClickPx?.() ?? DOUBLE_CLICK_MAX_PX,
+    }),
+  };
+}
+
 /** Build a recognizer holding no pointers. It touches no DOM: time and timers come from `opts.clock`. */
 export function createPointerRecognizer(opts: PointerRecognizerOptions): PointerRecognizer {
   const { sink, clock, observer = {}, toSurface = (p) => p } = opts;
   const world = (s: PointerSample): Point => opts.toWorld?.(s.clientX, s.clientY) ?? { x: s.clientX, y: s.clientY };
   const clicks = opts.clicks ?? { last: null };
   const held = new Map<number, Held>();
-  const touches = createMultiTouchEpisode();
+  const { longPressMs, tapPx, dragPx, doubleClick } = thresholdsOf(opts);
+  const touches = createMultiTouchEpisode(tapPx);
   const hold = createLongPressHold(clock, (pending) => { observer.holdChanged?.(pending); });
-  const longPressMs = (): number => opts.longPressMs?.() ?? LONG_PRESS_MS;
   const geometry = (extra: Point[] = []) => heldGeometry(held, toSurface, extra);
 
   // MULTI-POINTER POLICY: multitouch takes every pointer that has not already
@@ -163,7 +185,7 @@ export function createPointerRecognizer(opts: PointerRecognizerOptions): Pointer
       if (rec) rec.pos = to;
       touches.moved(s.pointerId, to);
       // The buffered press goes out before the move: it opens the drag the moves pump.
-      if (rec?.buffered && pastDragThreshold(rec.down, s)) {
+      if (rec?.buffered && pastDragThreshold(rec.down, s, dragPx())) {
         const press = rec.buffered;
         rec.buffered = null;
         hold.cancel(s.pointerId);
@@ -198,7 +220,7 @@ export function createPointerRecognizer(opts: PointerRecognizerOptions): Pointer
       const up = {
         target: s.target, clientX: s.clientX, clientY: s.clientY, worldX: at.x, worldY: at.y, ...modifiersOf(s),
       };
-      return composeClick(rec.down, up, clicks, () => clock.now(), (ev) => sink.dispatch(ev), observer);
+      return composeClick(rec.down, up, clicks, () => clock.now(), (ev) => sink.dispatch(ev), observer, doubleClick());
     },
 
     cancel(pointerId) {

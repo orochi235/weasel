@@ -44,6 +44,13 @@
   color: var(--wzl-fg);
 }
 
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--wzl-space-2);
+  margin-inline: auto var(--wzl-space-2);
+}
+
 .hideButton {
   margin-inline-end: var(--wzl-space-2);
 }

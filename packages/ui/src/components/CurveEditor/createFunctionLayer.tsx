@@ -29,8 +29,8 @@ const SAMPLES_PER_SEGMENT = 16;
 const ENDPOINT_HALF = handleHalf('--wzl-handle-size-lg');
 const LOCKED_HALF = handleHalf('--wzl-handle-size-sm');
 const ANCHOR_RADIUS = handleHalf('--wzl-handle-dot-size');
-const ANCHOR_SNAP_PX = 12;
-const CURVE_HIT_PX = 8;
+export const ANCHOR_SNAP_PX = 12;
+export const CURVE_HIT_PX = 8;
 /** An arrow-key nudge, as a fraction of the range; shift takes ten. */
 const KEY_STEP_FRACTION = 0.01;
 const SHIFT_MULTIPLIER = 10;
@@ -211,11 +211,11 @@ export function createFunctionLayer(cfg: FunctionLayerConfig = {}): CurveLayer<F
   function hitTest(state: FunctionLayerState, plot: PlotPoint, ctx: LayerCtx) {
     if (!interactive) return null;
     const plotAnchors = projectAnchors(state.points, ctx);
-    const a = hitTestAnchor(plotAnchors, plot, ANCHOR_SNAP_PX);
+    const a = hitTestAnchor(plotAnchors, plot, ctx.kitSettings?.get('targets.curveAnchorSnapPx') ?? ANCHOR_SNAP_PX);
     if (a) return { kind: 'anchor' as const, payload: { index: a.index } };
     if (addPointMode === 'click-curve' && curveVisible) {
       const segs = segmentSamples(state.points, interpolation, ctx);
-      const c = hitTestCurve(segs, plot, CURVE_HIT_PX);
+      const c = hitTestCurve(segs, plot, ctx.kitSettings?.get('targets.functionCurveHitPx') ?? CURVE_HIT_PX);
       if (c) return { kind: 'curve' as const, payload: { segIdx: c.segIdx, t: c.t } };
     }
     return null;

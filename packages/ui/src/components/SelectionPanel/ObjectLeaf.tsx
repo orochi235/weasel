@@ -3,7 +3,7 @@
  * each section of them as its `as` says.
  */
 import { useContext, type ReactNode } from 'react';
-import { isPrefLeaf, pairRuns, prefSectionLeaves, type PrefLeaf, type PrefObject } from '@weasel-js/prefs';
+import { isPrefLeaf, pairRuns, prefAsBox, prefSectionLeaves, type PrefLeaf, type PrefObject } from '@weasel-js/prefs';
 import { objectRows, type ObjectLeafParts } from '../Prefs/objectRows';
 import { pathWithin, selectionAttrs } from '../Prefs/selection';
 import { renderCells, type LeafCell } from './cells';
@@ -85,7 +85,7 @@ export function ObjectLeaf({
     ),
     // Depth is drawn only where a label marks it.
     frame: (key, section, inner, { labeled, indent }) => [
-      <div key={`group:${key}`} className={section.as === 'panel' ? s.objectPanel : labeled && indent ? s.objectGroup : undefined}>
+      <div key={`group:${key}`} className={prefAsBox(section.as) ? s.objectPanel : labeled && indent ? s.objectGroup : undefined}>
         {labeled && <h5 className={s.sectionTitle}>{section.name}</h5>}
         {inner}
       </div>,

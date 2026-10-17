@@ -1,0 +1,6 @@
+.stage {
+  position: relative;
+  width: 640px;
+  height: 120px;
+  background: var(--wzl-surface-sunken);
+}

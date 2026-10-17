@@ -11,7 +11,8 @@ import { boundsOfPath, IDENTITY_POSE_COMPOSITION, RIGID_POSE_COMPOSITION, type T
 import { parsedToDoc, svgNodesToSceneDrafts, SWILL_NAMESPACES } from './svgInterop';
 import { leafOfObj } from './svgImport';
 import { buildWeaselClipboardText, extractWeaselClipboardFromSvg } from '@weasel-js/core';
-import { asPaint, registerPaintKindLoader, solid, strokeOf } from '@weasel-js/core';
+import { asPaint, createScene, measureNode, registerPaintKindLoader, solid, strokeOf } from '@weasel-js/core';
+import { ANNOTATION_LAYER, DRAW_LAYERS, type WeaselDrawData, type WeaselDrawLayer, type WeaselDrawPose } from './drawDocument';
 import type { Stroke, StyledRun, Fill } from '@weasel-js/core';
 import {
   sceneToSvgString,
@@ -202,6 +203,22 @@ describe('Save then Open', () => {
     const { data } = leafOfObj(drafts[0].obj);
     expect(data.fill).toBeNull();
     expect(data.stroke).toMatchObject({ paint: { color: '#00ff00' }, width: 2 });
+  });
+});
+
+describe('Export leaves annotations out', () => {
+  it('writes the content and none of the measurements', async () => {
+    const scene = createScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>({ systemLayers: DRAW_LAYERS });
+    scene.add({
+      kind: 'leaf', layer: 'default', pose: { x: 10, y: 20, width: 30, height: 40 },
+      data: { path: { kind: 'rect', x: 0, y: 0, width: 30, height: 40 }, fill: { paint: solid('#ff0000') } },
+    });
+    scene.add(measureNode(scene.mintId(), ANNOTATION_LAYER, { x: 0, y: 0 }, { x: 50, y: 50 }) as never);
+    const svg = await sceneToSvgString(scene, {
+      filename: 'page', paperSize: 'letter', paperWidth: 100, paperHeight: 100, backgroundColor: '#ffffff',
+    });
+    let n = 0;
+    expect(svgNodesToSceneDrafts(parseSvg(svg), () => `n${n++}`)).toHaveLength(1);
   });
 });
 

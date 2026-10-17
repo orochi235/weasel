@@ -1,3 +1,4 @@
+import { matchQuery } from '@weasel-js/registry';
 import { prefAliasedLeaf, prefAliasTarget, type PrefAlias } from './alias';
 import type { PrefGroup, PrefSection } from './groups';
 import type { PrefLeaf, PrefNumber, PrefObject } from './schema';
@@ -33,9 +34,9 @@ export function isPrefLeaf(node: PrefLeaf | PrefGroup | PrefSection): node is Pr
   return 'kind' in node;
 }
 
-const VALUELESS: ReadonlySet<string> = new Set(['action', 'alias', 'label', 'separator']);
+const VALUELESS: ReadonlySet<string> = new Set(['action', 'actions', 'alias', 'label', 'separator']);
 
-/** Whether a leaf has a value to store: an `action` is a button and holds none, an `alias` shows another leaf's,
+/** Whether a leaf has a value to store: an `action` is a button and holds none, nor does an `actions` run of them, an `alias` shows another leaf's,
  *  and a `label` and a `separator` are text and a rule. */
 export function prefHoldsValue(leaf: PrefLeaf): boolean {
   return !VALUELESS.has(leaf.kind);
@@ -177,16 +178,14 @@ export function flattenPrefValues(schema: PrefGroup, tree: unknown): [string, un
   return out;
 }
 
-/** Whether one leaf answers to a filter query, by name, description or path. */
+/** Whether one leaf answers to a filter query, by name, description, path or tag. */
 function prefLeafMatches(pref: PrefLeaf, path: string, query: string): boolean {
-  if (pref.name.toLowerCase().includes(query)) return true;
-  if (pref.description?.toLowerCase().includes(query)) return true;
-  return path.toLowerCase().includes(query);
+  return matchQuery(query, { text: [pref.name, pref.description, path], tags: pref.tags }) !== null;
 }
 
 /**
  * Drop every leaf that does not answer to `query`, pruning groups left empty.
- * A group whose own name matches keeps all of its leaves. An empty or
+ * A group whose own name or tag matches keeps all of its leaves. An empty or
  * whitespace query matches everything.
  *
  * An alias answers as the row it draws: its target's name and description
@@ -209,7 +208,7 @@ export function filterPrefSubtree<T extends PrefLeaf | PrefGroup>(
     return prefLeafMatches(drawn, path, q) ? node : null;
   }
   const group = node as PrefGroup;
-  if (group.name.toLowerCase().includes(q)) return node;
+  if (matchQuery(q, { text: [group.name], tags: group.tags }) !== null) return node;
   const children: Record<string, PrefLeaf | PrefGroup> = {};
   for (const [key, child] of Object.entries(group.children)) {
     const kept = filterPrefSubtree(child, q, path === '' ? key : `${path}.${key}`, within);

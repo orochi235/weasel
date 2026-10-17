@@ -75,13 +75,19 @@ export interface ToolPaletteProps {
    * Defaults to `['select', 'shape', 'draw', 'type', 'view']`.
    */
   groupOrder?: readonly string[];
+  /** Which of the registered tools this palette shows; all of them when omitted.
+   *  Two palettes over one `tools` with complementary filters split a canvas's
+   *  tools between two toolbars. */
+  include?: (tool: Tool) => boolean;
+  /** The toolbar's accessible name. Default `"Tools"`. */
+  ariaLabel?: string;
 }
 
 /**
  * Toolbar of the registered tools, split into separator-divided groups by
  * each tool's presentation group and navigable by arrow keys. Clicking a
- * button makes that tool active. A tool whose presentation sets `hide` is
- * left out.
+ * button makes that tool active. A tool whose presentation sets `hide`, or
+ * that `include` turns down, is left out.
  *
  * Given a `modeRegistry`, tools whose capabilities the current mode does not
  * allow render greyed out and inert rather than disappearing.
@@ -89,9 +95,9 @@ export interface ToolPaletteProps {
 export function ToolPalette(props: ToolPaletteProps) {
   const {
     tools, orientation = 'vertical', className, lookupShortcut, modeRegistry,
-    groupOrder = DEFAULT_GROUP_ORDER,
+    groupOrder = DEFAULT_GROUP_ORDER, include, ariaLabel = 'Tools',
   } = props;
-  const list = Object.values(tools.registry).filter((t) => !t.presentation?.hide);
+  const list = Object.values(tools.registry).filter((t) => !t.presentation?.hide && (!include || include(t)));
   const groups = partitionByGroup(list);
   const groupKeys = orderedGroupKeys(groups, groupOrder);
   const cls = [s.palette, orientation === 'horizontal' && s.horizontal, className]
@@ -115,7 +121,7 @@ export function ToolPalette(props: ToolPaletteProps) {
       onKeyDown={roving.onKeyDown}
       className={cls}
       role="toolbar"
-      aria-label="Tools"
+      aria-label={ariaLabel}
     >
       {groupKeys.map((key, i) => (
         <Fragment key={key}>

@@ -1,14 +1,5 @@
-import {
-  type ActionTunings,
-  asNodeId,
-  boundsOfPath,
-  createScene,
-  DEFAULT_BRIDGE_TENSION,
-  PathBuilder,
-  type PolygonPath,
-  type RectPose,
-  solid,
-} from '@weasel-js/core';
+import { type ActionTunings, asNodeId, boundsOfPath, createScene, PathBuilder, type PolygonPath, type RectPose, solid } from '@weasel-js/core';
+import { bridgePreset, DEFAULT_BRIDGE_TENSION } from '@weasel-js/path-tools';
 import {
   type ConfigOf,
   defineInstrument,
@@ -21,9 +12,11 @@ import {
 } from '@weasel-js/labkit';
 import { ActionBar, PenIcon, SelectIcon } from '@weasel-js/ui';
 import { useMemo } from 'react';
-import s from './pathLabActions.module.css';
+import s from './BridgeLabDemo.module.css';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
+
+const FEATURES = ['draw', bridgePreset] as const;
 
 const config = f.schema({
   tension: f.number(DEFAULT_BRIDGE_TENSION).range(0, 1.5).step(0.05).label('Tension'),
@@ -32,13 +25,12 @@ type Config = ConfigOf<typeof config>;
 type State = SceneTrialState<unknown, 'default', RectPose>;
 
 function openPath(id: string, path: PolygonPath, color: string) {
-  const { x, y, width, height } = boundsOfPath(path);
   return {
     id: asNodeId(id),
     kind: 'leaf' as const,
     layer: 'default' as const,
-    pose: { x, y, width, height },
-    data: { path, fill: null, stroke: { paint: solid(color), width: 3 } },
+    pose: boundsOfPath(path),
+    data: { path, stroke: { paint: solid(color), width: 3 } },
   };
 }
 
@@ -65,19 +57,20 @@ function BridgeTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const selectionOptions = useMemo(() => ({ mode: 'multi' as const, initial: BRIDGE_SEED.map((id) => asNodeId(id)) }), []);
 
   return (
-    <TrialSceneCanvas
-      features={['draw']}
-      defaultTools={['pen']}
-      scene={scene}
-      trial={ctx.trial}
-      tune={tune}
-      selectionOptions={selectionOptions}
-    >
+    <div className={s.trial}>
+      <TrialSceneCanvas
+        features={FEATURES}
+        defaultTools={['pen']}
+        scene={scene}
+        trial={ctx.trial}
+        tune={tune}
+        selectionOptions={selectionOptions}
+      />
       <div className={s.actions}>
         <ActionBar group="path" />
         <ActionBar group="anchors" />
       </div>
-    </TrialSceneCanvas>
+    </div>
   );
 }
 

@@ -1,10 +1,11 @@
-/** Path anchor, control-handle, and segment affordances. */
+/** Path anchor, control-handle, and segment affordances, and the parts path-edit extensions add. */
 
 import type { CursorSpec } from '@weasel-js/cursor';
 import type { Affordance, AffordanceBinding, AffordanceRegion, CommonAffordanceScratch } from './types';
 import type { ChromeState } from 'core/selection/chromeState';
-import type { PolygonPath } from '@weasel-js/geom';
+import { pathToAnchors, type AnchorSet, type PolygonPath } from '@weasel-js/geom';
 import { enumerateAnchors } from 'interactions/actions/edit-anchors/geometry';
+import type { PathEditExtension } from 'features/paths/pathEditExtension';
 
 /**
  * Live anchor-editing state. The thunk that returns it is called on every
@@ -16,6 +17,13 @@ export interface AnchorState {
   editingId: string | null;
   /** Current editable path for a node id. Non-polygon values are ignored. */
   getPose(id: string): unknown;
+  /** The committed pose and data of a node, which extensions' parts read. */
+  getNode?(id: string): { pose: unknown; data: unknown } | null;
+  /** The path-edit extensions whose parts are pressed, in order. */
+  extensions?: readonly PathEditExtension[];
+  /** The active path-edit tool, if any. While one is set, anchors and controls
+   *  carry no cursor of their own, so the tool's action shows its own. */
+  tool?: string | null;
   /** The path whose outline counts as a segment press, when it is not
    *  `getPose`'s: a spiro curve, edited through its control path. */
   getOutline?(id: string): unknown;
@@ -25,7 +33,8 @@ export interface AnchorState {
 export interface PathAnchorAffordanceOptions {
   /** Hit radius (screen-px) for anchor and control points. Default 8. */
   hitRadius?: number;
-  /** Cursor while hovering an anchor or control. Defaults to `'pointer'`. */
+  /** Cursor while hovering an anchor or control, with no path-edit tool
+   *  active. Defaults to `'pointer'`. */
   cursor?: CursorSpec;
 }
 
@@ -39,19 +48,21 @@ export interface AnchorScratch extends CommonAffordanceScratch {
   part: 'anchor' | 'controlIn' | 'controlOut';
 }
 
-/** Chrome-caps id gating every returned affordance. */
+/** Chrome-caps id gating the anchor, control, and segment affordances. */
 export const PATH_ANCHOR_CHROME_ID = 'path-edit.anchors';
 
 /**
- * Segment, anchor, and control affordances for the selected paths, bottom →
- * top.
+ * Segment, extension-part, anchor, and control affordances for the selected
+ * paths, bottom → top.
  *
  * Three affordances rather than one, so that a control handle beats an anchor
  * regardless of which is nearer, the way controls draw on top, and both beat
  * the segment they sit on. Within each, nearest wins. A press on the edited
  * path's outline is a `segment` hit, which the segment bend binds to and a
- * selection move turns down. They deliberately share one id: chrome-caps
- * gates anchor editing as a single piece of chrome.
+ * selection move turns down. Anchors, controls, and segments share one id:
+ * chrome-caps gates anchor editing as a single piece of chrome. A part a
+ * path-edit extension adds (`PathEditExtension.parts`) may name a chrome id of
+ * its own as well, so it can be shown apart from the anchors.
  *
  * Order matters — spread this into an affordance list in the returned order.
  */
@@ -88,7 +99,7 @@ export function createPathAnchorAffordances(
     targetId: null,
     shape: { kind: 'point', x, y, hitRadiusPx: hitRadius },
     hitKind,
-    cursor,
+    ...(getAnchorState()?.tool ? {} : { cursor }),
     bind: (): AffordanceBinding => ({ initialScratch: { ...scratch, targetId } }),
   });
 
@@ -166,5 +177,42 @@ export function createPathAnchorAffordances(
     },
   };
 
-  return [segments, anchors, controls];
+  return [segments, extensionParts(getAnchorState, hitRadius, cursor), anchors, controls];
+}
+
+/** The parts path-edit extensions add to the path in edit mode while it is
+ *  selected, each pressed as its own `hitKind`. */
+function extensionParts(
+  getAnchorState: () => AnchorState | null,
+  hitRadius: number,
+  cursor: CursorSpec,
+): Affordance {
+  return {
+    id: PATH_ANCHOR_CHROME_ID,
+    regions(state) {
+      const anchorState = getAnchorState();
+      const editingId = anchorState?.editingId ?? null;
+      const extensions = anchorState?.extensions?.filter((e) => e.parts) ?? [];
+      if (editingId === null || extensions.length === 0) return [];
+      if (!(state.selection as readonly string[]).includes(editingId)) return [];
+      const pose = anchorState!.getPose(editingId);
+      const node = anchorState!.getNode?.(editingId);
+      if (!node || !pose || (pose as { kind?: string }).kind !== 'polygon') return [];
+      const target = {
+        id: editingId, node, path: pose as PolygonPath, anchors: pathToAnchors(pose as PolygonPath) as AnchorSet,
+      };
+      return extensions.flatMap((ext) => ext.parts!(target).map((part): AffordanceRegion => ({
+        id: `${editingId}:${part.hitKind}`,
+        targetId: null,
+        shape: {
+          kind: 'point', x: part.x, y: part.y, hitRadiusPx: part.hitRadiusPx ?? hitRadius,
+          ...(part.standoff ? { standoff: part.standoff } : {}),
+        },
+        hitKind: part.hitKind,
+        ...(part.chromeId ? { chromeId: part.chromeId } : {}),
+        cursor,
+        bind: (): AffordanceBinding => ({ initialScratch: { targetId: editingId } }),
+      })));
+    },
+  };
 }

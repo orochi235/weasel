@@ -1,5 +1,67 @@
 # @weasel-js/routing
 
+## 1.10.1
+
+### Patch Changes
+
+- c7b7ed5: In path edit, dragging a segment bends it: the point pressed follows the pointer and the segment's two handles move to carry it, and a straight segment becomes a curve. An end anchor that was smooth stays smooth, its other handle turning at its own length. It is the `bendSegment` action, in the standard actions and the `paths` feature preset. A drag that starts on an anchor or off the path still moves anchors or draws the marquee, and on a canvas with no mode registry a drag that starts on the edge no longer moves the shape.
+  
+  Path edit now lays a `segment` affordance along the edited path's outline, under its anchors and controls, and `bendSegment` binds to it. Affordance regions take a new shape for it, `{ kind: 'outline', path, hitRadiusPx }`: hit within that many screen pixels of the path's outline. `@weasel-js/routing` adds `isSegment` for that hit and `isPathEditPart` for any anchor, control, or segment hit; `move` turns down a press on any of them.
+  
+  `bendSegment(set, grip, dx, dy)` (`@weasel-js/geom`) is the edit underneath, taking the `{ sub, segIdx, t }` that `segmentAt` reports.
+- 7c5af8a: Filling an empty tool slot no longer counts as a tool switch. A `<SceneCanvas>` with no `initialActive` seeds its first tool after mounting, and that used to cancel every live gesture and every `useOngoingAction` edit opened while the canvas mounted. Tools still hear `onActivate` when the slot is filled; only switching away from a tool ends what was in progress.
+- 789e80d: A `hover` binding can ask for the pointer leaving. `HoverSpec` takes `motion: 'leave'`, written `hover(leave)` in a route: the binding then runs when the pointer passes out of what it targets, onto something its `target` does not match or off the surface, in place of on each move. With no `target` it runs only when the pointer leaves the surface. Its params are those of the move that took the pointer out, or of the last move before it left the surface. Additive: `hover` gains a `motion` arg in the route grammar that defaults to `move`, `HoverEvent` gains `from` and `off`, and `HoverWhere` is exported. A binding for a move and one for a leave on the same target no longer read as a conflict.
+- 35c4879: One answer to "is a pointer held on this canvas". `heldPointers(element)` is new in `@weasel-js/gestures` (additive): it counts the pointers pressed on an element with any button and not yet released, and every reader of one element shares its listeners. The dispatcher's `hover` gesture and hover cursor, a layer's `onUncapturedMove`, and the `pointer` dep's published position all read it, where each used to track a press its own way.
+  
+  What changes: a move with a secondary or middle button held is no longer a `hover`; `onUncapturedMove` stays off until the last of several pointers is released, and through a `pointerleave` mid-press; and the `pointer` dep no longer reports a position for a drag that began outside the canvas and passed over the page.
+  
+  `giveKeys` (`@weasel-js/react/testing/giveKeys`) releases the middle-button press it makes.
+- b67b6cd: `useOngoingAction` no longer commits an open edit during StrictMode's rehearsal unmount. The
+  commit on unmount now waits a microtask, and a remount with the same action id in that time
+  keeps the edit open; a real unmount still commits it, and changing the id still commits the old
+  action's edit at once.
+- 886380f: Each README's "API reference" link now opens the package's page on the site, `https://orochi235.github.io/weasel/#pkg/<name>`, where it used to open the TypeDoc site at `/weasel/api/`, which is no longer built. A file comment that sat on an `export { … }` list is now marked as the file's, so an entry's description no longer shows up as the summary of each function the entry re-exports. No code changed. `@weasel-js/labkit` drops `vitepress` from its devDependencies, which nothing used.
+- b5267f9: The rotate cursor now turns with the pointer, so the opening of its arc faces the selection's pivot from wherever the pointer is: over the rotation ring, and through the rotate drag, which used to show no rotate cursor at all. It used to be turned to match the target's own rotation.
+  
+  Two new surfaces carry it. An `AffordanceRegion`'s `cursor` may be a function of the pointer's world point and the view, worked out on each hit and reported on `AffordanceRegionHit.cursor`; read the cursor there rather than off `region.cursor`, which may now be a function. An `OngoingHandle` may declare `cursor()`, read after every move and ahead of its action's `activeCursor`.
+- 690ea72: Hold Space while drawing a rectangle, ellipse, line, polygon, or star to move the shape instead of resizing it; let go and the drag resizes again from where the shape now sits. It is the `insert.reposition` action, which each kit shape tool binds through `INSERT_REPOSITION_BINDING` (a Space hold gated to the tool's own engaged phase), so a consumer's own drag-to-draw tool can bind it the same way. A grid-snapped start stays on the grid as it moves.
+  
+  An offhand tool now engages only between gestures: `buildToolOffhandBindings` gates its key-held specs to `[{ channel: '*', phase: 'initial' }]`. Before, pressing Space mid-drag pushed the hand tool, and the tool switch canceled the drag.
+- e962494: New package, `@weasel-js/symmetry`: live symmetry groups. A group's copies (a mirror at any angle, both axes, a point, radial, kaleidoscope, or a repeat with an optional glide) are drawn from its real children. Every edit to a child therefore reaches every copy, a click on a copy selects the child it copies, and `bakeSymmetry` turns the copies into real nodes. `createSymmetry(scene).contribution` draws the guide with draggable center, axis, and step handles, sends every tool's shapes into the active group, and keeps a path that is its own image under its group symmetric while its anchors are dragged or nudged.
+  
+  Core gains what the package is built on, and each piece is usable on its own:
+  
+  - `ContainerNode.copiesFromPose`: a container draws its subtree again under each affine it returns. Hit tests reach into the copies, and the clip travels with each one. Additive.
+  - The `insertInto` dep: the container the `insert` dep puts new nodes into.
+  - The `pathSymmetry` dep: transforms that anchor drags and nudges keep a path symmetric under.
+  
+  `@weasel-js/geom` adds `anchorSymmetry`, `anchorSymmetries`, `translateAnchorsSymmetric`, and `moveHandleSymmetric`. `@weasel-js/svg` writes a container's copies as transformed groups.
+- 92c2e8e: `<SceneCanvas tune>` changes a built-in action on one canvas without restating it. Keyed by action id, an entry sets `params` every invocation starts from (a thunk is read on each call, so a value changed mid-drag reaches an ongoing action) and adds `bindings` beside the action's own. A binding's or a `trigger` call's own params are laid over the tuned ones. The tuning applies to whichever descriptor holds the id, from a preset or a tool, so setting a param no longer means copying the gesture that reaches the action. Additive: `ActionsRegistry.tune(id, tuning)` underneath it, `tuneAction`, the types `ActionTuning`, `ActionTunings`, `ActionParams` and `TunedBinding`, and `ActionParamSchema`, which types params by action id for the kit's parametric actions and takes an app's own entries by declaration merging, as `DepSchema` does. `BoundGesture` is no longer marked experimental.
+  
+  `SceneCanvasViewport` names the type of `<SceneCanvas viewport>`.
+- Updated dependencies [cbd5b4d]
+- Updated dependencies [aaa2b4f]
+- Updated dependencies [c7b7ed5]
+- Updated dependencies [ee59ccd]
+- Updated dependencies [789e80d]
+- Updated dependencies [b8bfb2d]
+- Updated dependencies [35c4879]
+- Updated dependencies [9eefcc7]
+- Updated dependencies [886380f]
+- Updated dependencies [d8b51a4]
+- Updated dependencies [62e766c]
+- Updated dependencies [ab9ea7a]
+- Updated dependencies [e962494]
+- Updated dependencies [10c5d41]
+  - @weasel-js/geom@1.10.1
+  - @weasel-js/gestures@1.10.1
+  - @weasel-js/history@1.10.1
+  - @weasel-js/select@1.10.1
+  - @weasel-js/cursor@1.10.1
+  - @weasel-js/react@1.10.1
+  - @weasel-js/modes@1.10.1
+  - @weasel-js/registry@1.10.1
+
 ## 1.10.0
 
 ### Minor Changes

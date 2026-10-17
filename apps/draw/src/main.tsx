@@ -13,7 +13,7 @@ import { drawTheme } from './theme';
 import { ColorModeProvider } from './colorMode';
 import { registerAvailableFonts } from './fonts';
 import { registerDefaultFont } from '../../shared/defaultFont';
-import { migrateLegacyPanelFlags } from './panels';
+import { migrateLegacyPanelFlags } from './surfaces/surfaceState';
 import { drawPrefs, importLegacyPrefs } from './prefs';
 
 // The dev surfaces are only reachable at `#/dev/*`, and `RegistryInspector`

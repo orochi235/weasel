@@ -42,7 +42,11 @@ function makeClock() {
   };
 }
 
-function setup(step: (ctx: PoseRunCtx<RectPose>) => PoseRunStep<RectPose>, label?: string) {
+function setup(
+  step: (ctx: PoseRunCtx<RectPose>) => PoseRunStep<RectPose>,
+  label?: string,
+  commitWith?: (finished: boolean) => void,
+) {
   const scene = createScene<object, 'main', RectPose>({ systemLayers: LAYERS });
   const a = scene.add({ kind: 'leaf', layer: 'main', pose: box(0, 0), data: {} });
   const b = scene.add({ kind: 'leaf', layer: 'main', pose: box(50, 0), data: {} });
@@ -53,6 +57,7 @@ function setup(step: (ctx: PoseRunCtx<RectPose>) => PoseRunStep<RectPose>, label
     step,
     onCommit,
     ...(label === undefined ? {} : { label }),
+    ...(commitWith === undefined ? {} : { commitWith }),
     requestFrame: clock.requestFrame,
     cancelFrame: clock.cancelFrame,
   }));
@@ -133,6 +138,29 @@ describe('usePoseRun', () => {
     act(() => { unmount(); });
     expect(scene.get(a)!.pose).toEqual(box(0, 0));
     expect(scene.overrides.ids()).toEqual([]);
+  });
+
+  it('makes the caller\'s own writes in the same undo entry, told the run finished', () => {
+    const told: boolean[] = [];
+    const s = setup((ctx) => marching(s.a, 2)(ctx), undefined, (finished) => {
+      told.push(finished);
+      s.scene.setPose(s.b, box(70, 0));
+    });
+    act(() => { s.run().start(); });
+    act(() => { s.clock.frames(2); });
+    expect(told).toEqual([true]);
+    act(() => { s.scene.undo(); });
+    expect(s.scene.get(s.a)!.pose).toEqual(box(0, 0));
+    expect(s.scene.get(s.b)!.pose).toEqual(box(50, 0));
+  });
+
+  it('tells the caller\'s writes when a stop cut the run short', () => {
+    const told: boolean[] = [];
+    const s = setup((ctx) => marching(s.a, 100)(ctx), undefined, (finished) => { told.push(finished); });
+    act(() => { s.run().start(); });
+    act(() => { s.clock.frames(2); });
+    act(() => { s.run().stop(); });
+    expect(told).toEqual([false]);
   });
 
   it('names the undo entry', () => {

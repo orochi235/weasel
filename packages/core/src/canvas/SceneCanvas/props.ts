@@ -1,5 +1,6 @@
 import type { ModeRegistry } from '@weasel-js/modes';
-import type { PathEditHost } from './pathEditHost';
+import type { PathEditHost, PathEditOpening } from './pathEditHost';
+import type { SceneCanvasGeometry } from './geometryProps';
 import type { Paint } from '@weasel-js/paint';
 import type { ActionsProp, ActionTunings } from '@weasel-js/routing';
 import { Yoke } from '@weasel-js/routing/react';
@@ -19,9 +20,8 @@ import type { UseResizeOptions } from 'interactions/actions/resize/options';
 import type { UseRotateOptions } from 'interactions/actions/rotate/options';
 import type { SnapStrategy } from 'interactions/gestures/types';
 import type { ReactNode } from 'react';
-import type { Bounds } from 'tools/builtin/select';
 import type { Animator } from '@weasel-js/animator';
-import { HANDLE_BASE_PX, targetSizesPx } from '../../core/device/targets';
+import { HANDLE_BASE_PX, targetSizesPx, type TargetSizesPx } from '../../core/device/targets';
 import type { DeviceProfile } from '../../core/device/types';
 import type { NodeRoutingEntry } from '../../core/scene/NodeRouting';
 import type { DebugConfig } from '../../debug/types';
@@ -39,9 +39,7 @@ import type {
 } from '../deps';
 import type { SurfaceContribution } from '../surfaceContribution';
 import type { CameraProps } from '../useCanvasView';
-import type {
-  Feature
-} from './features';
+import type { FeatureEntry } from './features';
 import type { BuiltinToolOptions } from './useBuiltinShapeTools';
 import type { VersionCheck } from './useContributionRoles';
 import type { SceneCanvasViewport } from './viewportProp';
@@ -89,10 +87,10 @@ export type SceneCanvasLayers<TNode extends { id: string }, TPose> = LayersMap<
 /** Deep-merge user-supplied `layers` with kit defaults. Slots the user
  *  doesn't mention get filled with defaults; slots explicitly set to
  *  `null` are dropped. Partial slot configs are shallow-spread on top of the
- *  default slot config. `targetScale` comes from the resolved {@link DeviceProfile}. */
+ *  default slot config. `targetScale` (from the {@link DeviceProfile}) and `baseSizes` go to `targetSizesPx`. */
 export function mergeLayersWithDefaults<TData, TLayer extends string, TPose>(
   user: SceneCanvasLayers<Node<TData, TLayer, TPose>, TPose> | undefined,
-  targetScale = 1,
+  targetScale = 1, baseSizes: Partial<TargetSizesPx> = {},
 ): LayersMap<Node<TData, TLayer, TPose>, TPose> {
   const defaults = {
     scene: {
@@ -102,7 +100,7 @@ export function mergeLayersWithDefaults<TData, TLayer extends string, TPose>(
       ) => DrawCommand[],
       paintBounds: defaultPaintBounds<TData, TLayer, TPose>,
     },
-    selectionOverlay: { handles: { size: targetSizesPx(targetScale).handle } },
+    selectionOverlay: { handles: { size: targetSizesPx(targetScale, baseSizes).handle } },
   };
 
   if (!user) return defaults as LayersMap<Node<TData, TLayer, TPose>, TPose>;
@@ -228,34 +226,7 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
 
     // --- Geometry: hit-test + bounds overrides consumed by the internal
     //     `useSelectTool`. Ignored if the consumer passes their own `tools`. ---
-    geometry?: {
-      /** Hit-test override. Return the topmost id, the full back-to-front hit
-       *  stack (`string[]`), or `null` for empty space. The stack form lets a
-       *  consumer with domain overlap ordering (e.g. children over their
-       *  container) feed the kit's `pickTopMostHit` the true order instead of
-       *  pre-collapsing to one id. Matches `Canvas`'s `pickEvery` shape. */
-      pickEvery?: (worldX: number, worldY: number) => string | string[] | null;
-      boundsOf?: (id: string) => Bounds | null;
-      /**
-       * What "the pointer is on this node" means for the default body-pick.
-       *
-       * - `'pose'` — the node's pose rect, rotation honored.
-       * - `'shape'` (default) — the pose rect as a pre-filter, then the ink the painter
-       *   actually lays down: its silhouette filled or not per the painter's `ink`, plus
-       *   its outline widened by the stroke half-width and `pickTolerancePx`.
-       *
-       * Painters with no silhouette keep the pose-rect answer either way. Ignored when
-       * `pickEvery` is supplied: that override owns the test.
-       */
-      picking?: 'pose' | 'shape';
-      /**
-       * Grab slop around a shape's outline, in **screen** pixels, so the target keeps
-       * its apparent size at any zoom. Default 4. It widens the outline test under
-       * `picking: 'shape'` and grows the pose-rect pre-filter so those outline hits
-       * survive it. Set `0` for exact geometry.
-       */
-      pickTolerancePx?: number;
-    };
+    geometry?: SceneCanvasGeometry;
 
     // --- Selection options. `pickBest` and `handleHitRadius` configure the
     //     internal select tool, and are ignored under a `tools` takeover;
@@ -369,11 +340,13 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      *   whatever `ingestion.handlers` accept, on Cmd/Ctrl+V or an OS drop.
      * - `draw` — all of the above.
      *
+     * Any `FeaturePreset` object goes beside the names: core's own
+     * (`pathsPreset`), or one a package ships.
      * Tools add the actions they bind — a shape tool brings `insert` — so
      * `defaultTools` composes with any preset. `actions` then adds, overrides
      * or removes on top of what the presets registered.
      */
-    features?: readonly Feature[];
+    features?: readonly FeatureEntry[];
 
     /** Extra tools or overrides keyed by id, or a full `ToolsApi` takeover.
      *
@@ -517,11 +490,8 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      */
     children?: ReactNode;
 
-    /**
-     * A yoke to join, from `useYoke()`: canvases on one yoke share the
-     * active tool, the gesture in flight and history. Omitted, this canvas
-     * keeps its own.
-     */
+    /** A yoke to join, from `useYoke()`: canvases on one yoke share the active tool, the gesture
+     *  in flight and history. Omitted, this canvas keeps its own. */
     yoke?: Yoke;
 
     /**
@@ -545,6 +515,8 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
 
     /** Hands which path is being anchor-edited to the host. See {@link PathEditHost}. */
     pathEdit?: PathEditHost;
+    /** A path to open in anchor edit as the canvas mounts, with anchors selected. Read once. */
+    defaultPathEdit?: PathEditOpening;
 
     /**
      * Override detected device facts. Merged over what `matchMedia` reports;

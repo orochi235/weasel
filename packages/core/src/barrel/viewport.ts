@@ -1,4 +1,8 @@
-/** Part of the `@weasel-js/core` barrel. Views, viewports, and the canvases that show one. */
+/**
+ * Part of the `@weasel-js/core` barrel. Views, viewports, and the canvases that show one.
+ *
+ * @packageDocumentation
+ */
 
 // ─── Build identity ─────────────────────────────────────────────────────────
 export { VERSION } from '../version';

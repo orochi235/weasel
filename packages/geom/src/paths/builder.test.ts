@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { PathBuilder, polygonFromPoints, rectPath } from './builder';
+import { PathBuilder, asPolygonPath, polygonFromPoints, rectPath } from './builder';
+import { countPathAnchors } from './anchors';
 import { PATH_C, PATH_L, PATH_M, PATH_Q, PATH_Z } from '../commands';
 
 describe('PathBuilder', () => {
@@ -40,5 +41,20 @@ describe('rectPath', () => {
   it('returns a RectPath subtype', () => {
     const r = rectPath(1, 2, 3, 4);
     expect(r).toEqual({ kind: 'rect', x: 1, y: 2, width: 3, height: 4 });
+  });
+});
+
+describe('asPolygonPath', () => {
+  it('turns a rect into its four corners, clockwise from (x, y)', () => {
+    const p = asPolygonPath(rectPath(1, 2, 10, 4));
+    expect(p.kind).toBe('polygon');
+    expect(Array.from(p.commands)).toEqual([PATH_M, PATH_L, PATH_L, PATH_L, PATH_Z]);
+    expect(Array.from(p.coords)).toEqual([1, 2, 11, 2, 11, 6, 1, 6]);
+    expect(countPathAnchors(p)).toBe(countPathAnchors(rectPath(1, 2, 10, 4)));
+  });
+
+  it('hands a polygon back as it is', () => {
+    const p = polygonFromPoints([{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }]);
+    expect(asPolygonPath(p)).toBe(p);
   });
 });

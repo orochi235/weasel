@@ -28,6 +28,15 @@ export function paintAttrs(
   return out;
 }
 
+/** A stroke's paint and opacity as `fill` attributes, for drawing its
+ *  outline as a filled shape. */
+export function strokePaintAsFillAttrs(stroke: SvgStroke, registry: PaintServerRegistry): string[] {
+  return [
+    ...paintAttrs(stroke.paint, 'fill', registry, false),
+    ...opacityAttr('fill-opacity', stroke.opacity ?? svgPaintOpacity(stroke.paint)),
+  ];
+}
+
 /** The opacity an `SvgPaint` carries, whichever kind holds it. */
 function svgPaintOpacity(paint: SvgPaint): number | undefined {
   if (paint.kind === 'solid') return paint.opacity;

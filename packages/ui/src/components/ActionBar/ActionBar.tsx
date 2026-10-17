@@ -1,16 +1,29 @@
-import { useMemo, useSyncExternalStore } from 'react';
-import { useActionsRegistry, actionItems, type Action } from '@weasel-js/core';
-import type { PrefAction, PrefGroup } from '@weasel-js/prefs';
+import { useMemo } from 'react';
+import { taggedActionItems } from '@weasel-js/core';
+import type { PrefActions, PrefGroup } from '@weasel-js/prefs';
 import { Bar } from '../Bar/Bar';
-import s from './ActionBar.module.css';
+import { BarActions } from '../Bar/BarActions';
+import type { PropertyRenderer } from '../SelectionPanel/renderContext';
 
-const EMPTY_LIST: readonly Action[] = Object.freeze([]);
-const noopSubscribe = (): (() => void) => () => {};
+/** Which actions an {@link ActionBar} draws: one group's, or every one carrying a tag. */
+export type ActionBarSource =
+  | {
+    /** Group key — only actions with `action.group === group` are rendered. */
+    group: string;
+    tag?: never;
+  }
+  | {
+    /** Only the entries carrying this tag are rendered, from any group: an
+     *  action's own, or one variant's. See `taggedActionItems`. */
+    tag: string;
+    group?: never;
+  };
 
 /** Props for {@link ActionBar}. */
-export interface ActionBarProps {
-  /** Group key — only actions with `action.group === group` are rendered. */
-  group: string;
+export type ActionBarProps = ActionBarSource & ActionBarOptions;
+
+/** What an {@link ActionBar} takes besides its {@link ActionBarSource}. */
+export interface ActionBarOptions {
   /** Layout direction. Defaults to `'horizontal'`. */
   orientation?: 'horizontal' | 'vertical';
   /**
@@ -25,51 +38,47 @@ export interface ActionBarProps {
    * and `title`. When omitted, the entry's own `label` is used.
    */
   labels?: Record<string, string>;
+  /** Only these of the entries `group` or `tag` picks, each an action id — every variant of
+   *  it — or an `id:variant` key. Absent, all of them. */
+  only?: readonly string[];
   /** Additional class for the toolbar root. */
   className?: string;
 }
 
 /**
- * Generic group-keyed action toolbar. Reads the parent `ActionsRegistry`,
- * filters to actions whose `group` matches `props.group`, and draws them as a
- * {@link Bar} of `action` leaves: one icon button per match — or per variant,
- * for an action that declares `variants`. A button whose action's `enabled`
- * predicate fails greys out and swallows clicks, while the keybinding — if
- * any — still fires through the registry's keydown listener. No keyboard
- * navigation (roving tabindex).
+ * Generic action toolbar: a {@link Bar} over one `actions` leaf for `group`,
+ * so it draws one icon button per action in that group — or per variant, for
+ * an action that declares `variants` — in registry order. `tag`, `only`,
+ * `icons`, and `labels` have no form in a schema, and reach the leaf's
+ * buttons as a filter over what it expands to. A button whose action's
+ * `enabled` predicate fails greys out and swallows clicks, while the
+ * keybinding — if any — still fires through the registry's keydown listener.
+ * No keyboard navigation (roving tabindex).
  */
 export function ActionBar(props: ActionBarProps) {
-  const { group, orientation = 'horizontal', icons, labels, className } = props;
-  const registry = useActionsRegistry();
-  const all = useSyncExternalStore(
-    registry ? registry.subscribe : noopSubscribe,
-    registry ? registry.list : () => EMPTY_LIST,
-    registry ? registry.list : () => EMPTY_LIST,
-  );
+  const { group, tag, orientation = 'horizontal', icons, labels, only, className } = props;
   const schema = useMemo((): PrefGroup => {
-    const keys = all.filter((a) => a.group === group).flatMap(actionItems).map((item) => item.key);
-    const leaf = (key: string): PrefAction => {
-      const icon = icons?.[key];
-      return {
-        kind: 'action',
-        // Empty, the button reads the registered action's own label.
-        name: labels?.[key] ?? '',
-        description: '',
-        default: undefined,
-        action: key,
-        ...(icon === undefined ? {} : { icon }),
-      };
+    const leaf: PrefActions = { kind: 'actions', name: '', description: '', default: undefined, group: group ?? '' };
+    return { name: '', children: { actions: leaf } };
+  }, [group]);
+  const renderers = useMemo((): Record<string, PropertyRenderer> | undefined => {
+    if (tag === undefined && !only && !icons && !labels) return undefined;
+    const pick = tag === undefined ? undefined : (all: Parameters<typeof taggedActionItems>[0]) => taggedActionItems(all, tag);
+    return {
+      actions: (ctx) => (
+        <BarActions leaf={ctx.pref as PrefActions} path={ctx.path} disabled={ctx.disabled} pick={pick} only={only} icons={icons} labels={labels} />
+      ),
     };
-    // An action's key may hold a dot, which a schema key may not, and a key that reads as an index would sort first.
-    return { name: '', children: Object.fromEntries(keys.map((key, i) => [`action${i}`, leaf(key)])) };
-  }, [all, group, icons, labels]);
+  }, [tag, only, icons, labels]);
 
   return (
     <Bar
       schema={schema}
+      renderers={renderers}
       orientation={orientation}
-      label={`${group} actions`}
-      className={[s.bar, className].filter(Boolean).join(' ')}
+      label={`${tag ?? group} actions`}
+      framed="segmented"
+      className={className}
     />
   );
 }

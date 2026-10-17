@@ -18,17 +18,17 @@ vi.mock('../Tree', async (original) => ({
 
 afterEach(cleanup);
 
-const ACTIONS: readonly EditorAction[] = [{ key: 'edit.copy', label: 'Copy' }, { key: 'edit.paste', label: 'Paste' }];
+const ACTIONS: readonly EditorAction[] = [{ key: 'edit.copy', label: 'Copy', tags: ['clipboard'] }, { key: 'edit.paste', label: 'Paste' }];
 const COPY = 'edit/editCopy';
 
-function listed(over: Partial<ActionCatalog> = {}) {
+function listed(over: Partial<ActionCatalog> = {}, sought = '') {
   const onDrag = vi.fn<(drag: PaletteDrag | null) => void>();
   const onDrop = vi.fn<(drag: PaletteDrag) => void>();
   const catalog: ActionCatalog = {
     actions: ACTIONS, root: actionCatalog(ACTIONS), editable: true, selected: [],
     pick: vi.fn(), clear: vi.fn(), commit: vi.fn(), move: vi.fn(), addGroup: vi.fn(), remove: vi.fn(), ...over,
   };
-  render(<ActionList catalog={catalog} sought="" onDrag={onDrag} onDrop={onDrop} />);
+  render(<ActionList catalog={catalog} sought={sought} onDrag={onDrag} onDrop={onDrop} />);
   const props = () => tree.props as TreeProps;
   return {
     catalog,
@@ -49,6 +49,10 @@ const ids = (nodes: readonly TreeNode[]): unknown[] => nodes.map((n) => (n.child
 describe('ActionList', () => {
   it('lists the catalog’s groups and the prefs under them, by tree path', () => {
     expect(ids(listed().props().nodes)).toEqual([['edit', [COPY, 'edit/editPaste']]]);
+  });
+
+  it('finds a pref by its registered action’s tags', () => {
+    expect(ids(listed({}, 'clip').props().nodes)).toEqual([['edit', [COPY]]]);
   });
 
   it('holds one node from the first move of a drag to its drop: a copy of the catalog’s pref', () => {

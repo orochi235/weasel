@@ -10,16 +10,18 @@ import {
   useStandardActions,
 } from '@weasel-js/core';
 import { CommandBar, type CommandBarProps } from './CommandBar';
+import { StripSurfaces } from './surfaces/StripSurfaces';
 import {
   preferencesAction,
   releaseCompoundAction,
   toggleGridAction,
   toggleSnapAction,
+  toggleSymmetryAction,
   type AppCommands,
 } from './appCommands/actions';
 import './app.css';
 
-// Every strip but the file buttons is the kit's registry-driven `<ActionBar>`,
+// Every strip but the file buttons is drawn from the action registry,
 // so the story registers the kit actions and the app's own itself, the way
 // `<SceneCanvas>` does in the app. Only a selection is published for the kit's:
 // enough to light up the selection-gated buttons; undo, paste and ungroup read
@@ -32,11 +34,16 @@ function Actions({ selected, compound, children }: { selected: number; compound:
   useStandardActions({ selection });
   const [gridVisible, setGrid] = useState(false);
   const [snapToGrid, setSnap] = useState(false);
+  const [symmetryOn, setSymmetry] = useState(false);
   const commands: AppCommands = {
     gridVisible,
     toggleGrid: () => setGrid((v) => !v),
     snapToGrid,
     toggleSnap: () => setSnap((v) => !v),
+    pathDirection: false,
+    togglePathDirection: noop,
+    symmetryOn,
+    toggleSymmetry: () => setSymmetry((v) => !v),
     canReleaseCompound: compound,
     releaseCompound: noop,
     openPrefs: noop,
@@ -45,6 +52,7 @@ function Actions({ selected, compound, children }: { selected: number; compound:
   useDepSource('appCommands', () => commands);
   useAction(toggleGridAction);
   useAction(toggleSnapAction);
+  useAction(toggleSymmetryAction);
   useAction(releaseCompoundAction);
   useAction(preferencesAction);
   return <>{children}</>;
@@ -57,6 +65,7 @@ const baseArgs: CommandBarProps = {
   onOpenSvg: noop,
   onImportSvg: noop,
   onNew: noop,
+  surfaces: <StripSurfaces />,
 };
 
 const withActions = (selected: number, compound = false) => (Story: ComponentType) => (

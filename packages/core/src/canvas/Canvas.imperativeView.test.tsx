@@ -295,8 +295,6 @@ describe('imperative view', () => {
   it('repaints with the prop view a controlled consumer hands down', async () => {
     const apiRef = { current: null as CanvasExtensionApi | null };
     const draw = vi.fn();
-    // Hoisted whole: a fresh `layers` literal per render fires the paint
-    // tripwire on its own, and the view dep this guards would go untested.
     const layers = { probe: { layer: probeLayer(draw) } };
     const { rerender } = render(
       <Canvas ref={apiRef} width={100} height={80} layers={layers} view={IDENTITY} />,

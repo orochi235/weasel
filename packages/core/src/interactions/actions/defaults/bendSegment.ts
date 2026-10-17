@@ -20,16 +20,21 @@ import { inPlane, editingLayer } from '../planeInput';
 import { pathEditPreview } from '../edit-anchors/preview';
 import { segmentUnder } from './segmentUnder';
 import { editsSpiro, spiroInsertAt, spiroInsertDrag } from './spiroSegmentDrag';
+import { pathEditToolActive } from './pathEditTools';
+import { pathOperationTags } from '../pathGestureTags';
+import { BendSegmentIcon } from './icons/anchorIcons';
 
 const BEND_CURSOR: CursorSpec = 'grab';
 
 export const bendSegmentAction: Action & { requires: string[] } = inPlane({
   id: 'bendSegment',
   label: 'Bend segment',
+  icon: BendSegmentIcon,
+  tags: pathOperationTags('drag'),
   defaultBinding: { kind: 'drag', target: { kindOf: isSegment } },
   cursor: BEND_CURSOR,
   eligible: { capability: 'edits-anchors' },
-  requires: ['editAnchors', 'view'],
+  requires: ['editAnchors', 'view', 'kitSettings'],
   invoker: {
     timing: 'ongoing',
     start(ctx: InvocationCtx): OngoingHandle {
@@ -64,7 +69,7 @@ export const bendSegmentAction: Action & { requires: string[] } = inPlane({
     },
   },
   enabled: (deps, at) => {
-    if (!deps?.editAnchors?.editingId) return ActionDisabledReason.NotApplicable;
+    if (!deps?.editAnchors?.editingId || pathEditToolActive(deps)) return ActionDisabledReason.NotApplicable;
     const hit = (p: { x: number; y: number }) =>
       (editsSpiro(deps) ? spiroInsertAt(deps, p.x, p.y) : segmentUnder(deps, p.x, p.y)) !== null;
     if (at && !hit(at)) return ActionDisabledReason.NotApplicable;

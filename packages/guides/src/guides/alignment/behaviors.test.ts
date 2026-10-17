@@ -64,6 +64,23 @@ describe('alignMoveBehavior', () => {
     expect(b.onMove!(at(0.5), tt(0, 0))).toEqual({ transform: { kind: 'translate', dx: -4, dy: 0 } });
   });
 
+  it('measures the dragged box as the gesture frames draw it', () => {
+    const b = alignMoveBehavior<Pose>({
+      getCandidates: () => [{ id: 'L', axis: 'x', offset: 92 }],
+      setActiveGuides: () => {},
+      tolerance: 3,
+    });
+    // A stroke reaching 5 past the box puts its drawn left edge at 95.
+    const frames = {
+      world: () => ({ x: 0, y: 0, width: 0, height: 0 }),
+      toWorld: (_id: string, p: Pose) => p,
+      toLocal: (_id: string, p: Pose) => p,
+      planeOf: () => null,
+      drawnBounds: (_id: string, p: Pose) => ({ x: p.x - 5, y: p.y - 5, width: p.width + 10, height: p.height + 10 }),
+    };
+    expect(b.onMove!({ ...ctx(), frames }, tt(0, 0))).toEqual({ transform: { kind: 'translate', dx: -3, dy: 0 } });
+  });
+
   it('clears actives and returns nothing on a miss', () => {
     let active: readonly Guide[] = [{ id: 'stale', axis: 'x', offset: 0 }];
     const b = alignMoveBehavior<Pose>({

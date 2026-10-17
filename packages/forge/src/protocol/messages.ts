@@ -20,6 +20,8 @@ export interface CssVarReport {
   value: string;
   /** Whether a `vars.set` override is in force on it. */
   overridden: boolean;
+  /** Whether the story reads it, directly or through another property it reads. */
+  used: boolean;
 }
 
 /** Visibility and validation answers, keyed by the config they were computed for. */

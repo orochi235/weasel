@@ -11,10 +11,12 @@ import {
   type SpiroKind,
   spiroNodeData,
 } from '@weasel-js/core';
+import { spiroPreset } from '@weasel-js/path-tools';
 import {
   type ConfigOf,
   defineInstrument,
   f,
+  FloatingPanel,
   Lab,
   type RenderContext,
   type SceneTrialState,
@@ -22,8 +24,7 @@ import {
   useTrialScene,
 } from '@weasel-js/labkit';
 import { ActionBar, SelectIcon } from '@weasel-js/ui';
-import { useMemo, useState } from 'react';
-import s from './pathLabActions.module.css';
+import { useMemo } from 'react';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 
@@ -35,6 +36,9 @@ type State = SceneTrialState<unknown, 'default', RectPose>;
 
 /** The curve the lab opens on, in path edit. */
 export const SEEDED_SPIRO = 'wave';
+
+const FEATURES = ['draw', spiroPreset] as const;
+const OPENING = { id: SEEDED_SPIRO };
 
 function spiroNode(id: string, contour: SpiroContour, color: string) {
   const { path, spiro } = spiroNodeData([contour]);
@@ -84,27 +88,23 @@ function SpiroTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const scene = useTrialScene(ctx, createLabScene);
   const { pointKind } = ctx.config;
   const tune = useMemo<ActionTunings>(() => ({ 'spiro.placePoint': { params: { kind: pointKind } } }), [pointKind]);
-  // The trial opens with the seeded curve in path edit; the canvas moves it from there.
-  const [pathEdit] = useState(() => {
-    let editing: string | null = SEEDED_SPIRO;
-    return { editingId: () => editing, setEditingId: (id: string | null) => { editing = id; } };
-  });
   const selectionOptions = useMemo(() => ({ initial: [asNodeId(SEEDED_SPIRO)] }), []);
 
   return (
-    <TrialSceneCanvas
-      features={['draw']}
-      defaultTools={['spiro']}
-      scene={scene}
-      trial={ctx.trial}
-      tune={tune}
-      pathEdit={pathEdit}
-      selectionOptions={selectionOptions}
-    >
-      <div className={s.actions}>
+    <>
+      <TrialSceneCanvas
+        features={FEATURES}
+        defaultTools={['spiro']}
+        scene={scene}
+        trial={ctx.trial}
+        tune={tune}
+        defaultPathEdit={OPENING}
+        selectionOptions={selectionOptions}
+      />
+      <FloatingPanel anchor="top-right">
         <ActionBar group="spiro" />
-      </div>
-    </TrialSceneCanvas>
+      </FloatingPanel>
+    </>
   );
 }
 
@@ -116,7 +116,7 @@ const spiroInstrument = defineInstrument<State, Config>({
   tools: {
     tools: [
       { id: 'select', label: 'Select', icon: SelectIcon, shortcut: 'V' },
-      { id: 'spiro', label: 'Spiro', icon: SpiroIcon, shortcut: 'B' },
+      { id: 'spiro', label: 'Spiro', icon: SpiroIcon, shortcut: 'Shift+P' },
     ],
   },
   render: (ctx) => <SpiroTrial ctx={ctx} />,

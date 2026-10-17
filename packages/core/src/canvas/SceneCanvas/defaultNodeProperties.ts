@@ -83,6 +83,15 @@ const alignEncoding: PrefEnumEncoding = {
   write: (edge) => edge,
 };
 
+const DEFAULT_NIB = { angle: Math.PI / 6, ratio: 0.25 };
+
+/** `Stroke.nib` as a flag: on keeps the nib held, or starts a default one,
+ *  and off removes it. */
+const nibEncoding: PrefBooleanEncoding = {
+  read: (stored) => stored != null && typeof stored === 'object',
+  write: (on, stroke) => (on ? (stroke?.nib ?? DEFAULT_NIB) : undefined),
+};
+
 /** `pose.transform` as a flag: on while the pose carries a skew or a per-axis
  *  scale, and off removes it. On keeps the one held, since a flag cannot
  *  author a matrix. */
@@ -162,6 +171,9 @@ const STROKE_LEAF: PrefLeaf = {
     // dash pattern is a property of the line rather than of how the
     // ribbon meets the geometry.
     dash: { kind: 'enum', name: 'Style', description: 'Solid, dashed or dotted. Dash lengths are multiples of the stroke width, so a style holds as the width changes.', default: 'solid', control: 'toggle', block: true, encoding: strokeDashEncoding, options: [{ value: 'solid', label: 'Solid', icon: 'dashSolid' }, { value: 'dashed', label: 'Dashed', icon: 'dashDashed' }, { value: 'dotted', label: 'Dotted', icon: 'dashDotted' }, { value: 'custom', label: 'Custom', icon: 'dashCustom', disabled: true }] },
+    nib: { kind: 'boolean', name: 'Nib', description: 'A broad pen: the stroke is its full width moving across the nib, and thinner moving along it.', default: false, control: 'switch', block: true, encoding: nibEncoding },
+    'nib.angle': { kind: 'number', name: 'Angle', description: 'The nib\'s edge, counterclockwise from level.', default: DEFAULT_NIB.angle, step: 1, unit: rotationDegreesUnit, block: true, showIf: { path: 'data.stroke.nib' }, pair: { with: 'data.stroke.nib.ratio', label: 'Nib' } },
+    'nib.ratio': { kind: 'number', name: 'Thinnest', description: 'The width moving along the nib, as a fraction of the width moving across it.', default: DEFAULT_NIB.ratio, min: 0, max: 1, step: 0.05, control: 'slider', block: true, showIf: { path: 'data.stroke.nib' } },
     markerStart: markerLeaf({ name: 'Start', description: 'Marker at the first vertex of each open subpath.', block: true, pair: { with: ['data.stroke.markerMid', 'data.stroke.markerEnd'], label: 'Markers' } }),
     markerMid: markerLeaf({ name: 'Mid', description: 'Marker at every interior authored vertex.', block: true }),
     markerEnd: markerLeaf({ name: 'End', description: 'Marker at the last vertex of each open subpath.', block: true }),

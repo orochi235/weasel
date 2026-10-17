@@ -12,6 +12,8 @@ import { nodeDescriptors, poseDescriptorOf } from '../poseDescriptorDep';
 import { scenePoseFrame, type PoseFrame } from '../poseFrame';
 import { buildGestureContext, captureBox, captureStarts, captureTargets, resolvePolicy } from './capture';
 import type { PoseDescriptor } from './geometry';
+import type { InkExtents } from 'core/geometry/inkExtents';
+import { drawnBoxes } from '../drawnBoxes';
 
 /** The box the drag resizes, as the press found it. */
 export interface ResizeBox {
@@ -26,6 +28,10 @@ export interface ResizeBox {
   /** World position of the corner opposite the dragged one, which a resize
    *  in a turned or skewed frame pins. */
   readonly fixedWorld: { x: number; y: number };
+  /** How far the ink reaches past `bounds` in its own frame. The handles sit
+   *  on `bounds` grown by it, and the constraints see that box; the stroke
+   *  does not scale, so the same extents come off whatever box they return. */
+  readonly extents: InkExtents;
 }
 
 /** What a resize captured at press. Nothing here changes during the drag. */
@@ -81,7 +87,7 @@ export function captureResize(
   scene: Scene<unknown, string, unknown>,
   ids: readonly NodeId[],
   anchor: ResizeAnchor,
-  deps: Pick<ActionDeps, 'poseDescriptor' | 'resizePolicy' | 'view'>,
+  deps: Pick<ActionDeps, 'poseDescriptor' | 'resizePolicy' | 'view' | 'boundsIncludeStroke'>,
 ): {
   place: ResizePlace;
   ruleOrigin: Bounds;
@@ -103,7 +109,8 @@ export function captureResize(
   // to its node's plane and stored in the node's own parent frame.
   const poseFrame = scenePoseFrame(scene);
   const view = deps.view;
-  const starts = captureStarts(scene, writeIds, geometryOf, poseFrame, view);
+  const boxes = drawnBoxes({ ...deps, scene }, poseFrame);
+  const starts = captureStarts(scene, writeIds, geometryOf, poseFrame, view, boxes);
   if (starts.startPoses.size === 0) return null;
 
   const { box, ruleOrigin } = captureBox(starts, writeIds, isGroupPath, anchor, geometry, geometryOf);

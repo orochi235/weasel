@@ -7,6 +7,8 @@
  *
  * The `cond`/`when`/`and`/`or` builders that produce these trees live in
  * core, beside the chrome ids they name.
+ *
+ * @packageDocumentation
  */
 export { evaluate, describeRule, ALWAYS, NEVER } from './rule';
 export { rulesExclusive, ruleCanHoldIn } from './exclusive';

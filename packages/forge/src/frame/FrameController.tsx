@@ -215,7 +215,7 @@ export function startFrame({ story, channel, container, setup = {} }: StartFrame
         const at = lastVars?.findIndex((v) => v.name === msg.name) ?? -1;
         if (!lastVars || at < 0) break;
         const vars = lastVars.slice();
-        vars[at] = { name: msg.name, value: resolveCssVar(document, msg.name), overridden: overrides.has(msg.name) };
+        vars[at] = { ...vars[at]!, value: resolveCssVar(document, msg.name), overridden: overrides.has(msg.name) };
         publishVars(vars);
         break;
       }

@@ -1,17 +1,19 @@
 import {
   ActiveToolContextProvider,
+  createMeasurements,
   type SceneCanvasApi,
   type SelectionApi,
+  type Tool,
   type ToolsApi,
   useActionsRegistry,
   type View
 } from '@weasel-js/core';
-import { CharacterOptions, CommandPalette, ResizeHandle, Sidebar, ToolPalette } from '@weasel-js/ui';
+import { CharacterOptions, CommandPalette, ContextMenuHost, ResizeHandle, Sidebar, ToolPalette } from '@weasel-js/ui';
 import { type CSSProperties, type ReactElement, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActiveSwatches } from './ActiveSwatches';
 import { lookupShortcutByToolId } from './dev/keybindingsView';
 import { PAPER_PRESETS } from './docPersistence';
-import type { DrawScene } from './drawDocument';
+import { ANNOTATION_LAYER, type DrawScene } from './drawDocument';
 import { EditorStatusBar } from './EditorStatusBar';
 import { showFirstRunNotice } from './firstRunNotice';
 import { LoupeControls } from './LoupeControls';
@@ -25,8 +27,13 @@ import { useDocumentState } from './useDocumentState';
 import { useLastTool } from './useLastTool';
 import { useMachineFontOutlines } from './useMachineFontOutlines';
 import { useRightSidebarWidth } from './useRightSidebarWidth';
+import { isPathTool } from './usePathToolsTools';
 import { useTextEditSession } from './useTextEditSession';
 import { Workspace } from './Workspace';
+
+const isCoreTool = (tool: Tool): boolean => !isPathTool(tool);
+/** The path palette's groups: the Girth tool, the stroke tools, then the warps. */
+const PATH_TOOL_GROUPS = ['shape', 'path', 'warp'] as const;
 
 export interface EditorProps {
   scene: DrawScene;
@@ -51,6 +58,8 @@ export function Editor({ scene, selection, modality }: EditorProps): ReactElemen
   const doc = useDocumentState(selection.current.length > 0);
   const rightSidebar = useRightSidebarWidth();
   const [view, setView] = useState<View>({ x: 0, y: 0, scale: { x: 1, y: 1 } });
+  // Measurements are nodes on the annotation layer; this is which one is picked.
+  const [measurements] = useState(() => createMeasurements({ layer: ANNOTATION_LAYER }));
 
   // `useHud` and `createLoupe` both read the canvas handle in a mount effect
   // and neither retries, so the loupe chrome can only mount once the handle
@@ -82,9 +91,11 @@ export function Editor({ scene, selection, modality }: EditorProps): ReactElemen
           setFilename={doc.setFilename}
           backgroundColor={doc.backgroundColor}
           setBackgroundColor={doc.setBackgroundColor}
+          cornerSelection={modality.cornerSelection}
         />
         <PreferencesModal open={prefsOpen} onClose={() => setPrefsOpen(false)} registryEnumSources={prefSources} />
         <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
+        <ContextMenuHost />
         {/* Permanently reserved, never mounted on demand: the canvas is sized
             to the workspace, so appearing mid-edit would resize it under the
             caret. Empty until a text edit is in progress. */}
@@ -98,6 +109,7 @@ export function Editor({ scene, selection, modality }: EditorProps): ReactElemen
             {tools && (
               <ToolPalette
                 tools={tools}
+                include={isCoreTool}
                 orientation="vertical"
                 lookupShortcut={(id) => lookupShortcutByToolId(id, actionsReg?.list() ?? [])}
                 modeRegistry={modality.machine.registry}
@@ -105,9 +117,23 @@ export function Editor({ scene, selection, modality }: EditorProps): ReactElemen
             )}
             <ActiveSwatches />
           </Sidebar>
+          <Sidebar side="left" className="wd-sidebar left path" ariaLabel="Path tools">
+            {tools && (
+              <ToolPalette
+                tools={tools}
+                include={isPathTool}
+                ariaLabel="Path tools"
+                groupOrder={PATH_TOOL_GROUPS}
+                orientation="vertical"
+                lookupShortcut={(id) => lookupShortcutByToolId(id, actionsReg?.list() ?? [])}
+                modeRegistry={modality.machine.registry}
+              />
+            )}
+          </Sidebar>
           <Workspace
             scene={scene}
             selection={selection}
+            measurements={measurements}
             modality={modality}
             hostRef={hostRef}
             textEdit={textEdit}
@@ -140,6 +166,7 @@ export function Editor({ scene, selection, modality }: EditorProps): ReactElemen
             <RightSidebar
               scene={scene}
               selection={selection}
+              measurements={measurements}
               filename={doc.filename}
               setFilename={doc.setFilename}
               backgroundColor={doc.backgroundColor}

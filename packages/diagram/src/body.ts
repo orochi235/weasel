@@ -18,9 +18,13 @@ import type { DiagramNode, PortSpec } from './types';
 
 /** One line of body content. */
 export type Row =
-  /** Text. `label` is the node's name; `field` is a named value. */
-  | { kind: 'label'; text: string; style?: RowTextStyle }
-  | { kind: 'field'; label: string; value: string; style?: RowTextStyle }
+  /** Text. `label` is the node's name; `field` is a named value. A row with
+   *  an `id` gets a scene node of that name under the body's, so it can be
+   *  found again; one without is named by its place. Not a bare number. */
+  | { kind: 'label'; text: string; style?: RowTextStyle; id?: string }
+  /** `room` is a value the row is measured as at least as wide as, so a
+   *  value written in later fits the box it already has. */
+  | { kind: 'field'; label: string; value: string; style?: RowTextStyle; id?: string; room?: string }
   /** A row that carries ports on its own left and right edges. */
   | { kind: 'ports'; left?: readonly RowPort[]; right?: readonly RowPort[]; height?: number }
   /** Reserved space a consumer paints into. */
@@ -134,7 +138,8 @@ function measureRow(row: Row, measure: MeasureRowText | undefined): { width: num
       // Label and value sit on one line with a gap between them.
       const l = text(row.label, row.style);
       const v = text(row.value, row.style);
-      return { width: l.width + DEFAULT_GAP * 2 + v.width, height: Math.max(l.height, v.height) };
+      const room = row.room === undefined ? 0 : text(row.room, row.style).width;
+      return { width: l.width + DEFAULT_GAP * 2 + Math.max(v.width, room), height: Math.max(l.height, v.height) };
     }
     case 'ports': {
       const side = (ports: readonly RowPort[] | undefined): number =>
@@ -349,7 +354,7 @@ export function buildBody<TData, TLayer extends string, TPose extends Bounds>(
     ...(opts.id === undefined ? {} : { id: opts.id }),
   }];
 
-  const leaf = (box: Bounds, data: TData): void => {
+  const leaf = (box: Bounds, data: TData, rowId?: string): void => {
     specs.push({
       kind: 'leaf',
       layer: opts.layer,
@@ -357,13 +362,14 @@ export function buildBody<TData, TLayer extends string, TPose extends Bounds>(
       data,
       pickable: false,
       ...(opts.id === undefined ? {} : { parent: opts.id }),
+      ...(opts.id !== undefined && rowId !== undefined ? { id: `${opts.id}/${rowId}` } : {}),
     });
   };
 
   const portLabel = opts.portLabel;
   for (const box of layoutBody(spec, pose, opts.measure)) {
     const data = opts.row(rowText(box.row), box);
-    if (data !== null) leaf(box, data);
+    if (data !== null) leaf(box, data, 'id' in box.row ? box.row.id : undefined);
     if (portLabel === undefined || box.row.kind !== 'ports') continue;
     for (const pb of layoutRowPorts(box.row, box, opts.measure)) {
       if (pb.port.label === undefined) continue;

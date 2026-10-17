@@ -1,8 +1,10 @@
 /**
  * A node's editable polygon. It lives in one of two places: the pose itself
  * (`pose.kind === 'polygon'`), or `data.path` with a rect pose, stored pose-local.
+ * A rect `data.path` is edited as its four corners and is stored as a polygon
+ * from the first edit on; reading it changes nothing.
  */
-import { pathInWorld, worldEditToStorage, type Path, type PolygonPath, type SpiroKind } from '@weasel-js/geom';
+import { asPolygonPath, pathInWorld, worldEditToStorage, type Path, type PolygonPath, type SpiroKind } from '@weasel-js/geom';
 import type { GesturePreviewSource } from 'canvas/gestureBounds';
 import { pathFromPlane } from 'canvas/planeClips';
 import { isRectPose } from 'core/geometry/autoPoseDescriptor';
@@ -17,7 +19,8 @@ export interface EditableShape {
 }
 
 /** Resolve where a node's editable polygon lives. Returns null when the
- *  node has neither a polygon pose nor a polygon on `data.path`. */
+ *  node has neither a polygon pose nor a polygon or rect on `data.path`.
+ *  A rect comes back as the polygon it draws. */
 export function classifyPathStorage(
   node: EditableShape | undefined | null,
 ): { kind: 'pose' } | { kind: 'data'; pose: RectPose; data: { path: PolygonPath } } | null {
@@ -25,14 +28,19 @@ export function classifyPathStorage(
   const pose = node.pose as { kind?: string } | undefined;
   if (pose?.kind === 'polygon') return { kind: 'pose' };
   const data = node.data as { path?: Path } | null;
-  if (data?.path && (data.path as { kind?: string }).kind === 'polygon' && isRectPose(node.pose)) {
-    return {
-      kind: 'data',
-      pose: node.pose,
-      data: data as { path: PolygonPath },
-    };
-  }
-  return null;
+  const kind = (data?.path as { kind?: string } | undefined)?.kind;
+  if (!data?.path || (kind !== 'polygon' && kind !== 'rect') || !isRectPose(node.pose)) return null;
+  const path = asPolygonPath(data.path);
+  return {
+    kind: 'data',
+    pose: node.pose,
+    data: (path === data.path ? data : { ...data, path }) as { path: PolygonPath },
+  };
+}
+
+/** Whether `node` has a path that path edit can show anchors for. */
+export function hasEditablePath(node: EditableShape | undefined | null): boolean {
+  return classifyPathStorage(node) !== null;
 }
 
 /** A node's editable polygon in world coords. Does NOT consult any preview state —

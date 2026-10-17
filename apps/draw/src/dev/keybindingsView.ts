@@ -12,9 +12,7 @@ interface ToolActivateBoundEntry {
   spec: {
     kind: string;
     key?: string | string[];
-    mod?: boolean;
-    alt?: boolean;
-    shift?: boolean | 'optional';
+    mods?: { mod?: boolean; alt?: boolean; shift?: boolean | 'optional' };
   };
   opts: { params: { toolId: string } };
 }
@@ -39,11 +37,12 @@ export function lookupShortcutByToolId(
     if (entry.spec.kind !== 'key') return undefined;
     const key = Array.isArray(entry.spec.key) ? entry.spec.key[0] : entry.spec.key;
     if (key === undefined) return undefined;
+    const mods = entry.spec.mods ?? {};
     return {
       key,
-      ...(entry.spec.mod !== undefined && { mod: entry.spec.mod }),
-      ...(entry.spec.alt !== undefined && { alt: entry.spec.alt }),
-      ...(entry.spec.shift !== undefined && { shift: entry.spec.shift }),
+      ...(mods.mod !== undefined && { mod: mods.mod }),
+      ...(mods.alt !== undefined && { alt: mods.alt }),
+      ...(mods.shift !== undefined && { shift: mods.shift }),
     };
   }
   return undefined;

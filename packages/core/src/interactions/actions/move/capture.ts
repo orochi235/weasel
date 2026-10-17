@@ -135,7 +135,7 @@ export function buildGestureContext(
     pointer: pointerStateOf(ctx.world, ctx),
     view: readers.view(),
     plane: readers.plane(),
-    frames: sceneGestureFrames(scene, ctx.deps.view),
+    frames: sceneGestureFrames(scene, ctx.deps),
     offset: (from, to) => {
       const a = projection.getBounds(from);
       const b = projection.getBounds(to);

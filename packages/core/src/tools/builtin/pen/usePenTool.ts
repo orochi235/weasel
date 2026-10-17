@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useReducer, useRef, useState, createElement } from 'react';
-import { useLatest } from '@weasel-js/react';
+import { useKitSettings, useLatest } from '@weasel-js/react';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { defineTool } from '../../overlayBinding';
 import type { Tool } from '../../overlayBinding';
@@ -99,12 +99,10 @@ export interface UsePenToolOptions {
    *  existing path's anchor. Default `8`; `0` turns it off. Takes precedence
    *  over `snapPoint`, which applies only when no anchor is in range. */
   anchorSnapRadius?: number;
-  /** Optional point snapper applied to every world-space coordinate the
-   *  pen records or previews — anchor positions (corner clicks, smooth-
-   *  drag base point), the rubber-band cursor, and the outgoing-handle
-   *  target. Receives raw world coords; returns snapped world coords.
-   *  Pen state (anchor handles, etc.) is computed AFTER snapping so the
-   *  visible geometry stays grid-aligned. */
+  /** Snaps every world-space point the pen records or previews — anchors,
+   *  the rubber-band cursor, the outgoing-handle target — before the pen
+   *  derives anything from it. Without it the host's `snap` dep does, which in
+   *  `<SceneCanvas>` is `toolOptions.pathSnap`, then `toolOptions.snapPoint`. */
   snapPoint?: (p: { x: number; y: number }) => { x: number; y: number };
 }
 
@@ -166,12 +164,12 @@ export function usePenTool(
 
   // Latest options stashed so handlers see fresh values without rebuilding
   // the Tool record.
-  const optsRef = useLatest({ autoSelect, autoCommitOnClose, closeHitRadius, anchorSnapRadius, snapPoint });
+  const optsRef = useLatest({ autoSelect, autoCommitOnClose, closeHitRadius, anchorSnapRadius, snapPoint, kitSettings: useKitSettings() });
 
   // Scratch mutations alone don't trigger React re-renders, so the preview
   // layer would not repaint. Force a render after every scratch mutation.
   const [, forceRender] = useReducer((x: number) => x + 1, 0);
-  const [overlay] = useState(() => createPenPreviewLayer({ state: scratchRef.current! }));
+  const [overlay] = useState(() => createPenPreviewLayer({ state: scratchRef.current!, kitSettings: () => optsRef.current.kitSettings }));
 
   /** Write the pen's subpaths back into the node it picked up: the first
    *  replaces the subpath it continued, any later ones are appended. Skips
@@ -310,9 +308,9 @@ export function usePenTool(
     return true;
   }, [optsRef]);
 
-  const snap = useCallback((x: number, y: number): { x: number; y: number } => {
+  const snap = useCallback((deps: ActionDeps | undefined, x: number, y: number, from?: { x: number; y: number }) => {
     const fn = optsRef.current.snapPoint;
-    return fn ? fn({ x, y }) : { x, y };
+    return fn ? fn({ x, y }) : deps?.snap?.point({ x, y }, from ? { origin: from } : undefined) ?? { x, y };
   }, [optsRef]);
 
   /** Where an anchor pressed at `(x, y)` lands: on an existing path's anchor
@@ -324,32 +322,29 @@ export function usePenTool(
       const hit = nearestPathAnchor(pathsNear(deps, x, y, radius), { x, y }, radius, viewScale(deps));
       if (hit) return { x: hit.x, y: hit.y, hit };
     }
-    return { ...snap(x, y), hit: null };
+    return { ...snap(deps, x, y, scratchRef.current!.current?.anchors.at(-1)), hit: null };
   }, [snap, optsRef]);
 
   /** Is a world point within the close-hit radius of `(ax, ay)`? Measured as a
    *  screen-space circle, so the zone stays round under non-uniform zoom. */
-  const withinCloseRadius = useCallback(
-    (deps: ActionDeps, ax: number, ay: number, wx: number, wy: number): boolean => {
-      return withinPxRadius(ax - wx, ay - wy, optsRef.current.closeHitRadius, viewScale(deps));
-    },
-    [optsRef],
-  );
+  const withinCloseRadius = useCallback((deps: ActionDeps, ax: number, ay: number, wx: number, wy: number): boolean =>
+    withinPxRadius(ax - wx, ay - wy, optsRef.current.closeHitRadius, viewScale(deps)), [optsRef]);
 
   // The rubber band and the close hint trail the `pointer` dep while a path is
-  // in progress. `view` is the camera of the deps last followed through.
+  // in progress. `followed` is the deps last followed through.
   const trail = useMemo(() => {
-    let view: ActionDeps['view'];
+    let followed: ActionDeps | undefined;
     const follower = createPointerFollower(() => track());
     const track = (): void => {
       const s = scratchRef.current!;
       if (!s.current && s.finishedSubpaths.length === 0) follower.unfollow();
       const at = s.current ? follower.pointer()?.get() ?? null : null;
-      s.cursor = at ? snap(at.worldX, at.worldY) : null;
+      if (!at) followed?.snap?.release?.();
+      s.cursor = at ? snap(followed, at.worldX, at.worldY, s.current?.anchors.at(-1)) : null;
       const first = s.current && s.current.anchors.length >= 3 ? s.current.anchors[0] : null;
       s.closeHintActive = first !== null && s.cursor !== null && withinPxRadius(
         first.x - s.cursor.x, first.y - s.cursor.y,
-        optsRef.current.closeHitRadius, view?.get().scale ?? { x: 1, y: 1 },
+        optsRef.current.closeHitRadius, followed?.view?.get().scale ?? { x: 1, y: 1 },
       );
       forceRender();
     };
@@ -358,7 +353,7 @@ export function usePenTool(
       refresh: track,
       /** The same, following `deps`' pointer from here on. */
       update(deps: ActionDeps): void {
-        view = deps.view;
+        followed = deps; // eslint-disable-line react-hooks/immutability -- the trail's own deps, read by `track`
         follower.follow(deps.pointer);
         track();
       },
@@ -382,7 +377,7 @@ export function usePenTool(
         id: 'pen.placeAnchor',
         label: 'Pen — place anchor',
         eligible: { capability: 'creates-paths' },
-        requires: ['view', 'pointer', 'areaSelect', 'editAnchors', 'scene', 'applyOps', 'insert', 'selection'],
+        requires: ['view', 'pointer', 'areaSelect', 'editAnchors', 'scene', 'applyOps', 'insert', 'selection', 'snap'],
         invoker: {
           timing: 'immediate' as const,
           run: (deps, params) => {
@@ -456,7 +451,7 @@ export function usePenTool(
         id: 'pen.dragHandle',
         label: 'Pen — drag out a bezier handle',
         eligible: { capability: 'creates-paths' },
-        requires: ['view', 'pointer', 'areaSelect', 'editAnchors', 'scene', 'applyOps', 'insert', 'selection'],
+        requires: ['view', 'pointer', 'areaSelect', 'editAnchors', 'scene', 'applyOps', 'insert', 'selection', 'snap'],
         invoker: {
           timing: 'ongoing' as const,
           start: (ctx: InvocationCtx) => {
@@ -484,7 +479,8 @@ export function usePenTool(
             // A picked-up endpoint's in-handle belongs to the existing
             // segment into it, which the pen does not reshape.
             const linked = !pickedUp;
-            applyOutHandle(scratch, ctx.world, ctx.modifiers.shift, linked, optsRef.current.snapPoint);
+            const snapHandle = (p: { x: number; y: number }) => snap(ctx.deps, p.x, p.y, scratch.current!.anchors[scratch.draggingHandleAt!]);
+            applyOutHandle(scratch, ctx.world, ctx.modifiers.shift, linked, snapHandle);
             trail.update(ctx.deps);
 
             return {
@@ -494,7 +490,7 @@ export function usePenTool(
                 if (moveCtx.modifiers.alt && sm.current) {
                   sm.current.anchors[sm.draggingHandleAt].altBroken = true;
                 }
-                applyOutHandle(sm, moveCtx.world, moveCtx.modifiers.shift, linked, optsRef.current.snapPoint);
+                applyOutHandle(sm, moveCtx.world, moveCtx.modifiers.shift, linked, snapHandle);
                 forceRender();
               },
               onEnd: (endCtx: InvocationCtx, reason: 'commit' | 'cancel') => {
@@ -516,7 +512,7 @@ export function usePenTool(
                   if (endCtx.modifiers.alt && se.current) {
                     se.current.anchors[se.draggingHandleAt].altBroken = true;
                   }
-                  applyOutHandle(se, endCtx.world, endCtx.modifiers.shift, linked, optsRef.current.snapPoint);
+                  applyOutHandle(se, endCtx.world, endCtx.modifiers.shift, linked, snapHandle);
                   se.draggingHandleAt = null;
                 }
                 if (joinHit && se.current) commitJoin(se, ctx.deps, joinHit);
@@ -564,7 +560,7 @@ export function usePenTool(
         },
       },
     ];
-  }, [commit, placeAt, withinCloseRadius, pickUpEndpoint, joinable, commitJoin, optsRef, trail, forceRender]);
+  }, [commit, placeAt, withinCloseRadius, pickUpEndpoint, joinable, commitJoin, optsRef, trail, forceRender, snap]);
 
   return useMemo(() => {
     return defineTool({

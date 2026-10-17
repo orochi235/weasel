@@ -80,7 +80,7 @@ export function DrawCanvas(props: DrawCanvasProps) {
     commands.push({ kind: 'group', transform: viewToMat3(view), children: [...content] });
     return lease.paint(el, commands, view, { width, height, dpr });
   };
-  useCanvasSurface(paint, { target: canvasElRef, dpr, redrawOn, paintOnCommit: true });
+  useCanvasSurface(paint, { target: canvasElRef, dpr, redrawOn, onCommit: 'paint' });
 
   return <SurfaceCanvas ref={setRefs} width={width} height={height} className={className} />;
 }

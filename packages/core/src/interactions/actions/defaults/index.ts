@@ -25,12 +25,17 @@ export {
   nudgeAnchorsUpAction, nudgeAnchorsDownAction,
   nudgeAnchorsLeftAction, nudgeAnchorsRightAction,
   deleteAnchorsAction, cutPathAtAnchorAction, marqueeAnchorsAction, selectAnchorAction,
+  anchorEditWouldChange, commitAnchorEdit, depOf, requiresAnchorSelection,
 } from './anchorEditing';
-export { retractHandlesAction, makeHandlesSymmetricAction } from './anchorHandles';
-export { averageAnchorsAction, bridgeAnchorsAction, joinAnchorsAction } from './anchorJoin';
+export { setAnchorFieldAction, type SetAnchorFieldParams } from './anchorFields';
+export { exitPathEditToolAction, pathEditToolAction, pathEditToolActive } from './pathEditTools';
 export {
-  simplifyPathAction, offsetPathAction, snipAtCrossingsAction, joinPathsAction, bridgePathsAction,
-  setSpiroKindAction, releaseSpiroAction, DEFAULT_BRIDGE_TENSION,
+  retractHandlesAction, makeHandlesSymmetricAction, makeHandleCommand, type HandleEdit, type HandleScope,
+} from './anchorHandles';
+export { averageAnchorsAction, joinAnchorsAction, joinSelectedAnchors } from './anchorJoin';
+export { editTargetOf } from './pathEditMarks';
+export {
+  simplifyPathAction, offsetPathAction, snipAtCrossingsAction, joinPathsAction, joinPathsCommand, planJoin,
 } from '../pathCommands';
 export { undoAction, redoAction } from './undoRedo';
 export { clipboardCopyAction, clipboardCutAction, clipboardPasteAction, clipboardPasteEventAction } from '../clipboard/action';

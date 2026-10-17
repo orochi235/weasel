@@ -13,7 +13,7 @@ describe('the front page', () => {
     const hrefs = screen.getAllByRole('link').map((a) => a.getAttribute('href'));
     expect(hrefs).toEqual([
       '#__get_started',
-      './api/',
+      '#pkg',
       '#__demos',
       './docs/ui/forge/',
       './draw/',

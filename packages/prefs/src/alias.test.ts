@@ -57,6 +57,12 @@ describe('prefAliasedLeaf', () => {
     expect(prefAliasedLeaf(alias('view.grid'), target)).toEqual(target);
     expect(prefAliasedLeaf(alias('view.grid', 'Grid here'), target)).toEqual({ ...target, name: 'Grid here' });
   });
+
+  it('carries the target\'s tags, then its own', () => {
+    const target = { kind: 'boolean' as const, name: 'Grid', description: '', default: true, tags: ['guides'] };
+    expect(prefAliasedLeaf(alias('view.grid'), target).tags).toEqual(['guides']);
+    expect(prefAliasedLeaf({ ...alias('view.grid'), tags: ['quick'] }, target).tags).toEqual(['guides', 'quick']);
+  });
 });
 
 describe('an alias in a store', () => {

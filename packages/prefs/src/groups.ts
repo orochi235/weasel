@@ -13,8 +13,11 @@ import type { PrefLeaf } from './schema';
  * `fragment` draws nothing of its own, so its rows sit among its neighbors'
  * as though they were written there. A fragment exists to hold things
  * together: one key for their values to nest under, one node to move.
+ * `bar` puts its prefs on one line in their bar forms. `menu` is drawn as
+ * a menu wherever a menu fits: on a bar, a button opening its contents as a
+ * menu; in a menu, a submenu; in a panel, a titled box as `panel` is.
  */
-export type PrefGroupAs = 'page' | 'tab' | 'panel' | 'section' | 'fragment' | 'bar';
+export type PrefGroupAs = 'page' | 'tab' | 'panel' | 'section' | 'fragment' | 'bar' | 'menu';
 
 /**
  * What a group or a section drawn `as: 'bar'` does with cells its line has no
@@ -41,6 +44,9 @@ export interface PrefGroup {
    *  reads as nothing without it). */
   name: string;
   description?: string;
+  /** Tags every leaf under the group carries besides its own. A settings
+   *  search matching one keeps the whole group, as matching its name does. */
+  tags?: readonly string[];
   /** How the group is drawn. Unset, its depth decides: a top-level group is a
    *  `page`, and one inside another is a `section`. */
   as?: PrefGroupAs;
@@ -67,6 +73,8 @@ export interface PrefSection {
    *  {@link PrefGroup}. */
   name: string;
   description?: string;
+  /** As a {@link PrefGroup}'s. */
+  tags?: readonly string[];
   /** How the section is drawn, as a {@link PrefGroup}'s `as` — without
    *  `page`, since nothing that draws sections has a rail. Unset: a heading
    *  over its rows. */
@@ -78,6 +86,12 @@ export interface PrefSection {
   /** As a {@link PrefGroup}'s. */
   enableIf?: PrefCondition;
   members: Record<string, PrefLeaf | PrefSection>;
+}
+
+/** Whether a panel draws a group or a section drawn `as` this in a bordered, titled box: a `panel`, and a `menu`,
+ *  which a panel has no menu to open as. */
+export function prefAsBox(as: PrefGroupAs | undefined): boolean {
+  return as === 'panel' || as === 'menu';
 }
 
 /** Whether a top-level group gets a page of its own, and not a place on the page of the root's own leaves. */

@@ -103,7 +103,7 @@ describe('SpiroLabDemo', () => {
 
   it('draws a new spiro curve with the tool, one point per click', async () => {
     const canvas = await mount();
-    await userEvent.click(screen.getByRole('button', { name: /^Spiro\s*B$/ }));
+    await userEvent.click(screen.getByRole('button', { name: /^Spiro(?! point)/ }));
     click(canvas, 100, 420);
     click(canvas, 200, 360);
     click(canvas, 300, 430);

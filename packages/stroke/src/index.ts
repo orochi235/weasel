@@ -4,12 +4,15 @@
  * Paths come from `@weasel-js/geom` and the `Stroke` itself from
  * `@weasel-js/paint`; nothing here knows about a scene graph, a renderer or
  * React.
+ *
+ * @packageDocumentation
  */
 
 export { tessellateStroke, resolveStrokeWidth } from './tessellate/stroke';
 export type { StrokeOptions } from './tessellate/stroke';
 export { splitForDash } from './tessellate/dash';
-export { populatePolylineWidths } from './tessellate/vertexWidths';
+export { populatePolylineWidths, widestStrokeWidth } from './tessellate/vertexWidths';
+export { nibWidthScale } from './tessellate/nib';
 export type { WidthScale } from './tessellate/vertexWidths';
 export { trimInSpace } from './tessellate/insets';
 export type { InsetLength, MeasuredLength } from './tessellate/insets';
@@ -28,6 +31,8 @@ export type { MarkerSite, MarkerSiteRequest } from './markerSites';
 export { markerHeads, markerReadsKey, markerReach } from './markerHeads';
 export type { MarkerHead } from './markerHeads';
 
+export { strokeEdgeNear } from './strokeEdge';
+export type { StrokeEdgeHit, StrokeEdgeOptions, StrokeSide } from './strokeEdge';
 export { strokeToPath } from './strokeToPath';
 export type { StrokeToPathOptions } from './strokeToPath';
 export { offsetPath } from './offsetPath';

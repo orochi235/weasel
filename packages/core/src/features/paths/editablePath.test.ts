@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { polygonFromPoints, type PolygonPath } from '@weasel-js/geom';
+import { polygonFromPoints, rectPath, type PolygonPath } from '@weasel-js/geom';
 import type { GesturePreviewSource } from 'canvas/gestureBounds';
-import { liveEditablePath, resolveEditablePathOf, storeEditablePath } from './editablePath';
+import { classifyPathStorage, liveEditablePath, resolveEditablePathOf, storeEditablePath } from './editablePath';
 
 /** A triangle filling a 10x10 box, with its apex at `apexX` along the bottom edge. */
 const tri = (apexX = 10): PolygonPath =>
@@ -63,5 +63,36 @@ describe('storeEditablePath', () => {
 
   it('is null for a node with no polygon', () => {
     expect(storeEditablePath({ pose: rect(0), data: {} }, tri())).toBeNull();
+  });
+});
+
+describe('a rectangle path', () => {
+  const node = { pose: { x: 100, y: 50, width: 20, height: 10 }, data: { path: rectPath(0, 0, 20, 10), tag: 1 } };
+
+  it('is editable, with its four corners as anchors in world coords', () => {
+    expect(classifyPathStorage(node)?.kind).toBe('data');
+    expect(coords(resolveEditablePathOf(node))).toEqual([100, 50, 120, 50, 120, 60, 100, 60]);
+  });
+
+  it('follows a pose resized past the stored rect', () => {
+    const resized = { ...node, pose: { x: 0, y: 0, width: 40, height: 40 } };
+    expect(coords(resolveEditablePathOf(resized))).toEqual([0, 0, 40, 0, 40, 40, 0, 40]);
+  });
+
+  it('is stored as a polygon once edited, keeping the rest of its data', () => {
+    const world = resolveEditablePathOf(node)!;
+    const moved = new Float32Array(world.coords);
+    moved[0] = 90;
+    const stored = storeEditablePath(node, { ...world, coords: moved })!;
+    const data = stored.data as { path: PolygonPath; tag: number };
+    expect(data.path.kind).toBe('polygon');
+    expect(data.tag).toBe(1);
+    expect(stored.pose).toMatchObject({ x: 90, y: 50, width: 30, height: 10 });
+    expect(coords(resolveEditablePathOf(stored))).toEqual([90, 50, 120, 50, 120, 60, 100, 60]);
+  });
+
+  it('is left a rect by reading it', () => {
+    resolveEditablePathOf(node);
+    expect(node.data.path.kind).toBe('rect');
   });
 });

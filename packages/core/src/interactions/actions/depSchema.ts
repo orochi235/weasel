@@ -12,19 +12,18 @@ import type { ViewAnimationOptions } from 'core/viewport/useViewAnimation';
 import type { Scene, NodeId } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
 import type { GestureLifecycleOptions } from './gestureLifecycle';
-import type { InsertAdapter, PasteOmission, RegionPickView } from 'core/adapters/types';
+import type { RegionPickView } from 'core/adapters/types';
 import type { History } from '@weasel-js/history';
-import type {
-  PointSnapBehavior,
-  BoundsConstraint,
-} from '../gestures/types';
+import type { PointSnapBehavior, BoundsConstraint } from '../gestures/types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { PoseDescriptor } from './resize/geometry';
 import type { GeometryProjection } from './geometryProjection';
-import type { Point2, DebugSink, LongPressState } from '@weasel-js/routing';
-import type { InsertDep, InsertExtras, InsertLive } from './insertDep';
+import type { DragSample, DebugSink, LongPressState } from '@weasel-js/routing';
+import type { EditAnchorsDep } from './editAnchorsDep';
+import type { SnapDep } from './snapDep';
 
-export type { InsertDep, InsertExtras, InsertLive };
+export type { EditAnchorsDep };
+export type { SnapDep, SnapGeometry, SnapQuery } from './snapDep';
 
 /** Minimal view API the action layer consumes. */
 export interface ViewApi {
@@ -98,75 +97,6 @@ export interface AreaSelectDep {
 }
 
 /**
- * Adapter dep for `editAnchorsAction`: narrow read/write access to the
- * editable polygon of a single node, so anchor-edit actions need not know
- * whether it lives directly on the node's pose (`pose.kind === 'polygon'`)
- * or on `node.data.path`.
- *
- * In-flight edit state is surfaced through the dispatcher's
- * `OngoingHandle.previewIds/previewPose/previewData` triple, not this dep.
- */
-export interface EditAnchorsDep {
-  /** Id of the node currently being edited. Empty string means no node is
-   *  currently in edit mode — the chrome and gesture both opt out. */
-  editingId: string;
-  /** Enter/exit edit mode for a specific node. Pass `null` (or an empty
-   *  string) to exit. */
-  setEditingId(id: string | null): void;
-  /** Returns the COMMITTED editable polygon in world coordinates, or
-   *  null if this node has no editable polygon. For a spiro node it is the
-   *  straight-sided control path through the curve's points, which
-   *  `applyEdit` solves the curve through again. Does NOT consult in-
-   *  flight previews — callers that need live state read the dispatcher's
-   *  in-flight handles. */
-  getEditablePath(id: string): unknown;
-  /** The drawn geometry, in world coordinates, whose outline is a segment press: a spiro
-   *  node's curve rather than its control path. Absent, `getEditablePath`'s path. */
-  getOutlinePath?(id: string): unknown;
-  /** Returns where the polygon is stored — `'pose'` when `node.pose`
-   *  IS the polygon, `'data'` when it lives on `node.data.path` with a
-   *  rect pose, or `null` when the node has no editable polygon. */
-  getStorageKind(id: string): 'pose' | 'data' | null;
-  /** Returns the node's raw `pose` and `data` so storage-aware actions
-   *  can capture origin state at gesture-start and synthesize a matching
-   *  `previewPose` / `previewData` during `onMove`. Returns null when the
-   *  node is gone. */
-  getNodeShape(id: string): { pose: unknown; data: unknown } | null;
-  /** Commit `worldPath` as the new value for `id`, as one history entry
-   *  labeled `label`: a setPose when the pose IS the polygon, a batched
-   *  setPose+update when it lives on data.path. Given `origins` (from
-   *  `editAnchorSetTracked`), a `data.skin` is renumbered in that entry. */
-  applyEdit(id: string, worldPath: unknown, label: string, origins?: readonly (import('@weasel-js/geom').PointOrigin | null)[]): void;
-  /** The ops `applyEdit` would commit for the same arguments, unapplied, so
-   *  a caller can make the edit part of a larger batch — the pen joining
-   *  two paths edits one node and deletes the other in one undo step.
-   *  Optional; a caller that needs it declines the composite edit without
-   *  it. Returns `[]` when `id` has no editable polygon. */
-  editOps?(id: string, worldPath: unknown, label: string, origins?: readonly (import('@weasel-js/geom').PointOrigin | null)[]): Op[];
-
-  /**
-   * Anchors currently selected within the edited path, as **flat anchor
-   * indices** — the same numbering `enumerateAnchors` produces and the
-   * `anchor:N` affordance kinds carry.
-   *
-   * Selection is transient UI state, deliberately not part of the scene:
-   * it is cleared whenever `editingId` changes, and any edit that
-   * renumbers anchors (insert, delete) is responsible for leaving it
-   * coherent. Empty means "no anchor selected" — the keyboard actions
-   * (nudge, delete) no-op rather than acting on all anchors.
-   */
-  selectedAnchors: ReadonlySet<number>;
-  /** Replace the anchor selection. Pass an empty iterable to clear. */
-  setSelectedAnchors(next: Iterable<number>): void;
-
-  /** In-flight anchor-marquee rect in world coords, or null when no
-   *  marquee drag is active. */
-  marquee: { x: number; y: number; width: number; height: number } | null;
-  /** Set or clear the in-flight marquee rect. */
-  setMarquee(rect: { x: number; y: number; width: number; height: number } | null): void;
-}
-
-/**
  * Adapter dep for `lassoSelectAction`: polygon-lasso hit-testing +
  * selection read/write.
  */
@@ -193,82 +123,49 @@ export interface LassoSelectDep {
   setSelection(ids: string[]): void;
 }
 
-/**
- * Options for the kit `image/svg+xml` content handler, threaded from
- * SceneCanvas's `ingestion={{ svg }}` prop.
- */
-export interface SvgIngestOptions {
-  /** Parse dropped/pasted/picked SVG files into native scene nodes (path /
-   *  text leaves under containers mirroring the source `<g>` structure)
-   *  instead of the default single embedded-image node.
-   *
-   *  Pass `unpackSvgFiles` from `@weasel-js/svg`:
-   *
-   *  ```ts
-   *  import { unpackSvgFiles } from '@weasel-js/svg';
-   *  <SceneCanvas ingestion={{ svg: { unpack: unpackSvgFiles } }} />
-   *  ```
-   *
-   *  It is injected rather than flagged on with `true` because the SVG parser
-   *  lives in `@weasel-js/svg`, which depends on this package. */
-  unpack?: SvgUnpacker;
-}
-
-/** Parses SVG files and inserts the resulting nodes into `ctx.scene`, as one
- *  `applyOps` batch per file. Implemented by `unpackSvgFiles` in
- *  `@weasel-js/svg`; see {@link SvgIngestOptions.unpack}. */
-export type SvgUnpacker = (
-  files: File[],
-  ctx: import('../../features/ingestion/contentHandlers').IngestCtx,
-) => Promise<void>;
+import type { SvgIngestOptions, SvgUnpacker, ClipboardIngestCtx, IngestionDep } from './ingestionDeps';
+export type { SvgIngestOptions, SvgUnpacker, ClipboardIngestCtx, IngestionDep };
 
 /**
- * Clipboard-paste seam consumed by the kit weasel-JSON content handler
- * (`IngestCtx.clipboard`). Built by `<SceneCanvas>` from its own synthesized
- * adapter + the `ingestion.clipboard` prop; absent when the consumer set
- * `ingestion.clipboard.enabled === false` or the adapter lacks `commitPaste`.
- * Absence makes the handler decline inert (dwarn, nothing ingested) — its
- * matched items were already consumed at match time and do not fall through
- * to other handlers.
+ * Per-kind extra geometry passed to `InsertDep.commit`.
+ *
+ * Built-in tools populate a typed variant so the kit's default factory can
+ * render the true tool params (line endpoints, polygon side count, star
+ * geometry, pencil sample list). Consumer-defined tools may pass any
+ * `{ kind: string; ... }` payload; the kit's factory falls back to AABB
+ * inscription for unknown kinds.
+ *
+ * `bounds` is still passed alongside as a useful AABB pose hint — factories
+ * may use it as the node's pose even when richer geometry is available.
  */
-export interface ClipboardIngestCtx {
-  /** The hosting canvas's adapter — `commitPaste` materializes the pasted
-   *  nodes (fresh ids, offset applied); insertion still goes through ops. */
-  adapter: InsertAdapter<{ id: string }>;
-  /** JSON reviver for the weasel wire payload (typed arrays etc.) — from
-   *  `SceneCanvasProps.ingestion.clipboard.reviver`. */
-  reviver?: (key: string, value: unknown) => unknown;
-  /** Told what a paste left out and why — from
-   *  `SceneCanvasProps.ingestion.clipboard.onOmitted`. */
-  onOmitted?: (omitted: PasteOmission[]) => void;
-}
+export type InsertExtras =
+  | { kind: 'rect' }
+  | { kind: 'ellipse' }
+  | { kind: 'line'; a: { x: number; y: number }; b: { x: number; y: number } }
+  | { kind: 'polygon'; sides: number; rotation: number; center?: { x: number; y: number }; radius?: number }
+  | { kind: 'star'; points: number; innerRadiusRatio: number; rotation: number; center?: { x: number; y: number }; outerRadius?: number }
+  | { kind: 'pencil'; samples: ReadonlyArray<DragSample> }
+  | { kind: 'text'; text?: string }
+  /** A finished path in world coords, as the pen tool commits one. `bounds`
+   *  is its AABB. An open path takes no fill. */
+  | { kind: 'path'; path: import('@weasel-js/geom').PolygonPath; closed: boolean }
+  /** A spiro curve through `points`, as the spiro tool commits one. The kit
+   *  solves it into `data.path` and records the points in `data.spiro`. An
+   *  open curve takes no fill. */
+  | { kind: 'spiro'; points: import('@weasel-js/geom').SpiroPoint[]; closed: boolean }
+  | {
+      kind: 'image';
+      src?: string;
+      opacity?: number;
+      /** Chrome-only: what the in-flight drag paints. Read by the overlay
+       *  layer, ignored by the insert dep. */
+      preview?: 'bitmap' | 'outline';
+    }
+  | { kind: string; [extra: string]: unknown };
 
-/** Dep for the `ingest` action (external-content ingestion). */
-export interface IngestionDep {
-  /** Visible canvas area in world coordinates. */
-  viewportWorldRect(): { x: number; y: number; width: number; height: number };
-  /** Consumer file→src resolver (from SceneCanvas's `ingestion` prop).
-   *  Live accessor — read it at use time. Destructuring (or copying the
-   *  property early) snapshots the current value and won't track later
-   *  prop changes across an `await`. */
-  resolveSrc?: (file: File) => Promise<string>;
-  /** Kit SVG-handler options (from SceneCanvas's `ingestion` prop).
-   *  Live accessor, same caveat as `resolveSrc`. */
-  svg?: SvgIngestOptions;
-  /** Clipboard-paste seam for the kit weasel-JSON handler.
-   *  Live accessor, same caveat as `resolveSrc`. */
-  clipboard?: ClipboardIngestCtx;
-}
 
-/**
- * World-space point snapping — grid, guides, or any consumer rule. Actions
- * apply it to the coords they ingest so the live preview and the committed
- * geometry agree.
- */
-export interface SnapDep {
-  /** Snap a world-space point. Return `p` unchanged to opt out. */
-  point(p: { x: number; y: number }): { x: number; y: number };
-}
+import type { InsertDep, PathSymmetryDep, InsertIntoDep, InsertLive } from './insertDeps';
+export type { InsertDep, PathSymmetryDep, InsertIntoDep, InsertLive };
 
 /**
  * Adapter dep for `resizeAction`: bounds-frame behaviors (e.g.
@@ -305,58 +202,8 @@ export interface LayoutDep {
   reflow?: import('../../layout/types').ReflowTransition<unknown> | null;
 }
 
-/**
- * Dep for `enterTextEditAction`.
- *
- * Wrap the return value of `useTextEdit` / `useSceneTextEdit` to source this
- * dep. The `isTextNode` predicate is optional — when absent the action fires
- * unconditionally (the binding spec acts as the gate).
- *
- * @example
- * ```ts
- * const textEdit = useSceneTextEdit(scene, container);
- * useDepSource('textEdit', () => ({
- *   startEdit: textEdit.startEdit,
- *   isTextNode: textEdit.isTextNode,
- * }));
- * ```
- */
-export interface TextEditDep {
-  /** Begin editing the node with `id`. */
-  startEdit(id: string, opts?: { caret?: number | 'all' }): void;
-  /**
-   * Optional predicate: returns `true` when the node with `id` is a text node.
-   * When absent the action fires on any selected node (binding spec is the gate).
-   * When present and returning `false`, the invocation is a no-op.
-   */
-  isTextNode?(id: string): boolean;
-}
-
-/**
- * Clipboard dep — the imperative surface `useClipboardOps` returns.
- *
- * Consumers publish their live clipboard through `useDepSource('clipboard',
- * …)` from inside the `<DepRegistryProvider>` (i.e. under `<SceneCanvas>`).
- * The kit deliberately does not build one for them: `useClipboardOps` needs
- * an adapter and a selection reader that only the consumer can supply.
- */
-export interface ClipboardDep {
-  copy(): void;
-  paste(): void;
-  isEmpty(): boolean;
-}
-
-/**
- * The commit behind the Slice action. `commit` receives the cut as a polyline
- * of at least two points (world coords): the drag's two ends for a straight
- * cut, its whole trail for a freehand one, the placed points for a
- * click-by-click one, whose last point equals its first when it closes into
- * a loop. `<SceneCanvas>` publishes one over its scene (`useSliceDepSource`);
- * a consumer replaces it with `useSliceDep`.
- */
-export interface SliceDep {
-  commit(cut: ReadonlyArray<Point2>): void;
-}
+import type { TextEditDep, ClipboardDep, SliceDep } from './editDeps';
+export type { TextEditDep, ClipboardDep, SliceDep };
 
 /**
  * The names an action may declare in `requires`, and what each resolves to.
@@ -399,8 +246,18 @@ declare module '@weasel-js/routing' {
      *  `insert.adjustRotation` reaches the one in its own input scope.
      *  Sourced by `<SceneCanvas>`; without it the rotation does nothing. */
     insertLive?: InsertLive;
-    /** Snap dep — world-space point snapping (grid / guides). Sourced by
-     *  `<SceneCanvas>` from `toolOptions.snapPoint`. Absent means no snapping. */
+    /** The params an action starts with in this scope when its binding
+     *  passes `given`, `<SceneCanvas tune>` included: what a tool's chrome
+     *  reads to draw what the action it binds will make. Sourced by
+     *  `<SceneCanvas>`. */
+    actionParams?: (id: string, given?: Record<string, unknown>) => Record<string, unknown>;
+    /** The container the `insert` dep puts new nodes into — every shape a
+     *  tool draws and every dropped image or text. Absent, or answering
+     *  `null`: the top of the tree. */
+    insertInto?: InsertIntoDep;
+    /** Snap dep — world-space point snapping (path geometry, grid, guides).
+     *  Sourced by `<SceneCanvas>` from `toolOptions.pathSnap` and
+     *  `toolOptions.snapPoint`. Absent means no snapping. */
     snap?: SnapDep;
     /**
      * The canvas's debug sink.
@@ -408,11 +265,17 @@ declare module '@weasel-js/routing' {
      * Actions report what they did here, and the overlay draws it.
      */
     debug?: DebugSink;
+    /** Viewport point of a world point on this canvas, or null before it mounts.
+     *  Sourced by `<SceneCanvas>`. */
+    worldToClient?: (x: number, y: number) => { x: number; y: number } | null;
     /** Lasso-select dep — polygon hit-test + selection read/write. */
     lassoSelect: LassoSelectDep;
     /** Edit-anchors dep — narrow read/write of one polygon's path. If
      *  absent, `editAnchorsAction`'s `start` returns an empty handle (no-op). */
     editAnchors: EditAnchorsDep;
+    /** The transforms a path being edited should stay its own image under.
+     *  Absent: an anchor drag moves only what is dragged. */
+    pathSymmetry?: PathSymmetryDep;
     /**
      * Text-edit dep — activates the in-place text editing overlay. Sourced
      * from consumer via `useTextEdit` / `useSceneTextEdit`.
@@ -436,6 +299,10 @@ declare module '@weasel-js/routing' {
      * from its `poseDescriptor` prop; `AUTO_POSE_DESCRIPTOR` when absent.
      */
     poseDescriptor?: PoseDescriptor<unknown>;
+    /** Whether the box resize, rotate, flip, align, and distribute work against
+     *  includes the stroke. From `<SceneCanvas geometry.boundsIncludeStroke>`;
+     *  absent means `true`. */
+    boundsIncludeStroke?: boolean;
     /**
      * Booleans adapter — read selection ids, fetch world-space `Path`s,
      * compare z-order, and mint result nodes for Pathfinder ops.

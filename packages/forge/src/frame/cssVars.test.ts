@@ -20,7 +20,7 @@ describe('scanCssVars', () => {
   it('finds a var used in a stylesheet rule, nested ones included, with its value on :root', () => {
     addStyle(':root { --fg-t-rule: red; } .x { color: var(--fg-t-rule); } @media (min-width: 1px) { .y { color: var( --fg-t-nested ); } }');
     const vars = scanCssVars(document);
-    expect(vars).toContainEqual({ name: '--fg-t-rule', value: 'red', overridden: false });
+    expect(vars).toContainEqual({ name: '--fg-t-rule', value: 'red', overridden: false, used: false });
     expect(vars.map((v) => v.name)).toContain('--fg-t-nested');
   });
 
@@ -29,7 +29,7 @@ describe('scanCssVars', () => {
     el.setAttribute('style', '--fg-t-local: blue; color: var(--fg-t-local)');
     document.body.append(el);
     added.push(el);
-    expect(scanCssVars(document)).toContainEqual({ name: '--fg-t-local', value: 'blue', overridden: false });
+    expect(scanCssVars(document)).toContainEqual({ name: '--fg-t-local', value: 'blue', overridden: false, used: true });
   });
 
   it('marks the names an override is in force on, and sorts by name', () => {

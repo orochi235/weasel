@@ -255,7 +255,7 @@ export function useTextEdit(
 
   const isEditing = useCallback((id: string) => editingId === id, [editingId]);
 
-  const applyStyleToSelection = useCallback((patch: RunStylePatch) => {
+  const applyStyleToSelection = useCallback(function applyStyle(patch: RunStylePatch) {
     const overlay = overlayRef.current;
     if (!overlay) return;
     // An empty patch would still round-trip the runs through
@@ -302,7 +302,7 @@ export function useTextEdit(
       // Whatever else the patch carried still applies on its own terms.
       const rest = { ...patch };
       delete rest[unsetFlag];
-      if (Object.keys(rest).length > 0) applyStyleToSelection(rest);
+      if (Object.keys(rest).length > 0) applyStyle(rest);
       return;
     }
 

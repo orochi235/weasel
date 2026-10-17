@@ -7,7 +7,7 @@
  * live preview and the reported gesture bounds use.
  */
 import { useRef } from 'react';
-import { useDepSource } from '@weasel-js/routing/react';
+import { useDepRegistry, useDepSource } from '@weasel-js/routing/react';
 import { useLatest } from '@weasel-js/react';
 import type { InsertDep, InsertExtras, InsertLive } from 'interactions/actions/depSchema';
 import type { Scene, NodeId } from 'core/scene/types';
@@ -30,6 +30,8 @@ import { spiroNodeData } from 'features/paths/spiroShape';
 import type { ShapeGenerator } from 'features/paths/shapeGenerator';
 import type { Stroke, Fill } from '@weasel-js/paint';
 import { cycleFill, solid, strokeOf } from '../../util/paint';
+import { composesFrames, composeWorldPose } from 'core/scene/composeFrame';
+import { definesFrame } from 'core/scene/effectivePose';
 
 interface OpsApplier {
   applyOps(ops: Op[], label?: string): void;
@@ -132,6 +134,31 @@ function boxKindData(
   }
 }
 
+/**
+ * Where an insert lands: the container the `insertInto` dep names, on that container's
+ * layer, with the pose made local to it when the scene composes frames —
+ * or the top of the tree, on the first layer, when it names no container.
+ */
+function insertSite(
+  sc: Scene<unknown, string, unknown>,
+  into: string | null | undefined,
+): { parent: NodeId | null; layer: string; local: (world: unknown) => unknown } {
+  const parent = into == null ? undefined : sc.get(into as NodeId);
+  if (parent === undefined || parent.kind !== 'container') {
+    return { parent: null, layer: (sc.layers[0]?.id ?? 'default') as string, local: (p) => p };
+  }
+  const composition = sc.composition;
+  if (composition === undefined || !composesFrames(composition)) {
+    return { parent: parent.id, layer: parent.layer, local: (p) => p };
+  }
+  const frame = composeWorldPose({
+    getPose: (id) => sc.get(id as NodeId)!.pose,
+    getParent: (id) => sc.get(id as NodeId)?.parent ?? null,
+    definesFrame: (id) => definesFrame(sc.get(id as NodeId) ?? {}),
+  }, parent.id, composition.compose);
+  return { parent: parent.id, layer: parent.layer, local: (p) => composition.decompose(frame, p) };
+}
+
 export function useInsertDepSource(
   scene: Scene<unknown, string, unknown>,
   adapter: OpsApplier,
@@ -142,6 +169,7 @@ export function useInsertDepSource(
   const adapterRef = useLatest(adapter);
   const factoriesRef = useLatest(factories);
   const paintRef = useLatest(paint);
+  const registry = useDepRegistry();
   const insertSeqRef = useRef(0);
   const liveRef = useRef<InsertLive>({ gesture: null });
   useDepSource('insertLive', () => liveRef.current);
@@ -150,12 +178,13 @@ export function useInsertDepSource(
     const sc = sceneRef.current;
     const ad = adapterRef.current;
 
-    const layer = (sc.layers[0]?.id ?? 'default') as string;
+    const site = () => insertSite(sc, registry.get('insertInto')?.get());
     const build = (
       bounds: { x: number; y: number; width: number; height: number },
       extras: InsertExtras,
     ): { id: NodeId; ops: Op[] } | null => {
         const kind = extras.kind;
+        const { parent, layer, local } = site();
         const seq = ++insertSeqRef.current;
         const id = sc.mintId();
         let asked: ReturnType<InsertPaint> | undefined;
@@ -174,7 +203,7 @@ export function useInsertDepSource(
           if (built === null) return null;
           return {
             id,
-            ops: [createInsertOp({ node: { id, kind: 'leaf', layer, pose: built.pose ?? pose, data: built.data } as unknown as { id: string }, label: `Insert ${kind}` })],
+            ops: [createInsertOp({ node: { id, kind: 'leaf', layer, parent, pose: local(built.pose ?? pose), data: built.data } as unknown as { id: string }, label: `Insert ${kind}` })],
           };
         }
 
@@ -227,11 +256,11 @@ export function useInsertDepSource(
         data = withFillRule(data, asked?.fillRule);
         return {
           id,
-          ops: [createInsertOp({ node: { id, kind: 'leaf', layer, pose, data } as unknown as { id: string }, label: `Insert ${kind}` })],
+          ops: [createInsertOp({ node: { id, kind: 'leaf', layer, parent, pose: local(pose), data } as unknown as { id: string }, label: `Insert ${kind}` })],
         };
     };
     return {
-      layer: () => layer,
+      layer: () => site().layer,
       build,
       commit(bounds, extras): NodeId | null {
         const built = build(bounds, extras);

@@ -3,6 +3,8 @@
  * through `@weasel-js/labkit/weasel-ui` rather than depending on the
  * weasel-ui package directly. Lets labkit swap implementations in the
  * future without consumer churn.
+ *
+ * @packageDocumentation
  */
 
 export { formatNumber, MINUS_SIGN } from '@weasel-js/quantity';

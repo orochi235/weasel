@@ -7,6 +7,7 @@ import type { TreeNode } from '../Tree';
 import { GROUP_ICON } from './Palette';
 import { drawnLeaf } from './pointers';
 import { childrenOf, joinPath, type SchemaNode, type SchemaRoot } from './schemaEdit';
+import { soughtRow } from './rowSearch';
 import s from './PrefSchemaEditor.module.css';
 
 /** How many leaves `nodes` come to, counting those under each at any depth. */
@@ -28,13 +29,13 @@ export function toTreeNodes(node: SchemaNode, path: string | null, changed: Read
     const p = joinPath(path, key);
     const kids = childrenOf(child);
     // A layout's pointer reads as the setting it points at, and one that points at none as its key.
-    const name = (over && isPrefLeaf(child) && child.kind === 'alias' ? drawnLeaf(over, child as PrefAlias)?.name : undefined) ?? child.name;
+    const drawn = over && isPrefLeaf(child) && child.kind === 'alias' ? drawnLeaf(over, child as PrefAlias) : undefined;
+    const name = drawn?.name ?? child.name;
     const named = nodeLabel(name, key);
     const label = changed.has(p) ? <span className={s.changed}>{named}</span> : named;
-    return {
+    return soughtRow({
       id: p,
       label: isPrefLeaf(child) ? leafLabel(label) : label,
-      textValue: name ? `${name} ${key}` : key,
       ...(child.description ? { tooltip: child.description } : {}),
       // Unset, a group is drawn by its depth: a page under the root, a section below that.
       ...(isPrefLeaf(child) ? {} : { leading: <Icon size={16} name={GROUP_ICON[child.as ?? (path === null && !isPrefSection(child) ? 'page' : 'section')]} /> }),
@@ -43,6 +44,6 @@ export function toTreeNodes(node: SchemaNode, path: string | null, changed: Read
         // Its glyph says how a group is drawn, so it carries no badge to say it again.
         : <>{mark?.(p)}{countBadge(leafCount([child]))}</>,
       ...(kids ? { children: toTreeNodes(child, p, changed, mark, over) } : {}),
-    };
+    }, { text: [name, key], tags: drawn?.tags ?? child.tags });
   });
 }
