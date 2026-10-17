@@ -873,10 +873,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   Headless Playwright sends no such event, so this is unverified. Check on a real Windows or
   Linux Chrome; if it reproduces, the likely fix is for the keydown to suppress the native event.
 
-- **(P3) A bar `action` leaf naming a bare parametric id draws a dead button that misreports itself.**
-  Its tooltip says "no action", though the action exists and only needs a variant. Expand the leaf
-  into its variants, or word the tooltip as "pick a variant".
-
 - **(P4) A `BarMenu` that opened itself can pull focus out of another menu when it closes.** Its
   `close` gives focus to its button only when focus is inside a menu, but it checks with
   `closest('[role="menu"]')`, which matches any menu on the page. Scope the check to this menu's

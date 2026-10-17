@@ -59,14 +59,16 @@ export function actionLeafKey(key: string): string {
   return undigit(words.map((w, i) => (i === 0 ? w : w[0]!.toUpperCase() + w.slice(1))).join('')) || 'action';
 }
 
-/** The tree paths of the action prefs in `root` that fire a key not among `keys`. */
+/** The tree paths of the action prefs in `root` that fire a key not among `keys`, nor the bare id of one. */
 export function deadActionPaths(root: SchemaRoot, keys: ReadonlySet<string>, join: (parent: string | null, key: string) => string): Set<string> {
   const out = new Set<string>();
+  // A bare parametric id is drawn as its variants, so a variant key makes its id live too.
+  const live = new Set([...keys].flatMap((k) => (k.includes(':') ? [k, k.slice(0, k.indexOf(':'))] : [k])));
   const walk = (node: SchemaNode, path: string | null): void => {
     for (const [key, child] of Object.entries(childrenOf(node) ?? {})) {
       const at = join(path, key);
       const fires = (child as { kind?: string; action?: string }).kind === 'action' ? (child as PrefAction).action : undefined;
-      if (fires !== undefined && !keys.has(fires)) out.add(at);
+      if (fires !== undefined && !live.has(fires)) out.add(at);
       walk(child, at);
     }
   };

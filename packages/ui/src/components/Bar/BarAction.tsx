@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { Focusable } from 'react-aria-components';
 import type { PrefAction } from '@weasel-js/prefs';
+import { actionLeafVariants, useRegisteredActions } from '../Prefs/registeredActions';
 import { useLeafAction } from '../Prefs/useLeafAction';
 import { segmentTooltipContent } from '../segmentTooltip';
 import { Tooltip, TooltipTrigger } from '../Tooltip';
@@ -73,8 +74,19 @@ export function BarActionButton(props: BarActionButtonProps) {
   );
 }
 
-/** An `action` leaf as a bar's cell: an icon button, or icon and label for `control: 'button'`. */
+/** An `action` leaf as a bar's cell: an icon button, or icon and label for `control: 'button'`. A leaf naming a
+ *  parametric action by its bare id is a button per variant. */
 export function BarAction({ leaf, path, disabled }: { leaf: PrefAction; path: string; disabled?: boolean }) {
+  const variants = actionLeafVariants(leaf, useRegisteredActions());
+  if (!variants) return <BarActionOne leaf={leaf} path={path} disabled={disabled} />;
+  return (
+    <span className={s.actions}>
+      {variants.map((one, i) => <BarActionOne key={one.action} leaf={one} path={`${path}.${i}`} disabled={disabled} />)}
+    </span>
+  );
+}
+
+function BarActionOne({ leaf, path, disabled }: { leaf: PrefAction; path: string; disabled?: boolean }) {
   const { press, ...button } = useLeafAction(leaf, path, disabled);
   return <BarActionButton {...button} description={leaf.description} labeled={leaf.control === 'button'} onPress={press} />;
 }

@@ -64,6 +64,26 @@ describe('BarAction', () => {
     expect(run).toHaveBeenCalledWith({ to: 'left' });
   });
 
+  it('draws a leaf naming a bare parametric id as one button per variant, as a menu does', () => {
+    const run = vi.fn();
+    const align = action('align', { variants: [
+      { key: 'left', label: 'Align left', params: { to: 'left' } },
+      { key: 'right', label: 'Align right', params: { to: 'right' } },
+    ] });
+    align.invoker = { timing: 'immediate', run: (_deps, params) => run(params) };
+    render(
+      <Host actions={[align]}>
+        <BarAction leaf={leaf({ name: 'Align', action: 'align' })} path="align" />
+        <PrefActionButton pref={leaf({ name: 'Align', action: 'align' })} path="align2" />
+      </Host>,
+    );
+    expect(screen.getAllByRole('button').map((b) => b.getAttribute('aria-label')))
+      .toEqual(['Align left', 'Align right', 'Align left', 'Align right']);
+    expect(document.querySelector('[data-missing]')).toBeNull();
+    fireEvent.click(screen.getAllByRole('button', { name: 'Align right' })[0]!);
+    expect(run).toHaveBeenCalledWith({ to: 'right' });
+  });
+
   it('is disabled while the action says it cannot run', () => {
     render(
       <Host actions={[action('text.bold', { enabled: () => 'selection-required' })]}>
