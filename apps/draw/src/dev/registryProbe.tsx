@@ -16,8 +16,7 @@ import {
   type Fill,
 } from '@weasel-js/core';
 import { routesForSpec } from '@weasel-js/core/routing';
-import { actionIcon, type ActionIconSource } from '@weasel-js/ui';
-import type { ReactNode } from 'react';
+import { actionIcon } from '@weasel-js/ui';
 import type { DeclaredRoute, ToolSurface, ToolEntry, ActionEntry, CallbackRef, CallbackSource } from './registryEntries';
 import s from './RegistryInspector.module.css';
 
@@ -113,7 +112,7 @@ export function RegistryProbe({ onSnapshot }: ProbeProps) {
             label: def.presentation.label,
             group: def.presentation.group,
             shortcut: def.presentation.shortcut,
-            icon: renderPresentationIcon(def.presentation.icon),
+            icon: actionIcon(def.presentation.icon),
           } : undefined,
           surface,
           capabilities: {
@@ -132,8 +131,8 @@ export function RegistryProbe({ onSnapshot }: ProbeProps) {
     bindingShortcut: actionBindings(a).map(({ spec }) => keySpecShortcut(spec)).find((k) => k !== undefined),
     shortcut: a.shortcut,
     group: a.group,
-    icon: renderPresentationIcon(a.icon),
-    items: actionItems(a).map((i) => ({ key: i.key, label: i.label, icon: renderPresentationIcon(i.icon) })),
+    icon: actionIcon(a.icon),
+    items: actionItems(a).map((i) => ({ key: i.key, label: i.label, ...(i.icon ? { icon: i.icon } : {}) })),
     enabled: snapshotEnabled(a.enabled),
     callbacks: collectActionCallbacks(a),
     defaultBinding: a.defaultBinding,
@@ -269,12 +268,6 @@ function snapshotEnabled(
   } catch {
     return { enabled: false, reason: 'predicate-threw' };
   }
-}
-
-/** The probe lists every action, so one icon thunk that throws must not take the panel down. */
-function renderPresentationIcon(icon: unknown): ReactNode | undefined {
-  try { return actionIcon(icon as ActionIconSource) ?? undefined; }
-  catch { return undefined; }
 }
 
 /** Reads `__source` attached to a function value by the dev-only

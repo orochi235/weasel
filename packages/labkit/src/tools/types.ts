@@ -1,4 +1,4 @@
-import type { IconComponent } from '../chrome/types';
+import type { IconRef } from '@weasel-js/icons';
 
 /**
  * A tool a trial can be in. labkit's own — core's `ToolsApi` carries hotkey
@@ -9,7 +9,7 @@ import type { IconComponent } from '../chrome/types';
 export interface TrialTool {
   id: string;
   label: string;
-  icon: IconComponent;
+  icon: IconRef;
   /** Shown in the tooltip. Not bound here — the instrument owns its keymap. */
   shortcut?: string;
   /** Presentation grouping in the palette. Ungrouped tools sort after grouped. */

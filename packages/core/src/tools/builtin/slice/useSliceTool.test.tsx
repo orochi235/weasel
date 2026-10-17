@@ -1,12 +1,10 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest';
-import { isValidElement } from 'react';
 import { renderHook, act } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { useSliceTool, VERTEX_RADIUS_PX } from './useSliceTool';
 import { boundsOfPath } from '@weasel-js/geom';
 import { KitSettingsProvider, type KitSettingsOverrides } from '@weasel-js/react';
 import type { ReactNode } from 'react';
-import { SliceIcon } from '../../../icons';
 import { reportRouteConflicts, type Action, type ActionDeps, type InvocationCtx } from '@weasel-js/routing';
 import type { RenderLayer } from 'core/layers/render';
 import { createPointerStore } from '@weasel-js/routing/react';
@@ -52,8 +50,7 @@ function setup(opts: Parameters<typeof useSliceTool>[0] = {}, settings?: KitSett
 describe('useSliceTool — palette presentation', () => {
   it('declares the knife glyph, so a palette draws no placeholder', () => {
     const { tool } = setup();
-    const icon = tool().presentation?.icon;
-    expect(isValidElement(icon) && icon.type).toBe(SliceIcon);
+    expect(tool().presentation?.icon).toBe('core:slice');
   });
 });
 

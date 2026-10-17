@@ -1,5 +1,6 @@
-import { ExportIcon } from '@weasel-js/ui';
+import { Icon } from '@weasel-js/ui';
 import { useId, useState } from 'react';
+import { icon } from '../icons.gen';
 import { Callout } from '../passthrough/weasel-ui';
 import { Toolbar } from '../primitives/Toolbar';
 import { useAnnotationsOptional } from './AnnotationsContext';
@@ -87,7 +88,7 @@ export function ExportMenu() {
         title="Export"
         onClick={() => setOpen((was) => !was)}
       >
-        <ExportIcon size={16} />
+        <Icon name={icon('ui:export')} size={16} />
       </Toolbar.Button>
       <Callout
         triggerRef={{ current: anchor }}

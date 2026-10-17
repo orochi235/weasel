@@ -1,4 +1,5 @@
 import { defineConfig } from 'tsup';
+import { weaselIcons } from '../icons-plugin/src/index';
 
 export default defineConfig({
   entry: {
@@ -43,4 +44,5 @@ export default defineConfig({
   ],
   splitting: true,
   treeshake: true,
+  esbuildPlugins: [weaselIcons.esbuild({ mode: 'library' })],
 });

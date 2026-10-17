@@ -1,9 +1,9 @@
 import { act, fireEvent, screen } from '@testing-library/react';
 import { pref } from '@weasel-js/prefs';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
-import { AddIcon } from '@weasel-js/ui';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import type { LabContribution } from '../chrome';
+import { icon } from '../icons.gen';
 import { defineInstrument } from '../instrument/defineInstrument';
 import { Lab } from './Lab';
 import { type LabContextValue, useLabContext } from './LabContext';
@@ -116,7 +116,7 @@ describe('the lab’s menu bar', () => {
         id: 'x-hello',
         region: 'header',
         group: 'story',
-        item: { icon: AddIcon, label: 'Hello', onActivate },
+        item: { icon: icon('ui:add'), label: 'Hello', onActivate },
       },
     ];
     await mount({ labChrome });

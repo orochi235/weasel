@@ -1,15 +1,16 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { CloseButton } from './CloseButton';
-import { ICON_PATHS } from '../../icons/generated/paths';
+import { icons as uiIcons } from '../../icons.table';
+import { withIcons } from '../../testing/withIcons';
 
 describe('CloseButton', () => {
   it('draws the kit close glyph, not a text ×, named by ariaLabel', () => {
-    render(<CloseButton ariaLabel="Close dialog" />);
+    render(<CloseButton ariaLabel="Close dialog" />, { wrapper: withIcons });
     const btn = screen.getByRole('button', { name: 'Close dialog' });
     expect(btn.textContent).toBe('');
     const svg = btn.querySelector('svg')!;
-    const d = /d="([^"]+)"/.exec(ICON_PATHS.close)![1];
+    const d = /d="([^"]+)"/.exec(uiIcons.icons.close!.body)![1];
     expect(svg.querySelector('path')!.getAttribute('d')).toBe(d);
     expect(svg.getAttribute('width')).toBe('16');
     expect(svg.getAttribute('aria-hidden')).toBe('true');

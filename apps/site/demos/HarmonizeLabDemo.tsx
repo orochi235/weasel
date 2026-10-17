@@ -10,12 +10,13 @@ import {
   TrialSceneCanvas,
   useTrialScene,
 } from '@weasel-js/labkit';
-import { ActionBar, SelectIcon } from '@weasel-js/ui';
+import { ActionBar } from '@weasel-js/ui';
 import { useMemo } from 'react';
 import { createPathLabScene, useSeededPathEdit } from './pathEditLabSeed';
 import s from './HarmonizeLabDemo.module.css';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
+import { icon } from '../icons.gen';
 
 const config = f.schema({
   comb: f.boolean(true).label('Show comb'),
@@ -68,7 +69,7 @@ const harmonizeInstrument = defineInstrument<State, Config>({
   config,
   initialState: () => ({ scene: null }),
   undo: {},
-  tools: { tools: [{ id: 'select', label: 'Select', icon: SelectIcon, shortcut: 'V' }] },
+  tools: { tools: [{ id: 'select', label: 'Select', icon: icon('core:select'), shortcut: 'V' }] },
   render: (ctx) => <HarmonizeTrial ctx={ctx} />,
 });
 

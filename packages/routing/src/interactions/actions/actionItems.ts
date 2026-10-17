@@ -2,7 +2,7 @@
  * The entries an action contributes to a bar, menu or palette — one per
  * variant, or the action itself when it declares none.
  */
-import type { ReactNode } from 'react';
+import type { IconRef } from '@weasel-js/icons';
 import type { Action } from './action';
 
 const NO_TAGS: readonly string[] = Object.freeze([]);
@@ -13,7 +13,7 @@ export interface ActionItem {
   key: string;
   action: Action;
   label: string;
-  icon?: ReactNode | (() => ReactNode);
+  icon?: IconRef;
   /** The action's tags, then the variant's own. */
   tags: readonly string[];
   /** What to pass to `trigger(action.id, params)`; absent for a plain action. */

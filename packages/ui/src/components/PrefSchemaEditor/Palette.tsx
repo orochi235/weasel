@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState, type PointerEvent, type ReactNode } from 'react';
 import { startThresholdDrag, type ThresholdDragHandle } from '@weasel-js/core';
 import type { PrefGroup, PrefSection } from '@weasel-js/prefs';
-import { Icon, type IconName } from '../../icons';
+import type { IconRef } from '@weasel-js/icons';
+import { Icon } from '../../icons';
+import { icon } from '../../icons.gen';
 import { DragGhost } from '../DragGhost';
 import { ToolButton } from '../ToolButton';
 import { ToolGroup } from '../ToolGroup';
@@ -14,28 +16,28 @@ import s from './PrefSchemaEditor.module.css';
 export interface PaletteItem {
   id: string;
   label: string;
-  icon: IconName;
+  icon: IconRef;
   /** What the new node's key starts as; a number is added when a sibling holds it. */
   key: string;
   make(): SchemaNode;
 }
 
 /** The glyph for each way a group is drawn, on the palette's tools and beside a group in the tree. */
-export const GROUP_ICON: Record<NonNullable<PrefGroup['as']>, IconName> = {
-  page: 'formPage',
-  tab: 'formTab',
-  panel: 'formPanel',
-  section: 'formSection',
-  fragment: 'code',
-  bar: 'formBar',
-  menu: 'menu',
+export const GROUP_ICON: Record<NonNullable<PrefGroup['as']>, IconRef> = {
+  page: icon('formPage'),
+  tab: icon('formTab'),
+  panel: icon('formPanel'),
+  section: icon('formSection'),
+  fragment: icon('code'),
+  bar: icon('formBar'),
+  menu: icon('menu'),
 };
 
 const group = (name: string, as: PrefGroup['as']): PrefGroup => ({ name, description: '', as, children: {} });
 
 const section = (name: string, as: PrefSection['as']): PrefSection => ({ name, description: '', as, members: {} });
-const LABEL: PaletteItem = { id: 'label', label: 'Label', icon: 'formLabel', key: 'label', make: () => blankLeaf('label') };
-const SEPARATOR: PaletteItem = { id: 'separator', label: 'Separator', icon: 'formSeparator', key: 'separator', make: () => blankLeaf('separator') };
+const LABEL: PaletteItem = { id: 'label', label: 'Label', icon: icon('formLabel'), key: 'label', make: () => blankLeaf('label') };
+const SEPARATOR: PaletteItem = { id: 'separator', label: 'Separator', icon: icon('formSeparator'), key: 'separator', make: () => blankLeaf('separator') };
 
 /** What a section root takes: the same, less the page, each a section. */
 export const SECTION_PALETTE: readonly PaletteItem[] = [

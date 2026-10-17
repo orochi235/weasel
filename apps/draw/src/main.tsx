@@ -5,9 +5,11 @@ import { createRoot } from 'react-dom/client';
 import {
   ActionsProvider,
   DepRegistryProvider,
+  IconRegistryProvider,
   SelectionContextProvider,
 } from '@weasel-js/core';
 import { ThemeProvider } from '@weasel-js/theme/react';
+import icons from 'virtual:weasel-icons';
 import { App } from './App';
 import { drawTheme } from './theme';
 import { ColorModeProvider } from './colorMode';
@@ -15,6 +17,10 @@ import { registerAvailableFonts } from './fonts';
 import { registerDefaultFont } from '../../shared/defaultFont';
 import { migrateLegacyPanelFlags } from './surfaces/surfaceState';
 import { drawPrefs, importLegacyPrefs } from './prefs';
+const ICON_VARIANTS = {
+  all: () => import('virtual:weasel-icons/all'),
+  draw: () => import('virtual:weasel-icons/draw'),
+};
 
 // The dev surfaces are only reachable at `#/dev/*`, and `RegistryInspector`
 // reaches `dev/sourceLookup`, which embeds this app's own source as strings.
@@ -85,12 +91,14 @@ const slot = container as ContainerWithRoot;
 slot.__reactRoot ??= createRoot(slot);
 slot.__reactRoot.render(
   <StrictMode>
-    <DepRegistryProvider>
-      <ActionsProvider>
-        <SelectionContextProvider>
-          <Root />
-        </SelectionContextProvider>
-      </ActionsProvider>
-    </DepRegistryProvider>
+    <IconRegistryProvider icons={icons} variants={ICON_VARIANTS}>
+      <DepRegistryProvider>
+        <ActionsProvider>
+          <SelectionContextProvider>
+            <Root />
+          </SelectionContextProvider>
+        </ActionsProvider>
+      </DepRegistryProvider>
+    </IconRegistryProvider>
   </StrictMode>,
 );

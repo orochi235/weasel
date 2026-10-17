@@ -1,9 +1,9 @@
-import { createElement, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useLatest } from '@weasel-js/react';
 import type { ToolKeybinding } from '@weasel-js/routing';
 import { defineTool, type Tool } from '../../overlayBinding';
 import { createPathOverlay } from 'canvas/pathOverlay';
-import { UnionIcon } from 'interactions/actions/defaults/icons/booleanIcons';
+import { icon } from '../../../icons.gen';
 import { PATHFINDER_STROKES } from 'interactions/actions/booleans/action';
 import type { BooleanStrokes } from 'interactions/actions/booleans/operands';
 import type { ShapeBuilderMode } from 'interactions/actions/booleans/shapeBuilder';
@@ -45,7 +45,7 @@ export function useShapeBuilderTool(options: UseShapeBuilderToolOptions = {}): T
     capabilities: ['edits-page'],
     hookName: 'useShapeBuilderTool',
     cursor: 'crosshair',
-    presentation: { label: 'Shape Builder', icon: createElement(UnionIcon), group: 'shape' },
+    presentation: { label: 'Shape Builder', icon: icon('union'), group: 'shape' },
     ...(keybinding === null ? {} : { keybinding: keybinding ?? { key: 'M', shift: true } }),
     actions: built.actions,
     overlay: overlay.layer,

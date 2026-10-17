@@ -1,6 +1,6 @@
 import type { Tool } from 'tools/overlayBinding';
 import { presetBuiltinTools, presetOwnTools, type EnabledPresets } from './features';
-import { IS_DEV } from './isDev';
+import { isDev } from '@weasel-js/react';
 import { BUILTIN_TOOL_IDS, type BuiltinToolId } from './props';
 
 /** The patch form of `<SceneCanvas tools>`: per id, `true` mounts that
@@ -30,7 +30,7 @@ export interface ResolveToolRegistryArgs {
  * order. That order is the palette's.
  */
 export function resolveToolRegistry(args: ResolveToolRegistryArgs): Record<string, Tool> {
-  const { builtins, defaultTools = [], enabled, patch, dev = IS_DEV } = args;
+  const { builtins, defaultTools = [], enabled, patch, dev = isDev() } = args;
   const registry: Record<string, Tool> = {};
   const preset = presetBuiltinTools(enabled);
   for (const id of BUILTIN_TOOL_IDS) {

@@ -1,11 +1,10 @@
-import { createElement } from 'react';
-import { CopyIcon, CutIcon, PasteIcon } from '../defaults/icons/editIcons';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
 import { ActionDisabledReason, type Action } from '@weasel-js/routing';
 import { buildDeleteOps } from '../defaults/delete';
 import { requiresSelection } from '../defaults/requiresSelection';
 import { kitWeaselJsonHandler } from 'features/ingestion/weaselJsonHandler';
 import { ANY_INGEST_MODS, claimable, INGEST_REQUIRES, ingestFromEvent } from '../defaults/ingest';
+import { icon } from '../../../icons.gen';
 
 /**
  * Static descriptor for the `clipboard.copy` Action (Cmd/Ctrl+C).
@@ -13,7 +12,7 @@ import { ANY_INGEST_MODS, claimable, INGEST_REQUIRES, ingestFromEvent } from '..
 export const clipboardCopyAction: Action & { requires: string[] } = {
   id: 'clipboard.copy',
   label: 'Copy',
-  icon: createElement(CopyIcon),
+  icon: icon('copy'),
   group: 'clipboard',
   defaultBinding: { kind: 'key', key: 'c', mods: { mod: true } },
   // Same gate as `duplicate`: a mode that can neither edit the page nor own a
@@ -39,7 +38,7 @@ export const clipboardCopyAction: Action & { requires: string[] } = {
 export const clipboardCutAction: Action & { requires: string[] } = {
   id: 'clipboard.cut',
   label: 'Cut',
-  icon: createElement(CutIcon),
+  icon: icon('cut'),
   group: 'clipboard',
   defaultBinding: { kind: 'key', key: 'x', mods: { mod: true } },
   eligible: { capability: 'edits-page' },
@@ -79,7 +78,7 @@ export const clipboardCutAction: Action & { requires: string[] } = {
 export const clipboardPasteAction: Action & { requires: string[] } = {
   id: 'clipboard.paste',
   label: 'Paste',
-  icon: createElement(PasteIcon),
+  icon: icon('paste'),
   group: 'clipboard',
   eligible: { capability: 'edits-page' },
   requires: ['clipboard'],

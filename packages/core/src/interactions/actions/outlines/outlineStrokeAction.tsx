@@ -2,7 +2,7 @@ import type { Action, ImmediateInvoker } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import { applyOutlineStroke, textIsStroked } from './outlineStroke';
 import { withTextOutlines } from './createOutlinesAction';
-import { OutlineStrokeIcon } from '../defaults/icons/outlineIcons';
+import { icon } from '../../../icons.gen';
 
 /**
  * Static descriptor for Outline Stroke: replace each selected
@@ -13,7 +13,7 @@ import { OutlineStrokeIcon } from '../defaults/icons/outlineIcons';
 export const outlineStrokeAction: Action = {
   id: 'outlineStroke',
   label: 'Outline Stroke',
-  icon: <OutlineStrokeIcon />,
+  icon: icon('outlineStroke'),
   group: 'pathfinder',
   eligible: { capability: 'creates-shapes' },
   requires: ['selection', 'createOutlinesAdapter', 'view'],

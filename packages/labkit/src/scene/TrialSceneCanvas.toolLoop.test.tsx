@@ -2,9 +2,9 @@
 import { act, renderHook, screen } from '@testing-library/react';
 import { createScene, type ToolsApi, useEllipseTool, useLatest } from '@weasel-js/core';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
-import { RectIcon, SelectIcon } from '@weasel-js/ui';
 import { StrictMode, useEffect } from 'react';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
+import { icon } from '../icons.gen';
 import { defineInstrument } from '../instrument/defineInstrument';
 import type { RenderContext } from '../instrument/types';
 import { Lab } from '../lab/Lab';
@@ -67,8 +67,8 @@ const instrument = (pick: string, everyRender = false) =>
     initialState: () => ({ scene: null }),
     tools: {
       tools: [
-        { id: 'select', label: 'Select', icon: SelectIcon },
-        { id: 'ellipse', label: 'Ellipse', icon: RectIcon },
+        { id: 'select', label: 'Select', icon: icon('core:select') },
+        { id: 'ellipse', label: 'Ellipse', icon: icon('core:rect') },
       ],
     },
     render: (ctx) => <Body ctx={ctx} pick={pick} everyRender={everyRender} />,

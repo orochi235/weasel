@@ -5,7 +5,7 @@
  */
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
-import { TESTING, workspaceEntries } from './packageEntries.mjs';
+import { APP_SOURCES, TESTING, workspaceEntries } from './packageEntries.mjs';
 
 /** Bare top-level paths into core's source, as `scripts/vite-aliases.ts` has them. */
 const KIT_DIRS = ['core', 'features', 'affordances', 'interactions', 'tools', 'canvas', 'debug'];
@@ -29,6 +29,7 @@ export function tsconfigPaths(repoRoot) {
     if (existsSync(join(dir, 'src', TESTING))) paths[`${name}/${TESTING}/*`] = [at(`src/${TESTING}/*`)];
   }
   for (const dir of KIT_DIRS) paths[`${dir}/*`] = [`./packages/core/src/${dir}/*`];
+  for (const [alias, dir] of Object.entries(APP_SOURCES)) paths[`${alias}/*`] = [`./${dir}/*`];
   return paths;
 }
 

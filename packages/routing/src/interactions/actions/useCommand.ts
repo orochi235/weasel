@@ -1,5 +1,6 @@
-import { useMemo, type ReactNode } from 'react';
+import { useMemo } from 'react';
 import type { GestureSpec } from '@weasel-js/gestures';
+import type { IconRef } from '@weasel-js/icons';
 import { useLatest, useStableByContent } from '@weasel-js/react';
 import type { Action, ActionDisabledReason, ActionVariant } from './action';
 import { useAction } from './ActionsProvider';
@@ -12,8 +13,8 @@ export interface CommandOptions {
   active?: () => boolean;
   /** The gestures that run it. */
   keys?: GestureSpec | readonly GestureSpec[];
-  /** Shown beside the label. A function is read each time it is shown. */
-  icon?: ReactNode | (() => ReactNode);
+  /** Shown beside the label. */
+  icon?: IconRef;
   /** Words a palette finds it by and a tagged bar or menu gathers it under. */
   tags?: readonly string[];
   /** One entry each in a bar, menu or palette; `run` receives the chosen one's params. */
@@ -25,7 +26,7 @@ export interface CommandOptions {
  * for the calling component's lifetime, so a menu, toolbar, palette or key
  * can run it. Callbacks and option functions may be new on every render: the
  * latest are read when used, and the action is replaced only when `id`,
- * `label`, `keys`, `tags` or `variants` change by value.
+ * `label`, `icon`, `keys`, `tags` or `variants` change by value.
  */
 export function useCommand(
   id: string,
@@ -39,7 +40,7 @@ export function useCommand(
   const variants = useStableByContent(options?.variants, sameValue);
   const hasEnabled = options?.enabled !== undefined;
   const hasActive = options?.active !== undefined;
-  const hasIcon = options?.icon !== undefined;
+  const icon = options?.icon;
   const action = useMemo<Action>(() => {
     const read = () => latest.current.options;
     const a: Action = {
@@ -52,14 +53,9 @@ export function useCommand(
     if (variants !== undefined) a.variants = variants;
     if (hasEnabled) a.enabled = () => read()?.enabled?.() ?? true;
     if (hasActive) a.active = () => read()?.active?.() ?? false;
-    if (hasIcon) {
-      a.icon = () => {
-        const icon = read()?.icon;
-        return typeof icon === 'function' ? icon() : icon;
-      };
-    }
+    if (icon !== undefined) a.icon = icon;
     return a;
-  }, [id, label, keys, tags, variants, hasEnabled, hasActive, hasIcon, latest]);
+  }, [id, label, icon, keys, tags, variants, hasEnabled, hasActive, latest]);
   useAction(action);
 }
 

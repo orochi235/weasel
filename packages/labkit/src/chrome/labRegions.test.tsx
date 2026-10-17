@@ -1,13 +1,14 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { describe, expect, it, vi } from 'vitest';
+import { icon } from '../icons.gen';
 import type { Instrument } from '../instrument/types';
 import { Lab } from '../lab/Lab';
 import { LabShell } from '../lab/LabShell';
 import type { LabChromeContext, LabContribution } from './labTypes';
 import { ToolbarRegion } from './regions/ToolbarRegion';
 
-const Glyph = () => <svg />;
+const Glyph = icon('ui:add');
 const bare: Instrument = {
   name: 'Bare',
   defaultConfig: () => ({}),

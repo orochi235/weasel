@@ -4,7 +4,7 @@
  * runs and what happens when it does; `ActionPresentation` is what a palette,
  * menu or toolbar renders. `Action` is both.
  */
-import type { ReactNode } from 'react';
+import type { IconRef } from '@weasel-js/icons';
 import type { CursorSpec } from '@weasel-js/cursor';
 import type { ActionDeps, Invoker } from './invoker';
 import type { BindingSource } from './binding';
@@ -33,10 +33,8 @@ export type ActionDisabledReason =
  */
 export interface ActionPresentation {
   label: string;
-  /** Inline-SVG icon for palette / toolbar surfaces. May be a static
-   *  `ReactNode` or a function (rare; useful for state-aware icons like a
-   *  "lock" toggle). */
-  icon?: ReactNode | (() => ReactNode);
+  /** The action's icon, by qualified name: `icon('group')` in the package that draws it. */
+  icon?: IconRef;
   /** Grouping key for palette/menu surfaces. Free-form string; the kit
    *  ships defaults for `'align'` (six edges/centers), `'distribute'`
    *  (two axes), and recommends `'pathfinder'` for boolean ops. */
@@ -67,7 +65,7 @@ export interface ActionVariant {
   key: string;
   label: string;
   /** Falls back to the action's own `icon`. */
-  icon?: ReactNode | (() => ReactNode);
+  icon?: IconRef;
   /** Tags this variant carries besides its action's, which it carries too. */
   tags?: readonly string[];
   /** Passed to `trigger`, and matched against each binding's

@@ -2,7 +2,7 @@ import type { MouseEvent, PointerEvent } from 'react';
 import type { MenuEntry } from '@weasel-js/menu';
 import { formatShortcut } from '../ToolPalette/formatShortcut';
 import { Caret } from '../Caret';
-import { actionIcon, type ActionIconSource } from '../../icons/actionIcon';
+import { resolveIcon } from '../../icons/resolveIcon';
 import { AccessLabel } from './AccessLabel';
 import s from './ContextMenu.module.css';
 
@@ -49,7 +49,7 @@ export function MenuRow(props: {
   };
   const content = (
     <>
-      <span className={s.icon} aria-hidden="true">{e.kind === 'item' && e.checked ? '✓' : actionIcon(e.icon as ActionIconSource)}</span>
+      <span className={s.icon} aria-hidden="true">{e.kind === 'item' && e.checked ? '✓' : resolveIcon(typeof e.icon === 'string' ? e.icon : undefined, 16)}</span>
       <AccessLabel label={e.label} access={e.access} />
       {e.kind === 'item' && e.shortcut && <span className={s.shortcut}>{formatShortcut(e.shortcut)}</span>}
       {e.kind === 'submenu' && <Caret className={s.caret} />}

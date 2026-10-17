@@ -11,9 +11,10 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { resolve } from 'node:path';
+import { weaselIcons } from '../icons-plugin/src/index.ts';
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), weaselIcons.vite({ mode: 'library' })],
   build: {
     lib: {
       entry: {

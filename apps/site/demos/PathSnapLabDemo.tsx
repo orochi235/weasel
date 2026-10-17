@@ -9,11 +9,11 @@ import {
   TrialSceneCanvas,
   useTrialScene,
 } from '@weasel-js/labkit';
-import { LineIcon, PenIcon, SelectIcon } from '@weasel-js/ui';
 import { useMemo } from 'react';
 import { strokeNode } from './pathEditLabScene';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
+import { icon } from '../icons.gen';
 
 const config = f.schema({
   kinds: f.group({
@@ -74,9 +74,9 @@ const snapInstrument = defineInstrument<State, Config>({
   tools: {
     initial: 'line',
     tools: [
-      { id: 'line', label: 'Line', icon: LineIcon, shortcut: '\\' },
-      { id: 'pen', label: 'Pen', icon: PenIcon, shortcut: 'P' },
-      { id: 'select', label: 'Select', icon: SelectIcon, shortcut: 'V' },
+      { id: 'line', label: 'Line', icon: icon('core:line'), shortcut: '\\' },
+      { id: 'pen', label: 'Pen', icon: icon('core:pen'), shortcut: 'P' },
+      { id: 'select', label: 'Select', icon: icon('core:select'), shortcut: 'V' },
     ],
   },
   render: (ctx) => <PathSnapTrial ctx={ctx} />,

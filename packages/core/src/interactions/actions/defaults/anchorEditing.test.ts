@@ -1,11 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createElement, type ReactElement } from 'react';
-import { renderToStaticMarkup } from 'react-dom/server';
 import { PathBuilder, type PolygonPath, pathToAnchors } from '@weasel-js/geom';
 import type { InvocationCtx, OngoingInvoker, ImmediateInvoker } from '@weasel-js/routing';
 import { makeEditAnchorsDep } from '../testUtils';
 import { areaSelectAction } from './areaSelect';
-import { NudgeAnchorsIcon } from './icons/anchorIcons';
+import { icons } from '../../../icons.table';
 import {
   cutPathAtAnchorAction,
   deleteAnchorsAction,
@@ -55,11 +53,11 @@ const ongoing = (a: { invoker?: unknown }) => a.invoker as OngoingInvoker;
 
 describe('nudgeAnchors', () => {
   it('draws the nudge glyph turned the way each action moves', () => {
-    const drawn = (icon: unknown) => renderToStaticMarkup((icon as () => ReactElement)());
+    const drawn = (ref: string | undefined) => icons.icons[(ref ?? '').replace(/^core:/, '')]?.body;
     expect(drawn(nudgeAnchorsRightAction.icon)).toContain('rotate(0 10 10)');
     expect(drawn(nudgeAnchorsUpAction.icon)).toContain('rotate(-90 10 10)');
     // With no direction, it points right.
-    expect(renderToStaticMarkup(createElement(NudgeAnchorsIcon))).toContain('rotate(0 10 10)');
+    expect(drawn('core:nudgeAnchors')).toContain('rotate(0 10 10)');
   });
 
   it('moves only the selected anchors', () => {

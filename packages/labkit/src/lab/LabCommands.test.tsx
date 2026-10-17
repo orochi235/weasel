@@ -2,9 +2,9 @@ import { act, fireEvent } from '@testing-library/react';
 import { type ActionsRegistry, evaluateActive, useActionsRegistry } from '@weasel-js/core';
 import { isApplePlatform } from '@weasel-js/gestures';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
-import { AddIcon } from '@weasel-js/ui';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import type { LabContribution } from '../chrome';
+import { icon } from '../icons.gen';
 import { defineInstrument } from '../instrument/defineInstrument';
 import { Lab } from './Lab';
 import { type LabContextValue, useLabContext } from './LabContext';
@@ -111,7 +111,7 @@ describe('a lab’s header commands', () => {
       {
         id: 'x-hello',
         region: 'header',
-        item: { icon: AddIcon, label: 'Hello', onActivate },
+        item: { icon: icon('ui:add'), label: 'Hello', onActivate },
       },
     ];
     await renderSettled(
@@ -131,7 +131,7 @@ describe('a lab’s header commands', () => {
         id: 'x-key',
         region: 'header',
         item: {
-          icon: AddIcon,
+          icon: icon('ui:add'),
           label: 'Key',
           onActivate,
           keys: { kind: 'key', key: 'j', mods: { mod: true } },
@@ -169,7 +169,7 @@ describe('a lab’s header commands', () => {
   it("leaves lab.zoom in place beside a header item whose id is 'zoom'", async () => {
     const onActivate = vi.fn();
     const labChrome: LabContribution[] = [
-      { id: 'zoom', region: 'header', item: { icon: AddIcon, label: 'Mine', onActivate } },
+      { id: 'zoom', region: 'header', item: { icon: icon('ui:add'), label: 'Mine', onActivate } },
     ];
     await renderSettled(
       <Lab instruments={[Staged]} defaultInstrument="Staged" labChrome={labChrome}>
@@ -190,7 +190,7 @@ describe('a lab’s header commands', () => {
         id: 'fg-info',
         region: 'header',
         item: {
-          icon: AddIcon,
+          icon: icon('ui:add'),
           label: 'Info',
           onActivate,
           keys: { kind: 'key', key: 'i', mods: { mod: true } },

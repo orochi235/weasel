@@ -11,6 +11,7 @@ import { demoSources } from './scripts/vite-demo-sources.ts';
 import { changelogs } from './scripts/vite-changelogs.ts';
 import { getStarted } from './scripts/vite-get-started.ts';
 import { packageDocs } from './scripts/vite-package-docs.ts';
+import { weaselIcons } from './packages/icons-plugin/src/index.ts';
 import { browserCommands } from './scripts/vitest-browser-commands.ts';
 import { browserDeps } from './scripts/vitest-browser-deps.ts';
 
@@ -81,6 +82,7 @@ export default defineConfig({
           changelogs({ root: import.meta.dirname }),
           getStarted({ root: import.meta.dirname }),
           packageDocs({ root: import.meta.dirname }),
+          weaselIcons.vite({ mode: 'app' }),
         ],
         test: {
           name: 'site',
@@ -123,7 +125,7 @@ export default defineConfig({
           // core runs in the `core` project above — it lived at the repo root
           // until the move into packages/, and this glob would otherwise
           // swallow its entire suite and run it twice.
-          exclude: ['packages/labkit/**', 'packages/forge/**', 'packages/core/**', ...VITE_SERVER_TESTS, '**/*.browser.test.{ts,tsx}', '**/node_modules/**'],
+          exclude: ['packages/labkit/**', 'packages/forge/**', 'packages/core/**', ...VITE_SERVER_TESTS, '**/*.build.test.ts', '**/*.browser.test.{ts,tsx}', '**/node_modules/**'],
         },
       },
       {
@@ -170,7 +172,7 @@ export default defineConfig({
           environment: 'node',
           pool: 'threads',
           testTimeout: 20_000,
-          include: VITE_SERVER_TESTS,
+          include: [...VITE_SERVER_TESTS, 'packages/icons-plugin/src/**/*.build.test.ts'],
         },
       },
       {
@@ -182,7 +184,7 @@ export default defineConfig({
         // doesn't inherit that config, so the plugin has to be added
         // here too or any test that imports a Bundle Inspector module
         // fails to resolve the virtual id at load time.
-        plugins: [react(), traitSchemasPlugin({ repoRoot: import.meta.dirname })],
+        plugins: [react(), traitSchemasPlugin({ repoRoot: import.meta.dirname }), weaselIcons.vite({ mode: 'app' })],
         test: {
           name: 'draw',
           environment: 'jsdom',

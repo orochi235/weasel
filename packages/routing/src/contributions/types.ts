@@ -22,9 +22,8 @@ export type HotkeyTrigger = 'space' | 'alt' | 'ctrl' | 'meta' | 'shift' | (strin
 export interface ToolPresentation {
   /** Human-readable label, distinct from the `id`. Falls back to `id`. */
   label?: string;
-  /** Inline-SVG icon component output: a static `ReactNode`, or a function
-   *  returning one. */
-  icon?: import('react').ReactNode | (() => import('react').ReactNode);
+  /** The tool's icon, by qualified name: `icon('rect')` in the package that draws it. */
+  icon?: import('@weasel-js/icons').IconRef;
   /** Palette grouping key. Tools sharing a group render contiguously
    *  with separators between groups. Free-form string; the kit
    *  recommends 'select' | 'shape' | 'draw' | 'type' | 'view'. */

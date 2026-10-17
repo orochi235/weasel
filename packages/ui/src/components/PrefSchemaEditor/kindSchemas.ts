@@ -16,6 +16,7 @@ import {
 import { replaceNode, nodeAt, type SchemaNode, type SchemaRoot } from './schemaEdit';
 import { containsCode, STUB } from './schemaExport';
 import { findType, NO_TYPES, typeNamed, type PrefTypes } from './types';
+import { actionChoice, registeredFacts, type RegisteredAction } from './registeredActionAttrs';
 
 /** One attribute of a kind, as the leaf that edits it. `required` keeps it on a leaf when it is emptied, and seeds
  *  it, from this leaf's `default`, in a new leaf of the kind. */
@@ -37,6 +38,8 @@ const strings = (name: string, description: string): PrefLeaf =>
   ({ kind: 'list', name, description, default: [], item: { kind: 'string', name: '', description: '', default: '' } }) as PrefLeaf;
 /** Text the code spells, which the editor sets in monospace. */
 const symbol = (name: string, description: string): PrefLeaf => ({ kind: 'symbol', name, description, default: '' });
+/** The attribute kind an `icon` is edited as: a picker over every registered icon. */
+export const ICON_KIND = 'icon';
 const symbols = (name: string, description: string): PrefLeaf =>
   ({ kind: 'list', name, description, default: [], item: symbol('', '') }) as PrefLeaf;
 /** The attribute kind a `showIf` or an `enableIf` is edited as: a `PrefCondition` over the schema's other leaves. */
@@ -58,7 +61,7 @@ const LEAF_BASE: KindAttrs = {
   enableIf: ENABLE_IF,
   block: flag('Block', 'Full width with no label row, for a control with its own chrome.'),
   heading: flag('In heading', 'Drawn in the heading of the group holding it, in place of a row. A boolean or an enum only.'),
-  icon: symbol('Icon', 'Glyph name in the host\'s icon set.'),
+  icon: { kind: ICON_KIND, name: 'Icon', description: 'An icon by qualified name, from the icon sets this app registered.', default: undefined } as PrefLeaf,
   pair: { kind: 'pair', name: 'Pair', description: 'The fields that share this one\'s row in compact property UIs, and what the row reads.', default: undefined },
   short: strings('Short names', 'Shorter forms of the name, longest first.'),
   absentIsDefault: flag('Absent is default', 'Where nothing is held, it reads as its default: for a node property whose reader does the same.'),
@@ -194,29 +197,6 @@ function autoAttrs(leaf: PrefLeaf): KindAttrs {
   if (!prefHoldsValue(leaf)) return {};
   const value = valueAttr(leaf, { name: 'Auto value', description: 'What it reads while auto, where nothing computes it. It need not be the default.' });
   return { ...AUTO_FLAGS, ...(value ? { autoValue: value } : {}) };
-}
-
-/** What an action pref's attributes are told of an action the host has registered. */
-export interface RegisteredAction {
-  key: string;
-  label: string;
-  group?: string;
-  tags?: readonly string[];
-  shortcut?: string;
-}
-
-/** What the registry says of the action a pref fires, which the pref does not hold and no row edits. */
-function registeredFacts(action: RegisteredAction | undefined): Array<[string, unknown]> {
-  if (!action) return [];
-  const facts: Array<[string, unknown]> = [['registered as', action.label], ['registered group', action.group], ['registered tags', action.tags?.join(', ')], ['shortcut', action.shortcut]];
-  return facts.filter(([, value]) => value !== undefined && value !== '');
-}
-
-/** The `action` attribute as a choice among the keys a host has, with the key the pref holds now if it is none of them. */
-function actionChoice(attr: PrefLeaf, actions: readonly RegisteredAction[], held: string | undefined): PrefLeaf {
-  const options = actions.map((a) => ({ value: a.key, label: `${a.label} (${a.key})` }));
-  if (held !== undefined && held !== '' && !actions.some((a) => a.key === held)) options.unshift({ value: held, label: `${held} (not registered)` });
-  return { kind: 'enum', name: attr.name, description: attr.description, default: undefined, clearable: true, options } as PrefLeaf;
 }
 
 const READOUT = flag('Readout', 'Drawn showing its value but not editable.');

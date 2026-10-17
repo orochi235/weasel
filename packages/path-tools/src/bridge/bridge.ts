@@ -5,8 +5,9 @@
  */
 import { type Action, ActionDisabledReason, type ImmediateInvoker } from '@weasel-js/routing';
 import {
-  anchorEditWouldChange, BridgeIcon, commitAnchorEdit, depOf, joinPathsCommand, joinSelectedAnchors, pathOperationTags,
+  anchorEditWouldChange, commitAnchorEdit, depOf, joinPathsCommand, joinSelectedAnchors, pathOperationTags,
 } from '@weasel-js/core';
+import { icon } from '../icons.gen';
 
 /** How long Bridge makes each handle, as a fraction of the gap, when its
  *  params name no `tension`. */
@@ -29,7 +30,7 @@ export const bridgePathsAction = joinPathsCommand(
   {
     id: 'bridgePaths',
     label: 'Bridge',
-    icon: BridgeIcon,
+    icon: icon('core:bridge'),
     // `code` too: with Shift held the key reads as `J`.
     defaultBinding: { kind: 'key', key: 'j', code: 'KeyJ', mods: { mod: true, shift: true } },
   },
@@ -49,7 +50,7 @@ export const bridgeAnchorsAction: Action & { requires: string[] } = {
   id: 'bridgeAnchors',
   label: 'Bridge anchors',
   tags: pathOperationTags('command'),
-  icon: BridgeIcon,
+  icon: icon('core:bridge'),
   group: 'anchors',
   defaultBinding: { kind: 'key', key: 'j', code: 'KeyJ', mods: { mod: true, shift: true } },
   eligible: { capability: 'edits-anchors' },

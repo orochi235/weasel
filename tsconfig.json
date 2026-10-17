@@ -36,6 +36,7 @@
       "@weasel-js/audio/testing/*": ["./packages/audio/src/testing/*"],
       "@weasel-js/bidi": ["./packages/bidi/src/index.ts"],
       "@weasel-js/core": ["./packages/core/src/index.ts"],
+      "@weasel-js/core/icons": ["./packages/core/src/import-shims/icons.ts"],
       "@weasel-js/core/math": ["./packages/core/src/import-shims/math.ts"],
       "@weasel-js/core/mesh": ["./packages/core/src/import-shims/mesh.ts"],
       "@weasel-js/core/move": ["./packages/core/src/import-shims/move.ts"],
@@ -75,9 +76,11 @@
       "@weasel-js/guides/resize": ["./packages/guides/src/resize.ts"],
       "@weasel-js/guides/insert": ["./packages/guides/src/insert.ts"],
       "@weasel-js/history": ["./packages/history/src/index.ts"],
-      "@weasel-js/menu": ["./packages/menu/src/index.ts"],
       "@weasel-js/hud": ["./packages/hud/src/index.ts"],
       "@weasel-js/hud/react": ["./packages/hud/src/react/index.ts"],
+      "@weasel-js/icons": ["./packages/icons/src/index.ts"],
+      "@weasel-js/icons-plugin": ["./packages/icons-plugin/src/index.ts"],
+      "@weasel-js/icons-plugin/virtual": ["./packages/icons-plugin/virtual.d.ts"],
       "@weasel-js/kernel3d": ["./packages/kernel3d/src/index.ts"],
       "@weasel-js/labkit": ["./packages/labkit/src/index.ts"],
       "@weasel-js/labkit/chrome": ["./packages/labkit/src/chrome/index.ts"],
@@ -97,12 +100,14 @@
       "@weasel-js/labkit/styles.css": ["./packages/labkit/src/styles.less"],
       "@weasel-js/labkit/loupe": ["./packages/labkit/src/loupe/index.ts"],
       "@weasel-js/loupe": ["./packages/loupe/src/index.ts"],
+      "@weasel-js/menu": ["./packages/menu/src/index.ts"],
       "@weasel-js/minimap": ["./packages/minimap/src/index.ts"],
       "@weasel-js/modes": ["./packages/modes/src/index.ts"],
       "@weasel-js/modes/presets/default": ["./packages/modes/src/presets/default.ts"],
       "@weasel-js/paint": ["./packages/paint/src/index.ts"],
       "@weasel-js/parallax": ["./packages/parallax/src/index.ts"],
       "@weasel-js/path-tools": ["./packages/path-tools/src/index.ts"],
+      "@weasel-js/path-tools/icons": ["./packages/path-tools/src/icons.table.ts"],
       "@weasel-js/prefs": ["./packages/prefs/src/index.ts"],
       "@weasel-js/prefs/react": ["./packages/prefs/src/react.ts"],
       "@weasel-js/prefs/vite": ["./packages/prefs/src/vite.ts"],
@@ -147,6 +152,7 @@
       "@weasel-js/theme/testing/*": ["./packages/theme/src/testing/*"],
       "@weasel-js/ui": ["./packages/ui/src/index.ts"],
       "@weasel-js/ui/components/*": ["./packages/ui/src/components/*/index.ts"],
+      "@weasel-js/ui/icons": ["./packages/ui/src/icons.table.ts"],
       "@weasel-js/ui/testing/*": ["./packages/ui/src/testing/*"],
       "core/*": ["./packages/core/src/core/*"],
       "features/*": ["./packages/core/src/features/*"],
@@ -154,7 +160,8 @@
       "interactions/*": ["./packages/core/src/interactions/*"],
       "tools/*": ["./packages/core/src/tools/*"],
       "canvas/*": ["./packages/core/src/canvas/*"],
-      "debug/*": ["./packages/core/src/debug/*"]
+      "debug/*": ["./packages/core/src/debug/*"],
+      "@draw/*": ["./apps/draw/src/*"]
     }
   },
   // `tests/perf/bench` is in here and the rest of `tests/` is not: the benches
@@ -162,7 +169,7 @@
   // core silently breaks them otherwise. The Playwright suites under
   // tests/e2e, the rest of tests/perf and tests/visual drive the app over a wire and
   // don't.
-  "include": ["apps", "tests/perf/bench", "packages/core/src", "packages/animator/src", "packages/ui/src", "packages/hud/src", "packages/theme/src", "packages/svg/src", "packages/geom/src", "packages/font/src", "packages/paint/src", "packages/text/src", "packages/text-dom/src","packages/history/src", "packages/menu/src", "packages/quantity/src", "packages/simulation/src", "packages/stroke/src", "packages/renderer/src", "packages/storage/src", "packages/prefs/src", "packages/registry/src", "packages/react/src", "packages/modes/src", "packages/gestures/src", "packages/d3/src", "packages/diagram/src", "packages/guides/src", "packages/labkit/src", "packages/labkit/examples", "packages/audio/src", "packages/kernel3d/src", "packages/parallax/src", "packages/minimap/src", "packages/symmetry/src", "packages/path-tools/src", "packages/forge/src", "packages/routing/src", "packages/cursor/src", "packages/bidi/src", "packages/loupe/src"],
+  "include": ["apps", "tests/perf/bench", "packages/core/src", "packages/animator/src", "packages/ui/src", "packages/hud/src", "packages/theme/src", "packages/svg/src", "packages/geom/src", "packages/font/src", "packages/paint/src", "packages/text/src", "packages/text-dom/src","packages/history/src", "packages/menu/src", "packages/quantity/src", "packages/simulation/src", "packages/stroke/src", "packages/renderer/src", "packages/storage/src", "packages/prefs/src", "packages/registry/src", "packages/icons/src", "packages/icons-plugin/src","packages/react/src", "packages/modes/src", "packages/gestures/src", "packages/d3/src", "packages/diagram/src", "packages/guides/src", "packages/labkit/src", "packages/labkit/examples", "packages/audio/src", "packages/kernel3d/src", "packages/parallax/src", "packages/minimap/src", "packages/symmetry/src", "packages/path-tools/src", "packages/forge/src", "packages/routing/src", "packages/cursor/src", "packages/bidi/src", "packages/loupe/src"],
   // Browser tests are typechecked by packages/tsconfig.json, which says why.
   "exclude": ["node_modules", "dist", "**/*.browser.test.ts", "**/*.browser.test.tsx"]
 }

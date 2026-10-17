@@ -1,7 +1,7 @@
 import { f } from '@weasel-js/labkit/config';
 import { Component, type ReactNode } from 'react';
 import { flushSync } from 'react-dom';
-import { createRoot } from 'react-dom/client';
+import { createKitRoot } from '../../kitIcons';
 import type { Channel } from '../../protocol/channel';
 import type { FromFrame, Globals, ToFrame } from '../../protocol/messages';
 import { describeSchema } from '../../protocol/schema';
@@ -61,7 +61,7 @@ export function startIndex(options: StartIndexOptions): () => void {
   const wrapper = document.createElement('div');
   wrapper.className = 'fg-frame fg-frame--fullscreen';
   container.append(wrapper);
-  const root = createRoot(wrapper);
+  const root = createKitRoot(wrapper, setup.icons);
   const globalsTarget = createGlobalsTarget(document.documentElement, ':root');
   let globals: Globals | null = null;
   let announced = false;

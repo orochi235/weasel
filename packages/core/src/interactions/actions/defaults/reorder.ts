@@ -1,12 +1,11 @@
 import { createReorderOp } from 'core/ops/reorder';
-import { createElement } from 'react';
-import { BringForwardIcon, BringToFrontIcon, SendBackwardIcon, SendToBackIcon } from './icons/editIcons';
 import type { Scene } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
 import type { Action } from '@weasel-js/routing';
 import { requiresSelection } from './requiresSelection';
+import { icon } from '../../../icons.gen';
 
 // ---------------------------------------------------------------------------
 // Shared helper
@@ -63,8 +62,8 @@ export const reorderForwardAction: Action & { requires: string[] } = {
   label: 'Bring',
   group: 'reorder',
   variants: [
-    { key: 'adjacent', label: 'Bring Forward', icon: createElement(BringForwardIcon), params: { distance: 'adjacent' } },
-    { key: 'extreme', label: 'Bring to Front', icon: createElement(BringToFrontIcon), params: { distance: 'extreme' } },
+    { key: 'adjacent', label: 'Bring Forward', icon: icon('bringForward'), params: { distance: 'adjacent' } },
+    { key: 'extreme', label: 'Bring to Front', icon: icon('bringToFront'), params: { distance: 'extreme' } },
   ],
   defaultBinding: [
     {
@@ -119,8 +118,8 @@ export const reorderBackwardAction: Action & { requires: string[] } = {
   label: 'Send',
   group: 'reorder',
   variants: [
-    { key: 'adjacent', label: 'Send Backward', icon: createElement(SendBackwardIcon), params: { distance: 'adjacent' } },
-    { key: 'extreme', label: 'Send to Back', icon: createElement(SendToBackIcon), params: { distance: 'extreme' } },
+    { key: 'adjacent', label: 'Send Backward', icon: icon('sendBackward'), params: { distance: 'adjacent' } },
+    { key: 'extreme', label: 'Send to Back', icon: icon('sendToBack'), params: { distance: 'extreme' } },
   ],
   defaultBinding: [
     {

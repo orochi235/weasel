@@ -1,51 +1,37 @@
 import { describe, it, expect } from 'vitest';
-import { createElement, type ReactNode } from 'react';
+import type { IconRef } from '@weasel-js/icons';
 import { collectIcons, collectBundles, collectRoutingTrait, collectPropertiesTrait, collectOpFactories, collectOpKinds, collectShapeTrait } from './registryData';
 import type { ActionEntry } from './registryEntries';
+import { icon } from '../icons.gen';
 import * as Weasel from '@weasel-js/core';
 import { defaultNodeRouting, defaultNodeProperties, type NodePropertiesEntry, type NodeRoutingEntry } from '@weasel-js/core';
 
 describe('registryData static collectors', () => {
-  it('collectIcons lists app icons alongside the actions\' glyphs', () => {
+  it('collectIcons lists every draw glyph alongside the actions\' glyphs', () => {
     const icons = collectIcons([]);
     const byId = new Map(icons.map((i) => [i.id, i]));
-    expect(byId.get('SettingsIcon')?.source).toBe('app');
+    expect(byId.get('draw:settings')?.source).toBe('app');
     for (const i of icons) {
       expect(i.kind).toBe('icon');
-      expect(typeof i.Component).toBe('function');
+      expect(i.ref).toBe(i.id);
     }
   });
 
-  it('collectIcons reads action glyphs off the actions, once each, under their export names', () => {
-    const entry = (id: string, items: { key: string; icon: ReactNode }[]): ActionEntry => ({
+  it('collectIcons reads action glyphs off the actions, once each, under their names', () => {
+    const entry = (id: string, items: { key: string; icon?: IconRef }[]): ActionEntry => ({
       kind: 'action', id, label: id, items: items.map((i) => ({ ...i, label: i.key })),
     });
     const icons = collectIcons([
-      entry('undo', [{ key: 'undo', icon: createElement(Weasel.UndoIcon) }]),
+      entry('undo', [{ key: 'undo', icon: icon('core:undo') }]),
       entry('flip', [
-        { key: 'flip:x', icon: createElement(Weasel.FlipXIcon) },
-        { key: 'flip:y', icon: createElement(Weasel.FlipYIcon) },
+        { key: 'flip:x', icon: icon('core:flipX') },
+        { key: 'flip:y', icon: icon('core:flipY') },
       ]),
-      entry('app.thing', [{ key: 'app.thing', icon: createElement(Weasel.FlipYIcon) }]),
-      entry('app.local', [{ key: 'app.local', icon: createElement(() => null) }]),
-      entry('app.bare', [{ key: 'app.bare', icon: undefined }]),
+      entry('app.thing', [{ key: 'app.thing', icon: icon('core:flipY') }]),
+      entry('app.bare', [{ key: 'app.bare' }]),
     ]).filter((i) => i.source === 'action');
-    expect(icons.map((i) => i.id)).toEqual(['UndoIcon', 'FlipXIcon', 'FlipYIcon', 'app.local']);
+    expect(icons.map((i) => i.id)).toEqual(['core:undo', 'core:flipX', 'core:flipY']);
     expect(icons[2]?.actions).toEqual(['flip:y', 'app.thing']);
-    expect(icons[0]?.Component).toBe(Weasel.UndoIcon);
-  });
-
-  it('collectIcons names the align and distribute glyphs by their export', () => {
-    const names = [
-      'AlignLeftIcon', 'AlignCenterXIcon', 'AlignRightIcon',
-      'AlignTopIcon', 'AlignCenterYIcon', 'AlignBottomIcon',
-      'DistributeHorizontalIcon', 'DistributeVerticalIcon',
-    ] as const;
-    const icons = collectIcons(names.map((name): ActionEntry => ({
-      kind: 'action', id: name, label: name,
-      items: [{ key: `key:${name}`, label: name, icon: createElement(Weasel[name]) }],
-    }))).filter((i) => i.source === 'action');
-    expect(icons.map((i) => i.id)).toEqual(names);
   });
 
   it('collectBundles returns the three named tool bundles', () => {

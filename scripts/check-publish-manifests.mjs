@@ -22,6 +22,7 @@ function advertisedPaths(manifest) {
   for (const field of ['main', 'module', 'types', 'typings', 'style', 'browser', 'unpkg']) {
     add(manifest[field]);
   }
+  add(manifest.weaselIcons?.table);
   if (typeof manifest.bin === 'string') add(manifest.bin);
   else if (manifest.bin) for (const v of Object.values(manifest.bin)) add(v);
 

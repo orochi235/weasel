@@ -283,8 +283,8 @@ Priority tags:
   leaves a thousandth of the subpath (`packages/geom/src/paths/lengthenPathEnd.ts`); an end is
   pressed within 8 screen px, the cursor is `penPlus`, nothing previews where a drag will land
   before it starts, and the end anchor is left selected after a drag
-  (`packages/path-tools/src/lengthen/lengthenPath.ts`). Its toolbar glyph, `LengthenIcon`, has not
-  been proofed large.
+  (`packages/path-tools/src/lengthen/lengthenPath.ts`). Its toolbar glyph, `path-tools:lengthen`, has
+  not been proofed large.
 - **(P2) Tune the Smudge brush hands-on, with the maintainer driving.** First-draft brush radius
   (40 screen px) and strength (0.6) (`DEFAULT_SMUDGE_RADIUS_PX`, `DEFAULT_SMUDGE_STRENGTH` in
   `packages/path-tools/src/smudge/smudgeBrush.ts`), the falloff `(1 − (d/r)²)²` and the subdivision threshold of a
@@ -390,17 +390,11 @@ Priority tags:
   a drag and an Alt-drag clone measure on screen. So inside a group drawn turned, Cmd+D after a
   drag steps in a different direction from the drag. Recording the move in world space and
   mapping it through each node's parent on replay would make the two agree.
-- **(P3) The path commands have no icons.** `simplifyPath`, `offsetPath`, `snipAtCrossings`,
-  `joinPaths`, `bridgePaths`, `joinAnchors`, `bridgeAnchors`, `averageAnchors`, `resamplePath`,
-  `addExtremeAnchors`, the anchor selection commands, and `extendToMeet` show as text in draw's
-  bar, as do `setPathStart`, `reversePath`, `convertSegments`, and draw's own
-  `view.pathDirection` toggle; `useTrimTool` and `useExtendTool` borrow `SliceIcon`, and
-  `useSmudgeBrushTool` has none. `expandWarp` and `configureWarp` have none
-  either, and `useDistortTool`, `useEnvelopeTool`, and `usePuppetTool` give no
-  `presentation.icon`: their labs borrow `FitStretchIcon`, `GridIcon`, and `PinIcon` from
-  `@weasel-js/ui`.
-  `RetractHandlesIcon`, `SymmetricHandlesIcon`, `SimplifyBrushIcon`, and `HarmonizeIcon`
-  (`defaults/icons/anchorIcons.tsx`) are first drafts, not proofed at high resolution.
+- **(P3) Some path commands have no icons.** `resamplePath`, the anchor selection commands and
+  draw's own `view.pathDirection` toggle show as text in draw's bar. The warp labs' tool lists
+  borrow `ui:fitStretch`, `ui:grid` and `ui:pin` rather than the warp tools' own glyphs.
+  `core:retractHandles`, `core:symmetricHandles`, `core:simplifyBrush` and `core:harmonize`
+  (`packages/core/icons/anchor.mjs`) are first drafts, not proofed at high resolution.
 - **(P2) Puppet warp bends by straight-line distance, not through the shape.** `rigidPuppetMap`
   (`packages/geom/src/warp/puppet.ts`) weights each pin by its distance across the plane, so two
   limbs that nearly touch move together when a pin on one is dragged. As-rigid-as-possible over
@@ -540,12 +534,12 @@ Priority tags:
   `direction` they light the edge they resolve to; under `auto`, where each paragraph takes its
   own from its first strong character, they light nothing. A click on any segment still writes an
   edge over the reading-order value. Giving them segments of their own takes two glyphs, which
-  have to be drawn and proofed in a browser (`packages/ui/scripts/icons/text.mjs`).
+  have to be drawn and proofed in a browser (`packages/core/icons/text.mjs`).
 
 - **(P3) Icons: the size family and `orbit` collapse at 16px 1x.** `taller`, `shorter`, `wider`,
   `narrower`, `tallest` and `shortest` carry two short arrows each, and at 16 device pixels the
   heads close up into dots; `orbit`'s head does the same against its ring. All resolve at 2x.
-  They want heads on the pixel grid, or fewer of them (`packages/ui/scripts/icons/size.mjs`,
+  They want heads on the pixel grid, or fewer of them (`packages/ui/icons/size.mjs`,
   `camera.mjs`). The straight arrows drawn before the 45-degree rule in CLAUDE.md ("Drawing
   icons") still use spreads of 36 to 42.
 
@@ -558,6 +552,76 @@ Priority tags:
   color pages empty together with the field pages when either set fills (`reclaim` in
   `packages/font/src/dynamic/bakeQueue.ts`), and one 384px emoji takes the room of sixty at 48.
   Whether the result is sharp can only be read in a browser.
+
+- **(P4) `gen:icons` writes `apps/site/icons.manifest.json`, and nothing reads it.** It lists
+  every drawn glyph's namespace, name, group and tags. Either something reads it or the generator
+  stops writing it (`packages/icons/scripts/gen-icons.mjs`).
+
+---
+
+## Icons
+
+How the registry and the build plugin work is in `docs/icons.md`.
+
+- **(P3) Nothing stops a package importing another package's source by relative path.**
+  `@weasel-js/icons-plugin` reaches `../../icons/src/names` on purpose (the plugin loads during
+  `@weasel-js/icons`' own build, before its `dist` exists), and `check:imports` passes it only
+  because `scripts/check-declared-imports.mjs` skips relative specifiers. Allowlist that one import
+  there and fail any other relative specifier that leaves its package.
+- **(P3) The plugin's dev table discovery skips every directory named `fixtures`.** `SKIP` in
+  `packages/icons-plugin/src/tables.ts` is meant for the plugin's own test fixtures, but it also
+  hides a consumer app's `fixtures/` directory, whose table then appears in dev only once one of
+  its modules has been transformed. Skip the plugin's fixture path, not the name.
+- **(P3) A variant that fails to load says nothing about why.** `createVariants` in
+  `packages/icons/src/variants.ts` catches the loader's rejection and only sets `failed`. Log the
+  error with `console.error` in development before setting the state.
+
+- **(P3) Changing `IconRegistryProvider`'s `icons` only ever adds.** The tables given on mount
+  seed the registry in its constructor and are never released, so a new `icons` array registers
+  alongside them instead of replacing them
+  (`packages/core/src/iconRegistry/IconRegistryProvider.tsx`). Register the first tables through
+  the same effect that registers later ones, so each change releases what it replaces.
+
+- **(P3) `WeaselProvider` remounts its whole tree when `icons` or `iconVariants` comes or goes.**
+  It wraps the tree in `IconRegistryProvider` when either is set and in
+  `IconRegistryProviderIfRoot` otherwise (`packages/core/src/WeaselProvider.tsx`), so the element
+  type above the tree changes. Keep one wrapper that decides inside whether to mount a registry.
+
+- **(P3) The build plugin never forgets refs or tables between watch builds.** `refs` and `tables`
+  in `packages/icons-plugin/src/index.ts` live for the plugin's lifetime, so under `vite build
+  --watch` a name deleted from the source still ships, and one deleted from both the source and its
+  table fails the rebuild. Clear both in `buildStart` outside dev.
+
+- **(P3) The build plugin skips some imports of `icon()` without a warning.** `rewriteIconCalls`
+  (`packages/icons-plugin/src/rewrite.ts`) follows only a named import from an `icons.gen` module.
+  A namespace import (`g.icon('x')`), a default import, or a module that re-exports `icon` leaves
+  its calls unrewritten, so their glyphs miss a trimmed build. Warn on each of those forms.
+
+- **(P3) The build plugin takes a `dist/package.json` stub for a package root.** `packageDirFinder`
+  (`packages/icons-plugin/src/tables.ts`) stops at the nearest `package.json`. A package that
+  ships `{ "type": "module" }` in `dist` has no `weaselIcons` field there, so its table is never
+  read. Keep walking up past a manifest with no `name`.
+
+- **(P3) Library mode re-annotates only the refs of a chunk's own modules.** `annotate.ts`
+  (`packages/icons-plugin/src/annotate.ts`) matches a chunk's literals against refs recorded for
+  the modules in that chunk. If rolldown inlines a constant into another chunk, that literal ships
+  unannotated and an app build drops its glyph. Match against every ref the build recorded.
+
+- **(P3) Library mode's lost-annotation check fires only when every annotation is gone.**
+  `stripped()` in `packages/icons-plugin/src/annotate.ts` fails a build whose output holds no
+  `@icon` at all. Check each recorded ref instead, so losing some of them fails too.
+
+- **(P3) PrefSchemaEditor's icon picker is missing keyboard and state handling.** `IconAttrField`
+  (`packages/ui/src/components/PrefSchemaEditor/IconAttrField.tsx`) has no Home, End, PageUp or
+  PageDown; a click on a cell moves focus off the listbox, so the arrows stop working; it ignores
+  `ctx.mixed` across a multi-selection; and a value no table holds shows with no mark. Add the
+  keys, keep focus on the listbox, show the mixed state, and mark an unregistered value.
+
+- **(P3) Tests that draw icons mount registries in different ways, or not at all.** Many ui and
+  labkit tests render with no registry and print missing-icon warnings. Forge's
+  `packages/forge/src/kitIcons.tsx` and ui's `packages/ui/src/testing/withIcons.tsx` each list
+  core's and ui's tables, and several tests list them again. Make one helper that holds the list,
+  and wrap those tests in it.
 
 ---
 
@@ -747,7 +811,7 @@ Priority tags:
 
 ### Timelines and rigging
 
-- **(P3) The bone and weight tools have no icon and are not `defaultTools` ids** — they are
+- **(P3) The bone and weight tools are not `defaultTools` ids** — they are
   mounted as `tools={{ bone, weight }}`, as slice is.
 
 ### Combining animations
@@ -859,10 +923,9 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 - **(P2) A bar can lead with an icon, not only its label.** `lead: 'label'` landed 2026-10-16
   (`PrefBarLead` in `packages/prefs/src/groups.ts`). The icon form needs the group to name a glyph
-  as data, which is what the icon registry on the `icon-registry` branch (`@weasel-js/icons`,
-  `namespace:name`) provides: add `icon?: string` to `PrefGroup`/`PrefSection`, `'icon'` to
-  `PrefBarLead`, resolve it through the registry in `BarLayout`, and offer both in the asset
-  editor. A `menu` group's button could take the same `icon`.
+  as data: add `icon?: IconRef` to `PrefGroup`/`PrefSection`, as a pref leaf's `icon` already is
+  (`docs/icons.md`), `'icon'` to `PrefBarLead`, draw it with `resolveIcon` in `BarLayout`, and
+  offer both in the asset editor. A `menu` group's button could take the same `icon`.
 
 - **(P3) ui's `ShortcutInput` is a third copy of the shortcut shape.**
   `packages/ui/src/components/ToolPalette/formatShortcut.ts` describes what `@weasel-js/menu`'s

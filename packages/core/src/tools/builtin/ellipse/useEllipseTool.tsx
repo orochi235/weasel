@@ -1,10 +1,10 @@
 import { useMemo } from 'react';
 import { defineTool } from '../../overlayBinding';
-import { EllipseIcon } from '../../../icons';
 import type { Tool } from '../../overlayBinding';
 import { INSERT_REPOSITION_BINDING } from 'interactions/actions/insert/repositionAction';
 import { insertBindingBehaviors, type InsertToolOptions } from '../shared/insertToolOptions';
 import { cursorFor } from '@weasel-js/cursor';
+import { icon } from '../../../icons.gen';
 
 /**
  * Drag-to-draw ellipse tool. Mirrors `useRectTool`: the `drag` binding
@@ -25,7 +25,7 @@ export function useEllipseTool(options: InsertToolOptions = {}): Tool {
         presentation: {
           label: 'Ellipse',
           group: 'shape',
-          icon: <EllipseIcon />,
+          icon: icon('ellipse'),
         },
         bindings: [
           {

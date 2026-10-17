@@ -1,5 +1,4 @@
 import type { MouseEventHandler } from 'react';
-import { LockIcon } from '../../icons';
 import { CloseButton } from '../CloseButton';
 import { Disclosure } from '../Disclosure';
 import { DragGrip } from '../DragGrip';
@@ -7,6 +6,8 @@ import rows from '../ItemList/ItemList.module.css';
 import type { Shared } from './LayerList';
 import type { LayerListItem } from './layerListProps';
 import s from './LayerList.module.css';
+import { icon } from '../../icons.gen';
+import { Icon } from '../../icons/Icon';
 
 interface RowProps {
   item: LayerListItem;
@@ -106,7 +107,7 @@ function Grip({ item, reorder }: { item: LayerListItem; reorder: boolean }) {
   if (item.locked) {
     return (
       <span className={s.lock} role="img" aria-label="Locked">
-        <LockIcon size={12} />
+        <Icon name={icon('lock')} size={12} />
       </span>
     );
   }

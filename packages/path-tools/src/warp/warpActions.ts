@@ -4,7 +4,6 @@
  * `configureWarp` work on whatever warp the selection holds and ship with
  * the `paths` preset.
  */
-import { createElement } from 'react';
 import {
   type Action, type ActionDeps, ActionDisabledReason, type BindingOpts, type ImmediateInvoker, type InvocationCtx, type OngoingHandle, resolveParams,
 } from '@weasel-js/routing';
@@ -12,12 +11,12 @@ import { createEmitter } from '@weasel-js/registry';
 import {
   applyToPoint, invert, moveWarpControl, pathWarpMap, unwarpPoint, warpControls, type Point,
 } from '@weasel-js/geom';
-import { commitOps, createSetDataOp, type Op, reshapeTo, selectedPathNodes, pathOperationTags, TuneIcon } from '@weasel-js/core';
+import { commitOps, createSetDataOp, type Op, reshapeTo, selectedPathNodes, pathOperationTags } from '@weasel-js/core';
 import { heldPathWarpOf, resolvePathWarp, withoutPathWarp } from './pathWarp';
-import { ExpandIcon } from '../icons';
 import {
   storeWarp, WARP_LABELS, warpTargets, withWarpSettings, type WarpKind, type WarpSettings, type WarpTarget,
 } from './warpTargets';
+import { icon } from '../icons.gen';
 
 /** What a press on a warp control hands the drag that follows. */
 export interface WarpHandleScratch {
@@ -210,7 +209,7 @@ export function createWarpGrabAction(kind: WarpKind): Action {
 export const expandWarpAction: Action = {
   id: 'expandWarp',
   label: 'Expand Warp',
-  icon: ExpandIcon,
+  icon: icon('expand'),
   tags: pathOperationTags('command'),
   group: 'path',
   requires: REQUIRES,
@@ -239,7 +238,7 @@ export const expandWarpAction: Action = {
 export const configureWarpAction: Action = {
   id: 'configureWarp',
   label: 'Warp Settings',
-  icon: createElement(TuneIcon),
+  icon: icon('core:tune'),
   tags: pathOperationTags('command'),
   group: 'path',
   requires: REQUIRES,

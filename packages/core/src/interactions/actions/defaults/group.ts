@@ -1,6 +1,4 @@
 import type { Node, NodeId } from 'core/scene/types';
-import { createElement } from 'react';
-import { GroupIcon, UngroupIcon } from './icons/editIcons';
 import type { Op } from 'core/ops/types';
 import { createInsertOp } from 'core/ops/create';
 import { createReparentOp } from 'core/ops/reparent';
@@ -13,6 +11,7 @@ import { ActionDisabledReason, type Action } from '@weasel-js/routing';
 import { requiresSelection } from './requiresSelection';
 import { scenePoseFrame } from '../poseFrame';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
+import { icon } from '../../../icons.gen';
 
 /**
  * Creates a structural `ContainerNode` and reparents the current selection
@@ -31,7 +30,7 @@ import { defaultCommitAdapter } from '../defaultCommitAdapter';
 export const groupAction: Action & { requires: string[] } = {
   id: 'group',
   label: 'Group',
-  icon: createElement(GroupIcon),
+  icon: icon('group'),
   group: 'structure',
   defaultBinding: { kind: 'key', key: 'g', mods: { mod: true } },
   eligible: { capability: 'edits-page' },
@@ -129,7 +128,7 @@ export const groupAction: Action & { requires: string[] } = {
 export const ungroupAction: Action & { requires: string[] } = {
   id: 'ungroup',
   label: 'Ungroup',
-  icon: createElement(UngroupIcon),
+  icon: icon('ungroup'),
   group: 'structure',
   defaultBinding: { kind: 'key', key: 'g', mods: { mod: true, shift: true } },
   eligible: { capability: 'edits-page' },

@@ -1,9 +1,10 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import { icon } from '../../icons.gen';
 import type { TrialChromeContext, TrialContribution } from '../types';
 import { ToolbarRegion } from './ToolbarRegion';
 
-const Glyph = () => <svg data-testid="glyph" />;
+const Glyph = icon('ui:add');
 
 const ctx = { trialId: 't1' } as unknown as TrialChromeContext;
 

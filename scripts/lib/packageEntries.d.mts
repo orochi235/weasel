@@ -5,6 +5,7 @@ export interface PackageEntry {
   types: string | null;
 }
 export const TESTING: string;
+export const APP_SOURCES: Record<string, string>;
 export function packageEntries(packageDir: string): PackageEntry[];
 export function workspaceEntries(
   repoRoot: string,

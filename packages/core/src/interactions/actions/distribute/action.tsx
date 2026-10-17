@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { IconRef } from '@weasel-js/icons';
 import type { Scene } from 'core/scene/types';
 import type { PoseDescriptor } from '../resize/geometry';
 import { poseDescriptorOf } from '../poseDescriptorDep';
@@ -11,13 +11,13 @@ import type { Action } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { ImmediateInvoker } from '@weasel-js/routing';
-import { DistributeHorizontalIcon, DistributeVerticalIcon } from '../defaults/icons/distributeIcons';
+import { icon } from '../../../icons.gen';
 
 const ID_FOR: Record<DistributeAxis, string> = { x: 'distribute.horizontal', y: 'distribute.vertical' };
 const LABEL_FOR: Record<DistributeAxis, string> = { x: 'Distribute Horizontally', y: 'Distribute Vertically' };
-const ICON_FOR: Record<DistributeAxis, ReactNode> = {
-  x: <DistributeHorizontalIcon />,
-  y: <DistributeVerticalIcon />,
+const ICON_FOR: Record<DistributeAxis, IconRef> = {
+  x: icon('distributeHorizontal'),
+  y: icon('distributeVertical'),
 };
 
 // ---------------------------------------------------------------------------

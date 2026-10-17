@@ -1,5 +1,6 @@
 import { harmonizeAnchors } from '@weasel-js/geom';
-import { HarmonizeIcon, makeHandleCommand } from '@weasel-js/core';
+import { makeHandleCommand } from '@weasel-js/core';
+import { icon } from '../icons.gen';
 
 /**
  * Make the selected smooth anchors curvature-continuous by adjusting their
@@ -8,7 +9,7 @@ import { HarmonizeIcon, makeHandleCommand } from '@weasel-js/core';
 export const harmonizeAnchorsAction = makeHandleCommand(
   'harmonizeAnchors',
   'Harmonize curvature',
-  <HarmonizeIcon />,
+  icon('core:harmonize'),
   harmonizeAnchors,
   'selectedOrAll',
 );

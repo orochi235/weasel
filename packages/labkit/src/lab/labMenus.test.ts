@@ -1,7 +1,7 @@
 import { type PrefGroup, pref } from '@weasel-js/prefs';
-import { AddIcon } from '@weasel-js/ui';
 import { describe, expect, it } from 'vitest';
 import type { LabContribution } from '../chrome/labTypes';
+import { icon } from '../icons.gen';
 import type { InstrumentList } from '../instrument/types';
 import { labMenuBar } from './labMenus';
 
@@ -14,7 +14,7 @@ const make = (name: string, title?: string) => ({
 });
 const ONE: InstrumentList = [make('Stub')];
 const TWO: InstrumentList = [make('a.b', 'Dotted'), make('Plain')];
-const item = (label: string) => ({ icon: AddIcon, label, onActivate: () => {} });
+const item = (label: string) => ({ icon: icon('ui:add'), label, onActivate: () => {} });
 
 const base = { instruments: ONE, addTrial: true, zoom: true, header: [] as LabContribution[] };
 const menu = (bar: PrefGroup, key: string) => bar.children[key] as PrefGroup;

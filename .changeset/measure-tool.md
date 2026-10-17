@@ -9,7 +9,7 @@ A measurement is a leaf on an annotation layer whose `data.measure` holds its tw
 
 `createMeasurements({ layer })` names the layer and holds what is not the document's: which measurement is picked, and the one a measure drag is drawing. Give the same object to:
 
-- `useMeasureTool({ measurements, angleStep? })` (key M, `MeasureIcon`): a drag adds a measurement, both ends through the `snap` dep and Shift holding the angle to `angleStep` (default 15°), and picks it; a click picks the measurement under it; Escape drops the pick and Delete removes it.
+- `useMeasureTool({ measurements, angleStep? })` (key M, icon `core:measure`): a drag adds a measurement, both ends through the `snap` dep and Shift holding the angle to `angleStep` (default 15°), and picks it; a click picks the measurement under it; Escape drops the pick and Delete removes it.
 - `measurementsContribution(scene, measurements)`, installed with `<SceneCanvas ambient>`: under every tool, a click on a measurement picks it without touching the content selection, a drag on the picked one's end moves that end, and a drag anywhere else on one carries it. Its commands, in the `measure` group: `measure.moveBy` moves the content selection by the current measurement's offset and `measure.rotateBy` turns it about its center the way the line goes, each one undo step Transform Again repeats; `measure.delete` and `measure.clear` remove one or all. The current measurement is the picked one, else the newest.
 - `<MeasureReadout scene measurements>` in `@weasel-js/ui`: the current measurement's distance, offset, and angle, with Move by, Rotate by, Delete, and Clear all.
 

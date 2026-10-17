@@ -1,0 +1,24 @@
+{
+  "name": "@weasel-js/icons",
+  "version": "1.10.1",
+  "description": "Namespaced icon names and the icon registry. No React, no DOM, no glyphs of its own.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": { "import": "./dist/index.js", "types": "./dist/index.d.ts" },
+    "./package.json": "./package.json"
+  },
+  "author": "orochi235",
+  "homepage": "https://orochi235.github.io/weasel/",
+  "repository": { "type": "git", "url": "git+https://github.com/orochi235/weasel.git", "directory": "packages/icons" },
+  "bugs": { "url": "https://github.com/orochi235/weasel/issues" },
+  "engines": { "node": ">=22" },
+  "files": ["dist", "README.md", "LICENSE"],
+  "scripts": { "build": "tsup" },
+  "dependencies": { "@weasel-js/registry": "1.10.1" },
+  "publishConfig": { "access": "public", "provenance": true }
+}

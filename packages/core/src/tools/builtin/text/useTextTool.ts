@@ -1,13 +1,14 @@
-import { useMemo, createElement } from 'react';
+import { useMemo } from 'react';
+import type { IconRef } from '@weasel-js/icons';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { defineTool } from '../../overlayBinding';
 import type { Tool } from '../../overlayBinding';
 import { insertBindingBehaviors, type InsertToolOptions } from '../shared/insertToolOptions';
-import { TextIcon } from '../../../icons';
+import { icon } from '../../../icons.gen';
 
 const PRESENTATION = {
   label: 'Text',
-  icon: createElement(TextIcon),
+  icon: icon('text'),
   group: 'type',
 };
 
@@ -47,12 +48,12 @@ export function useTextTool(options: InsertToolOptions = {}): Tool {
 const PERCENT = { scale: 0.01, precision: 1, suffix: '%' };
 
 /** A run flag: on or off per character, drawn as one segment of a bar. */
-const flag = (name: string, icon: string) =>
+const flag = (name: string, glyph: IconRef) =>
   ({
     kind: 'boolean',
     name,
     description: `${name} for the characters in the range.`,
-    icon,
+    icon: glyph,
     control: 'toggle',
     default: false,
   }) as const;
@@ -72,13 +73,13 @@ useTextTool.options = {
   description: 'Character styling for the selected range.',
   children: {
     bold: {
-      ...flag('Bold', 'bold'),
+      ...flag('Bold', icon('bold')),
       pair: { with: ['italic', 'underline', 'strikethrough', 'overline'], label: 'Character style' },
     },
-    italic: flag('Italic', 'italic'),
-    underline: flag('Underline', 'underline'),
-    strikethrough: flag('Strikethrough', 'strikethrough'),
-    overline: flag('Overline', 'overline'),
+    italic: flag('Italic', icon('italic')),
+    underline: flag('Underline', icon('underline')),
+    strikethrough: flag('Strikethrough', icon('strikethrough')),
+    overline: flag('Overline', icon('overline')),
     // Clearable: the two values are exclusive *and* absent is a third state,
     // so clicking the lit segment turns the script off.
     script: {
@@ -89,8 +90,8 @@ useTextTool.options = {
       clearable: true,
       default: undefined,
       options: [
-        { value: 'super', label: 'Superscript', icon: 'superscript' },
-        { value: 'sub', label: 'Subscript', icon: 'subscript' },
+        { value: 'super', label: 'Superscript', icon: icon('superscript') },
+        { value: 'sub', label: 'Subscript', icon: icon('subscript') },
       ],
     },
     textTransform: {
@@ -163,7 +164,7 @@ useTextTool.options = {
       kind: 'boolean',
       name: 'No fill',
       description: 'Draw the range with no fill.',
-      icon: 'paintNone',
+      icon: icon('paintNone'),
       control: 'toggle',
       default: false,
     },

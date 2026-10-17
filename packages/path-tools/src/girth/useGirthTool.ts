@@ -1,13 +1,13 @@
-import { createElement, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useLatest } from '@weasel-js/react';
 import { createEmitter } from '@weasel-js/registry';
 import type { ToolKeybinding } from '@weasel-js/routing';
 import { defineTool, type Tool } from '@weasel-js/core';
-import { GirthIcon } from '../icons';
 import {
   createGirthActions, GIRTH_CLEAR_ID, GIRTH_DRAG_ID, GIRTH_HOVER_ID, GIRTH_UNHOVER_ID, type GirthEnv, type GirthFocus,
 } from './girthActions';
 import { createGirthOverlay } from './girthOverlay';
+import { icon } from '../icons.gen';
 
 /** Options for `useGirthTool`. */
 export interface UseGirthToolOptions {
@@ -57,7 +57,7 @@ export function useGirthTool(options: UseGirthToolOptions = {}): Tool {
     capabilities: ['edits-page'],
     hookName: 'useGirthTool',
     cursor: 'crosshair',
-    presentation: { label: 'Girth', group: 'shape', icon: createElement(GirthIcon) },
+    presentation: { label: 'Girth', group: 'shape', icon: icon('girth') },
     ...(keybinding === null ? {} : { keybinding: keybinding ?? { key: 'W', shift: true } }),
     actions,
     overlay,

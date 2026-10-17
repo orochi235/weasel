@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { actionItems, actionShortcuts, useActionsRegistry, type ActionItem } from '@weasel-js/core';
 import type { PrefAction } from '@weasel-js/prefs';
-import { namedGlyph } from '../../icons/namedGlyph';
+import { resolveIcon } from '../../icons/resolveIcon';
 import { actionIcon } from '../../icons/actionIcon';
 import { formatShortcut } from '../ToolPalette/formatShortcut';
 import { useActionStates } from '../ActionBar/useActionStates';
@@ -55,7 +55,7 @@ export function useLeafAction(leaf: PrefAction, path: string, disabled = false):
   }, []);
 
   const label = leaf.label ?? (leaf.name !== '' ? leaf.name : (item?.label ?? ''));
-  const icon = namedGlyph(leaf.icon, 16) ?? (item ? actionIcon(item.icon) : undefined);
+  const icon = resolveIcon(leaf.icon, 16) ?? (item ? actionIcon(item.icon) : undefined);
 
   if (key !== undefined) {
     return {

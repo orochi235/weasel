@@ -24,7 +24,6 @@
  * path-edit mode. See `anchorEditing.test.ts`.
  */
 
-import { createElement } from 'react';
 import type { Action } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import type { ActionDeps } from '@weasel-js/routing';
@@ -45,7 +44,7 @@ import { selectionAfterAnchorPress } from '../edit-anchors/action';
 import { deleteSelectedMark, markUnder } from './pathEditMarks';
 import { inPlane, editingLayer } from '../planeInput';
 import { NUDGE_KEY, NUDGE_LABEL, nudgeDelta, type NudgeDirection } from './nudgeSteps';
-import { NudgeAnchorsIcon } from './icons/anchorIcons';
+import { icon } from '../../../icons.gen';
 import { pathEditToolActive } from './pathEditTools';
 import { pathOperationTags } from '../pathGestureTags';
 
@@ -173,6 +172,13 @@ export const selectAnchorAction: Action & { requires: string[] } = inPlane({
   enabled: plainAnchorEditing,
 }, editingLayer);
 
+const NUDGE_ICON = {
+  right: icon('nudgeAnchors'),
+  up: icon('nudgeAnchorsUp'),
+  down: icon('nudgeAnchorsDown'),
+  left: icon('nudgeAnchorsLeft'),
+} as const;
+
 /**
  * Move the selected anchors by one step. Shift multiplies the step. Every
  * keystroke is its own history entry.
@@ -182,7 +188,7 @@ function makeNudgeAnchorsAction(dir: NudgeDirection): Action & { requires: strin
     id: `nudgeAnchors.${dir}`,
     label: `Nudge Anchors ${NUDGE_LABEL[dir]}`,
     group: 'nudgeAnchors',
-    icon: () => createElement(NudgeAnchorsIcon, { dir }),
+    icon: NUDGE_ICON[dir],
     defaultBinding: [
       { spec: { kind: 'key', key: NUDGE_KEY[dir] },                        opts: { params: { magnitude: 'small' } } },
       { spec: { kind: 'key', key: NUDGE_KEY[dir], mods: { shift: true } }, opts: { params: { magnitude: 'big' } } },

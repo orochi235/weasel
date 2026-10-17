@@ -1,7 +1,9 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { vi } from 'vitest';
 import { keySpecFromKey } from '@weasel-js/ui';
+import { withIcons } from '@weasel-js/ui/testing/withIcons';
 import { RegistryDetail } from './RegistryDetail';
+import { icon } from '../icons.gen';
 import { RouteBadge } from './detail/RouteBadge';
 import { collectBundles } from './registryData';
 import type { ActionEntry, TreeEntry } from './registryEntries';
@@ -83,10 +85,10 @@ describe('RegistryDetail', () => {
   });
 
   it('renders an Icon entry with a visual preview', () => {
-    const Component = () => <svg data-testid="icon-svg" width={16} height={16} />;
-    const entry: TreeEntry = { kind: 'icon', id: 'TestIcon', label: 'TestIcon', source: 'action', Component };
-    render(<RegistryDetail entry={entry} tools={[]} actions={[]} onNavigate={() => {}} />);
-    expect(screen.getAllByTestId('icon-svg').length).toBeGreaterThanOrEqual(2);
+    const ref = icon('core:undo');
+    const entry: TreeEntry = { kind: 'icon', id: ref, label: ref, source: 'action', ref };
+    const { container } = render(<RegistryDetail entry={entry} tools={[]} actions={[]} onNavigate={() => {}} />, { wrapper: withIcons });
+    expect(container.querySelectorAll('svg').length).toBeGreaterThanOrEqual(2);
   });
 
   it('renders a ShapeKind entry with id', () => {

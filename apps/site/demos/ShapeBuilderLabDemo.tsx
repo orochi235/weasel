@@ -1,5 +1,5 @@
 import {
-  asNodeId, createScene, ellipsePath, type Path, type RectPose, solid, UnionIcon, useLatest, useSelection,
+  asNodeId, createScene, ellipsePath, type Path, type RectPose, solid, useLatest, useSelection,
   useShapeBuilderTool,
 } from '@weasel-js/core';
 import {
@@ -12,10 +12,10 @@ import {
   TrialSceneCanvas,
   useTrialScene,
 } from '@weasel-js/labkit';
-import { SelectIcon } from '@weasel-js/ui';
 import { useEffect, useMemo } from 'react';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
+import { icon } from '../icons.gen';
 
 const config = f.schema({
   mode: f.enum('merge', [
@@ -80,8 +80,8 @@ const shapeBuilderInstrument = defineInstrument<State, Config>({
   tools: {
     initial: 'shapeBuilder',
     tools: [
-      { id: 'select', label: 'Select', icon: SelectIcon, shortcut: 'V' },
-      { id: 'shapeBuilder', label: 'Shape Builder', icon: UnionIcon, shortcut: 'Shift+M' },
+      { id: 'select', label: 'Select', icon: icon('core:select'), shortcut: 'V' },
+      { id: 'shapeBuilder', label: 'Shape Builder', icon: icon('core:union'), shortcut: 'Shift+M' },
     ],
   },
   render: (ctx) => <ShapeBuilderTrial ctx={ctx} />,

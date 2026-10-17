@@ -1,5 +1,7 @@
 import { Select, useLabContext, usePersistedState } from '@weasel-js/labkit';
-import { Button, Callout, Icon, type IconName } from '@weasel-js/ui';
+import type { IconRef } from '@weasel-js/icons';
+import { Button, Callout, Icon } from '@weasel-js/ui';
+import { icon as glyph } from '../icons.gen';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Globals } from '../protocol/messages';
 import { followApp, type GlobalDeclaration, type GlobalDeclarations, labGlobals, labOptions } from './globals';
@@ -58,7 +60,7 @@ export function GlobalsToolbar({ declarations }: { declarations: GlobalDeclarati
           <NestedGlobals
             key={key}
             label={declaration.label}
-            icon={declaration.icon ?? 'tune'}
+            icon={declaration.icon ?? glyph('core:tune')}
             nested={nested}
             values={values}
             set={set}
@@ -77,7 +79,7 @@ function NestedGlobals({
   set,
 }: {
   label: string;
-  icon: IconName;
+  icon: IconRef;
   nested: readonly [string, GlobalDeclaration][];
   values: Globals;
   set: (key: string, value: string) => void;

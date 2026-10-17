@@ -1,12 +1,14 @@
 import type { ReactNode } from 'react';
 import { isPrefLeaf, isPrefSection, type PrefAction } from '@weasel-js/prefs';
-import { Icon, type IconName } from '../../icons';
+import type { IconRef } from '@weasel-js/icons';
+import { Icon } from '../../icons';
+import { icon } from '../../icons.gen';
 import type { EditorAction } from './editorActions';
 import { GROUP_ICON } from './Palette';
 import type { SchemaNode } from './schemaEdit';
 
 /** The glyph of an `actions` leaf, which groups the actions it draws as a group does its own rows. */
-export const ACTIONS_ICON: IconName = 'formActions';
+export const ACTIONS_ICON: IconRef = icon('formActions');
 
 /**
  * The glyph a node is drawn with, where it has one: a group's for how it is drawn, unset drawn by its depth (a page

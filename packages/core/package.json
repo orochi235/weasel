@@ -33,6 +33,9 @@
     "LICENSE",
     "CHANGELOG.md"
   ],
+  "weaselIcons": {
+    "table": "./dist/icons.table.json"
+  },
   "main": "./dist/index.js",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -42,6 +45,10 @@
       "types": "./dist/index.d.ts"
     },
     "./style.css": "./dist/style.css",
+    "./icons": {
+      "import": "./dist/icons.js",
+      "types": "./dist/icons.d.ts"
+    },
     "./math": {
       "import": "./dist/math.js",
       "types": "./dist/math.d.ts"
@@ -85,7 +92,7 @@
     "./package.json": "./package.json"
   },
   "scripts": {
-    "build": "vite build && tsup && node ../labkit/scripts/build-css.mjs --if-built",
+    "build": "vite build && tsup && cp src/icons.table.json dist/ && node ../labkit/scripts/build-css.mjs --if-built",
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "peerDependencies": {
@@ -99,6 +106,7 @@
     "@weasel-js/geom": "1.10.1",
     "@weasel-js/gestures": "1.10.1",
     "@weasel-js/history": "1.10.1",
+    "@weasel-js/icons": "1.10.1",
     "@weasel-js/modes": "1.10.1",
     "@weasel-js/paint": "1.10.1",
     "@weasel-js/prefs": "1.10.1",
@@ -129,6 +137,7 @@
     "2d"
   ],
   "devDependencies": {
+    "@weasel-js/icons-plugin": "1.10.1",
     "@weasel-js/modes": "1.10.1",
     "@weasel-js/theme": "1.10.1"
   }

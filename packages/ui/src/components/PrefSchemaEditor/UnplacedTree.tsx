@@ -9,6 +9,7 @@ import { keyOf, type SchemaNode } from './schemaEdit';
 import { unplacedAt } from './unplaced';
 import s from './PrefSchemaEditor.module.css';
 import { leafLabel, nodeLabel } from './structureRows';
+import { icon } from '../../icons.gen';
 
 const SEP = '/';
 /** What leads the id of a row the schema does not hold. No key holds a `/`, so no schema path starts with one. */
@@ -65,7 +66,7 @@ export function UnplacedTree({ loose, looseAt, waiting, sought, selected, onPick
     if (!node) return null;
     const key = held ? keyOf(id) : id.split(SEP).at(-1)!;
     const from = ids.every((x) => !x.startsWith(NEW)) ? ids : [id];
-    return { item: { id, label: node.name, icon: 'formLabel', key, make: () => node }, node, ...(held ? { from } : {}), ...point };
+    return { item: { id, label: node.name, icon: icon('formLabel'), key, make: () => node }, node, ...(held ? { from } : {}), ...point };
   };
   return (
     <Tree

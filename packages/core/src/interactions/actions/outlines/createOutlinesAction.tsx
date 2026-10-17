@@ -5,7 +5,7 @@ import { loadTextOutlines, type TextNodeSource, type TextOutlinesError } from '@
 import {
   applyCreateOutlines, type CreateOutlinesAdapter, type CreateOutlinesResult,
 } from './createOutlines';
-import { CreateOutlinesIcon } from '../defaults/icons/outlineIcons';
+import { icon } from '../../../icons.gen';
 
 /** What an outline conversion answers when a text face had no outlines. */
 type OutlinesFailure = { kind: 'failed'; error: TextOutlinesError };
@@ -49,7 +49,7 @@ export function runCreateOutlines(adapter: CreateOutlinesAdapter): Promise<Creat
 export const createOutlinesAction: Action = {
   id: 'createOutlines',
   label: 'Create Outlines',
-  icon: <CreateOutlinesIcon />,
+  icon: icon('createOutlines'),
   group: 'text',
   defaultBinding: { kind: 'key', key: 'o', mods: { mod: true, shift: true } },
   eligible: { capability: 'creates-shapes' },

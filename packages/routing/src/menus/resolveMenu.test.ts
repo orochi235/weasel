@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { MenuEntry } from '@weasel-js/menu';
 import { pref, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
 import { resolveMenu, resolveSchemaMenu, type MenuSources } from './resolveMenu';
+import { toIconRef } from '@weasel-js/icons';
 import { ActionDisabledReason, type Action } from '../interactions/actions/action';
 
 const immediate = { timing: 'immediate' as const, run: () => {} };
@@ -14,8 +15,8 @@ const actions: Action[] = [
     { key: 'l', label: 'Left', params: { edge: 'left' } },
     { key: 'r', label: 'Right', params: { edge: 'right' } },
   ] },
-  { id: 'flip', label: 'Flip', icon: 'flip-icon', invoker: immediate, variants: [
-    { key: 'h', label: 'Horizontal', icon: 'h-icon', params: { axis: 'x' } },
+  { id: 'flip', label: 'Flip', icon: toIconRef('test:flip')!, invoker: immediate, variants: [
+    { key: 'h', label: 'Horizontal', icon: toIconRef('test:flipH')!, params: { axis: 'x' } },
     { key: 'v', label: 'Vertical', params: { axis: 'y' } },
   ] },
   { id: 'front', label: 'To Front', group: 'arrange', invoker: immediate },
@@ -72,7 +73,7 @@ describe('resolveSchemaMenu: action leaves', () => {
     const src = sources();
     const es = resolveSchemaMenu(menu({ flip: act('flip') }), src);
     expect(labels(es)).toEqual(['Horizontal', 'Vertical']);
-    expect(es.map((e) => e.kind === 'item' && e.icon)).toEqual(['h-icon', 'flip-icon']);
+    expect(es.map((e) => e.kind === 'item' && e.icon)).toEqual(['test:flipH', 'test:flip']);
     run(es[1]);
     expect(src.trigger).toHaveBeenCalledWith('flip', { axis: 'y' });
   });

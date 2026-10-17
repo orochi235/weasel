@@ -7,8 +7,9 @@ import {
   type AnchorSet, type PointOrigin, type PolygonPath,
 } from '@weasel-js/geom';
 import {
-  DEFAULT_SIMPLIFY_TOLERANCE, depOf, editingLayer, inPlane, pathEditPreview, pathEditToolAction, SimplifyBrushIcon, pathOperationTags,
+  DEFAULT_SIMPLIFY_TOLERANCE, depOf, editingLayer, inPlane, pathEditPreview, pathEditToolAction, pathOperationTags,
 } from '@weasel-js/core';
+import { icon } from '../icons.gen';
 
 /** The path-edit tool under which a plain drag brushes. */
 export const SIMPLIFY_BRUSH_TOOL = 'simplifyBrush';
@@ -125,4 +126,4 @@ export const simplifyBrushAction: Action & { requires: string[] } = inPlane({
 }, editingLayer);
 
 /** The bar toggle for the brush: `pathEditTool.simplifyBrush`. */
-export const simplifyBrushToolAction = pathEditToolAction(SIMPLIFY_BRUSH_TOOL, 'Simplify brush', SimplifyBrushIcon);
+export const simplifyBrushToolAction = pathEditToolAction(SIMPLIFY_BRUSH_TOOL, 'Simplify brush', icon('core:simplifyBrush'));

@@ -1,9 +1,10 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import { icon } from '../../icons.gen';
 import type { TrialChromeContext, TrialContribution } from '../types';
 import { TitleBarRegion } from './TitleBarRegion';
 
-const Glyph = () => <svg />;
+const Glyph = icon('ui:add');
 const ctx = { trialId: 't1', saveSnapshot: vi.fn() } as unknown as TrialChromeContext;
 
 function item(id: string, over: Partial<TrialContribution> = {}): TrialContribution {

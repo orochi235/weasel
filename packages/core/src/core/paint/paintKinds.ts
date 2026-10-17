@@ -16,24 +16,26 @@ import { createReflectable, type ReflectedEntry, type Reflection } from '@weasel
 import { getPaintDrawKind, registerPaintDrawKind, registerPaintDrawKindLoader } from '@weasel-js/renderer';
 import { _resetPaintDrawKindsForTests } from '@weasel-js/renderer/test-seams';
 import type { PaintKind, PaintKindEntry, PaintKindFamily } from './paintKindEntry';
+import type { IconRef } from '@weasel-js/icons';
+import { icon } from '../../icons.gen';
 
 /** The family the built-in tiles and `texture` are offered under. A consumer's
  *  own pattern kind joins it by naming this as its `family`. */
-export const patternFamily: PaintKindFamily = { id: 'pattern', label: 'Pattern', icon: 'paintPattern' };
+export const patternFamily: PaintKindFamily = { id: 'pattern', label: 'Pattern', icon: icon('paintPattern') };
 
 const BUILTINS: readonly PaintKindEntry[] = [
   {
     id: 'solid',
     label: 'Solid',
-    icon: 'paintSolid',
+    icon: icon('paintSolid'),
     seed: (color) => ({ color }),
     colorOf: (paint) => ((paint.kind ?? 'solid') === 'solid'
       ? (paint as { color: string }).color
       : undefined),
   },
-  gradientKind('linear-gradient', 'Linear', 'paintLinear'),
-  gradientKind('radial-gradient', 'Radial', 'paintRadial'),
-  gradientKind('conic-gradient', 'Conic', 'paintConic'),
+  gradientKind('linear-gradient', 'Linear', icon('paintLinear')),
+  gradientKind('radial-gradient', 'Radial', icon('paintRadial')),
+  gradientKind('conic-gradient', 'Conic', icon('paintConic')),
   tileKind('hatch', 'Hatch'),
   tileKind('crosshatch', 'Crosshatch'),
   tileKind('dots', 'Dots'),
@@ -68,7 +70,7 @@ export function seedTile(kind: TileKind, color: string): TilePaint {
     : { kind, color, units: 'bounds' };
 }
 
-function gradientKind(id: GradientKind, label: string, icon: string): PaintKindEntry {
+function gradientKind(id: GradientKind, label: string, icon: IconRef): PaintKindEntry {
   return {
     id,
     label,

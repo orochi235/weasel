@@ -2,14 +2,7 @@ import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
 import { ToolPalette, type ToolPaletteProps } from './ToolPalette';
 import type { Tool, ToolsApi } from '@weasel-js/core';
-import {
-  SelectIcon,
-  LassoIcon,
-  RectIcon,
-  TextIcon,
-  PenIcon,
-  HandIcon,
-} from '@weasel-js/core';
+import { icon } from '../../icons.gen';
 
 const meta: Meta<typeof ToolPalette> = {
   title: 'ui/ToolPalette',
@@ -21,20 +14,20 @@ type Story = StoryObj<typeof ToolPalette>;
 
 function fullList(): Tool[] {
   return [
-    { id: 'select', keybinding: { key: 'v' }, presentation: { label: 'Select', icon: <SelectIcon />, group: 'select' } } as Tool,
-    { id: 'lasso',  keybinding: { key: 'l' }, presentation: { label: 'Lasso',  icon: <LassoIcon />,  group: 'select' } } as Tool,
-    { id: 'rect',   keybinding: { key: 'r' }, presentation: { label: 'Rect',   icon: <RectIcon />,   group: 'shape'  } } as Tool,
-    { id: 'text',   keybinding: { key: 't' }, presentation: { label: 'Text',   icon: <TextIcon />,   group: 'type'   } } as Tool,
-    { id: 'pen',    keybinding: { key: 'p' }, presentation: { label: 'Pen',    icon: <PenIcon />,    group: 'draw'   } } as Tool,
-    { id: 'hand',   keybinding: { key: 'h' }, presentation: { label: 'Hand',   icon: <HandIcon />,   group: 'view'   } } as Tool,
+    { id: 'select', keybinding: { key: 'v' }, presentation: { label: 'Select', icon: icon('core:select'), group: 'select' } } as Tool,
+    { id: 'lasso',  keybinding: { key: 'l' }, presentation: { label: 'Lasso',  icon: icon('core:lasso'),  group: 'select' } } as Tool,
+    { id: 'rect',   keybinding: { key: 'r' }, presentation: { label: 'Rect',   icon: icon('core:rect'),   group: 'shape'  } } as Tool,
+    { id: 'text',   keybinding: { key: 't' }, presentation: { label: 'Text',   icon: icon('core:text'),   group: 'type'   } } as Tool,
+    { id: 'pen',    keybinding: { key: 'p' }, presentation: { label: 'Pen',    icon: icon('core:pen'),    group: 'draw'   } } as Tool,
+    { id: 'hand',   keybinding: { key: 'h' }, presentation: { label: 'Hand',   icon: icon('core:hand'),   group: 'view'   } } as Tool,
   ];
 }
 
 function minimalList(): Tool[] {
   return [
-    { id: 'select', keybinding: { key: 'v' }, presentation: { label: 'Select', icon: <SelectIcon /> } } as Tool,
-    { id: 'pen',    keybinding: { key: 'p' }, presentation: { label: 'Pen',    icon: <PenIcon /> } } as Tool,
-    { id: 'hand',   keybinding: { key: 'h' }, presentation: { label: 'Hand',   icon: <HandIcon /> } } as Tool,
+    { id: 'select', keybinding: { key: 'v' }, presentation: { label: 'Select', icon: icon('core:select') } } as Tool,
+    { id: 'pen',    keybinding: { key: 'p' }, presentation: { label: 'Pen',    icon: icon('core:pen') } } as Tool,
+    { id: 'hand',   keybinding: { key: 'h' }, presentation: { label: 'Hand',   icon: icon('core:hand') } } as Tool,
   ];
 }
 

@@ -1,8 +1,6 @@
 import type { NodeId, Scene } from 'core/scene/types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { shapeSources } from '../selectionSubtree';
-import { createElement } from 'react';
-import { FlipXIcon, FlipYIcon } from '../defaults/icons/editIcons';
 import type { Op } from 'core/ops/types';
 import { multiply, rotate, translate, type Affine } from '@weasel-js/geom';
 import { createTransformOp } from 'core/ops/transform';
@@ -26,6 +24,7 @@ import { defaultCommitAdapter } from '../defaultCommitAdapter';
 import { requiresSelection } from '../defaults/requiresSelection';
 import type { SelectionApi } from 'core/selection/useSelection';
 import { geometryDataOp, type GeometryProjection } from '../geometryProjection';
+import { icon } from '../../../icons.gen';
 
 /**
  * The world mirror about `axis` through the center of `pivotWorld`, written in
@@ -161,8 +160,8 @@ export const flipAction: Action & { requires: string[] } = {
   group: 'flip',
   tags: ['mirror'],
   variants: [
-    { key: 'x', label: 'Flip Horizontal', icon: createElement(FlipXIcon), params: { axis: 'x' } },
-    { key: 'y', label: 'Flip Vertical', icon: createElement(FlipYIcon), params: { axis: 'y' } },
+    { key: 'x', label: 'Flip Horizontal', icon: icon('flipX'), params: { axis: 'x' } },
+    { key: 'y', label: 'Flip Vertical', icon: icon('flipY'), params: { axis: 'y' } },
   ],
   defaultBinding: [
     { spec: { kind: 'key', key: ['h', 'H'], mods: { shift: true } }, opts: { params: { axis: 'x' } } },

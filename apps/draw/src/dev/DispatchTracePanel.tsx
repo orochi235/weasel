@@ -6,10 +6,11 @@
  */
 import { useCallback, useState, type CSSProperties, type ReactElement } from 'react';
 import { useHostAnchor } from '@weasel-js/core';
-import { ButtonBar, CheckIcon, DeleteIcon, Disclosure, ErrorIcon, ToggleBar } from '@weasel-js/ui';
+import { ButtonBar, Disclosure, ToggleBar, Icon } from '@weasel-js/ui';
 import s from './DispatchTracePanel.module.css';
 import { useDispatchTraceLog } from './dispatchTraceLog';
 import { DispatchTraceTable } from './DispatchTraceTable';
+import { icon } from '../icons.gen';
 
 type OutcomeFilter = 'handled' | 'unhandled';
 
@@ -65,13 +66,13 @@ export function DispatchTracePanel(props: DispatchTracePanelProps = {}): ReactEl
           items={[
             {
               value: 'handled',
-              label: <CheckIcon size={14} className={s.handledIcon} />,
+              label: <Icon name={icon('ui:check')} size={14} className={s.handledIcon} />,
               ariaLabel: 'Handled events',
               tooltip: 'Show handled events',
             },
             {
               value: 'unhandled',
-              label: <ErrorIcon size={14} className={s.unhandledIcon} />,
+              label: <Icon name={icon('ui:error')} size={14} className={s.unhandledIcon} />,
               ariaLabel: 'Unhandled events',
               tooltip: 'Show unhandled events',
             },
@@ -92,7 +93,7 @@ export function DispatchTracePanel(props: DispatchTracePanelProps = {}): ReactEl
           items={[
             {
               value: 'clear',
-              label: <DeleteIcon size={14} />,
+              label: <Icon name={icon('core:delete')} size={14} />,
               ariaLabel: 'Clear log',
               tooltip: 'Clear log',
               disabled: entries.length === 0,

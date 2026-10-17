@@ -4,6 +4,7 @@ import { ActionsProvider, useAction, type Action } from '@weasel-js/core';
 import type { PrefAction } from '@weasel-js/prefs';
 import { BarAction } from './BarAction';
 import s from './Bar.stories.module.css';
+import { icon } from '../../icons.gen';
 
 const meta: Meta<typeof BarAction> = {
   title: 'ui/Bar/BarAction',
@@ -42,7 +43,7 @@ const immediate = { timing: 'immediate', run } as const;
 export const Enabled: Story = {
   render: () => (
     <Host actions={[{ id: 'edit.undo', label: 'Undo', shortcut: '⌘Z', invoker: immediate }]}>
-      <BarAction leaf={leaf({ name: 'Undo', icon: 'undo', action: 'edit.undo' })} path="undo" />
+      <BarAction leaf={leaf({ name: 'Undo', icon: icon('core:undo'), action: 'edit.undo' })} path="undo" />
     </Host>
   ),
 };
@@ -51,7 +52,7 @@ export const Enabled: Story = {
 export const Disabled: Story = {
   render: () => (
     <Host actions={[{ id: 'edit.undo', label: 'Undo', invoker: immediate, enabled: () => 'not-applicable' }]}>
-      <BarAction leaf={leaf({ name: 'Undo', icon: 'undo', action: 'edit.undo' })} path="undo" />
+      <BarAction leaf={leaf({ name: 'Undo', icon: icon('core:undo'), action: 'edit.undo' })} path="undo" />
     </Host>
   ),
 };
@@ -87,7 +88,7 @@ export const Pending: Story = {
 export const Labeled: Story = {
   render: () => (
     <Host actions={[{ id: 'edit.undo', label: 'Undo', invoker: immediate }]}>
-      <BarAction leaf={leaf({ name: 'Undo', icon: 'undo', action: 'edit.undo', control: 'button' })} path="undo" />
+      <BarAction leaf={leaf({ name: 'Undo', icon: icon('core:undo'), action: 'edit.undo', control: 'button' })} path="undo" />
     </Host>
   ),
 };
