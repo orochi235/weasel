@@ -10,7 +10,7 @@ import type { AddNodeSpec, MarkerRef, RectPose, Stroke } from '@weasel-js/core';
 import { DEFAULT_GROUP_INSET, expandGroupEdges } from './cluster';
 import { groupSpecs, resolveGroups } from './dataGroups';
 import { bodyTrait, buildBody, measureBody, sizeToBody, type BodySpec, type MeasureRowText, type Row, type RowTextStyle } from './body';
-import { edgeSpecs, labelStyleOf } from './dataEdges';
+import { edgeSpecs, labelStyleOf, wireLabels } from './dataEdges';
 import type { DiagramEdge } from './edge';
 import { force } from './force';
 import { labelFollowsLayout, type EdgeLabelRoom, type Graph, type GraphEdge, type GraphGroup, type GraphNode } from './graph';
@@ -340,10 +340,9 @@ export function diagramScene(data: DiagramData, opts: DiagramSceneOptions = {}):
   // The author's own ports and waypoints win over the plan's.
   const routes = plan === null ? null : authoredOver(edges.map((e) => ({ ...e, id: edgeIdOf(e) })), plan);
   // Behind every node, so a box never paints over what it holds.
-  specs.push(...groupSpecs(groups, placedAt, (g) => ({
-    style: opts.groupStyle?.(g) ?? GROUP,
-    text: styleOf(titleStyle),
-  })));
+  const edgeCtx = { idOf: edgeIdOf, font, measure, fallback: EDGE, labelPlacement: LABEL_PLACEMENT, routes, opts };
+  const groupLook = (g: DataGroup) => ({ style: opts.groupStyle?.(g) ?? GROUP, text: styleOf(titleStyle) });
+  specs.push(...groupSpecs(groups, placedAt, groupLook, wireLabels(edges, edgeCtx)));
   for (const [i, n] of data.nodes.entries()) {
     const seed = seeds[i]!.bounds;
     const at = placedAt.get(n.id)!;
@@ -376,6 +375,6 @@ export function diagramScene(data: DiagramData, opts: DiagramSceneOptions = {}):
     }
     if (n.marks) specs.push(...markSpecs(n.id, n.marks, at, { style, textStyle: styleOf, measure }));
   }
-  specs.push(...edgeSpecs(edges, { idOf: edgeIdOf, font, measure, fallback: EDGE, labelPlacement: LABEL_PLACEMENT, routes, opts }));
+  specs.push(...edgeSpecs(edges, edgeCtx));
   return specs;
 }

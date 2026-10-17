@@ -1,8 +1,10 @@
 /** The scene specs `diagramScene` makes for edges and their labels. */
+import { polylineFromPoints } from '@weasel-js/core';
+import type { WireLabel } from './dataGroups';
 import { EDGE_DERIVE_PATH } from './edge';
 import type { MeasureRowText } from './body';
 import type { DataEdge, DiagramSceneOptions, DiagramSpec, EdgeStyle } from './fromData';
-import { LABEL_DERIVE_POSE, type DiagramLabel } from './label';
+import { LABEL_DERIVE_POSE, labelCenter, type DiagramLabel } from './label';
 import type { LayeredRoute } from './route';
 
 export interface EdgeSpecContext {
@@ -25,6 +27,35 @@ export const labelStyleOf = (font: { fontFamily: string; fontSize: number }) => 
 function placementOf(e: DataEdge, route: LayeredRoute | undefined, ctx: EdgeSpecContext): DiagramLabel {
   const placement = e.labelPlacement ?? ctx.opts.labelPlacement ?? ctx.labelPlacement;
   return route?.labelAt === undefined ? placement : { ...placement, at: { near: route.labelAt } };
+}
+
+/** The box an edge's label takes, set in the diagram's label face. */
+function labelSizeOf(text: string, ctx: EdgeSpecContext): { width: number; height: number } {
+  const style = labelStyleOf(ctx.font);
+  return { width: ctx.measure(text, style).width, height: style.fontSize };
+}
+
+/** Each edge's label as a group's box takes it in: where it sits, when layout
+ *  stationed it beside its waypoints, else only its id. */
+export function wireLabels(edges: readonly DataEdge[], ctx: EdgeSpecContext): WireLabel[] {
+  const out: WireLabel[] = [];
+  for (const e of edges) {
+    if (!e.label) continue;
+    const id = ctx.idOf(e);
+    const route = ctx.routes?.get(id);
+    const size = labelSizeOf(e.label, ctx);
+    const placement = placementOf(e, route, ctx);
+    const center = route?.waypoints !== undefined && typeof placement.at === 'object'
+      ? labelCenter(polylineFromPoints([...route.waypoints]), placement, size)
+      : null;
+    out.push({
+      id: `${id}/label`,
+      from: e.from,
+      to: e.to,
+      at: center === null ? null : { x: center.x - size.width / 2, y: center.y - size.height / 2, ...size },
+    });
+  }
+  return out;
 }
 
 /** An edge end naming `port`, marked as layout's when the author named none. */
@@ -74,7 +105,7 @@ export function edgeSpecs(edges: readonly DataEdge[], ctx: EdgeSpecContext): Dia
       kind: 'leaf',
       layer: 'main',
       pickable: false,
-      pose: { x: 0, y: 0, width: ctx.measure(e.label, labelStyle).width, height: labelStyle.fontSize },
+      pose: { x: 0, y: 0, ...labelSizeOf(e.label, ctx) },
       data: {
         diagram: { label: placementOf(e, route, ctx) },
         text: e.label,

@@ -88,6 +88,22 @@ function nearestStation(path: Path, near: Vec2): { point: Vec2; tangent: Vec2 } 
   return found === null ? null : { point: { x: found.x, y: found.y }, tangent: heading };
 }
 
+/** Where the center of a label `size` big sits along `path`; `null` for a
+ *  path with no points. */
+export function labelCenter(path: Path, label: DiagramLabel, size: { width: number; height: number }): Vec2 | null {
+  const station = typeof label.at === 'object'
+    ? nearestStation(path, label.at.near) ?? pointAlongPath(path, 0.5)
+    : pointAlongPath(path, typeof label.at === 'number' ? label.at : NAMED[label.at] ?? 0.5);
+  if (station === null) return null;
+  const nx = station.tangent.y;
+  const ny = -station.tangent.x;
+  // Half the label's depth along the normal, so its near side, not its center, sits `offset` off the line.
+  const offset = label.offset ?? 0;
+  const reach = offset + Math.sign(offset) * (Math.abs(nx) * size.width + Math.abs(ny) * size.height) / 2;
+  // Left of travel: with y down, that is above an edge running rightward.
+  return { x: station.point.x + nx * reach, y: station.point.y + ny * reach };
+}
+
 /** Options for {@link labelDerivePose}. `geometry` defaults to the kit's
  *  `AUTO_POSE_DESCRIPTOR`. */
 export interface LabelPoseOptions<TPose> {
@@ -113,25 +129,14 @@ export function labelDerivePose<TPose>(
     const path = deps[0]?.path ?? null;
     if (path === null) return null;
 
-    const station = typeof label.at === 'object'
-      ? nearestStation(path, label.at.near) ?? pointAlongPath(path, 0.5)
-      : pointAlongPath(path, typeof label.at === 'number' ? label.at : NAMED[label.at] ?? 0.5);
-    if (station === null) return null;
-
     const bounds = geometry.getBounds(node.pose);
-    const nx = station.tangent.y;
-    const ny = -station.tangent.x;
-    // Half the label's depth along the normal, so its near side, not its center, sits `offset` off the line.
-    const offset = label.offset ?? 0;
-    const reach = offset + Math.sign(offset) * (Math.abs(nx) * bounds.width + Math.abs(ny) * bounds.height) / 2;
-    // Left of travel: with y down, that is above an edge running rightward.
-    const x = station.point.x + nx * reach;
-    const y = station.point.y + ny * reach;
+    const center = labelCenter(path, label, bounds);
+    if (center === null) return null;
 
     return translatePoseViaDescriptor(
       node.pose,
-      x - (bounds.x + bounds.width / 2),
-      y - (bounds.y + bounds.height / 2),
+      center.x - (bounds.x + bounds.width / 2),
+      center.y - (bounds.y + bounds.height / 2),
       geometry,
     );
   };

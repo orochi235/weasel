@@ -129,6 +129,14 @@ describe('a group in a scene', () => {
     const specs = diagramScene({ ...DATA, groups: [{ id: 'G', members: ['nope'] }] });
     expect(specs.some((s) => s.id === 'G')).toBe(false);
   });
+
+  it('takes in a label on a wire between its members, and derives the box it was built with', () => {
+    const wire = { from: 'a', to: 'b', label: 'a label far wider than either of its two ends' };
+    const { specs, pose } = load({ ...DATA, edges: [wire, DATA.edges[1]!] });
+    const label = pose(`${edgeIdOf(wire)}/label`);
+    expect(contains(pose('G'), label)).toBe(true);
+    expect(pose('G')).toEqual(specs.find((s) => s.id === 'G')!.pose);
+  });
 });
 
 describe('a group inside a group, in a scene', () => {
