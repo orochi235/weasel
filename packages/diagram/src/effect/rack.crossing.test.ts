@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { SIDE_TRACK_GAP } from '../chainRoutes';
 import { EDGE_DERIVE_PATH } from '../edge';
 import { diagramScene, type DiagramSpec } from '../fromData';
 import { rack } from './rack';
@@ -74,6 +75,7 @@ describe('rack side wires', () => {
 
   it.each([2, 3, 5, 8])('do not cross for %i side stages', (count) => {
     expect(drawnCrossings(fan(count), 'below')).toEqual([]);
+    expect(drawnCrossings(fan(count), 'above')).toEqual([]);
   });
 
   it('do not cross when the side stages are listed against their inputs\' order', () => {
@@ -81,4 +83,18 @@ describe('rack side wires', () => {
     expect(drawnCrossings(fan(6, 'reversed'), 'above')).toEqual([]);
   });
 
+
+  it.each([undefined, 16])('sit at least SIDE_TRACK_GAP apart for 8 side stages, nodeGap %s', (nodeGap) => {
+    const drawn = rack(fan(8), nodeGap === undefined ? {} : { nodeGap });
+    const specs = diagramScene(drawn.data, drawn.scene);
+    const box = (id: string) => specs.find((s) => s.id === id)!.pose as { y: number; height: number };
+    const tracks = [...new Set(specs.flatMap((s) => {
+      const via = (s.data?.diagram as { waypoints?: { y: number }[] } | undefined)?.waypoints;
+      return via === undefined || !String(s.id).includes('layer-') ? [] : via.map((p) => p.y);
+    }))];
+    expect(tracks.length).toBeGreaterThan(1);
+    const levels = [box('mix').y + box('mix').height, ...tracks, box('layer-l1').y].sort((a, b) => a - b);
+    const gaps = levels.slice(1).map((y, i) => y - levels[i]!);
+    expect(Math.min(...gaps)).toBeGreaterThanOrEqual(SIDE_TRACK_GAP - 1e-9);
+  });
 });

@@ -65,6 +65,31 @@ function sidesOf(graph: Graph, hanging: Hanging, moves: LayoutResult, axes: Layo
   return byLine;
 }
 
+/** The least room between two side tracks, and between a track and the edge
+ *  of either node it runs beside. A turn onto a track rounds within that room,
+ *  so this is also the tightest corner radius: six widths of a 2px edge. */
+export const SIDE_TRACK_GAP = 12;
+
+/** A chain node's sideways side edges, split by which way they turn, each set
+ *  in the order its tracks take outward from the line. */
+function turning(sides: readonly Side[]): [Side[], Side[]] {
+  const sideways = sides.filter((s) => Math.abs(s.hung - s.port) > 0.5);
+  return [
+    sideways.filter((s) => s.hung < s.port).sort((a, b) => a.port - b.port),
+    sideways.filter((s) => s.hung > s.port).sort((a, b) => b.port - a.port),
+  ];
+}
+
+/** The most tracks any chain node's side edges need. */
+export function tracksNeeded(graph: Graph, hanging: Hanging, moves: LayoutResult, axes: LayoutAxes, before: boolean): number {
+  let most = 0;
+  for (const sides of sidesOf(graph, hanging, moves, axes, before).values()) {
+    const [low, high] = turning(sides);
+    most = Math.max(most, low.length, high.length);
+  }
+  return most;
+}
+
 /**
  * The waypoints of every side edge that has to run sideways to reach its port.
  *
@@ -82,9 +107,7 @@ export function sideRoutes(
 ): Map<string, Vec2[]> {
   const out = new Map<string, Vec2[]>();
   for (const sides of sidesOf(graph, hanging, moves, axes, before).values()) {
-    const sideways = sides.filter((s) => Math.abs(s.hung - s.port) > 0.5);
-    const low = sideways.filter((s) => s.hung < s.port).sort((a, b) => a.port - b.port);
-    const high = sideways.filter((s) => s.hung > s.port).sort((a, b) => b.port - a.port);
+    const [low, high] = turning(sides);
     const lineEdge = sides[0]!.lineEdge;
     const hungEdge = before ? Math.max(...sides.map((s) => s.hungEdge)) : Math.min(...sides.map((s) => s.hungEdge));
     const step = (hungEdge - lineEdge) / (Math.max(low.length, high.length) + 1);

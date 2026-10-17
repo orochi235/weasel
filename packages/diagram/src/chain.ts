@@ -6,7 +6,7 @@
  * them. Each chain node owns a column as long as the widest row hung on it, so
  * two neighbors' hangers never share space. Groups are ignored.
  */
-import { inPortOrder, sideRoutes, type Hanging } from './chainRoutes';
+import { inPortOrder, SIDE_TRACK_GAP, sideRoutes, tracksNeeded, type Hanging } from './chainRoutes';
 import type { Graph, GraphNode } from './graph';
 import { backEdges, ranksOf } from './layered';
 import {
@@ -107,7 +107,12 @@ function chainPlan(graph: Graph, opts: LayoutOptions = {}): LayoutPlan {
   }
   for (const [id, column] of rows) if (column[1]) column[1] = inPortOrder(graph, id, column[1], axes);
   const before = opts.chainSide === 'before';
-  const moves = settle(graph, slotsFor(line, rows, levelSize, axes, nodeGap, rankGap, before), opts);
+  const place = (side: number) => settle(graph, slotsFor(line, rows, levelSize, axes, { node: nodeGap, rank: rankGap, side }, before), opts);
+  // Where a side edge turns depends only on positions along the line, which
+  // the gap across it does not move, so one trial run counts the tracks.
+  let moves = place(nodeGap);
+  const side = (tracksNeeded(graph, hanging, moves, axes, before) + 1) * SIDE_TRACK_GAP;
+  if (side > nodeGap) moves = place(side);
   return { moves, waypoints: sideRoutes(graph, hanging, moves, axes, before) };
 }
 
@@ -116,16 +121,18 @@ function slotsFor(
   rows: ReadonlyMap<string, GraphNode[][]>,
   levelSize: readonly number[],
   axes: LayoutAxes,
-  nodeGap: number,
-  rankGap: number,
+  gaps: { node: number; rank: number; side: number },
   before: boolean,
 ): Map<string, Slot> {
+  const { node: nodeGap, rank: rankGap } = gaps;
   const rowSpan = (row: readonly GraphNode[]) =>
     row.reduce((sum, n) => sum + extent(n.bounds, axes.rank), 0) + nodeGap * Math.max(row.length - 1, 0);
-  /** The low cross edge of level `at`'s band, the line's own being 0. */
+  /** The low cross edge of level `at`'s band, the line's own being 0. The
+   *  gap between the line and the first band is `gaps.side`. */
   const bandStart = (at: number): number => {
     let offset = 0;
-    for (let k = before ? 1 : 0; k < (before ? at + 1 : at); k++) offset += (levelSize[k] ?? 0) + nodeGap;
+    const first = before ? 1 : 0;
+    for (let k = first; k < (before ? at + 1 : at); k++) offset += (levelSize[k] ?? 0) + (k === first ? gaps.side : nodeGap);
     return before ? -offset : offset;
   };
 
