@@ -1,5 +1,5 @@
 import { flushSync } from 'react-dom';
-import { createRoot } from 'react-dom/client';
+import { createKitRoot } from '../kitIcons';
 import type { Channel } from '../protocol/channel';
 import {
   type CssVarReport,
@@ -65,7 +65,7 @@ export function startFrame({ story, channel, container, setup = {} }: StartFrame
   const wrapper = document.createElement('div');
   wrapper.className = `fg-frame fg-frame--${story.layout}`;
   container.append(wrapper);
-  const root = createRoot(wrapper);
+  const root = createKitRoot(wrapper);
   const decorators = setup.decorators ?? [];
 
   let initialized = false;

@@ -5,8 +5,12 @@ import { createRoot } from 'react-dom/client';
 import {
   ActionsProvider,
   DepRegistryProvider,
+  IconRegistryProvider,
   SelectionContextProvider,
 } from '@weasel-js/core';
+import { icons as coreIcons } from '@weasel-js/core/icons';
+import { icons as pathToolsIcons } from '@weasel-js/path-tools/icons';
+import { icons as uiIcons } from '@weasel-js/ui/icons';
 import { ThemeProvider } from '@weasel-js/theme/react';
 import { App } from './App';
 import { drawTheme } from './theme';
@@ -15,6 +19,9 @@ import { registerAvailableFonts } from './fonts';
 import { registerDefaultFont } from '../../shared/defaultFont';
 import { migrateLegacyPanelFlags } from './surfaces/surfaceState';
 import { drawPrefs, importLegacyPrefs } from './prefs';
+import { icons as drawIcons } from './icons.table';
+
+const ICONS = [coreIcons, uiIcons, pathToolsIcons, drawIcons];
 
 // The dev surfaces are only reachable at `#/dev/*`, and `RegistryInspector`
 // reaches `dev/sourceLookup`, which embeds this app's own source as strings.
@@ -85,12 +92,14 @@ const slot = container as ContainerWithRoot;
 slot.__reactRoot ??= createRoot(slot);
 slot.__reactRoot.render(
   <StrictMode>
-    <DepRegistryProvider>
-      <ActionsProvider>
-        <SelectionContextProvider>
-          <Root />
-        </SelectionContextProvider>
-      </ActionsProvider>
-    </DepRegistryProvider>
+    <IconRegistryProvider icons={ICONS}>
+      <DepRegistryProvider>
+        <ActionsProvider>
+          <SelectionContextProvider>
+            <Root />
+          </SelectionContextProvider>
+        </ActionsProvider>
+      </DepRegistryProvider>
+    </IconRegistryProvider>
   </StrictMode>,
 );
