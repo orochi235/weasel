@@ -14,7 +14,7 @@ import { useMemo } from 'react';
 import { strokeNode } from './pathEditLabScene';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
-import { icon } from '../icon';
+import { icon } from '../icons.gen';
 
 const FEATURES = ['draw', trimPreset] as const;
 

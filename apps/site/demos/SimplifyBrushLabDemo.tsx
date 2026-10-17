@@ -8,7 +8,7 @@ import { createModeRegistry, DEFAULT_MODES } from '@weasel-js/modes';
 import { useMemo, useState } from 'react';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
-import { icon } from '../icon';
+import { icon } from '../icons.gen';
 
 const FEATURES = ['draw', simplifyBrushPreset] as const;
 

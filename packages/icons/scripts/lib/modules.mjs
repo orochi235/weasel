@@ -35,3 +35,13 @@ ${names.map((n) => `    '${table.namespace}:${n}': true;`).join('\n')}
 }
 `;
 }
+
+/** The icon() of a root that draws nothing: every name it writes is qualified, so the build sees each one. */
+export function emitConsumerGen(namespace) {
+  return `${HEADER}
+import { scopedIcon } from '@weasel-js/icons';
+
+/** This package draws no glyphs of its own, so every name it writes is qualified: \`icon('ui:close')\`. */
+export const icon = scopedIcon<never>('${namespace}');
+`;
+}

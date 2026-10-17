@@ -1,7 +1,7 @@
 import type { IconRef } from '@weasel-js/icons';
 import { Icon, TOKEN_CATEGORIES, type TokenCategory, ToggleBar, type ToggleBarItem } from '@weasel-js/ui';
 import { useEffect, useRef, useState } from 'react';
-import { icon } from '../../icon';
+import { icon } from '../../icons.gen';
 
 const ICONS: Record<TokenCategory, IconRef> = {
   color: icon('ui:drop'),

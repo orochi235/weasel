@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import type { ConfigField } from '../controls/types';
-import { icon } from '../icon';
+import { icon } from '../icons.gen';
 import type { Instrument } from '../instrument/types';
 import { Lab } from '../lab/Lab';
 

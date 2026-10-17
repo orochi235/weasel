@@ -4,7 +4,7 @@ import { createScene, type ToolsApi, useEllipseTool, useLatest } from '@weasel-j
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { StrictMode, useEffect } from 'react';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
-import { icon } from '../icon';
+import { icon } from '../icons.gen';
 import { defineInstrument } from '../instrument/defineInstrument';
 import type { RenderContext } from '../instrument/types';
 import { Lab } from '../lab/Lab';

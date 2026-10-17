@@ -4,7 +4,7 @@ import { createScene, type Scene, type ToolsApi } from '@weasel-js/core';
 import { giveKeys } from '@weasel-js/react/testing/giveKeys';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
-import { icon } from '../icon';
+import { icon } from '../icons.gen';
 import { defineInstrument } from '../instrument/defineInstrument';
 import type { RenderContext } from '../instrument/types';
 import { Lab } from '../lab/Lab';

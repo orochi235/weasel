@@ -23,7 +23,7 @@ import { useEffect, useMemo, useReducer, useState } from 'react';
 import s from './RectPathEditLabDemo.module.css';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
-import { icon } from '../icon';
+import { icon } from '../icons.gen';
 
 type Data = { path?: { kind: string }; fill?: unknown };
 type State = SceneTrialState<Data, 'default', RectPose>;

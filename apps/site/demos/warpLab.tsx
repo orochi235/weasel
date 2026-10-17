@@ -7,7 +7,7 @@ import { type ActionsRegistry, asNodeId, boundsOfPath, type PolygonPath, type Re
 import { type WarpKind, type WarpSettings } from '@weasel-js/path-tools';
 import type { TrialContribution } from '@weasel-js/labkit';
 import { useEffect } from 'react';
-import { icon } from '../icon';
+import { icon } from '../icons.gen';
 
 /** Each trial's action registry, so its palette command fires on its own canvas. */
 const registries = new Map<string, Pick<ActionsRegistry, 'trigger'>>();

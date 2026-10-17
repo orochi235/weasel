@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { icon } from '../icon';
+import { icon } from '../icons.gen';
 import { mergeContributions, suppressContributions } from './merge';
 import type { TrialContribution } from './types';
 

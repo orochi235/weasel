@@ -16,7 +16,7 @@ import { createPathLabScene, useSeededPathEdit } from './pathEditLabSeed';
 import { PathLabStage } from './pathLab/pathLab';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
-import { icon } from '../icon';
+import { icon } from '../icons.gen';
 
 const config = f.schema({
   by: f.enum('count', ['count', 'spacing']).label('Resample by'),

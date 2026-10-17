@@ -10,7 +10,7 @@ import {
   useRef,
   useState,
 } from 'react';
-import { icon } from '../icon';
+import { icon } from '../icons.gen';
 import { useSurfaceOptional } from '../surface/useSurfaceTile';
 import { LightboxContext, type LightboxContextValue } from './LightboxContext';
 import { useLightboxLayers } from './LightboxLayers';

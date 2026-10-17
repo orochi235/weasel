@@ -16,7 +16,7 @@ import { createPathLabScene, useSeededPathEdit } from './pathEditLabSeed';
 import { OpeningSteps, PathLabStage } from './pathLab/pathLab';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
-import { icon } from '../icon';
+import { icon } from '../icons.gen';
 
 const config = f.schema({
   n: f.number(4).range(2, 8).step(1).label('Every Nth: N'),

@@ -32,7 +32,7 @@ import { RouteKnobs } from './RouteKnobs';
 import { StoryTree } from './tree/StoryTree';
 import { crossesInPlace, readRoute, readRouteEntry, useRoute } from './useRoute';
 import { useStoryRegistry } from './useStoryRegistry';
-import { icon } from '../icon';
+import { icon } from '../icons.gen';
 
 /** Props for `Workshop`. `index`, `importers` and `dependencies` are what the vite plugin's virtual modules supply. */
 export interface WorkshopProps {

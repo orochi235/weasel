@@ -6,7 +6,7 @@ import s from './HandleLockLabDemo.module.css';
 import { BLOB, type PathLabState, usePathEditTrial } from './pathEditLabScene';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
-import { icon } from '../icon';
+import { icon } from '../icons.gen';
 
 const FEATURES = ['pick', 'move', 'paths', handleLocksPreset] as const;
 

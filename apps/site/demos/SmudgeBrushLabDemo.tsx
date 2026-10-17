@@ -13,7 +13,7 @@ import {
 import { useMemo } from 'react';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
-import { icon } from '../icon';
+import { icon } from '../icons.gen';
 
 const FEATURES = ['draw', smudgePreset] as const;
 

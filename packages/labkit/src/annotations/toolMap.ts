@@ -1,5 +1,5 @@
 import type { BuiltinToolId } from '@weasel-js/core';
-import { icon } from '../icon';
+import { icon } from '../icons.gen';
 import type { InstrumentList } from '../instrument/types';
 import type { TrialTool } from '../tools/types';
 import type { AnnotationKind } from './types';

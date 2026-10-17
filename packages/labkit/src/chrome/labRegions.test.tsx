@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { describe, expect, it, vi } from 'vitest';
-import { icon } from '../icon';
+import { icon } from '../icons.gen';
 import type { Instrument } from '../instrument/types';
 import { Lab } from '../lab/Lab';
 import { LabShell } from '../lab/LabShell';

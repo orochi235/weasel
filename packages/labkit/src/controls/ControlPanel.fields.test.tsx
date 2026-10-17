@@ -2,7 +2,7 @@ import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { f } from '../config/builder';
 import { resolveConfigSchema } from '../config/resolve';
-import { icon } from '../icon';
+import { icon } from '../icons.gen';
 import { ControlPanel } from './ControlPanel';
 import type { ConfigField } from './types';
 

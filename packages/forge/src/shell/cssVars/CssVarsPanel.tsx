@@ -18,7 +18,7 @@ import { THEME_SOURCES, TOKEN_MANIFEST } from '@weasel-js/theme';
 import { scale as generateScale, type ThemeApi } from '@weasel-js/theme/engine';
 import { historyKey } from '@weasel-js/core';
 import { Button, Checkbox, Icon } from '@weasel-js/ui';
-import { icon } from '../../icon';
+import { icon } from '../../icons.gen';
 import { useCallback, useContext, useMemo, useState } from 'react';
 import type { Globals } from '../../protocol/messages';
 import { effectiveGlobals, GLOBALS_KEY } from '../globals';

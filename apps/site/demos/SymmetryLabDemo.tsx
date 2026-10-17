@@ -11,7 +11,7 @@ import {
 import { useLayoutEffect, useMemo, useState } from 'react';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
-import { icon } from '../icon';
+import { icon } from '../icons.gen';
 
 export const GROUP_ID = 'symmetry';
 /** A leaf symmetric about the kaleidoscope's first mirror, open in path edit. */

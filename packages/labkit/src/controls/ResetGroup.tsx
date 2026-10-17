@@ -1,7 +1,7 @@
 import { isPrefLeaf, type PrefGroup } from '@weasel-js/prefs';
 import { Button, Icon } from '@weasel-js/ui';
 import { valueAtPath } from '../config/path';
-import { icon } from '../icon';
+import { icon } from '../icons.gen';
 
 /** Every leaf beneath a group, as its dotted path and its default. */
 function leavesUnder(group: PrefGroup, at: string): [string, unknown][] {

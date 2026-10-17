@@ -1,6 +1,6 @@
 import type { GlobalDeclarations, StoryContext } from '@weasel-js/forge';
-import { toIconRef } from '@weasel-js/icons';
 import { defineTheme, type Theme, weaselTheme } from '@weasel-js/theme';
+import { icon } from './icons.gen';
 
 /** Loads the webfonts the font table names that no system ships. */
 const GOOGLE_FONTS_HREF =
@@ -74,7 +74,7 @@ const SLOTS = [
 
 /** Storybook's font toolbar, as forge globals: a family per weasel font slot, then weight, width and italic. */
 export const FONT_GLOBALS: GlobalDeclarations = {
-  fontFamily: { label: 'Font', default: 'oswald', options: options(FAMILY_OPTIONS), icon: toIconRef('ui:typeface') },
+  fontFamily: { label: 'Font', default: 'oswald', options: options(FAMILY_OPTIONS), icon: icon('ui:typeface') },
   ...Object.fromEntries(
     SLOTS.slice(1).map(({ global, label }) => [
       global,

@@ -1,4 +1,5 @@
-// Emits each package's icon table and bound icon() from its icons/ definitions.
+// Emits each package's icon table and bound icon() from its icons/ definitions. A root whose
+// index.mjs names a namespace and no groups draws nothing and gets only its icon().
 //
 //   node packages/icons/scripts/gen-icons.mjs
 //
@@ -9,7 +10,7 @@ import { existsSync, readdirSync, writeFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { camel, checkMark, element, fillElement } from './lib/emit.mjs';
-import { emitGen, emitTableModule } from './lib/modules.mjs';
+import { emitConsumerGen, emitGen, emitTableModule } from './lib/modules.mjs';
 
 const REPO = join(import.meta.dirname, '../../..');
 
@@ -58,7 +59,8 @@ function buildTable(pkg) {
 }
 
 function writePackage({ pkg, table, groups }) {
-  const src = join(pkg.root, 'src');
+  const src = existsSync(join(pkg.root, 'src')) ? join(pkg.root, 'src') : pkg.root;
+  if (!table) return writeFileSync(join(src, 'icons.gen.ts'), emitConsumerGen(pkg.namespace));
   writeFileSync(join(src, 'icons.table.json'), JSON.stringify(table, null, 2) + '\n');
   writeFileSync(join(src, 'icons.table.ts'), emitTableModule(table));
   writeFileSync(join(src, 'icons.gen.ts'), emitGen(table, groups));
@@ -73,20 +75,22 @@ export async function generate({ roots = discover(), write = true } = {}) {
     if (prior) throw new Error(`namespace "${p.namespace}" is declared by both ${prior} and ${relative(REPO, p.root)}`);
     owners.set(p.namespace, relative(REPO, p.root));
   }
-  const built = pkgs.map((p) => ({ pkg: p, ...buildTable(p) }));
+  const built = pkgs.map((p) => ({ pkg: p, ...(p.groups ? buildTable(p) : {}) }));
+  const drawn = built.filter((b) => b.table);
   if (write) {
     built.forEach(writePackage);
-    const manifest = built.map(({ table }) => ({
+    const manifest = drawn.map(({ table }) => ({
       namespace: table.namespace,
       owner: table.owner,
       names: Object.entries(table.icons).map(([name, g]) => ({ name, group: g.group, tags: g.tags })),
     }));
     writeFileSync(join(REPO, 'apps/site/icons.manifest.json'), JSON.stringify(manifest, null, 2) + '\n');
   }
-  return { tables: built.map((b) => b.table) };
+  return { tables: drawn.map((b) => b.table), consumers: built.filter((b) => !b.table).map((b) => b.pkg.namespace) };
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  const { tables } = await generate();
+  const { tables, consumers } = await generate();
   for (const t of tables) console.log(`${t.namespace}: ${Object.keys(t.icons).length} glyphs`);
+  for (const ns of consumers) console.log(`${ns}: icon() only`);
 }

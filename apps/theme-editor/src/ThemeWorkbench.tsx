@@ -19,7 +19,7 @@ import { describeIssue } from './theme/issues';
 import { documentSheets, tokensReadAt } from './theme/inspect';
 import { LAYERS, adoptGenerated, countTokens, pinApplies, runtimeTheme, type LayerId } from './theme/model';
 import { useLabHistory, type LabHistory } from './useLabHistory';
-import { icon } from './icon';
+import { icon } from './icons.gen';
 
 export interface WorkbenchProps {
   readonly api: ThemeApi;

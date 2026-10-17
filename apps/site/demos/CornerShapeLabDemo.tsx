@@ -26,7 +26,7 @@ import { CornerPanel } from './CornerShapePanel';
 import s from './CornerShapeLabDemo.module.css';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
-import { icon } from '../icon';
+import { icon } from '../icons.gen';
 
 // The corner controls read the selection, so they sit over the canvas
 // rather than in the trial's config.

@@ -1,5 +1,5 @@
 import { Icon } from '@weasel-js/ui';
-import { icon } from '../icon';
+import { icon } from '../icons.gen';
 import { MenuButton, ThemeSwitcher } from '../passthrough/weasel-ui';
 import { useLabContext } from './LabContext';
 

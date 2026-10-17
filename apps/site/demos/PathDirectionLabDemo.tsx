@@ -25,7 +25,7 @@ import { ActionBar } from '@weasel-js/ui';
 import { useMemo } from 'react';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
-import { icon } from '../icon';
+import { icon } from '../icons.gen';
 
 const config = f.schema({
   arrows: f.boolean(true).label('Direction arrows'),

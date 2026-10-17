@@ -15,7 +15,7 @@ import { useMemo } from 'react';
 import s from './BridgeLabDemo.module.css';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
-import { icon } from '../icon';
+import { icon } from '../icons.gen';
 
 const FEATURES = ['draw', bridgePreset] as const;
 

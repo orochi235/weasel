@@ -2,7 +2,7 @@ import { ExportMenu } from '../annotations/ExportMenu';
 import { MarkList } from '../annotations/MarkList';
 import type { ControlRenderer } from '../config/types';
 import { ControlPanel } from '../controls/ControlPanel';
-import { icon } from '../icon';
+import { icon } from '../icons.gen';
 import type { Instrument } from '../instrument/types';
 import { MenuButton } from '../passthrough/weasel-ui';
 import { FpsMeter } from '../primitives/FpsMeter';

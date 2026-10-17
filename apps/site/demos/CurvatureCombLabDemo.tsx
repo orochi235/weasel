@@ -14,7 +14,7 @@ import { useMemo } from 'react';
 import { createPathLabScene, useSeededPathEdit } from './pathEditLabSeed';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
-import { icon } from '../icon';
+import { icon } from '../icons.gen';
 
 const config = f.schema({
   comb: f.boolean(true).label('Show comb'),

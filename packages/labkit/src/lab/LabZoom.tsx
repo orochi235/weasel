@@ -19,7 +19,7 @@ import { useStore } from 'zustand/react';
 import type { CameraView } from '../canvas/CameraInput';
 import { CameraRegistryContext } from '../canvas/cameraRegistry';
 import { atScale, viewMiddle } from '../canvas/cameraZoom';
-import { icon } from '../icon';
+import { icon } from '../icons.gen';
 import { formatShortcut } from '../passthrough/weasel-ui';
 import { Toolbar } from '../primitives/Toolbar';
 import { LabStoreContext } from '../state/context';

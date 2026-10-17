@@ -25,7 +25,7 @@ import { useMemo, useState } from 'react';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import s from './MeasureLabDemo.module.css';
-import { icon } from '../icon';
+import { icon } from '../icons.gen';
 
 const config = f.schema({
   snap: f.boolean(true).label('Snap to grid'),

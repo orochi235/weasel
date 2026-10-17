@@ -26,7 +26,7 @@ import { useMemo } from 'react';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { PathEffectFrame, pathNode, usePathEffectProbe, usePathEffectSettings } from './pathEffectLab';
-import { icon } from '../icon';
+import { icon } from '../icons.gen';
 
 const FEATURES = ['draw', pathEffectsPreset] as const;
 

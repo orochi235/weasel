@@ -14,7 +14,7 @@ import { useMemo, useState, useSyncExternalStore } from 'react';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import s from './PathConstraintsLabDemo.module.css';
-import { icon } from '../icon';
+import { icon } from '../icons.gen';
 
 const FEATURES = ['draw', constraintsPreset] as const;
 

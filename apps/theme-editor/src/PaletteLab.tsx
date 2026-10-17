@@ -20,7 +20,7 @@ import { AnchorList } from './AnchorList';
 import { ConstraintsPanel } from './palette/ConstraintsPanel';
 import { unmetGates } from './palette/unmetGates';
 import { generate, type Anchor, type Constraints } from '@weasel-js/theme/engine';
-import { icon } from './icon';
+import { icon } from './icons.gen';
 
 const SURFACES: Record<SurfaceKey, string> = { dark: '#181a1e', light: '#f5f5f6' };
 

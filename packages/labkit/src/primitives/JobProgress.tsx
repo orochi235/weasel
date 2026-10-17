@@ -1,5 +1,5 @@
 import { Icon } from '@weasel-js/ui';
-import { icon } from '../icon';
+import { icon } from '../icons.gen';
 import type { JobHandle } from '../job/types';
 
 /** Props for `<JobProgress>`. */

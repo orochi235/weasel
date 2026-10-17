@@ -10,7 +10,7 @@ import {
 import { useEffect, useMemo, useRef } from 'react';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
-import { icon } from '../icon';
+import { icon } from '../icons.gen';
 
 const config = f.schema({
   width: f.number(14).range(1, 40).step(1).suffix('px').label('Base width'),

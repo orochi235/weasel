@@ -21,7 +21,7 @@ import {
 import { AnchorFields } from '@weasel-js/ui';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
-import { icon } from '../icon';
+import { icon } from '../icons.gen';
 
 /** Document units: points, 72 to the inch. */
 const UNITS = { pt: 1, in: 72, mm: 72 / 25.4 };
