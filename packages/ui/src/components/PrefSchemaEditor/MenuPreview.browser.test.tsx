@@ -26,7 +26,7 @@ function NameField() {
     <ActionsProvider>
       <Command />
       <input aria-label="Name" value={name} onChange={(e) => setName(e.target.value)} />
-      <PreviewPane schema={menu(name)} />
+      <PreviewPane schema={menu(name)} onDefaults={() => {}} />
     </ActionsProvider>
   );
 }
