@@ -148,8 +148,10 @@
   white-space: nowrap;
 }
 
-/* The bar's own name at the start of its line. */
+/* The bar's own name or glyph at the start of its line. */
 .lead {
+  display: flex;
+  align-items: center;
   flex: none;
   padding-inline: var(--wzl-space-2);
   font-size: var(--wzl-font-size-sm);

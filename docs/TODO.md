@@ -859,12 +859,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   `MenuBar` checks a title's `enableIf` and `showIf` only when the menu opens; close the menu when
   its title stops being openable.
 
-- **(P2) A bar can lead with an icon, not only its label.** `lead: 'label'` landed 2026-10-16
-  (`PrefBarLead` in `packages/prefs/src/groups.ts`). The icon form needs the group to name a glyph
-  as data: add `icon?: IconRef` to `PrefGroup`/`PrefSection`, as a pref leaf's `icon` already is
-  (`docs/icons.md`), `'icon'` to `PrefBarLead`, draw it with `resolveIcon` in `BarLayout`, and
-  offer both in the asset editor. A `menu` group's button could take the same `icon`.
-
 - **(P3) ui's `ShortcutInput` is a third copy of the shortcut shape.**
   `packages/ui/src/components/ToolPalette/formatShortcut.ts` describes what `@weasel-js/menu`'s
   `MenuShortcut` and routing's `ActionShortcut` (now an alias of it) already do. Fold it into

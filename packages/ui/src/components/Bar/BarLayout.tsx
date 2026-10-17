@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react';
+import type { IconRef } from '@weasel-js/icons';
 import { isPrefLeaf, prefAliasName, type PrefAlias, type PrefBarLead, type PrefBarOverflow, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
+import { resolveIcon } from '../../icons/resolveIcon';
 import { BarMenu, type BarMenuSources } from './BarMenu';
 import { barMenuRoot } from './barMenuRoot';
 import { BarOverflow } from './BarOverflow';
@@ -45,7 +47,7 @@ export type BarNode =
   | ({ kind: 'leaf' } & BarLeafNode)
   | ({ kind: 'cell' } & BarCell)
   | { kind: 'run'; path: string; nodes: readonly BarNode[] }
-  | { kind: 'opens'; path: string; name: string; body: () => ReactNode }
+  | { kind: 'opens'; path: string; name: string; icon?: IconRef; body: () => ReactNode }
   | { kind: 'menu'; path: string; name: string; group: PrefGroup; sources: BarMenuSources };
 
 /** A cell a surface drew for one leaf, or for several it fused into one control. */
@@ -70,8 +72,11 @@ export interface BarLayoutProps {
   rootAttrs?: Record<string, string | undefined>;
   /** Names the bar, and makes it a `toolbar`. Leave unset inside one. */
   label?: string;
-  /** What the line starts with: `'label'` shows `label` ahead of the cells. Unset: the first cell. */
+  /** What the line starts with: `'label'` shows `label` ahead of the cells, and `'icon'` shows `icon`. Unset: the
+   *  first cell. */
   lead?: PrefBarLead;
+  /** The glyph naming the bar, which `lead: 'icon'` starts its line with. */
+  icon?: IconRef;
   /** Draw the strip the bar sits on, for a bar set among other things with
    *  no strip of the host's under it. `'segmented'` is a compact strip with
    *  the cells almost touching. */
@@ -103,7 +108,7 @@ type Drawn = { divider: true } | { divider?: false; path: string; leaf: boolean;
  * leave the arrow keys to them, so it does not rove.
  */
 export function BarLayout(props: BarLayoutProps) {
-  const { nodes, orientation = 'horizontal', cells, row, attrs, rootAttrs, label, lead, framed, className } = props;
+  const { nodes, orientation = 'horizontal', cells, row, attrs, rootAttrs, label, lead, icon, framed, className } = props;
   const { overflow = 'scroll', overflowLabel = 'More' } = props;
   const vertical = orientation === 'vertical';
   const items: Drawn[] = [];
@@ -140,11 +145,13 @@ export function BarLayout(props: BarLayoutProps) {
         continue;
       }
       if (node.kind === 'opens') {
-        items.push({ path: node.path, leaf: false, content: <BarPopover label={node.name}>{node.body()}</BarPopover> });
+        items.push({ path: node.path, leaf: false, content: <BarPopover label={node.name} icon={resolveIcon(node.icon)}>{node.body()}</BarPopover> });
         continue;
       }
       if (node.kind === 'menu') {
-        const menu = <BarMenu label={node.name} description={node.group.description} schema={barMenuRoot(node.group, node.path)} {...node.sources} />;
+        const menu = (
+          <BarMenu label={node.name} icon={resolveIcon(node.group.icon)} description={node.group.description} schema={barMenuRoot(node.group, node.path)} {...node.sources} />
+        );
         items.push({ path: node.path, leaf: false, content: menu });
         continue;
       }
@@ -161,6 +168,8 @@ export function BarLayout(props: BarLayoutProps) {
     .filter((item, i) => !item.divider || (i > 0 && i < items.length - 1 && !items[i - 1]!.divider))
     .map((item, i) => ({ ...item, key: item.divider ? `divider:${i}` : item.path }));
   while (shown.at(-1)?.divider) shown.pop();
+
+  const leading = lead === 'label' ? label : lead === 'icon' ? resolveIcon(icon) : undefined;
 
   const menu = overflow === 'menu';
   const { bar, kept } = useBarOverflow(menu, shown.map((item) => item.key), vertical);
@@ -191,7 +200,7 @@ export function BarLayout(props: BarLayoutProps) {
       aria-label={label}
       aria-orientation={label === undefined ? undefined : orientation}
     >
-      {lead === 'label' && label && <span className={s.lead} aria-hidden="true" {...{ [BAR_LEAD]: '' }}>{label}</span>}
+      {leading && <span className={s.lead} aria-hidden="true" {...{ [BAR_LEAD]: '' }}>{leading}</span>}
       {draw(line, vertical)}
       {rest.length > 0 && (
         <span className={s.cell} {...{ [BAR_MORE]: '' }}>
@@ -223,7 +232,7 @@ export function groupBarNodes(
     } else if (child.as === 'menu' && menu) {
       out.push({ kind: 'menu', path: at, name: child.name, group: child, sources: menu });
     } else if (opensFromBar(child.as)) {
-      out.push({ kind: 'opens', path: at, name: child.name, body: () => open(child, at) });
+      out.push({ kind: 'opens', path: at, name: child.name, ...(child.icon ? { icon: child.icon } : {}), body: () => open(child, at) });
     } else {
       out.push({ kind: 'run', path: at, nodes: groupBarNodes(child, at, open, menu) });
     }

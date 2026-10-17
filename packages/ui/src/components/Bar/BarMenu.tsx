@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
 import {
   buildDepsFromRequires,
   resolveSchemaMenu,
@@ -26,6 +26,8 @@ export interface BarMenuSources {
 export interface BarMenuProps extends BarMenuSources {
   /** What the button reads, and what names the menu. */
   label: string;
+  /** A glyph before the label. */
+  icon?: ReactNode;
   /** The button's tooltip. */
   description?: string;
   /** The menu, as a schema `resolveSchemaMenu` walks: resolved each time it opens, so it shows what holds then. */
@@ -39,7 +41,7 @@ export interface BarMenuProps extends BarMenuSources {
  * as the DOM menu the context menu host draws — actions as items, flags as
  * checked items, choices as radio rows, nested groups as submenus.
  */
-export function BarMenu({ label, description, schema, values, onChange, over, defaultOpen }: BarMenuProps) {
+export function BarMenu({ label, icon, description, schema, values, onChange, over, defaultOpen }: BarMenuProps) {
   const registry = useActionsRegistry();
   const resolveMenu = useBarMenuResolver();
   const trigger = useMenuTrigger();
@@ -77,6 +79,7 @@ export function BarMenu({ label, description, schema, values, onChange, over, de
             trigger.click(e, resolve);
           }}
         >
+          {icon}
           <span>{label}</span>
           <Caret className={s.caret} />
         </button>

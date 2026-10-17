@@ -110,7 +110,18 @@ const KIND_ATTRS: Record<PrefKind, KindAttrs> = {
 
 const BAR_OVERFLOW = choice('Overflow', 'Drawn as a bar: what happens to the cells its line has no room for. scroll keeps them all on it, and menu opens the ones past its end from a button there. Unset: scroll.', ['scroll', 'menu']);
 
-const BAR_LEAD = choice('Lead', 'Drawn as a bar: what its line starts with. label puts its name there, ahead of its cells. Unset: its first cell.', ['label']);
+const BAR_LEAD = choice('Lead', 'Drawn as a bar: what its line starts with. label puts its name there, ahead of its cells, and icon its icon. Unset: its first cell.', ['label', 'icon']);
+
+const GROUP_ICON_ATTR = { ...LEAF_BASE.icon!, description: 'Drawn as a bar led by its icon, this starts its line; drawn as a menu, page, tab, or panel, it sits beside the name on the button a bar opens it from, and on its submenu row in a menu. An icon by qualified name, from the icon sets this app registered.' } as PrefLeaf;
+
+/** The attributes asked after how a group is drawn, which only some forms read. */
+const AS_ATTRS: Partial<Record<string, Array<[string, KindAttr]>>> = {
+  bar: [['overflow', BAR_OVERFLOW], ['lead', BAR_LEAD], ['icon', GROUP_ICON_ATTR]],
+  menu: [['icon', GROUP_ICON_ATTR]],
+  page: [['icon', GROUP_ICON_ATTR]],
+  tab: [['icon', GROUP_ICON_ATTR]],
+  panel: [['icon', GROUP_ICON_ATTR]],
+};
 
 const GROUP_ATTRS: KindAttrs = {
   name: LEAF_BASE.name!,
@@ -248,8 +259,7 @@ export function attributeSchema(
 ): AttributeSchema {
   if (!isPrefLeaf(node)) {
     const attrs = Object.entries(isPrefSection(node) ? SECTION_ATTRS : GROUP_ATTRS);
-    // Only a bar has a line to run out of, so only it is asked, after how it is drawn.
-    const shared = attrs.flatMap((attr): Array<[string, KindAttr]> => (attr[0] === 'as' && node.as === 'bar' ? [attr, ['overflow', BAR_OVERFLOW], ['lead', BAR_LEAD]] : [attr]));
+    const shared = attrs.flatMap((attr): Array<[string, KindAttr]> => (attr[0] === 'as' ? [attr, ...(AS_ATTRS[node.as ?? ''] ?? [])] : [attr]));
     return { shared: Object.fromEntries(shared), own: {}, auto: {}, entry: {}, readOnly: [] };
   }
   const typed = node.type !== undefined;

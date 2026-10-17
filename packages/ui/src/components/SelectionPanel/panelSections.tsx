@@ -32,6 +32,7 @@ function barSection(section: PanelSection, scope: PanelCellScope, marks: PanelMa
       framed
       overflow={section.overflow}
       lead={section.lead}
+      icon={section.icon}
       label={section.name === '' ? undefined : section.name}
       nodes={cells.map((cell) => ({ kind: 'cell', path: cell.key, content: cell.hidden ? <>{cell.content}<HiddenBadge /></> : cell.content }))}
       cells={() => []}
