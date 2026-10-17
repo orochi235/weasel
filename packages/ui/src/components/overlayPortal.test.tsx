@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, screen } from '@testing-library/react';
 import { Callout } from './Callout';
 import { ComboBox } from './ComboBox';
 import { Dialog } from './Dialog';
 import { Select } from './Select';
 import { Tooltip, TooltipTrigger } from './Tooltip';
 import { OverlayPortalProvider } from '../overlays/portalHost';
+import { renderWithIcons } from '../testing/withIcons';
 
 /**
  * A portalled overlay has to land inside the element the theme was applied
@@ -36,24 +37,24 @@ function host(): Element | null {
 
 describe('overlays portal into the nearest themed ancestor', () => {
   it('Select popover', () => {
-    render(<Themed><Select label="Color" options={OPTIONS} /></Themed>);
+    renderWithIcons(<Themed><Select label="Color" options={OPTIONS} /></Themed>);
     act(() => { fireEvent.click(screen.getByRole('button', { name: /Color/ })); });
     expect(host()).toBe(screen.getByTestId('themed'));
   });
 
   it('ComboBox popover', () => {
-    render(<Themed><ComboBox label="Color" options={OPTIONS} /></Themed>);
+    renderWithIcons(<Themed><ComboBox label="Color" options={OPTIONS} /></Themed>);
     act(() => { fireEvent.click(screen.getByRole('button', { name: /Show options/ })); });
     expect(host()).toBe(screen.getByTestId('themed'));
   });
 
   it('Dialog overlay', () => {
-    render(<Themed><Dialog isOpen title="Hi" onOpenChange={() => {}}>body</Dialog></Themed>);
+    renderWithIcons(<Themed><Dialog isOpen title="Hi" onOpenChange={() => {}}>body</Dialog></Themed>);
     expect(host()).toBe(screen.getByTestId('themed'));
   });
 
   it('Callout popover', () => {
-    render(
+    renderWithIcons(
       <Themed>
         <Callout isOpen anchorRect={{ x: 0, y: 0, width: 10, height: 10 }} aria-label="c">
           body
@@ -64,7 +65,7 @@ describe('overlays portal into the nearest themed ancestor', () => {
   });
 
   it('Tooltip bubble', () => {
-    render(
+    renderWithIcons(
       <Themed>
         <TooltipTrigger isOpen delay={0}>
           <button type="button">trigger</button>
@@ -76,7 +77,7 @@ describe('overlays portal into the nearest themed ancestor', () => {
   });
 
   it('finds the innermost themed ancestor, not the outermost', () => {
-    render(
+    renderWithIcons(
       <div data-wzl-theme="outer" data-wzl-mode="light">
         <div data-wzl-theme="inner" data-wzl-mode="dark" data-testid="inner">
           <Dialog isOpen title="Hi">body</Dialog>
@@ -87,7 +88,7 @@ describe('overlays portal into the nearest themed ancestor', () => {
   });
 
   it('honors an explicit host element opted in with data-wzl-portal-host', () => {
-    render(
+    renderWithIcons(
       <div data-wzl-theme="outer" data-wzl-mode="light">
         <div data-wzl-portal-host="" data-testid="opted">
           <Dialog isOpen title="Hi">body</Dialog>
@@ -104,7 +105,7 @@ describe('consumers can override where an overlay portals', () => {
     const elsewhere = document.createElement('div');
     elsewhere.setAttribute('data-testid', 'elsewhere');
     document.body.appendChild(elsewhere);
-    render(
+    renderWithIcons(
       <Themed>
         <Dialog isOpen title="Hi" portalContainer={elsewhere}>body</Dialog>
       </Themed>,
@@ -116,7 +117,7 @@ describe('consumers can override where an overlay portals', () => {
   });
 
   it('portalContainer={null} sends it to the body', () => {
-    render(
+    renderWithIcons(
       <Themed>
         <Dialog isOpen title="Hi" portalContainer={null}>body</Dialog>
       </Themed>,
@@ -127,7 +128,7 @@ describe('consumers can override where an overlay portals', () => {
   it('OverlayPortalProvider sets the container for a whole subtree', () => {
     const elsewhere = document.createElement('div');
     document.body.appendChild(elsewhere);
-    render(
+    renderWithIcons(
       <Themed>
         <OverlayPortalProvider container={elsewhere}>
           <Dialog isOpen title="Hi">body</Dialog>

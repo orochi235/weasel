@@ -1,8 +1,9 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { useState } from 'react';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { PrefSchemaEditor } from './PrefSchemaEditor';
+import { renderWithIcons } from '../../testing/withIcons';
 
 /** Types `value` and leaves the field, which is when a typed field commits. */
 const settle = (el: HTMLElement, value: string): void => {
@@ -39,7 +40,7 @@ const attributes = () => screen.getByRole('region', { name: 'Attributes' });
 
 describe('PrefSchemaEditor with several nodes selected', () => {
   it('adds a row to the selection with Cmd held, and a range with Shift', () => {
-    render(<Live />);
+    renderWithIcons(<Live />);
     fireEvent.click(row('grid'));
     fireEvent.click(row('dock'), { metaKey: true });
     expect(item('grid')).toHaveAttribute('aria-selected', 'true');
@@ -51,21 +52,21 @@ describe('PrefSchemaEditor with several nodes selected', () => {
   });
 
   it('selects every row the tree shows with Cmd+A', () => {
-    render(<Live />);
+    renderWithIcons(<Live />);
     fireEvent.click(row('grid'));
     fireEvent.keyDown(item('grid'), { key: 'a', metaKey: true });
     for (const key of ['grid', 'snap', 'zoom', 'dock']) expect(item(key)).toHaveAttribute('aria-selected', 'true');
   });
 
   it('says how many are selected', () => {
-    render(<Live />);
+    renderWithIcons(<Live />);
     fireEvent.click(row('grid'));
     fireEvent.click(row('dock'), { metaKey: true });
     expect(within(attributes()).getByText('2 selected')).toBeInTheDocument();
   });
 
   it('removes every selected node as one step, and undo brings them back selected', () => {
-    render(<Live />);
+    renderWithIcons(<Live />);
     fireEvent.click(row('grid'));
     fireEvent.click(row('dock'), { metaKey: true });
     fireEvent.keyDown(structure(), { key: 'Delete' });
@@ -83,7 +84,7 @@ describe('PrefSchemaEditor with several nodes selected', () => {
   const field = (name: string) => within(attributes()).getByRole('textbox', { name });
 
   it('shows no value where the nodes differ, and no key', () => {
-    render(<Live />);
+    renderWithIcons(<Live />);
     pickTwo();
     expect(field('Name')).toHaveValue('');
     expect(field('Name')).toHaveAttribute('placeholder', 'Mixed');
@@ -91,7 +92,7 @@ describe('PrefSchemaEditor with several nodes selected', () => {
   });
 
   it('writes an edit to every selected node, as one step back', () => {
-    render(<Live />);
+    renderWithIcons(<Live />);
     pickTwo();
     settle(field('Description'), 'Both.');
     fireEvent.click(row('grid'));
@@ -104,7 +105,7 @@ describe('PrefSchemaEditor with several nodes selected', () => {
   });
 
   it('leaves the keys alone when several nodes are named at once', () => {
-    render(<Live />);
+    renderWithIcons(<Live />);
     pickTwo();
     fireEvent.focus(field('Name'));
     settle(field('Name'), 'Same');
@@ -119,7 +120,7 @@ describe('PrefSchemaEditor with several nodes selected', () => {
   const previewRow = (label: string) => within(preview()).getByText(label).closest('[data-pref-path]')!;
 
   it('marks every selected node in the preview', () => {
-    render(<Live />);
+    renderWithIcons(<Live />);
     pickTwo();
     expect(previewRow('Show grid')).toHaveAttribute('data-selected');
     expect(previewRow('Snap')).toHaveAttribute('data-selected');
@@ -127,7 +128,7 @@ describe('PrefSchemaEditor with several nodes selected', () => {
   });
 
   it('adds a preview row to the selection with Cmd held, and takes it out again', () => {
-    render(<Live />);
+    renderWithIcons(<Live />);
     fireEvent.click(row('grid'));
     fireEvent.pointerDown(previewRow('Snap'), { metaKey: true });
     expect(item('grid')).toHaveAttribute('aria-selected', 'true');
@@ -138,7 +139,7 @@ describe('PrefSchemaEditor with several nodes selected', () => {
   });
 
   it('takes the preview rows from the first selected to the one pressed with Shift held', () => {
-    render(<Live />);
+    renderWithIcons(<Live />);
     fireEvent.click(row('grid'));
     fireEvent.pointerDown(previewRow('Zoom'), { shiftKey: true });
     for (const key of ['grid', 'snap', 'zoom']) expect(item(key)).toHaveAttribute('aria-selected', 'true');
@@ -150,7 +151,7 @@ describe('PrefSchemaEditor with several nodes selected', () => {
   });
 
   it('offers only what every kind has when the kinds differ', () => {
-    render(<Live />);
+    renderWithIcons(<Live />);
     fireEvent.click(row('zoom'));
     expect(field('Min')).toBeInTheDocument();
     fireEvent.click(row('grid'), { metaKey: true });

@@ -1,8 +1,9 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { f } from '../config/builder';
 import { resolveConfigSchema } from '../config/resolve';
 import { ControlPanel } from './ControlPanel';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 const phase = () =>
   f.object({
@@ -29,7 +30,7 @@ const schema = f.schema({
 const resolved = resolveConfigSchema(schema);
 
 function open(label: string, config: Record<string, unknown>): void {
-  render(
+  renderWithIcons(
     <ControlPanel
       schema={resolved}
       config={{ ...(schema.defaults() as Record<string, unknown>), ...config }}
@@ -87,7 +88,7 @@ describe('a condition that reads the entry, in a list a control panel opens in a
   });
 
   it('hides and disables a field in each entry by that entry', () => {
-    render(
+    renderWithIcons(
       <ControlPanel
         schema={resolveConfigSchema(entries)}
         config={entries.defaults() as Record<string, unknown>}
@@ -110,7 +111,7 @@ describe('a condition that reads the entry, in a list of plain text a control pa
   });
 
   it('disables one entry by that entry, leaves the next, and still lets it be removed', () => {
-    render(
+    renderWithIcons(
       <ControlPanel
         schema={resolveConfigSchema(tags)}
         config={tags.defaults() as Record<string, unknown>}

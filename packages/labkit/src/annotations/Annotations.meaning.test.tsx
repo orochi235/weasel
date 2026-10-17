@@ -4,12 +4,13 @@
  * plus the two things a reader needs at a glance — which target a mark is on,
  * and whether it still describes the picture under it.
  */
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { AnnotationsContext } from './AnnotationsContext';
 import { MarkList } from './MarkList';
 import { createAnnotationStore } from './store';
 import type { AnnotationMeaning, AnnotationsApi, AnnotationTargetInfo } from './types';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 const TARGETS: AnnotationTargetInfo[] = [
   { id: 'flat', content: { w: 200, h: 100 }, positionDependsOn: ['angle'] },
@@ -24,7 +25,7 @@ const MEANING: AnnotationMeaning = {
 };
 
 function mount(store: AnnotationsApi, meaning?: AnnotationMeaning, config: unknown = { angle: 0 }) {
-  return render(
+  return renderWithIcons(
     <AnnotationsContext.Provider value={store}>
       <MarkList meaning={meaning} config={config} />
     </AnnotationsContext.Provider>,

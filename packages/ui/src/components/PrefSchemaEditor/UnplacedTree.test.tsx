@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { useState } from 'react';
 import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 import type { TreeNode } from '../Tree';
@@ -7,6 +7,7 @@ import { PrefSchemaEditor } from './PrefSchemaEditor';
 import type { PaletteDrag } from './Palette';
 import { UnplacedTree } from './UnplacedTree';
 import { rowKey } from './treeRows.fixture';
+import { renderWithIcons } from '../../testing/withIcons';
 
 afterEach(cleanup);
 
@@ -31,7 +32,7 @@ const selectedIn = (tree: HTMLElement) =>
 
 describe('several unplaced nodes at once', () => {
   it('adds a row to the selection on Cmd-click, and replaces it on a plain click', () => {
-    render(<Live />);
+    renderWithIcons(<Live />);
     fireEvent.click(within(unplaced()).getByText('author'));
     fireEvent.click(within(unplaced()).getByText('owner'), { metaKey: true });
     expect(selectedIn(unplaced())).toEqual(['author', 'owner']);
@@ -41,7 +42,7 @@ describe('several unplaced nodes at once', () => {
   });
 
   it('keeps a row selected in the structure tree when one here joins it', () => {
-    render(<Live />);
+    renderWithIcons(<Live />);
     fireEvent.click(within(structure()).getByText('view'));
     fireEvent.click(within(unplaced()).getByText('author'), { metaKey: true });
     expect(selectedIn(structure())).toEqual(['view']);
@@ -51,7 +52,7 @@ describe('several unplaced nodes at once', () => {
   it('carries every selected row the schema holds in a drag out of the tree', () => {
     const rows: TreeNode[] = [{ id: 'author', label: 'Author' }, { id: 'owner', label: 'Owner' }, { id: 'extra', label: 'Extra' }];
     const dropped: PaletteDrag[] = [];
-    render(
+    renderWithIcons(
       <UnplacedTree loose={rows} looseAt={(path) => START.children[path] ?? text(path)} waiting={null} sought=""
         selected={['author', 'owner']} onPick={() => {}} onDrag={() => {}} onDrop={(drag) => dropped.push(drag)} />,
     );
@@ -80,7 +81,7 @@ describe('Add alias with several prefs selected', () => {
   const keys = () => within(structure()).getAllByRole('treeitem').map(rowKey);
 
   it('adds an alias of each, together after the one picked last', () => {
-    render(<Editor />);
+    renderWithIcons(<Editor />);
     fireEvent.click(within(structure()).getByText('snap'));
     fireEvent.click(within(structure()).getByText('grid'), { metaKey: true });
     expect(add()).toBeEnabled();
@@ -90,7 +91,7 @@ describe('Add alias with several prefs selected', () => {
   });
 
   it('offers none while one of them is a group, which has no alias', () => {
-    render(<Editor />);
+    renderWithIcons(<Editor />);
     fireEvent.click(within(structure()).getByText('snap'));
     fireEvent.click(within(structure()).getByText('view'), { metaKey: true });
     expect(add()).toBeDisabled();

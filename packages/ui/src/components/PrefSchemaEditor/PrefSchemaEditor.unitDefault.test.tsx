@@ -1,8 +1,9 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { useState } from 'react';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { PrefSchemaEditor } from './PrefSchemaEditor';
+import { renderWithIcons } from '../../testing/withIcons';
 
 afterEach(cleanup);
 
@@ -36,14 +37,14 @@ const type = (name: string, text: string) => {
 
 describe('PrefSchemaEditor: a number shown in a unit', () => {
   it('shows its default and its auto value in that unit', () => {
-    render(<Live />);
+    renderWithIcons(<Live />);
     fireEvent.click(within(screen.getByRole('tree', { name: 'Schema structure' })).getByText('dim'));
     expect(attributes().getByRole('spinbutton', { name: 'Default' })).toHaveValue('50');
     expect(attributes().getByRole('spinbutton', { name: 'Auto value' })).toHaveValue('25');
   });
 
   it('stores what is typed there in the stored unit', () => {
-    render(<Live />);
+    renderWithIcons(<Live />);
     fireEvent.click(within(screen.getByRole('tree', { name: 'Schema structure' })).getByText('dim'));
     type('Default', '80');
     expect(dim().default).toBeCloseTo(0.8);

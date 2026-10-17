@@ -1,10 +1,11 @@
 import '@weasel-js/theme/tokens.css';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, screen } from '@testing-library/react';
 import type { PrefCondition, PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 import { afterEach, beforeAll, expect, it } from 'vitest';
 import { page } from 'vitest/browser';
 import { PrefConditionEditor } from '../PrefConditionEditor';
 import { PrefsForm, type PrefRenderer } from './PrefsForm';
+import { renderWithIcons } from '../../testing/withIcons';
 
 // Where a row's label sits and how wide its control runs is layout, which jsdom does not do.
 
@@ -35,7 +36,7 @@ const box = (el: Element) => el.getBoundingClientRect();
 const parts = () => ['pref', 'comparison', 'value'].map((part) => box(screen.getByLabelText(`Condition 1 ${part}`)));
 
 function mount(schema: PrefGroup, wide: boolean, values: unknown) {
-  const { container } = render(
+  const { container } = renderWithIcons(
     <div style={{ width: 520 }}>
       <PrefsForm layout="list" schema={schema} values={values} onChange={() => {}} renderers={{ condition: condition(wide) }} />
     </div>,

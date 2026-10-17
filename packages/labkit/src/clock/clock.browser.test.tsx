@@ -2,10 +2,11 @@ import '@weasel-js/theme/tokens.css';
 import 'windease/styles.css';
 import '../styles.less';
 import './clock.browser.test.less';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, screen } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
 import type { Instrument } from '../instrument/types';
 import { Lab } from '../lab/Lab';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 // The lab's frame loop syncing a trial clock and a timed layer repainting from
 // it: real frames and real pixels, which only a browser has.
@@ -71,7 +72,7 @@ const POLL = { timeout: 10_000 };
 test('a timed layer repaints as the clock plays, and holds once it pauses', async () => {
   painted = [];
   pausedAt = Number.NaN;
-  render(
+  renderWithIcons(
     <div className="lk-clock-frame">
       <Lab title="T" instruments={[Ticking]} defaultInstrument="Ticking" />
     </div>,

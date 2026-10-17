@@ -1,7 +1,8 @@
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { PrefsForm, type PrefRenderContext } from './PrefsForm';
+import { renderWithIcons } from '../../testing/withIcons';
 
 afterEach(cleanup);
 
@@ -15,7 +16,7 @@ describe('PrefsForm list leaf', () => {
 
   it('draws one control per entry, each as the item leaf, and commits the whole array', () => {
     const onChange = vi.fn();
-    render(<PrefsForm schema={schema} values={{}} onChange={onChange} />);
+    renderWithIcons(<PrefsForm schema={schema} values={{}} onChange={onChange} />);
     expect(screen.getAllByRole('checkbox')).toHaveLength(2);
     fireEvent.click(screen.getByRole('checkbox', { name: 'Flag 2' }));
     expect(onChange).toHaveBeenCalledWith('flags', [false, true]);
@@ -23,7 +24,7 @@ describe('PrefsForm list leaf', () => {
 
   it('adds an entry at the item default and removes one', () => {
     const onChange = vi.fn();
-    render(<PrefsForm schema={schema} values={{ flags: [false] }} onChange={onChange} />);
+    renderWithIcons(<PrefsForm schema={schema} values={{ flags: [false] }} onChange={onChange} />);
     fireEvent.click(screen.getByRole('button', { name: 'Add' }));
     expect(onChange).toHaveBeenLastCalledWith('flags', [false, true]);
     fireEvent.click(screen.getByRole('button', { name: 'Remove Flag 1' }));
@@ -37,7 +38,7 @@ describe('PrefsForm list leaf', () => {
         flags: { kind: 'list', name: 'Flags', description: '', default: [true], item: flag, minItems: 1, maxItems: 1 },
       },
     };
-    render(<PrefsForm schema={bounded} values={{}} onChange={() => {}} />);
+    renderWithIcons(<PrefsForm schema={bounded} values={{}} onChange={() => {}} />);
     expect(screen.getByRole('button', { name: 'Add' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Remove Flag 1' })).toBeDisabled();
   });
@@ -56,7 +57,7 @@ describe('PrefsForm list leaf', () => {
       },
     };
     const onChange = vi.fn();
-    render(<PrefsForm schema={strings} values={{}} onChange={onChange} />);
+    renderWithIcons(<PrefsForm schema={strings} values={{}} onChange={onChange} />);
     fireEvent.change(screen.getByRole('textbox', { name: 'Glob 1' }), { target: { value: 'b' } });
     expect(onChange).toHaveBeenCalledWith('globs', ['b']);
   });
@@ -75,7 +76,7 @@ describe('PrefsForm list leaf', () => {
       },
     };
     const onChange = vi.fn();
-    render(<PrefsForm schema={grid} values={{}} onChange={onChange} />);
+    renderWithIcons(<PrefsForm schema={grid} values={{}} onChange={onChange} />);
     fireEvent.click(screen.getAllByRole('checkbox')[1]!);
     expect(onChange).toHaveBeenCalledWith('rows', [[true], [true]]);
   });
@@ -99,7 +100,7 @@ describe('PrefsForm list leaf', () => {
       return <button onClick={() => ctx.setValue('z')}>{`tag ${String(ctx.value)}`}</button>;
     };
     const onChange = vi.fn();
-    render(<PrefsForm schema={tags} values={{}} onChange={onChange} renderers={{ tag }} />);
+    renderWithIcons(<PrefsForm schema={tags} values={{}} onChange={onChange} renderers={{ tag }} />);
     expect([...paths]).toEqual(['tags.0', 'tags.1']);
     fireEvent.click(screen.getByRole('button', { name: 'tag y' }));
     expect(onChange).toHaveBeenCalledWith('tags', ['x', 'z']);
@@ -120,7 +121,7 @@ describe('PrefsForm object leaf', () => {
         },
       },
     };
-    render(
+    renderWithIcons(
       <PrefsForm
         schema={schema}
         values={{}}
@@ -143,7 +144,7 @@ describe('PrefsForm action leaf', () => {
   it("draws a button that calls run with the leaf's path, and writes no value", () => {
     const run = vi.fn();
     const onChange = vi.fn();
-    render(<PrefsForm schema={schemaWith(run, 'Wipe')} values={{}} onChange={onChange} />);
+    renderWithIcons(<PrefsForm schema={schemaWith(run, 'Wipe')} values={{}} onChange={onChange} />);
     fireEvent.click(screen.getByRole('button', { name: 'Wipe' }));
     expect(run).toHaveBeenCalledWith({ path: 'wipe' });
     expect(onChange).not.toHaveBeenCalled();
@@ -157,7 +158,7 @@ describe('PrefsForm action leaf', () => {
           finish = resolve;
         }),
     );
-    render(<PrefsForm schema={schemaWith(run)} values={{}} onChange={() => {}} />);
+    renderWithIcons(<PrefsForm schema={schemaWith(run)} values={{}} onChange={() => {}} />);
     const button = screen.getByRole('button', { name: 'Wipe cache' });
     fireEvent.click(button);
     expect(button).toBeDisabled();
@@ -176,7 +177,7 @@ describe('PrefsForm map leaf', () => {
 
   it('draws a key and the item\'s control per entry, and commits the whole record', () => {
     const onChange = vi.fn();
-    render(<PrefsForm schema={schema} values={{}} onChange={onChange} />);
+    renderWithIcons(<PrefsForm schema={schema} values={{}} onChange={onChange} />);
     expect(screen.getAllByRole('textbox').map((el) => (el as HTMLInputElement).value)).toEqual(['left', 'right']);
     fireEvent.click(screen.getByRole('checkbox', { name: 'Flag right' }));
     expect(onChange).toHaveBeenCalledWith('on', { left: false, right: true });
@@ -184,7 +185,7 @@ describe('PrefsForm map leaf', () => {
 
   it('keeps a new entry\'s row while it has no key, and writes it once it has one', () => {
     const onChange = vi.fn();
-    render(<PrefsForm schema={schema} values={{}} onChange={onChange} />);
+    renderWithIcons(<PrefsForm schema={schema} values={{}} onChange={onChange} />);
     fireEvent.click(screen.getByRole('button', { name: 'Add' }));
     expect(onChange).toHaveBeenLastCalledWith('on', { left: false, right: false });
     expect(screen.getAllByRole('textbox')).toHaveLength(3);
@@ -194,7 +195,7 @@ describe('PrefsForm map leaf', () => {
 
   it('renames a key in place and removes an entry', () => {
     const onChange = vi.fn();
-    render(<PrefsForm schema={schema} values={{}} onChange={onChange} />);
+    renderWithIcons(<PrefsForm schema={schema} values={{}} onChange={onChange} />);
     fireEvent.change(screen.getAllByRole('textbox')[0]!, { target: { value: 'port' } });
     expect(onChange).toHaveBeenLastCalledWith('on', { port: false, right: false });
     fireEvent.click(screen.getByRole('button', { name: 'Remove Flag 2' }));
@@ -222,14 +223,14 @@ describe('PrefsForm union leaf', () => {
 
   it('draws the fields of the variant its value is, and keeps the tag on an edit', () => {
     const onChange = vi.fn();
-    render(<PrefsForm schema={schema} values={{ shape: { type: 'box', square: false } }} onChange={onChange} />);
+    renderWithIcons(<PrefsForm schema={schema} values={{ shape: { type: 'box', square: false } }} onChange={onChange} />);
     expect(screen.queryByRole('checkbox', { name: 'Filled' })).toBeNull();
     fireEvent.click(screen.getByRole('checkbox', { name: 'Square' }));
     expect(onChange).toHaveBeenCalledWith('shape', { type: 'box', square: true });
   });
 
   it('draws no fields for a value whose tag names no variant', () => {
-    render(<PrefsForm schema={schema} values={{ shape: { type: 'star' } }} onChange={() => {}} />);
+    renderWithIcons(<PrefsForm schema={schema} values={{ shape: { type: 'star' } }} onChange={() => {}} />);
     expect(screen.queryByRole('checkbox')).toBeNull();
   });
 });
@@ -251,7 +252,7 @@ describe('PrefsForm alias leaf', () => {
   };
 
   it('draws the target\'s control a second time, under the target\'s name or its own', () => {
-    render(<PrefsForm schema={schema} values={{ view: { grid: true } }} onChange={() => {}} />);
+    renderWithIcons(<PrefsForm schema={schema} values={{ view: { grid: true } }} onChange={() => {}} />);
     const boxes = screen.getAllByRole('checkbox', { name: 'Show grid' });
     expect(boxes).toHaveLength(2);
     for (const box of boxes) expect(box).toBeChecked();
@@ -260,25 +261,25 @@ describe('PrefsForm alias leaf', () => {
 
   it('writes the target\'s value from the alias\'s row', () => {
     const onChange = vi.fn();
-    render(<PrefsForm schema={schema} values={{}} onChange={onChange} />);
+    renderWithIcons(<PrefsForm schema={schema} values={{}} onChange={onChange} />);
     fireEvent.click(screen.getByRole('checkbox', { name: 'Grid while playing' }));
     expect(onChange).toHaveBeenCalledWith('view.grid', true);
   });
 
   it('marks the row with its own place in the schema, which is what a selection names', () => {
-    const { container } = render(<PrefsForm schema={schema} values={{}} onChange={() => {}} selected={['play.named']} onSelect={() => {}} />);
+    const { container } = renderWithIcons(<PrefsForm schema={schema} values={{}} onChange={() => {}} selected={['play.named']} onSelect={() => {}} />);
     expect(container.querySelector('[data-pref-path="play.named"]')).toContainElement(screen.getByRole('checkbox', { name: 'Grid while playing' }));
   });
 
   it('says so in place where an alias names no pref', () => {
-    render(<PrefsForm schema={schema} values={{}} onChange={() => {}} />);
+    renderWithIcons(<PrefsForm schema={schema} values={{}} onChange={() => {}} />);
     expect(screen.getByText('(alias: no pref at view.gone)')).toBeInTheDocument();
   });
 
   it('toggles auto at the target from the alias\'s row', () => {
     const onAutoChange = vi.fn();
     const canInherit = vi.fn(() => true);
-    render(<PrefsForm schema={schema} values={{}} onChange={() => {}} auto={new Set()} onAutoChange={onAutoChange} canInherit={canInherit} />);
+    renderWithIcons(<PrefsForm schema={schema} values={{}} onChange={() => {}} auto={new Set()} onAutoChange={onAutoChange} canInherit={canInherit} />);
     fireEvent.click(screen.getByRole('button', { name: 'Pin Grid while playing' }));
     expect(onAutoChange.mock.calls).toEqual([['view.grid', true]]);
     expect(canInherit).toHaveBeenCalledWith('view.grid');

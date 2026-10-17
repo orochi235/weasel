@@ -1,10 +1,11 @@
 import '@weasel-js/theme/tokens.css';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
 import { page } from 'vitest/browser';
 
 import { prefType, type PrefGroup, type PrefObject } from '@weasel-js/prefs';
 import { PrefSchemaEditor } from './PrefSchemaEditor';
+import { renderWithIcons } from '../../testing/withIcons';
 
 // Whether the entry's rows fit the attributes pane is layout, which jsdom does not do.
 
@@ -29,7 +30,7 @@ const SCHEMA: PrefGroup = {
 
 test('a list\'s entry is edited inside the attributes pane, its type\'s own control drawing the default', async () => {
   await page.viewport(1300, 800);
-  render(
+  renderWithIcons(
     <div style={{ width: 1280, height: 780 }}>
       <PrefSchemaEditor schema={SCHEMA} onChange={() => {}} types={[GradientStop]} />
     </div>,

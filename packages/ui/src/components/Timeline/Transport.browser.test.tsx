@@ -1,8 +1,9 @@
 import '@weasel-js/theme/tokens.css';
 import '@weasel-js/theme/fonts.css';
-import { cleanup, render } from '@testing-library/react';
+import { cleanup } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
 import { Transport, type TransportProps } from './Transport';
+import { renderWithIcons } from '../../testing/withIcons';
 
 // A transport sized to its content beside a greedy scrub bar, as astv's labs
 // lay it out: whatever the readouts gain, the transport gains, and the bar loses.
@@ -22,7 +23,7 @@ const base: TransportProps = {
 };
 
 async function widthAt(props: Partial<TransportProps>): Promise<number> {
-  const { container, unmount } = render(
+  const { container, unmount } = renderWithIcons(
     <div style={{ display: 'flex', width: 900 }}>
       <div style={{ flex: 1 }} />
       <div style={{ flex: 'none' }}>
@@ -41,7 +42,7 @@ test('the transport keeps its width as the playhead gains a digit', async () => 
 });
 
 test('the scrub bar takes the slack of a transport given room', async () => {
-  const { getByRole } = render(
+  const { getByRole } = renderWithIcons(
     <div style={{ width: 900 }}>
       <Transport {...base} onSeek={() => {}} onReverseChange={() => {}} />
     </div>,

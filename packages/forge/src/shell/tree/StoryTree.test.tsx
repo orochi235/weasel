@@ -1,6 +1,6 @@
 import { breadcrumb } from '../breadcrumb';
 import { createMemoryAdapter, Lab, type LabContribution, type StorageAdapter } from '@weasel-js/labkit';
-import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { indexEntries, indexId } from '../../story/indexPages';
 import { LibrariesContext, librariesFrom } from '../../story/library';
@@ -8,6 +8,7 @@ import type { IndexEntry } from '../../story/types';
 import { installResizeObserver } from '../labHarness';
 import { useStoryRegistry } from '../useStoryRegistry';
 import { StoryTree } from './StoryTree';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 installResizeObserver();
 
@@ -49,7 +50,7 @@ const allTrials = () => screen.queryAllByRole('region', { name: /^Trial / });
 
 /** Mounts the lab and switches the sidebar to the folder tree, which these tests exercise. */
 async function mount(storage: StorageAdapter = createMemoryAdapter()) {
-  const view = render(<Harness storage={storage} />);
+  const view = renderWithIcons(<Harness storage={storage} />);
   const treeEl = await screen.findByRole('tree', { name: 'Stories' });
   fireEvent.click(screen.getByRole('radio', { name: 'Tree' }));
   return { treeEl, view };
@@ -76,13 +77,13 @@ afterEach(() => {
 
 describe('StoryTree', () => {
   it('lists components until another view is chosen', async () => {
-    render(<Harness storage={createMemoryAdapter()} />);
+    renderWithIcons(<Harness storage={createMemoryAdapter()} />);
     await screen.findByRole('tree', { name: 'Stories' });
     expect(screen.getByRole('radio', { name: 'Components' })).toHaveAttribute('aria-checked', 'true');
   });
 
   it('grays out Gallery in a project with no galleries', async () => {
-    render(<Harness storage={createMemoryAdapter()} />);
+    renderWithIcons(<Harness storage={createMemoryAdapter()} />);
     await screen.findByRole('tree', { name: 'Stories' });
     expect(screen.getByRole('radio', { name: 'Gallery' })).toBeDisabled();
     expect(screen.getByRole('radio', { name: 'Components' })).toBeEnabled();
@@ -90,13 +91,13 @@ describe('StoryTree', () => {
 
   it('shows Components when the stored view is a gallery the project lacks', async () => {
     const backing = new Map<string, unknown>();
-    const first = render(<Harness storage={createMemoryAdapter(backing)} />);
+    const first = renderWithIcons(<Harness storage={createMemoryAdapter(backing)} />);
     await screen.findByRole('tree', { name: 'Stories' });
     fireEvent.click(screen.getByRole('radio', { name: 'Tree' }));
     await waitFor(() => expect([...backing.values()]).toContain('tree'));
     first.unmount();
     for (const key of backing.keys()) if (key.includes('fg-tree-view')) backing.set(key, 'gallery');
-    render(<Harness storage={createMemoryAdapter(backing)} />);
+    renderWithIcons(<Harness storage={createMemoryAdapter(backing)} />);
     await screen.findByRole('tree', { name: 'Stories' });
     expect(screen.getByRole('radio', { name: 'Components' })).toHaveAttribute('aria-checked', 'true');
   });
@@ -156,7 +157,7 @@ describe('StoryTree', () => {
 
   it('shows a breadcrumb’s folder in the tree, switching to the view that has it', async () => {
     Element.prototype.scrollIntoView = vi.fn();
-    render(<Harness storage={createMemoryAdapter()} />);
+    renderWithIcons(<Harness storage={createMemoryAdapter()} />);
     const treeEl = await screen.findByRole('tree', { name: 'Stories' });
     const [title] = trialsOf(slider);
     fireEvent.click(within(title as HTMLElement).getByRole('button', { name: 'Kit' }));
@@ -169,7 +170,7 @@ describe('StoryTree', () => {
 
   it('opens a component’s index page from its breadcrumb, as its row would', async () => {
     Element.prototype.scrollIntoView = vi.fn();
-    render(<Harness storage={createMemoryAdapter()} />);
+    renderWithIcons(<Harness storage={createMemoryAdapter()} />);
     await screen.findByRole('tree', { name: 'Stories' });
     const [title] = trialsOf(slider);
     fireEvent.click(within(title as HTMLElement).getByRole('button', { name: 'Slider' }));
@@ -250,7 +251,7 @@ describe('StoryTree', () => {
   });
 
   it('makes a one-story component a folder in the components view', async () => {
-    const view = render(<Harness storage={createMemoryAdapter()} />);
+    const view = renderWithIcons(<Harness storage={createMemoryAdapter()} />);
     const treeEl = await screen.findByRole('tree', { name: 'Stories' });
     const sliderRow = item(treeEl, 'Slider');
     expect(sliderRow).toHaveAttribute('aria-expanded', 'false');
@@ -442,7 +443,7 @@ describe('StoryTree', () => {
 
   it('opens the routed component in the components view, and leaves the others shut', async () => {
     history.replaceState(null, '', `/#/${ghost.id}`);
-    render(<Harness storage={createMemoryAdapter()} />);
+    renderWithIcons(<Harness storage={createMemoryAdapter()} />);
     const treeEl = await screen.findByRole('tree', { name: 'Stories' });
     expect(item(treeEl, 'Button')).toHaveAttribute('aria-expanded', 'true');
     expect(item(treeEl, 'Slider')).toHaveAttribute('aria-expanded', 'false');
@@ -468,7 +469,7 @@ describe('StoryTree', () => {
       );
     }
     const libraries = librariesFrom([{ path: '/packages/ui/', label: 'ui', tone: { ref: 'swatch-amber' } }]);
-    render(
+    renderWithIcons(
       <LibrariesContext.Provider value={libraries}>
         <Tagged />
       </LibrariesContext.Provider>,
@@ -514,7 +515,7 @@ describe('StoryTree galleries', () => {
   const names = () => screen.getAllByRole('treeitem').map((row) => row.getAttribute('aria-label') ?? row.textContent);
 
   it.each(['Components', 'Tree'])('leaves galleries out of the %s view', async (view) => {
-    render(<GalleryHarness />);
+    renderWithIcons(<GalleryHarness />);
     await screen.findByRole('tree', { name: 'Stories' });
     fireEvent.click(screen.getByRole('radio', { name: view }));
     if (view === 'Tree') openFolder('Kit');
@@ -543,7 +544,7 @@ describe('StoryTree galleries', () => {
         />
       );
     }
-    render(<OnlyGalleries />);
+    renderWithIcons(<OnlyGalleries />);
     await screen.findByRole('tree', { name: 'Stories' });
     expect(screen.getByRole('radio', { name: 'Components' })).toBeDisabled();
     expect(screen.getByRole('radio', { name: 'Tree' })).toBeDisabled();
@@ -552,7 +553,7 @@ describe('StoryTree galleries', () => {
   });
 
   it('lists every gallery, and only galleries, in the Gallery view', async () => {
-    render(<GalleryHarness />);
+    renderWithIcons(<GalleryHarness />);
     await screen.findByRole('tree', { name: 'Stories' });
     fireEvent.click(screen.getByRole('radio', { name: 'Gallery' }));
     const button = screen.getByRole('treeitem', { name: 'Button' });

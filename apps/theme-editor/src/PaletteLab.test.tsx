@@ -1,7 +1,8 @@
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { cleanup, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it } from 'vitest';
 import { PaletteLab } from './PaletteLab';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 /**
  * The lab's undo/redo/reset rail. It is labkit chrome, so the assertions are
@@ -17,13 +18,13 @@ describe('<PaletteLab> action rail', () => {
   }
 
   it('renders the three controls in the lab toolbar', () => {
-    render(<PaletteLab />);
+    renderWithIcons(<PaletteLab />);
     const buttons = within(rail()).getAllByRole('button');
     expect(buttons.map((b) => b.textContent?.trim())).toEqual(['Undo', 'Redo', 'Reset']);
   });
 
   it('titles undo and redo with their shortcuts', () => {
-    render(<PaletteLab />);
+    renderWithIcons(<PaletteLab />);
     expect(within(rail()).getByRole('button', { name: 'Undo' })).toHaveAttribute(
       'title',
       'Undo (⌘Z)',
@@ -36,7 +37,7 @@ describe('<PaletteLab> action rail', () => {
 
   it('disables undo and redo until there is history to move through', async () => {
     const user = userEvent.setup();
-    render(<PaletteLab />);
+    renderWithIcons(<PaletteLab />);
     expect(within(rail()).getByRole('button', { name: 'Undo' })).toBeDisabled();
     expect(within(rail()).getByRole('button', { name: 'Redo' })).toBeDisabled();
 
@@ -52,7 +53,7 @@ describe('<PaletteLab> action rail', () => {
 
   it('resets to the default state', async () => {
     const user = userEvent.setup();
-    render(<PaletteLab />);
+    renderWithIcons(<PaletteLab />);
     await user.click(screen.getByRole('radio', { name: 'Light' }));
     expect(screen.getByRole('radio', { name: 'Light' })).toHaveAttribute('aria-checked', 'true');
 

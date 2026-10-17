@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { RectPathEditLabDemo } from '../RectPathEditLabDemo';
+import { withIcons } from '../../testIcons';
 
 // windease lays a lab's tiles out only once something measures them, and
 // jsdom ships no ResizeObserver.
@@ -45,7 +46,7 @@ function drag(canvas: Element, [x0, y0]: number[], [x1, y1]: number[]) {
 
 describe('RectPathEditLabDemo', () => {
   it('opens on a rectangle in path edit, and its first corner drag stores a polygon', async () => {
-    const { container } = await renderSettled(<RectPathEditLabDemo />);
+    const { container } = await renderSettled(<RectPathEditLabDemo />, { wrapper: withIcons });
     const canvas = container.querySelector('.lk-trial-scene canvas');
     if (!canvas) throw new Error('no scene canvas in the trial');
     expect(first().data.path.kind).toBe('rect');
@@ -64,7 +65,7 @@ describe('RectPathEditLabDemo', () => {
   });
 
   it('closes path edit with Done without touching the rectangle', async () => {
-    await renderSettled(<RectPathEditLabDemo />);
+    await renderSettled(<RectPathEditLabDemo />, { wrapper: withIcons });
     await userEvent.click(screen.getByRole('button', { name: 'Done' }));
     expect(readout().getByText('rect-1')).toBeTruthy();
     expect(first().data.path.kind).toBe('rect');

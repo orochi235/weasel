@@ -1,9 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, screen } from '@testing-library/react';
 import { asNodeId, createScene, type NodePropertiesEntry, type NodeRoutingEntry, type SelectionApi } from '@weasel-js/core';
 import type { PrefLeaf, PrefList } from '@weasel-js/prefs';
 import { prefListIsText } from '../Prefs';
 import { SelectionPanel } from './SelectionPanel';
+import { renderWithIcons } from '../../testing/withIcons';
 
 interface Data { kind: string; [field: string]: unknown }
 type Layer = 'default';
@@ -21,7 +22,7 @@ function setup(leaves: Record<string, PrefLeaf>, nodes: Record<string, Record<st
   const properties: NodePropertiesEntry[] = [
     { name: 'thing', schema: { name: 'Properties', members: { all: { name: 'All', members: leaves } } } },
   ];
-  render(<SelectionPanel scene={scene} selection={selectionOf(Object.keys(nodes))} properties={properties} routing={routing} />);
+  renderWithIcons(<SelectionPanel scene={scene} selection={selectionOf(Object.keys(nodes))} properties={properties} routing={routing} />);
   return (id: string) => scene.get(asNodeId(id))?.data;
 }
 

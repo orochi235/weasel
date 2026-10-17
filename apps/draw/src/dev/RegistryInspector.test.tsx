@@ -1,7 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
-import { act, render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { act, screen, fireEvent, waitFor } from '@testing-library/react';
 import { ActionsProvider, SelectionContextProvider } from '@weasel-js/core';
 import { RegistryInspector } from './RegistryInspector';
+import { renderWithIcons } from '../testIcons';
 
 // jsdom doesn't implement getContext or pointer capture; stub minimally so
 // SceneCanvas (mounted by RegistryProbe) can mount and synthesize tools/actions.
@@ -30,7 +31,7 @@ import { RegistryInspector } from './RegistryInspector';
 }
 
 function renderInspector() {
-  return render(
+  return renderWithIcons(
     <ActionsProvider>
       <SelectionContextProvider>
         <RegistryInspector />

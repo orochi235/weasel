@@ -1,7 +1,8 @@
-import { act, render, screen } from '@testing-library/react';
+import { act, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { defaultToastQueue, ToastRegion } from '@weasel-js/ui';
 import { describePasteOmissions, reportPasteOmissions } from './pasteOmissions';
+import { renderWithIcons } from './testIcons';
 
 afterEach(() => act(() => defaultToastQueue.clear()));
 
@@ -31,7 +32,7 @@ describe('describePasteOmissions', () => {
 
 describe('reportPasteOmissions', () => {
   it('shows one warning toast, replaced by the next paste', () => {
-    render(<ToastRegion />);
+    renderWithIcons(<ToastRegion />);
     act(() => reportPasteOmissions([{ id: 'e', reason: 'dependency-not-copied', missing: ['a'] }]));
     expect(screen.getByText('1 shape was not pasted')).toBeInTheDocument();
     act(() => reportPasteOmissions([

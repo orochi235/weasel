@@ -1,10 +1,11 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, screen } from '@testing-library/react';
 import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { f } from '../config/builder';
 import { withValueAtPath } from '../config/path';
 import { resolveConfigSchema } from '../config/resolve';
 import { ControlPanel } from './ControlPanel';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 function Panel({ schema }: { schema: Parameters<typeof resolveConfigSchema>[0] }) {
   const resolved = resolveConfigSchema(schema);
@@ -30,7 +31,7 @@ const open = (label: string): void => {
 
 describe('a control panel row for a leaf made of other leaves', () => {
   it('edits one field of an object in a dialog and writes the object whole', () => {
-    render(
+    renderWithIcons(
       <Panel schema={f.schema({ stop: f.object({ on: f.boolean(false), at: f.number(1) }) })} />,
     );
     open('Stop');
@@ -39,7 +40,7 @@ describe('a control panel row for a leaf made of other leaves', () => {
   });
 
   it('edits one entry of a typed list', () => {
-    render(
+    renderWithIcons(
       <Panel schema={f.schema({ flags: f.list([false, false], f.boolean(true).label('Flag')) })} />,
     );
     open('Flags');
@@ -48,7 +49,7 @@ describe('a control panel row for a leaf made of other leaves', () => {
   });
 
   it('edits one value of a map under its key', () => {
-    render(
+    renderWithIcons(
       <Panel
         schema={f.schema({
           on: f.map({ left: false, right: false }, f.boolean(true).label('Flag')),
@@ -67,7 +68,7 @@ describe('a control panel row for a leaf made of other leaves', () => {
         radial: f.object({ wide: f.boolean(false) }),
       }),
     });
-    render(<Panel schema={schema} />);
+    renderWithIcons(<Panel schema={schema} />);
     open('Ramp');
     expect(screen.queryByRole('checkbox', { name: 'Wide' })).toBeNull();
     fireEvent.click(screen.getByRole('checkbox', { name: 'Soft' }));
@@ -76,7 +77,7 @@ describe('a control panel row for a leaf made of other leaves', () => {
 
   it('runs an action from its row', () => {
     const run = vi.fn();
-    render(<Panel schema={f.schema({ wipe: f.action(run) })} />);
+    renderWithIcons(<Panel schema={f.schema({ wipe: f.action(run) })} />);
     fireEvent.click(screen.getByRole('button', { name: 'Wipe' }));
     expect(run).toHaveBeenCalledWith({ path: 'wipe' });
   });
@@ -88,7 +89,7 @@ describe('a control panel row for a list of strings', () => {
     const resolved = resolveConfigSchema(schema);
     const list = resolved.group.children.notes as unknown as { item: { control?: string } };
     list.item.control = 'textarea';
-    render(<ControlPanel schema={resolved} config={{ notes: ['a'] }} setConfig={() => {}} />);
+    renderWithIcons(<ControlPanel schema={resolved} config={{ notes: ['a'] }} setConfig={() => {}} />);
     open('Notes');
     expect(document.querySelector('textarea')).not.toBeNull();
   });

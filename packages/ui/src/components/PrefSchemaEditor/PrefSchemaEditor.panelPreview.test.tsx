@@ -1,9 +1,10 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { useState } from 'react';
 import type { PrefLeaf, PrefSection } from '@weasel-js/prefs';
 import { PrefSchemaEditor } from './PrefSchemaEditor';
 import { keyedRow } from './treeRows.fixture';
+import { renderWithIcons } from '../../testing/withIcons';
 
 afterEach(cleanup);
 
@@ -36,7 +37,7 @@ const marked = () => [...preview().querySelectorAll('[data-pref-path][data-selec
 
 describe('PrefSchemaEditor with a properties-panel preview', () => {
   it('marks in the preview the leaf or the field the tree selects', () => {
-    render(<Live />);
+    renderWithIcons(<Live />);
     fireEvent.click(row('data.tint'));
     expect(marked()).toEqual(['data.tint']);
     fireEvent.click(row('width'));
@@ -44,7 +45,7 @@ describe('PrefSchemaEditor with a properties-panel preview', () => {
   });
 
   it('selects in the tree the row the preview is pressed on, and adds one with Cmd held', () => {
-    render(<Live />);
+    renderWithIcons(<Live />);
     fireEvent.pointerDown(within(preview()).getByText('Width'));
     expect(item('width')).toHaveAttribute('aria-selected', 'true');
     fireEvent.pointerDown(within(preview()).getByText('Tint'));
@@ -57,7 +58,7 @@ describe('PrefSchemaEditor with a properties-panel preview', () => {
   });
 
   it('marks the one row of a pair for either of its leaves, and selects its first leaf for a press on it', () => {
-    render(<Live />);
+    renderWithIcons(<Live />);
     fireEvent.click(row('pose.y'));
     expect(marked()).toEqual(['pose.x']);
     fireEvent.click(row('data.tint'));
@@ -67,7 +68,7 @@ describe('PrefSchemaEditor with a properties-panel preview', () => {
   });
 
   it('marks a top-level section the tree selects, selects it for a press on its heading, and marks nothing for a nested one', () => {
-    render(<Live />);
+    renderWithIcons(<Live />);
     fireEvent.click(row('inner'));
     expect(marked()).toEqual([]);
     fireEvent.pointerDown(within(preview()).getByRole('heading', { name: 'Look' }));

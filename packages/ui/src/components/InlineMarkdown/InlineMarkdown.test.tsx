@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { render } from '@testing-library/react';
 import { InlineMarkdown } from './InlineMarkdown';
 import { inlineMarkdownText } from './parseInline';
+import { renderWithIcons } from '../../testing/withIcons';
 
 const html = (text: string, links?: 'anchor' | 'text') =>
-  render(<InlineMarkdown text={text} links={links} />).container;
+  renderWithIcons(<InlineMarkdown text={text} links={links} />).container;
 
 describe('InlineMarkdown', () => {
   it('renders a backticked fragment as code, not backticks', () => {

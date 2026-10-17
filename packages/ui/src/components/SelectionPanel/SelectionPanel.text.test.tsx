@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { cleanup, render, screen, fireEvent, within } from '@testing-library/react';
+import { cleanup, screen, fireEvent, within } from '@testing-library/react';
 import {
   createScene,
   asNodeId,
@@ -8,6 +8,7 @@ import {
   type SelectionApi,
 } from '@weasel-js/core';
 import { SelectionPanel } from './SelectionPanel';
+import { renderWithIcons } from '../../testing/withIcons';
 
 // The kit's own text schema, as apps/draw mounts it — not a fixture standing
 // in for it — so a regression in either the schema or the panel shows here.
@@ -27,7 +28,7 @@ function renderText(...styles: (Record<string, unknown> | undefined)[]) {
       data: { text: 'hi', ...(style ? { style } : {}) },
     });
   });
-  render(
+  renderWithIcons(
     <SelectionPanel
       scene={scene}
       selection={{ current: ids } as unknown as SelectionApi}

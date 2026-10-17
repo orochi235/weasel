@@ -1,8 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, screen, within } from '@testing-library/react';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { PrefSchemaEditor } from './PrefSchemaEditor';
 import { keyedRow } from './treeRows.fixture';
+import { renderWithIcons } from '../../testing/withIcons';
 
 afterEach(cleanup);
 
@@ -24,7 +25,7 @@ const ghost = () => document.querySelector<HTMLElement>('[aria-hidden="true"][cl
 describe('PrefSchemaEditor, a drag begun in the structure tree', () => {
   // jsdom gives the tree no box, so every point is outside it: the proxy for a drag that has left the tree.
   it('shows the node as the form draws it once the drag has left the tree, not the tree\'s row', () => {
-    render(<PrefSchemaEditor schema={SCHEMA} onChange={() => {}} />);
+    renderWithIcons(<PrefSchemaEditor schema={SCHEMA} onChange={() => {}} />);
     const tree = structure();
     tree.setPointerCapture = vi.fn();
     tree.releasePointerCapture = vi.fn();
@@ -40,7 +41,7 @@ describe('PrefSchemaEditor, a drag begun in the structure tree', () => {
   });
 
   it('counts the nodes a drag of several carries', () => {
-    render(<PrefSchemaEditor schema={SCHEMA} onChange={() => {}} />);
+    renderWithIcons(<PrefSchemaEditor schema={SCHEMA} onChange={() => {}} />);
     const tree = structure();
     tree.setPointerCapture = vi.fn();
     tree.releasePointerCapture = vi.fn();

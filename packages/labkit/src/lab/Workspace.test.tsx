@@ -3,6 +3,7 @@ import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { describe, expect, test, vi } from 'vitest';
 import { TileGrip } from './TileGrip';
 import { Workspace } from './Workspace';
+import { withIcons } from '@weasel-js/ui/testing/withIcons';
 
 /** A tile whose whole body is its grip, as a plain tile draws one. */
 function DragProbe({ label }: { label: string }) {
@@ -19,6 +20,7 @@ describe('Workspace', () => {
         <div>two</div>
         <div>three</div>
       </Workspace>,
+      { wrapper: withIcons },
     );
     expect(screen.getByText('one')).toBeInTheDocument();
     expect(screen.getByText('two')).toBeInTheDocument();
@@ -33,6 +35,7 @@ describe('Workspace', () => {
         <div>b</div>
         <div>c</div>
       </Workspace>,
+      { wrapper: withIcons },
     );
     expect(container.querySelector('[data-node="c"]')).toHaveTextContent('c');
 
@@ -54,6 +57,7 @@ describe('Workspace', () => {
         <div>a</div>
         <div>b</div>
       </Workspace>,
+      { wrapper: withIcons },
     );
     const box = (id: string) => container.querySelector(`[data-node="${id}"] .lk-lightbox`);
     expect(screen.getAllByRole('button', { name: 'Expand' })).toHaveLength(2);
@@ -69,6 +73,7 @@ describe('Workspace', () => {
         <div>a</div>
         <div>b</div>
       </Workspace>,
+      { wrapper: withIcons },
     );
     expect(screen.getAllByRole('button', { name: 'Expand' })).toHaveLength(1);
   });
@@ -78,6 +83,7 @@ describe('Workspace', () => {
       <Workspace viewport={VIEWPORT} lightbox={false} expandOnDoubleClick>
         <div>a</div>
       </Workspace>,
+      { wrapper: withIcons },
     );
     fireEvent.doubleClick(screen.getByText('a'));
     expect(document.querySelector('.lk-lightbox--expanded')).toBeNull();
@@ -89,6 +95,7 @@ describe('Workspace', () => {
       <Workspace viewport={VIEWPORT}>
         <div />
       </Workspace>,
+      { wrapper: withIcons },
     );
     expect((container.firstChild as HTMLElement).className).toContain('lk-workspace');
   });
@@ -99,6 +106,7 @@ describe('Workspace', () => {
         <div>a</div>
         <div>b</div>
       </Workspace>,
+      { wrapper: withIcons },
     );
     expect(container.querySelectorAll('[role="separator"]')).toHaveLength(0);
 
@@ -124,6 +132,7 @@ describe('Workspace', () => {
         <div>a</div>
         <div>b</div>
       </Workspace>,
+      { wrapper: withIcons },
     );
     const a = container.querySelector('[data-node="a"]') as HTMLElement;
     const b = container.querySelector('[data-node="b"]') as HTMLElement;
@@ -146,6 +155,7 @@ describe('Workspace', () => {
         <DragProbe label="a" />
         <DragProbe label="b" />
       </Workspace>,
+      { wrapper: withIcons },
     );
     const grip = screen.getByTestId('drag-a');
     // Drag `a` from its own tile to the far side of `b`.
@@ -170,13 +180,14 @@ describe('Workspace', () => {
         <DragProbe label="a" />
         <DragProbe label="b" />
       </Workspace>,
+      { wrapper: withIcons },
     );
     expect(screen.getByTestId('drag-a')).not.toHaveAttribute('data-lk-tile-grip');
     expect(screen.getByTestId('drag-b')).not.toHaveAttribute('data-lk-tile-grip');
   });
 
   test('a grip outside a workspace is a plain div', async () => {
-    await renderSettled(<TileGrip className="lk-probe">bar</TileGrip>);
+    await renderSettled(<TileGrip className="lk-probe">bar</TileGrip>, { wrapper: withIcons });
     const grip = screen.getByText('bar');
     expect(grip).toHaveClass('lk-probe');
     expect(grip).not.toHaveAttribute('data-lk-tile-grip');

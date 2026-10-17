@@ -1,7 +1,8 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, screen } from '@testing-library/react';
 import { useState } from 'react';
 import { describe, expect, it } from 'vitest';
 import { DialogRow } from './DialogRow';
+import { renderWithIcons } from '../../testing/withIcons';
 
 describe('DialogRow', () => {
   it('shows the summary on a button and keeps the body unmounted while closed', () => {
@@ -10,7 +11,7 @@ describe('DialogRow', () => {
       mounted++;
       return <p>body</p>;
     }
-    render(
+    renderWithIcons(
       <DialogRow label="Globs" summary="a, b">
         {() => <Body />}
       </DialogRow>,
@@ -21,7 +22,7 @@ describe('DialogRow', () => {
   });
 
   it('opens the body in a dialog titled by the label, and Done closes it', () => {
-    render(
+    renderWithIcons(
       <DialogRow label="Globs" summary="a">
         {() => <p>body</p>}
       </DialogRow>,
@@ -48,7 +49,7 @@ describe('DialogRow', () => {
         </>
       );
     }
-    render(
+    renderWithIcons(
       <DialogRow label="X" summary="-" footer={null}>
         {(close) => <Body close={close} />}
       </DialogRow>,

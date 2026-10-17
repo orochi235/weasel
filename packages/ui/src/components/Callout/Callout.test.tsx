@@ -1,10 +1,11 @@
 import { cssColorLiteral } from '@weasel-js/paint';
 import { describe, it, expect, vi } from 'vitest';
-import { act, render, screen, fireEvent } from '@testing-library/react';
+import { act, screen, fireEvent } from '@testing-library/react';
 import { useRef, useState } from 'react';
 import { Pressable } from 'react-aria-components';
 import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import { Callout, CalloutTrigger } from './Callout';
+import { renderWithIcons } from '../../testing/withIcons';
 
 function TriggerSubject() {
   return (
@@ -46,7 +47,7 @@ function ProgrammaticSubject(props: {
 
 describe('Callout', () => {
   it('opens from a composed trigger and closes via the close button', () => {
-    render(<TriggerSubject />);
+    renderWithIcons(<TriggerSubject />);
     expect(screen.queryByRole('dialog')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Explain' }));
     expect(screen.getByRole('dialog')).toBeTruthy();
@@ -56,19 +57,19 @@ describe('Callout', () => {
   });
 
   it('supports programmatic triggerRef + controlled open', () => {
-    render(<ProgrammaticSubject />);
+    renderWithIcons(<ProgrammaticSubject />);
     expect(screen.getByRole('dialog')).toBeTruthy();
     expect(screen.getByText('Pointed content')).toBeTruthy();
   });
 
   it('closes on Escape when non-modal', () => {
-    render(<ProgrammaticSubject />);
+    renderWithIcons(<ProgrammaticSubject />);
     fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
     expect(screen.queryByRole('dialog')).toBeNull();
   });
 
   it('uses alertdialog role and hides outside content when modal', () => {
-    render(<ProgrammaticSubject modal />);
+    renderWithIcons(<ProgrammaticSubject modal />);
     expect(screen.getByRole('alertdialog')).toBeTruthy();
     // react-aria's ariaHideOutside removes outside content from the a11y
     // tree while a modal overlay is open.
@@ -76,7 +77,7 @@ describe('Callout', () => {
   });
 
   it('renders an invisible fixed anchor for anchorRect mode', () => {
-    render(
+    renderWithIcons(
       <Callout isOpen anchorRect={{ x: 120, y: 80, width: 40, height: 20 }} title="Here">
         Anchored
       </Callout>,
@@ -98,7 +99,7 @@ describe('Callout', () => {
     const at = (x: number, y: number) => (
       <Callout isOpen anchorRect={{ x, y, width: 40, height: 20 }} title="Here">Anchored</Callout>
     );
-    const { rerender } = render(at(10, 10));
+    const { rerender } = renderWithIcons(at(10, 10));
     const anchor = document.body.querySelector('[data-callout-anchor]') as HTMLElement;
     const widths = [anchor.style.width];
     rerender(at(90, 60));
@@ -116,7 +117,7 @@ describe('Callout', () => {
 
   it('leaves the anchor as it is when the anchor rect is unchanged', () => {
     const rect = { x: 10, y: 10, width: 40, height: 20 };
-    const { rerender } = render(
+    const { rerender } = renderWithIcons(
       <Callout isOpen anchorRect={rect} title="Here">Anchored</Callout>,
     );
     const anchor = document.body.querySelector('[data-callout-anchor]') as HTMLElement;
@@ -127,7 +128,7 @@ describe('Callout', () => {
   });
 
   it('carries a tone beside the popover’s own positioning', () => {
-    render(
+    renderWithIcons(
       <Callout isOpen anchorRect={{ x: 0, y: 0, width: 10, height: 10 }} tone={cssColorLiteral('#224a63')} aria-label="Toned">
         !
       </Callout>,
@@ -139,7 +140,7 @@ describe('Callout', () => {
   });
 
   it('names its stance, `notice` unless told otherwise', () => {
-    render(
+    renderWithIcons(
       <Callout
         isOpen
         anchorRect={{ x: 0, y: 0, width: 10, height: 10 }}
@@ -154,14 +155,14 @@ describe('Callout', () => {
   });
 
   it('closes via the close button in programmatic triggerRef mode (close() no-op fallback)', () => {
-    render(<ProgrammaticSubject />);
+    renderWithIcons(<ProgrammaticSubject />);
     expect(screen.getByRole('dialog')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Close callout' }));
     expect(screen.queryByRole('dialog')).toBeNull();
   });
 
   it('blocks outside-click dismissal when modal', () => {
-    render(<ProgrammaticSubject modal />);
+    renderWithIcons(<ProgrammaticSubject modal />);
     expect(screen.getByRole('alertdialog')).toBeTruthy();
     // useInteractOutside needs the full pointer cycle (down, up, then the
     // resulting click) to register as an outside interaction in jsdom.
@@ -172,25 +173,25 @@ describe('Callout', () => {
   });
 
   it('defaults to no close button when modal', () => {
-    render(<ProgrammaticSubject modal />);
+    renderWithIcons(<ProgrammaticSubject modal />);
     expect(screen.queryByRole('button', { name: 'Close callout' })).toBeNull();
   });
 
   it('renders the footer slot', () => {
-    render(<ProgrammaticSubject footer={<button type="button">Footer action</button>} />);
+    renderWithIcons(<ProgrammaticSubject footer={<button type="button">Footer action</button>} />);
     expect(screen.getByRole('button', { name: 'Footer action' })).toBeTruthy();
   });
 
   it('reports the close button as a dismissal', () => {
     const onDismiss = vi.fn();
-    render(<ProgrammaticSubject onDismiss={onDismiss} />);
+    renderWithIcons(<ProgrammaticSubject onDismiss={onDismiss} />);
     fireEvent.click(screen.getByRole('button', { name: 'Close callout' }));
     expect(onDismiss).toHaveBeenCalledTimes(1);
   });
 
   it('reports Escape as a dismissal', () => {
     const onDismiss = vi.fn();
-    render(<ProgrammaticSubject onDismiss={onDismiss} />);
+    renderWithIcons(<ProgrammaticSubject onDismiss={onDismiss} />);
     fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
     expect(onDismiss).toHaveBeenCalledTimes(1);
   });
@@ -210,7 +211,7 @@ describe('Callout', () => {
     // the artwork. A consumer that owns dismissal must not hear those as "the
     // user read this and waved it away".
     const onDismiss = vi.fn();
-    render(<ProgrammaticSubject onDismiss={onDismiss} />);
+    renderWithIcons(<ProgrammaticSubject onDismiss={onDismiss} />);
     fireEvent.pointerDown(document.body);
     fireEvent.pointerUp(document.body);
     fireEvent.click(document.body);
@@ -222,7 +223,7 @@ describe('Callout', () => {
     // The shape a consumer owning dismissal uses: isOpen stays true while the
     // message stands, so RAC's own close paths can't retire it early.
     const onDismiss = vi.fn();
-    render(
+    renderWithIcons(
       <Callout isOpen anchorRect={{ x: 0, y: 0, width: 10, height: 10 }} title="Note" onDismiss={onDismiss}>
         Pinned
       </Callout>,
@@ -256,7 +257,7 @@ describe('Callout', () => {
         </>
       );
     }
-    render(<Subject />);
+    renderWithIcons(<Subject />);
     expect(screen.getByRole('dialog')).toBeTruthy();
     expect(document.body.querySelector('[data-callout-anchor]')).toBeTruthy();
   });

@@ -1,9 +1,10 @@
 import '@weasel-js/theme/tokens.css';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, screen } from '@testing-library/react';
 import { gradientForBounds, type Paint } from '@weasel-js/core';
 import { afterEach, expect, it } from 'vitest';
 import { userEvent } from 'vitest/browser';
 import { PropertyControl } from './PropertyField';
+import { renderWithIcons } from '../../testing/withIcons';
 
 // An inline paint is a stack of controls whose height depends on the paint. Whether the disabled form holds
 // that height, and whether anything in it still takes focus, are the browser's to say.
@@ -25,7 +26,7 @@ function strengths(root: Element): number[] {
 }
 
 function measure(paint: Paint, disabled: boolean): { height: number; drawn: number[] } {
-  const { container, unmount } = render(
+  const { container, unmount } = renderWithIcons(
     <div>
       <PropertyControl kind="paint" control="inline" name="Fill" value={paint} disabled={disabled} onChange={() => {}} />
     </div>,
@@ -46,7 +47,7 @@ it.each(PAINTS)('draws a disabled inline %s paint at the height of the enabled o
 });
 
 it.each(PAINTS)('keeps focus out of a disabled inline %s paint', async (_, paint) => {
-  render(
+  renderWithIcons(
     <>
       <button type="button">Before</button>
       <PropertyControl kind="paint" control="inline" name="Fill" value={paint} disabled onChange={() => {}} />

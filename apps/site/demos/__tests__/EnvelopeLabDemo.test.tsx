@@ -6,6 +6,7 @@ import { StrictMode } from 'react';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { EnvelopeLabDemo } from '../EnvelopeLabDemo';
 import { drag, sceneCanvas, stubResizeObserver } from './pathEditLabHarness';
+import { withIcons } from '../../testIcons';
 
 beforeAll(() => {
   window.history.replaceState(null, '', '/?test=1');
@@ -20,7 +21,7 @@ const node = (id: string) => window.__weaselTest!.getScene().nodes.find((n) => n
 
 describe('EnvelopeLabDemo', () => {
   it('bends the banner through a dragged mesh point', async () => {
-    const { container } = await renderSettled(<StrictMode><EnvelopeLabDemo /></StrictMode>);
+    const { container } = await renderSettled(<StrictMode><EnvelopeLabDemo /></StrictMode>, { wrapper: withIcons });
     const canvas = sceneCanvas(container);
 
     // A 3 × 3 mesh over (100, 100)–(400, 280): an inner point sits at (200, 160).

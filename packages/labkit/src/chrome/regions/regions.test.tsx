@@ -1,10 +1,11 @@
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { icon } from '../../icons.gen';
 import type { TrialChromeContext, TrialContribution } from '../types';
 import { SidebarRegion } from './SidebarRegion';
 import { StatusRegion } from './StatusRegion';
 import { ViewportRegion } from './ViewportRegion';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 const Glyph = icon('ui:add');
 const ctx = {
@@ -18,7 +19,7 @@ const ctx = {
 
 describe('SidebarRegion', () => {
   it('renders nothing when empty', () => {
-    const { container } = render(<SidebarRegion contributions={[]} ctx={ctx} />);
+    const { container } = renderWithIcons(<SidebarRegion contributions={[]} ctx={ctx} />);
     expect(container).toBeEmptyDOMElement();
   });
 
@@ -27,14 +28,14 @@ describe('SidebarRegion', () => {
       { id: 'settings', region: 'sidebar', item: { title: 'Settings', body: <p>fields</p> } },
       { id: 'layers', region: 'sidebar', item: { title: 'Layers', body: <p>list</p> } },
     ];
-    render(<SidebarRegion contributions={contributions} ctx={ctx} />);
+    renderWithIcons(<SidebarRegion contributions={contributions} ctx={ctx} />);
     expect(screen.getByText('Settings')).toBeInTheDocument();
     expect(screen.getByText('fields')).toBeInTheDocument();
     expect(screen.getByText('Layers')).toBeInTheDocument();
   });
 
   it('starts a section collapsed when it asks to', () => {
-    render(
+    renderWithIcons(
       <SidebarRegion
         contributions={[
           {
@@ -50,7 +51,7 @@ describe('SidebarRegion', () => {
   });
 
   it('takes the trial’s remembered fold over the section’s default', () => {
-    render(
+    renderWithIcons(
       <SidebarRegion
         contributions={[
           {
@@ -67,7 +68,7 @@ describe('SidebarRegion', () => {
 
   it('reports a toggle rather than keeping the fold itself', () => {
     const setSectionCollapsed = vi.fn();
-    render(
+    renderWithIcons(
       <SidebarRegion
         contributions={[{ id: 's', region: 'sidebar', item: { title: 'S', body: <p>body</p> } }]}
         ctx={{ ...ctx, setSectionCollapsed }}
@@ -80,12 +81,12 @@ describe('SidebarRegion', () => {
 
 describe('StatusRegion', () => {
   it('renders nothing when empty', () => {
-    const { container } = render(<StatusRegion contributions={[]} ctx={ctx} />);
+    const { container } = renderWithIcons(<StatusRegion contributions={[]} ctx={ctx} />);
     expect(container).toBeEmptyDOMElement();
   });
 
   it('renders each readout as text', () => {
-    render(
+    renderWithIcons(
       <StatusRegion
         contributions={[{ id: 'zoom', region: 'status', item: { text: '150%' } }]}
         ctx={ctx}
@@ -95,7 +96,7 @@ describe('StatusRegion', () => {
   });
 
   it('pushes the first readout marked end, and the ones after it, past one spacer', () => {
-    const { container } = render(
+    const { container } = renderWithIcons(
       <StatusRegion
         contributions={[
           { id: 'a', region: 'status', item: { text: 'A' } },
@@ -113,7 +114,7 @@ describe('StatusRegion', () => {
   });
 
   it('keeps a readout title as its hover text', () => {
-    render(
+    renderWithIcons(
       <StatusRegion
         contributions={[{ id: 'z', region: 'status', item: { text: '150%', title: 'zoom' } }]}
         ctx={ctx}
@@ -125,13 +126,13 @@ describe('StatusRegion', () => {
 
 describe('ViewportRegion', () => {
   it('renders nothing when empty', () => {
-    const { container } = render(<ViewportRegion contributions={[]} ctx={ctx} />);
+    const { container } = renderWithIcons(<ViewportRegion contributions={[]} ctx={ctx} />);
     expect(container).toBeEmptyDOMElement();
   });
 
   it('hands onActivate the chrome context', () => {
     const onActivate = vi.fn();
-    render(
+    renderWithIcons(
       <ViewportRegion
         contributions={[
           { id: 'fit', region: 'viewport', item: { icon: Glyph, label: 'Fit', onActivate } },
@@ -144,7 +145,7 @@ describe('ViewportRegion', () => {
   });
 
   it('names an item in a kit tooltip, not in a native title', () => {
-    render(
+    renderWithIcons(
       <ViewportRegion
         contributions={[
           {

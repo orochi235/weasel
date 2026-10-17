@@ -1,11 +1,12 @@
 import '@weasel-js/theme/tokens.css';
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { cleanup, screen, within } from '@testing-library/react';
 import { afterEach, beforeAll, expect, test } from 'vitest';
 import { page } from 'vitest/browser';
 import { useState } from 'react';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { PrefSchemaEditor } from './PrefSchemaEditor';
 import { drag, pointIn } from './pointerDrag.fixture';
+import { renderWithIcons } from '../../testing/withIcons';
 
 // Laying a schema out by dragging: each way of picking a node up, carried by a pointer to a place read off real boxes.
 
@@ -39,32 +40,32 @@ const tool = (name: string) => within(screen.getByRole('group', { name: 'Drag to
 const layout = () => Object.fromEntries(Object.entries(latest.children).map(([key, group]) => [key, Object.keys((group as PrefGroup).children)]));
 
 test('a palette tool dragged onto the top of a preview row adds its node before that row', () => {
-  render(<Live />);
+  renderWithIcons(<Live />);
   drag(tool('Label'), pointIn(label('Snap'), 0.5, 0.1));
   expect(layout()).toEqual({ view: ['grid', 'label', 'snap', 'zoom'], panels: ['dock'] });
   expect((latest.children.view as PrefGroup).children.label).toMatchObject({ kind: 'label' });
 });
 
 test('a preview row dragged onto the top of another lands before it', () => {
-  render(<Live />);
+  renderWithIcons(<Live />);
   drag(label('Zoom'), pointIn(label('Show grid'), 0.5, 0.1));
   expect(layout()).toEqual({ view: ['zoom', 'grid', 'snap'], panels: ['dock'] });
 });
 
 test('a preview row dragged onto another page\'s rail entry moves to the end of that page', () => {
-  render(<Live />);
+  renderWithIcons(<Live />);
   drag(label('Show grid'), rail('panels'));
   expect(layout()).toEqual({ view: ['snap', 'zoom'], panels: ['dock', 'grid'] });
 });
 
 test('a tree row dragged onto the top of a sibling lands before it', () => {
-  render(<Live />);
+  renderWithIcons(<Live />);
   drag(treeRow('zoom'), pointIn(treeRow('grid'), 0.5, 0.1));
   expect(layout()).toEqual({ view: ['zoom', 'grid', 'snap'], panels: ['dock'] });
 });
 
 test('a tree row dragged onto another group\'s row moves into that group', () => {
-  render(<Live />);
+  renderWithIcons(<Live />);
   drag(treeRow('snap'), treeRow('panels'));
   expect(layout()).toEqual({ view: ['grid', 'zoom'], panels: ['dock', 'snap'] });
 });

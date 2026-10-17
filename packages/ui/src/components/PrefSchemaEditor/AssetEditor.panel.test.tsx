@@ -1,9 +1,10 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { asset, attributes, Live, pickRow, row, structure, tool, WITH_LOCKED } from './AssetEditor.fixture';
 import { addNode } from './schemaEdit';
 import type { Workspace } from './workspace';
 import { CODE, WORKSPACE } from './workspace.fixtures';
+import { renderWithIcons } from '../../testing/withIcons';
 
 afterEach(cleanup);
 
@@ -11,7 +12,7 @@ const dragTool = (name: string) => within(screen.getByRole('group', { name: 'Dra
 
 describe('AssetEditor on a panel', () => {
   it('offers a panel nothing that holds a value or a page, and a dialog all of it', () => {
-    render(<Live />);
+    renderWithIcons(<Live />);
     expect(tool('Add pref')).toBeEnabled();
     expect(dragTool('Page')).toBeEnabled();
     fireEvent.click(asset('Code'));
@@ -26,7 +27,7 @@ describe('AssetEditor on a panel', () => {
 
   it('adds a panel a heading over its rows, not a page', () => {
     let latest: Workspace = WORKSPACE;
-    render(<Live onChange={(next) => { latest = next; }} />);
+    renderWithIcons(<Live onChange={(next) => { latest = next; }} />);
     fireEvent.click(asset('Code'));
     fireEvent.click(tool('Add group'));
     const dialog = screen.getByRole('dialog');
@@ -37,7 +38,7 @@ describe('AssetEditor on a panel', () => {
 
   it('offers no kind to turn a panel\'s label into a setting', () => {
     const start: Workspace = { assets: [WORKSPACE.assets[0]!, { ...WORKSPACE.assets[1]!, root: addNode(CODE, null, 'note', { kind: 'label', name: 'Note', description: '', default: undefined }) }] };
-    render(<Live start={start} />);
+    renderWithIcons(<Live start={start} />);
     fireEvent.click(asset('Code'));
     pickRow('note');
     expect(within(attributes()).getByRole('textbox', { name: 'Name' })).toBeInTheDocument();
@@ -45,7 +46,7 @@ describe('AssetEditor on a panel', () => {
   });
 
   it('names a pointer\'s row as the setting it points at, and a dead one by its key', () => {
-    render(<Live start={WITH_LOCKED} />);
+    renderWithIcons(<Live start={WITH_LOCKED} />);
     fireEvent.click(asset('Code'));
     expect(row('grid')).toHaveAccessibleName(/^Show grid grid\b/);
     expect(row('snap')).toHaveAccessibleName(/^Snap snap\b/);

@@ -1,9 +1,10 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { useState } from 'react';
 import type { PrefGroup, PrefLinearUnit, PrefNumber } from '@weasel-js/prefs';
 import { ATTR_RENDERERS } from './attrRenderers';
 import { PrefSchemaEditor } from './PrefSchemaEditor';
+import { renderWithIcons } from '../../testing/withIcons';
 
 afterEach(cleanup);
 
@@ -33,7 +34,7 @@ describe('the unit attribute', () => {
 
   it('makes a unit of a suffix typed where there was none, at a scale of 1', () => {
     const seen: Seen = {};
-    render(<Unit seen={seen} />);
+    renderWithIcons(<Unit seen={seen} />);
     expect(box('Unit scale')).toHaveValue('1');
     type('Unit suffix', '°');
     expect(seen.unit).toEqual({ suffix: '°', scale: 1 });
@@ -41,7 +42,7 @@ describe('the unit attribute', () => {
 
   it('takes a scale, an offset, and a count of places when each field is left', () => {
     const seen: Seen = {};
-    render(<Unit seen={seen} start={{ suffix: '°C', scale: 1 }} />);
+    renderWithIcons(<Unit seen={seen} start={{ suffix: '°C', scale: 1 }} />);
     enter('Unit scale', '0.5');
     enter('Unit offset', '273.15');
     enter('Unit places', '1');
@@ -51,7 +52,7 @@ describe('the unit attribute', () => {
   it('refuses a scale of zero, text that is no number, and places that are no whole count', () => {
     const seen: Seen = {};
     const start = { suffix: 'cm', scale: 10 };
-    render(<Unit seen={seen} start={start} />);
+    renderWithIcons(<Unit seen={seen} start={start} />);
     enter('Unit scale', '0');
     expect(box('Unit scale')).toHaveValue('10');
     enter('Unit scale', 'ten');
@@ -63,7 +64,7 @@ describe('the unit attribute', () => {
 
   it('removes the unit once nothing of it is left: no suffix, a scale of 1, nothing else', () => {
     const seen: Seen = {};
-    render(<Unit seen={seen} start={{ suffix: 'cm', scale: 10, offset: 2, precision: 1 }} />);
+    renderWithIcons(<Unit seen={seen} start={{ suffix: 'cm', scale: 10, offset: 2, precision: 1 }} />);
     enter('Unit offset', '');
     enter('Unit places', '');
     expect(seen.unit).toEqual({ suffix: 'cm', scale: 10 });
@@ -75,7 +76,7 @@ describe('the unit attribute', () => {
 
   it('adds a suffix to accept, as a bare scale until it has an offset, and removes it', () => {
     const seen: Seen = {};
-    render(<Unit seen={seen} start={{ suffix: 'cm', scale: 10 }} />);
+    renderWithIcons(<Unit seen={seen} start={{ suffix: 'cm', scale: 10 }} />);
     fireEvent.click(screen.getByRole('button', { name: 'Add accepted suffix' }));
     type('Accepted suffix 1', 'mm');
     enter('Accepted suffix 1 scale', '0.1');
@@ -88,7 +89,7 @@ describe('the unit attribute', () => {
 
   it('keeps the accepted suffixes in order as one is renamed, and refuses a name another holds', () => {
     const seen: Seen = {};
-    render(<Unit seen={seen} start={{ scale: 10, accepts: { mm: 0.1, m: 100 } }} />);
+    renderWithIcons(<Unit seen={seen} start={{ scale: 10, accepts: { mm: 0.1, m: 100 } }} />);
     type('Accepted suffix 1', 'mil');
     expect(Object.keys(seen.unit!.accepts!)).toEqual(['mil', 'm']);
     type('Accepted suffix 1', 'm');
@@ -97,7 +98,7 @@ describe('the unit attribute', () => {
 
   it('refuses an accepted suffix that starts with a digit, which a typed number would end in', () => {
     const seen: Seen = {};
-    render(<Unit seen={seen} start={{ scale: 10, accepts: { mm: 0.1, m: 100 } }} />);
+    renderWithIcons(<Unit seen={seen} start={{ scale: 10, accepts: { mm: 0.1, m: 100 } }} />);
     type('Accepted suffix 2', '2');
     type('Accepted suffix 2', '2x');
     expect(seen.unit).toEqual({ scale: 10, accepts: { mm: 0.1, m: 100 } });
@@ -120,7 +121,7 @@ describe('a number pref selected in PrefSchemaEditor', () => {
       latest = schema;
       return <PrefSchemaEditor schema={schema} onChange={setSchema} />;
     }
-    render(<Live />);
+    renderWithIcons(<Live />);
     fireEvent.click(within(screen.getByRole('tree', { name: 'Schema structure' })).getByText('zoom'));
     const attributes = screen.getByRole('region', { name: 'Attributes' });
     fireEvent.change(within(attributes).getByRole('textbox', { name: 'Unit suffix' }), { target: { value: '%' } });

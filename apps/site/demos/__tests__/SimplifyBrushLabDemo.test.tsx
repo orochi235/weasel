@@ -6,6 +6,7 @@ import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { StrictMode } from 'react';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { SEEDED_PATH_ID, SimplifyBrushLabDemo } from '../SimplifyBrushLabDemo';
+import { withIcons } from '../../testIcons';
 
 // windease lays a lab's tiles out only once something measures them, and
 // jsdom ships no ResizeObserver.
@@ -72,7 +73,7 @@ const alongScribble = () => scribble().slice(40, 161).filter((_, i) => i % 4 ===
 
 /** The lab as the site mounts it, under StrictMode, which runs every effect twice. */
 async function mount() {
-  const { container } = await renderSettled(<StrictMode><SimplifyBrushLabDemo /></StrictMode>);
+  const { container } = await renderSettled(<StrictMode><SimplifyBrushLabDemo /></StrictMode>, { wrapper: withIcons });
   const canvas = container.querySelector('.lk-trial-scene canvas');
   if (!canvas) throw new Error('no scene canvas in the trial');
   return canvas;

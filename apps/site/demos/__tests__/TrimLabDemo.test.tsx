@@ -5,6 +5,7 @@ import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { pathInWorld, type Path } from '@weasel-js/core';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { TrimLabDemo } from '../TrimLabDemo';
+import { withIcons } from '../../testIcons';
 
 // windease lays a lab's tiles out only once something measures them, and
 // jsdom ships no ResizeObserver.
@@ -47,7 +48,7 @@ function click(canvas: Element, x: number, y: number) {
 
 describe('TrimLabDemo', () => {
   it('clicking a piece between two crossings cuts it away, and Undo puts it back', async () => {
-    const { container } = await renderSettled(<StrictMode><TrimLabDemo /></StrictMode>);
+    const { container } = await renderSettled(<StrictMode><TrimLabDemo /></StrictMode>, { wrapper: withIcons });
     const canvas = container.querySelector('.lk-trial-scene canvas');
     if (!canvas) throw new Error('no scene canvas in the trial');
     const before = worldCoords('top');

@@ -1,6 +1,6 @@
 import { Lab } from '@weasel-js/labkit';
 import { f } from '@weasel-js/labkit/config';
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, screen } from '@testing-library/react';
 import { useState } from 'react';
 import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import { describe, expect, it, vi } from 'vitest';
@@ -10,6 +10,7 @@ import { documentInstrument } from './documentInstrument';
 import { installResizeObserver } from './labHarness';
 import { StoryGlobalsContext } from './StoryGlobalsContext';
 import { StoryTrial } from './StoryTrial';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 installResizeObserver();
 
@@ -62,7 +63,7 @@ function Harness({ onError }: { onError?: (error: unknown) => void }) {
 
 describe('StoryTrial', () => {
   it("seeds a null state from the story's own initial state, then renders from the trial's config and state", async () => {
-    render(<Harness />);
+    renderWithIcons(<Harness />);
     expect((await screen.findByRole('button', { name: 'clicks: 6' })).textContent).toBe('clicks: 6');
     fireEvent.click(screen.getByRole('button', { name: 'clicks: 6' }));
     expect(screen.getByRole('button', { name: 'clicks: 7' })).toBeInTheDocument();
@@ -70,7 +71,7 @@ describe('StoryTrial', () => {
   });
 
   it("writes the story's setConfig through to the trial, except onto the pins the story cannot see", async () => {
-    render(<Harness />);
+    renderWithIcons(<Harness />);
     await screen.findByRole('button', { name: 'clicks: 6' });
     fireEvent.click(screen.getByRole('button', { name: 'rename' }));
     expect(screen.getByRole('button', { name: 'taps: 6' })).toBeInTheDocument();
@@ -106,7 +107,7 @@ describe('StoryTrial', () => {
       );
     }
     try {
-      render(<Host />);
+      renderWithIcons(<Host />);
       expect(screen.getByText('not yet')).toBeInTheDocument();
       expect(onError).toHaveBeenCalledWith(expect.objectContaining({ message: 'not yet' }));
       act(() => fireEvent.click(screen.getByRole('button', { name: 'fix' })));
@@ -141,7 +142,7 @@ describe('StoryTrial', () => {
     );
     const entry = { id: 'test-local--local', title: 'Test/Local', name: 'Local', exportName: 'Local', file: '/local.stories.tsx' };
     const instrument = documentInstrument({ entry, loaded: { kind: 'story', story: local! }, setup: {} });
-    render(
+    renderWithIcons(
       <StoryGlobalsContext.Provider value={{}}>
         <Lab instruments={[instrument]} defaultInstrument={entry.id} />
       </StoryGlobalsContext.Provider>,

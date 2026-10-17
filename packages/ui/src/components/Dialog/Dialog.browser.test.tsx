@@ -1,9 +1,10 @@
 import '@weasel-js/theme/tokens.css';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
 import { afterEach, expect, test, vi } from 'vitest';
 import { Dialog } from './Dialog';
+import { renderWithIcons } from '../../testing/withIcons';
 
 // The overlay portals into the nearest themed ancestor, found from an anchor
 // that only exists after the first render. jsdom has no `inert`, so whether
@@ -38,7 +39,7 @@ test.each([
 ])('a dialog %s inside a themed root takes clicks and focus', async (_, initiallyOpen) => {
   const root = themedRoot();
   try {
-    render(<Composer initiallyOpen={initiallyOpen} />, { container: root });
+    renderWithIcons(<Composer initiallyOpen={initiallyOpen} />, { container: root });
     if (!initiallyOpen) await userEvent.click(screen.getByRole('button', { name: 'Open' }));
 
     const dialog = screen.getByRole('dialog');

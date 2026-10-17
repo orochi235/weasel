@@ -1,9 +1,10 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { useState } from 'react';
 import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 import type { CustomKinds } from './kindSchemas';
 import { PrefSchemaEditor } from './PrefSchemaEditor';
+import { renderWithIcons } from '../../testing/withIcons';
 
 /** Types `value` and leaves the field, which is when a typed field commits. */
 const settle = (el: HTMLElement, value: string): void => {
@@ -43,7 +44,7 @@ const leaf = (key: string) => (latest.children.view as PrefGroup).children[key] 
 
 describe('PrefSchemaEditor custom kinds', () => {
   it('keeps a required attribute that is emptied, and removes an optional one', () => {
-    render(<Live />);
+    renderWithIcons(<Live />);
     select('tool');
     settle(attributes().getByRole('textbox', { name: 'Source' }), '');
     expect(leaf('tool').source).toBe('');
@@ -52,7 +53,7 @@ describe('PrefSchemaEditor custom kinds', () => {
   });
 
   it('gives a leaf switched to the kind its required attributes', () => {
-    render(<Live />);
+    renderWithIcons(<Live />);
     select('flag');
     fireEvent.click(attributes().getByRole('button', { name: /^(?!About ).*Kind/ }));
     fireEvent.click(screen.getByRole('option', { name: 'lookup' }));
@@ -78,7 +79,7 @@ describe('PrefSchemaEditor custom kinds', () => {
       latest = schema;
       return <PrefSchemaEditor schema={schema} onChange={setSchema} kinds={kinds} />;
     }
-    render(<Both />);
+    renderWithIcons(<Both />);
     select('one');
     fireEvent.click(within(screen.getByRole('tree', { name: 'Schema structure' })).getByText('two'), { metaKey: true });
     expect(attributes().getByRole('textbox', { name: 'Edge' })).toHaveValue('');

@@ -1,11 +1,12 @@
 import '@weasel-js/theme/tokens.css';
-import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { afterEach, beforeAll, expect, test } from 'vitest';
 import { page } from 'vitest/browser';
 import { useState } from 'react';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { PrefSchemaEditor } from './PrefSchemaEditor';
 import { drag, grip, pointer } from './pointerDrag.fixture';
+import { renderWithIcons } from '../../testing/withIcons';
 
 // Wide enough that the live preview, the editor's last column, is on screen to be pressed.
 beforeAll(() => page.viewport(1600, 900));
@@ -52,7 +53,7 @@ function press(el: HTMLElement, keys: PointerEventInit = {}) {
 const pickInTree = (...keys: string[]) => keys.forEach((key, i) => fireEvent.click(row(key), { metaKey: i > 0 }));
 
 test('two rows selected in the tree drag to another group together, in their order', () => {
-  render(<Live />);
+  renderWithIcons(<Live />);
   pickInTree('snap', 'grid');
   drag(row('grid'), row('panels'));
   expect(under('view')).toEqual(['zoom']);
@@ -61,7 +62,7 @@ test('two rows selected in the tree drag to another group together, in their ord
 });
 
 test('a Cmd press on a preview row adds it to the selection', () => {
-  render(<Live />);
+  renderWithIcons(<Live />);
   pickInTree('grid');
   press(label('Snap'), { metaKey: true });
   expect(selected().sort()).toEqual(['view/grid', 'view/snap']);
@@ -69,14 +70,14 @@ test('a Cmd press on a preview row adds it to the selection', () => {
 });
 
 test('a press let go on one of several selected preview rows selects that row alone', () => {
-  render(<Live />);
+  renderWithIcons(<Live />);
   pickInTree('grid', 'snap');
   press(label('Show grid'));
   expect(selected()).toEqual(['view/grid']);
 });
 
 test('one of several selected preview rows dragged onto a rail entry takes them all', () => {
-  render(<Live />);
+  renderWithIcons(<Live />);
   pickInTree('grid', 'snap');
   drag(label('Show grid'), rail('panels'));
   expect(under('view')).toEqual(['zoom']);
@@ -84,7 +85,7 @@ test('one of several selected preview rows dragged onto a rail entry takes them 
 });
 
 test('two rows selected in the tree drag onto the preview together', () => {
-  render(<Live />);
+  renderWithIcons(<Live />);
   pickInTree('grid', 'snap');
   drag(row('grid'), rail('panels'));
   expect(under('view')).toEqual(['zoom']);

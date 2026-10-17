@@ -1,5 +1,5 @@
 import { afterEach, describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { screen, fireEvent, waitFor } from '@testing-library/react';
 import {
   PREF_KINDS,
   type PrefEnumEncoding,
@@ -10,6 +10,7 @@ import {
 import { PrefsDialog } from './PrefsDialog';
 import { PrefsForm, type PrefRenderContext } from './PrefsForm';
 import { rotationDegreesUnit } from '@weasel-js/core';
+import { renderWithIcons } from '../../testing/withIcons';
 
 const SCHEMA: PrefGroup = {
   name: 'Preferences',
@@ -89,7 +90,7 @@ const SCHEMA: PrefGroup = {
 
 describe('PrefsForm', () => {
   it('renders group titles and one control per visible leaf kind', async () => {
-    render(<PrefsForm schema={SCHEMA} onChange={() => {}} />);
+    renderWithIcons(<PrefsForm schema={SCHEMA} onChange={() => {}} />);
     expect(screen.getByText('Canvas')).toBeTruthy();
     expect(screen.getByText('Import / Export')).toBeTruthy();
     expect(screen.getByRole('checkbox', { name: 'Show grid' })).toBeTruthy();
@@ -104,14 +105,14 @@ describe('PrefsForm', () => {
   });
 
   it('hides hidden leaves by default and reveals them with showHidden', () => {
-    const { rerender } = render(<PrefsForm schema={SCHEMA} onChange={() => {}} />);
+    const { rerender } = renderWithIcons(<PrefsForm schema={SCHEMA} onChange={() => {}} />);
     expect(screen.queryByRole('checkbox', { name: 'Secret flag' })).toBeNull();
     rerender(<PrefsForm schema={SCHEMA} onChange={() => {}} showHidden />);
     expect(screen.getByRole('checkbox', { name: 'Secret flag' })).toBeTruthy();
   });
 
   it('reads sparse values by dotted path and falls back to defaults', () => {
-    render(
+    renderWithIcons(
       <PrefsForm
         schema={SCHEMA}
         values={{ canvas: { showGrid: false } }}
@@ -126,14 +127,14 @@ describe('PrefsForm', () => {
 
   it('reports changes with the leaf dotted path', () => {
     const onChange = vi.fn();
-    render(<PrefsForm schema={SCHEMA} onChange={onChange} />);
+    renderWithIcons(<PrefsForm schema={SCHEMA} onChange={onChange} />);
     fireEvent.click(screen.getByRole('checkbox', { name: 'Show grid' }));
     expect(onChange).toHaveBeenCalledWith('canvas.showGrid', false);
   });
 
   it('dispatches unknown kinds to the renderers map with full context', () => {
     const seen: PrefRenderContext[] = [];
-    render(
+    renderWithIcons(
       <PrefsForm
         schema={SCHEMA}
         values={{ io: { favoriteShape: 'ellipse' } }}
@@ -153,12 +154,12 @@ describe('PrefsForm', () => {
   });
 
   it('renders a labeled placeholder for unknown kinds with no renderer', () => {
-    render(<PrefsForm schema={SCHEMA} onChange={() => {}} />);
+    renderWithIcons(<PrefsForm schema={SCHEMA} onChange={() => {}} />);
     expect(screen.getByText('(registry-enum: no renderer)')).toBeTruthy();
   });
 
   it('renderer overrides win over built-in kinds', () => {
-    render(
+    renderWithIcons(
       <PrefsForm
         schema={SCHEMA}
         onChange={() => {}}
@@ -173,7 +174,7 @@ describe('PrefsForm', () => {
 describe('PrefsForm color leaf', () => {
   it('renders color leaves with ColorField and applies commits', () => {
     const onChange = vi.fn();
-    render(
+    renderWithIcons(
       <PrefsForm
         schema={{
           name: 'root',
@@ -229,7 +230,7 @@ describe('PrefsForm — union-valued leaves', () => {
   };
 
   const renderUnion = (values: unknown, onChange = vi.fn()) => {
-    render(<PrefsForm schema={UNION_SCHEMA} values={values} onChange={onChange} />);
+    renderWithIcons(<PrefsForm schema={UNION_SCHEMA} values={values} onChange={onChange} />);
     return onChange;
   };
 
@@ -358,7 +359,7 @@ describe('PrefsForm — encoded enum leaves', () => {
   };
 
   const renderDash = (values: unknown, onChange = vi.fn()) => {
-    render(<PrefsForm schema={DASH_SCHEMA} values={values} onChange={onChange} />);
+    renderWithIcons(<PrefsForm schema={DASH_SCHEMA} values={values} onChange={onChange} />);
     return onChange;
   };
 
@@ -411,7 +412,7 @@ describe('PrefsForm — exhaustiveness over built-in kinds', () => {
   it('throws for a built-in kind with no case arm', () => {
     (PREF_KINDS as Record<string, true>)[KIND] = true;
     expect(() =>
-      render(<PrefsForm schema={schemaWith(KIND)} onChange={() => {}} />),
+      renderWithIcons(<PrefsForm schema={schemaWith(KIND)} onChange={() => {}} />),
     ).toThrow(/spline/);
   });
 });
@@ -437,7 +438,7 @@ describe('PrefsForm — number leaves with a display unit', () => {
   });
 
   const renderRotation = (extra: Record<string, unknown>, stored: number, onChange = vi.fn()) => {
-    render(
+    renderWithIcons(
       <PrefsForm
         schema={rotationLeaf(extra)}
         values={{ layout: { rotation: stored } }}
@@ -517,7 +518,7 @@ describe('PrefsForm — number leaves with a display unit', () => {
 
   it('leaves a unitless number leaf in the unit it stores', () => {
     const onChange = vi.fn();
-    render(
+    renderWithIcons(
       <PrefsForm
         schema={{
           name: 'root',
@@ -572,7 +573,7 @@ describe('PrefsForm — inherited leaves', () => {
   const fields = () => screen.getAllByRole('spinbutton', { name: 'Glow' }) as HTMLInputElement[];
 
   it('draws an inherited leaf with its control, showing the value it was given, and a hint', () => {
-    render(<PrefsForm {...props} onChange={() => {}} onAutoChange={() => {}} />);
+    renderWithIcons(<PrefsForm {...props} onChange={() => {}} onAutoChange={() => {}} />);
     const [, windowGlow] = fields();
     expect(windowGlow.value).toBe('4');
     expect(screen.getAllByText('from Defaults')).toHaveLength(1);
@@ -581,7 +582,7 @@ describe('PrefsForm — inherited leaves', () => {
 
   it('pins an inherited leaf through onChange when its control is edited', () => {
     const onChange = vi.fn();
-    render(<PrefsForm {...props} onChange={onChange} onAutoChange={() => {}} />);
+    renderWithIcons(<PrefsForm {...props} onChange={onChange} onAutoChange={() => {}} />);
     const [, windowGlow] = fields();
     fireEvent.change(windowGlow, { target: { value: '7' } });
     fireEvent.blur(windowGlow);
@@ -590,7 +591,7 @@ describe('PrefsForm — inherited leaves', () => {
 
   it('toggles inheritance from the label of a leaf that can inherit, and only there', () => {
     const onAutoChange = vi.fn();
-    render(<PrefsForm {...props} values={{ ...values }} onChange={() => {}} onAutoChange={onAutoChange} />);
+    renderWithIcons(<PrefsForm {...props} values={{ ...values }} onChange={() => {}} onAutoChange={onAutoChange} />);
     const toggles = screen.getAllByRole('button', { name: 'Pin Glow' });
     // Defaults' row refuses inheritance, so only the window's label toggles.
     expect(toggles).toHaveLength(1);
@@ -604,13 +605,13 @@ describe('PrefsForm — inherited leaves', () => {
       name: 'Looks',
       children: { glow: { kind: 'number', name: 'Glow', description: '', default: 2, manual: true } },
     };
-    render(<PrefsForm schema={schema} values={{}} onChange={() => {}} onAutoChange={() => {}} />);
+    renderWithIcons(<PrefsForm schema={schema} values={{}} onChange={() => {}} onAutoChange={() => {}} />);
     expect(screen.queryByRole('button', { name: 'Pin Glow' })).toBeNull();
   });
 
   it('unpins a pinned leaf from its label', () => {
     const onAutoChange = vi.fn();
-    render(
+    renderWithIcons(
       <PrefsForm {...props} auto={new Set()} onChange={() => {}} onAutoChange={onAutoChange} />,
     );
     const toggle = screen.getByRole('button', { name: 'Pin Glow' });
@@ -626,7 +627,7 @@ describe('PrefsForm — inherited leaves', () => {
       name: 'Looks',
       children: { tint: { kind: 'swatch', name: 'Tint', description: '', default: 'red' } },
     };
-    render(
+    renderWithIcons(
       <PrefsForm
         schema={schema}
         auto={new Set(['tint'])}
@@ -640,7 +641,7 @@ describe('PrefsForm — inherited leaves', () => {
 
   it('threads the same props through PrefsDialog', () => {
     const onAutoChange = vi.fn();
-    render(
+    renderWithIcons(
       <PrefsDialog
         isOpen
         onOpenChange={() => {}}
@@ -657,7 +658,7 @@ describe('PrefsForm — inherited leaves', () => {
 
 describe('PrefsForm rows side by side', () => {
   it('gives a leaf whose value is a list the full width, and leaves a scalar in its column', () => {
-    render(
+    renderWithIcons(
       <PrefsForm layout="rail" rowsAcross={2} values={{}} onChange={() => {}}
         renderers={{ list: () => <span>globs</span> }}
         schema={{ name: 'Prefs', children: { icons: { name: 'Icons', children: {
@@ -678,7 +679,7 @@ describe('PrefsForm changed rows', () => {
       a: { kind: 'boolean', name: 'Alpha', description: '', default: false },
       b: { kind: 'boolean', name: 'Beta', description: '', default: false },
     } };
-    render(<PrefsForm schema={schema} values={{}} onChange={() => {}} changed={new Set(['b'])} />);
+    renderWithIcons(<PrefsForm schema={schema} values={{}} onChange={() => {}} changed={new Set(['b'])} />);
     expect(screen.getByRole('checkbox', { name: 'Beta' }).closest('[data-changed]')).not.toBeNull();
     expect(screen.getByRole('checkbox', { name: 'Alpha' }).closest('[data-changed]')).toBeNull();
   });
@@ -688,7 +689,7 @@ describe('PrefsForm changed rows', () => {
       a: { kind: 'boolean', name: 'Alpha', description: '', default: false },
       also: { kind: 'alias', name: 'Also alpha', description: '', default: undefined, of: 'a' },
     } };
-    render(<PrefsForm schema={schema} values={{}} onChange={() => {}} changed={new Set(['a'])} />);
+    renderWithIcons(<PrefsForm schema={schema} values={{}} onChange={() => {}} changed={new Set(['a'])} />);
     expect(screen.getByRole('checkbox', { name: 'Also alpha' }).closest('[data-changed]')).not.toBeNull();
   });
 });

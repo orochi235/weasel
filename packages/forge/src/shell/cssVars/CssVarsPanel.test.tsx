@@ -1,6 +1,6 @@
 import { createMemoryAdapter } from '@weasel-js/labkit';
 import { f } from '@weasel-js/labkit/config';
-import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { THEME_SOURCES, type ThemeDefinition } from '@weasel-js/theme';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { FromFrame, ToFrame } from '../../protocol/messages';
@@ -8,6 +8,7 @@ import { describeSchema } from '../../protocol/schema';
 import type { IndexEntry } from '../../story/types';
 import { connectFrame, flush, installResizeObserver } from '../labHarness';
 import { Workshop } from '../Workshop';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 installResizeObserver();
 
@@ -82,7 +83,7 @@ type VarsSet = Extract<ToFrame, { type: 'vars.set' }>;
 describe('CssVarsPanel', () => {
   it('lists the theme tokens and sends an edit, then its reset, through its trial’s frame', async () => {
     location.hash = '#/x--a';
-    render(<Workshop index={[a]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
+    renderWithIcons(<Workshop index={[a]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
     const { received } = await openTrial('A');
     expect(trial('A').queryByRole('region', { name: 'CSS Vars' })).toBeNull();
     const panel = vars();
@@ -108,7 +109,7 @@ describe('CssVarsPanel', () => {
   it('shows a token the frame has not reported at the value the theme gives it under the trial’s globals', async () => {
     location.hash = '#/x--a';
     const mode = { label: 'Mode', default: 'light', options: [{ value: 'light', label: 'Light' }] };
-    render(<Workshop index={[a]} frameUrl="/frame.html" config={{ globals: { mode } }} storage={createMemoryAdapter()} />);
+    renderWithIcons(<Workshop index={[a]} frameUrl="/frame.html" config={{ globals: { mode } }} storage={createMemoryAdapter()} />);
     await openTrial('A');
     const panel = vars();
     fireEvent.change(panel.getByLabelText('Filter'), { target: { value: 'secondary-base' } });
@@ -118,7 +119,7 @@ describe('CssVarsPanel', () => {
 
   it('regenerates every step of a theme scale from a new base, with the theme’s own rule', async () => {
     location.hash = '#/x--a';
-    render(<Workshop index={[a]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
+    renderWithIcons(<Workshop index={[a]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
     const { received } = await openTrial('A');
     const font = row(vars(), 'font');
     const base = font.getByRole('textbox', { name: 'font base' });
@@ -143,7 +144,7 @@ describe('CssVarsPanel', () => {
 
   it('files the theme’s tokens into collapsible sections, with the gray ramp as one row of swatches', async () => {
     location.hash = '#/x--a';
-    render(<Workshop index={[a]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
+    renderWithIcons(<Workshop index={[a]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
     await openTrial('A');
     const color = within(vars().getByRole('region', { name: 'Color' }));
     expect(within(color.getByRole('group', { name: 'gray' })).getAllByRole('button')).toHaveLength(10);
@@ -154,7 +155,7 @@ describe('CssVarsPanel', () => {
 
   it('lists the vars the story’s frame reports, with a color input for a color', async () => {
     location.hash = '#/x--a';
-    render(<Workshop index={[a]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
+    renderWithIcons(<Workshop index={[a]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
     const { frame, received } = await openTrial('A');
     const panel = vars();
     fireEvent.click(panel.getByRole('radio', { name: 'Story' }));
@@ -179,7 +180,7 @@ describe('CssVarsPanel', () => {
 
   it('lists only the vars the story uses until asked for the rest', async () => {
     location.hash = '#/x--a';
-    render(<Workshop index={[a]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
+    renderWithIcons(<Workshop index={[a]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
     const { frame } = await openTrial('A');
     const panel = vars();
     fireEvent.click(panel.getByRole('radio', { name: 'Story' }));
@@ -200,7 +201,7 @@ describe('CssVarsPanel', () => {
 
   it('follows the focused trial, keeping each trial’s overrides to it and sending them again when its frame reloads', async () => {
     location.hash = '#/x--a';
-    render(<Workshop index={[a, b]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
+    renderWithIcons(<Workshop index={[a, b]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
     const first = await openTrial('A');
     // Shift-click in the tree is what opens a second trial; a hash goes into the focused one.
     fireEvent.click(screen.getByRole('radio', { name: 'Tree' }));
@@ -232,7 +233,7 @@ describe('CssVarsPanel', () => {
   it('saves a font base edit into the current density’s seed, then drops the overrides the theme now carries', async () => {
     location.hash = '#/x--a';
     const calls = stubStore({ status: 200, body: { status: 'saved', hash: 'h2', issues: [], regenerated: true, problems: [] } });
-    render(<Workshop index={[a]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
+    renderWithIcons(<Workshop index={[a]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
     const { received } = await openTrial('A');
     await editFontBase(String(editedBase));
 
@@ -256,7 +257,7 @@ describe('CssVarsPanel', () => {
   it('saves a token edited by hand where the theme writes its value out, and offers no save for one it derives', async () => {
     location.hash = '#/x--a';
     const calls = stubStore({ status: 200, body: { status: 'saved', hash: 'h2', issues: [], regenerated: true, problems: [] } });
-    render(<Workshop index={[a]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
+    renderWithIcons(<Workshop index={[a]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
     const { received } = await openTrial('A');
     const edit = async (name: string, value: string) => {
       fireEvent.change(vars().getByLabelText('Filter'), { target: { value: name.replace('--wzl-', '') } });
@@ -288,7 +289,7 @@ describe('CssVarsPanel', () => {
     }));
     const calls = stubStore({ status: 200, body: { status: 'saved', hash: 'h2', issues: [], regenerated: true, problems: [] } });
     const mode = { label: 'Mode', default: 'auto', options: ['auto', 'light', 'dark'].map((value) => ({ value, label: value })) };
-    render(<Workshop index={[a]} frameUrl="/frame.html" config={{ globals: { mode } }} storage={createMemoryAdapter()} />);
+    renderWithIcons(<Workshop index={[a]} frameUrl="/frame.html" config={{ globals: { mode } }} storage={createMemoryAdapter()} />);
     await openTrial('A');
     fireEvent.change(vars().getByLabelText('Filter'), { target: { value: 'accent-strong' } });
     fireEvent.change(row(vars(), '--wzl-accent-strong').getByRole('textbox'), { target: { value: '#123456' } });
@@ -304,7 +305,7 @@ describe('CssVarsPanel', () => {
   it('reports a file changed on disk and keeps the edit', async () => {
     location.hash = '#/x--a';
     stubStore({ status: 409, body: { status: 'conflict', hash: 'h9' } });
-    render(<Workshop index={[a]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
+    renderWithIcons(<Workshop index={[a]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
     const { received } = await openTrial('A');
     const font = await editFontBase(String(editedBase));
 
@@ -326,7 +327,7 @@ describe('CssVarsPanel history', () => {
 
   it('takes a token edit back and puts it forward again, telling the frame each time', async () => {
     location.hash = '#/x--a';
-    render(<Workshop index={[a]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
+    renderWithIcons(<Workshop index={[a]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
     const { received } = await openTrial('A');
     expect(step('Undo')).toBeDisabled();
     const token = gray50();
@@ -348,7 +349,7 @@ describe('CssVarsPanel history', () => {
 
   it('takes a scale edit back as one step, every token and the base with it', async () => {
     location.hash = '#/x--a';
-    render(<Workshop index={[a]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
+    renderWithIcons(<Workshop index={[a]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
     const { received } = await openTrial('A');
     const font = await editFontBase(String(editedBase));
     const before = setsOf(received).length;
@@ -368,7 +369,7 @@ describe('CssVarsPanel history', () => {
 
   it('steps back on Mod+Z pressed in the panel, and leaves the filter’s own undo alone', async () => {
     location.hash = '#/x--a';
-    render(<Workshop index={[a]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
+    renderWithIcons(<Workshop index={[a]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
     await openTrial('A');
     const token = gray50();
     fireEvent.change(token.getByRole('textbox'), { target: { value: '#123456' } });
@@ -384,7 +385,7 @@ describe('CssVarsPanel history', () => {
   it('keeps the steps with the trial across a reload', async () => {
     location.hash = '#/x--a';
     const storage = createMemoryAdapter();
-    const first = render(<Workshop index={[a]} frameUrl="/frame.html" storage={storage} />);
+    const first = renderWithIcons(<Workshop index={[a]} frameUrl="/frame.html" storage={storage} />);
     await openTrial('A');
     fireEvent.change(gray50().getByRole('textbox'), { target: { value: '#123456' } });
     // labkit saves a trial's state a moment after it changes.
@@ -392,7 +393,7 @@ describe('CssVarsPanel history', () => {
     first.unmount();
 
     history.replaceState(null, '', '/');
-    render(<Workshop index={[a]} frameUrl="/frame.html" storage={storage} />);
+    renderWithIcons(<Workshop index={[a]} frameUrl="/frame.html" storage={storage} />);
     await openTrial('A');
     const token = gray50();
     expect(token.getByRole('textbox')).toHaveValue('#123456');
@@ -404,7 +405,7 @@ describe('CssVarsPanel history', () => {
   it('forgets the steps once a scale is saved into the theme', async () => {
     stubStore({ status: 200, body: { hash: 'h2', regenerated: true, problems: [] } });
     location.hash = '#/x--a';
-    render(<Workshop index={[a]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
+    renderWithIcons(<Workshop index={[a]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
     await openTrial('A');
     await editFontBase(String(editedBase));
     expect(step('Undo')).toBeEnabled();

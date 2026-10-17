@@ -1,9 +1,10 @@
 import '@weasel-js/theme/tokens.css';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { afterEach, beforeAll, expect, test } from 'vitest';
 import { page } from 'vitest/browser';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { PrefSchemaEditor } from './PrefSchemaEditor';
+import { renderWithIcons } from '../../testing/withIcons';
 
 // Whether the unit's fields fit the attributes pane on their rows is the browser's layout to say.
 
@@ -24,7 +25,7 @@ const SCHEMA: PrefGroup = {
 
 test('the unit\'s four fields share a line inside the pane, and an accepted suffix sits on a line of its own under them', async () => {
   await page.viewport(1300, 720);
-  render(<div className="unit-editor-box"><PrefSchemaEditor schema={SCHEMA} onChange={() => {}} /></div>);
+  renderWithIcons(<div className="unit-editor-box"><PrefSchemaEditor schema={SCHEMA} onChange={() => {}} /></div>);
   fireEvent.click(within(screen.getByRole('tree', { name: 'Schema structure' })).getByText('heat'));
   const pane = screen.getByRole('region', { name: 'Attributes' });
   const box = (name: string) => within(pane).getByRole('textbox', { name }).getBoundingClientRect();

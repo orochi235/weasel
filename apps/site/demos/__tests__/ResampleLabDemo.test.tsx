@@ -6,6 +6,7 @@ import { StrictMode } from 'react';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { ResampleLabDemo } from '../ResampleLabDemo';
 import { stubResizeObserver } from './pathEditLabHarness';
+import { withIcons } from '../../testIcons';
 
 beforeAll(() => {
   window.history.replaceState(null, '', '/?test=1');
@@ -22,7 +23,7 @@ const anchors = () =>
 
 describe('ResampleLabDemo', () => {
   it('opens previewing a resample to 12 anchors, and Apply writes it to the scene', async () => {
-    const { getByRole } = await renderSettled(<StrictMode><ResampleLabDemo /></StrictMode>);
+    const { getByRole } = await renderSettled(<StrictMode><ResampleLabDemo /></StrictMode>, { wrapper: withIcons });
     expect(anchors()).toBe(6);
     await userEvent.click(getByRole('button', { name: 'Apply' }));
     await act(async () => { await Promise.resolve(); });

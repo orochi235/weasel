@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import type { ReactElement } from 'react';
 import { describe, expect, it } from 'vitest';
 import { ComboBox } from './ComboBox/ComboBox';
@@ -12,6 +12,7 @@ import { NumberField } from './NumberField/NumberField';
 import { UnitField } from './NumberField/UnitField';
 import { Select } from './Select/Select';
 import f from './field.module.css';
+import { renderWithIcons } from '../testing/withIcons';
 
 // CSS modules are not processed in the `weasel-ui` vitest project, so these
 // assert the contract — which shared classes each control wears — and read the
@@ -35,14 +36,14 @@ const classesOf = (el: Element | null) => (el?.getAttribute('class') ?? '').spli
 describe('shared field layout', () => {
   describe.each(controls)('%s', (_, make) => {
     it('stacks the label above the frame by default', () => {
-      render(make('stacked'));
+      renderWithIcons(make('stacked'));
       const root = screen.getByText('Name').closest(`.${f.control}`);
       expect(classesOf(root)).toContain(f.field);
       expect(classesOf(root)).not.toContain(f.row);
     });
 
     it("sets the label beside the frame with orientation='row'", () => {
-      const { container } = render(make('row'));
+      const { container } = renderWithIcons(make('row'));
       const root = screen.getByText('Name').closest(`.${f.control}`);
       expect(classesOf(root)).toContain(f.row);
       expect(classesOf(screen.getByText('Name'))).toContain(f.label);
@@ -55,7 +56,7 @@ describe('shared field layout', () => {
 
   it('shares its label, hint and error classes with Field', () => {
     expect(fieldClasses).toEqual({ root: f.field, row: f.row, label: f.label, hint: f.hint, error: f.error });
-    const { container } = render(<Field orientation="row" />);
+    const { container } = renderWithIcons(<Field orientation="row" />);
     expect(classesOf(container.firstElementChild)).toEqual(expect.arrayContaining([f.field, f.row]));
   });
 
@@ -70,7 +71,7 @@ describe('shared field layout', () => {
 
 describe('shared field frame', () => {
   it('is worn by UnitField, MenuButton and each ListEditor input', () => {
-    const { container } = render(
+    const { container } = renderWithIcons(
       <>
         <UnitField aria-label="Size" value={1} onChange={() => {}} />
         <MenuButton label="Pick one" items={OPTIONS} onAction={() => {}} />

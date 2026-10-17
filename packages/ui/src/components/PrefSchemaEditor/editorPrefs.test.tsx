@@ -1,8 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, screen, within } from '@testing-library/react';
 import type { PrefGroup } from '@weasel-js/prefs';
 import type { PrefSchemaEditorPrefs } from './editorPrefs';
 import { PrefSchemaEditor } from './PrefSchemaEditor';
+import { renderWithIcons } from '../../testing/withIcons';
 
 afterEach(cleanup);
 
@@ -13,7 +14,7 @@ const open = () => fireEvent.click(screen.getByRole('button', { name: 'Preferenc
 
 describe('PrefSchemaEditor preferences', () => {
   it('opens its own settings from the bar, each at its default', () => {
-    render(<PrefSchemaEditor schema={SCHEMA} onChange={() => {}} />);
+    renderWithIcons(<PrefSchemaEditor schema={SCHEMA} onChange={() => {}} />);
     open();
     expect(dialog().getByRole('checkbox', { name: 'Select what is dropped' })).toBeChecked();
     fireEvent.click(dialog().getByRole('checkbox', { name: 'Select what is dropped' }));
@@ -24,7 +25,7 @@ describe('PrefSchemaEditor preferences', () => {
     const values = { preview: { selectDropped: false } };
     const set = vi.fn();
     const store = { subscribe: () => () => {}, values: () => values, set } as unknown as PrefSchemaEditorPrefs;
-    render(<PrefSchemaEditor schema={SCHEMA} onChange={() => {}} prefs={store} />);
+    renderWithIcons(<PrefSchemaEditor schema={SCHEMA} onChange={() => {}} prefs={store} />);
     open();
     const box = dialog().getByRole('checkbox', { name: 'Select what is dropped' });
     expect(box).not.toBeChecked();
@@ -36,7 +37,7 @@ describe('PrefSchemaEditor preferences', () => {
     const values = { layout: { structureWidth: 420 } };
     const set = vi.fn();
     const store = { subscribe: () => () => {}, values: () => values, set } as unknown as PrefSchemaEditorPrefs;
-    render(<PrefSchemaEditor schema={SCHEMA} onChange={() => {}} prefs={store} unplaced={{ name: '', children: { snap: { kind: 'boolean', name: 'Snap', description: '', default: false } } }} />);
+    renderWithIcons(<PrefSchemaEditor schema={SCHEMA} onChange={() => {}} prefs={store} unplaced={{ name: '', children: { snap: { kind: 'boolean', name: 'Snap', description: '', default: false } } }} />);
     const structure = screen.getByRole('separator', { name: 'Resize structure' });
     expect(structure).toHaveAttribute('aria-valuenow', '420');
     fireEvent.keyDown(structure, { key: 'ArrowRight' });
@@ -50,7 +51,7 @@ describe('PrefSchemaEditor preferences', () => {
   });
 
   it('lists no pane size among its settings', () => {
-    render(<PrefSchemaEditor schema={SCHEMA} onChange={() => {}} />);
+    renderWithIcons(<PrefSchemaEditor schema={SCHEMA} onChange={() => {}} />);
     open();
     expect(dialog().queryByText('Layout')).toBeNull();
     expect(dialog().queryByText('structureWidth')).toBeNull();

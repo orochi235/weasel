@@ -1,9 +1,10 @@
 import '@weasel-js/theme/tokens.css';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
 import { page } from 'vitest/browser';
 import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 import { PrefSchemaEditor } from './PrefSchemaEditor';
+import { renderWithIcons } from '../../testing/withIcons';
 
 // Whether a condition's rows fit the attributes pane's control column, and whether a tree row has room for its
 // mark, is layout, which jsdom does not do.
@@ -26,7 +27,7 @@ const box = (el: Element) => el.getBoundingClientRect();
 
 test('a condition\'s rows stay inside the attributes pane, and the tree row holding a bad one shows its mark', async () => {
   await page.viewport(1300, 720);
-  render(<div style={{ width: 1280, height: 700 }}><PrefSchemaEditor schema={SCHEMA} onChange={() => {}} /></div>);
+  renderWithIcons(<div style={{ width: 1280, height: 700 }}><PrefSchemaEditor schema={SCHEMA} onChange={() => {}} /></div>);
   const tree = screen.getByRole('tree', { name: 'Schema structure' });
   const mark = within(tree).getByText('bad condition');
   const structure = box(screen.getByRole('region', { name: 'Structure' }));

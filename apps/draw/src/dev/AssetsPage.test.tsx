@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { AssetsPage } from './AssetsPage';
+import { renderWithIcons } from '../testIcons';
 
 afterEach(cleanup);
 
@@ -10,7 +11,7 @@ const asset = (label: string) =>
 
 describe('AssetsPage', () => {
   it('opens on WeaselDraw preferences, and opens a node property schema picked from the list', () => {
-    render(<AssetsPage />);
+    renderWithIcons(<AssetsPage />);
     expect(within(tree()).getByText('tools')).toBeInTheDocument();
     fireEvent.click(asset('Node: rect'));
     fireEvent.click(within(tree()).getByText('pose.x'));
@@ -19,20 +20,20 @@ describe('AssetsPage', () => {
   });
 
   it('describes registry-enum attributes, so its source is editable', () => {
-    render(<AssetsPage />);
+    renderWithIcons(<AssetsPage />);
     fireEvent.click(within(tree()).getByText('lastTool'));
     expect(within(screen.getByRole('region', { name: 'Attributes' })).getByRole('textbox', { name: 'Source' })).toBeInTheDocument();
   });
 
   it('lists the surface assets and context menus, and opens one picked', () => {
-    render(<AssetsPage />);
+    renderWithIcons(<AssetsPage />);
     for (const label of ['Arrange', 'Pathfinder', 'Path', 'Selection', 'Canvas', 'Layer row']) expect(asset(label)).toBeInTheDocument();
     fireEvent.click(asset('Arrange'));
     expect(within(tree()).getByText('reorder')).toBeInTheDocument();
   });
 
   it('lists the menu bar, and shows its titles in the structure tree', () => {
-    render(<AssetsPage />);
+    renderWithIcons(<AssetsPage />);
     fireEvent.click(asset('Menu bar'));
     expect(within(tree()).getByText('File')).toBeInTheDocument();
   });

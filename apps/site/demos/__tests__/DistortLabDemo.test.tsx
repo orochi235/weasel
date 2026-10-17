@@ -6,6 +6,7 @@ import { StrictMode } from 'react';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { DistortLabDemo } from '../DistortLabDemo';
 import { drag, sceneCanvas, stubResizeObserver } from './pathEditLabHarness';
+import { withIcons } from '../../testIcons';
 
 beforeAll(() => {
   window.history.replaceState(null, '', '/?test=1');
@@ -20,7 +21,7 @@ const node = (id: string) => window.__weaselTest!.getScene().nodes.find((n) => n
 
 describe('DistortLabDemo', () => {
   it('drags a corner of the selection box and distorts both shapes, which Expand turns to plain paths', async () => {
-    const { container } = await renderSettled(<StrictMode><DistortLabDemo /></StrictMode>);
+    const { container } = await renderSettled(<StrictMode><DistortLabDemo /></StrictMode>, { wrapper: withIcons });
     const canvas = sceneCanvas(container);
     const before = node('board').data;
 

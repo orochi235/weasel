@@ -1,6 +1,6 @@
 import { createMemoryAdapter, type RenderContext } from '@weasel-js/labkit';
 import { f } from '@weasel-js/labkit/config';
-import { act, fireEvent, render, renderHook, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, renderHook, screen, waitFor, within } from '@testing-library/react';
 import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import { useLayoutEffect } from 'react';
 import { describe, expect, it, vi } from 'vitest';
@@ -12,6 +12,7 @@ import { FOLLOW_APP } from './globals';
 import { installResizeObserver } from './labHarness';
 import { type StoryRegistry, useStoryRegistry } from './useStoryRegistry';
 import { Workshop } from './Workshop';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 installResizeObserver();
 
@@ -46,7 +47,7 @@ describe('useStoryRegistry in the document', () => {
     expect(result.current.isReady('x--a')).toBe(false);
     expect(imports['/x.stories.tsx']).not.toHaveBeenCalled();
 
-    render(<>{pendingA!.render(ctx)}</>);
+    renderWithIcons(<>{pendingA!.render(ctx)}</>);
     await waitFor(() => expect(result.current.isReady('x--a')).toBe(true));
     expect(imports['/x.stories.tsx']).toHaveBeenCalledTimes(1);
     expect(prepare).toHaveBeenCalledTimes(2);
@@ -68,7 +69,7 @@ describe('useStoryRegistry in the document', () => {
       return null;
     }
     renderThenAbandon(committed, abandoned, (imports) => <Probe imports={imports} />);
-    render(<>{registry.instruments[0]!.render(ctx)}</>);
+    renderWithIcons(<>{registry.instruments[0]!.render(ctx)}</>);
     await waitFor(() => expect(committed['/x.stories.tsx']).toHaveBeenCalledTimes(1));
     expect(abandoned['/x.stories.tsx']).not.toHaveBeenCalled();
   });
@@ -77,7 +78,7 @@ describe('useStoryRegistry in the document', () => {
     const { result, rerender } = renderHook(({ imports }) => useStoryRegistry([a], { frameUrl: '/frame.html', importers: imports }), {
       initialProps: { imports: {} as Record<string, () => Promise<Record<string, unknown>>> },
     });
-    const view = render(<>{result.current.instruments[0]!.render(ctx)}</>);
+    const view = renderWithIcons(<>{result.current.instruments[0]!.render(ctx)}</>);
     await waitFor(() => {
       view.rerender(<>{result.current.instruments[0]!.render(ctx)}</>);
       expect(screen.getByText(/No importer for \/x\.stories\.tsx/)).toBeTruthy();
@@ -94,7 +95,7 @@ describe('useStoryRegistry in the document', () => {
   it('renders the fault in place of a story whose module fails to load', async () => {
     const imports = { '/x.stories.tsx': () => Promise.reject(new Error('syntax error in x')) };
     const { result } = renderHook(() => useStoryRegistry([a, b], { frameUrl: '/frame.html', importers: imports }));
-    const { rerender } = render(<>{result.current.instruments[0]!.render(ctx)}</>);
+    const { rerender } = renderWithIcons(<>{result.current.instruments[0]!.render(ctx)}</>);
     await waitFor(() => expect(result.current.instruments[0]).not.toBe(undefined));
     await waitFor(() => {
       rerender(<>{result.current.instruments[0]!.render(ctx)}</>);
@@ -107,7 +108,7 @@ describe('useStoryRegistry in the document', () => {
   it("loads a component's index page from its files", async () => {
     const imports = importers();
     const { result } = renderHook(() => useStoryRegistry([a, b, xIndex], { frameUrl: '/frame.html', importers: imports }));
-    render(<>{result.current.instruments[2]!.render(ctx)}</>);
+    renderWithIcons(<>{result.current.instruments[2]!.render(ctx)}</>);
     await waitFor(() => expect(result.current.isReady(xIndex.id)).toBe(true));
     expect(imports['/x.stories.tsx']).toHaveBeenCalledTimes(1);
     expect(result.current.instruments[2]?.title).toBe('X');
@@ -117,7 +118,7 @@ describe('useStoryRegistry in the document', () => {
   it('reload drops a file and imports it again for the entries that had it', async () => {
     const imports = importers();
     const { result } = renderHook(() => useStoryRegistry([a, b], { frameUrl: '/frame.html', importers: imports }));
-    const { rerender } = render(<>{result.current.instruments[0]!.render(ctx)}</>);
+    const { rerender } = renderWithIcons(<>{result.current.instruments[0]!.render(ctx)}</>);
     await waitFor(() => expect(result.current.isReady('x--a')).toBe(true));
     act(() => result.current.reload('/x.stories.tsx'));
     expect(result.current.isReady('x--a')).toBe(false);
@@ -130,7 +131,7 @@ describe('useStoryRegistry in the document', () => {
 describe('Workshop in the document', () => {
   it('renders the story the hash names inside a story host, with no frame', async () => {
     location.hash = '#/x--a';
-    const { container } = render(
+    const { container } = renderWithIcons(
       <Workshop index={[a, b]} frameUrl="/frame.html" importers={importers()} setup={{}} storage={createMemoryAdapter()} />,
     );
     // A lab, a trial and a story module under a loaded test run take more than testing-library's second.
@@ -144,7 +145,7 @@ describe('Workshop in the document', () => {
   it('keeps an isolated story in a frame and never imports its module', async () => {
     location.hash = '#/y--c';
     const imports = importers();
-    const { container } = render(
+    const { container } = renderWithIcons(
       <Workshop index={[a, c]} frameUrl="/frame.html" importers={imports} setup={{}} storage={createMemoryAdapter()} />,
     );
     await waitFor(() => expect(container.querySelector('iframe.fg-frame-view')).not.toBeNull(), { timeout: 5000 });
@@ -178,7 +179,7 @@ describe('the lab’s mode switch reaching trials', () => {
   ])('%s follows the switch while Mode is App, and a Mode picked in the toolbar overrides it', async (_kind, id) => {
     location.hash = `#/${id}`;
     const applyGlobals = vi.fn();
-    render(
+    renderWithIcons(
       <Workshop
         index={[a, b]}
         frameUrl="/frame.html"

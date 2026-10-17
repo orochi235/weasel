@@ -1,15 +1,16 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { screen, fireEvent } from '@testing-library/react';
 import type { Paint } from '@weasel-js/core';
 import { seedMeshPatch, type MeshGradientPaint } from '@weasel-js/core/mesh';
 import { MeshEditor } from './MeshEditor';
 import { PaintInput } from '../PaintInput';
+import { renderWithIcons } from '../../testing/withIcons';
 
 const MESH = seedMeshPatch('#ff0000ff') as MeshGradientPaint;
 
 describe('MeshEditor', () => {
   it('renders one swatch per corner, numbered in the patch walk order', () => {
-    render(<MeshEditor value={MESH} onChange={() => {}} />);
+    renderWithIcons(<MeshEditor value={MESH} onChange={() => {}} />);
     for (let i = 1; i <= 4; i++) {
       expect(screen.getByLabelText(`Patch 1 corner ${i}`)).toBeInTheDocument();
     }
@@ -17,7 +18,7 @@ describe('MeshEditor', () => {
 
   it('recolors one corner and leaves the geometry alone', () => {
     const onChange = vi.fn();
-    render(<MeshEditor value={MESH} onChange={onChange} />);
+    renderWithIcons(<MeshEditor value={MESH} onChange={onChange} />);
     const swatch = screen.getByLabelText('Patch 1 corner 2');
     fireEvent.input(swatch, { target: { value: '#00ff00' } });
     fireEvent.blur(swatch);
@@ -31,14 +32,14 @@ describe('MeshEditor', () => {
 
   it('commits the blend space', () => {
     const onChange = vi.fn();
-    render(<MeshEditor value={MESH} onChange={onChange} />);
+    renderWithIcons(<MeshEditor value={MESH} onChange={onChange} />);
     fireEvent.click(screen.getByRole('radio', { name: 'OKLab' }));
     expect(onChange.mock.calls[0][0]).toMatchObject({ interpolate: 'oklab' });
   });
 
   it('numbers the patches when there is more than one', () => {
     const two: MeshGradientPaint = { ...MESH, patches: [MESH.patches[0], MESH.patches[0]] };
-    render(<MeshEditor value={two} onChange={() => {}} />);
+    renderWithIcons(<MeshEditor value={two} onChange={() => {}} />);
     expect(screen.getByLabelText('Patch 2 corner 1')).toBeInTheDocument();
   });
 });
@@ -46,7 +47,7 @@ describe('MeshEditor', () => {
 describe('PaintInput holding a mesh', () => {
   it('edits it as a mesh rather than flattening it to a solid', () => {
     const onChange = vi.fn();
-    render(<PaintInput value={MESH as unknown as Paint} onChange={onChange} aria-label="Fill" />);
+    renderWithIcons(<PaintInput value={MESH as unknown as Paint} onChange={onChange} aria-label="Fill" />);
     const swatch = screen.getByLabelText('Patch 1 corner 1');
     fireEvent.input(swatch, { target: { value: '#0000ff' } });
     fireEvent.blur(swatch);
@@ -56,7 +57,7 @@ describe('PaintInput holding a mesh', () => {
   });
 
   it('lights the mesh segment in the kind bar', () => {
-    render(<PaintInput value={MESH as unknown as Paint} onChange={() => {}} aria-label="Fill" />);
+    renderWithIcons(<PaintInput value={MESH as unknown as Paint} onChange={() => {}} aria-label="Fill" />);
     expect(screen.getByRole('radio', { name: 'Mesh' })).toBeChecked();
   });
 });

@@ -1,7 +1,7 @@
 import '../../../../apps/forge/labkitStyles';
 import '../shell/shell.css';
 import { createMemoryAdapter } from '@weasel-js/labkit';
-import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
 import { page } from 'vitest/browser';
 import { readRouteParams } from '../shell/useRoute';
@@ -9,6 +9,7 @@ import { Workshop } from '../shell/Workshop';
 import { meta, story } from '../story/define';
 import type { IndexEntry } from '../story/types';
 import { usePlayhead } from './context';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 afterEach(() => {
   cleanup();
@@ -25,7 +26,7 @@ const tModule = { default: meta({ title: 'T' }), Timed: story({ timeline: { dura
 test("a timeline story's transport lays out in its trial's status bar, plays on real frames, and pauses into t", async () => {
   await page.viewport(1280, 800);
   history.replaceState(null, '', `${location.pathname}#/t--timed`);
-  render(
+  renderWithIcons(
     <div style={{ width: 1200, height: 700 }}>
       <Workshop
         index={[timed]}

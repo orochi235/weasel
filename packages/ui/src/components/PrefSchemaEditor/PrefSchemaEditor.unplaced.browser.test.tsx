@@ -1,10 +1,11 @@
 import '@weasel-js/theme/tokens.css';
-import { act, cleanup, render, screen, within } from '@testing-library/react';
+import { act, cleanup, screen, within } from '@testing-library/react';
 import { afterEach, beforeAll, expect, test } from 'vitest';
 import { page } from 'vitest/browser';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { PrefSchemaEditor } from './PrefSchemaEditor';
 import { grip, pointer, pointIn } from './pointerDrag.fixture';
+import { renderWithIcons } from '../../testing/withIcons';
 
 // Where the Unplaced list's drop outline falls against its heading is the browser's layout to say.
 
@@ -29,7 +30,7 @@ const textBox = (el: Element) => {
 };
 
 test('the outline a drag draws on the Unplaced list covers none of its heading, and nothing moves when it appears', () => {
-  render(<div style={{ height: 700 }}><PrefSchemaEditor schema={START} onChange={() => {}} /></div>);
+  renderWithIcons(<div style={{ height: 700 }}><PrefSchemaEditor schema={START} onChange={() => {}} /></div>);
   const before = textBox(heading());
   const from = treeRow('grid');
   const press = grip(from);

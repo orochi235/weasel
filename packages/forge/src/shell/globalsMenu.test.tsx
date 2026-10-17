@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { createMemoryAdapter } from '@weasel-js/labkit';
 import type { PrefEnum, PrefGroup } from '@weasel-js/prefs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -8,6 +8,7 @@ import { type GlobalDeclarations } from './globals';
 import { globalsMenu } from './globalsMenu';
 import { installResizeObserver } from './labHarness';
 import { Workshop } from './Workshop';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 installResizeObserver();
 
@@ -25,7 +26,7 @@ afterEach(() => {
 });
 
 const mount = (shell: ShellConfig) =>
-  render(<Workshop index={[a]} frameUrl="/frame.html" config={shell} storage={createMemoryAdapter()} />);
+  renderWithIcons(<Workshop index={[a]} frameUrl="/frame.html" config={shell} storage={createMemoryAdapter()} />);
 
 const title = async (name: string) =>
   (await screen.findAllByRole('menuitem', { name })).find(

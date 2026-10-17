@@ -1,8 +1,9 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { useState } from 'react';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { PrefSchemaEditor } from './PrefSchemaEditor';
+import { renderWithIcons } from '../../testing/withIcons';
 
 afterEach(cleanup);
 
@@ -27,7 +28,7 @@ const pick = (key: string) => fireEvent.click(row(key)!.firstElementChild!);
 
 describe('PrefSchemaEditor keys pressed in its own dialogs', () => {
   it('leaves the selected node alone when Backspace or Delete is pressed on a dialog\'s button', () => {
-    render(<Live />);
+    renderWithIcons(<Live />);
     pick('grid');
     expect(row('grid')).toHaveAttribute('aria-selected', 'true');
     fireEvent.click(screen.getByRole('button', { name: 'Add pref' }));
@@ -38,7 +39,7 @@ describe('PrefSchemaEditor keys pressed in its own dialogs', () => {
   });
 
   it('leaves the schema\'s history alone when Mod+Z is pressed in a dialog', () => {
-    render(<Live />);
+    renderWithIcons(<Live />);
     pick('grid');
     fireEvent.keyDown(row('snap')!, { key: 'Delete' });
     expect(row('grid')).toBeNull();

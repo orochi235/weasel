@@ -1,11 +1,12 @@
 import '@weasel-js/theme/tokens.css';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, screen } from '@testing-library/react';
 import { baselineOf } from '@weasel-js/react/testing/baselineOf';
 import { afterEach, beforeAll, expect, test } from 'vitest';
 import { ListEditor } from '../ListEditor';
 import { PropertyField } from './PropertyField';
 import { PropertyList } from './PropertyList';
 import { PropertyRow } from './PropertyRow';
+import { renderWithIcons } from '../../testing/withIcons';
 
 // Where an inline row puts its label is a layout question, so only a real
 // browser can answer it.
@@ -39,7 +40,7 @@ const frames = () =>
   new Promise<void>((done) => requestAnimationFrame(() => requestAnimationFrame(() => done())));
 
 test('a one-line row keeps its label centered on the control', async () => {
-  render(
+  renderWithIcons(
     <PropertyList align="center" className="narrow-labels">
       <PropertyField kind="number" label="Size" value={4} onChange={() => {}} layout="inline" />
     </PropertyList>,
@@ -52,7 +53,7 @@ test('a one-line row keeps its label centered on the control', async () => {
 });
 
 test('beside a textarea, the label sits at the top even under align="center"', async () => {
-  render(
+  renderWithIcons(
     <PropertyList align="center" className="narrow-labels">
       <PropertyField
         kind="string"
@@ -75,7 +76,7 @@ test('beside a textarea, the label sits at the top even under align="center"', a
 });
 
 test('beside a list editor, the label sits at the top', async () => {
-  render(
+  renderWithIcons(
     <PropertyList align="center" className="narrow-labels">
       <PropertyRow label="Tags" layout="inline" group>
         <ListEditor aria-label="Tags" value={['a', 'b', 'c', 'd']} onChange={() => {}} />
@@ -91,7 +92,7 @@ test('beside a list editor, the label sits at the top', async () => {
 });
 
 test('a label that wraps puts its first line level with a one-line control', async () => {
-  render(
+  renderWithIcons(
     <PropertyList align="center" className="narrow-labels">
       <PropertyField
         kind="number"
@@ -116,7 +117,7 @@ test('a label that wraps puts its first line level with a one-line control', asy
 });
 
 test('a label that wraps keeps its help glyph on its first line', async () => {
-  render(
+  renderWithIcons(
     <PropertyList align="center" className="narrow-labels">
       <PropertyField
         kind="boolean"
@@ -137,7 +138,7 @@ test('a label that wraps keeps its help glyph on its first line', async () => {
 });
 
 test('a dropdown row sets its value at the label size, on the label baseline', async () => {
-  render(
+  renderWithIcons(
     <PropertyList className="split-sizes">
       <PropertyField
         kind="enum"

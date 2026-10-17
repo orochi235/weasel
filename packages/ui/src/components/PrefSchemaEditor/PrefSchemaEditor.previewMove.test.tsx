@@ -1,9 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { useState } from 'react';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { PrefSchemaEditor } from './PrefSchemaEditor';
 import { keyedRow, rowKey } from './treeRows.fixture';
+import { renderWithIcons } from '../../testing/withIcons';
 
 // jsdom lays nothing out, so the form cannot say what is under a point: the mark is given.
 vi.mock('../Prefs', async (original) => ({
@@ -34,7 +35,7 @@ const item = (key: string) => keyedRow(structure(), key);
 
 describe('PrefSchemaEditor moves from the live preview', () => {
   it('opens a folded group in the tree when a row is dropped into it', () => {
-    render(<Live />);
+    renderWithIcons(<Live />);
     fireEvent.click(item('panels')!.querySelector('[data-tree-twisty]')!);
     expect(item('dock')).toBeNull();
     const preview = screen.getByRole('region', { name: 'Live preview' });
@@ -50,7 +51,7 @@ describe('PrefSchemaEditor moves from the live preview', () => {
   it('steps back from a move through a rail entry to the selection the drag began with', () => {
     vi.useFakeTimers();
     try {
-      render(<Live />);
+      renderWithIcons(<Live />);
       const preview = screen.getByRole('region', { name: 'Live preview' });
       const label = within(preview).getByText('Grid color');
       fireEvent.pointerDown(label, { button: 0, clientX: 5, clientY: 5 });

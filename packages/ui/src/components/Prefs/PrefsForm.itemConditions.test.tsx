@@ -1,8 +1,9 @@
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, screen } from '@testing-library/react';
 import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 import { afterEach, describe, expect, it } from 'vitest';
 import { PrefControl } from './PrefControl';
 import { PrefsForm } from './PrefsForm';
+import { renderWithIcons } from '../../testing/withIcons';
 
 afterEach(cleanup);
 
@@ -31,7 +32,7 @@ const form = (flags: Record<string, boolean>) => <PrefsForm schema={schema} valu
 
 describe("PrefsForm conditions on a list's and a map's item", () => {
   it("hides a field of every entry while the item's showIf for it fails", () => {
-    const { rerender } = render(form({ eased: false }));
+    const { rerender } = renderWithIcons(form({ eased: false }));
     expect(screen.getAllByRole('spinbutton', { name: 'Length' })).toHaveLength(3);
     expect(screen.queryByRole('spinbutton', { name: 'Ease' })).toBeNull();
     rerender(form({ eased: true }));
@@ -39,7 +40,7 @@ describe("PrefsForm conditions on a list's and a map's item", () => {
   });
 
   it("disables a field of every entry while the item's enableIf for it fails", () => {
-    const { rerender } = render(form({ holds: false }));
+    const { rerender } = renderWithIcons(form({ holds: false }));
     for (const hold of screen.getAllByRole('spinbutton', { name: 'Hold' })) expect(hold).toBeDisabled();
     expect(screen.getAllByRole('spinbutton', { name: 'Length' })[0]).toBeEnabled();
     rerender(form({ holds: true }));
@@ -47,7 +48,7 @@ describe("PrefsForm conditions on a list's and a map's item", () => {
   });
 
   it("disables every entry's control while the item's own enableIf fails", () => {
-    const { rerender } = render(form({ open: false }));
+    const { rerender } = renderWithIcons(form({ open: false }));
     expect(screen.getByRole('spinbutton', { name: 'Weight left' })).toBeDisabled();
     expect(screen.getByRole('textbox', { name: 'Tag 1' })).toBeDisabled();
     rerender(form({ open: true }));
@@ -59,7 +60,7 @@ describe("PrefsForm conditions on a list's and a map's item", () => {
 describe('PrefControl', () => {
   it('disables the fields its owner says a condition disables, an entry of a list by the item', () => {
     const list = schema.children.phases as PrefLeaf;
-    render(<PrefControl pref={list} path="phases" value={held.phases} onChange={() => {}} disabledAt={(at) => at === 'phases.*.hold'} />);
+    renderWithIcons(<PrefControl pref={list} path="phases" value={held.phases} onChange={() => {}} disabledAt={(at) => at === 'phases.*.hold'} />);
     for (const hold of screen.getAllByRole('spinbutton', { name: 'Hold' })) expect(hold).toBeDisabled();
     expect(screen.getAllByRole('spinbutton', { name: 'Length' })[0]).toBeEnabled();
   });

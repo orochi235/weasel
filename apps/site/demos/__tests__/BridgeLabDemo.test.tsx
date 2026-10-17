@@ -7,6 +7,7 @@ import { StrictMode } from 'react';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { BridgeLabDemo } from '../BridgeLabDemo';
 import { installLabEnvironment } from './pathLabHarness';
+import { withIcons } from '../../testIcons';
 
 beforeAll(installLabEnvironment);
 afterEach(() => {
@@ -18,7 +19,7 @@ const nodes = () => window.__weaselTest!.getScene().nodes;
 
 describe('BridgeLabDemo', () => {
   it('bridges the two seeded paths into one with a curve leaving each end along its heading', async () => {
-    await renderSettled(<StrictMode><BridgeLabDemo /></StrictMode>);
+    await renderSettled(<StrictMode><BridgeLabDemo /></StrictMode>, { wrapper: withIcons });
     expect(nodes()).toHaveLength(3);
 
     await userEvent.click(screen.getByRole('button', { name: 'Bridge' }));

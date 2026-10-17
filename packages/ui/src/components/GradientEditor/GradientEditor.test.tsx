@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { act, render, screen, fireEvent, within } from '@testing-library/react';
+import { act, screen, fireEvent, within } from '@testing-library/react';
 import {
   asPaint,
   registerPaintKind,
@@ -9,6 +9,7 @@ import {
 } from '@weasel-js/core';
 import { seedMeshPatch, type MeshGradientPaint } from '@weasel-js/core/mesh';
 import { GradientEditor } from './GradientEditor';
+import { renderWithIcons } from '../../testing/withIcons';
 
 const LINEAR: GradientPaint = {
   kind: 'linear-gradient',
@@ -24,7 +25,7 @@ const LINEAR: GradientPaint = {
 describe('GradientEditor', () => {
   it('recoloring a stop commits the whole gradient, geometry intact', () => {
     const onChange = vi.fn();
-    render(<GradientEditor value={LINEAR} onChange={onChange} />);
+    renderWithIcons(<GradientEditor value={LINEAR} onChange={onChange} />);
     const swatch = screen.getByLabelText('Stop 1');
     fireEvent.input(swatch, { target: { value: '#00ff00' } });
     fireEvent.blur(swatch);
@@ -45,7 +46,7 @@ describe('GradientEditor', () => {
   it('previews a recolor through onInput without committing it', () => {
     const onInput = vi.fn();
     const onChange = vi.fn();
-    render(<GradientEditor value={LINEAR} onInput={onInput} onChange={onChange} />);
+    renderWithIcons(<GradientEditor value={LINEAR} onInput={onInput} onChange={onChange} />);
     fireEvent.input(screen.getByLabelText('Stop 1'), { target: { value: '#00ff00' } });
 
     expect(onInput).toHaveBeenCalledTimes(1);
@@ -54,7 +55,7 @@ describe('GradientEditor', () => {
 
   it('switching kind preserves stops, units and opacity', () => {
     const onChange = vi.fn();
-    render(<GradientEditor value={{ ...LINEAR, opacity: 0.4 }} onChange={onChange} />);
+    renderWithIcons(<GradientEditor value={{ ...LINEAR, opacity: 0.4 }} onChange={onChange} />);
     fireEvent.click(screen.getByRole('radio', { name: 'Radial' }));
 
     expect(onChange).toHaveBeenCalledTimes(1);
@@ -69,7 +70,7 @@ describe('GradientEditor', () => {
   });
 
   it('hides the kind switch when the surrounding UI owns it', () => {
-    render(<GradientEditor value={LINEAR} onChange={() => {}} kindSwitch={false} />);
+    renderWithIcons(<GradientEditor value={LINEAR} onChange={() => {}} kindSwitch={false} />);
     expect(screen.queryByRole('radio', { name: 'Radial' })).not.toBeInTheDocument();
   });
 
@@ -82,7 +83,7 @@ describe('GradientEditor', () => {
         { offset: 0, color: '#ff0000ff' },
       ],
     };
-    render(<GradientEditor value={unordered} onChange={onChange} />);
+    renderWithIcons(<GradientEditor value={unordered} onChange={onChange} />);
     // The leftmost stop is stops[1]: numbered by where it sits, written by index.
     const swatch = screen.getByLabelText('Stop 1');
     fireEvent.input(swatch, { target: { value: '#00ff00' } });
@@ -97,7 +98,7 @@ describe('GradientEditor', () => {
   describe('the interpolation space', () => {
     it('commits the space the reader picked, geometry and stops intact', () => {
       const onChange = vi.fn();
-      render(<GradientEditor value={LINEAR} onChange={onChange} />);
+      renderWithIcons(<GradientEditor value={LINEAR} onChange={onChange} />);
       fireEvent.click(screen.getByRole('radio', { name: 'OKLCh' }));
 
       expect(onChange).toHaveBeenCalledTimes(1);
@@ -112,12 +113,12 @@ describe('GradientEditor', () => {
     });
 
     it('shows sRGB as the state of a gradient that named no space', () => {
-      render(<GradientEditor value={LINEAR} onChange={() => {}} />);
+      renderWithIcons(<GradientEditor value={LINEAR} onChange={() => {}} />);
       expect(screen.getByRole('radio', { name: 'sRGB' })).toBeChecked();
     });
 
     it('hides the switch when the surrounding UI owns it', () => {
-      render(<GradientEditor value={LINEAR} onChange={() => {}} spaceSwitch={false} />);
+      renderWithIcons(<GradientEditor value={LINEAR} onChange={() => {}} spaceSwitch={false} />);
       expect(screen.queryByRole('radio', { name: 'OKLCh' })).not.toBeInTheDocument();
     });
 
@@ -130,7 +131,7 @@ describe('GradientEditor', () => {
         .map((r) => r.getAttribute('aria-label') ?? r.textContent);
 
     it('offers every registered gradient kind, mesh included', () => {
-      render(<GradientEditor value={LINEAR} onChange={() => {}} />);
+      renderWithIcons(<GradientEditor value={LINEAR} onChange={() => {}} />);
       expect(kindNames()).toEqual(['Linear', 'Radial', 'Conic', 'Mesh']);
     });
 
@@ -144,7 +145,7 @@ describe('GradientEditor', () => {
         fromStops: (stops) => asPaint({ kind: 'diamond-gradient', stops }),
       });
       try {
-        render(<GradientEditor value={LINEAR} onChange={() => {}} />);
+        renderWithIcons(<GradientEditor value={LINEAR} onChange={() => {}} />);
         expect(kindNames()).toContain('Diamond');
       } finally {
         act(() => { dispose(); });
@@ -152,7 +153,7 @@ describe('GradientEditor', () => {
     });
 
     it('picks up a gradient kind registered after it mounted', () => {
-      render(<GradientEditor value={LINEAR} onChange={() => {}} />);
+      renderWithIcons(<GradientEditor value={LINEAR} onChange={() => {}} />);
       expect(kindNames()).not.toContain('Diamond');
       let dispose = (): void => {};
       act(() => {
@@ -174,7 +175,7 @@ describe('GradientEditor', () => {
 
     it('switches a stop gradient to a mesh carrying its colors', () => {
       const onChange = vi.fn();
-      render(<GradientEditor value={LINEAR} onChange={onChange} />);
+      renderWithIcons(<GradientEditor value={LINEAR} onChange={onChange} />);
       fireEvent.click(screen.getByRole('radio', { name: 'Mesh' }));
       const next = onChange.mock.calls[0][0] as MeshGradientPaint;
       expect(next.kind).toBe('mesh-gradient');
@@ -184,7 +185,7 @@ describe('GradientEditor', () => {
     it('edits a mesh by its corners, and switches it back to a stop gradient', () => {
       const onChange = vi.fn();
       const mesh = seedMeshPatch('#ff0000ff') as unknown as Paint;
-      render(<GradientEditor value={mesh} onChange={onChange} />);
+      renderWithIcons(<GradientEditor value={mesh} onChange={onChange} />);
       expect(screen.getByLabelText('Patch 1 corner 1')).toBeInTheDocument();
       expect(screen.queryByRole('slider', { name: /Gradient stop/ })).toBeNull();
       expect(screen.getByRole('radio', { name: 'Mesh' })).toBeChecked();
@@ -199,20 +200,20 @@ describe('GradientEditor', () => {
       within(screen.getByRole('radiogroup', { name: group })).getAllByRole('radio').map((r) => r.textContent);
 
     it('is off by default', () => {
-      render(<GradientEditor value={LINEAR} onChange={() => {}} />);
+      renderWithIcons(<GradientEditor value={LINEAR} onChange={() => {}} />);
       expect(radios('Gradient kind')).toContain('Conic');
       expect(radios('Blend space')).toEqual(['sRGB', 'OKLab', 'OKLCh']);
     });
 
     it('limits the kinds to the gradients SVG has elements for, and drops the space switch', () => {
-      render(<GradientEditor value={LINEAR} svg onChange={() => {}} />);
+      renderWithIcons(<GradientEditor value={LINEAR} svg onChange={() => {}} />);
       expect(radios('Gradient kind')).toEqual(['Linear', 'Radial']);
       expect(screen.queryByRole('radiogroup', { name: 'Blend space' })).toBeNull();
     });
 
     it('still shows the kind and space a value already has, so it can be switched off them', () => {
       const conic: GradientPaint = { kind: 'conic-gradient', center: { x: 0, y: 0 }, angle: 0, stops: LINEAR.stops, interpolate: 'oklch' };
-      render(<GradientEditor value={conic} svg onChange={() => {}} />);
+      renderWithIcons(<GradientEditor value={conic} svg onChange={() => {}} />);
       expect(radios('Gradient kind')).toEqual(['Linear', 'Radial', 'Conic']);
       expect(radios('Blend space')).toEqual(['sRGB', 'OKLCh']);
     });

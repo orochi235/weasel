@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ThemeDefinition } from '@weasel-js/theme';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -7,6 +7,7 @@ import type { ThemeApi } from './theme/api';
 import { weasel } from './theme/fixtures';
 import { removePin, setPin } from './theme/model';
 import type { PutResult, StoredTheme } from '@weasel-js/theme/engine';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 vi.mock('./theme/exportFiles', async (importOriginal) => ({ ...(await importOriginal<typeof import('./theme/exportFiles')>()), download: vi.fn() }));
 
@@ -27,7 +28,7 @@ function renderBench(overrides: Partial<WorkbenchProps> = {}): WorkbenchProps {
     onNew: vi.fn(() => null),
     ...overrides,
   };
-  render(<ThemeWorkbench {...props} />);
+  renderWithIcons(<ThemeWorkbench {...props} />);
   return props;
 }
 

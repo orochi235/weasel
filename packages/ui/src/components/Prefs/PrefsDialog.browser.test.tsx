@@ -1,8 +1,9 @@
 import '@weasel-js/theme/tokens.css';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, screen } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
 import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 import { PrefsDialog } from './PrefsDialog';
+import { renderWithIcons } from '../../testing/withIcons';
 
 // The modal sets only `max-height`, so a percentage height inside it resolves
 // against nothing; only real layout shows whether the pane is the box that scrolls.
@@ -37,7 +38,7 @@ function pane(): HTMLElement {
 }
 
 test('with no consumer height, the rail pane is capped by the modal and scrolls', () => {
-  render(
+  renderWithIcons(
     <PrefsDialog isOpen onOpenChange={() => {}} schema={SCHEMA} values={{}} onChange={() => {}} layout="rail" />,
   );
   const el = pane();
@@ -51,7 +52,7 @@ test('with no consumer height, the rail pane is capped by the modal and scrolls'
 });
 
 test('tall content grows the modal to its max-height, not only to the settled minimum', () => {
-  render(
+  renderWithIcons(
     <PrefsDialog isOpen onOpenChange={() => {}} schema={SCHEMA} values={{}} onChange={() => {}} layout="rail" />,
   );
   const modal = screen.getByRole('dialog').parentElement!;
@@ -63,7 +64,7 @@ test('a consumer height on the modal still decides the pane', () => {
   sheet.textContent = '.consumer-height { block-size: 600px; }';
   document.head.append(sheet);
   try {
-    render(
+    renderWithIcons(
       <PrefsDialog
         isOpen
         onOpenChange={() => {}}

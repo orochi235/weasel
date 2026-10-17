@@ -4,6 +4,7 @@ import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { StrictMode } from 'react';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { StrokeWidthLabDemo } from '../StrokeWidthLabDemo';
+import { withIcons } from '../../testIcons';
 
 // windease lays a lab's tiles out only once something measures them, and
 // jsdom ships no ResizeObserver.
@@ -47,7 +48,7 @@ function drag(canvas: Element, [x0, y0]: number[], [x1, y1]: number[], altKey = 
 
 describe('StrokeWidthLabDemo', () => {
   it("drags a stroke's edge with the Girth tool, both sides or with Alt one, as one undo entry each", async () => {
-    const { container } = await renderSettled(<StrictMode><StrokeWidthLabDemo /></StrictMode>);
+    const { container } = await renderSettled(<StrictMode><StrokeWidthLabDemo /></StrictMode>, { wrapper: withIcons });
     const canvas = container.querySelector('.lk-trial-scene canvas');
     if (!canvas) throw new Error('no scene canvas in the trial');
     expect(strokes()).toHaveLength(5);
@@ -72,7 +73,7 @@ describe('StrokeWidthLabDemo', () => {
   });
 
   it('writes the nib from the panel onto the selected handwriting', async () => {
-    await renderSettled(<StrokeWidthLabDemo />);
+    await renderSettled(<StrokeWidthLabDemo />, { wrapper: withIcons });
     expect(strokes()[4]?.nib?.ratio).toBeCloseTo(0.15, 6);
     const input = screen.getByRole('spinbutton', { name: /Nib thinnest/ });
     await userEvent.clear(input);

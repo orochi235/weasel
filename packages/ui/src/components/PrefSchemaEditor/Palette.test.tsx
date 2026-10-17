@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { Palette } from './Palette';
+import { renderWithIcons } from '../../testing/withIcons';
 
 afterEach(cleanup);
 
@@ -8,20 +9,20 @@ const tools = () => within(screen.getByRole('group', { name: 'Drag to add' })).g
 
 describe('Palette', () => {
   it('draws each thing it makes as a tool button: a glyph over its name', () => {
-    render(<Palette onDrag={vi.fn()} onDrop={vi.fn()} />);
+    renderWithIcons(<Palette onDrag={vi.fn()} onDrop={vi.fn()} />);
     expect(tools().map((b) => b.textContent)).toEqual(['Page', 'Tab', 'Panel', 'Section', 'Group', 'Bar', 'Label', 'Separator']);
     for (const button of tools()) expect(button.querySelector('svg')).not.toBeNull();
   });
 
   it('offers no page under a section root', () => {
-    render(<Palette sections onDrag={vi.fn()} onDrop={vi.fn()} />);
+    renderWithIcons(<Palette sections onDrag={vi.fn()} onDrop={vi.fn()} />);
     expect(tools().map((b) => b.textContent)).toEqual(['Tab', 'Panel', 'Section', 'Group', 'Bar', 'Label', 'Separator']);
   });
 
   it('reports a drag from a button as it moves, and the node it made where it is let go', () => {
     const onDrag = vi.fn();
     const onDrop = vi.fn();
-    render(<Palette onDrag={onDrag} onDrop={onDrop} />);
+    renderWithIcons(<Palette onDrag={onDrag} onDrop={onDrop} />);
     const panel = screen.getByRole('button', { name: 'Panel' });
     fireEvent.pointerDown(panel, { button: 0, clientX: 5, clientY: 5 });
     fireEvent.pointerMove(panel, { clientX: 40, clientY: 60 });
@@ -34,7 +35,7 @@ describe('Palette', () => {
   it('drops nothing when Escape ends the drag', () => {
     const onDrag = vi.fn();
     const onDrop = vi.fn();
-    render(<Palette onDrag={onDrag} onDrop={onDrop} />);
+    renderWithIcons(<Palette onDrag={onDrag} onDrop={onDrop} />);
     const panel = screen.getByRole('button', { name: 'Panel' });
     fireEvent.pointerDown(panel, { button: 0, clientX: 5, clientY: 5 });
     fireEvent.pointerMove(panel, { clientX: 40, clientY: 60 });
@@ -47,7 +48,7 @@ describe('Palette', () => {
   it('makes nothing of a press that never moves', () => {
     const onDrag = vi.fn();
     const onDrop = vi.fn();
-    render(<Palette onDrag={onDrag} onDrop={onDrop} />);
+    renderWithIcons(<Palette onDrag={onDrag} onDrop={onDrop} />);
     const panel = screen.getByRole('button', { name: 'Panel' });
     fireEvent.pointerDown(panel, { button: 0, clientX: 5, clientY: 5 });
     fireEvent.pointerUp(panel, { clientX: 5, clientY: 5 });

@@ -1,9 +1,10 @@
 import '@weasel-js/theme/tokens.css';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, screen } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
 import { page } from 'vitest/browser';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { PrefSchemaEditor } from './PrefSchemaEditor';
+import { renderWithIcons } from '../../testing/withIcons';
 
 // Which panes share an edge is the grid's doing, and jsdom lays nothing out.
 
@@ -18,7 +19,7 @@ const box = (el: Element): DOMRect => el.getBoundingClientRect();
 
 test('the structure pane runs the full height under the bar, and every other pane sits beside it', async () => {
   await page.viewport(1300, 720);
-  const { container } = render(
+  const { container } = renderWithIcons(
     <div style={{ width: 1280, height: 700 }}>
       <PrefSchemaEditor schema={SCHEMA} onChange={() => {}} />
     </div>,

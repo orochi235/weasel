@@ -1,10 +1,11 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, screen, within } from '@testing-library/react';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { asset, attributes, Live, pickRow, row, SETTINGS } from './AssetEditor.fixture';
 import { conditionProblems } from './conditionMarks';
 import type { Workspace } from './workspace';
 import { pointer } from './workspace.fixtures';
+import { renderWithIcons } from '../../testing/withIcons';
 
 afterEach(cleanup);
 
@@ -32,14 +33,14 @@ describe('what is wrong with a layout\'s conditions, held to the dialog it is dr
 
 describe('AssetEditor on a layout whose conditions read its dialog\'s settings', () => {
   it('marks a condition bad only where it reads a setting the dialog does not hold', () => {
-    render(<Live start={WORKSPACE} />);
+    renderWithIcons(<Live start={WORKSPACE} />);
     fireEvent.click(asset('Panel'));
     expect(within(row('rows')).queryByText('bad condition')).toBeNull();
     expect(within(row('lost')).getByText('bad condition')).toBeInTheDocument();
   });
 
   it('offers the dialog\'s settings to a condition, named for the dialog, and says nothing against a row that reads one', () => {
-    render(<Live start={WORKSPACE} />);
+    renderWithIcons(<Live start={WORKSPACE} />);
     fireEvent.click(asset('Panel'));
     pickRow('rows');
     const shownIf = within(attributes()).getByRole('group', { name: 'Shown if' });

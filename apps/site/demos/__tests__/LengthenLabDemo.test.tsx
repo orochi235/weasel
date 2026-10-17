@@ -5,6 +5,7 @@ import { pathInWorld, pathToAnchors, type PolygonPath } from '@weasel-js/core';
 import { StrictMode } from 'react';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { LengthenLabDemo, SEEDED_PATH_ID } from '../LengthenLabDemo';
+import { withIcons } from '../../testIcons';
 
 // windease lays a lab's tiles out only once something measures them, and
 // jsdom ships no ResizeObserver.
@@ -52,7 +53,7 @@ function drag(canvas: Element, [x0, y0]: number[], [x1, y1]: number[], shiftKey 
 
 async function mount() {
   // Under StrictMode, as the site mounts it: the double mount is what once left Select current.
-  const { container } = await renderSettled(<StrictMode><LengthenLabDemo /></StrictMode>);
+  const { container } = await renderSettled(<StrictMode><LengthenLabDemo /></StrictMode>, { wrapper: withIcons });
   const canvas = container.querySelector('.lk-trial-scene canvas');
   if (!canvas) throw new Error('no scene canvas in the trial');
   return canvas;

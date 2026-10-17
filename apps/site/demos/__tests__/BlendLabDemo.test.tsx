@@ -5,6 +5,7 @@ import { StrictMode } from 'react';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { BlendLabDemo } from '../BlendLabDemo';
 import type { PathEffectProbe } from '../pathEffectLab';
+import { withIcons } from '../../testIcons';
 
 // windease lays a lab's tiles out only once something measures them, and
 // jsdom ships no ResizeObserver.
@@ -49,7 +50,7 @@ function drag(canvas: Element, [x0, y0]: number[], [x1, y1]: number[]) {
 
 describe('BlendLabDemo', () => {
   it('opens on a live blend whose steps follow a dragged source', async () => {
-    const { container } = await renderSettled(<StrictMode><BlendLabDemo /></StrictMode>);
+    const { container } = await renderSettled(<StrictMode><BlendLabDemo /></StrictMode>, { wrapper: withIcons });
     const canvas = container.querySelector('.lk-trial-scene canvas');
     if (!canvas) throw new Error('no scene canvas in the trial');
     const before = stepCenters();
@@ -65,7 +66,7 @@ describe('BlendLabDemo', () => {
   });
 
   it('drags both sources when the blend itself is dragged, and the steps go with them', async () => {
-    const { container } = await renderSettled(<StrictMode><BlendLabDemo /></StrictMode>);
+    const { container } = await renderSettled(<StrictMode><BlendLabDemo /></StrictMode>, { wrapper: withIcons });
     const canvas = container.querySelector('.lk-trial-scene canvas');
     if (!canvas) throw new Error('no scene canvas in the trial');
     const pose = (id: string) => nodes().find((n) => n.id === id)!.pose as { y: number };
@@ -80,7 +81,7 @@ describe('BlendLabDemo', () => {
   });
 
   it('expands the selected blend into ordinary paths', async () => {
-    await renderSettled(<StrictMode><BlendLabDemo /></StrictMode>);
+    await renderSettled(<StrictMode><BlendLabDemo /></StrictMode>, { wrapper: withIcons });
     expect(nodes()).toHaveLength(3);
     await userEvent.click(screen.getByRole('button', { name: 'Expand to Paths' }));
     expect(nodes().find((n) => n.id === 'blend')).toBeUndefined();

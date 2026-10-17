@@ -1,9 +1,10 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { fireEvent, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { useState } from 'react';
 import { ActionsProvider } from '@weasel-js/core';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { PrefSchemaEditor } from './PrefSchemaEditor';
+import { renderWithIcons } from '../../testing/withIcons';
 
 const TOOLBAR: PrefGroup = {
   name: 'Text tools',
@@ -34,7 +35,7 @@ const preview = () => screen.getByRole('region', { name: 'Live preview' });
 
 describe('PrefSchemaEditor over a root drawn as a bar', () => {
   it('previews the toolbar itself, each pref in its bar form', () => {
-    render(<Live />);
+    renderWithIcons(<Live />);
     const bar = within(preview()).getByRole('toolbar', { name: 'Text tools' });
     expect(within(bar).getByRole('spinbutton', { name: 'Size' })).toHaveValue('12');
     expect(within(bar).getByRole('button', { name: 'Bold' })).toHaveAttribute('aria-pressed', 'false');
@@ -43,14 +44,14 @@ describe('PrefSchemaEditor over a root drawn as a bar', () => {
   });
 
   it('lists the bar’s prefs in the tree, since a bar holds them on no page', () => {
-    render(<Live />);
+    renderWithIcons(<Live />);
     const tree = screen.getByRole('tree', { name: 'Schema structure' });
     expect(within(tree).getByText('size')).toBeInTheDocument();
     expect(within(tree).getByText('undo')).toBeInTheDocument();
   });
 
   it('runs the bar down its side from a switch', () => {
-    render(<Live />);
+    renderWithIcons(<Live />);
     fireEvent.click(within(preview()).getByRole('switch', { name: 'Vertical' }));
     const bar = within(preview()).getByRole('toolbar', { name: 'Text tools' });
     expect(bar).toHaveAttribute('aria-orientation', 'vertical');
@@ -61,7 +62,7 @@ describe('PrefSchemaEditor over a root drawn as a bar', () => {
 
   it('makes a value set in the preview that pref’s default', () => {
     let latest = TOOLBAR;
-    render(<Live onSchema={(next) => { latest = next; }} />);
+    renderWithIcons(<Live onSchema={(next) => { latest = next; }} />);
     fireEvent.click(within(preview()).getByRole('button', { name: 'Bold' }));
     expect((latest.children.bold as { default: unknown }).default).toBe(true);
   });

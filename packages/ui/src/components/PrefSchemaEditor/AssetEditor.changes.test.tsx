@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { useState } from 'react';
-import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { AssetEditor } from './AssetEditor';
 import { asset, Live, pickRow, rekey, SETTINGS, structure, WORKSPACE } from './AssetEditor.fixture';
 import { removeNode } from './schemaEdit';
@@ -8,6 +8,7 @@ import { diffSchemas, formatChanges, printSchema } from './schemaExport';
 import type { SentAsset } from './useAssetChanges';
 import type { Workspace } from './workspace';
 import { workspaceCodec } from './workspaceCodec';
+import { renderWithIcons } from '../../testing/withIcons';
 
 afterEach(cleanup);
 
@@ -21,7 +22,7 @@ const submit = () => within(changes()).getByRole('button', { name: /Submit|Sendi
 
 describe('AssetEditor changes', () => {
   it('lists every changed asset\'s changes under its label, whichever asset is shown', () => {
-    render(<Live />);
+    renderWithIcons(<Live />);
     expect(listed()).toEqual(['No changes.']);
     pickRow('grid');
     rekey('lines');
@@ -35,7 +36,7 @@ describe('AssetEditor changes', () => {
 
   it('lists one asset\'s changes as they were before there were assets', () => {
     const one: Workspace = { assets: [WORKSPACE.assets[0]!] };
-    render(<Live start={one} />);
+    renderWithIcons(<Live start={one} />);
     pickRow('snap');
     fireEvent.keyDown(structure(), { key: 'Delete' });
     expect(listed().join('\n')).toBe(formatChanges(diffSchemas(SETTINGS, removeNode(SETTINGS, 'view/snap'))));
@@ -44,7 +45,7 @@ describe('AssetEditor changes', () => {
   it('submits every changed asset in the workspace\'s order, each with its literal', async () => {
     const onSubmit = vi.fn<(assets: readonly SentAsset[]) => void>();
     const onChange = vi.fn<(next: Workspace) => void>();
-    render(<Live onSubmit={onSubmit} onChange={onChange} />);
+    renderWithIcons(<Live onSubmit={onSubmit} onChange={onChange} />);
     expect(submit()).toBeDisabled();
     pickRow('grid');
     rekey('lines');
@@ -60,7 +61,7 @@ describe('AssetEditor changes', () => {
 
   it('submits a change to an asset that is not the one shown, and leaves an unchanged asset out', async () => {
     const onSubmit = vi.fn<(assets: readonly SentAsset[]) => void>();
-    render(<Live onSubmit={onSubmit} />);
+    renderWithIcons(<Live onSubmit={onSubmit} />);
     fireEvent.click(asset('Code'));
     pickRow('grid');
     fireEvent.keyDown(structure(), { key: 'Delete' });
@@ -76,7 +77,7 @@ describe('AssetEditor changes', () => {
       const workspace: Workspace = { assets: WORKSPACE.assets.map((a, i) => ({ ...a, root: roots[i]! })) };
       return <AssetEditor key="editor" list className={`t${tick}`} workspace={workspace} original={WORKSPACE} codec={workspaceCodec([])} onChange={(next) => setRoots(next.assets.map((a) => a.root))} onSubmit={() => {}} />;
     }
-    const view = render(<Host tick={0} />);
+    const view = renderWithIcons(<Host tick={0} />);
     pickRow('snap');
     fireEvent.keyDown(structure(), { key: 'Delete' });
     await act(async () => { fireEvent.click(submit()); });

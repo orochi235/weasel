@@ -1,8 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { useState } from 'react';
 import type { PrefCondition, PrefGroup, PrefLeaf, PrefList } from '@weasel-js/prefs';
 import { PrefConditionEditor } from './PrefConditionEditor';
+import { renderWithIcons } from '../../testing/withIcons';
 
 afterEach(cleanup);
 
@@ -23,7 +24,7 @@ function Live({ start, seen, schema = SCHEMA }: { start?: PrefCondition; seen: {
 }
 const open = (start?: PrefCondition, schema?: PrefGroup) => {
   const seen: { value?: PrefCondition; writes: number } = { writes: 0 };
-  render(<Live start={start} seen={seen} schema={schema} />);
+  renderWithIcons(<Live start={start} seen={seen} schema={schema} />);
   return seen;
 };
 
@@ -252,22 +253,22 @@ describe('PrefConditionEditor exclude', () => {
   const names = (list: string[]) => list.map((text) => text.replace(/ ?view\..*$/, ''));
 
   it('offers no pref at or beneath an excluded path, for a new row or an old one', () => {
-    render(<PrefConditionEditor aria-label="Shown if" schema={SCHEMA} exclude={['view.units', 'view.step']}
+    renderWithIcons(<PrefConditionEditor aria-label="Shown if" schema={SCHEMA} exclude={['view.units', 'view.step']}
       value={{ path: 'view.grid', is: true }} onChange={() => {}} />);
     expect(names(offered(screen.getByRole('group', { name: 'Shown if' }), /Add a condition/))).toEqual(['Show grid', 'Author']);
     expect(names(offered(row(1), /pref/))).toEqual(['Show grid', 'Author']);
   });
 
   it('leaves out everything under an excluded group, and a pref that only starts like the path stays', () => {
-    render(<PrefConditionEditor aria-label="Shown if" schema={SCHEMA} exclude={['view']} value={undefined} onChange={() => {}} />);
+    renderWithIcons(<PrefConditionEditor aria-label="Shown if" schema={SCHEMA} exclude={['view']} value={undefined} onChange={() => {}} />);
     expect(within(screen.getByRole('group', { name: 'Shown if' })).getByRole('button', { name: /Add a condition/ })).toBeDisabled();
     cleanup();
-    render(<PrefConditionEditor aria-label="Shown if" schema={SCHEMA} exclude={['view.gri']} value={undefined} onChange={() => {}} />);
+    renderWithIcons(<PrefConditionEditor aria-label="Shown if" schema={SCHEMA} exclude={['view.gri']} value={undefined} onChange={() => {}} />);
     expect(offered(screen.getByRole('group', { name: 'Shown if' }), /Add a condition/)).toHaveLength(4);
   });
 
   it('keeps a row that already reads an excluded path as its controls, with that pref still named', () => {
-    render(<PrefConditionEditor aria-label="Shown if" schema={SCHEMA} exclude={['view.units']}
+    renderWithIcons(<PrefConditionEditor aria-label="Shown if" schema={SCHEMA} exclude={['view.units']}
       value={{ path: 'view.units', is: 'mm' }} onChange={() => {}} />);
     expect(within(row(1)).getByRole('button', { name: /pref/ })).toHaveTextContent('Units');
     expect(within(row(1)).getByRole('button', { name: /comparison/ })).toHaveTextContent('is');
@@ -289,7 +290,7 @@ describe('PrefConditionEditor inside an entry', () => {
   }
   const openEntry = (start?: PrefCondition) => {
     const seen: { value?: PrefCondition } = {};
-    render(<Entry start={start} seen={seen} />);
+    renderWithIcons(<Entry start={start} seen={seen} />);
     return seen;
   };
   const group = () => screen.getByRole('group', { name: 'Enabled if' });
@@ -349,7 +350,7 @@ describe('PrefConditionEditor copy and paste', () => {
   it('copies the whole condition as JSON, and has nothing to copy with no rows', async () => {
     const held = clipboard();
     const condition: PrefCondition = { all: [{ path: 'view.grid' }, { not: { any: [{ path: 'view.author' }] } }] };
-    const { unmount } = render(<Live start={condition} seen={{ writes: 0 }} />);
+    const { unmount } = renderWithIcons(<Live start={condition} seen={{ writes: 0 }} />);
     fireEvent.click(screen.getByRole('button', { name: 'Copy condition' }));
     await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('Copied.'));
     expect(JSON.parse(held.text)).toEqual(condition);

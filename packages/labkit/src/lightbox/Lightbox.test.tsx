@@ -1,8 +1,9 @@
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, screen } from '@testing-library/react';
 import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { Lightbox } from './Lightbox';
 import { useLightboxControl } from './LightboxContext';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 function root(): HTMLElement {
   return document.querySelector('.lk-lightbox') as HTMLElement;
@@ -12,7 +13,7 @@ const expanded = (): boolean => root().classList.contains('lk-lightbox--expanded
 
 describe('Lightbox', () => {
   it('does not open on a double-click unless asked to', () => {
-    render(
+    renderWithIcons(
       <Lightbox>
         <div data-testid="out">output</div>
       </Lightbox>,
@@ -23,7 +24,7 @@ describe('Lightbox', () => {
   });
 
   it('opens on a double-click on its content when asked to, and closes on another', () => {
-    render(
+    renderWithIcons(
       <Lightbox expandOnDoubleClick>
         <div data-testid="out">output</div>
       </Lightbox>,
@@ -36,7 +37,7 @@ describe('Lightbox', () => {
   });
 
   it('ignores a double-click on a control, on an opted-out region, or one already handled', () => {
-    render(
+    renderWithIcons(
       <Lightbox expandOnDoubleClick>
         <button type="button">Run</button>
         <input aria-label="n" />
@@ -55,7 +56,7 @@ describe('Lightbox', () => {
   });
 
   it('opens from the expand button and moves focus to the close button, then back', () => {
-    render(
+    renderWithIcons(
       <Lightbox>
         <div>output</div>
       </Lightbox>,
@@ -71,7 +72,7 @@ describe('Lightbox', () => {
   });
 
   it('closes on Escape unless something inside handled it', () => {
-    render(
+    renderWithIcons(
       <Lightbox>
         {/* biome-ignore lint/a11y/noStaticElementInteractions: stands in for an overlay that consumes its own Escape */}
         <div data-testid="menu" onKeyDown={(e) => e.preventDefault()} />
@@ -85,7 +86,7 @@ describe('Lightbox', () => {
   });
 
   it('closes on a click in the margin, not on one in the content', () => {
-    render(
+    renderWithIcons(
       <Lightbox>
         <div data-testid="out">output</div>
       </Lightbox>,
@@ -98,7 +99,7 @@ describe('Lightbox', () => {
   });
 
   it('makes everything outside it inert while open, and only what it marked', () => {
-    render(
+    renderWithIcons(
       <div>
         <aside data-testid="already" inert />
         <nav data-testid="sibling" />
@@ -115,7 +116,7 @@ describe('Lightbox', () => {
   });
 
   it('marks itself a portal host only while open, so overlays stack inside it', () => {
-    render(
+    renderWithIcons(
       <Lightbox>
         <div>output</div>
       </Lightbox>,
@@ -134,7 +135,7 @@ describe('Lightbox', () => {
         </button>
       );
     }
-    render(
+    renderWithIcons(
       <Lightbox>
         <OwnControl />
       </Lightbox>,
@@ -160,7 +161,7 @@ describe('Lightbox', () => {
         </Lightbox>
       );
     }
-    render(<Host />);
+    renderWithIcons(<Host />);
     expect(expanded()).toBe(true);
     fireEvent.keyDown(document.body, { key: 'Escape' });
     expect(onChange).toHaveBeenCalledWith(false);
@@ -175,7 +176,7 @@ describe('Lightbox', () => {
       });
       return <div data-testid="out" />;
     }
-    const { rerender } = render(
+    const { rerender } = renderWithIcons(
       <Lightbox expandOnDoubleClick>
         <Content />
       </Lightbox>,

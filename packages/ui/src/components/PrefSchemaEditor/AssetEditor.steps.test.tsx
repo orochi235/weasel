@@ -1,9 +1,10 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { cleanup, fireEvent, render } from '@testing-library/react';
+import { cleanup, fireEvent } from '@testing-library/react';
 import { asset, Live, pickRow, rekey, structure, tool } from './AssetEditor.fixture';
 import type { Workspace } from './workspace';
 import { CODE, WORKSPACE } from './workspace.fixtures';
 import { rowKey } from './treeRows.fixture';
+import { renderWithIcons } from '../../testing/withIcons';
 
 afterEach(cleanup);
 
@@ -19,7 +20,7 @@ const shown = () => ({
 // Each test renders the whole editor through a dozen edits and steps: over 1 s on an idle machine, against a 5 s default.
 describe('AssetEditor steps across assets', { timeout: 20_000 }, () => {
   it('selects in the asset a step lands on what was selected there, however many times the step is taken', () => {
-    render(<Live start={START} />);
+    renderWithIcons(<Live start={START} />);
     pickRow('grid');
     rekey('lines');
     fireEvent.click(asset('Code'));
@@ -40,7 +41,7 @@ describe('AssetEditor steps across assets', { timeout: 20_000 }, () => {
   });
 
   it('selects it when the step is taken from the other asset', () => {
-    render(<Live start={START} />);
+    renderWithIcons(<Live start={START} />);
     fireEvent.click(asset('Code'));
     pickRow('rows');
     rekey('main');

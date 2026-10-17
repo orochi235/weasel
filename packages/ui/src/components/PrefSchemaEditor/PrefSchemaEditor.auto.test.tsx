@@ -1,8 +1,9 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { useState } from 'react';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { PrefSchemaEditor } from './PrefSchemaEditor';
+import { renderWithIcons } from '../../testing/withIcons';
 
 afterEach(cleanup);
 
@@ -31,7 +32,7 @@ const leaf = (key: string) => (latest.children.view as PrefGroup).children[key] 
 
 describe('PrefSchemaEditor auto attributes', () => {
   it('sets whether a leaf can be auto and whether it starts so', () => {
-    render(<Live />);
+    renderWithIcons(<Live />);
     select('gap');
     fireEvent.click(attributes().getByRole('checkbox', { name: 'Never auto' }));
     expect(leaf('gap').manual).toBe(true);
@@ -40,7 +41,7 @@ describe('PrefSchemaEditor auto attributes', () => {
   });
 
   it('leaves the auto value unset, its control off, until the switch beside it is on', () => {
-    render(<Live />);
+    renderWithIcons(<Live />);
     select('gap');
     const on = () => attributes().getByRole('switch', { name: 'Set Auto value' });
     expect(on()).not.toBeChecked();
@@ -57,7 +58,7 @@ describe('PrefSchemaEditor auto attributes', () => {
   });
 
   it('keeps an auto value of false, which an optional attribute would drop', () => {
-    render(<Live />);
+    renderWithIcons(<Live />);
     select('grid');
     expect(attributes().getByRole('checkbox', { name: 'Auto value' })).toBeDisabled();
     fireEvent.click(attributes().getByRole('switch', { name: 'Set Auto value' }));
@@ -68,13 +69,13 @@ describe('PrefSchemaEditor auto attributes', () => {
   });
 
   it('draws the switch and the control in a row that is not a label, which would hand its clicks to the switch', () => {
-    render(<Live />);
+    renderWithIcons(<Live />);
     select('gap');
     expect(attributes().getByRole('switch', { name: 'Set Auto value' }).closest('[data-property-row]')?.tagName).toBe('DIV');
   });
 
   it('offers none of it for a leaf that holds no value', () => {
-    render(<Live />);
+    renderWithIcons(<Live />);
     select('reset');
     expect(attributes().queryByRole('checkbox', { name: 'Never auto' })).toBeNull();
   });

@@ -1,11 +1,12 @@
 import { createMemoryAdapter } from '@weasel-js/labkit';
 import { f } from '@weasel-js/labkit/config';
-import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { describeSchema } from '../protocol/schema';
 import type { IndexEntry } from '../story/types';
 import { connectFrame, flush, installResizeObserver } from './labHarness';
 import { Workshop } from './Workshop';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 /** The row's own control rather than the label beside it, which is a button too
  *  — it toggles auto — and is named `Pin <label>`; a bare `/Mode/` matches both. */
@@ -28,7 +29,7 @@ afterEach(() => {
 
 describe('Workshop', () => {
   it('names the configured globs instead of a lab when no story is indexed', () => {
-    const { container } = render(
+    const { container } = renderWithIcons(
       <Workshop
         index={[]}
         frameUrl="/frame.html"
@@ -49,10 +50,10 @@ describe('Workshop', () => {
       const packages = await screen.findByRole('group', { name: 'Packages' });
       return Array.from(packages.querySelectorAll('.fg-tree__tag'), (tag) => tag.textContent);
     };
-    const bare = render(<Workshop index={index} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
+    const bare = renderWithIcons(<Workshop index={index} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
     expect(await labels()).toEqual(['X']);
     bare.unmount();
-    render(
+    renderWithIcons(
       <Workshop
         index={index}
         frameUrl="/frame.html"
@@ -65,13 +66,13 @@ describe('Workshop', () => {
 
   it('opens the story the hash names', async () => {
     location.hash = '#/x--b';
-    const { container } = render(<Workshop index={[a, b]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
+    const { container } = renderWithIcons(<Workshop index={[a, b]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
     expect(await frameSrc(container)).toBe('/frame.html#x--b');
   });
 
   it('shows a story the hash comes to name in the focused trial rather than a new one, and leaves out the add-trial picker', async () => {
     location.hash = '#/x--a';
-    const { container } = render(<Workshop index={[a, b]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
+    const { container } = renderWithIcons(<Workshop index={[a, b]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
     await waitFor(() => expect(screen.getAllByRole('region', { name: /^Trial / })).toHaveLength(1));
     expect(screen.getByRole('region', { name: 'Trial X > A' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /add trial/i })).toBeNull();
@@ -85,7 +86,7 @@ describe('Workshop', () => {
 
   it('says in the stage that the story the hash names does not exist, and shows a real one again when the hash names it', async () => {
     location.hash = '#/x--a';
-    render(<Workshop index={[a, b]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
+    renderWithIcons(<Workshop index={[a, b]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
     await waitFor(() => expect(screen.getByRole('region', { name: 'Trial X > A' })).toBeInTheDocument());
     act(() => {
       location.hash = '#/no-such--story';
@@ -102,7 +103,7 @@ describe('Workshop', () => {
 
   it('opens exactly one trial of a story clicked in the tree', async () => {
     location.hash = '#/x--a';
-    render(<Workshop index={[a, b]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
+    renderWithIcons(<Workshop index={[a, b]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
     await waitFor(() => expect(screen.getAllByRole('region', { name: /^Trial / })).toHaveLength(1));
     fireEvent.click(screen.getByRole('radio', { name: 'Tree' }));
     const folder = screen.getByRole('treeitem', { name: 'X' });
@@ -115,7 +116,7 @@ describe('Workshop', () => {
 
   it('takes the trial back to the previous story on browser back, rather than opening another', async () => {
     location.hash = '#/x--a';
-    render(<Workshop index={[a, b]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
+    renderWithIcons(<Workshop index={[a, b]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
     await waitFor(() => expect(screen.getAllByRole('region', { name: /^Trial / })).toHaveLength(1));
     fireEvent.click(screen.getByRole('radio', { name: 'Tree' }));
     const folder = screen.getByRole('treeitem', { name: 'X' });
@@ -144,7 +145,7 @@ describe('Workshop', () => {
       },
     };
     location.hash = '#/x--a';
-    const { container } = render(
+    const { container } = renderWithIcons(
       <Workshop index={[a, b]} frameUrl="/frame.html" config={{ globals }} storage={createMemoryAdapter()} />,
     );
     await waitFor(() => expect(screen.getAllByRole('region', { name: /^Trial / })).toHaveLength(1));
@@ -186,7 +187,7 @@ describe('Workshop', () => {
 
   it('opens a component’s index page the hash names', async () => {
     location.hash = '#/x:index';
-    const { container } = render(<Workshop index={[a, b]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
+    const { container } = renderWithIcons(<Workshop index={[a, b]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
     expect(await frameSrc(container)).toBe('/frame.html#x:index');
     expect(screen.getByRole('region', { name: 'Trial X' })).toBeInTheDocument();
     act(() => {
@@ -203,7 +204,7 @@ describe('Workshop', () => {
 
   it('opens on the missing story, not the first one, when the hash names none that is indexed', async () => {
     location.hash = '#/nope';
-    const { container } = render(<Workshop index={[a, b]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
+    const { container } = renderWithIcons(<Workshop index={[a, b]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
     const trial = await screen.findByRole('region', { name: 'Trial No story nope' });
     expect(within(trial).getByRole('alert').textContent).toContain('nope');
     expect(container.querySelector('iframe.fg-frame-view')).toBeNull();
@@ -211,7 +212,7 @@ describe('Workshop', () => {
 
   it('keeps a story frame hidden until the frame reports its first render, so a new trial shows no blank page', async () => {
     location.hash = '#/x--a';
-    const { container } = render(<Workshop index={[a]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
+    const { container } = renderWithIcons(<Workshop index={[a]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
     await frameSrc(container);
     const iframe = container.querySelector('iframe.fg-frame-view') as HTMLIFrameElement;
     expect(iframe).toHaveAttribute('data-pending');
@@ -231,7 +232,7 @@ describe('Workshop', () => {
 
   it('shows a frame that faults before it renders', async () => {
     location.hash = '#/x--a';
-    const { container } = render(<Workshop index={[a]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
+    const { container } = renderWithIcons(<Workshop index={[a]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
     await frameSrc(container);
     const iframe = container.querySelector('iframe.fg-frame-view') as HTMLIFrameElement;
     const { frame } = connectFrame(iframe);
@@ -247,7 +248,7 @@ describe('Workshop', () => {
       { href: '/labs/forge', label: 'weaselforge' },
       { href: '/labs/palette', label: 'Palette lab' },
     ];
-    render(<Workshop index={[a]} frameUrl="/frame.html" config={{ pages, path: '/labs/forge' }} storage={createMemoryAdapter()} />);
+    renderWithIcons(<Workshop index={[a]} frameUrl="/frame.html" config={{ pages, path: '/labs/forge' }} storage={createMemoryAdapter()} />);
     // The lab draws a fallback title while its store opens; the menu belongs to the mounted lab.
     await screen.findByRole('region', { name: /^Trial / });
     fireEvent.click(screen.getByRole('button', { name: 'weaselforge' }));
@@ -261,12 +262,12 @@ describe('Workshop', () => {
 
   it('is titled weaselforge, on the page and in the document, unless the config names it', async () => {
     location.hash = '#/x--a';
-    const { unmount } = render(<Workshop index={[a]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
+    const { unmount } = renderWithIcons(<Workshop index={[a]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
     await screen.findByRole('region', { name: /^Trial / });
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('weaselforge');
     expect(document.title).toBe('weaselforge');
     unmount();
-    render(<Workshop index={[a]} frameUrl="/frame.html" config={{ title: 'astv parts' }} storage={createMemoryAdapter()} />);
+    renderWithIcons(<Workshop index={[a]} frameUrl="/frame.html" config={{ title: 'astv parts' }} storage={createMemoryAdapter()} />);
     await screen.findByRole('region', { name: /^Trial / });
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('astv parts');
     expect(document.title).toBe('astv parts');
@@ -274,11 +275,11 @@ describe('Workshop', () => {
 
   it('offers the CSS Vars panel unless the config turns it off', async () => {
     location.hash = '#/x--a';
-    const { unmount } = render(<Workshop index={[a]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
+    const { unmount } = renderWithIcons(<Workshop index={[a]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
     await screen.findByRole('region', { name: /^Trial / });
     expect(screen.getByRole('region', { name: 'CSS Vars' })).toBeInTheDocument();
     unmount();
-    render(<Workshop index={[a]} frameUrl="/frame.html" config={{ cssVars: false }} storage={createMemoryAdapter()} />);
+    renderWithIcons(<Workshop index={[a]} frameUrl="/frame.html" config={{ cssVars: false }} storage={createMemoryAdapter()} />);
     await screen.findByRole('region', { name: /^Trial / });
     expect(screen.queryByRole('region', { name: 'CSS Vars' })).toBeNull();
   });

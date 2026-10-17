@@ -1,12 +1,13 @@
 import { afterEach, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { Live } from './AssetEditor.fixture';
+import { renderWithIcons } from '../../testing/withIcons';
 
 afterEach(cleanup);
 
 it('reports the assets that differ from the baseline when it mounts, and again when the set changes', () => {
   const onChangedAssets = vi.fn<(ids: ReadonlySet<string>) => void>();
-  render(<Live onChangedAssets={onChangedAssets} />);
+  renderWithIcons(<Live onChangedAssets={onChangedAssets} />);
   expect(onChangedAssets).toHaveBeenCalledTimes(1);
   expect([...onChangedAssets.mock.lastCall![0]]).toEqual([]);
 

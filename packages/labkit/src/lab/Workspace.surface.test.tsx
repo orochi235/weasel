@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { SurfaceContext } from '../surface/SurfaceContext';
 import type { SurfaceHandle } from '../surface/useTiledSurface';
 import { Workspace } from './Workspace';
+import { withIcons } from '@weasel-js/ui/testing/withIcons';
 
 function fakeHandle(): SurfaceHandle {
   return {
@@ -31,6 +32,7 @@ describe('Workspace with a surface above it', () => {
           <div>a</div>
         </Workspace>
       </SurfaceContext.Provider>,
+      { wrapper: withIcons },
     );
     (handle.invalidateRects as ReturnType<typeof vi.fn>).mockClear();
 

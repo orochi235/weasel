@@ -1,7 +1,8 @@
 import '@weasel-js/theme/tokens.css';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, screen } from '@testing-library/react';
 import { afterEach, expect, test, vi } from 'vitest';
 import { Callout } from './Callout';
+import { renderWithIcons } from '../../testing/withIcons';
 
 // Whether React Aria moves a popover after its anchor is only translated is its ResizeObserver's answer, which
 // jsdom does not have.
@@ -23,7 +24,7 @@ test('a callout follows an anchor rect that only moves, each time, without a res
   const onResize = vi.fn();
   window.addEventListener('resize', onResize);
   try {
-    const { rerender } = render(at(100, 100));
+    const { rerender } = renderWithIcons(at(100, 100));
     await frames(3);
     const first = box();
 

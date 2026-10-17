@@ -5,6 +5,7 @@ import { StrictMode } from 'react';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { BendAlongLabDemo } from '../BendAlongLabDemo';
 import type { PathEffectProbe } from '../pathEffectLab';
+import { withIcons } from '../../testIcons';
 
 // windease lays a lab's tiles out only once something measures them, and
 // jsdom ships no ResizeObserver.
@@ -46,7 +47,7 @@ function drag(canvas: Element, [x0, y0]: number[], [x1, y1]: number[]) {
 
 describe('BendAlongLabDemo', () => {
   it('opens with the spine in path edit, and re-bends the ribbon as a spine anchor is dragged', async () => {
-    const { container } = await renderSettled(<StrictMode><BendAlongLabDemo /></StrictMode>);
+    const { container } = await renderSettled(<StrictMode><BendAlongLabDemo /></StrictMode>, { wrapper: withIcons });
     const canvas = container.querySelector('.lk-trial-scene canvas');
     if (!canvas) throw new Error('no scene canvas in the trial');
     const before = bentBounds();

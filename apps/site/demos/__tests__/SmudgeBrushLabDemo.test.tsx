@@ -5,6 +5,7 @@ import { pathToAnchors, type PolygonPath } from '@weasel-js/core';
 import { StrictMode } from 'react';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { SmudgeBrushLabDemo } from '../SmudgeBrushLabDemo';
+import { withIcons } from '../../testIcons';
 
 // windease lays a lab's tiles out only once something measures them, and
 // jsdom ships no ResizeObserver.
@@ -44,7 +45,7 @@ function drag(canvas: Element, points: number[][]) {
 
 describe('SmudgeBrushLabDemo', () => {
   it('smudges the top edge of the selected square up in one undo step', async () => {
-    const { container } = await renderSettled(<StrictMode><SmudgeBrushLabDemo /></StrictMode>);
+    const { container } = await renderSettled(<StrictMode><SmudgeBrushLabDemo /></StrictMode>, { wrapper: withIcons });
     const canvas = container.querySelector('.lk-trial-scene canvas');
     if (!canvas) throw new Error('no scene canvas in the trial');
     expect(square().pose).toMatchObject({ y: 80 });
@@ -61,7 +62,7 @@ describe('SmudgeBrushLabDemo', () => {
   });
 
   it("smudges with the control panel's radius", async () => {
-    const { container } = await renderSettled(<StrictMode><SmudgeBrushLabDemo /></StrictMode>);
+    const { container } = await renderSettled(<StrictMode><SmudgeBrushLabDemo /></StrictMode>, { wrapper: withIcons });
     const canvas = container.querySelector('.lk-trial-scene canvas');
     if (!canvas) throw new Error('no scene canvas in the trial');
     act(() => {

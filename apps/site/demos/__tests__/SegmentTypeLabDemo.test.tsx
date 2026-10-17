@@ -5,6 +5,7 @@ import { PATH_C, PATH_L, type Path } from '@weasel-js/core';
 import { StrictMode } from 'react';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { SegmentTypeLabDemo } from '../SegmentTypeLabDemo';
+import { withIcons } from '../../testIcons';
 
 // windease lays a lab's tiles out only once something measures them, and
 // jsdom ships no ResizeObserver.
@@ -49,7 +50,7 @@ function shiftDoubleClick(canvas: Element, x: number, y: number) {
 
 describe('SegmentTypeLabDemo', () => {
   it('curves the straight base under a Shift+double-click, and the selected top edge from the bar', async () => {
-    const { container } = await renderSettled(<StrictMode><SegmentTypeLabDemo /></StrictMode>);
+    const { container } = await renderSettled(<StrictMode><SegmentTypeLabDemo /></StrictMode>, { wrapper: withIcons });
     const canvas = container.querySelector('.lk-trial-scene canvas');
     if (!canvas) throw new Error('no scene canvas in the trial');
     expect(commands().slice(0, 3)).toEqual([PATH_L, PATH_L, PATH_C]);

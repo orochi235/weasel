@@ -1,8 +1,9 @@
 import '@weasel-js/theme/tokens.css';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, screen } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
 import { Dialog } from './Dialog/Dialog';
 import { DragGhost } from './DragGhost/DragGhost';
+import { renderWithIcons } from '../testing/withIcons';
 
 // The overlays order themselves on the --wzl-z-* ladder; jsdom resolves no var().
 
@@ -29,7 +30,7 @@ function overlayOf(dialog: Element): Element {
 }
 
 test('a drag ghost draws over an open dialog', () => {
-  render(<Scene />);
+  renderWithIcons(<Scene />);
   const overlay = overlayOf(screen.getByRole('dialog'));
   const ghost = screen.getByTestId('ghost-item').parentElement as Element;
   expect(zOf(ghost)).toBeGreaterThan(zOf(overlay));
@@ -38,7 +39,7 @@ test('a drag ghost draws over an open dialog', () => {
 test('retuning --wzl-z-modal moves the dialog', () => {
   document.documentElement.style.setProperty('--wzl-z-modal', '4321');
   try {
-    render(<Scene />);
+    renderWithIcons(<Scene />);
     expect(zOf(overlayOf(screen.getByRole('dialog')))).toBe(4321);
   } finally {
     document.documentElement.style.removeProperty('--wzl-z-modal');

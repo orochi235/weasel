@@ -9,6 +9,7 @@ import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { ActionsProvider, DepRegistryProvider, SceneCanvas, createScene } from '@weasel-js/core';
 import { ActionBar } from '@weasel-js/ui';
 import { appCommandsContribution, type AppCommands } from './index';
+import { withIcons } from '../testIcons';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as { getContext: (...args: unknown[]) => unknown };
@@ -45,6 +46,7 @@ function setup(over: Partial<AppCommands> = {}) {
           ambient={[appCommandsContribution(() => commands)]} />
       </ActionsProvider>
     </DepRegistryProvider>,
+    { wrapper: withIcons },
   );
   const key = (init: KeyboardEventInit) => act(() => {
     window.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, ...init }));

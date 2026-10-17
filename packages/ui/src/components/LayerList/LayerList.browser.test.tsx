@@ -1,12 +1,13 @@
 import '@weasel-js/theme/tokens.css';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, screen } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
 import { LayerList } from './LayerList';
+import { renderWithIcons } from '../../testing/withIcons';
 
 afterEach(cleanup);
 
 test('a row\'s gridcell adds no box, so its content lays out as the row\'s own', () => {
-  render(
+  renderWithIcons(
     <div style={{ width: 240 }}>
       <LayerList items={[{ id: 'a', label: 'Alpha' }]} onReorder={() => {}} onRemove={() => {}} />
     </div>,
@@ -25,7 +26,7 @@ test('a row\'s gridcell adds no box, so its content lays out as the row\'s own',
 });
 
 test('a run of rows among cards adds no box, so its rows keep the level\'s spacing', () => {
-  render(
+  renderWithIcons(
     <LayerList
       label="Fills"
       items={[{ id: 'a', label: 'Alpha' }, { id: 'b', label: 'Beta' }, { id: 'c', label: 'Gamma' }, { id: 'd', label: 'Delta' }]}

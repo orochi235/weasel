@@ -1,18 +1,19 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { screen, fireEvent } from '@testing-library/react';
 import { SidebarPanel } from './SidebarPanel';
+import { renderWithIcons } from '../../testing/withIcons';
 
 describe('SidebarPanel', () => {
   it('renders a static title with no toggle when onToggleCollapse is omitted', () => {
-    render(<SidebarPanel title="Properties">body</SidebarPanel>);
+    renderWithIcons(<SidebarPanel title="Properties">body</SidebarPanel>);
     expect(screen.getByText('Properties')).toBeTruthy();
     expect(screen.queryByRole('button')).toBeNull();
   });
 
   it('draws its actions in the header, before the close button, and keeps them while collapsed', () => {
-    const { rerender } = render(
+    const { rerender } = renderWithIcons(
       <SidebarPanel title="Path" onToggleCollapse={() => {}} onHide={() => {}} actions={<button type="button">Switch</button>}>
         body
       </SidebarPanel>,
@@ -29,7 +30,7 @@ describe('SidebarPanel', () => {
 
   it('renders the collapse toggle as a button reporting aria-expanded', () => {
     const onToggleCollapse = vi.fn();
-    const { rerender } = render(
+    const { rerender } = renderWithIcons(
       <SidebarPanel title="Properties" onToggleCollapse={onToggleCollapse}>body</SidebarPanel>,
     );
     const btn = screen.getByRole('button', { expanded: true });
@@ -44,7 +45,7 @@ describe('SidebarPanel', () => {
   });
 
   it('draws the fold mark, not a text triangle, and shows the panel’s state on it', () => {
-    const { container, rerender } = render(
+    const { container, rerender } = renderWithIcons(
       <SidebarPanel title="Properties" onToggleCollapse={() => {}}>body</SidebarPanel>,
     );
     const btn = screen.getByRole('button');
@@ -60,7 +61,7 @@ describe('SidebarPanel', () => {
 
   it('renders the hide button only when onHide is given', () => {
     const onHide = vi.fn();
-    const { rerender } = render(<SidebarPanel title="Properties">body</SidebarPanel>);
+    const { rerender } = renderWithIcons(<SidebarPanel title="Properties">body</SidebarPanel>);
     expect(screen.queryByRole('button', { name: 'Hide panel' })).toBeNull();
     rerender(<SidebarPanel title="Properties" onHide={onHide}>body</SidebarPanel>);
     fireEvent.click(screen.getByRole('button', { name: 'Hide panel' }));
@@ -73,7 +74,7 @@ describe('SidebarPanel', () => {
 // collapsible title's inset.
 describe('SidebarPanel static title', () => {
   it('sits in the same inset box as the collapsible title', () => {
-    render(<SidebarPanel title="Properties">body</SidebarPanel>);
+    renderWithIcons(<SidebarPanel title="Properties">body</SidebarPanel>);
     expect(screen.getByText('Properties').className).toMatch(/titleBox/);
     const css = readFileSync(resolve(__dirname, 'SidebarPanel.module.css'), 'utf8');
     expect(css).toMatch(/\.titleBox\s*\{[^}]*padding: var\(--wzl-space-2\) var\(--wzl-space-4\);/);
@@ -81,7 +82,7 @@ describe('SidebarPanel static title', () => {
   });
 
   it('gives the collapsible title the same box', () => {
-    render(<SidebarPanel title="Properties" onToggleCollapse={() => {}}>body</SidebarPanel>);
+    renderWithIcons(<SidebarPanel title="Properties" onToggleCollapse={() => {}}>body</SidebarPanel>);
     expect(screen.getByRole('button').className).toMatch(/titleBox/);
   });
 });

@@ -1,6 +1,6 @@
 import { Lab, LabContext, type LabContextValue, TrialIdContext } from '@weasel-js/labkit';
 import { f } from '@weasel-js/labkit/config';
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { type Channel, openChannel } from '../protocol/channel';
 import type { A11yReport, FromFrame, ToFrame } from '../protocol/messages';
@@ -11,6 +11,7 @@ import { createAnswerBook } from './answers';
 import { storyInstrument } from './storyInstrument';
 import { createTrialFrames, TrialFramesContext } from './trialFrames';
 import { flush, installResizeObserver, sayHello } from './labHarness';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 const entry: IndexEntry = {
   id: 'test-counter--counter',
@@ -85,7 +86,7 @@ describe('FrameView audits its frame', () => {
       frameUrl: '/frame.html',
       onReady: () => {},
     });
-    const view = render(
+    const view = renderWithIcons(
       <TrialFramesContext.Provider value={frames}>
         <Lab instruments={[instrument]} defaultInstrument={entry.id}>
           <LabContext.Consumer>
@@ -135,7 +136,7 @@ describe('FrameView audits its frame', () => {
 
 describe('A11yPanel', () => {
   function panel(frames = createTrialFrames()) {
-    const view = render(
+    const view = renderWithIcons(
       <TrialFramesContext.Provider value={frames}>
         <TrialIdContext.Provider value="t1">
           <A11yPanel />

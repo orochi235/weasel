@@ -1,9 +1,10 @@
 import '@weasel-js/theme/tokens.css';
 import '@weasel-js/theme/faces.css';
-import { cleanup, render } from '@testing-library/react';
+import { cleanup } from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
 import { BankFitter } from './bankFitter';
 import { KeyboardLayouts } from './KeyboardLayout.stories';
+import { renderWithIcons } from '../../testing/withIcons';
 
 afterEach(() => {
   cleanup();
@@ -33,7 +34,7 @@ it('fits a workshop page of banked keys within budget, forcing no layout per spe
   });
 
   const start = performance.now();
-  const { container } = render(
+  const { container } = renderWithIcons(
     <>
       {Array.from({ length: COPIES }, (_, i) => (
         <div key={i}>{KeyboardLayouts.render!({ legend: 'auto', font: 'oswald', wrap: true } as never, {} as never)}</div>

@@ -1,7 +1,8 @@
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, screen } from '@testing-library/react';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { DEMOS } from '../registry';
 import { WeaselDemos } from '../WeaselDemos';
+import { renderWithIcons } from '../testIcons';
 
 // Reports every observed element as on screen at once, so the source panel
 // fetches its text on mount.
@@ -26,7 +27,7 @@ describe('the source panel', () => {
     const demo = DEMOS[0];
     vi.spyOn(demo.sources[0], 'load').mockRejectedValue(new Error('chunk is gone'));
     window.history.replaceState(null, '', `/#${demo.id}`);
-    const { container } = render(<WeaselDemos />);
+    const { container } = renderWithIcons(<WeaselDemos />);
     expect((await screen.findByRole('status')).textContent).toMatch(/could not be loaded/);
     expect(container.querySelector('.ckd-source-loading')).toBeNull();
   });

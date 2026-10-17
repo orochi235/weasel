@@ -1,10 +1,11 @@
 import '@weasel-js/theme/tokens.css';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, screen } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
 import { page } from 'vitest/browser';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { prefDropTargetAt } from './dropTarget';
 import { PrefsForm } from './PrefsForm';
+import { renderWithIcons } from '../../testing/withIcons';
 
 // A fragment has no box (`display: contents`), so whether its rows take cells in the grid around them, and
 // whether a selected one shows any mark, are layout's to answer.
@@ -32,7 +33,7 @@ const box = (name: string): DOMRect => slot(name).getBoundingClientRect();
 
 test('a fragment\'s rows take cells among their neighbors\' in a form two rows across', async () => {
   await page.viewport(900, 500);
-  render(
+  renderWithIcons(
     <div style={{ width: 820, height: 400 }}>
       <PrefsForm layout="rail" rowsAcross={2} schema={SCHEMA} values={{}} selected={['view.glue']} onChange={() => {}} />
     </div>,
@@ -72,7 +73,7 @@ const WIDE: PrefGroup = {
 
 test('a wide row inside a fragment spans both columns of a form two rows across', async () => {
   await page.viewport(900, 500);
-  render(
+  renderWithIcons(
     <div style={{ width: 820, height: 400 }}>
       <PrefsForm layout="rail" rowsAcross={2} schema={WIDE} values={{}} onChange={() => {}} />
     </div>,
@@ -87,7 +88,7 @@ test('a wide row inside a fragment spans both columns of a form two rows across'
 
 test('a drag over the gap between two rows of a fragment lands beside one of them', async () => {
   await page.viewport(900, 500);
-  const { container } = render(
+  const { container } = renderWithIcons(
     <div style={{ width: 820, height: 400 }}>
       <PrefsForm layout="rail" schema={SCHEMA} values={{}} onChange={() => {}} />
     </div>,

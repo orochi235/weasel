@@ -1,10 +1,11 @@
 import '@weasel-js/theme/tokens.css';
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { cleanup, screen, within } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
 import { useState } from 'react';
 import type { PrefGroup, PrefSection } from '@weasel-js/prefs';
 import { PrefSchemaEditor } from './PrefSchemaEditor';
 import { drag } from './pointerDrag.fixture';
+import { renderWithIcons } from '../../testing/withIcons';
 
 afterEach(cleanup);
 
@@ -26,7 +27,7 @@ function Live() {
 const row = (key: string) => within(screen.getByRole('tree', { name: 'Schema structure' })).getByText(key).closest('[role="treeitem"]')!.firstElementChild as HTMLElement;
 
 test('a row dragged onto another group with Alt held is copied there, and stays where it was', () => {
-  render(<Live />);
+  renderWithIcons(<Live />);
   drag(row('grid'), row('panels'), { altKey: true });
   expect(Object.keys(latest.children)).toEqual(['view', 'panels']);
   expect(Object.keys((latest.children.view as PrefGroup).children)).toEqual(['grid']);
@@ -35,7 +36,7 @@ test('a row dragged onto another group with Alt held is copied there, and stays 
 });
 
 test('with Alt and Cmd held the drag sets an alias there, and the preview draws the one setting twice', () => {
-  render(<Live />);
+  renderWithIcons(<Live />);
   drag(row('grid'), row('panels'), { altKey: true, metaKey: true });
   expect(Object.keys((latest.children.view as PrefGroup).children)).toEqual(['grid']);
   expect((latest.children.panels as PrefGroup).children.grid).toEqual({ kind: 'alias', name: '', description: '', default: undefined, of: 'view.grid' });
@@ -43,13 +44,13 @@ test('with Alt and Cmd held the drag sets an alias there, and the preview draws 
 });
 
 test('a group cannot be aliased: the drag lands nothing', () => {
-  render(<Live />);
+  renderWithIcons(<Live />);
   drag(row('view'), row('dock'), { altKey: true, metaKey: true });
   expect(latest).toBe(START);
 });
 
 test('the same drag without Alt moves it', () => {
-  render(<Live />);
+  renderWithIcons(<Live />);
   drag(row('grid'), row('panels'));
   expect(Object.keys((latest.children.view as PrefGroup).children)).toEqual([]);
   expect(Object.keys((latest.children.panels as PrefGroup).children).sort()).toEqual(['dock', 'grid']);
@@ -70,7 +71,7 @@ test('over a node property schema, where a second pref cannot have the first\'s 
     held = schema;
     return <div style={{ height: 600 }}><PrefSchemaEditor schema={schema} onChange={setSchema} /></div>;
   }
-  render(<LiveNode />);
+  renderWithIcons(<LiveNode />);
   drag(row('pose.x'), row('look'), { altKey: true });
   expect(Object.keys((held.members.layout as PrefSection).members)).toEqual(['pose.x']);
   expect((held.members.look as PrefSection).members.pose_xAlias).toEqual({ kind: 'alias', name: '', description: '', default: undefined, of: 'pose.x' });

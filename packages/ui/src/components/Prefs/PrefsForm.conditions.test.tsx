@@ -1,7 +1,8 @@
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { cleanup, screen, within } from '@testing-library/react';
 import type { PrefCondition, PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 import { afterEach, describe, expect, it } from 'vitest';
 import { PrefsForm, type PrefRenderContext } from './PrefsForm';
+import { renderWithIcons } from '../../testing/withIcons';
 
 afterEach(cleanup);
 
@@ -27,7 +28,7 @@ describe('PrefsForm showIf', () => {
   };
 
   it('draws nothing for a leaf whose condition fails, and draws it once it holds', () => {
-    const { rerender } = render(<PrefsForm schema={schema} values={{ snap: { on: false } }} onChange={noop} />);
+    const { rerender } = renderWithIcons(<PrefsForm schema={schema} values={{ snap: { on: false } }} onChange={noop} />);
     expect(screen.queryByText('Grid size')).toBeNull();
     expect(screen.queryByRole('spinbutton', { name: 'Grid size' })).toBeNull();
     rerender(<PrefsForm schema={schema} values={{ snap: { on: true } }} onChange={noop} />);
@@ -36,14 +37,14 @@ describe('PrefsForm showIf', () => {
 
   it('reads a leaf with nothing stored as its default', () => {
     const byDefault: PrefGroup = { name: '', children: { on: flag('On', { default: true }), size: num('Size', { showIf: { path: 'on' } }) } };
-    const { rerender } = render(<PrefsForm schema={byDefault} onChange={noop} />);
+    const { rerender } = renderWithIcons(<PrefsForm schema={byDefault} onChange={noop} />);
     expect(screen.getByRole('spinbutton', { name: 'Size' })).toBeInTheDocument();
     rerender(<PrefsForm schema={byDefault} values={{ on: false }} onChange={noop} />);
     expect(screen.queryByRole('spinbutton', { name: 'Size' })).toBeNull();
   });
 
   it.each(['columns', 'list'] as const)('draws no heading and no rows for a hidden group in the %s layout', (layout) => {
-    render(<PrefsForm layout={layout} schema={schema} values={{}} onChange={noop} />);
+    renderWithIcons(<PrefsForm layout={layout} schema={schema} values={{}} onChange={noop} />);
     expect(screen.queryByText('Grid')).toBeNull();
     expect(screen.queryByText('Fine')).toBeNull();
     expect(screen.getByText('Snap on')).toBeInTheDocument();
@@ -51,7 +52,7 @@ describe('PrefsForm showIf', () => {
 
   it('gives a hidden page no rail entry, and brings the entry back with the page', () => {
     const view = (snap: boolean) => <PrefsForm layout="rail" schema={schema} values={{ snap: { on: snap } }} onChange={noop} />;
-    const { rerender } = render(view(false));
+    const { rerender } = renderWithIcons(view(false));
     const rail = screen.getByRole('navigation');
     expect(within(rail).queryByText('Grid')).toBeNull();
     rerender(view(true));
@@ -64,7 +65,7 @@ describe('PrefsForm showIf', () => {
         name: 'Root',
         children: { snap: { name: 'Snap', children: { on: flag('Snap on'), more: { name: 'More', as, showIf: on, children: { fine: flag('Fine') } } } } },
       };
-      const { unmount } = render(<PrefsForm layout="rail" schema={deep} values={{}} onChange={noop} />);
+      const { unmount } = renderWithIcons(<PrefsForm layout="rail" schema={deep} values={{}} onChange={noop} />);
       expect(within(screen.getByRole('navigation')).queryByText('More')).toBeNull();
       expect(screen.queryByText('Fine')).toBeNull();
       unmount();
@@ -86,7 +87,7 @@ describe('PrefsForm showIf', () => {
         },
       },
     };
-    render(<PrefsForm layout="rail" schema={tabs} values={{}} onChange={noop} />);
+    renderWithIcons(<PrefsForm layout="rail" schema={tabs} values={{}} onChange={noop} />);
     expect(screen.getAllByRole('tab').map((t) => t.textContent)).toEqual(['Light']);
     expect(screen.queryByText('Edges')).toBeNull();
     expect(screen.queryByText('Round')).toBeNull();
@@ -102,7 +103,7 @@ describe('PrefsForm showIf', () => {
         } as PrefLeaf,
       },
     };
-    const { rerender } = render(<PrefsForm schema={object} values={{}} onChange={noop} />);
+    const { rerender } = renderWithIcons(<PrefsForm schema={object} values={{}} onChange={noop} />);
     expect(screen.queryByRole('spinbutton', { name: 'Dash' })).toBeNull();
     rerender(<PrefsForm schema={object} values={{ stroke: { width: 2, dash: 0 } }} onChange={noop} />);
     expect(screen.getByRole('spinbutton', { name: 'Dash' })).toBeInTheDocument();
@@ -119,7 +120,7 @@ describe('PrefsForm enableIf', () => {
   };
 
   it('draws a leaf whose condition fails with its control disabled and its row marked', () => {
-    const { rerender } = render(<PrefsForm schema={schema} values={{ snap: { on: false } }} onChange={noop} />);
+    const { rerender } = renderWithIcons(<PrefsForm schema={schema} values={{ snap: { on: false } }} onChange={noop} />);
     const size = screen.getByRole('spinbutton', { name: 'Grid size' });
     expect(size).toBeDisabled();
     expect(disabledRow(size)).not.toBeNull();
@@ -132,7 +133,7 @@ describe('PrefsForm enableIf', () => {
   });
 
   it('disables every leaf under a group whose condition fails', () => {
-    render(<PrefsForm schema={schema} values={{}} onChange={noop} />);
+    renderWithIcons(<PrefsForm schema={schema} values={{}} onChange={noop} />);
     expect(screen.getByRole('checkbox', { name: 'Fine' })).toBeDisabled();
     expect(screen.getByRole('spinbutton', { name: 'Step' })).toBeDisabled();
   });
@@ -147,7 +148,7 @@ describe('PrefsForm enableIf', () => {
       seen.push(ctx.disabled);
       return <button type="button" disabled={ctx.disabled}>dial</button>;
     };
-    const { rerender } = render(<PrefsForm schema={custom} values={{ on: false }} renderers={{ dial }} onChange={noop} />);
+    const { rerender } = renderWithIcons(<PrefsForm schema={custom} values={{ on: false }} renderers={{ dial }} onChange={noop} />);
     expect(seen.at(-1)).toBe(true);
     expect(screen.getByText('dial')).toBeDisabled();
     rerender(<PrefsForm schema={custom} values={{ on: true }} renderers={{ dial }} onChange={noop} />);
@@ -159,7 +160,7 @@ describe('PrefsForm enableIf', () => {
       kind: 'object', name: 'Stroke', description: '', default: { width: 0, dash: 0 }, ...extra,
       children: { width: num('Width'), dash: num('Dash', { enableIf: { path: 'stroke.width', above: 0 } }) },
     }) as PrefLeaf;
-    const { rerender } = render(<PrefsForm schema={{ name: '', children: { stroke: stroke({}) } }} values={{}} onChange={noop} />);
+    const { rerender } = renderWithIcons(<PrefsForm schema={{ name: '', children: { stroke: stroke({}) } }} values={{}} onChange={noop} />);
     expect(screen.getByRole('spinbutton', { name: 'Width' })).toBeEnabled();
     expect(screen.getByRole('spinbutton', { name: 'Dash' })).toBeDisabled();
     rerender(<PrefsForm schema={{ name: '', children: { stroke: stroke({ enableIf: { path: 'no' } }) } }} values={{ stroke: { width: 2 } }} onChange={noop} />);
@@ -176,7 +177,7 @@ describe('PrefsForm enableIf', () => {
         words: { kind: 'list', name: 'Words', description: '', default: ['a'], item: { kind: 'string', name: 'Word', description: '', default: '' }, ...off } as PrefLeaf,
       },
     };
-    render(<PrefsForm schema={lists} values={{}} onChange={noop} />);
+    renderWithIcons(<PrefsForm schema={lists} values={{}} onChange={noop} />);
     expect(screen.getByRole('checkbox', { name: 'Flag 1' })).toBeDisabled();
     expect(screen.getByRole('textbox', { name: 'Word 1' })).toBeDisabled();
     for (const button of screen.getAllByRole('button')) expect(button).toBeDisabled();
@@ -193,7 +194,7 @@ describe('PrefsForm enableIf', () => {
         go: { kind: 'action', name: 'Go', description: '', default: undefined, run: noop, ...off } as PrefLeaf,
       },
     };
-    render(<PrefsForm schema={mixed} values={{}} onChange={noop} />);
+    renderWithIcons(<PrefsForm schema={mixed} values={{}} onChange={noop} />);
     expect(screen.getByRole('textbox', { name: /key/ })).toBeDisabled();
     expect(screen.getByRole('spinbutton', { name: 'Value a' })).toBeDisabled();
     expect(screen.getByRole('button', { name: /Fill/ })).toBeDisabled();
@@ -209,7 +210,7 @@ describe('PrefsForm enableIf', () => {
         tools: { name: 'Tools', as: 'bar', children: { size: num('Size', { enableIf: { path: 'on' } }), go: { kind: 'action', name: 'Go', description: '', default: undefined, run: noop, enableIf: { path: 'on' } } as PrefLeaf, gone: num('Gone', { showIf: { path: 'on' } }) } },
       },
     };
-    render(<PrefsForm layout="list" schema={bar} values={{}} onChange={noop} />);
+    renderWithIcons(<PrefsForm layout="list" schema={bar} values={{}} onChange={noop} />);
     expect(screen.getByRole('spinbutton', { name: 'Size' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Go' })).toBeDisabled();
     expect(screen.queryByRole('spinbutton', { name: 'Gone' })).toBeNull();

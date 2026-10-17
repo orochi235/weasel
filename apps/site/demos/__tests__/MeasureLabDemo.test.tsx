@@ -4,6 +4,7 @@ import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { StrictMode } from 'react';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { MeasureLabDemo } from '../MeasureLabDemo';
+import { withIcons } from '../../testIcons';
 
 // windease lays a lab's tiles out only once something measures them, and
 // jsdom ships no ResizeObserver.
@@ -55,7 +56,7 @@ function drag(canvas: Element, [x0, y0]: number[], [x1, y1]: number[]) {
 // Under StrictMode, as the site mounts it: effects run twice, which is what
 // a tool slot that trades tools with its canvas breaks under.
 async function mount() {
-  const { container } = await renderSettled(<StrictMode><MeasureLabDemo /></StrictMode>);
+  const { container } = await renderSettled(<StrictMode><MeasureLabDemo /></StrictMode>, { wrapper: withIcons });
   const canvas = container.querySelector('.lk-trial-scene canvas');
   if (!canvas) throw new Error('no scene canvas in the trial');
   return canvas;

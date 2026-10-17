@@ -17,6 +17,7 @@ import type { DrawScene, WeaselDrawData, WeaselDrawLayer, WeaselDrawPose } from 
 import { FILE_ACTIONS, useFileCommands, type FileCommandsTarget } from './fileCommands';
 import { importSvgFile, openSvgFile } from './openSvg';
 import { saveSvgFile } from './saveSvg';
+import { withIcons } from './testIcons';
 
 vi.mock('./saveSvg', () => ({ saveSvgFile: vi.fn(async () => {}) }));
 vi.mock('./openSvg', () => ({ openSvgFile: vi.fn(async () => {}), importSvgFile: vi.fn(async () => {}) }));
@@ -67,7 +68,7 @@ function setup() {
       </ActionsProvider>
     </DepRegistryProvider>
   );
-  const view = render(ui(target));
+  const view = render(ui(target), { wrapper: withIcons });
   const reg = registry as unknown as ActionsRegistry;
   const get = (id: string) => reg.list().find((a) => a.id === id)!;
   return { scene, target, registry: reg, get, rerender: (t: FileCommandsTarget) => view.rerender(ui(t)) };
@@ -141,6 +142,7 @@ describe('useFileCommands', () => {
           <Host />
         </ActionsProvider>
       </DepRegistryProvider>,
+      { wrapper: withIcons },
     );
     fireEvent.click(screen.getByText('open'));
     fireEvent.change(screen.getByPlaceholderText('Search actions…'), { target: { value: 'new' } });
