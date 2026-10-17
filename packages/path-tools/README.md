@@ -30,7 +30,7 @@ that imports only some never loads the others:
 | `simplifyBrushPreset` | The Simplify brush, a path-edit tool that refits the curve it passes over |
 | `handleLocksPreset` | The `handleLock.angle` and `handleLock.length` toggles |
 | `bridgePreset` | Bridge: join open ends with a curve along each end's heading, on paths or on two anchors |
-| `spiroPreset` | Set the kind of the selected spiro points (`setSpiroKind`), and convert a spiro curve to an ordinary path (`releaseSpiro`) |
+| `spiroPreset` | Spiro curves: path edit edits a spiro node's points and solves the curve again through them, `setSpiroKind` sets the kind of the selected points, and `releaseSpiro` converts a spiro curve to an ordinary path; `useSpiroTool` (Shift+P) draws them |
 | `lengthenPreset` | Lengthen, a path-edit tool whose drag on an open end grows the path along its end tangent or curvature, or trims it back |
 | `trimPreset`, `extendPreset`, `smudgePreset` | The actions `useTrimTool`, `useExtendTool`, and `useSmudgeBrushTool` bind |
 | `harmonizePreset` | Harmonize curvature |
@@ -52,7 +52,8 @@ chrome-caps shows them; the corner widgets show until it hides
 `createConstraintsPreset`, `createPathStructurePreset`, and
 `createCornerShapePreset` take their look. They reach path edit through core's
 `PathEditExtension`: marks drawn on the open path, parts of it to press, marks
-a click selects and Delete removes, and what an edit keeps true.
+a click selects and Delete removes, what an edit keeps true, and, for spiro
+curves, how a path drawn from another form is edited.
 
 The tools are hooks, mounted with `<SceneCanvas tools>` as core's are; each
 binds an action its family's preset registers, so turn on both. `useGirthTool`

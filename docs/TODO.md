@@ -383,8 +383,8 @@ Priority tags:
   `setSpiroKind`, `releaseSpiro` and draw's own `view.pathDirection` toggle show as text in draw's
   bar. The warp labs' tool lists borrow `ui:fitStretch`, `ui:grid` and `ui:pin` rather than the
   warp tools' own glyphs. `core:retractHandles`, `core:symmetricHandles`, `core:simplifyBrush` and
-  `core:harmonize` (`packages/core/icons/anchor.mjs`) and `core:spiro`
-  (`packages/core/icons/tools.mjs`) are first drafts, not proofed at high resolution.
+  `core:harmonize` (`packages/core/icons/anchor.mjs`) and `path-tools:spiro`
+  (`packages/path-tools/icons/tools.mjs`) are first drafts, not proofed at high resolution.
 - **(P3) Spiro curves solve G2 points only.** `solveSpiro` keeps curvature continuous at a smooth
   point (G2). A point that also keeps its rate of change continuous (G4, a cubic-curvature segment
   either side) needs a second segment type in `eulerSpiral.ts` and two more equations per point.

@@ -22,7 +22,7 @@ Tag: `path-drag`
 | Operation | Action id | What the drag does | Default binding | Status | Package |
 |---|---|---|---|---|---|
 | Edit anchors | `editAnchors` | Moves anchors and handles | Drag on an anchor or handle | main | core |
-| Bend segment | `bendSegment` | Reshapes a segment by its middle; on a spiro curve, adds a smooth point there and drags it | Drag on a segment | main | core |
+| Bend segment | `bendSegment` | Reshapes a segment by its middle; on a spiro curve, with `spiroPreset` on, adds a smooth point there and drags it | Drag on a segment | main | core |
 | Marquee-select anchors | `marqueeAnchors` | Selects anchors in a box | Drag on empty canvas | main | core |
 | Handle locks | `handleLock.angle`, `handleLock.length` | Hold a handle's angle or length during a drag | Toggles; Mod while dragging holds length | main | path-tools |
 | Balance handles | `balanceHandles` | Scales a segment's two handles together from a grip on its balance line; a length lock holds it still | Drag a balance grip, shown under `path-edit.balance` | main | path-tools |
