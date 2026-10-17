@@ -24,6 +24,7 @@
  * path-edit mode. See `anchorEditing.test.ts`.
  */
 
+import { createElement } from 'react';
 import type { Action } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import type { ActionDeps } from '@weasel-js/routing';
@@ -44,6 +45,7 @@ import { selectionAfterAnchorPress } from '../edit-anchors/action';
 import { deleteSelectedMark, markUnder } from './pathEditMarks';
 import { inPlane, editingLayer } from '../planeInput';
 import { NUDGE_KEY, NUDGE_LABEL, nudgeDelta, type NudgeDirection } from './nudgeSteps';
+import { NudgeAnchorsIcon } from './icons/anchorIcons';
 import { pathEditToolActive } from './pathEditTools';
 import { pathOperationTags } from '../pathGestureTags';
 
@@ -180,6 +182,7 @@ function makeNudgeAnchorsAction(dir: NudgeDirection): Action & { requires: strin
     id: `nudgeAnchors.${dir}`,
     label: `Nudge Anchors ${NUDGE_LABEL[dir]}`,
     group: 'nudgeAnchors',
+    icon: () => createElement(NudgeAnchorsIcon, { dir }),
     defaultBinding: [
       { spec: { kind: 'key', key: NUDGE_KEY[dir] },                        opts: { params: { magnitude: 'small' } } },
       { spec: { kind: 'key', key: NUDGE_KEY[dir], mods: { shift: true } }, opts: { params: { magnitude: 'big' } } },

@@ -147,3 +147,29 @@ export function BendSegmentIcon() {
     </svg>
   );
 }
+
+/** How far the nudge glyph is turned from pointing right, for each direction. */
+const NUDGE_TURN = { right: 0, down: 90, left: 180, up: -90 } as const;
+
+/**
+ * Nudge anchors: a hatched block pushed by a two-ring pulse behind it, pointing the way it moves. At 16px a unit is
+ * 0.8 px, so the block's edges sit on whole pixels and each hatch line, `x + y` a multiple of 1.25, crosses pixel
+ * centers. The hatch runs through the block's top-right and bottom-left corners, so no sliver is left at either.
+ * Right is the glyph for nudging as such, where no direction is given.
+ *
+ * @experimental
+ */
+export function NudgeAnchorsIcon({ dir = 'right' }: { dir?: keyof typeof NUDGE_TURN }) {
+  return (
+    <svg {...SVG_BASE}>
+      <g transform={`rotate(${NUDGE_TURN[dir]} 10 10)`}>
+        <path d="M4.1605 6.4645 A5 5 0 0 1 4.1605 13.5355" />
+        <path d="M6.8122 3.8128 A8.75 8.75 0 0 1 6.8122 16.1872" />
+        <svg x="11.25" y="3.75" width="5" height="12.5" viewBox="11.25 3.75 5 12.5" overflow="hidden">
+          <path d="M0 16.25 L20 -3.75 M3.75 16.25 L23.75 -3.75 M7.5 16.25 L27.5 -3.75 M11.25 16.25 L31.25 -3.75 M15 16.25 L35 -3.75"
+            strokeWidth={1} strokeLinecap="butt" />
+        </svg>
+      </g>
+    </svg>
+  );
+}
