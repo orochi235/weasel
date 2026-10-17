@@ -1,6 +1,6 @@
 import { fileURLToPath } from 'node:url';
 import { build as esbuild } from 'esbuild';
-import { build, type Rollup } from 'vite';
+import { build, createServer, type Rollup } from 'vite';
 import { describe, expect, it } from 'vitest';
 import { weaselIcons, type WeaselIconsOptions } from './index';
 
@@ -82,6 +82,32 @@ describe('weaselIcons app mode', () => {
 
   it('fails when a custom variant takes the name of a namespace it finds', async () => {
     await expect(bundle({ variants: { lib: { tags: ['round'] } } })).rejects.toThrow(/custom icon variant "lib"/);
+  });
+});
+
+describe('weaselIcons in dev', () => {
+  it('serves every table whole before any module importing icons.gen is transformed', async () => {
+    const server = await createServer({
+      root,
+      logLevel: 'silent',
+      configFile: false,
+      appType: 'custom',
+      server: { middlewareMode: true, hmr: false, ws: false },
+      optimizeDeps: { noDiscovery: true, include: [] },
+      resolve: { alias: { '@weasel-js/icons': iconsSrc } },
+      plugins: [weaselIcons.vite({ mode: 'app' })],
+    });
+    try {
+      type Tables = { default: { namespace: string; icons: Record<string, unknown> }[] };
+      const used = (await server.ssrLoadModule('virtual:weasel-icons')) as Tables;
+      const fx = used.default.find((t) => t.namespace === 'fx');
+      expect(Object.keys(fx?.icons ?? {}).sort()).toEqual(['dot', 'ring']);
+      expect(used.default.some((t) => t.namespace === 'lib')).toBe(true);
+      const own = (await server.ssrLoadModule('virtual:weasel-icons/fx')) as Tables;
+      expect(own.default.map((t) => t.namespace)).toEqual(['fx']);
+    } finally {
+      await server.close();
+    }
   });
 });
 

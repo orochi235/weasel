@@ -1,4 +1,4 @@
-import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { existsSync, lstatSync, readdirSync, readFileSync, realpathSync } from 'node:fs';
 import { dirname, join, parse } from 'node:path';
 import type { IconTable } from '../table';
 
@@ -36,23 +36,52 @@ export function packageDirFinder() {
   return (file: string) => find(dirname(file));
 }
 
-/**
- * Every package declaring a table in a `node_modules` at `root` or above it, one level down
- * and under each scope. Dev uses this: vite pre-bundles dependencies with esbuild, which skips
- * the plugin's transform, so a dev server never sees their modules.
- */
-export function installedTables(root: string): IconTable[] {
+const GEN = /^icons\.gen\.[cm]?[jt]sx?$/;
+const SKIP = new Set(['node_modules', 'dist']);
+
+/** Every table sitting beside a generated icons.gen anywhere under `dir`, outside `node_modules` and `dist`. */
+export function sourceTablesUnder(dir: string): IconTable[] {
   const out: IconTable[] = [];
+  const walk = (d: string) => {
+    const entries = readdirSync(d, { withFileTypes: true });
+    if (entries.some((e) => e.isFile() && GEN.test(e.name)) && existsSync(join(d, 'icons.table.json'))) {
+      out.push(read(join(d, 'icons.table.json')));
+    }
+    for (const e of entries) if (e.isDirectory() && !SKIP.has(e.name) && !e.name.startsWith('.')) walk(join(d, e.name));
+  };
+  if (existsSync(dir)) walk(dir);
+  return out;
+}
+
+/**
+ * The tables a package ships, or, when it is a linked workspace package or its declared table
+ * is not built, the source tables under its `src`.
+ */
+function packageTables(pkg: string): IconTable[] {
+  const declared = declaredTable(pkg);
+  if (declared) return [declared];
+  const linked = lstatSync(pkg).isSymbolicLink();
+  const declares = existsSync(join(pkg, 'package.json')) && readFileSync(join(pkg, 'package.json'), 'utf8').includes('"weaselIcons"');
+  if (!linked && !declares) return [];
+  const real = realpathSync(pkg);
+  return sourceTablesUnder(existsSync(join(real, 'src')) ? join(real, 'src') : real);
+}
+
+/**
+ * Every table the app at `root` can reach without a transform: its own source tables, and those
+ * of each package in a `node_modules` at `root` or above it. Dev and vitest use this, since vite
+ * pre-bundles dependencies with esbuild, skipping the plugin, and a virtual module can load
+ * before the modules that would reveal a table are transformed.
+ */
+export function reachableTables(root: string): IconTable[] {
+  const out = sourceTablesUnder(root);
   for (let dir = root; ; dir = dirname(dir)) {
     const nm = join(dir, 'node_modules');
     if (existsSync(nm)) {
       const dirs = readdirSync(nm).flatMap((d) =>
-        d.startsWith('@') ? readdirSync(join(nm, d)).map((s) => join(nm, d, s)) : [join(nm, d)],
+        d.startsWith('@') ? readdirSync(join(nm, d)).map((s) => join(nm, d, s)) : d.startsWith('.') ? [] : [join(nm, d)],
       );
-      for (const pkg of dirs) {
-        const table = declaredTable(pkg);
-        if (table) out.push(table);
-      }
+      for (const pkg of dirs) if (existsSync(join(pkg, 'package.json'))) out.push(...packageTables(pkg));
     }
     if (dir === parse(dir).root) return out;
   }

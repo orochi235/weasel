@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { collectIconRefs } from './collect';
 import { rewriteIconCalls } from './rewrite';
 
 const ns = (spec: string) => (spec.endsWith('icons.gen') ? 'core' : undefined);
@@ -43,5 +44,26 @@ describe('rewriteIconCalls', () => {
     const { map } = rewriteIconCalls(src, 'g.ts', ns)!;
     expect(map.sources).toEqual(['g.ts']);
     expect(map.mappings).not.toBe('');
+  });
+});
+
+describe('rewriteIconCalls in comments and strings', () => {
+  const src = [
+    `import { icon } from './icons.gen';`,
+    `/** @example icon('inBlock') */`,
+    `// icon('inLine')`,
+    `const a = "icon('inDouble')";`,
+    `const b = 'icon("inSingle")';`,
+    'const c = `icon(\'inTemplate\') ${icon(\'inExpr\')} ${ { k: icon(\'inBraces\') }.k }`;',
+    `const r = /'/;`,
+    `const d = icon('real');`,
+  ].join('\n');
+
+  it('rewrites only real calls, including those in a template expression', () => {
+    const code = rewriteIconCalls(src, 'h.ts', ns)!.code;
+    for (const kept of [`/** @example icon('inBlock') */`, `// icon('inLine')`, `"icon('inDouble')"`, `'icon("inSingle")'`, "`icon('inTemplate') "]) {
+      expect(code).toContain(kept);
+    }
+    expect(collectIconRefs(code).sort()).toEqual(['core:inBraces', 'core:inExpr', 'core:real']);
   });
 });

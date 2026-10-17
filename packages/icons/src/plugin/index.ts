@@ -6,7 +6,7 @@ import { splitIconRef } from '../names';
 import type { IconTable } from '../table';
 import { collectIconRefs } from './collect';
 import { rewriteIconCalls } from './rewrite';
-import { declaredTable, installedTables, namespaceIn, packageDirFinder, tableBeside } from './tables';
+import { declaredTable, namespaceIn, packageDirFinder, reachableTables, tableBeside } from './tables';
 import { MARKER, PREFIX, USED, admits, moduleFor, subset, variantOf, type VariantFilter } from './virtual';
 
 export type { VariantFilter } from './virtual';
@@ -42,7 +42,6 @@ export const weaselIcons: UnpluginInstance<WeaselIconsOptions, false> = createUn
   const tables = new Map<string, IconTable>();
   const packageDir = packageDirFinder();
   const seenPackages = new Set<string>();
-  let root = process.cwd();
   let dev = false;
 
   const addTable = (ctx: object, table: IconTable) => {
@@ -92,9 +91,6 @@ export const weaselIcons: UnpluginInstance<WeaselIconsOptions, false> = createUn
   return {
     name: 'weasel-icons',
     enforce: 'pre',
-    buildStart() {
-      if (app && dev) for (const t of installedTables(root)) addTable(this, t);
-    },
     transformInclude: (id) => !id.startsWith('\0') && SOURCE.test(id.split('?')[0]!),
     transform(code, id) {
       const file = id.split('?')[0]!;
@@ -131,8 +127,8 @@ export const weaselIcons: UnpluginInstance<WeaselIconsOptions, false> = createUn
     },
     vite: {
       configResolved(config) {
-        root = config.root;
         dev = config.command === 'serve' || config.mode === 'test';
+        if (app && dev) for (const t of reachableTables(config.root)) addTable(this, t);
       },
       renderChunk,
     },

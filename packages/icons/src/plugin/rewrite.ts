@@ -1,5 +1,6 @@
 import MagicString, { type SourceMap } from 'magic-string';
 import { qualify } from '../names';
+import { inside, opaqueSpans } from './lex';
 
 const IMPORT = /import\s*\{([^}]*)\}\s*from\s*(['"])([^'"]*icons\.gen(?:\.[jt]s)?)\2/g;
 const LITERAL_ARG = /\s*(['"])([^'"\s]+)\1\s*\)/y;
@@ -19,8 +20,11 @@ export function rewriteIconCalls(
   id: string,
   namespaceOf: (specifier: string) => string | undefined,
 ): RewriteResult | null {
+  if (!code.includes('icons.gen')) return null;
+  const spans = opaqueSpans(code);
   const locals = new Map<string, string>();
   for (const m of code.matchAll(IMPORT)) {
+    if (inside(spans, m.index!)) continue;
     const namespace = namespaceOf(m[3]!);
     if (!namespace) continue;
     for (const part of m[1]!.split(',')) {
@@ -34,6 +38,7 @@ export function rewriteIconCalls(
   const call = new RegExp(`(?<![\\w$.])(${[...locals.keys()].map(escape).join('|')})\\s*\\(`, 'g');
   for (const m of code.matchAll(call)) {
     const start = m.index!;
+    if (inside(spans, start)) continue;
     LITERAL_ARG.lastIndex = start + m[0].length;
     const arg = LITERAL_ARG.exec(code);
     if (!arg) {
