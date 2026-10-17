@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { relative, resolve } from 'node:path';
 import type { PluginOption } from 'vite';
+import { namedSpecifiers } from './lib/imports.mjs';
 
 /**
  * Virtual modules that expose each demo's source text to the code panel
@@ -61,12 +62,11 @@ export function demoSources(opts: { root?: string } = {}): PluginOption {
 
 type Language = 'json' | 'tsx' | 'ts' | 'css' | 'md';
 
-function extToLang(ext: string): Language {
-  if (ext === 'json') return 'json';
-  if (ext === 'ts') return 'ts';
-  if (ext === 'css') return 'css';
-  if (ext === 'md') return 'md';
-  return 'tsx';
+const LANGUAGES: readonly string[] = ['json', 'tsx', 'ts', 'css', 'md'] satisfies Language[];
+
+/** The panel language for a file extension, or `undefined` for a file the panel cannot show. */
+function extToLang(ext: string): Language | undefined {
+  return LANGUAGES.includes(ext) ? (ext as Language) : undefined;
 }
 
 /** Resolve `./data/x.json` cited from `apps/site/demos/D.tsx` to
@@ -96,8 +96,6 @@ function findFile(root: string, resolved: string): { path: string; ext: string }
   return null;
 }
 
-const RELATIVE_IMPORT_RE = /from\s+['"]([./][^'"]+)['"]/g;
-
 /** A demo's files as its code panel lists them: the demo itself, then each file it imports by relative path. */
 export function tabsFor(root: string, demoPath: string): { path: string; language: Language }[] {
   const src = readFileSync(resolve(root, demoPath), 'utf8');
@@ -105,13 +103,15 @@ export function tabsFor(root: string, demoPath: string): { path: string; languag
     { path: demoPath, language: 'tsx' },
   ];
   const seen = new Set([demoPath]);
-  for (const m of src.matchAll(RELATIVE_IMPORT_RE)) {
-    const resolved = resolveRelative(demoPath, m[1]);
+  for (const specifier of namedSpecifiers(src, demoPath)) {
+    if (!/^[./]/.test(specifier)) continue;
+    const resolved = resolveRelative(demoPath, specifier);
     if (seen.has(resolved)) continue;
     const found = findFile(root, resolved);
-    if (!found || seen.has(found.path)) continue;
+    const language = found && extToLang(found.ext);
+    if (!found || !language || seen.has(found.path)) continue;
     seen.add(found.path);
-    tabs.push({ path: found.path, language: extToLang(found.ext) });
+    tabs.push({ path: found.path, language });
   }
   return tabs;
 }
