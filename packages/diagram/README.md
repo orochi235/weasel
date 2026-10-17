@@ -384,12 +384,14 @@ they can:
 
 A look is how a pipeline is drawn: a function from the pipeline and its
 options to `{ data, scene, color }`, which are `diagramScene`'s two arguments
-and a `color(type)` for the ports. `EFFECT_LOOKS` holds `nodeGraph` and `rack`.
+and a `color(type)` for the ports. `EFFECT_LOOKS` holds `nodeGraph`, `rack`, `lanes` and `compact`.
 
 | Look | Draws | Options |
 | --- | --- | --- |
 | `nodeGraph` (default) | Every port a named row on its stage, a wire from port to port, flowing left to right. | `router` (default `'bezier'`), `nodeGap`, `rankGap`, `colors`, `showParams`, `showValues`, `branch` |
 | `rack` | The main signal on one straight line, and everything else hung beside the stage on the line it is nearest to, whichever way the wire runs. | `chain`, `side`, `nodeGap`, `rankGap`, `colors`, `showParams`, `showValues`, `branch`, `collapseSkips` |
+| `lanes` | A horizontal lane per value type, and each stage standing across the lanes of the types it reads and writes, as tall as they are, its ports in their own lanes. | `lanes`, `laneHeight`, `rankGap`, `router`, `colors`, `showParams`, `showValues`, `branch`, `measure` |
+| `compact` | Each stage one line, its title alone, no ports drawn, and one line between two stages however many wires join them. For a pipeline too big to read as a node graph. | `router`, `nodeGap`, `rankGap`, `colors`, `branch` |
 
 `colors` maps a value type to a color, over the palette; `showParams` (default
 true) shows the `params` of ordinary stages, sources and sinks; `showValues`
@@ -397,6 +399,31 @@ true) shows the `params` of ordinary stages, sources and sinks; `showValues`
 along `chain`, a list of stage ids that defaults to the longest path over data
 wires (`mainChain(pipeline)` returns it); `side` is `'below'` (default) or
 `'above'`.
+
+`lanes` puts the lanes top down in the order their types first appear on the
+pipeline's ports, after any it is given in `lanes`. A stage stands
+`LANE_INSET` inside the first and last lane it touches and covers every lane
+between; its inputs sit on its left edge and its outputs on its right, each in
+its own type's lane. Stages stand in columns, each right of every stage that
+feeds it, and a stage moves a column further right rather than share one with
+a stage holding any of its lanes. A lane is `laneHeight` (default 48) tall, or
+taller until each stage fits the lanes it spans, params and value rows
+included. A decision keeps its symbol's own size, centered across its lanes,
+and brings its control inputs in from the bottom when their lanes are below
+the rest of its ports. The lanes are nodes too, `laneId(type)`, drawn behind
+the stages; a pick of one is reported as `null`. Text is measured to cut the
+lanes before `diagramScene` lays anything out, so pass `measure` to the look,
+not to `diagramScene`: the look hands it on in `scene`.
+
+`compact` shows no params and keeps no value rows: one line has no room for
+them, so a run fades and costs its stages but writes no values. Its ports
+carry no type, which is what keeps the port layer from drawing them. A
+decision draws as a `'hexagon'` by default, the one symbol a single row holds;
+another `branch` draws at that symbol's own size. Wires between two stages
+draw as one line, in the color of a data wire among them, dashed only when
+every one is a control wire, and in the warning color when any was flagged;
+a decision keeps one line per exit, labeled, so a run can fade the exits it
+did not take.
 
 With `collapseSkips` (default true), `rack` draws a decision as an arc over the
 stages it skips, not as a symbol, when all of these hold:
@@ -418,18 +445,23 @@ A decision stage draws as a branch symbol, chosen by `branch`:
 | `'bar'` | A tall bar in bands of equal height, the cut values as labels at the ticks. |
 | `'demux'` | A trapezoid with the exits spread down its right side. |
 | `'switch'` | A lever thrown between two contacts. |
+| `'hexagon'` | The stage's title inside a flat hexagon, on one line. |
+| `'step'` | A staircase rising a step at each cut, the cut values under the risers. |
+| `'comparator'` | A triangle pointing right, its two exits leaving by its slanted edges. With a sound one-cut `split` the high band leaves by the upper edge and the cut is written inside; otherwise the first exit leaves by the upper edge, and two inputs on its flat side are marked `+` and `−`. |
+| `'crossover'` | One filter curve per band, lowest at the bottom, overlapping at each cut. |
+| `'fork'` | A bare dot every exit leaves from, the conditions left to the labels on its wires. |
 
-`'bar'` draws as a diamond for a stage with no `split` or a bad one, and
-`'switch'` for a stage that does not have exactly two outputs.
+`'bar'`, `'step'` and `'crossover'` draw as a diamond for a stage with no `split` or a bad one, and
+`'switch'` and `'comparator'` for a stage that does not have exactly two outputs.
 `BRANCH_SYMBOLS`, `branchNode` and `symbolNameFor` expose the same lookup. The
 signal enters on the left; inputs of a `control` type enter at the top, and so
-does the input a `'bar'` tests, when the stage has more than one input. A symbol
+does the input a `'bar'`, `'step'` or `'crossover'` tests, when the stage has more than one input. A symbol
 takes `{ controlSide: 'bottom' }` to bring those inputs in at the bottom instead,
 and `rack` passes it with `side: 'below'`, so a control wire comes straight up from
-the stage driving it. A symbol's lines, dots and ticks are drawn in the `text` color of
+the stage driving it; `lanes` passes it when the control inputs' lanes are below. A symbol's lines, dots and ticks are drawn in the `text` color of
 `{ style }` (default `stageStyle(stage)`, so a bypassed decision draws dim), and a
-`'bar'`'s bands in `{ tints }`, lowest first; a bypassed bar's bands default to its
-style's `stroke`.
+`'bar'`'s bands and a `'crossover'`'s curves in `{ tints }`, lowest first; a bypassed
+stage's default to its style's `stroke`.
 
 A look is an `EffectLook<TOptions>`. Plain `EffectLook` is a look whose options
 are not known, so a list of looks with different options, such as
@@ -451,6 +483,7 @@ exported for yours:
 | `kindOf(stage)` | The stage's `kind`, with any value the shipped looks do not know read as `'stage'`. |
 | `portOn(stage, id)` | The stage's port with that id. |
 | `stageRows(stage, { showParams, withPorts, showValues })` | Body rows for a stage: its title, a row of its ports, a value row per output (`valueRowId(port)`, showing `NO_VALUE`), its params. |
+| `wireEdges(pipeline, color)` | An edge per drawable wire, from port to port, named by `exitLabel` and styled by `wireStyle`, each as `{ edge, style }`. |
 | `exitLabel(wire)` | What to call one of `drawableWires`' wires: its own label, or for a wire leaving a decision the exit's label or id. |
 | `branchNode(stage, pipeline, branch, { controlSide, style, tints })` | The node a decision draws as. |
 
