@@ -8,7 +8,7 @@
  */
 import type { AddNodeSpec, MarkerRef, RectPose, Stroke } from '@weasel-js/core';
 import { DEFAULT_GROUP_INSET, expandGroupEdges } from './cluster';
-import { groupSpecs, resolveGroups, type ResolvedGroup } from './dataGroups';
+import { groupSpecs, resolveGroups } from './dataGroups';
 import { bodyTrait, buildBody, measureBody, sizeToBody, type BodySpec, type MeasureRowText, type Row, type RowTextStyle } from './body';
 import { edgeSpecs, labelStyleOf } from './dataEdges';
 import type { DiagramEdge } from './edge';
@@ -17,11 +17,11 @@ import { labelFollowsLayout, type EdgeLabelRoom, type Graph, type GraphEdge, typ
 import type { DiagramAnchor } from './group';
 import type { DiagramLabel } from './label';
 import { chain } from './chain';
-import { layered, type LayeredPlan } from './layered';
-import type { LayoutFn, LayoutOptions, LayoutPlan } from './layout';
+import { layered } from './layered';
+import type { LayoutFn, LayoutOptions } from './layout';
 import { markSpecs, type DataMark, type DiagramMark } from './marks';
 import type { Outline } from './outline';
-import { authoredOver, type LayeredRoute } from './route';
+import { authoredOver } from './route';
 import { tree } from './tree';
 import type { DiagramNode, PortSpec } from './types';
 import type { Vec2 } from '@weasel-js/core/math';
@@ -185,9 +185,17 @@ const GLYPH = 0.6;
 const MIN_WIDTH = 64;
 const LAYOUTS = { layered, tree, force, chain } as const;
 
-/** The scene node id `diagramScene` gives an edge, built from its ends, ports, and label. */
-export const edgeIdOf = (e: DataEdge) =>
-  `edge:${e.from}${e.fromPort ? `.${e.fromPort}` : ''}->${e.to}${e.toPort ? `.${e.toPort}` : ''}${e.label ? `:${e.label}` : ''}`;
+/** A part of an edge id with its separators, and the `/` sub-specs append
+ *  after one, escaped by a backslash. */
+const idPart = (s: string) => s.replace(/[\\.>:/]/g, '\\$&');
+
+/** The scene node id `diagramScene` gives an edge, built from its ends, ports,
+ *  and label. Two edges differing in any of those get different ids: a `.`,
+ *  `>`, `:`, `/` or `\` in one of them is escaped with a backslash. */
+export const edgeIdOf = (e: DataEdge) => {
+  const port = (p: string | undefined) => (p ? `.${idPart(p)}` : '');
+  return `edge:${idPart(e.from)}${port(e.fromPort)}->${idPart(e.to)}${port(e.toPort)}${e.label ? `:${idPart(e.label)}` : ''}`;
+};
 
 function graphOf(nodes: GraphNode[], edges: GraphEdge[], groups: GraphGroup[] = []): Graph {
   const byId = new Map(nodes.map((n) => [n.id, n]));
@@ -205,20 +213,6 @@ function graphOf(nodes: GraphNode[], edges: GraphEdge[], groups: GraphGroup[] = 
     outgoing: (id) => out.get(id) ?? [],
     incoming: (id) => inc.get(id) ?? [],
   };
-}
-
-/** Each edge's ports and waypoints under a layout that plans its routes: the
- *  author's where given, else `layeredRoutes`'. */
-function routed(data: DiagramData, edges: readonly DataEdge[], groups: readonly ResolvedGroup[],
-  plan: LayoutPlan, layoutOptions: LayoutOptions): Map<string, LayeredRoute> {
-  return authoredOver(edges.map((e) => ({ ...e, id: edgeIdOf(e) })), {
-    ranks: 'ranks' in plan ? (plan as LayeredPlan).ranks : new Map(),
-    waypoints: plan.waypoints ?? new Map(),
-    ...(plan.labels !== undefined ? { labels: plan.labels } : {}),
-    members: new Map(groups.map((g) => [g.group.id, g.members])),
-    compass: new Set([...data.nodes.filter((n) => n.ports === undefined).map((n) => n.id), ...groups.map((g) => g.group.id)]),
-    ...(layoutOptions.direction ? { direction: layoutOptions.direction } : {}),
-  });
 }
 
 /** The room an edge's label asks layout for: none when the edge puts its
@@ -343,7 +337,8 @@ export function diagramScene(data: DiagramData, opts: DiagramSceneOptions = {}):
 
   const specs: DiagramSpec[] = [];
   const placedAt = placed(data, seeds, moved);
-  const routes = plan === null ? null : routed(data, edges, groups, plan, layoutOptions);
+  // The author's own ports and waypoints win over the plan's.
+  const routes = plan === null ? null : authoredOver(edges.map((e) => ({ ...e, id: edgeIdOf(e) })), plan);
   // Behind every node, so a box never paints over what it holds.
   specs.push(...groupSpecs(groups, placedAt, (g) => ({
     style: opts.groupStyle?.(g) ?? GROUP,

@@ -159,6 +159,20 @@ describe('diagramScene', () => {
     expect(spec.data?.stroke).toEqual({ paint: { color: '#fff' }, width: 1.5, dash: [4, 2], markerStart: 'dot' });
   });
 
+  it('gives distinct edges distinct ids, whatever their ids, ports and labels hold', () => {
+    const edges = [
+      { from: 'a.b', to: 'c' }, { from: 'a', fromPort: 'b', to: 'c' },
+      { from: 'a->b', to: 'c' }, { from: 'a', to: 'b->c' },
+      { from: 'a', to: 'b:x' }, { from: 'a', to: 'b', label: 'x' },
+      { from: 'a', to: 'b', label: 'x/label' },
+      { from: 'a\\', fromPort: 'p', to: 'b' }, { from: 'a', fromPort: '\\.p', to: 'b' },
+    ];
+    const ids = edges.map(edgeIdOf);
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(ids).not.toContain(`${edgeIdOf({ from: 'a', to: 'b', label: 'x' })}/label`);
+    expect(edgeIdOf({ from: 'osc-1', to: 'out' })).toBe('edge:osc-1->out');
+  });
+
   it('places a label where the edge says, colored by the style', () => {
     const specs = diagramScene(
       { nodes: DATA.nodes, edges: [{ from: 'a', to: 'b', label: 'w', labelPlacement: { at: 0.25 } }] },
