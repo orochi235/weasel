@@ -1,7 +1,8 @@
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, screen } from '@testing-library/react';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import type { Stroke, Fill } from '@weasel-js/core';
 import { StrokeAndFillDemo } from '../StrokeAndFillDemo';
+import { renderWithIcons } from '../../testIcons';
 
 // jsdom's canvas rect is all zeros and the view is identity, so client coords
 // are world coords.
@@ -37,7 +38,7 @@ afterEach(() => {
 
 describe('StrokeAndFillDemo', () => {
   it('opens on the rect with both paint slots in the panel', () => {
-    const { container } = render(<StrokeAndFillDemo />);
+    const { container } = renderWithIcons(<StrokeAndFillDemo />);
     expect(container.querySelector('canvas')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Fill' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Stroke' })).toBeTruthy();
@@ -45,7 +46,7 @@ describe('StrokeAndFillDemo', () => {
   });
 
   it('swaps the panel for the vertex swatches when the heptagon is selected', () => {
-    const { container } = render(<StrokeAndFillDemo />);
+    const { container } = renderWithIcons(<StrokeAndFillDemo />);
     const canvas = container.querySelector('canvas')!;
 
     click(canvas, 430, 125);
@@ -54,7 +55,7 @@ describe('StrokeAndFillDemo', () => {
   });
 
   it('recolors one vertex and leaves the other six alone', () => {
-    const { container } = render(<StrokeAndFillDemo />);
+    const { container } = renderWithIcons(<StrokeAndFillDemo />);
     const canvas = container.querySelector('canvas')!;
     const before = data('petal').vertexColors!;
 
@@ -73,7 +74,7 @@ describe('StrokeAndFillDemo', () => {
   });
 
   it('drives the polyline taper from the panel slider', () => {
-    const { container } = render(<StrokeAndFillDemo />);
+    const { container } = renderWithIcons(<StrokeAndFillDemo />);
     const canvas = container.querySelector('canvas')!;
 
     click(canvas, 300, 380);

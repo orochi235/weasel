@@ -1,5 +1,5 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { ActionsProvider, useAction, type Action } from '@weasel-js/core';
 import { ContextMenuHost } from '@weasel-js/ui';
 import { CommandBar } from '../CommandBar';
@@ -7,6 +7,7 @@ import { drawPrefs } from '../prefs';
 import { RightSidebar } from '../RightSidebar';
 import { StripSurfaces } from './StripSurfaces';
 import type { SidebarHost } from './types';
+import { renderWithIcons } from '../testIcons';
 
 // Same in-memory Storage shim as prefs.test.ts: jsdom 26 + Node 26 can
 // leave `window.localStorage` undefined.
@@ -71,14 +72,14 @@ afterEach(cleanup);
 
 describe('surface assets', () => {
   it('draw as labeled toolbars in the strip by default', () => {
-    render(<App />);
+    renderWithIcons(<App />);
     for (const name of ['Arrange', 'Pathfinder', 'Path']) expect(strip().getByRole('toolbar', { name })).toBeDefined();
     expect(within(strip().getByRole('toolbar', { name: 'Path' })).getByRole('button', { name: 'Join' })).toBeDefined();
     expect(sidebar().queryByText('Path')).toBeNull();
   });
 
   it('move from the strip to the sidebar, to a menu button, and back to the strip', () => {
-    render(<App />);
+    renderWithIcons(<App />);
     act(() => { fireEvent.contextMenu(strip().getByRole('toolbar', { name: 'Path' })); });
     expect(screen.queryByRole('menuitem', { name: 'Show as toolbar' })).toBeNull();
     click(screen.getByRole('menuitem', { name: 'Show as panel' }));

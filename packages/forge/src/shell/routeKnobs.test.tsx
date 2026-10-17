@@ -1,11 +1,12 @@
 import { createMemoryAdapter } from '@weasel-js/labkit';
 import { f } from '@weasel-js/labkit/config';
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { meta, story } from '../story/define';
 import type { IndexEntry } from '../story/types';
 import { installResizeObserver } from './labHarness';
 import { Workshop } from './Workshop';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 installResizeObserver();
 
@@ -29,7 +30,7 @@ const importers = () => ({ '/x.stories.tsx': vi.fn(() => Promise.resolve(xModule
 
 function mount(hash: string) {
   history.replaceState(null, '', `/${hash}`);
-  return render(<Workshop index={[a, b]} frameUrl="/frame.html" importers={importers()} storage={createMemoryAdapter()} />);
+  return renderWithIcons(<Workshop index={[a, b]} frameUrl="/frame.html" importers={importers()} storage={createMemoryAdapter()} />);
 }
 
 /** The story's text, once its module has loaded; the first load in a jsdom realm takes over a second. */
@@ -85,7 +86,7 @@ describe('knobs in the URL', () => {
     const storage = createMemoryAdapter();
     const workshop = () => <Workshop index={[a, b]} frameUrl="/frame.html" importers={importers()} storage={storage} />;
     history.replaceState(null, '', '/#/x--a');
-    const first = render(workshop());
+    const first = renderWithIcons(workshop());
     await shows('hi/4/false');
     fireEvent.change(screen.getByRole('textbox', { name: 'Label' }), { target: { value: 'Save' } });
     await waitFor(() => expect(location.hash).toBe('#/x--a?label=Save'));
@@ -94,7 +95,7 @@ describe('knobs in the URL', () => {
     first.unmount();
 
     history.replaceState(null, '', '/');
-    render(workshop());
+    renderWithIcons(workshop());
     await shows('Save/4/false');
     fireEvent.click(screen.getByRole('radio', { name: 'Tree' }));
     const folder = screen.getByRole('treeitem', { name: 'X' });
@@ -115,7 +116,7 @@ describe('knobs in the URL', () => {
   it('keeps a restored trial’s knobs when its story is picked in the tree before its module has loaded', async () => {
     const storage = createMemoryAdapter();
     history.replaceState(null, '', '/#/x--a');
-    const first = render(<Workshop index={[a, b]} frameUrl="/frame.html" importers={importers()} storage={storage} />);
+    const first = renderWithIcons(<Workshop index={[a, b]} frameUrl="/frame.html" importers={importers()} storage={storage} />);
     await shows('hi/4/false');
     fireEvent.change(screen.getByRole('textbox', { name: 'Label' }), { target: { value: 'Save' } });
     await waitFor(() => expect(JSON.stringify(storage.listSync?.(''))).toContain('Save'), { timeout: 5000 });
@@ -126,7 +127,7 @@ describe('knobs in the URL', () => {
     const pending = new Promise<Record<string, unknown>>((resolve) => {
       load = () => resolve(xModule as unknown as Record<string, unknown>);
     });
-    render(<Workshop index={[a, b]} frameUrl="/frame.html" importers={{ '/x.stories.tsx': () => pending }} storage={storage} />);
+    renderWithIcons(<Workshop index={[a, b]} frameUrl="/frame.html" importers={{ '/x.stories.tsx': () => pending }} storage={storage} />);
     fireEvent.click(await screen.findByRole('radio', { name: 'Tree' }, { timeout: 5000 }));
     const folder = screen.getByRole('treeitem', { name: 'X' });
     if (folder.getAttribute('aria-expanded') !== 'true') fireEvent.click(folder.querySelector('.fg-tree__fold')!);

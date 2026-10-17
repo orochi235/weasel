@@ -1,7 +1,8 @@
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { PrefBooleanEncoding, PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 import { PrefsForm } from './PrefsForm';
+import { renderWithIcons } from '../../testing/withIcons';
 
 afterEach(cleanup);
 
@@ -42,32 +43,32 @@ const box = (name: string) => screen.queryByRole('checkbox', { name });
 
 describe('a condition of a form\'s own node that reads a pref of `over`', () => {
   it('reads that pref\'s default where the values hold nothing', () => {
-    const alone = render(<PrefsForm schema={panel} values={{}} onChange={() => {}} />);
+    const alone = renderWithIcons(<PrefsForm schema={panel} values={{}} onChange={() => {}} />);
     expect(box('By default')).toBeNull();
     alone.unmount();
-    render(<PrefsForm schema={panel} values={{}} over={dialog} onChange={() => {}} />);
+    renderWithIcons(<PrefsForm schema={panel} values={{}} over={dialog} onChange={() => {}} />);
     expect(box('By default')).toBeInTheDocument();
   });
 
   it('reads the value the form holds at that pref\'s path', () => {
-    render(<PrefsForm schema={panel} values={{ on: false }} over={dialog} onChange={() => {}} />);
+    renderWithIcons(<PrefsForm schema={panel} values={{ on: false }} over={dialog} onChange={() => {}} />);
     expect(box('By default')).toBeNull();
   });
 
   it('compares the value as that pref\'s control shows it', () => {
-    const { rerender } = render(<PrefsForm schema={panel} values={{ slant: 'normal' }} over={dialog} onChange={() => {}} />);
+    const { rerender } = renderWithIcons(<PrefsForm schema={panel} values={{ slant: 'normal' }} over={dialog} onChange={() => {}} />);
     expect(box('By slant')).toBeDisabled();
     rerender(<PrefsForm schema={panel} values={{ slant: 'italic' }} over={dialog} onChange={() => {}} />);
     expect(box('By slant')).toBeEnabled();
   });
 
   it('reads the form\'s own leaf at a path both schemas hold', () => {
-    render(<PrefsForm schema={panel} values={{}} over={dialog} onChange={() => {}} />);
+    renderWithIcons(<PrefsForm schema={panel} values={{}} over={dialog} onChange={() => {}} />);
     expect(box('By own')).toBeNull();
   });
 
   it('answers a condition that reads an entry of a list the same way', () => {
-    const { rerender } = render(<PrefsForm schema={panel} values={{}} over={dialog} onChange={() => {}} />);
+    const { rerender } = renderWithIcons(<PrefsForm schema={panel} values={{}} over={dialog} onChange={() => {}} />);
     expect(screen.getByRole('spinbutton')).toBeEnabled();
     rerender(<PrefsForm schema={panel} values={{ on: false }} over={dialog} onChange={() => {}} />);
     expect(screen.getByRole('spinbutton')).toBeDisabled();

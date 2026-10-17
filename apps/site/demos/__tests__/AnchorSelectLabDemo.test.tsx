@@ -6,6 +6,7 @@ import { StrictMode } from 'react';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { AnchorSelectLabDemo } from '../AnchorSelectLabDemo';
 import { press, stubResizeObserver } from './pathEditLabHarness';
+import { withIcons } from '../../testIcons';
 
 beforeAll(() => {
   window.history.replaceState(null, '', '/?test=1');
@@ -20,7 +21,7 @@ const anchors = () => countPathAnchors((window.__weaselTest!.getScene().nodes[0]
 
 describe('AnchorSelectLabDemo', () => {
   it('opens with every 4th anchor selected, and ] grows the selection along the path', async () => {
-    const { container } = await renderSettled(<StrictMode><AnchorSelectLabDemo /></StrictMode>);
+    const { container } = await renderSettled(<StrictMode><AnchorSelectLabDemo /></StrictMode>, { wrapper: withIcons });
     giveKeys(container.querySelector('.lk-trial-scene canvas'));
     const before = anchors();
     // Grow takes the 4 seeded anchors to 12; deleting them leaves the other 4.

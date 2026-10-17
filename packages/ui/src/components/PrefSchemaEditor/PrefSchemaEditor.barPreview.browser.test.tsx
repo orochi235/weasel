@@ -1,11 +1,12 @@
 import '@weasel-js/theme/tokens.css';
-import { act, cleanup, render, screen, within } from '@testing-library/react';
+import { act, cleanup, screen, within } from '@testing-library/react';
 import { afterEach, beforeAll, expect, test } from 'vitest';
 import { page } from 'vitest/browser';
 import { useState } from 'react';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { PrefSchemaEditor } from './PrefSchemaEditor';
 import { drag, pointIn, pointer } from './pointerDrag.fixture';
+import { renderWithIcons } from '../../testing/withIcons';
 
 // A drop on a bar is placed by which half of a cell the pointer is over, which needs real boxes.
 
@@ -43,21 +44,21 @@ const treeRow = (tree: string, key: string) =>
   within(screen.getByRole('tree', { name: tree })).getByText(key).closest('[role="treeitem"]') as HTMLElement;
 
 test('an action dropped on the near half of a cell of a bar root lands before it', () => {
-  render(<Live />);
+  renderWithIcons(<Live />);
   const row = treeRow('Actions', 'snap').firstElementChild as HTMLElement;
   drag(row, pointIn(cell('redo'), 0.25), { press: pointIn(row, 0.2) });
   expect(Object.keys(latest.children)).toEqual(['undo', 'viewSnap', 'redo', 'size']);
 });
 
 test('a button of a bar root dragged past the far half of the last cell lands after it', () => {
-  render(<Live />);
+  renderWithIcons(<Live />);
   const button = within(cell('undo')).getByRole('button');
   drag(button, pointIn(cell('size'), 0.9), { press: pointIn(button, 0.5) });
   expect(Object.keys(latest.children)).toEqual(['redo', 'size', 'undo']);
 });
 
 test('a press on a cell of a bar root selects its pref in the tree', () => {
-  render(<Live />);
+  renderWithIcons(<Live />);
   const size = cell('size');
   const p = pointIn(size, 0.1);
   act(() => pointer('pointerdown', size.firstElementChild!, p));

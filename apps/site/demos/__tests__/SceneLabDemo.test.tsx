@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { SceneLabDemo } from '../SceneLabDemo';
+import { withIcons } from '../../testIcons';
 
 // windease lays a lab's tiles out only once something measures them, and
 // jsdom ships no ResizeObserver.
@@ -43,7 +44,7 @@ function drag(canvas: Element, [x0, y0]: number[], [x1, y1]: number[]) {
 
 describe('SceneLabDemo', () => {
   it('draws a rectangle with the tool picked in the trial palette, snapped to the grid', async () => {
-    const { container } = await renderSettled(<SceneLabDemo />);
+    const { container } = await renderSettled(<SceneLabDemo />, { wrapper: withIcons });
     const canvas = container.querySelector('.lk-trial-scene canvas');
     if (!canvas) throw new Error('no scene canvas in the trial');
     expect(nodes()).toHaveLength(3);
@@ -59,7 +60,7 @@ describe('SceneLabDemo', () => {
   });
 
   it("hands the control panel's snap setting to the tool on the next drag", async () => {
-    const { container } = await renderSettled(<SceneLabDemo />);
+    const { container } = await renderSettled(<SceneLabDemo />, { wrapper: withIcons });
     const canvas = container.querySelector('.lk-trial-scene canvas');
     if (!canvas) throw new Error('no scene canvas in the trial');
     await userEvent.click(screen.getByRole('checkbox', { name: 'Snap to grid' }));

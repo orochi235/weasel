@@ -1,8 +1,9 @@
 import '@weasel-js/theme/tokens.css';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeAll, expect, test, vi } from 'vitest';
 import { Dialog } from './Dialog';
+import { renderWithIcons } from '../../testing/withIcons';
 
 afterEach(cleanup);
 
@@ -15,7 +16,7 @@ beforeAll(() => {
 // The consumer's sheet is first in the document, so a body default left outside `:where()`
 // ties with it on specificity and wins on order.
 test('bodyClassName can replace every default the body sets', () => {
-  render(<Dialog isOpen title="Sized" bodyClassName="own-flex">body</Dialog>);
+  renderWithIcons(<Dialog isOpen title="Sized" bodyClassName="own-flex">body</Dialog>);
   const body = getComputedStyle(screen.getByText('body'));
   expect(body.flexGrow).toBe('0');
   expect(body.minHeight).toBe('37px');
@@ -25,7 +26,7 @@ test('bodyClassName can replace every default the body sets', () => {
 
 test('a click outside closes the dialog only when isDismissable is set', async () => {
   const onOpenChange = vi.fn();
-  const { rerender } = render(<Dialog isOpen onOpenChange={onOpenChange} title="Stay">body</Dialog>);
+  const { rerender } = renderWithIcons(<Dialog isOpen onOpenChange={onOpenChange} title="Stay">body</Dialog>);
   await userEvent.click(document.querySelector('[data-weasel-overlay]')!);
   expect(onOpenChange).not.toHaveBeenCalled();
   rerender(<Dialog isOpen isDismissable onOpenChange={onOpenChange} title="Stay">body</Dialog>);

@@ -1,11 +1,12 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { useState } from 'react';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { AssetEditor } from './AssetEditor';
 import { asset, hasRow, pickRow, structure, tool } from './AssetEditor.fixture';
 import type { Workspace } from './workspace';
 import { WORKSPACE } from './workspace.fixtures';
 import { workspaceCodec } from './workspaceCodec';
+import { renderWithIcons } from '../../testing/withIcons';
 
 afterEach(cleanup);
 
@@ -26,7 +27,7 @@ function Host({ seen }: { seen(workspace: Workspace): void }) {
 describe('AssetEditor under a host that changes an asset between steps', () => {
   it('steps the roots back and forward, and leaves a lock and a label as the host has them now', () => {
     let latest: Workspace = WORKSPACE;
-    render(<Host seen={(w) => { latest = w; }} />);
+    renderWithIcons(<Host seen={(w) => { latest = w; }} />);
     pickRow('snap');
     fireEvent.keyDown(structure(), { key: 'Delete' });
     fireEvent.click(screen.getByRole('button', { name: 'Lock the panel' }));

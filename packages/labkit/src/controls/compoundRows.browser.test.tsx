@@ -1,6 +1,7 @@
 import '@weasel-js/theme/tokens.css';
 import '../styles.less';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, screen } from '@testing-library/react';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import { useState } from 'react';
 import { afterEach, beforeAll, expect, test } from 'vitest';
 import { page } from 'vitest/browser';
@@ -46,7 +47,7 @@ test.each([
   ['Limits', 4],
   ['Ramp', 1],
 ] as const)('a row opens %s in a dialog with room for its controls', async (label, count) => {
-  render(<Panel />);
+  renderWithIcons(<Panel />);
   fireEvent.click(screen.getByRole('button', { name: `Edit ${label}` }));
   const dialog = await screen.findByRole('dialog');
   const box = dialog.getBoundingClientRect();

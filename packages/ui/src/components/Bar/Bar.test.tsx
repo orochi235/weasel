@@ -1,9 +1,10 @@
 import { describe, it, expect, vi } from 'vitest';
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { fireEvent, screen, within } from '@testing-library/react';
 import { ActionsProvider, useAction, type Action } from '@weasel-js/core';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { icon } from '../../icons.gen';
 import { Bar } from './Bar';
+import { renderWithIcons } from '../../testing/withIcons';
 
 const schema: PrefGroup = {
   name: 'Text',
@@ -43,21 +44,21 @@ const separators = (root: HTMLElement): number => root.querySelectorAll('[role="
 
 describe('Bar', () => {
   it("takes what its schema says of `overflow`, under the prop's own word", () => {
-    const { rerender } = render(<Bar schema={{ ...schema, overflow: 'menu' }} label="Text" />);
+    const { rerender } = renderWithIcons(<Bar schema={{ ...schema, overflow: 'menu' }} label="Text" />);
     expect(screen.getByRole('toolbar')).toHaveAttribute('data-overflow', 'menu');
     rerender(<Bar schema={{ ...schema, overflow: 'menu' }} overflow="scroll" label="Text" />);
     expect(screen.getByRole('toolbar')).not.toHaveAttribute('data-overflow');
   });
 
   it('starts its line with its label when its schema leads with it, and not otherwise', () => {
-    const { rerender } = render(<Bar schema={{ ...schema, lead: 'label' }} label="Text" />);
+    const { rerender } = renderWithIcons(<Bar schema={{ ...schema, lead: 'label' }} label="Text" />);
     expect(screen.getByRole('toolbar').firstElementChild).toHaveTextContent(/^Text$/);
     rerender(<Bar schema={schema} label="Text" />);
     expect(within(screen.getByRole('toolbar')).queryByText('Text')).toBeNull();
   });
 
   it('starts its line with its icon when its schema leads with that', () => {
-    render(<Bar schema={{ ...schema, lead: 'icon', icon: icon('close') }} label="Text" />);
+    renderWithIcons(<Bar schema={{ ...schema, lead: 'icon', icon: icon('close') }} label="Text" />);
     const first = screen.getByRole('toolbar').firstElementChild!;
     expect(first.querySelector('svg')).not.toBeNull();
     expect(first).toHaveTextContent(/^$/);
@@ -66,12 +67,12 @@ describe('Bar', () => {
   it("draws a group's icon on the button opening it, as a menu or a popover", () => {
     const more: PrefGroup = { name: 'More', as: 'menu', icon: icon('close'), children: { undo: schema.children.undo! } };
     const spacing = { ...(schema.children.spacing as PrefGroup), icon: icon('close') };
-    render(<Bar schema={{ ...schema, children: { more, spacing } }} label="Text" />);
+    renderWithIcons(<Bar schema={{ ...schema, children: { more, spacing } }} label="Text" />);
     for (const name of ['More', 'Spacing']) expect(screen.getByRole('button', { name }).querySelector('svg[viewBox="0 0 20 20"]')).not.toBeNull();
   });
 
   it('draws leaves in their bar forms, in the order the group lists them', () => {
-    const { container } = render(<Bar schema={schema} values={{ size: 12 }} label="Text" />);
+    const { container } = renderWithIcons(<Bar schema={schema} values={{ size: 12 }} label="Text" />);
     const bar = screen.getByRole('toolbar', { name: 'Text' });
     expect(container.querySelector('[data-bar-label]')).toHaveTextContent('Size');
     const cells = [
@@ -84,7 +85,7 @@ describe('Bar', () => {
   });
 
   it('sets a nested section apart with a divider on each side, and no heading', () => {
-    const { container } = render(<Bar schema={schema} />);
+    const { container } = renderWithIcons(<Bar schema={schema} />);
     expect(separators(container)).toBe(2);
     expect(screen.queryByText('Style')).toBeNull();
     const flags = screen.getByRole('group', { name: 'Style' });
@@ -97,20 +98,20 @@ describe('Bar', () => {
       as: 'section',
       children: { on: { kind: 'boolean', name, description: '', default: false } },
     });
-    const { container } = render(<Bar schema={{ name: 'B', children: { a: run('A'), b: run('B') } }} />);
+    const { container } = renderWithIcons(<Bar schema={{ name: 'B', children: { a: run('A'), b: run('B') } }} />);
     expect(separators(container)).toBe(1);
   });
 
   it('writes a leaf under a nested group at its dotted path', () => {
     const onChange = vi.fn();
-    render(<Bar schema={schema} values={{}} onChange={onChange} />);
+    renderWithIcons(<Bar schema={schema} values={{}} onChange={onChange} />);
     fireEvent.click(screen.getByRole('button', { name: 'Italic' }));
     expect(onChange).toHaveBeenCalledWith('style.italic', true);
   });
 
   it('opens a panel group from a button reading its name, as rows', () => {
     const onChange = vi.fn();
-    render(<Bar schema={schema} values={{ 'spacing.leading': 1.5 }} onChange={onChange} />);
+    renderWithIcons(<Bar schema={schema} values={{ 'spacing.leading': 1.5 }} onChange={onChange} />);
     expect(screen.queryByLabelText('Leading')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Spacing' }));
     const field = screen.getByLabelText('Leading');
@@ -121,7 +122,7 @@ describe('Bar', () => {
 
   it('fires an action leaf by key', () => {
     const run = vi.fn();
-    render(
+    renderWithIcons(
       <ActionsProvider>
         <Register action={{ id: 'edit.undo', label: 'Undo', invoker: { timing: 'immediate', run } }} />
         <Bar schema={schema} />
@@ -132,7 +133,7 @@ describe('Bar', () => {
   });
 
   it('opens every field from a button when vertical, and keeps actions on the bar', () => {
-    render(<Bar schema={schema} values={{ size: 12 }} orientation="vertical" label="Text" />);
+    renderWithIcons(<Bar schema={schema} values={{ size: 12 }} orientation="vertical" label="Text" />);
     expect(screen.getByRole('toolbar')).toHaveAttribute('aria-orientation', 'vertical');
     expect(screen.queryByLabelText('Size')).toBeNull();
     expect(screen.getByRole('button', { name: 'Undo' })).toBeInTheDocument();
@@ -141,7 +142,7 @@ describe('Bar', () => {
   });
 
   it('is no toolbar of its own with no label, for a host that is one', () => {
-    render(<Bar schema={schema} />);
+    renderWithIcons(<Bar schema={schema} />);
     expect(screen.queryByRole('toolbar')).toBeNull();
   });
 });

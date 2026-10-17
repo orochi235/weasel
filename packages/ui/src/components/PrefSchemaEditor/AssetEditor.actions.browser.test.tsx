@@ -1,5 +1,5 @@
 import '@weasel-js/theme/tokens.css';
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { cleanup, screen, within } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
 import { page } from 'vitest/browser';
 import type { PrefGroup } from '@weasel-js/prefs';
@@ -7,6 +7,7 @@ import { actionCatalog } from './actionCatalog';
 import { Live, WORKSPACE } from './AssetEditor.fixture';
 import { catalogOf, type Workspace } from './workspace';
 import { drag } from './pointerDrag.fixture';
+import { renderWithIcons } from '../../testing/withIcons';
 
 // A drag within the tree is hit-tested against real boxes.
 
@@ -23,7 +24,7 @@ const row = (label: string) =>
 async function live(start: Workspace) {
   let latest = start;
   await page.viewport(1500, 720);
-  render(
+  renderWithIcons(
     <div style={{ width: 1480, height: 700 }}>
       <Live start={start} actions={ACTIONS} onChange={(next) => { latest = next; }} />
     </div>,

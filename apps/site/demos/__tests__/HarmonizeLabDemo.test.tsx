@@ -5,6 +5,7 @@ import { StrictMode } from 'react';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { HarmonizeLabDemo } from '../HarmonizeLabDemo';
 import { click, editedAnchors, sceneCanvas, stubResizeObserver } from './pathEditLabHarness';
+import { withIcons } from '../../testIcons';
 
 beforeAll(() => {
   window.history.replaceState(null, '', '/?test=1');
@@ -23,7 +24,7 @@ function firstHandleLengths(): [number, number] {
 
 describe('HarmonizeLabDemo', () => {
   it('harmonizes the whole path from the bar, keeping each anchor\'s handles in line, and undoes', async () => {
-    await renderSettled(<StrictMode><HarmonizeLabDemo /></StrictMode>);
+    await renderSettled(<StrictMode><HarmonizeLabDemo /></StrictMode>, { wrapper: withIcons });
     const [inBefore, outBefore] = firstHandleLengths();
     expect([inBefore, outBefore]).toEqual([40, 60]);
 
@@ -41,7 +42,7 @@ describe('HarmonizeLabDemo', () => {
   });
 
   it('answers H, the key the lab tunes onto the command, for the selected anchor', async () => {
-    const { container } = await renderSettled(<StrictMode><HarmonizeLabDemo /></StrictMode>);
+    const { container } = await renderSettled(<StrictMode><HarmonizeLabDemo /></StrictMode>, { wrapper: withIcons });
     // A press in the trial is what hands its canvas the keys; this one
     // selects anchor 0.
     click(sceneCanvas(container), 200, 100);

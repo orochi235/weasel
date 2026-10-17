@@ -1,10 +1,11 @@
 import '@weasel-js/theme/tokens.css';
-import { act, cleanup, render, screen } from '@testing-library/react';
+import { act, cleanup, screen } from '@testing-library/react';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import { useState } from 'react';
 import { OverlayPortalProvider } from '../../overlays/portalHost';
 import { ToastRegion, type ToastRegionProps } from './Toast';
 import { createToastQueue } from './queue';
+import { renderWithIcons } from '../../testing/withIcons';
 
 // With view transitions on, a toast reaches the DOM only on the next rendered frame, which a
 // loaded runner can withhold past findByRole's timeout. These tests measure layout, not motion.
@@ -51,7 +52,7 @@ function within(inner: DOMRect, outer: DOMRect): boolean {
 for (const via of ['provider', 'prop'] as const) {
   test(`a toast given a container by ${via} sits inside that container's box`, async () => {
     const queue = createToastQueue();
-    render(<Hosted via={via} queue={queue} />);
+    renderWithIcons(<Hosted via={via} queue={queue} />);
     act(() => queue.add('info', 'Contained', { ttlMs: null }));
 
     const host = screen.getByTestId('host').getBoundingClientRect();
@@ -67,7 +68,7 @@ for (const via of ['provider', 'prop'] as const) {
 
 test('each placement anchors to its corner of the container', async () => {
   const queue = createToastQueue();
-  render(<Hosted via="prop" queue={queue} placement="top-left" />);
+  renderWithIcons(<Hosted via="prop" queue={queue} placement="top-left" />);
   act(() => queue.add('info', 'Top left', { ttlMs: null }));
   const host = screen.getByTestId('host').getBoundingClientRect();
   const toast = (await screen.findByRole('alertdialog')).getBoundingClientRect();
@@ -77,7 +78,7 @@ test('each placement anchors to its corner of the container', async () => {
 
 test('with no container, the region is fixed to the viewport corner as before', async () => {
   const queue = createToastQueue();
-  render(
+  renderWithIcons(
     <div className="toast-host" data-wzl-theme="default">
       <ToastRegion queue={queue} />
     </div>,

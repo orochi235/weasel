@@ -1,4 +1,5 @@
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import { describe, expect, it, vi } from 'vitest';
 import { icon } from '../../icons.gen';
 import type { TrialChromeContext, TrialContribution } from '../types';
@@ -18,12 +19,14 @@ function item(id: string, over: Partial<TrialContribution> = {}): TrialContribut
 
 describe('TitleBarRegion', () => {
   it('renders nothing when it has nothing for its placement', () => {
-    const { container } = render(<TitleBarRegion contributions={[item('lead')]} ctx={ctx} />);
+    const { container } = renderWithIcons(
+      <TitleBarRegion contributions={[item('lead')]} ctx={ctx} />,
+    );
     expect(container).toBeEmptyDOMElement();
   });
 
   it('takes the contributions that set `end` into the actions span', () => {
-    const { container } = render(
+    const { container } = renderWithIcons(
       <TitleBarRegion contributions={[item('lead'), item('close', { end: true })]} ctx={ctx} />,
     );
     expect(container.querySelector('.lk-trial__titlebar-actions')).toBeTruthy();
@@ -32,7 +35,7 @@ describe('TitleBarRegion', () => {
   });
 
   it('takes the rest into the lead span', () => {
-    const { container } = render(
+    const { container } = renderWithIcons(
       <TitleBarRegion
         placement="lead"
         contributions={[item('lead'), item('close', { end: true })]}
@@ -46,7 +49,7 @@ describe('TitleBarRegion', () => {
 
   it('hands onActivate the chrome context', () => {
     const onActivate = vi.fn();
-    render(
+    renderWithIcons(
       <TitleBarRegion
         contributions={[
           {

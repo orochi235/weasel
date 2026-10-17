@@ -1,5 +1,5 @@
 import '@weasel-js/theme/tokens.css';
-import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { afterEach, beforeAll, expect, test } from 'vitest';
 import { page } from 'vitest/browser';
 import { useState } from 'react';
@@ -10,6 +10,7 @@ import { drag, grip, pointer, pointIn, type Point } from './pointerDrag.fixture'
 import { keyedRow } from './treeRows.fixture';
 import type { Workspace } from './workspace';
 import { workspaceCodec } from './workspaceCodec';
+import { renderWithIcons } from '../../testing/withIcons';
 
 // Where the asset list sits and what its rows look like is the grid's and the stylesheet's doing, and whether a
 // drop is taken is read off real boxes; jsdom lays nothing out.
@@ -37,7 +38,7 @@ const rootOf = (id: string) => latest.assets.find((a) => a.id === id)!.root as P
 const overlap = (a: DOMRect, b: DOMRect) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
 
 test('the asset list fills the editor\'s far column, beside the preview and the export under it', () => {
-  const { container } = render(<Live />);
+  const { container } = renderWithIcons(<Live />);
   const editor = box(container.firstElementChild!.firstElementChild!);
   const aside = box(screen.getByRole('complementary', { name: 'Sidebar' }));
   const bar = box(screen.getByRole('group', { name: 'Schema tools' }));
@@ -57,7 +58,7 @@ test('the asset list fills the editor\'s far column, beside the preview and the 
 });
 
 test('every row of the list is one line tall, a lock set after its label and not over it', () => {
-  render(<Live />);
+  renderWithIcons(<Live />);
   const rows = within(list()).getAllByRole('option');
   expect(rows).toHaveLength(3);
   const height = box(rows[0]!).height;
@@ -75,7 +76,7 @@ test('every row of the list is one line tall, a lock set after its label and not
 
 test('a label too long for the list is cut short on its one line, and its lock stays in the row', () => {
   const long: Workspace = { assets: DEMO_WORKSPACE.assets.map((a) => (a.id === 'export' ? { ...a, label: 'Export, as the file menu and the toolbar both lay it out' } : a)) };
-  render(<Live start={long} />);
+  renderWithIcons(<Live start={long} />);
   const row = option('Export');
   const lock = box(within(row).getByRole('img', { name: 'Dynamic' }));
   expect(box(row).height).toBe(box(option('Settings')).height);
@@ -85,7 +86,7 @@ test('a label too long for the list is cut short on its one line, and its lock s
 });
 
 test('a changed asset\'s label takes the color of a changed row in the tree, and moves nothing', () => {
-  render(<Live />);
+  renderWithIcons(<Live />);
   const before = { settings: box(labelOf(option('Settings'))), exported: box(labelOf(option('Export'))), lock: box(within(option('Export')).getByRole('img')) };
   const plain = getComputedStyle(labelOf(option('Canvas'))).color;
   // Removing a setting changes the dialog and the panel that pointed at it.
@@ -110,7 +111,7 @@ test('a changed asset\'s label takes the color of a changed row in the tree, and
 });
 
 test('picking an asset leaves the list where it was, at the size it was', () => {
-  render(<Live />);
+  renderWithIcons(<Live />);
   const before = box(list());
   const rows = () => within(list()).getAllByRole('option').map(box);
   const were = rows();
@@ -123,7 +124,7 @@ test('picking an asset leaves the list where it was, at the size it was', () => 
 });
 
 test('a panel\'s preview draws its pointers as the dialog\'s settings, its own rows among its sections\'', () => {
-  render(<Live />);
+  renderWithIcons(<Live />);
   fireEvent.click(option('Canvas'));
   const zoom = box(within(preview()).getByText('Zoom step'));
   const grid = box(within(preview()).getByText('Show grid'));
@@ -136,7 +137,7 @@ test('a panel\'s preview draws its pointers as the dialog\'s settings, its own r
 });
 
 test('a pointer dragged in a panel\'s tree moves in the panel, and still points where it did', () => {
-  render(<Live />);
+  renderWithIcons(<Live />);
   fireEvent.click(option('Canvas'));
   drag(treeRow('snap'), pointIn(treeRow('grid'), 0.5, 0.1));
   const section = rootOf('canvas').children.lines as PrefGroup;
@@ -158,7 +159,7 @@ const drawn = () => [...preview().querySelectorAll('[data-pref-path], [data-drop
 const dragTool = (name: string) => within(screen.getByRole('group', { name: 'Drag to add' })).getByRole('button', { name });
 
 test('a read-only panel marks no place to drop, in its tree or in its preview, and takes nothing let go there', () => {
-  render(<Live />);
+  renderWithIcons(<Live />);
   fireEvent.click(option('Export'));
   const rows = drawn();
   let release = hold(treeRow('scale'), pointIn(treeRow('format'), 0.5, 0.1));
@@ -184,7 +185,7 @@ test('a read-only panel marks no place to drop, in its tree or in its preview, a
 });
 
 test('the same drags over a panel that takes edits mark where they would land, and land', () => {
-  render(<Live />);
+  renderWithIcons(<Live />);
   fireEvent.click(option('Canvas'));
   let release = hold(treeRow('snap'), pointIn(treeRow('zoomStep'), 0.5, 0.1));
   expect(structure().querySelector('[data-drop]')).not.toBeNull();

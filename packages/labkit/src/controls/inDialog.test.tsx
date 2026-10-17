@@ -1,4 +1,5 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, screen } from '@testing-library/react';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { f } from '../config/builder';
@@ -29,7 +30,7 @@ describe('f.list', () => {
     const schema = f.schema({
       icons: f.list(['**/node_modules/**', 'dist']).label('Draw as icons'),
     });
-    render(<Panel schema={schema} />);
+    renderWithIcons(<Panel schema={schema} />);
     const trigger = screen.getByRole('button', { name: 'Edit Draw as icons' });
     expect(trigger.textContent).toContain('**/node_modules/**, dist');
 
@@ -57,7 +58,7 @@ describe('.dialog', () => {
         </button>
       )),
     });
-    render(<Panel schema={schema} />);
+    renderWithIcons(<Panel schema={schema} />);
     fireEvent.click(screen.getByRole('button', { name: 'Edit Note' }));
     fireEvent.click(screen.getByRole('button', { name: 'shout' }));
     expect(screen.getByTestId('config').textContent).toBe(JSON.stringify({ note: 'hi!' }));
@@ -66,7 +67,7 @@ describe('.dialog', () => {
   it('takes a summary of its own', () => {
     const summary = vi.fn((v: unknown) => `${(v as number[]).length} points`);
     const schema = f.schema({ pts: f.custom('points', [1, 2, 3]).dialog(() => null, { summary }) });
-    render(<Panel schema={schema} />);
+    renderWithIcons(<Panel schema={schema} />);
     expect(screen.getByRole('button', { name: 'Edit Pts' }).textContent).toContain('3 points');
   });
 
@@ -81,7 +82,7 @@ describe('.dialog', () => {
         .render(() => <span>row b</span>)
         .dialog(() => null),
     });
-    render(<Panel schema={schema} />);
+    renderWithIcons(<Panel schema={schema} />);
     expect(screen.getByText('row a')).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Edit A' })).toBeNull();
     expect(screen.queryByText('row b')).toBeNull();

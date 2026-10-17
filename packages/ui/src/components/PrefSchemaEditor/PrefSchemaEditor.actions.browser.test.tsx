@@ -1,10 +1,11 @@
 import '@weasel-js/theme/tokens.css';
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { cleanup, screen, within } from '@testing-library/react';
 import { afterEach, beforeAll, expect, test } from 'vitest';
 import { useState } from 'react';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { PrefSchemaEditor } from './PrefSchemaEditor';
 import { drag, grip, pointer } from './pointerDrag.fixture';
+import { renderWithIcons } from '../../testing/withIcons';
 
 // A drag out of one tree and into another is hit-tested against real boxes.
 
@@ -37,7 +38,7 @@ const underTools = () => (latest.children.tools as PrefGroup).children;
 const UNDO = { kind: 'action', name: 'Undo', description: '', default: undefined, action: 'edit.undo' };
 
 test('an action dragged onto a group in the tree lands there as a pref that fires it, and stays listed', () => {
-  render(<Live />);
+  renderWithIcons(<Live />);
   drag(rowIn('Actions', 'undo'), rowIn('Schema structure', 'tools'));
   expect(underTools().editUndo).toEqual(UNDO);
   expect(Object.keys(underTools())).toContain('grid');
@@ -45,7 +46,7 @@ test('an action dragged onto a group in the tree lands there as a pref that fire
 });
 
 test('an action let go on a row the tree has not marked yet lands there', async () => {
-  render(<Live />);
+  renderWithIcons(<Live />);
   const from = rowIn('Actions', 'undo');
   const onto = grip(rowIn('Schema structure', 'tools'));
   // One task, so React has drawn nothing of the move when the release comes.

@@ -5,6 +5,7 @@ import { pathInWorld, pathToAnchors, type Path, type PolygonPath } from '@weasel
 import { StrictMode } from 'react';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { PathDirectionLabDemo } from '../PathDirectionLabDemo';
+import { withIcons } from '../../testIcons';
 
 // windease lays a lab's tiles out only once something measures them, and
 // jsdom ships no ResizeObserver.
@@ -37,7 +38,7 @@ function ring() {
 
 describe('PathDirectionLabDemo', () => {
   it('makes the selected anchor the start, its color going with it, and reverses the ring', async () => {
-    await renderSettled(<StrictMode><PathDirectionLabDemo /></StrictMode>);
+    await renderSettled(<StrictMode><PathDirectionLabDemo /></StrictMode>, { wrapper: withIcons });
     const before = ring();
     expect(before.start).toEqual([200, 60]);
 

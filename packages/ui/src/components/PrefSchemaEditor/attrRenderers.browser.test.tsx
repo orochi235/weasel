@@ -1,8 +1,9 @@
 import '@weasel-js/theme/tokens.css';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, screen } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
 import type { PrefRenderContext } from '../Prefs';
 import { ATTR_RENDERERS } from './attrRenderers';
+import { renderWithIcons } from '../../testing/withIcons';
 
 // Where a flagged row's message pushes its neighbors is layout, which jsdom does not do.
 
@@ -13,7 +14,7 @@ const ctx = (value: unknown): PrefRenderContext => ({
 });
 
 test('a flagged option draws its value in the danger color, with its label still level beside it', () => {
-  render(<div style={{ width: 400 }}>{ATTR_RENDERERS['enum-options'](ctx([{ value: 'a', label: 'A' }, { value: 'a', label: 'B' }]))}</div>);
+  renderWithIcons(<div style={{ width: 400 }}>{ATTR_RENDERERS['enum-options'](ctx([{ value: 'a', label: 'A' }, { value: 'a', label: 'B' }]))}</div>);
   const box = (name: string) => screen.getByRole('textbox', { name });
   const frame = (name: string) => box(name).parentElement!;
   expect(getComputedStyle(frame('Option 2 value')).borderColor).not.toBe(getComputedStyle(frame('Option 1 value')).borderColor);

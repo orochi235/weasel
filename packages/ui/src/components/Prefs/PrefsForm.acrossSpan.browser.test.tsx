@@ -1,9 +1,10 @@
 import '@weasel-js/theme/tokens.css';
-import { cleanup, render } from '@testing-library/react';
+import { cleanup } from '@testing-library/react';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { afterEach, beforeAll, expect, it } from 'vitest';
 import { page } from 'vitest/browser';
 import { PrefsForm } from './PrefsForm';
+import { renderWithIcons } from '../../testing/withIcons';
 
 // Where a spanning leaf's rows start against the two columns beside it is the browser's grid and flex layout.
 
@@ -41,7 +42,7 @@ const SCHEMA: PrefGroup = {
 };
 
 const mount = async () => {
-  const { container } = render(
+  const { container } = renderWithIcons(
     <div style={{ width: 620, height: 520, display: 'flex' }}>
       <PrefsForm schema={SCHEMA} onChange={() => {}} layout="rail" rowsAcross={2} />
     </div>,

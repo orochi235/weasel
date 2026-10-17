@@ -1,8 +1,9 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { fireEvent, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { PrefSchemaEditor } from './PrefSchemaEditor';
 import { rowKey } from './treeRows.fixture';
+import { renderWithIcons } from '../../testing/withIcons';
 
 const flag = (name: string) => ({ kind: 'boolean', name, description: '', default: false }) as const;
 const SCHEMA: PrefGroup = {
@@ -18,7 +19,7 @@ const keys = () => tree().getAllByRole('treeitem').map(rowKey);
 
 describe('PrefSchemaEditor structure folds', () => {
   it('folds every branch from Collapse all, and opens every one from Expand all', () => {
-    render(<PrefSchemaEditor schema={SCHEMA} onChange={() => {}} />);
+    renderWithIcons(<PrefSchemaEditor schema={SCHEMA} onChange={() => {}} />);
     const header = within(screen.getByRole('region', { name: 'Structure' }));
     fireEvent.click(header.getByRole('button', { name: 'Collapse all' }));
     expect(keys()).toEqual(['view', 'edit']);
@@ -27,7 +28,7 @@ describe('PrefSchemaEditor structure folds', () => {
   });
 
   it('offers neither while a filter is set', () => {
-    render(<PrefSchemaEditor schema={SCHEMA} onChange={() => {}} />);
+    renderWithIcons(<PrefSchemaEditor schema={SCHEMA} onChange={() => {}} />);
     fireEvent.change(screen.getByRole('textbox', { name: 'Filter structure' }), { target: { value: 'snap' } });
     expect(screen.getByRole('button', { name: 'Expand all' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Collapse all' })).toBeDisabled();

@@ -1,10 +1,11 @@
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { actionCatalog } from './actionCatalog';
 import { assets, attributes, Live, pickRow, structure, tool, WORKSPACE } from './AssetEditor.fixture';
 import type { EditorAction } from './editorActions';
 import { catalogOf, type Workspace } from './workspace';
+import { renderWithIcons } from '../../testing/withIcons';
 
 afterEach(cleanup);
 
@@ -24,7 +25,7 @@ const name = () => within(attributes()).getByRole('textbox', { name: 'Name' }) a
 
 function live(start: Workspace = WITH_CATALOG) {
   let latest = start;
-  render(<Live start={start} actions={ACTIONS} onChange={(next) => { latest = next; }} />);
+  renderWithIcons(<Live start={start} actions={ACTIONS} onChange={(next) => { latest = next; }} />);
   return { catalog: () => catalogOf(latest)!.root as PrefGroup, workspace: () => latest };
 }
 const under = (group: PrefGroup, key: string) => (group.children[key] as PrefGroup).children;

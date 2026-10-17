@@ -1,8 +1,9 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, screen } from '@testing-library/react';
 import { asNodeId, createScene, type NodePropertiesEntry, type NodeRoutingEntry, type SelectionApi } from '@weasel-js/core';
 import type { PrefLeaf } from '@weasel-js/prefs';
 import { SelectionPanel, type PropertyRenderer } from './index';
+import { renderWithIcons } from '../../testing/withIcons';
 
 afterEach(cleanup);
 
@@ -17,7 +18,7 @@ function setup(held: unknown[], renderers?: Record<string, PropertyRenderer>) {
   const scene = createScene<Data, 'default', Record<string, number>>({ systemLayers: [{ id: 'default' }] });
   scene.add({ id: asNodeId('a'), kind: 'leaf', layer: 'default', pose: {}, data: { kind: 'thing', counts: held } });
   const properties: NodePropertiesEntry[] = [{ name: 'thing', schema: { name: 'Properties', members: { 'data.counts': counts } } }];
-  render(<SelectionPanel scene={scene} selection={{ current: ['a'] } as unknown as SelectionApi} properties={properties} routing={routing} renderers={renderers} />);
+  renderWithIcons(<SelectionPanel scene={scene} selection={{ current: ['a'] } as unknown as SelectionApi} properties={properties} routing={routing} renderers={renderers} />);
 }
 
 describe('a list leaf in a selection panel', () => {

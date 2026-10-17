@@ -1,9 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Pressable } from 'react-aria-components';
 import { ComboBox } from '../ComboBox';
 import { Callout, CalloutTrigger } from './Callout';
+import { renderWithIcons } from '../../testing/withIcons';
 
 const OPTIONS = [{ value: 'a', label: 'Apple' }, { value: 'b', label: 'Banana' }];
 const RECT = { x: 0, y: 0, width: 10, height: 10 };
@@ -35,7 +36,7 @@ async function escapeTheMenu(): Promise<void> {
 describe('Callout onDismiss and Escape', () => {
   it('stays quiet for an Escape that closed a menu inside a pinned callout', async () => {
     const onDismiss = vi.fn();
-    render(
+    renderWithIcons(
       <Callout isOpen anchorRect={RECT} title="Note" onDismiss={onDismiss}>
         <ComboBox aria-label="Fruit" options={OPTIONS} />
       </Callout>,
@@ -46,7 +47,7 @@ describe('Callout onDismiss and Escape', () => {
 
   it('stays quiet for an Escape that closed a menu inside a composed callout', async () => {
     const onDismiss = vi.fn();
-    render(<Composed onDismiss={onDismiss} combo />);
+    renderWithIcons(<Composed onDismiss={onDismiss} combo />);
     fireEvent.click(screen.getByRole('button', { name: 'Explain' }));
     await escapeTheMenu();
     expect(onDismiss).not.toHaveBeenCalled();
@@ -55,7 +56,7 @@ describe('Callout onDismiss and Escape', () => {
   it('does not hold that Escape against a later close by other means', async () => {
     const onDismiss = vi.fn();
     const onOpenChange = vi.fn();
-    render(
+    renderWithIcons(
       <>
         <button type="button">outside</button>
         <Callout isOpen anchorRect={RECT} title="Note" onDismiss={onDismiss} onOpenChange={onOpenChange}>
@@ -72,7 +73,7 @@ describe('Callout onDismiss and Escape', () => {
 
   it('reports the Escape that closes a composed callout', () => {
     const onDismiss = vi.fn();
-    render(<Composed onDismiss={onDismiss} />);
+    renderWithIcons(<Composed onDismiss={onDismiss} />);
     fireEvent.click(screen.getByRole('button', { name: 'Explain' }));
     fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
     expect(screen.queryByRole('dialog')).toBeNull();

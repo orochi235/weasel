@@ -1,7 +1,7 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { screen, fireEvent } from '@testing-library/react';
 import { vi } from 'vitest';
 import { keySpecFromKey } from '@weasel-js/ui';
-import { withIcons } from '@weasel-js/ui/testing/withIcons';
+import { renderWithIcons } from '../testIcons';
 import { RegistryDetail } from './RegistryDetail';
 import { icon } from '../icons.gen';
 import { RouteBadge } from './detail/RouteBadge';
@@ -32,7 +32,7 @@ describe('RegistryDetail', () => {
         onActivate: false, onDeactivate: false,
       },
     };
-    render(<RegistryDetail entry={entry} tools={[]} actions={[]} onNavigate={() => {}} />);
+    renderWithIcons(<RegistryDetail entry={entry} tools={[]} actions={[]} onNavigate={() => {}} />);
     expect(screen.getAllByText(/rect/).length).toBeGreaterThan(0);
     // Routes are rendered as a DataGrid with per-route columns; assert the
     // expected per-row cell contents appear.
@@ -46,13 +46,13 @@ describe('RegistryDetail', () => {
 
   it('renders an Action entry with shortcut', () => {
     const entry: TreeEntry = { kind: 'action', id: 'delete', label: 'Delete', bindingShortcut: { key: 'd' } };
-    render(<RegistryDetail entry={entry} tools={[]} actions={[]} onNavigate={() => {}} />);
+    renderWithIcons(<RegistryDetail entry={entry} tools={[]} actions={[]} onNavigate={() => {}} />);
     expect(screen.getByText('D')).toBeTruthy();
   });
 
   it('pairs each fact about an entry with its label in a description list', () => {
     const entry: TreeEntry = { kind: 'action', id: 'delete', label: 'Delete', group: 'edit' };
-    render(<RegistryDetail entry={entry} tools={[]} actions={[]} onNavigate={() => {}} />);
+    renderWithIcons(<RegistryDetail entry={entry} tools={[]} actions={[]} onNavigate={() => {}} />);
     const valueOf = (label: string) => {
       const dt = screen.getByText(label, { selector: 'dt' });
       expect(dt.nextElementSibling?.tagName).toBe('DD');
@@ -64,7 +64,7 @@ describe('RegistryDetail', () => {
 
   it('names the bundle diff list by its heading, one row per other bundle', () => {
     const entry = { kind: 'bundle', id: 'probe', label: 'Probe', tools: ['probeOnly'] } as unknown as TreeEntry;
-    render(<RegistryDetail entry={entry} tools={[]} actions={[]} onNavigate={() => {}} />);
+    renderWithIcons(<RegistryDetail entry={entry} tools={[]} actions={[]} onNavigate={() => {}} />);
     const heading = screen.getByRole('heading', { name: 'Diff vs other bundles' });
     const list = document.querySelector(`dl[aria-labelledby="${heading.id}"]`)!;
     const values = [...list.querySelectorAll('dd')];
@@ -78,7 +78,7 @@ describe('RegistryDetail', () => {
       tools: ['select', 'hand'],
     };
     const onNavigate = vi.fn();
-    render(<RegistryDetail entry={entry} tools={[]} actions={[]} onNavigate={onNavigate} />);
+    renderWithIcons(<RegistryDetail entry={entry} tools={[]} actions={[]} onNavigate={onNavigate} />);
     fireEvent.click(screen.getByRole('button', { name: 'select' }));
     expect(onNavigate).toHaveBeenCalledTimes(1);
     expect(onNavigate.mock.calls[0][0]).toEqual({ kind: 'tool', id: 'select' });
@@ -87,13 +87,13 @@ describe('RegistryDetail', () => {
   it('renders an Icon entry with a visual preview', () => {
     const ref = icon('core:undo');
     const entry: TreeEntry = { kind: 'icon', id: ref, label: ref, source: 'action', ref };
-    const { container } = render(<RegistryDetail entry={entry} tools={[]} actions={[]} onNavigate={() => {}} />, { wrapper: withIcons });
+    const { container } = renderWithIcons(<RegistryDetail entry={entry} tools={[]} actions={[]} onNavigate={() => {}} />);
     expect(container.querySelectorAll('svg').length).toBeGreaterThanOrEqual(2);
   });
 
   it('renders a ShapeKind entry with id', () => {
     const entry: TreeEntry = { kind: 'shapeKind', id: 'rect', label: 'rect', trait: 'shape' };
-    render(<RegistryDetail entry={entry} tools={[]} actions={[]} onNavigate={() => {}} />);
+    renderWithIcons(<RegistryDetail entry={entry} tools={[]} actions={[]} onNavigate={() => {}} />);
     expect(screen.getByText('rect')).toBeTruthy();
   });
 
@@ -101,7 +101,7 @@ describe('RegistryDetail', () => {
     const entry: TreeEntry = {
       kind: 'routingKind', id: 'rect', label: 'rect', trait: 'routing', source: 'default', shapeKindId: 'rect',
     };
-    render(<RegistryDetail entry={entry} tools={[]} actions={[]} onNavigate={() => {}} />);
+    renderWithIcons(<RegistryDetail entry={entry} tools={[]} actions={[]} onNavigate={() => {}} />);
     expect(screen.getAllByText('rect').length).toBeGreaterThan(0);
     expect(screen.getByText('default')).toBeTruthy();
     expect(screen.getByText('routing-kind')).toBeTruthy();
@@ -109,7 +109,7 @@ describe('RegistryDetail', () => {
 
   it('renders an OpFactory entry with id', () => {
     const entry: TreeEntry = { kind: 'opFactory', id: 'createInsertOp', label: 'createInsertOp' };
-    render(<RegistryDetail entry={entry} tools={[]} actions={[]} onNavigate={() => {}} />);
+    renderWithIcons(<RegistryDetail entry={entry} tools={[]} actions={[]} onNavigate={() => {}} />);
     expect(screen.getByText('createInsertOp')).toBeTruthy();
   });
 
@@ -133,7 +133,7 @@ describe('RegistryDetail', () => {
         ],
       };
       const entry: TreeEntry = { kind: 'gesture', id: gestureKind, label: gestureKind };
-      render(<RegistryDetail entry={entry} tools={[]} actions={[ingest]} onNavigate={() => {}} />);
+      renderWithIcons(<RegistryDetail entry={entry} tools={[]} actions={[ingest]} onNavigate={() => {}} />);
       expect(screen.getByText(route)).toBeTruthy();
     },
   );
@@ -142,7 +142,7 @@ describe('RegistryDetail', () => {
 
 describe('RouteBadge v3', () => {
   it('renders bracketed phase + gesture + target + modifier', () => {
-    render(<RouteBadge route="[initial] click => empty +shift" />);
+    renderWithIcons(<RouteBadge route="[initial] click => empty +shift" />);
     expect(screen.getByText('initial')).toBeTruthy();
     expect(screen.getByText('click')).toBeTruthy();
     expect(screen.getByText('empty')).toBeTruthy();
@@ -150,31 +150,31 @@ describe('RouteBadge v3', () => {
   });
 
   it('renders multi-phase list', () => {
-    render(<RouteBadge route="[initial,engaged] contextMenu => empty" />);
+    renderWithIcons(<RouteBadge route="[initial,engaged] contextMenu => empty" />);
     expect(screen.getByText('initial')).toBeTruthy();
     expect(screen.getByText('engaged')).toBeTruthy();
   });
 
   it('renders [*] as the wildcard phase', () => {
-    render(<RouteBadge route="[*] click => empty" />);
+    renderWithIcons(<RouteBadge route="[*] click => empty" />);
     expect(screen.getByText('*')).toBeTruthy();
   });
 
   it('renders optional modifier inverted', () => {
-    const { container } = render(<RouteBadge route="[initial] keyDown(ArrowDown) ?shift" />);
+    const { container } = renderWithIcons(<RouteBadge route="[initial] keyDown(ArrowDown) ?shift" />);
     const cap = container.querySelector('[data-inverted]');
     expect(cap?.textContent).toBe('⇧');
   });
 
   it('renders "*" target as a muted tag — wildcards stay visible so the route reads as the full wiring', () => {
-    const { container } = render(<RouteBadge route="[initial] click" />);
+    const { container } = renderWithIcons(<RouteBadge route="[initial] click" />);
     const tag = container.querySelector('code');
     expect(tag?.textContent).toBe('*');
     expect(tag?.className).toMatch(/routeMuted/);
   });
 
   it('renders keyDown arg as a default KeyCap with the canonical label (no parens)', () => {
-    const { container } = render(<RouteBadge route="[initial] keyDown(Escape)" />);
+    const { container } = renderWithIcons(<RouteBadge route="[initial] keyDown(Escape)" />);
     const cap = container.querySelector('kbd:not([data-variant])');
     // Compare against keySpecFromKey rather than a literal glyph — the label
     // is platform-dependent (⎋ on macOS, Esc elsewhere), and the detected
@@ -186,12 +186,12 @@ describe('RouteBadge v3', () => {
   });
 
   it('keeps parens for non-key args (e.g. wheel direction)', () => {
-    const { container } = render(<RouteBadge route="[initial] wheel(up)" />);
+    const { container } = renderWithIcons(<RouteBadge route="[initial] wheel(up)" />);
     expect(container.textContent).toMatch(/wheel\(up\)/);
   });
 
   it('renders keyHeld arg as a default KeyCap (same path as keyDown)', () => {
-    const { container } = render(<RouteBadge route="[initial] keyHeld(Space)" />);
+    const { container } = renderWithIcons(<RouteBadge route="[initial] keyHeld(Space)" />);
     const cap = container.querySelector('kbd:not([data-variant])');
     expect(cap?.textContent).toBe(keySpecFromKey(' ').label);
   });

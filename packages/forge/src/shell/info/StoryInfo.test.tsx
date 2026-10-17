@@ -1,11 +1,12 @@
 import { createMemoryAdapter } from '@weasel-js/labkit';
 import { f } from '@weasel-js/labkit/config';
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { describeSchema } from '../../protocol/schema';
 import type { IndexEntry } from '../../story/types';
 import { connectFrame, flush, installResizeObserver } from '../labHarness';
 import { Workshop } from '../Workshop';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 installResizeObserver();
 
@@ -20,7 +21,7 @@ const entry: IndexEntry = {
 };
 
 function mount() {
-  return render(
+  return renderWithIcons(
     <Workshop
       index={[entry]}
       frameUrl="/frame.html"

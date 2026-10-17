@@ -1,4 +1,5 @@
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, screen } from '@testing-library/react';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import { describe, expect, it, vi } from 'vitest';
 import { icon } from '../../icons.gen';
 import type { RegionContribution, ToolSlotContext } from '../types';
@@ -18,12 +19,12 @@ function tool(id: string): RegionContribution<ToolSlotContext> {
 
 describe('PaletteRegion', () => {
   it('renders nothing when empty', () => {
-    const { container } = render(<PaletteRegion contributions={[]} ctx={ctxWith(null)} />);
+    const { container } = renderWithIcons(<PaletteRegion contributions={[]} ctx={ctxWith(null)} />);
     expect(container).toBeEmptyDOMElement();
   });
 
   it('marks the resolved tool as current', () => {
-    render(
+    renderWithIcons(
       <PaletteRegion contributions={[tool('brush'), tool('eraser')]} ctx={ctxWith('brush')} />,
     );
     expect(screen.getByRole('button', { name: 'brush' })).toHaveAttribute('aria-current', 'true');
@@ -32,7 +33,9 @@ describe('PaletteRegion', () => {
 
   it('sets the tool on click', () => {
     const setActiveTool = vi.fn();
-    render(<PaletteRegion contributions={[tool('brush')]} ctx={ctxWith(null, setActiveTool)} />);
+    renderWithIcons(
+      <PaletteRegion contributions={[tool('brush')]} ctx={ctxWith(null, setActiveTool)} />,
+    );
     screen.getByRole('button', { name: 'brush' }).click();
     expect(setActiveTool).toHaveBeenCalledWith('brush');
   });
@@ -46,7 +49,7 @@ describe('PaletteRegion', () => {
       region: 'palette',
       item: { icon: Glyph, label: 'Info', onActivate },
     };
-    render(<PaletteRegion contributions={[info]} ctx={ctx} />);
+    renderWithIcons(<PaletteRegion contributions={[info]} ctx={ctx} />);
     const button = screen.getByRole('button', { name: 'Info' });
     button.click();
     expect(onActivate).toHaveBeenCalledWith(ctx);
@@ -56,13 +59,17 @@ describe('PaletteRegion', () => {
   });
 
   it('puts exactly one tool in the tab order', () => {
-    render(<PaletteRegion contributions={[tool('brush'), tool('eraser')]} ctx={ctxWith(null)} />);
+    renderWithIcons(
+      <PaletteRegion contributions={[tool('brush'), tool('eraser')]} ctx={ctxWith(null)} />,
+    );
     expect(screen.getByRole('button', { name: 'brush' })).toHaveAttribute('tabindex', '0');
     expect(screen.getByRole('button', { name: 'eraser' })).toHaveAttribute('tabindex', '-1');
   });
 
   it('walks the vertical strip with ArrowDown, and leaves ArrowRight to the page', () => {
-    render(<PaletteRegion contributions={[tool('brush'), tool('eraser')]} ctx={ctxWith(null)} />);
+    renderWithIcons(
+      <PaletteRegion contributions={[tool('brush'), tool('eraser')]} ctx={ctxWith(null)} />,
+    );
     const brush = screen.getByRole('button', { name: 'brush' });
     const eraser = screen.getByRole('button', { name: 'eraser' });
 

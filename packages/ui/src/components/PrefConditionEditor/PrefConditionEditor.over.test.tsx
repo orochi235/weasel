@@ -1,8 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, screen, within } from '@testing-library/react';
 import type { PrefCondition, PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 import { conditionLeaves } from './conditionLeaves';
 import { PrefConditionEditor } from './PrefConditionEditor';
+import { renderWithIcons } from '../../testing/withIcons';
 
 afterEach(cleanup);
 
@@ -14,7 +15,7 @@ const LAYOUT: PrefGroup = { name: 'Layout', children: { view: { name: 'View', ch
 
 const open = (value?: PrefCondition, over?: PrefGroup) => {
   const onChange = vi.fn();
-  render(<PrefConditionEditor aria-label="Shown if" schema={LAYOUT} over={over} value={value} onChange={onChange} />);
+  renderWithIcons(<PrefConditionEditor aria-label="Shown if" schema={LAYOUT} over={over} value={value} onChange={onChange} />);
   return onChange;
 };
 const offered = (): string[] => {

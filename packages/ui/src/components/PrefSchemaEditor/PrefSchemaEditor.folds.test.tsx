@@ -1,9 +1,10 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { useState } from 'react';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { PrefSchemaEditor } from './PrefSchemaEditor';
 import { keyedRow } from './treeRows.fixture';
+import { renderWithIcons } from '../../testing/withIcons';
 
 afterEach(cleanup);
 
@@ -25,7 +26,7 @@ const row = (key: string) => within(structure()).queryByText(key);
 
 describe('PrefSchemaEditor folds across undo', () => {
   it('keeps a group open when its re-keying is undone and redone', () => {
-    render(<Live />);
+    renderWithIcons(<Live />);
     // A click on a group's row folds it, and a second opens it again.
     fireEvent.click(row('view')!);
     fireEvent.click(row('view')!);

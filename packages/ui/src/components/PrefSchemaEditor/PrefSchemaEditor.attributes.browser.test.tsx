@@ -1,9 +1,10 @@
 import '@weasel-js/theme/tokens.css';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
 import { page } from 'vitest/browser';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { PrefSchemaEditor } from './PrefSchemaEditor';
+import { renderWithIcons } from '../../testing/withIcons';
 
 // Where the attributes pane starts, and which of its rows share an edge, is the browser's layout to say.
 
@@ -16,7 +17,7 @@ const SCHEMA: PrefGroup = {
 
 const mount = async () => {
   await page.viewport(1300, 720);
-  return render(
+  return renderWithIcons(
     <div style={{ width: 1280, height: 700 }}>
       <PrefSchemaEditor schema={SCHEMA} onChange={() => {}} />
     </div>,

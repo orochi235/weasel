@@ -2,7 +2,8 @@ import '@weasel-js/theme/tokens.css';
 import 'windease/styles.css';
 import '../styles.less';
 import './presentation.browser.test.less';
-import { act, cleanup, render } from '@testing-library/react';
+import { act, cleanup } from '@testing-library/react';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import { afterEach, expect, test } from 'vitest';
 import type { Instrument } from '../instrument/types';
 import { Lab } from './Lab';
@@ -47,7 +48,7 @@ function Capture() {
 }
 
 function mount(present: boolean) {
-  return render(
+  return renderWithIcons(
     <div className="lk-present-frame">
       <Lab instruments={[Painted]} defaultInstrument="Painted" present={present}>
         <Capture />
@@ -121,7 +122,7 @@ test('entering and leaving keeps every trial’s canvas element', async () => {
 const Timed: Instrument = { ...Painted, name: 'Timed', clock: { duration: 1000 } };
 
 function mountTimed(frame: string, transport?: { minWidth: number }) {
-  return render(
+  return renderWithIcons(
     <div className={frame}>
       <Lab
         instruments={[Timed]}
@@ -177,7 +178,7 @@ const Centered: Instrument = {
 };
 
 test('entering refits the view to the presented box, and leaving gives the tile its own back', async () => {
-  const { container } = render(
+  const { container } = renderWithIcons(
     <div className="lk-present-frame">
       <Lab instruments={[Centered]} defaultInstrument="Centered">
         <Capture />

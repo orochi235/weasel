@@ -1,9 +1,10 @@
 import '@weasel-js/theme/tokens.css';
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { cleanup, screen, within } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
 import { page } from 'vitest/browser';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { PrefsForm } from './PrefsForm';
+import { renderWithIcons } from '../../testing/withIcons';
 
 // Whether an entry's control keeps a usable width beside its remove button, and whether an
 // object entry's rows stay inside the entry, are facts of layout that jsdom has none of.
@@ -80,7 +81,7 @@ const SCHEMA: PrefGroup = {
 
 test('a list entry gives its control the row and keeps its remove button beside it', async () => {
   await page.viewport(720, 800);
-  render(
+  renderWithIcons(
     <div data-testid="frame" style={{ width: 640 }}>
       <PrefsForm schema={SCHEMA} values={{}} onChange={() => {}} />
     </div>,
@@ -112,7 +113,7 @@ test('a list entry gives its control the row and keeps its remove button beside 
 
 test('a map entry sets its key beside its value, and a union its fields under its select, inside the form', async () => {
   await page.viewport(720, 800);
-  render(
+  renderWithIcons(
     <div data-testid="frame" style={{ width: 640 }}>
       <PrefsForm schema={SCHEMA} values={{}} onChange={() => {}} />
     </div>,
@@ -142,7 +143,7 @@ test('a map entry sets its key beside its value, and a union its fields under it
 
 test('a map or union leaf\'s editor runs under its label in the rail layout, at the pane\'s width', async () => {
   await page.viewport(900, 800);
-  render(
+  renderWithIcons(
     <div style={{ width: 820, height: 760, display: 'flex' }}>
       <PrefsForm layout="rail" schema={SCHEMA} values={{}} onChange={() => {}} />
     </div>,
@@ -160,7 +161,7 @@ test('a map or union leaf\'s editor runs under its label in the rail layout, at 
 
 test('a remove button sits beside its entry’s first row, not halfway down a tall entry', async () => {
   await page.viewport(720, 800);
-  render(
+  renderWithIcons(
     <div style={{ width: 640 }}>
       <PrefsForm schema={SCHEMA} values={{}} onChange={() => {}} />
     </div>,

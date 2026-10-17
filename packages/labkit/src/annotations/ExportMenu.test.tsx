@@ -2,7 +2,8 @@
  * The toolbar's export popover. Marks belong to a target, so any export has to
  * name one — which is why this is a panel and not a bare button.
  */
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { AnnotationsContext } from './AnnotationsContext';
 import { ExportMenu } from './ExportMenu';
@@ -15,7 +16,7 @@ const TARGETS: AnnotationTargetInfo[] = [
 ];
 
 function mount(store: AnnotationsApi | null) {
-  return render(
+  return renderWithIcons(
     <AnnotationsContext.Provider value={store}>
       <ExportMenu />
     </AnnotationsContext.Provider>,
@@ -79,7 +80,7 @@ describe('<ExportMenu>', () => {
   // is the proxy for whether it reads the lab's tokens at all.
   it('opens inside the lab root, not on the body', () => {
     const { store } = spied();
-    render(
+    renderWithIcons(
       <div className="lk-root" data-wzl-portal-host="" data-testid="lk-root">
         <AnnotationsContext.Provider value={store}>
           <ExportMenu />

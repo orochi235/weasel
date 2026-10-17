@@ -1,9 +1,10 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { useState } from 'react';
 import { prefType, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
 import { PrefSchemaEditor } from './PrefSchemaEditor';
 import { rowKey } from './treeRows.fixture';
+import { renderWithIcons } from '../../testing/withIcons';
 
 /** Types `value` and leaves the field, which is when a typed field commits. */
 const settle = (el: HTMLElement, value: string): void => {
@@ -53,7 +54,7 @@ const pick = (button: RegExp, option: string) => {
 
 describe('PrefSchemaEditor over a list, a union and a typed leaf', () => {
   it('shows each as one row, with nothing under it', () => {
-    render(<Live />);
+    renderWithIcons(<Live />);
     expect(keys().filter((key) => ['item', 'circle', 'at'].includes(key))).toEqual([]);
     expect(row('phases')).toBeInTheDocument();
     expect(row('shape')).toBeInTheDocument();
@@ -61,33 +62,33 @@ describe('PrefSchemaEditor over a list, a union and a typed leaf', () => {
   });
 
   it('names a typed leaf\'s row by its type', () => {
-    render(<Live />);
+    renderWithIcons(<Live />);
     expect(row('first').closest('[role="treeitem"]')).toHaveTextContent('GradientStop');
   });
 
   it('edits a list\'s entry among the list\'s own attributes', () => {
-    render(<Live />);
+    renderWithIcons(<Live />);
     fireEvent.click(row('phases'));
     settle(entryField('name'), 'Hold');
     expect(literal()).toHaveTextContent(/item: \{ kind: 'number', name: 'Hold'/);
   });
 
   it('changes what an entry is to another kind', () => {
-    render(<Live />);
+    renderWithIcons(<Live />);
     fireEvent.click(row('phases'));
     pick(/Entry kind/, 'boolean');
     expect(literal()).toHaveTextContent(/item: \{ kind: 'boolean', name: 'Phase'/);
   });
 
   it('makes an entry a registered type, printed by its name', () => {
-    render(<Live />);
+    renderWithIcons(<Live />);
     fireEvent.click(row('phases'));
     pick(/Entry kind/, 'GradientStop');
     expect(literal()).toHaveTextContent(/item: GradientStop,/);
   });
 
   it('offers an entry no kind with a shape of its own', () => {
-    render(<Live />);
+    renderWithIcons(<Live />);
     fireEvent.click(row('phases'));
     fireEvent.click(within(attributes()).getByRole('button', { name: /Entry kind/ }));
     const options = screen.getAllByRole('option').map((o) => o.textContent);
@@ -96,7 +97,7 @@ describe('PrefSchemaEditor over a list, a union and a typed leaf', () => {
   });
 
   it('adds a pref of a registered type by its name, and no blank union', () => {
-    render(<Live />);
+    renderWithIcons(<Live />);
     fireEvent.click(row('phases'));
     fireEvent.click(screen.getByRole('button', { name: 'Add pref' }));
     const dialog = screen.getByRole('dialog', { name: 'Add pref' });
@@ -109,12 +110,12 @@ describe('PrefSchemaEditor over a list, a union and a typed leaf', () => {
   });
 
   it('prints a typed leaf as its type\'s name under what the leaf sets', () => {
-    render(<Live />);
+    renderWithIcons(<Live />);
     expect(literal()).toHaveTextContent(/first: \{ \.\.\.GradientStop, name: 'First stop', \}/);
   });
 
   it('removes a list like any leaf', () => {
-    render(<Live />);
+    renderWithIcons(<Live />);
     fireEvent.click(row('phases'));
     fireEvent.click(screen.getByRole('button', { name: 'Remove' }));
     expect(literal()).not.toHaveTextContent(/phases/);

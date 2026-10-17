@@ -4,6 +4,7 @@ import { StrictMode } from 'react';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { BalanceHandlesLabDemo } from '../BalanceHandlesLabDemo';
 import { doubleClick, drag, editedAnchors, sceneCanvas, stubResizeObserver } from './pathEditLabHarness';
+import { withIcons } from '../../testIcons';
 
 beforeAll(() => {
   window.history.replaceState(null, '', '/?test=1');
@@ -21,7 +22,7 @@ const GRIP = [200, 170];
 
 describe('BalanceHandlesLabDemo', () => {
   it('scales both of a segment\'s handles together when its grip is dragged', async () => {
-    const { container } = await renderSettled(<StrictMode><BalanceHandlesLabDemo /></StrictMode>);
+    const { container } = await renderSettled(<StrictMode><BalanceHandlesLabDemo /></StrictMode>, { wrapper: withIcons });
     drag(sceneCanvas(container), GRIP, [190, 140]);
 
     const [a, b] = editedAnchors();
@@ -35,7 +36,7 @@ describe('BalanceHandlesLabDemo', () => {
   });
 
   it('gives a segment\'s handles one proportion when its grip is double-clicked', async () => {
-    const { container } = await renderSettled(<StrictMode><BalanceHandlesLabDemo /></StrictMode>);
+    const { container } = await renderSettled(<StrictMode><BalanceHandlesLabDemo /></StrictMode>, { wrapper: withIcons });
     doubleClick(sceneCanvas(container), GRIP[0], GRIP[1]);
 
     // Both handle lines run to (160, 140); the handles reach 2/3 and 4/9 of

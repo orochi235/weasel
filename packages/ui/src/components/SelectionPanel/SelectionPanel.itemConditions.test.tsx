@@ -1,8 +1,9 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, screen } from '@testing-library/react';
 import { asNodeId, createScene, type NodePropertiesEntry, type NodeRoutingEntry, type SelectionApi } from '@weasel-js/core';
 import type { PrefLeaf, PrefSection } from '@weasel-js/prefs';
 import { SelectionPanel } from './SelectionPanel';
+import { renderWithIcons } from '../../testing/withIcons';
 
 afterEach(cleanup);
 
@@ -28,7 +29,7 @@ function setup(flags: Record<string, boolean>) {
   const scene = createScene<Data, 'default', Record<string, number>>({ systemLayers: [{ id: 'default' }] });
   scene.add({ id: asNodeId('n'), kind: 'leaf', layer: 'default', pose: {}, data: { kind: 'thing', phases: [{ length: 1 }, { length: 2 }], weights: { left: 3 }, ...flags } });
   const properties: NodePropertiesEntry[] = [{ name: 'thing', schema: { name: 'Properties', members } }];
-  render(<SelectionPanel scene={scene} selection={{ current: ['n'] } as unknown as SelectionApi} properties={properties} routing={routing} />);
+  renderWithIcons(<SelectionPanel scene={scene} selection={{ current: ['n'] } as unknown as SelectionApi} properties={properties} routing={routing} />);
 }
 
 describe("SelectionPanel conditions on a list's and a map's item", () => {
@@ -74,7 +75,7 @@ describe('SelectionPanel conditions that read the entry', () => {
     const scene = createScene<Data, 'default', Record<string, number>>({ systemLayers: [{ id: 'default' }] });
     data.forEach((d, i) => scene.add({ id: asNodeId(`n${i}`), kind: 'leaf', layer: 'default', pose: {}, data: { kind: 'thing', ...d } }));
     const properties: NodePropertiesEntry[] = [{ name: 'thing', schema: { name: 'Properties', members: entries } }];
-    render(<SelectionPanel scene={scene} selection={{ current: data.map((_, i) => `n${i}`) } as unknown as SelectionApi} properties={properties} routing={routing} />);
+    renderWithIcons(<SelectionPanel scene={scene} selection={{ current: data.map((_, i) => `n${i}`) } as unknown as SelectionApi} properties={properties} routing={routing} />);
   };
 
   it('hides and disables a field in each entry by that entry, not by the node\'s field of the same name', () => {

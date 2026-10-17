@@ -1,7 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, screen } from '@testing-library/react';
 import type { PrefBoolean, PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 import { PrefsForm, type PrefRenderContext } from './index';
+import { renderWithIcons } from '../../testing/withIcons';
 
 afterEach(cleanup);
 
@@ -29,7 +30,7 @@ const HELD = { stroke: { on: true, cap: 'round', dash: { round: true } } };
 
 function form(schema: PrefGroup, values: unknown, mixed: string[], more: Partial<Parameters<typeof PrefsForm>[0]> = {}) {
   const onChange = vi.fn();
-  render(<PrefsForm layout="list" schema={schema} values={values} onChange={onChange} mixed={new Set(mixed)} {...more} />);
+  renderWithIcons(<PrefsForm layout="list" schema={schema} values={values} onChange={onChange} mixed={new Set(mixed)} {...more} />);
   return onChange;
 }
 

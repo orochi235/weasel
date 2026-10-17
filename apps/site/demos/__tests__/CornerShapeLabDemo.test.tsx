@@ -5,6 +5,7 @@ import { CORNER_CONTROLS_PROMPT } from '@weasel-js/path-tools';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { CornerShapeLabDemo } from '../CornerShapeLabDemo';
+import { withIcons } from '../../testIcons';
 
 // windease lays a lab's tiles out only once something measures them, and
 // jsdom ships no ResizeObserver.
@@ -60,7 +61,7 @@ const styleButton = (name: string) => screen.getByRole('radio', { name });
 const curvature = () => screen.getByRole('slider', { name: 'Curvature' }) as HTMLInputElement;
 
 async function mount() {
-  const { container } = await renderSettled(<CornerShapeLabDemo />);
+  const { container } = await renderSettled(<CornerShapeLabDemo />, { wrapper: withIcons });
   const canvas = container.querySelector('.lk-trial-scene canvas');
   if (!canvas) throw new Error('no scene canvas in the trial');
   return canvas;

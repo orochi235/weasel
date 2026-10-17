@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { act, render, screen, fireEvent } from '@testing-library/react';
+import { act, screen, fireEvent } from '@testing-library/react';
 import {
   createScene,
   asNodeId,
@@ -8,6 +8,7 @@ import {
 } from '@weasel-js/core';
 import { SelectionPanel } from './SelectionPanel';
 import { type Layer, type Pose, selectionOf } from './testing/rectScene';
+import { renderWithIcons } from '../../testing/withIcons';
 
 /**
  * The `paint` leaf addresses a whole `Paint`. The `color` leaf can't:
@@ -57,7 +58,7 @@ describe('SelectionPanel — paint leaf', () => {
   }
 
   function renderPaint(fill: unknown) {
-    return render(
+    return renderWithIcons(
       <SelectionPanel
         scene={sceneWithFill(fill)}
         selection={selectionOf(['t'])}
@@ -82,7 +83,7 @@ describe('SelectionPanel — paint leaf', () => {
     // apps/draw's opacity scrub writes exactly this shape: `opacity` on the
     // solid paint, through `scene.update` inside `scene.batch`.
     const scene = sceneWithFill({ color: '#336699' });
-    render(
+    renderWithIcons(
       <SelectionPanel
         scene={scene}
         selection={selectionOf(['t'])}
@@ -126,7 +127,7 @@ describe('SelectionPanel — paint leaf', () => {
         data: { kind: 'text', style: { fill: { kind: 'solid', color } } },
       });
     }
-    const { container } = render(
+    const { container } = renderWithIcons(
       <SelectionPanel
         scene={scene}
         selection={selectionOf(['a', 'b'])}
@@ -144,7 +145,7 @@ describe('SelectionPanel — paint leaf', () => {
       radius: 1,
       stops: [{ offset: 0, color: '#000000ff' }],
     });
-    render(
+    renderWithIcons(
       <SelectionPanel
         scene={scene}
         selection={selectionOf(['t'])}

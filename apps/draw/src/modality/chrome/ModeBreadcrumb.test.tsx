@@ -1,11 +1,12 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { screen, fireEvent } from '@testing-library/react';
 import { FREE_TRANSFORM, NORMAL, PATH_EDIT } from '@weasel-js/modes';
 import { ModeBreadcrumb } from './ModeBreadcrumb';
+import { renderWithIcons } from '../../testIcons';
 
 describe('ModeBreadcrumb', () => {
   it('renders nothing in normal mode', () => {
-    const { container } = render(
+    const { container } = renderWithIcons(
       <ModeBreadcrumb mode={NORMAL} targetLabel={null} onExit={vi.fn()} onCommit={vi.fn()} onCancel={vi.fn()} />
     );
     expect(container.firstChild).toBeNull();
@@ -13,7 +14,7 @@ describe('ModeBreadcrumb', () => {
 
   it('renders the soft variant with name, label, and Exit button', () => {
     const onExit = vi.fn();
-    render(
+    renderWithIcons(
       <ModeBreadcrumb mode={PATH_EDIT} targetLabel="Circle Path" onExit={onExit} onCommit={vi.fn()} onCancel={vi.fn()} />
     );
     expect(screen.getByText(/path edit/i)).toBeTruthy();
@@ -25,7 +26,7 @@ describe('ModeBreadcrumb', () => {
   it('renders the strict variant with Cancel and Commit buttons', () => {
     const onCommit = vi.fn();
     const onCancel = vi.fn();
-    render(
+    renderWithIcons(
       <ModeBreadcrumb mode={FREE_TRANSFORM} targetLabel={null} onExit={vi.fn()} onCommit={onCommit} onCancel={onCancel} />
     );
     fireEvent.click(screen.getByRole('button', { name: /cancel/i }));
@@ -35,7 +36,7 @@ describe('ModeBreadcrumb', () => {
   });
 
   it('omits target label when null', () => {
-    render(
+    renderWithIcons(
       <ModeBreadcrumb mode={FREE_TRANSFORM} targetLabel={null} onExit={vi.fn()} onCommit={vi.fn()} onCancel={vi.fn()} />
     );
     expect(screen.queryByText(/·/)).toBeNull();  // separator absent without label

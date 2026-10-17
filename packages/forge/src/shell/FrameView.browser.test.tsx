@@ -2,7 +2,7 @@ import '../../../../apps/forge/labkitStyles';
 import './shell.css';
 import { Lab, LabContext, type LabContextValue } from '@weasel-js/labkit';
 import { f } from '@weasel-js/labkit/config';
-import { cleanup, render } from '@testing-library/react';
+import { cleanup } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
 import { page } from 'vitest/browser';
 import type { FromFrame } from '../protocol/messages';
@@ -12,6 +12,7 @@ import { createAnswerBook } from './answers';
 import { connectFrame, flush } from './labHarness';
 import { StoryGlobalsContext } from './StoryGlobalsContext';
 import { storyInstrument } from './storyInstrument';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 // The stubbed-observer test in storyInstrument.test.tsx proves the reload; this one proves a real scroll triggers it.
 
@@ -34,7 +35,7 @@ test('a trial scrolled far out of view drops its frame, and on return reloads it
   let lab: LabContextValue | null = null;
   // about:blank stands in for the frame document: the test plays its half of the protocol.
   const instrument = storyInstrument({ entry, ready, answers: createAnswerBook(), frameUrl: 'about:blank', onReady: () => {} });
-  render(
+  renderWithIcons(
     <StoryGlobalsContext.Provider value={{}}>
       <div style={{ height: SPACER }} />
       <div style={{ width: 900, height: 600 }}>

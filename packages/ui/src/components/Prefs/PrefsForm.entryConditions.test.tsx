@@ -1,8 +1,9 @@
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { cleanup, screen, within } from '@testing-library/react';
 import { applyPrefEntryConditions, prefJudge, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
 import { afterEach, describe, expect, it } from 'vitest';
 import { PrefControl } from './PrefControl';
 import { PrefsForm } from './PrefsForm';
+import { renderWithIcons } from '../../testing/withIcons';
 
 afterEach(cleanup);
 
@@ -41,7 +42,7 @@ const values = {
 
 describe('PrefsForm conditions that read the entry', () => {
   it('hides and disables a field in each entry of a list by that entry\'s own value', () => {
-    render(<PrefsForm schema={{ name: '', children: { held: schema.children.held!, phases: schema.children.phases! } }} values={values} onChange={() => {}} />);
+    renderWithIcons(<PrefsForm schema={{ name: '', children: { held: schema.children.held!, phases: schema.children.phases! } }} values={values} onChange={() => {}} />);
     expect(screen.getAllByRole('spinbutton', { name: 'Hold' })).toHaveLength(1);
     const [first, second] = screen.getAllByRole('spinbutton', { name: 'Gain' });
     expect(first).toBeEnabled();
@@ -50,7 +51,7 @@ describe('PrefsForm conditions that read the entry', () => {
   });
 
   it('does the same in each entry of a map', () => {
-    render(<PrefsForm schema={{ name: '', children: { byName: schema.children.byName! } }} values={values} onChange={() => {}} />);
+    renderWithIcons(<PrefsForm schema={{ name: '', children: { byName: schema.children.byName! } }} values={values} onChange={() => {}} />);
     expect(screen.getAllByRole('spinbutton', { name: 'Hold' })).toHaveLength(1);
     const [a, b] = screen.getAllByRole('spinbutton', { name: 'Gain' });
     expect(a).toBeDisabled();
@@ -58,13 +59,13 @@ describe('PrefsForm conditions that read the entry', () => {
   });
 
   it('reads the nearest entry inside a list within a list', () => {
-    render(<PrefsForm schema={{ name: '', children: { phases: schema.children.phases! } }} values={values} onChange={() => {}} />);
+    renderWithIcons(<PrefsForm schema={{ name: '', children: { phases: schema.children.phases! } }} values={values} onChange={() => {}} />);
     expect(screen.getAllByRole('checkbox', { name: 'Step on' })).toHaveLength(2);
     expect(screen.getAllByRole('spinbutton', { name: 'Step size' })).toHaveLength(1);
   });
 
   it("disables one entry by the item's own enableIf, and leaves the next", () => {
-    render(<PrefsForm schema={{ name: '', children: { locks: schema.children.locks! } }} values={values} onChange={() => {}} />);
+    renderWithIcons(<PrefsForm schema={{ name: '', children: { locks: schema.children.locks! } }} values={values} onChange={() => {}} />);
     const [first, second] = screen.getAllByRole('spinbutton', { name: 'Depth' });
     expect(first).toBeDisabled();
     expect(second).toBeEnabled();
@@ -72,7 +73,7 @@ describe('PrefsForm conditions that read the entry', () => {
 
   it("disables one text entry by the item's own enableIf, leaves the next, and still lets it be removed", () => {
     const tags = list('Tags', { kind: 'string', name: 'Tag', description: '', default: '', enableIf: { from: 'item', path: '', isNot: 'fixed' } } as PrefLeaf);
-    render(<PrefsForm schema={{ name: '', children: { tags } }} values={{ tags: ['fixed', 'free'] }} onChange={() => {}} />);
+    renderWithIcons(<PrefsForm schema={{ name: '', children: { tags } }} values={{ tags: ['fixed', 'free'] }} onChange={() => {}} />);
     expect(screen.getByRole('textbox', { name: 'Tag 1' })).toBeDisabled();
     expect(screen.getByRole('textbox', { name: 'Tag 2' })).toBeEnabled();
     expect(screen.getByRole('button', { name: 'Remove Tag 1' })).toBeEnabled();
@@ -80,7 +81,7 @@ describe('PrefsForm conditions that read the entry', () => {
   });
 
   it('keeps and marks a field an entry hides where hidden prefs are marked', () => {
-    render(<PrefsForm markHidden schema={{ name: '', children: { phases: schema.children.phases! } }} values={values} onChange={() => {}} />);
+    renderWithIcons(<PrefsForm markHidden schema={{ name: '', children: { phases: schema.children.phases! } }} values={values} onChange={() => {}} />);
     const holds = screen.getAllByRole('spinbutton', { name: 'Hold' });
     expect(holds).toHaveLength(2);
     expect(holds[0]!.closest('[data-pref-hidden]')).toBeNull();
@@ -91,7 +92,7 @@ describe('PrefsForm conditions that read the entry', () => {
 describe('PrefControl', () => {
   it('draws each entry as its owner says the conditions that read it leave it', () => {
     const phases = schema.children.phases as PrefLeaf;
-    render(
+    renderWithIcons(
       <PrefControl pref={phases} path="phases" value={values.phases} onChange={() => {}}
         entryAt={(item, path, value) => applyPrefEntryConditions(item, path, prefJudge(schema, () => undefined, { item, value }))} />,
     );

@@ -1,6 +1,7 @@
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { PropertyControl, PropertyField } from './PropertyField';
+import { renderWithIcons } from '../../testing/withIcons';
 
 const OPTIONS = [
   { value: 'a', label: 'Alpha' },
@@ -15,7 +16,7 @@ function expectDisabled(el: Element): void {
 
 describe('PropertyControl disabled', () => {
   it('disables a checkbox, a switch, and a boolean toggle', () => {
-    render(
+    renderWithIcons(
       <>
         <PropertyControl kind="boolean" name="Box" value disabled onChange={noop} />
         <PropertyControl kind="boolean" control="switch" name="Switch" value disabled onChange={noop} />
@@ -28,25 +29,25 @@ describe('PropertyControl disabled', () => {
   });
 
   it('disables a typed number and its steppers', () => {
-    render(<PropertyControl kind="number" name="Radius" value={4} steppers disabled onChange={noop} />);
+    renderWithIcons(<PropertyControl kind="number" name="Radius" value={4} steppers disabled onChange={noop} />);
     expect(screen.getByRole('spinbutton', { name: 'Radius' })).toBeDisabled();
     for (const stepper of screen.getAllByRole('button', { hidden: true })) expect(stepper).toBeDisabled();
   });
 
   it('disables a slider track and its readout', () => {
-    render(<PropertyControl kind="number" control="slider" name="Blur" value={4} disabled onChange={noop} />);
+    renderWithIcons(<PropertyControl kind="number" control="slider" name="Blur" value={4} disabled onChange={noop} />);
     expect(screen.getByRole('slider', { name: 'Blur' })).toBeDisabled();
     expect(screen.getByRole('spinbutton', { name: 'Blur' })).toBeDisabled();
   });
 
   it('disables a slider in a row of its own', () => {
-    render(<PropertyField kind="number" control="slider" label="Blur" value={4} disabled onChange={noop} />);
+    renderWithIcons(<PropertyField kind="number" control="slider" label="Blur" value={4} disabled onChange={noop} />);
     expect(screen.getByRole('slider', { name: 'Blur' })).toBeDisabled();
     expect(screen.getByRole('spinbutton', { name: 'Blur' })).toBeDisabled();
   });
 
   it('disables a text field and a textarea', () => {
-    render(
+    renderWithIcons(
       <>
         <PropertyControl kind="string" name="Title" value="x" disabled onChange={noop} />
         <PropertyControl kind="string" control="textarea" name="Notes" value="x" disabled onChange={noop} />
@@ -57,7 +58,7 @@ describe('PropertyControl disabled', () => {
   });
 
   it('disables a select, a menu, every radio, and every segment', () => {
-    render(
+    renderWithIcons(
       <>
         <PropertyControl kind="enum" name="Select" value="a" options={OPTIONS} disabled onChange={noop} />
         <PropertyControl kind="enum" control="menu" name="Menu" value="a" options={OPTIONS} disabled onChange={noop} />
@@ -83,13 +84,13 @@ describe('PropertyControl disabled', () => {
   });
 
   it('disables a color swatch and its opacity track', () => {
-    render(<PropertyControl kind="color" name="Tint" value="#ff0000" alpha disabled onChange={noop} />);
+    renderWithIcons(<PropertyControl kind="color" name="Tint" value="#ff0000" alpha disabled onChange={noop} />);
     expect(screen.getByLabelText('Tint')).toBeDisabled();
     expect(screen.getByRole('slider', { name: 'Tint opacity' })).toBeDisabled();
   });
 
   it('disables a paint swatch, and draws a disabled inline paint as its editor made inert', () => {
-    render(
+    renderWithIcons(
       <>
         <PropertyControl kind="paint" name="Fill" value={{ color: '#ff0000' }} disabled onChange={noop} />
         <PropertyControl kind="paint" control="inline" name="Stroke" value={{ color: '#00ff00' }} disabled onChange={noop} />
@@ -105,7 +106,7 @@ describe('PropertyControl disabled', () => {
   });
 
   it('disables the font pickers', () => {
-    render(
+    renderWithIcons(
       <>
         <PropertyControl kind="font-family" name="Family" value="Inter" disabled onChange={noop} />
         <PropertyControl kind="font-weight" name="Weight" value={400} disabled onChange={noop} />
@@ -116,7 +117,7 @@ describe('PropertyControl disabled', () => {
   });
 
   it('leaves every control enabled without it', () => {
-    render(
+    renderWithIcons(
       <>
         <PropertyControl kind="boolean" name="Box" value onChange={noop} />
         <PropertyControl kind="number" name="Radius" value={4} onChange={noop} />

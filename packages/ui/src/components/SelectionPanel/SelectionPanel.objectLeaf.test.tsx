@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { screen, fireEvent } from '@testing-library/react';
 import {
   createScene,
   asNodeId,
@@ -10,6 +10,7 @@ import {
 } from '@weasel-js/core';
 import { SelectionPanel } from './SelectionPanel';
 import { type Layer, type Pose, selectionOf } from './testing/rectScene';
+import { renderWithIcons } from '../../testing/withIcons';
 
 /**
  * An object leaf holds one value with its fields hanging off it. Sibling
@@ -67,7 +68,7 @@ describe('SelectionPanel — object leaf', () => {
   }
 
   function renderStroke(scene: ReturnType<typeof sceneWithStroke>) {
-    return render(
+    return renderWithIcons(
       <SelectionPanel
         scene={scene}
         selection={selectionOf(['p'])}
@@ -79,7 +80,7 @@ describe('SelectionPanel — object leaf', () => {
 
   it('passes the selection key down to a field of an object leaf', () => {
     const seen: (string | undefined)[] = [];
-    render(
+    renderWithIcons(
       <SelectionPanel
         scene={sceneWithStroke({ paint: { color: '#00ff00ff' }, width: 4, cap: 'round' })}
         selection={selectionOf(['p'])}
@@ -144,7 +145,7 @@ describe('SelectionPanel — object leaf', () => {
     ];
 
     const renderToggle = (stroke: unknown) =>
-      render(
+      renderWithIcons(
         <SelectionPanel
           scene={sceneWithStroke(stroke)}
           selection={selectionOf(['p'])}
@@ -176,7 +177,7 @@ describe('SelectionPanel — object leaf', () => {
     });
 
     it('leaves a select unselected rather than showing its default', () => {
-      render(
+      renderWithIcons(
         <SelectionPanel
           scene={sceneWithStroke(undefined)}
           selection={selectionOf(['p'])}
@@ -189,7 +190,7 @@ describe('SelectionPanel — object leaf', () => {
     });
 
     it('leaves a number blank rather than showing its default', () => {
-      render(
+      renderWithIcons(
         <SelectionPanel
           scene={sceneWithStroke(undefined)}
           selection={selectionOf(['p'])}
@@ -252,7 +253,7 @@ describe('SelectionPanel — object leaf', () => {
 
     const renderDash = (stroke: unknown) => {
       const scene = sceneWithStroke(stroke);
-      render(
+      renderWithIcons(
         <SelectionPanel
           scene={scene}
           selection={selectionOf(['p'])}
@@ -332,7 +333,7 @@ describe('SelectionPanel — object leaf', () => {
           pose: { x: 0, y: 0, width: 10, height: 10 },
           data: { kind: 'path', stroke: strokeOfWidth(4, dashForStrokeStyle('dashed', 4)) },
         });
-        render(
+        renderWithIcons(
           <SelectionPanel
             scene={scene}
             selection={selectionOf(['p', 'q'])}
@@ -395,7 +396,7 @@ describe('SelectionPanel — object leaf', () => {
       },
     }] as unknown as NodePropertiesEntry[];
 
-    const renderReal = (scene: ReturnType<typeof sceneWithStroke>) => render(
+    const renderReal = (scene: ReturnType<typeof sceneWithStroke>) => renderWithIcons(
       <SelectionPanel
         scene={scene}
         selection={selectionOf(['p'])}
@@ -465,7 +466,7 @@ describe('SelectionPanel — object leaf', () => {
       },
     ];
     const scene = sceneWithStroke({ paint: { color: '#000000ff' }, width: 3 });
-    render(
+    renderWithIcons(
       <SelectionPanel
         scene={scene}
         selection={selectionOf(['p'])}

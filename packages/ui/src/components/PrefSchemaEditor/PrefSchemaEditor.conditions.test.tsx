@@ -1,9 +1,10 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { useState } from 'react';
 import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 import { PrefSchemaEditor } from './PrefSchemaEditor';
 import { nodeAt } from './schemaEdit';
+import { renderWithIcons } from '../../testing/withIcons';
 
 afterEach(cleanup);
 
@@ -46,7 +47,7 @@ const held = (path: string) => nodeAt(latest, path) as { showIf?: unknown; enabl
 
 describe('PrefSchemaEditor: the conditions a node is shown and enabled by', () => {
   it('sets a pref\'s from its attributes, into the schema and the exported literal, and Undo takes it back', () => {
-    render(<Live start={BASE} />);
+    renderWithIcons(<Live start={BASE} />);
     select('size');
     pick(attr('Shown if'), /Add a condition/, /Show grid/);
     expect(held('view/size').showIf).toEqual({ path: 'view.grid', is: true });
@@ -60,7 +61,7 @@ describe('PrefSchemaEditor: the conditions a node is shown and enabled by', () =
     const two: PrefGroup = { ...BASE, children: { ...BASE.children, panels: { name: 'Panels', children: {
       dock: { kind: 'boolean', name: 'Dock', description: '', default: true },
     } } } };
-    render(<Live start={two} />);
+    renderWithIcons(<Live start={two} />);
     select('view');
     pick(attr('Enabled if'), /Add a condition/, /Dock/);
     expect(held('view').enableIf).toEqual({ path: 'panels.dock', is: true });
@@ -69,7 +70,7 @@ describe('PrefSchemaEditor: the conditions a node is shown and enabled by', () =
   });
 
   it('keeps a condition on the pref it reads when that pref\'s key is changed', () => {
-    render(<Live start={CONDITIONED} />);
+    renderWithIcons(<Live start={CONDITIONED} />);
     select('grid');
     const key = attributes().getByRole('textbox', { name: 'Key' });
     fireEvent.change(key, { target: { value: 'lines' } });
@@ -78,7 +79,7 @@ describe('PrefSchemaEditor: the conditions a node is shown and enabled by', () =
   });
 
   it('marks the row whose condition reads a pref that was removed, and says so on the condition\'s own row', () => {
-    render(<Live start={CONDITIONED} />);
+    renderWithIcons(<Live start={CONDITIONED} />);
     expect(treeRow('size')).not.toHaveTextContent('bad condition');
     select('grid');
     fireEvent.click(screen.getByRole('button', { name: 'Remove' }));
@@ -91,7 +92,7 @@ describe('PrefSchemaEditor: the conditions a node is shown and enabled by', () =
   });
 
   it('marks the row whose condition compares a pref against a value its new kind never holds', () => {
-    render(<Live start={CONDITIONED} />);
+    renderWithIcons(<Live start={CONDITIONED} />);
     select('units');
     pick(screen.getByRole('region', { name: 'Attributes' }), /Kind/, 'number');
     expect(held('view/size').enableIf).toEqual({ path: 'view.units', is: 'mm' });
@@ -101,7 +102,7 @@ describe('PrefSchemaEditor: the conditions a node is shown and enabled by', () =
   });
 
   it('draws conditions that differ as none, marked as mixed, and writes the first edit over them all', () => {
-    render(<Live start={CONDITIONED} />);
+    renderWithIcons(<Live start={CONDITIONED} />);
     select('grid');
     fireEvent.click(within(structure()).getByText('size'), { metaKey: true });
     const shown = attr('Shown if');
@@ -115,7 +116,7 @@ describe('PrefSchemaEditor: the conditions a node is shown and enabled by', () =
   });
 
   it('sets one condition on several prefs at once', () => {
-    render(<Live start={CONDITIONED} />);
+    renderWithIcons(<Live start={CONDITIONED} />);
     select('grid');
     fireEvent.click(within(structure()).getByText('units'), { metaKey: true });
     pick(attr('Shown if'), /Add a condition/, /Grid size/);
@@ -124,7 +125,7 @@ describe('PrefSchemaEditor: the conditions a node is shown and enabled by', () =
   });
 
   it('offers a pref every pref but itself to be conditioned on, and a group none of its own', () => {
-    render(<Live start={BASE} />);
+    renderWithIcons(<Live start={BASE} />);
     const offered = (): string[] => {
       fireEvent.click(within(attr('Shown if')).getByRole('button', { name: /Add a condition/ }));
       const names = screen.getAllByRole('option').map((o) => (o.textContent ?? '').replace(/ ?view\..*$/, ''));

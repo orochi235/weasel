@@ -2,7 +2,8 @@ import '@weasel-js/theme/tokens.css';
 import 'windease/styles.css';
 import '../styles.less';
 import './presentation.browser.test.less';
-import { cleanup, render } from '@testing-library/react';
+import { cleanup } from '@testing-library/react';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import { afterEach, expect, test } from 'vitest';
 import type { Instrument } from '../instrument/types';
 import { Lab } from './Lab';
@@ -20,7 +21,7 @@ const Bare: Instrument = {
 };
 
 test('a trial with no sidebar sections gives its whole body to the content', async () => {
-  const { container, getByTestId } = render(
+  const { container, getByTestId } = renderWithIcons(
     <div className="lk-present-frame">
       <Lab instruments={[Bare]} defaultInstrument="Bare" />
     </div>,

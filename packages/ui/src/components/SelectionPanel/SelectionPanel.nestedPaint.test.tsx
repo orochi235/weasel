@@ -1,8 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { render, screen, fireEvent, within } from '@testing-library/react';
+import { screen, fireEvent, within } from '@testing-library/react';
 import { createScene, asNodeId, type NodePropertiesEntry, type NodeRoutingEntry } from '@weasel-js/core';
 import { SelectionPanel } from './SelectionPanel';
 import { type Layer, type Pose, selectionOf } from './testing/rectScene';
+import { renderWithIcons } from '../../testing/withIcons';
 
 /**
  * `Fill.paint` and `Stroke.paint` are optional, and either record without one
@@ -54,7 +55,7 @@ describe('SelectionPanel — a paint nested in an object', () => {
   }
 
   function renderPanel(scene: ReturnType<typeof sceneOf>, ids = ['n0']) {
-    return render(<SelectionPanel scene={scene} selection={selectionOf(ids)} properties={properties} routing={routing} />);
+    return renderWithIcons(<SelectionPanel scene={scene} selection={selectionOf(ids)} properties={properties} routing={routing} />);
   }
 
   /** The paint kind bars, in document order: the fill's, then the stroke's. */

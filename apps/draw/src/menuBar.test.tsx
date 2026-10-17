@@ -20,6 +20,7 @@ import type { WeaselDrawData, WeaselDrawLayer, WeaselDrawPose } from './drawDocu
 import { useFileCommands } from './fileCommands';
 import { DRAW_MENU_BAR } from './menuBar';
 import { saveSvgFile } from './saveSvg';
+import { withIcons } from './testIcons';
 
 vi.mock('./saveSvg', () => ({ saveSvgFile: vi.fn(async () => {}) }));
 vi.mock('./openSvg', () => ({ openSvgFile: vi.fn(async () => {}), importSvgFile: vi.fn(async () => {}) }));
@@ -71,6 +72,7 @@ function setup() {
           ambient={[appCommandsContribution(() => commands)]} />
       </ActionsProvider>
     </DepRegistryProvider>,
+    { wrapper: withIcons },
   );
   return {
     commands, setPaperSize, scene,

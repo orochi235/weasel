@@ -4,6 +4,7 @@ import { StrictMode } from 'react';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { HandleSnapLabDemo } from '../HandleSnapLabDemo';
 import { drag, installLabEnvironment, labAnchors, sceneCanvas } from './pathLabHarness';
+import { withIcons } from '../../testIcons';
 
 beforeAll(installLabEnvironment);
 afterEach(() => {
@@ -13,7 +14,7 @@ afterEach(() => {
 
 describe('HandleSnapLabDemo', () => {
   it('snaps a handle dragged a few degrees off level back onto the level', async () => {
-    const { container } = await renderSettled(<StrictMode><HandleSnapLabDemo /></StrictMode>);
+    const { container } = await renderSettled(<StrictMode><HandleSnapLabDemo /></StrictMode>, { wrapper: withIcons });
     // The top anchor sits at (240, 80) with its out handle at (320, 80).
     drag(sceneCanvas(container), [320, 80], [330, 84]);
     const handle = labAnchors()[0]!.outHandle!;

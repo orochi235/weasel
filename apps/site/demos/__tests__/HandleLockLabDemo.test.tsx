@@ -4,6 +4,7 @@ import { StrictMode } from 'react';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { HandleLockLabDemo } from '../HandleLockLabDemo';
 import { drag, installLabEnvironment, labAnchors, sceneCanvas } from './pathLabHarness';
+import { withIcons } from '../../testIcons';
 
 beforeAll(installLabEnvironment);
 afterEach(() => {
@@ -13,7 +14,7 @@ afterEach(() => {
 
 describe('HandleLockLabDemo', () => {
   it('turns a handle without changing its length once the length toggle is pressed', async () => {
-    const { container } = await renderSettled(<StrictMode><HandleLockLabDemo /></StrictMode>);
+    const { container } = await renderSettled(<StrictMode><HandleLockLabDemo /></StrictMode>, { wrapper: withIcons });
     const toggle = screen.getByRole('button', { name: 'Hold handle length' });
     expect(toggle.getAttribute('aria-pressed')).toBe('false');
     await act(async () => { toggle.click(); });
@@ -26,7 +27,7 @@ describe('HandleLockLabDemo', () => {
   });
 
   it('moves the handle freely with no lock held', async () => {
-    const { container } = await renderSettled(<StrictMode><HandleLockLabDemo /></StrictMode>);
+    const { container } = await renderSettled(<StrictMode><HandleLockLabDemo /></StrictMode>, { wrapper: withIcons });
     drag(sceneCanvas(container), [320, 80], [300, 40]);
     const handle = labAnchors()[0]!.outHandle!;
     expect(handle.x).toBeCloseTo(300, 3);

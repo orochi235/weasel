@@ -1,8 +1,9 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { useState } from 'react';
 import type { PrefLeaf, PrefSection } from '@weasel-js/prefs';
 import { PrefSchemaEditor } from './PrefSchemaEditor';
+import { renderWithIcons } from '../../testing/withIcons';
 
 afterEach(cleanup);
 
@@ -29,7 +30,7 @@ const attributes = () => within(screen.getByRole('region', { name: 'Attributes' 
 
 describe('PrefSchemaEditor over a node property schema: one value path, one pref', () => {
   it('refuses, in Add pref, an id a pref in another section holds', () => {
-    render(<Live />);
+    renderWithIcons(<Live />);
     fireEvent.click(row('look'));
     fireEvent.click(screen.getByRole('button', { name: 'Add pref' }));
     const dialog = screen.getByRole('dialog');
@@ -42,7 +43,7 @@ describe('PrefSchemaEditor over a node property schema: one value path, one pref
   });
 
   it('refuses a key edit that names a pref in another section', () => {
-    render(<Live />);
+    renderWithIcons(<Live />);
     fireEvent.click(row('opacity'));
     const key = attributes().getByRole('textbox', { name: 'Key' });
     fireEvent.change(key, { target: { value: 'pose.x' } });
@@ -52,7 +53,7 @@ describe('PrefSchemaEditor over a node property schema: one value path, one pref
   });
 
   it('refuses a section key that names a pref, and a pref key that names a section', () => {
-    render(<Live />);
+    renderWithIcons(<Live />);
     fireEvent.click(row('layout'));
     const key = attributes().getByRole('textbox', { name: 'Key' });
     fireEvent.change(key, { target: { value: 'opacity' } });
@@ -68,7 +69,7 @@ describe('PrefSchemaEditor over a node property schema: one value path, one pref
 
   it('marks the section and the pref of a schema that came naming both alike', () => {
     const shared: PrefSection = { ...NODE, members: { ...NODE.members, opacity: { name: 'Opacity', members: { 'pose.y': num('Y') } } } };
-    render(<Live start={shared} />);
+    renderWithIcons(<Live start={shared} />);
     const rows = treeRows('opacity');
     expect(rows).toHaveLength(2);
     for (const r of rows) expect(r.firstElementChild).toHaveTextContent('key taken');
@@ -77,7 +78,7 @@ describe('PrefSchemaEditor over a node property schema: one value path, one pref
 
   it('marks both rows of a schema that came holding one value path twice, and no other row', () => {
     const twice: PrefSection = { ...NODE, members: { ...NODE.members, look: { name: 'Look', members: { 'pose.x': num('X again') } } } };
-    render(<Live start={twice} />);
+    renderWithIcons(<Live start={twice} />);
     const rows = treeRows('pose.x');
     expect(rows).toHaveLength(2);
     for (const r of rows) expect(r).toHaveTextContent('key taken');

@@ -1,7 +1,8 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { ActionsProvider, DepRegistryProvider, SelectionContextProvider } from '@weasel-js/core';
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { ToolkitBuilder } from './ToolkitBuilder';
+import { renderWithIcons } from '../testIcons';
 
 beforeAll(() => {
   (HTMLCanvasElement.prototype as unknown as { getContext: () => null }).getContext = () => null;
@@ -14,7 +15,7 @@ async function countIn(title: string): Promise<number> {
 }
 
 function mount(): void {
-  render(
+  renderWithIcons(
     <DepRegistryProvider>
       <ActionsProvider>
         <SelectionContextProvider>

@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DEMOS } from '../registry';
 import { App } from '../App';
@@ -7,6 +7,7 @@ import { PACKAGES, PACKAGES_BY_NAME, demosOf } from '../Packages/catalog';
 // Loaded at collection so `lazy()` resolves from the module cache inside a test's timeout.
 import '../Packages/Packages';
 import '../Shell';
+import { renderWithIcons } from '../testIcons';
 
 beforeEach(() => {
   vi.stubGlobal(
@@ -39,7 +40,7 @@ afterEach(() => {
 describe('the package pages', () => {
   it('lists every published package at #pkg, each linked to its page', async () => {
     go('#pkg');
-    render(<WeaselDemos />);
+    renderWithIcons(<WeaselDemos />);
     await heading(2, 'Packages');
     expect(main().getAllByRole('listitem')).toHaveLength(PACKAGES.length);
     expect(main().getByRole('link', { name: '@weasel-js/geom' }).getAttribute('href')).toBe('#pkg/geom');
@@ -47,7 +48,7 @@ describe('the package pages', () => {
 
   it('opens a package on its overview: its entries from the manifest, then its README', async () => {
     go('#pkg/geom');
-    render(<WeaselDemos />);
+    renderWithIcons(<WeaselDemos />);
     await heading(2, '@weasel-js/geom');
     expect(main().getByRole('link', { name: '@weasel-js/geom/booleans' }).getAttribute('href')).toBe(
       '#pkg/geom/reference/booleans',
@@ -58,7 +59,7 @@ describe('the package pages', () => {
 
   it('opens a guide by its slug, titled from the file\'s heading', async () => {
     go('#pkg/geom/guides/paths');
-    render(<WeaselDemos />);
+    renderWithIcons(<WeaselDemos />);
     await heading(3, 'Working with paths');
     expect(main().getByRole('link', { name: 'Guides' }).getAttribute('aria-current')).toBe('page');
   });
@@ -66,7 +67,7 @@ describe('the package pages', () => {
   it('lists the demos that import a package, each a link to the demo', async () => {
     const filed = DEMOS.find((demo) => demo.package === 'geom')!;
     go('#pkg/geom/demos');
-    render(<WeaselDemos />);
+    renderWithIcons(<WeaselDemos />);
     await heading(2, '@weasel-js/geom');
     expect(main().getByRole('link', { name: filed.title }).getAttribute('href')).toBe(`#${filed.id}`);
   });
@@ -74,7 +75,7 @@ describe('the package pages', () => {
   it('leaves a tab off a package that has nothing for it', async () => {
     const bare = PACKAGES.find((pkg) => pkg.guides.length === 0)!;
     go(`#pkg/${bare.name}`);
-    render(<WeaselDemos />);
+    renderWithIcons(<WeaselDemos />);
     await heading(2, bare.specifier);
     expect(main().queryByRole('link', { name: 'Guides' })).toBeNull();
     expect(main().getByRole('link', { name: 'Reference' })).toBeTruthy();
@@ -83,13 +84,13 @@ describe('the package pages', () => {
   it('says the reference is not built when the site has none to fetch', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response('not built', { status: 404 })));
     go('#pkg/gestures/reference');
-    render(<WeaselDemos />);
+    renderWithIcons(<WeaselDemos />);
     await waitFor(() => expect(main().getByRole('status').textContent).toMatch(/has not been built/), { timeout: 5000 });
   });
 
   it('shows the front page for a package that does not exist', async () => {
     go('#pkg/no-such-package');
-    render(<App />);
+    renderWithIcons(<App />);
     expect(await screen.findByRole('link', { name: /get started/i })).toBeTruthy();
     expect(window.location.hash).toBe('');
   });
@@ -98,7 +99,7 @@ describe('the package pages', () => {
 describe('the sidebar', () => {
   it('links a package heading to that package\'s page', () => {
     go(`#${DEMOS[0].id}`);
-    render(<WeaselDemos />);
+    renderWithIcons(<WeaselDemos />);
     const heading = within(screen.getByRole('complementary')).getByRole('heading', { level: 3, name: 'geom' });
     expect(within(heading).getByRole('link').getAttribute('href')).toBe('#pkg/geom');
   });

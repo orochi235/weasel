@@ -1,10 +1,11 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, screen } from '@testing-library/react';
 import type { ThemeDefinition } from '@weasel-js/theme';
 import { derive } from '@weasel-js/theme/engine';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { LayerId } from './theme/model';
 import { lookupOf } from './theme/fixtures';
 import { TokenLayer } from './TokenLayer';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 /** One pin, so it draws as a lone color row rather than joining a swatch family. */
 const tiny: ThemeDefinition = {
@@ -16,7 +17,7 @@ const lookup = lookupOf(tiny);
 
 function renderLayer(layer: LayerId, def: ThemeDefinition = tiny, highlight: readonly string[] = []) {
   const onChange = vi.fn();
-  render(
+  renderWithIcons(
     <TokenLayer
       layer={layer}
       draft={def}

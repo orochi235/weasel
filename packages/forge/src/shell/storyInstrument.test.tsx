@@ -17,6 +17,7 @@ import { FrameView } from './FrameView';
 import { StoryGlobalsContext } from './StoryGlobalsContext';
 import { storyInstrument } from './storyInstrument';
 import { useStoryRegistry } from './useStoryRegistry';
+import { withIcons } from '@weasel-js/ui/testing/withIcons';
 
 const entry: IndexEntry = {
   id: 'test-counter--counter',
@@ -139,7 +140,7 @@ function connect(iframe: HTMLIFrameElement) {
 async function mountWith(instrumentReady: Ready | undefined, onReady = vi.fn(), answers = createAnswerBook()) {
   lab = null;
   ctx = null;
-  const view = await renderSettled(labWith(instrumentReady, onReady, answers));
+  const view = await renderSettled(labWith(instrumentReady, onReady, answers), { wrapper: withIcons });
   const iframe = view.container.querySelector('iframe.fg-frame-view') as HTMLIFrameElement;
   return { view, iframe, onReady, answers, ...connect(iframe) };
 }
@@ -314,7 +315,7 @@ describe('FrameView', () => {
         vi.fn((_entry: IndexEntry, next: Ready) => flushSync(() => setHeld(next))),
       );
     }
-    const view = await renderSettled(<SyncReady />);
+    const view = await renderSettled(<SyncReady />, { wrapper: withIcons });
     const { frame, received } = connect(view.container.querySelector('iframe.fg-frame-view') as HTMLIFrameElement);
     frame.send(ready);
     await flush();
@@ -417,6 +418,7 @@ describe('FrameView', () => {
           {captureLab()}
         </Lab>
       </StoryGlobalsContext.Provider>,
+      { wrapper: withIcons },
     );
     cleanups.push(() => history.replaceState(null, '', '/'));
     const { frame } = connect(view.container.querySelector('iframe.fg-frame-view') as HTMLIFrameElement);
@@ -436,7 +438,7 @@ const handoffs = (post: { mock: { calls: unknown[][] } }) =>
 
 describe('FrameView handshake', () => {
   it('hands off a port on each hello and never on load, which a browser fires before the hello', async () => {
-    const view = await renderSettled(labWith(ready));
+    const view = await renderSettled(labWith(ready), { wrapper: withIcons });
     const iframe = view.container.querySelector('iframe.fg-frame-view') as HTMLIFrameElement;
     const post = vi.spyOn(iframe.contentWindow as Window, 'postMessage').mockImplementation(() => {});
     fireEvent.load(iframe);
@@ -449,7 +451,7 @@ describe('FrameView handshake', () => {
 
   it('faults when the frame document never says hello', async () => {
     vi.useFakeTimers();
-    const view = await renderSettled(labWith(ready));
+    const view = await renderSettled(labWith(ready), { wrapper: withIcons });
     act(() => {
       vi.advanceTimersByTime(30_000);
     });
@@ -457,7 +459,7 @@ describe('FrameView handshake', () => {
   });
 
   it('ignores a hello from a window other than its frame', async () => {
-    const view = await renderSettled(labWith(ready));
+    const view = await renderSettled(labWith(ready), { wrapper: withIcons });
     const iframe = view.container.querySelector('iframe.fg-frame-view') as HTMLIFrameElement;
     const post = vi.spyOn(iframe.contentWindow as Window, 'postMessage').mockImplementation(() => {});
     const stray = new MessageEvent('message', { data: { type: FRAME_HELLO }, origin: location.origin });
@@ -480,7 +482,7 @@ describe('FrameView handshake', () => {
     cleanups.push(() => warm.remove());
     const post = vi.spyOn(warm.contentWindow as Window, 'postMessage').mockImplementation(() => {});
     const pool: FramePool = { claim: vi.fn(() => warm), dispose: () => {} };
-    const view = await renderSettled(<FramePoolContext.Provider value={pool}>{labWith(ready)}</FramePoolContext.Provider>);
+    const view = await renderSettled(<FramePoolContext.Provider value={pool}>{labWith(ready)}</FramePoolContext.Provider>, { wrapper: withIcons });
     expect(moveBefore).toHaveBeenCalledWith(warm, null);
     expect(moveBefore.mock.contexts[0]).toBe(view.container.querySelector('.fg-frame-slot'));
     expect(warm.className).toBe('fg-frame-view');
@@ -525,6 +527,7 @@ describe('FrameView with declared globals', () => {
           {captureLab()}
         </Lab>
       </StoryGlobalsContext.Provider>,
+      { wrapper: withIcons },
     );
     return { view, ...connect(view.container.querySelector('iframe.fg-frame-view') as HTMLIFrameElement) };
   }
@@ -580,7 +583,7 @@ describe('FrameView under a story registry', () => {
 
   it('sends new globals to the frame without replacing the instruments', async () => {
     const lists: InstrumentList[] = [];
-    const view = await renderSettled(<RegistryLab labGlobals={globals} lists={lists} />);
+    const view = await renderSettled(<RegistryLab labGlobals={globals} lists={lists} />, { wrapper: withIcons });
     const { frame, received } = connect(view.container.querySelector('iframe.fg-frame-view') as HTMLIFrameElement);
     frame.send(ready);
     await flush();
@@ -593,7 +596,7 @@ describe('FrameView under a story registry', () => {
   });
   it('keeps its iframe when the ready brings the viewport the index already read', async () => {
     const viewport = { width: 320, height: 200 };
-    const view = await renderSettled(<RegistryLab labGlobals={globals} lists={[]} story={{ ...entry, viewport }} />);
+    const view = await renderSettled(<RegistryLab labGlobals={globals} lists={[]} story={{ ...entry, viewport }} />, { wrapper: withIcons });
     const iframe = view.container.querySelector('iframe.fg-frame-view') as HTMLIFrameElement;
     const { frame, received } = connect(iframe);
     frame.send({ ...ready, viewport });

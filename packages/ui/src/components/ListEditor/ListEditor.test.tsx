@@ -1,7 +1,8 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, screen } from '@testing-library/react';
 import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { ListEditor } from './ListEditor';
+import { renderWithIcons } from '../../testing/withIcons';
 
 function Controlled({ initial, onChange }: { initial: string[]; onChange?: (v: string[]) => void }) {
   const [value, setValue] = useState(initial);
@@ -20,20 +21,20 @@ function Controlled({ initial, onChange }: { initial: string[]; onChange?: (v: s
 describe('ListEditor', () => {
   it('edits one entry and writes the whole list', () => {
     const onChange = vi.fn();
-    render(<ListEditor aria-label="Glob" value={['a', 'b']} onChange={onChange} />);
+    renderWithIcons(<ListEditor aria-label="Glob" value={['a', 'b']} onChange={onChange} />);
     fireEvent.change(screen.getByRole('textbox', { name: 'Glob 2' }), { target: { value: 'c' } });
     expect(onChange).toHaveBeenCalledWith(['a', 'c']);
   });
 
   it('removes an entry', () => {
     const onChange = vi.fn();
-    render(<ListEditor aria-label="Glob" value={['a', 'b']} onChange={onChange} />);
+    renderWithIcons(<ListEditor aria-label="Glob" value={['a', 'b']} onChange={onChange} />);
     fireEvent.click(screen.getByRole('button', { name: 'Remove Glob 1' }));
     expect(onChange).toHaveBeenCalledWith(['b']);
   });
 
   it('adds an empty entry at the end and focuses it', () => {
-    render(<Controlled initial={['a']} />);
+    renderWithIcons(<Controlled initial={['a']} />);
     fireEvent.click(screen.getByRole('button', { name: 'Add' }));
     const added = screen.getByRole('textbox', { name: 'Glob 2' });
     expect((added as HTMLInputElement).value).toBe('');
@@ -42,7 +43,7 @@ describe('ListEditor', () => {
 
   it('Enter inserts after the entry, Backspace in an empty one removes it', () => {
     const onChange = vi.fn();
-    render(<Controlled initial={['a', 'b']} onChange={onChange} />);
+    renderWithIcons(<Controlled initial={['a', 'b']} onChange={onChange} />);
     fireEvent.keyDown(screen.getByRole('textbox', { name: 'Glob 1' }), { key: 'Enter' });
     expect(onChange).toHaveBeenLastCalledWith(['a', '', 'b']);
     fireEvent.keyDown(screen.getByRole('textbox', { name: 'Glob 2' }), { key: 'Backspace' });
@@ -50,13 +51,13 @@ describe('ListEditor', () => {
   });
 
   it('says so when empty', () => {
-    render(<ListEditor value={[]} onChange={vi.fn()} empty="No globs" />);
+    renderWithIcons(<ListEditor value={[]} onChange={vi.fn()} empty="No globs" />);
     expect(screen.getByText('No globs')).toBeTruthy();
   });
 
   it('draws entries that are not strings through renderEntry, and adds what newEntry makes', () => {
     const onChange = vi.fn();
-    render(
+    renderWithIcons(
       <ListEditor<number>
         aria-label="Phase"
         value={[1, 2]}
@@ -72,7 +73,7 @@ describe('ListEditor', () => {
   });
 
   it('disables add at maxItems and remove at minItems', () => {
-    render(<ListEditor aria-label="Glob" value={['a']} onChange={() => {}} minItems={1} maxItems={1} />);
+    renderWithIcons(<ListEditor aria-label="Glob" value={['a']} onChange={() => {}} minItems={1} maxItems={1} />);
     expect(screen.getByRole('button', { name: 'Add' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Remove Glob 1' })).toBeDisabled();
   });
@@ -97,19 +98,19 @@ describe('ListEditor', () => {
   };
 
   it('moves focus to the entry before one removed from a list that draws its own entries', () => {
-    render(<Numbers initial={[1, 2]} />);
+    renderWithIcons(<Numbers initial={[1, 2]} />);
     press('Remove Phase 2');
     expect(screen.getByRole('button', { name: 'Remove Phase 1' })).toHaveFocus();
   });
 
   it('moves focus to the add button when the last entry is removed', () => {
-    render(<Controlled initial={['a']} />);
+    renderWithIcons(<Controlled initial={['a']} />);
     press('Remove Glob 1');
     expect(screen.getByRole('button', { name: 'Add' })).toHaveFocus();
   });
 
   it('leaves focus on the add button after adding to a list that draws its own entries', () => {
-    render(<Numbers initial={[1]} />);
+    renderWithIcons(<Numbers initial={[1]} />);
     press('Add');
     expect(screen.getByRole('button', { name: 'Add' })).toHaveFocus();
   });

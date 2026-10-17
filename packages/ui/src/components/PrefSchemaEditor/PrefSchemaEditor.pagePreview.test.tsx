@@ -1,9 +1,10 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { useState } from 'react';
 import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 import { PrefSchemaEditor } from './PrefSchemaEditor';
 import { keyedRow } from './treeRows.fixture';
+import { renderWithIcons } from '../../testing/withIcons';
 
 afterEach(cleanup);
 
@@ -37,14 +38,14 @@ const drawAsPage = (): void => {
 
 describe('PrefSchemaEditor previewing sections and pages', () => {
   it('draws a nested group as a section of its page, as a form given the schema would', () => {
-    render(<Live />);
+    renderWithIcons(<Live />);
     expect(page()).toBe('canvas');
     expect(within(preview()).getByText('Snap on')).toBeInTheDocument();
     expect(entry('canvas.snapping')).toBeNull();
   });
 
   it('gives a nested group a page of its own once it is drawn as a page, and opens it', () => {
-    render(<Live />);
+    renderWithIcons(<Live />);
     fireEvent.click(row('snapping'));
     expect(page()).toBe('canvas');
     drawAsPage();
@@ -55,7 +56,7 @@ describe('PrefSchemaEditor previewing sections and pages', () => {
   });
 
   it('opens the page of what the tree selects, and selects in the tree the entry the rail is pressed on', () => {
-    render(<Live />);
+    renderWithIcons(<Live />);
     fireEvent.click(row('snapping'));
     drawAsPage();
     fireEvent.click(row('alpha'));

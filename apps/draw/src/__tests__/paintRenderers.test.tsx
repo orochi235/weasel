@@ -1,9 +1,10 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { describe, expect, it } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, screen } from '@testing-library/react';
 import { ActionsProvider, createDispatcher, useActionsRegistry, type Action } from '@weasel-js/core';
 import type { PropertyRenderContext } from '@weasel-js/ui';
 import { WD_RENDERERS } from '../paintRenderers';
+import { renderWithIcons } from '../testIcons';
 
 /** The schema's own `data.stroke.paint` leaf: a `paint` leaf, so its default
  *  is a whole `Paint` and not a color string. */
@@ -36,7 +37,7 @@ const GRADIENT = {
 };
 
 function colorInputValue(value: unknown): string | undefined {
-  const { container } = render(
+  const { container } = renderWithIcons(
     <ActionsProvider>{WD_RENDERERS['data.stroke.paint'](ctxWith(value))}</ActionsProvider>,
   );
   return container.querySelector<HTMLInputElement>('input[type="color"]')?.value;
@@ -54,7 +55,7 @@ describe("WeaselDraw's data.stroke.paint renderer", () => {
   });
 
   it('edits a gradient stroke as a gradient', () => {
-    render(
+    renderWithIcons(
       <ActionsProvider>{WD_RENDERERS['data.stroke.paint'](ctxWith(GRADIENT))}</ActionsProvider>,
     );
     expect(screen.getByRole('radio', { name: 'Linear' })).toBeChecked();
@@ -95,7 +96,7 @@ describe("WeaselDraw's paint renderers across selections", () => {
         <Recording seen={seen}>{WD_RENDERERS['data.fill.paint'](ctxWith(value, key))}</Recording>
       </ActionsProvider>
     );
-    const { rerender } = render(at(GRADIENT, 'a'));
+    const { rerender } = renderWithIcons(at(GRADIENT, 'a'));
     rerender(at({ kind: 'solid', color: '#123456ff' }, 'b'));
     fireEvent.click(screen.getByRole('radio', { name: 'Linear' }));
 

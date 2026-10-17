@@ -2,7 +2,8 @@ import '@weasel-js/theme/tokens.css';
 import 'windease/styles.css';
 import '../styles.less';
 import './presentation.browser.test.less';
-import { cleanup, render } from '@testing-library/react';
+import { cleanup } from '@testing-library/react';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import { afterEach, expect, test } from 'vitest';
 import type { TrialClock } from '../clock/trialClock';
 import type { Instrument } from '../instrument/types';
@@ -47,7 +48,7 @@ const Timed: Instrument = {
 };
 
 function mount(props: Partial<LabProps>, instrument: Instrument = Timed) {
-  return render(
+  return renderWithIcons(
     <div className="lk-present-frame">
       <Lab {...({ instruments: [instrument], defaultInstrument: 'Timed', ...props } as LabProps)} />
     </div>,

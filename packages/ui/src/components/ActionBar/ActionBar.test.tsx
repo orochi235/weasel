@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent, act } from '@testing-library/react';
+import { screen, fireEvent, act } from '@testing-library/react';
 import {
   ActionsProvider,
   DepRegistryProvider,
@@ -17,7 +17,7 @@ import type { IconRef } from '@weasel-js/icons';
 import { ActionBar } from './ActionBar';
 import { icon } from '../../icons.gen';
 import { Icon } from '../../icons/Icon';
-import { withIcons } from '../../testing/withIcons';
+import { renderWithIcons } from '../../testing/withIcons';
 
 /**
  * Test harness: registers a set of `Action` descriptors on mount via
@@ -56,7 +56,7 @@ const item = (label: string) => screen.getByRole('button', { name: label });
 
 describe('ActionBar', () => {
   it('renders empty toolbar when no actions match the group (no crash)', () => {
-    render(
+    renderWithIcons(
       <Harness
         actions={[makeAction({ id: 'other', group: 'something-else' })]}
         bar={<ActionBar group="demo" />}
@@ -68,7 +68,7 @@ describe('ActionBar', () => {
   });
 
   it('draws a bar from a tag: the actions carrying it, and the variants that do', () => {
-    render(
+    renderWithIcons(
       <Harness
         actions={[
           makeAction({ id: 'union', tags: ['boolean'] }),
@@ -89,7 +89,7 @@ describe('ActionBar', () => {
   });
 
   it('renders one button per action in the group', () => {
-    render(
+    renderWithIcons(
       <Harness
         actions={[
           makeAction({ id: 'a' }),
@@ -107,7 +107,7 @@ describe('ActionBar', () => {
 
   it('clicking an enabled button triggers the action.run', () => {
     const run = vi.fn();
-    render(
+    renderWithIcons(
       <Harness
         actions={[makeAction({ id: 'a', run })]}
         bar={<ActionBar group="demo" />}
@@ -118,7 +118,7 @@ describe('ActionBar', () => {
   });
 
   it('disabled state from evaluateEnabled reflects on the button', () => {
-    render(
+    renderWithIcons(
       <Harness
         actions={[
           makeAction({ id: 'on', enabled: () => true }),
@@ -155,7 +155,7 @@ describe('ActionBar', () => {
         </ActionsProvider>
       </DepRegistryProvider>
     );
-    const { rerender } = render(view(false));
+    const { rerender } = renderWithIcons(view(false));
     const button = () => item('gated') as HTMLButtonElement;
     expect(button().disabled).toBe(true);
     rerender(view(true));
@@ -176,7 +176,7 @@ describe('ActionBar', () => {
       useDepSource('gate' as DepName, () => gate.open as never);
       return null;
     }
-    render(
+    renderWithIcons(
       <DepRegistryProvider>
         <ActionsProvider>
           <Register action={action} />
@@ -193,7 +193,7 @@ describe('ActionBar', () => {
 
   it('clicking a disabled button does not invoke run', () => {
     const run = vi.fn();
-    render(
+    renderWithIcons(
       <Harness
         actions={[makeAction({ id: 'off', run, enabled: () => 'not-applicable' })]}
         bar={<ActionBar group="demo" />}
@@ -205,9 +205,9 @@ describe('ActionBar', () => {
 
   it('icons prop names a glyph that replaces the action.icon for that id only', () => {
     const glyph = (ref: IconRef) =>
-      render(<Icon name={ref} />, { wrapper: withIcons }).container.querySelector('svg')!.innerHTML;
+      renderWithIcons(<Icon name={ref} />).container.querySelector('svg')!.innerHTML;
     const [close, add, remove] = [glyph(icon('close')), glyph(icon('add')), glyph(icon('remove'))];
-    render(
+    renderWithIcons(
       <Harness
         actions={[
           makeAction({ id: 'a', icon: icon('add') }),
@@ -215,7 +215,6 @@ describe('ActionBar', () => {
         ]}
         bar={<ActionBar group="demo" icons={{ a: icon('close') }} />}
       />,
-      { wrapper: withIcons },
     );
     expect(item('a').querySelector('svg')!.innerHTML).toBe(close);
     expect(item('a').querySelector('svg')!.innerHTML).not.toBe(add);
@@ -223,7 +222,7 @@ describe('ActionBar', () => {
   });
 
   it('labels prop overrides aria-label and tooltip for that id only', () => {
-    render(
+    renderWithIcons(
       <Harness
         actions={[
           makeAction({ id: 'a', label: 'Alpha' }),
@@ -241,7 +240,7 @@ describe('ActionBar', () => {
   });
 
   it('shortcut appears in tooltip (in parentheses)', () => {
-    render(
+    renderWithIcons(
       <Harness
         actions={[makeAction({ id: 'a', label: 'Alpha', shortcut: 'A' })]}
         bar={<ActionBar group="demo" />}
@@ -257,16 +256,16 @@ describe('ActionBar', () => {
     const bar = (orientation?: 'vertical') => (
       <Harness actions={[makeAction({ id: 'a' })]} bar={<ActionBar group="demo" orientation={orientation} />} />
     );
-    const { unmount } = render(bar('vertical'));
+    const { unmount } = renderWithIcons(bar('vertical'));
     expect(screen.getByRole('toolbar')).toHaveAttribute('aria-orientation', 'vertical');
     expect(item('a')).toBeTruthy();
     unmount();
-    render(bar());
+    renderWithIcons(bar());
     expect(screen.getByRole('toolbar')).toHaveAttribute('aria-orientation', 'horizontal');
   });
 
   it('keeps the order the registry lists the actions in', () => {
-    render(
+    renderWithIcons(
       <Harness
         actions={[makeAction({ id: 'z.last' }), makeAction({ id: 'a.first' }), makeAction({ id: '10' }), makeAction({ id: '2' })]}
         bar={<ActionBar group="demo" />}
@@ -276,7 +275,7 @@ describe('ActionBar', () => {
   });
 
   it('forwards className to the toolbar root', () => {
-    const { container } = render(
+    const { container } = renderWithIcons(
       <Harness
         actions={[makeAction({ id: 'a' })]}
         bar={<ActionBar group="demo" className="custom-cls" />}
@@ -287,14 +286,14 @@ describe('ActionBar', () => {
   });
 
   it('renders nothing (empty toolbar) when no ActionsProvider is in scope', () => {
-    render(<ActionBar group="demo" />);
+    renderWithIcons(<ActionBar group="demo" />);
     const toolbar = screen.getByRole('toolbar');
     expect(toolbar.querySelectorAll('button').length).toBe(0);
   });
 
   it('keeps only the entries `only` names, by action id or by variant key', () => {
     const variants = [{ key: 'x', label: 'Flip X', params: {} }, { key: 'y', label: 'Flip Y', params: {} }];
-    render(
+    renderWithIcons(
       <Harness
         actions={[makeAction({ id: 'a' }), makeAction({ id: 'b' }), makeAction({ id: 'flip', variants })]}
         bar={<ActionBar group="demo" only={['b', 'flip:y']} />}
@@ -305,7 +304,7 @@ describe('ActionBar', () => {
 
   it('renders one button per variant and triggers with its params', () => {
     const run = vi.fn();
-    render(
+    renderWithIcons(
       <Harness
         actions={[
           {
@@ -329,7 +328,7 @@ describe('ActionBar', () => {
   });
 
   it("titles a variant with the shortcut of the binding that passes its params", () => {
-    render(
+    renderWithIcons(
       <Harness
         actions={[
           makeAction({
@@ -357,7 +356,7 @@ describe('ActionBar', () => {
 
 describe('ActionBar kit glyphs', () => {
   it('draws the standard edit actions with no icons map', () => {
-    render(
+    renderWithIcons(
       <Harness
         actions={[clipboardCutAction, clipboardCopyAction, clipboardPasteAction]}
         bar={<ActionBar group="clipboard" />}

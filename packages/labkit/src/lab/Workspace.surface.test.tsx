@@ -1,5 +1,6 @@
 import { act } from '@testing-library/react';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
+import { withIcons } from '@weasel-js/ui/testing/withIcons';
 import { describe, expect, it, vi } from 'vitest';
 import { SurfaceContext } from '../surface/SurfaceContext';
 import type { SurfaceHandle } from '../surface/useTiledSurface';
@@ -31,6 +32,7 @@ describe('Workspace with a surface above it', () => {
           <div>a</div>
         </Workspace>
       </SurfaceContext.Provider>,
+      { wrapper: withIcons },
     );
     (handle.invalidateRects as ReturnType<typeof vi.fn>).mockClear();
 

@@ -1,11 +1,12 @@
 import '@weasel-js/theme/tokens.css';
-import { act, cleanup, render, screen, within } from '@testing-library/react';
+import { act, cleanup, screen, within } from '@testing-library/react';
 import { afterEach, beforeAll, expect, test } from 'vitest';
 import { page } from 'vitest/browser';
 import { useState } from 'react';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { PrefSchemaEditor } from './PrefSchemaEditor';
 import { drag, grip, pointer, pointIn, type Point } from './pointerDrag.fixture';
+import { renderWithIcons } from '../../testing/withIcons';
 
 // The drags that end somewhere other than a preview row or a sibling: the Unplaced list, the tree from the
 // palette, and a page a drag opens by resting on its rail entry.
@@ -49,20 +50,20 @@ function carry(from: HTMLElement, to: Point): void {
 }
 
 test('a tree row dropped on the Unplaced list leaves its group for the root', () => {
-  render(<Live />);
+  renderWithIcons(<Live />);
   drag(treeRow('grid'), pointIn(unplaced(), 0.5, 0.7));
   expect(keys(latest.children.view as PrefGroup)).toEqual(['snap', 'zoom']);
   expect(keys(latest)).toContain('grid');
 });
 
 test('a palette tool dropped on the top of a tree row adds its node before that row', () => {
-  render(<Live />);
+  renderWithIcons(<Live />);
   drag(tool('Label'), pointIn(treeRow('snap'), 0.5, 0.1));
   expect(keys(latest.children.view as PrefGroup)).toEqual(['grid', 'label', 'snap', 'zoom']);
 });
 
 test('a drag held on a rail entry opens its page, and a row there can then be dropped beside', async () => {
-  render(<Live />);
+  renderWithIcons(<Live />);
   carry(label('Show grid'), pointIn(rail('panels'), 0.5, 0.5));
   expect(within(preview()).queryByText('Dock')).toBeNull();
   await expect.poll(() => within(preview()).queryByText('Dock'), { timeout: 2000 }).not.toBeNull();

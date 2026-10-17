@@ -1,7 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, screen } from '@testing-library/react';
 import type { PrefRenderContext } from '../Prefs';
 import { ATTR_RENDERERS } from './attrRenderers';
+import { renderWithIcons } from '../../testing/withIcons';
 
 afterEach(cleanup);
 
@@ -17,13 +18,13 @@ describe('attribute controls', () => {
   });
 
   it('icon says when the selection holds several icons', () => {
-    render(<>{ATTR_RENDERERS.icon({ ...ctx('icon', undefined), mixed: true })}</>);
+    renderWithIcons(<>{ATTR_RENDERERS.icon({ ...ctx('icon', undefined), mixed: true })}</>);
     expect(screen.getByText('Mixed')).toBeTruthy();
   });
 
   it('optional-number writes a number, and undefined when cleared', () => {
     const setValue = vi.fn();
-    render(<>{ATTR_RENDERERS['optional-number'](ctx('optional-number', 4, setValue))}</>);
+    renderWithIcons(<>{ATTR_RENDERERS['optional-number'](ctx('optional-number', 4, setValue))}</>);
     const box = screen.getByRole('textbox', { name: 'X' });
     fireEvent.change(box, { target: { value: '12' } });
     fireEvent.blur(box);
@@ -35,7 +36,7 @@ describe('attribute controls', () => {
 
   it('enum-options edits a value and adds a row', () => {
     const setValue = vi.fn();
-    render(<>{ATTR_RENDERERS['enum-options'](ctx('enum-options', [{ value: 'a', label: 'A' }], setValue))}</>);
+    renderWithIcons(<>{ATTR_RENDERERS['enum-options'](ctx('enum-options', [{ value: 'a', label: 'A' }], setValue))}</>);
     fireEvent.change(screen.getByRole('textbox', { name: 'Option 1 value' }), { target: { value: 'b' } });
     expect(setValue).toHaveBeenLastCalledWith([{ value: 'b', label: 'A' }]);
     fireEvent.click(screen.getByRole('button', { name: 'Add option' }));
@@ -45,7 +46,7 @@ describe('attribute controls', () => {
   it('enum-options flags a value that is empty or repeats an earlier one, and still takes the edit', () => {
     const setValue = vi.fn();
     const rows = [{ value: 'a', label: 'A' }, { value: '', label: '' }, { value: 'a', label: 'Again' }];
-    render(<>{ATTR_RENDERERS['enum-options'](ctx('enum-options', rows, setValue))}</>);
+    renderWithIcons(<>{ATTR_RENDERERS['enum-options'](ctx('enum-options', rows, setValue))}</>);
     const value = (n: number) => screen.getByRole('textbox', { name: `Option ${n} value` });
     expect(value(1)).not.toHaveAttribute('aria-invalid');
     expect(value(2)).toHaveAttribute('aria-invalid', 'true');

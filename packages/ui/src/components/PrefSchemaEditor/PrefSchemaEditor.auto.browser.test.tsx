@@ -1,9 +1,10 @@
 import '@weasel-js/theme/tokens.css';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
 import { page } from 'vitest/browser';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { PrefSchemaEditor } from './PrefSchemaEditor';
+import { renderWithIcons } from '../../testing/withIcons';
 
 // Whether the switch and its control share a line, and whether a faded control still takes a press, are layout.
 
@@ -16,7 +17,7 @@ const SCHEMA: PrefGroup = {
 
 test('an unset auto value draws its switch before a faded control on one line, and the control takes no press', async () => {
   await page.viewport(1300, 720);
-  render(
+  renderWithIcons(
     <div style={{ width: 1280, height: 700 }}>
       <PrefSchemaEditor schema={SCHEMA} onChange={() => {}} />
     </div>,

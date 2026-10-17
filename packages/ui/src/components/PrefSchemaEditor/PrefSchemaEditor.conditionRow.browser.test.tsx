@@ -1,9 +1,10 @@
 import '@weasel-js/theme/tokens.css';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
 import { page } from 'vitest/browser';
 import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 import { PrefSchemaEditor } from './PrefSchemaEditor';
+import { renderWithIcons } from '../../testing/withIcons';
 
 // Whether a condition gets the attributes pane's width or only its control column is layout.
 
@@ -21,7 +22,7 @@ const box = (el: Element) => el.getBoundingClientRect();
 
 test('a condition runs the width of the attributes pane under its label, and a key beside its own', async () => {
   await page.viewport(1300, 720);
-  render(<div style={{ width: 1280, height: 700 }}><PrefSchemaEditor schema={SCHEMA} onChange={() => {}} /></div>);
+  renderWithIcons(<div style={{ width: 1280, height: 700 }}><PrefSchemaEditor schema={SCHEMA} onChange={() => {}} /></div>);
   fireEvent.click(within(screen.getByRole('tree', { name: 'Schema structure' })).getByText('Grid size'));
   const pane = screen.getByRole('region', { name: 'Attributes' });
   for (const name of ['Shown if', 'Enabled if']) {

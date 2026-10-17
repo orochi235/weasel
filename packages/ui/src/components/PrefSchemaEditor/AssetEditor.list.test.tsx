@@ -1,10 +1,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { useState } from 'react';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { AssetEditor } from './AssetEditor';
 import { asset, assets, attributes, CODE, hasRow, Live, pickRow, rekey, row, SETTINGS, structure, tool, WITH_LOCKED, WORKSPACE } from './AssetEditor.fixture';
 import type { Workspace } from './workspace';
 import { workspaceCodec } from './workspaceCodec';
+import { renderWithIcons } from '../../testing/withIcons';
 
 afterEach(() => {
   cleanup();
@@ -22,14 +23,14 @@ const last = (onChange: ReturnType<typeof vi.fn>): Workspace => onChange.mock.ca
 
 describe('AssetEditor asset list', () => {
   it('lists Settings under Dialogs and Code under Panels', () => {
-    render(<Live />);
+    renderWithIcons(<Live />);
     expect(within(within(assets()).getByRole('group', { name: 'Dialogs' })).getByRole('option', { name: 'Settings' })).toHaveAttribute('aria-selected', 'true');
     expect(within(within(assets()).getByRole('group', { name: 'Panels' })).getByRole('option', { name: 'Code' })).toHaveAttribute('aria-selected', 'false');
   });
 
   it('shows the picked asset\'s rows in the structure tree, and keeps Undo as it was', () => {
     const onChange = vi.fn();
-    render(<Live onChange={onChange} />);
+    renderWithIcons(<Live onChange={onChange} />);
     pickRow('snap');
     fireEvent.keyDown(structure(), { key: 'Delete' });
     onChange.mockClear();
@@ -45,7 +46,7 @@ describe('AssetEditor asset list', () => {
   it('selects nothing in the asset picked, whatever was selected in the one left', () => {
     // Both hold a row at the path `grid`.
     const start: Workspace = { assets: [dialogWith('grid'), WORKSPACE.assets[1]!] };
-    render(<Live start={start} />);
+    renderWithIcons(<Live start={start} />);
     pickRow('grid');
     expect(row('grid')).toHaveAttribute('aria-selected', 'true');
     fireEvent.click(asset('Code'));
@@ -53,7 +54,7 @@ describe('AssetEditor asset list', () => {
   });
 
   it('shows a pointer naming the new key after its setting is re-keyed', () => {
-    render(<Live />);
+    renderWithIcons(<Live />);
     pickRow('grid');
     rekey('lines');
     fireEvent.click(asset('Code'));
@@ -63,7 +64,7 @@ describe('AssetEditor asset list', () => {
 
   it('restores the setting and its pointer with one Undo, and selects the dialog the step changed', () => {
     const onChange = vi.fn();
-    render(<Live onChange={onChange} />);
+    renderWithIcons(<Live onChange={onChange} />);
     pickRow('grid');
     rekey('lines');
     fireEvent.click(asset('Code'));
@@ -76,7 +77,7 @@ describe('AssetEditor asset list', () => {
 
   it('selects the panel a step changed, and none of the rows the dialog had selected', () => {
     const start: Workspace = { assets: [dialogWith('snap'), WORKSPACE.assets[1]!] };
-    render(<Live start={start} />);
+    renderWithIcons(<Live start={start} />);
     fireEvent.click(asset('Code'));
     pickRow('grid');
     fireEvent.keyDown(structure(), { key: 'Delete' });
@@ -95,7 +96,7 @@ describe('AssetEditor asset list', () => {
   });
 
   it('marks every asset a removal changed', () => {
-    render(<Live />);
+    renderWithIcons(<Live />);
     expect(asset('Settings')).not.toHaveAttribute('data-changed');
     pickRow('snap');
     fireEvent.keyDown(structure(), { key: 'Delete' });
@@ -105,7 +106,7 @@ describe('AssetEditor asset list', () => {
 
   it('locks a read-only asset: no tool adds or removes, and no attribute takes an edit', () => {
     const onChange = vi.fn();
-    render(<Live start={WITH_LOCKED} onChange={onChange} />);
+    renderWithIcons(<Live start={WITH_LOCKED} onChange={onChange} />);
     expect(within(asset('Layout')).getByRole('img', { name: 'Dynamic' })).toBeInTheDocument();
     expect(within(asset('Code')).queryByRole('img', { name: 'Dynamic' })).toBeNull();
     fireEvent.click(asset('Layout'));
@@ -123,7 +124,7 @@ describe('AssetEditor asset list', () => {
   });
 
   it('draws no list, and no pane for one, unless asked', () => {
-    render(<AssetEditor workspace={WORKSPACE} codec={workspaceCodec([])} onChange={() => {}} />);
+    renderWithIcons(<AssetEditor workspace={WORKSPACE} codec={workspaceCodec([])} onChange={() => {}} />);
     expect(screen.queryByRole('listbox', { name: 'Assets' })).toBeNull();
     expect(screen.queryByRole('complementary')).toBeNull();
     expect(screen.queryByRole('separator', { name: 'Resize sidebar' })).toBeNull();
@@ -142,7 +143,7 @@ describe('AssetEditor over several assets', () => {
       const workspace: Workspace = { assets: WORKSPACE.assets.map((a, i) => ({ ...a, root: roots[i]! })) };
       return <AssetEditor list workspace={workspace} codec={workspaceCodec([])} onChange={(next) => setRoots(next.assets.map((a) => a.root))} />;
     }
-    render(<Host />);
+    renderWithIcons(<Host />);
     pickRow('snap');
     fireEvent.keyDown(structure(), { key: 'Delete' });
     expect(tool('Undo')).toBeEnabled();
@@ -152,7 +153,7 @@ describe('AssetEditor over several assets', () => {
 
   it('keeps a draft of an edit to a panel alone, and drops it when the edit is undone', () => {
     const kept = storage();
-    render(<Live draftKey="ws" draftStorage={kept} />);
+    renderWithIcons(<Live draftKey="ws" draftStorage={kept} />);
     fireEvent.click(asset('Code'));
     pickRow('grid');
     fireEvent.keyDown(structure(), { key: 'Delete' });
@@ -164,7 +165,7 @@ describe('AssetEditor over several assets', () => {
   it('keeps each asset\'s folded rows apart', () => {
     // Both hold a group at the path `view`.
     const start: Workspace = { assets: [WORKSPACE.assets[0]!, { ...WORKSPACE.assets[1]!, root: { name: 'Code', children: { view: { name: 'Rows', as: 'section', children: CODE.children } } } }] };
-    const view = render(<Live start={start} draftKey="ws" />);
+    const view = renderWithIcons(<Live start={start} draftKey="ws" />);
     fireEvent.click(tool('Collapse all'));
     expect(hasRow('grid')).toBe(false);
     fireEvent.click(asset('Code'));
@@ -172,7 +173,7 @@ describe('AssetEditor over several assets', () => {
     fireEvent.click(asset('Settings'));
     expect(hasRow('grid')).toBe(false);
     view.unmount();
-    render(<Live start={start} draftKey="ws" />);
+    renderWithIcons(<Live start={start} draftKey="ws" />);
     expect(hasRow('view')).toBe(true);
     expect(hasRow('grid')).toBe(false);
     fireEvent.click(asset('Code'));

@@ -78,7 +78,9 @@ folds it to `false`.
 
 A unit test that draws a glyph mounts a registry holding `kitIcons`, core's and ui's tables
 (`@weasel-js/ui/kit-icons`): `renderWithIcons` in `packages/ui/src/testing/withIcons.tsx` in
-place of `render`, or its `withIcons` as the `wrapper` of `renderSettled`. jsdom cannot show
+place of `render`, or its `withIcons` as the `wrapper` of `renderSettled`. A test drawing another
+table's glyphs too passes it as `icons`, or builds its wrapper with `iconsWrapper`: apps/draw's and
+the site's tests import theirs from each app's `testIcons.ts`. jsdom cannot show
 that a glyph drew, so a check of the drawing is a `*.browser.test.tsx`.
 
 ## The registry

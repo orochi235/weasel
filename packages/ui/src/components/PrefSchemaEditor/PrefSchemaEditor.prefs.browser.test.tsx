@@ -1,5 +1,5 @@
 import '@weasel-js/theme/tokens.css';
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { useState } from 'react';
 import { afterEach, beforeAll, expect, test } from 'vitest';
 import { page } from 'vitest/browser';
@@ -7,6 +7,7 @@ import type { PrefGroup } from '@weasel-js/prefs';
 import { PrefSchemaEditor } from './PrefSchemaEditor';
 import { drag as dragTo } from './pointerDrag.fixture';
 import { rowKey } from './treeRows.fixture';
+import { renderWithIcons } from '../../testing/withIcons';
 
 // A drop into the live preview is hit-tested against the form's layout, which only a browser has.
 
@@ -38,14 +39,14 @@ function drag(from: string, onto: string) {
 }
 
 test('a row dropped in the live preview becomes the selection', () => {
-  render(<Live />);
+  renderWithIcons(<Live />);
   drag('Dock', 'Show grid');
   expect(order()).not.toEqual(['grid', 'snap', 'dock']);
   expect(selectedRows().map(rowKey)).toEqual(['dock']);
 });
 
 test('with "Select what is dropped" off in the editor\'s preferences, the selection stays where it was', async () => {
-  render(<Live />);
+  renderWithIcons(<Live />);
   fireEvent.click(screen.getByRole('button', { name: 'Preferences' }));
   fireEvent.click(within(screen.getByRole('dialog', { name: 'Schema editor preferences' })).getByRole('checkbox', { name: 'Select what is dropped' }));
   fireEvent.click(within(screen.getByRole('dialog', { name: 'Schema editor preferences' })).getByRole('button', { name: 'Close dialog' }));

@@ -20,6 +20,7 @@ import {
 import { SelectionPanel } from '@weasel-js/ui';
 import { WD_RENDERERS } from '../paintRenderers';
 import { useOpacityScrub } from './useOpacityScrub';
+import { withIcons } from '../testIcons';
 
 type D = { fill?: Fill | null; text?: string };
 type L = 'main';
@@ -84,7 +85,7 @@ function setup({ selected = true, data = { fill: { paint: solid('#ff0000') } } a
       </ActionsProvider>
     );
   }
-  const { container, getByRole } = render(<Harness />);
+  const { container, getByRole } = render(<Harness />, { wrapper: withIcons });
   const fillSlider = () => (getByRole('slider', { name: 'Fill opacity' }) as HTMLInputElement).value;
   const canvas = container.querySelector('canvas')!;
   const wheel = (init: WheelEventInit = {}) => act(() => {

@@ -1,10 +1,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { ActionsProvider, useAction, type Action } from '@weasel-js/core';
 import { pref, type PrefGroup } from '@weasel-js/prefs';
 import { PrefsForm } from './PrefsForm';
 import { icon } from '../../icons.gen';
+import { renderWithIcons } from '../../testing/withIcons';
 
 afterEach(cleanup);
 
@@ -27,7 +28,7 @@ const action = (id: string, rest: Partial<Action> = {}, run: () => void = () => 
 });
 
 const form = (schema: PrefGroup, actions: Action[] = []) =>
-  render(<Host actions={actions}><PrefsForm schema={schema} values={{}} onChange={() => {}} /></Host>);
+  renderWithIcons(<Host actions={actions}><PrefsForm schema={schema} values={{}} onChange={() => {}} /></Host>);
 
 describe('PrefsForm action rows', () => {
   it('reads an action leaf’s label once, on its button, with its icon', () => {
@@ -81,7 +82,7 @@ describe('PrefsForm readouts', () => {
         mode: { ...pref.enum('Mode', 'b', ['a', 'b']), readout: true },
       },
     };
-    render(<PrefsForm schema={schema} values={{}} onChange={() => {}} />);
+    renderWithIcons(<PrefsForm schema={schema} values={{}} onChange={() => {}} />);
     expect(screen.queryByRole('spinbutton')).toBeNull();
     expect(screen.queryByRole('checkbox')).toBeNull();
     expect(screen.getByRole('status', { name: 'Size' }).textContent).toBe('12');
@@ -99,7 +100,7 @@ describe('PrefsForm bar menus', () => {
         strip: pref.group('Strip', { view: pref.group('View', { grid: pref.boolean('Grid', false) }, { as: 'menu' }) }, { as: 'bar' }),
       },
     };
-    render(<PrefsForm schema={schema} values={{ strip: { view: { grid: true } } }} onChange={onChange} />);
+    renderWithIcons(<PrefsForm schema={schema} values={{ strip: { view: { grid: true } } }} onChange={onChange} />);
     fireEvent.click(screen.getByRole('button', { name: 'View' }));
     const grid = screen.getByRole('menuitemcheckbox', { name: /Grid/ });
     expect(grid).toHaveAttribute('aria-checked', 'true');

@@ -10,6 +10,7 @@ import '@weasel-js/theme/tokens.css';
 import { App } from './App';
 import { DOC_KEY } from './docPersistence';
 import { LS_KEY } from './sceneLoading';
+import { withIcons as WithIcons } from './testIcons';
 
 let root: Root | null = null;
 let mountPoint: HTMLDivElement | null = null;
@@ -33,13 +34,15 @@ async function mountApp(): Promise<{ host: HTMLElement; canvas: HTMLCanvasElemen
   document.body.appendChild(mountPoint);
   root = createRoot(mountPoint);
   root.render(
-    <DepRegistryProvider>
-      <ActionsProvider>
-        <SelectionContextProvider>
-          <App />
-        </SelectionContextProvider>
-      </ActionsProvider>
-    </DepRegistryProvider>,
+    <WithIcons>
+      <DepRegistryProvider>
+        <ActionsProvider>
+          <SelectionContextProvider>
+            <App />
+          </SelectionContextProvider>
+        </ActionsProvider>
+      </DepRegistryProvider>
+    </WithIcons>,
   );
   await expect.poll(() => document.querySelector('.wd-canvas-host canvas')).not.toBeNull();
   const host = document.querySelector<HTMLElement>('.wd-canvas-host')!;

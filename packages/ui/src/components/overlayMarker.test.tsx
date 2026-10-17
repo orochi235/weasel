@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, screen } from '@testing-library/react';
 import { Callout } from './Callout';
 import { ComboBox } from './ComboBox';
 import { Dialog } from './Dialog';
 import { Select } from './Select';
 import { Tooltip, TooltipTrigger } from './Tooltip';
+import { renderWithIcons } from '../testing/withIcons';
 
 /**
  * Every overlay this package renders into a portal carries
@@ -23,29 +24,29 @@ function marked(): boolean {
 
 describe('portal overlays carry data-weasel-overlay', () => {
   it('Select popover', () => {
-    render(<Select label="Color" options={OPTIONS} />);
+    renderWithIcons(<Select label="Color" options={OPTIONS} />);
     act(() => { fireEvent.click(screen.getByRole('button', { name: /Color/ })); });
     expect(marked()).toBe(true);
   });
 
   it('ComboBox popover', () => {
-    render(<ComboBox label="Color" options={OPTIONS} />);
+    renderWithIcons(<ComboBox label="Color" options={OPTIONS} />);
     act(() => { fireEvent.click(screen.getByRole('button', { name: /Show options/ })); });
     expect(marked()).toBe(true);
   });
 
   it('Dialog overlay', () => {
-    render(<Dialog isOpen title="Hi" onOpenChange={() => {}}>body</Dialog>);
+    renderWithIcons(<Dialog isOpen title="Hi" onOpenChange={() => {}}>body</Dialog>);
     expect(marked()).toBe(true);
   });
 
   it('Callout popover', () => {
-    render(<Callout isOpen anchorRect={{ x: 0, y: 0, width: 10, height: 10 }} aria-label="c">body</Callout>);
+    renderWithIcons(<Callout isOpen anchorRect={{ x: 0, y: 0, width: 10, height: 10 }} aria-label="c">body</Callout>);
     expect(marked()).toBe(true);
   });
 
   it('Tooltip bubble', () => {
-    render(
+    renderWithIcons(
       <TooltipTrigger isOpen delay={0}>
         <button type="button">trigger</button>
         <Tooltip>hint</Tooltip>

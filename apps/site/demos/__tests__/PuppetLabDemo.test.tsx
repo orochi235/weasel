@@ -6,6 +6,7 @@ import { StrictMode } from 'react';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { PuppetLabDemo } from '../PuppetLabDemo';
 import { click, drag, sceneCanvas, stubResizeObserver } from './pathEditLabHarness';
+import { withIcons } from '../../testIcons';
 
 beforeAll(() => {
   window.history.replaceState(null, '', '/?test=1');
@@ -27,7 +28,7 @@ const worldCoords = () => Array.from(
 
 describe('PuppetLabDemo', () => {
   it('bends the eel by its head pin while the tail pin holds, adds a pin on a click and takes it out on an Alt-click', async () => {
-    const { container } = await renderSettled(<StrictMode><PuppetLabDemo /></StrictMode>);
+    const { container } = await renderSettled(<StrictMode><PuppetLabDemo /></StrictMode>, { wrapper: withIcons });
     const canvas = sceneCanvas(container);
     expect(pinsOf()).toHaveLength(3);
     const tail = worldCoords().slice(0, 2);

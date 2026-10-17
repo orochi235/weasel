@@ -1,8 +1,9 @@
 import '@weasel-js/theme/tokens.css';
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { cleanup, screen, within } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { PrefSchemaEditor } from './PrefSchemaEditor';
+import { renderWithIcons } from '../../testing/withIcons';
 
 afterEach(cleanup);
 
@@ -17,7 +18,7 @@ const midX = (el: Element) => {
 };
 
 test('the palette sits at the middle of the bar, whatever the host sets at its start', () => {
-  render(<PrefSchemaEditor schema={SCHEMA} onChange={() => {}} bar={<span>A host control of some length</span>} />);
+  renderWithIcons(<PrefSchemaEditor schema={SCHEMA} onChange={() => {}} bar={<span>A host control of some length</span>} />);
   const bar = screen.getByRole('group', { name: 'Schema tools' });
   const drag = within(bar).getByRole('group', { name: 'Drag to add' });
   const palette = drag.parentElement!;
@@ -25,7 +26,7 @@ test('the palette sits at the middle of the bar, whatever the host sets at its s
 });
 
 test('the add and remove tools sit in the palette, past a rule after the drag tools', () => {
-  render(<PrefSchemaEditor schema={SCHEMA} onChange={() => {}} />);
+  renderWithIcons(<PrefSchemaEditor schema={SCHEMA} onChange={() => {}} />);
   const drag = screen.getByRole('group', { name: 'Drag to add' });
   const palette = drag.parentElement!;
   const rule = within(palette).getByRole('separator');

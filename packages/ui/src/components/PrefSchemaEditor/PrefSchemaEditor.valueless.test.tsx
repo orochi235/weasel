@@ -1,7 +1,8 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, screen, within } from '@testing-library/react';
 import type { PrefLeaf, PrefSection } from '@weasel-js/prefs';
 import { PrefSchemaEditor } from './PrefSchemaEditor';
+import { renderWithIcons } from '../../testing/withIcons';
 
 afterEach(cleanup);
 
@@ -14,7 +15,7 @@ describe('PrefSchemaEditor: a pref that holds no value', () => {
       rule: { kind: 'separator', name: '', description: '', default: undefined } as PrefLeaf,
       x: { kind: 'number', name: 'X', description: '', default: 0 },
     } };
-    render(<PrefSchemaEditor schema={start} onChange={() => {}} />);
+    renderWithIcons(<PrefSchemaEditor schema={start} onChange={() => {}} />);
     const pane = screen.getByRole('region', { name: 'Attributes' });
     fireEvent.click(within(structure()).getByText('x'));
     expect(pane).toHaveTextContent('Default');

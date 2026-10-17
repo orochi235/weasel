@@ -1,8 +1,9 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { useState } from 'react';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { PrefSchemaEditor } from './PrefSchemaEditor';
+import { renderWithIcons } from '../../testing/withIcons';
 
 afterEach(cleanup);
 
@@ -41,7 +42,7 @@ const keyField = () => attributes().getByRole('textbox', { name: 'Key' });
 
 describe('PrefSchemaEditor: the path under the key', () => {
   it('shows the selected node\'s whole path as plain text, not a field, and follows a new key', () => {
-    render(<Live />);
+    renderWithIcons(<Live />);
     select('snap');
     const path = () => attributes().getByText(/^(view|page)\./);
     expect(path()).toHaveTextContent('view.snap');
@@ -56,14 +57,14 @@ describe('PrefSchemaEditor: the path under the key', () => {
 
 describe('PrefSchemaEditor: the key follows the name', () => {
   it('sets the name above the key', () => {
-    render(<Live />);
+    renderWithIcons(<Live />);
     select('snap');
     const name = attributes().getByRole('textbox', { name: 'Name' });
     expect(name.compareDocumentPosition(keyField()) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it('rekeys a new node from its name when the name loses focus, and its new child after it', () => {
-    render(<Live />);
+    renderWithIcons(<Live />);
     select('page');
     rename('Side panels');
     expect(keyField()).toHaveValue('sidePanels');
@@ -76,14 +77,14 @@ describe('PrefSchemaEditor: the key follows the name', () => {
   });
 
   it('numbers the key when a sibling holds it', () => {
-    render(<Live />);
+    renderWithIcons(<Live />);
     select('page');
     rename('View');
     expect(keyField()).toHaveValue('view2');
   });
 
   it('rekeys a node from the baseline only when its key was the name\'s already', () => {
-    render(<Live />);
+    renderWithIcons(<Live />);
     select('grid');
     rename('Show the grid');
     expect(keyField()).toHaveValue('grid');

@@ -6,6 +6,7 @@ import { StrictMode } from 'react';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { AddExtremesLabDemo } from '../AddExtremesLabDemo';
 import { click, press, sceneCanvas, stubResizeObserver } from './pathEditLabHarness';
+import { withIcons } from '../../testIcons';
 
 beforeAll(() => {
   window.history.replaceState(null, '', '/?test=1');
@@ -20,7 +21,7 @@ const anchors = () => countPathAnchors((window.__weaselTest!.getScene().nodes[0]
 
 describe('AddExtremesLabDemo', () => {
   it('adds anchors to the selected segment on Alt+X, then to the rest once the selection is cleared', async () => {
-    const { container } = await renderSettled(<StrictMode><AddExtremesLabDemo /></StrictMode>);
+    const { container } = await renderSettled(<StrictMode><AddExtremesLabDemo /></StrictMode>, { wrapper: withIcons });
     giveKeys(container.querySelector('.lk-trial-scene canvas'));
     const before = anchors();
     press('x', 'KeyX', { altKey: true });

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { useState } from 'react';
-import { act, cleanup, render, screen, fireEvent, within } from '@testing-library/react';
+import { act, cleanup, screen, fireEvent, within } from '@testing-library/react';
 import {
   asPaint,
   registerPaintKind,
@@ -8,7 +8,7 @@ import {
   type GradientPaint,
 } from '@weasel-js/core';
 import { seedMeshPatch } from '@weasel-js/core/mesh';
-import { withIcons } from '../../testing/withIcons';
+import { renderWithIcons } from '../../testing/withIcons';
 import { PaintInput } from './PaintInput';
 
 const LINEAR: GradientPaint = {
@@ -45,20 +45,20 @@ const clickKind = (label: string): void => {
 
 describe('PaintInput', () => {
   it('lists every registered kind in the bar', () => {
-    render(<PaintInput value={SOLID} onChange={() => {}} />);
+    renderWithIcons(<PaintInput value={SOLID} onChange={() => {}} />);
     for (const label of ['Solid', 'Linear', 'Radial', 'Conic', 'Pattern']) {
       expect(screen.getByRole('radio', { name: label })).toBeInTheDocument();
     }
   });
 
   it('restricts the bar to `kinds` when given', () => {
-    render(<PaintInput value={SOLID} kinds={['solid', 'linear-gradient']} onChange={() => {}} />);
+    renderWithIcons(<PaintInput value={SOLID} kinds={['solid', 'linear-gradient']} onChange={() => {}} />);
     expect(screen.getByRole('radio', { name: 'Solid' })).toBeInTheDocument();
     expect(screen.queryByRole('radio', { name: 'Pattern' })).toBeNull();
   });
 
   it('lights the active kind, and nothing when mixed', () => {
-    const { rerender } = render(<PaintInput value={LINEAR} onChange={() => {}} />);
+    const { rerender } = renderWithIcons(<PaintInput value={LINEAR} onChange={() => {}} />);
     expect(screen.getByRole('radio', { name: 'Linear' })).toBeChecked();
 
     rerender(<PaintInput value={LINEAR} mixed onChange={() => {}} />);
@@ -66,20 +66,20 @@ describe('PaintInput', () => {
   });
 
   it('shows a gradient as a gradient rather than an indeterminate chip', () => {
-    const { container } = render(<PaintInput value={LINEAR} onChange={() => {}} />);
+    const { container } = renderWithIcons(<PaintInput value={LINEAR} onChange={() => {}} />);
     expect(screen.getByLabelText('Stop 1')).toBeInTheDocument();
     expect(container.querySelector('[data-mixed]')).toBeNull();
   });
 
   it('still shows the indeterminate chip when the selection is mixed', () => {
-    const { container } = render(<PaintInput value={LINEAR} mixed onChange={() => {}} />);
+    const { container } = renderWithIcons(<PaintInput value={LINEAR} mixed onChange={() => {}} />);
     expect(container.querySelector('[data-mixed]')).not.toBeNull();
   });
 
   // The switch precedence, which is the whole point of the memory.
   it('linear -> solid -> linear restores the stops', () => {
     const onCommit = vi.fn();
-    render(<Host initial={LINEAR} onCommit={onCommit} />);
+    renderWithIcons(<Host initial={LINEAR} onCommit={onCommit} />);
 
     clickKind('Solid');
     expect(onCommit).toHaveBeenLastCalledWith(expect.objectContaining({ color: '#ff0000ff' }));
@@ -90,7 +90,7 @@ describe('PaintInput', () => {
 
   it('forgets the last subject\'s paints when pointed at another', () => {
     const onChange = vi.fn();
-    const { rerender } = render(<PaintInput subject="a" value={LINEAR} onChange={onChange} />);
+    const { rerender } = renderWithIcons(<PaintInput subject="a" value={LINEAR} onChange={onChange} />);
     rerender(<PaintInput subject="b" value={SOLID} onChange={onChange} />);
 
     clickKind('Linear');
@@ -101,7 +101,7 @@ describe('PaintInput', () => {
 
   it('keeps its memory while the subject stays the same', () => {
     const onChange = vi.fn();
-    const { rerender } = render(<PaintInput subject="a" value={LINEAR} onChange={onChange} />);
+    const { rerender } = renderWithIcons(<PaintInput subject="a" value={LINEAR} onChange={onChange} />);
     rerender(<PaintInput subject="a" value={SOLID} onChange={onChange} />);
 
     clickKind('Linear');
@@ -110,7 +110,7 @@ describe('PaintInput', () => {
 
   it('seeds a kind it has not seen instead of remembering one', () => {
     const onCommit = vi.fn();
-    render(<Host initial={SOLID} onCommit={onCommit} />);
+    renderWithIcons(<Host initial={SOLID} onCommit={onCommit} />);
 
     clickKind('Pattern');
     const next = onCommit.mock.calls.at(-1)?.[0] as Paint;
@@ -118,7 +118,7 @@ describe('PaintInput', () => {
   });
 
   it('offers every tile kind under one Pattern segment', () => {
-    render(<Host initial={SOLID} />);
+    renderWithIcons(<Host initial={SOLID} />);
     const bar = screen.getByRole('radiogroup', { name: 'Paint kind' });
     expect(within(bar).queryByRole('radio', { name: 'Hatch' })).toBeNull();
     expect(within(bar).getAllByRole('radio', { name: 'Pattern' })).toHaveLength(1);
@@ -126,7 +126,7 @@ describe('PaintInput', () => {
 
   it('keeps the Pattern segment lit as the picker moves between tile kinds', () => {
     const onCommit = vi.fn();
-    render(<Host initial={{ kind: 'hatch', color: '#336699', units: 'bounds' }} onCommit={onCommit} />);
+    renderWithIcons(<Host initial={{ kind: 'hatch', color: '#336699', units: 'bounds' }} onCommit={onCommit} />);
     const pattern = (): HTMLElement => screen.getByRole('radio', { name: 'Pattern' });
     expect(pattern()).toBeChecked();
 
@@ -137,7 +137,7 @@ describe('PaintInput', () => {
 
   it('carries gradient geometry across a gradient-to-gradient switch', () => {
     const onCommit = vi.fn();
-    render(<Host initial={LINEAR} onCommit={onCommit} />);
+    renderWithIcons(<Host initial={LINEAR} onCommit={onCommit} />);
 
     clickKind('Radial');
     const next = onCommit.mock.calls.at(-1)?.[0] as GradientPaint;
@@ -147,7 +147,7 @@ describe('PaintInput', () => {
 
   it("carries a gradient's colors into a mesh rather than seeding one", () => {
     const onCommit = vi.fn();
-    render(<Host initial={LINEAR} onCommit={onCommit} />);
+    renderWithIcons(<Host initial={LINEAR} onCommit={onCommit} />);
 
     clickKind('Mesh');
     const next = onCommit.mock.calls.at(-1)?.[0] as unknown as { kind: string; patches: { colors: string[] }[] };
@@ -166,7 +166,7 @@ describe('PaintInput', () => {
       units: 'bounds',
     };
     const onCommit = vi.fn();
-    render(<Host initial={CONIC} onCommit={onCommit} />);
+    renderWithIcons(<Host initial={CONIC} onCommit={onCommit} />);
 
     clickKind('Radial');
     clickKind('Conic');
@@ -178,7 +178,7 @@ describe('PaintInput', () => {
 
   it('offers None, and switching to it commits no paint at all', () => {
     const onCommit = vi.fn();
-    render(<Host initial={SOLID} onCommit={onCommit} />);
+    renderWithIcons(<Host initial={SOLID} onCommit={onCommit} />);
 
     clickKind('None');
     expect(onCommit).toHaveBeenLastCalledWith(null);
@@ -186,21 +186,21 @@ describe('PaintInput', () => {
   });
 
   it('draws None as a glyph, like every other segment', () => {
-    render(<PaintInput value={null} onChange={() => {}} />, { wrapper: withIcons });
+    renderWithIcons(<PaintInput value={null} onChange={() => {}} />);
     const none = screen.getByRole('radio', { name: 'None' });
     expect(none).toHaveAttribute('aria-label', 'None');
     expect(none.querySelector('svg')).not.toBeNull();
   });
 
   it('shows no editor body for None', () => {
-    render(<PaintInput value={null} onChange={() => {}} />);
+    renderWithIcons(<PaintInput value={null} onChange={() => {}} />);
     expect(screen.getByRole('radio', { name: 'None' })).toBeChecked();
     expect(document.querySelector('input[type="color"]')).toBeNull();
   });
 
   it('leaving None restores the paint it was remembered from', () => {
     const onCommit = vi.fn();
-    render(<Host initial={LINEAR} onCommit={onCommit} />);
+    renderWithIcons(<Host initial={LINEAR} onCommit={onCommit} />);
 
     clickKind('None');
     expect(onCommit).toHaveBeenLastCalledWith(null);
@@ -211,7 +211,7 @@ describe('PaintInput', () => {
   });
 
   it('omits None when allowNone is false', () => {
-    render(<PaintInput value={SOLID} allowNone={false} onChange={() => {}} />);
+    renderWithIcons(<PaintInput value={SOLID} allowNone={false} onChange={() => {}} />);
     expect(screen.queryByRole('radio', { name: 'None' })).toBeNull();
     expect(screen.getByRole('radio', { name: 'Solid' })).toBeInTheDocument();
   });
@@ -234,13 +234,13 @@ describe('PaintInput — a registered kind', () => {
       Editor: () => <div data-testid="noise-editor" />,
     }));
 
-    render(<PaintInput value={asPaint({ kind: 'noise', color: '#112233ff' })} onChange={() => {}} />);
+    renderWithIcons(<PaintInput value={asPaint({ kind: 'noise', color: '#112233ff' })} onChange={() => {}} />);
     expect(screen.getByRole('radio', { name: 'Noise' })).toBeInTheDocument();
     expect(screen.getByTestId('noise-editor')).toBeInTheDocument();
   });
 
   it('picks up a kind registered after it mounted', () => {
-    render(<PaintInput value={asPaint({ kind: 'noise', color: '#112233ff' })} onChange={() => {}} />);
+    renderWithIcons(<PaintInput value={asPaint({ kind: 'noise', color: '#112233ff' })} onChange={() => {}} />);
     expect(screen.queryByRole('radio', { name: 'Noise' })).toBeNull();
 
     act(() => {
@@ -265,7 +265,7 @@ describe('PaintInput — a registered kind', () => {
       Editor: () => <div data-testid="custom-linear" />,
     }));
 
-    render(<PaintInput value={LINEAR} onChange={() => {}} />);
+    renderWithIcons(<PaintInput value={LINEAR} onChange={() => {}} />);
     expect(screen.getByTestId('custom-linear')).toBeInTheDocument();
     expect(screen.queryByLabelText('Stop 1')).toBeNull();
   });
@@ -279,7 +279,7 @@ describe('PaintInput — a registered kind', () => {
     }));
     const onChange = vi.fn();
     const onInput = vi.fn();
-    const { container } = render(
+    const { container } = renderWithIcons(
       <PaintInput
         value={asPaint({ kind: 'noise', color: '#112233ff' })}
         onInput={onInput}
@@ -304,12 +304,12 @@ describe('PaintInput — solid opacity', () => {
     screen.getByRole('slider', { name: /opacity/i }) as HTMLInputElement;
 
   it("reads a solid paint's alpha from its opacity slot", () => {
-    render(<PaintInput value={{ color: '#336699', opacity: 0.4 }} onChange={() => {}} />);
+    renderWithIcons(<PaintInput value={{ color: '#336699', opacity: 0.4 }} onChange={() => {}} />);
     expect(opacitySlider().value).toBe('40');
   });
 
   it('follows an opacity written from outside the control', () => {
-    const { rerender } = render(<PaintInput value={{ color: '#336699' }} onChange={() => {}} />);
+    const { rerender } = renderWithIcons(<PaintInput value={{ color: '#336699' }} onChange={() => {}} />);
     expect(opacitySlider().value).toBe('100');
     rerender(<PaintInput value={{ color: '#336699', opacity: 0.25 }} onChange={() => {}} />);
     expect(opacitySlider().value).toBe('25');
@@ -317,7 +317,7 @@ describe('PaintInput — solid opacity', () => {
 
   it('commits alpha into the opacity slot, not the hex', () => {
     const onChange = vi.fn();
-    render(<PaintInput value={{ color: '#336699', opacity: 0.4 }} onChange={onChange} />);
+    renderWithIcons(<PaintInput value={{ color: '#336699', opacity: 0.4 }} onChange={onChange} />);
     fireEvent.input(opacitySlider(), { target: { value: '70' } });
     fireEvent.pointerUp(opacitySlider());
     expect(onChange).toHaveBeenLastCalledWith({ color: '#336699', opacity: 0.7 });
@@ -339,7 +339,7 @@ describe('PaintInput — opacity of a paint with no single color', () => {
     it(`writes a ${name}'s opacity slot, keeping the rest of the paint`, () => {
       const onInput = vi.fn();
       const onChange = vi.fn();
-      render(<PaintInput value={paint} onInput={onInput} onChange={onChange} />);
+      renderWithIcons(<PaintInput value={paint} onInput={onInput} onChange={onChange} />);
       fireEvent.input(opacitySlider(), { target: { value: '30' } });
       expect(onInput).toHaveBeenLastCalledWith({ ...paint, opacity: 0.3 });
       fireEvent.pointerUp(opacitySlider());
@@ -348,7 +348,7 @@ describe('PaintInput — opacity of a paint with no single color', () => {
     });
 
     it(`follows a ${name}'s opacity written from outside the control`, () => {
-      const { rerender } = render(<PaintInput value={paint} onChange={() => {}} />);
+      const { rerender } = renderWithIcons(<PaintInput value={paint} onChange={() => {}} />);
       expect(opacitySlider().value).toBe('100');
       rerender(<PaintInput value={{ ...paint, opacity: 0.25 }} onChange={() => {}} />);
       expect(opacitySlider().value).toBe('25');
@@ -356,7 +356,7 @@ describe('PaintInput — opacity of a paint with no single color', () => {
   }
 
   it('shows one opacity control for a solid, not a second beside the swatch', () => {
-    render(<PaintInput value={SOLID} onChange={() => {}} />);
+    renderWithIcons(<PaintInput value={SOLID} onChange={() => {}} />);
     expect(screen.getAllByRole('slider', { name: /opacity/i })).toHaveLength(1);
   });
 });

@@ -2,7 +2,8 @@ import '@weasel-js/theme/tokens.css';
 import 'windease/styles.css';
 import '../styles.less';
 import './LabFit.browser.test.less';
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, screen, waitFor } from '@testing-library/react';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import { type ReactNode, useLayoutEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { afterEach, expect, test } from 'vitest';
@@ -195,7 +196,7 @@ const CASES = FIXTURES.flatMap((fixture) =>
 test.each(CASES)('$fixture fits a $viewport viewport', async ({ fixture, viewport }) => {
   const { width, height } = VIEWPORTS[viewport].styles;
   await page.viewport(Number.parseInt(width, 10), Number.parseInt(height, 10));
-  render(
+  renderWithIcons(
     <BodyHost host={HOST[fixture]}>
       <Lab
         title={`Fit: ${fixture}`}

@@ -5,6 +5,7 @@ import { ActionsProvider, DepRegistryProvider, SceneCanvas, createScene } from '
 import { ActionBar } from '@weasel-js/ui';
 import { recordingContribution } from './contribution';
 import type { RecordingSession } from './session';
+import { withIcons } from '../testIcons';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as { getContext: (...args: unknown[]) => unknown };
@@ -32,6 +33,7 @@ function setup(state: { recording?: boolean; playing?: boolean } = {}) {
           ambient={[recordingContribution(session)]} />
       </ActionsProvider>
     </DepRegistryProvider>,
+    { wrapper: withIcons },
   );
   const button = (name: string) => screen.getByRole('button', { name }) as HTMLButtonElement;
   const disabled = (b: HTMLButtonElement) => b.disabled || b.getAttribute('aria-disabled') === 'true';

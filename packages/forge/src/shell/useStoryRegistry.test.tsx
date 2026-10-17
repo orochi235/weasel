@@ -1,13 +1,14 @@
 import { Profiler, type ReactNode } from 'react';
 import { Lab } from '@weasel-js/labkit';
 import { f } from '@weasel-js/labkit/config';
-import { act, render, renderHook, screen } from '@testing-library/react';
+import { act, renderHook, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { type FromFrame, stableStringify } from '../protocol/messages';
 import { describeSchema } from '../protocol/schema';
 import type { IndexEntry } from '../story/types';
 import { connectFrame, flush, installResizeObserver } from './labHarness';
 import { useStoryRegistry } from './useStoryRegistry';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 const a: IndexEntry = { id: 'x--a', title: 'X', name: 'A', exportName: 'A', file: '/x.stories.tsx' };
 const b: IndexEntry = { id: 'x--b', title: 'X', name: 'B', exportName: 'B', file: '/x.stories.tsx' };
@@ -102,7 +103,7 @@ describe('useStoryRegistry under a lab', () => {
   }
 
   it('follows the frame’s answers in the settings panel without other input', async () => {
-    const view = render(<RegistryLab />);
+    const view = renderWithIcons(<RegistryLab />);
     const { frame } = connectFrame(view.container.querySelector('iframe.fg-frame-view') as HTMLIFrameElement);
     frame.send(conditional);
     await flush();
@@ -123,7 +124,7 @@ describe('useStoryRegistry under a lab', () => {
       instruments.push(registry.instruments[0]);
       return <Lab instruments={registry.instruments} defaultInstrument={a.id} />;
     }
-    const view = render(<Spy />);
+    const view = renderWithIcons(<Spy />);
     const { frame, received } = connectFrame(view.container.querySelector('iframe.fg-frame-view') as HTMLIFrameElement);
     frame.send(conditional);
     await flush();

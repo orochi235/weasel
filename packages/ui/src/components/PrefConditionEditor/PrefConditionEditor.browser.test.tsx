@@ -1,8 +1,9 @@
 import '@weasel-js/theme/tokens.css';
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { cleanup, screen, within } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
 import type { PrefCondition, PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 import { PrefConditionEditor } from './PrefConditionEditor';
+import { renderWithIcons } from '../../testing/withIcons';
 
 // Whether a row's controls wrap inside a narrow column or push it wider is layout, which jsdom does not do.
 // The test page is 414px wide, so that is as wide a column as these can ask about.
@@ -28,7 +29,7 @@ const box = (el: Element) => el.getBoundingClientRect();
 const row = (n: number) => screen.getByRole('group', { name: `Condition ${n}` });
 
 test.each([200, 300, 400])('every row stays inside a column %ipx wide, its remove button at the end of its first line', (width) => {
-  const { container } = render(<div style={{ width }}>
+  const { container } = renderWithIcons(<div style={{ width }}>
     <PrefConditionEditor aria-label="Shown if" schema={SCHEMA} value={VALUE} onChange={() => {}} />
   </div>);
   const frame = box(container.firstElementChild!);
@@ -49,7 +50,7 @@ test.each([200, 300, 400])('every row stays inside a column %ipx wide, its remov
 });
 
 test('what is wrong with a row is drawn under its controls, in the danger color', () => {
-  render(<div style={{ width: 400 }}><PrefConditionEditor aria-label="Shown if" schema={SCHEMA} value={VALUE} onChange={() => {}} /></div>);
+  renderWithIcons(<div style={{ width: 400 }}><PrefConditionEditor aria-label="Shown if" schema={SCHEMA} value={VALUE} onChange={() => {}} /></div>);
   const message = screen.getByText(/no leaf holds a value/);
   expect(row(5).contains(message)).toBe(true);
   expect(box(message).height).toBeGreaterThan(0);
@@ -60,7 +61,7 @@ test('what is wrong with a row is drawn under its controls, in the danger color'
 test('a pref and its comparison share a line where the column has room, and the pref takes its own where it has not', () => {
   const at = (width: number) => {
     cleanup();
-    render(<div style={{ width }}>
+    renderWithIcons(<div style={{ width }}>
       <PrefConditionEditor aria-label="Shown if" schema={SCHEMA} value={VALUE} onChange={() => {}} />
     </div>);
     const pref = box(within(row(1)).getByRole('button', { name: /pref/ }));

@@ -1,9 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, getDefaultNormalizer, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, getDefaultNormalizer, screen, within } from '@testing-library/react';
 import { useState } from 'react';
 import type { PrefGroup, PrefSection } from '@weasel-js/prefs';
 import { PrefSchemaEditor } from './PrefSchemaEditor';
 import { keyedRow, rowKey } from './treeRows.fixture';
+import { renderWithIcons } from '../../testing/withIcons';
 
 /** Types `value` and leaves the field, which is when a typed field commits. */
 const settle = (el: HTMLElement, value: string): void => {
@@ -38,13 +39,13 @@ const preview = () => screen.getByRole('region', { name: 'Live preview' });
 
 describe('PrefSchemaEditor', () => {
   it('shows the schema as a tree and the preview as a form', () => {
-    render(<Live />);
+    renderWithIcons(<Live />);
     expect(within(structure()).getByRole('treeitem', { name: /view/ })).toBeInTheDocument();
     expect(within(preview()).getByText('Show grid')).toBeInTheDocument();
   });
 
   it('resizes the structure and attributes columns from the handles between them', () => {
-    const { container } = render(<Live />);
+    const { container } = renderWithIcons(<Live />);
     const editor = container.firstElementChild as HTMLElement;
     const before = (v: string) => editor.style.getPropertyValue(v);
     const structureWidth = before('--structure-w');
@@ -56,7 +57,7 @@ describe('PrefSchemaEditor', () => {
   });
 
   it('edits a leaf attribute and the preview follows', () => {
-    render(<Live />);
+    renderWithIcons(<Live />);
     fireEvent.click(row('grid'));
     const name = within(screen.getByRole('region', { name: 'Attributes' })).getByRole('textbox', { name: 'Name' });
     settle(name, 'Grid on');
@@ -64,7 +65,7 @@ describe('PrefSchemaEditor', () => {
   });
 
   it('sets the attributes every kind shares beside Key and Kind, and the kind\'s own in a panel below', () => {
-    render(<Live />);
+    renderWithIcons(<Live />);
     fireEvent.click(row('grid'));
     const top = screen.getByRole('region', { name: 'Attributes' });
     // A group's heading sits in a header row, first in its panel.
@@ -88,7 +89,7 @@ describe('PrefSchemaEditor', () => {
   };
 
   it('adds a pref into the selected group from a name, an id and a kind, and lists it under Changes', () => {
-    render(<Live />);
+    renderWithIcons(<Live />);
     fireEvent.click(row('view'));
     const dialog = openAdd('Add pref');
     settle(within(dialog).getByRole('textbox', { name: 'Name' }), 'Line width');
@@ -102,7 +103,7 @@ describe('PrefSchemaEditor', () => {
   });
 
   it('adds nothing until a pref has a name, a free id and a kind', () => {
-    render(<Live />);
+    renderWithIcons(<Live />);
     fireEvent.click(row('view'));
     const dialog = openAdd('Add pref');
     const add = within(dialog).getByRole('button', { name: 'Add' });
@@ -116,7 +117,7 @@ describe('PrefSchemaEditor', () => {
   });
 
   it('adds a group with no name, keyed by the id given', () => {
-    render(<Live />);
+    renderWithIcons(<Live />);
     const dialog = openAdd('Add group');
     settle(within(dialog).getByRole('textbox', { name: 'Id' }), 'misc');
     fireEvent.click(within(dialog).getByRole('button', { name: 'Add' }));
@@ -124,13 +125,13 @@ describe('PrefSchemaEditor', () => {
   });
 
   it('shows a row as its name with its key, and a nameless one as its key alone', () => {
-    render(<Live start={{ name: 'Prefs', children: { bare: { name: '', children: {} }, view: START.children.view! } }} />);
+    renderWithIcons(<Live start={{ name: 'Prefs', children: { bare: { name: '', children: {} }, view: START.children.view! } }} />);
     expect(within(structure()).getByRole('treeitem', { name: /^View view/ })).toBeInTheDocument();
     expect(within(structure()).getByRole('treeitem', { name: /^bare 0$/ })).toBeInTheDocument();
   });
 
   it('draws a group\'s row with the glyph of the palette tool that makes it, and a leaf\'s with none', () => {
-    render(<Live start={{ name: 'Prefs', children: { view: { ...START.children.view!, children: {
+    renderWithIcons(<Live start={{ name: 'Prefs', children: { view: { ...START.children.view!, children: {
       box: { name: 'Box', as: 'panel', children: {} },
       grid: (START.children.view as PrefGroup).children.grid!,
     } } } }} />);
@@ -143,7 +144,7 @@ describe('PrefSchemaEditor', () => {
   });
 
   it('opens a page from a press and release on its rail entry in the preview, with no click of the browser\'s', () => {
-    render(<Live />);
+    renderWithIcons(<Live />);
     const entry = within(preview()).getByRole('button', { name: 'Panels' });
     fireEvent.pointerDown(entry, { button: 0, clientX: 5, clientY: 5 });
     fireEvent.pointerUp(entry, { clientX: 5, clientY: 5 });
@@ -151,7 +152,7 @@ describe('PrefSchemaEditor', () => {
   });
 
   it('selects a group in the tree and the attributes pane from a press on its rail entry in the preview', () => {
-    render(<Live />);
+    renderWithIcons(<Live />);
     const entry = within(preview()).getByRole('button', { name: 'Panels' });
     fireEvent.pointerDown(entry, { button: 0, clientX: 5, clientY: 5 });
     fireEvent.pointerUp(entry, { clientX: 5, clientY: 5 });
@@ -160,7 +161,7 @@ describe('PrefSchemaEditor', () => {
   });
 
   it('narrows the tree to the rows a filter matches, under the branches that hold them', () => {
-    render(<Live />);
+    renderWithIcons(<Live />);
     settle(screen.getByRole('textbox', { name: 'Filter structure' }), 'dock');
     expect(keyedRow(structure(), 'dock')).toBeInTheDocument();
     expect(keyedRow(structure(), 'panels')).toBeInTheDocument();
@@ -173,7 +174,7 @@ describe('PrefSchemaEditor', () => {
       panels: { name: 'Panels', children: { dock: { kind: 'boolean', name: 'Dock', description: '', default: true, tags: ['sidebar'] } } },
     } };
     const waiting: PrefGroup = { name: '', children: { glow: { kind: 'boolean', name: 'Glow', description: '', default: false, tags: ['halo'] } } };
-    render(<PrefSchemaEditor schema={start} onChange={() => {}} unplaced={waiting} />);
+    renderWithIcons(<PrefSchemaEditor schema={start} onChange={() => {}} unplaced={waiting} />);
     const filter = screen.getByRole('textbox', { name: 'Filter structure' });
     fireEvent.change(filter, { target: { value: 'Sideb' } });
     expect(keyedRow(structure(), 'dock')).toBeInTheDocument();
@@ -185,7 +186,7 @@ describe('PrefSchemaEditor', () => {
   it('narrows the unplaced rows by the same filter', () => {
     const start: PrefGroup = { name: '', children: { ...START.children, author: { kind: 'string', name: 'Author', description: '', default: '' } } };
     const waiting: PrefGroup = { name: '', children: { glow: { kind: 'boolean', name: 'Glow', description: '', default: false } } };
-    render(<PrefSchemaEditor schema={start} onChange={() => {}} unplaced={waiting} />);
+    renderWithIcons(<PrefSchemaEditor schema={start} onChange={() => {}} unplaced={waiting} />);
     const unplaced = screen.getByRole('tree', { name: 'Unplaced' });
     settle(screen.getByRole('textbox', { name: 'Filter structure' }), 'glo');
     expect(keyedRow(unplaced, 'glow')).toBeInTheDocument();
@@ -193,7 +194,7 @@ describe('PrefSchemaEditor', () => {
   });
 
   it('sets the host\'s controls, the palette, and the add and remove buttons in one bar above the panes', () => {
-    render(<PrefSchemaEditor schema={START} onChange={() => {}} bar={<button type="button">Source</button>} />);
+    renderWithIcons(<PrefSchemaEditor schema={START} onChange={() => {}} bar={<button type="button">Source</button>} />);
     const bar = screen.getByRole('group', { name: 'Schema tools' });
     for (const name of ['Source', 'Page', 'Add pref', 'Add group', 'Remove', 'Undo', 'Redo'])
       expect(within(bar).getByRole('button', { name })).toBeInTheDocument();
@@ -210,7 +211,7 @@ describe('PrefSchemaEditor', () => {
       fireEvent.click(screen.getByRole('tab', { name: 'Changes' }));
       return screen.getByRole('region', { name: 'Export' });
     };
-    const { rerender } = render(<Host original={START} taken={false} />);
+    const { rerender } = renderWithIcons(<Host original={START} taken={false} />);
     expect(within(changes()).queryByText('No changes.')).toBeNull();
     await act(async () => { fireEvent.click(within(changes()).getByRole('button', { name: 'Submit' })); });
     // The source took the rename in words of its own, which only the host's say-so tells from an edit still owed.
@@ -222,7 +223,7 @@ describe('PrefSchemaEditor', () => {
   });
 
   it('offers no group inside one that already sits at the depth allowed', () => {
-    render(<PrefSchemaEditor schema={START} onChange={() => {}} maxDepth={1} />);
+    renderWithIcons(<PrefSchemaEditor schema={START} onChange={() => {}} maxDepth={1} />);
     const add = screen.getByRole('button', { name: 'Add group' });
     expect(add).toBeEnabled();
     fireEvent.click(row('view'));
@@ -235,7 +236,7 @@ describe('PrefSchemaEditor', () => {
       view: { ...(START.children.view as PrefGroup), children: { snap: (START.children.view as PrefGroup).children.snap! } },
       panels: { ...(START.children.panels as PrefGroup), children: { ...(START.children.panels as PrefGroup).children, grid: (START.children.view as PrefGroup).children.grid! } },
     } };
-    const { rerender } = render(<PrefSchemaEditor schema={START} original={START} onChange={() => {}} rowMark={mark} />);
+    const { rerender } = renderWithIcons(<PrefSchemaEditor schema={START} original={START} onChange={() => {}} rowMark={mark} />);
     expect(rowKey(screen.getByTestId('mark').closest('[role="treeitem"]')!)).toBe('grid');
     rerender(<PrefSchemaEditor schema={moved} original={START} onChange={() => {}} rowMark={mark} />);
     expect(screen.getAllByTestId('mark')).toHaveLength(1);
@@ -244,18 +245,18 @@ describe('PrefSchemaEditor', () => {
 
   it('opens with the rows folded that were folded under its draft key last time', () => {
     localStorage.clear();
-    const first = render(<PrefSchemaEditor schema={START} onChange={() => {}} draftKey="folds-test" />);
+    const first = renderWithIcons(<PrefSchemaEditor schema={START} onChange={() => {}} draftKey="folds-test" />);
     fireEvent.click(row('view').closest('[role="treeitem"]')!.querySelector('[data-tree-twisty]')!);
     expect(keyedRow(structure(), 'view')).toHaveAttribute('aria-expanded', 'false');
     first.unmount();
-    render(<PrefSchemaEditor schema={START} onChange={() => {}} draftKey="folds-test" />);
+    renderWithIcons(<PrefSchemaEditor schema={START} onChange={() => {}} draftKey="folds-test" />);
     expect(keyedRow(structure(), 'view')).toHaveAttribute('aria-expanded', 'false');
     expect(keyedRow(structure(), 'panels')).toHaveAttribute('aria-expanded', 'true');
     localStorage.clear();
   });
 
   it('undoes and redoes an edit, from its buttons and from the keyboard', () => {
-    render(<Live />);
+    renderWithIcons(<Live />);
     fireEvent.click(row('grid'));
     const undo = screen.getByRole('button', { name: 'Undo' });
     expect(undo).toBeDisabled();
@@ -272,7 +273,7 @@ describe('PrefSchemaEditor', () => {
   });
 
   it('undoes a run of keystrokes in one field as one step', () => {
-    render(<Live />);
+    renderWithIcons(<Live />);
     fireEvent.click(row('grid'));
     const name = () => within(screen.getByRole('region', { name: 'Attributes' })).getByRole('textbox', { name: 'Name' });
     for (const typed of ['G', 'Gr', 'Gri', 'Grid']) settle(name(), typed);
@@ -282,7 +283,7 @@ describe('PrefSchemaEditor', () => {
   });
 
   it('undoes a removal, and selects the node again', () => {
-    render(<Live />);
+    renderWithIcons(<Live />);
     fireEvent.click(row('snap'));
     fireEvent.click(screen.getByRole('button', { name: 'Remove' }));
     expect(within(structure()).queryByText('snap')).toBeNull();
@@ -300,7 +301,7 @@ describe('PrefSchemaEditor', () => {
         </>
       );
     }
-    render(<Swap />);
+    renderWithIcons(<Swap />);
     fireEvent.click(row('snap'));
     fireEvent.click(screen.getByRole('button', { name: 'Remove' }));
     expect(screen.getByRole('button', { name: 'Undo' })).toBeEnabled();
@@ -313,7 +314,7 @@ describe('PrefSchemaEditor', () => {
       shown: { kind: 'boolean', name: 'Shown', description: '', default: false },
       secret: { kind: 'boolean', name: 'Secret', description: '', default: false, hidden: true },
     } } } };
-    render(<Live start={start} />);
+    renderWithIcons(<Live start={start} />);
     expect(within(preview()).getByRole('heading', { name: 'Live preview' })).toBeInTheDocument();
     expect(within(preview()).getByText('Secret')).toBeInTheDocument();
     fireEvent.click(within(preview()).getByRole('switch', { name: 'Show hidden' }));
@@ -321,7 +322,7 @@ describe('PrefSchemaEditor', () => {
   });
 
   it('writes a value set in the preview as that pref\'s default, and undoes it', () => {
-    render(<Live />);
+    renderWithIcons(<Live />);
     const snap = () => within(preview()).getByRole('checkbox', { name: 'Snap' });
     expect(snap()).not.toBeChecked();
     fireEvent.click(snap());
@@ -334,7 +335,7 @@ describe('PrefSchemaEditor', () => {
   });
 
   it('removes the selected node on Delete or Backspace, and leaves a key pressed in a text field to the field', () => {
-    render(<Live />);
+    renderWithIcons(<Live />);
     fireEvent.click(row('snap'));
     const name = within(screen.getByRole('region', { name: 'Attributes' })).getByRole('textbox', { name: 'Name' });
     fireEvent.keyDown(name, { key: 'Backspace' });
@@ -355,7 +356,7 @@ describe('PrefSchemaEditor', () => {
         more: { name: 'More', children: { snap: { kind: 'boolean', name: 'Snap', description: '', default: false } } },
       } },
     } };
-    render(<Live start={start} />);
+    renderWithIcons(<Live start={start} />);
     const item = (name: RegExp) => within(structure()).getByRole('treeitem', { name });
     expect(within(item(/View/)).getAllByText('2')[0]).toBeInTheDocument();
     expect(within(item(/More/)).getAllByText('1')[0]).toBeInTheDocument();
@@ -369,13 +370,13 @@ describe('PrefSchemaEditor', () => {
     afterEach(() => localStorage.removeItem('test-draft'));
 
     it('opens on the edits a previous editor left, still listed as changes from the baseline', () => {
-      const first = render(<Kept />);
+      const first = renderWithIcons(<Kept />);
       expect(screen.queryByRole('button', { name: 'Discard draft' })).toBeNull();
       fireEvent.click(row('snap'));
       fireEvent.keyDown(structure(), { key: 'Delete' });
       expect(screen.getByText(/Draft saved/)).toBeInTheDocument();
       first.unmount();
-      render(<Kept />);
+      renderWithIcons(<Kept />);
       expect(within(structure()).queryByText('snap')).toBeNull();
       expect(row('grid')).toBeInTheDocument();
       expect(screen.getByText(/− view\/snap/)).toBeInTheDocument();
@@ -392,27 +393,27 @@ describe('PrefSchemaEditor', () => {
         const [schema, setSchema] = useState(START);
         return <PrefSchemaEditor schema={schema} onChange={setSchema} original={START} draftKey="test-draft" draftStorage={storage} />;
       }
-      const first = render(<Filed />);
+      const first = renderWithIcons(<Filed />);
       fireEvent.click(row('snap'));
       fireEvent.keyDown(structure(), { key: 'Delete' });
       expect(held.has('test-draft')).toBe(true);
       expect(localStorage.getItem('test-draft')).toBeNull();
       first.unmount();
-      render(<Filed />);
+      renderWithIcons(<Filed />);
       expect(within(structure()).queryByText('snap')).toBeNull();
       fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
       expect(held.has('test-draft')).toBe(false);
     });
 
     it('still steps back and forward through a previous editor’s edits', () => {
-      const first = render(<Kept />);
+      const first = renderWithIcons(<Kept />);
       fireEvent.click(row('snap'));
       fireEvent.keyDown(structure(), { key: 'Delete' });
       fireEvent.click(row('grid'));
       fireEvent.keyDown(structure(), { key: 'Delete' });
       fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
       first.unmount();
-      render(<Kept />);
+      renderWithIcons(<Kept />);
       expect(row('grid')).toBeInTheDocument();
       fireEvent.click(screen.getByRole('button', { name: 'Redo' }));
       expect(within(structure()).queryByText('grid')).toBeNull();
@@ -427,19 +428,19 @@ describe('PrefSchemaEditor', () => {
     });
 
     it('opens a draft whose steps do not read, without them', () => {
-      const first = render(<Kept />);
+      const first = renderWithIcons(<Kept />);
       fireEvent.click(row('snap'));
       fireEvent.keyDown(structure(), { key: 'Delete' });
       first.unmount();
       const draft = JSON.parse(localStorage.getItem('test-draft')!);
       localStorage.setItem('test-draft', JSON.stringify({ ...draft, steps: { schemas: [], current: 4, stacks: {} } }));
-      render(<Kept />);
+      renderWithIcons(<Kept />);
       expect(within(structure()).queryByText('snap')).toBeNull();
       expect(screen.getByRole('button', { name: 'Undo' })).toBeDisabled();
     });
 
     it('carries a draft onto a source that changed since, listing only the reader’s own edits', () => {
-      const first = render(<Kept />);
+      const first = renderWithIcons(<Kept />);
       fireEvent.click(row('snap'));
       fireEvent.keyDown(structure(), { key: 'Delete' });
       first.unmount();
@@ -450,7 +451,7 @@ describe('PrefSchemaEditor', () => {
         const [schema, setSchema] = useState(moved);
         return <PrefSchemaEditor schema={schema} onChange={setSchema} original={moved} draftKey="test-draft" />;
       }
-      render(<Later />);
+      renderWithIcons(<Later />);
       expect(within(structure()).queryByText('snap')).toBeNull();
       expect(within(structure()).getByText('Grid lines')).toBeInTheDocument();
       expect(screen.getByText(/− view\/snap/)).toBeInTheDocument();
@@ -464,21 +465,21 @@ describe('PrefSchemaEditor', () => {
     });
 
     it('goes back to the baseline on Discard draft, and keeps nothing for the next editor', () => {
-      const first = render(<Kept />);
+      const first = renderWithIcons(<Kept />);
       fireEvent.click(row('snap'));
       fireEvent.keyDown(structure(), { key: 'Delete' });
       fireEvent.click(screen.getByRole('button', { name: 'Discard draft' }));
       expect(row('snap')).toBeInTheDocument();
       expect(localStorage.getItem('test-draft')).toBeNull();
       first.unmount();
-      render(<Kept />);
+      renderWithIcons(<Kept />);
       expect(row('snap')).toBeInTheDocument();
       expect(screen.queryByRole('button', { name: 'Discard draft' })).toBeNull();
     });
   });
 
   it('marks in the preview what the tree selects, and selects in the tree what the preview is pressed on', () => {
-    render(<Live />);
+    renderWithIcons(<Live />);
     fireEvent.click(row('dock'));
     expect(within(preview()).getByText('Dock').closest('[data-pref-path]')).toHaveAttribute('data-selected');
     fireEvent.pointerDown(within(preview()).getByText('Dock'));
@@ -489,7 +490,7 @@ describe('PrefSchemaEditor', () => {
 
   it('lists what the root holds on no page as unplaced, out of the tree and the preview, and selects one from there', () => {
     const start: PrefGroup = { name: '', children: { ...START.children, author: { kind: 'string', name: 'Author', description: '', default: '' } } };
-    render(<Live start={start} />);
+    renderWithIcons(<Live start={start} />);
     expect(within(structure()).queryByText('author')).toBeNull();
     expect(within(structure()).queryByRole('treeitem', { name: /General/ })).toBeNull();
     expect(within(preview()).queryByText('Author')).toBeNull();
@@ -500,7 +501,7 @@ describe('PrefSchemaEditor', () => {
   });
 
   it('shows the literal and the change list a tab each, the literal first', () => {
-    render(<Live />);
+    renderWithIcons(<Live />);
     expect(screen.getByRole('tab', { name: 'Literal' })).toHaveAttribute('aria-selected', 'true');
     expect(screen.getByRole('tabpanel', { name: 'Literal' })).toContainElement(screen.getByTestId('schema-literal'));
     fireEvent.click(screen.getByRole('tab', { name: 'Changes' }));
@@ -509,7 +510,7 @@ describe('PrefSchemaEditor', () => {
   });
 
   it('pairs a leaf with another by picking it from the schema\'s fields', () => {
-    render(<Live />);
+    renderWithIcons(<Live />);
     fireEvent.click(row('grid'));
     const attrs = screen.getByRole('region', { name: 'Attributes' });
     fireEvent.click(within(attrs).getByRole('button', { name: /Add a paired field/ }));
@@ -524,7 +525,7 @@ describe('PrefSchemaEditor', () => {
       grid: { kind: 'boolean', name: 'Show grid', description: '', default: true },
       motion: { name: 'Motion', children: { ease: { kind: 'number', name: 'Ease', description: '', default: 1 } } },
     } };
-    render(<PrefSchemaEditor schema={START} onChange={() => {}} unplaced={waiting} />);
+    renderWithIcons(<PrefSchemaEditor schema={START} onChange={() => {}} unplaced={waiting} />);
     const tree = screen.getByRole('tree', { name: 'Unplaced' });
     expect(within(tree).getAllByRole('treeitem').map((r) => r.getAttribute('aria-level'))).toEqual(['1', '1', '2']);
     expect(within(tree).getByRole('treeitem', { name: /^Glow glow/ })).toBeInTheDocument();
@@ -534,7 +535,7 @@ describe('PrefSchemaEditor', () => {
   });
 
   it('exports a literal with the edit in it', () => {
-    render(<Live />);
+    renderWithIcons(<Live />);
     fireEvent.click(row('grid'));
     const name = within(screen.getByRole('region', { name: 'Attributes' })).getByRole('textbox', { name: 'Name' });
     settle(name, 'Grid on');
@@ -546,7 +547,7 @@ describe('PrefSchemaEditor', () => {
     const start: PrefGroup = { name: 'Prefs', children: {
       flag: { kind: 'boolean', name: 'Flag', description: '', default: false, encoding },
     } };
-    render(<Live start={start} />);
+    renderWithIcons(<Live start={start} />);
     expect(screen.getByTestId('schema-literal').textContent).toContain('encoding: KEEP_FROM_SOURCE');
   });
 
@@ -558,26 +559,26 @@ describe('PrefSchemaEditor', () => {
   };
 
   it('refuses an invalid key and says why', () => {
-    render(<Live />);
+    renderWithIcons(<Live />);
     rekey('grid', 'a.b');
     expect(screen.getByText(/not a valid key/)).toBeInTheDocument();
   });
 
   it('refuses a key a sibling holds', () => {
-    render(<Live />);
+    renderWithIcons(<Live />);
     rekey('grid', 'snap');
     expect(screen.getByText(/"snap" is taken here/)).toBeInTheDocument();
   });
 
   it('accepts a key that only names an inherited property', () => {
-    render(<Live />);
+    renderWithIcons(<Live />);
     rekey('grid', 'constructor');
     expect(row('constructor')).toBeInTheDocument();
     expect(screen.queryByText(/is taken here/)).toBeNull();
   });
 
   it('keeps a moved group open', () => {
-    render(<Live />);
+    renderWithIcons(<Live />);
     act(() => keyedRow(structure(), 'panels')!.focus());
     fireEvent.keyDown(document.activeElement!, { key: 'ArrowRight', altKey: true });
     expect(keyedRow(structure(), 'panels')).toHaveAttribute('aria-level', '2');
@@ -585,7 +586,7 @@ describe('PrefSchemaEditor', () => {
   });
 
   it('keeps the notice region mounted while it is empty', () => {
-    render(<Live />);
+    renderWithIcons(<Live />);
     expect(screen.getByRole('status')).toHaveTextContent('');
   });
 
@@ -593,7 +594,7 @@ describe('PrefSchemaEditor', () => {
     const writeText = vi.fn(() => Promise.resolve());
     Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
     try {
-      render(<Live />);
+      renderWithIcons(<Live />);
       const copy = () => fireEvent.click(within(screen.getByRole('region', { name: 'Export' })).getByRole('button', { name: 'Copy' }));
       copy();
       expect(writeText).toHaveBeenLastCalledWith(expect.stringContaining("name: 'Prefs',"));
@@ -612,7 +613,7 @@ describe('PrefSchemaEditor', () => {
     const writeText = vi.fn(() => refused);
     Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
     try {
-      render(<Live />);
+      renderWithIcons(<Live />);
       fireEvent.click(within(screen.getByRole('region', { name: 'Export' })).getByRole('button', { name: 'Copy' }));
       await new Promise((r) => setTimeout(r, 0));
       expect(writeText).toHaveBeenCalled();
@@ -640,7 +641,7 @@ describe('PrefSchemaEditor', () => {
     }
 
     it('opens a leaf keyed by a dotted node path and previews the schema as a properties panel', () => {
-      render(<LiveNode />);
+      renderWithIcons(<LiveNode />);
       fireEvent.click(row('pose.x'));
       const attrs = screen.getByRole('region', { name: 'Attributes' });
       expect(within(attrs).getByRole('textbox', { name: 'Key' })).toHaveValue('pose.x');
@@ -652,7 +653,7 @@ describe('PrefSchemaEditor', () => {
     });
 
     it('writes a value typed in the preview as that property\'s default', () => {
-      render(<LiveNode />);
+      renderWithIcons(<LiveNode />);
       const text = () => within(preview()).getByRole('textbox', { name: 'Text' });
       settle(text(), 'typed');
       fireEvent.blur(text());
@@ -662,7 +663,7 @@ describe('PrefSchemaEditor', () => {
     });
 
     it('adds a section where a preferences schema adds a group, and a pref under a dotted id', () => {
-      render(<LiveNode />);
+      renderWithIcons(<LiveNode />);
       expect(screen.queryByRole('button', { name: 'Add group' })).toBeNull();
       fireEvent.click(row('layout'));
       const dialog = openAdd('Add pref');
@@ -685,7 +686,7 @@ describe('PrefSchemaEditor changed fields and aliases', () => {
   const marked = (field: string) => within(attrs()).getByRole('textbox', { name: field }).closest('[data-changed]') !== null;
 
   it('marks the attribute that was edited in the Attributes pane, and no other', () => {
-    render(<Live />);
+    renderWithIcons(<Live />);
     fireEvent.click(row('grid'));
     expect(marked('Description')).toBe(false);
     settle(within(attrs()).getByRole('textbox', { name: 'Description' }), 'Other.');
@@ -694,7 +695,7 @@ describe('PrefSchemaEditor changed fields and aliases', () => {
   });
 
   it('adds an alias of the selected pref after it from the bar, and offers none for a group', () => {
-    render(<Live />);
+    renderWithIcons(<Live />);
     const add = () => screen.getByRole('button', { name: 'Add alias' });
     expect(add()).toBeDisabled();
     fireEvent.click(row('panels'));
@@ -712,7 +713,7 @@ describe('PrefSchemaEditor changed fields and aliases', () => {
         width: { kind: 'number', name: 'Width', description: '', default: 1 },
       } } as PrefGroup['children'][string],
     } } } };
-    render(<Live start={start} />);
+    renderWithIcons(<Live start={start} />);
     const add = () => screen.getByRole('button', { name: 'Add alias' });
     fireEvent.click(row('width'));
     expect(add()).toBeDisabled();

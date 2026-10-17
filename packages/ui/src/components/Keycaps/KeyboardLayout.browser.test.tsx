@@ -2,11 +2,12 @@ import '@weasel-js/theme/tokens.css';
 import '@weasel-js/theme/faces.css';
 import { Profiler, StrictMode, type ReactNode } from 'react';
 import { afterEach, describe, expect, it } from 'vitest';
-import { cleanup, render } from '@testing-library/react';
+import { cleanup } from '@testing-library/react';
 import { KeyBank } from './KeyBank';
 import { KeyCap } from './Keycap';
 import { KeyboardLayouts } from './KeyboardLayout.stories';
 import KeyBankStories, { Default as BankDefault, Wrapped as BankWrapped } from './KeyBank.stories';
+import { renderWithIcons } from '../../testing/withIcons';
 
 afterEach(cleanup);
 
@@ -21,7 +22,7 @@ async function settle(node: ReactNode): Promise<{ errors: string[]; lateCommits:
   window.addEventListener('error', onError);
   let commits = 0;
   try {
-    const { container } = render(<Profiler id="probe" onRender={() => { commits++; }}>{node}</Profiler>);
+    const { container } = renderWithIcons(<Profiler id="probe" onRender={() => { commits++; }}>{node}</Profiler>);
     await document.fonts.ready;
     await wait(300);
     const settled = commits;

@@ -4,6 +4,7 @@ import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { StrictMode } from 'react';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { PathConstraintsLabDemo } from '../PathConstraintsLabDemo';
+import { withIcons } from '../../testIcons';
 
 // windease lays a lab's tiles out only once something measures them, and
 // jsdom ships no ResizeObserver.
@@ -51,7 +52,7 @@ function drag(canvas: Element, [x0, y0]: number[], [x1, y1]: number[]) {
 
 describe('PathConstraintsLabDemo', () => {
   it('keeps the seeded parallelogram one when a corner is dragged', async () => {
-    const { container } = await renderSettled(<StrictMode><PathConstraintsLabDemo /></StrictMode>);
+    const { container } = await renderSettled(<StrictMode><PathConstraintsLabDemo /></StrictMode>, { wrapper: withIcons });
     const canvas = container.querySelector('.lk-trial-scene canvas');
     if (!canvas) throw new Error('no scene canvas in the trial');
     expect(screen.getByRole('status').textContent).toBe('4 constraints, all holding.');
@@ -70,7 +71,7 @@ describe('PathConstraintsLabDemo', () => {
   });
 
   it('adds the kind the control panel picks to the selected anchors on C', async () => {
-    const { container } = await renderSettled(<StrictMode><PathConstraintsLabDemo /></StrictMode>);
+    const { container } = await renderSettled(<StrictMode><PathConstraintsLabDemo /></StrictMode>, { wrapper: withIcons });
     const canvas = container.querySelector('.lk-trial-scene canvas');
     if (!canvas) throw new Error('no scene canvas in the trial');
     const click = clicker(canvas);
@@ -86,7 +87,7 @@ describe('PathConstraintsLabDemo', () => {
   });
 
   it('deletes a clicked anchor rather than the shape, renumbering the constraints', async () => {
-    const { container } = await renderSettled(<StrictMode><PathConstraintsLabDemo /></StrictMode>);
+    const { container } = await renderSettled(<StrictMode><PathConstraintsLabDemo /></StrictMode>, { wrapper: withIcons });
     const canvas = container.querySelector('.lk-trial-scene canvas');
     if (!canvas) throw new Error('no scene canvas in the trial');
     clicker(canvas)(420, 140);
@@ -97,7 +98,7 @@ describe('PathConstraintsLabDemo', () => {
   });
 
   it('nudges a clicked anchor with the arrows rather than the whole shape', async () => {
-    const { container } = await renderSettled(<StrictMode><PathConstraintsLabDemo /></StrictMode>);
+    const { container } = await renderSettled(<StrictMode><PathConstraintsLabDemo /></StrictMode>, { wrapper: withIcons });
     const canvas = container.querySelector('.lk-trial-scene canvas');
     if (!canvas) throw new Error('no scene canvas in the trial');
     clicker(canvas)(420, 140);
@@ -108,7 +109,7 @@ describe('PathConstraintsLabDemo', () => {
   });
 
   it('deletes a constraint whose mark is clicked', async () => {
-    const { container } = await renderSettled(<StrictMode><PathConstraintsLabDemo /></StrictMode>);
+    const { container } = await renderSettled(<StrictMode><PathConstraintsLabDemo /></StrictMode>, { wrapper: withIcons });
     const canvas = container.querySelector('.lk-trial-scene canvas');
     if (!canvas) throw new Error('no scene canvas in the trial');
     // The bottom edge's H sits 12 above its midpoint, inside the shape.

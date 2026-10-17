@@ -4,6 +4,7 @@ import { StrictMode } from 'react';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { CurvatureCombLabDemo } from '../CurvatureCombLabDemo';
 import { drag, editedAnchors, sceneCanvas, stubResizeObserver } from './pathEditLabHarness';
+import { withIcons } from '../../testIcons';
 
 beforeAll(() => {
   window.history.replaceState(null, '', '/?test=1');
@@ -16,7 +17,7 @@ afterEach(() => {
 
 describe('CurvatureCombLabDemo', () => {
   it('opens with the path in edit, so a handle drags straight away', async () => {
-    const { container } = await renderSettled(<StrictMode><CurvatureCombLabDemo /></StrictMode>);
+    const { container } = await renderSettled(<StrictMode><CurvatureCombLabDemo /></StrictMode>, { wrapper: withIcons });
     const canvas = sceneCanvas(container);
     expect(editedAnchors()[1].outHandle).toEqual({ x: 300, y: 120 });
 

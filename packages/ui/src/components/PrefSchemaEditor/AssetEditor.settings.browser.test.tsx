@@ -1,5 +1,5 @@
 import '@weasel-js/theme/tokens.css';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { afterEach, beforeAll, expect, test } from 'vitest';
 import { page } from 'vitest/browser';
 import { useState } from 'react';
@@ -9,6 +9,7 @@ import { DEMO_WORKSPACE } from './AssetEditor.demo';
 import { drag } from './pointerDrag.fixture';
 import type { Workspace } from './workspace';
 import { workspaceCodec } from './workspaceCodec';
+import { renderWithIcons } from '../../testing/withIcons';
 
 // Whether a row dragged out of the settings tree lands in the layout is read off real boxes; jsdom lays nothing out.
 
@@ -31,7 +32,7 @@ const pointers = (group: PrefGroup): Record<string, unknown> =>
   Object.fromEntries(Object.entries(group.children).map(([key, kid]) => [key, isPrefLeaf(kid) ? (kid as PrefAlias).of : pointers(kid as PrefGroup)]));
 
 test('a setting dragged from the settings tree onto a heading of the layout lands in it as a pointer, in one step', () => {
-  render(<Live />);
+  renderWithIcons(<Live />);
   fireEvent.click(option('Canvas'));
   const dialog = rootOf('settings');
   drag(rowIn('Settings', 'scale'), rowIn('Schema structure', 'lines'));
@@ -43,7 +44,7 @@ test('a setting dragged from the settings tree onto a heading of the layout land
 });
 
 test('a group dragged from the settings tree lands as a heading over a pointer to each of its settings', () => {
-  render(<Live />);
+  renderWithIcons(<Live />);
   fireEvent.click(option('Canvas'));
   drag(rowIn('Settings', 'export'), rowIn('Schema structure', 'zoomStep'));
   const canvas = pointers(rootOf('canvas'));

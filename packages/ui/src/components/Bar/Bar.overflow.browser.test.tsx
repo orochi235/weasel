@@ -1,9 +1,10 @@
 import '@weasel-js/theme/tokens.css';
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { cleanup, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 import { afterEach, expect, it } from 'vitest';
 import { Bar } from './Bar';
+import { renderWithIcons } from '../../testing/withIcons';
 
 // Which cells a line has room for is layout, and jsdom has none.
 
@@ -36,7 +37,7 @@ const more = () => within(bar()).queryByRole('button', { name: 'More' });
 
 it('keeps the cells its room holds on the line and opens the rest from a button at its end', async () => {
   const el = room(300);
-  render(<Bar schema={schema} label="Numbers" overflow="menu" />, { container: el });
+  renderWithIcons(<Bar schema={schema} label="Numbers" overflow="menu" />, { container: el });
 
   const kept = onLine();
   expect(kept.length).toBeGreaterThan(0);
@@ -57,7 +58,7 @@ it('keeps the cells its room holds on the line and opens the rest from a button 
 
 it('takes cells back as its room grows, and drops the button once all fit', async () => {
   const el = room(300);
-  render(<Bar schema={schema} label="Numbers" overflow="menu" />, { container: el });
+  renderWithIcons(<Bar schema={schema} label="Numbers" overflow="menu" />, { container: el });
   const narrow = onLine().length;
 
   el.style.width = '460px';
@@ -75,7 +76,7 @@ it('takes cells back as its room grows, and drops the button once all fit', asyn
 it('writes an edit made in the menu to the path of the cell', async () => {
   const el = room(300);
   const edits: [string, unknown][] = [];
-  render(<Bar schema={schema} label="Numbers" overflow="menu" values={{ foxtrot: 1 }} onChange={(path, value) => edits.push([path, value])} />, { container: el });
+  renderWithIcons(<Bar schema={schema} label="Numbers" overflow="menu" values={{ foxtrot: 1 }} onChange={(path, value) => edits.push([path, value])} />, { container: el });
   await userEvent.click(more()!);
   const cell = within(await screen.findByRole('dialog', { name: 'More' })).getByRole('spinbutton', { name: 'Foxtrot' });
   await userEvent.clear(cell);
@@ -91,7 +92,7 @@ it('ends the line on a cell and starts the menu on one where a run is cut', asyn
   });
   const runs: PrefGroup = { name: 'Runs', as: 'bar', children: { a: run(['A1', 'A2']), b: run(['B1', 'B2']), c: run(['C1', 'C2']) } };
   const el = room(1400);
-  render(<Bar schema={runs} label="Numbers" overflow="menu" />, { container: el });
+  renderWithIcons(<Bar schema={runs} label="Numbers" overflow="menu" />, { container: el });
   expect(within(bar()).getAllByRole('separator')).toHaveLength(2);
 
   const seen = new Set<number>();
@@ -116,7 +117,7 @@ it('ends the line on a cell and starts the menu on one where a run is cut', asyn
 
 it('scrolls with every cell on the line unless asked for the menu', () => {
   const el = room(300);
-  render(<Bar schema={schema} label="Numbers" framed />, { container: el });
+  renderWithIcons(<Bar schema={schema} label="Numbers" framed />, { container: el });
   expect(onLine()).toEqual(NAMES);
   expect(more()).toBeNull();
   expect(bar().scrollWidth).toBeGreaterThan(bar().clientWidth);

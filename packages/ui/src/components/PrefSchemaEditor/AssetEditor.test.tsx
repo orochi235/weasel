@@ -1,10 +1,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { useState } from 'react';
 import { AssetEditor } from './AssetEditor';
 import type { Workspace } from './workspace';
 import { SETTINGS } from './workspace.fixtures';
 import { workspaceCodec } from './workspaceCodec';
+import { renderWithIcons } from '../../testing/withIcons';
 
 afterEach(cleanup);
 
@@ -20,7 +21,7 @@ function Live({ start, onChange }: { start: Workspace; onChange(next: Workspace)
 describe('AssetEditor', () => {
   it('removes nothing from a read-only asset, and leaves the selection where it was', () => {
     const onChange = vi.fn();
-    render(<Live start={{ assets: [{ id: 'settings', label: 'Settings', kind: 'schema', root: SETTINGS, readOnly: true }] }} onChange={onChange} />);
+    renderWithIcons(<Live start={{ assets: [{ id: 'settings', label: 'Settings', kind: 'schema', root: SETTINGS, readOnly: true }] }} onChange={onChange} />);
     fireEvent.click(within(structure()).getByText('snap'));
     // What a reader sees of it: the tool that removes is off, with a row selected to remove.
     expect(screen.getByRole('button', { name: 'Remove' })).toBeDisabled();
@@ -32,7 +33,7 @@ describe('AssetEditor', () => {
 
   it('removes the selected setting from an asset that takes edits', () => {
     const onChange = vi.fn();
-    render(<Live start={{ assets: [{ id: 'settings', label: 'Settings', kind: 'schema', root: SETTINGS }] }} onChange={onChange} />);
+    renderWithIcons(<Live start={{ assets: [{ id: 'settings', label: 'Settings', kind: 'schema', root: SETTINGS }] }} onChange={onChange} />);
     fireEvent.click(within(structure()).getByText('snap'));
     fireEvent.keyDown(structure(), { key: 'Delete' });
     expect(onChange).toHaveBeenCalledTimes(1);

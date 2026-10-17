@@ -1,4 +1,5 @@
-import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, screen, within } from '@testing-library/react';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import { describe, expect, it, vi } from 'vitest';
 import { f } from '../config/builder';
 import { resolveConfigSchema } from '../config/resolve';
@@ -11,7 +12,7 @@ describe('<ControlPanel> slider', () => {
     const fields: ConfigField[] = [
       { key: 'freq', label: 'Frequency', type: 'slider', min: 0, max: 10, step: 0.5, default: 2 },
     ];
-    render(<ControlPanel fields={fields} config={{ freq: 2 }} setConfig={vi.fn()} />);
+    renderWithIcons(<ControlPanel fields={fields} config={{ freq: 2 }} setConfig={vi.fn()} />);
     // The row holds two controls -- the range and an editable readout -- inside
     // one wrapping label, so query the slider by role rather than by label text.
     const input = screen.getByRole('slider') as HTMLInputElement;
@@ -26,7 +27,7 @@ describe('<ControlPanel> slider', () => {
     const fields: ConfigField[] = [
       { key: 'freq', label: 'Frequency', type: 'slider', min: 0, max: 10, default: 2 },
     ];
-    render(<ControlPanel fields={fields} config={{ freq: 2 }} setConfig={setConfig} />);
+    renderWithIcons(<ControlPanel fields={fields} config={{ freq: 2 }} setConfig={setConfig} />);
     fireEvent.change(screen.getByRole('slider'), { target: { value: '5' } });
     expect(setConfig).toHaveBeenCalledWith('freq', 5);
   });
@@ -35,7 +36,7 @@ describe('<ControlPanel> slider', () => {
 describe('<ControlPanel> checkbox', () => {
   it('renders checkbox with label and reflects config', () => {
     const fields: ConfigField[] = [{ key: 'on', label: 'On', type: 'checkbox', default: false }];
-    render(<ControlPanel fields={fields} config={{ on: true }} setConfig={vi.fn()} />);
+    renderWithIcons(<ControlPanel fields={fields} config={{ on: true }} setConfig={vi.fn()} />);
     const cb = screen.getByLabelText('On') as HTMLInputElement;
     expect(cb.type).toBe('checkbox');
     expect(cb.checked).toBe(true);
@@ -44,7 +45,7 @@ describe('<ControlPanel> checkbox', () => {
   it('calls setConfig with boolean on change', () => {
     const setConfig = vi.fn();
     const fields: ConfigField[] = [{ key: 'on', label: 'On', type: 'checkbox', default: false }];
-    render(<ControlPanel fields={fields} config={{ on: false }} setConfig={setConfig} />);
+    renderWithIcons(<ControlPanel fields={fields} config={{ on: false }} setConfig={setConfig} />);
     fireEvent.click(screen.getByLabelText('On'));
     expect(setConfig).toHaveBeenCalledWith('on', true);
   });
@@ -65,7 +66,9 @@ describe('<ControlPanel> select', () => {
         ],
       },
     ];
-    render(<ControlPanel fields={fields} config={{ wave: 'sine' }} setConfig={setConfig} />);
+    renderWithIcons(
+      <ControlPanel fields={fields} config={{ wave: 'sine' }} setConfig={setConfig} />,
+    );
     const trigger = screen.getByRole('button', { name: 'Sine Wave' });
     expect(trigger).toHaveTextContent('Sine');
     act(() => {
@@ -81,7 +84,7 @@ describe('<ControlPanel> number', () => {
     const fields: ConfigField[] = [
       { key: 'n', label: 'N', type: 'number', default: 0, min: 0, max: 100 },
     ];
-    render(<ControlPanel fields={fields} config={{ n: 42 }} setConfig={vi.fn()} />);
+    renderWithIcons(<ControlPanel fields={fields} config={{ n: 42 }} setConfig={vi.fn()} />);
     const input = screen.getByLabelText('N') as HTMLInputElement;
     expect(input).toHaveAttribute('role', 'spinbutton');
     expect(input.value).toBe('42');
@@ -92,7 +95,7 @@ describe('<ControlPanel> number', () => {
     const fields: ConfigField[] = [
       { key: 'n', label: 'N', type: 'number', default: 0, min: 0, max: 100 },
     ];
-    render(<ControlPanel fields={fields} config={{ n: 50 }} setConfig={setConfig} />);
+    renderWithIcons(<ControlPanel fields={fields} config={{ n: 50 }} setConfig={setConfig} />);
     fireEvent.change(screen.getByRole('spinbutton'), { target: { value: '999' } });
     expect(setConfig).toHaveBeenCalledWith('n', 100);
   });
@@ -110,7 +113,7 @@ describe('<ControlPanel> text', () => {
         maxLength: 10,
       },
     ];
-    render(<ControlPanel fields={fields} config={{ t: 'hi' }} setConfig={vi.fn()} />);
+    renderWithIcons(<ControlPanel fields={fields} config={{ t: 'hi' }} setConfig={vi.fn()} />);
     const input = screen.getByLabelText('T') as HTMLInputElement;
     expect(input.type).toBe('text');
     expect(input.placeholder).toBe('type here');
@@ -122,7 +125,7 @@ describe('<ControlPanel> text', () => {
     const fields: ConfigField[] = [
       { key: 't', label: 'T', type: 'text', default: '', debounceMs: 0 },
     ];
-    render(<ControlPanel fields={fields} config={{ t: '' }} setConfig={setConfig} />);
+    renderWithIcons(<ControlPanel fields={fields} config={{ t: '' }} setConfig={setConfig} />);
     fireEvent.change(screen.getByLabelText('T'), { target: { value: 'a' } });
     expect(setConfig).toHaveBeenCalledWith('t', 'a');
   });
@@ -132,7 +135,9 @@ describe('<ControlPanel> color', () => {
   it('renders a color input reflecting config and dispatches value', () => {
     const setConfig = vi.fn();
     const fields: ConfigField[] = [{ key: 'c', label: 'Color', type: 'color', default: '#000000' }];
-    render(<ControlPanel fields={fields} config={{ c: '#ff0000' }} setConfig={setConfig} />);
+    renderWithIcons(
+      <ControlPanel fields={fields} config={{ c: '#ff0000' }} setConfig={setConfig} />,
+    );
     const input = screen.getByLabelText('Color') as HTMLInputElement;
     expect(input.type).toBe('color');
     expect(input.value).toBe('#ff0000');
@@ -147,7 +152,7 @@ describe('<ControlPanel> defensive', () => {
       { key: 'mystery', label: 'Mystery', type: 'mystery', default: 1 },
       { key: 'ok', label: 'Ok', type: 'checkbox', default: true },
     ] as unknown as ConfigField[];
-    const { container } = render(
+    const { container } = renderWithIcons(
       <ControlPanel fields={fields} config={{ mystery: 1, ok: true }} setConfig={vi.fn()} />,
     );
     expect(container.querySelector('.lk-control-panel')).not.toBeNull();
@@ -162,7 +167,9 @@ describe('<ControlPanel> option icons', () => {
   it('draws an enum asked for as a toggle with every option at once, and says so to the forms that read the leaf', () => {
     const camera = f.enum('3d', ['2d', '3d']).toggle();
     const schema = resolveConfigSchema(f.schema({ camera }), []);
-    render(<ControlPanel schema={schema} config={{ camera: '3d' }} setConfig={() => {}} />);
+    renderWithIcons(
+      <ControlPanel schema={schema} config={{ camera: '3d' }} setConfig={() => {}} />,
+    );
     expect(screen.getByRole('radio', { name: '3d' })).toBeInTheDocument();
     expect(schema.group.children.camera).toMatchObject({ control: 'toggle' });
   });
@@ -174,7 +181,7 @@ describe('<ControlPanel> option icons', () => {
         { value: 'bad', label: 'bad' },
       ])
       .radio();
-    render(
+    renderWithIcons(
       <ControlPanel
         schema={resolveConfigSchema(f.schema({ status }), [])}
         config={{ status: 'ok' }}
@@ -192,7 +199,7 @@ describe('<ControlPanel> option icons', () => {
       { value: 'ok', label: 'ok', icon: icon('ui:statusSuccess') },
       { value: 'bad', label: 'bad' },
     ]);
-    render(
+    renderWithIcons(
       <ControlPanel
         schema={resolveConfigSchema(f.schema({ status }), [])}
         config={{ status: 'ok' }}
@@ -214,7 +221,7 @@ describe('<ControlPanel> option icons', () => {
 
 describe('<ControlPanel> color alpha', () => {
   const panel = (setConfig = vi.fn(), stored = '#336699cc') => {
-    render(
+    renderWithIcons(
       <ControlPanel
         schema={resolveConfigSchema(
           f.schema({ tint: f.color('#000000ff').alpha().label('Tint') }),
@@ -246,7 +253,7 @@ describe('<ControlPanel> color alpha', () => {
   });
 
   it('leaves a color leaf without alpha as a bare swatch', () => {
-    render(
+    renderWithIcons(
       <ControlPanel
         schema={resolveConfigSchema(f.schema({ tint: f.color('#336699').label('Tint') }), [])}
         config={{ tint: '#336699' }}

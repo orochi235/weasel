@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import type { ReactNode } from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { screen, fireEvent } from '@testing-library/react';
 import type { GradientPaint } from '@weasel-js/core';
 import { ColorField } from '../ColorField';
 import { FillStrokeSwatch } from '../FillStrokeSwatch';
@@ -9,10 +9,11 @@ import { PaintInput } from '../PaintInput';
 import { SwatchGrid } from '../SwatchGrid';
 import { createRecentColorsStore } from './recentColors';
 import { RecentColorsProvider } from './RecentColorsProvider';
+import { renderWithIcons } from '../../testing/withIcons';
 
 function setup(ui: ReactNode) {
   const store = createRecentColorsStore({ storage: null });
-  render(<RecentColorsProvider store={store}>{ui}</RecentColorsProvider>);
+  renderWithIcons(<RecentColorsProvider store={store}>{ui}</RecentColorsProvider>);
   return store;
 }
 
@@ -44,7 +45,7 @@ describe('recent-color recording', () => {
 
   it('commits outside a provider, where there is nowhere to record', () => {
     const onChange = vi.fn();
-    render(<ColorField value="#112233ff" alpha onChange={onChange} aria-label="Fill" />);
+    renderWithIcons(<ColorField value="#112233ff" alpha onChange={onChange} aria-label="Fill" />);
     pick('Fill', '#445566');
     expect(onChange).toHaveBeenCalledWith('#445566ff');
   });

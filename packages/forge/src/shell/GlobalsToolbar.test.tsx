@@ -1,10 +1,11 @@
 import { createMemoryAdapter } from '@weasel-js/labkit';
-import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { ShellConfig } from '../config';
 import type { IndexEntry } from '../story/types';
 import { installResizeObserver } from './labHarness';
 import { Workshop } from './Workshop';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 installResizeObserver();
 
@@ -28,7 +29,7 @@ afterEach(() => {
 
 describe('GlobalsToolbar', () => {
   it('sets a global from a weasel-ui select, not a native one', async () => {
-    render(<Workshop index={[a]} frameUrl="/frame.html" config={config} storage={createMemoryAdapter()} />);
+    renderWithIcons(<Workshop index={[a]} frameUrl="/frame.html" config={config} storage={createMemoryAdapter()} />);
     const toolbar = within(await screen.findByRole('toolbar', { name: 'Globals' }));
     expect(toolbar.queryByRole('combobox')).toBeNull();
     const trigger = toolbar.getByRole('button', { name: /Mode/ });
@@ -51,7 +52,7 @@ describe('GlobalsToolbar', () => {
         display: { label: 'Display', default: 'oswald', options: faces, under: 'font' },
       },
     };
-    render(<Workshop index={[a]} frameUrl="/frame.html" config={nested} storage={createMemoryAdapter()} />);
+    renderWithIcons(<Workshop index={[a]} frameUrl="/frame.html" config={nested} storage={createMemoryAdapter()} />);
     const toolbar = within(await screen.findByRole('toolbar', { name: 'Globals' }));
     expect(toolbar.getByRole('button', { name: /^Oswald Font/ })).toHaveTextContent('Oswald');
     expect(toolbar.queryByRole('button', { name: /Display/ })).toBeNull();
@@ -78,7 +79,7 @@ describe('GlobalsToolbar', () => {
         },
       },
     };
-    render(<Workshop index={[a]} frameUrl="/frame.html" config={gated} storage={createMemoryAdapter()} />);
+    renderWithIcons(<Workshop index={[a]} frameUrl="/frame.html" config={gated} storage={createMemoryAdapter()} />);
     const toolbar = within(await screen.findByRole('toolbar', { name: 'Globals' }));
     act(() => {
       fireEvent.click(toolbar.getByRole('button', { name: /Tone/ }));

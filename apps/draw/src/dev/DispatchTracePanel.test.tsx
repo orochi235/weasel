@@ -1,7 +1,8 @@
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, screen } from '@testing-library/react';
 import { DispatchTracePanel } from './DispatchTracePanel';
 import type { TraceLogEntry } from './dispatchTraceLog';
 import { recordOf } from './dispatchTraceFixtures';
+import { renderWithIcons } from '../testIcons';
 
 const LOG: TraceLogEntry[] = [
   recordOf({ ts: 1000, eventKind: 'drag', ranked: ['move'] }),
@@ -22,7 +23,7 @@ afterEach(() => {
 
 describe('DispatchTracePanel', () => {
   it('filters rows by outcome with the two toggles', () => {
-    render(<DispatchTracePanel />);
+    renderWithIcons(<DispatchTracePanel />);
     expect(screen.getByText('drag')).toBeTruthy();
     expect(screen.queryByText('hover')).toBeNull();
 
@@ -35,14 +36,14 @@ describe('DispatchTracePanel', () => {
   });
 
   it('collapses to its bar', () => {
-    render(<DispatchTracePanel />);
+    renderWithIcons(<DispatchTracePanel />);
     fireEvent.click(screen.getByRole('button', { name: 'Dispatch trace', expanded: true }));
     expect(screen.queryByRole('table')).toBeNull();
     expect(screen.getByRole('button', { name: 'Dispatch trace' }).getAttribute('aria-expanded')).toBe('false');
   });
 
   it('clears the log', () => {
-    render(<DispatchTracePanel />);
+    renderWithIcons(<DispatchTracePanel />);
     act(() => { fireEvent.click(screen.getByRole('button', { name: 'Clear log' })); });
     expect(screen.getByText('0 entries')).toBeTruthy();
   });

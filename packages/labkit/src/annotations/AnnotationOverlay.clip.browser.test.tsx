@@ -2,7 +2,8 @@ import '@weasel-js/theme/tokens.css';
 import 'windease/styles.css';
 import '../styles.less';
 import './AnnotationOverlay.clip.browser.test.less';
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, screen, waitFor } from '@testing-library/react';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import { afterEach, beforeEach, expect, test } from 'vitest';
 import { page, userEvent } from 'vitest/browser';
 import { defineInstrument } from '../instrument/defineInstrument';
@@ -76,7 +77,7 @@ const not = (color: string, pixels: Pixel[]): number =>
   pixels.filter((p) => p.join() !== color).length;
 
 test('a mark is cut where its target is, and takes no press past it', async () => {
-  render(
+  renderWithIcons(
     <div className="lk-clip-lab-host">
       <Lab instruments={[Clipped]} defaultInstrument="Clipped" />
     </div>,

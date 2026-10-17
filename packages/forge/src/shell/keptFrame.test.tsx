@@ -8,6 +8,7 @@ import type { IndexEntry } from '../story/types';
 import { connectFrame, flush, installResizeObserver } from './labHarness';
 import { StoryGlobalsContext } from './StoryGlobalsContext';
 import { useStoryRegistry } from './useStoryRegistry';
+import { withIcons } from '@weasel-js/ui/testing/withIcons';
 
 installResizeObserver();
 
@@ -46,7 +47,7 @@ describe('a story frame whose ready brings a viewport the index did not read', (
       moved.push(node);
       this.insertBefore(node, child);
     };
-    const view = await renderSettled(<RegistryLab />);
+    const view = await renderSettled(<RegistryLab />, { wrapper: withIcons });
     const [iframe] = frames(view.container);
     const { frame, received } = connectFrame(iframe as HTMLIFrameElement);
     frame.send(ready);
@@ -70,7 +71,7 @@ describe('a story frame whose ready brings a viewport the index did not read', (
   });
 
   it('loads a new iframe where the browser cannot', async () => {
-    const view = await renderSettled(<RegistryLab />);
+    const view = await renderSettled(<RegistryLab />, { wrapper: withIcons });
     const [iframe] = frames(view.container);
     const { frame } = connectFrame(iframe as HTMLIFrameElement);
     frame.send(ready);

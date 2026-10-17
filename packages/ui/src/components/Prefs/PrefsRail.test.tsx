@@ -1,9 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { PrefsForm } from './PrefsForm';
 import { prefRailItems } from './schema';
+import { renderWithIcons } from '../../testing/withIcons';
 
 const SCHEMA: PrefGroup = {
   name: 'Preferences',
@@ -76,7 +77,7 @@ describe('prefRailItems', () => {
 
 describe('PrefsForm rail layout', () => {
   const renderRail = (props: Partial<Parameters<typeof PrefsForm>[0]> = {}) =>
-    render(
+    renderWithIcons(
       <PrefsForm schema={SCHEMA} onChange={() => {}} layout="rail" {...props} />,
     );
 
@@ -113,7 +114,7 @@ describe('PrefsForm rail layout', () => {
       export: { name: 'Export', children: names() },
     } };
     const user = userEvent.setup();
-    render(<PrefsForm schema={schema} onChange={() => {}} layout="rail" />);
+    renderWithIcons(<PrefsForm schema={schema} onChange={() => {}} layout="rail" />);
     const halfTyped = () => screen.queryAllByRole('textbox', { name: /key$/ });
     await user.click(screen.getByRole('button', { name: /^Add/ }));
     expect(halfTyped()).toHaveLength(1);
@@ -164,7 +165,7 @@ describe('PrefsForm rail layout, foldable', () => {
     snapping: { ...(canvas.children.snapping as PrefGroup), as: 'page' },
   } } } };
   const renderRail = (props: Partial<Parameters<typeof PrefsForm>[0]> = {}) =>
-    render(
+    renderWithIcons(
       <PrefsForm schema={PAGED} onChange={() => {}} layout="rail" foldable defaultSection="io" {...props} />,
     );
   const snapping = () => document.querySelector('[data-pref-rail="canvas.snapping"]');

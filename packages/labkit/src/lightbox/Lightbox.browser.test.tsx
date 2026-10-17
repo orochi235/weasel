@@ -1,7 +1,8 @@
 import '@weasel-js/theme/tokens.css';
 import '../styles.less';
 import './Lightbox.browser.test.less';
-import { cleanup, render } from '@testing-library/react';
+import { cleanup } from '@testing-library/react';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import { useEffect, useRef } from 'react';
 import { afterEach, expect, test } from 'vitest';
 import { userEvent } from 'vitest/browser';
@@ -38,7 +39,7 @@ function GlTile({ probe }: { probe: Probe }) {
 }
 
 function mount(probe: Probe) {
-  return render(
+  return renderWithIcons(
     <div className="lk-lightbox-test-host">
       <Workspace ids={['gl', 'plain']} expandOnDoubleClick={(id) => id === 'gl'}>
         <GlTile probe={probe} />

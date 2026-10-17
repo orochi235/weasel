@@ -1,6 +1,6 @@
 import { createMemoryAdapter, type StorageAdapter, useLabContext } from '@weasel-js/labkit';
 import { f } from '@weasel-js/labkit/config';
-import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { useEffect } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { loadCsfModule } from '../csf/loadCsfModule';
@@ -12,6 +12,7 @@ import { meta, story } from '../story/define';
 import { loadNativeModule } from '../story/native';
 import type { IndexEntry, LoadedStory, StoryContext } from '../story/types';
 import { usePlayhead, useTimeline } from './context';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 installResizeObserver();
 
@@ -74,7 +75,7 @@ const probeConfig = { labChrome: [{ id: 'probe', region: 'header', render: () =>
 
 function mount(url: string, storage: StorageAdapter = createMemoryAdapter()) {
   history.replaceState(null, '', url);
-  return render(
+  return renderWithIcons(
     <Workshop
       index={[timed, still, late]}
       frameUrl="/frame.html"
@@ -288,14 +289,14 @@ describe('a story with a timeline, outside a trial', () => {
       { default: meta({ title: 'L' }), Lead: story({ timeline: { duration: 1000, start: -300 }, render: () => <Readout /> }) },
       'L',
     );
-    render(<StoryHost story={lead!} ctx={ctx(lead!)} decorators={[]} resetKey={0} onError={() => {}} />);
+    renderWithIcons(<StoryHost story={lead!} ctx={ctx(lead!)} decorators={[]} resetKey={0} onError={() => {}} />);
     expect(playhead()).toBe(-300);
   });
 
   it('faults a story reading the playhead without declaring a timeline, naming the fix', () => {
     const [bare] = loadNativeModule({ default: meta({ title: 'B' }), Bare: story({ render: () => <Readout /> }) }, 'B');
     const errors: unknown[] = [];
-    render(<StoryHost story={bare!} ctx={ctx(bare!)} decorators={[]} resetKey={0} onError={(e) => errors.push(e)} />);
+    renderWithIcons(<StoryHost story={bare!} ctx={ctx(bare!)} decorators={[]} resetKey={0} onError={(e) => errors.push(e)} />);
     expect(String(errors[0])).toContain('declares no timeline');
   });
 
@@ -312,10 +313,10 @@ describe('a story with a timeline, outside a trial', () => {
       },
       'M',
     );
-    const { unmount } = render(<StoryHost story={byMeta!} ctx={ctx(byMeta!)} decorators={[]} resetKey={0} onError={() => {}} />);
+    const { unmount } = renderWithIcons(<StoryHost story={byMeta!} ctx={ctx(byMeta!)} decorators={[]} resetKey={0} onError={() => {}} />);
     expect(screen.getByRole('status', { name: 'span' }).textContent).toBe('0..500');
     unmount();
-    render(<StoryHost story={byConfig!} ctx={ctx(byConfig!, { length: 2000 })} decorators={[]} resetKey={0} onError={() => {}} />);
+    renderWithIcons(<StoryHost story={byConfig!} ctx={ctx(byConfig!, { length: 2000 })} decorators={[]} resetKey={0} onError={() => {}} />);
     expect(screen.getByRole('status', { name: 'span' }).textContent).toBe('0..2000');
   });
 

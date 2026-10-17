@@ -1,4 +1,4 @@
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { cleanup, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ThemeDefinition } from '@weasel-js/theme';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -6,11 +6,12 @@ import { deriveDraft } from '../theme/draft';
 import { child, lookupOf, weasel } from '../theme/fixtures';
 import { adoptGenerated } from '../theme/model';
 import { RampsLayer, type RampsLayerProps } from './RampsLayer';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 function renderRamps(): RampsLayerProps & { onChange: ReturnType<typeof vi.fn> } {
   const lookup = lookupOf();
   const props = { draft: weasel, derived: deriveDraft(weasel, lookup, {}), lookup, highlight: [], focused: null, onFocus: vi.fn(), onChange: vi.fn() };
-  render(<RampsLayer {...props} />);
+  renderWithIcons(<RampsLayer {...props} />);
   return props;
 }
 const nextDef = (fn: ReturnType<typeof vi.fn>) => fn.mock.calls[0][0] as ThemeDefinition;
@@ -50,7 +51,7 @@ describe('<RampsLayer>', () => {
   it("shows a ramp's own issues inside its section, and does not call authored values generated", () => {
     const broken = { ...weasel, ramps: { ...weasel.ramps!, accent: { ...weasel.ramps!.accent, chroma: { lightBias: 0.5 } } } } as unknown as ThemeDefinition;
     const lookup = lookupOf(broken);
-    render(<RampsLayer draft={broken} derived={deriveDraft(broken, lookup, {})} lookup={lookup} highlight={[]} focused={null} onFocus={vi.fn()} onChange={vi.fn()} />);
+    renderWithIcons(<RampsLayer draft={broken} derived={deriveDraft(broken, lookup, {})} lookup={lookup} highlight={[]} focused={null} onFocus={vi.fn()} onChange={vi.fn()} />);
     const accent = screen.getByRole('region', { name: 'accent ramp' });
     expect(within(accent).getByText(/ramps\.accent\.chroma\.peak: expected a number/)).toBeInTheDocument();
     expect(within(accent).queryByRole('rowheader', { name: 'Generated' })).toBeNull();
@@ -59,7 +60,7 @@ describe('<RampsLayer>', () => {
   it("keeps an inherited ramp read-only until it is made the theme's own", async () => {
     const lookup = lookupOf(child);
     const onChange = vi.fn();
-    render(<RampsLayer draft={child} derived={deriveDraft(child, lookup, {})} lookup={lookup} highlight={[]} focused={null} onFocus={vi.fn()} onChange={onChange} />);
+    renderWithIcons(<RampsLayer draft={child} derived={deriveDraft(child, lookup, {})} lookup={lookup} highlight={[]} focused={null} onFocus={vi.fn()} onChange={onChange} />);
     const gray = screen.getByRole('region', { name: 'gray ramp' });
     expect(within(gray).queryAllByRole('slider')).toEqual([]);
     expect(within(gray).getByText(/pins it inherits on them stop applying/)).toBeInTheDocument();
@@ -70,7 +71,7 @@ describe('<RampsLayer>', () => {
   it('keeps Compare in preview on a focused ramp with no pins left', () => {
     const lookup = lookupOf();
     const adopted = adoptGenerated(weasel, lookup, 'gray');
-    render(<RampsLayer draft={adopted} derived={deriveDraft(adopted, lookup, {})} lookup={lookup} highlight={[]} focused="gray" onFocus={vi.fn()} onChange={vi.fn()} />);
+    renderWithIcons(<RampsLayer draft={adopted} derived={deriveDraft(adopted, lookup, {})} lookup={lookup} highlight={[]} focused="gray" onFocus={vi.fn()} onChange={vi.fn()} />);
     const button = within(screen.getByRole('region', { name: 'gray ramp' })).getByRole('button', { name: 'Compare in preview' });
     expect(button).toHaveAttribute('aria-pressed', 'true');
   });
@@ -81,7 +82,7 @@ describe('<RampsLayer>', () => {
     const lookup = lookupOf(draft);
     const derived = deriveDraft(draft, lookup, {});
     const onChange = vi.fn();
-    render(<RampsLayer draft={draft} derived={derived} lookup={lookup} highlight={[]} focused={null} onFocus={vi.fn()} onChange={onChange} />);
+    renderWithIcons(<RampsLayer draft={draft} derived={derived} lookup={lookup} highlight={[]} focused={null} onFocus={vi.fn()} onChange={onChange} />);
     await userEvent.click(screen.getByRole('button', { name: 'Pin tint-a' }));
     const hexIn = (mode: string) => derived.views.find((v) => v.mode === mode)!.result.tokens['tint-a'].value;
     expect(hexIn('dark')).not.toBe(hexIn('light'));

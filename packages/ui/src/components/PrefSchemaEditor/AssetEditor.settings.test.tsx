@@ -1,11 +1,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { asset, Live, WITH_LOCKED } from './AssetEditor.fixture';
 import type { PaletteDrag } from './Palette';
 import { SettingsTree } from './SettingsTree';
 import { removeNode } from './schemaEdit';
 import type { Workspace } from './workspace';
 import { CODE, pointer, SETTINGS, WORKSPACE } from './workspace.fixtures';
+import { renderWithIcons } from '../../testing/withIcons';
 
 afterEach(cleanup);
 
@@ -14,7 +15,7 @@ const hasSettings = () => screen.queryByRole('tree', { name: 'Settings' }) !== n
 
 describe('the settings of a layout\'s dialog', () => {
   it('are listed under a layout\'s tree, and not under a dialog\'s or a read-only layout\'s', () => {
-    render(<Live start={WITH_LOCKED} />);
+    renderWithIcons(<Live start={WITH_LOCKED} />);
     expect(hasSettings()).toBe(false);
     fireEvent.click(asset('Code'));
     expect(within(settings()).getByText('view')).toBeInTheDocument();
@@ -26,7 +27,7 @@ describe('the settings of a layout\'s dialog', () => {
 
   it('mutes a setting the layout points at, and not one it does not', () => {
     const start: Workspace = { assets: [WORKSPACE.assets[0]!, { ...WORKSPACE.assets[1]!, root: removeNode(CODE, 'snap') }] };
-    render(<Live start={start} />);
+    renderWithIcons(<Live start={start} />);
     fireEvent.click(asset('Code'));
     const muted = (key: string) => within(settings()).getByText(key).parentElement!.className.includes('pointed');
     expect(muted('grid')).toBe(true);
@@ -34,7 +35,7 @@ describe('the settings of a layout\'s dialog', () => {
   });
 
   it('lists only what the structure\'s filter holds', () => {
-    render(<Live />);
+    renderWithIcons(<Live />);
     fireEvent.click(asset('Code'));
     fireEvent.change(screen.getByRole('textbox', { name: 'Filter structure' }), { target: { value: 'snap' } });
     expect(within(settings()).queryByText('grid')).toBeNull();
@@ -43,13 +44,13 @@ describe('the settings of a layout\'s dialog', () => {
 
   it('lists a setting a tag of its own finds', () => {
     const over = { name: '', children: { look: { name: 'Look', children: { glow: { kind: 'boolean', name: 'Glow', description: '', default: false, tags: ['halo'] } } } } } as const;
-    render(<SettingsTree over={over as never} layout={{ name: '', children: {} }} sought="halo" onDrag={() => {}} onDrop={() => {}} />);
+    renderWithIcons(<SettingsTree over={over as never} layout={{ name: '', children: {} }} sought="halo" onDrag={() => {}} onDrop={() => {}} />);
     expect(within(settings()).getByText('glow')).toBeInTheDocument();
   });
 
   it('carries a pointer to the setting dragged out, and a heading of pointers for a group', () => {
     const dropped: PaletteDrag[] = [];
-    render(<SettingsTree over={SETTINGS} layout={CODE} sought="" onDrag={() => {}} onDrop={(drag) => dropped.push(drag)} />);
+    renderWithIcons(<SettingsTree over={SETTINGS} layout={CODE} sought="" onDrag={() => {}} onDrop={(drag) => dropped.push(drag)} />);
     const tree = settings();
     tree.setPointerCapture = vi.fn();
     tree.releasePointerCapture = vi.fn();

@@ -1,10 +1,11 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { useState } from 'react';
 import type { PrefGroup, PrefLeaf, PrefList } from '@weasel-js/prefs';
 import { attributeSchema } from './kindSchemas';
 import { PrefSchemaEditor } from './PrefSchemaEditor';
 import { nodeAt } from './schemaEdit';
+import { renderWithIcons } from '../../testing/withIcons';
 
 afterEach(cleanup);
 
@@ -34,7 +35,7 @@ describe('PrefSchemaEditor: the condition on a list\'s entry', () => {
   });
 
   it('sets it from the entry\'s own fields, as a test that reads from the entry', () => {
-    render(<Live />);
+    renderWithIcons(<Live />);
     fireEvent.click(within(screen.getByRole('tree', { name: 'Schema structure' })).getByText('phases'));
     expect(attributes().queryByRole('group', { name: 'Entry shown if' })).toBeNull();
     const entry = attributes().getByRole('group', { name: 'Entry enabled if' });

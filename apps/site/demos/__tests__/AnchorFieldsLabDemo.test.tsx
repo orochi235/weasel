@@ -4,6 +4,7 @@ import { pathInWorld, pathToAnchors, type Path, type PolygonPath } from '@weasel
 import { act, StrictMode } from 'react';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { AnchorFieldsLabDemo } from '../AnchorFieldsLabDemo';
+import { withIcons } from '../../testIcons';
 
 // windease lays a lab's tiles out only once something measures them, and
 // jsdom ships no ResizeObserver.
@@ -43,7 +44,7 @@ function type(name: string, text: string) {
 
 describe('AnchorFieldsLabDemo', () => {
   it('reads the two selected anchors as Mixed in X, moves both by +=, and sets both to a typed value', async () => {
-    await renderSettled(<StrictMode><AnchorFieldsLabDemo /></StrictMode>);
+    await renderSettled(<StrictMode><AnchorFieldsLabDemo /></StrictMode>, { wrapper: withIcons });
     expect(screen.getByRole('spinbutton', { name: 'X' })).toHaveAttribute('placeholder', 'Mixed');
     expect(anchorXs()).toEqual([100, 340]);
 
