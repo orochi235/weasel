@@ -6,7 +6,7 @@ import { GROUP_ICON } from './Palette';
 import type { SchemaNode } from './schemaEdit';
 
 /** The glyph of an `actions` leaf, which groups the actions it draws as a group does its own rows. */
-export const ACTIONS_ICON: IconName = 'bolt';
+export const ACTIONS_ICON: IconName = 'formActions';
 
 /**
  * The glyph a node is drawn with, where it has one: a group's for how it is drawn, unset drawn by its depth (a page

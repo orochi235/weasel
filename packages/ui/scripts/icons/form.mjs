@@ -61,6 +61,12 @@ export const FORM = {
 
   formLabel: `<path d="${tag}"/><circle cx="8.75" cy="10" r="1.1" fill="currentColor" stroke="none"/>`,
 
+  // An actions pref, which holds a registry group's actions: a folder with a solid bolt in it, the bolt the
+  // status set's own scaled to 7 tall and centered in the folder's body.
+  formActions: `
+    <path d="M2.75 5.5a1.5 1.5 0 0 1 1.5-1.5h3.2l1.6 1.75h6.7a1.5 1.5 0 0 1 1.5 1.5v7.25a1.5 1.5 0 0 1-1.5 1.5h-11.5a1.5 1.5 0 0 1-1.5-1.5z"/>
+    <path d="M10.68 7.376 7.473 11.458h2.235l-.388 2.916 3.207-4.082h-2.235z" fill="currentColor" stroke="none"/>`,
+
   // A rule the width of the form, with a row above it and a row below.
   formSeparator: `
     <path d="M${L} ${BAR_MID}h${W}"/>

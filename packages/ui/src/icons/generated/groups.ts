@@ -237,6 +237,7 @@ export const ICON_GROUPS: readonly { label: string; names: readonly IconName[] }
     'formSection',
     'formBar',
     'formLabel',
+    'formActions',
     'formSeparator',
   ] },
   { label: 'Repository views', names: [
