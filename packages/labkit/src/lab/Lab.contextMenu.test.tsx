@@ -1,5 +1,5 @@
 import { act, fireEvent, screen } from '@testing-library/react';
-import { type MenuDef } from '@weasel-js/core';
+import type { MenuDef } from '@weasel-js/core';
 import { pref } from '@weasel-js/prefs';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
@@ -81,5 +81,41 @@ describe('a lab’s context menus', () => {
       fireEvent.contextMenu(hosts[1] as HTMLElement, { clientX: 20, clientY: 20 });
     });
     expect(screen.getAllByRole('menu')).toHaveLength(1);
+    await act(async () => {
+      fireEvent.click(screen.getByRole('menuitemcheckbox', { name: 'Dark' }));
+    });
+    expect(lab?.mode).toBe('dark');
+  });
+
+  it('still suppresses the browser’s menu when no declared menu matches', async () => {
+    const none: readonly MenuDef[] = [
+      { id: 'body', when: { bodyTarget: 'selected-body' }, menu: MENUS[0]?.menu as never },
+    ];
+    const { container } = await mount({ contextMenus: none });
+    let notPrevented = true;
+    await act(async () => {
+      notPrevented = fireEvent.contextMenu(stages(container)[0] as HTMLElement, {
+        clientX: 10,
+        clientY: 10,
+      });
+    });
+    expect(notPrevented).toBe(false);
+    expect(screen.queryByRole('menu')).toBeNull();
+  });
+
+  it.each([
+    ['Shift+F10', { key: 'F10', shiftKey: true }],
+    ['the ContextMenu key', { key: 'ContextMenu' }],
+  ])('opens from %s on a focused camera', async (_name, key) => {
+    const { container } = await mount({ contextMenus: MENUS });
+    const host = stages(container)[0] as HTMLElement;
+    await act(async () => {
+      fireEvent.pointerDown(host, { button: 0, pointerId: 1, clientX: 5, clientY: 5 });
+      fireEvent.pointerUp(host, { button: 0, pointerId: 1, clientX: 5, clientY: 5 });
+    });
+    await act(async () => {
+      fireEvent.keyDown(host, key);
+    });
+    expect(screen.getByRole('menu').textContent).toContain('Dark');
   });
 });

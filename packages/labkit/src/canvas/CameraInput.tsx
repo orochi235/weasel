@@ -36,7 +36,7 @@ import type { Point, ViewTransform } from '../instrument/types';
 import { LabContextMenusContext } from '../lab/labContextMenus';
 import { normalize2DView } from '../state/view';
 import { CameraWheelContext } from './CameraWheelContext';
-import { cameraContextMenuAction } from './cameraContextMenu';
+import { cameraCenter, cameraContextMenuAction } from './cameraContextMenu';
 import { type CameraGestures, resolveGestures } from './cameraGestures';
 import { usePublishCamera } from './cameraRegistry';
 import { clampZoomAbout, frameLocalToWorld, fromCameraView, toCameraView } from './cameraView';
@@ -236,7 +236,7 @@ function CameraDispatch({
         },
       },
     };
-    const menu = labMenu && cameraContextMenuAction(labMenu);
+    const menu = labMenu && cameraContextMenuAction(labMenu, () => cameraCenter(hostRef, camera));
     return [
       ...(menu ? [menu] : []),
       // A trial pans on a plain drag; the kit action binds none of its own.
@@ -247,7 +247,7 @@ function CameraDispatch({
       ...(pinch ? [makePinchZoomAction(unclamped)] : []),
       ...(taps ? [tap] : []),
     ];
-  }, [frameRef, onTapRef, pan, wheel, pinch, taps, labMenu]);
+  }, [frameRef, onTapRef, pan, wheel, pinch, taps, labMenu, hostRef, camera]);
 
   useEffect(() => {
     const offs = actions.map((a) => registry.register(a));

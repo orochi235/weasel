@@ -804,6 +804,13 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   before redrawing it, so moving it onto a lab clock is an agnew library change, and the owner's
   call.
 
+### labkit context menus
+
+- **(P3) `canvas/cameraContextMenu.ts` copies core's `openContextMenu` and the `enabled` rule of
+  `menu.context`.** Core's are `@experimental` and unexported, and need scene deps a labkit camera
+  lacks. Promoting a scene-free `openContextMenu` would let labkit drop the copy, and that is the
+  owner's call.
+
 ### labkit's deprecated snapshot undo
 
 - **(P3) Delete `packages/labkit/src/undo/undoStack.ts` and its exports**
