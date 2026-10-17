@@ -66,6 +66,7 @@
       "@weasel-js/hud": ["../hud/src/index.ts"],
       "@weasel-js/hud/react": ["../hud/src/react/index.ts"],
       "@weasel-js/icons": ["../icons/src/index.ts"],
+      "@weasel-js/icons/plugin": ["../icons/src/plugin/index.ts"],
       "@weasel-js/kernel3d": ["../kernel3d/src/index.ts"],
       "@weasel-js/labkit": ["../labkit/src/index.ts"],
       "@weasel-js/labkit/chrome": ["../labkit/src/chrome/index.ts"],

@@ -19,6 +19,7 @@ const BUILT_FROM = {
     './shell.css': 'src/shell/shell.css',
     './frame.css': 'src/frame/frame.css',
   },
+  icons: { './plugin': 'src/plugin/index.ts' },
   labkit: { './styles.css': 'src/styles.less' },
   theme: { './tokens.css': 'src/generated/tokens.css' },
 };

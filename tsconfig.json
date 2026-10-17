@@ -79,6 +79,7 @@
       "@weasel-js/hud": ["./packages/hud/src/index.ts"],
       "@weasel-js/hud/react": ["./packages/hud/src/react/index.ts"],
       "@weasel-js/icons": ["./packages/icons/src/index.ts"],
+      "@weasel-js/icons/plugin": ["./packages/icons/src/plugin/index.ts"],
       "@weasel-js/kernel3d": ["./packages/kernel3d/src/index.ts"],
       "@weasel-js/labkit": ["./packages/labkit/src/index.ts"],
       "@weasel-js/labkit/chrome": ["./packages/labkit/src/chrome/index.ts"],
