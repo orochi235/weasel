@@ -30,7 +30,17 @@ export interface LaneEnd {
   point: Vec2;
   /** The way the port faces, or null. */
   normal: Vec2 | null;
+  /** The other places the port may sit, as `PortSpec.sites` gives them. */
+  sites?: readonly { point: Vec2; normal: Vec2 | null }[];
 }
+
+/** Whether a port faces more up or down than sideways. */
+const upright = (n: Vec2 | null): boolean => n !== null && Math.abs(n.y) > Math.abs(n.x);
+
+/** Where a port sits facing a wire bound for height `y`: at the first of
+ *  its places facing up toward it or down toward it, else where it is. */
+const facingY = (end: LaneEnd, y: number): { point: Vec2; normal: Vec2 | null } =>
+  [end, ...(end.sites ?? [])].find((s) => s.normal !== null && Math.sign(s.normal.y) === Math.sign(y - s.point.y) && upright(s.normal)) ?? end;
 
 /** Between two wires sharing a corridor, and between a corridor's outer
  *  wires and the stages beside it: `chain`'s spacing for its side tracks. */
@@ -139,12 +149,12 @@ function assignTracks(courses: readonly (Course | undefined)[]): { stretches: St
 }
 
 /** The height of track `j` of `n` along lane edge `k`: spread about an inner
- *  edge, and inward from the chart's top and bottom. */
+ *  edge, and inside the chart's top and bottom, the first half a gap in. */
 function trackY(grid: LaneGrid, k: number, j: number, n: number): number {
   const last = grid.edges.length - 1;
   const y = grid.edges[k]!;
-  if (k === 0) return y + j * TRACK_GAP;
-  if (k === last) return y - j * TRACK_GAP;
+  if (k === 0) return y + (j + 0.5) * TRACK_GAP;
+  if (k === last) return y - (j + 0.5) * TRACK_GAP;
   return y + (j - (n - 1) / 2) * TRACK_GAP;
 }
 
@@ -169,8 +179,18 @@ function waypointsOf(grid: LaneGrid, course: Course, ys: readonly number[]): Vec
   // past whatever else the column holds.
   const out = edge(from.column, 1);
   if (from.normal?.x === 1 && from.point.x < out - 1) points.push({ x: (from.point.x + out) / 2, y: from.point.y }, { x: out, y: from.point.y });
+  // A port facing up or down turns onto its first height as far along as it
+  // climbs, so the turn does not overshoot it; the last height, likewise.
+  const first = ys[0]!;
+  const leave = facingY(from, first);
+  const rise = Math.abs(first - leave.point.y);
+  if (upright(leave.normal) && leave.point.x + rise < out) points.push({ x: leave.point.x + rise, y: first }, { x: out, y: first });
   course.legs.forEach(({ column }, i) => points.push({ x: edge(column, 0), y: ys[i]! }, { x: edge(column, 1), y: ys[i]! }));
   const into = edge(to.column, 0);
+  const last = ys[ys.length - 1]!;
+  const arrive = facingY(to, last);
+  const fall = Math.abs(last - arrive.point.y);
+  if (upright(arrive.normal) && arrive.point.x - fall > into) points.push({ x: into, y: last }, { x: arrive.point.x - fall, y: last });
   if (to.normal?.x === -1 && to.point.x > into + 1) points.push({ x: into, y: to.point.y }, { x: (to.point.x + into) / 2, y: to.point.y });
   return straightened(points);
 }
@@ -232,13 +252,16 @@ export function routeWires(
   const grid: LaneGrid = { ...laid.grid, ink: laid.grid.columns.map((_, c) => [...ink].flatMap(([id, b]) => (laid.column.get(id) === c ? b : []))) };
   const end = (stage: string, port: string): LaneEnd => {
     const s = spec.get(stage)!;
-    const site = portSitesOf({ id: stage, data: s.data } as never, s.pose, port)[0];
-    return { column: laid.column.get(stage)!, point: site?.point ?? { x: 0, y: 0 }, normal: site?.normal ?? null };
+    const [site, ...sites] = portSitesOf({ id: stage, data: s.data } as never, s.pose, port);
+    return { column: laid.column.get(stage)!, point: site?.point ?? { x: 0, y: 0 }, normal: site?.normal ?? null, sites };
   };
   const courses = wires.map(({ edge }) => (edge.from === edge.to ? undefined : laneCourse(grid, end(edge.from, edge.fromPort!), end(edge.to, edge.toPort!))));
   const { stretches, tracks } = assignTracks(courses);
-  const keepOut = [...ink.values()].flat();
-  const edges = wires.map(({ edge, style }, w) => {
+  // Outside the lanes is off the chart: a label goes no further than its wires.
+  const [top, bottom] = [grid.edges[0] ?? 0, grid.edges[grid.edges.length - 1] ?? 0];
+  const keepOut = [...ink.values()].flat()
+    .concat({ x: -1e9, y: top - 1e9, width: 2e9, height: 1e9 }, { x: -1e9, y: bottom, width: 2e9, height: 1e9 });
+  const routes = wires.map(({ edge }, w) => {
     const course = courses[w];
     const ys = course?.legs.map(({ column, at }) => {
       if (typeof at === 'number') return at;
@@ -246,10 +269,26 @@ export function routeWires(
       return trackY(grid, at.edge, s.track, tracks.get(at.edge)!);
     });
     const waypoints = course === undefined ? undefined : waypointsOf(grid, course, ys!);
+    return { waypoints, path: routeOf(spec.get(edge.from)!, edge.fromPort!, spec.get(edge.to)!, edge.toPort!, laid.router, waypoints) };
+  });
+  // Each wire, as the boxes of its drawn segments, for the labels of the others to keep off.
+  const segments = routes.map(({ path }) => {
+    const c = path?.kind === 'polygon' ? path.coords : [];
+    return Array.from({ length: Math.max(0, c.length / 2 - 1) }, (_, i): Box => {
+      const [x0, y0, x1, y1] = [c[2 * i]!, c[2 * i + 1]!, c[2 * i + 2]!, c[2 * i + 3]!];
+      return { x: Math.min(x0, x1) - 1, y: Math.min(y0, y1) - 1, width: Math.abs(x1 - x0) + 2, height: Math.abs(y1 - y0) + 2 };
+    });
+  });
+  const edges = wires.map(({ edge, style }, w) => {
+    const { waypoints, path } = routes[w]!;
     const routed: DataEdge = waypoints === undefined ? edge : { ...edge, routed: waypoints };
     const label = spec.get(`${edgeIdOf(edge)}/label`)?.pose as Box | undefined;
-    const path = label === undefined ? null : routeOf(spec.get(edge.from)!, edge.fromPort!, spec.get(edge.to)!, edge.toPort!, laid.router, waypoints);
-    const clear = path === null || label === undefined ? undefined : clearLabel(path, label, LABEL_PLACEMENT.offset ?? 0, keepOut);
+    // Off the other wires too where there is room for that, else off the stages alone.
+    const others = keepOut.concat(segments.flatMap((boxes, k) => (k === w ? [] : boxes)));
+    const offset = LABEL_PLACEMENT.offset ?? 0;
+    const clear = path === null || label === undefined
+      ? undefined
+      : clearLabel(path, label, offset, others) ?? clearLabel(path, label, offset, keepOut);
     if (clear === undefined) return { edge: routed, style };
     keepOut.push(clear.box);
     return { edge: { ...routed, labelPlacement: { at: { near: clear.near }, offset: clear.offset } }, style };

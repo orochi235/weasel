@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { createScene, derivedDepOf, effectivePose, type RectPose } from '@weasel-js/core';
 import { withDiagramRegistry } from '../edge';
-import { diagramScene, type DiagramSpec } from '../fromData';
-import { uniqueStages } from './draw';
+import { diagramScene, edgeIdOf, type DiagramSpec } from '../fromData';
+import { portOn, uniqueStages } from './draw';
 import { SAMPLES } from './lab/samples';
-import { lanes } from './lanes';
+import { laneId, lanes } from './lanes';
 import { TRACK_GAP } from './lanesRoutes';
 import { io, w } from './skipFixture';
 import type { EffectPipeline } from './types';
@@ -149,6 +149,33 @@ describe('lanes wires', () => {
           const hit = inkOf(a).some((x) => inkOf(b).some((y) => overlap(x, y)));
           expect(hit, `${name}: ${a} ${b}`).toBe(false);
         }
+      }
+    });
+  }
+
+  for (const [name, p] of Object.entries(CASES)) {
+    it(`draws every wire and label inside the lanes, and a wire with nothing in its way inside its own: ${name}`, () => {
+      const { drawn, specs, pose, route } = load(p);
+      const band = (type: string) => pose(laneId(type));
+      const bands = drawn.data.nodes.filter((n) => n.id.startsWith('~lane:')).map((n) => pose(n.id));
+      const top = Math.min(...bands.map((b) => b.y));
+      const bottom = Math.max(...bands.map((b) => b.y + b.height));
+      for (const edge of drawn.data.edges) {
+        const id = edgeIdOf(edge);
+        if (!specs.some((s) => s.id === id)) continue;
+        const ys = route(id).map((q) => q.y);
+        expect(Math.min(...ys), `${name}: ${id} above the chart`).toBeGreaterThanOrEqual(top - 1e-3);
+        expect(Math.max(...ys), `${name}: ${id} below the chart`).toBeLessThanOrEqual(bottom + 1e-3);
+        if (specs.some((s) => s.id === `${id}/label`)) {
+          const label = pose(`${id}/label`);
+          expect(label.y >= top - 1e-3 && label.y + label.height <= bottom + 1e-3, `${name}: ${id}'s label outside the chart`).toBe(true);
+        }
+        if (edge.routed !== undefined || edge.from === edge.to) continue;
+        const type = portOn(p.stages.find((s) => s.id === edge.from), edge.fromPort!)!.type;
+        if (type !== portOn(p.stages.find((s) => s.id === edge.to), edge.toPort!)!.type) continue;
+        const lane = band(type);
+        expect(Math.min(...ys), `${name}: ${id} above its lane`).toBeGreaterThanOrEqual(lane.y - 1e-3);
+        expect(Math.max(...ys), `${name}: ${id} below its lane`).toBeLessThanOrEqual(lane.y + lane.height + 1e-3);
       }
     });
   }

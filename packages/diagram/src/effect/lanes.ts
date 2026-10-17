@@ -102,7 +102,9 @@ function lanePorts(stage: EffectStage, box: Box, lane: ReadonlyMap<string, numbe
     const a = Math.max(top, box.y);
     const b = Math.min(bottom, box.y + box.height);
     const y = a + ((b - a) * (same.indexOf(p) + 1)) / (same.length + 1);
-    return { id: p.id, type: p.type, at: { u, v: (y - box.y) / box.height } };
+    // Level, not the anchor's own heading: off its side's middle that leans
+    // toward the corner, and the wire would leave or arrive through another lane.
+    return { id: p.id, type: p.type, at: { u, v: (y - box.y) / box.height }, normal: { x: u === 0 ? -1 : 1, y: 0 } };
   });
   return [...side(stage.inputs ?? [], 0), ...side(stage.outputs ?? [], 1)];
 }
@@ -154,8 +156,8 @@ function laneNode(type: string, box: Box, color: TypeColor): DataNode {
  *  either side. The chart's top and bottom edges take their tracks inward. */
 function insetsFor(edges: number, tracks: ReadonlyMap<number, number>): number[] {
   return Array.from({ length: edges }, (_, k) => {
-    const extra = Math.max(0, (tracks.get(k) ?? 1) - 1) * TRACK_GAP;
-    return LANE_INSET + (k === 0 || k === edges - 1 ? extra : extra / 2);
+    const n = tracks.get(k) ?? 0;
+    return LANE_INSET + (k === 0 || k === edges - 1 ? n * TRACK_GAP : Math.max(0, n - 1) * TRACK_GAP / 2);
   });
 }
 
