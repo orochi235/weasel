@@ -1,3 +1,4 @@
+import { isDev } from '@weasel-js/registry';
 import type { IconTable, IconVariantLoader } from './table';
 
 /** Where a named icon variant stands: no loader for it (`unknown`), a loader not yet run (`idle`), in flight, in, or failed. */
@@ -37,7 +38,10 @@ export function createVariants(addTables: (tables: readonly IconTable[]) => void
           addTables(mod.default);
           set(name, 'loaded');
         })
-        .catch(() => set(name, 'failed'))
+        .catch((error: unknown) => {
+          if (isDev()) console.error(`icon variant "${name}" failed to load`, error);
+          set(name, 'failed');
+        })
         .finally(() => pending.delete(name));
       pending.set(name, run);
       return run;

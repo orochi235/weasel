@@ -572,10 +572,6 @@ How the registry and the build plugin work is in `docs/icons.md`.
   `packages/icons-plugin/src/tables.ts` is meant for the plugin's own test fixtures, but it also
   hides a consumer app's `fixtures/` directory, whose table then appears in dev only once one of
   its modules has been transformed. Skip the plugin's fixture path, not the name.
-- **(P3) A variant that fails to load says nothing about why.** `createVariants` in
-  `packages/icons/src/variants.ts` catches the loader's rejection and only sets `failed`. Log the
-  error with `console.error` in development before setting the state.
-
 - **(P3) Changing `IconRegistryProvider`'s `icons` only ever adds.** The tables given on mount
   seed the registry in its constructor and are never released, so a new `icons` array registers
   alongside them instead of replacing them

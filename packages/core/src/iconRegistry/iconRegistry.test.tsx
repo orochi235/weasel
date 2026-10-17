@@ -61,6 +61,7 @@ describe('icon registry provider', () => {
   });
 
   it('a failed variant can be asked for again', async () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
     let fail = true;
     const loader = async () => { if (fail) throw new Error('offline'); return { default: [more] }; };
     function Probe() {
@@ -75,5 +76,7 @@ describe('icon registry provider', () => {
     fail = false;
     await act(async () => rerender(tree(2)));
     await waitFor(() => expect(screen.getByText('loaded')).toBeTruthy());
+    expect(error).toHaveBeenCalledTimes(1);
+    error.mockRestore();
   });
 });
