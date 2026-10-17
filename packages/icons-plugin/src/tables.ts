@@ -37,9 +37,9 @@ export function packageDirFinder() {
 }
 
 const GEN = /^icons\.gen\.[cm]?[jt]sx?$/;
-const SKIP = new Set(['node_modules', 'dist']);
+const SKIP = new Set(['node_modules', 'dist', 'fixtures']);
 
-/** Every table sitting beside a generated icons.gen anywhere under `dir`, outside `node_modules` and `dist`. */
+/** Every table sitting beside a generated icons.gen anywhere under `dir`, outside `node_modules`, `dist` and test `fixtures`. */
 export function sourceTablesUnder(dir: string): IconTable[] {
   const out: IconTable[] = [];
   const walk = (d: string) => {
