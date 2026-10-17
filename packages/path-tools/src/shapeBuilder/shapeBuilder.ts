@@ -4,11 +4,10 @@
  */
 import { pointInPath, type PolygonPath } from '@weasel-js/geom';
 import { pathFacePieces, pathUnion } from '@weasel-js/geom/booleans';
-import type { PathPaint } from 'canvas/nodeShapes/nodePaint';
-import type { NodeId } from 'core/scene/types';
-import type { BooleanOpResult, BooleansAdapter } from './booleans';
-import { commitBooleanPieces, resolveBooleanOperands, type BooleanCommitPiece } from './custom';
-import type { BooleanOpOptions } from './operands';
+import {
+  commitBooleanPieces, resolveBooleanOperands,
+  type BooleanCommitPiece, type BooleanOpOptions, type BooleanOpResult, type BooleansAdapter, type NodeId, type PathPaint,
+} from '@weasel-js/core';
 
 /** What a pick of faces does: unite them into one path, or delete them. */
 export type ShapeBuilderMode = 'merge' | 'delete';

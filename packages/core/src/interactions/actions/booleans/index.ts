@@ -10,7 +10,3 @@ export {
   type BooleanCommitPiece, type BooleanOperands, type BooleanSource,
 } from './custom';
 export { PATHFINDER_STROKES } from './action';
-export {
-  planShapeBuilder, facesAlong,
-  type ShapeBuilderFace, type ShapeBuilderMode, type ShapeBuilderPlan,
-} from './shapeBuilder';

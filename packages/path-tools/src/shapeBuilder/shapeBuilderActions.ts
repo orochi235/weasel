@@ -1,11 +1,7 @@
 import type { Action, ActionDeps, InvocationCtx, OngoingHandle } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
-import type { PathOverlay, TransientPath } from 'canvas/pathOverlay';
-import type { NodeId } from 'core/scene/types';
-import type { BooleanOpOptions } from 'interactions/actions/booleans/operands';
-import {
-  facesAlong, planShapeBuilder, type ShapeBuilderMode, type ShapeBuilderPlan,
-} from 'interactions/actions/booleans/shapeBuilder';
+import type { BooleanOpOptions, NodeId, PathOverlay, TransientPath } from '@weasel-js/core';
+import { facesAlong, planShapeBuilder, type ShapeBuilderMode, type ShapeBuilderPlan } from './shapeBuilder';
 
 type Point = { x: number; y: number };
 
