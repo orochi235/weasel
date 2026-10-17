@@ -1,13 +1,5 @@
 import { asNodeId, createScene, type RectPose, solid, useSelection } from '@weasel-js/core';
-import {
-  alignMoveBehavior,
-  createGuidesLayer,
-  deriveAlignmentGuides,
-  distanceReadout,
-  type Guide,
-  siblingBounds,
-  type SpacingGap,
-} from '@weasel-js/guides';
+import { createSpacingHintsPreset } from '@weasel-js/guides';
 import {
   type ConfigOf,
   defineInstrument,
@@ -19,7 +11,7 @@ import {
   useTrialScene,
 } from '@weasel-js/labkit';
 import { RectIcon, SelectIcon } from '@weasel-js/ui';
-import { useMemo, useRef } from 'react';
+import { useMemo } from 'react';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 
@@ -61,49 +53,18 @@ function SpacingTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const scene = useTrialScene(ctx, createLabScene);
   const selection = useSelection({ mode: 'multi', initial: [STRAY_ID] });
   const { spacing, align, tolerance, readout, modifier } = ctx.config;
-  const guidesRef = useRef<readonly Guide[]>([]);
-  const gapsRef = useRef<readonly SpacingGap[]>([]);
-
-  const selectTool = useMemo(() => {
-    if (!spacing && !align) return undefined;
-    const siblings = () => siblingBounds(scene, selection.get());
-    return {
-      move: {
-        behaviors: [alignMoveBehavior<RectPose>({
-          tolerance,
-          getCandidates: () => (align ? deriveAlignmentGuides(siblings()) : []),
-          setActiveGuides: (g) => { guidesRef.current = g; },
-          ...(spacing ? { getSpacingTargets: siblings, setActiveGaps: (g: readonly SpacingGap[]) => { gapsRef.current = g; } } : {}),
-        })],
-      },
-    };
-  }, [scene, selection, spacing, align, tolerance]);
-
-  const layers = useMemo(() => ({
-    spacingHints: {
-      layer: createGuidesLayer({
-        getGuides: () => guidesRef.current,
-        getGaps: () => gapsRef.current,
-        color: HINT_COLOR,
-      }),
-    },
-  }), []);
-
-  const ambient = useMemo(
-    () => (readout ? [distanceReadout({ modifier, color: HINT_COLOR })] : []),
-    [readout, modifier],
+  const spacingHints = useMemo(
+    () => createSpacingHintsPreset({ spacing, align, tolerance, readout: readout && { modifier }, color: HINT_COLOR }),
+    [spacing, align, tolerance, readout, modifier],
   );
 
   return (
     <TrialSceneCanvas
-      features={['draw']}
+      features={['draw', spacingHints]}
       defaultTools={['rect']}
       scene={scene}
       selection={selection}
       trial={ctx.trial}
-      selectTool={selectTool}
-      layers={layers}
-      ambient={ambient}
     />
   );
 }

@@ -87,7 +87,7 @@ export function Workspace(props: WorkspaceProps): ReactElement {
 
   const paperLayer = usePaperLayer(page, backgroundColor);
   const grid = useGrid(page, backgroundColor);
-  const spacing = useSpacingHints(scene, selection);
+  const spacingHints = useSpacingHints();
   const pathDirection = usePathDirection();
   const symmetry = useSymmetry(scene, page);
   // The mode tint covers the workspace around the page, not the page itself.
@@ -113,13 +113,6 @@ export function Workspace(props: WorkspaceProps): ReactElement {
     openPrefs: props.openPrefs,
     openPalette: props.openPalette,
   });
-  const selectTool = useMemo(() => {
-    if (!grid.snap && !spacing.move) return undefined;
-    return {
-      ...(grid.snap ? { snap: grid.snap } : {}),
-      ...(spacing.move ? { move: { behaviors: [spacing.move] } } : {}),
-    };
-  }, [grid.snap, spacing.move]);
   const insertPaint = useInsertPaint();
   const sliceTool = useSliceTool();
   const shapeBuilderTool = useShapeBuilderTool();
@@ -130,10 +123,7 @@ export function Workspace(props: WorkspaceProps): ReactElement {
     () => measurementsContribution(scene as never, measurements),
     [scene, measurements],
   );
-  const ambientEntries = useMemo(
-    () => [...ambient, measureEntry, ...(spacing.readout ? [spacing.readout] : [])],
-    [ambient, measureEntry, spacing.readout],
-  );
+  const ambientEntries = useMemo(() => [...ambient, measureEntry], [ambient, measureEntry]);
   // Measurement ends snap first, within a few screen pixels, then the grid.
   const gridSnap = grid.snapPoint;
   const perPx = 1 / (view.scale.x || 1);
@@ -179,7 +169,7 @@ export function Workspace(props: WorkspaceProps): ReactElement {
         onCancel={() => machine.cancelMode()}
       />
       {hostDims.width > 0 && hostDims.height > 0 && (
-        <SceneCanvas<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose> features={['draw', pathTools]}
+        <SceneCanvas<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose> features={['draw', pathTools, ...(spacingHints ? [spacingHints] : [])]}
           claimKeys
           ref={props.onCanvas}
           ambient={ambientEntries}
@@ -201,13 +191,12 @@ export function Workspace(props: WorkspaceProps): ReactElement {
           pickHud
           modalityHud
           onToolsCreated={props.onToolsCreated}
-          selectTool={selectTool}
+          selectTool={grid.snap ? { snap: grid.snap } : undefined}
           toolOptions={toolOptions}
           layers={{
             paper: { layer: paperLayer, before: 'grid' },
             ...(grid.layer ? { grid: { layer: grid.layer } } : {}),
             modeTint: { layer: workspaceTint, after: 'grid' },
-            ...(spacing.layer ? { spacingHints: { layer: spacing.layer } } : {}),
           }}
           decorationLayer={modality.decorationLayer}
           alphaFor={alphaFor}
