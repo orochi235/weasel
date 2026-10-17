@@ -261,7 +261,7 @@ describe('tessellate — pen position after Z', () => {
   });
 });
 
-describe('tessellate (PolygonPath, nonzero, crossing outlines)', () => {
+describe('tessellate (PolygonPath, nonzero, crossing or nested outlines)', () => {
   // Triangles strictly containing (x, y): 1 where the path fills, 0 in a hole;
   // 2 would blend a translucent fill twice. Probe off any diagonal earcut may cut.
   const coverage = (mesh: ReturnType<typeof tessellate>, x: number, y: number): number => {
@@ -275,6 +275,15 @@ describe('tessellate (PolygonPath, nonzero, crossing outlines)', () => {
       if ((d1 > 0 && d2 > 0 && d3 > 0) || (d1 < 0 && d2 < 0 && d3 < 0)) n++;
     }
     return n;
+  };
+  const area = (mesh: ReturnType<typeof tessellate>): number => {
+    const v = mesh.vertices;
+    let sum = 0;
+    for (let t = 0; t < mesh.indices.length; t += 3) {
+      const [a, b, c] = [mesh.indices[t] * 2, mesh.indices[t + 1] * 2, mesh.indices[t + 2] * 2];
+      sum += Math.abs((v[b] - v[a]) * (v[c + 1] - v[a + 1]) - (v[c] - v[a]) * (v[b + 1] - v[a + 1])) / 2;
+    }
+    return sum;
   };
   const poly = (commands: number[], coords: number[]): PolygonPath => ({
     kind: 'polygon', commands: new Uint8Array(commands), coords: new Float32Array(coords), fillRule: 'nonzero',
@@ -315,5 +324,53 @@ describe('tessellate (PolygonPath, nonzero, crossing outlines)', () => {
     expect(coverage(mesh, 2.3, 3.1)).toBe(1);
     expect(coverage(mesh, 7.2, 7.9)).toBe(1);
     expect(coverage(mesh, 12.4, 13.3)).toBe(1);
+  });
+
+  const squares = (...rings: [number, number, number, boolean][]) => {
+    const parts = rings.map(([x, y, side, cw]) => square(x, y, side, cw));
+    return poly(parts.flatMap((r) => r.cmds), parts.flatMap((r) => r.xy));
+  };
+
+  it('covers a same-wound square nested in a square once', () => {
+    const mesh = tessellate(squares([0, 0, 10, true], [3, 3, 4, true]));
+    expect(area(mesh)).toBeCloseTo(100);
+    expect(coverage(mesh, 4.3, 5.1)).toBe(1);
+    expect(coverage(mesh, 1.2, 1.7)).toBe(1);
+  });
+
+  it('keeps an opposite-wound nested square a hole', () => {
+    const mesh = tessellate(squares([0, 0, 10, true], [3, 3, 4, false]));
+    expect(area(mesh)).toBeCloseTo(84);
+    expect(coverage(mesh, 4.3, 5.1)).toBe(0);
+    expect(coverage(mesh, 1.2, 1.7)).toBe(1);
+  });
+
+  it('fills by winding through three levels of nesting', () => {
+    // Inside each ring: 1, 2, 3 — all filled, once.
+    const same = tessellate(squares([0, 0, 12, true], [2, 2, 8, true], [4, 4, 4, true]));
+    expect(area(same)).toBeCloseTo(144);
+    expect(coverage(same, 5.3, 6.1)).toBe(1);
+    // 1, 0, 1 — an island in a hole.
+    const island = tessellate(squares([0, 0, 12, true], [2, 2, 8, false], [4, 4, 4, true]));
+    expect(area(island)).toBeCloseTo(144 - 64 + 16);
+    expect(coverage(island, 3.1, 5.3)).toBe(0);
+    expect(coverage(island, 5.3, 6.1)).toBe(1);
+    // 1, 0, -1 — a hole wound past zero fills again.
+    const pastZero = tessellate(squares([0, 0, 12, true], [2, 2, 8, false], [4, 4, 4, false]));
+    expect(area(pastZero)).toBeCloseTo(144 - 64 + 16);
+    expect(coverage(pastZero, 3.1, 5.3)).toBe(0);
+    expect(coverage(pastZero, 5.3, 6.1)).toBe(1);
+  });
+
+  it("fills an 'o' by its counter's winding, in either contour order", () => {
+    const counter = tessellate(squares([0, 0, 10, true], [3, 2, 4, false]));
+    expect(coverage(counter, 4.3, 3.1)).toBe(0);
+    expect(area(counter)).toBeCloseTo(84);
+    const counterFirst = tessellate(squares([3, 2, 4, false], [0, 0, 10, true]));
+    expect(coverage(counterFirst, 4.3, 3.1)).toBe(0);
+    expect(area(counterFirst)).toBeCloseTo(84);
+    const sameWound = tessellate(squares([0, 0, 10, true], [3, 2, 4, true]));
+    expect(coverage(sameWound, 4.3, 3.1)).toBe(1);
+    expect(area(sameWound)).toBeCloseTo(100);
   });
 });
