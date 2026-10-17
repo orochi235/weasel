@@ -867,6 +867,11 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   menu asset — the first thing anyone sees after making one — shows a lone button. Say in the
   preview that the menu is empty and how to give it rows.
 
+- **(P4) A `BarMenu` that opened itself can pull focus out of another menu when it closes.** Its
+  `close` gives focus to its button only when focus is inside a menu, but it checks with
+  `closest('[role="menu"]')`, which matches any menu on the page. Scope the check to this menu's
+  own panel ids.
+
 - **(P4) A headless-component layer shared by DOM and WebGL chrome.** The context-menu model
   splits state, keyboard and placement from drawing so one menu renders in both. Generalize that
   split (focus, roving highlight, placement, a measure/draw contract) so buttons, lists and other
