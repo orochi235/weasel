@@ -105,6 +105,8 @@ describe('PrefSchemaEditor actions', () => {
     const under = structure().querySelectorAll('[data-tree-id^="edit#"]');
     expect([...under].map((row) => row.getAttribute('data-tree-id'))).toEqual(['edit#edit.undo', 'edit#edit.redo']);
     expect(under[0]).toHaveAttribute('aria-disabled', 'true');
+    // Drawn as a grouping: a glyph, and the count of the actions it draws.
+    expect(structure().querySelector('[data-tree-id="edit"] > :first-child')).toHaveTextContent(/2$/);
   });
 });
 
