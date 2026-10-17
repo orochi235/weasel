@@ -48,6 +48,13 @@ describe('Bar', () => {
     expect(screen.getByRole('toolbar')).not.toHaveAttribute('data-overflow');
   });
 
+  it('starts its line with its label when its schema leads with it, and not otherwise', () => {
+    const { rerender } = render(<Bar schema={{ ...schema, lead: 'label' }} label="Text" />);
+    expect(screen.getByRole('toolbar').firstElementChild).toHaveTextContent(/^Text$/);
+    rerender(<Bar schema={schema} label="Text" />);
+    expect(within(screen.getByRole('toolbar')).queryByText('Text')).toBeNull();
+  });
+
   it('draws leaves in their bar forms, in the order the group lists them', () => {
     const { container } = render(<Bar schema={schema} values={{ size: 12 }} label="Text" />);
     const bar = screen.getByRole('toolbar', { name: 'Text' });

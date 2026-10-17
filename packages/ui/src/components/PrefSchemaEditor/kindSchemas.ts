@@ -106,6 +106,8 @@ const KIND_ATTRS: Record<PrefKind, KindAttrs> = {
 
 const BAR_OVERFLOW = choice('Overflow', 'Drawn as a bar: what happens to the cells its line has no room for. scroll keeps them all on it, and menu opens the ones past its end from a button there. Unset: scroll.', ['scroll', 'menu']);
 
+const BAR_LEAD = choice('Lead', 'Drawn as a bar: what its line starts with. label puts its name there, ahead of its cells. Unset: its first cell.', ['label']);
+
 const GROUP_ATTRS: KindAttrs = {
   name: LEAF_BASE.name!,
   description: LEAF_BASE.description!,
@@ -259,7 +261,7 @@ export function attributeSchema(
   if (!isPrefLeaf(node)) {
     const attrs = Object.entries(isPrefSection(node) ? SECTION_ATTRS : GROUP_ATTRS);
     // Only a bar has a line to run out of, so only it is asked, after how it is drawn.
-    const shared = attrs.flatMap((attr): Array<[string, KindAttr]> => (attr[0] === 'as' && node.as === 'bar' ? [attr, ['overflow', BAR_OVERFLOW]] : [attr]));
+    const shared = attrs.flatMap((attr): Array<[string, KindAttr]> => (attr[0] === 'as' && node.as === 'bar' ? [attr, ['overflow', BAR_OVERFLOW], ['lead', BAR_LEAD]] : [attr]));
     return { shared: Object.fromEntries(shared), own: {}, auto: {}, entry: {}, readOnly: [] };
   }
   const typed = node.type !== undefined;

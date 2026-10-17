@@ -65,6 +65,12 @@ describe('kindSchemas', () => {
     expect(attributeSchema({ name: 'G', as: 'panel', children: {} }).shared.overflow).toBeUndefined();
   });
 
+  it('offers what a bar starts with, and offers it of nothing else', () => {
+    const bar = attributeSchema({ name: 'G', as: 'bar', children: {} }).shared;
+    expect((bar.lead as unknown as { options: Array<{ value: string }> }).options.map((o) => o.value)).toEqual(['label']);
+    expect(attributeSchema({ name: 'G', as: 'panel', children: {} }).shared.lead).toBeUndefined();
+  });
+
   it('uses a custom kind\'s attributes, and treats unknown attributes as read-only', () => {
     const leaf = { kind: 'registry-enum', name: 'R', description: '', default: 'a', source: 'tools', extra: 1 } as PrefLeaf;
     const { own, readOnly } = attributeSchema(leaf, { 'registry-enum': { source: { kind: 'string', name: 'Source', description: '', default: '' } } });

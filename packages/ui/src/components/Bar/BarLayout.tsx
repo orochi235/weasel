@@ -1,10 +1,10 @@
 import type { ReactNode } from 'react';
-import { isPrefLeaf, prefAliasName, type PrefAlias, type PrefBarOverflow, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
+import { isPrefLeaf, prefAliasName, type PrefAlias, type PrefBarLead, type PrefBarOverflow, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
 import { BarMenu, type BarMenuSources } from './BarMenu';
 import { barMenuRoot } from './barMenuRoot';
 import { BarOverflow } from './BarOverflow';
 import { BarPopover } from './BarPopover';
-import { BAR_ITEM, BAR_MORE, useBarOverflow } from './useBarOverflow';
+import { BAR_ITEM, BAR_LEAD, BAR_MORE, useBarOverflow } from './useBarOverflow';
 import s from './Bar.module.css';
 
 /** Which way a bar runs. */
@@ -70,6 +70,8 @@ export interface BarLayoutProps {
   rootAttrs?: Record<string, string | undefined>;
   /** Names the bar, and makes it a `toolbar`. Leave unset inside one. */
   label?: string;
+  /** What the line starts with: `'label'` shows `label` ahead of the cells. Unset: the first cell. */
+  lead?: PrefBarLead;
   /** Draw the strip the bar sits on, for a bar set among other things with
    *  no strip of the host's under it. `'segmented'` is a compact strip with
    *  the cells almost touching. */
@@ -101,7 +103,7 @@ type Drawn = { divider: true } | { divider?: false; path: string; leaf: boolean;
  * leave the arrow keys to them, so it does not rove.
  */
 export function BarLayout(props: BarLayoutProps) {
-  const { nodes, orientation = 'horizontal', cells, row, attrs, rootAttrs, label, framed, className } = props;
+  const { nodes, orientation = 'horizontal', cells, row, attrs, rootAttrs, label, lead, framed, className } = props;
   const { overflow = 'scroll', overflowLabel = 'More' } = props;
   const vertical = orientation === 'vertical';
   const items: Drawn[] = [];
@@ -189,6 +191,7 @@ export function BarLayout(props: BarLayoutProps) {
       aria-label={label}
       aria-orientation={label === undefined ? undefined : orientation}
     >
+      {lead === 'label' && label && <span className={s.lead} aria-hidden="true" {...{ [BAR_LEAD]: '' }}>{label}</span>}
       {draw(line, vertical)}
       {rest.length > 0 && (
         <span className={s.cell} {...{ [BAR_MORE]: '' }}>
