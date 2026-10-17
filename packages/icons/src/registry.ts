@@ -22,6 +22,7 @@ export class IconNamespaceClaimedError extends Error {
   }
 }
 
+/** Resolves icon refs to glyphs across registered tables and overrides, and reports who owns each namespace. */
 export interface IconRegistry {
   get(ref: string): IconGlyph | undefined;
   add(tables: IconTable | readonly IconTable[]): () => void;
@@ -56,6 +57,7 @@ const lastOf = <T>(it: Iterable<T>): T | undefined => {
   return last;
 };
 
+/** A registry, optionally seeded with tables; each `add` and `override` returns its own release function. */
 export function createIconRegistry(initial?: IconTable | readonly IconTable[]): IconRegistry {
   const slots = new Map<string, Slot>();
   // How many live tables hold each namespace, and whose it is while any do.

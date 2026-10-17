@@ -20,4 +20,5 @@ export interface IconVariantModule {
   readonly default: readonly IconTable[];
 }
 
+/** Loads one variant module: the icon tables that variant adds. */
 export type IconVariantLoader = () => Promise<IconVariantModule>;
