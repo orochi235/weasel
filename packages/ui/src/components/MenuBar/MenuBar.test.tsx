@@ -134,18 +134,74 @@ describe('MenuBar', () => {
     expect(document.activeElement).toBe(before);
   });
 
-  it('draws a run of non-menu entries as a bar beside the titles', () => {
+  it('draws a run of non-menu entries after the menubar, outside it', () => {
     render(
       <MenuBar
         schema={pref.group('', {
           file: pref.group('File', { snap: pref.boolean('Snap', false) }, { as: 'menu' }),
           zoom: pref.number('Zoom', 100),
+          edit: pref.group('Edit', { grid: pref.boolean('Grid', false) }, { as: 'menu' }),
         })}
         values={{ zoom: 150 }}
       />,
     );
     const bar = screen.getByRole('menubar');
-    expect(bar.textContent).toContain('Zoom');
-    expect(screen.getByRole('menuitem', { name: 'File' }).parentElement).toBe(bar);
+    expect(bar.textContent).not.toContain('Zoom');
+    expect([...bar.children].map((el) => el.getAttribute('role'))).toEqual(['menuitem', 'menuitem']);
+    expect(bar.parentElement!.textContent).toContain('Zoom');
+  });
+
+  it('gives focus back to where it was after a menu opened by press is escaped twice', () => {
+    const { file } = setup();
+    const before = screen.getByRole('button', { name: 'Before' });
+    act(() => before.focus());
+    fireEvent.pointerDown(file);
+    expect(document.activeElement).toBe(screen.getByRole('menu'));
+    fireEvent.keyDown(screen.getByRole('menu'), { key: 'Escape' });
+    expect(document.activeElement).toBe(file);
+    fireEvent.keyDown(file, { key: 'Escape' });
+    expect(document.activeElement).toBe(before);
+  });
+
+  it('gives focus back to where it was, not to the title, when a row runs', () => {
+    const { file } = setup();
+    const before = screen.getByRole('button', { name: 'Before' });
+    act(() => before.focus());
+    fireEvent.pointerDown(file);
+    fireEvent.pointerUp(screen.getByRole('menuitem', { name: 'Open' }));
+    expect(ran).toEqual(['file.open']);
+    expect(document.activeElement).toBe(before);
+  });
+});
+
+describe('MenuBar conditions', () => {
+  const GATED: PrefGroup = pref.group('', {
+    on: pref.boolean('On', false),
+    file: { ...pref.group('File', { new: pref.action('file.new') }, { as: 'menu' }), showIf: { path: 'on' } },
+    edit: { ...pref.group('Edit', { undo: pref.action('edit.undo') }, { as: 'menu' }), enableIf: { path: 'on' } },
+  });
+  const gated = (on: boolean) => render(
+    <ActionsProvider>
+      {ACTIONS.map((a) => <Register key={a.id} action={a} />)}
+      <MenuBar schema={GATED} values={{ on }} />
+    </ActionsProvider>,
+  );
+
+  it('leaves out a title whose showIf fails', () => {
+    gated(false);
+    expect(screen.queryByRole('menuitem', { name: 'File' })).toBeNull();
+    cleanup();
+    gated(true);
+    expect(screen.getByRole('menuitem', { name: 'File' })).toBeDefined();
+  });
+
+  it('marks a title whose enableIf fails disabled, and opens it neither by press nor by key', () => {
+    gated(false);
+    const edit = screen.getByRole('menuitem', { name: 'Edit' });
+    expect(edit.getAttribute('aria-disabled')).toBe('true');
+    fireEvent.pointerDown(edit);
+    act(() => edit.focus());
+    for (const key of ['ArrowDown', 'Enter', ' ']) fireEvent.keyDown(edit, { key });
+    expect(screen.queryByRole('menu')).toBeNull();
   });
 });

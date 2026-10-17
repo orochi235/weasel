@@ -1,3 +1,11 @@
+/* The menubar, then the runs that are not menus. */
+.root {
+  display: flex;
+  align-items: center;
+  gap: var(--wzl-space-4);
+  min-width: 0;
+}
+
 .bar {
   display: flex;
   align-items: center;
@@ -23,6 +31,11 @@
 .title:hover,
 .title[aria-expanded='true'] {
   background: var(--wzl-surface-hover);
+}
+
+.title[aria-disabled='true'] {
+  color: var(--wzl-fg-muted);
+  background: none;
 }
 
 .title:focus-visible {

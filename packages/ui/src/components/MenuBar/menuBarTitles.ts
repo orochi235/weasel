@@ -1,4 +1,4 @@
-import { isPrefLeaf, type PrefGroup } from '@weasel-js/prefs';
+import { applyPrefConditions, isPrefLeaf, prefJudge, type PrefGroup } from '@weasel-js/prefs';
 
 /** One stretch of a menu bar: a menu group's title, or a run of anything else, drawn as a bar. */
 export type MenuBarTitle =
@@ -23,4 +23,13 @@ export function menuBarTitles(schema: PrefGroup): MenuBarTitle[] {
     run[key] = child;
   }
   return titles;
+}
+
+/** The titles and runs a menu bar draws as its conditions leave it, read as `Bar` reads them: a title whose
+ *  `showIf` fails is left out, and the keys of those whose `enableIf` fails are in `disabled`. */
+export function shownMenuBar(
+  schema: PrefGroup, read: (path: string) => unknown, over?: PrefGroup,
+): { titles: MenuBarTitle[]; disabled: ReadonlySet<string> } {
+  const { shown, disabled } = applyPrefConditions(schema, prefJudge(schema, read, undefined, over), { keepEmpty: true });
+  return { titles: shown ? menuBarTitles(shown) : [], disabled };
 }

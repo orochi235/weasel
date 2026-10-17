@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { ActionsProvider, useAction, type Action } from '@weasel-js/core';
 import { pref, type PrefGroup } from '@weasel-js/prefs';
 import { MenuBar, type MenuBarProps } from './MenuBar';
-import s from '../Bar/Bar.stories.module.css';
+import s from './MenuBar.stories.module.css';
 
 const meta: Meta<typeof MenuBar> = {
   title: 'ui/MenuBar',
