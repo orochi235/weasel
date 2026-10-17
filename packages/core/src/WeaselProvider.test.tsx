@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { render } from '@testing-library/react';
 import { WeaselProvider } from './WeaselProvider';
 import { useActionsRegistry, useSelectionContext } from '@weasel-js/routing/react';
+import { useIconRegistry } from './iconRegistry';
 
 /** Reports the registry identities visible at this point in the tree. */
 function Probe({ into }: { into: { actions: unknown[]; selection: unknown[] } }) {
@@ -53,5 +54,19 @@ describe('WeaselProvider', () => {
       </WeaselProvider>,
     );
     expect(seen.actions[0]).not.toBe(seen.actions[1]);
+  });
+
+  // Icons are settled when the app is built, so an isolated canvas still draws the app's.
+  it('keeps the icon registry in scope under `isolate`', () => {
+    const seen: unknown[] = [];
+    const Icons = () => { seen.push(useIconRegistry()); return null; };
+    render(
+      <WeaselProvider icons={[]}>
+        <Icons />
+        <WeaselProvider isolate><Icons /></WeaselProvider>
+      </WeaselProvider>,
+    );
+    expect(seen[0]).not.toBeNull();
+    expect(seen[1]).toBe(seen[0]);
   });
 });

@@ -70,7 +70,8 @@ export function WeaselProvider({ children, isolate = false, icons, iconVariants 
       </Actions>
     </Deps>
   );
-  if (isolate || icons || iconVariants) {
+  // `isolate` leaves the icon registry alone: icons are the app's, settled when it is built.
+  if (icons || iconVariants) {
     return (
       <IconRegistryProvider icons={icons} variants={iconVariants}>
         {tree}
