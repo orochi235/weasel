@@ -30,7 +30,7 @@ export const COMMANDS = {
     <rect x="14.5" y="12.5" width="3" height="3" fill="currentColor" stroke="none"/>`,
   extremeAnchors: `
     <path d="M3 16 C3 4.5 17 4.5 17 16"/>
-    <path d="M6.5 7.4 H13.5" stroke-width="1"/>
+    <path d="M3.5 7.4 H16.5" stroke-width="1"/>
     <rect x="1.5" y="14.5" width="3" height="3" fill="currentColor" stroke="none"/>
     <rect x="15.5" y="14.5" width="3" height="3" fill="currentColor" stroke="none"/>
     <rect x="8.5" y="5.9" width="3" height="3" fill="currentColor" stroke="none"/>`,

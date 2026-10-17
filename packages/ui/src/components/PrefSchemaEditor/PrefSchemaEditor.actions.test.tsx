@@ -91,11 +91,32 @@ describe('PrefSchemaEditor actions', () => {
     const attributes = screen.getByRole('region', { name: 'Attributes' });
     fireEvent.click(within(attributes).getByRole('button', { name: /Action/ }));
     expect(screen.getAllByRole('option').map((o) => o.textContent)).toEqual([
+      'Unset',
       'layers.flatten (not registered)',
       'Undo (edit.undo)',
       'Redo (edit.redo)',
       'Snap (view.snap)',
     ]);
+  });
+
+  it('draws the icon of the action an action pref fires beside its name, and none for a leaf with no icon', () => {
+    const withIcon = [{ ...ACTIONS[0]!, icon: <svg data-testid="undo-icon" /> }, ...ACTIONS.slice(1)];
+    render(<Live actions={withIcon} />);
+    const attributes = () => screen.getByRole('region', { name: 'Attributes' });
+    fireEvent.click(within(structure()).getByText('undo'));
+    expect(within(attributes()).getByTestId('undo-icon')).toBeInTheDocument();
+    fireEvent.click(within(structure()).getByText('flatten'));
+    expect(within(attributes()).queryByTestId('undo-icon')).toBeNull();
+  });
+
+  it('holds a row under an actions pref for each action of its group, which takes no selection', () => {
+    const run: PrefGroup = { name: 'Run', as: 'bar', children: { edit: { kind: 'actions', name: '', description: '', default: undefined, group: 'Edit' } } };
+    render(<PrefSchemaEditor schema={run} onChange={() => {}} actions={ACTIONS} />);
+    const under = structure().querySelectorAll('[data-tree-id^="edit#"]');
+    expect([...under].map((row) => row.getAttribute('data-tree-id'))).toEqual(['edit#edit.undo', 'edit#edit.redo']);
+    expect(under[0]).toHaveAttribute('aria-disabled', 'true');
+    // Drawn as a grouping: a glyph, and the count of the actions it draws.
+    expect(structure().querySelector('[data-tree-id="edit"] > :first-child')).toHaveTextContent(/2$/);
   });
 });
 

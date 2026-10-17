@@ -155,6 +155,7 @@ export type UiIconName =
   | 'formSection'
   | 'formBar'
   | 'formLabel'
+  | 'formActions'
   | 'formSeparator'
   | 'commitNode'
   | 'commitTimeline'
@@ -584,6 +585,7 @@ export const ICON_GROUPS: readonly { label: string; names: readonly UiIconName[]
       "formSection",
       "formBar",
       "formLabel",
+      "formActions",
       "formSeparator"
     ]
   },
@@ -955,6 +957,7 @@ declare module '@weasel-js/icons' {
     'ui:formSection': true;
     'ui:formBar': true;
     'ui:formLabel': true;
+    'ui:formActions': true;
     'ui:formSeparator': true;
     'ui:commitNode': true;
     'ui:commitTimeline': true;

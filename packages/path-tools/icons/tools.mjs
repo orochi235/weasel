@@ -25,9 +25,11 @@ export const TOOLS = {
     <circle cx="4.5" cy="10" r="2.6"/>
     <rect x="7.9" y="7" width="4.4" height="6" rx="1.6" stroke-width="1"/>
     <rect x="13.4" y="5.5" width="4.4" height="9" rx="0.5"/>`,
+  // Each stripe runs along the band's normal from one edge's line to the other's and stops there: a cap past
+  // either line shows outside the band.
   bendAlong: `
     <path d="M3 14 Q10 0 17 14 L14.5 15 Q10 5 5.5 15 Z"/>
-    <path d="M10 7 V9.9 M6.2 9.6 L8.1 11.4 M13.8 9.6 L11.9 11.4" stroke-width="1"/>`,
+    <path d="M10 7 V10 M6.5 8.75 L8.39 10.64 M13.5 8.75 L11.61 10.64" stroke-width="1" stroke-linecap="butt"/>`,
   repeatAlong: `
     <path d="M2.9 14.2 L3.6 12.9 M6.4 10.1 L8.2 8.8 M11.8 8.8 L13.6 10.1 M16.4 12.9 L17.1 14.2" stroke-width="1"/>
     <circle cx="4.75" cy="11.43" r="1.9" stroke-width="1.25"/>

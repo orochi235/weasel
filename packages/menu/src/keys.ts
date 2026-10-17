@@ -7,7 +7,8 @@ export type MenuStack = readonly (number | null)[];
 export type KeyEffect =
   | { kind: 'none' }
   | { kind: 'choose'; level: number; index: number }
-  | { kind: 'close' };
+  | { kind: 'close' }
+  | { kind: 'edge'; dir: -1 | 1 };
 
 const NONE: KeyEffect = { kind: 'none' };
 
@@ -55,8 +56,11 @@ export function keyStep(
     case 'ArrowUp': return done(withTop(stack, step(rows, at, -1)));
     case 'Home': return done(withTop(stack, step(rows, null, 1)));
     case 'End': return done(withTop(stack, step(rows, null, -1)));
-    case 'ArrowRight': return done(openSub(root, stack) ?? stack);
-    case 'ArrowLeft': return done(level > 0 ? stack.slice(0, -1) : stack);
+    case 'ArrowRight': {
+      const opened = openSub(root, stack);
+      return opened ? done(opened) : done(stack, { kind: 'edge', dir: 1 });
+    }
+    case 'ArrowLeft': return level > 0 ? done(stack.slice(0, -1)) : done(stack, { kind: 'edge', dir: -1 });
     case 'Escape': return level > 0 ? done(stack.slice(0, -1)) : done(stack, { kind: 'close' });
     case 'Tab': return done(stack, { kind: 'close' });
     case 'Enter':

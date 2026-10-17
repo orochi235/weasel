@@ -69,6 +69,10 @@ export type CoreIconName =
   | 'harmonize'
   | 'averageAnchors'
   | 'bendSegment'
+  | 'nudgeAnchors'
+  | 'nudgeAnchorsUp'
+  | 'nudgeAnchorsDown'
+  | 'nudgeAnchorsLeft'
   | 'createOutlines'
   | 'outlineStroke'
   | 'bold'
@@ -217,7 +221,11 @@ export const ICON_GROUPS: readonly { label: string; names: readonly CoreIconName
       "simplifyBrush",
       "harmonize",
       "averageAnchors",
-      "bendSegment"
+      "bendSegment",
+      "nudgeAnchors",
+      "nudgeAnchorsUp",
+      "nudgeAnchorsDown",
+      "nudgeAnchorsLeft"
     ]
   },
   {
@@ -349,6 +357,10 @@ declare module '@weasel-js/icons' {
     'core:harmonize': true;
     'core:averageAnchors': true;
     'core:bendSegment': true;
+    'core:nudgeAnchors': true;
+    'core:nudgeAnchorsUp': true;
+    'core:nudgeAnchorsDown': true;
+    'core:nudgeAnchorsLeft': true;
     'core:createOutlines': true;
     'core:outlineStroke': true;
     'core:bold': true;

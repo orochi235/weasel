@@ -1,0 +1,44 @@
+/* The menubar, then the runs that are not menus. */
+.root {
+  display: flex;
+  align-items: center;
+  gap: var(--wzl-space-4);
+  min-width: 0;
+}
+
+.bar {
+  display: flex;
+  align-items: center;
+  gap: var(--wzl-space-1);
+  min-width: 0;
+}
+
+.title {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  padding: var(--wzl-space-1) var(--wzl-space-3);
+  background: none;
+  border: 0;
+  border-radius: var(--wzl-radius-sm);
+  color: inherit;
+  font: inherit;
+  white-space: nowrap;
+  cursor: default;
+  user-select: none;
+}
+
+.title:hover,
+.title[aria-expanded='true'] {
+  background: var(--wzl-surface-hover);
+}
+
+.title[aria-disabled='true'] {
+  color: var(--wzl-fg-muted);
+  background: none;
+}
+
+.title:focus-visible {
+  outline: 2px solid var(--wzl-focus-ring);
+  outline-offset: -2px;
+}

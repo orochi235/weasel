@@ -27,6 +27,9 @@ export type PrefGroupAs = 'page' | 'tab' | 'panel' | 'section' | 'fragment' | 'b
  */
 export type PrefBarOverflow = 'scroll' | 'menu';
 
+/** What a bar's line starts with: `label` puts the bar's name there, ahead of its cells. */
+export type PrefBarLead = 'label';
+
 /** How a {@link PrefSection} is drawn. */
 export type PrefSectionAs = Exclude<PrefGroupAs, 'page'>;
 
@@ -54,6 +57,10 @@ export interface PrefGroup {
    *  Unset: `scroll`. A surface that takes drops keeps every cell on the line
    *  whatever this says, so each is there to drop beside. */
   overflow?: PrefBarOverflow;
+  /** Drawn `as: 'bar'`: what its line starts with. Unset: its first cell. */
+  lead?: PrefBarLead;
+  /** The letter that picks this in a menu, and with the menu bar's chord opens a top-level menu. One character; supported, never required. */
+  access?: string;
   /** Drawn, with everything under it, only while this holds. */
   showIf?: PrefCondition;
   /** Everything under it is disabled while this does not hold. */
@@ -81,6 +88,10 @@ export interface PrefSection {
   as?: PrefSectionAs;
   /** As a {@link PrefGroup}'s. */
   overflow?: PrefBarOverflow;
+  /** As a {@link PrefGroup}'s. */
+  lead?: PrefBarLead;
+  /** As a {@link PrefGroup}'s. */
+  access?: string;
   /** As a {@link PrefGroup}'s. */
   showIf?: PrefCondition;
   /** As a {@link PrefGroup}'s. */

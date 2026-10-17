@@ -4,6 +4,10 @@
  * @packageDocumentation
  */
 
+// --- Commands ----------------------------------------------------------------
+export { useCommand } from '@weasel-js/routing/react';
+export type { CommandOptions } from '@weasel-js/routing/react';
+
 // --- @experimental Actions Registry (2026-05-09) ----------------------------
 export { ActionsProvider, InputScope, useYoke, Yoke, useActionsRegistry, useAction, useOngoingAction } from '@weasel-js/routing/react';
 export { useLatest } from '@weasel-js/react';
@@ -127,6 +131,7 @@ export { usePoseDescriptorDepSource } from '../canvas/deps/poseDescriptor';
 export { CORNER_ANCHORS, cornerPoint } from '../interactions/actions/resize/cornerHandles';
 export type { CornerAnchor, CornerEdge } from '../interactions/actions/resize/cornerHandles';
 export { useSliceDep, useSliceDepSource, type OpsApplier } from '../canvas/deps/slice';
+export { useBooleansAdapterSource } from '../canvas/deps/booleans';
 export {
   computeSliceOps,
   type ComputeSliceOpsArgs,

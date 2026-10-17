@@ -359,9 +359,11 @@ Priority tags:
   `lengthenPathEnd` through `editAnchorSetTracked`, which counts the anchor set's subpaths. The two
   agree unless a path holds an empty subpath (a bare `M`); then the end extended is not the one
   picked (`packages/geom/src/paths/extendPath.ts`). Number them one way.
-- **(P2) Shape builder.** Drag across overlapping regions to merge them, Alt-drag to delete them.
-  `previewBooleanOp` already answers the pieces; the tool draws and picks among them. Building it
-  also gives "Live preview of a Boolean operation" below its display.
+- **(P3) Shape builder slows past a handful of selected paths.** `pathFacePieces`
+  (`packages/geom/src/booleans/ops.ts`) cuts one region per subset of the paths, so the faces
+  `useShapeBuilderTool` works on cost 2^N clipping runs: fine for the few shapes it is usually
+  given, unusable for a dozen. Tracing the arrangement of the outlines' edges once would give
+  the same faces at the cost of one overlay.
 - **(P2) Two kit key bindings are chords a browser takes first.** `createOutlines` is on
   Mod+Shift+O (Chrome's bookmark manager) and `averageAnchors` on Mod+Alt+J (Chrome's console),
   so neither fires there. `browserReservedBindings.test.ts` pins the pair, so a new collision
@@ -372,6 +374,11 @@ Priority tags:
   id, and an imported leaf takes a fresh id (`svgNodesToSceneDrafts` keeps ids for groups only,
   through `wd:group-id`); with a leaf id carried the same way, the effect's `data.pathEffect`
   and `dependsOn` can ride as `wd:` attributes on its group.
+- **(P3) Roughen, zigzag and pucker/bloat exist only on the `pel-effects-push` branch.** That
+  branch stored effects as a `data.effects` list on the path itself, a design main did not take
+  (`f082c838e` adopted its push brush as Smudge and left the rest). Its math is in
+  `packages/geom/src/effects/` there; carrying the three over means rebuilding each as a derived
+  effect node beside blend, bend and repeat. Undecided whether to; the branch is kept until then.
 - **(P3) A path effect inside a container that composes frames is untried.** An effect paints in
   the frame its sources are painted in (`core/scene/pathEffects/`); the actions only make one
   over two leaves, inserted beside the first.
@@ -429,7 +436,7 @@ Priority tags:
 - **(P3) Create Outlines refuses synthetic-bold text.** `textToPath` answers `reason: 'synthetic-bold'`: emboldening it is a union with the glyphs' own outline stroke, but the width has to match what the renderer's distance-field shift (`SYNTH_BOLD_AMOUNT`, `packages/renderer/src/draw/text.ts`) draws. Read from `glyphCoverage` and `glyphFieldScale` (`packages/font/src/textSdf.ts`) and not measured against pixels: the shift moves the edge out by `SYNTH_BOLD_AMOUNT` of the field's span, which is `distanceRange` texels in a baked atlas and `SDF_RADIUS` in a runtime canvas page, and a texel is `1 / info.size` em, so the outline grows by `SYNTH_BOLD_AMOUNT × span / info.size` em on each side and differs by which tier serves the glyph. What is left: `textToPath` (`packages/text`) has no stroke outliner to call, since `strokeToPath` is in `@weasel-js/stroke`, which text does not depend on; the union flattens every curve of the glyph; and the result has to be compared with the field in a browser.
 - **(P3) Non-destructive boolean groups.** Figma-style "boolean group" container node that recomputes geometry from children at render time. Requires a new layer/scene-node type plus renderer support.
 - **(P3) True curve booleans.** The booleans flatten beziers before clipping (`packages/geom/src/booleans/adapter.ts`), so the result is straight-line. Skia/PathKit-style curve-preserving booleans are substantially harder.
-- **(P3) Live preview of a Boolean operation.** Seeing the result before committing: on hovering a Pathfinder button, or holding an op key over a path. `previewBooleanOp` answers the pieces an operation would make, each with its source and paint, and mints and commits nothing. What is left is everything that shows them: no Pathfinder action has a gesture or a key to hold, an action has no way to say what it would do while its button is hovered, and nothing draws paths that are not nodes over the scene.
+- **(P3) Live preview of a Boolean operation.** Seeing the result before committing: on hovering a Pathfinder button, or holding an op key over a path. `previewBooleanOp` answers the pieces an operation would make, each with its source and paint, and mints and commits nothing. `createPathOverlay` draws paths that are not nodes over the scene, as the shape builder shows its faces with. What is left is asking for them: no Pathfinder action has a gesture or a key to hold, and an action has no way to say what it would do while its button is hovered.
 
 ---
 - **(P3) draw's SVG files do not carry layers.** A saved file keeps paper size, title, groups, and
@@ -835,13 +842,23 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 ## Selection, actions & UI panels
 
-- **(P2) Menus as layout assets, and a menu bar built from them.** Half built. Landed 2026-10-16: a
-  menu is a prefs group drawn `as: 'menu'`, `MenuDef` is a `when` around one, and
-  `resolveSchemaMenu` serves context menus and a bar's menu groups alike. Left: the menu bar itself
-  (a layout asset whose root is a bar of menu groups, with its keys), access letters,
-  `MenuHost.open` anchored to a rect, `MenuButton` onto the context-menu renderer, `useCommand`,
-  and the asset editor's remaining `menu` cases
-  (`docs/superpowers/specs/2026-10-16-menus-as-layout-assets-design.md`).
+- **(P2) Menus as layout assets, and a menu bar built from them.** `MenuBar`, access letters and
+  `MenuButton` on the context-menu renderer have landed. Left: WeaselDraw's menu bar (file actions
+  first), then labkit's (a lab-wide registry first)
+  (`docs/superpowers/specs/2026-10-16-menus-as-layout-assets-design.md`, "Consumers").
+
+- **(P3) The menu bar's default access chord, Alt, is unverified in Chrome on Windows, which may
+  open its own menu on Alt+F; check there before relying on it.**
+
+- **(P3) A menu bar title made disabled or hidden while its menu is open leaves the menu open.**
+  `MenuBar` checks a title's `enableIf` and `showIf` only when the menu opens; close the menu when
+  its title stops being openable.
+
+- **(P2) A bar can lead with an icon, not only its label.** `lead: 'label'` landed 2026-10-16
+  (`PrefBarLead` in `packages/prefs/src/groups.ts`). The icon form needs the group to name a glyph
+  as data: add `icon?: IconRef` to `PrefGroup`/`PrefSection`, as a pref leaf's `icon` already is
+  (`docs/icons.md`), `'icon'` to `PrefBarLead`, draw it with `resolveIcon` in `BarLayout`, and
+  offer both in the asset editor. A `menu` group's button could take the same `icon`.
 
 - **(P3) ui's `ShortcutInput` is a third copy of the shortcut shape.**
   `packages/ui/src/components/ToolPalette/formatShortcut.ts` describes what `@weasel-js/menu`'s
@@ -853,6 +870,25 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   native `contextmenu` event to the focused canvas, which would reopen it at that event's point.
   Headless Playwright sends no such event, so this is unverified. Check on a real Windows or
   Linux Chrome; if it reproduces, the likely fix is for the keydown to suppress the native event.
+
+- **(P3) Four private deep-equals each answer a slightly different question.** `sameValue` in
+  routing's `interactions/actions/useCommand.ts` compares any non-null object key by key;
+  `sameValue` in ui's `PrefSchemaEditor/attrAggregate.ts` goes by `toString` tag, so it holds
+  across realms and treats a class instance by identity; `sameValue` in ui's
+  `SelectionPanel/model.ts` reads a key holding `undefined` as absent; `deepEqual` in text's
+  `runs/rangeStyle.ts` takes only plain objects and arrays. Give them one home below routing —
+  `@weasel-js/registry` beside `isPlainObject`, or `@weasel-js/react` beside `sameList` — with the
+  undefined-as-absent reading as an option, and have all four call it.
+
+- **(P3) An empty menu asset previews as a bare button with nothing to say why.** `MenuPreview`
+  opens the menu on mount, but a menu with no rows resolves to nothing and stays shut, so a new
+  menu asset — the first thing anyone sees after making one — shows a lone button. Say in the
+  preview that the menu is empty and how to give it rows.
+
+- **(P4) A `BarMenu` that opened itself can pull focus out of another menu when it closes.** Its
+  `close` gives focus to its button only when focus is inside a menu, but it checks with
+  `closest('[role="menu"]')`, which matches any menu on the page. Scope the check to this menu's
+  own panel ids.
 
 - **(P4) A headless-component layer shared by DOM and WebGL chrome.** The context-menu model
   splits state, keyboard and placement from drawing so one menu renders in both. Generalize that
@@ -1411,6 +1447,9 @@ only story runner in the repo.
     only file on an idle teitou on 2026-10-16 it failed 5 of 10 on `main` (`9741e1af3`), the pan
     coming back 1.7 or 5.2 px short in y, so load is not the cause. Unverified guess: the test
     keeps the tile's first non-null view, before the tile's height settles.
+  - **`labkit/src/lab/Lab.messages.test.tsx` ("starts an ended run over on play") failed once** in
+    the fleet run of `main` at `e167efc7c` (2026-10-16), and passed 13 of 13 run alone on orochi.
+    One sighting, nothing changed near it; cause not looked into.
   - `forge/src/vite/plugin.test.ts` has its own entry under "Demos & visual regression".
 
 - **(P2) HUD vs DOM text: what the idle rerun left open.** `tests/perf/hud-vs-dom.spec.ts` prices

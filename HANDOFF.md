@@ -17,6 +17,37 @@ value held once per option of an enum leaf, folded by weight when read, and edit
 `prefsCss` writes such a store as CSS custom properties, and `pref` builds a schema in short
 form. The arc after them is a P2 entry in `docs/TODO.md`: a theme's tokens as a prefs schema.
 
+## In flight: menus and a menu bar
+
+The design is `docs/superpowers/specs/2026-10-16-menus-as-layout-assets-design.md`; its "Landed"
+section is what is built, and its "Order" section lists the arcs left. The owner asked for all of
+them to be carried through: for each arc, write a plan (writing-plans), run it subagent-driven
+(he chose that over native), and merge to `main` once its fleet run is green. Run `git log
+--oneline origin/main..main` to see what is unpushed; nothing is pushed without his word.
+
+Decisions from the conversation that the design doc does not carry:
+
+- The menu bar is new surface. Nothing moves out of the component that owns it — not a trial's
+  title bar, not draw's palettes — and no question should invite that.
+- labkit's per-trial commands stay on the trial windows; the lab's menu bar holds what the lab
+  header holds plus what a lab declares at lab level.
+- Access letters are supported, never required.
+- `ActionDisabledReason`'s const is `@experimental`; whether to promote it is the owner's call.
+  `useCommand` names only the untagged type.
+
+MenuBar, access letters and `MenuButton` on the menu renderer have landed. What is left is WeaselDraw's menu bar, then labkit's (spec "Order").
+
+How subagent work ran here, and what bit:
+
+- Subagents inherit the session's worktree lock: an agent cannot enter any worktree but the one
+  this session is in. For parallel tasks, dispatch with `isolation: "worktree"`, and expect an
+  agent resumed with `SendMessage` to land back in the session's worktree.
+- Parallel fleet runs collide on one node (`onto` keeps one tree per repo per node): pin each
+  worktree's runs with `npm run test:fleet -- HEAD --node <name>` — teitou, studio, msb-uai,
+  keiei; orochi is this Mac.
+- `scripts/review-package` in the SDD skill is refused under the worktree lock; build the diff
+  file with plain `git log`/`git diff` redirects.
+
 ## Next
 
 1. Everything on the 2026-10-13 never-run list ran on 2026-10-15 and passes, `npm run build:api`
@@ -37,6 +68,7 @@ form. The arc after them is a P2 entry in `docs/TODO.md`: a theme's tokens as a 
 
 Passed its tests and was never looked at. Delete a line when someone has.
 
+- Menus: the menu bar's pointer and keyboard behavior in real Chrome and Safari, Option+letter on macOS, `MenuButton` on the new renderer in `LabSwitcher` (link rows) and `CommandBar` (with a tooltip), the `.frame:focus-visible` ring on button frames, and a link row released with Cmd held after a long press-drag (it calls `window.open` from a pointerup, which a browser may block as a popup).
 - Renderer: the `u_origin` shader path for large translations, the `a_position` pin, skewed text
   and images, the glyph atlas reclaim, an emoji at any size, and the split SVG export.
 - Canvas: the size a kit canvas takes from core's stylesheet, in `apps/draw` and the site's demos;
@@ -76,6 +108,9 @@ Passed its tests and was never looked at. Delete a line when someone has.
   Simplify and Offset sliders' previews, Cut at Crossings, Join and Average, Cmd+D after a move,
   rotate, resize, and a duplicate-and-move, Space during a shape drag, and a star's Points and
   Inner rows in the inspector.
+- Menus, 2026-10-16: a bar's menu flipping above its button near the viewport bottom, the WebGL
+  menu placed under a rect, and a menu asset previewing open in the asset editor without taking
+  focus while a row is renamed.
 - By ear: the music bed's level, and whether each cue in the `score` demo reads as its name.
 
 ## Weak evidence

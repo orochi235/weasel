@@ -4,7 +4,7 @@ import { Code } from '../Code';
 import { DetailList, DetailRow } from '../DetailList';
 import { Input } from '../Input';
 import { PrefConditionEditor } from '../PrefConditionEditor';
-import { PrefsForm, type PrefRenderer } from '../Prefs';
+import type { PrefRenderer } from '../Prefs';
 import { renderPrefControl } from '../Prefs/PrefsRow';
 import { Select } from '../Select';
 import { Switch } from '../Switch';
@@ -18,6 +18,8 @@ import { KEEP, STUB, containsCode, printValue } from './schemaExport';
 import { PaneHeader } from './PaneHeader';
 import { pointerAttributes } from './pointers';
 import { useSelectedNodes } from './useSelectedNodes';
+import { IdentityForm } from './IdentityForm';
+import { nodeIcon } from './nodeIcon';
 import s from './PrefSchemaEditor.module.css';
 
 /** Form paths for the rows that are not attributes: the key, the kind, and the kind's own panel. */
@@ -209,12 +211,13 @@ export function AttributesPane({ schema, onChange, paths, onRename, added = fals
     ),
   };
   const children: Record<string, PrefLeaf | PrefGroup> = {
-    // First, so the key under it can follow it.
+    // First, the name and what it says, which a node's glyph stands beside; the key follows the name from under them.
     ...(shared.name ? { name: { ...shared.name, kind: NAME_KIND } as PrefLeaf } : {}),
+    ...(shared.description ? { description: shared.description } : {}),
     ...(keyed ? { [KEY]: { kind: KEY_KIND, name: 'Key', description: 'The name its value is stored under.', default: '' } as PrefLeaf } : {}),
     ...(keyed ? { [PATH]: { kind: PATH_KIND, name: 'Path', description: 'Where its value is stored now: its key under each group above it.', default: '' } as PrefLeaf } : {}),
     ...(leaf ? { [KIND]: { kind: KIND_KIND, name: 'Kind', description: 'The type of its value, which picks the control that draws it.', default: '' } as PrefLeaf } : {}),
-    ...Object.fromEntries(Object.entries(shared).filter(([k]) => k !== 'name')),
+    ...Object.fromEntries(Object.entries(shared).filter(([k]) => k !== 'name' && k !== 'description')),
     ...(Object.keys(own).length > 0 ? { [OWN]: { name: agg.kind === undefined ? 'group' : agg.kind ?? 'Common', children: own } } : {}),
     ...(item && Object.keys(entry).length > 0 ? {
       [ENTRY]: {
@@ -246,10 +249,9 @@ export function AttributesPane({ schema, onChange, paths, onRename, added = fals
     <section className={s.pane} aria-label="Attributes">
       <PaneHeader title={several ? `${targets.length} selected` : 'Attributes'} />
       <Lockable locked={locked}>
-      <PrefsForm
+      <IdentityForm icon={several ? null : nodeIcon(node, path !== null && parentPath(path) === null, actions)}
         schema={{ name: 'Attributes', children }}
-        layout="list"
-        fields={fields}
+        layout="list" fields={fields}
         changed={marked}
         values={{ ...held, [OWN]: held, [ENTRY]: item, [AUTO]: noAutoValue ? { ...held, autoValue: held.default } : held }}
         mixed={mixedPaths}

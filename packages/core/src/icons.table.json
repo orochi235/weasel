@@ -327,6 +327,26 @@
       "group": "Anchors",
       "tags": []
     },
+    "nudgeAnchors": {
+      "body": "<g transform=\"rotate(0 10 10)\"><path d=\"M4.1605 6.4645 A5 5 0 0 1 4.1605 13.5355\"/><path d=\"M6.8122 3.8128 A8.75 8.75 0 0 1 6.8122 16.1872\"/><svg x=\"11.25\" y=\"3.75\" width=\"5\" height=\"12.5\" viewBox=\"11.25 3.75 5 12.5\" overflow=\"hidden\"><path d=\"M0 16.25 L20 -3.75 M3.75 16.25 L23.75 -3.75 M7.5 16.25 L27.5 -3.75 M11.25 16.25 L31.25 -3.75 M15 16.25 L35 -3.75\" stroke-width=\"1\" stroke-linecap=\"butt\"/></svg></g>",
+      "group": "Anchors",
+      "tags": []
+    },
+    "nudgeAnchorsUp": {
+      "body": "<g transform=\"rotate(-90 10 10)\"><path d=\"M4.1605 6.4645 A5 5 0 0 1 4.1605 13.5355\"/><path d=\"M6.8122 3.8128 A8.75 8.75 0 0 1 6.8122 16.1872\"/><svg x=\"11.25\" y=\"3.75\" width=\"5\" height=\"12.5\" viewBox=\"11.25 3.75 5 12.5\" overflow=\"hidden\"><path d=\"M0 16.25 L20 -3.75 M3.75 16.25 L23.75 -3.75 M7.5 16.25 L27.5 -3.75 M11.25 16.25 L31.25 -3.75 M15 16.25 L35 -3.75\" stroke-width=\"1\" stroke-linecap=\"butt\"/></svg></g>",
+      "group": "Anchors",
+      "tags": []
+    },
+    "nudgeAnchorsDown": {
+      "body": "<g transform=\"rotate(90 10 10)\"><path d=\"M4.1605 6.4645 A5 5 0 0 1 4.1605 13.5355\"/><path d=\"M6.8122 3.8128 A8.75 8.75 0 0 1 6.8122 16.1872\"/><svg x=\"11.25\" y=\"3.75\" width=\"5\" height=\"12.5\" viewBox=\"11.25 3.75 5 12.5\" overflow=\"hidden\"><path d=\"M0 16.25 L20 -3.75 M3.75 16.25 L23.75 -3.75 M7.5 16.25 L27.5 -3.75 M11.25 16.25 L31.25 -3.75 M15 16.25 L35 -3.75\" stroke-width=\"1\" stroke-linecap=\"butt\"/></svg></g>",
+      "group": "Anchors",
+      "tags": []
+    },
+    "nudgeAnchorsLeft": {
+      "body": "<g transform=\"rotate(180 10 10)\"><path d=\"M4.1605 6.4645 A5 5 0 0 1 4.1605 13.5355\"/><path d=\"M6.8122 3.8128 A8.75 8.75 0 0 1 6.8122 16.1872\"/><svg x=\"11.25\" y=\"3.75\" width=\"5\" height=\"12.5\" viewBox=\"11.25 3.75 5 12.5\" overflow=\"hidden\"><path d=\"M0 16.25 L20 -3.75 M3.75 16.25 L23.75 -3.75 M7.5 16.25 L27.5 -3.75 M11.25 16.25 L31.25 -3.75 M15 16.25 L35 -3.75\" stroke-width=\"1\" stroke-linecap=\"butt\"/></svg></g>",
+      "group": "Anchors",
+      "tags": []
+    },
     "createOutlines": {
       "body": "<g stroke-linecap=\"butt\" stroke-linejoin=\"miter\"><path d=\"M3.5 3.5 H16.5 V7.5 H12 V16.5 H8 V7.5 H3.5 Z\" stroke-linejoin=\"miter\"/><g fill=\"currentColor\" stroke=\"none\"><rect x=\"2\" y=\"2\" width=\"3\" height=\"3\"/><rect x=\"15\" y=\"2\" width=\"3\" height=\"3\"/><rect x=\"6.5\" y=\"15\" width=\"3\" height=\"3\"/><rect x=\"10.5\" y=\"15\" width=\"3\" height=\"3\"/></g></g>",
       "group": "Outline",

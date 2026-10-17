@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { pathCrop, pathCropPieces, pathDivide, pathDividePieces, pathMerge, pathTrim } from './index';
+import { pathCrop, pathCropPieces, pathDivide, pathDividePieces, pathFacePieces, pathMerge, pathTrim } from './index';
 import type { RectPath } from '../path';
 import { pointInPath } from '../pathHitTest';
 
@@ -28,6 +28,22 @@ describe('pathDividePieces', () => {
 
   it('names a lone input as its own source', () => {
     expect(pathDividePieces(r(0, 0, 10, 10)).map((p) => p.sources)).toEqual([[0]]);
+  });
+});
+
+describe('pathFacePieces', () => {
+  it('splits a region that falls apart into one piece per connected face', () => {
+    // The bar crosses the box, leaving the box two faces on either side of it.
+    const pieces = pathFacePieces(r(0, 0, 30, 10), r(10, -5, 10, 20));
+    expect(pieces.map((p) => p.sources)).toEqual([[0], [0], [1], [1], [0, 1]]);
+    const holds = (x: number, y: number) => pieces.findIndex((p) => pointInPath(p.path, x, y));
+    expect(new Set([holds(5, 5), holds(25, 5), holds(15, -2), holds(15, 12), holds(15, 5)]).size).toBe(5);
+  });
+
+  it('keeps a face with a hole as one piece', () => {
+    const pieces = pathFacePieces(r(0, 0, 30, 30), r(10, 10, 10, 10));
+    expect(pieces.map((p) => p.sources)).toEqual([[0], [0, 1]]);
+    expect(pointInPath(pieces[0]!.path, 15, 15)).toBe(false);
   });
 });
 

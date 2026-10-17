@@ -1,5 +1,6 @@
 import { isPrefLeaf, prefSectionLeaves, type PrefLeaf, type PrefObject } from '@weasel-js/prefs';
-import { attributeSchema, type AttributeSchema, type CustomKinds, type KindAttrs, type RegisteredAction } from './kindSchemas';
+import { attributeSchema, type AttributeSchema, type CustomKinds, type KindAttrs } from './kindSchemas';
+import type { RegisteredAction } from './registeredActionAttrs';
 import { nodeAt, setAttribute, type SchemaNode, type SchemaRoot } from './schemaEdit';
 
 /** Whether two attribute values hold the same thing. Functions and class instances compare by identity. */

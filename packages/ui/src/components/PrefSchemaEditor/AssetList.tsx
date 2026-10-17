@@ -9,7 +9,7 @@ import s from './AssetList.module.css';
 import { icon } from '../../icons.gen';
 
 /** The headings the assets are listed under, in order. */
-const HEADINGS: readonly AssetHeading[] = ['Dialogs', 'Panels', 'Toolbars'];
+const HEADINGS: readonly AssetHeading[] = ['Dialogs', 'Panels', 'Toolbars', 'Menus'];
 
 /** `rows` with the ones `order` names first, as it names them, and the rest after as they stood. */
 function inOrder<T extends { id: string }>(rows: readonly T[], order: readonly string[]): T[] {

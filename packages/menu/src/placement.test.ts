@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { placeMenu, placeSubmenu } from './placement';
+import { placeMenu, placeMenuUnder, placeSubmenu } from './placement';
 
 const bounds = { x: 0, y: 0, w: 800, h: 600 };
 const size = { w: 200, h: 300 };
@@ -39,5 +39,21 @@ describe('placeSubmenu', () => {
   });
   it('shifts up so its bottom stays inside', () => {
     expect(placeSubmenu(size, { ...row, y: 500 }, bounds)).toEqual({ x: 300, y: 300 });
+  });
+});
+
+describe('placeMenuUnder', () => {
+  it('opens below the rect, left-aligned', () => {
+    expect(placeMenuUnder(size, { x: 100, y: 20, w: 60, h: 24 }, bounds)).toEqual({ x: 100, y: 44 });
+  });
+  it('flips above the rect when below does not fit', () => {
+    expect(placeMenuUnder(size, { x: 100, y: 560, w: 60, h: 24 }, bounds)).toEqual({ x: 100, y: 260 });
+  });
+  it('right-aligns to the rect when left-aligned would clip', () => {
+    expect(placeMenuUnder(size, { x: 700, y: 20, w: 60, h: 24 }, bounds)).toEqual({ x: 560, y: 44 });
+  });
+  it('shifts inside the bounds when neither side fits', () => {
+    expect(placeMenuUnder({ w: 200, h: 390 }, { x: 100, y: 180, w: 60, h: 24 }, { x: 0, y: 0, w: 800, h: 400 }))
+      .toEqual({ x: 100, y: 10 });
   });
 });

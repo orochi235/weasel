@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import type { PrefSection } from '@weasel-js/prefs';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { renderSettled } from '@weasel-js/react/testing/renderSettled';
+import { ActionsProvider, useCommand } from '@weasel-js/core';
+import type { PrefGroup, PrefSection } from '@weasel-js/prefs';
 import { PreviewPane } from './PreviewPane';
 
 afterEach(cleanup);
@@ -21,5 +23,36 @@ describe('the preview of a node property schema', () => {
     fireEvent.change(text, { target: { value: 'typed' } });
     fireEvent.blur(text);
     expect(onDefaults).toHaveBeenLastCalledWith([[['data', 'text'], 'typed']]);
+  });
+});
+
+function Command() {
+  useCommand('file.open', 'Open', () => {});
+  return null;
+}
+
+describe('the preview of a menu root', () => {
+  const menu = (action: string): PrefGroup => ({
+    name: 'File', description: '', as: 'menu',
+    children: { open: { kind: 'action', action, name: '', description: '', default: undefined } },
+  });
+
+  it('previews a menu root open', async () => {
+    const schema = menu('file.open');
+    await renderSettled(<ActionsProvider><Command /><PreviewPane schema={schema} onDefaults={vi.fn()} /></ActionsProvider>);
+    expect(screen.getByRole('menuitem', { name: 'Open' })).toBeDefined();
+  });
+
+  it('reopens the preview with the edited rows', async () => {
+    function Commands() {
+      useCommand('file.open', 'Open', () => {});
+      useCommand('file.save', 'Save', () => {});
+      return null;
+    }
+    const ui = (schema: PrefGroup) => <ActionsProvider><Commands /><PreviewPane schema={schema} onDefaults={vi.fn()} /></ActionsProvider>;
+    const { rerender } = await renderSettled(ui(menu('file.open')));
+    expect(screen.getByRole('menuitem', { name: 'Open' })).toBeDefined();
+    await act(async () => { rerender(ui(menu('file.save'))); });
+    expect(screen.getByRole('menuitem', { name: 'Save' })).toBeDefined();
   });
 });

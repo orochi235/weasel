@@ -8,6 +8,7 @@
  *  (`recording`), so a button's shortcut is the binding that fires it. The buttons built here are the file ones. */
 import type { ReactNode } from 'react';
 import { ActionBar as KitActionBar, ButtonBar, MenuButton } from '@weasel-js/ui';
+import { DEV_ROUTES } from './dev/devRoutes';
 import { PAPER_OPTIONS, type PaperSizeKey } from './paperSizes';
 import { CornerShape, type CornerShapeProps } from './ui/CornerShape';
 import { PathCommands } from './ui/PathCommands';
@@ -32,12 +33,8 @@ export interface CommandBarProps {
 
 const KIT_GROUPS = ['history', 'clipboard', 'edit', 'structure'] as const;
 
-/** The in-repo dev surfaces, hash-routed in main.tsx; each opens in a new tab. */
-const DEBUG_ROUTES: ReadonlyArray<{ value: string; label: string }> = [
-  { value: '#/dev/toolkits', label: 'Toolkit Builder' },
-  { value: '#/dev/registry', label: 'Bundle Inspector' },
-  { value: '#/dev/prefs', label: 'Prefs Schema' },
-];
+/** The in-repo dev surfaces; each opens in a new tab. */
+const DEBUG_ROUTES = DEV_ROUTES.map((r) => ({ value: r.href, label: r.label }));
 
 function openDebugRoute(hash: string) {
   window.open(`${window.location.pathname}${window.location.search}${hash}`, '_blank', 'noopener');

@@ -329,6 +329,26 @@
         "tags": []
       },
       {
+        "name": "nudgeAnchors",
+        "group": "Anchors",
+        "tags": []
+      },
+      {
+        "name": "nudgeAnchorsUp",
+        "group": "Anchors",
+        "tags": []
+      },
+      {
+        "name": "nudgeAnchorsDown",
+        "group": "Anchors",
+        "tags": []
+      },
+      {
+        "name": "nudgeAnchorsLeft",
+        "group": "Anchors",
+        "tags": []
+      },
+      {
         "name": "createOutlines",
         "group": "Outline",
         "tags": []
@@ -1402,6 +1422,11 @@
       },
       {
         "name": "formLabel",
+        "group": "Settings form",
+        "tags": []
+      },
+      {
+        "name": "formActions",
         "group": "Settings form",
         "tags": []
       },

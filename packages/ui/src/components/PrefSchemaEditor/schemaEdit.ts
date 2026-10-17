@@ -160,21 +160,6 @@ export function shiftNodes<R extends SchemaRoot>(
   return { root: next, from, paths: out };
 }
 
-/** Every path whose node can hold children, in tree order. */
-export function branchPaths(root: SchemaRoot): string[] {
-  const out: string[] = [];
-  const walk = (node: SchemaNode, path: string | null) => {
-    for (const [key, child] of Object.entries(childrenOf(node) ?? {})) {
-      if (!childrenOf(child)) continue;
-      const p = joinPath(path, key);
-      out.push(p);
-      walk(child, p);
-    }
-  };
-  walk(root, null);
-  return out;
-}
-
 /** The outermost of `paths`, in the order the schema holds them. */
 export function carried(root: SchemaRoot, paths: readonly string[]): string[] {
   const tops = new Set(outermost(paths));

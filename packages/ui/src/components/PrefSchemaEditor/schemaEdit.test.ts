@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { PrefGroup, PrefLeaf, PrefSection } from '@weasel-js/prefs';
-import { addNode, aliasNodes, branchPaths, canAlias, carried, copyNodes, outermost, removeNodes, isValidKey, keyProblem, moveNodes, rebasePaths, nodeAt, removeNode, renameKey, setAttribute, uniqueKey, valuePathOf } from './schemaEdit';
+import { addNode, aliasNodes, canAlias, carried, copyNodes, outermost, removeNodes, isValidKey, keyProblem, moveNodes, rebasePaths, nodeAt, removeNode, renameKey, setAttribute, uniqueKey, valuePathOf } from './schemaEdit';
+import { foldablePaths } from './folds';
 
 const enc = { read: () => true, write: (on: boolean) => on };
 const ROOT: PrefGroup = {
@@ -126,7 +127,7 @@ describe('schemaEdit', () => {
   });
 
   it('lists every path that holds children', () => {
-    expect(branchPaths(ROOT)).toEqual(['a', 'b', 'z']);
+    expect(foldablePaths(ROOT)).toEqual(['a', 'b', 'z']);
   });
 
   it('rebases paths at and beneath a moved node, leaving the rest', () => {
@@ -241,7 +242,7 @@ describe('a section root', () => {
     expect(nodeAt(NODE, 'data.text')).toMatchObject({ name: 'Text' });
     expect(members(removeNode(NODE, 'layout/pose.x'), 'layout')).toEqual(['pose.y']);
     expect(nodeAt(setAttribute(NODE, 'layout/pose.y', 'default', 4), 'layout/pose.y')).toMatchObject({ default: 4 });
-    expect(branchPaths(NODE)).toEqual(['layout']);
+    expect(foldablePaths(NODE)).toEqual(['layout']);
   });
 
   it('takes a dotted key for a leaf and a plain one for a section', () => {

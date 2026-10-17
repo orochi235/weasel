@@ -105,6 +105,27 @@ describe('PropertyField text drafting', () => {
 });
 
 describe('PropertyField enum choices', () => {
+  it('lists Unset first in a clearable radio group, checked while nothing is chosen, and clears through it', () => {
+    const onClear = vi.fn();
+    const onChange = vi.fn();
+    render(<PropertyField kind="enum" control="radio" label="Mode" value="a" options={OPTIONS} onChange={onChange} onClear={onClear} />);
+    expect(screen.getAllByRole('radio').map((r) => r.getAttribute('value'))).toHaveLength(3);
+    fireEvent.click(screen.getByRole('radio', { name: 'Unset' }));
+    expect(onClear).toHaveBeenCalled();
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('offers Unset in a clearable select, and nowhere without onClear', () => {
+    const onClear = vi.fn();
+    const { rerender } = render(<PropertyField kind="enum" label="Mode" value="a" options={OPTIONS} onChange={() => {}} onClear={onClear} />);
+    fireEvent.click(screen.getByRole('button', { name: /Mode/ }));
+    fireEvent.click(screen.getByRole('option', { name: 'Unset' }));
+    expect(onClear).toHaveBeenCalled();
+    rerender(<PropertyField kind="enum" label="Mode" value="a" options={OPTIONS} onChange={() => {}} />);
+    fireEvent.click(screen.getByRole('button', { name: /Mode/ }));
+    expect(screen.queryByRole('option', { name: 'Unset' })).toBeNull();
+  });
+
   it('draws a toggle as segments that say which one is chosen, and move with the arrows', () => {
     const onChange = vi.fn();
     render(

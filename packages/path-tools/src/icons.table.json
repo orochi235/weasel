@@ -28,7 +28,7 @@
       "tags": []
     },
     "bendAlong": {
-      "body": "<path d=\"M3 14 Q10 0 17 14 L14.5 15 Q10 5 5.5 15 Z\"/><path d=\"M10 7 V9.9 M6.2 9.6 L8.1 11.4 M13.8 9.6 L11.9 11.4\" stroke-width=\"1\"/>",
+      "body": "<path d=\"M3 14 Q10 0 17 14 L14.5 15 Q10 5 5.5 15 Z\"/><path d=\"M10 7 V10 M6.5 8.75 L8.39 10.64 M13.5 8.75 L11.61 10.64\" stroke-width=\"1\" stroke-linecap=\"butt\"/>",
       "group": "Tools",
       "tags": []
     },
@@ -108,7 +108,7 @@
       "tags": []
     },
     "extremeAnchors": {
-      "body": "<path d=\"M3 16 C3 4.5 17 4.5 17 16\"/><path d=\"M6.5 7.4 H13.5\" stroke-width=\"1\"/><rect x=\"1.5\" y=\"14.5\" width=\"3\" height=\"3\" fill=\"currentColor\" stroke=\"none\"/><rect x=\"15.5\" y=\"14.5\" width=\"3\" height=\"3\" fill=\"currentColor\" stroke=\"none\"/><rect x=\"8.5\" y=\"5.9\" width=\"3\" height=\"3\" fill=\"currentColor\" stroke=\"none\"/>",
+      "body": "<path d=\"M3 16 C3 4.5 17 4.5 17 16\"/><path d=\"M3.5 7.4 H16.5\" stroke-width=\"1\"/><rect x=\"1.5\" y=\"14.5\" width=\"3\" height=\"3\" fill=\"currentColor\" stroke=\"none\"/><rect x=\"15.5\" y=\"14.5\" width=\"3\" height=\"3\" fill=\"currentColor\" stroke=\"none\"/><rect x=\"8.5\" y=\"5.9\" width=\"3\" height=\"3\" fill=\"currentColor\" stroke=\"none\"/>",
       "group": "Commands",
       "tags": []
     }
