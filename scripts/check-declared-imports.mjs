@@ -5,6 +5,8 @@
  * resolves it. Published, a bundling build inlines the module and a per-module
  * build leaves a specifier a clean install cannot resolve. The consumer smoke
  * test cannot see either: it packs every sibling into one tree.
+ *
+ * A relative import must also stay inside its own package, so it cannot reach a sibling's source.
  */
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { builtinModules } from 'node:module';
@@ -23,6 +25,9 @@ const TEST_HELPERS = [
   'packages/storage/src/adapterContract.ts',
 ];
 const BUILTINS = new Set(builtinModules);
+// Relative imports that leave their package on purpose, as package directory → target without its
+// extension. The icons plugin loads from source during @weasel-js/icons' own build, before its dist exists.
+const CROSS_PACKAGE = [{ from: 'packages/icons-plugin', to: 'packages/icons/src/names' }];
 
 function walk(dir, out = []) {
   for (const name of readdirSync(dir)) {
@@ -60,6 +65,13 @@ function ownAliases(dir) {
   return aliases;
 }
 
+for (const { to } of CROSS_PACKAGE) {
+  if (!['.ts', '.tsx', '.js'].some((ext) => existsSync(join(ROOT, to + ext)))) {
+    console.error(`[declared-imports] ${to} is allowlisted as a cross-package import and does not exist.`);
+    process.exit(1);
+  }
+}
+
 for (const helper of TEST_HELPERS) {
   if (!existsSync(join(ROOT, helper))) {
     console.error(`[declared-imports] ${helper} is listed as a test helper and does not exist.`);
@@ -68,6 +80,7 @@ for (const helper of TEST_HELPERS) {
 }
 
 const offenders = [];
+const escapes = [];
 let checked = 0;
 
 for (const name of readdirSync(PACKAGES).sort()) {
@@ -92,6 +105,13 @@ for (const name of readdirSync(PACKAGES).sort()) {
     if (NOT_SHIPPED.test(rel) || TEST_HELPERS.includes(rel)) continue;
     for (const written of importSpecifiers(readFileSync(file, 'utf8'))) {
       const specifier = written.replace(/\?.*$/, '');
+      if (specifier.startsWith('.')) {
+        const target = relative(ROOT, resolve(dirname(file), specifier)).replace(/\.[cm]?[jt]sx?$/, '');
+        const own = relative(ROOT, dir);
+        if (target.startsWith(`${own}/`)) continue;
+        if (!CROSS_PACKAGE.some((a) => a.from === own && a.to === target)) escapes.push({ file: rel, specifier });
+        continue;
+      }
       if (!isBare(specifier)) continue;
       const pkg = packageOf(specifier);
       if (declared.has(pkg) || BUILTINS.has(pkg)) continue;
@@ -107,6 +127,12 @@ if (checked === 0) {
   process.exit(1);
 }
 
+if (escapes.length > 0) {
+  console.error(`\n[declared-imports] BLOCKED: ${escapes.length} relative import(s) leave their package.\n`);
+  for (const { file, specifier } of escapes) console.error(`  ${file}   imports ${specifier}`);
+  console.error("\n  Import the other package by name, and declare it. A published package cannot reach a sibling's source.\n");
+}
+
 if (offenders.length > 0) {
   console.error(`\n[declared-imports] BLOCKED: ${offenders.length} package(s) import a module they do not declare.\n`);
   for (const { name, missing } of offenders) {
@@ -114,7 +140,8 @@ if (offenders.length > 0) {
     for (const [pkg, file] of missing) console.error(`      ${pkg}   (first seen in ${file})`);
   }
   console.error('\n  Add each to the package\'s dependencies or peerDependencies.\n');
-  process.exit(1);
 }
+
+if (escapes.length > 0 || offenders.length > 0) process.exit(1);
 
 console.log(`[declared-imports] OK — ${checked} published package(s), every import declared.`);
