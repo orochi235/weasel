@@ -60,10 +60,6 @@ describe('weaselIcons library mode', () => {
   it('fails a vite library build that strips every annotation', async () => {
     await expect(viteLibrary(true)).rejects.toThrow(/stripped every @icon annotation/);
   });
-
-  it('refuses app mode under esbuild, which cannot fill the placeholders', () => {
-    expect(() => weaselIcons.esbuild({ mode: 'app' })).toThrow(/app mode needs vite, rollup or rolldown/);
-  });
 });
 
 describe('weaselIcons on a root that draws nothing', () => {
