@@ -5,7 +5,7 @@ describe('libraryAnnotations', () => {
   it('annotates a ref inlined into a chunk that does not hold the module naming it', () => {
     const library = libraryAnnotations();
     library.record('a.ts', ['lib:star']);
-    const out = library.renderChunk(`const s = 'lib:star';\n`, { fileName: 'b.js', moduleIds: ['b.ts'] });
+    const out = library.renderChunk(`const s = 'lib:star';\n`, { fileName: 'b.js' });
     expect(out?.code).toContain(`/* @icon */ 'lib:star'`);
   });
 

@@ -27,6 +27,20 @@ export interface WeaselIconsOptions {
 
 const SOURCE = /\.[cm]?[jt]sx?$/;
 
+interface ModuleUse {
+  readonly file: string;
+  /** The icons.gen modules it imports. */
+  readonly gens: readonly string[];
+  readonly pkg: string | undefined;
+  readonly refs: readonly string[];
+}
+
+/** The ids of every module in the build, when the bundler's context can list them. */
+function liveModules(ctx: object): Set<string> | undefined {
+  if (!('getModuleIds' in ctx) || typeof ctx.getModuleIds !== 'function') return undefined;
+  return new Set(ctx.getModuleIds() as Iterable<string>);
+}
+
 /** Report through the bundler when its context can, and throw in case it only records. */
 function fail(ctx: object, message: string): never {
   if ('error' in ctx && typeof ctx.error === 'function') ctx.error(message);
@@ -49,6 +63,8 @@ export const weaselIcons: UnpluginInstance<WeaselIconsOptions, false> = createUn
   const tables = new Map<string, IconTable>();
   const packageDir = packageDirFinder();
   const seenPackages = new Set<string>();
+  // What each transformed module read, so a rebuild can forget the modules it no longer holds.
+  const uses = new Map<string, ModuleUse>();
   const library = libraryAnnotations();
   let dev = false;
 
@@ -72,6 +88,18 @@ export const weaselIcons: UnpluginInstance<WeaselIconsOptions, false> = createUn
     if (!own) fail(ctx, `virtual:weasel-icons/${variant} names no custom variant and no icon namespace in this build`);
     return [own];
   };
+  const tablesFrom = (gens: Iterable<string>, pkgs: Iterable<string>) => [
+    ...[...gens].map(tableBeside),
+    ...[...pkgs].map(declaredTable),
+  ].filter((t): t is IconTable => t !== undefined);
+  const rebuildFromUses = (ctx: object) => {
+    tables.clear();
+    refs.clear();
+    const all = [...uses.values()];
+    const pkgs = new Set(all.flatMap((u) => (u.pkg ? [u.pkg] : [])));
+    for (const t of tablesFrom(new Set(all.flatMap((u) => u.gens)), pkgs)) addTable(ctx, t);
+    for (const u of all) for (const ref of u.refs) if (!refs.has(ref)) refs.set(ref, u.file);
+  };
   const checkRefs = (ctx: object) => {
     for (const [ref, from] of refs) {
       const parts = splitIconRef(ref);
@@ -81,7 +109,7 @@ export const weaselIcons: UnpluginInstance<WeaselIconsOptions, false> = createUn
     }
   };
   // Runs after every module is transformed, so `refs` and `tables` are complete.
-  function renderChunk(this: object, code: string, chunk: { fileName: string; moduleIds: readonly string[] }) {
+  function renderChunk(this: object, code: string, chunk: { fileName: string }) {
     if (!app) return library.renderChunk(code, chunk);
     if (!code.includes('__WEASEL_ICONS__')) return null;
     const s = new MagicString(code);
@@ -106,31 +134,32 @@ export const weaselIcons: UnpluginInstance<WeaselIconsOptions, false> = createUn
     transformInclude: (id) => !id.startsWith('\0') && SOURCE.test(id.split('?')[0]!),
     transform(code, id) {
       const file = id.split('?')[0]!;
+      const gens: string[] = [];
       const out = rewriteIconCalls(
         code,
         file,
         (spec) => {
           const gen = genFile(spec, file);
-          if (!gen) return undefined;
-          const table = app ? tableBeside(gen) : undefined;
-          if (table) addTable(this, table);
-          return namespaceIn(gen);
+          if (gen) gens.push(gen);
+          return gen && namespaceIn(gen);
         },
         (message) => this.warn(message),
       );
       if (out && out.dynamic > 0) {
         this.warn(`${file}: ${out.dynamic} icon() call(s) with a computed name resolve only from a loaded variant`);
       }
+      const named = collectIconRefs(out?.code ?? code, file);
       if (!app) {
-        library.record(id, collectIconRefs(out?.code ?? code, file));
+        library.record(id, named);
       } else {
-        const dir = packageDir(file);
-        if (dir && !seenPackages.has(dir)) {
-          seenPackages.add(dir);
-          const table = declaredTable(dir);
-          if (table) addTable(this, table);
+        const pkg = packageDir(file);
+        if (!dev) {
+          uses.set(id, { file, gens, pkg, refs: named });
+        } else {
+          const fresh = pkg && !seenPackages.has(pkg) ? [pkg] : [];
+          fresh.forEach((d) => seenPackages.add(d));
+          for (const t of tablesFrom(gens, fresh)) addTable(this, t);
         }
-        for (const ref of collectIconRefs(out?.code ?? code, file)) if (!refs.has(ref)) refs.set(ref, file);
       }
       return out ? { code: out.code, map: out.map } : null;
     },
@@ -142,7 +171,16 @@ export const weaselIcons: UnpluginInstance<WeaselIconsOptions, false> = createUn
       return dev ? `export default ${JSON.stringify(variantTables(this, variant))};` : moduleFor(variant);
     },
     buildEnd() {
-      if (app && !dev) checkRefs(this);
+      if (dev) return;
+      const live = liveModules(this);
+      if (live) {
+        for (const id of uses.keys()) if (!live.has(id)) uses.delete(id);
+        library.keep(live);
+      }
+      if (app) {
+        rebuildFromUses(this);
+        checkRefs(this);
+      }
     },
     vite: {
       configResolved(config) {
