@@ -568,10 +568,6 @@ How the registry and the build plugin work is in `docs/icons.md`.
   `@weasel-js/icons`' own build, before its `dist` exists), and `check:imports` passes it only
   because `scripts/check-declared-imports.mjs` skips relative specifiers. Allowlist that one import
   there and fail any other relative specifier that leaves its package.
-- **(P3) The plugin's dev table discovery skips every directory named `fixtures`.** `SKIP` in
-  `packages/icons-plugin/src/tables.ts` is meant for the plugin's own test fixtures, but it also
-  hides a consumer app's `fixtures/` directory, whose table then appears in dev only once one of
-  its modules has been transformed. Skip the plugin's fixture path, not the name.
 - **(P3) A variant that fails to load says nothing about why.** `createVariants` in
   `packages/icons/src/variants.ts` catches the loader's rejection and only sets `failed`. Log the
   error with `console.error` in development before setting the state.
@@ -596,11 +592,6 @@ How the registry and the build plugin work is in `docs/icons.md`.
   (`packages/icons-plugin/src/rewrite.ts`) follows only a named import from an `icons.gen` module.
   A namespace import (`g.icon('x')`), a default import, or a module that re-exports `icon` leaves
   its calls unrewritten, so their glyphs miss a trimmed build. Warn on each of those forms.
-
-- **(P3) The build plugin takes a `dist/package.json` stub for a package root.** `packageDirFinder`
-  (`packages/icons-plugin/src/tables.ts`) stops at the nearest `package.json`. A package that
-  ships `{ "type": "module" }` in `dist` has no `weaselIcons` field there, so its table is never
-  read. Keep walking up past a manifest with no `name`.
 
 - **(P3) Library mode re-annotates only the refs of a chunk's own modules.** `annotate.ts`
   (`packages/icons-plugin/src/annotate.ts`) matches a chunk's literals against refs recorded for
