@@ -5,7 +5,7 @@
  * sources live for the module lifetime.
  */
 
-import { createReflectable, type Reflection } from '@weasel-js/registry';
+import { createReflectable, isDev, type Reflection } from '@weasel-js/registry';
 import { type TextureHandle } from '../textures/registerTexture';
 
 export type { TextureHandle };
@@ -71,8 +71,6 @@ export function getProgramSource(id: string): ProgramSource | null {
   return registry.get(id) ?? null;
 }
 
-const isDev = (): boolean =>
-  typeof process !== 'undefined' ? process.env.NODE_ENV !== 'production' : true;
 
 /**
  * Register a custom shader program by id.
