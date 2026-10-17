@@ -13,7 +13,7 @@ import react from '@vitejs/plugin-react';
 import { rolldown } from 'rolldown';
 import { defineConfig, type Plugin } from 'vite';
 import { entries } from './entries.ts';
-import { weaselIcons } from '../icons/src/plugin/index.ts';
+import { weaselIcons } from '../icons-plugin/src/index.ts';
 import { stableScopedName } from '../../scripts/vite-css-modules.ts';
 
 const pkg = JSON.parse(readFileSync(resolve(import.meta.dirname, 'package.json'), 'utf8')) as {

@@ -24,6 +24,10 @@ const ENTRIES = [
     why: 'names and the registry, read by prefs and routing, which must not pull React in',
   },
   {
+    file: 'packages/icons-plugin/dist/index.js',
+    why: 'the build plugin, loaded by a bundler config in Node',
+  },
+  {
     file: 'packages/core/dist/math.js',
     why: 'the geometry and simulation half, for a server with no DOM',
   },

@@ -11,7 +11,7 @@ import { getStarted } from './scripts/vite-get-started.ts';
 import { packageDocs } from './scripts/vite-package-docs.ts';
 import { localWake } from './scripts/vite-wake.ts';
 import { watchProbe } from './packages/forge/src/vite/watchProbe.ts';
-import { weaselIcons } from './packages/icons/src/plugin/index.ts';
+import { weaselIcons } from './packages/icons-plugin/src/index.ts';
 import ports from './scripts/dev-ports.json' with { type: 'json' };
 
 /**

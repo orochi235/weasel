@@ -1,8 +1,9 @@
 import MagicString from 'magic-string';
 import { createUnplugin, type UnpluginInstance } from 'unplugin';
 import { libraryAnnotations } from './annotate';
-import { splitIconRef } from '../names';
-import type { IconTable } from '../table';
+import type { IconTable } from '@weasel-js/icons';
+// Relative, and so bundled in: vite and tsup configs load this from source, before any dist exists.
+import { splitIconRef } from '../../icons/src/names';
 import { collectIconRefs } from './collect';
 import { rewriteIconCalls } from './rewrite';
 import { declaredTable, genFile, namespaceIn, packageDirFinder, reachableTables, tableBeside } from './tables';

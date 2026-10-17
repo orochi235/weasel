@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { weaselIcons, type WeaselIconsOptions } from './index';
 
 const root = fileURLToPath(new URL('./fixtures/app', import.meta.url));
-const iconsSrc = fileURLToPath(new URL('../index.ts', import.meta.url));
+const iconsSrc = fileURLToPath(new URL('../../icons/src/index.ts', import.meta.url));
 
 async function bundle(options: Partial<WeaselIconsOptions> = {}, { minify = false, entry = 'main.ts' } = {}) {
   const out = await build({

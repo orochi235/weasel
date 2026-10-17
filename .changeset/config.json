@@ -23,6 +23,7 @@
       "@weasel-js/select",
       "@weasel-js/registry",
       "@weasel-js/icons",
+      "@weasel-js/icons-plugin",
       "@weasel-js/react",
       "@weasel-js/loupe",
       "@weasel-js/modes",

@@ -7,7 +7,7 @@ import { localWake } from '../../scripts/vite-wake.ts';
 import { callbackSourcePlugin } from './vite-plugin-callback-source.ts';
 import { traitSchemasPlugin } from './vite-plugin-trait-schemas.ts';
 import { watchProbe } from '../../packages/forge/src/vite/watchProbe.ts';
-import { weaselIcons } from '../../packages/icons/src/plugin/index.ts';
+import { weaselIcons } from '../../packages/icons-plugin/src/index.ts';
 import ports from '../../scripts/dev-ports.json' with { type: 'json' };
 
 const repoRoot = resolve(import.meta.dirname, '../..');

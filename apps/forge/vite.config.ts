@@ -3,7 +3,7 @@ import { resolve } from 'node:path';
 import { defineConfig } from 'vite';
 import { traitSchemasPlugin } from '../draw/vite-plugin-trait-schemas.ts';
 import { forge } from '../../packages/forge/src/vite/index.ts';
-import { weaselIcons } from '../../packages/icons/src/plugin/index.ts';
+import { weaselIcons } from '../../packages/icons-plugin/src/index.ts';
 import { weaselDefines } from '../../scripts/vite-build-info.ts';
 import { repoThemeStoreOptions } from '../../scripts/theme-store.ts';
 import { themeStorePlugin } from '../../scripts/vite-theme-store.ts';

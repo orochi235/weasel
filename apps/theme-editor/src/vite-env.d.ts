@@ -1,1 +1,1 @@
-/// <reference types="@weasel-js/icons/virtual" />
+/// <reference types="@weasel-js/icons-plugin/virtual" />

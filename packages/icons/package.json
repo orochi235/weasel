@@ -1,7 +1,7 @@
 {
   "name": "@weasel-js/icons",
   "version": "1.10.1",
-  "description": "Namespaced icon names, the icon registry, and the build plugin that ships only the glyphs a build uses. No React, no DOM, no glyphs of its own.",
+  "description": "Namespaced icon names and the icon registry. No React, no DOM, no glyphs of its own.",
   "license": "MIT",
   "type": "module",
   "sideEffects": false,
@@ -10,8 +10,6 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": { "import": "./dist/index.js", "types": "./dist/index.d.ts" },
-    "./plugin": { "import": "./dist/plugin.js", "types": "./dist/plugin.d.ts" },
-    "./virtual": { "types": "./virtual.d.ts" },
     "./package.json": "./package.json"
   },
   "author": "orochi235",
@@ -19,10 +17,8 @@
   "repository": { "type": "git", "url": "git+https://github.com/orochi235/weasel.git", "directory": "packages/icons" },
   "bugs": { "url": "https://github.com/orochi235/weasel/issues" },
   "engines": { "node": ">=22" },
-  "files": ["dist", "virtual.d.ts", "README.md", "LICENSE"],
+  "files": ["dist", "README.md", "LICENSE"],
   "scripts": { "build": "tsup" },
-  "dependencies": { "@weasel-js/registry": "1.10.1", "magic-string": "1.4.3", "oxc-parser": "0.154.0", "unplugin": "3.4.0" },
-  "peerDependencies": { "vite": "^8.0.0" },
-  "peerDependenciesMeta": { "vite": { "optional": true } },
+  "dependencies": { "@weasel-js/registry": "1.10.1" },
   "publishConfig": { "access": "public", "provenance": true }
 }

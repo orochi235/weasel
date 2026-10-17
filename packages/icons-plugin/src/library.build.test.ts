@@ -9,7 +9,7 @@ import { weaselIcons } from './index';
 
 const lib = fileURLToPath(new URL('./fixtures/lib', import.meta.url));
 const app = fileURLToPath(new URL('./fixtures/app', import.meta.url));
-const iconsSrc = fileURLToPath(new URL('../index.ts', import.meta.url));
+const iconsSrc = fileURLToPath(new URL('../../icons/src/index.ts', import.meta.url));
 const ANNOTATED = /\/\* @icon \*\/\s*['"]lib:star['"]/g;
 const annotations = (out: string) => out.match(ANNOTATED)?.length ?? 0;
 

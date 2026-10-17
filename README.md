@@ -200,7 +200,8 @@ Every package is published under `@weasel-js` and released together at one versi
 | `select` |  | selection as a value: which ids a press selects, with toggle, range and anchor rules |
 | `menu` | <img src="docs/badges/standalone.svg" width="20" height="20" alt="Depends on no other weasel package" title="Depends on no other weasel package"> | the headless model behind context menus: entries, a controller for highlight, submenus, keyboard and typeahead, and placement |
 | `registry` | <img src="docs/badges/standalone.svg" width="20" height="20" alt="Depends on no other weasel package" title="Depends on no other weasel package"> | keyed registries you can enumerate and subscribe to |
-| `icons` |  | namespaced icon names, the icon registry, and the build plugin that ships only the glyphs a build uses; no React, no DOM, no glyphs of its own |
+| `icons` |  | namespaced icon names and the icon registry; no React, no DOM, no glyphs of its own |
+| `icons-plugin` |  | the build plugin that ships only the glyphs a build names, for vite, rollup, rolldown and esbuild |
 | `react` | <img src="docs/badges/react.svg" width="20" height="20" alt="Needs React" title="Needs React"><img src="docs/badges/dom.svg" width="20" height="20" alt="Needs a browser: document, window or navigator" title="Needs a browser: document, window or navigator"> | generic React hooks the other packages share: `useLatest`, `useStableByContent`, `useVisibleRaf` |
 | `paint` | <img src="docs/badges/standalone.svg" width="20" height="20" alt="Depends on no other weasel package" title="Depends on no other weasel package"> | fills, strokes, gradients and dashes as plain data |
 | `stroke` |  | a stroke as geometry: the ribbon mesh, the marker registry, and a stroke outlined as a path |

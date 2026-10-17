@@ -51,7 +51,7 @@ function sources(dir: string): string[] {
 describe('every icon ref the repo writes', () => {
   const files = ['packages', 'apps']
     .flatMap((d) => sources(join(REPO, d)))
-    .filter((f) => !relative(REPO, f).startsWith('packages/icons/'));
+    .filter((f) => !relative(REPO, f).startsWith('packages/icons/') && !relative(REPO, f).startsWith('packages/icons-plugin/'));
 
   it('comes from a generated icons.gen icon()', () => {
     const own = files.filter((f) => !/icons\.gen\.ts$/.test(f) && /\bscopedIcon\s*[<(]/.test(readFileSync(f, 'utf8')));

@@ -119,9 +119,10 @@ PrefSchemaEditor's icon picker reads `all`.
 
 ## The build plugin
 
-`weaselIcons` from `@weasel-js/icons/plugin` is one unplugin implementation, used as
+`weaselIcons` from `@weasel-js/icons-plugin` is one unplugin implementation, used as
 `weaselIcons.vite(…)`, `.rollup(…)`, `.rolldown(…)` or `.esbuild(…)`. It parses modules with
-`oxc-parser`.
+`oxc-parser`, which is why it is a package of its own: `@weasel-js/icons`, which every kit package
+depends on, installs no parser.
 
 It rewrites every call to an `icon` imported by name from a module named `icons.gen.*` into an
 annotated, qualified literal, `icon('undo')` becoming `/* @icon */ 'core:undo'`, reading the
@@ -156,7 +157,7 @@ namespace's table (naming the module that wrote it), and one namespace with two 
 
 Each variant is its own chunk, loaded only when something imports it. A custom variant cannot be
 named `all`, nor share a namespace's name. The import types come from
-`/// <reference types="@weasel-js/icons/virtual" />`.
+`/// <reference types="@weasel-js/icons-plugin/virtual" />`.
 
 In the dev server and under vitest, `virtual:weasel-icons` holds every table the plugin can reach:
 vite pre-bundles `node_modules` with esbuild, which never runs the plugin's hooks, so the kit's

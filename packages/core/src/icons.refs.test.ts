@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
-import { collectIconRefs } from '@weasel-js/icons/plugin';
+import { collectIconRefs } from '@weasel-js/icons-plugin';
 import { icons } from './icons.table';
 
 function sources(dir: string): string[] {

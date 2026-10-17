@@ -1,5 +1,5 @@
 import { defineConfig } from 'tsup';
-import { weaselIcons } from '../icons/src/plugin/index';
+import { weaselIcons } from '../icons-plugin/src/index';
 
 export default defineConfig({
   entry: {

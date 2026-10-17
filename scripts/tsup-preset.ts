@@ -11,7 +11,7 @@
  */
 import type { Options } from 'tsup';
 // From source, so a preset build needs no built @weasel-js/icons.
-import { weaselIcons } from '../packages/icons/src/plugin/index';
+import { weaselIcons } from '../packages/icons-plugin/src/index';
 
 export interface PackagePresetOptions {
   /** tsup entry map, relative to the package root. */

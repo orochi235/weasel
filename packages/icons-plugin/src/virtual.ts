@@ -1,4 +1,4 @@
-import type { IconTable } from '../table';
+import type { IconTable } from '@weasel-js/icons';
 
 export const PREFIX = 'virtual:weasel-icons';
 export const RESOLVED = '\0' + PREFIX;

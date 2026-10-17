@@ -11,7 +11,7 @@ import { demoSources } from './scripts/vite-demo-sources.ts';
 import { changelogs } from './scripts/vite-changelogs.ts';
 import { getStarted } from './scripts/vite-get-started.ts';
 import { packageDocs } from './scripts/vite-package-docs.ts';
-import { weaselIcons } from './packages/icons/src/plugin/index.ts';
+import { weaselIcons } from './packages/icons-plugin/src/index.ts';
 import { browserCommands } from './scripts/vitest-browser-commands.ts';
 import { browserDeps } from './scripts/vitest-browser-deps.ts';
 
@@ -172,7 +172,7 @@ export default defineConfig({
           environment: 'node',
           pool: 'threads',
           testTimeout: 20_000,
-          include: [...VITE_SERVER_TESTS, 'packages/icons/src/**/*.build.test.ts'],
+          include: [...VITE_SERVER_TESTS, 'packages/icons-plugin/src/**/*.build.test.ts'],
         },
       },
       {

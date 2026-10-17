@@ -1,6 +1,6 @@
 import { existsSync, lstatSync, readdirSync, readFileSync, realpathSync } from 'node:fs';
 import { dirname, join, parse, resolve } from 'node:path';
-import type { IconTable } from '../table';
+import type { IconTable } from '@weasel-js/icons';
 
 const read = (file: string): IconTable => JSON.parse(readFileSync(file, 'utf8')) as IconTable;
 

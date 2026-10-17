@@ -2,7 +2,8 @@
 // weaselIcons in app mode must ship the glyphs it names, through its own icon() and
 // through a kit package's dist, and no glyph nothing names.
 
-import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
+import { mkdir, readFile, rm, symlink, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { build } from 'vite';
@@ -20,10 +21,32 @@ async function pathData(nodeModules, name) {
 }
 
 /**
+ * The packed plugin, with only the third-party packages its manifest declares linked into the
+ * tree beside it, so an import it does not declare fails to resolve.
+ */
+async function packedPlugin(repoRoot, nodeModules) {
+  const dir = join(nodeModules, '@weasel-js/icons-plugin');
+  const { dependencies = {} } = JSON.parse(await readFile(join(dir, 'package.json'), 'utf8'));
+  for (const dep of Object.keys(dependencies)) {
+    const at = join(nodeModules, dep);
+    if (dep.startsWith('@weasel-js/') || existsSync(at)) continue;
+    await mkdir(join(at, '..'), { recursive: true });
+    const nested = join(repoRoot, 'packages/icons-plugin/node_modules', dep);
+    await symlink(existsSync(nested) ? nested : join(repoRoot, 'node_modules', dep), at, 'dir');
+  }
+  return import(pathToFileURL(join(dir, 'dist/index.js')).href);
+}
+
+/**
  * @param {{ repoRoot: string, workDir: string, nodeModules: string, external: string[], fail: (msg: string, detail?: string) => never }} ctx
  */
 export async function smokeIcons({ repoRoot, workDir, nodeModules, external, fail }) {
-  const { weaselIcons } = await import(pathToFileURL(join(repoRoot, 'packages/icons/dist/plugin.js')).href);
+  let weaselIcons;
+  try {
+    ({ weaselIcons } = await packedPlugin(repoRoot, nodeModules));
+  } catch (err) {
+    fail('the packed @weasel-js/icons-plugin does not load from its declared dependencies:', err.message ?? String(err));
+  }
   const app = join(workDir, 'icons-app');
   await mkdir(join(app, 'src'), { recursive: true });
   // What gen:icons emits for a root that draws nothing.
@@ -55,13 +78,17 @@ export async function smokeIcons({ repoRoot, workDir, nodeModules, external, fai
   }
   const chunks = (Array.isArray(out) ? out[0] : out).output.filter((o) => o.type === 'chunk');
   const entry = chunks.find((c) => c.isEntry).code;
+  const variant = (c) => c.moduleIds.some((id) => id.startsWith('\0virtual:weasel-icons/'));
   const all = chunks.find((c) => c.moduleIds.includes('\0virtual:weasel-icons/all'))?.code ?? '';
   const problems = [];
   const expect = (ok, what) => ok || problems.push(what);
   expect(entry.includes(await pathData(nodeModules, 'close')), "the entry lacks ui:close, named by the app's own icon()");
   expect(entry.includes(await pathData(nodeModules, 'statusSuccess')), "the entry lacks ui:statusSuccess, named only in ui's dist");
-  expect(!entry.includes(await pathData(nodeModules, UNNAMED)), `the entry ships ui:${UNNAMED}, which nothing names`);
-  expect(all.includes(await pathData(nodeModules, UNNAMED)), `the all variant lacks ui:${UNNAMED}`);
+  const unnamed = await pathData(nodeModules, UNNAMED);
+  for (const c of chunks.filter((c) => !variant(c))) {
+    expect(!c.code.includes(unnamed), `${c.fileName} ships ui:${UNNAMED}, which nothing names`);
+  }
+  expect(all.includes(unnamed), `the all variant lacks ui:${UNNAMED}`);
   expect(!chunks.some((c) => c.code.includes('__WEASEL_ICONS__')), 'a chunk still holds a __WEASEL_ICONS__ placeholder');
   if (problems.length) fail('icon app build ships the wrong glyphs:', problems.join('\n'));
   console.log('[smoke] icon app OK — ships what it names, through its own icon() and a kit dist, and nothing else.');

@@ -1,6 +1,6 @@
 import MagicString, { type SourceMap } from 'magic-string';
 import { Visitor } from 'oxc-parser';
-import { qualify } from '../names';
+import { qualify } from '../../icons/src/names';
 import { parseModule } from './parse';
 
 const ICONS_GEN = /icons\.gen(?:\.[cm]?[jt]sx?)?$/;
