@@ -157,9 +157,6 @@
     "lines": 464,
     "longestFunction": 321
   },
-  "packages/labkit/src/canvas/CanvasStack.tsx": {
-    "longestFunction": 138
-  },
   "packages/labkit/src/chrome/builtins.tsx": {
     "longestFunction": 223
   },
@@ -210,8 +207,8 @@
     "longestFunction": 255
   },
   "packages/labkit/src/trial/Trial.tsx": {
-    "lines": 548,
-    "longestFunction": 423
+    "lines": 525,
+    "longestFunction": 402
   },
   "packages/labkit/src/trial/TrialChrome.tsx": {
     "longestFunction": 227

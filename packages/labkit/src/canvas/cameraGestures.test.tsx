@@ -103,8 +103,8 @@ describe('camera gestures', () => {
     expect(host.dataset.lkTouch).toBe('none');
   });
 
-  it('leaves a drag alone with `pan: false`', () => {
-    const { host, seen } = mountStage({ pan: false });
+  it('leaves a drag alone with `drag: false`', () => {
+    const { host, seen } = mountStage({ drag: false });
     drag(host);
     expect(seen).toEqual([]);
   });
@@ -126,21 +126,21 @@ describe('camera gestures', () => {
   });
 
   it('zooms on a two-finger pinch', () => {
-    const { host, seen } = mountStage({ pan: false });
+    const { host, seen } = mountStage({ drag: false });
     pinchOut(host);
     expect(seen.at(-1)?.zoom).toBeGreaterThan(1);
   });
 
   it('leaves a pinch alone with `pinch: false`, trackpad or touch', () => {
-    const { host, seen } = mountStage({ pan: false, pinch: false });
+    const { host, seen } = mountStage({ drag: false, pinch: false });
     expect(wheel(host, { ctrlKey: true })).toBe(false);
     pinchOut(host);
     expect(seen).toEqual([]);
   });
 
   it('hands the browser one-finger scrolling once the camera does not pan', () => {
-    expect(mountStage({ pan: false }).host.dataset.lkTouch).toBe('scroll');
-    expect(mountStage({ pan: false, pinch: false }).host.dataset.lkTouch).toBe('auto');
+    expect(mountStage({ drag: false }).host.dataset.lkTouch).toBe('scroll');
+    expect(mountStage({ drag: false, pinch: false }).host.dataset.lkTouch).toBe('auto');
   });
 
   it('reports no tap with `tap: false`', () => {
@@ -169,5 +169,32 @@ describe('camera gestures', () => {
     expect(onHitTest).toHaveBeenCalledTimes(1);
     tap({ tap: false });
     expect(onHitTest).toHaveBeenCalledTimes(1);
+  });
+
+  it('goes home on a double click only when told to, a 2D camera leaving it to the content', () => {
+    const onHome = vi.fn();
+    const doubleClick = (gestures?: CameraGestures) => {
+      const { container, unmount } = render(
+        <Stage
+          size={{ width: 100, height: 100 }}
+          view={OPEN}
+          onViewChange={() => {}}
+          onHome={onHome}
+          {...(gestures ? { gestures } : {})}
+        />,
+      );
+      const host = container.querySelector('.lk-stage') as HTMLElement;
+      act(() => {
+        for (let i = 0; i < 2; i++) {
+          pointer(host, 'pointerdown', 1, 20, 20);
+          pointer(host, 'pointerup', 1, 20, 20, 0);
+        }
+      });
+      unmount();
+    };
+    doubleClick();
+    expect(onHome).not.toHaveBeenCalled();
+    doubleClick({ home: true });
+    expect(onHome).toHaveBeenCalledTimes(1);
   });
 });
