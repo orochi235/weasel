@@ -8,7 +8,7 @@ import {
   type LegendStyle,
   type LogicalMod,
   type Platform,
-} from './keySpecsFromMods';
+} from '@weasel-js/gestures';
 import { KEYCAP_VARIANT_ICONS } from './variantIcons';
 
 const VARIANTS: KeyCapVariant[] = ['default', 'inverse'];

@@ -1,5 +1,5 @@
-import { keySpecsFromShortcut } from '../Keycaps/keySpecsFromShortcut';
-import { detectPlatform, type KeySpecsFromModsOptions, type Platform } from '../Keycaps/keySpecsFromMods';
+import { keySpecsFromShortcut } from './keySpecsFromShortcut';
+import { detectPlatform, type KeySpecsFromModsOptions, type Platform } from './keySpecsFromMods';
 
 /** The key and modifiers the shortcut formatters read. A tool's `keybinding`
  *  has this shape and passes as-is. */

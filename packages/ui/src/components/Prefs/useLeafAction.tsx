@@ -3,7 +3,7 @@ import { actionItems, actionShortcuts, useActionsRegistry, type ActionItem } fro
 import type { PrefAction } from '@weasel-js/prefs';
 import { resolveIcon } from '../../icons/resolveIcon';
 import { actionIcon } from '../../icons/actionIcon';
-import { formatShortcut } from '../ToolPalette/formatShortcut';
+import { formatShortcut } from '@weasel-js/gestures';
 import { useActionStates } from '../ActionBar/useActionStates';
 import { DEFAULT_REASON_LABELS } from '../ActionBar/reasonLabels';
 import { useRegisteredActions } from './registeredActions';

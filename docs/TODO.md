@@ -867,8 +867,8 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   (`docs/icons.md`), `'icon'` to `PrefBarLead`, draw it with `resolveIcon` in `BarLayout`, and
   offer both in the asset editor. A `menu` group's button could take the same `icon`.
 
-- **(P3) ui's `ShortcutInput` is a third copy of the shortcut shape.**
-  `packages/ui/src/components/ToolPalette/formatShortcut.ts` describes what `@weasel-js/menu`'s
+- **(P3) `ShortcutInput` is a third copy of the shortcut shape.**
+  `packages/gestures/src/ui/formatShortcut.ts` describes what `@weasel-js/menu`'s
   `MenuShortcut` and routing's `ActionShortcut` (now an alias of it) already do. Fold it into
   `MenuShortcut`.
 
@@ -896,11 +896,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   canvas and exposes only `accessibleName`. Mirror the open menu as hidden DOM with menu roles,
   kept in step with the model's highlight.
 
-- **(P3) The WebGL context menu stays open through a wheel or resize elsewhere.** The DOM menu's
-  `useDismiss` closes on a wheel outside its panels, on window blur and on resize; `attachMenuHost`
-  closes only when HUD focus moves, so a wheel over the canvas zooms under an open menu and a
-  resize leaves it where the old canvas put it.
-
 - **(P3) The WebGL context menu draws no icons, shortcut chips or check marks.** `drawPanel` draws
   each row's label and a submenu caret; the DOM rows also show the action's icon, its shortcut and a
   check for a row whose action is `active`. So a toggle action's state cannot be seen in the WebGL
@@ -908,10 +903,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 - **(P4) The WebGL context menu has square corners and no shadow.** The DOM panel takes
   `--wzl-radius-md` and `--wzl-bevel-raised`; `drawPanel` draws a plain bordered rect.
-
-- **(P3) The WebGL context menu does not return HUD focus on close.** The DOM host gives focus back
-  to whatever held it when the menu opened (`useReturnFocus`); `attachMenuHost` leaves the HUD with
-  nothing focused, so a keyboard user loses their place among the widgets.
 
 - **(P3) Some boxes still leave the stroke out.** `drawnBoundsOf` (`canvas/drawnBounds.ts`) is the
   box a stroked shape is shown and measured with, and `<SceneCanvas>`'s chrome, resize, rotate,

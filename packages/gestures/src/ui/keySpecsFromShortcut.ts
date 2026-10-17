@@ -1,9 +1,8 @@
-import type { ShortcutInput } from '../ToolPalette/formatShortcut';
-import type { KeySpec } from './Keycaps';
-import { keySpecFromKey, keySpecsFromMods, type KeySpecsFromModsOptions, type LogicalModSpec } from './keySpecsFromMods';
+import type { ShortcutInput } from './formatShortcut';
+import { keySpecFromKey, keySpecsFromMods, type KeyLegend, type KeySpecsFromModsOptions, type LogicalModSpec } from './keySpecsFromMods';
 
 /**
- * A shortcut as `KeySequence` keys, one per key: mod, shift, alt, then the
+ * A shortcut as key legends, one per key, as `@weasel-js/ui`'s `KeySequence` draws them: mod, shift, alt, then the
  * key, each in the platform's own legend (`⌘` on macOS, `Ctrl` elsewhere).
  * `formatShortcutParts` is these labels as strings. `shift: 'optional'`
  * becomes an optional key; a key list
@@ -16,7 +15,7 @@ import { keySpecFromKey, keySpecsFromMods, type KeySpecsFromModsOptions, type Lo
 export function keySpecsFromShortcut(
   shortcut: ShortcutInput | undefined,
   opts: KeySpecsFromModsOptions = {},
-): readonly KeySpec[] | undefined {
+): readonly KeyLegend[] | undefined {
   if (!shortcut) return undefined;
   const mods: LogicalModSpec[] = [];
   if (shortcut.mod) mods.push({ name: 'mod' });

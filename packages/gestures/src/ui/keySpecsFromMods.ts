@@ -1,5 +1,13 @@
-import { isApplePlatform } from '@weasel-js/gestures';
-import type { KeySpec } from './Keycaps';
+import { isApplePlatform } from './platform';
+
+/** One key of a shortcut as a keyboard prints it. */
+export interface KeyLegend {
+  /** Glyph drawn for the key (modifier or key). */
+  label: string;
+  /** When true, the key may be held but is not required to trigger the action
+   *  (e.g. an optional modifier). Defaults to false. */
+  optional?: boolean;
+}
 
 /** Logical modifier name. Matches the kit's `ModifierKey` in shape — kept as a
  *  local type so `weasel-ui` stays independent of `@weasel-js/core`. */
@@ -26,7 +34,7 @@ export type LegendStyle = 'auto' | 'symbol' | 'text';
 export interface LogicalModSpec {
   name: LogicalMod;
   /** Marks this modifier as optional (may be held but isn't required).
-   *  Forwarded as the resulting `KeySpec.optional`. */
+   *  Forwarded as the resulting `KeyLegend.optional`. */
   optional?: boolean;
 }
 
@@ -86,7 +94,7 @@ export const MODIFIER_LABELS: ReadonlySet<string> = new Set(
 );
 
 /** The platform whose key legends to draw. Whether `mod` is ⌘ comes from
- *  `isApplePlatform` in `@weasel-js/gestures`, the same read the dispatcher
+ *  `isApplePlatform`, the same read the dispatcher
  *  matches `mod` with, so a keycap names the key that fires. With no
  *  `navigator` (a server render) it answers `'macos'`, the kit's docs
  *  convention; an unrecognized browser reads as `'linux'`. */
@@ -101,7 +109,7 @@ export function detectPlatform(): Platform {
 
 /**
  * Map a list of **logical** modifiers (`'mod'`, `'shift'`, …) to **visual**
- * `KeySpec`s appropriate for the current platform — `'mod'` means "Cmd on
+ * `KeyLegend`s appropriate for the current platform — `'mod'` means "Cmd on
  * Mac, Ctrl on Win/Linux".
  *
  * ```ts
@@ -113,7 +121,7 @@ export function detectPlatform(): Platform {
 export function keySpecsFromMods(
   mods: readonly LogicalModSpec[],
   opts: KeySpecsFromModsOptions = {},
-): readonly KeySpec[] {
+): readonly KeyLegend[] {
   const platform = opts.platform ?? detectPlatform();
   const legend = opts.legend ?? 'auto';
   return mods.map((m) => {
@@ -155,7 +163,7 @@ const NAMED_KEY: Record<string, Record<Platform, Record<LegendStyle, string>>> =
 
 /**
  * Render a raw `KeyboardEvent.key` value as a platform-appropriate
- * `KeySpec`. Named non-modifier keys (Esc, Enter, Tab, Space, Backspace,
+ * `KeyLegend`. Named non-modifier keys (Esc, Enter, Tab, Space, Backspace,
  * Delete, arrows) get the platform's conventional form. Letter / digit /
  * other keys pass through upper-cased.
  *
@@ -171,7 +179,7 @@ const NAMED_KEY: Record<string, Record<Platform, Record<LegendStyle, string>>> =
 export function keySpecFromKey(
   raw: string,
   opts: KeySpecsFromModsOptions & { optional?: boolean } = {},
-): KeySpec {
+): KeyLegend {
   const platform = opts.platform ?? detectPlatform();
   const legend = opts.legend ?? 'auto';
   const entry = NAMED_KEY[raw];
