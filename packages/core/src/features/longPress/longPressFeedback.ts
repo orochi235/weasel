@@ -6,6 +6,7 @@
  * drag threshold, lifts, or is canceled.
  */
 import type { LongPressState } from '@weasel-js/routing';
+import { prefersReducedMotion } from '@weasel-js/react';
 import type { RenderLayer } from 'core/layers/render';
 import { ellipsePath, polylineFromPoints, type Path } from '@weasel-js/geom';
 import type { DrawCommand } from '@weasel-js/renderer';
@@ -40,11 +41,6 @@ const RING_SEGMENTS = 64;
 const TRACK_OPACITY = 0.3;
 
 const nowMs = (): number => performance.now();
-
-function prefersReducedMotion(): boolean {
-  return typeof matchMedia === 'function'
-    && matchMedia('(prefers-reduced-motion: reduce)').matches;
-}
 
 /** An open arc from 12 o'clock, clockwise on a y-down screen, through `t` of a turn. */
 function arcPath(cx: number, cy: number, r: number, t: number): Path {
