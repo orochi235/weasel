@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { Toolbar } from '../../primitives/Toolbar';
 import type { RegionContribution, ToolbarItem, TrialChromeContext } from '../types';
+import { groupsOf } from './groupsOf';
 
 /** Props for `<ToolbarRegion>`. */
 export interface ToolbarRegionProps<TCtx = TrialChromeContext> {
@@ -10,33 +11,6 @@ export interface ToolbarRegionProps<TCtx = TrialChromeContext> {
   region?: string;
   /** The bar's accessible name. */
   label?: string;
-}
-
-interface Group<TCtx> {
-  key: string;
-  end: boolean;
-  entries: RegionContribution<TCtx>[];
-}
-
-/** Bucket by group, preserving first-appearance order. Ungrouped
- *  contributions each become their own bucket so they stay in place. */
-function groupsOf<TCtx>(contributions: readonly RegionContribution<TCtx>[]): Group<TCtx>[] {
-  const groups: Group<TCtx>[] = [];
-  const byKey = new Map<string, Group<TCtx>>();
-  for (const c of contributions) {
-    if (c.group == null) {
-      groups.push({ key: c.id, end: c.end ?? false, entries: [c] });
-      continue;
-    }
-    let g = byKey.get(c.group);
-    if (!g) {
-      g = { key: c.group, end: c.end ?? false, entries: [] };
-      byKey.set(c.group, g);
-      groups.push(g);
-    }
-    g.entries.push(c);
-  }
-  return groups;
 }
 
 function renderEntry<TCtx>(c: RegionContribution<TCtx>, ctx: TCtx, region: string): ReactNode {

@@ -14,7 +14,7 @@ export { useLatest } from '@weasel-js/react';
 export type { OngoingAction } from '@weasel-js/routing/react';
 export { useMenuHost, useMenus } from '@weasel-js/routing/react';
 export type { MenuDef, MenuHit, MenuHost, MenuOpenRequest, MenuSources, OpenMenu } from '@weasel-js/routing';
-export { mergeMenuDefs, resolveSchemaMenu } from '@weasel-js/routing';
+export { resolveSchemaMenu } from '@weasel-js/routing';
 export type { ActionEntry, ActionsProp, ActionsRegistry, UiOngoingControl } from '@weasel-js/routing';
 export { actionCursor, ActionDisabledReason } from '@weasel-js/routing';
 export type { Action, ActionDispatch, ActionPresentation, ActionVariant } from '@weasel-js/routing';

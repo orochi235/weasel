@@ -69,10 +69,11 @@ describe('labMenuBar', () => {
     const sections = Object.entries(lab.children)
       .filter(([key]) => key !== 'add')
       .map(([, node]) => (node as PrefGroup).children);
+    // In the header's order: an ungrouped item keeps its place.
     expect(sections).toEqual([
+      { 'c-loose': pref.action('lab.item.loose') },
       { 'c-a1': pref.action('lab.item.a1'), 'c-a2': pref.action('lab.item.a2') },
       { 'c-b1': pref.action('lab.item.b1') },
-      { 'c-loose': pref.action('lab.item.loose') },
     ]);
   });
 
@@ -90,5 +91,23 @@ describe('labMenuBar', () => {
     expect(view.name).toBe('View');
     expect(Object.keys(view.children)).toEqual(['zoom', 'theme', '~sep1', 'grid', 'theme~1']);
     expect(view.children['~sep1']).toMatchObject({ kind: 'separator' });
+  });
+
+  it("appends a declared 'lab' menu's children to the built-in Lab after a separator", () => {
+    const declared = pref.group('', {
+      lab: pref.group('Mine', { reset: pref.action('x.reset') }, { as: 'menu' }),
+    });
+    const lab = menu(labMenuBar({ ...base, declared }), 'lab');
+    expect(lab.name).toBe('Lab');
+    expect(Object.keys(lab.children)).toEqual(['add', '~sep1', 'reset']);
+  });
+
+  it("throws on a declared 'lab' or 'view' that is not a menu", () => {
+    for (const key of ['lab', 'view']) {
+      const declared = pref.group('', { [key]: pref.boolean('Flag', false) });
+      expect(() => labMenuBar({ ...base, declared })).toThrow(
+        `'${key}' in a lab's menus is a built-in menu: declare a group as: 'menu' to add to it, or use another key`,
+      );
+    }
   });
 });

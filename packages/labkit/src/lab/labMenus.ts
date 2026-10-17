@@ -1,6 +1,7 @@
-import { mergeMenuDefs } from '@weasel-js/core';
 import { isPrefLeaf, type PrefGroup, type PrefLeaf, pref } from '@weasel-js/prefs';
+import { mergeMenuDefs } from '@weasel-js/routing';
 import type { LabContribution } from '../chrome/labTypes';
+import { groupsOf } from '../chrome/regions/groupsOf';
 import type { InstrumentList } from '../instrument/types';
 
 type Children = Record<string, PrefLeaf | PrefGroup>;
@@ -37,19 +38,16 @@ function addRows(instruments: InstrumentList): PrefLeaf | PrefGroup {
   return pref.group('Add trial', rows, { as: 'menu' });
 }
 
-/** One section per header-item group in first-appearance order, the ungrouped last. */
+/** One section per run the header draws, in the header's order: a group, or an ungrouped item. */
 function itemSections(contributions: readonly LabContribution[]): Children {
-  const groups = new Map<string | undefined, Children>();
-  for (const c of contributions) {
-    if (c.region !== 'header' || !c.item) continue;
-    const rows = groups.get(c.group) ?? {};
-    rows[`c-${c.id}`] = pref.action(`lab.item.${c.id}`);
-    groups.set(c.group, rows);
-  }
-  const ordered = [...groups].sort(([a], [b]) => Number(a === undefined) - Number(b === undefined));
+  const header = contributions.filter((c) => c.region === 'header');
   const sections: Children = {};
-  ordered.forEach(([, rows], n) => {
-    sections[`s${n}`] = pref.group('', rows);
+  groupsOf(header).forEach((g, n) => {
+    const rows: Children = {};
+    for (const c of g.entries) {
+      if (c.item) rows[`c-${c.id}`] = pref.action(`lab.item.${c.id}`);
+    }
+    if (Object.keys(rows).length > 0) sections[`s${n}`] = pref.group('', rows);
   });
   return sections;
 }
@@ -83,7 +81,7 @@ function merged(
   if (declared === undefined) return builtIn;
   if (!isMenu(declared)) {
     throw new Error(
-      `[labkit] a lab's declared menu-bar entry '${id}' must be a group drawn as: 'menu'`,
+      `[labkit] '${id}' in a lab's menus is a built-in menu: declare a group as: 'menu' to add to it, or use another key`,
     );
   }
   const defs = [builtIn, declared].map((menu) => ({ def: { id, menu }, owner: null }));

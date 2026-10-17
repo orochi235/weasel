@@ -19,6 +19,18 @@ afterEach(() => {
   history.replaceState(null, '', '/');
 });
 
+const Staged = defineInstrument<Record<string, never>, Record<string, never>>({
+  name: 'Staged',
+  defaultConfig: () => ({}),
+  initialState: () => ({}),
+  render: () => null,
+  stage: {
+    size: { width: 240, height: 160 },
+    initialView: { zoom: 1, pan: { x: 0, y: 0 } },
+    maxZoom: 4,
+  },
+});
+
 const Stub = defineInstrument<Record<string, never>, Record<string, never>>({
   name: 'Stub',
   defaultConfig: () => ({}),
@@ -141,6 +153,46 @@ describe('the lab’s menu bar', () => {
     );
     await press(screen.getByRole('menuitemcheckbox', { name: 'Px' }));
     expect(onChange).toHaveBeenCalledWith('tools.units', 'px');
+  });
+
+  it('focuses the Lab title on F10', async () => {
+    await mount();
+    await act(async () => {
+      fireEvent.keyDown(window, { key: 'F10', code: 'F10' });
+    });
+    expect(document.activeElement).toBe(title('Lab'));
+  });
+
+  it('lists the zoom variants under View, and runs one', async () => {
+    await mount({ instruments: [Staged], defaultInstrument: 'Staged' });
+    await open('View');
+    const rows = [...document.querySelectorAll('[role="menu"] [role^="menuitem"]')].map(
+      (el) => el.textContent ?? '',
+    );
+    expect(rows.slice(0, 3).map((r) => r.replace(/(Ctrl|⌘).*$/, ''))).toEqual([
+      'Zoom in',
+      'Zoom out',
+      'Actual size',
+    ]);
+    expect(screen.getByRole('button', { name: /^Zoom 100%/ })).toBeInTheDocument();
+    await press(row('Zoom in'));
+    expect(screen.queryByRole('button', { name: /^Zoom 100%/ })).toBeNull();
+  });
+
+  it("adds a declared 'lab' menu's rows to the built-in Lab menu", async () => {
+    const schema = pref.group('', {
+      lab: pref.group(
+        'Mine',
+        { again: pref.action('lab.add.Stub', { name: 'Another' }) },
+        { as: 'menu' },
+      ),
+    });
+    await mount({ menus: { schema } });
+    expect(screen.getByRole('menubar').textContent).toBe('LabView');
+    const before = lab?.trials.length ?? 0;
+    await open('Lab');
+    await press(row('Another'));
+    expect(lab?.trials.length).toBe(before + 1);
   });
 
   it.each([

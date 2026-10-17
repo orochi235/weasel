@@ -86,7 +86,7 @@ export interface LabBaseProps {
    *  that frames it. `children` go in the header, so they go too. */
   header?: boolean;
   /** Menus added to the lab's menu bar, between its built-in Lab and View. A menu keyed `lab`
-   *  or `view` adds its rows to that built-in menu instead. */
+   *  or `view` adds its rows to that built-in menu instead. Memoize or hoist. */
   menus?: LabMenus;
   /** Draw the lab's menu bar above its header. Default `true`. Dropped with the header
    *  (`header={false}`) and while presenting. */
