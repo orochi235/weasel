@@ -259,6 +259,36 @@ function placed(data: DiagramData, seeds: readonly GraphNode[], moved: ReadonlyM
   }));
 }
 
+/** A node's box, its rows' text and slots, and its port labels, laid out in `box`. */
+function nodeSpecs(
+  n: DataNode, body: BodySpec, box: { x: number; y: number; width: number; height: number },
+  look: { style: NodeStyle; text: (s: RowTextStyle | undefined) => DiagramTextStyle; measure: MeasureRowText },
+): DiagramSpec[] {
+  const { style } = look;
+  const textData = (text: string, s: RowTextStyle | undefined): DiagramSceneData =>
+    ({ text, style: look.text(s), fill: { paint: { color: style.text } } });
+  const built = buildBody<DiagramSceneData, 'main', RectPose>(body, box, {
+    id: n.id,
+    layer: 'main',
+    measure: look.measure,
+    body: (trait) => ({
+      diagram: n.pinned === true ? { ...trait, pinned: true } : trait,
+      fill: { paint: { color: style.fill } },
+      stroke: {
+        paint: { color: style.stroke },
+        width: style.strokeWidth ?? 2,
+        ...(style.dash ? { dash: style.dash } : {}),
+      },
+    }),
+    row: (text, at) =>
+      at.row.kind === 'slot'
+        ? (at.row.id === undefined ? null : { diagram: { mark: { d: SLOT_FRAME } }, stroke: { paint: { color: style.stroke }, width: 1 } })
+        : text === '' ? null : textData(text, at.row.kind === 'label' || at.row.kind === 'field' ? at.row.style : undefined),
+    portLabel: (text) => textData(text, undefined),
+  });
+  return built.specs.map((s, k) => ({ ...s, ...(s.id !== undefined ? {} : { id: `${n.id}/${k}` }) }) as DiagramSpec);
+}
+
 /** Every spec carries an id — a node's own, `<id>/<k>` for its text,
  *  `<id>/mark:<i>` for its marks, `<edge id>/label`, a group's own and
  *  `<group id>/label` — so a later call's
@@ -355,34 +385,7 @@ export function diagramScene(data: DiagramData, opts: DiagramSceneOptions = {}):
     const seed = seeds[i]!.bounds;
     const at = placedAt.get(n.id)!;
     const style = opts.nodeStyle?.(n) ?? NODE;
-    const textData = (text: string, s: RowTextStyle | undefined): DiagramSceneData =>
-      ({ text, style: styleOf(s), fill: { paint: { color: style.text } } });
-    const built = buildBody<DiagramSceneData, 'main', RectPose>(
-      bodies[i]!,
-      { x: at.x, y: at.y, width: seed.width, height: seed.height },
-      {
-        id: n.id,
-        layer: 'main',
-        measure,
-        body: (trait) => ({
-          diagram: n.pinned === true ? { ...trait, pinned: true } : trait,
-          fill: { paint: { color: style.fill } },
-          stroke: {
-            paint: { color: style.stroke },
-            width: style.strokeWidth ?? 2,
-            ...(style.dash ? { dash: style.dash } : {}),
-          },
-        }),
-        row: (text, box) =>
-          box.row.kind === 'slot'
-            ? (box.row.id === undefined ? null : { diagram: { mark: { d: SLOT_FRAME } }, stroke: { paint: { color: style.stroke }, width: 1 } })
-            : text === '' ? null : textData(text, box.row.kind === 'label' || box.row.kind === 'field' ? box.row.style : undefined),
-        portLabel: (text) => textData(text, undefined),
-      },
-    );
-    for (const [k, s] of built.specs.entries()) {
-      specs.push({ ...s, ...(s.id !== undefined ? {} : { id: `${n.id}/${k}` }) } as DiagramSpec);
-    }
+    specs.push(...nodeSpecs(n, bodies[i]!, { x: at.x, y: at.y, width: seed.width, height: seed.height }, { style, text: styleOf, measure }));
     if (n.marks) specs.push(...markSpecs(n.id, n.marks, at, { style, textStyle: styleOf, measure }));
   }
   specs.push(...edgeSpecs(edges, edgeCtx));

@@ -54,7 +54,7 @@ describe('showPreviews', () => {
   });
 
   it('puts each output\'s slot after its value row', () => {
-    const ids = built({ showPreviews: true, showValues: true }).filter((s) => s.parent === 'blur').map((s) => s.id);
+    const ids = built({ showPreviews: true, showValues: true }).filter((s) => s.parent === 'blur').map((s) => s.id as string);
     expect(ids.indexOf('blur/preview:out')).toBe(ids.indexOf('blur/value:out') + 1);
     expect(ids.indexOf('blur/preview:mask')).toBe(ids.indexOf('blur/value:mask') + 1);
   });
