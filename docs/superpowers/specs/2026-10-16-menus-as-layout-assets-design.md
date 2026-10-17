@@ -1,7 +1,8 @@
 # Menus as layout assets, and a menu bar
 
-**Status: half built.** The shape, the resolver, and `MenuDef` folded in landed on 2026-10-16
-(branch `surfaces`); everything from "Renderer and placement" down is unbuilt. Carried in `docs/TODO.md`
+**Status: half built.** The shape, the resolver, `MenuDef` folded in, rect placement, `useCommand` and
+the asset editor's menu cases are built; the access letters, `MenuBar`, `MenuButton` on the renderer
+and both consumers, from "Renderer and placement" down, are not. Carried in `docs/TODO.md`
 ("Menus as layout assets") until it lands. Delete this file when the rest merges.
 
 For whoever builds it: the decisions here were made with Mike in conversation; the ones marked
@@ -63,18 +64,27 @@ These are built, so the code is the reference:
 - Context menus hold actions only: the menu host passes no values, so boolean and enum leaves
   drop out there, while a bar's menu group resolves them through the bar's `values`/`onChange`.
 
+- `placeMenuUnder(size, under, bounds)` in `@weasel-js/menu` hangs a menu under a rect, flips it
+  above the rect, and right-aligns it at the right edge. `MenuOpenRequest.under` and
+  `OpenMenu.under` carry the rect; the DOM renderer (`MenuPanel`, `ContextMenuHost`) and the WebGL
+  one (hud `placePanels`, `menuWidget`) honor it, and `BarMenu` passes its button's rect.
+- `useCommand(id, label, run, options?)` registers a callback as an action, public from
+  `@weasel-js/routing/react` and `@weasel-js/core`. `options` is `CommandOptions`: `enabled`,
+  `active`, `keys`, `icon`, `tags`. The latest callback is held in a ref, so an inline function does
+  not re-register.
+- The asset editor files a menu root, or a bar whose children are all menu groups, under a "Menus"
+  heading. A menu root holds no pages and previews open: `BarMenu` takes `defaultOpen`, which
+  retries as commands register, and `MenuPreview` remounts on edit.
+
 Two builder's calls went differently from the draft: an enum draws as radio rows between
 separators, not a submenu, and contributions sharing a menu id append their children in order
 with a separator between, keeping keys (a later duplicate key gets `~n`), not merge by key.
 
 ## Renderer and placement
 
-The DOM renderer is the context menu's: `MenuPanel` and `MenuRow` over a `MenuController`. Three
+The DOM renderer is the context menu's: `MenuPanel` and `MenuRow` over a `MenuController`. Two
 things get added:
 
-- **A rect anchor.** `placeMenu` anchors to a point, and its vertical flip mirrors around that
-  point. A menu hanging from a title, or from a `MenuButton`, needs a rect: it opens below the
-  rect, flips above it, and is never drawn over it.
 - **Access letter underlines,** drawn in a row's label and a menu bar title when a letter is
   declared.
 - **Access letters inside an open menu,** handled in the controller beside typeahead: a declared
@@ -133,38 +143,6 @@ lab level for Mod+=/-/0. The menu bar's F10 and access letters run on a dispatch
 so they need no canvas to hold the keys. A focused text input blocks every binding
 (`channels/keyboard.ts`).
 
-## Commands from callbacks
-
-A hook turns a callback into a registered action:
-
-```ts
-useCommand('lab.reset', 'Reset', () => trial.reset(), { enabled, active, keys });
-```
-
-It holds the latest callback in a ref, so a new inline function each render does not
-re-register; only a change of id, label or options does. It is public API. `useAction` is marked
-`@experimental`, and this must not hand consumers that surface: either the hook is the public way
-to register a command, or `useAction` is promoted alongside it. The name `useCommand` is the
-builder's call.
-
-## Asset editor
-
-`as: 'menu'` needs adding wherever the editor lists or draws group kinds:
-
-- `PrefSchemaEditor/kindSchemas.ts` (the `as` choices)
-- `PrefSchemaEditor/Palette.tsx` (`GROUP_ICON`, which the compiler will demand, and the palettes)
-- the tree icons in `structureRows.tsx`, `UnplacedTree.tsx`, `SettingsTree.tsx`
-- `PrefSchemaEditor/PreviewPane.tsx`, which previews by `as`: a menu previews open
-- `PrefSchemaEditor/workspace.ts` `headingOf`, and `AssetList.tsx`: a bar whose children are all
-  menus is filed under a new "Menus" heading *(builder's call, made in drafting)*
-- `PrefSchemaEditor/loose.ts`
-
-and in each renderer that branches on `as`: in ui, `Bar/BarLayout.tsx`, `Bar/Bar.tsx`,
-`Prefs/PrefsForm.tsx`, `Prefs/PrefsPane.tsx`, `Prefs/objectRows.tsx`, `Prefs/ObjectLeaf.tsx`,
-`Prefs/RailLayout.tsx`, `Prefs/schema.ts`, `SelectionPanel/panelSections.tsx` and
-`SelectionPanel/selection.tsx`; in labkit, `controls/panelRows.tsx` and `config/sectionTree.ts`. In a bar, a menu group opens from a button as a menu. In a form, it draws as
-a button that opens it *(builder's call, made in drafting)*.
-
 ## Consumers
 
 **WeaselDraw.** A menu bar with File, Edit, Arrange and View sits above the command bar, as a strip
@@ -202,14 +180,12 @@ context menus.
 
 Each is its own arc, landing before the next starts:
 
-1. The rect anchor, `useCommand`, and the rest of the asset editor (`as: 'menu'` is already in
-   `kindSchemas.ts` and `Palette.tsx`).
-2. `MenuBar` and access letters; `MenuButton` onto the renderer.
-3. WeaselDraw: file actions, then its menu bar.
-4. labkit: the lab-wide registry and its lab-level commands, then its menu bar.
+1. `MenuBar` and access letters; `MenuButton` onto the renderer.
+2. WeaselDraw: file actions, then its menu bar.
+3. labkit: the lab-wide registry and its lab-level commands, then its menu bar.
 
 ## Left to the builder
 
-- Package placement of `MenuBar` and `useCommand`.
+- Package placement of `MenuBar`.
 - How an enum pointer and a variant list draw, within the table above.
 - The default access chord, after checking Chrome on Windows.

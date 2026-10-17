@@ -837,12 +837,9 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 ## Selection, actions & UI panels
 
-- **(P2) Menus as layout assets, and a menu bar built from them.** Half built. Landed 2026-10-16: a
-  menu is a prefs group drawn `as: 'menu'`, `MenuDef` is a `when` around one, and
-  `resolveSchemaMenu` serves context menus and a bar's menu groups alike. Left: the menu bar itself
-  (a layout asset whose root is a bar of menu groups, with its keys), access letters,
-  `MenuHost.open` anchored to a rect, `MenuButton` onto the context-menu renderer, `useCommand`,
-  and the asset editor's remaining `menu` cases
+- **(P2) Menus as layout assets, and a menu bar built from them.** Half built. Left: the menu bar
+  itself (a layout asset whose root is a bar of menu groups, with its keys), access letters,
+  `MenuButton` onto the context-menu renderer, then WeaselDraw's and labkit's menu bars
   (`docs/superpowers/specs/2026-10-16-menus-as-layout-assets-design.md`).
 
 - **(P3) ui's `ShortcutInput` is a third copy of the shortcut shape.**
