@@ -1,5 +1,5 @@
 import { act, render, renderHook, screen, waitFor } from '@testing-library/react';
-import type { ReactNode } from 'react';
+import { StrictMode, type ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import type { IconTable } from '@weasel-js/icons';
 import { IconRegistryProvider, useIconGlyph, useIconVariant } from './index';
@@ -18,6 +18,21 @@ describe('icon registry provider', () => {
     const wrapper = ({ children }: { children: ReactNode }) => <IconRegistryProvider icons={core}>{children}</IconRegistryProvider>;
     const { result } = renderHook(() => useIconGlyph('core:undo'), { wrapper });
     expect(result.current?.body).toBe('<path d="u"/>');
+  });
+
+  it('replaces the tables it was given when its icons change, from the first render on', () => {
+    function Probe() {
+      return <span>{`${useIconGlyph('core:undo')?.body ?? 'none'} ${useIconGlyph('core:redo')?.body ?? 'none'}`}</span>;
+    }
+    const tree = (icons: IconTable) => (
+      <StrictMode><IconRegistryProvider icons={icons}><Probe /></IconRegistryProvider></StrictMode>
+    );
+    const { rerender, container } = render(tree(core));
+    expect(container.textContent).toBe('<path d="u"/> none');
+    rerender(tree(more));
+    expect(container.textContent).toBe('none <path d="r"/>');
+    rerender(tree(core));
+    expect(container.textContent).toBe('<path d="u"/> none');
   });
 
   it('answers undefined with no provider in scope, and for a miss', () => {

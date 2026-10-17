@@ -5,7 +5,7 @@ const IconRegistryContext = createContext<IconRegistry | null>(null);
 
 /** Props for {@link IconRegistryProvider}. */
 export interface IconRegistryProviderProps {
-  /** Tables registered for the provider's lifetime: `virtual:weasel-icons`'s default export, or tables imported by hand. */
+  /** Tables to register: `virtual:weasel-icons`'s default export, or tables imported by hand. A new value replaces the tables the last one registered. */
   icons?: IconTable | readonly IconTable[];
   /** Variants a component may ask for by name, as dynamic imports: `{ all: () => import('virtual:weasel-icons/all') }`. */
   variants?: Readonly<Record<string, IconVariantLoader>>;
@@ -14,18 +14,22 @@ export interface IconRegistryProviderProps {
 
 /** Holds one icon registry for everything below it. */
 export function IconRegistryProvider({ icons, variants, children }: IconRegistryProviderProps) {
-  const [registry] = useState(() => {
-    const created = createIconRegistry(icons);
+  // The first tables register here so the first render can draw them; the effect below takes over their release.
+  const [{ registry, seed }] = useState(() => {
+    const created = createIconRegistry();
     if (variants) created.provideVariants(variants);
-    return created;
+    return { registry: created, seed: icons && { icons, release: created.add(icons) } };
   });
-  const registered = useRef(icons);
+  const seedTaken = useRef(false);
   const provided = useRef(variants);
   useEffect(() => {
-    if (registered.current === icons) return undefined;
-    registered.current = icons;
+    if (!seedTaken.current) {
+      seedTaken.current = true;
+      if (seed?.icons === icons) return seed.release;
+      seed?.release();
+    }
     return icons ? registry.add(icons) : undefined;
-  }, [registry, icons]);
+  }, [registry, seed, icons]);
   useEffect(() => {
     if (provided.current === variants) return;
     provided.current = variants;

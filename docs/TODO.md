@@ -572,12 +572,6 @@ How the registry and the build plugin work is in `docs/icons.md`.
   `packages/icons-plugin/src/tables.ts` is meant for the plugin's own test fixtures, but it also
   hides a consumer app's `fixtures/` directory, whose table then appears in dev only once one of
   its modules has been transformed. Skip the plugin's fixture path, not the name.
-- **(P3) Changing `IconRegistryProvider`'s `icons` only ever adds.** The tables given on mount
-  seed the registry in its constructor and are never released, so a new `icons` array registers
-  alongside them instead of replacing them
-  (`packages/core/src/iconRegistry/IconRegistryProvider.tsx`). Register the first tables through
-  the same effect that registers later ones, so each change releases what it replaces.
-
 - **(P3) `WeaselProvider` remounts its whole tree when `icons` or `iconVariants` comes or goes.**
   It wraps the tree in `IconRegistryProvider` when either is set and in
   `IconRegistryProviderIfRoot` otherwise (`packages/core/src/WeaselProvider.tsx`), so the element
