@@ -18,7 +18,7 @@ export function isLoose(node: SchemaNode): boolean {
 
 /**
  * The keys a group root holds outside any page, which the editor lists as unplaced and leaves out of the tree and
- * the preview. None for a section root, whose leaves a properties panel draws bare, or for a bar.
+ * the preview. None for a section root, whose leaves a properties panel draws bare, or for a bar or a menu, which hold no pages.
  */
 export function looseKeys(root: SchemaRoot, pageless = false): string[] {
   return holdsPages(root, pageless) ? Object.keys(root.children).filter((k) => isLoose(root.children[k]!)) : [];

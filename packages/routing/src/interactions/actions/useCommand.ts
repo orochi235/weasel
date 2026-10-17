@@ -12,6 +12,7 @@ export interface CommandOptions {
   active?: () => boolean;
   /** The gestures that run it. */
   keys?: GestureSpec | readonly GestureSpec[];
+  /** Shown beside the label. A function is read each time it is shown. */
   icon?: ReactNode | (() => ReactNode);
   /** Words a palette finds it by and a tagged bar or menu gathers it under. */
   tags?: readonly string[];

@@ -48,7 +48,7 @@ export function createMenuWidget(opts: MenuWidgetOptions): Widget {
   let panels: Rect[] = place(c, family);
   let disposed = false;
   let armed = false;
-  let under: number | null = null;
+  let hoverPanel: number | null = null;
   c.subscribe(() => { panels = place(c, family); rev.changed(); });
 
   /** The topmost panel under (x, y), or -1. */
@@ -71,8 +71,8 @@ export function createMenuWidget(opts: MenuWidgetOptions): Widget {
   /** The pointer is now over `level` (null: no panel). Leaving a panel clears
    *  its row, as the DOM menu's per-panel `pointerleave` does. */
   const enter = (level: number | null) => {
-    if (under !== null && under !== level) c.hover(under, null);
-    under = level;
+    if (hoverPanel !== null && hoverPanel !== level) c.hover(hoverPanel, null);
+    hoverPanel = level;
   };
 
   const pointer = (evt: HudPointerEvent) => {

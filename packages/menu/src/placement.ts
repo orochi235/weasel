@@ -26,13 +26,10 @@ export function placeMenu(size: Size, anchor: Point, bounds: Rect): Point {
 /** Where a submenu goes: beside `row`, right first, left if that does not
  *  fit, top-aligned with the row and shifted up to stay inside `bounds`. */
 export function placeSubmenu(size: Size, row: Rect, bounds: Rect): Point {
-  const right = row.x + row.w;
-  const hiX = bounds.x + bounds.w;
-  const x = right + size.w <= hiX
-    ? right
-    : row.x - size.w >= bounds.x ? row.x - size.w : Math.max(bounds.x, hiX - size.w);
-  const y = Math.max(bounds.y, Math.min(row.y, bounds.y + bounds.h - size.h));
-  return { x, y };
+  return {
+    x: flipOrShift(row.x + row.w, size.w, bounds.x, bounds.w, row.x),
+    y: Math.max(bounds.y, Math.min(row.y, bounds.y + bounds.h - size.h)),
+  };
 }
 
 /** Where a menu opened from the button at `under` goes: below it and
