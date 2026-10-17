@@ -1,75 +1,59 @@
-import { useMemo } from 'react';
 import type { LabMenus } from '@weasel-js/labkit';
-import { ActionDisabledReason, useCommand } from '@weasel-js/core';
-import { type PrefGroup, type PrefLeaf, pref } from '@weasel-js/prefs';
+import { type PrefGroup, pref } from '@weasel-js/prefs';
+import { useEffect, useMemo } from 'react';
 import type { Globals } from '../protocol/messages';
-import { allLabOptions, type GlobalDeclarations, labOptions } from './globals';
+import { type GlobalDeclarations, labOptions } from './globals';
 import { useLabGlobals } from './GlobalsToolbar';
 
-const commandId = (key: string, value: string) => `fg.global.${key}.${value}`;
+const leafPath = (n: number) => `globals.d${n}.v`;
 
 /**
- * The lab menu bar's Globals menu: a submenu per declaration, a row per option. The rows name the commands
- * {@link GlobalsCommands} registers. `undefined` when nothing is declared.
+ * The lab menu bar's Globals menu at `values`: a submenu per declaration holding one enum of the options the
+ * header's select offers. `undefined` when nothing is declared.
  */
-export function globalsMenu(declarations: GlobalDeclarations): PrefGroup | undefined {
+export function globalsMenu(
+  declarations: GlobalDeclarations,
+  values: Globals,
+  set: (key: string, value: string) => void,
+): LabMenus | undefined {
   const entries = Object.entries(declarations);
   if (entries.length === 0) return undefined;
   const submenus: Record<string, PrefGroup> = {};
+  const current: Record<string, unknown> = {};
+  const keys = new Map<string, string>();
   entries.forEach(([key, declaration], n) => {
-    const rows: Record<string, PrefLeaf> = {};
-    allLabOptions(declaration).forEach((option, i) => {
-      rows[`o${i}`] = pref.action(commandId(key, option.value));
-    });
-    submenus[`d${n}`] = pref.group(declaration.label, rows, { as: 'menu' });
+    const options = labOptions(declaration, values);
+    submenus[`d${n}`] = pref.group(
+      declaration.label,
+      { v: pref.enum(declaration.label, declaration.default, options) },
+      { as: 'menu' },
+    );
+    current[leafPath(n)] = values[key];
+    keys.set(leafPath(n), key);
   });
-  return pref.group('', { globals: pref.group('Globals', submenus, { as: 'menu' }) });
+  return {
+    schema: pref.group('', { globals: pref.group('Globals', submenus, { as: 'menu' }) }),
+    values: current,
+    onChange: (path, value) => {
+      const key = keys.get(path);
+      if (key !== undefined && typeof value === 'string') set(key, value);
+    },
+  };
 }
 
-/** The lab's `menus` for `declarations`: the Globals menu, or `undefined` when none are declared. */
-export function useGlobalsMenus(declarations: GlobalDeclarations): LabMenus | undefined {
-  return useMemo(() => {
-    const schema = globalsMenu(declarations);
-    return schema ? { schema } : undefined;
-  }, [declarations]);
-}
-
-interface GlobalCommandProps {
-  name: string;
-  value: string;
-  label: string;
-  shown: boolean;
-  values: Globals;
-  set: (key: string, value: string) => void;
-}
-
-function GlobalCommand({ name, value, label, shown, values, set }: GlobalCommandProps) {
-  useCommand(commandId(name, value), label, () => set(name, value), {
-    active: () => values[name] === value,
-    enabled: () => (shown ? true : ActionDisabledReason.NotApplicable),
-  });
-  return null;
-}
-
-/** Registers a command per option of each global, which the Globals menu's rows run. Mount it inside the lab. */
-export function GlobalsCommands({ declarations }: { declarations: GlobalDeclarations }) {
+/**
+ * Reports the lab's Globals menu to `onMenus` as the lab's values change. Renders nothing; mount it inside the
+ * lab, since the values live there.
+ */
+export function GlobalsMenus({
+  declarations,
+  onMenus,
+}: {
+  declarations: GlobalDeclarations;
+  onMenus: (menus: LabMenus | undefined) => void;
+}) {
   const [values, set] = useLabGlobals(declarations);
-  return (
-    <>
-      {Object.entries(declarations).flatMap(([name, declaration]) => {
-        const shown = new Set(labOptions(declaration, values).map((option) => option.value));
-        return allLabOptions(declaration).map((option) => (
-          <GlobalCommand
-            key={`${name}.${option.value}`}
-            name={name}
-            value={option.value}
-            label={option.label}
-            shown={shown.has(option.value)}
-            values={values}
-            set={set}
-          />
-        ));
-      })}
-    </>
-  );
+  const menus = useMemo(() => globalsMenu(declarations, values, set), [declarations, values, set]);
+  useEffect(() => onMenus(menus), [menus, onMenus]);
+  return null;
 }

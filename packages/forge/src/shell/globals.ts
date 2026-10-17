@@ -64,16 +64,9 @@ export function shownOptions(declaration: GlobalDeclaration, globals: Globals): 
 
 /** The options the lab's own control offers: `shownOptions`, after `App` where the declaration follows the app. */
 export function labOptions(declaration: GlobalDeclaration, globals: Globals): GlobalDeclaration['options'] {
-  return withApp(declaration, shownOptions(declaration, globals));
+  const shown = shownOptions(declaration, globals);
+  return declaration.follows ? [APP_OPTION, ...shown] : shown;
 }
-
-/** Every option the lab's own control could ever offer: `labOptions` with no `shows` filtering. */
-export function allLabOptions(declaration: GlobalDeclaration): GlobalDeclaration['options'] {
-  return withApp(declaration, declaration.options);
-}
-
-const withApp = (declaration: GlobalDeclaration, options: GlobalDeclaration['options']) =>
-  declaration.follows ? [APP_OPTION, ...options] : options;
 
 /** `values` with each `App` replaced by what its declaration reads from `chrome`; `values` itself when none is. */
 export function followApp(declarations: GlobalDeclarations, values: Globals, chrome: LabChrome): Globals {

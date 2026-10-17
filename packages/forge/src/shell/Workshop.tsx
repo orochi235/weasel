@@ -1,6 +1,7 @@
 import {
   Lab,
   type LabContribution,
+  type LabMenus,
   type StorageAdapter,
   useLabContext,
 } from '@weasel-js/labkit';
@@ -25,7 +26,7 @@ import { RoutePlayhead } from '../timeline/RoutePlayhead';
 import { createTrialClocks, TrialClocksContext } from '../timeline/trialClocks';
 import { type GlobalDeclarations, labGlobals } from './globals';
 import { GlobalsToolbar, LabGlobals } from './GlobalsToolbar';
-import { GlobalsCommands, useGlobalsMenus } from './globalsMenu';
+import { GlobalsMenus } from './globalsMenu';
 import type { StoryChanges } from './storyChanges';
 import { StoryGlobalsContext } from './StoryGlobalsContext';
 import { RouteKnobs } from './RouteKnobs';
@@ -150,7 +151,7 @@ export function Workshop({ index, frameUrl, importers, setup, changes, config, s
     ],
     [index, infoCommand, declarations, config?.cssVars, config?.labChrome],
   );
-  const menus = useGlobalsMenus(declarations);
+  const [menus, setMenus] = useState<LabMenus>();
   const first = index[0];
   if (!first) {
     return (
@@ -200,7 +201,7 @@ export function Workshop({ index, frameUrl, importers, setup, changes, config, s
                   onOpenChange={setInfoOpen}
                 />
                 <LabGlobals declarations={declarations} onChange={reportLabValues} />
-                <GlobalsCommands declarations={declarations} />
+                <GlobalsMenus declarations={declarations} onMenus={setMenus} />
               </Lab>
             </TrialClocksContext.Provider>
           </TrialFramesContext.Provider>

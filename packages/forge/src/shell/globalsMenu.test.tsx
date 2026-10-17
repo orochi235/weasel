@@ -1,8 +1,7 @@
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { createMemoryAdapter } from '@weasel-js/labkit';
-import type { PrefGroup } from '@weasel-js/prefs';
-import { pref } from '@weasel-js/prefs';
-import { afterEach, describe, expect, it } from 'vitest';
+import type { PrefEnum, PrefGroup } from '@weasel-js/prefs';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { ShellConfig } from '../config';
 import type { IndexEntry } from '../story/types';
 import { type GlobalDeclarations } from './globals';
@@ -44,28 +43,37 @@ const press = async (el: HTMLElement) => {
   });
 };
 
+const submenu = (menus: ReturnType<typeof globalsMenu>, n: number) =>
+  ((menus?.schema.children.globals as PrefGroup).children[`d${n}`] as PrefGroup);
+
 describe('globalsMenu', () => {
-  it('builds a Globals menu with a submenu per declaration and App first where it follows', () => {
-    const bar = globalsMenu({
-      theme: { label: 'Theme', default: 'app', options, follows: () => 'dark' },
-      font: { label: 'Font', default: 'a', options: [{ value: 'a', label: 'A' }] },
-    }) as PrefGroup;
-    const globals = bar.children.globals as PrefGroup;
-    expect(globals).toMatchObject({ name: 'Globals', as: 'menu' });
-    const theme = globals.children.d0 as PrefGroup;
-    expect(theme).toMatchObject({ name: 'Theme', as: 'menu' });
-    expect(Object.values(theme.children)).toEqual([
-      pref.action('fg.global.theme.app'),
-      pref.action('fg.global.theme.auto'),
-      pref.action('fg.global.theme.dark'),
-    ]);
-    expect((globals.children.d1 as PrefGroup).children).toEqual({
-      o0: pref.action('fg.global.font.a'),
-    });
+  it('builds a Globals menu with a submenu per declaration holding one enum, App first where it follows', () => {
+    const set = vi.fn();
+    const menus = globalsMenu(
+      {
+        theme: { label: 'Theme', default: 'app', options, follows: () => 'dark' },
+        font: { label: 'Font', default: 'a', options: [{ value: 'a', label: 'A' }] },
+      },
+      { theme: 'app', font: 'a' },
+      set,
+    );
+    expect(menus?.schema.children.globals).toMatchObject({ name: 'Globals', as: 'menu' });
+    expect(submenu(menus, 0)).toMatchObject({ name: 'Theme', as: 'menu' });
+    const theme = submenu(menus, 0).children.v as PrefEnum;
+    expect(theme.options.map((o) => o.value)).toEqual(['app', 'auto', 'dark']);
+    expect(menus?.values).toEqual({ 'globals.d0.v': 'app', 'globals.d1.v': 'a' });
+    menus?.onChange?.('globals.d1.v', 'b');
+    expect(set).toHaveBeenCalledWith('font', 'b');
+  });
+
+  it('leaves out an option the declaration hides at the current values, as the header does', () => {
+    const declarations = { theme: { label: 'Theme', default: 'auto', options, shows: (v: string) => v !== 'dark' } };
+    const menus = globalsMenu(declarations, { theme: 'auto' }, vi.fn());
+    expect((submenu(menus, 0).children.v as PrefEnum).options.map((o) => o.value)).toEqual(['auto']);
   });
 
   it('adds no Globals menu when no globals are declared', async () => {
-    expect(globalsMenu({})).toBeUndefined();
+    expect(globalsMenu({}, {}, vi.fn())).toBeUndefined();
     mount({});
     await screen.findByRole('menubar', { name: 'Lab menu bar' });
     expect(screen.queryByRole('menuitem', { name: 'Globals' })).toBeNull();
@@ -84,11 +92,51 @@ describe('globalsMenu', () => {
     expect(screen.getByRole('menuitemcheckbox', { name: 'Dark' })).toHaveAttribute('aria-checked', 'true');
   });
 
-  it("disables an option its declaration's shows leaves out", async () => {
+  it("leaves out an option its declaration's shows hides", async () => {
     mount(config({ shows: (value) => value !== 'dark' }));
     await open('Globals');
     await press(await screen.findByRole('menuitem', { name: 'Theme' }));
-    expect(screen.getByRole('menuitemcheckbox', { name: 'Dark' })).toHaveAttribute('aria-disabled', 'true');
-    expect(screen.getByRole('menuitemcheckbox', { name: 'Auto (OS)' })).not.toHaveAttribute('aria-disabled', 'true');
+    expect(screen.getByRole('menuitemcheckbox', { name: 'Auto (OS)' })).toBeInTheDocument();
+    expect(screen.queryByRole('menuitemcheckbox', { name: 'Dark' })).toBeNull();
+  });
+
+  it('keeps the active global selected as another global changes what shows', async () => {
+    const contrast = {
+      label: 'Contrast',
+      default: 'lo',
+      options: [
+        { value: 'lo', label: 'Low' },
+        { value: 'hi', label: 'High' },
+      ],
+    };
+    const shell: ShellConfig = {
+      globals: {
+        contrast,
+        theme: {
+          label: 'Theme',
+          default: 'auto',
+          options: [...options, { value: 'light', label: 'Light' }],
+          shows: (value, globals) => value !== 'light' || globals.contrast === 'hi',
+        },
+      },
+    };
+    mount(shell);
+    const choose = async (menu: string, row: string) => {
+      await open('Globals');
+      await press(await screen.findByRole('menuitem', { name: menu }));
+      await press(screen.getByRole('menuitemcheckbox', { name: row }));
+    };
+    await choose('Contrast', 'High');
+    await choose('Theme', 'Light');
+    await open('Globals');
+    await press(await screen.findByRole('menuitem', { name: 'Theme' }));
+    expect(screen.getByRole('menuitemcheckbox', { name: 'Light' })).toHaveAttribute('aria-checked', 'true');
+    await press(screen.getByRole('menuitemcheckbox', { name: 'Light' }));
+    await choose('Contrast', 'Low');
+    await open('Globals');
+    await press(await screen.findByRole('menuitem', { name: 'Theme' }));
+    expect(screen.queryByRole('menuitemcheckbox', { name: 'Light' })).toBeNull();
+    const checked = screen.getAllByRole('menuitemcheckbox').filter((el) => el.getAttribute('aria-checked') === 'true');
+    expect(checked).toHaveLength(1);
   });
 });
