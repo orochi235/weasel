@@ -1,8 +1,8 @@
 import { useLatest } from '@weasel-js/core';
 import { type ConfigOf, defineInstrument, f, Lab, type RenderContext, TrialSceneCanvas } from '@weasel-js/labkit';
 import { createHandleSnapPreset } from '@weasel-js/path-tools';
-import { SelectIcon } from '@weasel-js/ui';
 import { useMemo } from 'react';
+import { icon } from '../icons.gen';
 import { BLOB, type PathLabState, usePathEditTrial } from './pathEditLabScene';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
@@ -39,7 +39,7 @@ const snapInstrument = defineInstrument<PathLabState, Config>({
   config,
   initialState: () => ({ scene: null }),
   undo: {},
-  tools: { tools: [{ id: 'select', label: 'Select', icon: SelectIcon, shortcut: 'V' }] },
+  tools: { tools: [{ id: 'select', label: 'Select', icon: icon('core:select'), shortcut: 'V' }] },
   render: (ctx) => <HandleSnapTrial ctx={ctx} />,
 });
 
