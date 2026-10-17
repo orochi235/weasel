@@ -132,14 +132,11 @@ export function mergeLayersWithDefaults<TData, TLayer extends string, TPose>(
 
 /** Built-in tool ids SceneCanvas knows how to mount when no `tools` prop
  *  is supplied, via `defaultTools`. */
-export type BuiltinToolId = 'select' | 'hand' | BuiltinShapeToolId;
+export type BuiltinToolId = 'select' | 'hand' | BuiltinShapeToolId | 'slice' | 'bone' | 'weight';
 
-/** Built-in tool ids that aren't shape tools — the ones with no entry in
- *  the `core/shapeKinds` table. */
-export const NON_SHAPE_BUILTIN_TOOLS: readonly Exclude<BuiltinToolId, BuiltinShapeToolId>[] = ['select', 'hand'];
-
-/** Every built-in tool id, shape tools included. */
-export const BUILTIN_TOOL_IDS: readonly BuiltinToolId[] = [...NON_SHAPE_BUILTIN_TOOLS, ...KIT_SHAPE_KINDS];
+/** Every built-in tool id, in palette order: the navigation tools, the shape
+ *  tools of the `core/shapeKinds` table, then the knife and the rig tools. */
+export const BUILTIN_TOOL_IDS: readonly BuiltinToolId[] = ['select', 'hand', ...KIT_SHAPE_KINDS, 'slice', 'bone', 'weight'];
 
 /** Minimal hit descriptor passed to `onDoubleClick`. Contains the fields
  *  modality dispatch needs; extends as the kit's `Hit` type evolves. */
@@ -407,9 +404,9 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      */
     defaultTools?: readonly BuiltinToolId[];
 
-    /** Per-tool option overrides for the built-in shape/lasso/clone tools.
-     *  Each entry is a narrow subset of the underlying hook's options
-     *  surface — `lasso.mode`, `clone.cloneSelection`, etc. */
+    /** Per-tool option overrides for the built-in tools. Each entry is a
+     *  narrow subset of the underlying hook's options surface — `lasso.mode`,
+     *  `rig.state`, etc. */
     toolOptions?: BuiltinToolOptions;
 
     /** Initial active-slot tool id. Default: `'select'` when it is

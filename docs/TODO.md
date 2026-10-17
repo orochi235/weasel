@@ -696,11 +696,6 @@ How the registry and the build plugin work is in `docs/icons.md`.
 
 ## Animation
 
-### Timelines and rigging
-
-- **(P3) The bone and weight tools are not `defaultTools` ids** — they are
-  mounted as `tools={{ bone, weight }}`, as slice is.
-
 ### Combining animations
 
 Animations combine through targets, described in `docs/concepts.md` ("Animation target").

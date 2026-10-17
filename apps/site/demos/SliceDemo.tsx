@@ -9,7 +9,6 @@ import {
   starPath,
   useScene,
   useSelection,
-  useSliceTool,
   type Path,
   type ToolsApi,
 } from '@weasel-js/core';
@@ -37,10 +36,9 @@ const INITIAL = [
 ];
 
 export function SliceDemo() {
-  // `<SceneCanvas>` publishes the `slice` dep over its own scene, so the tool
-  // is all this needs: every cut swaps the paths it crosses for their pieces.
+  // `<SceneCanvas>` publishes the `slice` dep over its own scene, so mounting
+  // the tool is all this needs: every cut swaps the paths it crosses for their pieces.
   const scene = useScene({ systemLayers: [{ id: 'default' }], initial: INITIAL });
-  const slice = useSliceTool();
   const selection = useSelection({ mode: 'multi' });
   const [tools, setTools] = useState<ToolsApi | null>(null);
   return (
@@ -53,7 +51,7 @@ export function SliceDemo() {
         scene={scene}
         selection={selection}
         features={['pick', 'move', 'edit']}
-        tools={{ slice }}
+        defaultTools={['slice']}
         initialActiveTool="slice"
         onToolsCreated={setTools}
       />

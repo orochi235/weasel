@@ -220,7 +220,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   });
 
   const { tools, internal: internalTools, takeover: toolsTakeover } = useCanvasTools({
-    select: internalSelect,
+    select: internalSelect, scene: scene as Scene<unknown, string, unknown>, selection,
     enabled,
     tools: toolsProp,
     defaultTools,
