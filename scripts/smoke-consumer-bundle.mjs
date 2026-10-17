@@ -14,7 +14,8 @@
 //
 // Strategy: `npm pack` every published package, extract them into a
 // node_modules tree in a temp dir OUTSIDE the repo, then (a) bundle a consumer
-// with esbuild and (b) typecheck one with tsc. Outside the repo, neither the
+// with esbuild, (b) build an app with vite and weaselIcons (smoke-consumer-icons.mjs),
+// and (c) typecheck one with tsc. Outside the repo, neither the
 // repo tsconfig paths nor the workspace symlinks are discoverable.
 
 import { build } from 'esbuild';
@@ -24,6 +25,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
+import { smokeIcons } from './smoke-consumer-icons.mjs';
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -438,6 +440,8 @@ try {
   );
 }
 console.log('[smoke] consumer bundle OK — all cross-package specifiers resolve.');
+
+await smokeIcons({ repoRoot, workDir, nodeModules, external: [...thirdPartyDeps, 'react', 'react-dom', 'react/jsx-runtime'], fail });
 
 // ── Phase 4: consumer typecheck over the built .d.ts ───────────────────────
 // esbuild strips types, so it cannot see a .d.ts whose cross-package type
