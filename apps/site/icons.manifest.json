@@ -1,5 +1,462 @@
 [
   {
+    "namespace": "core",
+    "owner": "@weasel-js/core",
+    "names": [
+      {
+        "name": "arrow",
+        "group": "Tools",
+        "tags": []
+      },
+      {
+        "name": "bone",
+        "group": "Tools",
+        "tags": []
+      },
+      {
+        "name": "ellipse",
+        "group": "Tools",
+        "tags": []
+      },
+      {
+        "name": "eyedropper",
+        "group": "Tools",
+        "tags": []
+      },
+      {
+        "name": "hand",
+        "group": "Tools",
+        "tags": []
+      },
+      {
+        "name": "image",
+        "group": "Tools",
+        "tags": []
+      },
+      {
+        "name": "lasso",
+        "group": "Tools",
+        "tags": []
+      },
+      {
+        "name": "line",
+        "group": "Tools",
+        "tags": []
+      },
+      {
+        "name": "pen",
+        "group": "Tools",
+        "tags": []
+      },
+      {
+        "name": "pencil",
+        "group": "Tools",
+        "tags": []
+      },
+      {
+        "name": "polygon",
+        "group": "Tools",
+        "tags": []
+      },
+      {
+        "name": "rect",
+        "group": "Tools",
+        "tags": []
+      },
+      {
+        "name": "select",
+        "group": "Tools",
+        "tags": []
+      },
+      {
+        "name": "slice",
+        "group": "Tools",
+        "tags": []
+      },
+      {
+        "name": "star",
+        "group": "Tools",
+        "tags": []
+      },
+      {
+        "name": "text",
+        "group": "Tools",
+        "tags": []
+      },
+      {
+        "name": "unknown",
+        "group": "Tools",
+        "tags": []
+      },
+      {
+        "name": "weight",
+        "group": "Tools",
+        "tags": []
+      },
+      {
+        "name": "cut",
+        "group": "Edit",
+        "tags": []
+      },
+      {
+        "name": "copy",
+        "group": "Edit",
+        "tags": []
+      },
+      {
+        "name": "paste",
+        "group": "Edit",
+        "tags": []
+      },
+      {
+        "name": "duplicate",
+        "group": "Edit",
+        "tags": []
+      },
+      {
+        "name": "transformAgain",
+        "group": "Edit",
+        "tags": []
+      },
+      {
+        "name": "group",
+        "group": "Edit",
+        "tags": []
+      },
+      {
+        "name": "ungroup",
+        "group": "Edit",
+        "tags": []
+      },
+      {
+        "name": "bringForward",
+        "group": "Edit",
+        "tags": []
+      },
+      {
+        "name": "bringToFront",
+        "group": "Edit",
+        "tags": []
+      },
+      {
+        "name": "sendBackward",
+        "group": "Edit",
+        "tags": []
+      },
+      {
+        "name": "sendToBack",
+        "group": "Edit",
+        "tags": []
+      },
+      {
+        "name": "flipX",
+        "group": "Edit",
+        "tags": []
+      },
+      {
+        "name": "flipY",
+        "group": "Edit",
+        "tags": []
+      },
+      {
+        "name": "delete",
+        "group": "History",
+        "tags": []
+      },
+      {
+        "name": "undo",
+        "group": "History",
+        "tags": []
+      },
+      {
+        "name": "redo",
+        "group": "History",
+        "tags": []
+      },
+      {
+        "name": "measure",
+        "group": "History",
+        "tags": []
+      },
+      {
+        "name": "tune",
+        "group": "History",
+        "tags": []
+      },
+      {
+        "name": "alignLeft",
+        "group": "Align",
+        "tags": []
+      },
+      {
+        "name": "alignRight",
+        "group": "Align",
+        "tags": []
+      },
+      {
+        "name": "alignTop",
+        "group": "Align",
+        "tags": []
+      },
+      {
+        "name": "alignBottom",
+        "group": "Align",
+        "tags": []
+      },
+      {
+        "name": "alignCenterX",
+        "group": "Align",
+        "tags": []
+      },
+      {
+        "name": "alignCenterY",
+        "group": "Align",
+        "tags": []
+      },
+      {
+        "name": "distributeHorizontal",
+        "group": "Distribute",
+        "tags": []
+      },
+      {
+        "name": "distributeVertical",
+        "group": "Distribute",
+        "tags": []
+      },
+      {
+        "name": "union",
+        "group": "Booleans",
+        "tags": []
+      },
+      {
+        "name": "intersect",
+        "group": "Booleans",
+        "tags": []
+      },
+      {
+        "name": "subtract",
+        "group": "Booleans",
+        "tags": []
+      },
+      {
+        "name": "exclude",
+        "group": "Booleans",
+        "tags": []
+      },
+      {
+        "name": "divide",
+        "group": "Booleans",
+        "tags": []
+      },
+      {
+        "name": "crop",
+        "group": "Booleans",
+        "tags": []
+      },
+      {
+        "name": "trim",
+        "group": "Booleans",
+        "tags": []
+      },
+      {
+        "name": "merge",
+        "group": "Booleans",
+        "tags": []
+      },
+      {
+        "name": "join",
+        "group": "Path commands",
+        "tags": []
+      },
+      {
+        "name": "bridge",
+        "group": "Path commands",
+        "tags": []
+      },
+      {
+        "name": "cutAtCrossings",
+        "group": "Path commands",
+        "tags": []
+      },
+      {
+        "name": "simplify",
+        "group": "Path commands",
+        "tags": []
+      },
+      {
+        "name": "offsetPath",
+        "group": "Path commands",
+        "tags": []
+      },
+      {
+        "name": "retractHandles",
+        "group": "Anchors",
+        "tags": []
+      },
+      {
+        "name": "symmetricHandles",
+        "group": "Anchors",
+        "tags": []
+      },
+      {
+        "name": "holdHandleAngle",
+        "group": "Anchors",
+        "tags": []
+      },
+      {
+        "name": "holdHandleLength",
+        "group": "Anchors",
+        "tags": []
+      },
+      {
+        "name": "simplifyBrush",
+        "group": "Anchors",
+        "tags": []
+      },
+      {
+        "name": "harmonize",
+        "group": "Anchors",
+        "tags": []
+      },
+      {
+        "name": "averageAnchors",
+        "group": "Anchors",
+        "tags": []
+      },
+      {
+        "name": "bendSegment",
+        "group": "Anchors",
+        "tags": []
+      },
+      {
+        "name": "createOutlines",
+        "group": "Outline",
+        "tags": []
+      },
+      {
+        "name": "outlineStroke",
+        "group": "Outline",
+        "tags": []
+      }
+    ]
+  },
+  {
+    "namespace": "path-tools",
+    "owner": "@weasel-js/path-tools",
+    "names": [
+      {
+        "name": "smudgeBrush",
+        "group": "Tools",
+        "tags": []
+      },
+      {
+        "name": "distort",
+        "group": "Tools",
+        "tags": []
+      },
+      {
+        "name": "envelope",
+        "group": "Tools",
+        "tags": []
+      },
+      {
+        "name": "puppetWarp",
+        "group": "Tools",
+        "tags": []
+      },
+      {
+        "name": "blend",
+        "group": "Tools",
+        "tags": []
+      },
+      {
+        "name": "bendAlong",
+        "group": "Tools",
+        "tags": []
+      },
+      {
+        "name": "repeatAlong",
+        "group": "Tools",
+        "tags": []
+      },
+      {
+        "name": "expand",
+        "group": "Tools",
+        "tags": []
+      },
+      {
+        "name": "balanceHandles",
+        "group": "Tools",
+        "tags": []
+      },
+      {
+        "name": "equalizeHandles",
+        "group": "Tools",
+        "tags": []
+      },
+      {
+        "name": "lengthen",
+        "group": "Tools",
+        "tags": []
+      },
+      {
+        "name": "trim",
+        "group": "Tools",
+        "tags": []
+      },
+      {
+        "name": "extend",
+        "group": "Tools",
+        "tags": []
+      },
+      {
+        "name": "girth",
+        "group": "Tools",
+        "tags": []
+      },
+      {
+        "name": "reversePath",
+        "group": "Commands",
+        "tags": []
+      },
+      {
+        "name": "setPathStart",
+        "group": "Commands",
+        "tags": []
+      },
+      {
+        "name": "cornerRadius",
+        "group": "Commands",
+        "tags": []
+      },
+      {
+        "name": "cornerShape",
+        "group": "Commands",
+        "tags": []
+      },
+      {
+        "name": "convertSegment",
+        "group": "Commands",
+        "tags": []
+      },
+      {
+        "name": "straightenSegment",
+        "group": "Commands",
+        "tags": []
+      },
+      {
+        "name": "curveSegment",
+        "group": "Commands",
+        "tags": []
+      },
+      {
+        "name": "extremeAnchors",
+        "group": "Commands",
+        "tags": []
+      }
+    ]
+  },
+  {
     "namespace": "ui",
     "owner": "@weasel-js/ui",
     "names": [
@@ -74,22 +531,7 @@
         "tags": []
       },
       {
-        "name": "delete",
-        "group": "Actions",
-        "tags": []
-      },
-      {
         "name": "sort",
-        "group": "Actions",
-        "tags": []
-      },
-      {
-        "name": "undo",
-        "group": "Actions",
-        "tags": []
-      },
-      {
-        "name": "redo",
         "group": "Actions",
         "tags": []
       },
@@ -759,22 +1201,12 @@
         "tags": []
       },
       {
-        "name": "tune",
-        "group": "Instrument",
-        "tags": []
-      },
-      {
         "name": "grid",
         "group": "Instrument",
         "tags": []
       },
       {
         "name": "snap",
-        "group": "Instrument",
-        "tags": []
-      },
-      {
-        "name": "measure",
         "group": "Instrument",
         "tags": []
       },
@@ -1891,6 +2323,117 @@
       {
         "name": "d20",
         "group": "Platonic solids",
+        "tags": []
+      }
+    ]
+  },
+  {
+    "namespace": "draw",
+    "owner": "apps/draw",
+    "names": [
+      {
+        "name": "releaseCompound",
+        "group": "Actions",
+        "tags": []
+      },
+      {
+        "name": "symmetry",
+        "group": "Actions",
+        "tags": []
+      },
+      {
+        "name": "settings",
+        "group": "Actions",
+        "tags": []
+      },
+      {
+        "name": "width",
+        "group": "Actions",
+        "tags": []
+      },
+      {
+        "name": "height",
+        "group": "Actions",
+        "tags": []
+      },
+      {
+        "name": "fontSize",
+        "group": "Actions",
+        "tags": []
+      },
+      {
+        "name": "bold",
+        "group": "Actions",
+        "tags": []
+      },
+      {
+        "name": "italic",
+        "group": "Actions",
+        "tags": []
+      },
+      {
+        "name": "underline",
+        "group": "Actions",
+        "tags": []
+      },
+      {
+        "name": "strikethrough",
+        "group": "Actions",
+        "tags": []
+      },
+      {
+        "name": "opacity",
+        "group": "Actions",
+        "tags": []
+      },
+      {
+        "name": "strokeWidth",
+        "group": "Actions",
+        "tags": []
+      },
+      {
+        "name": "rotation",
+        "group": "Actions",
+        "tags": []
+      },
+      {
+        "name": "cornerRadius",
+        "group": "Actions",
+        "tags": []
+      },
+      {
+        "name": "letterSpacing",
+        "group": "Actions",
+        "tags": []
+      },
+      {
+        "name": "lineHeight",
+        "group": "Actions",
+        "tags": []
+      },
+      {
+        "name": "position",
+        "group": "Actions",
+        "tags": []
+      },
+      {
+        "name": "fill",
+        "group": "Actions",
+        "tags": []
+      },
+      {
+        "name": "stroke",
+        "group": "Actions",
+        "tags": []
+      },
+      {
+        "name": "record",
+        "group": "Actions",
+        "tags": []
+      },
+      {
+        "name": "playRecording",
+        "group": "Actions",
         "tags": []
       }
     ]

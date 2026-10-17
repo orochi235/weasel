@@ -210,10 +210,7 @@ const STATE = {
   expand: `<path d="${expand}"/>`,
   chevron: `<path d="${chevronDown}"/>`,
 
-  // instrument
-  tune: `
-    <path d="M3.4 6h13.2M3.4 10h13.2M3.4 14h13.2" stroke-width="1.25"/>
-    <circle cx="7" cy="6" r="1.8"/><circle cx="12.6" cy="10" r="1.8"/><circle cx="9" cy="14" r="1.8"/>`,
+  // instrument (tune and measure are core's: packages/core/icons/history.mjs)
   grid: `
     <rect x="3.4" y="3.4" width="13.2" height="13.2" rx="1.4"/>
     <path d="M7.8 3.4v13.2M12.2 3.4v13.2M3.4 7.8h13.2M3.4 12.2h13.2" stroke-width="1"/>`,
@@ -235,9 +232,6 @@ const STATE = {
     <circle cx="4.8" cy="10" r="1.3" fill="currentColor" stroke="none"/>
     <circle cx="10" cy="10" r="1.3" fill="currentColor" stroke="none"/>
     <circle cx="15.2" cy="10" r="1.3" fill="currentColor" stroke="none"/>`,
-  measure: `
-    <rect x="2.6" y="7.4" width="14.8" height="5.2" rx="1.2"/>
-    <path d="M6 7.4v2.2M9.4 7.4v3M12.8 7.4v2.2" stroke-width="1"/>`,
   randomize: `
     <rect x="3.6" y="3.6" width="12.8" height="12.8" rx="2"/>
     <circle cx="7.2" cy="7.2" r="1" fill="currentColor" stroke="none"/>
@@ -278,7 +272,7 @@ const SPLIT = {
   instrument: [
     'crosshair', 'fullscreen', 'compare', 'search', 'loupe',
     'layers', 'page', 'link', 'collapse', 'expand', 'chevron',
-    'tune', 'grid', 'snap', 'measure', 'randomize', 'refresh',
+    'grid', 'snap', 'randomize', 'refresh',
     'drop', 'type', 'typeface', 'more',
   ],
 };
