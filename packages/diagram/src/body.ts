@@ -11,7 +11,7 @@
  * Text measurement is a seam rather than an import: measuring needs a 2D
  * context, which a geometry module has no business owning.
  */
-import { cssFamilyName } from '@weasel-js/font';
+import { cssFamilyName } from '@weasel-js/font/metrics';
 import { boxForContent, contentBox, outlinePath, type Bounds, type Outline } from './outline';
 import { COMPASS } from './ports';
 import type { DiagramNode, PortSpec } from './types';

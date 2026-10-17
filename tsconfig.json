@@ -55,6 +55,7 @@
       "@weasel-js/diagram/effect": ["./packages/diagram/src/effect.entry.ts"],
       "@weasel-js/diagram-elk": ["./packages/diagram-elk/src/index.ts"],
       "@weasel-js/font": ["./packages/font/src/index.ts"],
+      "@weasel-js/font/metrics": ["./packages/font/src/metrics.entry.ts"],
       "@weasel-js/font/test-seams": ["./packages/font/src/test-seams.ts"],
       "@weasel-js/font/testing/*": ["./packages/font/src/testing/*"],
       "@weasel-js/forge": ["./packages/forge/src/index.ts"],
