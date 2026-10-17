@@ -1,1 +1,1 @@
-/// <reference path="../../../../../virtual.d.ts" />
+/// <reference path="../../../../virtual.d.ts" />
