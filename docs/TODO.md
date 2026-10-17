@@ -650,10 +650,6 @@ Priority tags:
 
 ### Diagram follow-ups
 
-- **(P3) An `EffectRun` shows values as text, not previews.** A run's `values` are strings in a
-  row `showValues` keeps (`paintRun`, `packages/diagram/src/effect/run.ts`). An image preview on
-  an output would need a `slot` row sized for it and an image node a run fills, with a cache so a
-  frame's preview does not re-upload.
 - **(P3) A second pinned node makes a seeded re-run move, and can sit on a long edge's route.**
   `layeredPlan` anchors the layout on the first pinned node; another one stays where its author
   put it while its neighbors are placed around the slot it would have had

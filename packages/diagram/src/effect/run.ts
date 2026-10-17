@@ -3,8 +3,9 @@
  * built, never a new layout. Whatever a run does not touch keeps the spec it
  * had, so a chart fed a run every frame repaints only what changed.
  */
+import { bitmapSrc } from '@weasel-js/core';
 import type { DiagramSpec } from '../fromData';
-import { NO_VALUE, stageStyle, uniqueStages, valueRowId, type EffectLookResult } from './draw';
+import { NO_VALUE, previewRowId, stageStyle, uniqueStages, valueRowId, type EffectLookResult } from './draw';
 import { thrownToSecond } from './symbols';
 import type { EffectPipeline, EffectRun, EffectStage } from './types';
 
@@ -47,9 +48,12 @@ export function paintRun(
   }
 
   const values = new Map<string, string>();
+  const previews = new Map<string, ImageBitmap>();
   for (const [id, stage] of stages) {
     for (const p of stage.outputs ?? []) {
       values.set(`${id}/${valueRowId(p.id)}`, `${p.label ?? p.id}: ${run.stages[id]?.values?.[p.id] ?? NO_VALUE}`);
+      const preview = run.stages[id]?.previews?.[p.id];
+      if (preview !== undefined) previews.set(`${id}/${previewRowId(p.id)}`, preview);
     }
   }
 
@@ -63,6 +67,8 @@ export function paintRun(
     let next = spec;
     const text = values.get(id);
     if (text !== undefined && (spec.data as { text?: string }).text !== text) next = { ...next, data: { ...next.data, text } };
+    const preview = previews.get(id);
+    if (preview !== undefined) next = { ...next, data: { image: { src: bitmapSrc(preview) } } };
     const stage = owner(spec);
     if (stage !== undefined && thrownSecond.has(stage)) next = thrown(next);
     const dependsOn = spec.dependsOn;

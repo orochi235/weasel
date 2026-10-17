@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useVisibleRaf } from '@weasel-js/core';
 import {
   BRANCH_SYMBOLS, EffectChart, compact, lanes, nodeGraph, rack,
-  type BranchChoice, type EffectLook, type EffectPipeline, type EffectRun,
+  type BranchChoice, type EffectLook, type EffectPipeline, type EffectRun, type EffectStageRun,
 } from '@weasel-js/diagram/effect';
 
 const image = (id: string, label?: string) => ({ id, type: 'image', ...(label ? { label } : {}) });
@@ -98,6 +98,54 @@ export function EffectChartRunDemo() {
       pipeline={PIPELINE}
       run={runAt(frame)}
       options={SHOW_VALUES}
+      background={GROUND}
+      width={820}
+      height={420}
+      className="ckd-canvas"
+    />
+  );
+}
+
+const SHOW_PREVIEWS = { showPreviews: true, previewSize: { width: 64, height: 36 } };
+
+/** A frame of a stand-in picture for one output: a band of `hue` sweeping across. */
+function thumbnail(scratch: OffscreenCanvas, hue: number, t: number): ImageBitmap {
+  const ctx = scratch.getContext('2d')!;
+  ctx.fillStyle = `hsl(${hue} 40% 18%)`;
+  ctx.fillRect(0, 0, scratch.width, scratch.height);
+  ctx.fillStyle = `hsl(${hue} 80% 60%)`;
+  ctx.fillRect(((t * 30 + hue) % (scratch.width + 16)) - 16, 0, 16, scratch.height);
+  return scratch.transferToImageBitmap();
+}
+
+/** `runAt(frame)` with a new preview on every output the run reached. */
+function withPreviews(run: EffectRun, scratch: OffscreenCanvas, frame: number): EffectRun {
+  const stages = Object.fromEntries(PIPELINE.stages.flatMap((stage, i): [string, EffectStageRun][] => {
+    const ran = run.stages[stage.id];
+    if (ran === undefined) return [];
+    const previews = Object.fromEntries((stage.outputs ?? []).map((p): [string, ImageBitmap] => [p.id, thumbnail(scratch, i * 47, frame / 60)]));
+    return [[stage.id, { ...ran, previews }]];
+  }));
+  return { stages };
+}
+
+export function EffectChartPreviewDemo() {
+  const [scratch] = useState(() => new OffscreenCanvas(SHOW_PREVIEWS.previewSize.width, SHOW_PREVIEWS.previewSize.height));
+  const [frame, setFrame] = useState(0);
+  const loop = useVisibleRaf((_now, loop) => {
+    loop.request();
+    setFrame((f) => f + 1);
+  });
+  useEffect(() => {
+    loop.request();
+    return () => loop.cancel();
+  }, [loop]);
+  const run = useMemo(() => withPreviews(runAt(frame), scratch, frame), [frame, scratch]);
+  return (
+    <EffectChart
+      pipeline={PIPELINE}
+      run={run}
+      options={SHOW_PREVIEWS}
       background={GROUND}
       width={820}
       height={420}

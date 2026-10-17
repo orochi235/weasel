@@ -2,14 +2,14 @@ import type { PortAnchor, PortSpec } from '../types';
 import { edgeIdOf } from '../fromData';
 import {
   boxNode, drawableWires, exitLabel, isControl, kindOf, portOn, sceneStyles, typeColors, uniqueGroups, uniqueStages,
-  wireEdge, wireStyle, type EffectLook,
+  wireEdge, wireStyle, type EffectLook, type RunRowOptions,
 } from './draw';
 import { mainChain, skipDecisions, type Skip } from './mainChain';
 import { branchNode, type BranchChoice } from './symbols';
 import type { EffectPipeline, EffectPort, EffectStage } from './types';
 
 /** Options for the `rack` look. */
-export interface RackOptions {
+export interface RackOptions extends RunRowOptions {
   /** The stage ids on the line, in order. Default the longest path over data wires. */
   chain?: readonly string[];
   /** Where what feeds the chain from the side sits. Default `'below'`. */
@@ -21,10 +21,6 @@ export interface RackOptions {
   /** Whether a stage lists its `params`. Default true. A decision's symbol
    *  does not show params either way. */
   showParams?: boolean;
-  /** Whether a stage keeps a row per output for the value an `EffectRun`
-   *  shows there. Default false. Kept from the start, so a run fills it in
-   *  without the chart laying out again. */
-  showValues?: boolean;
   /** Default `'auto'`. */
   branch?: BranchChoice;
   /** Draw a decision that only skips ahead as an arc over what it skips. Default true. */
@@ -149,7 +145,7 @@ export const rack: EffectLook<RackOptions> = (pipeline, options = {}) => {
   const nodes = kept.map((stage) => {
     if (kindOf(stage) === 'decision') return { id: stage.id, ...branchNode(stage, pipeline, options.branch, { controlSide }) };
     const ports = portsOf(stage, line, wires, near, far);
-    const node = boxNode(stage, { showParams: options.showParams !== false, rowPorts: false, ports, showValues: options.showValues === true });
+    const node = boxNode(stage, { showParams: options.showParams !== false, rowPorts: false, ports, run: options });
     const room = roomFor(ports);
     // One port per edge needs less than diagramScene's own minimum width; leave that in charge.
     return room > 2 * SIDE_PORT_GAP ? { ...node, width: room } : node;

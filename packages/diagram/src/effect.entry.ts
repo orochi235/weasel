@@ -8,12 +8,14 @@ export type { CompactOptions } from './effect/compact';
 export type { EffectProblem } from './effect/check';
 export {
   NO_VALUE,
+  PREVIEW_SIZE,
   PROBLEM_COLOR,
   drawableWires,
   exitLabel,
   isControl,
   kindOf,
   portOn,
+  previewRowId,
   stageRows,
   stageStyle,
   typeColors,
@@ -23,7 +25,7 @@ export {
   wireEdges,
   wireStyle,
 } from './effect/draw';
-export type { DrawableWire, EffectLook, EffectLookResult, TypeColor } from './effect/draw';
+export type { DrawableWire, EffectLook, EffectLookResult, RunRowOptions, TypeColor } from './effect/draw';
 export { EFFECT_MIN_SCALE, EffectChart } from './effect/EffectChart';
 export type { EffectChartProps } from './effect/EffectChart';
 export { LANE_INSET, laneId, lanes } from './effect/lanes';

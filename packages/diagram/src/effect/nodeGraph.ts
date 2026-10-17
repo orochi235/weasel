@@ -1,9 +1,9 @@
 import type { DiagramRouter } from '../fromData';
-import { boxNode, kindOf, sceneStyles, typeColors, uniqueGroups, uniqueStages, wireEdges, type EffectLook } from './draw';
+import { boxNode, kindOf, sceneStyles, typeColors, uniqueGroups, uniqueStages, wireEdges, type EffectLook, type RunRowOptions } from './draw';
 import { branchNode, type BranchChoice } from './symbols';
 
 /** Options for the `nodeGraph` look. */
-export interface NodeGraphOptions {
+export interface NodeGraphOptions extends RunRowOptions {
   /** Default `'bezier'`. */
   router?: DiagramRouter;
   nodeGap?: number;
@@ -13,10 +13,6 @@ export interface NodeGraphOptions {
   /** Whether a stage lists its `params`. Default true. A decision's symbol
    *  does not show params either way. */
   showParams?: boolean;
-  /** Whether a stage keeps a row per output for the value an `EffectRun`
-   *  shows there. Default false. Kept from the start, so a run fills it in
-   *  without the chart laying out again. */
-  showValues?: boolean;
   /** Default `'auto'`. */
   branch?: BranchChoice;
 }
@@ -28,7 +24,7 @@ export const nodeGraph: EffectLook<NodeGraphOptions> = (pipeline, options = {}) 
   const stages = uniqueStages(pipeline);
   const nodes = stages.map((stage) => (kindOf(stage) === 'decision'
     ? { id: stage.id, ...branchNode(stage, pipeline, options.branch) }
-    : boxNode(stage, { showParams: options.showParams !== false, rowPorts: true, ports: [], showValues: options.showValues === true })));
+    : boxNode(stage, { showParams: options.showParams !== false, rowPorts: true, ports: [], run: options })));
   const edges = wireEdges(pipeline, color);
 
   return {

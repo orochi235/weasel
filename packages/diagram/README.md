@@ -159,7 +159,10 @@ return <DiagramView specs={specs} width={360} height={600} selected={id} onSelec
 Every box is a `buildBody` body, so a data node takes the same knobs a body
 does — `outline`, `rows`, `padding`, `gap`, `verticalAlign`, `ports` — plus `pinned`, a
 starting `at`, and a minimum `width`/`height`; `lines` is shorthand for one
-label row each. An edge can name `fromPort`/`toPort`, its own `router`,
+label row each. A `slot` row is reserved space, `height` tall and, with a
+`width`, that wide and centered; one with an `id` becomes a scene node of that
+name, `<node>/<id>`, drawn as an empty frame until you fill it by changing its
+data — with `{ image: { src } }`, say. An edge can name `fromPort`/`toPort`, its own `router`,
 `waypoints` and `labelPlacement`.
 
 `outline` is `'rect'`, `'diamond'`, `'stadium'`, `'parallelogram'`,
@@ -377,6 +380,22 @@ writes just the fields that changed. So `showValues` keeps its rows from the
 first draw, wide enough for a value of about nine characters, and a longer one
 runs past the box's edge rather than resizing it.
 
+A run can also carry a picture per output, `previews: { [port]: ImageBitmap }`
+on a stage's entry. With a look's `showPreviews` on, each output gets a slot
+`previewSize` big (default `PREVIEW_SIZE`, a 48-unit square; or `{ width,
+height }`) under its value row, kept from the first draw like the value rows,
+drawn as an empty frame until a run fills it. The preview is stretched to the
+slot. It is an `ImageBitmap`, not a canvas, because a bitmap's pixels cannot
+change: a run that hands back the same bitmap edits nothing and uploads
+nothing, and new pixels are a new bitmap. A canvas you draw into becomes one
+with `transferToImageBitmap()` (`OffscreenCanvas`) or `createImageBitmap()`.
+`EffectChart` frees the texture of a bitmap the next run no longer shows, and
+of every one it shows when it unmounts; closing a bitmap is still yours to do.
+Under `paintRun` alone the slot becomes an image node whose `src` is
+`bitmapSrc(bitmap)` from `@weasel-js/core`, and releasing the replaced
+textures is the caller's: `releaseImageSource(old)` from
+`@weasel-js/core/renderer`.
+
 `checkPipeline(pipeline)` returns the problems without drawing anything, each
 `{ kind, message, stage?, port?, wire?, group? }`, where `wire` is an index into
 `pipeline.wires`. The shipped looks draw a pipeline with problems as far as
@@ -401,14 +420,15 @@ and a `color(type)` for the ports. `EFFECT_LOOKS` holds `nodeGraph`, `rack`, `la
 
 | Look | Draws | Options |
 | --- | --- | --- |
-| `nodeGraph` (default) | Every port a named row on its stage, a wire from port to port, flowing left to right. | `router` (default `'bezier'`), `nodeGap`, `rankGap`, `colors`, `showParams`, `showValues`, `branch` |
-| `rack` | The main signal on one straight line, and everything else hung beside the stage on the line it is nearest to, whichever way the wire runs. | `chain`, `side`, `nodeGap`, `rankGap`, `colors`, `showParams`, `showValues`, `branch`, `collapseSkips` |
-| `lanes` | A horizontal lane per value type, and each stage standing across the lanes of the types it reads and writes, as tall as they are, its ports in their own lanes. | `lanes`, `laneHeight`, `rankGap`, `router`, `colors`, `showParams`, `showValues`, `branch`, `measure` |
+| `nodeGraph` (default) | Every port a named row on its stage, a wire from port to port, flowing left to right. | `router` (default `'bezier'`), `nodeGap`, `rankGap`, `colors`, `showParams`, `showValues`, `showPreviews`, `previewSize`, `branch` |
+| `rack` | The main signal on one straight line, and everything else hung beside the stage on the line it is nearest to, whichever way the wire runs. | `chain`, `side`, `nodeGap`, `rankGap`, `colors`, `showParams`, `showValues`, `showPreviews`, `previewSize`, `branch`, `collapseSkips` |
+| `lanes` | A horizontal lane per value type, and each stage standing across the lanes of the types it reads and writes, as tall as they are, its ports in their own lanes. | `lanes`, `laneHeight`, `rankGap`, `router`, `colors`, `showParams`, `showValues`, `showPreviews`, `previewSize`, `branch`, `measure` |
 | `compact` | Each stage one line, its title alone, no ports drawn, and one line between two stages however many wires join them. For a pipeline too big to read as a node graph. | `router`, `nodeGap`, `rankGap`, `colors`, `branch` |
 
 `colors` maps a value type to a color, over the palette; `showParams` (default
 true) shows the `params` of ordinary stages, sources and sinks; `showValues`
-(default false) keeps a row per output on those stages for a run's values. `rack` runs
+(default false) keeps a row per output on those stages for a run's values, and
+`showPreviews` (default false) a slot per output for its previews. `rack` runs
 along `chain`, a list of stage ids that defaults to the longest path over data
 wires (`mainChain(pipeline)` returns it); `side` is `'below'` (default) or
 `'above'`.
@@ -421,15 +441,17 @@ its own type's lane. Stages stand in columns, each right of every stage that
 feeds it, and a stage moves a column further right rather than share one with
 a stage holding any of its lanes. A lane is `laneHeight` (default 48) tall, or
 taller until each stage fits the lanes it spans, params and value rows
-included. A decision keeps its symbol's own size, centered across its lanes,
+included; a source or sink stretched taller than it measured is widened by as
+much, so its round ends leave its rows the room they had. A decision keeps its symbol's own size, centered across its lanes,
 and brings its control inputs in from the bottom when their lanes are below
 the rest of its ports. The lanes are nodes too, `laneId(type)`, drawn behind
 the stages; a pick of one is reported as `null`. Text is measured to cut the
 lanes before `diagramScene` lays anything out, so pass `measure` to the look,
 not to `diagramScene`: the look hands it on in `scene`.
 
-`compact` shows no params and keeps no value rows: one line has no room for
-them, so a run fades and costs its stages but writes no values. Its ports
+`compact` shows no params and keeps no value rows or preview slots: one line
+has no room for them, so a run fades and costs its stages but writes no values
+and draws no previews. Its ports
 carry no type, which is what keeps the port layer from drawing them. A
 decision draws as a `'hexagon'` by default, the one symbol a single row holds;
 another `branch` draws at that symbol's own size. Wires between two stages
@@ -497,7 +519,7 @@ exported for yours:
 | `isControl(pipeline, type)` | Whether `types` marks a value type as `control`. |
 | `kindOf(stage)` | The stage's `kind`, with any value the shipped looks do not know read as `'stage'`. |
 | `portOn(stage, id)` | The stage's port with that id. |
-| `stageRows(stage, { showParams, withPorts, showValues })` | Body rows for a stage: its title, a row of its ports, a value row per output (`valueRowId(port)`, showing `NO_VALUE`), its params. |
+| `stageRows(stage, { showParams, withPorts, showValues, showPreviews, previewSize })` | Body rows for a stage: its title, a row of its ports, per output a value row (`valueRowId(port)`, showing `NO_VALUE`) and a preview slot (`previewRowId(port)`), its params. |
 | `wireEdges(pipeline, color)` | An edge per drawable wire, from port to port, named by `exitLabel` and styled by `wireStyle`, each as `{ edge, style }`. |
 | `exitLabel(wire)` | What to call one of `drawableWires`' wires: its own label, or for a wire leaving a decision the exit's label or id. |
 | `branchNode(stage, pipeline, branch, { controlSide, style, tints })` | The node a decision draws as. |

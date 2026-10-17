@@ -3,13 +3,13 @@ import { diagramScene, type DataNode, type DiagramRouter, type NodeStyle } from 
 import type { PortSpec } from '../types';
 import {
   boxNode, drawableWires, isControl, kindOf, sceneStyles, typeColors, uniqueGroups, uniqueStages, wireEdges,
-  type DrawableWire, type EffectLook, type TypeColor,
+  type DrawableWire, type EffectLook, type RunRowOptions, type TypeColor,
 } from './draw';
 import { branchNode, type BranchChoice } from './symbols';
 import type { EffectPipeline, EffectPort, EffectStage } from './types';
 
 /** Options for the `lanes` look. */
-export interface LanesOptions {
+export interface LanesOptions extends RunRowOptions {
   /** The value types whose lanes come first, top down. The rest follow in
    *  the order their types first appear on the pipeline's ports. */
   lanes?: readonly string[];
@@ -24,8 +24,6 @@ export interface LanesOptions {
   colors?: Readonly<Record<string, string>>;
   /** Whether a stage lists its `params`. Default true. */
   showParams?: boolean;
-  /** Whether a stage keeps a row per output for a run's values. Default false. */
-  showValues?: boolean;
   /** Default `'auto'`. */
   branch?: BranchChoice;
   /** Measures text, as `diagramScene` takes it, for sizing stages before
@@ -149,7 +147,7 @@ export const lanes: EffectLook<LanesOptions> = (pipeline, options = {}) => {
   const spans = new Map(stages.map((s) => [s.id, spanOf(s, lane)]));
   const drawn = stages.map((stage): DataNode => (kindOf(stage) === 'decision'
     ? { id: stage.id, ...branchNode(stage, pipeline, options.branch, { controlSide: controlSideOf(stage, pipeline, lane) }) }
-    : boxNode(stage, { showParams: options.showParams !== false, rowPorts: false, ports: [], showValues: options.showValues === true })));
+    : boxNode(stage, { showParams: options.showParams !== false, rowPorts: false, ports: [], run: options })));
   const labels = rows.map((t): DataNode => ({ id: laneId(t), lines: [t] }));
   const size = sizesOf([...drawn, ...labels], options.measure);
 
@@ -158,9 +156,21 @@ export const lanes: EffectLook<LanesOptions> = (pipeline, options = {}) => {
   const tops = heights.map((_, i) => heights.slice(0, i).reduce((a, b) => a + b, 0));
   const band = (i: number): [number, number] => [tops[i]!, tops[i]! + heights[i]!];
 
+  const stood = new Map(stages.map((stage) => {
+    const natural = size.get(stage.id)!;
+    const [lo, hi] = spans.get(stage.id)!;
+    const top = band(lo)[0] + LANE_INSET;
+    const span = band(hi)[1] - LANE_INSET - top;
+    const kind = kindOf(stage);
+    const height = kind === 'decision' ? natural.height : span;
+    // A stadium's rows sit between its round ends, which grow with its height.
+    const width = kind === 'source' || kind === 'sink' ? natural.width + Math.max(0, height - natural.height) : natural.width;
+    return [stage.id, { top, span, height, width }];
+  }));
+
   const column = columnsOf(stages, drawableWires(pipeline), spans);
   const widths: number[] = [];
-  for (const s of stages) widths[column.get(s.id)!] = Math.max(widths[column.get(s.id)!] ?? 0, size.get(s.id)!.width);
+  for (const s of stages) widths[column.get(s.id)!] = Math.max(widths[column.get(s.id)!] ?? 0, stood.get(s.id)!.width);
   const gap = options.rankGap ?? 40;
   const start = 2 * MARGIN + Math.max(0, ...labels.map((l) => size.get(l.id)!.width));
   const lefts = Array.from(widths, (_, c) => start + Array.from(widths.slice(0, c), (wd) => (wd ?? 0) + gap).reduce((a, b) => a + b, 0));
@@ -168,13 +178,9 @@ export const lanes: EffectLook<LanesOptions> = (pipeline, options = {}) => {
 
   const nodes = stages.map((stage, k): DataNode => {
     const c = column.get(stage.id)!;
-    const natural = size.get(stage.id)!;
-    const [lo, hi] = spans.get(stage.id)!;
-    const top = band(lo)[0] + LANE_INSET;
-    const span = band(hi)[1] - LANE_INSET - top;
+    const { top, span, height, width } = stood.get(stage.id)!;
     const decision = kindOf(stage) === 'decision';
-    const height = decision ? natural.height : span;
-    const box = { x: lefts[c]! + (widths[c]! - natural.width) / 2, y: top + (span - height) / 2, width: natural.width, height };
+    const box = { x: lefts[c]! + (widths[c]! - width) / 2, y: top + (span - height) / 2, width, height };
     const node = drawn[k]!;
     return {
       ...node,

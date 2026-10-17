@@ -111,6 +111,19 @@ describe('diagramScene', () => {
     expect(texts[1]!.data?.style?.fontWeight).toBeUndefined();
   });
 
+  it('gives a slot with an id a scene node of that name, an empty frame in its box', () => {
+    const specs = diagramScene({
+      nodes: [{ id: 'op', rows: [{ kind: 'label', text: 'mix' }, { kind: 'slot', height: 20, width: 30, id: 'well' }] }],
+      edges: [],
+    });
+    const well = specs.find((s) => s.id === 'op/well')!;
+    expect(well.parent).toBe('op');
+    expect(well.pose).toMatchObject({ width: 30, height: 20 });
+    expect(well.data?.diagram).toEqual({ mark: { d: 'M0 0H1V1H0Z' } });
+    expect(well.data?.fill).toBeUndefined();
+    expect(well.data?.stroke).toBeDefined();
+  });
+
   it('gives a ports row its ports and draws their labels', () => {
     const specs = diagramScene({
       nodes: [{ id: 'op', rows: [{ kind: 'ports', left: [{ id: 'a', label: 'in', type: 'num' }], right: [{ id: 'b' }] }] }],

@@ -139,7 +139,12 @@ export interface DiagramSceneData {
   stroke?: Stroke;
   text?: string;
   style?: DiagramTextStyle;
+  /** What a slot is filled with: an image the kit's image painter draws. */
+  image?: { src: string; opacity?: number };
 }
+
+/** The frame an empty slot with an id draws, in the unit square a mark is drawn in. */
+export const SLOT_FRAME = 'M0 0H1V1H0Z';
 
 /** A scene node spec, as `diagramScene` returns them. */
 export type DiagramSpec = AddNodeSpec<DiagramSceneData, 'main', RectPose>;
@@ -369,7 +374,9 @@ export function diagramScene(data: DiagramData, opts: DiagramSceneOptions = {}):
           },
         }),
         row: (text, box) =>
-          text === '' ? null : textData(text, box.row.kind === 'label' || box.row.kind === 'field' ? box.row.style : undefined),
+          box.row.kind === 'slot'
+            ? (box.row.id === undefined ? null : { diagram: { mark: { d: SLOT_FRAME } }, stroke: { paint: { color: style.stroke }, width: 1 } })
+            : text === '' ? null : textData(text, box.row.kind === 'label' || box.row.kind === 'field' ? box.row.style : undefined),
         portLabel: (text) => textData(text, undefined),
       },
     );

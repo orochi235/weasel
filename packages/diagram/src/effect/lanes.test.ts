@@ -88,6 +88,23 @@ describe('lanes', () => {
     }
   });
 
+  it('widens a source stretched to its lane\'s height, so its rounded ends do not eat its rows', () => {
+    for (let n = 0; n <= 10; n++) {
+      const tall: EffectPipeline = {
+        stages: [
+          { id: 'src', title: 'Source', kind: 'source', outputs: [{ id: 'out', type: 'image' }] },
+          { id: 'big', title: 'Big', inputs: [{ id: 'in', type: 'image' }], params: Array.from({ length: n }, (_, i) => ({ label: `p${i}`, value: '1' })) },
+        ],
+        wires: [w(['src', 'out'], ['big', 'in'])],
+      };
+      const { specs } = built(tall);
+      const title = specs.find((s) => s.parent === 'src' && (s.data as { text?: string }).text === 'Source')!;
+      // What the fallback measure makes of the title, in its face.
+      const needs = 'Source'.length * title.data.style!.fontSize * 0.6;
+      expect((title.pose as Box).width, `${n} params`).toBeGreaterThanOrEqual(needs - 1e-9);
+    }
+  });
+
   it('grows a lane until what stands in it fits', () => {
     const { box } = built(P, { laneHeight: 10, showValues: true });
     const lane = box(laneId('image'));

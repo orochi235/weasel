@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLatest, type Paint } from '@weasel-js/core';
+import { releaseImageSource } from '@weasel-js/core/renderer';
 import { DiagramView, type DiagramViewProps } from '../DiagramView';
 import { diagramScene } from '../fromData';
 import { checkPipeline, type EffectProblem } from './check';
@@ -16,9 +17,10 @@ export interface EffectChartProps<TOptions = never> {
   pipeline: EffectPipeline;
   /** One run of the pipeline, drawn over it: stages it never reached and
    *  branches it did not take faded, each stage's cost above its corner, and
-   *  each output's value in the row a look keeps for it (`showValues`). It may
-   *  change every frame: the chart neither lays out again nor refits, and
-   *  repaints only what changed. */
+   *  each output's value and preview in the rows a look keeps for them
+   *  (`showValues`, `showPreviews`). It may change every frame: the chart
+   *  neither lays out again nor refits, and repaints only what changed. A
+   *  preview the next run no longer shows has its texture freed then. */
   run?: EffectRun;
   /** How the pipeline is drawn. Default `nodeGraph`. */
   look?: EffectLook<TOptions>;
@@ -82,6 +84,22 @@ function useSameContent<T>(value: T): T {
   return value;
 }
 
+/** Free the texture of each preview a new run no longer shows, and of every
+ *  one on unmount, rather than leave it until the bitmap is collected. Runs
+ *  after `DiagramView` has reconciled the run that replaced it. */
+function useReleaseReplaced(run: EffectRun | undefined): void {
+  const shown = useRef(new Set<ImageBitmap>());
+  useEffect(() => {
+    const now = new Set(Object.values(run?.stages ?? {}).flatMap((s) => Object.values(s.previews ?? {})));
+    for (const old of shown.current) if (!now.has(old)) releaseImageSource(old);
+    shown.current = now;
+  }, [run]);
+  useEffect(() => () => {
+    for (const old of shown.current) releaseImageSource(old);
+    shown.current = new Set();
+  }, []);
+}
+
 /** A chart of an effects pipeline: pan, zoom, and pick a stage. Text paints
  *  only in a registered font family, so call `registerCanvasFont('sans-serif')`
  *  once before mounting one. */
@@ -116,6 +134,7 @@ export function EffectChart<TOptions = never>({
 
   // Keyed by the layout alone: a run edits the scene in place.
   const painted = useMemo(() => paintRun(pipeline, built.specs, run, built.exits), [pipeline, built, run]);
+  useReleaseReplaced(run);
 
   const stageIds = useMemo(() => new Set(pipeline.stages.map((s) => s.id)), [pipeline]);
   return (
