@@ -35,6 +35,17 @@ describe('icon registry provider', () => {
     expect(container.textContent).toBe('<path d="u"/> none');
   });
 
+  it('mounts with no icons and registers ones that arrive later', () => {
+    function Probe() {
+      return <span>{useIconGlyph('core:undo')?.body ?? 'none'}</span>;
+    }
+    const tree = (icons?: IconTable) => <IconRegistryProvider icons={icons}><Probe /></IconRegistryProvider>;
+    const { rerender, container } = render(tree());
+    expect(container.textContent).toBe('none');
+    rerender(tree(core));
+    expect(container.textContent).toBe('<path d="u"/>');
+  });
+
   it('answers undefined with no provider in scope, and for a miss', () => {
     expect(renderHook(() => useIconGlyph('core:undo')).result.current).toBeUndefined();
     const wrapper = ({ children }: { children: ReactNode }) => <IconRegistryProvider icons={core}>{children}</IconRegistryProvider>;

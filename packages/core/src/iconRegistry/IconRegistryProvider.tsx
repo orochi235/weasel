@@ -25,7 +25,7 @@ export function IconRegistryProvider({ icons, variants, children }: IconRegistry
   useEffect(() => {
     if (!seedTaken.current) {
       seedTaken.current = true;
-      if (seed?.icons === icons) return seed.release;
+      if (seed && seed.icons === icons) return seed.release;
       seed?.release();
     }
     return icons ? registry.add(icons) : undefined;
