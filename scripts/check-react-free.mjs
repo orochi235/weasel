@@ -14,6 +14,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { moduleSpecifiers } from './lib/moduleSpecifiers.mjs';
 import { REACT_FREE_ENTRIES } from './react-free-entries.mjs';
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -21,20 +22,6 @@ const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 /** A specifier that must not appear anywhere in a React-free closure. */
 const banned = (spec) =>
   spec === 'react' || spec.startsWith('react/') || spec === 'react-dom';
-
-/** Every static specifier in a module, import and re-export alike. */
-function specifiersIn(source) {
-  const out = [];
-  for (const m of source.matchAll(
-    /(?:^|[\s;}])(?:import|export)[^'"]*?from\s*['"]([^'"]+)['"]/g,
-  )) {
-    out.push(m[1]);
-  }
-  // A bare side-effect import (`import './chunk-X.js';`) has no `from`.
-  for (const m of source.matchAll(/(?:^|[\s;])import\s*['"]([^'"]+)['"]/g))
-    out.push(m[1]);
-  return out;
-}
 
 /**
  * Resolves a sibling workspace specifier to the built file its `exports` map
@@ -62,7 +49,7 @@ function closureOf(entry) {
   const walk = (file) => {
     if (seen.has(file)) return;
     seen.add(file);
-    for (const spec of specifiersIn(readFileSync(file, 'utf8'))) {
+    for (const spec of moduleSpecifiers(readFileSync(file, 'utf8'))) {
       if (spec.startsWith('.')) {
         walk(resolve(dirname(file), spec));
         continue;
