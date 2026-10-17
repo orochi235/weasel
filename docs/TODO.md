@@ -1230,13 +1230,6 @@ convenience layer shipped inside core. The items below are what survives that.
   Worth building only for d3 semantics the kit genuinely lacks, not for parity —
   none identified yet.
 
-### labkit context menus
-
-- **(P3) `canvas/cameraContextMenu.ts` copies core's `openContextMenu` and the `enabled` rule of
-  `menu.context`.** Core's are `@experimental` and unexported, and need scene deps a labkit camera
-  lacks. Promoting a scene-free `openContextMenu` would let labkit drop the copy, and that is the
-  owner's call.
-
 ---
 
 ## forge

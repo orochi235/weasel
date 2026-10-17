@@ -20,7 +20,7 @@ npm install @weasel-js/menu
 |---|---|
 | `@weasel-js/menu` | The model: entries, `createMenuController`, `placeMenu` / `placeSubmenu`. |
 | `@weasel-js/routing` | Declared menus (`MenuDef`: a prefs schema drawn as a menu, by `resolveSchemaMenu`) and `MenuHost`, which holds the open menu. |
-| `@weasel-js/core` | The `menu.context` action, which opens a menu from a right-click or the ContextMenu key; re-exports `useMenus`. |
+| `@weasel-js/core` | The public `menu.context` action (`contextMenuAction`, `openContextMenu`), which opens a menu from a right-click or the ContextMenu key, with or without a scene; re-exports `useMenus`. |
 | `@weasel-js/ui` | `<ContextMenuHost>`, the DOM renderer, and `useContextMenu` for opening a menu from chrome; `<MenuBar>`, a bar of menu groups across the top of an app; `<MenuButton>`. |
 | `@weasel-js/hud` | `attachMenuHost`, the WebGL renderer. |
 

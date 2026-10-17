@@ -10,6 +10,9 @@ export type { CommandOptions } from '@weasel-js/routing/react';
 export { ActionDisabledReason } from '@weasel-js/routing';
 export type { ActionVariant } from '@weasel-js/routing';
 
+// --- Context menu --------------------------------------------------------------
+export { contextMenuAction, openContextMenu } from '../interactions/actions/defaults/contextMenu';
+
 // --- @experimental Actions Registry (2026-05-09) ----------------------------
 export { ActionsProvider, InputScope, useYoke, Yoke, useActionsRegistry, useAction, useOngoingAction } from '@weasel-js/routing/react';
 export { useLatest } from '@weasel-js/react';

@@ -46,7 +46,11 @@ export function menuHitFor(deps: ActionDeps, at?: XY): { hit: MenuHit; select?: 
   return { hit: { bodyTarget: ids.length ? 'selected-body' : 'empty', bodyKind: ids.length === 1 ? deps.kindOfNode?.(ids[0]!) : undefined } };
 }
 
-/** Open the menu for a right-click, or for Shift+F10 when `params` carry no client point. */
+/**
+ * Open the menu for a right-click, or for Shift+F10 when `params` carry no client point. Reads
+ * only `menuHost`, `view` and `worldToClient` on a surface without a scene; `selection`, `scene`,
+ * `hitAt` and `kindOfNode` refine the hit and the keyboard anchor where they are supplied.
+ */
 export function openContextMenu(
   deps: ActionDeps,
   params?: Record<string, unknown>,
@@ -73,10 +77,9 @@ export function openContextMenu(
 const INITIAL = [{ channel: '*', phase: 'initial' }] as const;
 
 /**
- * @experimental
  * Opens the context menu: for the pointer on a right-click or an unclaimed
  * long-press, selecting the shape under it first; for the keyboard on
- * Shift+F10 or the ContextMenu key, at the selection.
+ * Shift+F10 or the ContextMenu key, at the selection or else the middle of the view.
  */
 export const contextMenuAction: Action & { requires: string[] } = {
   id: 'menu.context',

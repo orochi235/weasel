@@ -6,6 +6,7 @@
 import {
   type Action,
   type ActionsRegistry,
+  contextMenuAction,
   InputScope,
   makePinchZoomAction,
   makeViewportZoomAction,
@@ -36,7 +37,6 @@ import type { Point, ViewTransform } from '../instrument/types';
 import { LabContextMenusContext } from '../lab/labContextMenus';
 import { normalize2DView } from '../state/view';
 import { CameraWheelContext } from './CameraWheelContext';
-import { cameraCenter, cameraContextMenuAction } from './cameraContextMenu';
 import { type CameraGestures, resolveGestures } from './cameraGestures';
 import { usePublishCamera } from './cameraRegistry';
 import { clampZoomAbout, frameLocalToWorld, fromCameraView, toCameraView } from './cameraView';
@@ -210,6 +210,7 @@ function CameraDispatch({
 
   useDepSource('view', () => camera);
   useDepSource('rootView', () => camera);
+  useDepSource('menuHost', () => labMenu ?? undefined);
 
   const clientToWorld = useMemo(
     () => (cx: number, cy: number) => {
@@ -222,6 +223,12 @@ function CameraDispatch({
     },
     [hostRef, camera],
   );
+  useDepSource('worldToClient', () => (x: number, y: number) => {
+    const r = hostRef.current?.getBoundingClientRect();
+    if (!r) return null;
+    const v = camera.get();
+    return { x: (x - v.x) * v.scale.x + r.left, y: (y - v.y) * v.scale.y + r.top };
+  });
 
   const actions = useMemo<Action[]>(() => {
     // Unclamped here: `camera.set` clamps, to a range widened around the
@@ -248,11 +255,8 @@ function CameraDispatch({
         },
       },
     };
-    const menu =
-      labMenu &&
-      cameraContextMenuAction(labMenu, () => cameraCenter(hostRef, camera, clientToWorld));
     return [
-      ...(menu ? [menu] : []),
+      ...(labMenu ? [contextMenuAction] : []),
       // A trial pans on a plain drag; the kit action binds none of its own.
       ...(pan ? [{ ...viewportDragPanAction, defaultBinding: { kind: 'drag' } } as Action] : []),
       ...(zoomBindings.length > 0
@@ -261,7 +265,7 @@ function CameraDispatch({
       ...(pinch ? [makePinchZoomAction(unclamped)] : []),
       ...(taps ? [tap] : []),
     ];
-  }, [frameRef, onTapRef, pan, wheel, pinch, taps, labMenu, hostRef, camera, clientToWorld]);
+  }, [frameRef, onTapRef, pan, wheel, pinch, taps, labMenu]);
 
   useEffect(() => {
     const offs = actions.map((a) => registry.register(a));
