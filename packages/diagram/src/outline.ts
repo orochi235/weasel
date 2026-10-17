@@ -5,9 +5,11 @@
  * parallelogram, a terminator a stadium, a demultiplexer a trapezoid — plus `'rect'` for everything else and
  * a `Path` escape hatch for a shape the vocabulary does not have. The path is
  * built in world coordinates from the bounds it is given, the same way the
- * kit's own `clipFromPose` factories are.
+ * kit's own `clipFromPose` factories are; a custom `Path` is drawn in a unit
+ * square and stretched over them, as a mark is.
  */
 import { PathBuilder, polygonFromPoints, rectPath, type Path } from '@weasel-js/core/math';
+import { transformPath } from '@weasel-js/geom';
 
 /** An axis-aligned box. This is `PoseDescriptor.getBounds`'s return shape
  *  minus its optional `rotation`, deliberately: an outline is built in the
@@ -20,7 +22,9 @@ export interface Bounds {
   height: number;
 }
 
-/** A named flowchart shape, or a path a consumer built themselves. */
+/** A named flowchart shape, or a path a consumer built themselves in a unit
+ *  square — `(0, 0)` the box's top-left, `(1, 1)` its bottom-right — so it
+ *  follows its node wherever layout or a drag puts it. */
 export type Outline = 'rect' | 'diamond' | 'stadium' | 'parallelogram' | 'trapezoid' | Path;
 
 /** How far a parallelogram's top edge leans past its bottom one, as a
@@ -34,9 +38,9 @@ const KAPPA = 0.5522847498307936;
 /** The path `outline` describes inside `bounds`. A zero-area box gives a
  *  zero-area rect rather than a degenerate polygon. */
 export function outlinePath(outline: Outline, bounds: Bounds): Path {
-  if (typeof outline !== 'string') return outline;
   const { x, y, width: w, height: h } = bounds;
   if (w <= 0 || h <= 0) return rectPath(x, y, Math.max(w, 0), Math.max(h, 0));
+  if (typeof outline !== 'string') return transformPath(outline, [w, 0, 0, h, x, y]);
 
   switch (outline) {
     case 'rect':

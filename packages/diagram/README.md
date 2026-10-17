@@ -158,8 +158,9 @@ label row each. An edge can name `fromPort`/`toPort`, its own `router`,
 
 `outline` is `'rect'`, `'diamond'`, `'stadium'`, `'parallelogram'`,
 `'trapezoid'` (a demultiplexer: tall at the right, short at the left), or a
-`Path`. A `Path` is in world coordinates, so it does not follow its node when
-layout moves it.
+`Path` drawn in a unit square — `(0, 0)` the box's top-left, `(1, 1)` its
+bottom-right — which is stretched over the box, so it follows its node as
+marks do.
 
 `marks` draws more over a box than its rows. A mark with `d` is SVG path data
 in a unit square, stretched over the node's box; it takes `fill`, `stroke`,

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { boundsOfPath, rectPath } from '@weasel-js/core';
+import { boundsOfPath, polygonFromPoints, rectPath } from '@weasel-js/core';
 import { boxForContent, contentBox, outlinePath, type Bounds } from './outline';
 
 const BOX: Bounds = { x: 10, y: 20, width: 100, height: 40 };
@@ -20,9 +20,12 @@ describe('outlinePath', () => {
     expect(outlinePath('rect', BOX)).toEqual(rectPath(10, 20, 100, 40));
   });
 
-  it('passes a custom path through untouched', () => {
-    const custom = rectPath(0, 0, 1, 1);
-    expect(outlinePath(custom, BOX)).toBe(custom);
+  it('stretches a custom path in a unit square over the bounds', () => {
+    const custom = polygonFromPoints([{ x: 0.5, y: 0 }, { x: 1, y: 1 }, { x: 0, y: 1 }]);
+    expect([...(outlinePath(custom, BOX) as { coords: Float32Array }).coords])
+      .toEqual([60, 20, 110, 60, 10, 60]);
+    // The same path follows the box when it moves.
+    expect(boundsOfPath(outlinePath(custom, { ...BOX, x: 200 })).x).toBe(200);
   });
 
   for (const outline of ['rect', 'diamond', 'stadium', 'parallelogram', 'trapezoid'] as const) {
