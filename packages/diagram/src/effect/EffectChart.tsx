@@ -47,8 +47,8 @@ export interface EffectChartProps<TOptions = never> {
   className?: string;
 }
 
-/** `EffectChart`'s default `minScale`: the shipped looks' 12px titles at 9px. */
-export const EFFECT_MIN_SCALE = 0.75;
+/** `EffectChart`'s default `minScale`: the shipped looks' 12px titles at 6px, the smallest still legible. */
+export const EFFECT_MIN_SCALE = 0.5;
 
 const keys = new WeakMap<object, number>();
 let nextKey = 0;

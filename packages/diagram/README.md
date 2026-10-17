@@ -328,7 +328,7 @@ A stage:
 | `run` | One run of the pipeline, drawn over it (below). It may change every frame. |
 | `look`, `options` | How it is drawn, and that look's options. Default look `nodeGraph`. |
 | `width`, `height` | The canvas size. |
-| `minScale` | The smallest scale the chart opens at; a chart too big to fit whole at it opens at its start, the rest a pan away. Default `EFFECT_MIN_SCALE`, 0.75, which sets the shipped looks' titles at 9px. |
+| `minScale` | The smallest scale the chart opens at; a chart too big to fit whole at it opens at its start, the rest a pan away. Default `EFFECT_MIN_SCALE`, 0.5, which sets the shipped looks' titles at 6px. |
 | `background` | What the canvas paints behind the chart. Unset, it is transparent; the shipped looks are drawn for a dark ground. |
 | `selected`, `onSelect` | As on `DiagramView`, for stage ids. A pick of anything that is not a stage, such as a group box, is reported as `null`, and the canvas keeps its own highlight on it. |
 | `onProblems` | Hears what `checkPipeline` found, on mount and each time the pipeline's content changes, whether or not the list differs. |

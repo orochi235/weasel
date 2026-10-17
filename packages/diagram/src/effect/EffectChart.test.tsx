@@ -76,7 +76,7 @@ describe('EffectChart opening scale', () => {
 
   it('opens no smaller than a readable floor, or the one it is given', () => {
     render(<EffectChart pipeline={pipeline} width={100} height={100} />);
-    expect(seen[seen.length - 1]!.minScale).toBe(0.75);
+    expect(seen[seen.length - 1]!.minScale).toBe(0.5);
     render(<EffectChart pipeline={pipeline} width={100} height={100} minScale={0.2} />);
     expect(seen[seen.length - 1]!.minScale).toBe(0.2);
   });
