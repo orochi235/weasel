@@ -134,7 +134,10 @@ left alone and the build warns; its glyph resolves only from a loaded variant.
 | Used by | Every kit package's build: the tsup preset, labkit's tsup, and core's, ui's and hud's vite builds | apps/draw, the site, the theme editor, the forge app; the `site` and `draw` vitest projects |
 | Rewrites `icon()` | Yes | Yes |
 | Emits `virtual:weasel-icons` | No | Yes |
-| Bundlers | Any of them | vite, rollup, rolldown; throws at construction under esbuild, which has no hook to fill the virtual modules once every module is seen |
+| Bundlers | vite, rollup, rolldown, esbuild | vite, rollup, rolldown; esbuild has no hook to fill the virtual modules once every module is seen |
+
+Under any other bundler unplugin supports, the plugin throws: when it is created, or under webpack
+and rspack when the compiler applies it.
 
 **Library mode.** `dist` ships the annotated literals and no `icon()` call. esbuild keeps the
 comment; rolldown drops plain comments, so the plugin records each module's refs and re-annotates

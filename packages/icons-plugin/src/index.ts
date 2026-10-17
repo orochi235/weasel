@@ -1,6 +1,7 @@
 import MagicString from 'magic-string';
 import { createUnplugin, type UnpluginInstance } from 'unplugin';
 import { libraryAnnotations } from './annotate';
+import { assertBundler } from './bundlers';
 import type { IconTable } from '@weasel-js/icons';
 // Relative, and so bundled in: vite and tsup configs load this from source, before any dist exists.
 import { splitIconRef } from '../../icons/src/names';
@@ -15,8 +16,9 @@ export { collectIconRefs } from './collect';
 /** How {@link weaselIcons} treats the build it runs in. */
 export interface WeaselIconsOptions {
   /**
-   * `library` only rewrites `icon()` calls; `app` also emits `virtual:weasel-icons` and its variants,
-   * and needs vite, rollup or rolldown, since esbuild has no hook to fill them in once every module is seen.
+   * `library` only rewrites `icon()` calls, under vite, rollup, rolldown or esbuild. `app` also emits
+   * `virtual:weasel-icons` and its variants, and needs vite, rollup or rolldown: the others have no
+   * hook to fill them in once every module is seen.
    */
   mode: 'library' | 'app';
   /** Extra variants, each loadable as `virtual:weasel-icons/<name>`. */
@@ -37,9 +39,7 @@ function fail(ctx: object, message: string): never {
  * names, plus `/all`, `/<namespace>` and each custom variant, every one its own chunk.
  */
 export const weaselIcons: UnpluginInstance<WeaselIconsOptions, false> = createUnplugin((options: WeaselIconsOptions, meta) => {
-  if (options.mode === 'app' && meta.framework === 'esbuild') {
-    throw new Error("weaselIcons: app mode needs vite, rollup or rolldown; under esbuild its placeholders would ship unfilled");
-  }
+  assertBundler(options.mode, meta.framework);
   const variants = options.variants ?? {};
   for (const name of Object.keys(variants)) {
     if (name === 'all' || name === '') throw new Error(`weaselIcons: a custom variant cannot be named "${name}"`);
