@@ -96,8 +96,8 @@ describe('a lab’s actions registry', () => {
         <ElsewhereCanvas />
       </>,
     );
-    // The trial's scope is the lab's active one, and the keys sit in another
-    // tree's canvas, so the trial's own dispatcher does not take them.
+    // Press the trial, then a canvas in another tree, and send the key to the
+    // window: the key reaches neither the trial's scope nor the lab's.
     await press(container.querySelector('.lk-stage'));
     await press(screen.getByTestId('elsewhere'));
     await act(async () => {

@@ -1,7 +1,5 @@
 import {
-  type CommandItem,
   Lab,
-  type LabChromeContext,
   type LabContribution,
   type StorageAdapter,
   useLabContext,
@@ -17,9 +15,9 @@ import { LibrariesContext, librariesFrom } from '../story/library';
 import type { DepGraph, IndexEntry } from '../story/types';
 import { DependenciesContext } from './dependencies';
 import { missingInstrument } from './documentInstrument';
-import { InfoIcon } from '@weasel-js/ui';
 import { A11Y_SECTION } from './a11y/A11yPanel';
 import { CSS_VARS_SECTION } from './cssVars/CssVarsPanel';
+import { infoItem } from './info/infoItem';
 import { StoryInfoDialog } from './info/StoryInfoDialog';
 import { createFramePool, type FramePool, FramePoolContext } from './framePool';
 import { createTrialFrames, TrialFramesContext } from './trialFrames';
@@ -84,25 +82,6 @@ function RouteOpener() {
   return null;
 }
 
-/**
- * Opens Get Info on ⌘I / Ctrl+I. `CommandItem.shortcut` is a tooltip hint —
- * labkit binds no keys — so the shell binds its own.
- */
-function useInfoShortcut(open: (next: boolean) => void): void {
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== 'i' && event.key !== 'I') return;
-      if (!(event.metaKey || event.ctrlKey) || event.altKey || event.shiftKey) return;
-      const target = event.target as HTMLElement | null;
-      if (target?.isContentEditable || /^(input|textarea|select)$/i.test(target?.tagName ?? '')) return;
-      event.preventDefault();
-      open(true);
-    };
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [open]);
-}
-
 /** The workshop page: a labkit `Lab` with a story tree, where each story or index page opens as a trial. */
 export function Workshop({ index, frameUrl, importers, setup, changes, config, stories = [], storageKey, storage, dependencies }: WorkshopProps) {
   const declarations = config?.globals ?? NO_DECLARATIONS;
@@ -148,15 +127,11 @@ export function Workshop({ index, frameUrl, importers, setup, changes, config, s
   const themeFor = config?.labTheme;
   const labTheme = useMemo(() => themeFor?.(labValues), [themeFor, labValues]);
   const [infoOpen, setInfoOpen] = useState(false);
-  useInfoShortcut(setInfoOpen);
   const reportLabValues = useCallback(
     (next: Globals) => setLabValues((prev) => (stableStringify(prev) === stableStringify(next) ? prev : next)),
     [],
   );
-  const infoCommand = useMemo<CommandItem<LabChromeContext>>(
-    () => ({ icon: InfoIcon, label: 'Info', shortcut: '⌘I', onActivate: () => setInfoOpen(true) }),
-    [],
-  );
+  const infoCommand = useMemo(() => infoItem(() => setInfoOpen(true)), []);
   const labChrome = useMemo<readonly LabContribution[]>(
     () => [
       { id: 'fg-stories', region: 'sidebar', render: (ctx) => <StoryTree ctx={ctx} index={index} /> },

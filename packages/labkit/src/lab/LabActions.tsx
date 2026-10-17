@@ -46,6 +46,8 @@ function LabKeys() {
     actions,
     entriesById: NO_TOOLS,
     channels: CHANNELS,
+    // First, so a story's own zoom keys don't also fire over a trial with a camera;
+    // over one without, the action is disabled and the keys pass on.
     keyboard: 'first',
     hears: 'own',
   });

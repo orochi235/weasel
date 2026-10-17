@@ -10,7 +10,7 @@ export {
   toolContributions,
   useLabChromeContext,
 } from './LabChrome';
-export type { LabChromeContext, LabContribution, LabRegion } from './labTypes';
+export type { LabChromeContext, LabContribution, LabHeaderItem, LabRegion } from './labTypes';
 export { mergeContributions, suppressContributions } from './merge';
 export type { PaletteRegionProps } from './regions/PaletteRegion';
 export { PaletteRegion } from './regions/PaletteRegion';

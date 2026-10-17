@@ -1,6 +1,6 @@
 import { colorCount } from '@weasel-js/theme';
 import { ThemeProvider, useResolvedColorMode } from '@weasel-js/theme/react';
-import { type CSSProperties, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { type CSSProperties, useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { useStore } from 'zustand/react';
 import { useShallow } from 'zustand/react/shallow';
 import { AnnotationPreloadContext } from '../annotations/preload';
@@ -16,6 +16,7 @@ import { useOpenOnce, useWarnIgnoredChange } from '../state/useOpenOnce';
 import { interstellarTheme } from '../theme/interstellar';
 import { Trial } from '../trial/Trial';
 import { useLabFitWarning } from './fitCheck';
+import { LabCommands } from './LabCommands';
 import { trialIdsOf } from './LabContext';
 import { LabHeader, LabThemeSwitcher } from './LabHeader';
 import { LabPalette } from './LabPalette';
@@ -171,11 +172,9 @@ function LabRuntime({
   const layout = useStore(store, (s) => s.layout);
   const undockedPanels = useStore(store, (s) => s.undockedPanels);
 
-  // One registry for the lab's lifetime: a panel host is a DOM node the
-  // workspace owns and the trial portals into, so it must outlive both ends of
-  // a dock/undock without being rebuilt.
-  const panelHostsRef = useRef<ReturnType<typeof createPanelHostRegistry> | null>(null);
-  if (panelHostsRef.current === null) panelHostsRef.current = createPanelHostRegistry();
+  // One registry for the lab's lifetime: a panel host is a DOM node the workspace owns and the
+  // trial portals into, so it must outlive both ends of a dock/undock without being rebuilt.
+  const [panelHosts] = useState(createPanelHostRegistry);
 
   const [labBody, setLabBody] = useState<HTMLDivElement | null>(null);
   useLabFitWarning(labBody);
@@ -255,6 +254,7 @@ function LabRuntime({
 
   return (
     <LabProviders store={store} commands={commands}>
+      <LabCommands contributions={labChromeAll} addTrial={addTrial ?? true} />
       <PersistenceContext.Provider value={opened.records}>
         <AnnotationPreloadContext.Provider value={opened.marks}>
           <PresentationContext.Provider value={presentation}>
@@ -297,7 +297,7 @@ function LabRuntime({
                       }
                     >
                       <UnreadableRecords />
-                      <PanelHostContext.Provider value={panelHostsRef.current}>
+                      <PanelHostContext.Provider value={panelHosts}>
                         <LabSurface bodyRef={setLabBody}>
                           {hasPaneChrome ? (
                             <LabPanes contributions={labChromeAll}>
