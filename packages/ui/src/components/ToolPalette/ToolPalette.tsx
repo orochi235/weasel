@@ -1,11 +1,12 @@
 import { Fragment, type ReactNode } from 'react';
 import type { Tool, ToolsApi } from '@weasel-js/core';
+import type { MenuShortcut } from '@weasel-js/menu';
 import { eligibleContribution, type ModeRegistry } from '@weasel-js/modes';
 import { ToolButton } from '../ToolButton';
 import { ToolGroup } from '../ToolGroup';
 import { useRovingTabIndex } from '../../useRovingTabIndex';
 import s from './ToolPalette.module.css';
-import { formatShortcut, type ShortcutInput } from './formatShortcut';
+import { formatShortcut } from './formatShortcut';
 import { icon } from '../../icons.gen';
 import { Icon } from '../../icons/Icon';
 
@@ -58,7 +59,7 @@ export interface ToolPaletteProps {
   /** Derive the keyboard shortcut for a tool button from the action registry.
    *  Called with the tool's id; return `undefined` to suppress a chip. When
    *  omitted, falls back to `tool.keybinding` (legacy path). */
-  lookupShortcut?: (toolId: string) => ShortcutInput | undefined;
+  lookupShortcut?: (toolId: string) => MenuShortcut | undefined;
   /**
    * Optional mode registry. When provided, tools whose
    * `eligibility.capabilities` do not match the current mode are rendered

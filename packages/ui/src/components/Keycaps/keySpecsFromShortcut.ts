@@ -1,4 +1,4 @@
-import type { ShortcutInput } from '../ToolPalette/formatShortcut';
+import type { MenuShortcut } from '@weasel-js/menu';
 import type { KeySpec } from './Keycaps';
 import { keySpecFromKey, keySpecsFromMods, type KeySpecsFromModsOptions, type LogicalModSpec } from './keySpecsFromMods';
 
@@ -14,7 +14,7 @@ import { keySpecFromKey, keySpecsFromMods, type KeySpecsFromModsOptions, type Lo
  * ```
  */
 export function keySpecsFromShortcut(
-  shortcut: ShortcutInput | undefined,
+  shortcut: MenuShortcut | undefined,
   opts: KeySpecsFromModsOptions = {},
 ): readonly KeySpec[] | undefined {
   if (!shortcut) return undefined;

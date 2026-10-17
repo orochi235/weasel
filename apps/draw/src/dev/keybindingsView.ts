@@ -1,9 +1,4 @@
-export interface KeyShortcut {
-  key: string;
-  mod?: boolean;
-  alt?: boolean;
-  shift?: boolean | 'optional';
-}
+import type { ActionShortcut } from '@weasel-js/core';
 
 /** Shape of one `BoundGesture` entry on the consolidated `tool.activate`
  *  action's `defaultBinding`. Each entry pairs a key spec with
@@ -25,7 +20,7 @@ interface ToolActivateBoundEntry {
 export function lookupShortcutByToolId(
   toolId: string,
   actions: readonly { id: string; defaultBinding?: unknown }[],
-): KeyShortcut | undefined {
+): ActionShortcut | undefined {
   const action = actions.find((x) => x.id === 'tool.activate');
   const bindings = action?.defaultBinding;
   if (!Array.isArray(bindings)) return undefined;
