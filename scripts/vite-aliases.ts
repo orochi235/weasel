@@ -14,7 +14,7 @@
 
 import { existsSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import { TESTING, workspaceEntries } from './lib/packageEntries.mjs';
+import { APP_SOURCES, TESTING, workspaceEntries } from './lib/packageEntries.mjs';
 
 export interface ViteAlias {
   find: string | RegExp;
@@ -58,5 +58,9 @@ export function weaselAliases(repoRoot: string, overrides: ViteAlias[] = []): Vi
     { find: /^tools\/(.*)$/, replacement: resolve(repoRoot, 'packages/core/src/tools/$1') },
     { find: /^canvas\/(.*)$/, replacement: resolve(repoRoot, 'packages/core/src/canvas/$1') },
     { find: /^debug\/(.*)$/, replacement: resolve(repoRoot, 'packages/core/src/debug/$1') },
+    ...Object.entries(APP_SOURCES).map(([alias, dir]) => ({
+      find: new RegExp(`^${escapeRegex(alias)}/(.*)$`),
+      replacement: resolve(repoRoot, dir, '$1'),
+    })),
   ];
 }

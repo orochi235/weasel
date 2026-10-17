@@ -11,6 +11,7 @@
   "exports": {
     ".": { "import": "./dist/index.js", "types": "./dist/index.d.ts" },
     "./plugin": { "import": "./dist/plugin.js", "types": "./dist/plugin.d.ts" },
+    "./virtual": { "types": "./virtual.d.ts" },
     "./package.json": "./package.json"
   },
   "author": "orochi235",

@@ -80,6 +80,7 @@
       "@weasel-js/hud/react": ["./packages/hud/src/react/index.ts"],
       "@weasel-js/icons": ["./packages/icons/src/index.ts"],
       "@weasel-js/icons/plugin": ["./packages/icons/src/plugin/index.ts"],
+      "@weasel-js/icons/virtual": ["./packages/icons/virtual.d.ts"],
       "@weasel-js/kernel3d": ["./packages/kernel3d/src/index.ts"],
       "@weasel-js/labkit": ["./packages/labkit/src/index.ts"],
       "@weasel-js/labkit/chrome": ["./packages/labkit/src/chrome/index.ts"],
@@ -159,7 +160,8 @@
       "interactions/*": ["./packages/core/src/interactions/*"],
       "tools/*": ["./packages/core/src/tools/*"],
       "canvas/*": ["./packages/core/src/canvas/*"],
-      "debug/*": ["./packages/core/src/debug/*"]
+      "debug/*": ["./packages/core/src/debug/*"],
+      "@draw/*": ["./apps/draw/src/*"]
     }
   },
   // `tests/perf/bench` is in here and the rest of `tests/` is not: the benches

@@ -67,6 +67,7 @@
       "@weasel-js/hud/react": ["../hud/src/react/index.ts"],
       "@weasel-js/icons": ["../icons/src/index.ts"],
       "@weasel-js/icons/plugin": ["../icons/src/plugin/index.ts"],
+      "@weasel-js/icons/virtual": ["../icons/virtual.d.ts"],
       "@weasel-js/kernel3d": ["../kernel3d/src/index.ts"],
       "@weasel-js/labkit": ["../labkit/src/index.ts"],
       "@weasel-js/labkit/chrome": ["../labkit/src/chrome/index.ts"],
@@ -146,7 +147,8 @@
       "interactions/*": ["./src/interactions/*"],
       "tools/*": ["./src/tools/*"],
       "canvas/*": ["./src/canvas/*"],
-      "debug/*": ["./src/debug/*"]
+      "debug/*": ["./src/debug/*"],
+      "@draw/*": ["../../apps/draw/src/*"]
     }
   },
   "include": ["src"],
