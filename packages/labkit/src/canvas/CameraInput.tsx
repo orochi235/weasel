@@ -211,6 +211,18 @@ function CameraDispatch({
   useDepSource('view', () => camera);
   useDepSource('rootView', () => camera);
 
+  const clientToWorld = useMemo(
+    () => (cx: number, cy: number) => {
+      const r = hostRef.current?.getBoundingClientRect();
+      const v = camera.get();
+      return {
+        x: (cx - (r?.left ?? 0)) / v.scale.x + v.x,
+        y: (cy - (r?.top ?? 0)) / v.scale.y + v.y,
+      };
+    },
+    [hostRef, camera],
+  );
+
   const actions = useMemo<Action[]>(() => {
     // Unclamped here: `camera.set` clamps, to a range widened around the
     // zooms it was placed at, and anchors the clamp where the wheel was.
@@ -236,7 +248,9 @@ function CameraDispatch({
         },
       },
     };
-    const menu = labMenu && cameraContextMenuAction(labMenu, () => cameraCenter(hostRef, camera));
+    const menu =
+      labMenu &&
+      cameraContextMenuAction(labMenu, () => cameraCenter(hostRef, camera, clientToWorld));
     return [
       ...(menu ? [menu] : []),
       // A trial pans on a plain drag; the kit action binds none of its own.
@@ -247,7 +261,7 @@ function CameraDispatch({
       ...(pinch ? [makePinchZoomAction(unclamped)] : []),
       ...(taps ? [tap] : []),
     ];
-  }, [frameRef, onTapRef, pan, wheel, pinch, taps, labMenu, hostRef, camera]);
+  }, [frameRef, onTapRef, pan, wheel, pinch, taps, labMenu, hostRef, camera, clientToWorld]);
 
   useEffect(() => {
     const offs = actions.map((a) => registry.register(a));
@@ -255,18 +269,6 @@ function CameraDispatch({
       for (const off of offs) off();
     };
   }, [registry, actions]);
-
-  const clientToWorld = useMemo(
-    () => (cx: number, cy: number) => {
-      const r = hostRef.current?.getBoundingClientRect();
-      const v = camera.get();
-      return {
-        x: (cx - (r?.left ?? 0)) / v.scale.x + v.x,
-        y: (cy - (r?.top ?? 0)) / v.scale.y + v.y,
-      };
-    },
-    [hostRef, camera],
-  );
 
   useGestureDispatcher({
     canvasRef: hostRef,

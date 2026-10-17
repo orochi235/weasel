@@ -1,25 +1,28 @@
-import { type Action, ActionDisabledReason, type MenuHost, type ViewApi } from '@weasel-js/core';
+import { type Action, ActionDisabledReason, type MenuHost } from '@weasel-js/core';
 import type { RefObject } from 'react';
+import type { CameraView } from './CameraInput';
+import { viewMiddle } from './cameraZoom';
 
 type XY = { x: number; y: number };
 
 const INITIAL = [{ channel: '*', phase: 'initial' }] as const;
 
-type CameraCenter = () => { world: XY; client: XY } | null;
+type Anchor = { world: XY; client: XY };
 
-/** The middle of a camera's view, in its world and in client coordinates. */
+/** The middle of a camera's view, in client coordinates and in its world. */
 export function cameraCenter(
   hostRef: RefObject<HTMLElement | null>,
-  camera: ViewApi,
-): ReturnType<CameraCenter> {
+  camera: CameraView,
+  clientToWorld: (cx: number, cy: number) => XY,
+): Anchor | null {
   const r = hostRef.current?.getBoundingClientRect();
   if (!r) return null;
-  const v = camera.get();
-  const client = { x: r.left + r.width / 2, y: r.top + r.height / 2 };
-  return { client, world: { x: r.width / 2 / v.scale.x + v.x, y: r.height / 2 / v.scale.y + v.y } };
+  const middle = viewMiddle(camera);
+  const client = { x: r.left + middle.x, y: r.top + middle.y };
+  return { client, world: clientToWorld(client.x, client.y) };
 }
 
-export function cameraContextMenuAction(host: MenuHost, center: CameraCenter): Action {
+export function cameraContextMenuAction(host: MenuHost, center: () => Anchor | null): Action {
   return {
     id: 'camera.contextMenu',
     label: 'Show Context Menu',
