@@ -849,6 +849,11 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   first), then labkit's (a lab-wide registry first)
   (`docs/superpowers/specs/2026-10-16-menus-as-layout-assets-design.md`, "Consumers").
 
+- **(P3) The asset editor's preview of the menu bar shows fewer rows than the app.**
+  `RegistryProbe` registers the kit's actions but not `file.*` (`useFileCommands`) or the app's own
+  `view.*` toggles, so File, and View's toggles, preview without them. Register the same set the
+  app does, or have the probe take it as a prop.
+
 - **(P3) The menu bar's default access chord, Alt, is unverified in Chrome on Windows, which may
   open its own menu on Alt+F; check there before relying on it.**
 

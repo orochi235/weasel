@@ -30,4 +30,10 @@ describe('AssetsPage', () => {
     fireEvent.click(asset('Arrange'));
     expect(within(tree()).getByText('reorder')).toBeInTheDocument();
   });
+
+  it('lists the menu bar, and shows its titles in the structure tree', () => {
+    render(<AssetsPage />);
+    fireEvent.click(asset('Menu bar'));
+    expect(within(tree()).getByText('File')).toBeInTheDocument();
+  });
 });
