@@ -1,12 +1,12 @@
 /**
  * Pinned nodes after the first, held where their author put them. The first
  * pin anchors the layout (see `anchorOffset`); each other one keeps its place
- * across its rank, with the rest of the rank pushed clear of it, and the gap
- * on the anchor's side of its rank stretches or shrinks until the rank's band
- * covers it.
+ * across its rank, with everything else kept clear of it (see `settleAcross`),
+ * and its rank's band moves or deepens until it covers the pin.
  */
 import type { Graph } from '../graph';
 import { extent, worldOf, type LayoutAxes } from '../layout';
+import { settleAcross } from './across';
 import { depthOf } from './expand';
 import type { Rows } from './types';
 
@@ -21,16 +21,20 @@ export interface PinInput {
   pinned: ReadonlySet<string>;
   axes: LayoutAxes;
   nodeGap: number;
-  /** The least a gap may shrink to, to reach a pin. */
-  minGap: number;
+  /** The least each gap may shrink to, to reach a pin. */
+  minGaps: readonly number[];
 }
 
 /** What {@link holdPins} works out. */
 export interface HeldPins {
   crossAt: Map<string, number>;
   gaps: number[];
-  /** The low corner along the rank axis of each pin held, in place of the
-   *  centered one its rank's band gives. */
+  /** Each rank's band along the rank axis: its deepest node's extent, or
+   *  more where the band deepened to cover a pin. */
+  depths: number[];
+  /** The low corner along the rank axis of each pin held, in the frame where
+   *  the first rank's band starts at 0, in place of the centered one its
+   *  rank's band gives. */
   rankAt: Map<string, number>;
   /** Pins after the first that the layout could not be built around. */
   unheld: Set<string>;
@@ -38,113 +42,129 @@ export interface HeldPins {
 
 const EPS = 1e-6;
 
+/** Where each rank's band sits along the rank axis. The anchor's band starts
+ *  at `aStart`; the others follow from the depths and gaps outward from it,
+ *  so deepening a band moves only the ranks beyond it. */
+interface Bands {
+  depths: number[];
+  gaps: number[];
+  aStart: number;
+  /** The anchor's rank. */
+  a: number;
+}
+
+function startsOf(b: Bands): number[] {
+  const out: number[] = [];
+  out[b.a] = b.aStart;
+  for (let r = b.a + 1; r < b.depths.length; r++) out[r] = out[r - 1]! + b.depths[r - 1]! + b.gaps[r - 1]!;
+  for (let r = b.a - 1; r >= 0; r--) out[r] = out[r + 1]! - b.gaps[r]! - b.depths[r]!;
+  return out;
+}
+
 /**
- * A pin cannot be held when holding it would shrink a gap below `minGap`,
- * when its rank already holds another pin at a place the band does not
- * cover, or when its rank cannot fit its neighbors between it and another pin
- * there.
+ * A pin cannot be held when its rank's band cannot reach it: covering it
+ * would bring that band nearer the anchor's side than every gap between it and
+ * the nearest rank already holding a pin can give, each keeping its least; or
+ * when keeping a group's column whole leaves no room for it across (see
+ * `settleAcross`).
  */
 export function holdPins(input: PinInput): HeldPins {
   const { graph, rows, axes, pinned } = input;
-  const gaps = [...input.gaps];
+  const bands: Bands = { depths: rows.map((row) => depthOf(row, axes)), gaps: [...input.gaps], aStart: 0, a: 0 };
   const rankAt = new Map<string, number>();
   const unheld = new Set<string>();
   const rowOf = new Map<string, number>();
   rows.forEach((row, r) => row.forEach((n) => rowOf.set(n.id, r)));
   const pins = graph.nodes.filter((n) => pinned.has(n.id) && rowOf.has(n.id));
-  if (pins.length < 2) return { crossAt: new Map(input.crossAt), gaps, rankAt, unheld };
+  if (pins.length < 2) return { crossAt: new Map(input.crossAt), gaps: bands.gaps, depths: bands.depths, rankAt, unheld };
 
-  const depths = rows.map((row) => depthOf(row, axes));
-  const starts = (): number[] => {
-    const out: number[] = [];
-    let along = 0;
-    for (const [i, depth] of depths.entries()) {
-      out.push(along);
-      along += depth + (gaps[i] ?? 0);
-    }
-    return out;
-  };
   const anchor = pins[0]!;
   const a = rowOf.get(anchor.id)!;
+  bands.a = a;
+  for (let r = 0; r < a; r++) bands.aStart += bands.depths[r]! + bands.gaps[r]!;
   const anchorExt = extent(anchor.bounds, axes.rank);
+  const anchorRank = bands.aStart + (bands.depths[a]! - anchorExt) / 2;
+  const anchorWorld = worldOf({ cross: input.crossAt.get(anchor.id)!, rank: anchorRank }, anchorExt, axes);
   /** Where a pin's low corners sit in the canonical frame, given the anchor's. */
   const target = (id: string): { cross: number; rank: number } => {
-    const along = starts();
-    const world = worldOf({ cross: input.crossAt.get(anchor.id)!, rank: along[a]! + (depths[a]! - anchorExt) / 2 }, anchorExt, axes);
     const node = graph.node(id)!;
-    const x = node.bounds.x - (anchor.bounds.x - world.x);
-    const y = node.bounds.y - (anchor.bounds.y - world.y);
+    const x = node.bounds.x - (anchor.bounds.x - anchorWorld.x);
+    const y = node.bounds.y - (anchor.bounds.y - anchorWorld.y);
     const ext = extent(node.bounds, axes.rank);
     const rankWorld = axes.rank === 'x' ? x : y;
     return { cross: axes.cross === 'x' ? x : y, rank: axes.sign === 1 ? rankWorld : -rankWorld - ext };
   };
 
-  // Nearest the anchor first, so a stretch never moves a pin already held.
+  // Nearest the anchor first, so moving a band never moves a pin already held.
   const rest = pins.slice(1).sort((p, q) => Math.abs(rowOf.get(p.id)! - a) - Math.abs(rowOf.get(q.id)! - a));
   const fixedRows = new Set([a]);
   const held = new Map<string, number>([[anchor.id, input.crossAt.get(anchor.id)!]]);
-  const crossAt = new Map(input.crossAt);
+  const ranks = new Map<string, number>([[anchor.id, anchorRank]]);
+  let crossAt = new Map(input.crossAt);
   for (const pin of rest) {
     const r = rowOf.get(pin.id)!;
-    const ext = extent(pin.bounds, axes.rank);
-    const lo = starts()[r]!;
-    const hi = lo + depths[r]!;
-    const { rank } = target(pin.id);
-    const g = r > a ? r - 1 : r;
-    let stretch = 0;
-    if (rank < lo - EPS || rank + ext > hi + EPS) {
-      // Just far enough for the band to cover the pin: positive moves it
-      // away from the anchor's, negative toward it.
-      const past = rank + ext > hi + EPS;
-      stretch = r > a ? (past ? rank + ext - hi : rank - lo) : past ? hi - rank - ext : lo - rank;
-      if (fixedRows.has(r) || gaps[g]! + stretch < input.minGap - EPS) {
-        unheld.add(pin.id);
-        continue;
-      }
-    }
-    gaps[g]! += stretch;
     const at = target(pin.id);
-    held.set(pin.id, at.cross);
-    if (!settleRow(rows[r]!, crossAt, input.crossAt, held, input)) {
-      held.delete(pin.id);
-      gaps[g]! -= stretch;
+    const lo = startsOf(bands)[r]!;
+    const below = lo - at.rank;
+    const above = at.rank + extent(pin.bounds, axes.rank) - (lo + bands.depths[r]!);
+    const saved = { depths: [...bands.depths], gaps: [...bands.gaps], aStart: bands.aStart };
+    if (!reach(bands, r, fixedRows, Math.max(0, below), Math.max(0, above), input.minGaps)) {
+      Object.assign(bands, saved);
       unheld.add(pin.id);
       continue;
     }
+    held.set(pin.id, at.cross);
+    const settled = settleAcross({ graph, rows, preferred: input.crossAt, held, axes, nodeGap: input.nodeGap });
+    if (settled === undefined) {
+      held.delete(pin.id);
+      Object.assign(bands, saved);
+      unheld.add(pin.id);
+      continue;
+    }
+    crossAt = settled;
     fixedRows.add(r);
-    rankAt.set(pin.id, at.rank);
+    ranks.set(pin.id, at.rank);
   }
-  return { crossAt, gaps, rankAt, unheld };
+  const first = startsOf(bands)[0]!;
+  for (const [id, rank] of ranks) rankAt.set(id, rank - first);
+  return { crossAt, gaps: bands.gaps, depths: bands.depths, rankAt, unheld };
 }
 
 /**
- * Lay one rank out across, with its held pins where they are and everything
- * else as near its preferred place as keeping clear of them allows, in the
- * order the pins' places put them. Writes into `out` and answers `true`, or
- * answers `false` and writes nothing when the pins leave too little room.
+ * Move or deepen rank `r`'s band until it reaches `below` further toward the
+ * low end and `above` further toward the high end. A rank holding no pin yet
+ * moves whole; one already holding a pin, which must stay covered, deepens.
+ * Answers `false` when the side toward the anchor cannot get that far.
  */
-function settleRow(
-  row: Rows[number],
-  out: Map<string, number>,
-  preferred: ReadonlyMap<string, number>,
-  held: ReadonlyMap<string, number>,
-  input: PinInput,
-): boolean {
-  const size = (id: string) => extent(row.find((n) => n.id === id)!.bounds, input.axes.cross);
-  const at = (id: string) => held.get(id) ?? preferred.get(id)!;
-  const order = row.map((n) => n.id).sort((p, q) => at(p) + size(p) / 2 - (at(q) + size(q) / 2));
-  const xs = order.map(at);
-  const fixed = order.map((id) => held.has(id));
-  const sep = (i: number) => size(order[i]!) + input.nodeGap;
-
-  // Pushed clear of what comes before, then pulled clear of what comes after.
-  // Only a stretch between two pins too full for what sits in it is left
-  // overlapping, since one pin alone has room on both sides.
-  for (let i = 1; i < order.length; i++) if (!fixed[i]) xs[i] = Math.max(xs[i]!, xs[i - 1]! + sep(i - 1));
-  for (let i = order.length - 2; i >= 0; i--) if (!fixed[i]) xs[i] = Math.min(xs[i]!, xs[i + 1]! - sep(i));
-  for (let i = 1; i < order.length; i++) {
-    if (xs[i]! < xs[i - 1]! + sep(i - 1) - EPS) return false;
+function reach(bands: Bands, r: number, fixedRows: ReadonlySet<number>, below: number, above: number, minGaps: readonly number[]): boolean {
+  const { a } = bands;
+  if (r === a) {
+    bands.aStart -= below;
+    bands.depths[a]! += below + above;
+    return true;
   }
-  for (const [i, id] of order.entries()) out.set(id, xs[i]!);
+  const near = r > a ? below : above;
+  const far = r > a ? above : below;
+  if (near > EPS && !shrinkToward(bands, r, fixedRows, near, minGaps)) return false;
+  if (fixedRows.has(r)) bands.depths[r]! += near + far;
+  else bands.gaps[r > a ? r - 1 : r]! += far;
+  return true;
+}
+
+/**
+ * Bring rank `r` `by` nearer the anchor by shrinking the gaps between it and
+ * the nearest rank holding a pin, each in proportion to what it has above
+ * its least.
+ */
+function shrinkToward(bands: Bands, r: number, fixedRows: ReadonlySet<number>, by: number, minGaps: readonly number[]): boolean {
+  const step = r > bands.a ? -1 : 1;
+  let f = r + step;
+  while (!fixedRows.has(f)) f += step;
+  const between: number[] = [];
+  for (let k = Math.min(r, f); k < Math.max(r, f); k++) between.push(k);
+  const slack = (k: number) => Math.max(0, bands.gaps[k]! - minGaps[k]!);
+  const total = between.reduce((sum, k) => sum + slack(k), 0);
+  if (total < by - EPS) return false;
+  for (const k of between) bands.gaps[k]! -= (by * slack(k)) / total;
   return true;
 }

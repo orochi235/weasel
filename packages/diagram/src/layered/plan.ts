@@ -21,7 +21,7 @@ import {
   type LayoutResult,
   type Slot,
 } from '../layout';
-import { depthOf, expand } from './expand';
+import { expand } from './expand';
 import { orderRows } from './order';
 import { holdPins } from './pins';
 import { placeAcross } from './place';
@@ -49,10 +49,11 @@ export interface LayeredPlan {
    *  the compass ports facing the way it runs (see `layeredPorts`). */
   ports: ReadonlyMap<string, LayoutPorts>;
   /** Pinned nodes after the first that the layout could not be built
-   *  around: covering one with its rank's band would shrink a gap below a
-   *  quarter of `rankGap`, or its rank has too little room beside another
-   *  pin. They stay put, and the rest is laid out around the slot each would
-   *  have had. */
+   *  around: covering one with its rank's band would shrink the gaps between
+   *  it and the nearest rank holding a pin toward the first below a quarter
+   *  of `rankGap` each, or a group's column holding another pin would have
+   *  to be in two places across. They stay put, and the rest is laid out
+   *  around the slot each would have had. */
   unheld: ReadonlySet<string>;
 }
 
@@ -97,6 +98,8 @@ function planOnce(graph: Graph, opts: LayoutOptions = {}): LayeredPlan {
   const grouped = (graph.groups?.length ?? 0) > 0;
   const packed = grouped ? packClusters(graph, rows, preferred, axes, nodeGap) : preferred;
   const spaced = grouped ? rankGaps(graph, rows, axes, rankGap) : rows.slice(1).map(() => rankGap);
+  // A gap keeps the room its groups' insets take on top of `rankGap`.
+  const minGaps = spaced.map((gap) => gap - rankGap + rankGap * MIN_GAP);
   // A label's row splits one gap between two ranks; each side keeps
   // `LABEL_GAP` of it, room for a wire to turn toward its label.
   for (const r of expanded.labelRows) {
@@ -104,13 +107,13 @@ function planOnce(graph: Graph, opts: LayoutOptions = {}): LayeredPlan {
     spaced[r] = spaced[r]! - rankGap * (1 - LABEL_GAP);
   }
   const pinned = pinnedSet(graph, opts);
-  const { crossAt, gaps, rankAt, unheld } = holdPins({ graph, rows, crossAt: packed, gaps: spaced, pinned, axes, nodeGap, minGap: rankGap * MIN_GAP });
+  const { crossAt, gaps, depths, rankAt, unheld } = holdPins({ graph, rows, crossAt: packed, gaps: spaced, pinned, axes, nodeGap, minGaps });
 
   const slots = new Map<string, Slot>();
   const bands: [number, number][] = [];
   let along = 0;
   for (const [i, row] of rows.entries()) {
-    const depth = depthOf(row, axes);
+    const depth = depths[i]!;
     bands.push([along, along + depth]);
     for (const node of row) {
       // Centered in its rank's band, so a tall node does not push its
