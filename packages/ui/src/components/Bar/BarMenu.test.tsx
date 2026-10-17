@@ -22,4 +22,9 @@ describe('BarMenu', () => {
     await renderSettled(<ActionsProvider><Command /><BarMenu label="File" schema={FILE} values={() => undefined} defaultOpen /></ActionsProvider>);
     expect(screen.getByRole('menuitem', { name: 'Open' })).toBeDefined();
   });
+
+  it('opens with defaultOpen when its command registers after it mounts', async () => {
+    await renderSettled(<ActionsProvider><BarMenu label="File" schema={FILE} values={() => undefined} defaultOpen /><Command /></ActionsProvider>);
+    expect(screen.getByRole('menuitem', { name: 'Open' })).toBeDefined();
+  });
 });
