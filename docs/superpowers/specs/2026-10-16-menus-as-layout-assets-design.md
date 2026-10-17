@@ -1,10 +1,10 @@
 # Menus as layout assets, and a menu bar
 
-**Status: the menu bar is built; WeaselDraw's menu bar, then labkit's, are not.** The shape, the
+**Status: the menu bar and WeaselDraw's menu bar are built; labkit's is not.** The shape, the
 resolver, `MenuDef` folded in, rect placement, `useCommand`, the asset editor's menu cases, access
-letters, `MenuButton` on the renderer and `MenuBar` are built; "Consumers" below is what remains.
-Carried in `docs/TODO.md` ("Menus as layout assets") until it lands. Delete this file when the rest
-merges.
+letters, `MenuButton`, `MenuBar` and WeaselDraw's menu bar are built; the labkit paragraph of
+"Consumers" is what remains. Carried in `docs/TODO.md` ("Menus as layout assets") until it lands.
+Delete this file when the rest merges.
 
 For whoever builds it: the decisions here were made with Mike in conversation; the ones marked
 *(builder's call, made in drafting)* were not, and can be revisited.
@@ -70,8 +70,10 @@ These are built, so the code is the reference:
   one (hud `placePanels`, `menuWidget`) honor it, and `BarMenu` passes its button's rect.
 - `useCommand(id, label, run, options?)` registers a callback as an action, public from
   `@weasel-js/routing/react` and `@weasel-js/core`. `options` is `CommandOptions`: `enabled`,
-  `active`, `keys`, `icon`, `tags`. The latest callback is held in a ref, so an inline function does
-  not re-register.
+  `active`, `keys`, `icon`, `tags`, `variants`. The latest callback is held in a ref, so an inline
+  function does not re-register. `variants` are untagged `CommandVariant`s, and the callback
+  receives the chosen variant's params. `useCommand` names only untagged types; promoting
+  `ActionVariant` is the owner's call.
 - The asset editor files a menu root, or a bar whose children are all menu groups, under a "Menus"
   heading. A menu root holds no pages and previews open: `BarMenu` takes `defaultOpen`, which
   retries as commands register, and `MenuPreview` remounts on edit.
@@ -85,7 +87,17 @@ These are built, so the code is the reference:
   by default) with a title's declared letter opens that title's menu. Those two keys are
   `menu.bar` and `menu.open` in `useMenuBarKeys.tsx`, on a no-canvas `keyboard: 'first'`
   dispatcher of the bar's own, as `LabZoom.tsx` runs one; `menu.open` takes `scope: 'hotkey'`.
-  A focused text input blocks both.
+  A focused text input blocks both. A title's accessible name is its whole label ("File"), because
+  `AccessLabel` renders as one element.
+- WeaselDraw (`apps/draw/src/fileCommands.ts`, `menuBar.ts`): `useFileCommands` registers
+  `file.new` (a variant per paper size; with no variant it starts a document at the current paper
+  size), `file.open`, `file.import` and `file.save` (⌘S). The command bar's file group is a `Bar`
+  naming them, with tooltips from the leaves' descriptions (`BarAction` and `BarMenu` carry them).
+  `viewport.zoom` lists in, out and reset as variants. `DRAW_MENU_BAR` (File f, Edit e, Arrange a,
+  View v) is a layout asset, listed in the asset editor, and draws as a `.wd-menubar` strip above
+  the command bar. A bar `action` leaf naming a bare parametric id resolves to nothing, since a
+  menu expands it, so a bar names variants explicitly. ⌘S inside a text field falls through to the
+  browser, following the dispatcher's editable-target rule.
 
 The default chord is unverified: Chrome on Windows is said to open its own menu on Alt+F, and on
 macOS Option plus a letter types a character (matched by `code`, so it still opens the menu). Nobody
@@ -103,22 +115,8 @@ work there through the shared controller.
 
 ## Consumers
 
-**WeaselDraw.** A menu bar with File, Edit, Arrange and View sits above the command bar, as a strip
-of its own. The command bar stays; commands leave it for the menus over time, and it is deleted
-once it is empty. WeaselDraw has no menu bar yet and no real layout asset either: this is the
-first app to render one.
-
-File needs actions first: New, Open, Import and Save are hand-wired callbacks in `Toolbar.tsx` /
-`CommandBar.tsx` (`saveSvg.ts`, `openSvg.ts`, `fileIO.ts`). They become registered actions, Save
-gets ⌘S, and the buttons point at them. Most of Edit, Arrange and View already exist as actions
-(`undo`, `clipboard.*`, `group`, `reorder.*`, `align.*`, `view.grid`, `viewport.zoom` and the
-rest).
-
-An action leaf names an action or one of its variants, and carries no params; that stays so, and
-the saved format does not grow. An action a menu lists by parameter becomes parametric with
-variants instead: `viewport.zoom`'s in, out and reset (today params of one action), and New's
-paper sizes (today `PAPER_OPTIONS` passed to `onNew(size)` in `CommandBar.tsx`)
-*(builder's call, made in drafting)*.
+**WeaselDraw.** The command bar stays beside the menu bar; commands leave it for the menus over
+time, and it is deleted once it is empty.
 
 **labkit.** A lab declares menus the way it declares controls, and labkit draws them as a menu
 bar across the top of the lab. It holds what the lab header holds today — add trial, theme, the
@@ -136,10 +134,9 @@ context menus.
 
 ## Order
 
-Each is its own arc, landing before the next starts. `MenuBar`, access letters, and `MenuButton`
-onto the renderer have landed; these remain, in this order:
+Each is its own arc, landing before the next starts. `MenuBar`, access letters, `MenuButton`
+onto the renderer and WeaselDraw's menu bar have landed; this remains:
 
-- WeaselDraw: file actions, then its menu bar.
 - labkit: the lab-wide registry and its lab-level commands, then its menu bar.
 
 ## Left to the builder
