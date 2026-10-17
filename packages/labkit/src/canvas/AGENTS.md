@@ -137,7 +137,9 @@ its own. Reset nulls the view again, which re-frames.
 `gestures` (on `<CanvasStack>`, `<Stage>`, `<Orbit>`, `<CameraInput>`, an
 instrument's `canvas`, `stage` or `orbit`, and `<Lab>`, whose keys win) turns
 each gesture off on its own: a drag, the wheel (`'plain'`, `'mod'` or `false`),
-a pinch — the trackpad's and two fingers' — a tap, and `home`, a double click
+a pinch (`true`, or `'trackpad'` or `'touch'` alone — two fingers are pointers,
+so a camera leaving every press to its content keeps the trackpad's), a tap,
+and `home`, a double click
 back to where the camera opened. A gesture the camera does not bind is never
 claimed, so the page gets it: an unbound wheel scrolls, and the host's
 `touch-action` (from `data-lk-touch`) hands one finger to the page once the
@@ -150,7 +152,11 @@ camera's double clicks usually belong to its content.
 `Camera3d`, and its gestures are kernel3d's actions — `camera.orbit`,
 `camera.pan` (Shift+drag), `camera.dolly`, `camera.pinchDolly`, `camera.home` —
 on a `camera3d` dep its input scope provides, with an identity `clientToWorld`
-as kernel3d expects. It provides no `CameraContext`, whose `view` is 2D, so the
+as kernel3d expects. Its `viewport` prop names the element the scene is
+drawn in when that is less than the orbit's own: the dispatcher binds there,
+`data-lk-touch` goes there, and `camera3d.size()` measures it, which is what
+`camera.pan` and `camera.dolly` scale and anchor against. It provides no
+`CameraContext`, whose `view` is 2D, so the
 loupe, the overview and `LinkedCursor` stay out of it; it publishes itself to
 the camera registry as an `orbitZoomView`, whose scale is home distance over
 distance, so the lab's zoom steps dolly it and its reset returns to the home

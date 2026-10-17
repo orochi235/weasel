@@ -40,6 +40,17 @@ describe('camera.dolly', () => {
     expect(camera().distance).toBeGreaterThan(1000);
   });
 
+  it('dollies about the point under the pointer, the middle leaving the target put', () => {
+    const middle = depsFor({ distance: 10 });
+    run(dollyAction, middle.deps, { deltaY: -100, clientX: 400, clientY: 300 });
+    expect(middle.camera().target).toEqual({ x: 0, y: 0, z: 0 });
+    const right = depsFor({ distance: 10 });
+    run(dollyAction, right.deps, { deltaY: -100, clientX: 700, clientY: 300 });
+    // In toward a point right of the middle: at yaw 0 the target moves to +x.
+    expect(right.camera().distance).toBeLessThan(10);
+    expect(right.camera().target.x).toBeGreaterThan(0);
+  });
+
   it('dollies in on a Safari pinch that spreads', () => {
     const { deps, camera } = depsFor({ distance: 10 });
     run(dollyAction, deps, { scale: 2 });

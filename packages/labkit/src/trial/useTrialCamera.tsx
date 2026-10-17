@@ -1,5 +1,5 @@
 import { type Camera3d, clampCamera, createCamera } from '@weasel-js/kernel3d';
-import { type ReactNode, type RefObject, useContext, useRef } from 'react';
+import { type ReactNode, type RefObject, useContext, useMemo, useRef, useState } from 'react';
 import { type CameraGestures, CameraGesturesContext } from '../canvas/cameraGestures';
 import { Orbit } from '../canvas/Orbit';
 import { orbitZoomView } from '../canvas/orbitZoom';
@@ -55,6 +55,16 @@ export function useTrialCamera({
 }: TrialCameraOptions): TrialCamera {
   const camera = cameraOf(instrument);
   const cameraHost = useRef<HTMLDivElement | null>(null);
+  // The pane an orbit's instrument draws in, when it names one.
+  const [pane, setPane] = useState<HTMLElement | null>(null);
+  const measured = useMemo<RefObject<HTMLElement | null>>(
+    () => ({
+      get current() {
+        return pane ?? cameraHost.current;
+      },
+    }),
+    [pane],
+  );
   const labGestures = useContext(CameraGesturesContext);
   const gestures = { ...camera?.capability.gestures, ...labGestures };
   const placement = useViewPlacement({
@@ -62,7 +72,7 @@ export function useTrialCamera({
     view,
     setView,
     presented: useIsPresented(trialId),
-    viewport: camera?.kind === 'canvas' ? canvasHost : cameraHost,
+    viewport: camera?.kind === 'canvas' ? canvasHost : measured,
   });
   const home = (): void => {
     const placed = placement.home();
@@ -95,6 +105,7 @@ export function useTrialCamera({
           const placed = orbitHome();
           if (placed) setView(placed);
         },
+        viewportRef: setPane,
       }
     : null;
 
@@ -137,6 +148,7 @@ export function useTrialCamera({
             onViewChange={setView}
             limits={orbitCap.limits}
             home={orbitHome}
+            viewport={pane}
             onResize={placement.place}
             hostRef={cameraHost}
             gestures={gestures}

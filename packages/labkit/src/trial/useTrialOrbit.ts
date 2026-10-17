@@ -10,6 +10,12 @@ export interface TrialOrbit {
   setCamera: (camera: Camera3d) => void;
   /** Returns the camera to where it opened. */
   home: () => void;
+  /** A ref for the element the scene is drawn in, when the instrument's DOM is
+   *  more than that — a toolbar above it, a timeline beside it. The camera's
+   *  gestures land there, and its pans and dolly are measured against it, so
+   *  the point under the pointer stays put in that pane. Unattached, the
+   *  trial's whole body. */
+  viewportRef: (el: HTMLElement | null) => void;
 }
 
 export const TrialOrbitContext = createContext<TrialOrbit | null>(null);

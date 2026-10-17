@@ -137,3 +137,28 @@ export function panBy(camera: Camera3d, dx: number, dy: number, paneHeight: numb
   const shift = add(scale(right, -dx * perPixel), scale(up, dy * perPixel));
   return { ...camera, target: add(camera.target, shift) };
 }
+
+/**
+ * `dollyBy` about a point on the pane rather than its middle: the point in the
+ * target's screen-facing plane under `at` — CSS pixels from the pane's
+ * top-left, in a pane of `pane` size — stays under it, as a 2D camera's wheel
+ * zoom keeps the point under the pointer. The target slides toward that point
+ * by as much as the distance shrank, so the next turn pivots nearer it.
+ */
+export function dollyToward(
+  camera: Camera3d,
+  factor: number,
+  at: { x: number; y: number },
+  pane: { width: number; height: number },
+  limits?: Partial<OrbitLimits>,
+): Camera3d {
+  const dollied = dollyBy(camera, factor, limits);
+  const kept = 1 - dollied.distance / camera.distance;
+  const moved = panBy(
+    camera,
+    -kept * (at.x - pane.width / 2),
+    -kept * (at.y - pane.height / 2),
+    pane.height,
+  );
+  return { ...dollied, target: moved.target };
+}

@@ -10,7 +10,7 @@
 
 import { useMemo } from 'react';
 import { defineTool, type Action, type InvocationCtx, type Tool } from '@weasel-js/core';
-import { dollyBy, orbitBy, panBy, type Camera3d } from './camera';
+import { dollyToward, orbitBy, panBy, type Camera3d } from './camera';
 import type { Camera3dDep } from './cameraDep';
 
 /** Radians per CSS pixel of drag. A full pane width is a bit over half a turn. */
@@ -85,11 +85,25 @@ export const panAction: Action = {
   },
 };
 
-/** `camera.dolly`: moves the `camera3d` dep toward or away from its target.
- *  A wheel's `deltaY`, and a trackpad pinch delivered as ctrl+wheel, dolly by
- *  `exp(deltaY × rate)` — one rate for both, as a 2D camera zooms by both.
- *  Safari's pinch arrives as a `scale` and divides the distance by it. Bound
- *  to all three by default, in every tool. */
+/** Where on the pane a dolly anchors: the canvas-local point the event
+ *  carries, or the middle when it carries none. */
+function anchorOf(
+  params: Record<string, unknown> | undefined,
+  pane: { width: number; height: number },
+): { x: number; y: number } {
+  const x = params?.clientX;
+  const y = params?.clientY;
+  return typeof x === 'number' && typeof y === 'number'
+    ? { x, y }
+    : { x: pane.width / 2, y: pane.height / 2 };
+}
+
+/** `camera.dolly`: moves the `camera3d` dep in or out about the point under
+ *  the pointer, as a 2D camera's wheel zooms about it. A wheel's `deltaY`, and
+ *  a trackpad pinch delivered as ctrl+wheel, dolly by `exp(deltaY × rate)` —
+ *  one rate for both, as a 2D camera zooms by both. Safari's pinch arrives as
+ *  a `scale` and divides the distance by it. Bound to all three by default, in
+ *  every tool. */
 export const dollyAction: Action = {
   id: 'camera.dolly',
   label: 'Dolly',
@@ -113,13 +127,14 @@ export const dollyAction: Action = {
             * (deps.kitSettings?.get('orbit3d.dollyRate') ?? DOLLY_RATE),
         );
       if (!(factor > 0) || !Number.isFinite(factor)) return;
-      dep.set(dollyBy(dep.get(), factor, dep.limits?.()));
+      const pane = dep.size();
+      dep.set(dollyToward(dep.get(), factor, anchorOf(params, pane), pane, dep.limits?.()));
     },
   },
 };
 
 /** `camera.pinchDolly`: two fingers spreading dolly the `camera3d` dep in and
- *  closing dolly it out, by the ratio of their spread. */
+ *  closing dolly it out, by the ratio of their spread, about where they began. */
 export const pinchDollyAction: Action = {
   id: 'camera.pinchDolly',
   label: 'Pinch Dolly',
@@ -132,12 +147,15 @@ export const pinchDollyAction: Action = {
       const dep = ctx.deps.camera3d;
       const origin: Camera3d | undefined = dep?.get();
       const startSpread = ctx.multiTouch?.spread ?? 0;
+      const at = ctx.multiTouch?.centroid;
       return {
         kind: 'pinch',
         onMove(move) {
           const spread = move.multiTouch?.pinch?.currentSpread ?? 0;
           if (!dep || !origin || !(startSpread > 0) || !(spread > 0)) return;
-          dep.set(dollyBy(origin, startSpread / spread, dep.limits?.()));
+          const pane = dep.size();
+          const anchor = at ?? { x: pane.width / 2, y: pane.height / 2 };
+          dep.set(dollyToward(origin, startSpread / spread, anchor, pane, dep.limits?.()));
         },
       };
     },

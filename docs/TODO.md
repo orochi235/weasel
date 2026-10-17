@@ -764,18 +764,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   Patch page. blits works around it with `color: var(--wzl-fg)` on the provider's wrapper (blits
   `ccda71e`, `site/src/styles/site.css`). The panel root should set `color` itself.
 
-- **(P3) An orbit dollies toward its target; a 2D camera zooms about the pointer.** The wheel over
-  a 2D trial keeps the point under the pointer still, and over an orbit trial it moves straight
-  in. Dollying toward the pointer means moving the target along the pick ray as the distance
-  shrinks (three.js's `zoomToCursor`), which changes what the next drag turns about — a design
-  call, not a fix.
-
-- **(P3) An orbit can't give away the press and keep the trackpad pinch.** An instrument running
-  its own dispatcher over the viewport sets `gestures: { drag: false, home: false, pinch: false }`
-  (`examples/3d-lab`), because `pinch` covers two fingers too and those are pointers. That also
-  drops ctrl+wheel and Safari's pinch, which never touch the pointer channel. Splitting `pinch`
-  into the trackpad's and the touch screen's would keep them.
-
 - **(P3) The asset editor's preview of the menu bar shows fewer rows than the app.**
   `RegistryProbe` mounts `<SceneCanvas features={['draw']}>` with no `ambient` and no
   `useFileCommands`, so `file.*` and the app's `view.*` toggles are never registered and File, and
