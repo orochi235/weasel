@@ -95,6 +95,13 @@ move as one undo entry. Three rules keep a re-layout from scrambling a diagram
 someone has arranged: no RNG anywhere, within-rank order seeded from where the
 nodes already sit, and a node carrying `pinned: true` that nothing moves.
 
+The first pinned node anchors the layout. Under `layered`, every other pin
+keeps its place across its rank, with the rest of the rank pushed clear of it,
+and the gap on the first pin's side of its rank stretches or shrinks to reach
+it. A pin that would shrink a gap below a quarter of `rankGap`, or that has too
+little room beside another pin in its rank, stays put without the layout being
+built around it; `layeredPlan` names it in `unheld`.
+
 `force` is the exception to the second half of that: it is an iterative
 relaxation seeded from the current positions, so re-running it keeps relaxing.
 
@@ -200,8 +207,8 @@ Under `layered`, an edge that names neither leaves its source by the face
 toward the next rank and arrives at its target's face toward the last; an edge
 running back up the ranks does the same the other way round. One that spans
 ranks runs through the room `layeredPlan` left for it in each rank it crosses,
-so it goes around what lies between its ends — unless an end is pinned away
-from where its rank would put it, when it takes the router's own path. An
+so it goes around what lies between its ends — unless an end is a pin
+`layeredPlan` could not hold (`unheld`), when it takes the router's own path. An
 author's own ports and waypoints win. A label's `offset` is the gap between the
 route and the label's near side. A label whose edge sets no `labelPlacement`
 of its own, or one at `'mid'`, sits in the room layout left it, placed with

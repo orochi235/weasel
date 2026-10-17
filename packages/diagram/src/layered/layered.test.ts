@@ -162,8 +162,39 @@ function routed(graph: Graph, plan: LayeredPlan): Graph {
 const overlap = (a: GraphNode['bounds'], b: GraphNode['bounds']) =>
   a.x < b.x + b.width - 1e-6 && b.x < a.x + a.width - 1e-6 && a.y < b.y + b.height - 1e-6 && b.y < a.y + a.height - 1e-6;
 
+/** Whether the segment from `a` to `b`, axis-aligned or not, enters `box`. */
+function segmentHits(a: { x: number; y: number }, b: { x: number; y: number }, box: GraphNode['bounds']): boolean {
+  let lo = 0;
+  let hi = 1;
+  for (const [p, d, min, max] of [[a.x, b.x - a.x, box.x, box.x + box.width], [a.y, b.y - a.y, box.y, box.y + box.height]] as const) {
+    if (Math.abs(d) < 1e-9) {
+      if (p <= min + 1e-6 || p >= max - 1e-6) return false;
+      continue;
+    }
+    const t0 = (min - p) / d;
+    const t1 = (max - p) / d;
+    lo = Math.max(lo, Math.min(t0, t1));
+    hi = Math.min(hi, Math.max(t0, t1));
+  }
+  return hi - lo > 1e-6;
+}
+
 const SEEDS = Array.from({ length: 40 }, (_, i) => i + 1);
 const MODES: LayoutOptions[] = [{ order: 'seeded' }, { order: 'barycenter' }, { order: 'barycenter', direction: 'right' }];
+const DIRECTIONS = ['down', 'right', 'up', 'left'] as const;
+
+/** Seed `seed`'s graph laid out, then with `n0` and one other node pinned
+ *  and that other one dragged up to 150 either way along each axis. */
+function draggedPin(seed: number, opts: LayoutOptions, grouped = false): { dragged: Graph; pins: string[] } {
+  const rand = lcg(seed * 7919);
+  const graph = generated(seed, grouped);
+  const laid = routed(graph, layeredPlan(graph, opts));
+  const ids = laid.nodes.map((n) => n.id);
+  const pins = ['n0', ids[2 + Math.floor(rand() * (ids.length - 2))]!];
+  const from = laid.node(pins[1]!)!.bounds;
+  const dragged = after(laid, new Map([[pins[1]!, { x: from.x + (rand() - 0.5) * 300, y: from.y + (rand() - 0.5) * 300 }]]));
+  return { dragged, pins };
+}
 
 describe('layered, over generated graphs', () => {
   it.each(SEEDS)('seed %i: no two nodes overlap, and nothing enters a group\'s box', (seed) => {
@@ -211,6 +242,32 @@ describe('layered, over generated graphs', () => {
     expect(result.has('n2')).toBe(false);
   });
 
+  it.each(SEEDS)('seed %i: with a second pin dragged, a re-run builds around both pins and then moves nothing', (seed) => {
+    for (const direction of DIRECTIONS) {
+      for (const grouped of [false, true]) {
+        const { dragged, pins } = draggedPin(seed, { direction }, grouped);
+        const plan = layeredPlan(dragged, { direction, pin: pins });
+        if (plan.unheld.size > 0) continue;
+        const next = routed(dragged, plan);
+        expectClearOf(next, pins);
+        expect(layeredPlan(next, { direction, pin: pins }).moves.size, `${direction}${grouped ? ', grouped' : ''}`).toBe(0);
+      }
+    }
+  });
+
+  it('holds most dragged pins, and says which it cannot', () => {
+    let held = 0;
+    for (const seed of SEEDS) {
+      for (const direction of DIRECTIONS) {
+        const { dragged, pins } = draggedPin(seed, { direction });
+        const { unheld } = layeredPlan(dragged, { direction, pin: pins });
+        expect([...unheld].every((id) => id === pins[1])).toBe(true);
+        if (unheld.size === 0) held++;
+      }
+    }
+    expect(held).toBeGreaterThanOrEqual(122);
+  });
+
   it.each(SEEDS)('seed %i: every forward edge spanning ranks has two waypoints per rank it crosses', (seed) => {
     const graph = generated(seed, false);
     const plan = layeredPlan(graph, { order: 'barycenter' });
@@ -220,3 +277,63 @@ describe('layered, over generated graphs', () => {
     }
   });
 });
+
+describe('layered, with two pins', () => {
+  /** a → b → c, with a long edge a → c beside b, laid out down, and c then
+   *  moved by `dy` and pinned with a. */
+  function chain(dy: number): { graph: Graph; plan: LayeredPlan } {
+    const box = (x: number, y: number) => ({ x, y, width: 80, height: 30 });
+    const nodes: GraphNode[] = [
+      { id: 'a', bounds: box(0, 0), pinned: true },
+      { id: 'b', bounds: box(0, 126), pinned: false },
+      { id: 'c', bounds: box(0, 252 + dy), pinned: true },
+    ];
+    const edges = [
+      { id: 'ab', from: 'a', to: 'b' },
+      { id: 'bc', from: 'b', to: 'c' },
+      { id: 'ac', from: 'a', to: 'c' },
+    ];
+    const byId = new Map(nodes.map((n) => [n.id, n]));
+    const graph: Graph = {
+      nodes,
+      edges,
+      node: (id) => byId.get(id),
+      outgoing: (id) => edges.filter((e) => e.from === id),
+      incoming: (id) => edges.filter((e) => e.to === id),
+    };
+    return { graph, plan: layeredPlan(graph) };
+  }
+
+  it('stretches the gap before a pin moved away from the first, keeping its rank clear of the one before', () => {
+    const { graph, plan } = chain(200);
+    expect(plan.unheld.size).toBe(0);
+    const b = after(graph, plan.moves).node('b')!.bounds;
+    expect(b.y + b.height).toBeLessThan(452);
+    expect(plan.waypoints.get('ac')!.every((p) => p.y < 452)).toBe(true);
+  });
+
+  it('shrinks the gap before a pin moved toward the first', () => {
+    const { plan } = chain(-50);
+    expect(plan.unheld.size).toBe(0);
+    expect(plan.waypoints.get('ac')!.every((p) => p.y < 202)).toBe(true);
+  });
+
+  it('cannot hold a pin that would shrink a gap below a quarter of rankGap, and says so', () => {
+    expect([...chain(-100).plan.unheld]).toEqual(['c']);
+  });
+});
+
+/** No node on any pin in `graph`, and no route through one it does not join. */
+function expectClearOf(graph: Graph, pins: readonly string[]): void {
+  for (const pin of pins) {
+    const box = graph.node(pin)!.bounds;
+    for (const n of graph.nodes) if (n.id !== pin) expect(overlap(n.bounds, box), `${n.id} on ${pin}`).toBe(false);
+    for (const e of graph.edges) {
+      if (e.from === pin || e.to === pin) continue;
+      const route = e.waypoints ?? [];
+      for (let i = 1; i < route.length; i++) {
+        expect(segmentHits(route[i - 1]!, route[i]!, box), `${e.id} through ${pin}`).toBe(false);
+      }
+    }
+  }
+}
