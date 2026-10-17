@@ -1479,6 +1479,10 @@ only story runner in the repo.
     545.6 ms against its 500 ms budget** in a fleet run of `menus-draw` (`f5fb7d108`, 2026-10-17),
     which changed nothing in Keycaps, while another job's tests ran on the same node. A wall-clock
     budget in the suite fails whenever the node is shared.
+  - **`site/demos/__tests__/ScoreDemo.browser.test.tsx` ("a playing score shows the bar in force…")
+    read the next bar's cue where it expected the current one** in a fleet run of `menus-draw`
+    (`09bbde42a`, 2026-10-17), which changed nothing in the site or audio. The check right after
+    the click assumes no bar line passes in between, and the score runs on a real clock.
   - `forge/src/vite/plugin.test.ts` has its own entry under "Demos & visual regression".
 
 - **(P2) HUD vs DOM text: what the idle rerun left open.** `tests/perf/hud-vs-dom.spec.ts` prices
