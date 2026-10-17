@@ -22,7 +22,7 @@ Tag: `path-drag`
 | Operation | Action id | What the drag does | Default binding | Status | Package |
 |---|---|---|---|---|---|
 | Edit anchors | `editAnchors` | Moves anchors and handles | Drag on an anchor or handle | main | core |
-| Bend segment | `bendSegment` | Reshapes a segment by its middle | Drag on a segment | main | core |
+| Bend segment | `bendSegment` | Reshapes a segment by its middle; on a spiro curve, with `spiroPreset` on, adds a smooth point there and drags it | Drag on a segment | main | core |
 | Marquee-select anchors | `marqueeAnchors` | Selects anchors in a box | Drag on empty canvas | main | core |
 | Handle locks | `handleLock.angle`, `handleLock.length` | Hold a handle's angle or length during a drag | Toggles; Mod while dragging holds length | main | path-tools |
 | Balance handles | `balanceHandles` | Scales a segment's two handles together from a grip on its balance line; a length lock holds it still | Drag a balance grip, shown under `path-edit.balance` | main | path-tools |
@@ -99,6 +99,8 @@ Tag: `path-command`
 | Repeat along a path | `repeatAlong` | Live copies placed along a path | — | main | path-tools |
 | Expand warp | `expandWarp` | Drops a held distort, envelope, or puppet warp, keeping its geometry | — | main | path-tools |
 | Warp settings | `configureWarp` | Remakes a held warp with new settings | — | main | path-tools |
+| Spiro point kind | `setSpiroKind` | Makes the selected spiro points smooth, corner, or tangent to a line on either side, and solves the curve again | — | main | path-tools |
+| Convert spiro to path | `releaseSpiro` | Drops a spiro curve's points, keeping the curve as an ordinary path | — | main | path-tools |
 
 ## Gestures shared today
 

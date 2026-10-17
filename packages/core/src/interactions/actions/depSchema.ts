@@ -147,8 +147,15 @@ export type InsertExtras =
   | { kind: 'pencil'; samples: ReadonlyArray<DragSample> }
   | { kind: 'text'; text?: string }
   /** A finished path in world coords, as the pen tool commits one. `bounds`
-   *  is its AABB. An open path takes no fill. */
-  | { kind: 'path'; path: import('@weasel-js/geom').PolygonPath; closed: boolean }
+   *  is its AABB. An open path takes no fill. `data` is laid under the path
+   *  and paint on the node's data: the form the path was drawn from
+   *  (`data.representation`), say. */
+  | {
+      kind: 'path';
+      path: import('@weasel-js/geom').PolygonPath;
+      closed: boolean;
+      data?: Readonly<Record<string, unknown>>;
+    }
   | {
       kind: 'image';
       src?: string;

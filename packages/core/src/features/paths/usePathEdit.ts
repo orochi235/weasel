@@ -7,7 +7,7 @@ import type { PathEditHost, PathEditOpening } from 'canvas/SceneCanvas/pathEditH
 import type { RenderLayer } from 'core/layers/render';
 import { rectFromPlane, type PlaneMap } from 'core/viewport/parallax';
 import type { View } from 'core/viewport/view';
-import { liveEditablePath, type EditableShape } from './editablePath';
+import { liveAnchorMarkers, liveEditablePath, type EditableShape } from './editablePath';
 import { createPathEditingOverlayLayer } from './pathEditingOverlayLayer';
 import type { PathEditingOverlaySlotConfig } from 'canvas/layerSlots';
 import { createPathEditState, type PathEditState } from './pathEditState';
@@ -67,7 +67,8 @@ export function usePathEditOverlayLayer(
     ...createPathEditingOverlayLayer({
       getEditingId: () => state.getEditingId() || null,
       getPose: (id, previews, view) =>
-        liveEditablePath(id, live.current.nodeOf(id), previews, live.current.planeOfNode(id, view)),
+        liveEditablePath(id, live.current.nodeOf(id), previews, live.current.planeOfNode(id, view), state.getExtensions()),
+      getAnchorMarkers: (id, previews) => liveAnchorMarkers(id, live.current.nodeOf(id), previews, state.getExtensions()),
       getSelectedAnchors: state.getSelectedAnchors,
       getSelectedMark: state.getSelectedMark,
       getExtensions: state.getExtensions,

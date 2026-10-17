@@ -6,6 +6,7 @@ import type { DrawCommand } from '@weasel-js/renderer';
 import {
   circlePath, linePath, pathToAnchors, resolveCorners, squarePath, type PenAnchor, type PolygonPath, type View,
 } from '@weasel-js/geom';
+import type { AnchorMarkerShape } from './pathRepresentation';
 
 /** Appearance of the outline and of the anchor and handle markers. */
 export interface PathEditingOverlayStyle {
@@ -78,6 +79,14 @@ function crowded(sub: readonly Point[], closed: boolean, i: number, px: number):
   return near(i - 1) || near(i + 1);
 }
 
+/** The on-screen neighbors of `sub[i]` along its subpath, null past an open end. */
+function neighbors(sub: readonly Point[], closed: boolean, i: number): [Point | null, Point | null] {
+  const n = sub.length;
+  const prev = i > 0 || closed ? sub[(i - 1 + n) % n] : null;
+  const next = i < n - 1 || closed ? sub[(i + 1) % n] : null;
+  return [prev, next];
+}
+
 function handleCommands(a: Point, handle: Point, style: Required<PathEditingOverlayStyle>): DrawCommand[] {
   return [
     { kind: 'path', path: linePath(a, handle), stroke: { paint: { kind: 'solid', color: style.handleStroke }, width: 1 } },
@@ -91,15 +100,17 @@ function handleCommands(a: Point, handle: Point, style: Required<PathEditingOver
 
 /**
  * The open path's outline, then its anchors in walk order — each anchor's
- * handles under its marker. A selected anchor is a filled square, an
- * unselected one a hollow square, or a dot where its neighbors crowd it.
- * Flat indices count the way `enumerateAnchors` does, as the selection does.
+ * handles under its marker. A selected anchor's marker is filled, an
+ * unselected one's hollow, or a dot where its neighbors crowd it. The marker
+ * is a square, or the shape `markers` gives the anchor's flat index. Flat
+ * indices count the way `enumerateAnchors` does, as the selection does.
  */
 export function anchorMarkerCommands(
   path: PolygonPath,
   view: View,
   selected: ReadonlySet<number>,
   style: Required<PathEditingOverlayStyle>,
+  markers: readonly (AnchorMarkerShape | null)[] | null = null,
 ): DrawCommand[] {
   const out: DrawCommand[] = [{
     kind: 'path',
@@ -110,7 +121,9 @@ export function anchorMarkerCommands(
   let flat = 0;
   anchors.forEach((sub: PenAnchor[], s) => {
     const screen = sub.map((a) => worldToScreen(a, view));
+    const isClosed = closed[s];
     sub.forEach((a, i) => {
+      const shape = markers?.[flat] ?? null;
       const isSelected = selected.has(flat++);
       const at = screen[i];
       if (a.inHandle) out.push(...handleCommands(at, worldToScreen(a.inHandle, view), style));
@@ -125,7 +138,7 @@ export function anchorMarkerCommands(
       }
       out.push({
         kind: 'path',
-        path: squarePath(at.x, at.y, style.anchorSizePx),
+        path: shape ? shape(at, style.anchorSizePx, ...neighbors(screen, isClosed, i)) : squarePath(at.x, at.y, style.anchorSizePx),
         fill: { paint: { kind: 'solid', color: isSelected ? style.anchorFillSelected : style.anchorFill } },
         stroke: { paint: { kind: 'solid', color: style.anchorStroke }, width: 1 },
       });

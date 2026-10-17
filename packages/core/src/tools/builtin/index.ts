@@ -50,6 +50,7 @@ export {
 } from './pen';
 export { useRectTool } from './rect';
 export type { InsertToolOptions } from './shared/insertToolOptions';
+export { createPointerFollower, type PointerFollower } from './shared/pointerFollower';
 export { useEllipseTool } from './ellipse';
 export { useImageTool, type UseImageToolOptions } from './image';
 export {

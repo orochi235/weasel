@@ -34,6 +34,7 @@ import {
 } from './pathEffects/actions';
 import { simplifyBrushAction, simplifyBrushToolAction } from './simplifyBrush/simplifyBrush';
 import { smudgeBrushAction } from './smudge/smudgeBrush';
+import { spiroPreset } from './spiro/spiroPreset';
 import { trimPathAction } from './trim/trimSegment';
 import { configureWarpAction, expandWarpAction } from './warp/warpActions';
 
@@ -215,14 +216,14 @@ export const warpPreset: FeaturePreset = {
   actions: [expandWarpAction, configureWarpAction],
 };
 
-/** Every preset above, the comb, balance, constraints, path direction, and
- *  corner shape with their defaults — except soft selection and handle
- *  snapping, which change what every anchor or handle drag does. */
+/** Every preset above, spiro curves, the comb, balance, constraints, path
+ *  direction, and corner shape with their defaults — except soft selection and
+ *  handle snapping, which change what every anchor or handle drag does. */
 export const pathTools: FeaturePreset = {
   id: 'pathTools',
   includes: [
-    simplifyBrushPreset, handleLocksPreset, bridgePreset, trimPreset, extendPreset, lengthenPreset, smudgePreset,
-    harmonizePreset, anchorSelectionPreset, resamplePreset, addExtremesPreset,
+    simplifyBrushPreset, handleLocksPreset, bridgePreset, spiroPreset, trimPreset, extendPreset, lengthenPreset,
+    smudgePreset, harmonizePreset, anchorSelectionPreset, resamplePreset, addExtremesPreset,
     curvatureCombPreset, balancePreset, constraintsPreset, pathStructurePreset, segmentTypePreset,
     cornerShapePreset, pathEffectsPreset, warpPreset,
   ],

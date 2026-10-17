@@ -24,6 +24,10 @@ export interface AnchorState {
   /** The active path-edit tool, if any. While one is set, anchors and controls
    *  carry no cursor of their own, so the tool's action shows its own. */
   tool?: string | null;
+  /** The path whose outline counts as a segment press, when it is not
+   *  `getPose`'s: a path drawn from a form, edited through the form's edit
+   *  path. */
+  getOutline?(id: string): unknown;
 }
 
 /** Options for the path-anchor affordances. */
@@ -163,10 +167,11 @@ export function createPathAnchorAffordances(
       if (editingId === null) return [];
       const edited = editablePaths(state).find(({ id }) => id === editingId);
       if (!edited) return [];
+      const outline = getAnchorState()?.getOutline?.(editingId) as PolygonPath | null | undefined;
       return [{
         id: `${editingId}:segment`,
         targetId: null,
-        shape: { kind: 'outline', path: edited.path, hitRadiusPx: hitRadius },
+        shape: { kind: 'outline', path: outline?.kind === 'polygon' ? outline : edited.path, hitRadiusPx: hitRadius },
         hitKind: 'segment',
         bind: (): AffordanceBinding => ({ initialScratch: { targetId: editingId } }),
       }];

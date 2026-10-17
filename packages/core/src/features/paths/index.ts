@@ -201,6 +201,7 @@ export {
   type PathEditStore,
   type PathEditTarget,
 } from './pathEditExtension';
+export type { AnchorMarkerShape, PathForm, PathRepresentation } from './pathRepresentation';
 export {
   pathUnion,
   pathIntersect,

@@ -962,6 +962,16 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/SimplifyBrushLabDemo.tsx',
   },
   {
+    id: 'lab-spiro',
+    title: 'Spiro curves',
+    category: 'Geometry',
+    description:
+      "A curve drawn by its on-curve points alone. Between each pair of points runs a piece of an Euler spiral, whose curvature changes evenly along it, and `solveSpiro` solves the pieces together so tangent and curvature carry straight through every smooth point. A corner lets the two sides turn independently; a point marked as following a line continues the straight segment arriving at it, and one marked as leading into a line runs the curve into the straight segment leaving it. The node stores the solved curve as ordinary cubics in `data.path`, split wherever one cubic would stray, and a spiro form on `data.representation` records which anchors are the points. With `spiroPreset` on, path edit edits those points through a straight-sided control path and solves the curve again on every move, so the drag shows the finished curve; `useSpiroTool` draws new ones. The bar over the canvas sets the kind of the selected points, or converts the curve to a path whose anchors and handles are its own.",
+    hint: 'The wave opens in path edit: drag one of its points and watch the whole curve re-solve, or drag the curve between two points to add one there. Circles are smooth points, squares corners, half-discs the points beside a straight segment. Select points and press a kind in the bar, or Convert to path. Pick Spiro (<kbd>Shift+P</kbd>) to draw one: click to place points of the kind set under New point kind, <kbd>Alt</kbd>-click for a corner, click the first point to close, <kbd>Enter</kbd> or double-click to finish open, <kbd>Backspace</kbd> takes back a point, <kbd>Esc</kbd> discards.',
+    load: () => import('./demos/SpiroLabDemo').then((m) => m.SpiroLabDemo),
+    path: 'apps/site/demos/SpiroLabDemo.tsx',
+  },
+  {
     id: 'lab-bridge',
     title: 'Bridge',
     category: 'Geometry',
@@ -1100,7 +1110,7 @@ const DEMO_META: DemoMeta[] = [
     id: 'curve-lab',
     title: 'Curve representations lab',
     package: 'geom',
-    description: 'The same anchor set rendered as cubic Bezier, quadratic Bezier, NURBS, and Spiro (κ-curves v1) side by side. Toggle the curvature comb, inflection marks, and anchor / control chrome to see where the representations diverge. Five seeded presets; pen-tool authoring is v1.1.',
+    description: 'The same anchor set rendered as cubic Bezier, quadratic Bezier, NURBS, and Spiro (κ-curves) side by side. Toggle the curvature comb, inflection marks, and anchor / control chrome to see where the representations diverge. Five seeded presets; pen-tool authoring is v1.1.',
     hint: 'Switch presets to see the differences; toggle overlays for analysis.',
     load: () => import('./demos/CurveLabDemo').then((m) => m.CurveLabDemo),
     path: 'apps/site/demos/CurveLabDemo.tsx',

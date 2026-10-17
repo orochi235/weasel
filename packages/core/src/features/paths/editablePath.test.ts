@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { polygonFromPoints, rectPath, type PolygonPath } from '@weasel-js/geom';
 import type { GesturePreviewSource } from 'canvas/gestureBounds';
-import { classifyPathStorage, liveEditablePath, resolveEditablePathOf, storeEditablePath } from './editablePath';
+import {
+  classifyPathStorage, liveAnchorMarkers, liveEditablePath, pathEditPathOf, resolveEditablePathOf, storeEditablePath,
+} from './editablePath';
+import type { PathEditExtension } from './pathEditExtension';
 
 /** A triangle filling a 10x10 box, with its apex at `apexX` along the bottom edge. */
 const tri = (apexX = 10): PolygonPath =>
@@ -94,5 +97,39 @@ describe('a rectangle path', () => {
   it('is left a rect by reading it', () => {
     resolveEditablePathOf(node);
     expect(node.data.path.kind).toBe('rect');
+  });
+});
+
+describe('a path drawn from a form', () => {
+  // A form whose edit path is the drawn triangle's apex alone, and which draws an edit as the
+  // triangle with its apex there.
+  const apex = (path: PolygonPath) => polygonFromPoints([{ x: path.coords[4], y: path.coords[5] }]) as PolygonPath;
+  const marker = () => tri();
+  const extensions: PathEditExtension[] = [{
+    id: 'apex',
+    representation: {
+      kind: 'apex',
+      editPath: (path, form) => (form.valid ? apex(path) : null),
+      store: (_path, form, edited) => (form.valid ? { path: tri(edited.coords[0]), form: { ...form, edits: 1 } } : null),
+      anchorMarkers: () => [marker],
+    },
+  }];
+  const node = { pose: tri(), data: { representation: { kind: 'apex', valid: true }, tag: 1 } };
+
+  it('is edited through the form, by the representation that reads it', () => {
+    expect(coords(pathEditPathOf(node, extensions))).toEqual([10, 10]);
+    const stored = storeEditablePath(node, apex(tri(4)), extensions)!;
+    expect(coords(stored.pose as PolygonPath)).toEqual(coords(tri(4)));
+    expect(stored.data).toEqual({ representation: { kind: 'apex', valid: true, edits: 1 }, tag: 1 });
+    expect(liveAnchorMarkers('a', node, [], extensions)).toEqual([marker]);
+  });
+
+  it('is edited as drawn, and loses the form, where no representation reads it or it no longer holds', () => {
+    expect(pathEditPathOf(node)).toBe(node.pose);
+    expect(storeEditablePath(node, tri(4))).toEqual({ pose: tri(4), data: { tag: 1 } });
+    const stale = { ...node, data: { representation: { kind: 'apex', valid: false } } };
+    expect(pathEditPathOf(stale, extensions)).toBe(stale.pose);
+    expect(storeEditablePath(stale, tri(4), extensions)).toEqual({ pose: tri(4), data: {} });
+    expect(liveAnchorMarkers('a', node, [], [])).toBeNull();
   });
 });

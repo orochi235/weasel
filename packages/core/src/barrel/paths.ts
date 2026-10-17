@@ -158,6 +158,9 @@ export type {
   PathEditPart,
   PathEditStore,
   PathEditTarget,
+  AnchorMarkerShape,
+  PathForm,
+  PathRepresentation,
   PathInWorldPose,
   PathStation,
   PointAlongPathOptions,
@@ -241,7 +244,7 @@ export { pathEditPreview } from '../interactions/actions/edit-anchors/preview';
 export { editedPathSymmetries } from '../interactions/actions/edit-anchors/symmetry';
 export { locksInForce } from '../interactions/actions/edit-anchors/handleDrag';
 export {
-  classifyPathStorage, resolveEditablePathOf, storeEditablePath, type EditableShape,
+  classifyPathStorage, pathEditPathOf, resolveEditablePathOf, storeEditablePath, type EditableShape,
 } from '../features/paths/editablePath';
 export { nodeOutline } from '../features/paths/strokeOutline';
 export { DEFAULT_OVERLAY_STYLE } from '../features/paths/anchorMarkers';

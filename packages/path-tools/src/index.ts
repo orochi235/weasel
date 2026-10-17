@@ -101,6 +101,9 @@ export {
   type UseGirthToolOptions, type WidthEdgeHit, type GirthEnv, type GirthFocus, type WidthGrip, type WidthTarget,
 } from './girth';
 
+// ─── Spiro curves ──────────────────────────────────────────────────────────
+export * from './spiro';
+
 // ─── Path-edit chrome ──────────────────────────────────────────────────────
 export { combCommands, createCombExtension, PATH_COMB_CHROME_ID, type PathEditCombOptions } from './comb/comb';
 export {

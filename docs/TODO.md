@@ -381,11 +381,15 @@ Priority tags:
   a drag and an Alt-drag clone measure on screen. So inside a group drawn turned, Cmd+D after a
   drag steps in a different direction from the drag. Recording the move in world space and
   mapping it through each node's parent on replay would make the two agree.
-- **(P3) Some path commands have no icons.** `resamplePath`, the anchor selection commands and
-  draw's own `view.pathDirection` toggle show as text in draw's bar. The warp labs' tool lists
-  borrow `ui:fitStretch`, `ui:grid` and `ui:pin` rather than the warp tools' own glyphs.
-  `core:retractHandles`, `core:symmetricHandles`, `core:simplifyBrush` and `core:harmonize`
-  (`packages/core/icons/anchor.mjs`) are first drafts, not proofed at high resolution.
+- **(P3) Some path commands have no icons.** `resamplePath`, the anchor selection commands,
+  `setSpiroKind`, `releaseSpiro` and draw's own `view.pathDirection` toggle show as text in draw's
+  bar. The warp labs' tool lists borrow `ui:fitStretch`, `ui:grid` and `ui:pin` rather than the
+  warp tools' own glyphs. `core:retractHandles`, `core:symmetricHandles`, `core:simplifyBrush` and
+  `core:harmonize` (`packages/core/icons/anchor.mjs`) and `path-tools:spiro`
+  (`packages/path-tools/icons/tools.mjs`) are first drafts, not proofed at high resolution.
+- **(P3) Spiro curves solve G2 points only.** `solveSpiro` keeps curvature continuous at a smooth
+  point (G2). A point that also keeps its rate of change continuous (G4, a cubic-curvature segment
+  either side) needs a second segment type in `eulerSpiral.ts` and two more equations per point.
 - **(P2) Puppet warp bends by straight-line distance, not through the shape.** `rigidPuppetMap`
   (`packages/geom/src/warp/puppet.ts`) weights each pin by its distance across the plane, so two
   limbs that nearly touch move together when a pin on one is dragged. As-rigid-as-possible over

@@ -16,6 +16,7 @@ import {
   anchorMarkerCommands, DEFAULT_OVERLAY_STYLE, worldToScreen, type PathEditingOverlayStyle,
 } from './anchorMarkers';
 import type { PathEditExtension, PathEditMark } from './pathEditExtension';
+import type { AnchorMarkerShape } from './pathRepresentation';
 
 export type { PathEditingOverlayStyle } from './anchorMarkers';
 
@@ -37,6 +38,11 @@ export interface CreatePathEditingOverlayLayerOptions {
    * layer is a parallax plane stores its path in the plane's.
    */
   getPose(id: string, previews: readonly GesturePreviewSource[], view: View): Path | null;
+  /** The marker of each anchor, by flat index, for a node whose path was
+   *  drawn from a form (`PathRepresentation.anchorMarkers`); null, or an
+   *  anchor with none, draws a square. Resolve against `previews` as
+   *  `getPose` does. */
+  getAnchorMarkers?(id: string, previews: readonly GesturePreviewSource[]): readonly (AnchorMarkerShape | null)[] | null;
   /** Flat indices of the selected anchors. Selected anchors render
    *  filled; unselected ones hollow. */
   getSelectedAnchors?(): ReadonlySet<number>;
@@ -76,8 +82,10 @@ export function createPathEditingOverlayLayer(
       // the chrome still gets grabbable invisible anchors, or vice versa.
       const isVisible = isVisibleFrom(data);
       if (isVisible && !isVisible('path-edit.anchors')) return [];
-      const pose = opts.getPose(id, previewSourcesFrom(data), view);
+      const previews = previewSourcesFrom(data);
+      const pose = opts.getPose(id, previews, view);
       if (!pose || pose.kind !== 'polygon') return [];
+      const markers = opts.getAnchorMarkers?.(id, previews) ?? null;
 
       const selected = opts.getSelectedAnchors?.() ?? EMPTY_SELECTION;
       // Extensions' marks under the markers, which are what a press reaches first.
@@ -96,7 +104,7 @@ export function createPathEditingOverlayLayer(
           }));
         }
       }
-      out.push(...anchorMarkerCommands(pose as PolygonPath, view, selected, style));
+      out.push(...anchorMarkerCommands(pose as PolygonPath, view, selected, style, markers));
 
       // Marquee rubber band, on top of everything.
       const marquee = opts.getMarquee?.(view);

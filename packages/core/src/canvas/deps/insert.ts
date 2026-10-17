@@ -106,8 +106,8 @@ function boxKindData(
     case 'ellipse':
       return { path: ellipsePath(bounds), ...painted() };
     case 'path': {
-      const e = extras as { path: PolygonPath; closed: boolean };
-      return { path: e.path, ...painted(), ...(e.closed ? {} : { fill: null }) };
+      const e = extras as { path: PolygonPath; closed: boolean; data?: Readonly<Record<string, unknown>> };
+      return { ...e.data, path: e.path, ...painted(), ...(e.closed ? {} : { fill: null }) };
     }
     case 'text': {
       // The built-in text tool drags an empty text box you then type into, so

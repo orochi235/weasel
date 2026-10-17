@@ -20,10 +20,15 @@ export interface EditAnchorsDep {
    *  string) to exit. */
   setEditingId(id: string | null): void;
   /** Returns the COMMITTED editable polygon in world coordinates, or
-   *  null if this node has no editable polygon. Does NOT consult in-
+   *  null if this node has no editable polygon. For a node whose path was
+   *  drawn from a form a `PathRepresentation` reads, it is that form's edit
+   *  path, which `applyEdit` turns back into the drawn path. Does NOT consult in-
    *  flight previews — callers that need live state read the dispatcher's
    *  in-flight handles. */
   getEditablePath(id: string): unknown;
+  /** The drawn geometry, in world coordinates, whose outline is a segment press, where it
+   *  differs from `getEditablePath`'s: a path drawn from a form. Absent, `getEditablePath`'s. */
+  getOutlinePath?(id: string): unknown;
   /** Returns where the polygon is stored — `'pose'` when `node.pose`
    *  IS the polygon, `'data'` when it lives on `node.data.path` with a
    *  rect pose, or `null` when the node has no editable polygon. */

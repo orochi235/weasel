@@ -1,15 +1,16 @@
 /**
  * What a feature adds to path edit without path edit knowing it: marks drawn
  * on the open path, parts of it to press, marks a click selects and Delete
- * removes, a share in shaping an anchor or handle drag, and what an edit must
- * keep true when it commits. A preset carries
- * its extensions as `FeaturePreset.pathEdit`; core consults them in preset
- * order.
+ * removes, a share in shaping an anchor or handle drag, what an edit must keep
+ * true when it commits, and how a path drawn from another form is edited. A
+ * preset carries its extensions as `FeaturePreset.pathEdit`; core consults
+ * them in preset order.
  */
 import type { DrawCommand } from '@weasel-js/renderer';
 import type { AnchorSet, PointOrigin, PolygonPath, View } from '@weasel-js/geom';
 import type { OngoingOverlay } from '@weasel-js/routing';
 import type { HandleLocks } from 'interactions/actions/edit-anchors/params';
+import type { PathRepresentation } from './pathRepresentation';
 
 /** A mark an extension drew that is selected in place of anchors: Delete
  *  acts on it, and selecting anchors clears it. */
@@ -141,6 +142,9 @@ export interface PathEditExtension {
     worldPath: PolygonPath,
     origins?: readonly (PointOrigin | null)[],
   ): FinishedPathEdit | null;
+  /** How path edit reads and writes the nodes whose `data.representation`
+   *  is of its kind. */
+  representation?: PathRepresentation;
 }
 
 /** Commits a node's new path and data as one history entry, with no
@@ -151,9 +155,9 @@ export type PathEditStore = (id: string, worldPath: PolygonPath, label: string, 
  * Data fields that describe how a node's geometry was made, or name its
  * anchors, and so mean nothing once the geometry is replaced some other way.
  * A writer replacing a node's path drops them: a held warp, path
- * constraints, a skin.
+ * constraints, a skin, the form a path was drawn from.
  */
-export const GEOMETRY_BOUND_DATA: readonly string[] = ['skin', 'constraints', 'warp'];
+export const GEOMETRY_BOUND_DATA: readonly string[] = ['skin', 'constraints', 'warp', 'representation'];
 
 /** `data` without the fields in {@link GEOMETRY_BOUND_DATA}, other than `keep`. */
 export function withoutGeometryBoundData<T>(data: T, keep: readonly string[] = []): T {

@@ -2,7 +2,7 @@
  * The params this package's actions read, merged into routing's
  * `ActionParamSchema` so `<SceneCanvas tune>` types them.
  */
-import type { CornerShape, PathConstraintKind, SegmentType } from '@weasel-js/geom';
+import type { CornerShape, PathConstraintKind, SegmentType, SpiroKind } from '@weasel-js/geom';
 import type { BendAlongEffect, BlendEffect, RepeatAlongEffect } from '@weasel-js/core';
 import type { ConstrainAnchorsParams } from './constraints/anchorConstraints';
 import type { LengthenPathParams } from './lengthen/lengthenPath';
@@ -31,6 +31,8 @@ declare module '@weasel-js/routing' {
     lengthenPath: LengthenPathParams;
     bridgePaths: { tension?: number };
     bridgeAnchors: { tension?: number };
+    setSpiroKind: { kind?: SpiroKind };
+    'spiro.placePoint': { kind?: SpiroKind };
     constrainAnchors: ConstrainAnchorsParams;
     unconstrainAnchors: { kind?: PathConstraintKind };
     'distort.drag': WarpSettings;
