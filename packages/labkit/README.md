@@ -383,7 +383,7 @@ a page that frames it.
 A lab also draws a menu bar above its header: Lab (add a trial, the header's
 items), then the menus you declare with `menus`, then View (zoom, color mode).
 It adds to the header and takes nothing from it. A row names a command by id, and
-any child of `<Lab>` registers one with `useCommand`:
+any child of `<Lab>` registers one with `useCommand` (`header={false}` unmounts `<Lab>`'s children, and their commands with them):
 
 ```tsx
 const menus = {
@@ -394,7 +394,7 @@ const menus = {
 
 function Reseed() {
   useCommand('app.reseed', 'Reseed', () => setSeed(Math.random()), {
-    keys: [{ key: 'r', mod: true, shift: true }],
+    keys: { kind: 'key', key: 'r', mods: { mod: true, shift: true } },
   });
   return null;
 }

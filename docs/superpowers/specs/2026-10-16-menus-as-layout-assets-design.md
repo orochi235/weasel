@@ -84,7 +84,7 @@ These are built, so the code is the reference:
   pointer and keyboard behavior of a desktop menu bar. F10 focuses it, and its `accessChord` (Alt
   by default) with a title's declared letter opens that title's menu. Those two keys are
   `menu.bar` and `menu.open` in `useMenuBarKeys.tsx`, on a no-canvas `keyboard: 'first'`
-  dispatcher of the bar's own, as `LabZoom.tsx` runs one; `menu.open` takes `scope: 'hotkey'`.
+  dispatcher of the bar's own, as `LabActions.tsx` runs one; `menu.open` takes `scope: 'hotkey'`.
   A focused text input blocks both.
 
 - labkit's menu bar. `<Lab>` runs on one actions registry (`LabActions.tsx`) with `LabZoom`'s

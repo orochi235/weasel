@@ -3,6 +3,7 @@ import { mergeMenuDefs } from '@weasel-js/routing';
 import type { LabContribution } from '../chrome/labTypes';
 import { groupsOf } from '../chrome/regions/groupsOf';
 import type { InstrumentList } from '../instrument/types';
+import { MODES } from './labModes';
 
 type Children = Record<string, PrefLeaf | PrefGroup>;
 
@@ -60,11 +61,7 @@ function labMenu({ instruments, addTrial, header }: LabMenuBarInput): PrefGroup 
 function viewMenu(zoom: boolean): PrefGroup {
   const theme = pref.group(
     'Theme',
-    {
-      auto: pref.action('lab.mode.auto'),
-      light: pref.action('lab.mode.light'),
-      dark: pref.action('lab.mode.dark'),
-    },
+    Object.fromEntries(MODES.map(({ mode }) => [mode, pref.action(`lab.mode.${mode}`)])),
     { as: 'menu' },
   );
   const zoomSection: Children = zoom

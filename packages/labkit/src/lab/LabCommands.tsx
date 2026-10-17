@@ -2,12 +2,7 @@ import { ActionDisabledReason, useCommand } from '@weasel-js/core';
 import { type LabContribution, type LabHeaderItem, useLabChromeContext } from '../chrome';
 import type { LabMode } from '../state/types';
 import { useLabContext } from './LabContext';
-
-const MODES: readonly { mode: LabMode; label: string }[] = [
-  { mode: 'auto', label: 'Auto' },
-  { mode: 'light', label: 'Light' },
-  { mode: 'dark', label: 'Dark' },
-];
+import { MODES } from './labModes';
 
 /**
  * Registers the lab header's commands on the lab's actions registry: add a
