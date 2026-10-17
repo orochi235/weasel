@@ -7,6 +7,7 @@ import {
   useOptionalDepRegistry,
 } from '@weasel-js/core';
 import type { PrefGroup } from '@weasel-js/prefs';
+import type { MenuEntry } from '@weasel-js/menu';
 import { Caret } from '../Caret';
 import { useMenuTrigger } from '../ContextMenu/useMenuTrigger';
 import f from '../field.module.css';
@@ -37,20 +38,13 @@ export interface BarMenuProps extends BarMenuSources {
  */
 export function BarMenu({ label, schema, values, onChange, over, defaultOpen }: BarMenuProps) {
   const registry = useActionsRegistry();
-  const depReg = useOptionalDepRegistry();
+  const resolveMenu = useBarMenuResolver();
   const trigger = useMenuTrigger();
 
   // `defaultOpen` holds until the menu has opened once or the reader has touched it.
   const pending = useRef(defaultOpen === true);
 
-  const resolve = () => resolveSchemaMenu(schema, {
-    actions: () => registry?.list() ?? [],
-    depsFor: (action) => (depReg ? buildDepsFromRequires(action, depReg) : undefined),
-    trigger: (id, params) => registry?.trigger(id, params) ?? false,
-    values,
-    ...(onChange ? { onChange } : {}),
-    ...(over ? { over } : {}),
-  });
+  const resolve = () => resolveMenu(schema, { values, onChange, over });
   const showQuiet = useLatest(() => trigger.show(resolve(), 'pointer', true));
 
   // An action registered after this mounts can be what makes the menu non-empty, so a shut default retries on each change.
@@ -84,4 +78,19 @@ export function BarMenu({ label, schema, values, onChange, over, defaultOpen }: 
       {trigger.portal}
     </>
   );
+}
+
+/** Resolves a menu schema against the nearest actions registry and dep registry, reading and writing through
+ *  `sources`: what a bar's menu and a menu bar's title open. */
+export function useBarMenuResolver(): (schema: PrefGroup, sources: BarMenuSources) => MenuEntry[] {
+  const registry = useActionsRegistry();
+  const depReg = useOptionalDepRegistry();
+  return (schema, { values, onChange, over }) => resolveSchemaMenu(schema, {
+    actions: () => registry?.list() ?? [],
+    depsFor: (action) => (depReg ? buildDepsFromRequires(action, depReg) : undefined),
+    trigger: (id, params) => registry?.trigger(id, params) ?? false,
+    values,
+    ...(onChange ? { onChange } : {}),
+    ...(over ? { over } : {}),
+  });
 }
