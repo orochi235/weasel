@@ -237,9 +237,12 @@ since survive it. Editing reports rather than writes —
 ```
 
 — `onMove` turns on dragging and hears every node a drag or a layout run
-moved; `onConnect` makes ports grabbable and hears the edge a connect
-describes. Store a move as the node's `at`, with `pinned: true` unless the
-scene uses `layout: 'none'`, or the next `diagramScene` lays it out again.
+moved, and, as its second argument, every edge whose route a layout run
+rewrote (`{ id, waypoints }`, `id` being `edgeIdOf` of the data edge);
+`onConnect` makes ports grabbable and hears the edge a connect describes.
+Store a move as the node's `at`, with `pinned: true` unless the scene uses
+`layout: 'none'`, and a route as the edge's `waypoints`, or the next
+`diagramScene` lays them out again.
 `view.current.layout('layered')` re-runs a layout animated from where the
 nodes stand; `'force'` relaxes live.
 

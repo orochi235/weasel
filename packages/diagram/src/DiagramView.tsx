@@ -1,7 +1,6 @@
 import {
   dragPanContribution,
   fitViewToBounds,
-  reconcileSpecs,
   SceneCanvas,
   useLatest,
   useScene,
@@ -12,7 +11,7 @@ import {
   type SceneCanvasApi,
   type View,
 } from '@weasel-js/core';
-import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState, type Ref } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState, type Ref, type RefObject } from 'react';
 import type { CanConnect } from './connect';
 import { diagramPorts, type DiagramContributionOptions } from './contribution';
 import { withDiagramRegistry } from './edge';
@@ -23,10 +22,10 @@ import { useLiveLayout, type LiveLayout, type UseLiveLayoutOptions } from './liv
 import { useMirroredSelection } from './mirrorSelection';
 import { portLayer, sceneParticipants } from './portLayer';
 import { registerMarkShape } from './marks';
+import { useSceneSync, type EdgeRoute, type NodeMove } from './sceneSync';
 import { registerDiagramShape } from './shape';
 
-/** Where a moved node now stands. */
-export interface NodeMove { id: string; x: number; y: number }
+export type { EdgeRoute, NodeMove } from './sceneSync';
 
 /** Props for `DiagramView`. */
 export interface DiagramViewProps {
@@ -47,9 +46,10 @@ export interface DiagramViewProps {
    *  `selected` does not follow it; only a change to `selected` is pushed in. */
   onSelect?: (id: string | null) => void;
   /** Set to let nodes be dragged. Reports every node a drag or a layout run
-   *  moved. Store each as the data node's `at` with `pinned: true`, or the
-   *  next `diagramScene` lays it out again. */
-  onMove?: (moves: readonly NodeMove[]) => void;
+   *  moved, and every edge whose route a layout run rewrote. Store each move
+   *  as the data node's `at` with `pinned: true`, and each route as the data
+   *  edge's `waypoints`, or the next `diagramScene` lays them out again. */
+  onMove?: (moves: readonly NodeMove[], routes: readonly EdgeRoute[]) => void;
   /** Ports are grabbable when this is set, unless `ports` says otherwise. Dragging one port onto another reports the
    *  edge it describes and draws nothing; add it to the data to keep it. */
   onConnect?: (edge: DataEdge) => void;
@@ -141,42 +141,7 @@ function Inner({
   const selection = useSelection({ scene, mode: 'single' });
   const onClick = useMirroredSelection(selection, selected, onSelect);
 
-  const onMoveRef = useLatest(onMove);
-  const syncing = useRef(false);
-  const applied = useRef(specs);
-  const known = useRef<Map<string, { x: number; y: number }>>(new Map());
-  useEffect(() => {
-    const read = () => {
-      const out = new Map<string, { x: number; y: number }>();
-      for (const n of scene.renderOrderNodes()) {
-        if (n.kind === 'container') out.set(n.id, { x: n.pose.x, y: n.pose.y });
-      }
-      return out;
-    };
-    known.current = read();
-    return scene.subscribe(() => {
-      const now = read();
-      const moves: NodeMove[] = [];
-      if (!syncing.current) {
-        for (const [id, at] of now) {
-          const was = known.current.get(id);
-          if (was !== undefined && (was.x !== at.x || was.y !== at.y)) moves.push({ id, ...at });
-        }
-      }
-      known.current = now;
-      if (moves.length > 0) onMoveRef.current?.(moves);
-    });
-  }, [scene, onMoveRef]);
-  useEffect(() => {
-    if (applied.current === specs) return;
-    syncing.current = true;
-    try {
-      reconcileSpecs(scene, applied.current as DiagramSpec[], specs as DiagramSpec[]);
-    } finally {
-      syncing.current = false;
-    }
-    applied.current = specs;
-  }, [scene, specs]);
+  useSceneSync(scene, specs, onMove);
 
   const source = useMemo(() => sceneParticipants<RectPose>(scene), [scene]);
   // Each `layout()` call is a new run: the state change lands the algorithm in
@@ -223,16 +188,7 @@ function Inner({
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [controlled, width, height, minScale, maxScale, anchor, fitPadding],
   );
-  const fitted = useRef(defaultView);
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    const was = fitted.current;
-    if (canvas === null || defaultView === undefined || was === defaultView) return;
-    // A view the user has panned or zoomed off its fit is theirs to keep.
-    if (!sameView(canvas.getView(), was ?? IDENTITY)) return;
-    fitted.current = defaultView;
-    canvas.setView(defaultView);
-  }, [defaultView]);
+  useRefit(canvasRef, defaultView);
   return (
     <SceneCanvas
       ref={canvasRef}
@@ -253,6 +209,20 @@ function Inner({
       {...(background ? { backgroundFill: background } : {})}
     />
   );
+}
+
+/** Apply each new fit while the view is still the last one applied. */
+function useRefit(canvasRef: RefObject<SceneCanvasApi | null>, fit: View | undefined): void {
+  const fitted = useRef(fit);
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const was = fitted.current;
+    if (canvas === null || fit === undefined || was === fit) return;
+    // A view the user has panned or zoomed off its fit is theirs to keep.
+    if (!sameView(canvas.getView(), was ?? IDENTITY)) return;
+    fitted.current = fit;
+    canvas.setView(fit);
+  }, [canvasRef, fit]);
 }
 
 /** How `fitDiagram` frames a diagram in its box. */
