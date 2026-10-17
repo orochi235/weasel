@@ -53,8 +53,19 @@ interface Line {
   mainOut: ReadonlyMap<string, string>;
 }
 
+/** The least room between two ports on one edge of a stage, and from an end
+ *  port to the box's corner. */
+export const SIDE_PORT_GAP = 24;
+
 const spreadAt = (ports: readonly EffectPort[], v: number): PortSpec[] =>
   ports.map((p, i) => ({ id: p.id, type: p.type, at: { u: (i + 1) / (ports.length + 1), v } }));
+
+/** The narrowest a box may be so the ports along its top and its bottom each
+ *  sit `SIDE_PORT_GAP` apart. */
+function roomFor(ports: readonly PortSpec[]): number {
+  const count = (v: number) => ports.filter((p) => p.at.v === v && p.at.u > 0 && p.at.u < 1).length;
+  return (Math.max(count(0), count(1)) + 1) * SIDE_PORT_GAP;
+}
 
 function rackWires(pipeline: EffectPipeline, skips: readonly Skip[]): RackWire[] {
   const eaten = new Set<number>(skips.flatMap((s) => [s.into.index, s.through.index, s.skip.index]));
@@ -134,12 +145,14 @@ export const rack: EffectLook<RackOptions> = (pipeline, options = {}) => {
   const line = lineOf(pipeline, chain, wires);
 
   const kept = stages.filter((s) => !gone.has(s.id));
-  const nodes = kept.map((stage) => (kindOf(stage) === 'decision'
-    ? { id: stage.id, ...branchNode(stage, pipeline, options.branch) }
-    : boxNode(stage, {
-      showParams: options.showParams !== false, rowPorts: false, ports: portsOf(stage, line, wires, near, far),
-      showValues: options.showValues === true,
-    })));
+  const nodes = kept.map((stage) => {
+    if (kindOf(stage) === 'decision') return { id: stage.id, ...branchNode(stage, pipeline, options.branch) };
+    const ports = portsOf(stage, line, wires, near, far);
+    const node = boxNode(stage, { showParams: options.showParams !== false, rowPorts: false, ports, showValues: options.showValues === true });
+    const room = roomFor(ports);
+    // One port per edge needs less than diagramScene's own minimum width; leave that in charge.
+    return room > 2 * SIDE_PORT_GAP ? { ...node, width: room } : node;
+  });
 
   const byId = new Map(kept.map((s) => [s.id, s]));
   const edges = wires.map((wire) => {
