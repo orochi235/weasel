@@ -563,6 +563,15 @@ Priority tags:
 
 How the registry and the build plugin work is in `docs/icons.md`.
 
+- **(P3) Nothing stops a package importing another package's source by relative path.**
+  `@weasel-js/icons-plugin` reaches `../../icons/src/names` on purpose (the plugin loads during
+  `@weasel-js/icons`' own build, before its `dist` exists), and `check:imports` passes it only
+  because `scripts/check-declared-imports.mjs` skips relative specifiers. Allowlist that one import
+  there and fail any other relative specifier that leaves its package.
+- **(P3) The plugin's dev table discovery skips every directory named `fixtures`.** `SKIP` in
+  `packages/icons-plugin/src/tables.ts` is meant for the plugin's own test fixtures, but it also
+  hides a consumer app's `fixtures/` directory, whose table then appears in dev only once one of
+  its modules has been transformed. Skip the plugin's fixture path, not the name.
 - **(P3) A variant that fails to load says nothing about why.** `createVariants` in
   `packages/icons/src/variants.ts` catches the loader's rejection and only sets `failed`. Log the
   error with `console.error` in development before setting the state.
