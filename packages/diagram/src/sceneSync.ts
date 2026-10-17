@@ -6,38 +6,53 @@
 import { reconcileSpecs, useLatest, type RectPose, type Scene } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
 import { useEffect, useRef } from 'react';
-import { diagramEdgeOf, samePoints } from './edge';
+import { diagramEdgeOf, samePoints, type EdgeEnd } from './edge';
 import type { DiagramSceneData, DiagramSpec } from './fromData';
+import type { LayoutPorts } from './layout';
 
 /** Where a moved node now stands. */
 export interface NodeMove { id: string; x: number; y: number }
 
-/** An edge whose route a layout run rewrote. `id` is the edge's scene id,
- *  `edgeIdOf` of its data edge; `waypoints` is empty when the run took a
- *  route away and left the edge straight. Store it as the data edge's
- *  `routed`, which stays layout's, not as `waypoints`, which would be the
- *  author's. */
-export interface EdgeRoute { id: string; waypoints: readonly Vec2[] }
+/** An edge whose route or ports a layout run rewrote. `id` is the edge's
+ *  scene id, `edgeIdOf` of its data edge; `waypoints` is empty when the run
+ *  took a route away and left the edge straight, and `ports` names the ends
+ *  layout owns. Store them as the data edge's `routed` and `routedPorts`,
+ *  which stay layout's, not as `waypoints`, `fromPort` and `toPort`, which
+ *  would be the author's and rename the edge. */
+export interface EdgeRoute { id: string; waypoints: readonly Vec2[]; ports: LayoutPorts }
 
 type DiagramScene = Scene<DiagramSceneData, 'main', RectPose>;
 
+interface Route { waypoints: readonly Vec2[]; ports: LayoutPorts }
+
 interface Standing {
   nodes: Map<string, { x: number; y: number }>;
-  routes: Map<string, readonly Vec2[] | undefined>;
+  routes: Map<string, Route>;
 }
 
 const NONE: readonly Vec2[] = [];
 
+/** The port layout owns at `end`, if it named one. */
+const laidPort = (end: EdgeEnd) => (end.laidOut !== undefined && end.port === end.laidOut ? end.laidOut : undefined);
+
+function portsOf(from: EdgeEnd, to: EdgeEnd): LayoutPorts {
+  const f = laidPort(from);
+  const t = laidPort(to);
+  return { ...(f !== undefined ? { from: f } : {}), ...(t !== undefined ? { to: t } : {}) };
+}
+
+const samePorts = (a: LayoutPorts, b: LayoutPorts) => a.from === b.from && a.to === b.to;
+
 function readScene(scene: DiagramScene): Standing {
   const nodes = new Map<string, { x: number; y: number }>();
-  const routes = new Map<string, readonly Vec2[] | undefined>();
+  const routes = new Map<string, Route>();
   for (const n of scene.renderOrderNodes()) {
     if (n.kind === 'container') {
       nodes.set(n.id, { x: n.pose.x, y: n.pose.y });
       continue;
     }
     const edge = diagramEdgeOf(n);
-    if (edge !== null) routes.set(n.id, edge.waypoints);
+    if (edge !== null) routes.set(n.id, { waypoints: edge.waypoints ?? NONE, ports: portsOf(edge.from, edge.to) });
   }
   return { nodes, routes };
 }
@@ -49,11 +64,11 @@ function changes(was: Standing, now: Standing): { moves: NodeMove[]; routes: Edg
     if (before !== undefined && (before.x !== at.x || before.y !== at.y)) moves.push({ id, ...at });
   }
   const routes: EdgeRoute[] = [];
-  for (const [id, waypoints] of now.routes) {
-    if (!was.routes.has(id)) continue;
-    const before = was.routes.get(id) ?? NONE;
-    const after = waypoints ?? NONE;
-    if (before !== after && !samePoints(before, after)) routes.push({ id, waypoints: after });
+  for (const [id, after] of now.routes) {
+    const before = was.routes.get(id);
+    if (before === undefined) continue;
+    const moved = before.waypoints !== after.waypoints && !samePoints(before.waypoints, after.waypoints);
+    if (moved || !samePorts(before.ports, after.ports)) routes.push({ id, ...after });
   }
   return { moves, routes };
 }

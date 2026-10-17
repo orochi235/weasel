@@ -234,4 +234,17 @@ describe('diagramScene', () => {
     expect(authored.waypoints).toEqual(own);
     expect(authored.laidOut).toBeUndefined();
   });
+
+  it("draws stored `routedPorts` as layout's own, under the same edge id", () => {
+    const endsOf = (edge: DiagramData['edges'][number]) => {
+      const specs = diagramScene({ nodes: [{ id: 'a', lines: ['a'] }, { id: 'b', lines: ['b'] }], edges: [edge] }, { layout: 'none' });
+      return (specs.find((s) => s.id === edgeIdOf(edge))!.data as { diagram: { from: unknown; to: unknown } }).diagram;
+    };
+    expect(edgeIdOf({ from: 'a', to: 'b', routedPorts: { from: 's', to: 'n' } })).toBe(edgeIdOf({ from: 'a', to: 'b' }));
+    expect(endsOf({ from: 'a', to: 'b', routedPorts: { from: 's', to: 'n' } }))
+      .toMatchObject({ from: { port: 's', laidOut: 's' }, to: { port: 'n', laidOut: 'n' } });
+    const own = endsOf({ from: 'a', to: 'b', fromPort: 'e', routedPorts: { from: 's', to: 'n' } });
+    expect(own.from).toEqual({ port: 'e' });
+    expect(own.to).toEqual({ port: 'n', laidOut: 'n' });
+  });
 });

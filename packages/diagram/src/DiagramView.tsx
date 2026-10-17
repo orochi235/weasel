@@ -46,9 +46,10 @@ export interface DiagramViewProps {
    *  `selected` does not follow it; only a change to `selected` is pushed in. */
   onSelect?: (id: string | null) => void;
   /** Set to let nodes be dragged. Reports every node a drag or a layout run
-   *  moved, and every edge whose route a layout run rewrote. Store each move
-   *  as the data node's `at` with `pinned: true`, and each route as the data
-   *  edge's `waypoints`, or the next `diagramScene` lays them out again. */
+   *  moved, and every edge whose route or ports a layout run rewrote. Store
+   *  each move as the data node's `at` with `pinned: true`, and each route as
+   *  the data edge's `routed` and `routedPorts`, or the next `diagramScene`
+   *  lays them out again. */
   onMove?: (moves: readonly NodeMove[], routes: readonly EdgeRoute[]) => void;
   /** Ports are grabbable when this is set, unless `ports` says otherwise. Dragging one port onto another reports the
    *  edge it describes and draws nothing; add it to the data to keep it. */

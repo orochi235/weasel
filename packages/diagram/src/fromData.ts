@@ -18,7 +18,7 @@ import type { DiagramAnchor } from './group';
 import type { DiagramLabel } from './label';
 import { chain } from './chain';
 import { layered } from './layered';
-import type { LayoutFn, LayoutOptions } from './layout';
+import type { LayoutFn, LayoutOptions, LayoutPorts } from './layout';
 import { markSpecs, type DataMark, type DiagramMark } from './marks';
 import type { Outline } from './outline';
 import { authoredOver } from './route';
@@ -78,6 +78,9 @@ export interface DataEdge {
   /** A route a layout run wrote, as `DiagramView`'s `onMove` reports it: drawn
    *  until layout runs again, which may replace it. `waypoints` wins. */
   routed?: readonly Vec2[];
+  /** Ports a layout run named, as `onMove` reports them: used like `routed`,
+   *  and not part of the edge's id. `fromPort` and `toPort` win. */
+  routedPorts?: LayoutPorts;
 }
 
 /** A box drawn around some nodes, which layout keeps together. */
