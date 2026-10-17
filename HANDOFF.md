@@ -35,6 +35,14 @@ Decisions from the conversation that the design doc does not carry:
 - `ActionDisabledReason`'s const is `@experimental`; whether to promote it is the owner's call.
   `useCommand` names only the untagged type.
 
+**Arc 2 (MenuBar, access letters, MenuButton on the renderer) is in progress** on branch
+`menus-arc-2`, worktree `.claude/worktrees/menus-arc-2`. Plan: `docs/superpowers/plans/2026-10-16-menu-bar.md`.
+Its SDD ledger, with every ruling, is `.superpowers/sdd/2026-10-16-menu-bar/progress.md` in that
+worktree (git-ignored — copy its `Ruling:` lines out before deleting it). Tasks 1–4 are reviewed and
+done; Task 5's fix round is committed but not re-reviewed; Task 6 (F10 and access chords) is not
+started. Targeted tests run with `onto do --node studio --ref origin/main -- npx vitest run
+--project=<p> <path>`; menu, routing, prefs, hud and ui are all `weasel-ui`.
+
 How subagent work ran here, and what bit:
 
 - Subagents inherit the session's worktree lock: an agent cannot enter any worktree but the one
