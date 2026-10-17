@@ -49,11 +49,11 @@ export interface LayeredPlan {
    *  the compass ports facing the way it runs (see `layeredPorts`). */
   ports: ReadonlyMap<string, LayoutPorts>;
   /** Pinned nodes after the first that the layout could not be built
-   *  around: covering one with its rank's band would shrink the gaps between
-   *  it and the nearest rank holding a pin toward the first below a quarter
-   *  of `rankGap` each, or a group's column holding another pin would have
-   *  to be in two places across. They stay put, and the rest is laid out
-   *  around the slot each would have had. */
+   *  around: covering one with its rank's band would bring that band nearer
+   *  another pinned rank's than the bands between them allow with every gap
+   *  at a quarter of `rankGap` beyond its groups' insets, or would put a
+   *  group's box over a pin it does not hold. They stay put, and the rest is
+   *  laid out around the slot each would have had. */
   unheld: ReadonlySet<string>;
 }
 

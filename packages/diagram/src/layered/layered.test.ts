@@ -404,3 +404,55 @@ describe('layered, with two pins in one rank', () => {
     expectClearOf(after(graph, plan.moves), ['a', 'c']);
   });
 });
+
+describe('layered, with pins that move the anchor\'s band or a group', () => {
+  function graphOf(nodes: GraphNode[], pairs: [string, string][], groups: GraphGroup[] = []): Graph {
+    const edges = expandGroupEdges(pairs.map(([from, to]) => ({ id: `${from}${to}`, from, to })), groups);
+    const byId = new Map(nodes.map((n) => [n.id, n]));
+    return {
+      nodes,
+      edges,
+      groups,
+      node: (id) => byId.get(id),
+      outgoing: (id) => edges.filter((e) => e.from === id),
+      incoming: (id) => edges.filter((e) => e.to === id),
+    };
+  }
+
+  it('slides the anchor\'s band away from a pin when the anchor is not its rank\'s deepest node', () => {
+    const graph = graphOf(
+      [
+        { id: 'a', bounds: { x: 0, y: 15, width: 80, height: 30 }, pinned: true },
+        { id: 't', bounds: { x: 128, y: 0, width: 80, height: 60 }, pinned: false },
+        { id: 'c', bounds: { x: 0, y: 74, width: 80, height: 30 }, pinned: true },
+      ],
+      [['a', 'c'], ['t', 'c']],
+    );
+    const plan = layeredPlan(graph);
+    expect(plan.unheld.size).toBe(0);
+    const t = after(graph, plan.moves).node('t')!.bounds;
+    expect(t.y + t.height).toBeLessThanOrEqual(74 - 24 + 1e-6);
+    expect(t.y).toBeLessThanOrEqual(15 + 1e-6);
+  });
+
+  it('widens a group\'s column to hold two of its members pinned apart, keeping outsiders out of its box', () => {
+    const box = (x: number) => ({ x, y: 0, width: 80, height: 30 });
+    const groups: GraphGroup[] = [{ id: 'G', members: ['m1', 'm2'], inset: insetOf(12) }];
+    const nodes: GraphNode[] = [
+      { id: 'r', bounds: box(0), pinned: false },
+      { id: 'm1', bounds: box(0), pinned: false, group: 'G' },
+      { id: 'm2', bounds: box(0), pinned: false, group: 'G' },
+      { id: 'o', bounds: box(0), pinned: false },
+    ];
+    const graph = graphOf(nodes, [['r', 'm1'], ['r', 'm2'], ['r', 'o'], ['m1', 'm2']], groups);
+    const laid = routed(graph, layeredPlan(graph));
+    const m2 = laid.node('m2')!.bounds;
+    const dragged = after(laid, new Map([['m2', { x: m2.x + 400, y: m2.y }]]));
+    const plan = layeredPlan(dragged, { pin: ['m1', 'm2'] });
+    expect(plan.unheld.size).toBe(0);
+    const next = after(dragged, plan.moves);
+    const g = boxOf(next, groups[0]!);
+    for (const id of ['r', 'o']) expect(overlap(next.node(id)!.bounds, g), id).toBe(false);
+    expectClearOf(next, ['m1', 'm2']);
+  });
+});
