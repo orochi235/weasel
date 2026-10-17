@@ -58,12 +58,12 @@ function buildTable(pkg) {
   return { table: { namespace: pkg.namespace, owner: pkg.owner, icons }, groups };
 }
 
-function writePackage({ pkg, table, groups }) {
+function writePackage({ pkg, table, groups }, built) {
   const src = join(pkg.root, 'src');
   writeFileSync(join(src, 'icons.table.json'), JSON.stringify(table, null, 2) + '\n');
   writeFileSync(join(src, 'icons.table.ts'), emitTableModule(table));
   writeFileSync(join(src, 'icons.gen.ts'), emitGen(table, groups));
-  if (table.namespace === 'ui') writeLegacyUi({ repo: REPO, root: pkg.root, table: { ...table, groups }, markGroup: pkg.markGroup });
+  if (table.namespace === 'ui') writeLegacyUi({ repo: REPO, root: pkg.root, table: { ...table, groups }, coreTable: built.find((b) => b.table.namespace === 'core').table, markGroup: pkg.markGroup });
 }
 
 /** Read every root's definitions and build its table; with `write`, emit the generated files. */
@@ -77,7 +77,7 @@ export async function generate({ roots = discover(), write = true } = {}) {
   }
   const built = pkgs.map((p) => ({ pkg: p, ...buildTable(p) }));
   if (write) {
-    built.forEach(writePackage);
+    built.forEach((b) => writePackage(b, built));
     const manifest = built.map(({ table }) => ({
       namespace: table.namespace,
       owner: table.owner,

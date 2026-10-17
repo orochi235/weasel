@@ -18,10 +18,7 @@ export type UiIconName =
   | 'filter'
   | 'add'
   | 'remove'
-  | 'delete'
   | 'sort'
-  | 'undo'
-  | 'redo'
   | 'snapshot'
   | 'bold'
   | 'italic'
@@ -155,10 +152,8 @@ export type UiIconName =
   | 'collapse'
   | 'expand'
   | 'chevron'
-  | 'tune'
   | 'grid'
   | 'snap'
-  | 'measure'
   | 'randomize'
   | 'refresh'
   | 'drop'
@@ -410,10 +405,7 @@ export const ICON_GROUPS: readonly { label: string; names: readonly UiIconName[]
       "filter",
       "add",
       "remove",
-      "delete",
       "sort",
-      "undo",
-      "redo",
       "snapshot"
     ]
   },
@@ -622,10 +614,8 @@ export const ICON_GROUPS: readonly { label: string; names: readonly UiIconName[]
       "collapse",
       "expand",
       "chevron",
-      "tune",
       "grid",
       "snap",
-      "measure",
       "randomize",
       "refresh",
       "drop",
@@ -914,10 +904,7 @@ declare module '@weasel-js/icons' {
     'ui:filter': true;
     'ui:add': true;
     'ui:remove': true;
-    'ui:delete': true;
     'ui:sort': true;
-    'ui:undo': true;
-    'ui:redo': true;
     'ui:snapshot': true;
     'ui:bold': true;
     'ui:italic': true;
@@ -1051,10 +1038,8 @@ declare module '@weasel-js/icons' {
     'ui:collapse': true;
     'ui:expand': true;
     'ui:chevron': true;
-    'ui:tune': true;
     'ui:grid': true;
     'ui:snap': true;
-    'ui:measure': true;
     'ui:randomize': true;
     'ui:refresh': true;
     'ui:drop': true;

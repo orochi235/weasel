@@ -38,6 +38,7 @@
   },
   "dependencies": {
     "@weasel-js/cursor": "1.10.1",
+    "@weasel-js/icons": "1.10.1",
     "@weasel-js/paint": "1.10.1",
     "@weasel-js/prefs": "1.10.1",
     "@weasel-js/react": "1.10.1",
