@@ -5,6 +5,7 @@
  */
 import type { DiagramSpec } from '../fromData';
 import { NO_VALUE, stageStyle, uniqueStages, valueRowId, type EffectLookResult } from './draw';
+import { thrownToSecond } from './symbols';
 import type { EffectPipeline, EffectRun, EffectStage } from './types';
 
 /** How far a stage or wire the run passed by is faded. */
@@ -17,7 +18,8 @@ const COST_SCALE = 0.8;
 /**
  * `specs` as `run` leaves them: a stage the run never reached faded, with its
  * wires; a decision's wires to the outputs it did not take faded; each value
- * row a look kept filled in; and each stage's cost written above its corner.
+ * row a look kept filled in; a `switch` thrown to the output its decision
+ * took; and each stage's cost written above its corner.
  * No run, no change.
  */
 export function paintRun(
@@ -51,12 +53,18 @@ export function paintRun(
     }
   }
 
+  const thrownSecond = new Set([...stages.values()].filter((s) => {
+    const outs = s.outputs ?? [];
+    return outs.length === 2 && run.stages[s.id]?.taken === outs[1]!.id;
+  }).map((s) => s.id));
+
   const out = specs.map((spec): DiagramSpec => {
     const id = spec.id as string;
     let next = spec;
     const text = values.get(id);
     if (text !== undefined && (spec.data as { text?: string }).text !== text) next = { ...next, data: { ...next.data, text } };
     const stage = owner(spec);
+    if (stage !== undefined && thrownSecond.has(stage)) next = thrown(next);
     const dependsOn = spec.dependsOn;
     const onWire = Array.isArray(dependsOn) && dependsOn.length === 1 && passed.has(dependsOn[0] as string);
     if ((stage !== undefined && unreached.has(stage)) || passed.has(id) || onWire) next = { ...next, data: dimmed(next.data) };
@@ -91,6 +99,14 @@ function wireEnds(spec: DiagramSpec): { from: string; to: string; fromPort: stri
   const deps = spec.dependsOn;
   if (trait?.from === undefined || trait.to === undefined || !Array.isArray(deps) || deps.length !== 2) return null;
   return { from: deps[0] as string, to: deps[1] as string, fromPort: trait.from.port };
+}
+
+/** `spec` with its path data moved to where a `switch` thrown to its second
+ *  exit draws it, or as it was for any spec that is not such a mark. */
+function thrown(spec: DiagramSpec): DiagramSpec {
+  const trait = (spec.data as { diagram?: { mark?: { d: string } } }).diagram;
+  const d = trait?.mark === undefined ? undefined : thrownToSecond(trait.mark.d);
+  return d === undefined ? spec : { ...spec, data: { ...spec.data, diagram: { ...trait, mark: { d } } } as DiagramSpec['data'] };
 }
 
 /** `data` with every paint it carries faded. */

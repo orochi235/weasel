@@ -131,6 +131,23 @@ const demux: BranchSymbol = (stage, pipeline, options) => {
 const dot = (cx: number, cy: number, r: number): string =>
   `M${cx - r} ${cy} A${r} ${r} 0 1 0 ${cx + r} ${cy} A${r} ${r} 0 1 0 ${cx - r} ${cy} Z`;
 
+const LEVER_FIRST = 'M0.2 0.5 L0.78 0.27';
+const CONTACT_FIRST = dot(0.8, 0.25, 0.07);
+const CONTACT_SECOND = dot(0.8, 0.75, 0.07);
+/** A `switch` is drawn thrown to its first exit. Each of its marks that moves
+ *  when it is thrown to the second, by path data, and the path it takes then:
+ *  the lever, and the two contacts, which trade places so the filled one is
+ *  the closed one. */
+const THROWN_SECOND: ReadonlyMap<string, string> = new Map([
+  [LEVER_FIRST, 'M0.2 0.5 L0.78 0.73'],
+  [CONTACT_FIRST, CONTACT_SECOND],
+  [CONTACT_SECOND, CONTACT_FIRST],
+]);
+
+/** The path data a `switch` mark drawn as `d` takes with the lever thrown to
+ *  the stage's second exit, or `undefined` for a mark that stays put. */
+export const thrownToSecond = (d: string): string | undefined => THROWN_SECOND.get(d);
+
 const switchSymbol: BranchSymbol = (stage, pipeline, options) => {
   if (!canSwitch(stage)) return diamond(stage, pipeline, options);
   const exits = stage.outputs ?? [];
@@ -147,10 +164,10 @@ const switchSymbol: BranchSymbol = (stage, pipeline, options) => {
     ],
     marks: [
       { d: 'M0 0.5 H0.2 M0.8 0.25 H1 M0.8 0.75 H1', stroke: ink },
-      { d: 'M0.2 0.5 L0.78 0.27', stroke: ink, strokeWidth: 2.5 },
+      { d: LEVER_FIRST, stroke: ink, strokeWidth: 2.5 },
       { d: dot(0.2, 0.5, 0.07), fill: ink },
-      { d: dot(0.8, 0.25, 0.07), fill: ink },
-      { d: dot(0.8, 0.75, 0.07), stroke: ink },
+      { d: CONTACT_FIRST, fill: ink },
+      { d: CONTACT_SECOND, stroke: ink },
       title(stage),
     ],
   };

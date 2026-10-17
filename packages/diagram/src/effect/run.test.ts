@@ -97,6 +97,20 @@ describe('paintRun', () => {
     expect(painted.some((s) => s.id === 'hard/cost')).toBe(false);
   });
 
+  it('throws a switch\'s lever to the output the run took, closing that contact', () => {
+    const drawn = nodeGraph(PIPELINE, { branch: 'switch' });
+    const specs = diagramScene(drawn.data, drawn.scene);
+    const marks = (out: readonly DiagramSpec[]) => out.filter((s) => (s.id as string).startsWith('pick/mark:'))
+      .map((s) => ({ d: (s.data as { diagram?: { mark?: { d: string } } }).diagram?.mark?.d, fill: 'fill' in (s.data as object) }));
+    const tookA = marks(paintRun(PIPELINE, specs, RUN));
+    expect(tookA).toEqual(marks(specs));
+    const tookB = marks(paintRun(PIPELINE, specs, { stages: { ...RUN.stages, pick: { taken: 'b' } } }));
+    // Marks in order: leads, lever, pivot, the first exit's contact (filled), the second's (open).
+    expect(tookB[1]!.d).not.toBe(tookA[1]!.d);
+    expect(tookB[1]!.d).toMatch(/ 0\.7\d$/);
+    expect(tookB.slice(3, 5)).toEqual([{ d: tookA[4]!.d, fill: true }, { d: tookA[3]!.d, fill: false }]);
+  });
+
   it('works the same over the rack look, whose wires are labeled differently', () => {
     const painted = paintRun(PIPELINE, built(rack), RUN);
     expect(opacity(byId(painted, 'hard'), 'fill')).toBeLessThan(1);
