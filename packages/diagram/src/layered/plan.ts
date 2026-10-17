@@ -23,6 +23,7 @@ import {
 } from '../layout';
 import { expand } from './expand';
 import { orderRows } from './order';
+import { levelRoutes } from './level';
 import { holdPins } from './pins';
 import { placeAcross } from './place';
 import { ranksByLength } from './rank';
@@ -165,5 +166,14 @@ function planOnce(graph: Graph, opts: LayoutOptions = {}): LayeredPlan {
     }
   }
 
-  return { moves, ranks, back, waypoints, labels, ports: layeredPorts(graph, ranks, opts.direction), unheld };
+  const ports = layeredPorts(graph, ranks, opts.direction);
+  const boxes = new Map(graph.nodes.map((n) => [n.id, { ...n.bounds, ...moves.get(n.id) }]));
+  const level = levelRoutes({ graph, boxes, axes, rankGap, ...(opts.direction !== undefined ? { direction: opts.direction } : {}) });
+  for (const [edge, named] of level.ports) {
+    ports.set(edge, named);
+    waypoints.delete(edge);
+    labels.delete(edge);
+  }
+  for (const [edge, points] of level.waypoints) waypoints.set(edge, points);
+  return { moves, ranks, back, waypoints, labels, ports, unheld };
 }

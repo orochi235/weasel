@@ -13,6 +13,9 @@ import type { LayoutDirection, LayoutPorts } from './layout';
 import { COMPASS, DEFAULT_PORTS } from './ports';
 import type { PortSpec } from './types';
 
+/** A compass point's port name. */
+export type Compass = keyof typeof COMPASS;
+
 /** One edge to route, by the ids of its ends: a node's or a group's. */
 export interface RouteEdge {
   id: string;
@@ -51,7 +54,7 @@ export interface LayeredRouteInput {
 }
 
 /** The compass port facing the next rank, and the one facing the last. */
-const FACES: Record<LayoutDirection, { out: string; in: string }> = {
+export const FACES: Record<LayoutDirection, { out: Compass; in: Compass }> = {
   down: { out: 's', in: 'n' },
   up: { out: 'n', in: 's' },
   right: { out: 'e', in: 'w' },
@@ -105,14 +108,9 @@ export function layeredPorts(
   direction?: LayoutDirection,
 ): Map<string, LayoutPorts> {
   const faces = FACES[direction ?? 'down'];
-  const at = (ports: readonly PortSpec[], face: string) => {
-    const point = COMPASS[face as keyof typeof COMPASS];
-    return ports.some((p) => p.id === face && p.at.u === point.u && p.at.v === point.v);
-  };
   const compass = new Set<string>(graph.groups?.map((g) => g.id) ?? []);
   for (const node of graph.nodes) {
-    const ports = node.ports ?? DEFAULT_PORTS;
-    if (at(ports, faces.out) && at(ports, faces.in)) compass.add(node.id);
+    if (hasCompassPort(node, faces.out) && hasCompassPort(node, faces.in)) compass.add(node.id);
   }
   const edges = new Map<string, RouteEdge>();
   for (const e of graph.edges) {
@@ -131,6 +129,13 @@ export function layeredPorts(
     ...(r.fromPort !== undefined ? { from: r.fromPort } : {}),
     ...(r.toPort !== undefined ? { to: r.toPort } : {}),
   }]));
+}
+
+/** Whether `node` has a port named for compass point `face` and sitting at
+ *  it, which is the only kind of port a layout names. */
+export function hasCompassPort(node: { ports?: readonly PortSpec[] }, face: Compass): boolean {
+  const point = COMPASS[face];
+  return (node.ports ?? DEFAULT_PORTS).some((p) => p.id === face && p.at.u === point.u && p.at.v === point.v);
 }
 
 /** What a layout's plan says of each edge's route, as {@link authoredOver}
