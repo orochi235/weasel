@@ -27,6 +27,10 @@ export interface EffectChartProps<TOptions = never> {
   options?: TOptions;
   width: number;
   height: number;
+  /** The smallest scale the chart opens at. A chart that does not fit whole
+   *  at it opens at it anyway, anchored at its start, and the rest is a pan
+   *  away. Default `EFFECT_MIN_SCALE`. */
+  minScale?: number;
   /** What the canvas paints behind the chart. Unset, it is transparent; the
    *  shipped looks are drawn for a dark ground. */
   background?: Paint;
@@ -42,6 +46,9 @@ export interface EffectChartProps<TOptions = never> {
   /** A class for the canvas element. */
   className?: string;
 }
+
+/** `EffectChart`'s default `minScale`: the shipped looks' 12px titles at 9px. */
+export const EFFECT_MIN_SCALE = 0.75;
 
 const keys = new WeakMap<object, number>();
 let nextKey = 0;
@@ -79,7 +86,7 @@ function useSameContent<T>(value: T): T {
  *  only in a registered font family, so call `registerCanvasFont('sans-serif')`
  *  once before mounting one. */
 export function EffectChart<TOptions = never>({
-  pipeline: given, run, look, options, width, height, background, selected, onSelect, onProblems, className,
+  pipeline: given, run, look, options, width, height, minScale = EFFECT_MIN_SCALE, background, selected, onSelect, onProblems, className,
 }: EffectChartProps<TOptions>) {
   const pipeline = useSameContent(given);
   const problems = useMemo(() => checkPipeline(pipeline), [pipeline]);
@@ -110,6 +117,7 @@ export function EffectChart<TOptions = never>({
       specs={painted}
       width={width}
       height={height}
+      minScale={minScale}
       ports="show"
       portOptions={built.portOptions}
       anchor="start"

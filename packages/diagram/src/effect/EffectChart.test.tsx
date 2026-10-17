@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 interface SeenProps {
   background?: unknown;
+  minScale?: number;
   onSelect?: (id: string | null) => void;
   portOptions?: { showsPort?: (port: { type?: string }) => boolean };
 }
@@ -45,6 +46,17 @@ describe('EffectChart picking', () => {
     view.onSelect!('g');
     view.onSelect!(null);
     expect(onSelect.mock.calls.map((c) => c[0])).toEqual(['blur', null, null]);
+  });
+});
+
+describe('EffectChart opening scale', () => {
+  const pipeline = { stages: [{ id: 'a', title: 'A' }], wires: [] };
+
+  it('opens no smaller than a readable floor, or the one it is given', () => {
+    render(<EffectChart pipeline={pipeline} width={100} height={100} />);
+    expect(seen[seen.length - 1]!.minScale).toBe(0.75);
+    render(<EffectChart pipeline={pipeline} width={100} height={100} minScale={0.2} />);
+    expect(seen[seen.length - 1]!.minScale).toBe(0.2);
   });
 });
 

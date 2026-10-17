@@ -21,7 +21,7 @@ export {
   wireStyle,
 } from './effect/draw';
 export type { DrawableWire, EffectLook, EffectLookResult, TypeColor } from './effect/draw';
-export { EffectChart } from './effect/EffectChart';
+export { EFFECT_MIN_SCALE, EffectChart } from './effect/EffectChart';
 export type { EffectChartProps } from './effect/EffectChart';
 export { EFFECT_LOOKS } from './effect/looks';
 export { mainChain } from './effect/mainChain';
