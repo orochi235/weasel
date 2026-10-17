@@ -14,7 +14,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { moduleSpecifiers } from './lib/moduleSpecifiers.mjs';
+import { importSpecifiers } from './lib/imports.mjs';
 import { REACT_FREE_ENTRIES } from './react-free-entries.mjs';
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -49,7 +49,7 @@ function closureOf(entry) {
   const walk = (file) => {
     if (seen.has(file)) return;
     seen.add(file);
-    for (const spec of moduleSpecifiers(readFileSync(file, 'utf8'))) {
+    for (const spec of importSpecifiers(readFileSync(file, 'utf8'), file)) {
       if (spec.startsWith('.')) {
         walk(resolve(dirname(file), spec));
         continue;
