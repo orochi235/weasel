@@ -8,7 +8,7 @@
 import type { DrawCommand } from '@weasel-js/renderer';
 import type { RenderLayer } from 'core/layers/render';
 import {
-  type AnchorSet, type Path, type PolygonPath, type SpiroKind, type View, pathToAnchors, rectMarkerPath,
+  type AnchorSet, type Path, type PolygonPath, type View, pathToAnchors, rectMarkerPath,
 } from '@weasel-js/geom';
 import type { GesturePreviewSource } from 'canvas/gestureBounds';
 import { previewSourcesFrom, isVisibleFrom } from 'canvas/drawEnvelope';
@@ -16,6 +16,7 @@ import {
   anchorMarkerCommands, DEFAULT_OVERLAY_STYLE, worldToScreen, type PathEditingOverlayStyle,
 } from './anchorMarkers';
 import type { PathEditExtension, PathEditMark } from './pathEditExtension';
+import type { AnchorMarkerShape } from './pathRepresentation';
 
 export type { PathEditingOverlayStyle } from './anchorMarkers';
 
@@ -37,10 +38,11 @@ export interface CreatePathEditingOverlayLayerOptions {
    * layer is a parallax plane stores its path in the plane's.
    */
   getPose(id: string, previews: readonly GesturePreviewSource[], view: View): Path | null;
-  /** The spiro kind of each anchor, by flat index, for a node whose anchors
-   *  are spiro points; null for an ordinary path. Each kind draws its own
-   *  marker (`anchorMarkerPath`). Resolve against `previews` as `getPose` does. */
-  getAnchorKinds?(id: string, previews: readonly GesturePreviewSource[]): readonly SpiroKind[] | null;
+  /** The marker of each anchor, by flat index, for a node whose path was
+   *  drawn from a form (`PathRepresentation.anchorMarkers`); null, or an
+   *  anchor with none, draws a square. Resolve against `previews` as
+   *  `getPose` does. */
+  getAnchorMarkers?(id: string, previews: readonly GesturePreviewSource[]): readonly (AnchorMarkerShape | null)[] | null;
   /** Flat indices of the selected anchors. Selected anchors render
    *  filled; unselected ones hollow. */
   getSelectedAnchors?(): ReadonlySet<number>;
@@ -83,7 +85,7 @@ export function createPathEditingOverlayLayer(
       const previews = previewSourcesFrom(data);
       const pose = opts.getPose(id, previews, view);
       if (!pose || pose.kind !== 'polygon') return [];
-      const kinds = opts.getAnchorKinds?.(id, previews) ?? null;
+      const markers = opts.getAnchorMarkers?.(id, previews) ?? null;
 
       const selected = opts.getSelectedAnchors?.() ?? EMPTY_SELECTION;
       // Extensions' marks under the markers, which are what a press reaches first.
@@ -102,7 +104,7 @@ export function createPathEditingOverlayLayer(
           }));
         }
       }
-      out.push(...anchorMarkerCommands(pose as PolygonPath, view, selected, style, kinds));
+      out.push(...anchorMarkerCommands(pose as PolygonPath, view, selected, style, markers));
 
       // Marquee rubber band, on top of everything.
       const marquee = opts.getMarquee?.(view);

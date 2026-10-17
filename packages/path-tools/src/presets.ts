@@ -32,7 +32,7 @@ import {
 } from './pathEffects/actions';
 import { simplifyBrushAction, simplifyBrushToolAction } from './simplifyBrush/simplifyBrush';
 import { smudgeBrushAction } from './smudge/smudgeBrush';
-import { releaseSpiroAction, setSpiroKindAction } from './spiro/spiroCommands';
+import { spiroPreset } from './spiro/spiroPreset';
 import { trimPathAction } from './trim/trimSegment';
 import { configureWarpAction, expandWarpAction } from './warp/warpActions';
 
@@ -53,11 +53,6 @@ export const bridgePreset: FeaturePreset = {
   id: 'bridge',
   actions: [bridgeAnchorsAction, bridgePathsAction],
 };
-
-/** Spiro curves: set the kind of the selected points (`setSpiroKind`), and
- *  convert a spiro curve to an ordinary path (`releaseSpiro`). Core's spiro
- *  tool draws them and path edit edits their points. */
-export const spiroPreset: FeaturePreset = { id: 'spiro', actions: [setSpiroKindAction, releaseSpiroAction] };
 
 /** `trimPath`, which `useTrimTool` binds. */
 export const trimPreset: FeaturePreset = { id: 'trim', actions: [trimPathAction] };
@@ -197,7 +192,7 @@ export const warpPreset: FeaturePreset = {
   actions: [expandWarpAction, configureWarpAction],
 };
 
-/** Every preset above, the comb, balance, constraints, path direction, and
+/** Every preset above, spiro curves, the comb, balance, constraints, path direction, and
  *  corner shape with their defaults. */
 export const pathTools: FeaturePreset = {
   id: 'pathTools',

@@ -77,13 +77,6 @@ export const TOOLS = {
       <path d="M 8.5 10.5 L 14.5 4.5 L 16.5 6.5 L 10.5 12.5" stroke-linejoin="round" stroke-linecap="round"/>
       <path d="M 8.5 10.5 L 3.5 15.5 L 10.5 12.5 Z" fill="currentColor" stroke-linejoin="round"/>
     </g>`,
-  spiro: `
-    <g stroke-linecap="butt" stroke-linejoin="miter">
-      <path d="M 3.5 15 C 6.5 15 7 10 10 10 C 13 10 13.5 5 16.5 5" stroke-linecap="round"/>
-      <circle cx="3.5" cy="15" r="1.6" fill="currentColor" stroke="none"/>
-      <circle cx="10" cy="10" r="1.6" fill="currentColor" stroke="none"/>
-      <circle cx="16.5" cy="5" r="1.6" fill="currentColor" stroke="none"/>
-    </g>`,
   star: `
     <g stroke-linecap="butt" stroke-linejoin="miter">
       <polygon points="10,2.5 12.1,7.9 17.8,8.3 13.4,12 14.8,17.5 10,14.4 5.2,17.5 6.6,12 2.2,8.3 7.9,7.9" stroke-linejoin="round"/>

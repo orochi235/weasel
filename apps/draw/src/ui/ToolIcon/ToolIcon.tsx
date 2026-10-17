@@ -14,7 +14,6 @@ const BY_TOOL = {
   polygon: icon('core:polygon'),
   star: icon('core:star'),
   pen: icon('core:pen'),
-  spiro: icon('core:spiro'),
   pencil: icon('core:pencil'),
   lasso: icon('core:lasso'),
   text: icon('core:text'),

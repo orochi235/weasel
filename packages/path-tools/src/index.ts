@@ -33,7 +33,6 @@ export {
   resamplePreset,
   simplifyBrushPreset,
   smudgePreset,
-  spiroPreset,
   trimPreset,
   warpPreset,
 } from './presets';
@@ -48,7 +47,6 @@ export { handleLockAngleAction, handleLockLengthAction } from './handleLocks/han
 export {
   bridgeAnchorsAction, bridgePathsAction, bridgeTensionOf, DEFAULT_BRIDGE_TENSION,
 } from './bridge/bridge';
-export { releaseSpiroAction, setSpiroKindAction } from './spiro/spiroCommands';
 export { planTrim, trimPathAction } from './trim/trimSegment';
 export { extendToMeetAction } from './extend/extendToMeet';
 export {
@@ -95,6 +93,9 @@ export {
   useGirthTool, createGirthOverlay, createGirthActions, GIRTH_CLEAR_ID, GIRTH_DRAG_ID, GIRTH_HOVER_ID, GIRTH_UNHOVER_ID,
   type UseGirthToolOptions, type WidthEdgeHit, type GirthEnv, type GirthFocus, type WidthGrip, type WidthTarget,
 } from './girth';
+
+// ─── Spiro curves ──────────────────────────────────────────────────────────
+export * from './spiro';
 
 // ─── Path-edit chrome ──────────────────────────────────────────────────────
 export { combCommands, createCombExtension, PATH_COMB_CHROME_ID, type PathEditCombOptions } from './comb/comb';

@@ -28,13 +28,13 @@ afterEach(() => {
   delete window.__weaselTest;
 });
 
-interface SpiroData { path: PolygonPath; spiro: { kinds: string[]; at: number[] } }
+interface SpiroData { path: PolygonPath; representation: { kind: 'spiro'; kinds: string[]; at: number[] } }
 const nodes = () => window.__weaselTest!.getScene().nodes;
 const wave = () => nodes().find((n) => n.id === SEEDED_SPIRO)!;
 
 /** The world position of each spiro point of `node`. */
 function points(node: { pose: unknown; data: unknown }): number[][] {
-  const { path, spiro } = node.data as SpiroData;
+  const { path, representation: spiro } = node.data as SpiroData;
   const world = pathInWorld(path, node.pose as RectPose) as PolygonPath;
   const anchors = pathToAnchors(world).anchors.flat();
   return spiro.at.map((i) => [Math.round(anchors[i].x), Math.round(anchors[i].y)]);
@@ -78,7 +78,7 @@ describe('SpiroLabDemo', () => {
 
     const after = wave().data as SpiroData;
     expect(points(wave())[1]).toEqual([160, 110]);
-    expect(after.spiro.kinds).toEqual(before.spiro.kinds);
+    expect(after.representation.kinds).toEqual(before.representation.kinds);
     expect(Array.from(after.path.coords)).not.toEqual(Array.from(before.path.coords));
 
     await userEvent.click(screen.getByRole('button', { name: 'Undo' }));
@@ -87,7 +87,7 @@ describe('SpiroLabDemo', () => {
 
   it('adds a smooth point where the curve is dragged between two points, and moves it', async () => {
     const canvas = await mount();
-    const { path, spiro } = wave().data as SpiroData;
+    const { path, representation: spiro } = wave().data as SpiroData;
     const curve = pathToAnchors(pathInWorld(path, wave().pose as RectPose) as PolygonPath).anchors[0];
     // Halfway along the first cubic, between the first two points.
     const [a, b] = [curve[0], curve[1]];
@@ -96,7 +96,7 @@ describe('SpiroLabDemo', () => {
 
     drag(canvas, [mid.x, mid.y], [mid.x - 20, mid.y - 30]);
 
-    const after = (wave().data as SpiroData).spiro;
+    const after = (wave().data as SpiroData).representation;
     expect(after.kinds).toEqual(['smooth', ...spiro.kinds]);
     expect(points(wave())[1]).toEqual([Math.round(mid.x - 20), Math.round(mid.y - 30)]);
   });
@@ -112,7 +112,7 @@ describe('SpiroLabDemo', () => {
     });
     expect(nodes()).toHaveLength(3);
     const drawn = nodes().at(-1)!;
-    expect((drawn.data as SpiroData).spiro.kinds).toEqual(['smooth', 'smooth', 'smooth']);
+    expect((drawn.data as SpiroData).representation.kinds).toEqual(['smooth', 'smooth', 'smooth']);
     expect(points(drawn)).toEqual([[100, 420], [200, 360], [300, 430]]);
   });
 });

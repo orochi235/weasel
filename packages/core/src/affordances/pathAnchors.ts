@@ -25,7 +25,8 @@ export interface AnchorState {
    *  carry no cursor of their own, so the tool's action shows its own. */
   tool?: string | null;
   /** The path whose outline counts as a segment press, when it is not
-   *  `getPose`'s: a spiro curve, edited through its control path. */
+   *  `getPose`'s: a path drawn from a form, edited through the form's edit
+   *  path. */
   getOutline?(id: string): unknown;
 }
 

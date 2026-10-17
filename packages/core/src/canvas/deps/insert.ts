@@ -23,10 +23,8 @@ import {
   schneiderFit,
   type PathFillRule,
   type PolygonPath,
-  type SpiroPoint,
 } from '@weasel-js/geom';
 import { insertPreviewExtent } from '../insertPreviewExtent';
-import { spiroNodeData } from 'features/paths/spiroShape';
 import type { ShapeGenerator } from 'features/paths/shapeGenerator';
 import type { Stroke, Fill } from '@weasel-js/paint';
 import { cycleFill, solid, strokeOf } from '../../util/paint';
@@ -83,12 +81,12 @@ function withFillRule(data: unknown, rule: PathFillRule | undefined): unknown {
 }
 
 /** The default {@link InsertPaint}: the next color of the kit palette, as a
- *  fill on a closed shape, a fill and a stroke on a pen path or a spiro, and a stroke
+ *  fill on a closed shape, a fill and a stroke on a pen path, and a stroke
  *  alone on a line or a pencil trail. */
 export const paletteInsertPaint: InsertPaint = (kind, seq) => {
   const color = cycleFill(seq);
   if (kind === 'line' || kind === 'pencil') return { stroke: strokeOf(color, 2) };
-  if (kind === 'path' || kind === 'spiro') return { fill: { paint: solid(color) }, stroke: strokeOf(color, 2) };
+  if (kind === 'path') return { fill: { paint: solid(color) }, stroke: strokeOf(color, 2) };
   return { fill: { paint: solid(color) } };
 };
 
@@ -108,12 +106,8 @@ function boxKindData(
     case 'ellipse':
       return { path: ellipsePath(bounds), ...painted() };
     case 'path': {
-      const e = extras as { path: PolygonPath; closed: boolean };
-      return { path: e.path, ...painted(), ...(e.closed ? {} : { fill: null }) };
-    }
-    case 'spiro': {
-      const e = extras as { points: SpiroPoint[]; closed: boolean };
-      return { ...spiroNodeData([{ points: e.points, closed: e.closed }]), ...painted(), ...(e.closed ? {} : { fill: null }) };
+      const e = extras as { path: PolygonPath; closed: boolean; data?: Readonly<Record<string, unknown>> };
+      return { ...e.data, path: e.path, ...painted(), ...(e.closed ? {} : { fill: null }) };
     }
     case 'text': {
       // The built-in text tool drags an empty text box you then type into, so

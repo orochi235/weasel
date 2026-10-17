@@ -16,7 +16,7 @@ import {
   type View,
   workspaceTintLayer
 } from '@weasel-js/core';
-import { pathTools } from '@weasel-js/path-tools';
+import { pathTools, useSpiroTool } from '@weasel-js/path-tools';
 import { unpackSvgFiles } from '@weasel-js/svg';
 import { MeasureReadout, SceneGradientHandles, ToastRegion } from '@weasel-js/ui';
 import { type ReactElement, type RefObject, useCallback, useMemo } from 'react';
@@ -113,6 +113,7 @@ export function Workspace(props: WorkspaceProps): ReactElement {
   });
   const insertPaint = useInsertPaint();
   const sliceTool = useSliceTool();
+  const spiroTool = useSpiroTool();
   const shapeBuilderTool = useShapeBuilderTool();
   const pathToolsTools = usePathToolsTools();
   const { measurements } = props;
@@ -178,7 +179,7 @@ export function Workspace(props: WorkspaceProps): ReactElement {
           scene={scene}
           selection={selection}
           defaultTools={BUILTIN_TOOL_IDS}
-          tools={{ ...pathToolsTools, slice: sliceTool, shapeBuilder: shapeBuilderTool, measure: measureTool, opacityScrub: opacityScrubTool }}
+          tools={{ ...pathToolsTools, spiro: spiroTool, slice: sliceTool, shapeBuilder: shapeBuilderTool, measure: measureTool, opacityScrub: opacityScrubTool }}
           ingestion={DRAW_INGESTION}
           insertPaint={insertPaint}
           // Pick on the drawn shape, not the bounding box: clicking the blank right half of a

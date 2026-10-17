@@ -1,13 +1,14 @@
 /**
- * Commands on spiro curves (core's `spiroShape`): set the kind of the points
+ * Commands on spiro curves (`spiroShape`): set the kind of the points
  * selected in path edit, and convert a spiro curve to an ordinary path.
  */
 import { ActionDisabledReason, type Action, type ActionDeps, type ImmediateInvoker } from '@weasel-js/routing';
 import { SPIRO_KINDS, isSpiroKind, type SpiroKind } from '@weasel-js/geom';
 import {
-  commitOps, createSetDataOp, pathOperationTags, reshapeTo, resolveEditablePathOf, respiroWithKind, spiroOf,
-  storeEditablePath, withoutSpiro, type NodeId, type Op, type SceneNode,
+  commitOps, createSetDataOp, pathOperationTags, reshapeTo, resolveEditablePathOf, storeEditablePath,
+  type NodeId, type Op, type SceneNode,
 } from '@weasel-js/core';
+import { respiroWithKind, spiroOf, withoutSpiro } from './spiroShape';
 
 type AnyNode = SceneNode<unknown, string, unknown>;
 
@@ -39,7 +40,7 @@ function setKindOps(deps: ActionDeps | undefined, kind: SpiroKind, label: string
   if (!solved) return null;
   const stored = storeEditablePath({ pose: node.pose, data: withoutSpiro(node.data) }, solved.path);
   if (!stored) return null;
-  return reshapeTo(node, { pose: stored.pose, data: { ...(stored.data as object), spiro: solved.spiro } }, label);
+  return reshapeTo(node, { pose: stored.pose, data: { ...(stored.data as object), representation: solved.spiro } }, label);
 }
 
 const kindOf = (params: Record<string, unknown> | undefined): SpiroKind =>

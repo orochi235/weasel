@@ -39,7 +39,6 @@ declare module '@weasel-js/routing' {
     'tool.activate': { toolId: string };
     editAnchors: EditAnchorsParams;
     setAnchorField: SetAnchorFieldParams;
-    'spiro.placePoint': { kind?: import('@weasel-js/geom').SpiroKind };
   }
 }
 

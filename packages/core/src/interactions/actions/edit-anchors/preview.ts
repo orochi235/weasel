@@ -21,7 +21,8 @@ export interface PathEditPreview {
  * preview yet. Null when the node stores its path in neither supported place.
  *
  * The ghost is what committing `current` would store (`storeEditablePath`),
- * so a spiro curve is solved again on every move.
+ * so a path drawn from a form is drawn again from the edited form on every
+ * move.
  */
 export function pathEditPreview(
   dep: EditAnchorsDep,
@@ -44,7 +45,7 @@ export function pathEditPreview(
     if (!path) return null;
     if (path !== lastPath) {
       lastPath = path;
-      lastStored = storeEditablePath(origin, path);
+      lastStored = storeEditablePath(origin, path, dep.extensions);
     }
     return lastStored;
   };

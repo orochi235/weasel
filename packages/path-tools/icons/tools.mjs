@@ -73,4 +73,11 @@ export const TOOLS = {
     <path d="M10 6.6 V13.4" stroke-width="1"/>
     <circle cx="10" cy="6.6" r="1.4" fill="currentColor" stroke="none"/>
     <circle cx="10" cy="13.4" r="1.4" fill="currentColor" stroke="none"/>`,
+  spiro: `
+    <g stroke-linecap="butt" stroke-linejoin="miter">
+      <path d="M 3.5 15 C 6.5 15 7 10 10 10 C 13 10 13.5 5 16.5 5" stroke-linecap="round"/>
+      <circle cx="3.5" cy="15" r="1.6" fill="currentColor" stroke="none"/>
+      <circle cx="10" cy="10" r="1.6" fill="currentColor" stroke="none"/>
+      <circle cx="16.5" cy="5" r="1.6" fill="currentColor" stroke="none"/>
+    </g>`,
 };

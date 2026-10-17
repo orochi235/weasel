@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { pathToAnchors, worldEditToStorage, type PolygonPath, type SpiroPoint } from '@weasel-js/geom';
-import { pathEditPathOf, resolveEditablePathOf, storeEditablePath } from './editablePath';
+import { pathEditPathOf as editPathOf, resolveEditablePathOf, storeEditablePath as store } from '@weasel-js/core';
+import { spiroExtension } from './spiroRepresentation';
 import { spiroNodeData, spiroOf } from './spiroShape';
+
+type Shape = { pose: unknown; data: unknown };
+const EXTENSIONS = [spiroExtension];
+const pathEditPathOf = (node: Shape) => editPathOf(node, EXTENSIONS);
+const storeEditablePath = (node: Shape, path: PolygonPath) => store(node, path, EXTENSIONS);
 
 const points: SpiroPoint[] = [
   { x: 0, y: 0, kind: 'smooth' },
@@ -12,15 +18,15 @@ const points: SpiroPoint[] = [
 
 /** A spiro node storing its curve as the pose. */
 function poseNode() {
-  const { path, spiro } = spiroNodeData([{ points, closed: false }]);
-  return { pose: path as unknown, data: { spiro, tag: 1 } as unknown };
+  const { path, representation } = spiroNodeData([{ points, closed: false }]);
+  return { pose: path as unknown, data: { representation, tag: 1 } as unknown };
 }
 
 /** The same curve stored on `data.path` under a rotated rect pose. */
 function dataNode() {
-  const { path, spiro } = spiroNodeData([{ points, closed: false }]);
+  const { path, representation } = spiroNodeData([{ points, closed: false }]);
   const stored = worldEditToStorage({ x: 0, y: 0, width: 1, height: 1, rotation: 0.3 }, path);
-  return { pose: stored.pose as unknown, data: { path: stored.path, spiro } as unknown };
+  return { pose: stored.pose as unknown, data: { path: stored.path, representation } as unknown };
 }
 
 const xy = (path: PolygonPath) => pathToAnchors(path).anchors.flat().map((a) => [a.x, a.y]);
@@ -61,9 +67,16 @@ describe('a spiro node in path edit', () => {
 
   it('becomes plain geometry when its spiro no longer describes the path', () => {
     const node = poseNode();
-    const broken = { ...node, data: { spiro: { kinds: ['smooth'], at: [5] } } };
+    const broken = { ...node, data: { representation: { kind: 'spiro', kinds: ['smooth'], at: [5] } } };
     const path = resolveEditablePathOf(broken)!;
     expect(pathEditPathOf(broken)).toBe(path);
-    expect(spiroOf(storeEditablePath(broken, path)!.data)).toBeNull();
+    expect(storeEditablePath(broken, path)!.data).toEqual({});
+  });
+
+  it('is edited as plain geometry, and loses its spiro, without the spiro representation', () => {
+    const node = poseNode();
+    const curve = resolveEditablePathOf(node)!;
+    expect(editPathOf(node)).toBe(curve);
+    expect(store(node, curve)!.data).toEqual({ tag: 1 });
   });
 });

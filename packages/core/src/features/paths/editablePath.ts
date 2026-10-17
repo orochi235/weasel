@@ -4,13 +4,14 @@
  * A rect `data.path` is edited as its four corners and is stored as a polygon
  * from the first edit on; reading it changes nothing.
  */
-import { asPolygonPath, pathInWorld, worldEditToStorage, type Path, type PolygonPath, type SpiroKind } from '@weasel-js/geom';
+import { asPolygonPath, pathInWorld, worldEditToStorage, type Path, type PolygonPath } from '@weasel-js/geom';
 import type { GesturePreviewSource } from 'canvas/gestureBounds';
 import { pathFromPlane } from 'canvas/planeClips';
 import { isRectPose } from 'core/geometry/autoPoseDescriptor';
 import type { RectPose } from 'core/scene/types';
 import type { PlaneMap } from 'core/viewport/parallax';
-import { respiro, spiroEditPath, spiroOf, withoutSpiro } from './spiroShape';
+import type { PathEditExtension } from './pathEditExtension';
+import { pathFormOf, representationOf, withoutPathForm, type AnchorMarkerShape } from './pathRepresentation';
 
 /** The two fields of a node the editable path is read from. */
 export interface EditableShape {
@@ -60,37 +61,43 @@ export function resolveEditablePathOf(
 }
 
 /**
- * What path edit edits on a node, in world coords: a spiro node's control
- * path (`spiroShape`), whose anchors are the curve's points, and any other
- * node's editable polygon. Null when the node has no editable polygon.
+ * What path edit edits on a node, in world coords: the edit path of the form
+ * the node's path was drawn from, where one of `extensions` reads it
+ * (`PathRepresentation`), and otherwise its editable polygon. Null when the
+ * node has no editable polygon.
  */
-export function pathEditPathOf(node: EditableShape | undefined | null): PolygonPath | null {
+export function pathEditPathOf(
+  node: EditableShape | undefined | null,
+  extensions: readonly PathEditExtension[] = [],
+): PolygonPath | null {
   const path = resolveEditablePathOf(node);
-  const spiro = path ? spiroOf(node!.data) : null;
-  return (spiro && spiroEditPath(path!, spiro)) ?? path;
+  const held = path ? representationOf(extensions, node!.data) : null;
+  return (held && held.representation.editPath(path!, held.form)) ?? path;
 }
 
 /**
  * The pose and data that store `worldPath` where `node` stores its editable
  * polygon — the inverse of {@link resolveEditablePathOf}, so a `data.path`
- * node keeps its rotation. On a spiro node, `worldPath` is an edit of what
- * {@link pathEditPathOf} gave: the curve is solved again through its anchors.
- * Null when `node` has no editable polygon.
+ * node keeps its rotation. On a node whose path was drawn from a form one of
+ * `extensions` reads, `worldPath` is an edit of what {@link pathEditPathOf}
+ * gave, and the representation turns it into the drawn path; a form none
+ * reads, or that no longer describes the path, is dropped. Null when `node`
+ * has no editable polygon.
  */
 export function storeEditablePath(
   node: EditableShape | undefined | null,
   worldPath: PolygonPath,
+  extensions: readonly PathEditExtension[] = [],
 ): EditableShape | null {
   const storage = classifyPathStorage(node);
   if (!storage) return null;
   let path = worldPath;
   let data = node!.data;
-  const spiro = spiroOf(data);
-  if (spiro) {
-    // A spiro whose points no longer describe the path has nothing to solve: plain geometry.
-    const solved = respiro(resolveEditablePathOf(node)!, spiro, worldPath);
+  if (pathFormOf(data)) {
+    const held = representationOf(extensions, data);
+    const solved = held ? held.representation.store(resolveEditablePathOf(node)!, held.form, worldPath) : null;
     path = solved?.path ?? worldPath;
-    data = solved ? { ...(data as object), spiro: solved.spiro } : withoutSpiro(data);
+    data = solved ? { ...(data as object), representation: solved.form } : withoutPathForm(data);
   }
   if (storage.kind === 'pose') return { pose: path, data };
   const stored = worldEditToStorage(storage.pose, path);
@@ -133,18 +140,22 @@ export function liveEditablePath(
   node: EditableShape | undefined | null,
   previews: readonly GesturePreviewSource[],
   plane: PlaneMap | null,
+  extensions: readonly PathEditExtension[] = [],
 ): PolygonPath | null {
   if (!node) return null;
-  return pathFromPlane(pathEditPathOf(previewedShape(id, node, previews)), plane);
+  return pathFromPlane(pathEditPathOf(previewedShape(id, node, previews), extensions), plane);
 }
 
-/** The spiro kind of each anchor {@link liveEditablePath} shows for node `id`,
- *  or null when the node is not a spiro curve. */
-export function liveSpiroKinds(
+/** The marker of each anchor {@link liveEditablePath} shows for node `id`, as
+ *  the representation reading its form draws them; null for a node it reads
+ *  none of. */
+export function liveAnchorMarkers(
   id: string,
   node: EditableShape | undefined | null,
   previews: readonly GesturePreviewSource[],
-): readonly SpiroKind[] | null {
+  extensions: readonly PathEditExtension[],
+): readonly (AnchorMarkerShape | null)[] | null {
   if (!node) return null;
-  return spiroOf(previewedShape(id, node, previews).data)?.kinds ?? null;
+  const held = representationOf(extensions, previewedShape(id, node, previews).data);
+  return held?.representation.anchorMarkers?.(held.form) ?? null;
 }

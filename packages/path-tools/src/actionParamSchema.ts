@@ -32,6 +32,7 @@ declare module '@weasel-js/routing' {
     bridgePaths: { tension?: number };
     bridgeAnchors: { tension?: number };
     setSpiroKind: { kind?: SpiroKind };
+    'spiro.placePoint': { kind?: SpiroKind };
     constrainAnchors: ConstrainAnchorsParams;
     unconstrainAnchors: { kind?: PathConstraintKind };
     'distort.drag': WarpSettings;

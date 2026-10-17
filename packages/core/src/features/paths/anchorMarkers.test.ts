@@ -1,9 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import {
-  boundsOfPath, circlePath, PathBuilder, squarePath, type PolygonPath, type SpiroKind, type View,
-} from '@weasel-js/geom';
+import { circlePath, PathBuilder, squarePath, type PolygonPath, type View } from '@weasel-js/geom';
 import type { PathDrawCommand } from '@weasel-js/renderer';
-import { anchorMarkerCommands, anchorMarkerPath, DEFAULT_OVERLAY_STYLE } from './anchorMarkers';
+import { anchorMarkerCommands, DEFAULT_OVERLAY_STYLE } from './anchorMarkers';
 
 /** An open polyline along y = 10 with anchors `gap` world units apart. */
 function row(count: number, gap: number): PolygonPath {
@@ -59,35 +57,20 @@ describe('anchorMarkerCommands', () => {
 
 const sameCoords = (a: PolygonPath, b: PolygonPath) => expect(Array.from(a.coords)).toEqual(Array.from(b.coords));
 
-describe('anchorMarkerPath', () => {
-  it('draws a smooth point as a circle and a corner, or a plain anchor, as a square', () => {
-    sameCoords(anchorMarkerPath('smooth', { x: 10, y: 20 }, 8), circlePath(10, 20, 4));
-    sameCoords(anchorMarkerPath('corner', { x: 10, y: 20 }, 8), squarePath(10, 20, 8));
-    sameCoords(anchorMarkerPath(null, { x: 10, y: 20 }, 8), squarePath(10, 20, 8));
-  });
-
-  it('turns a tangent point into a half-disc whose round side faces away from its line', () => {
-    // The line arrives at a left point from the left, so the disc bulges right.
-    const left = boundsOfPath(anchorMarkerPath('left', { x: 0, y: 0 }, 8, { x: -50, y: 0 }, { x: 50, y: 30 }));
-    expect(left.x).toBeCloseTo(0, 6);
-    expect(left.x + left.width).toBeGreaterThan(4);
-    // The line leaves a right point toward the right, so the disc bulges left.
-    const right = boundsOfPath(anchorMarkerPath('right', { x: 0, y: 0 }, 8, { x: -50, y: 30 }, { x: 50, y: 0 }));
-    expect(right.x + right.width).toBeCloseTo(0, 6);
-    expect(right.x).toBeLessThan(-4);
-  });
-});
-
-describe('anchorMarkerCommands with spiro kinds', () => {
-  it('draws each spiro point with the marker of its kind', () => {
-    const control = new PathBuilder().moveTo(0, 0).lineTo(100, 0).lineTo(200, 50).lineTo(300, 0).build();
-    const kinds: SpiroKind[] = ['corner', 'left', 'smooth', 'smooth'];
-    const markers = (anchorMarkerCommands(control, at(1), new Set(), DEFAULT_OVERLAY_STYLE, kinds) as PathDrawCommand[])
+describe('anchorMarkerCommands with marker shapes', () => {
+  it('draws an anchor with the shape given for its flat index, and the rest as squares', () => {
+    const control = new PathBuilder().moveTo(0, 0).lineTo(100, 0).lineTo(200, 50).build();
+    const calls: unknown[][] = [];
+    const disc = (at: { x: number; y: number }, size: number, prev: unknown, next: unknown) => {
+      calls.push([at, size, prev, next]);
+      return circlePath(at.x, at.y, size / 2);
+    };
+    const markers = (anchorMarkerCommands(control, at(1), new Set(), DEFAULT_OVERLAY_STYLE, [null, disc]) as PathDrawCommand[])
       .slice(1).map((c) => c.path as PolygonPath);
-    expect(markers).toHaveLength(4);
+    expect(markers).toHaveLength(3);
     sameCoords(markers[0], squarePath(0, 0, 8));
-    sameCoords(markers[1], anchorMarkerPath('left', { x: 100, y: 0 }, 8, { x: 0, y: 0 }, { x: 200, y: 50 }));
-    sameCoords(markers[2], circlePath(200, 50, 4));
-    sameCoords(markers[3], circlePath(300, 0, 4));
+    sameCoords(markers[1], circlePath(100, 0, 4));
+    sameCoords(markers[2], squarePath(200, 50, 8));
+    expect(calls).toEqual([[{ x: 100, y: 0 }, 8, { x: 0, y: 0 }, { x: 200, y: 50 }]]);
   });
 });

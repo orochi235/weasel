@@ -3,11 +3,11 @@ import { useLatest } from '@weasel-js/react';
 import type { Action, ActionDeps } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import { cursorFor } from '@weasel-js/cursor';
-import { boundsOfPath, isSpiroKind, spiroToPath, withinPxRadius, type SpiroKind, type SpiroPoint } from '@weasel-js/geom';
-import { defineTool, type Tool } from '../../overlayBinding';
-import { icon } from '../../../icons.gen';
-import { createSpiroPreviewLayer, type SpiroPreviewState } from 'features/paths/spiroPreviewLayer';
-import { createPointerFollower } from '../shared/pointerFollower';
+import { boundsOfPath, isSpiroKind, withinPxRadius, type SpiroKind, type SpiroPoint } from '@weasel-js/geom';
+import { createPointerFollower, defineTool, type Tool } from '@weasel-js/core';
+import { icon } from '../icons.gen';
+import { createSpiroPreviewLayer, type SpiroPreviewState } from './spiroPreviewLayer';
+import { spiroNodeData } from './spiroShape';
 
 /** Options for {@link useSpiroTool}. */
 export interface UseSpiroToolOptions {
@@ -68,8 +68,8 @@ function spiroActions(host: SpiroActionsHost): Action[] {
   const commit = (deps: ActionDeps, closed: boolean): void => {
     const { points } = s();
     if (points.length >= 2) {
-      const { path } = spiroToPath([{ points, closed }]);
-      const id = deps.insert?.commit(boundsOfPath(path), { kind: 'spiro', points: [...points], closed }) ?? null;
+      const { path, representation } = spiroNodeData([{ points, closed }]);
+      const id = deps.insert?.commit(boundsOfPath(path), { kind: 'path', path, closed, data: { representation } }) ?? null;
       if (id !== null && host.options().autoSelect) deps.selection?.set([id]);
     }
     host.reset();
@@ -140,9 +140,10 @@ function spiroActions(host: SpiroActionsHost): Action[] {
  * a double-click or Mod-click finishes it open; Backspace takes back the last
  * point and Escape discards them all, as does switching tools.
  *
- * The curve is inserted through the `insert` dep as kind `'spiro'`, so a
- * consumer shapes the node by overriding that dep. Path edit then edits its
- * points (`spiroShape`).
+ * The curve is inserted through the `insert` dep as a `'path'`, its spiro
+ * form beside it on `data.representation`, so a consumer shapes the node by
+ * overriding that dep. With `spiroPreset` on, path edit then edits its points
+ * (`spiroRepresentation`).
  */
 export function useSpiroTool(options: UseSpiroToolOptions = {}): Tool {
   const { autoSelect = true, closeHitRadius = 8, snapPoint } = options;

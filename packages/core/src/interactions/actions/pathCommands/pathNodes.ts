@@ -1,9 +1,9 @@
 /**
  * What the path commands share: reading the selected path nodes, and writing
  * new geometry back into a node or into a copy of one. A node's geometry is
- * stored where it already lives (`storeEditablePath`); a shape generator, a
- * spiro, and the data in `GEOMETRY_BOUND_DATA`, which no longer make it or
- * name anchors it no longer has, are dropped.
+ * stored where it already lives (`storeEditablePath`); a shape generator, and
+ * the data in `GEOMETRY_BOUND_DATA`, which no longer make it or name anchors
+ * it no longer has, are dropped.
  */
 import type { ActionDeps } from '@weasel-js/routing';
 import type { PolygonPath } from '@weasel-js/geom';
@@ -15,7 +15,6 @@ import { createInsertOp } from 'core/ops/create';
 import { createDeleteOp } from 'core/ops/delete';
 import { resolveEditablePathOf, storeEditablePath } from 'features/paths/editablePath';
 import { withoutShapeGenerator } from 'features/paths/shapeGenerator';
-import { withoutSpiro } from 'features/paths/spiroShape';
 import { withoutGeometryBoundData } from 'features/paths/pathEditExtension';
 
 type AnyScene = Scene<unknown, string, unknown>;
@@ -57,7 +56,7 @@ export function pathNodesOf(
 /** `node` storing `worldPath` as plain geometry, or null when it holds no
  *  editable polygon. */
 export function withPath(node: AnyNode, worldPath: PolygonPath): { pose: unknown; data: unknown } | null {
-  const stored = storeEditablePath({ pose: node.pose, data: withoutSpiro(node.data) }, worldPath);
+  const stored = storeEditablePath(node, worldPath);
   if (!stored) return null;
   return { pose: stored.pose, data: withoutGeometryBoundData(withoutShapeGenerator(stored.data)) };
 }

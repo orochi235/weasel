@@ -1,40 +1,33 @@
 /**
- * Bend segment on a spiro curve: a press on the curve between two points
- * inserts a smooth point there and drags it, the curve solved again through
- * it on every move. A spiro curve has no handles to bend, so this is what
- * pulling on its outline means.
+ * A press on a spiro curve in path edit, between two points: it inserts a
+ * smooth point there and drags it, the curve solved again through it on
+ * every move. A spiro curve has no handles to bend, so this is what pulling
+ * on its outline means.
  */
 import type { ActionDeps, InvocationCtx, OngoingHandle } from '@weasel-js/routing';
 import {
   cubicPointAt, flatAnchorIndex, nearestSegmentT, pathToAnchors, spiroControlPath, withinPxRadius,
   type PolygonPath, type SpiroContour,
 } from '@weasel-js/geom';
-import type { EditAnchorsDep } from '../depSchema';
-import { spiroContours, spiroOf } from 'features/paths/spiroShape';
-import { pathEditPreview } from '../edit-anchors/preview';
+import { pathEditPreview, type EditAnchorsDep } from '@weasel-js/core';
+import { spiroContours, spiroOf } from './spiroShape';
 
 /** Screen-px reach of the curve, as the segment affordance's. */
 const CURVE_HIT_PX = 8;
 
 /** Where a press on the edited spiro curve adds a point: before `slot` in
  *  contour `sub` of `contours`, the curve's points as the press found them. */
-export interface SpiroInsertAt {
+interface SpiroInsertAt {
   dep: EditAnchorsDep;
   contours: SpiroContour[];
   sub: number;
   slot: number;
 }
 
-/** Whether the path in edit is a spiro curve. */
-export function editsSpiro(deps: ActionDeps | undefined): boolean {
-  const dep = deps?.editAnchors;
-  return !!dep?.editingId && spiroOf(dep.getNodeShape(dep.editingId)?.data) !== null;
-}
-
 /** The spiro curve in path edit, and where a press at `(x, y)` on it inserts
  *  a point. Null when no spiro curve is edited or the press misses it. */
-export function spiroInsertAt(deps: ActionDeps | undefined, x: number, y: number): SpiroInsertAt | null {
-  const dep = deps?.editAnchors;
+function spiroInsertAt(deps: ActionDeps, x: number, y: number): SpiroInsertAt | null {
+  const dep = deps.editAnchors;
   const spiro = dep?.editingId ? spiroOf(dep.getNodeShape(dep.editingId)?.data) : null;
   const curve = spiro ? (dep!.getOutlinePath?.(dep!.editingId) as PolygonPath | null | undefined) : null;
   if (!dep || !spiro || !curve) return null;
@@ -43,7 +36,7 @@ export function spiroInsertAt(deps: ActionDeps | undefined, x: number, y: number
   const set = pathToAnchors(curve);
   const hit = nearestSegmentT(set.anchors, x, y, set.closed);
   if (!hit) return null;
-  const scale = deps?.view?.get().scale ?? { x: 1, y: 1 };
+  const scale = deps.view?.get().scale ?? { x: 1, y: 1 };
   const on = set.anchors[hit.sub];
   const a = on[hit.segIdx];
   const b = on[(hit.segIdx + 1) % on.length];
@@ -61,7 +54,7 @@ export function spiroInsertAt(deps: ActionDeps | undefined, x: number, y: number
 }
 
 /** The drag that inserts a smooth point at the press and moves it. */
-export function spiroInsertDrag(insert: SpiroInsertAt): OngoingHandle {
+function spiroInsertDrag(insert: SpiroInsertAt): OngoingHandle {
   const { dep, contours, sub, slot } = insert;
   const id = dep.editingId;
   const flat = contours.slice(0, sub).reduce((n, c) => n + c.points.length, 0) + slot;
@@ -90,4 +83,11 @@ export function spiroInsertDrag(insert: SpiroInsertAt): OngoingHandle {
     previewPose: preview.previewPose,
     previewData: preview.previewData,
   };
+}
+
+/** The drag a press at `at` on the spiro curve in path edit starts, or null
+ *  when the press misses the curve or lands on one of its points. */
+export function spiroSegmentPress(deps: ActionDeps, at: { x: number; y: number }): (() => OngoingHandle) | null {
+  const insert = spiroInsertAt(deps, at.x, at.y);
+  return insert ? () => spiroInsertDrag(insert) : null;
 }

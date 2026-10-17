@@ -6,8 +6,8 @@
  */
 import type { DrawCommand } from '@weasel-js/renderer';
 import { circlePath, spiroToPath, transformPath, type Affine, type PolygonPath, type SpiroPoint } from '@weasel-js/geom';
-import type { RenderLayer } from 'core/layers/render';
-import { anchorMarkerPath } from './anchorMarkers';
+import type { RenderLayer } from '@weasel-js/core';
+import { spiroMarker } from './spiroMarkers';
 
 /** What the spiro tool has placed, as the preview reads it each frame. */
 export interface SpiroPreviewState {
@@ -51,7 +51,7 @@ export function createSpiroPreviewLayer(opts: CreateSpiroPreviewLayerOptions): R
       }
       const screen = points.map((p) => ({ x: sx(p), y: sy(p) }));
       points.forEach((p, i) => {
-        const path = anchorMarkerPath(p.kind, screen[i], MARKER_PX, screen[i - 1] ?? null, screen[i + 1] ?? null);
+        const path = spiroMarker(p.kind)(screen[i], MARKER_PX, screen[i - 1] ?? null, screen[i + 1] ?? null);
         out.push({ kind: 'path', path, fill: { paint }, stroke: { paint, width: 1 } });
       });
       if (closeHint) {

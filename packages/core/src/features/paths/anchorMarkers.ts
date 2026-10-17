@@ -4,9 +4,9 @@
  */
 import type { DrawCommand } from '@weasel-js/renderer';
 import {
-  circlePath, linePath, pathToAnchors, polygonFromPoints, resolveCorners, squarePath, type PenAnchor, type PolygonPath,
-  type SpiroKind, type View,
+  circlePath, linePath, pathToAnchors, resolveCorners, squarePath, type PenAnchor, type PolygonPath, type View,
 } from '@weasel-js/geom';
+import type { AnchorMarkerShape } from './pathRepresentation';
 
 /** Appearance of the outline and of the anchor and handle markers. */
 export interface PathEditingOverlayStyle {
@@ -79,44 +79,6 @@ function crowded(sub: readonly Point[], closed: boolean, i: number, px: number):
   return near(i - 1) || near(i + 1);
 }
 
-const HALF_DISC_STEPS = 12;
-
-/** A half-disc of radius `r` centered on `(x, y)`, bulging toward `toward`. */
-function halfDisc(x: number, y: number, r: number, toward: Point): PolygonPath {
-  const mid = Math.atan2(toward.y, toward.x);
-  const pts: Point[] = [];
-  for (let i = 0; i <= HALF_DISC_STEPS; i++) {
-    const a = mid - Math.PI / 2 + (Math.PI * i) / HALF_DISC_STEPS;
-    pts.push({ x: x + r * Math.cos(a), y: y + r * Math.sin(a) });
-  }
-  return polygonFromPoints(pts);
-}
-
-/**
- * The marker for an anchor at `at`, `size` px across, by what kind of point it
- * is: a square for an ordinary anchor (`kind` null) and a spiro corner, a
- * circle for a smooth spiro point, and a half-disc for a spiro point beside a
- * straight segment, its flat side toward the line. A `left` point's line
- * arrives from `prev` and a `right` point's leaves toward `next`, both in the
- * same screen space; without that neighbor the half-disc faces right.
- */
-export function anchorMarkerPath(
-  kind: SpiroKind | null,
-  at: Point,
-  size: number,
-  prev: Point | null = null,
-  next: Point | null = null,
-): PolygonPath {
-  if (kind === 'smooth') return circlePath(at.x, at.y, size / 2);
-  if (kind === 'left' || kind === 'right') {
-    const from = kind === 'left' ? prev : next;
-    const away = from ? { x: at.x - from.x, y: at.y - from.y } : { x: 1, y: 0 };
-    const toward = away.x === 0 && away.y === 0 ? { x: 1, y: 0 } : away;
-    return halfDisc(at.x, at.y, (size / 2) * 1.2, toward);
-  }
-  return squarePath(at.x, at.y, size);
-}
-
 /** The on-screen neighbors of `sub[i]` along its subpath, null past an open end. */
 function neighbors(sub: readonly Point[], closed: boolean, i: number): [Point | null, Point | null] {
   const n = sub.length;
@@ -140,16 +102,15 @@ function handleCommands(a: Point, handle: Point, style: Required<PathEditingOver
  * The open path's outline, then its anchors in walk order — each anchor's
  * handles under its marker. A selected anchor's marker is filled, an
  * unselected one's hollow, or a dot where its neighbors crowd it. The marker
- * is a square, or with `kinds`, the spiro kind of each anchor by flat index,
- * that kind's {@link anchorMarkerPath}. Flat indices count the way
- * `enumerateAnchors` does, as the selection does.
+ * is a square, or the shape `markers` gives the anchor's flat index. Flat
+ * indices count the way `enumerateAnchors` does, as the selection does.
  */
 export function anchorMarkerCommands(
   path: PolygonPath,
   view: View,
   selected: ReadonlySet<number>,
   style: Required<PathEditingOverlayStyle>,
-  kinds: readonly SpiroKind[] | null = null,
+  markers: readonly (AnchorMarkerShape | null)[] | null = null,
 ): DrawCommand[] {
   const out: DrawCommand[] = [{
     kind: 'path',
@@ -162,7 +123,7 @@ export function anchorMarkerCommands(
     const screen = sub.map((a) => worldToScreen(a, view));
     const isClosed = closed[s];
     sub.forEach((a, i) => {
-      const kind = kinds?.[flat] ?? null;
+      const shape = markers?.[flat] ?? null;
       const isSelected = selected.has(flat++);
       const at = screen[i];
       if (a.inHandle) out.push(...handleCommands(at, worldToScreen(a.inHandle, view), style));
@@ -177,7 +138,7 @@ export function anchorMarkerCommands(
       }
       out.push({
         kind: 'path',
-        path: anchorMarkerPath(kind, at, style.anchorSizePx, ...neighbors(screen, isClosed, i)),
+        path: shape ? shape(at, style.anchorSizePx, ...neighbors(screen, isClosed, i)) : squarePath(at.x, at.y, style.anchorSizePx),
         fill: { paint: { kind: 'solid', color: isSelected ? style.anchorFillSelected : style.anchorFill } },
         stroke: { paint: { kind: 'solid', color: style.anchorStroke }, width: 1 },
       });

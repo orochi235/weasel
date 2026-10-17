@@ -1,16 +1,6 @@
-import {
-  type ActionTunings,
-  asNodeId,
-  boundsOfPath,
-  createScene,
-  type RectPose,
-  solid,
-  SPIRO_KINDS,
-  type SpiroContour,
-  type SpiroKind,
-  spiroNodeData,
-} from '@weasel-js/core';
-import { spiroPreset } from '@weasel-js/path-tools';
+import { type ActionTunings, asNodeId, boundsOfPath, createScene, type RectPose, solid } from '@weasel-js/core';
+import { SPIRO_KINDS, type SpiroContour, type SpiroKind } from '@weasel-js/geom';
+import { spiroNodeData, spiroPreset, useSpiroTool } from '@weasel-js/path-tools';
 import {
   type ConfigOf,
   defineInstrument,
@@ -41,7 +31,7 @@ const FEATURES = ['draw', spiroPreset] as const;
 const OPENING = { id: SEEDED_SPIRO };
 
 function spiroNode(id: string, contour: SpiroContour, color: string) {
-  const { path, spiro } = spiroNodeData([contour]);
+  const { path, representation } = spiroNodeData([contour]);
   const { x, y, width, height } = boundsOfPath(path);
   return {
     id: asNodeId(id),
@@ -50,7 +40,7 @@ function spiroNode(id: string, contour: SpiroContour, color: string) {
     pose: { x, y, width, height },
     data: {
       path,
-      spiro,
+      representation,
       fill: contour.closed ? { paint: solid(color) } : null,
       stroke: { paint: solid(color), width: 2 },
     },
@@ -89,12 +79,14 @@ function SpiroTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const { pointKind } = ctx.config;
   const tune = useMemo<ActionTunings>(() => ({ 'spiro.placePoint': { params: { kind: pointKind } } }), [pointKind]);
   const selectionOptions = useMemo(() => ({ initial: [asNodeId(SEEDED_SPIRO)] }), []);
+  const spiro = useSpiroTool();
+  const tools = useMemo(() => ({ spiro }), [spiro]);
 
   return (
     <>
       <TrialSceneCanvas
         features={FEATURES}
-        defaultTools={['spiro']}
+        tools={tools}
         scene={scene}
         trial={ctx.trial}
         tune={tune}
@@ -116,7 +108,7 @@ const spiroInstrument = defineInstrument<State, Config>({
   tools: {
     tools: [
       { id: 'select', label: 'Select', icon: icon('core:select'), shortcut: 'V' },
-      { id: 'spiro', label: 'Spiro', icon: icon('core:spiro'), shortcut: 'Shift+P' },
+      { id: 'spiro', label: 'Spiro', icon: icon('path-tools:spiro'), shortcut: 'Shift+P' },
     ],
   },
   render: (ctx) => <SpiroTrial ctx={ctx} />,

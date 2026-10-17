@@ -72,6 +72,11 @@
       "group": "Tools",
       "tags": []
     },
+    "spiro": {
+      "body": "<g stroke-linecap=\"butt\" stroke-linejoin=\"miter\"><path d=\"M 3.5 15 C 6.5 15 7 10 10 10 C 13 10 13.5 5 16.5 5\" stroke-linecap=\"round\"/><circle cx=\"3.5\" cy=\"15\" r=\"1.6\" fill=\"currentColor\" stroke=\"none\"/><circle cx=\"10\" cy=\"10\" r=\"1.6\" fill=\"currentColor\" stroke=\"none\"/><circle cx=\"16.5\" cy=\"5\" r=\"1.6\" fill=\"currentColor\" stroke=\"none\"/></g>",
+      "group": "Tools",
+      "tags": []
+    },
     "reversePath": {
       "body": "<path d=\"M4.5 6.875 H15.5 M15.5 13.125 H4.5\"/><path d=\"M6.5 5.175 L4.5 6.875 L6.5 8.575 M13.5 11.425 L15.5 13.125 L13.5 14.825\"/>",
       "group": "Commands",

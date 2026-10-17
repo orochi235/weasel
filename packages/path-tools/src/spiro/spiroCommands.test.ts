@@ -1,8 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
 import { PathBuilder } from '@weasel-js/geom';
 import { ActionDisabledReason, type ImmediateInvoker, type InvocationCtx } from '@weasel-js/routing';
-import { asNodeId, spiroNodeData, spiroOf, type NodeId, type Op } from '@weasel-js/core';
+import { asNodeId, type NodeId, type Op } from '@weasel-js/core';
 import { releaseSpiroAction, setSpiroKindAction } from './spiroCommands';
+import { spiroNodeData, spiroOf } from './spiroShape';
 
 interface StubNode { id: NodeId; kind: 'leaf'; layer: string; pose: unknown; data: unknown; parent: NodeId | null }
 
@@ -31,11 +32,11 @@ const to = (op: Op) => (op.args as { to: unknown }).to;
 const line = (x0: number, y0: number, x1: number, y1: number) => new PathBuilder().moveTo(x0, y0).lineTo(x1, y1).build();
 
 const spiro = () => {
-  const { path, spiro: s } = spiroNodeData([{
+  const { path, representation } = spiroNodeData([{
     points: [{ x: 0, y: 0, kind: 'smooth' }, { x: 60, y: 60, kind: 'smooth' }, { x: 120, y: 0, kind: 'smooth' }],
     closed: false,
   }]);
-  return { pose: path, data: { spiro: s } };
+  return { pose: path, data: { representation } };
 };
 
 describe('setSpiroKindAction', () => {

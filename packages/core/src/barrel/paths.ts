@@ -83,7 +83,6 @@ export {
   pathPoseDescriptor,
   pathOriginProjection,
   createPenPreviewLayer,
-  createSpiroPreviewLayer,
   createPathEditingOverlayLayer,
   GEOMETRY_BOUND_DATA,
   withoutGeometryBoundData,
@@ -147,8 +146,6 @@ export type {
   CreatePathLayerOpts,
   CreatePenPreviewLayerOptions,
   PenPreviewStyle,
-  CreateSpiroPreviewLayerOptions,
-  SpiroPreviewState,
   CreatePathEditingOverlayLayerOptions,
   PathEditingOverlayStyle,
   FinishedPathEdit,
@@ -158,6 +155,9 @@ export type {
   PathEditPart,
   PathEditStore,
   PathEditTarget,
+  AnchorMarkerShape,
+  PathForm,
+  PathRepresentation,
   PathInWorldPose,
   PathStation,
   PointAlongPathOptions,
@@ -287,31 +287,6 @@ export type {
   PathConstraintKind,
   SolveConstraintsOptions,
   SolveConstraintsResult,
-} from '@weasel-js/geom';
-
-// ─── Spiro curves: a path solved through its on-curve points ───────────────
-export {
-  respiro,
-  respiroWithKind,
-  spiroContours,
-  spiroEditPath,
-  spiroNodeData,
-  spiroOf,
-  withoutSpiro,
-  type SpiroShape,
-} from '../features/paths/spiroShape';
-export {
-  SPIRO_KINDS,
-  isSpiroKind,
-  solveSpiro,
-  spiroControlPath,
-  spiroToPath,
-  type SpiroContour,
-  type SpiroKind,
-  type SpiroPath,
-  type SpiroPoint,
-  type SpiroSegment,
-  type SpiroToPathOptions,
 } from '@weasel-js/geom';
 
 // ─── Curves: alternate path representations (Bezier, NURBS, Spiro) ──────────
