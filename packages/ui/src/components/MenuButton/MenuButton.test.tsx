@@ -90,6 +90,17 @@ describe('MenuButton', () => {
     expect(screen.getByRole('menu')).toBeDefined();
   });
 
+  it('opens on a keyboard click after a press on the open button was released elsewhere', () => {
+    render(<MenuButton label="Add trial…" items={ITEMS} onAction={() => {}} />);
+    const btn = trigger(/Add trial…/);
+    press(btn);
+    fireEvent.pointerDown(btn);
+    expect(screen.queryByRole('menu')).toBeNull();
+    fireEvent.pointerUp(document.body);
+    fireEvent.click(btn);
+    expect(screen.getByRole('menu')).toBeDefined();
+  });
+
   it('names its menu by the button and marks its rows as inside an overlay', () => {
     render(<MenuButton label="Add trial…" items={ITEMS} onAction={() => {}} />);
     press(trigger(/Add trial…/));

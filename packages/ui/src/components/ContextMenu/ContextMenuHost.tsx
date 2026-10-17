@@ -2,9 +2,9 @@ import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useSta
 import { createPortal } from 'react-dom';
 import { createMenuController, withLinks, type MenuController, type Rect } from '@weasel-js/menu';
 import { useMenuHost, type MenuHost, type OpenMenu } from '@weasel-js/core';
-import { useOverlayPortal } from '../../overlays/portalHost';
 import { MenuPanel } from './MenuPanel';
 import { useDismiss } from './useDismiss';
+import { useMenuPortal } from './useMenuPortal';
 
 const noop = () => () => {};
 const nothing = () => null;
@@ -14,12 +14,11 @@ export function ContextMenuHost() {
   const host = useMenuHost();
   const open = useSyncExternalStore(host?.subscribe ?? noop, host?.current ?? nothing, host?.current ?? nothing);
   useReturnFocus(host);
-  const { anchor, container, ready } = useOverlayPortal();
-  const target = container ?? (typeof document !== 'undefined' ? document.body : null);
+  const { anchor, target } = useMenuPortal();
   return (
     <>
       {anchor}
-      {open && ready && target && host && createPortal(<OpenPanels key={open.seq} open={open} close={host.close} />, target)}
+      {open && target && host && createPortal(<OpenPanels key={open.seq} open={open} close={host.close} />, target)}
     </>
   );
 }
@@ -73,7 +72,7 @@ export function OpenPanels({ open, close, takeFocus = true, labelledBy, inside, 
   // Built where it is disposed, so StrictMode's rerun of this effect gets a live one.
   useLayoutEffect(() => {
     const c = createMenuController({
-      entries: withLinks(open.entries, (href) => window.location.assign(href)),
+      entries: withLinks(open.entries),
       highlightFirst: open.source === 'keyboard',
       onClose: close,
       onEdge: (dir) => edge.current?.(dir),

@@ -89,6 +89,7 @@ export function MenuButton<T extends string = string>({
           aria-label={ariaLabel}
           aria-haspopup="menu"
           aria-expanded={trigger.open}
+          onPointerDown={trigger.press}
           onClick={(e) => trigger.click(e, () => entries)}
           {...(current ? { 'data-current': '' } : {})}
         >

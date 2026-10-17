@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useId, useRef, useState, type MouseEvent, type ReactElement, type ReactNode, type RefObject } from 'react';
+import { useCallback, useEffect, useId, useRef, useState, type MouseEvent, type PointerEvent, type ReactElement, type ReactNode, type RefObject } from 'react';
 import { createPortal } from 'react-dom';
 import { useLatest, type OpenMenu } from '@weasel-js/core';
 import type { MenuEntry } from '@weasel-js/menu';
-import { useOverlayPortal } from '../../overlays/portalHost';
 import { OpenPanels } from './ContextMenuHost';
+import { menuUnder } from './menuUnder';
+import { useMenuPortal } from './useMenuPortal';
 
 /** What {@link useMenuTrigger} hands back. */
 export interface MenuTrigger {
@@ -17,6 +18,8 @@ export interface MenuTrigger {
    *  Returns false, opening nothing, for an empty list. */
   show: (entries: ReadonlyArray<MenuEntry>, source: OpenMenu['source'], silent?: boolean) => boolean;
   close: () => void;
+  /** The button's `onPointerDown`: a press on the open button closes the menu. */
+  press: (e: PointerEvent) => void;
   /** The button's `onClick`: opens `build()`, unless the press behind this click closed the menu, which stays closed.
    *  A click with no pointer under it came from the keyboard, which highlights the first row. */
   click: (e: MouseEvent, build: () => ReadonlyArray<MenuEntry>) => void;
@@ -35,19 +38,10 @@ export function useMenuTrigger(portalContainer?: Element | null): MenuTrigger {
   const quietNow = useRef(false);
   const button = useRef<HTMLButtonElement>(null);
   const id = useId();
-  const isOpen = useLatest(open !== null);
-  // The menu's dismiss listener has closed it by the time the button's click runs, so a window listener
-  // registered before that one reads whether the press found it open.
-  const wasOpen = useRef(false);
-  useEffect(() => {
-    const press = (e: PointerEvent) => {
-      wasOpen.current = e.target instanceof Node && button.current?.contains(e.target) === true && isOpen.current;
-    };
-    window.addEventListener('pointerdown', press, true);
-    return () => window.removeEventListener('pointerdown', press, true);
-  }, [isOpen]);
-  const { anchor, container, ready } = useOverlayPortal(portalContainer);
-  const target = container ?? (typeof document !== 'undefined' ? document.body : null);
+  const seq = useRef(0);
+  // The press on the open button that closed the menu: the click it leads to must not reopen it.
+  const closedByPress = useRef(false);
+  const { anchor, target } = useMenuPortal(portalContainer);
 
   const close = useCallback(() => {
     setOpen(null);
@@ -56,24 +50,35 @@ export function useMenuTrigger(portalContainer?: Element | null): MenuTrigger {
 
   const show = useCallback((entries: ReadonlyArray<MenuEntry>, source: OpenMenu['source'], silent = false): boolean => {
     if (entries.length === 0) return false;
-    const rect = button.current!.getBoundingClientRect();
-    const under = { x: rect.left, y: rect.top, w: rect.width, h: rect.height };
-    setOpen((prev) => ({ seq: (prev?.seq ?? 0) + 1, entries, client: { x: rect.left, y: rect.bottom }, under, source }));
+    setOpen(menuUnder(button.current!, entries, source, ++seq.current));
     quietNow.current = silent;
     setQuiet(silent);
     return true;
   }, []);
 
+  const inside = useCallback((t: EventTarget | null) => t instanceof Node && button.current?.contains(t) === true, []);
+  const isOpen = useLatest(open !== null);
+
+  // A press that lands elsewhere will not click the button, so it cancels what an earlier one left.
+  useEffect(() => {
+    const away = (e: globalThis.PointerEvent) => { if (!inside(e.target)) closedByPress.current = false; };
+    window.addEventListener('pointerdown', away, true);
+    return () => window.removeEventListener('pointerdown', away, true);
+  }, [inside]);
+
+  const press = useCallback(() => {
+    closedByPress.current = isOpen.current;
+    if (isOpen.current) close();
+  }, [isOpen, close]);
+
   const click = useCallback((e: MouseEvent, build: () => ReadonlyArray<MenuEntry>) => {
-    if (wasOpen.current) {
-      wasOpen.current = false;
-      return;
-    }
-    show(build(), e.detail === 0 ? 'keyboard' : 'pointer');
+    const swallow = closedByPress.current && e.detail !== 0;
+    closedByPress.current = false;
+    if (!swallow) show(build(), e.detail === 0 ? 'keyboard' : 'pointer');
   }, [show]);
 
-  const portal = open && ready && target
-    ? createPortal(<OpenPanels key={open.seq} open={open} close={close} takeFocus={!quiet} labelledBy={id} />, target)
+  const portal = open && target
+    ? createPortal(<OpenPanels key={open.seq} open={open} close={close} takeFocus={!quiet} labelledBy={id} inside={inside} />, target)
     : null;
-  return { button, id, open: open !== null, show, close, click, anchor, portal };
+  return { button, id, open: open !== null, show, close, press, click, anchor, portal };
 }

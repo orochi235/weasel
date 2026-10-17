@@ -67,6 +67,7 @@ export function BarMenu({ label, schema, values, onChange, over, defaultOpen }: 
         className={`${f.frame} ${s.popTrigger}`}
         aria-haspopup="menu"
         aria-expanded={trigger.open}
+        onPointerDown={trigger.press}
         onClick={(e) => {
           pending.current = false;
           trigger.click(e, resolve);

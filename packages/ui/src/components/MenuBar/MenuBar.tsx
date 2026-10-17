@@ -2,12 +2,13 @@ import { useCallback, useId, useMemo, useRef, useState, type KeyboardEvent } fro
 import { createPortal } from 'react-dom';
 import { useLatest, type OpenMenu } from '@weasel-js/core';
 import type { PrefGroup } from '@weasel-js/prefs';
-import { useOverlayPortal } from '../../overlays/portalHost';
 import { Bar, valueAt } from '../Bar/Bar';
 import { useBarMenuResolver } from '../Bar/BarMenu';
 import { barMenuRoot } from '../Bar/barMenuRoot';
 import { OpenPanels } from '../ContextMenu/ContextMenuHost';
-import { shownMenuBar, type MenuBarTitle as Title } from './menuBarTitles';
+import { menuUnder } from '../ContextMenu/menuUnder';
+import { useMenuPortal } from '../ContextMenu/useMenuPortal';
+import { shownMenuBar, type MenuBarPart as Title } from './menuBarTitles';
 import { MenuBarTitle } from './MenuBarTitle';
 import { useMenuBarFocus } from './useMenuBarFocus';
 import { MenuBarHandleContext, type MenuAccessChord, type MenuBarHandle } from './menuBarHandle';
@@ -57,8 +58,7 @@ export function MenuBar({ schema, over, values, onChange, label = 'Menu bar', ac
   const focus = useMenuBarFocus(bar);
   const idBase = useId();
   const titleId = (key: string) => `${idBase}-${key}`;
-  const { anchor, container, ready } = useOverlayPortal();
-  const target = container ?? (typeof document !== 'undefined' ? document.body : null);
+  const { anchor, target } = useMenuPortal();
 
   const show = (key: string, source: OpenMenu['source'], release = false) => {
     const title = menus.find((m) => m.key === key);
@@ -72,9 +72,7 @@ export function MenuBar({ schema, over, values, onChange, label = 'Menu bar', ac
       return;
     }
     focus.opening();
-    const r = el.getBoundingClientRect();
-    const menu: OpenMenu = { seq: ++seq.current, entries, client: { x: r.left, y: r.bottom }, under: { x: r.left, y: r.top, w: r.width, h: r.height }, source };
-    setOpened({ key, menu, release });
+    setOpened({ key, menu: menuUnder(el, entries, source, ++seq.current), release });
   };
   const showNow = useLatest(show);
 
@@ -147,7 +145,7 @@ export function MenuBar({ schema, over, values, onChange, label = 'Menu bar', ac
           <Bar key={t.key} schema={t.schema} over={over ?? schema} values={values} onChange={onChange} />
         ))}
       </div>
-      {opened && ready && target && createPortal(
+      {opened && target && createPortal(
         <OpenPanels
           key={opened.menu.seq}
           open={opened.menu}
