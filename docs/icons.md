@@ -91,7 +91,7 @@ Core supplies the React side:
 
 | Mount | Registry |
 |---|---|
-| `<IconRegistryProvider icons variants>` | A registry of its own, seeded with `icons` |
+| `<IconRegistryProvider icons variants>` | A registry of its own, holding `icons`; a new `icons` replaces the tables the last one registered |
 | `<WeaselProvider icons iconVariants>` | The same, around the provider stack. `isolate` leaves the registry alone |
 | `<WeaselProvider>` without either, or `<SceneCanvas>` | An empty one, only when none is in scope |
 
@@ -110,7 +110,7 @@ const ICON_VARIANTS = { all: () => import('virtual:weasel-icons/all') };
 
 Without the build plugin, an app passes the tables themselves, each imported as `icons` from
 `@weasel-js/core/icons`, `@weasel-js/ui/icons` or `@weasel-js/path-tools/icons`. The list is a
-module constant: the provider adds `icons` again whenever the array is a new one.
+module constant: the provider releases and registers its tables again whenever the array is a new one.
 
 ```tsx
 import { icons as coreIcons } from '@weasel-js/core/icons';
