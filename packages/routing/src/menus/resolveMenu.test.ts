@@ -261,3 +261,31 @@ describe('resolveSchemaMenu: access letters', () => {
     expect(es[0]).toMatchObject({ kind: 'submenu', access: 'v' });
   });
 });
+
+describe('resolveSchemaMenu: access letters through aliases and absence', () => {
+  const over = pref.group('', { view: pref.group('', {
+    grid: pref.boolean('Grid', false, { access: 'g' }), snap: pref.boolean('Snap', false),
+  }) });
+  const aliasOf = (of: string, access?: string) =>
+    ({ kind: 'alias', name: '', description: '', default: undefined, of, ...(access ? { access } : {}) }) as const;
+  const aliased = (a: ReturnType<typeof aliasOf>) =>
+    resolveSchemaMenu(menu({ a }), Object.assign(valued({ 'view.grid': true, 'view.snap': true }), { over }));
+
+  it('lets an alias letter win over its target letter', () => {
+    expect(aliased(aliasOf('view.grid', 'a'))[0]).toMatchObject({ access: 'a' });
+  });
+  it('lets an alias with no letter inherit its target letter', () => {
+    expect(aliased(aliasOf('view.grid'))[0]).toMatchObject({ access: 'g' });
+  });
+  it('gives an alias of a target with no letter none', () => {
+    expect(aliased(aliasOf('view.snap'))[0]).not.toHaveProperty('access');
+  });
+  it('gives an action leaf with no letter an item with no access key', () => {
+    expect(resolveSchemaMenu(menu({ cut: act('cut') }), sources())[0]).not.toHaveProperty('access');
+  });
+  it('gives a menu group with no letter a submenu with no access key', () => {
+    const es = resolveSchemaMenu(menu({ v: pref.group('V', { cut: act('cut') }, { as: 'menu' }) }), sources());
+    expect(es[0]).toMatchObject({ kind: 'submenu' });
+    expect(es[0]).not.toHaveProperty('access');
+  });
+});

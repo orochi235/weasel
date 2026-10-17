@@ -44,12 +44,13 @@ export function prefAliasName(alias: PrefAlias, target?: PrefLeaf): string {
   return target === undefined ? 'Alias' : target.name;
 }
 
-/** A leaf drawn through an alias: the target, under the alias's own name and description where it gives them. */
+/** A leaf drawn through an alias: the target, under the alias's own name, description and access letter where it gives them. */
 export function prefAliasedLeaf(alias: PrefAlias, target: PrefLeaf): PrefLeaf {
   return {
     ...target,
     name: prefAliasName(alias, target),
     description: alias.description === '' ? target.description : alias.description,
+    ...(alias.access ? { access: alias.access } : {}),
     ...(alias.tags ? { tags: [...(target.tags ?? []), ...alias.tags] } : {}),
   };
 }

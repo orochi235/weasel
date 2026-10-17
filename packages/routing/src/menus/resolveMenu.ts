@@ -40,6 +40,7 @@ type Ctx = {
 
 const SUBMENU_AS: ReadonlySet<PrefGroupAs> = new Set(['menu', 'page', 'tab', 'panel']);
 const noop = () => {};
+const withAccess = (access?: string): { access?: string } => (access ? { access } : {});
 const sep = (key: string): MenuEntry => ({ kind: 'separator', key });
 
 function itemOf(ctx: Ctx, it: ActionItem, key: string, label: string, off: boolean, access?: string): MenuItemEntry {
@@ -49,7 +50,7 @@ function itemOf(ctx: Ctx, it: ActionItem, key: string, label: string, off: boole
     kind: 'item',
     key,
     label,
-    ...(access ? { access } : {}),
+    ...withAccess(access),
     icon: it.icon,
     shortcut: actionShortcuts(it.action, it.params)[0],
     disabled: off || !evaluateEnabled(it.action, deps, ctx.at).enabled,
@@ -94,7 +95,8 @@ function booleanRows(ctx: Ctx, leaf: PrefBoolean, key: string, path: string, off
   const on = leaf.encoding ? leaf.encoding.read(stored, siblingsOf(ctx, path)) : stored === true;
   const write = (v: boolean) => (leaf.encoding ? leaf.encoding.write(v, siblingsOf(ctx, path)) : v);
   return [{
-    kind: 'item', key, label: leaf.name, ...(leaf.access ? { access: leaf.access } : {}), checked: on, disabled: off || leaf.readout === true,
+    kind: 'item', key, label: leaf.name, ...withAccess(leaf.access), checked: on,
+    disabled: off || leaf.readout === true,
     run: leaf.readout ? noop : () => onChange(path, write(!on)),
   }];
 }
@@ -133,7 +135,8 @@ function leafRows(ctx: Ctx, leaf: PrefLeaf, key: string, path: string, off: bool
     case 'boolean': return booleanRows(ctx, leaf as PrefBoolean, key, path, off);
     case 'enum': return enumRows(ctx, leaf as PrefEnum, key, path, off);
     case 'separator': return [sep(key)];
-    case 'label': return [{ kind: 'item', key, label: leaf.name, ...(leaf.access ? { access: leaf.access } : {}), disabled: true, run: noop }];
+    case 'label':
+      return [{ kind: 'item', key, label: leaf.name, ...withAccess(leaf.access), disabled: true, run: noop }];
     case 'alias': {
       const alias = leaf as Parameters<typeof prefAliasTarget>[0];
       const target = prefAliasTarget(alias, (p) => prefLeafAt(ctx.src.over ?? ctx.root, p));
@@ -153,7 +156,9 @@ function groupRows(ctx: Ctx, group: PrefGroup, prefix: string, off: boolean): Me
       out.push(...leafRows(ctx, node, path, path, disabled));
     } else if (node.as !== undefined && SUBMENU_AS.has(node.as)) {
       const entries = tidy(groupRows(ctx, node, path, disabled));
-      if (entries.length) out.push({ kind: 'submenu', key: path, label: node.name, ...(node.access ? { access: node.access } : {}), entries });
+      if (entries.length) {
+        out.push({ kind: 'submenu', key: path, label: node.name, ...withAccess(node.access), entries });
+      }
     } else {
       out.push(sep(`${path}/<`), ...groupRows(ctx, node, path, disabled), sep(`${path}/>`));
     }
