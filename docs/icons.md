@@ -154,8 +154,8 @@ and rspack when the compiler applies it.
 comment; rolldown drops plain comments, so the plugin records each module's refs and re-annotates
 them in a `renderChunk` ordered `post`. rolldown's output minify, including its default dead-code
 pass, strips them again, so core's and ui's vite builds set both `build.minify` and
-`rolldownOptions.output.minify` to `false`. A library build whose modules named refs and whose
-output holds no annotation fails.
+`rolldownOptions.output.minify` to `false`. A library build fails when any chunk holds a ref its
+modules named as a literal with no annotation, in whichever chunk the literal lands.
 
 **App mode.** The plugin collects every `@icon` literal in every module the build transforms,
 `node_modules` included. It reads the table beside each `icons.gen` it meets and each package's
@@ -196,7 +196,7 @@ gen:icons, and `packages/icons/scripts/gen-icons.test.ts` fails on a hand-writte
 | Written as | Result |
 |---|---|
 | `icon(name)` with a computed `name` | Not rewritten; the build warns, and the glyph needs a loaded variant |
-| `import * as g from './icons.gen'; g.icon('x')` | Not rewritten |
+| `import * as g from './icons.gen'; g.icon('x')`, a default import, or a module re-exporting `icon` | Not rewritten; the build warns |
 | A name in data, such as a JSON prefs schema | Never collected; the glyph needs a loaded variant |
 | A ref in a module the bundler later tree-shakes | Collected anyway, so its glyph ships; a build errs toward too many glyphs, never too few |
 | A table generated after the dev server started | Served after a restart |

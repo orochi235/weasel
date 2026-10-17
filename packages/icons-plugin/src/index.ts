@@ -2,13 +2,11 @@ import MagicString from 'magic-string';
 import { createUnplugin, type UnpluginInstance } from 'unplugin';
 import { libraryAnnotations } from './annotate';
 import { assertBundler } from './bundlers';
-import type { IconTable } from '@weasel-js/icons';
-// Relative, and so bundled in: vite and tsup configs load this from source, before any dist exists.
-import { splitIconRef } from '../../icons/src/names';
+import { fail, iconCatalog, tablesFrom } from './catalog';
 import { collectIconRefs } from './collect';
 import { rewriteIconCalls } from './rewrite';
-import { declaredTable, genFile, namespaceIn, packageDirFinder, reachableTables, tableBeside } from './tables';
-import { MARKER, PREFIX, USED, admits, moduleFor, subset, variantOf, type VariantFilter } from './virtual';
+import { genFile, namespaceIn, packageDirFinder, reachableTables } from './tables';
+import { MARKER, PREFIX, moduleFor, variantOf, type VariantFilter } from './virtual';
 
 export type { VariantFilter } from './virtual';
 export { collectIconRefs } from './collect';
@@ -27,10 +25,10 @@ export interface WeaselIconsOptions {
 
 const SOURCE = /\.[cm]?[jt]sx?$/;
 
-/** Report through the bundler when its context can, and throw in case it only records. */
-function fail(ctx: object, message: string): never {
-  if ('error' in ctx && typeof ctx.error === 'function') ctx.error(message);
-  throw new Error(message);
+/** The ids of every module in the build, when the bundler's context can list them. */
+function liveModules(ctx: object): Set<string> | undefined {
+  if (!('getModuleIds' in ctx) || typeof ctx.getModuleIds !== 'function') return undefined;
+  return new Set(ctx.getModuleIds() as Iterable<string>);
 }
 
 /**
@@ -45,48 +43,19 @@ export const weaselIcons: UnpluginInstance<WeaselIconsOptions, false> = createUn
     if (name === 'all' || name === '') throw new Error(`weaselIcons: a custom variant cannot be named "${name}"`);
   }
   const app = options.mode === 'app';
-  const refs = new Map<string, string>();
-  const tables = new Map<string, IconTable>();
+  const catalog = iconCatalog(variants);
   const packageDir = packageDirFinder();
   const seenPackages = new Set<string>();
   const library = libraryAnnotations();
   let dev = false;
 
-  const addTable = (ctx: object, table: IconTable) => {
-    const held = tables.get(table.namespace);
-    if (held && held.owner !== table.owner) {
-      fail(ctx, `the icon namespace "${table.namespace}" is claimed by both ${held.owner} and ${table.owner}`);
-    }
-    if (table.namespace in variants) {
-      fail(ctx, `the custom icon variant "${table.namespace}" has the name of ${table.owner}'s icon namespace`);
-    }
-    tables.set(table.namespace, held ? { ...table, icons: { ...held.icons, ...table.icons } } : table);
-  };
-  const variantTables = (ctx: object, variant: string): IconTable[] => {
-    const all = [...tables.values()];
-    if (variant === USED) return dev ? all : subset(all, (ns, name) => refs.has(`${ns}:${name}`));
-    if (variant === 'all') return all;
-    const custom = variants[variant];
-    if (custom) return subset(all, admits(custom));
-    const own = tables.get(variant);
-    if (!own) fail(ctx, `virtual:weasel-icons/${variant} names no custom variant and no icon namespace in this build`);
-    return [own];
-  };
-  const checkRefs = (ctx: object) => {
-    for (const [ref, from] of refs) {
-      const parts = splitIconRef(ref);
-      const table = parts && tables.get(parts.namespace);
-      if (!parts || !table) fail(ctx, `no package in this build provides the icon namespace "${parts?.namespace ?? ref}" (named in ${from})`);
-      if (!table.icons[parts.name]) fail(ctx, `icon "${ref}" is not in ${table.owner}'s table (named in ${from})`);
-    }
-  };
   // Runs after every module is transformed, so `refs` and `tables` are complete.
-  function renderChunk(this: object, code: string, chunk: { fileName: string; moduleIds: readonly string[] }) {
+  function renderChunk(this: object, code: string, chunk: { fileName: string }) {
     if (!app) return library.renderChunk(code, chunk);
     if (!code.includes('__WEASEL_ICONS__')) return null;
     const s = new MagicString(code);
     for (const m of code.matchAll(MARKER)) {
-      const json = JSON.stringify(JSON.stringify(variantTables(this, m[2]!)));
+      const json = JSON.stringify(JSON.stringify(catalog.variant(this, m[2]!, dev)));
       s.overwrite(m.index!, m.index! + m[0].length, json);
     }
     // A string map: magic-string's object form types `sourcesContent` wider than rollup accepts.
@@ -106,31 +75,32 @@ export const weaselIcons: UnpluginInstance<WeaselIconsOptions, false> = createUn
     transformInclude: (id) => !id.startsWith('\0') && SOURCE.test(id.split('?')[0]!),
     transform(code, id) {
       const file = id.split('?')[0]!;
+      const gens: string[] = [];
       const out = rewriteIconCalls(
         code,
         file,
         (spec) => {
           const gen = genFile(spec, file);
-          if (!gen) return undefined;
-          const table = app ? tableBeside(gen) : undefined;
-          if (table) addTable(this, table);
-          return namespaceIn(gen);
+          if (gen) gens.push(gen);
+          return gen && namespaceIn(gen);
         },
         (message) => this.warn(message),
       );
       if (out && out.dynamic > 0) {
         this.warn(`${file}: ${out.dynamic} icon() call(s) with a computed name resolve only from a loaded variant`);
       }
+      const named = collectIconRefs(out?.code ?? code, file);
       if (!app) {
-        library.record(id, collectIconRefs(out?.code ?? code, file));
+        library.record(id, named);
       } else {
-        const dir = packageDir(file);
-        if (dir && !seenPackages.has(dir)) {
-          seenPackages.add(dir);
-          const table = declaredTable(dir);
-          if (table) addTable(this, table);
+        const pkg = packageDir(file);
+        if (!dev) {
+          catalog.record(id, { file, gens, pkg, refs: named });
+        } else {
+          const fresh = pkg && !seenPackages.has(pkg) ? [pkg] : [];
+          fresh.forEach((d) => seenPackages.add(d));
+          for (const t of tablesFrom(gens, fresh)) catalog.add(this, t);
         }
-        for (const ref of collectIconRefs(out?.code ?? code, file)) if (!refs.has(ref)) refs.set(ref, file);
       }
       return out ? { code: out.code, map: out.map } : null;
     },
@@ -139,15 +109,21 @@ export const weaselIcons: UnpluginInstance<WeaselIconsOptions, false> = createUn
     load(id) {
       const variant = variantOf(id);
       if (variant === undefined) return null;
-      return dev ? `export default ${JSON.stringify(variantTables(this, variant))};` : moduleFor(variant);
+      return dev ? `export default ${JSON.stringify(catalog.variant(this, variant, dev))};` : moduleFor(variant);
     },
     buildEnd() {
-      if (app && !dev) checkRefs(this);
+      if (dev) return;
+      const live = liveModules(this);
+      if (live) {
+        catalog.keep(live);
+        library.keep(live);
+      }
+      if (app) catalog.settle(this);
     },
     vite: {
       configResolved(config) {
         dev = config.command === 'serve' || config.mode === 'test';
-        if (app && dev) for (const t of reachableTables(config.root)) addTable(this, t);
+        if (app && dev) for (const t of reachableTables(config.root)) catalog.add(this, t);
       },
       renderChunk: lastRenderChunk,
       generateBundle,

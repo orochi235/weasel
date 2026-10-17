@@ -47,15 +47,32 @@ export function rewriteIconCalls(
     return null;
   }
   const locals = new Map<string, string>();
+  const unfollowed = (form: string) =>
+    warn?.(`${id}: a ${form} of icon from an icons.gen module is not followed, so its calls are not rewritten and their glyphs can miss a trimmed build`);
+  const fromGen = (source: { value: string } | null | undefined) =>
+    !!source && ICONS_GEN.test(source.value) && namespaceOf(source.value) !== undefined;
+  const nameOf = (n: { type: string; name?: string; value?: unknown }) => (n.type === 'Identifier' ? n.name : String(n.value));
   for (const node of parsed.program.body) {
+    if (node.type === 'ExportAllDeclaration' && node.exportKind !== 'type' && fromGen(node.source)) unfollowed('re-export');
+    if (node.type === 'ExportNamedDeclaration' && node.exportKind !== 'type' && node.source && fromGen(node.source)) {
+      if (node.specifiers.some((e) => e.exportKind !== 'type' && nameOf(e.local) === 'icon')) unfollowed('re-export');
+    }
     if (node.type !== 'ImportDeclaration' || node.importKind === 'type' || !ICONS_GEN.test(node.source.value)) continue;
     const namespace = namespaceOf(node.source.value);
     if (!namespace) continue;
     for (const spec of node.specifiers) {
+      if (spec.type === 'ImportNamespaceSpecifier') unfollowed('namespace import');
+      if (spec.type === 'ImportDefaultSpecifier') unfollowed('default import');
       if (spec.type !== 'ImportSpecifier' || spec.importKind === 'type') continue;
-      const imported = spec.imported.type === 'Identifier' ? spec.imported.name : spec.imported.value;
-      if (imported === 'icon') locals.set(spec.local.name, namespace);
+      if (nameOf(spec.imported) === 'icon') locals.set(spec.local.name, namespace);
     }
+  }
+  for (const node of parsed.program.body) {
+    const local =
+      node.type === 'ExportNamedDeclaration' && !node.source && node.exportKind !== 'type'
+        ? node.specifiers.some((e) => locals.has(nameOf(e.local) ?? ''))
+        : node.type === 'ExportDefaultDeclaration' && node.declaration.type === 'Identifier' && locals.has(node.declaration.name);
+    if (local) unfollowed('re-export');
   }
   if (locals.size === 0) return null;
   const s = new MagicString(code);

@@ -47,6 +47,32 @@ describe('rewriteIconCalls', () => {
   });
 });
 
+describe('rewriteIconCalls on imports it cannot follow', () => {
+  const warned = (src: string) => {
+    const warnings: string[] = [];
+    rewriteIconCalls(src, 'w.ts', ns, (m) => warnings.push(m));
+    return warnings.join('\n');
+  };
+
+  it('warns on a namespace import', () => {
+    expect(warned(`import * as g from './icons.gen';\ng.icon('x');\n`)).toMatch(/w\.ts.*namespace import/);
+  });
+
+  it('warns on a default import', () => {
+    expect(warned(`import g from './icons.gen';\ng('x');\n`)).toMatch(/w\.ts.*default import/);
+  });
+
+  it('warns on a re-export of icon, from the module or through a local', () => {
+    expect(warned(`export { icon } from './icons.gen';\n`)).toMatch(/w\.ts.*re-export/);
+    expect(warned(`export * from './icons.gen';\n`)).toMatch(/w\.ts.*re-export/);
+    expect(warned(`import { icon } from './icons.gen';\nexport { icon as glyph };\n`)).toMatch(/w\.ts.*re-export/);
+  });
+
+  it('says nothing about a type-only re-export', () => {
+    expect(warned(`export type { CoreIconName } from './icons.gen';\n`)).toBe('');
+  });
+});
+
 describe('rewriteIconCalls in comments and strings', () => {
   const src = [
     `import { icon } from './icons.gen';`,

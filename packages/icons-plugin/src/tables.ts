@@ -23,13 +23,16 @@ export function declaredTable(pkgDir: string): IconTable | undefined {
   return table && existsSync(join(pkgDir, table)) ? read(join(pkgDir, table)) : undefined;
 }
 
+// A manifest with no name, such as a `dist/package.json` holding only `type`, does not root a package.
+const named = (file: string) => existsSync(file) && typeof (JSON.parse(readFileSync(file, 'utf8')) as { name?: unknown }).name === 'string';
+
 /** Finds the package directory a file belongs to, caching by directory. */
 export function packageDirFinder() {
   const cache = new Map<string, string | undefined>();
   const find = (dir: string): string | undefined => {
     if (cache.has(dir)) return cache.get(dir);
     const parent = dirname(dir);
-    const out = existsSync(join(dir, 'package.json')) ? dir : parent === dir ? undefined : find(parent);
+    const out = named(join(dir, 'package.json')) ? dir : parent === dir ? undefined : find(parent);
     cache.set(dir, out);
     return out;
   };
@@ -37,9 +40,10 @@ export function packageDirFinder() {
 }
 
 const GEN = /^icons\.gen\.[cm]?[jt]sx?$/;
-const SKIP = new Set(['node_modules', 'dist', 'fixtures']);
+const SKIP = new Set(['node_modules', 'dist']);
+const OWN_FIXTURES = join(import.meta.dirname, 'fixtures');
 
-/** Every table sitting beside a generated icons.gen anywhere under `dir`, outside `node_modules`, `dist` and test `fixtures`. */
+/** Every table sitting beside a generated icons.gen anywhere under `dir`, outside `node_modules`, `dist` and this plugin's test fixtures. */
 export function sourceTablesUnder(dir: string): IconTable[] {
   const out: IconTable[] = [];
   const walk = (d: string) => {
@@ -47,7 +51,10 @@ export function sourceTablesUnder(dir: string): IconTable[] {
     if (entries.some((e) => e.isFile() && GEN.test(e.name)) && existsSync(join(d, 'icons.table.json'))) {
       out.push(read(join(d, 'icons.table.json')));
     }
-    for (const e of entries) if (e.isDirectory() && !SKIP.has(e.name) && !e.name.startsWith('.')) walk(join(d, e.name));
+    for (const e of entries) {
+      const path = join(d, e.name);
+      if (e.isDirectory() && !SKIP.has(e.name) && !e.name.startsWith('.') && path !== OWN_FIXTURES) walk(path);
+    }
   };
   if (existsSync(dir)) walk(dir);
   return out;

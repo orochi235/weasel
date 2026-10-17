@@ -76,6 +76,26 @@ describe('weaselIcons app mode', () => {
     await expect(bundle({}, { entry: 'unknown.ts' })).rejects.toThrow(/icon "lib:nope" is not in @fx\/lib's table.*unknown\.ts/s);
   });
 
+  it('forgets the previous build when one plugin builds again, as under --watch', async () => {
+    const plugin = weaselIcons.vite({ mode: 'app' });
+    const entryOf = async (entry: string) => {
+      const out = await build({
+        root,
+        logLevel: 'silent',
+        configFile: false,
+        resolve: { alias: { '@weasel-js/icons': iconsSrc } },
+        plugins: [plugin],
+        build: { write: false, minify: false, rollupOptions: { input: `${root}/src/${entry}` } },
+      });
+      const result = Array.isArray(out) ? out[0]! : (out as Rollup.RollupOutput);
+      return result.output.find((o): o is Rollup.OutputChunk => o.type === 'chunk' && o.isEntry)!.code;
+    };
+    expect(await entryOf('main.ts')).toContain('lib-star-body');
+    const second = await entryOf('consumer.ts');
+    expect(second).toContain('fx-ring-body');
+    expect(second).not.toContain('lib-star-body');
+  });
+
   it('refuses a custom variant named all when constructed', () => {
     expect(() => weaselIcons.vite({ mode: 'app', variants: { all: {} } })).toThrow(/cannot be named "all"/);
   });
