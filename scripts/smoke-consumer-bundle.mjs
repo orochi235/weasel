@@ -477,6 +477,12 @@ const siblingLines = [...siblingImports].map(([spec, names]) =>
 const siblingUse =
   `export const _siblings = [${Array.from({ length: siblingIndex }, (_, i) => `_sib${i}`).join(', ')}];\n`;
 
+// A consumer's own icon(), as gen:icons writes it for a root that draws nothing.
+await writeFile(
+  join(workDir, 'icons.gen.ts'),
+  `import { scopedIcon } from '@weasel-js/icons';\nexport const icon = scopedIcon<never>('app');\n`,
+);
+
 const typeConsumer = join(workDir, 'consumer.ts');
 await writeFile(
   typeConsumer,
@@ -561,6 +567,12 @@ await writeFile(
     `// @ts-expect-error no such kit setting\n` +
     `const _kitWrong: KitSettingPath = 'tree.nope';\n` +
     `export const _kit = [_kitTree, _kitGesture, _kitTargets, _kitWrong];\n` +
+    // Core and ui each add their names to `@weasel-js/icons`' IconName from their
+    // published .d.ts. Lose either augmentation and a name it owns is TS2345 here.
+    `import { icon } from './icons.gen';\n` +
+    `export const _icons = [icon('core:undo'), icon('ui:close')];\n` +
+    `// @ts-expect-error no package draws core:nope\n` +
+    `export const _iconWrong = icon('core:nope');\n` +
     `export const _t = _tools;\n` +
     `export type { _Sel, _View, _Scene, _Hist, _Tool, _M, _G, _S, _O, _Ui, _Hud, _UiSubpath, _Augmented };\n` +
     `export const _key = _k;\n` +
@@ -613,6 +625,8 @@ try {
       "  • a consumer's `declare module '@weasel-js/core'` no longer merges into\n" +
       '    DepSchema — the interface must be DECLARED in the module the\n' +
       '    augmentation names, not merely re-exported from it\n' +
+      "  • core's or ui's `declare module '@weasel-js/icons'` IconName augmentation\n" +
+      '    is missing from its published .d.ts, so its icon names do not typecheck\n' +
       "  • routing's defineTool/Tool no longer default to core's overlay type —\n" +
       "    core's OverlaySchema merge is missing from the published .d.ts\n" +
       '  • core inlined a sibling\'s declarations instead of importing them, so the\n' +
