@@ -90,7 +90,9 @@ export function BendAlongIcon() {
   return (
     <svg {...SVG_BASE}>
       <path d="M3 14 Q10 0 17 14 L14.5 15 Q10 5 5.5 15 Z" />
-      <path d="M10 7 V9.9 M6.2 9.6 L8.1 11.4 M13.8 9.6 L11.9 11.4" strokeWidth={1} />
+      {/* Each stripe runs along the band's normal from one edge's line to the other's, and stops there: a cap past
+          either line shows outside the band. */}
+      <path d="M10 7 V10 M6.5 8.75 L8.39 10.64 M13.5 8.75 L11.61 10.64" strokeWidth={1} strokeLinecap="butt" />
     </svg>
   );
 }

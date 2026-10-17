@@ -123,7 +123,7 @@ export function ExtremeAnchorsIcon() {
   return (
     <svg {...SVG_BASE}>
       <path d="M3 16 C3 4.5 17 4.5 17 16" />
-      <path d="M6.5 7.4 H13.5" strokeWidth={1} />
+      <path d="M3.5 7.4 H16.5" strokeWidth={1} />
       {anchor(3, 16)}
       {anchor(17, 16)}
       {anchor(10, 7.4)}
