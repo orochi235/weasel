@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import type { GestureSpec } from '@weasel-js/gestures';
 import type { IconRef } from '@weasel-js/icons';
 import { useLatest, useStableByContent } from '@weasel-js/react';
+import { deepEqual } from '@weasel-js/registry';
 import type { Action, ActionDisabledReason, ActionVariant } from './action';
 import { useAction } from './ActionsProvider';
 
@@ -35,9 +36,9 @@ export function useCommand(
   options?: CommandOptions,
 ): void {
   const latest = useLatest({ run, options });
-  const keys = useStableByContent(options?.keys, sameValue);
-  const tags = useStableByContent(options?.tags, sameValue);
-  const variants = useStableByContent(options?.variants, sameValue);
+  const keys = useStableByContent(options?.keys, deepEqual);
+  const tags = useStableByContent(options?.tags, deepEqual);
+  const variants = useStableByContent(options?.variants, deepEqual);
   const hasEnabled = options?.enabled !== undefined;
   const hasActive = options?.active !== undefined;
   const icon = options?.icon;
@@ -57,15 +58,4 @@ export function useCommand(
     return a;
   }, [id, label, icon, keys, tags, variants, hasEnabled, hasActive, latest]);
   useAction(action);
-}
-
-/** Structural equality over plain objects and arrays; functions by reference. */
-function sameValue(a: unknown, b: unknown): boolean {
-  if (Object.is(a, b)) return true;
-  if (typeof a !== 'object' || typeof b !== 'object' || a === null || b === null) return false;
-  if (Array.isArray(a) !== Array.isArray(b)) return false;
-  const ka = Object.keys(a);
-  if (ka.length !== Object.keys(b).length) return false;
-  return ka.every((k) => Object.hasOwn(b, k)
-    && sameValue((a as Record<string, unknown>)[k], (b as Record<string, unknown>)[k]));
 }

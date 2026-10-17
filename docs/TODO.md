@@ -877,15 +877,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   Headless Playwright sends no such event, so this is unverified. Check on a real Windows or
   Linux Chrome; if it reproduces, the likely fix is for the keydown to suppress the native event.
 
-- **(P3) Four private deep-equals each answer a slightly different question.** `sameValue` in
-  routing's `interactions/actions/useCommand.ts` compares any non-null object key by key;
-  `sameValue` in ui's `PrefSchemaEditor/attrAggregate.ts` goes by `toString` tag, so it holds
-  across realms and treats a class instance by identity; `sameValue` in ui's
-  `SelectionPanel/model.ts` reads a key holding `undefined` as absent; `deepEqual` in text's
-  `runs/rangeStyle.ts` takes only plain objects and arrays. Give them one home below routing —
-  `@weasel-js/registry` beside `isPlainObject`, or `@weasel-js/react` beside `sameList` — with the
-  undefined-as-absent reading as an option, and have all four call it.
-
 - **(P3) An empty menu asset previews as a bare button with nothing to say why.** `MenuPreview`
   opens the menu on mount, but a menu with no rows resolves to nothing and stays shut, so a new
   menu asset — the first thing anyone sees after making one — shows a lone button. Say in the

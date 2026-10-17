@@ -9,7 +9,6 @@
 
 import {
   MIXED,
-  isPlainObject,
   type Mixed,
   type NodePropertiesEntry,
   type NodeRoutingEntry,
@@ -28,6 +27,7 @@ import {
   type PrefSection,
   type PrefSectionAs,
 } from '@weasel-js/prefs';
+import { deepEqual } from '@weasel-js/registry';
 
 // Re-exported under its existing public name here: the kit-wide "these
 // values disagree" sentinel (`@weasel-js/core`'s `MIXED`) also covers
@@ -256,27 +256,12 @@ export function aggregateValue(
 /** The one value `values` all are, or `MIXED`. */
 export function sharedValue(values: readonly unknown[]): unknown | Mixed {
   const [first, ...rest] = values;
-  return rest.every((v) => sameValue(v, first)) ? first : MIXED;
+  return rest.every((v) => deepEqual(v, first, { undefinedAsAbsent: true })) ? first : MIXED;
 }
 
 /** Whether two stored values are one value: identical, or arrays and plain
  *  objects alike all the way down. Two nodes loaded from a file hold equal
  *  paints as separate objects. */
-function sameValue(a: unknown, b: unknown): boolean {
-  if (Object.is(a, b)) return true;
-  if (Array.isArray(a) || Array.isArray(b)) {
-    return (
-      Array.isArray(a) &&
-      Array.isArray(b) &&
-      a.length === b.length &&
-      a.every((entry, i) => sameValue(entry, b[i]))
-    );
-  }
-  if (!isPlainObject(a) || !isPlainObject(b)) return false;
-  // A key holding `undefined` reads the same as one that is absent.
-  return [...new Set([...Object.keys(a), ...Object.keys(b)])].every((key) => sameValue(a[key], b[key]));
-}
-
 /** `'rect ×2 · text'` — kinds in first-seen order with counts. */
 export function kindBreakdown(kinds: readonly string[]): string {
   const counts = new Map<string, number>();
