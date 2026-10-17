@@ -5,7 +5,7 @@ import {
   type Bounds,
 } from '@weasel-js/core';
 import type { Guide } from '../../guides/types';
-import { DEFAULT_GUIDE_TOLERANCE_PX } from '../../strategies/guides';
+import { guideTolerance } from '../../strategies/guides';
 import { nearestGuideDelta } from '../../strategies/onPlane';
 
 type ModKey = keyof ModifierState;
@@ -14,7 +14,8 @@ type ModKey = keyof ModifierState;
 export interface SnapToGuidesResizeArgs {
   /** Stable getter into the live guide list (typically from `useGuides`). */
   getGuides: () => readonly Guide[];
-  /** Snap tolerance in screen px, read through the gesture's view. */
+  /** Snap tolerance in screen px, read through the gesture's view. Default the
+   *  `targets.guideSnapPx` kit setting, else `DEFAULT_GUIDE_TOLERANCE_PX`. */
   tolerance?: number;
   /** Modifier key that bypasses snapping while held. */
   bypassKey?: ModKey;
@@ -33,7 +34,6 @@ export interface SnapToGuidesResizeArgs {
 export function snapToGuides<TPose extends Bounds>(
   args: SnapToGuidesResizeArgs,
 ): BoundsConstraint<TPose> {
-  const tolerance = args.tolerance ?? DEFAULT_GUIDE_TOLERANCE_PX;
   const bypassKey = args.bypassKey;
 
   return {
@@ -44,7 +44,7 @@ export function snapToGuides<TPose extends Bounds>(
 
       // Per axis: a vertical guide is matched by a horizontal distance, so it
       // answers to `scale.x` alone.
-      const tol = screenTolerance(tolerance, ctx);
+      const tol = screenTolerance(guideTolerance(args.tolerance, ctx), ctx);
 
       let { x, y, width, height } = pose;
       let changed = false;
