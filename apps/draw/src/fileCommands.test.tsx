@@ -1,0 +1,120 @@
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { act, cleanup } from '@testing-library/react';
+import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
+import {
+  ActionsProvider,
+  DepRegistryProvider,
+  SceneCanvas,
+  actionItems,
+  asNodeId,
+  createScene,
+  useActionsRegistry,
+  type ActionsRegistry,
+} from '@weasel-js/core';
+import type { DrawScene, WeaselDrawData, WeaselDrawLayer, WeaselDrawPose } from './drawDocument';
+import { FILE_ACTIONS, useFileCommands, type FileCommandsTarget } from './fileCommands';
+import { importSvgFile, openSvgFile } from './openSvg';
+import { saveSvgFile } from './saveSvg';
+
+vi.mock('./saveSvg', () => ({ saveSvgFile: vi.fn(async () => {}) }));
+vi.mock('./openSvg', () => ({ openSvgFile: vi.fn(async () => {}), importSvgFile: vi.fn(async () => {}) }));
+
+beforeAll(() => {
+  const proto = HTMLCanvasElement.prototype as unknown as { getContext: (...args: unknown[]) => unknown };
+  proto.getContext = vi.fn(() => null);
+});
+afterEach(() => {
+  cleanup();
+  vi.clearAllMocks();
+});
+
+function seededScene(): DrawScene {
+  const scene = createScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>({ systemLayers: [{ id: 'default' }] });
+  for (const id of ['a', 'b']) {
+    scene.add({
+      kind: 'leaf', layer: 'default', id: asNodeId(id),
+      pose: { x: 0, y: 0, width: 10, height: 10 },
+      data: { path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 } },
+    });
+  }
+  return scene;
+}
+
+function setup() {
+  const scene = seededScene();
+  const target: FileCommandsTarget = {
+    scene,
+    filename: 'a',
+    paperSize: 'letter',
+    backgroundColor: '#ffffff',
+    setFilename: vi.fn(),
+    setPaperSize: vi.fn(),
+    setBackgroundColor: vi.fn(),
+  };
+  let registry: ActionsRegistry | null = null;
+  function Probe({ t }: { t: FileCommandsTarget }) {
+    useFileCommands(t);
+    registry = useActionsRegistry();
+    return null;
+  }
+  const ui = (t: FileCommandsTarget) => (
+    <DepRegistryProvider>
+      <ActionsProvider>
+        <Probe t={t} />
+        <SceneCanvas features={['draw']} scene={scene} layers={{}} width={64} height={64} />
+      </ActionsProvider>
+    </DepRegistryProvider>
+  );
+  const view = render(ui(target));
+  const reg = registry as unknown as ActionsRegistry;
+  const get = (id: string) => reg.list().find((a) => a.id === id)!;
+  return { scene, target, registry: reg, get, rerender: (t: FileCommandsTarget) => view.rerender(ui(t)) };
+}
+
+describe('useFileCommands', () => {
+  it('offers New once per paper size', () => {
+    const { get } = setup();
+    expect(actionItems(get(FILE_ACTIONS.new)).map((i) => [i.key, i.label]))
+      .toEqual([['file.new:letter', 'US Letter'], ['file.new:a4', 'A4'], ['file.new:legal', 'Legal']]);
+  });
+
+  it('New at a size empties the document in one undo entry and sets the size', () => {
+    const { registry, scene, target } = setup();
+    act(() => { registry.trigger('file.new', { size: 'a4' }); });
+    expect(scene.renderOrder()).toEqual([]);
+    expect(target.setPaperSize).toHaveBeenCalledWith('a4');
+    act(() => { scene.undo(); });
+    expect(scene.renderOrder()).toHaveLength(2);
+  });
+
+  it('New with no size empties the document and keeps the paper size', () => {
+    const { registry, scene, target } = setup();
+    act(() => { registry.trigger('file.new'); });
+    expect(scene.renderOrder()).toEqual([]);
+    expect(target.setPaperSize).not.toHaveBeenCalled();
+  });
+
+  it('Open and Import hand the picker the document', () => {
+    const { registry, scene } = setup();
+    act(() => { registry.trigger('file.open'); });
+    expect(openSvgFile).toHaveBeenCalledWith(expect.objectContaining({ scene }));
+    act(() => { registry.trigger('file.import'); });
+    expect(importSvgFile).toHaveBeenCalledWith(scene);
+  });
+
+  it('Save writes the latest filename, size and background', () => {
+    const { registry, scene, target, rerender } = setup();
+    rerender({ ...target, filename: 'b' });
+    act(() => { registry.trigger('file.save'); });
+    expect(saveSvgFile).toHaveBeenCalledWith(scene, { filename: 'b', paperSize: 'letter', backgroundColor: '#ffffff' });
+  });
+
+  it('mod+S saves, and keeps the browser from saving the page', () => {
+    setup();
+    // jsdom is not an Apple platform, so mod is Ctrl.
+    const e = new KeyboardEvent('keydown', { key: 's', code: 'KeyS', ctrlKey: true, bubbles: true, cancelable: true });
+    act(() => { window.dispatchEvent(e); });
+    expect(saveSvgFile).toHaveBeenCalledOnce();
+    expect(e.defaultPrevented).toBe(true);
+  });
+});

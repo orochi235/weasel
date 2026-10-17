@@ -41,14 +41,13 @@ function Register({ a }: { a: Action }) {
   return null;
 }
 
-const noop = () => {};
 
 function App() {
   return (
     <ActionsProvider>
       {ACTIONS.map((a) => <Register key={a.id} a={a} />)}
       <div data-testid="strip">
-        <CommandBar onSaveSvg={noop} onOpenSvg={noop} onImportSvg={noop} onNew={noop} surfaces={<StripSurfaces />} />
+        <CommandBar surfaces={<StripSurfaces />} />
       </div>
       <div data-testid="sidebar">
         <RightSidebar {...({} as SidebarHost)} />
