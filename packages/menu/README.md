@@ -46,8 +46,7 @@ These are not visible in the code; each was a choice between alternatives.
   the variant (`viewport.zoom:in`).
 - An enum draws as radio rows between separators, not as a submenu. Menus sharing an id append
   their children in order with a separator between (a later duplicate key gets `~n`).
-- `useCommand` names only untagged types (`CommandOptions`, `CommandVariant`). Promoting the
-  `@experimental` action types it mirrors is the owner's call.
+- `useCommand`'s `variants` are `ActionVariant`s, so a command's variants carry `tags` like any action's.
 - labkit's trials stay separate action roots. The lab's own dispatcher still hears only its own
   node (`hears: 'own'`), as a guard in case trials ever nest. Lab-wide globals are values, drawn
   as enum rows, not commands.

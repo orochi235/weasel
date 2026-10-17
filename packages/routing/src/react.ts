@@ -16,7 +16,7 @@ export type {
 
 export { ActionsProvider, useActionsRegistry, useAction } from './interactions/actions/ActionsProvider';
 export { useCommand } from './interactions/actions/useCommand';
-export type { CommandOptions, CommandVariant } from './interactions/actions/useCommand';
+export type { CommandOptions } from './interactions/actions/useCommand';
 export { useMenuHost, useMenus } from './menus/MenuHostContext';
 export { InputScope, useYoke, Yoke } from './interactions/actions/inputScope';
 export type { InputScopeProps, YokeProps } from './interactions/actions/inputScope';

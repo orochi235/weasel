@@ -889,9 +889,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   menu asset — the first thing anyone sees after making one — shows a lone button. Say in the
   preview that the menu is empty and how to give it rows.
 
-- **(P3) Should `ActionVariant` be public?** It is tagged `@experimental`, so `useCommand` keeps an
-  untagged copy, `CommandVariant`. Promoting it lets `useCommand` drop the copy; the owner's call.
-
 - **(P3) `useCommand` cannot give a variant its own shortcut.** `keys` takes one `GestureSpec`, not
   `{ spec, opts: { params } }`, so `viewport.zoom:in` can carry a key through `useAction` only.
 
