@@ -68,7 +68,7 @@ How subagent work ran here, and what bit:
 
 Passed its tests and was never looked at. Delete a line when someone has.
 
-- Menus: the menu bar's pointer and keyboard behavior in real Chrome and Safari, Option+letter on macOS, `MenuButton` on the new renderer in `LabSwitcher` (link rows) and `CommandBar` (with a tooltip), and the `.frame:focus-visible` ring on button frames.
+- Menus: the menu bar's pointer and keyboard behavior in real Chrome and Safari, Option+letter on macOS, `MenuButton` on the new renderer in `LabSwitcher` (link rows) and `CommandBar` (with a tooltip), the `.frame:focus-visible` ring on button frames, and a link row released with Cmd held after a long press-drag (it calls `window.open` from a pointerup, which a browser may block as a popup).
 - Renderer: the `u_origin` shader path for large translations, the `a_position` pin, skewed text
   and images, the glyph atlas reclaim, an emoji at any size, and the split SVG export.
 - Canvas: the size a kit canvas takes from core's stylesheet, in `apps/draw` and the site's demos;
