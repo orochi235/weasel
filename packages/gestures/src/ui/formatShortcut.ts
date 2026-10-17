@@ -1,8 +1,9 @@
 import { keySpecsFromShortcut } from './keySpecsFromShortcut';
 import { detectPlatform, type KeySpecsFromModsOptions, type Platform } from './keySpecsFromMods';
 
-/** The key and modifiers the shortcut formatters read. A tool's `keybinding`
- *  has this shape and passes as-is. */
+/** A keyboard shortcut as the formatters read it: the one shape for a shortcut
+ *  chip, which `@weasel-js/menu` names `MenuShortcut` and `@weasel-js/routing`
+ *  `ActionShortcut`. A tool's `keybinding` has this shape and passes as-is. */
 export interface ShortcutInput {
   key: string | readonly string[];
   mod?: boolean;

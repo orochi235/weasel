@@ -1,11 +1,8 @@
+import type { ShortcutInput } from '@weasel-js/gestures';
+
 /** A key chip: the key, and which modifiers are held with it. `@weasel-js/routing`
  *  derives these from action bindings as `ActionShortcut`. */
-export interface MenuShortcut {
-  key: string;
-  mod: boolean;
-  alt: boolean;
-  shift: boolean;
-}
+export type MenuShortcut = ShortcutInput;
 
 /** A row that runs something when chosen. */
 export interface MenuItemEntry {
