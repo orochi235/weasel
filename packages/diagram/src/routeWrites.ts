@@ -5,7 +5,7 @@
  * Layout writes only what it owns. An edge's route is its own while the edge
  * has no waypoints or still has the ones layout last wrote (`laidOut`); a
  * label's place is its own while the label sits at the default middle or at a
- * `{ waypoint }`, and its edge's route is layout's.
+ * `{ near }`, and its edge's route is layout's.
  */
 import type { Vec2 } from '@weasel-js/core/math';
 import { diagramEdgeOf, layoutOwnsPort, layoutOwnsRoute, type DiagramEdge, type EdgeEnd } from './edge';
@@ -19,7 +19,7 @@ export interface LayoutRoutes {
    *  from `waypoints`, or loses the one a layout gave it before. */
   edges: ReadonlySet<string>;
   waypoints: ReadonlyMap<string, readonly Vec2[]>;
-  labels?: ReadonlyMap<string, number>;
+  labels?: ReadonlyMap<string, Vec2>;
   /** The ports layout names. Each end layout owns gets its port from here,
    *  or loses the one a layout named before. */
   ports?: ReadonlyMap<string, LayoutPorts>;
@@ -78,8 +78,8 @@ export function routeWrites(scene: RoutedScene, routes: LayoutRoutes): Map<strin
     if (label === null || !Array.isArray(deps) || deps.length !== 1 || !owned.has(deps[0]!)) continue;
     if (!labelFollowsLayout(label.at) || stationed.has(deps[0]!)) continue;
     stationed.add(deps[0]!);
-    const k = routes.labels?.get(deps[0]!);
-    const at: DiagramLabel['at'] = k === undefined ? 'mid' : { waypoint: k };
+    const near = routes.labels?.get(deps[0]!);
+    const at: DiagramLabel['at'] = near === undefined ? 'mid' : { near };
     if (sameAt(label.at, at) || scene.isLocked(node.id as never)) continue;
     out.set(node.id, withTrait(node.data, { ...label, at }, 'label'));
   }
@@ -112,7 +112,7 @@ function near(a: readonly Vec2[], b: readonly Vec2[]): boolean {
 }
 
 function sameAt(a: DiagramLabel['at'], b: DiagramLabel['at']): boolean {
-  if (typeof a === 'object' && typeof b === 'object') return a.waypoint === b.waypoint;
+  if (typeof a === 'object' && typeof b === 'object') return near([a.near], [b.near]);
   return a === b;
 }
 

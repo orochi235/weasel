@@ -26,9 +26,9 @@ export interface LayeredRoute {
   fromPort?: string;
   toPort?: string;
   waypoints?: readonly Vec2[];
-  /** Where among `waypoints` layout left the edge's label room, as a
-   *  `DiagramLabel`'s `{ waypoint }`. */
-  labelAt?: number;
+  /** The point on the route layout left the edge's label room beside, as a
+   *  `DiagramLabel`'s `{ near }`. */
+  labelAt?: Vec2;
 }
 
 /** What {@link layeredRoutes} reads: where `layeredPlan` put things. */
@@ -41,7 +41,7 @@ export interface LayeredRouteInput {
   waypoints: ReadonlyMap<string, readonly Vec2[]>;
   /** Where each labeled edge's label room is among its waypoints, from
    *  `layeredPlan`. */
-  labels?: ReadonlyMap<string, number>;
+  labels?: ReadonlyMap<string, Vec2>;
   /** Each group's node members, through nested groups. */
   members: ReadonlyMap<string, readonly string[]>;
   /** Ids whose ports are the four compass midpoints, which are the only ones
@@ -138,7 +138,7 @@ export function layeredPorts(
 export interface PlannedRoutes {
   ports?: ReadonlyMap<string, LayoutPorts>;
   waypoints?: ReadonlyMap<string, readonly Vec2[]>;
-  labels?: ReadonlyMap<string, number>;
+  labels?: ReadonlyMap<string, Vec2>;
 }
 
 /** Each edge's ports and waypoints: the author's where given, else the

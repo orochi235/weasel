@@ -24,7 +24,7 @@ export const labelStyleOf = (font: { fontFamily: string; fontSize: number }) => 
  *  diagram's. */
 function placementOf(e: DataEdge, route: LayeredRoute | undefined, ctx: EdgeSpecContext): DiagramLabel {
   const placement = e.labelPlacement ?? ctx.opts.labelPlacement ?? ctx.labelPlacement;
-  return route?.labelAt === undefined ? placement : { ...placement, at: { waypoint: route.labelAt } };
+  return route?.labelAt === undefined ? placement : { ...placement, at: { near: route.labelAt } };
 }
 
 /** An edge end naming `port`, marked as layout's when the author named none. */

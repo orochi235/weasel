@@ -12,18 +12,22 @@ import {
   pointAlongPath,
   translatePoseViaDescriptor,
   type DerivedDep,
+  type Path,
   type PoseDescriptor,
   type Vec2,
 } from '@weasel-js/core';
+import {
+  PATH_C, PATH_L, PATH_Q, forEachSegment, nearestOnCubic, nearestOnLine, nearestOnQuadratic, type CurveNearest,
+} from '@weasel-js/geom';
 
 /** Where along an edge a label sits. */
 export interface DiagramLabel {
   /** `'start'`, `'mid'` and `'end'` are 0, 0.5 and 1; a number is that
-   *  fraction of the route's length. `{ waypoint: k }` is the edge's
-   *  waypoint `k`, and a fraction between two waypoints is that far along the
-   *  straight run between them — where `layered` leaves a label room. An
-   *  edge without that waypoint puts the label at `'mid'`. */
-  at: 'start' | 'mid' | 'end' | number | { waypoint: number };
+   *  fraction of the route's length. `{ near }` is the point on the route
+   *  nearest `near`, in world coordinates — where `layered` leaves a label
+   *  room — so a bend added or removed elsewhere leaves the label on the
+   *  stretch it was on. */
+  at: 'start' | 'mid' | 'end' | number | { near: Vec2 };
   /** World units between the route and the label's near side, to the **left
    *  of the direction of travel** — above a left-to-right edge. Default 0,
    *  which centers the label on the line. */
@@ -43,23 +47,45 @@ export function diagramLabelOf(node: { data: unknown }): DiagramLabel | null {
   return 'at' in label ? (label as DiagramLabel) : null;
 }
 
-/** The point `k` waypoints along an edge's own waypoints, and the direction of
- *  the run it is on; `null` when the edge has no such waypoint. Read off the
- *  edge's data rather than its path, which only passes through them. */
-function atWaypoint(data: unknown, k: number): { point: Vec2; tangent: Vec2 } | null {
-  const trait = (data as { diagram?: { waypoints?: unknown } } | null)?.diagram;
-  const points = trait?.waypoints;
-  if (!Array.isArray(points) || points.length < 2 || !(k >= 0) || k > points.length - 1) return null;
-  const i = Math.min(Math.floor(k), points.length - 2);
-  const a = points[i] as Vec2;
-  const b = points[i + 1] as Vec2;
-  const len = Math.hypot(b.x - a.x, b.y - a.y);
-  if (len === 0) return null;
-  const t = k - i;
-  return {
-    point: { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t },
-    tangent: { x: (b.x - a.x) / len, y: (b.y - a.y) / len },
-  };
+/** The point on `path` nearest `near`, and the heading of the path there;
+ *  `null` for a path with no segment to stand on. */
+function nearestStation(path: Path, near: Vec2): { point: Vec2; tangent: Vec2 } | null {
+  if (path.kind !== 'polygon') return null;
+  const { commands, coords } = path;
+  let best: CurveNearest | null = null;
+  let heading: Vec2 = { x: 1, y: 0 };
+  forEachSegment(commands, coords, (cmd, ci, x0, y0) => {
+    let hit: CurveNearest;
+    let d: Vec2;
+    if (cmd === PATH_L) {
+      hit = nearestOnLine(near.x, near.y, x0, y0, coords[ci]!, coords[ci + 1]!);
+      d = { x: coords[ci]! - x0, y: coords[ci + 1]! - y0 };
+    } else if (cmd === PATH_Q) {
+      hit = nearestOnQuadratic(near.x, near.y, x0, y0, coords[ci]!, coords[ci + 1]!, coords[ci + 2]!, coords[ci + 3]!);
+      const t = hit.t;
+      d = {
+        x: 2 * (1 - t) * (coords[ci]! - x0) + 2 * t * (coords[ci + 2]! - coords[ci]!),
+        y: 2 * (1 - t) * (coords[ci + 1]! - y0) + 2 * t * (coords[ci + 3]! - coords[ci + 1]!),
+      };
+    } else if (cmd === PATH_C) {
+      hit = nearestOnCubic(
+        near.x, near.y, x0, y0,
+        coords[ci]!, coords[ci + 1]!, coords[ci + 2]!, coords[ci + 3]!, coords[ci + 4]!, coords[ci + 5]!,
+      );
+      const t = hit.t;
+      const u = 1 - t;
+      d = {
+        x: 3 * u * u * (coords[ci]! - x0) + 6 * u * t * (coords[ci + 2]! - coords[ci]!) + 3 * t * t * (coords[ci + 4]! - coords[ci + 2]!),
+        y: 3 * u * u * (coords[ci + 1]! - y0) + 6 * u * t * (coords[ci + 3]! - coords[ci + 1]!) + 3 * t * t * (coords[ci + 5]! - coords[ci + 3]!),
+      };
+    } else return;
+    const len = Math.hypot(d.x, d.y);
+    if (len === 0 || (best !== null && hit.dist >= best.dist)) return;
+    best = hit;
+    heading = { x: d.x / len, y: d.y / len };
+  });
+  const found = best as CurveNearest | null;
+  return found === null ? null : { point: { x: found.x, y: found.y }, tangent: heading };
 }
 
 /** Options for {@link labelDerivePose}. `geometry` defaults to the kit's
@@ -88,7 +114,7 @@ export function labelDerivePose<TPose>(
     if (path === null) return null;
 
     const station = typeof label.at === 'object'
-      ? atWaypoint(deps[0]!.node.data, label.at.waypoint) ?? pointAlongPath(path, 0.5)
+      ? nearestStation(path, label.at.near) ?? pointAlongPath(path, 0.5)
       : pointAlongPath(path, typeof label.at === 'number' ? label.at : NAMED[label.at] ?? 0.5);
     if (station === null) return null;
 
