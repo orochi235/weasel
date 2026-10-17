@@ -10,13 +10,16 @@ export interface SegmentTooltipFields {
    *  and `ActionBar` show theirs. The name is `ariaLabel`, else a string
    *  `label`. */
   shortcut?: string;
-  /** What the tooltip reads in place of the name, before the shortcut. */
-  description?: string;
 }
 
 /** Tooltip content for an item, or `undefined` for none. */
 export function segmentTooltipContent(
-  item: SegmentTooltipFields & { label?: ReactNode; ariaLabel?: string },
+  item: SegmentTooltipFields & {
+    label?: ReactNode;
+    ariaLabel?: string;
+    /** What the tooltip reads in place of the name, before the shortcut. */
+    description?: string;
+  },
 ): ReactNode | undefined {
   if (item.tooltip !== undefined) return item.tooltip;
   if (!item.shortcut) return item.description || undefined;
