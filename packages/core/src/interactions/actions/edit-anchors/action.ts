@@ -15,6 +15,9 @@
  *     `handleLock` param ({@link EditAnchorsParams}), holds a lock with no
  *     modifier. The lock in force draws its guide as a `polyline` overlay
  *     of role `lock`: the line, or the circle round the anchor.
+ *   - **Path-edit extensions shape the drag** through their `drag`: anchors
+ *     that follow an anchor drag by a share of it, where a dragged handle
+ *     goes after the locks, the wheel mid-drag, and overlays of their own.
  *   - **Every frame is finished** by the dep's `finishEdit`, so what a
  *     path-edit extension keeps true holds while the drag runs.
  *   - **Under a `pathSymmetry` dep**, on a path that is its own image under
@@ -53,6 +56,10 @@ import { inPlane, editingLayer } from '../planeInput';
 import { lockHandle, locksInForce, type HandlePress } from './handleDrag';
 import { locksOf, type EditAnchorsParams } from './params';
 import { pathEditPreview } from './preview';
+import {
+  claimWheel, dragWeights, extensionOverlays, placeHandle, startExtensionDrags, translateWeighted,
+} from './extensionDrags';
+import type { PathEditDrag } from 'features/paths/pathEditExtension';
 import { pathEditToolActive } from '../defaults/pathEditTools';
 import { editedPathSymmetries } from './symmetry';
 import { pathOperationTags } from '../pathGestureTags';
@@ -114,6 +121,10 @@ interface EditAnchorsScratch {
   handlePress: HandlePress | null;
   /** The guide the lock in force drew at the last move. */
   guide: OngoingOverlay | null;
+  /** The path-edit extensions' shares of this drag. */
+  drags: readonly PathEditDrag[];
+  /** The last move, to redo when an extension claims the wheel. */
+  lastMove: InvocationCtx | null;
   originPose: PolygonPath;
   currentPose: PolygonPath;
   /** The transforms `originPose` is its own image under, read at the press. */
@@ -168,6 +179,36 @@ function handlePressOf(
 ): HandlePress | null {
   const handle = part === 'controlIn' ? origin.inHandle : part === 'controlOut' ? origin.outHandle : undefined;
   return handle ? { anchor: { x: origin.x, y: origin.y }, handle: { ...handle } } : null;
+}
+
+/** Move the dragged anchors to follow `to`, and the anchors the extensions
+ *  weight by their shares. A weighted drag moves no symmetric images. */
+function moveAnchors(scratch: EditAnchorsScratch, to: Point): void {
+  if (scratch.dragging.length === 0) return;
+  const dx = to.x - scratch.anchorOrigin.x;
+  const dy = to.y - scratch.anchorOrigin.y;
+  const weights = dragWeights(scratch.drags, scratch.dragging);
+  track(scratch, editAnchorSetTracked(scratch.originPose, (set) => {
+    if (weights) translateWeighted(set, weights, dx, dy);
+    else translateAnchorsSymmetric(set, scratch.dragging, dx, dy, scratch.symmetries);
+  }));
+}
+
+/** Move the dragged handle toward the pointer, under the locks in force, then
+ *  wherever the extensions place it. */
+function moveHandle(scratch: EditAnchorsScratch, ctx: InvocationCtx, params: EditAnchorsParams): void {
+  const side = scratch.part === 'controlIn' ? 'in' : 'out';
+  // Modifiers and held locks are read live, so either can change mid-drag.
+  const held = (ctx.deps.editAnchors ?? scratch.dep).handleLocks ?? locksOf(params.handleLock);
+  const locks = locksInForce(held, ctx.modifiers);
+  const locked = scratch.handlePress ? lockHandle(scratch.handlePress, ctx.world, locks) : { to: ctx.world, guide: null };
+  scratch.guide = locked.guide;
+  const to = placeHandle(scratch.drags, locked.to, { locks });
+  const alt = ctx.modifiers.alt;
+  const move = scratch.symmetries.length > 0
+    ? (set: AnchorSet) => moveHandleSymmetric(set, scratch.anchorIndex, side, to.x, to.y, alt, scratch.symmetries)
+    : (set: AnchorSet) => moveHandleTo(set, scratch.anchorIndex, side, to.x, to.y, alt);
+  track(scratch, editAnchorSetTracked(scratch.originPose, move));
 }
 
 /** Static descriptor for the `editAnchors` Action. */
@@ -250,6 +291,17 @@ export const editAnchorsAction: Action & { requires: string[] } = inPlane({
         anchorOrigin: { x: origin.x, y: origin.y },
         handlePress: handlePressOf(origin, anchorInfo.part),
         guide: null,
+        drags: startExtensionDrags(dep.extensions, {
+          id: editingId,
+          node: dep.getNodeShape(editingId),
+          path: worldPath,
+          anchors: decoded,
+          part: anchorInfo.part,
+          anchorIndex: anchorInfo.anchorIndex,
+          dragging: anchorInfo.part === 'anchor' ? dragging : [],
+          scale: ctx.deps.view?.get().scale,
+        }),
+        lastMove: null,
         originPose: worldPath,
         currentPose: worldPath,
         symmetries: editedPathSymmetries(ctx.deps.pathSymmetry, editingId, decoded),
@@ -258,35 +310,31 @@ export const editAnchorsAction: Action & { requires: string[] } = inPlane({
         id: editingId, origin: scratch.anchorOrigin, originPose: worldPath, dragging,
       });
 
+      const move = (moveCtx: InvocationCtx): void => {
+        scratch.lastMove = moveCtx;
+        if (scratch.part === 'anchor') moveAnchors(scratch, snapAnchor(moveCtx.world));
+        else moveHandle(scratch, moveCtx, paramsOf(opts));
+      };
+
       return {
         kind: 'edit-anchors',
         onMove(moveCtx: InvocationCtx): void {
-          if (scratch.part === 'anchor') {
-            if (scratch.dragging.length === 0) return;
-            const to = snapAnchor(moveCtx.world);
-            const dx = to.x - scratch.anchorOrigin.x;
-            const dy = to.y - scratch.anchorOrigin.y;
-            track(scratch, editAnchorSetTracked(scratch.originPose, (set) => {
-              translateAnchorsSymmetric(set, scratch.dragging, dx, dy, scratch.symmetries);
-            }));
-          } else {
-            const side = scratch.part === 'controlIn' ? 'in' : 'out';
-            // Modifiers and held locks are read live, so either can change mid-drag.
-            const held = (moveCtx.deps.editAnchors ?? scratch.dep).handleLocks ?? locksOf(paramsOf(opts).handleLock);
-            const locked = scratch.handlePress
-              ? lockHandle(scratch.handlePress, moveCtx.world, locksInForce(held, moveCtx.modifiers))
-              : { to: moveCtx.world, guide: null };
-            const to = locked.to;
-            scratch.guide = locked.guide;
-            const move = scratch.symmetries.length > 0
-              ? (set: AnchorSet) => moveHandleSymmetric(
-                set, scratch.anchorIndex, side, to.x, to.y, moveCtx.modifiers.alt, scratch.symmetries)
-              : (set: AnchorSet) => moveHandleTo(set, scratch.anchorIndex, side, to.x, to.y, moveCtx.modifiers.alt);
-            track(scratch, editAnchorSetTracked(scratch.originPose, move));
-          }
+          move(moveCtx);
           active = true;
         },
-        overlay: () => (active ? scratch.guide : null),
+        onWheel(wheelCtx: InvocationCtx): boolean {
+          if (!wheelCtx.wheel || !claimWheel(scratch.drags, wheelCtx.wheel)) return false;
+          if (scratch.lastMove) move(scratch.lastMove);
+          return true;
+        },
+        overlay(): readonly OngoingOverlay[] | null {
+          if (!active) return null;
+          const extra = scratch.drags.length > 0
+            ? extensionOverlays(scratch.drags, pathToAnchors(scratch.currentPose) as AnchorSet)
+            : [];
+          const all = scratch.guide ? [scratch.guide, ...extra] : extra;
+          return all.length > 0 ? all : null;
+        },
         onEnd(_endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
           active = false;
           ctx.deps.snap?.release?.();

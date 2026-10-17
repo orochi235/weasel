@@ -72,10 +72,14 @@ holds just the presets it was handed.
 A `PathEditExtension` is how a package adds to path edit without core knowing
 it: `marks` draws on the open path under its anchors, `parts` adds points to
 press (each a hit kind, optionally under a chrome id of its own), `markAt` and
-`deleteMark` let a click select one of its marks and Delete remove it, and
-`finishEdit` finishes every edit of a path so what it keeps true holds.
-`@weasel-js/path-tools` builds its curvature comb, balance grips, and path
-constraints this way.
+`deleteMark` let a click select one of its marks and Delete remove it, `drag`
+takes a share of an anchor or handle drag as it starts, and `finishEdit`
+finishes every edit of a path so what it keeps true holds. A drag share can
+name anchors that follow an anchor drag and by how much (`weights`), place a
+dragged handle after the locks (`handle`), claim the wheel mid-drag (`wheel`),
+and draw overlays while the drag lasts (`overlays`).
+`@weasel-js/path-tools` builds its curvature comb, balance grips, path
+constraints, soft selection, and handle snapping this way.
 
 ### Frame hooks
 

@@ -91,6 +91,15 @@ export function pumpGesture(run: GestureRun, event: InputEvent): Outcome | undef
     return 'handled';
   }
 
+  // A wheel continues no gesture of its own, but one in flight may claim it.
+  // The newest first, as with the cursor.
+  if (event.kind === 'wheel') {
+    for (const [gestureId, handle] of [...inFlight.handles].reverse()) {
+      if (handle.onWheel?.(ctxFor(run, event, {}, gestureId)) === true) return 'handled';
+    }
+    return undefined;
+  }
+
   if (event.kind === 'pointerup') return ended('commit');
   if (event.kind === 'pointercancel') return ended('cancel');
 

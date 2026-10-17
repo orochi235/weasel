@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { lassoSelectAction } from './action';
 import type { InvocationCtx } from '@weasel-js/routing';
 import type { LassoSelectDep } from '../depSchema';
-import { getScratch } from '@weasel-js/routing';
+import { getScratch, overlaysOf } from '@weasel-js/routing';
 import type { LassoSelectBehavior, LassoSelectProposed } from '../../gestures/types';
 import {
   LASSO_VERTICES,
@@ -100,7 +100,7 @@ describe('lassoSelectAction descriptor', () => {
     const handle = invoker.start(startCtx, undefined);
 
     // Initial: single vertex at the start point; current matches.
-    const initial = handle.overlay!();
+    const initial = (overlaysOf(handle)[0] ?? null);
     expect(initial?.kind).toBe('lasso');
     expect(initial && 'vertices' in initial ? Array.from(initial.vertices) : null).toEqual([{ x: 0, y: 0 }]);
     expect(initial && 'current' in initial ? initial.current : null).toEqual({ x: 0, y: 0 });
@@ -116,7 +116,7 @@ describe('lassoSelectAction descriptor', () => {
     // Move past the vertex-spacing threshold — vertex appends, current tracks.
     handle.onMove!(moveCtx(10, 0));
     handle.onMove!(moveCtx(10, 10));
-    const mid = handle.overlay!();
+    const mid = (overlaysOf(handle)[0] ?? null);
     expect(mid?.kind).toBe('lasso');
     const midVerts = mid && 'vertices' in mid ? Array.from(mid.vertices) : [];
     expect(midVerts).toEqual([{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }]);
@@ -124,13 +124,13 @@ describe('lassoSelectAction descriptor', () => {
 
     // Commit → overlay clears.
     handle.onEnd!(moveCtx(10, 10), 'commit');
-    expect(handle.overlay!()).toBeNull();
+    expect((overlaysOf(handle)[0] ?? null)).toBeNull();
 
     // Cancel path on a fresh handle.
     const handle2 = invoker.start(startCtx, undefined);
-    expect(handle2.overlay!()).not.toBeNull();
+    expect((overlaysOf(handle2)[0] ?? null)).not.toBeNull();
     handle2.onEnd!(moveCtx(0, 0), 'cancel');
-    expect(handle2.overlay!()).toBeNull();
+    expect((overlaysOf(handle2)[0] ?? null)).toBeNull();
   });
 
   it('onEnd(commit) calls hitTestLasso with accumulated vertices and sets selection', () => {
@@ -184,7 +184,7 @@ describe('lassoSelectAction descriptor', () => {
       for (const x of [1, 2, 3, 4, 5, 6]) {
         handle.onMove!({ ...makeCtx(), world: { x, y: 0 }, screen: { x, y: 0 } });
       }
-      const o = handle.overlay!();
+      const o = (overlaysOf(handle)[0] ?? null);
       return o && 'vertices' in o ? o.vertices.map((v) => v.x) : null;
     };
     expect(run(undefined)).toEqual([0, 2, 4, 6]);

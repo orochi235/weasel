@@ -64,7 +64,9 @@ tessellation, polylines, trim), `booleans/splitBySegment.ts` (`./booleans`).
 
 **Editing** — in `@weasel-js/geom`: `paths/anchorEdits.ts` (the anchor-set
 mutations: translate, handle-drag with smooth mirroring, insert-on-segment,
-delete-with-refit, scissors, rect select), the curvature comb
+delete-with-refit, scissors, rect select), `paths/handleEdits.ts` (handle
+locks and angle snapping), `paths/softSelection.ts` (falloff weights by
+distance along the path), the curvature comb
 (`paths/curvature.ts`), the balance-handle edits (`paths/balanceHandles.ts`), and the anchor model itself
 (`pathToAnchors` / `anchorsToPath`, `PenAnchor`, `nearestSegmentT`). Its
 invariant test, `anchorEdits.test.ts`, stays here because it reads an action's

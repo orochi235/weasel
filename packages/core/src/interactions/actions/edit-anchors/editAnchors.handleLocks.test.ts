@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { AffordanceHit, InvocationCtx, OngoingHandle, OngoingOverlay } from '@weasel-js/routing';
+import { overlaysOf } from '@weasel-js/routing';
 import { PATH_C, PATH_M, PATH_Z, pathToAnchors, type PolygonPath } from '@weasel-js/geom';
 import type { EditAnchorsDep } from '../depSchema';
 import { makeEditAnchorsDep, stubDeps } from '../testUtils';
@@ -54,7 +55,7 @@ describe('editAnchors handle locks', () => {
   it('holds the length while Mod is down, and draws the circle it keeps to', () => {
     const drag = start();
     drag.move({ x: 0, y: 50 }, { ...NO_MODS, meta: true });
-    const guide = drag.handle.overlay!();
+    const guide = overlaysOf(drag.handle)[0];
     expect(guide).toMatchObject({ kind: 'polyline', role: 'lock' });
     // A circle of radius 10 round the anchor.
     for (const p of pointsOf(guide)) {
@@ -76,7 +77,7 @@ describe('editAnchors handle locks', () => {
   it('holds the angle while Shift is down, and draws the line it keeps to', () => {
     const drag = start();
     drag.move({ x: 30, y: 12 }, { ...NO_MODS, shift: true });
-    const guide = drag.handle.overlay!();
+    const guide = overlaysOf(drag.handle)[0];
     expect(guide).toMatchObject({ kind: 'polyline', role: 'lock' });
     expect(pointsOf(guide).every((p) => Math.abs(p.y) < 1e-9)).toBe(true);
     expect(drag.out()).toEqual({ x: 30, y: 0 });
@@ -85,14 +86,14 @@ describe('editAnchors handle locks', () => {
   it('freezes the handle with both modifiers down', () => {
     const drag = start();
     drag.move({ x: -25, y: 40 }, { ...NO_MODS, shift: true, meta: true });
-    expect(drag.handle.overlay!()).toMatchObject({ role: 'lock' });
+    expect(overlaysOf(drag.handle)[0]).toMatchObject({ role: 'lock' });
     expect(drag.out()).toEqual({ x: 10, y: 0 });
   });
 
   it('draws nothing with no lock held', () => {
     const drag = start();
     drag.move({ x: 20, y: 19 });
-    expect(drag.handle.overlay?.() ?? null).toBeNull();
+    expect(overlaysOf(drag.handle)).toEqual([]);
     expect(drag.out()).toEqual({ x: 20, y: 19 });
   });
 
