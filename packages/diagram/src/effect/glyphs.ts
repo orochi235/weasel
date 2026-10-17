@@ -47,7 +47,7 @@ export const step: BranchSymbol = (stage, pipeline, options) => {
   stage.split.at.forEach((cut, k) => marks.push({
     text: String(cut), at: { u: riser(k), v: 1 }, self: { u: 0.5, v: 0 }, offset: { x: 0, y: 3 }, style: { fontSize: 10 },
   }));
-  marks.push(title(stage, 18));
+  marks.push(title(stage, options, 18));
   return {
     outline: 'rect',
     lines: [],
@@ -88,7 +88,7 @@ export const comparator: BranchSymbol = (stage, pipeline, options) => {
   else if (signal.length === 2) {
     signal.forEach((p, i) => marks.push({ text: i === 0 ? '+' : '−', at: p.at, self: { u: 0, v: 0.5 }, offset: { x: 4, y: 0 }, color: ink }));
   }
-  marks.push(title(stage));
+  marks.push(title(stage, options));
   const exit = (p: EffectPort, v: number): PortSpec => ({ id: p.id, type: p.type, at: { u: EXIT_AT, v } });
   return {
     outline: COMPARATOR,
@@ -126,7 +126,7 @@ export const crossover: BranchSymbol = (stage, pipeline, options) => {
     marks.push({ d: response(i, n), stroke: tints[i % tints.length]!, strokeWidth: 1.5 });
     marks.push({ d: `M0.75 ${1 - (i + 0.5) / n} H1`, stroke: ink });
   });
-  marks.push(...cutLabels(stage.split.at, n), title(stage));
+  marks.push(...cutLabels(stage.split.at, n), title(stage, options));
   return {
     outline: 'rect',
     lines: [],
@@ -152,5 +152,5 @@ export const fork: BranchSymbol = (stage, pipeline, options) => ({
   width: FORK,
   height: FORK,
   ports: [...inputs(stage, pipeline, options, undefined, onDot), ...onDot(stage.outputs ?? [], 'right')],
-  marks: [{ d: dot(0.5, 0.5, 0.5), fill: styleOf(stage, options).text }, title(stage)],
+  marks: [{ d: dot(0.5, 0.5, 0.5), fill: styleOf(stage, options).text }, title(stage, options)],
 });

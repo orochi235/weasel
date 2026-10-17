@@ -33,7 +33,7 @@ const bar: BranchSymbol = (stage, pipeline, options) => {
     marks.push({ d: `M0 ${top} H1 V${1 - i / n} H0 Z`, fill: tints[i % tints.length]!, opacity: 0.3 });
   });
   cuts.forEach((_, k) => marks.push({ d: `M-0.25 ${1 - (k + 1) / n} H1.25`, stroke: ink }));
-  marks.push(...cutLabels(cuts, n), title(stage));
+  marks.push(...cutLabels(cuts, n), title(stage, options));
   return {
     outline: 'rect',
     lines: [],
@@ -54,7 +54,7 @@ const demux: BranchSymbol = (stage, pipeline, options) => {
     width: 44,
     height: Math.max(64, 28 * exits.length),
     ports: [...inputs(stage, pipeline, options), ...spread(exits, 'right')],
-    marks: [title(stage)],
+    marks: [title(stage, options)],
   };
 };
 
@@ -95,7 +95,7 @@ const switchSymbol: BranchSymbol = (stage, pipeline, options) => {
       { d: dot(0.2, 0.5, 0.07), fill: ink },
       { d: CONTACT_FIRST, fill: ink },
       { d: CONTACT_SECOND, stroke: ink },
-      title(stage),
+      title(stage, options),
     ],
   };
 };

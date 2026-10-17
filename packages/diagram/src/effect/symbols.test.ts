@@ -54,14 +54,31 @@ describe('branch symbols', () => {
     expect(port(yesNo, 'no', 'diamond').at).toEqual({ u: 0.5, v: 1 });
   });
 
-  it('puts control inputs on the bottom when told to, with a diamond\'s second exit on top', () => {
+  it('puts control inputs on the bottom when told to', () => {
     const bottom = (stage: EffectStage, id: string, choice: Parameters<typeof branchNode>[2]) =>
       branchNode(stage, P, choice, { controlSide: 'bottom' }).ports!.find((p) => p.id === id)!.at;
-    for (const choice of ['diamond', 'demux', 'switch'] as const) expect(bottom(yesNo, 'when', choice).v).toBe(1);
-    expect(bottom(yesNo, 'no', 'diamond')).toEqual({ u: 0.5, v: 0 });
-    expect(branchNode(yesNo, P, 'diamond', { controlSide: 'bottom' }).ports!.find((p) => p.id === 'no')!.sites).toBeUndefined();
+    for (const choice of ['demux', 'switch'] as const) expect(bottom(yesNo, 'when', choice).v).toBe(1);
     const steered = { ...bands, inputs: [{ id: 'x', type: 'number' }, { id: 'sig', type: 'number' }] };
     expect(bottom(steered, 'x', 'bar').v).toBe(1);
+  });
+
+  it('keeps a diamond\'s second exit on the bottom vertex when control comes from below', () => {
+    // On the vertex, the exit would have to leave by the top, and its wire to a stage below
+    // would cross the diamond.
+    const node = branchNode(yesNo, P, 'diamond', { controlSide: 'bottom' });
+    const at = (id: string) => node.ports!.find((p) => p.id === id)!;
+    expect(at('when').at).toEqual({ u: 0.25, v: 0.75 });
+    expect(at('no').at).toEqual({ u: 0.5, v: 1 });
+    expect(at('no').sites).toEqual([{ u: 0.5, v: 0 }]);
+  });
+
+  it('moves a symbol\'s title above it when control comes from below, clear of the control port', () => {
+    for (const choice of ['demux', 'switch'] as const) {
+      const titles = (side: 'top' | 'bottom') => branchNode(yesNo, P, choice, { controlSide: side }).marks!
+        .filter((m) => 'text' in m && m.text === yesNo.title);
+      expect(titles('top')[0]).toMatchObject({ at: { v: 1 } });
+      expect(titles('bottom')[0]).toMatchObject({ at: { v: 0 }, self: { v: 1 } });
+    }
   });
 
   it('draws a symbol\'s marks in its node style\'s text color, and a bypassed one dim', () => {

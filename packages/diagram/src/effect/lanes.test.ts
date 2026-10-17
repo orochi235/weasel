@@ -125,7 +125,7 @@ describe('lanes', () => {
       wires: [],
     };
     const at = (order: string[]) => lanes(steered, { lanes: order }).data.nodes.find((n) => n.id === 'q')!.ports!.find((p) => p.id === 'when')!.at.v;
-    expect(at(['image', 'bool'])).toBe(1);
+    expect(at(['image', 'bool'])).toBeGreaterThan(0.5);
     expect(at(['bool', 'image'])).toBe(0);
   });
 

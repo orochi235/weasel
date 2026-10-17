@@ -69,23 +69,29 @@ export function inputs(
   return [...place(all.filter((p) => !steering.includes(p)), 'left'), ...place(steering, side)];
 }
 
-/** The stage's title under the symbol, `below` from its bottom edge. */
-export const title = (stage: EffectStage, below = 4): DataMark =>
-  ({ text: stage.title, at: { u: 0.5, v: 1 }, self: { u: 0.5, v: 0 }, offset: { x: 0, y: below } });
+/** The stage's title on the side of the symbol away from its control inputs,
+ *  `gap` from that edge: under it, or over it when control comes from below. */
+export const title = (stage: EffectStage, options: BranchOptions | undefined, gap = 4): DataMark =>
+  (options?.controlSide === 'bottom'
+    ? { text: stage.title, at: { u: 0.5, v: 0 }, self: { u: 0.5, v: 1 }, offset: { x: 0, y: -gap } }
+    : { text: stage.title, at: { u: 0.5, v: 1 }, self: { u: 0.5, v: 0 }, offset: { x: 0, y: gap } });
+
+/** Control from below enters a diamond by its lower-left edge, leaving the
+ *  bottom vertex to the second exit. */
+const DIAMOND_SIDES = placeAlong({
+  left: [[0, 0], [0, 1]], top: [[0.5, 0], [0.5, 0]], right: [[1, 0], [1, 1]], bottom: [[0, 0.5], [0.5, 1]],
+});
 
 /** Two exits leave by the right vertex and by the bottom one, or the top
- *  when that faces the wire better and no input holds it. With control
- *  inputs on the bottom, top and bottom swap. */
+ *  when that faces the wire better and no input holds it. */
 export const diamond: BranchSymbol = (stage, pipeline, options) => {
   const exits = stage.outputs ?? [];
-  const ins = inputs(stage, pipeline, options);
-  const held = options?.controlSide === 'bottom' && ins.some((p) => p.at.v === 1);
-  const [main, other] = held ? [0, 1] : [1, 0];
-  const otherFree = !ins.some((p) => p.at.v === other);
+  const ins = inputs(stage, pipeline, options, undefined, options?.controlSide === 'bottom' ? DIAMOND_SIDES : spread);
+  const topFree = !ins.some((p) => p.at.v === 0);
   const out: PortSpec[] = exits.length === 2
     ? [
         { id: exits[0]!.id, type: exits[0]!.type, at: { u: 1, v: 0.5 } },
-        { id: exits[1]!.id, type: exits[1]!.type, at: { u: 0.5, v: main }, ...(otherFree ? { sites: [{ u: 0.5, v: other }] } : {}) },
+        { id: exits[1]!.id, type: exits[1]!.type, at: { u: 0.5, v: 1 }, ...(topFree ? { sites: [{ u: 0.5, v: 0 }] } : {}) },
       ]
     : spread(exits, 'right');
   return { outline: 'diamond', lines: [stage.title], ports: [...ins, ...out] };
