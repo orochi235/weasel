@@ -29,6 +29,8 @@ export interface BarMenuProps extends BarMenuSources {
   label: string;
   /** The menu, as a schema `resolveSchemaMenu` walks: resolved each time it opens, so it shows what holds then. */
   schema: PrefGroup;
+  /** Open, as from a pointer, once on mount. */
+  defaultOpen?: boolean;
 }
 
 /**
@@ -36,7 +38,7 @@ export interface BarMenuProps extends BarMenuSources {
  * as the DOM menu the context menu host draws — actions as items, flags as
  * checked items, choices as radio rows, nested groups as submenus.
  */
-export function BarMenu({ label, schema, values, onChange, over }: BarMenuProps) {
+export function BarMenu({ label, schema, values, onChange, over, defaultOpen }: BarMenuProps) {
   const registry = useActionsRegistry();
   const depReg = useOptionalDepRegistry();
   const [open, setOpen] = useState<OpenMenu | null>(null);
@@ -74,6 +76,12 @@ export function BarMenu({ label, schema, values, onChange, over }: BarMenuProps)
     const under = { x: rect.left, y: rect.top, w: rect.width, h: rect.height };
     setOpen((prev) => ({ seq: (prev?.seq ?? 0) + 1, entries, client: { x: rect.left, y: rect.bottom }, under, source }));
   };
+
+  useEffect(() => {
+    if (defaultOpen) show('pointer');
+    // Once, on mount: `defaultOpen` is an initial state, not a controlled one.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <>
