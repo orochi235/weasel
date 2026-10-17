@@ -10,8 +10,8 @@ import {
   TrialSceneCanvas,
   useTrialScene,
 } from '@weasel-js/labkit';
-import { RectIcon, SelectIcon } from '@weasel-js/ui';
 import { useMemo } from 'react';
+import { icon } from '../icons.gen';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 
@@ -76,8 +76,8 @@ const spacingInstrument = defineInstrument<State, Config>({
   undo: {},
   tools: {
     tools: [
-      { id: 'select', label: 'Select', icon: SelectIcon, shortcut: 'V' },
-      { id: 'rect', label: 'Rectangle', icon: RectIcon, shortcut: 'R' },
+      { id: 'select', label: 'Select', icon: icon('core:select'), shortcut: 'V' },
+      { id: 'rect', label: 'Rectangle', icon: icon('core:rect'), shortcut: 'R' },
     ],
   },
   render: (ctx) => <SpacingTrial ctx={ctx} />,
