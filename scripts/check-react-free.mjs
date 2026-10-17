@@ -14,40 +14,9 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { REACT_FREE_ENTRIES } from './react-free-entries.mjs';
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-
-/** Entry files that must have no React in their closure, and why each exists. */
-const ENTRIES = [
-  {
-    file: 'packages/icons/dist/index.js',
-    why: 'names and the registry, read by prefs and routing, which must not pull React in',
-  },
-  {
-    file: 'packages/icons-plugin/dist/index.js',
-    why: 'the build plugin, loaded by a bundler config in Node',
-  },
-  {
-    file: 'packages/core/dist/math.js',
-    why: 'the geometry and simulation half, for a server with no DOM',
-  },
-  {
-    file: 'packages/diagram/dist/layout.js',
-    why: 'measurement, ranking, force and ports, for a server-side layout',
-  },
-  {
-    file: 'packages/simulation/dist/index.js',
-    why: 'the integrator; the frame-loop hook lives behind @weasel-js/simulation/react',
-  },
-  {
-    file: 'packages/renderer/dist/index.js',
-    why: 'draw commands to pixels; a paint kind\'s editor is registered in core',
-  },
-  {
-    file: 'packages/prefs/dist/index.js',
-    why: 'the schema and the store; the hooks live behind @weasel-js/prefs/react',
-  },
-];
 
 /** A specifier that must not appear anywhere in a React-free closure. */
 const banned = (spec) =>
@@ -69,7 +38,7 @@ function specifiersIn(source) {
 
 /**
  * Resolves a sibling workspace specifier to the built file its `exports` map
- * names, or `null` for anything outside the kit. A walk that stops at the
+ * names, built or not, or `null` for anything outside the kit. A walk that stops at the
  * package boundary reports the React barrel as merely external and cannot fail.
  */
 function resolveWorkspace(spec) {
@@ -83,8 +52,7 @@ function resolveWorkspace(spec) {
   const entry = map?.[sub === undefined ? '.' : `./${sub}`];
   const file = typeof entry === 'string' ? entry : entry?.import;
   if (typeof file !== 'string') return null;
-  const abs = resolve(dir, file);
-  return existsSync(abs) ? abs : null;
+  return resolve(dir, file);
 }
 
 /** Walks relative imports and workspace siblings alike; collects the rest. */
@@ -100,7 +68,7 @@ function closureOf(entry) {
         continue;
       }
       const sibling = resolveWorkspace(spec);
-      if (sibling === null) external.add(spec);
+      if (sibling === null || !existsSync(sibling)) external.add(spec);
       else walk(sibling);
     }
   };
@@ -109,8 +77,10 @@ function closureOf(entry) {
 }
 
 let failed = false;
-for (const { file, why } of ENTRIES) {
-  const abs = resolve(repoRoot, file);
+for (const { spec, why } of REACT_FREE_ENTRIES) {
+  const abs = resolveWorkspace(spec);
+  if (abs === null) throw new Error(`${spec} names no workspace package export`);
+  const file = relative(repoRoot, abs);
   if (!existsSync(abs)) {
     console.error(`✗ ${file} — not built. Run \`npm run build\` first.`);
     failed = true;
