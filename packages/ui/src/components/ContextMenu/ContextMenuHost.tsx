@@ -58,11 +58,16 @@ export function OpenPanels({ open, close, takeFocus = true, inside, onEdge, rele
   const edge = useRef(onEdge);
   const release = useRef(releaseRuns);
   useLayoutEffect(() => { edge.current = onEdge; });
-  useLayoutEffect(() => { release.current = releaseRuns; }, [releaseRuns]);
+  // `open` is a dependency so a new menu arms again while the prop stays true.
+  useLayoutEffect(() => { release.current = releaseRuns; }, [releaseRuns, open]);
   useEffect(() => {
     const disarm = () => { release.current = false; };
     window.addEventListener('pointerup', disarm);
-    return () => window.removeEventListener('pointerup', disarm);
+    window.addEventListener('pointercancel', disarm);
+    return () => {
+      window.removeEventListener('pointerup', disarm);
+      window.removeEventListener('pointercancel', disarm);
+    };
   }, []);
   // Built where it is disposed, so StrictMode's rerun of this effect gets a live one.
   useLayoutEffect(() => {

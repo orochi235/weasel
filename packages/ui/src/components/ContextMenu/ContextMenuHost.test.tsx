@@ -311,6 +311,43 @@ describe('OpenPanels bar hooks', () => {
     expect(ran).toEqual([]);
   });
 
+  it('releaseRuns: a new menu through the same OpenPanels re-arms while the prop stays true', () => {
+    ran.length = 0;
+    const close = vi.fn();
+    const mk = (seq: number, entries: MenuEntry[]) => ({ seq, entries, client: { x: 0, y: 0 }, source: 'pointer' as const });
+    const { rerender } = render(<OpenPanels open={mk(1, [item('a')])} close={close} releaseRuns />);
+    fireEvent.pointerUp(document.body);
+    rerender(<OpenPanels open={mk(2, [item('x')])} close={close} releaseRuns />);
+    fireEvent.pointerUp(screen.getByRole('menuitem', { name: 'x' }));
+    expect(ran).toEqual(['x']);
+  });
+
+  it('releaseRuns: flipping it on a rerender keeps the same row elements', () => {
+    const close = vi.fn();
+    const open = { seq: 1, entries: [item('a')], client: { x: 0, y: 0 }, source: 'pointer' as const };
+    const { rerender } = render(<OpenPanels open={open} close={close} />);
+    const before = screen.getByRole('menuitem', { name: 'a' });
+    rerender(<OpenPanels open={open} close={close} releaseRuns />);
+    expect(screen.getByRole('menuitem', { name: 'a' })).toBe(before);
+  });
+
+  it('releaseRuns: the release that presses a row disarms, so a second one runs nothing', () => {
+    ran.length = 0;
+    const more: MenuEntry = { kind: 'submenu', key: 'more', label: 'More', entries: [item('inner')] };
+    panels([more], { releaseRuns: true });
+    fireEvent.pointerUp(screen.getByRole('menuitem', { name: 'More' }));
+    fireEvent.pointerUp(screen.getByRole('menuitem', { name: 'inner' }));
+    expect(ran).toEqual([]);
+  });
+
+  it('releaseRuns: a pointercancel disarms', () => {
+    ran.length = 0;
+    panels([item('a')], { releaseRuns: true });
+    fireEvent.pointerCancel(document.body);
+    fireEvent.pointerUp(screen.getByRole('menuitem', { name: 'a' }));
+    expect(ran).toEqual([]);
+  });
+
   it('without releaseRuns a pointerup presses nothing', () => {
     ran.length = 0;
     panels([item('a')]);
