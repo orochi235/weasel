@@ -6,8 +6,9 @@ import { Lab } from '../lab/Lab';
 import { LabShell } from '../lab/LabShell';
 import type { LabChromeContext, LabContribution } from './labTypes';
 import { ToolbarRegion } from './regions/ToolbarRegion';
+import { icon } from '../icon';
 
-const Glyph = () => <svg />;
+const Glyph = icon('ui:add');
 const bare: Instrument = {
   name: 'Bare',
   defaultConfig: () => ({}),

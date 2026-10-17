@@ -6,8 +6,8 @@
 import { type ActionsRegistry, asNodeId, boundsOfPath, type PolygonPath, type RectPose, solid, useActionsRegistry } from '@weasel-js/core';
 import { type WarpKind, type WarpSettings } from '@weasel-js/path-tools';
 import type { TrialContribution } from '@weasel-js/labkit';
-import { CheckIcon } from '@weasel-js/ui';
 import { useEffect } from 'react';
+import { icon } from '../icon';
 
 /** Each trial's action registry, so its palette command fires on its own canvas. */
 const registries = new Map<string, Pick<ActionsRegistry, 'trigger'>>();
@@ -38,7 +38,7 @@ export const expandWarpCommand: TrialContribution = {
   id: 'expand-warp',
   region: 'palette',
   item: {
-    icon: CheckIcon,
+    icon: icon('ui:check'),
     label: 'Expand warp',
     onActivate: (ctx) => { registries.get(ctx.trialId)?.trigger('expandWarp'); },
   },

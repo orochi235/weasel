@@ -1,5 +1,4 @@
 import { Fragment, type ReactNode } from 'react';
-import { UnknownIcon } from '@weasel-js/core';
 import type { Tool, ToolsApi } from '@weasel-js/core';
 import { eligibleContribution, type ModeRegistry } from '@weasel-js/modes';
 import { ToolButton } from '../ToolButton';
@@ -7,6 +6,8 @@ import { ToolGroup } from '../ToolGroup';
 import { useRovingTabIndex } from '../../useRovingTabIndex';
 import s from './ToolPalette.module.css';
 import { formatShortcut, type ShortcutInput } from './formatShortcut';
+import { icon } from '../../icons.gen';
+import { Icon } from '../../icons/Icon';
 
 const DEFAULT_GROUP_ORDER = ['select', 'shape', 'draw', 'type', 'view'] as const;
 const MISC = 'misc';
@@ -45,11 +46,8 @@ function orderedGroupKeys(
   return ordered;
 }
 
-function resolveIcon(tool: Tool): ReactNode {
-  const rawIcon = tool.presentation?.icon;
-  if (rawIcon == null) return <UnknownIcon />;
-  if (typeof rawIcon === 'function') return rawIcon();
-  return rawIcon;
+function toolGlyph(tool: Tool): ReactNode {
+  return <Icon name={tool.presentation?.icon ?? icon('core:unknown')} />;
 }
 
 /** Props for {@link ToolPalette}. */
@@ -146,7 +144,7 @@ export function ToolPalette(props: ToolPaletteProps) {
               return (
                 <ToolButton
                   key={tool.id}
-                  icon={resolveIcon(tool)}
+                  icon={toolGlyph(tool)}
                   label={label}
                   shortcut={shortcut}
                   active={tools.active === tool.id}

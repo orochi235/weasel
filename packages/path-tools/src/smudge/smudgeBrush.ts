@@ -7,8 +7,8 @@ import {
 } from '@weasel-js/routing';
 import { pxExtent, smudgePath, type PolygonPath } from '@weasel-js/geom';
 import { brushRingCursor } from '../simplifyBrush/simplifyBrush';
-import { SmudgeBrushIcon } from '../icons';
 import { commitOps, reshapeOps, selectedPathNodes, withPath, type PathNode, type SceneNode, pathOperationTags } from '@weasel-js/core';
+import { icon } from '../icons.gen';
 
 type AnyNode = SceneNode<unknown, string, unknown>;
 
@@ -58,7 +58,7 @@ function worldRadius(deps: ActionDeps, radiusPx: number): number {
 export const smudgeBrushAction: Action & { requires: string[] } = {
   id: 'smudgeBrush',
   label: LABEL,
-  icon: SmudgeBrushIcon,
+  icon: icon('smudgeBrush'),
   tags: pathOperationTags('brush'),
   group: 'path',
   eligible: { capability: 'creates-shapes' },

@@ -2,7 +2,7 @@ import type { PointerEvent } from 'react';
 import type { MenuEntry } from '@weasel-js/menu';
 import { formatShortcut } from '../ToolPalette/formatShortcut';
 import { Caret } from '../Caret';
-import { actionIcon, type ActionIconSource } from '../../icons/actionIcon';
+import { resolveIcon } from '../../icons/resolveIcon';
 import s from './ContextMenu.module.css';
 
 /** One line of a panel. Rows are `div`s: the panel owns focus and points at
@@ -30,7 +30,7 @@ export function MenuRow(props: {
       onPointerMove={props.onHover}
       onClick={props.onPress}
     >
-      <span className={s.icon} aria-hidden="true">{e.kind === 'item' && e.checked ? '✓' : actionIcon(e.icon as ActionIconSource)}</span>
+      <span className={s.icon} aria-hidden="true">{e.kind === 'item' && e.checked ? '✓' : resolveIcon(typeof e.icon === 'string' ? e.icon : undefined, 16)}</span>
       <span className={s.label}>{e.label}</span>
       {e.kind === 'item' && e.shortcut && <span className={s.shortcut}>{formatShortcut(e.shortcut)}</span>}
       {e.kind === 'submenu' && <Caret className={s.caret} />}

@@ -2,8 +2,9 @@ import { act, fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { RegionContribution, ToolSlotContext } from '../types';
 import { PaletteRegion } from './PaletteRegion';
+import { icon } from '../../icon';
 
-const Glyph = () => <svg />;
+const Glyph = icon('ui:add');
 
 // The region reads a tool slot and nothing else, so the fixture is a real
 // `ToolSlotContext` rather than a faked trial.

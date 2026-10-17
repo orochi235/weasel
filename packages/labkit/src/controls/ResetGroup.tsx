@@ -1,6 +1,7 @@
 import { isPrefLeaf, type PrefGroup } from '@weasel-js/prefs';
-import { Button, ResetIcon } from '@weasel-js/ui';
+import { Button, Icon } from '@weasel-js/ui';
 import { valueAtPath } from '../config/path';
+import { icon } from '../icon';
 
 /** Every leaf beneath a group, as its dotted path and its default. */
 function leavesUnder(group: PrefGroup, at: string): [string, unknown][] {
@@ -40,7 +41,7 @@ export function ResetGroup({
         for (const [p, d] of changed) setConfig(p, d);
       }}
     >
-      <ResetIcon />
+      <Icon name={icon('ui:reset')} />
     </Button>
   );
 }

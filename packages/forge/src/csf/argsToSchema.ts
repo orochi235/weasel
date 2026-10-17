@@ -1,5 +1,6 @@
 import { type ConfigNode, type ConfigSchema, type ConfigShape, f } from '@weasel-js/labkit/config';
 import { isPlainObject } from '@weasel-js/core';
+import { toIconRef } from '@weasel-js/icons';
 import { portSafePart } from './portSafe';
 
 /** Storybook's conditional control: shown only while an arg, or a global, meets the test. */
@@ -104,7 +105,10 @@ function controlled(control: Control, argType: ArgType, has: boolean, value: unk
       const { icons } = control;
       const node = f.enum(
         def<string>(),
-        icons ? options.map((value) => ({ value, label: value, ...(icons[value] ? { icon: icons[value] } : {}) })) : options,
+        icons ? options.map((value) => {
+          const ref = toIconRef(icons[value]);
+          return { value, label: value, ...(ref ? { icon: ref } : {}) };
+        }) : options,
       );
       return control.type === 'radio' || control.type === 'inline-radio' ? node.radio() : node;
     }

@@ -1,13 +1,12 @@
 import type { Action, ActionDeps } from '@weasel-js/routing';
 import { composesFrames } from 'core/scene/composePose';
-import { createElement } from 'react';
-import { DuplicateIcon } from './icons/editIcons';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
 import { copySelection } from './copySubtree';
 import { requiresSelection } from './requiresSelection';
 import { nodeDescriptors, poseDescriptorOf } from '../poseDescriptorDep';
 import { translatePoseViaDescriptor } from '../resize/geometry';
 import { recordTransform } from '../transform-again/memory';
+import { icon } from '../../../icons.gen';
 
 /** Same nudge `sceneToAdapter.getPasteOffset` gives a paste, so duplicate and
  *  paste land in the same place rather than disagreeing by a few units. */
@@ -60,7 +59,7 @@ export function duplicateSelection(
 export const duplicateAction: Action & { requires: string[] } = {
   id: 'duplicate',
   label: 'Duplicate',
-  icon: createElement(DuplicateIcon),
+  icon: icon('duplicate'),
   group: 'edit',
   // Cmd/Ctrl+D is `transformAgain`, which duplicates when nothing else is
   // there to repeat.

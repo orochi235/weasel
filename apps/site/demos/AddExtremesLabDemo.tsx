@@ -10,11 +10,12 @@ import {
   TrialSceneCanvas,
   useTrialScene,
 } from '@weasel-js/labkit';
-import { ActionBar, SelectIcon } from '@weasel-js/ui';
+import { ActionBar } from '@weasel-js/ui';
 import { createPathLabScene, useSeededPathEdit } from './pathEditLabSeed';
 import { OpeningSteps, PathLabStage } from './pathLab/pathLab';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
+import { icon } from '../icon';
 
 const config = f.schema({});
 type Config = ConfigOf<typeof config>;
@@ -51,7 +52,7 @@ const instrument = defineInstrument<State, Config>({
   config,
   initialState: () => ({ scene: null }),
   undo: {},
-  tools: { tools: [{ id: 'select', label: 'Select', icon: SelectIcon, shortcut: 'V' }] },
+  tools: { tools: [{ id: 'select', label: 'Select', icon: icon('core:select'), shortcut: 'V' }] },
   render: (ctx) => <AddExtremesTrial ctx={ctx} />,
 });
 

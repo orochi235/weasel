@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useReducer, useRef, useState, createElement } from 'react';
+import { useCallback, useMemo, useReducer, useRef, useState } from 'react';
 import { useKitSettings, useLatest } from '@weasel-js/react';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { defineTool } from '../../overlayBinding';
@@ -8,7 +8,6 @@ import { ActionDisabledReason } from '@weasel-js/routing';
 import type { ActionDeps, InvocationCtx } from '@weasel-js/routing';
 import { asNodeId } from 'core/scene/types';
 import { pxExtent, withinPxRadius, nearestPathAnchor, reverseAnchors, type PathAnchorHit } from '@weasel-js/geom';
-import { PenIcon } from '../../../icons';
 import { boundsOfPath, type PolygonPath, anchorsToPath, editAnchorSetTracked, pathToAnchors } from '@weasel-js/geom';
 import { createPenPreviewLayer } from 'features/paths/penPreviewLayer';
 import type { Op } from 'core/ops/types';
@@ -17,6 +16,7 @@ import { defaultCommitAdapter } from 'interactions/actions/defaultCommitAdapter'
 import { constrainTo45 } from '../../../util/constrainTo45';
 import { cursorFor } from '@weasel-js/cursor';
 import { createPointerFollower } from '../shared/pointerFollower';
+import { icon } from '../../../icons.gen';
 
 /**
  * In-progress pen anchor. A click places a corner, with no handles. A drag
@@ -574,7 +574,7 @@ export function usePenTool(
           : cursorFor('pen', { fallback: 'crosshair' }),
       presentation: {
         label: 'Pen',
-        icon: createElement(PenIcon),
+        icon: icon('pen'),
         group: 'draw',
       },
       actions,

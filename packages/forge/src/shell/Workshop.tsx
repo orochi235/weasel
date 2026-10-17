@@ -17,7 +17,6 @@ import { LibrariesContext, librariesFrom } from '../story/library';
 import type { DepGraph, IndexEntry } from '../story/types';
 import { DependenciesContext } from './dependencies';
 import { missingInstrument } from './documentInstrument';
-import { InfoIcon } from '@weasel-js/ui';
 import { A11Y_SECTION } from './a11y/A11yPanel';
 import { CSS_VARS_SECTION } from './cssVars/CssVarsPanel';
 import { StoryInfoDialog } from './info/StoryInfoDialog';
@@ -33,6 +32,7 @@ import { RouteKnobs } from './RouteKnobs';
 import { StoryTree } from './tree/StoryTree';
 import { crossesInPlace, readRoute, readRouteEntry, useRoute } from './useRoute';
 import { useStoryRegistry } from './useStoryRegistry';
+import { icon } from '../icon';
 
 /** Props for `Workshop`. `index`, `importers` and `dependencies` are what the vite plugin's virtual modules supply. */
 export interface WorkshopProps {
@@ -154,7 +154,7 @@ export function Workshop({ index, frameUrl, importers, setup, changes, config, s
     [],
   );
   const infoCommand = useMemo<CommandItem<LabChromeContext>>(
-    () => ({ icon: InfoIcon, label: 'Info', shortcut: '⌘I', onActivate: () => setInfoOpen(true) }),
+    () => ({ icon: icon('ui:info'), label: 'Info', shortcut: '⌘I', onActivate: () => setInfoOpen(true) }),
     [],
   );
   const labChrome = useMemo<readonly LabContribution[]>(

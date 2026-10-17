@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { Icon } from '../../passthrough/weasel-ui';
 import { Toolbar } from '../../primitives/Toolbar';
 import type { RegionContribution, ToolbarItem, TrialChromeContext } from '../types';
 
@@ -43,7 +44,7 @@ function renderEntry<TCtx>(c: RegionContribution<TCtx>, ctx: TCtx, region: strin
   if (c.render) return <span key={c.id}>{c.render(ctx)}</span>;
   if (c.region !== region || !c.item) return null;
   const {
-    icon: Icon,
+    icon,
     label,
     shortcut,
     disabled,
@@ -63,7 +64,7 @@ function renderEntry<TCtx>(c: RegionContribution<TCtx>, ctx: TCtx, region: strin
       title={shortcut ? `${label} (${shortcut})` : label}
       onClick={() => onActivate(ctx)}
     >
-      <Icon size={16} />
+      <Icon name={icon} size={16} />
       {showLabel ? <span>{label}</span> : null}
     </Toolbar.Button>
   );

@@ -182,16 +182,16 @@ export const AliasesIntoAnotherSchema: Story = {
 };
 
 const ARRANGE_ACTIONS: Action[] = [
-  { id: 'arrange.front', label: 'Bring to front', group: 'arrange', icon: '⤒', invoker: { timing: 'immediate', run: () => {} } },
-  { id: 'arrange.back', label: 'Send to back', group: 'arrange', icon: '⤓', invoker: { timing: 'immediate', run: () => {} } },
+  { id: 'arrange.front', label: 'Bring to front', group: 'arrange', icon: icon('core:bringToFront'), invoker: { timing: 'immediate', run: () => {} } },
+  { id: 'arrange.back', label: 'Send to back', group: 'arrange', icon: icon('core:sendToBack'), invoker: { timing: 'immediate', run: () => {} } },
   {
     id: 'arrange.flip',
     label: 'Flip',
     group: 'arrange',
     invoker: { timing: 'immediate', run: () => {} },
     variants: [
-      { key: 'x', label: 'Flip horizontally', icon: '⇋', params: { axis: 'x' } },
-      { key: 'y', label: 'Flip vertically', icon: '⇵', params: { axis: 'y' } },
+      { key: 'x', label: 'Flip horizontally', icon: icon('core:flipX'), params: { axis: 'x' } },
+      { key: 'y', label: 'Flip vertically', icon: icon('core:flipY'), params: { axis: 'y' } },
     ],
   },
 ];

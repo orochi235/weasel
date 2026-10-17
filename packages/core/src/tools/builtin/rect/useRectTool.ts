@@ -1,10 +1,10 @@
-import { useMemo, createElement } from 'react';
+import { useMemo } from 'react';
 import { defineTool } from '../../overlayBinding';
-import { RectIcon } from '../../../icons';
 import type { Tool } from '../../overlayBinding';
 import { INSERT_REPOSITION_BINDING } from 'interactions/actions/insert/repositionAction';
 import { insertBindingBehaviors, type InsertToolOptions } from '../shared/insertToolOptions';
 import { cursorFor } from '@weasel-js/cursor';
+import { icon } from '../../../icons.gen';
 
 /**
  * Drag-to-draw rectangle tool.
@@ -26,7 +26,7 @@ export function useRectTool(options: InsertToolOptions = {}): Tool {
         cursor: cursorFor('crosshairRect', { fallback: 'crosshair' }),
         presentation: {
           label: 'Rectangle',
-          icon: createElement(RectIcon),
+          icon: icon('rect'),
           group: 'shape',
         },
         // Single binding: insertAction toggles corner ⇄ center on live Alt

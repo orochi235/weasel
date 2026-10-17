@@ -1,8 +1,8 @@
 import { useMemo } from 'react';
 import { defineTool } from '../../overlayBinding';
-import { ImageIcon } from '../../../icons';
 import type { Tool } from '../../overlayBinding';
 import { insertBindingBehaviors, type InsertToolOptions } from '../shared/insertToolOptions';
+import { icon } from '../../../icons.gen';
 
 /** Options for `useImageTool`. */
 export interface UseImageToolOptions extends InsertToolOptions {
@@ -39,7 +39,7 @@ export function useImageTool(options: UseImageToolOptions): Tool {
         presentation: {
           label,
           group: 'shape',
-          icon: <ImageIcon />,
+          icon: icon('image'),
         },
         // Declarative binding routes empty-space drags through the
         // dispatcher + insertAction; `kind: 'image'` selects the insert

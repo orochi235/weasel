@@ -5,12 +5,12 @@ import { icon } from '../icons.gen';
 import { resolveIcon } from './resolveIcon';
 
 it('draws a qualified name, at the size asked for', () => {
-  const { container } = render(<>{resolveIcon(icon('bold'), 16)}</>, { wrapper: withIcons });
+  const { container } = render(<>{resolveIcon(icon('close'), 16)}</>, { wrapper: withIcons });
   expect(container.querySelector('svg')).toHaveAttribute('width', '16');
 });
 
 it('takes a qualified string read from data', () => {
-  const { container } = render(<>{resolveIcon('ui:bold')}</>, { wrapper: withIcons });
+  const { container } = render(<>{resolveIcon('ui:close')}</>, { wrapper: withIcons });
   expect(container.querySelector('svg')).toHaveAttribute('width', '14');
 });
 

@@ -4,8 +4,9 @@ import { describe, expect, it, vi } from 'vitest';
 import type { TrialContribution } from '../chrome/types';
 import type { Instrument } from '../instrument/types';
 import { Lab } from './Lab';
+import { icon } from '../icon';
 
-const Glyph = () => <svg />;
+const Glyph = icon('ui:add');
 const bare: Instrument = {
   name: 'Bare',
   defaultConfig: () => ({}),

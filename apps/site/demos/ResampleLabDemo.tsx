@@ -10,12 +10,13 @@ import {
   TrialSceneCanvas,
   useTrialScene,
 } from '@weasel-js/labkit';
-import { Button, SelectIcon } from '@weasel-js/ui';
+import { Button } from '@weasel-js/ui';
 import { useEffect, useMemo } from 'react';
 import { createPathLabScene, useSeededPathEdit } from './pathEditLabSeed';
 import { PathLabStage } from './pathLab/pathLab';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
+import { icon } from '../icon';
 
 const config = f.schema({
   by: f.enum('count', ['count', 'spacing']).label('Resample by'),
@@ -69,7 +70,7 @@ const instrument = defineInstrument<State, Config>({
   config,
   initialState: () => ({ scene: null }),
   undo: {},
-  tools: { tools: [{ id: 'select', label: 'Select', icon: SelectIcon, shortcut: 'V' }] },
+  tools: { tools: [{ id: 'select', label: 'Select', icon: icon('core:select'), shortcut: 'V' }] },
   render: (ctx) => <ResampleTrial ctx={ctx} />,
 });
 

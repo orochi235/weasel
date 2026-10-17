@@ -3,6 +3,7 @@
 // compose those into one registry, which `PrefsForm` renders and `openPrefs`
 // stores.
 
+import type { IconRef } from '@weasel-js/icons';
 import type { PrefAction, PrefActions } from './action';
 import type { PrefAlias } from './alias';
 import type { PrefCondition } from './condition';
@@ -68,12 +69,11 @@ export interface PrefBase<K extends string, Value> {
    *  fits there (`prefFitsHeading`); any other leaf stays a row. Honored by
    *  weasel-ui `PrefsForm` and labkit's `ControlPanel`. */
   heading?: boolean;
-  /** Glyph naming this leaf in a host UI's icon set (weasel-ui resolves it
-   *  against `ICON_PATHS`). A plain string because this package ships no
-   *  icon set and cannot depend on one. Read where a leaf's `name` has nowhere to go — a
+  /** Glyph naming this leaf. A name from `@weasel-js/icons`; this package draws
+   *  nothing. Read where a leaf's `name` has nowhere to go — a
    *  `pair`ed row is labeled by the pair, so its fields have only the glyph
    *  to tell them apart. */
-  icon?: string;
+  icon?: IconRef;
   /** Puts this leaf and the ones it names on one row. */
   pair?: PrefPair;
   /** Shorter forms of `name`, longest first. A surface short of room for
@@ -188,10 +188,8 @@ export interface PrefEnumBase<T extends string = string>
   extends PrefValueBase<'enum', T | undefined> {
   /** `short` holds shorter forms of `label`, longest first, for a segmented
    *  control too narrow for the full one — down to a capital or two. `icon`
-   *  names a glyph in the host UI's set (weasel-ui resolves it against
-   *  `ICON_PATHS`), drawn in place of any text form where it resolves. It is
-   *  a plain string because this package ships no icon set and cannot
-   *  depend on one. The full `label` stays the accessible name, so neither the abbreviation nor the glyph becomes the only thing naming
+   *  names a glyph, drawn in place of any text form where it resolves. A name
+   *  from `@weasel-js/icons`; this package draws nothing. The full `label` stays the accessible name, so neither the abbreviation nor the glyph becomes the only thing naming
    *  the option.
    *
    *  `disabled` marks an option a control reports but cannot author — the
@@ -202,7 +200,7 @@ export interface PrefEnumBase<T extends string = string>
     value: T;
     label: string;
     short?: readonly string[];
-    icon?: string;
+    icon?: IconRef;
     disabled?: boolean;
   }[];
   control?: PrefEnumControl;

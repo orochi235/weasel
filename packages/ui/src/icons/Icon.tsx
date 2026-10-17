@@ -37,7 +37,7 @@ const SVG_BASE: SVGProps<SVGSVGElement> = {
   strokeLinejoin: 'round',
 };
 
-/** Renders the glyph the icon registry in scope holds for `name`. A name it lacks draws `UnknownIcon`'s
+/** Renders the glyph the icon registry in scope holds for `name`. A name it lacks draws `core:unknown`'s
  *  placeholder in dev, warning once, and nothing in production. */
 export function Icon({
   name,

@@ -6,7 +6,7 @@ import {
 } from '@weasel-js/geom';
 import { commitOps, type Op, type PathNode, reshapeOps, selectedPathNodes, pathOperationTags } from '@weasel-js/core';
 import { pressOf, scenePathNodes, strokesBesides, type StrokePress } from '../shared/scenePaths';
-import { ExtendIcon } from '../icons';
+import { icon } from '../icons.gen';
 
 const EXTEND_LABEL = 'Extend to next path';
 
@@ -66,7 +66,7 @@ function planExtend(deps: ActionDeps | undefined, params?: unknown): Map<string,
  */
 export const extendToMeetAction: Action & { requires: string[] } = {
   id: 'extendToMeet',
-  icon: ExtendIcon,
+  icon: icon('extend'),
   label: EXTEND_LABEL,
   tags: pathOperationTags('click'),
   group: 'path',

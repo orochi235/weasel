@@ -3,7 +3,7 @@ import type { Action, ActionDeps, ImmediateInvoker } from '@weasel-js/routing';
 import { trimPathAt, type TrimResult } from '@weasel-js/geom';
 import { commitOps, deleteNode, reshapeOps, type PathNode, pathOperationTags } from '@weasel-js/core';
 import { pressOf, scenePathNodes, strokesBesides } from '../shared/scenePaths';
-import { TrimIcon } from '../icons';
+import { icon } from '../icons.gen';
 
 const TRIM_LABEL = 'Trim segment';
 
@@ -36,7 +36,7 @@ export function planTrim(
  */
 export const trimPathAction: Action & { requires: string[] } = {
   id: 'trimPath',
-  icon: TrimIcon,
+  icon: icon('trim'),
   label: TRIM_LABEL,
   tags: pathOperationTags('click'),
   group: 'path',

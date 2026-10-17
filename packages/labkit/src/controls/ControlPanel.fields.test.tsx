@@ -4,6 +4,7 @@ import { f } from '../config/builder';
 import { resolveConfigSchema } from '../config/resolve';
 import { ControlPanel } from './ControlPanel';
 import type { ConfigField } from './types';
+import { icon } from '../icon';
 
 describe('<ControlPanel> slider', () => {
   it('renders a range input with min/max/step and label', () => {
@@ -169,7 +170,7 @@ describe('<ControlPanel> option icons', () => {
   it("draws an option's icon in its segment and keeps the label as its name", () => {
     const status = f
       .enum('ok', [
-        { value: 'ok', label: 'ok', icon: 'ui:statusSuccess' },
+        { value: 'ok', label: 'ok', icon: icon('ui:statusSuccess') },
         { value: 'bad', label: 'bad' },
       ])
       .radio();
@@ -188,7 +189,7 @@ describe('<ControlPanel> option icons', () => {
 
   it("draws an option's icon beside its label in a select's trigger and list", () => {
     const status = f.enum('ok', [
-      { value: 'ok', label: 'ok', icon: 'ui:statusSuccess' },
+      { value: 'ok', label: 'ok', icon: icon('ui:statusSuccess') },
       { value: 'bad', label: 'bad' },
     ]);
     render(

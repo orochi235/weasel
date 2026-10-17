@@ -4,8 +4,9 @@ import type { TrialChromeContext, TrialContribution } from '../types';
 import { SidebarRegion } from './SidebarRegion';
 import { StatusRegion } from './StatusRegion';
 import { ViewportRegion } from './ViewportRegion';
+import { icon } from '../../icon';
 
-const Glyph = () => <svg />;
+const Glyph = icon('ui:add');
 const ctx = {
   trialId: 't1',
   undockedPanels: [],

@@ -1,5 +1,4 @@
 import { useLatest } from '@weasel-js/core';
-import { CloseIcon, FullscreenIcon } from '@weasel-js/ui';
 import {
   type MouseEvent,
   type ReactNode,
@@ -14,6 +13,8 @@ import { useSurfaceOptional } from '../surface/useSurfaceTile';
 import { LightboxContext, type LightboxContextValue } from './LightboxContext';
 import { useLightboxLayers } from './LightboxLayers';
 import { inertOutside, liftStack, opensLightbox } from './modal';
+import { icon } from '../icon';
+import { Icon } from '@weasel-js/ui';
 
 /** Props for `<Lightbox>`. */
 export interface LightboxProps {
@@ -169,7 +170,7 @@ export function Lightbox({
         title="Close (Esc)"
         onClick={() => set(false)}
       >
-        <CloseIcon size={16} />
+        <Icon name={icon('ui:close')} size={16} />
       </button>
     );
   } else if (!disabled && claims === 0) {
@@ -181,7 +182,7 @@ export function Lightbox({
         title="Expand"
         onClick={() => set(true)}
       >
-        <FullscreenIcon size={16} />
+        <Icon name={icon('ui:fullscreen')} size={16} />
       </button>
     );
   }

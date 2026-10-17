@@ -8,10 +8,10 @@ import {
 import {
   createSymmetry, symmetryGroupSpec, symmetryRegistry, type SymmetryKind, type SymmetrySpec,
 } from '@weasel-js/symmetry';
-import { EllipseIcon, PencilIcon, PenIcon, RectIcon, SelectIcon } from '@weasel-js/ui';
 import { useLayoutEffect, useMemo, useState } from 'react';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
+import { icon } from '../icon';
 
 export const GROUP_ID = 'symmetry';
 /** A leaf symmetric about the kaleidoscope's first mirror, open in path edit. */
@@ -160,11 +160,11 @@ const symmetryInstrument = defineInstrument<State, Config>({
   undo: {},
   tools: {
     tools: [
-      { id: 'select', label: 'Select', icon: SelectIcon, shortcut: 'V' },
-      { id: 'rect', label: 'Rectangle', icon: RectIcon, shortcut: 'R' },
-      { id: 'ellipse', label: 'Ellipse', icon: EllipseIcon, shortcut: 'E' },
-      { id: 'pen', label: 'Pen', icon: PenIcon, shortcut: 'P' },
-      { id: 'pencil', label: 'Pencil', icon: PencilIcon, shortcut: 'N' },
+      { id: 'select', label: 'Select', icon: icon('core:select'), shortcut: 'V' },
+      { id: 'rect', label: 'Rectangle', icon: icon('core:rect'), shortcut: 'R' },
+      { id: 'ellipse', label: 'Ellipse', icon: icon('core:ellipse'), shortcut: 'E' },
+      { id: 'pen', label: 'Pen', icon: icon('core:pen'), shortcut: 'P' },
+      { id: 'pencil', label: 'Pencil', icon: icon('core:pencil'), shortcut: 'N' },
     ],
   },
   render: (ctx) => <SymmetryTrial ctx={ctx} />,

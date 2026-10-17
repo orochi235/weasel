@@ -10,11 +10,11 @@ import {
   TrialSceneCanvas,
   useTrialScene,
 } from '@weasel-js/labkit';
-import { SelectIcon } from '@weasel-js/ui';
 import { useMemo } from 'react';
 import { createPathLabScene, useSeededPathEdit } from './pathEditLabSeed';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
+import { icon } from '../icon';
 
 const config = f.schema({
   comb: f.boolean(true).label('Show comb'),
@@ -57,7 +57,7 @@ const combInstrument = defineInstrument<State, Config>({
   config,
   initialState: () => ({ scene: null }),
   undo: {},
-  tools: { tools: [{ id: 'select', label: 'Select', icon: SelectIcon, shortcut: 'V' }] },
+  tools: { tools: [{ id: 'select', label: 'Select', icon: icon('core:select'), shortcut: 'V' }] },
   render: (ctx) => <CombTrial ctx={ctx} />,
 });
 

@@ -1,9 +1,8 @@
-import { isValidElement, type ComponentType } from 'react';
 import * as Weasel from '@weasel-js/core';
 import { defaultNodeRouting, defaultNodeProperties, type NodeRoutingEntry, type NodePropertiesEntry } from '@weasel-js/core';
 import { canonicalModifiers, parseRoute as kitParseRoute, type ParsedRoute as KitParsedRoute } from '@weasel-js/core/routing';
 import { type PrefObject, prefSectionLeaves } from '@weasel-js/prefs';
-import * as AppIcons from '../actionIcons';
+import { ICON_GROUPS, icon } from '../icons.gen';
 import {
   type ActionEntry,
   type BundleEntry,
@@ -44,44 +43,25 @@ export function collectMeta(): readonly MetaEntry[] {
 
 // ── Static collectors ──────────────────────────────────────────────────────
 
-function isLikelyComponent(value: unknown): boolean {
-  return typeof value === 'function'
-    || (typeof value === 'object' && value !== null && '$$typeof' in value);
-}
-
 /** The glyphs the registered actions carry — what an `<ActionBar>` actually
- *  draws. Named by the core barrel export that is the glyph's component
- *  (identity rather than `Function.name`, which minification rewrites), else
- *  by the first action item drawing it. */
+ *  draws — once each, under their qualified names. */
 function collectActionIcons(actions: readonly ActionEntry[]): IconEntry[] {
-  const exportName = new Map<unknown, string>();
-  for (const [name, value] of Object.entries(Weasel)) {
-    if (typeof value === 'function' && !exportName.has(value)) exportName.set(value, name);
-  }
-  const byGlyph = new Map<unknown, IconEntry & { actions: string[] }>();
+  const byGlyph = new Map<string, IconEntry & { actions: string[] }>();
   for (const item of actions.flatMap((a) => a.items ?? [])) {
-    const icon = item.icon;
-    if (!isValidElement(icon)) continue;
-    const existing = byGlyph.get(icon.type);
-    if (existing) {
-      existing.actions.push(item.key);
-      continue;
-    }
-    const id = exportName.get(icon.type) ?? item.key;
-    const bare = typeof icon.type === 'function' && Object.keys(icon.props as object).length === 0;
-    byGlyph.set(icon.type, {
-      kind: 'icon', id, label: id, source: 'action', actions: [item.key],
-      Component: bare ? icon.type as ComponentType : () => icon,
-    });
+    const ref = item.icon;
+    if (ref === undefined) continue;
+    const existing = byGlyph.get(ref);
+    if (existing) existing.actions.push(item.key);
+    else byGlyph.set(ref, { kind: 'icon', id: ref, label: ref, source: 'action', actions: [item.key], ref });
   }
   return [...byGlyph.values()];
 }
 
 export function collectIcons(actions: readonly ActionEntry[]): readonly IconEntry[] {
   const out: IconEntry[] = collectActionIcons(actions);
-  for (const [id, Component] of Object.entries(AppIcons)) {
-    if (!isLikelyComponent(Component)) continue;
-    out.push({ kind: 'icon', id, label: id, source: 'app', Component: Component as ComponentType });
+  for (const name of ICON_GROUPS.flatMap((g) => g.names)) {
+    const ref = icon(name);
+    out.push({ kind: 'icon', id: ref, label: ref, source: 'app', ref });
   }
   return out;
 }

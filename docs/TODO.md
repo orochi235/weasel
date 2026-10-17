@@ -283,8 +283,8 @@ Priority tags:
   leaves a thousandth of the subpath (`packages/geom/src/paths/lengthenPathEnd.ts`); an end is
   pressed within 8 screen px, the cursor is `penPlus`, nothing previews where a drag will land
   before it starts, and the end anchor is left selected after a drag
-  (`packages/path-tools/src/lengthen/lengthenPath.ts`). Its toolbar glyph, `LengthenIcon`, has not
-  been proofed large.
+  (`packages/path-tools/src/lengthen/lengthenPath.ts`). Its toolbar glyph, `path-tools:lengthen`, has
+  not been proofed large.
 - **(P2) Tune the Smudge brush hands-on, with the maintainer driving.** First-draft brush radius
   (40 screen px) and strength (0.6) (`DEFAULT_SMUDGE_RADIUS_PX`, `DEFAULT_SMUDGE_STRENGTH` in
   `packages/path-tools/src/smudge/smudgeBrush.ts`), the falloff `(1 − (d/r)²)²` and the subdivision threshold of a
@@ -383,17 +383,11 @@ Priority tags:
   a drag and an Alt-drag clone measure on screen. So inside a group drawn turned, Cmd+D after a
   drag steps in a different direction from the drag. Recording the move in world space and
   mapping it through each node's parent on replay would make the two agree.
-- **(P3) The path commands have no icons.** `simplifyPath`, `offsetPath`, `snipAtCrossings`,
-  `joinPaths`, `bridgePaths`, `joinAnchors`, `bridgeAnchors`, `averageAnchors`, `resamplePath`,
-  `addExtremeAnchors`, the anchor selection commands, and `extendToMeet` show as text in draw's
-  bar, as do `setPathStart`, `reversePath`, `convertSegments`, and draw's own
-  `view.pathDirection` toggle; `useTrimTool` and `useExtendTool` borrow `SliceIcon`, and
-  `useSmudgeBrushTool` has none. `expandWarp` and `configureWarp` have none
-  either, and `useDistortTool`, `useEnvelopeTool`, and `usePuppetTool` give no
-  `presentation.icon`: their labs borrow `FitStretchIcon`, `GridIcon`, and `PinIcon` from
-  `@weasel-js/ui`.
-  `RetractHandlesIcon`, `SymmetricHandlesIcon`, `SimplifyBrushIcon`, and `HarmonizeIcon`
-  (`defaults/icons/anchorIcons.tsx`) are first drafts, not proofed at high resolution.
+- **(P3) Some path commands have no icons.** `resamplePath`, the anchor selection commands and
+  draw's own `view.pathDirection` toggle show as text in draw's bar. The warp labs' tool lists
+  borrow `ui:fitStretch`, `ui:grid` and `ui:pin` rather than the warp tools' own glyphs.
+  `core:retractHandles`, `core:symmetricHandles`, `core:simplifyBrush` and `core:harmonize`
+  (`packages/core/icons/anchor.mjs`) are first drafts, not proofed at high resolution.
 - **(P2) Puppet warp bends by straight-line distance, not through the shape.** `rigidPuppetMap`
   (`packages/geom/src/warp/puppet.ts`) weights each pin by its distance across the plane, so two
   limbs that nearly touch move together when a pin on one is dragged. As-rigid-as-possible over

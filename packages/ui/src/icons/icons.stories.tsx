@@ -1,52 +1,36 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { Icon } from './Icon';
+import { toIconRef, type IconRef, type IconTable } from '@weasel-js/icons';
+import { icons as coreIcons } from '@weasel-js/core/icons';
 import { ICON_GROUPS, icon } from '../icons.gen';
-import {
-  SelectIcon, LassoIcon, RectIcon, EllipseIcon, ImageIcon, EyedropperIcon,
-  LineIcon, ArrowIcon, PolygonIcon, StarIcon, PencilIcon, TextIcon, PenIcon,
-  HandIcon, SliceIcon, MeasureIcon, UnknownIcon,
-} from './index';
+import { icons as uiIcons } from '../icons.table';
 import s from './icons.stories.module.css';
 
 const meta: Meta = { title: 'ui/Icons/Gallery', tags: ['gallery'] };
 export default meta;
 
-/**
- * The tool glyphs, which live in `@weasel-js/core` because core needs them for
- * `Tool.presentation.icon` defaults and cannot depend on this package. They
- * are re-exported here as one import site for the whole set, so a catalog that
- * showed only ui's own table would be showing half of it.
- */
-const TOOL_ICONS = {
-  SelectIcon, LassoIcon, RectIcon, EllipseIcon, ImageIcon, EyedropperIcon,
-  LineIcon, ArrowIcon, PolygonIcon, StarIcon, PencilIcon, TextIcon, PenIcon,
-  HandIcon, SliceIcon, MeasureIcon, UnknownIcon,
-} as const;
-
-function ToolSheet({ size, proof }: { size: number; proof?: boolean }) {
-  return (
-    <div className={proof ? `${s.sheet} ${s.proof}` : s.sheet}>
-      {Object.entries(TOOL_ICONS).map(([name, Glyph]) => (
-        <figure key={name}>
-          <Glyph size={size} />
-          <figcaption>{name}</figcaption>
-        </figure>
-      ))}
-    </div>
-  );
+/** A table's glyphs by group, in the order it lists them. */
+function groupsOf(table: IconTable): { label: string; refs: IconRef[] }[] {
+  const groups = new Map<string, IconRef[]>();
+  for (const [name, glyph] of Object.entries(table.icons)) {
+    const refs = groups.get(glyph.group) ?? [];
+    refs.push(toIconRef(`${table.namespace}:${name}`)!);
+    groups.set(glyph.group, refs);
+  }
+  return [...groups].map(([label, refs]) => ({ label, refs }));
 }
 
-function Sheet({ size, proof }: { size: number; proof?: boolean }) {
+function Sheet({ table = uiIcons, size, proof }: { table?: IconTable; size: number; proof?: boolean }) {
   return (
     <>
-      {ICON_GROUPS.map(({ label, names }) => (
+      {groupsOf(table).map(({ label, refs }) => (
         <section key={label}>
           <h2 className={s.groupHeading}>{label}</h2>
           <div className={proof ? `${s.sheet} ${s.proof}` : s.sheet}>
-            {names.map((n) => (
-              <figure key={n}>
-                <Icon name={icon(n)} size={size} label={n} />
-                <figcaption>{n}</figcaption>
+            {refs.map((ref) => (
+              <figure key={ref}>
+                <Icon name={ref} size={size} label={ref} />
+                <figcaption>{ref}</figcaption>
               </figure>
             ))}
           </div>
@@ -87,10 +71,10 @@ export const AtChromeSize: StoryObj = { render: () => <Sheet size={20} /> };
  *  a change; a misplaced arrowhead is invisible at 20px. */
 export const AtProofSize: StoryObj = { render: () => <Sheet size={160} proof /> };
 
-/** The core-owned half of the set, at the size the toolbar draws it. */
-export const ToolIconsAtChromeSize: StoryObj = { render: () => <ToolSheet size={20} /> };
+/** Core's glyphs — its tools, actions and leaves — at the size the toolbar draws them. */
+export const CoreAtChromeSize: StoryObj = { render: () => <Sheet table={coreIcons} size={20} /> };
 
-export const ToolIconsAtProofSize: StoryObj = { render: () => <ToolSheet size={160} proof /> };
+export const CoreAtProofSize: StoryObj = { render: () => <Sheet table={coreIcons} size={160} proof /> };
 
 /**
  * Both theme modes at once.
@@ -105,11 +89,11 @@ export const BothModes: StoryObj = {
     <>
       <div data-wzl-mode="light" className={s.modePanel}>
         <Sheet size={20} />
-        <ToolSheet size={20} />
+        <Sheet table={coreIcons} size={20} />
       </div>
       <div data-wzl-mode="dark" className={s.modePanel}>
         <Sheet size={20} />
-        <ToolSheet size={20} />
+        <Sheet table={coreIcons} size={20} />
       </div>
     </>
   ),

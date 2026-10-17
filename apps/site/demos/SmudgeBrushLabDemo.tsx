@@ -10,10 +10,10 @@ import {
   TrialSceneCanvas,
   useTrialScene,
 } from '@weasel-js/labkit';
-import { CrosshairIcon, SelectIcon } from '@weasel-js/ui';
 import { useMemo } from 'react';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
+import { icon } from '../icon';
 
 const FEATURES = ['draw', smudgePreset] as const;
 
@@ -63,8 +63,8 @@ const smudgeInstrument = defineInstrument<State, Config>({
   undo: {},
   tools: {
     tools: [
-      { id: 'select', label: 'Select', icon: SelectIcon, shortcut: 'V' },
-      { id: 'smudgeBrush', label: 'Smudge brush', icon: CrosshairIcon, shortcut: 'S' },
+      { id: 'select', label: 'Select', icon: icon('core:select'), shortcut: 'V' },
+      { id: 'smudgeBrush', label: 'Smudge brush', icon: icon('ui:crosshair'), shortcut: 'S' },
     ],
     initial: 'smudgeBrush',
   },

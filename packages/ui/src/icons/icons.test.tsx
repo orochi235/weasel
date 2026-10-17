@@ -2,7 +2,6 @@ import { render } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { icons as coreIcons } from '@weasel-js/core/icons';
 import { Icon } from './Icon';
-import { CheckIcon, DeleteIcon, RedoIcon, UndoIcon } from './index';
 import { isFillable } from './Icon';
 import { ICON_GROUPS, icon, type UiIconName } from '../icons.gen';
 import { icons as uiIcons } from '../icons.table';
@@ -59,10 +58,9 @@ describe('icon set', () => {
     expect([...grouped].sort()).toEqual([...NAMES].sort());
   });
 
-  it('reads fillability off the glyph', () => {
-    for (const name of NAMES) {
-      expect(isFillable(uiIcons.icons[name]), name).toBe(uiIcons.icons[name]!.fill !== undefined);
-    }
+  it('calls a glyph fillable only when it encloses a region', () => {
+    expect(isFillable(uiIcons.icons.shapeHexagon)).toBe(true);
+    expect(isFillable(uiIcons.icons.curveTangent)).toBe(false);
     expect(isFillable(undefined)).toBe(false);
   });
 
@@ -161,9 +159,9 @@ describe('a marked glyph', () => {
   });
 });
 
-describe('CheckIcon', () => {
-  it('draws the check glyph as one open stroke, in the State family', () => {
-    const { container } = draw(<CheckIcon label="Handled" />);
+describe('the check glyph', () => {
+  it('draws as one open stroke, in the State family', () => {
+    const { container } = draw(<Icon name={icon('check')} label="Handled" />);
     const svg = container.querySelector('svg');
     expect(svg?.getAttribute('aria-label')).toBe('Handled');
     expect(svg?.querySelector('path')?.getAttribute('d')).toBe(body('check').match(/d="([^"]+)"/)?.[1]);
@@ -172,37 +170,10 @@ describe('CheckIcon', () => {
   });
 });
 
-// Drawn in ui's definitions once, now core's to ship on its actions.
-describe('core-owned action glyphs', () => {
-  it.each([
-    ['undo', UndoIcon], ['redo', RedoIcon], ['delete', DeleteIcon],
-  ] as const)('draws %s the same as <Icon>', (name, Component) => {
-    const a = render(<Component size={16} label="x" className="c" />).container.innerHTML;
-    const b = draw(<Icon name={icon(`core:${name}`)} size={16} label="x" className="c" />).container.innerHTML;
-    expect(a).toBe(b);
+// Drawn in ui's definitions once, now core's to name on its actions, tools and leaves.
+describe('core-owned glyphs', () => {
+  it.each(['undo', 'redo', 'delete', 'bold', 'capButt', 'paintSolid', 'textAlignLeft'])('%s is core\'s, not ui\'s', (name) => {
     expect(coreIcons.icons[name]).toBeDefined();
-  });
-});
-
-describe('core action glyph re-exports', () => {
-  it('passes the align and distribute glyphs through by identity', async () => {
-    const ui = await import('./index');
-    const core = await import('@weasel-js/core');
-    for (const name of [
-      'AlignLeftIcon', 'AlignCenterXIcon', 'AlignRightIcon',
-      'AlignTopIcon', 'AlignCenterYIcon', 'AlignBottomIcon',
-      'DistributeHorizontalIcon', 'DistributeVerticalIcon',
-    ] as const) {
-      expect(ui[name], name).toBe(core[name]);
-      expect(ui[name], name).toBeTypeOf('function');
-    }
-  });
-
-  it('passes the tool glyphs through by identity, so each has one drawing', async () => {
-    const ui = await import('./index');
-    const core = await import('@weasel-js/core');
-    for (const name of ['SliceIcon', 'MeasureIcon'] as const) {
-      expect(ui[name], name).toBe(core[name]);
-    }
+    expect(uiIcons.icons[name]).toBeUndefined();
   });
 });

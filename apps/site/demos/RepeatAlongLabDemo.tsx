@@ -21,12 +21,12 @@ import {
   TrialSceneCanvas,
   useTrialScene,
 } from '@weasel-js/labkit';
-import { PenIcon, RectIcon, SelectIcon } from '@weasel-js/ui';
 import { useLatest } from '@weasel-js/react';
 import { useMemo } from 'react';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { PathEffectFrame, pathNode, usePathEffectProbe, usePathEffectSettings, useSeedPathEdit } from './pathEffectLab';
+import { icon } from '../icon';
 
 const FEATURES = ['draw', pathEffectsPreset] as const;
 
@@ -96,9 +96,9 @@ const repeatInstrument = defineInstrument<State, Config>({
   undo: {},
   tools: {
     tools: [
-      { id: 'select', label: 'Select', icon: SelectIcon, shortcut: 'V' },
-      { id: 'rect', label: 'Rectangle', icon: RectIcon, shortcut: 'R' },
-      { id: 'pen', label: 'Pen', icon: PenIcon, shortcut: 'P' },
+      { id: 'select', label: 'Select', icon: icon('core:select'), shortcut: 'V' },
+      { id: 'rect', label: 'Rectangle', icon: icon('core:rect'), shortcut: 'R' },
+      { id: 'pen', label: 'Pen', icon: icon('core:pen'), shortcut: 'P' },
     ],
   },
   render: (ctx) => <RepeatTrial ctx={ctx} />,

@@ -29,7 +29,6 @@ export { ViewportRegion } from './regions/ViewportRegion';
 export type {
   CommandItem,
   ContributionBase,
-  IconComponent,
   RailItem,
   RegionContribution,
   SidebarSection,

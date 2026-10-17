@@ -1,19 +1,10 @@
-import type { ReactNode } from 'react';
+import type { IconRef } from '@weasel-js/icons';
 import { applyBooleanOp, type BooleanOp } from './booleans';
 import type { BooleanStrokes } from './operands';
 import type { Action } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import type { ImmediateInvoker } from '@weasel-js/routing';
-import {
-  UnionIcon,
-  IntersectIcon,
-  SubtractIcon,
-  ExcludeIcon,
-  DivideIcon,
-  CropIcon,
-  TrimIcon,
-  MergeIcon,
-} from '../defaults/icons/booleanIcons';
+import { icon } from '../../../icons.gen';
 
 const ID_FOR: Record<BooleanOp, string> = {
   union: 'pathfinder.union',
@@ -37,15 +28,15 @@ const LABEL_FOR: Record<BooleanOp, string> = {
   merge: 'Merge',
 };
 
-const ICON_FOR: Record<BooleanOp, ReactNode> = {
-  union: <UnionIcon />,
-  intersect: <IntersectIcon />,
-  subtract: <SubtractIcon />,
-  exclude: <ExcludeIcon />,
-  divide: <DivideIcon />,
-  crop: <CropIcon />,
-  trim: <TrimIcon />,
-  merge: <MergeIcon />,
+const ICON_FOR: Record<BooleanOp, IconRef> = {
+  union: icon('union'),
+  intersect: icon('intersect'),
+  subtract: icon('subtract'),
+  exclude: icon('exclude'),
+  divide: icon('divide'),
+  crop: icon('crop'),
+  trim: icon('trim'),
+  merge: icon('merge'),
 };
 
 /** What a stroked operand gives the built-in Pathfinder actions. */

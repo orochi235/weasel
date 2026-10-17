@@ -9,7 +9,7 @@ import {
   type PolygonPath,
 } from '@weasel-js/geom';
 import { anchorEditWouldChange, commitAnchorEdit, commitOps, depOf, pathOperationTags, type Op } from '@weasel-js/core';
-import { ReversePathIcon, SetPathStartIcon } from '../commandIcons';
+import { icon } from '../icons.gen';
 
 const START_LABEL = 'Make start point';
 const REVERSE_LABEL = 'Reverse path direction';
@@ -27,7 +27,7 @@ function loneAnchor(deps: ActionDeps | undefined): number | null {
  */
 export const setPathStartAction: Action & { requires: string[] } = {
   id: 'setPathStart',
-  icon: SetPathStartIcon,
+  icon: icon('setPathStart'),
   label: START_LABEL,
   tags: pathOperationTags('command'),
   group: 'anchors',
@@ -90,7 +90,7 @@ function reverseInPathEdit(deps: ActionDeps): boolean {
  */
 export const reversePathAction: Action & { requires: string[] } = {
   id: 'reversePath',
-  icon: ReversePathIcon,
+  icon: icon('reversePath'),
   label: REVERSE_LABEL,
   tags: pathOperationTags('command'),
   group: 'path',

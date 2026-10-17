@@ -13,7 +13,6 @@ import {
   useLatest,
   type ViewApi,
 } from '@weasel-js/core';
-import { ZoomInIcon, ZoomOutIcon } from '@weasel-js/ui';
 import { useContext, useEffect, useMemo, useSyncExternalStore } from 'react';
 import { useStore } from 'zustand/react';
 import type { CameraView } from '../canvas/CameraInput';
@@ -24,6 +23,8 @@ import { Toolbar } from '../primitives/Toolbar';
 import { LabStoreContext } from '../state/context';
 import { as2DView } from '../state/view';
 import { useLabCommands } from './LabContext';
+import { icon } from '../icon';
+import { Icon } from '@weasel-js/ui';
 
 const ZOOM_ID = 'viewport.zoom';
 const NO_TOOLS: ReadonlyMap<string, Tool> = new Map();
@@ -143,7 +144,7 @@ function LabZoomControls() {
           disabled={!canOut}
           onClick={run('out')}
         >
-          <ZoomOutIcon size={16} />
+          <Icon name={icon('ui:zoomOut')} size={16} />
         </Toolbar.Button>
         <Toolbar.Button
           aria-label={shown ? `Zoom ${shown} — reset to actual size` : 'Zoom unavailable'}
@@ -160,7 +161,7 @@ function LabZoomControls() {
           disabled={!canIn}
           onClick={run('in')}
         >
-          <ZoomInIcon size={16} />
+          <Icon name={icon('ui:zoomIn')} size={16} />
         </Toolbar.Button>
       </Toolbar.Group>
     </Toolbar>

@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isValidElement } from 'react';
-import { actionItems, type ActionItem } from '@weasel-js/routing';
+import { actionItems } from '@weasel-js/routing';
 import { clipboardCopyAction, clipboardCutAction, clipboardPasteAction } from '../clipboard/action';
 import { duplicateAction } from './duplicate';
 import { transformAgainAction } from '../transform-again/action';
@@ -9,11 +8,7 @@ import { reorderForwardAction, reorderBackwardAction } from './reorder';
 import { flipAction } from '../flip/action';
 import { undoAction, redoAction } from './undoRedo';
 import { deleteAction } from './delete';
-
-function iconOf(item: ActionItem) {
-  const i = item.icon;
-  return typeof i === 'function' ? i() : i;
-}
+import { icons } from '../../../icons.table';
 
 describe('default edit-action icons', () => {
   const items = [
@@ -22,7 +17,7 @@ describe('default edit-action icons', () => {
     groupAction, ungroupAction, reorderForwardAction, reorderBackwardAction, flipAction,
   ].flatMap(actionItems);
 
-  it('gives every entry an svg glyph', () => {
+  it('names a core glyph for every entry', () => {
     expect(items.map((i) => i.key)).toEqual([
       'undo', 'redo', 'delete',
       'clipboard.cut', 'clipboard.copy', 'clipboard.paste', 'duplicate', 'transformAgain', 'group', 'ungroup',
@@ -31,16 +26,13 @@ describe('default edit-action icons', () => {
       'flip:x', 'flip:y',
     ]);
     for (const item of items) {
-      const icon = iconOf(item);
-      expect(isValidElement(icon), item.key).toBe(true);
+      const [ns, name] = (item.icon ?? '').split(':');
+      expect(ns, item.key).toBe('core');
+      expect(icons.icons[name!], item.key).toBeDefined();
     }
   });
 
   it('draws each variant differently', () => {
-    const glyphs = items.map((i) => {
-      const el = iconOf(i) as { type: unknown };
-      return el.type;
-    });
-    expect(new Set(glyphs).size).toBe(items.length);
+    expect(new Set(items.map((i) => i.icon)).size).toBe(items.length);
   });
 });

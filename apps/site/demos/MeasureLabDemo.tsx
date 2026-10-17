@@ -20,11 +20,12 @@ import {
   TrialSceneCanvas,
   useTrialScene,
 } from '@weasel-js/labkit';
-import { MeasureIcon, MeasureReadout, RectIcon, SelectIcon } from '@weasel-js/ui';
+import { MeasureReadout } from '@weasel-js/ui';
 import { useMemo, useState } from 'react';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import s from './MeasureLabDemo.module.css';
+import { icon } from '../icon';
 
 const config = f.schema({
   snap: f.boolean(true).label('Snap to grid'),
@@ -123,9 +124,9 @@ const measureInstrument = defineInstrument<State, Config>({
   undo: {},
   tools: {
     tools: [
-      { id: 'select', label: 'Select', icon: SelectIcon, shortcut: 'V' },
-      { id: 'measure', label: 'Measure', icon: MeasureIcon, shortcut: 'M' },
-      { id: 'rect', label: 'Rectangle', icon: RectIcon, shortcut: 'R' },
+      { id: 'select', label: 'Select', icon: icon('core:select'), shortcut: 'V' },
+      { id: 'measure', label: 'Measure', icon: icon('core:measure'), shortcut: 'M' },
+      { id: 'rect', label: 'Rectangle', icon: icon('core:rect'), shortcut: 'R' },
     ],
   },
   render: (ctx) => <MeasureTrial ctx={ctx} />,

@@ -1,7 +1,8 @@
 import type { ReactElement, ReactNode } from 'react';
 import type { ColorModePreference } from '@weasel-js/theme';
-import { ModeAutoIcon, ModeDarkIcon, ModeLightIcon } from '../../icons';
 import { Button, type ButtonSize, type ButtonVariant } from '../Button/Button';
+import { icon } from '../../icons.gen';
+import { Icon } from '../../icons/Icon';
 
 /** One stop in a {@link ThemeSwitcher}'s rotation. */
 export interface ThemeSwitcherOption<T extends string = string> {
@@ -14,9 +15,9 @@ export interface ThemeSwitcherOption<T extends string = string> {
 
 /** The color modes, in rotation order, as {@link ThemeSwitcher} cycles them by default. */
 export const COLOR_MODE_OPTIONS: readonly ThemeSwitcherOption<ColorModePreference>[] = [
-  { value: 'auto', icon: <ModeAutoIcon size={16} />, label: 'Auto' },
-  { value: 'light', icon: <ModeLightIcon size={16} />, label: 'Light' },
-  { value: 'dark', icon: <ModeDarkIcon size={16} />, label: 'Dark' },
+  { value: 'auto', icon: <Icon name={icon('modeAuto')} size={16} />, label: 'Auto' },
+  { value: 'light', icon: <Icon name={icon('modeLight')} size={16} />, label: 'Light' },
+  { value: 'dark', icon: <Icon name={icon('modeDark')} size={16} />, label: 'Dark' },
 ];
 
 /** Props for {@link ThemeSwitcher}. */

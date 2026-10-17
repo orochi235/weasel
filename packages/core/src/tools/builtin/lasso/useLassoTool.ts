@@ -1,11 +1,11 @@
-import { useMemo, createElement } from 'react';
+import { useMemo } from 'react';
 import { useLatest } from '@weasel-js/react';
 import { defineTool } from '../../overlayBinding';
-import { LassoIcon } from '../../../icons';
 import type { Tool } from '../../overlayBinding';
 import type { UseLassoSelectOptions } from 'interactions/actions/lasso-select/options';
 import type { LassoHitMode } from 'core/adapters/types';
 import type { ToolKeybinding } from '@weasel-js/routing';
+import { icon } from '../../../icons.gen';
 
 /** Options for `useLassoTool` — the lasso-select action's options plus the
  *  tool's own hit mode and activation key. */
@@ -43,7 +43,7 @@ export function useLassoTool(options: UseLassoToolOptions = {}): Tool {
       cursor: 'crosshair',
       presentation: {
         label: 'Lasso',
-        icon: createElement(LassoIcon),
+        icon: icon('lasso'),
         group: 'select',
       },
       // Declarative drag binding for the new gesture dispatcher. The

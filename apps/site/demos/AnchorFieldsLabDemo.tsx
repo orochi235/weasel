@@ -18,9 +18,10 @@ import {
   TrialSceneCanvas,
   useTrialScene,
 } from '@weasel-js/labkit';
-import { AnchorFields, SelectIcon } from '@weasel-js/ui';
+import { AnchorFields } from '@weasel-js/ui';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
+import { icon } from '../icon';
 
 /** Document units: points, 72 to the inch. */
 const UNITS = { pt: 1, in: 72, mm: 72 / 25.4 };
@@ -82,7 +83,7 @@ const fieldsInstrument = defineInstrument<State, Config>({
   config,
   initialState: () => ({ scene: null }),
   undo: {},
-  tools: { tools: [{ id: 'select', label: 'Select', icon: SelectIcon, shortcut: 'V' }] },
+  tools: { tools: [{ id: 'select', label: 'Select', icon: icon('core:select'), shortcut: 'V' }] },
   render: (ctx) => <FieldsTrial ctx={ctx} />,
 });
 

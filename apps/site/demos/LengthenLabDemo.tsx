@@ -1,14 +1,14 @@
 import { type ActionTunings, asNodeId, boundsOfPath, createScene, type PathEditHost, pathFromD, type RectPose, solid, useLatest } from '@weasel-js/core';
-import { LENGTHEN_TOOL, LengthenIcon, lengthenPreset } from '@weasel-js/path-tools';
+import { LENGTHEN_TOOL, lengthenPreset } from '@weasel-js/path-tools';
 import {
   type ConfigOf, defineInstrument, f, Lab, type RenderContext, type SceneTrialState,
   TrialSceneCanvas, useTrialScene,
 } from '@weasel-js/labkit';
 import { createModeRegistry, DEFAULT_MODES } from '@weasel-js/modes';
-import { SelectIcon } from '@weasel-js/ui';
 import { useMemo, useState } from 'react';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
+import { icon } from '../icon';
 
 const FEATURES = ['draw', lengthenPreset] as const;
 
@@ -102,8 +102,8 @@ const lengthenInstrument = defineInstrument<State, Config>({
   undo: {},
   tools: {
     tools: [
-      { id: 'select', label: 'Select', icon: SelectIcon, shortcut: 'V' },
-      { id: LENGTHEN_TOOL, label: 'Lengthen', icon: LengthenIcon },
+      { id: 'select', label: 'Select', icon: icon('core:select'), shortcut: 'V' },
+      { id: LENGTHEN_TOOL, label: 'Lengthen', icon: icon('path-tools:lengthen') },
     ],
     initial: LENGTHEN_TOOL,
   },

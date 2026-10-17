@@ -11,8 +11,9 @@ import { LabStoreContext } from '../state/context';
 import { createLabStore } from '../state/store';
 import type { SavedSnapshot, TrialRecord } from '../state/types';
 import { TrialChrome } from './TrialChrome';
+import { icon } from '../icon';
 
-const Glyph = () => <svg />;
+const Glyph = icon('ui:add');
 
 const stubInstrument: Instrument = {
   name: 'Stub',

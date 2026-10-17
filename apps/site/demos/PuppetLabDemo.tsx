@@ -10,11 +10,11 @@ import {
   TrialSceneCanvas,
   useTrialScene,
 } from '@weasel-js/labkit';
-import { PinIcon, SelectIcon } from '@weasel-js/ui';
 import { useMemo } from 'react';
 import { expandWarpCommand, pathLeaf, useWarpLabActions } from './warpLab';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
+import { icon } from '../icon';
 
 const FEATURES = ['draw', warpPreset] as const;
 
@@ -71,8 +71,8 @@ const puppetInstrument = defineInstrument<State, Config>({
   undo: {},
   tools: {
     tools: [
-      { id: 'select', label: 'Select', icon: SelectIcon, shortcut: 'V' },
-      { id: 'puppet', label: 'Puppet Warp', icon: PinIcon, shortcut: 'B' },
+      { id: 'select', label: 'Select', icon: icon('core:select'), shortcut: 'V' },
+      { id: 'puppet', label: 'Puppet Warp', icon: icon('ui:pin'), shortcut: 'B' },
     ],
     initial: 'puppet',
   },

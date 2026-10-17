@@ -10,10 +10,10 @@ import {
   TrialSceneCanvas,
   useTrialScene,
 } from '@weasel-js/labkit';
-import { PenIcon, RectIcon, SelectIcon } from '@weasel-js/ui';
 import { useMemo } from 'react';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
+import { icon } from '../icon';
 
 const config = f.schema({
   snap: f.boolean(true).label('Snap to grid'),
@@ -88,9 +88,9 @@ const sceneInstrument = defineInstrument<State, Config>({
   undo: {},
   tools: {
     tools: [
-      { id: 'select', label: 'Select', icon: SelectIcon, shortcut: 'V' },
-      { id: 'rect', label: 'Rectangle', icon: RectIcon, shortcut: 'R' },
-      { id: 'pen', label: 'Pen', icon: PenIcon, shortcut: 'P' },
+      { id: 'select', label: 'Select', icon: icon('core:select'), shortcut: 'V' },
+      { id: 'rect', label: 'Rectangle', icon: icon('core:rect'), shortcut: 'R' },
+      { id: 'pen', label: 'Pen', icon: icon('core:pen'), shortcut: 'P' },
     ],
   },
   render: (ctx) => <SceneTrial ctx={ctx} />,

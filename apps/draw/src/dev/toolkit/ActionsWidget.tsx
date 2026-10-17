@@ -1,7 +1,6 @@
 import { type Action, actionBindings, type GestureSpec, keySpecShortcut } from '@weasel-js/core';
 import {
   actionIcon,
-  type ActionIconSource,
   Code,
   DataGrid,
   type DataGridColumn,
@@ -29,7 +28,7 @@ export function ActionsWidget({ actions }: { actions: readonly Action[] }): Reac
 }
 
 const ACTION_COLUMNS: readonly DataGridColumn<Action>[] = [
-  { id: 'icon', header: 'Icon', sortable: false, className: s.iconCell, render: (a) => renderIcon(a.icon) },
+  { id: 'icon', header: 'Icon', sortable: false, className: s.iconCell, render: (a) => actionIcon(a.icon) },
   { id: 'id', header: 'ID', render: (a) => <code>{a.id}</code> },
   { id: 'group', header: 'Group', render: (a) => a.group ?? <span className={s.empty}>—</span> },
   { id: 'binding', header: 'Binding', sortable: false, render: renderBinding },
@@ -92,11 +91,6 @@ function renderSpec(spec: GestureSpec): ReactNode {
       )}
     </>
   );
-}
-
-/** One icon thunk that throws must not take the whole table down. */
-function renderIcon(icon: Action['icon']): ReactNode {
-  try { return actionIcon(icon as ActionIconSource) ?? null; } catch { return null; }
 }
 
 function snapshotEnabled(a: Action): ReactNode {

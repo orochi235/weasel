@@ -1,11 +1,12 @@
 import { defineInstrument, Lab, type RenderContext, TrialSceneCanvas } from '@weasel-js/labkit';
 import { handleLocksPreset } from '@weasel-js/path-tools';
 import type { PrefGroup } from '@weasel-js/prefs';
-import { Bar, SelectIcon } from '@weasel-js/ui';
+import { Bar } from '@weasel-js/ui';
 import s from './HandleLockLabDemo.module.css';
 import { BLOB, type PathLabState, usePathEditTrial } from './pathEditLabScene';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
+import { icon } from '../icon';
 
 const FEATURES = ['pick', 'move', 'paths', handleLocksPreset] as const;
 
@@ -39,7 +40,7 @@ const lockInstrument = defineInstrument<PathLabState, Record<string, never>>({
   defaultConfig: () => ({}),
   initialState: () => ({ scene: null }),
   undo: {},
-  tools: { tools: [{ id: 'select', label: 'Select', icon: SelectIcon, shortcut: 'V' }] },
+  tools: { tools: [{ id: 'select', label: 'Select', icon: icon('core:select'), shortcut: 'V' }] },
   render: (ctx) => <HandleLockTrial ctx={ctx} />,
 });
 

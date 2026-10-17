@@ -1,5 +1,6 @@
 import type { StanceProps } from '@weasel-js/ui';
-import type { ComponentType, ReactNode } from 'react';
+import type { IconRef } from '@weasel-js/icons';
+import type { ReactNode } from 'react';
 import type { ResolvedConfig } from '../config/types';
 import type { ConfigField } from '../controls/types';
 import type { SavedSnapshot } from '../state/types';
@@ -8,14 +9,11 @@ import type { SavedSnapshot } from '../state/types';
  *  the instrument. The lab's own boxes are named in `LabRegion`. */
 export type TrialRegion = 'titlebar' | 'toolbar' | 'palette' | 'sidebar' | 'viewport' | 'status';
 
-/** An icon component taking a pixel size, as `@weasel-js/ui` glyphs do. */
-export type IconComponent = ComponentType<{ size?: number }>;
-
 /** A button that runs once when pressed: it holds no focus and binds no
  *  input. `TCtx` is the chrome context its `onActivate` is handed — a trial's,
  *  or the lab's for a lab-level region. */
 export interface CommandItem<TCtx = TrialChromeContext> {
-  icon: IconComponent;
+  icon: IconRef;
   label: string;
   /** Shown in the tooltip. Not bound here — the trial owns its keymap. */
   shortcut?: string;
@@ -40,7 +38,7 @@ export interface ToolbarItem<TCtx = TrialChromeContext> extends CommandItem<TCtx
 /** A tool on a rail: pressing it writes the tool slot under the
  *  contribution's id, and it reads as current while the slot names it. */
 export interface ToolItem {
-  icon: IconComponent;
+  icon: IconRef;
   label: string;
   /** Shown in the tooltip. Not bound here — the trial owns its keymap. */
   shortcut?: string;
@@ -72,7 +70,7 @@ export interface SidebarSection extends StanceProps {
 
 /** A control acting on the view of the trial, not on the trial. */
 export interface ViewportControl<TCtx = TrialChromeContext> {
-  icon: IconComponent;
+  icon: IconRef;
   label: string;
   disabled?: boolean;
   /** Handed the trial's chrome context, as `ToolbarItem.onActivate` is. */

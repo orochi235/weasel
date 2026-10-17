@@ -3,9 +3,10 @@ import { multiplier, qty } from '@weasel-js/quantity';
 import { DetentSlider } from '../DetentSlider';
 import { QuantityText } from '../QuantityText';
 import { Slider } from '../Slider';
-import { PauseIcon, PlayIcon } from '../../icons';
 import s from './Timeline.module.css';
 import t from './Transport.module.css';
+import { icon } from '../../icons.gen';
+import { Icon } from '../../icons/Icon';
 
 const RATE = multiplier({ symbol: 'x' });
 
@@ -85,7 +86,7 @@ export function Transport(props: TransportProps): ReactElement {
         aria-label={paused ? 'Play' : 'Pause'}
         onClick={paused ? onPlay : onPause}
       >
-        {paused ? <PlayIcon size={14} /> : <PauseIcon size={14} />}
+        {paused ? <Icon name={icon('play')} size={14} /> : <Icon name={icon('pause')} size={14} />}
       </button>
 
       {onReverseChange ? (
@@ -97,7 +98,7 @@ export function Transport(props: TransportProps): ReactElement {
           className={s.transportButton}
           onClick={() => onReverseChange(!reverse)}
         >
-          <PlayIcon size={14} className={t.backward} />
+          <Icon name={icon('play')} size={14} className={t.backward} />
         </button>
       ) : null}
 

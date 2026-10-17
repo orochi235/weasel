@@ -1,17 +1,8 @@
 import type { BuiltinToolId } from '@weasel-js/core';
-import {
-  ArrowIcon,
-  EllipseIcon,
-  HandIcon,
-  LineIcon,
-  PencilIcon,
-  RectIcon,
-  SelectIcon,
-  TextIcon,
-} from '@weasel-js/ui';
 import type { InstrumentList } from '../instrument/types';
 import type { TrialTool } from '../tools/types';
 import type { AnnotationKind } from './types';
+import { icon } from '../icon';
 
 /** Which weasel tool an annotation tool drives, and what kind of mark that
  *  makes. `select` makes none. */
@@ -37,14 +28,14 @@ const TOOLS: Record<string, AnnotationToolInfo> = {
  *  lab's tool slot holds whichever is active. */
 export const ANNOTATION_TOOLS: readonly TrialTool[] = [
   // Not in `TOOLS`: an id the map does not carry is what leaves the overlay idle.
-  { id: 'pointer', label: 'Interact', icon: HandIcon, group: 'annotate' },
-  { id: 'select', label: 'Select', icon: SelectIcon, group: 'annotate' },
-  { id: 'stroke', label: 'Freehand', icon: PencilIcon, group: 'annotate' },
-  { id: 'line', label: 'Line', icon: LineIcon, group: 'annotate' },
-  { id: 'arrow', label: 'Arrow', icon: ArrowIcon, group: 'annotate' },
-  { id: 'rect', label: 'Rectangle', icon: RectIcon, group: 'annotate' },
-  { id: 'ellipse', label: 'Ellipse', icon: EllipseIcon, group: 'annotate' },
-  { id: 'text', label: 'Text', icon: TextIcon, group: 'annotate' },
+  { id: 'pointer', label: 'Interact', icon: icon('core:hand'), group: 'annotate' },
+  { id: 'select', label: 'Select', icon: icon('core:select'), group: 'annotate' },
+  { id: 'stroke', label: 'Freehand', icon: icon('core:pencil'), group: 'annotate' },
+  { id: 'line', label: 'Line', icon: icon('core:line'), group: 'annotate' },
+  { id: 'arrow', label: 'Arrow', icon: icon('core:arrow'), group: 'annotate' },
+  { id: 'rect', label: 'Rectangle', icon: icon('core:rect'), group: 'annotate' },
+  { id: 'ellipse', label: 'Ellipse', icon: icon('core:ellipse'), group: 'annotate' },
+  { id: 'text', label: 'Text', icon: icon('core:text'), group: 'annotate' },
 ];
 
 /** The annotation tools a lab's rail carries for these instruments: none

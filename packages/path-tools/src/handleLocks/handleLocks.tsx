@@ -7,7 +7,8 @@
  */
 
 import { type Action, type ActionDeps, ActionDisabledReason, type ImmediateInvoker } from '@weasel-js/routing';
-import { type HandleLock, HoldHandleAngleIcon, HoldHandleLengthIcon, pathOperationTags } from '@weasel-js/core';
+import { type HandleLock, pathOperationTags } from '@weasel-js/core';
+import { icon } from '../icons.gen';
 
 function makeHandleLockToggle(
   lock: HandleLock,
@@ -37,7 +38,7 @@ function makeHandleLockToggle(
 }
 
 /** Hold every handle drag to the handle's angle, as Shift does. */
-export const handleLockAngleAction = makeHandleLockToggle('angle', 'Hold handle angle', <HoldHandleAngleIcon />);
+export const handleLockAngleAction = makeHandleLockToggle('angle', 'Hold handle angle', icon('core:holdHandleAngle'));
 
 /** Hold every handle drag to the handle's length, as Mod (Cmd or Ctrl) does. */
-export const handleLockLengthAction = makeHandleLockToggle('length', 'Hold handle length', <HoldHandleLengthIcon />);
+export const handleLockLengthAction = makeHandleLockToggle('length', 'Hold handle length', icon('core:holdHandleLength'));

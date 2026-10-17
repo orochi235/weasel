@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { mergeContributions, suppressContributions } from './merge';
 import type { TrialContribution } from './types';
+import { icon } from '../icon';
 
-const Glyph = () => null;
+const Glyph = icon('ui:add');
 
 function toolbarItem(id: string): TrialContribution {
   return {

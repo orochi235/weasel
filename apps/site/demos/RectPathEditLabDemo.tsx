@@ -18,11 +18,12 @@ import {
   TrialSceneCanvas,
   useTrialScene,
 } from '@weasel-js/labkit';
-import { Button, PenIcon, RectIcon, SelectIcon } from '@weasel-js/ui';
+import { Button } from '@weasel-js/ui';
 import { useEffect, useMemo, useReducer, useState } from 'react';
 import s from './RectPathEditLabDemo.module.css';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
+import { icon } from '../icon';
 
 type Data = { path?: { kind: string }; fill?: unknown };
 type State = SceneTrialState<Data, 'default', RectPose>;
@@ -131,9 +132,9 @@ const rectPathEditInstrument = defineInstrument<State, unknown>({
   undo: {},
   tools: {
     tools: [
-      { id: 'select', label: 'Select', icon: SelectIcon, shortcut: 'V' },
-      { id: 'rect', label: 'Rectangle', icon: RectIcon, shortcut: 'R' },
-      { id: 'pen', label: 'Pen', icon: PenIcon, shortcut: 'P' },
+      { id: 'select', label: 'Select', icon: icon('core:select'), shortcut: 'V' },
+      { id: 'rect', label: 'Rectangle', icon: icon('core:rect'), shortcut: 'R' },
+      { id: 'pen', label: 'Pen', icon: icon('core:pen'), shortcut: 'P' },
     ],
   },
   render: (ctx) => <RectPathEditTrial ctx={ctx} />,

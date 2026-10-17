@@ -1,17 +1,3 @@
-import {
-  CloneIcon,
-  CloseIcon,
-  CollapseIcon,
-  FitIcon,
-  FullscreenIcon,
-  LoupeIcon,
-  RedoIcon,
-  ResetIcon,
-  SnapshotIcon,
-  UndoIcon,
-  ZoomInIcon,
-  ZoomOutIcon,
-} from '@weasel-js/ui';
 import { ExportMenu } from '../annotations/ExportMenu';
 import { MarkList } from '../annotations/MarkList';
 import type { ControlRenderer } from '../config/types';
@@ -22,6 +8,7 @@ import { FpsMeter } from '../primitives/FpsMeter';
 import { ScaleIndicator } from '../primitives/ScaleIndicator';
 import { ZoomControl } from '../primitives/ZoomControl';
 import type { TrialChromeContext, TrialContribution } from './types';
+import { icon } from '../icon';
 
 const ZOOM_STEP = 1.25;
 
@@ -78,7 +65,7 @@ export function builtinContributions(
       region: 'toolbar',
       group: 'history',
       item: {
-        icon: UndoIcon,
+        icon: icon('core:undo'),
         label: 'Undo',
         shortcut: 'Mod+Z',
         disabled: !ctx.canUndo,
@@ -90,7 +77,7 @@ export function builtinContributions(
       region: 'toolbar',
       group: 'history',
       item: {
-        icon: RedoIcon,
+        icon: icon('core:redo'),
         label: 'Redo',
         shortcut: 'Mod+Shift+Z',
         disabled: !ctx.canRedo,
@@ -117,7 +104,7 @@ export function builtinContributions(
       region: 'toolbar',
       group: 'view',
       item: {
-        icon: LoupeIcon,
+        icon: icon('ui:loupe'),
         label: 'Loupe',
         pressed: ctx.loupeOn,
         onActivate: ctx.toggleLoupe,
@@ -133,7 +120,7 @@ export function builtinContributions(
       region: 'viewport',
       group: 'zoom',
       item: {
-        icon: ZoomOutIcon,
+        icon: icon('ui:zoomOut'),
         label: 'Zoom out',
         onActivate: () => ctx.setZoom(zoom / ZOOM_STEP),
       },
@@ -143,7 +130,7 @@ export function builtinContributions(
       region: 'viewport',
       group: 'zoom',
       item: {
-        icon: ZoomInIcon,
+        icon: icon('ui:zoomIn'),
         label: 'Zoom in',
         onActivate: () => ctx.setZoom(zoom * ZOOM_STEP),
       },
@@ -152,7 +139,7 @@ export function builtinContributions(
       id: 'actual-size',
       region: 'viewport',
       group: 'zoom',
-      item: { icon: FitIcon, label: 'Actual size', onActivate: () => ctx.setZoom(1) },
+      item: { icon: icon('ui:fit'), label: 'Actual size', onActivate: () => ctx.setZoom(1) },
     });
     out.push({
       id: 'zoom-control',
@@ -241,7 +228,7 @@ export function builtinContributions(
       region: 'titlebar',
       end: true,
       item: {
-        icon: ctx.expanded ? CollapseIcon : FullscreenIcon,
+        icon: ctx.expanded ? icon('ui:collapse') : icon('ui:fullscreen'),
         label: ctx.expanded ? 'Close expanded view' : 'Expand trial',
         onActivate: ctx.toggleExpanded,
       },
@@ -251,20 +238,20 @@ export function builtinContributions(
     id: 'clone',
     region: 'titlebar',
     end: true,
-    item: { icon: CloneIcon, label: 'Clone trial', onActivate: ctx.clone },
+    item: { icon: icon('ui:clone'), label: 'Clone trial', onActivate: ctx.clone },
   });
   out.push({
     id: 'reset',
     region: 'titlebar',
     end: true,
-    item: { icon: ResetIcon, label: 'Reset trial', onActivate: ctx.reset },
+    item: { icon: icon('ui:reset'), label: 'Reset trial', onActivate: ctx.reset },
   });
   out.push({
     id: 'snapshot',
     region: 'titlebar',
     end: true,
     item: {
-      icon: SnapshotIcon,
+      icon: icon('ui:snapshot'),
       label: 'Save snapshot',
       shortcut: 'Mod+S',
       onActivate: () => ctx.saveSnapshot(),
@@ -275,7 +262,7 @@ export function builtinContributions(
     region: 'titlebar',
     end: true,
     item: {
-      icon: CloseIcon,
+      icon: icon('ui:close'),
       label: ctx.isLastTrial ? 'Cannot close the last trial' : 'Close trial',
       danger: true,
       disabled: ctx.isLastTrial,

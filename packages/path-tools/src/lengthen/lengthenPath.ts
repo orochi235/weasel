@@ -10,7 +10,7 @@ import {
 import {
   depOf, type EditAnchorsDep, editingLayer, inPlane, pathEditPreview, pathEditToolAction, pathOperationTags,
 } from '@weasel-js/core';
-import { LengthenIcon } from '../icons';
+import { icon } from '../icons.gen';
 
 /** The path-edit tool under which a drag on an open end lengthens the path. */
 export const LENGTHEN_TOOL = 'lengthen';
@@ -123,4 +123,4 @@ export const lengthenPathAction: Action & { requires: string[] } = inPlane({
 }, editingLayer);
 
 /** The bar toggle for Lengthen: `pathEditTool.lengthen`. */
-export const lengthenToolAction = pathEditToolAction(LENGTHEN_TOOL, 'Lengthen', LengthenIcon);
+export const lengthenToolAction = pathEditToolAction(LENGTHEN_TOOL, 'Lengthen', icon('lengthen'));

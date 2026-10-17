@@ -1,6 +1,7 @@
-import { AddIcon } from '@weasel-js/ui';
 import { MenuButton, ThemeSwitcher } from '../passthrough/weasel-ui';
 import { useLabContext } from './LabContext';
+import { icon } from '../icon';
+import { Icon } from '@weasel-js/ui';
 
 /** The control `<Lab>` puts at the start of its header: add a trial. It drives
  *  `LabContext`, which carried it with no UI at all — so every consumer rebuilt
@@ -17,7 +18,7 @@ export function LabHeader({ addTrial = true }: { addTrial?: boolean }) {
           className="lk-lab-header__add"
           onClick={() => lab.addTrial(only.name)}
         >
-          <AddIcon size={16} />
+          <Icon name={icon('ui:add')} size={16} />
           <span>Add trial</span>
         </button>
       ) : (

@@ -1,11 +1,10 @@
-import { createElement } from 'react';
-import { DeleteIcon } from './icons/actionGlyphIcons';
 import type { Node, NodeId, Scene } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
 import { createDeleteOp } from 'core/ops/delete';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
 import type { Action } from '@weasel-js/routing';
 import { requiresSelection } from './requiresSelection';
+import { icon } from '../../../icons.gen';
 
 /** `id`'s slot among the scene roots or its parent's children, or `-1`. */
 function hostIndex(scene: Scene<unknown, string, unknown>, id: NodeId): number {
@@ -60,7 +59,7 @@ export function buildDeleteOps(
 export const deleteAction: Action & { requires: string[] } = {
   id: 'delete',
   label: 'Delete',
-  icon: createElement(DeleteIcon),
+  icon: icon('delete'),
   group: 'edit',
   // Suppressed while any tool is mid-gesture — accidentally hitting
   // Delete during a drag shouldn't wipe the selection out from under

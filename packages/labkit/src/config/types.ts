@@ -12,6 +12,7 @@ import type {
 import type { Display, InfinityText } from '@weasel-js/quantity';
 import type { PrefRenderer } from '@weasel-js/ui';
 import type { ReactNode } from 'react';
+import type { IconRef } from '@weasel-js/icons';
 
 /**
  * Renders the control cell for one config leaf. Identical to weasel-ui's
@@ -24,10 +25,10 @@ export type ControlRenderer = PrefRenderer;
 export interface ConfigOption {
   value: string;
   label: string;
-  /** A qualified icon ref (`ui:statusSuccess`) in the registry in scope. A segmented row draws it in
+  /** A qualified icon ref (`icon('ui:statusSuccess')`) in the registry in scope. A segmented row draws it in
    *  place of `label`, which stays the accessible name and becomes the tooltip;
    *  a select draws it beside `label`. */
-  icon?: string;
+  icon?: IconRef;
 }
 
 /** Everything a leaf can carry beyond its kind and default. A flat union of

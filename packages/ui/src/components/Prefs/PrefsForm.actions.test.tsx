@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import { ActionsProvider, useAction, type Action } from '@weasel-js/core';
 import { pref, type PrefGroup } from '@weasel-js/prefs';
 import { PrefsForm } from './PrefsForm';
+import { icon } from '../../icons.gen';
 
 afterEach(cleanup);
 
@@ -31,7 +32,7 @@ const form = (schema: PrefGroup, actions: Action[] = []) =>
 describe('PrefsForm action rows', () => {
   it('reads an action leaf’s label once, on its button, with its icon', () => {
     const run = vi.fn();
-    form({ name: 'T', children: { go: pref.action('front', { name: 'Bring to front' }) } }, [action('front', { icon: <svg data-testid="front-icon" /> }, run)]);
+    form({ name: 'T', children: { go: pref.action('front', { name: 'Bring to front' }) } }, [action('front', { icon: icon('core:bringToFront') }, run)]);
     expect(screen.getAllByText('Bring to front')).toHaveLength(1);
     const button = screen.getByRole('button', { name: 'Bring to front' });
     expect(button.querySelector('svg')).not.toBeNull();
