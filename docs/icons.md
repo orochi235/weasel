@@ -1,0 +1,197 @@
+# Icons
+
+How code names an icon, where the glyph for that name comes from, and how a build ships only the
+glyphs it names. For anyone adding a glyph, drawing one, or wiring icons into an app. How to draw a
+glyph well is in `CLAUDE.md` ("Drawing icons").
+
+## Names
+
+An icon's name is qualified: `namespace:name`, as in `core:undo`, `ui:close`,
+`path-tools:reversePath`. Code gets one from its own package's `icon()`, which returns an
+`IconRef`, a branded string; a field that takes an icon takes an `IconRef`, so a bare string
+literal fails the typecheck there.
+
+```ts
+import { icon } from '../icons.gen';
+
+icon('undo');      // in core: 'core:undo'
+icon('ui:close');  // another namespace is always written qualified
+```
+
+A bare name means the calling package's own namespace and nothing else; there is no search. Every
+qualified name is a key of the `IconName` interface in `@weasel-js/icons`, which each package's
+generated `icons.gen.ts` extends, so a package can write another namespace's names only when it
+depends on that package. So a glyph core names is drawn in core, never in ui: the stroke, paint
+and text-styling glyphs core's properties use live there.
+
+A string that arrives at run time, such as a prefs schema loaded from JSON, becomes a ref through
+`toIconRef(value)`, which returns `undefined` for anything not qualified.
+
+### Namespaces
+
+The root that draws the glyphs declares its namespace and owner in `icons/index.mjs`. A namespace
+belongs to one owner: two tables with the same namespace and the same owner merge (a package's
+source table and its built one, say), and a table from a different owner is refused. Replacing one
+glyph is explicit, through the registry's `override(ref, glyph)`.
+
+| Namespace | Owner | Definitions | Holds |
+|---|---|---|---|
+| `core` | `@weasel-js/core` | `packages/core/icons/` | Tools, edit and history actions, align, booleans, path and anchor commands, text styling, stroke and paint |
+| `ui` | `@weasel-js/ui` | `packages/ui/icons/` | Chrome, state, playback, arrows, key legends, marks, shapes and the rest of the component set |
+| `path-tools` | `@weasel-js/path-tools` | `packages/path-tools/icons/` | The path tools and their commands |
+| `draw` | `apps/draw` | `apps/draw/icons/` | WeaselDraw's own actions |
+
+`labkit`, `forge`, `site`, `theme-editor` and `forge-app` draw nothing. Their `icons/index.mjs`
+declares a namespace and owner and no groups, so their `icon()` takes qualified names only.
+
+## Adding a glyph
+
+1. Draw it in an `icons/*.mjs` file of the package that owns it: an SVG body on a 20×20 viewBox,
+   stroked in `currentColor`. The shared geometry helpers (`chevron`, `chevronOn`, `onCircle`) are
+   in `packages/icons/scripts/lib/base.mjs`.
+2. A new file's set goes into `groups` in that package's `icons/index.mjs`, as
+   `[label, set, { tags }?]`. `tags` maps a glyph's key to search tags. Group order is gallery
+   order; path order within a glyph is z-order.
+3. Run `npm run gen:icons`. It writes each package's `src/icons.gen.ts` (its `icon()`, its
+   `IconName` keys and `ICON_GROUPS`), `src/icons.table.json` and `src/icons.table.ts`, and
+   fails on a namespace declared twice or a name drawn twice, differently, in one namespace.
+4. Name it: `icon('newName')`.
+
+A new package that draws glyphs also needs an `./icons` export pointing at its built table module
+and a `"weaselIcons": { "table": "./dist/icons.table.json" }` field in `package.json`, with its
+build copying the JSON into `dist`. Core, ui and path-tools show the shape. The build plugin finds
+an installed package's glyphs through that field.
+
+## Drawing a glyph
+
+`<Icon name={ref} />` from `@weasel-js/ui` draws the glyph the nearest registry holds, with
+`filled` and `mark` for the shaded and badged forms. `resolveIcon(source)` draws a ref or a string
+read from data, and `actionIcon(ref)` an action's icon. Outside ui, `useIconGlyph(ref)` from core
+returns the glyph itself.
+
+A name the registry lacks draws `core:unknown`'s question mark and warns once in development, and
+draws nothing in production. Development is `isDev()` from `@weasel-js/registry` (re-exported by
+`@weasel-js/react`), which reads `process.env.NODE_ENV` inside a `try`, so a production bundle
+folds it to `false`.
+
+A unit test that reads a glyph mounts a registry: `withIcons` in
+`packages/ui/src/testing/withIcons.tsx` registers core's and ui's tables. jsdom cannot show that a
+glyph drew, so a check of the drawing is a `*.browser.test.tsx`.
+
+## The registry
+
+`createIconRegistry()` from `@weasel-js/icons` holds tables and overrides. Each `add` and
+`override` returns its own release, and releasing a table removes only that table's glyphs. It is
+not a Reflectable: it keeps its own layer per table and per override for each name, so it does not
+appear on the `Reflection` surface other kit registries share.
+
+Core supplies the React side:
+
+| Mount | Registry |
+|---|---|
+| `<IconRegistryProvider icons variants>` | A registry of its own, seeded with `icons` |
+| `<WeaselProvider icons iconVariants>` | The same, inside the provider stack |
+| `<WeaselProvider>` without either, or `<SceneCanvas>` | An empty one, only when none is in scope |
+
+An app mounts `IconRegistryProvider` at its root, not `WeaselProvider`: a root `WeaselProvider`
+would put every canvas under one active-tool and pointer scope.
+
+```tsx
+import icons from 'virtual:weasel-icons';
+
+const ICON_VARIANTS = { all: () => import('virtual:weasel-icons/all') };
+
+<IconRegistryProvider icons={icons} variants={ICON_VARIANTS}>
+  <App />
+</IconRegistryProvider>
+```
+
+Without the build plugin, an app passes tables directly:
+`icons={[coreIcons, uiIcons]}`, imported as `icons` from `@weasel-js/core/icons`,
+`@weasel-js/ui/icons` and `@weasel-js/path-tools/icons`.
+
+A component that lists glyphs rather than naming them asks for a variant by name:
+`useIconVariant('all')` runs the app's loader once, adds its tables, and returns
+`{ entries, state }`. A variant with no loader lists what is already registered.
+PrefSchemaEditor's icon picker reads `all`.
+
+## The build plugin
+
+`weaselIcons` from `@weasel-js/icons/plugin` is one unplugin implementation, used as
+`weaselIcons.vite(…)`, `.rollup(…)`, `.rolldown(…)` or `.esbuild(…)`. It parses modules with
+`oxc-parser`.
+
+It rewrites every call to an `icon` imported by name from a module named `icons.gen.*` into an
+annotated, qualified literal, `icon('undo')` becoming `/* @icon */ 'core:undo'`, reading the
+namespace from that module's `scopedIcon<…>('ns')` call. A call whose argument is not a literal is
+left alone and the build warns; its glyph resolves only from a loaded variant.
+
+| | `mode: 'library'` | `mode: 'app'` |
+|---|---|---|
+| Used by | Every kit package's build: the tsup preset, labkit's tsup, and core's, ui's and hud's vite builds | apps/draw, the site, the theme editor, the forge app; the `site` and `draw` vitest projects |
+| Rewrites `icon()` | Yes | Yes |
+| Emits `virtual:weasel-icons` | No | Yes |
+| Bundlers | Any of them | vite, rollup, rolldown; throws at construction under esbuild, which has no hook to fill the virtual modules once every module is seen |
+
+**Library mode.** `dist` ships the annotated literals and no `icon()` call. esbuild keeps the
+comment; rolldown drops plain comments, so the plugin records each module's refs and re-annotates
+them in a `renderChunk` ordered `post`. rolldown's output minify, including its default dead-code
+pass, strips them again, so core's and ui's vite builds set both `build.minify` and
+`rolldownOptions.output.minify` to `false`. A library build whose modules named refs and whose
+output holds no annotation fails.
+
+**App mode.** The plugin collects every `@icon` literal in every module the build transforms,
+`node_modules` included. It reads the table beside each `icons.gen` it meets and each package's
+`weaselIcons.table`. The build fails on a namespace no table provides, a name missing from its
+namespace's table (naming the module that wrote it), and one namespace with two owners.
+
+| Import | Holds |
+|---|---|
+| `virtual:weasel-icons` | The glyphs the build names |
+| `virtual:weasel-icons/all` | Every table found |
+| `virtual:weasel-icons/<namespace>` | That namespace, whole |
+| `virtual:weasel-icons/<variant>` | A custom variant: `variants: { picker: { namespaces?, groups?, tags? } }` in the plugin options. Each listed field narrows; a glyph needs one of the listed tags |
+
+Each variant is its own chunk, loaded only when something imports it. A custom variant cannot be
+named `all`, nor share a namespace's name. The import types come from
+`/// <reference types="@weasel-js/icons/virtual" />`.
+
+In the dev server and under vitest, `virtual:weasel-icons` holds every table the plugin can reach:
+vite pre-bundles `node_modules` with esbuild, which never runs the plugin's hooks, so the kit's
+refs are invisible there.
+
+Measured on WeaselDraw's production build at `46e968c97`:
+
+| Variant | Raw | Gzip | Gzip, names, groups and tags only |
+|---|---:|---:|---:|
+| `/all` (core, ui, path-tools, draw) | 156,520 B | 27,688 B | 3,227 B |
+| `/draw` | 7,875 B | 1,289 B | 237 B |
+
+No metadata-only catalog chunk is built: a variant ships names and bodies together.
+
+An app outside this repo that writes icon names gives the plugin the same shape gen:icons
+writes here: a module named `icons.gen.ts` holding
+`export const icon = scopedIcon<never>('my-app');`. In this repo a root gets that file from
+gen:icons, and `packages/icons/scripts/gen-icons.test.ts` fails on a hand-written `scopedIcon`.
+
+### What the plugin cannot see
+
+| Written as | Result |
+|---|---|
+| `icon(name)` with a computed `name` | Not rewritten; the build warns, and the glyph needs a loaded variant |
+| `import * as g from './icons.gen'; g.icon('x')` | Not rewritten |
+| A name in data, such as a JSON prefs schema | Never collected; the glyph needs a loaded variant |
+| A ref in a module the bundler later tree-shakes | Collected anyway, so its glyph ships; a build errs toward too many glyphs, never too few |
+| A table generated after the dev server started | Served after a restart |
+| A `.vue` or `.svelte` module | Not transformed; only `.js`, `.ts`, `.jsx`, `.tsx` and their `m`/`c` forms are |
+
+Forge registers core's and ui's tables whole, plus whatever `FrameSetup.icons` passes
+(`apps/forge/forge.frame.tsx` passes path-tools' and draw's), so forge's frames are never trimmed.
+
+## Guards
+
+| Check | Fails when |
+|---|---|
+| `packages/core/src/icons.refs.test.ts` | An annotated literal in core's source names something outside core's table. `meshKind.ts` writes `/* @icon */ 'core:paintMesh'` by hand, because its self-contained bundle cannot import `icon()` |
+| `packages/icons/scripts/gen-icons.test.ts` | A file outside `icons.gen` calls `scopedIcon`, or hands `toIconRef` a literal |
+| `scripts/smoke-consumer-icons.mjs` (part of `test:smoke:consumer`) | A consumer app built from the packed packages ships a glyph it does not name, or misses one it names through its own `icon()` or through a kit `dist` |

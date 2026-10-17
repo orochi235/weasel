@@ -303,7 +303,8 @@ trial then runs no camera of its own, so every pointer, wheel and key gesture
 over the canvas is the scene's, its pan and zoom included.
 
 ```tsx
-import { createScene, toIconRef } from '@weasel-js/core';
+import { createScene } from '@weasel-js/core';
+import { icon } from './icons.gen'; // the app's icon(): see @weasel-js/icons
 import {
   type ConfigOf, defineInstrument, f, type RenderContext, type SceneTrialState,
   TrialSceneCanvas, useTrialScene,
@@ -325,7 +326,7 @@ defineInstrument<SceneTrialState, ConfigOf<typeof config>>({
   config,
   initialState: () => ({ scene: null }),
   undo: {},
-  tools: { tools: [{ id: 'select', label: 'Select', icon: toIconRef('core:select')! }, { id: 'rect', label: 'Rectangle', icon: toIconRef('core:rect')! }] },
+  tools: { tools: [{ id: 'select', label: 'Select', icon: icon('core:select') }, { id: 'rect', label: 'Rectangle', icon: icon('core:rect') }] },
   render: (ctx) => <Body ctx={ctx} />,
 });
 ```

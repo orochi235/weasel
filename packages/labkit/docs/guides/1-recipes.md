@@ -498,6 +498,7 @@ out. Contributions on `<Lab chrome>` reach every trial; an instrument's own
 
 ```tsx
 import type { TrialContribution } from "@weasel-js/labkit";
+import { icon } from "./icons.gen"; // the app's icon(): see @weasel-js/icons
 
 const chrome: TrialContribution[] = [
   { id: "seed", region: "status", item: { text: `seed ${seed}` } },
@@ -509,7 +510,7 @@ const chrome: TrialContribution[] = [
   {
     id: "reseed",
     region: "toolbar",
-    item: { icon: DiceIcon, label: "Reseed", shortcut: "R", onActivate: reseed },
+    item: { icon: icon("ui:randomize"), label: "Reseed", shortcut: "R", onActivate: reseed },
   },
 ];
 

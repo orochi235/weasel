@@ -527,14 +527,18 @@ Priority tags:
   `direction` they light the edge they resolve to; under `auto`, where each paragraph takes its
   own from its first strong character, they light nothing. A click on any segment still writes an
   edge over the reading-order value. Giving them segments of their own takes two glyphs, which
-  have to be drawn and proofed in a browser (`packages/ui/scripts/icons/text.mjs`).
+  have to be drawn and proofed in a browser (`packages/core/icons/text.mjs`).
 
 - **(P3) Icons: the size family and `orbit` collapse at 16px 1x.** `taller`, `shorter`, `wider`,
   `narrower`, `tallest` and `shortest` carry two short arrows each, and at 16 device pixels the
   heads close up into dots; `orbit`'s head does the same against its ring. All resolve at 2x.
-  They want heads on the pixel grid, or fewer of them (`packages/ui/scripts/icons/size.mjs`,
+  They want heads on the pixel grid, or fewer of them (`packages/ui/icons/size.mjs`,
   `camera.mjs`). The straight arrows drawn before the 45-degree rule in CLAUDE.md ("Drawing
   icons") still use spreads of 36 to 42.
+
+- **(P4) `gen:icons` writes `apps/site/icons.manifest.json`, and nothing reads it.** It lists
+  every drawn glyph's namespace, name, group and tags, meant for the site's icon gallery. Either
+  the gallery reads it or the generator stops writing it (`packages/icons/scripts/gen-icons.mjs`).
 
 - **(P3) Text: an emoji is a bitmap baked at one size.** A color glyph is rasterized at the canvas
   tier's `BAKE_SIZE` (48px) and mipmapped, so it is sharp at or below that on screen and blurs
@@ -734,7 +738,7 @@ Priority tags:
 
 ### Timelines and rigging
 
-- **(P3) The bone and weight tools have no icon and are not `defaultTools` ids** — they are
+- **(P3) The bone and weight tools are not `defaultTools` ids** — they are
   mounted as `tools={{ bone, weight }}`, as slice is.
 
 ### Combining animations

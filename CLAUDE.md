@@ -149,6 +149,8 @@ real. Full rule: `docs/proposals/2026-08-26-loops-stop-when-unseen.md`.
 
 ## Drawing icons
 
+Where glyphs live, how code names one, and how a build trims them: `docs/icons.md`.
+
 **Proof SVG icons at 10–15× their display size.** A glyph authored on a 20×20
 viewBox gets inspected at ~240–320px before anyone looks at it small. At
 chrome size a misplaced arrowhead or a join that doesn't meet is two blurry
@@ -173,8 +175,8 @@ head lands on the flattest stretch that is clear of other strokes.
 Where there is no room for a straight run, hang the head on the shaft instead of on its tangent:
 walk one trail of arc back from the tip and put the two barb ends on the curve's normal there, the
 same distance either side. That holds down to a bend radius of about 1.2 head lengths; tighter,
-the inner barb fills the bend, and the head wants to be solid. `chevronOn` in `base.mjs` draws
-this head, and `turn` in `camera.mjs` uses it.
+the inner barb fills the bend, and the head wants to be solid. `chevronOn` in `packages/icons/scripts/lib/base.mjs`
+draws this head, and `turn` in `packages/ui/icons/camera.mjs` uses it.
 
 **Where one stroke passes behind another, cut it along the front stroke's outline grown by a fixed
 gap.** The cut end is parallel to the stroke in front, not square to the stroke being cut: a butt
@@ -204,7 +206,7 @@ resolves. Neither grid is the answer on its own, and a conclusion drawn from one
 does not transfer.
 
 **Path order is z-order.** `gen:icons` emits paths in source order, so the
-sequence in `packages/ui/scripts/icons/` is load-bearing wherever a glyph gets
+sequence in each package's `icons/` definitions is load-bearing wherever a glyph gets
 depth from overlap. Reordering paths for tidiness breaks it silently.
 
 Fuller notes from the session that produced these — what stroke weight can and
