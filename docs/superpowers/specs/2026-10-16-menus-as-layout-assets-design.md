@@ -91,10 +91,15 @@ The default chord is unverified: Chrome on Windows is said to open its own menu 
 macOS Option plus a letter types a character (matched by `code`, so it still opens the menu). Nobody
 has checked Chrome on Windows; do that before relying on Alt there.
 
-Three builder's calls went differently from the draft: an enum draws as radio rows between
+Some builder's calls went differently from the draft: an enum draws as radio rows between
 separators, not a submenu; contributions sharing a menu id append their children in order
-with a separator between, keeping keys (a later duplicate key gets `~n`), not merge by key; and
-outside a bar a menu group draws as a panel (`prefAsBox`), not as a button that opens it.
+with a separator between, keeping keys (a later duplicate key gets `~n`), not merge by key;
+outside a bar a menu group draws as a panel (`prefAsBox`), not as a button that opens it; the
+`role="menubar"` element holds only the titles, and anything else at the top level draws after
+them in declared order, because ARIA allows only menu items in a menubar; and after a row runs
+from a menu opened by pointer, focus returns to where it was before the bar, so only Escape
+lands on the title. The WebGL host does not underline letters or mark `current`, though letters
+work there through the shared controller.
 
 ## Consumers
 
