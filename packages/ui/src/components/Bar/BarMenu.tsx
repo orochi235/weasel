@@ -29,7 +29,7 @@ export interface BarMenuProps extends BarMenuSources {
   label: string;
   /** The menu, as a schema `resolveSchemaMenu` walks: resolved each time it opens, so it shows what holds then. */
   schema: PrefGroup;
-  /** Open, as from a pointer, once on mount. */
+  /** Open, as from a pointer, once on mount, leaving focus where it is. */
   defaultOpen?: boolean;
 }
 
@@ -42,6 +42,9 @@ export function BarMenu({ label, schema, values, onChange, over, defaultOpen }: 
   const registry = useActionsRegistry();
   const depReg = useOptionalDepRegistry();
   const [open, setOpen] = useState<OpenMenu | null>(null);
+  // Opened by `defaultOpen`: it takes focus only once the reader moves focus into it.
+  const [quiet, setQuiet] = useState(false);
+  const isQuiet = useLatest(quiet);
   const button = useRef<HTMLButtonElement>(null);
   const isOpen = useLatest(open !== null);
   // A press on the button closes an open menu, and its click must not reopen it. The menu's dismiss listener has
@@ -62,10 +65,10 @@ export function BarMenu({ label, schema, values, onChange, over, defaultOpen }: 
   const close = useCallback(() => {
     pending.current = false;
     setOpen(null);
-    button.current?.focus();
-  }, []);
+    if (!isQuiet.current || document.activeElement?.closest('[role="menu"]')) button.current?.focus();
+  }, [isQuiet]);
 
-  const show = (source: OpenMenu['source']): boolean => {
+  const show = (source: OpenMenu['source'], silent = false): boolean => {
     const entries = resolveSchemaMenu(schema, {
       actions: () => registry?.list() ?? [],
       depsFor: (action) => (depReg ? buildDepsFromRequires(action, depReg) : undefined),
@@ -78,6 +81,7 @@ export function BarMenu({ label, schema, values, onChange, over, defaultOpen }: 
     const rect = button.current!.getBoundingClientRect();
     const under = { x: rect.left, y: rect.top, w: rect.width, h: rect.height };
     setOpen((prev) => ({ seq: (prev?.seq ?? 0) + 1, entries, client: { x: rect.left, y: rect.bottom }, under, source }));
+    setQuiet(silent);
     return true;
   };
   const showNow = useLatest(show);
@@ -86,7 +90,7 @@ export function BarMenu({ label, schema, values, onChange, over, defaultOpen }: 
   useEffect(() => {
     if (!pending.current) return;
     const attempt = () => {
-      if (pending.current && showNow.current('pointer')) pending.current = false;
+      if (pending.current && showNow.current('pointer', true)) pending.current = false;
     };
     attempt();
     return registry?.subscribe(attempt);
@@ -114,7 +118,7 @@ export function BarMenu({ label, schema, values, onChange, over, defaultOpen }: 
         <span>{label}</span>
         <Caret className={s.caret} />
       </button>
-      {open && ready && target && createPortal(<OpenPanels key={open.seq} open={open} close={close} />, target)}
+      {open && ready && target && createPortal(<OpenPanels key={open.seq} open={open} close={close} takeFocus={!quiet} />, target)}
     </>
   );
 }

@@ -44,8 +44,9 @@ function useReturnFocus(host: MenuHost | null): void {
   }, [host]);
 }
 
-/** One open menu's panels, with the controller that runs them. What the host draws, and a bar's menu button. */
-export function OpenPanels({ open, close }: { open: OpenMenu; close: () => void }) {
+/** One open menu's panels, with the controller that runs them. What the host draws, and a bar's menu button.
+ *  With `takeFocus` false a panel takes focus only once focus is already inside the menu. */
+export function OpenPanels({ open, close, takeFocus = true }: { open: OpenMenu; close: () => void; takeFocus?: boolean }) {
   const [controller, setController] = useState<MenuController | null>(null);
   // Built where it is disposed, so StrictMode's rerun of this effect gets a live one.
   useLayoutEffect(() => {
@@ -54,10 +55,10 @@ export function OpenPanels({ open, close }: { open: OpenMenu; close: () => void 
     setController(c);
     return () => c.dispose();
   }, [open, close]);
-  return controller ? <Panels controller={controller} open={open} close={close} /> : null;
+  return controller ? <Panels controller={controller} open={open} close={close} takeFocus={takeFocus} /> : null;
 }
 
-function Panels({ controller, open, close }: { controller: MenuController; open: OpenMenu; close: () => void }) {
+function Panels({ controller, open, close, takeFocus }: { controller: MenuController; open: OpenMenu; close: () => void; takeFocus: boolean }) {
   const idBase = useId();
   const panels = useRef(new Map<number, HTMLElement>());
   const stack = useSyncExternalStore(controller.subscribe, controller.stack, controller.stack);
@@ -68,6 +69,7 @@ function Panels({ controller, open, close }: { controller: MenuController; open:
   useDismiss(isInside, close);
 
   const root = useMemo(() => (open.under ? { client: open.client, under: open.under } : { client: open.client }), [open]);
+  const focusable = takeFocus || (typeof document !== 'undefined' && document.activeElement?.id.startsWith(`${idBase}-panel-`) === true);
   const rowId = (level: number) => `${idBase}-${level}-${stack[level]}`;
   const rowRect = (level: number): Rect | null => {
     const el = stack[level] == null ? null : document.getElementById(rowId(level));
@@ -91,7 +93,7 @@ function Panels({ controller, open, close }: { controller: MenuController; open:
           labelledBy={level === 0 ? undefined : rowId(level - 1)}
           anchor={level === 0 ? root : null}
           parentRow={() => (level === 0 ? null : rowRect(level - 1))}
-          focus={level === stack.length - 1}
+          focus={focusable && level === stack.length - 1}
           register={(el) => { if (el) panels.current.set(level, el); else panels.current.delete(level); }}
         />
       ))}
