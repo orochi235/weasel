@@ -30,7 +30,7 @@ export function keyboardAnchor(deps: ActionDeps): XY | null {
  * `hitAt` and `kindOfNode` deps). A shape under `at` counts as selected, since
  * opening selects it first, and `select` names it when it is not yet; with no
  * `at`, the current selection. Without a classifier wired, a pointer hit names
- * no body at all.
+ * no body at all, and without a selection neither does a keyboard one.
  */
 export function menuHitFor(deps: ActionDeps, at?: XY): { hit: MenuHit; select?: string } {
   if (at) {
@@ -42,7 +42,8 @@ export function menuHitFor(deps: ActionDeps, at?: XY): { hit: MenuHit; select?: 
       ...(hit.bodyTarget === 'unselected-body' && hit.id !== undefined ? { select: hit.id } : {}),
     };
   }
-  const ids = deps.selection?.get() ?? [];
+  if (!deps.selection) return { hit: {} };
+  const ids = deps.selection.get();
   return { hit: { bodyTarget: ids.length ? 'selected-body' : 'empty', bodyKind: ids.length === 1 ? deps.kindOfNode?.(ids[0]!) : undefined } };
 }
 

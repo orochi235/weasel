@@ -12,6 +12,7 @@ import {
   makeViewportZoomAction,
   PointerContextProvider,
   type PointerWorldPos,
+  screenToWorld,
   type Tool,
   useActionsRegistry,
   useDepSource,
@@ -21,6 +22,8 @@ import {
   type View,
   type ViewApi,
   viewportDragPanAction,
+  viewToTransform,
+  worldToScreen,
   type Yoke,
 } from '@weasel-js/core';
 import {
@@ -215,19 +218,20 @@ function CameraDispatch({
   const clientToWorld = useMemo(
     () => (cx: number, cy: number) => {
       const r = hostRef.current?.getBoundingClientRect();
-      const v = camera.get();
-      return {
-        x: (cx - (r?.left ?? 0)) / v.scale.x + v.x,
-        y: (cy - (r?.top ?? 0)) / v.scale.y + v.y,
-      };
+      const [x, y] = screenToWorld(
+        cx - (r?.left ?? 0),
+        cy - (r?.top ?? 0),
+        viewToTransform(camera.get()),
+      );
+      return { x, y };
     },
     [hostRef, camera],
   );
   useDepSource('worldToClient', () => (x: number, y: number) => {
     const r = hostRef.current?.getBoundingClientRect();
     if (!r) return null;
-    const v = camera.get();
-    return { x: (x - v.x) * v.scale.x + r.left, y: (y - v.y) * v.scale.y + r.top };
+    const [sx, sy] = worldToScreen(x, y, viewToTransform(camera.get()));
+    return { x: r.left + sx, y: r.top + sy };
   });
 
   const actions = useMemo<Action[]>(() => {

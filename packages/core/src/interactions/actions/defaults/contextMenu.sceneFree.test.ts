@@ -26,7 +26,7 @@ describe('menu.context with only menuHost, view and worldToClient', () => {
     const d = deps();
     expect(openContextMenu(d as never)).toBe(true);
     expect(d.menuHost.open).toHaveBeenCalledWith({
-      hit: { bodyTarget: 'empty', bodyKind: undefined },
+      hit: {},
       client: { x: 1200, y: 1100 }, world: { x: 200, y: 100 }, source: 'keyboard',
     });
   });
