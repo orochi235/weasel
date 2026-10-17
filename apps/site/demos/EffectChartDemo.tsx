@@ -1,6 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useVisibleRaf } from '@weasel-js/core';
-import { EffectChart, rack, type EffectLook, type EffectPipeline, type EffectRun } from '@weasel-js/diagram/effect';
+import {
+  BRANCH_SYMBOLS, EffectChart, compact, lanes, nodeGraph, rack,
+  type BranchChoice, type EffectLook, type EffectPipeline, type EffectRun,
+} from '@weasel-js/diagram/effect';
 
 const image = (id: string, label?: string) => ({ id, type: 'image', ...(label ? { label } : {}) });
 
@@ -105,4 +108,66 @@ export function EffectChartRunDemo() {
 
 export function EffectChartRackDemo() {
   return <Demo look={rack} />;
+}
+
+export function EffectChartLanesDemo() {
+  return <Demo look={lanes} />;
+}
+
+export function EffectChartCompactDemo() {
+  return <Demo look={compact} />;
+}
+
+const level = (id: string) => ({ id, type: 'audio' });
+
+/** A level split three ways, and a gate a control value opens. */
+const BRANCHES: EffectPipeline = {
+  types: { gate: { control: true } },
+  stages: [
+    { id: 'in', title: 'Input', kind: 'source', outputs: [level('out')] },
+    { id: 'band', title: 'Loudness', kind: 'decision', inputs: [level('in')],
+      outputs: [level('quiet'), level('mid'), level('loud')], split: { input: 'in', at: [-30, -12] } },
+    { id: 'boost', title: 'Boost', inputs: [level('in')], outputs: [level('out')] },
+    { id: 'keep', title: 'Keep', inputs: [level('in')], outputs: [level('out')] },
+    { id: 'limit', title: 'Limit', inputs: [level('in')], outputs: [level('out')] },
+    { id: 'key', title: 'Sidechain', outputs: [{ id: 'open', type: 'gate' }] },
+    { id: 'gate', title: 'open?', kind: 'decision', inputs: [level('in'), { id: 'when', type: 'gate' }],
+      outputs: [level('yes'), level('no')] },
+    { id: 'out', title: 'Output', kind: 'sink', inputs: [level('in')] },
+  ],
+  wires: [
+    { from: { stage: 'in', port: 'out' }, to: { stage: 'band', port: 'in' } },
+    { from: { stage: 'band', port: 'quiet' }, to: { stage: 'boost', port: 'in' } },
+    { from: { stage: 'band', port: 'mid' }, to: { stage: 'keep', port: 'in' } },
+    { from: { stage: 'band', port: 'loud' }, to: { stage: 'limit', port: 'in' } },
+    { from: { stage: 'keep', port: 'out' }, to: { stage: 'gate', port: 'in' } },
+    { from: { stage: 'key', port: 'open' }, to: { stage: 'gate', port: 'when' } },
+    { from: { stage: 'gate', port: 'yes' }, to: { stage: 'out', port: 'in' } },
+  ],
+};
+
+const CHOICES = ['auto', ...Object.keys(BRANCH_SYMBOLS)] as BranchChoice[];
+
+export function EffectChartBranchDemo() {
+  const [branch, setBranch] = useState<BranchChoice>('crossover');
+  const options = useMemo(() => ({ branch }), [branch]);
+  return (
+    <div className="ckd-stack">
+      <label className="ckd-row">
+        branch symbol{' '}
+        <select value={branch} onChange={(e) => setBranch(e.target.value as BranchChoice)}>
+          {CHOICES.map((c) => <option key={c} value={c}>{c}</option>)}
+        </select>
+      </label>
+      <EffectChart
+        pipeline={BRANCHES}
+        look={nodeGraph}
+        options={options}
+        background={GROUND}
+        width={820}
+        height={420}
+        className="ckd-canvas"
+      />
+    </div>
+  );
 }

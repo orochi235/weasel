@@ -29,6 +29,7 @@ const P: EffectPipeline = {
   groups: [{ id: 'g', label: 'Soften', members: ['blur'] }],
 };
 
+const strokeOpacity = (spec: DiagramSpec) => (spec.data as { stroke?: { paint?: { opacity?: number } } }).stroke?.paint?.opacity;
 type Box = { x: number; y: number; width: number; height: number };
 const built = (p: EffectPipeline, options?: Parameters<typeof lanes>[1]) => {
   const drawn = lanes(p, options);
@@ -138,8 +139,7 @@ describe('lanes', () => {
     const { drawn, specs } = built(P);
     const run = { stages: { src: {}, q: { taken: 'yes' }, blur: {}, mix: {}, out: {}, osc: {}, cut: {} } };
     const painted = paintRun(P, specs, run, drawn.exits);
-    const opacity = (from: string, to: string) => (painted.find((s) => s.id === `edge:q.${from}->${to}:${from}`)!.data as DiagramSpec['data'])
-      .stroke!.paint.opacity;
+    const opacity = (from: string, to: string) => strokeOpacity(painted.find((s) => s.id === `edge:q.${from}->${to}:${from}`)!);
     expect(opacity('yes', 'blur.in')).toBeUndefined();
     expect(opacity('no', 'mix.base')).toBeLessThan(1);
   });

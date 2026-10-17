@@ -84,7 +84,7 @@ export const comparator: BranchSymbol = (stage, pipeline, options) => {
   const signal = ins.filter((p) => p.at.u === 0);
   const ink = styleOf(stage, options).text;
   const marks: DataMark[] = [];
-  if (banded) marks.push({ text: String(stage.split.at[0]), at: { u: 0.35, v: 0.5 }, self: { u: 0.5, v: 0.5 }, color: ink });
+  if (canBand(stage)) marks.push({ text: String(stage.split.at[0]), at: { u: 0.35, v: 0.5 }, self: { u: 0.5, v: 0.5 }, color: ink });
   else if (signal.length === 2) {
     signal.forEach((p, i) => marks.push({ text: i === 0 ? '+' : '−', at: p.at, self: { u: 0, v: 0.5 }, offset: { x: 4, y: 0 }, color: ink }));
   }
