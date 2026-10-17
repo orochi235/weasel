@@ -27,7 +27,7 @@
     "longestFunction": 422
   },
   "packages/core/src/canvas/CanvasView.tsx": {
-    "lines": 409,
+    "lines": 407,
     "longestFunction": 262
   },
   "packages/core/src/canvas/SceneCanvas.tsx": {
@@ -38,7 +38,7 @@
     "longestFunction": 249
   },
   "packages/core/src/canvas/SceneCanvas/props.ts": {
-    "lines": 609
+    "lines": 607
   },
   "packages/core/src/canvas/sceneAdapter.ts": {
     "longestFunction": 156

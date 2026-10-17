@@ -8,6 +8,7 @@ import type { Action } from '@weasel-js/routing';
 import { KIT_STANDARD_ACTIONS } from '../../canvas/SceneCanvas/namedPresets';
 import { useActionSet, useStandardDeps, type StandardDeps } from './useActionSet';
 
+/** Options for `useStandardActions`: which actions to register, and the deps they read. */
 export interface UseStandardActionsOptions extends StandardDeps {
   /**
    * The actions to register, in order. Default: every kit-standard action

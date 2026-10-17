@@ -20,6 +20,7 @@ import {
  *  pointer is over no publishing surface. */
 export type PointerWorldPos = { worldX: number; worldY: number; viewId: string | null } | null;
 
+/** A pointer store: the latest position, a way to publish one, and change notification. */
 export interface PointerContextValue {
   /** The latest position. */
   get(): PointerWorldPos;

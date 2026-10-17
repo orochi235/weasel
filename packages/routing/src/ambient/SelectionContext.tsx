@@ -20,6 +20,7 @@ import {
 import { useLatest } from '@weasel-js/react';
 import type { NodeId } from '../vocabulary';
 
+/** The ambient selection store a canvas publishes into and non-canvas UI reads. */
 export interface SelectionContextValue {
   /** The most-recently-published selection. Empty array when no canvas
    *  has published or when the active canvas's selection is empty. */
