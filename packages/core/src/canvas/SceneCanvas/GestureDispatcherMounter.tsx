@@ -15,7 +15,7 @@ import { useChromeAffordances } from './useChromeAffordances';
 import type { CanvasExtensionApi } from '../canvasExtension';
 import { useKitSettingsDepSource } from '../deps/kitSettings';
 import { pathFromPlane } from '../planeClips';
-import { useOptionalViewRegistry } from '../viewRegistry';
+import { surfaceLocal, useOptionalViewRegistry } from '../viewRegistry';
 import { traceConversion } from './coordTrace';
 import type { SceneCanvasLongPress } from './props';
 
@@ -240,6 +240,11 @@ export function GestureDispatcherMounter({
     };
   }, [viewRegistry]);
 
+  const clientToLocal = useMemo(() => {
+    if (!viewRegistry) return undefined;
+    return (clientX: number, clientY: number) => surfaceLocal(viewRegistry.surface(), clientX, clientY);
+  }, [viewRegistry]);
+
   // Hover cursors live in `useGestureDispatcher`'s hover-cursor pump:
   // affordance hits carry `AffordanceHit.cursor` (set by `buildAffordanceAt`),
   // and everything else is predicted via `Dispatcher.resolveOnly` +
@@ -255,6 +260,7 @@ export function GestureDispatcherMounter({
     classifyTarget,
     dispatcher,
     clientToWorld,
+    ...(clientToLocal ? { clientToLocal } : {}),
     requestRedraw,
     paintedCursor,
     cursorSink,

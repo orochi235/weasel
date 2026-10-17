@@ -186,6 +186,16 @@ export interface UseGestureDispatcherOptions {
   clientToWorld?: (clientX: number, clientY: number) => { x: number; y: number };
 
   /**
+   * Converts a client point to CSS pixels from the canvas's top-left: where
+   * the painted cursor draws, where a wheel or pinch zoom anchors, and where a
+   * pending long-press is published. Without this, the element's rect is
+   * subtracted — wrong for a canvas under a CSS transform, whose host already
+   * owns the mapping. `<SceneCanvas>` wires it from its own camera, so a
+   * `clientToWorld` override reaches it.
+   */
+  clientToLocal?: (clientX: number, clientY: number) => { x: number; y: number };
+
+  /**
    * Called whenever one of this hook's dispatchers notifies its subscribers:
    * once for each input event, cancel, or UI-driven step that found or left a
    * gesture in flight. Lets the host canvas schedule a redraw, so
