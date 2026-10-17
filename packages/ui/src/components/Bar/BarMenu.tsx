@@ -1,17 +1,15 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
+import { useEffect, useRef } from 'react';
 import {
   buildDepsFromRequires,
   resolveSchemaMenu,
   useLatest,
   useActionsRegistry,
   useOptionalDepRegistry,
-  type OpenMenu,
 } from '@weasel-js/core';
 import type { PrefGroup } from '@weasel-js/prefs';
-import { useOverlayPortal } from '../../overlays/portalHost';
+import type { MenuEntry } from '@weasel-js/menu';
 import { Caret } from '../Caret';
-import { OpenPanels } from '../ContextMenu/ContextMenuHost';
+import { useMenuTrigger } from '../ContextMenu/useMenuTrigger';
 import f from '../field.module.css';
 import s from './Bar.module.css';
 
@@ -40,86 +38,60 @@ export interface BarMenuProps extends BarMenuSources {
  */
 export function BarMenu({ label, schema, values, onChange, over, defaultOpen }: BarMenuProps) {
   const registry = useActionsRegistry();
-  const depReg = useOptionalDepRegistry();
-  const [open, setOpen] = useState<OpenMenu | null>(null);
-  // Opened by `defaultOpen`: it takes focus only once the reader moves focus into it.
-  const [quiet, setQuiet] = useState(false);
-  const quietNow = useRef(false);
-  const button = useRef<HTMLButtonElement>(null);
-  const isOpen = useLatest(open !== null);
-  // A press on the button closes an open menu, and its click must not reopen it. The menu's dismiss listener has
-  // closed it by the button's own handler, so a window listener registered before that one reads whether it was open.
-  const wasOpen = useRef(false);
-  useEffect(() => {
-    const press = (e: PointerEvent) => {
-      if (e.target instanceof Node && button.current?.contains(e.target)) wasOpen.current = isOpen.current;
-    };
-    window.addEventListener('pointerdown', press, true);
-    return () => window.removeEventListener('pointerdown', press, true);
-  }, [isOpen]);
-  const { anchor, container, ready } = useOverlayPortal();
-  const target = container ?? (typeof document !== 'undefined' ? document.body : null);
+  const resolveMenu = useBarMenuResolver();
+  const trigger = useMenuTrigger();
 
   // `defaultOpen` holds until the menu has opened once or the reader has touched it.
   const pending = useRef(defaultOpen === true);
-  const close = useCallback(() => {
-    pending.current = false;
-    setOpen(null);
-    if (!quietNow.current || document.activeElement?.closest('[role="menu"]')) button.current?.focus();
-  }, []);
 
-  const show = (source: OpenMenu['source'], silent = false): boolean => {
-    const entries = resolveSchemaMenu(schema, {
-      actions: () => registry?.list() ?? [],
-      depsFor: (action) => (depReg ? buildDepsFromRequires(action, depReg) : undefined),
-      trigger: (id, params) => registry?.trigger(id, params) ?? false,
-      values,
-      ...(onChange ? { onChange } : {}),
-      ...(over ? { over } : {}),
-    });
-    if (entries.length === 0) return false;
-    const rect = button.current!.getBoundingClientRect();
-    const under = { x: rect.left, y: rect.top, w: rect.width, h: rect.height };
-    setOpen((prev) => ({ seq: (prev?.seq ?? 0) + 1, entries, client: { x: rect.left, y: rect.bottom }, under, source }));
-    quietNow.current = silent;
-    setQuiet(silent);
-    return true;
-  };
-  const showNow = useLatest(show);
+  const resolve = () => resolveMenu(schema, { values, onChange, over });
+  const showQuiet = useLatest(() => trigger.show(resolve(), 'pointer', true));
 
   // An action registered after this mounts can be what makes the menu non-empty, so a shut default retries on each change.
   useEffect(() => {
     if (!pending.current) return;
     const attempt = () => {
-      if (pending.current && showNow.current('pointer', true)) pending.current = false;
+      if (pending.current && showQuiet.current()) pending.current = false;
     };
     attempt();
     return registry?.subscribe(attempt);
-  }, [registry, showNow]);
+  }, [registry, showQuiet]);
 
   return (
     <>
-      {anchor}
+      {trigger.anchor}
       <button
-        ref={button}
+        ref={trigger.button}
+        id={trigger.id}
         type="button"
         className={`${f.frame} ${s.popTrigger}`}
         aria-haspopup="menu"
-        aria-expanded={open !== null}
+        aria-expanded={trigger.open}
+        onPointerDown={trigger.press}
         onClick={(e) => {
           pending.current = false;
-          if (wasOpen.current) {
-            wasOpen.current = false;
-            return;
-          }
-          // A click with no pointer under it came from the keyboard, which highlights the first row.
-          show(e.detail === 0 ? 'keyboard' : 'pointer');
+          trigger.click(e, resolve);
         }}
       >
         <span>{label}</span>
         <Caret className={s.caret} />
       </button>
-      {open && ready && target && createPortal(<OpenPanels key={open.seq} open={open} close={close} takeFocus={!quiet} />, target)}
+      {trigger.portal}
     </>
   );
+}
+
+/** Resolves a menu schema against the nearest actions registry and dep registry, reading and writing through
+ *  `sources`: what a bar's menu and a menu bar's title open. */
+export function useBarMenuResolver(): (schema: PrefGroup, sources: BarMenuSources) => MenuEntry[] {
+  const registry = useActionsRegistry();
+  const depReg = useOptionalDepRegistry();
+  return (schema, { values, onChange, over }) => resolveSchemaMenu(schema, {
+    actions: () => registry?.list() ?? [],
+    depsFor: (action) => (depReg ? buildDepsFromRequires(action, depReg) : undefined),
+    trigger: (id, params) => registry?.trigger(id, params) ?? false,
+    values,
+    ...(onChange ? { onChange } : {}),
+    ...(over ? { over } : {}),
+  });
 }

@@ -35,6 +35,8 @@ Decisions from the conversation that the design doc does not carry:
 - `ActionDisabledReason`'s const is `@experimental`; whether to promote it is the owner's call.
   `useCommand` names only the untagged type.
 
+MenuBar, access letters and `MenuButton` on the menu renderer have landed. What is left is WeaselDraw's menu bar, then labkit's (spec "Order").
+
 How subagent work ran here, and what bit:
 
 - Subagents inherit the session's worktree lock: an agent cannot enter any worktree but the one
@@ -66,6 +68,7 @@ How subagent work ran here, and what bit:
 
 Passed its tests and was never looked at. Delete a line when someone has.
 
+- Menus: the menu bar's pointer and keyboard behavior in real Chrome and Safari, Option+letter on macOS, `MenuButton` on the new renderer in `LabSwitcher` (link rows) and `CommandBar` (with a tooltip), and the `.frame:focus-visible` ring on button frames.
 - Renderer: the `u_origin` shader path for large translations, the `a_position` pin, skewed text
   and images, the glyph atlas reclaim, an emoji at any size, and the split SVG export.
 - Canvas: the size a kit canvas takes from core's stylesheet, in `apps/draw` and the site's demos;

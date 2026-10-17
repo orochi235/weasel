@@ -13,6 +13,9 @@ export function MenuPanel(props: {
   anchor: { client: { x: number; y: number }; under?: Rect } | null;
   parentRow: () => Rect | null;
   focus: boolean;
+  /** While true, a pointerup over a row presses it. Read at the event, never rendered from. */
+  releaseRuns: { readonly current: boolean };
+  close(): void;
   register(el: HTMLElement | null): void;
 }) {
   const { controller: c, level, entries, highlight, idBase, parentRow, anchor, focus } = props;
@@ -49,6 +52,7 @@ export function MenuPanel(props: {
       ref={(el) => { ref.current = el; props.register(el); }}
       id={`${idBase}-panel-${level}`}
       role="menu"
+      data-weasel-overlay=""
       tabIndex={-1}
       aria-labelledby={props.labelledBy}
       className={s.panel}
@@ -67,6 +71,14 @@ export function MenuPanel(props: {
           controls={`${idBase}-panel-${level + 1}`}
           onHover={(e) => c.hover(level, i, { x: e.clientX, y: e.clientY })}
           onPress={() => c.press(level, i)}
+          onLeave={props.close}
+          onRelease={(modified) => {
+            if (!props.releaseRuns.current) return;
+            if (modified && entry.kind === 'item' && entry.href !== undefined) {
+              window.open(entry.href, '_blank');
+              props.close();
+            } else c.press(level, i);
+          }}
         />
       ))}
     </div>

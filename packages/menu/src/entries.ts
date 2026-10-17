@@ -18,6 +18,12 @@ export interface MenuItemEntry {
   disabled?: boolean;
   /** `undefined` for a row with no on/off state. */
   checked?: boolean;
+  /** Letter that chooses this row from the keyboard, compared ignoring case. */
+  access?: string;
+  /** Where choosing the row goes; see `withLinks`. */
+  href?: string;
+  /** The row for the page that is open. */
+  current?: boolean;
   run(): void;
 }
 
@@ -34,6 +40,8 @@ export interface SubmenuEntry {
   label: string;
   icon?: unknown;
   disabled?: boolean;
+  /** Letter that opens this row from the keyboard, compared ignoring case. */
+  access?: string;
   entries: readonly MenuEntry[];
 }
 

@@ -55,7 +55,7 @@ export function EnumControl(p: PropertyEnumFieldProps) {
         label={reads}
         current={held !== undefined}
         isDisabled={p.disabled}
-        items={choices(p).map((o) => ({ value: o.value, label: o.label, isDisabled: o.disabled }))}
+        items={choices(p).map((o) => ({ value: o.value, label: nameOf(o.label) ?? o.short?.[0] ?? o.value, isDisabled: o.disabled }))}
         onAction={choose(p)}
       />
     );

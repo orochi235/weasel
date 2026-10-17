@@ -1,0 +1,10 @@
+/* A stand-in for the strip across the top of an app that the menu bar sits on. */
+.strip {
+  display: flex;
+  align-items: center;
+  height: var(--wzl-tb-height);
+  padding: 0 var(--wzl-space-3);
+  background: var(--wzl-surface);
+  border-bottom: 1px solid var(--wzl-border);
+  color: var(--wzl-fg);
+}

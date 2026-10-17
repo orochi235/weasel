@@ -52,6 +52,7 @@ const LEAF_BASE: KindAttrs = {
   name: text('Name', 'The label beside the control.'),
   description: text('Description', 'Help text for the tooltip or the line under the label.', true),
   tags: strings('Tags', 'Words a settings search also finds it by, and that gather it with others carrying them.'),
+  access: text('Access letter', 'The letter that picks it in a menu, and with the menu bar\'s chord opens a top-level menu. One character; optional.'),
   hidden: flag('Hidden', 'Left out of a settings UI unless it shows hidden prefs.'),
   showIf: SHOW_IF,
   enableIf: ENABLE_IF,
@@ -113,6 +114,7 @@ const GROUP_ATTRS: KindAttrs = {
   description: LEAF_BASE.description!,
   tags: strings('Tags', 'Tags every pref under it carries too. A settings search matching one keeps all of them.'),
   as: choice('Drawn as', 'A page of its own in the rail, a tab beside its neighbors, a bordered panel, a heading over its rows, a fragment: its rows among its neighbors\' with nothing drawn around them, a bar: its prefs on one line in their bar forms, or a menu: a button opening it as a menu on a bar, a submenu in a menu, and a panel in a form. Unset: a page at the top level, a section inside another group.', ['page', 'tab', 'panel', 'section', 'fragment', 'bar', 'menu']),
+  access: LEAF_BASE.access!,
   showIf: SHOW_IF,
   enableIf: ENABLE_IF,
 };
@@ -121,6 +123,7 @@ const SECTION_ATTRS: KindAttrs = {
   description: LEAF_BASE.description!,
   tags: strings('Tags', 'Tags every pref under it carries too. A settings search matching one keeps all of them.'),
   as: choice('Drawn as', 'A tab beside its neighbors, a bordered panel, a heading over its rows, a fragment: its rows among its neighbors\' with nothing drawn around them, a bar: its prefs on one line in their bar forms, or a menu: a button opening it as a menu on a bar, a submenu in a menu, and a panel in a form. Unset: a heading.', ['tab', 'panel', 'section', 'fragment', 'bar', 'menu']),
+  access: LEAF_BASE.access!,
   showIf: SHOW_IF,
   enableIf: ENABLE_IF,
 };
@@ -140,7 +143,7 @@ const REQUIRED = new Set(['name', 'description', 'default', 'options', 'tag', 'o
 const SLOTS = new Set(['children', 'members', 'variants', 'item']);
 
 /** The fields a leaf made from a type sets where it is used; the rest are its type's. */
-const USE_SITE = new Set(['name', 'description', 'tags', 'default', 'hidden', 'showIf', 'enableIf', 'block', 'heading', 'icon', 'pair', 'short', 'absentIsDefault', 'readout', 'manual', 'unpinned', 'autoValue']);
+const USE_SITE = new Set(['name', 'description', 'tags', 'default', 'access', 'hidden', 'showIf', 'enableIf', 'block', 'heading', 'icon', 'pair', 'short', 'absentIsDefault', 'readout', 'manual', 'unpinned', 'autoValue']);
 
 function valueAttr(leaf: PrefLeaf, base: { name: string; description: string }): PrefLeaf | null {
   switch (leaf.kind) {
@@ -218,18 +221,23 @@ function actionChoice(attr: PrefLeaf, actions: readonly RegisteredAction[], held
 
 const READOUT = flag('Readout', 'Drawn showing its value but not editable.');
 
+/** The leaf kinds a menu draws a row for, besides a label, and so can give a letter. */
+const LETTERED: ReadonlySet<string> = new Set(['action', 'boolean', 'alias']);
+
 /** The attributes a leaf shares with every other, less the ones nothing draws for it: a label is its
  *  name and its description, and a separator neither, and neither has a control to enable. An actions
  *  pref is a run of buttons, and only a leaf holding a value can be a readout of it. */
 function sharedAttrs(leaf: PrefLeaf): KindAttrs {
   const { kind } = leaf;
   if (kind === 'separator') return { hidden: LEAF_BASE.hidden!, showIf: SHOW_IF };
-  if (kind === 'label') return { name: LEAF_BASE.name!, description: LEAF_BASE.description!, hidden: LEAF_BASE.hidden!, showIf: SHOW_IF };
+  if (kind === 'label') return { name: LEAF_BASE.name!, description: LEAF_BASE.description!, access: LEAF_BASE.access!, hidden: LEAF_BASE.hidden!, showIf: SHOW_IF };
   if (kind === 'actions') {
     const { name, description, tags, hidden, showIf, enableIf } = LEAF_BASE;
     return { name: name!, description: description!, tags: tags!, hidden: hidden!, showIf: showIf!, enableIf: enableIf! };
   }
-  return prefHoldsValue(leaf) ? { ...LEAF_BASE, readout: READOUT } : { ...LEAF_BASE };
+  const { access, ...noLetter } = LEAF_BASE;
+  const base = LETTERED.has(kind) ? { ...noLetter, access: access! } : noLetter;
+  return prefHoldsValue(leaf) ? { ...base, readout: READOUT } : base;
 }
 
 /** What every leaf carries and nothing draws for a separator, so no row lists it. */

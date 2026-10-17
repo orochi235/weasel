@@ -113,7 +113,7 @@ function shownNode(node: BarLeafNode, draw: Draw): BarLeafNode {
 }
 
 /** The value a condition reads at `path`: the entry there, else the part of an entry above it that the rest of the path names. */
-function valueAt(values: Readonly<Record<string, unknown>> | undefined, path: string): unknown {
+export function valueAt(values: Readonly<Record<string, unknown>> | undefined, path: string): unknown {
   if (values === undefined || Object.hasOwn(values, path)) return values?.[path];
   for (let dot = path.lastIndexOf('.'); dot > 0; dot = path.lastIndexOf('.', dot - 1)) {
     const head = path.slice(0, dot);
