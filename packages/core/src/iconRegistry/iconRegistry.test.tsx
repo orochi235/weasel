@@ -44,6 +44,22 @@ describe('icon registry provider', () => {
     expect(result.current.entries.map((e) => e.ref)).toEqual(['core:undo']);
   });
 
+  it('loads a variant whose loader arrives after the component mounted', async () => {
+    const loader = vi.fn(async () => ({ default: [more] }));
+    function Probe() {
+      const { state } = useIconVariant('all');
+      return <span>{state}</span>;
+    }
+    const tree = (variants?: { all: typeof loader }) => (
+      <IconRegistryProvider icons={core} variants={variants}><Probe /></IconRegistryProvider>
+    );
+    const { rerender } = render(tree());
+    expect(screen.getByText('unknown')).toBeTruthy();
+    await act(async () => rerender(tree({ all: loader })));
+    await waitFor(() => expect(screen.getByText('loaded')).toBeTruthy());
+    expect(loader).toHaveBeenCalledTimes(1);
+  });
+
   it('a failed variant can be asked for again', async () => {
     let fail = true;
     const loader = async () => { if (fail) throw new Error('offline'); return { default: [more] }; };

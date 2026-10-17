@@ -1,6 +1,6 @@
 import type { IconTable, IconVariantLoader } from './table';
 
-/** Where a named icon variant stands: not yet asked for, queued, in flight, in, or failed. */
+/** Where a named icon variant stands: no loader for it (`unknown`), a loader not yet run (`idle`), in flight, in, or failed. */
 export type IconVariantState = 'unknown' | 'idle' | 'loading' | 'loaded' | 'failed';
 
 /** Loads each named variant at most once at a time; a failure leaves it retryable. */
