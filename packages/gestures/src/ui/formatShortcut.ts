@@ -1,15 +1,9 @@
+import type { MenuShortcut } from '@weasel-js/menu';
 import { keySpecsFromShortcut } from './keySpecsFromShortcut';
 import { detectPlatform, type KeySpecsFromModsOptions, type Platform } from './keySpecsFromMods';
 
-/** A keyboard shortcut as the formatters read it: the one shape for a shortcut
- *  chip, which `@weasel-js/menu` names `MenuShortcut` and `@weasel-js/routing`
- *  `ActionShortcut`. A tool's `keybinding` has this shape and passes as-is. */
-export interface ShortcutInput {
-  key: string | readonly string[];
-  mod?: boolean;
-  alt?: boolean;
-  shift?: boolean | 'optional';
-}
+/** A keyboard shortcut as the formatters read it: `@weasel-js/menu`'s `MenuShortcut`. */
+export type ShortcutInput = MenuShortcut;
 
 /** Options for {@link formatShortcut} and {@link formatShortcutParts}. */
 export interface FormatShortcutOptions {
