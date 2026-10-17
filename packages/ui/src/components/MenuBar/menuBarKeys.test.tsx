@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import {
   ActionsProvider,
@@ -9,15 +9,29 @@ import {
   useGestureDispatcher,
   type Action,
   type ActionsRegistry,
+  type UseGestureDispatcherOptions,
 } from '@weasel-js/core';
 import { isApplePlatform } from '@weasel-js/gestures';
 import { pref, type PrefGroup } from '@weasel-js/prefs';
 import { MenuBar, type MenuAccessChord } from './MenuBar';
 
+/** Every dispatcher mounted, by its options: how the test reaches the registry the bar's own dispatcher reads. */
+const mounted = vi.hoisted(() => [] as UseGestureDispatcherOptions[]);
+vi.mock('@weasel-js/core', async (importOriginal) => {
+  const core = await importOriginal<typeof import('@weasel-js/core')>();
+  return {
+    ...core,
+    useGestureDispatcher: (opts: UseGestureDispatcherOptions) => {
+      mounted.push(opts);
+      core.useGestureDispatcher(opts);
+    },
+  };
+});
+
 afterEach(cleanup);
 
 const ran: string[] = [];
-beforeEach(() => { ran.length = 0; });
+beforeEach(() => { ran.length = 0; mounted.length = 0; });
 
 const INITIAL = [{ channel: '*', phase: 'initial' }] as const;
 const act1 = (id: string, label: string, defaultBinding?: Action['defaultBinding']): Action => ({
@@ -31,14 +45,15 @@ const ACTIONS = [
 ];
 
 const SCHEMA: PrefGroup = pref.group('', {
-  file: {
-    ...pref.group('File', {
-      more: pref.group('More', { open: pref.action('file.open') }, { as: 'menu' }),
-      new: pref.action('file.new'),
-    }, { as: 'menu' }),
-    access: 'f',
-  },
+  file: { ...pref.group('File', { new: pref.action('file.new'), open: pref.action('file.open') }, { as: 'menu' }), access: 'f' },
   edit: pref.group('Edit', { undo: pref.action('edit.undo') }, { as: 'menu' }),
+});
+
+/** SCHEMA with File disabled until `on` is set. */
+const FILE_GATED: PrefGroup = pref.group('', {
+  on: pref.boolean('On', false),
+  file: { ...SCHEMA.children.file!, enableIf: { path: 'on' } },
+  edit: SCHEMA.children.edit!,
 });
 
 function Register({ action }: { action: Action }) {
@@ -55,16 +70,15 @@ function AppKeys() {
   return null;
 }
 
-function setup(accessChord?: MenuAccessChord) {
+function setup({ accessChord, schema = SCHEMA }: { accessChord?: MenuAccessChord; schema?: PrefGroup } = {}) {
   render(
     <DepRegistryProvider>
       <ActionsProvider>
         <ActiveToolContextProvider>
           {ACTIONS.map((a) => <Register key={a.id} action={a} />)}
           <AppKeys />
-          <button type="button">Before</button>
           <input aria-label="Name" />
-          <MenuBar schema={SCHEMA} {...(accessChord ? { accessChord } : {})} />
+          <MenuBar schema={schema} values={{ on: false }} {...(accessChord ? { accessChord } : {})} />
         </ActiveToolContextProvider>
       </ActionsProvider>
     </DepRegistryProvider>,
@@ -87,8 +101,8 @@ describe('MenuBar keys', () => {
     setup();
     fireEvent.keyDown(document.body, altF);
     const menu = screen.getByRole('menu');
-    expect(rowNames()).toEqual(['More', 'New']);
-    expect(menu.getAttribute('aria-activedescendant')).toBe(screen.getByRole('menuitem', { name: 'More' }).id);
+    expect(rowNames()).toEqual(['New', 'Open']);
+    expect(menu.getAttribute('aria-activedescendant')).toBe(screen.getByRole('menuitem', { name: 'New' }).id);
   });
 
   it('opens nothing on Alt and a letter no title declares', () => {
@@ -97,15 +111,27 @@ describe('MenuBar keys', () => {
     expect(screen.queryByRole('menu')).toBeNull();
   });
 
+  it('opens nothing on Ctrl+Alt and a letter under the default chord', () => {
+    setup();
+    fireEvent.keyDown(document.body, { ...altF, ctrlKey: true });
+    expect(screen.queryByRole('menu')).toBeNull();
+  });
+
   it('takes the chord the host gives instead of Alt', () => {
-    setup({ ctrl: true, alt: true });
+    setup({ accessChord: { ctrl: true, alt: true } });
     fireEvent.keyDown(document.body, altF);
     expect(screen.queryByRole('menu')).toBeNull();
     fireEvent.keyDown(document.body, { ...altF, ctrlKey: true });
-    expect(rowNames()).toEqual(['More', 'New']);
+    expect(rowNames()).toEqual(['New', 'Open']);
   });
 
-  it('leaves an app key binding to run once with the bar mounted', () => {
+  it('routes its keys through a registry holding only its own two actions, none of the app’s', () => {
+    setup();
+    const own = mounted.find((o) => o.keyboard === 'first');
+    expect(own?.actions.list().map((a) => a.id).sort()).toEqual(['menu.bar', 'menu.open']);
+  });
+
+  it('runs an app key binding once, through the app, with the bar mounted', () => {
     setup();
     const mac = isApplePlatform();
     fireEvent.keyDown(document.body, { key: 'z', code: 'KeyZ', metaKey: mac, ctrlKey: !mac });
@@ -120,17 +146,7 @@ describe('MenuBar keys', () => {
   });
 
   it('leaves a disabled title’s access chord to the app', () => {
-    render(
-      <DepRegistryProvider>
-        <ActionsProvider>
-          <ActiveToolContextProvider>
-            {ACTIONS.map((a) => <Register key={a.id} action={a} />)}
-            <AppKeys />
-            <MenuBar schema={{ ...SCHEMA, children: { ...SCHEMA.children, on: pref.boolean('On', false), file: { ...SCHEMA.children.file!, enableIf: { path: 'on' } } } }} values={{ on: false }} />
-          </ActiveToolContextProvider>
-        </ActionsProvider>
-      </DepRegistryProvider>,
-    );
+    setup({ schema: FILE_GATED });
     fireEvent.keyDown(document.body, altF);
     expect(screen.queryByRole('menu')).toBeNull();
     expect(ran).toEqual(['app.find']);
@@ -142,22 +158,5 @@ describe('MenuBar keys', () => {
     act(() => input.focus());
     fireEvent.keyDown(input, altF);
     expect(screen.queryByRole('menu')).toBeNull();
-  });
-});
-
-describe('MenuBar focus after a dismiss', () => {
-  it('gives focus back, not to the title, when a wheel closes a menu after Escape closed only its submenu', () => {
-    const { file } = setup();
-    const before = screen.getByRole('button', { name: 'Before' });
-    act(() => before.focus());
-    act(() => file.focus());
-    fireEvent.keyDown(file, { key: 'ArrowDown' });
-    fireEvent.keyDown(screen.getByRole('menu'), { key: 'ArrowRight' });
-    expect(screen.getAllByRole('menu')).toHaveLength(2);
-    fireEvent.keyDown(document.activeElement!, { key: 'Escape' });
-    expect(screen.getAllByRole('menu')).toHaveLength(1);
-    fireEvent.wheel(document.body);
-    expect(screen.queryByRole('menu')).toBeNull();
-    expect(document.activeElement).toBe(before);
   });
 });

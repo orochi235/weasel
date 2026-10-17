@@ -17,17 +17,26 @@ const SCHEMA: PrefGroup = pref.group('', {
   edit: pref.group('Edit', { undo: pref.action('edit.undo') }, { as: 'menu' }),
 });
 
+/** File with a submenu first, so the first row opens it. */
+const WITH_SUBMENU: PrefGroup = pref.group('', {
+  file: pref.group('File', {
+    more: pref.group('More', { open: pref.action('file.open') }, { as: 'menu' }),
+    new: pref.action('file.new'),
+  }, { as: 'menu' }),
+  edit: SCHEMA.children.edit!,
+});
+
 function Register({ action }: { action: Action }) {
   useAction(action);
   return null;
 }
 
-function setup() {
+function setup(schema = SCHEMA) {
   render(
     <ActionsProvider>
       {ACTIONS.map((a) => <Register key={a.id} action={a} />)}
       <button type="button">Before</button>
-      <MenuBar schema={SCHEMA} />
+      <MenuBar schema={schema} />
     </ActionsProvider>,
   );
   return { file: screen.getByRole('menuitem', { name: 'File' }), edit: screen.getByRole('menuitem', { name: 'Edit' }) };
@@ -170,6 +179,38 @@ describe('MenuBar', () => {
     fireEvent.pointerDown(file);
     fireEvent.pointerUp(screen.getByRole('menuitem', { name: 'Open' }));
     expect(ran).toEqual(['file.open']);
+    expect(document.activeElement).toBe(before);
+  });
+});
+
+describe('MenuBar focus after a dismiss that is not Escape', () => {
+  /** Opens File's submenu from the keyboard, with focus first on Before, and closes only the submenu on Escape. */
+  async function escapeSubmenu() {
+    const { file } = setup(WITH_SUBMENU);
+    const before = screen.getByRole('button', { name: 'Before' });
+    act(() => before.focus());
+    act(() => file.focus());
+    fireEvent.keyDown(file, { key: 'ArrowDown' });
+    fireEvent.keyDown(screen.getByRole('menu'), { key: 'ArrowRight' });
+    expect(screen.getAllByRole('menu')).toHaveLength(2);
+    fireEvent.keyDown(document.activeElement!, { key: 'Escape' });
+    expect(screen.getAllByRole('menu')).toHaveLength(1);
+    // Past the Escape keydown's own task, as a later dismiss would be.
+    await act(() => new Promise((r) => setTimeout(r, 0)));
+    return before;
+  }
+
+  it('gives focus back, not to the title, when a wheel closes the menu', async () => {
+    const before = await escapeSubmenu();
+    fireEvent.wheel(document.body);
+    expect(screen.queryByRole('menu')).toBeNull();
+    expect(document.activeElement).toBe(before);
+  });
+
+  it('gives focus back, not to the title, when a window blur closes the menu', async () => {
+    const before = await escapeSubmenu();
+    fireEvent.blur(window);
+    expect(screen.queryByRole('menu')).toBeNull();
     expect(document.activeElement).toBe(before);
   });
 });

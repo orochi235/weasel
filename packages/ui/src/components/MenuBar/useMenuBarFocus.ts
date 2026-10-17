@@ -7,20 +7,21 @@ import { useEffect, useMemo, useRef, type FocusEvent } from 'react';
  */
 export function useMenuBarFocus(bar: { readonly current: HTMLElement | null }) {
   const returnTo = useRef<HTMLElement | null>(null);
-  // Whether the key or press now being handled is an Escape; read, and cleared, when a menu closes.
+  // True only while an Escape keydown is being handled; read when a menu closes.
   const escaped = useRef(false);
   useEffect(() => {
-    const key = (e: KeyboardEvent) => { escaped.current = e.key === 'Escape'; };
-    const press = () => { escaped.current = false; };
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const key = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      escaped.current = true;
+      clearTimeout(timer);
+      // A task, not a microtask: a native event runs microtasks between listeners, before the menu sees the key.
+      timer = setTimeout(() => { escaped.current = false; });
+    };
     window.addEventListener('keydown', key, true);
-    window.addEventListener('pointerdown', press, true);
-    window.addEventListener('pointerup', press, true);
-    window.addEventListener('wheel', press, { capture: true, passive: true });
     return () => {
       window.removeEventListener('keydown', key, true);
-      window.removeEventListener('pointerdown', press, true);
-      window.removeEventListener('pointerup', press, true);
-      window.removeEventListener('wheel', press, true);
+      clearTimeout(timer);
     };
   }, []);
 
@@ -31,7 +32,7 @@ export function useMenuBarFocus(bar: { readonly current: HTMLElement | null }) {
 function focusMoves(
   bar: { readonly current: HTMLElement | null },
   returnTo: { current: HTMLElement | null },
-  escaped: { current: boolean },
+  escaped: { readonly current: boolean },
 ) {
   const outside = (el: Element) => !bar.current?.contains(el) && !el.closest('[role="menu"]');
   const remember = (el: Element | null) => {
@@ -60,11 +61,9 @@ function focusMoves(
     leave,
     /** A menu has closed: if focus was in it, Escape puts it on the title and anything else leaves the bar. */
     closed: (title: HTMLElement | undefined) => {
-      const byEscape = escaped.current;
-      escaped.current = false;
       const el = document.activeElement;
       if (!el?.closest('[role="menu"]')) return;
-      if (byEscape) title?.focus();
+      if (escaped.current) title?.focus();
       else leave(el instanceof HTMLElement ? el : null);
     },
   };

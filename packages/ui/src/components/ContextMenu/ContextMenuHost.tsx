@@ -78,7 +78,6 @@ export function OpenPanels({ open, close, takeFocus = true, labelledBy, inside, 
       onClose: close,
       onEdge: (dir) => edge.current?.(dir),
     });
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- publishes the controller this effect creates
     setController(c);
     return () => c.dispose();
   }, [open, close]);

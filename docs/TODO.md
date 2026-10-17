@@ -845,8 +845,8 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 ## Selection, actions & UI panels
 
 - **(P2) Menus as layout assets, and a menu bar built from them.** `MenuBar`, access letters and
-  `MenuButton` on the context-menu renderer have landed. Left: arcs 2–3, WeaselDraw's menu bar
-  (file actions first) and labkit's (a lab-wide registry first)
+  `MenuButton` on the context-menu renderer have landed. Left: WeaselDraw's menu bar (file actions
+  first), then labkit's (a lab-wide registry first)
   (`docs/superpowers/specs/2026-10-16-menus-as-layout-assets-design.md`, "Consumers").
 
 - **(P3) The menu bar's default access chord, Alt, is unverified in Chrome on Windows, which may

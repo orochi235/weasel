@@ -1,6 +1,6 @@
 # Menus as layout assets, and a menu bar
 
-**Status: arc 1 built; arcs 2–3 (WeaselDraw's and labkit's menu bars) are not.** The shape, the
+**Status: the menu bar is built; WeaselDraw's menu bar, then labkit's, are not.** The shape, the
 resolver, `MenuDef` folded in, rect placement, `useCommand`, the asset editor's menu cases, access
 letters, `MenuButton` on the renderer and `MenuBar` are built; "Consumers" below is what remains.
 Carried in `docs/TODO.md` ("Menus as layout assets") until it lands. Delete this file when the rest
@@ -131,11 +131,11 @@ context menus.
 
 ## Order
 
-Each is its own arc, landing before the next starts. Arc 1 — `MenuBar`, access letters, and
-`MenuButton` onto the renderer — has landed; these remain:
+Each is its own arc, landing before the next starts. `MenuBar`, access letters, and `MenuButton`
+onto the renderer have landed; these remain, in this order:
 
-2. WeaselDraw: file actions, then its menu bar.
-3. labkit: the lab-wide registry and its lab-level commands, then its menu bar.
+- WeaselDraw: file actions, then its menu bar.
+- labkit: the lab-wide registry and its lab-level commands, then its menu bar.
 
 ## Left to the builder
 
