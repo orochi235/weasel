@@ -789,6 +789,28 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 ## Selection, actions & UI panels
 
+- **(P2) `ThemeProvider` drops a `selection.mode` that is not a concrete mode, with no warning.**
+  blits' site passed `selection={{ mode: 'auto' }}` and got the theme's default, dark, on a light
+  page; it now resolves the mode first with `useResolvedColorMode('auto')`. Either accept `'auto'`
+  there and resolve it, or warn in dev on a mode the theme does not have.
+
+- **(P2) labkit's control panels never set their own text color.** Dimmed labels inherit the
+  page's ink, so a light page puts dark text on a near-black panel — contrast about 1:1 on blits'
+  Patch page. blits works around it with `color: var(--wzl-fg)` on the provider's wrapper (blits
+  `ccda71e`, `site/src/styles/site.css`). The panel root should set `color` itself.
+
+- **(P3) An orbit dollies toward its target; a 2D camera zooms about the pointer.** The wheel over
+  a 2D trial keeps the point under the pointer still, and over an orbit trial it moves straight
+  in. Dollying toward the pointer means moving the target along the pick ray as the distance
+  shrinks (three.js's `zoomToCursor`), which changes what the next drag turns about — a design
+  call, not a fix.
+
+- **(P3) An orbit can't give away the press and keep the trackpad pinch.** An instrument running
+  its own dispatcher over the viewport sets `gestures: { drag: false, home: false, pinch: false }`
+  (`examples/3d-lab`), because `pinch` covers two fingers too and those are pointers. That also
+  drops ctrl+wheel and Safari's pinch, which never touch the pointer channel. Splitting `pinch`
+  into the trackpad's and the touch screen's would keep them.
+
 - **(P3) The asset editor's preview of the menu bar shows fewer rows than the app.**
   `RegistryProbe` mounts `<SceneCanvas features={['draw']}>` with no `ambient` and no
   `useFileCommands`, so `file.*` and the app's `view.*` toggles are never registered and File, and

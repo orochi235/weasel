@@ -25,9 +25,9 @@ export interface RenderContext<TS = unknown, TC = unknown> {
    *  into it. */
   trial: TrialInfo & {
     setView: (next: unknown) => void;
-    /** The camera's magnification over `view`, 1 where it opened at actual
-     *  size: a 2D view's own zoom, or an orbit's opening distance over its
-     *  distance now. Reads 1 and writes nothing with no camera. */
+    /** The camera's magnification: a 2D view's zoom, or an orbit's opening
+     *  distance over its distance now. Reads 1 and writes nothing with no
+     *  camera. */
     zoom: number;
     setZoom: (z: number) => void;
     /** Resolved active tool: this trial's slot, or the lab's. Null when neither
@@ -46,7 +46,8 @@ export interface RenderContext<TS = unknown, TC = unknown> {
      * `get()` answers `{ worldX, worldY, viewId }`, where `viewId` is
      * `'stage'` over the trial's own camera and `'overview'` over its
      * `<TrialOverview>`, or `null` when it is over neither. A key handler
-     * reading it works over either view.
+     * reading it works over either view. An orbit has no world point under
+     * the pointer, so over one this stays `null`.
      */
     pointer: PointerContextValue;
     /** The trial's clock, present when the instrument declares `clock`. */

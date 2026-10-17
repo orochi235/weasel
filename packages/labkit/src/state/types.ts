@@ -21,8 +21,9 @@ export interface TrialRecord<TS = unknown, TC = unknown, TV = unknown> {
   instrumentName: string;
   config: TC;
   state: TS;
-  /** Opaque to labkit: persisted, restored on Reset and handed to the instrument,
-   *  but never read into. A 3D lab puts an orbit here and keeps all three. */
+  /** The trial's camera, in the shape the instrument's camera keeps it — a 2D
+   *  `ViewTransform`, or an orbit's `Camera3d`. Persisted, copied by Clone and
+   *  restored on Reset; `null` until a camera placed by its size is measured. */
   view: TV;
   /** The config `addTrial` opened this trial on, overlaid on the instrument's
    *  defaults. Kept so Reset restores the trial's own subject rather than the
