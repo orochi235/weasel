@@ -3,11 +3,11 @@
  * outline, ports and marks of a diagram data node; a look adds the id and the
  * style. All of them read left to right: signal in on the left, exits on the right.
  */
-import type { DataNode } from '../fromData';
+import type { DataNode, NodeStyle } from '../fromData';
 import type { DataMark } from '../marks';
 import type { PortAnchor, PortSpec } from '../types';
 import { splitProblem } from './check';
-import { isControl } from './draw';
+import { isControl, stageStyle } from './draw';
 import type { EffectPipeline, EffectPort, EffectStage } from './types';
 
 /** Which symbol a decision draws as: one by name, or `'auto'` for a bar when
@@ -20,6 +20,12 @@ export interface BranchOptions {
   /** The edge control inputs enter by: the side the stages driving them sit
    *  on. Default `'top'`. */
   controlSide?: 'top' | 'bottom';
+  /** The style the look draws the stage's node in: lines, dots and ticks
+   *  take its `text` color. Default `stageStyle(stage)`. */
+  style?: NodeStyle;
+  /** The colors of a `bar`'s bands, lowest first, repeating. Default a
+   *  palette of four, or for a bypassed stage `style.stroke` for every band. */
+  tints?: readonly string[];
 }
 /** Draws one decision stage, with a port for each of its inputs and outputs. */
 export type BranchSymbol = (stage: EffectStage, pipeline: EffectPipeline, options?: BranchOptions) => BranchNode;
@@ -68,6 +74,8 @@ const diamond: BranchSymbol = (stage, pipeline, options) => {
 
 const BAND_TINTS = ['#c58bff', '#6fb3ff', '#5ad07f', '#f2c14e'];
 
+const styleOf = (stage: EffectStage, options: BranchOptions | undefined): NodeStyle => options?.style ?? stageStyle(stage);
+
 /** `bar` needs a sound split to band. */
 const canBar = (stage: EffectStage): stage is EffectStage & { split: NonNullable<EffectStage['split']> } =>
   stage.split !== undefined && splitProblem(stage) === null;
@@ -79,12 +87,15 @@ const bar: BranchSymbol = (stage, pipeline, options) => {
   const cuts = stage.split.at;
   const exits = stage.outputs ?? [];
   const n = exits.length;
+  const style = styleOf(stage, options);
+  const ink = style.text;
+  const tints = options?.tints ?? (stage.bypassed === true ? [style.stroke] : BAND_TINTS);
   const marks: DataMark[] = [];
   exits.forEach((_, i) => {
     const top = 1 - (i + 1) / n;
-    marks.push({ d: `M0 ${top} H1 V${1 - i / n} H0 Z`, fill: BAND_TINTS[i % BAND_TINTS.length]!, opacity: 0.3 });
+    marks.push({ d: `M0 ${top} H1 V${1 - i / n} H0 Z`, fill: tints[i % tints.length]!, opacity: 0.3 });
   });
-  cuts.forEach((_, k) => marks.push({ d: `M-0.25 ${1 - (k + 1) / n} H1.25`, stroke: '#dbe7f2' }));
+  cuts.forEach((_, k) => marks.push({ d: `M-0.25 ${1 - (k + 1) / n} H1.25`, stroke: ink }));
   cuts.forEach((cut, k) => marks.push({
     text: String(cut), at: { u: 0, v: 1 - (k + 1) / n }, self: { u: 1, v: 0.5 }, offset: { x: -10, y: 0 },
   }));
@@ -123,6 +134,7 @@ const dot = (cx: number, cy: number, r: number): string =>
 const switchSymbol: BranchSymbol = (stage, pipeline, options) => {
   if (!canSwitch(stage)) return diamond(stage, pipeline, options);
   const exits = stage.outputs ?? [];
+  const ink = styleOf(stage, options).text;
   return {
     outline: 'rect',
     lines: [],
@@ -134,11 +146,11 @@ const switchSymbol: BranchSymbol = (stage, pipeline, options) => {
       ...exits.map((p, i): PortSpec => ({ id: p.id, type: p.type, at: { u: 1, v: i === 0 ? 0.25 : 0.75 } })),
     ],
     marks: [
-      { d: 'M0 0.5 H0.2 M0.8 0.25 H1 M0.8 0.75 H1', stroke: '#dbe7f2' },
-      { d: 'M0.2 0.5 L0.78 0.27', stroke: '#dbe7f2', strokeWidth: 2.5 },
-      { d: dot(0.2, 0.5, 0.07), fill: '#dbe7f2' },
-      { d: dot(0.8, 0.25, 0.07), fill: '#dbe7f2' },
-      { d: dot(0.8, 0.75, 0.07), stroke: '#dbe7f2' },
+      { d: 'M0 0.5 H0.2 M0.8 0.25 H1 M0.8 0.75 H1', stroke: ink },
+      { d: 'M0.2 0.5 L0.78 0.27', stroke: ink, strokeWidth: 2.5 },
+      { d: dot(0.2, 0.5, 0.07), fill: ink },
+      { d: dot(0.8, 0.25, 0.07), fill: ink },
+      { d: dot(0.8, 0.75, 0.07), stroke: ink },
       title(stage),
     ],
   };

@@ -64,6 +64,16 @@ describe('branch symbols', () => {
     expect(bottom(steered, 'x', 'bar').v).toBe(1);
   });
 
+  it('draws a symbol\'s marks in its node style\'s text color, and a bypassed one dim', () => {
+    const colors = (node: ReturnType<typeof branchNode>) => new Set(node.marks!.flatMap((m) =>
+      ('d' in m ? [m.stroke, m.fill] : [m.color]).filter((c): c is string => c !== undefined)));
+    const ink = { fill: '#000', stroke: '#111', text: '#123456' };
+    expect(colors(branchNode(yesNo, P, 'switch', { style: ink }))).toEqual(new Set(['#123456']));
+    const bypassed = colors(branchNode({ ...bands, bypassed: true }, P, 'bar'));
+    expect(bypassed.has('#dbe7f2')).toBe(false);
+    expect([...colors(branchNode(bands, P, 'bar', { style: ink, tints: ['#abcdef'] }))].sort()).toEqual(['#123456', '#abcdef']);
+  });
+
   it('stacks a bar\'s bands lowest at the bottom, with a tick and its value at each cut', () => {
     const node = branchNode(bands, P, 'bar');
     expect(port(bands, 'low', 'bar').at.v).toBeCloseTo(5 / 6, 6);

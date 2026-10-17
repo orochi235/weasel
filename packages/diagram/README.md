@@ -245,8 +245,9 @@ nodes stand; `'force'` relaxes live.
 
 Labels paint only in a registered font family, and the default is
 sans-serif, so call `registerCanvasFont('sans-serif')` once or they render
-blank. `minScale` stops the initial fit from shrinking a wide diagram past
-readable; the rest is a pan away.
+blank. The view opens fitted to the diagram and fits again when `width` or
+`height` changes, until the user pans or zooms. `minScale` stops the fit from
+shrinking a wide diagram past readable; the rest is a pan away.
 
 ### Effect charts
 
@@ -418,7 +419,10 @@ signal enters on the left; inputs of a `control` type enter at the top, and so
 does the input a `'bar'` tests, when the stage has more than one input. A symbol
 takes `{ controlSide: 'bottom' }` to bring those inputs in at the bottom instead,
 and `rack` passes it with `side: 'below'`, so a control wire comes straight up from
-the stage driving it.
+the stage driving it. A symbol's lines, dots and ticks are drawn in the `text` color of
+`{ style }` (default `stageStyle(stage)`, so a bypassed decision draws dim), and a
+`'bar'`'s bands in `{ tints }`, lowest first; a bypassed bar's bands default to its
+style's `stroke`.
 
 To write a look, return `{ data, scene, color }`, and `exits` if it draws a
 decision as something other than itself; `scene` takes any
@@ -437,7 +441,7 @@ exported for yours:
 | `portOn(stage, id)` | The stage's port with that id. |
 | `stageRows(stage, { showParams, withPorts, showValues })` | Body rows for a stage: its title, a row of its ports, a value row per output (`valueRowId(port)`, showing `NO_VALUE`), its params. |
 | `exitLabel(wire)` | What to call one of `drawableWires`' wires: its own label, or for a wire leaving a decision the exit's label or id. |
-| `branchNode(stage, pipeline, branch, { controlSide })` | The node a decision draws as. |
+| `branchNode(stage, pipeline, branch, { controlSide, style, tints })` | The node a decision draws as. |
 
 ```tsx
 import {
