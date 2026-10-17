@@ -16,26 +16,24 @@ import { createReflectable, type ReflectedEntry, type Reflection } from '@weasel
 import { getPaintDrawKind, registerPaintDrawKind, registerPaintDrawKindLoader } from '@weasel-js/renderer';
 import { _resetPaintDrawKindsForTests } from '@weasel-js/renderer/test-seams';
 import type { PaintKind, PaintKindEntry, PaintKindFamily } from './paintKindEntry';
-import type { IconRef } from '@weasel-js/icons';
-import { icon } from '../../icons.gen';
 
 /** The family the built-in tiles and `texture` are offered under. A consumer's
  *  own pattern kind joins it by naming this as its `family`. */
-export const patternFamily: PaintKindFamily = { id: 'pattern', label: 'Pattern', icon: icon('ui:paintPattern') };
+export const patternFamily: PaintKindFamily = { id: 'pattern', label: 'Pattern', icon: /* @icon */ 'ui:paintPattern' };
 
 const BUILTINS: readonly PaintKindEntry[] = [
   {
     id: 'solid',
     label: 'Solid',
-    icon: icon('ui:paintSolid'),
+    icon: /* @icon */ 'ui:paintSolid',
     seed: (color) => ({ color }),
     colorOf: (paint) => ((paint.kind ?? 'solid') === 'solid'
       ? (paint as { color: string }).color
       : undefined),
   },
-  gradientKind('linear-gradient', 'Linear', icon('ui:paintLinear')),
-  gradientKind('radial-gradient', 'Radial', icon('ui:paintRadial')),
-  gradientKind('conic-gradient', 'Conic', icon('ui:paintConic')),
+  gradientKind('linear-gradient', 'Linear', /* @icon */ 'ui:paintLinear'),
+  gradientKind('radial-gradient', 'Radial', /* @icon */ 'ui:paintRadial'),
+  gradientKind('conic-gradient', 'Conic', /* @icon */ 'ui:paintConic'),
   tileKind('hatch', 'Hatch'),
   tileKind('crosshatch', 'Crosshatch'),
   tileKind('dots', 'Dots'),
@@ -70,11 +68,11 @@ export function seedTile(kind: TileKind, color: string): TilePaint {
     : { kind, color, units: 'bounds' };
 }
 
-function gradientKind(id: GradientKind, label: string, glyph: IconRef): PaintKindEntry {
+function gradientKind(id: GradientKind, label: string, icon: string): PaintKindEntry {
   return {
     id,
     label,
-    icon: glyph,
+    icon,
     // `bounds` units make the seed independent of the node's actual size.
     seed: (color) => gradientForBounds(id, UNIT_BOX, twoStopRamp(color), 'bounds'),
     colorOf: (paint) => (paint as Partial<GradientPaint>).stops?.[0]?.color,
