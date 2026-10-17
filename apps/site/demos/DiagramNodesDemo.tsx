@@ -19,7 +19,7 @@ const NODES: DataNode[] = [
       { kind: 'field', label: 'mode', value: 'bilinear' },
     ],
   },
-  { id: 'load', at: { x: 300, y: 200 }, width: 170, height: 50, outline: 'parallelogram', lines: ['read frame'] },
+  { id: 'load', at: { x: 300, y: 200 }, width: 170, height: 50, outline: 'parallelogram', lines: ['read frame'], portLabels: { s: 'pixels' } },
 ];
 
 export function DiagramNodesDemo() {
