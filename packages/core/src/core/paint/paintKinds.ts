@@ -16,6 +16,7 @@ import { createReflectable, type ReflectedEntry, type Reflection } from '@weasel
 import { getPaintDrawKind, registerPaintDrawKind, registerPaintDrawKindLoader } from '@weasel-js/renderer';
 import { _resetPaintDrawKindsForTests } from '@weasel-js/renderer/test-seams';
 import type { PaintKind, PaintKindEntry, PaintKindFamily } from './paintKindEntry';
+import type { IconRef } from '@weasel-js/icons';
 import { icon } from '../../icons.gen';
 
 /** The family the built-in tiles and `texture` are offered under. A consumer's
@@ -69,7 +70,7 @@ export function seedTile(kind: TileKind, color: string): TilePaint {
     : { kind, color, units: 'bounds' };
 }
 
-function gradientKind(id: GradientKind, label: string, icon: string): PaintKindEntry {
+function gradientKind(id: GradientKind, label: string, icon: IconRef): PaintKindEntry {
   return {
     id,
     label,
