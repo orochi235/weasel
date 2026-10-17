@@ -12,17 +12,18 @@ An icon's name is qualified: `namespace:name`, as in `core:undo`, `ui:close`,
 literal fails the typecheck there.
 
 ```ts
+// in ui, which depends on core
 import { icon } from '../icons.gen';
 
-icon('undo');      // in core: 'core:undo'
-icon('ui:close');  // another namespace is always written qualified
+icon('close');      // 'ui:close'
+icon('core:undo');  // another namespace is always written qualified
 ```
 
 A bare name means the calling package's own namespace and nothing else; there is no search. Every
 qualified name is a key of the `IconName` interface in `@weasel-js/icons`, which each package's
 generated `icons.gen.ts` extends, so a package can write another namespace's names only when it
-depends on that package. So a glyph core names is drawn in core, never in ui: the stroke, paint
-and text-styling glyphs core's properties use live there.
+depends on that package. Core cannot name a ui glyph, so every glyph core names is drawn in core,
+including the stroke, paint and text-styling glyphs its properties use.
 
 A string that arrives at run time, such as a prefs schema loaded from JSON, becomes a ref through
 `toIconRef(value)`, which returns `undefined` for anything not qualified.
@@ -53,8 +54,9 @@ declares a namespace and owner and no groups, so their `icon()` takes qualified 
    `[label, set, { tags }?]`. `tags` maps a glyph's key to search tags. Group order is gallery
    order; path order within a glyph is z-order.
 3. Run `npm run gen:icons`. It writes each package's `src/icons.gen.ts` (its `icon()`, its
-   `IconName` keys and `ICON_GROUPS`), `src/icons.table.json` and `src/icons.table.ts`, and
-   fails on a namespace declared twice or a name drawn twice, differently, in one namespace.
+   `IconName` keys and `ICON_GROUPS`), `src/icons.table.json` and `src/icons.table.ts` (at the
+   root itself when it has no `src/`), and `apps/site/icons.manifest.json`. It fails on a
+   namespace declared twice or a name drawn twice, differently, in one namespace.
 4. Name it: `icon('newName')`.
 
 A new package that draws glyphs also needs an `./icons` export pointing at its built table module
@@ -90,7 +92,7 @@ Core supplies the React side:
 | Mount | Registry |
 |---|---|
 | `<IconRegistryProvider icons variants>` | A registry of its own, seeded with `icons` |
-| `<WeaselProvider icons iconVariants>` | The same, inside the provider stack |
+| `<WeaselProvider icons iconVariants>` | The same, around the provider stack. `isolate` leaves the registry alone |
 | `<WeaselProvider>` without either, or `<SceneCanvas>` | An empty one, only when none is in scope |
 
 An app mounts `IconRegistryProvider` at its root, not `WeaselProvider`: a root `WeaselProvider`
@@ -160,14 +162,14 @@ In the dev server and under vitest, `virtual:weasel-icons` holds every table the
 vite pre-bundles `node_modules` with esbuild, which never runs the plugin's hooks, so the kit's
 refs are invisible there.
 
-Measured on WeaselDraw's production build at `46e968c97`:
+Chunk sizes from `npm run build:draw` at `46e968c97`. The last column is what the variant would
+weigh, gzipped, if it held only names, groups and tags, with bodies and fills stripped; no build
+emits that.
 
-| Variant | Raw | Gzip | Gzip, names, groups and tags only |
+| Variant | Raw | Gzip | Gzip without bodies and fills (hypothetical) |
 |---|---:|---:|---:|
 | `/all` (core, ui, path-tools, draw) | 156,520 B | 27,688 B | 3,227 B |
 | `/draw` | 7,875 B | 1,289 B | 237 B |
-
-No metadata-only catalog chunk is built: a variant ships names and bodies together.
 
 An app outside this repo that writes icon names gives the plugin the same shape gen:icons
 writes here: a module named `icons.gen.ts` holding

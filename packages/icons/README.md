@@ -1,8 +1,8 @@
 # @weasel-js/icons
 
 Namespaced icon names (`namespace:name`), the icon registry, and the build plugin that ships only
-the glyphs a build names. No React, no DOM, no glyphs of its own: each weasel package publishes its
-own table, at `@weasel-js/<package>/icons`.
+the glyphs a build names. No React, no DOM, no glyphs of its own: each weasel package that draws glyphs
+publishes its own table, at `@weasel-js/<package>/icons`.
 
 | Export | What it is |
 |---|---|

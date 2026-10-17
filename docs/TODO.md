@@ -543,10 +543,6 @@ Priority tags:
   `camera.mjs`). The straight arrows drawn before the 45-degree rule in CLAUDE.md ("Drawing
   icons") still use spreads of 36 to 42.
 
-- **(P4) `gen:icons` writes `apps/site/icons.manifest.json`, and nothing reads it.** It lists
-  every drawn glyph's namespace, name, group and tags, meant for the site's icon gallery. Either
-  the gallery reads it or the generator stops writing it (`packages/icons/scripts/gen-icons.mjs`).
-
 - **(P3) Text: an emoji is a bitmap baked at one size.** A color glyph is rasterized at the canvas
   tier's `BAKE_SIZE` (48px) and mipmapped, so it is sharp at or below that on screen and blurs
   above it: a 96px heading, or body text zoomed past 4x. A distance field has no such limit and
@@ -556,6 +552,10 @@ Priority tags:
   color pages empty together with the field pages when either set fills (`reclaim` in
   `packages/font/src/dynamic/bakeQueue.ts`), and one 384px emoji takes the room of sixty at 48.
   Whether the result is sharp can only be read in a browser.
+
+- **(P4) `gen:icons` writes `apps/site/icons.manifest.json`, and nothing reads it.** It lists
+  every drawn glyph's namespace, name, group and tags. Either something reads it or the generator
+  stops writing it (`packages/icons/scripts/gen-icons.mjs`).
 
 ---
 
