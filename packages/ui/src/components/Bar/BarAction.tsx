@@ -8,8 +8,10 @@ import s from './Bar.module.css';
 /** Props for {@link BarActionButton}. */
 export interface BarActionButtonProps {
   label: string;
+  /** What the tooltip reads in place of the label. */
+  description?: string;
   icon?: ReactNode;
-  /** The keys that fire the action, read after the label in the tooltip. */
+  /** The keys that fire the action, read after the label or description in the tooltip. */
   shortcut?: string;
   /** Read the label beside the icon. A button with no icon reads it regardless. */
   labeled?: boolean;
@@ -29,19 +31,20 @@ export interface BarActionButtonProps {
 }
 
 /**
- * A bar's button for one action: its icon, with the label and shortcut in a
- * tooltip. What `BarAction` draws for a leaf and `ActionBar` for a registry
+ * A bar's button for one action: its icon, with the label (or description)
+ * and shortcut in a tooltip. What `BarAction` draws for a leaf and `ActionBar` for a registry
  * entry.
  */
 export function BarActionButton(props: BarActionButtonProps) {
-  const { label, icon, shortcut, row = false, disabled = false, active, missing, onPress, disabledReason } = props;
+  const { label, description, icon, shortcut, row = false, disabled = false, active, missing, onPress, disabledReason } = props;
+  const told = description || label;
   const labeled = row || props.labeled === true;
   const dead = missing !== undefined;
   const explained = dead || (disabled && disabledReason !== undefined);
   const tip = dead
     ? `${label}: no action “${missing}”`
     : disabled && disabledReason !== undefined ? `${label}: ${disabledReason}`
-    : shortcut ? `${label} (${shortcut})` : label;
+    : shortcut ? `${told} (${shortcut})` : told;
   const words = labeled || icon == null;
   return (
     // A dead or explained button keeps its tooltip, which is the only thing that says why.
@@ -73,5 +76,5 @@ export function BarActionButton(props: BarActionButtonProps) {
 /** An `action` leaf as a bar's cell: an icon button, or icon and label for `control: 'button'`. */
 export function BarAction({ leaf, path, disabled }: { leaf: PrefAction; path: string; disabled?: boolean }) {
   const { press, ...button } = useLeafAction(leaf, path, disabled);
-  return <BarActionButton {...button} labeled={leaf.control === 'button'} onPress={press} />;
+  return <BarActionButton {...button} description={leaf.description} labeled={leaf.control === 'button'} onPress={press} />;
 }

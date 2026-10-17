@@ -24,9 +24,9 @@ export interface CommandBarProps {
 
 const FILE_BAR = pref.group('', {
   new: FILE_NEW_MENU,
-  open: pref.action(FILE_ACTIONS.open),
-  import: pref.action(FILE_ACTIONS.import),
-  save: pref.action(FILE_ACTIONS.save),
+  open: pref.action(FILE_ACTIONS.open, { description: 'Open SVG…' }),
+  import: pref.action(FILE_ACTIONS.import, { description: 'Add an SVG to this document…' }),
+  save: pref.action(FILE_ACTIONS.save, { description: 'Save as SVG' }),
 }, { as: 'bar' });
 
 const KIT_GROUPS = ['history', 'clipboard', 'edit', 'structure'] as const;

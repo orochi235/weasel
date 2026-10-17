@@ -7,7 +7,11 @@ import { saveSvgFile, type SavedDoc } from './saveSvg';
 export const FILE_ACTIONS = { new: 'file.new', open: 'file.open', import: 'file.import', save: 'file.save' } as const;
 
 /** New, opening onto one row per paper size: the command bar's and the File menu's. */
-export const FILE_NEW_MENU: PrefGroup = pref.group('New', { sizes: pref.action(FILE_ACTIONS.new) }, { as: 'menu' });
+export const FILE_NEW_MENU: PrefGroup = pref.group(
+  'New',
+  { sizes: pref.action(FILE_ACTIONS.new) },
+  { as: 'menu', description: 'New document' },
+);
 
 /** The document the file commands read and write. */
 export interface FileCommandsTarget extends OpenSvgTarget, SavedDoc {}

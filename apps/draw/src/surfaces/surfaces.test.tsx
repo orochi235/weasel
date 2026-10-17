@@ -41,7 +41,6 @@ function Register({ a }: { a: Action }) {
   return null;
 }
 
-
 function App() {
   return (
     <ActionsProvider>

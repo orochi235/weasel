@@ -12,7 +12,7 @@ import s from './Prefs.module.css';
 export function PrefActionButton({ pref, path, disabled: off }: { pref: PrefAction; path: string; disabled?: boolean }) {
   const { press, reason, ...button } = useLeafAction(pref, path, off);
   const iconOnly = pref.control === 'icon' && button.icon != null;
-  return <BarActionButton {...button} row={!iconOnly} disabledReason={reason} onPress={press} />;
+  return <BarActionButton {...button} description={pref.description} row={!iconOnly} disabledReason={reason} onPress={press} />;
 }
 
 /** An `actions` leaf in a panel: one {@link PrefActionButton} row per entry of its registry group. */
