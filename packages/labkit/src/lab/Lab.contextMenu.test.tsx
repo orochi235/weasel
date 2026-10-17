@@ -2,6 +2,7 @@ import { act, fireEvent, screen } from '@testing-library/react';
 import type { MenuDef } from '@weasel-js/core';
 import { pref } from '@weasel-js/prefs';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
+import { withIcons } from '@weasel-js/ui/testing/withIcons';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { defineInstrument } from '../instrument/defineInstrument';
 import { Lab } from './Lab';
@@ -40,6 +41,7 @@ function mount(props: Partial<LabProps> = {}) {
     <Lab {...({ instruments: [Staged], defaultInstrument: 'Staged', ...props } as LabProps)}>
       <Grab />
     </Lab>,
+    { wrapper: withIcons },
   );
 }
 

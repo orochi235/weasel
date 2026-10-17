@@ -1,32 +1,32 @@
-import { render } from '@testing-library/react';
+import { renderWithIcons } from '../../testing/withIcons';
 import { KeyCap } from './Keycap';
 import { KeySequence } from './Keycaps';
 import { keySpecFromKey, keySpecsFromMods, type Platform } from './keySpecsFromMods';
 
 describe('KeyCap', () => {
   it('renders the label as a <kbd>', () => {
-    const { container } = render(<KeyCap label="K" />);
+    const { container } = renderWithIcons(<KeyCap label="K" />);
     const kbd = container.querySelector('kbd');
     expect(kbd?.textContent).toBe('K');
   });
 
   it('tags modifier glyphs with data-kind="modifier"', () => {
-    const { container } = render(<KeyCap label="⌘" />);
+    const { container } = renderWithIcons(<KeyCap label="⌘" />);
     expect(container.querySelector('kbd')?.getAttribute('data-kind')).toBe('modifier');
   });
 
   it('tags wide glyphs (tab/enter/space) with data-kind="wide"', () => {
-    const { container } = render(<KeyCap label="␣" />);
+    const { container } = renderWithIcons(<KeyCap label="␣" />);
     expect(container.querySelector('kbd')?.getAttribute('data-kind')).toBe('wide');
   });
 
   it('tags ordinary glyphs with data-kind="square"', () => {
-    const { container } = render(<KeyCap label="K" />);
+    const { container } = renderWithIcons(<KeyCap label="K" />);
     expect(container.querySelector('kbd')?.getAttribute('data-kind')).toBe('square');
   });
 
   it('draws a symbol legend as an icon, keeping its character as hidden text', () => {
-    const kbd = render(<KeyCap label="⌘" />).container.querySelector('kbd')!;
+    const kbd = renderWithIcons(<KeyCap label="⌘" />).container.querySelector('kbd')!;
     expect(kbd.querySelector('svg')).not.toBeNull();
     expect(kbd.textContent).toBe('⌘');
   });
@@ -42,56 +42,56 @@ describe('KeyCap', () => {
       }
     }
     const symbols = [...labels].filter((l) => /[^\x20-\x7e]/.test(l));
-    const unDrawn = symbols.filter((l) => !render(<KeyCap label={l} />).container.querySelector('kbd svg'));
+    const unDrawn = symbols.filter((l) => !renderWithIcons(<KeyCap label={l} />).container.querySelector('kbd svg'));
     expect(unDrawn).toEqual([]);
   });
 
   it('leaves a plain-text legend as text', () => {
-    const kbd = render(<KeyCap label="Ctrl" />).container.querySelector('kbd')!;
+    const kbd = renderWithIcons(<KeyCap label="Ctrl" />).container.querySelector('kbd')!;
     expect(kbd.querySelector('svg')).toBeNull();
     expect(kbd.textContent).toBe('Ctrl');
   });
 
   it('marks function keys F1 to F24 with data-fn, and nothing else', () => {
-    const fn = (label: string) => render(<KeyCap label={label} />).container.querySelector('kbd')!.hasAttribute('data-fn');
+    const fn = (label: string) => renderWithIcons(<KeyCap label={label} />).container.querySelector('kbd')!.hasAttribute('data-fn');
     expect(['F1', 'F9', 'F12', 'F24'].map(fn)).toEqual([true, true, true, true]);
     expect(['F', 'F0', 'F25', 'fn', 'FN', 'F1a'].map(fn)).toEqual([false, false, false, false, false, false]);
   });
 
   it('applies data-inverted when inverted prop is true', () => {
-    const { container } = render(<KeyCap label="K" inverted />);
+    const { container } = renderWithIcons(<KeyCap label="K" inverted />);
     expect(container.querySelector('kbd')?.hasAttribute('data-inverted')).toBe(true);
   });
 
   it('omits data-inverted by default', () => {
-    const { container } = render(<KeyCap label="K" />);
+    const { container } = renderWithIcons(<KeyCap label="K" />);
     expect(container.querySelector('kbd')?.hasAttribute('data-inverted')).toBe(false);
   });
 
   it('omits data-variant for the default variant', () => {
-    const { container } = render(<KeyCap label="K" />);
+    const { container } = renderWithIcons(<KeyCap label="K" />);
     expect(container.querySelector('kbd')?.hasAttribute('data-variant')).toBe(false);
   });
 
   it('tags data-variant="inverse" when variant="inverse"', () => {
-    const { container } = render(<KeyCap label="K" variant="inverse" />);
+    const { container } = renderWithIcons(<KeyCap label="K" variant="inverse" />);
     expect(container.querySelector('kbd')?.getAttribute('data-variant')).toBe('inverse');
   });
 
   it('omits inline font-family by default (inherits CSS-var token)', () => {
-    const { container } = render(<KeyCap label="K" />);
+    const { container } = renderWithIcons(<KeyCap label="K" />);
     const kbd = container.querySelector('kbd') as HTMLElement;
     expect(kbd.style.fontFamily).toBe('');
   });
 
   it('applies font as inline font-family when the prop is set', () => {
-    const { container } = render(<KeyCap label="K" font="Roboto Mono" />);
+    const { container } = renderWithIcons(<KeyCap label="K" font="Roboto Mono" />);
     const kbd = container.querySelector('kbd') as HTMLElement;
     expect(kbd.style.fontFamily).toMatch(/Roboto Mono/);
   });
 
   it('still surfaces data-inverted under variant="inverse"', () => {
-    const { container } = render(<KeyCap label="K" variant="inverse" inverted />);
+    const { container } = renderWithIcons(<KeyCap label="K" variant="inverse" inverted />);
     const kbd = container.querySelector('kbd');
     expect(kbd?.hasAttribute('data-inverted')).toBe(true);
     expect(kbd?.getAttribute('data-variant')).toBe('inverse');
@@ -104,23 +104,23 @@ describe('KeySequence', () => {
   }
 
   it('renders an em-dash when keys is undefined', () => {
-    const { container } = render(<KeySequence keys={undefined} />);
+    const { container } = renderWithIcons(<KeySequence keys={undefined} />);
     expect(container.textContent).toBe('—');
     expect(chips(container)).toHaveLength(0);
   });
 
   it('renders an em-dash when keys is empty', () => {
-    const { container } = render(<KeySequence keys={[]} />);
+    const { container } = renderWithIcons(<KeySequence keys={[]} />);
     expect(container.textContent).toBe('—');
   });
 
   it('renders one KeyCap per entry, in order, when all are non-modifiers', () => {
-    const { container } = render(<KeySequence keys={[{ label: 'A' }, { label: 'B' }]} />);
+    const { container } = renderWithIcons(<KeySequence keys={[{ label: 'A' }, { label: 'B' }]} />);
     expect(chips(container).map((c) => c.textContent)).toEqual(['A', 'B']);
   });
 
   it('inverts only entries marked optional', () => {
-    const { container } = render(
+    const { container } = renderWithIcons(
       <KeySequence keys={[{ label: '⌘', optional: true }, { label: 'K' }]} />,
     );
     const cs = chips(container);
@@ -129,14 +129,14 @@ describe('KeySequence', () => {
   });
 
   it('always renders modifiers first even when given out of order', () => {
-    const { container } = render(
+    const { container } = renderWithIcons(
       <KeySequence keys={[{ label: 'K' }, { label: '⌘' }, { label: '⇧' }]} joins="none" />,
     );
     expect(chips(container).map((c) => c.textContent)).toEqual(['⌘', '⇧', 'K']);
   });
 
   it('preserves relative order within modifiers and within non-modifiers', () => {
-    const { container } = render(
+    const { container } = renderWithIcons(
       <KeySequence
         keys={[{ label: 'B' }, { label: '⌥' }, { label: 'A' }, { label: '⌘' }]}
         joins="none"
@@ -146,19 +146,19 @@ describe('KeySequence', () => {
   });
 
   it('defaults the separator to "+"', () => {
-    const { container } = render(<KeySequence keys={[{ label: '⌘' }, { label: 'K' }]} />);
+    const { container } = renderWithIcons(<KeySequence keys={[{ label: '⌘' }, { label: 'K' }]} />);
     expect(container.textContent).toBe('⌘+K');
   });
 
   it('honors a custom separator string', () => {
-    const { container } = render(
+    const { container } = renderWithIcons(
       <KeySequence keys={[{ label: '⌘' }, { label: 'K' }]} separator=" then " />,
     );
     expect(container.textContent).toBe('⌘ then K');
   });
 
   it('suppresses the separator with joins="none"', () => {
-    const { container } = render(
+    const { container } = renderWithIcons(
       <KeySequence keys={[{ label: '⌘' }, { label: 'K' }]} joins="none" />,
     );
     expect(container.textContent).toBe('⌘K');
@@ -167,30 +167,30 @@ describe('KeySequence', () => {
 
   it('joins="key" (the default) separates the modifiers from the key', () => {
     const keys = [{ label: '⌘' }, { label: '⇧' }, { label: 'K' }];
-    const a = render(<KeySequence keys={keys} />);
+    const a = renderWithIcons(<KeySequence keys={keys} />);
     expect(a.container.textContent).toBe('⌘⇧+K');
     a.unmount();
-    const b = render(<KeySequence keys={keys} joins="key" />);
+    const b = renderWithIcons(<KeySequence keys={keys} joins="key" />);
     expect(b.container.textContent).toBe('⌘⇧+K');
   });
 
   it('joins="key" puts a separator before every non-modifier', () => {
-    const { container } = render(
+    const { container } = renderWithIcons(
       <KeySequence keys={[{ label: '⌘' }, { label: 'K' }, { label: 'L' }]} joins="key" />,
     );
     expect(container.textContent).toBe('⌘+K+L');
   });
 
   it('joins="key" joins a sequence of plain keys but not one of modifiers', () => {
-    const plain = render(<KeySequence keys={[{ label: 'A' }, { label: 'B' }]} joins="key" />);
+    const plain = renderWithIcons(<KeySequence keys={[{ label: 'A' }, { label: 'B' }]} joins="key" />);
     expect(plain.container.textContent).toBe('A+B');
     plain.unmount();
-    const mods = render(<KeySequence keys={[{ label: '⌘' }, { label: '⇧' }]} joins="key" />);
+    const mods = renderWithIcons(<KeySequence keys={[{ label: '⌘' }, { label: '⇧' }]} joins="key" />);
     expect(mods.container.textContent).toBe('⌘⇧');
   });
 
   it('joins="all" separates every adjacent pair of chips', () => {
-    const { container } = render(
+    const { container } = renderWithIcons(
       <KeySequence keys={[{ label: 'K' }, { label: '⌘' }, { label: '⇧' }]} joins="all" />,
     );
     expect(container.textContent).toBe('⌘+⇧+K');
@@ -198,25 +198,25 @@ describe('KeySequence', () => {
   });
 
   it('joins="all" separates modifier-only and key-only sequences too', () => {
-    const mods = render(<KeySequence keys={[{ label: '⌘' }, { label: '⇧' }]} joins="all" />);
+    const mods = renderWithIcons(<KeySequence keys={[{ label: '⌘' }, { label: '⇧' }]} joins="all" />);
     expect(mods.container.textContent).toBe('⌘+⇧');
     mods.unmount();
-    const plain = render(<KeySequence keys={[{ label: 'A' }, { label: 'B' }]} joins="all" separator=" then " />);
+    const plain = renderWithIcons(<KeySequence keys={[{ label: 'A' }, { label: 'B' }]} joins="all" separator=" then " />);
     expect(plain.container.textContent).toBe('A then B');
   });
 
   it('joins="all" renders no separator around a single chip', () => {
-    const { container } = render(<KeySequence keys={[{ label: 'K' }]} joins="all" />);
+    const { container } = renderWithIcons(<KeySequence keys={[{ label: 'K' }]} joins="all" />);
     expect(container.textContent).toBe('K');
   });
 
   it('omits the separator when there are no non-modifiers', () => {
-    const { container } = render(<KeySequence keys={[{ label: '⌘' }, { label: '⇧' }]} />);
+    const { container } = renderWithIcons(<KeySequence keys={[{ label: '⌘' }, { label: '⇧' }]} />);
     expect(container.textContent).toBe('⌘⇧');
   });
 
   it('places the separator at the modifier/non-modifier boundary even when input is unordered', () => {
-    const { container } = render(
+    const { container } = renderWithIcons(
       <KeySequence keys={[{ label: 'K' }, { label: '⌘' }]} separator="+" />,
     );
     expect(container.textContent).toBe('⌘+K');
@@ -228,7 +228,7 @@ describe('KeySequence', () => {
       for (const legend of ['auto', 'symbol', 'text'] as const) {
         const [alt, mod, meta] = keySpecsFromMods([{ name: 'alt' }, { name: 'mod' }, { name: 'meta' }], { platform, legend });
         const b = keySpecFromKey('b', { platform, legend });
-        const { container, unmount } = render(<KeySequence keys={[{ label: 'A' }, alt, b, mod, meta]} separator="+" />);
+        const { container, unmount } = renderWithIcons(<KeySequence keys={[{ label: 'A' }, alt, b, mod, meta]} separator="+" />);
         expect(container.textContent).toBe(`${alt.label}${mod.label}${meta.label}+A+B`);
         unmount();
       }
@@ -236,7 +236,7 @@ describe('KeySequence', () => {
   );
 
   it('forwards `font` to every KeyCap', () => {
-    const { container } = render(
+    const { container } = renderWithIcons(
       <KeySequence keys={[{ label: '⌘' }, { label: 'K' }]} font="Courier" />,
     );
     for (const chip of chips(container)) {
@@ -245,7 +245,7 @@ describe('KeySequence', () => {
   });
 
   it('forwards variant="inverse" to every KeyCap', () => {
-    const { container } = render(
+    const { container } = renderWithIcons(
       <KeySequence keys={[{ label: '⌘' }, { label: 'K' }]} variant="inverse" />,
     );
     for (const chip of chips(container)) {

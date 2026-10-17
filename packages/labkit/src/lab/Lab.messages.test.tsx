@@ -1,5 +1,6 @@
 import { act, screen } from '@testing-library/react';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
+import { withIcons } from '@weasel-js/ui/testing/withIcons';
 import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
 import type { ClockCapability, TrialClock } from '../clock/trialClock';
 import type { Instrument } from '../instrument/types';
@@ -32,6 +33,7 @@ function mountLab(spec: ClockCapability | undefined, props: Partial<LabProps> = 
         ...props,
       } as LabProps)}
     />,
+    { wrapper: withIcons },
   );
 }
 

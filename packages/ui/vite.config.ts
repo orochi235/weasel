@@ -31,6 +31,7 @@ const componentsDir = resolve(import.meta.dirname, 'src/components');
 const entries: Record<string, string> = {
   index: resolve(import.meta.dirname, 'src/index.ts'),
   'icons.table': resolve(import.meta.dirname, 'src/icons.table.ts'),
+  kitIcons: resolve(import.meta.dirname, 'src/kitIcons.ts'),
 };
 for (const dirent of readdirSync(componentsDir, { withFileTypes: true })) {
   if (!dirent.isDirectory()) continue;

@@ -1,6 +1,7 @@
 import { act, fireEvent, screen } from '@testing-library/react';
 import { pref } from '@weasel-js/prefs';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
+import { withIcons } from '@weasel-js/ui/testing/withIcons';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import type { LabContribution } from '../chrome';
 import { icon } from '../icons.gen';
@@ -49,6 +50,7 @@ function mount(props: Partial<LabProps> = {}) {
     <Lab {...({ instruments: [Stub], defaultInstrument: 'Stub', ...props } as LabProps)}>
       <Grab />
     </Lab>,
+    { wrapper: withIcons },
   );
 }
 

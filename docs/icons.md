@@ -76,9 +76,10 @@ draws nothing in production. Development is `isDev()` from `@weasel-js/registry`
 `@weasel-js/react`), which reads `process.env.NODE_ENV` inside a `try`, so a production bundle
 folds it to `false`.
 
-A unit test that reads a glyph mounts a registry: `withIcons` in
-`packages/ui/src/testing/withIcons.tsx` registers core's and ui's tables. jsdom cannot show that a
-glyph drew, so a check of the drawing is a `*.browser.test.tsx`.
+A unit test that draws a glyph mounts a registry holding `kitIcons`, core's and ui's tables
+(`@weasel-js/ui/kit-icons`): `renderWithIcons` in `packages/ui/src/testing/withIcons.tsx` in
+place of `render`, or its `withIcons` as the `wrapper` of `renderSettled`. jsdom cannot show
+that a glyph drew, so a check of the drawing is a `*.browser.test.tsx`.
 
 ## The registry
 
@@ -91,7 +92,7 @@ Core supplies the React side:
 
 | Mount | Registry |
 |---|---|
-| `<IconRegistryProvider icons variants>` | A registry of its own, seeded with `icons` |
+| `<IconRegistryProvider icons variants>` | A registry of its own, holding `icons`; a new `icons` replaces the tables the last one registered |
 | `<WeaselProvider icons iconVariants>` | The same, around the provider stack. `isolate` leaves the registry alone |
 | `<WeaselProvider>` without either, or `<SceneCanvas>` | An empty one, only when none is in scope |
 
@@ -110,7 +111,7 @@ const ICON_VARIANTS = { all: () => import('virtual:weasel-icons/all') };
 
 Without the build plugin, an app passes the tables themselves, each imported as `icons` from
 `@weasel-js/core/icons`, `@weasel-js/ui/icons` or `@weasel-js/path-tools/icons`. The list is a
-module constant: the provider adds `icons` again whenever the array is a new one.
+module constant: the provider releases and registers its tables again whenever the array is a new one.
 
 ```tsx
 import { icons as coreIcons } from '@weasel-js/core/icons';
@@ -122,6 +123,8 @@ const ICONS = [coreIcons, uiIcons];
   <App />
 </IconRegistryProvider>
 ```
+
+`kitIcons` from `@weasel-js/ui/kit-icons` is that list of core's and ui's tables, whole.
 
 A component that lists glyphs rather than naming them asks for a variant by name:
 `useIconVariant('all')` runs the app's loader once, adds its tables, and returns
@@ -202,7 +205,7 @@ gen:icons, and `packages/icons/scripts/gen-icons.test.ts` fails on a hand-writte
 | A table generated after the dev server started | Served after a restart |
 | A `.vue` or `.svelte` module | Not transformed; only `.js`, `.ts`, `.jsx`, `.tsx` and their `m`/`c` forms are |
 
-Forge registers core's and ui's tables whole, plus whatever `FrameSetup.icons` passes
+Forge registers `kitIcons` whole, plus whatever `FrameSetup.icons` passes
 (`apps/forge/forge.frame.tsx` passes path-tools' and draw's), so forge's frames are never trimmed.
 
 ## Guards

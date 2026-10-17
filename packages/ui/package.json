@@ -23,6 +23,10 @@
       "types": "./dist/icons.table.d.ts",
       "import": "./dist/icons.table.js"
     },
+    "./kit-icons": {
+      "types": "./dist/kitIcons.d.ts",
+      "import": "./dist/kitIcons.js"
+    },
     "./style.css": "./dist/style.css",
     "./package.json": "./package.json"
   },

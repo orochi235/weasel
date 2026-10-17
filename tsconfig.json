@@ -153,6 +153,7 @@
       "@weasel-js/ui": ["./packages/ui/src/index.ts"],
       "@weasel-js/ui/components/*": ["./packages/ui/src/components/*/index.ts"],
       "@weasel-js/ui/icons": ["./packages/ui/src/icons.table.ts"],
+      "@weasel-js/ui/kit-icons": ["./packages/ui/src/kitIcons.ts"],
       "@weasel-js/ui/testing/*": ["./packages/ui/src/testing/*"],
       "core/*": ["./packages/core/src/core/*"],
       "features/*": ["./packages/core/src/features/*"],

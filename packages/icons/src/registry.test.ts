@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createIconRegistry, IconNamespaceClaimedError } from './registry';
 import type { IconTable } from './table';
 import type { IconRef } from './names';
@@ -131,6 +131,8 @@ describe('merged namespaces and overrides', () => {
 });
 
 describe('variants', () => {
+  afterEach(() => vi.restoreAllMocks());
+
   it('loads a variant once and adds its tables', async () => {
     const r = createIconRegistry();
     const loader = vi.fn(async () => ({ default: [core({ undo: 'u' })] }));
@@ -149,6 +151,7 @@ describe('variants', () => {
   });
 
   it('marks a rejected loader failed, keeps what it had, and retries on the next call', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
     const r = createIconRegistry(core({ undo: 'u' }));
     let fail = true;
     r.provideVariants({
@@ -166,7 +169,32 @@ describe('variants', () => {
     expect(r.get('core:redo')).toBeDefined();
   });
 
+  it('logs why a variant failed in development, and stays quiet in production', async () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      const cause = new Error('offline');
+      const r = createIconRegistry();
+      r.provideVariants({ all: async () => { throw cause; } });
+      await r.loadVariant('all');
+      expect(error).toHaveBeenCalledTimes(1);
+      expect(error.mock.calls[0]).toContain(cause);
+      expect(String(error.mock.calls[0]![0])).toContain('all');
+
+      error.mockClear();
+      vi.stubEnv('NODE_ENV', 'production');
+      const quiet = createIconRegistry();
+      quiet.provideVariants({ all: async () => { throw cause; } });
+      await quiet.loadVariant('all');
+      expect(quiet.variantState('all')).toBe('failed');
+      expect(error).not.toHaveBeenCalled();
+    } finally {
+      vi.unstubAllEnvs();
+      error.mockRestore();
+    }
+  });
+
   it('marks a loader that throws synchronously failed, not stuck loading', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
     const r = createIconRegistry();
     r.provideVariants({
       all: () => {

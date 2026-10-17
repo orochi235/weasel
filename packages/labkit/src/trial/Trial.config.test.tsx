@@ -1,5 +1,6 @@
 import { fireEvent, screen } from '@testing-library/react';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
+import { withIcons } from '@weasel-js/ui/testing/withIcons';
 import { describe, expect, it } from 'vitest';
 import { auto } from '../config/auto';
 import { f } from '../config/builder';
@@ -29,18 +30,24 @@ const legacyInstrument = defineInstrument({
 
 describe('a trial renders its instrument config', () => {
   it('renders a builder schema into the settings sidebar', async () => {
-    await renderSettled(<Lab instruments={[schemaInstrument]} defaultInstrument="Schema" />);
+    await renderSettled(<Lab instruments={[schemaInstrument]} defaultInstrument="Schema" />, {
+      wrapper: withIcons,
+    });
     expect(screen.getByLabelText('Show grid')).toBeInTheDocument();
     expect(screen.getByText('Grid spacing')).toBeInTheDocument();
   });
 
   it('renders a legacy ConfigField list through the same path', async () => {
-    await renderSettled(<Lab instruments={[legacyInstrument]} defaultInstrument="Legacy" />);
+    await renderSettled(<Lab instruments={[legacyInstrument]} defaultInstrument="Legacy" />, {
+      wrapper: withIcons,
+    });
     expect(screen.getByLabelText('Show grid')).toBeInTheDocument();
   });
 
   it('writes a config change back to the trial', async () => {
-    await renderSettled(<Lab instruments={[schemaInstrument]} defaultInstrument="Schema" />);
+    await renderSettled(<Lab instruments={[schemaInstrument]} defaultInstrument="Schema" />, {
+      wrapper: withIcons,
+    });
     const checkbox = screen.getByLabelText('Show grid') as HTMLInputElement;
     expect(checkbox.checked).toBe(true);
     fireEvent.click(checkbox);
@@ -59,6 +66,7 @@ describe('lab-wide config seams', () => {
     const colorByName: ConfigRule = (ctx) => (ctx.key.endsWith('Color') ? { kind: 'color' } : null);
     await renderSettled(
       <Lab instruments={[inst]} defaultInstrument="Ruled" configRules={[colorByName]} />,
+      { wrapper: withIcons },
     );
     expect(screen.getByLabelText('Tint color')).toHaveAttribute('type', 'color');
   });
@@ -70,7 +78,9 @@ describe('lab-wide config seams', () => {
       initialState: () => ({}),
       render: () => null,
     });
-    await renderSettled(<Lab instruments={[inst]} defaultInstrument="Unruled" />);
+    await renderSettled(<Lab instruments={[inst]} defaultInstrument="Unruled" />, {
+      wrapper: withIcons,
+    });
     expect(screen.getByLabelText('Tint color')).toHaveAttribute('type', 'text');
   });
 
@@ -86,6 +96,7 @@ describe('lab-wide config seams', () => {
     );
     await renderSettled(
       <Lab instruments={[inst]} defaultInstrument="Custom" controls={{ vector2 }} />,
+      { wrapper: withIcons },
     );
     expect(screen.getByText('vec:3')).toBeInTheDocument();
   });
@@ -97,7 +108,9 @@ describe('lab-wide config seams', () => {
       initialState: () => ({}),
       render: () => null,
     });
-    await renderSettled(<Lab instruments={[inst]} defaultInstrument="Unwired" />);
+    await renderSettled(<Lab instruments={[inst]} defaultInstrument="Unwired" />, {
+      wrapper: withIcons,
+    });
     expect(screen.getByText(/vector2/)).toBeInTheDocument();
   });
 
@@ -108,7 +121,9 @@ describe('lab-wide config seams', () => {
       initialState: () => ({}),
       render: () => null,
     });
-    await renderSettled(<Lab instruments={[inst]} defaultInstrument="Bare" />);
+    await renderSettled(<Lab instruments={[inst]} defaultInstrument="Bare" />, {
+      wrapper: withIcons,
+    });
     expect(screen.queryByText('Settings')).not.toBeInTheDocument();
   });
 });
@@ -136,7 +151,9 @@ describe('a nested config value, end to end', () => {
 
   it('renders a nested leaf and writes the change back into the tree', async () => {
     const { instrument } = nestedInstrument();
-    await renderSettled(<Lab instruments={[instrument]} defaultInstrument="Nested" />);
+    await renderSettled(<Lab instruments={[instrument]} defaultInstrument="Nested" />, {
+      wrapper: withIcons,
+    });
     expect(screen.getByText('20')).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText('Cell size'), {
       target: { value: '40' },
@@ -146,7 +163,9 @@ describe('a nested config value, end to end', () => {
 
   it('hands onConfigChange the whole tree, with the sibling branch intact', async () => {
     const { instrument, seen } = nestedInstrument();
-    await renderSettled(<Lab instruments={[instrument]} defaultInstrument="Nested" />);
+    await renderSettled(<Lab instruments={[instrument]} defaultInstrument="Nested" />, {
+      wrapper: withIcons,
+    });
     fireEvent.change(screen.getByLabelText('Cell size'), {
       target: { value: '40' },
     });
@@ -190,7 +209,9 @@ describe('several config writes in one tick', () => {
       ],
       render: (ctx) => <output>{`sum ${(ctx.state as { sum: number }).sum}`}</output>,
     });
-    await renderSettled(<Lab instruments={[instrument]} defaultInstrument="Summed" />);
+    await renderSettled(<Lab instruments={[instrument]} defaultInstrument="Summed" />, {
+      wrapper: withIcons,
+    });
     fireEvent.click(screen.getByText('zero both'));
     expect(screen.getByText('sum 0')).toBeInTheDocument();
   });
@@ -228,7 +249,9 @@ describe('a config written as auto', () => {
 
   it('hands onConfigChange the resolved config, never the sentinel', async () => {
     const { instrument, seen } = unpinnable();
-    await renderSettled(<Lab instruments={[instrument]} defaultInstrument="Unpinnable" />);
+    await renderSettled(<Lab instruments={[instrument]} defaultInstrument="Unpinnable" />, {
+      wrapper: withIcons,
+    });
     fireEvent.click(screen.getByText('unpin gap'));
     expect(seen.at(-1)?.config).toEqual({ width: 432, gap: 18 });
     expect(seen.at(-1)?.prev).toEqual({ width: 432, gap: 12 });
@@ -236,7 +259,9 @@ describe('a config written as auto', () => {
 
   it('keeps the state that write derived free of the sentinel', async () => {
     const { instrument } = unpinnable();
-    await renderSettled(<Lab instruments={[instrument]} defaultInstrument="Unpinnable" />);
+    await renderSettled(<Lab instruments={[instrument]} defaultInstrument="Unpinnable" />, {
+      wrapper: withIcons,
+    });
     fireEvent.click(screen.getByText('unpin gap'));
     expect(screen.getByText('18')).toBeInTheDocument();
   });
@@ -257,6 +282,7 @@ describe('a config written as auto', () => {
     });
     const { container } = await renderSettled(
       <Lab instruments={[instrument]} defaultInstrument="Ghosted" />,
+      { wrapper: withIcons },
     );
     expect(screen.getByRole('button', { name: 'Pin Gap' })).toHaveAttribute(
       'aria-pressed',

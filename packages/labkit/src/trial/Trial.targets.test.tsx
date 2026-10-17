@@ -6,6 +6,7 @@
  */
 import { act, fireEvent, screen } from '@testing-library/react';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
+import { withIcons } from '@weasel-js/ui/testing/withIcons';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AnnotationTarget } from '../annotations/types';
 import { defineInstrument } from '../instrument/defineInstrument';
@@ -69,6 +70,7 @@ async function mountTwoTrials(): Promise<[string, string]> {
     <Lab instruments={[subject]} defaultInstrument="Subject">
       <CaptureLab />
     </Lab>,
+    { wrapper: withIcons },
   );
   await act(async () => labRef?.addTrial('Subject'));
   const ids = labRef?.trials.map((t) => t.id) ?? [];

@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { createScene, type Scene, type ToolsApi } from '@weasel-js/core';
 import { giveKeys } from '@weasel-js/react/testing/giveKeys';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
+import { withIcons } from '@weasel-js/ui/testing/withIcons';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { icon } from '../icons.gen';
 import { defineInstrument } from '../instrument/defineInstrument';
@@ -67,7 +68,9 @@ const instrument = defineInstrument<State, Record<string, never>>({
 
 async function mount(which = instrument) {
   live = { scene: null as never, tools: null };
-  return renderSettled(<Lab instruments={[which]} defaultInstrument="Scene" />);
+  return renderSettled(<Lab instruments={[which]} defaultInstrument="Scene" />, {
+    wrapper: withIcons,
+  });
 }
 
 const addOne = () =>

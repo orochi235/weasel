@@ -559,32 +559,11 @@ Priority tags:
 
 How the registry and the build plugin work is in `docs/icons.md`.
 
-- **(P3) A variant that fails to load says nothing about why.** `createVariants` in
-  `packages/icons/src/variants.ts` catches the loader's rejection and only sets `failed`. Log the
-  error with `console.error` in development before setting the state.
-
-- **(P3) Changing `IconRegistryProvider`'s `icons` only ever adds.** The tables given on mount
-  seed the registry in its constructor and are never released, so a new `icons` array registers
-  alongside them instead of replacing them
-  (`packages/core/src/iconRegistry/IconRegistryProvider.tsx`). Register the first tables through
-  the same effect that registers later ones, so each change releases what it replaces.
-
-- **(P3) `WeaselProvider` remounts its whole tree when `icons` or `iconVariants` comes or goes.**
-  It wraps the tree in `IconRegistryProvider` when either is set and in
-  `IconRegistryProviderIfRoot` otherwise (`packages/core/src/WeaselProvider.tsx`), so the element
-  type above the tree changes. Keep one wrapper that decides inside whether to mount a registry.
-
-- **(P3) PrefSchemaEditor's icon picker is missing keyboard and state handling.** `IconAttrField`
-  (`packages/ui/src/components/PrefSchemaEditor/IconAttrField.tsx`) has no Home, End, PageUp or
-  PageDown; a click on a cell moves focus off the listbox, so the arrows stop working; it ignores
-  `ctx.mixed` across a multi-selection; and a value no table holds shows with no mark. Add the
-  keys, keep focus on the listbox, show the mixed state, and mark an unregistered value.
-
-- **(P3) Tests that draw icons mount registries in different ways, or not at all.** Many ui and
-  labkit tests render with no registry and print missing-icon warnings. Forge's
-  `packages/forge/src/kitIcons.tsx` and ui's `packages/ui/src/testing/withIcons.tsx` each list
-  core's and ui's tables, and several tests list them again. Make one helper that holds the list,
-  and wrap those tests in it.
+- **(P3) Some tests may still draw icons with no registry.** `renderWithIcons` and `withIcons`
+  (`packages/ui/src/testing/withIcons.tsx`) now wrap every test found printing a missing-icon
+  warning, but only ui's component tests that draw icons and labkit's tests that mount a lab were
+  run to find them. Grep a fleet run's log for `is registered. Is its package` and wrap any file
+  it names.
 
 ---
 

@@ -1,11 +1,18 @@
-import type { ReactNode } from 'react';
+import type { ReactElement, ReactNode } from 'react';
+import { render, type RenderOptions } from '@testing-library/react';
 import { IconRegistryProvider } from '@weasel-js/core';
-import { icons as coreIcons } from '@weasel-js/core/icons';
-import { icons as uiIcons } from '../icons.table';
+import { kitIcons } from '../kitIcons';
 
-const KIT_ICONS = [coreIcons, uiIcons];
-
-/** A `render` wrapper with core's and ui's icon tables registered, for a test that reads a glyph. */
+/** A `render` wrapper with core's and ui's icon tables registered, for a test that draws a glyph. */
 export function withIcons({ children }: { children: ReactNode }) {
-  return <IconRegistryProvider icons={KIT_ICONS}>{children}</IconRegistryProvider>;
+  return <IconRegistryProvider icons={kitIcons}>{children}</IconRegistryProvider>;
+}
+
+/** `render` inside {@link withIcons}, around any `wrapper` the options give. */
+export function renderWithIcons(ui: ReactElement, options: Omit<RenderOptions, 'queries'> = {}) {
+  const Inner = options.wrapper;
+  const wrapper = Inner
+    ? ({ children }: { children: ReactNode }) => withIcons({ children: <Inner>{children}</Inner> })
+    : withIcons;
+  return render(ui, { ...options, wrapper });
 }

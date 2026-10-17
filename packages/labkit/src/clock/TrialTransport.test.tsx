@@ -1,5 +1,6 @@
 import { act, fireEvent, screen } from '@testing-library/react';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
+import { withIcons } from '@weasel-js/ui/testing/withIcons';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Instrument } from '../instrument/types';
 import { Lab } from '../lab/Lab';
@@ -27,7 +28,9 @@ function timed(spec: ClockCapability | undefined, props: TrialTransportProps = {
 }
 
 async function mount(spec: ClockCapability | undefined, props?: TrialTransportProps) {
-  return renderSettled(<Lab instruments={[timed(spec, props)]} defaultInstrument="Timed" />);
+  return renderSettled(<Lab instruments={[timed(spec, props)]} defaultInstrument="Timed" />, {
+    wrapper: withIcons,
+  });
 }
 
 const c = () => clock as TrialClock;
@@ -69,7 +72,9 @@ describe('<TrialTransport>', () => {
         );
       },
     };
-    await renderSettled(<Lab instruments={[twice]} defaultInstrument="Timed" />);
+    await renderSettled(<Lab instruments={[twice]} defaultInstrument="Timed" />, {
+      wrapper: withIcons,
+    });
     const [first] = screen.getAllByRole('slider', { name: /rate/i });
     fireEvent.keyDown(first as HTMLElement, { key: 'ArrowRight' });
     await act(async () =>

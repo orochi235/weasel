@@ -6,6 +6,7 @@
  */
 import { act, fireEvent, screen, within } from '@testing-library/react';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
+import { withIcons } from '@weasel-js/ui/testing/withIcons';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { useAnnotations, useAnnotationsOptional } from '../annotations/AnnotationsContext';
 import type { AnnotationsApi } from '../annotations/types';
@@ -55,7 +56,9 @@ const plain = defineInstrument<Record<string, never>, Record<string, never>>({
 
 describe('an instrument that declares annotations', () => {
   it('gets a drawing palette', async () => {
-    await renderSettled(<Lab instruments={[annotating]} defaultInstrument="Annotating" />);
+    await renderSettled(<Lab instruments={[annotating]} defaultInstrument="Annotating" />, {
+      wrapper: withIcons,
+    });
     for (const label of [
       'Interact',
       'Select',
@@ -79,7 +82,9 @@ describe('an instrument that declares annotations', () => {
         tools: ['pointer', 'select'],
       },
     });
-    await renderSettled(<Lab instruments={[narrow]} defaultInstrument="Narrow" />);
+    await renderSettled(<Lab instruments={[narrow]} defaultInstrument="Narrow" />, {
+      wrapper: withIcons,
+    });
     expect(screen.getByRole('button', { name: 'Interact' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Select' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Freehand' })).toBeNull();
@@ -87,12 +92,16 @@ describe('an instrument that declares annotations', () => {
   });
 
   it('puts the store in reach of its own render', async () => {
-    await renderSettled(<Lab instruments={[annotating]} defaultInstrument="Annotating" />);
+    await renderSettled(<Lab instruments={[annotating]} defaultInstrument="Annotating" />, {
+      wrapper: withIcons,
+    });
     expect(screen.getByTestId('pane').dataset.marks).toBe('0');
   });
 
   it('starts in interact, so a first click reaches the instrument', async () => {
-    await renderSettled(<Lab instruments={[annotating]} defaultInstrument="Annotating" />);
+    await renderSettled(<Lab instruments={[annotating]} defaultInstrument="Annotating" />, {
+      wrapper: withIcons,
+    });
     expect(screen.getByRole('button', { name: 'Interact' }).getAttribute('aria-current')).toBe(
       'true',
     );
@@ -114,7 +123,9 @@ function CaptureLab() {
 
 describe('the annotation tool', () => {
   it("is offered in the lab's rail, not in a trial's", async () => {
-    await renderSettled(<Lab instruments={[annotating]} defaultInstrument="Annotating" />);
+    await renderSettled(<Lab instruments={[annotating]} defaultInstrument="Annotating" />, {
+      wrapper: withIcons,
+    });
     expect(screen.getAllByRole('button', { name: 'Rectangle' })).toHaveLength(1);
     const trial = screen.getByRole('region', { name: /trial/i });
     expect(within(trial).queryByRole('button', { name: 'Rectangle' })).toBeNull();
@@ -128,6 +139,7 @@ describe('the annotation tool', () => {
       <Lab instruments={[annotating]} defaultInstrument="Annotating">
         <CaptureLab />
       </Lab>,
+      { wrapper: withIcons },
     );
     await act(async () => labRef?.addTrial('Annotating'));
     const panes = screen.getAllByTestId('pane');
@@ -145,13 +157,17 @@ describe('the trial undo chrome over marks', () => {
   it('gets undo and redo without the instrument declaring `undo`', async () => {
     // Weasel history is the authority for marks, so the capability that
     // creates them is what earns the buttons.
-    await renderSettled(<Lab instruments={[annotating]} defaultInstrument="Annotating" />);
+    await renderSettled(<Lab instruments={[annotating]} defaultInstrument="Annotating" />, {
+      wrapper: withIcons,
+    });
     expect(screen.getByRole('button', { name: 'Undo' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Redo' })).toBeTruthy();
   });
 
   it('takes back a mark, and puts it back', async () => {
-    await renderSettled(<Lab instruments={[annotating]} defaultInstrument="Annotating" />);
+    await renderSettled(<Lab instruments={[annotating]} defaultInstrument="Annotating" />, {
+      wrapper: withIcons,
+    });
     const undo = screen.getByRole('button', { name: 'Undo' });
     expect(undo.getAttribute('aria-disabled') ?? undo.getAttribute('disabled')).not.toBeNull();
 
@@ -172,7 +188,9 @@ describe('the trial undo chrome over marks', () => {
   });
 
   it('lists the marks in a sidebar panel', async () => {
-    await renderSettled(<Lab instruments={[annotating]} defaultInstrument="Annotating" />);
+    await renderSettled(<Lab instruments={[annotating]} defaultInstrument="Annotating" />, {
+      wrapper: withIcons,
+    });
     expect(screen.getByText('Marks')).toBeTruthy();
     await act(async () => {
       marks().add({ target: 'pane', kind: 'line', frac: { x: 0, y: 0, w: 0.5, h: 0 } });
@@ -210,7 +228,9 @@ describe('targets that follow the trial state', () => {
           })),
       },
     });
-    await renderSettled(<Lab instruments={[growing]} defaultInstrument="Growing" />);
+    await renderSettled(<Lab instruments={[growing]} defaultInstrument="Growing" />, {
+      wrapper: withIcons,
+    });
     expect(screen.getByTestId('growing').dataset.targets).toBe('1');
     await act(async () => {
       fireEvent.click(screen.getByTestId('growing'));
@@ -245,13 +265,17 @@ describe("the capability's selection mode", () => {
   };
 
   it('keeps the selection to one target by default', async () => {
-    await renderSettled(<Lab instruments={[twoTargets()]} defaultInstrument="Two" />);
+    await renderSettled(<Lab instruments={[twoTargets()]} defaultInstrument="Two" />, {
+      wrapper: withIcons,
+    });
     const [onA] = await selectBoth();
     expect(marks().selection()).toEqual([onA]);
   });
 
   it("reaches the trial's store when the instrument asks for per-target", async () => {
-    await renderSettled(<Lab instruments={[twoTargets('per-target')]} defaultInstrument="Two" />);
+    await renderSettled(<Lab instruments={[twoTargets('per-target')]} defaultInstrument="Two" />, {
+      wrapper: withIcons,
+    });
     expect(marks().selection()).toEqual([]);
     const both = await selectBoth();
     expect(marks().selection()).toEqual(both);
@@ -260,7 +284,9 @@ describe("the capability's selection mode", () => {
 
 describe('an instrument that declares none', () => {
   it('gets no store and no palette', async () => {
-    await renderSettled(<Lab instruments={[plain]} defaultInstrument="Plain" />);
+    await renderSettled(<Lab instruments={[plain]} defaultInstrument="Plain" />, {
+      wrapper: withIcons,
+    });
     expect(screen.getByTestId('plain').dataset.hasApi).toBe('false');
     expect(screen.queryByRole('button', { name: 'Rectangle' })).toBeNull();
   });

@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent, act } from '@testing-library/react';
+import { screen, fireEvent, act } from '@testing-library/react';
+import { renderWithIcons } from '../../testing/withIcons';
 import { ToolPalette } from './ToolPalette';
 import type { Tool, ToolsApi } from '@weasel-js/core';
 import { createModeRegistry } from '@weasel-js/modes';
@@ -26,7 +27,7 @@ function fakeTools(list: Tool[], active: string | null = null): ToolsApi {
 describe('ToolPalette', () => {
   it('renders one button per tool', () => {
     const tools = fakeTools([fakeTool('select'), fakeTool('hand')]);
-    render(<ToolPalette tools={tools} />);
+    renderWithIcons(<ToolPalette tools={tools} />);
     expect(screen.getAllByRole('button')).toHaveLength(2);
   });
 
@@ -35,33 +36,33 @@ describe('ToolPalette', () => {
       fakeTool('select'),
       { id: 'scrub', presentation: { label: 'Scrub', hide: true } } as Tool,
     ]);
-    render(<ToolPalette tools={tools} />);
+    renderWithIcons(<ToolPalette tools={tools} />);
     expect(screen.getAllByRole('button')).toHaveLength(1);
     expect(screen.queryByText('Scrub')).toBeNull();
   });
 
   it('shows only the tools include accepts, under its own name', () => {
     const tools = fakeTools([fakeTool('select'), fakeTool('trim', undefined, 'Trim')]);
-    render(<ToolPalette tools={tools} include={(t) => t.id === 'trim'} ariaLabel="Path tools" />);
+    renderWithIcons(<ToolPalette tools={tools} include={(t) => t.id === 'trim'} ariaLabel="Path tools" />);
     expect(screen.getAllByRole('button')).toHaveLength(1);
     expect(screen.getByRole('toolbar', { name: 'Path tools' })).toBeTruthy();
   });
 
   it('shows the tool label from presentation', () => {
     const tools = fakeTools([fakeTool('select', undefined, 'Select')]);
-    render(<ToolPalette tools={tools} />);
+    renderWithIcons(<ToolPalette tools={tools} />);
     expect(screen.getByText('Select')).toBeTruthy();
   });
 
   it('falls back to id when presentation.label is absent', () => {
     const tools = fakeTools([{ id: 'mystery' } as Tool]);
-    render(<ToolPalette tools={tools} />);
+    renderWithIcons(<ToolPalette tools={tools} />);
     expect(screen.getByText('mystery')).toBeTruthy();
   });
 
   it('marks the active tool with aria-current', () => {
     const tools = fakeTools([fakeTool('a'), fakeTool('b')], 'b');
-    render(<ToolPalette tools={tools} />);
+    renderWithIcons(<ToolPalette tools={tools} />);
     const aBtn = screen.getByRole('button', { name: /^a/ });
     const bBtn = screen.getByRole('button', { name: /^b/ });
     expect(aBtn.getAttribute('aria-current')).toBeNull();
@@ -70,14 +71,14 @@ describe('ToolPalette', () => {
 
   it('clicking a button dispatches tools.setActive(id)', () => {
     const tools = fakeTools([fakeTool('select'), fakeTool('hand')], 'select');
-    render(<ToolPalette tools={tools} />);
+    renderWithIcons(<ToolPalette tools={tools} />);
     fireEvent.click(screen.getByRole('button', { name: /^hand/ }));
     expect(tools.setActive).toHaveBeenCalledWith('hand');
   });
 
   it('root has role="toolbar" with an accessible name', () => {
     const tools = fakeTools([fakeTool('select')]);
-    const { container } = render(<ToolPalette tools={tools} />);
+    const { container } = renderWithIcons(<ToolPalette tools={tools} />);
     const root = container.querySelector('[role="toolbar"]');
     expect(root).toBeTruthy();
     expect(root?.getAttribute('aria-label')).toBeTruthy();
@@ -93,7 +94,7 @@ describe('ToolPalette — grouping', () => {
       fakeTool('rect', 'shape'),
       fakeTool('pen', 'draw'),
     ]);
-    render(<ToolPalette tools={tools} />);
+    renderWithIcons(<ToolPalette tools={tools} />);
     expect(screen.getAllByRole('button').map((b) => b.textContent)).toEqual([
       expect.stringContaining('select'),
       expect.stringContaining('rect'),
@@ -110,7 +111,7 @@ describe('ToolPalette — grouping', () => {
       fakeTool('weird', 'experimental'),
       fakeTool('hand', 'view'),
     ]);
-    render(<ToolPalette tools={tools} />);
+    renderWithIcons(<ToolPalette tools={tools} />);
     expect(screen.getAllByRole('button').map((b) => b.textContent)).toEqual([
       expect.stringContaining('select'),
       expect.stringContaining('hand'),
@@ -124,7 +125,7 @@ describe('ToolPalette — grouping', () => {
       fakeTool('select', 'select'),
       { id: 'orphan', presentation: { label: 'Orphan' } } as Tool,
     ]);
-    render(<ToolPalette tools={tools} />);
+    renderWithIcons(<ToolPalette tools={tools} />);
     const buttons = screen.getAllByRole('button');
     expect(buttons[buttons.length - 1].textContent).toContain('Orphan');
   });
@@ -136,7 +137,7 @@ describe('ToolPalette — grouping', () => {
       fakeTool('hand', 'view'),
       fakeTool('rect', 'shape'),
     ]);
-    render(<ToolPalette tools={tools} groupOrder={['select', 'view', 'shape', 'type']} />);
+    renderWithIcons(<ToolPalette tools={tools} groupOrder={['select', 'view', 'shape', 'type']} />);
     const buttons = screen.getAllByRole('button');
     expect(buttons.map((b) => b.textContent)).toEqual([
       expect.stringContaining('select'),
@@ -151,7 +152,7 @@ describe('ToolPalette — grouping', () => {
       fakeTool('select', 'select'),
       fakeTool('rect', 'shape'),
     ]);
-    const { container } = render(<ToolPalette tools={tools} />);
+    const { container } = renderWithIcons(<ToolPalette tools={tools} />);
     const separators = container.querySelectorAll('[role="separator"]');
     expect(separators.length).toBeGreaterThanOrEqual(1);
   });
@@ -164,7 +165,7 @@ describe('ToolPalette — shortcuts', () => {
 
   it('shows shortcut derived from keybinding', () => {
     const tools = fakeTools([withKeybinding('select', { key: 'v' })]);
-    render(<ToolPalette tools={tools} />);
+    renderWithIcons(<ToolPalette tools={tools} />);
     expect(screen.getByText('V')).toBeTruthy();
   });
 
@@ -175,14 +176,14 @@ describe('ToolPalette — shortcuts', () => {
       presentation: { label: 'Select', group: 'select', shortcut: 'Sel' },
     } as Tool;
     const tools = fakeTools([tool]);
-    render(<ToolPalette tools={tools} />);
+    renderWithIcons(<ToolPalette tools={tools} />);
     expect(screen.getByText('Sel')).toBeTruthy();
     expect(screen.queryByText('V')).toBeNull();
   });
 
   it('button tooltip combines label and shortcut', () => {
     const tools = fakeTools([withKeybinding('select', { key: 'v' })]);
-    render(<ToolPalette tools={tools} />);
+    renderWithIcons(<ToolPalette tools={tools} />);
     const btn = screen.getByRole('button', { name: /select/i });
     fireEvent.keyDown(document.body, { key: 'Tab' });
     act(() => btn.focus());
@@ -194,7 +195,7 @@ describe('ToolPalette — shortcuts', () => {
   it('button tooltip is just the label when no shortcut is available', () => {
     const tool = { id: 'select', presentation: { label: 'Select', group: 'select' } } as Tool;
     const tools = fakeTools([tool]);
-    render(<ToolPalette tools={tools} />);
+    renderWithIcons(<ToolPalette tools={tools} />);
     const btn = screen.getByRole('button', { name: /select/i });
     fireEvent.keyDown(document.body, { key: 'Tab' });
     act(() => btn.focus());
@@ -209,7 +210,7 @@ describe('ToolPalette — keyboard nav', () => {
 
   it('only the active tool has tabIndex=0 initially; others tabIndex=-1', () => {
     const tools = fakeTools([fakeTool('a', 'select'), fakeTool('b', 'select')], 'b');
-    render(<ToolPalette tools={tools} />);
+    renderWithIcons(<ToolPalette tools={tools} />);
     const a = screen.getByRole('button', { name: /^a/i }) as HTMLButtonElement;
     const b = screen.getByRole('button', { name: /^b/i }) as HTMLButtonElement;
     expect(a.tabIndex).toBe(-1);
@@ -218,7 +219,7 @@ describe('ToolPalette — keyboard nav', () => {
 
   it('falls back to the first tool when no active tool', () => {
     const tools = fakeTools([fakeTool('a', 'select'), fakeTool('b', 'select')], null);
-    render(<ToolPalette tools={tools} />);
+    renderWithIcons(<ToolPalette tools={tools} />);
     const a = screen.getByRole('button', { name: /^a/i }) as HTMLButtonElement;
     const b = screen.getByRole('button', { name: /^b/i }) as HTMLButtonElement;
     expect(a.tabIndex).toBe(0);
@@ -227,7 +228,7 @@ describe('ToolPalette — keyboard nav', () => {
 
   it('ArrowDown / ArrowRight moves focus to the next tool', () => {
     const tools = fiveTools();
-    render(<ToolPalette tools={tools} />);
+    renderWithIcons(<ToolPalette tools={tools} />);
     const a = screen.getByRole('button', { name: /^A/ });
     const b = screen.getByRole('button', { name: /^B/ });
     act(() => a.focus());
@@ -237,7 +238,7 @@ describe('ToolPalette — keyboard nav', () => {
 
   it('ArrowUp / ArrowLeft moves focus to the previous tool', () => {
     const tools = fiveTools();
-    render(<ToolPalette tools={tools} />);
+    renderWithIcons(<ToolPalette tools={tools} />);
     const a = screen.getByRole('button', { name: /^A/ });
     const b = screen.getByRole('button', { name: /^B/ });
     act(() => b.focus());
@@ -247,7 +248,7 @@ describe('ToolPalette — keyboard nav', () => {
 
   it('Home focuses the first tool, End focuses the last', () => {
     const tools = fiveTools();
-    render(<ToolPalette tools={tools} />);
+    renderWithIcons(<ToolPalette tools={tools} />);
     const a = screen.getByRole('button', { name: /^A/ });
     const c = screen.getByRole('button', { name: /^C/ });
     const e = screen.getByRole('button', { name: /^E/ });
@@ -260,7 +261,7 @@ describe('ToolPalette — keyboard nav', () => {
 
   it('focus wraps from last to first on ArrowDown, first to last on ArrowUp', () => {
     const tools = fiveTools();
-    render(<ToolPalette tools={tools} />);
+    renderWithIcons(<ToolPalette tools={tools} />);
     const a = screen.getByRole('button', { name: /^A/ });
     const e = screen.getByRole('button', { name: /^E/ });
     act(() => e.focus());
@@ -297,7 +298,7 @@ describe('ToolPalette — mode eligibility', () => {
     const reg = createModeRegistry({ modes: DEFAULT_MODES, initial: 'normal' });
     // selectTool ('creates-selection') and handTool ('navigation') are both eligible in normal mode.
     const tools = makeTools(selectTool, handTool);
-    render(<ToolPalette tools={tools} modeRegistry={reg} />);
+    renderWithIcons(<ToolPalette tools={tools} modeRegistry={reg} />);
     const buttons = screen.getAllByRole('button');
     for (const btn of buttons) {
       expect(btn.getAttribute('aria-disabled')).toBeNull();
@@ -308,7 +309,7 @@ describe('ToolPalette — mode eligibility', () => {
   it('when mode is "path-edit", select tool is aria-disabled and ineligible; anchor-edit is not', () => {
     const reg = createModeRegistry({ modes: DEFAULT_MODES, initial: 'path-edit' });
     const tools = makeTools(selectTool, anchorTool, handTool);
-    render(<ToolPalette tools={tools} modeRegistry={reg} />);
+    renderWithIcons(<ToolPalette tools={tools} modeRegistry={reg} />);
 
     const selectBtn = screen.getByRole('button', { name: /select/i });
     expect(selectBtn.getAttribute('aria-disabled')).toBe('true');
@@ -322,7 +323,7 @@ describe('ToolPalette — mode eligibility', () => {
   it('ineligible button does not invoke setActive when clicked', () => {
     const reg = createModeRegistry({ modes: DEFAULT_MODES, initial: 'path-edit' });
     const tools = makeTools(selectTool, anchorTool, handTool);
-    render(<ToolPalette tools={tools} modeRegistry={reg} />);
+    renderWithIcons(<ToolPalette tools={tools} modeRegistry={reg} />);
 
     const selectBtn = screen.getByRole('button', { name: /select/i });
     fireEvent.click(selectBtn);
@@ -334,7 +335,7 @@ describe('ToolPalette — mode eligibility', () => {
     // DOM order follows group order: select ('select', ineligible here),
     // anchor-edit ('draw'), hand ('view').
     const tools = makeTools(selectTool, anchorTool, handTool);
-    render(<ToolPalette tools={tools} modeRegistry={reg} />);
+    renderWithIcons(<ToolPalette tools={tools} modeRegistry={reg} />);
     const anchorBtn = screen.getByRole('button', { name: /anchor/i });
     const handBtn = screen.getByRole('button', { name: /hand/i });
 
@@ -349,7 +350,7 @@ describe('ToolPalette — mode eligibility', () => {
   it('Home / End land on eligible tools', () => {
     const reg = createModeRegistry({ modes: DEFAULT_MODES, initial: 'path-edit' });
     const tools = makeTools(selectTool, anchorTool, handTool);
-    render(<ToolPalette tools={tools} modeRegistry={reg} />);
+    renderWithIcons(<ToolPalette tools={tools} modeRegistry={reg} />);
     const anchorBtn = screen.getByRole('button', { name: /anchor/i });
     const handBtn = screen.getByRole('button', { name: /hand/i });
 
@@ -364,7 +365,7 @@ describe('ToolPalette — mode eligibility', () => {
     const reg = createModeRegistry({ modes: DEFAULT_MODES, initial: 'path-edit' });
     // `makeTools` makes the first tool active — here, the ineligible one.
     const tools = makeTools(selectTool, anchorTool, handTool);
-    render(<ToolPalette tools={tools} modeRegistry={reg} />);
+    renderWithIcons(<ToolPalette tools={tools} modeRegistry={reg} />);
     const selectBtn = screen.getByRole('button', { name: /select/i }) as HTMLButtonElement;
     const anchorBtn = screen.getByRole('button', { name: /anchor/i }) as HTMLButtonElement;
     expect(selectBtn.tabIndex).toBe(-1);
@@ -374,7 +375,7 @@ describe('ToolPalette — mode eligibility', () => {
   it('when modeRegistry is omitted, all tools are eligible (fallback behaviour)', () => {
     // PATH_EDIT would normally disable 'select', but no registry means all eligible.
     const tools = makeTools(selectTool, anchorTool, handTool);
-    render(<ToolPalette tools={tools} />);
+    renderWithIcons(<ToolPalette tools={tools} />);
     const buttons = screen.getAllByRole('button');
     for (const btn of buttons) {
       expect(btn.getAttribute('aria-disabled')).toBeNull();

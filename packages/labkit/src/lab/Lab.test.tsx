@@ -1,6 +1,7 @@
-import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { createMemoryAdapter } from '@weasel-js/storage';
+import { renderWithIcons, withIcons } from '@weasel-js/ui/testing/withIcons';
 import { type ReactNode, useContext, useEffect } from 'react';
 import { describe, expect, it } from 'vitest';
 import { auto } from '../config/auto';
@@ -43,6 +44,7 @@ async function mountLab(props: Partial<Record<keyof LabProps, unknown>> = {}) {
     <Lab {...({ instruments: [stub, stubB], defaultInstrument: 'Stub', ...props } as LabProps)}>
       <CaptureLab />
     </Lab>,
+    { wrapper: withIcons },
   );
 }
 
@@ -104,6 +106,7 @@ describe('<Lab>', () => {
           <CaptureStore />
         </CaptureLab>
       </Lab>,
+      { wrapper: withIcons },
     );
     const ws = labRef?.trials[0];
     if (!ws) throw new Error('no trial');
@@ -131,6 +134,7 @@ describe('<Lab>', () => {
           <CaptureStore />
         </CaptureLab>
       </Lab>,
+      { wrapper: withIcons },
     );
     await act(async () => labRef?.addTrial('Stub', { config: { count: auto } }));
     const id = labRef?.trials[1]?.id ?? '';
@@ -169,13 +173,13 @@ describe('<Lab>', () => {
   });
 
   it('throws when instruments is empty', () => {
-    expect(() => render(<Lab instruments={[]} defaultInstrument="Stub" />)).toThrow(
+    expect(() => renderWithIcons(<Lab instruments={[]} defaultInstrument="Stub" />)).toThrow(
       /requires a non-empty `instruments` array/,
     );
   });
 
   it('throws when defaultInstrument does not match any instrument', () => {
-    expect(() => render(<Lab instruments={[stub]} defaultInstrument="Missing" />)).toThrow(
+    expect(() => renderWithIcons(<Lab instruments={[stub]} defaultInstrument="Missing" />)).toThrow(
       /Unknown instrument/,
     );
   });
@@ -197,6 +201,7 @@ describe('<Lab>', () => {
 
     const first = await renderSettled(
       <Lab instruments={[mapped]} defaultInstrument="Mapped" storage={storage()} storageKey="s" />,
+      { wrapper: withIcons },
     );
     await waitFor(() => expect(JSON.stringify([...backing.values()])).toContain('"seen":["a"]'));
     first.unmount();
@@ -235,6 +240,7 @@ describe('instruments that change while mounted', () => {
       <Lab instruments={[v1]} defaultInstrument="Grow">
         <CaptureLab />
       </Lab>,
+      { wrapper: withIcons },
     );
     view.rerender(
       <Lab instruments={[v2]} defaultInstrument="Grow">
@@ -252,6 +258,7 @@ describe('instruments that change while mounted', () => {
       <Lab instruments={[stub]} defaultInstrument="Stub">
         <CaptureLab />
       </Lab>,
+      { wrapper: withIcons },
     );
     view.rerender(
       <Lab instruments={[stub, later]} defaultInstrument="Stub">
@@ -278,7 +285,9 @@ describe('instruments that change while mounted', () => {
       render: () => <Probe />,
     };
     const v2: Instrument = { ...v1, defaultConfig: () => ({ extra: 1 }) };
-    const view = await renderSettled(<Lab instruments={[v1]} defaultInstrument="Keep" />);
+    const view = await renderSettled(<Lab instruments={[v1]} defaultInstrument="Keep" />, {
+      wrapper: withIcons,
+    });
     view.rerender(<Lab instruments={[v2]} defaultInstrument="Keep" />);
     expect(mounts).toBe(1);
   });

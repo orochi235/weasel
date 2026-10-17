@@ -1,9 +1,5 @@
 import type { ComponentType, ReactNode } from 'react';
-import {
-  IconRegistryProvider,
-  IconRegistryProviderIfRoot,
-  type IconRegistryProviderProps,
-} from './iconRegistry';
+import { IconRegistryScope, type IconRegistryProviderProps } from './iconRegistry';
 import { DepRegistryProviderIfRoot } from './canvas/SceneCanvas/DepRegistryProviderIfRoot';
 import { ActionsProviderIfRoot } from './canvas/SceneCanvas/ActionsProviderIfRoot';
 import { PointerProviderIfRoot } from './canvas/SceneCanvas/PointerProviderIfRoot';
@@ -57,26 +53,20 @@ export function WeaselProvider({ children, isolate = false, icons, iconVariants 
     ? SelectionContextProvider
     : SelectionContextProviderIfRoot;
   const Pointer: Wrapper = isolate ? PointerContextProvider : PointerProviderIfRoot;
-  const tree = (
-    <Deps>
-      <Actions>
-        <ActiveTool>
-          <Selection>
-            <Pointer>
-              {children}
-            </Pointer>
-          </Selection>
-        </ActiveTool>
-      </Actions>
-    </Deps>
-  );
   // `isolate` leaves the icon registry alone: icons are the app's, settled when it is built.
-  if (icons || iconVariants) {
-    return (
-      <IconRegistryProvider icons={icons} variants={iconVariants}>
-        {tree}
-      </IconRegistryProvider>
-    );
-  }
-  return <IconRegistryProviderIfRoot>{tree}</IconRegistryProviderIfRoot>;
+  return (
+    <IconRegistryScope icons={icons} variants={iconVariants}>
+      <Deps>
+        <Actions>
+          <ActiveTool>
+            <Selection>
+              <Pointer>
+                {children}
+              </Pointer>
+            </Selection>
+          </ActiveTool>
+        </Actions>
+      </Deps>
+    </IconRegistryScope>
+  );
 }

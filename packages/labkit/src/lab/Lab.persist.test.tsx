@@ -1,6 +1,7 @@
 import 'fake-indexeddb/auto';
-import { act, render, screen, waitFor } from '@testing-library/react';
+import { act, screen, waitFor } from '@testing-library/react';
 import { createMemoryAdapter, type StorageAdapter } from '@weasel-js/storage';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import { StrictMode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Instrument } from '../instrument/types';
@@ -54,7 +55,7 @@ afterEach(() => {
 describe('<Lab> with a storageKey', () => {
   it('renders its fallback until the lab has loaded', async () => {
     const { storage, release } = gated();
-    render(
+    renderWithIcons(
       <Lab
         instruments={[stub]}
         defaultInstrument="Stub"
@@ -72,7 +73,7 @@ describe('<Lab> with a storageKey', () => {
 
   it("falls back to the lab's empty shell by default", () => {
     const { storage } = gated();
-    const { container } = render(
+    const { container } = renderWithIcons(
       <Lab
         instruments={[stub]}
         defaultInstrument="Stub"
@@ -89,7 +90,7 @@ describe('<Lab> with a storageKey', () => {
   it('opens the lab once under StrictMode', async () => {
     const storage = createMemoryAdapter();
     const list = vi.spyOn(storage, 'list');
-    render(
+    renderWithIcons(
       <StrictMode>
         <Lab instruments={[stub]} defaultInstrument="Stub" storageKey="strict" storage={storage} />
       </StrictMode>,
@@ -99,7 +100,7 @@ describe('<Lab> with a storageKey', () => {
   });
 
   it('persists to IndexedDB when given no storage', async () => {
-    const view = render(
+    const view = renderWithIcons(
       <Lab instruments={[stub]} defaultInstrument="Stub" storageKey="idb-lab">
         <CaptureLab />
       </Lab>,
@@ -117,7 +118,7 @@ describe('<Lab> with a storageKey', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const backing = new Map<string, unknown>();
     const storage = createMemoryAdapter(backing);
-    const view = render(
+    const view = renderWithIcons(
       <Lab instruments={[stub]} defaultInstrument="Stub" storageKey="one" storage={storage}>
         <CaptureLab />
       </Lab>,
@@ -157,7 +158,7 @@ describe('<Lab> with a storageKey', () => {
         return data as object;
       },
     };
-    render(
+    renderWithIcons(
       <Lab
         instruments={[picky]}
         defaultInstrument="Stub"
@@ -182,7 +183,7 @@ describe('<Lab> with a storageKey', () => {
 
   it('closes the lab on unmount, sending what was queued', async () => {
     const backing = new Map<string, unknown>();
-    const view = render(
+    const view = renderWithIcons(
       <Lab
         instruments={[stub]}
         defaultInstrument="Stub"

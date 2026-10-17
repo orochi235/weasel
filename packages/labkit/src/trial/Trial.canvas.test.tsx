@@ -1,6 +1,7 @@
 import { act, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
+import { withIcons } from '@weasel-js/ui/testing/withIcons';
 import { useContext } from 'react';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { auto } from '../config/auto';
@@ -55,6 +56,7 @@ describe('an instrument that draws', () => {
   it('still renders its own DOM, as an overlay over the canvas', async () => {
     const { container } = await renderSettled(
       <Lab instruments={[makeInstrument(() => undefined)]} defaultInstrument="Probe" />,
+      { wrapper: withIcons },
     );
     expect(screen.getByTestId('readout')).toHaveTextContent('n = 7');
     expect(container.querySelector('.lk-canvas-stack__overlay')).toContainElement(
@@ -65,7 +67,9 @@ describe('an instrument that draws', () => {
 
   it('draws with the camera applied, so world geometry lands where the view says', async () => {
     const draw = vi.fn();
-    await renderSettled(<Lab instruments={[makeInstrument(draw)]} defaultInstrument="Probe" />);
+    await renderSettled(<Lab instruments={[makeInstrument(draw)]} defaultInstrument="Probe" />, {
+      wrapper: withIcons,
+    });
     await nextFrame();
 
     expect(draw).toHaveBeenCalled();
@@ -75,7 +79,9 @@ describe('an instrument that draws', () => {
 
   it('passes zoom in the args so a layer can keep line widths unscaled', async () => {
     const draw = vi.fn();
-    await renderSettled(<Lab instruments={[makeInstrument(draw)]} defaultInstrument="Probe" />);
+    await renderSettled(<Lab instruments={[makeInstrument(draw)]} defaultInstrument="Probe" />, {
+      wrapper: withIcons,
+    });
     await nextFrame();
 
     expect(draw).toHaveBeenCalledWith(
@@ -101,6 +107,7 @@ describe('two trials that draw', () => {
       <Lab instruments={[makeInstrument(draw)]} defaultInstrument="Probe">
         <Capture />
       </Lab>,
+      { wrapper: withIcons },
     );
     await act(async () => seen.lab?.addTrial('Probe'));
     await nextFrame();
@@ -135,6 +142,7 @@ describe('an auto config path', () => {
     });
     const { container } = await renderSettled(
       <Lab instruments={[instrument as Instrument]} defaultInstrument="Auto" />,
+      { wrapper: withIcons },
     );
     await nextFrame();
 
@@ -155,7 +163,9 @@ describe('LabProps.instruments', () => {
     // The assignment is the assertion: this file fails to compile if
     // `defineInstrument<St, ...>`'s result stops being assignable.
     const typed = makeInstrument(() => undefined);
-    await renderSettled(<Lab instruments={[typed]} defaultInstrument="Probe" />);
+    await renderSettled(<Lab instruments={[typed]} defaultInstrument="Probe" />, {
+      wrapper: withIcons,
+    });
     expect(screen.getByTestId('readout')).toBeInTheDocument();
   });
 
@@ -172,7 +182,9 @@ describe('LabProps.instruments', () => {
     const instrument = makeInstrument(vi.fn(), {
       worldSpec: { origin: { x: 0.5, y: 0.5 }, yAxis: 'up' },
     });
-    await renderSettled(<Lab instruments={[instrument]} defaultInstrument="Probe" />);
+    await renderSettled(<Lab instruments={[instrument]} defaultInstrument="Probe" />, {
+      wrapper: withIcons,
+    });
     await nextFrame();
 
     // Origin (400,300) plus the instrument's pan (30,40); y runs up.
@@ -196,7 +208,9 @@ describe('LabProps.instruments', () => {
         pan: { x: width / 4, y: height / 4 },
       }),
     });
-    await renderSettled(<Lab instruments={[instrument]} defaultInstrument="Probe" />);
+    await renderSettled(<Lab instruments={[instrument]} defaultInstrument="Probe" />, {
+      wrapper: withIcons,
+    });
     await nextFrame();
     await nextFrame();
 
@@ -222,7 +236,9 @@ describe('LabProps.instruments', () => {
       },
       layers: { ids: ['grid', 'glyph'] },
     });
-    await renderSettled(<Lab instruments={[instrument]} defaultInstrument="Probe" />);
+    await renderSettled(<Lab instruments={[instrument]} defaultInstrument="Probe" />, {
+      wrapper: withIcons,
+    });
     expect([...seen]).toEqual(['grid', 'glyph']);
 
     await userEvent.click(screen.getByRole('checkbox', { name: 'Show grid' }));
@@ -239,7 +255,9 @@ describe('LabProps.instruments', () => {
       canvas: { layers: [{ id: 'grid', draw: () => undefined }] },
       layers: { ids: ['grid'] },
     });
-    await renderSettled(<Lab instruments={[instrument]} defaultInstrument="Probe" />);
+    await renderSettled(<Lab instruments={[instrument]} defaultInstrument="Probe" />, {
+      wrapper: withIcons,
+    });
     const undo = screen.getByRole('button', { name: 'Undo' });
     expect(undo).toBeDisabled();
 
