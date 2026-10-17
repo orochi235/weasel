@@ -37,6 +37,8 @@ const strings = (name: string, description: string): PrefLeaf =>
   ({ kind: 'list', name, description, default: [], item: { kind: 'string', name: '', description: '', default: '' } }) as PrefLeaf;
 /** Text the code spells, which the editor sets in monospace. */
 const symbol = (name: string, description: string): PrefLeaf => ({ kind: 'symbol', name, description, default: '' });
+/** The attribute kind an `icon` is edited as: a picker over every registered icon. */
+export const ICON_KIND = 'icon';
 const symbols = (name: string, description: string): PrefLeaf =>
   ({ kind: 'list', name, description, default: [], item: symbol('', '') }) as PrefLeaf;
 /** The attribute kind a `showIf` or an `enableIf` is edited as: a `PrefCondition` over the schema's other leaves. */
@@ -57,7 +59,7 @@ const LEAF_BASE: KindAttrs = {
   enableIf: ENABLE_IF,
   block: flag('Block', 'Full width with no label row, for a control with its own chrome.'),
   heading: flag('In heading', 'Drawn in the heading of the group holding it, in place of a row. A boolean or an enum only.'),
-  icon: symbol('Icon', 'Glyph name in the host\'s icon set.'),
+  icon: { kind: ICON_KIND, name: 'Icon', description: 'An icon by qualified name, from the icon sets this app registered.', default: undefined } as PrefLeaf,
   pair: { kind: 'pair', name: 'Pair', description: 'The fields that share this one\'s row in compact property UIs, and what the row reads.', default: undefined },
   short: strings('Short names', 'Shorter forms of the name, longest first.'),
   absentIsDefault: flag('Absent is default', 'Where nothing is held, it reads as its default: for a node property whose reader does the same.'),

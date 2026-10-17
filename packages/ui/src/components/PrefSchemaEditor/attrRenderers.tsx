@@ -5,6 +5,7 @@ import { CloseButton } from '../CloseButton';
 import { Input } from '../Input';
 import { Select } from '../Select';
 import { NumberText } from './NumberText';
+import { IconAttrField } from './IconAttrField';
 import { UnitEditor } from './UnitAttr';
 import s from './PrefSchemaEditor.module.css';
 
@@ -86,9 +87,13 @@ function PairEditor({ ctx }: { ctx: PrefRenderContext }) {
   );
 }
 
-export const ATTR_RENDERERS: Record<'optional-number' | 'enum-options' | 'pair' | 'symbol' | 'unit', PrefRenderer> = {
+export const ATTR_RENDERERS: Record<'optional-number' | 'enum-options' | 'pair' | 'symbol' | 'unit' | 'icon', PrefRenderer> = {
   // Four fields across, which the control column has no room for.
   unit: Object.assign<PrefRenderer, { group: boolean; wide: boolean }>((ctx) => <UnitEditor ctx={ctx} />, { group: true, wide: true }),
+  // A search box and a grid of glyphs, which the control column has no room for.
+  icon: Object.assign<PrefRenderer, { group: boolean; wide: boolean }>((ctx) => (
+    <IconAttrField value={typeof ctx.value === 'string' ? ctx.value : undefined} onChange={ctx.setValue} />
+  ), { group: true, wide: true }),
   pair: Object.assign<PrefRenderer, { group: boolean }>((ctx) => <PairEditor ctx={ctx} />, { group: true }),
   'optional-number': (ctx) => <OptionalNumber ctx={ctx} />,
   'enum-options': Object.assign<PrefRenderer, { group: boolean }>((ctx) => <EnumOptions ctx={ctx} />, { group: true }),
