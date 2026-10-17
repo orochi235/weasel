@@ -3,6 +3,8 @@
  * what each reads and writes, and where a decision sends the signal.
  */
 export { checkPipeline } from './effect/check';
+export { COMPACT_PADDING, compact } from './effect/compact';
+export type { CompactOptions } from './effect/compact';
 export type { EffectProblem } from './effect/check';
 export {
   NO_VALUE,
@@ -18,11 +20,14 @@ export {
   uniqueGroups,
   uniqueStages,
   valueRowId,
+  wireEdges,
   wireStyle,
 } from './effect/draw';
 export type { DrawableWire, EffectLook, EffectLookResult, TypeColor } from './effect/draw';
 export { EFFECT_MIN_SCALE, EffectChart } from './effect/EffectChart';
 export type { EffectChartProps } from './effect/EffectChart';
+export { LANE_INSET, laneId, lanes } from './effect/lanes';
+export type { LanesOptions } from './effect/lanes';
 export { EFFECT_LOOKS } from './effect/looks';
 export { mainChain } from './effect/mainChain';
 export { nodeGraph } from './effect/nodeGraph';

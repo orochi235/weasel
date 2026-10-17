@@ -6,7 +6,9 @@ import { EffectChart } from '../EffectChart';
 import { EFFECT_LOOKS } from '../looks';
 import type { NodeGraphOptions } from '../nodeGraph';
 import type { RackOptions } from '../rack';
-import type { BranchChoice } from '../symbols';
+import type { CompactOptions } from '../compact';
+import type { LanesOptions } from '../lanes';
+import { BRANCH_SYMBOLS, type BranchChoice } from '../symbols';
 import { SAMPLES } from './samples';
 import s from './EffectLab.stories.module.css';
 
@@ -54,8 +56,8 @@ function useBoxSize<T extends HTMLElement>() {
 function LabView({ config }: { config: LabConfig }) {
   const [problems, setProblems] = useState<readonly EffectProblem[]>([]);
   const [picked, setPicked] = useState<string | null>(null);
-  // Both looks take one bag; each reads the keys it knows.
-  const options = useMemo((): NodeGraphOptions & RackOptions => ({
+  // Every look takes one bag; each reads the keys it knows.
+  const options = useMemo((): NodeGraphOptions & RackOptions & LanesOptions & CompactOptions => ({
     branch: config.branch,
     showParams: config.showParams,
     nodeGap: config.nodeGap,
@@ -99,11 +101,11 @@ export const Lab = story({
   config: f.schema({
     sample: f.enum('skip', Object.keys(SAMPLES)).label('Pipeline'),
     look: f.enum('nodeGraph', Object.keys(EFFECT_LOOKS)).radio().label('Look'),
-    branch: f.enum('auto', ['auto', 'diamond', 'bar', 'demux', 'switch']).label('Branch symbol'),
+    branch: f.enum('auto', ['auto', ...Object.keys(BRANCH_SYMBOLS)]).label('Branch symbol'),
     showParams: f.boolean(true).label('Show params'),
     nodeGap: f.number(32).range(8, 96).step(4).label('Node gap'),
     rankGap: f.number(72).range(24, 200).step(4).label('Rank gap'),
-    router: f.enum('bezier', ['bezier', 'orthogonal', 'straight']).label('Router').showIf((c) => c.look === 'nodeGraph'),
+    router: f.enum('bezier', ['bezier', 'orthogonal', 'straight']).label('Router').showIf((c) => c.look !== 'rack'),
     side: f.enum('below', ['below', 'above']).radio().label('Side inputs').showIf((c) => c.look === 'rack'),
     collapseSkips: f.boolean(true).label('Collapse skip-ahead decisions').showIf((c) => c.look === 'rack'),
   }),

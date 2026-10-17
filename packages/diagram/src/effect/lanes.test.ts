@@ -1,0 +1,173 @@
+import { describe, expect, it } from 'vitest';
+import { diagramScene, type DiagramSpec } from '../fromData';
+import { PROBLEM_COLOR } from './draw';
+import { SAMPLES } from './lab/samples';
+import { LANE_INSET, laneId, lanes } from './lanes';
+import { paintRun } from './run';
+import { io, w } from './skipFixture';
+import type { EffectPipeline } from './types';
+
+/** An image chain with a quality check, a blur steered by a control number,
+ *  and a composite that also reads a mask. */
+const P: EffectPipeline = {
+  types: { number: { control: true } },
+  stages: [
+    io('src', { kind: 'source', inputs: [] }),
+    { id: 'q', title: 'high?', kind: 'decision', inputs: [{ id: 'in', type: 'image' }],
+      outputs: [{ id: 'yes', type: 'image' }, { id: 'no', type: 'image' }] },
+    io('blur', { inputs: [{ id: 'in', type: 'image' }, { id: 'radius', type: 'number' }], params: [{ label: 'radius', value: '6 px' }] }),
+    io('mix', { inputs: [{ id: 'base', type: 'image' }, { id: 'over', type: 'image' }, { id: 'mask', type: 'mask' }] }),
+    io('out', { kind: 'sink', outputs: [] }),
+    { id: 'osc', title: 'Oscillator', outputs: [{ id: 'value', type: 'number' }] },
+    { id: 'cut', title: 'Mask', outputs: [{ id: 'out', type: 'mask' }] },
+  ],
+  wires: [
+    w(['src', 'out'], ['q', 'in']), w(['q', 'yes'], ['blur', 'in']), w(['q', 'no'], ['mix', 'base']),
+    w(['blur', 'out'], ['mix', 'over']), w(['mix', 'out'], ['out', 'in']), w(['osc', 'value'], ['blur', 'radius']),
+    w(['cut', 'out'], ['mix', 'mask']),
+  ],
+  groups: [{ id: 'g', label: 'Soften', members: ['blur'] }],
+};
+
+type Box = { x: number; y: number; width: number; height: number };
+const built = (p: EffectPipeline, options?: Parameters<typeof lanes>[1]) => {
+  const drawn = lanes(p, options);
+  const specs = diagramScene(drawn.data, drawn.scene);
+  const box = (id: string) => specs.find((s) => s.id === id)!.pose as Box;
+  return { drawn, specs, box };
+};
+const stageIds = (p: EffectPipeline) => p.stages.map((s) => s.id);
+const overlap = (a: Box, b: Box) => a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
+
+describe('lanes', () => {
+  it('draws one lane per value type, top to bottom in the order types first appear', () => {
+    const { drawn } = built(P);
+    expect(drawn.data.nodes.slice(0, 3).map((n) => n.id)).toEqual([laneId('image'), laneId('number'), laneId('mask')]);
+  });
+
+  it('takes the lane order it is given, the rest after', () => {
+    const { drawn } = built(P, { lanes: ['mask', 'nothing'] });
+    expect(drawn.data.nodes.slice(0, 3).map((n) => n.id)).toEqual([laneId('mask'), laneId('image'), laneId('number')]);
+  });
+
+  it('stacks the lanes edge to edge, each as wide as the chart', () => {
+    const { box } = built(P);
+    const [a, b, c] = ['image', 'number', 'mask'].map((t) => box(laneId(t)));
+    expect(b!.y).toBeCloseTo(a!.y + a!.height, 6);
+    expect(c!.y).toBeCloseTo(b!.y + b!.height, 6);
+    expect(b!.width).toBe(a!.width);
+  });
+
+  it('makes each stage as tall as the span of lanes it touches, and sits it inside them', () => {
+    const { box } = built(P);
+    const lane = (t: string) => box(laneId(t));
+    const spans: Record<string, [string, string]> = {
+      src: ['image', 'image'], blur: ['image', 'number'], mix: ['image', 'mask'], osc: ['number', 'number'], cut: ['mask', 'mask'],
+    };
+    for (const [id, [first, last]] of Object.entries(spans)) {
+      const b = box(id);
+      const top = lane(first).y;
+      const bottom = lane(last).y + lane(last).height;
+      expect(b.y, id).toBeGreaterThan(top);
+      expect(b.y + b.height, id).toBeLessThan(bottom);
+      expect(b.y - top, id).toBeCloseTo(LANE_INSET, 6);
+      expect(bottom - (b.y + b.height), id).toBeCloseTo(LANE_INSET, 6);
+    }
+    const q = box('q');
+    expect(q.y).toBeGreaterThan(lane('image').y);
+    expect(q.y + q.height).toBeLessThan(lane('image').y + lane('image').height);
+  });
+
+  it('overlaps no two stages, two sources of one type included', () => {
+    const two: EffectPipeline = { ...P, stages: [...P.stages, io('beams', { inputs: [] })], wires: [...P.wires, w(['beams', 'out'], ['mix', 'over'])] };
+    for (const options of [{}, { showValues: true }, { laneHeight: 10 }]) {
+      const { box } = built(two, options);
+      const ids = stageIds(two);
+      for (const [i, a] of ids.entries()) for (const b of ids.slice(i + 1)) expect(overlap(box(a), box(b)), `${a} ${b}`).toBe(false);
+    }
+  });
+
+  it('grows a lane until what stands in it fits', () => {
+    const { box } = built(P, { laneHeight: 10, showValues: true });
+    const lane = box(laneId('image'));
+    for (const id of ['src', 'blur', 'mix']) expect(box(id).y).toBeGreaterThan(lane.y);
+  });
+
+  it('puts each stage right of every stage that feeds it', () => {
+    const { box } = built(P);
+    for (const wire of P.wires) {
+      expect(box(wire.to.stage).x, `${wire.from.stage} > ${wire.to.stage}`).toBeGreaterThan(box(wire.from.stage).x);
+    }
+  });
+
+  it('sets each port of an ordinary stage in the lane of its type', () => {
+    const { drawn, box } = built(P);
+    const lane = (t: string) => box(laneId(t));
+    for (const id of ['blur', 'mix']) {
+      const node = drawn.data.nodes.find((n) => n.id === id)!;
+      const b = box(id);
+      for (const port of node.ports!) {
+        const y = b.y + port.at.v * b.height;
+        const l = lane(port.type!);
+        expect(y, `${id}.${port.id}`).toBeGreaterThan(l.y);
+        expect(y, `${id}.${port.id}`).toBeLessThan(l.y + l.height);
+        expect(port.at.u).toBe(P.stages.find((s) => s.id === id)!.inputs!.some((p) => p.id === port.id) ? 0 : 1);
+      }
+    }
+  });
+
+  it('brings a decision\'s control inputs in from the bottom when their lane is below its signal', () => {
+    const steered: EffectPipeline = {
+      types: { bool: { control: true } },
+      stages: [{ id: 'q', title: 'q', kind: 'decision', inputs: [{ id: 'in', type: 'image' }, { id: 'when', type: 'bool' }],
+        outputs: [{ id: 'a', type: 'image' }, { id: 'b', type: 'image' }] }],
+      wires: [],
+    };
+    const at = (order: string[]) => lanes(steered, { lanes: order }).data.nodes.find((n) => n.id === 'q')!.ports!.find((p) => p.id === 'when')!.at.v;
+    expect(at(['image', 'bool'])).toBe(1);
+    expect(at(['bool', 'image'])).toBe(0);
+  });
+
+  it('draws a mismatched wire in the problem color and keeps groups', () => {
+    const bad = lanes({ ...P, wires: [...P.wires, w(['cut', 'out'], ['blur', 'in'])] });
+    expect(bad.scene.edgeStyle!(bad.data.edges[bad.data.edges.length - 1]!).stroke).toBe(PROBLEM_COLOR);
+    expect(bad.data.groups).toEqual(P.groups);
+  });
+
+  it('fades a decision\'s exit a run did not take', () => {
+    const { drawn, specs } = built(P);
+    const run = { stages: { src: {}, q: { taken: 'yes' }, blur: {}, mix: {}, out: {}, osc: {}, cut: {} } };
+    const painted = paintRun(P, specs, run, drawn.exits);
+    const opacity = (from: string, to: string) => (painted.find((s) => s.id === `edge:q.${from}->${to}:${from}`)!.data as DiagramSpec['data'])
+      .stroke!.paint.opacity;
+    expect(opacity('yes', 'blur.in')).toBeUndefined();
+    expect(opacity('no', 'mix.base')).toBeLessThan(1);
+  });
+
+  it('draws a pipeline with no stages, and stages with no ports', () => {
+    expect(() => built({ stages: [], wires: [] })).not.toThrow();
+    const bare = built({ stages: [{ id: 'a', title: 'A' }, { id: 'b', title: 'B' }], wires: [] });
+    expect(overlap(bare.box('a'), bare.box('b'))).toBe(false);
+  });
+
+  it('places a stage on a loop without throwing', () => {
+    const loop: EffectPipeline = { stages: [io('a'), io('b')], wires: [w(['a', 'out'], ['b', 'in']), w(['b', 'out'], ['a', 'in'])] };
+    const { box } = built(loop);
+    expect(overlap(box('a'), box('b'))).toBe(false);
+  });
+
+  it('overlaps no two stages and keeps each inside its lanes, in every lab sample', () => {
+    for (const [name, p] of Object.entries(SAMPLES)) {
+      const { drawn, box } = built(p);
+      const ids = [...new Set(p.stages.map((s) => s.id))];
+      for (const [i, a] of ids.entries()) for (const b of ids.slice(i + 1)) expect(overlap(box(a), box(b)), `${name}: ${a} ${b}`).toBe(false);
+      const bands = drawn.data.nodes.filter((n) => n.id.startsWith('~lane:')).map((n) => box(n.id));
+      const top = Math.min(...bands.map((b) => b.y));
+      const bottom = Math.max(...bands.map((b) => b.y + b.height));
+      for (const id of ids) {
+        expect(box(id).y, `${name}: ${id}`).toBeGreaterThanOrEqual(top);
+        expect(box(id).y + box(id).height, `${name}: ${id}`).toBeLessThanOrEqual(bottom);
+      }
+    }
+  });
+});
