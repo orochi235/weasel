@@ -1,6 +1,6 @@
 /** The rows the registry inspector's tree lists, one shape per category. */
-import type { ActionShortcut } from '@weasel-js/core';
 import type { IconRef } from '@weasel-js/icons';
+import type { ShortcutInput } from '@weasel-js/ui';
 
 /** Discriminated leaf entry. One of these per row in the tree's right pane. */
 export type TreeEntry =
@@ -114,7 +114,7 @@ export interface ToolEntry {
   slot: 'registry' | 'ambient';
   /** The tool-switch keybinding (`ToolDef.keybinding`). Distinct from
    *  gesture shortcuts inside the tool. */
-  switchShortcut?: ActionShortcut;
+  switchShortcut?: ShortcutInput;
   /** Hotkey-slot trigger key (`space|alt|ctrl|meta|shift`) when set — the
    *  press-and-hold slot. */
   hotkey?: string;
@@ -145,7 +145,7 @@ export interface ActionEntry {
   label: string;
   /** The first key binding in the action's `defaultBinding`. `undefined`
    *  when it binds no key. */
-  bindingShortcut?: ActionShortcut;
+  bindingShortcut?: ShortcutInput;
   /** Display-override shortcut string from `Action.shortcut` — orthogonal
    *  to `bindingShortcut` (which comes from `defaultBinding`). */
   shortcut?: string;

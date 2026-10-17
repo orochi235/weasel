@@ -867,6 +867,11 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   (`docs/icons.md`), `'icon'` to `PrefBarLead`, draw it with `resolveIcon` in `BarLayout`, and
   offer both in the asset editor. A `menu` group's button could take the same `icon`.
 
+- **(P3) ui's `ShortcutInput` is a third copy of the shortcut shape.**
+  `packages/ui/src/components/ToolPalette/formatShortcut.ts` describes what `@weasel-js/menu`'s
+  `MenuShortcut` and routing's `ActionShortcut` (now an alias of it) already do. Fold it into
+  `MenuShortcut`.
+
 - **(P3) Shift+F10 / the ContextMenu key may open the menu twice in Chrome on Windows/Linux.**
   The `menu.context` key binding opens it at the selection, and those platforms also send a
   native `contextmenu` event to the focused canvas, which would reopen it at that event's point.
