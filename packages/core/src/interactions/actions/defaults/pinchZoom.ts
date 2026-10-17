@@ -13,7 +13,6 @@ interface PinchScratch {
 }
 
 /**
- * @experimental
  * Tuning for {@link makePinchZoomAction}.
  */
 export interface PinchZoomOptions {
@@ -27,7 +26,6 @@ export interface PinchZoomOptions {
 }
 
 /**
- * @experimental
  * Build a `viewport.pinchZoom` Action descriptor with a configurable scale
  * clamp. The same two-finger gesture zooms and pans, applied each frame.
  */
@@ -93,7 +91,6 @@ export function makePinchZoomAction(
 }
 
 /**
- * @experimental
  * Default `viewport.pinchZoom` descriptor: two-finger pinch with the kit's
  * default 0.1–8 scale clamp. Equivalent to `makePinchZoomAction()`.
  */

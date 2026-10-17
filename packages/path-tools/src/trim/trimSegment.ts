@@ -27,7 +27,7 @@ export function planTrim(
 }
 
 /**
- * @experimental Trim segment: remove the piece of the stroke under the press
+ * Trim segment: remove the piece of the stroke under the press
  * between the nearest crossings on either side — with any other node's
  * outline, or with itself — as `trimPathAt` cuts it. The topmost stroke
  * within `radiusPx` of the press (default 6) is the one trimmed; a stroke

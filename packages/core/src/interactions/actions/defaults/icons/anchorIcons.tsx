@@ -17,8 +17,6 @@ const SVG_BASE = {
 /**
  * Retract handles: a sharp corner on its anchor, with the handle stubs
  * either side pointing in toward it.
- *
- * @experimental
  */
 export function RetractHandlesIcon() {
   return (
@@ -34,8 +32,6 @@ export function RetractHandlesIcon() {
 /**
  * Make handles symmetric: a smooth curve through its anchor, with one handle
  * line across it ending in two equal knobs.
- *
- * @experimental
  */
 export function SymmetricHandlesIcon() {
   return (
@@ -52,8 +48,6 @@ export function SymmetricHandlesIcon() {
 /**
  * Hold handle angle: a handle knob on the line out of its anchor, with an
  * arrowhead saying it only slides along that line.
- *
- * @experimental
  */
 export function HoldHandleAngleIcon() {
   return (
@@ -69,8 +63,6 @@ export function HoldHandleAngleIcon() {
 /**
  * Hold handle length: a handle from its anchor to a knob on the circle it
  * keeps to, so it only turns.
- *
- * @experimental
  */
 export function HoldHandleLengthIcon() {
   return (
@@ -86,8 +78,6 @@ export function HoldHandleLengthIcon() {
 /**
  * Simplify brush: a smooth curve with a brush ring over its crest, the stretch
  * the brush would thin.
- *
- * @experimental
  */
 export function SimplifyBrushIcon() {
   return (
@@ -101,8 +91,6 @@ export function SimplifyBrushIcon() {
 /**
  * Harmonize curvature: a smooth arch through its anchor, with comb teeth of
  * one length standing out of it.
- *
- * @experimental
  */
 export function HarmonizeIcon() {
   return (
@@ -116,8 +104,6 @@ export function HarmonizeIcon() {
 
 /**
  * Average anchors: three anchors with spokes in to the anchor at their mean.
- *
- * @experimental
  */
 export function AverageAnchorsIcon() {
   return (
@@ -133,8 +119,6 @@ export function AverageAnchorsIcon() {
 
 /**
  * Bend segment: a straight segment, dashed, pulled up into a curve.
- *
- * @experimental
  */
 export function BendSegmentIcon() {
   return (
@@ -156,8 +140,6 @@ const NUDGE_TURN = { right: 0, down: 90, left: 180, up: -90 } as const;
  * 0.8 px, so the block's edges sit on whole pixels and each hatch line, `x + y` a multiple of 1.25, crosses pixel
  * centers. The hatch runs through the block's top-right and bottom-left corners, so no sliver is left at either.
  * Right is the glyph for nudging as such, where no direction is given.
- *
- * @experimental
  */
 export function NudgeAnchorsIcon({ dir = 'right' }: { dir?: keyof typeof NUDGE_TURN }) {
   return (

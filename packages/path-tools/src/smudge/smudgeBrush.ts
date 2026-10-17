@@ -45,7 +45,7 @@ function worldRadius(deps: ActionDeps, radiusPx: number): number {
 }
 
 /**
- * @experimental A drag that pushes the outline of every selected path along with
+ * A drag that pushes the outline of every selected path along with
  * the pointer (`smudgePath` in `@weasel-js/geom`). Each pointer move is one dab from
  * where the last one ended: points under the brush move with it, most at its center
  * and not at all at its rim, and a long segment the brush meets gets anchors added

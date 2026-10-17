@@ -18,7 +18,7 @@ const axisOf = (params: Record<string, unknown> | undefined): AverageAxis => {
 };
 
 /**
- * @experimental Move the selected anchors to their mean position:
+ * Move the selected anchors to their mean position:
  * `params.axis` `'both'` (the default) stacks them on one point, `'x'` lines
  * them up on one vertical, `'y'` on one horizontal.
  */
@@ -63,7 +63,7 @@ export const joinSelectedAnchors = (options: JoinOptions): AnchorEdit => (set, s
 const join = joinSelectedAnchors({});
 
 /**
- * @experimental Join the two selected anchors, each the end of an open
+ * Join the two selected anchors, each the end of an open
  * subpath: the ends of one subpath close it, and ends of two make them one
  * (`joinAnchorsAt`). Joining renumbers the anchors, so the anchor selection
  * is cleared.

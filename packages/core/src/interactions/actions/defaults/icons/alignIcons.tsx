@@ -21,8 +21,6 @@ const AXIS = {
 
 /**
  * Align left: two bars flush against a left edge line.
- *
- * @experimental
  */
 export function AlignLeftIcon() {
   return (
@@ -36,8 +34,6 @@ export function AlignLeftIcon() {
 
 /**
  * Align right: two bars flush against a right edge line.
- *
- * @experimental
  */
 export function AlignRightIcon() {
   return (
@@ -51,8 +47,6 @@ export function AlignRightIcon() {
 
 /**
  * Align top: two bars hanging from a top edge line.
- *
- * @experimental
  */
 export function AlignTopIcon() {
   return (
@@ -66,8 +60,6 @@ export function AlignTopIcon() {
 
 /**
  * Align bottom: two bars standing on a bottom edge line.
- *
- * @experimental
  */
 export function AlignBottomIcon() {
   return (
@@ -81,8 +73,6 @@ export function AlignBottomIcon() {
 
 /**
  * Align centers horizontally: two bars centered on a vertical axis.
- *
- * @experimental
  */
 export function AlignCenterXIcon() {
   // Center horizontally — rectangles share a vertical center axis (x = 8).
@@ -97,8 +87,6 @@ export function AlignCenterXIcon() {
 
 /**
  * Align centers vertically: two bars centered on a horizontal axis.
- *
- * @experimental
  */
 export function AlignCenterYIcon() {
   // Center vertically — rectangles share a horizontal center axis (y = 8).

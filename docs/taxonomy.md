@@ -528,7 +528,7 @@ the ids itself and nothing else sees them — what a `<CanvasView>` opts into vi
 `selection` / `selectionOptions` props. Either way the selection is not document
 content: it is not a node, and `scene.toJSON()` does not carry it.
 
-Selection participates in the `@experimental`
+Selection participates in the
 [`SelectionContext`](#selectioncontext) for non-canvas UI. See
 `packages/core/src/core/selection/useSelection.ts`. The kit-level `ChromeState` (the
 affordance-facing read-only view) is built from the `SelectionApi` via
@@ -536,7 +536,7 @@ affordance-facing read-only view) is built from the `SelectionApi` via
 
 ### SelectionContext
 
-`@experimental`. An ambient React context populated by `<SceneCanvas>` (via
+An ambient React context populated by `<SceneCanvas>` (via
 `usePublishSelection`) that non-canvas UI (palette, status bar) can read without
 prop-drilling. Provides the current selection ids and optional per-id `kinds`
 labels. The `kinds` parallel array is a temporary half-step toward typed scene

@@ -151,7 +151,6 @@ function flipSelection(
 }
 
 /**
- * @experimental
  * Flips the selection. `params.axis` (`'x'` | `'y'`, default `'x'`) picks the
  * direction, and the optional `params.pivot` (a `FlipPivot`, default `'each'`)
  * picks what it mirrors about.

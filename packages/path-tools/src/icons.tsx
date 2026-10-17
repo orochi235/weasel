@@ -3,8 +3,6 @@ import { anchor, DOT, SVG_BASE } from './iconBase';
 
 /**
  * Smudge brush: a path dragged up into the brush ring that carries it.
- *
- * @experimental
  */
 export function SmudgeBrushIcon() {
   return (
@@ -18,8 +16,6 @@ export function SmudgeBrushIcon() {
 
 /**
  * Distort: a box pulled out of square by its four corners.
- *
- * @experimental
  */
 export function DistortIcon() {
   return (
@@ -35,8 +31,6 @@ export function DistortIcon() {
 
 /**
  * Envelope: a box bowed top and bottom, with the mesh inside bent to match.
- *
- * @experimental
  */
 export function EnvelopeIcon() {
   return (
@@ -53,8 +47,6 @@ export function EnvelopeIcon() {
 
 /**
  * Puppet Warp: a bar bent between the two pins holding it.
- *
- * @experimental
  */
 export function PuppetWarpIcon() {
   return (
@@ -68,8 +60,6 @@ export function PuppetWarpIcon() {
 
 /**
  * Blend: a circle turning into a box, with the step between them lighter.
- *
- * @experimental
  */
 export function BlendIcon() {
   return (
@@ -83,8 +73,6 @@ export function BlendIcon() {
 
 /**
  * Bend Along Path: a striped band bent over an arch.
- *
- * @experimental
  */
 export function BendAlongIcon() {
   return (
@@ -99,8 +87,6 @@ export function BendAlongIcon() {
 
 /**
  * Repeat Along Path: copies of a ring spaced along an arch.
- *
- * @experimental
  */
 export function RepeatAlongIcon() {
   return (
@@ -116,8 +102,6 @@ export function RepeatAlongIcon() {
 /**
  * Expand: a live outline, dashed, with the anchors it becomes. Used for
  * Expand to Paths and Expand Warp.
- *
- * @experimental
  */
 export function ExpandIcon() {
   return (
@@ -148,8 +132,6 @@ function BalancedSegment() {
 /**
  * Balance handles: a segment's balance grip, with an arrow for the drag that
  * scales both handles together.
- *
- * @experimental
  */
 export function BalanceHandlesIcon() {
   return (
@@ -163,8 +145,6 @@ export function BalanceHandlesIcon() {
 /**
  * Equalize handles: a segment's balance grip, with an equals sign for handles
  * evened out.
- *
- * @experimental
  */
 export function EqualizeHandlesIcon() {
   return (
@@ -178,8 +158,6 @@ export function EqualizeHandlesIcon() {
 /**
  * Lengthen: an open path's end anchor, and the run it grows along dashed
  * on past it.
- *
- * @experimental
  */
 export function LengthenIcon() {
   return (
@@ -193,8 +171,6 @@ export function LengthenIcon() {
 
 /**
  * Trim segment: a stroke between two crossings, its middle piece gone.
- *
- * @experimental
  */
 export function TrimIcon() {
   return (
@@ -208,8 +184,6 @@ export function TrimIcon() {
 
 /**
  * Extend to next path: an open end carried on, dashed, to the stroke it meets.
- *
- * @experimental
  */
 export function ExtendIcon() {
   return (
@@ -225,8 +199,6 @@ export function ExtendIcon() {
 /**
  * Girth: a stroke swelling from fine ends, with the width handle across its
  * widest point.
- *
- * @experimental
  */
 export function GirthIcon() {
   return (

@@ -14,7 +14,7 @@ import { insertAt, pathCopy, reshapeOps, slotOf } from './pathNodes';
 export const DEFAULT_SIMPLIFY_TOLERANCE = 1;
 
 /**
- * @experimental Refit each selected path with as few anchors as keep it
+ * Refit each selected path with as few anchors as keep it
  * within `params.tolerance` of where it was (`simplifyPath`).
  */
 export const simplifyPathAction = livePathEdit({
@@ -28,7 +28,7 @@ export const simplifyPathAction = livePathEdit({
 });
 
 /**
- * @experimental Add, beside each selected path, the outline of the region it
+ * Add, beside each selected path, the outline of the region it
  * fills grown by `params.distance` (shrunk by a negative one), with
  * `params.join` corners (`offsetPath`). A grown outline goes behind its
  * source and a shrunk one in front, so neither hides the other; the new

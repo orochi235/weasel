@@ -8,7 +8,6 @@ import { kitWeaselJsonHandler } from 'features/ingestion/weaselJsonHandler';
 import { ANY_INGEST_MODS, claimable, INGEST_REQUIRES, ingestFromEvent } from '../defaults/ingest';
 
 /**
- * @experimental
  * Static descriptor for the `clipboard.copy` Action (Cmd/Ctrl+C).
  */
 export const clipboardCopyAction: Action & { requires: string[] } = {
@@ -34,7 +33,6 @@ export const clipboardCopyAction: Action & { requires: string[] } = {
 };
 
 /**
- * @experimental
  * Static descriptor for the `clipboard.cut` Action (Cmd/Ctrl+X) — copy, then
  * the same batched delete `deleteAction` performs, as one undo entry.
  */
@@ -72,7 +70,6 @@ export const clipboardCutAction: Action & { requires: string[] } = {
 };
 
 /**
- * @experimental
  * Static descriptor for the `clipboard.paste` Action — what a Paste button or
  * menu item triggers, pasting the last copy this canvas made. It has no key
  * binding: Cmd/Ctrl+V already arrives as a DOM `paste` event, which the
@@ -103,7 +100,6 @@ export const clipboardPasteAction: Action & { requires: string[] } = {
 const PASTE_EVENT_HANDLERS = [kitWeaselJsonHandler];
 
 /**
- * @experimental
  * Static descriptor for the `clipboard.pasteEvent` Action — Cmd/Ctrl+V on a
  * canvas that edits and does not ingest. It answers the DOM `paste` event by
  * pasting nodes a kit canvas copied to the OS clipboard, in this tab or

@@ -5,7 +5,7 @@ import { withTextOutlines } from './createOutlinesAction';
 import { OutlineStrokeIcon } from '../defaults/icons/outlineIcons';
 
 /**
- * @experimental Static descriptor for Outline Stroke: replace each selected
+ * Static descriptor for Outline Stroke: replace each selected
  * stroked path, or stroked text, with the region its stroke covers, filled in
  * the stroke's paint. Reads the `createOutlinesAdapter` dep, published with
  * `useCreateOutlinesAdapter`, and needs its `getWorldPath` and `getPaint` for paths.

@@ -21,7 +21,7 @@ import { CutAtCrossingsIcon, JoinIcon } from '../defaults/icons/pathIcons';
 const CUT_LABEL = 'Cut at Crossings';
 
 /**
- * @experimental Cut every selected path wherever another selected path
+ * Cut every selected path wherever another selected path
  * crosses it (`snipPathsAtCrossings`): each cut path is replaced, in its
  * slot, by its pieces, which take its paint, and the pieces are selected.
  */
@@ -136,7 +136,7 @@ export function joinPathsCommand(
 }
 
 /**
- * @experimental Join open paths: close a selected path's open end to its
+ * Join open paths: close a selected path's open end to its
  * start, or connect two selected paths at their nearest open ends into one
  * (`planJoin`). Ends that meet merge into one anchor; ends apart are bridged
  * straight. In path edit, `joinAnchors` joins the two selected anchors

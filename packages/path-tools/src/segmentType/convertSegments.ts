@@ -16,7 +16,7 @@ const typeOf = (params: Record<string, unknown> | undefined): SegmentType | unde
   (params?.to === 'line' || params?.to === 'curve' ? params.to : undefined);
 
 /**
- * @experimental Convert the selected segments — those whose two ends are both
+ * Convert the selected segments — those whose two ends are both
  * selected anchors. `params.to` `'line'` straightens them, `'curve'` curves
  * them with handles at their thirds so they keep their shape, and no `to`
  * (Shift+C) curves them all when any is straight and straightens them
@@ -53,7 +53,7 @@ export const convertSegmentsAction: Action & { requires: string[] } = {
 };
 
 /**
- * @experimental Shift+double-click a segment of the path being edited to flip
+ * Shift+double-click a segment of the path being edited to flip
  * it between straight and curved. Off every segment the click falls through.
  */
 export const convertSegmentAtAction: Action & { requires: string[] } = inPlane({

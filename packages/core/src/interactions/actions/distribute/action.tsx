@@ -95,8 +95,8 @@ function makeDistributeAction(axis: DistributeAxis): Action {
   };
 }
 
-/** @experimental Static descriptor for distribute-horizontal. */
+/** Static descriptor for distribute-horizontal. */
 export const distributeHorizontalAction = makeDistributeAction('x');
-/** @experimental Static descriptor for distribute-vertical. */
+/** Static descriptor for distribute-vertical. */
 export const distributeVerticalAction   = makeDistributeAction('y');
 

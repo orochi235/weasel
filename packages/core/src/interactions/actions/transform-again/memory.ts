@@ -2,7 +2,6 @@ import type { ResizeAnchor } from '@weasel-js/routing';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 
 /**
- * @experimental
  * A transform the selection underwent, kept relative so it can be applied to
  * whatever is selected next.
  *
@@ -35,7 +34,6 @@ function sameIds(a: readonly string[], b: readonly string[]): boolean {
 }
 
 /**
- * @experimental
  * The last transform recorded against `scene`, which `transformAgain` repeats.
  */
 export function lastTransform(scene: object): RepeatableTransform | undefined {
@@ -43,7 +41,6 @@ export function lastTransform(scene: object): RepeatableTransform | undefined {
 }
 
 /**
- * @experimental
  * Remember `transform` as the last one `scene` underwent, `subject` being the
  * ids selected once it landed. A translate of exactly the copies a
  * `duplicate` just made folds into it, so the copies' offset from their
@@ -70,7 +67,7 @@ export function recordTransform(
   LAST.set(scene, { transform, subject: [...subject] });
 }
 
-/** @experimental Drop what `scene` remembers, so `transformAgain` has nothing to repeat. */
+/** Drop what `scene` remembers, so `transformAgain` has nothing to repeat. */
 export function forgetTransform(scene: object): void {
   LAST.delete(scene);
 }

@@ -5,7 +5,6 @@ import type { PoseFrame } from './poseFrame';
 import type { DrawnBoxes } from './drawnBoxes';
 
 /**
- * @experimental
  * A world-space place a selection transform lines up against — what align
  * aligns to, what flip mirrors about — other than the selection itself:
  *
@@ -20,7 +19,7 @@ export type SpatialReference =
   | { x: number; y: number; width?: number; height?: number }
   | { node: NodeId };
 
-/** @experimental Where `resolveSpatialReference` reads a reference's inputs. */
+/** Where `resolveSpatialReference` reads a reference's inputs. */
 export interface SpatialReferenceSources {
   /** The pointer's world position, or `null` when it is over no canvas. */
   pointer(): { x: number; y: number } | null;
@@ -29,7 +28,6 @@ export interface SpatialReferenceSources {
 }
 
 /**
- * @experimental
  * The world bounds `ref` names — a point comes back as a zero-size rect — or
  * `null` when it names nothing right now (no pointer, a missing node, a
  * malformed value).

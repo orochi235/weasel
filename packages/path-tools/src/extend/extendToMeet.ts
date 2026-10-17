@@ -57,7 +57,7 @@ function planExtend(deps: ActionDeps | undefined, params?: unknown): Map<string,
 }
 
 /**
- * @experimental Extend to next path: carry each open end of the selected
+ * Extend to next path: carry each open end of the selected
  * paths along its tangent to the first stroke it meets (`extendToMeet`). In
  * path edit, the selected end anchors of the edited path, or all its open
  * ends when none is selected. Given a press (`pressX`, `pressY`, as a click

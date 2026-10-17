@@ -15,8 +15,6 @@ const SVG_BASE = {
 /**
  * Create Outlines: a letter T drawn as its outline, with anchor squares on
  * its corners — type turned into editable geometry.
- *
- * @experimental
  */
 export function CreateOutlinesIcon() {
   return (
@@ -35,8 +33,6 @@ export function CreateOutlinesIcon() {
 /**
  * Outline Stroke: a thick curved stroke drawn as its outline, with anchor
  * squares on its corners.
- *
- * @experimental
  */
 export function OutlineStrokeIcon() {
   return (

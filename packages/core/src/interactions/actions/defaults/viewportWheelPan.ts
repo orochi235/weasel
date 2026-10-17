@@ -2,7 +2,6 @@ import type { Action } from '@weasel-js/routing';
 import { wheelPan } from 'core/viewport/wheelHandler';
 
 /**
- * @experimental
  * Wheel and trackpad pan. Shift+wheel pans horizontally, by routing deltaY
  * into the x axis (`params.swapAxis`). `params.axis` locks the pan to one
  * axis, and outranks `swapAxis`: a shift-wheel routed into a barred axis

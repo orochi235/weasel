@@ -105,7 +105,6 @@ function PaletteList({ id, items, highlight, reasonLabels, onHighlight, onRun }:
 }
 
 /**
- * @experimental
  * A dialog that lists every action registered with the surrounding
  * `<ActionsProvider>`, filters by label or tag, and runs the chosen one. The host
  * owns `open`. The list and each row's `enabled` state are read when it

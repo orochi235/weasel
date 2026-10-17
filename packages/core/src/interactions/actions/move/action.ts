@@ -11,7 +11,6 @@ import { recordTransform } from '../transform-again/memory';
 export type { ReparentOnDrop };
 
 /**
- * @experimental
  * Drag-translates the selection.
  *
  * Each frame's poses go to the scene's ephemeral override table, not the

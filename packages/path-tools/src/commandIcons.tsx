@@ -4,8 +4,6 @@ import { anchor, SVG_BASE } from './iconBase';
 
 /**
  * Reverse path: two runs pointing opposite ways.
- *
- * @experimental
  */
 export function ReversePathIcon() {
   return (
@@ -18,8 +16,6 @@ export function ReversePathIcon() {
 
 /**
  * Set path start: a closed loop with its first anchor flagged by a play mark.
- *
- * @experimental
  */
 export function SetPathStartIcon() {
   return (
@@ -34,8 +30,6 @@ export function SetPathStartIcon() {
 /**
  * Corners: a rounded corner, with the sharp one it replaced dashed. Used for
  * Set corners and the corner radius drag.
- *
- * @experimental
  */
 export function CornerRadiusIcon() {
   return (
@@ -48,8 +42,6 @@ export function CornerRadiusIcon() {
 
 /**
  * Next corner shape: a chamfered corner, with the round shape before it dashed.
- *
- * @experimental
  */
 export function CornerShapeIcon() {
   return (
@@ -67,8 +59,6 @@ const DASHED = { strokeWidth: 1, strokeDasharray: '1.4 1.4' };
 /**
  * Convert segments: one segment's two forms, straight and curved, between
  * the same anchors.
- *
- * @experimental
  */
 export function ConvertSegmentIcon() {
   return (
@@ -83,8 +73,6 @@ export function ConvertSegmentIcon() {
 
 /**
  * Make segments straight: the straight form solid, the curve dashed.
- *
- * @experimental
  */
 export function StraightenSegmentIcon() {
   return (
@@ -99,8 +87,6 @@ export function StraightenSegmentIcon() {
 
 /**
  * Make segments curved: the curve solid, the straight form dashed.
- *
- * @experimental
  */
 export function CurveSegmentIcon() {
   return (
@@ -116,8 +102,6 @@ export function CurveSegmentIcon() {
 /**
  * Add extreme anchors: an arch with a new anchor at its top, on the level
  * tangent there.
- *
- * @experimental
  */
 export function ExtremeAnchorsIcon() {
   return (

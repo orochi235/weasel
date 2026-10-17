@@ -52,7 +52,6 @@ export function buildDeleteOps(
 }
 
 /**
- * @experimental
  * Removes every selected node from the scene as one undo entry. Undo restores
  * everything the removal cascaded — a container's children and a deleted
  * node's dependents come back with it, at their own slots.

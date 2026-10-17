@@ -1,5 +1,4 @@
 /**
- * @experimental
  * SelectionContext — an ambient context that publishes "what's currently
  * selected" so non-canvas UI (command palette, status bar) can read it without
  * threading a selection prop through the tree.
@@ -21,7 +20,6 @@ import {
 import { useLatest } from '@weasel-js/react';
 import type { NodeId } from '../vocabulary';
 
-/** @experimental */
 export interface SelectionContextValue {
   /** The most-recently-published selection. Empty array when no canvas
    *  has published or when the active canvas's selection is empty. */
@@ -38,7 +36,6 @@ export interface SelectionContextValue {
 const SelectionContext = createContext<SelectionContextValue | null>(null);
 
 /**
- * @experimental
  * Wrap the part of the React tree that should share a selection context.
  * Usually placed at the demo / app root, alongside `<ActionsProvider>`.
  */
@@ -72,7 +69,6 @@ export function SelectionContextProvider({ children }: { children: ReactNode }):
 }
 
 /**
- * @experimental
  * The current selection-context value, or `null` when no
  * `<SelectionContextProvider>` is in scope.
  */
@@ -81,7 +77,6 @@ export function useSelectionContext(): SelectionContextValue | null {
 }
 
 /**
- * @experimental
  * Mounts a `<SelectionContextProvider>` only when no parent provider is in
  * scope; otherwise renders children unwrapped.
  */
@@ -96,7 +91,6 @@ export function SelectionContextProviderIfRoot({
 }
 
 /**
- * @experimental
  * Publishes `ids` into the surrounding `<SelectionContextProvider>` whenever
  * their content changes, and clears the slot on unmount unless another
  * publisher has written it since. No-op when there's no provider in scope.

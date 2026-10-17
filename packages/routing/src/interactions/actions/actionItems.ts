@@ -1,5 +1,4 @@
 /**
- * @experimental
  * The entries an action contributes to a bar, menu or palette — one per
  * variant, or the action itself when it declares none.
  */
@@ -8,7 +7,7 @@ import type { Action } from './action';
 
 const NO_TAGS: readonly string[] = Object.freeze([]);
 
-/** @experimental One renderable entry: an action, optionally with params. */
+/** One renderable entry: an action, optionally with params. */
 export interface ActionItem {
   /** `action.id`, or `action.id:variant.key` — unique across a registry. */
   key: string;
@@ -21,7 +20,7 @@ export interface ActionItem {
   params?: Readonly<Record<string, unknown>>;
 }
 
-/** @experimental Expand `action` into the entries a surface renders. An
+/** Expand `action` into the entries a surface renders. An
  *  action without an immediate invoker has none: `trigger` cannot start a
  *  drag, so a button for one would do nothing. */
 export function actionItems(action: Action): ActionItem[] {
@@ -39,7 +38,7 @@ export function actionItems(action: Action): ActionItem[] {
   }));
 }
 
-/** @experimental How a palette titles `item`: a variant reads as its action's
+/** How a palette titles `item`: a variant reads as its action's
  *  label and its own ("New: A4"), unless its label already holds the action's
  *  as whole words ("Zoom In", "Reset Zoom"). */
 export function actionItemTitle(item: ActionItem): string {

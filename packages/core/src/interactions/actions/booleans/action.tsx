@@ -83,20 +83,20 @@ function makePathfinderAction(op: BooleanOp): Action {
   };
 }
 
-/** @experimental Static descriptor for pathfinder-union. */
+/** Static descriptor for pathfinder-union. */
 export const pathfinderUnionAction     = makePathfinderAction('union');
-/** @experimental Static descriptor for pathfinder-subtract. */
+/** Static descriptor for pathfinder-subtract. */
 export const pathfinderSubtractAction  = makePathfinderAction('subtract');
-/** @experimental Static descriptor for pathfinder-intersect. */
+/** Static descriptor for pathfinder-intersect. */
 export const pathfinderIntersectAction = makePathfinderAction('intersect');
-/** @experimental Static descriptor for pathfinder-exclude. */
+/** Static descriptor for pathfinder-exclude. */
 export const pathfinderExcludeAction   = makePathfinderAction('exclude');
-/** @experimental Static descriptor for pathfinder-divide. */
+/** Static descriptor for pathfinder-divide. */
 export const pathfinderDivideAction    = makePathfinderAction('divide');
-/** @experimental Static descriptor for pathfinder-crop. */
+/** Static descriptor for pathfinder-crop. */
 export const pathfinderCropAction      = makePathfinderAction('crop');
-/** @experimental Static descriptor for pathfinder-trim. */
+/** Static descriptor for pathfinder-trim. */
 export const pathfinderTrimAction      = makePathfinderAction('trim');
-/** @experimental Static descriptor for pathfinder-merge. */
+/** Static descriptor for pathfinder-merge. */
 export const pathfinderMergeAction     = makePathfinderAction('merge');
 

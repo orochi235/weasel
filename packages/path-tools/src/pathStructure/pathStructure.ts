@@ -21,7 +21,7 @@ function loneAnchor(deps: ActionDeps | undefined): number | null {
 }
 
 /**
- * @experimental Make the selected anchor where its subpath starts. A closed
+ * Make the selected anchor where its subpath starts. A closed
  * subpath turns to start there; an open one can start only at an end, so its
  * last anchor reverses it (`setSubpathStart`). The anchor stays selected.
  */
@@ -82,7 +82,7 @@ function reverseInPathEdit(deps: ActionDeps): boolean {
 }
 
 /**
- * @experimental Run paths the other way, keeping their shape. In path edit it
+ * Run paths the other way, keeping their shape. In path edit it
  * reverses the subpaths holding the selected anchors — every subpath when
  * none is selected — and the selection follows its anchors. Otherwise it
  * reverses every selected path whole, in one undo entry. A closed subpath

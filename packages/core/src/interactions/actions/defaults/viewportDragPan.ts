@@ -57,7 +57,6 @@ export interface DragPanParams {
 }
 
 /**
- * @experimental
  * Translates the viewport by the screen-space drag delta so the canvas content
  * follows the pointer. Produces no scene ops — view changes are not undoable.
  * It has no binding of its own: the hand tool binds a drag to it, and a canvas

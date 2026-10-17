@@ -125,16 +125,16 @@ function makeAlignAction(edge: AlignEdge): Action {
   };
 }
 
-/** @experimental Static descriptor for align-left. */
+/** Static descriptor for align-left. */
 export const alignLeftAction    = makeAlignAction('left');
-/** @experimental Static descriptor for align-right. */
+/** Static descriptor for align-right. */
 export const alignRightAction   = makeAlignAction('right');
-/** @experimental Static descriptor for align-top. */
+/** Static descriptor for align-top. */
 export const alignTopAction     = makeAlignAction('top');
-/** @experimental Static descriptor for align-bottom. */
+/** Static descriptor for align-bottom. */
 export const alignBottomAction  = makeAlignAction('bottom');
-/** @experimental Static descriptor for align-center-x. */
+/** Static descriptor for align-center-x. */
 export const alignCenterXAction = makeAlignAction('center-x');
-/** @experimental Static descriptor for align-center-y. */
+/** Static descriptor for align-center-y. */
 export const alignCenterYAction = makeAlignAction('center-y');
 

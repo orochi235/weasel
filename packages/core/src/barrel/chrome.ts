@@ -14,7 +14,7 @@ export type {
   SelectionStore,
 } from '../core/selection/useSelection';
 
-// --- @experimental Selection ambient context (2026-05-09) -------------------
+// --- Selection ambient context --------------------------------------------
 export {
   SelectionContextProvider,
   SelectionContextProviderIfRoot,

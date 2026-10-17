@@ -8,13 +8,13 @@ Built for diagram editors, sketch tools, schematic editors, scene composers — 
 
 - Pointer interactions: move, resize, rotate, insert, clone, area-select, lasso, path-anchor editing, text edit
 - Op-based scene mutation with undo/redo and coalescing
-- A registry of actions with default key and gesture bindings, each one overridable by id (`@experimental`)
+- A registry of actions with default key and gesture bindings, each one overridable by id
 - Layered canvas rendering with debug overlays
 - Rect, rotated and path poses; first-class compound paths; nested containers
 - Viewport with zoom/pan tools, momentum, and boundary clamping
 - Detached read-only scene views and navigation minimap (`<SceneViewCanvas>`, `<MinimapCanvas>`)
 - WebGL2 renderer with MSDF text, gradients, patterns, and per-vertex colors
-- Custom fragment shaders via `registerProgram` (`@experimental`)
+- Custom fragment shaders via `registerProgram`
 
 ## Install
 
@@ -143,7 +143,7 @@ Core doesn't ship a prebuilt atlas — bake one from a weasel checkout with `npm
 
 `registerFont` lives in `@weasel-js/font` and is re-exported from core. An unregistered family renders in the default family with a one-time warning — see that package's README for `setFontFallbackPolicy`.
 
-## Custom shaders (`@experimental`)
+## Custom shaders
 
 A render layer can draw with its own fragment shader. Register the program once, then return a `kind: 'shader'` draw command with its uniforms and bounds:
 

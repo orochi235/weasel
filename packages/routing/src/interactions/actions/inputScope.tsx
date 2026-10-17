@@ -1,5 +1,4 @@
 /**
- * @experimental
  * Input scopes and yokes: the tiers between a root registry and a canvas.
  */
 import { useContext, useEffect, useMemo, type ReactElement, type ReactNode } from 'react';
@@ -9,7 +8,6 @@ import { ActiveToolNodeContext, ToolNode } from './activeToolContext';
 import { MenuHostContext } from '../../menus/MenuHostContext';
 
 /**
- * @experimental
  * Canvases that share input on purpose: the active tool, the gesture in
  * flight, history, and yoke-wide actions. Made once with `useYoke()`, and
  * passed to each canvas that joins it (`yoke={yoke}`) and to
@@ -78,7 +76,6 @@ export interface InputScopeProps {
 }
 
 /**
- * @experimental
  * One canvas's input: actions, deps and a tool of its own, under whichever
  * registries are in scope (or its yoke's). What the canvas registers stays
  * here; what it looks up is answered here first, then by the tiers above.
@@ -97,7 +94,6 @@ export function InputScope({ yoke, children }: InputScopeProps): ReactElement {
 }
 
 /**
- * @experimental
  * Make a yoke for canvases to join, under the registries in scope where it is
  * called. It lives as long as the calling component.
  */
@@ -112,7 +108,6 @@ export interface YokeProps {
 }
 
 /**
- * @experimental
  * Put `value` in scope for what is not a canvas — a toolbar, a status bar — so
  * its actions, deps and tool reads reach the yoke and, through it, the member
  * canvas last used.

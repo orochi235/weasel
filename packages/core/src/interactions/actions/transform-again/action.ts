@@ -46,7 +46,6 @@ function replay(deps: ActionDeps, scene: Scene<unknown, string, unknown>, t: Rep
 }
 
 /**
- * @experimental
  * Repeat the last move, rotate, resize, nudge, duplicate, or Alt-drag clone on
  * the current selection, as one undo entry. A repeated duplicate copies the
  * selection — the last copies — again by the same offset, so pressing it over

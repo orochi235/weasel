@@ -26,8 +26,6 @@ const END_ANCHORS = (
 
 /**
  * Join: two open ends facing each other across a gap, spanned straight.
- *
- * @experimental
  */
 export function JoinIcon() {
   return (
@@ -42,8 +40,6 @@ export function JoinIcon() {
 /**
  * Bridge: the ends Join spans, joined instead by a curve that leaves each one
  * along its path's heading.
- *
- * @experimental
  */
 export function BridgeIcon() {
   return (
@@ -58,8 +54,6 @@ export function BridgeIcon() {
 /**
  * Cut at Crossings: a path parted where another crosses it, with an anchor on
  * each new end.
- *
- * @experimental
  */
 export function CutAtCrossingsIcon() {
   return (
@@ -75,8 +69,6 @@ export function CutAtCrossingsIcon() {
 /**
  * Simplify: a jagged run above the smooth curve that refits it, held by its
  * two end anchors.
- *
- * @experimental
  */
 export function SimplifyIcon() {
   return (
@@ -92,8 +84,6 @@ export function SimplifyIcon() {
 /**
  * Offset Path: a shape inside the outline grown from it, its corners rounded
  * out by the offset.
- *
- * @experimental
  */
 export function OffsetPathIcon() {
   return (

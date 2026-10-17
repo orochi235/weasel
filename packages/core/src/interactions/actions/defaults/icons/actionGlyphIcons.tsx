@@ -3,7 +3,6 @@ import type { IconProps } from '../../../../icons/types';
 import { ACTION_GLYPHS } from './actionGlyphs';
 
 /**
- * @experimental
  * Props for the glyphs drawn from `ACTION_GLYPHS` — the same shape as
  * `@weasel-js/ui`'s `IconProps`, which re-exports these components.
  */
@@ -51,27 +50,27 @@ function renderGlyph(name: keyof typeof MARKUP, { className, size = 20, label }:
   );
 }
 
-/** @experimental Undo: a straight run returning in a half circle, arrowhead on the run. */
+/** Undo: a straight run returning in a half circle, arrowhead on the run. */
 export function UndoIcon(p: ActionGlyphProps) {
   return renderGlyph('undo', p);
 }
 
-/** @experimental Redo: the undo glyph mirrored. */
+/** Redo: the undo glyph mirrored. */
 export function RedoIcon(p: ActionGlyphProps) {
   return renderGlyph('redo', p);
 }
 
-/** @experimental Delete: a lidded trash can. */
+/** Delete: a lidded trash can. */
 export function DeleteIcon(p: ActionGlyphProps) {
   return renderGlyph('delete', p);
 }
 
-/** @experimental Measure: a ruler, with hairline ticks hanging from its upper edge. Used for `useMeasureTool`. */
+/** Measure: a ruler, with hairline ticks hanging from its upper edge. Used for `useMeasureTool`. */
 export function MeasureIcon(p: ActionGlyphProps) {
   return renderGlyph('measure', p);
 }
 
-/** @experimental Tune: three slider rails, each with its knob. Used for the settings of a live effect or warp. */
+/** Tune: three slider rails, each with its knob. Used for the settings of a live effect or warp. */
 export function TuneIcon(p: ActionGlyphProps) {
   return renderGlyph('tune', p);
 }

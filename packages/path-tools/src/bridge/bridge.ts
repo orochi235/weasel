@@ -19,7 +19,7 @@ export function bridgeTensionOf(params: Record<string, unknown> | undefined): nu
 }
 
 /**
- * @experimental Bridge open paths: as `joinPaths`, but the gap is spanned by
+ * Bridge open paths: as `joinPaths`, but the gap is spanned by
  * a curve leaving each end along the direction its path was heading, each
  * handle `params.tension` times the gap long (default
  * {@link DEFAULT_BRIDGE_TENSION}). Two paths become one. In path edit,
@@ -39,7 +39,7 @@ export const bridgePathsAction = joinPathsCommand(
 const join = joinSelectedAnchors({});
 
 /**
- * @experimental Bridge the two selected anchors, each the end of an open
+ * Bridge the two selected anchors, each the end of an open
  * subpath, as `joinAnchors` does, but with a curve leaving each end along the
  * direction its path was heading, each handle `params.tension` times the gap
  * long (`bridgePaths`'s default when absent). The anchor selection is

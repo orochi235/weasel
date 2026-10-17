@@ -7,7 +7,6 @@ function historyCan(deps: ActionDeps | undefined, which: 'canUndo' | 'canRedo'):
 }
 
 /**
- * @experimental
  * Static descriptor for the `undo` Action.
  */
 // No `eligible` field → undo/redo are always eligible across all modes.
@@ -28,7 +27,6 @@ export const undoAction: Action & { requires: string[] } = {
 };
 
 /**
- * @experimental
  * Static descriptor for the `redo` Action.
  */
 export const redoAction: Action & { requires: string[] } = {

@@ -1,5 +1,4 @@
 /**
- * @experimental
  * The React half of the actions registry: the context, the tree node that
  * owns each id → descriptor stack, the providers that mount nodes, and the two
  * hooks. The store contract it implements is in `registry.ts`.
@@ -270,7 +269,6 @@ export function actionsNodeOf(registry: ActionsRegistry | null): ActionsNode | n
 }
 
 /**
- * @experimental
  * Mounts a root `ActionsRegistry` for its lifetime. Children call
  * `useActionsRegistry()` or `useAction()` to participate. Mounts no input
  * listener of its own — the gesture dispatcher owns input.
@@ -302,7 +300,6 @@ const IS_DEV: boolean = (() => {
 })();
 
 /**
- * @experimental
  * Returns the `ActionsRegistry` in scope, or `null` when there is none.
  */
 export function useActionsRegistry(): ActionsRegistry | null {
@@ -310,7 +307,6 @@ export function useActionsRegistry(): ActionsRegistry | null {
 }
 
 /**
- * @experimental
  * Register an `Action` for the lifetime of the calling component. No-op (with
  * a dev-only warning) when no `ActionsProvider` is in scope. Re-registers on
  * `action` reference change (consumers should memoize stable identities to

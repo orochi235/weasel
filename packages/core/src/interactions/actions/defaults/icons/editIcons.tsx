@@ -16,8 +16,6 @@ const SVG_BASE = {
 
 /**
  * Cut: scissors.
- *
- * @experimental
  */
 export function CutIcon() {
   return (
@@ -32,8 +30,6 @@ export function CutIcon() {
 
 /**
  * Copy: a document peeking out behind another.
- *
- * @experimental
  */
 export function CopyIcon() {
   return (
@@ -46,8 +42,6 @@ export function CopyIcon() {
 
 /**
  * Paste: a clipboard with a filled clip.
- *
- * @experimental
  */
 export function PasteIcon() {
   return (
@@ -60,8 +54,6 @@ export function PasteIcon() {
 
 /**
  * Duplicate: the source outlined, the copy filled.
- *
- * @experimental
  */
 export function DuplicateIcon() {
   return (
@@ -74,8 +66,6 @@ export function DuplicateIcon() {
 
 /**
  * Transform again: a step-and-repeat run of three squares, the last filled.
- *
- * @experimental
  */
 export function TransformAgainIcon() {
   return (
@@ -89,8 +79,6 @@ export function TransformAgainIcon() {
 
 /**
  * Group: corner brackets framing two filled rects.
- *
- * @experimental
  */
 export function GroupIcon() {
   return (
@@ -107,8 +95,6 @@ export function GroupIcon() {
 
 /**
  * Ungroup: two filled rects escaping a frame broken to two dashed corners.
- *
- * @experimental
  */
 export function UngroupIcon() {
   return (
@@ -123,8 +109,6 @@ export function UngroupIcon() {
 
 /**
  * Bring forward: two stacked rects, the front one filled.
- *
- * @experimental
  */
 export function BringForwardIcon() {
   return (
@@ -137,8 +121,6 @@ export function BringForwardIcon() {
 
 /**
  * Bring to front: three stacked rects, the frontmost filled.
- *
- * @experimental
  */
 export function BringToFrontIcon() {
   return (
@@ -152,8 +134,6 @@ export function BringToFrontIcon() {
 
 /**
  * Send backward: two stacked rects, the rear one filled.
- *
- * @experimental
  */
 export function SendBackwardIcon() {
   return (
@@ -166,8 +146,6 @@ export function SendBackwardIcon() {
 
 /**
  * Send to back: three stacked rects, the rearmost filled.
- *
- * @experimental
  */
 export function SendToBackIcon() {
   return (
@@ -181,8 +159,6 @@ export function SendToBackIcon() {
 
 /**
  * Flip horizontal: an outlined and a filled chevron either side of a dashed vertical axis.
- *
- * @experimental
  */
 export function FlipXIcon() {
   return (
@@ -196,8 +172,6 @@ export function FlipXIcon() {
 
 /**
  * Flip vertical: an outlined and a filled chevron either side of a dashed horizontal axis.
- *
- * @experimental
  */
 export function FlipYIcon() {
   return (

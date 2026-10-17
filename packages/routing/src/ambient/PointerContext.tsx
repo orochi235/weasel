@@ -1,5 +1,4 @@
 /**
- * @experimental
  * PointerContext — the world-space position of the canvas pointer, and the
  * view it is over, refreshed on every `pointermove` and cleared on
  * `pointerleave`.
@@ -16,12 +15,11 @@ import {
   createContext, useContext, useState, useSyncExternalStore, type ReactNode,
 } from 'react';
 
-/** @experimental World-space pointer position and the view it is over — a
+/** World-space pointer position and the view it is over — a
  *  view id, or `null` for a surface's own camera. `null` as a whole when the
  *  pointer is over no publishing surface. */
 export type PointerWorldPos = { worldX: number; worldY: number; viewId: string | null } | null;
 
-/** @experimental */
 export interface PointerContextValue {
   /** The latest position. */
   get(): PointerWorldPos;
@@ -40,7 +38,7 @@ function samePos(a: PointerWorldPos, b: PointerWorldPos): boolean {
   return a.worldX === b.worldX && a.worldY === b.worldY && a.viewId === b.viewId;
 }
 
-/** @experimental A pointer store with no provider around it. */
+/** A pointer store with no provider around it. */
 export function createPointerStore(): PointerContextValue {
   let current: PointerWorldPos = null;
   let version = 0;
@@ -63,7 +61,6 @@ export function createPointerStore(): PointerContextValue {
 const PointerContext = createContext<PointerContextValue | null>(null);
 
 /**
- * @experimental
  * Wrap the part of the React tree that should share one pointer.
  * `<SceneCanvas>` mounts one when none is in scope, so mount it yourself only
  * when two surfaces should share a pointer. Pass `store` to publish into one
@@ -76,7 +73,7 @@ export function PointerContextProvider(
   return <PointerContext.Provider value={store ?? own}>{children}</PointerContext.Provider>;
 }
 
-/** @experimental The surrounding pointer store, or `null` when no provider is
+/** The surrounding pointer store, or `null` when no provider is
  *  in scope. */
 export function usePointerContext(): PointerContextValue | null {
   return useContext(PointerContext);
@@ -85,7 +82,7 @@ export function usePointerContext(): PointerContextValue | null {
 const noSubscribe = (): (() => void) => () => {};
 const noPointer = (): PointerWorldPos => null;
 
-/** @experimental The pointer, re-rendering the caller whenever it changes.
+/** The pointer, re-rendering the caller whenever it changes.
  *  `null` outside a provider. */
 export function usePointerPosition(): PointerWorldPos {
   const store = usePointerContext();

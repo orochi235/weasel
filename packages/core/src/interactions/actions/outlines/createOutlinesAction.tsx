@@ -42,7 +42,7 @@ export function runCreateOutlines(adapter: CreateOutlinesAdapter): Promise<Creat
 }
 
 /**
- * @experimental Static descriptor for Create Outlines: replace the selected
+ * Static descriptor for Create Outlines: replace the selected
  * text nodes with path nodes carrying their glyph outlines. Reads the
  * `createOutlinesAdapter` dep, published with `useCreateOutlinesAdapter`.
  */

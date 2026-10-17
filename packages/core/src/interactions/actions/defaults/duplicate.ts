@@ -52,7 +52,6 @@ export function duplicateSelection(
 }
 
 /**
- * @experimental
  * Static descriptor for the `duplicate` Action. Copies each selected node —
  * with its subtree, so duplicating a group produces a populated group — offset
  * by a small nudge, as one undoable batch, then selects the copies.

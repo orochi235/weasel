@@ -51,7 +51,6 @@ function reorderSelection(
 // ---------------------------------------------------------------------------
 
 /**
- * @experimental
  * Parametric descriptor for forward reorder (`reorder.forward`).
  *
  * Collapses the old `reorder.forward` (adjacent) and `reorder.front`
@@ -110,7 +109,6 @@ export const reorderForwardAction: Action & { requires: string[] } = {
 };
 
 /**
- * @experimental
  * Parametric descriptor for backward reorder (`reorder.backward`).
  *
  * Collapses the old `reorder.backward` (adjacent) and `reorder.back`

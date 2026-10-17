@@ -1,5 +1,4 @@
 /**
- * @experimental
  * Palette-side evaluation of `Action.enabled`. The dispatcher calls the
  * predicate raw as a gate; this is the surface that also enforces the
  * contract the predicate's JSDoc states — no throwing, under 4ms in dev.
@@ -9,7 +8,6 @@ import { ActionDisabledReason, type Action } from './action';
 import { isDev } from '../../devFlag';
 
 /**
- * @experimental
  * Result of evaluating an Action's `enabled` predicate.
  */
 export interface ActionEnabledResult {
@@ -21,7 +19,6 @@ const enabledSlowWarned = new Set<string>();
 const enabledThrewWarned = new Set<string>();
 const ENABLED_BUDGET_MS = 4;
 /**
- * @experimental
  * Safely evaluate an action's `enabled` predicate. Returns `{enabled: true}`
  * when no predicate is supplied. Catches throws and treats them as disabled
  * with reason `'(predicate threw)'`. In dev mode, warns once per action id
@@ -67,7 +64,6 @@ export function evaluateEnabled(
 }
 
 /**
- * @experimental
  * Safely evaluate an action's `active` predicate. `undefined` for an action
  * with no pressed state; a predicate that throws reads as not active.
  */

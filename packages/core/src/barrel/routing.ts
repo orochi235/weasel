@@ -15,7 +15,7 @@ export { contextMenuAction, openContextMenu } from '../interactions/actions/defa
 export { ActionDisabledReason } from '@weasel-js/routing';
 export type { ActionDisabledReasonValue, ActionVariant } from '@weasel-js/routing';
 
-// --- @experimental Actions Registry (2026-05-09) ----------------------------
+// --- Actions registry -----------------------------------------------------
 export { ActionsProvider, InputScope, useYoke, Yoke, useActionsRegistry, useAction, useOngoingAction } from '@weasel-js/routing/react';
 export { useLatest } from '@weasel-js/react';
 export type { OngoingAction } from '@weasel-js/routing/react';
