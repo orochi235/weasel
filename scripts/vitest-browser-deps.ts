@@ -60,9 +60,11 @@ export function browserDeps(repoRoot: string, { entries, setupFiles = [] }: Brow
   const found = new Set<string>();
   const seen = new Set<string>();
   const queue = [
+    // A failed browser test leaves its screenshots in a directory named for the test file.
     ...globSync(entries, { cwd: repoRoot, exclude: (name) => SKIPPED_DIR.test(name) })
       .sort()
-      .map((file) => join(repoRoot, file)),
+      .map((file) => join(repoRoot, file))
+      .filter(isFile),
     ...setupFiles.map((file) => resolve(repoRoot, file)),
   ];
   const resolved = new Map<string, string | undefined>();

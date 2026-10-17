@@ -653,14 +653,14 @@ How the registry and the build plugin work is in `docs/icons.md`.
 
 ### Diagram follow-ups
 
-- **(P3) A second pinned node makes a seeded re-run move, and can sit on a long edge's route.**
-  `layeredPlan` anchors the layout on the first pinned node; another one stays where its author
-  put it while its neighbors are placed around the slot it would have had
-  (`packages/diagram/src/layered/plan.ts`). In a probe of 400 generated two-pin graphs, 1396 of
-  2800 second runs moved nodes (none did with one pin), and 88 of 2800 layouts ran a long edge
-  through the second pin's box. Placement would have to hold each pinned node's cross-axis
-  position as a constraint, and rank gaps stretch to reach its rank-axis position or say they
-  cannot.
+- **(P3) `layered` cannot hold a pin its rank's band cannot reach.** Pins after the first are
+  held by `holdPins` (`packages/diagram/src/layered/pins.ts`); one in a rank that already holds a
+  pin at another depth, one that would shrink a gap below a quarter of `rankGap`, or one with too
+  little room beside another pin is reported in `LayeredPlan.unheld` and laid out around as
+  before, so a re-run can still move. In `layered.test.ts`'s dragged-pin cases, 38 of 160 are
+  unheld. Holding one would mean letting a band grow deeper than its deepest node, or moving
+  pins' neighbors to other ranks. Whether pushing a rank clear of a pin can put an outsider in a
+  group's box is unchecked.
 - **(P3) `onMove` reports a layout run's routes but not the ports it named.** A port layout picks
   is marked `laidOut` on its edge end, but `fromPort`/`toPort` are part of `edgeIdOf`, so a
   consumer storing one in its data renames the edge and the next reconcile replaces it
