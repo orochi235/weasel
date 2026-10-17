@@ -39,7 +39,7 @@ export {
 } from './body';
 export type { ForceBody, ForceOptions, ForceRelaxation } from './force';
 export { force, forceRelaxation } from './force';
-export type { EdgeLabelRoom, Graph, GraphEdge, GraphNode } from './graph';
+export type { EdgeLabelRoom, Graph, GraphEdge, GraphGroup, GraphNode } from './graph';
 export { chain } from './chain';
 export { backEdges, layered, layeredPlan, ranksByLength, ranksOf, type LayeredPlan } from './layered';
 export type {
@@ -48,10 +48,12 @@ export type {
   LayoutFn,
   LayoutOptions,
   LayoutPlan,
+  LayoutPorts,
   LayoutResult,
   Slot,
 } from './layout';
 export {
+  anchorOffset,
   axesFor,
   DEFAULT_NODE_GAP,
   DEFAULT_RANK_GAP,

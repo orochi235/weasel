@@ -1,0 +1,51 @@
+{
+  "name": "@weasel-js/diagram-elk",
+  "version": "1.10.1",
+  "description": "An ELK layout adapter for @weasel-js/diagram: lays a diagram's graph out once with elkjs, ports, labels and nested groups included, and answers with a diagram layout plan.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./package.json": "./package.json"
+  },
+  "author": "orochi235",
+  "homepage": "https://orochi235.github.io/weasel/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/orochi235/weasel.git",
+    "directory": "packages/diagram-elk"
+  },
+  "bugs": {
+    "url": "https://github.com/orochi235/weasel/issues"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsup"
+  },
+  "peerDependencies": {
+    "@weasel-js/core": "1.10.1",
+    "@weasel-js/diagram": "1.10.1",
+    "@weasel-js/geom": "1.10.1"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "dependencies": {
+    "elkjs": "^0.12.0"
+  }
+}

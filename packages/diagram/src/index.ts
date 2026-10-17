@@ -124,6 +124,7 @@ export type { LayeredRoute, LayeredRouteInput, RouteEdge } from './route';
 export {
   DEFAULT_NODE_GAP,
   DEFAULT_RANK_GAP,
+  anchorOffset,
   axesFor,
   graphOrder,
   packAcross,
