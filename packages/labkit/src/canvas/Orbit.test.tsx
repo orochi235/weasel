@@ -164,14 +164,14 @@ describe('<Orbit>', () => {
           }}
           viewport={pane}
         >
-          <div className="toolbar" />
-          <div className="pane" ref={setPane} />
+          <div data-testid="toolbar" />
+          <div data-testid="pane" ref={setPane} />
         </Orbit>
       );
     }
     const { container } = render(<Host />);
-    const toolbar = container.querySelector('.toolbar') as HTMLElement;
-    const pane = container.querySelector('.pane') as HTMLElement;
+    const toolbar = container.querySelector('[data-testid=toolbar]') as HTMLElement;
+    const pane = container.querySelector('[data-testid=pane]') as HTMLElement;
     expect(wheel(toolbar)).toBe(false);
     expect(seen).toEqual([]);
     expect(wheel(pane)).toBe(true);
