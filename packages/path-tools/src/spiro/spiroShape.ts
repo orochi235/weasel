@@ -22,11 +22,11 @@ export const SPIRO_FORM = 'spiro';
 
 /** A spiro form, as `data.representation` holds it: each point's kind, and
  *  the anchor of `data.path` it became. */
-export interface SpiroShape {
+export type SpiroShape = {
   kind: typeof SPIRO_FORM;
   kinds: SpiroKind[];
   at: number[];
-}
+};
 
 /** `form` as a spiro form, or null when it is not a well-formed one. */
 export function asSpiro(form: unknown): SpiroShape | null {
