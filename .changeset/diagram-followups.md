@@ -24,3 +24,15 @@ The `lanes` look routes a wire around the stages in its lane, each wire in a sha
 own track, places labels clear of every stage, and keeps a decision's title and cut values inside
 its lanes and column. `EffectChart` picks only stages, so clicking a lane or group box no longer
 leaves it highlighted.
+
+A perimeter port can carry a `label` (`PortSpec.label`, or `portLabels` by port id on a `BodySpec` or
+`DataNode`), drawn outside the node beside its wire. Layout lays each node out at its bounds grown by
+the room its labels take (`DiagramNode.margin`, `GraphNode.margin`), and a group's box takes it in.
+A port's alternative `sites` may carry their own `normal` (`PortSite`).
+
+`diagramLayoutOf(specs)` reads where a `diagramScene` build's layout put each unpinned node, and the
+routes and ports it wrote, in `onMove`'s shapes, so a host can keep a diagram still across edits.
+
+Under `layered`, an edge between two nodes that pins leave level along the rank axis runs straight
+between their facing sides, or around past both when a node sits between them, instead of looping
+round.

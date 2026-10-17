@@ -651,20 +651,6 @@ How the registry and the build plugin work is in `docs/icons.md`.
   `scale` only converts values: `RIGID_POSE_COMPOSITION` does not scale a container's frame by it,
   so whether a scoped container's children are also stored in its units is undecided.
 
-### Diagram follow-ups
-
-- **(P2) A default port cannot carry a label.** A host explaining what each port does has to say
-  it outside the diagram; blits' playground writes it in a panel header.
-
-- **(P2) `DiagramView` reports only the nodes a user dragged.** `onMove` fires for a drag, never
-  for where the initial layout put a node, so a host keeping nodes still across edits reads
-  positions back out of `diagramScene`'s output (blits' playground). A layout callback or a
-  positions read would replace that.
-
-- **(P3) Under `layered`, an edge between two pinned nodes in one rank loops down and around**
-  instead of running across between them. Seen in blits' playground on a release from before
-  `layered` held every pin, so check it again.
-
 ---
 
 ## Animation

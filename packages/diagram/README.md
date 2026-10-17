@@ -49,6 +49,11 @@ const { specs } = buildBody<Data, 'main', Pose>(
 The rows measure a floor and the authored pose is grown to clear it, never
 shrunk — so resize, align, distribute, snapping and undo need no special case.
 
+A perimeter port can carry a `label`, or be named in `portLabels` (on a
+`BodySpec` or a `DataNode`) by port id, which labels the default compass ports
+without redeclaring them. The label is drawn outside the node beside the port's
+wire; layout lays the node out with room for it, and a group's box takes it in.
+
 ### Making ports grabbable
 
 `diagramPorts` returns the two halves of the connect gesture. Attach the layer
@@ -218,6 +223,8 @@ running back up the ranks does the same the other way round. One that spans
 ranks runs through the room `layeredPlan` left for it in each rank it crosses,
 so it goes around what lies between its ends — unless an end is a pin
 `layeredPlan` could not hold (`unheld`), when it takes the router's own path. An
+edge whose pinned ends stand level runs straight between their facing sides, or
+around past both when a node stands between them. An
 author's own ports and waypoints win. A label's `offset` is the gap between the
 route and the label's near side. A label whose edge sets no `labelPlacement`
 of its own, or one at `'mid'`, sits in the room layout left it, placed with
@@ -277,6 +284,12 @@ not read: it is drawn until layout runs again, and stays
 layout's to replace, its label keeping the room layout leaves it. `waypoints`
 would make it yours, which layout never moves. A run that only rewrote routes
 calls `onMove` with no moves.
+`onMove` hears only what changes after the view is built. Where the build's own
+layout put things, `diagramLayoutOf(specs)` reads off the specs, in the same
+shape (`{ moves, routes }`): every node not pinned, and every edge whose route
+or ports layout wrote. Store them the same way and the next `diagramScene`
+leaves those nodes where they stand and lays out only the new ones, which keeps
+a diagram still while its data is edited.
 `view.current.layout('layered')` re-runs a layout animated from where the
 nodes stand; `'force'` relaxes live. Either way the routes ease with the nodes,
 through the ports the run will commit.
