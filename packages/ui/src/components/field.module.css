@@ -88,7 +88,8 @@
 /* A frame holding a text box rings whenever it has focus; a button frame only
    for keyboard focus, which React Aria marks. */
 .frame:focus-within:not(button),
-.frame[data-focus-visible] {
+.frame[data-focus-visible],
+.frame:focus-visible {
   border-color: var(--_frame-focus-border, var(--wzl-focus-ring));
   box-shadow: var(--_frame-focus-shadow, var(--wzl-field-focus-shadow, 0 0 0 1px var(--wzl-focus-ring)));
   outline: var(--_frame-focus-outline, none);

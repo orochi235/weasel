@@ -1,36 +1,23 @@
-import type { ReactNode } from 'react';
-import {
-  Button as RACButton,
-  Menu as RACMenu,
-  MenuItem as RACMenuItem,
-  MenuTrigger,
-  Popover as RACPopover,
-} from 'react-aria-components';
-import { useOverlayPortal, type OverlayPortalProps } from '../../overlays/portalHost';
+import { useMemo, type ReactNode } from 'react';
+import type { MenuEntry } from '@weasel-js/menu';
+import { type OverlayPortalProps } from '../../overlays/portalHost';
 import { Caret } from '../Caret';
+import { useMenuTrigger } from '../ContextMenu/useMenuTrigger';
 import f from '../field.module.css';
-import listbox from '../listbox.module.css';
 import s from './MenuButton.module.css';
-import { TriggerTooltip, segmentTooltipContent, type SegmentTooltipFields } from '../segmentTooltip';
+import { SegmentTooltip, segmentTooltipContent, type SegmentTooltipFields } from '../segmentTooltip';
 
 /** One row in a {@link MenuButton}'s list. */
 export type MenuButtonItem<T extends string = string> = {
   value: T;
-  label: ReactNode;
+  label: string;
   isDisabled?: boolean;
-  /** Plain-text form of `label`, for type-to-select and screen readers. A
-   *  string label supplies this itself. */
-  textValue?: string;
   /** Makes the row a link: an `<a>` that goes here when chosen, and that a
    *  middle or modified click opens as it opens any link. */
   href?: string;
   /** The row for the page that is open: `aria-current="page"`, drawn bold. */
   isCurrent?: boolean;
 };
-
-/** React Aria passes a menu item no ARIA attribute it does not write itself. */
-const markCurrent = (el: HTMLElement | null) => el?.setAttribute('aria-current', 'page');
-const unmarkCurrent = (el: HTMLElement | null) => el?.removeAttribute('aria-current');
 
 /** Props for {@link MenuButton}. */
 export type MenuButtonProps<T extends string = string> = {
@@ -72,45 +59,43 @@ export function MenuButton<T extends string = string>({
   shortcut,
   tooltip,
 }: MenuButtonProps<T>) {
-  const { anchor, portalProps, ready } = useOverlayPortal(portalContainer);
+  const trigger = useMenuTrigger(portalContainer);
+  const entries = useMemo(
+    (): MenuEntry[] => items.map((item) => ({
+      kind: 'item',
+      key: item.value,
+      label: item.label,
+      ...(item.isDisabled ? { disabled: true } : {}),
+      ...(item.href !== undefined ? { href: item.href } : {}),
+      ...(item.isCurrent ? { current: true } : {}),
+      run: () => onAction?.(item.value),
+    })),
+    [items, onAction],
+  );
   return (
-    <MenuTrigger>
-      {anchor}
-      <TriggerTooltip
+    <>
+      {trigger.anchor}
+      <SegmentTooltip
         content={segmentTooltipContent({ tooltip, shortcut, ariaLabel, label })}
         disabled={isDisabled}
       >
-        <RACButton
+        <button
+          ref={trigger.button}
+          type="button"
           className={[bare ? s.bare : f.frame, s.trigger, className].filter(Boolean).join(' ')}
-          isDisabled={isDisabled}
+          disabled={isDisabled}
+          {...(isDisabled ? { 'data-disabled': '' } : {})}
           aria-label={ariaLabel}
+          aria-haspopup="menu"
+          aria-expanded={trigger.open}
+          onClick={(e) => trigger.click(e, () => entries)}
           {...(current ? { 'data-current': '' } : {})}
         >
           <span className={s.label}>{label}</span>
           <Caret className={s.chevron} />
-        </RACButton>
-      </TriggerTooltip>
-      {/* `data-weasel-overlay`: see Select — the list renders in a portal,
-          outside the subtree the trigger sits in. */}
-      {ready && (
-        <RACPopover className={s.popover} data-weasel-overlay="" {...portalProps}>
-          <RACMenu className={`${listbox.surface} ${listbox.list}`} onAction={(key) => onAction?.(key as T)}>
-            {items.map((item) => (
-              <RACMenuItem
-                key={item.value}
-                id={item.value}
-                className={s.item}
-                href={item.href}
-                ref={item.isCurrent ? markCurrent : unmarkCurrent}
-                isDisabled={item.isDisabled}
-                textValue={item.textValue ?? (typeof item.label === 'string' ? item.label : undefined)}
-              >
-                {item.label}
-              </RACMenuItem>
-            ))}
-          </RACMenu>
-        </RACPopover>
-      )}
-    </MenuTrigger>
+        </button>
+      </SegmentTooltip>
+      {trigger.portal}
+    </>
   );
 }

@@ -8,45 +8,89 @@ const ITEMS = [
   { value: 'locked', label: 'Locked', isDisabled: true },
 ];
 
+const trigger = (name: RegExp | string) => screen.getByRole('button', { name });
+/** A click with a pointer under it; `fireEvent.click` alone has `detail` 0, which is what Enter on a button sends. */
+const press = (el: HTMLElement) => fireEvent.click(el, { detail: 1 });
+
 describe('MenuButton', () => {
-  it('is a button named by its label', () => {
+  it('is a button that has a menu, shut until pressed', () => {
     render(<MenuButton label="Add trial…" items={ITEMS} onAction={() => {}} />);
-    expect(screen.getByRole('button', { name: /Add trial…/ })).toBeTruthy();
+    const btn = trigger(/Add trial…/);
+    expect(btn).toHaveAttribute('aria-haspopup', 'menu');
+    expect(btn).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.queryByRole('menu')).toBeNull();
   });
 
-  it('opens a menu and acts on the row chosen', () => {
+  it('opens a menu with a row for each item', () => {
+    render(<MenuButton label="Add trial…" items={ITEMS} onAction={() => {}} />);
+    press(trigger(/Add trial…/));
+    expect(screen.getByRole('menu')).toBeDefined();
+    expect(screen.getAllByRole('menuitem').map((el) => el.textContent)).toEqual(['Sine wave', 'Garden', 'Locked']);
+    expect(trigger(/Add trial…/)).toHaveAttribute('aria-expanded', 'true');
+  });
+
+  it('acts on the row chosen and closes', () => {
     const onAction = vi.fn();
     render(<MenuButton label="Add trial…" items={ITEMS} onAction={onAction} />);
-    act(() => {
-      fireEvent.click(screen.getByRole('button', { name: /Add trial…/ }));
-    });
+    press(trigger(/Add trial…/));
     fireEvent.click(screen.getByRole('menuitem', { name: 'Garden' }));
     expect(onAction).toHaveBeenCalledWith('garden');
+    expect(screen.queryByRole('menu')).toBeNull();
   });
 
   it('keeps its own label after a row is chosen', () => {
     render(<MenuButton label="Load…" items={ITEMS} onAction={() => {}} />);
-    act(() => {
-      fireEvent.click(screen.getByRole('button', { name: /Load…/ }));
-    });
+    press(trigger(/Load…/));
     fireEvent.click(screen.getByRole('menuitem', { name: 'Sine wave' }));
-    expect(screen.getByRole('button', { name: /Load…/ })).toBeTruthy();
+    expect(trigger(/Load…/)).toBeTruthy();
     expect(screen.queryByRole('button', { name: /Sine wave/ })).toBeNull();
   });
 
   it('takes an accessible name over its label', () => {
     render(<MenuButton label="Load…" aria-label="Load snapshot" items={ITEMS} onAction={() => {}} />);
-    expect(screen.getByRole('button', { name: 'Load snapshot' })).toBeTruthy();
+    expect(trigger('Load snapshot')).toBeTruthy();
   });
 
-  it('does not act on a disabled row', () => {
+  it('opens from the keyboard with the first row highlighted', () => {
+    render(<MenuButton label="Add trial…" items={ITEMS} onAction={() => {}} />);
+    fireEvent.click(trigger(/Add trial…/));
+    const menu = screen.getByRole('menu');
+    const active = menu.getAttribute('aria-activedescendant');
+    expect(active).toBeTruthy();
+    expect(document.getElementById(active!)).toHaveTextContent('Sine wave');
+  });
+
+  it('marks a disabled item aria-disabled and does not act on it', () => {
     const onAction = vi.fn();
     render(<MenuButton label="Add trial…" items={ITEMS} onAction={onAction} />);
-    act(() => {
-      fireEvent.click(screen.getByRole('button', { name: /Add trial…/ }));
-    });
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Locked' }));
+    press(trigger(/Add trial…/));
+    const locked = screen.getByRole('menuitem', { name: 'Locked' });
+    expect(locked).toHaveAttribute('aria-disabled', 'true');
+    fireEvent.click(locked);
     expect(onAction).not.toHaveBeenCalled();
+  });
+
+  it('closes on a second press of the button, and stays closed', () => {
+    render(<MenuButton label="Add trial…" items={ITEMS} onAction={() => {}} />);
+    const btn = trigger(/Add trial…/);
+    press(btn);
+    fireEvent.pointerDown(btn);
+    press(btn);
+    expect(screen.queryByRole('menu')).toBeNull();
+  });
+
+  it('returns focus to the button on Escape', () => {
+    render(<MenuButton label="Add trial…" items={ITEMS} onAction={() => {}} />);
+    press(trigger(/Add trial…/));
+    fireEvent.keyDown(screen.getByRole('menu'), { key: 'Escape' });
+    expect(screen.queryByRole('menu')).toBeNull();
+    expect(document.activeElement).toBe(trigger(/Add trial…/));
+  });
+
+  it('does not open when disabled', () => {
+    render(<MenuButton label="Add trial…" items={ITEMS} onAction={() => {}} isDisabled />);
+    press(trigger(/Add trial…/));
+    expect(screen.queryByRole('menu')).toBeNull();
   });
 });
 
@@ -55,9 +99,7 @@ describe('MenuButton link rows', () => {
     { value: 'wall', label: 'Wall', href: '/corpus' },
     { value: 'stats', label: 'Dashboard', href: '/stats', isCurrent: true },
   ];
-  const open = () => act(() => {
-    fireEvent.click(screen.getByRole('button', { name: /Labs/ }));
-  });
+  const open = () => press(trigger(/Labs/));
 
   it('draws a row with an href as a link to it, and needs no onAction', () => {
     render(<MenuButton label="Labs" items={PAGES} />);
