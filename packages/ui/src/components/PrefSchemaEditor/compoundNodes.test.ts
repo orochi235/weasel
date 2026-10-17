@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { prefType, type PrefGroup, type PrefLeaf, type PrefObject } from '@weasel-js/prefs';
 import { packDraft, unpackDraft } from './draft';
 import { attributeSchema, blankLeaf, changeKind, convertLeaf } from './kindSchemas';
-import { addNode, branchPaths, childrenOf, nodeAt, setAttribute } from './schemaEdit';
+import { addNode, childrenOf, nodeAt, setAttribute } from './schemaEdit';
+import { foldablePaths } from './folds';
 import { diffSchemas, formatChanges, printSchema, STUB } from './schemaExport';
 import { entryChoices, kindChoices, typeChoice } from './types';
 
@@ -44,7 +45,7 @@ describe('a list, a map, a union and a typed leaf in the tree', () => {
     for (const path of ['phases', 'flags', 'shape', 'stop']) expect(childrenOf(nodeAt(ROOT, path)!)).toBeUndefined();
     expect(nodeAt(ROOT, 'phases/item')).toBeUndefined();
     expect(nodeAt(ROOT, 'plain/r')).toMatchObject({ name: 'R' });
-    expect(branchPaths(ROOT)).toEqual(['plain']);
+    expect(foldablePaths(ROOT)).toEqual(['plain']);
   });
 
   it('takes nothing under a list or a typed leaf', () => {

@@ -8,16 +8,18 @@ const ALL: readonly SurfaceKind[] = ['bar', 'panel', 'menu'];
 /** One run of an asset: every action in the registry group `group`. */
 const run = (group: string): PrefGroup => pref.group('', { actions: pref.actions(group) }, { as: 'section' });
 
-const PATH = pref.group('Path', { path: run('path'), anchors: run('anchors') });
+const LEAD = { lead: 'label' } as const;
 
-const PATHFINDER = pref.group('Pathfinder', { pathfinder: run('pathfinder') });
+const PATH = pref.group('Path', { path: run('path'), anchors: run('anchors') }, LEAD);
+
+const PATHFINDER = pref.group('Pathfinder', { pathfinder: run('pathfinder') }, LEAD);
 
 const ARRANGE = pref.group('Arrange', {
   reorder: run('reorder'),
   align: run('align'),
   distribute: run('distribute'),
   flip: run('flip'),
-});
+}, LEAD);
 
 /**
  * Everything WeaselDraw can show as a toolbar, a panel, or a menu, in the order each surface lists them: bars and

@@ -120,10 +120,10 @@ export function StructurePane({ schema, onChange, selected, lead, onPick, onSele
   const pageless = over !== undefined;
   // What a group root holds on no page waits with the unplaced, and the tree lists the pages.
   const [nodes, looseNodes] = useMemo(() => {
-    const all = toTreeNodes(schema, null, changed, rowMark, over);
+    const all = toTreeNodes(schema, null, changed, rowMark, over, actions?.actions);
     const loose = new Set(looseKeys(schema, pageless));
     return [all.filter((n) => !loose.has(n.id)), all.filter((n) => loose.has(n.id))];
-  }, [schema, changed, rowMark, over, pageless]);
+  }, [schema, changed, rowMark, over, pageless, actions?.actions]);
   const [query, setQuery] = useState('');
   const sought = query.trim().toLowerCase();
   const shown = useMemo(

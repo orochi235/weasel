@@ -146,7 +146,8 @@ export interface PropertyEnumFieldProps<T extends string = string> extends Field
   onChange: (next: T) => void;
   /**
    * Given, choosing nothing is a value of its own: a `toggle` lets the chosen
-   * segment be clicked off, and calls this. Absent, a toggle always holds one.
+   * segment be clicked off, and a select, a menu, and a radio group list an
+   * "Unset" entry first; each calls this. Absent, the field always holds one.
    */
   onClear?: () => void;
   /** Shown while no option is chosen. Defaults to "Choose option…". */

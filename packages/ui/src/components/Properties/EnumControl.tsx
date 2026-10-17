@@ -14,14 +14,28 @@ function glyphTip(o: PropertyOption<string>): ReactNode {
   return o.glyph === undefined || o.glyph === null ? undefined : o.label;
 }
 
+/** The key of the entry that clears a clearable enum: no option's value, which is a string a schema wrote. */
+const UNSET = '\u0000unset';
+
+/** `p.options`, led by an entry that clears the value where the field takes no value at all. */
+function choices(p: PropertyEnumFieldProps): readonly PropertyOption<string>[] {
+  return p.onClear ? [{ value: UNSET, label: 'Unset' }, ...p.options] : p.options;
+}
+
+/** `p.onChange`, sending the clearing entry to `p.onClear`. */
+const choose = (p: PropertyEnumFieldProps) => (value: string): void => {
+  if (value === UNSET) p.onClear?.();
+  else p.onChange(value);
+};
+
 export function EnumControl(p: PropertyEnumFieldProps) {
   const chosen = !p.mixed && p.options.some((opt) => opt.value === p.value);
   const current = chosen ? (p.value as string) : null;
 
   if (p.control === 'radio') {
     return (
-      <RadioGroup className={p.className} value={current} isDisabled={p.disabled} onChange={p.onChange} aria-label={p.name}>
-        {p.options.map((o) => (
+      <RadioGroup className={p.className} value={current ?? (p.onClear && !p.mixed ? UNSET : null)} isDisabled={p.disabled} onChange={choose(p)} aria-label={p.name}>
+        {choices(p).map((o) => (
           <Radio key={o.value} value={o.value} isDisabled={o.disabled}>
             {o.label}
           </Radio>
@@ -41,8 +55,8 @@ export function EnumControl(p: PropertyEnumFieldProps) {
         label={reads}
         current={held !== undefined}
         isDisabled={p.disabled}
-        items={p.options.map((o) => ({ value: o.value, label: o.label, isDisabled: o.disabled }))}
-        onAction={p.onChange}
+        items={choices(p).map((o) => ({ value: o.value, label: o.label, isDisabled: o.disabled }))}
+        onAction={choose(p)}
       />
     );
   }
@@ -106,7 +120,7 @@ export function EnumControl(p: PropertyEnumFieldProps) {
       aria-label={p.name}
       placeholder={p.mixed ? 'Mixed' : (p.placeholder ?? (p.unset ? '—' : 'Choose option…'))}
       selectedKey={current}
-      options={p.options.map((o) => ({
+      options={choices(p).map((o) => ({
         value: o.value,
         label: o.label,
         icon: o.glyph,
@@ -114,7 +128,7 @@ export function EnumControl(p: PropertyEnumFieldProps) {
       }))}
       onSelectionChange={(v) => {
         dlog('property-panel', 'select', { name: p.name, value: v });
-        p.onChange(v);
+        choose(p)(v);
       }}
     />
   );

@@ -852,6 +852,13 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   and the asset editor's remaining `menu` cases
   (`docs/superpowers/specs/2026-10-16-menus-as-layout-assets-design.md`).
 
+- **(P2) A bar can lead with an icon, not only its label.** `lead: 'label'` landed 2026-10-16
+  (`PrefBarLead` in `packages/prefs/src/groups.ts`). The icon form needs the group to name a glyph
+  as data, which is what the icon registry on the `icon-registry` branch (`@weasel-js/icons`,
+  `namespace:name`) provides: add `icon?: string` to `PrefGroup`/`PrefSection`, `'icon'` to
+  `PrefBarLead`, resolve it through the registry in `BarLayout`, and offer both in the asset
+  editor. A `menu` group's button could take the same `icon`.
+
 - **(P3) ui's `ShortcutInput` is a third copy of the shortcut shape.**
   `packages/ui/src/components/ToolPalette/formatShortcut.ts` describes what `@weasel-js/menu`'s
   `MenuShortcut` and routing's `ActionShortcut` (now an alias of it) already do. Fold it into

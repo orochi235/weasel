@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { applyPrefConditions, isPrefLeaf, prefAliasTargets, prefJudge, prefValueAtPath, type PrefAlias, type PrefAliasTargets, type PrefEntry, type PrefGroup, type PrefLeaf, type PrefSection } from '@weasel-js/prefs';
+import { applyPrefConditions, isPrefLeaf, prefAliasTargets, prefJudge, prefValueAtPath, type PrefAlias, type PrefAliasTargets, type PrefBarLead, type PrefEntry, type PrefGroup, type PrefLeaf, type PrefSection } from '@weasel-js/prefs';
 import type { LiveControl } from '../Prefs/commitPolicy';
 import { entryApplier, type EntryAt } from '../Prefs/entry';
 import { useParamsPolicy } from '../Prefs/useParamsPolicy';
@@ -43,6 +43,9 @@ export interface BarProps {
   orientation?: BarOrientation;
   /** Names the bar and makes it a `toolbar`. Leave unset inside one. */
   label?: string;
+  /** What the line starts with: `'label'` shows `label` ahead of the cells. Default: what `schema` says in its
+   *  own `lead`, else nothing. */
+  lead?: PrefBarLead;
   /** Draw the strip the bar sits on. Unset, the host's strip is under it. `'segmented'` is a compact strip
    *  whose buttons sit almost touching, so a run of actions reads as one control. */
   framed?: boolean | 'segmented';
@@ -76,6 +79,7 @@ export function Bar(props: BarProps) {
       nodes={shown === null ? [] : shownBarNodes(groupBarNodes(shown, '', (group, path) => <GroupRows draw={draw} group={group} path={path} />, { values: read, onChange, over: props.over && 'children' in props.over ? props.over : schema }), (node) => shownNode(node, draw))}
       orientation={orientation}
       label={label}
+      lead={props.lead ?? schema.lead}
       framed={framed}
       overflow={props.overflow ?? schema.overflow}
       overflowLabel={props.overflowLabel}
