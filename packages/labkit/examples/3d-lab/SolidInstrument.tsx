@@ -422,12 +422,16 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
     requestRedraw: repaint,
   });
 
+  // The trial's camera anchors its dolly in this pane, under the toolbar,
+  // where the renderer projects.
+  const viewportRef = trialOrbit?.viewportRef;
   const attachPane = useCallback(
     (el: HTMLDivElement | null) => {
       paneRef.current = el;
       attachTile(el);
+      viewportRef?.(el);
     },
-    [attachTile],
+    [attachTile, viewportRef],
   );
 
   return (
@@ -463,9 +467,9 @@ export const SolidInstrument = defineInstrument<SolidState, SolidConfig>({
   initialState: () => ({ solidCount: 3 }),
   config: f.schema({ showChrome: f.boolean(true) }),
   // The viewport runs its own dispatcher for its tools, so a press belongs to
-  // it, and the trial's camera takes only the wheel. A pinch is off with the
-  // press because two fingers are pointers too.
-  orbit: { initialView: HOME, gestures: { drag: false, home: false, pinch: false } },
+  // it, and two fingers with it: the trial's camera takes the wheel and the
+  // trackpad's pinch.
+  orbit: { initialView: HOME, gestures: { drag: false, home: false, pinch: 'trackpad' } },
   render: (ctx) => {
     const typed = ctx as RenderContext<SolidState, SolidConfig>;
     return (

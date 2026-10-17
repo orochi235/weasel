@@ -526,12 +526,15 @@ orbit: {
 },
 ```
 
-A drag turns it, Shift+drag pans its target, the wheel and a pinch dolly, and a
-double click goes home. An instrument running a dispatcher of its own over the
-viewport — tools that select or draw in 3D — keeps the press for them with
-`gestures: { drag: false, home: false, pinch: false }` and moves the trial's
-camera from its own tools; `examples/3d-lab` does this. The loupe, the overview
-and the linked cursor are 2D, and stay out of an orbit trial.
+A drag turns it, Shift+drag pans its target, the wheel and a pinch dolly
+about the point under the pointer — as a 2D camera zooms about it — and a
+double click goes home. When the instrument draws in a pane rather than its
+whole body, it hands that pane to `useTrialOrbit().viewportRef`: gestures land
+there, and the dolly anchors there. An instrument running a dispatcher of its
+own over the pane — tools that select or draw in 3D — keeps the press for them
+with `gestures: { drag: false, home: false, pinch: 'trackpad' }` and moves the
+trial's camera from its own tools; `examples/3d-lab` does both. The loupe, the
+overview and the linked cursor are 2D, and stay out of an orbit trial.
 
 The renderer is the instrument's: `CanvasStack` draws 2D layers, and for three.js
 or raw WebGL you take rects and dirtiness from labkit and keep the GL yourself:

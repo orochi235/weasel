@@ -143,6 +143,15 @@ describe('camera gestures', () => {
     expect(mountStage({ drag: false, pinch: false }).host.dataset.lkTouch).toBe('auto');
   });
 
+  it('splits the pinch: the trackpad zooms with no fingers taken, and fingers with no trackpad', () => {
+    const pad = mountStage({ drag: false, pinch: 'trackpad' });
+    expect(pad.host.dataset.lkTouch).toBe('auto');
+    expect(wheel(pad.host, { ctrlKey: true })).toBe(true);
+    const touch = mountStage({ drag: false, wheel: false, pinch: 'touch' });
+    expect(touch.host.dataset.lkTouch).toBe('scroll');
+    expect(wheel(touch.host, { ctrlKey: true })).toBe(false);
+  });
+
   it('reports no tap with `tap: false`', () => {
     const onHitTest = vi.fn();
     function Host({ gestures }: { gestures?: CameraGestures }) {

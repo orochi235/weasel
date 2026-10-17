@@ -12,9 +12,11 @@ export interface CameraGestures {
    *  with Cmd/Ctrl held, `false` never, leaving the wheel to scroll the page.
    *  Default `'plain'`. */
   wheel?: 'plain' | 'mod' | false;
-  /** A pinch zooms — a trackpad's, or two fingers on a touch screen. Default
-   *  `true`. */
-  pinch?: boolean;
+  /** A pinch zooms, or dollies an orbit: `true` both kinds, `'trackpad'` only
+   *  a trackpad's, `'touch'` only two fingers on a touch screen, `false`
+   *  neither. Two fingers are pointers, so a camera leaving every press to the
+   *  content beneath it keeps the trackpad's alone. Default `true`. */
+  pinch?: boolean | 'trackpad' | 'touch';
   /** A press released without dragging reports where it landed. 2D only: an
    *  orbit has no world point under the pointer to report. Default `true`. */
   tap?: boolean;
@@ -24,8 +26,18 @@ export interface CameraGestures {
   home?: boolean;
 }
 
-/** {@link CameraGestures} with every default filled in. */
-export type ResolvedCameraGestures = Required<CameraGestures>;
+/** {@link CameraGestures} with every default filled in, and `pinch` split
+ *  into the two inputs that deliver one. */
+export interface ResolvedCameraGestures {
+  drag: boolean;
+  wheel: 'plain' | 'mod' | false;
+  /** ctrl+wheel and WebKit's gesture events. */
+  trackpadPinch: boolean;
+  /** Two pointers. */
+  touchPinch: boolean;
+  tap: boolean;
+  home: boolean;
+}
 
 /** `gestures` with the defaults filled in. `home` is the one whose default
  *  depends on the camera, so the caller passes it. */
@@ -33,10 +45,12 @@ export function resolveGestures(
   gestures: CameraGestures | undefined,
   defaults: { home: boolean } = { home: false },
 ): ResolvedCameraGestures {
+  const pinch = gestures?.pinch ?? true;
   return {
     drag: gestures?.drag ?? true,
     wheel: gestures?.wheel ?? 'plain',
-    pinch: gestures?.pinch ?? true,
+    trackpadPinch: pinch === true || pinch === 'trackpad',
+    touchPinch: pinch === true || pinch === 'touch',
     tap: gestures?.tap ?? true,
     home: gestures?.home ?? defaults.home,
   };
@@ -50,7 +64,7 @@ export function resolveGestures(
  */
 export function touchMode(gestures: ResolvedCameraGestures): 'none' | 'scroll' | 'auto' {
   if (gestures.drag) return 'none';
-  return gestures.pinch ? 'scroll' : 'auto';
+  return gestures.touchPinch ? 'scroll' : 'auto';
 }
 
 /** Gestures a host lays over every trial camera below it — `<Lab gestures>`'s,

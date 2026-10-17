@@ -10,7 +10,7 @@
 
 export {
   MAX_PITCH, DEFAULT_ORBIT_LIMITS, createCamera, cameraEye, cameraView, cameraViewProjection,
-  clampCamera, orbitBy, dollyBy, panBy,
+  clampCamera, orbitBy, dollyBy, dollyToward, panBy,
   type Camera3d, type OrbitLimits,
 } from './camera';
 export { UNIT_CUBE, pose3, poseMatrix, aabbOfPose, type Pose3 } from './pose3';

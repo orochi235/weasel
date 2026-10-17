@@ -141,6 +141,45 @@ describe('<Orbit>', () => {
     expect(host.dataset.lkTouch).toBe('auto');
   });
 
+  it('keeps the trackpad pinch when told to leave every press alone', () => {
+    const { host, seen } = mount({ drag: false, home: false, pinch: 'trackpad' });
+    expect(wheel(host, { ctrlKey: true })).toBe(true);
+    expect(seen).toHaveLength(1);
+    drag(host);
+    expect(seen).toHaveLength(1);
+    expect(host.dataset.lkTouch).toBe('auto');
+  });
+
+  it('takes its gestures on the viewport it is given, and leaves the rest of its element', () => {
+    const seen: Camera3d[] = [];
+    function Host() {
+      const [view, setView] = useState(OPEN);
+      const [pane, setPane] = useState<HTMLElement | null>(null);
+      return (
+        <Orbit
+          view={view}
+          onViewChange={(v) => {
+            seen.push(v);
+            setView(v);
+          }}
+          viewport={pane}
+        >
+          <div data-testid="toolbar" />
+          <div data-testid="pane" ref={setPane} />
+        </Orbit>
+      );
+    }
+    const { container } = render(<Host />);
+    const toolbar = container.querySelector('[data-testid=toolbar]') as HTMLElement;
+    const pane = container.querySelector('[data-testid=pane]') as HTMLElement;
+    expect(wheel(toolbar)).toBe(false);
+    expect(seen).toEqual([]);
+    expect(wheel(pane)).toBe(true);
+    expect(seen).toHaveLength(1);
+    expect(pane.dataset.lkTouch).toBe('none');
+    expect((container.querySelector('.lk-orbit') as HTMLElement).dataset.lkTouch).toBeUndefined();
+  });
+
   it('publishes itself as a zoom the lab chrome can read and drive', () => {
     const { published, last } = mount();
     const camera = published.at(-1) as CameraView;

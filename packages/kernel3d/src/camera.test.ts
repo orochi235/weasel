@@ -6,6 +6,7 @@ import {
   orbitBy,
   dollyBy,
   clampCamera,
+  dollyToward,
   panBy,
   MAX_PITCH,
   type Camera3d,
@@ -119,6 +120,34 @@ describe('panBy', () => {
   it('keeps the angles and the distance', () => {
     const moved = panBy(createCamera({ distance: 8, yaw: 0.9, pitch: 0.5 }), 40, 25, RECT.height);
     expect([moved.yaw, moved.pitch, moved.distance]).toEqual([0.9, 0.5, 8]);
+  });
+});
+
+describe('dollyToward', () => {
+  const PANE = { width: RECT.width, height: RECT.height };
+  function onScreen(camera: Camera3d, p: Vec3): { x: number; y: number } {
+    const [x, y, , w] = transformPoint4(cameraViewProjection(camera, PANE.width / PANE.height), p);
+    return { x: ((x / w + 1) / 2) * PANE.width, y: ((1 - y / w) / 2) * PANE.height };
+  }
+
+  it('keeps the point under the pointer where it is, as a 2D wheel zoom does', () => {
+    const cam = createCamera({ distance: 10, yaw: 0.7, pitch: 0.4, target: { x: 1, y: 0, z: -2 } });
+    const at = { x: 620, y: 180 };
+    // The point in the target's plane under `at`: the target, slid there.
+    const under = panBy(cam, -(at.x - 400), -(at.y - 300), PANE.height).target;
+    expect(onScreen(cam, under).x).toBeCloseTo(at.x, 6);
+    const near = dollyToward(cam, 0.5, at, PANE);
+    expect(near.distance).toBeCloseTo(5, 9);
+    const p = onScreen(near, under);
+    expect(p.x).toBeCloseTo(at.x, 6);
+    expect(p.y).toBeCloseTo(at.y, 6);
+  });
+
+  it('is dollyBy at the middle of the pane, and moves no further than the limits let it', () => {
+    const cam = createCamera({ distance: 10, yaw: 0.7, pitch: 0.4 });
+    expect(dollyToward(cam, 0.5, { x: 400, y: 300 }, PANE)).toEqual(dollyBy(cam, 0.5));
+    const held = dollyToward(cam, 0.5, { x: 700, y: 100 }, PANE, { minDistance: 10 });
+    expect(held).toEqual(cam);
   });
 });
 

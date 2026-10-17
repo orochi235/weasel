@@ -27,14 +27,21 @@ import {
   useContext,
   useEffect,
   useInsertionEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
+  useState,
 } from 'react';
 import { LabContextMenusContext } from '../lab/labContextMenus';
 import { useSurfaceOptional } from '../surface/useSurfaceTile';
 import { CameraScope } from './CameraInput';
 import { useCameraWheelSlot } from './CameraWheelContext';
-import { type CameraGestures, resolveGestures, touchMode } from './cameraGestures';
+import {
+  type CameraGestures,
+  type ResolvedCameraGestures,
+  resolveGestures,
+  touchMode,
+} from './cameraGestures';
 import { usePublishCamera } from './cameraRegistry';
 import { orbitZoomView } from './orbitZoom';
 import type { ViewportSize } from './worldSpec';
@@ -50,7 +57,13 @@ export interface OrbitProps {
    *  distance the zoom chrome reads as 100%. Omitted, the `home` gesture does
    *  nothing and the chrome reads the camera as it stands. */
   home?: () => Camera3d | null;
-  /** Fired whenever the camera's element is measured at a non-zero size. */
+  /** The element the scene is drawn in, when that is not the camera's whole
+   *  element — a pane beside a timeline, say. Gestures land on it, and the
+   *  camera measures its pans and anchors its dolly against it, so a renderer
+   *  projecting into this pane sees the point under the pointer stay put.
+   *  Omitted, the camera's own element. */
+  viewport?: HTMLElement | null;
+  /** Fired whenever the viewport is measured at a non-zero size. */
   onResize?: (viewport: ViewportSize) => void;
   /** Handed the camera's element. */
   hostRef?: { current: HTMLDivElement | null };
@@ -79,6 +92,7 @@ export function Orbit({
   onViewChange,
   limits,
   home,
+  viewport,
   onResize,
   hostRef,
   overlay,
@@ -87,10 +101,24 @@ export function Orbit({
   gestures,
 }: OrbitProps) {
   const host = useRef<HTMLDivElement | null>(null);
+  // The element outlives every render of this component, so it is read once.
+  const [hostEl, setHostEl] = useState<HTMLDivElement | null>(null);
+  useLayoutEffect(() => setHostEl(host.current), []);
+  const areaEl = viewport ?? hostEl;
+  // A new ref object when the viewport changes, which is what rebinds the
+  // dispatcher onto it.
+  const area = useMemo(() => ({ current: areaEl }), [areaEl]);
+  const touch = touchMode(resolveGestures(gestures, { home: true }));
+  useEffect(() => {
+    if (!areaEl) return;
+    areaEl.setAttribute('data-lk-touch', touch);
+    return () => areaEl.removeAttribute('data-lk-touch');
+  }, [areaEl, touch]);
+
   const surface = useSurfaceOptional();
   const onResizeRef = useLatest(onResize);
   useEffect(() => {
-    const el = host.current;
+    const el = areaEl;
     if (!el) return;
     const measure = () => {
       const rect = el.getBoundingClientRect();
@@ -105,12 +133,12 @@ export function Orbit({
     const ro = new ResizeObserver(measure);
     ro.observe(el);
     return () => ro.disconnect();
-  }, [onResizeRef, surface]);
+  }, [areaEl, onResizeRef, surface]);
 
   return (
     <CameraScope yoke={yoke}>
       <OrbitInput
-        hostRef={host}
+        hostRef={area}
         view={view}
         onViewChange={onViewChange}
         limits={limits}
@@ -123,7 +151,6 @@ export function Orbit({
           if (hostRef) hostRef.current = el;
         }}
         className="lk-orbit"
-        data-lk-touch={touchMode(resolveGestures(gestures, { home: true }))}
       >
         {children}
         {overlay}
@@ -152,6 +179,45 @@ const NO_LIMITS: Partial<OrbitLimits> = {};
 /** A 3D host's world is its client space; kernel3d's deps cast rays from it. */
 const IDENTITY = (x: number, y: number) => ({ x, y });
 
+/** kernel3d's camera actions, bound to the gestures the orbit takes. */
+function orbitActions({
+  drag,
+  wheel,
+  trackpadPinch,
+  touchPinch,
+  homes,
+  menu,
+}: Omit<ResolvedCameraGestures, 'tap' | 'home'> & { homes: boolean; menu: boolean }): Action[] {
+  const wheelSpec =
+    wheel === 'plain'
+      ? [{ spec: { kind: 'wheel' }, opts: {} }]
+      : wheel === 'mod'
+        ? [{ spec: { kind: 'wheel', mods: { mod: true } }, opts: {} }]
+        : [];
+  // The trackpad's pinch: ctrl+wheel, and WebKit's gesture events.
+  const padPinch = trackpadPinch
+    ? [
+        { spec: { kind: 'wheel', mods: { ctrl: true } }, opts: {} },
+        { spec: { kind: 'pinch' }, opts: {} },
+      ]
+    : [];
+  const dollyBindings = [...wheelSpec, ...padPinch];
+  return [
+    ...(menu ? [contextMenuAction] : []),
+    ...(drag
+      ? [
+          { ...orbitAction, defaultBinding: { kind: 'drag' } } as Action,
+          { ...panAction, defaultBinding: { kind: 'drag', mods: { shift: true } } } as Action,
+        ]
+      : []),
+    ...(dollyBindings.length > 0
+      ? [{ ...dollyAction, defaultBinding: dollyBindings as Action['defaultBinding'] }]
+      : []),
+    ...(touchPinch ? [pinchDollyAction] : []),
+    ...(homes ? [homeAction] : []),
+  ];
+}
+
 function OrbitDispatch({
   hostRef,
   view,
@@ -161,7 +227,15 @@ function OrbitDispatch({
   gestures,
   registry,
 }: OrbitInputProps & { registry: ActionsRegistry }) {
-  const { drag, wheel, pinch, home: homes } = resolveGestures(gestures, { home: true });
+  const {
+    drag,
+    wheel,
+    trackpadPinch,
+    touchPinch,
+    home: homes,
+  } = resolveGestures(gestures, {
+    home: true,
+  });
   const labMenu = useContext(LabContextMenusContext);
 
   // Written by each commit and by `set`, ahead of the render it asks for — two
@@ -209,36 +283,10 @@ function OrbitDispatch({
   useDepSource('kitSettings', () => kitSettings.current);
   useDepSource('menuHost', () => labMenu ?? undefined);
 
-  const actions = useMemo<Action[]>(() => {
-    const wheelSpec =
-      wheel === 'plain'
-        ? [{ spec: { kind: 'wheel' }, opts: {} }]
-        : wheel === 'mod'
-          ? [{ spec: { kind: 'wheel', mods: { mod: true } }, opts: {} }]
-          : [];
-    // The trackpad's pinch: ctrl+wheel, and WebKit's gesture events.
-    const trackpadPinch = pinch
-      ? [
-          { spec: { kind: 'wheel', mods: { ctrl: true } }, opts: {} },
-          { spec: { kind: 'pinch' }, opts: {} },
-        ]
-      : [];
-    const dollyBindings = [...wheelSpec, ...trackpadPinch];
-    return [
-      ...(labMenu ? [contextMenuAction] : []),
-      ...(drag
-        ? [
-            { ...orbitAction, defaultBinding: { kind: 'drag' } } as Action,
-            { ...panAction, defaultBinding: { kind: 'drag', mods: { shift: true } } } as Action,
-          ]
-        : []),
-      ...(dollyBindings.length > 0
-        ? [{ ...dollyAction, defaultBinding: dollyBindings as Action['defaultBinding'] }]
-        : []),
-      ...(pinch ? [pinchDollyAction] : []),
-      ...(homes ? [homeAction] : []),
-    ];
-  }, [drag, wheel, pinch, homes, labMenu]);
+  const actions = useMemo(
+    () => orbitActions({ drag, wheel, trackpadPinch, touchPinch, homes, menu: labMenu !== null }),
+    [drag, wheel, trackpadPinch, touchPinch, homes, labMenu],
+  );
 
   useEffect(() => {
     const offs = actions.map((a) => registry.register(a));
@@ -253,8 +301,12 @@ function OrbitDispatch({
     entriesById: NO_TOOLS,
     clientToWorld: IDENTITY,
     channels: useMemo(
-      () => ({ pointer: drag || homes || pinch, ingest: false, contextMenu: labMenu !== null }),
-      [drag, homes, pinch, labMenu],
+      () => ({
+        pointer: drag || homes || touchPinch,
+        ingest: false,
+        contextMenu: labMenu !== null,
+      }),
+      [drag, homes, touchPinch, labMenu],
     ),
   });
 

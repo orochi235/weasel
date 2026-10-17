@@ -219,7 +219,14 @@ function CameraDispatch({
   const frameRef = useLatest(frame);
   const onTapRef = useLatest(onTap);
   const onHomeRef = useLatest(onHome);
-  const { drag, wheel, pinch, tap: taps, home } = resolveGestures(gestures);
+  const {
+    drag,
+    wheel,
+    trackpadPinch: padPinch,
+    touchPinch,
+    tap: taps,
+    home,
+  } = resolveGestures(gestures);
   const homes = home && onHome !== undefined;
   const labMenu = useContext(LabContextMenusContext);
 
@@ -257,7 +264,7 @@ function CameraDispatch({
     const [wheelBinding, ...trackpadPinch] = (
       zoom.defaultBinding as { spec: { kind: string } }[]
     ).filter((b) => b.spec.kind === 'wheel' || b.spec.kind === 'pinch');
-    const zoomBindings = [...(wheel ? [wheelBinding] : []), ...(pinch ? trackpadPinch : [])];
+    const zoomBindings = [...(wheel ? [wheelBinding] : []), ...(padPinch ? trackpadPinch : [])];
     const tap: Action = {
       id: TAP_ID,
       label: 'Tap the canvas',
@@ -284,11 +291,11 @@ function CameraDispatch({
       ...(zoomBindings.length > 0
         ? [{ ...zoom, defaultBinding: zoomBindings as Action['defaultBinding'] }]
         : []),
-      ...(pinch ? [makePinchZoomAction(unclamped)] : []),
+      ...(touchPinch ? [makePinchZoomAction(unclamped)] : []),
       ...(taps ? [tap] : []),
       ...(homes ? [goHome] : []),
     ];
-  }, [frameRef, onTapRef, onHomeRef, drag, wheel, pinch, taps, homes, labMenu]);
+  }, [frameRef, onTapRef, onHomeRef, drag, wheel, padPinch, touchPinch, taps, homes, labMenu]);
 
   useEffect(() => {
     const offs = actions.map((a) => registry.register(a));
