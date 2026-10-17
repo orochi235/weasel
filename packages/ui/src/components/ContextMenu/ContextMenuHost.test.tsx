@@ -279,6 +279,23 @@ describe('menu rows that are links', () => {
     expect(ran).toEqual([]);
   });
 
+  it('a release with Meta, Ctrl or Shift held opens the link in a new tab and closes', () => {
+    ran.length = 0;
+    const open = vi.spyOn(window, 'open').mockReturnValue(null);
+    try {
+      for (const mod of [{ metaKey: true }, { ctrlKey: true }, { shiftKey: true }]) {
+        const close = panels([item('docs', { href: '/docs' })], { releaseRuns: true });
+        fireEvent.pointerUp(screen.getByRole('menuitem', { name: 'docs' }), mod);
+        expect(open).toHaveBeenLastCalledWith('/docs', '_blank');
+        expect(close).toHaveBeenCalledTimes(1);
+        cleanup();
+      }
+      expect(ran).toEqual([]);
+    } finally {
+      open.mockRestore();
+    }
+  });
+
   it('marks the current row', () => {
     panels([item('here', { href: '/here', current: true }), item('there', { href: '/there' })]);
     expect(screen.getByRole('menuitem', { name: 'here' }).getAttribute('aria-current')).toBe('page');

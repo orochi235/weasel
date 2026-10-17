@@ -17,7 +17,8 @@ export function MenuRow(props: {
   onHover(e: PointerEvent): void; onPress(): void;
   /** A click the browser follows itself, such as a new-tab one: only the menu closes. */
   onLeave(): void;
-  onRelease(): void;
+  /** A primary-button release over the row; `modified` for a link released with Meta, Ctrl or Shift held. */
+  onRelease(modified: boolean): void;
 }) {
   const { entry: e, id, highlighted, expanded } = props;
   if (e.kind === 'separator') return <div role="separator" className={s.separator} />;
@@ -43,7 +44,7 @@ export function MenuRow(props: {
     'aria-expanded': e.kind === 'submenu' ? expanded : undefined,
     'aria-controls': e.kind === 'submenu' && expanded ? props.controls : undefined,
     onPointerMove: props.onHover,
-    onPointerUp: () => { if (!e.disabled) props.onRelease(); },
+    onPointerUp: (ev: PointerEvent) => { if (!e.disabled) props.onRelease(link && leftToBrowser(ev)); },
     onClick,
   };
   const content = (

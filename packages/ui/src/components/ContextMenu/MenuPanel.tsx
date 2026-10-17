@@ -72,7 +72,13 @@ export function MenuPanel(props: {
           onHover={(e) => c.hover(level, i, { x: e.clientX, y: e.clientY })}
           onPress={() => c.press(level, i)}
           onLeave={props.close}
-          onRelease={() => { if (props.releaseRuns.current) c.press(level, i); }}
+          onRelease={(modified) => {
+            if (!props.releaseRuns.current) return;
+            if (modified && entry.kind === 'item' && entry.href !== undefined) {
+              window.open(entry.href, '_blank');
+              props.close();
+            } else c.press(level, i);
+          }}
         />
       ))}
     </div>
