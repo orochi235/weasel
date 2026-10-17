@@ -5,7 +5,7 @@ import { ToolButton } from '../ToolButton';
 import { ToolGroup } from '../ToolGroup';
 import { useRovingTabIndex } from '../../useRovingTabIndex';
 import s from './ToolPalette.module.css';
-import { formatShortcut, type ShortcutInput } from './formatShortcut';
+import { formatShortcut, type ShortcutInput } from '@weasel-js/gestures';
 import { icon } from '../../icons.gen';
 import { Icon } from '../../icons/Icon';
 

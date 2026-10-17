@@ -112,6 +112,15 @@ export { matchSpec, matchModifiers, matchKey, matchTarget, matchPhase, parseTarg
 export { mimeMatchesGlob, matchIngestTypes, UNKNOWN_MIME } from './ui/ingestTypes';
 export type { PhaseContext, ModifiersEvent, TargetSpecForm } from './ui/match';
 export { isApplePlatform } from './ui/platform';
+
+// Shortcut legends: how a keyboard prints a binding's keys, per platform
+export { keySpecsFromMods, keySpecFromKey, detectPlatform, MODIFIER_LABELS } from './ui/keySpecsFromMods';
+export type {
+  KeyLegend, LogicalMod, LogicalModSpec, Platform, LegendStyle, KeySpecsFromModsOptions, KeyLabels,
+} from './ui/keySpecsFromMods';
+export { keySpecsFromShortcut } from './ui/keySpecsFromShortcut';
+export { formatShortcut, formatShortcutParts } from './ui/formatShortcut';
+export type { ShortcutInput, FormatShortcutOptions } from './ui/formatShortcut';
 export { fixedSeat, nearestPortalHost } from './ui/fixedSeat';
 export type { FixedSeat } from './ui/fixedSeat';
 

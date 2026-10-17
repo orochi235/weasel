@@ -1,7 +1,7 @@
 import { useMemo, useSyncExternalStore, type ReactNode } from 'react';
 import { actionItems, actionShortcuts, useActionsRegistry, type Action } from '@weasel-js/core';
 import type { PrefAction, PrefLeaf } from '@weasel-js/prefs';
-import { formatShortcut } from '../ToolPalette/formatShortcut';
+import { formatShortcut } from '@weasel-js/gestures';
 import { actionIcon } from '../../icons/actionIcon';
 import { childrenOf, undigit, type SchemaNode, type SchemaRoot } from './schemaEdit';
 

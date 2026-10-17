@@ -1,6 +1,5 @@
 import type { KeySpec } from './Keycaps';
-import { keySpecsFromShortcut } from './keySpecsFromShortcut';
-import { keySpecsFromMods, type KeySpecsFromModsOptions, type LogicalMod } from './keySpecsFromMods';
+import { keySpecsFromMods, keySpecsFromShortcut, type KeySpecsFromModsOptions, type LogicalMod } from '@weasel-js/gestures';
 
 const MODS: Readonly<Record<string, LogicalMod>> = { mod: 'mod', shift: 'shift', alt: 'alt' };
 
