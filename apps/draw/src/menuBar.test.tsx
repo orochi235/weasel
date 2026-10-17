@@ -3,14 +3,17 @@ import { act, cleanup, fireEvent, screen, within } from '@testing-library/react'
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import {
   ActionsProvider,
+  BUILTIN_TOOL_IDS,
   DepRegistryProvider,
   SceneCanvas,
+  asNodeId,
   createScene,
   useActionsRegistry,
   type ActionsRegistry,
+  type ToolsApi,
 } from '@weasel-js/core';
 import { pathTools } from '@weasel-js/path-tools';
-import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
+import { isPrefLeaf, type PrefGroup } from '@weasel-js/prefs';
 import { MenuBar } from '@weasel-js/ui';
 import { appCommandsContribution, type AppCommands } from './appCommands';
 import type { WeaselDrawData, WeaselDrawLayer, WeaselDrawPose } from './drawDocument';
@@ -30,6 +33,7 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
+/** Mounts what Workspace mounts around the canvas (its features and `claimKeys`), with the bar beside it. */
 function setup() {
   const commands: AppCommands = {
     gridVisible: false, toggleGrid: vi.fn(),
@@ -40,8 +44,14 @@ function setup() {
     openPrefs: vi.fn(), openPalette: vi.fn(),
   };
   const scene = createScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>({ systemLayers: [{ id: 'default' }] });
+  scene.add({
+    kind: 'leaf', layer: 'default', id: asNodeId('a'),
+    pose: { x: 0, y: 0, width: 10, height: 10 },
+    data: { path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 } },
+  });
   const setPaperSize = vi.fn();
   let registry: ActionsRegistry | null = null;
+  let tools: ToolsApi | null = null;
   function Probe() {
     useFileCommands({
       scene, filename: 'a', paperSize: 'letter', backgroundColor: '#ffffff',
@@ -55,45 +65,48 @@ function setup() {
       <ActionsProvider>
         <Probe />
         <MenuBar schema={DRAW_MENU_BAR} />
-        <SceneCanvas<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose> features={['draw', pathTools]}
-          scene={scene} layers={{}} width={64} height={64}
+        <SceneCanvas<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose> features={['draw', pathTools]} claimKeys
+          scene={scene} layers={{}} width={64} height={64} defaultTools={BUILTIN_TOOL_IDS}
+          onToolsCreated={(t) => { tools = t; }}
           ambient={[appCommandsContribution(() => commands)]} />
       </ActionsProvider>
     </DepRegistryProvider>,
   );
-  return { commands, setPaperSize, registry: registry as unknown as ActionsRegistry };
+  return {
+    commands, setPaperSize, scene,
+    registry: registry as unknown as ActionsRegistry,
+    tools: () => tools as unknown as ToolsApi,
+  };
 }
 
 const title = (name: string) => within(screen.getByRole('menubar')).getByRole('menuitem', { name });
 const open = (name: string) => act(() => { fireEvent.click(title(name)); });
-const menuRows = () => [...document.querySelectorAll<HTMLElement>('[role="menu"] [role="menuitem"], [role="menu"] [role="menuitemcheckbox"]')];
-/** A row's label alone: the second child, after the icon and before any shortcut. */
-const labelOf = (row: HTMLElement) => row.children[1]!.textContent;
-const rowsOf = (name: string) => {
-  open(name);
-  const rows = menuRows().map(labelOf);
-  act(() => { fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' }); });
-  cleanup();
-  return rows;
+/** The innermost open menu: a submenu is a second `menu` role on top of its parent. A row's accessible name is its label with its shortcut run on after it, so single rows match by prefix. */
+const menu = () => within(screen.getAllByRole('menu').at(-1)!);
+/** A row's label alone, for ordered lists: its accessible name carries the shortcut after it. */
+const labels = () => [...screen.getAllByRole('menu').at(-1)!.querySelectorAll<HTMLElement>('[role^="menuitem"]')]
+  .map((r) => r.children[1]!.textContent);
+
+const ROWS = {
+  File: ['New', 'Open…', 'Import…', 'Save'],
+  Edit: ['Undo', 'Redo', 'Cut', 'Copy', 'Paste', 'Duplicate', 'Delete', 'Select All'],
+  Arrange: ['Group', 'Ungroup', 'Bring Forward', 'Bring to Front', 'Send Backward', 'Send to Back',
+    'Align Left', 'Align Centers Horizontally', 'Align Right', 'Align Top', 'Align Centers Vertically', 'Align Bottom',
+    'Distribute Horizontally', 'Distribute Vertically', 'Flip Horizontal', 'Flip Vertical'],
+  View: ['Show grid', 'Snap to grid', 'Show path direction', 'Symmetry', 'Zoom In', 'Zoom Out', 'Reset Zoom'],
 };
-const row = (name: string) => menuRows().find((r) => labelOf(r) === name)!;
 
 describe('DRAW_MENU_BAR', () => {
   it('has File, Edit, Arrange and View', () => {
     setup();
     expect(within(screen.getByRole('menubar')).getAllByRole('menuitem').map((el) => el.textContent))
-      .toEqual(['File', 'Edit', 'Arrange', 'View']);
+      .toEqual(Object.keys(ROWS));
   });
 
-  it('lists every row it names, so no id is misspelled or unregistered', () => {
-    const t = () => setup();
-    const rows = (name: string) => { t(); return rowsOf(name); };
-    expect(rows('File')).toEqual(['New', 'Open…', 'Import…', 'Save']);
-    expect(rows('Edit')).toEqual(['Undo', 'Redo', 'Cut', 'Copy', 'Paste', 'Duplicate', 'Delete', 'Select All']);
-    expect(rows('Arrange')).toEqual(['Group', 'Ungroup', 'Bring Forward', 'Bring to Front', 'Send Backward', 'Send to Back',
-      'Align Left', 'Align Centers Horizontally', 'Align Right', 'Align Top', 'Align Centers Vertically', 'Align Bottom',
-      'Distribute Horizontally', 'Distribute Vertically', 'Flip Horizontal', 'Flip Vertical']);
-    expect(rows('View')).toEqual(['Show grid', 'Snap to grid', 'Show path direction', 'Symmetry', 'Zoom In', 'Zoom Out', 'Reset Zoom']);
+  it.each(Object.entries(ROWS))('lists every row %s names, so no id is misspelled or unregistered', (name, rows) => {
+    setup();
+    open(name);
+    expect(labels()).toEqual(rows);
   });
 
   it('names only actions the app registers', () => {
@@ -102,8 +115,8 @@ describe('DRAW_MENU_BAR', () => {
     const named: string[] = [];
     const walk = (g: PrefGroup) => {
       for (const child of Object.values(g.children)) {
-        if ('children' in child) walk(child as PrefGroup);
-        else if ((child as PrefLeaf).kind === 'action') named.push(((child as PrefLeaf & { action: string }).action));
+        if (!isPrefLeaf(child)) walk(child);
+        else if (child.kind === 'action' && 'action' in child && child.action) named.push(child.action);
       }
     };
     walk(DRAW_MENU_BAR);
@@ -114,33 +127,37 @@ describe('DRAW_MENU_BAR', () => {
   it("opens New's paper sizes as a submenu, and a size starts a document at it", () => {
     const t = setup();
     open('File');
-    act(() => { fireEvent.click(row('New')); });
-    expect(menuRows().map(labelOf)).toEqual(expect.arrayContaining(['US Letter', 'A4', 'Legal']));
-    act(() => { fireEvent.click(row('A4')); });
+    act(() => { fireEvent.click(menu().getByRole('menuitem', { name: /^New/ })); });
+    expect(labels()).toEqual(['US Letter', 'A4', 'Legal']);
+    act(() => { fireEvent.click(menu().getByRole('menuitem', { name: 'A4' })); });
     expect(t.setPaperSize).toHaveBeenCalledWith('a4');
   });
 
   it('runs the action a row names', () => {
     const t = setup();
     open('View');
-    act(() => { fireEvent.click(row('Show grid')); });
+    act(() => { fireEvent.click(menu().getByRole('menuitemcheckbox', { name: /^Show grid/ })); });
     expect(t.commands.toggleGrid).toHaveBeenCalledOnce();
     open('File');
-    act(() => { fireEvent.click(row('Save')); });
+    act(() => { fireEvent.click(menu().getByRole('menuitem', { name: /^Save/ })); });
     expect(saveSvgFile).toHaveBeenCalledOnce();
   });
 
   it('marks a row disabled while its action is', () => {
     setup();
     open('Arrange');
-    expect(row('Group').getAttribute('aria-disabled')).toBe('true');
+    expect(menu().getByRole('menuitem', { name: /^Group/ })).toHaveAttribute('aria-disabled', 'true');
   });
 
-  it('opens File on Alt+F while the canvas holds keys, and fires nothing else', () => {
+  // Option+letter as macOS reports it: the typed character, with the physical key in `code`.
+  it.each([
+    ['File', 'ƒ', 'KeyF'], ['Edit', '´', 'KeyE'], ['Arrange', 'å', 'KeyA'], ['View', '√', 'KeyV'],
+  ])('opens %s on its Alt chord while the canvas holds keys, and changes no tool or document', (name, key, code) => {
     const t = setup();
-    act(() => { fireEvent.keyDown(window, { key: 'f', code: 'KeyF', altKey: true }); });
-    expect(menuRows().map(labelOf)).toEqual(['New', 'Open…', 'Import…', 'Save']);
+    const before = { active: t.tools().active, engaged: t.tools().hotkeyEngaged, order: [...t.scene.renderOrder()] };
+    act(() => { fireEvent.keyDown(document.body, { key, code, altKey: true }); });
+    expect({ active: t.tools().active, engaged: t.tools().hotkeyEngaged, order: [...t.scene.renderOrder()] }).toEqual(before);
+    expect(labels()).toEqual(ROWS[name as keyof typeof ROWS]);
     expect(t.commands.toggleGrid).not.toHaveBeenCalled();
-    expect(saveSvgFile).not.toHaveBeenCalled();
   });
 });
