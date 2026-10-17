@@ -10,6 +10,7 @@ import { declaredTable, namespaceIn, packageDirFinder, reachableTables, tableBes
 import { MARKER, PREFIX, USED, admits, moduleFor, subset, variantOf, type VariantFilter } from './virtual';
 
 export type { VariantFilter } from './virtual';
+export { collectIconRefs } from './collect';
 
 /** How {@link weaselIcons} treats the build it runs in. */
 export interface WeaselIconsOptions {
