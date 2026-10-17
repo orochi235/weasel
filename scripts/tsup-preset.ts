@@ -10,6 +10,8 @@
  * peerDeps by default for both the JS bundle and the .d.ts.
  */
 import type { Options } from 'tsup';
+// From source, so a preset build needs no built @weasel-js/icons.
+import { weaselIcons } from '../packages/icons/src/plugin/index';
 
 export interface PackagePresetOptions {
   /** tsup entry map, relative to the package root. */
@@ -35,5 +37,6 @@ export function packagePreset({ entry, external = [] }: PackagePresetOptions): O
     // becomes two distinct instances.
     splitting: true,
     external: [...ALWAYS_EXTERNAL, ...external],
+    esbuildPlugins: [weaselIcons.esbuild({ mode: 'library' })],
   };
 }

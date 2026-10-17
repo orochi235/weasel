@@ -14,6 +14,7 @@ import react from '@vitejs/plugin-react';
 import { readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { stableScopedName } from '../../scripts/vite-css-modules.ts';
+import { weaselIcons } from '../icons/src/plugin/index.ts';
 
 /**
  * One entry per component directory, plus the barrel, backing the
@@ -39,7 +40,7 @@ for (const dirent of readdirSync(componentsDir, { withFileTypes: true })) {
 }
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), weaselIcons.vite({ mode: 'library' })],
   css: { modules: { generateScopedName: stableScopedName } },
   build: {
     lib: {
@@ -52,6 +53,8 @@ export default defineConfig({
     // One stylesheet for the whole package. With code splitting on, Vite emits
     // a stylesheet per chunk and consumers would have to know which to import.
     cssCodeSplit: false,
+    // A consumer's bundler minifies. Either pass here would strip the `@icon` annotations.
+    minify: false,
     sourcemap: true,
     emptyOutDir: true,
     rollupOptions: {
@@ -66,6 +69,7 @@ export default defineConfig({
         /^@weasel-js\//,
       ],
       output: {
+        minify: false,
         // Entry keys already carry the path (`components/Toast/index`), so emit
         // them verbatim to mirror the source tree — and the declaration tree.
         entryFileNames: '[name].js',
