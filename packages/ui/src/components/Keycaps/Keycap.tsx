@@ -3,7 +3,7 @@ import { Icon } from '../../icons/Icon';
 import type { IconRef } from '@weasel-js/icons';
 import { icon } from '../../icons.gen';
 import s from './Keycaps.module.css';
-import { MODIFIER_LABELS } from './keySpecsFromMods';
+import { MODIFIER_LABELS } from '@weasel-js/gestures';
 import { useLegendFit } from './useLegendFit';
 
 const WIDE_GLYPHS = new Set(['⇥', '↵', '␣']);

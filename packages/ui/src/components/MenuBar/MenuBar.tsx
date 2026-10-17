@@ -82,6 +82,9 @@ export function MenuBar({ schema, over, values, onChange, label = 'Menu bar', ac
     focus.closed(key === undefined ? undefined : buttons.current.get(key));
   }, [openedNow, focus]);
 
+  // A title that can no longer open takes its menu with it; set during render so the stranded menu never commits.
+  if (opened !== null && (disabled.has(opened.key) || !menus.some((m) => m.key === opened.key))) setOpened(null);
+
   const inside = useCallback(
     (t: EventTarget | null) => t instanceof Node && [...buttons.current.values()].some((b) => b.contains(t)),
     [],

@@ -56,6 +56,21 @@ export function actionsLeafActions(
     });
 }
 
+/**
+ * An `action` leaf naming a parametric action by its bare id, as one leaf per
+ * variant, the way a menu draws it; `null` for a leaf that names one entry.
+ * Each variant leaf names its entry by key and nothing else, so it shows the
+ * variant's own label and icon.
+ */
+export function actionLeafVariants(leaf: PrefAction, all: readonly Action[]): PrefAction[] | null {
+  const action = leaf.action === undefined ? undefined : all.find((a) => a.id === leaf.action);
+  if (!action?.variants?.length) return null;
+  return actionItems(action).map((item) => {
+    const { label: _label, icon: _icon, ...rest } = leaf;
+    return { ...rest, name: '', action: item.key };
+  });
+}
+
 /** True for a leaf a panel draws as action buttons that carry their own words, in place of a labeled row. */
 export function prefDrawsActionRow(leaf: PrefLeaf): boolean {
   return (leaf.kind === 'action' && (leaf as PrefAction).control !== 'icon') || leaf.kind === 'actions';

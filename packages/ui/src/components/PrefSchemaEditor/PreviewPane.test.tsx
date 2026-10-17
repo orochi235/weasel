@@ -55,4 +55,20 @@ describe('the preview of a menu root', () => {
     await act(async () => { rerender(ui(menu('file.save'))); });
     expect(screen.getByRole('menuitem', { name: 'Save' })).toBeDefined();
   });
+
+  it('says a menu with no rows is empty, and how to give it some', async () => {
+    const empty: PrefGroup = { name: 'File', description: '', as: 'menu', children: {} };
+    await renderSettled(<ActionsProvider><PreviewPane schema={empty} onDefaults={vi.fn()} /></ActionsProvider>);
+    expect(screen.getByText(/This menu is empty/).textContent).toMatch(/Actions/);
+  });
+
+  it('says why a menu whose rows name no registered action draws nothing', async () => {
+    await renderSettled(<ActionsProvider><PreviewPane schema={menu('file.nowhere')} onDefaults={vi.fn()} /></ActionsProvider>);
+    expect(screen.getByText(/None of this menu’s rows/)).toBeDefined();
+  });
+
+  it('says nothing once the menu has a row to draw', async () => {
+    await renderSettled(<ActionsProvider><Command /><PreviewPane schema={menu('file.open')} onDefaults={vi.fn()} /></ActionsProvider>);
+    expect(screen.queryByText(/This menu is empty|None of this menu’s rows/)).toBeNull();
+  });
 });

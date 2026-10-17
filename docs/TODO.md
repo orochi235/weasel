@@ -801,41 +801,11 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 - **(P3) The menu bar's default access chord, Alt, is unverified in Chrome on Windows, which may
   open its own menu on Alt+F; check there before relying on it.**
 
-- **(P3) A menu bar title made disabled or hidden while its menu is open leaves the menu open.**
-  `MenuBar` checks a title's `enableIf` and `showIf` only when the menu opens; close the menu when
-  its title stops being openable.
-
-- **(P3) ui's `ShortcutInput` is a third copy of the shortcut shape.**
-  `packages/ui/src/components/ToolPalette/formatShortcut.ts` describes what `@weasel-js/menu`'s
-  `MenuShortcut` and routing's `ActionShortcut` (now an alias of it) already do. Fold it into
-  `MenuShortcut`.
-
 - **(P3) Shift+F10 / the ContextMenu key may open the menu twice in Chrome on Windows/Linux.**
   The `menu.context` key binding opens it at the selection, and those platforms also send a
   native `contextmenu` event to the focused canvas, which would reopen it at that event's point.
   Headless Playwright sends no such event, so this is unverified. Check on a real Windows or
   Linux Chrome; if it reproduces, the likely fix is for the keydown to suppress the native event.
-
-- **(P3) Four private deep-equals each answer a slightly different question.** `sameValue` in
-  routing's `interactions/actions/useCommand.ts` compares any non-null object key by key;
-  `sameValue` in ui's `PrefSchemaEditor/attrAggregate.ts` goes by `toString` tag, so it holds
-  across realms and treats a class instance by identity; `sameValue` in ui's
-  `SelectionPanel/model.ts` reads a key holding `undefined` as absent; `deepEqual` in text's
-  `runs/rangeStyle.ts` takes only plain objects and arrays. Give them one home below routing —
-  `@weasel-js/registry` beside `isPlainObject`, or `@weasel-js/react` beside `sameList` — with the
-  undefined-as-absent reading as an option, and have all four call it.
-
-- **(P3) An empty menu asset previews as a bare button with nothing to say why.** `MenuPreview`
-  opens the menu on mount, but a menu with no rows resolves to nothing and stays shut, so a new
-  menu asset — the first thing anyone sees after making one — shows a lone button. Say in the
-  preview that the menu is empty and how to give it rows.
-
-- **(P3) `useCommand` cannot give a variant its own shortcut.** `keys` takes one `GestureSpec`, not
-  `{ spec, opts: { params } }`, so `viewport.zoom:in` can carry a key through `useAction` only.
-
-- **(P3) A bar `action` leaf naming a bare parametric id draws a dead button that misreports itself.**
-  Its tooltip says "no action", though the action exists and only needs a variant. Expand the leaf
-  into its variants, or word the tooltip as "pick a variant".
 
 - **(P4) A `BarMenu` that opened itself can pull focus out of another menu when it closes.** Its
   `close` gives focus to its button only when focus is inside a menu, but it checks with
@@ -851,11 +821,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   canvas and exposes only `accessibleName`. Mirror the open menu as hidden DOM with menu roles,
   kept in step with the model's highlight.
 
-- **(P3) The WebGL context menu stays open through a wheel or resize elsewhere.** The DOM menu's
-  `useDismiss` closes on a wheel outside its panels, on window blur and on resize; `attachMenuHost`
-  closes only when HUD focus moves, so a wheel over the canvas zooms under an open menu and a
-  resize leaves it where the old canvas put it.
-
 - **(P3) The WebGL context menu draws no icons, shortcut chips or check marks.** `drawPanel` draws
   each row's label and a submenu caret; the DOM rows also show the action's icon, its shortcut and a
   check for a row whose action is `active`. So a toggle action's state cannot be seen in the WebGL
@@ -863,10 +828,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 - **(P4) The WebGL context menu has square corners and no shadow.** The DOM panel takes
   `--wzl-radius-md` and `--wzl-bevel-raised`; `drawPanel` draws a plain bordered rect.
-
-- **(P3) The WebGL context menu does not return HUD focus on close.** The DOM host gives focus back
-  to whatever held it when the menu opened (`useReturnFocus`); `attachMenuHost` leaves the HUD with
-  nothing focused, so a keyboard user loses their place among the widgets.
 
 - **(P3) Some boxes still leave the stroke out.** `drawnBoundsOf` (`canvas/drawnBounds.ts`) is the
   box a stroked shape is shown and measured with, and `<SceneCanvas>`'s chrome, resize, rotate,

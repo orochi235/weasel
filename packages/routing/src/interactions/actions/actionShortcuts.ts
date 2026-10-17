@@ -8,8 +8,7 @@ import type { Action } from './action';
 import { actionBindings } from './binding';
 
 /** One keyboard shortcut, flattened for display: the chip a menu row draws
- *  (`MenuShortcut` in `@weasel-js/menu`), and the `ShortcutInput` weasel-ui
- *  formats. */
+ *  (`MenuShortcut` in `@weasel-js/menu`, `ShortcutInput` in `@weasel-js/gestures`). */
 export type ActionShortcut = MenuShortcut;
 
 /**

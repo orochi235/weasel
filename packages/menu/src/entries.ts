@@ -1,10 +1,13 @@
 /** A key chip: the key, and which modifiers are held with it. `@weasel-js/routing`
- *  derives these from action bindings as `ActionShortcut`. */
+ *  derives these from action bindings as `ActionShortcut`; `@weasel-js/gestures`
+ *  formats them as `ShortcutInput`. A tool's `keybinding` has this shape too. */
 export interface MenuShortcut {
-  key: string;
-  mod: boolean;
-  alt: boolean;
-  shift: boolean;
+  /** A list names spellings of one keycap (`['[', '{']`); the first is drawn. */
+  key: string | readonly string[];
+  mod?: boolean;
+  alt?: boolean;
+  /** `'optional'` matches held or not, and draws as an optional key. */
+  shift?: boolean | 'optional';
 }
 
 /** A row that runs something when chosen. */

@@ -1,6 +1,6 @@
 /** The rows the registry inspector's tree lists, one shape per category. */
 import type { IconRef } from '@weasel-js/icons';
-import type { ShortcutInput } from '@weasel-js/ui';
+import type { ShortcutInput } from '@weasel-js/gestures';
 
 /** Discriminated leaf entry. One of these per row in the tree's right pane. */
 export type TreeEntry =

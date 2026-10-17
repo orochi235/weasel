@@ -1,6 +1,6 @@
 import type { MouseEvent, PointerEvent } from 'react';
 import type { MenuEntry } from '@weasel-js/menu';
-import { formatShortcut } from '../ToolPalette/formatShortcut';
+import { formatShortcut } from '@weasel-js/gestures';
 import { Caret } from '../Caret';
 import { resolveIcon } from '../../icons/resolveIcon';
 import { AccessLabel } from './AccessLabel';

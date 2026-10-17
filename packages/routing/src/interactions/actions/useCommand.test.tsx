@@ -3,6 +3,8 @@ import { renderHook } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { ActionsProvider, useActionsRegistry } from './ActionsProvider';
 import { actionItems } from './actionItems';
+import { actionShortcuts } from './actionShortcuts';
+import { actionBindings } from './binding';
 import { evaluateActive, evaluateEnabled } from './actionEnabled';
 import type { ActionVariant } from './action';
 import { useCommand, type CommandOptions } from './useCommand';
@@ -55,6 +57,29 @@ describe('useCommand', () => {
     const before = found();
     rerender({ label: 'A', run: () => {}, options: { keys: { kind: 'key', key: 'r' }, tags: ['x'] } });
     expect(found()).toBe(before);
+  });
+
+  it('gives each variant its own key through keys in the { spec, opts } form', () => {
+    const run = vi.fn();
+    const { found } = mount({
+      label: 'Zoom', run, options: {
+        variants: [{ key: 'in', label: 'In', params: { dir: 'in' } }, { key: 'out', label: 'Out', params: { dir: 'out' } }],
+        keys: [
+          { spec: { kind: 'key', key: '=' }, opts: { params: { dir: 'in' } } },
+          { spec: { kind: 'key', key: '-' }, opts: { params: { dir: 'out' } } },
+        ],
+      },
+    });
+    const action = found()!;
+    expect(actionShortcuts(action, { dir: 'in' }).map((s) => s.key)).toEqual(['=']);
+    expect(actionShortcuts(action, { dir: 'out' }).map((s) => s.key)).toEqual(['-']);
+  });
+
+  it('takes a lone { spec, opts } as keys', () => {
+    const { found } = mount({
+      label: 'Zoom', run: vi.fn(), options: { keys: { spec: { kind: 'key', key: '=' }, opts: { params: { dir: 'in' } } } },
+    });
+    expect(actionBindings(found()!)).toEqual([{ spec: { kind: 'key', key: '=' }, actionId: 'cmd.a', opts: { params: { dir: 'in' } } }]);
   });
 
   it('re-registers when the label changes', () => {

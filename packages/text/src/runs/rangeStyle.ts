@@ -20,7 +20,7 @@
  * `styleAtRange` reports. Treat `fill` values as immutable.
  */
 
-import { MIXED, isPlainObject } from '@weasel-js/registry';
+import { MIXED, deepEqual } from '@weasel-js/registry';
 import type { Mixed } from '@weasel-js/registry';
 import type { StyledRun } from '../runs';
 
@@ -74,23 +74,6 @@ const FLAG_KEYS: ReadonlySet<StyleKey> = new Set<StyleKey>([
   'strikethrough',
   'overline',
 ]);
-
-/**
- * Structural equality over the JSON-ish values a run can hold. Assumes
- * `Paint` stays acyclic and plain: a cyclic field would recurse forever.
- */
-function deepEqual(a: unknown, b: unknown): boolean {
-  if (Object.is(a, b)) return true;
-  if (Array.isArray(a) && Array.isArray(b)) {
-    return a.length === b.length && a.every((item, i) => deepEqual(item, b[i]));
-  }
-  if (isPlainObject(a) && isPlainObject(b)) {
-    const keys = Object.keys(a);
-    if (keys.length !== Object.keys(b).length) return false;
-    return keys.every((k) => k in b && deepEqual(a[k], b[k]));
-  }
-  return false;
-}
 
 /** A run's value at `key`, with flags normalized so absent reads as `false`. */
 function valueAt(run: StyledRun, key: StyleKey): StyledRun[StyleKey] {

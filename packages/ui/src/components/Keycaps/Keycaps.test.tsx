@@ -1,7 +1,7 @@
 import { renderWithIcons } from '../../testing/withIcons';
 import { KeyCap } from './Keycap';
 import { KeySequence } from './Keycaps';
-import { keySpecFromKey, keySpecsFromMods, type Platform } from './keySpecsFromMods';
+import { keySpecFromKey, keySpecsFromMods, type Platform } from '@weasel-js/gestures';
 
 describe('KeyCap', () => {
   it('renders the label as a <kbd>', () => {
