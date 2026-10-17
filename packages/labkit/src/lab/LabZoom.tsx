@@ -1,15 +1,10 @@
 import {
   type Action,
   ActionDisabledReason,
-  ActionsProvider,
   type ActionsRegistry,
-  ActiveToolContextProvider,
-  DepRegistryProvider,
+  type ImmediateInvoker,
   makeViewportZoomAction,
-  type Tool,
   useActionsRegistry,
-  useDepSource,
-  useGestureDispatcher,
   useLatest,
   type ViewApi,
 } from '@weasel-js/core';
@@ -23,12 +18,10 @@ import { formatShortcut } from '../passthrough/weasel-ui';
 import { Toolbar } from '../primitives/Toolbar';
 import { LabStoreContext } from '../state/context';
 import { as2DView } from '../state/view';
+import { LabActions, useInLabActions } from './LabActions';
 import { useLabCommands } from './LabContext';
 
-const ZOOM_ID = 'viewport.zoom';
-const NO_TOOLS: ReadonlyMap<string, Tool> = new Map();
-const CHANNELS = { contextMenu: false, ingest: false } as const;
-const NO_ELEMENT = { current: null };
+const ZOOM_ID = 'lab.zoom';
 
 type ZoomKind = 'in' | 'out' | 'reset';
 
@@ -41,6 +34,12 @@ interface KeyBinding {
 // own dispatcher. The clamp is left to the camera, which knows its range.
 const BASE = makeViewportZoomAction({ min: 1e-9, max: Number.POSITIVE_INFINITY });
 const KEY_BINDINGS = (BASE.defaultBinding as KeyBinding[]).filter((b) => b.spec.kind === 'key');
+const BASE_RUN = (BASE.invoker as ImmediateInvoker).run;
+const VARIANTS = [
+  { key: 'in', label: 'Zoom in', params: { kind: 'in' } },
+  { key: 'out', label: 'Zoom out', params: { kind: 'out' } },
+  { key: 'reset', label: 'Actual size', params: { kind: 'reset' } },
+] as const;
 
 function shortcutFor(kind: ZoomKind): string | undefined {
   const spec = KEY_BINDINGS.find((b) => b.opts?.params?.kind === kind)?.spec;
@@ -62,21 +61,19 @@ const percent = new Intl.NumberFormat(undefined, { style: 'percent', maximumFrac
 
 /**
  * Zoom out, the zoom as a percentage, and zoom in, for whichever trial has the
- * focus. The percentage resets to actual size. They route through core's
- * `viewport.zoom` action, on a dispatcher of their own that listens for its
- * keys — Mod+=, Mod+- and Mod+0 — so the buttons and the keys are one path.
- * Over a trial with no camera the group stays, disabled, so the header does not
- * reflow as the focus moves.
+ * focus. The percentage resets to actual size. They run `lab.zoom` — core's
+ * zoom on the focused trial's camera, with its keys Mod+=, Mod+- and Mod+0 —
+ * on the lab's actions registry, so the buttons and the keys are one path.
+ * Outside a `<Lab>` it brings a registry of its own. Over a trial with no
+ * camera the group stays, disabled, so the header does not reflow as the
+ * focus moves.
  */
 export function LabZoom() {
+  if (useInLabActions()) return <LabZoomControls />;
   return (
-    <DepRegistryProvider>
-      <ActionsProvider>
-        <ActiveToolContextProvider>
-          <LabZoomControls />
-        </ActiveToolContextProvider>
-      </ActionsProvider>
-    </DepRegistryProvider>
+    <LabActions>
+      <LabZoomControls />
+    </LabActions>
   );
 }
 
@@ -99,26 +96,24 @@ function LabZoomControls() {
   const view = useMemo(() => (camera ? forZoom(camera) : null), [camera]);
   const viewRef = useLatest(live ? view : null);
 
-  useDepSource('view', () => viewRef.current as ViewApi);
-
   useEffect(() => {
     const action: Action = {
       ...BASE,
+      id: ZOOM_ID,
+      requires: ['debug'],
       defaultBinding: KEY_BINDINGS as Action['defaultBinding'],
+      variants: VARIANTS,
       enabled: () => (viewRef.current ? true : ActionDisabledReason.NotApplicable),
+      invoker: {
+        timing: 'immediate',
+        run: (deps, params) => {
+          const view = viewRef.current;
+          if (view) BASE_RUN({ ...deps, view }, params);
+        },
+      },
     };
     return registry.register(action);
   }, [registry, viewRef]);
-
-  // First, so a story's own zoom keys do not also fire over a trial with a
-  // camera; over one without, the action is disabled and the keys pass on.
-  useGestureDispatcher({
-    canvasRef: NO_ELEMENT,
-    actions: registry,
-    entriesById: NO_TOOLS,
-    channels: CHANNELS,
-    keyboard: 'first',
-  });
 
   const range = camera?.zoomRange();
   // A step that lands within rounding of a limit has reached it.

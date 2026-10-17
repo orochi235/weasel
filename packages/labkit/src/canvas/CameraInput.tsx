@@ -33,8 +33,10 @@ import {
   useRef,
 } from 'react';
 import type { Point, ViewTransform } from '../instrument/types';
+import { LabContextMenusContext } from '../lab/labContextMenus';
 import { normalize2DView } from '../state/view';
 import { CameraWheelContext } from './CameraWheelContext';
+import { cameraCenter, cameraContextMenuAction } from './cameraContextMenu';
 import { type CameraGestures, resolveGestures } from './cameraGestures';
 import { usePublishCamera } from './cameraRegistry';
 import { clampZoomAbout, frameLocalToWorld, fromCameraView, toCameraView } from './cameraView';
@@ -166,6 +168,7 @@ export function useCameraView({
 const TAP_ID = 'camera.tap';
 const NO_TOOLS: ReadonlyMap<string, Tool> = new Map();
 const CHANNELS = { contextMenu: false, ingest: false } as const;
+const CHANNELS_WITH_MENU = { ingest: false } as const;
 
 /** Props for `<CameraInput>`. */
 export interface CameraInputProps {
@@ -203,9 +206,22 @@ function CameraDispatch({
   const frameRef = useLatest(frame);
   const onTapRef = useLatest(onTap);
   const { pan, wheel, pinch, tap: taps } = resolveGestures(gestures);
+  const labMenu = useContext(LabContextMenusContext);
 
   useDepSource('view', () => camera);
   useDepSource('rootView', () => camera);
+
+  const clientToWorld = useMemo(
+    () => (cx: number, cy: number) => {
+      const r = hostRef.current?.getBoundingClientRect();
+      const v = camera.get();
+      return {
+        x: (cx - (r?.left ?? 0)) / v.scale.x + v.x,
+        y: (cy - (r?.top ?? 0)) / v.scale.y + v.y,
+      };
+    },
+    [hostRef, camera],
+  );
 
   const actions = useMemo<Action[]>(() => {
     // Unclamped here: `camera.set` clamps, to a range widened around the
@@ -232,7 +248,11 @@ function CameraDispatch({
         },
       },
     };
+    const menu =
+      labMenu &&
+      cameraContextMenuAction(labMenu, () => cameraCenter(hostRef, camera, clientToWorld));
     return [
+      ...(menu ? [menu] : []),
       // A trial pans on a plain drag; the kit action binds none of its own.
       ...(pan ? [{ ...viewportDragPanAction, defaultBinding: { kind: 'drag' } } as Action] : []),
       ...(zoomBindings.length > 0
@@ -241,7 +261,7 @@ function CameraDispatch({
       ...(pinch ? [makePinchZoomAction(unclamped)] : []),
       ...(taps ? [tap] : []),
     ];
-  }, [frameRef, onTapRef, pan, wheel, pinch, taps]);
+  }, [frameRef, onTapRef, pan, wheel, pinch, taps, labMenu, hostRef, camera, clientToWorld]);
 
   useEffect(() => {
     const offs = actions.map((a) => registry.register(a));
@@ -250,24 +270,12 @@ function CameraDispatch({
     };
   }, [registry, actions]);
 
-  const clientToWorld = useMemo(
-    () => (cx: number, cy: number) => {
-      const r = hostRef.current?.getBoundingClientRect();
-      const v = camera.get();
-      return {
-        x: (cx - (r?.left ?? 0)) / v.scale.x + v.x,
-        y: (cy - (r?.top ?? 0)) / v.scale.y + v.y,
-      };
-    },
-    [hostRef, camera],
-  );
-
   useGestureDispatcher({
     canvasRef: hostRef,
     actions: registry,
     entriesById: NO_TOOLS,
     clientToWorld,
-    channels: CHANNELS,
+    channels: labMenu ? CHANNELS_WITH_MENU : CHANNELS,
   });
 
   usePublishPointer(hostRef, clientToWorld, frame, STAGE_VIEW_ID);

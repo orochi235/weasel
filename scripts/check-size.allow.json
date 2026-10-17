@@ -106,9 +106,6 @@
   "packages/forge/src/shell/TrialHost.tsx": {
     "longestFunction": 138
   },
-  "packages/forge/src/shell/Workshop.tsx": {
-    "longestFunction": 123
-  },
   "packages/forge/src/shell/cssVars/CssVarsPanel.tsx": {
     "longestFunction": 149
   },
@@ -185,7 +182,7 @@
     "longestFunction": 256
   },
   "packages/labkit/src/lab/Lab.tsx": {
-    "longestFunction": 198
+    "longestFunction": 197
   },
   "packages/labkit/src/lab/Workspace.tsx": {
     "longestFunction": 159

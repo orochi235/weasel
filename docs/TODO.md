@@ -844,9 +844,9 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 ## Selection, actions & UI panels
 
-- **(P2) Menus as layout assets, and a menu bar built from them.** `MenuBar`, access letters and
-  `MenuButton` on the context-menu renderer have landed. Left: WeaselDraw's menu bar (file actions
-  first), then labkit's (a lab-wide registry first)
+- **(P2) Menus as layout assets, and a menu bar built from them.** `MenuBar`, access letters,
+  `MenuButton` on the context-menu renderer and labkit's menu bar have landed. Left: WeaselDraw's
+  menu bar (file actions first)
   (`docs/superpowers/specs/2026-10-16-menus-as-layout-assets-design.md`, "Consumers").
 
 - **(P3) The menu bar's default access chord, Alt, is unverified in Chrome on Windows, which may
@@ -1218,6 +1218,13 @@ convenience layer shipped inside core. The items below are what survives that.
   `useViewAnimation`; `useDragGesture`).
   Worth building only for d3 semantics the kit genuinely lacks, not for parity —
   none identified yet.
+
+### labkit context menus
+
+- **(P3) `canvas/cameraContextMenu.ts` copies core's `openContextMenu` and the `enabled` rule of
+  `menu.context`.** Core's are `@experimental` and unexported, and need scene deps a labkit camera
+  lacks. Promoting a scene-free `openContextMenu` would let labkit drop the copy, and that is the
+  owner's call.
 
 ---
 
