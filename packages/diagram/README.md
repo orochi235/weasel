@@ -109,8 +109,10 @@ a rank of its own between its ends, with room beside its wire as big as the
 label. Under `order: 'seeded'` an edge keeps its place in each rank the way a
 node does, from where its route crosses that rank now. Under
 `order: 'barycenter'` it also reorders each rank to cut crossings, reading each
-edge at the port it joins, so two wires into one node arrive in the order of
-its ports. `layeredPlan(graph, opts)`, also reachable as `layered.plan`,
+edge at the port it joins, where `portsOf` puts that port on the node's
+outline, so two wires into one node arrive in the order of its ports. A port
+with several places is read at the one nearest where the wire's other end
+falls among the node's wires on that side. `layeredPlan(graph, opts)`, also reachable as `layered.plan`,
 answers with the moves plus each node's rank, each spanning edge's waypoints
 and where among them each label's room is, for drawing those edges where their
 room was left. `ranksOf` is the plain longest-path ranking, which `chain` uses.
@@ -118,14 +120,18 @@ room was left. `ranksOf` is the plain longest-path ranking, which `chain` uses.
 On a live scene the layout action and a live `layered` run write those routes
 too, in the same undo entry as the moves: each long edge gets its waypoints,
 and its label, when it sits at the default middle, moves into the room left
-beside them. An edge records the waypoints layout wrote as `laidOut`, and
+beside them. Under `layered` each edge's compass ports are named for the way it
+runs between ranks, and an end records the port layout named as `laidOut`, the
+way a route does; layout names it again on each run while the end names no
+port or still names that one. An edge records the waypoints layout wrote as `laidOut`, and
 layout rewrites a route only while the edge's waypoints still match them; once
 someone moves a bend, the route is theirs and layout leaves it and its label
 alone, and keeps no room for it in the ranks it crosses. A layout that routes
 nothing, `tree` or `force`, takes layered's routes back off, and anything on a
 locked layer stays as it is. A live run writes its routes only when it arrives
 with nothing held along the way, since a drag or a `stop` leaves the nodes
-somewhere the routes were not laid out for. A layout of your own hands routes
+somewhere the routes were not laid out for. While it eases, each route it will
+write eases with the nodes, shown as the edge's path on the override channel. A layout of your own hands routes
 back the same way, by giving its `LayoutFn` a `plan`, which `diagramScene`
 reads too.
 
@@ -194,8 +200,9 @@ so it goes around what lies between its ends — unless an end is pinned away
 from where its rank would put it, when it takes the router's own path. An
 author's own ports and waypoints win. A label's `offset` is the gap between the
 route and the label's near side. A label whose edge sets no `labelPlacement`
-of its own, or one at `'mid'`, sits in the room layout left it, placed with `at: { waypoint }`,
-which stations a label between two of its edge's waypoints.
+of its own, or one at `'mid'`, sits in the room layout left it, placed with
+`at: { near }`, which stations a label where its route passes nearest a point,
+so a bend added or removed elsewhere leaves it where it was.
 
 `groups` draws a box around some nodes, with an optional `label` inside it:
 
@@ -210,7 +217,9 @@ else enters, in every rank from its first member's to its last, and rank gaps
 widen where a box needs the room; `force` pulls a group's members toward each
 other and pushes groups apart. The box is an ordinary scene node that depends
 on its members and derives its pose from theirs (`groupDerivePose`), so
-dragging a member carries the box along. It is never narrower than its label,
+dragging a member carries the box along. It also depends on the labels of the
+wires with both ends inside it, so a long label stays inside the box. It is
+never narrower than its label,
 and a layout running down or up leaves room for that width. An edge whose
 `from` or `to` names a group meets the box, and ranks against the group's first
 stage. A scene built
