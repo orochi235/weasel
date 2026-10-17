@@ -103,8 +103,6 @@ export type {
   EditAnchorsParams,
   HandleLock,
   HandleLocks,
-  HandleSnapParams,
-  SoftSelectionParams,
   PathAnchor,
 } from '../interactions/actions/edit-anchors';
 

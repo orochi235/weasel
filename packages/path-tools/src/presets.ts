@@ -16,6 +16,8 @@ import type { ConstraintGlyphStyle } from './constraints/constraintGlyphs';
 import { createConstraintsExtension } from './constraints/constraintsExtension';
 import { extendToMeetAction } from './extend/extendToMeet';
 import { handleLockAngleAction, handleLockLengthAction } from './handleLocks/handleLocks';
+import { createHandleSnapExtension, type HandleSnapOptions } from './handleSnap/handleSnap';
+import { createSoftSelectionExtension, type SoftSelectionOptions } from './softSelection/softSelection';
 import { harmonizeAnchorsAction } from './harmonize/harmonize';
 import { lengthenPathAction, lengthenToolAction } from './lengthen/lengthenPath';
 import { createDirectionExtension, PATH_DIRECTION_CHROME_ID, type PathDirectionStyle } from './pathStructure/directionMarks';
@@ -46,6 +48,28 @@ export const handleLocksPreset: FeaturePreset = {
   id: 'handleLocks',
   actions: [handleLockAngleAction, handleLockLengthAction],
 };
+
+/**
+ * Soft selection: dragging anchors in path edit also moves the anchors near
+ * them along the path, by a falloff over `options`' radius, read as each drag
+ * starts. The wheel scrubs the radius mid-drag. Null or undefined from
+ * `options` leaves a drag hard.
+ */
+export function createSoftSelectionPreset(options: () => SoftSelectionOptions | null | undefined): FeaturePreset {
+  return { id: 'softSelection', pathEdit: [createSoftSelectionExtension(options)] };
+}
+
+/**
+ * Handle snapping: a dragged control handle's angle snaps to steps and to the
+ * line through its anchor's other handle, as `options` says, read every move.
+ * Null or undefined from `options` leaves the handle unsnapped.
+ */
+export function createHandleSnapPreset(options: () => HandleSnapOptions | null | undefined = () => ({})): FeaturePreset {
+  return { id: 'handleSnap', pathEdit: [createHandleSnapExtension(options)] };
+}
+
+/** Handle snapping every 45°, within 6°, and to the opposite handle. */
+export const handleSnapPreset: FeaturePreset = createHandleSnapPreset();
 
 /** Bridge, on whole paths and on two selected anchors. */
 export const bridgePreset: FeaturePreset = {
@@ -192,7 +216,8 @@ export const warpPreset: FeaturePreset = {
 };
 
 /** Every preset above, the comb, balance, constraints, path direction, and
- *  corner shape with their defaults. */
+ *  corner shape with their defaults — except soft selection and handle
+ *  snapping, which change what every anchor or handle drag does. */
 export const pathTools: FeaturePreset = {
   id: 'pathTools',
   includes: [

@@ -1,5 +1,6 @@
-import { type ActionTunings, useLatest } from '@weasel-js/core';
+import { useLatest } from '@weasel-js/core';
 import { type ConfigOf, defineInstrument, f, Lab, type RenderContext, TrialSceneCanvas } from '@weasel-js/labkit';
+import { createSoftSelectionPreset } from '@weasel-js/path-tools';
 import { SelectIcon } from '@weasel-js/ui';
 import { useMemo } from 'react';
 import { type PathLabState, usePathEditTrial } from './pathEditLabScene';
@@ -25,26 +26,20 @@ const WAVE = (() => {
 function SoftSelectionTrial({ ctx }: { ctx: RenderContext<PathLabState, Config> }) {
   const { scene, selection, pathEdit } = usePathEditTrial(ctx, WAVE, '#3478f6');
   const live = useLatest(ctx);
-  const tune = useMemo<ActionTunings>(() => ({
-    editAnchors: {
-      params: () => {
-        const { soft, radius, falloff } = live.current.config;
-        return {
-          soft: soft ? { radiusPx: radius, falloff } : null,
-          onSoftRadius: (px: number) => live.current.setConfig('radius', Math.round(px)),
-        };
-      },
-    },
-  }), [live]);
+  const features = useMemo(() => ['pick', 'move', 'paths', createSoftSelectionPreset(() => {
+    const { soft, radius, falloff } = live.current.config;
+    return soft
+      ? { radiusPx: radius, falloff, onRadius: (px: number) => live.current.setConfig('radius', Math.round(px)) }
+      : null;
+  })] as const, [live]);
 
   return (
     <TrialSceneCanvas
-      features={['pick', 'move', 'paths']}
+      features={features}
       scene={scene}
       selection={selection}
       pathEdit={pathEdit}
       trial={ctx.trial}
-      tune={tune}
     />
   );
 }

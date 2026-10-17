@@ -1,19 +1,17 @@
 /**
- * The locks on a control-handle drag — its angle, its length, or both —
- * angle snapping, and the guides that show which one is holding.
+ * The locks on a control-handle drag — its angle, its length, or both — and
+ * the guide that shows which one is holding.
  */
 import type { ModifierState, OngoingOverlay } from '@weasel-js/routing';
-import { handleAlongItsAngle, handleAtItsLength, snapHandleAngle } from '@weasel-js/geom';
-import type { HandleLocks, HandleSnapParams } from './params';
+import { handleAlongItsAngle, handleAtItsLength } from '@weasel-js/geom';
+import type { HandleLocks } from './params';
 
 type Point = { x: number; y: number };
 
-/** Where a handle drag's anchor and both its handles sat at the press. */
+/** Where a handle drag's anchor and handle sat at the press. */
 export interface HandlePress {
   anchor: Point;
   handle: Point;
-  /** The anchor's other handle, when it has one. */
-  opposite: Point | null;
 }
 
 /** Where the handle goes this move, and the guide its lock draws. */
@@ -24,8 +22,6 @@ export interface LockedHandle {
 }
 
 const CIRCLE_SEGMENTS = 64;
-const DEFAULT_STEP_DEG = 45;
-const DEFAULT_TOLERANCE_DEG = 6;
 /** How far past the handle the angle guide reaches, as a share of its length. */
 const LINE_OVERSHOOT = 1.25;
 
@@ -51,44 +47,17 @@ export function lockHandle(press: HandlePress, pointer: Point, locks: HandleLock
   return { to: pointer, guide: null };
 }
 
-/** The handle dragged toward `pointer` under `locks`, then snapped by `snap`
- *  unless its angle is locked, with every guide that holds it. */
-export function constrainHandle(
-  press: HandlePress,
-  pointer: Point,
-  locks: HandleLocks,
-  snap: HandleSnapParams | null | undefined,
-): { to: Point; guides: OngoingOverlay[] } {
-  const locked = lockHandle(press, pointer, locks);
-  const guides = locked.guide ? [locked.guide] : [];
-  if (!snap || locks.angle) return { to: locked.to, guides };
-  const { anchor, opposite } = press;
-  const snapped = snapHandleAngle(anchor, locked.to, {
-    stepDeg: snap.stepDeg ?? DEFAULT_STEP_DEG,
-    toleranceDeg: snap.toleranceDeg ?? DEFAULT_TOLERANCE_DEG,
-    opposite: snap.opposite === false ? null : opposite,
-  });
-  const to = snapped.point;
-  if (snapped.snapped) {
-    const reach = dist(anchor, to);
-    guides.push(snapped.snapped.kind === 'opposite' && opposite
-      ? { kind: 'polyline', points: [opposite, anchor, extend(anchor, to, reach * 0.25)], role: 'snap' }
-      : lineGuide(anchor, to, reach, 'snap'));
-  }
-  return { to, guides };
-}
-
 /** The line through `anchor` toward `toward`, reaching past `reach` on both sides. */
-function lineGuide(anchor: Point, toward: Point, reach: number, role: 'lock' | 'snap' = 'lock'): OngoingOverlay {
+function lineGuide(anchor: Point, toward: Point, reach: number): OngoingOverlay {
   const d = dist(anchor, toward);
-  if (d === 0) return { kind: 'polyline', points: [anchor, anchor], role };
+  if (d === 0) return { kind: 'polyline', points: [anchor, anchor], role: 'lock' };
   const span = reach * LINE_OVERSHOOT;
   const ux = ((toward.x - anchor.x) / d) * span;
   const uy = ((toward.y - anchor.y) / d) * span;
   return {
     kind: 'polyline',
     points: [{ x: anchor.x - ux, y: anchor.y - uy }, { x: anchor.x + ux, y: anchor.y + uy }],
-    role,
+    role: 'lock',
   };
 }
 
@@ -99,12 +68,6 @@ function circleGuide(center: Point, r: number): OngoingOverlay {
     points.push({ x: center.x + Math.cos(a) * r, y: center.y + Math.sin(a) * r });
   }
   return { kind: 'polyline', points, role: 'lock' };
-}
-
-function extend(from: Point, through: Point, by: number): Point {
-  const d = dist(from, through);
-  if (d === 0) return through;
-  return { x: through.x + ((through.x - from.x) / d) * by, y: through.y + ((through.y - from.y) / d) * by };
 }
 
 function dist(a: Point, b: Point): number {

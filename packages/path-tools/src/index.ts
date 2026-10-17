@@ -20,10 +20,13 @@ export {
   createConstraintsPreset,
   createCornerShapePreset,
   createCurvatureCombPreset,
+  createHandleSnapPreset,
   createPathStructurePreset,
+  createSoftSelectionPreset,
   curvatureCombPreset,
   extendPreset,
   handleLocksPreset,
+  handleSnapPreset,
   lengthenPreset,
   harmonizePreset,
   pathEffectsPreset,
@@ -110,6 +113,10 @@ export {
 export {
   createDirectionExtension, directionCommands, PATH_DIRECTION_CHROME_ID, type PathDirectionStyle,
 } from './pathStructure/directionMarks';
+
+// ─── Path-edit drags ───────────────────────────────────────────────────────
+export { createHandleSnapExtension, type HandleSnapOptions } from './handleSnap/handleSnap';
+export { createSoftSelectionExtension, type SoftSelectionOptions } from './softSelection/softSelection';
 
 // ─── Panels ────────────────────────────────────────────────────────────────
 export {

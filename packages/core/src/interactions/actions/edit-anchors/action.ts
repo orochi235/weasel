@@ -6,9 +6,7 @@
  *     is already part of a multi-anchor selection leaves the selection
  *     alone, so you can grab a set and move it.
  *   - **Drag** then moves whatever the press left selected — one anchor,
- *     or every selected anchor together. With the `soft` param, anchors
- *     within a radius along the path follow by a falloff, drawn as `falloff`
- *     overlays, and the wheel scrubs the radius mid-drag.
+ *     or every selected anchor together.
  *   - **Dragging a control handle** moves just that handle, mirroring the
  *     opposite one while the anchor is smooth. Alt breaks the mirror; Shift
  *     holds the handle to the angle it had at the press, changing only its
@@ -16,9 +14,10 @@
  *     both freeze it. The `editAnchors` dep's `handleLocks`, or else the
  *     `handleLock` param ({@link EditAnchorsParams}), holds a lock with no
  *     modifier. The lock in force draws its guide as a `polyline` overlay
- *     of role `lock`: the line, or the circle round the anchor. With the
- *     `handleSnap` param an unlocked angle snaps to steps and to the line
- *     through the opposite handle, drawn as a `snap` overlay.
+ *     of role `lock`: the line, or the circle round the anchor.
+ *   - **Path-edit extensions shape the drag** through their `drag`: anchors
+ *     that follow an anchor drag by a share of it, where a dragged handle
+ *     goes after the locks, the wheel mid-drag, and overlays of their own.
  *   - **Every frame is finished** by the dep's `finishEdit`, so what a
  *     path-edit extension keeps true holds while the drag runs.
  *   - **Under a `pathSymmetry` dep**, on a path that is its own image under
@@ -54,10 +53,13 @@ import {
 } from '@weasel-js/geom';
 import { pathToAnchors, type PolygonPath } from '@weasel-js/geom';
 import { inPlane, editingLayer } from '../planeInput';
-import { constrainHandle, locksInForce, type HandlePress } from './handleDrag';
+import { lockHandle, locksInForce, type HandlePress } from './handleDrag';
 import { locksOf, type EditAnchorsParams } from './params';
 import { pathEditPreview } from './preview';
-import { scrubSoftRadius, softBandOverlays, softTranslate, startSoftDrag, type SoftDrag } from './softDrag';
+import {
+  claimWheel, dragWeights, extensionOverlays, placeHandle, startExtensionDrags, translateWeighted,
+} from './extensionDrags';
+import type { PathEditDrag } from 'features/paths/pathEditExtension';
 import { pathEditToolActive } from '../defaults/pathEditTools';
 import { editedPathSymmetries } from './symmetry';
 import { pathOperationTags } from '../pathGestureTags';
@@ -117,12 +119,12 @@ interface EditAnchorsScratch {
   anchorOrigin: { x: number; y: number };
   /** The anchor and the dragged control handle at the press, for a handle drag. */
   handlePress: HandlePress | null;
-  /** The lock and snap guides the last handle move drew. */
-  guides: OngoingOverlay[];
-  /** Soft selection for an anchor drag, when the `soft` param is on. */
-  soft: SoftDrag | null;
-  /** The pointer at the last move, to redo the move when the soft radius changes. */
-  lastWorld: Point | null;
+  /** The guide the lock in force drew at the last move. */
+  guide: OngoingOverlay | null;
+  /** The path-edit extensions' shares of this drag. */
+  drags: readonly PathEditDrag[];
+  /** The last move, to redo when an extension claims the wheel. */
+  lastMove: InvocationCtx | null;
   originPose: PolygonPath;
   currentPose: PolygonPath;
   /** The transforms `originPose` is its own image under, read at the press. */
@@ -170,40 +172,38 @@ function track(scratch: EditAnchorsScratch, next: ReturnType<typeof editAnchorSe
   scratch.origins = next.origins;
 }
 
-/** The anchor and the handles a press on `part` grabbed; null for an anchor press. */
+/** The anchor and the handle a press on `part` grabbed; null for an anchor press. */
 function handlePressOf(
   origin: PenAnchor,
   part: EditAnchorsScratch['part'],
 ): HandlePress | null {
   const handle = part === 'controlIn' ? origin.inHandle : part === 'controlOut' ? origin.outHandle : undefined;
-  const opposite = (part === 'controlIn' ? origin.outHandle : origin.inHandle) ?? null;
-  return handle
-    ? { anchor: { x: origin.x, y: origin.y }, handle: { ...handle }, opposite: opposite && { ...opposite } }
-    : null;
+  return handle ? { anchor: { x: origin.x, y: origin.y }, handle: { ...handle } } : null;
 }
 
-/** Move the dragged anchors to follow `to`, and their soft neighbors by their
- *  weights. A soft drag moves no symmetric images. */
+/** Move the dragged anchors to follow `to`, and the anchors the extensions
+ *  weight by their shares. A weighted drag moves no symmetric images. */
 function moveAnchors(scratch: EditAnchorsScratch, to: Point): void {
   if (scratch.dragging.length === 0) return;
   const dx = to.x - scratch.anchorOrigin.x;
   const dy = to.y - scratch.anchorOrigin.y;
-  const { soft } = scratch;
+  const weights = dragWeights(scratch.drags, scratch.dragging);
   track(scratch, editAnchorSetTracked(scratch.originPose, (set) => {
-    if (soft) softTranslate(set, soft, dx, dy);
+    if (weights) translateWeighted(set, weights, dx, dy);
     else translateAnchorsSymmetric(set, scratch.dragging, dx, dy, scratch.symmetries);
   }));
 }
 
-/** Move the dragged handle toward the pointer, under the locks and snapping in force. */
+/** Move the dragged handle toward the pointer, under the locks in force, then
+ *  wherever the extensions place it. */
 function moveHandle(scratch: EditAnchorsScratch, ctx: InvocationCtx, params: EditAnchorsParams): void {
   const side = scratch.part === 'controlIn' ? 'in' : 'out';
   // Modifiers and held locks are read live, so either can change mid-drag.
   const held = (ctx.deps.editAnchors ?? scratch.dep).handleLocks ?? locksOf(params.handleLock);
-  const { to, guides } = scratch.handlePress
-    ? constrainHandle(scratch.handlePress, ctx.world, locksInForce(held, ctx.modifiers), params.handleSnap)
-    : { to: ctx.world, guides: [] };
-  scratch.guides = guides;
+  const locks = locksInForce(held, ctx.modifiers);
+  const locked = scratch.handlePress ? lockHandle(scratch.handlePress, ctx.world, locks) : { to: ctx.world, guide: null };
+  scratch.guide = locked.guide;
+  const to = placeHandle(scratch.drags, locked.to, { locks });
   const alt = ctx.modifiers.alt;
   const move = scratch.symmetries.length > 0
     ? (set: AnchorSet) => moveHandleSymmetric(set, scratch.anchorIndex, side, to.x, to.y, alt, scratch.symmetries)
@@ -282,7 +282,6 @@ export const editAnchorsAction: Action & { requires: string[] } = inPlane({
           : [];
       }
 
-      const { soft } = paramsOf(opts);
       const scratch: EditAnchorsScratch = {
         dep,
         id: editingId,
@@ -291,11 +290,18 @@ export const editAnchorsAction: Action & { requires: string[] } = inPlane({
         dragging,
         anchorOrigin: { x: origin.x, y: origin.y },
         handlePress: handlePressOf(origin, anchorInfo.part),
-        guides: [],
-        soft: anchorInfo.part === 'anchor' && soft && dragging.length > 0
-          ? startSoftDrag(decoded, dragging, soft, ctx.deps.view?.get().scale)
-          : null,
-        lastWorld: null,
+        guide: null,
+        drags: startExtensionDrags(dep.extensions, {
+          id: editingId,
+          node: dep.getNodeShape(editingId),
+          path: worldPath,
+          anchors: decoded,
+          part: anchorInfo.part,
+          anchorIndex: anchorInfo.anchorIndex,
+          dragging: anchorInfo.part === 'anchor' ? dragging : [],
+          scale: ctx.deps.view?.get().scale,
+        }),
+        lastMove: null,
         originPose: worldPath,
         currentPose: worldPath,
         symmetries: editedPathSymmetries(ctx.deps.pathSymmetry, editingId, decoded),
@@ -304,25 +310,30 @@ export const editAnchorsAction: Action & { requires: string[] } = inPlane({
         id: editingId, origin: scratch.anchorOrigin, originPose: worldPath, dragging,
       });
 
+      const move = (moveCtx: InvocationCtx): void => {
+        scratch.lastMove = moveCtx;
+        if (scratch.part === 'anchor') moveAnchors(scratch, snapAnchor(moveCtx.world));
+        else moveHandle(scratch, moveCtx, paramsOf(opts));
+      };
+
       return {
         kind: 'edit-anchors',
         onMove(moveCtx: InvocationCtx): void {
-          scratch.lastWorld = moveCtx.world;
-          if (scratch.part === 'anchor') moveAnchors(scratch, snapAnchor(moveCtx.world));
-          else moveHandle(scratch, moveCtx, paramsOf(opts));
+          move(moveCtx);
           active = true;
         },
         onWheel(wheelCtx: InvocationCtx): boolean {
-          if (!scratch.soft || !wheelCtx.wheel) return false;
-          const radius = scrubSoftRadius(scratch.soft, wheelCtx.wheel.deltaY);
-          if (scratch.lastWorld) moveAnchors(scratch, snapAnchor(scratch.lastWorld));
-          paramsOf(opts).onSoftRadius?.(radius);
+          if (!wheelCtx.wheel || !claimWheel(scratch.drags, wheelCtx.wheel)) return false;
+          if (scratch.lastMove) move(scratch.lastMove);
           return true;
         },
         overlay(): readonly OngoingOverlay[] | null {
           if (!active) return null;
-          if (scratch.soft) return softBandOverlays(scratch.soft, pathToAnchors(scratch.currentPose) as AnchorSet);
-          return scratch.guides.length > 0 ? scratch.guides : null;
+          const extra = scratch.drags.length > 0
+            ? extensionOverlays(scratch.drags, pathToAnchors(scratch.currentPose) as AnchorSet)
+            : [];
+          const all = scratch.guide ? [scratch.guide, ...extra] : extra;
+          return all.length > 0 ? all : null;
         },
         onEnd(_endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
           active = false;

@@ -1,5 +1,6 @@
-import { type ActionTunings, useLatest } from '@weasel-js/core';
+import { useLatest } from '@weasel-js/core';
 import { type ConfigOf, defineInstrument, f, Lab, type RenderContext, TrialSceneCanvas } from '@weasel-js/labkit';
+import { createHandleSnapPreset } from '@weasel-js/path-tools';
 import { SelectIcon } from '@weasel-js/ui';
 import { useMemo } from 'react';
 import { BLOB, type PathLabState, usePathEditTrial } from './pathEditLabScene';
@@ -17,23 +18,18 @@ type Config = ConfigOf<typeof config>;
 function HandleSnapTrial({ ctx }: { ctx: RenderContext<PathLabState, Config> }) {
   const { scene, selection, pathEdit } = usePathEditTrial(ctx, BLOB, '#d4a574');
   const live = useLatest(ctx.config);
-  const tune = useMemo<ActionTunings>(() => ({
-    editAnchors: {
-      params: () => {
-        const { snap, step, tolerance, opposite } = live.current;
-        return { handleSnap: snap ? { stepDeg: Number(step), toleranceDeg: tolerance, opposite } : null };
-      },
-    },
-  }), [live]);
+  const features = useMemo(() => ['pick', 'move', 'paths', createHandleSnapPreset(() => {
+    const { snap, step, tolerance, opposite } = live.current;
+    return snap ? { stepDeg: Number(step), toleranceDeg: tolerance, opposite } : null;
+  })] as const, [live]);
 
   return (
     <TrialSceneCanvas
-      features={['pick', 'move', 'paths']}
+      features={features}
       scene={scene}
       selection={selection}
       pathEdit={pathEdit}
       trial={ctx.trial}
-      tune={tune}
     />
   );
 }
