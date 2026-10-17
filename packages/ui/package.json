@@ -21,7 +21,7 @@
     },
     "./icons": {
       "types": "./dist/icons.table.d.ts",
-      "import": "./dist/icons.js"
+      "import": "./dist/icons.table.js"
     },
     "./style.css": "./dist/style.css",
     "./package.json": "./package.json"

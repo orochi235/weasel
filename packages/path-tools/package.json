@@ -14,8 +14,8 @@
       "types": "./dist/index.d.ts"
     },
     "./icons": {
-      "import": "./dist/icons.js",
-      "types": "./dist/icons.d.ts"
+      "import": "./dist/icons.table.js",
+      "types": "./dist/icons.table.d.ts"
     },
     "./package.json": "./package.json"
   },

@@ -46,8 +46,8 @@
     },
     "./style.css": "./dist/style.css",
     "./icons": {
-      "import": "./dist/icons.js",
-      "types": "./dist/icons.d.ts"
+      "import": "./dist/icons.table.js",
+      "types": "./dist/icons.table.d.ts"
     },
     "./math": {
       "import": "./dist/math.js",

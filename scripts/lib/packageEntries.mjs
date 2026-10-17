@@ -13,14 +13,13 @@ import { basename, join } from 'node:path';
  * path, by package directory. A `*` stands for the entry's name.
  */
 const BUILT_FROM = {
-  core: { './*': 'src/import-shims/*.ts', './icons': 'src/icons.table.ts' },
+  core: { './*': 'src/import-shims/*.ts' },
   forge: {
     './preview-api': 'src/csf/shims/preview-api.ts',
     './shell.css': 'src/shell/shell.css',
     './frame.css': 'src/frame/frame.css',
   },
   labkit: { './styles.css': 'src/styles.less' },
-  'path-tools': { './icons': 'src/icons.table.ts' },
   theme: { './tokens.css': 'src/generated/tokens.css' },
 };
 

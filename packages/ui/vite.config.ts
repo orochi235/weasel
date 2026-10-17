@@ -29,7 +29,7 @@ import { stableScopedName } from '../../scripts/vite-css-modules.ts';
 const componentsDir = resolve(import.meta.dirname, 'src/components');
 const entries: Record<string, string> = {
   index: resolve(import.meta.dirname, 'src/index.ts'),
-  icons: resolve(import.meta.dirname, 'src/icons.table.ts'),
+  'icons.table': resolve(import.meta.dirname, 'src/icons.table.ts'),
 };
 for (const dirent of readdirSync(componentsDir, { withFileTypes: true })) {
   if (!dirent.isDirectory()) continue;
