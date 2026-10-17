@@ -19,8 +19,15 @@
       "types": "./dist/components/*/index.d.ts",
       "import": "./dist/components/*/index.js"
     },
+    "./icons": {
+      "types": "./dist/icons.table.d.ts",
+      "import": "./dist/icons.js"
+    },
     "./style.css": "./dist/style.css",
     "./package.json": "./package.json"
+  },
+  "weaselIcons": {
+    "table": "./dist/icons.table.json"
   },
   "dependencies": {
     "@weasel-js/font": "1.10.1",
@@ -65,7 +72,7 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "vite build && tsc -p tsconfig.build.json && node ../labkit/scripts/build-css.mjs --if-built"
+    "build": "vite build && tsc -p tsconfig.build.json && cp src/icons.table.json dist/ && node ../labkit/scripts/build-css.mjs --if-built"
   },
   "publishConfig": {
     "access": "public",

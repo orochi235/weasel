@@ -14,5 +14,6 @@ const shims = [
 
 export const entries: Record<string, string> = {
   index: 'src/index.ts',
+  icons: 'src/icons.table.ts',
   ...Object.fromEntries(shims.map((s) => [s, `src/import-shims/${s}.ts`])),
 };

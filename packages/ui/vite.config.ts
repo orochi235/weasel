@@ -27,7 +27,10 @@ import { stableScopedName } from '../../scripts/vite-css-modules.ts';
  * and is skipped; it still reaches consumers through whatever imports it.
  */
 const componentsDir = resolve(import.meta.dirname, 'src/components');
-const entries: Record<string, string> = { index: resolve(import.meta.dirname, 'src/index.ts') };
+const entries: Record<string, string> = {
+  index: resolve(import.meta.dirname, 'src/index.ts'),
+  icons: resolve(import.meta.dirname, 'src/icons.table.ts'),
+};
 for (const dirent of readdirSync(componentsDir, { withFileTypes: true })) {
   if (!dirent.isDirectory()) continue;
   const dir = resolve(componentsDir, dirent.name);
