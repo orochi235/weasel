@@ -102,6 +102,17 @@ describe('useCommand', () => {
     expect(found()).toBe(before);
   });
 
+  it('re-registers when a variant changes', () => {
+    const run = vi.fn();
+    const { found, rerender } = mount({ label: 'X', run, options: { variants: variants() } });
+    const before = found();
+    const changed = variants();
+    changed[1] = { key: 'b', label: 'B', params: { n: 3 } };
+    rerender({ label: 'X', run, options: { variants: changed } });
+    expect(found()).not.toBe(before);
+    expect(actionItems(found()!).map((i) => i.params)).toEqual([{ n: 1 }, { n: 3 }]);
+  });
+
   it('leaves the registry on unmount', () => {
     const run = vi.fn();
     const { registry, unmount } = mount({ label: 'A', run });

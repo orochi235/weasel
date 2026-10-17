@@ -1,8 +1,19 @@
 import { useMemo, type ReactNode } from 'react';
 import type { GestureSpec } from '@weasel-js/gestures';
 import { useLatest, useStableByContent } from '@weasel-js/react';
-import type { Action, ActionDisabledReason, ActionVariant } from './action';
+import type { Action, ActionDisabledReason } from './action';
 import { useAction } from './ActionsProvider';
+
+/** One entry a parametric command contributes to a bar, menu or palette. */
+export interface CommandVariant {
+  /** Unique within the command; joined to its id to make the entry's key. */
+  key: string;
+  label: string;
+  /** Falls back to the command's own `icon`. */
+  icon?: ReactNode | (() => ReactNode);
+  /** What `run` receives when this entry is chosen. */
+  params: Readonly<Record<string, unknown>>;
+}
 
 /** What a command offers besides its id, label and callback. */
 export interface CommandOptions {
@@ -17,7 +28,7 @@ export interface CommandOptions {
   /** Words a palette finds it by and a tagged bar or menu gathers it under. */
   tags?: readonly string[];
   /** One entry each in a bar, menu or palette; `run` receives the chosen one's params. */
-  variants?: readonly ActionVariant[];
+  variants?: readonly CommandVariant[];
 }
 
 /**
