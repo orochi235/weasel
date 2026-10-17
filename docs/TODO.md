@@ -714,96 +714,40 @@ How the registry and the build plugin work is in `docs/icons.md`.
 
 ### Diagram follow-ups
 
-- **(P3) An `EffectRun` shows values as text, not previews.** A run's `values` are strings in a
-  row `showValues` keeps (`paintRun`, `packages/diagram/src/effect/run.ts`). An image preview on
-  an output would need a `slot` row sized for it and an image node a run fills, with a cache so a
-  frame's preview does not re-upload. The `switch` symbol's lever also stays where it was drawn
-  rather than thrown to the output a run took, and port dots, which the port layer draws outside
-  the scene, do not fade with a stage the run never reached.
-- **(P3) EffectChart: more looks.** One lane per value type, with a stage as tall as the lanes it
-  touches; and a compact look with one-line stages and no ports drawn, for pipelines too big for
-  the node graph. Branch symbols sketched and not built: hexagon, step glyph, comparator,
-  crossover, and a bare fork with the conditions on its wires.
-- **(P3) A custom `Path` outline does not follow its node.** `outlinePath` returns a consumer's
-  path unchanged, in world coordinates, so `diagramScene`'s layout moves the box and leaves the
-  outline behind. Marks solve the same problem with path data in a unit square
-  (`packages/diagram/src/marks.ts`); an outline could take the same form.
-- **(P3) `layered` orders and places a port with several places at their mean.** A port's
-  `sites` are chosen per wire, by the router, once everything is placed, so ordering and placement
-  read the port at the mean of its places (`portAt` in `packages/diagram/src/layered/expand.ts`).
-  A wire whose port then turns to face it can cross a neighbor ordering thought it cleared. Picking
-  the place during ordering, from where the other end sits in the current order, would fix it.
-  `portAt` also reads a port at its anchor, where `portsOf` slides it onto a non-rectangular
-  outline: a diamond's anchor at `{ u: 0.75, v: 0 }` sits at about 0.667 (found in review, not
-  measured on a drawn diagram).
-- **(P3) A long label on a wire inside a group spills out of the group's box.** `layered` leaves
-  the label room inside the group's column, but the box is drawn around the members alone
-  (`GROUP_DERIVE_POSE`, `packages/diagram/src/group.ts`), so a label wider than the members'
-  overhang crosses the dashed edge. The box would need to know the room its members' wires took.
-- **(P3) A label stationed `{ waypoint }` follows an index, not a place.** `layeredPlan` points a
-  label at the run between two of its edge's waypoints by index
-  (`packages/diagram/src/label.ts`). Edit the edge's waypoints in a live scene and the label sits
-  on whichever run now has that index; remove enough and it falls back to the middle of the route.
-- **(P3) A live `layered` run draws its long edges through the old bends while it eases.** The
-  run moves nodes frame by frame but writes routes only when it arrives, so for its 24 frames an
-  edge layout routed last time still runs through those waypoints while its ends move away from
-  them (`useLiveLayout`, `packages/diagram/src/live.ts`). Easing each layout-owned waypoint from
-  where it was to where the plan puts it would need waypoints on the override channel, which
-  carries poses only.
-- **(P3) The ports `diagramScene` picks read as the author's on a live scene.** Under `layered`,
-  `layeredRoutes` names each edge's compass ports from which way it runs between ranks, and
-  `edgeSpecs` writes them as `from.port`/`to.port` with nothing like `laidOut` marking them
-  (`packages/diagram/src/dataEdges.ts`). A later live layout reads them as named by the author and
-  never revisits them, so an edit that turns which edge runs back up the ranks leaves a wire
-  leaving by the old face. Found in review, not reproduced.
-- **(P3) A long edge to a pinned node off its slot can reorder a second seeded run.** `layeredPlan`
-  gives such an edge no waypoints (`displaced`, `packages/diagram/src/layered/plan.ts`), so the
-  next run seeds its placeholders between its ends' new centers rather than where the last run
-  put them, and the rank's order can change. Found in review, not reproduced.
-- **(P3) `DiagramView`'s `onMove` reports nodes, not routes.** A layout run writes each long
-  edge's waypoints into the view's scene, but a consumer keeping the diagram as data hears only
-  the node moves, so the routes go whenever the data is laid into a scene again, or an edge's
-  spec changes and `reconcileSpecs` replaces its data (`packages/diagram/src/DiagramView.tsx`).
-- **(P3) A second pinned node can sit on a long edge's route.** `layeredPlan` anchors the layout
-  on the first pinned node; any other pinned node stays where its author put it, not in its slot.
-  A wire with that node as an end gets no waypoints, but a wire passing near it keeps the
-  waypoints laid out around the slot, and can run through the node
-  (`packages/diagram/src/layered/plan.ts`). Found by reading the code; no case reproduced yet.
+- **(P3) A second pinned node makes a seeded re-run move, and can sit on a long edge's route.**
+  `layeredPlan` anchors the layout on the first pinned node; another one stays where its author
+  put it while its neighbors are placed around the slot it would have had
+  (`packages/diagram/src/layered/plan.ts`). In a probe of 400 generated two-pin graphs, 1396 of
+  2800 second runs moved nodes (none did with one pin), and 88 of 2800 layouts ran a long edge
+  through the second pin's box. Placement would have to hold each pinned node's cross-axis
+  position as a constraint, and rank gaps stretch to reach its rank-axis position or say they
+  cannot.
+- **(P3) `onMove` reports a layout run's routes but not the ports it named.** A port layout picks
+  is marked `laidOut` on its edge end, but `fromPort`/`toPort` are part of `edgeIdOf`, so a
+  consumer storing one in its data renames the edge and the next reconcile replaces it
+  (`packages/diagram/src/sceneSync.ts`). Ports need an edge id that does not depend on them, or a
+  field of their own.
+- **(P3) The `lanes` look draws wires straight across stage boxes.** A wire running along its
+  lane passes over any stage between its ends that also touches that lane, and its label can sit
+  on that stage's title (`packages/diagram/src/effect/lanes.ts`). Clicking a lane band reports
+  `null` to `onSelect` but the canvas still highlights the band.
+- **(P3) An eased edge may switch faces on a live run's last frame.** Each eased frame draws
+  the route through the edge's current `from`/`to` ports, but the ports layout renames reach the
+  scene only at commit (`routeWrites`), so a run that changes the face an edge leaves by eases
+  along the old face and jumps on arrival (`easedPaths` in `packages/diagram/src/liveRoutes.ts`).
+  Found in review, not reproduced.
+- **(P3) A live run eases routes for `layered` only.** `force` runs still draw long edges through
+  the old bends while they ease, and an edge to a group reads the group's box a frame late
+  (`packages/diagram/src/liveRoutes.ts`).
+- **(P3) Wires into a `rack` stage's side ports can cross.** Six side stages feeding six side
+  inputs of one stage drew Layer 1's and Layer 2's wires crossing on their way in, before and
+  after the ports were spread apart (`packages/diagram/src/effect/rack.ts`).
+- **(P3) An empty-string port and no port give the same `edgeIdOf`.** Separators are escaped, so
+  no other two distinct wires share an id (`packages/diagram/src/fromData.ts`).
 - **(P4) An ELK layout adapter.** elkjs (the Eclipse Layout Kernel) lays out ports, labels and
   nested groups well, but answers asynchronously and is large (around 1.5 MB; not measured), so it cannot sit behind
   the synchronous `LayoutFn`. An adapter in a package of its own, for laying out a generated
   diagram once, would let a diagram be checked against it.
-- **(P3) `DiagramView` fits its view once, at mount.** `defaultView` only seeds the canvas's
-  view, so when `width` or `height` changes the canvas resizes and the view does not refit; a
-  diagram fitted for a wide box is clipped in a narrower one. The EffectChart lab shows it when
-  its frame is resized.
-- **(P3) Two wires can share an `edgeIdOf`.** Ids containing `.`, `->` or `:` build the same
-  edge id from different stages and ports. `diagramScene` keeps the first such edge, while the
-  looks keep one style per id, last one winning (`sceneStyles` in
-  `packages/diagram/src/effect/draw.ts`, `packages/diagram/src/fromData.ts`).
-- **(P3) The `rack` look overlaps side ports.** A stage's side ports are spread evenly along one
-  edge of a box sized by its text, however many there are, so a stage with many side inputs draws
-  them on top of one another (`spreadAt` in `packages/diagram/src/effect/rack.ts`).
-- **(P3) Branch symbols put control inputs on top whatever the rack's `side` is.** With the
-  default `side: 'below'`, the stage driving a decision hangs below it and its wire climbs to the
-  top edge (`inputs` in `packages/diagram/src/effect/symbols.ts`).
-- **(P3) A list of looks with different options needs a cast.** `EffectLook`'s options parameter
-  defaults to `unknown`, and `EffectLook<NodeGraphOptions>` is not assignable to it, so a list
-  holding `nodeGraph` and `rack` together is cast by hand (`packages/diagram/src/effect/draw.ts`;
-  the EffectChart lab story does it).
-- **(P3) `EffectChart` has no floor on its opening scale.** It opens every chart fitted whole and
-  passes no `minScale`, so a chart of hundreds of stages opens too small to read
-  (`packages/diagram/src/effect/EffectChart.tsx`; `DiagramView` already takes `minScale`).
-- **(P3) A branch symbol's drawn marks have fixed colors.** The `bar`'s bands and ticks and the
-  `switch`'s lever and contacts are color literals, so they stay bright on a bypassed decision
-  and a look cannot restyle them; only the titles follow the node style
-  (`packages/diagram/src/effect/symbols.ts`).
-- **(P3) Marks are only tested in jsdom.** No browser test moves a node that carries marks, so a
-  text mark following its node is unpinned, and so is a drawn mark's `opacity`
-  (`packages/diagram/src/marks.test.ts`).
-- **(P3) A mark whose path data does not parse fails when it is painted.** `diagramScene` passes
-  `d` through as given and `markShape` parses it on first paint, so a typo surfaces in the
-  renderer rather than where the data was built (`packages/diagram/src/marks.ts`).
 
 ---
 

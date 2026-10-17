@@ -2,7 +2,8 @@ import { describe, expect, it, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { createElement, useLayoutEffect } from 'react';
 import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
-import { createScene, type NodeId, type RectPose } from '@weasel-js/core';
+import { createScene, type NodeId, type RectPose, type Vec2 } from '@weasel-js/core';
+import { EDGE_DERIVE_PATH } from './edge';
 import { buildGraph, type Graph } from './graph';
 import { force } from './force';
 import { easedProducer, forceProducer, useLiveLayout, type LiveLayout } from './live';
@@ -317,5 +318,37 @@ describe('useLiveLayout', () => {
     // Without the re-heat the run would have finished on frame 4.
     act(() => { clock.frames(1); });
     expect(handle().isRunning()).toBe(true);
+  });
+
+  it('eases a long edge\'s route along with the nodes, and shows the document\'s once it arrives', () => {
+    const s = live('layered');
+    const long = s.scene.add({
+      kind: 'leaf', layer: 'main', pose: box(0, 0, 0, 0),
+      data: { diagram: { from: {}, to: {}, router: 'straight' } },
+      dependsOn: [s.a, s.c],
+      derivePath: EDGE_DERIVE_PATH as never,
+    });
+    const route = () => (s.scene.get(long)!.data as { diagram: { waypoints?: Vec2[] } }).diagram.waypoints ?? [];
+    act(() => { s.handle().start(); });
+    act(() => { s.clock.frames(4); });
+    const was = route();
+    expect(was).toHaveLength(2);
+
+    // `c` far off to the right: the next run routes `a → c` somewhere else.
+    act(() => { s.scene.setPose(s.c, box(900, 400)); });
+    const graph = graphOf(s.scene);
+    const next = layered.plan!(graph).waypoints!.get(long)!;
+    act(() => { s.handle().start(); });
+    act(() => { s.clock.frames(2); });
+    // Two frames of four, eased in and out: halfway.
+    const shown = s.scene.overrides.read(long)?.path;
+    expect(shown?.kind).toBe('polygon');
+    const coords = Array.from((shown as { coords: Float32Array }).coords);
+    const passes = (p: Vec2) => coords.some((x, i) => i % 2 === 0 && Math.abs(x - p.x) < 1e-3 && Math.abs(coords[i + 1]! - p.y) < 1e-3);
+    for (const [k, p] of was.entries()) expect(passes({ x: (p.x + next[k]!.x) / 2, y: (p.y + next[k]!.y) / 2 })).toBe(true);
+
+    act(() => { s.clock.frames(2); });
+    expect(route()).toEqual(next);
+    expect(s.scene.overrides.ids()).toEqual([]);
   });
 });

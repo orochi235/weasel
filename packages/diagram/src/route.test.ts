@@ -9,6 +9,11 @@ const traitOf = (data: DiagramData, edge: DataEdge, opts?: DiagramSceneOptions):
 };
 const poseOf = (data: DiagramData, id: string) =>
   diagramScene(data).find((s) => s.id === id)!.pose;
+/** Halfway between an edge's first two waypoints, where its label's room is. */
+const roomOf = (data: DiagramData, edge: DataEdge) => {
+  const [a, b] = traitOf(data, edge).waypoints!;
+  return { near: { x: (a!.x + b!.x) / 2, y: (a!.y + b!.y) / 2 } };
+};
 
 // `a` feeds `b`, which feeds `c`; `a` also feeds `c` straight, past `b`.
 const skip: DataEdge = { from: 'a', to: 'c' };
@@ -28,7 +33,7 @@ describe('layered routes', () => {
     const labeled: DataEdge = { from: 'a', to: 'b', label: 'then' };
     const data: DiagramData = { ...chain, edges: [labeled, chain.edges[1]!] };
     const label = diagramScene(data).find((s) => s.id === `${edgeIdOf(labeled)}/label`)!;
-    expect((label.data!.diagram as { label: unknown }).label).toEqual({ at: { waypoint: 0.5 }, offset: 9 });
+    expect((label.data!.diagram as { label: unknown }).label).toEqual({ at: roomOf(data, labeled), offset: 9 });
     expect(traitOf(data, labeled).waypoints).toHaveLength(2);
   });
 
@@ -44,7 +49,7 @@ describe('layered routes', () => {
     const labeled: DataEdge = { from: 'a', to: 'b', label: 'then', labelPlacement: { at: 'mid', offset: 4 } };
     const data: DiagramData = { ...chain, edges: [labeled, chain.edges[1]!] };
     const label = diagramScene(data).find((s) => s.id === `${edgeIdOf(labeled)}/label`)!;
-    expect((label.data!.diagram as { label: unknown }).label).toEqual({ at: { waypoint: 0.5 }, offset: 4 });
+    expect((label.data!.diagram as { label: unknown }).label).toEqual({ at: roomOf(data, labeled), offset: 4 });
   });
 
   it('come from any layout that plans its routes, not only layered', () => {

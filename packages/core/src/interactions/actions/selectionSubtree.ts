@@ -24,25 +24,35 @@ export function selectedRoots(scene: AnyScene, ids: readonly string[]): NodeId[]
     .filter((id) => scene.get(id) !== undefined && !hasSelectedAncestor(scene, id, set));
 }
 
+/** Whether `id` draws a path derived from other nodes. Its pose is a
+ *  placeholder: the path follows the nodes it derives from. */
+function derivesPathOnly(scene: AnyScene, id: string): boolean {
+  const node = scene.get(asNodeId(id));
+  return node?.derivePath !== undefined && node.derivePose === undefined
+    && Array.isArray(node.dependsOn) && node.dependsOn.length > 0;
+}
+
 /**
  * The nodes a translation of `ids` has to act on. A node whose pose is derived
  * from an id list cannot be moved itself, since a pose written to it is
  * overwritten on the next read, so the nodes it derives from stand in for it,
- * through however many derived nodes that takes. Each id appears once, in the
- * order it was first reached.
+ * through however many derived nodes that takes. A node reached that way which
+ * derives only its path — a wire under a label — follows its own dependencies
+ * and is not written. Each id appears once, in the order it was first reached.
  */
 export function moveSources(scene: AnyScene, ids: readonly string[]): string[] {
   const out = new Set<string>();
   const walked = new Set<string>();
-  const visit = (id: string): void => {
+  const visit = (id: string, reached: boolean): void => {
     if (walked.has(id)) return;
     walked.add(id);
+    if (reached && derivesPathOnly(scene, id)) return;
     const node = scene.get(asNodeId(id));
     const deps = node?.derivePose !== undefined && Array.isArray(node.dependsOn) ? node.dependsOn : [];
     if (deps.length === 0) out.add(id);
-    else for (const dep of deps) visit(dep);
+    else for (const dep of deps) visit(dep, true);
   };
-  for (const id of ids) visit(id);
+  for (const id of ids) visit(id, false);
   return [...out];
 }
 
@@ -50,23 +60,25 @@ export function moveSources(scene: AnyScene, ids: readonly string[]): string[] {
  * The nodes a resize, rotation, flip, or alignment of `ids` has to write. A
  * node whose pose is derived cannot be written itself, so what it derives
  * from stands in for it — a container's children, or the ids a node names —
- * through however many derived nodes that takes. Each id appears once, in
- * the order it was first reached.
+ * through however many derived nodes that takes, leaving out one reached that
+ * way which derives only its path, as {@link moveSources} does. Each id appears once, in the order it
+ * was first reached.
  */
 export function shapeSources(scene: AnyScene, ids: readonly string[]): string[] {
   const out = new Set<string>();
   const walked = new Set<string>();
-  const visit = (id: string): void => {
+  const visit = (id: string, reached: boolean): void => {
     if (walked.has(id)) return;
     walked.add(id);
+    if (reached && derivesPathOnly(scene, id)) return;
     const node = scene.get(asNodeId(id));
     const deps = node?.derivePose === undefined
       ? []
       : node.dependsOn === 'children' ? scene.childrenOf(asNodeId(id)) : node.dependsOn ?? [];
     if (deps.length === 0 && node?.dependsOn !== 'children') out.add(id);
-    else for (const dep of deps) visit(dep);
+    else for (const dep of deps) visit(dep, true);
   };
-  for (const id of ids) visit(id);
+  for (const id of ids) visit(id, false);
   return [...out];
 }
 

@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { diagramScene } from '../fromData';
 import { PROBLEM_COLOR } from './draw';
 import { mainChain, skipDecisions } from './mainChain';
-import { rack } from './rack';
-import { ADJACENT, SKIP } from './skipFixture';
+import { rack, SIDE_PORT_GAP } from './rack';
+import { ADJACENT, io, SKIP, w } from './skipFixture';
 import type { EffectPipeline, EffectStage } from './types';
 
 type Data = ReturnType<typeof rack>['data'];
@@ -106,6 +106,39 @@ describe('rack', () => {
     const twice = rack({ ...SKIP, groups: [{ id: 'g', members: ['q', 'blur'] }, { id: 'g', members: ['mix'] }, { id: 'mix', members: ['osc'] }] });
     expect(twice.data.groups).toEqual([{ id: 'g', members: ['blur'] }]);
     expect(() => diagramScene(twice.data, twice.scene)).not.toThrow();
+  });
+
+  it('turns a decision\'s control input toward the side its driver hangs on', () => {
+    const gated: EffectPipeline = {
+      ...SKIP,
+      stages: SKIP.stages.map((s) => (s.id === 'q' ? { ...s, inputs: [...s.inputs!, { id: 'when', type: 'number' }] } : s)),
+      wires: [...SKIP.wires, w(['osc', 'value'], ['q', 'when'])],
+    };
+    const when = (side: 'below' | 'above') => rack(gated, { collapseSkips: false, branch: 'switch', side })
+      .data.nodes.find((n) => n.id === 'q')!.ports!.find((p) => p.id === 'when')!.at.v;
+    expect(when('below')).toBe(1);
+    expect(when('above')).toBe(0);
+  });
+
+  it('widens a stage so its side ports sit apart, however many there are', () => {
+    const knobs = Array.from({ length: 8 }, (_, i) => `k${i}`);
+    const many: EffectPipeline = {
+      types: { number: { control: true } },
+      stages: [
+        io('src', { inputs: [] }),
+        io('fx', { inputs: [{ id: 'in', type: 'image' }, ...knobs.map((k) => ({ id: k, type: 'number' }))] }),
+        io('out', { outputs: [] }),
+        ...knobs.map((k) => ({ id: `osc-${k}`, title: 'o', outputs: [{ id: 'value', type: 'number' }] })),
+      ],
+      wires: [w(['src', 'out'], ['fx', 'in']), w(['fx', 'out'], ['out', 'in']), ...knobs.map((k) => w([`osc-${k}`, 'value'], ['fx', k]))],
+    };
+    const drawn = rack(many);
+    const specs = diagramScene(drawn.data, drawn.scene);
+    const width = (specs.find((s) => s.id === 'fx')!.pose as { width: number }).width;
+    const us = drawn.data.nodes.find((n) => n.id === 'fx')!.ports!.filter((p) => knobs.includes(p.id)).map((p) => p.at.u).sort();
+    const gaps = us.slice(1).map((u, i) => (u - us[i]!) * width);
+    expect(Math.min(...gaps)).toBeGreaterThanOrEqual(SIDE_PORT_GAP - 1e-9);
+    expect(us[0]! * width).toBeGreaterThanOrEqual(SIDE_PORT_GAP - 1e-9);
   });
 
   it('builds a scene diagramScene accepts, and an empty one for an empty pipeline', () => {

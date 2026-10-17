@@ -1,24 +1,26 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLatest, type Paint } from '@weasel-js/core';
+import { releaseImageSource } from '@weasel-js/core/renderer';
 import { DiagramView, type DiagramViewProps } from '../DiagramView';
 import { diagramScene } from '../fromData';
 import { checkPipeline, type EffectProblem } from './check';
 import type { EffectLook } from './draw';
 import { nodeGraph } from './nodeGraph';
-import { paintRun } from './run';
+import { DIM, paintRun, unreachedStages } from './run';
 import type { EffectPipeline, EffectRun } from './types';
 
 /** Props for `EffectChart`. */
-export interface EffectChartProps<TOptions = unknown> {
+export interface EffectChartProps<TOptions = never> {
   /** Compared by its JSON, so it may be rebuilt on every render: the chart
    *  lays out again only when that changes. A value JSON drops or flattens
    *  in a stage's `data` (a function, a `Map`) is not seen changing. */
   pipeline: EffectPipeline;
   /** One run of the pipeline, drawn over it: stages it never reached and
    *  branches it did not take faded, each stage's cost above its corner, and
-   *  each output's value in the row a look keeps for it (`showValues`). It may
-   *  change every frame: the chart neither lays out again nor refits, and
-   *  repaints only what changed. */
+   *  each output's value and preview in the rows a look keeps for them
+   *  (`showValues`, `showPreviews`). It may change every frame: the chart
+   *  neither lays out again nor refits, and repaints only what changed. A
+   *  preview the next run no longer shows has its texture freed then. */
   run?: EffectRun;
   /** How the pipeline is drawn. Default `nodeGraph`. */
   look?: EffectLook<TOptions>;
@@ -27,6 +29,10 @@ export interface EffectChartProps<TOptions = unknown> {
   options?: TOptions;
   width: number;
   height: number;
+  /** The smallest scale the chart opens at. A chart that does not fit whole
+   *  at it opens at it anyway, anchored at its start, and the rest is a pan
+   *  away. Default `EFFECT_MIN_SCALE`. */
+  minScale?: number;
   /** What the canvas paints behind the chart. Unset, it is transparent; the
    *  shipped looks are drawn for a dark ground. */
   background?: Paint;
@@ -42,6 +48,9 @@ export interface EffectChartProps<TOptions = unknown> {
   /** A class for the canvas element. */
   className?: string;
 }
+
+/** `EffectChart`'s default `minScale`: the shipped looks' 12px titles at 6px, the smallest still legible. */
+export const EFFECT_MIN_SCALE = 0.5;
 
 const keys = new WeakMap<object, number>();
 let nextKey = 0;
@@ -75,11 +84,27 @@ function useSameContent<T>(value: T): T {
   return value;
 }
 
+/** Free the texture of each preview a new run no longer shows, and of every
+ *  one on unmount, rather than leave it until the bitmap is collected. Runs
+ *  after `DiagramView` has reconciled the run that replaced it. */
+function useReleaseReplaced(run: EffectRun | undefined): void {
+  const shown = useRef(new Set<ImageBitmap>());
+  useEffect(() => {
+    const now = new Set(Object.values(run?.stages ?? {}).flatMap((s) => Object.values(s.previews ?? {})));
+    for (const old of shown.current) if (!now.has(old)) releaseImageSource(old);
+    shown.current = now;
+  }, [run]);
+  useEffect(() => () => {
+    for (const old of shown.current) releaseImageSource(old);
+    shown.current = new Set();
+  }, []);
+}
+
 /** A chart of an effects pipeline: pan, zoom, and pick a stage. Text paints
  *  only in a registered font family, so call `registerCanvasFont('sans-serif')`
  *  once before mounting one. */
-export function EffectChart<TOptions = unknown>({
-  pipeline: given, run, look, options, width, height, background, selected, onSelect, onProblems, className,
+export function EffectChart<TOptions = never>({
+  pipeline: given, run, look, options, width, height, minScale = EFFECT_MIN_SCALE, background, selected, onSelect, onProblems, className,
 }: EffectChartProps<TOptions>) {
   const pipeline = useSameContent(given);
   const problems = useMemo(() => checkPipeline(pipeline), [pipeline]);
@@ -90,18 +115,26 @@ export function EffectChart<TOptions = unknown>({
 
   const built = useMemo(() => {
     const drawn = ((look ?? nodeGraph) as EffectLook<TOptions>)(pipeline, options);
-    const portOptions: DiagramViewProps['portOptions'] = {
+    return { specs: diagramScene(drawn.data, drawn.scene), color: drawn.color, exits: drawn.exits };
+  }, [pipeline, look, options]);
+
+  // Keyed by which stages the run missed, not by the run, so a run that only
+  // changes values keeps the port layer.
+  const missed = JSON.stringify([...unreachedStages(pipeline, run)].sort());
+  const portOptions = useMemo((): DiagramViewProps['portOptions'] => {
+    const faded = new Set(JSON.parse(missed) as string[]);
+    return {
       shape: 'circle',
       sizePx: 8,
       // Every port a look declares has a value type; the compass defaults have none.
       showsPort: (port) => port.type !== undefined,
-      fill: (port) => ({ paint: { color: drawn.color(port.type) } }),
+      fill: (port) => ({ paint: { color: built.color(port.type), ...(faded.has(port.nodeId) ? { opacity: DIM } : {}) } }),
     };
-    return { specs: diagramScene(drawn.data, drawn.scene), portOptions, exits: drawn.exits };
-  }, [pipeline, look, options]);
+  }, [built, missed]);
 
   // Keyed by the layout alone: a run edits the scene in place.
   const painted = useMemo(() => paintRun(pipeline, built.specs, run, built.exits), [pipeline, built, run]);
+  useReleaseReplaced(run);
 
   const stageIds = useMemo(() => new Set(pipeline.stages.map((s) => s.id)), [pipeline]);
   return (
@@ -110,8 +143,9 @@ export function EffectChart<TOptions = unknown>({
       specs={painted}
       width={width}
       height={height}
+      minScale={minScale}
       ports="show"
-      portOptions={built.portOptions}
+      portOptions={portOptions}
       anchor="start"
       {...(background !== undefined ? { background } : {})}
       {...(selected !== undefined ? { selected } : {})}

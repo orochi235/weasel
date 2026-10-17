@@ -8,20 +8,20 @@
  */
 import type { AddNodeSpec, MarkerRef, RectPose, Stroke } from '@weasel-js/core';
 import { DEFAULT_GROUP_INSET, expandGroupEdges } from './cluster';
-import { groupSpecs, resolveGroups, type ResolvedGroup } from './dataGroups';
+import { groupSpecs, resolveGroups } from './dataGroups';
 import { bodyTrait, buildBody, measureBody, sizeToBody, type BodySpec, type MeasureRowText, type Row, type RowTextStyle } from './body';
-import { edgeSpecs, labelStyleOf } from './dataEdges';
+import { edgeSpecs, labelStyleOf, wireLabels } from './dataEdges';
 import type { DiagramEdge } from './edge';
 import { force } from './force';
 import { labelFollowsLayout, type EdgeLabelRoom, type Graph, type GraphEdge, type GraphGroup, type GraphNode } from './graph';
 import type { DiagramAnchor } from './group';
 import type { DiagramLabel } from './label';
 import { chain } from './chain';
-import { layered, type LayeredPlan } from './layered';
-import type { LayoutFn, LayoutOptions, LayoutPlan } from './layout';
+import { layered } from './layered';
+import type { LayoutFn, LayoutOptions } from './layout';
 import { markSpecs, type DataMark, type DiagramMark } from './marks';
 import type { Outline } from './outline';
-import { authoredOver, type LayeredRoute } from './route';
+import { authoredOver } from './route';
 import { tree } from './tree';
 import type { DiagramNode, PortSpec } from './types';
 import type { Vec2 } from '@weasel-js/core/math';
@@ -75,6 +75,9 @@ export interface DataEdge {
   router?: DiagramRouter;
   /** World points the route passes through. Layout does not move them. */
   waypoints?: readonly Vec2[];
+  /** A route a layout run wrote, as `DiagramView`'s `onMove` reports it: drawn
+   *  until layout runs again, which may replace it. `waypoints` wins. */
+  routed?: readonly Vec2[];
 }
 
 /** A box drawn around some nodes, which layout keeps together. */
@@ -136,7 +139,12 @@ export interface DiagramSceneData {
   stroke?: Stroke;
   text?: string;
   style?: DiagramTextStyle;
+  /** What a slot is filled with: an image the kit's image painter draws. */
+  image?: { src: string; opacity?: number };
 }
+
+/** The frame an empty slot with an id draws, in the unit square a mark is drawn in. */
+export const SLOT_FRAME = 'M0 0H1V1H0Z';
 
 /** A scene node spec, as `diagramScene` returns them. */
 export type DiagramSpec = AddNodeSpec<DiagramSceneData, 'main', RectPose>;
@@ -185,9 +193,17 @@ const GLYPH = 0.6;
 const MIN_WIDTH = 64;
 const LAYOUTS = { layered, tree, force, chain } as const;
 
-/** The scene node id `diagramScene` gives an edge, built from its ends, ports, and label. */
-export const edgeIdOf = (e: DataEdge) =>
-  `edge:${e.from}${e.fromPort ? `.${e.fromPort}` : ''}->${e.to}${e.toPort ? `.${e.toPort}` : ''}${e.label ? `:${e.label}` : ''}`;
+/** A part of an edge id with its separators, and the `/` sub-specs append
+ *  after one, escaped by a backslash. */
+const idPart = (s: string) => s.replace(/[\\.>:/]/g, '\\$&');
+
+/** The scene node id `diagramScene` gives an edge, built from its ends, ports,
+ *  and label. Two edges differing in any of those get different ids: a `.`,
+ *  `>`, `:`, `/` or `\` in one of them is escaped with a backslash. */
+export const edgeIdOf = (e: DataEdge) => {
+  const port = (p: string | undefined) => (p ? `.${idPart(p)}` : '');
+  return `edge:${idPart(e.from)}${port(e.fromPort)}->${idPart(e.to)}${port(e.toPort)}${e.label ? `:${idPart(e.label)}` : ''}`;
+};
 
 function graphOf(nodes: GraphNode[], edges: GraphEdge[], groups: GraphGroup[] = []): Graph {
   const byId = new Map(nodes.map((n) => [n.id, n]));
@@ -205,20 +221,6 @@ function graphOf(nodes: GraphNode[], edges: GraphEdge[], groups: GraphGroup[] = 
     outgoing: (id) => out.get(id) ?? [],
     incoming: (id) => inc.get(id) ?? [],
   };
-}
-
-/** Each edge's ports and waypoints under a layout that plans its routes: the
- *  author's where given, else `layeredRoutes`'. */
-function routed(data: DiagramData, edges: readonly DataEdge[], groups: readonly ResolvedGroup[],
-  plan: LayoutPlan, layoutOptions: LayoutOptions): Map<string, LayeredRoute> {
-  return authoredOver(edges.map((e) => ({ ...e, id: edgeIdOf(e) })), {
-    ranks: 'ranks' in plan ? (plan as LayeredPlan).ranks : new Map(),
-    waypoints: plan.waypoints ?? new Map(),
-    ...(plan.labels !== undefined ? { labels: plan.labels } : {}),
-    members: new Map(groups.map((g) => [g.group.id, g.members])),
-    compass: new Set([...data.nodes.filter((n) => n.ports === undefined).map((n) => n.id), ...groups.map((g) => g.group.id)]),
-    ...(layoutOptions.direction ? { direction: layoutOptions.direction } : {}),
-  });
 }
 
 /** The room an edge's label asks layout for: none when the edge puts its
@@ -255,6 +257,36 @@ function placed(data: DiagramData, seeds: readonly GraphNode[], moved: ReadonlyM
     const at = moved.get(n.id) ?? seed;
     return [n.id, { x: at.x, y: at.y, width: seed.width, height: seed.height }];
   }));
+}
+
+/** A node's box, its rows' text and slots, and its port labels, laid out in `box`. */
+function nodeSpecs(
+  n: DataNode, body: BodySpec, box: { x: number; y: number; width: number; height: number },
+  look: { style: NodeStyle; text: (s: RowTextStyle | undefined) => DiagramTextStyle; measure: MeasureRowText },
+): DiagramSpec[] {
+  const { style } = look;
+  const textData = (text: string, s: RowTextStyle | undefined): DiagramSceneData =>
+    ({ text, style: look.text(s), fill: { paint: { color: style.text } } });
+  const built = buildBody<DiagramSceneData, 'main', RectPose>(body, box, {
+    id: n.id,
+    layer: 'main',
+    measure: look.measure,
+    body: (trait) => ({
+      diagram: n.pinned === true ? { ...trait, pinned: true } : trait,
+      fill: { paint: { color: style.fill } },
+      stroke: {
+        paint: { color: style.stroke },
+        width: style.strokeWidth ?? 2,
+        ...(style.dash ? { dash: style.dash } : {}),
+      },
+    }),
+    row: (text, at) =>
+      at.row.kind === 'slot'
+        ? (at.row.id === undefined ? null : { diagram: { mark: { d: SLOT_FRAME } }, stroke: { paint: { color: style.stroke }, width: 1 } })
+        : text === '' ? null : textData(text, at.row.kind === 'label' || at.row.kind === 'field' ? at.row.style : undefined),
+    portLabel: (text) => textData(text, undefined),
+  });
+  return built.specs.map((s, k) => ({ ...s, ...(s.id !== undefined ? {} : { id: `${n.id}/${k}` }) }) as DiagramSpec);
 }
 
 /** Every spec carries an id — a node's own, `<id>/<k>` for its text,
@@ -312,8 +344,8 @@ export function diagramScene(data: DiagramData, opts: DiagramSceneOptions = {}):
       { ...(n.at ?? { x: i, y: i }), width: n.width ?? opts.minWidth ?? MIN_WIDTH, height: n.height ?? 0 },
       measureBody(bodies[i]!, measure),
     );
-    const ports = bodyTrait(bodies[i]!, pose, measure).ports;
-    return { id: n.id, bounds: pose, pinned: n.pinned === true, ...(ports !== undefined ? { ports } : {}) };
+    const { ports, outline } = bodyTrait(bodies[i]!, pose, measure);
+    return { id: n.id, bounds: pose, pinned: n.pinned === true, ...(ports !== undefined ? { ports } : {}), ...(outline !== undefined ? { outline } : {}) };
   });
   const graphGroups: GraphGroup[] = groups.map((g) => ({
     id: g.group.id,
@@ -343,44 +375,19 @@ export function diagramScene(data: DiagramData, opts: DiagramSceneOptions = {}):
 
   const specs: DiagramSpec[] = [];
   const placedAt = placed(data, seeds, moved);
-  const routes = plan === null ? null : routed(data, edges, groups, plan, layoutOptions);
+  // The author's own ports and waypoints win over the plan's.
+  const routes = plan === null ? null : authoredOver(edges.map((e) => ({ ...e, id: edgeIdOf(e) })), plan);
   // Behind every node, so a box never paints over what it holds.
-  specs.push(...groupSpecs(groups, placedAt, (g) => ({
-    style: opts.groupStyle?.(g) ?? GROUP,
-    text: styleOf(titleStyle),
-  })));
+  const edgeCtx = { idOf: edgeIdOf, font, measure, fallback: EDGE, labelPlacement: LABEL_PLACEMENT, routes, opts };
+  const groupLook = (g: DataGroup) => ({ style: opts.groupStyle?.(g) ?? GROUP, text: styleOf(titleStyle) });
+  specs.push(...groupSpecs(groups, placedAt, groupLook, wireLabels(edges, edgeCtx)));
   for (const [i, n] of data.nodes.entries()) {
     const seed = seeds[i]!.bounds;
     const at = placedAt.get(n.id)!;
     const style = opts.nodeStyle?.(n) ?? NODE;
-    const textData = (text: string, s: RowTextStyle | undefined): DiagramSceneData =>
-      ({ text, style: styleOf(s), fill: { paint: { color: style.text } } });
-    const built = buildBody<DiagramSceneData, 'main', RectPose>(
-      bodies[i]!,
-      { x: at.x, y: at.y, width: seed.width, height: seed.height },
-      {
-        id: n.id,
-        layer: 'main',
-        measure,
-        body: (trait) => ({
-          diagram: n.pinned === true ? { ...trait, pinned: true } : trait,
-          fill: { paint: { color: style.fill } },
-          stroke: {
-            paint: { color: style.stroke },
-            width: style.strokeWidth ?? 2,
-            ...(style.dash ? { dash: style.dash } : {}),
-          },
-        }),
-        row: (text, box) =>
-          text === '' ? null : textData(text, box.row.kind === 'label' || box.row.kind === 'field' ? box.row.style : undefined),
-        portLabel: (text) => textData(text, undefined),
-      },
-    );
-    for (const [k, s] of built.specs.entries()) {
-      specs.push({ ...s, ...(s.id !== undefined ? {} : { id: `${n.id}/${k}` }) } as DiagramSpec);
-    }
+    specs.push(...nodeSpecs(n, bodies[i]!, { x: at.x, y: at.y, width: seed.width, height: seed.height }, { style, text: styleOf, measure }));
     if (n.marks) specs.push(...markSpecs(n.id, n.marks, at, { style, textStyle: styleOf, measure }));
   }
-  specs.push(...edgeSpecs(edges, { idOf: edgeIdOf, font, measure, fallback: EDGE, labelPlacement: LABEL_PLACEMENT, routes, opts }));
+  specs.push(...edgeSpecs(edges, edgeCtx));
   return specs;
 }

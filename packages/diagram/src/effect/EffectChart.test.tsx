@@ -5,8 +5,12 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 interface SeenProps {
   background?: unknown;
+  minScale?: number;
   onSelect?: (id: string | null) => void;
-  portOptions?: { showsPort?: (port: { type?: string }) => boolean };
+  portOptions?: {
+    showsPort?: (port: { type?: string }) => boolean;
+    fill?: (port: { nodeId: string; type?: string }) => { paint: { color: string; opacity?: number } };
+  };
 }
 const seen: SeenProps[] = [];
 const view = { mounts: 0 };
@@ -45,6 +49,36 @@ describe('EffectChart picking', () => {
     view.onSelect!('g');
     view.onSelect!(null);
     expect(onSelect.mock.calls.map((c) => c[0])).toEqual(['blur', null, null]);
+  });
+});
+
+describe('EffectChart port dots under a run', () => {
+  const pipeline: EffectPipeline = {
+    stages: [
+      { id: 'a', title: 'A', outputs: [{ id: 'out', type: 'image' }] },
+      { id: 'b', title: 'B', inputs: [{ id: 'in', type: 'image' }] },
+    ],
+    wires: [{ from: { stage: 'a', port: 'out' }, to: { stage: 'b', port: 'in' } }],
+  };
+  const opacity = (stage: string) => seen[seen.length - 1]!.portOptions!.fill!({ nodeId: stage, type: 'image' }).paint.opacity;
+
+  it('fades the ports of a stage the run never reached, and only with a run', () => {
+    const { rerender } = render(<EffectChart pipeline={pipeline} width={100} height={100} />);
+    expect([opacity('a'), opacity('b')]).toEqual([undefined, undefined]);
+    rerender(<EffectChart pipeline={pipeline} width={100} height={100} run={{ stages: { a: {} } }} />);
+    expect(opacity('a')).toBeUndefined();
+    expect(opacity('b')).toBeCloseTo(0.3, 6);
+  });
+});
+
+describe('EffectChart opening scale', () => {
+  const pipeline = { stages: [{ id: 'a', title: 'A' }], wires: [] };
+
+  it('opens no smaller than a readable floor, or the one it is given', () => {
+    render(<EffectChart pipeline={pipeline} width={100} height={100} />);
+    expect(seen[seen.length - 1]!.minScale).toBe(0.5);
+    render(<EffectChart pipeline={pipeline} width={100} height={100} minScale={0.2} />);
+    expect(seen[seen.length - 1]!.minScale).toBe(0.2);
   });
 });
 

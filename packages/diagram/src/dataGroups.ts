@@ -65,10 +65,41 @@ export function resolveGroups(
 
 type Rect = { x: number; y: number; width: number; height: number };
 
-/** Each group's box around where its members were placed. */
+/** A label on a wire, as a group box takes it in: the label node's id, and
+ *  where it sits when that is known before the scene derives it. */
+export interface WireLabel {
+  id: string;
+  from: string;
+  to: string;
+  at: Rect | null;
+}
+
+/** The labels each group's box takes in: those on wires with both ends
+ *  inside it, each in the innermost group holding both. */
+export function labelsByGroup(groups: readonly ResolvedGroup[], labels: readonly WireLabel[]): Map<string, WireLabel[]> {
+  const byId = new Map(groups.map((g) => [g.group.id, g]));
+  const holder = new Map<string, string>();
+  for (const g of groups) for (const m of g.direct) holder.set(m, g.group.id);
+  const ancestry = (id: string): string[] => {
+    const out: string[] = [];
+    for (let at = byId.has(id) ? byId.get(id)!.parent : holder.get(id); at !== undefined; at = byId.get(at)?.parent) out.push(at);
+    return out;
+  };
+  const out = new Map<string, WireLabel[]>();
+  for (const label of labels) {
+    const up = new Set(ancestry(label.to));
+    const shared = ancestry(label.from).find((g) => up.has(g));
+    if (shared !== undefined) out.set(shared, [...(out.get(shared) ?? []), label]);
+  }
+  return out;
+}
+
+/** Each group's box around where its members were placed, and the labels
+ *  it takes in where they are known. */
 export function groupBoxes(
   groups: readonly ResolvedGroup[],
   placedAt: ReadonlyMap<string, Rect>,
+  labels: ReadonlyMap<string, readonly WireLabel[]> = new Map(),
 ): Map<string, Rect> {
   const byId = new Map(groups.map((g) => [g.group.id, g]));
   const boxes = new Map<string, Rect>();
@@ -77,6 +108,7 @@ export function groupBoxes(
     if (known !== undefined) return known;
     const g = byId.get(id)!;
     const rs = g.direct.map((m) => (byId.has(m) ? boxOf(m) : placedAt.get(m)!));
+    for (const label of labels.get(id) ?? []) if (label.at !== null) rs.push(label.at);
     const x = Math.min(...rs.map((r) => r.x));
     const y = Math.min(...rs.map((r) => r.y));
     const box = boxAround({
@@ -95,14 +127,17 @@ export function groupBoxes(
 /**
  * Each group's box, and its label when it has one, around where its members
  * were placed. In the order given, so an outer box paints behind the boxes
- * inside it.
+ * inside it. A box depends on its members and on the labels it takes in
+ * (see {@link labelsByGroup}), so a wire's label stays inside it.
  */
 export function groupSpecs(
   groups: readonly ResolvedGroup[],
   placedAt: ReadonlyMap<string, Rect>,
   styleOf: (group: DataGroup) => { style: NodeStyle; text: NonNullable<DiagramSceneData['style']> },
+  wireLabels: readonly WireLabel[] = [],
 ): DiagramSpec[] {
-  const boxes = groupBoxes(groups, placedAt);
+  const labels = labelsByGroup(groups, wireLabels);
+  const boxes = groupBoxes(groups, placedAt, labels);
   const specs: DiagramSpec[] = [];
   for (const g of groups) {
     const { style, text } = styleOf(g.group);
@@ -121,7 +156,7 @@ export function groupSpecs(
           ...(style.dash ? { dash: style.dash } : {}),
         },
       },
-      dependsOn: g.direct as never[],
+      dependsOn: [...g.direct, ...(labels.get(g.group.id) ?? []).map((l) => l.id)] as never[],
       derivePose: GROUP_DERIVE_POSE as never,
     });
     if (g.title === null || !g.group.label) continue;

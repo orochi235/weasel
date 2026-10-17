@@ -48,14 +48,29 @@ export function diagramMarkOf(node: { data: unknown }): DiagramMark | null {
 const PARSED = new Map<string, Path>();
 const PARSED_MAX = 256;
 
-function unitPath(d: string): Path {
+function unitPath(d: string, onWarn?: (message: string) => void): Path {
   let path = PARSED.get(d);
   if (path === undefined) {
-    if (PARSED.size >= PARSED_MAX) PARSED.clear();
-    path = pathFromD(d);
-    PARSED.set(d, path);
+    let warned = false;
+    path = pathFromD(d, (message) => {
+      warned = true;
+      onWarn?.(message);
+    });
+    if (path.kind === 'polygon' && path.commands.length === 0) onWarn?.('it draws nothing');
+    else if (!warned) {
+      if (PARSED.size >= PARSED_MAX) PARSED.clear();
+      PARSED.set(d, path);
+    }
   }
   return path;
+}
+
+/** Parse a drawn mark's path data now, so a typo surfaces where the diagram
+ *  is built rather than at first paint. */
+function checkMarkPath(nodeId: string, index: number, d: string): void {
+  unitPath(d, (message) => {
+    throw new Error(`diagramScene: node "${nodeId}", mark ${index}: path data ${JSON.stringify(d)} does not parse: ${message}`);
+  });
 }
 
 /** The painter for a drawn mark. */
@@ -98,6 +113,7 @@ export function markSpecs(
   return marks.map((mark, i): DiagramSpec => {
     const id = `${nodeId}/mark:${i}` as never;
     if ('d' in mark) {
+      checkMarkPath(nodeId, i, mark.d);
       const paint = (color: string) => ({ color, ...(mark.opacity !== undefined ? { opacity: mark.opacity } : {}) });
       const stroke = mark.stroke ?? (mark.fill === undefined ? ctx.style.stroke : undefined);
       return {

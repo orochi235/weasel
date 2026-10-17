@@ -111,6 +111,19 @@ describe('diagramScene', () => {
     expect(texts[1]!.data?.style?.fontWeight).toBeUndefined();
   });
 
+  it('gives a slot with an id a scene node of that name, an empty frame in its box', () => {
+    const specs = diagramScene({
+      nodes: [{ id: 'op', rows: [{ kind: 'label', text: 'mix' }, { kind: 'slot', height: 20, width: 30, id: 'well' }] }],
+      edges: [],
+    });
+    const well = specs.find((s) => s.id === 'op/well')!;
+    expect(well.parent).toBe('op');
+    expect(well.pose).toMatchObject({ width: 30, height: 20 });
+    expect(well.data?.diagram).toEqual({ mark: { d: 'M0 0H1V1H0Z' } });
+    expect(well.data?.fill).toBeUndefined();
+    expect(well.data?.stroke).toBeDefined();
+  });
+
   it('gives a ports row its ports and draws their labels', () => {
     const specs = diagramScene({
       nodes: [{ id: 'op', rows: [{ kind: 'ports', left: [{ id: 'a', label: 'in', type: 'num' }], right: [{ id: 'b' }] }] }],
@@ -159,6 +172,20 @@ describe('diagramScene', () => {
     expect(spec.data?.stroke).toEqual({ paint: { color: '#fff' }, width: 1.5, dash: [4, 2], markerStart: 'dot' });
   });
 
+  it('gives distinct edges distinct ids, whatever their ids, ports and labels hold', () => {
+    const edges = [
+      { from: 'a.b', to: 'c' }, { from: 'a', fromPort: 'b', to: 'c' },
+      { from: 'a->b', to: 'c' }, { from: 'a', to: 'b->c' },
+      { from: 'a', to: 'b:x' }, { from: 'a', to: 'b', label: 'x' },
+      { from: 'a', to: 'b', label: 'x/label' },
+      { from: 'a\\', fromPort: 'p', to: 'b' }, { from: 'a', fromPort: '\\.p', to: 'b' },
+    ];
+    const ids = edges.map(edgeIdOf);
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(ids).not.toContain(`${edgeIdOf({ from: 'a', to: 'b', label: 'x' })}/label`);
+    expect(edgeIdOf({ from: 'osc-1', to: 'out' })).toBe('edge:osc-1->out');
+  });
+
   it('places a label where the edge says, colored by the style', () => {
     const specs = diagramScene(
       { nodes: DATA.nodes, edges: [{ from: 'a', to: 'b', label: 'w', labelPlacement: { at: 0.25 } }] },
@@ -191,5 +218,18 @@ describe('diagramScene', () => {
       { layout: 'none' },
     );
     expect(containers(specs).map((s) => s.pose)).toMatchObject([{ x: 300, y: 7 }, { x: 0, y: 0 }]);
+  });
+
+  it("draws a stored `routed` route as layout's own, so a later layout may replace it", () => {
+    const routed = [{ x: 50, y: 50 }];
+    const edgeOf = (edge: DiagramData['edges'][number]) => {
+      const specs = diagramScene({ nodes: [{ id: 'a', lines: ['a'] }, { id: 'b', lines: ['b'] }], edges: [edge] }, { layout: 'none' });
+      return (specs.find((s) => s.id === edgeIdOf(edge))!.data as { diagram: { waypoints?: unknown; laidOut?: unknown } }).diagram;
+    };
+    expect(edgeOf({ from: 'a', to: 'b', routed })).toMatchObject({ waypoints: routed, laidOut: routed });
+    const own = [{ x: 9, y: 9 }];
+    const authored = edgeOf({ from: 'a', to: 'b', routed, waypoints: own });
+    expect(authored.waypoints).toEqual(own);
+    expect(authored.laidOut).toBeUndefined();
   });
 });

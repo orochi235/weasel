@@ -17,6 +17,7 @@ import {
   untilSettled,
   worldOf,
   type LayoutOptions,
+  type LayoutPorts,
   type LayoutResult,
   type Slot,
 } from '../layout';
@@ -24,6 +25,8 @@ import { depthOf, expand } from './expand';
 import { orderRows } from './order';
 import { placeAcross } from './place';
 import { ranksByLength } from './rank';
+import { settlePlaces } from './places';
+import { layeredPorts } from '../route';
 
 /** What {@link layeredPlan} works out. */
 export interface LayeredPlan {
@@ -38,9 +41,12 @@ export interface LayeredPlan {
    *  enters and leaves that rank. */
   waypoints: ReadonlyMap<string, readonly Vec2[]>;
   /** For each labeled edge given room, keyed by the edge's id as drawn: the
-   *  place among its waypoints that room is beside, as a `DiagramLabel`'s
-   *  `{ waypoint }` reads it. */
-  labels: ReadonlyMap<string, number>;
+   *  point on its route that room is beside, as a `DiagramLabel`'s
+   *  `{ near }` reads it. */
+  labels: ReadonlyMap<string, Vec2>;
+  /** For each edge running between ranks, keyed by the edge's id as drawn:
+   *  the compass ports facing the way it runs (see `layeredPorts`). */
+  ports: ReadonlyMap<string, LayoutPorts>;
 }
 
 /** How much of `rankGap` each side of a label's row keeps. */
@@ -78,7 +84,7 @@ function planOnce(graph: Graph, opts: LayoutOptions = {}): LayeredPlan {
   const expanded = expand(graph, ranks, back, { axes, nodeGap });
   const rows = finding ? orderRows(expanded.rows, expanded.hops, { groups: graph.groups ?? [] }) : expanded.rows;
 
-  const preferred = placeAcross(rows, expanded.hops, axes.cross, nodeGap);
+  const preferred = placeAcross(rows, settlePlaces(rows, expanded.hops), axes.cross, nodeGap);
   const grouped = (graph.groups?.length ?? 0) > 0;
   const crossAt = grouped ? packClusters(graph, rows, preferred, axes, nodeGap) : preferred;
   const gaps = grouped ? rankGaps(graph, rows, axes, rankGap) : rows.slice(1).map(() => rankGap);
@@ -123,14 +129,13 @@ function planOnce(graph: Graph, opts: LayoutOptions = {}): LayeredPlan {
   }
 
   const waypoints = new Map<string, Vec2[]>();
-  const labels = new Map<string, number>();
+  const labels = new Map<string, Vec2>();
   const rankOf = new Map<string, number>();
   rows.forEach((row, r) => row.forEach((n) => rankOf.set(n.id, r)));
   const widthOf = new Map(rows.flat().map((n) => [n.id, extent(n.bounds, axes.cross)]));
   for (const [edge, chain] of expanded.chains) {
     if (chain.ends.some((id) => displaced.has(id))) continue;
-    const beside = expanded.labels.get(edge);
-    if (beside !== undefined) labels.set(edge, chain.ids.indexOf(beside) * 2 + 0.5);
+    const beside = chain.ids.indexOf(expanded.labels.get(edge) ?? '');
     const points: Vec2[] = [];
     for (const id of chain.ids) {
       const cross = crossAt.get(id)! + (expanded.wires.get(id) ?? widthOf.get(id)! / 2);
@@ -141,7 +146,11 @@ function planOnce(graph: Graph, opts: LayoutOptions = {}): LayeredPlan {
       }
     }
     waypoints.set(edge, points);
+    if (beside >= 0) {
+      const [a, b] = [points[beside * 2]!, points[beside * 2 + 1]!];
+      labels.set(edge, { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
+    }
   }
 
-  return { moves, ranks, back, waypoints, labels };
+  return { moves, ranks, back, waypoints, labels, ports: layeredPorts(graph, ranks, opts.direction) };
 }

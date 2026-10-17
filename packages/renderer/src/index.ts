@@ -90,6 +90,7 @@ export { createTilePattern, type TilePatternOpts } from './patterns';
 export { resolveFillPattern, resolvePatternSpec } from './patterns/resolveSpec';
 export { textCommand, textCommandFromPose, textCommandFromRuns } from './textCommand';
 export {
+  bitmapSrc,
   getImageBitmap,
   imageStatus,
   isVectorImageSrc,

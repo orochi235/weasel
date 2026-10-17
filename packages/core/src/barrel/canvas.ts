@@ -51,6 +51,7 @@ export { drawnBoundsOf, drawnAABBOf, inkExtentsOf, findShapeDrawnBounds } from '
 export type { DrawnBoundsOptions, DrawnBoundsScene } from '../canvas/drawnBounds';
 export type { InkExtents } from '../core/geometry/inkExtents';
 export {
+  bitmapSrc,
   getImageBitmap,
   imageStatus,
   subscribeImageReady,
