@@ -39,6 +39,7 @@ import { useStoreCommands } from './storeCommands';
 import { UnreadableRecords } from './UnreadableRecords';
 import { useFocusPick } from './useFocusPick';
 import { type PanelDescriptor, type TrialLayout, Workspace } from './Workspace';
+import { isDev } from '@weasel-js/react';
 
 function LabFallback({
   title,
@@ -75,13 +76,13 @@ function LabFallback({
 /** The lab runtime: opens the store, provides it, and renders one trial
  *  per record in a grid. Each trial runs one of `instruments`. */
 export function Lab(props: LabProps) {
-  if (process.env.NODE_ENV !== 'production' && props.instruments.length === 0) {
+  if (isDev() && props.instruments.length === 0) {
     throw new Error('[labkit] <Lab> requires a non-empty `instruments` array');
   }
   const { storageKey, storage, present, still, clock } = props;
   useWarnIgnoredChange('<Lab>', { storageKey, storage, present, still, clock });
   const [start] = useState(() => presentationStart(present, still));
-  if (process.env.NODE_ENV !== 'production' && props.seed && !start.presenting) {
+  if (isDev() && props.seed && !start.presenting) {
     warnSeedIgnored();
   }
   const opened = useOpenOnce<OpenedLab>(() => {

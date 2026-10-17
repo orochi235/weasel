@@ -8,6 +8,7 @@ import type { Instrument } from '../instrument/types';
 import type { LabStore } from '../state/store';
 import type { TrialRecord } from '../state/types';
 import { stateOp } from '../undo/stateOp';
+import { isDev } from '@weasel-js/react';
 
 /** A config write within this long of the last one to the same path belongs
  *  to the same gesture — a slider drag writes on every move. */
@@ -79,7 +80,7 @@ export function useTrialWrites({
       const before = stored();
       if (!before) return;
       if (
-        process.env.NODE_ENV !== 'production' &&
+        isDev() &&
         !hasConfigPath(before.config as Record<string, unknown>, path) &&
         schemaNodeAtPath(schema.group, path) === undefined
       ) {

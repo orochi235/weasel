@@ -254,8 +254,7 @@ export function formatConflict(conflict: Conflict): string {
 /**
  * Detect reachable route conflicts in an assembled tool set and report each one.
  *
- * Call it once wherever a tool set is assembled, behind a
- * `process.env.NODE_ENV !== 'production'` guard.
+ * Call it once wherever a tool set is assembled, behind an `isDev()` guard.
  *
  * **Warn, never throw.** A conflict between a consumer's tool and a kit tool
  * is sometimes deliberate, since the loser can still take the gesture when

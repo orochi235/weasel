@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { isDev } from '@weasel-js/react';
 
 /** An element's edges, in the same coordinate space as the bound it is tested against. */
 export interface Edges {
@@ -98,7 +99,7 @@ const SETTLE_MS = 300;
 /** Dev only: warns once, naming the culprit, when a mounted lab scrolls. */
 export function useLabFitWarning(labBody: Element | null): void {
   useEffect(() => {
-    if (process.env.NODE_ENV === 'production') return;
+    if (!isDev()) return;
     if (!labBody || typeof ResizeObserver === 'undefined') return;
     const lab = labBody.closest('.lk-lab');
     const shellBody = labBody.closest('.lk-shell-body');

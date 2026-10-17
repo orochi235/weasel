@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useState } from 'react';
 import type { ClockRegistry } from '../clock/clockRegistry';
 import type { TrialClock, TrialClockHandle } from '../clock/trialClock';
+import { isDev } from '@weasel-js/react';
 
 /** A presented lab held still, for a poster to be taken of it. */
 export interface Still {
@@ -30,7 +31,7 @@ function holdStill(handle: TrialClockHandle, still: Still): void {
   if (clock.rate !== 0) clock.rate = 0;
   if (still.at === undefined || runs(handle)) return;
   if (clock.seekable) clock.seek(still.at);
-  else if (process.env.NODE_ENV !== 'production')
+  else if (isDev())
     console.warn(
       `[labkit] a still at ${still.at}ms leaves a clock that is not seekable where it opens; a \`step\` in its declaration runs it there`,
     );
