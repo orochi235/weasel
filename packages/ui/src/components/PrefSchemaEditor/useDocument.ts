@@ -45,15 +45,14 @@ export function useDocument<V>(options: DocumentOptions<V>): EditorDocument<V> {
   const { value, base, codec, opened, draftKey, draftStorage, taken, same = Object.is } = options;
   const latest = useLatest(options);
   const emitted = useRef(value);
-  // Read once: the history takes its window when it is made.
-  const coalesceMs = useKitSetting('history.coalesceMs') ?? COALESCE_MS;
+  const coalesceMs = useLatest(useKitSetting('history.coalesceMs') ?? COALESCE_MS);
   const hand = (next: V) => {
     emitted.current = next;
     latest.current.onChange(next);
   };
   const [history] = useState(() =>
     createHistory(null, {
-      coalesceWindowMs: coalesceMs,
+      coalesceWindowMs: () => coalesceMs.current,
       selection: {
         get: () => latest.current.selection.get(),
         set: (ids) => latest.current.selection.set(ids),
