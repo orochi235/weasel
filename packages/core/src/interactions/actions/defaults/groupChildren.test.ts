@@ -9,7 +9,7 @@ import { createScene } from 'core/scene/scene';
 import type { NodeId, RectPose } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import { unionOfChildren } from 'core/scene/kitRegistry';
-import { shapeSources } from '../selectionSubtree';
+import { moveSources, shapeSources } from '../selectionSubtree';
 import { resizeAction } from '../resize/action';
 import { rotateAction } from '../rotate/action';
 import { flipAction } from '../flip/action';
@@ -57,6 +57,27 @@ describe('shapeSources', () => {
     const { scene, group, a, b, lone } = setup();
     expect(shapeSources(scene as never, [lone, group])).toEqual([lone, a, b]);
     expect(shapeSources(scene as never, [a, group])).toEqual([a, b]);
+  });
+
+  // A box drawn around two nodes and the label on the wire between them: the
+  // wire's pose is a placeholder, and turning it would turn the path it draws.
+  it('reaches past a dependency that derives its path, rather than writing it', () => {
+    const { scene, a, b } = setup();
+    const wire = scene.add({
+      kind: 'leaf', layer: 'main', data: {}, pose: { x: 0, y: 0, width: 0, height: 0 },
+      dependsOn: [a, b], derivePath: () => null,
+    });
+    const label = scene.add({
+      kind: 'leaf', layer: 'main', data: {}, pose: { x: 0, y: 0, width: 10, height: 10 },
+      dependsOn: [wire], derivePose: () => null,
+    });
+    const box = scene.add({
+      kind: 'leaf', layer: 'main', data: {}, pose: { x: 0, y: 0, width: 1, height: 1 },
+      dependsOn: [a, b, label], derivePose: () => null,
+    });
+    expect(shapeSources(scene as never, [box])).toEqual([a, b]);
+    expect(moveSources(scene as never, [box])).toEqual([a, b]);
+    expect(moveSources(scene as never, [wire])).toEqual([wire]);
   });
 });
 
