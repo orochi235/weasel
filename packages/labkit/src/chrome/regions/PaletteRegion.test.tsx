@@ -1,9 +1,9 @@
 import { act, fireEvent, screen } from '@testing-library/react';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import { describe, expect, it, vi } from 'vitest';
 import { icon } from '../../icons.gen';
 import type { RegionContribution, ToolSlotContext } from '../types';
 import { PaletteRegion } from './PaletteRegion';
-import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 const Glyph = icon('ui:add');
 
@@ -33,7 +33,9 @@ describe('PaletteRegion', () => {
 
   it('sets the tool on click', () => {
     const setActiveTool = vi.fn();
-    renderWithIcons(<PaletteRegion contributions={[tool('brush')]} ctx={ctxWith(null, setActiveTool)} />);
+    renderWithIcons(
+      <PaletteRegion contributions={[tool('brush')]} ctx={ctxWith(null, setActiveTool)} />,
+    );
     screen.getByRole('button', { name: 'brush' }).click();
     expect(setActiveTool).toHaveBeenCalledWith('brush');
   });
@@ -57,13 +59,17 @@ describe('PaletteRegion', () => {
   });
 
   it('puts exactly one tool in the tab order', () => {
-    renderWithIcons(<PaletteRegion contributions={[tool('brush'), tool('eraser')]} ctx={ctxWith(null)} />);
+    renderWithIcons(
+      <PaletteRegion contributions={[tool('brush'), tool('eraser')]} ctx={ctxWith(null)} />,
+    );
     expect(screen.getByRole('button', { name: 'brush' })).toHaveAttribute('tabindex', '0');
     expect(screen.getByRole('button', { name: 'eraser' })).toHaveAttribute('tabindex', '-1');
   });
 
   it('walks the vertical strip with ArrowDown, and leaves ArrowRight to the page', () => {
-    renderWithIcons(<PaletteRegion contributions={[tool('brush'), tool('eraser')]} ctx={ctxWith(null)} />);
+    renderWithIcons(
+      <PaletteRegion contributions={[tool('brush'), tool('eraser')]} ctx={ctxWith(null)} />,
+    );
     const brush = screen.getByRole('button', { name: 'brush' });
     const eraser = screen.getByRole('button', { name: 'eraser' });
 

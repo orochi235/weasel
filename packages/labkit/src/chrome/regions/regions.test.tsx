@@ -1,11 +1,11 @@
 import { act, fireEvent, screen } from '@testing-library/react';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import { describe, expect, it, vi } from 'vitest';
 import { icon } from '../../icons.gen';
 import type { TrialChromeContext, TrialContribution } from '../types';
 import { SidebarRegion } from './SidebarRegion';
 import { StatusRegion } from './StatusRegion';
 import { ViewportRegion } from './ViewportRegion';
-import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 const Glyph = icon('ui:add');
 const ctx = {

@@ -1,9 +1,9 @@
 import { act, fireEvent, screen } from '@testing-library/react';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
+import { withIcons } from '@weasel-js/ui/testing/withIcons';
 import { describe, expect, test, vi } from 'vitest';
 import { TileGrip } from './TileGrip';
 import { Workspace } from './Workspace';
-import { withIcons } from '@weasel-js/ui/testing/withIcons';
 
 /** A tile whose whole body is its grip, as a plain tile draws one. */
 function DragProbe({ label }: { label: string }) {

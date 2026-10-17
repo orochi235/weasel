@@ -1,11 +1,11 @@
 import { fireEvent, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import { describe, expect, it, vi } from 'vitest';
 import { f } from '../config/builder';
 import { resolveConfigSchema } from '../config/resolve';
 import { ControlPanel } from './ControlPanel';
 import type { ConfigField } from './types';
-import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 describe('<ControlPanel> visibility and sections', () => {
   it('hides a row whose showIf is false', () => {
@@ -166,7 +166,9 @@ describe('<ControlPanel> collapsible sections', () => {
   });
 
   it('folds a section away when the panel starts closed', () => {
-    renderWithIcons(<ControlPanel schema={schema} config={config} setConfig={vi.fn()} collapse="closed" />);
+    renderWithIcons(
+      <ControlPanel schema={schema} config={config} setConfig={vi.fn()} collapse="closed" />,
+    );
     expect(screen.getByLabelText('Seed')).not.toBeVisible();
     fireEvent.click(screen.getByRole('button', { name: 'Advanced' }));
     expect(screen.getByLabelText('Seed')).toBeVisible();

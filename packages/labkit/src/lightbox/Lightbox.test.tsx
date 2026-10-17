@@ -1,9 +1,9 @@
 import { act, fireEvent, screen } from '@testing-library/react';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { Lightbox } from './Lightbox';
 import { useLightboxControl } from './LightboxContext';
-import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 function root(): HTMLElement {
   return document.querySelector('.lk-lightbox') as HTMLElement;

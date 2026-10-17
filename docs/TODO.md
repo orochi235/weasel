@@ -558,18 +558,6 @@ Priority tags:
 
 ---
 
-## Icons
-
-How the registry and the build plugin work is in `docs/icons.md`.
-
-- **(P3) Some tests may still draw icons with no registry.** `renderWithIcons` and `withIcons`
-  (`packages/ui/src/testing/withIcons.tsx`) now wrap every test found printing a missing-icon
-  warning, but only ui's component tests that draw icons and labkit's tests that mount a lab were
-  run to find them. Grep a fleet run's log for `is registered. Is its package` and wrap any file
-  it names.
-
----
-
 ## Scene, adapters & layout
 
 - **(P3) A direct scene call made while a journal is open lands on the scene's own stack.**

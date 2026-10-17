@@ -5,6 +5,7 @@ import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { StrictMode } from 'react';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { SEEDED_SPIRO, SpiroLabDemo } from '../SpiroLabDemo';
+import { withIcons } from '../../testIcons';
 
 // windease lays a lab's tiles out only once something measures them, and
 // jsdom ships no ResizeObserver.
@@ -62,7 +63,7 @@ function click(canvas: Element, x: number, y: number) {
 }
 
 const mount = async () => {
-  const { container } = await renderSettled(<StrictMode><SpiroLabDemo /></StrictMode>);
+  const { container } = await renderSettled(<StrictMode><SpiroLabDemo /></StrictMode>, { wrapper: withIcons });
   const canvas = container.querySelector('.lk-trial-scene canvas');
   if (!canvas) throw new Error('no scene canvas in the trial');
   return canvas;

@@ -3,10 +3,10 @@ import 'windease/styles.css';
 import '../styles.less';
 import './presentation.browser.test.less';
 import { cleanup } from '@testing-library/react';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import { afterEach, expect, test } from 'vitest';
 import type { Instrument } from '../instrument/types';
 import { Lab } from './Lab';
-import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 // jsdom resolves no layout, so whether the content well really fills a trial
 // with no sidebar is only checkable here.

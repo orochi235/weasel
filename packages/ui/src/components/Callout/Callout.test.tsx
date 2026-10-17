@@ -5,7 +5,7 @@ import { useRef, useState } from 'react';
 import { Pressable } from 'react-aria-components';
 import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import { Callout, CalloutTrigger } from './Callout';
-import { renderWithIcons } from '../../testing/withIcons';
+import { renderWithIcons, withIcons as WithIcons } from '../../testing/withIcons';
 
 function TriggerSubject() {
   return (
@@ -199,7 +199,9 @@ describe('Callout', () => {
   it('reports Escape to the committed onDismiss, not an abandoned render\'s', async () => {
     const committed = vi.fn();
     const abandoned = vi.fn();
-    renderThenAbandon(committed, abandoned, (onDismiss) => <ProgrammaticSubject onDismiss={onDismiss} />);
+    renderThenAbandon(committed, abandoned, (onDismiss) => (
+      <WithIcons><ProgrammaticSubject onDismiss={onDismiss} /></WithIcons>
+    ));
     await act(async () => { fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' }); });
     expect(abandoned).not.toHaveBeenCalled();
     expect(committed).toHaveBeenCalledTimes(1);

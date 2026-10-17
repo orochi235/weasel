@@ -1,10 +1,10 @@
 import { act } from '@testing-library/react';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
+import { withIcons } from '@weasel-js/ui/testing/withIcons';
 import { describe, expect, it, vi } from 'vitest';
 import { SurfaceContext } from '../surface/SurfaceContext';
 import type { SurfaceHandle } from '../surface/useTiledSurface';
 import { Workspace } from './Workspace';
-import { withIcons } from '@weasel-js/ui/testing/withIcons';
 
 function fakeHandle(): SurfaceHandle {
   return {

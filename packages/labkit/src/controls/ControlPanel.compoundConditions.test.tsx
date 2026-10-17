@@ -1,9 +1,9 @@
 import { fireEvent, screen } from '@testing-library/react';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import { describe, expect, it } from 'vitest';
 import { f } from '../config/builder';
 import { resolveConfigSchema } from '../config/resolve';
 import { ControlPanel } from './ControlPanel';
-import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 const phase = () =>
   f.object({

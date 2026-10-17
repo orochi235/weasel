@@ -3,10 +3,10 @@ import 'windease/styles.css';
 import '../styles.less';
 import './clock.browser.test.less';
 import { cleanup, fireEvent, screen } from '@testing-library/react';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import { afterEach, expect, test } from 'vitest';
 import type { Instrument } from '../instrument/types';
 import { Lab } from '../lab/Lab';
-import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 // The lab's frame loop syncing a trial clock and a timed layer repainting from
 // it: real frames and real pixels, which only a browser has.

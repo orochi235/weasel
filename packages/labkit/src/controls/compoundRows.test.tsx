@@ -1,11 +1,11 @@
 import { fireEvent, screen } from '@testing-library/react';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { f } from '../config/builder';
 import { withValueAtPath } from '../config/path';
 import { resolveConfigSchema } from '../config/resolve';
 import { ControlPanel } from './ControlPanel';
-import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 function Panel({ schema }: { schema: Parameters<typeof resolveConfigSchema>[0] }) {
   const resolved = resolveConfigSchema(schema);
@@ -89,7 +89,9 @@ describe('a control panel row for a list of strings', () => {
     const resolved = resolveConfigSchema(schema);
     const list = resolved.group.children.notes as unknown as { item: { control?: string } };
     list.item.control = 'textarea';
-    renderWithIcons(<ControlPanel schema={resolved} config={{ notes: ['a'] }} setConfig={() => {}} />);
+    renderWithIcons(
+      <ControlPanel schema={resolved} config={{ notes: ['a'] }} setConfig={() => {}} />,
+    );
     open('Notes');
     expect(document.querySelector('textarea')).not.toBeNull();
   });

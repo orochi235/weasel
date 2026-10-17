@@ -1,6 +1,7 @@
 import '@weasel-js/theme/tokens.css';
 import '../styles.less';
 import { cleanup, fireEvent, screen } from '@testing-library/react';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import { useState } from 'react';
 import { afterEach, beforeAll, expect, test } from 'vitest';
 import { page } from 'vitest/browser';
@@ -8,7 +9,6 @@ import { f } from '../config/builder';
 import { withValueAtPath } from '../config/path';
 import { resolveConfigSchema } from '../config/resolve';
 import { ControlPanel } from './ControlPanel';
-import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 // Whether a dialog opened from a row gives an object's rows, a map's entries and a union's
 // fields room to be used is a fact of layout, which jsdom has none of.

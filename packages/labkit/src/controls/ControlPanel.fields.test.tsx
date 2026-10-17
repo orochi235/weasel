@@ -1,11 +1,11 @@
 import { act, fireEvent, screen, within } from '@testing-library/react';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import { describe, expect, it, vi } from 'vitest';
 import { f } from '../config/builder';
 import { resolveConfigSchema } from '../config/resolve';
 import { icon } from '../icons.gen';
 import { ControlPanel } from './ControlPanel';
 import type { ConfigField } from './types';
-import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 describe('<ControlPanel> slider', () => {
   it('renders a range input with min/max/step and label', () => {
@@ -66,7 +66,9 @@ describe('<ControlPanel> select', () => {
         ],
       },
     ];
-    renderWithIcons(<ControlPanel fields={fields} config={{ wave: 'sine' }} setConfig={setConfig} />);
+    renderWithIcons(
+      <ControlPanel fields={fields} config={{ wave: 'sine' }} setConfig={setConfig} />,
+    );
     const trigger = screen.getByRole('button', { name: 'Sine Wave' });
     expect(trigger).toHaveTextContent('Sine');
     act(() => {
@@ -133,7 +135,9 @@ describe('<ControlPanel> color', () => {
   it('renders a color input reflecting config and dispatches value', () => {
     const setConfig = vi.fn();
     const fields: ConfigField[] = [{ key: 'c', label: 'Color', type: 'color', default: '#000000' }];
-    renderWithIcons(<ControlPanel fields={fields} config={{ c: '#ff0000' }} setConfig={setConfig} />);
+    renderWithIcons(
+      <ControlPanel fields={fields} config={{ c: '#ff0000' }} setConfig={setConfig} />,
+    );
     const input = screen.getByLabelText('Color') as HTMLInputElement;
     expect(input.type).toBe('color');
     expect(input.value).toBe('#ff0000');
@@ -163,7 +167,9 @@ describe('<ControlPanel> option icons', () => {
   it('draws an enum asked for as a toggle with every option at once, and says so to the forms that read the leaf', () => {
     const camera = f.enum('3d', ['2d', '3d']).toggle();
     const schema = resolveConfigSchema(f.schema({ camera }), []);
-    renderWithIcons(<ControlPanel schema={schema} config={{ camera: '3d' }} setConfig={() => {}} />);
+    renderWithIcons(
+      <ControlPanel schema={schema} config={{ camera: '3d' }} setConfig={() => {}} />,
+    );
     expect(screen.getByRole('radio', { name: '3d' })).toBeInTheDocument();
     expect(schema.group.children.camera).toMatchObject({ control: 'toggle' });
   });

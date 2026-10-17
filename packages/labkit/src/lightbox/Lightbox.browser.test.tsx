@@ -2,11 +2,11 @@ import '@weasel-js/theme/tokens.css';
 import '../styles.less';
 import './Lightbox.browser.test.less';
 import { cleanup } from '@testing-library/react';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import { useEffect, useRef } from 'react';
 import { afterEach, expect, test } from 'vitest';
 import { userEvent } from 'vitest/browser';
 import { Workspace } from '../lab/Workspace';
-import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 // The top layer, its escape from a transformed and clipping ancestor, and what
 // a ResizeObserver reports are all layout — only a real browser has them.

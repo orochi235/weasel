@@ -5,12 +5,12 @@
  * and whether it still describes the picture under it.
  */
 import { fireEvent, screen } from '@testing-library/react';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import { describe, expect, it } from 'vitest';
 import { AnnotationsContext } from './AnnotationsContext';
 import { MarkList } from './MarkList';
 import { createAnnotationStore } from './store';
 import type { AnnotationMeaning, AnnotationsApi, AnnotationTargetInfo } from './types';
-import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 const TARGETS: AnnotationTargetInfo[] = [
   { id: 'flat', content: { w: 200, h: 100 }, positionDependsOn: ['angle'] },

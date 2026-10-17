@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { SpacingHintsLabDemo, STRAY_ID } from '../SpacingHintsLabDemo';
+import { withIcons } from '../../testIcons';
 
 // windease lays a lab's tiles out only once something measures them, and
 // jsdom ships no ResizeObserver.
@@ -42,7 +43,7 @@ function drag(canvas: Element, [x0, y0]: number[], [x1, y1]: number[]) {
 }
 
 async function mount() {
-  const { container } = await renderSettled(<SpacingHintsLabDemo />);
+  const { container } = await renderSettled(<SpacingHintsLabDemo />, { wrapper: withIcons });
   const canvas = container.querySelector('.lk-trial-scene canvas');
   if (!canvas) throw new Error('no scene canvas in the trial');
   return canvas;

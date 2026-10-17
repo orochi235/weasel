@@ -1,4 +1,5 @@
 import { fireEvent, screen } from '@testing-library/react';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { f } from '../config/builder';
@@ -6,7 +7,6 @@ import { withValueAtPath } from '../config/path';
 import { resolveConfigSchema } from '../config/resolve';
 import { ControlPanel } from './ControlPanel';
 import { summarizeLeaf, summarizeValue } from './inDialog';
-import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 function Panel({ schema }: { schema: Parameters<typeof resolveConfigSchema>[0] }) {
   const resolved = resolveConfigSchema(schema);

@@ -3,6 +3,7 @@ import 'windease/styles.css';
 import '../styles.less';
 import './LabLightbox.browser.test.less';
 import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import { useEffect } from 'react';
 import { afterEach, beforeEach, expect, test } from 'vitest';
 import { page, userEvent } from 'vitest/browser';
@@ -11,7 +12,6 @@ import { defineInstrument } from '../instrument/defineInstrument';
 import { toDeviceRect } from '../surface/deviceRect';
 import { useSurface, useSurfaceCanvas, useSurfaceTile, useTileId } from '../surface/useSurfaceTile';
 import { Lab } from './Lab';
-import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 // Annotation marks are drawn into the lab's shared buffer and take input from
 // a box the lab mounts, neither inside the trial. Whether they come along when

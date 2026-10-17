@@ -1,9 +1,9 @@
 import { screen } from '@testing-library/react';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import { describe, expect, it, vi } from 'vitest';
 import { icon } from '../../icons.gen';
 import type { TrialChromeContext, TrialContribution } from '../types';
 import { TitleBarRegion } from './TitleBarRegion';
-import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 const Glyph = icon('ui:add');
 const ctx = { trialId: 't1', saveSnapshot: vi.fn() } as unknown as TrialChromeContext;
@@ -19,7 +19,9 @@ function item(id: string, over: Partial<TrialContribution> = {}): TrialContribut
 
 describe('TitleBarRegion', () => {
   it('renders nothing when it has nothing for its placement', () => {
-    const { container } = renderWithIcons(<TitleBarRegion contributions={[item('lead')]} ctx={ctx} />);
+    const { container } = renderWithIcons(
+      <TitleBarRegion contributions={[item('lead')]} ctx={ctx} />,
+    );
     expect(container).toBeEmptyDOMElement();
   });
 

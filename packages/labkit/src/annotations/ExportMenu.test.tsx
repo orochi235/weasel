@@ -3,12 +3,12 @@
  * name one — which is why this is a panel and not a bare button.
  */
 import { fireEvent, screen, waitFor } from '@testing-library/react';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { AnnotationsContext } from './AnnotationsContext';
 import { ExportMenu } from './ExportMenu';
 import { createAnnotationStore } from './store';
 import type { AnnotationsApi, AnnotationTargetInfo, CaptureOptions } from './types';
-import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 const TARGETS: AnnotationTargetInfo[] = [
   { id: 'flat', content: { w: 200, h: 100 } },

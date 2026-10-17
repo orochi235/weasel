@@ -3,12 +3,12 @@ import 'windease/styles.css';
 import '../styles.less';
 import './AnnotationOverlay.clip.browser.test.less';
 import { cleanup, screen, waitFor } from '@testing-library/react';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import { afterEach, beforeEach, expect, test } from 'vitest';
 import { page, userEvent } from 'vitest/browser';
 import { defineInstrument } from '../instrument/defineInstrument';
 import { Lab } from '../lab/Lab';
 import { useAnnotations } from './AnnotationsContext';
-import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 // A target's marks are drawn into the lab's shared buffer and take input from
 // a box the lab mounts, neither inside the element that clips the target. So
