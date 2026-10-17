@@ -272,3 +272,75 @@ describe('createMenuController', () => {
     expect(c.stack()).toEqual([2]);
   });
 });
+
+describe('access letters and edges', () => {
+  const run = () => {};
+  const make = (entries: MenuEntry[], onEdge?: (d: -1 | 1) => void) => {
+    const onClose = vi.fn();
+    const c = createMenuController({ entries, onClose, onEdge, scheduler: fakeScheduler().s });
+    return { c, onClose };
+  };
+
+  it('access letter runs its item and closes', () => {
+    const spy = vi.fn();
+    const { c, onClose } = make([{ kind: 'item', key: 'save', label: 'Save', access: 's', run: spy }]);
+    expect(c.key('S')).toBe(true);
+    expect(spy).toHaveBeenCalledOnce();
+    expect(onClose).toHaveBeenCalledOnce();
+  });
+
+  it('access letter opens its submenu with the first row highlighted', () => {
+    const { c } = make([
+      { kind: 'item', key: 'a', label: 'A', run },
+      { kind: 'submenu', key: 'x', label: 'More', access: 'x', entries: [
+        { kind: 'separator', key: 'sep' },
+        { kind: 'item', key: 'b', label: 'B', run },
+      ] },
+    ]);
+    c.key('x');
+    expect(c.stack()).toEqual([1, 1]);
+  });
+
+  it('access letter wins over typeahead', () => {
+    const spy = vi.fn();
+    const { c } = make([
+      { kind: 'item', key: 'save', label: 'Save', run },
+      { kind: 'item', key: 'export', label: 'Export', access: 's', run: spy },
+    ]);
+    c.key('s');
+    expect(spy).toHaveBeenCalledOnce();
+  });
+
+  it("a disabled row's letter does nothing and does not fall to typeahead", () => {
+    const spy = vi.fn();
+    const { c, onClose } = make([
+      { kind: 'item', key: 'save', label: 'Save', run },
+      { kind: 'item', key: 'export', label: 'Export', access: 's', disabled: true, run: spy },
+    ]);
+    c.hover(0, 0);
+    expect(c.key('s')).toBe(true);
+    expect(spy).not.toHaveBeenCalled();
+    expect(onClose).not.toHaveBeenCalled();
+    expect(c.stack()).toEqual([0]);
+  });
+
+  it('an undeclared letter falls back to typeahead', () => {
+    const { c } = make([
+      { kind: 'item', key: 'a', label: 'Alpha', access: 'a', run },
+      { kind: 'item', key: 'b', label: 'Beta', run },
+    ]);
+    c.key('b');
+    expect(c.stack()).toEqual([1]);
+  });
+
+  it('an edge key calls onEdge and leaves the menu open', () => {
+    const onEdge = vi.fn();
+    const { c, onClose } = make([{ kind: 'item', key: 'a', label: 'A', run }], onEdge);
+    c.hover(0, 0);
+    c.key('ArrowRight');
+    expect(onEdge).toHaveBeenCalledWith(1);
+    c.key('ArrowLeft');
+    expect(onEdge).toHaveBeenLastCalledWith(-1);
+    expect(onClose).not.toHaveBeenCalled();
+  });
+});

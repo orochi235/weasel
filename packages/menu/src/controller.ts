@@ -1,3 +1,4 @@
+import { accessMatch } from './access';
 import { entriesAt, isRow, type MenuEntry } from './entries';
 import { firstRow, keyStep, type MenuStack } from './keys';
 import type { Point, Rect } from './placement';
@@ -33,6 +34,8 @@ export interface MenuControllerOptions {
   highlightFirst?: boolean;
   /** The menu is done: an item was chosen, or it was dismissed. */
   onClose(): void;
+  /** An arrow key ran off the menu: left from the first level (-1), or right from a row with no submenu (1). */
+  onEdge?(dir: -1 | 1): void;
   scheduler?: MenuScheduler;
 }
 
@@ -126,11 +129,22 @@ export function createMenuController(opts: MenuControllerOptions): MenuControlle
         if (r.stack !== stack) { typed = { text: '', at: -Infinity }; set(r.stack); }
         if (r.effect.kind === 'choose') choose(r.effect.level, r.effect.index);
         else if (r.effect.kind === 'close') finish();
+        else if (r.effect.kind === 'edge') opts.onEdge?.(r.effect.dir);
         return true;
       }
       if (key.length !== 1 || key === ' ') return false;
       cancel();
       const level = stack.length - 1;
+      const letter = accessMatch(entriesAt(root, stack, level), key);
+      if (letter !== null) {
+        const e = entryAt(level, letter);
+        if (e?.kind === 'item' && !e.disabled) choose(level, letter);
+        else if (e?.kind === 'submenu' && !e.disabled) {
+          typed = { text: '', at: -Infinity };
+          set([...stack.slice(0, level), letter, firstRow(e.entries)]);
+        }
+        return true;
+      }
       const t = typeaheadStep(entriesAt(root, stack, level), stack[level] ?? null, typed, key, sched.now());
       typed = t.buffer;
       if (t.hit !== null) set([...stack.slice(0, level), t.hit]);
