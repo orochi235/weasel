@@ -310,6 +310,9 @@ export {
   useBooleansAdapter,
   applyBooleanOp,
   previewBooleanOp,
+  resolveBooleanOperands,
+  commitBooleanPieces,
+  PATHFINDER_STROKES,
 } from '../interactions/actions/booleans';
 export type {
   BooleanOp,
@@ -319,6 +322,9 @@ export type {
   BooleanPreviewPiece,
   BooleanOpOptions,
   BooleanStrokes,
+  BooleanSource,
+  BooleanOperands,
+  BooleanCommitPiece,
   UseBooleansOptions,
   UseBooleansReturn,
   ShapeBuilderFace,
