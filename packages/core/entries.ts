@@ -1,5 +1,6 @@
 /** Published entry points, keyed by their `dist/<key>.js` name; read by both build configs. */
 const shims = [
+  'icons',
   'math',
   'mesh',
   'move',
@@ -14,6 +15,5 @@ const shims = [
 
 export const entries: Record<string, string> = {
   index: 'src/index.ts',
-  'icons.table': 'src/icons.table.ts',
   ...Object.fromEntries(shims.map((s) => [s, `src/import-shims/${s}.ts`])),
 };

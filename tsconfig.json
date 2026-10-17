@@ -36,7 +36,7 @@
       "@weasel-js/audio/testing/*": ["./packages/audio/src/testing/*"],
       "@weasel-js/bidi": ["./packages/bidi/src/index.ts"],
       "@weasel-js/core": ["./packages/core/src/index.ts"],
-      "@weasel-js/core/icons": ["./packages/core/src/icons.table.ts"],
+      "@weasel-js/core/icons": ["./packages/core/src/import-shims/icons.ts"],
       "@weasel-js/core/math": ["./packages/core/src/import-shims/math.ts"],
       "@weasel-js/core/mesh": ["./packages/core/src/import-shims/mesh.ts"],
       "@weasel-js/core/move": ["./packages/core/src/import-shims/move.ts"],
