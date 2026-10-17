@@ -166,6 +166,11 @@ describe('resolveSchemaMenu: groups', () => {
       ['submenu', 'M'], ['submenu', 'P'], ['submenu', 'T'], ['submenu', 'B'],
     ]);
   });
+  it('gives a submenu the icon its group names', () => {
+    const glyph = toIconRef('test:more')!;
+    const es = resolveSchemaMenu(menu({ m: pref.group('M', { cut: act('cut') }, { as: 'menu', icon: glyph }) }), sources());
+    expect(es[0]).toMatchObject({ kind: 'submenu', icon: glyph });
+  });
   it('drops a submenu left empty', () => {
     expect(resolveSchemaMenu(menu({ m: pref.group('M', { a: act('nope') }, { as: 'menu' }) }), sources())).toEqual([]);
   });

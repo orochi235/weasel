@@ -198,11 +198,12 @@ const LAYOUTS = { layered, tree, force, chain } as const;
 const idPart = (s: string) => s.replace(/[\\.>:/]/g, '\\$&');
 
 /** The scene node id `diagramScene` gives an edge, built from its ends, ports,
- *  and label. Two edges differing in any of those get different ids: a `.`,
- *  `>`, `:`, `/` or `\` in one of them is escaped with a backslash. */
+ *  and label. Two edges differing in any of those get different ids, an empty
+ *  port or label included: a `.`, `>`, `:`, `/` or `\` in one of them is
+ *  escaped with a backslash. */
 export const edgeIdOf = (e: DataEdge) => {
-  const port = (p: string | undefined) => (p ? `.${idPart(p)}` : '');
-  return `edge:${idPart(e.from)}${port(e.fromPort)}->${idPart(e.to)}${port(e.toPort)}${e.label ? `:${idPart(e.label)}` : ''}`;
+  const part = (mark: string, p: string | undefined) => (p === undefined ? '' : `${mark}${idPart(p)}`);
+  return `edge:${idPart(e.from)}${part('.', e.fromPort)}->${idPart(e.to)}${part('.', e.toPort)}${part(':', e.label)}`;
 };
 
 function graphOf(nodes: GraphNode[], edges: GraphEdge[], groups: GraphGroup[] = []): Graph {

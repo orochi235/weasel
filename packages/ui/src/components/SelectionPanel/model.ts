@@ -15,6 +15,7 @@ import {
   type NodeRoutingEntry,
   type SceneNode,
 } from '@weasel-js/core';
+import type { IconRef } from '@weasel-js/icons';
 import {
   isPrefLeaf,
   pairRuns,
@@ -78,6 +79,8 @@ export interface PanelSection {
   overflow?: PrefBarOverflow;
   /** Drawn as a bar: what its line starts with. */
   lead?: PrefBarLead;
+  /** The glyph naming it, which a bar can start its line with. */
+  icon?: IconRef;
   rows: PanelRow[];
 }
 
@@ -117,7 +120,7 @@ function flatten(schema: PrefSection, rawAliases: boolean, targets?: PrefAliasTa
       untitled.push(shown(key, child));
     } else {
       const leaves = prefSectionLeaves(child.members).map(([path, leaf]) => shown(path, leaf));
-      sections.push({ key, name: child.name, ...(child.as ? { as: child.as } : {}), ...(child.overflow ? { overflow: child.overflow } : {}), ...(child.lead ? { lead: child.lead } : {}), rows: pairRows(leaves) });
+      sections.push({ key, name: child.name, ...(child.as ? { as: child.as } : {}), ...(child.overflow ? { overflow: child.overflow } : {}), ...(child.lead ? { lead: child.lead } : {}), ...(child.icon ? { icon: child.icon } : {}), rows: pairRows(leaves) });
     }
   }
   if (untitled.length > 0) {

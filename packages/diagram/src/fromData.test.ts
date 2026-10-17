@@ -179,6 +179,8 @@ describe('diagramScene', () => {
       { from: 'a', to: 'b:x' }, { from: 'a', to: 'b', label: 'x' },
       { from: 'a', to: 'b', label: 'x/label' },
       { from: 'a\\', fromPort: 'p', to: 'b' }, { from: 'a', fromPort: '\\.p', to: 'b' },
+      { from: 'a', to: 'b' }, { from: 'a', fromPort: '', to: 'b' }, { from: 'a', to: 'b', toPort: '' },
+      { from: 'a', to: 'b', label: '' },
     ];
     const ids = edges.map(edgeIdOf);
     expect(new Set(ids).size).toBe(ids.length);

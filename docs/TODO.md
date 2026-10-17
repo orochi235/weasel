@@ -553,10 +553,6 @@ Priority tags:
   `packages/font/src/dynamic/bakeQueue.ts`), and one 384px emoji takes the room of sixty at 48.
   Whether the result is sharp can only be read in a browser.
 
-- **(P4) `gen:icons` writes `apps/site/icons.manifest.json`, and nothing reads it.** It lists
-  every drawn glyph's namespace, name, group and tags. Either something reads it or the generator
-  stops writing it (`packages/icons/scripts/gen-icons.mjs`).
-
 ---
 
 ## Icons
@@ -709,8 +705,6 @@ How the registry and the build plugin work is in `docs/icons.md`.
 - **(P3) Wires into a `rack` stage's side ports can cross.** Six side stages feeding six side
   inputs of one stage drew Layer 1's and Layer 2's wires crossing on their way in, before and
   after the ports were spread apart (`packages/diagram/src/effect/rack.ts`).
-- **(P3) An empty-string port and no port give the same `edgeIdOf`.** Separators are escaped, so
-  no other two distinct wires share an id (`packages/diagram/src/fromData.ts`).
 - **(P4) An ELK layout adapter.** elkjs (the Eclipse Layout Kernel) lays out ports, labels and
   nested groups well, but answers asynchronously and is large (around 1.5 MB; not measured), so it cannot sit behind
   the synchronous `LayoutFn`. An adapter in a package of its own, for laying out a generated
@@ -831,12 +825,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 - **(P3) A menu bar title made disabled or hidden while its menu is open leaves the menu open.**
   `MenuBar` checks a title's `enableIf` and `showIf` only when the menu opens; close the menu when
   its title stops being openable.
-
-- **(P2) A bar can lead with an icon, not only its label.** `lead: 'label'` landed 2026-10-16
-  (`PrefBarLead` in `packages/prefs/src/groups.ts`). The icon form needs the group to name a glyph
-  as data: add `icon?: IconRef` to `PrefGroup`/`PrefSection`, as a pref leaf's `icon` already is
-  (`docs/icons.md`), `'icon'` to `PrefBarLead`, draw it with `resolveIcon` in `BarLayout`, and
-  offer both in the asset editor. A `menu` group's button could take the same `icon`.
 
 - **(P3) ui's `ShortcutInput` is a third copy of the shortcut shape.**
   `packages/ui/src/components/ToolPalette/formatShortcut.ts` describes what `@weasel-js/menu`'s

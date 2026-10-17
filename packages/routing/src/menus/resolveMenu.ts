@@ -157,7 +157,7 @@ function groupRows(ctx: Ctx, group: PrefGroup, prefix: string, off: boolean): Me
     } else if (node.as !== undefined && SUBMENU_AS.has(node.as)) {
       const entries = tidy(groupRows(ctx, node, path, disabled));
       if (entries.length) {
-        out.push({ kind: 'submenu', key: path, label: node.name, ...withAccess(node.access), entries });
+        out.push({ kind: 'submenu', key: path, label: node.name, ...(node.icon ? { icon: node.icon } : {}), ...withAccess(node.access), entries });
       }
     } else {
       out.push(sep(`${path}/<`), ...groupRows(ctx, node, path, disabled), sep(`${path}/>`));

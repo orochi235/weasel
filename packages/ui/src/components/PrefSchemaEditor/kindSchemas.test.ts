@@ -75,8 +75,16 @@ describe('kindSchemas', () => {
 
   it('offers what a bar starts with, and offers it of nothing else', () => {
     const bar = attributeSchema({ name: 'G', as: 'bar', children: {} }).shared;
-    expect((bar.lead as unknown as { options: Array<{ value: string }> }).options.map((o) => o.value)).toEqual(['label']);
+    expect((bar.lead as unknown as { options: Array<{ value: string }> }).options.map((o) => o.value)).toEqual(['label', 'icon']);
     expect(attributeSchema({ name: 'G', as: 'panel', children: {} }).shared.lead).toBeUndefined();
+  });
+
+  it('offers an icon of a group a bar leads with or opens from a button, and of no other', () => {
+    expect(attributeSchema({ name: 'G', as: 'bar', children: {} }).shared.icon).toBeDefined();
+    expect(attributeSchema({ name: 'S', as: 'menu', members: {} }).shared.icon).toBeDefined();
+    expect(attributeSchema({ name: 'G', as: 'panel', children: {} }).shared.icon).toBeDefined();
+    expect(attributeSchema({ name: 'G', as: 'section', children: {} }).shared.icon).toBeUndefined();
+    expect(attributeSchema({ name: 'G', children: {} }).shared.icon).toBeUndefined();
   });
 
   it('uses a custom kind\'s attributes, and treats unknown attributes as read-only', () => {

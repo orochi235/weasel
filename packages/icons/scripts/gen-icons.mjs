@@ -77,15 +77,7 @@ export async function generate({ roots = discover(), write = true } = {}) {
   }
   const built = pkgs.map((p) => ({ pkg: p, ...(p.groups ? buildTable(p) : {}) }));
   const drawn = built.filter((b) => b.table);
-  if (write) {
-    built.forEach(writePackage);
-    const manifest = drawn.map(({ table }) => ({
-      namespace: table.namespace,
-      owner: table.owner,
-      names: Object.entries(table.icons).map(([name, g]) => ({ name, group: g.group, tags: g.tags })),
-    }));
-    writeFileSync(join(REPO, 'apps/site/icons.manifest.json'), JSON.stringify(manifest, null, 2) + '\n');
-  }
+  if (write) built.forEach(writePackage);
   return { tables: drawn.map((b) => b.table), consumers: built.filter((b) => !b.table).map((b) => b.pkg.namespace) };
 }
 

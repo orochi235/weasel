@@ -55,7 +55,7 @@ declares a namespace and owner and no groups, so their `icon()` takes qualified 
    order; path order within a glyph is z-order.
 3. Run `npm run gen:icons`. It writes each package's `src/icons.gen.ts` (its `icon()`, its
    `IconName` keys and `ICON_GROUPS`), `src/icons.table.json` and `src/icons.table.ts` (at the
-   root itself when it has no `src/`), and `apps/site/icons.manifest.json`. It fails on a
+   root itself when it has no `src/`). It fails on a
    namespace declared twice or a name drawn twice, differently, in one namespace.
 4. Name it: `icon('newName')`.
 

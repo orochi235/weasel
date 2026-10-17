@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import type { IconRef } from '@weasel-js/icons';
 import { applyPrefConditions, isPrefLeaf, prefAliasTargets, prefJudge, prefValueAtPath, type PrefAlias, type PrefAliasTargets, type PrefBarLead, type PrefEntry, type PrefGroup, type PrefLeaf, type PrefSection } from '@weasel-js/prefs';
 import type { LiveControl } from '../Prefs/commitPolicy';
 import { entryApplier, type EntryAt } from '../Prefs/entry';
@@ -44,8 +45,10 @@ export interface BarProps {
   /** Names the bar and makes it a `toolbar`. Leave unset inside one. */
   label?: string;
   /** What the line starts with: `'label'` shows `label` ahead of the cells. Default: what `schema` says in its
-   *  own `lead`, else nothing. */
+   *  own `lead`, else nothing. `'icon'` shows `icon`. */
   lead?: PrefBarLead;
+  /** The glyph `lead: 'icon'` starts the line with. Default: `schema`'s own `icon`. */
+  icon?: IconRef;
   /** Draw the strip the bar sits on. Unset, the host's strip is under it. `'segmented'` is a compact strip
    *  whose buttons sit almost touching, so a run of actions reads as one control. */
   framed?: boolean | 'segmented';
@@ -80,6 +83,7 @@ export function Bar(props: BarProps) {
       orientation={orientation}
       label={label}
       lead={props.lead ?? schema.lead}
+      icon={props.icon ?? schema.icon}
       framed={framed}
       overflow={props.overflow ?? schema.overflow}
       overflowLabel={props.overflowLabel}

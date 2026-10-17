@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type CSSProperties, type PointerEvent, type ReactNode, type RefObject } from 'react';
 import { asNodeId, createScene, type NodeRoutingEntry, type Scene } from '@weasel-js/core';
 import { isPrefSection, prefAliasTarget, prefLeafAt, prefSectionLeaves, prefValueAtPath, type PrefAlias, type PrefGroup, type PrefSection } from '@weasel-js/prefs';
+import { resolveIcon } from '../../icons/resolveIcon';
 import { BarMenu } from '../Bar/BarMenu';
 import { DragGhost } from '../DragGhost';
 import { PrefsDialog, PrefsForm, type PrefDrop, type PrefRenderer, type PrefSelectHow } from '../Prefs';
@@ -69,7 +70,7 @@ function MenuPreview({ schema, over }: { schema: PrefGroup; over?: SchemaRoot })
     <section className={`${s.pane} ${s.previewPane}`} aria-label="Live preview">
       <PaneHeader title="Live preview" />
       <div className={s.previewStage}>
-        <BarMenu key={JSON.stringify(schema)} label={schema.name || 'Menu'} schema={schema} values={() => undefined} defaultOpen {...(over && 'children' in over ? { over } : {})} />
+        <BarMenu key={JSON.stringify(schema)} label={schema.name || 'Menu'} icon={resolveIcon(schema.icon)} schema={schema} values={() => undefined} defaultOpen {...(over && 'children' in over ? { over } : {})} />
       </div>
     </section>
   );
