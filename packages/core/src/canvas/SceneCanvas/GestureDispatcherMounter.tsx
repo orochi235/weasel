@@ -15,7 +15,8 @@ import { useChromeAffordances } from './useChromeAffordances';
 import type { CanvasExtensionApi } from '../canvasExtension';
 import { useKitSettingsDepSource } from '../deps/kitSettings';
 import { pathFromPlane } from '../planeClips';
-import { surfaceLocal, useOptionalViewRegistry } from '../viewRegistry';
+import { useOptionalViewRegistry } from '../viewRegistry';
+import { useSurfaceRouting } from './useSurfaceRouting';
 import { traceConversion } from './coordTrace';
 import type { SceneCanvasLongPress } from './props';
 
@@ -229,21 +230,7 @@ export function GestureDispatcherMounter({
     ...(longPressHaptics !== undefined ? { haptics: longPressHaptics } : {}),
   }), [longPressState, longPressDuration, longPressHaptics]);
 
-  // Input routing to registered views. Rebuilt per event from the registry, so
-  // a view that mounts or moves mid-session is routable on the next event; with
-  // nothing registered every point resolves to the canvas, as before.
-  const views = useMemo(() => {
-    if (!viewRegistry) return undefined;
-    return {
-      targets: () => viewRegistry.list().map((r) => ({ id: r.id, ...r.target })),
-      resolver: viewRegistry.resolver,
-    };
-  }, [viewRegistry]);
-
-  const clientToLocal = useMemo(() => {
-    if (!viewRegistry) return undefined;
-    return (clientX: number, clientY: number) => surfaceLocal(viewRegistry.surface(), clientX, clientY);
-  }, [viewRegistry]);
+  const routing = useSurfaceRouting(viewRegistry);
 
   // Hover cursors live in `useGestureDispatcher`'s hover-cursor pump:
   // affordance hits carry `AffordanceHit.cursor` (set by `buildAffordanceAt`),
@@ -260,7 +247,6 @@ export function GestureDispatcherMounter({
     classifyTarget,
     dispatcher,
     clientToWorld,
-    ...(clientToLocal ? { clientToLocal } : {}),
     requestRedraw,
     paintedCursor,
     cursorSink,
@@ -268,7 +254,7 @@ export function GestureDispatcherMounter({
     onClick,
     onDoubleClick,
     longPress,
-    ...(views ? { views } : {}),
+    ...routing,
   });
   useDispatchDepSources(longPressState, classifyTarget, kindOfNodeRef);
   useKitSettingsDepSource();
