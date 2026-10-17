@@ -553,10 +553,6 @@ Priority tags:
   `packages/font/src/dynamic/bakeQueue.ts`), and one 384px emoji takes the room of sixty at 48.
   Whether the result is sharp can only be read in a browser.
 
-- **(P4) `gen:icons` writes `apps/site/icons.manifest.json`, and nothing reads it.** It lists
-  every drawn glyph's namespace, name, group and tags. Either something reads it or the generator
-  stops writing it (`packages/icons/scripts/gen-icons.mjs`).
-
 ---
 
 ## Icons
