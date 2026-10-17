@@ -828,9 +828,8 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   covered. A `{ px }` stroke under a skewing or stretching `transform` is outset by its width at
   the mean scale, which only approximates the screen-exact ribbon.
 
-- **(P2) Kit settings that do not reach their readers yet.** Not yet settings at all: `guides`'
-  `DEFAULT_GUIDE_TOLERANCE_PX`, and `thresholdDrag`, a plain function with no store in reach. See
-  `docs/conventions.md` ("Kit settings").
+- **(P2) Kit settings that do not reach their readers yet.** Not yet a setting at all: `guides`'
+  `DEFAULT_GUIDE_TOLERANCE_PX`. See `docs/conventions.md` ("Kit settings").
 
 - **(P3) `PrefsRail`'s scroll-to-section browser test fails now and then.** "leaves a nested page
   off the page that holds it and scrolls to a section that follows it"
