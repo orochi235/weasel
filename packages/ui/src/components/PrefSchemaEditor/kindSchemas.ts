@@ -221,18 +221,23 @@ function actionChoice(attr: PrefLeaf, actions: readonly RegisteredAction[], held
 
 const READOUT = flag('Readout', 'Drawn showing its value but not editable.');
 
+/** The leaf kinds a menu draws a row for, besides a label, and so can give a letter. */
+const LETTERED: ReadonlySet<string> = new Set(['action', 'boolean', 'alias']);
+
 /** The attributes a leaf shares with every other, less the ones nothing draws for it: a label is its
  *  name and its description, and a separator neither, and neither has a control to enable. An actions
  *  pref is a run of buttons, and only a leaf holding a value can be a readout of it. */
 function sharedAttrs(leaf: PrefLeaf): KindAttrs {
   const { kind } = leaf;
   if (kind === 'separator') return { hidden: LEAF_BASE.hidden!, showIf: SHOW_IF };
-  if (kind === 'label') return { name: LEAF_BASE.name!, description: LEAF_BASE.description!, hidden: LEAF_BASE.hidden!, showIf: SHOW_IF };
+  if (kind === 'label') return { name: LEAF_BASE.name!, description: LEAF_BASE.description!, access: LEAF_BASE.access!, hidden: LEAF_BASE.hidden!, showIf: SHOW_IF };
   if (kind === 'actions') {
     const { name, description, tags, hidden, showIf, enableIf } = LEAF_BASE;
     return { name: name!, description: description!, tags: tags!, hidden: hidden!, showIf: showIf!, enableIf: enableIf! };
   }
-  return prefHoldsValue(leaf) ? { ...LEAF_BASE, readout: READOUT } : { ...LEAF_BASE };
+  const { access, ...noLetter } = LEAF_BASE;
+  const base = LETTERED.has(kind) ? { ...noLetter, access: access! } : noLetter;
+  return prefHoldsValue(leaf) ? { ...base, readout: READOUT } : base;
 }
 
 /** What every leaf carries and nothing draws for a separator, so no row lists it. */

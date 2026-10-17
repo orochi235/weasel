@@ -19,6 +19,11 @@ describe('AccessLabel', () => {
     expect(container.querySelector('span')!.textContent).toBe('x');
   });
 
+  it('underlines only the first character of a longer declaration', () => {
+    const { container } = render(<AccessLabel label="Edit" access="ex" />);
+    expect(container.querySelector('span')!.textContent).toBe('E');
+  });
+
   it('draws the plain label when the letter is absent or none is declared', () => {
     for (const access of ['q', undefined]) {
       const { container, unmount } = render(<AccessLabel label="File" access={access} />);

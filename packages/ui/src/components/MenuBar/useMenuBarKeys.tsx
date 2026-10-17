@@ -10,6 +10,7 @@ import {
   type ActionsRegistry,
   type Tool,
 } from '@weasel-js/core';
+import { accessLetter } from '@weasel-js/menu';
 import { MenuBarHandleContext, type MenuAccessChord, type MenuBarHandle } from './menuBarHandle';
 
 /** A title the key layer can open: its key and its declared access letter. */
@@ -34,7 +35,8 @@ function codeOf(letter: string): string | undefined {
 function openBindings(titles: readonly AccessTitle[], chord: MenuAccessChord): Action['defaultBinding'] {
   const seen = new Set<string>();
   return titles.flatMap(({ key, access }) => {
-    const letter = access.toLowerCase();
+    const letter = accessLetter(access);
+    if (!letter) return [];
     if (seen.has(letter)) return [];
     seen.add(letter);
     const code = codeOf(letter);

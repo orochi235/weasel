@@ -49,6 +49,14 @@ describe('kindSchemas', () => {
     expect((section.as as unknown as { options: Array<{ value: string }> }).options.map((o) => o.value)).toEqual(['tab', 'panel', 'section', 'fragment', 'bar', 'menu']);
   });
 
+  it('offers an access letter only where a menu carries one: actions, booleans, labels, aliases, groups and sections', () => {
+    const offered = (kind: string) => 'access' in attributeSchema(blankLeaf(kind)).shared;
+    for (const kind of ['action', 'boolean', 'label', 'alias']) expect(offered(kind), kind).toBe(true);
+    for (const kind of ['number', 'string', 'enum', 'color', 'paint', 'object', 'list', 'map', 'union', 'field', 'actions', 'separator']) {
+      expect(offered(kind), kind).toBe(false);
+    }
+  });
+
   it('offers readout on a leaf holding a value, and an actions leaf only its group and what it shares with buttons', () => {
     expect(attributeSchema(num).shared.readout).toBeDefined();
     expect(attributeSchema(blankLeaf('action')).shared.readout).toBeUndefined();
@@ -104,9 +112,9 @@ describe('kindSchemas', () => {
     expect(blankLeaf('object')).toMatchObject({ children: {} });
   });
 
-  it('offers a label its name, its description, and when it is drawn, and a separator only when it is drawn', () => {
+  it('offers a label its name, its description, its access letter, and when it is drawn, and a separator only when it is drawn', () => {
     const label = attributeSchema(blankLeaf('label'));
-    expect([Object.keys(label.shared), Object.keys(label.own), Object.keys(label.auto)]).toEqual([['name', 'description', 'hidden', 'showIf'], [], []]);
+    expect([Object.keys(label.shared), Object.keys(label.own), Object.keys(label.auto)]).toEqual([['name', 'description', 'access', 'hidden', 'showIf'], [], []]);
     const rule = attributeSchema(blankLeaf('separator'));
     expect([Object.keys(rule.shared), Object.keys(rule.own), Object.keys(rule.auto)]).toEqual([['hidden', 'showIf'], [], []]);
     expect(rule.readOnly).toEqual([]);

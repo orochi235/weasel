@@ -7,7 +7,7 @@ export { entriesAt, isRow } from './entries';
 export type { MenuEntry, MenuItemEntry, MenuSeparatorEntry, SubmenuEntry, MenuShortcut } from './entries';
 export { placeMenu, placeMenuUnder, placeSubmenu } from './placement';
 export type { Point, Rect, Size } from './placement';
-export { accessMatch } from './access';
+export { accessLetter, accessMatch } from './access';
 export { withLinks } from './links';
 export { keyStep, firstRow } from './keys';
 export type { KeyEffect, MenuStack } from './keys';

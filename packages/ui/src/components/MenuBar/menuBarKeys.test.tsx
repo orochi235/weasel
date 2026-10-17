@@ -105,6 +105,12 @@ describe('MenuBar keys', () => {
     expect(menu.getAttribute('aria-activedescendant')).toBe(screen.getByRole('menuitem', { name: 'New' }).id);
   });
 
+  it('reads only the first character of a declared letter', () => {
+    setup({ schema: { ...SCHEMA, children: { ...SCHEMA.children, file: { ...SCHEMA.children.file!, access: 'fx' } } } as PrefGroup });
+    fireEvent.keyDown(document.body, altF);
+    expect(rowNames()).toEqual(['New', 'Open']);
+  });
+
   it('opens nothing on Alt and a letter no title declares', () => {
     setup();
     fireEvent.keyDown(document.body, { key: '´', code: 'KeyE', altKey: true });

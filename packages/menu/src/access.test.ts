@@ -17,6 +17,10 @@ describe('accessMatch', () => {
   it('includes disabled rows', () => {
     expect(accessMatch([{ kind: 'item', key: 'a', label: 'A', run, access: 'a', disabled: true }], 'a')).toBe(0);
   });
+  it('reads only the first character of a longer declaration', () => {
+    expect(accessMatch([item('a', 'fx')], 'f')).toBe(0);
+    expect(accessMatch([item('a', 'fx')], 'x')).toBeNull();
+  });
   it('returns null for separators only and for an undeclared letter', () => {
     expect(accessMatch([{ kind: 'separator', key: 's' }], 'a')).toBeNull();
     expect(accessMatch([item('a', 'a')], 'z')).toBeNull();

@@ -35,7 +35,7 @@ export function createMenuWidget(opts: MenuWidgetOptions): Widget {
   const m = opts.metrics ?? DEFAULT_MENU_METRICS;
   const rev = createRevision(opts.onChange);
   const c = createMenuController({
-    entries: withLinks(opts.open.entries, (href) => window.location.assign(href)),
+    entries: withLinks(opts.open.entries),
     highlightFirst: opts.open.source === 'keyboard', onClose: opts.close,
   });
   const place = createPlacer({
