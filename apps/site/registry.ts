@@ -260,7 +260,7 @@ const DEMO_META: DemoMeta[] = [
     id: 'lab-shape-builder',
     title: 'Shape builder',
     category: 'Geometry',
-    description: "`useShapeBuilderTool` works on the faces the selected paths' outlines cut each other into: `planShapeBuilder` finds them, and the face under the pointer is drawn through `createPathOverlay`, a layer for paths that are no node. A drag unites every face it passes through into one path standing in for the first face's source, so it wears that circle's color; an Alt-drag deletes them instead. Every face not taken becomes a path of its own, and each gesture is one undo step. The canvas's own `booleansAdapter` reads its path leaves, so the lab publishes none. The control panel's A plain drag swaps which of the two Alt gives.",
+    description: "`useShapeBuilderTool`, from `@weasel-js/path-tools`, works on the faces the selected paths' outlines cut each other into: `planShapeBuilder` finds them, and the face under the pointer is drawn through `createPathOverlay`, a layer for paths that are no node. A drag unites every face it passes through into one path standing in for the first face's source, so it wears that circle's color; an Alt-drag deletes them instead. Every face not taken becomes a path of its own, and each gesture is one undo step. The canvas's own `booleansAdapter` reads its path leaves, so the lab publishes none. The control panel's A plain drag swaps which of the two Alt gives.",
     hint: 'The three circles open selected with Shape Builder in hand: hover to see each face, drag across faces to merge them, <kbd>Alt</kbd>-drag to delete them, or click one face to cut it free. The results stay selected, so keep building. Undo with the button or <kbd>Mod+Z</kbd>; Reset brings the circles back.',
     load: () => import('./demos/ShapeBuilderLabDemo').then((m) => m.ShapeBuilderLabDemo),
     path: 'apps/site/demos/ShapeBuilderLabDemo.tsx',
@@ -822,6 +822,26 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/SceneLabDemo.tsx',
   },
   {
+    id: 'lab-soft-selection',
+    title: 'Soft selection',
+    category: 'Geometry',
+    description:
+      "Dragging an anchor in path edit also moves the anchors near it, each by a weight that falls from 1 at the dragged anchor to 0 at the radius. The radius is measured along the path in screen pixels, not straight across, so two anchors close together across a bend are as far apart as the curve between them. The falloff is smooth, linear or sharp. It is `@weasel-js/path-tools`'s `createSoftSelectionPreset`, which reads its options as each drag starts; the stretch of path it reaches is drawn as a band while the drag is in flight, and the wheel scrubs the radius mid-drag, reporting it back through `onRadius` so the control panel follows. Turning Soft selection off here answers null from those options, which leaves the drag hard.",
+    hint: 'Drag any anchor of the wave. While dragging, turn the wheel to grow or shrink the radius. Change the falloff, or turn Soft selection off to move one anchor alone.',
+    load: () => import('./demos/SoftSelectionLabDemo').then((m) => m.SoftSelectionLabDemo),
+    path: 'apps/site/demos/SoftSelectionLabDemo.tsx',
+  },
+  {
+    id: 'lab-handle-snap',
+    title: 'Handle snapping',
+    category: 'Geometry',
+    description:
+      "A control handle dragged in path edit snaps its angle to steps — every 45° by default — and to the line through the anchor's other handle, so the two come out in line. It snaps only within a tolerance and keeps the handle's length. The line it snapped to is drawn while the drag lasts. It is `@weasel-js/path-tools`'s `createHandleSnapPreset`, which reads its options on every move. The bottom anchor is a corner, so its handles move separately and the opposite-handle snap has something to find.",
+    hint: 'Drag a handle dot slowly round its anchor and watch it catch on each step. Drag one of the bottom corner\'s handles until it lines up with the other. <kbd>Alt</kbd> breaks a smooth anchor\'s mirror so its handles move apart.',
+    load: () => import('./demos/HandleSnapLabDemo').then((m) => m.HandleSnapLabDemo),
+    path: 'apps/site/demos/HandleSnapLabDemo.tsx',
+  },
+  {
     id: 'lab-path-direction',
     title: 'Path start and direction',
     category: 'Geometry',
@@ -940,6 +960,16 @@ const DEMO_META: DemoMeta[] = [
     hint: 'Drag along the scribble to thin it, then undo with the button or <kbd>Mod+Z</kbd>. Raise Tolerance and brush again to go further. Press Escape to put the brush down and edit anchors, Escape again to leave path edit; then double-click the cog and pick Simplify brush to brush across its teeth.',
     load: () => import('./demos/SimplifyBrushLabDemo').then((m) => m.SimplifyBrushLabDemo),
     path: 'apps/site/demos/SimplifyBrushLabDemo.tsx',
+  },
+  {
+    id: 'lab-spiro',
+    title: 'Spiro curves',
+    category: 'Geometry',
+    description:
+      "A curve drawn by its on-curve points alone. Between each pair of points runs a piece of an Euler spiral, whose curvature changes evenly along it, and `solveSpiro` solves the pieces together so tangent and curvature carry straight through every smooth point. A corner lets the two sides turn independently; a point marked as following a line continues the straight segment arriving at it, and one marked as leading into a line runs the curve into the straight segment leaving it. The node stores the solved curve as ordinary cubics in `data.path`, split wherever one cubic would stray, and a spiro form on `data.representation` records which anchors are the points. With `spiroPreset` on, path edit edits those points through a straight-sided control path and solves the curve again on every move, so the drag shows the finished curve; `useSpiroTool` draws new ones. The bar over the canvas sets the kind of the selected points, or converts the curve to a path whose anchors and handles are its own.",
+    hint: 'The wave opens in path edit: drag one of its points and watch the whole curve re-solve, or drag the curve between two points to add one there. Circles are smooth points, squares corners, half-discs the points beside a straight segment. Select points and press a kind in the bar, or Convert to path. Pick Spiro (<kbd>Shift+P</kbd>) to draw one: click to place points of the kind set under New point kind, <kbd>Alt</kbd>-click for a corner, click the first point to close, <kbd>Enter</kbd> or double-click to finish open, <kbd>Backspace</kbd> takes back a point, <kbd>Esc</kbd> discards.',
+    load: () => import('./demos/SpiroLabDemo').then((m) => m.SpiroLabDemo),
+    path: 'apps/site/demos/SpiroLabDemo.tsx',
   },
   {
     id: 'lab-bridge',
@@ -1080,7 +1110,7 @@ const DEMO_META: DemoMeta[] = [
     id: 'curve-lab',
     title: 'Curve representations lab',
     package: 'geom',
-    description: 'The same anchor set rendered as cubic Bezier, quadratic Bezier, NURBS, and Spiro (κ-curves v1) side by side. Toggle the curvature comb, inflection marks, and anchor / control chrome to see where the representations diverge. Five seeded presets; pen-tool authoring is v1.1.',
+    description: 'The same anchor set rendered as cubic Bezier, quadratic Bezier, NURBS, and Spiro (κ-curves) side by side. Toggle the curvature comb, inflection marks, and anchor / control chrome to see where the representations diverge. Five seeded presets; pen-tool authoring is v1.1.',
     hint: 'Switch presets to see the differences; toggle overlays for analysis.',
     load: () => import('./demos/CurveLabDemo').then((m) => m.CurveLabDemo),
     path: 'apps/site/demos/CurveLabDemo.tsx',
@@ -1102,6 +1132,15 @@ const DEMO_META: DemoMeta[] = [
     hint: 'Drag the purple rectangle near another rect’s edge or center, or pick the rect tool and draw one beside them.',
     load: () => import('./demos/AlignmentGuidesDemo').then((m) => m.AlignmentGuidesDemo),
     path: 'apps/site/demos/AlignmentGuidesDemo.tsx',
+  },
+  {
+    id: 'lab-spacing-hints',
+    title: 'Spacing hints lab',
+    package: 'guides',
+    description: 'Equal spacing and distance readouts on a scene in a lab. Moving the selection snaps it so its gap to a neighbor matches a gap already between its siblings, or centers it between two, and every equal gap is marked with its size. Holding the readout key over another shape shows its distances from the selection on each axis where they separate, or to its inner edges when one holds the other. All of it is one `createSpacingHintsPreset` in the canvas `features`. The control panel turns each part on and off, sets the snap distance in screen pixels, adds snapping to edges and centers, and picks the readout key.',
+    hint: 'The purple box starts selected: drag it up level with the row and toward the right end until it snaps 40 from the blue box and all three equal gaps are marked. Hold <kbd>Alt</kbd> (<kbd>Option</kbd>) and point at another box to read its distances, then undo with <kbd>Mod+Z</kbd>.',
+    load: () => import('./demos/SpacingHintsLabDemo').then((m) => m.SpacingHintsLabDemo),
+    path: 'apps/site/demos/SpacingHintsLabDemo.tsx',
   },
   {
     id: 'point-snap',

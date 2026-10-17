@@ -4,7 +4,8 @@
  * The paint-kind and stroke-marker registries are global module state that
  * changes what renders, so a test that registers into one has to be able to
  * put it back. Path edit's dep source and a stub of its dep let a package
- * building on path edit test against the real thing. These live here rather
+ * building on path edit test against the real thing, and a fake adapter's
+ * flat tree lets one test a commit through ops. These live here rather
  * than on the package barrel so that reaching for them is a deliberate import
  * of a test surface, not something an application finds by autocomplete.
  *
@@ -17,3 +18,4 @@ export { makeEditAnchorsDep as makeEditAnchorsDepForTests } from 'interactions/a
 export {
   useEditAnchorsDepSource as useEditAnchorsDepSourceForTests, type EditAnchorsStateRef,
 } from 'canvas/deps/editAnchors';
+export { rootsTree as rootsTreeForTests } from 'core/adapters/testing/rootsTree';

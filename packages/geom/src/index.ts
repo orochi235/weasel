@@ -94,6 +94,17 @@ export {
   type AverageAxis, type JoinOptions, type SubpathEnd,
 } from './paths/joinAnchors';
 export {
+  SPIRO_KINDS, isSpiroKind, solveSpiro, type SpiroKind, type SpiroPoint, type SpiroSegment,
+} from './paths/spiro';
+export {
+  spiroContoursFromControl, spiroContoursOf, spiroControlPath, spiroToPath,
+  type SpiroContour, type SpiroPath, type SpiroToPathOptions,
+} from './paths/spiroPath';
+export {
+  eulerAngleAt, eulerCurvatureAt, eulerPointAt, fitEulerSegment, placeEulerSegment,
+  type EulerFit, type EulerSegment,
+} from './paths/eulerSpiral';
+export {
   pointInPath, strokeHitTest,
   pathContainsPoint, pathContainsRect, pathIntersectsRect,
   pathContainsPolygon, pathIntersectsPolygon,
@@ -142,7 +153,15 @@ export {
 } from './paths/anchorSymmetry';
 export { bendSegment, type BendGrip } from './paths/bendSegment';
 export { smudgePath, type SmudgePathOptions } from './paths/smudgePath';
-export { handleAlongItsAngle, handleAtItsLength, makeHandlesSymmetric, retractHandles } from './paths/handleEdits';
+export {
+  handleAlongItsAngle, handleAtItsLength, makeHandlesSymmetric, retractHandles, snapHandleAngle,
+  type HandleAngleSnap, type HandleAngleSnapOptions,
+} from './paths/handleEdits';
+export {
+  measureAnchorPath, softFalloff, softSelectionBand, softSelectionWeights,
+  type AnchorPathMeasure, type AnchorSubpathMeasure, type MeasureAnchorPathOptions, type SegmentMeasure,
+  type SoftFalloff,
+} from './paths/softSelection';
 export {
   combTeeth, cubicCurvatureAt, cubicCurvatureSource, cubicDerivativeAt, curvatureComb,
   type CombTooth, type CurvatureCombOptions, type CurvatureSource, type SegmentComb,

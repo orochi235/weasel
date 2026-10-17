@@ -4,11 +4,10 @@
  */
 import { pointInPath, type PolygonPath } from '@weasel-js/geom';
 import { pathFacePieces, pathUnion } from '@weasel-js/geom/booleans';
-import type { PathPaint } from 'canvas/nodeShapes/nodePaint';
-import type { NodeId } from 'core/scene/types';
-import { resolveEntries, type BooleanOpResult, type BooleansAdapter } from './booleans';
-import { commitPieces, type CommitPiece } from './commit';
-import type { BooleanOpOptions } from './operands';
+import {
+  commitBooleanPieces, resolveBooleanOperands,
+  type BooleanCommitPiece, type BooleanOpOptions, type BooleanOpResult, type BooleansAdapter, type NodeId, type PathPaint,
+} from '@weasel-js/core';
 
 /** What a pick of faces does: unite them into one path, or delete them. */
 export type ShapeBuilderMode = 'merge' | 'delete';
@@ -48,16 +47,16 @@ export function planShapeBuilder(
   adapter: BooleansAdapter,
   opts: BooleanOpOptions = {},
 ): ShapeBuilderPlan | Exclude<BooleanOpResult, { kind: 'applied' }> {
-  const sel = [...adapter.getSelection()] as NodeId[];
-  const entries = resolveEntries(adapter, sel, 'divide', opts);
-  if ('kind' in entries) return entries;
-  const cut = pathFacePieces(...entries.map((e) => e.operand.path))
+  const operands = resolveBooleanOperands(adapter, opts);
+  if ('kind' in operands) return operands;
+  const { sources } = operands;
+  const cut = pathFacePieces(...sources.map((s) => s.path))
     .filter((p) => p.path.commands.length > 0)
     .map((p) => ({ path: p.path, source: p.sources[p.sources.length - 1]! }));
   if (cut.length === 0) return { kind: 'noop', reason: 'empty-result' };
   const faces = cut.map(({ path, source }): ShapeBuilderFace => {
-    const { id, operand } = entries[source]!;
-    return operand.paint ? { path, sourceId: id, paint: operand.paint } : { path, sourceId: id };
+    const { id, paint } = sources[source]!;
+    return paint ? { path, sourceId: id, paint } : { path, sourceId: id };
   });
   return {
     kind: 'faces',
@@ -67,7 +66,7 @@ export function planShapeBuilder(
       const chosen = [...new Set(picked)].filter((i) => i >= 0 && i < cut.length);
       if (chosen.length === 0) return { kind: 'noop', reason: 'empty-result' };
       const taken = new Set(chosen);
-      const pieces: CommitPiece[] = cut.flatMap((c, i) => (taken.has(i) ? [] : [{ ...c, producedBy: 'divide' as const }]));
+      const pieces: BooleanCommitPiece[] = cut.flatMap((c, i) => (taken.has(i) ? [] : [{ ...c, producedBy: 'divide' as const }]));
       if (mode === 'merge') {
         const first = cut[chosen[0]!]!;
         const path = chosen.length === 1 ? first.path : pathUnion(...chosen.map((i) => cut[i]!.path));
@@ -75,7 +74,7 @@ export function planShapeBuilder(
       }
       // Stable, so each source's pieces keep their order and stack where it did.
       pieces.sort((a, b) => a.source - b.source);
-      return { kind: 'applied', resultIds: commitPieces(adapter, sel, entries, pieces, LABEL) };
+      return commitBooleanPieces(adapter, operands, pieces, LABEL);
     },
   };
 }

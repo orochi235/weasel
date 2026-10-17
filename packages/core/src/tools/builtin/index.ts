@@ -50,6 +50,7 @@ export {
 } from './pen';
 export { useRectTool } from './rect';
 export type { InsertToolOptions } from './shared/insertToolOptions';
+export { createPointerFollower, type PointerFollower } from './shared/pointerFollower';
 export { useEllipseTool } from './ellipse';
 export { useImageTool, type UseImageToolOptions } from './image';
 export {
@@ -62,5 +63,4 @@ export { usePolygonTool, type UsePolygonToolOptions } from './polygon';
 export { useStarTool, type UseStarToolOptions } from './star';
 export { usePencilTool, type PencilPoint } from './pencil';
 export { useSliceTool, type UseSliceToolOptions, type SliceScratch } from './slice';
-export { useShapeBuilderTool, type UseShapeBuilderToolOptions } from './shapeBuilder';
 export { useMeasureTool, type UseMeasureToolOptions } from './measure';

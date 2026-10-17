@@ -42,3 +42,15 @@ test('a rule from every imported sheet reaches the class the module exports', ()
   expect(style('subpanel').gridColumnStart).toBe('1');
   expect(style('subpanel').gridColumnEnd).toBe('-1');
 });
+
+test('a subpanel spans both columns of a paired group, as it does a paired list', () => {
+  const root = mount(`
+    <div class="${s.group} ${s.groupPairs}">
+      <div class="${s.groupBody}">
+        <section class="${s.subpanel}" data-part="subpanel"></section>
+      </div>
+    </div>`);
+  const sub = getComputedStyle(root.querySelector('[data-part="subpanel"]')!);
+  expect(sub.gridColumnStart).toBe('1');
+  expect(sub.gridColumnEnd).toBe('-1');
+});

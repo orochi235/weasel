@@ -6,6 +6,7 @@ export {
 } from './booleans';
 export type { BooleanOpOptions, BooleanStrokes } from './operands';
 export {
-  planShapeBuilder, facesAlong,
-  type ShapeBuilderFace, type ShapeBuilderMode, type ShapeBuilderPlan,
-} from './shapeBuilder';
+  commitBooleanPieces, resolveBooleanOperands,
+  type BooleanCommitPiece, type BooleanOperands, type BooleanSource,
+} from './custom';
+export { PATHFINDER_STROKES } from './action';

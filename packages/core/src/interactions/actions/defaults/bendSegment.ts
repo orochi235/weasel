@@ -7,21 +7,33 @@
  * ties the marquee's `empty` and move's `selected-body` on specificity and
  * registers ahead of the marquee; move turns segment presses down itself.
  * An anchor's own affordance sits above the segment's, so a press on an
- * anchor is the anchor drag's.
+ * anchor is the anchor drag's. On a path drawn from a form whose
+ * representation takes segment presses (`PathRepresentation.segmentPress`),
+ * the press is the representation's instead.
  */
 
-import type { Action, InvocationCtx, OngoingHandle } from '@weasel-js/routing';
+import type { Action, ActionDeps, InvocationCtx, OngoingHandle } from '@weasel-js/routing';
 import { ActionDisabledReason, isSegment } from '@weasel-js/routing';
 import type { CursorSpec } from '@weasel-js/cursor';
 import { bendSegment, editAnchorSetTracked, type PointOrigin, type PolygonPath } from '@weasel-js/geom';
 import { inPlane, editingLayer } from '../planeInput';
 import { pathEditPreview } from '../edit-anchors/preview';
 import { segmentUnder } from './segmentUnder';
+import { representationOf, type PathRepresentation } from 'features/paths/pathRepresentation';
 import { pathEditToolActive } from './pathEditTools';
 import { pathOperationTags } from '../pathGestureTags';
 import { icon } from '../../../icons.gen';
 
 const BEND_CURSOR: CursorSpec = 'grab';
+
+/** The segment press of the representation the path in edit is drawn
+ *  through, when it takes them. */
+function representedPress(deps: ActionDeps | undefined): NonNullable<PathRepresentation['segmentPress']> | null {
+  const dep = deps?.editAnchors;
+  if (!dep?.editingId) return null;
+  const representation = representationOf(dep.extensions, dep.getNodeShape(dep.editingId)?.data)?.representation;
+  return representation?.segmentPress ? (on, at) => representation.segmentPress!(on, at) : null;
+}
 
 export const bendSegmentAction: Action & { requires: string[] } = inPlane({
   id: 'bendSegment',
@@ -35,6 +47,8 @@ export const bendSegmentAction: Action & { requires: string[] } = inPlane({
   invoker: {
     timing: 'ongoing',
     start(ctx: InvocationCtx): OngoingHandle {
+      const represented = representedPress(ctx.deps);
+      if (represented) return represented(ctx.deps, ctx.world)?.() ?? {};
       const under = segmentUnder(ctx.deps, ctx.world.x, ctx.world.y);
       if (!under) return {};
       const { dep, path: originPath, hit } = under;
@@ -65,7 +79,10 @@ export const bendSegmentAction: Action & { requires: string[] } = inPlane({
   },
   enabled: (deps, at) => {
     if (!deps?.editAnchors?.editingId || pathEditToolActive(deps)) return ActionDisabledReason.NotApplicable;
-    if (at && !segmentUnder(deps, at.x, at.y)) return ActionDisabledReason.NotApplicable;
+    const represented = representedPress(deps);
+    const hit = (p: { x: number; y: number }) =>
+      (represented ? represented(deps, p) : segmentUnder(deps, p.x, p.y)) !== null;
+    if (at && !hit(at)) return ActionDisabledReason.NotApplicable;
     return true;
   },
 }, editingLayer);

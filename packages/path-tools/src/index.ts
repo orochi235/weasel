@@ -20,10 +20,13 @@ export {
   createConstraintsPreset,
   createCornerShapePreset,
   createCurvatureCombPreset,
+  createHandleSnapPreset,
   createPathStructurePreset,
+  createSoftSelectionPreset,
   curvatureCombPreset,
   extendPreset,
   handleLocksPreset,
+  handleSnapPreset,
   lengthenPreset,
   harmonizePreset,
   pathEffectsPreset,
@@ -90,9 +93,16 @@ export {
 } from './warp/useWarpTool';
 export { warpLayerId } from './warp/warpHandles';
 export {
+  facesAlong, planShapeBuilder, useShapeBuilderTool,
+  type ShapeBuilderFace, type ShapeBuilderMode, type ShapeBuilderPlan, type UseShapeBuilderToolOptions,
+} from './shapeBuilder';
+export {
   useGirthTool, createGirthOverlay, createGirthActions, GIRTH_CLEAR_ID, GIRTH_DRAG_ID, GIRTH_HOVER_ID, GIRTH_UNHOVER_ID,
   type UseGirthToolOptions, type WidthEdgeHit, type GirthEnv, type GirthFocus, type WidthGrip, type WidthTarget,
 } from './girth';
+
+// ─── Spiro curves ──────────────────────────────────────────────────────────
+export * from './spiro';
 
 // ─── Path-edit chrome ──────────────────────────────────────────────────────
 export { combCommands, createCombExtension, PATH_COMB_CHROME_ID, type PathEditCombOptions } from './comb/comb';
@@ -110,6 +120,10 @@ export {
 export {
   createDirectionExtension, directionCommands, PATH_DIRECTION_CHROME_ID, type PathDirectionStyle,
 } from './pathStructure/directionMarks';
+
+// ─── Path-edit drags ───────────────────────────────────────────────────────
+export { createHandleSnapExtension, type HandleSnapOptions } from './handleSnap/handleSnap';
+export { createSoftSelectionExtension, type SoftSelectionOptions } from './softSelection/softSelection';
 
 // ─── Panels ────────────────────────────────────────────────────────────────
 export {

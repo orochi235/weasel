@@ -3,15 +3,11 @@ import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { act } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import type { Path } from '@weasel-js/geom';
-import type { RenderLayer } from 'core/layers/render';
-import { SceneCanvas } from 'canvas/SceneCanvas';
-import { createScene } from 'core/scene/scene';
-import type { NodeId } from 'core/scene/types';
-import { useSelection } from 'core/selection/useSelection';
-import type { SelectionApi } from 'core/selection/useSelection';
-import { useBooleansAdapter } from 'interactions/actions/booleans/useBooleansAdapter';
-import type { BooleansAdapter } from 'interactions/actions/booleans/booleans';
-import { rootsTree } from 'core/adapters/testing/rootsTree';
+import {
+  createScene, SceneCanvas, useBooleansAdapter, useSelection,
+  type BooleansAdapter, type NodeId, type RenderLayer, type SelectionApi,
+} from '@weasel-js/core';
+import { rootsTreeForTests as rootsTree } from '@weasel-js/core/test-seams';
 import { useShapeBuilderTool } from './useShapeBuilderTool';
 
 type P = { x: number; y: number; width: number; height: number };

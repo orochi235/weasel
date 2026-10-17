@@ -130,6 +130,8 @@ export {
   visualBoundsViaDescriptor,
 } from '../interactions/actions/align';
 export { resolveSpatialReference } from '../interactions/actions/spatialReference';
+export { scenePoseFrame } from '../interactions/actions/poseFrame';
+export type { PoseFrame } from '../interactions/actions/poseFrame';
 export type { SpatialReference, SpatialReferenceSources } from '../interactions/actions/spatialReference';
 export type { FlipAxis, FlipPivot } from '../interactions/actions/flip/helpers';
 export { lastTransform, recordTransform, forgetTransform } from '../interactions/actions/transform-again/memory';

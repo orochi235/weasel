@@ -11,12 +11,11 @@ import {
   useCanvasSize,
   type UseSceneTextEditReturn,
   useMeasureTool,
-  useShapeBuilderTool,
   useSliceTool,
   type View,
   workspaceTintLayer
 } from '@weasel-js/core';
-import { pathTools } from '@weasel-js/path-tools';
+import { pathTools, useShapeBuilderTool, useSpiroTool } from '@weasel-js/path-tools';
 import { unpackSvgFiles } from '@weasel-js/svg';
 import { MeasureReadout, SceneGradientHandles, ToastRegion } from '@weasel-js/ui';
 import { type ReactElement, type RefObject, useCallback, useMemo } from 'react';
@@ -42,6 +41,7 @@ import { usePathDirection } from './usePathDirection';
 import { usePathToolsTools } from './usePathToolsTools';
 import { useSymmetry } from './useSymmetry';
 import { usePageFit } from './usePageFit';
+import { useSpacingHints } from './useSpacingHints';
 
 /** Screen-px radius within which a drawing tool snaps to a measurement's end. */
 const END_SNAP_PX = 6;
@@ -86,6 +86,7 @@ export function Workspace(props: WorkspaceProps): ReactElement {
 
   const paperLayer = usePaperLayer(page, backgroundColor);
   const grid = useGrid(page, backgroundColor);
+  const spacingHints = useSpacingHints();
   const pathDirection = usePathDirection();
   const symmetry = useSymmetry(scene, page);
   // The mode tint covers the workspace around the page, not the page itself.
@@ -113,6 +114,7 @@ export function Workspace(props: WorkspaceProps): ReactElement {
   });
   const insertPaint = useInsertPaint();
   const sliceTool = useSliceTool();
+  const spiroTool = useSpiroTool();
   const shapeBuilderTool = useShapeBuilderTool();
   const pathToolsTools = usePathToolsTools();
   const { measurements } = props;
@@ -167,7 +169,7 @@ export function Workspace(props: WorkspaceProps): ReactElement {
         onCancel={() => machine.cancelMode()}
       />
       {hostDims.width > 0 && hostDims.height > 0 && (
-        <SceneCanvas<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose> features={['draw', pathTools]}
+        <SceneCanvas<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose> features={['draw', pathTools, ...(spacingHints ? [spacingHints] : [])]}
           claimKeys
           ref={props.onCanvas}
           ambient={ambientEntries}
@@ -178,7 +180,7 @@ export function Workspace(props: WorkspaceProps): ReactElement {
           scene={scene}
           selection={selection}
           defaultTools={BUILTIN_TOOL_IDS}
-          tools={{ ...pathToolsTools, slice: sliceTool, shapeBuilder: shapeBuilderTool, measure: measureTool, opacityScrub: opacityScrubTool }}
+          tools={{ ...pathToolsTools, spiro: spiroTool, slice: sliceTool, shapeBuilder: shapeBuilderTool, measure: measureTool, opacityScrub: opacityScrubTool }}
           ingestion={DRAW_INGESTION}
           insertPaint={insertPaint}
           // Pick on the drawn shape, not the bounding box: clicking the blank right half of a

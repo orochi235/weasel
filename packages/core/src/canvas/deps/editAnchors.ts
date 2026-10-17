@@ -19,7 +19,8 @@ import type { Scene, NodeId } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { PointOrigin, PolygonPath } from '@weasel-js/geom';
 import { anchorDataPatch } from 'features/paths/anchorData';
-import { classifyPathStorage, resolveEditablePathOf, storeEditablePath } from 'features/paths/editablePath';
+import { classifyPathStorage, pathEditPathOf, resolveEditablePathOf, storeEditablePath } from 'features/paths/editablePath';
+import { representationOf } from 'features/paths/pathRepresentation';
 import { withoutShapeGenerator } from 'features/paths/shapeGenerator';
 import { withoutGeometryBoundData, type PathEditExtension } from 'features/paths/pathEditExtension';
 import { createPathEditState, isSelectedNode, type PathEditState } from 'features/paths/pathEditState';
@@ -159,20 +160,27 @@ function pathAccess(
   sc: Scene<unknown, string, unknown>,
   ad: OpsApplier,
   extensions: readonly PathEditExtension[],
-): Pick<EditAnchorsDep, 'getEditablePath' | 'getStorageKind' | 'getNodeShape' | 'applyEdit' | 'editOps' | 'finishEdit' | 'store'> {
+): Pick<
+  EditAnchorsDep,
+  'getEditablePath' | 'getOutlinePath' | 'getStorageKind' | 'getNodeShape' | 'applyEdit' | 'editOps' | 'finishEdit' | 'store'
+> {
   const editOps = (id: string, worldPath: unknown, label: string, origins?: readonly (PointOrigin | null)[]): Op[] => {
     const node = sc.get(id as NodeId) as EditableNode | undefined;
     if (!node) return [];
     const done = finish(extensions, node, worldPath as PolygonPath, origins);
     if (!done) return [];
-    const before = origins ? resolveEditablePathOf(node) : null;
+    // A form's origins number the anchors of its edit path, not data.path's.
+    const before = origins && !representationOf(extensions, node.data) ? resolveEditablePathOf(node) : null;
     const patch = { ...(before && origins ? anchorDataPatch(node.data, before, done.path, origins) : {}), ...done.data };
-    return reshapeOps(id, node, done.path, label, Object.keys(patch).length > 0 ? patch : null);
+    return reshapeOps(id, node, done.path, label, Object.keys(patch).length > 0 ? patch : null, extensions);
   };
   return {
     getEditablePath(id: string): PolygonPath | null {
       const node = sc.get(id as NodeId);
-      return resolveEditablePathOf(node as { pose: unknown; data: unknown });
+      return pathEditPathOf(node as { pose: unknown; data: unknown }, extensions);
+    },
+    getOutlinePath(id: string): PolygonPath | null {
+      return resolveEditablePathOf(sc.get(id as NodeId) as { pose: unknown; data: unknown });
     },
     getStorageKind(id: string): 'pose' | 'data' | null {
       const node = sc.get(id as NodeId);
@@ -196,7 +204,7 @@ function pathAccess(
     },
     store(id, worldPath, label, data) {
       const node = sc.get(id as NodeId) as EditableNode | undefined;
-      const ops = node ? reshapeOps(id, node, worldPath, label, data ?? null) : [];
+      const ops = node ? reshapeOps(id, node, worldPath, label, data ?? null, extensions) : [];
       if (ops.length > 0) ad.applyOps(ops, label);
     },
   };
@@ -211,14 +219,16 @@ function reshapeOps(
   worldPath: PolygonPath,
   label: string,
   patch: Record<string, unknown> | null,
+  extensions: readonly PathEditExtension[],
 ): Op[] {
-  const next = storeEditablePath(node, worldPath);
+  const next = storeEditablePath(node, worldPath, extensions);
   if (!next) return [];
   const reshape = createTransformOp({ id, from: node.pose, to: next.pose, label });
   // A path edited by hand is no longer what its generator or warp makes: it becomes plain geometry.
-  // Its skin and constraints stay, renumbered by the caller's patch where it has one.
+  // Its skin and constraints stay, renumbered by the caller's patch where it has one, and the
+  // form it was drawn from as storing it left it.
   const data = withoutGeometryBoundData(
-    next.data === node.data ? node.data : withoutShapeGenerator(next.data), ['skin', 'constraints'],
+    next.data === node.data ? node.data : withoutShapeGenerator(next.data), ['skin', 'constraints', 'representation'],
   );
   if (data === node.data && !patch) return [reshape];
   return [reshape, createSetDataOp({ id, from: node.data, to: { ...(data as object), ...patch }, label })];

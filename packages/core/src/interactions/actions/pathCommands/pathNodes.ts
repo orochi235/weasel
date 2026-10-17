@@ -53,7 +53,8 @@ export function pathNodesOf(
   return out;
 }
 
-/** `node` storing `worldPath`, or null when it holds no editable polygon. */
+/** `node` storing `worldPath` as plain geometry, or null when it holds no
+ *  editable polygon. */
 export function withPath(node: AnyNode, worldPath: PolygonPath): { pose: unknown; data: unknown } | null {
   const stored = storeEditablePath(node, worldPath);
   if (!stored) return null;

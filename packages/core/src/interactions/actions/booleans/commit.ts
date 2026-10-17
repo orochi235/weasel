@@ -9,9 +9,9 @@ import { dispatchApplyBatch } from 'core/applyOps';
 import type { BooleanEntry, BooleanOp, BooleansAdapter, BooleanZOrder } from './booleans';
 import { placementOps } from './placement';
 
-/** One result to mint: its path, the entry it stands in for, and the op it
+/** One path to mint: the index of the source it stands in for, and the op it
  *  is recorded as made by. */
-export interface CommitPiece {
+export interface BooleanCommitPiece {
   path: Path;
   source: number;
   producedBy: BooleanOp;
@@ -26,7 +26,7 @@ export function commitPieces(
   adapter: BooleansAdapter,
   sel: readonly NodeId[],
   entries: readonly BooleanEntry[],
-  pieces: readonly CommitPiece[],
+  pieces: readonly BooleanCommitPiece[],
   label: string,
 ): string[] {
   // Every source's slot, read before the scene is mutated.

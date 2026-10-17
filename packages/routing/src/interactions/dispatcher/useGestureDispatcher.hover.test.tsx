@@ -62,6 +62,22 @@ describe('a hover binding', () => {
     expect(typeof run.mock.calls[0][0].worldX).toBe('number');
   });
 
+  it('runs again where the pointer rests when a modifier goes down or up, and not on a key repeat', () => {
+    const run = vi.fn();
+    const fire = mount([follow('readout', run, { defaultBinding: { kind: 'hover', mods: { alt: 'optional' } } })]);
+    const key = (type: string, init: KeyboardEventInit) => act(() => { window.dispatchEvent(new KeyboardEvent(type, init)); });
+    key('keydown', { key: 'Alt', altKey: true });
+    expect(run).not.toHaveBeenCalled();
+    fire('pointermove', { clientX: 5, clientY: 7 });
+    key('keydown', { key: 'Alt', altKey: true });
+    key('keydown', { key: 'Alt', altKey: true, repeat: true });
+    key('keyup', { key: 'Alt', altKey: false });
+    key('keydown', { key: 'a' });
+    expect(run).toHaveBeenCalledTimes(3);
+    expect(run.mock.calls[1][0]).toMatchObject({ clientX: 5, clientY: 7, mods: { alt: true } });
+    expect(run.mock.calls[2][0]).toMatchObject({ clientX: 5, mods: { alt: false } });
+  });
+
   it('claims nothing: every hover binding runs, and the move is not canceled', () => {
     const a = vi.fn();
     const b = vi.fn();

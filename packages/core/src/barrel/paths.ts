@@ -149,12 +149,18 @@ export type {
   CreatePathEditingOverlayLayerOptions,
   PathEditingOverlayStyle,
   FinishedPathEdit,
+  PathEditDrag,
+  PathEditDragStart,
   PathEditExtension,
+  PathEditHandleMove,
   PathEditMark,
   PathEditMarksCtx,
   PathEditPart,
   PathEditStore,
   PathEditTarget,
+  AnchorMarkerShape,
+  PathForm,
+  PathRepresentation,
   PathInWorldPose,
   PathStation,
   PointAlongPathOptions,
@@ -238,7 +244,7 @@ export { pathEditPreview } from '../interactions/actions/edit-anchors/preview';
 export { editedPathSymmetries } from '../interactions/actions/edit-anchors/symmetry';
 export { locksInForce } from '../interactions/actions/edit-anchors/handleDrag';
 export {
-  classifyPathStorage, resolveEditablePathOf, storeEditablePath, type EditableShape,
+  classifyPathStorage, pathEditPathOf, resolveEditablePathOf, storeEditablePath, type EditableShape,
 } from '../features/paths/editablePath';
 export { nodeOutline } from '../features/paths/strokeOutline';
 export { DEFAULT_OVERLAY_STYLE } from '../features/paths/anchorMarkers';
@@ -310,6 +316,9 @@ export {
   useBooleansAdapter,
   applyBooleanOp,
   previewBooleanOp,
+  resolveBooleanOperands,
+  commitBooleanPieces,
+  PATHFINDER_STROKES,
 } from '../interactions/actions/booleans';
 export type {
   BooleanOp,
@@ -319,10 +328,9 @@ export type {
   BooleanPreviewPiece,
   BooleanOpOptions,
   BooleanStrokes,
+  BooleanSource,
+  BooleanOperands,
+  BooleanCommitPiece,
   UseBooleansOptions,
   UseBooleansReturn,
-  ShapeBuilderFace,
-  ShapeBuilderMode,
-  ShapeBuilderPlan,
 } from '../interactions/actions/booleans';
-export { planShapeBuilder, facesAlong } from '../interactions/actions/booleans';

@@ -1,12 +1,16 @@
 /**
  * What a feature adds to path edit without path edit knowing it: marks drawn
  * on the open path, parts of it to press, marks a click selects and Delete
- * removes, and what an edit must keep true when it commits. A preset carries
- * its extensions as `FeaturePreset.pathEdit`; core consults them in preset
- * order.
+ * removes, a share in shaping an anchor or handle drag, what an edit must keep
+ * true when it commits, and how a path drawn from another form is edited. A
+ * preset carries its extensions as `FeaturePreset.pathEdit`; core consults
+ * them in preset order.
  */
 import type { DrawCommand } from '@weasel-js/renderer';
 import type { AnchorSet, PointOrigin, PolygonPath, View } from '@weasel-js/geom';
+import type { OngoingOverlay } from '@weasel-js/routing';
+import type { HandleLocks } from 'interactions/actions/edit-anchors/params';
+import type { PathRepresentation } from './pathRepresentation';
 
 /** A mark an extension drew that is selected in place of anchors: Delete
  *  acts on it, and selecting anchors clears it. */
@@ -55,6 +59,51 @@ export interface PathEditPart {
   standoff?: { px: number; normal: { x: number; y: number } };
 }
 
+type Point = { x: number; y: number };
+
+/** An anchor or handle drag on the open path, as it starts. */
+export interface PathEditDragStart extends Omit<PathEditTarget, 'node'> {
+  /** The node's committed pose and data; null when it cannot be read. */
+  node: PathEditTarget['node'] | null;
+  /** What the press grabbed: an anchor, or one of its handles. */
+  part: 'anchor' | 'controlIn' | 'controlOut';
+  /** The pressed anchor, as a flat index. */
+  anchorIndex: number;
+  /** The anchors an anchor drag moves, as flat indices; empty for a handle
+   *  drag, or when Shift took the pressed anchor out of the selection. */
+  dragging: readonly number[];
+  /** The view's world-to-screen scale at the press, to measure in screen
+   *  pixels by; absent without a view. */
+  scale?: { x: number; y: number };
+}
+
+/** A handle drag's move, as {@link PathEditDrag.handle} reads it. */
+export interface PathEditHandleMove {
+  /** The handle locks in force this move, modifiers included. */
+  locks: HandleLocks;
+}
+
+/** One extension's share of a drag in flight. Every member is optional. */
+export interface PathEditDrag {
+  /**
+   * For an anchor drag, anchors that follow it and the share of its delta
+   * each moves by, keyed by flat index. Read every move. When any extension
+   * gives one, the drag moves its dragged anchors in full and every anchor
+   * named by the largest share given, and moves no symmetric images.
+   */
+  weights?(): ReadonlyMap<number, number>;
+  /** For a handle drag, where the handle goes, given `to`: where the pointer
+   *  and the locks in force put it. Extensions answer in turn, each from the
+   *  last one's answer. */
+  handle?(to: Point, move: PathEditHandleMove): Point;
+  /** A wheel turned while the drag is in flight. Return true to claim it;
+   *  the drag then redoes its last move. */
+  wheel?(wheel: { deltaX: number; deltaY: number; deltaZ: number }): boolean;
+  /** Overlays to draw while the drag is in flight, for `current`, the path
+   *  as the drag has made it. */
+  overlays?(current: AnchorSet): readonly OngoingOverlay[];
+}
+
 /** What an edit commits once an extension has finished it. */
 export interface FinishedPathEdit {
   path: PolygonPath;
@@ -79,6 +128,9 @@ export interface PathEditExtension {
   /** Remove mark `index` of the node `target` names, committing through
    *  `store`. Delete in path edit calls it on the selected mark. */
   deleteMark?(target: PathEditTarget, index: number, store: PathEditStore): void;
+  /** Its share of an anchor or handle drag starting on the open path, or
+   *  null to sit it out. Asked once, at the press. */
+  drag?(start: PathEditDragStart): PathEditDrag | null;
   /**
    * `worldPath`, an edit of `node`'s committed path, finished so whatever
    * this extension keeps true holds — the path, and any data fields that
@@ -90,6 +142,9 @@ export interface PathEditExtension {
     worldPath: PolygonPath,
     origins?: readonly (PointOrigin | null)[],
   ): FinishedPathEdit | null;
+  /** How path edit reads and writes the nodes whose `data.representation`
+   *  is of its kind. */
+  representation?: PathRepresentation;
 }
 
 /** Commits a node's new path and data as one history entry, with no
@@ -100,9 +155,9 @@ export type PathEditStore = (id: string, worldPath: PolygonPath, label: string, 
  * Data fields that describe how a node's geometry was made, or name its
  * anchors, and so mean nothing once the geometry is replaced some other way.
  * A writer replacing a node's path drops them: a held warp, path
- * constraints, a skin.
+ * constraints, a skin, the form a path was drawn from.
  */
-export const GEOMETRY_BOUND_DATA: readonly string[] = ['skin', 'constraints', 'warp'];
+export const GEOMETRY_BOUND_DATA: readonly string[] = ['skin', 'constraints', 'warp', 'representation'];
 
 /** `data` without the fields in {@link GEOMETRY_BOUND_DATA}, other than `keep`. */
 export function withoutGeometryBoundData<T>(data: T, keep: readonly string[] = []): T {

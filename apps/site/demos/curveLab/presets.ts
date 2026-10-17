@@ -44,7 +44,7 @@ export const CURVE_PRESETS: readonly CurvePreset[] = [
   {
     id: 'closed-loop',
     label: 'Closed loop (heart-ish)',
-    description: 'Open-curve representations close via a straight return; Spiro v1 doesn\'t support true closed.',
+    description: 'Open-curve representations close via a straight return; the Spiro representation here is open-only.',
     anchors: [
       { x: 200, y: 80 },
       { x: 340, y: 160 },
@@ -62,7 +62,7 @@ export const CURVE_PRESETS: readonly CurvePreset[] = [
     anchors: [
       { x: 60, y: 200, spiroType: 'corner' },
       { x: 180, y: 80, weight: 2 },
-      { x: 300, y: 200, spiroType: 'g4-smooth' },
+      { x: 300, y: 200, spiroType: 'right' },
       { x: 380, y: 320, weight: 0.5 },
     ],
   },

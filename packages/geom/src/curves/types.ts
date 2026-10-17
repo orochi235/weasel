@@ -1,4 +1,5 @@
 import type { PolygonPath } from '../path';
+import type { SpiroKind } from '../paths/spiro';
 
 /** A point in the shared anchor set. Every representation reads only the
  *  fields it cares about: cubic Bezier reads inHandle/outHandle; NURBS
@@ -14,8 +15,8 @@ export interface SharedAnchor {
   /** NURBS rational weight. Default 1 (non-rational B-spline). Clamped
    *  ≥ 1e-3 by the UI. */
   weight?: number;
-  /** Spiro continuity class at this anchor. Default 'g2-smooth'. */
-  spiroType?: 'corner' | 'g2-smooth' | 'g4-smooth';
+  /** What holds at this anchor read as a spiro point. Default `'smooth'`. */
+  spiroType?: SpiroKind;
 }
 
 /** Which curve representation an anchor set is interpreted through. */

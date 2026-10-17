@@ -1,6 +1,6 @@
 /**
- * The kit `booleansAdapter` dep: the Pathfinder actions and the shape builder
- * over a canvas's own path leaves.
+ * The kit `booleansAdapter` dep: what the Pathfinder actions, and any tool
+ * reading the dep, work on over a canvas's own path leaves.
  *
  * `<SceneCanvas>` publishes it over its own scene. A consumer replaces it with
  * `useBooleansAdapter` from under the canvas — for text operands, say, which

@@ -10,6 +10,8 @@ import { pathFromPlane } from 'canvas/planeClips';
 import { isRectPose } from 'core/geometry/autoPoseDescriptor';
 import type { RectPose } from 'core/scene/types';
 import type { PlaneMap } from 'core/viewport/parallax';
+import type { PathEditExtension } from './pathEditExtension';
+import { pathFormOf, representationOf, withoutPathForm, type AnchorMarkerShape } from './pathRepresentation';
 
 /** The two fields of a node the editable path is read from. */
 export interface EditableShape {
@@ -59,19 +61,47 @@ export function resolveEditablePathOf(
 }
 
 /**
+ * What path edit edits on a node, in world coords: the edit path of the form
+ * the node's path was drawn from, where one of `extensions` reads it
+ * (`PathRepresentation`), and otherwise its editable polygon. Null when the
+ * node has no editable polygon.
+ */
+export function pathEditPathOf(
+  node: EditableShape | undefined | null,
+  extensions: readonly PathEditExtension[] = [],
+): PolygonPath | null {
+  const path = resolveEditablePathOf(node);
+  const held = path ? representationOf(extensions, node!.data) : null;
+  return (held && held.representation.editPath(path!, held.form)) ?? path;
+}
+
+/**
  * The pose and data that store `worldPath` where `node` stores its editable
  * polygon — the inverse of {@link resolveEditablePathOf}, so a `data.path`
- * node keeps its rotation. Null when `node` has no editable polygon.
+ * node keeps its rotation. On a node whose path was drawn from a form one of
+ * `extensions` reads, `worldPath` is an edit of what {@link pathEditPathOf}
+ * gave, and the representation turns it into the drawn path; a form none
+ * reads, or that no longer describes the path, is dropped. Null when `node`
+ * has no editable polygon.
  */
 export function storeEditablePath(
   node: EditableShape | undefined | null,
   worldPath: PolygonPath,
+  extensions: readonly PathEditExtension[] = [],
 ): EditableShape | null {
   const storage = classifyPathStorage(node);
   if (!storage) return null;
-  if (storage.kind === 'pose') return { pose: worldPath, data: node!.data };
-  const { pose, path } = worldEditToStorage(storage.pose, worldPath);
-  return { pose, data: { ...storage.data, path } };
+  let path = worldPath;
+  let data = node!.data;
+  if (pathFormOf(data)) {
+    const held = representationOf(extensions, data);
+    const solved = held ? held.representation.store(resolveEditablePathOf(node)!, held.form, worldPath) : null;
+    path = solved?.path ?? worldPath;
+    data = solved ? { ...(data as object), representation: solved.form } : withoutPathForm(data);
+  }
+  if (storage.kind === 'pose') return { pose: path, data };
+  const stored = worldEditToStorage(storage.pose, path);
+  return { pose: stored.pose, data: { ...(data as object), path: stored.path } };
 }
 
 /** `node` as the in-flight gestures in `previews` would leave it: a handle
@@ -101,7 +131,7 @@ function previewedShape(
 }
 
 /**
- * The editable polygon of node `id` as it is drawn right now: following any
+ * What path edit shows of node `id` right now ({@link pathEditPathOf}): following any
  * in-flight gesture in `previews`, and in the world of the camera whose
  * `plane` this is — a path on a parallax plane is stored in the plane's.
  */
@@ -110,7 +140,22 @@ export function liveEditablePath(
   node: EditableShape | undefined | null,
   previews: readonly GesturePreviewSource[],
   plane: PlaneMap | null,
+  extensions: readonly PathEditExtension[] = [],
 ): PolygonPath | null {
   if (!node) return null;
-  return pathFromPlane(resolveEditablePathOf(previewedShape(id, node, previews)), plane);
+  return pathFromPlane(pathEditPathOf(previewedShape(id, node, previews), extensions), plane);
+}
+
+/** The marker of each anchor {@link liveEditablePath} shows for node `id`, as
+ *  the representation reading its form draws them; null for a node it reads
+ *  none of. */
+export function liveAnchorMarkers(
+  id: string,
+  node: EditableShape | undefined | null,
+  previews: readonly GesturePreviewSource[],
+  extensions: readonly PathEditExtension[],
+): readonly (AnchorMarkerShape | null)[] | null {
+  if (!node) return null;
+  const held = representationOf(extensions, previewedShape(id, node, previews).data);
+  return held?.representation.anchorMarkers?.(held.form) ?? null;
 }

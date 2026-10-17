@@ -54,3 +54,23 @@ describe('anchorMarkerCommands', () => {
     expect(markers.map((m) => m.path)).toEqual([dot(0, 0), dot(2, 0), dot(4, 0), square(60, 0)]);
   });
 });
+
+const sameCoords = (a: PolygonPath, b: PolygonPath) => expect(Array.from(a.coords)).toEqual(Array.from(b.coords));
+
+describe('anchorMarkerCommands with marker shapes', () => {
+  it('draws an anchor with the shape given for its flat index, and the rest as squares', () => {
+    const control = new PathBuilder().moveTo(0, 0).lineTo(100, 0).lineTo(200, 50).build();
+    const calls: unknown[][] = [];
+    const disc = (at: { x: number; y: number }, size: number, prev: unknown, next: unknown) => {
+      calls.push([at, size, prev, next]);
+      return circlePath(at.x, at.y, size / 2);
+    };
+    const markers = (anchorMarkerCommands(control, at(1), new Set(), DEFAULT_OVERLAY_STYLE, [null, disc]) as PathDrawCommand[])
+      .slice(1).map((c) => c.path as PolygonPath);
+    expect(markers).toHaveLength(3);
+    sameCoords(markers[0], squarePath(0, 0, 8));
+    sameCoords(markers[1], circlePath(100, 0, 4));
+    sameCoords(markers[2], squarePath(200, 50, 8));
+    expect(calls).toEqual([[{ x: 100, y: 0 }, 8, { x: 0, y: 0 }, { x: 200, y: 50 }]]);
+  });
+});

@@ -183,6 +183,17 @@ describe('FEATURE_PRESETS', () => {
     expect(rotate.bindings![0].opts!.params).toMatchObject({ label: 'Spin' });
   });
 
+  it("folds a preset's move behaviors into the move, after the select tool's", () => {
+    const own = { onMove: () => undefined };
+    const added = { onMove: () => undefined };
+    const snapping: FeaturePreset = { id: 'snapping', moveBehaviors: [added] };
+    const entries = presetAmbient(resolve(['move', snapping]), { move: { behaviors: [own] } });
+    const move = entries.find((e) => e.id === SELECTION_MOVE_ID)!;
+    expect(move.bindings!.find((b) => b.actionId === 'move')!.opts!.behaviors).toEqual([own, added]);
+    const bare = presetAmbient(resolve(['move']), {}).find((e) => e.id === SELECTION_MOVE_ID)!;
+    expect(bare.bindings!.find((b) => b.actionId === 'move')!.opts?.behaviors).toBeUndefined();
+  });
+
   it('owns, in the chrome table, exactly the chrome its rows turn on', () => {
     expect([...PRESET_OWNED_CHROME].sort()).toEqual(rows.flatMap(([, row]) => row.chrome ?? []).sort());
   });

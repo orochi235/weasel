@@ -290,7 +290,9 @@ It is the one gesture that claims nothing. It has no press to own, so it binds
 only an immediate action, never an ongoing one; every live `hover` binding that
 matches a move runs, where every other gesture has one winner; and the move goes
 on to the hover-cursor pump as if no binding had been there. A held pointer's
-moves belong to its drag and are not hovers.
+moves belong to its drag and are not hovers. A modifier going down or up over a
+resting pointer is a hover too, with the new modifiers, so a binding that needs
+one held answers the key without waiting for the pointer to move.
 
 A `hover` spec with `motion: 'leave'` (`hover(leave)` in a route) fires when the
 pointer passes out of what the binding targets, in place of on each move: onto

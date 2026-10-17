@@ -110,6 +110,10 @@ export function anchorStateFrom(
       getPose: (id) => (toCamera ? toCamera(id, dep.getEditablePath(id)) : dep.getEditablePath(id)),
       getNode: (id) => dep.getNodeShape(id),
       ...(dep.extensions ? { extensions: dep.extensions } : {}),
+      getOutline: (id) => {
+        const path = dep.getOutlinePath?.(id) ?? dep.getEditablePath(id);
+        return toCamera ? toCamera(id, path) : path;
+      },
     };
   };
 }

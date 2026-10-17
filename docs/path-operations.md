@@ -22,15 +22,15 @@ Tag: `path-drag`
 | Operation | Action id | What the drag does | Default binding | Status | Package |
 |---|---|---|---|---|---|
 | Edit anchors | `editAnchors` | Moves anchors and handles | Drag on an anchor or handle | main | core |
-| Bend segment | `bendSegment` | Reshapes a segment by its middle | Drag on a segment | main | core |
+| Bend segment | `bendSegment` | Reshapes a segment by its middle; on a spiro curve, with `spiroPreset` on, adds a smooth point there and drags it | Drag on a segment | main | core |
 | Marquee-select anchors | `marqueeAnchors` | Selects anchors in a box | Drag on empty canvas | main | core |
 | Handle locks | `handleLock.angle`, `handleLock.length` | Hold a handle's angle or length during a drag | Toggles; Mod while dragging holds length | main | path-tools |
 | Balance handles | `balanceHandles` | Scales a segment's two handles together from a grip on its balance line; a length lock holds it still | Drag a balance grip, shown under `path-edit.balance` | main | path-tools |
 | Path constraints | `constrainAnchors`, `unconstrainAnchors` | Keep geometric relations (parallel, level, fixed) during any anchor drag | C / Shift+C in its lab only | main | path-tools |
 | Corner shape | `editCorner` | Sets a corner anchor's radius, or every selected corner's, from the widget inside it | Drag a corner widget, shown under `path-edit.corners` | main | path-tools |
 | Path snapping | — | Locks a dragged anchor to other shapes' anchors, crossings, tangent and perpendicular points, midpoints, extremes, and strokes, and to the parts of its own path the drag leaves still; the pen, the insert tools, and a move snap the same way | Any anchor drag, while `toolOptions.pathSnap` is set | main | core |
-| Soft selection | — | Moves nearby anchors with falling weight | Drag an anchor | audition | — |
-| Handle snap | — | Snaps a handle's angle to steps and to its partner | Drag a handle | audition | — |
+| Soft selection | — | Moves nearby anchors with falling weight; the wheel scrubs the radius mid-drag | Any anchor drag, under `createSoftSelectionPreset` | landing | path-tools |
+| Handle snap | — | Snaps a handle's angle to steps and to its partner | Any handle drag, under `createHandleSnapPreset` | landing | path-tools |
 | Lengthen | `lengthenPath` | Grows an open end along its tangent or curvature, or trims it back along itself | Drag an end anchor with the Lengthen path-edit tool on | main | path-tools |
 
 ## Click on a path
@@ -99,6 +99,8 @@ Tag: `path-command`
 | Repeat along a path | `repeatAlong` | Live copies placed along a path | — | main | path-tools |
 | Expand warp | `expandWarp` | Drops a held distort, envelope, or puppet warp, keeping its geometry | — | main | path-tools |
 | Warp settings | `configureWarp` | Remakes a held warp with new settings | — | main | path-tools |
+| Spiro point kind | `setSpiroKind` | Makes the selected spiro points smooth, corner, or tangent to a line on either side, and solves the curve again | — | main | path-tools |
+| Convert spiro to path | `releaseSpiro` | Drops a spiro curve's points, keeping the curve as an ordinary path | — | main | path-tools |
 
 ## Gestures shared today
 
@@ -106,7 +108,7 @@ Places where one gesture already reaches several operations, which a variant set
 explicit:
 
 - **A drag on an anchor or handle** runs `editAnchors`, with handle locks, constraints, path snapping,
-  and (in audition) soft selection and handle snap all shaping the same drag.
+  soft selection and handle snap all shaping the same drag.
 - **A click on a stroke** trims or extends depending on the tool held; Insert and Cut add a
   modifier to the same click.
 - **A brush drag** simplifies or smudges depending on the tool.

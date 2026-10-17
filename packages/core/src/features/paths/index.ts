@@ -191,13 +191,17 @@ export {
   GEOMETRY_BOUND_DATA,
   withoutGeometryBoundData,
   type FinishedPathEdit,
+  type PathEditDrag,
+  type PathEditDragStart,
   type PathEditExtension,
+  type PathEditHandleMove,
   type PathEditMark,
   type PathEditMarksCtx,
   type PathEditPart,
   type PathEditStore,
   type PathEditTarget,
 } from './pathEditExtension';
+export type { AnchorMarkerShape, PathForm, PathRepresentation } from './pathRepresentation';
 export {
   pathUnion,
   pathIntersect,

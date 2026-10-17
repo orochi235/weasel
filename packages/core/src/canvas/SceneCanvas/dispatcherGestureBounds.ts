@@ -7,7 +7,7 @@
  * reads, and both size them through `insertPreviewExtent`, so the reported
  * bounds and the drawn preview can't disagree.
  */
-import type { Dispatcher } from '@weasel-js/routing';
+import { overlaysOf, type Dispatcher } from '@weasel-js/routing';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { GestureSource } from '../gestureBounds';
 import type { OngoingOverlay } from '@weasel-js/routing';
@@ -45,14 +45,15 @@ export function dispatcherInsertBounds(dispatcher: Dispatcher | null | undefined
   const out: Bounds[] = [];
   if (!dispatcher) return out;
   for (const handle of dispatcher.getInFlightHandles()) {
-    const ov = handle.overlay?.();
-    if (!ov || ov.kind !== 'insertPreview') continue;
-    const b = insertPreviewExtent(ov).bounds;
-    // A zero-area extent is the pointerdown frame before the first move. A
-    // pencil gesture can be meaningful at near-zero AABB, so it reports its
-    // point rather than nothing.
-    if (b.width === 0 && b.height === 0 && ov.shape !== 'pencil') continue;
-    out.push({ x: b.x, y: b.y, width: b.width, height: b.height });
+    for (const ov of overlaysOf(handle)) {
+      if (ov.kind !== 'insertPreview') continue;
+      const b = insertPreviewExtent(ov).bounds;
+      // A zero-area extent is the pointerdown frame before the first move. A
+      // pencil gesture can be meaningful at near-zero AABB, so it reports its
+      // point rather than nothing.
+      if (b.width === 0 && b.height === 0 && ov.shape !== 'pencil') continue;
+      out.push({ x: b.x, y: b.y, width: b.width, height: b.height });
+    }
   }
   return out;
 }
@@ -75,10 +76,7 @@ export function createGestureSource(
     previewSources: () => [...(getDispatcher()?.getInFlightHandles() ?? [])],
     overlays: () => {
       const out: OngoingOverlay[] = [];
-      for (const handle of getDispatcher()?.getInFlightHandles() ?? []) {
-        const ov = handle.overlay?.();
-        if (ov) out.push(ov);
-      }
+      for (const handle of getDispatcher()?.getInFlightHandles() ?? []) out.push(...overlaysOf(handle));
       return out;
     },
   };

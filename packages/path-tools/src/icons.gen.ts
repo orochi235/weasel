@@ -18,6 +18,7 @@ export type PathToolsIconName =
   | 'trim'
   | 'extend'
   | 'girth'
+  | 'spiro'
   | 'reversePath'
   | 'setPathStart'
   | 'cornerRadius'
@@ -48,7 +49,8 @@ export const ICON_GROUPS: readonly { label: string; names: readonly PathToolsIco
       "lengthen",
       "trim",
       "extend",
-      "girth"
+      "girth",
+      "spiro"
     ]
   },
   {
@@ -82,6 +84,7 @@ declare module '@weasel-js/icons' {
     'path-tools:trim': true;
     'path-tools:extend': true;
     'path-tools:girth': true;
+    'path-tools:spiro': true;
     'path-tools:reversePath': true;
     'path-tools:setPathStart': true;
     'path-tools:cornerRadius': true;
