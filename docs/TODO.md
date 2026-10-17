@@ -894,6 +894,19 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   menu asset — the first thing anyone sees after making one — shows a lone button. Say in the
   preview that the menu is empty and how to give it rows.
 
+- **(P3) Should `ActionVariant` be public?** It is tagged `@experimental`, so `useCommand` keeps an
+  untagged copy, `CommandVariant`. Promoting it lets `useCommand` drop the copy; the owner's call.
+
+- **(P3) `useCommand` cannot give a variant its own shortcut.** `keys` takes one `GestureSpec`, not
+  `{ spec, opts: { params } }`, so `viewport.zoom:in` can carry a key through `useAction` only.
+
+- **(P3) A bar `action` leaf naming a bare parametric id draws a dead button that misreports itself.**
+  Its tooltip says "no action", though the action exists and only needs a variant. Expand the leaf
+  into its variants, or word the tooltip as "pick a variant".
+
+- **(P3) Should the command palette prefix a variant's label with its action's?** New's paper sizes
+  list as "US Letter", "A4" and "Legal"; "New: A4" would say what they do. The owner's call.
+
 - **(P4) A `BarMenu` that opened itself can pull focus out of another menu when it closes.** Its
   `close` gives focus to its button only when focus is inside a menu, but it checks with
   `closest('[role="menu"]')`, which matches any menu on the page. Scope the check to this menu's

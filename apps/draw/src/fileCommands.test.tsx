@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
-import { act, cleanup } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import {
   ActionsProvider,
@@ -11,6 +12,7 @@ import {
   useActionsRegistry,
   type ActionsRegistry,
 } from '@weasel-js/core';
+import { CommandPalette } from '@weasel-js/ui';
 import type { DrawScene, WeaselDrawData, WeaselDrawLayer, WeaselDrawPose } from './drawDocument';
 import { FILE_ACTIONS, useFileCommands, type FileCommandsTarget } from './fileCommands';
 import { importSvgFile, openSvgFile } from './openSvg';
@@ -116,5 +118,34 @@ describe('useFileCommands', () => {
     act(() => { window.dispatchEvent(e); });
     expect(saveSvgFile).toHaveBeenCalledOnce();
     expect(e.defaultPrevented).toBe(true);
+  });
+
+  it('finds the paper sizes in the command palette by typing "new"', () => {
+    Element.prototype.scrollIntoView = () => {};
+    const scene = seededScene();
+    const target = { scene, filename: 'a', paperSize: 'letter', backgroundColor: '#fff', setFilename: vi.fn(), setPaperSize: vi.fn(), setBackgroundColor: vi.fn() } as FileCommandsTarget;
+    // The palette snapshots the registry when it opens, so open it after the commands register.
+    function Host() {
+      useFileCommands(target);
+      const [open, setOpen] = useState(false);
+      return (
+        <>
+          <button type="button" onClick={() => setOpen(true)}>open</button>
+          <CommandPalette open={open} onClose={() => setOpen(false)} />
+        </>
+      );
+    }
+    render(
+      <DepRegistryProvider>
+        <ActionsProvider>
+          <Host />
+        </ActionsProvider>
+      </DepRegistryProvider>,
+    );
+    fireEvent.click(screen.getByText('open'));
+    fireEvent.change(screen.getByPlaceholderText('Search actions…'), { target: { value: 'new' } });
+    expect(screen.getAllByRole('option').map((o) => o.textContent)).toEqual(
+      expect.arrayContaining([expect.stringContaining('US Letter'), expect.stringContaining('A4'), expect.stringContaining('Legal')]),
+    );
   });
 });

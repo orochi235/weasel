@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { Focusable } from 'react-aria-components';
 import type { PrefAction } from '@weasel-js/prefs';
 import { useLeafAction } from '../Prefs/useLeafAction';
+import { segmentTooltipContent } from '../segmentTooltip';
 import { Tooltip, TooltipTrigger } from '../Tooltip';
 import s from './Bar.module.css';
 
@@ -37,14 +38,13 @@ export interface BarActionButtonProps {
  */
 export function BarActionButton(props: BarActionButtonProps) {
   const { label, description, icon, shortcut, row = false, disabled = false, active, missing, onPress, disabledReason } = props;
-  const told = description || label;
   const labeled = row || props.labeled === true;
   const dead = missing !== undefined;
   const explained = dead || (disabled && disabledReason !== undefined);
   const tip = dead
     ? `${label}: no action “${missing}”`
     : disabled && disabledReason !== undefined ? `${label}: ${disabledReason}`
-    : shortcut ? `${told} (${shortcut})` : told;
+    : segmentTooltipContent({ description: description || label, shortcut });
   const words = labeled || icon == null;
   return (
     // A dead or explained button keeps its tooltip, which is the only thing that says why.

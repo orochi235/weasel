@@ -12,4 +12,11 @@ describe('segmentTooltipContent', () => {
     expect(segmentTooltipContent({ ariaLabel: 'Bold', shortcut: '⌘B', tooltip: 'Heavier' })).toBe('Heavier');
     expect(segmentTooltipContent({ ariaLabel: 'Bold', label: 'B' })).toBeUndefined();
   });
+
+  it('reads a description in place of the name, shortcut after it', () => {
+    expect(segmentTooltipContent({ ariaLabel: 'Bold', description: 'Make it heavier', shortcut: '⌘B' })).toBe('Make it heavier (⌘B)');
+    expect(segmentTooltipContent({ description: 'Make it heavier' })).toBe('Make it heavier');
+    expect(segmentTooltipContent({ description: '' })).toBeUndefined();
+    expect(segmentTooltipContent({ description: 'Heavier', tooltip: 'Override' })).toBe('Override');
+  });
 });

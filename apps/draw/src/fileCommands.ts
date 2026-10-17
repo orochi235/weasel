@@ -30,7 +30,7 @@ export function useFileCommands(target: FileCommandsTarget): void {
     scene.batch('New document', () => {
       scene.removeMany([...scene.renderOrder()]);
     });
-  }, { variants: NEW_VARIANTS });
+  }, { variants: NEW_VARIANTS, tags: ['new', 'document'] });
   useCommand(FILE_ACTIONS.open, 'Open…', () => { void openSvgFile(target); });
   useCommand(FILE_ACTIONS.import, 'Import…', () => { void importSvgFile(scene); });
   useCommand(FILE_ACTIONS.save, 'Save', () => {

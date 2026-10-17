@@ -10,7 +10,7 @@ import type { PrefGroup } from '@weasel-js/prefs';
 import type { MenuEntry } from '@weasel-js/menu';
 import { Caret } from '../Caret';
 import { useMenuTrigger } from '../ContextMenu/useMenuTrigger';
-import { SegmentTooltip } from '../segmentTooltip';
+import { SegmentTooltip, segmentTooltipContent } from '../segmentTooltip';
 import f from '../field.module.css';
 import s from './Bar.module.css';
 
@@ -63,7 +63,7 @@ export function BarMenu({ label, description, schema, values, onChange, over, de
   return (
     <>
       {trigger.anchor}
-      <SegmentTooltip content={description || undefined}>
+      <SegmentTooltip content={segmentTooltipContent({ description })}>
         <button
           ref={trigger.button}
           id={trigger.id}

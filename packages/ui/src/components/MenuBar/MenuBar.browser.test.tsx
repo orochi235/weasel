@@ -85,7 +85,7 @@ function setupTitle(access?: string) {
       <MenuBar schema={schema} />
     </ActionsProvider>,
   );
-  return screen.getByRole('menuitem', { name: 'File', exact: true });
+  return screen.getByRole('menuitem', { name: 'File' });
 }
 
 it('names a title by its whole label when it underlines an access letter', () => {

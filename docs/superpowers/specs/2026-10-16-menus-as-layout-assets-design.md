@@ -92,11 +92,12 @@ These are built, so the code is the reference:
 - WeaselDraw (`apps/draw/src/fileCommands.ts`, `menuBar.ts`): `useFileCommands` registers
   `file.new` (a variant per paper size; with no variant it starts a document at the current paper
   size), `file.open`, `file.import` and `file.save` (⌘S). The command bar's file group is a `Bar`
-  naming them, with tooltips from the leaves' descriptions (`BarAction` and `BarMenu` carry them).
+  naming them, with tooltips from the leaves' descriptions (`BarAction`, `BarMenu` and
+  `PrefActionButton` carry them, through `segmentTooltipContent`).
   `viewport.zoom` lists in, out and reset as variants. `DRAW_MENU_BAR` (File f, Edit e, Arrange a,
   View v) is a layout asset, listed in the asset editor, and draws as a `.wd-menubar` strip above
-  the command bar. A bar `action` leaf naming a bare parametric id resolves to nothing, since a
-  menu expands it, so a bar names variants explicitly. ⌘S inside a text field falls through to the
+  the command bar. A bar `action` leaf naming a bare parametric id draws a dead button, so a bar
+  names variants explicitly (`viewport.zoom:in`); a menu or an `actions` group lists every variant. ⌘S inside a text field falls through to the
   browser, following the dispatcher's editable-target rule.
 
 The default chord is unverified: Chrome on Windows is said to open its own menu on Alt+F, and on
