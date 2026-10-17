@@ -31,8 +31,8 @@ import { Canvas } from './Canvas';
 import { CanvasView } from './CanvasView';
 import { canvasDebug, DevHuds } from './SceneCanvas/DevHuds';
 import { GestureDispatcherMounter } from './SceneCanvas/GestureDispatcherMounter';
-import { IconRegistryProviderIfRoot } from '../iconRegistry';
-import { PointerProviderIfRoot, PointerPublisher } from './SceneCanvas/PointerProviderIfRoot';
+import { CanvasKitProviders } from './SceneCanvas/CanvasKitProviders';
+import { PointerPublisher } from './SceneCanvas/PointerProviderIfRoot';
 import { StandardActionsRegistrar } from './SceneCanvas/StandardActionsRegistrar';
 import { ToolKeybindingsMounter } from './SceneCanvas/ToolKeybindingsMounter';
 import type { FeatureBindingOptions, PresetSource } from './SceneCanvas/features';
@@ -57,7 +57,7 @@ import type { CanvasExtensionApi, SceneCanvasApi } from './canvasExtension';
 import { useSceneAdapter } from './useSceneAdapter';
 import { composeAlphaFor } from './sceneSlotWiring';
 import { useHitObserver } from './useHitObserver';
-import { ViewInputsProvider, type SurfaceViewInputs } from './viewInputs';
+import type { SurfaceViewInputs } from './viewInputs';
 import { ViewRegistryProvider } from './viewRegistry';
 export { SCENE_CANVAS_FEATURES, type Feature } from './SceneCanvas/features';
 export type { BuiltinToolOptions } from './SceneCanvas/useBuiltinShapeTools';
@@ -331,122 +331,118 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   });
 
   return (
-    <ViewInputsProvider value={viewInputs}>
-      <IconRegistryProviderIfRoot>
-      <PointerProviderIfRoot>
-        <Canvas<TPose>
-          ref={handleRef}
-          adapter={adapter}
-          selection={selection}
-          poseDescriptor={descriptor}
-          tools={tools}
-          layers={wiredLayers}
-          // The chrome's bounds are the picker's: a node on a parallax plane is
-          // boxed where the plane draws it, and a `geometry.boundsOf` reaches both.
-          boundsOf={internalBoundsOf}
-          boundsOfPose={internalBoundsOfPose}
-          getIsVisible={getIsVisibleForCanvas}
-          // The gesture surface behind `helpersRef.getGestureBounds()` /
-          // `subscribeGestures()` — Canvas has no dispatcher of its own.
-          gestureSource={gestureSource}
-          previewPoseExtra={previewPoseExtra}
-          {...(debug !== undefined ? { debug: canvasDebug(debug) } : {})}
-          contentVersion={scene.getVersion}
-          layerVisibility={layerVisibility}
-          layerOrder={layerOrder}
-          viewState={viewState}
-          redrawOn={redrawOn}
-          {...restProps}
-        />
-        <DevHuds
-          cursorCoords={cursorCoordsHud}
-          pick={pickHud}
-          modality={modalityHud}
-          canvasRef={internalCanvasRef}
-          canvasApiRef={canvasApiRef}
-          detachedInput={restProps.paintInto ? restProps.inputElement ?? null : undefined}
-          viewRef={viewRef}
-          pickEvery={internalPickEvery}
-          pickBest={internalPickBest}
-        />
-        <PointerPublisher canvasRef={internalCanvasRef} canvasApiRef={canvasApiRef} />
-        <StandardActionsRegistrar
-          selection={selection}
-          scene={scene}
-          adapter={adapter as unknown as BridgeAdapter}
-          actions={resolvedActions} tune={tune}
-          standardActions={standardActions}
-          currentViewRef={viewRef}
-          onViewChange={viewState.setViewFromInput}
-          resizeOptions={selectToolOpts?.resize as UseResizeOptions<unknown> | undefined}
-          poseDescriptor={descriptor as PoseDescriptor<unknown>} boundsIncludeStroke={geometry?.boundsIncludeStroke ?? true}
-          geometryProjection={geometryProjection}
-          dispatcher={dispatcher}
-          pickEvery={internalPickEvery}
-          layerIsPainted={viewLayerGate}
-          alphaOf={alphaFor ? composedAlphaFor : undefined}
-          viewportPanEnabled={enabled.has('view') ? (viewport?.pan ?? true) : false}
-          viewportZoom={enabled.has('view') ? resolvedViewportZoom : false}
-          viewportPinchZoom={enabled.has('view') ? (viewport?.pinchZoom ?? true) : false}
-          viewportRecenter={viewport?.recenter}
-          viewAnimation={viewAnimation}
-          editAnchorsExternalState={pathEditState}
-          layoutDropTarget={layoutDropTarget}
-          reflowTransition={reflowTransition as ReflowTransition<unknown> | null | undefined}
-          insertNodeFactories={insertNodeFactories}
-          insertPaint={insertPaint}
-          snap={{ snapPoint: toolOptions?.snapPoint, paths: pathSnapper }}
-          canvasRef={internalCanvasRef}
-          canvasApiRef={canvasApiRef}
-          ingestionResolveSrc={ingestion?.resolveSrc}
-          ingestionSvg={ingestion?.svg}
-          ingestionClipboard={ingestionClipboard}
-        />
-        <GestureDispatcherMounter
-          canvasRef={internalCanvasRef}
-          canvasApiRef={canvasApiRef}
-          tools={tools}
-          contributions={featureContributions}
-          enabled={enableGestureDispatcher}
-          keyboard={enableKeybindings}
-          claimKeys={claimKeys}
-          selectionRef={selectionRef}
-          boundsOf={internalBoundsOf}
-          planeOfNode={internalPlaneOfNode}
-          pickEvery={internalPickEvery}
-          pickBest={internalPickBest}
-          kindOfNode={kindOfNode}
-          viewRef={viewRef}
-          dispatcher={dispatcher}
-          getIsVisibleForCanvas={getIsVisibleForCanvas}
-          getRuleCtx={getRuleCtxForCanvas}
-          targetScale={deviceProfile.targetScale}
-          handleHitRadius={selectToolOpts?.handleHitRadius}
-          rotationBadge={rotationBadge}
-          chromeAffordancesRef={chromeAffordancesRef}
-          onDoubleClick={onDoubleClickObserver}
-          onClick={onClickObserver}
-          longPress={longPress}
-        />
-        <ToolKeybindingsMounter
-          internalTools={internalTools}
-          toolsTakeover={toolsTakeover ?? undefined}
-          enableKeybindings={enableKeybindings}
-          modes={modes}
-          canvasApi={canvasReady ? canvasApiRef.current : null}
-          versionCheck={versionCheck}
-        />
-        {viewDescriptors?.map((v, i) => (
-          <CanvasView key={v.id} {...v} order={v.order ?? i} />
-        ))}
-        {contributionEntries(tools).flatMap((e) => e.views ?? []).map((v) => (
-          <CanvasView key={`contribution:${v.id}`} {...v} />
-        ))}
-        {addedViews.map((v) => <CanvasView key={`added:${v.id}`} {...v} />)}
-        {children}
-      </PointerProviderIfRoot>
-      </IconRegistryProviderIfRoot>
-    </ViewInputsProvider>
+    <CanvasKitProviders viewInputs={viewInputs}>
+      <Canvas<TPose>
+        ref={handleRef}
+        adapter={adapter}
+        selection={selection}
+        poseDescriptor={descriptor}
+        tools={tools}
+        layers={wiredLayers}
+        // The chrome's bounds are the picker's: a node on a parallax plane is
+        // boxed where the plane draws it, and a `geometry.boundsOf` reaches both.
+        boundsOf={internalBoundsOf}
+        boundsOfPose={internalBoundsOfPose}
+        getIsVisible={getIsVisibleForCanvas}
+        // The gesture surface behind `helpersRef.getGestureBounds()` /
+        // `subscribeGestures()` — Canvas has no dispatcher of its own.
+        gestureSource={gestureSource}
+        previewPoseExtra={previewPoseExtra}
+        {...(debug !== undefined ? { debug: canvasDebug(debug) } : {})}
+        contentVersion={scene.getVersion}
+        layerVisibility={layerVisibility}
+        layerOrder={layerOrder}
+        viewState={viewState}
+        redrawOn={redrawOn}
+        {...restProps}
+      />
+      <DevHuds
+        cursorCoords={cursorCoordsHud}
+        pick={pickHud}
+        modality={modalityHud}
+        canvasRef={internalCanvasRef}
+        canvasApiRef={canvasApiRef}
+        detachedInput={restProps.paintInto ? restProps.inputElement ?? null : undefined}
+        viewRef={viewRef}
+        pickEvery={internalPickEvery}
+        pickBest={internalPickBest}
+      />
+      <PointerPublisher canvasRef={internalCanvasRef} canvasApiRef={canvasApiRef} />
+      <StandardActionsRegistrar
+        selection={selection}
+        scene={scene}
+        adapter={adapter as unknown as BridgeAdapter}
+        actions={resolvedActions} tune={tune}
+        standardActions={standardActions}
+        currentViewRef={viewRef}
+        onViewChange={viewState.setViewFromInput}
+        resizeOptions={selectToolOpts?.resize as UseResizeOptions<unknown> | undefined}
+        poseDescriptor={descriptor as PoseDescriptor<unknown>} boundsIncludeStroke={geometry?.boundsIncludeStroke ?? true}
+        geometryProjection={geometryProjection}
+        dispatcher={dispatcher}
+        pickEvery={internalPickEvery}
+        layerIsPainted={viewLayerGate}
+        alphaOf={alphaFor ? composedAlphaFor : undefined}
+        viewportPanEnabled={enabled.has('view') ? (viewport?.pan ?? true) : false}
+        viewportZoom={enabled.has('view') ? resolvedViewportZoom : false}
+        viewportPinchZoom={enabled.has('view') ? (viewport?.pinchZoom ?? true) : false}
+        viewportRecenter={viewport?.recenter}
+        viewAnimation={viewAnimation}
+        editAnchorsExternalState={pathEditState}
+        layoutDropTarget={layoutDropTarget}
+        reflowTransition={reflowTransition as ReflowTransition<unknown> | null | undefined}
+        insertNodeFactories={insertNodeFactories}
+        insertPaint={insertPaint}
+        snap={{ snapPoint: toolOptions?.snapPoint, paths: pathSnapper }}
+        canvasRef={internalCanvasRef}
+        canvasApiRef={canvasApiRef}
+        ingestionResolveSrc={ingestion?.resolveSrc}
+        ingestionSvg={ingestion?.svg}
+        ingestionClipboard={ingestionClipboard}
+      />
+      <GestureDispatcherMounter
+        canvasRef={internalCanvasRef}
+        canvasApiRef={canvasApiRef}
+        tools={tools}
+        contributions={featureContributions}
+        enabled={enableGestureDispatcher}
+        keyboard={enableKeybindings}
+        claimKeys={claimKeys}
+        selectionRef={selectionRef}
+        boundsOf={internalBoundsOf}
+        planeOfNode={internalPlaneOfNode}
+        pickEvery={internalPickEvery}
+        pickBest={internalPickBest}
+        kindOfNode={kindOfNode}
+        viewRef={viewRef}
+        dispatcher={dispatcher}
+        getIsVisibleForCanvas={getIsVisibleForCanvas}
+        getRuleCtx={getRuleCtxForCanvas}
+        targetScale={deviceProfile.targetScale}
+        handleHitRadius={selectToolOpts?.handleHitRadius}
+        rotationBadge={rotationBadge}
+        chromeAffordancesRef={chromeAffordancesRef}
+        onDoubleClick={onDoubleClickObserver}
+        onClick={onClickObserver}
+        longPress={longPress}
+      />
+      <ToolKeybindingsMounter
+        internalTools={internalTools}
+        toolsTakeover={toolsTakeover ?? undefined}
+        enableKeybindings={enableKeybindings}
+        modes={modes}
+        canvasApi={canvasReady ? canvasApiRef.current : null}
+        versionCheck={versionCheck}
+      />
+      {viewDescriptors?.map((v, i) => (
+        <CanvasView key={v.id} {...v} order={v.order ?? i} />
+      ))}
+      {contributionEntries(tools).flatMap((e) => e.views ?? []).map((v) => (
+        <CanvasView key={`contribution:${v.id}`} {...v} />
+      ))}
+      {addedViews.map((v) => <CanvasView key={`added:${v.id}`} {...v} />)}
+      {children}
+    </CanvasKitProviders>
   );
 }
 
