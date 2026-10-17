@@ -20,21 +20,7 @@ export type UiIconName =
   | 'remove'
   | 'sort'
   | 'snapshot'
-  | 'bold'
-  | 'italic'
-  | 'underline'
-  | 'strikethrough'
-  | 'overline'
-  | 'superscript'
-  | 'subscript'
   | 'code'
-  | 'textAlignLeft'
-  | 'textAlignCenter'
-  | 'textAlignRight'
-  | 'textAlignJustify'
-  | 'textAlignTop'
-  | 'textAlignMiddle'
-  | 'textAlignBottom'
   | 'play'
   | 'pause'
   | 'stop'
@@ -160,30 +146,6 @@ export type UiIconName =
   | 'type'
   | 'typeface'
   | 'more'
-  | 'strokeWidth'
-  | 'strokeCap'
-  | 'strokeJoin'
-  | 'strokeAlign'
-  | 'capButt'
-  | 'capRound'
-  | 'capSquare'
-  | 'joinMiter'
-  | 'joinRound'
-  | 'joinBevel'
-  | 'alignInner'
-  | 'alignCenter'
-  | 'alignOuter'
-  | 'dashSolid'
-  | 'dashDashed'
-  | 'dashDotted'
-  | 'dashCustom'
-  | 'paintSolid'
-  | 'paintLinear'
-  | 'paintRadial'
-  | 'paintConic'
-  | 'paintMesh'
-  | 'paintPattern'
-  | 'paintNone'
   | 'layoutRows'
   | 'layoutColumns'
   | 'layoutGrid'
@@ -412,26 +374,7 @@ export const ICON_GROUPS: readonly { label: string; names: readonly UiIconName[]
   {
     "label": "Character styling",
     "names": [
-      "bold",
-      "italic",
-      "underline",
-      "strikethrough",
-      "overline",
-      "superscript",
-      "subscript",
       "code"
-    ]
-  },
-  {
-    "label": "Paragraph alignment",
-    "names": [
-      "textAlignLeft",
-      "textAlignCenter",
-      "textAlignRight",
-      "textAlignJustify",
-      "textAlignTop",
-      "textAlignMiddle",
-      "textAlignBottom"
     ]
   },
   {
@@ -622,35 +565,6 @@ export const ICON_GROUPS: readonly { label: string; names: readonly UiIconName[]
       "type",
       "typeface",
       "more"
-    ]
-  },
-  {
-    "label": "Stroke cap, join, align and dash",
-    "names": [
-      "strokeWidth",
-      "strokeCap",
-      "strokeJoin",
-      "strokeAlign",
-      "capButt",
-      "capRound",
-      "capSquare",
-      "joinMiter",
-      "joinRound",
-      "joinBevel",
-      "alignInner",
-      "alignCenter",
-      "alignOuter",
-      "dashSolid",
-      "dashDashed",
-      "dashDotted",
-      "dashCustom",
-      "paintSolid",
-      "paintLinear",
-      "paintRadial",
-      "paintConic",
-      "paintMesh",
-      "paintPattern",
-      "paintNone"
     ]
   },
   {
@@ -906,21 +820,7 @@ declare module '@weasel-js/icons' {
     'ui:remove': true;
     'ui:sort': true;
     'ui:snapshot': true;
-    'ui:bold': true;
-    'ui:italic': true;
-    'ui:underline': true;
-    'ui:strikethrough': true;
-    'ui:overline': true;
-    'ui:superscript': true;
-    'ui:subscript': true;
     'ui:code': true;
-    'ui:textAlignLeft': true;
-    'ui:textAlignCenter': true;
-    'ui:textAlignRight': true;
-    'ui:textAlignJustify': true;
-    'ui:textAlignTop': true;
-    'ui:textAlignMiddle': true;
-    'ui:textAlignBottom': true;
     'ui:play': true;
     'ui:pause': true;
     'ui:stop': true;
@@ -1046,30 +946,6 @@ declare module '@weasel-js/icons' {
     'ui:type': true;
     'ui:typeface': true;
     'ui:more': true;
-    'ui:strokeWidth': true;
-    'ui:strokeCap': true;
-    'ui:strokeJoin': true;
-    'ui:strokeAlign': true;
-    'ui:capButt': true;
-    'ui:capRound': true;
-    'ui:capSquare': true;
-    'ui:joinMiter': true;
-    'ui:joinRound': true;
-    'ui:joinBevel': true;
-    'ui:alignInner': true;
-    'ui:alignCenter': true;
-    'ui:alignOuter': true;
-    'ui:dashSolid': true;
-    'ui:dashDashed': true;
-    'ui:dashDotted': true;
-    'ui:dashCustom': true;
-    'ui:paintSolid': true;
-    'ui:paintLinear': true;
-    'ui:paintRadial': true;
-    'ui:paintConic': true;
-    'ui:paintMesh': true;
-    'ui:paintPattern': true;
-    'ui:paintNone': true;
     'ui:layoutRows': true;
     'ui:layoutColumns': true;
     'ui:layoutGrid': true;

@@ -7,6 +7,8 @@ import { PATH } from './path.mjs';
 import { ANCHOR } from './anchor.mjs';
 import { OUTLINE } from './outline.mjs';
 import { HISTORY } from './history.mjs';
+import { PAINT } from './paint.mjs';
+import { PARAGRAPH, TEXT } from './text.mjs';
 
 export const namespace = 'core';
 export const owner = '@weasel-js/core';
@@ -20,4 +22,7 @@ export const groups = [
   ['Path commands', PATH],
   ['Anchors', ANCHOR],
   ['Outline', OUTLINE],
+  ['Character styling', TEXT],
+  ['Paragraph alignment', PARAGRAPH],
+  ['Stroke and paint', PAINT],
 ];

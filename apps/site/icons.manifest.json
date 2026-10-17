@@ -337,6 +337,196 @@
         "name": "outlineStroke",
         "group": "Outline",
         "tags": []
+      },
+      {
+        "name": "bold",
+        "group": "Character styling",
+        "tags": []
+      },
+      {
+        "name": "italic",
+        "group": "Character styling",
+        "tags": []
+      },
+      {
+        "name": "underline",
+        "group": "Character styling",
+        "tags": []
+      },
+      {
+        "name": "strikethrough",
+        "group": "Character styling",
+        "tags": []
+      },
+      {
+        "name": "overline",
+        "group": "Character styling",
+        "tags": []
+      },
+      {
+        "name": "superscript",
+        "group": "Character styling",
+        "tags": []
+      },
+      {
+        "name": "subscript",
+        "group": "Character styling",
+        "tags": []
+      },
+      {
+        "name": "textAlignLeft",
+        "group": "Paragraph alignment",
+        "tags": []
+      },
+      {
+        "name": "textAlignCenter",
+        "group": "Paragraph alignment",
+        "tags": []
+      },
+      {
+        "name": "textAlignRight",
+        "group": "Paragraph alignment",
+        "tags": []
+      },
+      {
+        "name": "textAlignJustify",
+        "group": "Paragraph alignment",
+        "tags": []
+      },
+      {
+        "name": "textAlignTop",
+        "group": "Paragraph alignment",
+        "tags": []
+      },
+      {
+        "name": "textAlignMiddle",
+        "group": "Paragraph alignment",
+        "tags": []
+      },
+      {
+        "name": "textAlignBottom",
+        "group": "Paragraph alignment",
+        "tags": []
+      },
+      {
+        "name": "strokeWidth",
+        "group": "Stroke and paint",
+        "tags": []
+      },
+      {
+        "name": "strokeCap",
+        "group": "Stroke and paint",
+        "tags": []
+      },
+      {
+        "name": "strokeJoin",
+        "group": "Stroke and paint",
+        "tags": []
+      },
+      {
+        "name": "strokeAlign",
+        "group": "Stroke and paint",
+        "tags": []
+      },
+      {
+        "name": "capButt",
+        "group": "Stroke and paint",
+        "tags": []
+      },
+      {
+        "name": "capRound",
+        "group": "Stroke and paint",
+        "tags": []
+      },
+      {
+        "name": "capSquare",
+        "group": "Stroke and paint",
+        "tags": []
+      },
+      {
+        "name": "joinMiter",
+        "group": "Stroke and paint",
+        "tags": []
+      },
+      {
+        "name": "joinRound",
+        "group": "Stroke and paint",
+        "tags": []
+      },
+      {
+        "name": "joinBevel",
+        "group": "Stroke and paint",
+        "tags": []
+      },
+      {
+        "name": "alignInner",
+        "group": "Stroke and paint",
+        "tags": []
+      },
+      {
+        "name": "alignCenter",
+        "group": "Stroke and paint",
+        "tags": []
+      },
+      {
+        "name": "alignOuter",
+        "group": "Stroke and paint",
+        "tags": []
+      },
+      {
+        "name": "dashSolid",
+        "group": "Stroke and paint",
+        "tags": []
+      },
+      {
+        "name": "dashDashed",
+        "group": "Stroke and paint",
+        "tags": []
+      },
+      {
+        "name": "dashDotted",
+        "group": "Stroke and paint",
+        "tags": []
+      },
+      {
+        "name": "dashCustom",
+        "group": "Stroke and paint",
+        "tags": []
+      },
+      {
+        "name": "paintSolid",
+        "group": "Stroke and paint",
+        "tags": []
+      },
+      {
+        "name": "paintLinear",
+        "group": "Stroke and paint",
+        "tags": []
+      },
+      {
+        "name": "paintRadial",
+        "group": "Stroke and paint",
+        "tags": []
+      },
+      {
+        "name": "paintConic",
+        "group": "Stroke and paint",
+        "tags": []
+      },
+      {
+        "name": "paintMesh",
+        "group": "Stroke and paint",
+        "tags": []
+      },
+      {
+        "name": "paintPattern",
+        "group": "Stroke and paint",
+        "tags": []
+      },
+      {
+        "name": "paintNone",
+        "group": "Stroke and paint",
+        "tags": []
       }
     ]
   },
@@ -541,78 +731,8 @@
         "tags": []
       },
       {
-        "name": "bold",
-        "group": "Character styling",
-        "tags": []
-      },
-      {
-        "name": "italic",
-        "group": "Character styling",
-        "tags": []
-      },
-      {
-        "name": "underline",
-        "group": "Character styling",
-        "tags": []
-      },
-      {
-        "name": "strikethrough",
-        "group": "Character styling",
-        "tags": []
-      },
-      {
-        "name": "overline",
-        "group": "Character styling",
-        "tags": []
-      },
-      {
-        "name": "superscript",
-        "group": "Character styling",
-        "tags": []
-      },
-      {
-        "name": "subscript",
-        "group": "Character styling",
-        "tags": []
-      },
-      {
         "name": "code",
         "group": "Character styling",
-        "tags": []
-      },
-      {
-        "name": "textAlignLeft",
-        "group": "Paragraph alignment",
-        "tags": []
-      },
-      {
-        "name": "textAlignCenter",
-        "group": "Paragraph alignment",
-        "tags": []
-      },
-      {
-        "name": "textAlignRight",
-        "group": "Paragraph alignment",
-        "tags": []
-      },
-      {
-        "name": "textAlignJustify",
-        "group": "Paragraph alignment",
-        "tags": []
-      },
-      {
-        "name": "textAlignTop",
-        "group": "Paragraph alignment",
-        "tags": []
-      },
-      {
-        "name": "textAlignMiddle",
-        "group": "Paragraph alignment",
-        "tags": []
-      },
-      {
-        "name": "textAlignBottom",
-        "group": "Paragraph alignment",
         "tags": []
       },
       {
@@ -1238,126 +1358,6 @@
       {
         "name": "more",
         "group": "Instrument",
-        "tags": []
-      },
-      {
-        "name": "strokeWidth",
-        "group": "Stroke cap, join, align and dash",
-        "tags": []
-      },
-      {
-        "name": "strokeCap",
-        "group": "Stroke cap, join, align and dash",
-        "tags": []
-      },
-      {
-        "name": "strokeJoin",
-        "group": "Stroke cap, join, align and dash",
-        "tags": []
-      },
-      {
-        "name": "strokeAlign",
-        "group": "Stroke cap, join, align and dash",
-        "tags": []
-      },
-      {
-        "name": "capButt",
-        "group": "Stroke cap, join, align and dash",
-        "tags": []
-      },
-      {
-        "name": "capRound",
-        "group": "Stroke cap, join, align and dash",
-        "tags": []
-      },
-      {
-        "name": "capSquare",
-        "group": "Stroke cap, join, align and dash",
-        "tags": []
-      },
-      {
-        "name": "joinMiter",
-        "group": "Stroke cap, join, align and dash",
-        "tags": []
-      },
-      {
-        "name": "joinRound",
-        "group": "Stroke cap, join, align and dash",
-        "tags": []
-      },
-      {
-        "name": "joinBevel",
-        "group": "Stroke cap, join, align and dash",
-        "tags": []
-      },
-      {
-        "name": "alignInner",
-        "group": "Stroke cap, join, align and dash",
-        "tags": []
-      },
-      {
-        "name": "alignCenter",
-        "group": "Stroke cap, join, align and dash",
-        "tags": []
-      },
-      {
-        "name": "alignOuter",
-        "group": "Stroke cap, join, align and dash",
-        "tags": []
-      },
-      {
-        "name": "dashSolid",
-        "group": "Stroke cap, join, align and dash",
-        "tags": []
-      },
-      {
-        "name": "dashDashed",
-        "group": "Stroke cap, join, align and dash",
-        "tags": []
-      },
-      {
-        "name": "dashDotted",
-        "group": "Stroke cap, join, align and dash",
-        "tags": []
-      },
-      {
-        "name": "dashCustom",
-        "group": "Stroke cap, join, align and dash",
-        "tags": []
-      },
-      {
-        "name": "paintSolid",
-        "group": "Stroke cap, join, align and dash",
-        "tags": []
-      },
-      {
-        "name": "paintLinear",
-        "group": "Stroke cap, join, align and dash",
-        "tags": []
-      },
-      {
-        "name": "paintRadial",
-        "group": "Stroke cap, join, align and dash",
-        "tags": []
-      },
-      {
-        "name": "paintConic",
-        "group": "Stroke cap, join, align and dash",
-        "tags": []
-      },
-      {
-        "name": "paintMesh",
-        "group": "Stroke cap, join, align and dash",
-        "tags": []
-      },
-      {
-        "name": "paintPattern",
-        "group": "Stroke cap, join, align and dash",
-        "tags": []
-      },
-      {
-        "name": "paintNone",
-        "group": "Stroke cap, join, align and dash",
         "tags": []
       },
       {

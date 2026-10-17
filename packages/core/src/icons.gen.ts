@@ -70,7 +70,45 @@ export type CoreIconName =
   | 'averageAnchors'
   | 'bendSegment'
   | 'createOutlines'
-  | 'outlineStroke';
+  | 'outlineStroke'
+  | 'bold'
+  | 'italic'
+  | 'underline'
+  | 'strikethrough'
+  | 'overline'
+  | 'superscript'
+  | 'subscript'
+  | 'textAlignLeft'
+  | 'textAlignCenter'
+  | 'textAlignRight'
+  | 'textAlignJustify'
+  | 'textAlignTop'
+  | 'textAlignMiddle'
+  | 'textAlignBottom'
+  | 'strokeWidth'
+  | 'strokeCap'
+  | 'strokeJoin'
+  | 'strokeAlign'
+  | 'capButt'
+  | 'capRound'
+  | 'capSquare'
+  | 'joinMiter'
+  | 'joinRound'
+  | 'joinBevel'
+  | 'alignInner'
+  | 'alignCenter'
+  | 'alignOuter'
+  | 'dashSolid'
+  | 'dashDashed'
+  | 'dashDotted'
+  | 'dashCustom'
+  | 'paintSolid'
+  | 'paintLinear'
+  | 'paintRadial'
+  | 'paintConic'
+  | 'paintMesh'
+  | 'paintPattern'
+  | 'paintNone';
 
 /** This package's `icon()`: a bare name means `core:<name>`. */
 export const icon = scopedIcon<CoreIconName>('core');
@@ -188,6 +226,59 @@ export const ICON_GROUPS: readonly { label: string; names: readonly CoreIconName
       "createOutlines",
       "outlineStroke"
     ]
+  },
+  {
+    "label": "Character styling",
+    "names": [
+      "bold",
+      "italic",
+      "underline",
+      "strikethrough",
+      "overline",
+      "superscript",
+      "subscript"
+    ]
+  },
+  {
+    "label": "Paragraph alignment",
+    "names": [
+      "textAlignLeft",
+      "textAlignCenter",
+      "textAlignRight",
+      "textAlignJustify",
+      "textAlignTop",
+      "textAlignMiddle",
+      "textAlignBottom"
+    ]
+  },
+  {
+    "label": "Stroke and paint",
+    "names": [
+      "strokeWidth",
+      "strokeCap",
+      "strokeJoin",
+      "strokeAlign",
+      "capButt",
+      "capRound",
+      "capSquare",
+      "joinMiter",
+      "joinRound",
+      "joinBevel",
+      "alignInner",
+      "alignCenter",
+      "alignOuter",
+      "dashSolid",
+      "dashDashed",
+      "dashDotted",
+      "dashCustom",
+      "paintSolid",
+      "paintLinear",
+      "paintRadial",
+      "paintConic",
+      "paintMesh",
+      "paintPattern",
+      "paintNone"
+    ]
   }
 ];
 
@@ -260,5 +351,43 @@ declare module '@weasel-js/icons' {
     'core:bendSegment': true;
     'core:createOutlines': true;
     'core:outlineStroke': true;
+    'core:bold': true;
+    'core:italic': true;
+    'core:underline': true;
+    'core:strikethrough': true;
+    'core:overline': true;
+    'core:superscript': true;
+    'core:subscript': true;
+    'core:textAlignLeft': true;
+    'core:textAlignCenter': true;
+    'core:textAlignRight': true;
+    'core:textAlignJustify': true;
+    'core:textAlignTop': true;
+    'core:textAlignMiddle': true;
+    'core:textAlignBottom': true;
+    'core:strokeWidth': true;
+    'core:strokeCap': true;
+    'core:strokeJoin': true;
+    'core:strokeAlign': true;
+    'core:capButt': true;
+    'core:capRound': true;
+    'core:capSquare': true;
+    'core:joinMiter': true;
+    'core:joinRound': true;
+    'core:joinBevel': true;
+    'core:alignInner': true;
+    'core:alignCenter': true;
+    'core:alignOuter': true;
+    'core:dashSolid': true;
+    'core:dashDashed': true;
+    'core:dashDotted': true;
+    'core:dashCustom': true;
+    'core:paintSolid': true;
+    'core:paintLinear': true;
+    'core:paintRadial': true;
+    'core:paintConic': true;
+    'core:paintMesh': true;
+    'core:paintPattern': true;
+    'core:paintNone': true;
   }
 }

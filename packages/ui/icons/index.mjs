@@ -7,7 +7,6 @@ import { SIZE } from './size.mjs';
 import { ACTIONS } from './actions.mjs';
 import { INSTRUMENT, PLAYBACK, STATUS } from './state.mjs';
 import { PAGING } from './paging.mjs';
-import { PAINT } from './paint.mjs';
 import { LAYOUT } from './layout.mjs';
 import { FORM } from './form.mjs';
 import { REPO } from './repo.mjs';
@@ -15,7 +14,7 @@ import { ARCS } from './arcs.mjs';
 import { CURVES } from './curves.mjs';
 import { SHAPES } from './shapes.mjs';
 import { SOLIDS } from './solids.mjs';
-import { PARAGRAPH, TEXT } from './text.mjs';
+import { TEXT } from './text.mjs';
 import { STATUSES } from './status.mjs';
 import { VARIANTS } from './variants.mjs';
 import { MARKS } from './marks.mjs';
@@ -32,7 +31,6 @@ export const groups = [
   ['View and lifecycle', BASE],
   ['Actions', ACTIONS],
   ['Character styling', TEXT],
-  ['Paragraph alignment', PARAGRAPH],
   ['Playback', PLAYBACK],
   ['Paging', PAGING],
   ['Arrows', ARROWS],
@@ -46,7 +44,6 @@ export const groups = [
   ['Badge status', STATUSES],
   ['Component variants', VARIANTS],
   ['Instrument', INSTRUMENT],
-  ['Stroke cap, join, align and dash', PAINT],
   ['Workspace layout', LAYOUT],
   ['Settings form', FORM],
   ['Repository views', REPO],
