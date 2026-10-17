@@ -24,13 +24,13 @@ const big: IconTable = {
   icons: Object.fromEntries(Array.from({ length: 240 }, (_, i) => [`g${i}`, { body: '<path d="M3 3h14v14H3z"/>', group: `Set ${i % 4}`, tags: [] }])),
 };
 
-const mount = async () => {
+const mount = async (onChange: (next: PrefGroup) => void = () => {}) => {
   await page.viewport(1300, 720);
   const loader = vi.fn(async () => ({ default: [big] }));
   const out = render(
     <IconRegistryProvider icons={[coreIcons, uiIcons]} variants={{ all: loader }}>
       <div style={{ width: 1280, height: 700 }}>
-        <PrefSchemaEditor schema={SCHEMA} onChange={() => {}} />
+        <PrefSchemaEditor schema={SCHEMA} onChange={onChange} />
       </div>
     </IconRegistryProvider>,
   );
@@ -54,13 +54,19 @@ test('a cell draws a glyph with a box', async () => {
 });
 
 test('ArrowDown moves to the cell in the next row, and Enter chooses it', async () => {
-  const { grid } = await mount();
+  const onChange = vi.fn<(next: PrefGroup) => void>();
+  const { grid } = await mount(onChange);
   grid.focus();
   const first = grid.querySelector('[role="option"]')!.getBoundingClientRect();
   fireEvent.keyDown(grid, { key: 'ArrowDown' });
+  const active = () => document.getElementById(grid.getAttribute('aria-activedescendant')!)!;
   await waitFor(() => {
-    const active = document.getElementById(grid.getAttribute('aria-activedescendant')!)!.getBoundingClientRect();
-    expect(active.top).toBeGreaterThan(first.top);
-    expect(Math.abs(active.left - first.left)).toBeLessThan(1);
+    expect(active().getBoundingClientRect().top).toBeGreaterThan(first.top);
+    expect(Math.abs(active().getBoundingClientRect().left - first.left)).toBeLessThan(1);
   });
+  const chosen = active().getAttribute('aria-label');
+  fireEvent.keyDown(grid, { key: 'Enter' });
+  await waitFor(() => expect(onChange).toHaveBeenCalled());
+  const view = onChange.mock.lastCall![0].children.view as PrefGroup;
+  expect(view.children.grid).toMatchObject({ icon: chosen });
 });
