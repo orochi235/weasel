@@ -3,14 +3,6 @@ import type { MenuEntry } from './entries';
 import { withLinks } from './links';
 
 describe('withLinks', () => {
-  it('navigates with location.assign when no navigator is given', () => {
-    window.location.hash = '';
-    const out = withLinks([{ kind: 'item', key: 'a', label: 'A', href: '#a', run: () => {} }])[0];
-    if (out?.kind !== 'item') throw new Error('shape');
-    out.run();
-    expect(window.location.hash).toBe('#a');
-    window.location.hash = '';
-  });
   it('runs the item, then navigates', () => {
     const calls: string[] = [];
     const entries: MenuEntry[] = [

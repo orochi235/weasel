@@ -72,7 +72,7 @@ export function OpenPanels({ open, close, takeFocus = true, labelledBy, inside, 
   // Built where it is disposed, so StrictMode's rerun of this effect gets a live one.
   useLayoutEffect(() => {
     const c = createMenuController({
-      entries: withLinks(open.entries),
+      entries: withLinks(open.entries, (href) => window.location.assign(href)),
       highlightFirst: open.source === 'keyboard',
       onClose: close,
       onEdge: (dir) => edge.current?.(dir),
