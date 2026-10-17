@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type CSSProperties, type PointerEvent, type ReactNode, type RefObject } from 'react';
 import { asNodeId, createScene, type NodeRoutingEntry, type Scene } from '@weasel-js/core';
 import { isPrefSection, prefAliasTarget, prefLeafAt, prefSectionLeaves, prefValueAtPath, type PrefAlias, type PrefGroup, type PrefSection } from '@weasel-js/prefs';
+import { BarMenu } from '../Bar/BarMenu';
 import { DragGhost } from '../DragGhost';
 import { PrefsDialog, PrefsForm, type PrefDrop, type PrefRenderer, type PrefSelectHow } from '../Prefs';
 import { ResizeHandle } from '../ResizeHandle';
@@ -57,11 +58,23 @@ export function PreviewPane({ schema, renderers, propertyRenderers, selected, on
     );
   }
   if (isPrefSection(schema)) return <SectionPreview schema={schema} renderers={propertyRenderers} selected={selected ?? NO_SELECTION} onSelect={onSelect} onDefaults={onDefaults} over={over} />;
+  if (schema.as === 'menu') return <MenuPreview schema={schema} over={over} />;
   if (schema.as === 'bar') return <BarPreview schema={schema} renderers={renderers} selected={selected ?? NO_SELECTION} onSelect={onSelect} onDefaults={onDefaults} stageRef={stageRef} drop={drop} onStagePointerDown={onStagePointerDown} ghost={ghost} over={over} />;
   return <GroupPreview schema={schema} renderers={renderers} selected={selected ?? NO_SELECTION} onSelect={onSelect} onDefaults={onDefaults} stageRef={stageRef} drop={drop} onStagePointerDown={onStagePointerDown} ghost={ghost} pageless={pageless} over={over} />;
 }
 
-/** A root drawn as a bar: the toolbar itself on a stage, run either way. */
+/** A root drawn as a menu: its button, with the menu open. */
+function MenuPreview({ schema, over }: { schema: PrefGroup; over?: SchemaRoot }) {
+  return (
+    <section className={`${s.pane} ${s.previewPane}`} aria-label="Live preview">
+      <PaneHeader title="Live preview" />
+      <div className={s.previewStage}>
+        <BarMenu key={JSON.stringify(schema)} label={schema.name || 'Menu'} schema={schema} values={() => undefined} defaultOpen {...(over && 'children' in over ? { over } : {})} />
+      </div>
+    </section>
+  );
+}
+
 /** `how` with its range named as the editor names nodes, less any path that names none. */
 function rangeIn(how: PrefSelectHow, treePath: (path: string) => string | null | undefined): PrefSelectHow {
   return how.range ? { ...how, range: how.range.flatMap((path) => treePath(path) ?? []) } : how;

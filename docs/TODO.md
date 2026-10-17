@@ -844,12 +844,9 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 ## Selection, actions & UI panels
 
-- **(P2) Menus as layout assets, and a menu bar built from them.** Half built. Landed 2026-10-16: a
-  menu is a prefs group drawn `as: 'menu'`, `MenuDef` is a `when` around one, and
-  `resolveSchemaMenu` serves context menus and a bar's menu groups alike. Left: the menu bar itself
-  (a layout asset whose root is a bar of menu groups, with its keys), access letters,
-  `MenuHost.open` anchored to a rect, `MenuButton` onto the context-menu renderer, `useCommand`,
-  and the asset editor's remaining `menu` cases
+- **(P2) Menus as layout assets, and a menu bar built from them.** Half built. Left: the menu bar
+  itself (a layout asset whose root is a bar of menu groups, with its keys), access letters,
+  `MenuButton` onto the context-menu renderer, then WeaselDraw's and labkit's menu bars
   (`docs/superpowers/specs/2026-10-16-menus-as-layout-assets-design.md`).
 
 - **(P2) A bar can lead with an icon, not only its label.** `lead: 'label'` landed 2026-10-16
@@ -869,6 +866,25 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   native `contextmenu` event to the focused canvas, which would reopen it at that event's point.
   Headless Playwright sends no such event, so this is unverified. Check on a real Windows or
   Linux Chrome; if it reproduces, the likely fix is for the keydown to suppress the native event.
+
+- **(P3) Four private deep-equals each answer a slightly different question.** `sameValue` in
+  routing's `interactions/actions/useCommand.ts` compares any non-null object key by key;
+  `sameValue` in ui's `PrefSchemaEditor/attrAggregate.ts` goes by `toString` tag, so it holds
+  across realms and treats a class instance by identity; `sameValue` in ui's
+  `SelectionPanel/model.ts` reads a key holding `undefined` as absent; `deepEqual` in text's
+  `runs/rangeStyle.ts` takes only plain objects and arrays. Give them one home below routing —
+  `@weasel-js/registry` beside `isPlainObject`, or `@weasel-js/react` beside `sameList` — with the
+  undefined-as-absent reading as an option, and have all four call it.
+
+- **(P3) An empty menu asset previews as a bare button with nothing to say why.** `MenuPreview`
+  opens the menu on mount, but a menu with no rows resolves to nothing and stays shut, so a new
+  menu asset — the first thing anyone sees after making one — shows a lone button. Say in the
+  preview that the menu is empty and how to give it rows.
+
+- **(P4) A `BarMenu` that opened itself can pull focus out of another menu when it closes.** Its
+  `close` gives focus to its button only when focus is inside a menu, but it checks with
+  `closest('[role="menu"]')`, which matches any menu on the page. Scope the check to this menu's
+  own panel ids.
 
 - **(P4) A headless-component layer shared by DOM and WebGL chrome.** The context-menu model
   splits state, keyboard and placement from drawing so one menu renders in both. Generalize that

@@ -1,3 +1,4 @@
+import { isPrefLeaf, isPrefSection } from '@weasel-js/prefs';
 import type { SchemaRoot } from './schemaEdit';
 
 interface AssetBase {
@@ -36,12 +37,22 @@ export type ShownAsset = SchemaAsset | LayoutAsset;
 export type Asset = ShownAsset | ActionsAsset;
 
 /** What the asset list files an asset under. */
-export type AssetHeading = 'Dialogs' | 'Panels' | 'Toolbars';
+export type AssetHeading = 'Dialogs' | 'Panels' | 'Toolbars' | 'Menus';
 
-/** Where the list files `asset`: a dialog, a layout whose root is drawn as a bar, or any other layout. */
+/**
+ * Where the list files `asset`: a dialog; a layout drawn as a menu, or as a bar of nothing but menus, which is a
+ * menu bar; a layout drawn as any other bar; or any other layout.
+ */
 export function headingOf(asset: ShownAsset): AssetHeading {
   if (asset.kind === 'schema') return 'Dialogs';
-  return 'as' in asset.root && asset.root.as === 'bar' ? 'Toolbars' : 'Panels';
+  const root = asset.root;
+  if (!('as' in root)) return 'Panels';
+  if (root.as === 'menu') return 'Menus';
+  if (root.as !== 'bar') return 'Panels';
+  if (isPrefSection(root)) return 'Toolbars';
+  const kids = Object.values(root.children);
+  const menus = kids.length > 0 && kids.every((kid) => !isPrefLeaf(kid) && !isPrefSection(kid) && kid.as === 'menu');
+  return menus ? 'Menus' : 'Toolbars';
 }
 
 /** An asset some other editor holds, listed beside this one's to be picked. The host shows it, in whatever holds it. */

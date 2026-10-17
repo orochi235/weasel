@@ -14,7 +14,7 @@ export interface MenuWidgetOptions {
   open: OpenMenu;
   /** The menu is done: an item was chosen, or it was dismissed. */
   close(): void;
-  /** Viewport point to canvas CSS pixels, for `open.client`. */
+  /** Viewport point to canvas CSS pixels, for `open.client` and `open.under`. */
   toCanvas(client: XY): XY;
   canvasSize(): { width: number; height: number };
   /** Width of a label in the family the hud draws with. Defaults to the
@@ -22,6 +22,12 @@ export interface MenuWidgetOptions {
   measure?(text: string, fontSize: number, fontFamily: string): number;
   metrics?: MenuMetrics;
   onChange(): void;
+}
+
+function underOnCanvas(r: Rect, toCanvas: (client: XY) => XY): Rect {
+  const a = toCanvas({ x: r.x, y: r.y });
+  const b = toCanvas({ x: r.x + r.w, y: r.y + r.h });
+  return { x: a.x, y: a.y, w: b.x - a.x, h: b.y - a.y };
 }
 
 /** A widget that draws `open` as one panel per open level, driven by a menu controller it owns. */
@@ -32,7 +38,9 @@ export function createMenuWidget(opts: MenuWidgetOptions): Widget {
     entries: opts.open.entries, highlightFirst: opts.open.source === 'keyboard', onClose: opts.close,
   });
   const place = createPlacer({
-    anchor: opts.toCanvas(opts.open.client), canvasSize: opts.canvasSize,
+    anchor: opts.toCanvas(opts.open.client),
+    ...(opts.open.under ? { under: underOnCanvas(opts.open.under, opts.toCanvas) } : {}),
+    canvasSize: opts.canvasSize,
     measure: opts.measure ?? measureLabel, metrics: m,
   });
   // The hud's font is known only once it draws.
@@ -40,7 +48,7 @@ export function createMenuWidget(opts: MenuWidgetOptions): Widget {
   let panels: Rect[] = place(c, family);
   let disposed = false;
   let armed = false;
-  let under: number | null = null;
+  let hoverPanel: number | null = null;
   c.subscribe(() => { panels = place(c, family); rev.changed(); });
 
   /** The topmost panel under (x, y), or -1. */
@@ -63,8 +71,8 @@ export function createMenuWidget(opts: MenuWidgetOptions): Widget {
   /** The pointer is now over `level` (null: no panel). Leaving a panel clears
    *  its row, as the DOM menu's per-panel `pointerleave` does. */
   const enter = (level: number | null) => {
-    if (under !== null && under !== level) c.hover(under, null);
-    under = level;
+    if (hoverPanel !== null && hoverPanel !== level) c.hover(hoverPanel, null);
+    hoverPanel = level;
   };
 
   const pointer = (evt: HudPointerEvent) => {

@@ -1,6 +1,6 @@
 import { useLayoutEffect, useRef, type KeyboardEvent } from 'react';
 import type { MenuController, MenuEntry, Rect } from '@weasel-js/menu';
-import { placeMenu, placeSubmenu } from '@weasel-js/menu';
+import { placeMenu, placeMenuUnder, placeSubmenu } from '@weasel-js/menu';
 import { MenuRow } from './MenuRow';
 import s from './ContextMenu.module.css';
 
@@ -10,7 +10,7 @@ export function MenuPanel(props: {
   highlight: number | null; childOpen: boolean; idBase: string;
   /** The row a submenu hangs from. */
   labelledBy?: string;
-  anchor: { x: number; y: number } | null;
+  anchor: { client: { x: number; y: number }; under?: Rect } | null;
   parentRow: () => Rect | null;
   focus: boolean;
   register(el: HTMLElement | null): void;
@@ -24,7 +24,9 @@ export function MenuPanel(props: {
     const size = { w: el.offsetWidth, h: el.offsetHeight };
     const bounds = { x: 0, y: 0, w: window.innerWidth, h: window.innerHeight };
     const row = parentRow();
-    const at = row ? placeSubmenu(size, row, bounds) : placeMenu(size, anchor ?? { x: 0, y: 0 }, bounds);
+    const at = row ? placeSubmenu(size, row, bounds)
+      : anchor?.under ? placeMenuUnder(size, anchor.under, bounds)
+        : placeMenu(size, anchor?.client ?? { x: 0, y: 0 }, bounds);
     el.style.left = `${at.x}px`;
     el.style.top = `${at.y}px`;
     c.setPanel(level, { x: at.x, y: at.y, w: size.w, h: size.h });

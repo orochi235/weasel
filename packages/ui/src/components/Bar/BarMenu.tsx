@@ -29,6 +29,8 @@ export interface BarMenuProps extends BarMenuSources {
   label: string;
   /** The menu, as a schema `resolveSchemaMenu` walks: resolved each time it opens, so it shows what holds then. */
   schema: PrefGroup;
+  /** Open, as from a pointer, once on mount, leaving focus where it is. */
+  defaultOpen?: boolean;
 }
 
 /**
@@ -36,10 +38,13 @@ export interface BarMenuProps extends BarMenuSources {
  * as the DOM menu the context menu host draws — actions as items, flags as
  * checked items, choices as radio rows, nested groups as submenus.
  */
-export function BarMenu({ label, schema, values, onChange, over }: BarMenuProps) {
+export function BarMenu({ label, schema, values, onChange, over, defaultOpen }: BarMenuProps) {
   const registry = useActionsRegistry();
   const depReg = useOptionalDepRegistry();
   const [open, setOpen] = useState<OpenMenu | null>(null);
+  // Opened by `defaultOpen`: it takes focus only once the reader moves focus into it.
+  const [quiet, setQuiet] = useState(false);
+  const quietNow = useRef(false);
   const button = useRef<HTMLButtonElement>(null);
   const isOpen = useLatest(open !== null);
   // A press on the button closes an open menu, and its click must not reopen it. The menu's dismiss listener has
@@ -55,12 +60,15 @@ export function BarMenu({ label, schema, values, onChange, over }: BarMenuProps)
   const { anchor, container, ready } = useOverlayPortal();
   const target = container ?? (typeof document !== 'undefined' ? document.body : null);
 
+  // `defaultOpen` holds until the menu has opened once or the reader has touched it.
+  const pending = useRef(defaultOpen === true);
   const close = useCallback(() => {
+    pending.current = false;
     setOpen(null);
-    button.current?.focus();
+    if (!quietNow.current || document.activeElement?.closest('[role="menu"]')) button.current?.focus();
   }, []);
 
-  const show = (source: OpenMenu['source']): void => {
+  const show = (source: OpenMenu['source'], silent = false): boolean => {
     const entries = resolveSchemaMenu(schema, {
       actions: () => registry?.list() ?? [],
       depsFor: (action) => (depReg ? buildDepsFromRequires(action, depReg) : undefined),
@@ -69,10 +77,25 @@ export function BarMenu({ label, schema, values, onChange, over }: BarMenuProps)
       ...(onChange ? { onChange } : {}),
       ...(over ? { over } : {}),
     });
-    if (entries.length === 0) return;
+    if (entries.length === 0) return false;
     const rect = button.current!.getBoundingClientRect();
-    setOpen((prev) => ({ seq: (prev?.seq ?? 0) + 1, entries, client: { x: rect.left, y: rect.bottom }, source }));
+    const under = { x: rect.left, y: rect.top, w: rect.width, h: rect.height };
+    setOpen((prev) => ({ seq: (prev?.seq ?? 0) + 1, entries, client: { x: rect.left, y: rect.bottom }, under, source }));
+    quietNow.current = silent;
+    setQuiet(silent);
+    return true;
   };
+  const showNow = useLatest(show);
+
+  // An action registered after this mounts can be what makes the menu non-empty, so a shut default retries on each change.
+  useEffect(() => {
+    if (!pending.current) return;
+    const attempt = () => {
+      if (pending.current && showNow.current('pointer', true)) pending.current = false;
+    };
+    attempt();
+    return registry?.subscribe(attempt);
+  }, [registry, showNow]);
 
   return (
     <>
@@ -84,6 +107,7 @@ export function BarMenu({ label, schema, values, onChange, over }: BarMenuProps)
         aria-haspopup="menu"
         aria-expanded={open !== null}
         onClick={(e) => {
+          pending.current = false;
           if (wasOpen.current) {
             wasOpen.current = false;
             return;
@@ -95,7 +119,7 @@ export function BarMenu({ label, schema, values, onChange, over }: BarMenuProps)
         <span>{label}</span>
         <Caret className={s.caret} />
       </button>
-      {open && ready && target && createPortal(<OpenPanels key={open.seq} open={open} close={close} />, target)}
+      {open && ready && target && createPortal(<OpenPanels key={open.seq} open={open} close={close} takeFocus={!quiet} />, target)}
     </>
   );
 }
