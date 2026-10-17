@@ -1,9 +1,10 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, expectTypeOf, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { ActionsProvider, useActionsRegistry } from './ActionsProvider';
 import { actionItems } from './actionItems';
 import { evaluateActive, evaluateEnabled } from './actionEnabled';
+import type { ActionVariant } from './action';
 import { useCommand, type CommandOptions } from './useCommand';
 
 function wrap({ children }: { children: ReactNode }) {
@@ -120,5 +121,14 @@ describe('useCommand', () => {
     expect(registry.list().some((a) => a.id === 'cmd.a')).toBe(false);
     expect(registry.trigger('cmd.a')).toBe(false);
     expect(run).not.toHaveBeenCalled();
+  });
+});
+
+describe('CommandOptions.variants', () => {
+  it('takes ActionVariants, tags included', () => {
+    expectTypeOf<CommandOptions['variants']>().toEqualTypeOf<readonly ActionVariant[] | undefined>();
+    const tagged: ActionVariant = { key: 'a4', label: 'A4', tags: ['paper'], params: { size: 'a4' } };
+    const options: CommandOptions = { variants: [tagged] };
+    expect(options.variants).toHaveLength(1);
   });
 });

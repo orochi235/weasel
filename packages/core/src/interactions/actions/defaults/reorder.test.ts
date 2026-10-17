@@ -74,8 +74,8 @@ describe('reorderForwardAction (descriptor)', () => {
     expect(reorderForwardAction.id).toBe('reorder.forward');
   });
 
-  it('label is "Bring Forward"', () => {
-    expect(reorderForwardAction.label).toBe('Bring Forward');
+  it('label is "Bring"', () => {
+    expect(reorderForwardAction.label).toBe('Bring');
   });
 
   it('declares three parametric defaultBinding entries', () => {
@@ -196,8 +196,8 @@ describe('reorderBackwardAction (descriptor)', () => {
     expect(reorderBackwardAction.id).toBe('reorder.backward');
   });
 
-  it('label is "Send Backward"', () => {
-    expect(reorderBackwardAction.label).toBe('Send Backward');
+  it('label is "Send"', () => {
+    expect(reorderBackwardAction.label).toBe('Send');
   });
 
   it('declares three parametric defaultBinding entries', () => {

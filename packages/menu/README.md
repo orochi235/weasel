@@ -20,7 +20,7 @@ npm install @weasel-js/menu
 |---|---|
 | `@weasel-js/menu` | The model: entries, `createMenuController`, `placeMenu` / `placeSubmenu`. |
 | `@weasel-js/routing` | Declared menus (`MenuDef`: a prefs schema drawn as a menu, by `resolveSchemaMenu`) and `MenuHost`, which holds the open menu. |
-| `@weasel-js/core` | The `menu.context` action, which opens a menu from a right-click or the ContextMenu key; re-exports `useMenus`. |
+| `@weasel-js/core` | The public `menu.context` action (`contextMenuAction`, `openContextMenu`), which opens a menu from a right-click or the ContextMenu key, with or without a scene; re-exports `useMenus`. |
 | `@weasel-js/ui` | `<ContextMenuHost>`, the DOM renderer, and `useContextMenu` for opening a menu from chrome; `<MenuBar>`, a bar of menu groups across the top of an app; `<MenuButton>`. |
 | `@weasel-js/hud` | `attachMenuHost`, the WebGL renderer. |
 
@@ -46,8 +46,7 @@ These are not visible in the code; each was a choice between alternatives.
   the variant (`viewport.zoom:in`).
 - An enum draws as radio rows between separators, not as a submenu. Menus sharing an id append
   their children in order with a separator between (a later duplicate key gets `~n`).
-- `useCommand` names only untagged types (`CommandOptions`, `CommandVariant`). Promoting the
-  `@experimental` action types it mirrors is the owner's call.
+- `useCommand`'s `variants` are `ActionVariant`s, so a command's variants carry `tags` like any action's.
 - labkit's trials stay separate action roots. The lab's own dispatcher still hears only its own
   node (`hears: 'own'`), as a guard in case trials ever nest. Lab-wide globals are values, drawn
   as enum rows, not commands.

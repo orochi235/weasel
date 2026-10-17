@@ -61,7 +61,7 @@ function reorderSelection(
  */
 export const reorderForwardAction: Action & { requires: string[] } = {
   id: 'reorder.forward',
-  label: 'Bring Forward',
+  label: 'Bring',
   group: 'reorder',
   variants: [
     { key: 'adjacent', label: 'Bring Forward', icon: createElement(BringForwardIcon), params: { distance: 'adjacent' } },
@@ -118,7 +118,7 @@ export const reorderForwardAction: Action & { requires: string[] } = {
  */
 export const reorderBackwardAction: Action & { requires: string[] } = {
   id: 'reorder.backward',
-  label: 'Send Backward',
+  label: 'Send',
   group: 'reorder',
   variants: [
     { key: 'adjacent', label: 'Send Backward', icon: createElement(SendBackwardIcon), params: { distance: 'adjacent' } },

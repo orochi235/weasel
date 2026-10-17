@@ -103,6 +103,26 @@ describe('a lab’s context menus', () => {
     expect(screen.queryByRole('menu')).toBeNull();
   });
 
+  it('opens a menu declared for empty canvas from neither the mouse nor the keys', async () => {
+    const empty: readonly MenuDef[] = [
+      { id: 'empty', when: { bodyTarget: 'empty' }, menu: MENUS[0]?.menu as never },
+    ];
+    const { container } = await mount({ contextMenus: empty });
+    const host = stages(container)[0] as HTMLElement;
+    await act(async () => {
+      fireEvent.contextMenu(host, { clientX: 10, clientY: 10 });
+    });
+    expect(screen.queryByRole('menu')).toBeNull();
+    await act(async () => {
+      fireEvent.pointerDown(host, { button: 0, pointerId: 1, clientX: 5, clientY: 5 });
+      fireEvent.pointerUp(host, { button: 0, pointerId: 1, clientX: 5, clientY: 5 });
+    });
+    await act(async () => {
+      fireEvent.keyDown(host, { key: 'F10', shiftKey: true });
+    });
+    expect(screen.queryByRole('menu')).toBeNull();
+  });
+
   it.each([
     ['Shift+F10', { key: 'F10', shiftKey: true }],
     ['the ContextMenu key', { key: 'ContextMenu' }],
