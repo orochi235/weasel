@@ -76,3 +76,14 @@ it('switches to another title’s menu when the pointer moves onto it', async ()
   await userEvent.hover(screen.getByRole('menuitem', { name: 'Edit' }));
   expect(rows()).toEqual(['Undo']);
 });
+
+it('names a title by its whole label when it underlines an access letter', () => {
+  const schema = pref.group('', { file: pref.group('File', { new: pref.action('file.new') }, { as: 'menu', access: 'f' }) });
+  render(
+    <ActionsProvider>
+      {ACTIONS.map((a) => <Register key={a.id} action={a} />)}
+      <MenuBar schema={schema} />
+    </ActionsProvider>,
+  );
+  expect(page.getByRole('menuitem', { name: 'File', exact: true }).elements()).toHaveLength(1);
+});
