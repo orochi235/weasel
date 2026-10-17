@@ -572,11 +572,6 @@ How the registry and the build plugin work is in `docs/icons.md`.
   `packages/icons-plugin/src/tables.ts` is meant for the plugin's own test fixtures, but it also
   hides a consumer app's `fixtures/` directory, whose table then appears in dev only once one of
   its modules has been transformed. Skip the plugin's fixture path, not the name.
-- **(P3) `WeaselProvider` remounts its whole tree when `icons` or `iconVariants` comes or goes.**
-  It wraps the tree in `IconRegistryProvider` when either is set and in
-  `IconRegistryProviderIfRoot` otherwise (`packages/core/src/WeaselProvider.tsx`), so the element
-  type above the tree changes. Keep one wrapper that decides inside whether to mount a registry.
-
 - **(P3) The build plugin never forgets refs or tables between watch builds.** `refs` and `tables`
   in `packages/icons-plugin/src/index.ts` live for the plugin's lifetime, so under `vite build
   --watch` a name deleted from the source still ships, and one deleted from both the source and its
