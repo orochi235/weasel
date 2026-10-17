@@ -23,16 +23,17 @@ Priority tags:
   moving, Alt-hover distance readouts between the selection and the shape under the pointer) go in
   as part of a pass over every guide and snap at once, not alone. The pieces today don't share a
   pipeline: `@weasel-js/guides` has ruler guides, alignment guides, and equal-spacing snaps
-  (`packages/guides/src/guides/alignment/spacing.ts`), and only equal spacing is wired into draw, by
-  `apps/draw/src/useSpacingHints.ts` behind the Spacing hints preference; the select
+  (`packages/guides/src/guides/alignment/spacing.ts`), and only spacing hints reach draw, as
+  `createSpacingHintsPreset` (`packages/guides/src/spacingHints/`) behind the Spacing hints
+  preference; the select
   tool's move snaps only through `gridSnapStrategy`, so it ignores measurement ends; path snapping
   just landed with its own `snapPoint` ranking (`packages/core/src/features/paths/pathSnap/`); and
   the tolerances are fixed constants (`DEFAULT_GUIDE_TOLERANCE_PX`). The arc settles one snap
   pipeline every gesture uses — which targets compete, how ties are ranked, how a modifier
   suspends them mid-gesture — and one readout layer for gaps, distances, and guide labels. The
-  `spacing-hints` branch has landed as source material for it: an Alt-hover distance readout
-  (`distanceReadout.ts`), a hover dispatched when a modifier changes, and draw's move snapping to
-  equal sibling spacing, each still on its own path. The P3 "Moving a shape does not snap to measurement ends" folds into it.
+  spacing hints preset is source material for it: an Alt-hover distance readout drawn on its own
+  overlay, and a move snapping to equal sibling spacing with a marks layer of its own, neither
+  sharing a pipeline with the rest. The P3 "Moving a shape does not snap to measurement ends" folds into it.
 
 - **(P2) `features` names two things.** The `<SceneCanvas features>` prop composes behavior presets
   (`canvas/SceneCanvas/features.ts`); `packages/core/src/features/<name>/` is a source directory
