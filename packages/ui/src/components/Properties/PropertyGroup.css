@@ -38,7 +38,8 @@
 }
 
 .groupPairs .groupBody > h3,
-.groupPairs .groupBody > .span {
+.groupPairs .groupBody > .span,
+.groupPairs .groupBody > .subpanel {
   grid-column: 1 / -1;
 }
 
