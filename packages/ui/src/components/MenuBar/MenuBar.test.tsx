@@ -63,8 +63,8 @@ describe('MenuBar', () => {
     const { file, edit } = setup();
     expect(screen.getByRole('menubar', { name: 'Menu bar' })).toBeDefined();
     expect(file.parentElement).toBe(screen.getByRole('menubar'));
-    expect(file.querySelector('span')?.textContent).toBe('F');
-    expect(edit.querySelector('span')).toBeNull();
+    expect(file.querySelector('span span')?.textContent).toBe('F');
+    expect(edit.querySelector('span span')).toBeNull();
     expect(file.getAttribute('aria-haspopup')).toBe('menu');
     expect([file.tabIndex, edit.tabIndex]).toEqual([0, -1]);
   });

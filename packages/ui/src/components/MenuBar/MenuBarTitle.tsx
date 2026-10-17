@@ -35,8 +35,7 @@ export function MenuBarTitle(props: {
       onClick={(e) => { if (e.detail === 0) props.onActivate(); }}
       onKeyDown={props.onKey}
     >
-      {/* The flex title would make the underlined letter a block of its own, named apart from the rest: "F ile". */}
-      <span><AccessLabel label={props.name} access={props.access} /></span>
+      <AccessLabel label={props.name} access={props.access} />
     </button>
   );
 }
