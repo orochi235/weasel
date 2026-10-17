@@ -1427,6 +1427,9 @@ only story runner in the repo.
     only file on an idle teitou on 2026-10-16 it failed 5 of 10 on `main` (`9741e1af3`), the pan
     coming back 1.7 or 5.2 px short in y, so load is not the cause. Unverified guess: the test
     keeps the tile's first non-null view, before the tile's height settles.
+  - **`labkit/src/lab/Lab.messages.test.tsx` ("starts an ended run over on play") failed once** in
+    the fleet run of `main` at `e167efc7c` (2026-10-16), and passed 13 of 13 run alone on orochi.
+    One sighting, nothing changed near it; cause not looked into.
   - `forge/src/vite/plugin.test.ts` has its own entry under "Demos & visual regression".
 
 - **(P2) HUD vs DOM text: what the idle rerun left open.** `tests/perf/hud-vs-dom.spec.ts` prices
