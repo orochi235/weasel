@@ -164,6 +164,36 @@ describe('BarAction', () => {
   });
 });
 
+/** Enter keyboard modality, then focus: React Aria opens a tooltip only on focus-visible. */
+function keyboardFocus(el: HTMLElement) {
+  fireEvent.keyDown(document.body, { key: 'Tab' });
+  act(() => el.focus());
+}
+
+describe('BarAction tooltip', () => {
+  it('reads the leaf’s description, with the shortcut after it', () => {
+    render(<BarActionButton label="Save" description="Save as SVG" shortcut="Ctrl+S" onPress={() => {}} />);
+    keyboardFocus(screen.getByRole('button', { name: 'Save' }));
+    expect(screen.getByRole('tooltip').textContent).toBe('Save as SVG (Ctrl+S)');
+  });
+
+  it('reads the label and shortcut where there is no description', () => {
+    render(<BarActionButton label="Save" shortcut="Ctrl+S" onPress={() => {}} />);
+    keyboardFocus(screen.getByRole('button', { name: 'Save' }));
+    expect(screen.getByRole('tooltip').textContent).toBe('Save (Ctrl+S)');
+  });
+
+  it('takes the description from an action leaf', () => {
+    render(
+      <Host actions={[action('file.save')]}>
+        <BarAction leaf={leaf({ name: 'Save', action: 'file.save', description: 'Save as SVG' })} path="save" />
+      </Host>,
+    );
+    keyboardFocus(screen.getByRole('button', { name: 'Save' }));
+    expect(screen.getByRole('tooltip').textContent).toBe('Save as SVG');
+  });
+});
+
 describe('PrefActionButton', () => {
   it('fires a registered action by key from a row, under the leaf’s name', () => {
     const run = vi.fn();

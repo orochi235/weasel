@@ -17,36 +17,24 @@ value held once per option of an enum leaf, folded by weight when read, and edit
 `prefsCss` writes such a store as CSS custom properties, and `pref` builds a schema in short
 form. The arc after them is a P2 entry in `docs/TODO.md`: a theme's tokens as a prefs schema.
 
-## In flight: menus and a menu bar
+## Menus: done
 
-The design is `docs/superpowers/specs/2026-10-16-menus-as-layout-assets-design.md`; its "Landed"
-section is what is built, and its "Order" section lists the arcs left. The owner asked for all of
-them to be carried through: for each arc, write a plan (writing-plans), run it subagent-driven
-(he chose that over native), and merge to `main` once its fleet run is green. Run `git log
---oneline origin/main..main` to see what is unpushed; nothing is pushed without his word.
+All of the menus design has landed: `MenuBar` with access letters, `MenuButton` on the menu
+renderer, WeaselDraw's menu bar and file actions, and labkit's lab-wide registry, menu bar and
+context menus. The decisions that are not visible in the code are in
+`packages/menu/README.md` ("Decisions"); what is left is filed in `docs/TODO.md` (search
+"menu bar", "parametric", "labkit context menus"). Nothing here is pushed.
 
-Decisions from the conversation that the design doc does not carry:
+How subagent work ran, for the next arc run this way:
 
-- The menu bar is new surface. Nothing moves out of the component that owns it — not a trial's
-  title bar, not draw's palettes — and no question should invite that.
-- labkit's per-trial commands stay on the trial windows; the lab's menu bar holds what the lab
-  header holds plus what a lab declares at lab level.
-- Access letters are supported, never required.
-- `ActionDisabledReason`'s const is `@experimental`; whether to promote it is the owner's call.
-  `useCommand` names only the untagged type.
-
-MenuBar, access letters and `MenuButton` on the menu renderer have landed. What is left is WeaselDraw's menu bar, then labkit's (spec "Order").
-
-How subagent work ran here, and what bit:
-
-- Subagents inherit the session's worktree lock: an agent cannot enter any worktree but the one
-  this session is in. For parallel tasks, dispatch with `isolation: "worktree"`, and expect an
-  agent resumed with `SendMessage` to land back in the session's worktree.
-- Parallel fleet runs collide on one node (`onto` keeps one tree per repo per node): pin each
-  worktree's runs with `npm run test:fleet -- HEAD --node <name>` — teitou, studio, msb-uai,
-  keiei; orochi is this Mac.
-- `scripts/review-package` in the SDD skill is refused under the worktree lock; build the diff
-  file with plain `git log`/`git diff` redirects.
+- Run the controller from outside a worktree (`ExitWorktree` first). A session inside one locks
+  every subagent to it, and the SDD skill's helper scripts are refused there; outside, each
+  implementer works in its arc's worktree by absolute path.
+- Targeted tests run on a node, never here: `onto do --node <name> --ref origin/main -- npx
+  vitest run --project=<p> <path>`. `npm run check:test-projects` maps directories to projects.
+- `onto` keeps one tree per repository per node, so give each parallel arc its own node (teitou,
+  studio, msb-uai, keiei; orochi is this Mac), and keep a full `npm run test:fleet` off a node an
+  arc is testing on: they queue behind each other, and a timing-budget test run alongside fails.
 
 ## Next
 

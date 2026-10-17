@@ -4,6 +4,17 @@ import { useLatest, useStableByContent } from '@weasel-js/react';
 import type { Action, ActionDisabledReason } from './action';
 import { useAction } from './ActionsProvider';
 
+/** One entry a parametric command contributes to a bar, menu or palette. */
+export interface CommandVariant {
+  /** Unique within the command; joined to its id to make the entry's key. */
+  key: string;
+  label: string;
+  /** Falls back to the command's own `icon`. */
+  icon?: ReactNode | (() => ReactNode);
+  /** What `run` receives when this entry is chosen. */
+  params: Readonly<Record<string, unknown>>;
+}
+
 /** What a command offers besides its id, label and callback. */
 export interface CommandOptions {
   /** True when the command can run, else why not. Read each time it is asked. */
@@ -16,6 +27,8 @@ export interface CommandOptions {
   icon?: ReactNode | (() => ReactNode);
   /** Words a palette finds it by and a tagged bar or menu gathers it under. */
   tags?: readonly string[];
+  /** One entry each in a bar, menu or palette; `run` receives the chosen one's params. */
+  variants?: readonly CommandVariant[];
 }
 
 /**
@@ -23,12 +36,18 @@ export interface CommandOptions {
  * for the calling component's lifetime, so a menu, toolbar, palette or key
  * can run it. Callbacks and option functions may be new on every render: the
  * latest are read when used, and the action is replaced only when `id`,
- * `label`, `keys` or `tags` change by value.
+ * `label`, `keys`, `tags` or `variants` change by value.
  */
-export function useCommand(id: string, label: string, run: () => void, options?: CommandOptions): void {
+export function useCommand(
+  id: string,
+  label: string,
+  run: (params?: Readonly<Record<string, unknown>>) => void,
+  options?: CommandOptions,
+): void {
   const latest = useLatest({ run, options });
   const keys = useStableByContent(options?.keys, sameValue);
   const tags = useStableByContent(options?.tags, sameValue);
+  const variants = useStableByContent(options?.variants, sameValue);
   const hasEnabled = options?.enabled !== undefined;
   const hasActive = options?.active !== undefined;
   const hasIcon = options?.icon !== undefined;
@@ -37,10 +56,11 @@ export function useCommand(id: string, label: string, run: () => void, options?:
     const a: Action = {
       id,
       label,
-      invoker: { timing: 'immediate', run: () => latest.current.run() },
+      invoker: { timing: 'immediate', run: (_deps, params) => latest.current.run(params) },
     };
     if (keys !== undefined) a.defaultBinding = Array.isArray(keys) ? [...keys] : (keys as GestureSpec);
     if (tags !== undefined) a.tags = tags;
+    if (variants !== undefined) a.variants = variants;
     if (hasEnabled) a.enabled = () => read()?.enabled?.() ?? true;
     if (hasActive) a.active = () => read()?.active?.() ?? false;
     if (hasIcon) {
@@ -50,7 +70,7 @@ export function useCommand(id: string, label: string, run: () => void, options?:
       };
     }
     return a;
-  }, [id, label, keys, tags, hasEnabled, hasActive, hasIcon, latest]);
+  }, [id, label, keys, tags, variants, hasEnabled, hasActive, hasIcon, latest]);
   useAction(action);
 }
 

@@ -122,6 +122,11 @@ export function makeViewportZoomAction(
     id: 'viewport.zoom',
     label: 'Zoom',
     group: 'viewport',
+    variants: [
+      { key: 'in', label: 'Zoom In', params: { kind: 'in' } },
+      { key: 'out', label: 'Zoom Out', params: { kind: 'out' } },
+      { key: 'reset', label: 'Reset Zoom', params: { kind: 'reset' } },
+    ],
     defaultBinding: zoomBindings(opts.wheel),
     requires: ['view', 'debug'],
     invoker: {

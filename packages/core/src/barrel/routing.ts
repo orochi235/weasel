@@ -6,7 +6,7 @@
 
 // --- Commands ----------------------------------------------------------------
 export { useCommand } from '@weasel-js/routing/react';
-export type { CommandOptions } from '@weasel-js/routing/react';
+export type { CommandOptions, CommandVariant } from '@weasel-js/routing/react';
 
 // --- @experimental Actions Registry (2026-05-09) ----------------------------
 export { ActionsProvider, InputScope, useYoke, Yoke, useActionsRegistry, useAction, useOngoingAction } from '@weasel-js/routing/react';

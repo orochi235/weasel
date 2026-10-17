@@ -10,6 +10,7 @@ import type { PrefGroup } from '@weasel-js/prefs';
 import type { MenuEntry } from '@weasel-js/menu';
 import { Caret } from '../Caret';
 import { useMenuTrigger } from '../ContextMenu/useMenuTrigger';
+import { SegmentTooltip, segmentTooltipContent } from '../segmentTooltip';
 import f from '../field.module.css';
 import s from './Bar.module.css';
 
@@ -25,6 +26,8 @@ export interface BarMenuSources {
 export interface BarMenuProps extends BarMenuSources {
   /** What the button reads, and what names the menu. */
   label: string;
+  /** The button's tooltip. */
+  description?: string;
   /** The menu, as a schema `resolveSchemaMenu` walks: resolved each time it opens, so it shows what holds then. */
   schema: PrefGroup;
   /** Open, as from a pointer, once on mount, leaving focus where it is. */
@@ -36,7 +39,7 @@ export interface BarMenuProps extends BarMenuSources {
  * as the DOM menu the context menu host draws — actions as items, flags as
  * checked items, choices as radio rows, nested groups as submenus.
  */
-export function BarMenu({ label, schema, values, onChange, over, defaultOpen }: BarMenuProps) {
+export function BarMenu({ label, description, schema, values, onChange, over, defaultOpen }: BarMenuProps) {
   const registry = useActionsRegistry();
   const resolveMenu = useBarMenuResolver();
   const trigger = useMenuTrigger();
@@ -60,22 +63,24 @@ export function BarMenu({ label, schema, values, onChange, over, defaultOpen }: 
   return (
     <>
       {trigger.anchor}
-      <button
-        ref={trigger.button}
-        id={trigger.id}
-        type="button"
-        className={`${f.frame} ${s.popTrigger}`}
-        aria-haspopup="menu"
-        aria-expanded={trigger.open}
-        onPointerDown={trigger.press}
-        onClick={(e) => {
-          pending.current = false;
-          trigger.click(e, resolve);
-        }}
-      >
-        <span>{label}</span>
-        <Caret className={s.caret} />
-      </button>
+      <SegmentTooltip content={segmentTooltipContent({ description })}>
+        <button
+          ref={trigger.button}
+          id={trigger.id}
+          type="button"
+          className={`${f.frame} ${s.popTrigger}`}
+          aria-haspopup="menu"
+          aria-expanded={trigger.open}
+          onPointerDown={trigger.press}
+          onClick={(e) => {
+            pending.current = false;
+            trigger.click(e, resolve);
+          }}
+        >
+          <span>{label}</span>
+          <Caret className={s.caret} />
+        </button>
+      </SegmentTooltip>
       {trigger.portal}
     </>
   );

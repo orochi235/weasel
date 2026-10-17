@@ -144,7 +144,7 @@ export function BarLayout(props: BarLayoutProps) {
         continue;
       }
       if (node.kind === 'menu') {
-        const menu = <BarMenu label={node.name} schema={barMenuRoot(node.group, node.path)} {...node.sources} />;
+        const menu = <BarMenu label={node.name} description={node.group.description} schema={barMenuRoot(node.group, node.path)} {...node.sources} />;
         items.push({ path: node.path, leaf: false, content: menu });
         continue;
       }
