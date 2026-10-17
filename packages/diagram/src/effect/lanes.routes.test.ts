@@ -5,6 +5,7 @@ import { diagramScene, type DiagramSpec } from '../fromData';
 import { uniqueStages } from './draw';
 import { SAMPLES } from './lab/samples';
 import { lanes } from './lanes';
+import { TRACK_GAP } from './lanesRoutes';
 import { io, w } from './skipFixture';
 import type { EffectPipeline } from './types';
 
@@ -50,7 +51,7 @@ function load(p: EffectPipeline) {
     const path = derivedDepOf(scene as never, id as never)!.path! as { coords: Float32Array };
     return Array.from({ length: path.coords.length / 2 }, (_, i) => ({ x: path.coords[2 * i]!, y: path.coords[2 * i + 1]! }));
   };
-  return { specs, pose, route };
+  return { drawn, specs, pose, route };
 }
 
 /** Whether segment `a`–`b` passes inside `box` shrunk by `inset`. */
@@ -71,6 +72,7 @@ function crosses(a: Pt, b: Pt, box: Box, inset = 0.5): boolean {
   }
   return true;
 }
+const inside = (a: Box, b: Box) => a.x >= b.x - 1e-6 && a.y >= b.y - 1e-6 && a.x + a.width <= b.x + b.width + 1e-6 && a.y + a.height <= b.y + b.height + 1e-6;
 const overlap = (a: Box, b: Box) => a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
 
 const CASES: Record<string, EffectPipeline> = { past: PAST, loop: LOOP, ...SAMPLES };
@@ -82,6 +84,7 @@ describe('lanes wires', () => {
       const { specs, pose, route } = load(p);
       const stages = [...new Set(p.stages.map((s) => s.id))];
       const ownedBy = (t: DiagramSpec, id: string) => t.parent === id || String(t.id).startsWith(`${id}/mark:`);
+      const inkOf = (id: string) => specs.filter((t) => t.id === id || ownedBy(t, id)).map((t) => pose(t.id as string));
       const titles = uniqueStages(p).map((s) => {
         const t = specs.find((x) => ownedBy(x, s.id) && (x.data as { text?: string }).text === s.title);
         expect(t, `${name}: ${s.id}'s title`).toBeDefined();
@@ -94,10 +97,13 @@ describe('lanes wires', () => {
         const [from, to] = edge.dependsOn as unknown as string[];
         const points = route(edge.id as string);
         for (const id of stages) {
-          if (id === from || id === to) continue;
+          // Its own two stages' boxes it meets at its ports; what they draw outside them it keeps off.
+          const own = id === from || id === to;
           const box = pose(id);
-          const hit = points.slice(1).some((b, i) => crosses(points[i]!, b, box));
-          expect(hit, `${name}: ${edge.id as string} crosses ${id}`).toBe(false);
+          for (const ink of inkOf(id).filter((b) => !own || !inside(b, box))) {
+            const hit = points.slice(1).some((b, i) => crosses(points[i]!, b, ink));
+            expect(hit, `${name}: ${edge.id as string} crosses ${id} at ${JSON.stringify(ink)}`).toBe(false);
+          }
         }
         const label = specs.find((s) => s.id === `${edge.id as string}/label`);
         if (label === undefined) continue;
@@ -105,5 +111,47 @@ describe('lanes wires', () => {
       }
     });
   }
+  for (const [name, p] of Object.entries(CASES)) {
+    it(`run along a shared corridor no closer than TRACK_GAP: ${name}`, () => {
+      const { specs, route } = load(p);
+      const edges = specs.filter((s) => (s.data as { diagram?: { from?: unknown } }).diagram?.from !== undefined);
+      // The level runs of each wire away from its own two ports: those it takes along a corridor.
+      const runs = edges.flatMap((edge) => {
+        const points = route(edge.id as string);
+        const ends = [points[0]!.y, points[points.length - 1]!.y];
+        return points.slice(1).flatMap((b, i) => {
+          const a = points[i]!;
+          const level = Math.abs(a.y - b.y) < 1e-3 && Math.abs(a.x - b.x) > 1 && ends.every((y) => Math.abs(y - a.y) > 1e-3);
+          return level ? [{ edge: edge.id as string, y: a.y, lo: Math.min(a.x, b.x), hi: Math.max(a.x, b.x) }] : [];
+        });
+      });
+      for (const [i, a] of runs.entries()) {
+        for (const b of runs.slice(i + 1)) {
+          if (a.edge === b.edge || Math.min(a.hi, b.hi) - Math.max(a.lo, b.lo) <= 1) continue;
+          expect(Math.abs(a.y - b.y), `${name}: ${a.edge} and ${b.edge} at ${a.y}, ${b.y}`).toBeGreaterThanOrEqual(TRACK_GAP - 1e-3);
+        }
+      }
+    });
+
+    it(`keeps what each stage draws inside the lanes and off every other stage: ${name}`, () => {
+      const { drawn, specs, pose } = load(p);
+      const bands = drawn.data.nodes.filter((n) => n.id.startsWith('~lane:')).map((n) => pose(n.id));
+      const top = Math.min(...bands.map((b) => b.y));
+      const bottom = Math.max(...bands.map((b) => b.y + b.height));
+      const ids = uniqueStages(p).map((s) => s.id);
+      const inkOf = (id: string) => specs.filter((t) => t.id === id || t.parent === id || String(t.id).startsWith(`${id}/mark:`))
+        .map((t) => pose(t.id as string));
+      for (const id of ids) {
+        for (const b of inkOf(id)) expect(b.y >= top - 1e-6 && b.y + b.height <= bottom + 1e-6, `${name}: ${id} ${JSON.stringify(b)}`).toBe(true);
+      }
+      for (const [i, a] of ids.entries()) {
+        for (const b of ids.slice(i + 1)) {
+          const hit = inkOf(a).some((x) => inkOf(b).some((y) => overlap(x, y)));
+          expect(hit, `${name}: ${a} ${b}`).toBe(false);
+        }
+      }
+    });
+  }
+
   it('had labels to check', () => expect(labeled).toBeGreaterThan(5));
 });

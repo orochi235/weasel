@@ -1,10 +1,16 @@
-/** Routes for the `lanes` look: each wire kept clear of the stages it passes,
- *  and its label set where it covers no stage. */
+/** Routes for the `lanes` look: each wire kept clear of what the stages it
+ *  passes draw, each wire sharing a corridor on a track of its own, and each
+ *  label set where it covers no stage. */
 import { pointAlongPath, type Path } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
+import type { MeasureRowText } from '../body';
+import { SIDE_TRACK_GAP } from '../chainRoutes';
 import { EDGE_DERIVE_PATH } from '../edge';
-import type { DiagramRouter, DiagramSpec } from '../fromData';
+import {
+  diagramScene, edgeIdOf, LABEL_PLACEMENT, type DataEdge, type DataNode, type DiagramRouter, type DiagramSpec, type EdgeStyle,
+} from '../fromData';
 import { labelCenter } from '../label';
+import { portSitesOf } from '../ports';
 
 export type Box = { x: number; y: number; width: number; height: number };
 
@@ -26,6 +32,10 @@ export interface LaneEnd {
   normal: Vec2 | null;
 }
 
+/** Between two wires sharing a corridor, and between a corridor's outer
+ *  wires and the stages beside it: `chain`'s spacing for its side tracks. */
+export const TRACK_GAP = SIDE_TRACK_GAP;
+
 /** How far a wire keeps from anything a stage draws. */
 const CLEAR = 3;
 
@@ -33,43 +43,109 @@ const CLEAR = 3;
 const covers = (boxes: readonly Box[], y: number, to = y): boolean =>
   boxes.some((b) => b.y - CLEAR < Math.max(y, to) && Math.min(y, to) < b.y + b.height + CLEAR);
 
-/** The height nearest `near` at which a wire runs clear through every one of
- *  `columns`: a lane edge, or past the top or bottom of everything drawn. */
+/** A height a wire runs at through a column: its own, or a corridor along the lane edge numbered `edge`. */
+type Level = number | { edge: number };
+
+/** A wire's way from end to end: the height it runs at through each column it crosses, in order. */
+export interface Course {
+  from: LaneEnd;
+  to: LaneEnd;
+  legs: readonly { column: number; at: Level }[];
+  /** It runs right to left, turning past each end. */
+  back: boolean;
+}
+
+/** The lane `y` lies in, by its edges. */
+const laneAt = (grid: LaneGrid, y: number): number => Math.max(0, grid.edges.filter((e) => e <= y).length - 1);
+
+/** The lane edge nearest the lane of `near`, by lanes, along which a wire
+ *  runs clear through every one of `columns`. Counted in lanes, not units,
+ *  so the choice holds while the corridors widen to fit their tracks. */
 function corridor(grid: LaneGrid, columns: readonly number[], near: number): number {
   const ink = columns.flatMap((c) => grid.ink[c] ?? []);
-  const top = Math.min(grid.edges[0] ?? 0, ...ink.map((b) => b.y)) - 2 * CLEAR;
-  const bottom = Math.max(grid.edges[grid.edges.length - 1] ?? 0, ...ink.map((b) => b.y + b.height)) + 2 * CLEAR;
-  const clear = [...grid.edges, top, bottom].filter((y) => !covers(ink, y));
-  return clear.reduce((best, y) => (Math.abs(y - near) < Math.abs(best - near) ? y : best));
+  const middle = laneAt(grid, near) + 0.5;
+  const clear = grid.edges.flatMap((y, k) => (covers(ink, y) ? [] : [k]));
+  return clear.reduce((best, k) => (Math.abs(k - middle) < Math.abs(best - middle) ? k : best), clear[0] ?? 0);
 }
 
 /** The columns from `a` to `b`, `a` and `b` included, in that order. */
 const between = (a: number, b: number): number[] =>
   Array.from({ length: Math.abs(b - a) + 1 }, (_, i) => a + Math.sign(b - a) * i);
 
-/** Each column's height for a wire running forward from `from` to `to`: its
- *  own lane where that is clear, and around what stands there where not, one
- *  corridor for each stretch of columns in its way. Null when nothing between
- *  the two ends is in the way at all. */
-function levels(grid: LaneGrid, from: LaneEnd, to: LaneEnd): number[] | null {
+/** How a wire from `from` to `to` runs past the stages between them, or
+ *  undefined when its own route already clears them. Running forward it keeps
+ *  its own height through each column where that is clear and takes a
+ *  corridor through each stretch of columns where it is not; running back it
+ *  takes one corridor clear of every column it spans, its own two included. */
+export function laneCourse(grid: LaneGrid, from: LaneEnd, to: LaneEnd): Course | undefined {
+  if (from.column >= to.column) {
+    const columns = between(from.column, to.column);
+    const edge = corridor(grid, columns, from.point.y);
+    return { from, to, back: true, legs: columns.map((column) => ({ column, at: { edge } })) };
+  }
   const columns = Array.from({ length: to.column - from.column - 1 }, (_, i) => from.column + 1 + i);
-  const inWay = (c: number) => covers(grid.ink[c] ?? [], from.point.y, to.point.y);
-  const first = columns.findIndex(inWay);
-  if (first < 0) return null;
+  const blocked = (c: number, y: number, until = y) => covers(grid.ink[c] ?? [], y, until);
+  const first = columns.findIndex((c) => blocked(c, from.point.y, to.point.y));
+  if (first < 0) return undefined;
   const want = columns.map((_, i) => (i < first ? from.point.y : to.point.y));
-  const out = want.slice();
+  const legs: { column: number; at: Level }[] = columns.map((column, i) => ({ column, at: want[i]! }));
   for (let i = 0; i < columns.length;) {
-    if (!covers(grid.ink[columns[i]!] ?? [], want[i]!)) {
+    let j = i;
+    while (j < columns.length && blocked(columns[j]!, want[j]!)) j++;
+    if (j === i) {
       i++;
       continue;
     }
-    let j = i;
-    while (j < columns.length && covers(grid.ink[columns[j]!] ?? [], want[j]!)) j++;
-    const y = corridor(grid, columns.slice(i, j), want[i]!);
-    for (let k = i; k < j; k++) out[k] = y;
+    const edge = corridor(grid, columns.slice(i, j), want[i]!);
+    for (let k = i; k < j; k++) legs[k] = { column: columns[k]!, at: { edge } };
     i = j;
   }
-  return out;
+  return { from, to, back: false, legs };
+}
+
+/** A stretch of one course along one corridor: the columns it runs through, and the track it takes. */
+interface Stretch {
+  edge: number;
+  lo: number;
+  hi: number;
+  track: number;
+}
+
+/** Each course's corridor stretches, each given a track: the first free on
+ *  its corridor, where two stretches over or beside the same columns are
+ *  never on the same one. Answers how many tracks each corridor holds. */
+function assignTracks(courses: readonly (Course | undefined)[]): { stretches: Stretch[][]; tracks: Map<number, number> } {
+  const stretches = courses.map((course) => {
+    const out: Stretch[] = [];
+    for (const { column, at } of course?.legs ?? []) {
+      if (typeof at === 'number') continue;
+      const last = out[out.length - 1];
+      if (last !== undefined && last.edge === at.edge && Math.abs(column - (course!.back ? last.lo : last.hi)) === 1) {
+        if (course!.back) last.lo = column;
+        else last.hi = column;
+      } else out.push({ edge: at.edge, lo: column, hi: column, track: 0 });
+    }
+    return out;
+  });
+  const ends = new Map<number, number[]>();
+  for (const s of stretches.flat().sort((a, b) => a.lo - b.lo || a.hi - b.hi)) {
+    const taken = ends.get(s.edge) ?? [];
+    const free = taken.findIndex((end) => end + 1 < s.lo);
+    s.track = free < 0 ? taken.length : free;
+    taken[s.track] = s.hi;
+    ends.set(s.edge, taken);
+  }
+  return { stretches, tracks: new Map([...ends].map(([edge, taken]) => [edge, taken.length])) };
+}
+
+/** The height of track `j` of `n` along lane edge `k`: spread about an inner
+ *  edge, and inward from the chart's top and bottom. */
+function trackY(grid: LaneGrid, k: number, j: number, n: number): number {
+  const last = grid.edges.length - 1;
+  const y = grid.edges[k]!;
+  if (k === 0) return y + j * TRACK_GAP;
+  if (k === last) return y - j * TRACK_GAP;
+  return y + (j - (n - 1) / 2) * TRACK_GAP;
 }
 
 /** Points in order, a point level with the two either side of it dropped. */
@@ -81,25 +157,19 @@ function straightened(points: readonly Vec2[]): Vec2[] {
   });
 }
 
-/** The waypoints a wire runs through to stay clear of every stage but its
- *  own two, or none when the straight route already does. A wire running
- *  forward holds a level run through each column it crosses and changes
- *  height only in the gaps between; one running back turns in the gap past
- *  each end and runs back along one corridor clear of every column it spans. */
-export function laneWaypoints(grid: LaneGrid, from: LaneEnd, to: LaneEnd): Vec2[] | undefined {
+/** The waypoints a course runs through, given the height of each column it
+ *  crosses. Forward, a level run through each column and a change of height
+ *  only in the gaps between; back, one run turning in the gap past each end. */
+function waypointsOf(grid: LaneGrid, course: Course, ys: readonly number[]): Vec2[] {
+  const { from, to } = course;
   const edge = (c: number, side: 0 | 1) => grid.columns[c]![side];
-  if (from.column >= to.column) {
-    const y = corridor(grid, between(from.column, to.column), from.point.y);
-    return [{ x: edge(from.column, 1), y }, { x: edge(to.column, 0), y }];
-  }
-  const ys = levels(grid, from, to);
-  if (ys === null) return undefined;
+  if (course.back) return [{ x: edge(from.column, 1), y: ys[0]! }, { x: edge(to.column, 0), y: ys[0]! }];
   const points: Vec2[] = [];
   // A port short of its column's edge runs level out to it before turning,
   // past whatever else the column holds.
   const out = edge(from.column, 1);
   if (from.normal?.x === 1 && from.point.x < out - 1) points.push({ x: (from.point.x + out) / 2, y: from.point.y }, { x: out, y: from.point.y });
-  ys.forEach((y, i) => points.push({ x: edge(from.column + 1 + i, 0), y }, { x: edge(from.column + 1 + i, 1), y }));
+  course.legs.forEach(({ column }, i) => points.push({ x: edge(column, 0), y: ys[i]! }, { x: edge(column, 1), y: ys[i]! }));
   const into = edge(to.column, 0);
   if (to.normal?.x === -1 && to.point.x > into + 1) points.push({ x: into, y: to.point.y }, { x: (to.point.x + into) / 2, y: to.point.y });
   return straightened(points);
@@ -134,4 +204,55 @@ export function clearLabel(
     }
   }
   return undefined;
+}
+
+/** What a node draws: its box, and each of its rows and marks, some of which sit outside it. */
+export const inkOf = (id: string, specs: readonly DiagramSpec[]): Box[] =>
+  specs.filter((s) => s.id === id || s.parent === id || String(s.id).startsWith(`${id}/mark:`)).map((s) => s.pose as Box);
+
+/** What `routeWires` reads of the laid-out chart. */
+export interface Laid {
+  grid: Omit<LaneGrid, 'ink'>;
+  column: ReadonlyMap<string, number>;
+  router: DiagramRouter;
+  measure: MeasureRowText | undefined;
+}
+
+/** Each wire's edge, given the waypoints that keep it clear of the stages it
+ *  passes and, when it is labeled, a place for its label that covers none;
+ *  and how many tracks each lane edge's corridor needs. */
+export function routeWires(
+  wires: readonly { edge: DataEdge; style: EdgeStyle }[], nodes: readonly DataNode[], laid: Laid,
+): { edges: { edge: DataEdge; style: EdgeStyle }[]; tracks: ReadonlyMap<number, number> } {
+  const specs = diagramScene({ nodes, edges: wires.map((w) => w.edge) }, {
+    layout: 'none', router: laid.router, ...(laid.measure !== undefined ? { measure: laid.measure } : {}),
+  });
+  const spec = new Map(specs.map((s) => [s.id as string, s]));
+  const ink = new Map(nodes.map((n) => [n.id, inkOf(n.id, specs)]));
+  const grid: LaneGrid = { ...laid.grid, ink: laid.grid.columns.map((_, c) => [...ink].flatMap(([id, b]) => (laid.column.get(id) === c ? b : []))) };
+  const end = (stage: string, port: string): LaneEnd => {
+    const s = spec.get(stage)!;
+    const site = portSitesOf({ id: stage, data: s.data } as never, s.pose, port)[0];
+    return { column: laid.column.get(stage)!, point: site?.point ?? { x: 0, y: 0 }, normal: site?.normal ?? null };
+  };
+  const courses = wires.map(({ edge }) => (edge.from === edge.to ? undefined : laneCourse(grid, end(edge.from, edge.fromPort!), end(edge.to, edge.toPort!))));
+  const { stretches, tracks } = assignTracks(courses);
+  const keepOut = [...ink.values()].flat();
+  const edges = wires.map(({ edge, style }, w) => {
+    const course = courses[w];
+    const ys = course?.legs.map(({ column, at }) => {
+      if (typeof at === 'number') return at;
+      const s = stretches[w]!.find((t) => t.edge === at.edge && t.lo <= column && column <= t.hi)!;
+      return trackY(grid, at.edge, s.track, tracks.get(at.edge)!);
+    });
+    const waypoints = course === undefined ? undefined : waypointsOf(grid, course, ys!);
+    const routed: DataEdge = waypoints === undefined ? edge : { ...edge, routed: waypoints };
+    const label = spec.get(`${edgeIdOf(edge)}/label`)?.pose as Box | undefined;
+    const path = label === undefined ? null : routeOf(spec.get(edge.from)!, edge.fromPort!, spec.get(edge.to)!, edge.toPort!, laid.router, waypoints);
+    const clear = path === null || label === undefined ? undefined : clearLabel(path, label, LABEL_PLACEMENT.offset ?? 0, keepOut);
+    if (clear === undefined) return { edge: routed, style };
+    keepOut.push(clear.box);
+    return { edge: { ...routed, labelPlacement: { at: { near: clear.near }, offset: clear.offset } }, style };
+  });
+  return { edges, tracks };
 }
