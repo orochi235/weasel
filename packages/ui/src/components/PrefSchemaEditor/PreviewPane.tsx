@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState, type CSSProperties, type PointerEvent, type ReactNode, type RefObject } from 'react';
 import { asNodeId, createScene, type NodeRoutingEntry, type Scene } from '@weasel-js/core';
 import { isPrefSection, prefAliasTarget, prefLeafAt, prefSectionLeaves, prefValueAtPath, type PrefAlias, type PrefGroup, type PrefSection } from '@weasel-js/prefs';
-import { BarMenu } from '../Bar/BarMenu';
+import { BarMenu, useBarMenuResolver } from '../Bar/BarMenu';
 import { DragGhost } from '../DragGhost';
+import { useRegisteredActions } from '../Prefs/registeredActions';
 import { PrefsDialog, PrefsForm, type PrefDrop, type PrefRenderer, type PrefSelectHow } from '../Prefs';
 import { ResizeHandle } from '../ResizeHandle';
 import { SelectionPanel, setAtPath, type PropertyRenderer } from '../SelectionPanel';
@@ -63,13 +64,24 @@ export function PreviewPane({ schema, renderers, propertyRenderers, selected, on
   return <GroupPreview schema={schema} renderers={renderers} selected={selected ?? NO_SELECTION} onSelect={onSelect} onDefaults={onDefaults} stageRef={stageRef} drop={drop} onStagePointerDown={onStagePointerDown} ghost={ghost} pageless={pageless} over={over} />;
 }
 
-/** A root drawn as a menu: its button, with the menu open. */
+/** A root drawn as a menu: its button, with the menu open, or why it cannot open. */
 function MenuPreview({ schema, over }: { schema: PrefGroup; over?: SchemaRoot }) {
+  const into = over && 'children' in over ? { over } : {};
+  useRegisteredActions();
+  const resolve = useBarMenuResolver();
+  const drawn = resolve(schema, { values: () => undefined, ...into }).length > 0;
   return (
     <section className={`${s.pane} ${s.previewPane}`} aria-label="Live preview">
       <PaneHeader title="Live preview" />
       <div className={s.previewStage}>
-        <BarMenu key={JSON.stringify(schema)} label={schema.name || 'Menu'} schema={schema} values={() => undefined} defaultOpen {...(over && 'children' in over ? { over } : {})} />
+        <BarMenu key={JSON.stringify(schema)} label={schema.name || 'Menu'} schema={schema} values={() => undefined} defaultOpen {...into} />
+        {!drawn && (
+          <p className={s.storedEmpty}>
+            {Object.keys(schema.children).length === 0
+              ? 'This menu is empty. Drag an action from Actions onto it in Structure, or add a pref or a group to it there.'
+              : 'None of this menu’s rows can be drawn: no action they name is registered here.'}
+          </p>
+        )}
       </div>
     </section>
   );

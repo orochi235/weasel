@@ -873,11 +873,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   Headless Playwright sends no such event, so this is unverified. Check on a real Windows or
   Linux Chrome; if it reproduces, the likely fix is for the keydown to suppress the native event.
 
-- **(P3) An empty menu asset previews as a bare button with nothing to say why.** `MenuPreview`
-  opens the menu on mount, but a menu with no rows resolves to nothing and stays shut, so a new
-  menu asset — the first thing anyone sees after making one — shows a lone button. Say in the
-  preview that the menu is empty and how to give it rows.
-
 - **(P3) `useCommand` cannot give a variant its own shortcut.** `keys` takes one `GestureSpec`, not
   `{ spec, opts: { params } }`, so `viewport.zoom:in` can carry a key through `useAction` only.
 
