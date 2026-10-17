@@ -1,7 +1,7 @@
 import type { Action, GestureBinding, ModSpec, NodeId, Scene, SurfaceContribution } from '@weasel-js/core';
-import { createGuidesLayer, type GuidesLayerOpts } from './layer';
-import { measureDistances, type DistanceReadout } from './alignment/distance';
-import { worldBoundsOf, worldUnionOf } from './alignment/sceneBounds';
+import { createGuidesLayer, type GuidesLayerOpts } from '../guides/layer';
+import { measureDistances, type DistanceReadout } from './distance';
+import { worldBoundsOf, worldUnionOf } from '../guides/alignment/sceneBounds';
 
 type Modifier = 'alt' | 'ctrl' | 'meta' | 'shift';
 

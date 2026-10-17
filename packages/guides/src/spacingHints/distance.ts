@@ -1,5 +1,5 @@
 import type { Bounds } from '@weasel-js/core';
-import type { Guide, SpacingGap } from '../types';
+import type { Guide, SpacingGap } from '../guides/types';
 
 type Axis = 'x' | 'y';
 
