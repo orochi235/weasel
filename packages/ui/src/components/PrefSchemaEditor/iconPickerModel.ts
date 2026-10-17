@@ -40,3 +40,16 @@ export function stepIndex(boxes: readonly Box[], from: number, key: string): num
   });
   return best;
 }
+
+/** The index reached by PageUp or PageDown from `from`: as many rows as `height` holds, and at least one, keeping
+ *  to the nearest center. `null` where there is no row to move to, or for any other key. */
+export function pageIndex(boxes: readonly Box[], from: number, key: string, height: number): number | null {
+  const arrow = key === 'PageDown' ? 'ArrowDown' : key === 'PageUp' ? 'ArrowUp' : null;
+  if (arrow === null) return null;
+  let at = from;
+  for (let next = stepIndex(boxes, at, arrow); next !== null; next = stepIndex(boxes, at, arrow)) {
+    if (at !== from && Math.abs(boxes[next]!.top - boxes[from]!.top) > height) break;
+    at = next;
+  }
+  return at === from ? null : at;
+}

@@ -596,12 +596,6 @@ How the registry and the build plugin work is in `docs/icons.md`.
   `stripped()` in `packages/icons-plugin/src/annotate.ts` fails a build whose output holds no
   `@icon` at all. Check each recorded ref instead, so losing some of them fails too.
 
-- **(P3) PrefSchemaEditor's icon picker is missing keyboard and state handling.** `IconAttrField`
-  (`packages/ui/src/components/PrefSchemaEditor/IconAttrField.tsx`) has no Home, End, PageUp or
-  PageDown; a click on a cell moves focus off the listbox, so the arrows stop working; it ignores
-  `ctx.mixed` across a multi-selection; and a value no table holds shows with no mark. Add the
-  keys, keep focus on the listbox, show the mixed state, and mark an unregistered value.
-
 - **(P3) Tests that draw icons mount registries in different ways, or not at all.** Many ui and
   labkit tests render with no registry and print missing-icon warnings. Forge's
   `packages/forge/src/kitIcons.tsx` and ui's `packages/ui/src/testing/withIcons.tsx` each list

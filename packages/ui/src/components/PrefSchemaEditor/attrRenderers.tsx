@@ -7,6 +7,7 @@ import { Select } from '../Select';
 import { NumberText } from './NumberText';
 import { IconAttrField } from './IconAttrField';
 import { UnitEditor } from './UnitAttr';
+import { MIXED_HINT } from './mixedHint';
 import s from './PrefSchemaEditor.module.css';
 
 /** A number that may be unset: empty text clears it, and text that is not a number is left uncommitted. */
@@ -14,8 +15,7 @@ function OptionalNumber({ ctx }: { ctx: PrefRenderContext }) {
   return <NumberText label={ctx.pref.name} value={ctx.mixed ? undefined : (ctx.value as number | undefined)} placeholder={ctx.mixed ? MIXED_HINT : undefined} onCommit={ctx.setValue} />;
 }
 
-/** What a text control shows in place of several values that disagree. */
-export const MIXED_HINT = 'Mixed';
+export { MIXED_HINT };
 
 interface Option { value: string; label: string }
 
@@ -92,7 +92,7 @@ export const ATTR_RENDERERS: Record<'optional-number' | 'enum-options' | 'pair' 
   unit: Object.assign<PrefRenderer, { group: boolean; wide: boolean }>((ctx) => <UnitEditor ctx={ctx} />, { group: true, wide: true }),
   // A search box and a grid of glyphs, which the control column has no room for.
   icon: Object.assign<PrefRenderer, { group: boolean; wide: boolean }>((ctx) => (
-    <IconAttrField value={typeof ctx.value === 'string' ? ctx.value : undefined} onChange={ctx.setValue} />
+    <IconAttrField value={typeof ctx.value === 'string' ? ctx.value : undefined} mixed={ctx.mixed} onChange={ctx.setValue} />
   ), { group: true, wide: true }),
   pair: Object.assign<PrefRenderer, { group: boolean }>((ctx) => <PairEditor ctx={ctx} />, { group: true }),
   'optional-number': (ctx) => <OptionalNumber ctx={ctx} />,
