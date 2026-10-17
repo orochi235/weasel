@@ -63,7 +63,6 @@ These are built, so the code is the reference:
 - An action leaf with only `run` is a dead row that warns in development.
 - Context menus hold actions only: the menu host passes no values, so boolean and enum leaves
   drop out there, while a bar's menu group resolves them through the bar's `values`/`onChange`.
-
 - `placeMenuUnder(size, under, bounds)` in `@weasel-js/menu` hangs a menu under a rect, flips it
   above the rect, and right-aligns it at the right edge. `MenuOpenRequest.under` and
   `OpenMenu.under` carry the rect; the DOM renderer (`MenuPanel`, `ContextMenuHost`) and the WebGL
@@ -76,9 +75,10 @@ These are built, so the code is the reference:
   heading. A menu root holds no pages and previews open: `BarMenu` takes `defaultOpen`, which
   retries as commands register, and `MenuPreview` remounts on edit.
 
-Two builder's calls went differently from the draft: an enum draws as radio rows between
-separators, not a submenu, and contributions sharing a menu id append their children in order
-with a separator between, keeping keys (a later duplicate key gets `~n`), not merge by key.
+Three builder's calls went differently from the draft: an enum draws as radio rows between
+separators, not a submenu; contributions sharing a menu id append their children in order
+with a separator between, keeping keys (a later duplicate key gets `~n`), not merge by key; and
+outside a bar a menu group draws as a panel (`prefAsBox`), not as a button that opens it.
 
 ## Renderer and placement
 
