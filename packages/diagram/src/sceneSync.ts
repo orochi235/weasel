@@ -6,7 +6,7 @@
 import { reconcileSpecs, useLatest, type RectPose, type Scene } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
 import { useEffect, useRef } from 'react';
-import { diagramEdgeOf, samePoints, type EdgeEnd } from './edge';
+import { diagramEdgeOf, samePoints, type EdgeEnd } from './edgeTrait';
 import type { DiagramSceneData, DiagramSpec } from './fromData';
 import type { LayoutPorts } from './layout';
 

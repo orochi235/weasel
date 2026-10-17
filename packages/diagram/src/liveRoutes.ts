@@ -20,7 +20,7 @@ import {
   type Scene,
 } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
-import { diagramEdgeOf, layoutOwnsRoute, type DiagramEdge } from './edge';
+import { diagramEdgeOf, layoutOwnsRoute, type DiagramEdge } from './edgeTrait';
 import type { Graph } from './graph';
 import { routeWrites, type LayoutRoutes } from './routeWrites';
 

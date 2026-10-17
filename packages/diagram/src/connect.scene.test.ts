@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { createScene, type InvocationCtx, type Scene } from '@weasel-js/core';
 import { commitEdgeToScene } from './connect';
-import { DIAGRAM_EDGE, EDGE_DERIVE_PATH, diagramEdgeOf, withDiagramRegistry } from './edge';
+import { DIAGRAM_EDGE, EDGE_DERIVE_PATH, withDiagramRegistry } from './edge';
+import { diagramEdgeOf } from './edgeTrait';
 import type { Port } from './types';
 
 interface Data { diagram?: unknown }

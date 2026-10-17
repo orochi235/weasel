@@ -50,16 +50,15 @@ export {
   EDGE_DERIVE_PATH,
   ROUTERS,
   bezier,
-  diagramEdgeOf,
   edgeDerivePath,
-  layoutOwnsPort,
-  layoutOwnsRoute,
   orthogonal,
   resolveEnd,
   straight,
   withDiagramRegistry,
 } from './edge';
-export type { DiagramEdge, EdgeEnd, EdgeRouteOptions, RouteRequest, Router } from './edge';
+export type { EdgeRouteOptions, RouteRequest, Router } from './edge';
+export { diagramEdgeOf, layoutOwnsPort, layoutOwnsRoute } from './edgeTrait';
+export type { DiagramEdge, EdgeEnd } from './edgeTrait';
 export { selfLoop } from './selfLoop';
 export type { SelfLoop } from './selfLoop';
 export { buildGraph } from './graph';
@@ -73,8 +72,10 @@ export type {
   GraphNodeLike,
   GraphSource,
 } from './graph';
-export { DIAGRAM_LABEL, LABEL_DERIVE_POSE, diagramLabelOf, labelDerivePose } from './label';
-export type { DiagramLabel, LabelPoseOptions } from './label';
+export { DIAGRAM_LABEL, LABEL_DERIVE_POSE, labelDerivePose } from './label';
+export type { LabelPoseOptions } from './label';
+export { diagramLabelOf } from './labelTrait';
+export type { DiagramLabel } from './labelTrait';
 export { DEFAULT_GROUP_INSET, expandGroupEdges, insetOf, packClusters, rankGaps } from './cluster';
 export type { GroupInset } from './cluster';
 export {

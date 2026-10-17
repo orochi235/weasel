@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { bezier } from './edge';
 import { diagramScene, edgeIdOf, type DataEdge, type DiagramData, type DiagramSceneOptions } from './fromData';
-import type { DiagramEdge } from './edge';
+import type { DiagramEdge } from './edgeTrait';
 
 const traitOf = (data: DiagramData, edge: DataEdge, opts?: DiagramSceneOptions): DiagramEdge => {
   const spec = diagramScene(data, opts).find((s) => s.id === edgeIdOf(edge))!;

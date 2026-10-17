@@ -4,7 +4,8 @@ import type { WireLabel } from './dataGroups';
 import { EDGE_DERIVE_PATH } from './edge';
 import type { MeasureRowText } from './body';
 import type { DataEdge, DiagramSceneOptions, DiagramSpec, EdgeStyle } from './fromData';
-import { LABEL_DERIVE_POSE, labelCenter, type DiagramLabel } from './label';
+import { LABEL_DERIVE_POSE, labelCenter } from './label';
+import type { DiagramLabel } from './labelTrait';
 import type { LayeredRoute } from './route';
 
 export interface EdgeSpecContext {

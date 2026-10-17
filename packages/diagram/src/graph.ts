@@ -8,9 +8,9 @@
  */
 import { AUTO_POSE_DESCRIPTOR, type PoseDescriptor, type Vec2 } from '@weasel-js/core/math';
 import { expandGroupEdges, insetOf, type GroupInset } from './cluster';
-import { diagramEdgeOf, layoutOwnsRoute } from './edge';
+import { diagramEdgeOf, layoutOwnsRoute } from './edgeTrait';
 import { nestGroups } from './groupTree';
-import { diagramLabelOf, type DiagramLabel } from './label';
+import { diagramLabelOf, type DiagramLabel } from './labelTrait';
 import type { Bounds, Outline } from './outline';
 import { diagramNodeOf, type DiagramNodeLike, type DiagramNodeReader } from './trait';
 import type { PortSpec } from './types';
