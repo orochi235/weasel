@@ -1,5 +1,5 @@
 import type { View } from 'core/viewport/view';
-import { IS_DEV } from './isDev';
+import { isDev } from '@weasel-js/react';
 
 // ---------------------------------------------------------------------------
 // Dev-only coord trace
@@ -23,7 +23,7 @@ export const COORD_TRACE_LIMIT = 200;
 
 export const coordTrace: CoordTraceEntry[] = [];
 
-export const COORD_DEV: boolean = IS_DEV;
+export const COORD_DEV: boolean = isDev();
 
 if (COORD_DEV && typeof window !== 'undefined') {
   (window as unknown as { __weaselCoordLog__: CoordTraceEntry[] }).__weaselCoordLog__ = coordTrace;

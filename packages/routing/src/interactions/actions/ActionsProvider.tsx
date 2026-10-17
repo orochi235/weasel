@@ -28,6 +28,7 @@ import { createMenuHost, type MenuHost } from '../../menus/menuHost';
 import { MenuHostContext } from '../../menus/MenuHostContext';
 import { pushOwner, ScopeNode } from './scopeNode';
 import { tuneAction, tunedParams, type ActionTuning } from './tuning';
+import { isDev } from '@weasel-js/react';
 
 /** @internal Provided by `<ActionsProvider>`, `<InputScope>` and `<Yoke>`. */
 export const ActionsContext = createContext<ActionsRegistry | null>(null);
@@ -278,18 +279,7 @@ export function ActionsProvider({ children }: { children: ReactNode }): ReactEle
   );
 }
 
-/**
- * `import.meta.env.DEV` read through a cast — core must not depend on a
- * bundler's ambient augmentation (`vite/client`) to compile. Mirrors the same
- * cast in SceneCanvas.tsx, dispatcher.ts and buildDeps.ts.
- */
-const IS_DEV: boolean = (() => {
-  try {
-    return Boolean((import.meta as unknown as { env?: { DEV?: boolean } }).env?.DEV);
-  } catch {
-    return false;
-  }
-})();
+const IS_DEV = isDev();
 
 /**
  * @experimental

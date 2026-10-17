@@ -1,4 +1,5 @@
 export { assignRef } from './assignRef';
+export { isDev } from './isDev';
 export { useCanvasFocus } from './useCanvasFocus';
 export type { UseCanvasFocusOptions, CanvasFocusReturn } from './useCanvasFocus';
 export { useLatest } from './useLatest';

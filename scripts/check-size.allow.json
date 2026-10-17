@@ -59,7 +59,7 @@
     "lines": 440
   },
   "packages/core/src/features/paths/pathLayer.ts": {
-    "longestFunction": 123
+    "longestFunction": 121
   },
   "packages/core/src/features/paths/penPreviewLayer.ts": {
     "longestFunction": 138

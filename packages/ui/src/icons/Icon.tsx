@@ -2,7 +2,8 @@ import { useId, useMemo, type SVGProps } from 'react';
 import { useIconGlyph } from '@weasel-js/core';
 import type { IconGlyph, IconRef } from '@weasel-js/icons';
 import { ICON_SLOTS, inset } from './layers';
-import { IS_DEV, PLACEHOLDER_BODY, warnMissing } from './placeholder';
+import { isDev } from '@weasel-js/react';
+import { PLACEHOLDER_BODY, warnMissing } from './placeholder';
 
 /** Shared prop shape for the icon set. Color comes from the surrounding
  *  `color` CSS property — every glyph strokes in `currentColor`. */
@@ -58,7 +59,7 @@ export function Icon({
   // React 19 rewrites innerHTML whenever this object's identity changes, and a
   // rewrite during a press removes the node pointerdown hit, so no click follows.
   const markup = useMemo(() => ({ __html: html }), [html]);
-  if (!glyph && !IS_DEV) return null;
+  if (!glyph && !isDev()) return null;
   return (
     <svg
       {...SVG_BASE}

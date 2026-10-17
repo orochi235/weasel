@@ -11,6 +11,7 @@ import { type CommandStroke, type CommandFill, type VertexWidth } from '@weasel-
 import type { RenderLayer } from 'core/layers/render';
 import { type Path, countPathAnchors } from '@weasel-js/geom';
 import type { ColorOverrideRegistry } from '@weasel-js/animator';
+import { isDev } from '@weasel-js/react';
 
 const PLACEHOLDER_FILL: CommandFill = { paint: { color: '#ffffff' } };
 const PLACEHOLDER_STROKE: CommandStroke = { paint: { color: '#ffffff' }, width: 1 };
@@ -75,9 +76,7 @@ export function createPathLayer<T>(opts: CreatePathLayerOpts<T>): RenderLayer<un
     now = (): number => (typeof performance !== 'undefined' ? performance.now() : Date.now()),
   } = opts;
   const warned = new Set<string>();
-  const isDev = typeof import.meta !== 'undefined'
-    && (import.meta as unknown as { env?: { DEV?: boolean } }).env
-    && (import.meta as unknown as { env?: { DEV?: boolean } }).env?.DEV;
+  const dev = isDev();
 
   return {
     id,
@@ -113,7 +112,7 @@ export function createPathLayer<T>(opts: CreatePathLayerOpts<T>): RenderLayer<un
         if (vColors != null) {
           if (vColors.length === expectedLen) {
             useVColors = vColors;
-          } else if (isDev) {
+          } else if (dev) {
             const key = `${id}:${nodeKey}:fill`;
             if (!warned.has(key)) {
               warned.add(key);
@@ -128,7 +127,7 @@ export function createPathLayer<T>(opts: CreatePathLayerOpts<T>): RenderLayer<un
         if (strokeVColors != null) {
           if (strokeVColors.length === expectedLen) {
             useStrokeVColors = strokeVColors;
-          } else if (isDev) {
+          } else if (dev) {
             const key = `${id}:${nodeKey}:stroke`;
             if (!warned.has(key)) {
               warned.add(key);
@@ -150,7 +149,7 @@ export function createPathLayer<T>(opts: CreatePathLayerOpts<T>): RenderLayer<un
         if (strokeVWidths != null) {
           if (strokeVWidths.length === anchorCount) {
             useStrokeVWidths = strokeVWidths;
-          } else if (isDev) {
+          } else if (dev) {
             const key = `${id}:${nodeKey}:strokeWidths`;
             if (!warned.has(key)) {
               warned.add(key);

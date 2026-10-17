@@ -7,6 +7,7 @@ import { useCallback } from 'react';
 import { useLatest } from '@weasel-js/react';
 import { applyBooleanOp, type BooleansAdapter, type BooleanOp } from './booleans';
 import type { BooleanOpOptions } from './operands';
+import { isDev } from '@weasel-js/react';
 
 /** The Boolean path operations, each acting on the current selection and
  *  committing as one undo step. */
@@ -28,8 +29,7 @@ export interface UseBooleansOptions extends BooleanOpOptions {
   enableActions?: boolean;
 }
 
-const isDev = typeof import.meta !== 'undefined'
-  && (import.meta as { env?: { DEV?: boolean } }).env?.DEV;
+const dev = isDev();
 
 /** Bind the Boolean path operations to an adapter that knows how to read the
  *  selection, fetch world-space paths and mint result nodes. */
@@ -42,7 +42,7 @@ export function useBooleans(
 
   const run = useCallback((op: BooleanOp) => {
     const result = applyBooleanOp(adapterRef.current, op, optionsRef.current);
-    if (isDev && result.kind === 'noop' && result.reason === 'too-few-for-subtract') {
+    if (dev && result.kind === 'noop' && result.reason === 'too-few-for-subtract') {
       console.warn('[useBooleans] subtract requires at least 2 selected paths');
     }
   }, [adapterRef, optionsRef]);

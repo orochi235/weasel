@@ -1,6 +1,5 @@
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import { matchSorted } from './interactions/dispatcher/matcher';
-import { isDev } from './devFlag';
 
 /**
  * A bundle that reads `process.env` bare works everywhere the kit is normally
@@ -21,10 +20,6 @@ function withoutProcess<T>(fn: () => T): T {
 }
 
 describe('dev-flag reads survive a runtime with no process', () => {
-  it('isDev answers rather than throwing', () => {
-    expect(withoutProcess(() => isDev())).toBe(true);
-  });
-
   it('an exclusive claim matching no binding still drops the press cleanly', () => {
     const warn = vi.fn();
     // An exclusive claim nothing targets, against a binding pool that is

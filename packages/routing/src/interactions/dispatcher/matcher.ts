@@ -9,7 +9,7 @@ import type {
 } from '@weasel-js/gestures';
 import type { GestureBinding } from '../actions/binding';
 import type { ClaimableGesture } from '@weasel-js/gestures';
-import { isDev } from '../../devFlag';
+import { isDev } from '@weasel-js/react';
 
 export { matchSpec, matchModifiers, matchKey, matchTarget, matchPhase, specificity };
 export type { InputEvent, PhaseContext };

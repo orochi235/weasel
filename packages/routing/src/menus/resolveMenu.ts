@@ -9,7 +9,7 @@ import type { ActionDeps } from '../interactions/actions/invoker';
 import { actionItems, type ActionItem } from '../interactions/actions/actionItems';
 import { actionShortcuts } from '../interactions/actions/actionShortcuts';
 import { evaluateActive, evaluateEnabled } from '../interactions/actions/actionEnabled';
-import { isDev } from '../devFlag';
+import { isDev } from '@weasel-js/react';
 import type { MenuDef } from './types';
 
 /** What resolving reads: the registered actions, each one's deps, how to run

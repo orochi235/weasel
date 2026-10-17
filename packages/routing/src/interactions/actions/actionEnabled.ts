@@ -6,7 +6,7 @@
  */
 import type { ActionDeps } from './invoker';
 import { ActionDisabledReason, type Action } from './action';
-import { isDev } from '../../devFlag';
+import { isDev } from '@weasel-js/react';
 
 /**
  * @experimental
