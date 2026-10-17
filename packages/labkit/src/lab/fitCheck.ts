@@ -1,5 +1,5 @@
-import { useEffect } from 'react';
 import { isDev } from '@weasel-js/react';
+import { useEffect } from 'react';
 
 /** An element's edges, in the same coordinate space as the bound it is tested against. */
 export interface Edges {

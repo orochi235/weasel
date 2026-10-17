@@ -1,3 +1,4 @@
+import { isDev } from '@weasel-js/react';
 import { colorCount } from '@weasel-js/theme';
 import { ThemeProvider, useResolvedColorMode } from '@weasel-js/theme/react';
 import { type CSSProperties, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
@@ -39,7 +40,6 @@ import { useStoreCommands } from './storeCommands';
 import { UnreadableRecords } from './UnreadableRecords';
 import { useFocusPick } from './useFocusPick';
 import { type PanelDescriptor, type TrialLayout, Workspace } from './Workspace';
-import { isDev } from '@weasel-js/react';
 
 function LabFallback({
   title,

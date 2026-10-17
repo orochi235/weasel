@@ -1,7 +1,7 @@
+import { isDev } from '@weasel-js/react';
 import { useEffect, useLayoutEffect, useState } from 'react';
 import type { ClockRegistry } from '../clock/clockRegistry';
 import type { TrialClock, TrialClockHandle } from '../clock/trialClock';
-import { isDev } from '@weasel-js/react';
 
 /** A presented lab held still, for a poster to be taken of it. */
 export interface Still {

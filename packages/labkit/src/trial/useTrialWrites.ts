@@ -1,4 +1,5 @@
 import { createHistory } from '@weasel-js/core';
+import { isDev } from '@weasel-js/react';
 import { useCallback, useMemo, useRef } from 'react';
 import { useStore } from 'zustand/react';
 import { resolveAutoConfig } from '../config/autoConfig';
@@ -8,7 +9,6 @@ import type { Instrument } from '../instrument/types';
 import type { LabStore } from '../state/store';
 import type { TrialRecord } from '../state/types';
 import { stateOp } from '../undo/stateOp';
-import { isDev } from '@weasel-js/react';
 
 /** A config write within this long of the last one to the same path belongs
  *  to the same gesture — a slider drag writes on every move. */

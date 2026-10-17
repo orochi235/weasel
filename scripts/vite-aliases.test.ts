@@ -135,8 +135,8 @@ describe('rootDir', () => {
       .filter((name) => existsSync(join(REPO, 'packages', name, 'tsconfig.json')))
       .map((name) => [name, compilerOptions(join('packages', name))?.rootDir])
       .filter(([, rootDir]) => rootDir !== undefined);
-    // Core restates it: tsup resolves an inherited `rootDir` against the package.
-    expect(own).toEqual([['core', '../..']]);
+    // Core and the icon plugin restate it: tsup resolves an inherited `rootDir` against the package.
+    expect(own).toEqual([['core', '../..'], ['icons-plugin', '../..']]);
   });
 });
 

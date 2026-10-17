@@ -1,5 +1,5 @@
-import type { ResolvedConfig } from './types';
 import { isDev } from '@weasel-js/react';
+import type { ResolvedConfig } from './types';
 
 /**
  * Whether a row's label only repeats the heading above it: the same word, or
