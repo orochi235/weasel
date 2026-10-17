@@ -9,6 +9,7 @@ export type {
 export { deriveAlignmentGuides } from './derive';
 export { matchAlignment, MOVE_ANCHORS } from './match';
 export { matchSpacing, measureGaps } from './spacing';
+export { siblingBounds, worldBoundsOf, worldUnionOf, type SceneBoundsOptions } from './sceneBounds';
 export {
   alignMoveBehavior,
   alignInsertBehavior,

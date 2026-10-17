@@ -41,6 +41,7 @@ import { usePathDirection } from './usePathDirection';
 import { usePathToolsTools } from './usePathToolsTools';
 import { useSymmetry } from './useSymmetry';
 import { usePageFit } from './usePageFit';
+import { useSpacingHints } from './useSpacingHints';
 
 /** Screen-px radius within which a drawing tool snaps to a measurement's end. */
 const END_SNAP_PX = 6;
@@ -85,6 +86,7 @@ export function Workspace(props: WorkspaceProps): ReactElement {
 
   const paperLayer = usePaperLayer(page, backgroundColor);
   const grid = useGrid(page, backgroundColor);
+  const spacingHints = useSpacingHints();
   const pathDirection = usePathDirection();
   const symmetry = useSymmetry(scene, page);
   // The mode tint covers the workspace around the page, not the page itself.
@@ -166,7 +168,7 @@ export function Workspace(props: WorkspaceProps): ReactElement {
         onCancel={() => machine.cancelMode()}
       />
       {hostDims.width > 0 && hostDims.height > 0 && (
-        <SceneCanvas<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose> features={['draw', pathTools]}
+        <SceneCanvas<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose> features={['draw', pathTools, ...(spacingHints ? [spacingHints] : [])]}
           claimKeys
           ref={props.onCanvas}
           ambient={ambientEntries}

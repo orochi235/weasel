@@ -153,6 +153,12 @@ export const PREFS = {
             { value: 'both', label: 'Both' },
           ],
         },
+        spacingHints: {
+          kind: 'boolean',
+          name: 'Spacing hints',
+          description: 'While moving, snap to gaps that match the spacing between other shapes and mark them. Hold Alt (Option on a Mac) over a shape to measure its distance from the selection.',
+          default: true,
+        },
       },
     },
     text: {
