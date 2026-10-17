@@ -206,4 +206,17 @@ describe('diagramScene', () => {
     );
     expect(containers(specs).map((s) => s.pose)).toMatchObject([{ x: 300, y: 7 }, { x: 0, y: 0 }]);
   });
+
+  it("draws a stored `routed` route as layout's own, so a later layout may replace it", () => {
+    const routed = [{ x: 50, y: 50 }];
+    const edgeOf = (edge: DiagramData['edges'][number]) => {
+      const specs = diagramScene({ nodes: [{ id: 'a', lines: ['a'] }, { id: 'b', lines: ['b'] }], edges: [edge] }, { layout: 'none' });
+      return (specs.find((s) => s.id === edgeIdOf(edge))!.data as { diagram: { waypoints?: unknown; laidOut?: unknown } }).diagram;
+    };
+    expect(edgeOf({ from: 'a', to: 'b', routed })).toMatchObject({ waypoints: routed, laidOut: routed });
+    const own = [{ x: 9, y: 9 }];
+    const authored = edgeOf({ from: 'a', to: 'b', routed, waypoints: own });
+    expect(authored.waypoints).toEqual(own);
+    expect(authored.laidOut).toBeUndefined();
+  });
 });

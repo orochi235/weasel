@@ -14,7 +14,9 @@ export interface NodeMove { id: string; x: number; y: number }
 
 /** An edge whose route a layout run rewrote. `id` is the edge's scene id,
  *  `edgeIdOf` of its data edge; `waypoints` is empty when the run took a
- *  route away and left the edge straight. */
+ *  route away and left the edge straight. Store it as the data edge's
+ *  `routed`, which stays layout's, not as `waypoints`, which would be the
+ *  author's. */
 export interface EdgeRoute { id: string; waypoints: readonly Vec2[] }
 
 type DiagramScene = Scene<DiagramSceneData, 'main', RectPose>;

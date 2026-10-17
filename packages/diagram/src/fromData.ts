@@ -75,6 +75,9 @@ export interface DataEdge {
   router?: DiagramRouter;
   /** World points the route passes through. Layout does not move them. */
   waypoints?: readonly Vec2[];
+  /** A route a layout run wrote, as `DiagramView`'s `onMove` reports it: drawn
+   *  until layout runs again, which may replace it. `waypoints` wins. */
+  routed?: readonly Vec2[];
 }
 
 /** A box drawn around some nodes, which layout keeps together. */

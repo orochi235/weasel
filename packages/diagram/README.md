@@ -251,8 +251,11 @@ moved, and, as its second argument, every edge whose route a layout run
 rewrote (`{ id, waypoints }`, `id` being `edgeIdOf` of the data edge);
 `onConnect` makes ports grabbable and hears the edge a connect describes.
 Store a move as the node's `at`, with `pinned: true` unless the scene uses
-`layout: 'none'`, and a route as the edge's `waypoints`, or the next
-`diagramScene` lays them out again.
+`layout: 'none'`, or the next `diagramScene` lays it out again. Store a route
+as the edge's `routed`: it is drawn until layout runs again, and stays
+layout's to replace, its label keeping the room layout leaves it. `waypoints`
+would make it yours, which layout never moves. A run that only rewrote routes
+calls `onMove` with no moves.
 `view.current.layout('layered')` re-runs a layout animated from where the
 nodes stand; `'force'` relaxes live.
 
@@ -468,7 +471,9 @@ signal enters on the left; inputs of a `control` type enter at the top, and so
 does the input a `'bar'`, `'step'` or `'crossover'` tests, when the stage has more than one input. A symbol
 takes `{ controlSide: 'bottom' }` to bring those inputs in at the bottom instead,
 and `rack` passes it with `side: 'below'`, so a control wire comes straight up from
-the stage driving it; `lanes` passes it when the control inputs' lanes are below. A symbol's lines, dots and ticks are drawn in the `text` color of
+the stage driving it; `lanes` passes it when the control inputs' lanes are below.
+The title then moves above the symbol, and a diamond takes control in by its
+lower-left edge, keeping its bottom vertex for the second exit. A symbol's lines, dots and ticks are drawn in the `text` color of
 `{ style }` (default `stageStyle(stage)`, so a bypassed decision draws dim), and a
 `'bar'`'s bands and a `'crossover'`'s curves in `{ tints }`, lowest first; a bypassed
 stage's default to its style's `stroke`.

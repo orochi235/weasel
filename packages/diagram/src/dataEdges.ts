@@ -67,7 +67,7 @@ export function edgeSpecs(edges: readonly DataEdge[], ctx: EdgeSpecContext): Dia
   for (const e of edges) {
     const id = ctx.idOf(e);
     const route = ctx.routes?.get(id);
-    const { fromPort, toPort, waypoints } = route ?? e;
+    const { fromPort, toPort, waypoints } = route ?? { ...e, waypoints: e.waypoints ?? e.routed };
     // Layout's own route, marked so a later layout of the live scene owns it.
     const laidOut = e.waypoints === undefined && waypoints !== undefined;
     const style = ctx.opts.edgeStyle?.(e) ?? ctx.fallback;
