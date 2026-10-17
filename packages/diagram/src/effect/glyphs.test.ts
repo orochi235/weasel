@@ -121,6 +121,8 @@ describe('more branch symbols', () => {
 
   it('writes a hexagon\'s title inside it', () => {
     expect(branchNode(yesNo, P, 'hexagon').lines).toEqual(['high?']);
+    // The named outline, whose content box stops short of the points; a custom path's is its whole box.
+    expect(branchNode(yesNo, P, 'hexagon').outline).toBe('hexagon');
   });
 
   it('draws the new symbols\' marks in the node style\'s text color', () => {

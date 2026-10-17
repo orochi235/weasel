@@ -12,10 +12,8 @@ import type { EffectPort } from './types';
 type Pt = readonly [number, number];
 const outlineOf = (points: readonly Pt[]): Outline => polygonFromPoints(points.map(([x, y]) => ({ x, y })));
 
-/** How far a hexagon's points reach in from its sides, of its width. */
+/** How far a hexagon's points reach in from its sides, of its width: the `'hexagon'` outline's. */
 const POINT = 0.2;
-const HEX: readonly Pt[] = [[0, 0.5], [POINT, 0], [1 - POINT, 0], [1, 0.5], [1 - POINT, 1], [POINT, 1]];
-const HEXAGON = outlineOf(HEX);
 const onHexagon = placeAlong({
   left: [[POINT, 0], [0, 0.5], [POINT, 1]],
   right: [[1 - POINT, 0], [1, 0.5], [1 - POINT, 1]],
@@ -26,7 +24,7 @@ const onHexagon = placeAlong({
 /** The stage's title inside a flat hexagon, on one line: the signal enters
  *  by the left point and the exits leave along the right ones. */
 export const hexagon: BranchSymbol = (stage, pipeline, options) => ({
-  outline: HEXAGON,
+  outline: 'hexagon',
   lines: [stage.title],
   ports: [...inputs(stage, pipeline, options, undefined, onHexagon), ...onHexagon(stage.outputs ?? [], 'right')],
 });

@@ -92,7 +92,7 @@ describe('compact', () => {
   });
 
   it('draws a decision as a hexagon by default, and as the symbol `branch` names', () => {
-    expect(typeof compact(P).data.nodes.find((n) => n.id === 'q')!.outline).toBe('object');
+    expect(compact(P).data.nodes.find((n) => n.id === 'q')!.outline).toBe('hexagon');
     expect(compact(P, { branch: 'diamond' }).data.nodes.find((n) => n.id === 'q')!.outline).toBe('diamond');
   });
 

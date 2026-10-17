@@ -116,7 +116,12 @@ describe('contentBox', () => {
     expect(contentBox(rectPath(0, 0, 1, 1), BOX)).toEqual(BOX);
   });
 
-  for (const outline of ['rect', 'diamond', 'parallelogram', 'trapezoid'] as const) {
+  it("keeps content between a hexagon's points", () => {
+    expect(contentBox('hexagon', { x: 0, y: 0, width: 100, height: 40 }))
+      .toEqual({ x: 20, y: 0, width: 60, height: 40 });
+  });
+
+  for (const outline of ['rect', 'diamond', 'parallelogram', 'trapezoid', 'hexagon'] as const) {
     it(`boxForContent inverts contentBox for a ${outline}`, () => {
       const want = { width: 60, height: 40 };
       const box = boxForContent(outline, want);
@@ -125,6 +130,15 @@ describe('contentBox', () => {
       expect(got.height).toBeCloseTo(want.height, 6);
     });
   }
+});
+
+describe('hexagon', () => {
+  it('points left and right, a fifth of the width in from each side', () => {
+    const path = outlinePath('hexagon', { x: 10, y: 20, width: 100, height: 40 });
+    expect(path.kind).toBe('polygon');
+    if (path.kind !== 'polygon') return;
+    expect([...path.coords]).toEqual([10, 40, 30, 20, 90, 20, 110, 40, 90, 60, 30, 60]);
+  });
 });
 
 describe('trapezoid', () => {
