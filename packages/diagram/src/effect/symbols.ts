@@ -15,8 +15,14 @@ import type { EffectPipeline, EffectPort, EffectStage } from './types';
 export type BranchChoice = 'auto' | 'diamond' | 'bar' | 'demux' | 'switch';
 /** What a branch symbol draws: a data node without its id or style, which the look adds. */
 export type BranchNode = Pick<DataNode, 'outline' | 'lines' | 'rows' | 'ports' | 'marks' | 'width' | 'height' | 'padding'>;
+/** How a look wants a branch symbol drawn. */
+export interface BranchOptions {
+  /** The edge control inputs enter by: the side the stages driving them sit
+   *  on. Default `'top'`. */
+  controlSide?: 'top' | 'bottom';
+}
 /** Draws one decision stage, with a port for each of its inputs and outputs. */
-export type BranchSymbol = (stage: EffectStage, pipeline: EffectPipeline) => BranchNode;
+export type BranchSymbol = (stage: EffectStage, pipeline: EffectPipeline, options?: BranchOptions) => BranchNode;
 
 type Side = 'left' | 'top' | 'right' | 'bottom';
 
@@ -31,26 +37,30 @@ function along(side: Side, i: number, n: number): PortAnchor {
 const spread = (ports: readonly EffectPort[], side: Side): PortSpec[] =>
   ports.map((p, i) => ({ id: p.id, type: p.type, at: along(side, i, ports.length) }));
 
-/** Inputs split into the signal (left) and what steers the branch (top). */
-function inputs(stage: EffectStage, pipeline: EffectPipeline, steer?: string): PortSpec[] {
+/** Inputs split into the signal (left) and what steers the branch (`controlSide`). */
+function inputs(stage: EffectStage, pipeline: EffectPipeline, options: BranchOptions | undefined, steer?: string): PortSpec[] {
   const all = stage.inputs ?? [];
-  const top = all.filter((p) => isControl(pipeline, p.type) || (p.id === steer && all.length > 1));
-  return [...spread(all.filter((p) => !top.includes(p)), 'left'), ...spread(top, 'top')];
+  const steering = all.filter((p) => isControl(pipeline, p.type) || (p.id === steer && all.length > 1));
+  const side = options?.controlSide === 'bottom' ? 'bottom' : 'top';
+  return [...spread(all.filter((p) => !steering.includes(p)), 'left'), ...spread(steering, side)];
 }
 
 const title = (stage: EffectStage): DataMark =>
   ({ text: stage.title, at: { u: 0.5, v: 1 }, self: { u: 0.5, v: 0 }, offset: { x: 0, y: 4 } });
 
 /** Two exits leave by the right vertex and by the bottom one, or the top
- *  when that faces the wire better and no input holds it. */
-const diamond: BranchSymbol = (stage, pipeline) => {
+ *  when that faces the wire better and no input holds it. With control
+ *  inputs on the bottom, top and bottom swap. */
+const diamond: BranchSymbol = (stage, pipeline, options) => {
   const exits = stage.outputs ?? [];
-  const ins = inputs(stage, pipeline);
-  const topFree = !ins.some((p) => p.at.v === 0);
+  const ins = inputs(stage, pipeline, options);
+  const held = options?.controlSide === 'bottom' && ins.some((p) => p.at.v === 1);
+  const [main, other] = held ? [0, 1] : [1, 0];
+  const otherFree = !ins.some((p) => p.at.v === other);
   const out: PortSpec[] = exits.length === 2
     ? [
         { id: exits[0]!.id, type: exits[0]!.type, at: { u: 1, v: 0.5 } },
-        { id: exits[1]!.id, type: exits[1]!.type, at: { u: 0.5, v: 1 }, ...(topFree ? { sites: [{ u: 0.5, v: 0 }] } : {}) },
+        { id: exits[1]!.id, type: exits[1]!.type, at: { u: 0.5, v: main }, ...(otherFree ? { sites: [{ u: 0.5, v: other }] } : {}) },
       ]
     : spread(exits, 'right');
   return { outline: 'diamond', lines: [stage.title], ports: [...ins, ...out] };
@@ -64,8 +74,8 @@ const canBar = (stage: EffectStage): stage is EffectStage & { split: NonNullable
 /** `switch` throws a lever between two contacts. */
 const canSwitch = (stage: EffectStage): boolean => (stage.outputs ?? []).length === 2;
 
-const bar: BranchSymbol = (stage, pipeline) => {
-  if (!canBar(stage)) return diamond(stage, pipeline);
+const bar: BranchSymbol = (stage, pipeline, options) => {
+  if (!canBar(stage)) return diamond(stage, pipeline, options);
   const cuts = stage.split.at;
   const exits = stage.outputs ?? [];
   const n = exits.length;
@@ -86,14 +96,14 @@ const bar: BranchSymbol = (stage, pipeline) => {
     width: 24,
     height: Math.max(72, 30 * n),
     ports: [
-      ...inputs(stage, pipeline, stage.split.input),
+      ...inputs(stage, pipeline, options, stage.split.input),
       ...exits.map((p, i): PortSpec => ({ id: p.id, type: p.type, at: { u: 1, v: 1 - (i + 0.5) / n } })),
     ],
     marks,
   };
 };
 
-const demux: BranchSymbol = (stage, pipeline) => {
+const demux: BranchSymbol = (stage, pipeline, options) => {
   const exits = stage.outputs ?? [];
   return {
     outline: 'trapezoid',
@@ -101,7 +111,7 @@ const demux: BranchSymbol = (stage, pipeline) => {
     padding: 0,
     width: 44,
     height: Math.max(64, 28 * exits.length),
-    ports: [...inputs(stage, pipeline), ...spread(exits, 'right')],
+    ports: [...inputs(stage, pipeline, options), ...spread(exits, 'right')],
     marks: [title(stage)],
   };
 };
@@ -110,8 +120,8 @@ const demux: BranchSymbol = (stage, pipeline) => {
 const dot = (cx: number, cy: number, r: number): string =>
   `M${cx - r} ${cy} A${r} ${r} 0 1 0 ${cx + r} ${cy} A${r} ${r} 0 1 0 ${cx - r} ${cy} Z`;
 
-const switchSymbol: BranchSymbol = (stage, pipeline) => {
-  if (!canSwitch(stage)) return diamond(stage, pipeline);
+const switchSymbol: BranchSymbol = (stage, pipeline, options) => {
+  if (!canSwitch(stage)) return diamond(stage, pipeline, options);
   const exits = stage.outputs ?? [];
   return {
     outline: 'rect',
@@ -120,7 +130,7 @@ const switchSymbol: BranchSymbol = (stage, pipeline) => {
     width: 48,
     height: 48,
     ports: [
-      ...inputs(stage, pipeline),
+      ...inputs(stage, pipeline, options),
       ...exits.map((p, i): PortSpec => ({ id: p.id, type: p.type, at: { u: 1, v: i === 0 ? 0.25 : 0.75 } })),
     ],
     marks: [
@@ -153,6 +163,8 @@ export function symbolNameFor(stage: EffectStage, choice: BranchChoice = 'auto')
 }
 
 /** The node a decision stage draws as, by the symbol `choice` comes to. */
-export function branchNode(stage: EffectStage, pipeline: EffectPipeline, choice: BranchChoice = 'auto'): BranchNode {
-  return BRANCH_SYMBOLS[symbolNameFor(stage, choice)](stage, pipeline);
+export function branchNode(
+  stage: EffectStage, pipeline: EffectPipeline, choice: BranchChoice = 'auto', options?: BranchOptions,
+): BranchNode {
+  return BRANCH_SYMBOLS[symbolNameFor(stage, choice)](stage, pipeline, options);
 }

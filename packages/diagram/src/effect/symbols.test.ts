@@ -54,6 +54,16 @@ describe('branch symbols', () => {
     expect(port(yesNo, 'no', 'diamond').at).toEqual({ u: 0.5, v: 1 });
   });
 
+  it('puts control inputs on the bottom when told to, with a diamond\'s second exit on top', () => {
+    const bottom = (stage: EffectStage, id: string, choice: Parameters<typeof branchNode>[2]) =>
+      branchNode(stage, P, choice, { controlSide: 'bottom' }).ports!.find((p) => p.id === id)!.at;
+    for (const choice of ['diamond', 'demux', 'switch'] as const) expect(bottom(yesNo, 'when', choice).v).toBe(1);
+    expect(bottom(yesNo, 'no', 'diamond')).toEqual({ u: 0.5, v: 0 });
+    expect(branchNode(yesNo, P, 'diamond', { controlSide: 'bottom' }).ports!.find((p) => p.id === 'no')!.sites).toBeUndefined();
+    const steered = { ...bands, inputs: [{ id: 'x', type: 'number' }, { id: 'sig', type: 'number' }] };
+    expect(bottom(steered, 'x', 'bar').v).toBe(1);
+  });
+
   it('stacks a bar\'s bands lowest at the bottom, with a tick and its value at each cut', () => {
     const node = branchNode(bands, P, 'bar');
     expect(port(bands, 'low', 'bar').at.v).toBeCloseTo(5 / 6, 6);

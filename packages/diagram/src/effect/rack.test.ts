@@ -108,6 +108,18 @@ describe('rack', () => {
     expect(() => diagramScene(twice.data, twice.scene)).not.toThrow();
   });
 
+  it('turns a decision\'s control input toward the side its driver hangs on', () => {
+    const gated: EffectPipeline = {
+      ...SKIP,
+      stages: SKIP.stages.map((s) => (s.id === 'q' ? { ...s, inputs: [...s.inputs!, { id: 'when', type: 'number' }] } : s)),
+      wires: [...SKIP.wires, w(['osc', 'value'], ['q', 'when'])],
+    };
+    const when = (side: 'below' | 'above') => rack(gated, { collapseSkips: false, branch: 'switch', side })
+      .data.nodes.find((n) => n.id === 'q')!.ports!.find((p) => p.id === 'when')!.at.v;
+    expect(when('below')).toBe(1);
+    expect(when('above')).toBe(0);
+  });
+
   it('widens a stage so its side ports sit apart, however many there are', () => {
     const knobs = Array.from({ length: 8 }, (_, i) => `k${i}`);
     const many: EffectPipeline = {

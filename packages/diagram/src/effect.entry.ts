@@ -31,7 +31,7 @@ export { rack } from './effect/rack';
 export type { RackOptions } from './effect/rack';
 export { costText, paintRun } from './effect/run';
 export { BRANCH_SYMBOLS, branchNode, symbolNameFor } from './effect/symbols';
-export type { BranchChoice, BranchNode, BranchSymbol } from './effect/symbols';
+export type { BranchChoice, BranchNode, BranchOptions, BranchSymbol } from './effect/symbols';
 export type {
   EffectGroup,
   EffectPipeline,

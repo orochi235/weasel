@@ -415,7 +415,10 @@ A decision stage draws as a branch symbol, chosen by `branch`:
 `'switch'` for a stage that does not have exactly two outputs.
 `BRANCH_SYMBOLS`, `branchNode` and `symbolNameFor` expose the same lookup. The
 signal enters on the left; inputs of a `control` type enter at the top, and so
-does the input a `'bar'` tests, when the stage has more than one input.
+does the input a `'bar'` tests, when the stage has more than one input. A symbol
+takes `{ controlSide: 'bottom' }` to bring those inputs in at the bottom instead,
+and `rack` passes it with `side: 'below'`, so a control wire comes straight up from
+the stage driving it.
 
 To write a look, return `{ data, scene, color }`, and `exits` if it draws a
 decision as something other than itself; `scene` takes any
@@ -434,7 +437,7 @@ exported for yours:
 | `portOn(stage, id)` | The stage's port with that id. |
 | `stageRows(stage, { showParams, withPorts, showValues })` | Body rows for a stage: its title, a row of its ports, a value row per output (`valueRowId(port)`, showing `NO_VALUE`), its params. |
 | `exitLabel(wire)` | What to call one of `drawableWires`' wires: its own label, or for a wire leaving a decision the exit's label or id. |
-| `branchNode(stage, pipeline, branch)` | The node a decision draws as. |
+| `branchNode(stage, pipeline, branch, { controlSide })` | The node a decision draws as. |
 
 ```tsx
 import {

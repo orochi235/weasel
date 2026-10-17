@@ -145,8 +145,9 @@ export const rack: EffectLook<RackOptions> = (pipeline, options = {}) => {
   const line = lineOf(pipeline, chain, wires);
 
   const kept = stages.filter((s) => !gone.has(s.id));
+  const controlSide = below ? 'bottom' : 'top';
   const nodes = kept.map((stage) => {
-    if (kindOf(stage) === 'decision') return { id: stage.id, ...branchNode(stage, pipeline, options.branch) };
+    if (kindOf(stage) === 'decision') return { id: stage.id, ...branchNode(stage, pipeline, options.branch, { controlSide }) };
     const ports = portsOf(stage, line, wires, near, far);
     const node = boxNode(stage, { showParams: options.showParams !== false, rowPorts: false, ports, showValues: options.showValues === true });
     const room = roomFor(ports);
