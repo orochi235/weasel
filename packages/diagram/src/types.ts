@@ -29,6 +29,10 @@ export interface PortSpec {
   sites?: readonly PortAnchor[];
   /** Consulted by a connect gesture's validity predicate. Uninterpreted here. */
   type?: string;
+  /** What the port is for, drawn beside it outside the node: beside the
+   *  wire rather than across it. A built body draws it and keeps it in its
+   *  `margin`; any other participant gets it on its resolved `Port`. */
+  label?: string;
   /** The direction an edge leaves along, overriding the one the anchor
    *  implies. `null` means "no preferred direction" — a router goes straight
    *  at it. Applies at `at`; a port at one of its `sites` faces away from
@@ -58,6 +62,9 @@ export interface DiagramNode {
    *  itself is never laid out — it derives its pose from its members — but an
    *  edge can attach to it like any participant. */
   group?: DiagramGroup;
+  /** How far past its bounds something drawn with it reaches, on each side —
+   *  a built body's port labels. Layout keeps neighbors that far off too. */
+  margin?: GroupInset;
 }
 
 /** The group half of a {@link DiagramNode}. */
@@ -82,4 +89,5 @@ export interface Port {
    *  declared no direction. Rotated with the node. */
   normal: Vec2 | null;
   type?: string;
+  label?: string;
 }

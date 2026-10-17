@@ -18,7 +18,7 @@ import type { DiagramAnchor } from './group';
 import type { DiagramLabel } from './labelTrait';
 import { chain } from './chain';
 import { layered } from './layered';
-import type { LayoutFn, LayoutOptions, LayoutPorts } from './layout';
+import { planOf, type LayoutFn, type LayoutOptions, type LayoutPorts } from './layout';
 import { markSpecs, type DataMark, type DiagramMark } from './marks';
 import type { Outline } from './outline';
 import { authoredOver } from './route';
@@ -36,6 +36,8 @@ export interface DataNode {
   outline?: Outline;
   /** Perimeter ports, replacing the four compass midpoints. */
   ports?: readonly PortSpec[];
+  /** Labels for the perimeter ports by id, drawn outside the box beside each. */
+  portLabels?: Readonly<Record<string, string>>;
   /** Layout leaves this node at `at`. */
   pinned?: boolean;
   /** Where the node starts, before layout. Unset, nodes start on the
@@ -279,11 +281,7 @@ function nodeSpecs(
     body: (trait) => ({
       diagram: n.pinned === true ? { ...trait, pinned: true } : trait,
       fill: { paint: { color: style.fill } },
-      stroke: {
-        paint: { color: style.stroke },
-        width: style.strokeWidth ?? 2,
-        ...(style.dash ? { dash: style.dash } : {}),
-      },
+      stroke: { paint: { color: style.stroke }, width: style.strokeWidth ?? 2, ...(style.dash ? { dash: style.dash } : {}) },
     }),
     row: (text, at) =>
       at.row.kind === 'slot'
@@ -341,6 +339,7 @@ export function diagramScene(data: DiagramData, opts: DiagramSceneOptions = {}):
     gap: n.gap ?? opts.gap ?? 4,
     verticalAlign: n.verticalAlign ?? opts.verticalAlign ?? 'center',
     ...(n.ports ? { ports: n.ports } : {}),
+    ...(n.portLabels ? { portLabels: n.portLabels } : {}),
   }));
   // Seeded on the diagonal in source order, so whichever axis a layout reads
   // for in-rank order, it starts from the data's own order.
@@ -349,8 +348,9 @@ export function diagramScene(data: DiagramData, opts: DiagramSceneOptions = {}):
       { ...(n.at ?? { x: i, y: i }), width: n.width ?? opts.minWidth ?? MIN_WIDTH, height: n.height ?? 0 },
       measureBody(bodies[i]!, measure),
     );
-    const { ports, outline } = bodyTrait(bodies[i]!, pose, measure);
-    return { id: n.id, bounds: pose, pinned: n.pinned === true, ...(ports !== undefined ? { ports } : {}), ...(outline !== undefined ? { outline } : {}) };
+    const { ports, outline, margin } = bodyTrait(bodies[i]!, pose, measure);
+    return { id: n.id, bounds: pose, pinned: n.pinned === true, ...(ports !== undefined ? { ports } : {}),
+      ...(outline !== undefined ? { outline } : {}), ...(margin !== undefined ? { margin } : {}) };
   });
   const graphGroups: GraphGroup[] = groups.map((g) => ({
     id: g.group.id,
@@ -375,8 +375,9 @@ export function diagramScene(data: DiagramData, opts: DiagramSceneOptions = {}):
     : opts.layout === 'none' ? null
     : LAYOUTS[opts.layout ?? 'layered'];
   const layoutOptions: LayoutOptions = { order: 'barycenter', ...opts.layoutOptions };
-  const plan = layout?.plan?.(graph, layoutOptions) ?? null;
-  const moved = plan?.moves ?? (layout === null ? new Map() : layout(graph, layoutOptions));
+  const run = layout === null ? null : planOf(layout, graph, layoutOptions);
+  const plan = layout?.plan === undefined ? null : run;
+  const moved = run?.moves ?? new Map();
 
   const specs: DiagramSpec[] = [];
   const placedAt = placed(data, seeds, moved);

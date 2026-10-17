@@ -41,6 +41,9 @@ export interface GraphNode {
   /** The shape its ports are cast onto, as `portsOf` casts them. Absent,
    *  its bounds. */
   outline?: Outline;
+  /** How far past `bounds` it reaches (`DiagramNode.margin`). `planOf` lays
+   *  it out as that much bigger. */
+  margin?: GroupInset;
 }
 
 /** A box drawn around some participants, which a layout keeps together and
@@ -187,6 +190,7 @@ export function buildGraph<TPose>(
       pinned: trait.pinned === true,
       ...(trait.ports !== undefined ? { ports: trait.ports } : {}),
       ...(trait.outline !== undefined ? { outline: trait.outline } : {}),
+      ...(trait.margin !== undefined ? { margin: trait.margin } : {}),
     };
     nodes.push(entry);
     byId.set(entry.id, entry);

@@ -31,6 +31,9 @@ export type {
   RowPortBox,
   RowTextStyle,
 } from './body';
+export { PORT_LABEL_GAP, marginOf, portLabelBox, portLabelsOf } from './portLabels';
+export type { PerimeterPortLabelBox, PortLabelPlacement } from './portLabels';
+export { footprintNode } from './footprint';
 export {
   CONNECT_ACTION_ID,
   DEFAULT_EDGE_STROKE,

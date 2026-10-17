@@ -136,7 +136,7 @@ function placerOf<TPose>(
     const flat = (poly === null ? null : rayHit(poly, { x: cx, y: cy }, anchored)) ?? anchored;
     const normal = given === undefined ? normalOf(at) : given;
     if (rotation === 0) {
-      return { id: spec.id, nodeId: node.id, point: flat, normal, ...typeOf(spec) };
+      return { id: spec.id, nodeId: node.id, point: flat, normal, ...extrasOf(spec) };
     }
     return {
       id: spec.id,
@@ -144,7 +144,7 @@ function placerOf<TPose>(
       point: rotatePoint(flat.x, flat.y, cx, cy, rotation),
       // A direction rotates about the origin, not about the node's center.
       normal: normal === null ? null : rotatePoint(normal.x, normal.y, 0, 0, rotation),
-      ...typeOf(spec),
+      ...extrasOf(spec),
     };
   };
   return { specs: trait.ports ?? DEFAULT_PORTS, place };
@@ -152,6 +152,9 @@ function placerOf<TPose>(
 
 /** Spread rather than assigned, so a port with no type has no `type` key at
  *  all — `exactOptionalPropertyTypes` rejects an explicit `undefined`. */
-function typeOf(spec: PortSpec): { type?: string } {
-  return spec.type === undefined ? {} : { type: spec.type };
+function extrasOf(spec: PortSpec): { type?: string; label?: string } {
+  return {
+    ...(spec.type === undefined ? {} : { type: spec.type }),
+    ...(spec.label === undefined ? {} : { label: spec.label }),
+  };
 }

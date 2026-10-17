@@ -37,6 +37,9 @@ export {
   measureBody,
   sizeToBody,
 } from './body';
+export { PORT_LABEL_GAP, marginOf, portLabelBox } from './portLabels';
+export type { PerimeterPortLabelBox } from './portLabels';
+export { footprintNode } from './footprint';
 export type { ForceBody, ForceOptions, ForceRelaxation } from './force';
 export { force, forceRelaxation } from './force';
 export type { EdgeLabelRoom, Graph, GraphEdge, GraphGroup, GraphNode } from './graph';
