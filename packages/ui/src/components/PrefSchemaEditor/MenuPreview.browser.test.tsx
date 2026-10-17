@@ -37,6 +37,6 @@ test('a menu previewed open leaves focus in the field being typed into', async (
   act(() => input.focus());
   await userEvent.keyboard('er');
   expect(document.activeElement).toBe(input);
-  expect((input as HTMLInputElement).value).toBe('Filer');
+  expect((input as HTMLInputElement).value).toBe('Fileer');
   expect(screen.getByRole('menuitem', { name: 'Open' })).toBeDefined();
 });

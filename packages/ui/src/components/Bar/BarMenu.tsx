@@ -44,7 +44,7 @@ export function BarMenu({ label, schema, values, onChange, over, defaultOpen }: 
   const [open, setOpen] = useState<OpenMenu | null>(null);
   // Opened by `defaultOpen`: it takes focus only once the reader moves focus into it.
   const [quiet, setQuiet] = useState(false);
-  const isQuiet = useLatest(quiet);
+  const quietNow = useRef(false);
   const button = useRef<HTMLButtonElement>(null);
   const isOpen = useLatest(open !== null);
   // A press on the button closes an open menu, and its click must not reopen it. The menu's dismiss listener has
@@ -65,8 +65,8 @@ export function BarMenu({ label, schema, values, onChange, over, defaultOpen }: 
   const close = useCallback(() => {
     pending.current = false;
     setOpen(null);
-    if (!isQuiet.current || document.activeElement?.closest('[role="menu"]')) button.current?.focus();
-  }, [isQuiet]);
+    if (!quietNow.current || document.activeElement?.closest('[role="menu"]')) button.current?.focus();
+  }, []);
 
   const show = (source: OpenMenu['source'], silent = false): boolean => {
     const entries = resolveSchemaMenu(schema, {
@@ -81,6 +81,7 @@ export function BarMenu({ label, schema, values, onChange, over, defaultOpen }: 
     const rect = button.current!.getBoundingClientRect();
     const under = { x: rect.left, y: rect.top, w: rect.width, h: rect.height };
     setOpen((prev) => ({ seq: (prev?.seq ?? 0) + 1, entries, client: { x: rect.left, y: rect.bottom }, under, source }));
+    quietNow.current = silent;
     setQuiet(silent);
     return true;
   };
