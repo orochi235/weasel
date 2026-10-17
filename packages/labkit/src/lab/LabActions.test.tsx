@@ -166,6 +166,7 @@ describe('a lab’s actions registry', () => {
       set,
       hostSize: () => ({ width: 200, height: 100 }),
       zoomRange: () => ({ min: 0.1, max: 10 }),
+      zoomOf: () => current.scale.x,
     } as unknown as CameraView;
     const cameras = createCameraRegistry();
     cameras.register('t1', camera);

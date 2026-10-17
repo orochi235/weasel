@@ -16,3 +16,5 @@ export {
   reorderTrials,
   resetTrial,
 } from './trialOps';
+export type { TrialOrbit } from './useTrialOrbit';
+export { useTrialOrbit } from './useTrialOrbit';

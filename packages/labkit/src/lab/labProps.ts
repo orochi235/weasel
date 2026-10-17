@@ -117,7 +117,7 @@ export interface LabBaseProps {
    *  it. Ignored unless the lab starts presenting. */
   seed?: PresentationSeed;
   /** Gestures every trial's camera takes, over its instrument's own one by
-   *  one — `{ wheel: false, pan: false }` lets the page scroll past an embed. */
+   *  one — `{ wheel: false, drag: false }` lets the page scroll past an embed. */
   gestures?: CameraGestures;
   /** Play controls over a presented trial whose instrument declares a clock:
    *  hidden in a box too narrow for them, answering Space and friends, and

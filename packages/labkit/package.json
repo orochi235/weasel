@@ -126,6 +126,7 @@
   "dependencies": {
     "@weasel-js/geom": "1.10.1",
     "@weasel-js/icons": "1.10.1",
+    "@weasel-js/kernel3d": "1.10.1",
     "@weasel-js/loupe": "1.10.1",
     "@weasel-js/minimap": "1.10.1",
     "@weasel-js/prefs": "1.10.1",
@@ -148,7 +149,6 @@
     "@testing-library/jest-dom": "^7.0.1",
     "@weasel-js/guides": "1.10.1",
     "@weasel-js/history": "1.10.1",
-    "@weasel-js/kernel3d": "1.10.1",
     "@weasel-js/modes": "1.10.1",
     "less": "^4.2.0",
     "rollup-plugin-dts": "^6.4.1",
