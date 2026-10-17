@@ -353,8 +353,10 @@ decision as something else, as `rack` draws a skip as an arc, the look's
 corner; and writes each output's value into the row a look keeps for it when
 its `showValues` option is on, with a dash for an output the run says nothing
 about. A `switch` symbol is drawn thrown to its first exit, and a run whose
-`taken` is the second throws it there. Port dots are drawn outside the scene and
-do not fade, and a decision a look does not draw has nowhere to show its cost.
+`taken` is the second throws it there. `EffectChart` fades the port dots of a
+stage the run never reached as well; `paintRun` alone cannot, since the port
+layer draws them outside the scene. A decision a look does not draw has nowhere
+to show its cost.
 
 A run never lays the chart out again or refits it: `paintRun(pipeline, specs,
 run)` edits the specs the look already built, data only, and `DiagramView`

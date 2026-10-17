@@ -5,7 +5,7 @@ import { diagramScene } from '../fromData';
 import { checkPipeline, type EffectProblem } from './check';
 import type { EffectLook } from './draw';
 import { nodeGraph } from './nodeGraph';
-import { paintRun } from './run';
+import { DIM, paintRun, unreachedStages } from './run';
 import type { EffectPipeline, EffectRun } from './types';
 
 /** Props for `EffectChart`. */
@@ -97,15 +97,22 @@ export function EffectChart<TOptions = never>({
 
   const built = useMemo(() => {
     const drawn = ((look ?? nodeGraph) as EffectLook<TOptions>)(pipeline, options);
-    const portOptions: DiagramViewProps['portOptions'] = {
+    return { specs: diagramScene(drawn.data, drawn.scene), color: drawn.color, exits: drawn.exits };
+  }, [pipeline, look, options]);
+
+  // Keyed by which stages the run missed, not by the run, so a run that only
+  // changes values keeps the port layer.
+  const missed = JSON.stringify([...unreachedStages(pipeline, run)].sort());
+  const portOptions = useMemo((): DiagramViewProps['portOptions'] => {
+    const faded = new Set(JSON.parse(missed) as string[]);
+    return {
       shape: 'circle',
       sizePx: 8,
       // Every port a look declares has a value type; the compass defaults have none.
       showsPort: (port) => port.type !== undefined,
-      fill: (port) => ({ paint: { color: drawn.color(port.type) } }),
+      fill: (port) => ({ paint: { color: built.color(port.type), ...(faded.has(port.nodeId) ? { opacity: DIM } : {}) } }),
     };
-    return { specs: diagramScene(drawn.data, drawn.scene), portOptions, exits: drawn.exits };
-  }, [pipeline, look, options]);
+  }, [built, missed]);
 
   // Keyed by the layout alone: a run edits the scene in place.
   const painted = useMemo(() => paintRun(pipeline, built.specs, run, built.exits), [pipeline, built, run]);
@@ -119,7 +126,7 @@ export function EffectChart<TOptions = never>({
       height={height}
       minScale={minScale}
       ports="show"
-      portOptions={built.portOptions}
+      portOptions={portOptions}
       anchor="start"
       {...(background !== undefined ? { background } : {})}
       {...(selected !== undefined ? { selected } : {})}

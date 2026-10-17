@@ -9,7 +9,7 @@ import { thrownToSecond } from './symbols';
 import type { EffectPipeline, EffectRun, EffectStage } from './types';
 
 /** How far a stage or wire the run passed by is faded. */
-const DIM = 0.3;
+export const DIM = 0.3;
 /** How far a stage's cost sits above its top-right corner. */
 const COST_GAP = 2;
 /** Of the stage's title size. */
@@ -30,7 +30,7 @@ export function paintRun(
 ): DiagramSpec[] {
   if (run === undefined) return [...specs];
   const stages = new Map(uniqueStages(pipeline).map((s) => [s.id, s]));
-  const unreached = new Set([...stages.keys()].filter((id) => run.stages[id] === undefined));
+  const unreached = unreachedStages(pipeline, run);
   const owner = ownerOf(stages);
 
   // A decision's `taken` that names none of its outputs fades every exit.
@@ -76,6 +76,12 @@ export function paintRun(
     if (cost !== undefined) out.push(costSpec(spec, specs.filter((s) => owner(s) === id), stages.get(id)!, cost));
   }
   return out;
+}
+
+/** The ids of the stages `run` never reached: every one it has no entry for. */
+export function unreachedStages(pipeline: EffectPipeline, run: EffectRun | undefined): Set<string> {
+  if (run === undefined) return new Set();
+  return new Set(uniqueStages(pipeline).map((s) => s.id).filter((id) => run.stages[id] === undefined));
 }
 
 /** The stage a spec belongs to: the stage's own box, a row under it, or a mark
