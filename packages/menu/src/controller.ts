@@ -1,9 +1,9 @@
-import { accessMatch } from './access';
 import { entriesAt, isRow, type MenuEntry } from './entries';
-import { firstRow, keyStep, type MenuStack } from './keys';
+import { firstRow, type MenuStack } from './keys';
+import { EMPTY_TYPEAHEAD, planKey } from './keyPlan';
 import type { Point, Rect } from './placement';
 import { inTriangle } from './triangle';
-import { typeaheadStep, type TypeaheadBuffer } from './typeahead';
+import type { TypeaheadBuffer } from './typeahead';
 
 export { TYPEAHEAD_RESET_MS } from './typeahead';
 /** How long the pointer rests on a submenu row before its panel opens, in milliseconds. */
@@ -65,7 +65,7 @@ export function createMenuController(opts: MenuControllerOptions): MenuControlle
   let pendingKind: 'open' | 'diagonal' | null = null;
   let lastPoint: Point | null = null;
   let deferred: { level: number; index: number | null } | null = null;
-  let typed: TypeaheadBuffer = { text: '', at: -Infinity };
+  let typed: TypeaheadBuffer = EMPTY_TYPEAHEAD;
   let closed = false;
 
   const set = (next: MenuStack) => {
@@ -123,31 +123,15 @@ export function createMenuController(opts: MenuControllerOptions): MenuControlle
     entriesAt: (level) => entriesAt(root, stack, level),
     key(key) {
       if (closed) return false;
-      const r = keyStep(root, stack, key);
-      if (r.handled) {
-        cancel();
-        if (r.stack !== stack) { typed = { text: '', at: -Infinity }; set(r.stack); }
-        if (r.effect.kind === 'choose') choose(r.effect.level, r.effect.index);
-        else if (r.effect.kind === 'close') finish();
-        else if (r.effect.kind === 'edge') opts.onEdge?.(r.effect.dir);
-        return true;
-      }
-      if (key.length !== 1 || key === ' ') return false;
+      const plan = planKey(root, stack, typed, key, sched.now());
+      if (!plan) return false;
       cancel();
-      const level = stack.length - 1;
-      const letter = accessMatch(entriesAt(root, stack, level), key);
-      if (letter !== null) {
-        const e = entryAt(level, letter);
-        if (e?.kind === 'item' && !e.disabled) choose(level, letter);
-        else if (e?.kind === 'submenu' && !e.disabled) {
-          typed = { text: '', at: -Infinity };
-          set([...stack.slice(0, level), letter, firstRow(e.entries)]);
-        }
-        return true;
-      }
-      const t = typeaheadStep(entriesAt(root, stack, level), stack[level] ?? null, typed, key, sched.now());
-      typed = t.buffer;
-      if (t.hit !== null) set([...stack.slice(0, level), t.hit]);
+      typed = plan.typed;
+      if (plan.stack !== stack) set(plan.stack);
+      const { effect } = plan;
+      if (effect.kind === 'choose') choose(effect.level, effect.index);
+      else if (effect.kind === 'close') finish();
+      else if (effect.kind === 'edge') opts.onEdge?.(effect.dir);
       return true;
     },
     hover(level, index, point) {

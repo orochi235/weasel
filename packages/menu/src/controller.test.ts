@@ -324,6 +324,36 @@ describe('access letters and edges', () => {
     expect(c.stack()).toEqual([0]);
   });
 
+  it('a disabled row letter clears the typeahead buffer', () => {
+    const { c } = make([
+      { kind: 'item', key: 'cat', label: 'Cat', run },
+      { kind: 'item', key: 'cob', label: 'Cob', run },
+      { kind: 'item', key: 'x', label: 'Xray', access: 'x', disabled: true, run },
+    ]);
+    c.key('c');
+    c.key('x');
+    c.key('o');
+    expect(c.stack()).toEqual([0]);
+  });
+
+  it('with a submenu open a letter matches that menu, not the root', () => {
+    const inner = vi.fn();
+    const rootSpy = vi.fn();
+    const { c, onClose } = make([
+      { kind: 'item', key: 'r', label: 'Root', access: 'r', run: rootSpy },
+      { kind: 'submenu', key: 's', label: 'Sub', entries: [
+        { kind: 'item', key: 'i', label: 'Inner', access: 'i', run: inner },
+      ] },
+    ]);
+    c.press(0, 1);
+    c.key('r');
+    expect(rootSpy).not.toHaveBeenCalled();
+    expect(onClose).not.toHaveBeenCalled();
+    c.key('i');
+    expect(inner).toHaveBeenCalledOnce();
+    expect(rootSpy).not.toHaveBeenCalled();
+  });
+
   it('an undeclared letter falls back to typeahead', () => {
     const { c } = make([
       { kind: 'item', key: 'a', label: 'Alpha', access: 'a', run },
