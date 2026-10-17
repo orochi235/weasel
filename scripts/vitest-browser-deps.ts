@@ -14,7 +14,7 @@ import { workspaceEntries } from './lib/packageEntries.mjs';
 import { type ViteAlias, weaselAliases } from './vite-aliases.ts';
 
 const BUILTINS = new Set(builtinModules);
-const SKIPPED_DIR = /^(node_modules|dist)$/;
+const SKIPPED_DIR = /^(node_modules|dist|__screenshots__)$/;
 /** What a specifier may leave off, in the order vite tries them. */
 const ENDINGS = ['', '.ts', '.tsx', '.mts', '.mjs', '.js', '/index.ts', '/index.tsx'];
 /** A dependency's stylesheet, image, or data file: vite serves it and never pre-bundles it. */

@@ -251,7 +251,7 @@ describe('Workshop', () => {
     // The lab draws a fallback title while its store opens; the menu belongs to the mounted lab.
     await screen.findByRole('region', { name: /^Trial / });
     fireEvent.click(screen.getByRole('button', { name: 'weaselforge' }));
-    const items = screen.getAllByRole('menuitem');
+    const items = within(screen.getByRole('menu')).getAllByRole('menuitem');
     expect(items.map((item) => [item.textContent, item.getAttribute('href')])).toEqual([
       ['weaselforge', '/labs/forge'],
       ['Palette lab', '/labs/palette'],

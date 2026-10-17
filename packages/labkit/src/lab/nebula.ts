@@ -1,4 +1,5 @@
 import { type ColorList, colorAt, colorCount, resolveTheme, type Theme } from '@weasel-js/theme';
+import type { CSSProperties } from 'react';
 
 // Fixed spread of nebula blob positions / sizes / fall-off stops. Colors
 // supplied via the `nebula` prop are slotted into these slots in order;
@@ -27,4 +28,19 @@ export function buildNebula(
   });
   blobs.push('radial-gradient(ellipse at center, #0a0a18 0%, #02020a 100%)');
   return blobs.join(', ');
+}
+
+/** The lab root's style overriding its backdrop with `nebula`: only in dark,
+ *  where there is one to override. A custom property is the sanctioned use of
+ *  inline style. */
+export function nebulaStyle(
+  nebula: ColorList | undefined,
+  theme: Theme,
+  mode: 'light' | 'dark',
+  density: string,
+): CSSProperties | undefined {
+  if (mode !== 'dark' || !nebula || colorCount(nebula) === 0) return undefined;
+  return {
+    ['--wzl-backdrop' as string]: buildNebula(nebula, theme, mode, density),
+  } as CSSProperties;
 }

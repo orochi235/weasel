@@ -186,7 +186,18 @@ test('entering refits the view to the presented box, and leaving gives the tile 
   );
   await act(async () => lab?.addTrial('Centered'));
   const focused = () => lab?.trials.find((t) => t.id === lab?.focusedTrialId);
-  await expect.poll(() => focused()?.view ?? null).not.toBeNull();
+  // The canvas stack is briefly taller than the tile's body, until the status strip takes its
+  // room; capture the tile's own view only once the box has settled and the view sits at its middle.
+  const stack = () => box(container.querySelector('.lk-canvas-stack'));
+  const body = () => box(container.querySelector('.lk-trial__body'));
+  await expect
+    .poll(
+      () =>
+        (stack()?.height ?? 0) > 0 &&
+        stack()?.height === body()?.height &&
+        (focused()?.view as { pan: { y: number } } | null)?.pan.y === (stack()?.height ?? 0) / 2,
+    )
+    .toBe(true);
   const tileView = focused()?.view;
 
   await act(async () => presentation?.enter());
