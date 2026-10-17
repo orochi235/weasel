@@ -8,10 +8,10 @@
  * `{ waypoint }`, and its edge's route is layout's.
  */
 import type { Vec2 } from '@weasel-js/core/math';
-import { diagramEdgeOf, layoutOwnsRoute, type DiagramEdge } from './edge';
+import { diagramEdgeOf, layoutOwnsPort, layoutOwnsRoute, type DiagramEdge, type EdgeEnd } from './edge';
 import { labelFollowsLayout, type Graph } from './graph';
 import { diagramLabelOf, type DiagramLabel } from './label';
-import type { LayoutPlan } from './layout';
+import type { LayoutPlan, LayoutPorts } from './layout';
 
 /** Edge routes for `applyLayout` to write alongside a layout's moves. */
 export interface LayoutRoutes {
@@ -20,6 +20,9 @@ export interface LayoutRoutes {
   edges: ReadonlySet<string>;
   waypoints: ReadonlyMap<string, readonly Vec2[]>;
   labels?: ReadonlyMap<string, number>;
+  /** The ports layout names. Each end layout owns gets its port from here,
+   *  or loses the one a layout named before. */
+  ports?: ReadonlyMap<string, LayoutPorts>;
 }
 
 /** How far a route may sit from the one already written and still count as
@@ -33,6 +36,7 @@ export function routesOf(graph: Graph, plan: LayoutPlan): LayoutRoutes {
     edges: new Set(graph.edges.map((e) => e.origin?.id ?? e.id)),
     waypoints: plan.waypoints ?? new Map(),
     ...(plan.labels !== undefined ? { labels: plan.labels } : {}),
+    ...(plan.ports !== undefined ? { ports: plan.ports } : {}),
   };
 }
 
@@ -51,10 +55,19 @@ export function routeWrites(scene: RoutedScene, routes: LayoutRoutes): Map<strin
   for (const id of routes.edges) {
     const node = scene.get(id as never);
     const edge = node === undefined ? null : diagramEdgeOf(node);
-    if (node === undefined || edge === null || !layoutOwnsRoute(edge)) continue;
-    owned.add(id);
-    if (scene.isLocked(id as never)) continue;
-    const next = rerouted(edge, routes.waypoints.get(id));
+    if (node === undefined || edge === null || scene.isLocked(id as never)) {
+      if (edge !== null && layoutOwnsRoute(edge)) owned.add(id);
+      continue;
+    }
+    let next = edge;
+    if (layoutOwnsRoute(edge)) {
+      owned.add(id);
+      next = rerouted(edge, routes.waypoints.get(id));
+    }
+    const ports = routes.ports?.get(id);
+    const from = renamed(edge.from, ports?.from);
+    const to = renamed(edge.to, ports?.to);
+    if (from !== edge.from || to !== edge.to) next = { ...next, from, to };
     if (next !== edge) out.set(id, withTrait(node.data, next));
   }
   // The first label on an edge is the one `buildGraph` left room for.
@@ -83,6 +96,14 @@ function rerouted(edge: DiagramEdge, route: readonly Vec2[] | undefined): Diagra
   }
   if (edge.waypoints !== undefined && near(edge.waypoints, route)) return edge;
   return { ...edge, waypoints: route, laidOut: route };
+}
+
+/** `end` with the port layout names for it, or `end` itself when layout does
+ *  not own it or names what it already has. */
+function renamed(end: EdgeEnd, port: string | undefined): EdgeEnd {
+  if (!layoutOwnsPort(end) || (end.port === port && (port === undefined || end.laidOut === port))) return end;
+  const { port: _p, laidOut: _l, ...rest } = end;
+  return port === undefined ? rest : { ...rest, port, laidOut: port };
 }
 
 function near(a: readonly Vec2[], b: readonly Vec2[]): boolean {

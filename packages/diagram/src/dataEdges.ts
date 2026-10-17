@@ -27,6 +27,10 @@ function placementOf(e: DataEdge, route: LayeredRoute | undefined, ctx: EdgeSpec
   return route?.labelAt === undefined ? placement : { ...placement, at: { waypoint: route.labelAt } };
 }
 
+/** An edge end naming `port`, marked as layout's when the author named none. */
+const endOf = (own: string | undefined, port: string | undefined) =>
+  !port ? {} : own === undefined ? { port, laidOut: port } : { port };
+
 export function edgeSpecs(edges: readonly DataEdge[], ctx: EdgeSpecContext): DiagramSpec[] {
   const specs: DiagramSpec[] = [];
   for (const e of edges) {
@@ -46,8 +50,8 @@ export function edgeSpecs(edges: readonly DataEdge[], ctx: EdgeSpecContext): Dia
       pose: { x: 0, y: 0, width: 0, height: 0 },
       data: {
         diagram: {
-          from: fromPort ? { port: fromPort } : {},
-          to: toPort ? { port: toPort } : {},
+          from: endOf(e.fromPort, fromPort),
+          to: endOf(e.toPort, toPort),
           router: e.router ?? ctx.opts.router ?? 'bezier',
           ...(waypoints ? { waypoints } : {}),
           ...(laidOut ? { laidOut: waypoints } : {}),

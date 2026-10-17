@@ -52,6 +52,7 @@ export {
   bezier,
   diagramEdgeOf,
   edgeDerivePath,
+  layoutOwnsPort,
   layoutOwnsRoute,
   orthogonal,
   resolveEnd,
@@ -139,6 +140,7 @@ export type {
   LayoutFn,
   LayoutOptions,
   LayoutPlan,
+  LayoutPorts,
   LayoutResult,
   Slot,
 } from './layout';

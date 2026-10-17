@@ -17,6 +17,7 @@ import {
   untilSettled,
   worldOf,
   type LayoutOptions,
+  type LayoutPorts,
   type LayoutResult,
   type Slot,
 } from '../layout';
@@ -24,6 +25,7 @@ import { depthOf, expand } from './expand';
 import { orderRows } from './order';
 import { placeAcross } from './place';
 import { ranksByLength } from './rank';
+import { layeredPorts } from '../route';
 
 /** What {@link layeredPlan} works out. */
 export interface LayeredPlan {
@@ -41,6 +43,9 @@ export interface LayeredPlan {
    *  place among its waypoints that room is beside, as a `DiagramLabel`'s
    *  `{ waypoint }` reads it. */
   labels: ReadonlyMap<string, number>;
+  /** For each edge running between ranks, keyed by the edge's id as drawn:
+   *  the compass ports facing the way it runs (see `layeredPorts`). */
+  ports: ReadonlyMap<string, LayoutPorts>;
 }
 
 /** How much of `rankGap` each side of a label's row keeps. */
@@ -143,5 +148,5 @@ function planOnce(graph: Graph, opts: LayoutOptions = {}): LayeredPlan {
     waypoints.set(edge, points);
   }
 
-  return { moves, ranks, back, waypoints, labels };
+  return { moves, ranks, back, waypoints, labels, ports: layeredPorts(graph, ranks, opts.direction) };
 }

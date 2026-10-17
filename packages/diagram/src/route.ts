@@ -8,7 +8,10 @@
  * waypoints `layeredPlan` placed for it.
  */
 import type { Vec2 } from '@weasel-js/core/math';
-import type { LayoutDirection } from './layout';
+import type { Graph } from './graph';
+import type { LayoutDirection, LayoutPorts } from './layout';
+import { COMPASS, DEFAULT_PORTS } from './ports';
+import type { PortSpec } from './types';
 
 /** One edge to route, by the ids of its ends: a node's or a group's. */
 export interface RouteEdge {
@@ -90,20 +93,68 @@ export function layeredRoutes(input: LayeredRouteInput): Map<string, LayeredRout
   return routes;
 }
 
-/** Each edge's ports and waypoints: the author's where given, else
- *  {@link layeredRoutes}'. */
+/**
+ * The compass ports {@link layeredRoutes} names for each drawn edge of
+ * `graph` that runs between ranks, keyed by the edge's id as drawn. A node
+ * gets a face named only when it has a port by that name at that compass
+ * point; a group always does.
+ */
+export function layeredPorts(
+  graph: Graph,
+  ranks: ReadonlyMap<string, number>,
+  direction?: LayoutDirection,
+): Map<string, LayoutPorts> {
+  const faces = FACES[direction ?? 'down'];
+  const at = (ports: readonly PortSpec[], face: string) => {
+    const point = COMPASS[face as keyof typeof COMPASS];
+    return ports.some((p) => p.id === face && p.at.u === point.u && p.at.v === point.v);
+  };
+  const compass = new Set<string>(graph.groups?.map((g) => g.id) ?? []);
+  for (const node of graph.nodes) {
+    const ports = node.ports ?? DEFAULT_PORTS;
+    if (at(ports, faces.out) && at(ports, faces.in)) compass.add(node.id);
+  }
+  const edges = new Map<string, RouteEdge>();
+  for (const e of graph.edges) {
+    const id = e.origin?.id ?? e.id;
+    if (!edges.has(id)) edges.set(id, { id, from: e.origin?.from ?? e.from, to: e.origin?.to ?? e.to });
+  }
+  const routes = layeredRoutes({
+    edges: [...edges.values()],
+    ranks,
+    waypoints: new Map(),
+    members: new Map((graph.groups ?? []).map((g) => [g.id, g.members])),
+    compass,
+    ...(direction !== undefined ? { direction } : {}),
+  });
+  return new Map([...routes].map(([id, r]) => [id, {
+    ...(r.fromPort !== undefined ? { from: r.fromPort } : {}),
+    ...(r.toPort !== undefined ? { to: r.toPort } : {}),
+  }]));
+}
+
+/** What a layout's plan says of each edge's route, as {@link authoredOver}
+ *  reads it. */
+export interface PlannedRoutes {
+  ports?: ReadonlyMap<string, LayoutPorts>;
+  waypoints?: ReadonlyMap<string, readonly Vec2[]>;
+  labels?: ReadonlyMap<string, number>;
+}
+
+/** Each edge's ports and waypoints: the author's where given, else the
+ *  plan's. */
 export function authoredOver(
   edges: readonly (RouteEdge & LayeredRoute)[],
-  input: Omit<LayeredRouteInput, 'edges'>,
+  plan: PlannedRoutes,
 ): Map<string, LayeredRoute> {
-  const routes = layeredRoutes({ ...input, edges });
   return new Map(edges.map((e) => {
-    const r = routes.get(e.id);
-    const fromPort = e.fromPort ?? r?.fromPort;
-    const toPort = e.toPort ?? r?.toPort;
-    const waypoints = e.waypoints ?? r?.waypoints;
+    const ports = plan.ports?.get(e.id);
+    const planned = plan.waypoints?.get(e.id);
+    const fromPort = e.fromPort ?? ports?.from;
+    const toPort = e.toPort ?? ports?.to;
+    const waypoints = e.waypoints ?? (planned !== undefined && planned.length > 0 ? planned : undefined);
     // The room is beside layout's waypoints, not the author's.
-    const labelAt = e.waypoints === undefined ? r?.labelAt : undefined;
+    const labelAt = e.waypoints === undefined && waypoints !== undefined ? plan.labels?.get(e.id) : undefined;
     return [e.id, {
       ...(fromPort ? { fromPort } : {}),
       ...(toPort ? { toPort } : {}),
