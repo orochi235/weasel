@@ -2,7 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { expandGroupEdges, insetOf } from '../cluster';
 import type { Graph, GraphEdge, GraphGroup, GraphNode } from '../graph';
 import { axesFor } from '../layout';
+import type { Outline } from '../outline';
+import type { PortSpec } from '../types';
 import { expand } from './expand';
+import { crossings } from './order';
 import { isPlaceholder } from './types';
 
 const AXES = axesFor('down');
@@ -100,5 +103,39 @@ describe('expand', () => {
     const placeholders = rows.flat().filter((n) => isPlaceholder(n.id));
     expect(placeholders.find((n) => n.id.includes('e2'))!.group).toBe('G');
     expect(placeholders.find((n) => n.id.includes('e3'))!.group).toBeUndefined();
+  });
+});
+
+describe('a hop\'s port', () => {
+  /** `s` above `x` and `y`, with `y` seeded left of `x`. */
+  function ported(ports: PortSpec[], outline?: Outline, edges: [string, string, string][] = []): Graph {
+    const base = graphOf(['s', 'y', 'x'], []);
+    const at = { s: { x: 0, y: 0 }, y: { x: 0, y: 100 }, x: { x: 100, y: 100 } } as const;
+    const nodes = base.nodes.map((n) => ({
+      ...n,
+      bounds: { ...n.bounds, ...at[n.id as keyof typeof at] },
+      ...(n.id === 's' ? { ports, ...(outline !== undefined ? { outline } : {}) } : {}),
+    }));
+    const list: GraphEdge[] = edges.map(([fromPort, from, to], i) => ({ id: `e${i}`, from, to, fromPort }));
+    const byId = new Map(nodes.map((n) => [n.id, n]));
+    return { ...base, nodes, edges: list, node: (id) => byId.get(id), outgoing: (id) => list.filter((e) => e.from === id) };
+  }
+
+  it('is read where it sits on its node\'s outline, not at its anchor', () => {
+    const g = ported([{ id: 'p', at: { u: 0.75, v: 0 } }], 'diamond', [['p', 's', 'x']]);
+    const { hops } = expand(g, ranks({ s: 0, y: 1, x: 1 }), new Set(), { axes: AXES, nodeGap: 40 });
+    expect(hops.find((h) => h.edge === 'e0')!.fromAt).toBeCloseTo(2 / 3, 6);
+  });
+
+  it('with several places, is read at the one facing the other end where it now sits', () => {
+    // `out` may sit at either bottom corner; `mid` sits between them.
+    const g = ported([
+      { id: 'out', at: { u: 0, v: 1 }, sites: [{ u: 1, v: 1 }] },
+      { id: 'mid', at: { u: 0.75, v: 1 } },
+    ], undefined, [['out', 's', 'x'], ['mid', 's', 'y']]);
+    const { rows, hops } = expand(g, ranks({ s: 0, y: 1, x: 1 }), new Set(), { axes: AXES, nodeGap: 40 });
+    expect(rows[1]!.map((n) => n.id)).toEqual(['y', 'x']);
+    // `x` is to the right, so `out` leaves by its right corner and clears `mid`.
+    expect(crossings(rows, hops)).toBe(0);
   });
 });

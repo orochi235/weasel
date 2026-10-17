@@ -22,6 +22,11 @@ function makeHost(): MenuHost {
   return h;
 }
 
+const focusableWidget = (id: string): Widget => ({
+  id, bounds: { x: 700, y: 0, w: 20, h: 20 }, hidden: false, focusable: true,
+  draw: () => [], hitTest: () => false, onPointer: () => {}, dispose: () => {},
+});
+
 const opts = { toCanvas: (p: { x: number; y: number }) => p, canvasSize: () => ({ width: 800, height: 600 }), measure: () => 40 };
 
 let hud: Hud;
@@ -102,6 +107,70 @@ describe('attachMenuHost', () => {
     expect(hud.widgets()).toHaveLength(0);
     expect(host.current()).toBeNull();
     warn.mockRestore();
+  });
+
+  it('closes on a wheel outside the menu, and not on one over it', () => {
+    host.open({ menu: 'row', client: { x: 10, y: 10 } });
+    window.dispatchEvent(new WheelEvent('wheel', { clientX: 20, clientY: 20 }));
+    expect(host.current()).not.toBeNull();
+    window.dispatchEvent(new WheelEvent('wheel', { clientX: 600, clientY: 500 }));
+    expect(host.current()).toBeNull();
+  });
+
+  it.each(['blur', 'resize'])('closes on window %s', (type) => {
+    host.open({ menu: 'row', client: { x: 10, y: 10 } });
+    window.dispatchEvent(new Event(type));
+    expect(host.current()).toBeNull();
+  });
+
+  it('stops listening to the window once detached', () => {
+    detach();
+    detach = () => {};
+    const close = vi.spyOn(host, 'close');
+    window.dispatchEvent(new Event('resize'));
+    expect(close).not.toHaveBeenCalled();
+  });
+
+  it('gives focus back to the widget that held it when the menu closes', () => {
+    const other = focusableWidget('other');
+    hud.add(other);
+    hud.focus(other, { visible: true });
+    host.open({ menu: 'row', client: { x: 10, y: 10 } });
+    host.close();
+    expect(hud.focused).toBe(other);
+    expect(hud.focusVisible).toBe(true);
+  });
+
+  it('keeps that widget through a second open', () => {
+    const other = focusableWidget('other');
+    hud.add(other);
+    hud.focus(other);
+    host.open({ menu: 'row', client: { x: 10, y: 10 } });
+    host.open({ menu: 'row', client: { x: 50, y: 50 } });
+    host.close();
+    expect(hud.focused).toBe(other);
+  });
+
+  it('leaves focus where a press moved it', () => {
+    const other = focusableWidget('other');
+    const pressed = focusableWidget('pressed');
+    hud.add(other);
+    hud.add(pressed);
+    hud.focus(other);
+    host.open({ menu: 'row', client: { x: 10, y: 10 } });
+    hud.focus(pressed);
+    expect(host.current()).toBeNull();
+    expect(hud.focused).toBe(pressed);
+  });
+
+  it('does not give focus to a widget removed while the menu was open', () => {
+    const other = focusableWidget('other');
+    hud.add(other);
+    hud.focus(other);
+    host.open({ menu: 'row', client: { x: 10, y: 10 } });
+    hud.remove(other);
+    host.close();
+    expect(hud.focused).toBeNull();
   });
 
   it('detaching removes the widget and stops following the host', () => {

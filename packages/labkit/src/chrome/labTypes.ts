@@ -1,3 +1,4 @@
+import type { CommandOptions } from '@weasel-js/core';
 import type { ReactNode } from 'react';
 import type { LabContextValue } from '../lab/LabContext';
 import type {
@@ -24,6 +25,12 @@ export type LabRegion = 'header' | 'palette' | 'sidebar' | 'aside' | 'footer';
  */
 export interface LabChromeContext extends LabContextValue, ToolSlotContext {}
 
+/** A header button that is also a lab command, which `keys` can bind. */
+export interface LabHeaderItem<TCtx = LabChromeContext> extends ToolbarItem<TCtx> {
+  /** The keys that run it, wherever focus is in the lab. */
+  keys?: CommandOptions['keys'];
+}
+
 /**
  * A contribution to the lab's chrome. Shaped as `TrialContribution` is, and
  * merged and suppressed by the same rules, but keyed to the lab's regions and
@@ -37,7 +44,7 @@ export interface LabChromeContext extends LabContextValue, ToolSlotContext {}
 export type LabContribution<TCtx = LabChromeContext> =
   | (ContributionBase & {
       region: 'header';
-      item: ToolbarItem<TCtx>;
+      item: LabHeaderItem<TCtx>;
       render?: never;
     })
   | (ContributionBase & { region: 'palette'; item: RailItem<TCtx>; render?: never })

@@ -1,6 +1,6 @@
 import { useLayoutEffect, useRef, type KeyboardEvent } from 'react';
 import type { MenuController, MenuEntry, Rect } from '@weasel-js/menu';
-import { placeMenu, placeSubmenu } from '@weasel-js/menu';
+import { placeMenu, placeMenuUnder, placeSubmenu } from '@weasel-js/menu';
 import { MenuRow } from './MenuRow';
 import s from './ContextMenu.module.css';
 
@@ -10,9 +10,12 @@ export function MenuPanel(props: {
   highlight: number | null; childOpen: boolean; idBase: string;
   /** The row a submenu hangs from. */
   labelledBy?: string;
-  anchor: { x: number; y: number } | null;
+  anchor: { client: { x: number; y: number }; under?: Rect } | null;
   parentRow: () => Rect | null;
   focus: boolean;
+  /** While true, a pointerup over a row presses it. Read at the event, never rendered from. */
+  releaseRuns: { readonly current: boolean };
+  close(): void;
   register(el: HTMLElement | null): void;
 }) {
   const { controller: c, level, entries, highlight, idBase, parentRow, anchor, focus } = props;
@@ -24,7 +27,9 @@ export function MenuPanel(props: {
     const size = { w: el.offsetWidth, h: el.offsetHeight };
     const bounds = { x: 0, y: 0, w: window.innerWidth, h: window.innerHeight };
     const row = parentRow();
-    const at = row ? placeSubmenu(size, row, bounds) : placeMenu(size, anchor ?? { x: 0, y: 0 }, bounds);
+    const at = row ? placeSubmenu(size, row, bounds)
+      : anchor?.under ? placeMenuUnder(size, anchor.under, bounds)
+        : placeMenu(size, anchor?.client ?? { x: 0, y: 0 }, bounds);
     el.style.left = `${at.x}px`;
     el.style.top = `${at.y}px`;
     c.setPanel(level, { x: at.x, y: at.y, w: size.w, h: size.h });
@@ -47,6 +52,7 @@ export function MenuPanel(props: {
       ref={(el) => { ref.current = el; props.register(el); }}
       id={`${idBase}-panel-${level}`}
       role="menu"
+      data-weasel-overlay=""
       tabIndex={-1}
       aria-labelledby={props.labelledBy}
       className={s.panel}
@@ -65,6 +71,14 @@ export function MenuPanel(props: {
           controls={`${idBase}-panel-${level + 1}`}
           onHover={(e) => c.hover(level, i, { x: e.clientX, y: e.clientY })}
           onPress={() => c.press(level, i)}
+          onLeave={props.close}
+          onRelease={(modified) => {
+            if (!props.releaseRuns.current) return;
+            if (modified && entry.kind === 'item' && entry.href !== undefined) {
+              window.open(entry.href, '_blank');
+              props.close();
+            } else c.press(level, i);
+          }}
         />
       ))}
     </div>

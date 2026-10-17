@@ -448,14 +448,12 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
     tune?: ActionTunings;
 
     /**
-     * @experimental
      * Replace, add or mute whole action descriptors. Pass `null` to disable
      * all defaults. To change a built-in's params or add a key, use `tune`.
      */
     actions?: ActionsProp;
 
     /**
-     * @experimental
      * Given a scene node, return a short human-readable "kind" label (e.g. `'rectangle'`,
      * `'sticky note'`), which the kit publishes per id into any surrounding
      * `<SelectionContextProvider>`. Return `undefined` to skip an entry. When omitted,

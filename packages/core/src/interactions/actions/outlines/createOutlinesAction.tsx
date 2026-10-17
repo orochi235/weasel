@@ -5,7 +5,7 @@ import { loadTextOutlines, type TextNodeSource, type TextOutlinesError } from '@
 import {
   applyCreateOutlines, type CreateOutlinesAdapter, type CreateOutlinesResult,
 } from './createOutlines';
-import { CreateOutlinesIcon } from '../defaults/icons/outlineIcons';
+import { icon } from '../../../icons.gen';
 
 /** What an outline conversion answers when a text face had no outlines. */
 type OutlinesFailure = { kind: 'failed'; error: TextOutlinesError };
@@ -42,14 +42,14 @@ export function runCreateOutlines(adapter: CreateOutlinesAdapter): Promise<Creat
 }
 
 /**
- * @experimental Static descriptor for Create Outlines: replace the selected
+ * Static descriptor for Create Outlines: replace the selected
  * text nodes with path nodes carrying their glyph outlines. Reads the
  * `createOutlinesAdapter` dep, published with `useCreateOutlinesAdapter`.
  */
 export const createOutlinesAction: Action = {
   id: 'createOutlines',
   label: 'Create Outlines',
-  icon: <CreateOutlinesIcon />,
+  icon: icon('createOutlines'),
   group: 'text',
   defaultBinding: { kind: 'key', key: 'o', mods: { mod: true, shift: true } },
   eligible: { capability: 'creates-shapes' },

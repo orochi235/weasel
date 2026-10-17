@@ -6,7 +6,6 @@ import {
   type RectPose,
   solid,
   SPIRO_KINDS,
-  SpiroIcon,
   type SpiroContour,
   type SpiroKind,
   spiroNodeData,
@@ -23,10 +22,11 @@ import {
   TrialSceneCanvas,
   useTrialScene,
 } from '@weasel-js/labkit';
-import { ActionBar, SelectIcon } from '@weasel-js/ui';
+import { ActionBar } from '@weasel-js/ui';
 import { useMemo } from 'react';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
+import { icon } from '../icons.gen';
 
 const config = f.schema({
   pointKind: f.enum<SpiroKind>('smooth', SPIRO_KINDS).toggle().label('New point kind'),
@@ -115,8 +115,8 @@ const spiroInstrument = defineInstrument<State, Config>({
   undo: {},
   tools: {
     tools: [
-      { id: 'select', label: 'Select', icon: SelectIcon, shortcut: 'V' },
-      { id: 'spiro', label: 'Spiro', icon: SpiroIcon, shortcut: 'Shift+P' },
+      { id: 'select', label: 'Select', icon: icon('core:select'), shortcut: 'V' },
+      { id: 'spiro', label: 'Spiro', icon: icon('core:spiro'), shortcut: 'Shift+P' },
     ],
   },
   render: (ctx) => <SpiroTrial ctx={ctx} />,

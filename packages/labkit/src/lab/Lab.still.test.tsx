@@ -1,6 +1,7 @@
 import { screen, waitFor } from '@testing-library/react';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { createMemoryAdapter } from '@weasel-js/storage';
+import { withIcons } from '@weasel-js/ui/testing/withIcons';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { useClockFrame } from '../clock/hooks';
 import type { ClockCapability, TrialClock } from '../clock/trialClock';
@@ -27,6 +28,7 @@ function timed(spec: ClockCapability | 'lab'): Instrument {
 function mountLab(spec: ClockCapability | 'lab', props: Partial<LabProps> = {}) {
   return renderSettled(
     <Lab {...({ instruments: [timed(spec)], defaultInstrument: 'Timed', ...props } as LabProps)} />,
+    { wrapper: withIcons },
   );
 }
 
@@ -92,7 +94,7 @@ describe('<Lab still>', () => {
     const mountRunning = (spec: ClockCapability | 'lab', props: Partial<LabProps>) => {
       frames = [];
       const lab = { instruments: [running(spec)], defaultInstrument: 'Timed', ...props };
-      return renderSettled(<Lab {...(lab as LabProps)} />);
+      return renderSettled(<Lab {...(lab as LabProps)} />, { wrapper: withIcons });
     };
     // A real frame can repeat the time the run starts or stops at.
     const distinct = () => frames.filter((e, i) => e !== frames[i - 1]);

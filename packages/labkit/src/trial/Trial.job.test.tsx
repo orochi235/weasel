@@ -1,5 +1,6 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import { describe, expect, it } from 'vitest';
 import { defineInstrument } from '../instrument/defineInstrument';
 import type { JobEvent } from '../job/types';
@@ -36,7 +37,7 @@ function makeInstrument(name: string, n: number, delay: number) {
 describe('a trial whose instrument declares a job', () => {
   it('shows progress in the trial chrome', async () => {
     const fast = makeInstrument('fast', 3, 1);
-    render(<Lab instruments={[fast]} defaultInstrument="fast" />);
+    renderWithIcons(<Lab instruments={[fast]} defaultInstrument="fast" />);
     const bar = await waitFor(() => screen.getByRole('progressbar', { name: /job progress/i }));
     await waitFor(() => {
       // A job that reported a total drives a determinate bar, so the count and
@@ -49,7 +50,7 @@ describe('a trial whose instrument declares a job', () => {
 
   it('offers a cancel control while running, and drops it once cancelled', async () => {
     const slow = makeInstrument('slow', 40, 20);
-    render(<Lab instruments={[slow]} defaultInstrument="slow" />);
+    renderWithIcons(<Lab instruments={[slow]} defaultInstrument="slow" />);
     const cancel = await waitFor(() => screen.getByRole('button', { name: /cancel/i }));
     await userEvent.click(cancel);
     await waitFor(() => {
@@ -64,7 +65,7 @@ describe('a trial whose instrument declares a job', () => {
       initialState: () => ({ items: [] }),
       render: () => null,
     });
-    render(<Lab instruments={[plain]} defaultInstrument="plain" />);
+    renderWithIcons(<Lab instruments={[plain]} defaultInstrument="plain" />);
     await waitFor(() => {
       expect(document.querySelector('.lk-trial')).toBeInTheDocument();
     });

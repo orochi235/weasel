@@ -1,4 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
+import { actionItems, actionShortcuts } from '@weasel-js/routing';
 import { viewportZoomAction, makeViewportZoomAction } from './viewportZoom';
 import type { View } from 'core/viewport/view';
 import type { ViewApi } from '../depSchema';
@@ -385,5 +386,26 @@ describe('makeViewportZoomAction with animate', () => {
     getImmediateInvoker(action).run({ view: api }, { kind: 'in' });
 
     expect(calls.animate[0].opts).toEqual({ ms: 300, easing, interpolator, onDone });
+  });
+});
+
+describe('viewport.zoom variants', () => {
+  it('lists in, out and reset as variants, and nothing for wheel or pinch', () => {
+    expect(actionItems(makeViewportZoomAction()).map((i) => [i.key, i.label, i.params])).toEqual([
+      ['viewport.zoom:in', 'Zoom In', { kind: 'in' }],
+      ['viewport.zoom:out', 'Zoom Out', { kind: 'out' }],
+      ['viewport.zoom:reset', 'Reset Zoom', { kind: 'reset' }],
+    ]);
+  });
+
+  it('finds each variant its key binding as a shortcut', () => {
+    const action = makeViewportZoomAction();
+    const keyOf = (kind: string) => {
+      const s = actionShortcuts(action, { kind })[0];
+      return [s.key, s.mod];
+    };
+    expect(keyOf('in')).toEqual(['=', true]);
+    expect(keyOf('out')).toEqual(['-', true]);
+    expect(keyOf('reset')).toEqual(['0', true]);
   });
 });

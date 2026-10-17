@@ -65,7 +65,7 @@ export { renderDebugSnapshot, debugSnapshotArgs } from '../canvas/renderDebugSna
 export type { RenderDebugSnapshotArgs } from '../canvas/renderDebugSnapshot';
 export { rasterToPng } from '../canvas/rasterToPng';
 
-// --- @experimental Pointer ambient context (2026-05-16) ---------------------
+// --- Pointer ambient context ----------------------------------------------
 export {
   PointerContextProvider,
   createPointerStore,

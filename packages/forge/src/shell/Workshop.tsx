@@ -1,8 +1,7 @@
 import {
-  type CommandItem,
   Lab,
-  type LabChromeContext,
   type LabContribution,
+  type LabMenus,
   type StorageAdapter,
   useLabContext,
 } from '@weasel-js/labkit';
@@ -17,9 +16,9 @@ import { LibrariesContext, librariesFrom } from '../story/library';
 import type { DepGraph, IndexEntry } from '../story/types';
 import { DependenciesContext } from './dependencies';
 import { missingInstrument } from './documentInstrument';
-import { InfoIcon } from '@weasel-js/ui';
 import { A11Y_SECTION } from './a11y/A11yPanel';
 import { CSS_VARS_SECTION } from './cssVars/CssVarsPanel';
+import { infoItem } from './info/infoItem';
 import { StoryInfoDialog } from './info/StoryInfoDialog';
 import { createFramePool, type FramePool, FramePoolContext } from './framePool';
 import { createTrialFrames, TrialFramesContext } from './trialFrames';
@@ -27,6 +26,7 @@ import { RoutePlayhead } from '../timeline/RoutePlayhead';
 import { createTrialClocks, TrialClocksContext } from '../timeline/trialClocks';
 import { type GlobalDeclarations, labGlobals } from './globals';
 import { GlobalsToolbar, LabGlobals } from './GlobalsToolbar';
+import { GlobalsMenus } from './globalsMenu';
 import type { StoryChanges } from './storyChanges';
 import { StoryGlobalsContext } from './StoryGlobalsContext';
 import { RouteKnobs } from './RouteKnobs';
@@ -84,32 +84,17 @@ function RouteOpener() {
   return null;
 }
 
-/**
- * Opens Get Info on ⌘I / Ctrl+I. `CommandItem.shortcut` is a tooltip hint —
- * labkit binds no keys — so the shell binds its own.
- */
-function useInfoShortcut(open: (next: boolean) => void): void {
+function useDocumentTitle(title: string) {
   useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== 'i' && event.key !== 'I') return;
-      if (!(event.metaKey || event.ctrlKey) || event.altKey || event.shiftKey) return;
-      const target = event.target as HTMLElement | null;
-      if (target?.isContentEditable || /^(input|textarea|select)$/i.test(target?.tagName ?? '')) return;
-      event.preventDefault();
-      open(true);
-    };
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [open]);
+    document.title = title;
+  }, [title]);
 }
 
 /** The workshop page: a labkit `Lab` with a story tree, where each story or index page opens as a trial. */
 export function Workshop({ index, frameUrl, importers, setup, changes, config, stories = [], storageKey, storage, dependencies }: WorkshopProps) {
   const declarations = config?.globals ?? NO_DECLARATIONS;
   const title = config?.title ?? DEFAULT_TITLE;
-  useEffect(() => {
-    document.title = title;
-  }, [title]);
+  useDocumentTitle(title);
   const [frames] = useState(createTrialFrames);
   const [clocks] = useState(createTrialClocks);
   const [pool, setPool] = useState<FramePool | null>(null);
@@ -148,15 +133,11 @@ export function Workshop({ index, frameUrl, importers, setup, changes, config, s
   const themeFor = config?.labTheme;
   const labTheme = useMemo(() => themeFor?.(labValues), [themeFor, labValues]);
   const [infoOpen, setInfoOpen] = useState(false);
-  useInfoShortcut(setInfoOpen);
   const reportLabValues = useCallback(
     (next: Globals) => setLabValues((prev) => (stableStringify(prev) === stableStringify(next) ? prev : next)),
     [],
   );
-  const infoCommand = useMemo<CommandItem<LabChromeContext>>(
-    () => ({ icon: InfoIcon, label: 'Info', shortcut: '⌘I', onActivate: () => setInfoOpen(true) }),
-    [],
-  );
+  const infoCommand = useMemo(() => infoItem(() => setInfoOpen(true)), []);
   const labChrome = useMemo<readonly LabContribution[]>(
     () => [
       { id: 'fg-stories', region: 'sidebar', render: (ctx) => <StoryTree ctx={ctx} index={index} /> },
@@ -170,6 +151,7 @@ export function Workshop({ index, frameUrl, importers, setup, changes, config, s
     ],
     [index, infoCommand, declarations, config?.cssVars, config?.labChrome],
   );
+  const [menus, setMenus] = useState<LabMenus>();
   const first = index[0];
   if (!first) {
     return (
@@ -204,6 +186,7 @@ export function Workshop({ index, frameUrl, importers, setup, changes, config, s
                 {...(storage ? { storage } : {})}
                 labChrome={labChrome}
                 addTrial={false}
+                {...(menus ? { menus } : {})}
                 {...(config?.controls ? { controls: config.controls } : {})}
                 {...(config?.pages ? { pages: config.pages } : {})}
                 {...(config?.path !== undefined ? { path: config.path } : {})}
@@ -218,6 +201,7 @@ export function Workshop({ index, frameUrl, importers, setup, changes, config, s
                   onOpenChange={setInfoOpen}
                 />
                 <LabGlobals declarations={declarations} onChange={reportLabValues} />
+                <GlobalsMenus declarations={declarations} onMenus={setMenus} />
               </Lab>
             </TrialClocksContext.Provider>
           </TrialFramesContext.Provider>

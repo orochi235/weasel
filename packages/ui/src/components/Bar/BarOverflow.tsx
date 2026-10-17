@@ -4,6 +4,7 @@ import { Icon } from '../../icons/Icon';
 import { useOverlayPortal } from '../../overlays/portalHost';
 import listbox from '../listbox.module.css';
 import s from './Bar.module.css';
+import { icon } from '../../icons.gen';
 
 /** The button at the end of a bar that opens the cells its line had no room for, one under another. */
 export function BarOverflow({ label, children }: { label: string; children: ReactNode }) {
@@ -12,7 +13,7 @@ export function BarOverflow({ label, children }: { label: string; children: Reac
     <DialogTrigger>
       {anchor}
       <RACButton aria-label={label} className={s.action}>
-        <Icon name="more" size={16} />
+        <Icon name={icon('more')} size={16} />
       </RACButton>
       {ready && (
         <RACPopover className={s.popover} data-weasel-overlay="" {...portalProps}>

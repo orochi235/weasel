@@ -11,6 +11,7 @@ import type { ActionCatalog } from './useActionCatalog';
 import type { SchemaRoot } from './schemaEdit';
 import { SettingsTree } from './SettingsTree';
 import s from './PrefSchemaEditor.module.css';
+import { icon } from '../../icons.gen';
 
 /**
  * The row under the attributes and the preview, at a height the reader drags and the editor's prefs keep:
@@ -54,9 +55,9 @@ export function ShelfLists({ slot, over, layout, actions, ...drag }: ListDrag & 
   // What sorts the catalog, where there is one to sort.
   const tools = actions?.editable && (
     <>
-      <Button iconOnly variant="ghost" size="sm" ariaLabel="Add action group" tooltip="Add group" onClick={actions.addGroup}><Icon name={GROUP_ICON.section} mark="markAdd" size={16} /></Button>
+      <Button iconOnly variant="ghost" size="sm" ariaLabel="Add action group" tooltip="Add group" onClick={actions.addGroup}><Icon name={GROUP_ICON.section} mark={icon('markAdd')} size={16} /></Button>
       <Button iconOnly variant="ghost" size="sm" ariaLabel="Remove from actions" tooltip="Remove: a group gives up what it holds, and an action that is gone leaves the list"
-        disabled={actions.selected.length === 0} onClick={actions.remove}><Icon name="delete" size={16} /></Button>
+        disabled={actions.selected.length === 0} onClick={actions.remove}><Icon name={icon('core:delete')} size={16} /></Button>
     </>
   );
   return createPortal(

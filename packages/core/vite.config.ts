@@ -13,6 +13,7 @@ import react from '@vitejs/plugin-react';
 import { rolldown } from 'rolldown';
 import { defineConfig, type Plugin } from 'vite';
 import { entries } from './entries.ts';
+import { weaselIcons } from '../icons-plugin/src/index.ts';
 import { stableScopedName } from '../../scripts/vite-css-modules.ts';
 
 const pkg = JSON.parse(readFileSync(resolve(import.meta.dirname, 'package.json'), 'utf8')) as {
@@ -77,7 +78,7 @@ function selfContainedLazyKinds(): Plugin {
 }
 
 export default defineConfig({
-  plugins: [react(), selfContainedLazyKinds()],
+  plugins: [react(), selfContainedLazyKinds(), weaselIcons.vite({ mode: 'library' })],
   // In-repo builds that resolve core's source get the same define from
   // `scripts/vite-build-info.ts`.
   define: { __WEASEL_CORE_VERSION__: JSON.stringify(pkg.version) },
@@ -92,6 +93,8 @@ export default defineConfig({
       cssFileName: 'style',
     },
     target: 'es2022',
+    // A consumer's bundler minifies. Either pass here would strip the `@icon` annotations.
+    minify: false,
     cssCodeSplit: false,
     sourcemap: true,
     emptyOutDir: true,
@@ -102,6 +105,7 @@ export default defineConfig({
       // registration in that module with it (composite.ts registers a shader program).
       optimization: { inlineConst: false },
       output: {
+        minify: false,
         preserveModules: true,
         preserveModulesRoot: resolve(import.meta.dirname, 'src'),
         entryFileNames: '[name].js',

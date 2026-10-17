@@ -1,6 +1,7 @@
 import { act, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
+import { withIcons } from '@weasel-js/ui/testing/withIcons';
 import { useEffect, useRef, useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { defineInstrument } from '../instrument/defineInstrument';
@@ -56,7 +57,9 @@ const instrument = defineInstrument<{ n: number }, Record<string, never>>({
 describe('useTrialHistory', () => {
   it("steps the instrument's own history from the trial's Undo, and takes no snapshots meanwhile", async () => {
     history = fakeHistory();
-    await renderSettled(<Lab instruments={[instrument]} defaultInstrument="Own" />);
+    await renderSettled(<Lab instruments={[instrument]} defaultInstrument="Own" />, {
+      wrapper: withIcons,
+    });
     const undo = screen.getByRole('button', { name: 'Undo' });
     expect(undo).toBeDisabled();
     act(() => history.set(true));

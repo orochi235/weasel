@@ -27,8 +27,9 @@ export type Row =
   | { kind: 'field'; label: string; value: string; style?: RowTextStyle; id?: string; room?: string }
   /** A row that carries ports on its own left and right edges. */
   | { kind: 'ports'; left?: readonly RowPort[]; right?: readonly RowPort[]; height?: number }
-  /** Reserved space a consumer paints into. */
-  | { kind: 'slot'; height: number; id?: string };
+  /** Reserved space a consumer paints into. With a `width`, the body is at
+   *  least that wide and the slot's box is that wide, centered in its row. */
+  | { kind: 'slot'; height: number; width?: number; id?: string };
 
 /** A port declared on a row rather than on the node's perimeter. */
 export interface RowPort {
@@ -151,7 +152,7 @@ function measureRow(row: Row, measure: MeasureRowText | undefined): { width: num
       };
     }
     case 'slot':
-      return { width: 0, height: row.height };
+      return { width: row.width ?? 0, height: row.height };
   }
 }
 
@@ -208,7 +209,8 @@ export function layoutBody(
   let y = inner.y + padding + slack * share;
   return spec.rows.map((row, index) => {
     const h = heights[index];
-    const box: RowBox = { row, index, x: inner.x + padding, y, width, height: h };
+    const w = row.kind === 'slot' && row.width !== undefined ? Math.min(row.width, width) : width;
+    const box: RowBox = { row, index, x: inner.x + padding + (width - w) / 2, y, width: w, height: h };
     y += h + gap;
     return box;
   });

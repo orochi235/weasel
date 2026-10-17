@@ -1,11 +1,11 @@
-import { createElement, useMemo, useReducer, useRef, useState } from 'react';
+import { useMemo, useReducer, useRef, useState } from 'react';
 import { useLatest } from '@weasel-js/react';
 import type { Action, ActionDeps } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import { cursorFor } from '@weasel-js/cursor';
 import { boundsOfPath, isSpiroKind, spiroToPath, withinPxRadius, type SpiroKind, type SpiroPoint } from '@weasel-js/geom';
 import { defineTool, type Tool } from '../../overlayBinding';
-import { SpiroIcon } from '../../../icons';
+import { icon } from '../../../icons.gen';
 import { createSpiroPreviewLayer, type SpiroPreviewState } from 'features/paths/spiroPreviewLayer';
 import { createPointerFollower } from '../shared/pointerFollower';
 
@@ -165,7 +165,7 @@ export function useSpiroTool(options: UseSpiroToolOptions = {}): Tool {
     capabilities: ['creates-paths'],
     hookName: 'useSpiroTool',
     cursor: () => (scratchRef.current?.closeHint ? 'pointer' : cursorFor('pen', { fallback: 'crosshair' })),
-    presentation: { label: 'Spiro', icon: createElement(SpiroIcon), group: 'draw' },
+    presentation: { label: 'Spiro', icon: icon('spiro'), group: 'draw' },
     actions,
     overlay,
     overlayPosition: 'before-selection',

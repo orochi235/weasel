@@ -5,3 +5,7 @@ export {
   type BooleanOp, type BooleansAdapter, type BooleanOpPreview, type BooleanOpResult, type BooleanPreviewPiece,
 } from './booleans';
 export type { BooleanOpOptions, BooleanStrokes } from './operands';
+export {
+  planShapeBuilder, facesAlong,
+  type ShapeBuilderFace, type ShapeBuilderMode, type ShapeBuilderPlan,
+} from './shapeBuilder';

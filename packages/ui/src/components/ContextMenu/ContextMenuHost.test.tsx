@@ -5,7 +5,8 @@ import { StrictMode } from 'react';
 import {
   ActionDisabledReason, ActionsProvider, useAction, useMenuHost, useMenus, type MenuDef, type MenuHost,
 } from '@weasel-js/core';
-import { ContextMenuHost } from './ContextMenuHost';
+import type { MenuEntry } from '@weasel-js/menu';
+import { ContextMenuHost, OpenPanels } from './ContextMenuHost';
 
 afterEach(cleanup);
 
@@ -210,5 +211,185 @@ describe('ContextMenuHost', () => {
     expect(() => fireEvent.click(screen.getByRole('menuitem', { name: 'Gated' }))).not.toThrow();
     expect(ran).toEqual([]);
     expect(screen.queryByRole('menu')).toBeNull();
+  });
+});
+
+describe('ContextMenuHost access letters', () => {
+  it('runs a row on its declared access letter', () => {
+    ran.length = 0;
+    const menus: MenuDef[] = [{ id: 'a', menu: pref.group('', { cut: pref.action('cut', { access: 's' }) }) }];
+    function Access() {
+      useAction(act1('cut'));
+      useMenus(menus);
+      host = useMenuHost();
+      return <ContextMenuHost />;
+    }
+    render(<ActionsProvider><Access /></ActionsProvider>);
+    act(() => { host!.open({ menu: 'a', client: { x: 0, y: 0 }, source: 'keyboard' }); });
+    fireEvent.keyDown(screen.getByRole('menu'), { key: 's' });
+    expect(ran).toEqual(['cut']);
+    expect(screen.queryByRole('menu')).toBeNull();
+  });
+});
+
+const item = (key: string, extra: Partial<Extract<MenuEntry, { kind: 'item' }>> = {}): MenuEntry =>
+  ({ kind: 'item', key, label: key, run: () => { ran.push(key); }, ...extra });
+const panels = (entries: MenuEntry[], extra: Partial<Parameters<typeof OpenPanels>[0]> = {}) => {
+  const close = vi.fn();
+  const open = { seq: 1, entries, client: { x: 0, y: 0 }, source: 'pointer' as const };
+  render(<OpenPanels open={open} close={close} {...extra} />);
+  return close;
+};
+
+describe('menu rows that are links', () => {
+  it('draws an href row as an anchor that keeps the menuitem role', () => {
+    panels([item('docs', { href: '/docs' })]);
+    const row = screen.getByRole('menuitem', { name: 'docs' });
+    expect(row.tagName).toBe('A');
+    expect(row.getAttribute('href')).toBe('/docs');
+  });
+
+  it('a plain click runs the row, navigates and closes', () => {
+    ran.length = 0;
+    window.location.hash = '';
+    const close = panels([item('docs', { href: '#docs' })]);
+    const notPrevented = fireEvent.click(screen.getByRole('menuitem', { name: 'docs' }));
+    expect(notPrevented).toBe(false);
+    expect(ran).toEqual(['docs']);
+    expect(window.location.hash).toBe('#docs');
+    expect(close).toHaveBeenCalled();
+    window.location.hash = '';
+  });
+
+  it('a Meta-click, Ctrl-click, Shift-click or middle click is left to the browser and closes', () => {
+    ran.length = 0;
+    window.location.hash = '';
+    for (const fire of [
+      (el: Element) => fireEvent.click(el, { metaKey: true }),
+      (el: Element) => fireEvent.click(el, { ctrlKey: true }),
+      (el: Element) => fireEvent.click(el, { shiftKey: true }),
+      (el: Element) => fireEvent(el, new MouseEvent('auxclick', { bubbles: true, cancelable: true, button: 1 })),
+    ]) {
+      const close = panels([item('docs', { href: '#docs' })]);
+      expect(fire(screen.getByRole('menuitem', { name: 'docs' }))).toBe(true);
+      expect(close).toHaveBeenCalledTimes(1);
+      cleanup();
+    }
+    expect(window.location.hash).toBe('');
+    expect(ran).toEqual([]);
+  });
+
+  it('a release with Meta, Ctrl or Shift held opens the link in a new tab and closes', () => {
+    ran.length = 0;
+    const open = vi.spyOn(window, 'open').mockReturnValue(null);
+    try {
+      for (const mod of [{ metaKey: true }, { ctrlKey: true }, { shiftKey: true }]) {
+        const close = panels([item('docs', { href: '/docs' })], { releaseRuns: true });
+        fireEvent.pointerUp(screen.getByRole('menuitem', { name: 'docs' }), mod);
+        expect(open).toHaveBeenLastCalledWith('/docs', '_blank');
+        expect(close).toHaveBeenCalledTimes(1);
+        cleanup();
+      }
+      expect(ran).toEqual([]);
+    } finally {
+      open.mockRestore();
+    }
+  });
+
+  it('marks the current row', () => {
+    panels([item('here', { href: '/here', current: true }), item('there', { href: '/there' })]);
+    expect(screen.getByRole('menuitem', { name: 'here' }).getAttribute('aria-current')).toBe('page');
+    expect(screen.getByRole('menuitem', { name: 'there' }).hasAttribute('aria-current')).toBe(false);
+  });
+
+  it('keeps a declared letter that is absent from its label working, with nothing underlined', () => {
+    ran.length = 0;
+    panels([item('File', { access: 'x' })]);
+    const row = screen.getByRole('menuitem', { name: 'File' });
+    expect(row.querySelector('span span')).toBeNull();
+    fireEvent.keyDown(screen.getByRole('menu'), { key: 'x' });
+    expect(ran).toEqual(['File']);
+  });
+});
+
+describe('OpenPanels bar hooks', () => {
+  it('releaseRuns: a pointerup over a row presses it', () => {
+    ran.length = 0;
+    panels([item('a'), item('b')], { releaseRuns: true });
+    fireEvent.pointerUp(screen.getByRole('menuitem', { name: 'b' }));
+    expect(ran).toEqual(['b']);
+  });
+
+  it('releaseRuns: a pointerup over a disabled row runs nothing and still disarms', () => {
+    ran.length = 0;
+    panels([item('a', { disabled: true }), item('c')], { releaseRuns: true });
+    fireEvent.pointerUp(screen.getByRole('menuitem', { name: 'a' }));
+    fireEvent.pointerUp(screen.getByRole('menuitem', { name: 'c' }));
+    expect(ran).toEqual([]);
+  });
+
+  it('releaseRuns: a new menu through the same OpenPanels re-arms while the prop stays true', () => {
+    ran.length = 0;
+    const close = vi.fn();
+    const mk = (seq: number, entries: MenuEntry[]) => ({ seq, entries, client: { x: 0, y: 0 }, source: 'pointer' as const });
+    const { rerender } = render(<OpenPanels open={mk(1, [item('a')])} close={close} releaseRuns />);
+    fireEvent.pointerUp(document.body);
+    rerender(<OpenPanels open={mk(2, [item('x')])} close={close} releaseRuns />);
+    fireEvent.pointerUp(screen.getByRole('menuitem', { name: 'x' }));
+    expect(ran).toEqual(['x']);
+  });
+
+  it('releaseRuns: flipping it on a rerender keeps the same row elements', () => {
+    const close = vi.fn();
+    const open = { seq: 1, entries: [item('a')], client: { x: 0, y: 0 }, source: 'pointer' as const };
+    const { rerender } = render(<OpenPanels open={open} close={close} />);
+    const before = screen.getByRole('menuitem', { name: 'a' });
+    rerender(<OpenPanels open={open} close={close} releaseRuns />);
+    expect(screen.getByRole('menuitem', { name: 'a' })).toBe(before);
+  });
+
+  it('releaseRuns: the release that presses a row disarms, so a second one runs nothing', () => {
+    ran.length = 0;
+    const more: MenuEntry = { kind: 'submenu', key: 'more', label: 'More', entries: [item('inner')] };
+    panels([more], { releaseRuns: true });
+    fireEvent.pointerUp(screen.getByRole('menuitem', { name: 'More' }));
+    fireEvent.pointerUp(screen.getByRole('menuitem', { name: 'inner' }));
+    expect(ran).toEqual([]);
+  });
+
+  it('releaseRuns: a pointercancel disarms', () => {
+    ran.length = 0;
+    panels([item('a')], { releaseRuns: true });
+    fireEvent.pointerCancel(document.body);
+    fireEvent.pointerUp(screen.getByRole('menuitem', { name: 'a' }));
+    expect(ran).toEqual([]);
+  });
+
+  it('without releaseRuns a pointerup presses nothing', () => {
+    ran.length = 0;
+    panels([item('a')]);
+    fireEvent.pointerUp(screen.getByRole('menuitem', { name: 'a' }));
+    expect(ran).toEqual([]);
+  });
+
+  it('inside: a press on an extra target does not dismiss', () => {
+    const extra = document.createElement('button');
+    document.body.append(extra);
+    try {
+      const close = panels([item('a')], { inside: (t) => t === extra });
+      fireEvent.pointerDown(extra);
+      expect(close).not.toHaveBeenCalled();
+      fireEvent.pointerDown(document.body);
+      expect(close).toHaveBeenCalled();
+    } finally {
+      extra.remove();
+    }
+  });
+
+  it('onEdge: ArrowLeft with no submenu open reaches the callback', () => {
+    const onEdge = vi.fn();
+    panels([item('a')], { onEdge });
+    fireEvent.keyDown(screen.getByRole('menu'), { key: 'ArrowLeft' });
+    expect(onEdge).toHaveBeenCalledWith(-1);
   });
 });

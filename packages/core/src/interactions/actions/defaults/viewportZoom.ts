@@ -18,7 +18,6 @@ function keyAnchor(view: ViewApi): { x: number; y: number } {
 }
 
 /**
- * @experimental
  * Tuning for the animated form of the discrete zoom steps.
  */
 export interface ViewportZoomAnimateOptions extends ViewAnimationOptions {
@@ -27,7 +26,6 @@ export interface ViewportZoomAnimateOptions extends ViewAnimationOptions {
 }
 
 /**
- * @experimental
  * Tuning for {@link makeViewportZoomAction}.
  */
 export interface ViewportZoomOptions {
@@ -101,7 +99,6 @@ function zoomBindings(wheel: ViewportZoomOptions['wheel']): BoundGesture[] {
 }
 
 /**
- * @experimental
  * Build a `viewport.zoom` Action descriptor with a configurable wheel trigger
  * and scale clamp. The keyboard bindings (Cmd+=/-/0) and the two trackpad
  * pinch bindings are fixed. A wheel or pinch sample zooms about its focal
@@ -122,6 +119,11 @@ export function makeViewportZoomAction(
     id: 'viewport.zoom',
     label: 'Zoom',
     group: 'viewport',
+    variants: [
+      { key: 'in', label: 'Zoom In', params: { kind: 'in' } },
+      { key: 'out', label: 'Zoom Out', params: { kind: 'out' } },
+      { key: 'reset', label: 'Reset Zoom', params: { kind: 'reset' } },
+    ],
     defaultBinding: zoomBindings(opts.wheel),
     requires: ['view', 'debug'],
     invoker: {
@@ -199,7 +201,6 @@ export function makeViewportZoomAction(
 }
 
 /**
- * @experimental
  * Default `viewport.zoom` descriptor: Cmd/Ctrl+wheel zoom with the kit's
  * default 0.1–8 scale clamp. Equivalent to `makeViewportZoomAction()`.
  */

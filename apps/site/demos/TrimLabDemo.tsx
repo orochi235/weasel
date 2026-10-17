@@ -10,11 +10,11 @@ import {
   TrialSceneCanvas,
   useTrialScene,
 } from '@weasel-js/labkit';
-import { SelectIcon, SliceIcon } from '@weasel-js/ui';
 import { useMemo } from 'react';
 import { strokeNode } from './pathEditLabScene';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
+import { icon } from '../icons.gen';
 
 const FEATURES = ['draw', trimPreset] as const;
 
@@ -59,8 +59,8 @@ const trimInstrument = defineInstrument<State, Config>({
   tools: {
     initial: 'trim',
     tools: [
-      { id: 'trim', label: 'Trim segment', icon: SliceIcon, shortcut: 'Y' },
-      { id: 'select', label: 'Select', icon: SelectIcon, shortcut: 'V' },
+      { id: 'trim', label: 'Trim segment', icon: icon('core:slice'), shortcut: 'Y' },
+      { id: 'select', label: 'Select', icon: icon('core:select'), shortcut: 'V' },
     ],
   },
   render: (ctx) => <TrimTrial ctx={ctx} />,

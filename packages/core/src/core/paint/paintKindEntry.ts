@@ -1,4 +1,5 @@
 import type { ComponentType } from 'react';
+import type { IconRef } from '@weasel-js/icons';
 import type { Paint, GradStop, TileKind } from '@weasel-js/paint';
 import type { PaintDrawKind } from '@weasel-js/renderer';
 
@@ -20,8 +21,8 @@ export type PaintKind =
 export interface PaintKindFamily {
   id: string;
   label: string;
-  /** Glyph for the family's segment, resolved the way an entry's `icon` is. */
-  icon?: string;
+  /** Glyph for the family's segment. */
+  icon?: IconRef;
 }
 
 /** What a registered kind's editor renders. `PaintInput` in `@weasel-js/ui`
@@ -41,10 +42,9 @@ export interface PaintKindEditorProps {
  */
 export interface PaintKindEntry extends PaintDrawKind {
   label: string;
-  /** Glyph naming this kind in an editor's kind bar, as an icon name the UI
-   *  layer resolves — the same indirection `PrefBase.icon` uses. A kind
-   *  without one is named by its `label`. */
-  icon?: string;
+  /** Glyph naming this kind in an editor's kind bar. A kind without one is
+   *  named by its `label`. */
+  icon?: IconRef;
   /** The family this kind is offered under; see {@link PaintKindFamily}. A
    *  kind without one is its own segment. */
   family?: PaintKindFamily;

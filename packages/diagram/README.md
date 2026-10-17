@@ -109,8 +109,10 @@ a rank of its own between its ends, with room beside its wire as big as the
 label. Under `order: 'seeded'` an edge keeps its place in each rank the way a
 node does, from where its route crosses that rank now. Under
 `order: 'barycenter'` it also reorders each rank to cut crossings, reading each
-edge at the port it joins, so two wires into one node arrive in the order of
-its ports. `layeredPlan(graph, opts)`, also reachable as `layered.plan`,
+edge at the port it joins, where `portsOf` puts that port on the node's
+outline, so two wires into one node arrive in the order of its ports. A port
+with several places is read at the one nearest where the wire's other end
+falls among the node's wires on that side. `layeredPlan(graph, opts)`, also reachable as `layered.plan`,
 answers with the moves plus each node's rank, each spanning edge's waypoints
 and where among them each label's room is, for drawing those edges where their
 room was left. `ranksOf` is the plain longest-path ranking, which `chain` uses.
@@ -118,14 +120,18 @@ room was left. `ranksOf` is the plain longest-path ranking, which `chain` uses.
 On a live scene the layout action and a live `layered` run write those routes
 too, in the same undo entry as the moves: each long edge gets its waypoints,
 and its label, when it sits at the default middle, moves into the room left
-beside them. An edge records the waypoints layout wrote as `laidOut`, and
+beside them. Under `layered` each edge's compass ports are named for the way it
+runs between ranks, and an end records the port layout named as `laidOut`, the
+way a route does; layout names it again on each run while the end names no
+port or still names that one. An edge records the waypoints layout wrote as `laidOut`, and
 layout rewrites a route only while the edge's waypoints still match them; once
 someone moves a bend, the route is theirs and layout leaves it and its label
 alone, and keeps no room for it in the ranks it crosses. A layout that routes
 nothing, `tree` or `force`, takes layered's routes back off, and anything on a
 locked layer stays as it is. A live run writes its routes only when it arrives
 with nothing held along the way, since a drag or a `stop` leaves the nodes
-somewhere the routes were not laid out for. A layout of your own hands routes
+somewhere the routes were not laid out for. While it eases, each route it will
+write eases with the nodes, shown as the edge's path on the override channel. A layout of your own hands routes
 back the same way, by giving its `LayoutFn` a `plan`, which `diagramScene`
 reads too.
 
@@ -153,17 +159,23 @@ return <DiagramView specs={specs} width={360} height={600} selected={id} onSelec
 Every box is a `buildBody` body, so a data node takes the same knobs a body
 does — `outline`, `rows`, `padding`, `gap`, `verticalAlign`, `ports` — plus `pinned`, a
 starting `at`, and a minimum `width`/`height`; `lines` is shorthand for one
-label row each. An edge can name `fromPort`/`toPort`, its own `router`,
+label row each. A `slot` row is reserved space, `height` tall and, with a
+`width`, that wide and centered; one with an `id` becomes a scene node of that
+name, `<node>/<id>`, drawn as an empty frame until you fill it by changing its
+data — with `{ image: { src } }`, say. An edge can name `fromPort`/`toPort`, its own `router`,
 `waypoints` and `labelPlacement`.
 
 `outline` is `'rect'`, `'diamond'`, `'stadium'`, `'parallelogram'`,
-`'trapezoid'` (a demultiplexer: tall at the right, short at the left), or a
-`Path`. A `Path` is in world coordinates, so it does not follow its node when
-layout moves it.
+`'trapezoid'` (a demultiplexer: tall at the right, short at the left),
+`'hexagon'` (pointed at the left and right, its rows kept between the points), or a
+`Path` drawn in a unit square — `(0, 0)` the box's top-left, `(1, 1)` its
+bottom-right — which is stretched over the box, so it follows its node as
+marks do.
 
 `marks` draws more over a box than its rows. A mark with `d` is SVG path data
 in a unit square, stretched over the node's box; it takes `fill`, `stroke`,
-`strokeWidth`, `dash` and `opacity`. A mark with `text` is pinned to a point on
+`strokeWidth`, `dash` and `opacity`. `diagramScene` throws on path data that
+does not parse or draws nothing, naming the node and the mark's index. A mark with `text` is pinned to a point on
 the box: `at` is that point as `{ u, v }` fractions of the box, `self` is which
 point of the text sits on it (default `at`), and `offset` nudges it in pixels.
 Marks move with their node. `DiagramView` registers the painters for outlines
@@ -192,8 +204,9 @@ so it goes around what lies between its ends — unless an end is pinned away
 from where its rank would put it, when it takes the router's own path. An
 author's own ports and waypoints win. A label's `offset` is the gap between the
 route and the label's near side. A label whose edge sets no `labelPlacement`
-of its own, or one at `'mid'`, sits in the room layout left it, placed with `at: { waypoint }`,
-which stations a label between two of its edge's waypoints.
+of its own, or one at `'mid'`, sits in the room layout left it, placed with
+`at: { near }`, which stations a label where its route passes nearest a point,
+so a bend added or removed elsewhere leaves it where it was.
 
 `groups` draws a box around some nodes, with an optional `label` inside it:
 
@@ -208,7 +221,9 @@ else enters, in every rank from its first member's to its last, and rank gaps
 widen where a box needs the room; `force` pulls a group's members toward each
 other and pushes groups apart. The box is an ordinary scene node that depends
 on its members and derives its pose from theirs (`groupDerivePose`), so
-dragging a member carries the box along. It is never narrower than its label,
+dragging a member carries the box along. It also depends on the labels of the
+wires with both ends inside it, so a long label stays inside the box. It is
+never narrower than its label,
 and a layout running down or up leaves room for that width. An edge whose
 `from` or `to` names a group meets the box, and ranks against the group's first
 stage. A scene built
@@ -235,16 +250,23 @@ since survive it. Editing reports rather than writes —
 ```
 
 — `onMove` turns on dragging and hears every node a drag or a layout run
-moved; `onConnect` makes ports grabbable and hears the edge a connect
-describes. Store a move as the node's `at`, with `pinned: true` unless the
-scene uses `layout: 'none'`, or the next `diagramScene` lays it out again.
+moved, and, as its second argument, every edge whose route a layout run
+rewrote (`{ id, waypoints }`, `id` being `edgeIdOf` of the data edge);
+`onConnect` makes ports grabbable and hears the edge a connect describes.
+Store a move as the node's `at`, with `pinned: true` unless the scene uses
+`layout: 'none'`, or the next `diagramScene` lays it out again. Store a route
+as the edge's `routed`: it is drawn until layout runs again, and stays
+layout's to replace, its label keeping the room layout leaves it. `waypoints`
+would make it yours, which layout never moves. A run that only rewrote routes
+calls `onMove` with no moves.
 `view.current.layout('layered')` re-runs a layout animated from where the
 nodes stand; `'force'` relaxes live.
 
 Labels paint only in a registered font family, and the default is
 sans-serif, so call `registerCanvasFont('sans-serif')` once or they render
-blank. `minScale` stops the initial fit from shrinking a wide diagram past
-readable; the rest is a pan away.
+blank. The view opens fitted to the diagram and fits again when `width` or
+`height` changes, until the user pans or zooms. `minScale` stops the fit from
+shrinking a wide diagram past readable; the rest is a pan away.
 
 ### Effect charts
 
@@ -312,6 +334,7 @@ A stage:
 | `run` | One run of the pipeline, drawn over it (below). It may change every frame. |
 | `look`, `options` | How it is drawn, and that look's options. Default look `nodeGraph`. |
 | `width`, `height` | The canvas size. |
+| `minScale` | The smallest scale the chart opens at; a chart too big to fit whole at it opens at its start, the rest a pan away. Default `EFFECT_MIN_SCALE`, 0.5, which sets the shipped looks' titles at 6px. |
 | `background` | What the canvas paints behind the chart. Unset, it is transparent; the shipped looks are drawn for a dark ground. |
 | `selected`, `onSelect` | As on `DiagramView`, for stage ids. A pick of anything that is not a stage, such as a group box, is reported as `null`, and the canvas keeps its own highlight on it. |
 | `onProblems` | Hears what `checkPipeline` found, on mount and each time the pipeline's content changes, whether or not the list differs. |
@@ -345,14 +368,33 @@ decision as something else, as `rack` draws a skip as an arc, the look's
 `exits` say which edges stand for which exit. It writes each stage's `cost`, in milliseconds, above its top-right
 corner; and writes each output's value into the row a look keeps for it when
 its `showValues` option is on, with a dash for an output the run says nothing
-about. Port dots are drawn outside the scene and do not fade, and a decision a
-look does not draw has nowhere to show its cost.
+about. A `switch` symbol is drawn thrown to its first exit, and a run whose
+`taken` is the second throws it there. `EffectChart` fades the port dots of a
+stage the run never reached as well; `paintRun` alone cannot, since the port
+layer draws them outside the scene. A decision a look does not draw has nowhere
+to show its cost.
 
 A run never lays the chart out again or refits it: `paintRun(pipeline, specs,
 run)` edits the specs the look already built, data only, and `DiagramView`
 writes just the fields that changed. So `showValues` keeps its rows from the
 first draw, wide enough for a value of about nine characters, and a longer one
 runs past the box's edge rather than resizing it.
+
+A run can also carry a picture per output, `previews: { [port]: ImageBitmap }`
+on a stage's entry. With a look's `showPreviews` on, each output gets a slot
+`previewSize` big (default `PREVIEW_SIZE`, a 48-unit square; or `{ width,
+height }`) under its value row, kept from the first draw like the value rows,
+drawn as an empty frame until a run fills it. The preview is stretched to the
+slot. It is an `ImageBitmap`, not a canvas, because a bitmap's pixels cannot
+change: a run that hands back the same bitmap edits nothing and uploads
+nothing, and new pixels are a new bitmap. A canvas you draw into becomes one
+with `transferToImageBitmap()` (`OffscreenCanvas`) or `createImageBitmap()`.
+`EffectChart` frees the texture of a bitmap the next run no longer shows, and
+of every one it shows when it unmounts; closing a bitmap is still yours to do.
+Under `paintRun` alone the slot becomes an image node whose `src` is
+`bitmapSrc(bitmap)` from `@weasel-js/core`, and releasing the replaced
+textures is the caller's: `releaseImageSource(old)` from
+`@weasel-js/core/renderer`.
 
 `checkPipeline(pipeline)` returns the problems without drawing anything, each
 `{ kind, message, stage?, port?, wire?, group? }`, where `wire` is an index into
@@ -374,19 +416,49 @@ they can:
 
 A look is how a pipeline is drawn: a function from the pipeline and its
 options to `{ data, scene, color }`, which are `diagramScene`'s two arguments
-and a `color(type)` for the ports. `EFFECT_LOOKS` holds `nodeGraph` and `rack`.
+and a `color(type)` for the ports. `EFFECT_LOOKS` holds `nodeGraph`, `rack`, `lanes` and `compact`.
 
 | Look | Draws | Options |
 | --- | --- | --- |
-| `nodeGraph` (default) | Every port a named row on its stage, a wire from port to port, flowing left to right. | `router` (default `'bezier'`), `nodeGap`, `rankGap`, `colors`, `showParams`, `showValues`, `branch` |
-| `rack` | The main signal on one straight line, and everything else hung beside the stage on the line it is nearest to, whichever way the wire runs. | `chain`, `side`, `nodeGap`, `rankGap`, `colors`, `showParams`, `showValues`, `branch`, `collapseSkips` |
+| `nodeGraph` (default) | Every port a named row on its stage, a wire from port to port, flowing left to right. | `router` (default `'bezier'`), `nodeGap`, `rankGap`, `colors`, `showParams`, `showValues`, `showPreviews`, `previewSize`, `branch` |
+| `rack` | The main signal on one straight line, and everything else hung beside the stage on the line it is nearest to, whichever way the wire runs. | `chain`, `side`, `nodeGap`, `rankGap`, `colors`, `showParams`, `showValues`, `showPreviews`, `previewSize`, `branch`, `collapseSkips` |
+| `lanes` | A horizontal lane per value type, and each stage standing across the lanes of the types it reads and writes, as tall as they are, its ports in their own lanes. | `lanes`, `laneHeight`, `rankGap`, `router`, `colors`, `showParams`, `showValues`, `showPreviews`, `previewSize`, `branch`, `measure` |
+| `compact` | Each stage one line, its title alone, no ports drawn, and one line between two stages however many wires join them. For a pipeline too big to read as a node graph. | `router`, `nodeGap`, `rankGap`, `colors`, `branch` |
 
 `colors` maps a value type to a color, over the palette; `showParams` (default
 true) shows the `params` of ordinary stages, sources and sinks; `showValues`
-(default false) keeps a row per output on those stages for a run's values. `rack` runs
+(default false) keeps a row per output on those stages for a run's values, and
+`showPreviews` (default false) a slot per output for its previews. `rack` runs
 along `chain`, a list of stage ids that defaults to the longest path over data
 wires (`mainChain(pipeline)` returns it); `side` is `'below'` (default) or
 `'above'`.
+
+`lanes` puts the lanes top down in the order their types first appear on the
+pipeline's ports, after any it is given in `lanes`. A stage stands
+`LANE_INSET` inside the first and last lane it touches and covers every lane
+between; its inputs sit on its left edge and its outputs on its right, each in
+its own type's lane. Stages stand in columns, each right of every stage that
+feeds it, and a stage moves a column further right rather than share one with
+a stage holding any of its lanes. A lane is `laneHeight` (default 48) tall, or
+taller until each stage fits the lanes it spans, params and value rows
+included; a source or sink stretched taller than it measured is widened by as
+much, so its round ends leave its rows the room they had. A decision keeps its symbol's own size, centered across its lanes,
+and brings its control inputs in from the bottom when their lanes are below
+the rest of its ports. The lanes are nodes too, `laneId(type)`, drawn behind
+the stages; a pick of one is reported as `null`. Text is measured to cut the
+lanes before `diagramScene` lays anything out, so pass `measure` to the look,
+not to `diagramScene`: the look hands it on in `scene`.
+
+`compact` shows no params and keeps no value rows or preview slots: one line
+has no room for them, so a run fades and costs its stages but writes no values
+and draws no previews. Its ports
+carry no type, which is what keeps the port layer from drawing them. A
+decision draws as a `'hexagon'` by default, the one symbol a single row holds;
+another `branch` draws at that symbol's own size. Wires between two stages
+draw as one line, in the color of a data wire among them, dashed only when
+every one is a control wire, and in the warning color when any was flagged;
+a decision keeps one line per exit, labeled, so a run can fade the exits it
+did not take.
 
 With `collapseSkips` (default true), `rack` draws a decision as an arc over the
 stages it skips, not as a symbol, when all of these hold:
@@ -408,12 +480,29 @@ A decision stage draws as a branch symbol, chosen by `branch`:
 | `'bar'` | A tall bar in bands of equal height, the cut values as labels at the ticks. |
 | `'demux'` | A trapezoid with the exits spread down its right side. |
 | `'switch'` | A lever thrown between two contacts. |
+| `'hexagon'` | The stage's title inside a flat hexagon, on one line. |
+| `'step'` | A staircase rising a step at each cut, the cut values under the risers. |
+| `'comparator'` | A triangle pointing right, its two exits leaving by its slanted edges. With a sound one-cut `split` the high band leaves by the upper edge and the cut is written inside; otherwise the first exit leaves by the upper edge, and two inputs on its flat side are marked `+` and `−`. |
+| `'crossover'` | One filter curve per band, lowest at the bottom, overlapping at each cut. |
+| `'fork'` | A bare dot every exit leaves from, the conditions left to the labels on its wires. |
 
-`'bar'` draws as a diamond for a stage with no `split` or a bad one, and
-`'switch'` for a stage that does not have exactly two outputs.
+`'bar'`, `'step'` and `'crossover'` draw as a diamond for a stage with no `split` or a bad one, and
+`'switch'` and `'comparator'` for a stage that does not have exactly two outputs.
 `BRANCH_SYMBOLS`, `branchNode` and `symbolNameFor` expose the same lookup. The
 signal enters on the left; inputs of a `control` type enter at the top, and so
-does the input a `'bar'` tests, when the stage has more than one input.
+does the input a `'bar'`, `'step'` or `'crossover'` tests, when the stage has more than one input. A symbol
+takes `{ controlSide: 'bottom' }` to bring those inputs in at the bottom instead,
+and `rack` passes it with `side: 'below'`, so a control wire comes straight up from
+the stage driving it; `lanes` passes it when the control inputs' lanes are below.
+The title then moves above the symbol, and a diamond takes control in by its
+lower-left edge, keeping its bottom vertex for the second exit. A symbol's lines, dots and ticks are drawn in the `text` color of
+`{ style }` (default `stageStyle(stage)`, so a bypassed decision draws dim), and a
+`'bar'`'s bands and a `'crossover'`'s curves in `{ tints }`, lowest first; a bypassed
+stage's default to its style's `stroke`.
+
+A look is an `EffectLook<TOptions>`. Plain `EffectLook` is a look whose options
+are not known, so a list of looks with different options, such as
+`[nodeGraph, rack]`, is an `EffectLook[]`; such a look is called with no options.
 
 To write a look, return `{ data, scene, color }`, and `exits` if it draws a
 decision as something other than itself; `scene` takes any
@@ -430,9 +519,10 @@ exported for yours:
 | `isControl(pipeline, type)` | Whether `types` marks a value type as `control`. |
 | `kindOf(stage)` | The stage's `kind`, with any value the shipped looks do not know read as `'stage'`. |
 | `portOn(stage, id)` | The stage's port with that id. |
-| `stageRows(stage, { showParams, withPorts, showValues })` | Body rows for a stage: its title, a row of its ports, a value row per output (`valueRowId(port)`, showing `NO_VALUE`), its params. |
+| `stageRows(stage, { showParams, withPorts, showValues, showPreviews, previewSize })` | Body rows for a stage: its title, a row of its ports, per output a value row (`valueRowId(port)`, showing `NO_VALUE`) and a preview slot (`previewRowId(port)`), its params. |
+| `wireEdges(pipeline, color)` | An edge per drawable wire, from port to port, named by `exitLabel` and styled by `wireStyle`, each as `{ edge, style }`. |
 | `exitLabel(wire)` | What to call one of `drawableWires`' wires: its own label, or for a wire leaving a decision the exit's label or id. |
-| `branchNode(stage, pipeline, branch)` | The node a decision draws as. |
+| `branchNode(stage, pipeline, branch, { controlSide, style, tints })` | The node a decision draws as. |
 
 ```tsx
 import {

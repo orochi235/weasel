@@ -96,16 +96,6 @@ export {
   type UseGirthToolOptions, type WidthEdgeHit, type GirthEnv, type GirthFocus, type WidthGrip, type WidthTarget,
 } from './girth';
 
-// ─── Icons ─────────────────────────────────────────────────────────────────
-export {
-  BalanceHandlesIcon, BendAlongIcon, BlendIcon, DistortIcon, EnvelopeIcon, EqualizeHandlesIcon, ExpandIcon, ExtendIcon,
-  GirthIcon, LengthenIcon, PuppetWarpIcon, RepeatAlongIcon, SmudgeBrushIcon, TrimIcon,
-} from './icons';
-export {
-  ConvertSegmentIcon, CornerRadiusIcon, CornerShapeIcon, CurveSegmentIcon, ExtremeAnchorsIcon, ReversePathIcon,
-  SetPathStartIcon, StraightenSegmentIcon,
-} from './commandIcons';
-
 // ─── Path-edit chrome ──────────────────────────────────────────────────────
 export { combCommands, createCombExtension, PATH_COMB_CHROME_ID, type PathEditCombOptions } from './comb/comb';
 export {
@@ -139,3 +129,6 @@ export {
 export {
   DEFAULT_ENVELOPE_SIZE, DEFAULT_WARP_TOLERANCE, withPathWarp, type WarpKind, type WarpSettings,
 } from './warp/warpTargets';
+
+// Carries path-tools' IconName augmentation into the published declarations.
+export type { PathToolsIconName } from './icons.gen';

@@ -2,9 +2,13 @@ import { registerCanvasFont } from '@weasel-js/font';
 import { f, meta, story } from '@weasel-js/forge';
 import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { EffectProblem } from '../check';
-import type { EffectLook } from '../draw';
 import { EffectChart } from '../EffectChart';
 import { EFFECT_LOOKS } from '../looks';
+import type { NodeGraphOptions } from '../nodeGraph';
+import type { RackOptions } from '../rack';
+import type { CompactOptions } from '../compact';
+import type { LanesOptions } from '../lanes';
+import { BRANCH_SYMBOLS, type BranchChoice } from '../symbols';
 import { SAMPLES } from './samples';
 import s from './EffectLab.stories.module.css';
 
@@ -16,13 +20,13 @@ export default meta({ title: 'diagram/EffectChart lab', layout: 'fullscreen' });
 
 interface LabConfig {
   sample: string;
-  look: string;
-  branch: string;
+  look: keyof typeof EFFECT_LOOKS;
+  branch: BranchChoice;
   showParams: boolean;
   nodeGap: number;
   rankGap: number;
-  router: string;
-  side: string;
+  router: NonNullable<NodeGraphOptions['router']>;
+  side: NonNullable<RackOptions['side']>;
   collapseSkips: boolean;
 }
 
@@ -52,8 +56,8 @@ function useBoxSize<T extends HTMLElement>() {
 function LabView({ config }: { config: LabConfig }) {
   const [problems, setProblems] = useState<readonly EffectProblem[]>([]);
   const [picked, setPicked] = useState<string | null>(null);
-  // Both looks take one bag; each reads the keys it knows.
-  const options = useMemo(() => ({
+  // Every look takes one bag; each reads the keys it knows.
+  const options = useMemo((): NodeGraphOptions & RackOptions & LanesOptions & CompactOptions => ({
     branch: config.branch,
     showParams: config.showParams,
     nodeGap: config.nodeGap,
@@ -63,7 +67,7 @@ function LabView({ config }: { config: LabConfig }) {
     collapseSkips: config.collapseSkips,
   }), [config.branch, config.showParams, config.nodeGap, config.rankGap, config.router, config.side, config.collapseSkips]);
   const [boxRef, size] = useBoxSize<HTMLDivElement>();
-  const look = EFFECT_LOOKS[config.look as keyof typeof EFFECT_LOOKS] as EffectLook<typeof options>;
+  const look = EFFECT_LOOKS[config.look];
   return (
     <div className={s.lab}>
       <div ref={boxRef} className={s.chart}>
@@ -97,11 +101,11 @@ export const Lab = story({
   config: f.schema({
     sample: f.enum('skip', Object.keys(SAMPLES)).label('Pipeline'),
     look: f.enum('nodeGraph', Object.keys(EFFECT_LOOKS)).radio().label('Look'),
-    branch: f.enum('auto', ['auto', 'diamond', 'bar', 'demux', 'switch']).label('Branch symbol'),
+    branch: f.enum('auto', ['auto', ...Object.keys(BRANCH_SYMBOLS)]).label('Branch symbol'),
     showParams: f.boolean(true).label('Show params'),
     nodeGap: f.number(32).range(8, 96).step(4).label('Node gap'),
     rankGap: f.number(72).range(24, 200).step(4).label('Rank gap'),
-    router: f.enum('bezier', ['bezier', 'orthogonal', 'straight']).label('Router').showIf((c) => c.look === 'nodeGraph'),
+    router: f.enum('bezier', ['bezier', 'orthogonal', 'straight']).label('Router').showIf((c) => c.look !== 'rack'),
     side: f.enum('below', ['below', 'above']).radio().label('Side inputs').showIf((c) => c.look === 'rack'),
     collapseSkips: f.boolean(true).label('Collapse skip-ahead decisions').showIf((c) => c.look === 'rack'),
   }),

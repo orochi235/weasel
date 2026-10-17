@@ -1,4 +1,5 @@
 /// <reference types="vite/client" />
+/// <reference types="@weasel-js/icons-plugin/virtual" />
 
 declare module '*.png' {
   const src: string;

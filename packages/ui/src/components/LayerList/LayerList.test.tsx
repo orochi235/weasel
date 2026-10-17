@@ -1,4 +1,5 @@
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, screen } from '@testing-library/react';
+import { renderWithIcons } from '../../testing/withIcons';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import { LayerList, type LayerListItem, type LayerListProps, moveLayers } from './LayerList';
@@ -51,7 +52,7 @@ function click(label: string, init: { shiftKey?: boolean; metaKey?: boolean; ctr
 }
 
 function list(props: Partial<LayerListProps> = {}) {
-  return render(<LayerList items={FLAT} {...props} />);
+  return renderWithIcons(<LayerList items={FLAT} {...props} />);
 }
 
 describe('LayerList rows', () => {

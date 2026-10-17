@@ -18,6 +18,7 @@ import type { CanvasExtensionApi } from '../canvasExtension';
 import type { SurfaceContribution } from '../surfaceContribution';
 import { checkRequirements, type RequirementMismatch } from '../kitRequirements';
 import { useContributionFrameHooks } from './contributionFrameHooks';
+import { isDev } from '@weasel-js/react';
 
 /** How a surface treats an entry whose `requires` the running kit does not
  *  meet: warn in development (the default), throw, or not check. */
@@ -121,7 +122,7 @@ export function useContributionRoles(
   const entries = contributionEntries(tools);
   // Development only for a warning; a strict surface asked to be stopped, so
   // it throws in every build.
-  if (versionCheck === 'strict' || (versionCheck === 'warn' && process.env.NODE_ENV !== 'production')) {
+  if (versionCheck === 'strict' || (versionCheck === 'warn' && isDev())) {
     checkEntryRequirements(entries, versionCheck);
   }
 

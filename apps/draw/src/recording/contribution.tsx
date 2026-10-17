@@ -8,8 +8,8 @@
 import './depSchemaAugmentation';
 
 import { ActionDisabledReason, type Action, type ActionDeps, type SurfaceContribution } from '@weasel-js/core';
-import { PlayRecordingIcon, RecordIcon } from '../actionIcons';
 import { RECORD_KEY, type RecordingSession } from './session';
+import { icon } from '../icons.gen';
 
 const read = (deps?: ActionDeps): RecordingSession | undefined => deps?.recording;
 
@@ -18,7 +18,7 @@ type RecordingAction = Action & { requires: ['recording'] };
 const recordAction: RecordingAction = {
   id: 'record.toggle',
   label: 'Record input',
-  icon: () => <RecordIcon />,
+  icon: icon('record'),
   group: 'record',
   defaultBinding: { kind: 'key', key: RECORD_KEY },
   requires: ['recording'],
@@ -30,7 +30,7 @@ const recordAction: RecordingAction = {
 const playAction: RecordingAction = {
   id: 'record.play',
   label: 'Play recording',
-  icon: () => <PlayRecordingIcon />,
+  icon: icon('playRecording'),
   group: 'record',
   requires: ['recording'],
   enabled: (deps) => {

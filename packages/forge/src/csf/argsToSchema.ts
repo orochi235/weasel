@@ -1,5 +1,6 @@
 import { type ConfigNode, type ConfigSchema, type ConfigShape, f } from '@weasel-js/labkit/config';
 import { isPlainObject } from '@weasel-js/core';
+import { iconFromData } from '@weasel-js/ui';
 import { portSafePart } from './portSafe';
 
 /** Storybook's conditional control: shown only while an arg, or a global, meets the test. */
@@ -22,7 +23,7 @@ export interface ArgType {
         min?: number;
         max?: number;
         step?: number;
-        /** forge's own: an icon (weasel-ui `IconName`) per option, drawn in place of its label. */
+        /** forge's own: a qualified icon ref (`ui:variantSolid`) per option, drawn in place of its label. */
         icons?: Readonly<Record<string, string>>;
       };
   options?: readonly unknown[];
@@ -104,7 +105,10 @@ function controlled(control: Control, argType: ArgType, has: boolean, value: unk
       const { icons } = control;
       const node = f.enum(
         def<string>(),
-        icons ? options.map((value) => ({ value, label: value, ...(icons[value] ? { icon: icons[value] } : {}) })) : options,
+        icons ? options.map((value) => {
+          const ref = iconFromData(icons[value]);
+          return { value, label: value, ...(ref ? { icon: ref } : {}) };
+        }) : options,
       );
       return control.type === 'radio' || control.type === 'inline-radio' ? node.radio() : node;
     }

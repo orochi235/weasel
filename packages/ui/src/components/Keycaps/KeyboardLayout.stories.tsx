@@ -3,7 +3,7 @@ import type { CSSProperties, ReactElement, ReactNode } from 'react';
 import { KeyBank } from './KeyBank';
 import { KeyCap } from './Keycap';
 import { FONT_OPTIONS, resolveFont } from './keycapStoryFonts';
-import { keySpecFromKey, keySpecsFromMods, type LegendStyle, type Platform } from './keySpecsFromMods';
+import { keySpecFromKey, keySpecsFromMods, type LegendStyle, type Platform } from '@weasel-js/gestures';
 
 const PLATFORMS: Platform[] = ['macos', 'windows', 'linux'];
 const LEGENDS: LegendStyle[] = ['auto', 'symbol', 'text'];

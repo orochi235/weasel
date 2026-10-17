@@ -9,6 +9,7 @@ import { ANGLE_RADIANS, decimal } from '@weasel-js/quantity';
 import { poseLinearOf } from '@weasel-js/geom';
 import { settleShapeGenerator } from 'features/paths/shapeGenerator';
 import { SHAPE_GENERATOR_SECTIONS } from './shapeGeneratorProperties';
+import { icon } from '../../icons.gen';
 
 /** Radians-stored / degrees-shown conversion for `pose.rotation` leaves.
  *  Display rounds to 0.1° so a canonical radian value doesn't render as
@@ -159,18 +160,18 @@ const STROKE_LEAF: PrefLeaf = {
     // glyph instead.
     // Unpaired: the paint field is a whole paint editor — a kind bar
     // over a per-kind body — and cannot share a row with a slider.
-    width: { kind: 'number', name: 'Width', description: 'Stroke width, world units.', absentIsDefault: true, default: 1, min: 0, max: 20, step: 0.5, control: 'slider', icon: 'strokeWidth', block: true },
+    width: { kind: 'number', name: 'Width', description: 'Stroke width, world units.', absentIsDefault: true, default: 1, min: 0, max: 20, step: 0.5, control: 'slider', icon: icon('strokeWidth'), block: true },
     paint: { kind: 'paint', name: 'Paint', description: 'Stroke paint.', default: { kind: 'solid', color: '#000000ff' }, alpha: true, block: true },
     // Three options each: a segmented control shows every one at
     // once where a select shows the current one and hides the rest
     // behind a click.
-    cap: { kind: 'enum', name: 'Cap', description: 'How an open end is drawn.', absentIsDefault: true, default: 'butt', control: 'toggle', block: true, pair: { with: ['data.stroke.join', 'data.stroke.align'], label: 'Line' }, options: [{ value: 'butt', label: 'Butt', icon: 'capButt' }, { value: 'round', label: 'Round', icon: 'capRound' }, { value: 'square', label: 'Square', icon: 'capSquare' }] },
-    join: { kind: 'enum', name: 'Join', description: 'How a corner is drawn.', absentIsDefault: true, default: 'miter', control: 'toggle', block: true, options: [{ value: 'miter', label: 'Miter', icon: 'joinMiter' }, { value: 'round', label: 'Round', icon: 'joinRound' }, { value: 'bevel', label: 'Bevel', icon: 'joinBevel' }] },
-    align: { kind: 'enum', name: 'Align', description: 'Where the ribbon sits relative to the edge.', absentIsDefault: true, default: 'center', control: 'toggle', block: true, options: [{ value: 'inner', label: 'Inner', icon: 'alignInner' }, { value: 'center', label: 'Center', icon: 'alignCenter' }, { value: 'outer', label: 'Outer', icon: 'alignOuter' }] },
+    cap: { kind: 'enum', name: 'Cap', description: 'How an open end is drawn.', absentIsDefault: true, default: 'butt', control: 'toggle', block: true, pair: { with: ['data.stroke.join', 'data.stroke.align'], label: 'Line' }, options: [{ value: 'butt', label: 'Butt', icon: icon('capButt') }, { value: 'round', label: 'Round', icon: icon('capRound') }, { value: 'square', label: 'Square', icon: icon('capSquare') }] },
+    join: { kind: 'enum', name: 'Join', description: 'How a corner is drawn.', absentIsDefault: true, default: 'miter', control: 'toggle', block: true, options: [{ value: 'miter', label: 'Miter', icon: icon('joinMiter') }, { value: 'round', label: 'Round', icon: icon('joinRound') }, { value: 'bevel', label: 'Bevel', icon: icon('joinBevel') }] },
+    align: { kind: 'enum', name: 'Align', description: 'Where the ribbon sits relative to the edge.', absentIsDefault: true, default: 'center', control: 'toggle', block: true, options: [{ value: 'inner', label: 'Inner', icon: icon('alignInner') }, { value: 'center', label: 'Center', icon: icon('alignCenter') }, { value: 'outer', label: 'Outer', icon: icon('alignOuter') }] },
     // Its own row: three bars already fill the one above, and the
     // dash pattern is a property of the line rather than of how the
     // ribbon meets the geometry.
-    dash: { kind: 'enum', name: 'Style', description: 'Solid, dashed or dotted. Dash lengths are multiples of the stroke width, so a style holds as the width changes.', default: 'solid', control: 'toggle', block: true, encoding: strokeDashEncoding, options: [{ value: 'solid', label: 'Solid', icon: 'dashSolid' }, { value: 'dashed', label: 'Dashed', icon: 'dashDashed' }, { value: 'dotted', label: 'Dotted', icon: 'dashDotted' }, { value: 'custom', label: 'Custom', icon: 'dashCustom', disabled: true }] },
+    dash: { kind: 'enum', name: 'Style', description: 'Solid, dashed or dotted. Dash lengths are multiples of the stroke width, so a style holds as the width changes.', default: 'solid', control: 'toggle', block: true, encoding: strokeDashEncoding, options: [{ value: 'solid', label: 'Solid', icon: icon('dashSolid') }, { value: 'dashed', label: 'Dashed', icon: icon('dashDashed') }, { value: 'dotted', label: 'Dotted', icon: icon('dashDotted') }, { value: 'custom', label: 'Custom', icon: icon('dashCustom'), disabled: true }] },
     nib: { kind: 'boolean', name: 'Nib', description: 'A broad pen: the stroke is its full width moving across the nib, and thinner moving along it.', default: false, control: 'switch', block: true, encoding: nibEncoding },
     'nib.angle': { kind: 'number', name: 'Angle', description: 'The nib\'s edge, counterclockwise from level.', default: DEFAULT_NIB.angle, step: 1, unit: rotationDegreesUnit, block: true, showIf: { path: 'data.stroke.nib' }, pair: { with: 'data.stroke.nib.ratio', label: 'Nib' } },
     'nib.ratio': { kind: 'number', name: 'Thinnest', description: 'The width moving along the nib, as a fraction of the width moving across it.', default: DEFAULT_NIB.ratio, min: 0, max: 1, step: 0.05, control: 'slider', block: true, showIf: { path: 'data.stroke.nib' } },
@@ -262,11 +263,11 @@ function shapeSchema(opts: { text?: boolean; generators?: readonly string[] } = 
                         // draws: the slant, the three rules, then the two
                         // scripts. Italic is a flag here although the field
                         // is `fontStyle`, whose only other value is upright.
-                        fontStyle: { kind: 'boolean', name: 'Italic', description: 'Set the text in its italic face.', default: false, control: 'toggle', icon: 'italic', short: ['I'], pair: { with: ['data.style.underline', 'data.style.strikethrough', 'data.style.overline', 'data.style.script'], label: 'Style' }, encoding: italicEncoding },
-                        underline: { kind: 'boolean', name: 'Underline', description: 'Underline the text.', absentIsDefault: true, default: false, control: 'toggle', icon: 'underline', short: ['U'] },
-                        strikethrough: { kind: 'boolean', name: 'Strikethrough', description: 'Strike through the text.', absentIsDefault: true, default: false, control: 'toggle', icon: 'strikethrough', short: ['S'] },
-                        overline: { kind: 'boolean', name: 'Overline', description: 'Rule the text above its ascent.', absentIsDefault: true, default: false, control: 'toggle', icon: 'overline', short: ['O'] },
-                        script: { kind: 'enum', name: 'Script', description: 'Set the text smaller and raised or lowered, on the line it would otherwise hold.', default: undefined, control: 'toggle', clearable: true, options: [{ value: 'super', label: 'Superscript', icon: 'superscript' }, { value: 'sub', label: 'Subscript', icon: 'subscript' }] },
+                        fontStyle: { kind: 'boolean', name: 'Italic', description: 'Set the text in its italic face.', default: false, control: 'toggle', icon: icon('italic'), short: ['I'], pair: { with: ['data.style.underline', 'data.style.strikethrough', 'data.style.overline', 'data.style.script'], label: 'Style' }, encoding: italicEncoding },
+                        underline: { kind: 'boolean', name: 'Underline', description: 'Underline the text.', absentIsDefault: true, default: false, control: 'toggle', icon: icon('underline'), short: ['U'] },
+                        strikethrough: { kind: 'boolean', name: 'Strikethrough', description: 'Strike through the text.', absentIsDefault: true, default: false, control: 'toggle', icon: icon('strikethrough'), short: ['S'] },
+                        overline: { kind: 'boolean', name: 'Overline', description: 'Rule the text above its ascent.', absentIsDefault: true, default: false, control: 'toggle', icon: icon('overline'), short: ['O'] },
+                        script: { kind: 'enum', name: 'Script', description: 'Set the text smaller and raised or lowered, on the line it would otherwise hold.', default: undefined, control: 'toggle', clearable: true, options: [{ value: 'super', label: 'Superscript', icon: icon('superscript') }, { value: 'sub', label: 'Subscript', icon: icon('subscript') }] },
                         letterSpacing: { kind: 'number', display: TWO_PLACES, name: 'Tracking', description: 'Extra advance per glyph, world units.', absentIsDefault: true, default: 0, step: 0.1 },
                         textTransform: { kind: 'enum', name: 'Case', description: 'Draw the text in capitals, lowercase or title case. The text itself is unchanged.', absentIsDefault: true, default: 'none', control: 'toggle', options: [{ value: 'none', label: 'None', short: ['–'] }, { value: 'uppercase', label: 'Uppercase', short: ['AA'] }, { value: 'lowercase', label: 'Lowercase', short: ['aa'] }, { value: 'capitalize', label: 'Capitalize', short: ['Aa'] }] },
                         fontVariantCaps: { kind: 'enum', name: 'Small caps', description: 'Draw lowercase letters as smaller capitals. The text itself is unchanged.', absentIsDefault: true, default: 'normal', control: 'toggle', options: [{ value: 'normal', label: 'Normal', short: ['–'] }, { value: 'small-caps', label: 'Small caps', short: ['Sc'] }] },
@@ -281,12 +282,12 @@ function shapeSchema(opts: { text?: boolean; generators?: readonly string[] } = 
                         direction: { kind: 'enum', name: 'Direction', description: 'Reading direction. Auto takes each paragraph\'s from its first strong character.', absentIsDefault: true, default: 'auto', control: 'toggle', options: [{ value: 'auto', label: 'Auto', short: ['Auto'] }, { value: 'ltr', label: 'Left to right', short: ['LTR'] }, { value: 'rtl', label: 'Right to left', short: ['RTL'] }] },
                         // Last, so the box's vertical alignment — a field of
                         // the node rather than of its style — follows it.
-                        align: { kind: 'enum', name: 'Align', description: 'Horizontal alignment.', absentIsDefault: true, default: 'left', control: 'toggle', encoding: alignEncoding, options: [{ value: 'left', label: 'Left', icon: 'textAlignLeft' }, { value: 'center', label: 'Center', icon: 'textAlignCenter' }, { value: 'right', label: 'Right', icon: 'textAlignRight' }, { value: 'justify', label: 'Justify', icon: 'textAlignJustify' }] },
+                        align: { kind: 'enum', name: 'Align', description: 'Horizontal alignment.', absentIsDefault: true, default: 'left', control: 'toggle', encoding: alignEncoding, options: [{ value: 'left', label: 'Left', icon: icon('textAlignLeft') }, { value: 'center', label: 'Center', icon: icon('textAlignCenter') }, { value: 'right', label: 'Right', icon: icon('textAlignRight') }, { value: 'justify', label: 'Justify', icon: icon('textAlignJustify') }] },
                       },
                     },
                   },
                 },
-                'data.verticalAlign': { kind: 'enum', name: 'Vertical', description: 'Where the lines sit in the box\'s height.', absentIsDefault: true, default: 'top', control: 'toggle', options: [{ value: 'top', label: 'Top', icon: 'textAlignTop' }, { value: 'center', label: 'Middle', icon: 'textAlignMiddle' }, { value: 'bottom', label: 'Bottom', icon: 'textAlignBottom' }] },
+                'data.verticalAlign': { kind: 'enum', name: 'Vertical', description: 'Where the lines sit in the box\'s height.', absentIsDefault: true, default: 'top', control: 'toggle', options: [{ value: 'top', label: 'Top', icon: icon('textAlignTop') }, { value: 'center', label: 'Middle', icon: icon('textAlignMiddle') }, { value: 'bottom', label: 'Bottom', icon: icon('textAlignBottom') }] },
               },
             },
           }

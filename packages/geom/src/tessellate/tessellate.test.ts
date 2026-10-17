@@ -260,3 +260,60 @@ describe('tessellate — pen position after Z', () => {
     expect(z.slice(-cubicLength)).toEqual(l.slice(-cubicLength));
   });
 });
+
+describe('tessellate (PolygonPath, nonzero, crossing outlines)', () => {
+  // Triangles strictly containing (x, y): 1 where the path fills, 0 in a hole;
+  // 2 would blend a translucent fill twice. Probe off any diagonal earcut may cut.
+  const coverage = (mesh: ReturnType<typeof tessellate>, x: number, y: number): number => {
+    const v = mesh.vertices;
+    let n = 0;
+    for (let t = 0; t < mesh.indices.length; t += 3) {
+      const [a, b, c] = [mesh.indices[t], mesh.indices[t + 1], mesh.indices[t + 2]];
+      const side = (i: number, j: number) =>
+        (v[j * 2] - v[i * 2]) * (y - v[i * 2 + 1]) - (x - v[i * 2]) * (v[j * 2 + 1] - v[i * 2 + 1]);
+      const d1 = side(a, b), d2 = side(b, c), d3 = side(c, a);
+      if ((d1 > 0 && d2 > 0 && d3 > 0) || (d1 < 0 && d2 < 0 && d3 < 0)) n++;
+    }
+    return n;
+  };
+  const poly = (commands: number[], coords: number[]): PolygonPath => ({
+    kind: 'polygon', commands: new Uint8Array(commands), coords: new Float32Array(coords), fillRule: 'nonzero',
+  });
+  const square = (x: number, y: number, s: number, cw: boolean) => ({
+    cmds: [PATH_M, PATH_L, PATH_L, PATH_L, PATH_Z],
+    xy: cw ? [x, y, x + s, y, x + s, y + s, x, y + s] : [x, y, x, y + s, x + s, y + s, x + s, y],
+  });
+
+  it('fills both lobes of a bowtie once each', () => {
+    const mesh = tessellate(poly([PATH_M, PATH_L, PATH_L, PATH_L, PATH_Z], [0, 0, 10, 10, 10, 0, 0, 10]));
+    expect(coverage(mesh, 2, 5)).toBe(1);
+    expect(coverage(mesh, 8, 5)).toBe(1);
+    expect(coverage(mesh, 5, 1)).toBe(0);
+  });
+
+  it('fills the opposite-wound lobe of a curved outline that crosses itself', () => {
+    const mesh = tessellate(poly([PATH_M, PATH_L, PATH_L, PATH_C, PATH_C, PATH_Z], [
+      394.0009765625, 766.5681762695312, 384.3759765625, 618.3184814453125, 574.3128051757812, 686.1607055664062,
+      574.3128051757812, 686.1607055664062, 588.0728149414062, 589.5969848632812, 462.7142639160156, 727.05029296875,
+      337.35565185546875, 864.5035400390625, 394.0009765625, 766.5681762695312, 394.0009765625, 766.5681762695312,
+    ]));
+    expect(coverage(mesh, 429, 643)).toBe(1);
+    expect(coverage(mesh, 555, 679)).toBe(1);
+  });
+
+  it('leaves the overlap of two oppositely wound squares empty', () => {
+    const a = square(0, 0, 10, true), b = square(5, 5, 10, false);
+    const mesh = tessellate(poly([...a.cmds, ...b.cmds], [...a.xy, ...b.xy]));
+    expect(coverage(mesh, 2.3, 3.1)).toBe(1);
+    expect(coverage(mesh, 7.2, 7.9)).toBe(0);
+    expect(coverage(mesh, 12.4, 13.3)).toBe(1);
+  });
+
+  it('covers the overlap of two same-wound squares once', () => {
+    const a = square(0, 0, 10, true), b = square(5, 5, 10, true);
+    const mesh = tessellate(poly([...a.cmds, ...b.cmds], [...a.xy, ...b.xy]));
+    expect(coverage(mesh, 2.3, 3.1)).toBe(1);
+    expect(coverage(mesh, 7.2, 7.9)).toBe(1);
+    expect(coverage(mesh, 12.4, 13.3)).toBe(1);
+  });
+});

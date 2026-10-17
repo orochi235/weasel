@@ -7,7 +7,6 @@ import type { ClaimableGesture } from '@weasel-js/gestures';
 import type { PolygonPath } from '@weasel-js/geom';
 
 /**
- * @experimental
  * A single interactive piece of chrome. Affordances declare interactive regions in a target's
  * *local* frame; `composeAffordanceLayer` composes the target's bounds transform (rotation
  * around the AABB center, when present) for both paint and hit-test, so the affordance never
@@ -28,7 +27,6 @@ export interface Affordance {
 }
 
 /**
- * @experimental
  * One interactive region produced by an affordance. The framework owns
  * the local↔world transform for `targetId` (when non-null), so `shape`,
  * `paint.sizePx`, and `hitRadiusPx` are always specified in coordinates
@@ -149,7 +147,6 @@ export interface CustomPaintContext {
 }
 
 /**
- * @experimental
  * Result of an affordance hit. `initialScratch` is what the region already knows (which
  * corner, which target id) so the action that picks up the drag doesn't re-derive it. It
  * reaches the matching action through `InvocationCtx.drag.affordance`.

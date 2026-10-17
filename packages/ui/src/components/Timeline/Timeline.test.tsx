@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
-import { render, fireEvent, screen } from '@testing-library/react';
+import { fireEvent, screen } from '@testing-library/react';
+import { renderWithIcons } from '../../testing/withIcons';
 import type { SampledTrack, TimelineTrack, Track } from '@weasel-js/animator';
 import { Timeline } from './Timeline';
 
@@ -44,12 +45,12 @@ const base = {
 
 describe('Timeline', () => {
   it('renders one lane per track', () => {
-    render(<Timeline {...base} tracks={tracks()} />);
+    renderWithIcons(<Timeline {...base} tracks={tracks()} />);
     expect(screen.getAllByTestId('timeline-lane-track')).toHaveLength(2);
   });
 
   it('draws the time readout and the Graph switch, and no playback controls, with no transport', () => {
-    render(<Timeline {...base} tracks={tracks()} playhead={250} />);
+    renderWithIcons(<Timeline {...base} tracks={tracks()} playhead={250} />);
     expect(screen.getByTestId('timeline-time')).toHaveTextContent('0.25s / 1.00s');
     expect(screen.getByRole('switch', { name: 'Graph mode' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Play' })).not.toBeInTheDocument();
@@ -60,7 +61,7 @@ describe('Timeline', () => {
 
   it('draws the playback controls of a transport it is given', () => {
     const onPlay = vi.fn();
-    render(
+    renderWithIcons(
       <Timeline
         {...base}
         tracks={tracks()}
@@ -74,7 +75,7 @@ describe('Timeline', () => {
 
   it('holds the mode itself when given no mode', () => {
     const onModeChange = vi.fn();
-    render(<Timeline {...base} tracks={tracks()} onModeChange={onModeChange} />);
+    renderWithIcons(<Timeline {...base} tracks={tracks()} onModeChange={onModeChange} />);
     const graph = screen.getByRole('switch', { name: 'Graph mode' });
     expect(graph).toHaveAttribute('aria-checked', 'false');
     fireEvent.click(graph);
@@ -85,20 +86,20 @@ describe('Timeline', () => {
   });
 
   it('follows a mode it is given', () => {
-    render(<Timeline {...base} tracks={tracks()} mode="dope" />);
+    renderWithIcons(<Timeline {...base} tracks={tracks()} mode="dope" />);
     const graph = screen.getByRole('switch', { name: 'Graph mode' });
     fireEvent.click(graph);
     expect(graph).toHaveAttribute('aria-checked', 'false');
   });
 
   it('hides the transport when told to', () => {
-    render(<Timeline {...base} tracks={tracks()} transport={false} />);
+    renderWithIcons(<Timeline {...base} tracks={tracks()} transport={false} />);
     expect(screen.queryByTestId('timeline-time')).not.toBeInTheDocument();
   });
 
   it('commits a dragged key once, with the track re-sorted', () => {
     const onChange = vi.fn();
-    render(<Timeline {...base} tracks={tracks()} onChange={onChange} />);
+    renderWithIcons(<Timeline {...base} tracks={tracks()} onChange={onChange} />);
     const key = screen.getAllByTestId('timeline-key')[0];
     fireEvent.pointerDown(key, { clientX: 0, clientY: 10, button: 0 });
     fireEvent.pointerMove(document, { clientX: 400, clientY: 10 });
@@ -111,7 +112,7 @@ describe('Timeline', () => {
   it('reports live positions through onInput without committing', () => {
     const onInput = vi.fn();
     const onChange = vi.fn();
-    render(<Timeline {...base} tracks={tracks()} onInput={onInput} onChange={onChange} />);
+    renderWithIcons(<Timeline {...base} tracks={tracks()} onInput={onInput} onChange={onChange} />);
     fireEvent.pointerDown(screen.getAllByTestId('timeline-key')[0], { clientX: 0, clientY: 10, button: 0 });
     fireEvent.pointerMove(document, { clientX: 100, clientY: 10 });
     expect(onInput).toHaveBeenCalledTimes(1);
@@ -121,7 +122,7 @@ describe('Timeline', () => {
   it('preserves a track’s callbacks across an edit', () => {
     const input = tracks();
     const onChange = vi.fn();
-    render(<Timeline {...base} tracks={input} onChange={onChange} />);
+    renderWithIcons(<Timeline {...base} tracks={input} onChange={onChange} />);
     fireEvent.pointerDown(screen.getAllByTestId('timeline-key')[0], { clientX: 0, clientY: 10, button: 0 });
     fireEvent.pointerUp(document, { clientX: 100, clientY: 10 });
     const next = onChange.mock.calls[0][0] as Track[];
@@ -130,19 +131,19 @@ describe('Timeline', () => {
 
   it('scrubs from the ruler', () => {
     const onScrub = vi.fn();
-    render(<Timeline {...base} tracks={tracks()} onScrub={onScrub} />);
+    renderWithIcons(<Timeline {...base} tracks={tracks()} onScrub={onScrub} />);
     fireEvent.pointerDown(screen.getByTestId('timeline-ruler'), { clientX: 250, clientY: 5, button: 0 });
     expect(onScrub).toHaveBeenCalledWith(500);
   });
 
   it('fits its window to a duration that arrives after mount', () => {
-    const { rerender } = render(<Timeline {...base} tracks={tracks()} duration={0} />);
+    const { rerender } = renderWithIcons(<Timeline {...base} tracks={tracks()} duration={0} />);
     rerender(<Timeline {...base} tracks={tracks()} duration={2000} />);
     expect(screen.getAllByTestId('timeline-key')[1].style.left).toBe('25%');
   });
 
   it('keeps a window the user zoomed when the duration changes', () => {
-    const { rerender } = render(<Timeline {...base} tracks={tracks()} />);
+    const { rerender } = renderWithIcons(<Timeline {...base} tracks={tracks()} />);
     fireEvent.wheel(screen.getByTestId('timeline-ruler'), { ctrlKey: true, deltaY: -Math.log(2) / 0.0015, clientX: 0 });
     expect(screen.getAllByTestId('timeline-key')[1].style.left).toBe('100%');
     rerender(<Timeline {...base} tracks={tracks()} duration={2000} />);
@@ -156,7 +157,7 @@ describe('Timeline', () => {
       ] as Track[]);
       return <Timeline {...base} tracks={value} onChange={setValue} />;
     }
-    render(<Host />);
+    renderWithIcons(<Host />);
     const first = screen.getAllByTestId('timeline-key')[0];
     first.focus();
     fireEvent.keyDown(first, { key: 'ArrowRight' });
@@ -168,7 +169,7 @@ describe('Timeline', () => {
 
   it('deletes the selected key on Delete', () => {
     const onChange = vi.fn();
-    render(<Timeline {...base} tracks={tracks()} onChange={onChange} />);
+    renderWithIcons(<Timeline {...base} tracks={tracks()} onChange={onChange} />);
     fireEvent.pointerDown(screen.getAllByTestId('timeline-key')[1], { clientX: 250, button: 0 });
     fireEvent.pointerUp(document, { clientX: 250 });
     onChange.mockClear();
@@ -179,7 +180,7 @@ describe('Timeline', () => {
 
   it('leaves Backspace typed into the key editor to the editor', () => {
     const onChange = vi.fn();
-    render(
+    renderWithIcons(
       <Timeline
         {...base}
         tracks={tracks()}
@@ -198,7 +199,7 @@ describe('Timeline', () => {
 
   it('leaves a Delete a child already handled alone', () => {
     const onChange = vi.fn();
-    render(
+    renderWithIcons(
       <Timeline
         {...base}
         tracks={tracks()}
@@ -217,7 +218,7 @@ describe('Timeline', () => {
 
   it('does not report a change for Delete on an event mark, which it cannot remove', () => {
     const onChange = vi.fn();
-    render(<Timeline {...base} tracks={tracks()} onChange={onChange} />);
+    renderWithIcons(<Timeline {...base} tracks={tracks()} onChange={onChange} />);
     fireEvent.pointerDown(screen.getByTestId('timeline-event'), { clientX: 125, button: 0 });
     fireEvent.pointerUp(document, { clientX: 125 });
     const notPrevented = fireEvent.keyDown(screen.getByTestId('timeline-root'), { key: 'Delete' });
@@ -232,7 +233,7 @@ describe('Timeline', () => {
       ] as Track[]);
       return <Timeline {...base} tracks={value} onChange={setValue} />;
     }
-    render(<Host />);
+    renderWithIcons(<Host />);
     fireEvent.click(screen.getAllByTestId('timeline-segment')[1]);
     expect(screen.getByTestId('easing-preview')).toBeInTheDocument();
     fireEvent.pointerDown(screen.getAllByTestId('timeline-key')[1], { clientX: 200, button: 0 });
@@ -258,7 +259,7 @@ describe('Timeline', () => {
     };
 
     it('closes when a key is selected', () => {
-      render(<Timeline {...base} tracks={threeKeys()} renderKeyEditor={editor} />);
+      renderWithIcons(<Timeline {...base} tracks={threeKeys()} renderKeyEditor={editor} />);
       openPicker();
       fireEvent.pointerDown(screen.getAllByTestId('timeline-key')[2], { clientX: 400, button: 0 });
       fireEvent.pointerUp(document, { clientX: 400 });
@@ -267,7 +268,7 @@ describe('Timeline', () => {
     });
 
     it('takes the place of the key editor when a segment is selected', () => {
-      render(<Timeline {...base} tracks={threeKeys()} renderKeyEditor={editor} />);
+      renderWithIcons(<Timeline {...base} tracks={threeKeys()} renderKeyEditor={editor} />);
       fireEvent.pointerDown(screen.getAllByTestId('timeline-key')[2], { clientX: 400, button: 0 });
       fireEvent.pointerUp(document, { clientX: 400 });
       expect(screen.getByTestId('key-editor')).toBeInTheDocument();
@@ -277,27 +278,27 @@ describe('Timeline', () => {
 
     it('tells a consumer holding the selection that a segment took it', () => {
       const onSelect = vi.fn();
-      render(<Timeline {...base} tracks={threeKeys()} selection={{ trackPath: [0], keyIndex: 2 }} onSelect={onSelect} />);
+      renderWithIcons(<Timeline {...base} tracks={threeKeys()} selection={{ trackPath: [0], keyIndex: 2 }} onSelect={onSelect} />);
       fireEvent.click(screen.getAllByTestId('timeline-segment')[0]);
       expect(onSelect).toHaveBeenLastCalledWith(null);
     });
 
     it('closes on a press on empty lane', () => {
-      render(<Timeline {...base} tracks={threeKeys()} />);
+      renderWithIcons(<Timeline {...base} tracks={threeKeys()} />);
       openPicker();
       fireEvent.pointerDown(screen.getByTestId('timeline-lane-track'), { clientX: 450, button: 0 });
       expect(screen.queryByTestId('easing-preview')).not.toBeInTheDocument();
     });
 
     it('stays open for a press on its own segment', () => {
-      render(<Timeline {...base} tracks={threeKeys()} />);
+      renderWithIcons(<Timeline {...base} tracks={threeKeys()} />);
       openPicker();
       fireEvent.pointerDown(screen.getAllByTestId('timeline-segment')[0], { clientX: 100, button: 0 });
       expect(screen.getByTestId('easing-preview')).toBeInTheDocument();
     });
 
     it('closes on Escape, and leaves an Escape with nothing to close alone', () => {
-      render(<Timeline {...base} tracks={threeKeys()} />);
+      renderWithIcons(<Timeline {...base} tracks={threeKeys()} />);
       const root = screen.getByTestId('timeline-root');
       expect(fireEvent.keyDown(root, { key: 'Escape' })).toBe(true);
       openPicker();
@@ -307,7 +308,7 @@ describe('Timeline', () => {
   });
 
   it('renders the consumer’s key editor for the selection', () => {
-    render(
+    renderWithIcons(
       <Timeline
         {...base}
         tracks={tracks()}
@@ -321,7 +322,7 @@ describe('Timeline', () => {
 
   it('commits a value written through the key editor', () => {
     const onChange = vi.fn();
-    render(
+    renderWithIcons(
       <Timeline
         {...base}
         tracks={tracks()}
@@ -340,7 +341,7 @@ describe('Timeline', () => {
   });
 
   it('expands a nested timeline to show its children', () => {
-    render(<Timeline {...base} tracks={nestedTracks()} />);
+    renderWithIcons(<Timeline {...base} tracks={nestedTracks()} />);
     expect(screen.getAllByTestId('timeline-lane-track')).toHaveLength(1);
     fireEvent.click(screen.getByTestId('timeline-disclosure'));
     expect(screen.getAllByTestId('timeline-lane-track')).toHaveLength(2);
@@ -348,7 +349,7 @@ describe('Timeline', () => {
 
   it('drags a key inside an expanded nested timeline', () => {
     const onChange = vi.fn();
-    render(<Timeline {...base} tracks={nestedTracks()} onChange={onChange} />);
+    renderWithIcons(<Timeline {...base} tracks={nestedTracks()} onChange={onChange} />);
     fireEvent.click(screen.getByTestId('timeline-disclosure'));
     // The nested track sits at `at: 100`, so a key dropped at ruler 800ms is
     // 700ms into the child.
@@ -360,7 +361,7 @@ describe('Timeline', () => {
 
   it('deletes a selected nested key', () => {
     const onChange = vi.fn();
-    render(<Timeline {...base} tracks={nestedTracks()} onChange={onChange} />);
+    renderWithIcons(<Timeline {...base} tracks={nestedTracks()} onChange={onChange} />);
     fireEvent.click(screen.getByTestId('timeline-disclosure'));
     fireEvent.pointerDown(screen.getAllByTestId('timeline-key')[0], { clientX: 0, clientY: 10, button: 0 });
     fireEvent.pointerUp(document, { clientX: 0, clientY: 10 });
@@ -371,7 +372,7 @@ describe('Timeline', () => {
 
   it('snaps a nested key against ruler times, not track-local ones', () => {
     const onChange = vi.fn();
-    render(<Timeline {...base} tracks={nestedTracks()} onChange={onChange} />);
+    renderWithIcons(<Timeline {...base} tracks={nestedTracks()} onChange={onChange} />);
     fireEvent.click(screen.getByTestId('timeline-disclosure'));
     // The sibling key is local 300, ruler 400 — 200px in. Dropped 4px shy of
     // it, inside the 6px snap radius, so it lands exactly on it.

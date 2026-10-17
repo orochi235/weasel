@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { ActionsProvider, useAction, type Action } from '@weasel-js/core';
 import type { PrefGroup } from '@weasel-js/prefs';
+import { icon } from '../../icons.gen';
 import { Bar } from './Bar';
 
 const schema: PrefGroup = {
@@ -46,6 +47,27 @@ describe('Bar', () => {
     expect(screen.getByRole('toolbar')).toHaveAttribute('data-overflow', 'menu');
     rerender(<Bar schema={{ ...schema, overflow: 'menu' }} overflow="scroll" label="Text" />);
     expect(screen.getByRole('toolbar')).not.toHaveAttribute('data-overflow');
+  });
+
+  it('starts its line with its label when its schema leads with it, and not otherwise', () => {
+    const { rerender } = render(<Bar schema={{ ...schema, lead: 'label' }} label="Text" />);
+    expect(screen.getByRole('toolbar').firstElementChild).toHaveTextContent(/^Text$/);
+    rerender(<Bar schema={schema} label="Text" />);
+    expect(within(screen.getByRole('toolbar')).queryByText('Text')).toBeNull();
+  });
+
+  it('starts its line with its icon when its schema leads with that', () => {
+    render(<Bar schema={{ ...schema, lead: 'icon', icon: icon('close') }} label="Text" />);
+    const first = screen.getByRole('toolbar').firstElementChild!;
+    expect(first.querySelector('svg')).not.toBeNull();
+    expect(first).toHaveTextContent(/^$/);
+  });
+
+  it("draws a group's icon on the button opening it, as a menu or a popover", () => {
+    const more: PrefGroup = { name: 'More', as: 'menu', icon: icon('close'), children: { undo: schema.children.undo! } };
+    const spacing = { ...(schema.children.spacing as PrefGroup), icon: icon('close') };
+    render(<Bar schema={{ ...schema, children: { more, spacing } }} label="Text" />);
+    for (const name of ['More', 'Spacing']) expect(screen.getByRole('button', { name }).querySelector('svg[viewBox="0 0 20 20"]')).not.toBeNull();
   });
 
   it('draws leaves in their bar forms, in the order the group lists them', () => {

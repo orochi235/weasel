@@ -8,8 +8,7 @@
 import './depSchemaAugmentation';
 
 import { ActionDisabledReason, type Action, type ActionDeps } from '@weasel-js/core';
-import { GridIcon, SearchIcon, SnapIcon } from '@weasel-js/ui';
-import { ReleaseCompoundIcon, SettingsIcon, SymmetryIcon } from '../actionIcons';
+import { icon } from '../icons.gen';
 
 /** What the app's own commands read and do. */
 export interface AppCommands {
@@ -37,7 +36,7 @@ type AppAction = Action & { requires: ['appCommands'] };
 export const toggleGridAction: AppAction = {
   id: 'view.grid',
   label: 'Show grid',
-  icon: () => <GridIcon />,
+  icon: icon('ui:grid'),
   group: 'view',
   // `code` too: with Shift held the key reads as the symbol above the 3.
   defaultBinding: { kind: 'key', key: '3', code: 'Digit3', mods: { shift: true } },
@@ -49,7 +48,7 @@ export const toggleGridAction: AppAction = {
 export const toggleSnapAction: AppAction = {
   id: 'view.snap',
   label: 'Snap to grid',
-  icon: () => <SnapIcon />,
+  icon: icon('ui:snap'),
   group: 'view',
   requires: ['appCommands'],
   active: (deps) => read(deps)?.snapToGrid === true,
@@ -68,7 +67,7 @@ export const togglePathDirectionAction: AppAction = {
 export const toggleSymmetryAction: AppAction = {
   id: 'view.symmetry',
   label: 'Symmetry',
-  icon: () => <SymmetryIcon />,
+  icon: icon('symmetry'),
   group: 'view',
   requires: ['appCommands'],
   active: (deps) => read(deps)?.symmetryOn === true,
@@ -78,7 +77,7 @@ export const toggleSymmetryAction: AppAction = {
 export const releaseCompoundAction: AppAction = {
   id: 'path.releaseCompound',
   label: 'Release compound path',
-  icon: () => <ReleaseCompoundIcon />,
+  icon: icon('releaseCompound'),
   group: 'compound',
   defaultBinding: { kind: 'key', key: '|', mods: { shift: true } },
   requires: ['appCommands'],
@@ -95,7 +94,7 @@ export const releaseCompoundAction: AppAction = {
 export const preferencesAction: AppAction = {
   id: 'app.preferences',
   label: 'Preferences',
-  icon: () => <SettingsIcon />,
+  icon: icon('settings'),
   group: 'app',
   defaultBinding: { kind: 'key', key: ',', mods: { mod: true } },
   requires: ['appCommands'],
@@ -105,7 +104,7 @@ export const preferencesAction: AppAction = {
 export const commandsAction: AppAction = {
   id: 'app.commands',
   label: 'Commands',
-  icon: () => <SearchIcon />,
+  icon: icon('ui:search'),
   group: 'app',
   defaultBinding: { kind: 'key', key: 'k', mods: { mod: true } },
   requires: ['appCommands'],

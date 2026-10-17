@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { render, screen, fireEvent, act } from '@testing-library/react';
+import { screen, fireEvent, act } from '@testing-library/react';
+import { renderWithIcons } from '../../testing/withIcons';
 import { ToastRegion } from './Toast';
 import { createToastQueue } from './queue';
 
@@ -13,7 +14,7 @@ describe('ToastRegion', () => {
 
   it('renders queued toasts inside a landmark region', () => {
     const q = createToastQueue();
-    render(<ToastRegion queue={q} />);
+    renderWithIcons(<ToastRegion queue={q} />);
     act(() => q.add('success', 'Saved', { description: 'All changes stored' }));
     expect(screen.getByRole('region', { name: /notifications/i })).toBeTruthy();
     expect(screen.getByText('Saved')).toBeTruthy();
@@ -22,7 +23,7 @@ describe('ToastRegion', () => {
 
   it('dismisses via the close button', () => {
     const q = createToastQueue();
-    render(<ToastRegion queue={q} />);
+    renderWithIcons(<ToastRegion queue={q} />);
     act(() => q.add('info', 'Ephemeral'));
     fireEvent.click(screen.getByRole('button', { name: /dismiss/i }));
     expect(screen.queryByText('Ephemeral')).toBeNull();
@@ -30,7 +31,7 @@ describe('ToastRegion', () => {
 
   it('auto-dismisses after the default ttl', () => {
     const q = createToastQueue();
-    render(<ToastRegion queue={q} />);
+    renderWithIcons(<ToastRegion queue={q} />);
     act(() => q.add('info', 'Timed'));
     expect(screen.getByText('Timed')).toBeTruthy();
     act(() => vi.advanceTimersByTime(8100));
@@ -39,7 +40,7 @@ describe('ToastRegion', () => {
 
   it('keeps sticky toasts (ttlMs null) indefinitely', () => {
     const q = createToastQueue();
-    render(<ToastRegion queue={q} />);
+    renderWithIcons(<ToastRegion queue={q} />);
     act(() => q.add('error', 'Sticky', { ttlMs: null }));
     act(() => vi.advanceTimersByTime(60_000));
     expect(screen.getByText('Sticky')).toBeTruthy();
@@ -47,7 +48,7 @@ describe('ToastRegion', () => {
 
   it('stacks multiple toasts and applies tone classes', () => {
     const q = createToastQueue();
-    render(<ToastRegion queue={q} />);
+    renderWithIcons(<ToastRegion queue={q} />);
     act(() => {
       q.add('info', 'one', { ttlMs: null });
       q.add('warning', 'two', { ttlMs: null });
@@ -60,7 +61,7 @@ describe('ToastRegion', () => {
 
   it('orders toasts newest-first in the DOM, so corner CSS keeps the newest at the edge', () => {
     const q = createToastQueue();
-    render(<ToastRegion queue={q} />);
+    renderWithIcons(<ToastRegion queue={q} />);
     act(() => {
       q.add('info', 'one', { ttlMs: null });
       q.add('info', 'two', { ttlMs: null });
@@ -82,7 +83,7 @@ describe('ToastRegion given a container', () => {
   function setup() {
     const q = createToastQueue();
     const host = document.body.appendChild(document.createElement('div'));
-    render(<ToastRegion queue={q} portalContainer={host} />);
+    renderWithIcons(<ToastRegion queue={q} portalContainer={host} />);
     return { q, host };
   }
 

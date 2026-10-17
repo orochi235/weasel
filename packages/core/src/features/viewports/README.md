@@ -1,7 +1,5 @@
 # viewports
 
-`@experimental`
-
 A **viewport node** is a screen-space rectangle on the outer canvas that
 re-renders one or more source layers through an *inner* `View`, then clips them
 to its rect.

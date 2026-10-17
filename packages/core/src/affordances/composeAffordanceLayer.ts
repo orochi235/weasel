@@ -27,7 +27,6 @@ import type {
 } from './types';
 
 /**
- * @experimental
  * Bundle a list of Affordances into a single RenderLayer.
  *
  * Paint order matches array order (first → last = bottom → top). Hit-test walks affordances in

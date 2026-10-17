@@ -16,6 +16,9 @@ export function contextMenuInput(core: DispatchCore, takeNativeHold: () => boole
     // Suppress native menu so tools/actions own the right-click UX.
     e.preventDefault();
     if (takeNativeHold()) return;
+    // The keyboard ContextMenu key sends this with no press before it, and
+    // the menu's rows resolve through the active scope.
+    core.activate();
     routeAt(null, e.clientX, e.clientY);
     const w = toWorld(e.clientX, e.clientY);
     // A secondary button never reaches `onPointerDown`, so unlike click and

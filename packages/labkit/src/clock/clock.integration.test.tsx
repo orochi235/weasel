@@ -1,5 +1,6 @@
 import { act, fireEvent, screen } from '@testing-library/react';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
+import { withIcons } from '@weasel-js/ui/testing/withIcons';
 import { describe, expect, it, vi } from 'vitest';
 import type { Instrument } from '../instrument/types';
 import { Lab } from '../lab/Lab';
@@ -59,6 +60,7 @@ describe('a trial clock in a mounted lab', () => {
       <Lab title="T" instruments={[timed]} defaultInstrument="Timed">
         <Readout label="outside" />
       </Lab>,
+      { wrapper: withIcons },
     );
     expect(screen.getByLabelText('inside')).toHaveTextContent('0@0');
     expect(screen.getByLabelText('outside')).toHaveTextContent('0@0');
@@ -89,7 +91,9 @@ describe('a trial clock in a mounted lab', () => {
       clock: undefined,
       render: () => <Readout label="inside" />,
     };
-    await renderSettled(<Lab title="T" instruments={[plain]} defaultInstrument="Plain" />);
+    await renderSettled(<Lab title="T" instruments={[plain]} defaultInstrument="Plain" />, {
+      wrapper: withIcons,
+    });
     expect(screen.getByLabelText('inside')).toHaveTextContent('none');
   });
 
@@ -118,6 +122,7 @@ describe('a trial clock in a mounted lab', () => {
       >
         <Readout label="outside" />
       </Lab>,
+      { wrapper: withIcons },
     );
     const seeks = screen.getAllByRole('button', { name: /^seek/ });
     expect(seeks).toHaveLength(2);
@@ -139,7 +144,9 @@ describe('a trial clock in a mounted lab', () => {
     const shared: Instrument = { ...timed, name: 'Shared', clock: 'lab' };
     const quiet = vi.spyOn(console, 'error').mockImplementation(() => {});
     await expect(
-      renderSettled(<Lab title="T" instruments={[shared]} defaultInstrument="Shared" />),
+      renderSettled(<Lab title="T" instruments={[shared]} defaultInstrument="Shared" />, {
+        wrapper: withIcons,
+      }),
     ).rejects.toThrow(/declares no `clock`/);
     quiet.mockRestore();
   });
@@ -148,6 +155,7 @@ describe('a trial clock in a mounted lab', () => {
     const before = document.title;
     const { unmount } = await renderSettled(
       <Lab title="T" documentTitle="rosee" instruments={[timed]} defaultInstrument="Timed" />,
+      { wrapper: withIcons },
     );
     expect(document.title).toBe('rosee');
     unmount();

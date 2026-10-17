@@ -1,4 +1,4 @@
-import { createElement, useMemo, useRef } from 'react';
+import { useMemo, useRef } from 'react';
 import { useKitSettings, useLatest } from '@weasel-js/react';
 import { defineTool } from '../../overlayBinding';
 import type { Tool } from '../../overlayBinding';
@@ -14,7 +14,7 @@ import { viewToTransform } from 'core/viewport/view';
 import { ellipsePath, polylineFromPoints } from '@weasel-js/geom';
 import { OVERLAY_ROLE_STROKES } from 'canvas/overlayRoleStrokes';
 import { createEmitter } from '@weasel-js/registry';
-import { SliceIcon } from '../../../icons';
+import { icon } from '../../../icons.gen';
 
 /** Options for `useSliceTool`. */
 export interface UseSliceToolOptions {
@@ -202,7 +202,7 @@ export function useSliceTool(options: UseSliceToolOptions = {}): Tool {
     capabilities: ['edits-page'],
     hookName: 'useSliceTool',
     cursor: 'crosshair',
-    presentation: { label: 'Slice', icon: createElement(SliceIcon), group: 'shape' },
+    presentation: { label: 'Slice', icon: icon('slice'), group: 'shape' },
     ...(keybinding === null ? {} : { keybinding: keybinding ?? { key: 'K' } }),
     actions,
     overlay,

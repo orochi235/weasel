@@ -1,3 +1,4 @@
+import { isDev } from '@weasel-js/react';
 import { useEffect, useRef, useState } from 'react';
 
 interface Closable {
@@ -71,7 +72,7 @@ export function useWarnIgnoredChange(component: string, props: Record<string, un
   const warned = useRef(false);
   // In an effect, so only props that committed are compared.
   useEffect(() => {
-    if (process.env.NODE_ENV === 'production' || warned.current) return;
+    if (!isDev() || warned.current) return;
     for (const key of Object.keys(props)) {
       if (Object.is(first.current[key], props[key])) continue;
       warned.current = true;

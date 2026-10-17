@@ -9,6 +9,7 @@ import {
   __setImageLoaderForTests,
   setImageCacheBudget,
   _resetImageCacheForTests,
+  bitmapSrc,
 } from './imageCache';
 import { GLImageCache } from '../cache/GLImageCache';
 import { makeGLRecorder } from '../testing/glRecorder';
@@ -491,5 +492,52 @@ describe('the image cache byte budget', () => {
     await load('b');
     expect(recorder.calls.filter((c) => c.name === 'deleteTexture')).toHaveLength(1);
     textures.dispose();
+  });
+});
+
+describe('bitmapSrc', () => {
+  beforeEach(() => _resetImageCacheForTests());
+
+  it('names a bitmap so an image node draws it with no load', () => {
+    let calls = 0;
+    __setImageLoaderForTests(() => { calls++; return new Promise<ImageBitmap>(() => {}); });
+    const bmp = fakeBitmap();
+    const src = bitmapSrc(bmp);
+    expect(getImageBitmap(src)).toBe(bmp);
+    expect(imageStatus(src)).toBe('ready');
+    expect(calls).toBe(0);
+  });
+
+  it('gives the same bitmap the same src and another bitmap another', () => {
+    const a = fakeBitmap();
+    expect(bitmapSrc(a)).toBe(bitmapSrc(a));
+    expect(bitmapSrc(fakeBitmap())).not.toBe(bitmapSrc(a));
+  });
+
+  it('frees the texture and the name on releaseImage, and a later read does not try to load it', () => {
+    let calls = 0;
+    __setImageLoaderForTests(() => { calls++; return new Promise<ImageBitmap>(() => {}); });
+    const recorder = makeGLRecorder();
+    const textures = new GLImageCache(recorder.gl);
+    const bmp = fakeBitmap();
+    const src = bitmapSrc(bmp);
+    textures.upload(bmp, bmp);
+    recorder.reset();
+    releaseImage(src);
+    expect(recorder.calls.filter((c) => c.name === 'deleteTexture')).toHaveLength(1);
+    expect(getImageBitmap(src)).toBeUndefined();
+    expect(calls).toBe(0);
+    expect(bitmapSrc(bmp)).not.toBe(src);
+    textures.dispose();
+  });
+
+  it('is never dropped to fit the budget', async () => {
+    setImageCacheBudget(1);
+    const bmp = fakeBitmap();
+    const src = bitmapSrc(bmp);
+    __setImageLoaderForTests(() => Promise.resolve(fakeBitmap()));
+    getImageBitmap('other');
+    await flush();
+    expect(getImageBitmap(src)).toBe(bmp);
   });
 });

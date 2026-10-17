@@ -389,8 +389,8 @@ A registration lands in the innermost tier around the registering component. A
 lookup made through a scope answers from that scope first, then its yoke, then
 the root; another scope's entries are never visible. A lookup made through a
 root or a yoke — chrome's `trigger`, `begin`, `list`, `useActiveToolContext` —
-answers from the **active scope**: the one that last took a pointerdown or wheel,
-or the newest where none has. Keys are stricter. A key that reaches the page
+answers from the **active scope**: the one that last took a pointerdown, wheel or
+contextmenu, or the newest where none has. Keys are stricter. A key that reaches the page
 goes to the canvas last pressed or scrolled in, across every root on the page,
 and to no canvas before the first such interaction, so a canvas in a side panel
 takes no keys from a page that wants them. `<SceneCanvas claimKeys>` takes them
@@ -528,7 +528,7 @@ the ids itself and nothing else sees them — what a `<CanvasView>` opts into vi
 `selection` / `selectionOptions` props. Either way the selection is not document
 content: it is not a node, and `scene.toJSON()` does not carry it.
 
-Selection participates in the `@experimental`
+Selection participates in the
 [`SelectionContext`](#selectioncontext) for non-canvas UI. See
 `packages/core/src/core/selection/useSelection.ts`. The kit-level `ChromeState` (the
 affordance-facing read-only view) is built from the `SelectionApi` via
@@ -536,7 +536,7 @@ affordance-facing read-only view) is built from the `SelectionApi` via
 
 ### SelectionContext
 
-`@experimental`. An ambient React context populated by `<SceneCanvas>` (via
+An ambient React context populated by `<SceneCanvas>` (via
 `usePublishSelection`) that non-canvas UI (palette, status bar) can read without
 prop-drilling. Provides the current selection ids and optional per-id `kinds`
 labels. The `kinds` parallel array is a temporary half-step toward typed scene

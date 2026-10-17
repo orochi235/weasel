@@ -19,7 +19,6 @@ interface AreaSelectScratch {
 }
 
 /**
- * @experimental
  * Marquee selection: replace, or extend with shift held. Hit-testing and
  * selection writes are delegated to the `areaSelect` dep, and the selection
  * write makes no undo entry.

@@ -2,6 +2,7 @@ import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { f } from '../config/builder';
 import { resolveConfigSchema } from '../config/resolve';
+import { icon } from '../icons.gen';
 import { ControlPanel } from './ControlPanel';
 import type { ConfigField } from './types';
 
@@ -169,7 +170,7 @@ describe('<ControlPanel> option icons', () => {
   it("draws an option's icon in its segment and keeps the label as its name", () => {
     const status = f
       .enum('ok', [
-        { value: 'ok', label: 'ok', icon: 'statusSuccess' },
+        { value: 'ok', label: 'ok', icon: icon('ui:statusSuccess') },
         { value: 'bad', label: 'bad' },
       ])
       .radio();
@@ -188,7 +189,7 @@ describe('<ControlPanel> option icons', () => {
 
   it("draws an option's icon beside its label in a select's trigger and list", () => {
     const status = f.enum('ok', [
-      { value: 'ok', label: 'ok', icon: 'statusSuccess' },
+      { value: 'ok', label: 'ok', icon: icon('ui:statusSuccess') },
       { value: 'bad', label: 'bad' },
     ]);
     render(

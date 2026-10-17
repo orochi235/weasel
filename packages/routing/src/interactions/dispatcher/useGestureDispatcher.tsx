@@ -3,10 +3,12 @@
  * WebKit gesture events, pointer events, and multi-touch synthesized from
  * them) and routes each event to the dispatcher for the view it landed in.
  */
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { isApplePlatform, type ClickMemory } from '@weasel-js/gestures';
 import { useKitSettings, useLatest } from '@weasel-js/react';
 import { useActiveToolContext } from '../actions/activeToolContext';
+import { actionsNodeOf } from '../actions/ActionsProvider';
+import type { ActionSource } from '../actions/action';
 import { useDepRegistry } from '../actions/depRegistry';
 import { useToolLifecycle } from '../../tools/useToolLifecycle';
 import { createDispatcher, type Dispatcher, type DispatcherContext } from './dispatcher';
@@ -26,7 +28,7 @@ export type {
  * mounted inside `<SceneCanvas>`'s providers.
  */
 export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
-  const { canvasRef, actions, entriesById, enabled = true, keyboard = true, affordanceAt, classifyTarget, dispatcher: dispatcherOpt, clientToWorld, requestRedraw, paintedCursor, cursorSink, getRuleCtx, onClick, onDoubleClick, views, channels, longPress, claimKeys = false } = opts;
+  const { canvasRef, actions, entriesById, enabled = true, keyboard = true, affordanceAt, classifyTarget, dispatcher: dispatcherOpt, clientToWorld, clientToLocal, requestRedraw, paintedCursor, cursorSink, getRuleCtx, onClick, onDoubleClick, views, channels, longPress, claimKeys = false, hears = 'scope' } = opts;
   // Read out as booleans, not the object: the attach effect depends on
   // them, and an inline `channels={{...}}` would re-bind every listener on
   // every render.
@@ -49,8 +51,12 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
   // No `getRuleCtx` here: eligibility is a per-view answer, so it rides on the
   // dispatch record and the core installs the routed view's.
   const registryRef = useLatest(actions);
+  const heard = useMemo<ActionSource>(() => {
+    const node = hears === 'own' ? actionsNodeOf(actions) : null;
+    return node ? { list: () => node.ownActions() } : actions;
+  }, [actions, hears]);
   const ctxRef = useLatest<DispatcherContext>({
-    actions,
+    actions: heard,
     depRegistry,
     activeToolId: activeTool.active,
     hotkeyStack: activeTool.hotkeyStack,
@@ -64,6 +70,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     getRuleCtx,
   });
   const viewsRef = useLatest(views);
+  const clientToLocalRef = useLatest(clientToLocal);
 
   /** Every live dispatcher — what a cancel-everything has to reach. */
   const allDispatchers = useCallback((): Dispatcher[] => [
@@ -96,6 +103,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     return attachInput(canvasRef.current, {
       root: () => rootTargetRef.current,
       views: () => viewsRef.current,
+      clientToLocal: () => clientToLocalRef.current,
       context: () => ctxRef.current,
       actions: () => registryRef.current,
       dispatchers: allDispatchers,
@@ -116,5 +124,5 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       ingest: ingestChannel,
     });
   }, [enabled, keyboard, canvasRef, pointerChannel, wheelChannel, pinchChannel, contextMenuChannel, ingestChannel,
-    allDispatchers, ctxRef, kitSettingsRef, longPressRef, onClickRef, onDoubleClickRef, cursorRef, registryRef, requestRedrawRef, rootTargetRef, viewsRef]);
+    allDispatchers, clientToLocalRef, ctxRef, kitSettingsRef, longPressRef, onClickRef, onDoubleClickRef, cursorRef, registryRef, requestRedrawRef, rootTargetRef, viewsRef]);
 }

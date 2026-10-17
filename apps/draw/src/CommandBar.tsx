@@ -5,39 +5,34 @@
  *  glyphs included. Arrange, Pathfinder, and Path are surface assets, drawn in the
  *  `surfaces` slot when they are shown as toolbars or menus. The app's own view toggles, Release compound path, and
  *  Preferences are actions too (`appCommands`), as are Record and Play
- *  (`recording`), so a button's shortcut is the binding that fires it. The buttons built here are the file ones. */
+ *  (`recording`) and New, Open, Import and Save (`fileCommands`), so a button's shortcut is the
+ *  binding that fires it. */
 import type { ReactNode } from 'react';
-import { ActionBar as KitActionBar, ButtonBar, MenuButton } from '@weasel-js/ui';
-import { PAPER_OPTIONS, type PaperSizeKey } from './paperSizes';
+import { pref } from '@weasel-js/prefs';
+import { ActionBar as KitActionBar, Bar, MenuButton } from '@weasel-js/ui';
+import { DEV_ROUTES } from './dev/devRoutes';
+import { FILE_ACTIONS, FILE_NEW_MENU } from './fileCommands';
 import { CornerShape, type CornerShapeProps } from './ui/CornerShape';
 import { PathCommands } from './ui/PathCommands';
 
-export type { PaperSizeKey };
-
 export interface CommandBarProps {
-  // File I/O — SVG round-trip via @weasel-js/svg.
-  onSaveSvg(): void;
-  /** Replace the document with a picked file. */
-  onOpenSvg(): void;
-  /** Add a picked file to the document. */
-  onImportSvg(): void;
-  /** Start a fresh document at the picked paper size. Removing the old nodes
-   *  is one undoable entry; the view refits only when the paper size changes. */
-  onNew(size: PaperSizeKey): void;
   /** What the Corner shape controls read; without it they are left out. */
   corners?: CornerShapeProps;
   /** The surface assets drawn in the strip, after the view toggles. */
   surfaces?: ReactNode;
 }
 
+const FILE_BAR = pref.group('', {
+  new: FILE_NEW_MENU,
+  open: pref.action(FILE_ACTIONS.open, { description: 'Open SVG…' }),
+  import: pref.action(FILE_ACTIONS.import, { description: 'Add an SVG to this document…' }),
+  save: pref.action(FILE_ACTIONS.save, { description: 'Save as SVG' }),
+}, { as: 'bar' });
+
 const KIT_GROUPS = ['history', 'clipboard', 'edit', 'structure'] as const;
 
-/** The in-repo dev surfaces, hash-routed in main.tsx; each opens in a new tab. */
-const DEBUG_ROUTES: ReadonlyArray<{ value: string; label: string }> = [
-  { value: '#/dev/toolkits', label: 'Toolkit Builder' },
-  { value: '#/dev/registry', label: 'Bundle Inspector' },
-  { value: '#/dev/prefs', label: 'Prefs Schema' },
-];
+/** The in-repo dev surfaces; each opens in a new tab. */
+const DEBUG_ROUTES = DEV_ROUTES.map((r) => ({ value: r.href, label: r.label }));
 
 function openDebugRoute(hash: string) {
   window.open(`${window.location.pathname}${window.location.search}${hash}`, '_blank', 'noopener');
@@ -47,17 +42,7 @@ export function CommandBar(p: CommandBarProps) {
   return (
     <div className="wd-commandbar" role="toolbar" aria-label="Actions">
       <div className="wd-commandbar-group">
-        <MenuButton label="New" tooltip="New document" items={PAPER_OPTIONS} onAction={p.onNew} />
-        <ButtonBar
-          ariaLabel="File"
-          size="sm"
-          variant="minimal"
-          items={[
-            { value: 'open', label: 'Open', onAction: p.onOpenSvg, tooltip: 'Open SVG…' },
-            { value: 'import', label: 'Import', onAction: p.onImportSvg, tooltip: 'Add an SVG to this document…' },
-            { value: 'save', label: 'Save', onAction: p.onSaveSvg, tooltip: 'Save as SVG' },
-          ]}
-        />
+        <Bar schema={FILE_BAR} />
       </div>
       {KIT_GROUPS.map((group) => <KitActionBar key={group} group={group} />)}
       <KitActionBar group="view" />

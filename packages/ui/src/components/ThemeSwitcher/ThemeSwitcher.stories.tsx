@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useColorModePreference } from '@weasel-js/theme/react';
-import { EllipseIcon, RectIcon, StarIcon } from '../../icons';
 import { ThemeSwitcher, type ThemeSwitcherOption } from './ThemeSwitcher';
+import { icon } from '../../icons.gen';
+import { Icon } from '../../icons/Icon';
 
 const meta: Meta<typeof ThemeSwitcher> = {
   title: 'ui/Foundations/ThemeSwitcher',
@@ -28,9 +29,9 @@ export const WithPreferenceHook: Story = {
 };
 
 const SHAPES: ThemeSwitcherOption<'rect' | 'ellipse' | 'star'>[] = [
-  { value: 'rect', icon: <RectIcon size={16} />, label: 'Rectangle' },
-  { value: 'ellipse', icon: <EllipseIcon size={16} />, label: 'Ellipse' },
-  { value: 'star', icon: <StarIcon size={16} />, label: 'Star' },
+  { value: 'rect', icon: <Icon name={icon('core:rect')} size={16} />, label: 'Rectangle' },
+  { value: 'ellipse', icon: <Icon name={icon('core:ellipse')} size={16} />, label: 'Ellipse' },
+  { value: 'star', icon: <Icon name={icon('core:star')} size={16} />, label: 'Star' },
 ];
 
 /** Any ordered list of options cycles the same way, under its own name. */

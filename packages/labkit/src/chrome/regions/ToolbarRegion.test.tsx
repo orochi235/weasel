@@ -1,9 +1,11 @@
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import { describe, expect, it, vi } from 'vitest';
+import { icon } from '../../icons.gen';
 import type { TrialChromeContext, TrialContribution } from '../types';
 import { ToolbarRegion } from './ToolbarRegion';
 
-const Glyph = () => <svg data-testid="glyph" />;
+const Glyph = icon('ui:add');
 
 const ctx = { trialId: 't1' } as unknown as TrialChromeContext;
 
@@ -18,19 +20,19 @@ function item(id: string, over: Partial<TrialContribution> = {}): TrialContribut
 
 describe('ToolbarRegion', () => {
   it('renders nothing when it has no contributions', () => {
-    const { container } = render(<ToolbarRegion contributions={[]} ctx={ctx} />);
+    const { container } = renderWithIcons(<ToolbarRegion contributions={[]} ctx={ctx} />);
     expect(container).toBeEmptyDOMElement();
   });
 
   it('renders one button per contribution, labelled', () => {
-    render(<ToolbarRegion contributions={[item('undo'), item('redo')]} ctx={ctx} />);
+    renderWithIcons(<ToolbarRegion contributions={[item('undo'), item('redo')]} ctx={ctx} />);
     expect(screen.getByRole('button', { name: 'undo' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'redo' })).toBeInTheDocument();
   });
 
   it('hands onActivate the chrome context', () => {
     const onActivate = vi.fn();
-    render(
+    renderWithIcons(
       <ToolbarRegion
         contributions={[
           { id: 'snap', region: 'toolbar', item: { icon: Glyph, label: 'Snap', onActivate } },
@@ -43,7 +45,7 @@ describe('ToolbarRegion', () => {
   });
 
   it('groups contributions sharing a group into one group element', () => {
-    render(
+    renderWithIcons(
       <ToolbarRegion
         contributions={[
           item('undo', { group: 'history' }),
@@ -57,7 +59,7 @@ describe('ToolbarRegion', () => {
   });
 
   it('renders a render-escape contribution verbatim', () => {
-    render(
+    renderWithIcons(
       <ToolbarRegion
         contributions={[{ id: 'custom', region: 'toolbar', render: () => <b>custom</b> }]}
         ctx={ctx}
@@ -67,7 +69,7 @@ describe('ToolbarRegion', () => {
   });
 
   it('disables a button whose item says so', () => {
-    render(
+    renderWithIcons(
       <ToolbarRegion
         contributions={[
           item('undo', {

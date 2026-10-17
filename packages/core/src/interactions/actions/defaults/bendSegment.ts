@@ -22,14 +22,14 @@ import { segmentUnder } from './segmentUnder';
 import { editsSpiro, spiroInsertAt, spiroInsertDrag } from './spiroSegmentDrag';
 import { pathEditToolActive } from './pathEditTools';
 import { pathOperationTags } from '../pathGestureTags';
-import { BendSegmentIcon } from './icons/anchorIcons';
+import { icon } from '../../../icons.gen';
 
 const BEND_CURSOR: CursorSpec = 'grab';
 
 export const bendSegmentAction: Action & { requires: string[] } = inPlane({
   id: 'bendSegment',
   label: 'Bend segment',
-  icon: BendSegmentIcon,
+  icon: icon('bendSegment'),
   tags: pathOperationTags('drag'),
   defaultBinding: { kind: 'drag', target: { kindOf: isSegment } },
   cursor: BEND_CURSOR,

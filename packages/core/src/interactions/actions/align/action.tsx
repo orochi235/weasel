@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { IconRef } from '@weasel-js/icons';
 import type { Scene } from 'core/scene/types';
 import type { PoseDescriptor } from '../resize/geometry';
 import { poseDescriptorOf } from '../poseDescriptorDep';
@@ -17,14 +17,7 @@ import type { Action } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { ImmediateInvoker } from '@weasel-js/routing';
-import {
-  AlignLeftIcon,
-  AlignRightIcon,
-  AlignTopIcon,
-  AlignBottomIcon,
-  AlignCenterXIcon,
-  AlignCenterYIcon,
-} from '../defaults/icons/alignIcons';
+import { icon } from '../../../icons.gen';
 const ID_FOR: Record<AlignEdge, string> = {
   'left': 'align.left',
   'right': 'align.right',
@@ -41,13 +34,13 @@ const LABEL_FOR: Record<AlignEdge, string> = {
   'center-x': 'Align Centers Horizontally',
   'center-y': 'Align Centers Vertically',
 };
-const ICON_FOR: Record<AlignEdge, ReactNode> = {
-  'left': <AlignLeftIcon />,
-  'right': <AlignRightIcon />,
-  'top': <AlignTopIcon />,
-  'bottom': <AlignBottomIcon />,
-  'center-x': <AlignCenterXIcon />,
-  'center-y': <AlignCenterYIcon />,
+const ICON_FOR: Record<AlignEdge, IconRef> = {
+  'left': icon('alignLeft'),
+  'right': icon('alignRight'),
+  'top': icon('alignTop'),
+  'bottom': icon('alignBottom'),
+  'center-x': icon('alignCenterX'),
+  'center-y': icon('alignCenterY'),
 };
 
 // ---------------------------------------------------------------------------
@@ -125,16 +118,16 @@ function makeAlignAction(edge: AlignEdge): Action {
   };
 }
 
-/** @experimental Static descriptor for align-left. */
+/** Static descriptor for align-left. */
 export const alignLeftAction    = makeAlignAction('left');
-/** @experimental Static descriptor for align-right. */
+/** Static descriptor for align-right. */
 export const alignRightAction   = makeAlignAction('right');
-/** @experimental Static descriptor for align-top. */
+/** Static descriptor for align-top. */
 export const alignTopAction     = makeAlignAction('top');
-/** @experimental Static descriptor for align-bottom. */
+/** Static descriptor for align-bottom. */
 export const alignBottomAction  = makeAlignAction('bottom');
-/** @experimental Static descriptor for align-center-x. */
+/** Static descriptor for align-center-x. */
 export const alignCenterXAction = makeAlignAction('center-x');
-/** @experimental Static descriptor for align-center-y. */
+/** Static descriptor for align-center-y. */
 export const alignCenterYAction = makeAlignAction('center-y');
 

@@ -20,6 +20,14 @@ const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 /** Entry files that must have no React in their closure, and why each exists. */
 const ENTRIES = [
   {
+    file: 'packages/icons/dist/index.js',
+    why: 'names and the registry, read by prefs and routing, which must not pull React in',
+  },
+  {
+    file: 'packages/icons-plugin/dist/index.js',
+    why: 'the build plugin, loaded by a bundler config in Node',
+  },
+  {
     file: 'packages/core/dist/math.js',
     why: 'the geometry and simulation half, for a server with no DOM',
   },

@@ -1,15 +1,19 @@
 import type { ReactNode } from 'react';
 import { Focusable } from 'react-aria-components';
 import type { PrefAction } from '@weasel-js/prefs';
+import { actionLeafVariants, useRegisteredActions } from '../Prefs/registeredActions';
 import { useLeafAction } from '../Prefs/useLeafAction';
+import { segmentTooltipContent } from '../segmentTooltip';
 import { Tooltip, TooltipTrigger } from '../Tooltip';
 import s from './Bar.module.css';
 
 /** Props for {@link BarActionButton}. */
 export interface BarActionButtonProps {
   label: string;
+  /** What the tooltip reads in place of the label. */
+  description?: string;
   icon?: ReactNode;
-  /** The keys that fire the action, read after the label in the tooltip. */
+  /** The keys that fire the action, read after the label or description in the tooltip. */
   shortcut?: string;
   /** Read the label beside the icon. A button with no icon reads it regardless. */
   labeled?: boolean;
@@ -29,19 +33,19 @@ export interface BarActionButtonProps {
 }
 
 /**
- * A bar's button for one action: its icon, with the label and shortcut in a
- * tooltip. What `BarAction` draws for a leaf and `ActionBar` for a registry
+ * A bar's button for one action: its icon, with the label (or description)
+ * and shortcut in a tooltip. What `BarAction` draws for a leaf and `ActionBar` for a registry
  * entry.
  */
 export function BarActionButton(props: BarActionButtonProps) {
-  const { label, icon, shortcut, row = false, disabled = false, active, missing, onPress, disabledReason } = props;
+  const { label, description, icon, shortcut, row = false, disabled = false, active, missing, onPress, disabledReason } = props;
   const labeled = row || props.labeled === true;
   const dead = missing !== undefined;
   const explained = dead || (disabled && disabledReason !== undefined);
   const tip = dead
     ? `${label}: no action “${missing}”`
     : disabled && disabledReason !== undefined ? `${label}: ${disabledReason}`
-    : shortcut ? `${label} (${shortcut})` : label;
+    : segmentTooltipContent({ description: description || label, shortcut });
   const words = labeled || icon == null;
   return (
     // A dead or explained button keeps its tooltip, which is the only thing that says why.
@@ -70,8 +74,19 @@ export function BarActionButton(props: BarActionButtonProps) {
   );
 }
 
-/** An `action` leaf as a bar's cell: an icon button, or icon and label for `control: 'button'`. */
+/** An `action` leaf as a bar's cell: an icon button, or icon and label for `control: 'button'`. A leaf naming a
+ *  parametric action by its bare id is a button per variant. */
 export function BarAction({ leaf, path, disabled }: { leaf: PrefAction; path: string; disabled?: boolean }) {
+  const variants = actionLeafVariants(leaf, useRegisteredActions());
+  if (!variants) return <BarActionOne leaf={leaf} path={path} disabled={disabled} />;
+  return (
+    <span className={s.actions}>
+      {variants.map((one, i) => <BarActionOne key={one.action} leaf={one} path={`${path}.${i}`} disabled={disabled} />)}
+    </span>
+  );
+}
+
+function BarActionOne({ leaf, path, disabled }: { leaf: PrefAction; path: string; disabled?: boolean }) {
   const { press, ...button } = useLeafAction(leaf, path, disabled);
-  return <BarActionButton {...button} labeled={leaf.control === 'button'} onPress={press} />;
+  return <BarActionButton {...button} description={leaf.description} labeled={leaf.control === 'button'} onPress={press} />;
 }

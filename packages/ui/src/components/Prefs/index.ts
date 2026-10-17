@@ -13,7 +13,7 @@ export { PARAMS_SETTLES, PARAMS_TEXT_WAIT_MS, liveControl, withCommitPolicy, wit
 export { useParamsPolicy, type ParamsPolicy } from './useParamsPolicy';
 export { PARAMS_CONTROLS, withRowControl, withSurfaceControl, type SurfaceControls } from './surfaceControls';
 export { PrefActionButton, PrefActionRows } from './PrefActionButton';
-export { actionsLeafActions, prefDrawsActionRow, useRegisteredActions, type ActionsLeafOptions } from './registeredActions';
+export { actionLeafVariants, actionsLeafActions, prefDrawsActionRow, useRegisteredActions, type ActionsLeafOptions } from './registeredActions';
 export { PrefMixed } from './PrefMixed';
 export { PrefLabelLine, PrefRule, PrefWords, prefDrawsNoControl } from './PrefWords';
 export { useLeafAction, type LeafAction } from './useLeafAction';

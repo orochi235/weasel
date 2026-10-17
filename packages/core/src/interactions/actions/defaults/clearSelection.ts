@@ -3,7 +3,6 @@ import { ActionDisabledReason } from '@weasel-js/routing';
 import type { ActionDeps } from '@weasel-js/routing';
 
 /**
- * @experimental
  * Clears the selection on a click on empty canvas. It has no ambient
  * `defaultBinding`: it fires only through `useSelectTool`'s bindings.
  *

@@ -20,7 +20,7 @@ import {
 import {
   editingLayer, inPlane, pathEditPreview, pathEditToolActive, pathOperationTags, type EditAnchorsDep,
 } from '@weasel-js/core';
-import { CornerRadiusIcon } from '../commandIcons';
+import { icon } from '../icons.gen';
 
 /** The shape a corner with no spec yet takes. */
 export const DEFAULT_CORNER_SHAPE: CornerShape = 'round';
@@ -60,7 +60,7 @@ function widgetEnabled(deps: ActionDeps | undefined): true | ActionDisabledReaso
 /** Drag a corner widget to set the corner's radius. */
 export const editCornerAction: Action & { requires: string[] } = inPlane({
   id: 'editCorner',
-  icon: CornerRadiusIcon,
+  icon: icon('cornerRadius'),
   label: 'Corner radius',
   tags: pathOperationTags('drag'),
   // Ties the marquee's `empty` and move's `selected-body` on specificity and

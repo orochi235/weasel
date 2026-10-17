@@ -2,14 +2,13 @@
  * The path-effect actions: make a live blend, bend, or repeat from the
  * selection; change one's settings; and expand one into ordinary paths.
  */
-import { createElement } from 'react';
 import { type Action, type ActionDeps, ActionDisabledReason, type ImmediateInvoker } from '@weasel-js/routing';
 import { worldEditToStorage } from '@weasel-js/geom';
 import {
-  commitOps, createSetDataOp, deleteNode, derivedDepOf, insertAt, type NodeId, type Op, type PathEffect, pathEffectNode, pathEffectOf, pathEffectParts, registeredPathEffects, type Scene, type SceneNode as Node, slotOf, pathOperationTags, TuneIcon,
+  commitOps, createSetDataOp, deleteNode, derivedDepOf, insertAt, type NodeId, type Op, type PathEffect, pathEffectNode, pathEffectOf, pathEffectParts, registeredPathEffects, type Scene, type SceneNode as Node, slotOf, pathOperationTags,
 } from '@weasel-js/core';
-import { BendAlongIcon, BlendIcon, ExpandIcon, RepeatAlongIcon } from '../icons';
 import { EFFECT_DEFAULTS, withEffectSettings } from './params';
+import { icon } from '../icons.gen';
 
 type AnyScene = Scene<unknown, string, unknown>;
 type AnyNode = Node<unknown, string, unknown>;
@@ -100,7 +99,7 @@ function createEffectAction(spec: CreateSpec): Action & { requires: string[] } {
  * `BlendEffect`'s.
  */
 export const blendAction = createEffectAction({
-  id: 'blend', label: 'Blend', icon: BlendIcon, kind: 'blend', key: 'b', code: 'KeyB', between: true,
+  id: 'blend', label: 'Blend', icon: icon('blend'), kind: 'blend', key: 'b', code: 'KeyB', between: true,
 });
 
 /**
@@ -108,7 +107,7 @@ export const blendAction = createEffectAction({
  * re-bends it. Params are `BendAlongEffect`'s.
  */
 export const bendAlongAction = createEffectAction({
-  id: 'bendAlong', label: 'Bend Along Path', icon: BendAlongIcon, kind: 'bendAlong', key: 'w', code: 'KeyW', between: false,
+  id: 'bendAlong', label: 'Bend Along Path', icon: icon('bendAlong'), kind: 'bendAlong', key: 'w', code: 'KeyW', between: false,
 });
 
 /**
@@ -116,7 +115,7 @@ export const bendAlongAction = createEffectAction({
  * `RepeatAlongEffect`'s.
  */
 export const repeatAlongAction = createEffectAction({
-  id: 'repeatAlong', label: 'Repeat Along Path', icon: RepeatAlongIcon, kind: 'repeatAlong', key: 'r', code: 'KeyR', between: false,
+  id: 'repeatAlong', label: 'Repeat Along Path', icon: icon('repeatAlong'), kind: 'repeatAlong', key: 'r', code: 'KeyR', between: false,
 });
 
 const EDIT_LABEL = 'Edit Path Effect';
@@ -131,7 +130,7 @@ const EDIT_LABEL = 'Edit Path Effect';
 export const editPathEffectAction: Action & { requires: string[] } = {
   id: 'editPathEffect',
   label: EDIT_LABEL,
-  icon: createElement(TuneIcon),
+  icon: icon('core:tune'),
   requires: ['scene', 'applyOps'],
   invoker: {
     timing: 'immediate',
@@ -174,7 +173,7 @@ const EXPAND_LABEL = 'Expand to Paths';
 export const expandPathEffectAction: Action & { requires: string[] } = {
   id: 'expandPathEffect',
   label: EXPAND_LABEL,
-  icon: ExpandIcon,
+  icon: icon('expand'),
   group: PATH_EFFECTS_GROUP,
   defaultBinding: { kind: 'key', key: 'e', code: 'KeyE', mods: { alt: true, shift: true } },
   eligible: { capability: 'creates-shapes' },

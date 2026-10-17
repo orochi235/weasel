@@ -1,6 +1,8 @@
 export { createReflectable } from './reflectable';
 export { createEmitter, type Emitter } from './emitter';
+export { isDev } from './isDev';
 export { isPlainObject, isPlainPrototype } from './isPlainObject';
+export { deepEqual, type DeepEqualOptions } from './deepEqual';
 export type {
   Reflectable,
   Reflection,

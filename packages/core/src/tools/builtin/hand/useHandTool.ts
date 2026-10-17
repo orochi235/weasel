@@ -1,9 +1,9 @@
-import { useMemo, createElement } from 'react';
+import { useMemo } from 'react';
 import { useLatest } from '@weasel-js/react';
 import { defineTool } from '../../overlayBinding';
 import type { Tool } from '../../overlayBinding';
-import { HandIcon } from '../../../icons';
 import type { InertiaConfig } from 'core/viewport/useDecayLoop';
+import { icon } from '../../../icons.gen';
 
 export type { InertiaConfig };
 
@@ -50,7 +50,7 @@ export function useHandTool(opts: UseHandToolOptions = {}): Tool {
         hookName: 'useHandTool',
         presentation: {
           label: 'Hand',
-          icon: createElement(HandIcon),
+          icon: icon('hand'),
           group: 'view',
         },
         cursor: 'grab',

@@ -96,6 +96,13 @@ export interface UseGestureDispatcherOptions {
   canvasRef: RefObject<HTMLElement | null>;
   /** Action registry (ActionsRegistry from registry.tsx). */
   actions: ActionsRegistry;
+  /**
+   * Which actions this dispatcher matches. `'scope'` (default): every action a
+   * read from `actions` reaches, down its active scope. `'own'`: only those
+   * registered at `actions`' own node — for chrome on a root that canvases
+   * nest under.
+   */
+  hears?: 'scope' | 'own';
   /** Every entry in play, keyed by id: tools and any other contribution
    *  whose bindings this dispatcher routes. */
   entriesById: ReadonlyMap<string, Contribution<unknown>>;
@@ -177,6 +184,16 @@ export interface UseGestureDispatcherOptions {
    * `<SceneCanvas>` always wires this via its canvas rect + current view.
    */
   clientToWorld?: (clientX: number, clientY: number) => { x: number; y: number };
+
+  /**
+   * Converts a client point to CSS pixels from the canvas's top-left: where
+   * the painted cursor draws, where a wheel or pinch zoom anchors, and where a
+   * pending long-press is published. Without this, the element's rect is
+   * subtracted — wrong for a canvas under a CSS transform, whose host already
+   * owns the mapping. `<SceneCanvas>` wires it from its own camera, so a
+   * `clientToWorld` override reaches it.
+   */
+  clientToLocal?: (clientX: number, clientY: number) => { x: number; y: number };
 
   /**
    * Called whenever one of this hook's dispatchers notifies its subscribers:

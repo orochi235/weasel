@@ -4,7 +4,6 @@
  * the kind as a param (see `<SceneCanvas tune>`).
  */
 
-import { createElement } from 'react';
 import { type Action, type ActionDeps, ActionDisabledReason, type ImmediateInvoker } from '@weasel-js/routing';
 import {
   constraintAnchors,
@@ -14,9 +13,10 @@ import {
   type PathConstraintKind,
   type PolygonPath,
 } from '@weasel-js/geom';
-import { DeleteIcon, depOf, deleteSelectedMark, type EditAnchorsDep, pathOperationTags } from '@weasel-js/core';
+import { depOf, deleteSelectedMark, type EditAnchorsDep, pathOperationTags } from '@weasel-js/core';
 import { constraintsOf } from './pathConstraints';
 import { editedPath, selectedConstraintOf, setConstraints } from './constraintsExtension';
+import { icon } from '../icons.gen';
 
 /** Params for `constrainAnchors`. */
 export interface ConstrainAnchorsParams {
@@ -124,7 +124,7 @@ function constraintCommand(
 export const deleteConstraintAction: Action & { requires: string[] } = {
   id: 'deleteConstraint',
   label: 'Delete constraint',
-  icon: createElement(DeleteIcon),
+  icon: icon('core:delete'),
   eligible: { capability: 'edits-anchors' },
   requires: ['editAnchors'],
   invoker: {

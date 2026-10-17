@@ -10,11 +10,11 @@ import {
   TrialSceneCanvas,
   useTrialScene,
 } from '@weasel-js/labkit';
-import { SelectIcon } from '@weasel-js/ui';
 import { useMemo, useState, useSyncExternalStore } from 'react';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import s from './PathConstraintsLabDemo.module.css';
+import { icon } from '../icons.gen';
 
 const FEATURES = ['draw', constraintsPreset] as const;
 
@@ -133,7 +133,7 @@ const constraintsInstrument = defineInstrument<State, Config>({
   config,
   initialState: () => ({ scene: null }),
   undo: {},
-  tools: { tools: [{ id: 'select', label: 'Select', icon: SelectIcon, shortcut: 'V' }] },
+  tools: { tools: [{ id: 'select', label: 'Select', icon: icon('core:select'), shortcut: 'V' }] },
   render: (ctx) => <ConstraintsTrial ctx={ctx} />,
 });
 

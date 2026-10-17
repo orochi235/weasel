@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest';
-import { isValidElement, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { renderHook, act } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { reportRouteConflicts, resolveParams, type ActionsRegistry } from '@weasel-js/routing';
@@ -8,7 +8,6 @@ import { SceneCanvas } from 'canvas/SceneCanvas';
 import { createScene } from 'core/scene/scene';
 import type { NodeId, Scene } from 'core/scene/types';
 import { useSelection } from 'core/selection/useSelection';
-import { MeasureIcon } from '../../../icons';
 import { useMeasureTool } from './useMeasureTool';
 import { createMeasurements, measureIds } from 'features/measure/measurements';
 import { measureEndsOf } from 'features/measure/measurement';
@@ -21,8 +20,7 @@ const ms0 = () => createMeasurements({ layer: 'notes' });
 describe('useMeasureTool — the tool', () => {
   it('declares the ruler glyph and the M key', () => {
     const { result } = renderHook(() => useMeasureTool({ measurements: ms0() }));
-    const icon = result.current.presentation?.icon;
-    expect(isValidElement(icon) && icon.type).toBe(MeasureIcon);
+    expect(result.current.presentation?.icon).toBe('core:measure');
     expect(result.current.keybinding).toEqual({ key: 'M' });
   });
 

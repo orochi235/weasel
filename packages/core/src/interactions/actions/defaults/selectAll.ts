@@ -3,7 +3,6 @@ import type { Action } from '@weasel-js/routing';
 import { isAnnotationLayer } from 'core/scene/annotation';
 
 /**
- * @experimental
  * Static descriptor for the `selectAll` Action. Selects every scene node the
  * user can see and reach — nodes on a hidden or locked layer, or on a layer
  * the asking view does not paint, are left out, so Cmd+A then Delete cannot

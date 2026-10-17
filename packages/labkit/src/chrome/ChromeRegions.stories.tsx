@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import { CrosshairIcon, HandIcon, PencilIcon, SnapshotIcon } from '@weasel-js/ui';
 import type { ConfigField } from '../controls/types';
+import { icon } from '../icons.gen';
 import type { Instrument } from '../instrument/types';
 import { Lab } from '../lab/Lab';
 
@@ -29,9 +29,9 @@ const FullInstrument: Instrument<DemoState, DemoConfig> = {
   layers: { ids: ['wheel'] },
   tools: {
     tools: [
-      { id: 'draw', label: 'Draw', icon: PencilIcon, shortcut: 'D' },
-      { id: 'pan', label: 'Pan', icon: HandIcon, shortcut: 'H' },
-      { id: 'measure', label: 'Measure', icon: CrosshairIcon, shortcut: 'M' },
+      { id: 'draw', label: 'Draw', icon: icon('core:pencil'), shortcut: 'D' },
+      { id: 'pan', label: 'Pan', icon: icon('core:hand'), shortcut: 'H' },
+      { id: 'measure', label: 'Measure', icon: icon('ui:crosshair'), shortcut: 'M' },
     ],
   },
   canvas: {
@@ -94,7 +94,7 @@ export const SuppressedAndReplaced: Story = {
         group: 'trial',
         end: true,
         item: {
-          icon: CrosshairIcon,
+          icon: icon('ui:crosshair'),
           label: 'Export',
           showLabel: true,
           onActivate: () => {},
@@ -121,7 +121,7 @@ export const SubjectTitleAndLead: Story = {
         id: 'subject',
         region: 'titlebar',
         item: {
-          icon: PencilIcon,
+          icon: icon('core:pencil'),
           label: 'Next subject',
           onActivate: (ctx) => {
             const i = SUBJECTS.indexOf(ctx.title);
@@ -134,7 +134,7 @@ export const SubjectTitleAndLead: Story = {
         region: 'toolbar',
         group: 'trial',
         item: {
-          icon: SnapshotIcon,
+          icon: icon('ui:snapshot'),
           label: 'Snapshot',
           showLabel: true,
           onActivate: (ctx) => ctx.saveSnapshot(),

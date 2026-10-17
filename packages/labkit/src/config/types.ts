@@ -1,3 +1,4 @@
+import type { IconRef } from '@weasel-js/icons';
 import type {
   PrefAction,
   PrefBarOverflow,
@@ -24,10 +25,10 @@ export type ControlRenderer = PrefRenderer;
 export interface ConfigOption {
   value: string;
   label: string;
-  /** A glyph in weasel-ui's icon set (`IconName`). A segmented row draws it in
+  /** A qualified icon ref (`icon('ui:statusSuccess')`) in the registry in scope. A segmented row draws it in
    *  place of `label`, which stays the accessible name and becomes the tooltip;
    *  a select draws it beside `label`. */
-  icon?: string;
+  icon?: IconRef;
 }
 
 /** Everything a leaf can carry beyond its kind and default. A flat union of

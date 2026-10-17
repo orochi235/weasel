@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useInsertionEffect, useMemo, useRef } from 'react';
-import { useLatest, useVisibleRaf } from '@weasel-js/react';
+import { isDev, useLatest, useVisibleRaf } from '@weasel-js/react';
 import { ColorOverrideRegistry } from './colorRegistry';
 import { createAnimatorCore, type AnimatorCore } from './engine/core';
 import type { Animator, UseAnimatorOptions } from './types';
@@ -38,8 +38,7 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
       if (mountedRef.current) return false;
       if (!trippedRef.current) {
         trippedRef.current = true;
-        const isDev = typeof process !== 'undefined' ? process.env.NODE_ENV !== 'production' : true;
-        if (isDev) {
+        if (isDev()) {
           console.error(
             'weasel useAnimator: animation tick fired after the host component unmounted. ' +
             'This usually means cleanup logic was bypassed — check for refactors that ' +

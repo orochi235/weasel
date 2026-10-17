@@ -52,6 +52,7 @@ export {
   bezier,
   diagramEdgeOf,
   edgeDerivePath,
+  layoutOwnsPort,
   layoutOwnsRoute,
   orthogonal,
   resolveEnd,
@@ -139,6 +140,7 @@ export type {
   LayoutFn,
   LayoutOptions,
   LayoutPlan,
+  LayoutPorts,
   LayoutResult,
   Slot,
 } from './layout';
@@ -183,5 +185,5 @@ export {
 export type { DiagramNodeEntry, DiagramNodeLike, DiagramNodeReader } from './trait';
 export type { DiagramGroup, DiagramNode, Port, PortAnchor, PortSpec } from './types';
 export { DiagramView } from './DiagramView';
-export type { DiagramViewApi, DiagramViewProps, NodeMove } from './DiagramView';
+export type { DiagramViewApi, DiagramViewProps, EdgeRoute, NodeMove } from './DiagramView';
 export { useMirroredSelection } from './mirrorSelection';

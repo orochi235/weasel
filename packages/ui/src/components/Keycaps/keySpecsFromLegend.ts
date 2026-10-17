@@ -1,5 +1,5 @@
 import type { KeySpec } from './Keycaps';
-import { MODIFIER_LABELS } from './keySpecsFromMods';
+import { MODIFIER_LABELS } from '@weasel-js/gestures';
 
 /**
  * A shortcut already written out, as `formatShortcut` writes one (`⇧⌘Z`,

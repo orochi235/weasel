@@ -1,7 +1,6 @@
 import type { Action } from '@weasel-js/routing';
 
 /**
- * @experimental
  * Starts in-place text editing on the single selected node. It has no
  * `defaultBinding`: it fires only via `Tool.bindings`.
  *

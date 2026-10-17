@@ -19,6 +19,9 @@ Read in roughly this order:
   non-rect poses via `PoseDescriptor<TPose>`.
 - [dispatcher.md](./dispatcher.md) — diagrams of input routing: the dispatch
   pipeline, which binding wins, and how input scopes and yokes answer.
+- [icons.md](./icons.md) — icon names (`core:undo`), where each glyph is
+  drawn, the registry, and the build plugin that ships only the glyphs a
+  build names.
 - [scene-serialization.md](./scene-serialization.md) — `scene.toJSON()` and
   `sceneFromJSON()`: snapshot + restore a scene, the JSON shape, the function
   registry for `clipFromPose`, and loading static `*.scene.json` files.

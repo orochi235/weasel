@@ -1,15 +1,10 @@
 import { Fragment } from 'react';
 import s from './Keycaps.module.css';
+import type { KeyLegend } from '@weasel-js/gestures';
 import { KeyCap, inferKeycapKind, type KeyCapVariant } from './Keycap';
 
-/** One key in a shortcut. */
-export interface KeySpec {
-  /** Glyph rendered in the chip (modifier or key). */
-  label: string;
-  /** When true, the chip renders inverted to mark it as not required to
-   *  trigger the action (e.g. an optional modifier). Defaults to false. */
-  optional?: boolean;
-}
+/** One key in a shortcut. An `optional` key renders inverted. */
+export type KeySpec = KeyLegend;
 
 /** Where {@link KeySequence} draws its separator. */
 export type KeySequenceJoins = 'all' | 'key' | 'none';

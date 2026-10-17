@@ -6,6 +6,7 @@
  */
 import { act, screen } from '@testing-library/react';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
+import { withIcons } from '@weasel-js/ui/testing/withIcons';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { defineInstrument } from '../instrument/defineInstrument';
 import { Lab } from '../lab/Lab';
@@ -32,7 +33,9 @@ const reader = defineInstrument<{ hits: number }, Record<string, never>>({
 
 describe('<Trial> trial-scoped hooks', () => {
   it('lets an instrument read its own trial state through useTrialState', async () => {
-    await renderSettled(<Lab instruments={[reader]} defaultInstrument="Reader" />);
+    await renderSettled(<Lab instruments={[reader]} defaultInstrument="Reader" />, {
+      wrapper: withIcons,
+    });
     expect(screen.getByTestId('probe')).toHaveTextContent('hits:7');
   });
 });
@@ -49,6 +52,7 @@ describe('<Trial> root element', () => {
           }}
         </LabContext.Consumer>
       </Lab>,
+      { wrapper: withIcons },
     );
     await act(async () => (labRef as LabContextValue | null)?.addTrial('Reader'));
     const ids = (labRef as LabContextValue | null)?.trials.map((t) => t.id) ?? [];

@@ -19,9 +19,13 @@ const BUILT_FROM = {
     './shell.css': 'src/shell/shell.css',
     './frame.css': 'src/frame/frame.css',
   },
+  'icons-plugin': { './virtual': 'virtual.d.ts' },
   labkit: { './styles.css': 'src/styles.less' },
   theme: { './tokens.css': 'src/generated/tokens.css' },
 };
+
+/** An app's source, importable from another app as `<alias>/<path>`. */
+export const APP_SOURCES = { '@draw': 'apps/draw/src' };
 
 /** In-repo test helpers every package may keep under `src/testing/`, importable here and never published. */
 export const TESTING = 'testing';

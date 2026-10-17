@@ -9,6 +9,7 @@ import { childrenOf, joinPath, valuePathOf, type SchemaNode, type SchemaRoot } f
 import { pointable, pointedAt, pointersTo } from './settingPointers';
 import { leafLabel, nodeLabel } from './structureRows';
 import s from './PrefSchemaEditor.module.css';
+import { icon } from '../../icons.gen';
 
 /** The rows for what `node` of the dialog `over` holds: its settings, and each group that holds one. */
 function toRows(over: SchemaRoot, node: SchemaNode, path: string | null, placed: ReadonlySet<string>): TreeNode[] {
@@ -57,7 +58,7 @@ export function SettingsTree({ over, layout, sought, ghost, onDrag, onDrop }: {
     const id = ids[0];
     const made = id === undefined ? undefined : pointersTo(over, id);
     if (id === undefined || !made) return null;
-    return { item: { id, label: made.node.name, icon: 'link', key: made.key, make: () => made.node }, node: made.node, ...point };
+    return { item: { id, label: made.node.name, icon: icon('link'), key: made.key, make: () => made.node }, node: made.node, ...point };
   };
   return (
     <Tree

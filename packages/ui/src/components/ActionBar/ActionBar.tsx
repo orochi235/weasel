@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { taggedActionItems } from '@weasel-js/core';
+import type { IconRef } from '@weasel-js/icons';
 import type { PrefActions, PrefGroup } from '@weasel-js/prefs';
 import { Bar } from '../Bar/Bar';
 import { BarActions } from '../Bar/BarActions';
@@ -29,10 +30,10 @@ export interface ActionBarOptions {
   /**
    * Per-entry icon overrides, keyed by `ActionItem.key` — the action id, or
    * `id:variant` for one variant of a parametric action. Each names a glyph
-   * in the kit's icon set, as a leaf's `icon` does, and replaces the action's
-   * own `icon` for this bar only. A name the set lacks leaves the action's.
+   * in the icon registry, as a leaf's `icon` does, and replaces the action's
+   * own `icon` for this bar only.
    */
-  icons?: Record<string, string>;
+  icons?: Record<string, IconRef>;
   /**
    * Per-entry label overrides, keyed like `icons`. Drives both `aria-label`
    * and `title`. When omitted, the entry's own `label` is used.

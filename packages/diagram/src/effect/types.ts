@@ -70,6 +70,11 @@ export interface EffectStageRun {
   taken?: string;
   /** What each output carried, by port id, as text to show. */
   values?: Readonly<Record<string, string>>;
+  /** What each output carried, by port id, as a picture, drawn in the slot a
+   *  look keeps for it (`showPreviews`). A bitmap rather than a canvas
+   *  because its pixels cannot change: hand back the same one and nothing is
+   *  uploaded again; draw new pixels into a new one. */
+  previews?: Readonly<Record<string, ImageBitmap>>;
 }
 
 /** What a value type means, as `EffectPipeline.types` records it. */

@@ -36,6 +36,15 @@ export interface EdgeEnd {
    *  the nearest port, so an edge drawn before ports were thought about still
    *  meets the shape. */
   port?: string;
+  /** The port layout last named here. While `port` still equals it, or names
+   *  none, layout owns the end and names it again on its next run. */
+  laidOut?: string;
+}
+
+/** Whether layout may name this end's port: it names none, or only the one
+ *  layout last named. */
+export function layoutOwnsPort(end: EdgeEnd): boolean {
+  return end.port === undefined || end.port === end.laidOut;
 }
 
 /** The trait on an edge's `data`, under the same key participants use. */

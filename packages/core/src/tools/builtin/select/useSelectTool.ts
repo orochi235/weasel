@@ -1,6 +1,5 @@
-import { useMemo, useRef, createElement } from 'react';
+import { useMemo, useRef } from 'react';
 import { useLatest } from '@weasel-js/react';
-import { SelectIcon } from '../../../icons';
 import { pickWalk, adapterPickSource, scenePlaneOf } from 'canvas/pickWalk';
 import type { View } from 'core/viewport/view';
 import type { LayerEnumerableAdapter } from 'core/adapters/types';
@@ -17,6 +16,7 @@ import { onBody, onEmptyCanvas } from './selectionContributions';
 import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import { MULTI_RESIZE_TARGET_ID, type Bounds } from '../shared/selectionTarget';
+import { icon } from '../../../icons.gen';
 export type { Bounds };
 export { MULTI_RESIZE_TARGET_ID };
 
@@ -273,7 +273,7 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
         cursor: 'default',
         presentation: {
           label: 'Select',
-          icon: createElement(SelectIcon),
+          icon: icon('select'),
           group: 'select',
         },
         actions: [pickAction, collapseDeferredAction],

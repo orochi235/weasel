@@ -97,6 +97,20 @@ describe('paintRun', () => {
     expect(painted.some((s) => s.id === 'hard/cost')).toBe(false);
   });
 
+  it('throws a switch\'s lever to the output the run took, closing that contact', () => {
+    const drawn = nodeGraph(PIPELINE, { branch: 'switch' });
+    const specs = diagramScene(drawn.data, drawn.scene);
+    const marks = (out: readonly DiagramSpec[]) => out.filter((s) => (s.id as string).startsWith('pick/mark:'))
+      .map((s) => ({ d: (s.data as { diagram?: { mark?: { d: string } } }).diagram?.mark?.d, fill: 'fill' in (s.data as object) }));
+    const tookA = marks(paintRun(PIPELINE, specs, RUN));
+    expect(tookA).toEqual(marks(specs));
+    const tookB = marks(paintRun(PIPELINE, specs, { stages: { ...RUN.stages, pick: { taken: 'b' } } }));
+    // Marks in order: leads, lever, pivot, the first exit's contact (filled), the second's (open).
+    expect(tookB[1]!.d).not.toBe(tookA[1]!.d);
+    expect(tookB[1]!.d).toMatch(/ 0\.7\d$/);
+    expect(tookB.slice(3, 5)).toEqual([{ d: tookA[4]!.d, fill: true }, { d: tookA[3]!.d, fill: false }]);
+  });
+
   it('works the same over the rack look, whose wires are labeled differently', () => {
     const painted = paintRun(PIPELINE, built(rack), RUN);
     expect(opacity(byId(painted, 'hard'), 'fill')).toBeLessThan(1);
@@ -182,5 +196,38 @@ describe('paintRun on awkward pipelines', () => {
 describe('costText', () => {
   it('gives three figures, and whole milliseconds from 100 up', () => {
     expect([costText(0.4213), costText(12.345), costText(1234.5)]).toEqual(['0.421 ms', '12.3 ms', '1235 ms']);
+  });
+});
+
+describe('a cost over a symbol whose title sits above it', () => {
+  it('stands above the title, not on it', () => {
+    // rack's default `side: 'below'` brings control in at the bottom, which moves a symbol's title above it.
+    const P: EffectPipeline = {
+      types: { bool: { control: true } },
+      stages: [
+        { id: 'src', title: 'Source', kind: 'source', outputs: [{ id: 'out', type: 'image' }] },
+        { id: 'gate', title: 'Gate', outputs: [{ id: 'on', type: 'bool' }] },
+        {
+          id: 'q', title: 'Loudness', kind: 'decision',
+          inputs: [{ id: 'in', type: 'image' }, { id: 'when', type: 'bool' }],
+          outputs: [{ id: 'yes', type: 'image' }, { id: 'no', type: 'image' }],
+        },
+        { id: 'out', title: 'Out', kind: 'sink', inputs: [{ id: 'a', type: 'image' }, { id: 'b', type: 'image' }] },
+      ],
+      wires: [
+        { from: { stage: 'src', port: 'out' }, to: { stage: 'q', port: 'in' } },
+        { from: { stage: 'gate', port: 'on' }, to: { stage: 'q', port: 'when' } },
+        { from: { stage: 'q', port: 'yes' }, to: { stage: 'out', port: 'a' } },
+        { from: { stage: 'q', port: 'no' }, to: { stage: 'out', port: 'b' } },
+      ],
+    };
+    const drawn = rack(P, { branch: 'switch', collapseSkips: false });
+    const specs = paintRun(P, diagramScene(drawn.data, drawn.scene), { stages: { src: {}, gate: {}, q: { cost: 1.2, taken: 'yes' }, out: {} } });
+    const pose = (s: DiagramSpec) => s.pose as { y: number; height: number };
+    const title = specs.find((s) => (s.data as { text?: string }).text === 'Loudness')!;
+    const box = specs.find((s) => s.id === 'q')!;
+    expect(pose(title).y + pose(title).height).toBeLessThanOrEqual(pose(box).y);
+    const cost = specs.find((s) => s.id === 'q/cost')!;
+    expect(pose(cost).y + pose(cost).height).toBeLessThanOrEqual(pose(title).y);
   });
 });

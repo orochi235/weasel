@@ -15,7 +15,8 @@ import {
   type PaintKindEntry,
 } from '@weasel-js/core';
 import { Icon } from '../../icons/Icon';
-import { isIconName } from '../../icons/namedGlyph';
+import type { IconRef } from '@weasel-js/icons';
+import { icon } from '../../icons.gen';
 import { ColorField } from '../ColorField';
 import { OpacityRange } from '../ColorField/OpacityRange';
 import { GradientEditor } from '../GradientEditor';
@@ -55,11 +56,11 @@ function kindOf(paint: Paint | null | undefined): PaintKind | null {
   return paint.kind ?? 'solid';
 }
 
-function segment(id: string, label: string, icon: string | undefined): ToggleBarItem<PaintKind> {
-  return isIconName(icon)
+function segment(id: string, label: string, ref: IconRef | undefined): ToggleBarItem<PaintKind> {
+  return ref
     // Icon-only: the full label stays the accessible name. 14, not 15: a
     // `sm` bar is 17px tall over 1px of padding, so 15 fills the segment box.
-    ? { value: id, label: <Icon name={icon} size={14} />, ariaLabel: label }
+    ? { value: id, label: <Icon name={ref} size={14} />, ariaLabel: label }
     : { value: id, label };
 }
 
@@ -78,7 +79,7 @@ function segmentItems(
   firstOf: ReadonlyMap<string, PaintKindEntry>, allowNone: boolean,
 ): readonly ToggleBarItem<PaintKind>[] {
   return [
-    ...(allowNone ? [segment(NONE, 'None', 'paintNone')] : []),
+    ...(allowNone ? [segment(NONE, 'None', icon('core:paintNone'))] : []),
     ...[...firstOf].map(([id, entry]) => segment(
       id, entry.family?.label ?? entry.label, entry.family ? entry.family.icon : entry.icon,
     )),

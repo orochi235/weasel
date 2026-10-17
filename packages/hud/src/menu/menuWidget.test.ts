@@ -50,6 +50,20 @@ function colors(cmds: readonly DrawCommand[]): unknown[] {
   return out;
 }
 
+describe('createMenuWidget links', () => {
+  it('runs an href row, then navigates to it', () => {
+    window.location.hash = '';
+    const ran = vi.fn();
+    const link: MenuEntry = { kind: 'item', key: 'docs', label: 'Docs', href: '#docs', run: ran };
+    const { w, close } = widget({ ...open, source: 'keyboard', entries: [link] });
+    w.onKey!(keydown('Enter'));
+    expect(ran).toHaveBeenCalledTimes(1);
+    expect(window.location.hash).toBe('#docs');
+    expect(close).toHaveBeenCalled();
+    window.location.hash = '';
+  });
+});
+
 describe('createMenuWidget', () => {
   it('places its panel at the open point and claims every gesture', () => {
     const { w } = widget();
