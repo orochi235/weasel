@@ -25,6 +25,7 @@ import { depthOf, expand } from './expand';
 import { orderRows } from './order';
 import { placeAcross } from './place';
 import { ranksByLength } from './rank';
+import { settlePlaces } from './places';
 import { layeredPorts } from '../route';
 
 /** What {@link layeredPlan} works out. */
@@ -83,7 +84,7 @@ function planOnce(graph: Graph, opts: LayoutOptions = {}): LayeredPlan {
   const expanded = expand(graph, ranks, back, { axes, nodeGap });
   const rows = finding ? orderRows(expanded.rows, expanded.hops, { groups: graph.groups ?? [] }) : expanded.rows;
 
-  const preferred = placeAcross(rows, expanded.hops, axes.cross, nodeGap);
+  const preferred = placeAcross(rows, settlePlaces(rows, expanded.hops), axes.cross, nodeGap);
   const grouped = (graph.groups?.length ?? 0) > 0;
   const crossAt = grouped ? packClusters(graph, rows, preferred, axes, nodeGap) : preferred;
   const gaps = grouped ? rankGaps(graph, rows, axes, rankGap) : rows.slice(1).map(() => rankGap);
