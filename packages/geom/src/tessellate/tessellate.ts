@@ -11,6 +11,7 @@ import {
   flattenQuadraticWithArcLen,
 } from '../flatten';
 import type { Mesh } from './mesh';
+import { resolveCrossings, type FlattenedContours } from './crossings';
 
 /** Options for `tessellate`. A smaller tolerance means more triangles and
  *  smoother curves; it is in path-local units, so callers rendering at a
@@ -36,14 +37,6 @@ function tessellateRect(p: RectPath): Mesh {
     anchorB: new Uint32Array([0, 1, 2, 3]),
     anchorT: new Float32Array([0, 0, 0, 0]),
   };
-}
-
-interface FlattenedContours {
-  coords: number[];
-  contourStarts: number[];
-  anchorA: number[];
-  anchorB: number[];
-  anchorT: number[];
 }
 
 /** The contours a fill covers: all of them, or only those a `Z` closed. */
@@ -163,11 +156,20 @@ function flattenContours(p: PolygonPath, tolerance: number, closed: Set<number>)
 
 function tessellatePolygon(p: PolygonPath, opts: TessellateOptions): Mesh {
   const tolerance = opts.flattenTolerance ?? DEFAULT_FLATTEN_TOLERANCE;
-  const { coords, contourStarts, anchorA, anchorB, anchorT } = flattenPolygon(p, tolerance);
+  const flat = flattenPolygon(p, tolerance);
 
   if (p.fillRule === 'evenodd') {
+    const { coords, contourStarts, anchorA, anchorB, anchorT } = flat;
     return tessellateEvenoddWithAnchors(coords, contourStarts, anchorA, anchorB, anchorT);
   }
+  const resolved = resolveCrossings(flat);
+  return resolved ? tessellateNonzero(resolved, 1) : tessellateNonzero(flat);
+}
+
+/** Triangulate contours that do not cross. `refSign` is the signed-area sign
+ *  of a filled outline, when known; otherwise the first contour sets it. */
+function tessellateNonzero(flat: FlattenedContours, refSign?: number): Mesh {
+  const { coords, contourStarts, anchorA, anchorB, anchorT } = flat;
 
   // nonzero compound-path tessellation:
   //   - The first contour establishes the reference winding direction.
@@ -196,17 +198,17 @@ function tessellatePolygon(p: PolygonPath, opts: TessellateOptions): Mesh {
   }
 
   const areas: number[] = contourStarts.map((s, i) => signedArea(coords, s, contourEnd(i)));
-  const refSign = Math.sign(areas[0]) || 1;
+  const filledSign = refSign ?? (Math.sign(areas[0]) || 1);
 
   const positives: number[] = [];
   const negatives: number[] = [];
   for (let i = 0; i < contourStarts.length; i++) {
     if (areas[i] === 0) continue;
-    if (Math.sign(areas[i]) === refSign) positives.push(i);
+    if (Math.sign(areas[i]) === filledSign) positives.push(i);
     else negatives.push(i);
   }
 
-  if (positives.length === 1 && negatives.length > 0) {
+  if (positives.length === 1 && positives[0] === 0 && negatives.length > 0) {
     // Classic outer-with-holes pattern; pass directly to earcut.
     const holeIndices = contourStarts.slice(1);
     const tri = earcut(coords, holeIndices);

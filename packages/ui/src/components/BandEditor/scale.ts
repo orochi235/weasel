@@ -1,3 +1,4 @@
+import { isDev } from '@weasel-js/registry';
 /** Maps a domain value onto its position along the track, and back. */
 export interface BandScale {
   /** Domain → position in [0,1]. Must be monotonic increasing. */
@@ -31,9 +32,6 @@ export const logScale: BandScale = {
 
 let warnedNonPositiveMin = false;
 
-function isDev(): boolean {
-  return typeof process !== 'undefined' ? process.env.NODE_ENV !== 'production' : true;
-}
 
 /**
  * Resolves the `scale` prop, substituting `linearScale` for a `logScale`

@@ -1,19 +1,10 @@
-import type { ReactNode } from 'react';
+import type { IconRef } from '@weasel-js/icons';
 import { applyBooleanOp, type BooleanOp } from './booleans';
 import type { BooleanStrokes } from './operands';
 import type { Action } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import type { ImmediateInvoker } from '@weasel-js/routing';
-import {
-  UnionIcon,
-  IntersectIcon,
-  SubtractIcon,
-  ExcludeIcon,
-  DivideIcon,
-  CropIcon,
-  TrimIcon,
-  MergeIcon,
-} from '../defaults/icons/booleanIcons';
+import { icon } from '../../../icons.gen';
 
 const ID_FOR: Record<BooleanOp, string> = {
   union: 'pathfinder.union',
@@ -37,19 +28,19 @@ const LABEL_FOR: Record<BooleanOp, string> = {
   merge: 'Merge',
 };
 
-const ICON_FOR: Record<BooleanOp, ReactNode> = {
-  union: <UnionIcon />,
-  intersect: <IntersectIcon />,
-  subtract: <SubtractIcon />,
-  exclude: <ExcludeIcon />,
-  divide: <DivideIcon />,
-  crop: <CropIcon />,
-  trim: <TrimIcon />,
-  merge: <MergeIcon />,
+const ICON_FOR: Record<BooleanOp, IconRef> = {
+  union: icon('union'),
+  intersect: icon('intersect'),
+  subtract: icon('subtract'),
+  exclude: icon('exclude'),
+  divide: icon('divide'),
+  crop: icon('crop'),
+  trim: icon('trim'),
+  merge: icon('merge'),
 };
 
-/** What a stroked operand gives the built-in Pathfinder actions. */
-const PATHFINDER_STROKES: BooleanStrokes = 'unfilled';
+/** What a stroked operand gives the built-in Pathfinder actions and the shape builder. */
+export const PATHFINDER_STROKES: BooleanStrokes = 'unfilled';
 
 // ---------------------------------------------------------------------------
 // Static descriptors
@@ -83,20 +74,20 @@ function makePathfinderAction(op: BooleanOp): Action {
   };
 }
 
-/** @experimental Static descriptor for pathfinder-union. */
+/** Static descriptor for pathfinder-union. */
 export const pathfinderUnionAction     = makePathfinderAction('union');
-/** @experimental Static descriptor for pathfinder-subtract. */
+/** Static descriptor for pathfinder-subtract. */
 export const pathfinderSubtractAction  = makePathfinderAction('subtract');
-/** @experimental Static descriptor for pathfinder-intersect. */
+/** Static descriptor for pathfinder-intersect. */
 export const pathfinderIntersectAction = makePathfinderAction('intersect');
-/** @experimental Static descriptor for pathfinder-exclude. */
+/** Static descriptor for pathfinder-exclude. */
 export const pathfinderExcludeAction   = makePathfinderAction('exclude');
-/** @experimental Static descriptor for pathfinder-divide. */
+/** Static descriptor for pathfinder-divide. */
 export const pathfinderDivideAction    = makePathfinderAction('divide');
-/** @experimental Static descriptor for pathfinder-crop. */
+/** Static descriptor for pathfinder-crop. */
 export const pathfinderCropAction      = makePathfinderAction('crop');
-/** @experimental Static descriptor for pathfinder-trim. */
+/** Static descriptor for pathfinder-trim. */
 export const pathfinderTrimAction      = makePathfinderAction('trim');
-/** @experimental Static descriptor for pathfinder-merge. */
+/** Static descriptor for pathfinder-merge. */
 export const pathfinderMergeAction     = makePathfinderAction('merge');
 

@@ -19,13 +19,25 @@
       "types": "./dist/components/*/index.d.ts",
       "import": "./dist/components/*/index.js"
     },
+    "./icons": {
+      "types": "./dist/icons.table.d.ts",
+      "import": "./dist/icons.table.js"
+    },
+    "./kit-icons": {
+      "types": "./dist/kitIcons.d.ts",
+      "import": "./dist/kitIcons.js"
+    },
     "./style.css": "./dist/style.css",
     "./package.json": "./package.json"
+  },
+  "weaselIcons": {
+    "table": "./dist/icons.table.json"
   },
   "dependencies": {
     "@weasel-js/font": "1.10.1",
     "@weasel-js/geom": "1.10.1",
     "@weasel-js/gestures": "1.10.1",
+    "@weasel-js/icons": "1.10.1",
     "@weasel-js/menu": "1.10.1",
     "@weasel-js/modes": "1.10.1",
     "@weasel-js/paint": "1.10.1",
@@ -64,7 +76,7 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "vite build && tsc -p tsconfig.build.json && node ../labkit/scripts/build-css.mjs --if-built"
+    "build": "vite build && tsc -p tsconfig.build.json && cp src/icons.table.json dist/ && node ../labkit/scripts/build-css.mjs --if-built"
   },
   "publishConfig": {
     "access": "public",

@@ -10,6 +10,7 @@
 import { act } from '@testing-library/react';
 import type { PointerContextValue } from '@weasel-js/core';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
+import { withIcons } from '@weasel-js/ui/testing/withIcons';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { defineInstrument } from '../instrument/defineInstrument';
 import { Lab } from '../lab/Lab';
@@ -58,7 +59,9 @@ async function mount() {
       ),
     },
   });
-  const r = await renderSettled(<Lab instruments={[pictured]} defaultInstrument="Pictured" />);
+  const r = await renderSettled(<Lab instruments={[pictured]} defaultInstrument="Pictured" />, {
+    wrapper: withIcons,
+  });
   const box = r.container.querySelector('.lk-overview__box');
   const content = r.container.querySelector('.lk-stage__content') as HTMLElement | null;
   if (!box || !content) throw new Error('no overview or stage');

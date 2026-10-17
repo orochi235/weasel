@@ -33,9 +33,19 @@ describe('keyStep', () => {
   it('ArrowRight on a submenu opens it on its first row', () => {
     expect(keyStep(root, [3], 'ArrowRight').stack).toEqual([3, 0]);
   });
-  it('ArrowRight on an item is handled and changes nothing', () => {
+  it('ArrowRight on an item is an edge to the right and changes nothing', () => {
     const r = keyStep(root, [0], 'ArrowRight');
-    expect(r).toMatchObject({ stack: [0], handled: true });
+    expect(r).toMatchObject({ stack: [0], handled: true, effect: { kind: 'edge', dir: 1 } });
+  });
+  it('ArrowLeft at the first level is an edge to the left and changes nothing', () => {
+    const r = keyStep(root, [0], 'ArrowLeft');
+    expect(r).toMatchObject({ stack: [0], handled: true, effect: { kind: 'edge', dir: -1 } });
+  });
+  it('ArrowRight on a submenu opens it and is no edge', () => {
+    expect(keyStep(root, [3], 'ArrowRight').effect).toEqual({ kind: 'none' });
+  });
+  it('ArrowLeft at a deeper level closes the level and is no edge', () => {
+    expect(keyStep(root, [3, 0], 'ArrowLeft').effect).toEqual({ kind: 'none' });
   });
   it('ArrowLeft closes a submenu level and not the root', () => {
     expect(keyStep(root, [3, 1], 'ArrowLeft').stack).toEqual([3]);

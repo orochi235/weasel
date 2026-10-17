@@ -1,11 +1,10 @@
 /**
- * @experimental
  * The `Action` descriptor, split along the line the dispatcher reads.
  * `ActionDispatch` is everything routing consults to decide whether an action
  * runs and what happens when it does; `ActionPresentation` is what a palette,
  * menu or toolbar renders. `Action` is both.
  */
-import type { ReactNode } from 'react';
+import type { IconRef } from '@weasel-js/icons';
 import type { CursorSpec } from '@weasel-js/cursor';
 import type { ActionDeps, Invoker } from './invoker';
 import type { BindingSource } from './binding';
@@ -13,7 +12,6 @@ import type { DepName } from '../../index';
 import type { IngestItem } from '@weasel-js/gestures';
 
 /**
- * @experimental
  * Closed enum of reasons an action might report itself as disabled. The
  * consumer (palette, menu, etc.) maps these symbolic values to display
  * strings via its own label map.
@@ -30,16 +28,13 @@ export type ActionDisabledReason =
   (typeof ActionDisabledReason)[keyof typeof ActionDisabledReason];
 
 /**
- * @experimental
  * What a palette, menu or toolbar renders for an action. No part of this is
  * read during dispatch.
  */
 export interface ActionPresentation {
   label: string;
-  /** Inline-SVG icon for palette / toolbar surfaces. May be a static
-   *  `ReactNode` or a function (rare; useful for state-aware icons like a
-   *  "lock" toggle). */
-  icon?: ReactNode | (() => ReactNode);
+  /** The action's icon, by qualified name: `icon('group')` in the package that draws it. */
+  icon?: IconRef;
   /** Grouping key for palette/menu surfaces. Free-form string; the kit
    *  ships defaults for `'align'` (six edges/centers), `'distribute'`
    *  (two axes), and recommends `'pathfinder'` for boolean ops. */
@@ -63,7 +58,6 @@ export interface ActionPresentation {
 }
 
 /**
- * @experimental
  * One entry a parametric action contributes to a bar, menu or palette.
  */
 export interface ActionVariant {
@@ -71,7 +65,7 @@ export interface ActionVariant {
   key: string;
   label: string;
   /** Falls back to the action's own `icon`. */
-  icon?: ReactNode | (() => ReactNode);
+  icon?: IconRef;
   /** Tags this variant carries besides its action's, which it carries too. */
   tags?: readonly string[];
   /** Passed to `trigger`, and matched against each binding's
@@ -80,7 +74,6 @@ export interface ActionVariant {
 }
 
 /**
- * @experimental
  * What routing consults: the bindings that reach the action, the deps its
  * invoker reads, the gates it passes, and the cursors it claims.
  */
@@ -102,7 +95,6 @@ export interface ActionDispatch extends BindingSource {
    *  shortcuts and global held-key triggers. Default: ambient. */
   scope?: 'hotkey';
   /**
-   * @experimental
    * Optional predicate saying whether the action can run right now. Return
    * `true` when it can, or an `ActionDisabledReason` when it cannot. The
    * command palette greys out a disabled row, skips it in keyboard nav,
@@ -142,7 +134,6 @@ export interface ActionDispatch extends BindingSource {
     carried?: { items: readonly IngestItem[] },
   ) => true | ActionDisabledReason;
   /**
-   * @experimental
    * Whether the action reads as held down right now: bold on the selected
    * text, snapping switched on. A toolbar button draws it as pressed.
    * Omitted = the action has no pressed state, which is not the same as
@@ -199,13 +190,11 @@ export interface ActionDispatch extends BindingSource {
 }
 
 /**
- * @experimental
  * Single registered action.
  */
 export interface Action extends ActionDispatch, ActionPresentation {}
 
 /**
- * @experimental
  * The whole of an actions registry the dispatcher reads. It walks the list
  * once per event to build its actionId lookup and never mutates it, so the
  * routing side depends on this rather than on `ActionsRegistry`, whose

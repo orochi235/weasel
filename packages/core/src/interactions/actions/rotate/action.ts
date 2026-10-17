@@ -10,7 +10,6 @@ import { beginRotate, type RotateFrame } from './session';
 import { recordTransform } from '../transform-again/memory';
 
 /**
- * @experimental
  * Pointer-driven rotation of the selection, committed as one undo entry.
  *
  * A pose whose descriptor has no `withRotation`, or reports

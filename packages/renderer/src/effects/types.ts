@@ -20,8 +20,6 @@ export interface Effect {
  *
  * The fragment shader reads `v_uv` and `u_source`, may declare `u_resolution` /
  * `u_texel`, and must write premultiplied alpha. See `effectPrelude.ts`.
- *
- * @experimental
  */
 export function registerEffect(id: string, frag: string): ShaderProgramHandle {
   return registerProgram(id, EFFECT_VERT_SRC, frag);

@@ -4,6 +4,7 @@ import { ActionsProvider, useAction, type Action } from '@weasel-js/core';
 import { pref, type PrefGroup } from '@weasel-js/prefs';
 import { PrefActionButton } from './PrefActionButton';
 import { PrefsForm } from './PrefsForm';
+import { icon } from '../../icons.gen';
 
 const meta: Meta<typeof PrefActionButton> = {
   title: 'Primitives/Prefs/Action rows',
@@ -15,10 +16,10 @@ type Story = StoryObj<typeof PrefActionButton>;
 
 const run = { timing: 'immediate', run: () => {} } as const;
 const ACTIONS: Action[] = [
-  { id: 'arrange.front', label: 'Bring to front', group: 'arrange', icon: '⤒', invoker: run },
-  { id: 'arrange.back', label: 'Send to back', group: 'arrange', icon: '⤓', invoker: run },
-  { id: 'arrange.group', label: 'Group', group: 'arrange', icon: '▣', invoker: run, enabled: () => 'selection-required' },
-  { id: 'doc.export', label: 'Export…', icon: '⇪', invoker: run },
+  { id: 'arrange.front', label: 'Bring to front', group: 'arrange', icon: icon('core:bringToFront'), invoker: run },
+  { id: 'arrange.back', label: 'Send to back', group: 'arrange', icon: icon('core:sendToBack'), invoker: run },
+  { id: 'arrange.group', label: 'Group', group: 'arrange', icon: icon('core:group'), invoker: run, enabled: () => 'selection-required' },
+  { id: 'doc.export', label: 'Export…', icon: icon('export'), invoker: run },
 ];
 
 function Register({ action }: { action: Action }) {

@@ -1,0 +1,288 @@
+import { chevron, onCircle } from '../../icons/scripts/lib/base.mjs';
+
+// ── transport ────────────────────────────────────────────────────────────
+const playTri = `M7.6 5.2 15.6 10 7.6 14.8Z`;
+
+// ── broadcast ────────────────────────────────────────────────────────────
+// Arcs about the mast's tip, each spanning 70°, at two radii on each side.
+const wave = (r, from, to) => {
+  const [a, b] = [onCircle(10, 7.6, r, from), onCircle(10, 7.6, r, to)];
+  return `M${a.join(' ')}A${r} ${r} 0 0 0 ${b.join(' ')}`;
+};
+const WAVES = `<path d="${[3.4, 6.2].flatMap((r) => [wave(r, -35, 35), wave(r, 145, 215)]).join('')}"/>`;
+
+// ── refresh ──────────────────────────────────────────────────────────────
+// Two arcs, each a third of the circle, heads on opposite ends. Distinct from
+// `reset`, which is a single near-full arc.
+const RR = 6.1;
+const cwTangent = (deg) => [Math.sin((deg * Math.PI) / 180), Math.cos((deg * Math.PI) / 180)];
+const rf1a = onCircle(10, 10, RR, 200);
+const rf1b = onCircle(10, 10, RR, 40);
+const rf2a = onCircle(10, 10, RR, 20);
+const rf2b = onCircle(10, 10, RR, 220);
+
+// ── collapse / expand ────────────────────────────────────────────────────
+const collapse = chevron([10, 7.8], [0, 1], 5.6, 48) + chevron([10, 12.2], [0, -1], 5.6, 48);
+const expand = chevron([10, 4.4], [0, -1], 5.6, 48) + chevron([10, 15.6], [0, 1], 5.6, 48);
+
+// ── chevron ──────────────────────────────────────────────────────────────
+// Disclosure glyph — it spins under rotate(), so 12.4 centres the *stroked
+// region's centroid* on (10,10). Bbox-centring lands the ink 0.19 high.
+const chevronDown = chevron([10, 12.4], [0, 1], 6.6, 48);
+
+// ── drop ─────────────────────────────────────────────────────────────────
+// A tip joined to a circle along its two tangents, so the sides meet the rim
+// without a kink: the tangent point sits at asin(r/d) off the tip-centre line.
+const DROP_TIP = [10, 2.8];
+const DROP_C = [10, 11.9];
+const DROP_R = 4.7;
+const dropTheta = Math.asin(DROP_R / (DROP_C[1] - DROP_TIP[1]));
+const dropDx = Math.round(DROP_R * Math.cos(dropTheta) * 100) / 100;
+const dropY = Math.round((DROP_C[1] - DROP_R * Math.sin(dropTheta)) * 100) / 100;
+const drop = `M${DROP_TIP[0]} ${DROP_TIP[1]}L${10 + dropDx} ${dropY}A${DROP_R} ${DROP_R} 0 1 1 ${10 - dropDx} ${dropY}Z`;
+
+// ── colour mode ──────────────────────────────────────────────────────────
+// Sun: disc plus eight rays on the axes and diagonals.
+const sunDisc = 3.5;
+const sunRays = [0, 45, 90, 135, 180, 225, 270, 315]
+  .map((d) => {
+    const [x1, y1] = onCircle(10, 10, 5.3, d);
+    const [x2, y2] = onCircle(10, 10, 7.7, d);
+    return `M${x1} ${y1}L${x2} ${y2}`;
+  })
+  .join('');
+
+// A crescent is one disc minus another, so both arcs have to terminate on the
+// two circle-circle intersections. Guessing those coordinates closes the path
+// with a straight seam and draws a swoosh instead of a moon.
+function circleIntersections(x0, y0, r0, x1, y1, r1) {
+  const dx = x1 - x0;
+  const dy = y1 - y0;
+  const d = Math.hypot(dx, dy);
+  const a = (r0 * r0 - r1 * r1 + d * d) / (2 * d);
+  const h = Math.sqrt(r0 * r0 - a * a);
+  const [xm, ym] = [x0 + (a * dx) / d, y0 + (a * dy) / d];
+  const r = (v) => Math.round(v * 100) / 100;
+  return [
+    [r(xm + (h * dy) / d), r(ym - (h * dx) / d)],
+    [r(xm - (h * dy) / d), r(ym + (h * dx) / d)],
+  ];
+}
+
+const MOON_RO = 6.7;
+const MOON_RI = 5.9;
+const moonBite = 4.1 / Math.SQRT2;
+const [moonP1, moonP2] = circleIntersections(10, 10, MOON_RO, 10 + moonBite, 10 - moonBite, MOON_RI);
+const moonArc =
+  `M${moonP1[0]} ${moonP1[1]}A${MOON_RO} ${MOON_RO} 0 1 0 ${moonP2[0]} ${moonP2[1]}` +
+  `A${MOON_RI} ${MOON_RI} 0 0 1 ${moonP1[0]} ${moonP1[1]}Z`;
+
+// Four-pointed sparkle: tips on the axes, each side a quadratic whose control
+// point sits at the centre, which is what pulls the sides fully concave.
+const SPARK_R = 7.4;
+const round2 = (v) => Math.round(v * 100) / 100;
+const sparkTips = [
+  [10, round2(10 - SPARK_R)],
+  [round2(10 + SPARK_R), 10],
+  [10, round2(10 + SPARK_R)],
+  [round2(10 - SPARK_R), 10],
+];
+const sparkle =
+  `M${sparkTips[0][0]} ${sparkTips[0][1]}` +
+  sparkTips
+    .slice(1)
+    .concat([sparkTips[0]])
+    .map(([x, y]) => `Q10 10 ${x} ${y}`)
+    .join('') +
+  'Z';
+
+// ── check ────────────────────────────────────────────────────────────────
+// Two legs off one vertex; the mark is then shifted so its bounding box, not
+// its vertex, centres on (10,10).
+const CHECK_SHORT = onCircle(0, 0, 5.2, 135);
+const CHECK_LONG = onCircle(0, 0, 11.4, 48);
+const checkMid = [
+  (Math.min(CHECK_SHORT[0], 0) + Math.max(CHECK_LONG[0], 0)) / 2,
+  (Math.min(CHECK_SHORT[1], CHECK_LONG[1]) + 0) / 2,
+];
+const checkAt = ([x, y]) => `${round2(x + 10 - checkMid[0])} ${round2(y + 10 - checkMid[1])}`;
+const check = `M${checkAt(CHECK_SHORT)} ${checkAt([0, 0])} ${checkAt(CHECK_LONG)}`;
+
+// ── bookmark ─────────────────────────────────────────────────────────────
+// Ribbon with a V notch; the outline doubles as the fill so `<Icon filled>`
+// reads as "bookmarked". Sides at 5.7/14.3 land mostly in one pixel at 16px 1x.
+const bookmark = `M5.7 16.6V4.8a1.4 1.4 0 0 1 1.4-1.4h5.8a1.4 1.4 0 0 1 1.4 1.4V16.6L10 13.2Z`;
+
+// ── page ─────────────────────────────────────────────────────────────────
+const PAGE_EAR = 11.6;
+
+const STATE = {
+  // transport
+  play: `<path d="${playTri}"/>`,
+  pause: `<path d="M7.8 5.2v9.6M12.2 5.2v9.6"/>`,
+  stop: `<rect x="5.6" y="5.6" width="8.8" height="8.8" rx="1.4"/>`,
+  stepForward: `<path d="M6.4 5.4 13 10 6.4 14.6Z"/><path d="M15.2 5.4v9.2"/>`,
+  stepBack: `<path d="M13.6 5.4 7 10 13.6 14.6Z"/><path d="M4.8 5.4v9.2"/>`,
+  rewind: `<path d="M9.6 5.6 3.4 10 9.6 14.4Z"/><path d="M16.6 5.6 10.4 10 16.6 14.4Z"/>`,
+  fastForward: `<path d="M3.4 5.6 9.6 10 3.4 14.4Z"/><path d="M10.4 5.6 16.6 10 10.4 14.4Z"/>`,
+  // The playhead, up against the end of what there is.
+  live: `<circle cx="8.2" cy="10" r="2.6" fill="currentColor"/><path d="M15.2 5.4v9.2"/>`,
+  record: `<circle cx="10" cy="10" r="5.8"/><circle cx="10" cy="10" r="2.5" fill="currentColor" stroke="none"/>`,
+  loop: `
+    <path d="M4.2 10.2V8.4a2.4 2.4 0 0 1 2.4-2.4h9"/>
+    <path d="${chevron([15.6, 6], [1, 0], 2.6, 40)}"/>
+    <path d="M15.8 9.8v1.8a2.4 2.4 0 0 1-2.4 2.4h-9"/>
+    <path d="${chevron([4.4, 14], [-1, 0], 2.6, 40)}"/>`,
+  // A dial and its needle.
+  speed: `<path d="M4 14.4a6.6 6.6 0 1 1 12 0"/><path d="M10 11.6 13.2 7.8"/><circle cx="10" cy="11.6" r="1.1" fill="currentColor" stroke="none"/>`,
+
+  // view
+  crosshair: `
+    <circle cx="10" cy="10" r="5.6"/>
+    <path d="M10 2.8v4.4M10 12.8v4.4M2.8 10h4.4M12.8 10h4.4"/>`,
+  fullscreen: `
+    <path d="M11.6 3.6h4.8v4.8M8.4 16.4H3.6v-4.8"/>
+    <path d="M16.4 3.6 11.2 8.8M3.6 16.4 8.8 11.2"/>`,
+
+  // lifecycle
+  compare: `
+    <rect x="3.4" y="4.6" width="13.2" height="10.8" rx="1.6"/>
+    <path d="M10 4.6v10.8" stroke-width="1"/>
+    <path d="M5.2 7.6h3.4M5.2 10h2.6M5.2 12.4h3.4" stroke-width="1"/>
+    <path d="M11.4 7.6h3.4M11.4 10h3.4M11.4 12.4h1.8" stroke-width="1"/>`,
+
+  // collection
+  search: `<circle cx="9" cy="9" r="5.4"/><path d="M12.82 12.82 16.9 16.9"/>`,
+
+  // Magnified pixels, not an empty lens: `zoomOut` is this silhouette with one
+  // bar in it and shares the trial's viewport controls, so anything linear
+  // inside reads as that at 16px. A dense square grid does not. Handle starts
+  // on the rim at -45°: 9 + 5.6*cos45 = 12.96.
+  loupe: `
+    <circle cx="9" cy="9" r="5.6"/>
+    <path d="M12.96 12.96 17 17"/>
+    <rect x="6" y="6" width="6" height="6" stroke-width="1"/>
+    <path d="M9 6v6M6 9h6" stroke-width="1"/>`,
+  layers: `
+    <path d="M10 2.8 17.2 6.6 10 10.4 2.8 6.6z"/>
+    <path d="M2.8 10 10 13.8 17.2 10" stroke-width="1"/>
+    <path d="M2.8 13.4 10 17.2 17.2 13.4" stroke-width="1"/>`,
+  // Document page: dog-ear folded at 45°, so the fold's two legs land exactly
+  // on the corner cut's endpoints.
+  page: `
+    <path d="M4.6 2.8H${PAGE_EAR}L15.4 ${round2(2.8 + 15.4 - PAGE_EAR)}V17.2H4.6z"/>
+    <path d="M${PAGE_EAR} 2.8V${round2(2.8 + 15.4 - PAGE_EAR)}H15.4"/>`,
+
+  // state
+  lock: `
+    <rect x="4.6" y="9" width="10.8" height="8" rx="1.6"/>
+    <path d="M7.2 9V6.6a2.8 2.8 0 0 1 5.6 0V9"/>`,
+  unlock: `
+    <rect x="4.6" y="9" width="10.8" height="8" rx="1.6"/>
+    <path d="M7.2 9V6.6a2.8 2.8 0 0 1 5.6 0"/>`,
+  bolt: `
+    <path d="M11.4 2.8 4.8 11.2h4.6l-.8 6 6.6-8.4h-4.6z"/>`,
+  visible: `
+    <path d="M2.6 10C4.6 6.6 7.1 5 10 5s5.4 1.6 7.4 5c-2 3.4-4.5 5-7.4 5s-5.4-1.6-7.4-5z"/>
+    <circle cx="10" cy="10" r="2.2"/>`,
+  hidden: `
+    <path d="M2.6 10C4.6 6.6 7.1 5 10 5s5.4 1.6 7.4 5c-2 3.4-4.5 5-7.4 5s-5.4-1.6-7.4-5z"/>
+    <circle cx="10" cy="10" r="2.2"/>
+    <path d="M4.2 15.8 15.8 4.2"/>`,
+
+  // A mast with two waves to either side of its tip.
+  broadcast: `
+    <circle cx="10" cy="7.6" r="1.2" fill="currentColor" stroke="none"/>
+    <path d="M10 9.4 7.6 17.2M10 9.4l2.4 7.8M8.4 14.4h3.2"/>
+    ${WAVES}`,
+  // A pole with a cloth that ripples once along its top and bottom.
+  flag: `
+    <path d="M5.2 2.8v14.4"/>
+    <path d="M5.2 3.8c1.8-.9 3.6-.9 5.5 0s3.7.9 5.5 0v7.2c-1.8.9-3.6.9-5.5 0s-3.7-.9-5.5 0"/>`,
+  pin: `
+    <path d="M8.2 3.4v5.2l-2 2.6h7.6l-2-2.6V3.4z"/><path d="M7 3.4h6"/>
+    <path d="M10 11.2v5.4"/>`,
+  bookmark: { d: bookmark, fill: bookmark },
+  link: `
+    <path d="M8.6 11.4a3.4 3.4 0 0 1 0-4.8l2.2-2.2a3.4 3.4 0 0 1 4.8 4.8l-1.1 1.1"/>
+    <path d="M11.4 8.6a3.4 3.4 0 0 1 0 4.8l-2.2 2.2a3.4 3.4 0 0 1-4.8-4.8l1.1-1.1"/>`,
+  collapse: `<path d="${collapse}"/>`,
+  expand: `<path d="${expand}"/>`,
+  chevron: `<path d="${chevronDown}"/>`,
+
+  // instrument (tune and measure are core's: packages/core/icons/history.mjs)
+  grid: `
+    <rect x="3.4" y="3.4" width="13.2" height="13.2" rx="1.4"/>
+    <path d="M7.8 3.4v13.2M12.2 3.4v13.2M3.4 7.8h13.2M3.4 12.2h13.2" stroke-width="1"/>`,
+  snap: `
+    <path d="M5.4 15.6V9.4a4.6 4.6 0 0 1 9.2 0v6.2h-3.2V9.4a1.4 1.4 0 0 0-2.8 0v6.2z"/>
+    <path d="M5.4 12.8h3.2M11.4 12.8h3.2" stroke-width="1"/>`,
+  drop: { d: drop, fill: drop },
+  type: `
+    <path d="M4.6 6.4V4.2h10.8v2.2"/>
+    <path d="M10 4.2v11.6M7.4 15.8h5.2"/>`,
+  // A serif A with a type specimen's contrast: a hairline left leg and crossbar
+  // against a heavy right leg, filled rather than stroked so its apex and foot
+  // cut flat instead of ending in round caps. The crossbar's ends sit on the
+  // hairline and on the heavy leg's inner edge at y=11.4.
+  typeface: `
+    <path d="M9.6 3.2 4.6 16M6.4 11.4h5.88M3 16h3.2M13.2 16h4" stroke-width="1"/>
+    <path d="M9.4 3.2H11.6L16.5 16H13.9Z" fill="currentColor" stroke="none"/>`,
+  more: `
+    <circle cx="4.8" cy="10" r="1.3" fill="currentColor" stroke="none"/>
+    <circle cx="10" cy="10" r="1.3" fill="currentColor" stroke="none"/>
+    <circle cx="15.2" cy="10" r="1.3" fill="currentColor" stroke="none"/>`,
+  randomize: `
+    <rect x="3.6" y="3.6" width="12.8" height="12.8" rx="2"/>
+    <circle cx="7.2" cy="7.2" r="1" fill="currentColor" stroke="none"/>
+    <circle cx="10" cy="10" r="1" fill="currentColor" stroke="none"/>
+    <circle cx="12.8" cy="12.8" r="1" fill="currentColor" stroke="none"/>`,
+  refresh: `
+    <path d="M${rf1a[0]} ${rf1a[1]}A${RR} ${RR} 0 0 1 ${rf1b[0]} ${rf1b[1]}"/>
+    <path d="${chevron(rf1b, cwTangent(40), 2.7, 40)}"/>
+    <path d="M${rf2a[0]} ${rf2a[1]}A${RR} ${RR} 0 0 1 ${rf2b[0]} ${rf2b[1]}"/>
+    <path d="${chevron(rf2b, cwTangent(220), 2.7, 40)}"/>`,
+
+  // status
+  info: `
+    <circle cx="10" cy="10" r="7"/>
+    <path d="M10 9.4v4.4"/><path d="M10 6.5h0"/>`,
+  warning: `
+    <path d="M10 3.4 17.4 16.2H2.6z"/>
+    <path d="M10 8.4v3.4"/><path d="M10 14h0"/>`,
+  error: `
+    <circle cx="10" cy="10" r="7"/>
+    <path d="M7.6 7.6 12.4 12.4M12.4 7.6 7.6 12.4"/>`,
+  busy: `<path d="M10 3.2A6.8 6.8 0 1 1 3.2 10"/>`,
+  check: `<path d="${check}"/>`,
+
+  // colour mode
+  'mode-light': `<circle cx="10" cy="10" r="${sunDisc}"/><path d="${sunRays}"/>`,
+  'mode-dark': `<path d="${moonArc}"/>`,
+  'mode-auto': `<path d="${sparkle}"/>`,
+};
+
+const SPLIT = {
+  playback: ['play', 'pause', 'stop', 'stepBack', 'stepForward', 'rewind', 'fastForward', 'live', 'record', 'loop', 'speed'],
+  status: [
+    'lock', 'unlock', 'bolt', 'visible', 'hidden', 'broadcast', 'flag', 'pin', 'bookmark',
+    'info', 'warning', 'error', 'busy', 'check',
+    'mode-light', 'mode-dark', 'mode-auto',
+  ],
+  instrument: [
+    'crosshair', 'fullscreen', 'compare', 'search', 'loupe',
+    'layers', 'page', 'link', 'collapse', 'expand', 'chevron',
+    'grid', 'snap', 'randomize', 'refresh',
+    'drop', 'type', 'typeface', 'more',
+  ],
+};
+
+const listed = Object.values(SPLIT).flat();
+const unlisted = Object.keys(STATE).filter((k) => !listed.includes(k));
+if (unlisted.length || listed.length !== Object.keys(STATE).length)
+  throw new Error(`state.mjs: every glyph needs exactly one subset (unlisted: ${unlisted})`);
+
+const pick = (keys) => Object.fromEntries(keys.map((k) => [k, STATE[k]]));
+export const PLAYBACK = pick(SPLIT.playback);
+export const STATUS = pick(SPLIT.status);
+export const INSTRUMENT = pick(SPLIT.instrument);

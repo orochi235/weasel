@@ -1,6 +1,7 @@
 import { createRef, useState } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen } from '@testing-library/react';
+import { renderWithIcons } from '../../testing/withIcons';
 import { Tree, type TreeNode } from './Tree';
 
 afterEach(() => {
@@ -29,7 +30,7 @@ function stamp(tree: HTMLElement) {
 
 function setup(props: Partial<Parameters<typeof Tree>[0]> = {}) {
   const onMove = vi.fn();
-  render(<Tree aria-label="T" nodes={NODES} defaultExpandedIds={['g']} selectionMode="single" onMove={onMove} {...props} />);
+  renderWithIcons(<Tree aria-label="T" nodes={NODES} defaultExpandedIds={['g']} selectionMode="single" onMove={onMove} {...props} />);
   const tree = screen.getByRole('tree');
   tree.setPointerCapture = vi.fn();
   tree.releasePointerCapture = vi.fn();
@@ -272,7 +273,7 @@ describe('Tree — drag to reorder', () => {
 
   it('calls a stable callback ref once across a rerender', () => {
     const cb = vi.fn();
-    const { rerender } = render(<Tree aria-label="T" nodes={NODES} onMove={vi.fn()} ref={cb} />);
+    const { rerender } = renderWithIcons(<Tree aria-label="T" nodes={NODES} onMove={vi.fn()} ref={cb} />);
     rerender(<Tree aria-label="T" nodes={NODES} onMove={vi.fn()} ref={cb} />);
     expect(cb).toHaveBeenCalledTimes(1);
     expect(cb.mock.calls[0]![0]).toBe(screen.getByRole('tree'));
@@ -280,7 +281,7 @@ describe('Tree — drag to reorder', () => {
 
   it('points a ref at the tree once nodes arrive after an empty mount', () => {
     const ref = createRef<HTMLUListElement>();
-    const { rerender } = render(<Tree aria-label="T" nodes={[]} ref={ref} />);
+    const { rerender } = renderWithIcons(<Tree aria-label="T" nodes={[]} ref={ref} />);
     expect(ref.current).toBeNull();
     rerender(<Tree aria-label="T" nodes={NODES} ref={ref} />);
     expect(ref.current).toBe(screen.getByRole('tree'));
@@ -337,7 +338,7 @@ describe('Tree — keyboard moves', () => {
   });
 
   it('leaves focus alone on a later render when the move never changed the nodes', async () => {
-    const { rerender } = render(<Tree aria-label="T" nodes={NODES} defaultExpandedIds={['g']} onMove={() => {}} />);
+    const { rerender } = renderWithIcons(<Tree aria-label="T" nodes={NODES} defaultExpandedIds={['g']} onMove={() => {}} />);
     focusOn('Why');
     key('ArrowUp');
     await frame();
@@ -356,7 +357,7 @@ describe('Tree — keyboard moves', () => {
         }} />
       );
     }
-    render(<Live />);
+    renderWithIcons(<Live />);
     focusOn('Zed');
     key('ArrowRight');
     expect(document.activeElement).toBe(screen.getByRole('treeitem', { name: 'Zed' }));

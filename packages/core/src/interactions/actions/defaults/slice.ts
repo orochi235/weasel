@@ -4,7 +4,6 @@ import type { BindingOpts, InvocationCtx, OngoingHandle, OngoingOverlay, Point2 
 import { pathOperationTags } from '../pathGestureTags';
 
 /**
- * @experimental
  * Static descriptor for the `slice` Action.
  *
  * Ongoing drag invoker: tracks the cut while the gesture is in flight,

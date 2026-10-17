@@ -6,6 +6,7 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
 } from 'react';
 import {
+  actionItemTitle,
   actionShortcuts,
   useSelectionContext,
   type ActionItem,
@@ -90,7 +91,7 @@ function PaletteList({ id, items, highlight, reasonLabels, onHighlight, onRun }:
             onMouseDown={(e) => { e.preventDefault(); if (enabled) onRun(item); }}
             title={reason}
           >
-            <span className={styles.label}>{item.label}</span>
+            <span className={styles.label}>{actionItemTitle(item)}</span>
             {tag !== undefined && <span className={styles.tag}>{tag}</span>}
             {!enabled && reason && (
               <span className={styles.reason}>{reason}</span>
@@ -104,7 +105,6 @@ function PaletteList({ id, items, highlight, reasonLabels, onHighlight, onRun }:
 }
 
 /**
- * @experimental
  * A dialog that lists every action registered with the surrounding
  * `<ActionsProvider>`, filters by label or tag, and runs the chosen one. The host
  * owns `open`. The list and each row's `enabled` state are read when it

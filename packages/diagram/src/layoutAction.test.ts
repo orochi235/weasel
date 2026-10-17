@@ -121,6 +121,11 @@ describe('routes', () => {
   };
   const trait = (scene: Scene<Data, 'main', Rect>, id: string) =>
     (scene.get(id as never)!.data as { diagram: Record<string, unknown> }).diagram;
+  /** Halfway along the label's rank, between the route's first two waypoints. */
+  const roomOf = (scene: Scene<Data, 'main', Rect>, long: string) => {
+    const [a, b] = trait(scene, long)['waypoints'] as { x: number; y: number }[];
+    return { near: { x: (a!.x + b!.x) / 2, y: (a!.y + b!.y) / 2 } };
+  };
 
   it('routes a long edge round the rank it crosses, and marks the route layout\'s', () => {
     const { scene, long } = spanning();
@@ -136,9 +141,9 @@ describe('routes', () => {
   });
 
   it('stations the label in the room left for it', () => {
-    const { scene, label } = spanning();
+    const { scene, long, label } = spanning();
     lay(scene);
-    expect(trait(scene, label)['label']).toEqual({ at: { waypoint: 0.5 } });
+    expect(trait(scene, label)['label']).toEqual({ at: roomOf(scene, long) });
   });
 
   it('writes nothing on a second run', () => {
@@ -152,12 +157,13 @@ describe('routes', () => {
   it('leaves a route someone edited, and the label on it, alone', () => {
     const { scene, long, label } = spanning();
     lay(scene);
+    const room = roomOf(scene, long);
     const mine = [{ x: -400, y: 0 }];
     scene.update(long as never, { data: { diagram: { ...trait(scene, long), waypoints: mine } } });
     scene.setPose('a' as never, { x: 900, y: 900, width: 100, height: 40 });
     lay(scene);
     expect(trait(scene, long)['waypoints']).toEqual(mine);
-    expect(trait(scene, label)['label']).toEqual({ at: { waypoint: 0.5 } });
+    expect(trait(scene, label)['label']).toEqual({ at: room });
   });
 
   it('takes its route back off an edge that no longer spans a rank', () => {
@@ -203,7 +209,7 @@ describe('routes', () => {
       dependsOn: [long] as never,
     });
     lay(scene);
-    expect(trait(scene, label)['label']).toEqual({ at: { waypoint: 0.5 } });
+    expect(trait(scene, label)['label']).toEqual({ at: roomOf(scene, long) });
     expect(trait(scene, second)['label']).toEqual({ at: 'mid' });
   });
 

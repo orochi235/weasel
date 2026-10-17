@@ -181,7 +181,7 @@ export const PREFS = {
         pathFillRule: {
           kind: 'enum',
           name: 'Path fill rule',
-          description: 'How self-intersecting paths fill. Nonzero (SVG default) leaves a hole anywhere two opposite-winding loops overlap; evenodd fills any region enclosed by an odd number of edges. Switch to evenodd if you draw lasso-style outlines that cross themselves.',
+          description: 'How a path fills where its outline crosses itself. A region the outline circles twice the same way is filled under nonzero (SVG default) and left empty under even-odd. Under both, a region circled once either way is filled, and one circled once each way is empty.',
           default: 'nonzero',
           options: [
             { value: 'nonzero', label: 'Nonzero (SVG default)' },

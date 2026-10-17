@@ -1,20 +1,18 @@
-import { createElement } from 'react';
-import { CopyIcon, CutIcon, PasteIcon } from '../defaults/icons/editIcons';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
 import { ActionDisabledReason, type Action } from '@weasel-js/routing';
 import { buildDeleteOps } from '../defaults/delete';
 import { requiresSelection } from '../defaults/requiresSelection';
 import { kitWeaselJsonHandler } from 'features/ingestion/weaselJsonHandler';
 import { ANY_INGEST_MODS, claimable, INGEST_REQUIRES, ingestFromEvent } from '../defaults/ingest';
+import { icon } from '../../../icons.gen';
 
 /**
- * @experimental
  * Static descriptor for the `clipboard.copy` Action (Cmd/Ctrl+C).
  */
 export const clipboardCopyAction: Action & { requires: string[] } = {
   id: 'clipboard.copy',
   label: 'Copy',
-  icon: createElement(CopyIcon),
+  icon: icon('copy'),
   group: 'clipboard',
   defaultBinding: { kind: 'key', key: 'c', mods: { mod: true } },
   // Same gate as `duplicate`: a mode that can neither edit the page nor own a
@@ -34,14 +32,13 @@ export const clipboardCopyAction: Action & { requires: string[] } = {
 };
 
 /**
- * @experimental
  * Static descriptor for the `clipboard.cut` Action (Cmd/Ctrl+X) — copy, then
  * the same batched delete `deleteAction` performs, as one undo entry.
  */
 export const clipboardCutAction: Action & { requires: string[] } = {
   id: 'clipboard.cut',
   label: 'Cut',
-  icon: createElement(CutIcon),
+  icon: icon('cut'),
   group: 'clipboard',
   defaultBinding: { kind: 'key', key: 'x', mods: { mod: true } },
   eligible: { capability: 'edits-page' },
@@ -72,7 +69,6 @@ export const clipboardCutAction: Action & { requires: string[] } = {
 };
 
 /**
- * @experimental
  * Static descriptor for the `clipboard.paste` Action — what a Paste button or
  * menu item triggers, pasting the last copy this canvas made. It has no key
  * binding: Cmd/Ctrl+V already arrives as a DOM `paste` event, which the
@@ -82,7 +78,7 @@ export const clipboardCutAction: Action & { requires: string[] } = {
 export const clipboardPasteAction: Action & { requires: string[] } = {
   id: 'clipboard.paste',
   label: 'Paste',
-  icon: createElement(PasteIcon),
+  icon: icon('paste'),
   group: 'clipboard',
   eligible: { capability: 'edits-page' },
   requires: ['clipboard'],
@@ -103,7 +99,6 @@ export const clipboardPasteAction: Action & { requires: string[] } = {
 const PASTE_EVENT_HANDLERS = [kitWeaselJsonHandler];
 
 /**
- * @experimental
  * Static descriptor for the `clipboard.pasteEvent` Action — Cmd/Ctrl+V on a
  * canvas that edits and does not ingest. It answers the DOM `paste` event by
  * pasting nodes a kit canvas copied to the OS clipboard, in this tab or

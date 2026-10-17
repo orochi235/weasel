@@ -68,10 +68,10 @@ test('multi-delete + undo preserves paint order', async ({ page }) => {
   await waitForRepaint(page);
   await page.waitForTimeout(200);
 
-  // Click "Open" and feed the SVG buffer via the filechooser.
+  // Click "Open…" and feed the SVG buffer via the filechooser.
   const [fileChooser] = await Promise.all([
     page.waitForEvent('filechooser'),
-    page.getByRole('button', { name: 'Open' }).click(),
+    page.getByRole('button', { name: 'Open…' }).click(),
   ]);
   await fileChooser.setFiles({
     name: 'stacked.svg',

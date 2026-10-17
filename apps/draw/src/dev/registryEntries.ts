@@ -1,6 +1,6 @@
 /** The rows the registry inspector's tree lists, one shape per category. */
-import type { ComponentType } from 'react';
-import type { ShortcutInput } from '@weasel-js/ui';
+import type { IconRef } from '@weasel-js/icons';
+import type { ShortcutInput } from '@weasel-js/gestures';
 
 /** Discriminated leaf entry. One of these per row in the tree's right pane. */
 export type TreeEntry =
@@ -119,8 +119,7 @@ export interface ToolEntry {
    *  press-and-hold slot. */
   hotkey?: string;
   /** Palette presentation. `icon` is the rendered `presentation.icon` when
-   *  the def supplies one (the kit accepts either `ReactNode` or a thunk,
-   *  which we invoke for display). */
+   *  the def supplies one. */
   presentation?: {
     label?: string;
     group?: string;
@@ -153,12 +152,11 @@ export interface ActionEntry {
   /** Grouping key from `Action.group`. When unset we fall back to the
    *  id-prefix segment before the first `.` (e.g. `align.left` → `align`). */
   group?: string;
-  /** Pre-rendered icon node, when `Action.icon` is set. Function-form icons
-   *  are invoked with no arguments. */
+  /** Pre-rendered icon node, when `Action.icon` is set. */
   icon?: import('react').ReactNode;
   /** One entry per `ActionItem` (a variant each, or the action alone), with
-   *  its icon pre-rendered — what an `<ActionBar>` draws for this action. */
-  items?: readonly { key: string; label: string; icon?: import('react').ReactNode }[];
+   *  its icon's name — what an `<ActionBar>` draws for this action. */
+  items?: readonly { key: string; label: string; icon?: IconRef }[];
   /** Snapshot of `Action.enabled()` at probe time. `undefined` when the
    *  action declares no predicate (always enabled). Stale-by-design: the
    *  inspector doesn't re-evaluate on selection changes — open a fresh
@@ -236,7 +234,7 @@ export interface IconEntry {
   source: 'action' | 'app';
   /** For `action` glyphs, the `ActionItem.key` of every entry that draws it. */
   actions?: readonly string[];
-  Component: ComponentType;
+  ref: IconRef;
 }
 
 export interface OpFactoryEntry {

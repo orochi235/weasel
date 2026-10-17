@@ -7,8 +7,8 @@ import {
 } from '@weasel-js/routing';
 import { pxExtent, smudgePath, type PolygonPath } from '@weasel-js/geom';
 import { brushRingCursor } from '../simplifyBrush/simplifyBrush';
-import { SmudgeBrushIcon } from '../icons';
 import { commitOps, reshapeOps, selectedPathNodes, withPath, type PathNode, type SceneNode, pathOperationTags } from '@weasel-js/core';
+import { icon } from '../icons.gen';
 
 type AnyNode = SceneNode<unknown, string, unknown>;
 
@@ -45,7 +45,7 @@ function worldRadius(deps: ActionDeps, radiusPx: number): number {
 }
 
 /**
- * @experimental A drag that pushes the outline of every selected path along with
+ * A drag that pushes the outline of every selected path along with
  * the pointer (`smudgePath` in `@weasel-js/geom`). Each pointer move is one dab from
  * where the last one ended: points under the brush move with it, most at its center
  * and not at all at its rim, and a long segment the brush meets gets anchors added
@@ -58,7 +58,7 @@ function worldRadius(deps: ActionDeps, radiusPx: number): number {
 export const smudgeBrushAction: Action & { requires: string[] } = {
   id: 'smudgeBrush',
   label: LABEL,
-  icon: SmudgeBrushIcon,
+  icon: icon('smudgeBrush'),
   tags: pathOperationTags('brush'),
   group: 'path',
   eligible: { capability: 'creates-shapes' },

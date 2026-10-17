@@ -11,6 +11,7 @@ import {
   useCanvasSize,
   type UseSceneTextEditReturn,
   useMeasureTool,
+  useShapeBuilderTool,
   useSliceTool,
   type View,
   workspaceTintLayer
@@ -121,6 +122,7 @@ export function Workspace(props: WorkspaceProps): ReactElement {
   }, [grid.snap, spacing.move]);
   const insertPaint = useInsertPaint();
   const sliceTool = useSliceTool();
+  const shapeBuilderTool = useShapeBuilderTool();
   const pathToolsTools = usePathToolsTools();
   const { measurements } = props;
   const measureTool = useMeasureTool({ measurements });
@@ -188,7 +190,7 @@ export function Workspace(props: WorkspaceProps): ReactElement {
           scene={scene}
           selection={selection}
           defaultTools={BUILTIN_TOOL_IDS}
-          tools={{ ...pathToolsTools, slice: sliceTool, measure: measureTool, opacityScrub: opacityScrubTool }}
+          tools={{ ...pathToolsTools, slice: sliceTool, shapeBuilder: shapeBuilderTool, measure: measureTool, opacityScrub: opacityScrubTool }}
           ingestion={DRAW_INGESTION}
           insertPaint={insertPaint}
           // Pick on the drawn shape, not the bounding box: clicking the blank right half of a

@@ -55,7 +55,7 @@ describe('RegistryInspector', () => {
       ['WeaselDraw', '/'],
       ['Toolkit Builder', '#/dev/toolkits'],
       ['Bundle Inspector', '#/dev/registry'],
-      ['Prefs Schema', '#/dev/prefs'],
+      ['Assets', '#/dev/assets'],
     ]);
     expect(screen.getByRole('menuitem', { name: 'Bundle Inspector' }))
       .toHaveAttribute('aria-current', 'page');

@@ -1,12 +1,6 @@
 import { LabShell, ToolbarRegion, type LabContribution } from '@weasel-js/labkit';
 import { LABS, PALETTE_LAB } from '../../shared/labs';
-import {
-  PropertyField,
-  PropertyPanel,
-  RedoIcon,
-  ResetIcon,
-  UndoIcon,
-} from '@weasel-js/ui';
+import { PropertyField, PropertyPanel } from '@weasel-js/ui';
 import { useEffect, useMemo, useState } from 'react';
 import { PresetBar } from './PresetBar';
 import { SwatchPanel } from './SwatchPanel';
@@ -26,6 +20,7 @@ import { AnchorList } from './AnchorList';
 import { ConstraintsPanel } from './palette/ConstraintsPanel';
 import { unmetGates } from './palette/unmetGates';
 import { generate, type Anchor, type Constraints } from '@weasel-js/theme/engine';
+import { icon } from './icons.gen';
 
 const SURFACES: Record<SurfaceKey, string> = { dark: '#181a1e', light: '#f5f5f6' };
 
@@ -59,7 +54,7 @@ export function PaletteLab() {
         group: 'history',
         region: 'header',
         item: {
-          icon: UndoIcon,
+          icon: icon('core:undo'),
           label: 'Undo',
           shortcut: '⌘Z',
           showLabel: true,
@@ -72,7 +67,7 @@ export function PaletteLab() {
         group: 'history',
         region: 'header',
         item: {
-          icon: RedoIcon,
+          icon: icon('core:redo'),
           label: 'Redo',
           shortcut: '⇧⌘Z',
           showLabel: true,
@@ -84,7 +79,7 @@ export function PaletteLab() {
         id: 'reset',
         region: 'header',
         item: {
-          icon: ResetIcon,
+          icon: icon('ui:reset'),
           label: 'Reset',
           showLabel: true,
           onActivate: (h) => h.update(INITIAL, 'reset'),

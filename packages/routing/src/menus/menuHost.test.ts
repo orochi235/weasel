@@ -20,6 +20,12 @@ describe('createMenuHost', () => {
     expect(h.current()).toMatchObject({ client: { x: 5, y: 6 }, source: 'pointer' });
     expect(h.current()!.entries).toHaveLength(1);
   });
+  it('keeps the rect a menu was opened under', () => {
+    const h = host();
+    h.define({ id: 'm', menu: pref.group('', { cut: pref.action('cut') }) });
+    h.open({ menu: 'm', client: { x: 1, y: 2 }, under: { x: 1, y: 2, w: 30, h: 10 } });
+    expect(h.current()?.under).toEqual({ x: 1, y: 2, w: 30, h: 10 });
+  });
   it('opens a menu by id', () => {
     const h = host();
     h.define({ id: 'row', menu: pref.group('', { cut: pref.action('cut') }) });

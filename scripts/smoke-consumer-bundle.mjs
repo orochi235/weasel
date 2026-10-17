@@ -14,7 +14,8 @@
 //
 // Strategy: `npm pack` every published package, extract them into a
 // node_modules tree in a temp dir OUTSIDE the repo, then (a) bundle a consumer
-// with esbuild and (b) typecheck one with tsc. Outside the repo, neither the
+// with esbuild, (b) build an app with vite and weaselIcons (smoke-consumer-icons.mjs),
+// and (c) typecheck one with tsc. Outside the repo, neither the
 // repo tsconfig paths nor the workspace symlinks are discoverable.
 
 import { build } from 'esbuild';
@@ -24,6 +25,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
+import { smokeIcons } from './smoke-consumer-icons.mjs';
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -439,6 +441,8 @@ try {
 }
 console.log('[smoke] consumer bundle OK — all cross-package specifiers resolve.');
 
+await smokeIcons({ repoRoot, workDir, nodeModules, external: [...thirdPartyDeps, 'react', 'react-dom', 'react/jsx-runtime'], fail });
+
 // ── Phase 4: consumer typecheck over the built .d.ts ───────────────────────
 // esbuild strips types, so it cannot see a .d.ts whose cross-package type
 // imports don't resolve, nor an empty DepSchema. A real tsc pass — bundler
@@ -472,6 +476,12 @@ const siblingLines = [...siblingImports].map(([spec, names]) =>
 );
 const siblingUse =
   `export const _siblings = [${Array.from({ length: siblingIndex }, (_, i) => `_sib${i}`).join(', ')}];\n`;
+
+// A consumer's own icon(), as gen:icons writes it for a root that draws nothing.
+await writeFile(
+  join(workDir, 'icons.gen.ts'),
+  `import { scopedIcon } from '@weasel-js/icons';\nexport const icon = scopedIcon<never>('app');\n`,
+);
 
 const typeConsumer = join(workDir, 'consumer.ts');
 await writeFile(
@@ -557,6 +567,12 @@ await writeFile(
     `// @ts-expect-error no such kit setting\n` +
     `const _kitWrong: KitSettingPath = 'tree.nope';\n` +
     `export const _kit = [_kitTree, _kitGesture, _kitTargets, _kitWrong];\n` +
+    // Core and ui each add their names to `@weasel-js/icons`' IconName from their
+    // published .d.ts. Lose either augmentation and a name it owns is TS2345 here.
+    `import { icon } from './icons.gen';\n` +
+    `export const _icons = [icon('core:undo'), icon('ui:close')];\n` +
+    `// @ts-expect-error no package draws core:nope\n` +
+    `export const _iconWrong = icon('core:nope');\n` +
     `export const _t = _tools;\n` +
     `export type { _Sel, _View, _Scene, _Hist, _Tool, _M, _G, _S, _O, _Ui, _Hud, _UiSubpath, _Augmented };\n` +
     `export const _key = _k;\n` +
@@ -609,6 +625,8 @@ try {
       "  • a consumer's `declare module '@weasel-js/core'` no longer merges into\n" +
       '    DepSchema — the interface must be DECLARED in the module the\n' +
       '    augmentation names, not merely re-exported from it\n' +
+      "  • core's or ui's `declare module '@weasel-js/icons'` IconName augmentation\n" +
+      '    is missing from its published .d.ts, so its icon names do not typecheck\n' +
       "  • routing's defineTool/Tool no longer default to core's overlay type —\n" +
       "    core's OverlaySchema merge is missing from the published .d.ts\n" +
       '  • core inlined a sibling\'s declarations instead of importing them, so the\n' +

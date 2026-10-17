@@ -1,4 +1,5 @@
 import { normalizeZoom as clampToFloor, ZOOM_FLOOR } from '@weasel-js/geom';
+import { isDev } from '@weasel-js/react';
 
 /**
  * The kit's system-wide zoom clamp, in `View.scale` units (pixels per world
@@ -31,19 +32,10 @@ let warned = false;
 
 /** @internal Once per session, in dev builds only. */
 export function warnInvalidView(what: string): void {
-  if (warned || !IS_DEV) return;
+  if (warned || !isDev()) return;
   warned = true;
   console.warn(
     `[weasel] a view was given ${what} and has been clamped. A view's zoom is ` +
     'always positive and finite, and its position finite; see ZOOM_FLOOR.',
   );
 }
-
-/** `import.meta.env.DEV` read through a cast, as in SceneCanvas.tsx. */
-const IS_DEV: boolean = (() => {
-  try {
-    return Boolean((import.meta as unknown as { env?: { DEV?: boolean } }).env?.DEV);
-  } catch {
-    return false;
-  }
-})();

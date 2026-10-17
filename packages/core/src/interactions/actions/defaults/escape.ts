@@ -2,7 +2,6 @@ import type { Action } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 
 /**
- * @experimental
  * Static descriptor for the `escape` Action. Clears selection.
  */
 // No `eligible` field → always eligible. Escape works in every mode; the

@@ -9,7 +9,7 @@ import {
   type PolygonPath,
 } from '@weasel-js/geom';
 import { anchorEditWouldChange, commitAnchorEdit, commitOps, depOf, pathOperationTags, type Op } from '@weasel-js/core';
-import { ReversePathIcon, SetPathStartIcon } from '../commandIcons';
+import { icon } from '../icons.gen';
 
 const START_LABEL = 'Make start point';
 const REVERSE_LABEL = 'Reverse path direction';
@@ -21,13 +21,13 @@ function loneAnchor(deps: ActionDeps | undefined): number | null {
 }
 
 /**
- * @experimental Make the selected anchor where its subpath starts. A closed
+ * Make the selected anchor where its subpath starts. A closed
  * subpath turns to start there; an open one can start only at an end, so its
  * last anchor reverses it (`setSubpathStart`). The anchor stays selected.
  */
 export const setPathStartAction: Action & { requires: string[] } = {
   id: 'setPathStart',
-  icon: SetPathStartIcon,
+  icon: icon('setPathStart'),
   label: START_LABEL,
   tags: pathOperationTags('command'),
   group: 'anchors',
@@ -82,7 +82,7 @@ function reverseInPathEdit(deps: ActionDeps): boolean {
 }
 
 /**
- * @experimental Run paths the other way, keeping their shape. In path edit it
+ * Run paths the other way, keeping their shape. In path edit it
  * reverses the subpaths holding the selected anchors — every subpath when
  * none is selected — and the selection follows its anchors. Otherwise it
  * reverses every selected path whole, in one undo entry. A closed subpath
@@ -90,7 +90,7 @@ function reverseInPathEdit(deps: ActionDeps): boolean {
  */
 export const reversePathAction: Action & { requires: string[] } = {
   id: 'reversePath',
-  icon: ReversePathIcon,
+  icon: icon('reversePath'),
   label: REVERSE_LABEL,
   tags: pathOperationTags('command'),
   group: 'path',

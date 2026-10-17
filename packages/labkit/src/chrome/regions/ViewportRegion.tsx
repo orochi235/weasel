@@ -1,4 +1,4 @@
-import { Button, useRovingTabIndex } from '../../passthrough/weasel-ui';
+import { Button, Icon, useRovingTabIndex } from '../../passthrough/weasel-ui';
 import type { TrialChromeContext, TrialContribution } from '../types';
 
 /** Props for `<ViewportRegion>`. */
@@ -31,7 +31,7 @@ export function ViewportRegion({ contributions, ctx }: ViewportRegionProps) {
           );
         }
         if (c.region !== 'viewport' || !c.item) return null;
-        const { icon: Icon, label, disabled, onActivate } = c.item;
+        const { icon, label, disabled, onActivate } = c.item;
         return (
           <Button
             key={c.id}
@@ -42,7 +42,7 @@ export function ViewportRegion({ contributions, ctx }: ViewportRegionProps) {
             disabled={disabled}
             onClick={() => onActivate(ctx)}
           >
-            <Icon size={16} />
+            <Icon name={icon} size={16} />
           </Button>
         );
       })}

@@ -2,7 +2,6 @@ import { heldKeySpec, type Action, type GestureBinding } from '@weasel-js/routin
 import type { InsertLiveGesture } from './live';
 
 /**
- * @experimental
  * Companion to `insertAction`: while its key is held, dragging moves the
  * shape being drawn instead of resizing it; letting go resumes resizing from
  * where the shape now sits. No-op when no insert is in flight.

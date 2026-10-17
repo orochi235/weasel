@@ -1,14 +1,14 @@
-import { type ActionTunings, asNodeId, boundsOfPath, createScene, type PathEditHost, pathFromD, type RectPose, SimplifyBrushIcon, solid, useLatest } from '@weasel-js/core';
+import { type ActionTunings, asNodeId, boundsOfPath, createScene, type PathEditHost, pathFromD, type RectPose, solid, useLatest } from '@weasel-js/core';
 import { SIMPLIFY_BRUSH_TOOL, simplifyBrushPreset } from '@weasel-js/path-tools';
 import {
   type ConfigOf, defineInstrument, f, Lab, type RenderContext, type SceneTrialState,
   TrialSceneCanvas, useTrialScene,
 } from '@weasel-js/labkit';
 import { createModeRegistry, DEFAULT_MODES } from '@weasel-js/modes';
-import { SelectIcon } from '@weasel-js/ui';
 import { useMemo, useState } from 'react';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
+import { icon } from '../icons.gen';
 
 const FEATURES = ['draw', simplifyBrushPreset] as const;
 
@@ -137,8 +137,8 @@ const brushInstrument = defineInstrument<State, Config>({
   undo: {},
   tools: {
     tools: [
-      { id: 'select', label: 'Select', icon: SelectIcon, shortcut: 'V' },
-      { id: SIMPLIFY_BRUSH_TOOL, label: 'Simplify brush', icon: SimplifyBrushIcon },
+      { id: 'select', label: 'Select', icon: icon('core:select'), shortcut: 'V' },
+      { id: SIMPLIFY_BRUSH_TOOL, label: 'Simplify brush', icon: icon('core:simplifyBrush') },
     ],
     initial: SIMPLIFY_BRUSH_TOOL,
   },

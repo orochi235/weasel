@@ -1,4 +1,5 @@
 import type { ComponentType, ReactNode } from 'react';
+import { IconRegistryScope, type IconRegistryProviderProps } from './iconRegistry';
 import { DepRegistryProviderIfRoot } from './canvas/SceneCanvas/DepRegistryProviderIfRoot';
 import { ActionsProviderIfRoot } from './canvas/SceneCanvas/ActionsProviderIfRoot';
 import { PointerProviderIfRoot } from './canvas/SceneCanvas/PointerProviderIfRoot';
@@ -26,6 +27,10 @@ export interface WeaselProviderProps {
    * nothing — a toolbar outside both can drive neither.
    */
   isolate?: boolean;
+  /** Icon tables to register, e.g. `virtual:weasel-icons`'s default export. Mounts a registry of its own rather than joining one in scope. */
+  icons?: IconRegistryProviderProps['icons'];
+  /** Icon variants a component may load by name. Mounts a registry of its own, like `icons`. */
+  iconVariants?: IconRegistryProviderProps['variants'];
 }
 
 /**
@@ -38,7 +43,7 @@ export interface WeaselProviderProps {
  * panel, or two canvases that should agree on the selection. Mount it above
  * any `useTools(...)` call, or the dispatcher sees a stale active tool.
  */
-export function WeaselProvider({ children, isolate = false }: WeaselProviderProps) {
+export function WeaselProvider({ children, isolate = false, icons, iconVariants }: WeaselProviderProps) {
   const Deps: Wrapper = isolate ? DepRegistryProvider : DepRegistryProviderIfRoot;
   const Actions: Wrapper = isolate ? ActionsProvider : ActionsProviderIfRoot;
   const ActiveTool: Wrapper = isolate
@@ -48,17 +53,20 @@ export function WeaselProvider({ children, isolate = false }: WeaselProviderProp
     ? SelectionContextProvider
     : SelectionContextProviderIfRoot;
   const Pointer: Wrapper = isolate ? PointerContextProvider : PointerProviderIfRoot;
+  // `isolate` leaves the icon registry alone: icons are the app's, settled when it is built.
   return (
-    <Deps>
-      <Actions>
-        <ActiveTool>
-          <Selection>
-            <Pointer>
-              {children}
-            </Pointer>
-          </Selection>
-        </ActiveTool>
-      </Actions>
-    </Deps>
+    <IconRegistryScope icons={icons} variants={iconVariants}>
+      <Deps>
+        <Actions>
+          <ActiveTool>
+            <Selection>
+              <Pointer>
+                {children}
+              </Pointer>
+            </Selection>
+          </ActiveTool>
+        </Actions>
+      </Deps>
+    </IconRegistryScope>
   );
 }

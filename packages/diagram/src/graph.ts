@@ -11,7 +11,7 @@ import { expandGroupEdges, insetOf, type GroupInset } from './cluster';
 import { diagramEdgeOf, layoutOwnsRoute } from './edge';
 import { nestGroups } from './groupTree';
 import { diagramLabelOf, type DiagramLabel } from './label';
-import type { Bounds } from './outline';
+import type { Bounds, Outline } from './outline';
 import { diagramNodeOf, type DiagramNodeLike, type DiagramNodeReader } from './trait';
 import type { PortSpec } from './types';
 
@@ -38,6 +38,9 @@ export interface GraphNode {
   /** Where its ports sit. Absent, the four compass midpoints
    *  (`DEFAULT_PORTS`). */
   ports?: readonly PortSpec[];
+  /** The shape its ports are cast onto, as `portsOf` casts them. Absent,
+   *  its bounds. */
+  outline?: Outline;
 }
 
 /** A box drawn around some participants, which a layout keeps together and
@@ -183,6 +186,7 @@ export function buildGraph<TPose>(
       bounds: geometry.getBounds(pose),
       pinned: trait.pinned === true,
       ...(trait.ports !== undefined ? { ports: trait.ports } : {}),
+      ...(trait.outline !== undefined ? { outline: trait.outline } : {}),
     };
     nodes.push(entry);
     byId.set(entry.id, entry);

@@ -7,7 +7,7 @@ import { pathToAnchors, segmentAt, type AnchorSet, type PolygonPath, type Segmen
  *  radius, so the two regions meet without a gap. */
 export const SEGMENT_HIT_PX = 8;
 
-/** @experimental The segment of the path being edited under world point
+/** The segment of the path being edited under world point
  *  `(x, y)`, or null off every segment, on an anchor, or with no path in edit
  *  mode. Its reach is the `targets.segmentHitPx` kit setting. */
 export function segmentUnder(

@@ -5,11 +5,11 @@ export interface Size { w: number; h: number }
 /** A rectangle in viewport pixels: top-left corner plus width and height. */
 export interface Rect { x: number; y: number; w: number; h: number }
 
-/** Start at `at`, else end there (flip), else slide inside `[lo, lo + span]`. */
-function flipOrShift(at: number, len: number, lo: number, span: number): number {
+/** Start at `at`, else end at `flipAt` (default `at`), else slide inside `[lo, lo + span]`. */
+function flipOrShift(at: number, len: number, lo: number, span: number, flipAt = at): number {
   const hi = lo + span;
   if (at + len <= hi) return Math.max(lo, at);
-  if (at - len >= lo) return Math.max(lo, Math.min(at - len, hi - len));
+  if (flipAt - len >= lo) return Math.max(lo, Math.min(flipAt - len, hi - len));
   return Math.max(lo, hi - len);
 }
 
@@ -26,11 +26,18 @@ export function placeMenu(size: Size, anchor: Point, bounds: Rect): Point {
 /** Where a submenu goes: beside `row`, right first, left if that does not
  *  fit, top-aligned with the row and shifted up to stay inside `bounds`. */
 export function placeSubmenu(size: Size, row: Rect, bounds: Rect): Point {
-  const right = row.x + row.w;
-  const hiX = bounds.x + bounds.w;
-  const x = right + size.w <= hiX
-    ? right
-    : row.x - size.w >= bounds.x ? row.x - size.w : Math.max(bounds.x, hiX - size.w);
-  const y = Math.max(bounds.y, Math.min(row.y, bounds.y + bounds.h - size.h));
-  return { x, y };
+  return {
+    x: flipOrShift(row.x + row.w, size.w, bounds.x, bounds.w, row.x),
+    y: Math.max(bounds.y, Math.min(row.y, bounds.y + bounds.h - size.h)),
+  };
+}
+
+/** Where a menu opened from the button at `under` goes: below it and
+ *  left-aligned, flipped above it or right-aligned to it on an axis that does
+ *  not fit, shifted inside `bounds` when neither side does. */
+export function placeMenuUnder(size: Size, under: Rect, bounds: Rect): Point {
+  return {
+    x: flipOrShift(under.x, size.w, bounds.x, bounds.w, under.x + under.w),
+    y: flipOrShift(under.y + under.h, size.h, bounds.y, bounds.h, under.y),
+  };
 }

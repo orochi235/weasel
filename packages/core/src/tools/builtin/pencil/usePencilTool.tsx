@@ -1,9 +1,9 @@
 import { useMemo } from 'react';
 import { defineTool } from '../../overlayBinding';
-import { PencilIcon } from '../../../icons';
 import type { Tool } from '../../overlayBinding';
 import { insertBindingBehaviors, type InsertToolOptions } from '../shared/insertToolOptions';
 import { cursorFor } from '@weasel-js/cursor';
+import { icon } from '../../../icons.gen';
 
 /** A single pointer sample captured during a freehand pencil stroke.
  *
@@ -47,7 +47,7 @@ export function usePencilTool(options: InsertToolOptions = {}): Tool {
         presentation: {
           label: 'Pencil',
           group: 'draw',
-          icon: <PencilIcon />,
+          icon: icon('pencil'),
         },
         bindings: [
           {

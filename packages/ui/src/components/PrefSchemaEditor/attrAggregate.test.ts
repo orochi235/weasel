@@ -1,21 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
-import { aggregateAttributes, sameValue } from './attrAggregate';
+import { aggregateAttributes } from './attrAggregate';
 import { attributeSchema } from './kindSchemas';
 
 const num = (over: Record<string, unknown> = {}): PrefLeaf =>
   ({ kind: 'number', name: 'N', description: 'd', default: 1, min: 0, ...over }) as PrefLeaf;
 const bool: PrefLeaf = { kind: 'boolean', name: 'B', description: 'd', default: false };
 const group: PrefGroup = { name: 'G', children: {} };
-
-describe('sameValue', () => {
-  it('compares structure, not identity', () => {
-    expect(sameValue([{ a: 1 }], [{ a: 1 }])).toBe(true);
-    expect(sameValue({ a: 1, b: 2 }, { b: 2, a: 1 })).toBe(true);
-    expect(sameValue({ a: 1 }, { a: 1, b: undefined })).toBe(false);
-    expect(sameValue([1, 2], [2, 1])).toBe(false);
-  });
-});
 
 describe('aggregateAttributes', () => {
   it('is the node\'s own schema for one node', () => {

@@ -27,18 +27,18 @@
     "longestFunction": 422
   },
   "packages/core/src/canvas/CanvasView.tsx": {
-    "lines": 409,
+    "lines": 407,
     "longestFunction": 262
   },
   "packages/core/src/canvas/SceneCanvas.tsx": {
-    "lines": 503,
-    "longestFunction": 383
+    "lines": 502,
+    "longestFunction": 381
   },
   "packages/core/src/canvas/SceneCanvas/GestureDispatcherMounter.tsx": {
-    "longestFunction": 249
+    "longestFunction": 240
   },
   "packages/core/src/canvas/SceneCanvas/props.ts": {
-    "lines": 609
+    "lines": 607
   },
   "packages/core/src/canvas/sceneAdapter.ts": {
     "longestFunction": 156
@@ -59,7 +59,7 @@
     "lines": 440
   },
   "packages/core/src/features/paths/pathLayer.ts": {
-    "longestFunction": 123
+    "longestFunction": 121
   },
   "packages/core/src/features/paths/penPreviewLayer.ts": {
     "longestFunction": 138
@@ -106,9 +106,6 @@
   "packages/forge/src/shell/TrialHost.tsx": {
     "longestFunction": 138
   },
-  "packages/forge/src/shell/Workshop.tsx": {
-    "longestFunction": 123
-  },
   "packages/forge/src/shell/cssVars/CssVarsPanel.tsx": {
     "longestFunction": 149
   },
@@ -126,9 +123,6 @@
   },
   "packages/geom/src/tessellate/polyline.ts": {
     "longestFunction": 141
-  },
-  "packages/geom/src/tessellate/tessellate.ts": {
-    "longestFunction": 124
   },
   "packages/guides/src/layout/strategies/tileGrid.ts": {
     "longestFunction": 281
@@ -185,7 +179,7 @@
     "longestFunction": 256
   },
   "packages/labkit/src/lab/Lab.tsx": {
-    "longestFunction": 198
+    "longestFunction": 197
   },
   "packages/labkit/src/lab/Workspace.tsx": {
     "longestFunction": 159

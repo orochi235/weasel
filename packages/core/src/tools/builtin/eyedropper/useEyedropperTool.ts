@@ -1,12 +1,12 @@
-import { useMemo, createElement } from 'react';
+import { useMemo } from 'react';
 import { useLatest } from '@weasel-js/react';
 import { defineTool } from '../../overlayBinding';
 import type { Tool } from '../../overlayBinding';
 import type { HotkeyTrigger } from '@weasel-js/routing';
 import type { ToolKeybinding } from '@weasel-js/routing';
 import type { Action } from '@weasel-js/routing';
-import { EyedropperIcon } from '../../../icons';
 import { cursorFor } from '@weasel-js/cursor';
+import { icon } from '../../../icons.gen';
 
 /** Options for `useEyedropperTool`. */
 export interface UseEyedropperToolOptions {
@@ -82,7 +82,7 @@ export function useEyedropperTool(opts: UseEyedropperToolOptions): Tool {
       cursor: cursorFor('eyedropper', { fallback: 'crosshair' }),
       presentation: {
         label: 'Eyedropper',
-        icon: createElement(EyedropperIcon),
+        icon: icon('eyedropper'),
         group: 'view',
       },
       actions: [pickAction],

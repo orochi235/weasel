@@ -3,16 +3,11 @@
  * one per mode switch, in a rolling buffer the dev tools read.
  */
 import type { DispatchRecord } from './dispatchRecord';
+import { isDev } from '@weasel-js/react';
 
 /** True in dev builds; false in production. Tree-shakes the Proxy + trace
  *  log out of prod entirely. */
-export const DEV: boolean = (() => {
-  try {
-    return Boolean((import.meta as unknown as { env?: { DEV?: boolean } }).env?.DEV);
-  } catch {
-    return false;
-  }
-})();
+export const DEV = isDev();
 
 /** One entry per "mode change" — a kit state transition that isn't a
  *  dispatched input event but explains why an input was (or wasn't) handled

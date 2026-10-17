@@ -35,7 +35,7 @@ import {
 import {
   commitAnchorEdit, type EditAnchorsDep, editedPathSymmetries, editingLayer, inPlane, locksInForce, pathEditPreview, pathEditToolActive, pathOperationTags,
 } from '@weasel-js/core';
-import { BalanceHandlesIcon, EqualizeHandlesIcon } from '../icons';
+import { icon } from '../icons.gen';
 
 /** The segment a `balance:N` affordance names, on the path being edited. */
 function gripTarget(
@@ -63,7 +63,7 @@ function gripEnabled(deps: ActionDeps | undefined): true | ActionDisabledReason 
 export const balanceHandlesAction: Action & { requires: string[] } = inPlane({
   id: 'balanceHandles',
   label: 'Balance handles',
-  icon: BalanceHandlesIcon,
+  icon: icon('balanceHandles'),
   tags: pathOperationTags('drag'),
   // Ties the marquee's `empty` and move's `selected-body` on specificity and
   // registers ahead of the marquee; move turns path-edit presses down itself.
@@ -120,7 +120,7 @@ export const balanceHandlesAction: Action & { requires: string[] } = inPlane({
 export const equalizeHandlesAction: Action & { requires: string[] } = {
   id: 'equalizeHandles',
   label: 'Equalize handles',
-  icon: EqualizeHandlesIcon,
+  icon: icon('equalizeHandles'),
   tags: pathOperationTags('click'),
   defaultBinding: { kind: 'doubleClick', target: { kindOf: isBalanceGrip } },
   eligible: { capability: 'edits-anchors' },

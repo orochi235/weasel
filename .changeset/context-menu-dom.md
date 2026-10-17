@@ -12,4 +12,4 @@ The gesture dispatcher leaves a key pressed inside an element with `role="menu"`
 
 `PropertyGroup` and `MotifFrame` take an `onContextMenu` prop.
 
-`@weasel-js/ui` exports `actionIcon`, which turns an action's declared icon (a node, or a thunk drawing one) into the node to draw.
+`@weasel-js/ui` exports `actionIcon`, which turns an action's icon name into the node to draw.

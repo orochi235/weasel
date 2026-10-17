@@ -63,9 +63,19 @@ export interface LayoutPlan {
    *  `from` end to its `to` end. An edge absent runs straight between its
    *  ends. Absent altogether, the layout routes nothing. */
   waypoints?: ReadonlyMap<string, readonly Vec2[]>;
-  /** For each edge layout left label room beside: where among its waypoints,
-   *  as a `DiagramLabel`'s `{ waypoint }`. */
-  labels?: ReadonlyMap<string, number>;
+  /** For each edge layout left label room beside: the point on its route
+   *  the room is beside, as a `DiagramLabel`'s `{ near }`. */
+  labels?: ReadonlyMap<string, Vec2>;
+  /** For each edge layout named ports for: the port it leaves `from` by and
+   *  the one it arrives at `to` by, either absent where layout names none.
+   *  Absent altogether, the layout names no ports. */
+  ports?: ReadonlyMap<string, LayoutPorts>;
+}
+
+/** The ports a layout names for one edge. */
+export interface LayoutPorts {
+  from?: string;
+  to?: string;
 }
 
 /** Every layout in this package has this shape, and so does a consumer's.

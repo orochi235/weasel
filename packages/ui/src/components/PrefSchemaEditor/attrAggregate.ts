@@ -1,23 +1,8 @@
 import { isPrefLeaf, prefSectionLeaves, type PrefLeaf, type PrefObject } from '@weasel-js/prefs';
-import { attributeSchema, type AttributeSchema, type CustomKinds, type KindAttrs, type RegisteredAction } from './kindSchemas';
+import { deepEqual } from '@weasel-js/registry';
+import { attributeSchema, type AttributeSchema, type CustomKinds, type KindAttrs } from './kindSchemas';
+import type { RegisteredAction } from './registeredActionAttrs';
 import { nodeAt, setAttribute, type SchemaNode, type SchemaRoot } from './schemaEdit';
-
-/** Whether two attribute values hold the same thing. Functions and class instances compare by identity. */
-export function sameValue(a: unknown, b: unknown): boolean {
-  if (Object.is(a, b)) return true;
-  if (typeof a !== 'object' || typeof b !== 'object' || a === null || b === null) return false;
-  // By tag: a value from another realm fails `instanceof`.
-  const tag = Object.prototype.toString.call(a);
-  if (tag !== Object.prototype.toString.call(b)) return false;
-  if (tag === '[object Array]') {
-    const [x, y] = [a as unknown[], b as unknown[]];
-    return x.length === y.length && x.every((v, i) => sameValue(v, y[i]));
-  }
-  if (tag !== '[object Object]') return false;
-  const [x, y] = [a as Record<string, unknown>, b as Record<string, unknown>];
-  const keys = Object.keys(x);
-  return keys.length === Object.keys(y).length && keys.every((k) => Object.hasOwn(y, k) && sameValue(x[k], y[k]));
-}
 
 /** Attribute kinds whose control shows one whole value. Several that disagree are listed and not edited, but for an object, which is split by field. */
 export const WHOLE: ReadonlySet<string> = new Set(['list', 'map', 'object', 'union']);
@@ -36,7 +21,7 @@ function splitObject(
   const mixed: string[] = [];
   for (const [key, field] of prefSectionLeaves(def.children)) {
     const held = each.map((value) => fieldsOf(value)[key]);
-    if (held.every((value) => sameValue(value, held[0]))) {
+    if (held.every((value) => deepEqual(value, held[0]))) {
       if (held[0] !== undefined) agreed[key] = held[0];
     } else if (field.kind === 'object') {
       const inner = splitObject(field as PrefObject, held, `${at}.${key}`, drawsMixed);
@@ -108,8 +93,8 @@ export function aggregateAttributes(
   const common = (part: 'shared' | 'own' | 'auto'): KindAttrs => {
     const out: KindAttrs = {};
     for (const [key, def] of Object.entries(first![part])) {
-      if (!rest.every((s) => sameValue(s[part][key], def))) continue;
-      if (held.every((h) => sameValue(h[key], held[0]![key]))) {
+      if (!rest.every((s) => deepEqual(s[part][key], def))) continue;
+      if (held.every((h) => deepEqual(h[key], held[0]![key]))) {
         out[key] = def;
         if (held[0]![key] !== undefined) values[key] = held[0]![key];
       } else if (drawsMixed(def.kind)) {
@@ -134,7 +119,7 @@ export function aggregateAttributes(
     auto: common('auto'),
     // What a list or a map holds is edited one node at a time.
     entry: rest.length === 0 ? first!.entry : {},
-    readOnly: first!.readOnly.filter(([k, v]) => rest.every((s) => s.readOnly.some(([k2, v2]) => k2 === k && sameValue(v2, v)))),
+    readOnly: first!.readOnly.filter(([k, v]) => rest.every((s) => s.readOnly.some(([k2, v2]) => k2 === k && deepEqual(v2, v)))),
   };
   const kinds = nodes.map((n) => (isPrefLeaf(n) ? n.kind : undefined));
   const kind = kinds.includes(undefined) ? undefined : kinds.every((k) => k === kinds[0]) ? kinds[0]! : null;

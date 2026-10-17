@@ -1,10 +1,13 @@
 /** A key chip: the key, and which modifiers are held with it. `@weasel-js/routing`
- *  derives these from action bindings as `ActionShortcut`. */
+ *  derives these from action bindings as `ActionShortcut`; `@weasel-js/gestures`
+ *  formats them as `ShortcutInput`. A tool's `keybinding` has this shape too. */
 export interface MenuShortcut {
-  key: string;
-  mod: boolean;
-  alt: boolean;
-  shift: boolean;
+  /** A list names spellings of one keycap (`['[', '{']`); the first is drawn. */
+  key: string | readonly string[];
+  mod?: boolean;
+  alt?: boolean;
+  /** `'optional'` matches held or not, and draws as an optional key. */
+  shift?: boolean | 'optional';
 }
 
 /** A row that runs something when chosen. */
@@ -18,6 +21,12 @@ export interface MenuItemEntry {
   disabled?: boolean;
   /** `undefined` for a row with no on/off state. */
   checked?: boolean;
+  /** Letter that chooses this row from the keyboard, compared ignoring case. */
+  access?: string;
+  /** Where choosing the row goes; see `withLinks`. */
+  href?: string;
+  /** The row for the page that is open. */
+  current?: boolean;
   run(): void;
 }
 
@@ -34,6 +43,8 @@ export interface SubmenuEntry {
   label: string;
   icon?: unknown;
   disabled?: boolean;
+  /** Letter that opens this row from the keyboard, compared ignoring case. */
+  access?: string;
   entries: readonly MenuEntry[];
 }
 

@@ -321,4 +321,8 @@ export type {
   BooleanStrokes,
   UseBooleansOptions,
   UseBooleansReturn,
+  ShapeBuilderFace,
+  ShapeBuilderMode,
+  ShapeBuilderPlan,
 } from '../interactions/actions/booleans';
+export { planShapeBuilder, facesAlong } from '../interactions/actions/booleans';

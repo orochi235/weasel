@@ -5,7 +5,7 @@
 import type { ReactNode } from 'react';
 import { prefObjectBase, prefObjectWithField, type PrefLeaf, type PrefObject } from '@weasel-js/prefs';
 import { withBarLabel, type LeafSurface } from '../Bar/renderBarLeaf';
-import { namedGlyph } from '../../icons/namedGlyph';
+import { resolveIcon } from '../../icons/resolveIcon';
 import { absentValue, MIXED, sharedValue } from './model';
 import type { LeafCell } from './cells';
 import type { PropertyRenderContext, PropertyRenderer } from './renderContext';
@@ -97,7 +97,7 @@ function renderField(
   // already carries `name` as its accessible name, which leaves the
   // glyph decorative.
   const unlabeled = pairs.has(childCtx.path) || child.block === true;
-  const glyph = unlabeled ? namedGlyph(child.icon) : undefined;
+  const glyph = unlabeled ? resolveIcon(child.icon) : undefined;
   if (!glyph) return rendered;
   return (
     <span className={s.namedField}>

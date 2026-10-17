@@ -4,6 +4,8 @@ import { ActionsProvider, useAction, type Action } from '@weasel-js/core';
 import { pref, type PrefGroup } from '@weasel-js/prefs';
 import { Bar, type BarProps } from './Bar';
 import s from './Bar.stories.module.css';
+import type { IconRef } from '@weasel-js/icons';
+import { icon } from '../../icons.gen';
 
 const meta: Meta<typeof Bar> = {
   title: 'ui/Bar/Bar',
@@ -12,13 +14,13 @@ const meta: Meta<typeof Bar> = {
 export default meta;
 type Story = StoryObj<typeof Bar>;
 
-const action = (name: string, key: string, icon?: string): PrefGroup['children'][string] => ({
+const action = (name: string, key: string, glyph?: IconRef): PrefGroup['children'][string] => ({
   kind: 'action',
   name,
   description: '',
   default: undefined,
   action: key,
-  ...(icon ? { icon } : {}),
+  ...(glyph ? { icon: glyph } : {}),
 });
 
 const TEXT: PrefGroup = {
@@ -28,7 +30,7 @@ const TEXT: PrefGroup = {
     history: {
       name: 'History',
       as: 'section',
-      children: { undo: action('Undo', 'edit.undo', 'undo'), redo: action('Redo', 'edit.redo', 'redo') },
+      children: { undo: action('Undo', 'edit.undo', icon('core:undo')), redo: action('Redo', 'edit.redo', icon('core:redo')) },
     },
     size: { kind: 'number', name: 'Size', description: 'Type size.', default: 12, min: 1 },
     style: {
@@ -180,16 +182,16 @@ export const AliasesIntoAnotherSchema: Story = {
 };
 
 const ARRANGE_ACTIONS: Action[] = [
-  { id: 'arrange.front', label: 'Bring to front', group: 'arrange', icon: '⤒', invoker: { timing: 'immediate', run: () => {} } },
-  { id: 'arrange.back', label: 'Send to back', group: 'arrange', icon: '⤓', invoker: { timing: 'immediate', run: () => {} } },
+  { id: 'arrange.front', label: 'Bring to front', group: 'arrange', icon: icon('core:bringToFront'), invoker: { timing: 'immediate', run: () => {} } },
+  { id: 'arrange.back', label: 'Send to back', group: 'arrange', icon: icon('core:sendToBack'), invoker: { timing: 'immediate', run: () => {} } },
   {
     id: 'arrange.flip',
     label: 'Flip',
     group: 'arrange',
     invoker: { timing: 'immediate', run: () => {} },
     variants: [
-      { key: 'x', label: 'Flip horizontally', icon: '⇋', params: { axis: 'x' } },
-      { key: 'y', label: 'Flip vertically', icon: '⇵', params: { axis: 'y' } },
+      { key: 'x', label: 'Flip horizontally', icon: icon('core:flipX'), params: { axis: 'x' } },
+      { key: 'y', label: 'Flip vertically', icon: icon('core:flipY'), params: { axis: 'y' } },
     ],
   },
 ];

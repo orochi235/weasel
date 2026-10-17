@@ -4,6 +4,7 @@ import {
   ActionsProvider,
   DepRegistryProvider,
   asNodeId,
+  createScene,
   useAction,
   useDepSource,
   useSelection,
@@ -19,9 +20,11 @@ import {
   toggleSymmetryAction,
   type AppCommands,
 } from './appCommands/actions';
+import type { WeaselDrawData, WeaselDrawLayer, WeaselDrawPose } from './drawDocument';
+import { useFileCommands } from './fileCommands';
 import './app.css';
 
-// Every strip but the file buttons is drawn from the action registry,
+// Every strip is drawn from the action registry,
 // so the story registers the kit actions and the app's own itself, the way
 // `<SceneCanvas>` does in the app. Only a selection is published for the kit's:
 // enough to light up the selection-gated buttons; undo, paste and ungroup read
@@ -55,16 +58,18 @@ function Actions({ selected, compound, children }: { selected: number; compound:
   useAction(toggleSymmetryAction);
   useAction(releaseCompoundAction);
   useAction(preferencesAction);
+  useFileCommands({
+    scene: storyScene, filename: 'story', paperSize: 'letter', backgroundColor: '#ffffff',
+    setFilename: noop, setPaperSize: noop, setBackgroundColor: noop,
+  });
   return <>{children}</>;
 }
 
 const noop = () => {};
 
+const storyScene = createScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>({ systemLayers: [{ id: 'default' }] });
+
 const baseArgs: CommandBarProps = {
-  onSaveSvg: noop,
-  onOpenSvg: noop,
-  onImportSvg: noop,
-  onNew: noop,
   surfaces: <StripSurfaces />,
 };
 

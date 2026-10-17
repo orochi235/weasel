@@ -8,7 +8,7 @@ import { convertSegments, editAnchorSetTracked, segmentsBetweenAnchors, type Seg
 import {
   anchorEditWouldChange, commitAnchorEdit, depOf, editingLayer, inPlane, pathOperationTags, segmentUnder,
 } from '@weasel-js/core';
-import { ConvertSegmentIcon, CurveSegmentIcon, StraightenSegmentIcon } from '../commandIcons';
+import { icon } from '../icons.gen';
 
 const LABEL = 'Convert segments';
 
@@ -16,7 +16,7 @@ const typeOf = (params: Record<string, unknown> | undefined): SegmentType | unde
   (params?.to === 'line' || params?.to === 'curve' ? params.to : undefined);
 
 /**
- * @experimental Convert the selected segments — those whose two ends are both
+ * Convert the selected segments — those whose two ends are both
  * selected anchors. `params.to` `'line'` straightens them, `'curve'` curves
  * them with handles at their thirds so they keep their shape, and no `to`
  * (Shift+C) curves them all when any is straight and straightens them
@@ -24,13 +24,13 @@ const typeOf = (params: Record<string, unknown> | undefined): SegmentType | unde
  */
 export const convertSegmentsAction: Action & { requires: string[] } = {
   id: 'convertSegments',
-  icon: ConvertSegmentIcon,
+  icon: icon('convertSegment'),
   label: LABEL,
   tags: pathOperationTags('command'),
   group: 'anchors',
   variants: [
-    { key: 'line', label: 'Make segments straight', icon: StraightenSegmentIcon, params: { to: 'line' } },
-    { key: 'curve', label: 'Make segments curved', icon: CurveSegmentIcon, params: { to: 'curve' } },
+    { key: 'line', label: 'Make segments straight', icon: icon('straightenSegment'), params: { to: 'line' } },
+    { key: 'curve', label: 'Make segments curved', icon: icon('curveSegment'), params: { to: 'curve' } },
   ],
   defaultBinding: { kind: 'key', key: ['c', 'C'], mods: { shift: true } },
   eligible: { capability: 'edits-anchors' },
@@ -53,12 +53,12 @@ export const convertSegmentsAction: Action & { requires: string[] } = {
 };
 
 /**
- * @experimental Shift+double-click a segment of the path being edited to flip
+ * Shift+double-click a segment of the path being edited to flip
  * it between straight and curved. Off every segment the click falls through.
  */
 export const convertSegmentAtAction: Action & { requires: string[] } = inPlane({
   id: 'convertSegmentAt',
-  icon: ConvertSegmentIcon,
+  icon: icon('convertSegment'),
   label: 'Convert segment',
   tags: pathOperationTags('click'),
   defaultBinding: { kind: 'doubleClick', mods: { shift: true } },

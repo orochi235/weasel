@@ -13,7 +13,11 @@ import {
   clipboardPasteAction,
   type Action,
 } from '@weasel-js/core';
+import type { IconRef } from '@weasel-js/icons';
 import { ActionBar } from './ActionBar';
+import { icon } from '../../icons.gen';
+import { Icon } from '../../icons/Icon';
+import { withIcons } from '../../testing/withIcons';
 
 /**
  * Test harness: registers a set of `Action` descriptors on mount via
@@ -200,19 +204,22 @@ describe('ActionBar', () => {
   });
 
   it('icons prop names a glyph that replaces the action.icon for that id only', () => {
-    const DefaultIcon = () => <span data-testid="default-icon-a">A</span>;
+    const glyph = (ref: IconRef) =>
+      render(<Icon name={ref} />, { wrapper: withIcons }).container.querySelector('svg')!.innerHTML;
+    const [close, add, remove] = [glyph(icon('close')), glyph(icon('add')), glyph(icon('remove'))];
     render(
       <Harness
         actions={[
-          makeAction({ id: 'a', icon: <DefaultIcon /> }),
-          makeAction({ id: 'b', icon: <span data-testid="default-icon-b">B</span> }),
+          makeAction({ id: 'a', icon: icon('add') }),
+          makeAction({ id: 'b', icon: icon('remove') }),
         ]}
-        bar={<ActionBar group="demo" icons={{ a: 'close' }} />}
+        bar={<ActionBar group="demo" icons={{ a: icon('close') }} />}
       />,
+      { wrapper: withIcons },
     );
-    expect(item('a').querySelector('svg')).not.toBeNull();
-    expect(screen.queryByTestId('default-icon-a')).toBeNull();
-    expect(screen.getByTestId('default-icon-b')).toBeTruthy();
+    expect(item('a').querySelector('svg')!.innerHTML).toBe(close);
+    expect(item('a').querySelector('svg')!.innerHTML).not.toBe(add);
+    expect(item('b').querySelector('svg')!.innerHTML).toBe(remove);
   });
 
   it('labels prop overrides aria-label and tooltip for that id only', () => {
@@ -283,21 +290,6 @@ describe('ActionBar', () => {
     render(<ActionBar group="demo" />);
     const toolbar = screen.getByRole('toolbar');
     expect(toolbar.querySelectorAll('button').length).toBe(0);
-  });
-
-  it('supports a function-form icon on the Action', () => {
-    render(
-      <Harness
-        actions={[
-          makeAction({
-            id: 'a',
-            icon: () => <span data-testid="fn-icon">fn</span>,
-          }),
-        ]}
-        bar={<ActionBar group="demo" />}
-      />,
-    );
-    expect(screen.getByTestId('fn-icon')).toBeTruthy();
   });
 
   it('keeps only the entries `only` names, by action id or by variant key', () => {

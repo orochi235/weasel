@@ -1,4 +1,4 @@
-import type { MenuEntry } from '@weasel-js/menu';
+import type { MenuEntry, Rect } from '@weasel-js/menu';
 import { mergeMenuDefs, pickMenu } from './pickMenu';
 import { resolveMenu, type MenuSources } from './resolveMenu';
 import type { MenuDef, MenuHit, OwnedMenuDef } from './types';
@@ -9,8 +9,10 @@ type XY = { x: number; y: number };
 export interface MenuOpenRequest {
   menu?: string;
   hit?: MenuHit;
-  /** Viewport point the menu is placed at. */
+  /** Viewport point the menu is placed at, unless `under` is set. */
   client: XY;
+  /** Viewport rect of the button the menu hangs from: placed below it, or above when below does not fit. */
+  under?: Rect;
   /** World point, passed to `enabled` and to every item. */
   world?: XY;
   params?: Record<string, unknown>;
@@ -22,6 +24,7 @@ export interface OpenMenu {
   seq: number;
   entries: readonly MenuEntry[];
   client: XY;
+  under?: Rect;
   world?: XY;
   source: 'pointer' | 'keyboard';
 }
@@ -78,6 +81,7 @@ export function createMenuHost(src: MenuSources & { activeTool(): string | null 
       }
       open = {
         seq: ++seq, entries, client: req.client, world: req.world,
+        ...(req.under ? { under: req.under } : {}),
         source: req.source ?? 'pointer',
       };
       emit();

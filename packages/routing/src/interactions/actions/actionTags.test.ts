@@ -41,4 +41,14 @@ describe('action tags', () => {
     expect(matchActionItem(h!, 'mirr')).toEqual({ by: 'tag', tag: 'mirror' });
     expect(matchActionItem(v!, 'mirr')).toBeNull();
   });
+
+  it('finds a variant by its palette title, "New: A4", for a word of the variant or of the action', () => {
+    const doc: Action = {
+      id: 'new', label: 'New', invoker: { timing: 'immediate', run },
+      variants: [{ key: 'a4', label: 'A4', params: { size: 'a4' } }],
+    };
+    const [item] = actionItems(doc);
+    expect(matchActionItem(item!, 'a4')?.by).toBe('text');
+    expect(matchActionItem(item!, 'new')?.by).toBe('text');
+  });
 });

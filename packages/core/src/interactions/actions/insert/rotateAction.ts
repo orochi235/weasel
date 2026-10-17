@@ -7,7 +7,6 @@ import type { InsertLiveGesture } from './live';
 const ROTATION_SENSITIVITY = Math.PI / 720;
 
 /**
- * @experimental
  * Companion to `insertAction` — adjusts the live insert gesture's
  * `userRotation` based on wheel deltaY. Intended to be bound to
  * Shift+wheel during the insert tool's engaged phase. No-op when no

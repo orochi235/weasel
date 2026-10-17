@@ -6,8 +6,6 @@ import { mat3, type GlMat3 } from '@weasel-js/geom';
 import type { ResolvableView } from './viewResolver';
 
 /**
- * @experimental
- *
  * A "viewport node" — a screen-space rectangle on the outer canvas that
  * re-renders one or more `source` layers through an *inner* `View`, then
  * clips them to its rect. The same source layer can be rendered through
@@ -61,8 +59,6 @@ export interface CreateViewportLayerOpts<TData, TSource = TData> {
 }
 
 /**
- * @experimental
- *
  * A {@link RenderLayer} that can also describe itself as a routing target.
  * Returned by {@link createViewportLayer}.
  */

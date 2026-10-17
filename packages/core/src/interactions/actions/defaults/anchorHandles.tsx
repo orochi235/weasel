@@ -7,8 +7,8 @@ import type { Action, ImmediateInvoker } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import { makeHandlesSymmetric, retractHandles, type AnchorSet } from '@weasel-js/geom';
 import { anchorEditWouldChange, commitAnchorEdit, depOf, requiresAnchorSelection } from './anchorEditing';
-import { RetractHandlesIcon, SymmetricHandlesIcon } from './icons/anchorIcons';
 import { pathOperationTags } from '../pathGestureTags';
+import { icon } from '../../../icons.gen';
 
 /** An edit of the handles of the anchors at `flatIndexes`; absent means
  *  every anchor of the path. */
@@ -64,7 +64,7 @@ function selectedOrAll(selected: ReadonlySet<number>): number[] | undefined {
 export const retractHandlesAction = makeHandleCommand(
   'retractHandles',
   'Retract handles',
-  <RetractHandlesIcon />,
+  icon('retractHandles'),
   (set, flat) => retractHandles(set, flat ?? []),
 );
 
@@ -72,7 +72,7 @@ export const retractHandlesAction = makeHandleCommand(
 export const makeHandlesSymmetricAction = makeHandleCommand(
   'makeHandlesSymmetric',
   'Make handles symmetric',
-  <SymmetricHandlesIcon />,
+  icon('symmetricHandles'),
   (set, flat) => makeHandlesSymmetric(set, flat ?? []),
 );
 

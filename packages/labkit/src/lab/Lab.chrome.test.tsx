@@ -1,11 +1,13 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, screen } from '@testing-library/react';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
+import { renderWithIcons, withIcons } from '@weasel-js/ui/testing/withIcons';
 import { describe, expect, it, vi } from 'vitest';
 import type { TrialContribution } from '../chrome/types';
+import { icon } from '../icons.gen';
 import type { Instrument } from '../instrument/types';
 import { Lab } from './Lab';
 
-const Glyph = () => <svg />;
+const Glyph = icon('ui:add');
 const bare: Instrument = {
   name: 'Bare',
   defaultConfig: () => ({}),
@@ -28,12 +30,15 @@ describe('<Lab> chrome', () => {
     };
     await renderSettled(
       <Lab title="T" instruments={[bare]} defaultInstrument="Bare" chrome={[extra]} />,
+      { wrapper: withIcons },
     );
     expect(screen.getByRole('button', { name: 'Export' })).toBeInTheDocument();
   });
 
   it('puts the expand toggle in the trial title bar instead of the tile corner', async () => {
-    await renderSettled(<Lab title="T" instruments={[bare]} defaultInstrument="Bare" />);
+    await renderSettled(<Lab title="T" instruments={[bare]} defaultInstrument="Bare" />, {
+      wrapper: withIcons,
+    });
     expect(screen.queryByRole('button', { name: 'Expand' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Expand trial' }));
     expect(document.querySelector('.lk-lightbox--expanded .lk-trial')).not.toBeNull();
@@ -42,6 +47,7 @@ describe('<Lab> chrome', () => {
   it('suppresses a built-in by id', async () => {
     await renderSettled(
       <Lab title="T" instruments={[bare]} defaultInstrument="Bare" suppress={['snapshot']} />,
+      { wrapper: withIcons },
     );
     expect(screen.queryByRole('button', { name: 'Save snapshot' })).toBeNull();
     expect(screen.getByRole('button', { name: 'Clone trial' })).toBeInTheDocument();
@@ -55,7 +61,9 @@ describe('<Lab> chrome', () => {
       item: { icon: Glyph, label: 'Mine', onActivate: () => {} },
     };
     expect(() =>
-      render(<Lab title="T" instruments={[bare]} defaultInstrument="Bare" chrome={[clash]} />),
+      renderWithIcons(
+        <Lab title="T" instruments={[bare]} defaultInstrument="Bare" chrome={[clash]} />,
+      ),
     ).toThrow(/duplicate contribution id "clone"/);
   });
 
@@ -75,6 +83,7 @@ describe('<Lab> chrome', () => {
         defaultInstrument="Sized"
         suppress={['zoom-out', 'zoom-in', 'actual-size', 'zoom-control', 'scale', 'fps']}
       />,
+      { wrapper: withIcons },
     );
     expect(document.querySelector('.lk-viewport-controls')).toBeNull();
   });
@@ -82,7 +91,9 @@ describe('<Lab> chrome', () => {
   it('throws when suppressing an id that is not there', async () => {
     silenceRenderError();
     expect(() =>
-      render(<Lab title="T" instruments={[bare]} defaultInstrument="Bare" suppress={['nope']} />),
+      renderWithIcons(
+        <Lab title="T" instruments={[bare]} defaultInstrument="Bare" suppress={['nope']} />,
+      ),
     ).toThrow(/cannot suppress "nope"/);
   });
 
@@ -91,7 +102,9 @@ describe('<Lab> chrome', () => {
       ...bare,
       chrome: [{ id: 'mine', region: 'status', item: { text: 'ready' } }],
     };
-    await renderSettled(<Lab title="T" instruments={[withChrome]} defaultInstrument="Bare" />);
+    await renderSettled(<Lab title="T" instruments={[withChrome]} defaultInstrument="Bare" />, {
+      wrapper: withIcons,
+    });
     expect(screen.getByText('ready')).toBeInTheDocument();
   });
 
@@ -103,6 +116,7 @@ describe('<Lab> chrome', () => {
         defaultInstrument="Bare"
         labChrome={[{ id: 'notes', region: 'aside', item: { title: 'Notes', body: <p>jot</p> } }]}
       />,
+      { wrapper: withIcons },
     );
     const body = screen.getByText('jot');
     const trial = screen.getByRole('region', { name: /trial/i });

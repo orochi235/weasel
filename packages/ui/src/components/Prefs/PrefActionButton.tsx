@@ -1,18 +1,29 @@
 import type { PrefAction, PrefActions } from '@weasel-js/prefs';
 import { BarActionButton } from '../Bar/BarAction';
-import { actionsLeafActions, useRegisteredActions } from './registeredActions';
+import { actionLeafVariants, actionsLeafActions, useRegisteredActions } from './registeredActions';
 import { useLeafAction } from './useLeafAction';
 import s from './Prefs.module.css';
 
 /**
  * An `action` leaf's button in a panel: a row reading its icon and label once,
  * or its icon alone for `control: 'icon'`. A key nothing registered answers to,
- * or an action that says why it cannot run, keeps a tooltip saying so.
+ * or an action that says why it cannot run, keeps a tooltip saying so. A leaf
+ * naming a parametric action by its bare id is a row per variant.
  */
-export function PrefActionButton({ pref, path, disabled: off }: { pref: PrefAction; path: string; disabled?: boolean }) {
+export function PrefActionButton({ pref, path, disabled }: { pref: PrefAction; path: string; disabled?: boolean }) {
+  const variants = actionLeafVariants(pref, useRegisteredActions());
+  if (!variants) return <PrefActionOne pref={pref} path={path} disabled={disabled} />;
+  return (
+    <span className={s.actionRows}>
+      {variants.map((one, i) => <PrefActionOne key={one.action} pref={one} path={`${path}.${i}`} disabled={disabled} />)}
+    </span>
+  );
+}
+
+function PrefActionOne({ pref, path, disabled: off }: { pref: PrefAction; path: string; disabled?: boolean }) {
   const { press, reason, ...button } = useLeafAction(pref, path, off);
   const iconOnly = pref.control === 'icon' && button.icon != null;
-  return <BarActionButton {...button} row={!iconOnly} disabledReason={reason} onPress={press} />;
+  return <BarActionButton {...button} description={pref.description} row={!iconOnly} disabledReason={reason} onPress={press} />;
 }
 
 /** An `actions` leaf in a panel: one {@link PrefActionButton} row per entry of its registry group. */

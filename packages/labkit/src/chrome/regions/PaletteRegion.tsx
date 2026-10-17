@@ -1,4 +1,4 @@
-import { ToolButton, ToolGroup, useRovingTabIndex } from '../../passthrough/weasel-ui';
+import { Icon, ToolButton, ToolGroup, useRovingTabIndex } from '../../passthrough/weasel-ui';
 import type { RailItem, RegionContribution, ToolSlotContext, TrialChromeContext } from '../types';
 
 /** Props for `<PaletteRegion>`. */
@@ -34,12 +34,12 @@ export function PaletteRegion<TCtx extends ToolSlotContext = TrialChromeContext>
           if (c.render) return <span key={c.id}>{c.render(ctx)}</span>;
           if (c.region !== region || !c.item) return null;
           const item = c.item as RailItem<TCtx>;
-          const { icon: Icon, label, shortcut, disabled } = item;
+          const { icon, label, shortcut, disabled } = item;
           const run = 'onActivate' in item ? item.onActivate : null;
           return (
             <ToolButton
               key={c.id}
-              icon={<Icon size={16} />}
+              icon={<Icon name={icon} size={16} />}
               label={label}
               shortcut={shortcut}
               active={run ? false : ctx.activeToolId === c.id}

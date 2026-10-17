@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { act, cleanup, render } from '@testing-library/react';
+import { act, cleanup } from '@testing-library/react';
+import { renderWithIcons } from '../../testing/withIcons';
 import { KitSettingsProvider } from '@weasel-js/react';
 import { createToastQueue, DEFAULT_TTL_MS, racQueueOf } from './queue';
 import { ToastRegion } from './Toast';
@@ -11,14 +12,14 @@ const timeoutOf = (q: ReturnType<typeof createToastQueue>) => racQueueOf(q).visi
 describe('ToastRegion kit settings', () => {
   it('times a toast by the constant with no provider', () => {
     const q = createToastQueue();
-    render(<ToastRegion queue={q} />);
+    renderWithIcons(<ToastRegion queue={q} />);
     act(() => q.add('info', 'Saved'));
     expect(timeoutOf(q)).toBe(DEFAULT_TTL_MS);
   });
 
   it("times a toast by the provider's toast.ttlMs, and a toast's own ttlMs over it", () => {
     const q = createToastQueue();
-    render(
+    renderWithIcons(
       <KitSettingsProvider value={{ toast: { ttlMs: 3000 } }}>
         <ToastRegion queue={q} />
       </KitSettingsProvider>,
@@ -31,7 +32,7 @@ describe('ToastRegion kit settings', () => {
 
   it('goes back to the constant once the region unmounts', () => {
     const q = createToastQueue();
-    const { unmount } = render(
+    const { unmount } = renderWithIcons(
       <KitSettingsProvider value={{ toast: { ttlMs: 3000 } }}>
         <ToastRegion queue={q} />
       </KitSettingsProvider>,

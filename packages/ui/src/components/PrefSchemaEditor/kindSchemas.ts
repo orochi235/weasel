@@ -16,6 +16,7 @@ import {
 import { replaceNode, nodeAt, type SchemaNode, type SchemaRoot } from './schemaEdit';
 import { containsCode, STUB } from './schemaExport';
 import { findType, NO_TYPES, typeNamed, type PrefTypes } from './types';
+import { actionChoice, registeredFacts, type RegisteredAction } from './registeredActionAttrs';
 
 /** One attribute of a kind, as the leaf that edits it. `required` keeps it on a leaf when it is emptied, and seeds
  *  it, from this leaf's `default`, in a new leaf of the kind. */
@@ -37,6 +38,8 @@ const strings = (name: string, description: string): PrefLeaf =>
   ({ kind: 'list', name, description, default: [], item: { kind: 'string', name: '', description: '', default: '' } }) as PrefLeaf;
 /** Text the code spells, which the editor sets in monospace. */
 const symbol = (name: string, description: string): PrefLeaf => ({ kind: 'symbol', name, description, default: '' });
+/** The attribute kind an `icon` is edited as: a picker over every registered icon. */
+export const ICON_KIND = 'icon';
 const symbols = (name: string, description: string): PrefLeaf =>
   ({ kind: 'list', name, description, default: [], item: symbol('', '') }) as PrefLeaf;
 /** The attribute kind a `showIf` or an `enableIf` is edited as: a `PrefCondition` over the schema's other leaves. */
@@ -52,12 +55,13 @@ const LEAF_BASE: KindAttrs = {
   name: text('Name', 'The label beside the control.'),
   description: text('Description', 'Help text for the tooltip or the line under the label.', true),
   tags: strings('Tags', 'Words a settings search also finds it by, and that gather it with others carrying them.'),
+  access: text('Access letter', 'The letter that picks it in a menu, and with the menu bar\'s chord opens a top-level menu. One character; optional.'),
   hidden: flag('Hidden', 'Left out of a settings UI unless it shows hidden prefs.'),
   showIf: SHOW_IF,
   enableIf: ENABLE_IF,
   block: flag('Block', 'Full width with no label row, for a control with its own chrome.'),
   heading: flag('In heading', 'Drawn in the heading of the group holding it, in place of a row. A boolean or an enum only.'),
-  icon: symbol('Icon', 'Glyph name in the host\'s icon set.'),
+  icon: { kind: ICON_KIND, name: 'Icon', description: 'An icon by qualified name, from the icon sets this app registered.', default: undefined } as PrefLeaf,
   pair: { kind: 'pair', name: 'Pair', description: 'The fields that share this one\'s row in compact property UIs, and what the row reads.', default: undefined },
   short: strings('Short names', 'Shorter forms of the name, longest first.'),
   absentIsDefault: flag('Absent is default', 'Where nothing is held, it reads as its default: for a node property whose reader does the same.'),
@@ -106,11 +110,25 @@ const KIND_ATTRS: Record<PrefKind, KindAttrs> = {
 
 const BAR_OVERFLOW = choice('Overflow', 'Drawn as a bar: what happens to the cells its line has no room for. scroll keeps them all on it, and menu opens the ones past its end from a button there. Unset: scroll.', ['scroll', 'menu']);
 
+const BAR_LEAD = choice('Lead', 'Drawn as a bar: what its line starts with. label puts its name there, ahead of its cells, and icon its icon. Unset: its first cell.', ['label', 'icon']);
+
+const GROUP_ICON_ATTR = { ...LEAF_BASE.icon!, description: 'Drawn as a bar led by its icon, this starts its line; drawn as a menu, page, tab, or panel, it sits beside the name on the button a bar opens it from, and on its submenu row in a menu. An icon by qualified name, from the icon sets this app registered.' } as PrefLeaf;
+
+/** The attributes asked after how a group is drawn, which only some forms read. */
+const AS_ATTRS: Partial<Record<string, Array<[string, KindAttr]>>> = {
+  bar: [['overflow', BAR_OVERFLOW], ['lead', BAR_LEAD], ['icon', GROUP_ICON_ATTR]],
+  menu: [['icon', GROUP_ICON_ATTR]],
+  page: [['icon', GROUP_ICON_ATTR]],
+  tab: [['icon', GROUP_ICON_ATTR]],
+  panel: [['icon', GROUP_ICON_ATTR]],
+};
+
 const GROUP_ATTRS: KindAttrs = {
   name: LEAF_BASE.name!,
   description: LEAF_BASE.description!,
   tags: strings('Tags', 'Tags every pref under it carries too. A settings search matching one keeps all of them.'),
   as: choice('Drawn as', 'A page of its own in the rail, a tab beside its neighbors, a bordered panel, a heading over its rows, a fragment: its rows among its neighbors\' with nothing drawn around them, a bar: its prefs on one line in their bar forms, or a menu: a button opening it as a menu on a bar, a submenu in a menu, and a panel in a form. Unset: a page at the top level, a section inside another group.', ['page', 'tab', 'panel', 'section', 'fragment', 'bar', 'menu']),
+  access: LEAF_BASE.access!,
   showIf: SHOW_IF,
   enableIf: ENABLE_IF,
 };
@@ -119,6 +137,7 @@ const SECTION_ATTRS: KindAttrs = {
   description: LEAF_BASE.description!,
   tags: strings('Tags', 'Tags every pref under it carries too. A settings search matching one keeps all of them.'),
   as: choice('Drawn as', 'A tab beside its neighbors, a bordered panel, a heading over its rows, a fragment: its rows among its neighbors\' with nothing drawn around them, a bar: its prefs on one line in their bar forms, or a menu: a button opening it as a menu on a bar, a submenu in a menu, and a panel in a form. Unset: a heading.', ['tab', 'panel', 'section', 'fragment', 'bar', 'menu']),
+  access: LEAF_BASE.access!,
   showIf: SHOW_IF,
   enableIf: ENABLE_IF,
 };
@@ -138,7 +157,7 @@ const REQUIRED = new Set(['name', 'description', 'default', 'options', 'tag', 'o
 const SLOTS = new Set(['children', 'members', 'variants', 'item']);
 
 /** The fields a leaf made from a type sets where it is used; the rest are its type's. */
-const USE_SITE = new Set(['name', 'description', 'tags', 'default', 'hidden', 'showIf', 'enableIf', 'block', 'heading', 'icon', 'pair', 'short', 'absentIsDefault', 'readout', 'manual', 'unpinned', 'autoValue']);
+const USE_SITE = new Set(['name', 'description', 'tags', 'default', 'access', 'hidden', 'showIf', 'enableIf', 'block', 'heading', 'icon', 'pair', 'short', 'absentIsDefault', 'readout', 'manual', 'unpinned', 'autoValue']);
 
 function valueAttr(leaf: PrefLeaf, base: { name: string; description: string }): PrefLeaf | null {
   switch (leaf.kind) {
@@ -191,30 +210,10 @@ function autoAttrs(leaf: PrefLeaf): KindAttrs {
   return { ...AUTO_FLAGS, ...(value ? { autoValue: value } : {}) };
 }
 
-/** What an action pref's attributes are told of an action the host has registered. */
-export interface RegisteredAction {
-  key: string;
-  label: string;
-  group?: string;
-  tags?: readonly string[];
-  shortcut?: string;
-}
-
-/** What the registry says of the action a pref fires, which the pref does not hold and no row edits. */
-function registeredFacts(action: RegisteredAction | undefined): Array<[string, unknown]> {
-  if (!action) return [];
-  const facts: Array<[string, unknown]> = [['registered as', action.label], ['registered group', action.group], ['registered tags', action.tags?.join(', ')], ['shortcut', action.shortcut]];
-  return facts.filter(([, value]) => value !== undefined && value !== '');
-}
-
-/** The `action` attribute as a choice among the keys a host has, with the key the pref holds now if it is none of them. */
-function actionChoice(attr: PrefLeaf, actions: readonly RegisteredAction[], held: string | undefined): PrefLeaf {
-  const options = actions.map((a) => ({ value: a.key, label: `${a.label} (${a.key})` }));
-  if (held !== undefined && held !== '' && !actions.some((a) => a.key === held)) options.unshift({ value: held, label: `${held} (not registered)` });
-  return { kind: 'enum', name: attr.name, description: attr.description, default: undefined, clearable: true, options } as PrefLeaf;
-}
-
 const READOUT = flag('Readout', 'Drawn showing its value but not editable.');
+
+/** The leaf kinds a menu draws a row for, besides a label, and so can give a letter. */
+const LETTERED: ReadonlySet<string> = new Set(['action', 'boolean', 'alias']);
 
 /** The attributes a leaf shares with every other, less the ones nothing draws for it: a label is its
  *  name and its description, and a separator neither, and neither has a control to enable. An actions
@@ -222,12 +221,14 @@ const READOUT = flag('Readout', 'Drawn showing its value but not editable.');
 function sharedAttrs(leaf: PrefLeaf): KindAttrs {
   const { kind } = leaf;
   if (kind === 'separator') return { hidden: LEAF_BASE.hidden!, showIf: SHOW_IF };
-  if (kind === 'label') return { name: LEAF_BASE.name!, description: LEAF_BASE.description!, hidden: LEAF_BASE.hidden!, showIf: SHOW_IF };
+  if (kind === 'label') return { name: LEAF_BASE.name!, description: LEAF_BASE.description!, access: LEAF_BASE.access!, hidden: LEAF_BASE.hidden!, showIf: SHOW_IF };
   if (kind === 'actions') {
     const { name, description, tags, hidden, showIf, enableIf } = LEAF_BASE;
     return { name: name!, description: description!, tags: tags!, hidden: hidden!, showIf: showIf!, enableIf: enableIf! };
   }
-  return prefHoldsValue(leaf) ? { ...LEAF_BASE, readout: READOUT } : { ...LEAF_BASE };
+  const { access, ...noLetter } = LEAF_BASE;
+  const base = LETTERED.has(kind) ? { ...noLetter, access: access! } : noLetter;
+  return prefHoldsValue(leaf) ? { ...base, readout: READOUT } : base;
 }
 
 /** What every leaf carries and nothing draws for a separator, so no row lists it. */
@@ -258,8 +259,7 @@ export function attributeSchema(
 ): AttributeSchema {
   if (!isPrefLeaf(node)) {
     const attrs = Object.entries(isPrefSection(node) ? SECTION_ATTRS : GROUP_ATTRS);
-    // Only a bar has a line to run out of, so only it is asked, after how it is drawn.
-    const shared = attrs.flatMap((attr): Array<[string, KindAttr]> => (attr[0] === 'as' && node.as === 'bar' ? [attr, ['overflow', BAR_OVERFLOW]] : [attr]));
+    const shared = attrs.flatMap((attr): Array<[string, KindAttr]> => (attr[0] === 'as' ? [attr, ...(AS_ATTRS[node.as ?? ''] ?? [])] : [attr]));
     return { shared: Object.fromEntries(shared), own: {}, auto: {}, entry: {}, readOnly: [] };
   }
   const typed = node.type !== undefined;

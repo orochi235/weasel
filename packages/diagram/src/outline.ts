@@ -2,12 +2,15 @@
  * The shapes a built body can wear, as paths in the node's bounds.
  *
  * These are the flowchart vocabulary — a decision is a diamond, an I/O step a
- * parallelogram, a terminator a stadium, a demultiplexer a trapezoid — plus `'rect'` for everything else and
+ * parallelogram, a terminator a stadium, a demultiplexer a trapezoid, a preparation step a hexagon —
+ * plus `'rect'` for everything else and
  * a `Path` escape hatch for a shape the vocabulary does not have. The path is
  * built in world coordinates from the bounds it is given, the same way the
- * kit's own `clipFromPose` factories are.
+ * kit's own `clipFromPose` factories are; a custom `Path` is drawn in a unit
+ * square and stretched over them, as a mark is.
  */
 import { PathBuilder, polygonFromPoints, rectPath, type Path } from '@weasel-js/core/math';
+import { transformPath } from '@weasel-js/geom';
 
 /** An axis-aligned box. This is `PoseDescriptor.getBounds`'s return shape
  *  minus its optional `rotation`, deliberately: an outline is built in the
@@ -20,12 +23,17 @@ export interface Bounds {
   height: number;
 }
 
-/** A named flowchart shape, or a path a consumer built themselves. */
-export type Outline = 'rect' | 'diamond' | 'stadium' | 'parallelogram' | 'trapezoid' | Path;
+/** A named flowchart shape, or a path a consumer built themselves in a unit
+ *  square — `(0, 0)` the box's top-left, `(1, 1)` its bottom-right — so it
+ *  follows its node wherever layout or a drag puts it. */
+export type Outline = 'rect' | 'diamond' | 'stadium' | 'parallelogram' | 'trapezoid' | 'hexagon' | Path;
 
 /** How far a parallelogram's top edge leans past its bottom one, as a
  *  fraction of the box's width. The flowchart convention. */
 const LEAN = 0.2;
+/** How far a hexagon's points reach past its flat top and bottom, as a
+ *  fraction of the box's width. */
+const POINT = 0.2;
 
 /** Cubic approximation of a quarter circle. A stadium's ends are two of these
  *  each, which is the same construction `ellipsePath` uses. */
@@ -34,9 +42,9 @@ const KAPPA = 0.5522847498307936;
 /** The path `outline` describes inside `bounds`. A zero-area box gives a
  *  zero-area rect rather than a degenerate polygon. */
 export function outlinePath(outline: Outline, bounds: Bounds): Path {
-  if (typeof outline !== 'string') return outline;
   const { x, y, width: w, height: h } = bounds;
   if (w <= 0 || h <= 0) return rectPath(x, y, Math.max(w, 0), Math.max(h, 0));
+  if (typeof outline !== 'string') return transformPath(outline, [w, 0, 0, h, x, y]);
 
   switch (outline) {
     case 'rect':
@@ -67,6 +75,16 @@ export function outlinePath(outline: Outline, bounds: Bounds): Path {
         { x: x + w, y },
         { x: x + w, y: y + h },
         { x, y: y + (h * 3) / 4 },
+      ]);
+
+    case 'hexagon':
+      return polygonFromPoints([
+        { x, y: y + h / 2 },
+        { x: x + w * POINT, y },
+        { x: x + w * (1 - POINT), y },
+        { x: x + w, y: y + h / 2 },
+        { x: x + w * (1 - POINT), y: y + h },
+        { x: x + w * POINT, y: y + h },
       ]);
 
     case 'stadium':
@@ -142,6 +160,8 @@ export function contentBox(outline: Outline, bounds: Bounds): Bounds {
     }
     case 'trapezoid':
       return { x, y: y + h / 4, width: w, height: h / 2 };
+    case 'hexagon':
+      return { x: x + w * POINT, y, width: w * (1 - POINT * 2), height: h };
     case 'stadium': {
       const r = Math.min(w, h) / 2;
       return w >= h
@@ -173,6 +193,8 @@ export function boxForContent(
       return { width: content.width / (1 - LEAN * 2), height: content.height };
     case 'trapezoid':
       return { width: content.width, height: content.height * 2 };
+    case 'hexagon':
+      return { width: content.width / (1 - POINT * 2), height: content.height };
     case 'stadium':
       return { width: content.width + content.height, height: content.height };
   }

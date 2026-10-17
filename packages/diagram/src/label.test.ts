@@ -1,8 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import {
-  asNodeId, createScene, polylineFromPoints, type DerivedDep, type Path, type RectPose,
+  asNodeId, createScene, effectivePose, polylineFromPoints, type DerivedDep, type Path, type RectPose, type Vec2,
 } from '@weasel-js/core';
 import { withDiagramRegistry } from './edge';
+import { diagramScene, edgeIdOf, type DiagramData } from './fromData';
 import { DIAGRAM_LABEL, LABEL_DERIVE_POSE, diagramLabelOf, labelDerivePose } from './label';
 
 const box = (x: number, y: number, w = 20, h = 8): RectPose => ({ x, y, width: w, height: h });
@@ -50,15 +51,11 @@ describe('labelDerivePose', () => {
     expect(poseOf({ at: 'end' }, edgeDep(elbow))).toEqual(box(90, 96));
   });
 
-  it('sits between two of its edge\'s waypoints, beside the run joining them', () => {
-    const dep = { ...edgeDep(elbow), node: { ...edgeDep(elbow).node, data: { diagram: { from: {}, to: {}, waypoints: [{ x: 50, y: 0 }, { x: 50, y: 100 }] } } } } as DerivedDep<RectPose>;
-    expect(poseOf({ at: { waypoint: 0.5 } }, dep)).toEqual(box(40, 46));
+  it('sits on the route where it passes nearest its place, beside the run there', () => {
+    expect(poseOf({ at: { near: { x: 110, y: 50 } } }, edgeDep(elbow))).toEqual(box(90, 46));
     // Running down, left of travel is +x: its near side 10 right of the run.
-    expect(poseOf({ at: { waypoint: 0.5 }, offset: 10 }, dep)).toEqual(box(60, 46));
-  });
-
-  it('falls back to the middle of the route for a waypoint its edge does not have', () => {
-    expect(poseOf({ at: { waypoint: 3 } }, edgeDep(elbow))).toEqual(box(90, -4));
+    expect(poseOf({ at: { near: { x: 110, y: 50 } }, offset: 10 }, edgeDep(elbow))).toEqual(box(110, 46));
+    expect(poseOf({ at: { near: { x: 40, y: -5 } } }, edgeDep(elbow))).toEqual(box(30, -4));
   });
 
   it('offsets to the left of travel, which is above a rightward edge', () => {
@@ -109,5 +106,30 @@ describe('registry', () => {
     });
     const node = scene.toJSON().nodes.find((n) => n.id === (label as string))!;
     expect(node.derivePoseKey).toBe(DIAGRAM_LABEL);
+  });
+});
+
+describe('a label layout stationed', () => {
+  // `a → c` passes `b`, so layout gives it waypoints and its label a rank of
+  // its own between them.
+  const data: DiagramData = {
+    nodes: [{ id: 'a', lines: ['a'] }, { id: 'b', lines: ['b'] }, { id: 'c', lines: ['c'] }],
+    edges: [{ from: 'a', to: 'b' }, { from: 'b', to: 'c' }, { from: 'a', to: 'c', label: 'past' }],
+  };
+  const edge = edgeIdOf(data.edges[2]!);
+
+  it('stays on its stretch when the route gains a bend before it', () => {
+    const scene = createScene<unknown, 'main', RectPose>({
+      systemLayers: [{ id: 'main' }],
+      initial: diagramScene(data) as never,
+      registry: withDiagramRegistry(),
+    });
+    const pose = () => effectivePose(scene as never, scene.get(`${edge}/label` as never)! as never);
+    const before = pose();
+    const own = scene.get(edge as never)!.data as { diagram: { waypoints: Vec2[] } };
+    const [first] = own.diagram.waypoints;
+    const bent = [{ x: first!.x - 40, y: first!.y - 10 }, ...own.diagram.waypoints];
+    scene.update(edge as never, { data: { ...own, diagram: { ...own.diagram, waypoints: bent } } });
+    expect(pose()).toEqual(before);
   });
 });

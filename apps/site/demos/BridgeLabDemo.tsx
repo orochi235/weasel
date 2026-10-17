@@ -10,11 +10,12 @@ import {
   TrialSceneCanvas,
   useTrialScene,
 } from '@weasel-js/labkit';
-import { ActionBar, PenIcon, SelectIcon } from '@weasel-js/ui';
+import { ActionBar } from '@weasel-js/ui';
 import { useMemo } from 'react';
 import s from './BridgeLabDemo.module.css';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
+import { icon } from '../icons.gen';
 
 const FEATURES = ['draw', bridgePreset] as const;
 
@@ -81,8 +82,8 @@ const bridgeInstrument = defineInstrument<State, Config>({
   undo: {},
   tools: {
     tools: [
-      { id: 'select', label: 'Select', icon: SelectIcon, shortcut: 'V' },
-      { id: 'pen', label: 'Pen', icon: PenIcon, shortcut: 'P' },
+      { id: 'select', label: 'Select', icon: icon('core:select'), shortcut: 'V' },
+      { id: 'pen', label: 'Pen', icon: icon('core:pen'), shortcut: 'P' },
     ],
   },
   render: (ctx) => <BridgeTrial ctx={ctx} />,

@@ -4,6 +4,7 @@ import { Icon } from '../../icons';
 import { ToolButton } from '../ToolButton';
 import { PrefsDialog } from '../Prefs';
 import { setAtPath } from '../SelectionPanel';
+import { icon } from '../../icons.gen';
 
 /** The editor's own settings, as the schema a host opens a prefs store over to keep them. */
 export const PREF_SCHEMA_EDITOR_PREFS = {
@@ -98,7 +99,7 @@ export function EditorPrefsButton({ prefs }: { prefs: EditorPrefs }) {
   const [open, setOpen] = useState(false);
   return (
     <>
-      <ToolButton icon={<Icon name="tune" />} label="Preferences" onClick={() => setOpen(true)} />
+      <ToolButton icon={<Icon name={icon('core:tune')} />} label="Preferences" onClick={() => setOpen(true)} />
       <PrefsDialog isOpen={open} onOpenChange={setOpen} layout="list" schema={PREF_SCHEMA_EDITOR_PREFS} values={prefs.values} onChange={prefs.set} />
     </>
   );

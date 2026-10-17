@@ -6,21 +6,21 @@
 import { simplifyPath } from '@weasel-js/geom';
 import { offsetPath } from '@weasel-js/stroke';
 import type { Op } from 'core/ops/types';
-import { OffsetPathIcon, SimplifyIcon } from '../defaults/icons/pathIcons';
 import { livePathEdit } from './livePathEdit';
 import { insertAt, pathCopy, reshapeOps, slotOf } from './pathNodes';
+import { icon } from '../../../icons.gen';
 
 /** Simplify's tolerance when none is given: world units off the original. */
 export const DEFAULT_SIMPLIFY_TOLERANCE = 1;
 
 /**
- * @experimental Refit each selected path with as few anchors as keep it
+ * Refit each selected path with as few anchors as keep it
  * within `params.tolerance` of where it was (`simplifyPath`).
  */
 export const simplifyPathAction = livePathEdit({
   id: 'simplifyPath',
   label: 'Simplify',
-  icon: SimplifyIcon,
+  icon: icon('simplify'),
   param: 'tolerance',
   initial: DEFAULT_SIMPLIFY_TOLERANCE,
   edit: ({ path }, tolerance) => simplifyPath(path, Math.max(tolerance, 0)),
@@ -28,7 +28,7 @@ export const simplifyPathAction = livePathEdit({
 });
 
 /**
- * @experimental Add, beside each selected path, the outline of the region it
+ * Add, beside each selected path, the outline of the region it
  * fills grown by `params.distance` (shrunk by a negative one), with
  * `params.join` corners (`offsetPath`). A grown outline goes behind its
  * source and a shrunk one in front, so neither hides the other; the new
@@ -37,7 +37,7 @@ export const simplifyPathAction = livePathEdit({
 export const offsetPathAction = livePathEdit({
   id: 'offsetPath',
   label: 'Offset Path',
-  icon: OffsetPathIcon,
+  icon: icon('offsetPath'),
   param: 'distance',
   initial: 0,
   overlaysSource: true,

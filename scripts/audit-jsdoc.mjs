@@ -177,7 +177,6 @@ for (const name of packageDirs) {
           definedIn: relative(ROOT, file).split('/')[1] ?? '?',
           documented: doc.length > 0,
           internal: /@internal\b/.test(doc),
-          experimental: /@experimental\b/.test(doc),
         };
         records.push(record);
         total += 1;
@@ -217,16 +216,15 @@ if (listUndocumented) {
 const pad = (s, n) => String(s).padEnd(n);
 const byPkg = new Map();
 for (const r of sites) {
-  const e = byPkg.get(r.definedIn) ?? { total: 0, undocumented: 0, internal: 0, experimental: 0 };
+  const e = byPkg.get(r.definedIn) ?? { total: 0, undocumented: 0, internal: 0 };
   e.total += 1;
   if (!r.documented) e.undocumented += 1;
   if (r.internal) e.internal += 1;
-  if (r.experimental) e.experimental += 1;
   byPkg.set(r.definedIn, e);
 }
-console.log(`${pad('defined in', 14)}${pad('exports', 9)}${pad('undocumented', 14)}${pad('@internal', 11)}@experimental`);
+console.log(`${pad('defined in', 14)}${pad('exports', 9)}${pad('undocumented', 14)}@internal`);
 for (const [name, e] of [...byPkg].sort()) {
-  console.log(`${pad(name, 14)}${pad(e.total, 9)}${pad(e.undocumented, 14)}${pad(e.internal, 11)}${e.experimental}`);
+  console.log(`${pad(name, 14)}${pad(e.total, 9)}${pad(e.undocumented, 14)}${e.internal}`);
 }
 const undoc = sites.filter((r) => !r.documented).length;
 console.log(`\n${sites.length} public exports (unique definition sites), ${undoc} undocumented (${sites.length ? Math.round((undoc / sites.length) * 100) : 0}%)`);

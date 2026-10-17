@@ -1,5 +1,4 @@
 /**
- * @experimental
  * `ingest` — routes externally-arrived content (OS drop, clipboard paste,
  * file picker / `CanvasExtensionApi.ingest`) through the content-handler
  * registry (`features/ingestion/contentHandlers`).
@@ -37,7 +36,6 @@ export const ANY_INGEST_MODS = {
 export const INGEST_REQUIRES = ['scene', 'selection', 'insert', 'applyOps', 'ingestion'] as const;
 
 /**
- * @experimental
  * Route one drop or paste event's dispatcher params through the content
  * handlers: builds the `IngestCtx` from the action's deps and calls
  * `runIngest`. `opts` is `runIngest`'s, so an action accepting only some

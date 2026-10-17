@@ -1,7 +1,7 @@
 /**
  * A `<SceneCanvas clientToWorld>` override reaches every conversion the
- * component makes for its own view: the dispatcher's, the published pointer
- * position, and hover.
+ * component makes for its own view: the dispatcher's world and canvas-local
+ * points, the published pointer position, and hover.
  */
 import { describe, it, expect, vi, beforeAll, afterEach } from 'vitest';
 import { createElement } from 'react';
@@ -9,6 +9,7 @@ import { act, cleanup } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { createModeRegistry, DEFAULT_MODES } from '@weasel-js/modes';
 import type { RuleCtx } from '@weasel-js/routing';
+import type { UseGestureDispatcherOptions } from '@weasel-js/routing/react';
 import { PointerContextProvider, createPointerStore } from '@weasel-js/routing/react';
 import { createScene } from 'core/scene/scene';
 import { asNodeId } from 'core/scene/types';
@@ -16,7 +17,21 @@ import { SceneCanvas } from './SceneCanvas';
 
 type P = { x: number; y: number; width: number; height: number };
 
-const seen: { getRuleCtx: (() => RuleCtx | undefined) | undefined } = { getRuleCtx: undefined };
+const seen: {
+  getRuleCtx: (() => RuleCtx | undefined) | undefined;
+  clientToLocal: UseGestureDispatcherOptions['clientToLocal'];
+} = { getRuleCtx: undefined, clientToLocal: undefined };
+
+vi.mock('@weasel-js/routing/react', async (importOriginal) => {
+  const real = await importOriginal<typeof import('@weasel-js/routing/react')>();
+  return {
+    ...real,
+    useGestureDispatcher: (opts: UseGestureDispatcherOptions) => {
+      seen.clientToLocal = opts.clientToLocal;
+      real.useGestureDispatcher(opts);
+    },
+  };
+});
 
 vi.mock('./SceneCanvas/GestureDispatcherMounter', async (importOriginal) => {
   const real = await importOriginal<typeof import('./SceneCanvas/GestureDispatcherMounter')>();
@@ -90,6 +105,11 @@ describe('<SceneCanvas clientToWorld>', () => {
     fire('pointerup');
     expect(onClick).toHaveBeenCalledTimes(1);
     expect(onClick.mock.calls[0]![0]).toMatchObject({ id: ID });
+  });
+
+  it('hands the dispatcher a canvas-local point through the override', () => {
+    mount();
+    expect(seen.clientToLocal!(CLIENT.x, CLIENT.y)).toEqual({ x: 150, y: 125 });
   });
 
   it('publishes the pointer position converted with the override', () => {

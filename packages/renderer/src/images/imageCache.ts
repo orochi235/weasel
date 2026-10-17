@@ -275,6 +275,7 @@ function maybeReraster(src: string, entry: Entry, v: VectorRaster, drawnAt: Imag
  *  power-of-two steps — the current raster is returned until the sharper one
  *  is ready. Raster sources ignore it. */
 export function getImageBitmap(src: string, drawnAt?: ImageRasterSize): ImageBitmap | undefined {
+  if (src.startsWith(BITMAP_SCHEME)) return held.get(src)?.deref();
   const entry = cache.get(src);
   if (!entry) {
     startLoad(src);
@@ -285,8 +286,39 @@ export function getImageBitmap(src: string, drawnAt?: ImageRasterSize): ImageBit
   return entry.bitmap;
 }
 
+const BITMAP_SCHEME = 'weasel-bitmap:';
+let held = new Map<string, WeakRef<ImageBitmap>>();
+let srcOfBitmap = new WeakMap<ImageBitmap, string>();
+let minted = 0;
+const forget = new FinalizationRegistry<string>((src) => {
+  if (held.get(src)?.deref() === undefined) held.delete(src);
+});
+
+/**
+ * A `src` that names `bitmap` itself, for an image node to draw a bitmap made
+ * at runtime — a canvas snapshot, a frame of video — with no load. The same
+ * bitmap always gets the same `src`, so a node handed it again changes no
+ * data and its texture is not uploaded again. A bitmap is immutable, so that
+ * identity is its content: new pixels are a new bitmap and a new `src`.
+ *
+ * The cache holds the bitmap weakly and never drops it to fit its budget;
+ * whoever made it keeps it alive while it is drawn. {@link releaseImage}
+ * frees its textures at once and retires the name, which never loads.
+ */
+export function bitmapSrc(bitmap: ImageBitmap): string {
+  let src = srcOfBitmap.get(bitmap);
+  if (src === undefined) {
+    src = `${BITMAP_SCHEME}${++minted}`;
+    srcOfBitmap.set(bitmap, src);
+    held.set(src, new WeakRef(bitmap));
+    forget.register(bitmap, src, bitmap);
+  }
+  return src;
+}
+
 /** Current load status for `src` (`'idle'` if never requested). */
 export function imageStatus(src: string): ImageStatus {
+  if (src.startsWith(BITMAP_SCHEME)) return getImageBitmap(src) === undefined ? 'idle' : 'ready';
   return cache.get(src)?.status ?? 'idle';
 }
 
@@ -298,6 +330,13 @@ export function imageStatus(src: string): ImageStatus {
  * same `src` loads it again.
  */
 export function releaseImage(src: string): void {
+  const bitmap = held.get(src)?.deref();
+  held.delete(src);
+  if (bitmap !== undefined) {
+    srcOfBitmap.delete(bitmap);
+    forget.unregister(bitmap);
+    releaseImageSource(bitmap);
+  }
   const entry = cache.get(src);
   cache.delete(src);
   decodedVectors.delete(src);
@@ -328,6 +367,8 @@ export function __setImageLoaderForTests(fn: Loader): void {
  *  loader. Not part of the public barrel. */
 export function _resetImageCacheForTests(): void {
   cache.clear();
+  held = new Map();
+  srcOfBitmap = new WeakMap();
   ready = createEmitter();
   decodedVectors.clear();
   loader = defaultLoader;

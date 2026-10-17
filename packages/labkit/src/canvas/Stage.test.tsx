@@ -1,5 +1,6 @@
 import { act, fireEvent, screen, within } from '@testing-library/react';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
+import { withIcons } from '@weasel-js/ui/testing/withIcons';
 import { useState } from 'react';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { defineInstrument } from '../instrument/defineInstrument';
@@ -57,6 +58,7 @@ describe('<Stage>', () => {
       >
         <div data-testid="art" />
       </Stage>,
+      { wrapper: withIcons },
     );
     const el = content(container);
     expect(el).toContainElement(screen.getByTestId('art'));
@@ -76,7 +78,7 @@ describe('<Stage>', () => {
         </Stage>
       );
     }
-    const { container } = await renderSettled(<Host />);
+    const { container } = await renderSettled(<Host />, { wrapper: withIcons });
     const host = container.querySelector('.lk-stage');
     if (!host) throw new Error('no stage');
     fireEvent.wheel(host, { deltaY: -200, clientX: 0, clientY: 0 });
@@ -97,7 +99,7 @@ describe('<Stage>', () => {
         </CameraWheelContext.Provider>
       );
     }
-    const { container } = await renderSettled(<Host />);
+    const { container } = await renderSettled(<Host />, { wrapper: withIcons });
     const original = new WheelEvent('wheel', { deltaY: -200, cancelable: true });
     await act(async () => {
       slot.current?.(original);
@@ -120,6 +122,7 @@ describe('<Stage>', () => {
       >
         <div />
       </Stage>,
+      { wrapper: withIcons },
     );
     const host = container.querySelector('.lk-stage');
     const wheel = add.mock.calls.filter(
@@ -143,7 +146,9 @@ describe('<Stage>', () => {
         </Stage>
       </SurfaceContext.Provider>
     );
-    const { rerender } = await renderSettled(at({ zoom: 1, pan: { x: 0, y: 0 } }));
+    const { rerender } = await renderSettled(at({ zoom: 1, pan: { x: 0, y: 0 } }), {
+      wrapper: withIcons,
+    });
     invalidateRects.mockClear();
     rerender(at({ zoom: 1.5, pan: { x: 0, y: 0 } }));
     expect(invalidateRects).toHaveBeenCalled();
@@ -169,6 +174,7 @@ describe('an instrument that declares a stage', () => {
   it('renders its DOM on the stage', async () => {
     const { container } = await renderSettled(
       <Lab instruments={[staged]} defaultInstrument="Staged" />,
+      { wrapper: withIcons },
     );
     expect(content(container)).toContainElement(screen.getByTestId('art'));
   });
@@ -176,6 +182,7 @@ describe('an instrument that declares a stage', () => {
   it('gets the zoom controls, and they move the stage', async () => {
     const { container } = await renderSettled(
       <Lab instruments={[staged]} defaultInstrument="Staged" />,
+      { wrapper: withIcons },
     );
     const trialView = within(screen.getByRole('toolbar', { name: 'View' }));
     await act(async () => {
@@ -203,6 +210,7 @@ describe('an instrument that declares a stage', () => {
     try {
       const { container } = await renderSettled(
         <Lab instruments={[staged]} defaultInstrument="Staged" />,
+        { wrapper: withIcons },
       );
       const trialView = within(screen.getByRole('toolbar', { name: 'View' }));
       await act(async () => {
@@ -219,7 +227,9 @@ describe('an instrument that declares a stage', () => {
   });
 
   it('is what earns them: DOM content without one gets none', async () => {
-    await renderSettled(<Lab instruments={[plain]} defaultInstrument="Plain" />);
+    await renderSettled(<Lab instruments={[plain]} defaultInstrument="Plain" />, {
+      wrapper: withIcons,
+    });
     expect(screen.queryByRole('toolbar', { name: 'View' })).toBeNull();
   });
 
@@ -236,6 +246,7 @@ describe('an instrument that declares a stage', () => {
     });
     const { container } = await renderSettled(
       <Lab instruments={[overlaid]} defaultInstrument="Overlaid" />,
+      { wrapper: withIcons },
     );
     const legend = screen.getByTestId('legend');
     expect(legend).toHaveTextContent('7');

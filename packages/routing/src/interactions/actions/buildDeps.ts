@@ -8,16 +8,11 @@
 import type { Action } from './action';
 import type { DepRegistry } from './depNode';
 import type { ActionDeps } from './invoker';
+import { isDev } from '@weasel-js/react';
 
 /** True in dev builds; false in production. Tree-shakes the Proxy out of
  *  prod entirely. (Mirrors the dispatcher's own `DEV` const.) */
-const DEV: boolean = (() => {
-  try {
-    return Boolean((import.meta as unknown as { env?: { DEV?: boolean } }).env?.DEV);
-  } catch {
-    return false;
-  }
-})();
+const DEV = isDev();
 
 /** Build the deps bag for an action from its declared `requires`. */
 export function buildDepsFromRequires(action: Action, depRegistry: DepRegistry): ActionDeps {

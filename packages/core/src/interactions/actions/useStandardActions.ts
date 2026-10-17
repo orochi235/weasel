@@ -1,5 +1,4 @@
 /**
- * @experimental
  * `useStandardActions` — register the kit-standard action descriptors into the
  * nearest `<ActionsProvider>` and publish dep sources into the nearest
  * `<DepRegistryProvider>`. Falls back silently to a no-op when either is
@@ -9,7 +8,7 @@ import type { Action } from '@weasel-js/routing';
 import { KIT_STANDARD_ACTIONS } from '../../canvas/SceneCanvas/namedPresets';
 import { useActionSet, useStandardDeps, type StandardDeps } from './useActionSet';
 
-/** @experimental */
+/** Options for `useStandardActions`: which actions to register, and the deps they read. */
 export interface UseStandardActionsOptions extends StandardDeps {
   /**
    * The actions to register, in order. Default: every kit-standard action
@@ -30,7 +29,6 @@ export interface UseStandardActionsOptions extends StandardDeps {
 export const KIT_STANDARD_ACTION_IDS: readonly string[] = KIT_STANDARD_ACTIONS.map((a) => a.id);
 
 /**
- * @experimental
  * Register each kit-standard dep source and action descriptor into the
  * surrounding `<ActionsProvider>` and `<DepRegistryProvider>` (typically
  * provided by `<SceneCanvas>`); a silent no-op when either is absent.

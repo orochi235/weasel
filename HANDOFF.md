@@ -17,6 +17,25 @@ value held once per option of an enum leaf, folded by weight when read, and edit
 `prefsCss` writes such a store as CSS custom properties, and `pref` builds a schema in short
 form. The arc after them is a P2 entry in `docs/TODO.md`: a theme's tokens as a prefs schema.
 
+## Menus: done
+
+All of the menus design has landed: `MenuBar` with access letters, `MenuButton` on the menu
+renderer, WeaselDraw's menu bar and file actions, and labkit's lab-wide registry, menu bar and
+context menus. The decisions that are not visible in the code are in
+`packages/menu/README.md` ("Decisions"); what is left is filed in `docs/TODO.md` (search
+"menu bar", "parametric", "labkit context menus"). Nothing here is pushed.
+
+How subagent work ran, for the next arc run this way:
+
+- Run the controller from outside a worktree (`ExitWorktree` first). A session inside one locks
+  every subagent to it, and the SDD skill's helper scripts are refused there; outside, each
+  implementer works in its arc's worktree by absolute path.
+- Targeted tests run on a node, never here: `onto do --node <name> --ref origin/main -- npx
+  vitest run --project=<p> <path>`. `npm run check:test-projects` maps directories to projects.
+- `onto` keeps one tree per repository per node, so give each parallel arc its own node (teitou,
+  studio, msb-uai, keiei; orochi is this Mac), and keep a full `npm run test:fleet` off a node an
+  arc is testing on: they queue behind each other, and a timing-budget test run alongside fails.
+
 ## Next
 
 1. Everything on the 2026-10-13 never-run list ran on 2026-10-15 and passes, `npm run build:api`
@@ -37,6 +56,7 @@ form. The arc after them is a P2 entry in `docs/TODO.md`: a theme's tokens as a 
 
 Passed its tests and was never looked at. Delete a line when someone has.
 
+- Menus: the menu bar's pointer and keyboard behavior in real Chrome and Safari, Option+letter on macOS, `MenuButton` on the new renderer in `LabSwitcher` (link rows) and `CommandBar` (with a tooltip), the `.frame:focus-visible` ring on button frames, and a link row released with Cmd held after a long press-drag (it calls `window.open` from a pointerup, which a browser may block as a popup).
 - Renderer: the `u_origin` shader path for large translations, the `a_position` pin, skewed text
   and images, the glyph atlas reclaim, an emoji at any size, and the split SVG export.
 - Canvas: the size a kit canvas takes from core's stylesheet, in `apps/draw` and the site's demos;
@@ -76,6 +96,9 @@ Passed its tests and was never looked at. Delete a line when someone has.
   Simplify and Offset sliders' previews, Cut at Crossings, Join and Average, Cmd+D after a move,
   rotate, resize, and a duplicate-and-move, Space during a shape drag, and a star's Points and
   Inner rows in the inspector.
+- Menus, 2026-10-16: a bar's menu flipping above its button near the viewport bottom, the WebGL
+  menu placed under a rect, and a menu asset previewing open in the asset editor without taking
+  focus while a row is renamed.
 - By ear: the music bed's level, and whether each cue in the `score` demo reads as its name.
 
 ## Weak evidence

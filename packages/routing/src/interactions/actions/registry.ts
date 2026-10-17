@@ -1,5 +1,4 @@
 /**
- * @experimental
  * The actions store contract and the `actions` prop that seeds it. The
  * provider that implements this lives in `ActionsProvider.tsx`; nothing here
  * touches React.
@@ -17,20 +16,17 @@ export type { UiOngoingControl } from '../dispatcher/dispatcher';
 
 
 /**
- * @experimental
  * Partial override or full descriptor passed via `<SceneCanvas actions={...}>`.
  * `null` disables a default at this id.
  */
 export type ActionEntry = null | Partial<Action> | Action;
 
 /**
- * @experimental
  * Shape of the `actions` prop on `<SceneCanvas>`. `null` disables all defaults.
  */
 export type ActionsProp = null | Record<string, ActionEntry>;
 
 /**
- * @experimental
  * Imperative API exposed by `useActionsRegistry()`.
  */
 export interface ActionsRegistry {

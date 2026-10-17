@@ -14,7 +14,7 @@ import type { HotkeyTrigger } from './types';
 import { assembleEntries } from './assemble';
 import { liveScope } from './eligibility';
 import type { Contribution, OverlayPosition } from './types';
-import { isDev } from '../devFlag';
+import { isDev } from '@weasel-js/react';
 import { sameList, useStableByContent } from '@weasel-js/react';
 import type { KernelOverlay } from '../index';
 

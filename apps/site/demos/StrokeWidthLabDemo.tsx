@@ -2,15 +2,15 @@ import {
   asNodeId, boundsOfPath, createScene, type Path, PathBuilder, pathInWorld, type RectPose, type RenderLayer, type Scene,
   solid, type Stroke,
 } from '@weasel-js/core';
-import { GirthIcon, useGirthTool } from '@weasel-js/path-tools';
+import { useGirthTool } from '@weasel-js/path-tools';
 import { strokeToPath } from '@weasel-js/stroke';
 import {
   type ConfigOf, defineInstrument, f, Lab, type RenderContext, type SceneTrialState, TrialSceneCanvas, useTrialScene,
 } from '@weasel-js/labkit';
-import { SelectIcon } from '@weasel-js/ui';
 import { useEffect, useMemo, useRef } from 'react';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
+import { icon } from '../icons.gen';
 
 const config = f.schema({
   width: f.number(14).range(1, 40).step(1).suffix('px').label('Base width'),
@@ -141,8 +141,8 @@ const widthInstrument = defineInstrument<State, Config>({
   undo: {},
   tools: {
     tools: [
-      { id: 'select', label: 'Select', icon: SelectIcon, shortcut: 'V' },
-      { id: 'girth', label: 'Girth', icon: GirthIcon, shortcut: 'Shift+W' },
+      { id: 'select', label: 'Select', icon: icon('core:select'), shortcut: 'V' },
+      { id: 'girth', label: 'Girth', icon: icon('path-tools:girth'), shortcut: 'Shift+W' },
     ],
     initial: 'girth',
   },

@@ -21,12 +21,12 @@ import {
   useTrialScene,
 } from '@weasel-js/labkit';
 import { CORNER_CONTROLS, cornerShapePreset, type CornerControlsSelection } from '@weasel-js/path-tools';
-import { PenIcon, SelectIcon } from '@weasel-js/ui';
 import { useMemo, useState } from 'react';
 import { CornerPanel } from './CornerShapePanel';
 import s from './CornerShapeLabDemo.module.css';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
+import { icon } from '../icons.gen';
 
 // The corner controls read the selection, so they sit over the canvas
 // rather than in the trial's config.
@@ -128,8 +128,8 @@ const cornersInstrument = defineInstrument<State, Config>({
   undo: {},
   tools: {
     tools: [
-      { id: 'select', label: 'Select', icon: SelectIcon, shortcut: 'V' },
-      { id: 'pen', label: 'Pen', icon: PenIcon, shortcut: 'P' },
+      { id: 'select', label: 'Select', icon: icon('core:select'), shortcut: 'V' },
+      { id: 'pen', label: 'Pen', icon: icon('core:pen'), shortcut: 'P' },
     ],
   },
   render: (ctx) => <CornersTrial ctx={ctx} />,

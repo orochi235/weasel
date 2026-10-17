@@ -15,6 +15,9 @@
     },
     "./package.json": "./package.json"
   },
+  "dependencies": {
+    "@weasel-js/menu": "1.10.1"
+  },
   "author": "orochi235",
   "homepage": "https://orochi235.github.io/weasel/",
   "repository": {

@@ -1,6 +1,7 @@
 import { act, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
+import { withIcons } from '@weasel-js/ui/testing/withIcons';
 import { useEffect } from 'react';
 import { describe, expect, it } from 'vitest';
 import type { TrialContribution } from '../chrome/types';
@@ -40,6 +41,7 @@ const pinned: TrialContribution = {
 async function renderLab() {
   return renderSettled(
     <Lab title="T" instruments={[bare]} defaultInstrument="Bare" chrome={[notes]} />,
+    { wrapper: withIcons },
   );
 }
 
@@ -75,6 +77,7 @@ describe('undocking a sidebar section', () => {
   it('sends a section declaring undockAs floating to the floating layer', async () => {
     const { container } = await renderSettled(
       <Lab title="T" instruments={[bare]} defaultInstrument="Bare" chrome={[floater]} />,
+      { wrapper: withIcons },
     );
     await userEvent.click(screen.getByRole('button', { name: 'Undock Floater' }));
 
@@ -94,6 +97,7 @@ describe('undocking a sidebar section', () => {
     const counted: Instrument = { ...bare, render: () => <Counted /> };
     await renderSettled(
       <Lab title="T" instruments={[counted]} defaultInstrument="Bare" chrome={[floater]} />,
+      { wrapper: withIcons },
     );
     expect(mounts).toBe(1);
     await userEvent.click(screen.getByRole('button', { name: 'Undock Floater' }));
@@ -104,6 +108,7 @@ describe('undocking a sidebar section', () => {
   it('offers no tear-out control on a section that opts out', async () => {
     await renderSettled(
       <Lab title="T" instruments={[bare]} defaultInstrument="Bare" chrome={[pinned]} />,
+      { wrapper: withIcons },
     );
     expect(screen.queryByRole('button', { name: 'Undock Pinned' })).toBeNull();
   });
@@ -124,6 +129,7 @@ describe('undocking a sidebar section', () => {
         <Lab title="T" instruments={[bare]} defaultInstrument="Bare" chrome={[notes]}>
           {capture}
         </Lab>,
+        { wrapper: withIcons },
       );
       await act(async () => lab?.addTrial('Bare'));
       const [undock] = screen.getAllByRole('button', { name: 'Undock Notes' });

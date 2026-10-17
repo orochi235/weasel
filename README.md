@@ -8,13 +8,13 @@ Built for diagram editors, sketch tools, schematic editors, scene composers — 
 
 - Pointer interactions: move, resize, rotate, insert, clone, area-select, lasso, path-anchor editing, text edit
 - Op-based scene mutation with undo/redo and coalescing
-- A registry of actions with default key and gesture bindings, each one overridable by id (`@experimental`)
+- A registry of actions with default key and gesture bindings, each one overridable by id
 - Layered canvas rendering with debug overlays
 - Rect, rotated and path poses; first-class compound paths; nested containers
 - Viewport with zoom/pan tools, momentum, and boundary clamping
 - Detached read-only scene views and navigation minimap (`<SceneViewCanvas>`, `<MinimapCanvas>`)
 - WebGL2 renderer with MSDF text, gradients, patterns, and per-vertex colors
-- Custom fragment shaders via `registerProgram` (`@experimental`)
+- Custom fragment shaders via `registerProgram`
 
 ## Install
 
@@ -143,7 +143,7 @@ Core doesn't ship a prebuilt atlas — bake one from a weasel checkout with `npm
 
 `registerFont` lives in `@weasel-js/font` and is re-exported from core. An unregistered family renders in the default family with a one-time warning — see that package's README for `setFontFallbackPolicy`.
 
-## Custom shaders (`@experimental`)
+## Custom shaders
 
 A render layer can draw with its own fragment shader. Register the program once, then return a `kind: 'shader'` draw command with its uniforms and bounds:
 
@@ -194,12 +194,14 @@ Every package is published under `@weasel-js` and released together at one versi
 |---|---|---|
 | `core` | <img src="docs/badges/react.svg" width="20" height="20" alt="Needs React" title="Needs React"><img src="docs/badges/dom.svg" width="20" height="20" alt="Needs a browser: document, window or navigator" title="Needs a browser: document, window or navigator"><img src="docs/badges/webgl2.svg" width="20" height="20" alt="Draws with WebGL2" title="Draws with WebGL2"> | the scene graph, `<SceneCanvas>`, actions, and tools |
 | `geom` | <img src="docs/badges/standalone.svg" width="20" height="20" alt="Depends on no other weasel package" title="Depends on no other weasel package"> | pure 2D geometry — affine, box, curve, polyline; polygon booleans under `./booleans` |
-| `gestures` | <img src="docs/badges/dom.svg" width="20" height="20" alt="Needs a browser: document, window or navigator" title="Needs a browser: document, window or navigator"><img src="docs/badges/standalone.svg" width="20" height="20" alt="Depends on no other weasel package" title="Depends on no other weasel package"> | the gesture taxonomy, route grammars and matchers |
+| `gestures` | <img src="docs/badges/dom.svg" width="20" height="20" alt="Needs a browser: document, window or navigator" title="Needs a browser: document, window or navigator"> | the gesture taxonomy, route grammars and matchers |
 | `history` |  | undo/redo with scoped sub-histories |
 | `routing` | <img src="docs/badges/react.svg" width="20" height="20" alt="Needs React" title="Needs React"><img src="docs/badges/dom.svg" width="20" height="20" alt="Needs a browser: document, window or navigator" title="Needs a browser: document, window or navigator"> | binding-to-action routing: the gesture dispatcher, the action registry, tool and contribution declaration |
 | `select` |  | selection as a value: which ids a press selects, with toggle, range and anchor rules |
 | `menu` | <img src="docs/badges/standalone.svg" width="20" height="20" alt="Depends on no other weasel package" title="Depends on no other weasel package"> | the headless model behind context menus: entries, a controller for highlight, submenus, keyboard and typeahead, and placement |
 | `registry` | <img src="docs/badges/standalone.svg" width="20" height="20" alt="Depends on no other weasel package" title="Depends on no other weasel package"> | keyed registries you can enumerate and subscribe to |
+| `icons` |  | namespaced icon names and the icon registry; no React, no DOM, no glyphs of its own |
+| `icons-plugin` |  | the build plugin that ships only the glyphs a build names, for vite, rollup, rolldown and esbuild |
 | `react` | <img src="docs/badges/react.svg" width="20" height="20" alt="Needs React" title="Needs React"><img src="docs/badges/dom.svg" width="20" height="20" alt="Needs a browser: document, window or navigator" title="Needs a browser: document, window or navigator"> | generic React hooks the other packages share: `useLatest`, `useStableByContent`, `useVisibleRaf` |
 | `paint` | <img src="docs/badges/standalone.svg" width="20" height="20" alt="Depends on no other weasel package" title="Depends on no other weasel package"> | fills, strokes, gradients and dashes as plain data |
 | `stroke` |  | a stroke as geometry: the ribbon mesh, the marker registry, and a stroke outlined as a path |

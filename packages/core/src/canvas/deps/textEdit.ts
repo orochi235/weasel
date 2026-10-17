@@ -6,7 +6,7 @@
  * `useSceneTextEdit` instance.
  */
 import { useDepSource } from '@weasel-js/routing/react';
-import { useLatest } from '@weasel-js/react';
+import { useLatest, isDev } from '@weasel-js/react';
 import type { TextEditDep } from 'interactions/actions/depSchema';
 import type { Scene, NodeId } from 'core/scene/types';
 import { isTextData } from '@weasel-js/text';
@@ -20,7 +20,7 @@ export function useTextEditDepSource(
     const sc = sceneRef.current;
     return {
       startEdit(_id: string, _opts?: { caret?: number | 'all' }) {
-        if (process.env.NODE_ENV !== 'production') {
+        if (isDev()) {
           console.warn(
             'weasel textEditDep: startEdit called but no useTextEdit hook is mounted in SceneCanvas. ' +
             'Override the "textEdit" dep via useDepSource("textEdit", ...) to enable in-place text editing.',

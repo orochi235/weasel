@@ -1,4 +1,5 @@
 import { createHistory } from '@weasel-js/core';
+import { isDev } from '@weasel-js/react';
 import { useCallback, useMemo, useRef } from 'react';
 import { useStore } from 'zustand/react';
 import { resolveAutoConfig } from '../config/autoConfig';
@@ -79,7 +80,7 @@ export function useTrialWrites({
       const before = stored();
       if (!before) return;
       if (
-        process.env.NODE_ENV !== 'production' &&
+        isDev() &&
         !hasConfigPath(before.config as Record<string, unknown>, path) &&
         schemaNodeAtPath(schema.group, path) === undefined
       ) {

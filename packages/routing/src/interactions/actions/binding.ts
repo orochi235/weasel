@@ -27,7 +27,6 @@ export interface GestureBinding {
 export type BoundGesture = GestureSpec | { spec: GestureSpec; opts: BindingOpts };
 
 /**
- * @experimental
  * The whole of an action `actionBindings` reads. Routing needs this much and
  * none of `Action`'s palette fields, so it is the narrowest type the
  * dispatcher's binding walk can be written against.
@@ -45,7 +44,6 @@ export interface BindingSource {
 }
 
 /**
- * @experimental
  * Flatten an action's `defaultBinding` into `GestureBinding`s. A bare
  * `GestureSpec` has `kind` at top level; the object form has `spec`.
  */

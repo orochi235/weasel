@@ -66,7 +66,6 @@ export function translateSelection(
 }
 
 /**
- * @experimental
  * The nudge descriptor for one direction: bare arrow (magnitude='small') and
  * Shift+arrow (magnitude='big').
  */

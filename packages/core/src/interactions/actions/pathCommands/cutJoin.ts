@@ -16,19 +16,19 @@ import {
 } from './pathNodes';
 import { commitOps } from '../defaultCommitAdapter';
 import { pathOperationTags } from '../pathGestureTags';
-import { CutAtCrossingsIcon, JoinIcon } from '../defaults/icons/pathIcons';
+import { icon } from '../../../icons.gen';
 
 const CUT_LABEL = 'Cut at Crossings';
 
 /**
- * @experimental Cut every selected path wherever another selected path
+ * Cut every selected path wherever another selected path
  * crosses it (`snipPathsAtCrossings`): each cut path is replaced, in its
  * slot, by its pieces, which take its paint, and the pieces are selected.
  */
 export const snipAtCrossingsAction: Action & { requires: string[] } = {
   id: 'snipAtCrossings',
   label: CUT_LABEL,
-  icon: CutAtCrossingsIcon,
+  icon: icon('cutAtCrossings'),
   group: 'path',
   tags: pathOperationTags('command'),
   eligible: { capability: 'creates-shapes' },
@@ -136,14 +136,14 @@ export function joinPathsCommand(
 }
 
 /**
- * @experimental Join open paths: close a selected path's open end to its
+ * Join open paths: close a selected path's open end to its
  * start, or connect two selected paths at their nearest open ends into one
  * (`planJoin`). Ends that meet merge into one anchor; ends apart are bridged
  * straight. In path edit, `joinAnchors` joins the two selected anchors
  * instead.
  */
 export const joinPathsAction = joinPathsCommand(
-  { id: 'joinPaths', label: 'Join', icon: JoinIcon, defaultBinding: { kind: 'key', key: 'j', mods: { mod: true } } },
+  { id: 'joinPaths', label: 'Join', icon: icon('join'), defaultBinding: { kind: 'key', key: 'j', mods: { mod: true } } },
   () => ({}),
 );
 

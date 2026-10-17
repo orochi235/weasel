@@ -7,8 +7,7 @@ import { ActionDisabledReason } from '@weasel-js/routing';
 import { averageAnchorsAt, joinAnchorsAt, type AnchorSet, type AverageAxis, type JoinOptions } from '@weasel-js/geom';
 import { anchorEditWouldChange, commitAnchorEdit, depOf } from './anchorEditing';
 import { pathOperationTags } from '../pathGestureTags';
-import { AverageAnchorsIcon } from './icons/anchorIcons';
-import { JoinIcon } from './icons/pathIcons';
+import { icon } from '../../../icons.gen';
 
 type AnchorEdit = (set: AnchorSet, selected: number[]) => boolean;
 
@@ -18,14 +17,14 @@ const axisOf = (params: Record<string, unknown> | undefined): AverageAxis => {
 };
 
 /**
- * @experimental Move the selected anchors to their mean position:
+ * Move the selected anchors to their mean position:
  * `params.axis` `'both'` (the default) stacks them on one point, `'x'` lines
  * them up on one vertical, `'y'` on one horizontal.
  */
 export const averageAnchorsAction: Action & { requires: string[] } = {
   id: 'averageAnchors',
   label: 'Average anchors',
-  icon: AverageAnchorsIcon,
+  icon: icon('averageAnchors'),
   tags: pathOperationTags('command'),
   group: 'anchors',
   variants: [
@@ -63,7 +62,7 @@ export const joinSelectedAnchors = (options: JoinOptions): AnchorEdit => (set, s
 const join = joinSelectedAnchors({});
 
 /**
- * @experimental Join the two selected anchors, each the end of an open
+ * Join the two selected anchors, each the end of an open
  * subpath: the ends of one subpath close it, and ends of two make them one
  * (`joinAnchorsAt`). Joining renumbers the anchors, so the anchor selection
  * is cleared.
@@ -71,7 +70,7 @@ const join = joinSelectedAnchors({});
 export const joinAnchorsAction: Action & { requires: string[] } = {
   id: 'joinAnchors',
   label: 'Join anchors',
-  icon: JoinIcon,
+  icon: icon('join'),
   tags: pathOperationTags('command'),
   group: 'anchors',
   defaultBinding: { kind: 'key', key: 'j', mods: { mod: true } },

@@ -1,5 +1,6 @@
 import { act, fireEvent, screen } from '@testing-library/react';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
+import { withIcons } from '@weasel-js/ui/testing/withIcons';
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { TrialContribution } from '../chrome/types';
 import type { Instrument } from '../instrument/types';
@@ -61,6 +62,7 @@ describe('a lab with two trials', () => {
       <Lab instruments={[counter]} defaultInstrument="Counter" chrome={CHROME}>
         <CaptureLab />
       </Lab>,
+      { wrapper: withIcons },
     );
     await act(async () => lab?.addTrial('Counter'));
     const [first, second] = (lab?.trials ?? []).map((t) => t.id) as [string, string];
@@ -82,6 +84,7 @@ describe('a lab with two trials', () => {
       <Lab instruments={[counter]} defaultInstrument="Counter">
         <CaptureLab />
       </Lab>,
+      { wrapper: withIcons },
     );
     const [id] = (lab?.trials ?? []).map((t) => t.id) as [string];
     fireEvent.click(screen.getByRole('button', { name: `bump ${id}` }));
