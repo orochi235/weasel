@@ -1,10 +1,9 @@
 import type { ReactNode } from 'react';
-import { isPrefLeaf, isPrefSection, type PrefActions, type PrefAlias, type PrefLeaf } from '@weasel-js/prefs';
-import { Icon, type IconName } from '../../icons';
+import { isPrefLeaf, type PrefActions, type PrefAlias, type PrefLeaf } from '@weasel-js/prefs';
 import { Badge } from '../Badge';
 import { PrefKindBadge } from '../Prefs/PrefKindBadge';
 import type { TreeNode } from '../Tree';
-import { GROUP_ICON } from './Palette';
+import { nodeIcon } from './nodeIcon';
 import type { EditorAction } from './editorActions';
 import { drawnLeaf } from './pointers';
 import { childrenOf, joinPath, type SchemaNode, type SchemaRoot } from './schemaEdit';
@@ -48,9 +47,6 @@ function drawnActionRows(path: string, leaf: PrefActions, actions: readonly Edit
 /** Sets a drawn action's row id apart from every tree path, which holds no `#`. */
 const DRAWN_ACTION = '#';
 
-/** The glyph of an `actions` leaf's row, which groups the actions it draws as a group's row does its own. */
-const ACTIONS_ICON: IconName = 'bolt';
-
 /** The structure tree's rows for what `node` holds: each child's name before its key, a group's glyph and count, a leaf's kind, and the host's mark. `over` is the dialog a layout's pointers name settings in. An `actions` leaf holds a row for each of `actions` it draws. */
 export function toTreeNodes(node: SchemaNode, path: string | null, changed: ReadonlySet<string>, mark?: (path: string) => ReactNode, over?: SchemaRoot, actions?: readonly EditorAction[]): TreeNode[] {
   return Object.entries(childrenOf(node) ?? {}).map(([key, child]) => {
@@ -62,13 +58,12 @@ export function toTreeNodes(node: SchemaNode, path: string | null, changed: Read
     const named = nodeLabel(name, key);
     const label = changed.has(p) ? <span className={s.changed}>{named}</span> : named;
     const run = actions && isActionsLeaf(child) ? drawnActionRows(p, child, actions) : undefined;
-    // Unset, a group is drawn by its depth: a page under the root, a section below that.
-    const glyph = run ? ACTIONS_ICON : isPrefLeaf(child) ? undefined : GROUP_ICON[child.as ?? (path === null && !isPrefSection(child) ? 'page' : 'section')];
+    const glyph = run || !isPrefLeaf(child) ? nodeIcon(child, path === null) : null;
     return soughtRow({
       id: p,
       label: glyph ? label : leafLabel(label),
       ...(child.description ? { tooltip: child.description } : {}),
-      ...(glyph ? { leading: <Icon size={16} name={glyph} /> } : {}),
+      ...(glyph ? { leading: glyph } : {}),
       trailing: glyph
         // Its glyph says how a grouping is drawn, so it carries no badge to say it again.
         ? <>{mark?.(p)}{countBadge(leafCount([child], actions))}</>

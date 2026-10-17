@@ -99,6 +99,16 @@ describe('PrefSchemaEditor actions', () => {
     ]);
   });
 
+  it('draws the icon of the action an action pref fires beside its name, and none for a leaf with no icon', () => {
+    const withIcon = [{ ...ACTIONS[0]!, icon: <svg data-testid="undo-icon" /> }, ...ACTIONS.slice(1)];
+    render(<Live actions={withIcon} />);
+    const attributes = () => screen.getByRole('region', { name: 'Attributes' });
+    fireEvent.click(within(structure()).getByText('undo'));
+    expect(within(attributes()).getByTestId('undo-icon')).toBeInTheDocument();
+    fireEvent.click(within(structure()).getByText('flatten'));
+    expect(within(attributes()).queryByTestId('undo-icon')).toBeNull();
+  });
+
   it('holds a row under an actions pref for each action of its group, which takes no selection', () => {
     const run: PrefGroup = { name: 'Run', as: 'bar', children: { edit: { kind: 'actions', name: '', description: '', default: undefined, group: 'Edit' } } };
     render(<PrefSchemaEditor schema={run} onChange={() => {}} actions={ACTIONS} />);
