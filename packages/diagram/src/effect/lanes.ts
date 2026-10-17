@@ -1,10 +1,14 @@
 import type { MeasureRowText } from '../body';
-import { diagramScene, type DataNode, type DiagramRouter, type NodeStyle } from '../fromData';
+import {
+  diagramScene, edgeIdOf, LABEL_PLACEMENT, type DataEdge, type DataNode, type DiagramRouter, type DiagramSpec, type EdgeStyle, type NodeStyle,
+} from '../fromData';
+import { portSitesOf } from '../ports';
 import type { PortSpec } from '../types';
 import {
   boxNode, drawableWires, isControl, kindOf, sceneStyles, typeColors, uniqueGroups, uniqueStages, wireEdges,
   type DrawableWire, type EffectLook, type RunRowOptions, type TypeColor,
 } from './draw';
+import { clearLabel, laneWaypoints, routeOf, type Box, type LaneEnd, type LaneGrid } from './lanesRoutes';
 import { branchNode, type BranchChoice } from './symbols';
 import type { EffectPipeline, EffectPort, EffectStage } from './types';
 
@@ -45,7 +49,6 @@ export const laneId = (type: string): string => `~lane:${type}`;
 
 /** A stage's span: the first and last lane it touches. */
 type Span = readonly [number, number];
-type Box = { x: number; y: number; width: number; height: number };
 
 /** Lane types top down: `first` that the pipeline uses, then the rest in order of first appearance. */
 function laneTypes(stages: readonly EffectStage[], first: readonly string[] = []): string[] {
@@ -134,6 +137,50 @@ function laneNode(type: string, box: Box, color: TypeColor): DataNode {
   };
 }
 
+/** What `routeWires` reads of the laid-out chart. */
+interface Laid {
+  grid: Omit<LaneGrid, 'ink'>;
+  column: ReadonlyMap<string, number>;
+  router: DiagramRouter;
+  measure: MeasureRowText | undefined;
+}
+
+/** What a node draws: its box, and each of its rows and marks, some of which sit outside it. */
+const inkOf = (id: string, specs: readonly DiagramSpec[]): Box[] =>
+  specs.filter((s) => s.id === id || s.parent === id || String(s.id).startsWith(`${id}/mark:`)).map((s) => s.pose as Box);
+
+/** Each wire's edge, given the waypoints that keep it clear of the stages it
+ *  passes and, when it is labeled, a place for its label that covers none. */
+function routeWires(
+  wires: readonly { edge: DataEdge; style: EdgeStyle }[], nodes: readonly DataNode[], laid: Laid,
+): { edge: DataEdge; style: EdgeStyle }[] {
+  const specs = diagramScene({ nodes, edges: wires.map((w) => w.edge) }, {
+    layout: 'none', router: laid.router, ...(laid.measure !== undefined ? { measure: laid.measure } : {}),
+  });
+  const spec = new Map(specs.map((s) => [s.id as string, s]));
+  const ink = new Map(nodes.map((n) => [n.id, inkOf(n.id, specs)]));
+  const grid: LaneGrid = { ...laid.grid, ink: laid.grid.columns.map((_, c) => [...ink].flatMap(([id, b]) => (laid.column.get(id) === c ? b : []))) };
+  const keepOut = [...ink.values()].flat();
+  const offset = LABEL_PLACEMENT.offset ?? 0;
+  const end = (stage: string, port: string): LaneEnd => {
+    const s = spec.get(stage)!;
+    const site = portSitesOf({ id: stage, data: s.data } as never, s.pose, port)[0];
+    return { column: laid.column.get(stage)!, point: site?.point ?? { x: 0, y: 0 }, normal: site?.normal ?? null };
+  };
+  return wires.map(({ edge, style }) => {
+    const from = end(edge.from, edge.fromPort!);
+    const to = end(edge.to, edge.toPort!);
+    const waypoints = edge.from === edge.to ? undefined : laneWaypoints(grid, from, to);
+    const routed: DataEdge = waypoints === undefined ? edge : { ...edge, routed: waypoints };
+    const label = spec.get(`${edgeIdOf(edge)}/label`)?.pose as Box | undefined;
+    const path = label === undefined ? null : routeOf(spec.get(edge.from)!, edge.fromPort!, spec.get(edge.to)!, edge.toPort!, laid.router, waypoints);
+    const clear = path === null || label === undefined ? undefined : clearLabel(path, label, offset, keepOut);
+    if (clear === undefined) return { edge: routed, style };
+    keepOut.push(clear.box);
+    return { edge: { ...routed, labelPlacement: { at: { near: clear.near }, offset: clear.offset } }, style };
+  });
+}
+
 /** The lanes look: a horizontal lane per value type, and each stage standing
  *  across the lanes of the types it reads and writes, as tall as they are,
  *  its ports in their own lanes. A decision keeps its symbol's size, centered
@@ -191,7 +238,12 @@ export const lanes: EffectLook<LanesOptions> = (pipeline, options = {}) => {
     };
   });
   const laneNodes = rows.map((t, i) => laneNode(t, { x: 0, y: tops[i]!, width: right, height: heights[i]! }, color));
-  const edges = wireEdges(pipeline, color);
+  const router = options.router ?? 'bezier';
+  const grid = {
+    columns: Array.from(widths, (wd, c) => [lefts[c]!, lefts[c]! + (wd ?? 0)] as const),
+    edges: [...tops, tops.length === 0 ? 0 : tops[tops.length - 1]! + heights[heights.length - 1]!],
+  };
+  const edges = routeWires(wireEdges(pipeline, color), nodes, { grid, column, router, measure: options.measure });
   const styles = sceneStyles(stages, edges);
   const laneStyle = new Map(rows.map((t, i) => [laneId(t), LANE_STYLES[i % LANE_STYLES.length]!]));
 
@@ -199,7 +251,7 @@ export const lanes: EffectLook<LanesOptions> = (pipeline, options = {}) => {
     data: { nodes: [...laneNodes, ...nodes], edges: edges.map((e) => e.edge), groups: uniqueGroups(pipeline) },
     scene: {
       layout: 'none',
-      router: options.router ?? 'bezier',
+      router,
       ...(options.measure !== undefined ? { measure: options.measure } : {}),
       ...styles,
       nodeStyle: (n) => laneStyle.get(n.id) ?? styles.nodeStyle(n),

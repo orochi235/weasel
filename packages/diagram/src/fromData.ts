@@ -190,7 +190,8 @@ const FONT = { fontFamily: 'sans-serif', fontSize: 12 };
 const NODE: NodeStyle = { fill: '#16222c', stroke: '#7ba7c7', text: '#dbe7f2' };
 const EDGE: EdgeStyle = { stroke: '#7ba7c7' };
 const GROUP: NodeStyle = { fill: 'rgba(123, 167, 199, 0.08)', stroke: '#7ba7c7', text: '#9fbdd6', strokeWidth: 1, dash: [4, 3] };
-const LABEL_PLACEMENT: DiagramLabel = { at: 'mid', offset: 9 };
+/** Where an edge label sits when neither the edge nor the scene says. */
+export const LABEL_PLACEMENT: DiagramLabel = { at: 'mid', offset: 9 };
 const LINE = 1.4;
 const GLYPH = 0.6;
 const MIN_WIDTH = 64;
