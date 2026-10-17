@@ -359,9 +359,11 @@ Priority tags:
   `lengthenPathEnd` through `editAnchorSetTracked`, which counts the anchor set's subpaths. The two
   agree unless a path holds an empty subpath (a bare `M`); then the end extended is not the one
   picked (`packages/geom/src/paths/extendPath.ts`). Number them one way.
-- **(P2) Shape builder.** Drag across overlapping regions to merge them, Alt-drag to delete them.
-  `previewBooleanOp` already answers the pieces; the tool draws and picks among them. Building it
-  also gives "Live preview of a Boolean operation" below its display.
+- **(P3) Shape builder slows past a handful of selected paths.** `pathFacePieces`
+  (`packages/geom/src/booleans/ops.ts`) cuts one region per subset of the paths, so the faces
+  `useShapeBuilderTool` works on cost 2^N clipping runs: fine for the few shapes it is usually
+  given, unusable for a dozen. Tracing the arrangement of the outlines' edges once would give
+  the same faces at the cost of one overlay.
 - **(P2) Two kit key bindings are chords a browser takes first.** `createOutlines` is on
   Mod+Shift+O (Chrome's bookmark manager) and `averageAnchors` on Mod+Alt+J (Chrome's console),
   so neither fires there. `browserReservedBindings.test.ts` pins the pair, so a new collision
@@ -435,7 +437,7 @@ Priority tags:
 - **(P3) Create Outlines refuses synthetic-bold text.** `textToPath` answers `reason: 'synthetic-bold'`: emboldening it is a union with the glyphs' own outline stroke, but the width has to match what the renderer's distance-field shift (`SYNTH_BOLD_AMOUNT`, `packages/renderer/src/draw/text.ts`) draws. Read from `glyphCoverage` and `glyphFieldScale` (`packages/font/src/textSdf.ts`) and not measured against pixels: the shift moves the edge out by `SYNTH_BOLD_AMOUNT` of the field's span, which is `distanceRange` texels in a baked atlas and `SDF_RADIUS` in a runtime canvas page, and a texel is `1 / info.size` em, so the outline grows by `SYNTH_BOLD_AMOUNT × span / info.size` em on each side and differs by which tier serves the glyph. What is left: `textToPath` (`packages/text`) has no stroke outliner to call, since `strokeToPath` is in `@weasel-js/stroke`, which text does not depend on; the union flattens every curve of the glyph; and the result has to be compared with the field in a browser.
 - **(P3) Non-destructive boolean groups.** Figma-style "boolean group" container node that recomputes geometry from children at render time. Requires a new layer/scene-node type plus renderer support.
 - **(P3) True curve booleans.** The booleans flatten beziers before clipping (`packages/geom/src/booleans/adapter.ts`), so the result is straight-line. Skia/PathKit-style curve-preserving booleans are substantially harder.
-- **(P3) Live preview of a Boolean operation.** Seeing the result before committing: on hovering a Pathfinder button, or holding an op key over a path. `previewBooleanOp` answers the pieces an operation would make, each with its source and paint, and mints and commits nothing. What is left is everything that shows them: no Pathfinder action has a gesture or a key to hold, an action has no way to say what it would do while its button is hovered, and nothing draws paths that are not nodes over the scene.
+- **(P3) Live preview of a Boolean operation.** Seeing the result before committing: on hovering a Pathfinder button, or holding an op key over a path. `previewBooleanOp` answers the pieces an operation would make, each with its source and paint, and mints and commits nothing. `createPathOverlay` draws paths that are not nodes over the scene, as the shape builder shows its faces with. What is left is asking for them: no Pathfinder action has a gesture or a key to hold, and an action has no way to say what it would do while its button is hovered.
 
 ---
 - **(P3) draw's SVG files do not carry layers.** A saved file keeps paper size, title, groups, and

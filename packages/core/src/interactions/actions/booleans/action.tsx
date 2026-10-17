@@ -48,8 +48,8 @@ const ICON_FOR: Record<BooleanOp, ReactNode> = {
   merge: <MergeIcon />,
 };
 
-/** What a stroked operand gives the built-in Pathfinder actions. */
-const PATHFINDER_STROKES: BooleanStrokes = 'unfilled';
+/** What a stroked operand gives the built-in Pathfinder actions and the shape builder. */
+export const PATHFINDER_STROKES: BooleanStrokes = 'unfilled';
 
 // ---------------------------------------------------------------------------
 // Static descriptors

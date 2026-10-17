@@ -30,7 +30,7 @@ import {
   useLayoutDepSource,
   useNodeAtPointDepSource,
   usePoseDescriptorDepSource,
-  useSliceDepSource,
+  usePathLeafDepSources,
   useSnapDepSource,
   useSurfaceDepSources,
   useTextEditDepSource,
@@ -215,7 +215,7 @@ export function StandardActionsRegistrar({
   useNodeAtPointDepSource(pickEvery);
   useLayoutDepSource(scene, layoutDropTarget, reflowTransition);
   useInsertDepSource(scene, adapter, insertNodeFactories, insertPaint);
-  useSliceDepSource(scene, selection, adapter, poseDescriptor);
+  usePathLeafDepSources(scene, selection, adapter, poseDescriptor);
   useSnapDepSource(snap, currentViewRef);
   useDebugDepSource(canvasApiRef);
   useDepChangeNotices(scene, selection.current, editAnchorsExternalState);

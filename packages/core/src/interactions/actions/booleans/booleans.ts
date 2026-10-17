@@ -4,18 +4,13 @@
  * single batch of `Op`s (delete sources + insert results + set selection).
  */
 import type { Affine, Path } from '@weasel-js/geom';
-import { createInsertOp } from 'core/ops/create';
-import { createDeleteOp } from 'core/ops/delete';
-import { createSetSelectionOp } from 'core/ops/select';
-import { locateChild } from 'core/ops/slot';
 import type { Op } from 'core/ops/types';
 import type { NodeId } from 'core/scene/types';
-import { dispatchApplyBatch } from 'core/applyOps';
 import { TextOutlinesError, type TextNodeSource } from '@weasel-js/text';
 import type { PathPaint } from 'canvas/nodeShapes/nodePaint';
 import { resolveOperand, type BooleanOpOptions, type BooleanOperand } from './operands';
 import { booleanPieces, type ResultPiece } from './pieces';
-import { placementOps } from './placement';
+import { commitPieces } from './commit';
 
 /** Boolean op identifiers: the five Pathfinder primaries, and Crop, Trim, and Merge. */
 export type BooleanOp = 'union' | 'intersect' | 'subtract' | 'exclude' | 'divide' | 'crop' | 'trim' | 'merge';
@@ -123,16 +118,18 @@ export type BooleanOpPreview =
   | { kind: 'pieces'; pieces: BooleanPreviewPiece[] }
   | Exclude<BooleanOpResult, { kind: 'applied' }>;
 
-type Entry = { id: NodeId; operand: BooleanOperand };
+/** @internal A selected node and the operand it gives. */
+export type BooleanEntry = { id: NodeId; operand: BooleanOperand };
+type Entry = BooleanEntry;
 
-/** The operands back to front and the pieces `op` makes of them, or the
- *  result that says why it makes none. Reads the adapter and changes nothing. */
-function planBooleanOp(
+/** @internal The operands behind `sel`, back to front, or the result that
+ *  says why there are too few. Reads the adapter and changes nothing. */
+export function resolveEntries(
   adapter: BooleansAdapter,
   sel: readonly NodeId[],
   op: BooleanOp,
   opts: BooleanOpOptions,
-): { entries: Entry[]; pieces: ResultPiece[] } | Exclude<BooleanOpResult, { kind: 'applied' }> {
+): Entry[] | Exclude<BooleanOpResult, { kind: 'applied' }> {
   // Sorted ascending by `compareZ` so the first entry is the bottommost
   // (back) member. `subtract` relies on this: it computes `back − union(rest)`.
   let resolved: { id: NodeId; operand: BooleanOperand | undefined }[];
@@ -151,7 +148,19 @@ function planBooleanOp(
     return { kind: 'noop', reason: 'too-few-for-subtract' };
   }
   if (entries.length < 2) return { kind: 'noop', reason: 'no-paths' };
+  return entries;
+}
 
+/** The operands back to front and the pieces `op` makes of them, or the
+ *  result that says why it makes none. Reads the adapter and changes nothing. */
+function planBooleanOp(
+  adapter: BooleansAdapter,
+  sel: readonly NodeId[],
+  op: BooleanOp,
+  opts: BooleanOpOptions,
+): { entries: Entry[]; pieces: ResultPiece[] } | Exclude<BooleanOpResult, { kind: 'applied' }> {
+  const entries = resolveEntries(adapter, sel, op, opts);
+  if ('kind' in entries) return entries;
   // Merge unites the operands that wear one fill; one whose paint is unknown is united with nothing.
   const fillKey = (i: number): unknown => {
     const { id, operand } = entries[i]!;
@@ -201,35 +210,6 @@ export function applyBooleanOp(
   const plan = planBooleanOp(adapter, sel, op, opts);
   if ('kind' in plan) return plan;
   const { entries, pieces } = plan;
-  // Every source's slot, read before the scene is mutated.
-  const slots: (BooleanZOrder | undefined)[] =
-    entries.map((e) => locateChild(adapter, e.id) ?? undefined);
-  // A piece stands in for its own source: it is minted from that source, wears
-  // the paint a stroke folded into that source left it, and takes its slot.
-  const made = pieces.map((piece) => {
-    const { id, operand } = entries[piece.source]!;
-    return { node: adapter.createPathNode(piece.path, op, id, operand.paint), slot: slots[piece.source] };
-  });
-  const newNodes = made.map((m) => m.node);
-  const ops: Op[] = [];
-  // Capture the full node so the delete's `invert()` (an insert) restores
-  // every field on undo. The index is -1 for a source its parent does not list.
-  const captured = entries.map((e, i) => ({
-    node: adapter.getNode(e.id) ?? { id: e.id },
-    index: slots[i]?.index ?? -1,
-  }));
-  // Order by index DESC so reverse-then-invert (history's undo path)
-  // re-inserts ASC — each splice lands on a correctly-sized array
-  // instead of clamping high indices to a still-growing length.
-  captured.sort((a, b) => b.index - a.index);
-  for (const { node, index } of captured) ops.push(createDeleteOp({ node, index }));
-  for (const n of newNodes) ops.push(createInsertOp({ node: n }));
-  ops.push(...placementOps(made.map((m) => ({ id: m.node.id, slot: m.slot })), slots));
-  ops.push(createSetSelectionOp({
-    from: sel,
-    to: newNodes.map((n) => n.id as NodeId),
-  }));
-  dispatchApplyBatch(adapter, ops, LABEL[op]);
-
-  return { kind: 'applied', resultIds: newNodes.map((n) => n.id) };
+  const made = pieces.map((piece) => ({ path: piece.path, source: piece.source, producedBy: op }));
+  return { kind: 'applied', resultIds: commitPieces(adapter, sel, entries, made, LABEL[op]) };
 }

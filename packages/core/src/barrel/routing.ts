@@ -127,6 +127,7 @@ export { usePoseDescriptorDepSource } from '../canvas/deps/poseDescriptor';
 export { CORNER_ANCHORS, cornerPoint } from '../interactions/actions/resize/cornerHandles';
 export type { CornerAnchor, CornerEdge } from '../interactions/actions/resize/cornerHandles';
 export { useSliceDep, useSliceDepSource, type OpsApplier } from '../canvas/deps/slice';
+export { useBooleansAdapterSource } from '../canvas/deps/booleans';
 export {
   computeSliceOps,
   type ComputeSliceOpsArgs,

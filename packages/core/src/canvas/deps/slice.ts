@@ -12,11 +12,10 @@ import type { SliceDep } from 'interactions/actions/depSchema';
 import type { Scene, NodeId, Node } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { Op } from 'core/ops/types';
-import type { Path } from '@weasel-js/geom';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import { poseDescriptorForNode, type PoseDescriptor } from 'core/geometry/poseDescriptor';
-import { pathInWorld, worldEditToStorage, type PathInWorldPose } from '@weasel-js/geom';
-import { poseLinearOf } from '@weasel-js/geom';
+import { pathInWorld } from '@weasel-js/geom';
+import { drawnPose, leafPath, storePiece, type DrawnPose } from './pathLeaf';
 import { scenePoseFrame } from 'interactions/actions/poseFrame';
 import { computeSliceOps, type SliceLeaf } from 'interactions/actions/defaults/sliceOps';
 
@@ -63,7 +62,7 @@ export function useSliceDepSource(
       const leaves: SliceLeaf<Node<unknown, string, unknown>>[] = [];
       const drawnAt = new Map<string, DrawnPose>();
       for (const node of sc.renderOrderNodes()) {
-        const path = sliceablePath(sc, node);
+        const path = leafPath(sc, node);
         if (!path) continue;
         const drawn = drawnPose(poseDescriptorForNode(descriptor, node), frame.world(node.id));
         if (!drawn) continue;
@@ -87,42 +86,6 @@ export function useSliceDepSource(
       if (nextSelection) sel.set(nextSelection as NodeId[]);
     },
   }));
-}
-
-/** A leaf's world pose, and the box, rotation, and transform its path is drawn through. */
-interface DrawnPose {
-  world: unknown;
-  g: PoseDescriptor<unknown>;
-  box: PathInWorldPose;
-}
-
-function drawnPose(g: PoseDescriptor<unknown>, world: unknown): DrawnPose | null {
-  const b = g.getBounds(world);
-  if (!b || ![b.x, b.y, b.width, b.height].every(Number.isFinite)) return null;
-  const rotation = g.getRotation?.(world) ?? 0;
-  const transform = poseLinearOf(world) ?? undefined;
-  return { world, g, box: { x: b.x, y: b.y, width: b.width, height: b.height, rotation, transform } };
-}
-
-/** A world-space piece as a world pose of the source's kind plus the path it draws. */
-function storePiece({ world, g, box }: DrawnPose, piece: Path): { pose: unknown; path: Path } {
-  const keepsRotation = !!g.withRotation && g.supportsRotation?.(world) !== false;
-  const rotation = box.rotation ?? 0;
-  if (rotation !== 0 && !keepsRotation) {
-    const baked = worldEditToStorage({ ...box, rotation: 0 }, piece);
-    return { pose: g.fromBounds(baked.pose, world), path: baked.path };
-  }
-  const { pose: b, path } = worldEditToStorage(box, piece);
-  const dst = { x: b.x, y: b.y, width: b.width, height: b.height };
-  const pose = g.remapBounds(world, g.getBounds(world), dst);
-  return { pose: rotation !== 0 ? g.withRotation!(pose, rotation) : pose, path };
-}
-
-function sliceablePath(scene: Scene<unknown, string, unknown>, node: Node<unknown, string, unknown>): Path | null {
-  if (node.kind !== 'leaf' || node.derivePath || node.derivePose) return null;
-  if (scene.isLocked(node.id)) return null;
-  const path = (node.data as { path?: unknown } | null)?.path as Path | undefined;
-  return path && (path.kind === 'rect' || path.kind === 'polygon') ? path : null;
 }
 
 function siblingIndex(scene: Scene<unknown, string, unknown>, node: Node<unknown, string, unknown>): number {

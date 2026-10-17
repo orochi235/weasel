@@ -257,6 +257,15 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/BooleanOpsDemo.tsx',
   },
   {
+    id: 'lab-shape-builder',
+    title: 'Shape builder',
+    category: 'Geometry',
+    description: "`useShapeBuilderTool` works on the faces the selected paths' outlines cut each other into: `planShapeBuilder` finds them, and the face under the pointer is drawn through `createPathOverlay`, a layer for paths that are no node. A drag unites every face it passes through into one path standing in for the first face's source, so it wears that circle's color; an Alt-drag deletes them instead. Every face not taken becomes a path of its own, and each gesture is one undo step. The canvas's own `booleansAdapter` reads its path leaves, so the lab publishes none. The control panel's A plain drag swaps which of the two Alt gives.",
+    hint: 'The three circles open selected with Shape Builder in hand: hover to see each face, drag across faces to merge them, <kbd>Alt</kbd>-drag to delete them, or click one face to cut it free. The results stay selected, so keep building. Undo with the button or <kbd>Mod+Z</kbd>; Reset brings the circles back.',
+    load: () => import('./demos/ShapeBuilderLabDemo').then((m) => m.ShapeBuilderLabDemo),
+    path: 'apps/site/demos/ShapeBuilderLabDemo.tsx',
+  },
+  {
     id: 'shape-tools',
     title: 'Shape tools',
     category: 'Geometry',
