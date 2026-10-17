@@ -11,7 +11,6 @@ import {
   useCanvasSize,
   type UseSceneTextEditReturn,
   useMeasureTool,
-  useSliceTool,
   type View,
   workspaceTintLayer
 } from '@weasel-js/core';
@@ -42,6 +41,9 @@ import { usePathToolsTools } from './usePathToolsTools';
 import { useSymmetry } from './useSymmetry';
 import { usePageFit } from './usePageFit';
 import { useSpacingHints } from './useSpacingHints';
+
+/** Every built-in but the rig tools: a drawing has no skeletons to edit. */
+const DRAW_TOOLS = BUILTIN_TOOL_IDS.filter((id) => id !== 'bone' && id !== 'weight');
 
 /** Screen-px radius within which a drawing tool snaps to a measurement's end. */
 const END_SNAP_PX = 6;
@@ -113,7 +115,6 @@ export function Workspace(props: WorkspaceProps): ReactElement {
     openPalette: props.openPalette,
   });
   const insertPaint = useInsertPaint();
-  const sliceTool = useSliceTool();
   const spiroTool = useSpiroTool();
   const shapeBuilderTool = useShapeBuilderTool();
   const pathToolsTools = usePathToolsTools();
@@ -179,8 +180,8 @@ export function Workspace(props: WorkspaceProps): ReactElement {
           onViewChange={onViewChange}
           scene={scene}
           selection={selection}
-          defaultTools={BUILTIN_TOOL_IDS}
-          tools={{ ...pathToolsTools, spiro: spiroTool, slice: sliceTool, shapeBuilder: shapeBuilderTool, measure: measureTool, opacityScrub: opacityScrubTool }}
+          defaultTools={DRAW_TOOLS}
+          tools={{ ...pathToolsTools, spiro: spiroTool, shapeBuilder: shapeBuilderTool, measure: measureTool, opacityScrub: opacityScrubTool }}
           ingestion={DRAW_INGESTION}
           insertPaint={insertPaint}
           // Pick on the drawn shape, not the bounding box: clicking the blank right half of a

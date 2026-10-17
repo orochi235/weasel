@@ -21,8 +21,10 @@ import type { InsertToolOptions } from 'tools/builtin/shared/insertToolOptions';
 import type { LassoHitMode } from 'core/adapters/types';
 import type { BuiltinShapeToolId } from 'core/shapeKinds';
 import type { PathSnapOptions } from 'features/paths/pathSnap/pathSnapper';
+import type { NodeId } from 'core/scene/types';
+import type { RigEditState } from 'tools/builtin/bone/rigEditState';
 
-/** Per-tool option overrides for the built-in shape/lasso tools.
+/** Per-tool option overrides for the built-in tools.
  *  Each entry is a narrow subset of the underlying hook's options surface
  *  — just the knobs that need consumer control under the bundle pattern. */
 export interface BuiltinToolOptions {
@@ -47,6 +49,16 @@ export interface BuiltinToolOptions {
    *  a stroke. Applies to the drawing tools as `snapPoint` does, and also to
    *  a move's base point and to a dragged anchor. Absent, off. */
   pathSnap?: PathSnapOptions;
+  /** The knife: screen px around the first point within which a click closes the cut. */
+  slice?: { closeHitRadius?: number };
+  /** The bone and weight tools. `rig` names the node they edit; by default the one
+   *  selected node, or the nearest ancestor of it holding `data.skeleton`. `state` is the
+   *  joint they share, which a canvas otherwise makes for itself; pass the one handed to
+   *  `useRigNode` as `painting` so a stroke shows as it is painted. `reach` is the screen
+   *  px around a joint within which a press takes it. */
+  rig?: { rig?: () => NodeId | null; state?: RigEditState; reach?: number };
+  /** The weight tool's brush radius, in screen px. */
+  weight?: { radius?: number };
 }
 
 // `BuiltinShapeToolId` / `KIT_SHAPE_KINDS` derive from the `core/shapeKinds`

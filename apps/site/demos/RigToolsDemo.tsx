@@ -9,10 +9,8 @@ import {
   polygonFromPoints,
   SceneCanvas,
   solid,
-  useBoneTool,
   useRigNode,
   useScene,
-  useWeightTool,
 } from '@weasel-js/core';
 import type { NodeId, Path, RectPose, Stroke, Fill } from '@weasel-js/core';
 import num from '@weasel-js/theme/numeric.module.css';
@@ -61,8 +59,9 @@ export function RigToolsDemo() {
   });
   const [bend, setBend] = useState(0);
   const state = useMemo(() => createRigEditState(), []);
-  const options = useMemo(() => ({ scene, rig: () => RIG, state }), [scene, state]);
-  const tools = { bone: useBoneTool(options), weight: useWeightTool(options) };
+  // The tools edit the one arm whatever is selected, and share their joint and the
+  // stroke being painted with `useRigNode`, which shows the stroke as it goes.
+  const toolOptions = useMemo(() => ({ rig: { rig: () => RIG, state } }), [state]);
 
   const rig = useRigNode({ scene, node: RIG, painting: state });
   useEffect(() => {
@@ -95,7 +94,8 @@ export function RigToolsDemo() {
         className="ckd-canvas"
         scene={scene}
         features={['pick', 'paths']}
-        tools={tools}
+        defaultTools={['bone', 'weight']}
+        toolOptions={toolOptions}
         claimKeys
       />
       <div className="ckd-hint">
