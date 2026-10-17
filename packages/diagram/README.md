@@ -96,11 +96,16 @@ someone has arranged: no RNG anywhere, within-rank order seeded from where the
 nodes already sit, and a node carrying `pinned: true` that nothing moves.
 
 The first pinned node anchors the layout. Under `layered`, every other pin
-keeps its place across its rank, with the rest of the rank pushed clear of it,
-and the gap on the first pin's side of its rank stretches or shrinks to reach
-it. A pin that would shrink a gap below a quarter of `rankGap`, or that has too
-little room beside another pin in its rank, stays put without the layout being
-built around it; `layeredPlan` names it in `unheld`.
+keeps its place across its rank, with the rest of the rank moved clear of it,
+past it if there is no room beside it. A pin's rank band slides or deepens to
+cover it, the gaps toward other pinned ranks shrink to make room, and a group's
+column moves or widens to take in its pinned members, never over a node outside
+the group. A pin is left out only when no arrangement fits: its band would come
+nearer another pinned rank's than the ranks between them allow with every gap
+at a quarter of `rankGap` (plus group insets), or a group's box would cover a
+pin outside the group. In practice that is a pin dragged level with, or past,
+the rank beside it. Such a pin stays put without the layout being built around
+it; `layeredPlan` names it in `unheld`.
 
 `force` is the exception to the second half of that: it is an iterative
 relaxation seeded from the current positions, so re-running it keeps relaxing.
@@ -151,7 +156,11 @@ order; unset, or naming no node of the graph, it is the longest path through
 the graph. `chainSide` is
 `'after'` (default) or `'before'`: which side of the line the rest hangs on.
 Each chain node owns a column as wide as the widest thing hung on it, so
-neighbors never share space. Groups are ignored.
+neighbors never share space, and the hung nodes stand in the order of the ports
+they connect to. An edge between a chain node and one hung beside it, both ends
+naming ports that face each other, runs on a track of its own in the gap
+between them, so a fan of them never crosses; the gap grows to keep tracks 12
+apart. Groups are ignored.
 
 ### From data
 
@@ -258,16 +267,23 @@ since survive it. Editing reports rather than writes —
 
 — `onMove` turns on dragging and hears every node a drag or a layout run
 moved, and, as its second argument, every edge whose route a layout run
-rewrote (`{ id, waypoints }`, `id` being `edgeIdOf` of the data edge);
+or ports rewrote (`{ id, waypoints, ports }`, `id` being `edgeIdOf` of the
+data edge, `ports` the ends whose port the run picked);
 `onConnect` makes ports grabbable and hears the edge a connect describes.
 Store a move as the node's `at`, with `pinned: true` unless the scene uses
 `layout: 'none'`, or the next `diagramScene` lays it out again. Store a route
-as the edge's `routed`: it is drawn until layout runs again, and stays
+as the edge's `routed` and its `ports` as `routedPorts`, which `edgeIdOf` does
+not read: it is drawn until layout runs again, and stays
 layout's to replace, its label keeping the room layout leaves it. `waypoints`
 would make it yours, which layout never moves. A run that only rewrote routes
 calls `onMove` with no moves.
 `view.current.layout('layered')` re-runs a layout animated from where the
-nodes stand; `'force'` relaxes live.
+nodes stand; `'force'` relaxes live. Either way the routes ease with the nodes,
+through the ports the run will commit.
+
+To lay a diagram out once with ELK (the Eclipse Layout Kernel), see
+`@weasel-js/diagram-elk`: `await elkPlan(graph)` returns a `LayoutPlan` that
+`applyLayout` and `routesOf` take as they are.
 
 Labels paint only in a registered font family, and the default is
 sans-serif, so call `registerCanvasFont('sans-serif')` once or they render
@@ -452,7 +468,12 @@ included; a source or sink stretched taller than it measured is widened by as
 much, so its round ends leave its rows the room they had. A decision keeps its symbol's own size, centered across its lanes,
 and brings its control inputs in from the bottom when their lanes are below
 the rest of its ports. The lanes are nodes too, `laneId(type)`, drawn behind
-the stages; a pick of one is reported as `null`. Text is measured to cut the
+the stages, and only stages can be picked: a click on a lane or a group box
+selects nothing. A wire that would cross a stage in its lane runs along a lane
+edge clear of every stage it passes, changing height only between columns, each
+wire in a shared corridor on a track of its own; its label sits as near the
+middle as it can without covering a stage. A decision's title and cut values
+stay inside its lanes and column. Text is measured to cut the
 lanes before `diagramScene` lays anything out, so pass `measure` to the look,
 not to `diagramScene`: the look hands it on in `scene`.
 
