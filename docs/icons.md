@@ -196,7 +196,7 @@ gen:icons, and `packages/icons/scripts/gen-icons.test.ts` fails on a hand-writte
 | Written as | Result |
 |---|---|
 | `icon(name)` with a computed `name` | Not rewritten; the build warns, and the glyph needs a loaded variant |
-| `import * as g from './icons.gen'; g.icon('x')` | Not rewritten |
+| `import * as g from './icons.gen'; g.icon('x')`, a default import, or a module re-exporting `icon` | Not rewritten; the build warns |
 | A name in data, such as a JSON prefs schema | Never collected; the glyph needs a loaded variant |
 | A ref in a module the bundler later tree-shakes | Collected anyway, so its glyph ships; a build errs toward too many glyphs, never too few |
 | A table generated after the dev server started | Served after a restart |

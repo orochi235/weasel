@@ -588,11 +588,6 @@ How the registry and the build plugin work is in `docs/icons.md`.
   --watch` a name deleted from the source still ships, and one deleted from both the source and its
   table fails the rebuild. Clear both in `buildStart` outside dev.
 
-- **(P3) The build plugin skips some imports of `icon()` without a warning.** `rewriteIconCalls`
-  (`packages/icons-plugin/src/rewrite.ts`) follows only a named import from an `icons.gen` module.
-  A namespace import (`g.icon('x')`), a default import, or a module that re-exports `icon` leaves
-  its calls unrewritten, so their glyphs miss a trimmed build. Warn on each of those forms.
-
 - **(P3) PrefSchemaEditor's icon picker is missing keyboard and state handling.** `IconAttrField`
   (`packages/ui/src/components/PrefSchemaEditor/IconAttrField.tsx`) has no Home, End, PageUp or
   PageDown; a click on a cell moves focus off the listbox, so the arrows stop working; it ignores
