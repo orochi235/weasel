@@ -91,6 +91,7 @@ describe('PrefSchemaEditor actions', () => {
     const attributes = screen.getByRole('region', { name: 'Attributes' });
     fireEvent.click(within(attributes).getByRole('button', { name: /Action/ }));
     expect(screen.getAllByRole('option').map((o) => o.textContent)).toEqual([
+      'Unset',
       'layers.flatten (not registered)',
       'Undo (edit.undo)',
       'Redo (edit.redo)',
