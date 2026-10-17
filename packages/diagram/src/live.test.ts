@@ -331,13 +331,14 @@ describe('useLiveLayout', () => {
     const route = () => (s.scene.get(long)!.data as { diagram: { waypoints?: Vec2[] } }).diagram.waypoints ?? [];
     act(() => { s.handle().start(); });
     act(() => { s.clock.frames(4); });
-    const was = route();
-    expect(was).toHaveLength(2);
+    const next = route();
+    expect(next).toHaveLength(2);
 
-    // `c` far off to the right: the next run routes `a → c` somewhere else.
-    act(() => { s.scene.setPose(s.c, box(900, 400)); });
-    const graph = graphOf(s.scene);
-    const next = layered.plan!(graph).waypoints!.get(long)!;
+    // As an earlier run left it somewhere else: the next run routes it back.
+    const was = next.map((p) => ({ x: p.x + 50, y: p.y - 30 }));
+    const data = s.scene.get(long)!.data as { diagram: object };
+    act(() => { s.scene.update(long, { data: { ...data, diagram: { ...data.diagram, waypoints: was, laidOut: was } } }); });
+    expect(layered.plan!(graphOf(s.scene)).waypoints!.get(long)).toEqual(next);
     act(() => { s.handle().start(); });
     act(() => { s.clock.frames(2); });
     // Two frames of four, eased in and out: halfway.
