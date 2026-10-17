@@ -6,7 +6,7 @@ import {
   sceneFromJSON,
   useAnimatedReflow,
 } from '@weasel-js/core';
-import { useAnimator } from '@weasel-js/animator';
+import { useAnimator } from '@weasel-js/animator/react';
 import { freeform, snapPoint, tileGrid } from '@weasel-js/guides';
 import type { SerializedScene } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';

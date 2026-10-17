@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { SceneCanvas, asNodeId, springPose, tweenPose, useScene, useSceneAdapter } from '@weasel-js/core';
-import { useAnimator } from '@weasel-js/animator';
+import { useAnimator } from '@weasel-js/animator/react';
 import type { Fill } from '@weasel-js/core';
 
 interface Block { id: string; x: number; y: number; width: number; height: number; fill: Fill }

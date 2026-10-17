@@ -6,7 +6,7 @@ import {
   asNodeId,
   textCommandFromRuns,
 } from '@weasel-js/core';
-import { useAnimator } from '@weasel-js/animator';
+import { useAnimator } from '@weasel-js/animator/react';
 import type { RenderLayer } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import { Slider } from '@weasel-js/ui';

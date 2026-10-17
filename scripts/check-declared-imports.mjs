@@ -103,7 +103,7 @@ for (const name of readdirSync(PACKAGES).sort()) {
   for (const file of walk(join(dir, 'src'))) {
     const rel = relative(ROOT, file);
     if (NOT_SHIPPED.test(rel) || TEST_HELPERS.includes(rel)) continue;
-    for (const written of importSpecifiers(readFileSync(file, 'utf8'))) {
+    for (const written of importSpecifiers(readFileSync(file, 'utf8'), file)) {
       const specifier = written.replace(/\?.*$/, '');
       if (specifier.startsWith('.')) {
         const target = relative(ROOT, resolve(dirname(file), specifier)).replace(/\.[cm]?[jt]sx?$/, '');

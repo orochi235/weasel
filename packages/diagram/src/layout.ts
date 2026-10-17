@@ -18,6 +18,7 @@
  * re-running it keeps relaxing.
  */
 import type { Vec2 } from '@weasel-js/core/math';
+import { planWithMargins } from './footprint';
 import type { Graph, GraphNode } from './graph';
 import type { Bounds } from './outline';
 
@@ -85,9 +86,10 @@ export interface LayoutFn {
   readonly plan?: (graph: Graph, opts?: LayoutOptions) => LayoutPlan;
 }
 
-/** A layout's plan: its own `plan`, or its moves alone. */
+/** A layout's plan: its own `plan`, or its moves alone. A node with a
+ *  `margin` is laid out as its footprint, so neighbors keep clear of it. */
 export function planOf(layout: LayoutFn, graph: Graph, opts?: LayoutOptions): LayoutPlan {
-  return layout.plan !== undefined ? layout.plan(graph, opts) : { moves: layout(graph, opts) };
+  return planWithMargins(graph, (g) => (layout.plan !== undefined ? layout.plan(g, opts) : { moves: layout(g, opts) }));
 }
 
 /** `LayoutOptions.nodeGap`'s default, in world units. */

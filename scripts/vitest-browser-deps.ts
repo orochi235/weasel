@@ -29,6 +29,22 @@ function sourceAt(path: string): string | undefined {
   return found && SOURCE.test(found) ? found : undefined;
 }
 
+type Parsed = Map<string, { stamp: string; specifiers: string[] }>;
+const PARSED = Symbol.for('weasel.browserDeps.parsed');
+/** vitest evaluates its config once per project, each time in a fresh module instance, so the
+ *  parses are kept on `globalThis`. Keyed on mtime and size, a watch-mode reload still sees edits. */
+const parsed: Parsed = ((globalThis as { [PARSED]?: Parsed })[PARSED] ??= new Map());
+
+function importsOf(file: string): string[] {
+  const { mtimeMs, size } = statSync(file);
+  const stamp = `${mtimeMs}:${size}`;
+  const hit = parsed.get(file);
+  if (hit?.stamp === stamp) return hit.specifiers;
+  const specifiers = importSpecifiers(readFileSync(file, 'utf8'), file);
+  parsed.set(file, { stamp, specifiers });
+  return specifiers;
+}
+
 function aliased(specifier: string, aliases: ViteAlias[]): string | undefined {
   for (const { find, replacement } of aliases) {
     if (typeof find !== 'string') {
@@ -79,7 +95,7 @@ export function browserDeps(repoRoot: string, { entries, setupFiles = [] }: Brow
 
   for (let file = queue.pop(); file; file = queue.pop()) {
     seen.add(file);
-    for (const specifier of importSpecifiers(readFileSync(file, 'utf8'))) {
+    for (const specifier of importsOf(file)) {
       // A query (`?raw`, `?url`) hands the module to a vite plugin as text or an address.
       if (specifier.includes('?')) continue;
       const target = aliased(specifier, aliases);

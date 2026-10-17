@@ -11,7 +11,7 @@
  */
 
 import { applyToPoint } from '@weasel-js/geom';
-import type { RectPose } from 'core/scene/types';
+import type { RectPose } from 'core/geometry/rectPose';
 import { poseFrameOf } from '@weasel-js/geom';
 export type { RectPose };
 

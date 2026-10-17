@@ -11,14 +11,15 @@ import { DEFAULT_GROUP_INSET, expandGroupEdges } from './cluster';
 import { groupSpecs, resolveGroups } from './dataGroups';
 import { bodyTrait, buildBody, measureBody, sizeToBody, type BodySpec, type MeasureRowText, type Row, type RowTextStyle } from './body';
 import { edgeSpecs, labelStyleOf, wireLabels } from './dataEdges';
-import type { DiagramEdge } from './edge';
+import type { DiagramEdge } from './edgeTrait';
 import { force } from './force';
+import { grownBy } from './footprint';
 import { labelFollowsLayout, type EdgeLabelRoom, type Graph, type GraphEdge, type GraphGroup, type GraphNode } from './graph';
 import type { DiagramAnchor } from './group';
-import type { DiagramLabel } from './label';
+import type { DiagramLabel } from './labelTrait';
 import { chain } from './chain';
 import { layered } from './layered';
-import type { LayoutFn, LayoutOptions } from './layout';
+import { planOf, type LayoutFn, type LayoutOptions, type LayoutPorts } from './layout';
 import { markSpecs, type DataMark, type DiagramMark } from './marks';
 import type { Outline } from './outline';
 import { authoredOver } from './route';
@@ -36,6 +37,8 @@ export interface DataNode {
   outline?: Outline;
   /** Perimeter ports, replacing the four compass midpoints. */
   ports?: readonly PortSpec[];
+  /** Labels for the perimeter ports by id, drawn outside the box beside each. */
+  portLabels?: Readonly<Record<string, string>>;
   /** Layout leaves this node at `at`. */
   pinned?: boolean;
   /** Where the node starts, before layout. Unset, nodes start on the
@@ -78,6 +81,9 @@ export interface DataEdge {
   /** A route a layout run wrote, as `DiagramView`'s `onMove` reports it: drawn
    *  until layout runs again, which may replace it. `waypoints` wins. */
   routed?: readonly Vec2[];
+  /** Ports a layout run named, as `onMove` reports them: used like `routed`,
+   *  and not part of the edge's id. `fromPort` and `toPort` win. */
+  routedPorts?: LayoutPorts;
 }
 
 /** A box drawn around some nodes, which layout keeps together. */
@@ -187,7 +193,8 @@ const FONT = { fontFamily: 'sans-serif', fontSize: 12 };
 const NODE: NodeStyle = { fill: '#16222c', stroke: '#7ba7c7', text: '#dbe7f2' };
 const EDGE: EdgeStyle = { stroke: '#7ba7c7' };
 const GROUP: NodeStyle = { fill: 'rgba(123, 167, 199, 0.08)', stroke: '#7ba7c7', text: '#9fbdd6', strokeWidth: 1, dash: [4, 3] };
-const LABEL_PLACEMENT: DiagramLabel = { at: 'mid', offset: 9 };
+/** Where an edge label sits when neither the edge nor the scene says. */
+export const LABEL_PLACEMENT: DiagramLabel = { at: 'mid', offset: 9 };
 const LINE = 1.4;
 const GLYPH = 0.6;
 const MIN_WIDTH = 64;
@@ -275,11 +282,7 @@ function nodeSpecs(
     body: (trait) => ({
       diagram: n.pinned === true ? { ...trait, pinned: true } : trait,
       fill: { paint: { color: style.fill } },
-      stroke: {
-        paint: { color: style.stroke },
-        width: style.strokeWidth ?? 2,
-        ...(style.dash ? { dash: style.dash } : {}),
-      },
+      stroke: { paint: { color: style.stroke }, width: style.strokeWidth ?? 2, ...(style.dash ? { dash: style.dash } : {}) },
     }),
     row: (text, at) =>
       at.row.kind === 'slot'
@@ -337,6 +340,7 @@ export function diagramScene(data: DiagramData, opts: DiagramSceneOptions = {}):
     gap: n.gap ?? opts.gap ?? 4,
     verticalAlign: n.verticalAlign ?? opts.verticalAlign ?? 'center',
     ...(n.ports ? { ports: n.ports } : {}),
+    ...(n.portLabels ? { portLabels: n.portLabels } : {}),
   }));
   // Seeded on the diagonal in source order, so whichever axis a layout reads
   // for in-rank order, it starts from the data's own order.
@@ -345,8 +349,9 @@ export function diagramScene(data: DiagramData, opts: DiagramSceneOptions = {}):
       { ...(n.at ?? { x: i, y: i }), width: n.width ?? opts.minWidth ?? MIN_WIDTH, height: n.height ?? 0 },
       measureBody(bodies[i]!, measure),
     );
-    const { ports, outline } = bodyTrait(bodies[i]!, pose, measure);
-    return { id: n.id, bounds: pose, pinned: n.pinned === true, ...(ports !== undefined ? { ports } : {}), ...(outline !== undefined ? { outline } : {}) };
+    const { ports, outline, margin } = bodyTrait(bodies[i]!, pose, measure);
+    return { id: n.id, bounds: pose, pinned: n.pinned === true, ...(ports !== undefined ? { ports } : {}),
+      ...(outline !== undefined ? { outline } : {}), ...(margin !== undefined ? { margin } : {}) };
   });
   const graphGroups: GraphGroup[] = groups.map((g) => ({
     id: g.group.id,
@@ -371,17 +376,18 @@ export function diagramScene(data: DiagramData, opts: DiagramSceneOptions = {}):
     : opts.layout === 'none' ? null
     : LAYOUTS[opts.layout ?? 'layered'];
   const layoutOptions: LayoutOptions = { order: 'barycenter', ...opts.layoutOptions };
-  const plan = layout?.plan?.(graph, layoutOptions) ?? null;
-  const moved = plan?.moves ?? (layout === null ? new Map() : layout(graph, layoutOptions));
+  const plan = layout === null ? null : planOf(layout, graph, layoutOptions);
+  const moved = plan?.moves ?? new Map();
 
   const specs: DiagramSpec[] = [];
   const placedAt = placed(data, seeds, moved);
   // The author's own ports and waypoints win over the plan's.
-  const routes = plan === null ? null : authoredOver(edges.map((e) => ({ ...e, id: edgeIdOf(e) })), plan);
+  const routes = plan === null || layout?.plan === undefined ? null : authoredOver(edges.map((e) => ({ ...e, id: edgeIdOf(e) })), plan);
   // Behind every node, so a box never paints over what it holds.
   const edgeCtx = { idOf: edgeIdOf, font, measure, fallback: EDGE, labelPlacement: LABEL_PLACEMENT, routes, opts };
   const groupLook = (g: DataGroup) => ({ style: opts.groupStyle?.(g) ?? GROUP, text: styleOf(titleStyle) });
-  specs.push(...groupSpecs(groups, placedAt, groupLook, wireLabels(edges, edgeCtx)));
+  const footprints = new Map(seeds.map((s) => [s.id, grownBy(placedAt.get(s.id)!, s.margin)]));
+  specs.push(...groupSpecs(groups, footprints, groupLook, wireLabels(edges, edgeCtx)));
   for (const [i, n] of data.nodes.entries()) {
     const seed = seeds[i]!.bounds;
     const at = placedAt.get(n.id)!;

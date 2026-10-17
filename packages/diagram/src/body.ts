@@ -11,9 +11,10 @@
  * Text measurement is a seam rather than an import: measuring needs a 2D
  * context, which a geometry module has no business owning.
  */
-import { cssFamilyName } from '@weasel-js/font';
+import { cssFamilyName } from '@weasel-js/font/metrics';
 import { boxForContent, contentBox, outlinePath, type Bounds, type Outline } from './outline';
-import { COMPASS } from './ports';
+import { marginOf, portLabelsOf, withLabels, type PerimeterPortLabelBox } from './portLabels';
+import { DEFAULT_PORTS } from './ports';
 import type { DiagramNode, PortSpec } from './types';
 
 /** One line of body content. */
@@ -63,6 +64,8 @@ export interface BodySpec {
   /** The perimeter ports, replacing the four compass midpoints. A `ports`
    *  row's own ports are added either way. */
   ports?: readonly PortSpec[];
+  /** Perimeter port labels by id, drawn outside the box; over a port's own `label`. */
+  portLabels?: Readonly<Record<string, string>>;
 }
 
 /** What {@link buildBody} emits: the `AddNodeSpec` fields it fills in. Named
@@ -268,13 +271,8 @@ export function layoutRowPorts(
  */
 export function bodyTrait(spec: BodySpec, bounds: Bounds, measure?: MeasureRowText): DiagramNode {
   const outline = spec.outline;
-  const compass: readonly PortSpec[] = spec.ports ?? [
-    { id: 'n', at: COMPASS.n },
-    { id: 'e', at: COMPASS.e },
-    { id: 's', at: COMPASS.s },
-    { id: 'w', at: COMPASS.w },
-  ];
-  if (bounds.height <= 0) return { outline, ports: [...compass] };
+  const compass = withLabels(spec.ports ?? DEFAULT_PORTS, spec.portLabels);
+  if (bounds.height <= 0) return { outline, ports: compass };
 
   const rowPorts: PortSpec[] = [];
   let hasLeft = false;
@@ -293,8 +291,14 @@ export function bodyTrait(spec: BodySpec, bounds: Bounds, measure?: MeasureRowTe
   }
   const kept = spec.ports !== undefined ? compass : compass.filter((p) =>
     !(p.id === 'w' && hasLeft) && !(p.id === 'e' && hasRight));
-  return { outline, ports: [...kept, ...rowPorts] };
+  const trait: DiagramNode = { outline, ports: [...kept, ...rowPorts] };
+  const margin = marginOf(bounds, portLabelsOf(trait, bounds, labelSize(measure)).map((l) => l.box));
+  return margin === undefined ? trait : { ...trait, margin };
 }
+
+/** How big one port label is: measured as a `label` row with no style. */
+const labelSize = (measure: MeasureRowText | undefined) => (text: string) =>
+  measureRow({ kind: 'label', text }, measure);
 
 function withType(spec: PortSpec, type: string | undefined): PortSpec {
   return type === undefined ? spec : { ...spec, type };
@@ -328,9 +332,9 @@ export interface BuildBodyOptions<TData, TLayer extends string, TPose extends Bo
   body: (trait: DiagramNode, pose: TPose) => TData;
   /** One row's data, or `null` to leave that row undrawn. */
   row: RowNodeData<TData>;
-  /** One row port's label, or `null` to leave it undrawn. Ports with no
-   *  `label` are never offered. Omit to draw none. */
-  portLabel?: (text: string, box: RowPortBox) => TData | null;
+  /** One port's label — a row port's or a perimeter port's — or `null` to
+   *  leave it undrawn. Ports with no label are never offered. Omit to draw none. */
+  portLabel?: (text: string, box: RowPortBox | PerimeterPortLabelBox) => TData | null;
 }
 
 /**
@@ -348,11 +352,12 @@ export function buildBody<TData, TLayer extends string, TPose extends Bounds>(
   opts: BuildBodyOptions<TData, TLayer, TPose>,
 ): { pose: TPose; specs: BodyNodeSpec<TData, TLayer, TPose>[] } {
   const pose = sizeToBody(at, measureBody(spec, opts.measure));
+  const trait = bodyTrait(spec, pose, opts.measure);
   const specs: BodyNodeSpec<TData, TLayer, TPose>[] = [{
     kind: 'container',
     layer: opts.layer,
     pose,
-    data: opts.body(bodyTrait(spec, pose, opts.measure), pose),
+    data: opts.body(trait, pose),
     ...(opts.id === undefined ? {} : { id: opts.id }),
   }];
 
@@ -378,6 +383,11 @@ export function buildBody<TData, TLayer extends string, TPose extends Bounds>(
       const labelData = portLabel(pb.port.label, pb);
       if (labelData !== null) leaf(pb, labelData);
     }
+  }
+  const perimeter = portLabel === undefined ? [] : portLabelsOf(trait, pose, labelSize(opts.measure));
+  for (const { port, box } of perimeter) {
+    const labelData = portLabel!(port.label, { ...box, port: trait.ports!.find((p) => p.id === port.id)!, side: 'outside' });
+    if (labelData !== null) leaf(box, labelData);
   }
   return { pose, specs };
 }

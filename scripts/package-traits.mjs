@@ -43,12 +43,12 @@ const rootPaths = () =>
   ts.parseConfigFileTextToJson('tsconfig.json', readFileSync(join(repoRoot, 'tsconfig.json'), 'utf8')).config
     .compilerOptions.paths;
 
-/** Typechecks one package's main entry without the DOM. */
-async function probe(name, paths) {
-  const entry = paths[`@weasel-js/${name}`]?.[0];
-  if (!entry) throw new Error(`no paths entry for @weasel-js/${name} in tsconfig.json`);
+/** Typechecks one entry, named by its import specifier, without the DOM. */
+async function probe(spec, paths) {
+  const entry = paths[spec]?.[0];
+  if (!entry) throw new Error(`no paths entry for ${spec} in tsconfig.json`);
   const up = (p) => join('../../..', p);
-  const config = join(cache, `${name}.json`);
+  const config = join(cache, `${spec.replace(/^@weasel-js\//, '').replaceAll('/', '--')}.json`);
   writeFileSync(
     config,
     JSON.stringify({
@@ -83,12 +83,37 @@ async function probe(name, paths) {
   }
   const lines = out.split('\n');
   if (lines.some((l) => l.endsWith('/lib.dom.d.ts'))) {
-    throw new Error(`${name}: lib.dom.d.ts was pulled in by a \`/// <reference lib="dom" />\` in some dependency's types; stub that module in package-traits.mjs`);
+    throw new Error(`${spec}: lib.dom.d.ts was pulled in by a \`/// <reference lib="dom" />\` in some dependency's types; stub that module in package-traits.mjs`);
   }
   return {
     react: lines.some((l) => l.includes('/node_modules/@types/react/') || (l.endsWith('.tsx') && !l.includes('/node_modules/'))),
     dom: lines.some((l) => /error TS/.test(l)),
   };
+}
+
+/**
+ * `{ react, dom }` for each specifier, typechecked as `probe` does.
+ * `onProbe(done, total, spec)` reports progress.
+ */
+export async function probeEntries(specs, { onProbe } = {}) {
+  mkdirSync(cache, { recursive: true });
+  // @types/opentype.js opens with `/// <reference lib="dom" />`, which would
+  // hand every program importing font the whole DOM. What opentype.js does
+  // inside itself is not ours to measure, so the probe sees it untyped.
+  writeFileSync(join(cache, 'opentype-stub.d.ts'), 'declare const opentype: any;\nexport = opentype;\n');
+  const paths = rootPaths();
+  const probes = new Map();
+  const queue = [...specs];
+  await Promise.all(
+    Array.from({ length: Math.max(1, Math.min(cpus().length - 1, 6)) }, async () => {
+      while (queue.length) {
+        const spec = queue.shift();
+        probes.set(spec, await probe(spec, paths));
+        onProbe?.(probes.size, specs.length, spec);
+      }
+    }),
+  );
+  return probes;
 }
 
 /**
@@ -99,30 +124,16 @@ async function probe(name, paths) {
  */
 export async function packageTraits({ onProbe } = {}) {
   const manifests = readManifests();
-  mkdirSync(cache, { recursive: true });
-  // @types/opentype.js opens with `/// <reference lib="dom" />`, which would
-  // hand every program importing font the whole DOM. What opentype.js does
-  // inside itself is not ours to measure, so the probe sees it untyped.
-  writeFileSync(join(cache, 'opentype-stub.d.ts'), 'declare const opentype: any;\nexport = opentype;\n');
-  const paths = rootPaths();
   const names = [...manifests.keys()];
-  const probes = new Map();
-  const queue = [...names];
-  await Promise.all(
-    Array.from({ length: Math.max(1, Math.min(cpus().length - 1, 6)) }, async () => {
-      while (queue.length) {
-        const name = queue.shift();
-        probes.set(name, await probe(name, paths));
-        onProbe?.(probes.size, names.length, name);
-      }
-    }),
-  );
+  const probes = await probeEntries(names.map((n) => `@weasel-js/${n}`), {
+    onProbe: onProbe && ((done, total, spec) => onProbe(done, total, spec.slice('@weasel-js/'.length))),
+  });
   const out = new Map();
   for (const name of names) {
     const pkg = manifests.get(name);
     const needs = pkg.weasel?.needs ?? [];
     for (const n of needs) if (!DEVICES.includes(n)) throw new Error(`${name}: unknown weasel.needs entry "${n}"`);
-    const p = probes.get(name);
+    const p = probes.get(`@weasel-js/${name}`);
     out.set(name, {
       react: p.react ? 'needs' : pkg.exports?.['./react'] ? 'optional' : 'none',
       dom: p.dom,

@@ -1,5 +1,6 @@
 import { useEffect, useReducer, useRef, useState } from 'react';
-import { createTarget, useAnimator, type AnimationKind, type HoldHandle } from '@weasel-js/animator';
+import { createTarget, type AnimationKind, type HoldHandle } from '@weasel-js/animator';
+import { useAnimator } from '@weasel-js/animator/react';
 import { DrawCanvas, solid } from '@weasel-js/core';
 import { Button, ToggleBar } from '@weasel-js/ui';
 import s from './AnimatorDemo.module.css';

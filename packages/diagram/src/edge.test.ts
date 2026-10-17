@@ -3,13 +3,13 @@ import { createScene, asNodeId, type DerivedDep, type RectPose } from '@weasel-j
 import {
   DIAGRAM_EDGE,
   bezier,
-  diagramEdgeOf,
   edgeDerivePath,
   orthogonal,
   straight,
   withDiagramRegistry,
   type Router,
 } from './edge';
+import { diagramEdgeOf } from './edgeTrait';
 import type { Port } from './types';
 
 const port = (id: string, x: number, y: number, normal: Port['normal'] = null): Port =>

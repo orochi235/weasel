@@ -6,7 +6,7 @@ import { effectivePose } from '../../core/scene/effectivePose';
 import type { NodeId, RectPose } from '../../core/scene/types';
 import { mat3 } from '@weasel-js/geom';
 import type { SampledTrack } from '@weasel-js/animator';
-import { useAnimator } from '@weasel-js/animator';
+import { useAnimator } from '@weasel-js/animator/react';
 import { bindRig } from './bindRig';
 import type { Pose, Skeleton } from '@weasel-js/animator';
 

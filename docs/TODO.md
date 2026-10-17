@@ -651,53 +651,6 @@ How the registry and the build plugin work is in `docs/icons.md`.
   `scale` only converts values: `RIGID_POSE_COMPOSITION` does not scale a container's frame by it,
   so whether a scoped container's children are also stored in its units is undecided.
 
-### Diagram follow-ups
-
-- **(P2) A default port cannot carry a label.** A host explaining what each port does has to say
-  it outside the diagram; blits' playground writes it in a panel header.
-
-- **(P2) `DiagramView` reports only the nodes a user dragged.** `onMove` fires for a drag, never
-  for where the initial layout put a node, so a host keeping nodes still across edits reads
-  positions back out of `diagramScene`'s output (blits' playground). A layout callback or a
-  positions read would replace that.
-
-- **(P3) Under `layered`, an edge between two pinned nodes in one rank loops down and around**
-  instead of running across between them. Seen in blits' playground on a release from before
-  `layered` held every pin, so check it again.
-
-- **(P3) `layered` cannot hold a pin its rank's band cannot reach.** Pins after the first are
-  held by `holdPins` (`packages/diagram/src/layered/pins.ts`); one in a rank that already holds a
-  pin at another depth, one that would shrink a gap below a quarter of `rankGap`, or one with too
-  little room beside another pin is reported in `LayeredPlan.unheld` and laid out around as
-  before, so a re-run can still move. In `layered.test.ts`'s dragged-pin cases, 38 of 160 are
-  unheld. Holding one would mean letting a band grow deeper than its deepest node, or moving
-  pins' neighbors to other ranks. Whether pushing a rank clear of a pin can put an outsider in a
-  group's box is unchecked.
-- **(P3) `onMove` reports a layout run's routes but not the ports it named.** A port layout picks
-  is marked `laidOut` on its edge end, but `fromPort`/`toPort` are part of `edgeIdOf`, so a
-  consumer storing one in its data renames the edge and the next reconcile replaces it
-  (`packages/diagram/src/sceneSync.ts`). Ports need an edge id that does not depend on them, or a
-  field of their own.
-- **(P3) The `lanes` look draws wires straight across stage boxes.** A wire running along its
-  lane passes over any stage between its ends that also touches that lane, and its label can sit
-  on that stage's title (`packages/diagram/src/effect/lanes.ts`). Clicking a lane band reports
-  `null` to `onSelect` but the canvas still highlights the band.
-- **(P3) An eased edge may switch faces on a live run's last frame.** Each eased frame draws
-  the route through the edge's current `from`/`to` ports, but the ports layout renames reach the
-  scene only at commit (`routeWrites`), so a run that changes the face an edge leaves by eases
-  along the old face and jumps on arrival (`easedPaths` in `packages/diagram/src/liveRoutes.ts`).
-  Found in review, not reproduced.
-- **(P3) A live run eases routes for `layered` only.** `force` runs still draw long edges through
-  the old bends while they ease, and an edge to a group reads the group's box a frame late
-  (`packages/diagram/src/liveRoutes.ts`).
-- **(P3) Wires into a `rack` stage's side ports can cross.** Six side stages feeding six side
-  inputs of one stage drew Layer 1's and Layer 2's wires crossing on their way in, before and
-  after the ports were spread apart (`packages/diagram/src/effect/rack.ts`).
-- **(P4) An ELK layout adapter.** elkjs (the Eclipse Layout Kernel) lays out ports, labels and
-  nested groups well, but answers asynchronously and is large (around 1.5 MB; not measured), so it cannot sit behind
-  the synchronous `LayoutFn`. An adapter in a package of its own, for laying out a generated
-  diagram once, would let a diagram be checked against it.
-
 ---
 
 ## Animation

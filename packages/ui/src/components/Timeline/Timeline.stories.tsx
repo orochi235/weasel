@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ReactElement } from 'react';
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import { useAnimator, type Track, type TimelineHandle } from '@weasel-js/animator';
+import { type Track, type TimelineHandle } from '@weasel-js/animator';
+import { useAnimator } from '@weasel-js/animator/react';
 import { Timeline, type TimelineProps } from './Timeline';
 import { AnimatedTimeline } from './AnimatedTimeline';
 

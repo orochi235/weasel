@@ -8,17 +8,15 @@
 
 import type { ModifierState, ResizeAnchor } from '../../vocabulary';
 import type { ClaimableGesture } from '@weasel-js/gestures';
+import type { Point } from '@weasel-js/geom';
 
 import type { CursorSpec } from '@weasel-js/cursor';
 import type { DepSchema } from '../../index';
 
 export type { ModifierState } from '../../vocabulary';
 
-/** A 2D point in either world or screen coordinates. */
-export interface Point2 {
-  x: number;
-  y: number;
-}
+/** A 2D point in either world or screen coordinates; geom's `Point`. */
+export type Point2 = Point;
 
 /**
  * Which UI affordance was hit at pointerdown. Populated by the dispatcher when

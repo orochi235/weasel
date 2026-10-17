@@ -8,7 +8,7 @@ import type { GestureContext } from 'interactions/gestures/types';
 import { moveEnd } from 'interactions/actions/testUtils';
 import { tweenPose } from '../poseHelpers';
 import { scenePoseTarget } from '../poseTarget';
-import { useAnimator } from '@weasel-js/animator';
+import { useAnimator } from '@weasel-js/animator/react';
 import { momentum, type MomentumOptions } from './momentum';
 
 function makeClock() {

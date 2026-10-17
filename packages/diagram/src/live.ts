@@ -269,6 +269,7 @@ export function useLiveLayout<TPose>(opts: UseLiveLayoutOptions<TPose>): LiveLay
     const algorithm = o.algorithm ?? 'force';
     if (algorithm === 'force') {
       routes.current = routesOf(graph, { moves: new Map() });
+      eased.set(routeEasings(o.scene, graph, routes.current));
       producer.current = forceProducer<TPose>(graph, {
         ...o.layout, ...o.force,
         ...(o.geometry ? { geometry: o.geometry } : {}),
@@ -278,7 +279,7 @@ export function useLiveLayout<TPose>(opts: UseLiveLayoutOptions<TPose>): LiveLay
     const fn = typeof algorithm === 'function' ? algorithm : LAYOUTS[algorithm] ?? layered;
     const plan = planOf(fn, graph, o.layout);
     routes.current = routesOf(graph, plan);
-    eased.set(routeEasings(o.scene, graph, plan.moves, routes.current));
+    eased.set(routeEasings(o.scene, graph, routes.current));
     producer.current = easedProducer<TPose>(graph, () => plan.moves, {
       ...(o.layout ? { layout: o.layout } : {}),
       ...(o.frames === undefined ? {} : { frames: o.frames }),
@@ -304,7 +305,7 @@ export function useLiveLayout<TPose>(opts: UseLiveLayoutOptions<TPose>): LiveLay
     const poses = layoutPoses(o.scene, placed, o.geometry);
     // Routes ease only toward where they will be written, which a held run never writes.
     const { u } = progress(frame, o.frames ?? EASE_FRAMES, o.easing ?? easeInOut);
-    eased.show(o.scene, held.current ? null : u, (id) => poses.get(id) ?? ctx.pinned.get(id as NodeId));
+    eased.show(o.scene, held.current ? null : u, (id) => poses.get(id) ?? ctx.pinned.get(id as NodeId), o.geometry);
     return { poses: [...poses] as [NodeId, TPose][], done };
   }, [optsRef, eased]);
 

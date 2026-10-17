@@ -6,28 +6,14 @@ import type { LayoutStrategy } from '../../layout/types';
 import type { AddLayerSpec, LayerRecord, SystemLayerRecord, SystemLayerSpec, UserLayerRecord } from './layerTypes';
 import type { LayoutFrame, LayoutMove } from './layoutTypes';
 import type { PoseComposition } from './composeFrame';
-import type { PoseLinear } from '@weasel-js/geom';
 import type { PoseHold, PoseOverride, PoseOverrides } from './poseOverrideTypes';
 import type { SerializedLayer, SerializedNode, SerializedScene } from './serializedTypes';
 
+import type { RectPose } from '../geometry/rectPose';
+export type { RectPose };
 export type { AddLayerSpec, LayerRecord, SystemLayerRecord, SystemLayerSpec, UserLayerRecord };
 export type { LayoutFrame, LayoutMove, PoseHold, PoseOverride, PoseOverrides, SerializedLayer, SerializedNode, SerializedScene };
 
-/**
- * Axis-aligned rectangle pose with optional rotation. Rotation is in
- * radians, pivoted on the unrotated AABB center; absent === 0.
- */
-export interface RectPose {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  /** Rotation in radians around the unrotated AABB center. Absent === 0. */
-  rotation?: number;
-  /** A skew or per-axis scale the box and rotation cannot hold; see
-   *  {@link PoseLinear}. Absent is the identity. */
-  transform?: PoseLinear;
-}
 
 /**
  * # SceneNode — the thing in the scene

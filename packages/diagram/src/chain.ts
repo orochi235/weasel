@@ -6,6 +6,7 @@
  * them. Each chain node owns a column as long as the widest row hung on it, so
  * two neighbors' hangers never share space. Groups are ignored.
  */
+import { inPortOrder, SIDE_TRACK_GAP, sideRoutes, tracksNeeded, type Hanging } from './chainRoutes';
 import type { Graph, GraphNode } from './graph';
 import { backEdges, ranksOf } from './layered';
 import {
@@ -16,6 +17,8 @@ import {
   settle,
   type LayoutAxes,
   type LayoutFn,
+  type LayoutOptions,
+  type LayoutPlan,
   type Slot,
 } from './layout';
 
@@ -44,11 +47,6 @@ function lineOf(graph: Graph, ids: readonly string[] | undefined): GraphNode[] {
     at = edge === undefined ? undefined : graph.node(edge.from);
   }
   return line;
-}
-
-interface Hanging {
-  owner: Map<string, string>;
-  level: Map<string, number>;
 }
 
 /** Breadth-first from the line, so a node hangs on the chain node it is
@@ -81,14 +79,22 @@ function hangFrom(graph: Graph, line: readonly GraphNode[]): Hanging {
 
 /** The chain layout: the nodes `opts.chain` names (or the longest path) on
  *  one line in order, and every other node hung beside the chain node it is
- *  fewest edges from, on the `opts.chainSide` side. */
-export const chain: LayoutFn = (graph, opts = {}) => {
+ *  fewest edges from, on the `opts.chainSide` side. Its `plan` also routes
+ *  each edge between a chain node and a node hung beside it through a track
+ *  of its own, so a fan of them into one node does not cross itself. */
+export const chain: LayoutFn = Object.assign(
+  (graph: Graph, opts: LayoutOptions = {}) => chainPlan(graph, opts).moves,
+  { plan: chainPlan },
+);
+
+function chainPlan(graph: Graph, opts: LayoutOptions = {}): LayoutPlan {
   const axes = axesFor(opts.direction);
   const nodeGap = opts.nodeGap ?? DEFAULT_NODE_GAP;
   const rankGap = opts.rankGap ?? DEFAULT_RANK_GAP;
   const line = lineOf(graph, opts.chain);
-  if (line.length === 0) return new Map();
-  const { owner, level } = hangFrom(graph, line);
+  if (line.length === 0) return { moves: new Map() };
+  const hanging = hangFrom(graph, line);
+  const { owner, level } = hanging;
 
   const rows = new Map<string, GraphNode[][]>(line.map((n) => [n.id, []]));
   const levelSize: number[] = [Math.max(...line.map((n) => extent(n.bounds, axes.cross)))];
@@ -99,25 +105,34 @@ export const chain: LayoutFn = (graph, opts = {}) => {
     (column[at] ??= []).push(node);
     levelSize[at] = Math.max(levelSize[at] ?? 0, extent(node.bounds, axes.cross));
   }
-  const slots = slotsFor(line, rows, levelSize, axes, nodeGap, rankGap, opts.chainSide === 'before');
-  return settle(graph, slots, opts);
-};
+  for (const [id, column] of rows) if (column[1]) column[1] = inPortOrder(graph, id, column[1], axes);
+  const before = opts.chainSide === 'before';
+  const place = (side: number) => settle(graph, slotsFor(line, rows, levelSize, axes, { node: nodeGap, rank: rankGap, side }, before), opts);
+  // Where a side edge turns depends only on positions along the line, which
+  // the gap across it does not move, so one trial run counts the tracks.
+  let moves = place(nodeGap);
+  const side = (tracksNeeded(graph, hanging, moves, axes, before) + 1) * SIDE_TRACK_GAP;
+  if (side > nodeGap) moves = place(side);
+  return { moves, waypoints: sideRoutes(graph, hanging, moves, axes, before) };
+}
 
 function slotsFor(
   line: readonly GraphNode[],
   rows: ReadonlyMap<string, GraphNode[][]>,
   levelSize: readonly number[],
   axes: LayoutAxes,
-  nodeGap: number,
-  rankGap: number,
+  gaps: { node: number; rank: number; side: number },
   before: boolean,
 ): Map<string, Slot> {
+  const { node: nodeGap, rank: rankGap } = gaps;
   const rowSpan = (row: readonly GraphNode[]) =>
     row.reduce((sum, n) => sum + extent(n.bounds, axes.rank), 0) + nodeGap * Math.max(row.length - 1, 0);
-  /** The low cross edge of level `at`'s band, the line's own being 0. */
+  /** The low cross edge of level `at`'s band, the line's own being 0. The
+   *  gap between the line and the first band is `gaps.side`. */
   const bandStart = (at: number): number => {
     let offset = 0;
-    for (let k = before ? 1 : 0; k < (before ? at + 1 : at); k++) offset += (levelSize[k] ?? 0) + nodeGap;
+    const first = before ? 1 : 0;
+    for (let k = first; k < (before ? at + 1 : at); k++) offset += (levelSize[k] ?? 0) + (k === first ? gaps.side : nodeGap);
     return before ? -offset : offset;
   };
 

@@ -71,7 +71,8 @@ describe('lanes', () => {
       const bottom = lane(last).y + lane(last).height;
       expect(b.y, id).toBeGreaterThan(top);
       expect(b.y + b.height, id).toBeLessThan(bottom);
-      expect(b.y - top, id).toBeCloseTo(LANE_INSET, 6);
+      // More beside an edge wires run along: the top, here, which `q.no` takes past `blur`.
+      expect(b.y - top, id).toBeGreaterThanOrEqual(LANE_INSET - 1e-6);
       expect(bottom - (b.y + b.height), id).toBeCloseTo(LANE_INSET, 6);
     }
     const q = box('q');

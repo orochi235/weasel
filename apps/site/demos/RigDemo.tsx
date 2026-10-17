@@ -16,8 +16,8 @@ import {
   resolveSkeleton,
   sampleTrack,
   solveIk,
-  useAnimator,
 } from '@weasel-js/animator';
+import { useAnimator } from '@weasel-js/animator/react';
 import type {
   NodeId,
   RectPose,

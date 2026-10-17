@@ -4,7 +4,7 @@ import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import { renderHook, act } from '@testing-library/react';
 import { DEFAULT_VIEW_ANIMATION_MS, useViewAnimation, type ViewAnimationApi, type ViewChannel } from './useViewAnimation';
 import { KitSettingsProvider, type KitSettingsOverrides } from '@weasel-js/react';
-import { useAnimator } from '@weasel-js/animator';
+import { useAnimator } from '@weasel-js/animator/react';
 import { linear } from '@weasel-js/geom';
 import { zoomAt } from './zoomAt';
 import type { View } from './view';

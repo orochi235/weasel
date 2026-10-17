@@ -10,7 +10,8 @@ import {
   useLatest,
   useScene,
 } from '@weasel-js/core';
-import { bindClip, createTarget, useAnimator } from '@weasel-js/animator';
+import { bindClip, createTarget } from '@weasel-js/animator';
+import { useAnimator } from '@weasel-js/animator/react';
 import type { Paint, RectPose, Fill } from '@weasel-js/core';
 import type { Clip, SampledTrack, TimelineHandle } from '@weasel-js/animator';
 import num from '@weasel-js/theme/numeric.module.css';

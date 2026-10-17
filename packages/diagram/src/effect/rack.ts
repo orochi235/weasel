@@ -53,8 +53,10 @@ interface Line {
  *  port to the box's corner. */
 export const SIDE_PORT_GAP = 24;
 
+/** Ports spread along the edge at `v`, each facing straight out of it rather
+ *  than away from the box's center, so a wire leaves square to the edge. */
 const spreadAt = (ports: readonly EffectPort[], v: number): PortSpec[] =>
-  ports.map((p, i) => ({ id: p.id, type: p.type, at: { u: (i + 1) / (ports.length + 1), v } }));
+  ports.map((p, i) => ({ id: p.id, type: p.type, at: { u: (i + 1) / (ports.length + 1), v }, normal: { x: 0, y: v * 2 - 1 } }));
 
 /** The narrowest a box may be so the ports along its top and its bottom each
  *  sit `SIDE_PORT_GAP` apart. */
