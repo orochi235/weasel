@@ -62,7 +62,7 @@ function ModeCommand({ mode, label }: { mode: LabMode; label: string }) {
 
 function HeaderItemCommand({ id, item }: { id: string; item: LabHeaderItem }) {
   const ctx = useLabChromeContext();
-  useCommand(`lab.${id}`, item.label, () => item.onActivate(ctx), {
+  useCommand(`lab.item.${id}`, item.label, () => item.onActivate(ctx), {
     enabled: () => (item.disabled ? ActionDisabledReason.NotApplicable : true),
     ...(item.pressed === undefined ? {} : { active: () => item.pressed === true }),
     ...(item.keys === undefined ? {} : { keys: item.keys }),

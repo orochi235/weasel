@@ -1,6 +1,5 @@
-import { colorCount } from '@weasel-js/theme';
 import { ThemeProvider, useResolvedColorMode } from '@weasel-js/theme/react';
-import { type CSSProperties, useEffect, useLayoutEffect, useMemo, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { useStore } from 'zustand/react';
 import { useShallow } from 'zustand/react/shallow';
 import { AnnotationPreloadContext } from '../annotations/preload';
@@ -19,6 +18,7 @@ import { useLabFitWarning } from './fitCheck';
 import { LabCommands } from './LabCommands';
 import { trialIdsOf } from './LabContext';
 import { LabHeader, LabThemeSwitcher } from './LabHeader';
+import { LabMenuBar } from './LabMenuBar';
 import { LabPalette } from './LabPalette';
 import { LabPanes } from './LabPanes';
 import { LabProviders } from './LabProviders';
@@ -26,7 +26,7 @@ import { LabShell } from './LabShell';
 import { LabSurface } from './LabSurface';
 import { LabZoom } from './LabZoom';
 import type { LabBaseProps, LabProps } from './labProps';
-import { buildNebula } from './nebula';
+import { nebulaStyle } from './nebula';
 import { type OpenedLab, openStoredLab, openUnstoredLab, presentStorageKey } from './openLab';
 import { createPanelHostRegistry, PanelHostContext } from './panelHost';
 import {
@@ -145,6 +145,8 @@ function LabRuntime({
   addTrial,
   zoom = true,
   header = true,
+  menus,
+  menuBar = true,
   tools,
   configRules,
   controls,
@@ -214,19 +216,7 @@ function LabRuntime({
     controls,
   });
 
-  // Only override the backdrop in dark, where there is one to override.
-  // Setting a CSS custom property is the sanctioned use of inline style.
-  const backdropStyle =
-    resolvedMode === 'dark' && nebula && colorCount(nebula) !== 0
-      ? ({
-          ['--wzl-backdrop' as string]: buildNebula(
-            nebula,
-            theme,
-            resolvedMode,
-            density ?? 'comfortable',
-          ),
-        } as CSSProperties)
-      : undefined;
+  const backdropStyle = nebulaStyle(nebula, theme, resolvedMode, density ?? 'comfortable');
 
   const workspace = (
     <Workspace
@@ -270,6 +260,16 @@ function LabRuntime({
                     <LabShell
                       title={title ?? 'Labkit'}
                       bar={header}
+                      menuBar={
+                        menuBar && !presenting ? (
+                          <LabMenuBar
+                            menus={menus}
+                            contributions={labChromeAll}
+                            addTrial={addTrial ?? true}
+                            zoom={zoom}
+                          />
+                        ) : null
+                      }
                       mode={modeValue}
                       {...(documentTitle !== undefined ? { documentTitle } : {})}
                       {...(pages ? { pages } : {})}

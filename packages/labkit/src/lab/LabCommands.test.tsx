@@ -105,7 +105,7 @@ describe('a lab’s header commands', () => {
     expect(evaluateActive(light)).toBe(false);
   });
 
-  it("registers a header item contribution as lab.<id>, run with the lab's chrome context", async () => {
+  it("registers a header item contribution as lab.item.<id>, run with the lab's chrome context", async () => {
     const onActivate = vi.fn();
     const labChrome: LabContribution[] = [
       {
@@ -119,7 +119,7 @@ describe('a lab’s header commands', () => {
         <Grab />
       </Lab>,
     );
-    await trigger('lab.x-hello');
+    await trigger('lab.item.x-hello');
     expect(onActivate).toHaveBeenCalledTimes(1);
     expect(onActivate.mock.calls[0]?.[0]).toHaveProperty('addTrial');
   });
@@ -163,6 +163,46 @@ describe('a lab’s header commands', () => {
         <Grab />
       </Lab>,
     );
-    expect(ids()).not.toContain('lab.x-render');
+    expect(ids().filter((id) => id.includes('x-render'))).toEqual([]);
+  });
+
+  it("leaves lab.zoom in place beside a header item whose id is 'zoom'", async () => {
+    const onActivate = vi.fn();
+    const labChrome: LabContribution[] = [
+      { id: 'zoom', region: 'header', item: { icon: AddIcon, label: 'Mine', onActivate } },
+    ];
+    await renderSettled(
+      <Lab instruments={[Staged]} defaultInstrument="Staged" labChrome={labChrome}>
+        <Grab />
+      </Lab>,
+    );
+    expect(registry?.list().find((a) => a.id === 'lab.zoom')?.label).not.toBe('Mine');
+    expect(registry?.list().find((a) => a.id === 'lab.item.zoom')?.label).toBe('Mine');
+  });
+
+  it.each([
+    ['header={false}', { header: false }],
+    ['present', { present: true }],
+  ] as const)("runs a header item's keys with %s", async (_, props) => {
+    const onActivate = vi.fn();
+    const labChrome: LabContribution[] = [
+      {
+        id: 'fg-info',
+        region: 'header',
+        item: {
+          icon: AddIcon,
+          label: 'Info',
+          onActivate,
+          keys: { kind: 'key', key: 'i', mods: { mod: true } },
+        },
+      },
+    ];
+    await renderSettled(
+      <Lab instruments={[Staged]} defaultInstrument="Staged" labChrome={labChrome} {...props} />,
+    );
+    await act(async () => {
+      fireEvent.keyDown(window, { key: 'i', ...MOD });
+    });
+    expect(onActivate).toHaveBeenCalledTimes(1);
   });
 });
