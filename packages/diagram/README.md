@@ -164,7 +164,8 @@ marks do.
 
 `marks` draws more over a box than its rows. A mark with `d` is SVG path data
 in a unit square, stretched over the node's box; it takes `fill`, `stroke`,
-`strokeWidth`, `dash` and `opacity`. A mark with `text` is pinned to a point on
+`strokeWidth`, `dash` and `opacity`. `diagramScene` throws on path data that
+does not parse or draws nothing, naming the node and the mark's index. A mark with `text` is pinned to a point on
 the box: `at` is that point as `{ u, v }` fractions of the box, `self` is which
 point of the text sits on it (default `at`), and `offset` nudges it in pixels.
 Marks move with their node. `DiagramView` registers the painters for outlines
