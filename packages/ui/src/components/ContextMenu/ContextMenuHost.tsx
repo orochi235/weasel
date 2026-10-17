@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { createPortal } from 'react-dom';
-import { createMenuController, type MenuController, type Rect } from '@weasel-js/menu';
+import { createMenuController, withLinks, type MenuController, type Rect } from '@weasel-js/menu';
 import { useMenuHost, type MenuHost, type OpenMenu } from '@weasel-js/core';
 import { useOverlayPortal } from '../../overlays/portalHost';
 import { MenuPanel } from './MenuPanel';
@@ -45,26 +45,54 @@ function useReturnFocus(host: MenuHost | null): void {
 }
 
 /** One open menu's panels, with the controller that runs them. What the host draws, and a bar's menu button.
- *  With `takeFocus` false a panel takes focus only once focus is already inside the menu. */
-export function OpenPanels({ open, close, takeFocus = true }: { open: OpenMenu; close: () => void; takeFocus?: boolean }) {
+ *  With `takeFocus` false a panel takes focus only once focus is already inside the menu.
+ *  `inside` names extra targets that do not dismiss, `onEdge` hears Left or Right with nothing to open or close,
+ *  and while `releaseRuns` is true a pointerup over a row presses it, until the first pointerup anywhere. */
+export function OpenPanels({ open, close, takeFocus = true, inside, onEdge, releaseRuns = false }: {
+  open: OpenMenu; close: () => void; takeFocus?: boolean;
+  inside?: (target: EventTarget | null) => boolean;
+  onEdge?: (dir: -1 | 1) => void;
+  releaseRuns?: boolean;
+}) {
   const [controller, setController] = useState<MenuController | null>(null);
+  const edge = useRef(onEdge);
+  const release = useRef(releaseRuns);
+  useLayoutEffect(() => { edge.current = onEdge; });
+  useLayoutEffect(() => { release.current = releaseRuns; }, [releaseRuns]);
+  useEffect(() => {
+    const disarm = () => { release.current = false; };
+    window.addEventListener('pointerup', disarm);
+    return () => window.removeEventListener('pointerup', disarm);
+  }, []);
   // Built where it is disposed, so StrictMode's rerun of this effect gets a live one.
   useLayoutEffect(() => {
-    const c = createMenuController({ entries: open.entries, highlightFirst: open.source === 'keyboard', onClose: close });
+    const c = createMenuController({
+      entries: withLinks(open.entries, (href) => window.location.assign(href)),
+      highlightFirst: open.source === 'keyboard',
+      onClose: close,
+      onEdge: (dir) => edge.current?.(dir),
+    });
     // eslint-disable-next-line react-hooks/set-state-in-effect -- publishes the controller this effect creates
     setController(c);
     return () => c.dispose();
   }, [open, close]);
-  return controller ? <Panels controller={controller} open={open} close={close} takeFocus={takeFocus} /> : null;
+  return controller
+    ? <Panels controller={controller} open={open} close={close} takeFocus={takeFocus} inside={inside} release={release} />
+    : null;
 }
 
-function Panels({ controller, open, close, takeFocus }: { controller: MenuController; open: OpenMenu; close: () => void; takeFocus: boolean }) {
+function Panels({ controller, open, close, takeFocus, inside, release }: {
+  controller: MenuController; open: OpenMenu; close: () => void; takeFocus: boolean;
+  inside: ((target: EventTarget | null) => boolean) | undefined;
+  release: { readonly current: boolean };
+}) {
   const idBase = useId();
   const panels = useRef(new Map<number, HTMLElement>());
   const stack = useSyncExternalStore(controller.subscribe, controller.stack, controller.stack);
   const isInside = useCallback(
-    (t: EventTarget | null) => t instanceof Node && [...panels.current.values()].some((el) => el.contains(t)),
-    [],
+    (t: EventTarget | null) =>
+      (t instanceof Node && [...panels.current.values()].some((el) => el.contains(t))) || inside?.(t) === true,
+    [inside],
   );
   useDismiss(isInside, close);
 
@@ -94,6 +122,8 @@ function Panels({ controller, open, close, takeFocus }: { controller: MenuContro
           anchor={level === 0 ? root : null}
           parentRow={() => (level === 0 ? null : rowRect(level - 1))}
           focus={focusable && level === stack.length - 1}
+          releaseRuns={release}
+          close={close}
           register={(el) => { if (el) panels.current.set(level, el); else panels.current.delete(level); }}
         />
       ))}

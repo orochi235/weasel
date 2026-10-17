@@ -1,4 +1,4 @@
-import { createMenuController, type Rect } from '@weasel-js/menu';
+import { createMenuController, withLinks, type Rect } from '@weasel-js/menu';
 import { faceGeneration } from '@weasel-js/font';
 import type { ClaimableGesture, OpenMenu } from '@weasel-js/core';
 import { createRevision, type HudKeyEvent, type HudPointerEvent, type Widget, type WidgetBounds } from '../widget';
@@ -35,7 +35,8 @@ export function createMenuWidget(opts: MenuWidgetOptions): Widget {
   const m = opts.metrics ?? DEFAULT_MENU_METRICS;
   const rev = createRevision(opts.onChange);
   const c = createMenuController({
-    entries: opts.open.entries, highlightFirst: opts.open.source === 'keyboard', onClose: opts.close,
+    entries: withLinks(opts.open.entries, (href) => window.location.assign(href)),
+    highlightFirst: opts.open.source === 'keyboard', onClose: opts.close,
   });
   const place = createPlacer({
     anchor: opts.toCanvas(opts.open.client),
