@@ -1,7 +1,8 @@
-import { ResetIcon } from '../../icons';
 import { Button } from '../Button';
 import s from './TokenPanel.module.css';
 import type { TokenEntry } from './tokenTypes';
+import { icon } from '../../icons.gen';
+import { Icon } from '../../icons/Icon';
 
 /** Each name's segments past those every name in the set shares; a name that is all shared keeps its last. */
 export function stepLabels(names: readonly string[]): string[] {
@@ -22,7 +23,7 @@ export function tipOf(token: TokenEntry): string {
 export function Reset({ label, onPress }: { label: string; onPress: () => void }) {
   return (
     <Button className={s.reset} variant="ghost" size="sm" iconOnly ariaLabel={label} onClick={onPress}>
-      <ResetIcon size={12} />
+      <Icon name={icon('reset')} size={12} />
     </Button>
   );
 }

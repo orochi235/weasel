@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from 'react';
 import { actionItems, useActionsRegistry, type Action, type ActionItem } from '@weasel-js/core';
+import type { IconRef } from '@weasel-js/icons';
 import type { PrefAction, PrefActions, PrefLeaf } from '@weasel-js/prefs';
 
 const NONE: readonly Action[] = Object.freeze([]);
@@ -23,7 +24,7 @@ export interface ActionsLeafOptions {
   /** Only these of them, each an action id — every variant of it — or an `id:variant` key. */
   only?: readonly string[];
   /** Glyph names by entry key, over each action's own icon. */
-  icons?: Readonly<Record<string, string>>;
+  icons?: Readonly<Record<string, IconRef>>;
   /** Labels by entry key, over each action's own label. */
   labels?: Readonly<Record<string, string>>;
 }
@@ -53,6 +54,21 @@ export function actionsLeafActions(
         ...(icon === undefined ? {} : { icon }),
       };
     });
+}
+
+/**
+ * An `action` leaf naming a parametric action by its bare id, as one leaf per
+ * variant, the way a menu draws it; `null` for a leaf that names one entry.
+ * Each variant leaf names its entry by key and nothing else, so it shows the
+ * variant's own label and icon.
+ */
+export function actionLeafVariants(leaf: PrefAction, all: readonly Action[]): PrefAction[] | null {
+  const action = leaf.action === undefined ? undefined : all.find((a) => a.id === leaf.action);
+  if (!action?.variants?.length) return null;
+  return actionItems(action).map((item) => {
+    const { label: _label, icon: _icon, ...rest } = leaf;
+    return { ...rest, name: '', action: item.key };
+  });
 }
 
 /** True for a leaf a panel draws as action buttons that carry their own words, in place of a labeled row. */

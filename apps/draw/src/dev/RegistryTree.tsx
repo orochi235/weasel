@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Badge, Input, SearchIcon, Tree, filterTree, treeBranchIds, type TreeNode } from '@weasel-js/ui';
+import { Badge, Input, Tree, filterTree, treeBranchIds, type TreeNode, Icon } from '@weasel-js/ui';
 import s from './RegistryInspector.module.css';
 import type { TreeCategoryNode, TreeEntry } from './registryEntries';
+import { icon } from '../icons.gen';
 
 interface Props {
   nodes: readonly TreeCategoryNode[];
@@ -109,7 +110,7 @@ export function RegistryTree({ nodes, selected, onSelect, filter: filterProp, on
         className={s.filterInput}
         aria-label="Filter registry"
         placeholder="Filter…"
-        leadingAdornment={<SearchIcon />}
+        leadingAdornment={<Icon name={icon('ui:search')} />}
         value={filter}
         onChange={setFilter}
       />

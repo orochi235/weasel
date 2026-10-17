@@ -14,7 +14,6 @@ import { beginInsert } from './session';
 import { insertKind, insertShape } from './shape';
 
 /**
- * @experimental
  * Drag-to-insert. The node `kind` is read from `opts.params.kind`.
  *
  * Grid snapping comes from the optional `snap` dep, applied to the drag's

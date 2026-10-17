@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useIconVariant } from '@weasel-js/core';
 import { Select } from '@weasel-js/ui';
 import s from './RegistryInspector.module.css';
 import { DevShell } from './DevShell';
@@ -50,6 +51,8 @@ export function RegistryInspector() {
   const onSnapshot = useCallback((snap: RegistrySnapshot) => setRuntime(snap), []);
 
   const bundles = useMemo(() => collectBundles(), []);
+  // Lists every draw glyph, including ones no action names, so the build ships them only on request.
+  useIconVariant('draw');
   const icons = useMemo(() => collectIcons(runtime.actions), [runtime.actions]);
   const shapeKinds = useMemo(() => collectShapeTrait(runtime.tools), [runtime.tools]);
   const routingEntries = useMemo(() => collectRoutingTrait(runtime.routing), [runtime.routing]);

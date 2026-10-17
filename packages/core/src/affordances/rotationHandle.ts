@@ -53,7 +53,6 @@ const DEFAULT_PAINT: AnnulusPaintForm = {
 };
 
 /**
- * @experimental
  * Rotation affordance for the active selection: an elliptical ring that wraps the selection —
  * the smallest ellipse containing the AABB, minus the AABB itself. Hovering the ring sets the
  * cursor (default the `rotate` glyph) and a drag from it triggers `rotateAction`.

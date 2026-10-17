@@ -16,6 +16,11 @@ describe('attribute controls', () => {
     expect(ATTR_RENDERERS.symbol.group).toBeUndefined();
   });
 
+  it('icon says when the selection holds several icons', () => {
+    render(<>{ATTR_RENDERERS.icon({ ...ctx('icon', undefined), mixed: true })}</>);
+    expect(screen.getByText('Mixed')).toBeTruthy();
+  });
+
   it('optional-number writes a number, and undefined when cleared', () => {
     const setValue = vi.fn();
     render(<>{ATTR_RENDERERS['optional-number'](ctx('optional-number', 4, setValue))}</>);

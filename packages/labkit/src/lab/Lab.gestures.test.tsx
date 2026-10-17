@@ -1,4 +1,5 @@
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
+import { withIcons } from '@weasel-js/ui/testing/withIcons';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import type { CameraGestures } from '../canvas/cameraGestures';
 import type { Instrument } from '../instrument/types';
@@ -33,6 +34,7 @@ async function touchOf(instrument: Instrument, gestures?: CameraGestures) {
       defaultInstrument={instrument.name}
       {...(gestures ? { gestures } : {})}
     />,
+    { wrapper: withIcons },
   );
   const host = container.querySelector<HTMLElement>('.lk-canvas-stack, .lk-stage');
   return host?.dataset.lkTouch;

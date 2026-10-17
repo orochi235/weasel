@@ -1,3 +1,4 @@
+import { isDev } from '@weasel-js/react';
 import type { ResolvedConfig } from './types';
 
 /**
@@ -19,7 +20,7 @@ const warned = new WeakMap<ResolvedConfig, Set<string>>();
 
 /** Warn of an authoring fault in `resolved` once per `key`, whichever surface meets it first. */
 export function warnOnce(resolved: ResolvedConfig, key: string, message: string): void {
-  if (process.env.NODE_ENV === 'production') return;
+  if (!isDev()) return;
   const seen = warned.get(resolved) ?? new Set<string>();
   warned.set(resolved, seen);
   if (seen.has(key)) return;

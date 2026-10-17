@@ -10,7 +10,6 @@ import { unitsOfBox } from './replay';
 import { recordTransform } from '../transform-again/memory';
 
 /**
- * @experimental
  * Anchor-relative drag resize, committed as one batch on release. It needs
  * `InvocationCtx.drag.affordance` with a `handle:*` kind.
  *

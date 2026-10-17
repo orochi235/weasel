@@ -13,6 +13,11 @@ export interface Hop {
   fromAt?: number;
   /** The same, where the hop arrives at `to`. */
   toAt?: number;
+  /** Every place `from`'s port may sit, read as `fromAt` is, when it has
+   *  more than one; `fromAt` is the first. See `./places`. */
+  fromPlaces?: readonly number[];
+  /** The same, for `to`'s port. */
+  toPlaces?: readonly number[];
 }
 
 /** A rank's members in order. A placeholder is a `GraphNode` whose id starts

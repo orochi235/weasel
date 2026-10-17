@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { MenuEntry } from '@weasel-js/menu';
 import { pref, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
 import { resolveMenu, resolveSchemaMenu, type MenuSources } from './resolveMenu';
+import { toIconRef } from '@weasel-js/icons';
 import { ActionDisabledReason, type Action } from '../interactions/actions/action';
 
 const immediate = { timing: 'immediate' as const, run: () => {} };
@@ -14,8 +15,8 @@ const actions: Action[] = [
     { key: 'l', label: 'Left', params: { edge: 'left' } },
     { key: 'r', label: 'Right', params: { edge: 'right' } },
   ] },
-  { id: 'flip', label: 'Flip', icon: 'flip-icon', invoker: immediate, variants: [
-    { key: 'h', label: 'Horizontal', icon: 'h-icon', params: { axis: 'x' } },
+  { id: 'flip', label: 'Flip', icon: toIconRef('test:flip')!, invoker: immediate, variants: [
+    { key: 'h', label: 'Horizontal', icon: toIconRef('test:flipH')!, params: { axis: 'x' } },
     { key: 'v', label: 'Vertical', params: { axis: 'y' } },
   ] },
   { id: 'front', label: 'To Front', group: 'arrange', invoker: immediate },
@@ -72,7 +73,7 @@ describe('resolveSchemaMenu: action leaves', () => {
     const src = sources();
     const es = resolveSchemaMenu(menu({ flip: act('flip') }), src);
     expect(labels(es)).toEqual(['Horizontal', 'Vertical']);
-    expect(es.map((e) => e.kind === 'item' && e.icon)).toEqual(['h-icon', 'flip-icon']);
+    expect(es.map((e) => e.kind === 'item' && e.icon)).toEqual(['test:flipH', 'test:flip']);
     run(es[1]);
     expect(src.trigger).toHaveBeenCalledWith('flip', { axis: 'y' });
   });
@@ -165,6 +166,11 @@ describe('resolveSchemaMenu: groups', () => {
       ['submenu', 'M'], ['submenu', 'P'], ['submenu', 'T'], ['submenu', 'B'],
     ]);
   });
+  it('gives a submenu the icon its group names', () => {
+    const glyph = toIconRef('test:more')!;
+    const es = resolveSchemaMenu(menu({ m: pref.group('M', { cut: act('cut') }, { as: 'menu', icon: glyph }) }), sources());
+    expect(es[0]).toMatchObject({ kind: 'submenu', icon: glyph });
+  });
   it('drops a submenu left empty', () => {
     expect(resolveSchemaMenu(menu({ m: pref.group('M', { a: act('nope') }, { as: 'menu' }) }), sources())).toEqual([]);
   });
@@ -233,5 +239,59 @@ describe('resolveSchemaMenu: conditions', () => {
 describe('resolveMenu', () => {
   it('resolves the def schema', () => {
     expect(labels(resolveMenu({ id: 'm', menu: menu({ cut: act('cut') }) }, sources()))).toEqual(['Cut']);
+  });
+});
+
+describe('resolveSchemaMenu: access letters', () => {
+  it('copies a leaf letter onto the one item it makes', () => {
+    const es = resolveSchemaMenu(menu({ cut: pref.action('cut', { access: 't' }) }), sources());
+    expect(es[0]).toMatchObject({ kind: 'item', access: 't' });
+  });
+  it('leaves the letter off every variant a parametric action makes', () => {
+    const es = resolveSchemaMenu(menu({ flip: pref.action('flip', { access: 'f' }) }), sources());
+    expect(es).toHaveLength(2);
+    for (const e of es) expect(e).not.toHaveProperty('access');
+  });
+  it('keeps a boolean leaf letter', () => {
+    const es = resolveSchemaMenu(menu({ grid: pref.boolean('Grid', false, { access: 'g' }) }), valued({ grid: false }));
+    expect(es[0]).toMatchObject({ kind: 'item', access: 'g' });
+  });
+  it('gives a boolean no letter it did not declare', () => {
+    const es = resolveSchemaMenu(menu({ grid: pref.boolean('Grid', false) }), valued({ grid: false }));
+    expect(es[0]).not.toHaveProperty('access');
+  });
+  it('copies a letter on a menu group onto its submenu', () => {
+    const es = resolveSchemaMenu(menu({
+      view: { name: 'View', as: 'menu', access: 'v', children: { cut: act('cut') } },
+    }), sources());
+    expect(es[0]).toMatchObject({ kind: 'submenu', access: 'v' });
+  });
+});
+
+describe('resolveSchemaMenu: access letters through aliases and absence', () => {
+  const over = pref.group('', { view: pref.group('', {
+    grid: pref.boolean('Grid', false, { access: 'g' }), snap: pref.boolean('Snap', false),
+  }) });
+  const aliasOf = (of: string, access?: string) =>
+    ({ kind: 'alias', name: '', description: '', default: undefined, of, ...(access ? { access } : {}) }) as const;
+  const aliased = (a: ReturnType<typeof aliasOf>) =>
+    resolveSchemaMenu(menu({ a }), Object.assign(valued({ 'view.grid': true, 'view.snap': true }), { over }));
+
+  it('lets an alias letter win over its target letter', () => {
+    expect(aliased(aliasOf('view.grid', 'a'))[0]).toMatchObject({ access: 'a' });
+  });
+  it('lets an alias with no letter inherit its target letter', () => {
+    expect(aliased(aliasOf('view.grid'))[0]).toMatchObject({ access: 'g' });
+  });
+  it('gives an alias of a target with no letter none', () => {
+    expect(aliased(aliasOf('view.snap'))[0]).not.toHaveProperty('access');
+  });
+  it('gives an action leaf with no letter an item with no access key', () => {
+    expect(resolveSchemaMenu(menu({ cut: act('cut') }), sources())[0]).not.toHaveProperty('access');
+  });
+  it('gives a menu group with no letter a submenu with no access key', () => {
+    const es = resolveSchemaMenu(menu({ v: pref.group('V', { cut: act('cut') }, { as: 'menu' }) }), sources());
+    expect(es[0]).toMatchObject({ kind: 'submenu' });
+    expect(es[0]).not.toHaveProperty('access');
   });
 });

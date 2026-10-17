@@ -8,7 +8,7 @@ import {
   useActionsRegistry,
   type View
 } from '@weasel-js/core';
-import { CharacterOptions, CommandPalette, ContextMenuHost, ResizeHandle, Sidebar, ToolPalette } from '@weasel-js/ui';
+import { CharacterOptions, CommandPalette, ContextMenuHost, MenuBar, ResizeHandle, Sidebar, ToolPalette } from '@weasel-js/ui';
 import { type CSSProperties, type ReactElement, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActiveSwatches } from './ActiveSwatches';
 import { lookupShortcutByToolId } from './dev/keybindingsView';
@@ -17,6 +17,7 @@ import { ANNOTATION_LAYER, type DrawScene } from './drawDocument';
 import { EditorStatusBar } from './EditorStatusBar';
 import { showFirstRunNotice } from './firstRunNotice';
 import { LoupeControls } from './LoupeControls';
+import { DRAW_MENU_BAR } from './menuBar';
 import type { UseModalityReturn } from './modality/useModality';
 import { useLoupeSource } from './pageLayers';
 import { PreferencesModal } from './PreferencesModal';
@@ -41,7 +42,7 @@ export interface EditorProps {
   modality: UseModalityReturn;
 }
 
-/** The editor's chrome around the workspace: the command bar, the tool-options strip, the two
+/** The editor's chrome around the workspace: the menu bar, the command bar, the tool-options strip, the two
  *  sidebars, and the status bar. */
 export function Editor({ scene, selection, modality }: EditorProps): ReactElement {
   const [tools, setTools] = useState<ToolsApi | null>(null);
@@ -82,6 +83,7 @@ export function Editor({ scene, selection, modality }: EditorProps): ReactElemen
   return (
     <ActiveToolContextProvider>
       <div className="wd-app">
+        <MenuBar schema={DRAW_MENU_BAR} label="Menu bar" className="wd-menubar" />
         <Toolbar
           scene={scene}
           selection={selection}

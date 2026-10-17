@@ -7,14 +7,14 @@ import { mat3 } from '@weasel-js/geom';
 import type { DrawContext } from './drawContext';
 import { drawTriangles } from './drawTriangles';
 import { applyClipTest } from './stencil';
+import { isDev } from '@weasel-js/registry';
 
 const warnedUniforms = new Set<string>();
 
 function warnOnce(key: string, message: string): void {
   if (warnedUniforms.has(key)) return;
   warnedUniforms.add(key);
-  const isDev = typeof process !== 'undefined' ? process.env.NODE_ENV !== 'production' : true;
-  if (isDev) console.warn(message);
+  if (isDev()) console.warn(message);
 }
 
 export function warnOnceUniform(programId: string, name: string): void {
@@ -46,8 +46,7 @@ export function setUniform(
     const handle = value as TextureHandle;
     const entry = getTexture(handle.id);
     if (!entry) {
-      const isDev = typeof process !== 'undefined' ? process.env.NODE_ENV !== 'production' : true;
-      if (isDev) console.warn(`weasel setUniform: TextureHandle "${handle.id}" not registered`);
+      if (isDev()) console.warn(`weasel setUniform: TextureHandle "${handle.id}" not registered`);
       return;
     }
     const unit = nextTexUnit.value++;
@@ -69,8 +68,7 @@ export function setUniform(
     } else if (value.length === 16) {
       gl.uniformMatrix4fv(loc, false, value);
     } else {
-      const isDev = typeof process !== 'undefined' ? process.env.NODE_ENV !== 'production' : true;
-      if (isDev) throw new TypeError(`weasel setUniform: Float32Array must be length 9 (mat3) or 16 (mat4), got ${value.length}`);
+      if (isDev()) throw new TypeError(`weasel setUniform: Float32Array must be length 9 (mat3) or 16 (mat4), got ${value.length}`);
     }
     return;
   }
@@ -82,8 +80,7 @@ export function setUniform(
       case 3: gl.uniform3fv(loc, arr as [number, number, number]); break;
       case 4: gl.uniform4fv(loc, arr as [number, number, number, number]); break;
       default: {
-        const isDev = typeof process !== 'undefined' ? process.env.NODE_ENV !== 'production' : true;
-        if (isDev) throw new TypeError(`weasel setUniform: array length ${arr.length} not supported`);
+        if (isDev()) throw new TypeError(`weasel setUniform: array length ${arr.length} not supported`);
       }
     }
     return;
@@ -135,14 +132,13 @@ function setUniformArray(
   arr: UniformArray,
   value: ArrayValue,
 ): void {
-  const isDev = typeof process !== 'undefined' ? process.env.NODE_ENV !== 'production' : true;
   const upload = ARRAY_UPLOADS[arr.type];
   if (!upload) {
-    if (isDev) console.warn(`weasel setUniform: array uniform "${name}" has type ${arr.type}, which cannot be written as a whole`);
+    if (isDev()) console.warn(`weasel setUniform: array uniform "${name}" has type ${arr.type}, which cannot be written as a whole`);
     return;
   }
   if (value.length % upload.n !== 0 || value.length > upload.n * arr.size) {
-    if (isDev) {
+    if (isDev()) {
       throw new TypeError(
         `weasel setUniform: "${name}" is ${arr.type}[${arr.size}], so its value must hold a multiple of ${upload.n} `
         + `numbers, at most ${upload.n * arr.size}; got ${value.length}`,

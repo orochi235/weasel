@@ -3,8 +3,9 @@ import userEvent from '@testing-library/user-event';
 import { createScene, type Scene, type ToolsApi } from '@weasel-js/core';
 import { giveKeys } from '@weasel-js/react/testing/giveKeys';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
-import { RectIcon, SelectIcon } from '@weasel-js/ui';
+import { withIcons } from '@weasel-js/ui/testing/withIcons';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
+import { icon } from '../icons.gen';
 import { defineInstrument } from '../instrument/defineInstrument';
 import type { RenderContext } from '../instrument/types';
 import { Lab } from '../lab/Lab';
@@ -58,8 +59,8 @@ const instrument = defineInstrument<State, Record<string, never>>({
   undo: {},
   tools: {
     tools: [
-      { id: 'select', label: 'Select', icon: SelectIcon },
-      { id: 'rect', label: 'Rectangle', icon: RectIcon },
+      { id: 'select', label: 'Select', icon: icon('core:select') },
+      { id: 'rect', label: 'Rectangle', icon: icon('core:rect') },
     ],
   },
   render: (ctx) => <Body ctx={ctx} />,
@@ -67,7 +68,9 @@ const instrument = defineInstrument<State, Record<string, never>>({
 
 async function mount(which = instrument) {
   live = { scene: null as never, tools: null };
-  return renderSettled(<Lab instruments={[which]} defaultInstrument="Scene" />);
+  return renderSettled(<Lab instruments={[which]} defaultInstrument="Scene" />, {
+    wrapper: withIcons,
+  });
 }
 
 const addOne = () =>

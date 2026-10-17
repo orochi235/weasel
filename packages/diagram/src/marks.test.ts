@@ -43,4 +43,17 @@ describe('marks', () => {
     expect(pose.x + pose.width).toBeCloseTo(94, 6);
     expect(pose.y + pose.height / 2).toBeCloseTo(240, 6);
   });
+
+  it('rejects path data that does not parse where the diagram is built, naming the node and mark', () => {
+    const bad = (d: string): DiagramData => ({
+      nodes: [{ id: 'gain', lines: [], width: 40, height: 40, marks: [{ text: 'x', at: { u: 0, v: 0 } }, { d }] }],
+      edges: [],
+    });
+    const build = (d: string) => () => diagramScene(bad(d), { layout: 'none', font: { fontFamily: 'sans-serif', fontSize: 10 } });
+    expect(build('M0 0 L1 x')).toThrow(/node "gain".*mark 1/);
+    expect(build('L1 1')).toThrow(/node "gain".*mark 1/);
+    expect(build('M0 0 L1')).toThrow(/node "gain".*mark 1/);
+    expect(build('')).toThrow(/node "gain".*mark 1/);
+    expect(build('M0 0 L1 1')).not.toThrow();
+  });
 });

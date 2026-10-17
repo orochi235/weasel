@@ -5,9 +5,11 @@ import { createRoot } from 'react-dom/client';
 import {
   ActionsProvider,
   DepRegistryProvider,
+  IconRegistryProvider,
   SelectionContextProvider,
 } from '@weasel-js/core';
 import { ThemeProvider } from '@weasel-js/theme/react';
+import icons from 'virtual:weasel-icons';
 import { App } from './App';
 import { drawTheme } from './theme';
 import { ColorModeProvider } from './colorMode';
@@ -15,6 +17,10 @@ import { registerAvailableFonts } from './fonts';
 import { registerDefaultFont } from '../../shared/defaultFont';
 import { migrateLegacyPanelFlags } from './surfaces/surfaceState';
 import { drawPrefs, importLegacyPrefs } from './prefs';
+const ICON_VARIANTS = {
+  all: () => import('virtual:weasel-icons/all'),
+  draw: () => import('virtual:weasel-icons/draw'),
+};
 
 // The dev surfaces are only reachable at `#/dev/*`, and `RegistryInspector`
 // reaches `dev/sourceLookup`, which embeds this app's own source as strings.
@@ -25,8 +31,8 @@ const ToolkitBuilder = lazy(() =>
 const RegistryInspector = lazy(() =>
   import('./dev/RegistryInspector').then((m) => ({ default: m.RegistryInspector })));
 
-const PrefSchemaPage = lazy(() =>
-  import('./dev/PrefSchemaPage').then((m) => ({ default: m.PrefSchemaPage })));
+const AssetsPage = lazy(() =>
+  import('./dev/AssetsPage').then((m) => ({ default: m.AssetsPage })));
 
 const container = document.getElementById('root');
 if (!container) throw new Error('Missing #root element');
@@ -43,7 +49,7 @@ importLegacyPrefs(drawPrefs());
 migrateLegacyPanelFlags();
 
 /** Hash-based router: `#/dev/toolkits` mounts ToolkitBuilder, `#/dev/registry`
- *  the bundle inspector, `#/dev/prefs` the prefs schema editor, anything else
+ *  the bundle inspector, `#/dev/assets` the asset editor, anything else
  *  the main App. Independent surfaces — they don't share providers
  *  beyond the outer ActionsProvider / SelectionContextProvider scope. */
 function Root() {
@@ -59,8 +65,8 @@ function Root() {
     <ToolkitBuilder />
   ) : inspector ? (
     <RegistryInspector />
-  ) : hash.startsWith('#/dev/prefs') ? (
-    <PrefSchemaPage />
+  ) : hash.startsWith('#/dev/assets') ? (
+    <AssetsPage />
   ) : (
     <App />
   );
@@ -85,12 +91,14 @@ const slot = container as ContainerWithRoot;
 slot.__reactRoot ??= createRoot(slot);
 slot.__reactRoot.render(
   <StrictMode>
-    <DepRegistryProvider>
-      <ActionsProvider>
-        <SelectionContextProvider>
-          <Root />
-        </SelectionContextProvider>
-      </ActionsProvider>
-    </DepRegistryProvider>
+    <IconRegistryProvider icons={icons} variants={ICON_VARIANTS}>
+      <DepRegistryProvider>
+        <ActionsProvider>
+          <SelectionContextProvider>
+            <Root />
+          </SelectionContextProvider>
+        </ActionsProvider>
+      </DepRegistryProvider>
+    </IconRegistryProvider>
   </StrictMode>,
 );

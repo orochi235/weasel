@@ -1,3 +1,4 @@
+import type { MenuDef } from '@weasel-js/core';
 import type { StorageAdapter } from '@weasel-js/storage';
 import type { ColorList, Theme } from '@weasel-js/theme';
 import type { ReactNode } from 'react';
@@ -10,6 +11,7 @@ import type { InstrumentList } from '../instrument/types';
 import type { LabDensity, LabMode, TrialRecord } from '../state/types';
 import type { TrialTool } from '../tools/types';
 import type { LabPage } from './LabSwitcher';
+import type { LabMenus } from './labMenus';
 import type { PresentationSeed } from './openLab';
 import type { PresentedTransportOptions } from './presentation';
 import type { PresentationMessageOptions } from './presentationMessages';
@@ -84,6 +86,16 @@ export interface LabBaseProps {
    *  all of them, the zoom keys with the controls, for a lab embedded in a page
    *  that frames it. `children` go in the header, so they go too. */
   header?: boolean;
+  /** Menus added to the lab's menu bar, between its built-in Lab and View. A menu keyed `lab`
+   *  or `view` adds its rows to that built-in menu instead. Memoize or hoist. */
+  menus?: LabMenus;
+  /** Draw the lab's menu bar above its header. Default `true`. Dropped with the header
+   *  (`header={false}`) and while presenting. */
+  menuBar?: boolean;
+  /** Menus a right-click over a trial's camera opens, picked by each def's `when` (a camera
+   *  reports no body, so `when: {}` matches anywhere on it). Rows name commands registered in
+   *  the lab. Memoize or hoist. */
+  contextMenus?: readonly MenuDef[];
   /** Tools offered lab-wide. A trial whose instrument declares none of its own
    *  reflects and writes this slot. */
   tools?: readonly TrialTool[];

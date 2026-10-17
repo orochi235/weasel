@@ -1,5 +1,4 @@
 /**
- * @experimental
  * The tags a path operation carries: `path` on every one, and one more naming
  * the gesture family that drives it, so operations sharing a gesture can be
  * gathered (`actionsTagged`) into one tool's variants. The families are the
@@ -20,10 +19,10 @@ export const PATH_GESTURE_TAGS = {
   command: 'path-command',
 } as const;
 
-/** @experimental A gesture family of {@link PATH_GESTURE_TAGS}. */
+/** A gesture family of {@link PATH_GESTURE_TAGS}. */
 export type PathGestureFamily = Exclude<keyof typeof PATH_GESTURE_TAGS, 'path'>;
 
-/** @experimental The tags of a path operation in `family`. */
+/** The tags of a path operation in `family`. */
 export function pathOperationTags(family: PathGestureFamily): readonly string[] {
   return [PATH_GESTURE_TAGS.path, PATH_GESTURE_TAGS[family]];
 }

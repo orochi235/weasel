@@ -1,5 +1,6 @@
 import { act, fireEvent, screen } from '@testing-library/react';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
+import { withIcons } from '@weasel-js/ui/testing/withIcons';
 import { useContext } from 'react';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { useStore } from 'zustand/react';
@@ -57,6 +58,7 @@ async function renderLab(probe?: (state: DropState) => void, instrument = testIn
     <Lab instruments={[instrument]} defaultInstrument={instrument.name}>
       {probe ? <StateProbe onState={probe} /> : null}
     </Lab>,
+    { wrapper: withIcons },
   );
 }
 

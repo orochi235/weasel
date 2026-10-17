@@ -1,7 +1,6 @@
 import type { Action } from '@weasel-js/routing';
 
 /**
- * @experimental
  * Escape mid-drag tells the dispatcher to abort every in-flight handle
  * (`onEnd('cancel')` on each, no scene mutation).
  *

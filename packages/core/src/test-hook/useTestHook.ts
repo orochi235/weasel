@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useLatest } from '@weasel-js/react';
+import { useLatest, isDev } from '@weasel-js/react';
 import { installTestHookIfRequested, releaseTestHook } from './install';
 import type { TestHookRefs } from './types';
 
@@ -8,10 +8,7 @@ import type { TestHookRefs } from './types';
 export function useTestHook(read: TestHookRefs): void {
   const live = useLatest(read);
   useEffect(() => {
-    // The gate must sit at this call site: a consumer's production build constant-folds
-    // `process.env.NODE_ENV` and drops this block, but a called function can't be
-    // tree-shaken even if its body is dead.
-    if (process.env.NODE_ENV !== 'production') {
+    if (isDev()) {
       const hook = installTestHookIfRequested({
         getScene: () => live.current.getScene(),
         getSelectionIds: () => live.current.getSelectionIds(),

@@ -4,6 +4,8 @@ import { useLayoutEffect, useRef, useState, type RefObject } from 'react';
 export const BAR_ITEM = 'data-bar-item';
 /** Marks the bar's child that opens what did not fit. */
 export const BAR_MORE = 'data-bar-more';
+/** Marks the bar's name at the start of its line, which takes room from its items. */
+export const BAR_LEAD = 'data-bar-lead';
 
 // A bar's room is a whole number of pixels and its cells are not.
 const SLACK = 0.5;
@@ -36,7 +38,10 @@ export function useBarOverflow(
       for (const child of el.querySelectorAll(`:scope > [${BAR_ITEM}]`)) sizes.current.set(child.getAttribute(BAR_ITEM)!, along(child));
       const button = el.querySelector(`:scope > [${BAR_MORE}]`);
       if (button !== null) more.current = along(button);
-      setKept(fitting(signature === '' ? [] : signature.split('\n'), sizes.current, more.current, roomOf(el, vertical)));
+      const room = roomOf(el, vertical);
+      const lead = el.querySelector(`:scope > [${BAR_LEAD}]`);
+      if (lead !== null) room.size -= along(lead) + room.gap;
+      setKept(fitting(signature === '' ? [] : signature.split('\n'), sizes.current, more.current, room));
     };
     measure();
     if (typeof ResizeObserver === 'undefined') return;

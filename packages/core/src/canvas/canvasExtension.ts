@@ -12,7 +12,6 @@ import type { Animator } from '@weasel-js/animator';
 
 /**
  * A view added through {@link SceneCanvasApi.addView}.
- * @experimental
  */
 export interface CanvasViewHandle {
   readonly id: string;
@@ -29,7 +28,6 @@ export interface CanvasViewHandle {
  * canvas's own handle carries for its camera, with the same contract. A camera
  * derived by a thunk reads fresh but tells no subscriber when it moves;
  * subscribe to the canvas it derives from.
- * @experimental
  */
 export type CanvasViewCamera = Pick<CanvasExtensionApi, 'getView' | 'setView' | 'subscribeView'>;
 
@@ -226,7 +224,6 @@ export interface SceneCanvasApi extends CanvasExtensionApi {
    *
    * Pass thunks for `bounds` and `view` rather than re-adding to move it.
    * Adding an id already present replaces that view.
-   * @experimental
    */
   addView(props: CanvasViewProps): CanvasViewHandle;
 }

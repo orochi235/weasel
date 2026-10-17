@@ -1,7 +1,7 @@
 import { LabShell, ToolbarRegion, type LabContribution } from '@weasel-js/labkit';
 import { fullSelection, type Selection, type ThemeDefinition } from '@weasel-js/theme';
 import type { IssueReport, Lookup, PutResult, StoredTheme } from '@weasel-js/theme/engine';
-import { AddIcon, Button, Dialog, ExportIcon, Input, RedoIcon, Select, UndoIcon } from '@weasel-js/ui';
+import { Button, Dialog, Input, Select } from '@weasel-js/ui';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { LayerRail } from './LayerRail';
 import { RampsLayer } from './layers/RampsLayer';
@@ -19,6 +19,7 @@ import { describeIssue } from './theme/issues';
 import { documentSheets, tokensReadAt } from './theme/inspect';
 import { LAYERS, adoptGenerated, countTokens, pinApplies, runtimeTheme, type LayerId } from './theme/model';
 import { useLabHistory, type LabHistory } from './useLabHistory';
+import { icon } from './icons.gen';
 
 export interface WorkbenchProps {
   readonly api: ThemeApi;
@@ -145,13 +146,13 @@ export function ThemeWorkbench({ api, themes, stored, start, onPick, onSaved, on
 
   const contributions = useMemo<readonly LabContribution<LabHistory<ThemeDefinition>>[]>(
     () => [
-      { id: 'undo', group: 'history', region: 'header', item: { icon: UndoIcon, label: 'Undo', shortcut: '⌘Z', disabled: !canUndo, onActivate: (h) => h.undo() } },
-      { id: 'redo', group: 'history', region: 'header', item: { icon: RedoIcon, label: 'Redo', shortcut: '⇧⌘Z', disabled: !canRedo, onActivate: (h) => h.redo() } },
+      { id: 'undo', group: 'history', region: 'header', item: { icon: icon('core:undo'), label: 'Undo', shortcut: '⌘Z', disabled: !canUndo, onActivate: (h) => h.undo() } },
+      { id: 'redo', group: 'history', region: 'header', item: { icon: icon('core:redo'), label: 'Redo', shortcut: '⇧⌘Z', disabled: !canRedo, onActivate: (h) => h.redo() } },
       {
         id: 'export',
         region: 'header',
         item: {
-          icon: ExportIcon,
+          icon: icon('ui:export'),
           label: 'Export',
           showLabel: true,
           onActivate: () => {
@@ -160,7 +161,7 @@ export function ThemeWorkbench({ api, themes, stored, start, onPick, onSaved, on
           },
         },
       },
-      { id: 'new', region: 'header', item: { icon: AddIcon, label: 'New theme', showLabel: true, onActivate: () => setCreating(true) } },
+      { id: 'new', region: 'header', item: { icon: icon('ui:add'), label: 'New theme', showLabel: true, onActivate: () => setCreating(true) } },
     ],
     [canUndo, canRedo],
   );

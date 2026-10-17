@@ -48,6 +48,10 @@ describe('measureBody', () => {
     expect(measureBody(spec([{ kind: 'slot', height: 33 }]), measure).minHeight).toBe(33);
   });
 
+  it('measures a slot with a width at least that wide', () => {
+    expect(measureBody(spec([{ kind: 'slot', height: 10, width: 48 }]), measure).minWidth).toBe(48);
+  });
+
   it('grows the floor so a shape that does not fill its box still fits', () => {
     const rows: BodySpec['rows'] = [{ kind: 'label', text: 'abcdef' }];
     const rect = measureBody(spec(rows), measure);
@@ -152,6 +156,12 @@ describe('layoutBody', () => {
     const boxes = layoutBody(spec(rows), BOUNDS, measure);
     expect(boxes.map((b) => b.index)).toEqual([0, 1]);
     expect(boxes[1]!.row).toBe(rows[1]);
+  });
+
+  it('gives a slot with a width a box that wide, centered in its row', () => {
+    const boxes = layoutBody(spec([{ kind: 'slot', height: 10, width: 40 }]),
+      { x: 0, y: 0, width: 100, height: 10 }, measure);
+    expect(boxes[0]).toMatchObject({ x: 30, width: 40, height: 10 });
   });
 
   it('insets rows to the shape, not to the bounding box', () => {

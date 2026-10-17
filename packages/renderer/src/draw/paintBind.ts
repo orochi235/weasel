@@ -8,6 +8,7 @@ import { patternTileSpace } from '../math/patternSpace';
 import type { DrawContext } from './drawContext';
 import { setAlphaUniform, setColorMatrixUniforms, setProjAndModel } from './uniforms';
 import { gradientSpaceInverse, spaceToDevice } from './gradient';
+import { isDev } from '@weasel-js/registry';
 
 /** The narrow renderer surface a registered paint kind binds against, built
  *  once per frame context. `DrawContext` is not consumer surface. */
@@ -57,8 +58,7 @@ export function bindPattern(
   const tex = fill.texture;
   const entry = getTexture(tex.id);
   if (!entry) {
-    const isDev = typeof process !== 'undefined' ? process.env.NODE_ENV !== 'production' : true;
-    if (isDev) console.warn(`weasel: pattern TextureHandle "${tex.id}" not registered`);
+    if (isDev()) console.warn(`weasel: pattern TextureHandle "${tex.id}" not registered`);
     return null;
   }
   const inverse = gradientSpaceInverse(ctx, fill.units);

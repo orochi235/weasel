@@ -1,5 +1,4 @@
 /**
- * @experimental
  * The React half of the actions registry: the context, the tree node that
  * owns each id → descriptor stack, the providers that mount nodes, and the two
  * hooks. The store contract it implements is in `registry.ts`.
@@ -28,6 +27,7 @@ import { createMenuHost, type MenuHost } from '../../menus/menuHost';
 import { MenuHostContext } from '../../menus/MenuHostContext';
 import { pushOwner, ScopeNode } from './scopeNode';
 import { tuneAction, tunedParams, type ActionTuning } from './tuning';
+import { isDev } from '@weasel-js/react';
 
 /** @internal Provided by `<ActionsProvider>`, `<InputScope>` and `<Yoke>`. */
 export const ActionsContext = createContext<ActionsRegistry | null>(null);
@@ -120,6 +120,16 @@ export class ActionsNode extends ScopeNode<ActionsNode> {
       if (r) return r;
     }
     return null;
+  }
+
+  /** The actions registered at this node itself, live, unmuted and tuned —
+   *  none from the scopes below it. */
+  ownActions(): readonly Action[] {
+    const out: Action[] = [];
+    for (const [id, stack] of this.actions) {
+      if (stack.length > 0 && !this.muted.has(id)) out.push(this.tuned(stack.at(-1)!));
+    }
+    return out;
   }
 
   /** The deps `a` is invoked with from here: the active scope's, which is
@@ -260,7 +270,6 @@ export function actionsNodeOf(registry: ActionsRegistry | null): ActionsNode | n
 }
 
 /**
- * @experimental
  * Mounts a root `ActionsRegistry` for its lifetime. Children call
  * `useActionsRegistry()` or `useAction()` to participate. Mounts no input
  * listener of its own — the gesture dispatcher owns input.
@@ -278,21 +287,9 @@ export function ActionsProvider({ children }: { children: ReactNode }): ReactEle
   );
 }
 
-/**
- * `import.meta.env.DEV` read through a cast — core must not depend on a
- * bundler's ambient augmentation (`vite/client`) to compile. Mirrors the same
- * cast in SceneCanvas.tsx, dispatcher.ts and buildDeps.ts.
- */
-const IS_DEV: boolean = (() => {
-  try {
-    return Boolean((import.meta as unknown as { env?: { DEV?: boolean } }).env?.DEV);
-  } catch {
-    return false;
-  }
-})();
+const IS_DEV = isDev();
 
 /**
- * @experimental
  * Returns the `ActionsRegistry` in scope, or `null` when there is none.
  */
 export function useActionsRegistry(): ActionsRegistry | null {
@@ -300,7 +297,6 @@ export function useActionsRegistry(): ActionsRegistry | null {
 }
 
 /**
- * @experimental
  * Register an `Action` for the lifetime of the calling component. No-op (with
  * a dev-only warning) when no `ActionsProvider` is in scope. Re-registers on
  * `action` reference change (consumers should memoize stable identities to

@@ -19,6 +19,18 @@
   cursor: default;
 }
 
+a.row {
+  text-decoration: none;
+}
+
+.current {
+  font-weight: var(--wzl-font-weight-bold);
+}
+
+.access {
+  text-decoration: underline;
+}
+
 .row[data-highlighted] {
   background: var(--wzl-surface-hover);
 }

@@ -1,18 +1,28 @@
 import type { ReactNode } from 'react';
-import { isPrefLeaf, isPrefSection, type PrefAlias } from '@weasel-js/prefs';
-import { Icon } from '../../icons';
+import { isPrefLeaf, type PrefActions, type PrefAlias, type PrefLeaf } from '@weasel-js/prefs';
 import { Badge } from '../Badge';
 import { PrefKindBadge } from '../Prefs/PrefKindBadge';
 import type { TreeNode } from '../Tree';
-import { GROUP_ICON } from './Palette';
+import { nodeIcon } from './nodeIcon';
+import type { EditorAction } from './editorActions';
 import { drawnLeaf } from './pointers';
 import { childrenOf, joinPath, type SchemaNode, type SchemaRoot } from './schemaEdit';
 import { soughtRow } from './rowSearch';
 import s from './PrefSchemaEditor.module.css';
 
-/** How many leaves `nodes` come to, counting those under each at any depth. */
-function leafCount(nodes: readonly SchemaNode[]): number {
-  return nodes.reduce((n, node) => n + (isPrefLeaf(node) ? 1 : leafCount(Object.values(childrenOf(node) ?? {}))), 0);
+/** The actions an `actions` leaf draws, of `actions`. */
+const drawnBy = (leaf: PrefActions, actions: readonly EditorAction[]): EditorAction[] => actions.filter((a) => a.group === leaf.group);
+
+/** Whether `node` is an `actions` leaf, which the tree draws as a grouping of the actions it draws. */
+const isActionsLeaf = (node: SchemaNode): node is PrefActions => isPrefLeaf(node) && node.kind === 'actions';
+
+/** How many leaves `nodes` come to, counting those under each at any depth, and an `actions` leaf as the actions it
+ *  draws where `actions` says which. */
+function leafCount(nodes: readonly SchemaNode[], actions?: readonly EditorAction[]): number {
+  return nodes.reduce((n, node) => {
+    if (actions && isActionsLeaf(node)) return n + drawnBy(node, actions).length;
+    return n + (isPrefLeaf(node) ? 1 : leafCount(Object.values(childrenOf(node) ?? {}), actions));
+  }, 0);
 }
 
 /** A row's label for a node: its name before its key, and an unnamed node's key alone. */
@@ -23,8 +33,22 @@ export const leafLabel = (label: ReactNode): ReactNode => <span className={s.tre
 
 const countBadge = (n: number) => <Badge size="xs" status="muted" variant="subtle" className={s.treeCount}>{n}</Badge>;
 
-/** The structure tree's rows for what `node` holds: each child's name before its key, a group's glyph and count, a leaf's kind, and the host's mark. `over` is the dialog a layout's pointers name settings in. */
-export function toTreeNodes(node: SchemaNode, path: string | null, changed: ReadonlySet<string>, mark?: (path: string) => ReactNode, over?: SchemaRoot): TreeNode[] {
+/** The actions an `actions` leaf draws, each a row under it that names one and takes no edit: the leaf holds none
+ *  of them, so they are shown and never selected. */
+function drawnActionRows(path: string, leaf: PrefActions, actions: readonly EditorAction[]): TreeNode[] {
+  return drawnBy(leaf, actions).map((a) => soughtRow({
+    id: `${path}${DRAWN_ACTION}${a.key}`,
+    label: leafLabel(nodeLabel(a.label, a.key)),
+    ...(a.icon ? { leading: a.icon } : {}),
+    disabled: true,
+  }, { text: [a.label, a.key], tags: a.tags }));
+}
+
+/** Sets a drawn action's row id apart from every tree path, which holds no `#`. */
+const DRAWN_ACTION = '#';
+
+/** The structure tree's rows for what `node` holds: each child's name before its key, a group's glyph and count, a leaf's kind, and the host's mark. `over` is the dialog a layout's pointers name settings in. An `actions` leaf holds a row for each of `actions` it draws. */
+export function toTreeNodes(node: SchemaNode, path: string | null, changed: ReadonlySet<string>, mark?: (path: string) => ReactNode, over?: SchemaRoot, actions?: readonly EditorAction[]): TreeNode[] {
   return Object.entries(childrenOf(node) ?? {}).map(([key, child]) => {
     const p = joinPath(path, key);
     const kids = childrenOf(child);
@@ -33,17 +57,19 @@ export function toTreeNodes(node: SchemaNode, path: string | null, changed: Read
     const name = drawn?.name ?? child.name;
     const named = nodeLabel(name, key);
     const label = changed.has(p) ? <span className={s.changed}>{named}</span> : named;
+    const run = actions && isActionsLeaf(child) ? drawnActionRows(p, child, actions) : undefined;
+    const glyph = run || !isPrefLeaf(child) ? nodeIcon(child, path === null) : null;
     return soughtRow({
       id: p,
-      label: isPrefLeaf(child) ? leafLabel(label) : label,
+      label: glyph ? label : leafLabel(label),
       ...(child.description ? { tooltip: child.description } : {}),
-      // Unset, a group is drawn by its depth: a page under the root, a section below that.
-      ...(isPrefLeaf(child) ? {} : { leading: <Icon size={16} name={GROUP_ICON[child.as ?? (path === null && !isPrefSection(child) ? 'page' : 'section')]} /> }),
-      trailing: isPrefLeaf(child)
-        ? <>{mark?.(p)}<PrefKindBadge kind={child.type ?? child.kind} /></>
-        // Its glyph says how a group is drawn, so it carries no badge to say it again.
-        : <>{mark?.(p)}{countBadge(leafCount([child]))}</>,
-      ...(kids ? { children: toTreeNodes(child, p, changed, mark, over) } : {}),
+      ...(glyph ? { leading: glyph } : {}),
+      trailing: glyph
+        // Its glyph says how a grouping is drawn, so it carries no badge to say it again.
+        ? <>{mark?.(p)}{countBadge(leafCount([child], actions))}</>
+        : <>{mark?.(p)}<PrefKindBadge kind={(child as PrefLeaf).type ?? (child as PrefLeaf).kind} /></>,
+      ...(kids ? { children: toTreeNodes(child, p, changed, mark, over, actions) } : {}),
+      ...(run ? { children: run } : {}),
     }, { text: [name, key], tags: drawn?.tags ?? child.tags });
   });
 }

@@ -94,7 +94,6 @@ interface LassoScratch {
 }
 
 /**
- * @experimental
  * Static descriptor for the `lassoSelect` Action.
  */
 export const lassoSelectAction: Action & { requires: string[] } = {

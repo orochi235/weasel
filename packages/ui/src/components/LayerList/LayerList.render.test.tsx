@@ -1,4 +1,5 @@
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
+import { renderWithIcons } from '../../testing/withIcons';
 import { Profiler } from 'react';
 import { expect, it } from 'vitest';
 import { LayerList, type LayerListItem } from './LayerList';
@@ -12,14 +13,14 @@ it('renders once per update, not a second time to re-attach its container ref', 
       <LayerList items={ITEMS} title={title} />
     </Profiler>
   );
-  const { rerender } = render(tree('one'));
+  const { rerender } = renderWithIcons(tree('one'));
   commits = 0;
   rerender(tree('two'));
   expect(commits).toBe(1);
 });
 
 it('marks a non-printing row, and offers only the controls its row allows', () => {
-  render(
+  renderWithIcons(
     <LayerList
       items={[
         { id: 'notes', label: 'Measurements', nonPrinting: true, removable: false, children: [

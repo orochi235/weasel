@@ -1,10 +1,11 @@
-import type { IconName } from '../../icons/generated/paths';
+import type { IconRef } from '@weasel-js/icons';
+import { icon } from '../../icons.gen';
 import type { ButtonVariant } from './Button';
 
 /** The glyph for each variant, for a picker that shows them. */
-export const BUTTON_VARIANT_ICONS: Readonly<Record<ButtonVariant, IconName>> = {
-  primary: 'variantSolid',
-  secondary: 'variantOutline',
-  ghost: 'variantGhost',
-  link: 'variantLink',
+export const BUTTON_VARIANT_ICONS: Readonly<Record<ButtonVariant, IconRef>> = {
+  primary: icon('variantSolid'),
+  secondary: icon('variantOutline'),
+  ghost: icon('variantGhost'),
+  link: icon('variantLink'),
 };

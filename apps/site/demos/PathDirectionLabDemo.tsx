@@ -21,10 +21,11 @@ import {
   useTrialScene,
 } from '@weasel-js/labkit';
 import { PATH_DIRECTION_CHROME_ID, pathStructurePreset } from '@weasel-js/path-tools';
-import { ActionBar, SelectIcon } from '@weasel-js/ui';
+import { ActionBar } from '@weasel-js/ui';
 import { useMemo } from 'react';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
+import { icon } from '../icons.gen';
 
 const config = f.schema({
   arrows: f.boolean(true).label('Direction arrows'),
@@ -95,7 +96,7 @@ const directionInstrument = defineInstrument<State, Config>({
   config,
   initialState: () => ({ scene: null }),
   undo: {},
-  tools: { tools: [{ id: 'select', label: 'Select', icon: SelectIcon, shortcut: 'V' }] },
+  tools: { tools: [{ id: 'select', label: 'Select', icon: icon('core:select'), shortcut: 'V' }] },
   render: (ctx) => <DirectionTrial ctx={ctx} />,
 });
 

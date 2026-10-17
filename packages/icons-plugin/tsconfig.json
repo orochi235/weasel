@@ -1,0 +1,10 @@
+{
+  "extends": "../../tsconfig.json",
+  "include": ["src"],
+  "compilerOptions": {
+    // The plugin bundles `../icons/src/names.ts`, and tsup's declaration build resolves an
+    // inherited `rootDir` against this directory, failing that file with TS6059. Core does the same.
+    "rootDir": "../..",
+    "noEmit": true
+  }
+}

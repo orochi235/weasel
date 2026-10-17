@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { Icon } from '../../passthrough/weasel-ui';
 import type { TrialChromeContext, TrialContribution } from '../types';
 
 /** Which end of the title bar a `<TitleBarRegion>` lays out: `'lead'` renders
@@ -17,7 +18,7 @@ export interface TitleBarRegionProps {
 function renderEntry(c: TrialContribution, ctx: TrialChromeContext): ReactNode {
   if (c.render) return <span key={c.id}>{c.render(ctx)}</span>;
   if (c.region !== 'titlebar' || !c.item) return null;
-  const { icon: Icon, label, shortcut, disabled, danger, onActivate } = c.item;
+  const { icon, label, shortcut, disabled, danger, onActivate } = c.item;
   return (
     <button
       key={c.id}
@@ -32,7 +33,7 @@ function renderEntry(c: TrialContribution, ctx: TrialChromeContext): ReactNode {
       onPointerDown={(e) => e.stopPropagation()}
       onMouseDown={(e) => e.stopPropagation()}
     >
-      <Icon size={16} />
+      <Icon name={icon} size={16} />
     </button>
   );
 }

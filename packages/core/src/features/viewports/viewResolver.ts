@@ -1,8 +1,6 @@
 import type { View } from 'core/viewport/view';
 
 /**
- * @experimental
- *
  * A view the resolver can route input to: a camera and the rect it paints
  * into, in canvas CSS-pixel space. A viewport node supplies one of these per
  * frame; so could any other per-view surface.
@@ -14,8 +12,6 @@ export interface ResolvableView {
 }
 
 /**
- * @experimental
- *
  * The view an input event belongs to. `id` is `null` for the root view —
  * the whole canvas, when no viewport contains the point.
  */
@@ -27,8 +23,6 @@ export interface ViewTarget {
 }
 
 /**
- * @experimental
- *
  * Routes client points to views, and holds a captured pointer on the view its
  * gesture started in.
  *
@@ -53,8 +47,6 @@ export interface ViewResolver {
 }
 
 /**
- * @experimental
- *
  * Options for `createViewResolver`. Each field is a function called afresh on
  * every query, so views and the canvas may move between events.
  */
@@ -73,7 +65,7 @@ export interface CreateViewResolverOpts {
   occluded?: (x: number, y: number) => boolean;
 }
 
-/** @experimental Build a `ViewResolver` over `opts.views`, falling back to `opts.root`. */
+/** Build a `ViewResolver` over `opts.views`, falling back to `opts.root`. */
 export function createViewResolver(opts: CreateViewResolverOpts): ViewResolver {
   const { views, root, toLocal, occluded } = opts;
   const pinned = new Map<number, string | null>();

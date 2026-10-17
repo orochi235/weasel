@@ -17,13 +17,13 @@ import {
   useMemo,
   useState
 } from 'react';
-import { CommandBar, type PaperSizeKey } from './CommandBar';
-import { importSvgFile, openSvgFile } from './openSvg';
+import { CommandBar } from './CommandBar';
 import type { DrawScene } from './drawDocument';
+import { useFileCommands } from './fileCommands';
+import type { PaperSizeKey } from './paperSizes';
 import { reportPasteOmissions } from './pasteOmissions';
 import { serializeReplacer } from './persistence';
 import { StripSurfaces } from './surfaces/StripSurfaces';
-import { saveSvgFile } from './saveSvg';
 import { clipboardSnapshotRootIds, selectionToClipboardSvgString } from './svgExport';
 
 // ─── Right sidebar: LayerList + SelectionPanel ──────────────────────────────
@@ -95,26 +95,13 @@ export function Toolbar({
     isEmpty: clipboard.isEmpty,
   }), [clipboard]);
   useDepSource('clipboard', () => clipboardDep);
+  useFileCommands({ scene, filename, paperSize, backgroundColor, setFilename, setPaperSize, setBackgroundColor });
 
   return (
     <>
       <CommandBar
         surfaces={<StripSurfaces />}
         {...(cornerSelection ? { corners: { scene, selection: cornerSelection } } : {})}
-        onSaveSvg={() => {
-          void saveSvgFile(scene, { filename, paperSize, backgroundColor });
-        }}
-        onOpenSvg={() => {
-          void openSvgFile({ scene, setFilename, setPaperSize, setBackgroundColor });
-        }}
-        onImportSvg={() => { void importSvgFile(scene); }}
-        onNew={(size) => {
-          setPaperSize(size);
-          // The batch is what names the entry and captures the prior selection.
-          scene.batch('New document', () => {
-            scene.removeMany([...scene.renderOrder()]);
-          });
-        }}
       />
     </>
   );

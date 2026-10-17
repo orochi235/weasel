@@ -1,8 +1,9 @@
 import { useRef, type CSSProperties } from 'react';
 import { Icon } from '../../icons/Icon';
-import type { IconName } from '../../icons/generated/paths';
+import type { IconRef } from '@weasel-js/icons';
+import { icon } from '../../icons.gen';
 import s from './Keycaps.module.css';
-import { MODIFIER_LABELS } from './keySpecsFromMods';
+import { MODIFIER_LABELS } from '@weasel-js/gestures';
 import { useLegendFit } from './useLegendFit';
 
 const WIDE_GLYPHS = new Set(['⇥', '↵', '␣']);
@@ -10,14 +11,14 @@ const FUNCTION_KEY = /^F([1-9]|1\d|2[0-4])$/;
 
 /** The icon a symbol legend is drawn as, so it matches its neighbors whatever
  *  font the chip is in. Every symbol the legend tables produce has one. */
-const LEGEND_ICONS: Readonly<Record<string, IconName>> = {
-  '⌘': 'keyCommand', '⇧': 'keyShift', '⌥': 'keyOption', '⌃': 'keyControl', '⎈': 'keyHelm', '⎇': 'keyAlt',
-  '⎋': 'keyEscape', '↵': 'keyReturn', '⏎': 'keyReturn', '⇥': 'keyTab', '␣': 'keySpace',
-  '⌫': 'keyBackspace', '⌦': 'keyDelete', '⟵': 'keyBackspaceArrow',
-  '↑': 'keyArrowUp', '↓': 'keyArrowDown', '←': 'keyArrowLeft', '→': 'keyArrowRight',
-  '↖': 'keyHome', '↘': 'keyEnd', '⇞': 'keyPageUp', '⇟': 'keyPageDown',
-  '⎙': 'keyPrintScreen', '⎀': 'keyInsert', '⇳': 'keyScrollLock', '⎉': 'keyPause',
-  '⊞': 'keyWindows', '▤': 'keyMenu',
+const LEGEND_ICONS: Readonly<Record<string, IconRef>> = {
+  '⌘': icon('keyCommand'), '⇧': icon('keyShift'), '⌥': icon('keyOption'), '⌃': icon('keyControl'), '⎈': icon('keyHelm'), '⎇': icon('keyAlt'),
+  '⎋': icon('keyEscape'), '↵': icon('keyReturn'), '⏎': icon('keyReturn'), '⇥': icon('keyTab'), '␣': icon('keySpace'),
+  '⌫': icon('keyBackspace'), '⌦': icon('keyDelete'), '⟵': icon('keyBackspaceArrow'),
+  '↑': icon('keyArrowUp'), '↓': icon('keyArrowDown'), '←': icon('keyArrowLeft'), '→': icon('keyArrowRight'),
+  '↖': icon('keyHome'), '↘': icon('keyEnd'), '⇞': icon('keyPageUp'), '⇟': icon('keyPageDown'),
+  '⎙': icon('keyPrintScreen'), '⎀': icon('keyInsert'), '⇳': icon('keyScrollLock'), '⎉': icon('keyPause'),
+  '⊞': icon('keyWindows'), '▤': icon('keyMenu'),
 };
 
 /**
@@ -84,7 +85,7 @@ export function KeyCap({ label, inverted = false, variant = 'default', className
   const fit = useLegendFit(ref, label, { wrap, font, fixed: fixed ?? (style?.width !== undefined || kind === 'square') });
   const fitted = fit.scale === undefined ? style : ({ ...style, '--key-legend-scale': String(fit.scale) } as CSSProperties);
   const resolvedStyle = font ? { ...fitted, fontFamily: font } : fitted;
-  const icon = LEGEND_ICONS[fit.label];
+  const glyph = LEGEND_ICONS[fit.label];
   return (
     <kbd
       ref={ref}
@@ -97,9 +98,9 @@ export function KeyCap({ label, inverted = false, variant = 'default', className
       data-wrapped={fit.wrapped || undefined}
       style={resolvedStyle}
     >
-      {icon ? (
+      {glyph ? (
         <>
-          <Icon name={icon} className={s.legendIcon} />
+          <Icon name={glyph} className={s.legendIcon} />
           <span className={s.legendText}>{fit.label}</span>
         </>
       ) : fit.label}

@@ -1,5 +1,6 @@
 import { fireEvent, screen } from '@testing-library/react';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
+import { withIcons } from '@weasel-js/ui/testing/withIcons';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { f } from '../config/builder';
 import { defineInstrument } from '../instrument/defineInstrument';
@@ -32,7 +33,9 @@ const counting = (snapshotOn: string[]) =>
   });
 
 const mount = (snapshotOn: string[] = ['config.change']) =>
-  renderSettled(<Lab instruments={[counting(snapshotOn)]} defaultInstrument="Counting" />);
+  renderSettled(<Lab instruments={[counting(snapshotOn)]} defaultInstrument="Counting" />, {
+    wrapper: withIcons,
+  });
 const changes = () => screen.getByLabelText('changes').textContent;
 const click = (name: string) => fireEvent.click(screen.getByRole('button', { name }));
 const undo = () => screen.getByRole('button', { name: 'Undo' });

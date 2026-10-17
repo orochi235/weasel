@@ -1,29 +1,12 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import type { ReactNode } from 'react';
+import type { IconRef } from '@weasel-js/icons';
 import {
   ActionsProvider,
   useAction,
   type Action,
 } from '@weasel-js/core';
 import { ActionBar } from './ActionBar';
-
-// Inline placeholder glyphs keep the story self-contained.
-function Glyph({ char }: { char: string }) {
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
-      <text
-        x="8"
-        y="11"
-        fontSize="11"
-        textAnchor="middle"
-        fill="currentColor"
-        style={{ fontFamily: 'var(--wzl-font-mono)' }}
-      >
-        {char}
-      </text>
-    </svg>
-  );
-}
+import { icon } from '../../icons.gen';
 
 function Register({ action }: { action: Action }) {
   useAction(action);
@@ -34,7 +17,7 @@ function makeAction(opts: {
   id: string;
   label: string;
   group: string;
-  icon: ReactNode;
+  icon: IconRef;
   enabled?: () => true | 'selection-required' | 'scene-empty' | 'not-applicable';
   shortcut?: string;
 }): Action {
@@ -56,15 +39,15 @@ function makeAction(opts: {
 }
 
 const alignActions: Action[] = [
-  makeAction({ id: 'align.left', label: 'Align Left', group: 'align', icon: <Glyph char="←" />, shortcut: 'L' }),
-  makeAction({ id: 'align.center', label: 'Align Center', group: 'align', icon: <Glyph char="↔" />, shortcut: 'C' }),
-  makeAction({ id: 'align.right', label: 'Align Right', group: 'align', icon: <Glyph char="→" />, shortcut: 'R' }),
+  makeAction({ id: 'align.left', label: 'Align Left', group: 'align', icon: icon('core:alignLeft'), shortcut: 'L' }),
+  makeAction({ id: 'align.center', label: 'Align Center', group: 'align', icon: icon('core:alignCenterX'), shortcut: 'C' }),
+  makeAction({ id: 'align.right', label: 'Align Right', group: 'align', icon: icon('core:alignRight'), shortcut: 'R' }),
 ];
 
 const mixedEnabled: Action[] = [
-  makeAction({ id: 'mix.on', label: 'Enabled', group: 'mix', icon: <Glyph char="✓" />, enabled: () => true }),
-  makeAction({ id: 'mix.off', label: 'Disabled', group: 'mix', icon: <Glyph char="×" />, enabled: () => 'selection-required' }),
-  makeAction({ id: 'mix.also', label: 'Also disabled', group: 'mix', icon: <Glyph char="×" />, enabled: () => 'not-applicable' }),
+  makeAction({ id: 'mix.on', label: 'Enabled', group: 'mix', icon: icon('check'), enabled: () => true }),
+  makeAction({ id: 'mix.off', label: 'Disabled', group: 'mix', icon: icon('close'), enabled: () => 'selection-required' }),
+  makeAction({ id: 'mix.also', label: 'Also disabled', group: 'mix', icon: icon('close'), enabled: () => 'not-applicable' }),
 ];
 
 const meta: Meta<typeof ActionBar> = {
@@ -116,7 +99,7 @@ export const WithIconAndLabelOverrides: Story = {
       ))}
       <ActionBar
         group="align"
-        icons={{ 'align.center': 'fit' }}
+        icons={{ 'align.center': icon('fit') }}
         labels={{ 'align.center': 'Center on canvas' }}
       />
     </ActionsProvider>

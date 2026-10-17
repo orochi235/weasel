@@ -21,8 +21,9 @@ export interface EffectLookResult {
   exits?: ReadonlyMap<string, { stage: string; port: string }>;
 }
 
-/** One way of drawing a pipeline. */
-export type EffectLook<TOptions = unknown> = (pipeline: EffectPipeline, options?: TOptions) => EffectLookResult;
+/** One way of drawing a pipeline. Unparameterized, a look whose options are
+ *  not known: any look fits it, and it is called with none. */
+export type EffectLook<TOptions = never> = (pipeline: EffectPipeline, options?: TOptions) => EffectLookResult;
 
 const PALETTE = ['#6fb3ff', '#c58bff', '#f2c14e', '#5ad07f', '#ff8a6b', '#4fd1c5', '#e58fb8', '#b0bec5'];
 const UNTYPED = '#8aa2b5';
@@ -125,27 +126,58 @@ const VALUE_ROOM = '00000.000';
 
 /** The row id of the value row for an output, under its stage's body. */
 export const valueRowId = (port: string): string => `value:${port}`;
+/** The row id of the preview slot for an output, under its stage's body. */
+export const previewRowId = (port: string): string => `preview:${port}`;
+
+/** `RunRowOptions.previewSize`'s default: a 48-unit square. */
+export const PREVIEW_SIZE = 48;
+
+/** The rows a look keeps on each stage for what an `EffectRun` shows there.
+ *  Kept from the start, so a run fills them in without the chart laying out
+ *  again. A decision's symbol keeps neither. */
+export interface RunRowOptions {
+  /** A row per output for its value. Default false. */
+  showValues?: boolean;
+  /** A slot per output for its preview, after its value row. Default false. */
+  showPreviews?: boolean;
+  /** The preview slot's size: a square's side, or a width and height. A
+   *  preview is stretched to fill it. Default `PREVIEW_SIZE`. */
+  previewSize?: number | { width: number; height: number };
+}
+
+/** The `RunRowOptions` out of a look's options. */
+function runRowsOf(o: RunRowOptions): RunRowOptions {
+  return {
+    ...(o.showValues !== undefined ? { showValues: o.showValues } : {}),
+    ...(o.showPreviews !== undefined ? { showPreviews: o.showPreviews } : {}),
+    ...(o.previewSize !== undefined ? { previewSize: o.previewSize } : {}),
+  };
+}
 
 /** The body rows of an ordinary stage: its title, a row of its ports when
- *  `withPorts` (inputs left, outputs right), a row per output for a run's
- *  value when `showValues`, then its params when `showParams`. */
+ *  `withPorts` (inputs left, outputs right), then for each output its value
+ *  row when `showValues` and its preview slot when `showPreviews`, then its
+ *  params when `showParams`. */
 export function stageRows(
   stage: EffectStage,
-  opts: { showParams: boolean; withPorts: boolean; showValues?: boolean },
+  opts: { showParams: boolean; withPorts: boolean } & RunRowOptions,
 ): Row[] {
   const rows: Row[] = [{ kind: 'label', text: stage.title, style: { bold: true } }];
   const side = (ports: EffectStage['inputs']) => (ports ?? []).map((p) => ({ id: p.id, label: p.label ?? p.id, type: p.type }));
   if (opts.withPorts && ((stage.inputs?.length ?? 0) > 0 || (stage.outputs?.length ?? 0) > 0)) {
     rows.push({ kind: 'ports', left: side(stage.inputs), right: side(stage.outputs) });
   }
-  if (opts.showValues === true) {
-    // A repeated port id is a problem `checkPipeline` reports; one row for it.
-    const seen = new Set<string>();
-    for (const p of stage.outputs ?? []) {
-      if (seen.has(p.id)) continue;
-      seen.add(p.id);
+  const size = opts.previewSize ?? PREVIEW_SIZE;
+  const preview = typeof size === 'number' ? { width: size, height: size } : size;
+  // A repeated port id is a problem `checkPipeline` reports; one row for it.
+  const seen = new Set<string>();
+  for (const p of stage.outputs ?? []) {
+    if (seen.has(p.id)) continue;
+    seen.add(p.id);
+    if (opts.showValues === true) {
       rows.push({ kind: 'field', id: valueRowId(p.id), label: p.label ?? p.id, value: NO_VALUE, room: VALUE_ROOM });
     }
+    if (opts.showPreviews === true) rows.push({ kind: 'slot', id: previewRowId(p.id), ...preview });
   }
   if (opts.showParams) for (const p of stage.params ?? []) rows.push({ kind: 'field', label: p.label, value: p.value });
   return rows;
@@ -163,12 +195,12 @@ export function exitLabel(d: DrawableWire): string | undefined {
  *  perimeter ports; pass none when the rows carry them. */
 export function boxNode(
   stage: EffectStage,
-  opts: { showParams: boolean; rowPorts: boolean; ports: readonly PortSpec[]; showValues?: boolean },
+  opts: { showParams: boolean; rowPorts: boolean; ports: readonly PortSpec[]; run?: RunRowOptions },
 ): DataNode {
   return {
     id: stage.id,
     outline: kindOf(stage) === 'stage' ? 'rect' : 'stadium',
-    rows: stageRows(stage, { showParams: opts.showParams, withPorts: opts.rowPorts, showValues: opts.showValues === true }),
+    rows: stageRows(stage, { showParams: opts.showParams, withPorts: opts.rowPorts, ...runRowsOf(opts.run ?? {}) }),
     // Always set: left off, a stage port named n, e, s or w would share its id with a compass default.
     ports: opts.ports,
   };
@@ -177,6 +209,15 @@ export function boxNode(
 /** One edge of a look's data, from port to port. */
 export function wireEdge(from: EffectWire['from'], to: EffectWire['to'], label: string | undefined): DataEdge {
   return { from: from.stage, fromPort: from.port, to: to.stage, toPort: to.port, ...(label !== undefined ? { label } : {}) };
+}
+
+/** One edge per drawable wire, from port to port, named by `exitLabel` and
+ *  styled by `wireStyle` in its type's color. */
+export function wireEdges(pipeline: EffectPipeline, color: TypeColor): { edge: DataEdge; style: EdgeStyle }[] {
+  return drawableWires(pipeline).map((d) => ({
+    edge: wireEdge(d.wire.from, d.wire.to, exitLabel(d)),
+    style: wireStyle(color(d.type), isControl(pipeline, d.type), d.problem),
+  }));
 }
 
 /** A look's `nodeStyle` and `edgeStyle`: `stageStyle` for each stage, and for

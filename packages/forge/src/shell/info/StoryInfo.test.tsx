@@ -30,6 +30,10 @@ function mount() {
   );
 }
 
+const MOD = /mac|iphone|ipad|ipod/i.test(navigator.platform || navigator.userAgent)
+  ? { metaKey: true }
+  : { ctrlKey: true };
+
 const openInfo = async () => {
   fireEvent.click(screen.getByRole('button', { name: /^Info/ }));
   return screen.findByRole('dialog');
@@ -45,6 +49,24 @@ describe('Get Info', () => {
     expect(dialog.textContent).toContain('Slider');
     expect(dialog.textContent).toContain('/repo/packages/ui/src/X.stories.tsx');
     expect(within(dialog).getByText('Library').nextElementSibling?.textContent).toBe('ui');
+  });
+
+  it('opens Get Info on Mod+I', async () => {
+    mount();
+    await waitFor(() => expect(screen.getByRole('region', { name: 'Trial X > A' })).toBeInTheDocument());
+    fireEvent.keyDown(window, { key: 'i', ...MOD });
+    expect(await screen.findByRole('dialog')).toBeInTheDocument();
+  });
+
+  it('leaves Mod+I to a focused text field', async () => {
+    mount();
+    await waitFor(() => expect(screen.getByRole('region', { name: 'Trial X > A' })).toBeInTheDocument());
+    const field = document.body.appendChild(document.createElement('input'));
+    field.focus();
+    fireEvent.keyDown(field, { key: 'i', ...MOD });
+    await flush();
+    expect(screen.queryByRole('dialog')).toBeNull();
+    field.remove();
   });
 
   it('leaves the Info command unpressed: it is a command, not a tool', async () => {

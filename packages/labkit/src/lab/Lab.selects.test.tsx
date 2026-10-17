@@ -1,5 +1,6 @@
 import { fireEvent, screen } from '@testing-library/react';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
+import { withIcons } from '@weasel-js/ui/testing/withIcons';
 import { describe, expect, it, vi } from 'vitest';
 import type { Instrument } from '../instrument/types';
 import { Lab } from './Lab';
@@ -42,6 +43,7 @@ describe('a change to one trial’s record', () => {
           }}
         </LabContext.Consumer>
       </Lab>,
+      { wrapper: withIcons },
     );
     // Settle focus on the trial, so the click below moves none.
     fireEvent.pointerDown(screen.getByRole('button', { name: 'bump 0' }));

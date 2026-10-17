@@ -1,10 +1,10 @@
 import { useMemo } from 'react';
 import { defineTool } from '../../overlayBinding';
-import { LineIcon } from '../../../icons';
 import type { Tool } from '../../overlayBinding';
 import { INSERT_REPOSITION_BINDING } from 'interactions/actions/insert/repositionAction';
 import { insertBindingBehaviors, type InsertToolOptions } from '../shared/insertToolOptions';
 import { cursorFor } from '@weasel-js/cursor';
+import { icon } from '../../../icons.gen';
 
 /** An endpoint of a line, in world coordinates. */
 export interface LinePoint { x: number; y: number }
@@ -30,7 +30,7 @@ export function useLineTool(options: InsertToolOptions = {}): Tool {
         presentation: {
           label: 'Line',
           group: 'shape',
-          icon: <LineIcon />,
+          icon: icon('line'),
         },
         bindings: [
           {

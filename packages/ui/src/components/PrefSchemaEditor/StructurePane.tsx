@@ -27,6 +27,7 @@ import {
   uniqueKey, withinDepth, type SchemaNode, type SchemaRoot, type SchemaTarget,
 } from './schemaEdit';
 import s from './PrefSchemaEditor.module.css';
+import { icon } from '../../icons.gen';
 
 export interface StructurePaneProps {
   schema: SchemaRoot;
@@ -120,10 +121,10 @@ export function StructurePane({ schema, onChange, selected, lead, onPick, onSele
   const pageless = over !== undefined;
   // What a group root holds on no page waits with the unplaced, and the tree lists the pages.
   const [nodes, looseNodes] = useMemo(() => {
-    const all = toTreeNodes(schema, null, changed, rowMark, over);
+    const all = toTreeNodes(schema, null, changed, rowMark, over, actions?.actions);
     const loose = new Set(looseKeys(schema, pageless));
     return [all.filter((n) => !loose.has(n.id)), all.filter((n) => loose.has(n.id))];
-  }, [schema, changed, rowMark, over, pageless]);
+  }, [schema, changed, rowMark, over, pageless, actions?.actions]);
   const [query, setQuery] = useState('');
   const sought = query.trim().toLowerCase();
   const shown = useMemo(
@@ -215,20 +216,20 @@ export function StructurePane({ schema, onChange, selected, lead, onPick, onSele
       <PaneHeader title="Structure">
         {/* A filter opens every branch it shows, so there is nothing to fold while one is set. */}
         <Button iconOnly variant="ghost" size="sm" ariaLabel="Expand all" tooltip="Expand all" disabled={sought !== ''}
-          onClick={() => onExpandedChange(new Set(treeBranchIds(nodes)))}><Icon name="expand" size={16} /></Button>
+          onClick={() => onExpandedChange(new Set(treeBranchIds(nodes)))}><Icon name={icon('expand')} size={16} /></Button>
         <Button iconOnly variant="ghost" size="sm" ariaLabel="Collapse all" tooltip="Collapse all" disabled={sought !== ''}
-          onClick={() => onExpandedChange(new Set())}><Icon name="collapse" size={16} /></Button>
+          onClick={() => onExpandedChange(new Set())}><Icon name={icon('collapse')} size={16} /></Button>
       </PaneHeader>
       <div className={s.treeFilter}>
         <Input value={query} onChange={setQuery} aria-label="Filter structure" placeholder="Filter" />
       </div>
       {toolSlot && createPortal(
         <Palette sections={isPrefSection(schema)} ghost={!outsideDraws} disabled={readOnly} pages={!pageless} onDrag={onPaletteDrag} onDrop={onPaletteDrop}>
-          <ToolButton icon={<Icon name="tune" mark="markAdd" />} label="Add pref" disabled={readOnly || pageless} onClick={() => setAdding('pref')} />
-          <ToolButton icon={<Icon name={GROUP_ICON.section} mark="markAdd" />} label={`Add ${branch}`} disabled={readOnly || (branch === 'group' && !withinDepth(addTarget().parent, [blankGroup()], maxDepth))} onClick={() => setAdding('branch')} />
-          <ToolButton icon={<Icon name="link" mark="markAdd" />} label="Add alias" title="Show each selected pref in a second place"
+          <ToolButton icon={<Icon name={icon('core:tune')} mark={icon('markAdd')} />} label="Add pref" disabled={readOnly || pageless} onClick={() => setAdding('pref')} />
+          <ToolButton icon={<Icon name={GROUP_ICON.section} mark={icon('markAdd')} />} label={`Add ${branch}`} disabled={readOnly || (branch === 'group' && !withinDepth(addTarget().parent, [blankGroup()], maxDepth))} onClick={() => setAdding('branch')} />
+          <ToolButton icon={<Icon name={icon('link')} mark={icon('markAdd')} />} label="Add alias" title="Show each selected pref in a second place"
             disabled={aliasAt === null} onClick={() => { if (aliasAt) alias(selected, aliasAt); }} />
-          <ToolButton icon={<Icon name="delete" />} label="Remove" disabled={readOnly || selected.length === 0} onClick={onRemove} />
+          <ToolButton icon={<Icon name={icon('core:delete')} />} label="Remove" disabled={readOnly || selected.length === 0} onClick={onRemove} />
         </Palette>,
         toolSlot,
       )}

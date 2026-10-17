@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import type { PrefGroup } from '@weasel-js/prefs';
-import { Bar, BarMenu, PrefsForm, SidebarPanel, useContextMenu } from '@weasel-js/ui';
+import { Bar, BarMenu, PrefsForm, resolveIcon, SidebarPanel, useContextMenu } from '@weasel-js/ui';
 import { switchMenuId, switchSchema, SurfaceSwitchButton } from './surfaceSwitch';
 import type { PanelChrome, SchemaAsset } from './types';
 import s from './SchemaSurfaces.module.css';
@@ -68,7 +68,7 @@ export function SchemaMenu({ asset, values, onChange }: { asset: SchemaAsset } &
   );
   return (
     <div className={s.slot} onContextMenu={openSwitch}>
-      <BarMenu label={asset.label} schema={schema} values={(path) => values?.[path]} {...(onChange ? { onChange } : {})} />
+      <BarMenu label={asset.label} icon={resolveIcon(asset.schema.icon)} schema={schema} values={(path) => values?.[path]} {...(onChange ? { onChange } : {})} />
     </div>
   );
 }

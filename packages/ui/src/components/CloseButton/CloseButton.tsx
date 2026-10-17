@@ -2,6 +2,7 @@ import { forwardRef, type ButtonHTMLAttributes, type ReactNode, type Ref } from 
 import { Icon } from '../../icons/Icon';
 import { SegmentTooltip } from '../segmentTooltip';
 import s from './CloseButton.module.css';
+import { icon } from '../../icons.gen';
 
 /** Props for {@link CloseButton}. */
 export interface CloseButtonProps {
@@ -36,7 +37,7 @@ export const CloseButton = forwardRef(function CloseButton(
         disabled={disabled}
         onClick={onClick}
       >
-        <Icon name="close" size={16} />
+        <Icon name={icon('close')} size={16} />
       </button>
     </SegmentTooltip>
   );

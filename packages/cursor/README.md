@@ -37,7 +37,7 @@ and they disagree, which is the point. A glyph that reads at 11x and turns to
 mush at 24 has failed.
 
 The register is a filled silhouette with a white halo, deliberately unlike the
-toolbar icon sets (`@weasel-js/ui`'s `ICON_PATHS`, core's tool icons), which are
+toolbar icons (core's, ui's and path-tools' icon tables, drawn by ui's `<Icon>`), which are
 `fill: none` outlines in `currentColor`. An unfilled glyph over dark artwork is
 a dark outline around a dark hole, and a baked image has no cascade to inherit a
 color from. Share the authoring discipline, not the paths.

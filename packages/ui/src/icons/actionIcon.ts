@@ -1,9 +1,8 @@
 import type { ReactNode } from 'react';
+import type { IconRef } from '@weasel-js/icons';
+import { resolveIcon } from './resolveIcon';
 
-/** An action's icon as declared: a node, or a thunk drawing one on demand. */
-export type ActionIconSource = ReactNode | (() => ReactNode);
-
-/** The node to draw for an action's declared icon. */
-export function actionIcon(icon: ActionIconSource): ReactNode {
-  return typeof icon === 'function' ? icon() : icon;
+/** The node to draw for an action's icon. */
+export function actionIcon(icon: IconRef | undefined, size = 16): ReactNode {
+  return resolveIcon(icon, size);
 }

@@ -84,7 +84,6 @@ function commitClone(scratch: CloneScratch, behaviors: CloneBehaviors, selection
 }
 
 /**
- * @experimental
  * Static descriptor for the `clone` Action. Copies each selected node, with
  * its subtree, to where the drag left it. One undo entry.
  */

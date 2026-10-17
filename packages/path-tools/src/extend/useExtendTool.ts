@@ -1,7 +1,7 @@
 import type { ToolKeybinding } from '@weasel-js/routing';
 import { type Tool } from '@weasel-js/core';
-import { ExtendIcon } from '../icons';
 import { useStrokeClickTool, type StrokeClickToolOptions } from '../shared/strokeClickTool';
+import { icon } from '../icons.gen';
 
 /** Options for `useExtendTool`; the default keybinding is `{ key: 'U' }`. */
 export type UseExtendToolOptions = StrokeClickToolOptions;
@@ -16,7 +16,7 @@ const EXTEND_KEY: ToolKeybinding = { key: 'U' };
 export function useExtendTool(options: UseExtendToolOptions = {}): Tool {
   return useStrokeClickTool(
     {
-      id: 'extend', label: 'Extend to next path', icon: ExtendIcon, hookName: 'useExtendTool',
+      id: 'extend', label: 'Extend to next path', icon: icon('extend'), hookName: 'useExtendTool',
       actionId: 'extendToMeet', keybinding: EXTEND_KEY,
     },
     options,

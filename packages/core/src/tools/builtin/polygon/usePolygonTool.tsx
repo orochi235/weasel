@@ -1,12 +1,12 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { defineTool } from '../../overlayBinding';
-import { PolygonIcon } from '../../../icons';
 import type { Tool } from '../../overlayBinding';
 import { INSERT_REPOSITION_BINDING } from 'interactions/actions/insert/repositionAction';
 import { SHAPE_COUNT_RANGE } from 'features/paths/shapeGenerator';
 import { insertBindingBehaviors, type InsertToolOptions } from '../shared/insertToolOptions';
 import type { Action } from '@weasel-js/routing';
 import { cursorFor } from '@weasel-js/cursor';
+import { icon } from '../../../icons.gen';
 
 /** A point in world coordinates. */
 export interface PolygonPoint { x: number; y: number }
@@ -92,7 +92,7 @@ export function usePolygonTool<TNode extends { id: string } = { id: string }>(
         presentation: {
           label,
           group: 'shape',
-          icon: <PolygonIcon />,
+          icon: icon('polygon'),
         },
         bindings: [
           // Default = drag from corner, consistent with rect/ellipse.

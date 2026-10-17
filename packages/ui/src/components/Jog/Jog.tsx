@@ -1,8 +1,9 @@
 import type { ReactNode } from 'react';
-import { PauseIcon, PlayIcon, StepBackIcon, StepForwardIcon } from '../../icons';
 import { Button } from '../Button';
 import { Slider } from '../Slider/Slider';
 import s from './Jog.module.css';
+import { icon } from '../../icons.gen';
+import { Icon } from '../../icons/Icon';
 
 /** Props for {@link Jog}. */
 export interface JogProps {
@@ -49,7 +50,7 @@ export function Jog(props: JogProps) {
         disabled={at <= 0}
         onClick={() => onStep(-1)}
       >
-        <StepBackIcon size={14} />
+        <Icon name={icon('stepBack')} size={14} />
       </Button>
       <Button
         iconOnly
@@ -59,7 +60,7 @@ export function Jog(props: JogProps) {
         disabled={count < 2}
         onClick={() => onPlay(!playing)}
       >
-        {playing ? <PauseIcon size={14} /> : <PlayIcon size={14} />}
+        {playing ? <Icon name={icon('pause')} size={14} /> : <Icon name={icon('play')} size={14} />}
       </Button>
       <Button
         iconOnly
@@ -69,7 +70,7 @@ export function Jog(props: JogProps) {
         disabled={at >= last}
         onClick={() => onStep(1)}
       >
-        <StepForwardIcon size={14} />
+        <Icon name={icon('stepForward')} size={14} />
       </Button>
 
       {onScrub && count > 0 && (

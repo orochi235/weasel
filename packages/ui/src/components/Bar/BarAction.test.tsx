@@ -64,6 +64,26 @@ describe('BarAction', () => {
     expect(run).toHaveBeenCalledWith({ to: 'left' });
   });
 
+  it('draws a leaf naming a bare parametric id as one button per variant, as a menu does', () => {
+    const run = vi.fn();
+    const align = action('align', { variants: [
+      { key: 'left', label: 'Align left', params: { to: 'left' } },
+      { key: 'right', label: 'Align right', params: { to: 'right' } },
+    ] });
+    align.invoker = { timing: 'immediate', run: (_deps, params) => run(params) };
+    render(
+      <Host actions={[align]}>
+        <BarAction leaf={leaf({ name: 'Align', action: 'align' })} path="align" />
+        <PrefActionButton pref={leaf({ name: 'Align', action: 'align' })} path="align2" />
+      </Host>,
+    );
+    expect(screen.getAllByRole('button').map((b) => b.getAttribute('aria-label')))
+      .toEqual(['Align left', 'Align right', 'Align left', 'Align right']);
+    expect(document.querySelector('[data-missing]')).toBeNull();
+    fireEvent.click(screen.getAllByRole('button', { name: 'Align right' })[0]!);
+    expect(run).toHaveBeenCalledWith({ to: 'right' });
+  });
+
   it('is disabled while the action says it cannot run', () => {
     render(
       <Host actions={[action('text.bold', { enabled: () => 'selection-required' })]}>
@@ -161,6 +181,36 @@ describe('BarAction', () => {
     expect(button).toBeDisabled();
     await act(async () => { settle(); });
     expect(button).not.toBeDisabled();
+  });
+});
+
+/** Enter keyboard modality, then focus: React Aria opens a tooltip only on focus-visible. */
+function keyboardFocus(el: HTMLElement) {
+  fireEvent.keyDown(document.body, { key: 'Tab' });
+  act(() => el.focus());
+}
+
+describe('BarAction tooltip', () => {
+  it('reads the leaf’s description, with the shortcut after it', () => {
+    render(<BarActionButton label="Save" description="Save as SVG" shortcut="Ctrl+S" onPress={() => {}} />);
+    keyboardFocus(screen.getByRole('button', { name: 'Save' }));
+    expect(screen.getByRole('tooltip').textContent).toBe('Save as SVG (Ctrl+S)');
+  });
+
+  it('reads the label and shortcut where there is no description', () => {
+    render(<BarActionButton label="Save" shortcut="Ctrl+S" onPress={() => {}} />);
+    keyboardFocus(screen.getByRole('button', { name: 'Save' }));
+    expect(screen.getByRole('tooltip').textContent).toBe('Save (Ctrl+S)');
+  });
+
+  it('takes the description from an action leaf', () => {
+    render(
+      <Host actions={[action('file.save')]}>
+        <BarAction leaf={leaf({ name: 'Save', action: 'file.save', description: 'Save as SVG' })} path="save" />
+      </Host>,
+    );
+    keyboardFocus(screen.getByRole('button', { name: 'Save' }));
+    expect(screen.getByRole('tooltip').textContent).toBe('Save as SVG');
   });
 });
 

@@ -29,6 +29,16 @@ on a node would break persistence and the clipboard.
 `data:image/…;base64,…` URI (the embedded-bytes path used by
 [`../ingestion`](../ingestion/README.md) when it inlines a dropped file).
 
+## Bitmaps made at runtime
+
+`bitmapSrc(bitmap)` names an `ImageBitmap` the page made itself — a canvas
+snapshot, a video frame — as a `src` an image node draws with no load. The same
+bitmap always gets the same name, and the GL texture is keyed on the bitmap, so
+handing a node the same one again uploads nothing. New pixels are a new bitmap
+and a new name. The cache holds these weakly and never budget-drops them; the
+maker keeps the bitmap alive, and `releaseImageSource(old)` frees a replaced
+one's texture without waiting for GC.
+
 ## SVG sources
 
 An SVG source (`isVectorImageSrc`) has no single right raster. `kit:image`

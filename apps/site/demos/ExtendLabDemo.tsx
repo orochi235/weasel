@@ -10,11 +10,11 @@ import {
   TrialSceneCanvas,
   useTrialScene,
 } from '@weasel-js/labkit';
-import { ArrowRightIcon, SelectIcon } from '@weasel-js/ui';
 import { useMemo } from 'react';
 import { strokeNode } from './pathEditLabScene';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
+import { icon } from '../icons.gen';
 
 const FEATURES = ['draw', extendPreset] as const;
 
@@ -61,8 +61,8 @@ const extendInstrument = defineInstrument<State, Config>({
   tools: {
     initial: 'extend',
     tools: [
-      { id: 'extend', label: 'Extend to next path', icon: ArrowRightIcon, shortcut: 'U' },
-      { id: 'select', label: 'Select (then E extends the selection)', icon: SelectIcon, shortcut: 'V' },
+      { id: 'extend', label: 'Extend to next path', icon: icon('ui:arrowRight'), shortcut: 'U' },
+      { id: 'select', label: 'Select (then E extends the selection)', icon: icon('core:select'), shortcut: 'V' },
     ],
   },
   render: (ctx) => <ExtendTrial ctx={ctx} />,

@@ -10,11 +10,11 @@ import {
   TrialSceneCanvas,
   useTrialScene,
 } from '@weasel-js/labkit';
-import { FitStretchIcon, SelectIcon } from '@weasel-js/ui';
 import { useMemo } from 'react';
 import { expandWarpCommand, pathLeaf, useWarpLabActions } from './warpLab';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
+import { icon } from '../icons.gen';
 
 const FEATURES = ['draw', warpPreset] as const;
 
@@ -78,8 +78,8 @@ const distortInstrument = defineInstrument<State, Config>({
   undo: {},
   tools: {
     tools: [
-      { id: 'select', label: 'Select', icon: SelectIcon, shortcut: 'V' },
-      { id: 'distort', label: 'Distort', icon: FitStretchIcon, shortcut: 'F' },
+      { id: 'select', label: 'Select', icon: icon('core:select'), shortcut: 'V' },
+      { id: 'distort', label: 'Distort', icon: icon('ui:fitStretch'), shortcut: 'F' },
     ],
     initial: 'distort',
   },

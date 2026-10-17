@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react';
 import { pathsIn, scopedPath } from './assetScope';
-import { foldsUnder, openAfterStep } from './folds';
-import { branchPaths, type SchemaRoot } from './schemaEdit';
+import { foldablePaths, foldsUnder, openAfterStep } from './folds';
+import type { SchemaRoot } from './schemaEdit';
 import { useEditorSelection, type EditorSelection } from './useEditorSelection';
 import { assetOf, isShown, shownAssets, type ShownAsset, type Workspace } from './workspace';
 import { changedAsset } from './workspaceChanges';
@@ -41,11 +41,11 @@ export function useAssetView(workspace: Workspace, opened: Workspace | undefined
   const folds = useMemo(() => foldsUnder(draftKey), [draftKey]);
   const startOpen = (id: string, root: SchemaRoot): Set<string> => {
     const folded = new Set(folds.open(id));
-    return new Set(branchPaths(root).filter((path) => !folded.has(path)));
+    return new Set(foldablePaths(root).filter((path) => !folded.has(path)));
   };
   const [expanded, setExpanded] = useState(() => startOpen(asset.id, (opened && assetOf(opened, asset.id)?.root) ?? schema));
   useEffect(() => {
-    folds.save(asset.id, branchPaths(schema).filter((id) => !expanded.has(id)));
+    folds.save(asset.id, foldablePaths(schema).filter((id) => !expanded.has(id)));
   }, [folds, asset.id, schema, expanded]);
   // The rows open under each schema shown, for a step back to one to open what it brings back.
   const openAt = useRef(new WeakMap<SchemaRoot, ReadonlySet<string>>());

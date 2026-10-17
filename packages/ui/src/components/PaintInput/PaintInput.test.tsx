@@ -8,6 +8,7 @@ import {
   type GradientPaint,
 } from '@weasel-js/core';
 import { seedMeshPatch } from '@weasel-js/core/mesh';
+import { withIcons } from '../../testing/withIcons';
 import { PaintInput } from './PaintInput';
 
 const LINEAR: GradientPaint = {
@@ -182,6 +183,13 @@ describe('PaintInput', () => {
     clickKind('None');
     expect(onCommit).toHaveBeenLastCalledWith(null);
     expect(screen.getByRole('radio', { name: 'None' })).toBeChecked();
+  });
+
+  it('draws None as a glyph, like every other segment', () => {
+    render(<PaintInput value={null} onChange={() => {}} />, { wrapper: withIcons });
+    const none = screen.getByRole('radio', { name: 'None' });
+    expect(none).toHaveAttribute('aria-label', 'None');
+    expect(none.querySelector('svg')).not.toBeNull();
   });
 
   it('shows no editor body for None', () => {

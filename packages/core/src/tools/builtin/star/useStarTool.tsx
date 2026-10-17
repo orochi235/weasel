@@ -1,6 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { defineTool } from '../../overlayBinding';
-import { StarIcon } from '../../../icons';
 import type { Tool } from '../../overlayBinding';
 import { INSERT_REPOSITION_BINDING } from 'interactions/actions/insert/repositionAction';
 import { SHAPE_COUNT_RANGE } from 'features/paths/shapeGenerator';
@@ -8,6 +7,7 @@ import { insertBindingBehaviors, type InsertToolOptions } from '../shared/insert
 import type { Action } from '@weasel-js/routing';
 import { useLatest } from '@weasel-js/react';
 import { cursorFor } from '@weasel-js/cursor';
+import { icon } from '../../../icons.gen';
 
 /** A point in world coordinates. */
 export interface StarPoint { x: number; y: number }
@@ -90,7 +90,7 @@ export function useStarTool<TNode extends { id: string } = { id: string }>(
         presentation: {
           label,
           group: 'shape',
-          icon: <StarIcon />,
+          icon: icon('star'),
         },
         bindings: [
           // Default = drag from corner; anchor dot in the overlay sells

@@ -42,11 +42,19 @@ describe('kindSchemas', () => {
 
   it('describes a group and a section each with a name, a description and how it is drawn, a section with no page', () => {
     const { shared, own } = attributeSchema({ name: 'G', children: {} });
-    expect(Object.keys(shared)).toEqual(['name', 'description', 'tags', 'as', 'showIf', 'enableIf']);
+    expect(Object.keys(shared)).toEqual(['name', 'description', 'tags', 'as', 'access', 'showIf', 'enableIf']);
     expect(own).toEqual({});
     const section = attributeSchema({ name: 'S', members: {} }).shared;
-    expect(Object.keys(section)).toEqual(['name', 'description', 'tags', 'as', 'showIf', 'enableIf']);
+    expect(Object.keys(section)).toEqual(['name', 'description', 'tags', 'as', 'access', 'showIf', 'enableIf']);
     expect((section.as as unknown as { options: Array<{ value: string }> }).options.map((o) => o.value)).toEqual(['tab', 'panel', 'section', 'fragment', 'bar', 'menu']);
+  });
+
+  it('offers an access letter only where a menu carries one: actions, booleans, labels, aliases, groups and sections', () => {
+    const offered = (kind: string) => 'access' in attributeSchema(blankLeaf(kind)).shared;
+    for (const kind of ['action', 'boolean', 'label', 'alias']) expect(offered(kind), kind).toBe(true);
+    for (const kind of ['number', 'string', 'enum', 'color', 'paint', 'object', 'list', 'map', 'union', 'field', 'actions', 'separator']) {
+      expect(offered(kind), kind).toBe(false);
+    }
   });
 
   it('offers readout on a leaf holding a value, and an actions leaf only its group and what it shares with buttons', () => {
@@ -63,6 +71,20 @@ describe('kindSchemas', () => {
     expect((bar.overflow as unknown as { options: Array<{ value: string }> }).options.map((o) => o.value)).toEqual(['scroll', 'menu']);
     expect(attributeSchema({ name: 'S', as: 'bar', members: {} }).shared.overflow).toBeDefined();
     expect(attributeSchema({ name: 'G', as: 'panel', children: {} }).shared.overflow).toBeUndefined();
+  });
+
+  it('offers what a bar starts with, and offers it of nothing else', () => {
+    const bar = attributeSchema({ name: 'G', as: 'bar', children: {} }).shared;
+    expect((bar.lead as unknown as { options: Array<{ value: string }> }).options.map((o) => o.value)).toEqual(['label', 'icon']);
+    expect(attributeSchema({ name: 'G', as: 'panel', children: {} }).shared.lead).toBeUndefined();
+  });
+
+  it('offers an icon of a group a bar leads with or opens from a button, and of no other', () => {
+    expect(attributeSchema({ name: 'G', as: 'bar', children: {} }).shared.icon).toBeDefined();
+    expect(attributeSchema({ name: 'S', as: 'menu', members: {} }).shared.icon).toBeDefined();
+    expect(attributeSchema({ name: 'G', as: 'panel', children: {} }).shared.icon).toBeDefined();
+    expect(attributeSchema({ name: 'G', as: 'section', children: {} }).shared.icon).toBeUndefined();
+    expect(attributeSchema({ name: 'G', children: {} }).shared.icon).toBeUndefined();
   });
 
   it('uses a custom kind\'s attributes, and treats unknown attributes as read-only', () => {
@@ -98,9 +120,9 @@ describe('kindSchemas', () => {
     expect(blankLeaf('object')).toMatchObject({ children: {} });
   });
 
-  it('offers a label its name, its description, and when it is drawn, and a separator only when it is drawn', () => {
+  it('offers a label its name, its description, its access letter, and when it is drawn, and a separator only when it is drawn', () => {
     const label = attributeSchema(blankLeaf('label'));
-    expect([Object.keys(label.shared), Object.keys(label.own), Object.keys(label.auto)]).toEqual([['name', 'description', 'hidden', 'showIf'], [], []]);
+    expect([Object.keys(label.shared), Object.keys(label.own), Object.keys(label.auto)]).toEqual([['name', 'description', 'access', 'hidden', 'showIf'], [], []]);
     const rule = attributeSchema(blankLeaf('separator'));
     expect([Object.keys(rule.shared), Object.keys(rule.own), Object.keys(rule.auto)]).toEqual([['hidden', 'showIf'], [], []]);
     expect(rule.readOnly).toEqual([]);

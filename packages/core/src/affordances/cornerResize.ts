@@ -35,7 +35,6 @@ const DEFAULT_FILL = '#d4c4a8';
 const DEFAULT_STROKE = '#1a130d';
 
 /**
- * @experimental
  * Corner-handle affordance for resizing the active selection (single
  * member in single-mode; the union AABB in multi-mode).
  *

@@ -14,6 +14,7 @@ import react from '@vitejs/plugin-react';
 import { readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { stableScopedName } from '../../scripts/vite-css-modules.ts';
+import { weaselIcons } from '../icons-plugin/src/index.ts';
 
 /**
  * One entry per component directory, plus the barrel, backing the
@@ -27,7 +28,11 @@ import { stableScopedName } from '../../scripts/vite-css-modules.ts';
  * and is skipped; it still reaches consumers through whatever imports it.
  */
 const componentsDir = resolve(import.meta.dirname, 'src/components');
-const entries: Record<string, string> = { index: resolve(import.meta.dirname, 'src/index.ts') };
+const entries: Record<string, string> = {
+  index: resolve(import.meta.dirname, 'src/index.ts'),
+  'icons.table': resolve(import.meta.dirname, 'src/icons.table.ts'),
+  kitIcons: resolve(import.meta.dirname, 'src/kitIcons.ts'),
+};
 for (const dirent of readdirSync(componentsDir, { withFileTypes: true })) {
   if (!dirent.isDirectory()) continue;
   const dir = resolve(componentsDir, dirent.name);
@@ -36,7 +41,7 @@ for (const dirent of readdirSync(componentsDir, { withFileTypes: true })) {
 }
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), weaselIcons.vite({ mode: 'library' })],
   css: { modules: { generateScopedName: stableScopedName } },
   build: {
     lib: {
@@ -49,6 +54,8 @@ export default defineConfig({
     // One stylesheet for the whole package. With code splitting on, Vite emits
     // a stylesheet per chunk and consumers would have to know which to import.
     cssCodeSplit: false,
+    // A consumer's bundler minifies. Either pass here would strip the `@icon` annotations.
+    minify: false,
     sourcemap: true,
     emptyOutDir: true,
     rollupOptions: {
@@ -63,6 +70,7 @@ export default defineConfig({
         /^@weasel-js\//,
       ],
       output: {
+        minify: false,
         // Entry keys already carry the path (`components/Toast/index`), so emit
         // them verbatim to mirror the source tree — and the declaration tree.
         entryFileNames: '[name].js',

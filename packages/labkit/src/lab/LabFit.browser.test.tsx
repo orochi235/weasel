@@ -79,6 +79,13 @@ function BodyHost({ host, children }: { host: Host; children: ReactNode }) {
 
 type Fixture = 'fullscreen' | 'floating' | 'wrapped' | 'framed' | 'sidebar';
 
+/** The element the lab is portaled into, per host. */
+const MOUNT: Record<Host, string> = {
+  reset: '.lk-fit-host--reset',
+  wrapped: '.lk-fit-host--wrapped > div',
+  framed: '.lk-fit-frame',
+};
+
 const HOST: Record<Fixture, Host> = {
   fullscreen: 'reset',
   sidebar: 'reset',
@@ -126,6 +133,22 @@ function fitProblems(fixture: Fixture, viewport: keyof typeof VIEWPORTS): string
     const h = t.getBoundingClientRect().height;
     if (!(h > 0)) problems.push(`tile ${i}: height ${h}`);
   });
+
+  // The page itself must not scroll, menu bar and all.
+  window.scrollTo(0, 5000);
+  if (window.scrollY !== 0) problems.push(`window scrolled to ${window.scrollY}`);
+
+  const mount = document.querySelector(MOUNT[HOST[fixture]])?.getBoundingClientRect();
+  if (!mount) return [...problems, `no mount ${MOUNT[HOST[fixture]]}`];
+  if (Math.abs(shellBox.height - mount.height) > 1)
+    problems.push(`.lk-shell height ${shellBox.height} != host ${mount.height}`);
+
+  const bar = document.querySelector('.lk-shell-menubar [role="menubar"]')?.getBoundingClientRect();
+  const header = document.querySelector('.lk-shell-header')?.getBoundingClientRect();
+  if (!bar || !header) return [...problems, 'no menu bar or header'];
+  if (!(bar.height > 0)) problems.push(`menu bar height ${bar.height}`);
+  if (bar.bottom > header.top + 1)
+    problems.push(`menu bar ${bar.bottom} below header ${header.top}`);
 
   if (fixture === 'framed') {
     const frame = document.querySelector('.lk-fit-frame');
@@ -194,4 +217,8 @@ test.each(CASES)('$fixture fits a $viewport viewport', async ({ fixture, viewpor
     { timeout: 2000 },
   );
   expect(fitProblems(fixture, viewport)).toEqual([]);
+  if (fixture === 'fullscreen' && viewport === 'wide') {
+    // Overwritten each run, under the gitignored screenshot directory.
+    await page.screenshot({ path: '__screenshots__/LabFit.browser.test.tsx/lab-wide.png' });
+  }
 });

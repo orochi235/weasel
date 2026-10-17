@@ -9,12 +9,12 @@
 
 import {
   MIXED,
-  isPlainObject,
   type Mixed,
   type NodePropertiesEntry,
   type NodeRoutingEntry,
   type SceneNode,
 } from '@weasel-js/core';
+import type { IconRef } from '@weasel-js/icons';
 import {
   isPrefLeaf,
   pairRuns,
@@ -22,11 +22,13 @@ import {
   prefSectionLeaves,
   type PrefAlias,
   type PrefAliasTargets,
+  type PrefBarLead,
   type PrefBarOverflow,
   type PrefLeaf,
   type PrefSection,
   type PrefSectionAs,
 } from '@weasel-js/prefs';
+import { deepEqual } from '@weasel-js/registry';
 
 // Re-exported under its existing public name here: the kit-wide "these
 // values disagree" sentinel (`@weasel-js/core`'s `MIXED`) also covers
@@ -75,6 +77,10 @@ export interface PanelSection {
   as?: PrefSectionAs;
   /** Drawn as a bar: what happens to the cells its line has no room for. */
   overflow?: PrefBarOverflow;
+  /** Drawn as a bar: what its line starts with. */
+  lead?: PrefBarLead;
+  /** The glyph naming it, which a bar can start its line with. */
+  icon?: IconRef;
   rows: PanelRow[];
 }
 
@@ -114,7 +120,7 @@ function flatten(schema: PrefSection, rawAliases: boolean, targets?: PrefAliasTa
       untitled.push(shown(key, child));
     } else {
       const leaves = prefSectionLeaves(child.members).map(([path, leaf]) => shown(path, leaf));
-      sections.push({ key, name: child.name, ...(child.as ? { as: child.as } : {}), ...(child.overflow ? { overflow: child.overflow } : {}), rows: pairRows(leaves) });
+      sections.push({ key, name: child.name, ...(child.as ? { as: child.as } : {}), ...(child.overflow ? { overflow: child.overflow } : {}), ...(child.lead ? { lead: child.lead } : {}), ...(child.icon ? { icon: child.icon } : {}), rows: pairRows(leaves) });
     }
   }
   if (untitled.length > 0) {
@@ -253,27 +259,12 @@ export function aggregateValue(
 /** The one value `values` all are, or `MIXED`. */
 export function sharedValue(values: readonly unknown[]): unknown | Mixed {
   const [first, ...rest] = values;
-  return rest.every((v) => sameValue(v, first)) ? first : MIXED;
+  return rest.every((v) => deepEqual(v, first, { undefinedAsAbsent: true })) ? first : MIXED;
 }
 
 /** Whether two stored values are one value: identical, or arrays and plain
  *  objects alike all the way down. Two nodes loaded from a file hold equal
  *  paints as separate objects. */
-function sameValue(a: unknown, b: unknown): boolean {
-  if (Object.is(a, b)) return true;
-  if (Array.isArray(a) || Array.isArray(b)) {
-    return (
-      Array.isArray(a) &&
-      Array.isArray(b) &&
-      a.length === b.length &&
-      a.every((entry, i) => sameValue(entry, b[i]))
-    );
-  }
-  if (!isPlainObject(a) || !isPlainObject(b)) return false;
-  // A key holding `undefined` reads the same as one that is absent.
-  return [...new Set([...Object.keys(a), ...Object.keys(b)])].every((key) => sameValue(a[key], b[key]));
-}
-
 /** `'rect ×2 · text'` — kinds in first-seen order with counts. */
 export function kindBreakdown(kinds: readonly string[]): string {
   const counts = new Map<string, number>();

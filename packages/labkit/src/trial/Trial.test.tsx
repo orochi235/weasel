@@ -1,9 +1,11 @@
 import { fireEvent, screen, within } from '@testing-library/react';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
+import { withIcons } from '@weasel-js/ui/testing/withIcons';
 import { type ReactNode, useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { useStore } from 'zustand/react';
 import { f } from '../config/builder';
+import { icon } from '../icons.gen';
 import type { Instrument } from '../instrument/types';
 import { Lab } from '../lab/Lab';
 import { LabContext, type LabContextValue } from '../lab/LabContext';
@@ -12,7 +14,7 @@ import { createLabStore } from '../state/store';
 import type { SavedSnapshot, TrialRecord } from '../state/types';
 import { TrialChrome } from './TrialChrome';
 
-const Glyph = () => <svg />;
+const Glyph = icon('ui:add');
 
 const stubInstrument: Instrument = {
   name: 'Stub',
@@ -102,18 +104,18 @@ function ChromeFromStore({
 
 describe('<TrialChrome>', () => {
   it('renders children in the content area', async () => {
-    await renderSettled(<ChromeHarness />);
+    await renderSettled(<ChromeHarness />, { wrapper: withIcons });
     expect(screen.getByTestId('content')).toBeInTheDocument();
   });
 
   it('renders the built-in trial actions', async () => {
-    await renderSettled(<ChromeHarness />);
+    await renderSettled(<ChromeHarness />, { wrapper: withIcons });
     expect(screen.getByRole('button', { name: 'Close trial' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Clone trial' })).toBeInTheDocument();
   });
 
   it('puts clone, reset and snapshot at the end of the title bar, beside close', async () => {
-    const { container } = await renderSettled(<ChromeHarness />);
+    const { container } = await renderSettled(<ChromeHarness />, { wrapper: withIcons });
     const titlebar = container.querySelector('.lk-trial__titlebar');
     if (!titlebar) throw new Error('no title bar');
     expect(titlebar).toContainElement(screen.getByRole('button', { name: 'Clone trial' }));
@@ -125,18 +127,19 @@ describe('<TrialChrome>', () => {
   });
 
   it('disables close on the last trial', async () => {
-    await renderSettled(<ChromeHarness isLastTrial />);
+    await renderSettled(<ChromeHarness isLastTrial />, { wrapper: withIcons });
     expect(screen.getByRole('button', { name: /close/i })).toBeDisabled();
   });
 
   it('omits undo and redo unless the instrument declares undo', async () => {
-    await renderSettled(<ChromeHarness />);
+    await renderSettled(<ChromeHarness />, { wrapper: withIcons });
     expect(screen.queryByRole('button', { name: 'Undo' })).toBeNull();
     await renderSettled(
       <ChromeHarness
         instrument={{ ...stubInstrument, undo: {} }}
         undoBindings={{ canUndo: true, canRedo: false, undo: vi.fn(), redo: vi.fn() }}
       />,
+      { wrapper: withIcons },
     );
     expect(screen.getByRole('button', { name: 'Undo' })).not.toBeDisabled();
     expect(screen.getByRole('button', { name: 'Redo' })).toBeDisabled();
@@ -152,13 +155,16 @@ describe('<TrialChrome>', () => {
       state: {},
       savedAt: 1,
     };
-    await renderSettled(<ChromeHarness labOverrides={{ savedSnapshots: [snapshot] }} />);
+    await renderSettled(<ChromeHarness labOverrides={{ savedSnapshots: [snapshot] }} />, {
+      wrapper: withIcons,
+    });
     expect(screen.getByRole('button', { name: /load snapshot/i })).toBeInTheDocument();
   });
 
   it('renders a consumer contribution alongside the built-ins', async () => {
     await renderSettled(
       <ChromeHarness chrome={[{ id: 'mine', region: 'status', item: { text: 'ready' } }]} />,
+      { wrapper: withIcons },
     );
     expect(screen.getByText('ready')).toBeInTheDocument();
   });
@@ -174,6 +180,7 @@ describe('<TrialChrome>', () => {
           },
         ]}
       />,
+      { wrapper: withIcons },
     );
     const titlebar = container.querySelector('.lk-trial__titlebar');
     if (!titlebar) throw new Error('no title bar');
@@ -199,6 +206,7 @@ describe('<TrialChrome>', () => {
           },
         ]}
       />,
+      { wrapper: withIcons },
     );
     expect(screen.getByRole('region', { name: 'Trial Stub' })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Rename' }));
@@ -224,6 +232,7 @@ describe('<TrialChrome>', () => {
           },
         ]}
       />,
+      { wrapper: withIcons },
     );
     expect(screen.getByRole('region', { name: 'Trial Stub / Default' })).toBeInTheDocument();
     expect(screen.getByText('Stub / Default')).toBeInTheDocument();
@@ -235,7 +244,7 @@ describe('<TrialChrome>', () => {
 
   it('Cmd+S triggers saveSnapshot', async () => {
     const saveSnapshot = vi.fn();
-    await renderSettled(<ChromeHarness labOverrides={{ saveSnapshot }} />);
+    await renderSettled(<ChromeHarness labOverrides={{ saveSnapshot }} />, { wrapper: withIcons });
     const region = screen.getByRole('region', { name: /trial/i });
     fireEvent.keyDown(region, { key: 's', metaKey: true });
     expect(saveSnapshot).toHaveBeenCalledWith('ws-1', undefined);
@@ -243,7 +252,9 @@ describe('<TrialChrome>', () => {
 
   it('leaves Cmd+S to the browser once the snapshot button is suppressed', async () => {
     const saveSnapshot = vi.fn();
-    await renderSettled(<ChromeHarness labOverrides={{ saveSnapshot }} suppress={['snapshot']} />);
+    await renderSettled(<ChromeHarness labOverrides={{ saveSnapshot }} suppress={['snapshot']} />, {
+      wrapper: withIcons,
+    });
     const region = screen.getByRole('region', { name: /trial/i });
     expect(fireEvent.keyDown(region, { key: 's', metaKey: true })).toBe(true);
     expect(saveSnapshot).not.toHaveBeenCalled();
@@ -254,6 +265,7 @@ describe('<TrialChrome>', () => {
     const bindings = { canUndo: true, canRedo: false, undo, redo: vi.fn() };
     const { unmount } = await renderSettled(
       <ChromeHarness instrument={{ ...stubInstrument, undo: {} }} undoBindings={bindings} />,
+      { wrapper: withIcons },
     );
     expect(
       fireEvent.keyDown(screen.getByRole('region', { name: /trial/i }), {
@@ -270,6 +282,7 @@ describe('<TrialChrome>', () => {
         undoBindings={bindings}
         suppress={['undo', 'redo']}
       />,
+      { wrapper: withIcons },
     );
     expect(
       fireEvent.keyDown(screen.getByRole('region', { name: /trial/i }), {
@@ -288,6 +301,7 @@ describe('<TrialChrome>', () => {
         <input data-testid="field" type="text" />
         <input data-testid="slider" type="range" />
       </ChromeHarness>,
+      { wrapper: withIcons },
     );
     expect(fireEvent.keyDown(screen.getByTestId('field'), { key: 'z', metaKey: true })).toBe(true);
     expect(undo).not.toHaveBeenCalled();
@@ -305,6 +319,7 @@ describe('<TrialChrome>', () => {
         <input data-testid="outside" type="text" />
         <ChromeHarness instrument={{ ...stubInstrument, undo: {} }} undoBindings={bindings} />
       </>,
+      { wrapper: withIcons },
     );
     expect(fireEvent.keyDown(document.body, { key: 'z', metaKey: true })).toBe(false);
     expect(undo).toHaveBeenCalledTimes(1);
@@ -319,6 +334,7 @@ describe('chrome regions in a mounted lab', () => {
   async function renderLabWith(instrument: Instrument) {
     return renderSettled(
       <Lab title="T" instruments={[instrument]} defaultInstrument={instrument.name} />,
+      { wrapper: withIcons },
     );
   }
 
@@ -364,23 +380,31 @@ describe('<TrialChrome> — state that outlives a mount', () => {
 
   it('keeps a title across a remount', async () => {
     const store = makeChromeStore();
-    const first = await renderSettled(<ChromeHarness store={store} chrome={renameChrome} />);
+    const first = await renderSettled(<ChromeHarness store={store} chrome={renameChrome} />, {
+      wrapper: withIcons,
+    });
     fireEvent.click(screen.getByRole('button', { name: 'Rename' }));
     first.unmount();
 
-    await renderSettled(<ChromeHarness store={store} chrome={renameChrome} />);
+    await renderSettled(<ChromeHarness store={store} chrome={renameChrome} />, {
+      wrapper: withIcons,
+    });
     expect(screen.getByRole('region', { name: 'Trial Sprocket 7' })).toBeInTheDocument();
   });
 
   it('keeps a folded sidebar section across a remount', async () => {
     const store = makeChromeStore();
-    const first = await renderSettled(<ChromeHarness store={store} chrome={sectionChrome} />);
+    const first = await renderSettled(<ChromeHarness store={store} chrome={sectionChrome} />, {
+      wrapper: withIcons,
+    });
     expect(screen.getByTestId('notes-body')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Notes' }));
     expect(screen.queryByTestId('notes-body')).toBeNull();
     first.unmount();
 
-    await renderSettled(<ChromeHarness store={store} chrome={sectionChrome} />);
+    await renderSettled(<ChromeHarness store={store} chrome={sectionChrome} />, {
+      wrapper: withIcons,
+    });
     expect(screen.getByRole('button', { name: 'Notes' })).toHaveAttribute('aria-expanded', 'false');
     expect(screen.queryByTestId('notes-body')).toBeNull();
   });
@@ -391,13 +415,17 @@ describe('<TrialChrome> — state that outlives a mount', () => {
       config: f.schema({ size: f.number(1).section('Shape') }),
     };
     const store = makeChromeStore();
-    const first = await renderSettled(<ChromeHarness store={store} instrument={sectioned} />);
+    const first = await renderSettled(<ChromeHarness store={store} instrument={sectioned} />, {
+      wrapper: withIcons,
+    });
     const twisty = screen.getByRole('button', { name: 'Shape' });
     expect(twisty).toHaveAttribute('aria-expanded', 'true');
     fireEvent.click(twisty);
     first.unmount();
 
-    await renderSettled(<ChromeHarness store={store} instrument={sectioned} />);
+    await renderSettled(<ChromeHarness store={store} instrument={sectioned} />, {
+      wrapper: withIcons,
+    });
     expect(screen.getByRole('button', { name: 'Shape' })).toHaveAttribute('aria-expanded', 'false');
   });
 
@@ -414,12 +442,16 @@ describe('<TrialChrome> — state that outlives a mount', () => {
       },
     ];
     const store = makeChromeStore();
-    const first = await renderSettled(<ChromeHarness store={store} chrome={collapsedChrome} />);
+    const first = await renderSettled(<ChromeHarness store={store} chrome={collapsedChrome} />, {
+      wrapper: withIcons,
+    });
     expect(screen.queryByTestId('notes-body')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Notes' }));
     first.unmount();
 
-    await renderSettled(<ChromeHarness store={store} chrome={collapsedChrome} />);
+    await renderSettled(<ChromeHarness store={store} chrome={collapsedChrome} />, {
+      wrapper: withIcons,
+    });
     expect(screen.getByTestId('notes-body')).toBeInTheDocument();
   });
 });
@@ -444,7 +476,9 @@ describe('state undo in a mounted lab', () => {
   };
 
   it('undoes and redoes a change through the trial history', async () => {
-    await renderSettled(<Lab title="T" instruments={[counter]} defaultInstrument="Counter" />);
+    await renderSettled(<Lab title="T" instruments={[counter]} defaultInstrument="Counter" />, {
+      wrapper: withIcons,
+    });
     const undo = screen.getByRole('button', { name: 'Undo' });
     const redo = screen.getByRole('button', { name: 'Redo' });
     expect(undo).toBeDisabled();

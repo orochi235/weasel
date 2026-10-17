@@ -1,14 +1,27 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import { ActionsProvider, createScene } from '@weasel-js/core';
 import { parseSvg } from '@weasel-js/svg';
 import { CommandBar } from './CommandBar';
 import { loadDoc, DOC_KEY } from './docPersistence';
+import type { WeaselDrawData, WeaselDrawLayer, WeaselDrawPose } from './drawDocument';
+import { useFileCommands } from './fileCommands';
 import { isPaperSize, PAPER_OPTIONS, PAPER_PRESETS, PAPER_SIZES } from './paperSizes';
 import { parsedToDoc, SWILL_NAMESPACES } from './svgInterop';
 
+const scene = createScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>({ systemLayers: [{ id: 'default' }] });
+
+function FileCommands() {
+  useFileCommands({
+    scene, filename: '', paperSize: 'letter', backgroundColor: '#ffffff',
+    setFilename: vi.fn(), setPaperSize: vi.fn(), setBackgroundColor: vi.fn(),
+  });
+  return null;
+}
+
 describe('paper sizes', () => {
   it('labels the New menu from the table the document properties read', () => {
-    render(<CommandBar onSaveSvg={vi.fn()} onOpenSvg={vi.fn()} onImportSvg={vi.fn()} onNew={vi.fn()} />);
+    render(<ActionsProvider><FileCommands /><CommandBar /></ActionsProvider>);
     act(() => { fireEvent.click(screen.getByRole('button', { name: /New/ })); });
     const menu = screen.getAllByRole('menuitem').map((el) => el.textContent);
     expect(menu).toEqual(PAPER_SIZES.map((s) => s.label));

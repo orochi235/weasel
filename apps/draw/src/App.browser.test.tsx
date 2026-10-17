@@ -3,7 +3,7 @@
  * measures zero there.
  */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { page } from 'vitest/browser';
+import { page, userEvent } from 'vitest/browser';
 import { createRoot, type Root } from 'react-dom/client';
 import { ActionsProvider, DepRegistryProvider, SelectionContextProvider } from '@weasel-js/core';
 import '@weasel-js/theme/tokens.css';
@@ -97,7 +97,44 @@ const editor = (): Element | null => document.querySelector('.wd-canvas-host [co
 
 const statusText = (): string => document.querySelector('.wd-statusbar')?.textContent ?? '';
 
+/** The menu bar strip sits at the top, wholly above the command bar, and the page neither grows nor scrolls. */
+function expectStripAboveCommandBar(): void {
+  const strip = document.querySelector('[role="menubar"]')!.closest('.wd-menubar')!.getBoundingClientRect();
+  const commands = document.querySelector('.wd-commandbar')!.getBoundingClientRect();
+  expect(strip.top).toBe(0);
+  expect(strip.height).toBeGreaterThan(0);
+  expect(strip.bottom).toBeLessThanOrEqual(commands.top + 0.5);
+  expect(document.querySelector('.wd-app')!.getBoundingClientRect().height).toBe(window.innerHeight);
+  expect(document.documentElement.scrollHeight).toBeLessThanOrEqual(window.innerHeight);
+  window.scrollTo(0, 5000);
+  expect(window.scrollY).toBe(0);
+}
+
+const menuRows = (): string[] =>
+  [...document.querySelectorAll('[role="menu"] [role="menuitem"]')].map((el) => el.textContent ?? '');
+
 describe('WeaselDraw', () => {
+  it('draws the menu bar as a strip of its own above the command bar, and the page does not scroll', async () => {
+    await mountApp();
+    expectStripAboveCommandBar();
+  });
+
+  it('keeps the strip above the command bar at 640px wide', async () => {
+    await page.viewport(640, 800);
+    await mountApp();
+    expectStripAboveCommandBar();
+  });
+
+  it('opens File from its title, with Save showing its shortcut', async () => {
+    await mountApp();
+    await userEvent.click(page.getByRole('menuitem', { name: 'File' }));
+    await expect.poll(menuRows).toHaveLength(4);
+    const rows = menuRows();
+    ['New', 'Open…', 'Import…', 'Save'].forEach((label, i) => expect(rows[i]!.startsWith(label)).toBe(true));
+    expect(rows[3]).toMatch(/S$/);
+    expect(rows[3]).not.toBe('Save');
+  });
+
   it('sizes the canvas to the workspace between the sidebars', async () => {
     const { host, canvas } = await mountApp();
     const hostBox = host.getBoundingClientRect();

@@ -106,7 +106,7 @@ export type KernelOverlay = OverlaySchema extends { overlay: infer O } ? O : unk
 export type {
   Action, ActionDispatch, ActionPresentation, ActionSource, ActionVariant,
 } from './interactions/actions/action';
-export { actionItems } from './interactions/actions/actionItems';
+export { actionItems, actionItemTitle } from './interactions/actions/actionItems';
 export type { ActionItem } from './interactions/actions/actionItems';
 export { actionShortcuts, keySpecShortcut } from './interactions/actions/actionShortcuts';
 export type { ActionShortcut } from './interactions/actions/actionShortcuts';

@@ -19,11 +19,11 @@ import { visualBoundsViaDescriptor, translatePoseViaDescriptor } from '../resize
  *  bounds (rotated members contribute their ink extent). */
 export type AlignEdge = 'left' | 'right' | 'top' | 'bottom' | 'center-x' | 'center-y';
 
-/** @experimental What the selection aligns to: `'union'` — the selection's
+/** What the selection aligns to: `'union'` — the selection's
  *  own visual union AABB, the default — or a {@link SpatialReference}. */
 export type AlignReference = 'union' | SpatialReference;
 
-/** @experimental The bounds each member of `bounds` aligns to under `to`, or
+/** The bounds each member of `bounds` aligns to under `to`, or
  *  `null` when there is nothing to align: a union of fewer than two members,
  *  an empty selection, or a reference that names nothing right now. */
 export function alignTargetBounds(

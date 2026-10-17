@@ -46,7 +46,7 @@ import {
 /** A rect on the surface, in CSS pixels from the canvas top-left. */
 export interface ViewRect { x: number; y: number; w: number; h: number }
 
-/** Props for `<CanvasView>`. @experimental */
+/** Props for `<CanvasView>`. */
 export interface CanvasViewProps {
   /** Identifies the view to the surface and to input routing. Must be unique
    *  among the views on one canvas. */
@@ -136,8 +136,6 @@ const sizeOf = (rect: ViewRect): Dims => ({ width: rect.w, height: rect.h });
 const ALL_LAYERS = (s: readonly RenderLayer<unknown>[]): readonly RenderLayer<unknown>[] => s;
 
 /**
- * @experimental
- *
  * One view on a shared canvas. Owns a camera, contributes the viewport node
  * that paints it, and registers the dispatch record that sends gestures inside
  * its rect to that camera rather than to the canvas's.

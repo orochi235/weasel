@@ -1,4 +1,5 @@
-import { ErrorIcon, WarningIcon } from '@weasel-js/ui';
+import { Icon } from '@weasel-js/ui';
+import { icon } from '../icons.gen';
 import type { JobHandle } from '../job/types';
 
 /** Props for `<JobProgress>`. */
@@ -43,14 +44,14 @@ export function JobProgress({ job, className }: JobProgressProps) {
 
       {failures.length > 0 && (
         <span className="lk-job__failures" title={failures.map((f) => f.error).join('\n')}>
-          <WarningIcon size={14} />
+          <Icon name={icon('ui:warning')} size={14} />
           {failures.length} failed
         </span>
       )}
 
       {error && (
         <span className="lk-job__error" title={error}>
-          <ErrorIcon size={14} />
+          <Icon name={icon('ui:error')} size={14} />
           {error}
         </span>
       )}

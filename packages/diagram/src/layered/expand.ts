@@ -4,7 +4,7 @@
  */
 import type { Vec2 } from '@weasel-js/core/math';
 import type { EdgeLabelRoom, Graph, GraphEdge, GraphNode } from '../graph';
-import { DEFAULT_PORTS } from '../ports';
+import { portSitesOf } from '../ports';
 import { center, extent, graphOrder, seededOrder, type LayoutAxes } from '../layout';
 import { PLACEHOLDER, type Hop, type Rows } from './types';
 
@@ -86,17 +86,30 @@ function labelRoom(room: EdgeLabelRoom, axes: LayoutAxes, back: boolean, nodeGap
   return { size, depth, wire: left * Math.sign(offset) > 0 ? margin : size - margin };
 }
 
+const MIDDLE: readonly number[] = [0.5];
+
 /**
- * Where a port sits along its node's extent across the rank, 0 to 1. A port
- * with several places counts at their mean, since the route picks among them
- * only once everything is placed; no port named is the middle.
+ * Every place a port may sit, as `Hop.fromAt` reads one: along its node's
+ * extent across the rank, 0 to 1, where `portsOf` puts it, on the node's
+ * outline. No port named, or none by that name, is the middle.
  */
-export function portAt(node: GraphNode | undefined, port: string | undefined, axis: 'x' | 'y'): number {
-  if (node === undefined || port === undefined) return 0.5;
-  const spec = (node.ports ?? DEFAULT_PORTS).find((p) => p.id === port);
-  if (spec === undefined) return 0.5;
-  const places = [spec.at, ...(spec.sites ?? [])];
-  return places.reduce((sum, at) => sum + (axis === 'x' ? at.u : at.v), 0) / places.length;
+export function portPlaces(node: GraphNode | undefined, port: string | undefined, axes: LayoutAxes): readonly number[] {
+  if (node === undefined || port === undefined) return MIDDLE;
+  const { bounds } = node;
+  const trait = { ...(node.ports !== undefined ? { ports: node.ports } : {}), ...(node.outline !== undefined ? { outline: node.outline } : {}) };
+  const sites = portSitesOf({ id: node.id, kind: 'leaf', data: null }, bounds, port, { read: () => trait });
+  const size = extent(bounds, axes.cross);
+  if (sites.length === 0 || size <= 0) return MIDDLE;
+  const low = axes.cross === 'x' ? bounds.x : bounds.y;
+  return sites.map((p) => (p.point[axes.cross] - low) / size);
+}
+
+/** A hop end's port as a `Hop` carries it: its first place, and every place
+ *  when it has more than one. */
+function portOf(places: readonly number[], side: 'from' | 'to'): Partial<Hop> {
+  const at = places[0]!;
+  if (side === 'from') return places.length > 1 ? { fromAt: at, fromPlaces: places } : { fromAt: at };
+  return places.length > 1 ? { toAt: at, toPlaces: places } : { toAt: at };
 }
 
 /**
@@ -152,8 +165,8 @@ export function expand(graph: Graph, nodeRanks: ReadonlyMap<string, number>, bac
     const [from, to] = d.back ? [d.to, d.from] : [d.from, d.to];
     const [fromPort, toPort] = d.back ? [d.toPort, d.fromPort] : [d.fromPort, d.toPort];
     // A group end's members have no port of the edge's own.
-    const leave = (id: string) => (id === from ? { fromAt: portAt(graph.node(id), fromPort, axes.cross) } : {});
-    const arrive = (id: string) => (id === to ? { toAt: portAt(graph.node(id), toPort, axes.cross) } : {});
+    const leave = (id: string) => (id === from ? portOf(portPlaces(graph.node(id), fromPort, axes), 'from') : {});
+    const arrive = (id: string) => (id === to ? portOf(portPlaces(graph.node(id), toPort, axes), 'to') : {});
     const a = span(from);
     const b = span(to);
     if (a === null || b === null || a[1] >= b[0]) continue;

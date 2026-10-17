@@ -172,6 +172,8 @@ export function PaneBar({ ctx, group, path, depth, orientation }: {
       framed
       orientation={orientation}
       overflow={ctx.droppable ? undefined : group.overflow}
+      lead={group.lead}
+      icon={group.icon}
       rootAttrs={{ ...selectionAttrs(path, ctx), 'data-pref-bar': '' }}
       label={group.name === '' ? undefined : group.name}
       nodes={shownBarNodes(groupBarNodes(group, path, (inner, at) => (

@@ -1,15 +1,31 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, screen } from '@testing-library/react';
-import { CommandBar, type CommandBarProps } from './CommandBar';
+import { ActionsProvider, useCommand } from '@weasel-js/core';
+import { CommandBar } from './CommandBar';
+import { PAPER_SIZES } from './paperSizes';
 
-function props(over: Partial<CommandBarProps> = {}): CommandBarProps {
-  return {
-    onSaveSvg: vi.fn(),
-    onOpenSvg: vi.fn(),
-    onImportSvg: vi.fn(),
-    onNew: vi.fn(),
-    ...over,
-  };
+const newRun = vi.fn();
+const openRun = vi.fn();
+const importRun = vi.fn();
+const saveRun = vi.fn();
+
+function FileStubs() {
+  useCommand('file.new', 'New', newRun, {
+    variants: PAPER_SIZES.map(({ key, label }) => ({ key, label, params: { size: key } })),
+  });
+  useCommand('file.open', 'Open…', openRun);
+  useCommand('file.import', 'Import…', importRun);
+  useCommand('file.save', 'Save', saveRun);
+  return null;
+}
+
+function renderBar() {
+  render(
+    <ActionsProvider>
+      <FileStubs />
+      <CommandBar />
+    </ActionsProvider>,
+  );
 }
 
 function openMenu(name: RegExp) {
@@ -18,28 +34,33 @@ function openMenu(name: RegExp) {
   });
 }
 
-afterEach(() => vi.restoreAllMocks());
+afterEach(() => {
+  vi.restoreAllMocks();
+  vi.clearAllMocks();
+});
 
 describe('CommandBar', () => {
   it('starts a new document at the paper size picked from New', () => {
-    const p = props();
-    render(<CommandBar {...p} />);
+    renderBar();
     openMenu(/New/);
     fireEvent.click(screen.getByRole('menuitem', { name: 'A4' }));
-    expect(p.onNew).toHaveBeenCalledWith('a4');
+    expect(newRun).toHaveBeenCalledWith({ size: 'a4' });
   });
 
-  it('imports from its own button, beside Open', () => {
-    const p = props();
-    render(<CommandBar {...p} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Import' }));
-    expect(p.onImportSvg).toHaveBeenCalledTimes(1);
-    expect(p.onOpenSvg).not.toHaveBeenCalled();
+  it('opens, imports and saves from their own buttons', () => {
+    renderBar();
+    fireEvent.click(screen.getByRole('button', { name: 'Import…' }));
+    expect(importRun).toHaveBeenCalledTimes(1);
+    expect(openRun).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Open…' }));
+    expect(openRun).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    expect(saveRun).toHaveBeenCalledTimes(1);
   });
 
   it('opens a debug surface in a new tab', () => {
     const open = vi.spyOn(window, 'open').mockReturnValue(null);
-    render(<CommandBar {...props()} />);
+    render(<CommandBar />);
     openMenu(/Debug/);
     fireEvent.click(screen.getByRole('menuitem', { name: 'Bundle Inspector' }));
     expect(open).toHaveBeenCalledWith(expect.stringMatching(/#\/dev\/registry$/), '_blank', 'noopener');

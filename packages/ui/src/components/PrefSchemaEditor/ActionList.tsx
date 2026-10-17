@@ -11,6 +11,7 @@ import s from './PrefSchemaEditor.module.css';
 import { childrenOf, joinPath, keyOf, nodeAt, type SchemaNode } from './schemaEdit';
 import { nodeLabel } from './structureRows';
 import type { ActionCatalog } from './useActionCatalog';
+import { icon } from '../../icons.gen';
 
 /** The rows for what `node` of a catalog holds: a group by its name, and a pref by its own and what its action brings. */
 function toRows(node: SchemaNode, path: string | null, tails: ReadonlyMap<string, string>, registered: ReadonlyMap<string, EditorAction>): TreeNode[] {
@@ -65,7 +66,7 @@ export function ActionList({ catalog, sought, ghost, onDrag, onDrop }: {
     // A copy: the catalog keeps its own.
     if (held.current?.id !== id) held.current = { id, node: { ...nodeAt(root, id)! } };
     const node = held.current.node;
-    return { item: { id, label: node.name, icon: 'formLabel', key: keyOf(id), make: () => node }, node, ...point };
+    return { item: { id, label: node.name, icon: icon('formLabel'), key: keyOf(id), make: () => node }, node, ...point };
   };
   return (
     <Tree

@@ -27,7 +27,7 @@ export const switchActionId = (id: string): string => `draw.surface.${id}`;
 function switchAction(asset: SchemaAsset, setSurface: (id: string, surface: SurfaceKind) => void): Action {
   return {
     id: switchActionId(asset.id),
-    label: `Show ${asset.label} as`,
+    label: asset.label,
     variants: asset.surfaces.map((surface) => ({ key: surface, label: SHOW_AS[surface], params: { surface } })),
     invoker: {
       timing: 'immediate',

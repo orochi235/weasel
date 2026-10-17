@@ -1,5 +1,6 @@
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { colorAt, resolveTheme } from '@weasel-js/theme';
+import { withIcons } from '@weasel-js/ui/testing/withIcons';
 import { describe, expect, it } from 'vitest';
 import type { Instrument } from '../instrument/types';
 import { interstellarTheme } from '../theme/interstellar';
@@ -26,6 +27,7 @@ describe('<Lab nebula>', () => {
         mode="dark"
         nebula={['#ff0000', '#00ff00']}
       />,
+      { wrapper: withIcons },
     );
     expect(backdrop(container).match(/radial-gradient/g)).toHaveLength(3);
   });
@@ -33,6 +35,7 @@ describe('<Lab nebula>', () => {
   it('resolves a theme ramp against the lab’s theme', async () => {
     const { container } = await renderSettled(
       <Lab instruments={[bare]} defaultInstrument="Bare" mode="dark" nebula={{ ramp: 'swatch' }} />,
+      { wrapper: withIcons },
     );
     const sky = resolveTheme(interstellarTheme, { mode: 'dark' })['--wzl-swatch-sky'];
     expect(backdrop(container)).toContain(sky);
@@ -46,6 +49,7 @@ describe('<Lab nebula>', () => {
         mode="dark"
         nebula={[{ ref: 'swatch', index: 2 }]}
       />,
+      { wrapper: withIcons },
     );
     const ctx = {
       theme: interstellarTheme,

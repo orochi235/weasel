@@ -33,11 +33,6 @@ Priority tags:
   (`distanceReadout.ts`), a hover dispatched when a modifier changes, and draw's move snapping to
   equal sibling spacing. The P3 "Moving a shape does not snap to measurement ends" folds into it.
 
-- **(P3) A `contextmenu` with no preceding press resolves against the wrong input scope.** The
-  keyboard ContextMenu key sends one with no press before it, so it falls to the active or newest
-  input scope; with several sibling canvases and no press yet, that may not be the canvas the
-  event came from. Shift+F10 goes through the key holder and is unaffected.
-
 - **(P2) `features` names two things.** The `<SceneCanvas features>` prop composes behavior presets
   (`canvas/SceneCanvas/features.ts`); `packages/core/src/features/<name>/` is a source directory
   bundling one domain's primitives, and `docs/taxonomy.md` calls each of those a "feature" too.
@@ -133,12 +128,6 @@ Priority tags:
 
 - **(P3) `BASELINE.md`'s text layout numbers include grouping.**
   `tests/perf/bench/text-layout.bench.ts` times layout alone now, so they need re-recording.
-
-- **(P3) The dispatcher's canvas-local point ignores a `clientToWorld` override.** `toCanvasLocal`
-  in `packages/routing/src/interactions/dispatcher/dispatchCore.ts` subtracts the element's rect,
-  so on a canvas under a CSS transform the painted cursor, a wheel or pinch's `local`, and the
-  long-press state's `local` are off. Core's `surfaceLocal` puts the override's world point back
-  through the camera; the dispatcher holds no camera to do the same with.
 
 - **(P3) What moving the Badge lab out of its stories file left.** The lab is
   `packages/ui/src/components/Badge/lab/` now.
@@ -283,8 +272,8 @@ Priority tags:
   leaves a thousandth of the subpath (`packages/geom/src/paths/lengthenPathEnd.ts`); an end is
   pressed within 8 screen px, the cursor is `penPlus`, nothing previews where a drag will land
   before it starts, and the end anchor is left selected after a drag
-  (`packages/path-tools/src/lengthen/lengthenPath.ts`). Its toolbar glyph, `LengthenIcon`, has not
-  been proofed large.
+  (`packages/path-tools/src/lengthen/lengthenPath.ts`). Its toolbar glyph, `path-tools:lengthen`, has
+  not been proofed large.
 - **(P2) Tune the Smudge brush hands-on, with the maintainer driving.** First-draft brush radius
   (40 screen px) and strength (0.6) (`DEFAULT_SMUDGE_RADIUS_PX`, `DEFAULT_SMUDGE_STRENGTH` in
   `packages/path-tools/src/smudge/smudgeBrush.ts`), the falloff `(1 − (d/r)²)²` and the subdivision threshold of a
@@ -359,9 +348,11 @@ Priority tags:
   `lengthenPathEnd` through `editAnchorSetTracked`, which counts the anchor set's subpaths. The two
   agree unless a path holds an empty subpath (a bare `M`); then the end extended is not the one
   picked (`packages/geom/src/paths/extendPath.ts`). Number them one way.
-- **(P2) Shape builder.** Drag across overlapping regions to merge them, Alt-drag to delete them.
-  `previewBooleanOp` already answers the pieces; the tool draws and picks among them. Building it
-  also gives "Live preview of a Boolean operation" below its display.
+- **(P3) Shape builder slows past a handful of selected paths.** `pathFacePieces`
+  (`packages/geom/src/booleans/ops.ts`) cuts one region per subset of the paths, so the faces
+  `useShapeBuilderTool` works on cost 2^N clipping runs: fine for the few shapes it is usually
+  given, unusable for a dozen. Tracing the arrangement of the outlines' edges once would give
+  the same faces at the cost of one overlay.
 - **(P2) Two kit key bindings are chords a browser takes first.** `createOutlines` is on
   Mod+Shift+O (Chrome's bookmark manager) and `averageAnchors` on Mod+Alt+J (Chrome's console),
   so neither fires there. `browserReservedBindings.test.ts` pins the pair, so a new collision
@@ -372,6 +363,11 @@ Priority tags:
   id, and an imported leaf takes a fresh id (`svgNodesToSceneDrafts` keeps ids for groups only,
   through `wd:group-id`); with a leaf id carried the same way, the effect's `data.pathEffect`
   and `dependsOn` can ride as `wd:` attributes on its group.
+- **(P3) Roughen, zigzag and pucker/bloat exist only on the `pel-effects-push` branch.** That
+  branch stored effects as a `data.effects` list on the path itself, a design main did not take
+  (`f082c838e` adopted its push brush as Smudge and left the rest). Its math is in
+  `packages/geom/src/effects/` there; carrying the three over means rebuilding each as a derived
+  effect node beside blend, bend and repeat. Undecided whether to; the branch is kept until then.
 - **(P3) A path effect inside a container that composes frames is untried.** An effect paints in
   the frame its sources are painted in (`core/scene/pathEffects/`); the actions only make one
   over two leaves, inserted beside the first.
@@ -383,17 +379,11 @@ Priority tags:
   a drag and an Alt-drag clone measure on screen. So inside a group drawn turned, Cmd+D after a
   drag steps in a different direction from the drag. Recording the move in world space and
   mapping it through each node's parent on replay would make the two agree.
-- **(P3) The path commands have no icons.** `simplifyPath`, `offsetPath`, `snipAtCrossings`,
-  `joinPaths`, `bridgePaths`, `joinAnchors`, `bridgeAnchors`, `averageAnchors`, `resamplePath`,
-  `addExtremeAnchors`, the anchor selection commands, and `extendToMeet` show as text in draw's
-  bar, as do `setPathStart`, `reversePath`, `convertSegments`, and draw's own
-  `view.pathDirection` toggle; `useTrimTool` and `useExtendTool` borrow `SliceIcon`, and
-  `useSmudgeBrushTool` has none. `expandWarp` and `configureWarp` have none
-  either, and `useDistortTool`, `useEnvelopeTool`, and `usePuppetTool` give no
-  `presentation.icon`: their labs borrow `FitStretchIcon`, `GridIcon`, and `PinIcon` from
-  `@weasel-js/ui`.
-  `RetractHandlesIcon`, `SymmetricHandlesIcon`, `SimplifyBrushIcon`, and `HarmonizeIcon`
-  (`defaults/icons/anchorIcons.tsx`) are first drafts, not proofed at high resolution.
+- **(P3) Some path commands have no icons.** `resamplePath`, the anchor selection commands and
+  draw's own `view.pathDirection` toggle show as text in draw's bar. The warp labs' tool lists
+  borrow `ui:fitStretch`, `ui:grid` and `ui:pin` rather than the warp tools' own glyphs.
+  `core:retractHandles`, `core:symmetricHandles`, `core:simplifyBrush` and `core:harmonize`
+  (`packages/core/icons/anchor.mjs`) are first drafts, not proofed at high resolution.
 - **(P2) Puppet warp bends by straight-line distance, not through the shape.** `rigidPuppetMap`
   (`packages/geom/src/warp/puppet.ts`) weights each pin by its distance across the plane, so two
   limbs that nearly touch move together when a pin on one is dragged. As-rigid-as-possible over
@@ -435,7 +425,7 @@ Priority tags:
 - **(P3) Create Outlines refuses synthetic-bold text.** `textToPath` answers `reason: 'synthetic-bold'`: emboldening it is a union with the glyphs' own outline stroke, but the width has to match what the renderer's distance-field shift (`SYNTH_BOLD_AMOUNT`, `packages/renderer/src/draw/text.ts`) draws. Read from `glyphCoverage` and `glyphFieldScale` (`packages/font/src/textSdf.ts`) and not measured against pixels: the shift moves the edge out by `SYNTH_BOLD_AMOUNT` of the field's span, which is `distanceRange` texels in a baked atlas and `SDF_RADIUS` in a runtime canvas page, and a texel is `1 / info.size` em, so the outline grows by `SYNTH_BOLD_AMOUNT × span / info.size` em on each side and differs by which tier serves the glyph. What is left: `textToPath` (`packages/text`) has no stroke outliner to call, since `strokeToPath` is in `@weasel-js/stroke`, which text does not depend on; the union flattens every curve of the glyph; and the result has to be compared with the field in a browser.
 - **(P3) Non-destructive boolean groups.** Figma-style "boolean group" container node that recomputes geometry from children at render time. Requires a new layer/scene-node type plus renderer support.
 - **(P3) True curve booleans.** The booleans flatten beziers before clipping (`packages/geom/src/booleans/adapter.ts`), so the result is straight-line. Skia/PathKit-style curve-preserving booleans are substantially harder.
-- **(P3) Live preview of a Boolean operation.** Seeing the result before committing: on hovering a Pathfinder button, or holding an op key over a path. `previewBooleanOp` answers the pieces an operation would make, each with its source and paint, and mints and commits nothing. What is left is everything that shows them: no Pathfinder action has a gesture or a key to hold, an action has no way to say what it would do while its button is hovered, and nothing draws paths that are not nodes over the scene.
+- **(P3) Live preview of a Boolean operation.** Seeing the result before committing: on hovering a Pathfinder button, or holding an op key over a path. `previewBooleanOp` answers the pieces an operation would make, each with its source and paint, and mints and commits nothing. `createPathOverlay` draws paths that are not nodes over the scene, as the shape builder shows its faces with. What is left is asking for them: no Pathfinder action has a gesture or a key to hold, and an action has no way to say what it would do while its button is hovered.
 
 ---
 - **(P3) draw's SVG files do not carry layers.** A saved file keeps paper size, title, groups, and
@@ -477,6 +467,14 @@ Priority tags:
   a continuous zoom doesn't rebuild every mesh on every frame. Thick strokes already cap each
   flattened step at 10° (`strokeFlattening` in `@weasel-js/stroke`), which fixes what the facets
   look like at a tight bend but not this.
+
+- **(P2) Nonzero fill doubles where same-wound outlines nest without crossing.** `tessellate`
+  rebuilds a nonzero path as the boundary of its fill only when two edges cross
+  (`resolveCrossings` in `geom/src/tessellate/crossings.ts`). A square inside a square wound the
+  same way crosses nothing, so it keeps the old grouping: both count as outer shapes and each is
+  triangulated, covering the inner square twice, which doubles a translucent fill there. Routing
+  it through the same rebuild fixes it; the open question is the cost on text, whose glyph
+  outlines are all nonzero and mostly non-crossing.
 
 ---
 
@@ -533,12 +531,12 @@ Priority tags:
   `direction` they light the edge they resolve to; under `auto`, where each paragraph takes its
   own from its first strong character, they light nothing. A click on any segment still writes an
   edge over the reading-order value. Giving them segments of their own takes two glyphs, which
-  have to be drawn and proofed in a browser (`packages/ui/scripts/icons/text.mjs`).
+  have to be drawn and proofed in a browser (`packages/core/icons/text.mjs`).
 
 - **(P3) Icons: the size family and `orbit` collapse at 16px 1x.** `taller`, `shorter`, `wider`,
   `narrower`, `tallest` and `shortest` carry two short arrows each, and at 16 device pixels the
   heads close up into dots; `orbit`'s head does the same against its ring. All resolve at 2x.
-  They want heads on the pixel grid, or fewer of them (`packages/ui/scripts/icons/size.mjs`,
+  They want heads on the pixel grid, or fewer of them (`packages/ui/icons/size.mjs`,
   `camera.mjs`). The straight arrows drawn before the 45-degree rule in CLAUDE.md ("Drawing
   icons") still use spreads of 36 to 42.
 
@@ -551,6 +549,18 @@ Priority tags:
   color pages empty together with the field pages when either set fills (`reclaim` in
   `packages/font/src/dynamic/bakeQueue.ts`), and one 384px emoji takes the room of sixty at 48.
   Whether the result is sharp can only be read in a browser.
+
+---
+
+## Icons
+
+How the registry and the build plugin work is in `docs/icons.md`.
+
+- **(P3) Some tests may still draw icons with no registry.** `renderWithIcons` and `withIcons`
+  (`packages/ui/src/testing/withIcons.tsx`) now wrap every test found printing a missing-icon
+  warning, but only ui's component tests that draw icons and labkit's tests that mount a lab were
+  run to find them. Grep a fleet run's log for `is registered. Is its package` and wrap any file
+  it names.
 
 ---
 
@@ -643,96 +653,38 @@ Priority tags:
 
 ### Diagram follow-ups
 
-- **(P3) An `EffectRun` shows values as text, not previews.** A run's `values` are strings in a
-  row `showValues` keeps (`paintRun`, `packages/diagram/src/effect/run.ts`). An image preview on
-  an output would need a `slot` row sized for it and an image node a run fills, with a cache so a
-  frame's preview does not re-upload. The `switch` symbol's lever also stays where it was drawn
-  rather than thrown to the output a run took, and port dots, which the port layer draws outside
-  the scene, do not fade with a stage the run never reached.
-- **(P3) EffectChart: more looks.** One lane per value type, with a stage as tall as the lanes it
-  touches; and a compact look with one-line stages and no ports drawn, for pipelines too big for
-  the node graph. Branch symbols sketched and not built: hexagon, step glyph, comparator,
-  crossover, and a bare fork with the conditions on its wires.
-- **(P3) A custom `Path` outline does not follow its node.** `outlinePath` returns a consumer's
-  path unchanged, in world coordinates, so `diagramScene`'s layout moves the box and leaves the
-  outline behind. Marks solve the same problem with path data in a unit square
-  (`packages/diagram/src/marks.ts`); an outline could take the same form.
-- **(P3) `layered` orders and places a port with several places at their mean.** A port's
-  `sites` are chosen per wire, by the router, once everything is placed, so ordering and placement
-  read the port at the mean of its places (`portAt` in `packages/diagram/src/layered/expand.ts`).
-  A wire whose port then turns to face it can cross a neighbor ordering thought it cleared. Picking
-  the place during ordering, from where the other end sits in the current order, would fix it.
-  `portAt` also reads a port at its anchor, where `portsOf` slides it onto a non-rectangular
-  outline: a diamond's anchor at `{ u: 0.75, v: 0 }` sits at about 0.667 (found in review, not
-  measured on a drawn diagram).
-- **(P3) A long label on a wire inside a group spills out of the group's box.** `layered` leaves
-  the label room inside the group's column, but the box is drawn around the members alone
-  (`GROUP_DERIVE_POSE`, `packages/diagram/src/group.ts`), so a label wider than the members'
-  overhang crosses the dashed edge. The box would need to know the room its members' wires took.
-- **(P3) A label stationed `{ waypoint }` follows an index, not a place.** `layeredPlan` points a
-  label at the run between two of its edge's waypoints by index
-  (`packages/diagram/src/label.ts`). Edit the edge's waypoints in a live scene and the label sits
-  on whichever run now has that index; remove enough and it falls back to the middle of the route.
-- **(P3) A live `layered` run draws its long edges through the old bends while it eases.** The
-  run moves nodes frame by frame but writes routes only when it arrives, so for its 24 frames an
-  edge layout routed last time still runs through those waypoints while its ends move away from
-  them (`useLiveLayout`, `packages/diagram/src/live.ts`). Easing each layout-owned waypoint from
-  where it was to where the plan puts it would need waypoints on the override channel, which
-  carries poses only.
-- **(P3) The ports `diagramScene` picks read as the author's on a live scene.** Under `layered`,
-  `layeredRoutes` names each edge's compass ports from which way it runs between ranks, and
-  `edgeSpecs` writes them as `from.port`/`to.port` with nothing like `laidOut` marking them
-  (`packages/diagram/src/dataEdges.ts`). A later live layout reads them as named by the author and
-  never revisits them, so an edit that turns which edge runs back up the ranks leaves a wire
-  leaving by the old face. Found in review, not reproduced.
-- **(P3) A long edge to a pinned node off its slot can reorder a second seeded run.** `layeredPlan`
-  gives such an edge no waypoints (`displaced`, `packages/diagram/src/layered/plan.ts`), so the
-  next run seeds its placeholders between its ends' new centers rather than where the last run
-  put them, and the rank's order can change. Found in review, not reproduced.
-- **(P3) `DiagramView`'s `onMove` reports nodes, not routes.** A layout run writes each long
-  edge's waypoints into the view's scene, but a consumer keeping the diagram as data hears only
-  the node moves, so the routes go whenever the data is laid into a scene again, or an edge's
-  spec changes and `reconcileSpecs` replaces its data (`packages/diagram/src/DiagramView.tsx`).
-- **(P3) A second pinned node can sit on a long edge's route.** `layeredPlan` anchors the layout
-  on the first pinned node; any other pinned node stays where its author put it, not in its slot.
-  A wire with that node as an end gets no waypoints, but a wire passing near it keeps the
-  waypoints laid out around the slot, and can run through the node
-  (`packages/diagram/src/layered/plan.ts`). Found by reading the code; no case reproduced yet.
+- **(P3) A second pinned node makes a seeded re-run move, and can sit on a long edge's route.**
+  `layeredPlan` anchors the layout on the first pinned node; another one stays where its author
+  put it while its neighbors are placed around the slot it would have had
+  (`packages/diagram/src/layered/plan.ts`). In a probe of 400 generated two-pin graphs, 1396 of
+  2800 second runs moved nodes (none did with one pin), and 88 of 2800 layouts ran a long edge
+  through the second pin's box. Placement would have to hold each pinned node's cross-axis
+  position as a constraint, and rank gaps stretch to reach its rank-axis position or say they
+  cannot.
+- **(P3) `onMove` reports a layout run's routes but not the ports it named.** A port layout picks
+  is marked `laidOut` on its edge end, but `fromPort`/`toPort` are part of `edgeIdOf`, so a
+  consumer storing one in its data renames the edge and the next reconcile replaces it
+  (`packages/diagram/src/sceneSync.ts`). Ports need an edge id that does not depend on them, or a
+  field of their own.
+- **(P3) The `lanes` look draws wires straight across stage boxes.** A wire running along its
+  lane passes over any stage between its ends that also touches that lane, and its label can sit
+  on that stage's title (`packages/diagram/src/effect/lanes.ts`). Clicking a lane band reports
+  `null` to `onSelect` but the canvas still highlights the band.
+- **(P3) An eased edge may switch faces on a live run's last frame.** Each eased frame draws
+  the route through the edge's current `from`/`to` ports, but the ports layout renames reach the
+  scene only at commit (`routeWrites`), so a run that changes the face an edge leaves by eases
+  along the old face and jumps on arrival (`easedPaths` in `packages/diagram/src/liveRoutes.ts`).
+  Found in review, not reproduced.
+- **(P3) A live run eases routes for `layered` only.** `force` runs still draw long edges through
+  the old bends while they ease, and an edge to a group reads the group's box a frame late
+  (`packages/diagram/src/liveRoutes.ts`).
+- **(P3) Wires into a `rack` stage's side ports can cross.** Six side stages feeding six side
+  inputs of one stage drew Layer 1's and Layer 2's wires crossing on their way in, before and
+  after the ports were spread apart (`packages/diagram/src/effect/rack.ts`).
 - **(P4) An ELK layout adapter.** elkjs (the Eclipse Layout Kernel) lays out ports, labels and
   nested groups well, but answers asynchronously and is large (around 1.5 MB; not measured), so it cannot sit behind
   the synchronous `LayoutFn`. An adapter in a package of its own, for laying out a generated
   diagram once, would let a diagram be checked against it.
-- **(P3) `DiagramView` fits its view once, at mount.** `defaultView` only seeds the canvas's
-  view, so when `width` or `height` changes the canvas resizes and the view does not refit; a
-  diagram fitted for a wide box is clipped in a narrower one. The EffectChart lab shows it when
-  its frame is resized.
-- **(P3) Two wires can share an `edgeIdOf`.** Ids containing `.`, `->` or `:` build the same
-  edge id from different stages and ports. `diagramScene` keeps the first such edge, while the
-  looks keep one style per id, last one winning (`sceneStyles` in
-  `packages/diagram/src/effect/draw.ts`, `packages/diagram/src/fromData.ts`).
-- **(P3) The `rack` look overlaps side ports.** A stage's side ports are spread evenly along one
-  edge of a box sized by its text, however many there are, so a stage with many side inputs draws
-  them on top of one another (`spreadAt` in `packages/diagram/src/effect/rack.ts`).
-- **(P3) Branch symbols put control inputs on top whatever the rack's `side` is.** With the
-  default `side: 'below'`, the stage driving a decision hangs below it and its wire climbs to the
-  top edge (`inputs` in `packages/diagram/src/effect/symbols.ts`).
-- **(P3) A list of looks with different options needs a cast.** `EffectLook`'s options parameter
-  defaults to `unknown`, and `EffectLook<NodeGraphOptions>` is not assignable to it, so a list
-  holding `nodeGraph` and `rack` together is cast by hand (`packages/diagram/src/effect/draw.ts`;
-  the EffectChart lab story does it).
-- **(P3) `EffectChart` has no floor on its opening scale.** It opens every chart fitted whole and
-  passes no `minScale`, so a chart of hundreds of stages opens too small to read
-  (`packages/diagram/src/effect/EffectChart.tsx`; `DiagramView` already takes `minScale`).
-- **(P3) A branch symbol's drawn marks have fixed colors.** The `bar`'s bands and ticks and the
-  `switch`'s lever and contacts are color literals, so they stay bright on a bypassed decision
-  and a look cannot restyle them; only the titles follow the node style
-  (`packages/diagram/src/effect/symbols.ts`).
-- **(P3) Marks are only tested in jsdom.** No browser test moves a node that carries marks, so a
-  text mark following its node is unpinned, and so is a drawn mark's `opacity`
-  (`packages/diagram/src/marks.test.ts`).
-- **(P3) A mark whose path data does not parse fails when it is painted.** `diagramScene` passes
-  `d` through as given and `markShape` parses it on first paint, so a typo surfaces in the
-  renderer rather than where the data was built (`packages/diagram/src/marks.ts`).
 
 ---
 
@@ -740,7 +692,7 @@ Priority tags:
 
 ### Timelines and rigging
 
-- **(P3) The bone and weight tools have no icon and are not `defaultTools` ids** — they are
+- **(P3) The bone and weight tools are not `defaultTools` ids** — they are
   mounted as `tools={{ bone, weight }}`, as slice is.
 
 ### Combining animations
@@ -837,24 +789,25 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 ## Selection, actions & UI panels
 
-- **(P2) Menus as layout assets, and a menu bar built from them.** Half built. Landed 2026-10-16: a
-  menu is a prefs group drawn `as: 'menu'`, `MenuDef` is a `when` around one, and
-  `resolveSchemaMenu` serves context menus and a bar's menu groups alike. Left: the menu bar itself
-  (a layout asset whose root is a bar of menu groups, with its keys), access letters,
-  `MenuHost.open` anchored to a rect, `MenuButton` onto the context-menu renderer, `useCommand`,
-  and the asset editor's remaining `menu` cases
-  (`docs/superpowers/specs/2026-10-16-menus-as-layout-assets-design.md`).
+- **(P3) The asset editor's preview of the menu bar shows fewer rows than the app.**
+  `RegistryProbe` mounts `<SceneCanvas features={['draw']}>` with no `ambient` and no
+  `useFileCommands`, so `file.*` and the app's `view.*` toggles are never registered and File, and
+  View's four toggles, preview without them. Register the same set the
+  app does, or have the probe take it as a prop.
 
-- **(P3) ui's `ShortcutInput` is a third copy of the shortcut shape.**
-  `packages/ui/src/components/ToolPalette/formatShortcut.ts` describes what `@weasel-js/menu`'s
-  `MenuShortcut` and routing's `ActionShortcut` (now an alias of it) already do. Fold it into
-  `MenuShortcut`.
+- **(P3) The menu bar's default access chord, Alt, is unverified in Chrome on Windows, which may
+  open its own menu on Alt+F; check there before relying on it.**
 
 - **(P3) Shift+F10 / the ContextMenu key may open the menu twice in Chrome on Windows/Linux.**
   The `menu.context` key binding opens it at the selection, and those platforms also send a
   native `contextmenu` event to the focused canvas, which would reopen it at that event's point.
   Headless Playwright sends no such event, so this is unverified. Check on a real Windows or
   Linux Chrome; if it reproduces, the likely fix is for the keydown to suppress the native event.
+
+- **(P4) A `BarMenu` that opened itself can pull focus out of another menu when it closes.** Its
+  `close` gives focus to its button only when focus is inside a menu, but it checks with
+  `closest('[role="menu"]')`, which matches any menu on the page. Scope the check to this menu's
+  own panel ids.
 
 - **(P4) A headless-component layer shared by DOM and WebGL chrome.** The context-menu model
   splits state, keyboard and placement from drawing so one menu renders in both. Generalize that
@@ -865,11 +818,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   canvas and exposes only `accessibleName`. Mirror the open menu as hidden DOM with menu roles,
   kept in step with the model's highlight.
 
-- **(P3) The WebGL context menu stays open through a wheel or resize elsewhere.** The DOM menu's
-  `useDismiss` closes on a wheel outside its panels, on window blur and on resize; `attachMenuHost`
-  closes only when HUD focus moves, so a wheel over the canvas zooms under an open menu and a
-  resize leaves it where the old canvas put it.
-
 - **(P3) The WebGL context menu draws no icons, shortcut chips or check marks.** `drawPanel` draws
   each row's label and a submenu caret; the DOM rows also show the action's icon, its shortcut and a
   check for a row whose action is `active`. So a toggle action's state cannot be seen in the WebGL
@@ -877,10 +825,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 - **(P4) The WebGL context menu has square corners and no shadow.** The DOM panel takes
   `--wzl-radius-md` and `--wzl-bevel-raised`; `drawPanel` draws a plain bordered rect.
-
-- **(P3) The WebGL context menu does not return HUD focus on close.** The DOM host gives focus back
-  to whatever held it when the menu opened (`useReturnFocus`); `attachMenuHost` leaves the HUD with
-  nothing focused, so a keyboard user loses their place among the widgets.
 
 - **(P3) Some boxes still leave the stroke out.** `drawnBoundsOf` (`canvas/drawnBounds.ts`) is the
   box a stroked shape is shown and measured with, and `<SceneCanvas>`'s chrome, resize, rotate,
@@ -1407,12 +1351,24 @@ only story runner in the repo.
     Playwright's `page.frame('vitest-iframe')` returning the previous file's frame, since every
     test frame has that name; in 18 runs a check at each file's start never found a second or a
     detached one, but none of those runs had the failure, so that is unlikely, not ruled out.
-  - **`labkit/src/lab/presentation.browser.test.tsx` ("entering refits the view…") saw a pan off
-    on one axis** in 2 fleet runs at the old worker count, and in 6 of 19 runs of the project
-    alone at one or two workers on teitou, with and without the garbage collection. Run as the
-    only file on an idle teitou on 2026-10-16 it failed 5 of 10 on `main` (`9741e1af3`), the pan
-    coming back 1.7 or 5.2 px short in y, so load is not the cause. Unverified guess: the test
-    keeps the tile's first non-null view, before the tile's height settles.
+  - **A trial's canvas fits twice on first layout.** It is measured before the trial's status
+    strip takes its 30 px, placed at that height, then refit when the strip arrives. This made
+    `labkit/src/lab/presentation.browser.test.tsx` ("entering refits the view…") fail 3 of 6 runs
+    on main's code on teitou: it captured the tile's view between the two fits, and the pan came
+    back 5.2 px short. The test now waits for the settled box (10 of 10 passing, 2026-10-17); the
+    double fit itself is still there. Reserving the strip's room on first layout would remove it.
+  - **`labkit/src/lab/Lab.messages.test.tsx` ("starts an ended run over on play") failed once** in
+    the fleet run of `main` at `e167efc7c` (2026-10-16), and passed 13 of 13 run alone on orochi.
+    It failed again in a fleet run of the `menus-draw` branch (`6cc0ae6a2`, 2026-10-17), which
+    changed nothing in labkit. Two sightings; cause not looked into.
+  - **`ui/src/components/Keycaps/KeyBank.perf.browser.test.tsx` ("fits a workshop page…") took
+    545.6 ms against its 500 ms budget** in a fleet run of `menus-draw` (`f5fb7d108`, 2026-10-17),
+    which changed nothing in Keycaps, while another job's tests ran on the same node. A wall-clock
+    budget in the suite fails whenever the node is shared.
+  - **`site/demos/__tests__/ScoreDemo.browser.test.tsx` ("a playing score shows the bar in force…")
+    read the next bar's cue where it expected the current one** in a fleet run of `menus-draw`
+    (`09bbde42a`, 2026-10-17), which changed nothing in the site or audio. The check right after
+    the click assumes no bar line passes in between, and the score runs on a real clock.
   - `forge/src/vite/plugin.test.ts` has its own entry under "Demos & visual regression".
 
 - **(P2) HUD vs DOM text: what the idle rerun left open.** `tests/perf/hud-vs-dom.spec.ts` prices

@@ -84,6 +84,6 @@ describe('shared field frame', () => {
   });
 
   it('rings a text frame on any focus and a button frame only on keyboard focus', () => {
-    expect(css).toMatch(/\.frame:focus-within:not\(button\),\s*\.frame\[data-focus-visible\]\s*\{/);
+    expect(css).toMatch(/\.frame:focus-within:not\(button\),\s*\.frame\[data-focus-visible\],\s*\.frame:focus-visible\s*\{/);
   });
 });
