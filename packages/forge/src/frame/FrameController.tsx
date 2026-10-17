@@ -1,4 +1,5 @@
 import { flushSync } from 'react-dom';
+import type { IconTable } from '@weasel-js/icons';
 import { createKitRoot } from '../kitIcons';
 import type { Channel } from '../protocol/channel';
 import {
@@ -35,6 +36,8 @@ export interface FrameSetup {
    * need, so the rest never load it.
    */
   prepare?: (story: LoadedStory) => void | Promise<void>;
+  /** Icon tables registered beside the kit's in every frame: an app's own, for its stories' glyphs. */
+  icons?: readonly IconTable[];
 }
 
 /** Inputs to `startFrame`: the story, the channel to the shell, and the element to render into. */
@@ -65,7 +68,7 @@ export function startFrame({ story, channel, container, setup = {} }: StartFrame
   const wrapper = document.createElement('div');
   wrapper.className = `fg-frame fg-frame--${story.layout}`;
   container.append(wrapper);
-  const root = createKitRoot(wrapper);
+  const root = createKitRoot(wrapper, setup.icons);
   const decorators = setup.decorators ?? [];
 
   let initialized = false;

@@ -27,7 +27,7 @@ export interface MountedWorkshop {
 export function mountWorkshop({ container, ...props }: MountWorkshopOptions): MountedWorkshop {
   const target = container ?? document.getElementById('root');
   if (!target) throw new Error('mountWorkshop: no container given and no #root element');
-  const root = createKitRoot(target);
+  const root = createKitRoot(target, props.setup?.icons);
   const changes = createStoryChanges();
   let current: WorkshopProps = { ...props, changes };
   root.render(<Workshop {...current} />);

@@ -61,7 +61,7 @@ export function startIndex(options: StartIndexOptions): () => void {
   const wrapper = document.createElement('div');
   wrapper.className = 'fg-frame fg-frame--fullscreen';
   container.append(wrapper);
-  const root = createKitRoot(wrapper);
+  const root = createKitRoot(wrapper, setup.icons);
   const globalsTarget = createGlobalsTarget(document.documentElement, ':root');
   let globals: Globals | null = null;
   let announced = false;
