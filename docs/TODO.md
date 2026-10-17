@@ -468,6 +468,14 @@ Priority tags:
   flattened step at 10° (`strokeFlattening` in `@weasel-js/stroke`), which fixes what the facets
   look like at a tight bend but not this.
 
+- **(P2) Nonzero fill doubles where same-wound outlines nest without crossing.** `tessellate`
+  rebuilds a nonzero path as the boundary of its fill only when two edges cross
+  (`resolveCrossings` in `geom/src/tessellate/crossings.ts`). A square inside a square wound the
+  same way crosses nothing, so it keeps the old grouping: both count as outer shapes and each is
+  triangulated, covering the inner square twice, which doubles a translucent fill there. Routing
+  it through the same rebuild fixes it; the open question is the cost on text, whose glyph
+  outlines are all nonzero and mostly non-crossing.
+
 ---
 
 ## Text
