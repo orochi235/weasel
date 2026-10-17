@@ -1,9 +1,10 @@
 # Menus as layout assets, and a menu bar
 
-**Status: half built.** The shape, the resolver, `MenuDef` folded in, rect placement, `useCommand` and
-the asset editor's menu cases are built; the access letters, `MenuBar`, `MenuButton` on the renderer
-and both consumers, from "Renderer and placement" down, are not. Carried in `docs/TODO.md`
-("Menus as layout assets") until it lands. Delete this file when the rest merges.
+**Status: arc 1 built; arcs 2–3 (WeaselDraw's and labkit's menu bars) are not.** The shape, the
+resolver, `MenuDef` folded in, rect placement, `useCommand`, the asset editor's menu cases, access
+letters, `MenuButton` on the renderer and `MenuBar` are built; "Consumers" below is what remains.
+Carried in `docs/TODO.md` ("Menus as layout assets") until it lands. Delete this file when the rest
+merges.
 
 For whoever builds it: the decisions here were made with Mike in conversation; the ones marked
 *(builder's call, made in drafting)* were not, and can be revisited.
@@ -74,74 +75,26 @@ These are built, so the code is the reference:
 - The asset editor files a menu root, or a bar whose children are all menu groups, under a "Menus"
   heading. A menu root holds no pages and previews open: `BarMenu` takes `defaultOpen`, which
   retries as commands register, and `MenuPreview` remounts on edit.
+- Access letters inside an open menu: `accessMatch` (`packages/menu/src/access.ts`) runs a
+  declared letter's row, or opens its submenu, ahead of typeahead. `AccessLabel` underlines the
+  letter in a row and a menu bar title; a declared letter absent from the label still works.
+- `MenuButton` draws with the context menu's renderer (`MenuPanel`, `MenuRow`), and
+  `MenuItemEntry.href` draws a row as a link.
+- `MenuBar` (`packages/ui/src/components/MenuBar/`): a title per top-level menu group, with the
+  pointer and keyboard behavior of a desktop menu bar. F10 focuses it, and its `accessChord` (Alt
+  by default) with a title's declared letter opens that title's menu. Those two keys are
+  `menu.bar` and `menu.open` in `useMenuBarKeys.tsx`, on a no-canvas `keyboard: 'first'`
+  dispatcher of the bar's own, as `LabZoom.tsx` runs one; `menu.open` takes `scope: 'hotkey'`.
+  A focused text input blocks both.
+
+The default chord is unverified: Chrome on Windows is said to open its own menu on Alt+F, and on
+macOS Option plus a letter types a character (matched by `code`, so it still opens the menu). Nobody
+has checked Chrome on Windows; do that before relying on Alt there.
 
 Three builder's calls went differently from the draft: an enum draws as radio rows between
 separators, not a submenu; contributions sharing a menu id append their children in order
 with a separator between, keeping keys (a later duplicate key gets `~n`), not merge by key; and
 outside a bar a menu group draws as a panel (`prefAsBox`), not as a button that opens it.
-
-## Renderer and placement
-
-The DOM renderer is the context menu's: `MenuPanel` and `MenuRow` over a `MenuController`. Two
-things get added:
-
-- **Access letter underlines,** drawn in a row's label and a menu bar title when a letter is
-  declared.
-- **Access letters inside an open menu,** handled in the controller beside typeahead: a declared
-  letter runs its row, or opens its submenu, and wins over typeahead for that key.
-
-`MenuButton` moves off React Aria's `Menu` onto this renderer. Its rows (`value`, `label`,
-`href`, `isCurrent`, `isDisabled`) become `MenuEntry`s. `MenuItemEntry` gains an optional `href`:
-the DOM renderer draws that row as a link a modified click opens in a new tab, and the WebGL host
-navigates. `MenuEntry.label` stays a `string`, because the WebGL host draws it, so
-`MenuButtonItem.label` narrows from `ReactNode` to `string` and `textValue` goes. No call site
-passes anything but a string today (`LabHeader`, `LabSwitcher`, labkit's `builtins`, `Specimen`,
-`EnumControl`, WeaselDraw's `CommandBar`) *(builder's call, made in drafting)*.
-
-## The menu bar
-
-A kit component, `MenuBar`, takes what `Bar` takes (`schema`, `over`, `values`, `onChange`), where
-`schema` is a bar of menu groups. Each menu group is a title; anything else at the top level
-draws as it would in a bar *(builder's call, made in drafting)*. It has `role="menubar"`.
-
-Pointer:
-
-- Clicking a title opens its menu. Clicking the open title closes it.
-- With a menu open, moving onto another title switches to it.
-- Press on a title, drag to a row and release: the row runs.
-- Submenus use the aim triangle (`packages/menu/src/triangle.ts`).
-
-Keyboard:
-
-- F10 focuses the bar.
-- Left and Right walk the titles; Down or Enter opens one.
-- Inside a menu the context menu's keys and typeahead apply; Left or Right at the top level moves
-  to the neighboring menu, open.
-- Escape closes the menu and focuses its title; a second Escape leaves the bar and gives focus
-  back to where it was.
-
-## Access letters
-
-Supported, never required: nothing happens where none is declared.
-
-With the bar closed, Alt plus a declared letter opens that menu. These go through the gesture
-dispatcher as key bindings: one `menu.open` action with the menu as a param, its bindings
-generated from the declared letters, the way `menu.context` binds Shift+F10 and the ContextMenu
-key. Unlike `menu.context`, whose bindings are ambient, these take `scope: 'hotkey'` so a tool
-binding on the same key cannot take them.
-
-The chord is the host's choice; Alt is the default. Browsers claim some Alt letters for
-themselves — Chrome on Windows opens its own menu on Alt+F, and on macOS Option plus a letter
-types a character — which is why it has to be configurable. That is from memory, not measured;
-check it in Chrome on Windows before settling the default.
-
-Keys reach a dispatcher through `window` (`attachInput.ts`), so a binding fires with focus in
-chrome. A canvas dispatcher acts when it holds the keys (`keyHolder` in `ActionsProvider.tsx`).
-A dispatcher with no canvas acts whenever its node is active (`dispatchCore.ts`), and with
-`keyboard: 'first'` it listens in the capture phase, ahead of the rest — `LabZoom.tsx` runs one at
-lab level for Mod+=/-/0. The menu bar's F10 and access letters run on a dispatcher of that kind,
-so they need no canvas to hold the keys. A focused text input blocks every binding
-(`channels/keyboard.ts`).
 
 ## Consumers
 
@@ -178,14 +131,12 @@ context menus.
 
 ## Order
 
-Each is its own arc, landing before the next starts:
+Each is its own arc, landing before the next starts. Arc 1 — `MenuBar`, access letters, and
+`MenuButton` onto the renderer — has landed; these remain:
 
-1. `MenuBar` and access letters; `MenuButton` onto the renderer.
 2. WeaselDraw: file actions, then its menu bar.
 3. labkit: the lab-wide registry and its lab-level commands, then its menu bar.
 
 ## Left to the builder
 
-- Package placement of `MenuBar`.
-- How an enum pointer and a variant list draw, within the table above.
 - The default access chord, after checking Chrome on Windows.

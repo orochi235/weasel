@@ -7,7 +7,7 @@ import { useEffect, useMemo, useRef, type FocusEvent } from 'react';
  */
 export function useMenuBarFocus(bar: { readonly current: HTMLElement | null }) {
   const returnTo = useRef<HTMLElement | null>(null);
-  // Whether the key or press now being handled is an Escape; read when a menu closes.
+  // Whether the key or press now being handled is an Escape; read, and cleared, when a menu closes.
   const escaped = useRef(false);
   useEffect(() => {
     const key = (e: KeyboardEvent) => { escaped.current = e.key === 'Escape'; };
@@ -15,10 +15,12 @@ export function useMenuBarFocus(bar: { readonly current: HTMLElement | null }) {
     window.addEventListener('keydown', key, true);
     window.addEventListener('pointerdown', press, true);
     window.addEventListener('pointerup', press, true);
+    window.addEventListener('wheel', press, { capture: true, passive: true });
     return () => {
       window.removeEventListener('keydown', key, true);
       window.removeEventListener('pointerdown', press, true);
       window.removeEventListener('pointerup', press, true);
+      window.removeEventListener('wheel', press, true);
     };
   }, []);
 
@@ -29,7 +31,7 @@ export function useMenuBarFocus(bar: { readonly current: HTMLElement | null }) {
 function focusMoves(
   bar: { readonly current: HTMLElement | null },
   returnTo: { current: HTMLElement | null },
-  escaped: { readonly current: boolean },
+  escaped: { current: boolean },
 ) {
   const outside = (el: Element) => !bar.current?.contains(el) && !el.closest('[role="menu"]');
   const remember = (el: Element | null) => {
@@ -58,9 +60,11 @@ function focusMoves(
     leave,
     /** A menu has closed: if focus was in it, Escape puts it on the title and anything else leaves the bar. */
     closed: (title: HTMLElement | undefined) => {
+      const byEscape = escaped.current;
+      escaped.current = false;
       const el = document.activeElement;
       if (!el?.closest('[role="menu"]')) return;
-      if (escaped.current) title?.focus();
+      if (byEscape) title?.focus();
       else leave(el instanceof HTMLElement ? el : null);
     },
   };

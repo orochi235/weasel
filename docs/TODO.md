@@ -844,10 +844,17 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 ## Selection, actions & UI panels
 
-- **(P2) Menus as layout assets, and a menu bar built from them.** Half built. Left: the menu bar
-  itself (a layout asset whose root is a bar of menu groups, with its keys), access letters,
-  `MenuButton` onto the context-menu renderer, then WeaselDraw's and labkit's menu bars
-  (`docs/superpowers/specs/2026-10-16-menus-as-layout-assets-design.md`).
+- **(P2) Menus as layout assets, and a menu bar built from them.** `MenuBar`, access letters and
+  `MenuButton` on the context-menu renderer have landed. Left: arcs 2–3, WeaselDraw's menu bar
+  (file actions first) and labkit's (a lab-wide registry first)
+  (`docs/superpowers/specs/2026-10-16-menus-as-layout-assets-design.md`, "Consumers").
+
+- **(P3) The menu bar's default access chord, Alt, is unverified in Chrome on Windows, which may
+  open its own menu on Alt+F; check there before relying on it.**
+
+- **(P3) A menu bar title made disabled or hidden while its menu is open leaves the menu open.**
+  `MenuBar` checks a title's `enableIf` and `showIf` only when the menu opens; close the menu when
+  its title stops being openable.
 
 - **(P2) A bar can lead with an icon, not only its label.** `lead: 'label'` landed 2026-10-16
   (`PrefBarLead` in `packages/prefs/src/groups.ts`). The icon form needs the group to name a glyph

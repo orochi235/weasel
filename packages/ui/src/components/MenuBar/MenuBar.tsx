@@ -1,4 +1,4 @@
-import { createContext, useCallback, useId, useMemo, useRef, useState, type KeyboardEvent } from 'react';
+import { useCallback, useId, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import { createPortal } from 'react-dom';
 import { useLatest, type OpenMenu } from '@weasel-js/core';
 import type { PrefGroup } from '@weasel-js/prefs';
@@ -10,15 +10,11 @@ import { OpenPanels } from '../ContextMenu/ContextMenuHost';
 import { shownMenuBar, type MenuBarTitle as Title } from './menuBarTitles';
 import { MenuBarTitle } from './MenuBarTitle';
 import { useMenuBarFocus } from './useMenuBarFocus';
+import { MenuBarHandleContext, type MenuAccessChord, type MenuBarHandle } from './menuBarHandle';
+import { MenuBarKeys } from './useMenuBarKeys';
 import s from './MenuBar.module.css';
 
-/** The modifiers held with a title's access letter to open its menu from anywhere in the app. */
-export interface MenuAccessChord {
-  alt?: boolean;
-  ctrl?: boolean;
-  meta?: boolean;
-  shift?: boolean;
-}
+export type { MenuAccessChord } from './menuBarHandle';
 
 /** Props for {@link MenuBar}. */
 export interface MenuBarProps {
@@ -39,25 +35,15 @@ export interface MenuBarProps {
   className?: string;
 }
 
-/** What the bar's key layer drives it through. */
-export interface MenuBarHandle {
-  /** Focus the title that last had focus, else the first. */
-  focus(): void;
-  /** Open a title's menu, as from the keyboard. A disabled title opens nothing. */
-  open(key: string): void;
-}
-
-/** The enclosing bar's handle, for the key layer drawn inside it. */
-export const MenuBarHandleContext = createContext<MenuBarHandle | null>(null);
-
 type MenuTitle = Extract<Title, { kind: 'menu' }>;
 interface Opened { key: string; menu: OpenMenu; release: boolean }
+const ALT: MenuAccessChord = { alt: true };
 
 /**
  * A bar of menus across the top of an app: a title per menu group, each opening its group as the context menu's
  * panels do, with the pointer and keyboard behavior of a desktop menu bar.
  */
-export function MenuBar({ schema, over, values, onChange, label = 'Menu bar', className }: MenuBarProps) {
+export function MenuBar({ schema, over, values, onChange, label = 'Menu bar', accessChord = ALT, className }: MenuBarProps) {
   const read = (path: string) => valueAt(values, path);
   const { titles, disabled } = shownMenuBar(schema, read, over);
   const menus = titles.filter((t): t is MenuTitle => t.kind === 'menu');
@@ -136,6 +122,7 @@ export function MenuBar({ schema, over, values, onChange, label = 'Menu bar', cl
   return (
     <MenuBarHandleContext.Provider value={handle}>
       {anchor}
+      <MenuBarKeys titles={menus} disabled={disabled} chord={accessChord} />
       <div className={className ? `${s.root} ${className}` : s.root}>
         <div ref={bar} role="menubar" aria-label={label} className={s.bar} onFocus={focus.onFocus}>
           {menus.map((t) => (
