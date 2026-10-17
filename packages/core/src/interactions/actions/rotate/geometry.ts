@@ -1,4 +1,4 @@
-import type { RotatedPose } from '../../gestures/types';
+import type { RotatedPose } from 'core/geometry/poseDescriptor';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 
 /** AABB center of an unrotated rect — the canonical rotation pivot. */

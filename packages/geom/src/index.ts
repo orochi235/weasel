@@ -129,7 +129,7 @@ export { meanScale } from './meanScale';
 export { pxExtent, scaleDelta, screenAngleOf, standoff, withinPxBox, withinPxRadius, type Scale2 } from './pxExtent';
 export { poseRotationOf, rotatePathAround, type PoseRotation } from './poseRotation';
 export {
-  poseFrameOf, poseFrameInverseOf, poseLinearOf, pathThroughPoseFrame, type PoseLinear,
+  poseFrameOf, poseFrameInverseOf, poseLinearOf, pathThroughPoseFrame, type FramedBox, type PoseLinear,
 } from './poseFrame';
 export {
   anchorAt, anchorCount, anchorsInRect, deleteAnchorsAt, editAnchorSet, flatAnchorIndex, insertAnchorOnSegment,
