@@ -56,11 +56,13 @@ describe('actionItemTitle', () => {
 
   it('leaves a variant that already opens with the action label, in any case', () => {
     expect(titles('Zoom', ['Zoom In', 'zoom out', 'Reset'])).toEqual(['Zoom In', 'zoom out', 'Zoom: Reset']);
+    expect(titles('Zoom', ['Reset Zoom', 'Zoom'])).toEqual(['Reset Zoom', 'Zoom']);
     expect(titles('Flip', ['Flip Horizontal'])).toEqual(['Flip Horizontal']);
     expect(titles('Bring Forward', ['Bring Forward'])).toEqual(['Bring Forward']);
   });
 
   it('prefixes a variant that only shares the action label\'s letters', () => {
     expect(titles('Zoom', ['Zoomed out'])).toEqual(['Zoom: Zoomed out']);
+    expect(titles('Zoom', ['Unzoom'])).toEqual(['Zoom: Unzoom']);
   });
 });

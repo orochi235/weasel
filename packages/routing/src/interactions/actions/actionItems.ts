@@ -40,13 +40,15 @@ export function actionItems(action: Action): ActionItem[] {
 }
 
 /** @experimental How a palette titles `item`: a variant reads as its action's
- *  label and its own ("New: A4"), unless its label already opens with the
- *  action's as a whole word ("Zoom In"). */
+ *  label and its own ("New: A4"), unless its label already holds the action's
+ *  as whole words ("Zoom In", "Reset Zoom"). */
 export function actionItemTitle(item: ActionItem): string {
   if (item.key === item.action.id) return item.label;
-  const head = item.action.label.toLowerCase();
-  const label = item.label.toLowerCase();
-  const next = label.charAt(head.length);
-  if (label.startsWith(head) && !/[\p{L}\p{N}]/u.test(next)) return item.label;
+  const words = (s: string) => s.toLowerCase().match(/[\p{L}\p{N}]+/gu) ?? [];
+  const head = words(item.action.label);
+  const label = words(item.label);
+  for (let i = 0; i + head.length <= label.length; i++) {
+    if (head.every((w, j) => label[i + j] === w)) return item.label;
+  }
   return `${item.action.label}: ${item.label}`;
 }

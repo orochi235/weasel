@@ -30,8 +30,8 @@ export const averageAnchorsAction: Action & { requires: string[] } = {
   group: 'anchors',
   variants: [
     { key: 'both', label: 'Average anchors', params: { axis: 'both' } },
-    { key: 'x', label: 'Line anchors up vertically', params: { axis: 'x' } },
-    { key: 'y', label: 'Line anchors up horizontally', params: { axis: 'y' } },
+    { key: 'x', label: 'Average anchors vertically', params: { axis: 'x' } },
+    { key: 'y', label: 'Average anchors horizontally', params: { axis: 'y' } },
   ],
   // `code` too: with Alt held on a Mac the key reads as another glyph.
   defaultBinding: [{
