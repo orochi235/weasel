@@ -738,8 +738,6 @@ How the registry and the build plugin work is in `docs/icons.md`.
 - **(P3) Wires into a `rack` stage's side ports can cross.** Six side stages feeding six side
   inputs of one stage drew Layer 1's and Layer 2's wires crossing on their way in, before and
   after the ports were spread apart (`packages/diagram/src/effect/rack.ts`).
-- **(P3) An empty-string port and no port give the same `edgeIdOf`.** Separators are escaped, so
-  no other two distinct wires share an id (`packages/diagram/src/fromData.ts`).
 - **(P4) An ELK layout adapter.** elkjs (the Eclipse Layout Kernel) lays out ports, labels and
   nested groups well, but answers asynchronously and is large (around 1.5 MB; not measured), so it cannot sit behind
   the synchronous `LayoutFn`. An adapter in a package of its own, for laying out a generated
