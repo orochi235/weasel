@@ -235,3 +235,29 @@ describe('resolveMenu', () => {
     expect(labels(resolveMenu({ id: 'm', menu: menu({ cut: act('cut') }) }, sources()))).toEqual(['Cut']);
   });
 });
+
+describe('resolveSchemaMenu: access letters', () => {
+  it('copies a leaf letter onto the one item it makes', () => {
+    const es = resolveSchemaMenu(menu({ cut: pref.action('cut', { access: 't' }) }), sources());
+    expect(es[0]).toMatchObject({ kind: 'item', access: 't' });
+  });
+  it('leaves the letter off every variant a parametric action makes', () => {
+    const es = resolveSchemaMenu(menu({ flip: pref.action('flip', { access: 'f' }) }), sources());
+    expect(es).toHaveLength(2);
+    for (const e of es) expect(e).not.toHaveProperty('access');
+  });
+  it('keeps a boolean leaf letter', () => {
+    const es = resolveSchemaMenu(menu({ grid: pref.boolean('Grid', false, { access: 'g' }) }), valued({ grid: false }));
+    expect(es[0]).toMatchObject({ kind: 'item', access: 'g' });
+  });
+  it('gives a boolean no letter it did not declare', () => {
+    const es = resolveSchemaMenu(menu({ grid: pref.boolean('Grid', false) }), valued({ grid: false }));
+    expect(es[0]).not.toHaveProperty('access');
+  });
+  it('copies a letter on a menu group onto its submenu', () => {
+    const es = resolveSchemaMenu(menu({
+      view: { name: 'View', as: 'menu', access: 'v', children: { cut: act('cut') } },
+    }), sources());
+    expect(es[0]).toMatchObject({ kind: 'submenu', access: 'v' });
+  });
+});

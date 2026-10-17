@@ -45,6 +45,8 @@ export interface PrefBase<K extends string, Value> {
    *  (`prefLeafTags`). Unrelated to a union leaf's `tag`, which names the
    *  field its value's variant is read from. */
   tags?: readonly string[];
+  /** The letter that picks this in a menu, and with the menu bar's chord opens a top-level menu. One character; supported, never required. */
+  access?: string;
   /** Hide from a host app's settings UI by default. */
   hidden?: boolean;
   /** Drawn only while this holds. Presentational: the value stays stored

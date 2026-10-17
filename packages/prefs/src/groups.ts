@@ -59,6 +59,8 @@ export interface PrefGroup {
   overflow?: PrefBarOverflow;
   /** Drawn `as: 'bar'`: what its line starts with. Unset: its first cell. */
   lead?: PrefBarLead;
+  /** The letter that picks this in a menu, and with the menu bar's chord opens a top-level menu. One character; supported, never required. */
+  access?: string;
   /** Drawn, with everything under it, only while this holds. */
   showIf?: PrefCondition;
   /** Everything under it is disabled while this does not hold. */
@@ -88,6 +90,8 @@ export interface PrefSection {
   overflow?: PrefBarOverflow;
   /** As a {@link PrefGroup}'s. */
   lead?: PrefBarLead;
+  /** As a {@link PrefGroup}'s. */
+  access?: string;
   /** As a {@link PrefGroup}'s. */
   showIf?: PrefCondition;
   /** As a {@link PrefGroup}'s. */

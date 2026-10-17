@@ -42,10 +42,10 @@ describe('kindSchemas', () => {
 
   it('describes a group and a section each with a name, a description and how it is drawn, a section with no page', () => {
     const { shared, own } = attributeSchema({ name: 'G', children: {} });
-    expect(Object.keys(shared)).toEqual(['name', 'description', 'tags', 'as', 'showIf', 'enableIf']);
+    expect(Object.keys(shared)).toEqual(['name', 'description', 'tags', 'as', 'access', 'showIf', 'enableIf']);
     expect(own).toEqual({});
     const section = attributeSchema({ name: 'S', members: {} }).shared;
-    expect(Object.keys(section)).toEqual(['name', 'description', 'tags', 'as', 'showIf', 'enableIf']);
+    expect(Object.keys(section)).toEqual(['name', 'description', 'tags', 'as', 'access', 'showIf', 'enableIf']);
     expect((section.as as unknown as { options: Array<{ value: string }> }).options.map((o) => o.value)).toEqual(['tab', 'panel', 'section', 'fragment', 'bar', 'menu']);
   });
 

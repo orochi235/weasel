@@ -42,13 +42,14 @@ const SUBMENU_AS: ReadonlySet<PrefGroupAs> = new Set(['menu', 'page', 'tab', 'pa
 const noop = () => {};
 const sep = (key: string): MenuEntry => ({ kind: 'separator', key });
 
-function itemOf(ctx: Ctx, it: ActionItem, key: string, label: string, off: boolean): MenuItemEntry {
+function itemOf(ctx: Ctx, it: ActionItem, key: string, label: string, off: boolean, access?: string): MenuItemEntry {
   const deps = ctx.src.depsFor(it.action);
   const point = ctx.at ? { worldX: ctx.at.x, worldY: ctx.at.y } : {};
   return {
     kind: 'item',
     key,
     label,
+    ...(access ? { access } : {}),
     icon: it.icon,
     shortcut: actionShortcuts(it.action, it.params)[0],
     disabled: off || !evaluateEnabled(it.action, deps, ctx.at).enabled,
@@ -76,7 +77,7 @@ function actionRows(ctx: Ctx, leaf: PrefAction, key: string, off: boolean): Menu
     return [{ kind: 'item', key, label: own, disabled: true, run: noop }];
   }
   const items = itemsNamed(ctx, leaf.action);
-  if (items.length === 1) return [itemOf(ctx, items[0]!, key, own || items[0]!.label, off)];
+  if (items.length === 1) return [itemOf(ctx, items[0]!, key, own || items[0]!.label, off, leaf.access)];
   return items.map((it) => itemOf(ctx, it, `${key}/${it.key}`, it.label, off));
 }
 
@@ -93,7 +94,7 @@ function booleanRows(ctx: Ctx, leaf: PrefBoolean, key: string, path: string, off
   const on = leaf.encoding ? leaf.encoding.read(stored, siblingsOf(ctx, path)) : stored === true;
   const write = (v: boolean) => (leaf.encoding ? leaf.encoding.write(v, siblingsOf(ctx, path)) : v);
   return [{
-    kind: 'item', key, label: leaf.name, checked: on, disabled: off || leaf.readout === true,
+    kind: 'item', key, label: leaf.name, ...(leaf.access ? { access: leaf.access } : {}), checked: on, disabled: off || leaf.readout === true,
     run: leaf.readout ? noop : () => onChange(path, write(!on)),
   }];
 }
@@ -132,7 +133,7 @@ function leafRows(ctx: Ctx, leaf: PrefLeaf, key: string, path: string, off: bool
     case 'boolean': return booleanRows(ctx, leaf as PrefBoolean, key, path, off);
     case 'enum': return enumRows(ctx, leaf as PrefEnum, key, path, off);
     case 'separator': return [sep(key)];
-    case 'label': return [{ kind: 'item', key, label: leaf.name, disabled: true, run: noop }];
+    case 'label': return [{ kind: 'item', key, label: leaf.name, ...(leaf.access ? { access: leaf.access } : {}), disabled: true, run: noop }];
     case 'alias': {
       const alias = leaf as Parameters<typeof prefAliasTarget>[0];
       const target = prefAliasTarget(alias, (p) => prefLeafAt(ctx.src.over ?? ctx.root, p));
@@ -152,7 +153,7 @@ function groupRows(ctx: Ctx, group: PrefGroup, prefix: string, off: boolean): Me
       out.push(...leafRows(ctx, node, path, path, disabled));
     } else if (node.as !== undefined && SUBMENU_AS.has(node.as)) {
       const entries = tidy(groupRows(ctx, node, path, disabled));
-      if (entries.length) out.push({ kind: 'submenu', key: path, label: node.name, entries });
+      if (entries.length) out.push({ kind: 'submenu', key: path, label: node.name, ...(node.access ? { access: node.access } : {}), entries });
     } else {
       out.push(sep(`${path}/<`), ...groupRows(ctx, node, path, disabled), sep(`${path}/>`));
     }
