@@ -122,6 +122,16 @@ export class ActionsNode extends ScopeNode<ActionsNode> {
     return null;
   }
 
+  /** The actions registered at this node itself, live, unmuted and tuned —
+   *  none from the scopes below it. */
+  ownActions(): readonly Action[] {
+    const out: Action[] = [];
+    for (const [id, stack] of this.actions) {
+      if (stack.length > 0 && !this.muted.has(id)) out.push(this.tuned(stack.at(-1)!));
+    }
+    return out;
+  }
+
   /** The deps `a` is invoked with from here: the active scope's, which is
    *  what `trigger` and `begin` run it with. */
   depsOf(a: Action): ActionDeps {
