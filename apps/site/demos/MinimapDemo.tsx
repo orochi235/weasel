@@ -9,8 +9,9 @@ import {
 } from '@weasel-js/core';
 import { MinimapCanvas, createMinimapContribution } from '@weasel-js/minimap';
 import type { DrawCommand } from '@weasel-js/core/renderer';
-import type { View } from '@weasel-js/core';
+import type { CanvasSize, View } from '@weasel-js/core';
 import styles from './MinimapDemo.module.css';
+import { DemoStage } from './DemoStage';
 
 interface NodeData { color: string }
 type LayerId = 'default';
@@ -19,7 +20,7 @@ interface Pose { x: number; y: number; width: number; height: number }
 const MAIN_W = 600, MAIN_H = 400;
 const MINI_W = 200, MINI_H = 140;
 /** The in-surface minimap: a view in the main canvas's top-right corner. */
-const INSET = { x: MAIN_W - 168, y: 8, w: 160, h: 112 };
+const INSET = (_outer: View, dims: CanvasSize) => ({ x: dims.width - 168, y: 8, w: 160, h: 112 });
 
 const COLORS: NodeData['color'][] = ['#7fb069', '#a48bd4', '#f0e0a8', '#e07a7a', '#5fb0c2'];
 
@@ -50,6 +51,7 @@ export function MinimapDemo() {
   });
   const selection = useSelection();
   const [view, setView] = useState<View>({ x: 0, y: 0, scale: { x: 1, y: 1 } });
+  const [mainSize, setMainSize] = useState<CanvasSize>({ width: MAIN_W, height: MAIN_H });
   // One entry installs the whole inset minimap: its view, its pan, the
   // visible-rect indicator and the linked crosshair. Built once — the entry
   // holds the state its layers read.
@@ -83,40 +85,41 @@ export function MinimapDemo() {
           </span>
         </div>
         <div className={styles.row}>
-          <SceneCanvas features={['view']}
-            width={MAIN_W}
-            height={MAIN_H}
-            className="ckd-canvas"
-            scene={scene}
-            selection={selection}
-            view={view}
-            onViewChange={setView}
-            ambient={ambient}
-            layers={{
-              scene: {
-                drawOne: (n, p): DrawCommand[] => [{
-                  kind: 'path',
-                  path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-                  fill: { paint: { color: n.data.color } },
-                }],
-              },
-            }}
-          />
+          <DemoStage width={MAIN_W} height={MAIN_H}>
+            <SceneCanvas features={['view']}
+              className="ckd-canvas"
+              scene={scene}
+              selection={selection}
+              view={view}
+              onViewChange={setView}
+              ambient={ambient}
+              onResize={setMainSize}
+              layers={{
+                scene: {
+                  drawOne: (n, p): DrawCommand[] => [{
+                    kind: 'path',
+                    path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
+                    fill: { paint: { color: n.data.color } },
+                  }],
+                },
+              }}
+            />
+          </DemoStage>
           <aside className={styles.minimapPanel}>
             <div className={styles.minimapTitle}>
               Detached minimap
             </div>
-            <MinimapCanvas
-              scene={scene}
-              mainView={view}
-              mainViewDims={{ width: MAIN_W, height: MAIN_H }}
-              onMainViewChange={setView}
-              width={MINI_W}
-              height={MINI_H}
-              drawOne={minimapDrawOne}
-              fit="scene"
-              id="minimap-detached"
-            />
+            <DemoStage width={MINI_W} height={MINI_H}>
+              <MinimapCanvas
+                scene={scene}
+                mainView={view}
+                mainViewDims={mainSize}
+                onMainViewChange={setView}
+                drawOne={minimapDrawOne}
+                fit="scene"
+                id="minimap-detached"
+              />
+            </DemoStage>
           </aside>
         </div>
       </div>
