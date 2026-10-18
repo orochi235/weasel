@@ -1,6 +1,6 @@
 import type { ColorOverrideRegistry } from '../colorRegistry';
 import { AnimatorEventHub } from '../observe';
-import type { TargetState } from '../target';
+import type { Behind, TargetState } from '../target';
 import type { Animator } from '../types';
 import { createAnimatorApi } from './animatorApi';
 import { createCodec } from './codec';
@@ -34,19 +34,34 @@ export function createAnimatorCore(host: CoreHost): AnimatorCore {
   const clock: AnimatorClock = { frameT: null, elapsed: 0, timeScale: 1, paused: false };
   const hub = new AnimatorEventHub();
   const codec = createCodec((on) => {
+    // A move behind a row's holds runs in its table's lane for moves; the rest of a row's voices
+    // run in its table's lane.
+    if ('move' in on) return (on as Behind).move?.place;
     const { row } = on as TargetState;
     return row ? { group: row.table, tag: row.index } : undefined;
   });
   const afterTicks: (() => void)[] = [];
   const subscribers = createEmitter();
   let nextId = 1;
+  let atEnd = false;
   const seedClock = (): void => { if (clock.frameT == null) clock.frameT = host.now(); };
 
-  const reread = (): void => codec.refresh((on, queued) => targets.reread(on as TargetState, queued));
+  /** Targets whose holds a tick touched, folded again once the frame's ticks are done. */
+  const touched = new Set<TargetState>();
+  const refold = (s: TargetState): void => {
+    if (s.holds) s.holds.store.refold(s.holds.row);
+    // Between frames a table's `shown` is read apart for such a row; a frame's pass shows it.
+    if (s.row && !frame.framing()) s.row.table.mark(s.row.index);
+  };
+  const refoldTouched = (): void => {
+    for (const s of touched) refold(s);
+    touched.clear();
+  };
   const table = createTable({
     codec,
     hub,
     elapsed: () => clock.elapsed,
+    direction: () => (clock.timeScale < 0 ? -1 : 1),
     seedClock,
     showNow: (target) => targets.showNow(target),
     resting: () => targets.resting,
@@ -56,15 +71,12 @@ export function createAnimatorCore(host: CoreHost): AnimatorCore {
   const targets = createTargetBook({
     stop: (s) => {
       for (const a of [...table.on(s)]) table.retire(a.id);
-    },
-    reread: (s) => {
-      codec.touch(s);
-      reread();
+      for (const part of [...s.parts]) part();
     },
     columns: (table) => codec.columns(table),
   });
   const frame = createFrame({
-    clock, table, codec, targets, hub, afterTicks, subscribers, reread,
+    clock, table, codec, targets, hub, afterTicks, subscribers, refold: refoldTouched,
     requestFrame: host.requestFrame, tripwire: host.tripwire,
   });
 
@@ -72,6 +84,12 @@ export function createAnimatorCore(host: CoreHost): AnimatorCore {
     codec,
     targets,
     nextId: () => nextId++,
+    atEnd: () => atEnd,
+    starting: (end, start) => {
+      const was = atEnd;
+      atEnd = end;
+      try { return start(); } finally { atEnd = was; }
+    },
     seedClock,
     register: table.register,
     has: (id) => table.animations.has(id),
@@ -79,11 +97,12 @@ export function createAnimatorCore(host: CoreHost): AnimatorCore {
     reportEnd: table.reportEnd,
     finish: table.finish,
     touch: (target, at) => {
-      codec.touch(target);
-      if (frame.framing() && !at) return;
-      reread();
+      if (frame.framing() && !at) { touched.add(target); return; }
+      touched.delete(target);
+      refold(target);
       if (!frame.framing()) host.requestFrame();
     },
+    wake: () => { if (!frame.framing()) host.requestFrame(); },
     tripwire: host.tripwire,
     interrupt: (key, by) => table.cancelByKey(key, by as ActiveAnimation),
     velocityUnder: (key, target) => {

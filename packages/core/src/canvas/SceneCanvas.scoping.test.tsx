@@ -133,4 +133,35 @@ describe('SceneCanvas isPointerInteractive', () => {
     click(25, 5);
     expect(onClick.mock.calls[1]![0]).toBeNull();
   });
+
+  function setup(rejected: (ids: { a: string; b: string }) => string, bPose = { x: 20, y: 0, width: 10, height: 10 }) {
+    const scene = createScene<TData, TLayer, typeof POSE>({ systemLayers: [{ id: 'bg' }] });
+    const a = scene.add({ kind: 'leaf', layer: 'bg', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { label: 'a' } });
+    const b = scene.add({ kind: 'leaf', layer: 'bg', pose: bPose, data: { label: 'b' } });
+    const out = rejected({ a, b });
+    const { container } = render(
+      <SceneCanvas
+        features={['draw']} scene={scene} layers={{}} width={200} height={200}
+        isPointerInteractive={(id) => id !== out}
+      />,
+    );
+    const canvas = container.querySelector('canvas')!;
+    const click = (x: number, y: number) => act(() => {
+      canvas.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: x, clientY: y, pointerId: 1, button: 0, buttons: 1 }));
+      canvas.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, clientX: x, clientY: y, pointerId: 1, button: 0 }));
+    });
+    return { scene, a, b, click };
+  }
+
+  it('a click on a rejected node selects nothing', () => {
+    const t = setup(({ b }) => b);
+    t.click(25, 5);
+    expect(t.scene.getSelection()).toEqual([]);
+  });
+
+  it('a click on a rejected node reaches the node beneath it', () => {
+    const t = setup(({ b }) => b, { x: 0, y: 0, width: 10, height: 10 });
+    t.click(5, 5);
+    expect(t.scene.getSelection()).toEqual([t.a]);
+  });
 });

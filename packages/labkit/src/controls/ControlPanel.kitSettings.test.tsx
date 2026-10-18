@@ -16,24 +16,36 @@ function typeAndWait(ms: number): void {
   act(() => vi.advanceTimersByTime(ms));
 }
 
-describe('<ControlPanel> text under kit settings', () => {
+describe('<ControlPanel> text drafts under kit settings', () => {
   it('waits the lab default with no provider', () => {
-    const setConfig = vi.fn();
-    render(<ControlPanel fields={fields} config={{ t: '' }} setConfig={setConfig} />);
+    const draftConfig = vi.fn();
+    render(
+      <ControlPanel
+        fields={fields}
+        config={{ t: '' }}
+        setConfig={vi.fn()}
+        draftConfig={draftConfig}
+      />,
+    );
     typeAndWait(PARAMS_TEXT_WAIT_MS.lab - 1);
-    expect(setConfig).not.toHaveBeenCalled();
+    expect(draftConfig).not.toHaveBeenCalled();
     act(() => vi.advanceTimersByTime(1));
-    expect(setConfig).toHaveBeenCalledWith('t', 'a');
+    expect(draftConfig).toHaveBeenCalledWith('t', 'a');
   });
 
   it('waits params.lab.textWaitMs where a provider sets it', () => {
-    const setConfig = vi.fn();
+    const draftConfig = vi.fn();
     render(
       <KitSettingsProvider value={{ params: { lab: { textWaitMs: 20 } } }}>
-        <ControlPanel fields={fields} config={{ t: '' }} setConfig={setConfig} />
+        <ControlPanel
+          fields={fields}
+          config={{ t: '' }}
+          setConfig={vi.fn()}
+          draftConfig={draftConfig}
+        />
       </KitSettingsProvider>,
     );
     typeAndWait(20);
-    expect(setConfig).toHaveBeenCalledWith('t', 'a');
+    expect(draftConfig).toHaveBeenCalledWith('t', 'a');
   });
 });

@@ -35,9 +35,14 @@ export interface RetainedDraw {
 /**
  * The textures retained groups keep between frames, one per `retain` id, and
  * the budget they share. Each surface covers only the rect of the drawing
- * buffer its group can paint, and the one multisampled scratch buffer they are
- * drawn in is as large as the largest of them; a change of the drawing
- * buffer's size drops them all.
+ * buffer its group can paint; a change of the drawing buffer's size drops
+ * them all.
+ *
+ * The budget counts the surfaces, which are what is kept. The multisampled
+ * scratch buffer they are drawn in is transient: as large as the largest
+ * surface it has drawn, so never past one canvas-sized buffer, and freed
+ * after the first frame that redraws nothing. Counting it against the budget
+ * spent half the default at 4x on a buffer a still frame never touches.
  */
 export class RetainedSurfaces {
   private readonly gl: WebGL2RenderingContext;
@@ -64,16 +69,14 @@ export class RetainedSurfaces {
 
   /** GPU memory held now, scratch buffer included. */
   get bytes(): number {
-    let n = this.scratch ? this.scratchBytes(this.scratch.width, this.scratch.height) : 0;
-    for (const surface of this.surfaces.values()) n += rectBytes(surface.rect);
-    return n;
+    return this.keptBytes() + (this.scratch ? this.scratchBytes(this.scratch.width, this.scratch.height) : 0);
   }
 
-  /** Change the budget. Lowered below what is held, every surface goes, and
-   *  groups are drawn again within the new one. */
+  /** Change the budget. Lowered below what the surfaces hold, every surface
+   *  goes, and groups are drawn again within the new one. */
   setBudget(budget: number): void {
     this.budget = budget;
-    if (this.bytes > budget) this.releaseAll();
+    if (this.keptBytes() > budget) this.releaseAll();
   }
 
   /** Open a frame. `stamp` holds what every surface depends on beyond its
@@ -108,8 +111,7 @@ export class RetainedSurfaces {
     const held = this.scratch;
     const scratchW = Math.max(held?.width ?? 0, empty ? 0 : rect.width);
     const scratchH = Math.max(held?.height ?? 0, empty ? 0 : rect.height);
-    const after = this.bytes + rectBytes(rect) - (existing ? rectBytes(existing.rect) : 0)
-      + this.scratchBytes(scratchW, scratchH) - (held ? this.scratchBytes(held.width, held.height) : 0);
+    const after = this.keptBytes() + rectBytes(rect) - (existing ? rectBytes(existing.rect) : 0);
     if (after > this.budget) {
       this.declined++;
       return null;
@@ -137,7 +139,8 @@ export class RetainedSurfaces {
   }
 
   /** Free every surface no group asked for this frame, and the scratch
-   *  buffer once it is larger than every surface left needs. */
+   *  buffer once this frame redrew nothing or it is larger than every surface
+   *  left needs. */
   endFrame(): void {
     let needW = 0;
     let needH = 0;
@@ -150,7 +153,8 @@ export class RetainedSurfaces {
       this.deleteSurface(surface);
       this.surfaces.delete(id);
     }
-    if (this.scratch && (this.scratch.width > needW || this.scratch.height > needH)) this.dropScratch();
+    const oversized = this.scratch && (this.scratch.width > needW || this.scratch.height > needH);
+    if (this.redrawn === 0 || oversized) this.dropScratch();
   }
 
   /** Drop everything: on dispose, and on context loss, where the handles are
@@ -166,6 +170,12 @@ export class RetainedSurfaces {
     this.releaseAll();
     this.width = width;
     this.height = height;
+  }
+
+  private keptBytes(): number {
+    let n = 0;
+    for (const surface of this.surfaces.values()) n += rectBytes(surface.rect);
+    return n;
   }
 
   private scratchBytes(width: number, height: number): number {

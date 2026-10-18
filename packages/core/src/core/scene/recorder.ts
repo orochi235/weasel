@@ -27,6 +27,8 @@ export interface RecorderEnv {
   selection(): readonly NodeId[];
   /** Write one pose an arrival settle decided. */
   writePose(id: string, pose: unknown): void;
+  /** Run `fn` as an edit made by a scene call labeled `label`. */
+  labeled<T>(label: string, via: 'call', fn: () => T): T;
 }
 
 export interface Recorder {
@@ -84,7 +86,7 @@ export function createRecorder(env: RecorderEnv): Recorder {
     // the selection has already moved to wherever the batch put it.
     if (outermost) collecting = { label, ops: [], outer: [], selectionBefore: env.selection() };
     const ownsArrivals = outermost && arrivals.open(true);
-    return notifier.deferred(() => mode.during('batch', () => {
+    return env.labeled(label, 'call', () => notifier.deferred(() => mode.during('batch', () => {
       if (!outermost) return fn();
       try {
         const result = log.atomically(
@@ -109,20 +111,22 @@ export function createRecorder(env: RecorderEnv): Recorder {
       if (finished.ops.length > 0) {
         engine.recordEntry(finished.ops, finished.label, { selectionBefore: finished.selectionBefore });
       }
-    });
+    }));
   }
 
   return {
     record(kind, payload, label) {
-      if (mode.records() && !collecting) {
-        // The engine applies the op itself, which is what lets it coalesce.
-        mode.during('own', () => engine.applyOps([env.makeOp(kind, payload)], label));
-      } else {
-        env.runOp(kind, payload);
-        log.logApplied(kind, payload);
-        if (mode.records()) collecting!.ops.push(env.makeOp(kind, payload));
-        else if (!mode.untracked()) captured?.push(env.makeOp(kind, payload));
-      }
+      env.labeled(label, 'call', () => {
+        if (mode.records() && !collecting) {
+          // The engine applies the op itself, which is what lets it coalesce.
+          mode.during('own', () => engine.applyOps([env.makeOp(kind, payload)], label));
+        } else {
+          env.runOp(kind, payload);
+          log.logApplied(kind, payload);
+          if (mode.records()) collecting!.ops.push(env.makeOp(kind, payload));
+          else if (!mode.untracked()) captured?.push(env.makeOp(kind, payload));
+        }
+      });
       notifier.notify();
     },
     edit: (label, touchesLayout, fn) => (touchesLayout && arrivals.bareLayoutEdit() ? batch(label, fn) : fn()),

@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react';
 import type { Paint, PaintKind } from '@weasel-js/core';
-import type { Display, UnitTable } from '@weasel-js/quantity';
-import type { Endless } from '../../endless';
+import type { Display, Endless, UnitTable } from '@weasel-js/quantity';
 
 /** One choice of an enum field. */
 export interface PropertyOption<T extends string> {
@@ -82,6 +81,9 @@ export interface PropertyNumberFieldProps extends FieldBase {
    *  read. A field showing a value has already sent that value back through
    *  the live callback; a mixed one has none to send, so this is all it says. */
   onCancel?: () => void;
+  /** A typed field was emptied and left by blur or Enter: the value is to be unset. Without it an emptied
+   *  field puts its value back. */
+  onClear?: () => void;
   /** A typed field's `+=` or `-=` entry, as an amount rather than a value:
    *  what a mixed field takes, for each value it stands for to move by. */
   onOffset?: (delta: number) => void;

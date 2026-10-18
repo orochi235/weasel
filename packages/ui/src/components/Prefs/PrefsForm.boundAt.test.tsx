@@ -23,3 +23,27 @@ describe('a number leaf with a minAt', () => {
     expect(onChange).toHaveBeenLastCalledWith('size', 20);
   });
 });
+
+const OBJECT_SCHEMA: PrefGroup = {
+  name: 'Preferences',
+  children: {
+    floor: { kind: 'number', name: 'Floor', description: '', default: 0 },
+    stroke: {
+      kind: 'object', name: 'Stroke', description: '', default: { width: 1 },
+      children: {
+        width: { kind: 'number', name: 'Width', description: '', default: 1, min: 0, minAt: (read) => read('floor') as number },
+      },
+    },
+  },
+};
+
+describe('a field of an object leaf with a minAt', () => {
+  it('holds a typed value to the bound read from the form\'s values', () => {
+    const onChange = vi.fn();
+    render(<PrefsForm layout="list" schema={OBJECT_SCHEMA} values={{ floor: 3, stroke: { width: 4 } }} onChange={onChange} />);
+    const width = screen.getByLabelText('Width');
+    fireEvent.change(width, { target: { value: '1' } });
+    fireEvent.blur(width);
+    expect(onChange).toHaveBeenLastCalledWith('stroke', { width: 3 });
+  });
+});

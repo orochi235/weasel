@@ -54,8 +54,8 @@ describe('createOutlinesAction', () => {
       .toBe(ActionDisabledReason.SelectionRequired);
   });
 
-  it('binds the conventional Shift+Mod+O', () => {
-    expect(createOutlinesAction.defaultBinding).toEqual({ kind: 'key', key: 'o', mods: { mod: true, shift: true } });
+  it("binds Affinity's Mod+Enter", () => {
+    expect(createOutlinesAction.defaultBinding).toEqual({ kind: 'key', key: 'Enter', mods: { mod: true } });
   });
 });
 

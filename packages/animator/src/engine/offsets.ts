@@ -1,3 +1,5 @@
+import type { HoldStore } from './holdStore';
+import type { Reader } from './lanes';
 import { readTarget, type Behind, type RowTable, type TargetAxes, type TargetOwner, type TargetState } from '../target';
 
 const TAU = Math.PI * 2;
@@ -37,6 +39,35 @@ export function bump(s: TargetState, delta: readonly number[], sign: 1 | -1): vo
   s.row?.table.mark(s.row.index);
 }
 
+/** Counts `delta` into what `b`, an animation with a destination on `s`, shows until the next
+ *  frame reads its voices again. */
+export function bumpBehind(s: TargetState, b: Behind, delta: readonly number[], sign: 1 | -1): void {
+  const adjust = (b.adjust ??= new Array<number>(delta.length).fill(0));
+  for (let i = 0; i < delta.length; i++) adjust[i] = adjust[i]! + sign * delta[i]!;
+  stale(s);
+  s.row?.table.mark(s.row.index);
+}
+
+/** Points `holder`, `s` or one of its `behind`, at `slot`, its voices' subject now. One whose
+ *  last voice left since the frame is still in what it shows until the next, so that goes into
+ *  its `adjust`. */
+export function seat(s: TargetState, holder: { slot: Reader | null; adjust: number[] | null }, slot: Reader): void {
+  const was = holder.slot;
+  if (was && was !== slot && was.refs === 0) {
+    const n = s.axes.count;
+    const adjust = (holder.adjust ??= new Array<number>(n).fill(0));
+    for (let i = 0; i < n; i++) adjust[i] = adjust[i]! + was.cols[was.at + i]!;
+    stale(s);
+  }
+  holder.slot = slot;
+}
+
+/** Says what waits beside `s`'s holds. */
+export function setBeside(s: TargetState, beside: number[] | null): void {
+  s.beside = beside;
+  s.row?.table.beside(s.row.index, beside);
+}
+
 function stale(s: TargetState): void {
   if (s.stale || !s.owner) return;
   s.stale = true;
@@ -62,16 +93,36 @@ export function shareBehind<T>(
 
 export const times = (a: readonly number[], b: readonly number[]): number[] => a.map((x, i) => x * b[i]!);
 
-/** Puts an animation behind `s`'s holds. `left` answers what is left of its move. */
-export function goBehind<T>(s: TargetState<T>, left: () => readonly number[]): Behind {
-  const b: Behind = { left, kept: null };
-  s.behind.add(b);
+/** Puts an animation with a destination on `s`. `own` answers its voices' sum, `left` what is
+ *  left of its move, and `share` how much of its voices' each axis that move is. */
+export function goBehind<T>(
+  s: TargetState<T>, own: () => readonly number[], left: () => readonly number[], share: readonly number[],
+): Behind {
+  const b: Behind = {
+    own, left, share, kept: null, slot: null, adjust: null,
+    move: s.row ? s.row.table.move(s.row.index, share) : null,
+  };
+  s.behind.push(b);
   return b;
+}
+
+/** Where an animation with a destination runs its voices, and counts what they add between
+ *  frames: on a subject of its own for a table's row, which the table's pass shows apart, and
+ *  among its target's for any other. */
+export const runsOn = (s: TargetState, b: Behind): TargetState | Behind => (b.move ? b : s);
+
+/** Counts `delta` into what the voices of `b`, an animation with a destination on `s`, show
+ *  until the next frame reads them. */
+export function bumpOn(s: TargetState, b: Behind, delta: readonly number[], sign: 1 | -1): void {
+  if (b.move) bumpBehind(s, b, delta, sign);
+  else bump(s, delta, sign);
 }
 
 /** Takes `b` out from behind `s`'s holds, and answers how much of `left` was still to show. */
 export function comeOut<T>(s: TargetState<T>, b: Behind, left: readonly number[]): number[] {
-  s.behind.delete(b);
+  const at = s.behind.indexOf(b);
+  if (at >= 0) s.behind.splice(at, 1);
+  b.move?.leave();
   if (b.kept) {
     s.dimmed = false;
     for (const other of s.behind) if (other.kept) s.dimmed = true;
@@ -94,7 +145,7 @@ export function commitOffset<T>(s: TargetState<T>, own: readonly number[], left:
 export function keep<T>(s: TargetState<T>, delta: readonly number[]): void {
   if (s.discard) return;
   if (s.held === 0) absorb(s, delta);
-  else s.beside = s.beside ? plus(s.beside, delta) : delta.slice();
+  else setBeside(s as never, s.beside ? plus(s.beside, delta) : delta.slice());
   s.row?.table.mark(s.row.index);
 }
 
@@ -103,7 +154,7 @@ export function keep<T>(s: TargetState<T>, delta: readonly number[]): void {
 export function takeUp<T>(s: TargetState<T>): number[] {
   const committed = s.axes.to(s.get());
   const beside = s.beside;
-  s.beside = null;
+  if (beside) setBeside(s as never, null);
   return beside ? plus(committed, beside) : committed;
 }
 
@@ -115,8 +166,8 @@ export interface TargetBook {
   detach(s: TargetState): void;
   /** Called once the frame's voices are read: what `adjust` held is in that reading now. */
   settle(): void;
-  /** Called once `s`'s voices are read again mid-frame: all that reading left out is `queued`. */
-  reread(s: TargetState, queued: readonly number[]): void;
+  /** Counts `by` more holds folded in `store`, which each frame asks while it has any. */
+  holding(store: HoldStore, by: 1 | -1): void;
   /** Hands each moving target, and each that came to rest since the last call, to its `show`. */
   show(): void;
   /** Shows `s` now, where an animation just started on it or was redirected. */
@@ -135,6 +186,8 @@ export function createTargetBook(owner: Omit<TargetOwner, 'adjusted'>): TargetBo
   const publishes = new Set<() => void>();
   /** Each table with a row moving, and how many of its rows are. */
   const tables = new Map<RowTable, number>();
+  /** Each store holds are folded in, and how many. */
+  const stores = new Map<HoldStore, number>();
   const shown = (s: TargetState, value: unknown): void => {
     s.show!(value);
     if (s.publish) publishes.add(s.publish);
@@ -166,8 +219,9 @@ export function createTargetBook(owner: Omit<TargetOwner, 'adjusted'>): TargetBo
       if (s.live > 0) return;
       s.owner = null;
       s.slot = null;
-      s.beside = null;
-      s.behind.clear();
+      if (s.beside) setBeside(s, null);
+      for (const b of s.behind) b.move?.leave();
+      s.behind.length = 0;
       s.dimmed = false;
       s.adjust.fill(0);
       s.stale = false;
@@ -178,22 +232,24 @@ export function createTargetBook(owner: Omit<TargetOwner, 'adjusted'>): TargetBo
         // One that came to rest since is cleared already, and may be another animator's now.
         if (!s.stale || s.owner !== token) continue;
         s.adjust.fill(0);
+        for (const b of s.behind) b.adjust = null;
         s.stale = false;
       }
       adjusted.length = 0;
+      for (const store of stores.keys()) store.frame();
       for (const t of tables.keys()) t.settle();
     },
-    reread(s, queued) {
-      for (let i = 0; i < queued.length; i++) s.adjust[i] = queued[i]!;
-      stale(s);
-      s.row?.table.mark(s.row.index);
+    holding(store, by) {
+      const count = (stores.get(store) ?? 0) + by;
+      if (count > 0) stores.set(store, count);
+      else stores.delete(store);
     },
     show() {
       for (const s of showing) shown(s, readTarget(s));
       for (const s of rested) shown(s, s.get());
       rested.clear();
       for (const [t, moving] of tables) {
-        t.fill(owner.columns(t));
+        t.fill(owner.columns);
         if (moving === 0) tables.delete(t);
       }
       publish();

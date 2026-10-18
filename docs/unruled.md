@@ -52,8 +52,17 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
   entry takes (`PATH_EDIT` `['path']`, `ISOLATION` `['group']`, `TEXT_EDIT` none), and core's
   `modeTriggers(registry, { enter, canEnter })` binds them: ambient tier, so a tool that binds the
   double-click itself (pen, spiro, slice finishing) now wins where draw's `onDoubleClick` observer
-  used to enter path-edit alongside it. The target is `hitAt`'s node, which ignores
-  `isPointerInteractive`, so draw's `canEnter` checks it.
+  used to enter path-edit alongside it.
+- 2026-10-18: `<SceneCanvas isPointerInteractive>` now gates every point hit, not only the
+  `onClick`/`onDoubleClick` observers: a rejected node is left out of the select tool's pick,
+  the dispatcher's `kind:` classification, `hitAt` and `nodeAtPoint`, and whatever is beneath it
+  answers. A click on a node a mode dims no longer selects it.
+- 2026-10-18: Routing entries are handed the node beside its data, and `inferredNodeRouting` (the
+  default when `routing` is unset) leads with `groupNodeRouting`, which routes a container as
+  `'group'` where it was `'unknown'`. `defaultNodeRouting` stays the shape-kind table; a consumer
+  spreads `groupNodeRouting` ahead of it.
+- 2026-10-18: Create Outlines moved from Mod+Shift+O to Mod+Enter (Affinity's Convert to Curves)
+  and Average Anchors from Mod+Alt+J to Mod+Alt+Shift+J, off chords Chrome takes first.
 
 ## Scene, move, and history
 
@@ -122,6 +131,14 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
 - 2026-10-18: `<Canvas retain>` takes `false` or `{ minCommands, budget }`, with `false` beating a
   layer's own `retain: true`; `WeaselRenderer.setRetainBudget` is new, and lowering the budget
   below what is held frees every surface.
+- 2026-10-18: `retainBudget` counts only kept surfaces; the multisampled scratch buffer is left out
+  and freed after a frame that redraws nothing, so a redrawing frame can exceed the budget by one
+  canvas-sized multisampled buffer.
+- 2026-10-18: Views nest: `<CanvasView parent>` measures `bounds` from the parent's rect, hands a
+  thunked `bounds` / `view` the parent's camera and size, cuts the view to the parent, and paints
+  only the layers the parent paints. `SceneCanvasApi.viewAt` (with `ViewAt`) is new, a loupe on a
+  canvas host magnifies the camera of the view under its aim, and `ResolvableView` and
+  `createViewportLayer` take an optional `clip`.
 
 ## Text
 
@@ -221,6 +238,14 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
 - 2026-10-13 (pass 6): `ClipValue`'s object arm is `object`.
 - 2026-10-13 (pass 6): When a rig's joints change, the new seat takes over the placement and
   committed pose of every joint still named; a renamed joint stops moving.
+- 2026-10-18: `<SceneCanvas poseTransition={{ transition, glides?, enter? }}>` glides what the
+  scene writes through the same kind of transition `reflowTransition` takes, reading the new
+  `scene.onPoseWrite`, which reports each change's net pose per node with an origin (`'call'`,
+  `'ops'`, `'undo'`, `'redo'`, `'layout'`, `'untracked'`) and the edit's label. By default it glides
+  calls, undos and redos, not action commits (`'ops'`); a node another override is showing — a
+  drag's preview, a pose-target animation — is left to it. `enter` grows in added nodes. `onReflow`
+  moved onto a `ScenePoseReports` interface `Scene` extends. AnimationDemo no longer uses
+  `animateOnSetPose` or `animateLifecycle`, which stay exported.
 
 ## ui, prefs, and theme
 

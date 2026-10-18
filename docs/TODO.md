@@ -63,14 +63,13 @@ Priority tags:
   `features`; the new word is not chosen yet. That leaves choosing it, then renaming the one path,
   its imports, and the section of the taxonomy.
 
-- **(P3) A double-click never isolates a group in draw.** `modeTriggers` (core) binds each mode's
-  `entry.targets`, and `ISOLATION` targets the routing kind `'group'`, but routing classifies a
-  node by its data alone and a container's is `{}`, so under draw's inferred routing every group is
-  `'unknown'` — a double-click on one opens its topmost member path instead
-  (`apps/draw/src/modality/canvasModes.doubleClick.test.tsx` pins this). It needs routing that can
-  see `node.kind`, or a `'group'` entry draw registers. Separately, the dispatcher's
-  `classifyTarget`, and the `hitAt` dep it backs, ignore `<SceneCanvas isPointerInteractive>`,
-  which the prop's doc says excludes a node from hit-test results; draw's `canEnter` re-checks it.
+- **(P3) A double-click never isolates a group in draw.** A container routes as `'group'` now, and
+  `ISOLATION`'s trigger binds `kind:group`, but the hit under a double-click on a group is never
+  the group: `pickTopMostHit` drops an ancestor whenever one of its children is also hit, and draw
+  selects members directly, so the double-click lands on the member and opens it in path-edit
+  (`apps/draw/src/modality/canvasModes.doubleClick.test.tsx` pins this). Needs a decision on what a
+  double-click on a grouped member names — the member, as now, or its group, Illustrator-style,
+  which would also mean asking whether a single click selects the group.
 
 - **(P3) External-content ingestion — follow-ups.** The pipeline is in
   `packages/core/src/features/ingestion/` (its README is the map). Left:
@@ -134,12 +133,10 @@ Priority tags:
 - **(P3) `BASELINE.md`'s text layout numbers include grouping.**
   `tests/perf/bench/text-layout.bench.ts` times layout alone now, so they need re-recording.
 
-- **(P3) The Badge lab's Compose view overflows at 1500px.** In the workshop at a 1500px window,
-  the Compose lab's (`packages/ui/src/components/Badge/lab/`) "Type & padding" column and effects
-  panel run past the right edge of the stage. Not compared against the lab before its text moved
-  onto the type scale. Its range inputs (`InlineRange`), effect-card reorder (`useReorderDragList`
-  with `DragGrip`), and `--wzl-*` colors are unchecked in a browser since they replaced the
-  hand-rolled ones.
+- **(P3) Nobody has dragged a Badge lab effect card to reorder it.** The Compose lab's
+  (`packages/ui/src/components/Badge/lab/`) effect cards reorder through `useReorderDragList` with
+  `DragGrip`, which replaced a hand-rolled drag; the cards, their ranges, and their colors were
+  looked at in a browser on 2026-10-18, but no card was dragged.
 
 ### Cursor package follow-ups
 
@@ -161,10 +158,11 @@ Priority tags:
 
 ## Viewport
 
-- **(P3) Views do not nest.** A view paints and routes the surface's own stack, never another view,
-  and a loupe magnifies the canvas's camera — aimed over a `<CanvasView>` panel it shows and edits
-  the canvas's world, not the panel's. Composing would mean a view's camera derived from the view
-  under its aim, and a resolver that descends rather than picking one rect.
+- **(P3) A loupe over a view takes that view's camera but not its layers or selection.** A lens
+  aimed over a `<CanvasView>` panel magnifies and edits the panel's world (`SceneCanvasApi.viewAt`),
+  but it paints the canvas's whole stack — a layer the panel hides shows in the lens — and acts on
+  the canvas's selection where the panel owns one. Its view would need to follow the view under its
+  aim the way a `parent` does, without being measured from or cut to that view's rect.
 
 ---
 
@@ -327,10 +325,12 @@ Priority tags:
   grid behavior included; that a move and an anchor drag snap to targets only, never `snapPoint`; no key or modifier to turn it off mid-gesture;
   the marker's glyphs, its fixed orange, and where its label sits; and that draw does not turn it
   on yet (`packages/core/src/features/paths/pathSnap/`, `packages/geom/src/snap/`).
-- **(P2) Two kit key bindings are chords a browser takes first.** `createOutlines` is on
-  Mod+Shift+O (Chrome's bookmark manager) and `averageAnchors` on Mod+Alt+J (Chrome's console),
-  so neither fires there. `browserReservedBindings.test.ts` pins the pair, so a new collision
-  fails it; moving these two is a choice of new keys.
+- **(P2) The browser-reserved chord list misses the devtools keys of Windows and Firefox.**
+  `BROWSER_RESERVED_CHORDS` (`packages/routing/src/interactions/browserReservedKeys.ts`) lists
+  Chrome's Mac devtools chords (Mod+Alt+I/J/C) but not their Windows and Linux form, Ctrl+Shift+I/J/C,
+  nor Firefox's Mod+Shift+J (Browser Console) and Mod+Shift+K (Web Console). path-tools' bridge is on
+  Mod+Shift+J, so adding them fails `packages/path-tools/src/browserReservedBindings.test.ts` and
+  bridge needs a new chord in the same change.
 - **(P3) Roughen, zigzag and pucker/bloat exist only on the `pel-effects-push` branch.** That
   branch stored effects as a `data.effects` list on the path itself, a design main did not take
   (`f082c838e` adopted its push brush as Smudge and left the rest). Its math is in
@@ -468,10 +468,6 @@ Priority tags:
 
 ## Scene, adapters & layout
 
-- **(P3) A layer hidden only in one view still shows its diagram ports.** `sceneParticipants`
-  (`packages/diagram/src/portLayer.ts`) gates ports on the scene's own hidden and locked flags
-  through `nodeGates`, but a canvas's `layerVisibility` (read by `pickWalk.ts` and
-  `sceneViewRender.ts`) never reaches the port layer, so ports float over a layer that view hides.
 - **(P3) A direct scene call made while a journal is open lands on the scene's own stack.**
   `scene.applyBatch` goes to the open journal; `scene.setPose` and its siblings, `scene.batch`, and
   `scene.history.apply` do not, so a mode that mixes the two splits its edits across two stacks.
@@ -560,24 +556,6 @@ Priority tags:
 
 Animations combine through targets, described in `docs/concepts.md` ("Animation target").
 
-- **(P3) A target table row is read by itself while an animation is behind a hold on it** —
-  a row is shown by the table's pass over its columns (`fill` in
-  `packages/animator/src/targetTable.ts`) except while a tween or spring with a destination
-  runs under a hold on it, and while something a stopped animation left waits beside a hold:
-  then it is read at a single target's cost. What a hold hides of such a move is worked out
-  per animation and per axis (`hidden` in `packages/animator/src/target.ts`), which the pass
-  has no column for, and blits weighs a voice whole, so the hidden share cannot ride on the
-  animation's own voice.
-- **(P3) A hold whose value is a function costs 0.3 to 0.7 µs a frame, where a tween costs
-  under 0.1** — `node tests/perf/target-reads/run.mjs table 10000 heldfn`. A timeline track, a
-  rig clip, and any `animator.hold` given a function are such holds; a hold of plain values is
-  not. What a function costs, from the CPU profile at 10,000: a quarter is blits running a
-  voice that answers through a function (`rows`, `call`, `foldInto`, `ready`, and a `WeakMap`
-  read per voice); the rest is the hold's own voice reaching, one after another, the group,
-  each member, the function that gives its value, that value, and the committed value. The
-  design left would move it and is not started: holds on a target table's rows could keep
-  their values and weights as rows of the table's own arrays, which adds public API to the
-  table whose shape is not ruled on.
 - **(P2) Take the blits release that makes stopping an animation cheap.** With 100 animations
   restarted a frame, a cancel cost 5 µs with 1,000 running and 21 with 10,000, because blits'
   `forget` walked every subject the mix held. blits `b97c8c1` (unreleased, on 0.10.0) stops that:
@@ -585,15 +563,10 @@ Animations combine through targets, described in `docs/concepts.md` ("Animation 
   2.4–2.9 at 10,000 and the frame after from 1.99–2.15 ms to 1.26–1.43. `animator`, `core`, and
   `labkit` pin `@msb235/blits` at exactly 0.10.0, so nothing reaches weasel until blits releases
   and the three pins move. blits' changelog holds a breaking change for that release, `loop`
-  defaulting to one pass, so every `cue` here that leaves `loop` out needs reading first
-  (`packages/animator/src/engine/holdVoices.ts` has one). After the bump, rerun
+  defaulting to one pass, so every `cue` here that leaves `loop` out needs reading first:
+  two in `packages/animator/src/engine/codec.ts` (a spring's voice and a queued tween's) and
+  `packages/core/src/core/scene/poseOverrides.ts`. After the bump, rerun
   `node tests/perf/target-reads/run.mjs churn 1000 10000`, which has not been run against the fix.
-
-- **(P3) Playing an animation backward** — a time scale below 0 is refused where it is set
-  (`timeScaleOf`, `engine/table.ts`). Playing backward needs the animator's clock to keep going
-  forward and hand each voice a rate below 0, which blits 0.9.0 ends where the voice started,
-  and an answer for what a tween run back to its start does: a blits voice past its start
-  reads 0, which for a tween on a target is its destination.
 
 ### Earlier deferrals
 
@@ -628,48 +601,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 ## Selection, actions & UI panels
 
-- **(P3) A `minAt` or `maxAt` on a field of an `object` leaf is not resolved.** `SelectionPanel`
-  resolves them on a top-level number leaf per node (`SelectionPanel/nodeBounds.ts`), and
-  `PrefsForm` and labkit on a top-level row. A field of an object (`data.stroke.width`) is drawn
-  by `objectField.tsx`, whose context has no nodes, and written as the whole object, which the
-  per-node clamp in `commitLeaf.ts` does not walk into. No schema bounds a field that way yet.
-
-- **(P2) `ThemeProvider` drops a `selection.mode` that is not a concrete mode, with no warning.**
-  blits' site passed `selection={{ mode: 'auto' }}` and got the theme's default, dark, on a light
-  page; it now resolves the mode first with `useResolvedColorMode('auto')`. Either accept `'auto'`
-  there and resolve it, or warn in dev on a mode the theme does not have.
-
-- **(P2) labkit's control panels never set their own text color.** Dimmed labels inherit the
-  page's ink, so a light page puts dark text on a near-black panel — contrast about 1:1 on blits'
-  Patch page. blits works around it with `color: var(--wzl-fg)` on the provider's wrapper (blits
-  `ccda71e`, `site/src/styles/site.css`). The panel root should set `color` itself.
-
-- **(P2) Gaps blits hit moving its playground onto labkit's `ControlPanel` and `f` (1.10.1).** Each
-  is worked around in blits' `apps/playground/src/app/CompositionControls.tsx` (`DraftRow`,
-  `drafted`) and `SpecFields.tsx`; those are the specs for the fixes.
-  - Number and text rows write on every keystroke, so one typed value is many undo steps. Use the
-    ui fields' draft-and-commit-on-blur; the text draft should also cancel on Escape.
-  - `.resettable()` groups write each value through its own `setConfig`: several undo steps, and a
-    stale-state race. Write the group as one change.
-  - `.dialog()` has no cancel; Escape commits.
-  - `showIf` on an enum value that is not among the enum's options throws, which crashed a whole
-    panel. Treat it as never matching.
-  - A number row cannot be cleared to mean unset/default (blank reverts), and `NumberNode` has no
-    min-only bound.
-  - `PropertyRow`/`ControlPanel` have no slot for a row's validation message.
-  - A section whose rows are all hidden still draws its heading.
-  - An `f.action` row repeats the button text as its label, and an action's run cannot reach the
-    panel's props.
-  - No "changed from baseline" marking; `PrefsForm` has one.
-  - `f` boolean and string leaves get the auto-pin toggle on their label unless `.manual()`, which
-    is easy to miss. Either make it opt-in or make the default obvious.
-  - A custom renderer's context does not carry the config.
-  - `ControlMatrix` cannot set a summary for a custom leaf's cell, and first-column inheritance is
-    its only model; there is no plain grid.
-  - `ListEditor` has no reorder and offers one kind of new entry.
-  - `EasingPicker` always renders its own "Easing" label, doubling the row's.
-  - In the two-column grid a bar or custom row takes a half cell unless its section is one-up.
-
 - **(P3) The menu bar's default access chord, Alt, is unverified in Chrome on Windows, which may
   open its own menu on Alt+F; check there before relying on it.**
 
@@ -680,9 +611,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
     picker. A swatch submenu, or a picker the DOM menu opens beside its row, would make it editable.
   - A string shows as `Name: value`, read-only. The DOM menu could hold a text field the way it
     holds a number one; the HUD menu has no text entry at all.
-  - A number row ignores the leaf's `endless` and `infinity`, so no menu reaches ±Infinity, and
-    the DOM field takes no typed units: `prefUnitAccepts`, which reads them off the leaf, lives in
-    `@weasel-js/ui`, below where `resolveMenu` can reach.
   - `paint`, `field`, `object`, `list`, `map`, `union`, and app-defined leaves are still left out.
 
 - **(P3) Shift+F10 / the ContextMenu key may open the menu twice in Chrome on Windows/Linux.**
@@ -747,10 +675,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 - **(P3) apps/site's body text is still the system face.** It loads `@weasel-js/theme/fonts.css`
   now, but `canvas-kit-demo.css` sets `body { font-family: system-ui, … }`, which beats that
   file's `:root` rule, so only text naming a `--wzl-font-*` token gets the kit's faces.
-
-- **(P3) `QuantityText` draws no kind's MathML form.** `present` hands back `mathml` for a kind that
-  has one (a fraction's), and `QuantityText` draws only the HTML form. A number field's string unit
-  draws through `QuantityText` now; a unit handed as JSX (`<sup>°</sup>`) is still drawn as given.
 
 - **(P3) labkit and the apps hand-build what weasel-ui already draws.** Each waits on something
   the ui component lacks, or on a look at the result in a browser:
@@ -1070,18 +994,13 @@ only story runner in the repo.
   and a line holding a larger run (2026-10-18). Not yet seen: an `rtl` node, whose anchor is
   the right edge of each chunk, and the `<tspan x dy>` lines written without a layout.
 
-- **(P3) The animation wrappers have no canvas seat.** `animateOnSetPose` and `animateLifecycle`
-  wrap an adapter the caller holds. `<SceneCanvas>` builds its own and takes neither, so nothing a
-  tool writes is animated; `apps/site/demos/AnimationDemo.tsx` wraps `useSceneAdapter(scene)` and
-  its buttons write through that. Wrapping the canvas's adapter would animate every op applied
-  through it, a drag's release, a resize, and an undo among them (read from `applyOps` in
-  `canvas/sceneAdapter.ts`, which hands each op the adapter it was called on; not run), so the
-  seat has to say which of those glide. It would still miss a button's `scene.setPose`, which
-  reaches no adapter: animating that needs the scene to report the write, as `onReflow` reports
-  a settle. `<SceneCanvas reflowTransition>` is that shape for layout writes already: the scene
-  hands `useLayoutDepSource` each move with the pose it left, and the transition glides what is
-  shown from there through a pose override, writing nothing. A removal cannot follow it, since
-  the node is gone by the time a report arrives.
+- **(P3) A removal on a canvas cannot animate out.** `<SceneCanvas poseTransition>` glides the
+  poses the scene writes and grows in the nodes it adds, from `scene.onPoseWrite`. A node a delete
+  removes is gone by the time that report arrives, so nothing is left to show leaving;
+  `animateLifecycle`'s `exitTo` still works only over an adapter the caller holds and removes
+  through. Following a removal needs the scene to keep the node presentable after it leaves the
+  document — a ghost the paint walk draws and nothing picks — or the delete action to wait on an
+  exit before it commits.
 
 ---
 
@@ -1114,6 +1033,14 @@ only story runner in the repo.
 ---
 
 ## Release-gate & build hygiene
+
+- **(P2) Nothing runs the stories' `play` checks.** CI, `npm test`, and the fleet's
+  `.onto/tests` all leave out the `forge-stories` vitest project, and CI's comment says it
+  "exists only to validate that stories can mount" — but plays assert layout jsdom cannot, and
+  `Prefs.stories.tsx`'s Rail play failed on `main` from 2026-10-14 (`815a44787`, a wider rail
+  gutter) until it was found by hand on 2026-10-18. The fleet already runs headless Chromium
+  for `browser`, so adding `--project=forge-stories` there costs wall time, not a new
+  dependency; run `npm run test:stories:forge` once first to see which plays are failing now.
 
 - **(P3) `onto test --spread` fails a run whose tree moved, where the other commands sync again.**
   onto `f621d8b` makes a launch carry the stamp its own sync was answered with, so a suite can no
@@ -1320,11 +1247,12 @@ only story runner in the repo.
   layer can paint, but text, custom shaders and `effects` cannot be bounded yet, so a layer holding
   any of them still gets a canvas-sized surface (16 MB at 1280x800 and dpr 2). Left:
 
-  - **The scratch buffer takes half the default budget.** The one multisampled buffer surfaces are
-    drawn in costs 8 bytes a sample at the size of the largest surface: 131 MB of the 256 MB default
-    at 4x for a canvas-sized one, which leaves room for about 8 canvas-sized surfaces. At 16 and 64 layers the
-    budget declined half or more of them (below). Drawing in tiles, or freeing the scratch buffer
-    once nothing is being redrawn, would change that.
+  - **The budget still caps canvas-sized layers at about 16.** `retainBudget` (256 MB default) counts only
+    kept surfaces; the multisampled scratch buffer they are drawn in is left out and freed after a
+    frame that redraws nothing. A canvas-sized surface is 16 MB, so at 64 layers holding text 48 are
+    still drawn straight through (below). Two things are open: a frame that redraws can hold the
+    budget plus one canvas-sized multisampled buffer (131 MB at 4x), which drawing in tiles would
+    cap; and whether the default should scale with the drawing buffer.
   - **Bounds for text and custom shaders.** Text needs its laid-out extent plus glyph overhang;
     a custom shader may read `gl_FragCoord`, which the offset viewport moves.
   - **Retaining through camera motion.** A world layer stops retaining while the view moves, and its
@@ -1332,25 +1260,27 @@ only story runner in the repo.
     first still frame. An oversized, bounded surface could be translated instead of redrawn.
   - **Layers with `effects`, and layers inside a `LayerGroup` that owns a surface,** are never
     retained: the renderer declines a retained group inside another render target.
-  - **The threshold.** `tests/perf/layer-dispatch.spec.ts` now times the real path (`retained`),
-    each variant on a renderer of its own. On msb-uai (Apple M3 Max, ANGLE Metal, headless Chromium
-    153), 2026-10-18, ms a frame over the control, medians of 3 runs:
+  - **The threshold.** `tests/perf/layer-dispatch.spec.ts` times the real path (`retained`), each
+    variant on a renderer of its own. On msb-uai (Apple M3 Max, ANGLE Metal, headless Chromium 153),
+    2026-10-18, ms a frame over the control, medians of 3 runs, with the scratch buffer outside the
+    budget:
 
     | layers | cmds | submit | retained | kept / declined |
     |---:|---:|---:|---:|---:|
-    |  4 |   30 |  0.225 |  0.515 |  4 /  0 |
-    |  4 |  100 |  0.830 |  0.500 |  4 /  0 |
-    |  4 |  300 |  2.405 |  0.410 |  4 /  0 |
-    | 16 |  100 |  2.750 |  2.565 |  8 /  8 |
-    | 16 |  300 | 10.730 |  5.200 |  8 /  8 |
-    | 64 |  100 | 15.850 | 12.310 |  8 / 56 |
-    | 64 | 1000 | 68.170 | 54.065 |  8 / 56 |
+    |  4 |   30 |  0.240 |  0.510 |  4 /  0 |
+    |  4 |  100 |  1.255 |  0.490 |  4 /  0 |
+    | 16 |   30 |  1.670 |  2.035 | 16 /  0 |
+    | 16 |  100 |  3.785 |  1.705 | 16 /  0 |
+    | 16 |  300 | 11.595 |  1.765 | 16 /  0 |
+    | 64 |  100 |  9.030 |  9.515 | 16 / 48 |
+    | 64 | 1000 | 56.125 | 43.005 | 16 / 48 |
 
-    Retaining wins by 100 commands a layer at every layer count and loses at 30 from 4 layers up,
-    well below the 250 in force. It was left at 250: this is one run on one GPU, and frame time does not price
-    the memory a lower threshold commits. Result file:
-    `tests/perf/recorded/layer-dispatch-retained-msb-uai-m3max-2026-10-18/`; the image stand-in it
-    replaces is in `tests/perf/recorded/layer-dispatch-2026-10-07/`.
+    Where every layer fits the budget, retaining wins by 100 commands a layer and loses at 30, well
+    below the 250 in force. It was left at 250: one GPU, and frame time does not price the memory a
+    lower threshold commits. With the scratch buffer counted, the same node kept 8 of 16 and 8 of
+    64. Result files: `tests/perf/recorded/layer-dispatch-scratch-unbudgeted-msb-uai-m3max-2026-10-18/`
+    (now) and `tests/perf/recorded/layer-dispatch-retained-msb-uai-m3max-2026-10-18/` (scratch
+    counted).
 
 - **(P3) The pull request benchmark job does not fit its time limit, and its comment shows
   seven of fifteen benchmarks.** Its steps ran on keiei (Apple M2, 8 cores, load about 6.9) on

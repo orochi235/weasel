@@ -10,7 +10,7 @@ describe('<ControlPanel> auto', () => {
   it('renders a label toggle whether or not it was given a set of auto paths', () => {
     render(
       <ControlPanel
-        schema={resolveConfigSchema(f.schema({ gap: f.number(12).range(0, 48) }), [])}
+        schema={resolveConfigSchema(f.schema({ gap: f.number(12).range(0, 48).auto() }), [])}
         config={{ gap: 12 }}
         setConfig={() => {}}
       />,
@@ -22,7 +22,7 @@ describe('<ControlPanel> auto', () => {
     const setConfig = vi.fn();
     render(
       <ControlPanel
-        schema={resolveConfigSchema(f.schema({ gap: f.number(12).range(0, 48) }), [])}
+        schema={resolveConfigSchema(f.schema({ gap: f.number(12).range(0, 48).auto() }), [])}
         config={{ gap: 12 }}
         auto={new Set(['gap'])}
         setConfig={setConfig}
@@ -93,7 +93,7 @@ describe('<ControlPanel> auto', () => {
     const setConfig = vi.fn();
     render(
       <ControlPanel
-        schema={resolveConfigSchema(f.schema({ gap: f.number(12).range(0, 48) }), [])}
+        schema={resolveConfigSchema(f.schema({ gap: f.number(12).range(0, 48).auto() }), [])}
         config={{ gap: 12 }}
         auto={new Set()}
         setConfig={setConfig}
@@ -107,7 +107,7 @@ describe('<ControlPanel> auto', () => {
     const setConfig = vi.fn();
     render(
       <ControlPanel
-        schema={resolveConfigSchema(f.schema({ gap: f.number(12).range(0, 48) }), [])}
+        schema={resolveConfigSchema(f.schema({ gap: f.number(12).range(0, 48).auto() }), [])}
         config={{ gap: 12 }}
         setConfig={setConfig}
       />,
@@ -121,7 +121,7 @@ describe('<ControlPanel> auto', () => {
     const setConfig = vi.fn();
     render(
       <ControlPanel
-        schema={resolveConfigSchema(f.schema({ gap: f.number(12).range(0, 48) }), [])}
+        schema={resolveConfigSchema(f.schema({ gap: f.number(12).range(0, 48).auto() }), [])}
         config={{ gap: 24 }}
         auto={new Set(['gap'])}
         setConfig={setConfig}
@@ -131,10 +131,10 @@ describe('<ControlPanel> auto', () => {
     expect(setConfig).toHaveBeenCalledWith('gap', 24);
   });
 
-  it('gives a manual row no dot', () => {
+  it('gives a row that never said auto no dot', () => {
     render(
       <ControlPanel
-        schema={resolveConfigSchema(f.schema({ seed: f.number(1).manual().range(0, 8) }), [])}
+        schema={resolveConfigSchema(f.schema({ seed: f.number(1).range(0, 8) }), [])}
         config={{ seed: 1 }}
         auto={new Set()}
         setConfig={() => {}}
@@ -151,7 +151,7 @@ describe('<ControlPanel> auto', () => {
       <ControlPanel
         schema={resolveConfigSchema(
           f.schema({
-            width: f.number(640),
+            width: f.number(640).auto(),
             gap: f
               .number(12)
               .range(0, 48)
@@ -223,7 +223,7 @@ describe('<ControlPanel> auto', () => {
   ])('marks a %s row auto and gives it a label toggle', (_kind, node) => {
     const { container } = render(
       <ControlPanel
-        schema={resolveConfigSchema(f.schema({ thing: node.label('Thing') }), [])}
+        schema={resolveConfigSchema(f.schema({ thing: node.label('Thing').auto() }), [])}
         config={{ thing: node.default }}
         auto={new Set(['thing'])}
         setConfig={() => {}}

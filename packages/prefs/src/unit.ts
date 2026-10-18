@@ -1,7 +1,7 @@
 // A number leaf's display unit: the stored value stays canonical (radians, millimeters), and a UI converts
 // at its edge. A unit is data where the conversion is linear, and a pair of functions where it is not.
 
-import { formatUnit, unitScale, type Unit, type UnitEntry, type UnitScale, type UnitSystem } from '@weasel-js/quantity';
+import { formatUnit, unitScale, type Unit, type UnitEntry, type UnitScale, type UnitSystem, type UnitTable } from '@weasel-js/quantity';
 
 /** What both forms of a unit say about the text around the number. */
 interface PrefUnitText {
@@ -47,6 +47,12 @@ export type PrefNumberUnit = PrefLinearUnit | PrefFunctionUnit;
 /** A unit of either form as the functions that convert and format with it. */
 export interface ResolvedPrefUnit extends PrefFunctionUnit {
   format: (stored: number) => string;
+}
+
+/** What a unit leaf's field reads as typed text: its `accepts` table, and its
+ *  `suffix` as the display unit itself. */
+export function prefUnitAccepts(unit: PrefNumberUnit): Readonly<UnitTable> {
+  return unit.suffix === undefined ? { ...unit.accepts } : { [unit.suffix]: 1, ...unit.accepts };
 }
 
 /** Whether `unit` is the data form, and so can be written out and edited. */

@@ -10,6 +10,7 @@ function rig() {
     codec: { stop() {}, has: () => false, rate() {} },
     hub: new AnimatorEventHub(),
     elapsed: () => 0,
+    direction: () => 1,
     seedClock() {},
     showNow() {},
     resting: () => false,

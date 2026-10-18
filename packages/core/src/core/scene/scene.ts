@@ -2,6 +2,7 @@ import { withKitRegistry } from './kitRegistry';
 import { createPoseOverrides } from './poseOverrides';
 import { createArrivalWindow } from './arrivalWindow';
 import { createNotifier } from './notifier';
+import { createPoseWriteLog } from './poseWrites';
 import { createEditMode } from './editMode';
 import { createSceneEdits } from './sceneEdits';
 import { createSceneRecording } from './sceneRecording';
@@ -57,7 +58,9 @@ function buildScene<TData, TLayer extends string, TPose>(
   const { state, locks, reads } = doc;
   const notifier = createNotifier();
   const mode = createEditMode();
-  const writePose = (id: string, pose: unknown): void => { scene.setPose(asNodeId(id), pose as TPose); };
+  const poseWrites = createPoseWriteLog<TPose>({ untracked: mode.untracked, changes: notifier });
+  const writePose = (id: string, pose: unknown): void =>
+    poseWrites.layout(() => scene.setPose(asNodeId(id), pose as TPose));
 
   const layoutFrame = resolveLayoutFrame(options.layoutFrame);
   const arrivals = createArrivalWindow<TData, TLayer, TPose>({
@@ -85,6 +88,7 @@ function buildScene<TData, TLayer extends string, TPose>(
     selection,
     arrivals,
     writePose,
+    poseWrites,
     config: options,
   });
 
@@ -95,7 +99,7 @@ function buildScene<TData, TLayer extends string, TPose>(
     layers: doc.layers,
     invalidateOrder: doc.order.invalidate,
     fnFields: doc.fnFields,
-    ops: recording.ops,
+    ops: { ...recording.ops, register: poseWrites.reporting(recording.ops.register) },
     recorder: recording.recorder,
     arrivals,
     layoutFrame,
@@ -123,6 +127,7 @@ function buildScene<TData, TLayer extends string, TPose>(
 
     setArrivalHandler: arrivals.setHandler,
     onReflow: arrivals.onReflow,
+    onPoseWrite: poseWrites.subscribe,
 
     overrides,
 
@@ -140,7 +145,7 @@ function buildScene<TData, TLayer extends string, TPose>(
       overrides.clearAll();
       doc.reset(json.systemLayers.map(layerFromSerialized));
       recording.clearHistory();
-      edits.construct(specs);
+      poseWrites.quiet(() => edits.construct(specs));
       selection.replace(locks.reachable(selection.get().filter((id) => state.nodes.has(id))));
       notifier.notify();
     },
@@ -151,7 +156,7 @@ function buildScene<TData, TLayer extends string, TPose>(
 
   const initial = initialNodes(registry);
   if (initial) {
-    edits.construct(initial);
+    poseWrites.quiet(() => edits.construct(initial));
     notifier.notify();
   }
 

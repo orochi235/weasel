@@ -3,7 +3,7 @@ import type { HudAccessibleNode } from '../widget';
 
 /** A row's name: a value row's label and the value it holds now. */
 function labelOf(c: MenuController, e: MenuRowEntry): string {
-  if (e.kind === 'number') return `${e.label}: ${menuNumberText(c.numberValue(e), e.suffix, e.display)}`;
+  if (e.kind === 'number') return `${e.label}: ${menuNumberText(c.numberValue(e), e)}`;
   if (e.kind === 'color') return `${e.label}: ${e.value ?? '—'}`;
   return e.label;
 }

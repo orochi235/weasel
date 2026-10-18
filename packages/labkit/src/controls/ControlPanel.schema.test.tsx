@@ -177,6 +177,7 @@ describe('<ControlPanel> nested groups', () => {
       />,
     );
     fireEvent.change(screen.getByLabelText('Cell size'), { target: { value: '40' } });
+    fireEvent.blur(screen.getByLabelText('Cell size'));
     expect(setConfig).toHaveBeenCalledWith('grid.size', 40);
   });
 

@@ -1,4 +1,4 @@
-import { present, presentRange, presentVector, type Display, type Presentation, type Quantity } from '@weasel-js/quantity';
+import { amount, present, presentRange, presentVector, type Display, type Presentation, type Quantity } from '@weasel-js/quantity';
 import s from './QuantityText.module.css';
 
 /** Props for {@link QuantityText}: one of `value`, `range`, `vector`, and `unit`. */
@@ -57,21 +57,32 @@ function presented(props: Exclude<QuantityTextProps, { unit: string }>): Present
  * `data-part` span for each named run in it, and a `data-composite` span
  * around a range or a vector. A unit alone is the `unit` part with no
  * `<data>` around it. A stylesheet reaches a unit, a label, or a
- * separator by those attributes. Where the spoken form differs from the text,
- * a screen reader gets the spoken form.
+ * separator by those attributes. A value whose display is `stacked`, a
+ * fraction's, is drawn as its MathML form inside its `<data value>`, with its
+ * text form hidden beside it so a copy reads `1/2`. Where the spoken form
+ * differs from the text, a screen reader gets the spoken form.
  */
 export function QuantityText(props: QuantityTextProps) {
   const className = [s.quantity, props.className].filter(Boolean).join(' ');
   if (props.unit !== undefined) {
     return <span className={className}><span data-part="unit">{props.unit}</span></span>;
   }
-  const { text, spoken, html } = presented(props);
+  const { text, spoken, html, mathml, stacked } = presented(props);
   const reads = !props.mute && spoken !== text;
   return (
     <span className={className}>
       {/* The package escapes every run it writes, a consumer's labels and separators included. */}
-      <span aria-hidden={reads || undefined} dangerouslySetInnerHTML={{ __html: html }} />
-      {reads && <span className={s.spoken}>{spoken}</span>}
+      {stacked && mathml !== undefined && props.value !== undefined ? (
+        <span aria-hidden={reads || undefined}>
+          <data value={String(amount(props.value))}>
+            <span className={s.math} dangerouslySetInnerHTML={{ __html: mathml }} />
+            <span className={s.hidden}>{text}</span>
+          </data>
+        </span>
+      ) : (
+        <span aria-hidden={reads || undefined} dangerouslySetInnerHTML={{ __html: html }} />
+      )}
+      {reads && <span className={s.hidden}>{spoken}</span>}
     </span>
   );
 }

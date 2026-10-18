@@ -71,8 +71,11 @@ export interface WeaselRendererOptions {
   flattenTolerance?: FlattenTolerance;
   /** GPU memory, in bytes, that retained groups may hold between frames — see
    *  `GroupDrawCommand.retain`. A group that would take the total past it is
-   *  drawn straight through instead. Counts each surface (4 bytes a device
-   *  pixel) and the multisampled buffer they are drawn in (8 bytes a sample).
+   *  drawn straight through instead. Counts each surface, 4 bytes a device
+   *  pixel. Not counted: the multisampled buffer surfaces are drawn in, 8
+   *  bytes a sample at the size of the largest surface drawn, held across
+   *  frames that redraw one and freed after the first that does not; on a
+   *  frame that redraws, GPU memory can reach the budget plus that buffer.
    *  Default {@link DEFAULT_RETAIN_BUDGET}; 0 retains nothing. */
   retainBudget?: number;
   /** Per-render synchronous bake budget for dynamic canvas-SDF glyphs.

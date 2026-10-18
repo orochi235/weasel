@@ -11,7 +11,8 @@ import {
   type AnchorSet, type Path, type PolygonPath, type View, pathToAnchors, rectMarkerPath,
 } from '@weasel-js/geom';
 import type { GesturePreviewSource } from 'canvas/gestureBounds';
-import { previewSourcesFrom, isVisibleFrom } from 'canvas/drawEnvelope';
+import { chromeStateFrom, previewSourcesFrom, isVisibleFrom } from 'canvas/drawEnvelope';
+import { paintsLayer } from 'core/selection/chromeState';
 import {
   anchorMarkerCommands, DEFAULT_OVERLAY_STYLE, worldToScreen, type PathEditingOverlayStyle,
 } from './anchorMarkers';
@@ -50,7 +51,7 @@ export interface CreatePathEditingOverlayLayerOptions {
    *  rubber band while `marqueeAnchorsAction` is dragging. */
   getMarquee?(view: View): { x: number; y: number; width: number; height: number } | null;
   /** The edited node's committed pose and data, which extensions' marks read. */
-  getNode?(id: string): { pose: unknown; data: unknown } | null;
+  getNode?(id: string): { pose: unknown; data: unknown; layer?: string } | null;
   /** The path-edit extensions whose marks are drawn, in order. */
   getExtensions?(): readonly PathEditExtension[];
   /** The selected extension mark, or null. */
@@ -82,6 +83,8 @@ export function createPathEditingOverlayLayer(
       // the chrome still gets grabbable invisible anchors, or vice versa.
       const isVisible = isVisibleFrom(data);
       if (isVisible && !isVisible('path-edit.anchors')) return [];
+      const node = opts.getNode?.(id);
+      if (!paintsLayer(chromeStateFrom(data), node?.layer)) return [];
       const previews = previewSourcesFrom(data);
       const pose = opts.getPose(id, previews, view);
       if (!pose || pose.kind !== 'polygon') return [];
@@ -90,7 +93,6 @@ export function createPathEditingOverlayLayer(
       const selected = opts.getSelectedAnchors?.() ?? EMPTY_SELECTION;
       // Extensions' marks under the markers, which are what a press reaches first.
       const out: DrawCommand[] = [];
-      const node = opts.getNode?.(id);
       if (node) {
         const mark = opts.getSelectedMark?.() ?? null;
         const anchors = pathToAnchors(pose as PolygonPath) as AnchorSet;

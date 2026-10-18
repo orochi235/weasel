@@ -47,6 +47,7 @@ export function MatrixCell({
   hint,
   canUnpin,
   disabled = false,
+  summary,
   setConfig,
   onOpen,
 }: {
@@ -60,6 +61,8 @@ export function MatrixCell({
   canUnpin: boolean;
   /** The cell takes no input: its `enableIf`, or that of a group above it, does not hold. */
   disabled?: boolean;
+  /** What the cell shows of its value, over the built-in reading. */
+  summary?: (value: unknown) => ReactNode;
   setConfig: (path: string, value: unknown) => void;
   onOpen: (el: HTMLElement) => void;
 }) {
@@ -101,45 +104,18 @@ export function MatrixCell({
         </span>
       </button>
     );
-  } else if (field?.kind === 'color' && !clearable(leaf)) {
-    const stored =
-      typeof field.value === 'string' && field.value !== '' ? toHex8(field.value) : '#000000ff';
-    control = (
-      <input
-        type="color"
-        aria-label={label}
-        className="lk-control-matrix__swatch"
-        disabled={disabled}
-        value={stored.slice(0, 7)}
-        onClick={(e) => {
-          unpinned(e);
-        }}
-        onChange={(e) => {
-          const rgb = e.currentTarget.value;
-          field.onChange(field.alpha ? withAlpha01(rgb, getAlpha01(stored)) : rgb);
-        }}
-      />
-    );
   } else if (field?.kind === 'color') {
-    // A color that may be unset opens the popover, which is the only place it can be cleared.
-    const set = typeof field.value === 'string' && field.value !== '';
     control = (
-      <button
-        type="button"
-        aria-label={set ? label : `${label}, unset`}
-        aria-haspopup="dialog"
-        className="lk-control-matrix__value"
+      <ColorCell
+        value={field.value}
+        alpha={field.alpha === true}
+        clearable={clearable(leaf)}
+        label={label}
         disabled={disabled}
-        onClick={(e) => {
-          if (!unpinned(e)) onOpen(e.currentTarget);
-        }}
-      >
-        <span
-          className={set ? 'lk-control-matrix__chip' : 'lk-control-matrix__chip is-unset'}
-          style={set ? ({ '--lk-chip': field.value } as CSSProperties) : undefined}
-          aria-hidden="true"
-        />
-      </button>
+        unpinned={unpinned}
+        onChange={field.onChange}
+        onOpen={onOpen}
+      />
     );
   } else {
     const valueClass =
@@ -155,7 +131,7 @@ export function MatrixCell({
           if (!unpinned(e)) onOpen(e.currentTarget);
         }}
       >
-        {summaryOf(field, leaf, shown)}
+        {summary ? summary(shown) : summaryOf(field, leaf, shown)}
       </button>
     );
   }
@@ -166,5 +142,66 @@ export function MatrixCell({
       <Focusable>{control}</Focusable>
       <Tooltip>{hint}</Tooltip>
     </TooltipTrigger>
+  );
+}
+
+/** A color cell: a swatch that edits in place, or, for a color that may be unset, a chip that opens the popover,
+ *  the only place it can be cleared. */
+function ColorCell({
+  value,
+  alpha,
+  clearable: unsettable,
+  label,
+  disabled,
+  unpinned,
+  onChange,
+  onOpen,
+}: {
+  value: unknown;
+  alpha: boolean;
+  clearable: boolean;
+  label: string;
+  disabled: boolean;
+  unpinned: (e: MouseEvent) => boolean;
+  onChange: (next: string) => void;
+  onOpen: (el: HTMLElement) => void;
+}): ReactElement<DOMAttributes<HTMLElement>, string> {
+  const set = typeof value === 'string' && value !== '';
+  if (!unsettable) {
+    const stored = set ? toHex8(value) : '#000000ff';
+    return (
+      <input
+        type="color"
+        aria-label={label}
+        className="lk-control-matrix__swatch"
+        disabled={disabled}
+        value={stored.slice(0, 7)}
+        onClick={(e) => {
+          unpinned(e);
+        }}
+        onChange={(e) => {
+          const rgb = e.currentTarget.value;
+          onChange(alpha ? withAlpha01(rgb, getAlpha01(stored)) : rgb);
+        }}
+      />
+    );
+  }
+  return (
+    <button
+      type="button"
+      aria-label={set ? label : `${label}, unset`}
+      aria-haspopup="dialog"
+      className="lk-control-matrix__value"
+      disabled={disabled}
+      onClick={(e) => {
+        if (!unpinned(e)) onOpen(e.currentTarget);
+      }}
+    >
+      <span
+        className={set ? 'lk-control-matrix__chip' : 'lk-control-matrix__chip is-unset'}
+        style={set ? ({ '--lk-chip': value } as CSSProperties) : undefined}
+        aria-hidden="true"
+      />
+    </button>
   );
 }

@@ -17,6 +17,12 @@ export interface Supervisor {
   setTimeScale(s: number): void;
   timeScale(): number;
   isPaused(): boolean;
+  /** The rate its clock runs at, the animator's own included: below 0 while it plays backward. */
+  rate(): number;
+  /** Whether it was started at its end, to play backward. */
+  readonly atEnd: boolean;
+  /** Runs `start`, which starts the composite's children: at their ends, given `end`. */
+  starting<T>(end: boolean, start: () => T): T;
   setOnCancel(cb: () => void): void;
   /** `cb` hears every pause, resume, and time scale set on the entry, by its
    *  handle or by `cancelKey`, so the composite can pass it to its children. */
@@ -43,11 +49,17 @@ export type SupervisorFactory = (opts: SupervisorOptions) => Supervisor;
 /** What {@link supervisors} needs of the animator. */
 export interface SupervisorHost {
   nextId(): number;
+  /** Whether an animation starting now starts at its end. */
+  atEnd(): boolean;
+  /** Runs `start`, starting what it starts at its end where `end` says. */
+  starting<T>(end: boolean, start: () => T): T;
   register(seed: AnimationSeed): AnimationHandle;
   /** Takes an entry off the table as finished. */
   finish(id: number): void;
   /** Runs `cb` once this frame's ticks are done. */
   afterTicks(cb: () => void): void;
+  /** The rate entry `id`'s clock runs at; 0 for one that has left. */
+  rateOf(id: number): number;
 }
 
 /** Makes the animator's supervisor factory: each is a registered animation whose tick never
@@ -56,6 +68,7 @@ export interface SupervisorHost {
 export function supervisors(host: SupervisorHost): SupervisorFactory {
   return ({ kind, cancelKey, label }) => {
     const id = host.nextId();
+    const atEnd = host.atEnd();
     let onCancelCb: (() => void) | undefined;
     let onRateCb: ((paused: boolean, timeScale: number) => void) | undefined;
     let onFrameCb: ((virtualNow: number) => void) | undefined;
@@ -79,6 +92,9 @@ export function supervisors(host: SupervisorHost): SupervisorFactory {
       setTimeScale: base.setTimeScale,
       timeScale: base.timeScale,
       isPaused: base.isPaused,
+      rate: () => host.rateOf(id),
+      atEnd,
+      starting: host.starting,
       setOnCancel: (cb) => { onCancelCb = cb; },
       setOnRate: (cb) => { onRateCb = cb; },
       setOnFrame: (cb) => { onFrameCb = cb; },

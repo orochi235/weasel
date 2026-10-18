@@ -133,3 +133,43 @@ export const BesideControlPanel: Story = {
     );
   },
 };
+
+const channel = () => ({
+  delay: f.number(0).range(0, 1000).step(10).input().suffix('ms'),
+  ease: f.custom<{ steps: number } | string>('ease', 'linear'),
+});
+const channels = ['x', 'y', 'opacity'] as const;
+const timing = f.schema(Object.fromEntries(channels.map((c) => [c, f.group(channel())])));
+
+/** A plain grid: every column its own, none inheriting. The `ease` row is a custom leaf, read through the
+ *  row's summary. */
+export const PlainGrid: Story = {
+  render: function Render() {
+    const schema = useMemo(() => resolveConfigSchema(timing, []), []);
+    const [values, setValues] = useState<Record<string, unknown>>(() => ({
+      x: { delay: 0, ease: 'easeOut' },
+      y: { delay: 40, ease: { steps: 4 } },
+      opacity: { delay: 120, ease: 'linear' },
+    }));
+    return (
+      <div className="lk-control-matrix-story">
+        <ControlMatrix
+          title="Timing"
+          inherit={false}
+          schema={schema}
+          columns={channels.map((c) => ({ key: c, label: c }))}
+          rows={[
+            { key: 'delay' },
+            {
+              key: 'ease',
+              summary: (v) =>
+                typeof v === 'string' ? v : `${(v as { steps: number }).steps} steps`,
+            },
+          ]}
+          config={values}
+          setConfig={(path, value) => setValues((prev) => withValueAtPath(prev, path, value))}
+        />
+      </div>
+    );
+  },
+};

@@ -275,19 +275,22 @@ describe('<ControlPanel> resettable group', () => {
     expect(screen.queryByRole('button', { name: 'Reset Plain' })).toBeNull();
   });
 
-  it('writes the default of every changed value beneath the group and nothing else', () => {
+  it('writes the group whole, once, with every value beneath it at its default', () => {
     const setConfig = vi.fn();
     renderWithIcons(
       <ControlPanel
         schema={schema}
-        config={{ name: 'b', modes: { one: 2, two: 0, inner: { three: 5 } }, plain: { four: 3 } }}
+        config={{
+          name: 'b',
+          modes: { one: 2, two: 0, inner: { three: 5 }, kept: 'x' },
+          plain: { four: 3 },
+        }}
         setConfig={setConfig}
       />,
     );
     fireEvent.click(screen.getByRole('button', { name: 'Reset Modes' }));
     expect(setConfig.mock.calls).toEqual([
-      ['modes.one', 0],
-      ['modes.inner.three', 1],
+      ['modes', { one: 0, two: 0, inner: { three: 1 }, kept: 'x' }],
     ]);
   });
 });

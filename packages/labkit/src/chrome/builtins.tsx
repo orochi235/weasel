@@ -28,6 +28,13 @@ function groupFolds(
   return out;
 }
 
+/** How the Settings panel writes a trial's config. The trial's writes already run together into one undo step
+ *  per gesture, so its drafts go there too, and the instrument follows every keystroke. */
+function settingsWrites(ctx: TrialChromeContext) {
+  const write = (path: string, value: unknown): void => ctx.setConfig(path, value);
+  return { setConfig: write, draftConfig: write };
+}
+
 /** Built-in ids contributed only while runtime state says so — the loupe
  *  toggle appears once a lens mounts, after the trial's first render, the
  *  expand toggle only inside a lightbox, and the zoom controls, scale and FPS
@@ -195,7 +202,7 @@ export function builtinContributions(
             schema={ctx.configSchema}
             config={ctx.config as Record<string, unknown>}
             auto={ctx.auto}
-            setConfig={(key, value) => ctx.setConfig(String(key), value)}
+            {...settingsWrites(ctx)}
             renderers={controls}
             collapsed={groupFolds(ctx.collapsedSections, 'settings')}
             onCollapse={(label, next) => ctx.setSectionCollapsed(`settings/${label}`, next)}

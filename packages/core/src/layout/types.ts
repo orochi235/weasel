@@ -70,7 +70,8 @@ export type LayoutDropTargetMode = 'innermost' | 'topmost' | 'region';
  * never written.
  *
  * `useAnimatedReflow` builds one over the animator. Supply it through
- * `<SceneCanvas reflowTransition>` or `LayoutDep.reflow`.
+ * `<SceneCanvas reflowTransition>` or `LayoutDep.reflow`, and through
+ * `<SceneCanvas poseTransition>` to glide other pose writes too.
  */
 export interface ReflowTransition<TPose = unknown> {
   /** Move what `id` shows toward `pose`, in the node's stored frame. A glide

@@ -67,11 +67,28 @@ describe('RetainedSurfaces', () => {
     expect(store.bytes).toBe(0);
   });
 
-  it('declines a rect whose surface and scratch would pass the budget', () => {
-    const store = new RetainedSurfaces(makeGLRecorder().gl, 40 * 30 * 12 - 1);
+  it('counts the surfaces it keeps against the budget, not the scratch buffer they are drawn in', () => {
+    const store = new RetainedSurfaces(makeGLRecorder().gl, 40 * 30 * 4 + 10 * 10 * 4);
     store.beginFrame([]);
-    expect(store.reserve('a', W, H, { x: 0, y: 0, width: 40, height: 30 })).toBeNull();
-    expect(store.reserve('b', W, H, { x: 0, y: 0, width: 39, height: 30 })).not.toBeNull();
+    expect(store.reserve('a', W, H, { x: 0, y: 0, width: 40, height: 30 })).not.toBeNull();
+    expect(store.reserve('b', W, H, { x: 0, y: 0, width: 10, height: 11 })).toBeNull();
+    expect(store.reserve('c', W, H, { x: 0, y: 0, width: 10, height: 10 })).not.toBeNull();
+  });
+
+  it('frees the scratch buffer after a frame that redraws nothing', () => {
+    const rec = makeGLRecorder();
+    const store = new RetainedSurfaces(rec.gl, Infinity);
+    const k = key();
+    store.beginFrame([]);
+    store.reserve('a', W, H, { x: 0, y: 0, width: 40, height: 30 })!.commit(k);
+    store.endFrame();
+    expect(store.bytes).toBe(40 * 30 * 4 + 40 * 30 * 8);
+
+    store.beginFrame([]);
+    expect(store.lookup('a', W, H, k)).not.toBeNull();
+    store.endFrame();
+    expect(store.bytes).toBe(40 * 30 * 4);
+    expect(rec.calls.filter((c) => c.name === 'deleteRenderbuffer')).toHaveLength(2);
   });
 });
 

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { ANGLE_RADIANS, METRIC_MM, type UnitSystem } from '@weasel-js/quantity';
 import { prefDisplayBounds } from './helpers';
 import type { PrefNumber } from './schema';
-import { isPrefLinearUnit, prefUnit, resolvePrefUnit, type PrefLinearUnit, type PrefNumberUnit } from './unit';
+import { isPrefLinearUnit, prefUnit, prefUnitAccepts, resolvePrefUnit, type PrefLinearUnit, type PrefNumberUnit } from './unit';
 
 /** Temperature is the smallest system whose units disagree about zero. */
 const TEMPERATURE_K: UnitSystem = {
@@ -141,5 +141,15 @@ describe('prefDisplayBounds over a linear unit', () => {
   it('swaps the ends under a negative scale', () => {
     const leaf: PrefNumber = { kind: 'number', name: 'D', description: '', default: 0, min: 0, max: 10, step: 2, unit: { scale: -1, offset: 100 } };
     expect(prefDisplayBounds(leaf)).toEqual({ min: 90, max: 100, step: 2 });
+    expect(prefDisplayBounds({ ...leaf, endless: 'max' }).endless).toBe('min');
+    expect(prefDisplayBounds({ ...leaf, endless: 'both' }).endless).toBe('both');
+    expect(prefDisplayBounds({ ...leaf, unit: { scale: 2 }, endless: 'max' }).endless).toBe('max');
+  });
+});
+
+describe('prefUnitAccepts', () => {
+  it('reads the display suffix as the display unit, beside what the unit accepts', () => {
+    expect(prefUnitAccepts({ scale: 10, suffix: 'cm', accepts: { mm: 0.1 } })).toEqual({ cm: 1, mm: 0.1 });
+    expect(prefUnitAccepts({ scale: 10, accepts: { mm: 0.1 } })).toEqual({ mm: 0.1 });
   });
 });

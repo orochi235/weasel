@@ -75,6 +75,7 @@ export {
 } from '../affordances';
 export type { ClaimableGesture } from '@weasel-js/gestures';
 export type { ChromeState } from '../core/selection/chromeState';
+export { paintsLayer } from '../core/selection/chromeState';
 
 // ─── chrome-caps: declarative chrome-visibility rules ──────────────────────
 export {

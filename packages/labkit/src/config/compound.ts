@@ -1,7 +1,7 @@
-import type { PrefAction, PrefLeaf, PrefObject } from '@weasel-js/prefs';
+import type { PrefLeaf, PrefObject } from '@weasel-js/prefs';
 import { BaseNode } from './baseNode';
 import { titleCase } from './rules';
-import type { ConfigNode, NodeValue } from './types';
+import type { ConfigActionRun, ConfigNode, NodeValue } from './types';
 
 /** A list leaf, built by `f.list`: strings, unless it was given what an entry is. */
 export class ListNode<T = string> extends BaseNode<T[]> {
@@ -132,8 +132,9 @@ export const compound = {
     });
   },
 
-  /** A button among the rows, which calls `run`. Its label is the button's text. */
-  action: (run: PrefAction['run']): ActionNode => new ActionNode(undefined, { run }),
+  /** A button among the rows, which calls `run` with the drawing panel's config and writer. Its label
+   *  is the button's text. */
+  action: (run: ConfigActionRun): ActionNode => new ActionNode(undefined, { run }),
   /** `of` is the path the shown leaf's value is written at, from the schema's root: `'view.grid'`. */
   alias: (of: string): AliasNode => new AliasNode(undefined, { of, name: '' }),
   /** A line of text among the rows. */

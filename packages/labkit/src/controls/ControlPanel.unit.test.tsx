@@ -37,6 +37,7 @@ describe('a number whose unit is data', () => {
     const field = screen.getByLabelText('Angle') as HTMLInputElement;
     expect(field.value).toBe('90');
     fireEvent.change(field, { target: { value: '45' } });
+    fireEvent.blur(field);
     expect(setConfig.mock.calls[0][0]).toBe('angle');
     expect(setConfig.mock.calls[0][1] as number).toBeCloseTo(Math.PI / 4, 10);
   });

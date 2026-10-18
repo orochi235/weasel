@@ -40,13 +40,50 @@ function panel() {
 describe('a number leaf with a minAt, in a ControlPanel', () => {
   it('holds a value typed into a paired cell to the bound read from the config', () => {
     const setConfig = panel();
-    fireEvent.change(screen.getByLabelText('H'), { target: { value: '5' } });
+    const field = screen.getByLabelText('H');
+    fireEvent.change(field, { target: { value: '5' } });
+    fireEvent.blur(field);
     expect(setConfig).toHaveBeenLastCalledWith('pose.height', 20);
   });
 
   it('holds a value typed into a row of its own the same way', () => {
     const setConfig = panel();
-    fireEvent.change(screen.getByLabelText('D'), { target: { value: '5' } });
+    const field = screen.getByLabelText('D');
+    fireEvent.change(field, { target: { value: '5' } });
+    fireEvent.blur(field);
     expect(setConfig).toHaveBeenLastCalledWith('pose.depth', 10);
+  });
+});
+
+describe('a field of an object leaf with a minAt, in a ControlPanel', () => {
+  it("holds a value typed into the object's dialog to the bound read from the config", () => {
+    const setConfig = vi.fn();
+    const schema: PrefSection = {
+      name: 'Box',
+      members: {
+        stroke: {
+          kind: 'object',
+          name: 'Stroke',
+          description: '',
+          default: { width: 1 },
+          children: {
+            width: num('Width', { minAt: (read) => read('floor') as number | undefined }),
+          },
+        },
+      },
+    };
+    render(
+      <ControlPanel
+        schema={resolveConfigSchema(f.prefs(schema), [])}
+        config={{ floor: 3, stroke: { width: 4 } }}
+        setConfig={setConfig}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Edit Stroke' }));
+    const field = screen.getByLabelText('Width');
+    fireEvent.change(field, { target: { value: '1' } });
+    fireEvent.blur(field);
+    fireEvent.click(screen.getByRole('button', { name: 'Done' }));
+    expect(setConfig).toHaveBeenLastCalledWith('stroke', { width: 3 });
   });
 });

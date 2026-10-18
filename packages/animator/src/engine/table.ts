@@ -13,6 +13,8 @@ export interface TableHost {
   hub: AnimatorEventHub;
   /** The animator's clock: the virtual ms its frames have advanced it by. */
   elapsed(): number;
+  /** -1 while the animator plays backward, else 1. */
+  direction(): number;
   /** Starts the frame clock where it stands idle, so a new animation is charged the wait for
    *  its first frame. */
   seedClock(): void;
@@ -43,8 +45,13 @@ export interface Table {
   on(target: TargetState): Iterable<ActiveAnimation>;
   /** Sets `a`'s pause and time scale, and gives its codec subject the rate they ask for. */
   pace(a: ActiveAnimation, paused: boolean, timeScale: number): void;
+  /** Runs `flip`, which turns the animator's direction, and gives every animation the rate that
+   *  leaves it, its clock where it stands. */
+  turn(flip: () => void): void;
   /** `a`'s own clock now, in virtual ms. */
   clockOf(a: ActiveAnimation): number;
+  /** The rate `a`'s clock runs at: 0 while paused, below 0 while it plays backward. */
+  rateOf(a: ActiveAnimation): number;
   /** Leaves `id` unticked until its clock has run `ms` more. */
   defer(id: number, ms: number): void;
   /** The animations to tick this frame, in the order they registered. */
@@ -63,29 +70,27 @@ export interface Table {
   watchCompletion: WatchCompletion;
 }
 
-/** `scale` as a time scale, refused below 0: the clock under the animator only goes forward. */
+/** `scale` as a time scale, refused where it is no finite number. Below 0 plays backward. */
 export function timeScaleOf(scale: number): number {
-  if (!(scale >= 0)) {
-    throw new Error(`animator: a time scale is 0 or above, and ${scale} was given; nothing plays backward`);
-  }
+  if (!Number.isFinite(scale)) throw new Error(`animator: a time scale is a finite number, and ${scale} was given`);
   return scale;
+}
+
+function infoOf(a: ActiveAnimation): AnimationInfo {
+  if (!a.info) {
+    const info: { -readonly [K in keyof AnimationInfo]: AnimationInfo[K] } = { id: a.id, kind: a.kind };
+    if (a.cancelKey != null) info.key = a.cancelKey;
+    if (a.label != null) info.label = a.label;
+    a.info = info;
+  }
+  return a.info;
 }
 
 export function createTable(host: TableHost): Table {
   const { codec, hub } = host;
-  const roster = createRoster(host.elapsed);
+  const roster = createRoster(host.elapsed, host.direction);
   const { animations, schedule, remove } = roster;
   const { fire: fireCompletion, watch: watchCompletion } = createCompletions((id) => animations.has(id));
-
-  const infoOf = (a: ActiveAnimation): AnimationInfo => {
-    if (!a.info) {
-      const info: { -readonly [K in keyof AnimationInfo]: AnimationInfo[K] } = { id: a.id, kind: a.kind };
-      if (a.cancelKey != null) info.key = a.cancelKey;
-      if (a.label != null) info.label = a.label;
-      a.info = info;
-    }
-    return a.info;
-  };
 
   const reportEnd = (id: number): void => {
     const a = animations.get(id);
@@ -114,10 +119,15 @@ export function createTable(host: TableHost): Table {
     for (const a of [...roster.under(key)]) retire(a.id, by);
   };
 
+  /** Hands `a`'s voices the rate its schedule now gives it. */
+  const rerate = (a: ActiveAnimation): void => {
+    const rate = schedule.rateOf(a);
+    if (codec.has(a.id)) codec.rate(a.id, rate);
+    a.onRate?.(a.paused, a.timeScale, rate);
+  };
   const pace = (a: ActiveAnimation, paused: boolean, timeScale: number): void => {
     schedule.pace(a, paused, timeScale);
-    if (codec.has(a.id)) codec.rate(a.id, paused ? 0 : timeScale);
-    a.onRate?.(paused, timeScale);
+    rerate(a);
   };
 
   const register = (seed: AnimationSeed): AnimationHandle => {
@@ -130,6 +140,7 @@ export function createTable(host: TableHost): Table {
     // animations it finds was registered.
     host.seedClock();
     roster.add(anim);
+    if (host.direction() < 0) rerate(anim);
     if (anim.target) host.showNow(anim.target);
     if (hub.watched) hub.emit({ type: 'start', animation: infoOf(anim) });
     // A frame in progress asks for the next one itself, after `onTick`: asked for from a tick,
@@ -156,7 +167,12 @@ export function createTable(host: TableHost): Table {
     under: roster.under,
     on: roster.on,
     pace,
+    turn(flip) {
+      schedule.turn(animations.values(), flip);
+      for (const a of [...animations.values()]) if (animations.get(a.id) === a) rerate(a);
+    },
     clockOf: schedule.clockOf,
+    rateOf: schedule.rateOf,
     defer: (id, ms) => schedule.defer(animations.get(id), ms),
     ticks: schedule.ticks,
     get awake() { return schedule.awake; },
