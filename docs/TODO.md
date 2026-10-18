@@ -309,6 +309,28 @@ Priority tags:
   suspend; and that draw turns on the grid, measurement ends and anchors but not the other path kinds
   ([`docs/snapping.md`](./snapping.md), `packages/core/src/features/snap/`,
   `packages/core/src/features/paths/pathSnap/`).
+- **(P3) Equal spacing on a turned resize, and where its alignment marks sit.** Decision for the
+  maintainer (2026-10-18). A resize whose frame turns or skews the box moves no side of its
+  axis-aligned extent alone, so `resizeEdges` (`packages/core/src/features/snap/resizeBox.ts`)
+  answers no edges and `spacingSnapSource` offers nothing; alignment still runs, but its marks span
+  the box at the press rather than where it lands. Open question: should spacing on a turned box
+  measure its extent, its own frame, or stay off?
+- **(P3) `resolveSnap` can report a member the others imply** (2026-10-18). `extend`
+  (`packages/geom/src/snap/resolve.ts`) adds a candidate whenever it narrows the solution, so a line
+  taken before a point on it leaves both in `members`. The move and `satisfied` are right. Open
+  question: prune members the final flat already implies, or document `members` as the path the
+  search took? Ties between combinations compare their members' orders, so by reading the code (not
+  observed) a redundant line could decide one.
+- **(P3) The flat math's two tolerances are uncalibrated against each other** (2026-10-18).
+  `RANK_TOL` (dependence in Gram-Schmidt) and `PIVOT_TOL` (zero pivots in the solve) in
+  `packages/geom/src/snap/flat.ts` were picked, not measured; nothing checks that they agree on when
+  two near-parallel directions are one. Left: a test over lines meeting at shrinking angles, and
+  the values it settles on.
+- **(P3) Are the snap readout's drawing helpers public API?** Decision for the maintainer
+  (2026-10-18). `tickedSegment`, `pillCommands` and `measuredSegmentCommands` are on
+  `@weasel-js/core`'s barrel because guides' layer draws with them. Either they stay as designed
+  public surface, or they move to an `internal` entry (as `@weasel-js/routing/internal` does),
+  which `audit:jsdoc` treats as a sibling-package surface.
 - **(P2) The browser-reserved chord list misses the devtools keys of Windows and Firefox.**
   `BROWSER_RESERVED_CHORDS` (`packages/routing/src/interactions/browserReservedKeys.ts`) lists
   Chrome's Mac devtools chords (Mod+Alt+I/J/C) but not their Windows and Linux form, Ctrl+Shift+I/J/C,
