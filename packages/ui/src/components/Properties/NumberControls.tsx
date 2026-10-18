@@ -11,6 +11,7 @@ import { decimal, parseAs, qty, type Display } from '@weasel-js/quantity';
 import { dlog } from '../../dlog';
 import { endlessTrack } from '../../endless';
 import { UnitField } from '../NumberField';
+import { QuantityText } from '../QuantityText';
 import { spinKey } from '../spin';
 import shared from '../range.module.css';
 import type { PropertyNumberFieldProps } from './fieldTypes';
@@ -97,7 +98,7 @@ function useCommitListener(
 
 function unitSuffix(unit: ReactNode, className: string): ReactNode {
   if (unit == null) return null;
-  return typeof unit === 'string' ? <span className={className}>{unit}</span> : unit;
+  return typeof unit === 'string' ? <QuantityText unit={unit} className={className} /> : unit;
 }
 
 export const ignore = (): void => {};

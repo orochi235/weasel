@@ -882,11 +882,9 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   `fonts.css`, so `--wzl-font-ui`'s Oswald and `--wzl-font-numeric`'s Oswald Tabular fall back to
   system faces in every demo. Left as is for now by decision; draw loads `fonts.css`.
 
-- **(P3) `PropertyField` draws its unit from its own `unit` prop, not through `QuantityText`.**
-  `Slider`'s readouts, `BandEditor`'s ticks and ends, and `Transport`'s rate draw through
-  `QuantityText`, which dims a unit, a percent sign, and a label. `PropertyField`'s suffix is still a
-  `ReactNode` it is handed beside an editable number, so it follows none of that. `QuantityText`
-  draws no kind's MathML form.
+- **(P3) `QuantityText` draws no kind's MathML form.** `present` hands back `mathml` for a kind that
+  has one (a fraction's), and `QuantityText` draws only the HTML form. A number field's string unit
+  draws through `QuantityText` now; a unit handed as JSX (`<sup>°</sup>`) is still drawn as given.
 
 - **(P3) labkit and the apps hand-build what weasel-ui already draws.** Each waits on something
   the ui component lacks, or on a look at the result in a browser:

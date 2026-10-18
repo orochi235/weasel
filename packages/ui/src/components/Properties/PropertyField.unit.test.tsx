@@ -16,6 +16,13 @@ describe('number field unit', () => {
     expect(field?.nextElementSibling?.textContent).toBe('px');
   });
 
+  it('draws a string unit as QuantityText draws one, so it dims as a slider readout\'s unit does', () => {
+    const { container } = render(
+      <PropertyField kind="number" label="Width" value={20} unit="px" onChange={() => {}} />,
+    );
+    expect(container.querySelector('[data-part="unit"]')?.textContent).toBe('px');
+  });
+
   it('renders a node unit as given', () => {
     const { container } = render(
       <PropertyField kind="number" label="Angle" value={90} unit={<sup>°</sup>} onChange={() => {}} />,
