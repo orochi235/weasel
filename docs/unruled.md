@@ -261,6 +261,12 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
 - 2026-10-18: A locked diagram node shows no ports at all, rather than drawn ports that cannot be
   dragged, matching the kit putting no selection or hover chrome on a locked node. A connect cannot
   land on a hidden or locked node's port either.
+- 2026-10-18: Audio's `synthVoices: 'worklet'` renders `playNote` and `playNoise` in an
+  `AudioWorkletProcessor` from events posted at the call; default `'nodes'`. Until the processor
+  has loaded (`unlock()` waits for it), or where it cannot, synth voices play on nodes rather than
+  being dropped. A worklet voice is never dropped as `stale`.
+- 2026-10-18: Audio's `Scheduler.schedule` takes a fourth argument, `{ reportLate: false }`, so
+  `onLate` stays quiet for a worklet voice: the scheduler reaching it late does not make it sound late.
 
 ## draw
 

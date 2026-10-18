@@ -8,10 +8,6 @@
   "packages/animator/src/timeline/createTimeline.ts": {
     "longestFunction": 172
   },
-  "packages/audio/src/createAudioEngine.ts": {
-    "lines": 765,
-    "longestFunction": 611
-  },
   "packages/audio/src/inserts.ts": {
     "longestFunction": 232
   },

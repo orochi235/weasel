@@ -54,6 +54,9 @@ jobs:
       # Every kit frame loop runs behind `useVisibleRaf`; a bare
       # requestAnimationFrame is how that stops being true.
       - run: npm run check:frame-loops
+      # The audio worklet's processor ships as source text generated from the
+      # synth kernels; editing a kernel without regenerating it ships the old one.
+      - run: npm run check:audio-worklet
       # No source file or function grows past its cap; the allowlist's entries
       # only come down.
       - run: npm run check:size

@@ -624,20 +624,13 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   ears: the `score` demo (`apps/site/demos/ScoreDemo.tsx`) plays each cue with
   its parameters beside the sliders.
 
-- **(P3) AudioWorklet voices** — immune to main-thread jank. What a stall
-  delays is the callback that makes a voice's nodes, which has to run on the
-  main thread, so immunity means synthesizing the voices inside a worklet
-  processor from events posted ahead of time. The synthesis is built:
-  `createNoteKernel` and `createNoiseKernel` (`voiceKernel.ts`) render what
-  `playNote` and `playNoise` play, a block at a time, and
-  `voiceKernel.browser.test.ts` holds them to the node graph. What is left:
-  - a processor that mixes kernels onto a bus from posted events. A worklet
-    cannot import the package's bundle, so the kernel has to reach it as source
-    text, which needs a build step.
-  - the engine's side. A worklet voice's handle, pool slot, steal, pan, and
-    position have to behave as a node voice's do, and `createAudioEngine.ts` is
-    one 611-line function at its size ceiling, so this starts by splitting it.
-  - a browser test that blocks the main thread and hears no gap.
+- **(P3) A worklet voice released inside a stall is cut, not released.** With
+  `synthVoices: 'worklet'` the audio thread starts a voice at its time, but the
+  engine counts it started only when the scheduler reaches it. A `release()` or
+  `stop(fadeMs)` landing between the two, which only a main-thread stall makes
+  possible, takes the before-start path in `voices.ts`: the processor is told to
+  stop at once and `onDrop('stopped')` fires for a voice that sounded. The fix
+  is for a booked voice to count as started once its `when` has passed.
 
 ---
 
