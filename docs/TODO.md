@@ -200,10 +200,6 @@ Priority tags:
 
 ### Path editing tricks
 
-- **(P2) Measurement rows in draw's Layers panel cannot be renamed, or hidden or locked one at a
-  time.** `LayerList` has no rename, and the scene has no per-node visibility or lock, so a
-  measurement row offers select and remove only; the annotation layer's own row can be hidden,
-  and shows its lock without toggling it. A measurement's `data.label` is what a rename would write.
 - **(P3) Moving a shape does not snap to measurement ends.** `nearestMeasureEnd` reaches the
   insert tools through the `snap` dep; the select tool's move snaps through its own `snap`
   strategy (`gridSnapStrategy`), which knows nothing of measurements.

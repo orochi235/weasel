@@ -16,7 +16,7 @@ import type { DrawScene, WeaselDrawData } from './drawDocument';
 import type { PanelChrome } from './surfaces/types';
 import { usePref } from './prefs';
 
-/** Synthetic id for the locked "Background" row in the Layers panel.
+/** Synthetic id for the fixed "Background" row in the Layers panel.
  *  Selecting this row surfaces the Document properties branch in the
  *  Properties panel; clicking any real node clears it. */
 export const BACKGROUND_ROW_ID = '__background__';
@@ -67,10 +67,12 @@ export interface LayersPanelProps {
 }
 
 /**
- * The Layers panel: a row per node, front to back, and a locked Background
- * row last. With `ui.showAnnotations` on, the annotation layer — the
- * measurements — and each measurement are listed too, marked not printed;
- * picking one there picks the measurement, as a click on it does.
+ * The Layers panel: a row per node, front to back, and a fixed Background
+ * row last. Each row hides, locks and renames its node; a name is
+ * `data.label`, shown in place of a text node's text. With
+ * `ui.showAnnotations` on, the annotation layer — the measurements — and each
+ * measurement are listed too, marked not printed; picking one there picks the
+ * measurement, as a click on it does.
  */
 export function LayersPanel(props: LayersPanelProps): ReactElement {
   const { scene, selection, measurements: ms, docSelected, setDocSelected, chrome } = props;
@@ -83,21 +85,22 @@ export function LayersPanel(props: LayersPanelProps): ReactElement {
       const m = measurementOf(node);
       if (m) return { label: node.data.label ?? `Measurement ${qty(m.distance, AT).text}` };
       const data = node.data;
-      return { label: data.text ?? data.label ?? node.id, leading: <LayerSwatch color={layerSwatch(data)} /> };
+      return { label: data.label ?? data.text ?? node.id, leading: <LayerSwatch color={layerSwatch(data)} /> };
     },
+    rename: (node, label) => ({ ...node.data, label }),
     ...(showAnnotations
       ? { annotations: { picked, pick: (id: string | null) => ms.picked.set(id as never), labelOf: () => 'Measurements' } }
       : {}),
   });
 
-  // A pinned, locked virtual "Background" row. Selecting it routes to the
+  // A pinned, fixed virtual "Background" row. Selecting it routes to the
   // Document properties branch instead of the kit `SelectionApi` (the
   // synthetic id is not a real NodeId and would corrupt scene queries).
   const backgroundRow: LayerListItem = {
     id: BACKGROUND_ROW_ID,
     label: 'Background',
     leading: <LayerSwatch color={props.backgroundColor} />,
-    locked: true,
+    fixed: true,
   };
   const onSelect = (ids: string[]): void => {
     if (ids.includes(BACKGROUND_ROW_ID)) {

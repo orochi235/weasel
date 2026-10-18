@@ -350,7 +350,7 @@ function TrialRuntime({
     return pinnedLast.map((l) => ({
       id: l.id,
       label: l.label,
-      locked: l.alwaysOn === true,
+      fixed: l.alwaysOn === true,
       visible: l.alwaysOn === true || layerVisibility[l.id] !== false,
     }));
   }, [layerDescriptors, layerOrder, layerVisibility]);

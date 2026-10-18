@@ -83,3 +83,51 @@ describe('LayersPanel — annotations toggle', () => {
     expect(screen.queryByText('Measurements')).toBeNull();
   });
 });
+
+describe('LayersPanel — one row at a time', () => {
+  beforeEach(() => {
+    drawPrefs().reset();
+    window.localStorage.clear();
+  });
+
+  it('renames a measurement into its data.label', () => {
+    const scene = makeScene();
+    renderWithIcons(<Host scene={scene} />);
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Show annotations' }));
+    fireEvent.doubleClick(screen.getByText('Measurement 50.0'));
+    const field = screen.getByLabelText('Rename Measurement 50.0');
+    fireEvent.change(field, { target: { value: 'Gap' } });
+    fireEvent.keyDown(field, { key: 'Enter' });
+    expect(scene.get(asNodeId('m1'))!.data.label).toBe('Gap');
+    scene.undo();
+    expect(scene.get(asNodeId('m1'))!.data.label).toBeUndefined();
+  });
+
+  it('hides and locks one measurement, and one shape, from its row', () => {
+    const scene = makeScene();
+    renderWithIcons(<Host scene={scene} />);
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Show annotations' }));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Show Measurement 50.0' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Lock Measurement 50.0' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Lock Box' }));
+    expect(scene.get(asNodeId('m1'))).toMatchObject({ hidden: true, locked: true });
+    expect(scene.get(asNodeId('box'))!.locked).toBe(true);
+    expect(scene.layers.find((l) => l.id === ANNOTATION_LAYER)).toMatchObject({ visible: true, locked: false });
+  });
+
+  it('locks the annotation layer from its own row', () => {
+    const scene = makeScene();
+    renderWithIcons(<Host scene={scene} />);
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Show annotations' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Lock Measurements' }));
+    expect(scene.layers.find((l) => l.id === ANNOTATION_LAYER)!.locked).toBe(true);
+  });
+
+  it('gives the Background row no lock, rename, or visibility', () => {
+    renderWithIcons(<Host scene={makeScene()} />);
+    expect(screen.queryByRole('button', { name: 'Lock Background' })).toBeNull();
+    expect(screen.queryByRole('checkbox', { name: 'Show Background' })).toBeNull();
+    fireEvent.doubleClick(screen.getByText('Background'));
+    expect(screen.queryByLabelText('Rename Background')).toBeNull();
+  });
+});

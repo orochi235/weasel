@@ -17,8 +17,13 @@ export interface LayerListItem {
   /** Which of its list this layer is: an index into the theme's tone list, or
    *  a color. A card draws its edge and handle in it and recolors its controls. */
   tone?: StanceProps['tone'];
-  /** Cannot be dragged, hidden or removed, walls off drops on either side, and
-   *  selects alone rather than joining a multi-selection. */
+  /** Cannot be dragged, hidden, locked, renamed or removed, walls off drops
+   *  on either side, and selects alone rather than joining a multi-selection:
+   *  a page's background. */
+  fixed?: boolean;
+  /** The layer's content is locked: shown pressed by the lock toggle when the
+   *  list has `onLockChange`. A locked layer can still be hidden and unlocked,
+   *  but not dragged, renamed or removed. Default false. */
   locked?: boolean;
   /** Shown or not, when the list has `onVisibilityChange`. Default true. */
   visible?: boolean;
@@ -29,6 +34,9 @@ export interface LayerListItem {
   /** Whether the row offers a visibility checkbox, when the list has
    *  `onVisibilityChange`. Default true. */
   hideable?: boolean;
+  /** Whether a one-line row can be renamed, when the list has `onRename`.
+   *  Default true. */
+  renamable?: boolean;
   /** Whether the row offers a remove button, when the list has `onRemove`.
    *  Default true. */
   removable?: boolean;
@@ -58,9 +66,15 @@ export interface LayerListProps {
    *  one, and dragging a selected row drags its selected siblings. */
   selectedIds?: readonly string[];
   onSelect?: (ids: string[]) => void;
-  /** Adds a visibility checkbox to every unlocked layer. */
+  /** Adds a visibility checkbox to every layer that is not fixed. */
   onVisibilityChange?: (id: string, visible: boolean) => void;
-  /** Adds a remove button to every unlocked layer. */
+  /** Adds a lock toggle to every layer that is not fixed. */
+  onLockChange?: (id: string, locked: boolean) => void;
+  /** Lets a one-line row be renamed: a double-click on its label, or F2 on the
+   *  focused row, opens a field; Enter or leaving it reports the new name,
+   *  Escape drops it. A card's title is its own. */
+  onRename?: (id: string, label: string) => void;
+  /** Adds a remove button to every layer that is neither fixed nor locked. */
   onRemove?: (id: string) => void;
   /** A right-click on a row. Select the row here if it should be; the
    *  handler decides whether the browser menu is blocked. */
