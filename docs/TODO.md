@@ -1070,18 +1070,13 @@ only story runner in the repo.
   and a line holding a larger run (2026-10-18). Not yet seen: an `rtl` node, whose anchor is
   the right edge of each chunk, and the `<tspan x dy>` lines written without a layout.
 
-- **(P3) The animation wrappers have no canvas seat.** `animateOnSetPose` and `animateLifecycle`
-  wrap an adapter the caller holds. `<SceneCanvas>` builds its own and takes neither, so nothing a
-  tool writes is animated; `apps/site/demos/AnimationDemo.tsx` wraps `useSceneAdapter(scene)` and
-  its buttons write through that. Wrapping the canvas's adapter would animate every op applied
-  through it, a drag's release, a resize, and an undo among them (read from `applyOps` in
-  `canvas/sceneAdapter.ts`, which hands each op the adapter it was called on; not run), so the
-  seat has to say which of those glide. It would still miss a button's `scene.setPose`, which
-  reaches no adapter: animating that needs the scene to report the write, as `onReflow` reports
-  a settle. `<SceneCanvas reflowTransition>` is that shape for layout writes already: the scene
-  hands `useLayoutDepSource` each move with the pose it left, and the transition glides what is
-  shown from there through a pose override, writing nothing. A removal cannot follow it, since
-  the node is gone by the time a report arrives.
+- **(P3) A removal on a canvas cannot animate out.** `<SceneCanvas poseTransition>` glides the
+  poses the scene writes and grows in the nodes it adds, from `scene.onPoseWrite`. A node a delete
+  removes is gone by the time that report arrives, so nothing is left to show leaving;
+  `animateLifecycle`'s `exitTo` still works only over an adapter the caller holds and removes
+  through. Following a removal needs the scene to keep the node presentable after it leaves the
+  document — a ghost the paint walk draws and nothing picks — or the delete action to wait on an
+  exit before it commits.
 
 ---
 

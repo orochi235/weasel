@@ -294,7 +294,7 @@ What is built on it:
 
 | Value | Its target | Moved by |
 |---|---|---|
-| A node's pose | `adapter.poseTarget(id)`: `scenePoseTarget(scene, id)` over a scene, `createWrittenPoseTarget` over a store with no overrides | `tweenPose`, `springPose`, `animateOnSetPose`, reflow glides, momentum |
+| A node's pose | `adapter.poseTarget(id)`: `scenePoseTarget(scene, id)` over a scene, `createWrittenPoseTarget` over a store with no overrides | `tweenPose`, `springPose`, `animateOnSetPose`, reflow glides (`reflowTransition`, and `poseTransition` for any write the scene reports), momentum |
 | The camera | `ViewAnimationApi.viewTarget`; on a `<SceneCanvas>` ref, `camera.target` | `useViewAnimation`, `animateView`; add a shake on the same animator, which the ref hands out as `camera.animator` |
 | Vertex colors | `colorOverrides.target(id, channel, length)` | `tweenVertexColors`, `springVertexColors`, `staggerVertexColors` |
 | A rig's pose | `rig.target` | clips: a `SampledTrack<Pose>` given `target` and `weight` |
