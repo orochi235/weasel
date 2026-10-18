@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { boundsOfPath, rectPath } from '@weasel-js/geom';
 import type { ImmediateInvoker, InvocationCtx, OngoingHandle, OngoingInvoker } from '@weasel-js/routing';
 import {
-  createScene, derivedDepOf, derivedPartsOf, effectivePose, moveAction, type NodeId, PATH_EFFECT_DERIVATIONS, pathEffectOf, pathEffectParts, type RectPose, type Scene, sceneFromJSON, withPathEffectsRegistry,
+  createScene, derivedDepOf, derivedPartsOf, effectivePose, moveAction, RIGID_POSE_COMPOSITION, type NodeId, PATH_EFFECT_DERIVATIONS, pathEffectOf, pathEffectParts, type RectPose, type Scene, sceneFromJSON, withPathEffectsRegistry,
 } from '@weasel-js/core';
 import { blendAction, bendAlongAction, editPathEffectAction, expandPathEffectAction, repeatAlongAction } from './actions';
 
@@ -147,6 +147,48 @@ describe('expand', () => {
     expect(made.map((n) => n.pose.x)).toEqual([-10, 90, 190]);
     scene.undo();
     expect(scene.get(effect as NodeId)).toBeDefined();
+  });
+});
+
+describe('in a scene whose containers compose frames', () => {
+  /** `a` in a container at (200,100) turned a quarter, `b` at the root. */
+  function framedSetup() {
+    const scene: TestScene = createScene<unknown, 'default', RectPose>({
+      systemLayers: [{ id: 'default' }],
+      registry: withPathEffectsRegistry(),
+      composition: RIGID_POSE_COMPOSITION,
+      initial: [
+        { id: 'g' as NodeId, kind: 'container', layer: 'default', pose: { x: 200, y: 100, width: 100, height: 100, rotation: Math.PI / 2 }, data: {} },
+        { ...box('a', 0, '#ff0000'), pose: { x: 0, y: 0, width: 20, height: 10 }, parent: 'g' as NodeId },
+        { ...box('b', 95, '#0000ff'), pose: { x: 95, y: 100, width: 10, height: 20 } },
+        { ...box('c', 80, '#00ff00'), pose: { x: 80, y: 40, width: 20, height: 10 }, parent: 'g' as NodeId },
+      ],
+    });
+    let current: string[] = [];
+    const selection = { get: () => current, set: (next: string[]) => { current = next; } };
+    const deps = { scene, selection } as unknown as InvocationCtx['deps'];
+    return { scene, deps, select: (ids: string[]) => { current = ids; }, selected: () => current };
+  }
+
+  it('makes a blend of two shapes in one container inside it', () => {
+    const { scene, deps, select, selected } = framedSetup();
+    select(['a', 'c']);
+    run(blendAction, deps, { steps: 1 });
+    expect(scene.get(selected()[0] as NodeId)!.parent).toBe('g');
+  });
+
+  it('expands a blend across frames where its steps are painted', () => {
+    const { scene, deps, select, selected } = framedSetup();
+    select(['a', 'b']);
+    run(blendAction, deps, { steps: 1, rotate: false });
+    expect(scene.get(selected()[0] as NodeId)!.parent).toBeNull();
+    run(expandPathEffectAction, deps);
+    // a is painted 10 wide by 20 tall about (295,110), b about (100,110).
+    const [copy] = selected().map((id) => scene.get(id as NodeId)!);
+    expect(copy!.pose.x).toBeCloseTo(192.5, 3);
+    expect(copy!.pose.y).toBeCloseTo(100, 3);
+    expect(copy!.pose.width).toBeCloseTo(10, 3);
+    expect(copy!.pose.height).toBeCloseTo(20, 3);
   });
 });
 

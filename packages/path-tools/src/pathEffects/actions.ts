@@ -190,7 +190,7 @@ export const expandPathEffectAction: Action & { requires: string[] } = {
       const ops: Op[] = [];
       const made: string[] = [];
       for (const { node, at } of effects) {
-        const sources = (Array.isArray(node.dependsOn) ? node.dependsOn : []).map((id) => derivedDepOf(scene, id));
+        const sources = (Array.isArray(node.dependsOn) ? node.dependsOn : []).map((id) => derivedDepOf(scene, id, node));
         const parts = pathEffectParts(node, sources) ?? [];
         ops.push(deleteNode(scene, node, EXPAND_LABEL));
         parts.forEach((part, k) => {

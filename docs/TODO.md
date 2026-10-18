@@ -386,9 +386,11 @@ Priority tags:
   (`f082c838e` adopted its push brush as Smudge and left the rest). Its math is in
   `packages/geom/src/effects/` there; carrying the three over means rebuilding each as a derived
   effect node beside blend, bend and repeat. Undecided whether to; the branch is kept until then.
-- **(P3) A path effect inside a container that composes frames is untried.** An effect paints in
-  the frame its sources are painted in (`core/scene/pathEffects/`); the actions only make one
-  over two leaves, inserted beside the first.
+- **(P3) A dependency that is itself derived reaches a derivation in its own frame.** Under a
+  composing strategy a derivation is handed each dependency's pose in the deriving node's frame
+  (`core/scene/depFrame.ts`), but a dependency's `path` — a blend whose source is another effect —
+  is not carried across, so an effect of an effect in another container reads that path where
+  its own container would put it.
 - **(P3) A blend has no spine, and its steps no spacing by distance.** `BlendEffect` places
   `steps` shapes evenly in `t` on the straight run between its sources; laying them along a
   third path, or spacing them so neighboring shapes sit a fixed distance apart, is not offered.

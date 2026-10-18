@@ -116,7 +116,7 @@ function pathObj(
 function effectToObj<TLayer extends string>(scene: DrawScene<TLayer>, id: string): EffectObj {
   const node = scene.get(id as never)!;
   const dependsOn = (Array.isArray(node.dependsOn) ? node.dependsOn : []).map(String);
-  const deps = dependsOn.map((d) => derivedDepOf(scene, d as never));
+  const deps = dependsOn.map((d) => derivedDepOf(scene, d as never, node));
   const parts = (pathEffectParts(node, deps) ?? []).map((part, k) => {
     const { x, y, width, height } = boundsOfPath(part.path);
     const own = node.data as WeaselDrawData;
