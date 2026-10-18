@@ -850,12 +850,13 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   confirmed: the section is polled into view and the marks are then read once, so a scroll spy
   that settles a frame later would still name the section above.
 
-- **(P3) Nobody has seen a theme's prefs schema in a form.** `themePrefsSchema`
-  (`@weasel-js/theme/prefs`) is tested as data and through a store, and no page draws it in
-  `PrefsForm` yet: a page in the rail per token group, and most color rows split by mode.
-  `apps/theme-editor` edits definitions through its own panels and is the place it would go.
-  Nothing drives `applyTheme`'s `weights` from an animator either, which is the same gap as the
-  selector weights under "What the split rows in `PrefsForm` left".
+- **(P3) Nobody has looked at a theme's prefs schema in a form.** `themePrefsSchema`
+  (`@weasel-js/theme/prefs`) is drawn in `PrefsForm` at `apps/theme-editor`'s `#/prefs` page
+  (`ThemePrefs.tsx`, "Theme prefs" in the lab menu): a rail page per token group, a color that
+  differs by mode split into a member per mode, and a preview of the pinned theme beside it. Built
+  and tested in jsdom, not yet looked at in a browser. Nothing drives `applyTheme`'s `weights` from
+  an animator either, which is the same gap as the selector weights under "What the split rows in
+  `PrefsForm` left".
 
 - **(P3) What the split rows in `PrefsForm` left.** The marks a split leaf draws in a group's
   heading and in a bar cell are tested in jsdom and were never seen. `list`, `map`, `union`,

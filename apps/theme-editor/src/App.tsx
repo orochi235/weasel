@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { PaletteLab } from './PaletteLab';
 import { ThemeEditor } from './ThemeEditor';
+import { ThemePrefs } from './ThemePrefs';
 
-const ROUTES = ['palette', 'theme'] as const;
+const ROUTES = ['palette', 'theme', 'prefs'] as const;
 type Route = (typeof ROUTES)[number];
 
 function readHash(): Route {
@@ -26,5 +27,6 @@ export function App() {
   }, [route]);
 
   if (route === 'theme') return <ThemeEditor />;
+  if (route === 'prefs') return <ThemePrefs />;
   return <PaletteLab />;
 }
