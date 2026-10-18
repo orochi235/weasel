@@ -79,6 +79,9 @@ export interface DispatcherChannels {
   /** OS drop on the element plus `paste` on the window. Off leaves the
    *  element a non-drop-target and stops `weasel-dropover` being applied. */
   ingest?: boolean;
+  /** A carry (`startCarry`) from elsewhere on the page, over the element. Off,
+   *  the element is not a surface a carry can be released on. */
+  carry?: boolean;
 }
 
 /** Options for `useGestureDispatcher`: the element to listen on, the actions

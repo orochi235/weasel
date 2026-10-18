@@ -255,6 +255,25 @@ export interface DropSpec {
   phase?: PhaseSpec;
 }
 
+/**
+ * A press that began elsewhere on the page, carried over the canvas: a palette
+ * item dragged in, a row dragged out of a list. The in-app sibling of
+ * {@link DropSpec}, which is the OS's drag. A carry is begun with `startCarry`.
+ * `types` filters by the payload's `type`, as globs; omitted or empty matches
+ * any carry.
+ *
+ * An ongoing action bound here starts when the carry comes over the surface:
+ * its moves update it, the release commits it, and leaving the surface or
+ * canceling the press cancels it. An immediate action fires once, on the
+ * release.
+ */
+export interface CarrySpec {
+  kind: 'carry';
+  types?: string[];
+  mods?: ModSpec;
+  phase?: PhaseSpec;
+}
+
 /** System-clipboard paste of external content. Same `types` semantics as
  *  {@link DropSpec} — omitted or empty = matches any paste. */
 export interface PasteSpec {
@@ -280,4 +299,5 @@ export type GestureSpec =
   | MultiTouchSpec
   | MultiTouchTapSpec
   | DropSpec
+  | CarrySpec
   | PasteSpec;

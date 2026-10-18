@@ -87,7 +87,7 @@ function phaseRank(spec: PhaseSpec | undefined): number {
  *    [1] mods   — count of required modifier keys (shift/alt/ctrl/meta/mod).
  *                 `'optional'` does NOT count.
  *    [2] phase  — how much the spec's `phase` narrows; see `phaseRank`.
- *    [3] exact  — per-kind tiebreak: 2 for a drop/paste spec with a
+ *    [3] exact  — per-kind tiebreak: 2 for a drop/carry/paste spec with a
  *                 non-empty `types` MIME filter, else 1.
  *
  *  Identical tuples fall back to registration order in the matcher's
@@ -102,7 +102,7 @@ export function specificity(
   // A consumer's `types: ['text/csv']` binding should win over the kit's
   // catch-all ingest binding.
   const typed =
-    (spec.kind === 'drop' || spec.kind === 'paste') &&
+    (spec.kind === 'drop' || spec.kind === 'carry' || spec.kind === 'paste') &&
     spec.types !== undefined && spec.types.length > 0
       ? 2 : 1;
   return [t, m, p, typed];

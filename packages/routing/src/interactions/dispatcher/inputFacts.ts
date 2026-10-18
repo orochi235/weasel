@@ -28,6 +28,8 @@ export function worldPointOf(event: InputEvent): { x: number; y: number } | unde
     case 'doubleclick':
     case 'contextmenu':
       return event.x !== undefined && event.y !== undefined ? { x: event.x, y: event.y } : undefined;
+    case 'carry':
+      return { x: event.x, y: event.y };
     default:
       return undefined;
   }
@@ -100,6 +102,14 @@ export function immediateParams(
         clientX: event.clientX, clientY: event.clientY,
         affordance: event.affordance,
         bodyTarget: event.bodyTarget,
+        mods: modifiersOf(event),
+        ...resolved,
+      };
+    case 'carry':
+      return {
+        worldX: event.x, worldY: event.y,
+        clientX: event.clientX, clientY: event.clientY,
+        carry: { type: event.type, value: event.value },
         mods: modifiersOf(event),
         ...resolved,
       };

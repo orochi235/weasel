@@ -135,6 +135,9 @@ export function buildInvocationCtx(
     Object.assign(base, pumpDrag(event, facts));
   } else if (event.kind === 'multitouch') {
     base.multiTouch = multiTouchOf(event, facts);
+  } else if (event.kind === 'carry') {
+    base.world = { x: event.x, y: event.y };
+    base.carry = { type: event.type, value: event.value };
   }
   return base;
 }
