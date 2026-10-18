@@ -901,6 +901,13 @@ only story runner in the repo.
   props are all supplied by the harness (`DragGhost`, `BarAction`'s `Snap`). Open:
   whether a matrix story should take args and apply them to every cell.
 
+- **(P3) Loading a story raises an unhandled "ResizeObserver loop" error.** With forge's dev
+  server running, opening `#/ui-foundations-slider--single` makes vite's terminal print
+  `[Unhandled error] Error: ResizeObserver loop completed with undelivered notifications.`,
+  once on load and again on reload (seen 2026-10-18, headless Chromium). Some ResizeObserver
+  callback changes a size it observes in the same frame. It isn't known yet which one, or
+  whether it's the Slider's or the workshop's.
+
 - **(P3) Marks are off in the workshop until annotations are a feature.** forge's
   instruments do not declare labkit's `annotations` capability, so trials show
   no Marks section and no tool rail. The removed wiring — the story as the one
