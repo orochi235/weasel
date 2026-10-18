@@ -67,14 +67,14 @@ function Grid({ mode }: { mode: SplineMode }) {
           key={r}
           d={`M ${r} 0 A ${r} ${r} 0 0 0 ${(r * Math.cos(end)).toFixed(2)} ${(-r * Math.sin(end)).toFixed(2)}`}
           fill="none"
-          stroke="rgba(255,255,255,0.06)"
+          className={s.ring}
           strokeWidth="0.3"
         />
       ))}
-      <line x1="0" y1="0" x2={RAY_LENGTH} y2="0" stroke="rgba(255,255,255,0.25)" strokeWidth="0.4" strokeDasharray="1.5 1.5" />
-      <line x1="0" y1="0" x2={endX.toFixed(2)} y2={endY.toFixed(2)} stroke="rgba(255,255,255,0.25)" strokeWidth="0.4" strokeDasharray="1.5 1.5" />
-      <text x="76" y="2" fontSize="3" fill="rgba(255,255,255,0.45)">cardinal (s = 0)</text>
-      <text x={(endX + 2).toFixed(2)} y={(endY - 1).toFixed(2)} fontSize="3" fill="rgba(255,255,255,0.45)">
+      <line x1="0" y1="0" x2={RAY_LENGTH} y2="0" className={s.ray} strokeWidth="0.4" strokeDasharray="1.5 1.5" />
+      <line x1="0" y1="0" x2={endX.toFixed(2)} y2={endY.toFixed(2)} className={s.ray} strokeWidth="0.4" strokeDasharray="1.5 1.5" />
+      <text x="76" y="2" fontSize="3" className={s.rayLabel}>cardinal (s = 0)</text>
+      <text x={(endX + 2).toFixed(2)} y={(endY - 1).toFixed(2)} fontSize="3" className={s.rayLabel}>
         {mode === 'octant' ? 'diagonal (s = 1)' : 'next cardinal (s = 1)'}
       </text>
     </>
@@ -92,14 +92,14 @@ function AnchorDot({ anchor, at, pinned, active, onPress, onDelete, onWeight }: 
 }) {
   return (
     <g>
-      <line x1="0" y1="0" x2={at.x.toFixed(2)} y2={at.y.toFixed(2)} stroke="rgba(255,255,255,0.08)" strokeWidth="0.25" />
+      <line x1="0" y1="0" x2={at.x.toFixed(2)} y2={at.y.toFixed(2)} className={s.spoke} strokeWidth="0.25" />
       <circle
         className={s.dot}
+        data-pinned={pinned || undefined}
+        data-active={active || undefined}
         cx={at.x}
         cy={at.y}
         r={active ? 2.6 : 1.5 + anchor.w * 0.7}
-        fill={active ? '#fff' : pinned ? '#3a2c1e' : '#1e1610'}
-        stroke={pinned ? '#a59685' : '#7fb069'}
         strokeWidth="0.7"
         onMouseDown={(e) => {
           e.preventDefault();
@@ -114,7 +114,7 @@ function AnchorDot({ anchor, at, pinned, active, onPress, onDelete, onWeight }: 
           onWeight(wheelWeight(anchor.w, e.deltaY));
         }}
       />
-      <text x={at.x + 2.5} y={at.y - 1.5} fontSize="2.8" fill="rgba(255,255,255,0.7)">
+      <text x={at.x + 2.5} y={at.y - 1.5} fontSize="2.8" className={s.anchorLabel}>
         {`(${anchor.s.toFixed(2)}, ${anchor.r.toFixed(1)}) w${anchor.w.toFixed(1)}`}
       </text>
     </g>
@@ -152,8 +152,7 @@ export function OctantSplineEditor({ anchors, mode, evalAtS, onAnchorChange, onA
         <Grid mode={mode} />
         <polyline
           points={samples.map((p) => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(' ')}
-          fill="rgba(127,176,105,0.18)"
-          stroke="#7fb069"
+          className={s.curve}
           strokeWidth="0.7"
           vectorEffect="non-scaling-stroke"
         />

@@ -22,7 +22,7 @@
   align-items: center;
   justify-content: center;
   padding: 16px;
-  background: rgba(255, 255, 255, 0.02);
+  background: color-mix(in srgb, var(--wzl-fg) 2%, transparent);
   border-radius: var(--wzl-radius-md);
   overflow: hidden;
 }
@@ -53,8 +53,8 @@
   gap: 6px;
   padding: 12px;
   border-radius: var(--wzl-radius-md);
-  background: rgba(127, 176, 105, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: color-mix(in srgb, var(--wzl-success) 6%, transparent);
+  border: 1px solid var(--wzl-border);
 }
 
 .sectionTitle {
@@ -88,7 +88,7 @@
   width: 22px;
   height: 22px;
   padding: 0;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid var(--wzl-border-strong);
   border-radius: var(--wzl-radius-sm);
   cursor: pointer;
   background: transparent;
@@ -147,9 +147,9 @@
   gap: 6px;
   padding: 12px;
   border-radius: var(--wzl-radius-md);
-  background: rgba(127, 176, 105, 0.18);
-  border: 1px solid rgba(127, 176, 105, 0.45);
-  box-shadow: 0 0 0 1px rgba(127, 176, 105, 0.15) inset, 0 6px 18px -8px rgba(127, 176, 105, 0.5);
+  background: color-mix(in srgb, var(--wzl-success) 18%, transparent);
+  border: 1px solid color-mix(in srgb, var(--wzl-success) 45%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--wzl-success) 15%, transparent) inset, 0 6px 18px -8px color-mix(in srgb, var(--wzl-success) 50%, transparent);
 }
 
 .effectsHead {
@@ -179,34 +179,38 @@
   margin: 0;
 }
 
+.cards {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
 .card {
   display: grid;
   grid-template-columns: 20px 1fr;
   gap: 6px;
   padding: 0;
   border-radius: var(--wzl-radius-sm);
-  background: rgba(0, 0, 0, 0.18);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--wzl-surface-sunken);
+  border: 1px solid var(--wzl-border);
   border-top: 2px solid transparent;
   border-bottom: 2px solid transparent;
   overflow: hidden;
 }
 
 .card[data-dragging] { opacity: 0.4; }
-.card[data-drop-above] { border-top-color: #7fb069; }
-.card[data-drop-below] { border-bottom-color: #7fb069; }
+.card[data-drop-above] { border-top-color: var(--wzl-success); }
+.card[data-drop-below] { border-bottom-color: var(--wzl-success); }
 
 .grip {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.04);
+  background: color-mix(in srgb, var(--wzl-fg) 4%, transparent);
   cursor: grab;
   user-select: none;
-  font-size: var(--wzl-font-size-md);
+  touch-action: none;
   opacity: 0.5;
-  writing-mode: vertical-rl;
-  letter-spacing: 2px;
 }
 
 .cardBody {
@@ -253,8 +257,8 @@
   align-items: center;
   gap: 4px;
   padding: 10px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: color-mix(in srgb, var(--wzl-fg) 3%, transparent);
+  border: 1px solid var(--wzl-border);
   border-radius: var(--wzl-radius-md);
   cursor: pointer;
   min-width: 96px;

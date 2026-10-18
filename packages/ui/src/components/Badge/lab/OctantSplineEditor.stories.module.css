@@ -7,7 +7,7 @@
 .canvas {
   width: 100%;
   aspect-ratio: 1;
-  background: #0a0806;
+  background: var(--wzl-surface-sunken);
   border-radius: var(--wzl-radius-sm);
   cursor: default;
   user-select: none;
@@ -15,7 +15,33 @@
 
 .canvas[data-dragging] { cursor: grabbing; }
 
-.dot { cursor: grab; }
+.dot {
+  cursor: grab;
+  fill: var(--wzl-surface-sunken);
+  stroke: var(--wzl-success);
+}
+
+.dot[data-pinned] {
+  fill: color-mix(in srgb, var(--wzl-warning) 25%, var(--wzl-surface-sunken));
+  stroke: var(--wzl-fg-muted);
+}
+
+.dot[data-active] { fill: var(--wzl-fg); }
+
+.ring { stroke: color-mix(in srgb, var(--wzl-fg) 6%, transparent); }
+
+.ray { stroke: color-mix(in srgb, var(--wzl-fg) 25%, transparent); }
+
+.rayLabel { fill: color-mix(in srgb, var(--wzl-fg) 45%, transparent); }
+
+.spoke { stroke: color-mix(in srgb, var(--wzl-fg) 8%, transparent); }
+
+.anchorLabel { fill: color-mix(in srgb, var(--wzl-fg) 70%, transparent); }
+
+.curve {
+  fill: color-mix(in srgb, var(--wzl-success) 18%, transparent);
+  stroke: var(--wzl-success);
+}
 
 .help {
   font-size: var(--wzl-font-size-2xs);

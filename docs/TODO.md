@@ -133,16 +133,12 @@ Priority tags:
 - **(P3) `BASELINE.md`'s text layout numbers include grouping.**
   `tests/perf/bench/text-layout.bench.ts` times layout alone now, so they need re-recording.
 
-- **(P3) What moving the Badge lab out of its stories file left.** The lab is
-  `packages/ui/src/components/Badge/lab/` now.
-  - It hand-rolls around kit components: `InlineRange` fits its range inputs, and
-    `useReorderDragList` with `DragGrip` fits the effect-card reorder, which uses HTML5 drag and a
-    text grip. Each swap changes how the lab looks or drags.
-  - Its colors are literals (`rgba(255,255,255,…)`, `#7fb069`) in the stylesheets, not `--wzl-*`
-    tokens.
-  - In the workshop at a 1500px window, the Compose lab's "Type & padding" column and effects
-    panel run past the right edge of the stage. Not compared against the lab before its text
-    moved onto the type scale.
+- **(P3) The Badge lab's Compose view overflows at 1500px.** In the workshop at a 1500px window,
+  the Compose lab's (`packages/ui/src/components/Badge/lab/`) "Type & padding" column and effects
+  panel run past the right edge of the stage. Not compared against the lab before its text moved
+  onto the type scale. Its range inputs (`InlineRange`), effect-card reorder (`useReorderDragList`
+  with `DragGrip`), and `--wzl-*` colors are unchecked in a browser since they replaced the
+  hand-rolled ones.
 
 ### Cursor package follow-ups
 
