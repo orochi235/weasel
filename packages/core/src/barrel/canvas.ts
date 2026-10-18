@@ -132,6 +132,8 @@ export type { WeaselProviderProps } from '../WeaselProvider';
 export * from '../core/layers/render';
 export { workspaceTintLayer, modeDecorationLayer } from '../features/modes/modeLayers';
 export type { WorkspaceTintLayerOptions } from '../features/modes/modeLayers';
+export { modeTriggers } from '../features/modes/modeTriggers';
+export type { ModeTriggerHandlers } from '../features/modes/modeTriggers';
 export { createChildrenLayer } from '../core/layers/children';
 export type { CreateChildrenLayerOpts } from '../core/layers/children';
 

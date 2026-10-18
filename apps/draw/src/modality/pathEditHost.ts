@@ -1,6 +1,6 @@
 import type { PathEditHost } from '@weasel-js/core';
 import type { AnchorSelection } from './anchorSelection';
-import { enterModeOn } from './doubleClickEntry';
+import { enterModeOn } from './enterModeOn';
 import type { ModeMachine } from './machine';
 
 const PATH_EDIT = 'path-edit';

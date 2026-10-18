@@ -63,14 +63,14 @@ Priority tags:
   `features`; the new word is not chosen yet. That leaves choosing it, then renaming the one path,
   its imports, and the section of the taxonomy.
 
-- **(P3) Nothing reads a mode's `entry.trigger`.** The `'double-click-target'` the definitions
-  in `packages/modes/src/presets/default.ts` declare is unread. A path with anchors is put in
-  path-edit by the kit's `enterPathEdit` binding, through draw's `PathEditHost`
-  (`apps/draw/src/modality/pathEditHost.ts`), and text-edit is entered by the edit itself
-  (`useTextEditSession`). Draw still enters isolation, and path-edit on a path with no anchors (a
-  rect), from `SceneCanvas`'s `onDoubleClick` observer through a kind-to-mode table of its own
-  (`apps/draw/src/modality/doubleClickEntry.ts`). Binding those means a double-click entry beside
-  `enterPathEdit`, and a definition does not say which hits it takes (draw's table does).
+- **(P3) A double-click never isolates a group in draw.** `modeTriggers` (core) binds each mode's
+  `entry.targets`, and `ISOLATION` targets the routing kind `'group'`, but routing classifies a
+  node by its data alone and a container's is `{}`, so under draw's inferred routing every group is
+  `'unknown'` — a double-click on one opens its topmost member path instead
+  (`apps/draw/src/modality/canvasModes.doubleClick.test.tsx` pins this). It needs routing that can
+  see `node.kind`, or a `'group'` entry draw registers. Separately, the dispatcher's
+  `classifyTarget`, and the `hitAt` dep it backs, ignore `<SceneCanvas isPointerInteractive>`,
+  which the prop's doc says excludes a node from hit-test results; draw's `canEnter` re-checks it.
 
 - **(P3) External-content ingestion — follow-ups.** The pipeline is in
   `packages/core/src/features/ingestion/` (its README is the map). Left:

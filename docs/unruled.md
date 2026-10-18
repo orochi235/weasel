@@ -48,6 +48,12 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
   memory is per scene and undo does not clear it.
 - 2026-10-14: Shift on a control handle drag keeps its angle; the handle shrinks onto its anchor
   but does not flip through it. Retract and Symmetric have no default shortcut.
+- 2026-10-18: `ModeDefinition.entry.targets` names the routing kinds a `'double-click-target'`
+  entry takes (`PATH_EDIT` `['path']`, `ISOLATION` `['group']`, `TEXT_EDIT` none), and core's
+  `modeTriggers(registry, { enter, canEnter })` binds them: ambient tier, so a tool that binds the
+  double-click itself (pen, spiro, slice finishing) now wins where draw's `onDoubleClick` observer
+  used to enter path-edit alongside it. The target is `hitAt`'s node, which ignores
+  `isPointerInteractive`, so draw's `canEnter` checks it.
 
 ## Scene, move, and history
 

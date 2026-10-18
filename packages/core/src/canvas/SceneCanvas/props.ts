@@ -591,8 +591,8 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
 
     /**
      * Called when the user double-clicks the canvas, with the hit node (id + kind) at that
-     * position, or `null` on empty canvas. Typical use: modality dispatch — enter path-edit
-     * on a path node, isolation on a group, text-edit on a text node.
+     * position, or `null` on empty canvas. A notification, not a binding: it fires whatever the
+     * double-click does. Entering a mode on the node belongs to `modeTriggers` instead.
      */
     onDoubleClick?: (hit: SceneCanvasHit | null) => void;
     /** Called on every click — a press and release without a drag — with the
