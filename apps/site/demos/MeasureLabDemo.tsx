@@ -91,7 +91,6 @@ function MeasureTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
       grid: {
         layer: createGridLayer({
           spacing,
-          bounds: () => ({ x: -2000, y: -2000, width: 4000, height: 4000 }),
           accentEvery: 5,
         }),
       },

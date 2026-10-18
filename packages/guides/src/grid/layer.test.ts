@@ -158,4 +158,44 @@ describe('createGridLayer', () => {
       expect(layer.draw(undefined, { x: 0, y: 0, scale: { x: 0, y: 1 } }, { width: 100, height: 100 })).toEqual([]);
     });
   });
+
+  describe('zoomed out', () => {
+    const RED = { paint: { kind: 'solid', color: 'red' }, width: 1 } as const;
+    const colorOf = (c: unknown) => ((c as PathDrawCommand).stroke?.paint as { color?: string }).color;
+
+    it('leaves out cell lines closer than a few pixels and lets accents carry on alone', () => {
+      const layer = createGridLayer({ spacing: 10, accentEvery: 5, style: { accent: RED } });
+      // Cells 1px apart on screen, accents 5px apart.
+      const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 0.1, y: 0.1 } }, { width: 800, height: 600 });
+      expect(tree.length).toBeGreaterThan(0);
+      expect(tree.every((c) => colorOf(c) === 'red')).toBe(true);
+      expect(tree.length).toBeLessThanOrEqual(800 / 5 + 3 + 600 / 5 + 3);
+    });
+
+    it('draws nothing once accents are that close too', () => {
+      const layer = createGridLayer({ spacing: 10, accentEvery: 5 });
+      const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 0.001, y: 0.001 } }, { width: 800, height: 600 });
+      expect(tree).toEqual([]);
+    });
+
+    it('drops subdivisions before cell lines', () => {
+      const layer = createGridLayer({
+        spacing: 10,
+        subdivisions: 4,
+        bounds: () => ({ x: 0, y: 0, width: 30, height: 30 }),
+      });
+      // Sub-lines 2.5px apart, cells 10px.
+      const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 100, height: 100 });
+      expect(tree).toHaveLength(8);
+    });
+
+    it('decides each axis by its own zoom', () => {
+      const layer = createGridLayer({ spacing: 10, bounds: () => ({ x: 0, y: 0, width: 30, height: 30 }) });
+      const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 0.1, y: 1 } }, { width: 100, height: 100 });
+      // Vertical lines would be 1px apart; the 4 horizontal ones stay.
+      const coords = (tree as PathDrawCommand[]).map((p) => (p.path as { coords: ArrayLike<number> }).coords);
+      expect(coords.every((c) => c[1] === c[3])).toBe(true);
+      expect(tree).toHaveLength(4);
+    });
+  });
 });

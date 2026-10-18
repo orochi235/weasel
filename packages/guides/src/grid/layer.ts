@@ -70,6 +70,9 @@ const DEFAULT_SUB: CommandStroke = {
   width: 1,
 };
 
+/** Closest, in CSS pixels, a line family is drawn; denser ones are left out. */
+const MIN_SCREEN_SPACING = 4;
+
 /** Build a `RenderLayer` that draws a world-space grid with optional accent lines and subdivisions. */
 export function createGridLayer(opts: GridLayerOpts): RenderLayer<unknown> {
   const line = opts.style?.line ?? DEFAULT_LINE;
@@ -113,48 +116,28 @@ export function createGridLayer(opts: GridLayerOpts): RenderLayer<unknown> {
         });
       };
 
-      // Sub-lines (drawn first so cell lines paint on top).
-      if (subdivisions && subdivisions > 1) {
-        const stepX = spacing.x / subdivisions;
-        for (let x = x0; x <= x1 + 1e-9; x += stepX) {
-          const k = Math.round((x - x0) / stepX);
-          if (k % subdivisions === 0) continue;
-          pushSegment(x, y0, x, y1, sub);
+      // One family of parallel lines `step` apart, leaving out every
+      // `skipEvery`th (the ones a coarser family draws), and none at all once
+      // they would sit closer than MIN_SCREEN_SPACING on screen.
+      const family = (axis: 'x' | 'y', step: number, skipEvery: number, s: CommandStroke): void => {
+        if (!(step * Math.abs(view.scale[axis]) >= MIN_SCREEN_SPACING)) return;
+        const [from, to] = axis === 'x' ? [x0, x1] : [y0, y1];
+        for (let k = 0; from + k * step <= to + 1e-9; k++) {
+          if (skipEvery > 0 && k % skipEvery === 0) continue;
+          const at = from + k * step;
+          if (axis === 'x') pushSegment(at, y0, at, y1, s);
+          else pushSegment(x0, at, x1, at, s);
         }
-        const stepY = spacing.y / subdivisions;
-        for (let y = y0; y <= y1 + 1e-9; y += stepY) {
-          const k = Math.round((y - y0) / stepY);
-          if (k % subdivisions === 0) continue;
-          pushSegment(x0, y, x1, y, sub);
-        }
-      }
+      };
 
-      // Cell lines (skip ones that will become accents).
-      let idx = 0;
-      for (let x = x0; x <= x1 + 1e-9; x += spacing.x) {
-        const isAccent = !!accentEvery && accentEvery > 0 && idx % accentEvery === 0;
-        if (!isAccent) pushSegment(x, y0, x, y1, line);
-        idx++;
+      const accentOn = accentEvery !== undefined && accentEvery > 0;
+      for (const axis of ['x', 'y'] as const) {
+        // Sub-lines first so cell lines paint on top, accents last of all.
+        if (subdivisions && subdivisions > 1) family(axis, spacing[axis] / subdivisions, subdivisions, sub);
       }
-      idx = 0;
-      for (let y = y0; y <= y1 + 1e-9; y += spacing.y) {
-        const isAccent = !!accentEvery && accentEvery > 0 && idx % accentEvery === 0;
-        if (!isAccent) pushSegment(x0, y, x1, y, line);
-        idx++;
-      }
-
-      // Accent lines on top.
-      if (accentEvery && accentEvery > 0) {
-        idx = 0;
-        for (let x = x0; x <= x1 + 1e-9; x += spacing.x) {
-          if (idx % accentEvery === 0) pushSegment(x, y0, x, y1, accent);
-          idx++;
-        }
-        idx = 0;
-        for (let y = y0; y <= y1 + 1e-9; y += spacing.y) {
-          if (idx % accentEvery === 0) pushSegment(x0, y, x1, y, accent);
-          idx++;
-        }
+      for (const axis of ['x', 'y'] as const) family(axis, spacing[axis], accentOn ? accentEvery : 0, line);
+      if (accentOn) {
+        for (const axis of ['x', 'y'] as const) family(axis, spacing[axis] * accentEvery, 0, accent);
       }
 
       // World-space commands; drawLayers wraps in viewToMat3 automatically.
