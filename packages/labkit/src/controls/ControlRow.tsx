@@ -326,7 +326,7 @@ function LeafRow<TC extends Record<string, unknown>>({
     );
   }
 
-  const field = labField(leaf, value, write, choices, disabled);
+  const field = labField(leaf, value, write, choices, disabled, (p) => valueAtPath(shown, p));
   if (field === null)
     return <UnwiredRow label={label} kind={leaf.kind} description={description} />;
   switch (field.kind) {
