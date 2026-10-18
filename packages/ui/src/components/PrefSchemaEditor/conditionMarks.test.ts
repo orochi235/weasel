@@ -63,12 +63,12 @@ describe('what is wrong with the conditions a schema holds, by the row that hold
     expect(found.get('fill')).toMatchObject([{ field: 'showIf', path: 'gone' }, { field: 'enableIf', path: 'nowhere' }]);
   });
 
-  it('puts the conditions of the fields inside a list\'s entry on the list', () => {
+  it('puts the conditions of the fields inside a list\'s object entry on each field\'s own row', () => {
     const root: PrefGroup = { name: 'Root', children: {
       rows: { kind: 'list', name: 'Rows', description: '', default: [], item: {
         kind: 'object', name: 'Row', description: '', default: {}, children: { on: flag({ showIf: { path: 'gone' } }) },
       } } as unknown as PrefLeaf,
     } };
-    expect([...conditionProblems(root).keys()]).toEqual(['rows']);
+    expect([...conditionProblems(root).keys()]).toEqual(['rows/on']);
   });
 });
