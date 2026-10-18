@@ -23,7 +23,7 @@ export const resizeAction: Action & { requires: string[] } = inPlane({
   // No default binding: a bare `{ kind: 'drag' }` claims every drag at ambient
   // scope. The resize handles bind it (`selectionResizeBindings`).
   eligible: { capability: 'transforms-selection' },
-  requires: ['selection', 'scene', 'resizePolicy', 'poseDescriptor', 'applyOps', 'geometryProjection', 'view', 'boundsIncludeStroke'],
+  requires: ['selection', 'scene', 'resizePolicy', 'poseDescriptor', 'applyOps', 'geometryProjection', 'view', 'boundsIncludeStroke', 'kitSettings'],
   invoker: {
     timing: 'ongoing',
     start(ctx: InvocationCtx, _opts): OngoingHandle {

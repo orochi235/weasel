@@ -126,12 +126,13 @@ export function Workspace(props: WorkspaceProps): ReactElement {
     [scene, measurements],
   );
   const ambientEntries = useMemo(() => [...ambient, measureEntry], [ambient, measureEntry]);
-  // Measurement ends snap first, within a few screen pixels, then the grid.
+  // Measurement ends snap a drawing or a move within a few screen pixels;
+  // past them, a drawing takes the grid.
   const gridSnap = grid.snapPoint;
   const perPx = 1 / (view.scale.x || 1);
   const toolOptions = useMemo(() => ({
-    snapPoint: (p: { x: number; y: number }) =>
-      nearestMeasureEnd(scene as never, measurements, p, END_SNAP_PX * perPx) ?? (gridSnap ? gridSnap(p) : p),
+    snapTargets: (p: { x: number; y: number }) => nearestMeasureEnd(scene as never, measurements, p, END_SNAP_PX * perPx),
+    ...(gridSnap ? { snapPoint: gridSnap } : {}),
   }), [scene, measurements, gridSnap, perPx]);
   const { tool: opacityScrubTool, percent: opacityScrubPercent } = useOpacityScrub({
     scene: scene as unknown as Parameters<typeof useOpacityScrub>[0]['scene'],

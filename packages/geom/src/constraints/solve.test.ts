@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { solveConstraints, unsatisfiedConstraints, type ConstraintPoint } from './solve';
+import { unsatisfiedConstraints } from './check';
+import type { ConstraintPoint } from './points';
+import { solveConstraints } from './solve';
+import { nearestOnCubic } from '../nearest';
 import type { PathConstraint } from './types';
 
 const P = (x: number, y: number): ConstraintPoint => ({ x, y });
@@ -129,6 +132,106 @@ describe('solveConstraints', () => {
     const r = solveConstraints([P(0, 0), P(100, 10)], constraints, { skip: [1] });
     expect(r.converged).toBe(true);
     expect(r.unsatisfied).toEqual([1]);
+  });
+});
+
+describe('tangent constraints', () => {
+  /** An anchor at the origin with handles that meet at a corner. */
+  const corner = (): ConstraintPoint => ({ x: 0, y: 0, inHandle: { x: -30, y: 10 }, outHandle: { x: 40, y: 15 } });
+  const angleOf = (a: ConstraintPoint) => {
+    const p = { x: a.inHandle!.x - a.x, y: a.inHandle!.y - a.y };
+    const q = { x: a.outHandle!.x - a.x, y: a.outHandle!.y - a.y };
+    return Math.atan2(p.x * q.y - p.y * q.x, p.x * q.x + p.y * q.y);
+  };
+
+  it('turns both handles of an anchor onto one line through it, their lengths left near what they were', () => {
+    const r = solveConstraints([corner()], [{ kind: 'tangent', anchor: 0 }]);
+    expect(r.converged).toBe(true);
+    const [a] = r.points;
+    expect(Math.abs(Math.abs(angleOf(a)) - Math.PI)).toBeLessThan(1e-5);
+    expect(Math.hypot(a.inHandle!.x, a.inHandle!.y) / Math.hypot(30, 10)).toBeCloseTo(1, 0);
+    expect(Math.hypot(a.outHandle!.x, a.outHandle!.y) / Math.hypot(40, 15)).toBeCloseTo(1, 0);
+    expect(a.x).toBe(0);
+  });
+
+  it('turns only the free handle when the other is held', () => {
+    const r = solveConstraints([corner()], [{ kind: 'tangent', anchor: 0 }], { heldHandles: [{ anchor: 0, side: 'out' }] });
+    expect(r.converged).toBe(true);
+    const [a] = r.points;
+    expect(a.outHandle).toEqual({ x: 40, y: 15 });
+    expect(Math.abs(Math.abs(angleOf(a)) - Math.PI)).toBeLessThan(1e-5);
+  });
+
+  it('carries the handles with an anchor another constraint moves', () => {
+    const points = [corner(), P(100, 20)];
+    const r = solveConstraints(points, [{ kind: 'tangent', anchor: 0 }, { kind: 'horizontal', segment: [0, 1] }], { held: [1] });
+    expect(r.converged).toBe(true);
+    const [a] = r.points;
+    expect(a.y).toBeCloseTo(20, 4);
+    expect(Math.abs(Math.abs(angleOf(a)) - Math.PI)).toBeLessThan(1e-5);
+  });
+
+  it('cannot hold on an anchor missing a handle', () => {
+    const r = solveConstraints([{ x: 0, y: 0, outHandle: { x: 10, y: 0 } }], [{ kind: 'tangent', anchor: 0 }]);
+    expect(r.converged).toBe(false);
+    expect(r.unsatisfied).toEqual([0]);
+  });
+
+  it('is unsatisfied while the handles meet at a corner', () => {
+    expect(unsatisfiedConstraints([corner()], [{ kind: 'tangent', anchor: 0 }])).toEqual([0]);
+    const smooth = { x: 0, y: 0, inHandle: { x: -30, y: -15 }, outHandle: { x: 20, y: 10 } };
+    expect(unsatisfiedConstraints([smooth], [{ kind: 'tangent', anchor: 0 }])).toEqual([]);
+  });
+});
+
+describe('onPath constraints', () => {
+  /** A curved segment from anchor 1 to anchor 2, and anchor 0 off it. */
+  const curve = (): ConstraintPoint[] => [
+    P(40, 30),
+    { x: 0, y: 0, outHandle: { x: 30, y: -40 } },
+    { x: 100, y: 0, inHandle: { x: 70, y: -40 } },
+  ];
+  const offCurve = (pts: ConstraintPoint[]) => {
+    const [p, a, b] = pts;
+    return nearestOnCubic(p.x, p.y, a.x, a.y, a.outHandle!.x, a.outHandle!.y, b.inHandle!.x, b.inHandle!.y, b.x, b.y).dist;
+  };
+  const ON: PathConstraint = { kind: 'onPath', anchor: 0, segment: [1, 2] };
+  const ENDS: PathConstraint[] = [{ kind: 'fixed', anchor: 1 }, { kind: 'fixed', anchor: 2 }];
+
+  it('puts an anchor on a curved segment', () => {
+    const r = solveConstraints(curve(), [ON, ...ENDS]);
+    expect(r.converged).toBe(true);
+    expect(offCurve(r.points)).toBeLessThan(1e-4);
+    expect(r.points[1]).toEqual(curve()[1]);
+  });
+
+  it('slides a held anchor onto the segment rather than moving the segment to it', () => {
+    const r = solveConstraints(curve(), [ON], { held: [0] });
+    expect(r.converged).toBe(true);
+    expect(offCurve(r.points)).toBeLessThan(1e-4);
+    expect(dist(r.points[1], P(0, 0))).toBeLessThan(0.5);
+    expect(dist(r.points[2], P(100, 0))).toBeLessThan(0.5);
+  });
+
+  it('stops an anchor at the end of its segment', () => {
+    const pts = curve();
+    pts[0] = P(160, 10);
+    const r = solveConstraints(pts, [ON, ...ENDS]);
+    expect(r.converged).toBe(true);
+    expect(dist(r.points[0], P(100, 0))).toBeLessThan(1e-4);
+  });
+
+  it('reads a segment with no handles as the straight line between its ends', () => {
+    const r = solveConstraints([P(40, 30), P(0, 0), P(100, 0)], [ON, ...ENDS]);
+    expect(r.points[0].x).toBeCloseTo(40, 4);
+    expect(r.points[0].y).toBeCloseTo(0, 4);
+  });
+
+  it('is unsatisfied off its segment and satisfied on it', () => {
+    expect(unsatisfiedConstraints(curve(), [ON])).toEqual([0]);
+    const on = curve();
+    on[0] = P(50, -30);
+    expect(unsatisfiedConstraints(on, [ON])).toEqual([]);
   });
 });
 

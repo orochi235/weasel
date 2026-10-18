@@ -1,32 +1,39 @@
 /**
  * A damped Gauss-Newton solve for anchor constraints: from the state an edit
- * left, the smallest weighted move of the anchors that makes every residual
- * zero. Each step is the minimum-norm solution of the linearized system,
- * `Δ = -M Jᵀ (J M Jᵀ + λI)⁻¹ r`, where `M` weighs how freely each anchor may
- * move; λ grows when a step makes things worse and shrinks when it helps,
- * which is the Levenberg-Marquardt schedule run on the constraint side.
+ * left, the smallest weighted move of the anchors and handles that makes
+ * every residual zero. Each step is the minimum-norm solution of the
+ * linearized system, `Δ = -M Jᵀ (J M Jᵀ + λI)⁻¹ r`, where `M` weighs how
+ * freely each coordinate may move; λ grows when a step makes things worse and
+ * shrinks when it helps, which is the Levenberg-Marquardt schedule run on the
+ * constraint side.
+ *
+ * A handle is a coordinate of its own only where a `tangent` reads it; any
+ * other rides with its anchor, as an offset nothing changes.
  */
 
-import { solveDense } from './linear';
-import { frameAt, residualRows, writeResiduals, type ConstraintFrame } from './residuals';
-import { constraintAnchors, constraintFits, type AnchorPair, type PathConstraint } from './types';
-
-/** A point the solver reads and writes. */
-export interface ConstraintPoint {
-  x: number;
-  y: number;
-}
-
-/** The residual, in the path's units, under which a constraint counts as holding. */
-export const CONSTRAINT_TOLERANCE = 1e-3;
+import { CONSTRAINT_TOLERANCE, collapsedBy, unsatisfiedConstraints } from './check';
+import { constraintApplies, pack, unpack, type ConstraintPoint, type HandleRef } from './points';
+import {
+  frameAt, handleAt, nearestParam, residualRows, spaceSize, writeResiduals, type ResidualSpace,
+} from './residuals';
+import { NormalSystem } from './sparse';
+import { constraintAnchors, type PathConstraint } from './types';
 
 /** How freely a held anchor moves, against 1 for any other: it gives way only when nothing else can. */
 const HELD_MOBILITY = 1e-3;
+
+/** How freely a held anchor an `onPath` binds moves: it slides onto its segment, which barely moves. */
+const SLIDE_MOBILITY = 1e3;
+
+/** How freely an `onPath` parameter moves, over the square of its segment's chord: freely enough that the anchor slides along before anything bends. */
+const PARAM_MOBILITY = 1e6;
 
 /** Options for {@link solveConstraints}. */
 export interface SolveConstraintsOptions {
   /** Anchors the edit put where they are — the dragged ones. They move only when no other anchor can satisfy the constraints. */
   held?: Iterable<number>;
+  /** Handles the edit put where they are, held the way `held` holds anchors. */
+  heldHandles?: Iterable<HandleRef>;
   /** Where each anchor was before the edit, which is where a `fixed` constraint keeps it. Default: where it is now. */
   reference?: readonly (ConstraintPoint | undefined)[];
   /** Radians the frame `horizontal` and `vertical` read is turned from the world's axes. Default 0. */
@@ -41,7 +48,7 @@ export interface SolveConstraintsOptions {
 
 /** What {@link solveConstraints} answers. */
 export interface SolveConstraintsResult {
-  /** Every anchor, moved. */
+  /** Every anchor, moved, with its handles. */
   points: ConstraintPoint[];
   /** Whether every constraint the solve took holds within its tolerance. */
   converged: boolean;
@@ -54,106 +61,139 @@ interface Row {
   c: PathConstraint;
   /** First residual row. */
   at: number;
-  /** Coordinates the constraint reads that may move. */
-  vars: number[];
+  /** Where an `onPath` constraint's parameter sits in the coordinates; -1 for any other. */
+  param: number;
 }
 
 interface System {
   rows: Row[];
   m: number;
-  n: number;
+  space: ResidualSpace;
+  normal: NormalSystem;
+  pinned: Set<number>;
   mobility: Float64Array;
-  frame: ConstraintFrame;
+  /** Coordinates: the points', then a parameter per `onPath`. */
+  size: number;
 }
 
 function residualsOf(sys: System, x: Float64Array): Float64Array {
   const r = new Float64Array(sys.m);
-  for (const row of sys.rows) writeResiduals(row.c, x, sys.frame, r, row.at);
+  for (const row of sys.rows) writeResiduals(row.c, x, sys.space, r, row.at, undefined, row.param);
   return r;
 }
 
-/** Central differences, one constraint at a time over only the coordinates it reads. */
-function jacobianOf(sys: System, x: Float64Array): Float64Array {
-  const j = new Float64Array(sys.m * sys.n);
-  const plus = new Float64Array(2);
-  const minus = new Float64Array(2);
+/** Load the analytic Jacobian at `x` into the normal system. */
+function loadJacobian(sys: System, x: Float64Array): void {
+  const { normal, space } = sys;
+  normal.clear();
+  const scratch = new Float64Array(2);
   for (const row of sys.rows) {
-    const rows = residualRows(row.c);
-    for (const v of row.vars) {
-      const h = 1e-6 * (1 + Math.abs(x[v]));
-      const keep = x[v];
-      x[v] = keep + h;
-      writeResiduals(row.c, x, sys.frame, plus, 0);
-      x[v] = keep - h;
-      writeResiduals(row.c, x, sys.frame, minus, 0);
-      x[v] = keep;
-      for (let k = 0; k < rows; k++) j[(row.at + k) * sys.n + v] = (plus[k] - minus[k]) / (2 * h);
-    }
+    writeResiduals(row.c, x, space, scratch, 0, (k, v, d) => normal.add(row.at + k, v, d), row.param);
   }
-  return j;
 }
 
-/** The damped minimum-norm step for residuals `r` and Jacobian `j`, or null when it cannot be taken. */
-function stepOf(sys: System, j: Float64Array, r: Float64Array, lambda: number): Float64Array | null {
-  const { m, n, mobility } = sys;
-  const a = new Float64Array(m * m);
-  for (let p = 0; p < m; p++) {
-    for (let q = p; q < m; q++) {
-      let s = 0;
-      for (let v = 0; v < n; v++) s += j[p * n + v] * mobility[v] * j[q * n + v];
-      a[p * m + q] = s;
-      a[q * m + p] = s;
-    }
-    a[p * m + p] += lambda;
-  }
-  const y = solveDense(a, Float64Array.from(r), m);
-  if (!y) return null;
-  const delta = new Float64Array(n);
-  for (let v = 0; v < n; v++) {
-    if (mobility[v] === 0) continue;
-    let s = 0;
-    for (let p = 0; p < m; p++) s += j[p * n + v] * y[p];
-    delta[v] = -mobility[v] * s;
-  }
-  return delta;
+/**
+ * The damped minimum-norm step for residuals `r` at the loaded Jacobian, or
+ * null when it cannot be taken. A parameter at an end of its segment that the
+ * step would push past it is held there, and the step taken again without it.
+ */
+function stepOf(sys: System, x: Float64Array, r: Float64Array, lambda: number): Float64Array | null {
+  const y = sys.normal.solve(r, lambda);
+  const delta = y && sys.normal.step(y);
+  if (!delta) return null;
+  const stuck = sys.rows.filter(({ param: p }) =>
+    p >= 0 && sys.mobility[p] > 0 && ((x[p] <= 0 && delta[p] < 0) || (x[p] >= 1 && delta[p] > 0)));
+  if (stuck.length === 0) return delta;
+  const keep = stuck.map(({ param }) => sys.mobility[param]);
+  for (const { param } of stuck) sys.mobility[param] = 0;
+  const again = sys.normal.solve(r, lambda);
+  const out = again && sys.normal.step(again);
+  stuck.forEach(({ param }, k) => { sys.mobility[param] = keep[k]; });
+  return out;
 }
 
 const sumSq = (r: Float64Array) => r.reduce((s, v) => s + v * v, 0);
 const maxAbs = (r: Float64Array) => r.reduce((s, v) => Math.max(s, Math.abs(v)), 0);
 
+/** The coordinates `c` reads, its parameter at `param`. */
+function coordinatesOf(c: PathConstraint, count: number, param: number): number[] {
+  if (c.kind === 'tangent') {
+    const h = handleAt(count, c.anchor);
+    return [h, h + 1, h + 2, h + 3];
+  }
+  const anchors = constraintAnchors(c).flatMap((i) => [2 * i, 2 * i + 1]);
+  if (c.kind !== 'onPath') return anchors;
+  const out = handleAt(count, c.segment[0]) + 2;
+  const inn = handleAt(count, c.segment[1]);
+  return [...anchors, out, out + 1, inn, inn + 1, param];
+}
+
+/** How freely each coordinate moves: anchors and the handles a tangent reads, the held ones at `heldMobility`, pinned ones not at all. */
+function mobilityOf(
+  points: readonly ConstraintPoint[],
+  active: readonly PathConstraint[],
+  opts: SolveConstraintsOptions,
+  heldMobility: number,
+  pinned: ReadonlySet<number>,
+): Float64Array {
+  const count = points.length;
+  const params = active.filter((c): c is PathConstraint & { kind: 'onPath' } => c.kind === 'onPath');
+  const mobility = new Float64Array(spaceSize(count) + params.length);
+  mobility.fill(1, 0, 2 * count);
+  const held = new Set(opts.held ?? []);
+  for (const i of held) {
+    if (i >= 0 && i < count) mobility.fill(heldMobility, 2 * i, 2 * i + 2);
+  }
+  params.forEach((c, k) => {
+    const [a, b] = c.segment.map((i) => points[i]);
+    mobility[spaceSize(count) + k] = PARAM_MOBILITY / ((b.x - a.x) ** 2 + (b.y - a.y) ** 2 + 1e-6);
+    if (held.has(c.anchor)) mobility.fill(SLIDE_MOBILITY, 2 * c.anchor, 2 * c.anchor + 2);
+  });
+  for (const i of pinned) mobility.fill(0, 2 * i, 2 * i + 2);
+  for (const c of active) {
+    if (c.kind === 'tangent') mobility.fill(1, handleAt(count, c.anchor), handleAt(count, c.anchor) + 4);
+  }
+  for (const { anchor, side } of opts.heldHandles ?? []) {
+    if (anchor < 0 || anchor >= count) continue;
+    const h = handleAt(count, anchor) + (side === 'out' ? 2 : 0);
+    if (mobility[h] > 0) mobility.fill(heldMobility, h, h + 2);
+  }
+  return mobility;
+}
+
 function buildSystem(
-  count: number,
+  points: readonly ConstraintPoint[],
   constraints: readonly PathConstraint[],
   opts: SolveConstraintsOptions,
   heldMobility: number,
-): System & { pinned: Set<number> } {
+): System {
+  const count = points.length;
   const skip = new Set(opts.skip ?? []);
-  const active = constraints.filter((c, i) => !skip.has(i) && constraintFits(c, count));
+  const active = constraints.filter((c, i) => !skip.has(i) && constraintApplies(c, points));
   const pinned = new Set(active.flatMap((c) => (c.kind === 'fixed' ? [c.anchor] : [])));
-  const mobility = new Float64Array(2 * count).fill(1);
-  for (const i of opts.held ?? []) {
-    if (i >= 0 && i < count) mobility.fill(heldMobility, 2 * i, 2 * i + 2);
-  }
-  for (const i of pinned) mobility.fill(0, 2 * i, 2 * i + 2);
+  const mobility = mobilityOf(points, active, opts, heldMobility, pinned);
   const rows: Row[] = [];
-  let m = 0;
+  const rowCols: Int32Array[] = [];
+  let size = spaceSize(count);
   for (const c of active) {
     const height = residualRows(c);
     if (height === 0) continue;
-    const vars = [...new Set(constraintAnchors(c).flatMap((i) => [2 * i, 2 * i + 1]))]
-      .filter((v) => mobility[v] > 0);
-    rows.push({ c, at: m, vars });
-    m += height;
+    const param = c.kind === 'onPath' ? size++ : -1;
+    rows.push({ c, at: rowCols.length, param });
+    const vars = Int32Array.from(coordinatesOf(c, count, param));
+    for (let k = 0; k < height; k++) rowCols.push(vars);
   }
-  return { rows, m, n: 2 * count, mobility, frame: frameAt(opts.axisAngle), pinned };
+  const normal = new NormalSystem(rowCols, mobility);
+  return { rows, m: rowCols.length, space: { frame: frameAt(opts.axisAngle), count }, normal, pinned, mobility, size };
 }
 
 /**
  * Move `points` the least that makes `constraints` hold. Anchors named by a
  * `fixed` constraint go back to `reference` and stay there; `held` anchors
- * stay where they are when the rest can satisfy the constraints, and give way
- * as little as they must when not. When the constraints cannot all hold,
- * `converged` is false and `unsatisfied` names the ones that do not.
+ * and `heldHandles` stay where they are when the rest can satisfy the
+ * constraints, and give way as little as they must when not. When the
+ * constraints cannot all hold, `converged` is false and `unsatisfied` names
+ * the ones that do not.
  */
 export function solveConstraints(
   points: readonly ConstraintPoint[],
@@ -161,8 +201,9 @@ export function solveConstraints(
   opts: SolveConstraintsOptions = {},
 ): SolveConstraintsResult {
   const held = [...(opts.held ?? [])];
-  const withHeld = { ...opts, held };
-  if (held.length > 0) {
+  const heldHandles = [...(opts.heldHandles ?? [])];
+  const withHeld = { ...opts, held, heldHandles };
+  if (held.length > 0 || heldHandles.length > 0) {
     const still = solveWith(points, constraints, withHeld, 0);
     if (still.converged) return still;
   }
@@ -176,25 +217,27 @@ function solveWith(
   heldMobility: number,
 ): SolveConstraintsResult {
   const { maxIterations = 100, tolerance = 1e-7 } = opts;
-  const sys = buildSystem(points.length, constraints, opts, heldMobility);
-  const x = new Float64Array(sys.n);
-  points.forEach((p, i) => {
-    const at = sys.pinned.has(i) ? opts.reference?.[i] ?? p : p;
-    x[2 * i] = at.x;
-    x[2 * i + 1] = at.y;
-  });
+  const sys = buildSystem(points, constraints, opts, heldMobility);
+  const x = new Float64Array(sys.size);
+  x.set(pack(points, (i) => (sys.pinned.has(i) ? opts.reference?.[i] ?? points[i] : points[i])));
+  for (const row of sys.rows) {
+    if (row.c.kind === 'onPath') x[row.param] = nearestParam(row.c, x, points.length);
+  }
 
   let r = residualsOf(sys, x);
   let lambda = 1e-6;
   let iterations = 0;
   while (maxAbs(r) > tolerance && iterations < maxIterations && lambda < 1e12) {
     iterations++;
-    const j = jacobianOf(sys, x);
+    loadJacobian(sys, x);
     const before = sumSq(r);
     for (; lambda < 1e12; lambda *= 10) {
-      const delta = stepOf(sys, j, r, lambda);
+      const delta = stepOf(sys, x, r, lambda);
       if (!delta) continue;
       const next = x.map((v, i) => v + delta[i]);
+      for (const row of sys.rows) {
+        if (row.param >= 0) next[row.param] = Math.min(1, Math.max(0, next[row.param]));
+      }
       const rn = residualsOf(sys, next);
       if (sumSq(rn) < before) {
         x.set(next);
@@ -205,7 +248,7 @@ function solveWith(
     }
   }
 
-  const out = points.map((_, i) => ({ x: x[2 * i], y: x[2 * i + 1] }));
+  const out = unpack(x, points);
   const skipped = new Set(opts.skip ?? []);
   const collapsed = collapsedBy(points, out, constraints, skipped);
   const unsatisfied = [...new Set([
@@ -218,92 +261,4 @@ function solveWith(
     iterations,
     unsatisfied,
   };
-}
-
-/** The anchor pairs `c` measures as segments. */
-function segmentsOf(c: PathConstraint): AnchorPair[] {
-  switch (c.kind) {
-    case 'fixed':
-    case 'coincident': return [];
-    case 'horizontal':
-    case 'vertical':
-    case 'length': return [c.segment];
-    default: return [...c.segments];
-  }
-}
-
-/**
- * Constraints the solve satisfied only by shrinking a segment they name to a
- * point — horizontal and vertical on one segment both hold once its ends meet.
- * That is a conflict, not a solution. A pair a constraint means to join, by
- * `coincident` or a zero `length`, is exempt.
- */
-function collapsedBy(
-  from: readonly ConstraintPoint[],
-  to: readonly ConstraintPoint[],
-  constraints: readonly PathConstraint[],
-  skipped: ReadonlySet<number>,
-): number[] {
-  const key = ([a, b]: AnchorPair) => (a < b ? `${a},${b}` : `${b},${a}`);
-  const joined = new Set(constraints.flatMap((c) =>
-    c.kind === 'coincident' ? [key(c.anchors)]
-      : c.kind === 'length' && c.length <= CONSTRAINT_TOLERANCE ? [key(c.segment)] : []));
-  const len = (p: readonly ConstraintPoint[], [a, b]: AnchorPair) => Math.hypot(p[b].x - p[a].x, p[b].y - p[a].y);
-  const out: number[] = [];
-  constraints.forEach((c, i) => {
-    if (skipped.has(i) || !constraintFits(c, from.length)) return;
-    const shrunk = segmentsOf(c).some((s) =>
-      !joined.has(key(s)) && len(from, s) > 10 * CONSTRAINT_TOLERANCE && len(to, s) <= CONSTRAINT_TOLERANCE);
-    if (shrunk) out.push(i);
-  });
-  return out;
-}
-
-/** Options for {@link unsatisfiedConstraints}. */
-export interface UnsatisfiedConstraintsOptions {
-  axisAngle?: number;
-  /** Where a `fixed` anchor belongs. Absent, a `fixed` constraint always holds. */
-  reference?: readonly (ConstraintPoint | undefined)[];
-  /** Default {@link CONSTRAINT_TOLERANCE}. */
-  tolerance?: number;
-}
-
-/**
- * Indices of the constraints that do not hold for `points`: a residual past
- * the tolerance, or an anchor index the points do not have.
- */
-export function unsatisfiedConstraints(
-  points: readonly ConstraintPoint[],
-  constraints: readonly PathConstraint[],
-  opts: UnsatisfiedConstraintsOptions = {},
-): number[] {
-  const { tolerance = CONSTRAINT_TOLERANCE, reference } = opts;
-  const frame = frameAt(opts.axisAngle);
-  const x = new Float64Array(2 * points.length);
-  points.forEach((p, i) => {
-    x[2 * i] = p.x;
-    x[2 * i + 1] = p.y;
-  });
-  const r = new Float64Array(2);
-  const out: number[] = [];
-  constraints.forEach((c, i) => {
-    if (!constraintFits(c, points.length)) {
-      out.push(i);
-      return;
-    }
-    if (c.kind === 'fixed') {
-      const at = reference?.[c.anchor];
-      const p = points[c.anchor];
-      if (at && Math.hypot(at.x - p.x, at.y - p.y) > tolerance) out.push(i);
-      return;
-    }
-    writeResiduals(c, x, frame, r, 0);
-    for (let k = 0; k < residualRows(c); k++) {
-      if (Math.abs(r[k]) > tolerance) {
-        out.push(i);
-        return;
-      }
-    }
-  });
-  return out;
 }

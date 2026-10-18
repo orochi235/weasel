@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { boundsOfPath, rectPath } from '@weasel-js/geom';
 import type { ImmediateInvoker, InvocationCtx, OngoingHandle, OngoingInvoker } from '@weasel-js/routing';
 import {
-  createScene, derivedDepOf, derivedPartsOf, effectivePose, moveAction, type NodeId, PATH_EFFECT_DERIVATIONS, pathEffectOf, pathEffectParts, type RectPose, type Scene, sceneFromJSON, withPathEffectsRegistry,
+  createScene, derivedDepOf, derivedPartsOf, effectivePose, moveAction, RIGID_POSE_COMPOSITION, type NodeId, PATH_EFFECT_DERIVATIONS, pathEffectOf, pathEffectParts, type RectPose, type Scene, sceneFromJSON, withPathEffectsRegistry,
 } from '@weasel-js/core';
 import { blendAction, bendAlongAction, editPathEffectAction, expandPathEffectAction, repeatAlongAction } from './actions';
 
@@ -112,6 +112,74 @@ describe('blend', () => {
   });
 });
 
+describe('a blend spaced by distance', () => {
+  it('puts a step every `distance` from the first source, as many as fit short of the second', () => {
+    const { scene, deps, selected } = setup(['a', 'b']);
+    // Middles at 10 and 210: a run of 200.
+    run(blendAction, deps, { spaceBy: 'distance', distance: 60 });
+    const middles = partsOf(scene, selected()[0]!).map((p) => {
+      const b = boundsOfPath(p.path);
+      return b.x + b.width / 2;
+    });
+    expect(middles.map((x) => Math.round(x * 1000) / 1000)).toEqual([70, 130, 190]);
+    // Far enough apart that none fits.
+    run(editPathEffectAction, deps, { ids: selected(), distance: 250 });
+    expect(partsOf(scene, selected()[0]!)).toBeNull();
+    // Back to its count.
+    run(editPathEffectAction, deps, { ids: selected(), spaceBy: 'count' });
+    expect(partsOf(scene, selected()[0]!)).toHaveLength(4);
+  });
+});
+
+describe('a blend along a spine', () => {
+  const middleOf = (path: Parameters<typeof boundsOfPath>[0]) => {
+    const b = boundsOfPath(path);
+    return { x: Math.round(b.x + b.width / 2), y: Math.round(b.y + b.height / 2), width: Math.round(b.width), height: Math.round(b.height) };
+  };
+
+  it('lays its steps along a third selected path, and follows it', () => {
+    const { scene, deps, selected } = setup(['a', 'b', 'spine']);
+    run(blendAction, deps, { steps: 3, rotate: false });
+    const id = selected()[0]!;
+    expect(scene.get(id as NodeId)!.dependsOn).toEqual(['a', 'b', 'spine']);
+    // The spine runs (0,100)-(200,100).
+    expect(partsOf(scene, id).map((p) => middleOf(p.path))).toMatchObject([
+      { x: 50, y: 100 }, { x: 100, y: 100 }, { x: 150, y: 100 },
+    ]);
+    scene.setPose('spine' as NodeId, { x: 0, y: 300, width: 200, height: 0 });
+    expect(middleOf(partsOf(scene, id)[1]!.path)).toMatchObject({ x: 100, y: 300 });
+  });
+
+  it('turns its steps to the spine with orient', () => {
+    const { scene, deps, selected } = setup(['a', 'b', 'spine']);
+    // A spine running down, across a run that goes right.
+    scene.setPose('spine' as NodeId, { x: 0, y: 0, width: 0, height: 200 });
+    scene.update('spine' as NodeId, { data: {
+      ...(scene.get('spine' as NodeId)!.data as object),
+      path: { kind: 'polygon', commands: new Uint8Array([0, 1]), coords: new Float32Array([0, 0, 0, 200]), fillRule: 'nonzero' },
+    } });
+    scene.setPose('b' as NodeId, { x: 200, y: 0, width: 60, height: 20 });
+    run(blendAction, deps, { steps: 1, rotate: false });
+    const id = selected()[0]!;
+    expect(middleOf(partsOf(scene, id)[0]!.path)).toEqual({ x: 0, y: 100, width: 40, height: 20 });
+    run(editPathEffectAction, deps, { ids: [id], orient: true });
+    expect(middleOf(partsOf(scene, id)[0]!.path)).toEqual({ x: 0, y: 100, width: 20, height: 40 });
+  });
+
+  it('spaces by distance along the spine', () => {
+    const { scene, deps, selected } = setup(['a', 'b', 'spine']);
+    run(blendAction, deps, { spaceBy: 'distance', distance: 90 });
+    expect(partsOf(scene, selected()[0]!).map((p) => middleOf(p.path).x)).toEqual([90, 180]);
+  });
+
+  it('paints nothing while its spine is gone', () => {
+    const { scene, deps, selected } = setup(['a', 'b', 'spine']);
+    run(blendAction, deps, { steps: 2 });
+    const node = scene.get(selected()[0] as NodeId)!;
+    expect(pathEffectParts(node, [derivedDepOf(scene, 'a' as NodeId), derivedDepOf(scene, 'b' as NodeId), undefined])).toBeNull();
+  });
+});
+
 describe('bend and repeat along a path', () => {
   it('bends the first selected shape along the second', () => {
     const { scene, deps, selected } = setup(['a', 'spine']);
@@ -147,6 +215,48 @@ describe('expand', () => {
     expect(made.map((n) => n.pose.x)).toEqual([-10, 90, 190]);
     scene.undo();
     expect(scene.get(effect as NodeId)).toBeDefined();
+  });
+});
+
+describe('in a scene whose containers compose frames', () => {
+  /** `a` in a container at (200,100) turned a quarter, `b` at the root. */
+  function framedSetup() {
+    const scene: TestScene = createScene<unknown, 'default', RectPose>({
+      systemLayers: [{ id: 'default' }],
+      registry: withPathEffectsRegistry(),
+      composition: RIGID_POSE_COMPOSITION,
+      initial: [
+        { id: 'g' as NodeId, kind: 'container', layer: 'default', pose: { x: 200, y: 100, width: 100, height: 100, rotation: Math.PI / 2 }, data: {} },
+        { ...box('a', 0, '#ff0000'), pose: { x: 0, y: 0, width: 20, height: 10 }, parent: 'g' as NodeId },
+        { ...box('b', 95, '#0000ff'), pose: { x: 95, y: 100, width: 10, height: 20 } },
+        { ...box('c', 80, '#00ff00'), pose: { x: 80, y: 40, width: 20, height: 10 }, parent: 'g' as NodeId },
+      ],
+    });
+    let current: string[] = [];
+    const selection = { get: () => current, set: (next: string[]) => { current = next; } };
+    const deps = { scene, selection } as unknown as InvocationCtx['deps'];
+    return { scene, deps, select: (ids: string[]) => { current = ids; }, selected: () => current };
+  }
+
+  it('makes a blend of two shapes in one container inside it', () => {
+    const { scene, deps, select, selected } = framedSetup();
+    select(['a', 'c']);
+    run(blendAction, deps, { steps: 1 });
+    expect(scene.get(selected()[0] as NodeId)!.parent).toBe('g');
+  });
+
+  it('expands a blend across frames where its steps are painted', () => {
+    const { scene, deps, select, selected } = framedSetup();
+    select(['a', 'b']);
+    run(blendAction, deps, { steps: 1, rotate: false });
+    expect(scene.get(selected()[0] as NodeId)!.parent).toBeNull();
+    run(expandPathEffectAction, deps);
+    // a is painted 10 wide by 20 tall about (295,110), b about (100,110).
+    const [copy] = selected().map((id) => scene.get(id as NodeId)!);
+    expect(copy!.pose.x).toBeCloseTo(192.5, 3);
+    expect(copy!.pose.y).toBeCloseTo(100, 3);
+    expect(copy!.pose.width).toBeCloseTo(10, 3);
+    expect(copy!.pose.height).toBeCloseTo(20, 3);
   });
 });
 

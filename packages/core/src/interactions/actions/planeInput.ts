@@ -202,12 +202,12 @@ function livePlane(
         ...(at.also ? { also: alsoFromPlane(at.also, m) } : {}),
       };
     };
-    const toPaths = snap.toPaths;
+    const toTargets = snap.toTargets;
     override('snap', {
       point: (p: Point, at?: SnapQuery) => toPlane(map(), snap.point(fromPlane(map(), p), query(at))),
-      ...(toPaths ? {
-        toPaths: (p: Point, at?: SnapQuery) => {
-          const hit = toPaths(fromPlane(map(), p), query(at));
+      ...(toTargets ? {
+        toTargets: (p: Point, at?: SnapQuery) => {
+          const hit = toTargets(fromPlane(map(), p), query(at));
           return hit && toPlane(map(), hit);
         },
       } : {}),

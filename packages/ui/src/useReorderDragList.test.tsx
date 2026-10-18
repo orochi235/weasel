@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { render, fireEvent } from '@testing-library/react';
 import type { RefCallback } from 'react';
 import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
+import { KitSettingsProvider } from '@weasel-js/react';
 import { useReorderDragList, type ReorderItem, type PressModifiers, type ReorderDragState } from './useReorderDragList';
 
 const ITEMS: ReorderItem[] = [
@@ -57,12 +58,13 @@ function stubGeometry(container: HTMLElement) {
   });
 }
 
-function setup(items: ReorderItem[] = ITEMS, selectedIds: string[] = []) {
+function setup(items: ReorderItem[] = ITEMS, selectedIds: string[] = [], dragPx?: number) {
   const onReorder = vi.fn();
   const onPress = vi.fn();
   const onRowClick = vi.fn();
   const view = render(
     <Harness items={items} selectedIds={selectedIds} onReorder={onReorder} onPress={onPress} onRowClick={onRowClick} />,
+    dragPx === undefined ? undefined : { wrapper: ({ children }) => <KitSettingsProvider value={{ gestures: { dragPx } }}>{children}</KitSettingsProvider> },
   );
   const list = view.getByTestId('list');
   list.setPointerCapture = vi.fn();
@@ -290,6 +292,18 @@ describe('useReorderDragList', () => {
     expect(list.releasePointerCapture).toHaveBeenCalledWith(1);
     release(999);
     expect(onReorder).not.toHaveBeenCalled();
+  });
+});
+
+describe('useReorderDragList threshold', () => {
+  it('engages only past the gestures.dragPx kit setting', () => {
+    const { row } = setup(ITEMS, [], 40);
+    press(row('a'), 16);
+    move(46);
+    expect(latest.draggedIds).toBeNull();
+    move(60);
+    expect(latest.draggedIds).toEqual(['a']);
+    release(60);
   });
 });
 

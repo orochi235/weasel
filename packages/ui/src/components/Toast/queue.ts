@@ -1,6 +1,6 @@
 import { UNSTABLE_ToastQueue } from 'react-aria-components';
 import { flushSync } from 'react-dom';
-import { prefersReducedMotion } from '../../reducedMotion';
+import { prefersReducedMotion } from '@weasel-js/react';
 
 /** Severity of a toast, driving its accent color and icon. */
 export type ToastTone = 'info' | 'success' | 'warning' | 'error';

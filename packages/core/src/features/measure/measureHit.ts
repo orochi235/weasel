@@ -48,7 +48,8 @@ export function measureAt(
 /**
  * The measurement end nearest `p` within `tolerance` world units, or null —
  * what a snap rule offers other tools so they can start or end on one.
- * Compose it ahead of a grid: `p => nearestMeasureEnd(…) ?? toGrid(p)`.
+ * Hand it to `<SceneCanvas toolOptions={{ snapTargets }}>`, where the drawing
+ * tools, a move and an anchor drag all reach it.
  */
 export function nearestMeasureEnd(
   scene: Pick<AnyScene, 'renderOrderNodes' | 'get' | 'layers'>,
