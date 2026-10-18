@@ -797,10 +797,17 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   Headless Playwright sends no such event, so this is unverified. Check on a real Windows or
   Linux Chrome; if it reproduces, the likely fix is for the keydown to suppress the native event.
 
-- **(P4) A headless-component layer shared by DOM and WebGL chrome.** The context-menu model
-  splits state, keyboard and placement from drawing so one menu renders in both. Generalize that
-  split (focus, roving highlight, placement, a measure/draw contract) so buttons, lists and other
-  chrome can draw on either substrate from one behavior.
+- **(P4) A headless-component layer shared by DOM and WebGL chrome.** The context menu already
+  runs one behavior on both substrates: `@weasel-js/menu` holds its state, keys, typeahead and
+  placement, ui's `MenuPanel` and hud's `drawPanel` draw it, and a hud widget's `accessibleTree`
+  is the substrate-neutral description its DOM mirror is built from. Generalizing that so buttons,
+  lists and other chrome draw on either substrate is several arcs: the roving highlight and
+  typeahead as a list behavior not typed to `MenuEntry` (`keys.ts`'s `step`/`firstRow`,
+  `typeahead.ts`); focus that means one thing whether it is DOM focus or `hud.focus`; a
+  measure/draw contract a DOM component and a hud widget both implement; then porting a button and
+  a list onto it. **Open decision before the first arc: where the layer lives.** A new package
+  (it needs nothing else from weasel, so it qualifies, and needs a first publish) or
+  `@weasel-js/menu` widened and renamed; the first arc moves the list behavior out of `menu` either way.
 
 - **(P3) Some boxes still leave the stroke out.** `drawnBoundsOf` (`canvas/drawnBounds.ts`) is the
   box a stroked shape is shown and measured with, and `<SceneCanvas>`'s chrome, resize, rotate,
