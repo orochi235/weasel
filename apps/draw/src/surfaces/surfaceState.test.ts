@@ -26,9 +26,9 @@ beforeAll(() => {
 });
 
 describe('SURFACE_ASSETS', () => {
-  it('lists Arrange, Pathfinder, and Path as toolbars, then the four sidebar panels', () => {
+  it('lists Arrange, Pathfinder, Path, and Loupe as toolbars, then the four sidebar panels', () => {
     expect(SURFACE_ASSETS.map((a) => [a.id, a.defaultSurface])).toEqual([
-      ['arrange', 'bar'], ['pathfinder', 'bar'], ['path', 'bar'],
+      ['arrange', 'bar'], ['pathfinder', 'bar'], ['path', 'bar'], ['loupe', 'bar'],
       ['properties', 'panel'], ['colors', 'panel'], ['layers', 'panel'], ['history', 'panel'],
     ]);
   });

@@ -1,5 +1,6 @@
 import { pref, type PrefGroup } from '@weasel-js/prefs';
 import { LayersPanel } from '../LayersPanel';
+import { LOUPE_SCHEMA, useLoupeBinding } from '../LoupeProvider';
 import { ColorsPanel, HistoryPanel, PropertiesPanel } from '../sidebarPanels';
 import type { SurfaceAsset, SurfaceKind } from './types';
 
@@ -29,6 +30,7 @@ export const SURFACE_ASSETS: readonly SurfaceAsset[] = [
   { id: 'arrange', label: 'Arrange', schema: ARRANGE, surfaces: ALL, defaultSurface: 'bar' },
   { id: 'pathfinder', label: 'Pathfinder', schema: PATHFINDER, surfaces: ALL, defaultSurface: 'bar' },
   { id: 'path', label: 'Path', schema: PATH, surfaces: ALL, defaultSurface: 'bar' },
+  { id: 'loupe', label: 'Loupe', schema: LOUPE_SCHEMA, useBinding: useLoupeBinding, surfaces: ALL, defaultSurface: 'bar' },
   {
     id: 'properties', label: 'Properties', surfaces: ['panel'], defaultSurface: 'panel',
     render: (host, chrome) => <PropertiesPanel host={host} chrome={chrome} />,

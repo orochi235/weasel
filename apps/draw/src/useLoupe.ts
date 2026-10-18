@@ -1,46 +1,46 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { drawOneLayer, useLatest } from '@weasel-js/core';
 import type { RenderLayer, SceneCanvasApi } from '@weasel-js/core';
 import type { Hud } from '@weasel-js/hud';
 import { createLoupe, type LoupeHandle, type LoupeMode } from '@weasel-js/hud';
 
-export interface UseLoupeOptions {
-  /** Called with the hex a click inside the lens picked. */
-  onPick?: (hex: string) => void;
-}
-
-export interface LoupeController {
+/** What the lens is told to be: whoever owns these drives it. */
+export interface LoupeSettings {
   visible: boolean;
   mode: LoupeMode;
   factor: number;
-  /** Hex under the aim point, read off the framebuffer. Null until the
-   *  pointer has moved over the canvas with the loupe showing. */
-  color: string | null;
-  toggle(): void;
-  setMode(mode: LoupeMode): void;
-  setFactor(factor: number): void;
 }
 
+/** What the lens reports back. */
+export interface LoupeEvents {
+  /** The hex under the aim point, read off the framebuffer. */
+  onColorChange(hex: string): void;
+  /** Called with the hex a click inside the lens picked. */
+  onPick?(hex: string): void;
+  /** The lens was closed from its own chrome. */
+  onClose(): void;
+}
+
+/** A loupe over `ref`'s canvas, kept to `settings`. Mount only once `ref` is populated: `createLoupe` reads it in a
+ *  mount effect and does not retry. */
 export function useLoupe(
   ref: { current: SceneCanvasApi | null },
   hud: Hud,
   source: RenderLayer<unknown>[],
-  opts: UseLoupeOptions = {},
-): LoupeController {
+  settings: LoupeSettings,
+  events: LoupeEvents,
+): void {
   const handle = useRef<LoupeHandle | null>(null);
-  const [visible, setVisible] = useState(false);
-  const [mode, setModeState] = useState<LoupeMode>('vector');
-  const [factor, setFactorState] = useState(8);
-  const [color, setColor] = useState<string | null>(null);
 
   // One stable layer delegating to the current `source`. Depending on
   // `source` directly would rebuild the loupe — losing position, size and
   // visibility — whenever the app re-memoizes a layer.
   const sourceRef = useLatest(source);
 
-  // Same reason as `source`: a fresh handler each render must not rebuild the
-  // loupe and lose its position, size and visibility.
-  const onPickRef = useLatest(opts.onPick);
+  // Same reason as `source`: fresh handlers or settings each render must not
+  // rebuild the loupe and lose its position and size.
+  const eventsRef = useLatest(events);
+  const settingsRef = useLatest(settings);
   const stableSource = useRef<RenderLayer<unknown>[]>([{
     id: 'loupe-source',
     label: 'Loupe source',
@@ -55,32 +55,27 @@ export function useLoupe(
   useEffect(() => {
     const api = ref.current;
     if (!api?.surface) return;
+    const { mode, factor, visible } = settingsRef.current;
     const loupe = createLoupe({
       hud,
       canvas: api.surface,
       ...(api.element ? { input: api.element } : {}),
       source: stableSource,
+      mode,
+      factor,
       requestRedraw: () => api.requestRedraw(),
       contentVersion: () => api.getPaintedVersion(),
-      onColorChange: setColor,
-      onPick: (hex) => onPickRef.current?.(hex),
-      onClose: () => { handle.current?.window.setHidden(true); setVisible(false); },
+      onColorChange: (hex) => eventsRef.current.onColorChange(hex),
+      onPick: (hex) => eventsRef.current.onPick?.(hex),
+      onClose: () => eventsRef.current.onClose(),
     });
-    loupe.window.setHidden(true);
+    loupe.window.setHidden(!visible);
     handle.current = loupe;
     return () => { loupe.dispose(); handle.current = null; };
-  }, [hud, onPickRef, ref, stableSource]);
+  }, [hud, eventsRef, settingsRef, ref, stableSource]);
 
-  return {
-    visible, mode, factor, color,
-    toggle() {
-      const loupe = handle.current;
-      if (!loupe) return;
-      const next = !visible;
-      loupe.window.setHidden(!next);
-      setVisible(next);
-    },
-    setMode(next) { handle.current?.setMode(next); setModeState(next); },
-    setFactor(next) { handle.current?.setFactor(next); setFactorState(next); },
-  };
+  const { visible, mode, factor } = settings;
+  useEffect(() => { handle.current?.window.setHidden(!visible); }, [visible]);
+  useEffect(() => { handle.current?.setMode(mode); }, [mode]);
+  useEffect(() => { handle.current?.setFactor(factor); }, [factor]);
 }

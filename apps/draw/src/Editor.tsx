@@ -16,7 +16,7 @@ import { PAPER_PRESETS } from './docPersistence';
 import { ANNOTATION_LAYER, type DrawScene } from './drawDocument';
 import { EditorStatusBar } from './EditorStatusBar';
 import { showFirstRunNotice } from './firstRunNotice';
-import { LoupeControls } from './LoupeControls';
+import { LoupeProvider } from './LoupeProvider';
 import { DRAW_MENU_BAR } from './menuBar';
 import type { UseModalityReturn } from './modality/useModality';
 import { useLoupeSource } from './pageLayers';
@@ -63,7 +63,7 @@ export function Editor({ scene, selection, modality }: EditorProps): ReactElemen
   const [measurements] = useState(() => createMeasurements({ layer: ANNOTATION_LAYER }));
 
   // `useHud` and `createLoupe` both read the canvas handle in a mount effect
-  // and neither retries, so the loupe chrome can only mount once the handle
+  // and neither retries, so the loupe's lens can only mount once the handle
   // exists — which is a render later than this component's first, because
   // `<SceneCanvas>` waits on the host's measured size.
   const canvasRef = useRef<SceneCanvasApi | null>(null);
@@ -82,106 +82,104 @@ export function Editor({ scene, selection, modality }: EditorProps): ReactElemen
 
   return (
     <ActiveToolContextProvider>
-      <div className="wd-app">
-        <MenuBar schema={DRAW_MENU_BAR} label="Menu bar" className="wd-menubar" />
-        <Toolbar
-          scene={scene}
-          selection={selection}
-          paperSize={doc.paperSize}
-          setPaperSize={doc.setPaperSize}
-          filename={doc.filename}
-          setFilename={doc.setFilename}
-          backgroundColor={doc.backgroundColor}
-          setBackgroundColor={doc.setBackgroundColor}
-          cornerSelection={modality.cornerSelection}
-        />
-        <PreferencesModal open={prefsOpen} onClose={() => setPrefsOpen(false)} registryEnumSources={prefSources} />
-        <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
-        <ContextMenuHost />
-        {/* Permanently reserved, never mounted on demand: the canvas is sized
-            to the workspace, so appearing mid-edit would resize it under the
-            caret. Empty until a text edit is in progress. */}
-        <CharacterOptions style={textEdit.effectiveStyle} onPatch={textEdit.applyStyleToSelection}>
-          {canvasReady && (
-            <LoupeControls canvasRef={canvasRef} source={loupeSource} />
-          )}
-        </CharacterOptions>
-        <div className="wd-body">
-          <Sidebar side="left" className="wd-sidebar left" ariaLabel="Tools">
-            {tools && (
-              <ToolPalette
-                tools={tools}
-                include={isCoreTool}
-                orientation="vertical"
-                lookupShortcut={(id) => lookupShortcutByToolId(id, actionsReg?.list() ?? [])}
-                modeRegistry={modality.machine.registry}
-              />
-            )}
-            <ActiveSwatches />
-          </Sidebar>
-          <Sidebar side="left" className="wd-sidebar left path" ariaLabel="Path tools">
-            {tools && (
-              <ToolPalette
-                tools={tools}
-                include={isPathTool}
-                ariaLabel="Path tools"
-                groupOrder={PATH_TOOL_GROUPS}
-                orientation="vertical"
-                lookupShortcut={(id) => lookupShortcutByToolId(id, actionsReg?.list() ?? [])}
-                modeRegistry={modality.machine.registry}
-              />
-            )}
-          </Sidebar>
-          <Workspace
+      <LoupeProvider canvasRef={canvasRef} ready={canvasReady} source={loupeSource}>
+        <div className="wd-app">
+          <MenuBar schema={DRAW_MENU_BAR} label="Menu bar" className="wd-menubar" />
+          <Toolbar
             scene={scene}
             selection={selection}
-            measurements={measurements}
-            modality={modality}
-            hostRef={hostRef}
-            textEdit={textEdit}
-            view={view}
-            onViewChange={setView}
             paperSize={doc.paperSize}
+            setPaperSize={doc.setPaperSize}
+            filename={doc.filename}
+            setFilename={doc.setFilename}
             backgroundColor={doc.backgroundColor}
-            onToolsCreated={setTools}
-            onCanvas={attachCanvas}
-            openPrefs={openPrefs}
-            openPalette={openPalette}
+            setBackgroundColor={doc.setBackgroundColor}
+            cornerSelection={modality.cornerSelection}
           />
-          <ResizeHandle
-            value={rightSidebar.width}
-            min={rightSidebar.min}
-            max={rightSidebar.max}
-            invert
-            onInput={rightSidebar.onInput}
-            onChange={rightSidebar.onChange}
-            ariaLabel="Resize properties sidebar"
-          />
-          <Sidebar
-            side="right"
-            className="wd-sidebar right"
-            ariaLabel="Properties"
-            // Width lives in a custom property so app.css keeps ownership of the
-            // clamp; only the number crosses the boundary.
-            style={{ '--wd-right-width': `${rightSidebar.width}px` } as CSSProperties}
-          >
-            <RightSidebar
+          <PreferencesModal open={prefsOpen} onClose={() => setPrefsOpen(false)} registryEnumSources={prefSources} />
+          <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
+          <ContextMenuHost />
+          {/* Permanently reserved, never mounted on demand: the canvas is sized
+              to the workspace, so appearing mid-edit would resize it under the
+              caret. Empty until a text edit is in progress. */}
+          <CharacterOptions style={textEdit.effectiveStyle} onPatch={textEdit.applyStyleToSelection} />
+          <div className="wd-body">
+            <Sidebar side="left" className="wd-sidebar left" ariaLabel="Tools">
+              {tools && (
+                <ToolPalette
+                  tools={tools}
+                  include={isCoreTool}
+                  orientation="vertical"
+                  lookupShortcut={(id) => lookupShortcutByToolId(id, actionsReg?.list() ?? [])}
+                  modeRegistry={modality.machine.registry}
+                />
+              )}
+              <ActiveSwatches />
+            </Sidebar>
+            <Sidebar side="left" className="wd-sidebar left path" ariaLabel="Path tools">
+              {tools && (
+                <ToolPalette
+                  tools={tools}
+                  include={isPathTool}
+                  ariaLabel="Path tools"
+                  groupOrder={PATH_TOOL_GROUPS}
+                  orientation="vertical"
+                  lookupShortcut={(id) => lookupShortcutByToolId(id, actionsReg?.list() ?? [])}
+                  modeRegistry={modality.machine.registry}
+                />
+              )}
+            </Sidebar>
+            <Workspace
               scene={scene}
               selection={selection}
               measurements={measurements}
-              filename={doc.filename}
-              setFilename={doc.setFilename}
-              backgroundColor={doc.backgroundColor}
-              setBackgroundColor={doc.setBackgroundColor}
+              modality={modality}
+              hostRef={hostRef}
+              textEdit={textEdit}
+              view={view}
+              onViewChange={setView}
               paperSize={doc.paperSize}
-              setPaperSize={doc.setPaperSize}
-              docSelected={doc.docSelected}
-              setDocSelected={doc.setDocSelected}
+              backgroundColor={doc.backgroundColor}
+              onToolsCreated={setTools}
+              onCanvas={attachCanvas}
+              openPrefs={openPrefs}
+              openPalette={openPalette}
             />
-          </Sidebar>
+            <ResizeHandle
+              value={rightSidebar.width}
+              min={rightSidebar.min}
+              max={rightSidebar.max}
+              invert
+              onInput={rightSidebar.onInput}
+              onChange={rightSidebar.onChange}
+              ariaLabel="Resize properties sidebar"
+            />
+            <Sidebar
+              side="right"
+              className="wd-sidebar right"
+              ariaLabel="Properties"
+              // Width lives in a custom property so app.css keeps ownership of the
+              // clamp; only the number crosses the boundary.
+              style={{ '--wd-right-width': `${rightSidebar.width}px` } as CSSProperties}
+            >
+              <RightSidebar
+                scene={scene}
+                selection={selection}
+                measurements={measurements}
+                filename={doc.filename}
+                setFilename={doc.setFilename}
+                backgroundColor={doc.backgroundColor}
+                setBackgroundColor={doc.setBackgroundColor}
+                paperSize={doc.paperSize}
+                setPaperSize={doc.setPaperSize}
+                docSelected={doc.docSelected}
+                setDocSelected={doc.setDocSelected}
+              />
+            </Sidebar>
+          </div>
+          <EditorStatusBar scene={scene} selection={selection} view={view} machine={modality.machine} />
         </div>
-        <EditorStatusBar scene={scene} selection={selection} view={view} machine={modality.machine} />
-      </div>
+      </LoupeProvider>
     </ActiveToolContextProvider>
   );
 }
