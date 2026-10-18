@@ -12,6 +12,7 @@ import type { View } from 'core/viewport/view';
 import type { Scene } from 'core/scene/types';
 import type { DrawnBoxes } from 'interactions/actions/drawnBoxes';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
+import type { OriginProjection } from 'interactions/gestures/shared/originProjection';
 import type { SnapOutcomeStore } from 'features/snap/outcomeStore';
 import type { SnapSourceRegistry } from 'features/snap/registry';
 import { sceneSession2d } from 'features/snap/sceneSession2d';
@@ -38,6 +39,8 @@ export interface SnapSessionSources {
   reachPx?: number;
   /** How a node's rotation is read, for angle targets. */
   poseDescriptor?: PoseDescriptor<unknown>;
+  /** How a pose's origin is read, for the `origin` probe. */
+  originProjection?: OriginProjection<unknown>;
   /** The canvas's debug sink, read when a session begins: each frame's
    *  candidates are recorded into it. */
   debug?: () => DebugSink | null | undefined;
@@ -86,6 +89,7 @@ export function useSnapDepSource(
         view: () => viewRef.current,
         reachPx: s.reachPx ?? kitSettings.get('targets.snapPx') ?? DEFAULT_SNAP_PX,
         ...(s.poseDescriptor ? { poseDescriptor: s.poseDescriptor } : {}),
+        ...(s.originProjection ? { originProjection: s.originProjection } : {}),
         ...(debug ? { debug } : {}),
         store,
       });

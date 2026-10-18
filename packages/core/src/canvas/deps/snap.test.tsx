@@ -8,12 +8,14 @@ import { drawnBoxes } from 'interactions/actions/drawnBoxes';
 import type { SnapDep } from 'interactions/actions/snapDep';
 import { createSnapOutcomeStore } from 'features/snap/outcomeStore';
 import type { SnapSource } from 'features/snap/types';
+import type { OriginProjection } from 'interactions/gestures/shared/originProjection';
 import { useSnapDepSource, type SnapSessionSources } from './snap';
 
 afterEach(() => { cleanup(); });
 
 const FREE = { suspend: false, constrain: false };
 const scene = createScene({ systemLayers: [{ id: 'main' }] }) as unknown as Scene<unknown, string, unknown>;
+const box = scene.add({ kind: 'leaf', layer: 'main', data: {}, pose: { x: 10, y: 20, width: 10, height: 10 } } as never) as string;
 
 function snapDepOf(session: Omit<SnapSessionSources, 'scene' | 'boxes'>): SnapDep {
   let reg!: DepRegistry;
@@ -51,5 +53,17 @@ describe('the snap dep', () => {
     ]);
     s.end();
     expect(sink.snapshot().snap).toEqual([]);
+  });
+
+  it('reads the origin probe through the canvas\'s origin projection', () => {
+    const seen: { x: number; y: number }[] = [];
+    const spy: SnapSource = { id: 'spy', roles: ['origin'], collect(q) { seen.push(...q.probes.map((p) => p.at)); return []; } };
+    const center: OriginProjection<unknown> = {
+      getOrigin: (p) => { const r = p as { x: number; y: number; width: number; height: number }; return { x: r.x + r.width / 2, y: r.y + r.height / 2 }; },
+      translate: (p) => p,
+    };
+    const snap = snapDepOf({ sources: [spy], originProjection: center });
+    snap.begin({ gesture: 'move', ids: [box], press: { x: 12, y: 22 } }).at({ x: 12, y: 22 }, FREE);
+    expect(seen).toEqual([{ x: 15, y: 25 }]);
   });
 });

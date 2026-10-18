@@ -7,6 +7,7 @@ import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { PlaneMap } from 'core/viewport/parallax';
 import type { SnapReadoutStyle } from './readoutLayer';
 import type { SnapGeometry, SnapMods } from 'interactions/actions/snapDep';
+import type { OriginProjection } from 'interactions/gestures/shared/originProjection';
 
 type Point = { x: number; y: number };
 
@@ -164,6 +165,10 @@ export interface SceneCanvasSnap {
   /** The reach of a source that sets none, in screen px. Default: the kit
    *  setting `targets.snapPx`. */
   reachPx?: number;
+  /** How a pose's origin is read, for the `origin` probe a grid or a ruler
+   *  guide snaps: a pose neither a rect nor a `Path` needs its own. Default
+   *  `AUTO_ORIGIN_PROJECTION`. */
+  originProjection?: OriginProjection<unknown>;
   /** Whether the snap marks are drawn. Default `true`. */
   readout?: boolean;
   /** The readout's default colors and line width, for a mark that sets no `color`. */
