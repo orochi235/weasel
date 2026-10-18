@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { useEffect, type ReactNode } from 'react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { useDepRegistry } from '@weasel-js/routing/react';
+import { KitSettingsProvider, type KitSettingsOverrides } from '@weasel-js/react';
 import { SceneCanvas } from 'canvas/SceneCanvas';
 import type { FeaturePreset } from 'canvas/SceneCanvas/features';
 import { pathFromD } from '@weasel-js/geom';
@@ -40,15 +41,19 @@ function Contribute({ source }: { source: SnapSource }) {
   return null;
 }
 
-function mount(children: ReactNode, props: Record<string, unknown>, paths: readonly string[] = []) {
+function mount(
+  children: ReactNode, props: Record<string, unknown>, paths: readonly string[] = [], settings: KitSettingsOverrides = {},
+) {
   const scene = createScene<unknown, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
   for (const d of paths) scene.add({ kind: 'leaf', layer: 'main', data: {}, pose: pathFromD(d) } as never);
   const got: { snap?: SnapDep } = {};
   render(
-    <SceneCanvas scene={scene} width={200} height={200} {...props}>
-      <Grab into={got} />
-      {children}
-    </SceneCanvas>,
+    <KitSettingsProvider value={settings}>
+      <SceneCanvas scene={scene} width={200} height={200} {...props}>
+        <Grab into={got} />
+        {children}
+      </SceneCanvas>
+    </KitSettingsProvider>,
   );
   return got.snap!;
 }
@@ -78,6 +83,15 @@ describe('<SceneCanvas snap>', () => {
     const snap = mount(null, { snap: { sources: [pointAt('prop', { x: 40, y: 40 }, [])], reachPx: 2 } });
     const s = snap.begin({ gesture: 'point', press: { x: 0, y: 0 } });
     expect(s.at({ x: 38, y: 43 }, FREE).point).toEqual({ x: 38, y: 43 });
+  });
+
+  it('takes its reach from the kit setting targets.snapPx, which the prop overrides', () => {
+    const source = pointAt('prop', { x: 40, y: 40 }, []);
+    const tight = { targets: { snapPx: 2 } };
+    const at = (snap: SnapDep) => snap.begin({ gesture: 'point', press: { x: 0, y: 0 } }).at({ x: 38, y: 43 }, FREE).point;
+    expect(at(mount(null, { snap: { sources: [source] } }, [], tight))).toEqual({ x: 38, y: 43 });
+    expect(at(mount(null, { snap: { sources: [source], reachPx: 8 } }, [], tight)))
+      .toEqual({ x: expect.closeTo(40, 9), y: expect.closeTo(40, 9) });
   });
 
   it('keeps one source per id: the last one listed', () => {

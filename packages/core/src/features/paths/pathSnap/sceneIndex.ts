@@ -18,12 +18,17 @@ export interface SceneSnapIndex {
 
 /** Indexes every leaf of `scene` with geometry (`nodeSnapGeometry`), but
  *  hidden ones (`nodeGates`) and those on an annotation layer, once per scene
- *  version, and again when a query brings geometry of its own. */
+ *  version, and again when a query brings geometry of its own. The scene
+ *  alone and the scene with the last `also` are cached apart, so a query
+ *  without geometry does not evict a gesture's. */
 export function createSceneSnapIndexer(scene: SnapScene): (also?: SnapGeometry) => SceneSnapIndex {
-  let cached: { version: number; layers: unknown; also: SnapGeometry | undefined; built: SceneSnapIndex } | null = null;
+  type Slot = { version: number; layers: unknown; also: SnapGeometry | undefined; built: SceneSnapIndex };
+  const slots: { bare: Slot | null; also: Slot | null } = { bare: null, also: null };
   return (also) => {
     const version = scene.getVersion();
     const layers = scene.layers;
+    const key = also ? 'also' : 'bare';
+    const cached = slots[key];
     if (cached?.version === version && cached.layers === layers && cached.also === also) return cached.built;
     const notes = new Set(layers.filter(isAnnotationLayer).map((l) => l.id));
     const gates = nodeGates({ layers, get: (id) => scene.nodes.get(id) });
@@ -45,7 +50,7 @@ export function createSceneSnapIndexer(scene: SnapScene): (also?: SnapGeometry) 
       paths.push({ kind: 'polygon', commands: new Uint8Array(), coords: new Float32Array(), fillRule: 'nonzero' });
     }
     const built = { ids, index: createPathSnapIndex(paths, extra) };
-    cached = { version, layers, also, built };
+    slots[key] = { version, layers, also, built };
     return built;
   };
 }

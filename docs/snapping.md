@@ -19,7 +19,7 @@ A gesture never talks to a source. It hands the session the point the dispatcher
 back the point it should use. Points are ctx coordinates: world in 2D, screen in a 3D host.
 
 Gestures that snap: move, resize, rotate, insert (drag and click-place), pen and spiro placement,
-pen handles, anchor and handle drags in path edit, measure, and the symmetry center.
+pen handles, anchor and handle drags in path edit, measure, and the symmetry center and axis.
 
 ## The model
 
@@ -49,7 +49,7 @@ A **candidate** is one locus offered for one probe. Since a move shifts every pr
 |---|---|
 | move, point gesture | the whole plane |
 | Shift (`snap.constrain`) on a move or an anchor drag | the line through the press at the nearest multiple of 45° |
-| Shift on a line insert, a measurement, a rotate | the nearest multiple of 15° (`SNAP_ANGLE_STEP`) about the start or pivot |
+| Shift on a line insert, a measurement, a rotate, a symmetry axis | the nearest multiple of 15° (`SNAP_ANGLE_STEP`) about the start or pivot |
 | Shift on a pen handle | the nearest multiple of 45° about its anchor |
 | Shift on a resize corner | the box's diagonal through the fixed corner |
 | resize edge handle | the handle's axis |
@@ -58,9 +58,9 @@ A **candidate** is one locus offered for one probe. Since a move shifts every pr
 Snapping within `H` is an intersection, so a constraint and a snap never disagree: Shift on a
 line insert lands where the 15° line meets a guide.
 
-A rotate (and a pen handle, path-tools' handle snap) runs the same resolver in one dimension:
-`δ` is an angle, targets are angles, and reach is turned into radians through the press's distance
-from the pivot, capped at 30° near the pivot.
+A rotate, the symmetry axis, and a control handle under path-tools' handle snap run the same
+resolver in one dimension: `δ` is an angle, targets are angles, and reach is turned into radians
+through the press's distance from the pivot, capped at 30° near the pivot.
 
 ## Ranking
 
@@ -81,7 +81,7 @@ within reach at the combined `δ` — and ranks the combinations by these keys, 
    and the combination whose lowest numbers come first wins.
 
 A candidate may be `required`: the result must meet one, whatever its reach (Shift's angle steps
-are required). Each probe keeps its 24 nearest in-reach candidates.
+are required). Each probe keeps its 24 nearest in-reach candidates, and every required one.
 
 The marks drawn are those of every in-reach candidate the result meets, not only the winning
 combination's: when three siblings share the edge you landed on, all three lines show.
@@ -216,7 +216,9 @@ the last frame, filled where the result met it.
 ## 3D
 
 The resolver is written over n-vectors, so a 3D host uses the same sources, ranking and marks with
-`Vec3` points. kernel3d's `createSnap(world, { sources, reachPx, store })` is its `snap` dep:
+`Vec3` points. kernel3d's `createSnap(world, { sources, reachPx, kitSettings, store })` is its
+`snap` dep, reading its reach from `targets.snapPx` in `kitSettings` and asking one source per id
+as a canvas does:
 
 - A move's `H` is the plane through the subject perpendicular to `up`, the plane `translate`
   already moves on; an insert snaps the pointer on the ground plane.
@@ -253,3 +255,5 @@ Calls made in the design, kept so they are not re-argued by accident:
 - Container slots and layout drops are not snapping: they decide which parent a node joins, and
   stay move behaviors (2026-10-17), running after the snap on the snapped delta (2026-10-18).
 - Old snap APIs were removed, not wrapped (2026-10-17).
+- The symmetry axis turns through a `rotate` session about its center, so it meets quarter turns
+  and other nodes' angles without Shift and draws the angle readout (2026-10-18).

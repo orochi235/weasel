@@ -5,16 +5,7 @@ import { viewToTransform } from 'core/viewport/view';
 import { worldToScreen } from 'core/viewport/viewTransform';
 import type { SnapOutcomeStore } from './outcomeStore';
 import { glyphCommands, measuredSegmentCommands } from './readoutDraw';
-
-/** The snap readout's colors and line width, for a mark that sets no `color`. */
-export interface SnapReadoutStyle {
-  /** Points, lines and their labels. Default orange, as the path marker. */
-  color?: string;
-  /** Gap and distance marks. Default blue, as the guides. */
-  gapColor?: string;
-  /** Stroke width in screen px. Default 1. */
-  lineWidth?: number;
-}
+import type { SnapReadoutStyle } from './types';
 
 const TICK = 6;
 

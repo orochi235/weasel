@@ -16,6 +16,7 @@ import { reparentOnDrop } from './behaviors/reparentOnDrop';
 import { buildGestureContext, captureFrames, capturePlaneRefs, captureStartPoses } from './capture';
 import { moveGestureAdapter, type MoveGestureAdapter } from './gestureAdapter';
 import type { SnapSession } from '../snapDep';
+import { lazySnapSession } from 'features/snap/lazySession';
 
 /** Allowed values for the `reparentOnDrop` binding param. `'off'` (the
  *  default) preserves the legacy translate-only commit. `'top'` lands the
@@ -60,7 +61,8 @@ export interface MoveSession {
   /** Read at release: a binding's params may be a thunk. */
   readonly reparentOnDrop: () => ReparentOnDrop;
   readonly dragThresholdPx: number;
-  /** The drag's snapping; null when the `snap` dep runs no sessions. */
+  /** The drag's snapping, begun once the drag passes its threshold; null
+   *  with no `snap` dep. */
   readonly snap: SnapSession | null;
   /** The press, in the coordinates the drag's delta is measured in. */
   readonly press: { x: number; y: number };
@@ -161,7 +163,7 @@ export function beginMove(
     nodeAtPoint: ctx.deps.nodeAtPoint,
     reparentOnDrop: () => (resolveParams(opts?.params)?.['reparentOnDrop'] as ReparentOnDrop | undefined) ?? 'off',
     dragThresholdPx,
-    snap: ctx.deps.snap?.begin({ gesture: 'move', ids, press, constrain: 'axis' }) ?? null,
+    snap: lazySnapSession(ctx.deps.snap, { gesture: 'move', ids, press, constrain: 'axis' }),
     press,
   };
   return { session, readers };

@@ -104,6 +104,12 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   measurement's ends.
 - 2026-10-18: A move's behaviors run on the snapped delta and their translate stands, so a
   container's slot preview wins over a snap target in reach.
+- 2026-10-18: The symmetry axis knob and a repeat's step handle turn through a `rotate` session:
+  they snap to quarter turns and other nodes' angles without Shift (new), Shift keeps the 15°
+  steps, Ctrl suspends, and the angle readout draws. With no `snap` dep they do not snap at all,
+  Shift included.
+- 2026-10-18: Where a move's `geometry` probe sits, the subject's own geometry nearest the press,
+  is looked for within the canvas's reach (`targets.snapPx` or `snap.reachPx`), not a fixed 8px.
 - 2026-10-18: Snap ties break by source order, then by the order a source yields its targets. A
   point target on the gesture's own `origin` is never offered.
 - 2026-10-18: The snap session factory is test-only (`createSnapSession2dForTests` in

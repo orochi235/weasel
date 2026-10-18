@@ -80,14 +80,15 @@ export function useSnapDepSource(
       const sources = withDefaults([...s.sources, ...(s.registry?.list() ?? [])], s.omit);
       const wantsGeometry = snapSourcesFor(sources, req.gesture).some((src) => src.roles.includes('geometry'));
       const debug = s.debug?.() ?? undefined;
+      const reachPx = s.reachPx ?? kitSettings.get('targets.snapPx') ?? DEFAULT_SNAP_PX;
       return sceneSession2d({
         req,
         scene: s.scene,
         boxes: s.boxes(),
         sources,
-        ...(wantsGeometry ? { geometryAt: (press: Point, ids: readonly string[]) => ownGeometryAt(s.scene, press, ids, view?.scale ?? { x: 1, y: 1 }) } : {}),
+        ...(wantsGeometry ? { geometryAt: (press: Point, ids: readonly string[]) => ownGeometryAt(s.scene, press, ids, view?.scale ?? { x: 1, y: 1 }, reachPx) } : {}),
         view: () => viewRef.current,
-        reachPx: s.reachPx ?? kitSettings.get('targets.snapPx') ?? DEFAULT_SNAP_PX,
+        reachPx,
         ...(s.poseDescriptor ? { poseDescriptor: s.poseDescriptor } : {}),
         ...(s.originProjection ? { originProjection: s.originProjection } : {}),
         ...(debug ? { debug } : {}),

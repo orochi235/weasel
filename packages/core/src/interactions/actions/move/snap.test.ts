@@ -11,7 +11,7 @@ import { sceneSession2d } from 'features/snap/sceneSession2d';
 import type { SnapSource } from 'features/snap/types';
 import { ownGeometryAt, pathSnapSource } from 'features/paths/pathSnap/pathSnapSource';
 import { drawnBoxes } from '../drawnBoxes';
-import type { SnapDep } from '../snapDep';
+import type { SnapBegin, SnapDep } from '../snapDep';
 import type { GroupTransform, MoveBehavior } from '../../gestures/types';
 import { snapToContainer } from './behaviors/snapToContainer';
 import { moveAction } from './action';
@@ -51,11 +51,15 @@ function rig(sources: readonly SnapSource[], build: (scene: AnyScene) => string[
   const scene = createScene<object, 'main', unknown>({ systemLayers: [{ id: 'main' }] }) as unknown as AnyScene;
   const ids = build(scene);
   const store = createSnapOutcomeStore();
+  const begun: SnapBegin[] = [];
   const snap: SnapDep = {
-    begin: (req) => sceneSession2d({
-      req, scene, boxes: drawnBoxes({ scene }), sources, view: () => VIEW, reachPx: 8, store,
-      geometryAt: (press, own) => ownGeometryAt(scene, press, own, VIEW.scale),
-    }),
+    begin: (req) => {
+      begun.push(req);
+      return sceneSession2d({
+        req, scene, boxes: drawnBoxes({ scene }), sources, view: () => VIEW, reachPx: 8, store,
+        geometryAt: (press, own) => ownGeometryAt(scene, press, own, VIEW.scale),
+      });
+    },
   };
   const deps = { scene, selection: { get: () => [ids[0]], set: () => {} } as unknown as SelectionApi, snap };
   let from: Point = { x: 0, y: 0 };
@@ -68,7 +72,7 @@ function rig(sources: readonly SnapSource[], build: (scene: AnyScene) => string[
     return (moveAction.invoker as OngoingInvoker).start(at(p), opts);
   };
   const pose = (id = ids[0]) => scene.get(asNodeId(id))!.pose as { x: number; y: number };
-  return { scene, ids, store, at, press, pose };
+  return { scene, ids, store, at, press, pose, begun };
 }
 
 const rect = (x: number, y: number, size = 10) => (scene: AnyScene) =>
@@ -142,6 +146,18 @@ describe('a move snapping through the snap session', () => {
     h.onMove!(r.at({ x: 35, y: 15 }, { shift: true }));
     h.onEnd!(r.at({ x: 35, y: 15 }, { shift: true }), 'commit');
     near(r.pose(), { x: 30, y: 0 });
+  });
+
+  it('begins no session for a press that never travels, and one for a drag', () => {
+    const r = rig([alignX(52)], rect(3, 3));
+    const click = r.press({ x: 5, y: 5 });
+    click.onEnd!(r.at({ x: 5, y: 5 }), 'commit');
+    expect(r.begun).toEqual([]);
+    const h = r.press({ x: 5, y: 5 });
+    h.onMove!(r.at({ x: 30, y: 9 }));
+    h.onMove!(r.at({ x: 52, y: 9 }));
+    h.onEnd!(r.at({ x: 52, y: 9 }), 'commit');
+    expect(r.begun).toHaveLength(1);
   });
 
   it('clears the marks when Escape cancels', () => {

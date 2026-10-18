@@ -5,7 +5,6 @@ import type { ProbeRole, SnapTier } from '@weasel-js/geom/nd';
 import type { Scene } from 'core/scene/types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { PlaneMap } from 'core/viewport/parallax';
-import type { SnapReadoutStyle } from './readoutLayer';
 import type { SnapGeometry, SnapMods } from 'interactions/actions/snapDep';
 import type { OriginProjection } from 'interactions/gestures/shared/originProjection';
 
@@ -169,8 +168,20 @@ export interface SceneCanvasSnap {
    *  guide snaps: a pose neither a rect nor a `Path` needs its own. Default
    *  `AUTO_ORIGIN_PROJECTION`. */
   originProjection?: OriginProjection<unknown>;
-  /** Whether the snap marks are drawn. Default `true`. */
+  /** Whether the canvas draws the snap marks. Default `true`. With `false`
+   *  the marks are still written to the `snapReadout` dep's store, for a
+   *  layer of the consumer's own. */
   readout?: boolean;
   /** The readout's default colors and line width, for a mark that sets no `color`. */
   readoutStyle?: SnapReadoutStyle;
+}
+
+/** The snap readout's colors and line width, for a mark that sets no `color`. */
+export interface SnapReadoutStyle {
+  /** Points, lines and their labels. Default orange, as the path marker. */
+  color?: string;
+  /** Gap and distance marks. Default blue, as the guides. */
+  gapColor?: string;
+  /** Stroke width in screen px. Default 1. */
+  lineWidth?: number;
 }
