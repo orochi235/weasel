@@ -127,17 +127,65 @@ function placePin(regions: Region[], pin: Point, k: number, h: number): void {
   else ring.splice(near.edge + 1, 0, { ...at, pins: [k] });
 }
 
+/** Whether any edge of `rings` passes within `r` of a point, through a grid of cells `r` wide. */
+function clearanceTest(rings: MeshPoint[][], r: number): (x: number, y: number) => boolean {
+  const cells = new Map<string, [MeshPoint, MeshPoint][]>();
+  const key = (i: number, j: number) => `${i},${j}`;
+  for (const ring of rings) {
+    ring.forEach((a, n) => {
+      const b = ring[(n + 1) % ring.length];
+      for (let i = Math.floor(Math.min(a.x, b.x) / r); i <= Math.floor(Math.max(a.x, b.x) / r); i++) {
+        for (let j = Math.floor(Math.min(a.y, b.y) / r); j <= Math.floor(Math.max(a.y, b.y) / r); j++) {
+          const k = key(i, j);
+          const list = cells.get(k);
+          if (list) list.push([a, b]);
+          else cells.set(k, [[a, b]]);
+        }
+      }
+    });
+  }
+  return (x, y) => {
+    const ci = Math.floor(x / r), cj = Math.floor(y / r);
+    for (let i = ci - 1; i <= ci + 1; i++) {
+      for (let j = cj - 1; j <= cj + 1; j++) {
+        for (const [a, b] of cells.get(key(i, j)) ?? []) {
+          const dx = b.x - a.x, dy = b.y - a.y;
+          const len2 = dx * dx + dy * dy;
+          const t = len2 > 0 ? Math.max(0, Math.min(1, ((x - a.x) * dx + (y - a.y) * dy) / len2)) : 0;
+          if (Math.hypot(a.x + dx * t - x, a.y + dy * t - y) < r) return true;
+        }
+      }
+    }
+    return false;
+  };
+}
+
+/** Where the horizontal line at `y` crosses any of `rings`, sorted; a point on it is inside where an odd count lie left of it. */
+function crossingsAt(rings: MeshPoint[][], y: number): number[] {
+  const xs: number[] = [];
+  for (const ring of rings) {
+    ring.forEach((a, n) => {
+      const b = ring[(n + 1) % ring.length];
+      if ((a.y > y) !== (b.y > y)) xs.push(a.x + ((y - a.y) * (b.x - a.x)) / (b.y - a.y));
+    });
+  }
+  return xs.sort((p, q) => p - q);
+}
+
 /** Points of a triangular lattice of spacing `h` inside `region`, clear of its outline and its pins. */
 function fillLattice(region: Region, h: number): void {
   const outer = region.rings[0];
   let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
   for (const p of outer) { x0 = Math.min(x0, p.x); y0 = Math.min(y0, p.y); x1 = Math.max(x1, p.x); y1 = Math.max(y1, p.y); }
   const pins = [...region.inner];
-  const flats = region.rings.map(flatRing);
+  const nearOutline = clearanceTest(region.rings, 0.5 * h);
   const rowH = h * Math.sqrt(3) / 2;
   for (let row = 0, y = y0 + rowH / 2; y < y1; row++, y += rowH) {
+    const xs = crossingsAt(region.rings, y);
+    let left = 0;
     for (let x = x0 + (row % 2 ? h / 2 : h / 4); x < x1; x += h) {
-      if (!inside(region, x, y, flats) || nearestEdge(region, x, y).d < 0.5 * h) continue;
+      while (left < xs.length && xs[left] < x) left++;
+      if (left % 2 === 0 || nearOutline(x, y)) continue;
       if (pins.some((p) => Math.hypot(p.x - x, p.y - y) < 0.5 * h)) continue;
       region.inner.push({ x, y, pins: [] });
     }

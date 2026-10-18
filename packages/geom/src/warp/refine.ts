@@ -26,6 +26,8 @@ class Triangulation {
   /** Directed edge `a→b` to the triangle having it, counter-clockwise. */
   private readonly owner = new Map<number, number>();
   private readonly free: number[] = [];
+  /** The triangle made last, where the next point's search starts. */
+  private last = 0;
 
   constructor(private readonly V: number[], private readonly stride: number) {}
 
@@ -33,6 +35,7 @@ class Triangulation {
 
   add(a: number, b: number, c: number): number {
     const t = this.free.pop() ?? this.tris.length / 3;
+    this.last = t;
     this.tris[3 * t] = a; this.tris[3 * t + 1] = b; this.tris[3 * t + 2] = c;
     this.owner.set(this.key(a, b), t); this.owner.set(this.key(b, c), t); this.owner.set(this.key(c, a), t);
     return t;
@@ -75,37 +78,62 @@ class Triangulation {
     }
   }
 
+  /** Whether triangle `t` holds `p`, and on which edge if on one: -1 outside, 3 strictly inside. */
+  private holds(t: number, p: number): number {
+    const V = this.V;
+    const [a, b, c] = this.corners(t);
+    const area = orient(V, a, b, c);
+    const ws = [orient(V, b, c, p), orient(V, c, a, p), orient(V, a, b, p)];
+    if (ws.some((w) => w < -1e-9 * area)) return -1;
+    const flat = ws.findIndex((w) => w <= 1e-9 * area);
+    return flat < 0 ? 3 : flat;
+  }
+
+  /** The triangle holding `p`: walked to from `from` across the edges `p` lies beyond, or
+   *  found by a scan when the walk leaves the region. */
+  private locate(p: number, from: number): { t: number; on: number } | null {
+    let t = from;
+    for (let step = 0; t >= 0 && this.tris[3 * t] >= 0 && step < this.tris.length; step++) {
+      const on = this.holds(t, p);
+      if (on >= 0) return { t, on };
+      const [a, b, c] = this.corners(t);
+      const edge = [[b, c], [c, a], [a, b]].find(([u, v]) => orient(this.V, u, v, p) < 0)!;
+      t = this.across(edge[0], edge[1])?.t ?? -1;
+    }
+    for (let s = 0; s < this.tris.length / 3; s++) {
+      if (this.tris[3 * s] < 0) continue;
+      const on = this.holds(s, p);
+      if (on >= 0) return { t: s, on };
+    }
+    return null;
+  }
+
   /** Split the triangle holding `p` (or the two sharing the edge it lies on). False when none holds it. */
   insert(p: number): boolean {
-    const V = this.V;
-    for (let t = 0; t < this.tris.length / 3; t++) {
-      if (this.tris[3 * t] < 0) continue;
-      const [a, b, c] = this.corners(t);
-      const area = orient(V, a, b, c);
-      const ws = [orient(V, b, c, p), orient(V, c, a, p), orient(V, a, b, p)];
-      if (ws.some((w) => w < -1e-9 * area)) continue;
-      const flat = ws.findIndex((w) => w <= 1e-9 * area);
-      if (flat < 0) {
-        this.remove(t);
-        this.add(a, b, p); this.add(b, c, p); this.add(c, a, p);
-        this.legalize(a, b, p); this.legalize(b, c, p); this.legalize(c, a, p);
-        return true;
-      }
-      // On edge u→v of this triangle, opposite corner w.
-      const [u, v, w] = [[b, c, a], [c, a, b], [a, b, c]][flat];
-      const other = this.across(u, v);
+    const found = this.locate(p, this.last);
+    if (!found) return false;
+    const { t } = found;
+    const [a, b, c] = this.corners(t);
+    const flat = found.on === 3 ? -1 : found.on;
+    if (flat < 0) {
       this.remove(t);
-      this.add(v, w, p); this.add(w, u, p);
-      const rim: [number, number][] = [[v, w], [w, u]];
-      if (other) {
-        this.remove(other.t);
-        this.add(u, other.c, p); this.add(other.c, v, p);
-        rim.push([u, other.c], [other.c, v]);
-      }
-      for (const [x, y] of rim) this.legalize(x, y, p);
+      this.add(a, b, p); this.add(b, c, p); this.add(c, a, p);
+      this.legalize(a, b, p); this.legalize(b, c, p); this.legalize(c, a, p);
       return true;
     }
-    return false;
+    // On edge u→v of this triangle, opposite corner w.
+    const [u, v, w] = [[b, c, a], [c, a, b], [a, b, c]][flat];
+    const other = this.across(u, v);
+    this.remove(t);
+    this.add(v, w, p); this.add(w, u, p);
+    const rim: [number, number][] = [[v, w], [w, u]];
+    if (other) {
+      this.remove(other.t);
+      this.add(u, other.c, p); this.add(other.c, v, p);
+      rim.push([u, other.c], [other.c, v]);
+    }
+    for (const [x, y] of rim) this.legalize(x, y, p);
+    return true;
   }
 }
 

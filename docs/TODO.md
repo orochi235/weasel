@@ -408,13 +408,9 @@ Priority tags:
 - **(P3) Spiro curves solve G2 points only.** `solveSpiro` keeps curvature continuous at a smooth
   point (G2). A point that also keeps its rate of change continuous (G4, a cubic-curvature segment
   either side) needs a second segment type in `eulerSpiral.ts` and two more equations per point.
-- **(P3) A puppet's pin set is slow to set up, and its bends add anchors.** Adding or removing a
-  pin rebuilds the mesh and refactors its solve (`puppetMesh`, `createArapSolver` in
-  `packages/geom/src/warp/`): about 100 ms at the default density on the star in
-  `tests/perf/bench/puppet.bench.ts`, against 0.4 ms for each drag frame's solve. Not profiled yet; point insertion
-  in `refine.ts` scans every triangle and the systems are assembled through `Map` rows. The map is
-  piecewise affine, so `warpPath` gains anchors where an edge crosses triangles that turned
-  differently; a smooth interpolation of the solved vertices would refit with fewer.
+- **(P3) A puppet warp's bends add anchors.** The puppet map (`packages/geom/src/warp/puppet.ts`)
+  is piecewise affine over its mesh, so `warpPath` gains anchors where an edge crosses triangles
+  that turned differently. A smooth interpolation of the solved vertices would refit with fewer.
 - **(P3) The Girth tool is untried on rectangles.** It edits the nodes `resolveEditablePathOf`
   answers a path for, which since rectangle path edit includes a drawn rectangle's rect
   `data.path`, but nothing has shaped a rectangle's stroke with it yet. `strokeEdgeNear`, which it hit-tests with, measures every stroke as centered, so on an
