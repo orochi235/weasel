@@ -13,7 +13,6 @@ import {
   resolvePrefUnit,
 } from '@weasel-js/prefs';
 import {
-  DialogRow,
   entriesDisabled,
   entryDisabledAt,
   ListEditor,
@@ -32,12 +31,13 @@ import {
 } from '@weasel-js/ui';
 import { useMemo } from 'react';
 import { autoResolverOf, resolveAutoConfig } from '../config/autoConfig';
-import { valueAtPath } from '../config/path';
+import { valueAtPath, withValueAtPath } from '../config/path';
 import type { ControlRenderer, ResolvedConfig } from '../config/types';
 import { aliasTargetsOf, conditionedLeaf } from '../config/visible';
 import type { ControlPack } from './controlPack';
 import { useFieldChoices } from './fieldChoices';
 import { extra, labField, leafValueAt } from './fields';
+import { DraftDialogRow } from './DraftDialogRow';
 import { inDialog, summarizeLeaf, summarizeValue } from './inDialog';
 import { DebouncedTextRow, UnwiredRow } from './rows';
 
@@ -303,7 +303,7 @@ function LeafRow<TC extends Record<string, unknown>>({
   // Too much for a row, so the row opens it in a dialog.
   if (prefIsCompound(leaf)) {
     return (
-      <DialogRow
+      <DraftDialogRow
         label={label}
         summary={summarizeLeaf(leaf, value)}
         readout={autoReadout}
@@ -311,22 +311,25 @@ function LeafRow<TC extends Record<string, unknown>>({
         description={description}
         disabled={disabled}
         {...autoProps}
+        value={value}
+        setValue={write}
       >
-        {() => (
+        {(draft, setDraft) => (
           <CompoundControl
             path={path}
             leaf={leaf}
             resolved={resolved}
-            config={config}
+            // A condition inside the leaf reads the value being edited, not the one stored.
+            config={withValueAtPath(config, path, draft)}
             label={label}
-            value={value}
-            onChange={write}
+            value={draft}
+            onChange={setDraft}
             renderers={renderers}
             over={over}
             given={inside}
           />
         )}
-      </DialogRow>
+      </DraftDialogRow>
     );
   }
 
