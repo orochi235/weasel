@@ -199,6 +199,13 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
   states `data-weasel-line-height`, since its pitch no longer does. A line the layout justified
   writes every word with its own `x`; `LaidOutLineBox.justified` (new text API) says which lines
   those are. Draw's exports and clipboard SVG pass it.
+- 2026-10-18: A puppet warp's solve runs five local/global rounds after its two linear steps, then,
+  only when a triangle is left turned over, an injective pass (untangling energy of Garanzha et al.,
+  2021) with the pins held. Every puppet-warped shape redraws differently, and a drag that starts to
+  fold jumps to the injective shape rather than easing into it. The solve is deterministic from the
+  pins: it does not warm-start from the previous frame, so a reopened document draws what the drag
+  last drew. A pass that runs out of rounds still tangled returns the folded result. Uniform edge
+  weights, not cotangent ones, so each system stays the one already factored.
 
 ## Animation
 

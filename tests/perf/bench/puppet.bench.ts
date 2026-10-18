@@ -44,6 +44,10 @@ group('puppet warp — per drag frame', (bench) => {
       k = (k + 1) % 40;
       solver.solve([200, 200, 380 + k, 200 - k, 200, 380, 60, 200]);
     });
+    bench(`solve, ${mesh.vertices.length / 2} vertices, the two linear steps alone`, () => {
+      k = (k + 1) % 40;
+      solver.solve([200, 200, 380 + k, 200 - k, 200, 380, 60, 200], { iterations: 0, injectiveIterations: 0 });
+    });
   }
   let k = 0;
   bench('solve + map + refit the star (default mesh)', () => {

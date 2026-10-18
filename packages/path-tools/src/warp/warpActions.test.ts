@@ -177,7 +177,8 @@ describe('puppet', () => {
     dragControl(scene, 'puppet', { warpId: held.id, index: 1 }, { x: 100, y: 100 }, { x: 140, y: 60 });
     const anchors = anchorsOf(scene);
     // The bent edges may gain anchors; the pinned corners stay anchors, where their pins are.
-    expect(anchors[0]).toEqual({ x: 0, y: 0 });
+    // `toEqual` tells -0 from 0, and the barycentric sum can land on either.
+    expect(anchors[0].x === 0 && anchors[0].y === 0).toBe(true);
     expect(anchors).toContainEqual({ x: 140, y: 60 });
   });
 });
