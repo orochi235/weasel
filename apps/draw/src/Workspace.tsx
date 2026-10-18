@@ -3,7 +3,7 @@ import {
   type Measurements,
   measurementsContribution,
   measureEndSource,
-  nearestMeasureEnd,
+  pathSnapSource,
   SceneCanvas,
   type SceneCanvasApi,
   type SelectionApi,
@@ -15,6 +15,7 @@ import {
   type View,
   workspaceTintLayer
 } from '@weasel-js/core';
+import { PATH_SNAP_KINDS } from '@weasel-js/geom';
 import { useShapeBuilderTool, useSpiroTool } from '@weasel-js/path-tools';
 import { unpackSvgFiles } from '@weasel-js/svg';
 import { MeasureReadout, SceneGradientHandles, ToastRegion } from '@weasel-js/ui';
@@ -49,8 +50,8 @@ import { useSpacingHints } from './useSpacingHints';
  *  SVG round trip does not carry. */
 const DRAW_TOOLS = BUILTIN_TOOL_IDS.filter((id) => id !== 'bone' && id !== 'weight' && id !== 'sticky');
 
-/** Screen-px radius within which a drawing tool snaps to a measurement's end. */
-const END_SNAP_PX = 6;
+/** Path targets as the pen has always had them: other paths' anchors only. */
+const ANCHOR_SNAP = pathSnapSource({ kinds: Object.fromEntries(PATH_SNAP_KINDS.map((k) => [k, k === 'anchor'])) });
 
 // OS-dropped and pasted SVG files unpack into real scene nodes rather than one embedded-image
 // node. `clipboard.reviver` revives typed-array node data carried by weasel-JSON clipboard
@@ -129,19 +130,13 @@ export function Workspace(props: WorkspaceProps): ReactElement {
     [scene, measurements],
   );
   const ambientEntries = useMemo(() => [...ambient, measureEntry], [ambient, measureEntry]);
-  // Measurement ends snap a gesture within a few screen pixels; past them it
-  // takes the grid. `toolOptions` carries the same for the pen and anchor drags.
+  // Path anchors and measurement ends snap a gesture within a few screen
+  // pixels; past them it takes the grid.
   const gridSource = grid.snapSource;
   const snap = useMemo(
-    () => ({ sources: [...(gridSource ? [gridSource] : []), measureEndSource()] }),
+    () => ({ sources: [...(gridSource ? [gridSource] : []), ANCHOR_SNAP, measureEndSource()] }),
     [gridSource],
   );
-  const gridSnap = grid.snapPoint;
-  const perPx = 1 / (view.scale.x || 1);
-  const toolOptions = useMemo(() => ({
-    snapTargets: (p: { x: number; y: number }) => nearestMeasureEnd(scene as never, measurements, p, END_SNAP_PX * perPx),
-    ...(gridSnap ? { snapPoint: gridSnap } : {}),
-  }), [scene, measurements, gridSnap, perPx]);
   const { tool: opacityScrubTool, percent: opacityScrubPercent } = useOpacityScrub({
     scene: scene as unknown as Parameters<typeof useOpacityScrub>[0]['scene'],
     selection,
@@ -203,7 +198,6 @@ export function Workspace(props: WorkspaceProps): ReactElement {
           modalityHud
           onToolsCreated={props.onToolsCreated}
           selectTool={grid.snap ? { snap: grid.snap } : undefined}
-          toolOptions={toolOptions}
           snap={snap}
           layers={{
             paper: { layer: paperLayer, before: 'grid' },

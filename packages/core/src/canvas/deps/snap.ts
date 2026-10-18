@@ -1,15 +1,10 @@
 /**
- * `useSnapDepSource` — wires the `snap` dep that `insertAction`, the pen and
- * an anchor drag consume, and whose `begin` a move runs.
+ * `useSnapDepSource` — wires the `snap` dep whose `begin` every snapping
+ * gesture runs: a session over the snap sources `session` names, writing its
+ * marks to the outcome store this hook returns.
  *
- * `point` / `toTargets` are sourced from `<SceneCanvas toolOptions={{ pathSnap, snapTargets, snapPoint }} />`.
- * A path target in range wins, then a point `snapTargets` offers; otherwise
- * `snapPoint` (a grid, say) has the point. The dep reads all three through a
- * ref, so toggling any takes effect on the next gesture without remounting
- * the registry.
- *
- * `begin` runs a session over the snap sources `session` names, and writes
- * its marks to the outcome store this hook returns.
+ * `point` / `toTargets` are the deprecated `<SceneCanvas toolOptions={{
+ * pathSnap, snapTargets, snapPoint }} />`, which no kit action calls any more.
  *
  * Always registered (hooks can't be conditional); with neither source the
  * dep's `point` is the identity function, which is the same behavior actions

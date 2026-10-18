@@ -6,7 +6,10 @@
  *     is already part of a multi-anchor selection leaves the selection
  *     alone, so you can grab a set and move it.
  *   - **Drag** then moves whatever the press left selected — one anchor,
- *     or every selected anchor together.
+ *     or every selected anchor together. The pressed anchor snaps through
+ *     the `snap` dep's `point` session, to what the drag leaves still of the
+ *     path and to the canvas's targets; Shift holds it to the axes and
+ *     diagonals through its press.
  *   - **Dragging a control handle** moves just that handle, mirroring the
  *     opposite one while the anchor is smooth. Alt breaks the mirror; Shift
  *     holds the handle to the angle it had at the press, changing only its
@@ -37,7 +40,10 @@
 
 import type { Action } from '@weasel-js/routing';
 import type { BindingOpts, InvocationCtx, OngoingHandle, OngoingOverlay } from '@weasel-js/routing';
-import type { EditAnchorsDep, SnapDep, SnapGeometry } from '../depSchema';
+import type { EditAnchorsDep, SnapDep } from '../depSchema';
+import type { SnapBegin, SnapMods, SnapSession } from '../snapDep';
+import { inputSession } from 'features/snap/session2d';
+import { SNAP_ROLES } from 'features/snap/roles';
 import { ActionDisabledReason, isAnchorOrControl, resolveParams, roleReader, type ModifierRoles } from '@weasel-js/routing';
 import {
   anchorAt,
@@ -57,7 +63,7 @@ import { HANDLE_LOCK_ROLES, lockHandle, locksInForce, type HandlePress } from '.
 import { locksOf, type EditAnchorsParams } from './params';
 import { pathEditPreview } from './preview';
 import {
-  claimWheel, dragWeights, extensionOverlays, placeHandle, startExtensionDrags, translateWeighted,
+  claimWheel, dragWeights, endExtensionDrags, extensionOverlays, placeHandle, startExtensionDrags, translateWeighted,
 } from './extensionDrags';
 import type { PathEditDrag } from 'features/paths/pathEditExtension';
 import { pathEditToolActive } from '../defaults/pathEditTools';
@@ -138,25 +144,32 @@ interface EditAnchorsScratch {
 type Point = { x: number; y: number };
 
 /**
- * An anchor drag's snap, from the press: where the pressed anchor goes for a
- * pointer at `world` — onto a path target in range, on another shape or on
- * the edited path's own anchors and segments that the drag leaves still.
- * Identity without a path snapper.
+ * An anchor drag's snap: a `point` session, begun on the first move, for
+ * where the pressed anchor goes. The edited path offers no targets but what
+ * the drag leaves still of it, and Shift holds the anchor to the axes and
+ * diagonals through its press.
  */
 function anchorDragSnap(
   snap: SnapDep | undefined,
   press: { id: string; origin: Point; originPose: PolygonPath; dragging: readonly number[] },
-): (world: Point) => Point {
-  const toTargets = snap?.toTargets;
-  if (!toTargets) return (world) => world;
-  // Built on the first move, and the same object after, so the snapper indexes it once.
-  let still: SnapGeometry | undefined;
-  return (world) => {
-    if (!still) {
-      const { path, anchors } = pathAwayFromAnchors(press.originPose, press.dragging);
-      still = { paths: [path], anchors };
-    }
-    return toTargets(world, { origin: press.origin, exclude: [press.id], also: still }) ?? world;
+): { at(world: Point, mods: SnapMods): Point; end(): void } {
+  let session: SnapSession | null = null;
+  return {
+    at(world, mods) {
+      if (!session) {
+        const { path, anchors } = pathAwayFromAnchors(press.originPose, press.dragging);
+        const req: SnapBegin = {
+          gesture: 'point', press: press.origin, origin: press.origin, ids: [press.id],
+          also: { paths: [path], anchors }, constrain: 'axis',
+        };
+        session = snap?.begin?.(req) ?? inputSession(req);
+      }
+      return session.at(world, mods).point;
+    },
+    end() {
+      session?.end();
+      session = null;
+    },
   };
 }
 
@@ -198,12 +211,14 @@ function moveAnchors(scratch: EditAnchorsScratch, to: Point): void {
 }
 
 /** The modifiers `editAnchors` reads while it runs: Shift on the press adds
- *  to the anchor selection, Alt breaks a smooth anchor's mirror, and the
- *  handle locks. */
+ *  to the anchor selection, Alt breaks a smooth anchor's mirror, the handle
+ *  locks, and Shift holds an anchor drag to the axes and diagonals. Nothing
+ *  suspends snapping: Ctrl already holds a handle's length. */
 export const EDIT_ANCHORS_ROLES = {
   'selection.add': { label: 'Add to the anchor selection', keys: ['shift'] },
   'mirror.break': { label: "Break the handles' mirror", keys: ['alt'] },
   ...HANDLE_LOCK_ROLES,
+  'snap.constrain': SNAP_ROLES['snap.constrain'],
 } as const satisfies ModifierRoles;
 
 const roleHeld = roleReader(EDIT_ANCHORS_ROLES);
@@ -319,6 +334,7 @@ export const editAnchorsAction: Action & { requires: string[] } = inPlane({
           anchorIndex: anchorInfo.anchorIndex,
           dragging: anchorInfo.part === 'anchor' ? dragging : [],
           scale: ctx.deps.view?.get().scale,
+          ...(ctx.deps.snap ? { snap: ctx.deps.snap } : {}),
         }),
         lastMove: null,
         originPose: worldPath,
@@ -332,8 +348,9 @@ export const editAnchorsAction: Action & { requires: string[] } = inPlane({
 
       const move = (moveCtx: InvocationCtx): void => {
         scratch.lastMove = moveCtx;
-        if (scratch.part === 'anchor') moveAnchors(scratch, snapAnchor(moveCtx.world));
-        else moveHandle(scratch, moveCtx, paramsOf(opts));
+        if (scratch.part !== 'anchor') return moveHandle(scratch, moveCtx, paramsOf(opts));
+        const mods = { suspend: false, constrain: roleHeld(moveCtx, 'snap.constrain') };
+        moveAnchors(scratch, snapAnchor.at(moveCtx.world, mods));
       };
 
       return {
@@ -357,10 +374,13 @@ export const editAnchorsAction: Action & { requires: string[] } = inPlane({
         },
         onEnd(_endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
           active = false;
-          ctx.deps.snap?.release?.();
-          if (reason === 'cancel') return;
-          if (scratch.originPose === scratch.currentPose) return;
-          scratch.dep.applyEdit(scratch.id, scratch.currentPose, 'Edit anchors', scratch.origins);
+          try {
+            if (reason === 'cancel' || scratch.originPose === scratch.currentPose) return;
+            scratch.dep.applyEdit(scratch.id, scratch.currentPose, 'Edit anchors', scratch.origins);
+          } finally {
+            snapAnchor.end();
+            endExtensionDrags(scratch.drags);
+          }
         },
         previewIds: preview.previewIds,
         previewPose: preview.previewPose,

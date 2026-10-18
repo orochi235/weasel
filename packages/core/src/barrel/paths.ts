@@ -309,9 +309,6 @@ export type {
   Discriminator,
 } from '@weasel-js/geom/curves';
 
-// ─── Utility: 45° axis constraint ───────────────────────────────────────────
-export { constrainTo45 } from '../util/constrainTo45';
-
 // ─── Path boolean ops (Pathfinder) ──────────────────────────────────────────
 export {
   useBooleans,

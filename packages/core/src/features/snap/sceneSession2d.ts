@@ -80,6 +80,8 @@ export interface SnapSession2dOptions {
   pivot?: Point;
   /** Rotate: the subject's angle at press. */
   theta0?: number;
+  /** Angle gestures: the reach as an angle, radians. */
+  reachRad?: number;
   /** Resize: the box `handle` belongs to. Default: the subjects' drawn box. */
   box?: SnapResizeBox;
   also?: SnapGeometry;
@@ -116,6 +118,7 @@ export function createSnapSession2d(opts: SnapSession2dOptions): SnapSession {
     ...(opts.handle ? { handle: opts.handle } : {}),
     ...(opts.pivot ? { pivot: opts.pivot } : {}),
     ...(opts.theta0 !== undefined ? { theta0: opts.theta0 } : {}),
+    ...(opts.reachRad !== undefined ? { reachRad: opts.reachRad } : {}),
     ...(opts.box ? { box: opts.box } : {}),
     ...(opts.also ? { also: opts.also } : {}),
     ...(opts.plane ? { plane: () => opts.plane ?? null } : {}),

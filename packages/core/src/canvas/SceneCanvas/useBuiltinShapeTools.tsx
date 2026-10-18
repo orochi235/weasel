@@ -39,22 +39,20 @@ export interface BuiltinToolOptions {
   insert?: InsertToolOptions;
   /** Snap world-space points to the active grid (or any other snap target).
    *
-   *  Read through the `snap` dep's `point` by the pen tool, for its own
-   *  anchor placement. Drag-to-insert, measure and the symmetry center snap
-   *  through the dep's sessions instead, which ask `<SceneCanvas snap>`'s
-   *  sources. A path target in range (`pathSnap`) wins over it. */
+   *  @deprecated No kit action reads it: every gesture snaps through the
+   *  `snap` dep's sessions, which ask `<SceneCanvas snap>`'s sources, so a
+   *  grid is `gridSnapSource`. */
   snapPoint?: (p: { x: number; y: number }) => { x: number; y: number };
-  /** Snap to the geometry of the scene's paths: crossings, tangent and
-   *  perpendicular points from where the line being drawn starts, segment
-   *  midpoints, curve extremes and quadrant points, and the nearest point on
-   *  a stroke. Applies to the pen as `snapPoint` does, and also to a dragged
-   *  anchor. Absent, off. */
+  /** Snap to the geometry of the scene's paths.
+   *
+   *  @deprecated No kit action reads it: register `pathSnapSource` in
+   *  `<SceneCanvas snap>` instead. */
   pathSnap?: PathSnapOptions;
-  /** Points to lock to that are in no path — a measurement's ends, say
-   *  (`nearestMeasureEnd`): the nearest within reach of `p`, or null. They
-   *  apply wherever a path target does, and a path target in range wins
-   *  over them. `at` is the asking gesture's
-   *  query; its `exclude` names what that gesture is moving. */
+  /** Points to lock to that are in no path: the nearest within reach of
+   *  `p`, or null.
+   *
+   *  @deprecated No kit action reads it: a target set is a `SnapSource` in
+   *  `<SceneCanvas snap>`, as `measureEndSource` is for a measurement's ends. */
   snapTargets?: (p: { x: number; y: number }, at?: SnapQuery) => { x: number; y: number } | null;
   /** The look of the notes the sticky tool makes: paper, ink, padding,
    *  typography, and the size a click places. */
@@ -100,7 +98,6 @@ export function useBuiltinShapeTools(args: UseBuiltinShapeToolsArgs = {}): Built
   const polygon = usePolygonTool(insert);
   const star = useStarTool(insert);
   const pencil = usePencilTool(insert);
-  // The pen reads `snapPoint` and `pathSnap` through the `snap` dep.
   const pen = usePenTool();
   const lasso = useLassoTool(options?.lasso ?? {});
   const text = useTextTool(insert);

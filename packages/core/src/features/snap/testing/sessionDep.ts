@@ -1,3 +1,5 @@
+import { PATH_SNAP_KINDS, type PathSnapKind, type PolygonPath } from '@weasel-js/geom';
+import { createScene } from 'core/scene/scene';
 import type { Scene } from 'core/scene/types';
 import { drawnBoxes } from 'interactions/actions/drawnBoxes';
 import type { SnapDep } from 'interactions/actions/snapDep';
@@ -33,12 +35,24 @@ export function lineSource(at: Point, dir: Point): SnapSource {
   };
 }
 
-/** A `snap` dep whose sessions run `sources` over `scene` at zoom 1, with an
- *  8px reach. */
-export function sessionDep(scene: AnyScene, sources: readonly SnapSource[]): SnapDep {
-  const store = createSnapOutcomeStore();
+/** `pathSnapSource`'s `kinds` with only anchors on. */
+export const ANCHORS_ONLY = Object.fromEntries(PATH_SNAP_KINDS.map((k) => [k, k === 'anchor'])) as Record<PathSnapKind, boolean>;
+
+/** A scene holding one leaf per path, on layer `main`, posed as the path. */
+export function sceneOfPaths(paths: readonly PolygonPath[]): AnyScene {
+  const scene = createScene<object, 'main', unknown>({ systemLayers: [{ id: 'main' }] }) as unknown as AnyScene;
+  for (const pose of paths) scene.add({ kind: 'leaf', layer: 'main', data: {}, pose } as never);
+  return scene;
+}
+
+/** A `snap` dep whose sessions run `sources` over `scene` at a zoom of
+ *  `scale` (default 1), with an 8px reach, writing marks to `store`. */
+export function sessionDep(
+  scene: AnyScene, sources: readonly SnapSource[], scale = 1, store = createSnapOutcomeStore(),
+): SnapDep {
+  const view = { ...VIEW, scale: { x: scale, y: scale } };
   return {
     point: (p) => p,
-    begin: (req) => sceneSession2d({ req, scene, boxes: drawnBoxes({ scene }), sources, view: () => VIEW, reachPx: 8, store }),
+    begin: (req) => sceneSession2d({ req, scene, boxes: drawnBoxes({ scene }), sources, view: () => view, reachPx: 8, store }),
   };
 }

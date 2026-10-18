@@ -1,10 +1,10 @@
 import { useMemo, useReducer, useRef, useState } from 'react';
 import { useLatest } from '@weasel-js/react';
-import type { Action, ActionDeps } from '@weasel-js/routing';
+import type { Action, ActionDeps, ModifierState } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import { cursorFor } from '@weasel-js/cursor';
 import { boundsOfPath, isSpiroKind, withinPxRadius, type SpiroKind, type SpiroPoint } from '@weasel-js/geom';
-import { createPointerFollower, defineTool, type Tool } from '@weasel-js/core';
+import { createPointerFollower, defineTool, pointSnap, SNAP_ROLES, snapMods, type Tool } from '@weasel-js/core';
 import { icon } from '../icons.gen';
 import { createSpiroPreviewLayer, type SpiroPreviewState } from './spiroPreviewLayer';
 import { spiroNodeData } from './spiroShape';
@@ -15,9 +15,6 @@ export interface UseSpiroToolOptions {
   autoSelect?: boolean;
   /** Screen-px radius of "click the first point to close". Default `8`. */
   closeHitRadius?: number;
-  /** Snaps every point placed, and the cursor the preview follows. Without
-   *  it the host's `snap` dep does. */
-  snapPoint?: (p: { x: number; y: number }) => { x: number; y: number };
 }
 
 /** The spiro tool's state between gestures: the points placed so far. */
@@ -33,20 +30,19 @@ interface SpiroActionsHost {
   scratch(): SpiroScratch;
   /** Drop every point placed. */
   reset(): void;
-  options(): { autoSelect: boolean; closeHitRadius: number; snapPoint?: UseSpiroToolOptions['snapPoint'] };
+  options(): { autoSelect: boolean; closeHitRadius: number };
   repaint(): void;
 }
 
-/** The spiro tool's actions. */
+const NO_KEYS: ModifierState = { alt: false, ctrl: false, meta: false, shift: false };
+
+/** The spiro tool's actions. Each point placed, and the cursor, snaps
+ *  through the `snap` dep's `point` sessions about the point placed before. */
 function spiroActions(host: SpiroActionsHost): Action[] {
   const s = host.scratch;
   // The deps last followed through, whose camera and snap the cursor reads.
   let followed: ActionDeps | undefined;
-  const snap = (x: number, y: number): { x: number; y: number } => {
-    const fn = host.options().snapPoint;
-    const from = s().points.at(-1);
-    return fn ? fn({ x, y }) : followed?.snap?.point({ x, y }, from ? { origin: from } : undefined) ?? { x, y };
-  };
+  const snaps = pointSnap();
   const nearFirst = (x: number, y: number): boolean => {
     const { points } = s();
     if (points.length < 3) return false;
@@ -59,8 +55,8 @@ function spiroActions(host: SpiroActionsHost): Action[] {
     const scratch = s();
     if (scratch.points.length === 0) follower.unfollow();
     const at = scratch.points.length > 0 ? follower.pointer()?.get() ?? null : null;
-    if (!at) followed?.snap?.release?.();
-    const p = at ? snap(at.worldX, at.worldY) : null;
+    if (!at) snaps.stop();
+    const p = at ? snaps.trail(followed?.snap, { x: at.worldX, y: at.worldY }, scratch.points.at(-1)) : null;
     scratch.cursor = p ? { ...p, kind: 'smooth' } : null;
     scratch.closeHint = p !== null && nearFirst(p.x, p.y);
     host.repaint();
@@ -82,15 +78,17 @@ function spiroActions(host: SpiroActionsHost): Action[] {
       id: 'spiro.placePoint',
       label: 'Spiro — place point',
       eligible: { capability: 'creates-paths' },
+      modifierRoles: SNAP_ROLES,
       requires: ['view', 'pointer', 'insert', 'selection', 'snap'],
       invoker: {
         timing: 'immediate',
         run: (deps, params) => {
-          const p = params as { pressX?: number; pressY?: number; kind?: unknown } | undefined;
+          const p = params as { pressX?: number; pressY?: number; kind?: unknown; mods?: ModifierState } | undefined;
           if (p?.pressX === undefined || p.pressY === undefined) return;
           followed = deps;
           follower.follow(deps.pointer);
-          const at = snap(p.pressX, p.pressY);
+          const mods = snapMods({ modifiers: p.mods ?? NO_KEYS });
+          const at = snaps.place(deps.snap, { x: p.pressX, y: p.pressY }, mods, s().points.at(-1)).point;
           if (nearFirst(at.x, at.y)) return commit(deps, true);
           const kind: SpiroKind = isSpiroKind(p.kind) ? p.kind : 'smooth';
           s().points.push({ x: at.x, y: at.y, kind });
@@ -146,8 +144,8 @@ function spiroActions(host: SpiroActionsHost): Action[] {
  * (`spiroRepresentation`).
  */
 export function useSpiroTool(options: UseSpiroToolOptions = {}): Tool {
-  const { autoSelect = true, closeHitRadius = 8, snapPoint } = options;
-  const opts = useLatest({ autoSelect, closeHitRadius, snapPoint });
+  const { autoSelect = true, closeHitRadius = 8 } = options;
+  const opts = useLatest({ autoSelect, closeHitRadius });
   const scratchRef = useRef<SpiroScratch | null>(null);
   if (scratchRef.current === null) scratchRef.current = fresh();
   const [, forceRender] = useReducer((n: number) => n + 1, 0);

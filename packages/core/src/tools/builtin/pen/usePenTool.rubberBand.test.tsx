@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { act } from '@testing-library/react';
 import { createPointerStore } from '@weasel-js/routing/react';
+import { gridSource } from 'features/snap/testing/sessionDep';
 import { setup } from './testing/penHarness';
 
 // The real layer, recorded: the pen keeps its state to itself, and the one
@@ -14,9 +15,9 @@ describe('usePenTool', () => {
   describe('rubber band and close hint', () => {
     const at = (x: number, y: number) => ({ worldX: x, worldY: y, viewId: null });
 
-    it('trails the pointer once an anchor is placed, through snapPoint', () => {
+    it('trails the pointer once an anchor is placed, through the snap dep', () => {
       const pointer = createPointerStore();
-      const p = setup({ deps: { pointer }, snapPoint: (q) => ({ x: Math.round(q.x / 10) * 10, y: q.y }) });
+      const p = setup({ deps: { pointer }, snap: [gridSource(10)] });
       act(() => { pointer.set(at(33, 80)); });
       expect(p.scratch.cursor).toBeNull();
       p.click(0, 0);

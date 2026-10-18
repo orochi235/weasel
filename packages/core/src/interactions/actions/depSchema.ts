@@ -261,9 +261,8 @@ declare module '@weasel-js/routing' {
      *  tool draws and every dropped image or text. Absent, or answering
      *  `null`: the top of the tree. */
     insertInto?: InsertIntoDep;
-    /** Snap dep — world-space point snapping (path geometry, grid, guides).
-     *  Sourced by `<SceneCanvas>` from `toolOptions.pathSnap` and
-     *  `toolOptions.snapPoint`. Absent means no snapping. */
+    /** Snap dep: the sessions a gesture snaps through, over `<SceneCanvas
+     *  snap>`'s sources. Absent means no snapping. */
     snap?: SnapDep;
     /** The store the snap readout layer draws, for an action's own marks. Sourced by `<SceneCanvas>`. */
     snapReadout?: import('../../features/snap/readoutDep').SnapReadoutDep;

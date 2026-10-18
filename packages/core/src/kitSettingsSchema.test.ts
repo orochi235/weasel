@@ -9,7 +9,7 @@ import { DEFAULT_PICK_TOLERANCE_PX } from 'canvas/SceneCanvas/useSceneSelectTool
 import { SEGMENT_HIT_PX } from 'interactions/actions/defaults/segmentUnder';
 import { ANCHOR_CLICK_PX } from 'interactions/actions/defaults/anchorEditing';
 import {
-  ANCHOR_RADIUS_PX, CLOSE_HINT_RADIUS_PX, HANDLE_DOT_RADIUS_PX, PEN_ANCHOR_SNAP_PX, PEN_CLOSE_HIT_PX,
+  ANCHOR_RADIUS_PX, CLOSE_HINT_RADIUS_PX, HANDLE_DOT_RADIUS_PX, PEN_CLOSE_HIT_PX,
 } from 'features/paths/penPreviewLayer';
 import { JOINT_RADIUS_PX } from 'tools/builtin/bone/boneOverlay';
 import { POINT_RADIUS_PX } from 'tools/builtin/weight/weightOverlay';
@@ -37,7 +37,6 @@ const CONSTANTS: Pick<KitSettings, 'gestures' | 'view'> & { targets: Record<stri
     penHandleDotRadiusPx: HANDLE_DOT_RADIUS_PX,
     penCloseHintRadiusPx: CLOSE_HINT_RADIUS_PX,
     penCloseHitPx: PEN_CLOSE_HIT_PX,
-    penAnchorSnapPx: PEN_ANCHOR_SNAP_PX,
     boneJointRadiusPx: JOINT_RADIUS_PX,
     weightPointRadiusPx: POINT_RADIUS_PX,
     sliceVertexRadiusPx: VERTEX_RADIUS_PX,

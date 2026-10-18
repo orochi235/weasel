@@ -16,7 +16,7 @@ import type { ConstraintGlyphStyle } from './constraints/constraintGlyphs';
 import { createConstraintsExtension } from './constraints/constraintsExtension';
 import { extendToMeetAction } from './extend/extendToMeet';
 import { handleLockAngleAction, handleLockLengthAction } from './handleLocks/handleLocks';
-import { createHandleSnapExtension, type HandleSnapOptions } from './handleSnap/handleSnap';
+import { createHandleSnapExtension, handleSnapSource, type HandleSnapOptionsInput } from './handleSnap/handleSnap';
 import { createSoftSelectionExtension, type SoftSelectionOptions } from './softSelection/softSelection';
 import { harmonizeAnchorsAction } from './harmonize/harmonize';
 import { lengthenPathAction, lengthenToolAction } from './lengthen/lengthenPath';
@@ -62,11 +62,11 @@ export function createSoftSelectionPreset(options: () => SoftSelectionOptions | 
 
 /**
  * Handle snapping: a dragged control handle's angle snaps to steps and to the
- * line through its anchor's other handle, as `options` says, read every move.
- * Null or undefined from `options` leaves the handle unsnapped.
+ * line through its anchor's other handle, as `options` says. A thunk is read
+ * every move, and null or undefined from it leaves the handle unsnapped.
  */
-export function createHandleSnapPreset(options: () => HandleSnapOptions | null | undefined = () => ({})): FeaturePreset {
-  return { id: 'handleSnap', pathEdit: [createHandleSnapExtension(options)] };
+export function createHandleSnapPreset(options: HandleSnapOptionsInput = {}): FeaturePreset {
+  return { id: 'handleSnap', pathEdit: [createHandleSnapExtension(options)], snapSources: [handleSnapSource(options)] };
 }
 
 /** Handle snapping every 45°, within 6°, and to the opposite handle. */

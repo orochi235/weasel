@@ -31,7 +31,7 @@ and an app that imports only some never loads the others:
 | `simplifyBrushPreset` | The Simplify brush, a path-edit tool that refits the curve it passes over |
 | `handleLocksPreset` | The `handleLock.angle` and `handleLock.length` toggles |
 | `createSoftSelectionPreset` | Soft selection: dragging anchors also moves the anchors near them along the path, by a falloff over a radius in screen pixels that the wheel scrubs mid-drag; the reach is drawn as a band. Not in `pathTools` |
-| `handleSnapPreset`, `createHandleSnapPreset` | Handle snapping: a dragged handle's angle snaps to steps and to the line through its anchor's other handle. Not in `pathTools` |
+| `handleSnapPreset`, `createHandleSnapPreset` | Handle snapping: a dragged handle's angle snaps to steps and to the line through its anchor's other handle, through a snap session whose angles `handleSnapSource` offers. Not in `pathTools` |
 | `bridgePreset` | Bridge: join open ends with a curve along each end's heading, on paths or on two anchors |
 | `spiroPreset` | Spiro curves: path edit edits a spiro node's points and solves the curve again through them, `setSpiroKind` sets the kind of the selected points, and `releaseSpiro` converts a spiro curve to an ordinary path; `useSpiroTool` (Shift+P) draws them |
 | `lengthenPreset` | Lengthen, a path-edit tool whose drag on an open end grows the path along its end tangent or curvature, or trims it back |
@@ -57,9 +57,9 @@ chrome-caps shows them; the corner widgets show until it hides
 `PathEditExtension`: marks drawn on the open path, parts of it to press, marks
 a click selects and Delete removes, a share of an anchor or handle drag, what
 an edit keeps true, and, for spiro curves, how a path drawn from another form
-is edited. `createSoftSelectionPreset` and `createHandleSnapPreset` take a
-function returning their options, read as each drag starts and on every move
-respectively; null from it turns the feature off for that drag.
+is edited. `createSoftSelectionPreset` takes a function returning its options,
+read as each drag starts, and `createHandleSnapPreset` options or a function
+read on every move; null from either function turns the feature off.
 
 The tools are hooks, mounted with `<SceneCanvas tools>` as core's are; each
 binds an action its family's preset registers, so turn on both. Two carry their

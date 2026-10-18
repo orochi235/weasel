@@ -10,6 +10,7 @@ import type { DrawCommand } from '@weasel-js/renderer';
 import type { AnchorSet, PointOrigin, PolygonPath, View } from '@weasel-js/geom';
 import type { OngoingOverlay } from '@weasel-js/routing';
 import type { HandleLocks } from 'interactions/actions/edit-anchors/params';
+import type { SnapDep } from 'interactions/actions/snapDep';
 import type { PathRepresentation } from './pathRepresentation';
 
 /** A mark an extension drew that is selected in place of anchors: Delete
@@ -75,6 +76,8 @@ export interface PathEditDragStart extends Omit<PathEditTarget, 'node'> {
   /** The view's world-to-screen scale at the press, to measure in screen
    *  pixels by; absent without a view. */
   scale?: { x: number; y: number };
+  /** The canvas's `snap` dep, to begin a session on; absent without one. */
+  snap?: SnapDep;
 }
 
 /** A handle drag's move, as {@link PathEditDrag.handle} reads it. */
@@ -102,6 +105,8 @@ export interface PathEditDrag {
   /** Overlays to draw while the drag is in flight, for `current`, the path
    *  as the drag has made it. */
   overlays?(current: AnchorSet): readonly OngoingOverlay[];
+  /** The drag is over, committed or canceled. */
+  end?(): void;
 }
 
 /** Another node an edit changes along with the edited one. */

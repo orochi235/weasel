@@ -90,6 +90,9 @@ export interface SnapCollect<P = Point> {
  *  are radians about `pivot`, in the frame `rotationOf` reads. */
 export interface AngleCollect {
   pivot: Point;
+  /** Where the gesture was pressed: its distance from `pivot` is the radius
+   *  the default marks are drawn at. */
+  press: Point;
   /** The angle at press. */
   theta0: number;
   /** The unsnapped angle now. */
@@ -99,6 +102,7 @@ export interface AngleCollect {
   /** Nodes that offer no targets: the subject and everything under it. */
   exclude: readonly string[];
   mods: SnapMods;
+  also?: SnapGeometry;
   /** Absent in a host with no 2D scene. */
   scene?: Scene<unknown, string, unknown>;
   /** `id`'s world rotation, read as the subject's is; undefined for a node

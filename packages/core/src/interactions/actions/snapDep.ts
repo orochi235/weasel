@@ -79,6 +79,9 @@ export interface SnapMods {
   /** No source answers; the input subspace still applies. */
   suspend: boolean;
   constrain: boolean;
+  /** Angle gestures: the angle stays at `theta0`, which becomes a required
+   *  target. */
+  hold?: boolean;
 }
 
 export interface SnapOutcome {

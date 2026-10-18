@@ -58,14 +58,21 @@ function collectAngles(
       out.push({ probe: PROBE, locus: { at: [at], dirs: [] }, source: 'constrain', order: -1, tier: 'target', reachPx: 0, required: true });
     }
   }
+  const theta0 = req.theta0 ?? 0;
+  if (mods.hold) {
+    const at = theta0 + TURN * Math.round((theta - theta0) / TURN);
+    out.push({ probe: PROBE, locus: { at: [at], dirs: [] }, source: 'hold', order: -1, tier: 'target', reachPx: 0, required: true, mark: [] });
+  }
   if (mods.suspend) return out;
   const q: AngleCollect = {
     pivot: req.pivot ?? req.press,
-    theta0: req.theta0 ?? 0,
+    press: req.press,
+    theta0,
     theta,
     ids: req.ids ?? [],
     exclude: inputs.exclude ?? req.ids ?? [],
     mods,
+    ...(req.also ? { also: req.also } : {}),
     ...(inputs.scene ? { scene: inputs.scene } : {}),
     ...(inputs.rotationOf ? { rotationOf: inputs.rotationOf } : {}),
   };
