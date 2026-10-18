@@ -20,7 +20,8 @@ export interface GatherSnapOptions<P> {
 
 /**
  * One frame's resolver candidates: each source is asked, through `ask`, about
- * the probes whose role it matches, and what it answers for a probe it was
+ * the probes whose role it matches and the reach that applies to it (its
+ * own `reachPx`, else `opts.reachPx`), and what it answers for a probe it was
  * not offered, or a point on `origin`, is dropped. Sources run in order, and
  * an earlier source, then an earlier yield, wins a full tie. The building
  * block of a host's own snap session over `resolveSnap`.
@@ -28,7 +29,7 @@ export interface GatherSnapOptions<P> {
 export function gatherSnapCandidates<P>(
   sources: readonly SnapSource<P>[],
   probes: readonly SnapProbeAt<P>[],
-  ask: (source: SnapSource<P>, offered: SnapProbeAt<P>[]) => SnapCollect<P>,
+  ask: (source: SnapSource<P>, offered: SnapProbeAt<P>[], reachPx: number) => SnapCollect<P>,
   opts: GatherSnapOptions<P>,
 ): SnapCandidate<SnapCandidateMark<P>>[] {
   const origin = opts.origin === undefined ? null : opts.toVec(opts.origin);
@@ -39,7 +40,7 @@ export function gatherSnapCandidates<P>(
     if (offered.length === 0) continue;
     const ids = new Set(offered.map((q) => q.id));
     const reachPx = source.reachPx ?? opts.reachPx;
-    for (const c of source.collect(ask(source, offered))) {
+    for (const c of source.collect(ask(source, offered, reachPx))) {
       if (!ids.has(c.probe)) continue;
       const at = opts.toVec(c.locus.at);
       if (origin && c.locus.dirs.length === 0 && same(at, origin)) continue;

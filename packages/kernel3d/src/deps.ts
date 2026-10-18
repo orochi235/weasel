@@ -8,8 +8,6 @@
 
 import type {
   AreaSelectDep,
-  InsertDep,
-  InsertExtras,
   NodeAtPointDep,
   NodeId,
   PoseDescriptor,
@@ -35,7 +33,7 @@ import {
 } from '@weasel-js/geom/3d';
 import { cameraEye, type Camera3d } from './camera';
 import { aabbOfPose, type Pose3 } from './pose3';
-import { rayAt, rectOf, viewProjectionOf, type Viewport3d, type ViewportSource } from './project';
+import { rayAt, rectOf, viewProjectionOf, type Viewport3d } from './project';
 import { projectAabbToScreen, type ScreenBox } from './screen';
 import { createSession3d } from './snap/session3d';
 
@@ -167,80 +165,6 @@ export function createSnap<TData, TLayer extends string>(
   return {
     point: (p) => p,
     begin: (req) => createSession3d({ req, world, sources, reachPx, store }),
-  };
-}
-
-/** The ground-plane rectangle a drag swept out, in world units. */
-export interface Footprint {
-  /** Centre of the swept rectangle, on the ground plane. */
-  center: Vec3;
-  /** Extent along the two axes the up axis is not. */
-  width: number;
-  depth: number;
-}
-
-/**
- * A drag rectangle becomes a footprint on the ground plane: its four corners
- * are cast onto the plane and the hit points give the extent. What node that
- * implies is the consumer's answer — the kernel does not know what it is
- * inserting.
- *
- * The kit's `InsertDep.commit` hands over a screen-space AABB and nothing else:
- * the depth the 2D contract cannot express comes from the plane, not from the
- * caller.
- */
-export function createInsert(opts: {
-  viewport: ViewportSource;
-  up?: Vec3;
-  /** Smallest footprint a click-sized drag produces. Default 0.25. */
-  minExtent?: number;
-  mint(footprint: Footprint, extras: InsertExtras): NodeId | null;
-}): InsertDep {
-  const up = opts.up ?? DEFAULT_UP;
-  const minExtent = opts.minExtent ?? 0.25;
-  // The two axes the up axis is not, so a footprint reads the same whichever
-  // way up the world is.
-  const axes: readonly ['x' | 'y' | 'z', 'x' | 'y' | 'z'] =
-    up.y !== 0 ? ['x', 'z'] : up.x !== 0 ? ['y', 'z'] : ['x', 'y'];
-
-  return {
-    commit(bounds, extras) {
-      const vp = opts.viewport();
-      const corners = [
-        { x: bounds.x, y: bounds.y },
-        { x: bounds.x + bounds.width, y: bounds.y },
-        { x: bounds.x, y: bounds.y + bounds.height },
-        { x: bounds.x + bounds.width, y: bounds.y + bounds.height },
-      ];
-
-      const hits: Vec3[] = [];
-      for (const corner of corners) {
-        const ray = rayAt(vp, corner);
-        if (!ray) continue;
-        const t = intersectRayPlane(ray, up, 0);
-        if (t !== null) hits.push(pointOnRay(ray, t));
-      }
-      if (hits.length === 0) return null;
-
-      const [u, v] = axes;
-      let minU = Infinity, maxU = -Infinity, minV = Infinity, maxV = -Infinity;
-      for (const h of hits) {
-        minU = Math.min(minU, h[u]); maxU = Math.max(maxU, h[u]);
-        minV = Math.min(minV, h[v]); maxV = Math.max(maxV, h[v]);
-      }
-
-      const center = { x: 0, y: 0, z: 0 };
-      center[u] = (minU + maxU) / 2;
-      center[v] = (minV + maxV) / 2;
-      return opts.mint(
-        {
-          center,
-          width: Math.max(minExtent, maxU - minU),
-          depth: Math.max(minExtent, maxV - minV),
-        },
-        extras,
-      );
-    },
   };
 }
 

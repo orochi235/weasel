@@ -141,11 +141,11 @@ function candidatesOf<TData, TLayer extends string>(
   const { req } = inputs;
   const shifted = probes.map((q) => ({ ...q, at: add(q.at, delta0) }));
   const perPx = worldPerPx(vp, shifted);
-  const found = gatherSnapCandidates(sources, shifted, (source, offered) => ({
+  const found = gatherSnapCandidates(sources, shifted, (_source, offered, reachPx) => ({
     gesture: req.gesture, probes: offered, delta0, exclude: req.ids ?? [],
     ...(origin ? { origin } : {}),
     reachWorld: (px) => px * perPx,
-    reachPx: source.reachPx ?? inputs.reachPx,
+    reachPx,
   }), { toVec: tuple, reachPx: inputs.reachPx, ...(origin ? { origin } : {}) });
   return found.filter((c) => !level(c.locus, up));
 }

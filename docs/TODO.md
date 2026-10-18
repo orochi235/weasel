@@ -116,6 +116,14 @@ Priority tags:
   a 3D host: its store (`PointerContextValue`) holds one `{ worldX, worldY, viewId }` point and no
   camera.
 
+- **(P3) A 3D move of several roots lands only the first one exactly.** kernel3d's snap session
+  answers in the screen point that `translate` turns back into the snapped world delta for the
+  anchor, the first selected node. `translate` converts a screen delta per node, from that node's
+  own screen center and on the plane at its own height, so every other root, at a different height
+  or place on screen, moves by a slightly different world delta, and a target one of them snapped
+  to is missed. A fix needs either a group-rigid 3D move or a world-delta channel in the pose
+  descriptor that a 3D move could use in place of a screen delta.
+
 - **(P3) Long-press: the native `contextmenu` a touch hold sends is unseen on a real device.**
   `useGestureDispatcher` treats a `contextmenu` that arrives while a touch or pen hold is in
   progress as that hold's long-press, so a `contextMenu` binding runs once. Tested only in jsdom

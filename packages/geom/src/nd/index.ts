@@ -15,3 +15,4 @@ export {
   resolveSnap,
   type ProbeRole, type SnapCandidate, type SnapProblem, type SnapProbe, type SnapResolution, type SnapTier,
 } from '../snap/resolve';
+export { stepLine } from '../snap/stepLine';

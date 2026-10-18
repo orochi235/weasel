@@ -170,8 +170,8 @@ export type InsertExtras =
   | { kind: string; [extra: string]: unknown };
 
 
-import type { InsertDep, PathSymmetryDep, InsertIntoDep, InsertLive } from './insertDeps';
-export type { InsertDep, PathSymmetryDep, InsertIntoDep, InsertLive };
+import type { InsertDep, InsertEnds, PathSymmetryDep, InsertIntoDep, InsertLive } from './insertDeps';
+export type { InsertDep, InsertEnds, PathSymmetryDep, InsertIntoDep, InsertLive };
 
 /**
  * Adapter dep for `resizeAction`: bounds-frame behaviors (e.g.

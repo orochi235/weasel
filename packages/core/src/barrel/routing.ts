@@ -118,6 +118,7 @@ export type {
   FinishedEditFrame,
   IngestionDep,
   InsertDep,
+  InsertEnds,
   InsertIntoDep,
   PathSymmetryDep,
   InsertLive,

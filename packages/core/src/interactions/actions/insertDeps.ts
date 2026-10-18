@@ -3,6 +3,16 @@ import type { NodeId } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
 import type { InsertExtras } from './depSchema';
 
+/** The drag an insert's bounds came from, in the same coordinates: `bounds`
+ *  is the box `start` and `end` span, or with `fromCenter`, the box centered
+ *  on `start` reaching `end`. A host whose bounds lose information on the
+ *  way, a 3D one casting them onto a plane, reads the ends instead. */
+export interface InsertEnds {
+  start: { x: number; y: number };
+  end: { x: number; y: number };
+  fromCenter?: boolean;
+}
+
 /** Adapter dep for `insertAction`. The `extras` carry the active tool's kind
  *  + per-kind geometry. */
 export interface InsertDep {
@@ -14,6 +24,8 @@ export interface InsertDep {
   commit(
     bounds: { x: number; y: number; width: number; height: number },
     extras: InsertExtras,
+    /** Absent when no drag made the bounds: a click-place. */
+    ends?: InsertEnds,
   ): NodeId | null;
   /**
    * What `commit` would apply, unapplied: the new node's id and the ops that

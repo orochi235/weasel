@@ -11,6 +11,9 @@ export const SNAP_ROLES = {
  *  measurement, a rotate, a symmetry axis. 15 degrees. */
 export const SNAP_ANGLE_STEP = Math.PI / 12;
 
+/** The step an `'axis'` lock holds a move to: the axes and the diagonals. */
+export const SNAP_AXIS_STEP = Math.PI / 4;
+
 const held = roleReader(SNAP_ROLES);
 
 /** The snap roles `ctx` holds. */

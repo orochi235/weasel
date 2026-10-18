@@ -1,14 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import {
   createAreaSelect,
-  createInsert,
   createNodeAtPoint,
   createPoseDescriptor,
   screenBoxOf,
   type Viewport3d,
   type ViewportSource,
-  type Footprint,
 } from './deps';
+import { createInsert, type Footprint } from './insert';
 import { createCamera, cameraEye, cameraViewProjection } from './camera';
 import { add, dot, len, scale, sub, type Vec3 } from '@weasel-js/geom/3d';
 import { pose3 } from './pose3';

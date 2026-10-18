@@ -19,11 +19,12 @@ export {
   type ChromeBox, type ScreenBox,
 } from './screen';
 export {
-  screenBoxOf, createNodeAtPoint, createAreaSelect, createSnap, createInsert,
+  screenBoxOf, createNodeAtPoint, createAreaSelect, createSnap,
   createPoseDescriptor,
-  type Footprint, type NodeBounds, type Node3d, type Scene3d, type Snap3dOptions, type Viewport3d,
+  type NodeBounds, type Node3d, type Scene3d, type Snap3dOptions, type Viewport3d,
   type ViewportSource, type World3d,
 } from './deps';
+export { createInsert, type Footprint } from './insert';
 export { projectPoint } from './project';
 export {
   alignPlaneSource, boxSnapSource, groundGridSource, type GroundGridSourceOptions,

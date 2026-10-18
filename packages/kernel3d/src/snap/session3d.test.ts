@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { createScene, type NodeId, type SnapSource } from '@weasel-js/core';
+import {
+  createScene, insertAction, type InvocationCtx, type NodeId, type OngoingInvoker, type SnapSource,
+} from '@weasel-js/core';
 import { add, intersectRayPlane, pointOnRay, type Vec3 } from '@weasel-js/geom/3d';
 import { MAX_PITCH, createCamera } from '../camera';
 import { createPoseDescriptor, createSnap, screenBoxOf } from '../deps';
+import { createInsert, type Footprint } from '../insert';
 import { aabbOfPose, pose3, type Pose3 } from '../pose3';
 import { projectPoint, rayAt, type Viewport3d } from '../project';
 import type { Scene3d, World3d } from '../world';
@@ -143,19 +146,60 @@ describe('createSnap: a 3D move', () => {
     expect(out.marks).toEqual([]);
     expect(move.landed(out.point).position.x).toBeCloseTo(2.02, 6);
   });
+
+  it('draws no marks for planes level with the move, which height alone meets', () => {
+    const { world, ids } = worldOf([pose3({ x: 0, y: 0.5, z: 0 }), pose3({ x: 0.04, y: 0.5, z: -5 })]);
+    const snap = createSnap(world, { sources: [alignPlaneSource(world)] });
+    const move = moveOf(world, ids[0]!);
+    const out = snap.begin!({ gesture: 'move', ids: [ids[0]!], press: move.press })
+      .at(move.pointerFor({ x: 0.01, y: 0, z: 0.7 }), FREE);
+    expect(out.marks.length).toBeGreaterThan(0);
+    // Every mark lies in an x plane: a y plane's would run level, between different xs.
+    for (const m of out.marks) {
+      if (m.kind !== 'line') throw new Error(`unexpected ${m.kind} mark`);
+      expect(m.from.x).toBeCloseTo(m.to.x, 9);
+    }
+  });
+
+  it('lands a move exactly with the world upside down', () => {
+    const vp = viewport();
+    const { world, ids } = worldOf([pose3({ x: 0, y: 0.5, z: 0 }), pose3({ x: 3, y: 0.5, z: 0 })], vp);
+    const flipped: W = { ...world, up: { x: 0, y: -1, z: 0 } };
+    const snap = createSnap(flipped, { sources: [boxSnapSource(flipped)] });
+    const move = moveOf(flipped, ids[0]!);
+    const out = snap.begin!({ gesture: 'move', ids: [ids[0]!], press: move.press })
+      .at(move.pointerFor({ x: 2.02, y: 0, z: 0.015 }), FREE);
+    expect(out.held).toBe(true);
+    const box = aabbOfPose(move.landed(out.point));
+    expect(box.max.x).toBeCloseTo(2.5, 6);
+    expect(box.max.z).toBeCloseTo(0.5, 6);
+    expect(box.min.y).toBeCloseTo(0, 12);
+  });
 });
 
 describe('createSnap: a 3D insert', () => {
-  it('lands the footprint corner on a ground grid point', () => {
+  it('mints a footprint whose corners are the ground grid points the drag snapped to', () => {
     const { world } = worldOf([]);
     const vp = world.viewport();
-    const snap = createSnap(world, { sources: [groundGridSource({ step: 1 })] });
-    const press = projectPoint({ x: 1.3, y: 0, z: -0.8 }, vp)!;
-    const out = snap.begin!({ gesture: 'point', press }).at(press, FREE);
-    expect(out.held).toBe(true);
-    const ground = cast(vp, out.point, 0);
-    expect(ground.x).toBeCloseTo(1, 6);
-    expect(ground.z).toBeCloseTo(-1, 6);
+    let minted: Footprint | null = null;
+    const deps = {
+      insert: createInsert({ viewport: world.viewport, mint: (f) => ((minted = f), 'n' as NodeId) }),
+      snap: createSnap(world, { sources: [groundGridSource({ step: 1 })] }),
+    };
+    const ctx = (p: Vec3): InvocationCtx => {
+      const s = projectPoint(p, vp)!;
+      return { world: s, screen: s, modifiers: { alt: false, ctrl: false, meta: false, shift: false }, deps };
+    };
+    const handle = (insertAction.invoker as OngoingInvoker).start(ctx({ x: 1.3, y: 0, z: -0.8 }), undefined);
+    const end = ctx({ x: 3.2, y: 0, z: 0.7 });
+    handle.onMove!(end);
+    handle.onEnd!(end, 'commit');
+    const f = minted as Footprint | null;
+    expect(f).not.toBeNull();
+    expect(f!.center.x - f!.width / 2).toBeCloseTo(1, 6);
+    expect(f!.center.x + f!.width / 2).toBeCloseTo(3, 6);
+    expect(f!.center.z - f!.depth / 2).toBeCloseTo(-1, 6);
+    expect(f!.center.z + f!.depth / 2).toBeCloseTo(1, 6);
   });
 
   it('snaps an insert onto a box corner on the ground ahead of the grid', () => {

@@ -1,8 +1,7 @@
-import type { SnapConstrain } from '@weasel-js/core';
-import type { Flat } from '@weasel-js/geom/nd';
-import { add, cross, dot, normalize, scale, sub, type Vec3 } from '@weasel-js/geom/3d';
+import { SNAP_AXIS_STEP, type SnapConstrain } from '@weasel-js/core';
+import { stepLine, type Flat } from '@weasel-js/geom/nd';
+import { cross, dot, normalize, scale, sub, type Vec3 } from '@weasel-js/geom/3d';
 
-const AXIS_STEP = Math.PI / 4;
 const ZERO: Vec3 = { x: 0, y: 0, z: 0 };
 
 export const tuple = (p: Vec3): number[] => [p.x, p.y, p.z];
@@ -28,11 +27,6 @@ export function inputFlat3d(
 ): Flat {
   const [u, v] = basis;
   if (!held || c === undefined || c === 'aspect') return { at: [0, 0, 0], dirs: [tuple(u), tuple(v)] };
-  const step = c === 'axis' ? AXIS_STEP : c.step;
-  const from = c === 'axis' ? ZERO : about;
-  const d = sub(delta0, from);
-  const a = dot(d, u);
-  const b = dot(d, v);
-  const theta = a === 0 && b === 0 ? 0 : Math.round(Math.atan2(b, a) / step) * step;
-  return { at: tuple(from), dirs: [tuple(add(scale(u, Math.cos(theta)), scale(v, Math.sin(theta))))] };
+  const step = c === 'axis' ? SNAP_AXIS_STEP : c.step;
+  return stepLine(tuple(c === 'axis' ? ZERO : about), tuple(delta0), [tuple(u), tuple(v)], step);
 }

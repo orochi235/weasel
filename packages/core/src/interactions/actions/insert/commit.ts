@@ -57,11 +57,11 @@ export function commitInsert(
     }
   }
 
-  const { bounds, extras } = insertShape(resolved, frame, points, userRotation);
+  const { bounds, extras, ends } = insertShape(resolved, frame, points, userRotation);
   // Sub-threshold drag — no insert.
   if (!isCommittableExtent(bounds, extras.kind)) return false;
 
-  const id = session.dep.commit(bounds, extras);
+  const id = session.dep.commit(bounds, extras, ends);
   enterInsertedText(session.textEdit, id === null ? null : String(id), extras.kind);
   return id !== null;
 }

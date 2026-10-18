@@ -125,7 +125,6 @@
     "longestFunction": 235
   },
   "packages/kernel3d/src/deps.ts": {
-    "lines": 420,
     "longestFunction": 161
   },
   "packages/labkit/src/annotations/AnnotationOverlay.tsx": {

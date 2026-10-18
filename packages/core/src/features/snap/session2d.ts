@@ -94,7 +94,7 @@ function collectAll(
   // A plane unit is `plane.scale` camera units the other way round.
   const scale = plane ? camera / Math.max(Math.abs(plane.scale.x), Math.abs(plane.scale.y)) : camera;
   const probes = inputs.probes.map((q) => ({ ...q, at: { x: q.at.x + delta0.x, y: q.at.y + delta0.y } }));
-  return gatherSnapCandidates(sources, probes, (source, offered) => ({
+  return gatherSnapCandidates(sources, probes, (_source, offered, reachPx) => ({
     gesture: req.gesture, probes: offered, delta0, exclude: inputs.exclude ?? req.ids ?? [],
     ...(plane ? { plane } : {}),
     ...subjectAt(inputs, delta0),
@@ -102,7 +102,7 @@ function collectAll(
     ...(req.origin ? { origin: req.origin } : {}),
     ...(req.also ? { also: req.also } : {}),
     reachWorld: (px) => px / scale,
-    reachPx: source.reachPx ?? inputs.reachPx,
+    reachPx,
     ...(inputs.scene ? { scene: inputs.scene } : {}),
   }), { toVec: (p) => [p.x, p.y], reachPx: inputs.reachPx, ...(req.origin ? { origin: req.origin } : {}) });
 }
