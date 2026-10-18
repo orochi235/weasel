@@ -52,8 +52,14 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
   entry takes (`PATH_EDIT` `['path']`, `ISOLATION` `['group']`, `TEXT_EDIT` none), and core's
   `modeTriggers(registry, { enter, canEnter })` binds them: ambient tier, so a tool that binds the
   double-click itself (pen, spiro, slice finishing) now wins where draw's `onDoubleClick` observer
-  used to enter path-edit alongside it. The target is `hitAt`'s node, which ignores
-  `isPointerInteractive`, so draw's `canEnter` checks it.
+  used to enter path-edit alongside it.
+- 2026-10-18: `<SceneCanvas isPointerInteractive>` now gates every point hit, not only the
+  `onClick`/`onDoubleClick` observers: a rejected node is left out of the select tool's pick,
+  the dispatcher's `kind:` classification, `hitAt` and `nodeAtPoint`, and whatever is beneath it
+  answers. A click on a node a mode dims no longer selects it.
+- 2026-10-18: Routing entries are handed the node beside its data, and `inferredNodeRouting` and
+  `defaultNodeRouting` lead with `groupNodeRouting`, which routes a container as `'group'`. A
+  container was `'unknown'` before.
 
 ## Scene, move, and history
 

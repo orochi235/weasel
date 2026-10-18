@@ -7,9 +7,16 @@ export interface NodeRoutingEntry {
   /** Unique kind name. Routing tables key on this string. Consumer-defined;
    *  the kit places no constraint beyond uniqueness within a registry. */
   name: string;
-  /** Predicate over a node's `data` payload. First registered kind whose
-   *  `matches` returns true claims the node. */
-  matches: (data: unknown) => boolean;
+  /** Predicate over a node's `data` payload, and the node itself where the caller has one, for
+   *  a kind its data cannot show (`'container'`). First registered kind whose `matches` returns
+   *  true claims the node. */
+  matches: (data: unknown, node?: RoutedNode) => boolean;
+}
+
+/** What a routing entry may read of a node beside its data. */
+export interface RoutedNode {
+  /** The node's structural kind: `'leaf'` or `'container'`. */
+  readonly kind?: string;
 }
 
 /**
@@ -22,8 +29,8 @@ export interface NodeRouting {
    *  Throws if a kind with this name is already registered. */
   register(kind: NodeRoutingEntry): void;
   /** Walk registered kinds in registration order; return the first kind
-   *  whose `matches(data)` returns true, or `'unknown'` if none match. */
-  classify(data: unknown): string;
+   *  whose `matches(data, node)` returns true, or `'unknown'` if none match. */
+  classify(data: unknown, node?: RoutedNode): string;
   /** Lookup a kind entry by name. */
   get(name: string): NodeRoutingEntry | undefined;
   /** Enumerate registered kinds in registration order. */
@@ -45,9 +52,9 @@ export function createNodeRouting(): NodeRouting {
       byName.set(kind.name, kind);
       entries.push(kind);
     },
-    classify(data) {
+    classify(data, node) {
       for (const kind of entries) {
-        if (kind.matches(data)) return kind.name;
+        if (kind.matches(data, node)) return kind.name;
       }
       return 'unknown';
     },

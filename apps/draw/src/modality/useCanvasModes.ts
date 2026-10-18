@@ -23,8 +23,7 @@ export interface CanvasModes {
 }
 
 /**
- * `isPointerInteractive` is the canvas's own: a node it rejects takes no double-click entry. A
- * path with anchors is left to the canvas's `enterPathEdit`, which opens it; one without still
+ * A path with anchors is left to the canvas's `enterPathEdit`, which opens it; one without still
  * takes path-edit, as Enter does.
  */
 export function useCanvasModes(
@@ -32,7 +31,6 @@ export function useCanvasModes(
   scene: DrawScene,
   selection: SelectionApi,
   pathEdit: PathEditHost,
-  isPointerInteractive: (id: string) => boolean = () => true,
 ): CanvasModes {
   const entry = useLatest({
     pathToEdit: (): string | null => {
@@ -47,12 +45,10 @@ export function useCanvasModes(
     selection: () => entry.current.selection(),
   }), [machine, entry]);
 
-  const interactive = useLatest(isPointerInteractive);
   const triggers = useMemo(() => modeTriggers(machine.registry, {
-    canEnter: (id, target) => interactive.current(target)
-      && !(id === 'path-edit' && hasEditablePath(scene.get(asNodeId(target)))),
+    canEnter: (id, target) => !(id === 'path-edit' && hasEditablePath(scene.get(asNodeId(target)))),
     enter: (id, target) => enterModeOn(machine, id, target),
-  }), [machine, scene, interactive]);
+  }), [machine, scene]);
 
   const ambient = useMemo(() => [keys, triggers], [keys, triggers]);
   return { ambient, pathEdit };

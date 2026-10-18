@@ -34,6 +34,17 @@ describe('inferredNodeRouting', () => {
     expect(classify({ text: undefined })).toBe('unknown');
   });
 
+  it('routes a container as "group" whatever its data, and data alone as before', () => {
+    for (const table of [inferredNodeRouting, defaultNodeRouting]) {
+      const r = createNodeRouting();
+      for (const k of table) r.register(k);
+      expect(r.classify({}, { kind: 'container' })).toBe('group');
+      expect(r.classify({ text: 'hi' }, { kind: 'container' })).toBe('group');
+      expect(r.classify({}, { kind: 'leaf' })).toBe('unknown');
+      expect(r.classify({})).toBe('unknown');
+    }
+  });
+
   it('defaultNodeRouting still matches by data.kind tag', () => {
     const r = createNodeRouting();
     for (const k of defaultNodeRouting) r.register(k);
