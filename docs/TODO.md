@@ -1332,11 +1332,12 @@ only story runner in the repo.
   layer can paint, but text, custom shaders and `effects` cannot be bounded yet, so a layer holding
   any of them still gets a canvas-sized surface (16 MB at 1280x800 and dpr 2). Left:
 
-  - **The scratch buffer takes half the default budget.** The one multisampled buffer surfaces are
-    drawn in costs 8 bytes a sample at the size of the largest surface: 131 MB of the 256 MB default
-    at 4x for a canvas-sized one, which leaves room for about 8 canvas-sized surfaces. At 16 and 64 layers the
-    budget declined half or more of them (below). Drawing in tiles, or freeing the scratch buffer
-    once nothing is being redrawn, would change that.
+  - **The budget still caps canvas-sized layers at about 16.** `retainBudget` (256 MB default) counts only
+    kept surfaces; the multisampled scratch buffer they are drawn in is left out and freed after a
+    frame that redraws nothing. A canvas-sized surface is 16 MB, so at 64 layers holding text 48 are
+    still drawn straight through (below). Two things are open: a frame that redraws can hold the
+    budget plus one canvas-sized multisampled buffer (131 MB at 4x), which drawing in tiles would
+    cap; and whether the default should scale with the drawing buffer.
   - **Bounds for text and custom shaders.** Text needs its laid-out extent plus glyph overhang;
     a custom shader may read `gl_FragCoord`, which the offset viewport moves.
   - **Retaining through camera motion.** A world layer stops retaining while the view moves, and its
@@ -1344,25 +1345,27 @@ only story runner in the repo.
     first still frame. An oversized, bounded surface could be translated instead of redrawn.
   - **Layers with `effects`, and layers inside a `LayerGroup` that owns a surface,** are never
     retained: the renderer declines a retained group inside another render target.
-  - **The threshold.** `tests/perf/layer-dispatch.spec.ts` now times the real path (`retained`),
-    each variant on a renderer of its own. On msb-uai (Apple M3 Max, ANGLE Metal, headless Chromium
-    153), 2026-10-18, ms a frame over the control, medians of 3 runs:
+  - **The threshold.** `tests/perf/layer-dispatch.spec.ts` times the real path (`retained`), each
+    variant on a renderer of its own. On msb-uai (Apple M3 Max, ANGLE Metal, headless Chromium 153),
+    2026-10-18, ms a frame over the control, medians of 3 runs, with the scratch buffer outside the
+    budget:
 
     | layers | cmds | submit | retained | kept / declined |
     |---:|---:|---:|---:|---:|
-    |  4 |   30 |  0.225 |  0.515 |  4 /  0 |
-    |  4 |  100 |  0.830 |  0.500 |  4 /  0 |
-    |  4 |  300 |  2.405 |  0.410 |  4 /  0 |
-    | 16 |  100 |  2.750 |  2.565 |  8 /  8 |
-    | 16 |  300 | 10.730 |  5.200 |  8 /  8 |
-    | 64 |  100 | 15.850 | 12.310 |  8 / 56 |
-    | 64 | 1000 | 68.170 | 54.065 |  8 / 56 |
+    |  4 |   30 |  0.240 |  0.510 |  4 /  0 |
+    |  4 |  100 |  1.255 |  0.490 |  4 /  0 |
+    | 16 |   30 |  1.670 |  2.035 | 16 /  0 |
+    | 16 |  100 |  3.785 |  1.705 | 16 /  0 |
+    | 16 |  300 | 11.595 |  1.765 | 16 /  0 |
+    | 64 |  100 |  9.030 |  9.515 | 16 / 48 |
+    | 64 | 1000 | 56.125 | 43.005 | 16 / 48 |
 
-    Retaining wins by 100 commands a layer at every layer count and loses at 30 from 4 layers up,
-    well below the 250 in force. It was left at 250: this is one run on one GPU, and frame time does not price
-    the memory a lower threshold commits. Result file:
-    `tests/perf/recorded/layer-dispatch-retained-msb-uai-m3max-2026-10-18/`; the image stand-in it
-    replaces is in `tests/perf/recorded/layer-dispatch-2026-10-07/`.
+    Where every layer fits the budget, retaining wins by 100 commands a layer and loses at 30, well
+    below the 250 in force. It was left at 250: one GPU, and frame time does not price the memory a
+    lower threshold commits. With the scratch buffer counted, the same node kept 8 of 16 and 8 of
+    64. Result files: `tests/perf/recorded/layer-dispatch-scratch-unbudgeted-msb-uai-m3max-2026-10-18/`
+    (now) and `tests/perf/recorded/layer-dispatch-retained-msb-uai-m3max-2026-10-18/` (scratch
+    counted).
 
 - **(P3) The pull request benchmark job does not fit its time limit, and its comment shows
   seven of fifteen benchmarks.** Its steps ran on keiei (Apple M2, 8 cores, load about 6.9) on

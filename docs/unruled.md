@@ -116,6 +116,9 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
 - 2026-10-18: `<Canvas retain>` takes `false` or `{ minCommands, budget }`, with `false` beating a
   layer's own `retain: true`; `WeaselRenderer.setRetainBudget` is new, and lowering the budget
   below what is held frees every surface.
+- 2026-10-18: `retainBudget` counts only kept surfaces; the multisampled scratch buffer is left out
+  and freed after a frame that redraws nothing, so a redrawing frame can exceed the budget by one
+  canvas-sized multisampled buffer.
 
 ## Text
 
