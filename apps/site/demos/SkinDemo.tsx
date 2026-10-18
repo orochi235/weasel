@@ -13,6 +13,7 @@ import {
 } from '@weasel-js/core';
 import type { NodeId, Path, RectPose, Stroke, Fill } from '@weasel-js/core';
 import num from '@weasel-js/theme/numeric.module.css';
+import { DemoStage } from './DemoStage';
 
 const W = 600, H = 300;
 const BONE = 110, HALF = 16, Y = 230;
@@ -114,14 +115,14 @@ export function SkinDemo() {
           {playing ? 'stop' : 'play'}
         </button>
       </div>
-      <SceneCanvas
-        width={W}
-        height={H}
-        className="ckd-canvas"
-        scene={scene}
-        features={['pick']}
-        animator={animator}
-      />
+      <DemoStage width={W} height={H}>
+        <SceneCanvas
+          className="ckd-canvas"
+          scene={scene}
+          features={['pick']}
+          animator={animator}
+        />
+      </DemoStage>
       <div className="ckd-hint">
         The same three-joint arm twice. On the left, <code>bindings</code> carry two rects, each
         whole with its joint, so they overlap inside the bend and gape outside it. On the right,

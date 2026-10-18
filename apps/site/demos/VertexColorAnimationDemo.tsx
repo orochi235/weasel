@@ -17,6 +17,7 @@ import {
   tweenVertexColors,
 } from '@weasel-js/animator';
 import { useAnimator } from '@weasel-js/animator/react';
+import { DemoStage } from './DemoStage';
 
 const W = 440, H = 240;
 const ANCHORS = 7;
@@ -99,14 +100,14 @@ export function VertexColorAnimationDemo() {
         <button className="ckd-btn" onClick={tween}>tween</button>
         <button className="ckd-btn" onClick={stagger}>stagger</button>
       </div>
-      <SceneCanvas
-        width={W}
-        height={H}
-        className="ckd-canvas"
-        scene={scene}
-        animator={animator}
-        selectable={false}
-      />
+      <DemoStage width={W} height={H}>
+        <SceneCanvas
+          className="ckd-canvas"
+          scene={scene}
+          animator={animator}
+          selectable={false}
+        />
+      </DemoStage>
     </div>
   );
 }

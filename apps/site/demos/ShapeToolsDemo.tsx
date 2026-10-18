@@ -7,6 +7,7 @@ import {
   BUILTIN_TOOL_IDS,
 } from '@weasel-js/core';
 import { ToolPalette } from '@weasel-js/ui';
+import { DemoStage } from './DemoStage';
 
 const W = 600, H = 400;
 
@@ -25,16 +26,16 @@ export function ShapeToolsDemo() {
   return (
     <div className="ckd-shape-tools-demo">
       {tools && <ToolPalette tools={tools} orientation="horizontal" />}
-      <SceneCanvas
-        width={W}
-        height={H}
-        className="ckd-canvas"
-        scene={scene}
-        selection={selection}
-        features={['pick']}
-        defaultTools={BUILTIN_TOOL_IDS}
-        onToolsCreated={setTools}
-      />
+      <DemoStage width={W} height={H}>
+        <SceneCanvas
+          className="ckd-canvas"
+          scene={scene}
+          selection={selection}
+          features={['pick']}
+          defaultTools={BUILTIN_TOOL_IDS}
+          onToolsCreated={setTools}
+        />
+      </DemoStage>
     </div>
   );
 }
