@@ -376,11 +376,9 @@ await writeFile(
     `import * as menu from '@weasel-js/menu';\n` +
     `import * as select from '@weasel-js/select';\n` +
     `import * as svg from '@weasel-js/svg';\n` +
-    // guides and its per-action subpaths, built on core. Whether core still
-    // exports every name they import is Phase 4's sibling-import check.
+    // guides, built on core. Whether core still exports every name it
+    // imports is Phase 4's sibling-import check.
     `import * as guides from '@weasel-js/guides';\n` +
-    `import * as guidesMove from '@weasel-js/guides/move';\n` +
-    `import * as guidesResize from '@weasel-js/guides/resize';\n` +
     `import * as theme from '@weasel-js/theme';\n` +
     // ui and hud are built with Vite library mode because they ship assets: ui
     // its bundled stylesheet and hud its data-URI font atlas.
@@ -407,7 +405,7 @@ await writeFile(
     `import { registerFont as directFont } from '@weasel-js/font';\n` +
     `void coreFont; void directFont;\n` +
     `const mods = { weasel, geom, booleans, curves, tessellate, warp, history, menu, select, svg, theme, ui, hud,\n` +
-    `  guides, guidesMove, guidesResize,\n` +
+    `  guides,\n` +
     `  toolPalette, prefs, callout, toastSub };\n` +
     `for (const [n, m] of Object.entries(mods)) {\n` +
     `  if (!m || typeof m !== 'object') throw new Error('empty namespace: ' + n);\n` +

@@ -68,8 +68,7 @@ export function siblingIds(scene: Scene<unknown, string, unknown>, ids: readonly
 
 /**
  * The world boxes of `ids`' siblings ({@link siblingIds}). What an
- * equal-spacing snap measures gaps between while `ids` move:
- * `alignMoveBehavior`'s `getSpacingTargets`.
+ * equal-spacing snap measures gaps between while `ids` move.
  */
 export function siblingBounds(
   scene: Scene<unknown, string, unknown>,

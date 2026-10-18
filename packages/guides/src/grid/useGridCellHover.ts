@@ -14,7 +14,7 @@ import {
   type PlaneUnits,
   type PlaneValue,
 } from '@weasel-js/core';
-import { pointToGridCell } from '../strategies/grid';
+import { pointToGridCell } from './pointToGridCell';
 
 /** Options for `useGridCellHover`. */
 export interface UseGridCellHoverOptions {

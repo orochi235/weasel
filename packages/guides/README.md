@@ -1,13 +1,13 @@
 # @weasel-js/guides
 
-Placement aids for weasel: a visible grid and snapping to it, guide lines and
-alignment to sibling edges, and the layout strategies a container arranges its
-children with.
+Placement aids for weasel: a visible grid, ruler guides, the snap sources that
+snap to them and to sibling edges and gaps, and the layout strategies a
+container arranges its children with.
 
-Everything here plugs into a seam `@weasel-js/core` already has. A snap
-strategy is a `SnapStrategy`, the select tool's `snap` option takes one, and
-core's `snap()` turns one into a move behavior. The move, resize and insert
-behaviors go in the actions' `behaviors` lists. The grid and guide overlays are
+Everything here plugs into a seam `@weasel-js/core` already has. A snap source
+goes in `<SceneCanvas snap={{ sources }}>` or a preset's `snapSources`, and
+competes with every other source under core's one ranking rule; see
+[Snapping](https://github.com/orochi235/weasel/blob/main/docs/snapping.md). The grid and guide overlays are
 `RenderLayer`s for a canvas layer slot, and a layout strategy implements core's
 `LayoutStrategy`.
 
@@ -26,30 +26,26 @@ npm install @weasel-js/guides
 A grid you can see and snap to:
 
 ```tsx
-import { SceneCanvas, type RectPose } from '@weasel-js/core';
-import { createGridLayer, gridSnapStrategy } from '@weasel-js/guides';
+import { SceneCanvas } from '@weasel-js/core';
+import { createGridLayer, gridSnapSource } from '@weasel-js/guides';
 
 const grid = createGridLayer({ spacing: 20, bounds: () => ({ x: 0, y: 0, width: 800, height: 600 }) });
+const snap = { sources: [gridSnapSource({ spacing: 20 })] };
 
 <SceneCanvas
   /* … */
-  selectTool={{ snap: gridSnapStrategy<RectPose>(20) }}
+  snap={snap}
   layers={{ grid: { layer: grid } }}
 />;
 ```
 
-`snapToGrid` and `snapToGuides` exist for move and resize, and each has the
-shape its action expects, so they are imported from a per-action subpath:
-
-```ts
-import { snapToGrid } from '@weasel-js/guides/move';
-import { snapToGrid, pointSnapToGrid } from '@weasel-js/guides/resize';
-```
+The grid source snaps every snapping gesture — move, resize, insert, the pen —
+and, being a fallback, gives way on any axis a real target in reach claims.
 
 | Area | Exports |
 |---|---|
-| Grid | `createGridLayer`, `createCellHighlightLayer`, `useGridCellHover`, `gridSnapStrategy`, `pointToGridCell`, `pointSnapToGrid`, `roundToCell` |
-| Guides | `useGuides`, `createGuidesLayer`, `guideSnapStrategy`, `deriveAlignmentGuides`, `matchAlignment`, `alignMoveBehavior`, `alignResizeBehavior`, `alignInsertBehavior` |
+| Grid | `createGridLayer`, `createCellHighlightLayer`, `useGridCellHover`, `pointToGridCell`, `roundToCell` |
+| Guides | `useGuides`, `createGuidesLayer`, `deriveAlignmentGuides`, `matchSpacing`, `measureGaps`, `siblingBounds`, `worldBoundsOf`, `worldUnionOf` |
 | Snap sources | `gridSnapSource`, `guideSnapSource`, `alignmentSnapSource`, `spacingSnapSource`, for `<SceneCanvas snap={{ sources }}>` or a preset's `snapSources` |
 | Spacing hints | `createSpacingHintsPreset` (below), `distanceReadout`, `measureDistances` |
 | Layout | `freeform`, `tileGrid`, `snapPoint`, `slots` (with the `rowSlots`, `gridSlots`, and `ringSlots` arrangements), `pack`, `quadtree`, `perContainer` for a strategy that keeps state, and the drop-target pickers `none`, `nearest`, `nearestWithin`, `containedThenNearest`, `cellAt` |

@@ -6,7 +6,7 @@
  * (`SpacingGap`) as ticked segments labeled with their size.
  *
  * Guides are not scene objects; they live outside the scene and are managed
- * via `useGuides`. Pair with `guideSnapStrategy` (snap behavior) to keep
+ * via `useGuides`. Pair with `guideSnapSource` (snap source) to keep
  * the visual guide and the snap target in lockstep.
  */
 
@@ -17,8 +17,8 @@ import type { Guide, SpacingGap } from './types';
 export interface GuidesLayerOpts {
   /** Stable getter for the live guide list — typically `useGuides().getGuides`. */
   getGuides: () => readonly Guide[];
-  /** Stable getter for the equal-spacing gaps to draw — typically what an
-   *  alignment behavior's `setActiveGaps` last published. */
+  /** Stable getter for the equal-spacing gaps to draw, such as
+   *  `matchSpacing`'s. */
   getGaps?: () => readonly SpacingGap[];
   /** `'span'` (default) draws a guide that carries a `span` as a segment over
    *  it; `'full'` draws every guide across the whole canvas. */

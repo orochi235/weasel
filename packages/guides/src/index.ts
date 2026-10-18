@@ -1,32 +1,20 @@
 /**
- * @weasel-js/guides — placement aids for weasel: a visible grid and snapping
- * to it, guide lines and alignment to sibling edges, and the layout strategies
- * a container arranges its children with.
- *
- * `snapToGrid` and `snapToGuides` exist for move and resize with different
- * shapes, so they are imported from a per-action subpath:
- *   import { snapToGrid } from '@weasel-js/guides/move';
- *   import { snapToGrid, pointSnapToGrid } from '@weasel-js/guides/resize';
+ * @weasel-js/guides — placement aids for weasel: a visible grid, ruler guides,
+ * the snap sources that snap to them and to sibling edges and gaps, and the
+ * layout strategies a container arranges its children with.
  */
 
-// ─── Grid: the visible lattice, its hover cell, and snapping to it ──────────
+// ─── Grid: the visible lattice and its hover cell ───────────────────────────
 export * from './grid';
-export { gridSnapStrategy, pointToGridCell } from './strategies/grid';
-export { pointSnapToGrid } from './behaviors/resize/pointSnapToGrid';
 
-// ─── Guides: guide lines, snapping to them, and alignment to siblings ───────
+// ─── Guides: guide lines, and the alignment and spacing math ────────────────
 export * from './guides';
-export { guideSnapStrategy, DEFAULT_GUIDE_TOLERANCE_PX } from './strategies/guides';
-export type { GuideSnapOptions } from './strategies/guides';
 
 // ─── Snap sources: grid, ruler guides, alignment, equal spacing ─────────────
 export * from './sources';
 
 // ─── Spacing hints: equal-spacing snaps on move, and Alt-hover distances ────
 export * from './spacingHints';
-
-// ─── Kit settings ───────────────────────────────────────────────────────────
-export { guidesKitSettingsSchema } from './kitSettings';
 
 // ─── Layout strategies, and the drop-target pickers they are built from ─────
 export * from './layout/snaps';

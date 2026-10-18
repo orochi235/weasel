@@ -1,7 +1,7 @@
 {
   "name": "@weasel-js/guides",
   "version": "1.10.1",
-  "description": "Placement aids for weasel: grids, alignment guides, snapping to them, and container layout strategies, built on core's snap and behavior seams.",
+  "description": "Placement aids for weasel: grids, ruler guides, snap sources for them and for sibling alignment and spacing, and container layout strategies.",
   "license": "MIT",
   "type": "module",
   "sideEffects": false,
@@ -12,14 +12,6 @@
     ".": {
       "import": "./dist/index.js",
       "types": "./dist/index.d.ts"
-    },
-    "./move": {
-      "import": "./dist/move.js",
-      "types": "./dist/move.d.ts"
-    },
-    "./resize": {
-      "import": "./dist/resize.js",
-      "types": "./dist/resize.d.ts"
     },
     "./package.json": "./package.json"
   },

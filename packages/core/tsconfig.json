@@ -63,8 +63,6 @@
       "@weasel-js/geom/warp": ["../geom/src/warp/index.ts"],
       "@weasel-js/gestures": ["../gestures/src/index.ts"],
       "@weasel-js/guides": ["../guides/src/index.ts"],
-      "@weasel-js/guides/move": ["../guides/src/move.ts"],
-      "@weasel-js/guides/resize": ["../guides/src/resize.ts"],
       "@weasel-js/history": ["../history/src/index.ts"],
       "@weasel-js/hud": ["../hud/src/index.ts"],
       "@weasel-js/hud/react": ["../hud/src/react/index.ts"],

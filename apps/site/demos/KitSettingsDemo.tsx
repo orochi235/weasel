@@ -1,5 +1,5 @@
 import { coreKitSettingsSchema, SceneCanvas, useScene, type Fill } from '@weasel-js/core';
-import { alignmentSnapSource, guidesKitSettingsSchema } from '@weasel-js/guides';
+import { alignmentSnapSource } from '@weasel-js/guides';
 import { kitSettingsCssOptions, mergePrefGroups, prefsCss } from '@weasel-js/prefs';
 import { KitSettingsFromPrefs, usePrefsStore, usePrefsValues } from '@weasel-js/prefs/react';
 import { localStorageAdapter } from '@weasel-js/storage';
@@ -7,7 +7,7 @@ import { Button, PrefsForm, Tree, type TreeNode, UnitField, uiKitSettingsSchema 
 import { useState } from 'react';
 import s from './KitSettingsDemo.module.css';
 
-const SCHEMA = mergePrefGroups('Kit settings', uiKitSettingsSchema, coreKitSettingsSchema, guidesKitSettingsSchema);
+const SCHEMA = mergePrefGroups('Kit settings', uiKitSettingsSchema, coreKitSettingsSchema);
 
 const FILES: readonly TreeNode[] = [
   { id: 'src', label: 'src', children: [{ id: 'app', label: 'app.ts' }, { id: 'apex', label: 'apex.ts' }, { id: 'atlas', label: 'atlas.ts' }] },
