@@ -1334,6 +1334,9 @@ only story runner in the repo.
   not separate them. Result files: `tests/perf/recorded/ring-size-2026-10-06/`. Only one GPU and
   backend has been measured, and the ring's own case was made on an M2 Max by the retired block
   method; D3D and Vulkan backends are where an in-flight buffer write would stall, if anywhere.
+  A single `image-quad` rerun on teitou on 2026-10-17, ring of 64, read `unmerged` at 27.4 us
+  (`tests/perf/recorded/batch-specs-2026-10-17/`), so the 22.5 / 22.0 above has drifted; why is
+  not known.
 
 - **(P3) The mesh batching caps are measured on one GPU.** A mesh joins a run up to
   `MAX_BATCHED_MESH_VERTICES_IN_RUN` (1,024) vertices when one is open, and up to
