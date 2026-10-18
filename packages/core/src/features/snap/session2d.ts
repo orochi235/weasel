@@ -156,7 +156,7 @@ function collectAll(
 
 /** The subject's box where `delta0` puts it, and the sides that moved. */
 function subjectAt(inputs: Session2dInputs, delta0: Point): Pick<SnapCollect, 'box' | 'edges'> {
-  if (inputs.resize) return { box: resizedBox(inputs.resize, delta0), edges: resizeEdges(inputs.resize) };
+  if (inputs.resize) return { box: resizedBox(inputs.resize, delta0), edges: resizeEdges(inputs.resize, delta0) };
   const b = inputs.req.gesture === 'move' ? inputs.box : null;
   return b ? { box: { ...b, x: b.x + delta0.x, y: b.y + delta0.y } } : {};
 }

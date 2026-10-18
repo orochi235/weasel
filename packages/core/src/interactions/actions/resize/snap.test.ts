@@ -23,17 +23,21 @@ const VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 const SE: ResizeAnchor = { x: 'min', y: 'min' };
 const EAST: ResizeAnchor = { x: 'min', y: 'free' };
 
-/** A ruler guide: the line `axis = at`, for the pointer. */
+/** A ruler guide: the line `axis = at`, for the pointer, marked. */
 const guide = (axis: 'x' | 'y', at: number): SnapSource => ({
   id: `guide-${axis}${at}`, roles: ['pointer'],
   *collect(q) {
     for (const p of q.probes) {
       yield axis === 'x'
-        ? { probe: p.id, locus: { at: { x: at, y: p.at.y }, dirs: [{ x: 0, y: 1 }] } }
-        : { probe: p.id, locus: { at: { x: p.at.x, y: at }, dirs: [{ x: 1, y: 0 }] } };
+        ? { probe: p.id, locus: { at: { x: at, y: p.at.y }, dirs: [{ x: 0, y: 1 }] }, mark: guideMark(axis, at) }
+        : { probe: p.id, locus: { at: { x: p.at.x, y: at }, dirs: [{ x: 1, y: 0 }] }, mark: guideMark(axis, at) };
     }
   },
 });
+
+const guideMark = (axis: 'x' | 'y', at: number) => (axis === 'x'
+  ? { kind: 'line' as const, from: { x: at, y: 0 }, to: { x: at, y: 1 } }
+  : { kind: 'line' as const, from: { x: 0, y: at }, to: { x: 1, y: at } });
 
 /** Grid lines every 10 on both axes, for the pointer. */
 const grid10: SnapSource = {
@@ -140,14 +144,25 @@ describe('a resize snapping through the snap session', () => {
   });
 
   it('never moves an edge handle along the other axis', () => {
-    // The y guide is in reach of the pointer, but the east edge only moves on x.
+    // The y guide is in reach of the pointer, but the east edge only moves on x,
+    // so the y guide is never met and never marked.
     const r = rig([guide('x', 140), guide('y', 30)], [BOX]);
     const h = r.press({ x: 100, y: 25 }, EAST);
     h.onMove!(r.at({ x: 137, y: 28 }));
     near(r.preview(h), { x: 0, y: 0, width: 140, height: 50 });
+    expect(r.store.get()).toEqual([guideMark('x', 140)]);
     h.onMove!(r.at({ x: 137, y: 28 }, { shift: true }));
     expect(r.preview(h).width).toBeCloseTo(140, 9);
+    expect(r.store.get()).toEqual([guideMark('x', 140)]);
     h.onEnd!(r.at({ x: 137, y: 28 }), 'cancel');
+  });
+
+  it('grows a thin box with the cursor under Shift, on the axis the drag leads', () => {
+    const r = rig([], [{ x: 0, y: 0, width: 1000, height: 10 }]);
+    const h = r.press({ x: 1000, y: 10 });
+    h.onMove!(r.at({ x: 1000, y: 110 }, { shift: true }));
+    near(r.preview(h), { x: 0, y: 0, width: 11000, height: 110 });
+    h.onEnd!(r.at({ x: 1000, y: 110 }), 'cancel');
   });
 
   it('suspends snapping under Ctrl and clears the marks however the drag ends', () => {

@@ -15,7 +15,7 @@ import { boxFrame } from './boxFrame';
 import { insetBox, outsetBox } from 'core/geometry/inkExtents';
 import type { ResizeBox, ResizeFrame, ResizeSession } from './session';
 import { clampToMinSize } from './behaviors/clampMinSize';
-import { edgeAspect } from './aspect';
+import { edgeAspect, onDiagonal } from './aspect';
 import { snapMods } from 'features/snap/roles';
 
 /** `ob` with the edges `anchor` leaves free moved by the drag delta, which is
@@ -138,6 +138,19 @@ export function posesInBox(
   return { previews, proposed, lone: { id, g, world } };
 }
 
+/** The pointer put on the box's diagonal, for an aspect-locked corner: the
+ *  session's input subspace then leaves it where it is, and a target still
+ *  lands it where the diagonal meets the target. */
+function aspectPointer(session: ResizeSession, frame: TargetTransform, drawn: Bounds, raw: { x: number; y: number }): { x: number; y: number } {
+  const { startWorld: o, box } = session;
+  const local = worldDeltaToLocal(frame, raw.x - o.x, raw.y - o.y);
+  const d = local && onDiagonal(local, drawn, box.anchor);
+  if (!d) return raw;
+  const zero = localToWorld(frame, 0, 0);
+  const w = localToWorld(frame, d.x, d.y);
+  return { x: o.x + w.x - zero.x, y: o.y + w.y - zero.y };
+}
+
 /** One move's previews: the box as the snapped drag and the constraints
  *  leave it, and every write id's stored pose inside it. A lone target also
  *  gets the rotated-resize pin and, when the snap session holds nothing, the
@@ -152,13 +165,16 @@ export function nextFrame(session: ResizeSession, readers: GestureReaders, moveC
   gctx.plane = readers.plane();
 
   const mods = snapMods(moveCtx);
-  const snapped = session.snap.at(raw, mods);
+  const frame = boxFrame(box, box.bounds);
+  const drawnStart = outsetBox(box.bounds, box.extents);
+  const pointer = mods.constrain ? aspectPointer(session, frame, drawnStart, raw) : raw;
+  const snapped = session.snap.at(pointer, mods);
   const at = snapped.point;
   // The constraints see the box as drawn; the stroke keeps its width, so the
   // extents come back off what they leave.
-  const moved = computeProposedBounds(box.bounds, box.anchor, at.x - session.startWorld.x, at.y - session.startWorld.y, boxFrame(box, box.bounds));
+  const moved = computeProposedBounds(box.bounds, box.anchor, at.x - session.startWorld.x, at.y - session.startWorld.y, frame);
   const drawn = outsetBox(moved, box.extents);
-  const shaped = mods.constrain ? edgeAspect(drawn, outsetBox(box.bounds, box.extents), box.anchor) : drawn;
+  const shaped = mods.constrain ? edgeAspect(drawn, drawnStart, box.anchor) : drawn;
   const constrained = insetBox(constrain(session.constraints, gctx, box.anchor, shaped), box.extents);
 
   const pointSnap = snapped.held ? undefined : (g: PoseDescriptor<unknown>, world: unknown) => snapPose(

@@ -90,4 +90,15 @@ describe('spacingSnapSource', () => {
     });
     expectNear(d.at({ x: 188, y: 125 }).point, { x: 190, y: 125 });
   });
+
+  it('moves the side a resize has flipped onto once the drag crosses the pinned edge', () => {
+    const { scene, ids } = sceneOf([{ x: 200, y: 100, width: 50, height: 50 }]);
+    const d = drive({
+      sources: [row()], gesture: 'resize', scene, ids, handle: { x: 'min', y: 'free' }, press: { x: 250, y: 125 },
+    });
+    // Dragged past 200, the east edge is the box's west side at 82: 22 from B,
+    // and the 20 between A and B puts it at 80.
+    expectNear(d.at({ x: 82, y: 125 }).point, { x: 80, y: 125 });
+  });
 });
+

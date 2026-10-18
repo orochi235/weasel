@@ -55,13 +55,18 @@ export function diagonal(s: ResizeSubject): Point {
   return { x: m.x - f.x, y: m.y - f.y };
 }
 
-/** The box's axis-aligned extent once the handle has moved by `delta`. */
-export function resizedBox(s: ResizeSubject, delta: Point): Bounds {
+/** The box in its own frame once the handle has moved by `delta`. */
+function movedBox(s: ResizeSubject, delta: Point): Bounds {
   const det = s.ex.x * s.ey.y - s.ey.x * s.ex.y;
   const local = Math.abs(det) < EPS
     ? { x: 0, y: 0 }
     : { x: (s.ey.y * delta.x - s.ey.x * delta.y) / det, y: (s.ex.x * delta.y - s.ex.y * delta.x) / det };
-  const b = movedEdges(s.bounds, s.handle, local.x, local.y);
+  return movedEdges(s.bounds, s.handle, local.x, local.y);
+}
+
+/** The box's axis-aligned extent once the handle has moved by `delta`. */
+export function resizedBox(s: ResizeSubject, delta: Point): Bounds {
+  const b = movedBox(s, delta);
   const corners = [
     s.at({ x: b.x, y: b.y }), s.at({ x: b.x + b.width, y: b.y }),
     s.at({ x: b.x, y: b.y + b.height }), s.at({ x: b.x + b.width, y: b.y + b.height }),
@@ -73,10 +78,18 @@ export function resizedBox(s: ResizeSubject, delta: Point): Bounds {
   return { x, y, width: Math.max(...xs) - x, height: Math.max(...ys) - y };
 }
 
-/** The sides of {@link resizedBox} the drag moves. A frame that turns or
- *  flips the box moves no side of its extent alone. */
-export function resizeEdges(s: ResizeSubject): SnapEdges {
+/** The sides of {@link resizedBox} a drag of `delta` moves: the side across
+ *  from the pinned one, or the pinned side's once the drag has flipped the
+ *  box past it. A frame that turns or flips the box moves no side of its
+ *  extent alone. */
+export function resizeEdges(s: ResizeSubject, delta: Point): SnapEdges {
   const square = Math.abs(s.ex.y) < EPS && Math.abs(s.ey.x) < EPS && s.ex.x > 0 && s.ey.y > 0;
-  const moved = (pin: ResizeAnchor['x']): SnapEdge => (!square ? null : pin === 'min' ? 'max' : pin === 'max' ? 'min' : null);
-  return { x: moved(s.handle.x), y: moved(s.handle.y) };
+  if (!square) return { x: null, y: null };
+  const b = movedBox(s, delta);
+  const moved = (pin: ResizeAnchor['x'], size: number): SnapEdge => {
+    if (pin === 'free') return null;
+    const far = pin === 'min' ? 'max' : 'min';
+    return size >= 0 ? far : pin;
+  };
+  return { x: moved(s.handle.x, b.width), y: moved(s.handle.y, b.height) };
 }

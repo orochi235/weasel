@@ -392,10 +392,9 @@ describe('resizeAction descriptor', () => {
 
     it('shift-drag on a corner keeps the start pose aspect ratio', () => {
       const pose = dragCorner(true);
-      // The corner goes to the point of the diagonal nearest the drag: (20, 40)
-      // onto (100, 50) is (32, 16).
-      expect(pose.width).toBeCloseTo(132);
-      expect(pose.height).toBeCloseTo(66);
+      // dy (40) dominates: height 50 → 90; width follows the 2:1 ratio.
+      expect(pose.height).toBeCloseTo(90);
+      expect(pose.width).toBeCloseTo(180);
       expect(pose.width / pose.height).toBeCloseTo(startPose.width / startPose.height);
     });
 
