@@ -15,7 +15,6 @@ import type { PropertyRenderContext, PropertyRenderer } from '../SelectionPanel/
 import { renderBuiltin } from '../SelectionPanel/renderLeaf';
 import { barLeafName, BarLayout, groupBarNodes, shownBarNodes, type BarCell, type BarLeafNode, type BarOrientation, type BarOverflowMode } from './BarLayout';
 import { withBarLabel, type LeafSurface } from './renderBarLeaf';
-import s from './Bar.module.css';
 
 /** Props for {@link Bar}. */
 export interface BarProps {
