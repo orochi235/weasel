@@ -49,6 +49,9 @@ export interface ControlRowProps<TC extends Record<string, unknown>> {
   /** `config` with every auto path resolved -- what the instrument reads. */
   shown: TC;
   setConfig: (path: string, value: unknown) => void;
+  /** Where the values an edit passes through go, a typed number's keystrokes or a slider's drag, while
+   *  `setConfig` hears the one it settles on. Without it a typed field writes only that settled value. */
+  draftConfig?: (path: string, value: unknown) => void;
   renderers?: Record<string, ControlRenderer>;
   pack: ControlPack;
   layout?: PropertyRowLayout;
@@ -224,6 +227,7 @@ function LeafRow<TC extends Record<string, unknown>>({
   config,
   shown,
   setConfig,
+  draftConfig,
   renderers,
   pack,
   layout,
@@ -234,6 +238,7 @@ function LeafRow<TC extends Record<string, unknown>>({
   inside,
 }: ControlRowProps<TC> & { inside?: PrefAliasTargets }) {
   const write = (value: unknown): void => setConfig(path, value);
+  const draft = draftConfig && ((value: unknown): void => draftConfig(path, value));
   const choices = useFieldChoices();
   const pinned = leafValueAt(config, path, leaf);
 
@@ -325,12 +330,16 @@ function LeafRow<TC extends Record<string, unknown>>({
     );
   }
 
-  const field = labField(leaf, value, write, choices, disabled);
+  const field = labField(leaf, value, write, choices, disabled, draft);
   if (field === null)
     return <UnwiredRow label={label} kind={leaf.kind} description={description} />;
   switch (field.kind) {
     case 'string':
-      return <DebouncedTextRow leaf={leaf} field={field} span={wide} {...row} />;
+      return draft ? (
+        <DebouncedTextRow leaf={leaf} field={field} span={wide} {...row} />
+      ) : (
+        <PropertyField {...field} {...row} span={wide} />
+      );
     case 'number':
       return <PropertyField {...field} {...row} span={field.control === 'slider' && wide} />;
     case 'enum':

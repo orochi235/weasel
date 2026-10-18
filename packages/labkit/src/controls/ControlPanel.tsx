@@ -33,6 +33,14 @@ export interface ControlPanelProps<TC extends Record<string, unknown>> extends S
    *  write too, of the group's whole value at the group's own path. */
   setConfig: (path: string, value: unknown) => void;
   /**
+   * Writes a value an edit is passing through: each keystroke of a typed
+   * number or text, each move of a slider's drag. Given, the instrument can
+   * follow the edit while `setConfig` hears only the value it settles on,
+   * once, which is one undo step. Omitted, a typed field writes only on Enter
+   * or blur, and Escape writes nothing; a slider writes as it moves.
+   */
+  draftConfig?: (path: string, value: unknown) => void;
+  /**
    * Control overrides and app-defined kinds, PrefsForm-style. Keys are config
    * paths (checked first) or leaf kinds. A renderer returning `null` collapses
    * the row; entries override the built-in rows on collision.
@@ -141,6 +149,7 @@ export function ControlPanel<TC extends Record<string, unknown>>({
   fields,
   config,
   setConfig,
+  draftConfig,
   renderers,
   over,
   pack = 'pairs',
@@ -196,6 +205,7 @@ export function ControlPanel<TC extends Record<string, unknown>>({
     config,
     shown,
     setConfig,
+    draftConfig,
     renderers,
     over,
     showHidden,

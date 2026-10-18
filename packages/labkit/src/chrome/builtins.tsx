@@ -196,6 +196,8 @@ export function builtinContributions(
             config={ctx.config as Record<string, unknown>}
             auto={ctx.auto}
             setConfig={(key, value) => ctx.setConfig(String(key), value)}
+            // A trial's writes already run together into one undo step per gesture, so the instrument follows every keystroke.
+            draftConfig={(key, value) => ctx.setConfig(String(key), value)}
             renderers={controls}
             collapsed={groupFolds(ctx.collapsedSections, 'settings')}
             onCollapse={(label, next) => ctx.setSectionCollapsed(`settings/${label}`, next)}

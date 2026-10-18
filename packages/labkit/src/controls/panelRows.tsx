@@ -49,6 +49,7 @@ export interface PanelRowsSource<TC extends Record<string, unknown>> {
   /** `config` with every auto path resolved. */
   shown: TC;
   setConfig: (path: string, value: unknown) => void;
+  draftConfig: ((path: string, value: unknown) => void) | undefined;
   renderers: Record<string, ControlRenderer> | undefined;
   /** The schema the panel's aliases point into, where that is not `resolved`'s. */
   over: PrefGroup | PrefSection | undefined;
@@ -72,6 +73,7 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
     config,
     shown,
     setConfig,
+    draftConfig,
     renderers,
     over,
     showHidden,
@@ -116,6 +118,7 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
           leaf={leaf}
           value={leafValueAt(shown, path, leaf)}
           write={(value) => setConfig(path, value)}
+          draft={draftConfig && ((value) => draftConfig(path, value))}
           name={typeof heading === 'string' ? heading : undefined}
           disabled={!enabled(path)}
         />
@@ -138,6 +141,7 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
           config={config}
           shown={shown}
           setConfig={setConfig}
+          draftConfig={draftConfig}
           renderers={renderers}
           pack={rows.pack}
           layout={rows.layout}
@@ -158,6 +162,7 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
           enabled={enabled}
           value={(p, leaf) => leafValueAt(shown, p, leaf)}
           write={setConfig}
+          draft={draftConfig}
           custom={(p, leaf) => drawsOwn(resolved, renderers, p, leaf)}
           row={(p) => (
             <PropertyList pack={rows.grid} density={density} align={align}>
@@ -287,6 +292,7 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
           cells={cells}
           shown={shown}
           setConfig={setConfig}
+          draftConfig={draftConfig}
           layout={rows.layout}
           // A segmented cell carries every choice at once, so a pair holding
           // one needs the whole row the way a segmented row of its own does.

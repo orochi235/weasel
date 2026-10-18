@@ -15,6 +15,8 @@ export interface ControlBarProps {
   /** The value the leaf at a path shows. */
   value: (path: string, leaf: PrefLeaf) => unknown;
   write: (path: string, value: unknown) => void;
+  /** Where the values an edit passes through go — see `ControlRow`'s `draftConfig`. */
+  draft?: (path: string, value: unknown) => void;
   /** Whether the lab draws the leaf's control itself, which then keeps its row form. */
   custom: (path: string, leaf: PrefLeaf) => boolean;
   /** The leaf at a path as one of the panel's rows. */
@@ -29,7 +31,7 @@ export interface ControlBarProps {
  * dividers, and a nested page, tab, or panel opens from a button.
  */
 export function ControlBar(props: ControlBarProps) {
-  const { group, path, visible, enabled, value, write, custom, row, open } = props;
+  const { group, path, visible, enabled, value, write, draft, custom, row, open } = props;
   return (
     <BarLayout
       framed
@@ -51,6 +53,7 @@ export function ControlBar(props: ControlBarProps) {
                 leaf={leaf}
                 value={value(at, leaf)}
                 write={(v) => write(at, v)}
+                draft={draft && ((v) => draft(at, v))}
                 disabled={!enabled(at)}
                 row={() => row(at)}
               />
@@ -67,6 +70,7 @@ function Cell({
   leaf,
   value,
   write,
+  draft,
   disabled,
   row,
 }: {
@@ -74,9 +78,10 @@ function Cell({
   leaf: PrefLeaf;
   value: unknown;
   write: (value: unknown) => void;
+  draft: ((value: unknown) => void) | undefined;
   disabled: boolean;
   row: () => ReactNode;
 }) {
-  const field = labField(leaf, value, write, useFieldChoices(), disabled);
+  const field = labField(leaf, value, write, useFieldChoices(), disabled, draft);
   return <>{renderBarLeaf({ leaf, path, name: leaf.name, field, disabled, row })}</>;
 }

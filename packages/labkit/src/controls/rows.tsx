@@ -8,6 +8,8 @@ import {
 import type { ReactNode } from 'react';
 import { BareControl, leafValueAt, useDebouncedText, useTextWaitMs } from './fields';
 
+const noDrafts = (): void => {};
+
 /** A leaf this panel has no control for is named rather than dropped: a silent
  *  gap reads as "this control does not exist". */
 export function UnwiredRow({
@@ -26,7 +28,7 @@ export function UnwiredRow({
   );
 }
 
-/** A text row whose writes are debounced — see {@link useDebouncedText}. */
+/** A text row whose drafts are debounced — see {@link useDebouncedText}. Its settled text is written as it is. */
 export function DebouncedTextRow({
   leaf,
   field,
@@ -42,13 +44,8 @@ export function DebouncedTextRow({
   auto?: boolean;
   onAutoChange?: (next: boolean) => void;
 }) {
-  // The lab's policy leaves text live, so its writer is `onInput`.
-  const text = useDebouncedText(
-    field.value ?? '',
-    field.onInput ?? field.onChange,
-    useTextWaitMs(leaf),
-  );
-  return <PropertyField {...field} {...row} value={text.local} onInput={text.type} />;
+  const drafts = useDebouncedText(field.value ?? '', field.onInput ?? noDrafts, useTextWaitMs(leaf));
+  return <PropertyField {...field} {...row} onInput={drafts.type} />;
 }
 
 /** One cell of a paired row, with its path and the leaf it draws. */
@@ -72,6 +69,7 @@ export function PairedRow<TC extends Record<string, unknown>>({
   cells,
   shown,
   setConfig,
+  draftConfig,
   layout,
   span,
 }: {
@@ -79,6 +77,7 @@ export function PairedRow<TC extends Record<string, unknown>>({
   cells: readonly PairCellSpec[];
   shown: TC;
   setConfig: (path: string, value: unknown) => void;
+  draftConfig?: (path: string, value: unknown) => void;
   layout?: PropertyRowLayout;
   span?: boolean;
 }) {
@@ -100,6 +99,7 @@ export function PairedRow<TC extends Record<string, unknown>>({
             leaf={leaf}
             value={leafValueAt(shown, path, leaf)}
             write={(value) => setConfig(path, value)}
+            draft={draftConfig && ((value) => draftConfig(path, value))}
             disabled={disabled}
           />
         </span>

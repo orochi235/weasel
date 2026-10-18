@@ -72,6 +72,7 @@ describe('<ControlPanel> pair', () => {
     const setConfig = vi.fn();
     render(<ControlPanel schema={paired()} config={config} setConfig={setConfig} />);
     fireEvent.change(screen.getByLabelText('Y'), { target: { value: '30' } });
+    fireEvent.blur(screen.getByLabelText('Y'));
     expect(setConfig).toHaveBeenCalledWith('y', 30);
   });
 
