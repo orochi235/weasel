@@ -27,7 +27,7 @@ import type {
   PoseDescriptor,
   CommandFill,
 } from '@weasel-js/core';
-import { ellipsePath, viewToTransform } from '@weasel-js/core';
+import { ellipsePath, paintsLayer, viewToTransform } from '@weasel-js/core';
 import { portsOf } from './ports';
 import type { DiagramNodeLike, DiagramNodeReader } from './trait';
 import type { Port } from './types';
@@ -61,10 +61,9 @@ export interface ParticipantPose<TPose> {
  *  and nor does one on a layer the asking view does not paint. */
 export function offersPorts(
   p: { hidden?: boolean; locked?: boolean; layer?: string },
-  layerIsPainted?: (layerId: string) => boolean,
+  view?: Parameters<typeof paintsLayer>[0],
 ): boolean {
-  if (p.hidden === true || p.locked === true) return false;
-  return p.layer === undefined || layerIsPainted?.(p.layer) !== false;
+  return p.hidden !== true && p.locked !== true && paintsLayer(view, p.layer);
 }
 
 /** Where the affordance gets its participants. A thunk rather than a scene so
@@ -168,7 +167,7 @@ export function createPortAffordance<TPose>(
     regions(state: ChromeState): readonly AffordanceRegion[] {
       const out: AffordanceRegion[] = [];
       for (const participant of participants()) {
-        if (!offersPorts(participant, state.layerIsPainted)) continue;
+        if (!offersPorts(participant, state)) continue;
         const { node, pose } = participant;
         if (opts.shows !== undefined && !opts.shows(node, state)) continue;
         for (const port of portsOf(node, pose, portOpts)) {

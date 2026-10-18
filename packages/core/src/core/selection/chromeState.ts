@@ -21,9 +21,11 @@ export const EMPTY_CHROME_STATE: ChromeState = {
  * must not cache anything they read from it.
  */
 export interface ChromeState {
-  /** Currently selected ids. Live; reflects useSelection's React state. */
+  /** Currently selected ids. Live; reflects useSelection's React state,
+   *  less any on a layer this view does not paint. */
   readonly selection: readonly NodeId[];
-  /** True when the canvas is in multi-mode AND >= 2 ids are selected. */
+  /** True when the canvas is in multi-mode AND >= 2 ids are selected, and
+   *  still >= 2 once `selection` drops the ones this view does not paint. */
   readonly multiActive: boolean;
   /** Bounds for any selection member id. Honors active-tool overlay state
    *  (move/resize/rotate ghosts → ghost bounds; otherwise → committed
@@ -62,22 +64,45 @@ export interface BuildChromeStateArgs {
    *  unit-test call sites that don't wire pose-descriptor capability. */
   canRotate?: (id: string) => boolean;
   layerIsPainted?: (layerId: string) => boolean;
+  /** The scene layer a selected id is painted on. With `layerIsPainted`,
+   *  drops from `selection` every id this view does not paint. */
+  layerOf?: (id: string) => string | undefined;
+}
+
+/** Whether chrome goes on something painted on `layer`, as `gate` — a
+ *  `ChromeState`, a `ViewApi` — says. No layer, or no gate: it does. */
+export function paintsLayer(
+  gate: { layerIsPainted?(layerId: string): boolean } | null | undefined,
+  layer: string | undefined,
+): boolean {
+  return layer === undefined || gate?.layerIsPainted?.(layer) !== false;
 }
 
 export function buildChromeState(args: BuildChromeStateArgs): ChromeState {
-  const { selection, multiActive, effectiveBoundsOf, modifiers, canRotate, layerIsPainted } = args;
+  const { effectiveBoundsOf, modifiers, canRotate, layerIsPainted, layerOf } = args;
+  const gate = { ...(layerIsPainted ? { layerIsPainted } : {}) };
+  // Read per call, like `unionBounds`: the view's layer settings change under a memoized state.
+  const shown = (): readonly NodeId[] => {
+    if (!layerIsPainted || !layerOf) return args.selection;
+    const kept = args.selection.filter((id) => paintsLayer(gate, layerOf(id)));
+    return kept.length === args.selection.length ? args.selection : kept;
+  };
+  const multi = (): boolean => {
+    const ids = shown();
+    return args.multiActive && (ids === args.selection || ids.length > 1);
+  };
   return {
-    selection,
-    multiActive,
+    get selection() { return shown(); },
+    get multiActive() { return multi(); },
     boundsOf: effectiveBoundsOf,
     modifiers,
     canRotate: canRotate ?? (() => true),
-    ...(layerIsPainted ? { layerIsPainted } : {}),
+    ...gate,
     // Not cached: the state is memoized across renders, and poses move under
     // it (a committed move, a live preview) without any of its inputs changing.
     get unionBounds() {
-      if (!multiActive) return null;
-      return unionAABB(selection.map((id) => effectiveBoundsOf(id)));
+      if (!multi()) return null;
+      return unionAABB(shown().map((id) => effectiveBoundsOf(id)));
     },
   };
 }

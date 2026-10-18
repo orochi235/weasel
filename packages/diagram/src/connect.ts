@@ -206,12 +206,12 @@ export function createConnectAction<TPose>(opts: ConnectActionOptions<TPose>): A
   const route: Router = routers[routerKey] ?? routers['straight'] ?? ROUTERS['straight']!;
 
   /** The port the pointer is over and may legally land on, or `null`.
-   *  `painted` is the view the drag started in: its own layer visibility. */
-  function targetPort(from: Port, at: Vec2, painted: (layerId: string) => boolean): Port | null {
+   *  `view` is the one the drag started in, whose layers it may land on. */
+  function targetPort(from: Port, at: Vec2, view: Parameters<typeof offersPorts>[1]): Port | null {
     let best: Port | null = null;
     let bestD2 = snapRadius * snapRadius;
     for (const participant of opts.participants()) {
-      if (!offersPorts(participant, painted)) continue;
+      if (!offersPorts(participant, view)) continue;
       for (const port of portsOf(participant.node, participant.pose, portOpts)) {
         if (opts.showsPort !== undefined && !opts.showsPort(port)) continue;
         if (!canConnect(from, port)) continue;
@@ -228,8 +228,7 @@ export function createConnectAction<TPose>(opts: ConnectActionOptions<TPose>): A
   /** The end the edge currently runs to: a snapped port, or the bare pointer.
    *  A free end is a port with no facing, so a router aims straight at it. */
   function endAt(scratch: ConnectScratch, at: Vec2): { port: Port | null; end: Port } {
-    const view = scratch.deps.view;
-    const port = targetPort(scratch.from, at, (layerId) => view?.layerIsPainted?.(layerId) !== false);
+    const port = targetPort(scratch.from, at, scratch.deps.view);
     return {
       port,
       end: port ?? { id: '', nodeId: '', point: at, normal: null },

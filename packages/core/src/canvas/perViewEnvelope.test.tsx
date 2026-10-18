@@ -155,6 +155,23 @@ describe('path-editing overlay resolves its path through the drawn view', () => 
   });
 });
 
+describe('path-editing overlay stays off a layer the drawn view does not paint', () => {
+  it('draws no anchors for a node on it', () => {
+    const layer = createPathEditingOverlayLayer({
+      getEditingId: () => 'p',
+      getPose: () => polygonFromPoints([{ x: 0, y: 0 }, { x: 10, y: 0 }]),
+      getNode: () => ({ pose: null, data: null, layer: 'fx' }),
+    });
+    const base = {
+      selection: [asNodeId('p')], multiActive: false, boundsOf: () => null, unionBounds: null,
+      modifiers: { alt: false, shift: false, meta: false, ctrl: false },
+    };
+    const hiding = { ...base, layerIsPainted: (l: string) => l !== 'fx' };
+    expect(layer.draw(envelope({ chromeState: base }), VIEW, DIMS)).not.toEqual([]);
+    expect(layer.draw(envelope({ chromeState: hiding }), VIEW, DIMS)).toEqual([]);
+  });
+});
+
 describe('slops-debug overlay answers for the view it is drawn for', () => {
   it('halos each view\'s own selection at that view\'s bounds', () => {
     const layer = createSlopsDebugLayer({ getAffordances: () => chromeAffordances() });

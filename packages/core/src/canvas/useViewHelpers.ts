@@ -126,6 +126,9 @@ export interface ViewPoseAdapter<TPose> {
   /** Where the node is drawn, when the adapter composes poses. An adapter
    *  without it stores absolute poses, where the two agree. */
   getWorldPose?(id: string): TPose;
+  /** The node an id names, whose `layer` decides whether a view that hides
+   *  that layer shows its selection chrome. */
+  getNode?(id: string): { layer?: string } | undefined;
 }
 
 export interface UseViewHelpersOpts<TPose> {
@@ -255,8 +258,9 @@ export function useViewHelpers<TPose>(
         return geometry.supportsRotation(pose);
       },
       ...(layerIsPainted ? { layerIsPainted } : {}),
+      ...(adapter?.getNode ? { layerOf: (id: string) => adapter.getNode?.(id)?.layer } : {}),
     }),
-    [selection, multiActive, boundsWithPreview, geometry, committedPoseOf, layerIsPainted],
+    [selection, multiActive, boundsWithPreview, geometry, committedPoseOf, layerIsPainted, adapter],
   );
 
   const helpers: CanvasViewHelpers<TPose> = {

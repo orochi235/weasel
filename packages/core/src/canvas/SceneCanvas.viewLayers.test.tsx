@@ -288,3 +288,42 @@ function RegistryOut({ set }: { set: (r: ViewRegistry) => void }): null {
   useEffect(() => { if (r) set(r); });
   return null;
 }
+
+describe('selection chrome stays off a layer a panel hides', () => {
+  /** `b`, on `fx`, selected on the surface; the panel hides `fx` or not. */
+  async function panelWith(layerVisibility: Record<string, boolean> | undefined) {
+    let registry!: ViewRegistry;
+    function Host(): ReactNode {
+      const selection = useSelection({ mode: 'multi', initial: [asNodeId('b')] });
+      return (
+        <SceneCanvas features={['draw']} scene={makeScene()} selection={selection} width={800} height={800}
+          layers={LAYERS}
+          views={[{
+            id: 'panel', bounds: { x: 0, y: 0, w: 400, h: 400 },
+            ...(layerVisibility ? { layerVisibility } : {}),
+          }]}>
+          <RegistryOut set={(found) => { registry = found; }} />
+        </SceneCanvas>
+      );
+    }
+    render(<Host />);
+    await nextFrame();
+    const panel = registry.list().find((v) => v.id === 'panel')!;
+    const drawn = panel.layer.draw({}, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 800, height: 800 });
+    return { panel, drawn: JSON.stringify(drawn) };
+  }
+
+  it('draws no outline or handles for it there', async () => {
+    const hiding = await panelWith(HIDE_FX);
+    const bare = await panelWith({ 'scene:fx': false, 'selection-overlay': false });
+    expect(hiding.drawn).toBe(bare.drawn);
+  });
+
+  it('offers no handle to grab on it there', async () => {
+    const shown = await panelWith(undefined);
+    const hiding = await panelWith(HIDE_FX);
+    // `b`'s bottom-right corner handle.
+    expect(shown.panel.target.affordanceAt!({ x: 150, y: 70 })).not.toBeNull();
+    expect(hiding.panel.target.affordanceAt!({ x: 150, y: 70 })).toBeNull();
+  });
+});
