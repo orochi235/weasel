@@ -19,7 +19,7 @@ import {
 } from '@weasel-js/ui';
 import { Fragment, type ReactNode } from 'react';
 import { headingLeaf } from '../config/headingLeaf';
-import { schemaNodeAtPath } from '../config/path';
+import { schemaNodeAtPath, valueAtPath } from '../config/path';
 import type { ControlRenderer, ResolvedConfig, SectionSpec } from '../config/types';
 import { isLeafEnabled, isLeafVisible } from '../config/visible';
 import { boundAction } from './boundAction';
@@ -41,6 +41,42 @@ export interface FoldProps {
   defaultCollapsed: boolean;
   collapsed: boolean | undefined;
   onCollapsedChange: ((next: boolean) => void) | undefined;
+}
+
+/** What a lifted heading control reads and writes through. */
+type LiftScope<TC extends Record<string, unknown>> = Pick<
+  PanelRowsSource<TC>,
+  'resolved' | 'renderers' | 'shown' | 'setConfig' | 'draftConfig'
+> & {
+  visible: (path: string) => boolean;
+  enabled: (path: string) => boolean;
+};
+
+/** The control a heading carries in its title row, lifted out of the rows
+ *  beneath it — see `headingLeaf`. */
+function liftedControl<TC extends Record<string, unknown>>(
+  heading: ReactNode,
+  paths: readonly string[],
+  scope: LiftScope<TC>,
+) {
+  const { resolved, renderers, shown, setConfig, draftConfig, visible, enabled } = scope;
+  const found = headingLeaf(resolved, heading, paths, renderers);
+  if (!found) return { path: undefined, control: undefined };
+  const { path, leaf } = found;
+  return {
+    path,
+    control: visible(path) ? (
+      <BareControl
+        leaf={leaf}
+        value={leafValueAt(shown, path, leaf)}
+        write={(value) => setConfig(path, value)}
+        draft={draftConfig && ((value) => draftConfig(path, value))}
+        name={typeof heading === 'string' ? heading : undefined}
+        disabled={!enabled(path)}
+        read={(p) => valueAtPath(shown, p)}
+      />
+    ) : undefined,
+  };
 }
 
 /** What a panel's rows are drawn from. */
@@ -104,26 +140,8 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
   const drawsAny = (path: string): boolean => drawsAnyAt(resolved, visible, path);
   const loosePaths = (group: PrefGroup, at: string): string[] => loosePathsIn(resolved, group, at);
 
-  /** The control a heading carries in its title row, lifted out of the rows
-   *  beneath it — see `headingLeaf`. */
-  const lift = (heading: ReactNode, paths: readonly string[]) => {
-    const found = headingLeaf(resolved, heading, paths, renderers);
-    if (!found) return { path: undefined, control: undefined };
-    const { path, leaf } = found;
-    return {
-      path,
-      control: visible(path) ? (
-        <BareControl
-          leaf={leaf}
-          value={leafValueAt(shown, path, leaf)}
-          write={(value) => setConfig(path, value)}
-          draft={draftConfig && ((value) => draftConfig(path, value))}
-          name={typeof heading === 'string' ? heading : undefined}
-          disabled={!enabled(path)}
-        />
-      ) : undefined,
-    };
-  };
+  const lift = (heading: ReactNode, paths: readonly string[]) =>
+    liftedControl(heading, paths, { resolved, renderers, shown, setConfig, draftConfig, visible, enabled });
 
   /** One node, which is either a group to recurse into or a row to draw. */
   const node = (path: string, rows: Rows): ReactNode => {
@@ -162,6 +180,7 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
           visible={visible}
           enabled={enabled}
           value={(p, leaf) => leafValueAt(shown, p, leaf)}
+          read={(p) => valueAtPath(shown, p)}
           write={setConfig}
           bind={(leaf) => boundAction(leaf, config as Record<string, unknown>, setConfig)}
           draft={draftConfig}

@@ -64,7 +64,7 @@ function numberText(p: PropertyNumberFieldProps): ReactNode {
   return <>{text}<span className={s.unit}>{p.unit}</span></>;
 }
 
-/** A chip of `color`, which is data and so reaches the stylesheet as a custom property. */
-function Swatch({ color }: { color: string }) {
+/** A chip of `color`, which is data and so reaches the stylesheet as a custom property. Also what a menu color row shows. */
+export function Swatch({ color }: { color: string }) {
   return <span className={s.swatch} aria-hidden="true" style={{ '--readout-swatch': color } as CSSProperties} />;
 }

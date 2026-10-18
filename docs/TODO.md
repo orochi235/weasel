@@ -63,14 +63,14 @@ Priority tags:
   `features`; the new word is not chosen yet. That leaves choosing it, then renaming the one path,
   its imports, and the section of the taxonomy.
 
-- **(P3) Nothing reads a mode's `entry.trigger`.** The `'double-click-target'` the definitions
-  in `packages/modes/src/presets/default.ts` declare is unread. A path with anchors is put in
-  path-edit by the kit's `enterPathEdit` binding, through draw's `PathEditHost`
-  (`apps/draw/src/modality/pathEditHost.ts`), and text-edit is entered by the edit itself
-  (`useTextEditSession`). Draw still enters isolation, and path-edit on a path with no anchors (a
-  rect), from `SceneCanvas`'s `onDoubleClick` observer through a kind-to-mode table of its own
-  (`apps/draw/src/modality/doubleClickEntry.ts`). Binding those means a double-click entry beside
-  `enterPathEdit`, and a definition does not say which hits it takes (draw's table does).
+- **(P3) A double-click never isolates a group in draw.** `modeTriggers` (core) binds each mode's
+  `entry.targets`, and `ISOLATION` targets the routing kind `'group'`, but routing classifies a
+  node by its data alone and a container's is `{}`, so under draw's inferred routing every group is
+  `'unknown'` — a double-click on one opens its topmost member path instead
+  (`apps/draw/src/modality/canvasModes.doubleClick.test.tsx` pins this). It needs routing that can
+  see `node.kind`, or a `'group'` entry draw registers. Separately, the dispatcher's
+  `classifyTarget`, and the `hitAt` dep it backs, ignore `<SceneCanvas isPointerInteractive>`,
+  which the prop's doc says excludes a node from hit-test results; draw's `canEnter` re-checks it.
 
 - **(P3) External-content ingestion — follow-ups.** The pipeline is in
   `packages/core/src/features/ingestion/` (its README is the map). Left:
@@ -336,11 +336,6 @@ Priority tags:
   (`f082c838e` adopted its push brush as Smudge and left the rest). Its math is in
   `packages/geom/src/effects/` there; carrying the three over means rebuilding each as a derived
   effect node beside blend, bend and repeat. Undecided whether to; the branch is kept until then.
-- **(P3) A dependency that is itself derived reaches a derivation in its own frame.** Under a
-  composing strategy a derivation is handed each dependency's pose in the deriving node's frame
-  (`core/scene/depFrame.ts`), but a dependency's `path` — a blend whose source is another effect —
-  is not carried across, so an effect of an effect in another container reads that path where
-  its own container would put it.
 - **(P3) A blend's spine is fixed when the blend is made.** `BlendEffect` takes a spine as an
   optional third source (`[from, to, spine]`), and Blend reads it from a third selected shape;
   nothing adds, swaps, or removes the spine of an existing blend.
@@ -611,41 +606,30 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   ears: the `score` demo (`apps/site/demos/ScoreDemo.tsx`) plays each cue with
   its parameters beside the sliders.
 
-- **(P3) AudioWorklet voices** — immune to main-thread jank. What a stall
-  delays is the callback that makes a voice's nodes, which has to run on the
-  main thread, so immunity means synthesizing the voices inside a worklet
-  processor from events posted ahead of time. The synthesis is built:
-  `createNoteKernel` and `createNoiseKernel` (`voiceKernel.ts`) render what
-  `playNote` and `playNoise` play, a block at a time, and
-  `voiceKernel.browser.test.ts` holds them to the node graph. What is left:
-  - a processor that mixes kernels onto a bus from posted events. A worklet
-    cannot import the package's bundle, so the kernel has to reach it as source
-    text, which needs a build step.
-  - the engine's side. A worklet voice's handle, pool slot, steal, pan, and
-    position have to behave as a node voice's do, and `createAudioEngine.ts` is
-    one 611-line function at its size ceiling, so this starts by splitting it.
-  - a browser test that blocks the main thread and hears no gap.
-
 ---
 
 ## Selection, actions & UI panels
 
-- **(P2) The Properties W and H fields go under a node's `data.minSize`.** The insert and place
-  actions, the resize handles, and a replayed scale all hold a node to it (`core/scene/minSize.ts`,
-  `resize/minimum.ts`); typing a smaller W into the `pose.width` field does not, because a
-  `PrefNumber`'s `min` is one static number for every node, and the field's write sees the pose,
-  not the data the minimum lives in. Needs a per-node bound in `@weasel-js/prefs` that the
-  selection panel resolves against the node.
+- **(P3) A `minAt` or `maxAt` on a field of an `object` leaf is not resolved.** `SelectionPanel`
+  resolves them on a top-level number leaf per node (`SelectionPanel/nodeBounds.ts`), and
+  `PrefsForm` and labkit on a top-level row. A field of an object (`data.stroke.width`) is drawn
+  by `objectField.tsx`, whose context has no nodes, and written as the whole object, which the
+  per-node clamp in `commitLeaf.ts` does not walk into. No schema bounds a field that way yet.
 
 - **(P3) The menu bar's default access chord, Alt, is unverified in Chrome on Windows, which may
   open its own menu on Alt+F; check there before relying on it.**
 
-- **(P3) A schema drawn as a menu drops its number and color leaves.** `leafRows` in
-  `packages/routing/src/menus/resolveMenu.ts` turns actions, booleans, enums, separators, labels,
-  and aliases into rows and answers nothing for any other kind, so the same asset loses controls
-  when it moves from a bar or a panel to a menu. draw's Loupe asset shows this: as a menu it keeps
-  its switch, mode, and Copy, and loses magnification and the picked color. A number row (an inline
-  field, or steps) and a read-only color row would close it.
+- **(P3) A schema drawn as a menu still drops or flattens some leaves.** `leafRows` in
+  `packages/routing/src/menus/resolveMenu.ts` now draws a number as a row edited in place and a
+  color and a string as read-only rows. What is left:
+  - A color that is not a `readout` shows read-only; neither menu renderer hosts the kit's color
+    picker. A swatch submenu, or a picker the DOM menu opens beside its row, would make it editable.
+  - A string shows as `Name: value`, read-only. The DOM menu could hold a text field the way it
+    holds a number one; the HUD menu has no text entry at all.
+  - A number row ignores the leaf's `endless` and `infinity`, so no menu reaches ±Infinity, and
+    the DOM field takes no typed units: `prefUnitAccepts`, which reads them off the leaf, lives in
+    `@weasel-js/ui`, below where `resolveMenu` can reach.
+  - `paint`, `field`, `object`, `list`, `map`, `union`, and app-defined leaves are still left out.
 
 - **(P3) Shift+F10 / the ContextMenu key may open the menu twice in Chrome on Windows/Linux.**
   The `menu.context` key binding opens it at the selection, and those platforms also send a
@@ -1081,6 +1065,14 @@ only story runner in the repo.
 
 ## Release-gate & build hygiene
 
+- **(P2) Nothing runs the stories' `play` checks.** CI, `npm test`, and the fleet's
+  `.onto/tests` all leave out the `forge-stories` vitest project, and CI's comment says it
+  "exists only to validate that stories can mount" — but plays assert layout jsdom cannot, and
+  `Prefs.stories.tsx`'s Rail play failed on `main` from 2026-10-14 (`815a44787`, a wider rail
+  gutter) until it was found by hand on 2026-10-18. The fleet already runs headless Chromium
+  for `browser`, so adding `--project=forge-stories` there costs wall time, not a new
+  dependency; run `npm run test:stories:forge` once first to see which plays are failing now.
+
 - **(P3) `onto test --spread` fails a run whose tree moved, where the other commands sync again.**
   onto `f621d8b` makes a launch carry the stamp its own sync was answered with, so a suite can no
   longer start in a tree another session synced; `scripts/fleet-tree.gate.ts` stays as the check
@@ -1279,32 +1271,44 @@ only story runner in the repo.
   draws them only through `WeaselRenderer` (checked 2026-10-17). It is one run on their side, the
   16px / 2,700-command rung with the GL build left off the page, and it could retire the entry.
 
-- **(P3) Retained layer surfaces: what the first arc left.** An unchanged layer of 250 commands or
-  more is now drawn once into its own texture and composited (`GroupDrawCommand.retain`,
-  `packages/renderer/src/retain/`; the policy is `packages/core/src/core/layers/retain.ts`). Memory
-  is bounded by a cap, `WeaselRendererOptions.retainBudget`, not by content: every surface is the
-  size of the drawing buffer, 16 MB at 1280x800 and dpr 2, plus one shared multisampled scratch
-  buffer of 8 bytes a sample (131 MB there at 4x). Left:
+- **(P3) Retained layer surfaces: what is left.** An unchanged layer of 250 commands or more is
+  drawn once into its own texture and composited (`GroupDrawCommand.retain`,
+  `packages/renderer/src/retain/`; the policy is `packages/core/src/core/layers/retain.ts`;
+  `<Canvas retain>` sets the threshold and budget). Each surface covers only the device pixels its
+  layer can paint, but text, custom shaders and `effects` cannot be bounded yet, so a layer holding
+  any of them still gets a canvas-sized surface (16 MB at 1280x800 and dpr 2). Left:
 
-  - **Content-bounded surfaces.** Size each surface to its layer's device bounds, clamped to the
-    viewport, and composite a quad over just that. Less memory and fill than a canvas-sized quad;
-    needs a bounds pass over every command kind and an offset projection inside the surface.
+  - **The scratch buffer takes half the default budget.** The one multisampled buffer surfaces are
+    drawn in costs 8 bytes a sample at the size of the largest surface: 131 MB of the 256 MB default
+    at 4x for a canvas-sized one, which leaves room for about 8 canvas-sized surfaces. At 16 and 64 layers the
+    budget declined half or more of them (below). Drawing in tiles, or freeing the scratch buffer
+    once nothing is being redrawn, would change that.
+  - **Bounds for text and custom shaders.** Text needs its laid-out extent plus glyph overhang;
+    a custom shader may read `gl_FragCoord`, which the offset viewport moves.
   - **Retaining through camera motion.** A world layer stops retaining while the view moves, and its
     surface is freed after a frame without it, so a pan resubmits every layer and reallocates on the
     first still frame. An oversized, bounded surface could be translated instead of redrawn.
   - **Layers with `effects`, and layers inside a `LayerGroup` that owns a surface,** are never
     retained: the renderer declines a retained group inside another render target.
-  - **No `Canvas` prop** sets the threshold or the budget, or turns retaining off for a whole canvas;
-    today that is `RenderLayer.retain: false` per layer, or the renderer's own options.
-  - **No timing of the real path yet.** The 250 threshold comes from `tests/perf/layer-dispatch.spec.ts`,
-    which stood in for a retained layer with one canvas-sized image (composite cheaper than submitting
-    from about 130–250 commands a layer, at 4 to 64 layers; 58 ms submit against 5.4 composite at 64
-    layers of 1,000). Its composite side should be rerun through `retain` itself, which adds the
-    resolve blit, and the threshold set from that.
+  - **The threshold.** `tests/perf/layer-dispatch.spec.ts` now times the real path (`retained`),
+    each variant on a renderer of its own. On msb-uai (Apple M3 Max, ANGLE Metal, headless Chromium
+    153), 2026-10-18, ms a frame over the control, medians of 3 runs:
 
-  Measured on teitou (Apple M5 Max, ANGLE Metal, headless Chromium 153), 2026-10-07; one GPU and
-  backend only. Result files: `tests/perf/recorded/layer-dispatch-2026-10-07/` and
-  `tests/perf/recorded/layer-dispatch-dirty-2026-10-07/`.
+    | layers | cmds | submit | retained | kept / declined |
+    |---:|---:|---:|---:|---:|
+    |  4 |   30 |  0.225 |  0.515 |  4 /  0 |
+    |  4 |  100 |  0.830 |  0.500 |  4 /  0 |
+    |  4 |  300 |  2.405 |  0.410 |  4 /  0 |
+    | 16 |  100 |  2.750 |  2.565 |  8 /  8 |
+    | 16 |  300 | 10.730 |  5.200 |  8 /  8 |
+    | 64 |  100 | 15.850 | 12.310 |  8 / 56 |
+    | 64 | 1000 | 68.170 | 54.065 |  8 / 56 |
+
+    Retaining wins by 100 commands a layer at every layer count and loses at 30 from 4 layers up,
+    well below the 250 in force. It was left at 250: this is one run on one GPU, and frame time does not price
+    the memory a lower threshold commits. Result file:
+    `tests/perf/recorded/layer-dispatch-retained-msb-uai-m3max-2026-10-18/`; the image stand-in it
+    replaces is in `tests/perf/recorded/layer-dispatch-2026-10-07/`.
 
 - **(P3) The pull request benchmark job does not fit its time limit, and its comment shows
   seven of fifteen benchmarks.** Its steps ran on keiei (Apple M2, 8 cores, load about 6.9) on
@@ -1322,14 +1326,11 @@ only story runner in the repo.
   - Still unmeasured: whether the base, measured first, reads differently from the head for that
     reason alone. Result files and logs from that run were not kept.
 
-- **(P3) `CanvasInner` is one 422-line function.** It is most of the 720-line `canvas/Canvas.tsx`,
-  after its scene-layer construction, its dev HUDs, and its camera moved to SceneCanvas.
-  `SceneCanvasInner` is under the cap: its mounters are hooks, called from `SceneCanvasInput`, a
-  component kept ahead of the canvas's children because a child's dep or action override has to
-  register after the kit's (`SceneCanvas.registrationOrder.test.tsx`). `CanvasInner` has no mounters
-  to fold, so it needs its own split. `docs/audits/2026-10-12-SceneCanvas.md` lists what belongs to
-  another owner. Left open by the preset table and the rule context, and described in the audit:
-  `selectTool.rotate === false` is still decided in three places that do not agree, and making
-  them one changes behavior three ways the audit lists, each needing a decision. Left open by the selection pass: the kind label published with the selection and the routing
-  kind disagree on every node, and `SelectionPanel` has a third classifier; the command palette's
-  summary prints the label, so making them one needs a decision on what it should say.
+- **(P3) `selectTool.rotate === false` is decided in three places that do not agree.** Making them
+  one changes behavior three ways, each needing a decision; `docs/audits/2026-10-12-SceneCanvas.md`
+  lists them. Left open by the preset table and the rule context.
+
+- **(P3) Three classifiers name a node's kind.** The kind label published with the selection and the
+  routing kind disagree on every node, and `SelectionPanel` has a third. The command palette's
+  summary prints the label, so making them one needs a decision on what it should say. Left open by
+  the selection pass.

@@ -6,6 +6,7 @@ import {
   type PropertyRowLayout,
 } from '@weasel-js/ui';
 import { Fragment, type ReactNode } from 'react';
+import { valueAtPath } from '../config/path';
 import { BareControl, leafValueAt, useDebouncedText, useTextWaitMs } from './fields';
 
 const noDrafts = (): void => {};
@@ -123,6 +124,7 @@ export function PairedRow<TC extends Record<string, unknown>>({
             write={(value) => setConfig(path, value)}
             draft={draftConfig && ((value) => draftConfig(path, value))}
             disabled={disabled}
+            read={(p) => valueAtPath(shown, p)}
           />
         </span>
       ))}

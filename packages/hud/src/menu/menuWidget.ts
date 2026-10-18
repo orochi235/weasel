@@ -6,6 +6,7 @@ import { accessibleMenu } from './accessibleMenu';
 import { DEFAULT_MENU_METRICS, drawPanel, rowAt, type MenuIcons, type MenuMetrics } from './drawPanel';
 import { measureLabel } from './measureLabel';
 import { createPlacer } from './placePanels';
+import { chipAt } from './valueRows';
 import type { Point } from '@weasel-js/geom';
 
 const CLAIMS: readonly ClaimableGesture[] = ['pointer', 'doubleClick', 'contextMenu', 'longPress', 'wheel'];
@@ -91,9 +92,16 @@ export function createMenuWidget(opts: MenuWidgetOptions): Widget {
     if (evt.type === 'up') armed = false;
     if (!choose) enter(level < 0 ? null : level);
     if (level < 0) return;
-    const index = rowAt(c.entriesAt(level), m, evt.y - panels[level]!.y);
+    const entries = c.entriesAt(level);
+    const index = rowAt(entries, m, evt.y - panels[level]!.y);
     if (!choose) c.hover(level, index, { x: evt.x, y: evt.y });
-    else if (index !== null) c.press(level, index);
+    else if (index !== null) {
+      c.press(level, index);
+      // A number row's chips step it, since this menu has no field to type in.
+      const e = entries[index];
+      const dir = e?.kind === 'number' ? chipAt(panels[level]!.w, m, evt.x - panels[level]!.x) : null;
+      if (e?.kind === 'number' && dir !== null) c.spin(e, dir > 0 ? 'ArrowUp' : 'ArrowDown');
+    }
   };
 
   const key = (evt: HudKeyEvent): boolean => {
@@ -119,7 +127,7 @@ export function createMenuWidget(opts: MenuWidgetOptions): Widget {
     draw: (ctx) => {
       family = ctx.defaultFont;
       panels = place(c, family);
-      return panels.flatMap((p, level) => drawPanel(ctx, p, c.entriesAt(level), c.stack()[level] ?? null, m, opts.icons));
+      return panels.flatMap((p, level) => drawPanel(ctx, p, c.entriesAt(level), c.stack()[level] ?? null, m, opts.icons, c.numberValue));
     },
     hitTest: (x, y) => levelAt(x, y) >= 0,
     cursorAt: () => 'default',

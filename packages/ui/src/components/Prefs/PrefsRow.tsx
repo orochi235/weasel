@@ -1,6 +1,7 @@
 import { type ReactNode } from 'react';
 import {
   prefAliasName,
+  prefNumberAt,
   prefValueAtPath,
   type PrefAction,
   type PrefActions,
@@ -8,6 +9,7 @@ import {
   type PrefAliasTargets,
   type PrefLeaf,
   type PrefMap,
+  type PrefNumber,
   type PrefUnion,
   prefDrawsSeveral,
 } from '@weasel-js/prefs';
@@ -179,7 +181,7 @@ export function prefRenderContext(
   const toggles = onAutoChange !== undefined && pref.manual !== true && (ctx.canInherit?.(path) ?? true);
   const renderCtx: PrefRenderContext = {
     path,
-    pref,
+    pref: pref.kind === 'number' ? prefNumberAt(pref as PrefNumber, (p) => prefValueAtPath(ctx.values, p)) : pref,
     value: mixed ? undefined : stored !== undefined ? stored : pref.default,
     values: ctx.values,
     ...(ctx.changed?.has(path) ? { changed: true } : {}),

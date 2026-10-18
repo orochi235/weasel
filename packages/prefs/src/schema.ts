@@ -6,6 +6,7 @@
 import type { IconRef } from '@weasel-js/icons';
 import type { PrefAction, PrefActions } from './action';
 import type { PrefAlias } from './alias';
+import type { PrefBoundAt } from './bounds';
 import type { PrefCondition } from './condition';
 import type { PrefSection } from './groups';
 import type { PrefLabel, PrefSeparator } from './label';
@@ -130,6 +131,12 @@ export type PrefEnumControl = 'select' | 'radio' | 'toggle' | 'menu';
 export interface PrefNumberBase extends PrefValueBase<'number', number | undefined> {
   min?: number;
   max?: number;
+  /** A lower bound read from where the value is held — a scene node's own
+   *  minimum — taken with `min`, the larger winning. A surface resolves it
+   *  per holder with `prefNumberAt`. */
+  minAt?: PrefBoundAt;
+  /** The upper counterpart of `minAt`, taken with `max`, the smaller winning. */
+  maxAt?: PrefBoundAt;
   step?: number;
   control?: PrefNumberControl;
   /** How the value shows, speaks and reads back when typed — `compact()`

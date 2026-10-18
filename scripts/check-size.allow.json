@@ -8,10 +8,6 @@
   "packages/animator/src/timeline/createTimeline.ts": {
     "longestFunction": 165
   },
-  "packages/audio/src/createAudioEngine.ts": {
-    "lines": 765,
-    "longestFunction": 611
-  },
   "packages/audio/src/inserts.ts": {
     "longestFunction": 232
   },
@@ -21,10 +17,6 @@
   },
   "packages/core/src/animation/reflow.ts": {
     "longestFunction": 165
-  },
-  "packages/core/src/canvas/Canvas.tsx": {
-    "lines": 486,
-    "longestFunction": 419
   },
   "packages/core/src/canvas/CanvasView.tsx": {
     "lines": 407,
@@ -157,7 +149,7 @@
     "longestFunction": 152
   },
   "packages/labkit/src/controls/panelRows.tsx": {
-    "longestFunction": 249
+    "longestFunction": 232
   },
   "packages/labkit/src/lab/Lab.tsx": {
     "longestFunction": 197
@@ -201,7 +193,7 @@
     "lines": 439
   },
   "packages/renderer/src/WeaselRenderer.ts": {
-    "lines": 636
+    "lines": 634
   },
   "packages/renderer/src/drawBatch.ts": {
     "lines": 608

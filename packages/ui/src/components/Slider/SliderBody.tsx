@@ -1,12 +1,11 @@
 import { useRef, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, type ReactElement } from 'react';
 import { clamp } from '@weasel-js/geom';
-import { qty } from '@weasel-js/quantity';
+import { qty, snapToStep } from '@weasel-js/quantity';
 import { QuantityText } from '../QuantityText';
 import { ReadoutsBelow } from './ReadoutsBelow';
 import s from './Slider.module.css';
 import { crossEnd } from './crossEnd';
 import { keyMoveOf } from './keyMove';
-import { snapToStep } from '../spin';
 import { READOUT, clampOrdered, defaultStep, fractionToPosition, resolveBounds, stepStops } from './stops';
 import type { SliderProps, Thumb } from './types';
 import { useScale, useSpan } from './useSpan';

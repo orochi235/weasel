@@ -131,4 +131,25 @@ describe('the loupe asset', () => {
     click(screen.getByRole('menuitemcheckbox', { name: 'Vector' }));
     expect(lens.settings?.mode).toBe('vector');
   });
+
+  it('keeps its magnification and color as a menu, the magnification edited without closing it', () => {
+    renderWithIcons(<App />);
+    click(loupeBar().getByRole('switch', { name: 'Loupe' }));
+    act(() => { lens.events!.onColorChange('#336699'); });
+    act(() => { drawPrefs().set('ui.surfaces', { ...drawPrefs().get('ui.surfaces'), loupe: { surface: 'menu' } }); });
+    click(strip().getByRole('button', { name: 'Loupe' }));
+
+    const factor = screen.getByRole('spinbutton', { name: 'Magnification' });
+    expect(screen.getByRole('menuitem', { name: /Magnification/ })).toContainElement(factor);
+    expect(factor).toHaveValue('8');
+    act(() => {
+      fireEvent.change(factor, { target: { value: '12' } });
+      fireEvent.blur(factor);
+    });
+    expect(lens.settings?.factor).toBe(12);
+    expect(screen.getByRole('menu')).toBeInTheDocument();
+    expect(factor).toHaveValue('12');
+
+    expect(screen.getByRole('menuitem', { name: /^Color\s*#336699$/ })).toHaveAttribute('aria-disabled', 'true');
+  });
 });

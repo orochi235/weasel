@@ -147,6 +147,24 @@ describe('a slot with its own toPose', () => {
     expect(sceneDerivedPathOf(scene, same)(scene.get(id)!)).toBe(BENT);
   });
 
+  // The walk turns what the painter draws by the pose it paints at, so the path stays in the
+  // unturned box: carried through the turn as well, it would be turned twice.
+  it('carries an override path box to box when toPose also turns the node', () => {
+    const { scene, id } = makeScene();
+    scene.overrides.set(id, { pose: BENT_POSE, path: BENT });
+    const turned = (n: Node<Data, 'main', RectPose>): RectPose => ({ ...stretched(n), rotation: Math.PI / 2 });
+    const drawOne = vi.fn((
+      _n: Node<Data, 'main', RectPose>, _p: RectPose, _v: View, _ctx?: NodePaintCtx,
+    ): DrawCommand[] => []);
+    const slot = wireSceneSlotToScene({ drawOne, toPose: turned }, scene);
+    const node = scene.get(id)!;
+    slot.drawOne(node, slot.toPose!(node), VIEW);
+    const b = boundsOfPath(drawOne.mock.calls[0][3]!.derivedPath!);
+    expect([b.x, b.y, b.width, b.height].map(Math.round)).toEqual([CARRIED.x, CARRIED.y, CARRIED.width, CARRIED.height]);
+    const onlyTurned = (n: Node<Data, 'main', RectPose>): RectPose => ({ ...n.pose, rotation: Math.PI / 2 });
+    expect(sceneDerivedPathOf(scene, onlyTurned)(node)).toBe(BENT);
+  });
+
   it('answers the carried path as a dependency\'s path', () => {
     const { scene, id } = makeScene();
     scene.overrides.set(id, { pose: BENT_POSE, path: BENT });

@@ -104,11 +104,11 @@ export function Workspace(props: WorkspaceProps): ReactElement {
 
   const modeId = useModeId(machine);
   const targetLabel = useModeTargetLabel(machine, scene);
-  const modes = useCanvasModes(machine, scene, selection, modality.pathEdit);
+  const modes = useCanvasModes(machine, scene, selection, modality.pathEdit, modality.scopingDim.isPointerInteractive);
   const ambient = useEditorAmbient({
     scene,
     selection,
-    modeKeys: modes.keys,
+    modes: modes.ambient,
     grid: grid.commands,
     pathDirection: pathDirection.commands,
     symmetry,
@@ -207,7 +207,6 @@ export function Workspace(props: WorkspaceProps): ReactElement {
           alphaFor={alphaFor}
           redrawOn={redrawOnScoping}
           isPointerInteractive={modality.scopingDim.isPointerInteractive}
-          onDoubleClick={modes.onDoubleClick}
           modes={machine.registry}
           pathEdit={modes.pathEdit}
           chromeVisibility={pathDirection.chromeVisibility}

@@ -7,12 +7,11 @@ import {
   useRef,
   useState,
 } from 'react';
-import { decimal, parseAs, qty, type Display } from '@weasel-js/quantity';
+import { decimal, parseAs, qty, spinKey, type Display } from '@weasel-js/quantity';
 import { dlog } from '../../dlog';
 import { endlessTrack } from '../../endless';
 import { UnitField } from '../NumberField';
 import { QuantityText } from '../QuantityText';
-import { spinKey } from '../spin';
 import shared from '../range.module.css';
 import type { PropertyNumberFieldProps } from './fieldTypes';
 import { PropertyRow } from './PropertyRow';

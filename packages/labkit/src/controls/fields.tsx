@@ -1,5 +1,10 @@
 import { getAlpha01, toHex8, withAlpha01 } from '@weasel-js/core';
-import type { PrefLeaf } from '@weasel-js/prefs';
+import {
+  type PrefBoundReader,
+  type PrefLeaf,
+  type PrefNumber,
+  prefNumberAt,
+} from '@weasel-js/prefs';
 import {
   PARAMS_SETTLES,
   type PrefFieldChoice,
@@ -48,17 +53,20 @@ export function leafValueAt(config: unknown, path: string, leaf: PrefLeaf): unkn
  * without it, a typed field writes only that settled value. `null` for a kind with no one field: a paint, which a
  * hex swatch would flatten to a solid and the panel declines, and an object,
  * which a flat row would write one field of and the panel opens in a dialog.
+ * `read` reads the panel's values, which a number's `minAt` and `maxAt` bound it by.
  */
 export function labField(
-  leaf: PrefLeaf,
+  given: PrefLeaf,
   value: unknown,
   write: (value: unknown) => void,
   fields: readonly PrefFieldChoice[],
   disabled = false,
   draft?: (value: unknown) => void,
+  read?: PrefBoundReader,
 ): PropertyControlProps | null {
   // `prefFieldProps` answers for the kinds ui draws that are no built-in of the schema's, the font pickers.
-  if (leaf.kind === 'paint' || leaf.kind === 'object') return null;
+  if (given.kind === 'paint' || given.kind === 'object') return null;
+  const leaf = given.kind === 'number' && read ? prefNumberAt(given as PrefNumber, read) : given;
   const state = { value, setValue: write, fields, disabled };
   const settled = prefFieldProps(leaf, state, 'lab', draft ? undefined : TYPED_SETTLE);
   if (settled === null) return null;
@@ -95,6 +103,7 @@ export function BareControl({
   draft,
   name = leaf.name,
   disabled,
+  read,
 }: {
   leaf: PrefLeaf;
   value: unknown;
@@ -104,8 +113,10 @@ export function BareControl({
   name?: string;
   /** The control takes no input: an `enableIf` on the way to it does not hold. */
   disabled?: boolean;
+  /** Reads the panel's values, which a number's `minAt` and `maxAt` bound it by. */
+  read?: PrefBoundReader;
 }) {
-  const field = labField(leaf, value, write, useFieldChoices(), disabled, draft);
+  const field = labField(leaf, value, write, useFieldChoices(), disabled, draft, read);
   const drafts = useDebouncedText(
     typeof value === 'string' ? value : '',
     draft ?? unwritten,

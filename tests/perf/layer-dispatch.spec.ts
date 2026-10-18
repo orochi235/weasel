@@ -18,6 +18,13 @@
  *                        through a copy effect. The copy is one full-buffer
  *                        pass a real layer texture would not need, so this is
  *                        an upper bound.
+ *   - `retained`       — `submit`'s layers with `retain: true`, so the
+ *                        renderer keeps each as a surface (`GroupDrawCommand.retain`)
+ *                        and composites it: the real path, resolve blit and
+ *                        budget included. Every other variant draws with
+ *                        retaining off.
+ *   - `retainedDirty`  — `retained` with the first layer's `deps` changing
+ *                        every frame, so that layer is submitted.
  *
  * The composite quads cycle through 8 distinct bitmaps rather than holding 64
  * canvas-sized textures. A run of image quads shares one draw until it runs out
@@ -49,11 +56,14 @@ const RUNS = rounds(3);
 /** Distinct cached-layer textures; layer l draws texture l % LAYER_TEXTURES. */
 const LAYER_TEXTURES = 8;
 
-const VARIANTS = ['control', 'submit', 'composite', 'submitDirty', 'compositeDirty'] as const;
+const VARIANTS = ['control', 'submit', 'composite', 'submitDirty', 'compositeDirty', 'retained', 'retainedDirty'] as const;
 type Variant = (typeof VARIANTS)[number];
 
 interface Cell { run: number; layers: number; cmds: number; variant: Variant; perFrameMs: number; cpuMs: number }
-interface Counts { layers: number; cmds: number; variant: Variant; draws: number }
+interface Counts {
+  layers: number; cmds: number; variant: Variant; draws: number;
+  retained: { composited: number; redrawn: number; declined: number; bytes: number };
+}
 
 test.setTimeout(3_600_000);
 
@@ -176,6 +186,7 @@ test('layer dispatch: unchanged layers submitted against composited', async ({ p
         space?: 'world' | 'screen';
         draw: () => unknown[];
         deps?: () => readonly unknown[];
+        retain?: boolean;
       }
       let tick = 0;
       const live: Layer = {
@@ -203,12 +214,13 @@ void main() { outColor = texture(u_source, v_uv); }
 
       function stackFor(variant: string, n: number, m: number): Layer[] {
         const out: Layer[] = [];
-        const dirty = variant === 'submitDirty' || variant === 'compositeDirty';
-        if (variant === 'submit' || variant === 'submitDirty') {
+        const dirty = variant.endsWith('Dirty');
+        if (variant.startsWith('submit') || variant.startsWith('retained')) {
+          const retain = variant.startsWith('retained');
           for (let l = 0; l < n; l++) {
             const cmds = Array.from({ length: m }, (_, j) => leaf(l * 7919 + j));
             const deps = dirty && l === 0 ? dirtyDeps : () => constDeps;
-            out.push({ id: `L${l}`, label: `L${l}`, draw: () => cmds, deps });
+            out.push({ id: `L${l}`, label: `L${l}`, draw: () => cmds, deps, retain });
           }
         } else if (variant === 'composite' || variant === 'compositeDirty') {
           for (let l = 0; l < n; l++) {
@@ -233,13 +245,21 @@ void main() { outColor = texture(u_source, v_uv); }
         for (const n of layerLadder) {
           for (const m of cmdLadder) {
             const { gl, canvas } = freshContext();
-            const renderer = new WeaselRenderer({ gl, canvas, width: w, height: h, dpr });
-            const stacks = new Map<string, { layers: Layer[]; cache: Map<string, unknown> }>();
-            for (const v of variants) stacks.set(v, { layers: stackFor(v, n, m), cache: new Map() });
+            // A renderer per variant on the one context: a retained surface is
+            // freed by the first frame that does not draw it, so variants
+            // interleaved on one renderer would redraw every surface each frame.
+            const stacks = new Map<string, { layers: Layer[]; cache: Map<string, unknown>; renderer: InstanceType<typeof WeaselRenderer> }>();
+            for (const v of variants) {
+              const renderer = new WeaselRenderer(v === 'control' ? { gl, canvas, width: w, height: h, dpr } : { gl, width: w, height: h, dpr });
+              stacks.set(v, { layers: stackFor(v, n, m), cache: new Map(), renderer });
+            }
             const frame = (v: string) => {
               frameNo += 1;
               const s = stacks.get(v)!;
-              renderer.render(drawLayers(s.layers, null, {}, undefined, view, dims, s.cache), identity);
+              const policy = v.startsWith('retained') ? undefined : false;
+              s.renderer.render(drawLayers(
+                s.layers, null, {}, undefined, view, dims, s.cache, undefined, undefined, undefined, policy,
+              ), identity);
             };
             for (const v of variants) { frame(v); frame(v); }
             gl.finish();
@@ -258,7 +278,8 @@ void main() { outColor = texture(u_source, v_uv); }
               const cover: Record<string, number> = {};
               for (const v of variants) {
                 frame(v);
-                await report({ type: 'calls', layers: n, cmds: m, variant: v, draws: renderer.lastFrameStats().drawCalls });
+                const stats = stacks.get(v)!.renderer.lastFrameStats();
+                await report({ type: 'calls', layers: n, cmds: m, variant: v, draws: stats.drawCalls, retained: stats.retained });
                 cover[v] = covered();
               }
               for (const v of variants) {
@@ -273,7 +294,7 @@ void main() { outColor = texture(u_source, v_uv); }
               return {
                 id: v,
                 frame: () => frame(v),
-                after: () => { cpu[v].push(renderer.lastFrameStats().ms); },
+                after: () => { cpu[v].push(stacks.get(v)!.renderer.lastFrameStats().ms); },
               };
             }));
             for (const v of variants) {
@@ -285,7 +306,7 @@ void main() { outColor = texture(u_source, v_uv); }
                 cpuMs: +c[Math.floor(c.length / 2)].toFixed(4),
               });
             }
-            renderer.dispose();
+            for (const st of stacks.values()) st.renderer.dispose();
             // Each cell uploads up to 128 MB of layer textures; free them now
             // rather than whenever the browser evicts the context.
             gl.getExtension('WEBGL_lose_context')?.loseContext();
@@ -305,8 +326,10 @@ void main() { outColor = texture(u_source, v_uv); }
     cells.filter((c) => c.layers === n && c.cmds === m && c.variant === v).map((c) => c.perFrameMs);
   const cpus = (n: number, m: number, v: Variant) =>
     cells.filter((c) => c.layers === n && c.cmds === m && c.variant === v).map((c) => c.cpuMs);
-  const draws = (n: number, m: number, v: Variant) =>
-    counts.find((c) => c.layers === n && c.cmds === m && c.variant === v)?.draws ?? NaN;
+  const countOf = (n: number, m: number, v: Variant) =>
+    counts.find((c) => c.layers === n && c.cmds === m && c.variant === v);
+  const draws = (n: number, m: number, v: Variant) => countOf(n, m, v)?.draws ?? NaN;
+  const kept = (n: number, m: number) => countOf(n, m, 'retained')?.retained;
   /** Over the control, medians. */
   const over = (n: number, m: number, v: Variant) => med(frames(n, m, v)) - med(frames(n, m, 'control'));
 
@@ -319,8 +342,10 @@ void main() { outColor = texture(u_source, v_uv); }
     '',
     '"dirty" redraws the first layer every frame: submitted again, or drawn into its texture.',
     '',
-    '| layers | cmds | control | submit | composite | submit dirty | composite dirty | submit cpu | composite cpu | draws s / c | composite / submit | dirty c / s |',
-    '|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|',
+    '"retained" is the real path; "kept" is how many of its layers composited from a surface, and how many the budget declined.',
+    '',
+    '| layers | cmds | control | submit | composite | retained | submit dirty | composite dirty | retained dirty | submit cpu | retained cpu | draws s / c / r | kept / declined | composite / submit | retained / submit | dirty r / s |',
+    '|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|',
   ];
   for (const n of LAYERS) {
     for (const m of CMDS) {
@@ -328,12 +353,17 @@ void main() { outColor = texture(u_source, v_uv); }
       const c = over(n, m, 'composite');
       const sd = over(n, m, 'submitDirty');
       const cd = over(n, m, 'compositeDirty');
+      const r = over(n, m, 'retained');
+      const rd = over(n, m, 'retainedDirty');
+      const k = kept(n, m);
       lines.push(
         `| ${String(n).padStart(2)} | ${String(m).padStart(4)} | ${f(med(frames(n, m, 'control')), 6, 3)}`
-        + ` | ${f(s, 7, 3)} | ${f(c, 7, 3)} | ${f(sd, 7, 3)} | ${f(cd, 7, 3)}`
-        + ` | ${f(med(cpus(n, m, 'submit')), 7, 3)} | ${f(med(cpus(n, m, 'composite')), 7, 3)}`
+        + ` | ${f(s, 7, 3)} | ${f(c, 7, 3)} | ${f(r, 7, 3)} | ${f(sd, 7, 3)} | ${f(cd, 7, 3)} | ${f(rd, 7, 3)}`
+        + ` | ${f(med(cpus(n, m, 'submit')), 7, 3)} | ${f(med(cpus(n, m, 'retained')), 7, 3)}`
         + ` | ${String(draws(n, m, 'submit')).padStart(4)} / ${String(draws(n, m, 'composite')).padStart(3)}`
-        + ` | ${f(c / s, 6, 2)} | ${f(cd / sd, 6, 2)} |`,
+        + ` / ${String(draws(n, m, 'retained')).padStart(3)}`
+        + ` | ${String(k?.composited ?? NaN).padStart(2)} / ${String(k?.declined ?? NaN).padStart(2)}`
+        + ` | ${f(c / s, 6, 2)} | ${f(r / s, 6, 2)} | ${f(rd / sd, 6, 2)} |`,
       );
     }
   }
@@ -363,6 +393,12 @@ void main() { outColor = texture(u_source, v_uv); }
       items.compositeOverControl = metric(over(n, m, 'composite'), 'ms', 'medians');
       items.submitDirtyOverControl = metric(over(n, m, 'submitDirty'), 'ms', 'medians');
       items.compositeDirtyOverControl = metric(over(n, m, 'compositeDirty'), 'ms', 'medians');
+      items.retainedOverControl = metric(over(n, m, 'retained'), 'ms', 'medians');
+      items.retainedDirtyOverControl = metric(over(n, m, 'retainedDirty'), 'ms', 'medians');
+      const k = kept(n, m);
+      items.retainedComposited = metric(k?.composited ?? NaN, 'count', 'layers composited from a surface, one untimed frame');
+      items.retainedDeclined = metric(k?.declined ?? NaN, 'count', 'layers the budget drew straight through, one untimed frame');
+      items.retainedBytes = metric(k?.bytes ?? NaN, 'bytes', 'surface memory held after one untimed frame');
       run.item(`${n}x${m}`, items, { layers: n, cmds: m });
     }
   }

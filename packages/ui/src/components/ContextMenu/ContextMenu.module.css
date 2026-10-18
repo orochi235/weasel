@@ -65,3 +65,16 @@ a.row {
   margin: var(--wzl-space-1) 0;
   background: var(--wzl-border);
 }
+
+/* A number row's field or a color row's swatch, in the shortcut's column. */
+.value {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wzl-space-1);
+  justify-self: end;
+}
+
+.unit {
+  color: var(--wzl-fg-muted);
+}

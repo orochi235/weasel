@@ -1,6 +1,5 @@
 import { type RefObject, useEffect, useRef, useState } from 'react';
-import { decimal, parseAs, parseNumber, qty, type Display, type UnitTable } from '@weasel-js/quantity';
-import { clampToBounds, spinKey } from '../spin';
+import { clampToBounds, decimal, parseAs, parseNumber, qty, spinKey, type Display, type UnitTable } from '@weasel-js/quantity';
 import f from '../field.module.css';
 import s from './NumberField.module.css';
 import { useStepRepeat } from './useStepRepeat';

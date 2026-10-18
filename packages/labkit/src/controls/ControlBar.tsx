@@ -1,4 +1,4 @@
-import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
+import type { PrefBoundReader, PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 import { BarLayout, groupBarNodes, renderBarLeaf } from '@weasel-js/ui';
 import type { ReactNode } from 'react';
 import { useFieldChoices } from './fieldChoices';
@@ -14,6 +14,8 @@ export interface ControlBarProps {
   enabled: (path: string) => boolean;
   /** The value the leaf at a path shows. */
   value: (path: string, leaf: PrefLeaf) => unknown;
+  /** Reads the panel's values, which a number's `minAt` and `maxAt` bound it by. */
+  read: PrefBoundReader;
   write: (path: string, value: unknown) => void;
   /** The leaf as the bar's cell draws it: an action's run told the panel's config. */
   bind: (leaf: PrefLeaf) => PrefLeaf;
@@ -33,7 +35,7 @@ export interface ControlBarProps {
  * dividers, and a nested page, tab, or panel opens from a button.
  */
 export function ControlBar(props: ControlBarProps) {
-  const { group, path, visible, enabled, value, write, bind, draft, custom, row, open } = props;
+  const { group, path, visible, enabled, value, read, write, bind, draft, custom, row, open } = props;
   return (
     <BarLayout
       className="lk-control-bar"
@@ -57,6 +59,7 @@ export function ControlBar(props: ControlBarProps) {
                 value={value(at, leaf)}
                 write={(v) => write(at, v)}
                 draft={draft && ((v) => draft(at, v))}
+                read={read}
                 disabled={!enabled(at)}
                 row={() => row(at)}
               />
@@ -74,6 +77,7 @@ function Cell({
   value,
   write,
   draft,
+  read,
   disabled,
   row,
 }: {
@@ -82,9 +86,10 @@ function Cell({
   value: unknown;
   write: (value: unknown) => void;
   draft: ((value: unknown) => void) | undefined;
+  read: PrefBoundReader;
   disabled: boolean;
   row: () => ReactNode;
 }) {
-  const field = labField(leaf, value, write, useFieldChoices(), disabled, draft);
+  const field = labField(leaf, value, write, useFieldChoices(), disabled, draft, read);
   return <>{renderBarLeaf({ leaf, path, name: leaf.name, field, disabled, row })}</>;
 }

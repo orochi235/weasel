@@ -15,7 +15,8 @@ export function returnToRenderTarget(
   const target = ctx.renderTarget ?? null;
   gl.bindFramebuffer(gl.FRAMEBUFFER, target ? target.fbo : null);
   if (target) {
-    gl.viewport(0, 0, width, height);
+    if (target.restore) target.restore();
+    else gl.viewport(0, 0, width, height);
   } else {
     ctx.restoreTargetRect?.();
     if (scissorWasOn) gl.enable(gl.SCISSOR_TEST);

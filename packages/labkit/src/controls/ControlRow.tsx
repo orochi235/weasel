@@ -28,7 +28,7 @@ import {
   withRowControl,
 } from '@weasel-js/ui';
 import type { ReactNode } from 'react';
-import { withValueAtPath } from '../config/path';
+import { valueAtPath, withValueAtPath } from '../config/path';
 import type { ControlRenderer, ResolvedConfig } from '../config/types';
 import { aliasTargetsOf, conditionedLeaf } from '../config/visible';
 import { boundAction } from './boundAction';
@@ -304,7 +304,7 @@ function LeafRow<TC extends Record<string, unknown>>({
     );
   }
 
-  const field = labField(leaf, value, write, choices, disabled, draft);
+  const field = labField(leaf, value, write, choices, disabled, draft, (p) => valueAtPath(shown, p));
   if (field === null)
     return <UnwiredRow label={label} kind={leaf.kind} description={description} />;
   switch (field.kind) {

@@ -18,6 +18,7 @@ export {
   VERSION_RECORD,
   visiblePrefSubtree,
 } from './helpers';
+export { prefClampNumber, prefNumberAt, type PrefBoundAt, type PrefBoundReader } from './bounds';
 export type { PrefAction, PrefActionContext, PrefActionControl, PrefActions } from './action';
 export { prefTabRuns, type PrefTabRun } from './tabRuns';
 export { prefLeavesTagged, prefLeafTags } from './tags';
