@@ -22,6 +22,42 @@
   gap: var(--wzl-space-2);
 }
 
+.entry[data-dragging] {
+  opacity: 0.5;
+}
+
+/* Where a dragged entry would land: a line on the edge of the entry it would land against. */
+.entry[data-drop-before] {
+  box-shadow: 0 -2px 0 var(--wzl-accent);
+}
+
+.entry[data-drop-after] {
+  box-shadow: 0 2px 0 var(--wzl-accent);
+}
+
+.handle {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: stretch;
+  padding: 0 var(--wzl-space-1);
+  border: 0;
+  border-radius: var(--wzl-radius-sm);
+  background: transparent;
+  color: var(--wzl-fg-subtle);
+  cursor: grab;
+  touch-action: none;
+}
+
+.handle:active {
+  cursor: grabbing;
+}
+
+.handle:disabled {
+  cursor: default;
+}
+
 .input {
   flex: 1 1 auto;
   min-width: 0;
