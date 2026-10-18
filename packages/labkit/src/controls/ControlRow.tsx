@@ -30,6 +30,7 @@ import {
 } from '@weasel-js/ui';
 import { valueAtPath } from '../config/path';
 import type { ControlRenderer, ResolvedConfig } from '../config/types';
+import type { ReactNode } from 'react';
 import { aliasTargetsOf, conditionedLeaf } from '../config/visible';
 import { boundAction } from './boundAction';
 import type { ControlPack } from './controlPack';
@@ -178,6 +179,11 @@ function customRow(
   );
 }
 
+const spanned = (row: ReactNode): ReactNode =>
+  row === null || row === undefined || row === false ? null : (
+    <div className="lk-control-custom">{row}</div>
+  );
+
 function LeafRow<TC extends Record<string, unknown>>({
   path,
   leaf,
@@ -205,10 +211,9 @@ function LeafRow<TC extends Record<string, unknown>>({
 
   const changed = changedPaths?.has(path) === true;
   const custom = customRow(resolved, renderers, path, leaf);
-  // A custom row places itself like any other; one that needs the full width
-  // says so with `<PropertyRow span>`, which is the same opt-out a built-in has.
+  // The grid cannot see what a custom row draws, so the row takes the whole width rather than half a pair.
   if (custom)
-    return custom({
+    return spanned(custom({
       path,
       pref: boundAction(leaf, config, setConfig),
       value,
@@ -219,7 +224,7 @@ function LeafRow<TC extends Record<string, unknown>>({
       setAuto,
       fields: choices,
       disabled,
-    });
+    }));
 
   const label = leaf.name;
   const description = leaf.description;

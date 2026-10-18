@@ -36,9 +36,12 @@
 }
 
 // A run of tab groups is a block of rows, not a control: it takes the whole
-// row of the list it sits in. So do a label's text, a separator's rule, and an action's button.
+// row of the list it sits in. So do a label's text, a separator's rule, an action's button, a bar, and a
+// row a renderer drew.
 .lk-control-tabs,
 .lk-control-words,
-.lk-control-actions {
+.lk-control-actions,
+.lk-control-bar,
+.lk-control-custom {
   grid-column: 1 / -1;
 }

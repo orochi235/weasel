@@ -34,6 +34,7 @@ export function ControlBar(props: ControlBarProps) {
   const { group, path, visible, enabled, value, write, bind, custom, row, open } = props;
   return (
     <BarLayout
+      className="lk-control-bar"
       framed
       overflow={group.overflow}
       lead={group.lead}
