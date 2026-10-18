@@ -1,8 +1,18 @@
+/* The mark's own face, so it never takes its container's: Inter 700 from
+   @fontsource/inter 5.0.20 (latin subset), OFL-1.1, license beside the file. */
+@font-face {
+  font-family: 'Weasel Wordmark';
+  font-weight: 700;
+  font-display: block;
+  src: url('../assets/fonts/inter-latin-700.woff2') format('woff2');
+}
+
 /* The mark's own colors, the same on every theme: the "w" is the gradient's
    first stop, so the word reads as one run. */
 .wordmark {
   --mark-start: #7fb069;
   color: var(--mark-start);
+  font-family: 'Weasel Wordmark', system-ui, sans-serif;
   font-weight: 700;
   letter-spacing: -0.02em;
   line-height: 1;

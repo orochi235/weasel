@@ -878,9 +878,9 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   cue is not chosen yet; that leaves choosing it and giving it to every control that fades when
   disabled.
 
-- **(P3) apps/site never loads the kit's faces.** It imports no `@weasel-js/theme/faces.css` or
-  `fonts.css`, so `--wzl-font-ui`'s Oswald and `--wzl-font-numeric`'s Oswald Tabular fall back to
-  system faces in every demo. Left as is for now by decision; draw loads `fonts.css`.
+- **(P3) apps/site's body text is still the system face.** It loads `@weasel-js/theme/fonts.css`
+  now, but `canvas-kit-demo.css` sets `body { font-family: system-ui, … }`, which beats that
+  file's `:root` rule, so only text naming a `--wzl-font-*` token gets the kit's faces.
 
 - **(P3) `PropertyField` draws its unit from its own `unit` prop, not through `QuantityText`.**
   `Slider`'s readouts, `BandEditor`'s ticks and ends, and `Transport`'s rate draw through
