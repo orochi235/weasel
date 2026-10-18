@@ -14,8 +14,9 @@ import type { ChromeState } from 'core/selection/chromeState';
 import type { View } from 'core/viewport/view';
 import type { ViewportLayer } from 'features/viewports/viewportLayer';
 import type { DispatcherViewTarget } from '@weasel-js/routing/internal';
-import { createViewResolver, type ViewResolver } from 'features/viewports/viewResolver';
+import { createViewResolver, viewContains, type ViewResolver } from 'features/viewports/viewResolver';
 import { createEmitter } from '@weasel-js/registry';
+import type { ViewAt } from './canvasExtension';
 
 /**
  * What a view needs from the surface hosting it.
@@ -81,6 +82,9 @@ export function surfaceLocal(
  */
 export interface ViewRegistration {
   id: string;
+  /** The view this one is nested in: listed, painted and hit after it, and
+   *  its `layer` measures itself from that view's rect and camera. */
+  parent?: string;
   /**
    * Paint and hit order, low to high. Views declared as props take their array
    * index; a view mounted as a child takes `Infinity`, so it lands after them
@@ -101,14 +105,24 @@ export interface ViewRegistration {
    *  reaches a view without a dispatch — hover — so it judges this view's
    *  paint rather than the surface's. */
   layerIsPainted(layerId: string): boolean;
+  /** The layers this view draws, in order — what a view nested in it paints
+   *  from. */
+  drawnLayers(): readonly RenderLayer<unknown>[];
 }
+
 
 /** @internal */
 export interface ViewRegistry {
   /** Returns an unregister. */
   register(reg: ViewRegistration): () => void;
-  /** Live registrations in paint order. */
+  /** Live registrations in paint order, each nested view after the view it
+   *  is nested in. */
   list(): readonly ViewRegistration[];
+  /** The live registration with `id`, if any. */
+  get(id: string): ViewRegistration | undefined;
+  /** The innermost view painted under a canvas-local point, whether or not it
+   *  takes input, passing over `except` and the views nested in it. */
+  viewAt(at: { x: number; y: number }, opts?: { except?: string }): ViewAt;
   /** Bumped whenever the list changes. Pair with {@link ViewRegistry.subscribe}
    *  for `useSyncExternalStore`. */
   getVersion(): number;
@@ -139,9 +153,22 @@ export function ViewRegistryProvider({ children }: { children: ReactNode }) {
       versionRef.current++;
       listeners.emit();
     };
-    const ordered = (): ViewRegistration[] => [...entriesRef.current.keys()].sort((a, b) => (
+    const ordered = (): ViewRegistration[] => nestedOrder([...entriesRef.current.keys()].sort((a, b) => (
       a.order - b.order || entriesRef.current.get(a)! - entriesRef.current.get(b)!
-    ));
+    )));
+    const get = (id: string): ViewRegistration | undefined => {
+      for (const r of entriesRef.current.keys()) if (r.id === id) return r;
+      return undefined;
+    };
+    /** Whether `r` is `id` or nested in it, however deep. */
+    const within = (r: ViewRegistration, id: string): boolean => {
+      const seen = new Set<ViewRegistration>();
+      for (let at: ViewRegistration | undefined = r; at && !seen.has(at); at = at.parent === undefined ? undefined : get(at.parent)) {
+        if (at.id === id) return true;
+        seen.add(at);
+      }
+      return false;
+    };
     const resolver = createViewResolver({
       views: () => {
         const surface = surfaceRef.current;
@@ -161,6 +188,21 @@ export function ViewRegistryProvider({ children }: { children: ReactNode }) {
         return () => { entriesRef.current.delete(reg); changed(); };
       },
       list: ordered,
+      get,
+      viewAt: ({ x, y }, opts) => {
+        const surface = surfaceRef.current;
+        const view = surface?.view() ?? IDENTITY_VIEW;
+        const dims = surface?.dims() ?? UNMEASURED_DIMS;
+        const except = opts?.except;
+        const list = ordered();
+        for (let i = list.length - 1; i >= 0; i--) {
+          const r = list[i]!;
+          if (except !== undefined && within(r, except)) continue;
+          const v = r.layer.resolvable(view, dims);
+          if (viewContains(v, x, y)) return { id: v.id, view: v.view, rect: v.rect };
+        }
+        return { id: null, view, rect: { x: 0, y: 0, w: dims.width, h: dims.height } };
+      },
       getVersion: () => versionRef.current,
       subscribe: listeners.subscribe,
       surface: () => surfaceRef.current,
@@ -177,6 +219,24 @@ export function ViewRegistryProvider({ children }: { children: ReactNode }) {
 /** The surface's view registry, or `null` outside one. */
 export function useOptionalViewRegistry(): ViewRegistry | null {
   return useContext(ViewRegistryContext);
+}
+
+/** Each view followed by the views nested in it, in the order given. A view
+ *  whose parent is not registered keeps its place; one caught in a cycle
+ *  goes last. */
+function nestedOrder(sorted: readonly ViewRegistration[]): ViewRegistration[] {
+  const ids = new Set(sorted.map((r) => r.id));
+  const out: ViewRegistration[] = [];
+  const placed = new Set<ViewRegistration>();
+  const place = (r: ViewRegistration): void => {
+    if (placed.has(r)) return;
+    placed.add(r);
+    out.push(r);
+    for (const child of sorted) if (child.parent === r.id) place(child);
+  };
+  for (const r of sorted) if (r.parent === undefined || !ids.has(r.parent)) place(r);
+  for (const r of sorted) place(r);
+  return out;
 }
 
 /** The `Dims` a surface reports before it has measured itself. */

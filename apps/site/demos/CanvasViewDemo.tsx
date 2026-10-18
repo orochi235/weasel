@@ -53,6 +53,17 @@ export function pipView(items: ReturnType<typeof makeRandomScene>): View {
   };
 }
 
+/** The inset nested in the PiP, at twice the PiP's zoom on the PiP's center. */
+const ZOOM = { w: 80, h: 60, margin: 6 };
+function zoomInto(pip: View, pipSize: { width: number; height: number }): View {
+  const scale = { x: pip.scale.x * 2, y: pip.scale.y * 2 };
+  return {
+    x: pip.x + pipSize.width / 2 / pip.scale.x - ZOOM.w / 2 / scale.x,
+    y: pip.y + pipSize.height / 2 / pip.scale.y - ZOOM.h / 2 / scale.y,
+    scale,
+  };
+}
+
 const OVERVIEW: View = { x: -200, y: -100, scale: { x: 0.18, y: 0.18 } };
 
 function PointerReadout() {
@@ -106,6 +117,16 @@ export function CanvasViewDemo() {
               bounds={(_outer, dims) => ({ x: PIP.margin, y: dims.height - PIP.h - PIP.margin, w: PIP.w, h: PIP.h })}
               defaultView={pipView(initial)}
               background="rgba(0,0,0,0.4)"
+            />
+            {/* Nested in the PiP: bounds are measured from the PiP's rect, the
+                camera follows the PiP's as it pans, and a press inside lands
+                in this view's world before the PiP's. */}
+            <CanvasView
+              id="pip-zoom"
+              parent="pip"
+              bounds={(_pip, size) => ({ x: size.width - ZOOM.w - ZOOM.margin, y: ZOOM.margin, w: ZOOM.w, h: ZOOM.h })}
+              view={zoomInto}
+              background="rgba(0,0,0,0.5)"
             />
             {/* Paint only: input over it reaches the canvas beneath. */}
             <CanvasView

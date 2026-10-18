@@ -132,6 +132,11 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
 - 2026-10-18: `retainBudget` counts only kept surfaces; the multisampled scratch buffer is left out
   and freed after a frame that redraws nothing, so a redrawing frame can exceed the budget by one
   canvas-sized multisampled buffer.
+- 2026-10-18: Views nest: `<CanvasView parent>` measures `bounds` from the parent's rect, hands a
+  thunked `bounds` / `view` the parent's camera and size, cuts the view to the parent, and paints
+  only the layers the parent paints. `SceneCanvasApi.viewAt` (with `ViewAt`) is new, a loupe on a
+  canvas host magnifies the camera of the view under its aim, and `ResolvableView` and
+  `createViewportLayer` take an optional `clip`.
 
 ## Text
 

@@ -437,10 +437,10 @@ const DEMO_META: DemoMeta[] = [
   },
   {
     id: 'canvas-view',
-    title: 'Canvas views (PiP · paint-only inset)',
+    title: 'Canvas views (PiP · nested zoom · paint-only inset)',
     category: 'Viewport',
-    description: 'A <CanvasView> is a second camera over a rect of the same canvas: one scene, one GL context, and input inside the rect routed through that camera by the kit\'s own dispatcher. The PiP (bottom-left) is interactive — a click picks what it shows, a drag moves a node in its world units, the wheel pans it alone, and the selection is shared with the canvas. The overview (top-right) is interactive={false}: it paints only, and input over it reaches the canvas beneath. Declaring the same thing through the views prop or SceneCanvasApi.addView is equivalent.',
-    hint: 'click or drag a node inside the PiP · wheel over the PiP to pan it · clicks on the overview fall through to the canvas',
+    description: 'A <CanvasView> is a second camera over a rect of the same canvas: one scene, one GL context, and input inside the rect routed through that camera by the kit\'s own dispatcher. The PiP (bottom-left) is interactive — a click picks what it shows, a drag moves a node in its world units, the wheel pans it alone, and the selection is shared with the canvas. The small inset in the PiP\'s corner is nested in it (parent="pip"): its rect is measured from the PiP\'s, its camera is derived from the PiP\'s at twice the zoom, and a press inside it lands in its world first. The overview (top-right) is interactive={false}: it paints only, and input over it reaches the canvas beneath. Declaring the same thing through the views prop or SceneCanvasApi.addView is equivalent.',
+    hint: 'click or drag a node inside the PiP or its zoomed inset · wheel over the PiP to pan it · clicks on the overview fall through to the canvas',
     load: () => import('./demos/CanvasViewDemo').then((m) => m.CanvasViewDemo),
     path: 'apps/site/demos/CanvasViewDemo.tsx',
   },
