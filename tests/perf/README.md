@@ -296,7 +296,7 @@ files in `tests/perf/recorded/back-to-back-2026-10-17/`.
 | Draws | Frame ends in | Yield | ms, frames 0–7 | ms, frame 24 on | First slow frame |
 |---:|---|---|---:|---:|---|
 | 512 | `finish` | none | 0.21 | 1.02 | 23–24 |
-| 512 | `flush` | none | 0.19 | 0.86 | 23–26 |
+| 512 | `flush` | none | 0.19 | 0.86 | 24–25 |
 | 2048 | `flush` | none | 0.84 | 16.94 | 5–6 |
 | 128 | `flush` | none | 0.05 | 0.02 | none in 120 frames, in 2 of 3 rounds |
 | 512 | `flush` | `setTimeout` every 4 frames | 0.17 | 0.08 | 24–26 |
@@ -340,8 +340,9 @@ the last two 5. A task boundary costs nothing; idle time costs, and it shows
 up in the GPU's own time for the same work, as it does in the first frames
 after the 300 ms each cell idles before starting. That the GPU drops its clock
 while idle is an inference. SwiftShader (`--use-angle=swiftshader`, and what
-`--use-angle=gl` gave headless on teitou) shows none of it: every row within
-7% of the others.
+`--use-angle=gl` gave headless on teitou) shows none of it: frames
+yielding by `setTimeout`, by `MessageChannel`, or not at all cost within 7% of
+each other.
 
 `frameTiming` yields by `setTimeout(0)` before every sample, so its samples sit
 in the third row's regime: a frame after a few ms of idle, as in a frame loop,
