@@ -201,7 +201,9 @@ test('a new trial places its view once, in the room its status strip leaves', as
   for (let i = 0; i < 10; i++) await act(() => new Promise((r) => requestAnimationFrame(r)));
   const stack = box(container.querySelector('.lk-canvas-stack'));
   expect(stack?.height).toBe(box(container.querySelector('.lk-trial__body'))?.height);
-  expect(views).toEqual([{ zoom: 1, pan: { x: (stack?.width ?? 0) / 2, y: (stack?.height ?? 0) / 2 } }]);
+  expect(views).toEqual([
+    { zoom: 1, pan: { x: (stack?.width ?? 0) / 2, y: (stack?.height ?? 0) / 2 } },
+  ]);
 });
 
 test('entering refits the view to the presented box, and leaving gives the tile its own back', async () => {
