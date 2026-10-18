@@ -13,6 +13,7 @@ import { useAnimator } from '@weasel-js/animator/react';
 import { createParallaxLayer, createParallaxPlane, createTiledLayer } from '@weasel-js/parallax';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import type { ParallaxOpts, Path, View, RenderLayer, Fill } from '@weasel-js/core';
+import { DemoStage } from './DemoStage';
 
 type NodeData = { path: Path; fill: Fill } | { fill: null };
 interface Pose { x: number; y: number; width: number; height: number }
@@ -194,21 +195,21 @@ function ParallaxDemoInner() {
           per-plane zoom
         </label>
       </div>
-      <SceneCanvas
-        features={['view', 'pick', 'move', 'transform', 'edit', 'paths']}
-        width={W}
-        height={H}
-        className="ckd-canvas"
-        scene={scene}
-        view={view}
-        onViewChange={setView}
-        viewport={{ pan: { axis: 'x' } }}
-        selectionOptions={{ mode: 'multi' }}
-        layers={{
-          paraSky: { layer: sky, before: 'scene:hills' },
-          paraGround: { layer: ground, before: 'scene:trees' },
-        }}
-      />
+      <DemoStage width={W} height={H}>
+        <SceneCanvas
+          features={['view', 'pick', 'move', 'transform', 'edit', 'paths']}
+          className="ckd-canvas"
+          scene={scene}
+          view={view}
+          onViewChange={setView}
+          viewport={{ pan: { axis: 'x' } }}
+          selectionOptions={{ mode: 'multi' }}
+          layers={{
+            paraSky: { layer: sky, before: 'scene:hills' },
+            paraGround: { layer: ground, before: 'scene:trees' },
+          }}
+        />
+      </DemoStage>
     </>
   );
 }

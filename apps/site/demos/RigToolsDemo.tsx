@@ -16,6 +16,7 @@ import {
 } from '@weasel-js/core';
 import type { NodeId, Path, RectPose, Stroke, Fill } from '@weasel-js/core';
 import num from '@weasel-js/theme/numeric.module.css';
+import { DemoStage } from './DemoStage';
 
 const W = 600, H = 320;
 const BOX: RectPose = { x: 80, y: 180, width: 440, height: 100 };
@@ -89,15 +90,15 @@ export function RigToolsDemo() {
         <button className="ckd-btn" onClick={reweigh}>weigh from bones</button>
         <button className="ckd-btn" onClick={() => scene.undo()}>undo</button>
       </div>
-      <SceneCanvas
-        width={W}
-        height={H}
-        className="ckd-canvas"
-        scene={scene}
-        features={['pick', 'paths']}
-        tools={tools}
-        claimKeys
-      />
+      <DemoStage width={W} height={H}>
+        <SceneCanvas
+          className="ckd-canvas"
+          scene={scene}
+          features={['pick', 'paths']}
+          tools={tools}
+          claimKeys
+        />
+      </DemoStage>
       <div className="ckd-hint">
         The arm is one container node with a skeleton in its <code>data.skeleton</code> and one
         path under it with weights in its <code>data.skin</code>; <code>useRigNode</code> binds a

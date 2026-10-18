@@ -2,6 +2,7 @@ import { useState, useSyncExternalStore } from 'react';
 import { SceneCanvas, sceneFromJSON, useSelection } from '@weasel-js/core';
 import type { SerializedScene, Fill } from '@weasel-js/core';
 import sceneJson from './data/scene.scene.json';
+import { DemoStage } from './DemoStage';
 
 interface NodeData { fill: Fill; label?: string }
 interface Pose { x: number; y: number; width: number; height: number }
@@ -23,15 +24,15 @@ export function SceneDemo() {
           Cmd/Ctrl+Z undo · Shift+Cmd/Ctrl+Z redo · drag rects to move
         </span>
       </div>
-      <SceneCanvas
-        features={['pick', 'move', 'edit']}
-        width={480}
-        height={320}
-        className="ckd-canvas"
-        scene={scene}
-        selection={selection}
-        backgroundFill={{ color: '#f4e9d8' }}
-      />
+      <DemoStage width={480} height={320}>
+        <SceneCanvas
+          features={['pick', 'move', 'edit']}
+          className="ckd-canvas"
+          scene={scene}
+          selection={selection}
+          backgroundFill={{ color: '#f4e9d8' }}
+        />
+      </DemoStage>
     </div>
   );
 }

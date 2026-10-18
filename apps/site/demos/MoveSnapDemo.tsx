@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { SceneCanvas, useScene, useSelection } from '@weasel-js/core';
 import { snapToContainer, snapBackOrDelete } from '@weasel-js/core/move';
 import type { DrawCommand } from '@weasel-js/core/renderer';
+import { DemoStage } from './DemoStage';
 
 interface NodeData { color: string }
 type LayerId = 'default';
@@ -37,22 +38,22 @@ export function MoveSnapDemo() {
   ], []);
 
   return (
-    <SceneCanvas features={['pick', 'move']}
-      width={W}
-      height={H}
-      className="ckd-canvas"
-      scene={scene}
-      selection={selection}
-      selectTool={{ move: { behaviors } }}
-      layers={{
-        scene: {
-          drawOne: (n, p): DrawCommand[] => [{
-            kind: 'path',
-            path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-            fill: { paint: { color: n.data.color } },
-          }],
-        },
-      }}
-    />
+    <DemoStage width={W} height={H}>
+      <SceneCanvas features={['pick', 'move']}
+        className="ckd-canvas"
+        scene={scene}
+        selection={selection}
+        selectTool={{ move: { behaviors } }}
+        layers={{
+          scene: {
+            drawOne: (n, p): DrawCommand[] => [{
+              kind: 'path',
+              path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
+              fill: { paint: { color: n.data.color } },
+            }],
+          },
+        }}
+      />
+    </DemoStage>
   );
 }

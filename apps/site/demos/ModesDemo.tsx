@@ -22,6 +22,7 @@ import type { Fill } from '@weasel-js/core';
 import { modeShortcuts } from '@weasel-js/routing';
 import { ToolPalette } from '@weasel-js/ui';
 import styles from './ModesDemo.module.css';
+import { DemoStage } from './DemoStage';
 
 const W = 620, H = 340;
 
@@ -156,24 +157,24 @@ export function ModesDemo() {
         {tools && <ToolPalette tools={tools} orientation="horizontal" modeRegistry={registry} />}
       </div>
 
-      <SceneCanvas
-        width={W}
-        height={H}
-        className="ckd-canvas"
-        backgroundFill={{ color: '#ffffff' }}
-        scene={scene}
-        selectionOptions={{ mode: 'multi' }}
-        features={['pick', 'move', 'transform']}
-        defaultTools={['select', 'hand', 'rect', 'ellipse']}
-        onToolsCreated={setTools}
-        modes={registry}
-        ambient={shortcuts}
-        alphaFor={scoping.alphaFor}
-        isPointerInteractive={scoping.isPointerInteractive}
-        redrawOn={redrawOn}
-        decorationLayer={decorationLayer}
-        layers={{ modeTint: { layer: tintLayer, before: 'scene' } }}
-      />
+      <DemoStage width={W} height={H}>
+        <SceneCanvas
+          className="ckd-canvas"
+          backgroundFill={{ color: '#ffffff' }}
+          scene={scene}
+          selectionOptions={{ mode: 'multi' }}
+          features={['pick', 'move', 'transform']}
+          defaultTools={['select', 'hand', 'rect', 'ellipse']}
+          onToolsCreated={setTools}
+          modes={registry}
+          ambient={shortcuts}
+          alphaFor={scoping.alphaFor}
+          isPointerInteractive={scoping.isPointerInteractive}
+          redrawOn={redrawOn}
+          decorationLayer={decorationLayer}
+          layers={{ modeTint: { layer: tintLayer, before: 'scene' } }}
+        />
+      </DemoStage>
 
       <dl className={styles.readout}>
         <dt>Mode</dt>
