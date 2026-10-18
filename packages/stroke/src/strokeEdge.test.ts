@@ -37,6 +37,39 @@ describe('strokeEdgeNear', () => {
     expect(far.gap).toBeCloseTo(Math.hypot(200, 1) - 2, 6);
   });
 
+  describe('an aligned stroke', () => {
+    // Clockwise on screen (y down): the right of each edge is inside.
+    const SQUARE = new PathBuilder().moveTo(0, 0).lineTo(100, 0).lineTo(100, 100).lineTo(0, 100).close().build();
+    const RECT = { kind: 'rect' as const, x: 0, y: 0, width: 100, height: 100 };
+
+    it('measures an inner stroke to the edge it draws inside the fill', () => {
+      for (const path of [SQUARE, RECT]) {
+        const hit = strokeEdgeNear(path, { ...stroke, align: 'inner' }, 50, 3)!;
+        expect(hit.side).toBe('right');
+        expect(hit.ny).toBeCloseTo(1, 6);
+        expect(hit.right).toBeCloseTo(4, 6);
+        expect(hit.left).toBe(0);
+        expect(hit.gap).toBeCloseTo(-1, 6);
+        expect(hit.factor).toBeCloseTo(2, 6);
+      }
+    });
+
+    it('measures a point outside an inner stroke across the ink', () => {
+      const hit = strokeEdgeNear(SQUARE, { ...stroke, align: 'inner' }, 50, -1)!;
+      expect(hit.side).toBe('right');
+      expect(hit.gap).toBeCloseTo(5, 6);
+    });
+
+    it('measures an outer stroke to the edge it draws outside the fill', () => {
+      const hit = strokeEdgeNear(SQUARE, { ...stroke, align: 'outer' }, 50, -3)!;
+      expect(hit.side).toBe('left');
+      expect(hit.ny).toBeCloseTo(-1, 6);
+      expect(hit.left).toBeCloseTo(4, 6);
+      expect(hit.right).toBe(0);
+      expect(hit.gap).toBeCloseTo(-1, 6);
+    });
+  });
+
   it('answers null for a path with no segments', () => {
     expect(strokeEdgeNear(new PathBuilder().moveTo(5, 5).build(), stroke, 5, 5)).toBeNull();
   });

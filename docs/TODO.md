@@ -418,10 +418,6 @@ Priority tags:
   as a box-to-box map, but a rotation rewrites the coordinates in a way no such map undoes, so the
   warp stops resolving and the warp tools start a fresh one. A `data.path` node keeps its warp
   through a rotation.
-- **(P3) The Girth tool is untried on rectangles.** It edits the nodes `resolveEditablePathOf`
-  answers a path for, which since rectangle path edit includes a drawn rectangle's rect
-  `data.path`, but nothing has shaped a rectangle's stroke with it yet. `strokeEdgeNear`, which it hit-tests with, measures every stroke as centered, so on an
-  inner- or outer-aligned stroke the grab point sits off the edge that is drawn.
 - **(P2) Tangent (G1) at an anchor.** The solver's variables are anchor positions only; handles
   ride along with their anchor. G1 needs each handle as a variable of its own (direction, or
   both handle points), and the handle drag to call `constrainEdit` the way the anchor drag does.
