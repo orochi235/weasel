@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { GLYPH_COVERAGE_GLSL, GLYPH_MODE_MSDF, GLYPH_MODE_R8, glyphFieldScale } from './textSdf';
+import {
+  GLYPH_COVERAGE_GLSL, GLYPH_MODE_MSDF, GLYPH_MODE_R8, SYNTH_BOLD_AMOUNT, glyphFieldScale, syntheticBoldGrowth,
+} from './textSdf';
+import { SDF_RADIUS } from './dynamic/dynamicAtlas';
+import { BAKE_SIZE } from './dynamic/glyphRasterizer';
 
 /**
  * Source-level assertions, because what this GLSL does needs a GL context and
@@ -63,5 +67,17 @@ describe('glyphFieldScale', () => {
 
   it('answers undefined for an atlas nobody registered', () => {
     expect(glyphFieldScale('atlas', 'never-registered', 400, 'normal')).toBeUndefined();
+  });
+});
+
+describe('syntheticBoldGrowth', () => {
+  it('moves a canvas glyph\'s edge by the shift across the bake radius, per em of bake', () => {
+    // Field 0.5 at the edge, falling 1 per SDF_RADIUS texels; BAKE_SIZE texels to the em.
+    expect(syntheticBoldGrowth('canvas', 'Anything', 700, 'normal'))
+      .toBeCloseTo((SYNTH_BOLD_AMOUNT * SDF_RADIUS) / BAKE_SIZE, 12);
+  });
+
+  it('answers undefined for an atlas nobody registered', () => {
+    expect(syntheticBoldGrowth('atlas', 'never-registered', 700, 'normal')).toBeUndefined();
   });
 });

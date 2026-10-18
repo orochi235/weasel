@@ -136,6 +136,10 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
 - 2026-10-13 (pass 6): The text tool's percent unit is data,
   `{ scale: 0.01, precision: 1, suffix: '%' }`, and a linear unit's `fromDisplay` stores a short
   decimal exactly.
+- 2026-10-18: `textToPath` outlines synthetic-bold text instead of refusing it: each glyph grows by
+  the distance the renderer's field shift moves its edge (0.01 em a side on Inter's atlas), corners
+  mitered, curves kept. The `'synthetic-bold'` failure reason is gone. The grown contours overlap
+  where they meet and fill once under `'nonzero'`; they are not merged.
 
 ## SVG and paths
 
