@@ -1,4 +1,5 @@
 import type { ReactElement } from 'react';
+import { usePropertyRow } from '../Properties/rowContext';
 import type { EasingSpec } from '@weasel-js/core';
 import s from './Timeline.module.css';
 import { EASING_NAMES, easingBezier, easingLabel, sampleEasing } from './easingSpec';
@@ -27,12 +28,18 @@ const DEFAULT_BEZIER: readonly [number, number, number, number] = [0.25, 0.1, 0.
 export interface EasingPickerProps {
   value: EasingSpec | undefined;
   onChange: (next: EasingSpec | undefined) => void;
+  /** The menu's label, and its accessible name. `false` draws none, naming the menu `Easing`. Inside a
+   *  `PropertyRow` it defaults to `false`, and the menu takes the row's label for its name. Default `Easing`. */
+  label?: string | false;
 }
 
 /** A key's easing: a menu of the named curves, a button converting a named
  *  curve to its cubic-bezier control points, and a plot of the curve. */
 export function EasingPicker(props: EasingPickerProps): ReactElement {
   const { value, onChange } = props;
+  const row = usePropertyRow();
+  const shown = props.label ?? (row ? false : 'Easing');
+  const name = shown !== false ? shown : typeof row?.label === 'string' && row.label !== '' ? row.label : 'Easing';
   const bezier = easingBezier(value);
   const label = easingLabel(value);
   const named = bezier === null && (EASING_NAMES as string[]).includes(label);
@@ -42,19 +49,26 @@ export function EasingPicker(props: EasingPickerProps): ReactElement {
     .map((v, i) => `${(i / (PREVIEW_SAMPLES - 1)) * 100},${100 - v * 100}`)
     .join(' ');
 
+  const menu = (
+    <select
+      aria-label={shown === false ? name : undefined}
+      value={selectValue}
+      onChange={(e) => onChange(e.target.value === 'linear' ? undefined : e.target.value as EasingSpec)}
+    >
+      <option value="linear">linear</option>
+      {EASING_NAMES.filter((n) => n !== 'linear').map((n) => <option key={n} value={n}>{n}</option>)}
+      {bezier !== null ? <option value="custom">custom</option> : null}
+    </select>
+  );
+
   return (
     <div className={s.easingPicker}>
-      <label>
-        Easing
-        <select
-          value={selectValue}
-          onChange={(e) => onChange(e.target.value === 'linear' ? undefined : e.target.value as EasingSpec)}
-        >
-          <option value="linear">linear</option>
-          {EASING_NAMES.filter((n) => n !== 'linear').map((n) => <option key={n} value={n}>{n}</option>)}
-          {bezier !== null ? <option value="custom">custom</option> : null}
-        </select>
-      </label>
+      {shown === false ? menu : (
+        <label>
+          {shown}
+          {menu}
+        </label>
+      )}
 
       {bezier !== null ? <span className={s.easingLabel}>{label}</span> : (
         <button

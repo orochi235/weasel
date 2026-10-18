@@ -85,6 +85,10 @@ export interface ControlPanelProps<TC extends Record<string, unknown>> extends S
   auto?: ReadonlySet<string>;
   /** Draw leaves marked `hidden`. */
   showHidden?: boolean;
+  /** Paths whose rows are marked as changed, as `PrefsForm`'s `changed` marks them: what differs from a
+   *  default, or from what was last saved, is the caller's to say. A paired row is marked when any of its
+   *  cells is named, and an alias row when the leaf it shows is. */
+  changed?: ReadonlySet<string>;
   /** Heads the panel. With `title`, `stance` or `tone` given, or with the panel
    *  made to fold, the rows sit in a `<PropertyPanel>` carrying them; with
    *  none, they are the bare list. */
@@ -154,6 +158,7 @@ export function ControlPanel<TC extends Record<string, unknown>>({
   twisty,
   auto: given,
   showHidden = false,
+  changed,
   title,
   stance,
   tone,
@@ -202,6 +207,7 @@ export function ControlPanel<TC extends Record<string, unknown>>({
     align,
     auto,
     setRowAuto,
+    changed,
     fold,
   });
 
@@ -225,6 +231,7 @@ export function ControlPanel<TC extends Record<string, unknown>>({
       list
     ) : (
       <PropertyPanel
+        className="lk-control-panel-frame"
         title={title}
         actions={titled.control}
         stance={stance}

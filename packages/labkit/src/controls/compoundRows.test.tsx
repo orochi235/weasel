@@ -79,7 +79,7 @@ describe('a control panel row for a leaf made of other leaves', () => {
     const run = vi.fn();
     renderWithIcons(<Panel schema={f.schema({ wipe: f.action(run) })} />);
     fireEvent.click(screen.getByRole('button', { name: 'Wipe' }));
-    expect(run).toHaveBeenCalledWith({ path: 'wipe' });
+    expect(run).toHaveBeenCalledWith(expect.objectContaining({ path: 'wipe' }));
   });
 });
 

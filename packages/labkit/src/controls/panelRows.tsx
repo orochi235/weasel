@@ -22,6 +22,7 @@ import { headingLeaf } from '../config/headingLeaf';
 import { schemaNodeAtPath, valueAtPath } from '../config/path';
 import type { ControlRenderer, ResolvedConfig, SectionSpec } from '../config/types';
 import { isLeafEnabled, isLeafVisible } from '../config/visible';
+import { boundAction } from './boundAction';
 import { ControlBar } from './ControlBar';
 import { ControlRow } from './ControlRow';
 import { type Rows, sectionRows } from './controlPack';
@@ -57,6 +58,8 @@ export interface PanelRowsSource<TC extends Record<string, unknown>> {
   align: PropertyAlign | undefined;
   auto: ReadonlySet<string>;
   setRowAuto: (path: string, next: boolean, value: unknown) => void;
+  /** Paths whose rows are marked as changed. */
+  changed?: ReadonlySet<string>;
   /** The fold of the heading keyed `key`, which starts as `declared` says. */
   fold: (key: string, declared: boolean | undefined, grid: PropertyListPack) => FoldProps;
 }
@@ -79,6 +82,7 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
     align,
     auto,
     setRowAuto,
+    changed,
     fold,
   } = source;
 
@@ -86,6 +90,12 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
     isLeafEnabled(resolved, path, config as Record<string, unknown>, over);
   const visible = (path: string): boolean =>
     isLeafVisible(resolved, path, config as Record<string, unknown>, showHidden, over);
+
+  const listOf = (rows: Rows, children: ReactNode): ReactNode => (
+    <PropertyList pack={rows.grid} density={density} align={align}>
+      {children}
+    </PropertyList>
+  );
 
   /** A group's paths that no section inside it claims, in schema order. */
   const loosePaths = (group: PrefGroup, at: string): string[] => {
@@ -135,6 +145,7 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
           layout={rows.layout}
           auto={auto}
           setRowAuto={setRowAuto}
+          changed={changed}
           disabled={!enabled(path)}
           over={over}
         />
@@ -150,17 +161,10 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
           enabled={enabled}
           value={(p, leaf) => valueAtPath(shown, p) ?? extra<unknown>(leaf, 'default')}
           write={setConfig}
+          bind={(leaf) => boundAction(leaf, config as Record<string, unknown>, setConfig)}
           custom={(p, leaf) => drawsOwn(resolved, renderers, p, leaf)}
-          row={(p) => (
-            <PropertyList pack={rows.grid} density={density} align={align}>
-              {node(p, rows)}
-            </PropertyList>
-          )}
-          open={(inner, at) => (
-            <PropertyList pack={rows.grid} density={density} align={align}>
-              {body(inner, at, rows)}
-            </PropertyList>
-          )}
+          row={(p) => listOf(rows, node(p, rows))}
+          open={(inner, at) => listOf(rows, body(inner, at, rows))}
         />
       );
     }
@@ -251,11 +255,7 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
               return {
                 id: path,
                 name: group.name,
-                content: (
-                  <PropertyList pack={rows.grid} density={density} align={align}>
-                    {body(group, path, rows)}
-                  </PropertyList>
-                ),
+                content: listOf(rows, body(group, path, rows)),
               };
             })}
           />,
@@ -280,6 +280,7 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
           shown={shown}
           setConfig={setConfig}
           layout={rows.layout}
+          changed={items.some((path) => changed?.has(path) === true)}
           // A segmented cell carries every choice at once, so a pair holding
           // one needs the whole row the way a segmented row of its own does.
           span={cells.some(({ leaf }) => extra<string>(leaf, 'control') === 'radio')}

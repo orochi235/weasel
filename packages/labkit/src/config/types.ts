@@ -1,6 +1,6 @@
 import type { IconRef } from '@weasel-js/icons';
 import type {
-  PrefAction,
+  PrefActionContext,
   PrefBarOverflow,
   PrefCondition,
   PrefGroup,
@@ -76,10 +76,20 @@ export interface Annotations {
   tag?: string;
   variants?: Record<string, PrefObject>;
   /** What an action leaf's button calls. */
-  run?: PrefAction['run'];
+  run?: ConfigActionRun;
   /** The path of the leaf an alias shows. */
   of?: string;
 }
+
+/** What an `f.action`'s run is told where labkit draws it: its path, and the config of the
+ *  panel drawing it, with that panel's writer. */
+export interface ConfigActionContext extends PrefActionContext {
+  config: Record<string, unknown>;
+  setConfig: (path: string, value: unknown) => void;
+}
+
+/** What an `f.action` calls. */
+export type ConfigActionRun = (ctx: ConfigActionContext) => void | Promise<void>;
 
 /** What a rule contributes. `kind` is honored only while it is still unset,
  *  which is what makes `f.value` claimable and a kinded factory final. */
@@ -188,6 +198,9 @@ export interface NodeOptions extends BranchOptions {
   dialog?: DialogSpec;
   /** Errors for this leaf under `config`, the instrument's whole config. */
   validate?: (leaf: PrefLeaf, config: Record<string, unknown>) => string[];
+  /** The leaf may be auto, and its row's label toggles it. Set by `.auto()`;
+   *  a leaf without it is always pinned. */
+  autoable?: boolean;
   /** Computes this leaf's value while it is auto. Attaching one is what gives
    *  the row a real value to pin back to and keeps the instrument off
    *  `?? compute()`. */
@@ -195,9 +208,6 @@ export interface NodeOptions extends BranchOptions {
   /** The leaf starts auto rather than pinned at its default. Set by
    *  `.initial(auto)`. */
   unpinned?: boolean;
-  /** The leaf can never be auto: the row's label does not toggle. For a value
-   *  the instrument cannot receive as `undefined`. */
-  manual?: boolean;
 }
 
 /** A `.showIf` or `.enableIf` written as code, for what a condition cannot say. */

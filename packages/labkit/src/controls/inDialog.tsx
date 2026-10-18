@@ -11,6 +11,7 @@ import {
   resolvePrefUnit,
 } from '@weasel-js/prefs';
 import { DialogRow } from '@weasel-js/ui';
+import { leafCanAuto } from '../config/autoConfig';
 import type { ControlRenderer, InDialogOptions } from '../config/types';
 
 export type { InDialogOptions };
@@ -73,7 +74,7 @@ export function inDialog(body: ControlRenderer, opts: InDialogOptions = {}): Con
   return (ctx) => {
     const { pref, value, auto, setAuto } = ctx;
     const summary = opts.summary ?? ((v: unknown) => summarizeLeaf(pref, v));
-    const manual = (pref as { manual?: boolean }).manual === true;
+    const pinned = !leafCanAuto(pref);
     return (
       <DialogRow
         label={pref.name}
@@ -82,7 +83,8 @@ export function inDialog(body: ControlRenderer, opts: InDialogOptions = {}): Con
         title={opts.title}
         readout={auto ? 'auto' : undefined}
         auto={auto}
-        onAutoChange={manual ? undefined : setAuto}
+        onAutoChange={pinned ? undefined : setAuto}
+        changed={ctx.changed}
       >
         {() => body(ctx)}
       </DialogRow>

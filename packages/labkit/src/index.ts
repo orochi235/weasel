@@ -222,6 +222,8 @@ export type {
   Annotations,
   BranchAnnotations,
   BranchOptions,
+  ConfigActionContext,
+  ConfigActionRun,
   ConfigBranch,
   ConfigEntry,
   ConfigNode,

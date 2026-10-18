@@ -203,20 +203,21 @@ const config = f.schema({
   width: f.number(432),
   gap: f.number(12).auto((c) => (c.width as number) / 24),
   cols: f.number(3).initial(auto),
-  seed: f.number(1).manual(),
+  seed: f.number(1),
+  scale: f.number(1).auto(),
 });
 
 setConfig('gap', auto);
 addTrial('demo', { gap: auto });
 ```
 
-`.auto(fn)` attaches a resolver: the instrument reads the computed value rather
-than writing `?? compute()` itself, and the ghosted control has a real number to
-draw. Without one, an auto field simply reads `undefined`. `.initial(auto)`
-opens the field auto instead of pinned at its default. `.manual()`
-opts a field out entirely, no dot and no gesture,
-which is what you want for a value the instrument cannot receive as `undefined`,
-like a color going straight to a uniform.
+A field can be auto only if it says so. `.auto()` opts it in, and an auto field
+reads `undefined`. `.auto(fn)` also attaches a resolver: the instrument reads the
+computed value rather than writing `?? compute()` itself, and the ghosted control
+has a real number to draw. `.initial(auto)` opts in and opens the field auto
+instead of pinned at its default. A field that says none of these, like `seed`,
+has no dot and no gesture: the default for a value the instrument cannot
+receive as `undefined`, like a color going straight to a uniform.
 
 Nothing stores the sentinel. It is normalized at every boundary into the
 trial's set of unpinned paths, and the pinned value stays in the config

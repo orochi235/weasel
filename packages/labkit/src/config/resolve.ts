@@ -137,11 +137,6 @@ function resolveEntry(
     const { name: _name, ...said } = entry.annotations;
     return { ...group, ...defined(said) } as PrefGroup;
   }
-  if (entry.options.manual && entry.options.unpinned) {
-    throw new Error(
-      `[labkit] "${path}" is both .manual() and .initial(auto) — a field that can never be auto cannot start auto`,
-    );
-  }
   const seed: LeafPatch = defined({
     ...entry.annotations,
     ...(entry.kind === null ? {} : { kind: entry.kind }),
@@ -152,7 +147,7 @@ function resolveEntry(
       `[labkit] "${path}" is an f.value whose kind cannot be inferred from its default (${String(entry.default)}) — declare it with a typed builder, or f.custom(kind, default) for a value with no row`,
     );
   }
-  const { autoResolve, unpinned, manual } = entry.options;
+  const { autoResolve, unpinned, autoable } = entry.options;
   return {
     ...patch,
     default: entry.default,
@@ -160,6 +155,6 @@ function resolveEntry(
     // back with its `extra<T>` helper, the same as `min`, `step` and the rest.
     ...(autoResolve === undefined ? {} : { autoResolve }),
     ...(unpinned === undefined ? {} : { unpinned }),
-    ...(manual === undefined ? {} : { manual }),
+    ...(autoable || unpinned ? { autoable: true } : {}),
   } as PrefLeaf;
 }

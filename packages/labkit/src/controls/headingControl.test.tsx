@@ -31,11 +31,10 @@ describe('<ControlPanel> heading controls', () => {
   const pump = () =>
     resolveConfigSchema(
       f.schema({
-        on: f.boolean(false).label('Pump').manual(),
+        on: f.boolean(false).label('Pump'),
         lobes: f
           .number(6)
           .label('Lobes')
-          .manual()
           .showIf((c) => c.on === true),
       }),
     );
@@ -68,8 +67,8 @@ describe('<ControlPanel> heading controls', () => {
   it('lifts a leaf marked .heading() without warning, whatever its label', () => {
     const schema = resolveConfigSchema(
       f.schema({
-        kind: f.enum<string>('none', ['none', 'eccentric']).label('Kind').heading().manual(),
-        eccentricity: f.number(8).label('Eccentricity').manual(),
+        kind: f.enum<string>('none', ['none', 'eccentric']).label('Kind').heading(),
+        eccentricity: f.number(8).label('Eccentricity'),
       }),
     );
     render(
@@ -91,11 +90,10 @@ describe('<ControlPanel> heading controls', () => {
         surface: f
           .enum<string>('flat', ['flat', 'dome'])
           .label('Surface')
-          .section('Surface')
-          .manual(),
-        radius: f.number(10).label('Radius').section('Surface').manual(),
+          .section('Surface'),
+        radius: f.number(10).label('Radius').section('Surface'),
         grid: f
-          .group({ show: f.boolean(true).label('Grid').manual(), size: f.number(8).manual() })
+          .group({ show: f.boolean(true).label('Grid'), size: f.number(8) })
           .label('Grid'),
       }),
     );
@@ -115,7 +113,7 @@ describe('<ControlPanel> heading controls', () => {
 
   it('warns but keeps the row when the stuttering control is too big for a heading', () => {
     const schema = resolveConfigSchema(
-      f.schema({ rubber: f.number(8).range(0, 20).label('Rubber').manual() }),
+      f.schema({ rubber: f.number(8).range(0, 20).label('Rubber') }),
     );
     render(
       <ControlPanel schema={schema} title="Rubber" config={{ rubber: 8 }} setConfig={vi.fn()} />,
@@ -126,7 +124,7 @@ describe('<ControlPanel> heading controls', () => {
 
   it('leaves a label that only starts with the heading alone', () => {
     const schema = resolveConfigSchema(
-      f.schema({ width: f.number(8).label('Rubber width').manual() }),
+      f.schema({ width: f.number(8).label('Rubber width') }),
     );
     render(
       <ControlPanel schema={schema} title="Rubber" config={{ width: 8 }} setConfig={vi.fn()} />,

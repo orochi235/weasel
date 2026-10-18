@@ -32,6 +32,8 @@ export interface DialogRowProps extends PropertyMetricProps {
   autoValue?: ReactNode;
   /** The row takes no input: its button is disabled, and still reads the summary. */
   disabled?: boolean;
+  /** The value differs from a baseline of the caller's — see `<PropertyRow changed>`. */
+  changed?: boolean;
 }
 
 /**
@@ -55,6 +57,7 @@ export function DialogRow({
   onAutoChange,
   autoValue,
   disabled,
+  changed,
 }: DialogRowProps) {
   const [open, setOpen] = useState(false);
   const close = (): void => setOpen(false);
@@ -72,6 +75,7 @@ export function DialogRow({
       onAutoChange={onAutoChange}
       autoValue={autoValue}
       disabled={disabled}
+      changed={changed}
       // A `<label>` hands a click on its text to its button, which would open
       // the dialog from the label — and the label is the auto toggle.
       group
