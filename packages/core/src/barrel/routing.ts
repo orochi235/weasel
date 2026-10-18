@@ -180,7 +180,6 @@ export type {
   PointerState,
   GestureContext,
   GestureFrames,
-  SnapStrategy,
   ActionBehavior,
   BehaviorResult,
   GroupTransform,
@@ -205,10 +204,6 @@ export type {
   LassoSelectMoveResult,
   LassoSelectBehavior,
   LassoSelectOverlay,
-  PointSnapFrame,
-  PointSnapContext,
-  PointSnapResult,
-  PointSnapBehavior,
   BehaviorEnd,
   MoveEnd,
 } from '../interactions/gestures/types';

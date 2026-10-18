@@ -8,7 +8,6 @@ import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { createSnapOutcomeStore } from 'features/snap/outcomeStore';
 import { sceneSession2d } from 'features/snap/sceneSession2d';
 import type { SnapSource } from 'features/snap/types';
-import type { PointSnapBehavior } from '../../gestures/types';
 import { rotatePoint } from '../rotate/geometry';
 import { drawnBoxes } from '../drawnBoxes';
 import type { SnapDep } from '../snapDep';
@@ -209,17 +208,5 @@ describe('a resize snapping through the snap session', () => {
     h.onEnd!(r.at({ x: 137, y: 25 }), 'cancel');
     expect(r.store.get()).toEqual([]);
     near(r.pose(), BOX);
-  });
-
-  it('runs a policy\'s point snap only while the session holds nothing', () => {
-    const corner: PointSnapBehavior<Bounds> = { onMove: () => ({ frame: 'dragged-corner', worldX: 200, worldY: 100 }) };
-    const policy = { constraints: [], pointSnap: [corner], expandIds: (ids: string[]) => ids };
-    const r = rig([guide('x', 140)], [BOX], { resizePolicy: policy });
-    const h = r.press({ x: 100, y: 50 });
-    h.onMove!(r.at({ x: 137, y: 60 }));
-    near(r.preview(h), { x: 0, y: 0, width: 140, height: 60 });
-    h.onMove!(r.at({ x: 170, y: 60 }));
-    near(r.preview(h), { x: 0, y: 0, width: 200, height: 100 });
-    h.onEnd!(r.at({ x: 170, y: 60 }), 'cancel');
   });
 });

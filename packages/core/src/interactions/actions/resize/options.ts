@@ -1,9 +1,6 @@
 /** Option surface for the `resize` action. */
 
-import type {
-  PointSnapBehavior,
-  BoundsConstraint,
-} from '../../gestures/types';
+import type { BoundsConstraint } from '../../gestures/types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 
 /** Options for the `resize` action: the constraints applied to the dragged
@@ -30,11 +27,6 @@ export interface UseResizeOptions<TPose> {
    *  the result. Called once at `start()`. Returning `[]` aborts the gesture
    *  cleanly. */
   expandIds?: (ids: string[]) => string[];
-  /** Behaviors that operate on world-space anchor points. Fire after
-   *  `behaviors[]`. The first non-null `PointSnapResult` wins, and the pose
-   *  is back-solved so the chosen frame's world point lands on the snap
-   *  target. */
-  pointSnapBehaviors?: TPose extends Bounds ? PointSnapBehavior<TPose>[] : never;
   /** Per-node resizability predicate. Returns `false` for nodes that should
    *  never show resize handles (and thus can't start a resize gesture). The
    *  handles hide whenever any selected node is non-resizable. Default: every

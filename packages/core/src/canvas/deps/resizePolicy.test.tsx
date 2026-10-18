@@ -35,13 +35,11 @@ describe('useResizePolicy', () => {
 describe('resizePolicyOptions', () => {
   it('maps every read UseResizeOptions field onto the policy options', () => {
     const behaviors = [{}];
-    const pointSnapBehaviors = [{}];
     const expandIds = (ids: string[]) => ids;
     const onGestureStart = () => {};
     const onGestureEnd = () => {};
     expect(resizePolicyOptions({
       behaviors: behaviors as never,
-      pointSnapBehaviors: pointSnapBehaviors as never,
       expandIds,
       resizeLabel: 'Stretch',
       transient: true,
@@ -49,7 +47,6 @@ describe('resizePolicyOptions', () => {
       onGestureEnd,
     })).toEqual({
       constraints: behaviors,
-      pointSnap: pointSnapBehaviors,
       expandIds,
       label: 'Stretch',
       transient: true,

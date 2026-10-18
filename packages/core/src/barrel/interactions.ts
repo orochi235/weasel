@@ -4,11 +4,9 @@
  * @packageDocumentation
  */
 
-// ─── Snapping seam: `snap` wraps a SnapStrategy as a MoveBehavior; an origin
-// projection says how a pose is read and moved. The strategies themselves
-// (grid, guides) are in @weasel-js/guides.
+// ─── Origin projections say how a pose is read and moved; gesture readers
+// convert screen pixels through the camera a drag landed in.
 export {
-  snap,
   AUTO_ORIGIN_PROJECTION,
   RECT_ORIGIN_PROJECTION,
   screenTolerance,

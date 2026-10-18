@@ -5,7 +5,7 @@ import type { NodeId, Scene } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { gestureReaders, type GestureReaders } from '../../gestures/shared/screenTolerance';
-import type { BoundsConstraint, GestureContext, PointSnapBehavior, ResizeAnchor } from '../../gestures/types';
+import type { BoundsConstraint, GestureContext, ResizeAnchor } from '../../gestures/types';
 import type { GeometryProjection } from '../geometryProjection';
 import { readGestureLifecycle, type GestureLifecycle } from '../gestureLifecycle';
 import { nodeDescriptors, poseDescriptorOf } from '../poseDescriptorDep';
@@ -64,7 +64,6 @@ export interface ResizeSession {
    *  minimums: a floor under every constraint. `null` for none. */
   readonly minimum: MinSize | null;
   readonly constraints: readonly BoundsConstraint<Bounds>[];
-  readonly pointSnap: readonly PointSnapBehavior<Bounds>[];
   /** Reused across the drag; constraints mutate its `scratch`. */
   readonly gestureCtx: GestureContext<Bounds>;
   readonly applyOps?: (ops: Op[], label: string) => void;
@@ -106,11 +105,10 @@ export function captureResize(
   ruleOrigin: Bounds;
   policy: ActionDeps['resizePolicy'];
   constraints: BoundsConstraint<Bounds>[];
-  pointSnap: PointSnapBehavior<Bounds>[];
 } | null {
   const geometry = poseDescriptorOf(deps.poseDescriptor);
   const policy = deps.resizePolicy;
-  const { constraints, pointSnap, expandIds } = resolvePolicy(policy);
+  const { constraints, expandIds } = resolvePolicy(policy);
   const geometryOf = nodeDescriptors(scene, geometry);
 
   const targets = captureTargets(scene, ids, expandIds);
@@ -145,7 +143,6 @@ export function captureResize(
     ruleOrigin,
     policy,
     constraints,
-    pointSnap,
   };
 }
 
@@ -181,7 +178,7 @@ export function beginResize(
 
   const captured = captureResize(scene, ids, anchor, ctx.deps);
   if (!captured) return null;
-  const { place, ruleOrigin, policy, constraints, pointSnap } = captured;
+  const { place, ruleOrigin, policy, constraints } = captured;
   const startWorld = { x: ctx.drag?.start.x ?? 0, y: ctx.drag?.start.y ?? 0 };
   const readers = gestureReaders(ctx.deps);
   const gestureCtx = buildGestureContext(ctx, ids, ruleOrigin, startWorld, readers);
@@ -191,7 +188,6 @@ export function beginResize(
     ...place,
     startWorld,
     constraints,
-    pointSnap,
     gestureCtx,
     applyOps: ctx.deps.applyOps,
     geometryProjection: ctx.deps.geometryProjection,

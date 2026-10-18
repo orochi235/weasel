@@ -18,7 +18,6 @@ import type { UseMoveOptions } from 'interactions/actions/move/options';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import type { UseResizeOptions } from 'interactions/actions/resize/options';
 import type { UseRotateOptions } from 'interactions/actions/rotate/options';
-import type { SnapStrategy } from 'interactions/gestures/types';
 import type { ReactNode } from 'react';
 import type { Animator } from '@weasel-js/animator';
 import type { PoseTransitionSeat } from '../../animation/poseTransition';
@@ -177,7 +176,7 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
 
     // --- Selection options. `pickBest` and `handleHitRadius` configure the
     //     internal select tool, and are ignored under a `tools` takeover;
-    //     `move`, `snap`, `resize` and `rotate` configure the `move`,
+    //     `move`, `resize` and `rotate` configure the `move`,
     //     `resize` and `rotate` presets, and apply either way. ---
     selectTool?: {
       move?: UseMoveOptions<TPose>;
@@ -185,7 +184,6 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
       /** Rotation options, or `false` to disable rotation entirely — drops the
        *  `rotate` action AND hides the selection rotation-handle chrome. */
       rotate?: UseRotateOptions<TPose> | false;
-      snap?: SnapStrategy<TPose>;
       handleHitRadius?: number;
       /** Override the body-pick used on click/pointerdown. Alt-aware: receives
        *  the live alt state + current selection so consumers can implement

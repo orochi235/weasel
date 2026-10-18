@@ -3,10 +3,9 @@ import type { OriginProjection } from 'interactions/gestures/shared/originProjec
 
 /**
  * `OriginProjection` for `Path` poses. The "origin" is the top-left of the
- * path's AABB; `translate` shifts every coord by the requested delta. Pair
- * with `@weasel-js/guides`' `gridSnapStrategy` to grid-snap a Path's bounds top-left:
- *
- *     gridSnapStrategy<Path>(20, { origin: pathOriginProjection })
+ * path's AABB; `translate` shifts every coord by the requested delta. It is
+ * where a snap session puts a Path's `origin` probe, so a grid source snaps a
+ * Path's bounds top-left.
  */
 export const pathOriginProjection: OriginProjection<Path> = {
   getOrigin: (path) => {

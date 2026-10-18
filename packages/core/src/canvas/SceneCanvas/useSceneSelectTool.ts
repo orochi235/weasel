@@ -16,8 +16,6 @@ import type { Node, Scene } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
 import type { UseMoveOptions } from 'interactions/actions/move/options';
 import type { UseResizeOptions } from 'interactions/actions/resize/options';
-import type { SnapStrategy } from 'interactions/gestures/types';
-import { snap as snapBehavior } from 'interactions/gestures/shared/snap';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import { drawnBoundsOf } from 'canvas/drawnBounds';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
@@ -83,7 +81,6 @@ export interface UseSceneSelectToolArgs<TData, TLayer extends string, TPose> {
   selectTool?: {
     move?: UseMoveOptions<TPose>;
     resize?: UseResizeOptions<TPose>;
-    snap?: SnapStrategy<TPose>;
     /** Override the body-pick used on click/pointerdown. Alt-aware: receives
      *  the live alt state + current selection so consumers can implement
      *  alt-cycling through an overlapping stack. Default: top-most hit
@@ -138,8 +135,7 @@ export interface UseSceneSelectToolReturn<TData, TLayer extends string, TPose> {
    *  answers only for a node's own pose. */
   boundsOfPose: (id: string, pose: TPose, view?: Pick<PickView, 'scale' | 'x' | 'y'> | null) =>
     import('core/viewport/fitViewToBounds').Bounds | null;
-  /** `selectTool.move` with `selectTool.snap` folded into its behaviors — what
-   *  the `move` preset's bindings carry. */
+  /** `selectTool.move` — what the `move` preset's bindings carry. */
   moveOptions: UseMoveOptions<TPose>;
 }
 
@@ -159,16 +155,7 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
   const pickTolerancePx = geometry?.pickTolerancePx ?? kitPickTolerancePx ?? DEFAULT_PICK_TOLERANCE_PX;
   const includeStroke = geometry?.boundsIncludeStroke ?? true;
   const moveOptions = opts?.move;
-  const snap = opts?.snap;
-
-  const wiredMoveOptions = useMemo<UseMoveOptions<TPose>>(() => {
-    const merged: UseMoveOptions<TPose> = { ...(moveOptions ?? {}) };
-    if (snap) {
-      const existing = merged.behaviors ?? [];
-      merged.behaviors = [snapBehavior(snap), ...existing];
-    }
-    return merged;
-  }, [moveOptions, snap]);
+  const wiredMoveOptions = useMemo<UseMoveOptions<TPose>>(() => moveOptions ?? {}, [moveOptions]);
 
   const wiredHitBody = usePointPick({
     scene, adapter, d, pickEveryProp, shapePicking, pickTolerancePx, getView,

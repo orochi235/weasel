@@ -12,7 +12,7 @@ import type { SnapSource } from 'features/snap/types';
 import { ownGeometryAt, pathSnapSource } from 'features/paths/pathSnap/pathSnapSource';
 import { drawnBoxes } from '../drawnBoxes';
 import type { SnapDep } from '../snapDep';
-import { snap } from '../../gestures/shared/snap';
+import type { GroupTransform, MoveBehavior } from '../../gestures/types';
 import { snapToContainer } from './behaviors/snapToContainer';
 import { moveAction } from './action';
 
@@ -110,14 +110,17 @@ describe('a move snapping through the snap session', () => {
     near(r.pose(), { x: 52, y: 10 });
   });
 
-  it('holds a session target over a binding behavior\'s own snapping', () => {
+  it('hands a binding behavior the snapped delta, and lets its translate stand', () => {
     const r = rig([alignX(52)], rect(3, 3));
-    // A grid of 7 would put the origin at (49, 7).
-    const grid7 = snap<Point>({ snap: (p) => ({ ...p, x: Math.round(p.x / 7) * 7, y: Math.round(p.y / 7) * 7 }) });
-    const h = r.press({ x: 5, y: 5 }, { behaviors: [grid7] } as unknown as BindingOpts);
+    const seen: GroupTransform[] = [];
+    const slot: MoveBehavior<Point> = {
+      onMove: (_ctx, proposed) => { seen.push(proposed); return { transform: { kind: 'translate', dx: 100, dy: 0 } }; },
+    };
+    const h = r.press({ x: 5, y: 5 }, { behaviors: [slot] } as unknown as BindingOpts);
     h.onMove!(r.at({ x: 52, y: 9 }));
+    expect(seen[0]).toMatchObject({ kind: 'translate', dx: expect.closeTo(49, 9), dy: expect.closeTo(4, 9) });
     h.onEnd!(r.at({ x: 52, y: 9 }), 'commit');
-    near(r.pose(), { x: 52, y: 7 });
+    near(r.pose(), { x: 103, y: 3 });
   });
 
   it('suspends snapping while Ctrl is held, with no marks, and snaps again once it is let go', () => {

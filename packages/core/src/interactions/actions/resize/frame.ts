@@ -9,7 +9,6 @@ import type { BoundsConstraint, GestureContext, ResizeAnchor, RotatedPose } from
 import { carryPose, planeOf } from '../planeInput';
 import { fixedCornerOf, movedEdges } from './cornerHandles';
 import { remapRotatedLeaf, translatePoseViaDescriptor, type PoseDescriptor } from './geometry';
-import { snapPose } from './pointSnap';
 import { boundsForRules } from './ruleBounds';
 import { boxFrame } from './boxFrame';
 import { insetBox, outsetBox } from 'core/geometry/inkExtents';
@@ -104,12 +103,11 @@ function storedPose(
 
 /** Every write id's stored pose with the box taken from where the press found
  *  it to `asked`, held to the place's minimum. A lone target is also pinned at
- *  the fixed corner and run through `snap`, and comes back with its world
- *  pose. `proposed` is the box they were put in. */
+ *  the fixed corner, and comes back with its world pose. `proposed` is the box
+ *  they were put in. */
 export function posesInBox(
   place: Pick<ResizeSession, 'scene' | 'poseFrame' | 'view' | 'geometryOf' | 'writeIds' | 'startWorlds' | 'box' | 'sharedBox' | 'minimum'>,
   asked: Bounds,
-  snap: (g: PoseDescriptor<unknown>, world: unknown) => unknown = (_g, world) => world,
 ): { previews: Map<NodeId, unknown>; proposed: Bounds; lone?: { id: NodeId; g: PoseDescriptor<unknown>; world: unknown } } {
   const { box } = place;
   const proposed = (place.minimum && clampToMinSize(asked, box.anchor, place.minimum)) ?? asked;
@@ -133,7 +131,7 @@ export function posesInBox(
   const g = place.geometryOf(id);
   const remapped = worldOf(id);
   if (remapped === undefined) return { previews, proposed };
-  const world = snap(g, pinFixedCorner(g, remapped, box, proposed));
+  const world = pinFixedCorner(g, remapped, box, proposed);
   previews.set(id, storedPose(place, id, world));
   return { previews, proposed, lone: { id, g, world } };
 }
@@ -153,8 +151,8 @@ function aspectPointer(session: ResizeSession, frame: TargetTransform, drawn: Bo
 
 /** One move's previews: the box as the snapped drag and the constraints
  *  leave it, and every write id's stored pose inside it. A lone target also
- *  gets the rotated-resize pin and, when the snap session holds nothing, the
- *  point snaps; a shared box, resized in the AABB frame, gets neither.
+ *  gets the rotated-resize pin; a shared box, resized in the AABB frame, does
+ *  not.
  *  `moveCtx` must carry a drag. */
 export function nextFrame(session: ResizeSession, readers: GestureReaders, moveCtx: InvocationCtx): ResizeFrame {
   const raw = moveCtx.drag!.current;
@@ -177,10 +175,7 @@ export function nextFrame(session: ResizeSession, readers: GestureReaders, moveC
   const shaped = mods.constrain ? edgeAspect(drawn, drawnStart, box.anchor) : drawn;
   const constrained = insetBox(constrain(session.constraints, gctx, box.anchor, shaped), box.extents);
 
-  const pointSnap = snapped.held ? undefined : (g: PoseDescriptor<unknown>, world: unknown) => snapPose(
-    session.pointSnap, g, world, box, box.anchor, gctx.modifiers, gctx.plane ?? null,
-  );
-  const { previews, proposed, lone } = posesInBox(session, constrained, pointSnap);
+  const { previews, proposed, lone } = posesInBox(session, constrained);
   if (lone) gctx.current = new Map<string, Bounds>([[lone.id as string, outsetBox(boundsForRules(lone.g, lone.world), box.extents)]]);
   return { previews, proposed };
 }

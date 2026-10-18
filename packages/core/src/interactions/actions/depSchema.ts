@@ -14,7 +14,7 @@ import type { Op } from 'core/ops/types';
 import type { GestureLifecycleOptions } from './gestureLifecycle';
 import type { RegionPickView } from 'core/adapters/types';
 import type { History } from '@weasel-js/history';
-import type { PointSnapBehavior, BoundsConstraint } from '../gestures/types';
+import type { BoundsConstraint } from '../gestures/types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { PoseDescriptor } from './resize/geometry';
 import type { GeometryProjection } from './geometryProjection';
@@ -175,8 +175,8 @@ export type { InsertDep, InsertEnds, PathSymmetryDep, InsertIntoDep, InsertLive 
 
 /**
  * Adapter dep for `resizeAction`: bounds-frame behaviors (e.g.
- * `clampMinSize`), world-space anchor-point snap behaviors (e.g.
- * `@weasel-js/guides`' `pointSnapToGrid`), and group-expansion (`expandIds`).
+ * `clampMinSize`) and group-expansion (`expandIds`). Snapping is the `snap`
+ * dep's.
  *
  * The generic is erased to `unknown` at the schema entry; consumers cast at
  * the call site.
@@ -185,9 +185,6 @@ export interface ResizePolicy<TPose> extends GestureLifecycleOptions {
   /** Bounds-frame constraints. Constrained to `TPose extends Bounds` since
    *  constraints read/write `{x,y,width,height}`. For non-rect TPose pass `[]`. */
   constraints: TPose extends Bounds ? BoundsConstraint<TPose>[] : never[];
-  /** World-space anchor-point snap behaviors. Same TPose constraint as
-   *  `constraints`. */
-  pointSnap: TPose extends Bounds ? PointSnapBehavior<TPose>[] : never[];
   /** Group-expansion at gesture start. Identity (`ids => ids`) when group
    *  resize isn't wanted. */
   expandIds: (ids: string[]) => string[];

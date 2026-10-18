@@ -13,12 +13,11 @@
  *     `Path`. Pass via `<SceneCanvas poseDescriptor>`.
  *   - `OriginProjection<TPose>` — read snap-origin + translate by delta.
  *     Defaults to `AUTO_ORIGIN_PROJECTION`, which reads rects and `Path`s
- *     alike. Pass via `snap(strategy, { origin })` or
- *     `snapBackOrDelete({ ..., origin })`.
+ *     alike. Pass via `snapBackOrDelete({ ..., origin })`.
  *
- * Placement aids — grids, guides, snapping to them, layout strategies — live
- * in `@weasel-js/guides`, built on the seams here (`SnapStrategy`,
- * `MoveBehavior`, `BoundsConstraint`, `PointSnapBehavior`, `snap`).
+ * Placement aids — grids, guides, the snap sources for them, layout
+ * strategies — live in `@weasel-js/guides`, built on the seams here
+ * (`SnapSource`, `MoveBehavior`, `BoundsConstraint`).
  */
 
 // One module per area, each naming what it re-exports. A star is safe here

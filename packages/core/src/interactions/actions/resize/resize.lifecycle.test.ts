@@ -21,7 +21,7 @@ function setup(policy: Partial<ResizePolicy<unknown>>) {
     deps: {
       selection: { get: () => [a] as NodeId[] },
       scene: scene,
-      resizePolicy: { constraints: [], pointSnap: [], expandIds: (ids: string[]) => ids, ...policy },
+      resizePolicy: { constraints: [], expandIds: (ids: string[]) => ids, ...policy },
     },
     drag: {
       start: { x: 100, y: 100 },

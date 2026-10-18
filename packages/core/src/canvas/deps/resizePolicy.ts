@@ -5,10 +5,7 @@
 import { useDepSource } from '@weasel-js/routing/react';
 import { useLatest } from '@weasel-js/react';
 import type { ResizePolicy } from 'interactions/actions/depSchema';
-import type {
-  PointSnapBehavior,
-  BoundsConstraint,
-} from 'interactions/gestures/types';
+import type { BoundsConstraint } from 'interactions/gestures/types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { GestureLifecycleOptions } from 'interactions/actions/gestureLifecycle';
 import type { UseResizeOptions } from 'interactions/actions/resize/options';
@@ -17,15 +14,14 @@ import type { UseResizeOptions } from 'interactions/actions/resize/options';
  *  default. */
 export interface UseResizePolicyOptions<TPose> extends GestureLifecycleOptions {
   constraints?: TPose extends Bounds ? BoundsConstraint<TPose>[] : never[];
-  pointSnap?: TPose extends Bounds ? PointSnapBehavior<TPose>[] : never[];
   expandIds?: (ids: string[]) => string[];
 }
 
 const IDENTITY_EXPAND = (ids: string[]) => ids;
 const EMPTY: readonly unknown[] = Object.freeze([]);
 
-/** Publish how resizing should behave — constraints, point snapping, group
- *  expansion — for the resize action to consult. */
+/** Publish how resizing should behave — constraints and group expansion —
+ *  for the resize action to consult. */
 export function useResizePolicy<TPose>(
   options: UseResizePolicyOptions<TPose>,
 ): void {
@@ -39,7 +35,6 @@ export function useResizePolicy<TPose>(
       onGestureStart: o.onGestureStart,
       onGestureEnd: o.onGestureEnd,
       constraints: (o.constraints ?? (EMPTY as unknown[])) as ResizePolicy<unknown>['constraints'],
-      pointSnap: (o.pointSnap ?? (EMPTY as unknown[])) as ResizePolicy<unknown>['pointSnap'],
       expandIds: o.expandIds ?? IDENTITY_EXPAND,
     };
   });
@@ -50,7 +45,6 @@ export function useResizePolicy<TPose>(
 export function resizePolicyOptions<TPose>(o: UseResizeOptions<TPose>): UseResizePolicyOptions<TPose> {
   return {
     constraints: o.behaviors as UseResizePolicyOptions<TPose>['constraints'],
-    pointSnap: o.pointSnapBehaviors as UseResizePolicyOptions<TPose>['pointSnap'],
     expandIds: o.expandIds,
     label: o.resizeLabel,
     transient: o.transient,

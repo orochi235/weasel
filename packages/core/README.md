@@ -60,19 +60,20 @@ A bare `<SceneCanvas>` only renders. It keeps a selection that nothing sets from
 Interactions are **actions** — descriptors registered into an actions registry — reached by **gesture bindings**. A tool is a list of `{ spec, actionId }` pairs and nothing more; the kit's own select, shape and viewport tools are built that way.
 
 ```tsx
-import { SceneCanvas, BUILTIN_TOOL_IDS, useScene, useSelection, type RectPose } from '@weasel-js/core';
-import { createGridLayer, gridSnapStrategy } from '@weasel-js/guides';
+import { SceneCanvas, BUILTIN_TOOL_IDS, useScene, useSelection } from '@weasel-js/core';
+import { createGridLayer, gridSnapSource } from '@weasel-js/guides';
 
 const W = 800, H = 600;
 const grid = createGridLayer({ spacing: 20, bounds: () => ({ x: 0, y: 0, width: W, height: H }) });
+const snap = { sources: [gridSnapSource({ spacing: 20 })] };
 
 export function Editor() {
   const scene = useScene({ systemLayers: [{ id: 'default' }], initial: [] });
   const selection = useSelection({ mode: 'multi' });
 
-  // Click to select, drag to move with grid snapping, handles to resize and
-  // rotate, the shape and text tools, sticky notes, the knife, the bone and
-  // weight tools, and the standard keyboard actions (Cmd+A, Cmd+Z, Delete, …):
+  // Click to select, drag to move, handles to resize and rotate, the shape and
+  // text tools, sticky notes, the knife, the bone and weight tools, and the
+  // standard keyboard actions (Cmd+A, Cmd+Z, Delete, …), all snapping to the grid:
   return (
     <SceneCanvas
       width={W}
@@ -81,7 +82,7 @@ export function Editor() {
       selection={selection}
       features={['draw']}
       defaultTools={BUILTIN_TOOL_IDS}
-      selectTool={{ snap: gridSnapStrategy<RectPose>(20) }}
+      snap={snap}
       layers={{ grid: { layer: grid } }}
     />
   );

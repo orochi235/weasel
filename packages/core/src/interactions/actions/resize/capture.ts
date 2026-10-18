@@ -7,7 +7,7 @@ import { unionAABB, unionBounds } from 'core/geometry/unionBounds';
 import type { NodeId, Scene } from 'core/scene/types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { GestureReaders } from '../../gestures/shared/screenTolerance';
-import type { BoundsConstraint, GestureContext, PointSnapBehavior, ResizeAnchor } from '../../gestures/types';
+import type { BoundsConstraint, GestureContext, ResizeAnchor } from '../../gestures/types';
 import type { ResizePolicy } from '../depSchema';
 import { carryPose, invertPlane, planeOf } from '../planeInput';
 import type { PoseFrame } from '../poseFrame';
@@ -27,24 +27,20 @@ import {
 } from 'core/geometry/inkExtents';
 
 const IDENTITY_EXPAND = (ids: string[]) => ids;
-const EMPTY_POINT_SNAP: PointSnapBehavior<Bounds>[] = [];
 
 /** The `resizePolicy` dep's rules, or the defaults when it is unsourced. */
 export function resolvePolicy(dep: ResizePolicy<unknown> | undefined): {
   constraints: BoundsConstraint<Bounds>[];
-  pointSnap: PointSnapBehavior<Bounds>[];
   expandIds: (ids: string[]) => string[];
 } {
   if (!dep) {
     return {
       constraints: [],
-      pointSnap: EMPTY_POINT_SNAP,
       expandIds: IDENTITY_EXPAND,
     };
   }
   return {
     constraints: dep.constraints as unknown as BoundsConstraint<Bounds>[],
-    pointSnap: dep.pointSnap as unknown as PointSnapBehavior<Bounds>[],
     expandIds: dep.expandIds,
   };
 }

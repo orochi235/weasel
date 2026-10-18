@@ -71,11 +71,6 @@ export interface GestureContext<TPose, TNode extends { id: string } = { id: stri
   scratch: Record<string, unknown>;
 }
 
-/** Pluggable per-gesture snap rule; receives the proposed pose and returns a snapped pose or `null` to skip. */
-export interface SnapStrategy<TPose> {
-  snap(pose: TPose, ctx: GestureContext<TPose, { id: string }>): TPose | null;
-}
-
 /**
  * Generalized base behavior. Each hook defines an alias that pins the
  * proposed-pose shape (TProposed) and the onMove return shape (TMoveResult).
@@ -332,39 +327,6 @@ export interface LassoSelectOverlay {
   vertices: ReadonlyArray<{ x: number; y: number }>;
   current: { worldX: number; worldY: number };
   shiftHeld: boolean;
-}
-
-// ----- point-snap -----
-
-/** Frames a point-snap behavior can return for the resize to back-solve. */
-export type PointSnapFrame = 'dragged-corner' | 'fixed-corner' | 'center' | 'origin';
-
-/** Per-frame world-space context handed to `PointSnapBehavior.onMove`.
- *  `draggedCorner` and `fixedCorner` are `null` for edge drags
- *  (`anchor.x === 'free'` or `anchor.y === 'free'`). `center` and
- *  `origin` are always present. */
-export interface PointSnapContext<TPose extends Bounds> {
-  draggedCorner: { worldX: number; worldY: number } | null;
-  fixedCorner: { worldX: number; worldY: number } | null;
-  center: { worldX: number; worldY: number };
-  origin: { worldX: number; worldY: number };
-  rotation: number;
-  anchor: ResizeAnchor;
-  proposed: TPose;
-  modifiers: ModifierState;
-}
-
-/** Per-frame snap result. A behavior returns at most one. */
-export interface PointSnapResult {
-  frame: PointSnapFrame;
-  worldX: number;
-  worldY: number;
-}
-
-/** A point-snap behavior, plugged into `ResizePolicy.pointSnap`. */
-export interface PointSnapBehavior<TPose extends Bounds> {
-  id?: string;
-  onMove(ctx: PointSnapContext<TPose>): PointSnapResult | null | undefined;
 }
 
 // ----- clone -----

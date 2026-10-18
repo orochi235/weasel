@@ -12,7 +12,7 @@ import type { Scene, NodeId } from 'core/scene/types';
 import type { View } from 'core/viewport/view';
 import type { RenderLayer } from 'core/layers/render';
 import type { SceneCanvasApi } from './canvasExtension';
-import { snap } from 'interactions/gestures/shared/snap';
+import type { MoveBehavior } from 'interactions/gestures/types';
 import { screenTolerance } from 'interactions/gestures/shared/screenTolerance';
 
 type D = { kind: 'rect' };
@@ -90,14 +90,20 @@ describe('a press over a view', () => {
   });
 });
 
-describe('snap tolerance is screen pixels through the camera the drag landed in', () => {
+describe('a behavior\'s screen-pixel tolerance goes through the camera the drag landed in', () => {
   /** A 6px snap to a vertical line at world `offset`. */
   const guideSnap = (offset: number) => ({
     move: {
-      behaviors: [snap<P>({
-        snap: (p, ctx) =>
-          Math.abs(p.x - offset) <= screenTolerance(6, ctx).x ? { ...p, x: offset } : null,
-      })],
+      behaviors: [{
+        onMove(ctx, t) {
+          const o = ctx.origin.get(ctx.draggedIds[0]!);
+          if (t.kind !== 'translate' || !o) return;
+          const x = o.x + t.dx;
+          return Math.abs(x - offset) <= screenTolerance(6, ctx).x
+            ? { transform: { kind: 'translate', dx: offset - o.x, dy: t.dy } }
+            : undefined;
+        },
+      } satisfies MoveBehavior<P>],
     },
   });
 

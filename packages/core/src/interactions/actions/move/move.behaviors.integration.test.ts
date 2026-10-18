@@ -2,18 +2,22 @@ import { describe, it, expect } from 'vitest';
 import { moveAction } from './action';
 import { snapToContainer } from './behaviors/snapToContainer';
 import { snapBackOrDelete } from './behaviors/snapBackOrDelete';
-import { snap } from '../../gestures/shared/snap';
+import type { MoveBehavior } from '../../gestures/types';
 import type { InvocationCtx, BindingOpts, OngoingHandle, OngoingInvoker } from '@weasel-js/routing';
 import { createScene } from 'core/scene/scene';
 import { asNodeId } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { SnapTarget } from 'core/adapters/types';
 
-/** A move snap that rounds the dragged origin to a 20-unit lattice. */
-const grid20 = () =>
-  snap<{ x: number; y: number }>({
-    snap: (p) => ({ ...p, x: Math.round(p.x / 20) * 20, y: Math.round(p.y / 20) * 20 }),
-  });
+/** A behavior that rounds the first dragged origin to a 20-unit lattice. */
+const grid20 = (): MoveBehavior<{ x: number; y: number }> => ({
+  onMove(ctx, t) {
+    const o = ctx.origin.get(ctx.draggedIds[0]!);
+    if (t.kind !== 'translate' || !o) return;
+    const round = (v: number) => Math.round(v / 20) * 20;
+    return { transform: { kind: 'translate', dx: round(o.x + t.dx) - o.x, dy: round(o.y + t.dy) - o.y } };
+  },
+});
 
 interface D { color: string }
 type L = 'main';
