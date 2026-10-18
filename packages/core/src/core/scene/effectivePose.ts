@@ -8,7 +8,7 @@
  */
 import { deriveRecorded, emptyDepRecord, sameDeps, type DepRecord } from './depMemo';
 import type { PoseComposition } from './composeFrame';
-import { carryDepPath, depFrameRebase } from './depFrame';
+import { carryDepPath, depFrameRebase, pathAsPainted } from './depFrame';
 import { dependencyIdsOf } from './dependents';
 import { resolveDerivedPath } from './derivedPath';
 import { dropPoseKeyedMemoSlots, nodeMemo } from './nodeMemo';
@@ -231,7 +231,7 @@ class SceneDep<TPose> implements DerivedDep<TPose> {
   }
 
   get path(): Path | null {
-    if (this.shown !== undefined) return this.shown;
+    if (this.shown !== undefined) return pathAsPainted(this.shown, this.pose, this.pose);
     const { source, reading } = this;
     return resolveDerivedPath(
       this.posed,

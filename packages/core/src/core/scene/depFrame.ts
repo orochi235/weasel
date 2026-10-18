@@ -80,6 +80,21 @@ export function carryDepPath(path: Path, from: unknown, to: unknown): Path {
   return carryPathBy(path, m);
 }
 
+/**
+ * `path`, drawn in the unturned box of a node posed at `box` — where a painter
+ * draws, and where a pose override's path is given — as that node is painted
+ * posed at `at`: carried box to box, then turned by `at`. Where a derivation
+ * reads it, beside `at` as the dependency's pose.
+ */
+export function pathAsPainted(path: Path, box: unknown, at: unknown): Path {
+  if (!isBox(box) || !isBox(at)) return path;
+  const fwd = poseFrameOf(at);
+  const same = box.x === at.x && box.y === at.y && box.width === at.width && box.height === at.height;
+  if (fwd === null && same) return path;
+  const m = boxToBox(box.x, box.y, box.width, box.height, at.x, at.y, at.width, at.height);
+  return carryPathBy(path, fwd === null ? m : multiply(fwd, m));
+}
+
 /** `path` through `m`, keeping its parts. Painted and read every frame, and a
  *  derivation's memo compares the path it read by reference, so the copy is
  *  kept against it. */

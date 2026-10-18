@@ -13,7 +13,7 @@ import { definesFrame, derivedDepOf, effectivePose } from 'core/scene/effectiveP
 import { composesFrames, composeWorldPose, type PoseAdapter } from 'core/scene/composeFrame';
 import { resolveDerivedPath } from 'core/scene/derivedPath';
 import { createNodeMemoScope, type NodeMemoScope } from 'core/scene/nodeMemo';
-import { carryBoxPath, carryPathBy } from 'core/scene/depFrame';
+import { carryBoxPath, carryPathBy, pathAsPainted } from 'core/scene/depFrame';
 import type { SceneViewDrawOne } from './NodeShape';
 
 export { resolveDerivedPath } from 'core/scene/derivedPath';
@@ -101,6 +101,9 @@ export function sceneDepLookup<TData, TLayer extends string, TPose>(
   if (slot === undefined) return (id) => derivedDepOf(scene, id);
   const ctx: SlotLookup<TPose> = {
     at: scenePaintedPoseOf(scene, toPose) as (node: unknown) => TPose,
+    local: (toPose
+      ? sceneShownToPose(scene, toPose)
+      : (node: Node<TData, TLayer, TPose>) => effectivePose(scene, node)) as (node: unknown) => TPose,
     slot,
     shown: sceneOverridePathOf(scene, toPose) as (node: unknown) => Path | undefined,
     childrenOf: (id: NodeId) => scene.childrenOf(id),
@@ -114,6 +117,8 @@ export function sceneDepLookup<TData, TLayer extends string, TPose>(
 
 interface SlotLookup<TPose> {
   at: (node: unknown) => TPose;
+  /** The pose the node is shown at in its own frame: the box its override path is drawn in. */
+  local: (node: unknown) => TPose;
   slot: string | NodeMemoScope;
   /** The path a pose override shows a node by, where it has one. */
   shown: (node: unknown) => Path | undefined;
@@ -133,7 +138,9 @@ class SlotDep<TPose> implements DerivedDep<TPose> {
   }
 
   get path(): Path | null {
-    return this.ctx.shown(this.node) ?? resolveDerivedPath(
+    const shown = this.ctx.shown(this.node);
+    if (shown !== undefined) return pathAsPainted(shown, this.ctx.local(this.node), this.pose);
+    return resolveDerivedPath(
       this.node as never, this.ctx.lookup, this.ctx.childrenOf, this.ctx.slot,
     );
   }
