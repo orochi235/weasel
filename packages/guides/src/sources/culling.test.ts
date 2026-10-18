@@ -31,7 +31,7 @@ describe('snap sources over a crowded row', () => {
     let worst = 0;
     const tally = new Map<string, number>();
     const sources = [gridSnapSource({ spacing: 10 }), alignmentSnapSource(), spacingSnapSource()].map((s) => counted(s, tally));
-    const m = moveBy({ sources, box, ids: [moving], scene: scene as unknown as Scene<unknown, string, unknown> });
+    const m = moveBy({ sources, ids: [moving], scene: scene as unknown as Scene<unknown, string, unknown> });
     const start = performance.now();
     for (let i = 0; i < 100; i++) {
       tally.clear();

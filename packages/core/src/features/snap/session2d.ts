@@ -27,6 +27,9 @@ export interface Session2dInputs {
   probes: readonly SnapProbeAt[];
   /** The subject's drawn box at press, for an aspect lock. */
   box?: Bounds | null;
+  /** `id`'s drawn box now, for sources measuring the scene the way the
+   *  subject's box was. */
+  drawnBox?: (id: string) => Bounds | undefined;
   view(): View | null;
   /** The reach of a source that sets none, in screen px. */
   reachPx: number;
@@ -99,6 +102,8 @@ function collectAll(
     const ids = new Set(offered.map((q) => q.id));
     const found = source.collect({
       gesture: req.gesture, probes: offered, delta0, exclude: req.ids ?? [],
+      ...(req.gesture === 'move' && inputs.box ? { box: shift(inputs.box, delta0) } : {}),
+      ...(inputs.drawnBox ? { drawnBox: inputs.drawnBox } : {}),
       ...(req.origin ? { origin: req.origin } : {}),
       ...(req.also ? { also: req.also } : {}),
       reachWorld: (px) => px / scale,
@@ -119,6 +124,8 @@ function collectAll(
   });
   return out;
 }
+
+const shift = (b: Bounds, d: Point): Bounds => ({ ...b, x: b.x + d.x, y: b.y + d.y });
 
 function toFlat(locus: { at: Point; dirs: readonly Point[] }): Flat {
   return { at: [locus.at.x, locus.at.y], dirs: locus.dirs.map((d) => [d.x, d.y]) };

@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { createScene, type Bounds, type Scene, type SnapMark } from '@weasel-js/core';
+import type { Bounds, SnapMark } from '@weasel-js/core';
 import { alignmentSnapSource } from './alignment';
 import { spacingSnapSource } from './spacing';
-import { drive, expectNear, moveBy } from './testing/session';
+import { drive, expectNear, moveBy, sceneOf } from './testing/session';
 
 type Gap = Extract<SnapMark, { kind: 'gap' }>;
 const gaps = (marks: readonly SnapMark[]) =>
@@ -60,15 +60,9 @@ describe('spacingSnapSource', () => {
   });
 
   it('measures the subject\'s siblings in a scene', () => {
-    const scene = createScene<object, 'default', Bounds>({ systemLayers: [{ id: 'default', visible: true, locked: false }] });
-    const rect = (x: number) => scene.add({ kind: 'leaf', layer: 'default', pose: { x, y: 0, width: 10, height: 10 }, data: {} });
-    rect(0);
-    rect(30);
-    const moving = rect(62);
-    const out = moveBy({
-      sources: [spacingSnapSource()], box: { x: 62, y: 0, width: 10, height: 10 },
-      ids: [moving], scene: scene as unknown as Scene<unknown, string, unknown>,
-    }).by(0, 0);
+    const rect = (x: number) => ({ x, y: 0, width: 10, height: 10 });
+    const { scene, ids } = sceneOf([rect(0), rect(30), rect(62)]);
+    const out = moveBy({ sources: [spacingSnapSource()], ids: [ids[2]], scene }).by(0, 0);
     // Its gap to the middle shape is 22; the gap beside it is 20, within reach.
     expectNear(out.point, { x: -2, y: 0 });
     expect(gaps(out.marks)).toEqual([[10, 30, 20], [40, 60, 20]]);

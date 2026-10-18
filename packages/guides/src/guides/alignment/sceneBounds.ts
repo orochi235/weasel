@@ -45,17 +45,9 @@ export function worldUnionOf(
   return boxes.length === 0 ? null : unionAABB(boxes);
 }
 
-/**
- * The world boxes of `ids`' siblings — every node sharing a parent with one
- * of them, outside the set, and not hidden (`nodeGates`). What an equal-spacing snap
- * measures gaps between while `ids` move: `alignMoveBehavior`'s
- * `getSpacingTargets`.
- */
-export function siblingBounds(
-  scene: Scene<unknown, string, unknown>,
-  ids: readonly NodeId[],
-  opts: SceneBoundsOptions = {},
-): Bounds[] {
+/** Every node sharing a parent with one of `ids`, outside the set, and not
+ *  hidden (`nodeGates`). */
+export function siblingIds(scene: Scene<unknown, string, unknown>, ids: readonly NodeId[]): NodeId[] {
   const moving = new Set(ids);
   const gates = nodeGates(scene);
   const parents = new Set<NodeId | null>();
@@ -71,5 +63,18 @@ export function siblingBounds(
       siblings.push(id);
     }
   }
-  return worldBoundsOf(scene, siblings, opts);
+  return siblings;
+}
+
+/**
+ * The world boxes of `ids`' siblings ({@link siblingIds}). What an
+ * equal-spacing snap measures gaps between while `ids` move:
+ * `alignMoveBehavior`'s `getSpacingTargets`.
+ */
+export function siblingBounds(
+  scene: Scene<unknown, string, unknown>,
+  ids: readonly NodeId[],
+  opts: SceneBoundsOptions = {},
+): Bounds[] {
+  return worldBoundsOf(scene, siblingIds(scene, ids), opts);
 }

@@ -2,7 +2,7 @@ import type { Bounds, SnapCollect, SnapMark, SnapProbeAt, SnapSource } from '@we
 import { deriveAlignmentGuides } from '../guides/alignment/derive';
 import { stretchSpan } from '../guides/alignment/match';
 import type { Guide } from '../guides/types';
-import { axisLine, landedShift, probeBox } from './lines';
+import { axisLine, landedShift } from './lines';
 import { cachedPerScene } from './targets';
 
 type Point = { x: number; y: number };
@@ -76,7 +76,7 @@ export function alignmentSnapSource(opts: AlignmentSnapSourceOptions = {}): Snap
       const indexes = linesFor(q);
       if (indexes.length === 0) return;
       const reach = q.reachWorld(q.reachPx);
-      const box = probeBox(q.probes);
+      const box = q.box ?? null;
       for (const p of q.probes) {
         for (const axis of ['x', 'y'] as const) {
           for (const index of indexes) {

@@ -24,10 +24,9 @@ import type { View } from 'core/viewport/view';
 import type { Scene } from 'core/scene/types';
 import type { DrawnBoxes } from 'interactions/actions/drawnBoxes';
 import type { SnapOutcomeStore } from 'features/snap/outcomeStore';
-import { buildProbes, subjectBox } from 'features/snap/probes2d';
 import type { SnapSourceRegistry } from 'features/snap/registry';
-import { sceneProbeReads } from 'features/snap/sceneReads';
-import { createSession2d, DEFAULT_SNAP_PX } from 'features/snap/session2d';
+import { sceneSession2d } from 'features/snap/sceneSession2d';
+import { DEFAULT_SNAP_PX } from 'features/snap/session2d';
 import type { SnapReadoutDep } from 'features/snap/readoutDep';
 import type { SnapSource } from 'features/snap/types';
 
@@ -86,18 +85,14 @@ export function useSnapDepSource(
           const view = viewRef.current;
           const sources = [...s.sources, ...(s.registry?.list() ?? [])];
           const wantsGeometry = sources.some((src) => src.roles.includes('geometry'));
-          const reads = sceneProbeReads({
-            scene: s.scene, boxes: s.boxes(),
-            ...(wantsGeometry ? { geometryAt: (press: Point, ids: readonly string[]) => ownGeometryAt(s.scene, press, ids, view?.scale ?? { x: 1, y: 1 }) } : {}),
-          });
-          return createSession2d({
+          return sceneSession2d({
             req,
+            scene: s.scene,
+            boxes: s.boxes(),
             sources,
-            probes: buildProbes(req, reads),
-            box: req.ids ? subjectBox(req.ids, reads) : null,
+            ...(wantsGeometry ? { geometryAt: (press: Point, ids: readonly string[]) => ownGeometryAt(s.scene, press, ids, view?.scale ?? { x: 1, y: 1 }) } : {}),
             view: () => viewRef.current,
             reachPx: s.reachPx ?? kitSettings.get('targets.snapPx') ?? DEFAULT_SNAP_PX,
-            scene: s.scene,
             store,
             onEnd: () => ref.current.paths?.release(),
           });

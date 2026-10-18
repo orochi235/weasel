@@ -1,18 +1,18 @@
 import { expect } from 'vitest';
 import {
-  createSession2d,
-  createSnapOutcomeStore,
-  DEFAULT_SNAP_PX,
+  createScene,
+  createSnapSession2d,
   type Bounds,
+  type ResizeAnchor,
   type Scene,
   type SnapGesture,
   type SnapMods,
   type SnapOutcome,
-  type SnapProbeAt,
   type SnapSource,
 } from '@weasel-js/core';
 
 type Point = { x: number; y: number };
+type AnyScene = Scene<unknown, string, unknown>;
 
 export const FREE: SnapMods = { suspend: false, constrain: false };
 
@@ -22,49 +22,54 @@ export function expectNear(a: Point, b: Point): void {
   expect(a.y).toBeCloseTo(b.y, 9);
 }
 
-/** The probes a move of `box` snaps, as core builds them: the pose origin at
- *  `origin` (default the box's corner), and the box's min, center and max. */
-export function moveProbes(box: Bounds, origin: Point = { x: box.x, y: box.y }): SnapProbeAt[] {
-  return [
-    { id: 'origin:a', at: origin, role: 'origin' },
-    { id: 'box.min', at: { x: box.x, y: box.y }, role: 'box' },
-    { id: 'box.center', at: { x: box.x + box.width / 2, y: box.y + box.height / 2 }, role: 'box' },
-    { id: 'box.max', at: { x: box.x + box.width, y: box.y + box.height }, role: 'box' },
-  ];
+/** A node's pose, and what it is drawn with. */
+export type Shape = Bounds & { rotation?: number; data?: object };
+
+/** A scene of top-level rects, and their ids in order. */
+export function sceneOf(shapes: readonly Shape[] = []): { scene: AnyScene; ids: string[] } {
+  const scene = createScene<object, 'default', Bounds>({ systemLayers: [{ id: 'default', visible: true, locked: false }] });
+  const ids = shapes.map(({ data, ...pose }) => scene.add({ kind: 'leaf', layer: 'default', pose, data: data ?? {} }) as string);
+  return { scene: scene as unknown as AnyScene, ids };
 }
 
 interface DriveOpts {
   sources: readonly SnapSource[];
   gesture?: SnapGesture;
-  /** Probes at press. Default a pointer probe at `press`. */
-  probes?: readonly SnapProbeAt[];
   press?: Point;
   ids?: readonly string[];
-  scene?: Scene<unknown, string, unknown>;
+  handle?: ResizeAnchor;
+  /** Default: an empty scene. */
+  scene?: AnyScene;
   /** The view's zoom. Default 1. */
   scale?: number;
   reachPx?: number;
 }
 
-/** A 2D snap session over `opts`, and the store it writes its marks to. */
+/** A snap session over `opts.scene`, as a host without `<SceneCanvas>` runs one. */
 export function drive(opts: DriveOpts) {
-  const store = createSnapOutcomeStore();
-  const press = opts.press ?? { x: 0, y: 0 };
   const scale = opts.scale ?? 1;
-  const session = createSession2d({
-    req: { gesture: opts.gesture ?? 'point', press, ...(opts.ids ? { ids: opts.ids } : {}) },
+  const session = createSnapSession2d({
+    scene: opts.scene ?? sceneOf().scene,
+    view: { x: 0, y: 0, scale: { x: scale, y: scale } },
     sources: opts.sources,
-    probes: opts.probes ?? [{ id: 'pointer', at: press, role: 'pointer' }],
-    view: () => ({ x: 0, y: 0, scale: { x: scale, y: scale } }),
-    reachPx: opts.reachPx ?? DEFAULT_SNAP_PX,
-    ...(opts.scene ? { scene: opts.scene } : {}),
-    store,
+    gesture: opts.gesture ?? 'point',
+    press: opts.press ?? { x: 0, y: 0 },
+    ...(opts.ids ? { ids: opts.ids } : {}),
+    ...(opts.handle ? { handle: opts.handle } : {}),
+    ...(opts.reachPx !== undefined ? { reachPx: opts.reachPx } : {}),
   });
-  return { session, store, at: (p: Point, mods: SnapMods = FREE): SnapOutcome => session.at(p, mods) };
+  return { session, at: (p: Point, mods: SnapMods = FREE): SnapOutcome => session.at(p, mods) };
 }
 
-/** A move of `box` dragged by `by`: the delta the session settles on. */
-export function moveBy(opts: Omit<DriveOpts, 'gesture' | 'probes' | 'press'> & { box: Bounds; origin?: Point }) {
-  const d = drive({ ...opts, gesture: 'move', probes: moveProbes(opts.box, opts.origin) });
+/** A move dragged by `by`, from a press at the origin: the delta it settles
+ *  on. With no `scene`, the subject is one unstroked rect at `box`. */
+export function moveBy(opts: Omit<DriveOpts, 'gesture' | 'press'> & { box?: Bounds }) {
+  const own = opts.scene ? null : sceneOf(opts.box ? [opts.box] : []);
+  const d = drive({
+    ...opts,
+    gesture: 'move',
+    scene: opts.scene ?? own!.scene,
+    ids: opts.ids ?? own!.ids,
+  });
   return { ...d, by: (dx: number, dy: number, mods?: SnapMods) => d.at({ x: dx, y: dy }, mods) };
 }

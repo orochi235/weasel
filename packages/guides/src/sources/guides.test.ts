@@ -58,11 +58,12 @@ describe('guideSnapSource', () => {
     expectNear(drive({ sources }).at({ x: 101, y: 17 }).point, { x: 103, y: 20 });
   });
 
-  it('meets a camera guide in the camera\'s world', () => {
-    // planeSnap's sun is drawn at camera 100; a 10.5 drag puts its origin at
-    // 110.5, inside reach of the guide at 111.
+  it('meets a guide a move brings its origin near', () => {
+    // A 10.5 drag puts the origin at 110.5, inside reach of the guide at 111.
     const box = { x: 100, y: 50, width: 20, height: 20 };
     const out = moveBy({ sources: [guideSnapSource(() => [{ id: 'g', axis: 'x', offset: 111 }])], box }).by(10.5, 0);
     expectNear(out.point, { x: 11, y: 0 });
   });
+
+  it.todo('meets a camera guide with a node on a parallax plane (Task 6)');
 });

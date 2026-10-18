@@ -1,17 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { createScene, type Bounds, type Scene, type SnapMark } from '@weasel-js/core';
+import type { Bounds, SnapMark } from '@weasel-js/core';
 import type { Guide } from '../guides/types';
 import { alignmentSnapSource } from './alignment';
 import { gridSnapSource } from './grid';
-import { drive, expectNear, moveBy } from './testing/session';
-
-type Pose = Bounds & { rotation?: number };
-
-function sceneOf(poses: readonly Pose[]) {
-  const scene = createScene<object, 'default', Pose>({ systemLayers: [{ id: 'default', visible: true, locked: false }] });
-  const ids = poses.map((pose) => scene.add({ kind: 'leaf', layer: 'default', pose, data: {} }) as string);
-  return { scene: scene as unknown as Scene<unknown, string, unknown>, ids };
-}
+import { drive, expectNear, moveBy, sceneOf } from './testing/session';
 
 const lines = (cands: readonly Guide[]) => alignmentSnapSource({ getCandidates: () => cands });
 const BOX: Bounds = { x: 100, y: 100, width: 50, height: 50 };
@@ -43,9 +35,12 @@ describe('alignmentSnapSource', () => {
 
   it('matches the union box of a selection, edges and center', () => {
     // A at x 100..150 and B at 180..260: the union runs 100..260, centered on 180.
-    const union: Bounds = { x: 100, y: 100, width: 160, height: 50 };
-    expect(moveBy({ sources: [lines([{ id: 'ur', axis: 'x', offset: 262 }])], box: union }).by(0, 0).point.x).toBeCloseTo(2, 9);
-    expect(moveBy({ sources: [lines([{ id: 'uc', axis: 'x', offset: 181 }])], box: union }).by(0, 0).point.x).toBeCloseTo(1, 9);
+    const union = (offset: number) => {
+      const { scene, ids } = sceneOf([{ x: 100, y: 100, width: 50, height: 50 }, { x: 180, y: 100, width: 80, height: 50 }]);
+      return moveBy({ sources: [lines([{ id: 'u', axis: 'x', offset }])], scene, ids }).by(0, 0).point.x;
+    };
+    expect(union(262)).toBeCloseTo(2, 9);
+    expect(union(181)).toBeCloseTo(1, 9);
   });
 
   it('snaps an inserted point to a line', () => {
@@ -54,17 +49,18 @@ describe('alignmentSnapSource', () => {
   });
 
   it('snaps a resize\'s moving edge to a line', () => {
-    // The east edge of 100..150 is the pointer probe; the west edge stays put.
+    // Pinning the west edge of 100..150 moves the east edge.
+    const { scene, ids } = sceneOf([BOX]);
     const edge = { x: 150, y: 125 };
     const out = drive({
       sources: [lines([{ id: 'r', axis: 'x', offset: 152 }])], gesture: 'resize', press: edge, reachPx: 5,
+      scene, ids, handle: { x: 'min', y: 'free' },
     }).at(edge);
     expectNear(out.point, { x: 152, y: 125 });
   });
 
   it('beats the grid on its axis while the grid holds the other', () => {
     const sources = [gridSnapSource({ spacing: 10 }), lines([{ id: 'L', axis: 'x', offset: 96 }])];
-    // Before the snap pipeline the grid rounded x to 100 and alignment then moved it again.
     expectNear(moveBy({ sources, box: BOX }).by(0, 7).point, { x: -4, y: 10 });
   });
 
@@ -81,10 +77,7 @@ describe('alignmentSnapSource', () => {
         { x: 0, y: 100, width: 20, height: 20 },
         { x: 2, y: 300, width: 20, height: 20 },
       ]);
-      const out = moveBy({
-        sources: [alignmentSnapSource({ color: '#e0397f' })], box: { x: 2, y: 300, width: 20, height: 20 },
-        ids: [ids[2]], scene,
-      }).by(-1, 5);
+      const out = moveBy({ sources: [alignmentSnapSource({ color: '#e0397f' })], ids: [ids[2]], scene }).by(-1, 5);
       expectNear(out.point, { x: -2, y: 5 });
       // At the snapped position the box spans y 305..325, below both siblings.
       expect(out.marks).toContainEqual({ kind: 'line', from: { x: 0, y: 0 }, to: { x: 0, y: 325 }, color: '#e0397f' });
@@ -98,9 +91,21 @@ describe('alignmentSnapSource', () => {
         { x: 40, y: 0, width: 40, height: 10, rotation: Math.PI / 2 },
         { x: 100, y: 100, width: 40, height: 10, rotation: Math.PI / 2 },
       ]);
-      const ink: Bounds = { x: 115, y: 85, width: 10, height: 40 };
-      const out = moveBy({ sources: [alignmentSnapSource()], box: ink, ids: [ids[1]], scene }).by(-48, 0);
+      const out = moveBy({ sources: [alignmentSnapSource()], ids: [ids[1]], scene }).by(-48, 0);
       expect(out.point.x).toBeCloseTo(-50, 9);
+    });
+
+    it('measures siblings by their drawn boxes, as it measures the subject', () => {
+      // Stroke 10 grows each box 5 a side: A is drawn -5..105, B 195..305.
+      const stroked = { shape: 'rect', stroke: { paint: { kind: 'solid', color: '#f00' }, width: 10 } };
+      const { scene, ids } = sceneOf([
+        { x: 0, y: 0, width: 100, height: 100, data: stroked },
+        { x: 200, y: 0, width: 100, height: 100, data: stroked },
+      ]);
+      // An 88 drag puts A's drawn right edge at 193, 2 short of B's drawn left
+      // edge; its pose edge (188) is 12 short of B's pose edge.
+      const out = moveBy({ sources: [alignmentSnapSource()], ids: [ids[0]], scene }).by(88, 0);
+      expectNear(out.point, { x: 90, y: 0 });
     });
 
     it('lines up a point gesture with the top-level nodes', () => {

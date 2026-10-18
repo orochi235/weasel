@@ -3,7 +3,7 @@ import {
   applyEdges, equalGaps, measureGapSpans, referenceGaps, spacingOffers, type MeasuredGap,
 } from '../guides/alignment/spacing';
 import type { SpacingGap } from '../guides/types';
-import { axisLine, landedShift, probeBox } from './lines';
+import { axisLine, landedShift } from './lines';
 import { cachedPerScene } from './targets';
 
 type Point = { x: number; y: number };
@@ -46,8 +46,8 @@ export function spacingSnapSource(opts: SpacingSnapSourceOptions = {}): SnapSour
     roles: ['box'],
     gestures: ['move', 'resize'],
     *collect(q) {
-      const box = probeBox(q.probes);
-      const probe = q.probes.find((p) => p.id === 'box.min');
+      const box = q.box;
+      const probe = q.probes.find((p) => p.role === 'box');
       const measured = opts.getTargets ? measureAll(opts.getTargets()) : fromScene(q);
       if (!box || !probe || !measured) return;
       const reach = q.reachWorld(q.reachPx);

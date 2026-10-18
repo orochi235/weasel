@@ -1,14 +1,21 @@
 import { nodeGates, type Bounds, type NodeId, type Scene, type SnapCollect } from '@weasel-js/core';
-import { siblingBounds, worldBoundsOf } from '../guides/alignment/sceneBounds';
+import { siblingIds } from '../guides/alignment/sceneBounds';
 
 type AnyScene = Scene<unknown, string, unknown>;
 
-/** The boxes a gesture's subject lines up with: its siblings' when it has
+/** The nodes a gesture's subject lines up with: its siblings when it has
  *  ids, the scene's visible top-level nodes for a point gesture. */
-export function targetBoxes(scene: AnyScene, exclude: readonly string[]): Bounds[] {
-  if (exclude.length > 0) return siblingBounds(scene, exclude as readonly NodeId[]);
+function targetIds(scene: AnyScene, exclude: readonly string[]): readonly NodeId[] {
+  if (exclude.length > 0) return siblingIds(scene, exclude as readonly NodeId[]);
   const gates = nodeGates(scene);
-  return worldBoundsOf(scene, scene.roots.filter((id) => !gates.hidden(id)));
+  return scene.roots.filter((id) => !gates.hidden(id));
+}
+
+/** The target nodes' boxes, measured as the session measures its subject;
+ *  none from a host that measures no boxes. */
+export function targetBoxes(q: SnapCollect, scene: AnyScene): Bounds[] {
+  const drawn = q.drawnBox;
+  return drawn ? targetIds(scene, q.exclude).flatMap((id) => drawn(id) ?? []) : [];
 }
 
 /**
@@ -25,7 +32,7 @@ export function cachedPerScene<T>(derive: (boxes: readonly Bounds[]) => T): (q: 
     const version = scene.getVersion();
     const exclude = q.exclude.join('\n');
     if (key === null || key.scene !== scene || key.version !== version || key.exclude !== exclude) {
-      value = derive(targetBoxes(scene, q.exclude));
+      value = derive(targetBoxes(q, scene));
       key = { scene, version, exclude };
     }
     return value;

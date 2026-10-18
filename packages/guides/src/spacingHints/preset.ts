@@ -33,8 +33,8 @@ export function createSpacingHintsPreset(opts: SpacingHintsOptions = {}): Featur
   const color = opts.color === undefined ? {} : { color: opts.color };
   const own = { ...color, ...(opts.tolerance === undefined ? {} : { reachPx: opts.tolerance }) };
   const snapSources: SnapSource[] = [
-    ...(opts.spacing ?? true ? [spacingSnapSource(own)] : []),
-    ...(opts.align ?? false ? [alignmentSnapSource(own)] : []),
+    ...((opts.spacing ?? true) ? [spacingSnapSource(own)] : []),
+    ...((opts.align ?? false) ? [alignmentSnapSource(own)] : []),
   ];
   const contributions: SurfaceContribution[] = [];
   if (opts.readout !== false) contributions.push(distanceReadout({ ...opts.readout, ...color }));

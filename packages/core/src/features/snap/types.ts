@@ -3,6 +3,7 @@
 
 import type { ProbeRole, SnapTier } from '@weasel-js/geom/nd';
 import type { Scene } from 'core/scene/types';
+import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { SnapReadoutStyle } from './readoutLayer';
 import type { SnapGeometry, SnapMods } from 'interactions/actions/snapDep';
 
@@ -46,6 +47,12 @@ export interface SnapCollect<P = Point> {
   /** The unsnapped move from the press. A probe at `at` here lands at
    *  `at - delta0 + delta` for the resolved `delta` a function mark gets. */
   delta0: P;
+  /** A move's subject: the union of its drawn boxes, stroke included, where
+   *  the unsnapped gesture puts it. Absent for other gestures. */
+  box?: Bounds;
+  /** `id`'s drawn box, measured as `box` is. Absent in a host with no 2D
+   *  scene. */
+  drawnBox?(id: string): Bounds | undefined;
   /** Nodes that offer no targets: what the gesture moves. */
   exclude: readonly string[];
   /** Only these nodes offer targets. */

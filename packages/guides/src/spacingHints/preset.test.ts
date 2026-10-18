@@ -26,8 +26,7 @@ describe('createSpacingHintsPreset', () => {
   it('snaps a moved shape to the spacing between its siblings and marks the equal gaps in its color', () => {
     const { scene, moving, preset } = fixture({ color: '#e0397f' });
     const out = moveBy({
-      sources: preset.snapSources!, box: { x: 62, y: 0, width: 10, height: 10 },
-      ids: [moving], scene: scene as unknown as Scene<unknown, string, unknown>,
+      sources: preset.snapSources!, ids: [moving], scene: scene as unknown as Scene<unknown, string, unknown>,
     }).by(0, 0);
     // Its gap to the middle shape is 22; the gap beside it is 20, within reach.
     expectNear(out.point, { x: -2, y: 0 });
