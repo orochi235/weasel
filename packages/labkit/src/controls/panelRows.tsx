@@ -43,14 +43,21 @@ export interface FoldProps {
 }
 
 /** What a lifted heading control reads and writes through. */
-type LiftScope<TC extends Record<string, unknown>> = Pick<PanelRowsSource<TC>, 'resolved' | 'renderers' | 'shown' | 'setConfig'> & {
+type LiftScope<TC extends Record<string, unknown>> = Pick<
+  PanelRowsSource<TC>,
+  'resolved' | 'renderers' | 'shown' | 'setConfig'
+> & {
   visible: (path: string) => boolean;
   enabled: (path: string) => boolean;
 };
 
 /** The control a heading carries in its title row, lifted out of the rows
  *  beneath it — see `headingLeaf`. */
-function liftedControl<TC extends Record<string, unknown>>(heading: ReactNode, paths: readonly string[], scope: LiftScope<TC>) {
+function liftedControl<TC extends Record<string, unknown>>(
+  heading: ReactNode,
+  paths: readonly string[],
+  scope: LiftScope<TC>,
+) {
   const { resolved, renderers, shown, setConfig, visible, enabled } = scope;
   const found = headingLeaf(resolved, heading, paths, renderers);
   if (!found) return { path: undefined, control: undefined };

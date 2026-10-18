@@ -1,5 +1,10 @@
 import { getAlpha01, toHex8, withAlpha01 } from '@weasel-js/core';
-import { prefNumberAt, type PrefBoundReader, type PrefLeaf, type PrefNumber } from '@weasel-js/prefs';
+import {
+  type PrefBoundReader,
+  type PrefLeaf,
+  type PrefNumber,
+  prefNumberAt,
+} from '@weasel-js/prefs';
 import {
   type PrefFieldChoice,
   PropertyControl,

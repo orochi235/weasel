@@ -9,7 +9,9 @@ const num = (name: string, extra: Partial<PrefLeaf> = {}): PrefLeaf =>
   ({ kind: 'number', name, description: '', default: 0, min: 0, ...extra }) as PrefLeaf;
 
 // A box side whose lower limit the config holds beside it, as a scene node's does.
-const floor = (side: string) => ({ minAt: (read: (path: string) => unknown) => read(`data.floor.${side}`) as number | undefined });
+const floor = (side: string) => ({
+  minAt: (read: (path: string) => unknown) => read(`data.floor.${side}`) as number | undefined,
+});
 
 const SCHEMA: PrefSection = {
   name: 'Box',
@@ -25,7 +27,10 @@ function panel() {
   render(
     <ControlPanel
       schema={resolveConfigSchema(f.prefs(SCHEMA), [])}
-      config={{ pose: { width: 50, height: 50, depth: 50 }, data: { floor: { width: 30, height: 20, depth: 10 } } }}
+      config={{
+        pose: { width: 50, height: 50, depth: 50 },
+        data: { floor: { width: 30, height: 20, depth: 10 } },
+      }}
       setConfig={setConfig}
     />,
   );
