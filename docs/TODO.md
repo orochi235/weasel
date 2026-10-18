@@ -1300,11 +1300,12 @@ only story runner in the repo.
 - **(P2) HUD vs DOM text: what the idle rerun left open.** `tests/perf/hud-vs-dom.spec.ts` prices
   the HUD against plain DOM, a React overlay, and a DOM layer moved as one element
   (`tests/perf/README.md`, "HUD text against a DOM overlay").
-  - **The HUD's 5,000-glyph readout gets the fewest frames** — about 70 ms apart under every
-    camera, against 43–61 for the DOM — while its traced busy time is the lowest, about 9 ms per
-    frame. Either the headless frame scheduler or a thread the trace analysis does not count
-    (renderer worker threads, for one) accounts for the rest; nothing has checked which. Until it
-    is, none of the frame intervals can be read as a display's frame rate.
+  - **The all-threads figures leave out the renderer's worker pool**, which the HUD keeps 1.8–2.4
+    ms a frame busier than the DOM at 5,000 glyphs changing every frame (`HVD_CENSUS=1`, teitou and
+    msb-uai, 2026-10-17; README, "Frame rate"). Rerunning the every-frame half of the sweep with
+    the census on would say whether "off the main thread the HUD is cheaper" survives, and the
+    pool's self times would say what it is doing. The 70 ms frame gap this entry used to ask about
+    no longer reproduces.
   - **A static label on a fixed camera still favors the DOM**, 1.38 ms of main thread against 0.33
     at 5,000 glyphs, because the renderer walks every unchanged text command each frame. A
     layer-level skip for a HUD whose widgets are all unchanged would need `content` painters kept
