@@ -35,8 +35,8 @@ export interface DiagramViewProps {
    *  them. Pass a new `key` to start over instead. */
   specs: readonly DiagramSpec[];
   /** The view opens fitted to the diagram, and fits again when the size or a
-   *  fit option changes, until the user pans or zooms; from then on the view
-   *  is theirs. */
+   *  fit option changes or a layout run settles, until the user pans or zooms;
+   *  from then on the view is theirs. */
   width: number;
   height: number;
   /** A participant id, or null for none. */
@@ -153,7 +153,26 @@ function Inner({
   // Each `layout()` call is a new run: the state change lands the algorithm in
   // the live layout's options before the effect restarts it.
   const [run, setRun] = useState<{ algorithm: DiagramLayout } | null>(null);
-  const live = useLiveLayout<RectPose>({ ...liveOpts, scene, source, algorithm: run?.algorithm ?? 'force' });
+  const controlled = view !== undefined;
+  const fitOpts = { minScale, maxScale, anchor, padding: fitPadding };
+  const defaultView = useMemo(
+    () => controlled ? undefined : fitDiagram(specs, { width, height }, fitOpts),
+    // A later `specs` keeps the view it has.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [controlled, width, height, minScale, maxScale, anchor, fitPadding],
+  );
+  // A settled run's fit holds until the box or a fit option changes.
+  const [settledFit, setSettledFit] = useState<{ view: View | undefined; over: View | undefined } | null>(null);
+  const fit = settledFit !== null && settledFit.over === defaultView ? settledFit.view : defaultView;
+  const settled = useLatest((moved: number) => {
+    liveOpts?.onSettle?.(moved);
+    if (controlled || moved === 0) return;
+    const boxes = Array.from(source(), ({ node, pose }) => ({ ...node, pose }));
+    setSettledFit({ view: fitDiagram(boxes, { width, height }, fitOpts), over: defaultView });
+  });
+  const live = useLiveLayout<RectPose>({
+    ...liveOpts, scene, source, algorithm: run?.algorithm ?? 'force', onSettle: (moved) => settled.current(moved),
+  });
   useEffect(() => {
     if (run !== null) live.restart();
   }, [run, live]);
@@ -185,16 +204,7 @@ function Inner({
   useEffect(() => (layer ? canvasRef.current?.registerLayer(layer) : undefined), [layer]);
   const ambient = useMemo(() => (ports ? [...AMBIENT, ports.contribution] : AMBIENT), [ports]);
 
-  const controlled = view !== undefined;
-  const defaultView = useMemo(
-    () => controlled
-      ? undefined
-      : fitDiagram(specs, { width, height }, { minScale, maxScale, anchor, padding: fitPadding }),
-    // A later `specs` keeps the view it has.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [controlled, width, height, minScale, maxScale, anchor, fitPadding],
-  );
-  useRefit(canvasRef, defaultView);
+  useRefit(canvasRef, fit);
   return (
     <SceneCanvas
       ref={canvasRef}
@@ -240,9 +250,10 @@ export interface DiagramFit {
 }
 
 /** The view `DiagramView` opens on: every node box and group box in view, never above
- *  `maxScale` (default 1) and never below `minScale`. */
+ *  `maxScale` (default 1) and never below `minScale`. Takes specs, or a scene's
+ *  nodes at the poses they are drawn at. */
 export function fitDiagram(
-  specs: readonly DiagramSpec[],
+  specs: readonly { kind: string; pose: unknown; data: unknown }[],
   size: { width: number; height: number },
   fit: DiagramFit = {},
 ): View | undefined {
