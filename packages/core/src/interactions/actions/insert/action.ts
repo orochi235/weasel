@@ -31,7 +31,7 @@ export const insertAction: Action & { requires: string[] } = inPlane({
   label: 'Insert',
   group: 'insert',
   eligible: { capability: 'creates-shapes' },
-  requires: ['insert', 'insertLive', 'insertInto', 'selection', 'snap', 'textEdit', 'scene', 'applyOps', 'view'],
+  requires: ['insert', 'insertLive', 'insertInto', 'selection', 'snap', 'textEdit', 'scene', 'applyOps', 'view', 'kitSettings'],
   invoker: {
     timing: 'ongoing',
     start(ctx: InvocationCtx, opts?: BindingOpts): OngoingHandle {

@@ -63,7 +63,8 @@ export interface AlignmentBehaviorBase {
   /** Publish the currently-matched line(s). Called every onMove; cleared
    *  (`[]`) on a miss and on onEnd. */
   setActiveGuides: (guides: readonly Guide[]) => void;
-  /** Tolerance in screen px, read through the gesture's view. Default 6. */
+  /** Tolerance in screen px, read through the gesture's view. Default the
+   *  `targets.guideSnapPx` kit setting, else `DEFAULT_GUIDE_TOLERANCE_PX`. */
   tolerance?: number;
   /** Modifier key that bypasses snapping while held. */
   bypassKey?: keyof ModifierState;

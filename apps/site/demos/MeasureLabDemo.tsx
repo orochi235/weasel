@@ -78,11 +78,11 @@ function MeasureTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
     () => ({ snap: snap ? gridSnapStrategy<RectPose>(spacing) : undefined }),
     [snap, spacing],
   );
-  // A measurement's ends snap first, then the grid.
+  // A measurement's ends snap a drawing or a move first; a drawing then takes the grid.
   const toolOptions = useMemo(
     () => ({
-      snapPoint: (p: { x: number; y: number }) => nearestMeasureEnd(scene as never, measurements, p, END_SNAP_PX)
-        ?? (snap ? { x: roundToCell(p.x, spacing), y: roundToCell(p.y, spacing) } : p),
+      snapTargets: (p: { x: number; y: number }) => nearestMeasureEnd(scene as never, measurements, p, END_SNAP_PX),
+      ...(snap ? { snapPoint: (p: { x: number; y: number }) => ({ x: roundToCell(p.x, spacing), y: roundToCell(p.y, spacing) }) } : {}),
     }),
     [scene, measurements, snap, spacing],
   );

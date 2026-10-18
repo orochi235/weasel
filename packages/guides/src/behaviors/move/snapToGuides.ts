@@ -13,7 +13,8 @@ type ModKey = keyof ModifierState;
 export interface SnapToGuidesMoveArgs<TPose> {
   /** Stable getter into the live guide list (typically from `useGuides`). */
   getGuides: () => readonly Guide[];
-  /** Snap tolerance in screen px, read through the gesture's view. */
+  /** Snap tolerance in screen px, read through the gesture's view. Default the
+   *  `targets.guideSnapPx` kit setting, else `DEFAULT_GUIDE_TOLERANCE_PX`. */
   tolerance?: number;
   /** Modifier key that bypasses snapping while held. */
   bypassKey?: ModKey;

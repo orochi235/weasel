@@ -1,6 +1,7 @@
 import { createRef, useState } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, screen } from '@testing-library/react';
+import { KitSettingsProvider } from '@weasel-js/react';
 import { renderWithIcons } from '../../testing/withIcons';
 import { Tree, type TreeNode } from './Tree';
 
@@ -43,6 +44,27 @@ const press = (el: HTMLElement, y: number, x = 100) =>
   fireEvent.pointerDown(el, { pointerId: 1, button: 0, clientX: x, clientY: y });
 const move = (y: number, x = 100, altKey = false, metaKey = false) => fireEvent.pointerMove(document, { pointerId: 1, clientX: x, clientY: y, altKey, metaKey });
 const release = (y: number, x = 100, altKey = false, metaKey = false) => fireEvent.pointerUp(document, { pointerId: 1, clientX: x, clientY: y, altKey, metaKey });
+
+describe('Tree — drag threshold', () => {
+  it('picks a row up only past the gestures.dragPx kit setting', () => {
+    const onMove = vi.fn();
+    renderWithIcons(
+      <KitSettingsProvider value={{ gestures: { dragPx: 40 } }}>
+        <Tree aria-label="T" nodes={NODES} defaultExpandedIds={['g']} selectionMode="single" onMove={onMove} />
+      </KitSettingsProvider>,
+    );
+    const tree = screen.getByRole('tree');
+    tree.setPointerCapture = vi.fn();
+    tree.releasePointerCapture = vi.fn();
+    stamp(tree);
+    press(screen.getByRole('treeitem', { name: 'Zed' }).firstElementChild as HTMLElement, 80);
+    move(50);
+    expect(screen.getAllByText('Zed')).toHaveLength(1);
+    move(30);
+    expect(screen.getAllByText('Zed')).toHaveLength(2);
+    release(30);
+  });
+});
 
 describe('Tree — drag ghost', () => {
   it('names a carried row that is hidden in a collapsed branch by its label', () => {

@@ -11,7 +11,11 @@ import type { Bounds } from 'core/viewport/fitViewToBounds';
  * - `scale`: the box the selection was resized to, in units of the box it
  *   started as (`{ x: 0, y: 0, width: 1, height: 1 }` is no change), and the
  *   anchor the resize held fixed.
- * - `duplicate`: copy the selection, offset by `(dx, dy)`, and select the copies.
+ * - `duplicate`: copy the selection, offset by the world offset `(dx, dy)`, and
+ *   select the copies.
+ *
+ * Offsets are world, so a repeat inside a turned group steps the way the drag
+ * or nudge it repeats did on screen.
  */
 export type RepeatableTransform =
   | { readonly kind: 'translate'; readonly dx: number; readonly dy: number }

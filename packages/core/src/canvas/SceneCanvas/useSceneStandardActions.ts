@@ -80,7 +80,8 @@ export interface SceneStandardActionsInputs {
    *  outside this subtree) can read the same `editingId` the dep does. */
   editAnchorsExternalState: import('../deps/editAnchors').EditAnchorsStateSource;
   /** The canvas's path snapper, which the `snap` dep composes with
-   *  `toolOptions.snapPoint` for the drawing and dragging actions. */
+   *  `toolOptions.snapPoint` and `toolOptions.snapTargets` for the drawing
+   *  and dragging actions. */
   pathSnapper: SnapSources['paths'];
   /** The canvas element ref, so `useIngestionDepSource` can compute the
    *  visible world rect from the client rect + current view. */
@@ -172,7 +173,10 @@ export function useSceneStandardActions(inputs: SceneStandardActionsInputs): voi
   useLayoutDepSource(scene, props.layoutDropTarget, reflowTransition);
   useInsertDepSource(scene, adapter, props.insertNodeFactories, props.insertPaint);
   usePathLeafDepSources(scene, selection, adapter, poseDescriptor);
-  useSnapDepSource({ snapPoint: toolOptions?.snapPoint, paths: pathSnapper }, currentViewRef);
+  useSnapDepSource(
+    { snapPoint: toolOptions?.snapPoint, targets: toolOptions?.snapTargets, paths: pathSnapper },
+    currentViewRef,
+  );
   useDebugDepSource(canvasApiRef);
   useDepChangeNotices(scene, selection.current, editAnchorsExternalState);
   useIngestionDepSource(canvasRef, () => currentViewRef.current, ingestion?.resolveSrc, ingestion?.svg, ingestionClipboard);

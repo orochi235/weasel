@@ -122,7 +122,7 @@
   },
   "packages/history/src/history.ts": {
     "lines": 695,
-    "longestFunction": 445
+    "longestFunction": 444
   },
   "packages/hud/src/attach.ts": {
     "longestFunction": 162

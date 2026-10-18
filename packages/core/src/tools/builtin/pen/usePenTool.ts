@@ -9,7 +9,7 @@ import type { ActionDeps, InvocationCtx } from '@weasel-js/routing';
 import { asNodeId } from 'core/scene/types';
 import { pxExtent, withinPxRadius, nearestPathAnchor, reverseAnchors, type PathAnchorHit } from '@weasel-js/geom';
 import { boundsOfPath, type PolygonPath, anchorsToPath, editAnchorSetTracked, pathToAnchors } from '@weasel-js/geom';
-import { createPenPreviewLayer } from 'features/paths/penPreviewLayer';
+import { createPenPreviewLayer, penReachOf } from 'features/paths/penPreviewLayer';
 import { resolveEditablePathOf } from 'features/paths/editablePath';
 import type { Op } from 'core/ops/types';
 import { createDeleteOp } from 'core/ops/delete';
@@ -91,12 +91,12 @@ export interface UsePenToolOptions {
    *  double-click, producing a compound path. Switching tools first discards
    *  it, as Escape does. */
   autoCommitOnClose?: boolean;
-  /** Screen-px hit radius for "click first anchor to close". Default `8`.
+  /** Screen-px hit radius for "click first anchor to close". Default the `targets.penCloseHitPx` kit setting, else `8`.
    *  Measured as a screen-space circle, so it stays round under non-uniform
    *  zoom; aligns with `useSelectTool.handleHitRadius`. */
   closeHitRadius?: number;
   /** Screen-px radius within which a placed anchor lands exactly on an
-   *  existing path's anchor. Default `8`; `0` turns it off. Takes precedence
+   *  existing path's anchor. Default the `targets.penAnchorSnapPx` kit setting, else `8`; `0` turns it off. Takes precedence
    *  over `snapPoint`, which applies only when no anchor is in range. */
   anchorSnapRadius?: number;
   /** Snaps every world-space point the pen records or previews — anchors,
@@ -157,7 +157,7 @@ function buildPath(
 export function usePenTool(
   options: UsePenToolOptions = {},
 ): Tool {
-  const { autoSelect = true, autoCommitOnClose = true, closeHitRadius = 8, anchorSnapRadius = 8, snapPoint } = options;
+  const { autoSelect = true, autoCommitOnClose = true, closeHitRadius, anchorSnapRadius, snapPoint } = options;
 
   const scratchRef = useRef<PenScratch | null>(null);
   if (scratchRef.current === null) scratchRef.current = freshScratch();
@@ -296,7 +296,7 @@ export function usePenTool(
   const pickUpEndpoint = useCallback((deps: ActionDeps, wx: number, wy: number): boolean => {
     const scratch = scratchRef.current!;
     if (scratch.current || scratch.finishedSubpaths.length > 0) return false;
-    const radius = optsRef.current.closeHitRadius;
+    const radius = penReachOf(optsRef.current).close;
     const scale = viewScale(deps);
     const hit = nearestPathAnchor(pathsNear(deps, wx, wy, radius), { x: wx, y: wy }, radius, scale, (h) => h.end !== null);
     if (!hit) return false;
@@ -317,7 +317,7 @@ export function usePenTool(
    *  when one is within `anchorSnapRadius`, else wherever `snapPoint` puts it.
    *  `hit` names the anchor it snapped to. */
   const placeAt = useCallback((deps: ActionDeps, x: number, y: number): { x: number; y: number; hit: PathAnchorHit | null } => {
-    const radius = optsRef.current.anchorSnapRadius;
+    const radius = penReachOf(optsRef.current).anchorSnap;
     if (radius > 0) {
       const hit = nearestPathAnchor(pathsNear(deps, x, y, radius), { x, y }, radius, viewScale(deps));
       if (hit) return { x: hit.x, y: hit.y, hit };
@@ -328,7 +328,7 @@ export function usePenTool(
   /** Is a world point within the close-hit radius of `(ax, ay)`? Measured as a
    *  screen-space circle, so the zone stays round under non-uniform zoom. */
   const withinCloseRadius = useCallback((deps: ActionDeps, ax: number, ay: number, wx: number, wy: number): boolean =>
-    withinPxRadius(ax - wx, ay - wy, optsRef.current.closeHitRadius, viewScale(deps)), [optsRef]);
+    withinPxRadius(ax - wx, ay - wy, penReachOf(optsRef.current).close, viewScale(deps)), [optsRef]);
 
   // The rubber band and the close hint trail the `pointer` dep while a path is
   // in progress. `followed` is the deps last followed through.
@@ -344,7 +344,7 @@ export function usePenTool(
       const first = s.current && s.current.anchors.length >= 3 ? s.current.anchors[0] : null;
       s.closeHintActive = first !== null && s.cursor !== null && withinPxRadius(
         first.x - s.cursor.x, first.y - s.cursor.y,
-        optsRef.current.closeHitRadius, followed?.view?.get().scale ?? { x: 1, y: 1 },
+        penReachOf(optsRef.current).close, followed?.view?.get().scale ?? { x: 1, y: 1 },
       );
       forceRender();
     };
