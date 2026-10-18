@@ -109,7 +109,7 @@ export interface StandardActionsRegistrarProps {
    *  consumer's per-kind node factories into the `insert` dep. */
   insertNodeFactories?: Record<string, InsertNodeFactory>;
   insertPaint?: InsertPaint;
-  /** `toolOptions.snapPoint` and the canvas's path snapper, which the
+  /** `toolOptions.snapPoint`, `toolOptions.snapTargets` and the canvas's path snapper, which the
    *  `snap` dep composes for the drawing and dragging actions. */
   snap: SnapSources;
   /** The canvas element ref, so `useIngestionDepSource` can compute the

@@ -23,7 +23,7 @@ function setup(paths: Record<string, string>, selected: string[] = [], extra: Re
   const batches: Array<{ ops: Op[]; label: string }> = [];
   const applyOps = vi.fn((ops: Op[], label: string) => { batches.push({ ops, label }); });
   const deps = { scene, selection, applyOps, ...extra } as never;
-  return { deps, batches, selection };
+  return { deps, batches, selection, nodes };
 }
 
 const poseOf = (op: Op) => Array.from(((op.args as { to: PolygonPath }).to).coords);
@@ -60,6 +60,22 @@ describe('trimPathAction', () => {
     expect(plan.target.id).toBe('line');
     expect(Array.from(plan.result.removed.coords)).toEqual([10, 0, 20, 0]);
     expect(batches).toHaveLength(0);
+  });
+
+  it('trims a leaf drawn as its rect pose alone, writing the path it is left with', () => {
+    const { deps, batches, nodes } = setup(walls);
+    nodes.set('box', {
+      id: asNodeId('box'), kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 30, height: 20 }, data: { tag: 1 }, parent: null,
+    });
+    // The walls are drawn first, so the box is topmost under the click.
+    run(trimPathAction, deps, { pressX: 15, pressY: 1, radiusPx: 3 });
+    expect(batches).toHaveLength(1);
+    const set = batches[0].ops.find((op) => op.name === 'setData')!;
+    expect((set.args as { from: unknown }).from).toEqual({ tag: 1 });
+    const to = (set.args as { to: { tag: number; path: PolygonPath } }).to;
+    expect(to.tag).toBe(1);
+    // The top edge loses its stretch between the walls: the rest runs open from x 20 round to x 10.
+    expect(Array.from(to.path.coords)).toEqual([20, 0, 30, 0, 30, 20, 0, 20, 0, 0, 10, 0]);
   });
 
   it('does nothing off every stroke, or on one nothing crosses', () => {

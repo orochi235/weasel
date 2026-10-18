@@ -35,9 +35,9 @@ const centerOf = (cmd: DrawCommand) => {
   return { x: b.x + b.width / 2, y: b.y + b.height / 2 };
 };
 
-function setup(path: Path = LINE, stroke: Stroke = { paint: { color: '#000' }, width: 4 }) {
+function setup(path: Path = LINE, stroke: Stroke = { paint: { color: '#000' }, width: 4 }, given?: RectPose) {
   const scene = createScene<Data, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
-  const pose = path === LINE ? { x: 0, y: 0, width: 100, height: 0 } : { x: 0, y: -45, width: 100, height: 45 };
+  const pose = given ?? (path === LINE ? { x: 0, y: 0, width: 100, height: 0 } : { x: 0, y: -45, width: 100, height: 45 });
   const line = scene.add({ kind: 'leaf', layer: 'main', pose, data: { path, stroke } });
   const { result } = renderHook(() => useGirthTool());
   const deps = { scene, view: { get: () => VIEW, set: () => {} } } as unknown as ActionDeps;
@@ -190,5 +190,37 @@ describe('useGirthTool', () => {
     t.run('girth.unhover', {});
     // A dot per anchor, and a line across the stroke for the one with a width.
     expect(t.marks()).toHaveLength(3);
+  });
+
+  describe('on a drawn rectangle', () => {
+    const RECT: Path = { kind: 'rect', x: 0, y: 0, width: 100, height: 50 };
+    const BOX = { x: 0, y: 0, width: 100, height: 50 };
+    const rectSetup = (align?: 'inner' | 'outer') =>
+      setup(RECT, { paint: { color: '#000' }, width: 4, ...(align ? { align } : {}) }, BOX);
+    const setWidths = (t: ReturnType<typeof setup>) => t.widths()!.filter((w) => !Number.isNaN(w));
+
+    it('widens the stroke where an edge is grabbed, adding an anchor to the rectangle', () => {
+      const t = rectSetup();
+      // The outer edge of the top side is 2 above it; pull it out to 10.
+      t.drag([[50, -2], [50, -10]]);
+      expect(countPathAnchors(t.data().path!)).toBe(5);
+      expect(t.widths()).toHaveLength(5);
+      expect(setWidths(t)).toEqual([20]);
+      t.scene.undo();
+      expect(t.data().path).toEqual(RECT);
+    });
+
+    it('grabs an inner stroke by the edge it draws inside the rectangle', () => {
+      const t = rectSetup('inner');
+      // Drawn 4 inside the top side; pulled 4 farther in, it is 8 wide.
+      t.drag([[50, 4], [50, 8]]);
+      expect(setWidths(t)).toEqual([8]);
+    });
+
+    it('grabs an outer stroke by the edge it draws outside the rectangle', () => {
+      const t = rectSetup('outer');
+      t.drag([[50, -4], [50, -8]]);
+      expect(setWidths(t)).toEqual([8]);
+    });
   });
 });

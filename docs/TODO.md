@@ -43,15 +43,15 @@ Priority tags:
   pipeline: `@weasel-js/guides` has ruler guides, alignment guides, and equal-spacing snaps
   (`packages/guides/src/guides/alignment/spacing.ts`), and only spacing hints reach draw, as
   `createSpacingHintsPreset` (`packages/guides/src/spacingHints/`) behind the Spacing hints
-  preference; the select
-  tool's move snaps only through `gridSnapStrategy`, so it ignores measurement ends; path snapping
-  just landed with its own `snapPoint` ranking (`packages/core/src/features/paths/pathSnap/`); and
+  preference; a move and the drawing tools reach path targets and measurement ends through the
+  `snap` dep (`toolOptions.snapTargets`), but the move's grid is a `gridSnapStrategy` behavior;
+  path snapping just landed with its own `snapPoint` ranking (`packages/core/src/features/paths/pathSnap/`); and
   the tolerances are fixed constants (`DEFAULT_GUIDE_TOLERANCE_PX`). The arc settles one snap
   pipeline every gesture uses — which targets compete, how ties are ranked, how a modifier
   suspends them mid-gesture — and one readout layer for gaps, distances, and guide labels. The
   spacing hints preset is source material for it: an Alt-hover distance readout drawn on its own
   overlay, and a move snapping to equal sibling spacing with a marks layer of its own, neither
-  sharing a pipeline with the rest. The P3 "Moving a shape does not snap to measurement ends" folds into it.
+  sharing a pipeline with the rest.
 
 - **(P2) `features` names two things.** The `<SceneCanvas features>` prop composes behavior presets
   (`canvas/SceneCanvas/features.ts`); `packages/core/src/features/<name>/` is a source directory
@@ -210,9 +210,6 @@ Priority tags:
   time.** `LayerList` has no rename, and the scene has no per-node visibility or lock, so a
   measurement row offers select and remove only; the annotation layer's own row can be hidden,
   and shows its lock without toggling it. A measurement's `data.label` is what a rename would write.
-- **(P3) Moving a shape does not snap to measurement ends.** `nearestMeasureEnd` reaches the
-  insert tools through the `snap` dep; the select tool's move snaps through its own `snap`
-  strategy (`gridSnapStrategy`), which knows nothing of measurements.
 - **(P3) `renderSceneToPixels` draws annotation layers.** The SVG export leaves them out through
   `isAnnotationNode`; a headless raster draws whatever the scene holds. Undecided: whether a raster
   is an export, and so skips them, or a view of the canvas, and so keeps them.
@@ -354,20 +351,10 @@ Priority tags:
   (`packages/path-tools/src/girth/`).
 - **(P2) Tune path snapping hands-on, with the maintainer driving.** First-draft behavior and
   keys: an 8px radius with every kind on, `nearest` included; that a path target beats
-  `snapPoint`, so in range it wins over the grid and measurement ends; that a move and an anchor
-  drag snap to path targets only, never the grid; no key or modifier to turn it off mid-gesture;
+  `snapTargets` and `snapPoint`, so in range it wins over measurement ends and the grid, a move's
+  grid behavior included; that a move and an anchor drag snap to targets only, never `snapPoint`; no key or modifier to turn it off mid-gesture;
   the marker's glyphs, its fixed orange, and where its label sits; and that draw does not turn it
   on yet (`packages/core/src/features/paths/pathSnap/`, `packages/geom/src/snap/`).
-- **(P3) Trim segment and Extend to next path change editable polygon paths only.** Any node's
-  drawn outline cuts or stops them (`nodeOutline`, `features/paths/strokeOutline.ts`), but what
-  they reshape comes from `scenePathNodes` (`pathCommands/scenePaths.ts`), which reads
-  `resolveEditablePathOf`, which answers a polygon or a rect `data.path` only: a node whose
-  geometry is its rect pose alone, with no `data.path`, cannot itself be trimmed or extended.
-- **(P3) Extend to next path and Lengthen number subpaths two ways.** `openPathEnds` counts the
-  subpaths `parseSubpaths` finds, while `lengthenOpenEnd` hands the same `OpenPathEnd.sub` to
-  `lengthenPathEnd` through `editAnchorSetTracked`, which counts the anchor set's subpaths. The two
-  agree unless a path holds an empty subpath (a bare `M`); then the end extended is not the one
-  picked (`packages/geom/src/paths/extendPath.ts`). Number them one way.
 - **(P3) Shape builder slows past a handful of selected paths.** `pathFacePieces`
   (`packages/geom/src/booleans/ops.ts`) cuts one region per subset of the paths, so the faces
   `useShapeBuilderTool` works on cost 2^N clipping runs: fine for the few shapes it is usually
@@ -394,11 +381,6 @@ Priority tags:
 - **(P3) A blend has no spine, and its steps no spacing by distance.** `BlendEffect` places
   `steps` shapes evenly in `t` on the straight run between its sources; laying them along a
   third path, or spacing them so neighboring shapes sit a fixed distance apart, is not offered.
-- **(P3) A move under a rotated parent repeats in the parent's axes.** Nudge, duplicate, and
-  Transform Again (`interactions/actions/transform-again/`) offset a node along its parent's axes;
-  a drag and an Alt-drag clone measure on screen. So inside a group drawn turned, Cmd+D after a
-  drag steps in a different direction from the drag. Recording the move in world space and
-  mapping it through each node's parent on replay would make the two agree.
 - **(P3) Some path commands have no icons.** `resamplePath`, the anchor selection commands,
   `setSpiroKind`, `releaseSpiro` and draw's own `view.pathDirection` toggle show as text in draw's
   bar. The warp labs' tool lists borrow `ui:fitStretch`, `ui:grid` and `ui:pin` rather than the
@@ -423,10 +405,6 @@ Priority tags:
   as a box-to-box map, but a rotation rewrites the coordinates in a way no such map undoes, so the
   warp stops resolving and the warp tools start a fresh one. A `data.path` node keeps its warp
   through a rotation.
-- **(P3) The Girth tool is untried on rectangles.** It edits the nodes `resolveEditablePathOf`
-  answers a path for, which since rectangle path edit includes a drawn rectangle's rect
-  `data.path`, but nothing has shaped a rectangle's stroke with it yet. `strokeEdgeNear`, which it hit-tests with, measures every stroke as centered, so on an
-  inner- or outer-aligned stroke the grab point sits off the edge that is drawn.
 - **(P2) Tangent (G1) at an anchor.** The solver's variables are anchor positions only; handles
   ride along with their anchor. G1 needs each handle as a variable of its own (direction, or
   both handle points), and the handle drag to call `constrainEdit` the way the anchor drag does.
