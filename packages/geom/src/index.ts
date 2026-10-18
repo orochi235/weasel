@@ -29,9 +29,13 @@ export {
 } from './paths/builder';
 export { boundsOfPath } from './paths/bounds';
 export {
-  cornerFrameAt, cornerFrames, remapPerAnchor, resolveCorners,
-  resolveCornersWithSources, type CornerFrame, type ResolvedCorners,
+  cornerCuts, cornerFrameAt, cornerFrames, remapPerAnchor, resolveCorners,
+  resolveCornersWithSources, type CornerCut, type CornerFrame, type ResolvedCorners,
 } from './paths/corners';
+export {
+  CORNER_RESTORE_TOLERANCE, cornerTraces, keepCorners, restoreCorners, type CornerTrace,
+} from './paths/cornerRestore';
+export { offsetCornerTraces } from './paths/cornerOffset';
 export {
   compactCorners, cornerAt, cornerSpecAt, hasCorners, lerpCorners, scaleCorners, withCorner,
   withoutCorners, type CornerSpec,

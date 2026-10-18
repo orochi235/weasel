@@ -11,16 +11,22 @@
  * the `@weasel-js/geom/booleans` subpath so the core stays `deps: {}`.
  */
 import polygonClipping from 'polygon-clipping';
-import { pathToMultiPolygon, multiPolygonToPath, type Polygon } from './adapter';
+import { pathToMultiPolygon, multiPolygonToPath, type MultiPolygon, type Polygon } from './adapter';
 import { arrangementFaces } from './arrangementFaces';
 import type { Path, PolygonPath } from '../path';
+import { keepCorners } from '../paths/cornerRestore';
+
+/** `mp` as a path, with the corners of `sources` it still draws whole kept as corners. */
+function toPath(mp: MultiPolygon, sources: readonly Path[]): PolygonPath {
+  return keepCorners(sources, multiPolygonToPath(mp));
+}
 
 /** Union of N paths. Commutative. Returns an empty path if all inputs are empty. */
 export function pathUnion(...paths: Path[]): PolygonPath {
   if (paths.length === 0) return multiPolygonToPath([]);
   const mps = paths.map((p) => pathToMultiPolygon(p));
   const [head, ...rest] = mps;
-  return multiPolygonToPath(polygonClipping.union(head, ...rest));
+  return toPath(polygonClipping.union(head, ...rest), paths);
 }
 
 /** Intersection of N paths. Commutative. Empty result is an empty path. */
@@ -28,12 +34,12 @@ export function pathIntersect(...paths: Path[]): PolygonPath {
   if (paths.length === 0) return multiPolygonToPath([]);
   const mps = paths.map((p) => pathToMultiPolygon(p));
   const [head, ...rest] = mps;
-  return multiPolygonToPath(polygonClipping.intersection(head, ...rest));
+  return toPath(polygonClipping.intersection(head, ...rest), paths);
 }
 
 /** Asymmetric difference: returns `a − b`. */
 export function pathSubtract(a: Path, b: Path): PolygonPath {
-  return multiPolygonToPath(polygonClipping.difference(pathToMultiPolygon(a), pathToMultiPolygon(b)));
+  return toPath(polygonClipping.difference(pathToMultiPolygon(a), pathToMultiPolygon(b)), [a, b]);
 }
 
 /** Symmetric difference (XOR) of N paths. Commutative. */
@@ -41,7 +47,7 @@ export function pathExclude(...paths: Path[]): PolygonPath {
   if (paths.length === 0) return multiPolygonToPath([]);
   const mps = paths.map((p) => pathToMultiPolygon(p));
   const [head, ...rest] = mps;
-  return multiPolygonToPath(polygonClipping.xor(head, ...rest));
+  return toPath(polygonClipping.xor(head, ...rest), paths);
 }
 
 /** One path of a result that keeps its pieces apart, and the inputs it came
@@ -89,7 +95,7 @@ export function pathDividePieces(...paths: Path[]): BooleanPiece[] {
     if (region) region.polygons.push(polygon);
     else regions.set(key, { polygons: [polygon], sources });
   }
-  return [...regions.values()].map(({ polygons, sources }) => ({ path: multiPolygonToPath(polygons), sources }));
+  return [...regions.values()].map(({ polygons, sources }) => ({ path: toPath(polygons, paths), sources }));
 }
 
 /**
@@ -101,7 +107,7 @@ export function pathDividePieces(...paths: Path[]): BooleanPiece[] {
  * edges and their crossings rather than with the subsets of the inputs.
  */
 export function pathFacePieces(...paths: Path[]): BooleanPiece[] {
-  return faces(paths).map(({ polygon, sources }) => ({ path: multiPolygonToPath([polygon]), sources }));
+  return faces(paths).map(({ polygon, sources }) => ({ path: toPath([polygon], paths), sources }));
 }
 
 /**
@@ -116,7 +122,7 @@ export function pathTrim(...paths: Path[]): BooleanPiece[] {
   let cover: (typeof mps)[number] | null = null;
   for (let i = mps.length - 1; i >= 0; i--) {
     const shown = cover ? polygonClipping.difference(mps[i], cover) : mps[i];
-    if (shown.length > 0) out.unshift({ path: multiPolygonToPath(shown), sources: [i] });
+    if (shown.length > 0) out.unshift({ path: toPath(shown, paths), sources: [i] });
     cover = cover ? polygonClipping.union(cover, mps[i]) : mps[i];
   }
   return out;
@@ -159,7 +165,7 @@ export function pathCropPieces(...paths: Path[]): BooleanPiece[] {
   const out: BooleanPiece[] = [];
   for (let i = 0; i < mps.length - 1; i++) {
     const clipped = polygonClipping.intersection(mps[i], mask);
-    if (clipped.length > 0) out.push({ path: multiPolygonToPath(clipped), sources: [i] });
+    if (clipped.length > 0) out.push({ path: toPath(clipped, paths), sources: [i] });
   }
   return out;
 }

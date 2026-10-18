@@ -268,11 +268,12 @@ Priority tags:
   panel's curvature slider spans -4 to 4, and the widgets show by default under
   `path-edit.corners` with no key to hide them (`packages/path-tools/src/cornerShape/`,
   `packages/geom/src/paths/cornerShape.ts`, `apps/site/demos/CornerShapeLabDemo.tsx`).
-- **(P3) Booleans, Trim segment, Extend to next path, Cut at crossings, and Offset path drop
-  corner specs.** Each expands a path's corners before it rebuilds the geometry, so the rounded
-  shape survives as plain anchors but the corners can no longer be edited as corners
-  (they read paths through `resolveCorners` or a reader that calls it, such as
-  `packages/geom/src/booleans/contours.ts` and `packages/stroke/src/offsetPath.ts`).
+- **(P3) Offset path leaves slivers beside a curve, and spikes where a round corner shrinks to
+  nothing.** `offsetPath` (`packages/stroke/src/offsetPath.ts`) unites the region with its stroke
+  band, and the union keeps thin leftovers of the two meeting along the curve:
+  `offsetPath` of a 100×100 square with a 20-unit round corner, grown by 10, answers six subpaths,
+  five of them slivers. Grown by exactly the corner's radius, the outline also runs a spike into
+  the interior, so that corner cannot be kept as a corner.
 - **(P2) Tune Blend, Bend along a path, and Repeat along a path hands-on, with the maintainer
   driving.** First-draft step counts, spacing, and turn defaults, their keys, and how an effect is
   re-edited and expanded (`packages/path-tools/src/pathEffects/`, and core's `features/pathEffects/`).

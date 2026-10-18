@@ -1,5 +1,6 @@
 import {
-  anchorsToPath, pathToAnchors, resolveCorners, simplifyPath, type Path, type PolygonPath,
+  anchorsToPath, offsetCornerTraces, pathToAnchors, resolveCorners, restoreCorners, simplifyPath,
+  type Path, type PolygonPath,
 } from '@weasel-js/geom';
 import { pathSubtract, pathUnion } from '@weasel-js/geom/booleans';
 import { strokeToPath } from './strokeToPath';
@@ -27,16 +28,21 @@ export interface OffsetPathOptions {
  * Returns an empty path when nothing is left.
  */
 export function offsetPath(path: Path, distance: number, opts: OffsetPathOptions = {}): PolygonPath {
+  if (distance === 0) return closedRegion(path);
   const region = closedRegion(resolveCorners(path));
-  if (distance === 0) return region;
   const tolerance = opts.tolerance ?? 0.1;
   const band = strokeToPath(region, {
     width: Math.abs(distance) * 2,
     join: opts.join ?? 'miter',
     miterLimit: opts.miterLimit ?? 4,
   }, { flattenTolerance: tolerance });
-  const grown = distance > 0 ? pathUnion(region, band) : pathSubtract(region, band);
-  return opts.refit === false || grown.commands.length === 0 ? grown : simplifyPath(grown, tolerance);
+  const cut = distance > 0 ? pathUnion(region, band) : pathSubtract(region, band);
+  const corners = offsetCornerTraces(path, distance);
+  // Tried before the refit, which can move a cut's ends off its anchors, and
+  // after it, which can clear what the union left beside the cut.
+  const grown = restoreCorners(cut, corners, tolerance);
+  if (opts.refit === false || grown.commands.length === 0) return grown;
+  return restoreCorners(simplifyPath(grown, tolerance), corners, tolerance);
 }
 
 /** `path` with every subpath closed. */
