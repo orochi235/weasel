@@ -1,12 +1,12 @@
 {
   "packages/animator/src/engine/codec.ts": {
-    "longestFunction": 183
+    "longestFunction": 144
   },
   "packages/animator/src/timeline/booking.ts": {
     "longestFunction": 135
   },
   "packages/animator/src/timeline/createTimeline.ts": {
-    "longestFunction": 172
+    "longestFunction": 165
   },
   "packages/audio/src/inserts.ts": {
     "longestFunction": 232
@@ -146,16 +146,10 @@
     "longestFunction": 199
   },
   "packages/labkit/src/controls/ControlMatrix.tsx": {
-    "longestFunction": 191
-  },
-  "packages/labkit/src/controls/ControlRow.tsx": {
-    "longestFunction": 123
-  },
-  "packages/labkit/src/controls/MatrixCell.tsx": {
-    "longestFunction": 129
+    "longestFunction": 152
   },
   "packages/labkit/src/controls/panelRows.tsx": {
-    "longestFunction": 240
+    "longestFunction": 232
   },
   "packages/labkit/src/lab/Lab.tsx": {
     "longestFunction": 197
@@ -281,7 +275,7 @@
     "longestFunction": 204
   },
   "packages/ui/src/components/NumberField/UnitField.tsx": {
-    "longestFunction": 169
+    "longestFunction": 159
   },
   "packages/ui/src/components/PaintInput/PaintInput.tsx": {
     "longestFunction": 138

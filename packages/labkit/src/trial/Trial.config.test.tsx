@@ -270,7 +270,7 @@ describe('a config written as auto', () => {
     const instrument = defineInstrument({
       name: 'Ghosted',
       config: f.schema({
-        width: f.number(432),
+        width: f.number(432).auto(),
         gap: f
           .number(12)
           .initial(auto)

@@ -63,6 +63,7 @@ export function ListLeaf({
           // An entry is not pinned on its own: it shares the state of its list.
           auto: ctx.auto,
           setAuto: ctx.setAuto,
+          values: ctx.values,
           ...(ctx.fields ? { fields: ctx.fields } : {}),
           ...(ctx.settles ? { settles: ctx.settles } : {}),
         });

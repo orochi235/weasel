@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { MatrixCell } from './MatrixCell';
 import type { MatrixTarget } from './matrixTarget';
 
@@ -13,6 +14,7 @@ export function MatrixSlot({
   hint,
   canUnpin,
   disabled,
+  summary,
   setConfig,
   onOpen,
 }: {
@@ -28,6 +30,8 @@ export function MatrixSlot({
   hint?: string;
   canUnpin: boolean;
   disabled: boolean;
+  /** What the cell shows of its value, over the built-in reading. */
+  summary?: (value: unknown) => ReactNode;
   setConfig: (path: string, value: unknown) => void;
   onOpen: (el: HTMLElement) => void;
 }) {
@@ -51,6 +55,7 @@ export function MatrixSlot({
         hint={hint}
         canUnpin={cell.own && canUnpin}
         disabled={disabled}
+        summary={summary}
         setConfig={setConfig}
         onOpen={onOpen}
       />

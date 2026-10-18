@@ -1,10 +1,10 @@
-import { stateOf } from '../target';
+import { stateOf, type Behind, type TargetState } from '../target';
 import type { AnimationKind, PhysicsHandle, TargetPhysicsOptions } from '../types';
 import type { AnimationContext, AnimationSeed } from './context';
 import { absorb, axesFor, comeOut, commitOffset, goBehind, minus, norm, plus, takeUp, times, travel } from './offsets';
 import { resolveSpringConstants } from './physicsAnimation';
 import { earliestRest } from './springRest';
-import { createSpringVoices } from './springVoices';
+import { createSpringVoices, type SpringVoices, type SpringVoicesOptions } from './springVoices';
 
 const any = (a: readonly number[]): boolean => a.some((x) => x !== 0);
 
@@ -43,6 +43,20 @@ function restWaits(
   };
 }
 
+/** The voices a spring or a coast starts with: `move` behind the target's holds, all of its
+ *  voice the move, and the rest of `start`, with `velocity`, on top. */
+function startVoices(
+  ctx: AnimationContext, s: TargetState, o: Omit<SpringVoicesOptions, 'behind'>,
+  move: Along, start: Along, velocity: Along, coast: boolean,
+): { voices: SpringVoices; behind: Behind } {
+  const behind = goBehind(s, () => voices.moved(), () => voices.moved(), new Array<number>(move.length).fill(1));
+  const voices = createSpringVoices(ctx.codec, s, { ...o, behind });
+  if (any(move)) voices.move(move);
+  const top = minus(start, move);
+  if (!any(move) || any(top) || any(velocity)) voices.rest(top, velocity, coast);
+  return { voices, behind };
+}
+
 /**
  * A spring or a coast on a target. A spring commits its destination as it starts and its voices
  * are what is left to travel. A coast has no destination: its voice is how far it has gone, which
@@ -57,7 +71,7 @@ export function startOffsetPhysics<T>(
   const ax = s.axes;
   let dest = o.to == null ? null : axesFor(ax, o.to, 'to');
   const constants = constantsFor(o, kind, dest != null);
-  const { stiffness, damping, mass } = constants;
+  const { stiffness } = constants;
   const given = o.from === undefined ? null : axesFor(ax, o.from, 'from');
   let velocity = o.velocity === undefined ? null : axesFor(ax, o.velocity, 'velocity');
   const restThreshold = o.restThreshold ?? 0.01;
@@ -83,11 +97,9 @@ export function startOffsetPhysics<T>(
   ctx.targets.attach(s as never);
   if (o.to != null) s.set(o.to);
   ctx.seedClock();
-  const voices = createSpringVoices(ctx.codec, s as never, { id, nextId: ctx.nextId, stiffness, damping, mass });
-  if (any(move)) voices.move(move);
-  const top = minus(start, move);
-  if (!any(move) || any(top) || (velocity && any(velocity))) voices.rest(top, velocity ?? zeros(), dest == null);
-  const behind = goBehind(s, voices.moved);
+  const { voices, behind } = startVoices(
+    ctx, s as never, { id, nextId: ctx.nextId, ...constants }, move, start, velocity ?? zeros(), dest == null,
+  );
 
   let left = false;
   const leave = (commit: boolean): void => {
@@ -99,36 +111,39 @@ export function startOffsetPhysics<T>(
     voices.stop();
     ctx.targets.detach(s as never);
   };
-  const finish = (): void => {
-    // A coast commits where it stopped; a spring drops what is left under the threshold.
-    leave(dest == null);
+  /** A coast commits where it stopped, and so does one played back to its start; a spring
+   *  drops what is left under the threshold. */
+  const finish = (commit = dest == null): true => {
+    leave(commit);
     ctx.reportEnd(id);
     o.onDone?.();
+    return true;
   };
+  /** What it shows, for `onTick`. */
+  const shows = (own: readonly number[]): T => ax.from(plus(dest ?? ax.to(s.get()), own));
 
   let ticked = false;
   seed.due = waits.first(start, velocity ?? zeros(), dest == null);
   seed.onCancel = () => leave(true);
-  seed.onRate = (paused, timeScale) => voices.rate(paused ? 0 : timeScale);
+  seed.onRate = (_paused, _timeScale, rate) => voices.rate(rate);
   seed.velocity = () => voices.own().velocity;
-  seed.tick = () => {
+  seed.tick = (nowMs, scale) => {
     if (ctx.tripwire()) { leave(true); return true; }
     const own = voices.own();
-    // A coast too slow to move ends at once rather than emit a tick and wait a frame.
-    if (!ticked && dest == null && norm(own.velocity) < restThreshold) {
-      finish();
-      return true;
+    if (scale < 0 && (nowMs <= 0 || voices.rewound())) {
+      o.onTick?.(shows(own.value));
+      return ctx.has(id) ? finish(true) : true;
     }
+    // A coast too slow to move ends at once rather than emit a tick and wait a frame.
+    if (!ticked && dest == null && norm(own.velocity) < restThreshold) return finish();
     ticked = true;
-    o.onTick?.(ax.from(plus(dest ?? ax.to(s.get()), own.value)));
+    o.onTick?.(shows(own.value));
     if (!ctx.has(id)) return true;
     if (norm(own.velocity) >= restThreshold || (dest && norm(own.value) >= restThreshold)) {
       return waits.again(own.value, own.velocity, dest == null);
     }
     if (dest) o.onTick?.(ax.from(dest));
-    if (!ctx.has(id)) return true;
-    finish();
-    return true;
+    return ctx.has(id) ? finish() : true;
   };
   const base = ctx.register(seed);
 

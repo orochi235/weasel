@@ -40,13 +40,17 @@ function panel() {
 describe('a number leaf with a minAt, in a ControlPanel', () => {
   it('holds a value typed into a paired cell to the bound read from the config', () => {
     const setConfig = panel();
-    fireEvent.change(screen.getByLabelText('H'), { target: { value: '5' } });
+    const field = screen.getByLabelText('H');
+    fireEvent.change(field, { target: { value: '5' } });
+    fireEvent.blur(field);
     expect(setConfig).toHaveBeenLastCalledWith('pose.height', 20);
   });
 
   it('holds a value typed into a row of its own the same way', () => {
     const setConfig = panel();
-    fireEvent.change(screen.getByLabelText('D'), { target: { value: '5' } });
+    const field = screen.getByLabelText('D');
+    fireEvent.change(field, { target: { value: '5' } });
+    fireEvent.blur(field);
     expect(setConfig).toHaveBeenLastCalledWith('pose.depth', 10);
   });
 });

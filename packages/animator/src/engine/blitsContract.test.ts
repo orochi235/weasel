@@ -143,41 +143,23 @@ describe('blits behaviors the animator codec relies on', () => {
     expect(cols.p[0]).toBe(3);
   });
 
-  /** A voice answering whatever `read` returns now, the way a hold answers its value. */
-  const live = (read: () => number[]) =>
-    patch<object, P>(1, () => ({ p: read() }), { writes: ['p'] });
-  const pulled = (m: ReturnType<typeof mix<object, P>>, subject: object): number[] => {
+
+  it('a voice played backward leaves at its start, and its subject then reads as though it never ran', () => {
+    const m = mix<object, P>(kit<P>({ p: vec(2, sum()) }));
+    m.sync(0);
+    const subject = {};
+    const tw = tween<object, P, number[]>('p', { from: [-40, 0], to: [-40, 0], ms: 1000, ease: linear });
+    const h = m.cue({ patch: tw, subjects: [subject] });
+    tw.to(subject, [0, 0], 0);
+    m.sync(300);
+    h.rate = -1;
+    m.sync(500);
     const cols = { p: new Float64Array(2) };
     m.pull([subject], cols);
-    return [...cols.p];
-  };
-
-  it('a patch reading an outside value keeps its answer while the clock stands still, until touch', () => {
-    const m = mix<object, P>(kit<P>({ p: vec(2, sum()) }));
-    m.sync(0);
-    const subject = {};
-    let x = 1;
-    m.cue({ patch: live(() => [x, 0]), subjects: [subject], loop: true });
-    m.sync(16);
-    expect(pulled(m, subject)[0]).toBe(1);
-    x = 2;
-    m.sync(16);
-    expect(pulled(m, subject)[0]).toBe(1);
-    m.touch(subject);
-    expect(pulled(m, subject)[0]).toBe(2);
-    expect(m.probe(subject).p[0]).toBe(2);
-  });
-
-  it('a voice cued or faded since the last sync is in or out of the next read at once', () => {
-    const m = mix<object, P>(kit<P>({ p: vec(2, sum()) }));
-    m.sync(0);
-    const subject = {};
-    const a = m.cue({ patch: live(() => [1, 0]), subjects: [subject], loop: true });
-    m.sync(16);
-    expect(pulled(m, subject)[0]).toBe(1);
-    m.cue({ patch: live(() => [10, 0]), subjects: [subject], loop: true });
-    expect(m.probe(subject).p[0]).toBe(11);
-    a.fade({ over: 0 });
-    expect(m.probe(subject).p[0]).toBe(10);
+    expect(cols.p[0]).toBeCloseTo(-36, 9);
+    m.sync(800);
+    m.pull([subject], cols);
+    expect(h.state).toBe('done');
+    expect(cols.p[0]).toBe(0);
   });
 });

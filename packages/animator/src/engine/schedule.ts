@@ -10,6 +10,11 @@ export interface Schedule {
   remove(a: ActiveAnimation): void;
   /** Sets `a`'s pause and time scale, leaving its clock where it stands. */
   pace(a: ActiveAnimation, paused: boolean, timeScale: number): void;
+  /** `a`'s rate now: its own time scale, 0 while paused, and below 0 while it plays backward. */
+  rateOf(a: ActiveAnimation): number;
+  /** Runs `flip`, which turns the direction the animations play in, leaving every one of `all`
+   *  with its clock where it stands. */
+  turn(all: Iterable<ActiveAnimation>, flip: () => void): void;
   /** Leaves `a` unticked until its clock has run `ms` more, whether it was waiting already or
    *  ticked every frame. Nothing for an `a` that has left. */
   defer(a: ActiveAnimation | undefined, ms: number): void;
@@ -23,8 +28,9 @@ export interface Schedule {
   clear(): void;
 }
 
-/** `elapsed` answers the animator's clock: its time scale and pauses are already in it. */
-export function createSchedule(elapsed: () => number): Schedule {
+/** `elapsed` answers the animator's clock, which only goes forward: its time scale and pauses
+ *  are already in it. `direction` is -1 while the animator plays backward. */
+export function createSchedule(elapsed: () => number, direction: () => number = () => 1): Schedule {
   /** Ticked every frame, in the order they joined. */
   const every = new Set<ActiveAnimation>();
   /** Waiting for the animator's clock to reach the time their own reaches `due`. */
@@ -34,11 +40,30 @@ export function createSchedule(elapsed: () => number): Schedule {
   /** With a `due` and not yet woken, whether or not a rate above 0 has it in `wakes`. */
   let waiting = 0;
 
-  const rateOf = (a: ActiveAnimation): number => (a.paused ? 0 : a.timeScale);
+  const rateOf = (a: ActiveAnimation): number => (a.paused ? 0 : a.timeScale * direction());
   const clockOf = (a: ActiveAnimation): number => a.base + (elapsed() - a.anchor) * rateOf(a);
+  const rebase = (a: ActiveAnimation): void => {
+    a.base = clockOf(a);
+    a.anchor = elapsed();
+  };
 
+  /** Has `a` wait for its `due`. One playing backward is ticked every frame instead: it ends
+   *  where its clock gets back to 0, which no `due` ahead of it marks. */
   const wait = (a: ActiveAnimation): void => {
     const rate = rateOf(a);
+    if (rate < 0 && a.due! < Infinity) {
+      if (every.has(a)) return;
+      wakes.remove(a);
+      waiting -= 1;
+      every.add(a);
+      a.rewinding = true;
+      return;
+    }
+    if (a.rewinding) {
+      a.rewinding = false;
+      every.delete(a);
+      waiting += 1;
+    }
     if (rate > 0 && a.due! < Infinity) wakes.set(a, a.anchor + (a.due! - a.base) / rate);
     else wakes.remove(a);
   };
@@ -51,6 +76,7 @@ export function createSchedule(elapsed: () => number): Schedule {
       a.seq = seq++;
       a.heapAt = -1;
       a.wakeAt = Infinity;
+      a.rewinding = false;
       if (!a.idle) awake += 1;
       if (a.due === undefined) {
         every.add(a);
@@ -66,16 +92,23 @@ export function createSchedule(elapsed: () => number): Schedule {
       wakes.remove(a);
     },
     pace(a, paused, timeScale) {
-      a.base = clockOf(a);
-      a.anchor = elapsed();
+      rebase(a);
       a.paused = paused;
       a.timeScale = timeScale;
-      if (!every.has(a)) wait(a);
+      if (!every.has(a) || a.rewinding) wait(a);
+    },
+    rateOf,
+    turn(all, flip) {
+      const each = [...all];
+      for (const a of each) rebase(a);
+      flip();
+      for (const a of each) if (!every.has(a) || a.rewinding) wait(a);
     },
     defer(a, ms) {
       if (!a) return;
       a.due = clockOf(a) + ms;
       if (every.delete(a)) waiting += 1;
+      a.rewinding = false;
       wait(a);
     },
     ticks() {

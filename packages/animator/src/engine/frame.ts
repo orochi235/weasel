@@ -30,8 +30,8 @@ export interface FrameHost {
   afterTicks: (() => void)[];
   /** Told once a frame, after its ticks and its targets are shown. */
   subscribers: Pick<Emitter, 'emit'>;
-  /** Reads each touched target's voices again. */
-  reread(): void;
+  /** Folds again the holds of each target a tick touched. */
+  refold(): void;
   requestFrame(): void;
   /** True once the host has unmounted; logs the first time. */
   tripwire(): boolean;
@@ -97,7 +97,8 @@ export function createFrame(host: FrameHost): Frame {
       const frameDt = clock.frameT == null ? 0 : Math.max(0, t - clock.frameT);
       clock.frameT = t;
       framing = true;
-      const dt = frameDt * (clock.paused ? 0 : clock.timeScale);
+      // Backward is each animation's own rate: the clock under them only goes forward.
+      const dt = frameDt * (clock.paused ? 0 : Math.abs(clock.timeScale));
       clock.elapsed += dt;
       host.codec.frame(dt);
       host.targets.settle();
@@ -109,7 +110,7 @@ export function createFrame(host: FrameHost): Frame {
       for (const cb of host.afterTicks.splice(0)) {
         try { cb(); } catch (err) { console.error('useAnimator: a staggered start threw', err); }
       }
-      host.reread();
+      host.refold();
       framing = false;
       host.targets.show();
       // After the tick batch, so each subscriber sees the latest color overrides and poses.

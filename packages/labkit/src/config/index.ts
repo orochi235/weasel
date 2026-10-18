@@ -39,6 +39,8 @@ export type {
   BranchAnnotations,
   Branching,
   BranchOptions,
+  ConfigActionContext,
+  ConfigActionRun,
   ConfigBranch,
   ConfigEntry,
   ConfigNode,

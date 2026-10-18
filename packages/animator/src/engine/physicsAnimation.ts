@@ -58,24 +58,33 @@ export function startPhysics<T>(
     });
   }
 
+  /** Ends it. As for a tween: canceled from its own onTick, it never completes. */
+  const end = (): true => {
+    codec.stop(id);
+    if (ctx.has(id)) {
+      ctx.reportEnd(id);
+      o.onDone?.();
+    }
+    return true;
+  };
   const baseHandle = ctx.register({
     id,
     kind,
     cancelKey: o.cancelKey,
     label: o.label,
-    tick(nowMs) {
+    tick(nowMs, rate) {
       if (ctx.tripwire()) { codec.stop(id); return true; }
+      // Played backward, it ends where it started, as a tween does.
+      if (rate < 0 && (nowMs <= 0 || (axes && codec.rewound(id)))) {
+        o.onTick(axes ? axes.from(reader!.motion().value) : o.from);
+        return end();
+      }
       if (lastTime == null) {
         lastTime = nowMs;
         // Already-at-rest short-circuit: decay-mode (target == null)
         // with starting velocity below threshold should complete
         // immediately rather than emit a tick and wait a frame.
-        if (target == null && magnitude(velocity) < restThreshold) {
-          codec.stop(id);
-          ctx.reportEnd(id);
-          o.onDone?.();
-          return true;
-        }
+        if (target == null && magnitude(velocity) < restThreshold) return end();
         // The codec's voice has run since registration, so only Euler starts its clock here.
         if (!axes) {
           o.onTick(value);
@@ -88,7 +97,7 @@ export function startPhysics<T>(
         velocity = axes.from(m.velocity);
       } else {
         // Semi-implicit Euler, for a T blits cannot move as axes, or constants its closed forms can't solve.
-        const dt = Math.min(0.064, (nowMs - lastTime) / 1000);
+        const dt = Math.max(-0.064, Math.min(0.064, (nowMs - lastTime) / 1000));
         const next = stepSpring({ add, subtract, scale }, value, velocity, target, kBase, damping, mass, dt);
         value = next.value;
         velocity = next.velocity;
@@ -99,17 +108,9 @@ export function startPhysics<T>(
       const posRested = target == null
         ? true
         : magnitude(subtract(value, target)) < restThreshold;
-      if (velRested && posRested) {
-        if (target != null) o.onTick(target);
-        codec.stop(id);
-        // As for a tween: canceled from its own onTick, it never completes.
-        if (ctx.has(id)) {
-          ctx.reportEnd(id);
-          o.onDone?.();
-        }
-        return true;
-      }
-      return false;
+      if (!velRested || !posRested) return false;
+      if (target != null) o.onTick(target);
+      return end();
     },
   });
 

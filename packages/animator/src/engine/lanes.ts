@@ -9,6 +9,8 @@ export interface Reader {
   readonly cols: Float64Array;
   /** Where the subject's axes start in `cols`. */
   readonly at: number;
+  /** How many voices reach it: 0 once the last has left, and it reads what it showed then. */
+  readonly refs: number;
 }
 
 /** One subject of a lane: what `pull` reads for it, summed over every voice reaching it. */
@@ -73,10 +75,6 @@ export interface Lanes {
   leave(slot: Slot): void;
   /** Syncs every lane to `time` and reads its subjects. */
   frame(time: number): void;
-  /** Says what a voice on `key` reads from outside has changed since the last `frame`. */
-  touch(key: unknown): void;
-  /** Reads each touched subject again where the clock stands, then hands it to `each`. */
-  refresh(each: (slot: Slot) => void): void;
 }
 
 /** Takes `s` out of its lane's places, moving the last one into the gap. */
@@ -127,7 +125,8 @@ function rebuild(l: Lane): void {
 export function createLanes(placeOf?: (key: object) => LanePlace | undefined): Lanes {
   const lanes = new Map<unknown, Lane>();
   const slots = new Map<unknown, Slot>();
-  const touched = new Set<Slot>();
+  /** Slots whose last voice left since the last frame. */
+  const gone: Slot[] = [];
   let now = 0;
 
   const laneOf = (axes: number, group: object | undefined): Lane => {
@@ -168,12 +167,20 @@ export function createLanes(placeOf?: (key: object) => LanePlace | undefined): L
     leave(s) {
       s.refs -= 1;
       if (s.refs > 0) return;
+      // Whoever holds it reads what it showed as its last voice left, until the next frame.
+      const n = s.lane.axes;
+      s.held.set(s.cols.subarray(s.at, s.at + n));
       s.lane.mix.drop(s.key);
       depart(s);
+      s.cols = s.held;
+      s.at = 0;
+      gone.push(s);
       slots.delete(s.key);
     },
     frame(time) {
       now = time;
+      for (const s of gone) s.held.fill(0);
+      gone.length = 0;
       for (const l of lanes.values()) {
         if (l.dirty) rebuild(l);
         if (l.keys.length === 0 && ++l.idle >= 2) {
@@ -185,26 +192,10 @@ export function createLanes(placeOf?: (key: object) => LanePlace | undefined): L
         l.idle = 0;
         l.mix.pull(l.keys, l.cols);
       }
-      touched.clear();
     },
     columns(group) {
       const l = lanes.get(group);
       return l ? { cols: l.cols.v, tags: l.tags, count: l.keys.length } : null;
-    },
-    touch(key) {
-      const s = slots.get(key);
-      if (!s) return;
-      s.lane.mix.touch(key);
-      touched.add(s);
-    },
-    refresh(each) {
-      for (const s of touched) {
-        touched.delete(s);
-        if (slots.get(s.key) !== s) continue;
-        const out = s.lane.mix.probe(s.key, { v: new Array<number>(s.lane.axes).fill(0) });
-        s.cols.set(out.v, s.at);
-        each(s);
-      }
     },
   };
 }

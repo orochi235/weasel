@@ -1,7 +1,7 @@
 import { createEmitter } from '@weasel-js/registry';
 import type { AnimationHandle } from '../types';
 import { createBooker } from './booking';
-import { createEventFirer } from './fireEvents';
+import { createEventCursor, createEventFirer } from './fireEvents';
 import { createTrackSampler, type OpenTrackHold } from './trackHolds';
 import type { EventTrack, TimelineEvent, TimelineHandle, TimelineOptions, Track } from './types';
 
@@ -48,11 +48,15 @@ function tracksEnd(tracks: Track[], explicit?: number): number {
 
 /** Hands `take` the laps a playhead at or past `duration` has crossed, of those left, all at
  *  once: a frame that skips whole laps fires the outgoing lap's tail and the lap it lands in,
- *  and nothing of the laps in between. */
-function crossLaps(playhead: number, duration: number, loopsLeft: number, take: (laps: number) => void): void {
-  if (duration <= 0 || playhead < duration) return;
-  const laps = Math.min(Math.floor(playhead / duration), loopsLeft);
-  if (laps > 0) take(laps);
+ *  and nothing of the laps in between. Played backward below 0, it hands the laps crossed back
+ *  into, of the `lap` behind it, as a count below 0. */
+function crossLaps(
+  playhead: number, duration: number, loopsLeft: number, lap: number, take: (laps: number) => void,
+): void {
+  if (duration <= 0) return;
+  const laps = playhead >= duration ? Math.min(Math.floor(playhead / duration), loopsLeft)
+    : playhead < 0 ? -Math.min(Math.ceil(-playhead / duration), lap) : 0;
+  if (laps !== 0) take(laps);
 }
 
 /**
@@ -76,14 +80,11 @@ export function createTimeline(
   let offset = 0;
   let lastVirtual = 0;
   let playhead = 0;
-  let prevPlayhead = -Infinity;
-  /** A seek leaves the event it landed on unfired, so the next span starts at it. */
-  let prevOpen = false;
   /** A held playhead fires nothing: what it sits on waits for playback to move. */
   let held = false;
   let done = false;
   let live = true;
-  let cancelled = false;
+  let canceled = false;
   let wantPaused = opts.autoplay === false;
   let wantScale = 1;
 
@@ -106,14 +107,13 @@ export function createTimeline(
     : null;
   const sampler = createTrackSampler(hold);
 
-  const fireEvents = createEventFirer(report, booker !== null);
+  const events = createEventCursor(createEventFirer(report, booker !== null));
 
   // Flush the outgoing pass's tail before re-arming, or an event between the
   // last tick and `duration` is dropped whenever a frame straddles the seam.
-  const onWrap = (): void => {
-    if (!held) fireEvents(opts.tracks, prevPlayhead, duration, prevOpen);
-    prevPlayhead = -Infinity;
-    prevOpen = false;
+  const onWrap = (laps: number): void => {
+    if (!held && laps > 0) events.to(opts.tracks, duration);
+    events.place(laps > 0 ? -Infinity : playhead, false);
     if (report?.watched) report.lap(lap);
   };
 
@@ -125,41 +125,39 @@ export function createTimeline(
     const parked = held && duration > 0 && playhead === duration && loopsLeft > 0;
     if (!parked) {
       playhead = virtualNow + offset;
-      crossLaps(playhead, duration, loopsLeft, (laps) => {
+      crossLaps(playhead, duration, loopsLeft, lap, (laps) => {
         loopsLeft -= laps;
         offset -= laps * duration;
         playhead -= laps * duration;
         lap += laps;
-        onWrap();
+        onWrap(laps);
       });
     }
 
     const finished = playhead >= duration && !parked;
-    playhead = Math.min(playhead, duration);
+    // Played backward, it ends at its start as it ends at its end going forward.
+    const rewound = rate < 0 && playhead <= 0;
+    playhead = Math.min(Math.max(playhead, 0), duration);
 
     // Sampled before fired, so a handler reads the current frame's values.
     sampler.apply(opts.tracks, playhead);
-    if (!held) {
-      fireEvents(opts.tracks, prevPlayhead, playhead, prevOpen);
-      prevPlayhead = playhead;
-      prevOpen = false;
-    }
+    if (!held) events.to(opts.tracks, playhead);
     booker?.tick(virtualNow, rate);
 
-    if (finished && !done) { done = true; opts.onDone?.(); playbackChanged(); }
+    if ((finished || rewound) && !done) { done = true; opts.onDone?.(); playbackChanged(); }
     // Re-read: `onDone` may have seeked back or extended the duration, and
     // retiring the entry would strand the replay its own handler just started.
-    if (playhead < duration || parked) return false;
+    if ((rewound ? playhead > 0 : playhead < duration) || parked) return false;
     live = false;
     sampler.release();
     return true;
   };
 
   // Every cancel path inside the animator routes through here, so a timeline
-  // cancelled by key or by `cancelAll` is as dead as one cancelled by hand.
+  // canceled by key or by `cancelAll` is as dead as one canceled by hand.
   const onCancel = (): void => {
-    const first = !cancelled;
-    cancelled = true;
+    const first = !canceled;
+    canceled = true;
     live = false;
     booker?.retract();
     sampler.release();
@@ -176,7 +174,7 @@ export function createTimeline(
   /** Put a finished timeline back on the animator's table. A re-registered
    *  entry's `virtualNow` restarts at 0, so `offset` carries the playhead. */
   const rearm = (): void => {
-    if (cancelled || playhead >= duration) return;
+    if (canceled || playhead >= duration) return;
     done = false;
     if (live) return;
     booker?.rearm();
@@ -208,8 +206,7 @@ export function createTimeline(
       booker?.retract();
       offset = t - lastVirtual;
       playhead = t;
-      prevPlayhead = t;
-      prevOpen = true;
+      events.place(t, true);
       booker?.seek();
       rearm();
       sampleNow();

@@ -110,6 +110,7 @@ export {
   type PrefCustom,
   type PrefEnum,
   type PrefEnumBase,
+  type PrefNumberBase,
   type PrefEnumControl,
   type PrefEnumEncoding,
   type PrefField,

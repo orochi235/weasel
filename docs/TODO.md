@@ -559,24 +559,6 @@ Priority tags:
 
 Animations combine through targets, described in `docs/concepts.md` ("Animation target").
 
-- **(P3) A target table row is read by itself while an animation is behind a hold on it** —
-  a row is shown by the table's pass over its columns (`fill` in
-  `packages/animator/src/targetTable.ts`) except while a tween or spring with a destination
-  runs under a hold on it, and while something a stopped animation left waits beside a hold:
-  then it is read at a single target's cost. What a hold hides of such a move is worked out
-  per animation and per axis (`hidden` in `packages/animator/src/target.ts`), which the pass
-  has no column for, and blits weighs a voice whole, so the hidden share cannot ride on the
-  animation's own voice.
-- **(P3) A hold whose value is a function costs 0.3 to 0.7 µs a frame, where a tween costs
-  under 0.1** — `node tests/perf/target-reads/run.mjs table 10000 heldfn`. A timeline track, a
-  rig clip, and any `animator.hold` given a function are such holds; a hold of plain values is
-  not. What a function costs, from the CPU profile at 10,000: a quarter is blits running a
-  voice that answers through a function (`rows`, `call`, `foldInto`, `ready`, and a `WeakMap`
-  read per voice); the rest is the hold's own voice reaching, one after another, the group,
-  each member, the function that gives its value, that value, and the committed value. The
-  design left would move it and is not started: holds on a target table's rows could keep
-  their values and weights as rows of the table's own arrays, which adds public API to the
-  table whose shape is not ruled on.
 - **(P2) Take the blits release that makes stopping an animation cheap.** With 100 animations
   restarted a frame, a cancel cost 5 µs with 1,000 running and 21 with 10,000, because blits'
   `forget` walked every subject the mix held. blits `b97c8c1` (unreleased, on 0.10.0) stops that:
@@ -584,15 +566,15 @@ Animations combine through targets, described in `docs/concepts.md` ("Animation 
   2.4–2.9 at 10,000 and the frame after from 1.99–2.15 ms to 1.26–1.43. `animator`, `core`, and
   `labkit` pin `@msb235/blits` at exactly 0.10.0, so nothing reaches weasel until blits releases
   and the three pins move. blits' changelog holds a breaking change for that release, `loop`
-  defaulting to one pass, so every `cue` here that leaves `loop` out needs reading first
-  (`packages/animator/src/engine/holdVoices.ts` has one). After the bump, rerun
+  defaulting to one pass, so every `cue` here that leaves `loop` out needs reading first:
+  two in `packages/animator/src/engine/codec.ts` (a spring's voice and a queued tween's) and
+  `packages/core/src/core/scene/poseOverrides.ts`. After the bump, rerun
   `node tests/perf/target-reads/run.mjs churn 1000 10000`, which has not been run against the fix.
 
-- **(P3) Playing an animation backward** — a time scale below 0 is refused where it is set
-  (`timeScaleOf`, `engine/table.ts`). Playing backward needs the animator's clock to keep going
-  forward and hand each voice a rate below 0, which blits 0.9.0 ends where the voice started,
-  and an answer for what a tween run back to its start does: a blits voice past its start
-  reads 0, which for a tween on a target is its destination.
+- **(P3) A loop played backward ends after its current pass.** With a time scale below 0, a
+  `loop` runs its pass in flight back to its start and stops there rather than replaying the
+  passes before it backward, because nothing can start a primitive at its end. Timelines already
+  run back through their laps (`timeScale.composites.test.tsx`).
 
 ### Earlier deferrals
 
@@ -632,42 +614,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   `PrefsForm` and labkit on a top-level row. A field of an object (`data.stroke.width`) is drawn
   by `objectField.tsx`, whose context has no nodes, and written as the whole object, which the
   per-node clamp in `commitLeaf.ts` does not walk into. No schema bounds a field that way yet.
-
-- **(P2) `ThemeProvider` drops a `selection.mode` that is not a concrete mode, with no warning.**
-  blits' site passed `selection={{ mode: 'auto' }}` and got the theme's default, dark, on a light
-  page; it now resolves the mode first with `useResolvedColorMode('auto')`. Either accept `'auto'`
-  there and resolve it, or warn in dev on a mode the theme does not have.
-
-- **(P2) labkit's control panels never set their own text color.** Dimmed labels inherit the
-  page's ink, so a light page puts dark text on a near-black panel — contrast about 1:1 on blits'
-  Patch page. blits works around it with `color: var(--wzl-fg)` on the provider's wrapper (blits
-  `ccda71e`, `site/src/styles/site.css`). The panel root should set `color` itself.
-
-- **(P2) Gaps blits hit moving its playground onto labkit's `ControlPanel` and `f` (1.10.1).** Each
-  is worked around in blits' `apps/playground/src/app/CompositionControls.tsx` (`DraftRow`,
-  `drafted`) and `SpecFields.tsx`; those are the specs for the fixes.
-  - Number and text rows write on every keystroke, so one typed value is many undo steps. Use the
-    ui fields' draft-and-commit-on-blur; the text draft should also cancel on Escape.
-  - `.resettable()` groups write each value through its own `setConfig`: several undo steps, and a
-    stale-state race. Write the group as one change.
-  - `.dialog()` has no cancel; Escape commits.
-  - `showIf` on an enum value that is not among the enum's options throws, which crashed a whole
-    panel. Treat it as never matching.
-  - A number row cannot be cleared to mean unset/default (blank reverts), and `NumberNode` has no
-    min-only bound.
-  - `PropertyRow`/`ControlPanel` have no slot for a row's validation message.
-  - A section whose rows are all hidden still draws its heading.
-  - An `f.action` row repeats the button text as its label, and an action's run cannot reach the
-    panel's props.
-  - No "changed from baseline" marking; `PrefsForm` has one.
-  - `f` boolean and string leaves get the auto-pin toggle on their label unless `.manual()`, which
-    is easy to miss. Either make it opt-in or make the default obvious.
-  - A custom renderer's context does not carry the config.
-  - `ControlMatrix` cannot set a summary for a custom leaf's cell, and first-column inheritance is
-    its only model; there is no plain grid.
-  - `ListEditor` has no reorder and offers one kind of new entry.
-  - `EasingPicker` always renders its own "Easing" label, doubling the row's.
-  - In the two-column grid a bar or custom row takes a half cell unless its section is one-up.
 
 - **(P3) The menu bar's default access chord, Alt, is unverified in Chrome on Windows, which may
   open its own menu on Alt+F; check there before relying on it.**
@@ -1108,6 +1054,14 @@ only story runner in the repo.
 ---
 
 ## Release-gate & build hygiene
+
+- **(P2) Nothing runs the stories' `play` checks.** CI, `npm test`, and the fleet's
+  `.onto/tests` all leave out the `forge-stories` vitest project, and CI's comment says it
+  "exists only to validate that stories can mount" — but plays assert layout jsdom cannot, and
+  `Prefs.stories.tsx`'s Rail play failed on `main` from 2026-10-14 (`815a44787`, a wider rail
+  gutter) until it was found by hand on 2026-10-18. The fleet already runs headless Chromium
+  for `browser`, so adding `--project=forge-stories` there costs wall time, not a new
+  dependency; run `npm run test:stories:forge` once first to see which plays are failing now.
 
 - **(P3) `onto test --spread` fails a run whose tree moved, where the other commands sync again.**
   onto `f621d8b` makes a launch carry the stamp its own sync was answered with, so a suite can no

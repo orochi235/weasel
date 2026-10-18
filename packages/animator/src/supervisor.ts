@@ -17,6 +17,8 @@ export interface Supervisor {
   setTimeScale(s: number): void;
   timeScale(): number;
   isPaused(): boolean;
+  /** The rate its clock runs at, the animator's own included: below 0 while it plays backward. */
+  rate(): number;
   setOnCancel(cb: () => void): void;
   /** `cb` hears every pause, resume, and time scale set on the entry, by its
    *  handle or by `cancelKey`, so the composite can pass it to its children. */
@@ -48,6 +50,8 @@ export interface SupervisorHost {
   finish(id: number): void;
   /** Runs `cb` once this frame's ticks are done. */
   afterTicks(cb: () => void): void;
+  /** The rate entry `id`'s clock runs at; 0 for one that has left. */
+  rateOf(id: number): number;
 }
 
 /** Makes the animator's supervisor factory: each is a registered animation whose tick never
@@ -79,6 +83,7 @@ export function supervisors(host: SupervisorHost): SupervisorFactory {
       setTimeScale: base.setTimeScale,
       timeScale: base.timeScale,
       isPaused: base.isPaused,
+      rate: () => host.rateOf(id),
       setOnCancel: (cb) => { onCancelCb = cb; },
       setOnRate: (cb) => { onRateCb = cb; },
       setOnFrame: (cb) => { onFrameCb = cb; },

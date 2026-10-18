@@ -38,6 +38,7 @@ describe('f.list', () => {
     fireEvent.change(screen.getByRole('textbox', { name: 'Draw as icons 2' }), {
       target: { value: 'build' },
     });
+    fireEvent.click(screen.getByRole('button', { name: 'Done' }));
     expect(screen.getByTestId('config').textContent).toBe(
       JSON.stringify({ icons: ['**/node_modules/**', 'build'] }),
     );
@@ -61,6 +62,7 @@ describe('.dialog', () => {
     renderWithIcons(<Panel schema={schema} />);
     fireEvent.click(screen.getByRole('button', { name: 'Edit Note' }));
     fireEvent.click(screen.getByRole('button', { name: 'shout' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Done' }));
     expect(screen.getByTestId('config').textContent).toBe(JSON.stringify({ note: 'hi!' }));
   });
 

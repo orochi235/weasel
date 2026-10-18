@@ -41,6 +41,10 @@ export interface PropertyFieldRowProps extends PropertyMetricProps {
   onAutoChange?: (next: boolean) => void;
   /** What the row reads when it is auto — see `<PropertyRow autoValue>`. */
   autoValue?: ReactNode;
+  /** The value differs from a baseline of the caller's — see `<PropertyRow changed>`. */
+  changed?: boolean;
+  /** What is wrong with the value — see `<PropertyRow error>`. */
+  error?: ReactNode;
   /** Class on the row. `controlClassName` reaches the control. */
   rowClassName?: string;
   controlClassName?: string;
@@ -79,6 +83,8 @@ export function PropertyField<T extends string = string>(props: PropertyFieldPro
     auto,
     onAutoChange,
     autoValue,
+    changed,
+    error,
     rowClassName,
     controlClassName,
     ...field
@@ -105,6 +111,8 @@ export function PropertyField<T extends string = string>(props: PropertyFieldPro
     auto,
     onAutoChange,
     autoValue,
+    changed,
+    error,
     className: rowClassName,
     variant: shape.variant,
     group: shape.group,

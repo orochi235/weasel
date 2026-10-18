@@ -133,20 +133,32 @@ function BooleanControl(p: PropertyBooleanFieldProps) {
 /**
  * The text a field shows and how an edit to it lands: the draft shows while it
  * differs from `value`, `onInput` gets each keystroke, and the draft settles
- * through `onChange` on blur or Enter.
+ * through `onChange` on blur or Enter. Escape drops it, and gives `onInput` back
+ * the value typing began from.
  */
 function useTextEdit(p: PropertyStringFieldProps) {
   const [draft, setDraft] = useState<string | null>(null);
+  // Escape leaves by blurring, and that blur runs the handler of the render before the draft was dropped.
+  const canceled = useRef(false);
   const value = p.mixed ? '' : (p.value ?? '');
   return {
     shown: draft ?? value,
     type: (next: string) => {
+      canceled.current = false;
       setDraft(next);
       p.onInput?.(next);
     },
     settle: () => {
-      if (draft !== null && draft !== value) p.onChange(draft);
+      if (draft !== null && draft !== value && !canceled.current) p.onChange(draft);
+      canceled.current = false;
       setDraft(null);
+    },
+    keyDown: (e: { key: string; target: EventTarget }) => {
+      if (e.key !== 'Escape') return;
+      canceled.current = true;
+      if (draft !== null) p.onInput?.(value);
+      setDraft(null);
+      (e.target as HTMLElement).blur();
     },
   };
 }
@@ -167,6 +179,7 @@ function StringControl(p: PropertyStringFieldProps) {
         rows={3}
         onChange={(e) => edit.type(e.target.value)}
         onBlur={edit.settle}
+        onKeyDown={edit.keyDown}
       />
     );
   }
@@ -183,6 +196,7 @@ function StringControl(p: PropertyStringFieldProps) {
       onBlur={edit.settle}
       onKeyDown={(e) => {
         if (e.key === 'Enter') (e.target as HTMLElement).blur();
+        else edit.keyDown(e);
       }}
     />
   );

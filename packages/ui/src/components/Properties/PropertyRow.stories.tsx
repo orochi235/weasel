@@ -39,6 +39,24 @@ export const WithReadout: Story = {
   ),
 };
 
+/** A validation message sits under the control, across the row, in either layout. */
+export const WithError: Story = {
+  render: () => (
+    <SideBySide
+      block={
+        <PropertyRow label="Name" error="needs a name">
+          <input type="text" />
+        </PropertyRow>
+      }
+      inline={
+        <PropertyRow label="Name" layout="inline" error="needs a name">
+          <input type="text" />
+        </PropertyRow>
+      }
+    />
+  ),
+};
+
 export const Variants: Story = {
   tags: ['gallery'],
   render: () => (

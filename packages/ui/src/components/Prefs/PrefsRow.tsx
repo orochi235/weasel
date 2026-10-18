@@ -46,6 +46,11 @@ export interface PrefRenderContext {
   pref: PrefLeaf;
   /** Current value — `values` at `path`, falling back to `pref.default`. */
   value: unknown;
+  /** Everything the surface edits, from its root: a form's `values`, a control panel's `config`. What a row
+   *  reads of another setting. */
+  values?: unknown;
+  /** The surface marks this leaf's row as changed: a renderer drawing its whole row passes it to `PropertyRow`. */
+  changed?: boolean;
   /** The leaf stands for several values that disagree; `value` is undefined. */
   mixed?: boolean;
   setValue: (value: unknown) => void;
@@ -73,6 +78,9 @@ export interface PrefRenderContext {
   /** Which live controls write only the value an edit settles on, as the form's kit settings have it. Absent, the
    *  form's defaults. */
   settles?: Readonly<Record<LiveControl, boolean>>;
+  /** What is wrong with the value, where the surface has a message for this leaf. A renderer drawing its own
+   *  `<PropertyRow>` hands it to the row's `error`. */
+  error?: ReactNode;
 }
 
 /**
@@ -175,6 +183,8 @@ export function prefRenderContext(
     path,
     pref: pref.kind === 'number' ? prefNumberAt(pref as PrefNumber, (p) => prefValueAtPath(ctx.values, p)) : pref,
     value: mixed ? undefined : stored !== undefined ? stored : pref.default,
+    values: ctx.values,
+    ...(ctx.changed?.has(path) ? { changed: true } : {}),
     mixed,
     setValue: (v) => ctx.onChange(path, v),
     mixedAt: (at, below = false) => pathIsMixed(ctx.mixed, from + at.slice(path.length), below),

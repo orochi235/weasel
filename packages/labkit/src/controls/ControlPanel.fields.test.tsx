@@ -90,13 +90,14 @@ describe('<ControlPanel> number', () => {
     expect(input.value).toBe('42');
   });
 
-  it('clamps to [min, max] as it is typed', () => {
+  it('clamps to [min, max] what is typed', () => {
     const setConfig = vi.fn();
     const fields: ConfigField[] = [
       { key: 'n', label: 'N', type: 'number', default: 0, min: 0, max: 100 },
     ];
     renderWithIcons(<ControlPanel fields={fields} config={{ n: 50 }} setConfig={setConfig} />);
     fireEvent.change(screen.getByRole('spinbutton'), { target: { value: '999' } });
+    fireEvent.blur(screen.getByRole('spinbutton'));
     expect(setConfig).toHaveBeenCalledWith('n', 100);
   });
 });
@@ -120,14 +121,21 @@ describe('<ControlPanel> text', () => {
     expect(input.maxLength).toBe(10);
   });
 
-  it('calls setConfig live when debounceMs is 0', () => {
-    const setConfig = vi.fn();
+  it('drafts every keystroke when debounceMs is 0', () => {
+    const draftConfig = vi.fn();
     const fields: ConfigField[] = [
       { key: 't', label: 'T', type: 'text', default: '', debounceMs: 0 },
     ];
-    renderWithIcons(<ControlPanel fields={fields} config={{ t: '' }} setConfig={setConfig} />);
+    renderWithIcons(
+      <ControlPanel
+        fields={fields}
+        config={{ t: '' }}
+        setConfig={vi.fn()}
+        draftConfig={draftConfig}
+      />,
+    );
     fireEvent.change(screen.getByLabelText('T'), { target: { value: 'a' } });
-    expect(setConfig).toHaveBeenCalledWith('t', 'a');
+    expect(draftConfig).toHaveBeenCalledWith('t', 'a');
   });
 });
 
