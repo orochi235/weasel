@@ -7,7 +7,7 @@ export {
   specOfData, symmetryCopies, symmetryGroupOf, symmetryGroupSpec, symmetryRegistry,
   type SymmetryGroupData, type SymmetryGroupOptions, type SymmetryPose,
 } from './group';
-export { bakeSymmetry, type BakeResult } from './bake';
+export { bakeSymmetry, carryPose, type BakeResult } from './bake';
 export {
   SYMMETRY_GUIDE_ID, SYMMETRY_HANDLE_KIND, guideHandles, symmetryGuideLayer,
   type SymmetryGuideSource, type SymmetryGuideStyle, type SymmetryHandle, type SymmetryHandlePress,

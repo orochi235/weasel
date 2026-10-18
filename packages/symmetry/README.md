@@ -54,7 +54,7 @@ symmetry.create({ center: { x: 300, y: 200 }, symmetry: { kind: 'kaleidoscope', 
 
 `symmetry.update(id, { spec, center })` changes a group as one undo step.
 `symmetry.bake(id)` replaces it with a plain group holding real copies of its
-path leaves.
+leaves, each one's pose turned or mirrored the way the live copy drew it.
 
 Without `symmetryRegistry` a group still draws, but `scene.toJSON()` refuses
 it. Exported to SVG, each copy is written as a transformed group.

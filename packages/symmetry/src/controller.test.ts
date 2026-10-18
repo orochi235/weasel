@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   asNodeId, createScene, sceneFromJSON, type NodeId, type RectPose, type SceneRegistry,
 } from '@weasel-js/core';
-import { boundsOfPath, rectPath, type Path } from '@weasel-js/geom';
+import { rectPath } from '@weasel-js/geom';
 import { createSymmetry } from './controller';
 import { isSymmetryGroup, symmetryCopies, symmetryRegistry } from './group';
 import { VERTICAL_AXIS } from './kinds';
@@ -109,21 +109,46 @@ describe('bake', () => {
     expect(kids).toHaveLength(2);
     expect(kids[0]).toBe(leaf);
     const copy = scene.get(kids[1])!;
-    expect(copy.pose).toMatchObject({ x: 70, y: 10, width: 10, height: 10 });
-    expect(boundsOfPath((copy.data as { path: Path }).path)).toMatchObject({ x: 70, y: 10 });
+    expect(copy.pose).toEqual({ x: 70, y: 10, width: 10, height: 10, transform: [-1, 0, 0, 1] });
     expect(scene.historyEntries()).toHaveLength(before + 1);
     scene.undo();
     expect(isSymmetryGroup(scene as never, group)).toBe(true);
     expect(scene.childrenOf(group)).toEqual([leaf]);
   });
 
-  it('reports a leaf it cannot copy and keeps it', () => {
+  it('copies a text leaf, mirrored the way the live copy drew it', () => {
     const { scene, sym, group } = setup();
-    const label = scene.add({
-      kind: 'leaf', layer: 'main', parent: group, pose: { x: 0, y: 0, width: 5, height: 5 }, data: { text: 'hi' },
+    scene.add({
+      kind: 'leaf', layer: 'main', parent: group, id: asNodeId('label'),
+      pose: { x: 0, y: 0, width: 5, height: 5 }, data: { text: 'hi' },
     });
     const out = sym.bake(group)!;
-    expect(out.skipped).toEqual([label]);
-    expect(scene.childrenOf(out.group)).toContain(label);
+    expect(out.skipped).toEqual([]);
+    const copies = scene.childrenOf(out.group).map((id) => scene.get(id)!).filter((n) => (n.data as { text?: string }).text);
+    expect(copies).toHaveLength(2);
+    expect(copies[1].pose).toEqual({ x: 195, y: 0, width: 5, height: 5, transform: [-1, 0, 0, 1] });
+  });
+
+  it('turns a copy through its pose, so a paint laid out in its box turns with it', () => {
+    const { scene, sym, group, leaf } = setup();
+    sym.update(group, { spec: { kind: 'point' } });
+    const out = sym.bake(group)!;
+    const copy = scene.get(scene.childrenOf(out.group).find((id) => id !== leaf)!)!;
+    const pose = copy.pose as RectPose & { rotation?: number; transform?: unknown };
+    expect(pose.x).toBeCloseTo(70);
+    expect(pose.y).toBeCloseTo(-20);
+    expect(pose.rotation).toBeCloseTo(Math.PI);
+    expect(pose.transform).toBeUndefined();
+    expect(copy.data).toBe(scene.get(leaf)!.data);
+  });
+
+  it('reports a leaf whose pose is not a box and keeps it', () => {
+    const { scene, sym, group } = setup();
+    const odd = scene.add({
+      kind: 'leaf', layer: 'main', parent: group, pose: { cx: 0 } as never, data: {},
+    });
+    const out = sym.bake(group)!;
+    expect(out.skipped).toEqual([odd]);
+    expect(scene.childrenOf(out.group)).toContain(odd);
   });
 });
