@@ -17,7 +17,7 @@ import { diagramPorts, type DiagramContributionOptions } from './contribution';
 import { withDiagramRegistry } from './edge';
 import { diagramGroupOf } from './group';
 import type { DataEdge, DiagramSceneData, DiagramSpec } from './fromData';
-import type { LayoutFn } from './layout';
+import type { LayoutFn, LayoutPlanner } from './layout';
 import { useLiveLayout, type LiveLayout, type UseLiveLayoutOptions } from './live';
 import { useMirroredSelection } from './mirrorSelection';
 import { portLayer, sceneParticipants } from './portLayer';
@@ -35,8 +35,8 @@ export interface DiagramViewProps {
    *  them. Pass a new `key` to start over instead. */
   specs: readonly DiagramSpec[];
   /** The view opens fitted to the diagram, and fits again when the size or a
-   *  fit option changes, until the user pans or zooms; from then on the view
-   *  is theirs. */
+   *  fit option changes or a layout run settles, until the user pans or zooms;
+   *  from then on the view is theirs. */
   width: number;
   height: number;
   /** A participant id, or null for none. */
@@ -73,7 +73,8 @@ export interface DiagramViewProps {
     'fill' | 'stroke' | 'shape' | 'sizePx' | 'hitRadiusPx' | 'cursor' | 'shows' | 'showsPort' | 'snapRadius' | 'router'
   >;
   /** How a layout run from {@link DiagramViewApi.layout} behaves: its forces,
-   *  how many frames an eased layout takes, its easing. */
+   *  how many frames an eased layout takes, its easing, and `onError`, which
+   *  hears a `LayoutPlanner` that failed to answer. */
   live?: Omit<UseLiveLayoutOptions<RectPose>, 'scene' | 'source' | 'algorithm'>;
   /** The smallest scale the fit may use. Unset, the whole diagram fits
    *  however small that makes it; set, it stops here and the rest is a pan away. */
@@ -101,11 +102,16 @@ export interface DiagramViewProps {
 export interface DiagramViewApi {
   /** Lay the diagram out again from where its nodes stand, animated. `'force'`
    *  (default) relaxes until it settles; any other layout eases to its answer.
-   *  What moved is reported to `onMove` once the run settles. */
-  layout(algorithm?: 'layered' | 'tree' | 'force' | 'chain' | LayoutFn): void;
+   *  A `LayoutPlanner` is handed the diagram's graph and eased to once it
+   *  answers; a drag, an edit or another `layout` call before then drops the
+   *  answer. What moved is reported to `onMove` once the run settles. */
+  layout(algorithm?: DiagramLayout): void;
   /** The run `layout` started: stop it where it stands, or cancel it. */
   live: LiveLayout;
 }
+
+/** What {@link DiagramViewApi.layout} runs. */
+export type DiagramLayout = 'layered' | 'tree' | 'force' | 'chain' | LayoutFn | LayoutPlanner;
 
 const AMBIENT = [dragPanContribution()];
 const IDENTITY: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
@@ -147,8 +153,27 @@ function Inner({
   const source = useMemo(() => sceneParticipants<RectPose>(scene), [scene]);
   // Each `layout()` call is a new run: the state change lands the algorithm in
   // the live layout's options before the effect restarts it.
-  const [run, setRun] = useState<{ algorithm: 'layered' | 'tree' | 'force' | 'chain' | LayoutFn } | null>(null);
-  const live = useLiveLayout<RectPose>({ ...liveOpts, scene, source, algorithm: run?.algorithm ?? 'force' });
+  const [run, setRun] = useState<{ algorithm: DiagramLayout } | null>(null);
+  const controlled = view !== undefined;
+  const fitOpts = { minScale, maxScale, anchor, padding: fitPadding };
+  const defaultView = useMemo(
+    () => controlled ? undefined : fitDiagram(specs, { width, height }, fitOpts),
+    // A later `specs` keeps the view it has.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [controlled, width, height, minScale, maxScale, anchor, fitPadding],
+  );
+  // A settled run's fit holds until the box or a fit option changes.
+  const [settledFit, setSettledFit] = useState<{ view: View | undefined; over: View | undefined } | null>(null);
+  const fit = settledFit !== null && settledFit.over === defaultView ? settledFit.view : defaultView;
+  const settled = useLatest((moved: number) => {
+    liveOpts?.onSettle?.(moved);
+    if (controlled || moved === 0) return;
+    const boxes = Array.from(source(), ({ node, pose }) => ({ ...node, pose }));
+    setSettledFit({ view: fitDiagram(boxes, { width, height }, fitOpts), over: defaultView });
+  });
+  const live = useLiveLayout<RectPose>({
+    ...liveOpts, scene, source, algorithm: run?.algorithm ?? 'force', onSettle: (moved) => settled.current(moved),
+  });
   useEffect(() => {
     if (run !== null) live.restart();
   }, [run, live]);
@@ -180,16 +205,7 @@ function Inner({
   useEffect(() => (layer ? canvasRef.current?.registerLayer(layer) : undefined), [layer]);
   const ambient = useMemo(() => (ports ? [...AMBIENT, ports.contribution] : AMBIENT), [ports]);
 
-  const controlled = view !== undefined;
-  const defaultView = useMemo(
-    () => controlled
-      ? undefined
-      : fitDiagram(specs, { width, height }, { minScale, maxScale, anchor, padding: fitPadding }),
-    // A later `specs` keeps the view it has.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [controlled, width, height, minScale, maxScale, anchor, fitPadding],
-  );
-  useRefit(canvasRef, defaultView);
+  useRefit(canvasRef, fit);
   return (
     <SceneCanvas
       ref={canvasRef}
@@ -235,9 +251,10 @@ export interface DiagramFit {
 }
 
 /** The view `DiagramView` opens on: every node box and group box in view, never above
- *  `maxScale` (default 1) and never below `minScale`. */
+ *  `maxScale` (default 1) and never below `minScale`. Takes specs, or a scene's
+ *  nodes at the poses they are drawn at. */
 export function fitDiagram(
-  specs: readonly DiagramSpec[],
+  specs: readonly { kind: string; pose: unknown; data: unknown }[],
   size: { width: number; height: number },
   fit: DiagramFit = {},
 ): View | undefined {

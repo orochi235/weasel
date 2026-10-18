@@ -4,8 +4,8 @@ Lays a `@weasel-js/diagram` graph out with [ELK](https://eclipse.dev/elk/), the
 Eclipse Layout Kernel, through [elkjs](https://github.com/kieler/elkjs), and
 answers with the diagram package's own `LayoutPlan`, so the result is applied
 the way `layered` or `tree` is. ELK places ports, edge labels and nested groups
-well; use it to lay a generated diagram out once, or to check one of the
-diagram package's layouts against it.
+well; use it to lay a diagram out from a `DiagramView`, to lay a generated
+diagram out once, or to check one of the diagram package's layouts against it.
 
 Part of [weasel](https://github.com/orochi235/weasel), a domain-agnostic 2D
 scene-graph canvas kit for React. See the
@@ -17,6 +17,22 @@ npm install @weasel-js/diagram-elk
 
 ## Laying a diagram out
 
+On a `DiagramView`, hand `elkPlanner` to `layout()`. The view eases to ELK's
+answer the way it eases to `layered`'s and reports the moves, routes and ports
+to `onMove`; a drag or another `layout()` call before ELK answers drops the
+answer, and an ELK failure goes to the view's `live.onError`.
+`elkPlanner`'s options go over the view's `live.layout` options.
+
+```tsx
+import { elkPlanner } from '@weasel-js/diagram-elk';
+
+const elk = elkPlanner({ direction: 'right' });
+view.current?.layout(elk);
+```
+
+`useLiveLayout` takes the same planner as its `algorithm`. To lay a scene out
+once, without a view:
+
 ```ts
 import { applyLayout, buildGraph, routesOf } from '@weasel-js/diagram';
 import { elkPlan } from '@weasel-js/diagram-elk';
@@ -27,7 +43,8 @@ applyLayout(scene, plan.moves, { routes: routesOf(graph, plan) });
 ```
 
 ELK answers asynchronously, so `elkPlan` returns a promise and is not a
-`LayoutFn`: it cannot run inside a live layout, which recomputes every frame.
+`LayoutFn`; `elkPlanner` wraps it as a `LayoutPlanner`, which a live run asks
+once and eases to.
 
 What goes in, and how ELK reads it:
 

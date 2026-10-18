@@ -134,6 +134,7 @@ export {
   packAcross,
   pinnedSet,
   planOf,
+  plannerPlan,
   seededOrder,
   settle,
   translated,
@@ -145,6 +146,7 @@ export type {
   LayoutFn,
   LayoutOptions,
   LayoutPlan,
+  LayoutPlanner,
   LayoutPorts,
   LayoutResult,
   Slot,
@@ -190,6 +192,6 @@ export {
 export type { DiagramNodeEntry, DiagramNodeLike, DiagramNodeReader } from './trait';
 export type { DiagramGroup, DiagramNode, Port, PortAnchor, PortSite, PortSpec } from './types';
 export { DiagramView } from './DiagramView';
-export type { DiagramViewApi, DiagramViewProps, EdgeRoute, NodeMove } from './DiagramView';
+export type { DiagramLayout, DiagramViewApi, DiagramViewProps, EdgeRoute, NodeMove } from './DiagramView';
 export { diagramLayoutOf } from './sceneSync';
 export { useMirroredSelection } from './mirrorSelection';

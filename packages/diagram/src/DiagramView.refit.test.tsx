@@ -2,7 +2,9 @@ import { act, cleanup } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { View } from '@weasel-js/core';
-import { DiagramView, fitDiagram } from './DiagramView';
+import { createRef } from 'react';
+import { DiagramView, fitDiagram, type DiagramViewApi } from './DiagramView';
+import type { LayoutPlanner } from './layout';
 import { diagramScene, type DiagramData } from './fromData';
 
 afterEach(() => { cleanup(); });
@@ -39,4 +41,48 @@ describe('DiagramView refit', () => {
     });
     expect(views.at(-1)).toEqual(panned);
   });
+
+  it('fits again once a layout run settles, while the view is still its fit', async () => {
+    for (const panned of [false, true]) {
+      const views: View[] = [];
+      const clock = makeClock();
+      const api = createRef<DiagramViewApi>();
+      const { container, unmount } = render(
+        <DiagramView
+          ref={api} specs={SPECS} width={800} height={300} onViewChange={(v) => views.push(v)}
+          live={{ frames: 2, requestFrame: clock.requestFrame, cancelFrame: clock.cancelFrame }}
+        />,
+      );
+      if (panned) {
+        await act(async () => {
+          container.querySelector('canvas')!.dispatchEvent(new WheelEvent('wheel', { deltaX: 40, deltaY: 30, bubbles: true, cancelable: true }));
+        });
+      }
+      const before = views.at(-1);
+      await act(async () => { api.current!.layout(FAR); });
+      await act(async () => { clock.run(); });
+      const moved = diagramScene({ ...DATA, nodes: DATA.nodes.map((n) => (n.id === 'b' ? { ...n, at: { x: 2000, y: 0 } } : n)) }, { layout: 'none' });
+      expect(views.at(-1)).toEqual(panned ? before : fitDiagram(moved, { width: 800, height: 300 }));
+      unmount();
+    }
+  });
 });
+
+/** Sends `b` far off to the right. */
+const FAR: LayoutPlanner = { plan: () => ({ moves: new Map([['b', { x: 2000, y: 0 }]]) }) };
+
+function makeClock() {
+  const callbacks = new Map<number, (t: number) => void>();
+  let next = 1;
+  return {
+    requestFrame: (cb: (t: number) => void) => { callbacks.set(next, cb); return next++; },
+    cancelFrame: (h: number) => { callbacks.delete(h); },
+    run() {
+      for (let i = 0; i < 50 && callbacks.size > 0; i++) {
+        const due = [...callbacks.values()];
+        callbacks.clear();
+        for (const cb of due) cb(0);
+      }
+    },
+  };
+}

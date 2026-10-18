@@ -294,14 +294,25 @@ a diagram still while its data is edited.
 nodes stand; `'force'` relaxes live. Either way the routes ease with the nodes,
 through the ports the run will commit.
 
-To lay a diagram out once with ELK (the Eclipse Layout Kernel), see
-`@weasel-js/diagram-elk`: `await elkPlan(graph)` returns a `LayoutPlan` that
-`applyLayout` and `routesOf` take as they are.
+`layout()` also takes a `LayoutPlanner`, an object whose `plan(graph, opts)`
+answers with a whole `LayoutPlan`, now or as a promise. The run asks it once,
+with the graph as it stands, and eases to the answer the way it eases to
+`layered`'s, reporting the same moves, routes and ports to `onMove`. While the
+answer is on its way, a drag, a change to the data, or another `layout()` call
+drops it, since the plan was made for a diagram that is no longer there. A
+planner whose promise rejects starts no run, and the reason goes to
+`live.onError`, or to `console.error` when that is unset.
+`elkPlanner()` from `@weasel-js/diagram-elk` is one: it lays the diagram out
+with ELK (the Eclipse Layout Kernel).
+
+```tsx
+view.current.layout(elkPlanner({ direction: 'right' }));
+```
 
 Labels paint only in a registered font family, and the default is
 sans-serif, so call `registerCanvasFont('sans-serif')` once or they render
 blank. The view opens fitted to the diagram and fits again when `width` or
-`height` changes, until the user pans or zooms. `minScale` stops the fit from
+`height` changes or a layout run settles, until the user pans or zooms. `minScale` stops the fit from
 shrinking a wide diagram past readable; the rest is a pan away.
 
 ### Effect charts

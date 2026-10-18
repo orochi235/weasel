@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Graph, GraphEdge, GraphGroup, GraphNode } from '@weasel-js/diagram/layout';
-import { elkLayout, elkPlan } from './elkPlan';
+import { elkLayout, elkPlan, elkPlanner } from './elkPlan';
 
 const INSET = { top: 30, right: 12, bottom: 12, left: 12 };
 
@@ -203,5 +203,15 @@ describe('elkPlan', () => {
     const graph = graphOf([node('a')], []);
     await elkPlan(graph, { elk: elk as never, layoutOptions: { 'elk.algorithm': 'mrtree' } });
     expect(seen[0]!['elk.algorithm']).toBe('mrtree');
+  });
+});
+
+describe('elkPlanner', () => {
+  it('plans with its own options over the ones a run passes', async () => {
+    const graph = graphOf([node('a'), node('b')], [{ id: 'ab', from: 'a', to: 'b' }]);
+    const plan = await elkPlanner({ direction: 'right' }).plan(graph, { direction: 'down', nodeGap: 20 });
+    expect(plan).toEqual(await elkPlan(graph, { direction: 'right', nodeGap: 20 }));
+    const at = placed(graph, plan.moves);
+    expect(at.get('b')!.x).toBeGreaterThan(at.get('a')!.x + 80);
   });
 });
