@@ -9,6 +9,7 @@ import type { View } from 'core/viewport/view';
 import type { ClipboardIngestCtx } from 'interactions/actions/depSchema';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import { useActionSet, useStandardDeps } from 'interactions/actions/useActionSet';
+import { drawnBoxes } from 'interactions/actions/drawnBoxes';
 import type React from 'react';
 import { useEffect, useMemo } from 'react';
 import type { ReflowTransition } from '../../layout/types';
@@ -182,7 +183,7 @@ export function useSceneStandardActions(inputs: SceneStandardActionsInputs): voi
     { snapPoint: toolOptions?.snapPoint, targets: toolOptions?.snapTargets, paths: pathSnapper },
     currentViewRef,
     {
-      scene, descriptor: poseDescriptor, boundsIncludeStroke, sources: snap.sources,
+      scene, boxes: () => drawnBoxes({ scene, poseDescriptor, view, boundsIncludeStroke }), sources: snap.sources,
       ...(snap.registry ? { registry: snap.registry } : {}),
       ...(props.snap?.reachPx !== undefined ? { reachPx: props.snap.reachPx } : {}),
     },

@@ -88,6 +88,25 @@ describe('createSession2d', () => {
     expect(store.get()).toEqual([]);
   });
 
+  it('draws a function mark where the probe landed', () => {
+    const lineTo: SnapSource = {
+      id: 'line', roles: ['pointer'],
+      *collect(q) {
+        for (const p of q.probes) {
+          yield {
+            probe: p.id, locus: { at: TARGET, dirs: [] },
+            mark: (d: Point) => ({ kind: 'line', from: { x: d.x, y: d.y }, to: TARGET }),
+          };
+        }
+      },
+    };
+    const out = session({ sources: [lineTo] }).s.at({ x: 51, y: 49 }, FREE);
+    expect(out.marks).toHaveLength(1);
+    const mark = out.marks[0] as Extract<SnapMark, { kind: 'line' }>;
+    // The probe starts at the press (0, 0), so it lands at the delta: the target, not (51, 49).
+    near(mark.from, TARGET);
+  });
+
   it('clears the store on end', () => {
     const { s, store } = session();
     s.at({ x: 51, y: 49 }, FREE);

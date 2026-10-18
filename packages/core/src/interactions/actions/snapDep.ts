@@ -30,11 +30,6 @@ export interface SnapQuery {
   also?: SnapGeometry;
 }
 
-/**
- * World-space point snapping — grid, guides, path geometry, or any consumer
- * rule. Actions apply it to the coords they ingest so the live preview and
- * the committed geometry agree.
- */
 /** What builds a gesture's input subspace while `snap.constrain` is held:
  *  an angle step in radians about `origin`, an axis or 45° lock about the
  *  press, or a resize's aspect. */
@@ -79,6 +74,11 @@ export interface SnapSession {
   end(): void;
 }
 
+/**
+ * World-space point snapping — grid, guides, path geometry, or any consumer
+ * rule. Actions apply it to the coords they ingest so the live preview and
+ * the committed geometry agree.
+ */
 export interface SnapDep {
   /** Start a gesture's snap session. */
   begin?(req: SnapBegin): SnapSession;

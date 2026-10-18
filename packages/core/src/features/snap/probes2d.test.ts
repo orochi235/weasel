@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type RectPose, type Scene } from 'core/scene/types';
-import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
+import { drawnBoxes } from 'interactions/actions/drawnBoxes';
 import { buildProbes } from './probes2d';
 import { sceneProbeReads } from './sceneReads';
 
@@ -17,10 +17,11 @@ function strokedRect(): Scene<unknown, string, unknown> {
   return scene as unknown as Scene<unknown, string, unknown>;
 }
 
-const reads = (geometryAt?: () => { x: number; y: number } | null) => sceneProbeReads({
-  scene: strokedRect(), descriptor: AUTO_POSE_DESCRIPTOR, includeStroke: true, view: null,
-  ...(geometryAt ? { geometryAt } : {}),
-});
+function reads(geometryAt?: () => { x: number; y: number } | null) {
+  const scene = strokedRect();
+  const boxes = drawnBoxes({ scene } as Parameters<typeof drawnBoxes>[0]);
+  return sceneProbeReads({ scene, boxes, ...(geometryAt ? { geometryAt } : {}) });
+}
 
 describe('buildProbes', () => {
   it('puts a move\'s box probes on the drawn box and its origin probe on the pose origin', () => {

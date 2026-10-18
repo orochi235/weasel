@@ -22,7 +22,7 @@ import type { SnapDep, SnapQuery } from 'interactions/actions/snapDep';
 import type { PathSnapper } from 'features/paths/pathSnap/pathSnapper';
 import type { View } from 'core/viewport/view';
 import type { Scene } from 'core/scene/types';
-import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
+import type { DrawnBoxes } from 'interactions/actions/drawnBoxes';
 import { createSnapOutcomeStore, type SnapOutcomeStore } from 'features/snap/outcomeStore';
 import { buildProbes, subjectBox } from 'features/snap/probes2d';
 import type { SnapSourceRegistry } from 'features/snap/registry';
@@ -46,8 +46,8 @@ export interface SnapSources {
 /** What `begin` reads: the scene its probes come from and the sources it asks. */
 export interface SnapSessionSources {
   scene: Scene<unknown, string, unknown>;
-  descriptor: PoseDescriptor<unknown>;
-  boundsIncludeStroke: boolean;
+  /** The boxes the subject is drawn with, read when a session begins. */
+  boxes: () => DrawnBoxes;
   /** `<SceneCanvas snap.sources>`, then the presets' `snapSources`. */
   sources: readonly SnapSource[];
   /** Sources `useSnapSource` adds, after `sources`. */
@@ -83,7 +83,7 @@ export function useSnapDepSource(
           const view = viewRef.current;
           const paths = ref.current.paths;
           const reads = sceneProbeReads({
-            scene: s.scene, descriptor: s.descriptor, includeStroke: s.boundsIncludeStroke, view,
+            scene: s.scene, boxes: s.boxes(),
             ...(paths ? { geometryAt: (press: Point, ids: readonly string[]) => paths.snap(press, { include: ids }, view?.scale ?? { x: 1, y: 1 }) } : {}),
           });
           return createSession2d({

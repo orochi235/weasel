@@ -23,8 +23,9 @@ export interface SourceCandidate<P = Point> {
   locus: Locus<P>;
   /** The result must meet one required candidate, whatever its reach. */
   required?: boolean;
-  /** Drawn when the result meets this candidate. */
-  mark?: SnapMark<P>;
+  /** Drawn when the result meets this candidate. A function is handed the
+   *  resolved move, so the mark can sit where the probe landed. */
+  mark?: SnapMark<P> | ((delta: P) => SnapMark<P>);
 }
 
 export type SnapGesture = 'point' | 'move' | 'resize' | 'rotate';

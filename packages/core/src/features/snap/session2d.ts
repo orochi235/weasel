@@ -1,16 +1,20 @@
 import { closestOnFlat, resolveSnap, type Flat, type SnapCandidate } from '@weasel-js/geom/nd';
 import type { View } from '@weasel-js/geom';
 import type { Scene } from 'core/scene/types';
+import { viewToTransform } from 'core/viewport/view';
+import { worldToScreen } from 'core/viewport/viewTransform';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { SnapBegin, SnapOutcome, SnapSession } from 'interactions/actions/snapDep';
 import { inputFlat } from './inputSubspace';
 import type { SnapOutcomeStore } from './outcomeStore';
-import type { SnapGesture, SnapMark, SnapProbeAt, SnapSource } from './types';
+import type { SnapGesture, SnapMark, SnapProbeAt, SnapSource, SourceCandidate } from './types';
 
 type Point = { x: number; y: number };
 
 /** The canvas's reach when neither a source nor the kit settings name one. */
 export const DEFAULT_SNAP_PX = 8;
+
+type SourceMark = NonNullable<SourceCandidate['mark']>;
 
 const DEFAULT_GESTURES: readonly SnapGesture[] = ['point', 'move', 'resize'];
 
@@ -50,9 +54,10 @@ export function createSession2d(inputs: Session2dInputs): SnapSession {
         input,
         delta0: [delta0.x, delta0.y],
         candidates: collectAll(inputs, sources, delta0, view),
-        toScreen: view ? ([x, y]) => [(x - view.x) * view.scale.x, (y - view.y) * view.scale.y] : (w) => w,
+        toScreen: screenOf(view),
       });
-      const marks = res.satisfied.flatMap((c) => (c.mark ? [c.mark] : []));
+      const delta = { x: res.delta[0], y: res.delta[1] };
+      const marks = res.satisfied.flatMap((c) => (c.mark ? [typeof c.mark === 'function' ? c.mark(delta) : c.mark] : []));
       store.set(marks);
       return outcome(req.press, res.delta, res.members.length > 0, marks);
     },
@@ -64,16 +69,22 @@ export function createSession2d(inputs: Session2dInputs): SnapSession {
   };
 }
 
+function screenOf(view: View | null): (w: readonly number[]) => readonly number[] {
+  if (!view) return (w) => w;
+  const t = viewToTransform(view);
+  return ([x, y]) => worldToScreen(x, y, t);
+}
+
 function outcome(press: Point, delta: readonly number[], held: boolean, marks: readonly SnapMark[]): SnapOutcome {
   return { point: { x: press.x + delta[0], y: press.y + delta[1] }, held, marks };
 }
 
 function collectAll(
   inputs: Session2dInputs, sources: readonly SnapSource[], delta0: Point, view: View | null,
-): SnapCandidate<SnapMark>[] {
+): SnapCandidate<SourceMark>[] {
   const { req } = inputs;
   const scale = view ? Math.min(Math.abs(view.scale.x), Math.abs(view.scale.y)) : 1;
-  const out: SnapCandidate<SnapMark>[] = [];
+  const out: SnapCandidate<SourceMark>[] = [];
   sources.forEach((source, order) => {
     const offered = inputs.probes
       .filter((q) => source.roles.includes(q.role))
