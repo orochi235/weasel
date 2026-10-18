@@ -27,8 +27,11 @@ export interface EffectChartProps<TOptions = never> {
   /** The look's options. Keep the object's identity steady between renders,
    *  or the chart lays out again on each one. */
   options?: TOptions;
-  width: number;
-  height: number;
+  /** CSS pixels. Omit both to fill the parent, which then needs a size of
+   *  its own. The chart refits when its size changes, until the user pans or
+   *  zooms. */
+  width?: number;
+  height?: number;
   /** The smallest scale the chart opens at. A chart that does not fit whole
    *  at it opens at it anyway, anchored at its start, and the rest is a pan
    *  away. Default `EFFECT_MIN_SCALE`. */

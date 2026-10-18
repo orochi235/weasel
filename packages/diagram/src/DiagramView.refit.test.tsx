@@ -1,13 +1,13 @@
 import { act, cleanup } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { View } from '@weasel-js/core';
 import { createRef } from 'react';
 import { DiagramView, fitDiagram, type DiagramViewApi } from './DiagramView';
 import type { LayoutPlanner } from './layout';
 import { diagramScene, type DiagramData } from './fromData';
 
-afterEach(() => { cleanup(); });
+afterEach(() => { cleanup(); vi.unstubAllGlobals(); vi.restoreAllMocks(); });
 
 const DATA: DiagramData = {
   nodes: [{ id: 'a', lines: [], width: 400, height: 40, at: { x: 0, y: 0 } }, { id: 'b', lines: [], width: 40, height: 40, at: { x: 600, y: 0 } }],
@@ -65,6 +65,53 @@ describe('DiagramView refit', () => {
       expect(views.at(-1)).toEqual(panned ? before : fitDiagram(moved, { width: 800, height: 300 }));
       unmount();
     }
+  });
+});
+
+describe('DiagramView with no width or height', () => {
+  /** jsdom lays nothing out: the canvas's box and its resize reports are stubbed. */
+  function stubMeasurement(start: { width: number; height: number }) {
+    let box = start;
+    const observers: (() => void)[] = [];
+    vi.stubGlobal('ResizeObserver', class {
+      constructor(private cb: () => void) {}
+      observe() { observers.push(this.cb); }
+      unobserve() {}
+      disconnect() {}
+    });
+    vi.spyOn(HTMLCanvasElement.prototype, 'getBoundingClientRect').mockImplementation(
+      () => ({ x: 0, y: 0, left: 0, top: 0, right: box.width, bottom: box.height, ...box, toJSON() {} }) as DOMRect,
+    );
+    return (next: { width: number; height: number }) => {
+      box = next;
+      for (const cb of observers) cb();
+    };
+  }
+
+  it('opens fitted to the box it fills, and fits again as that box resizes', async () => {
+    const resize = stubMeasurement({ width: 800, height: 300 });
+    const views: View[] = [];
+    await act(async () => {
+      render(<DiagramView specs={SPECS} onViewChange={(v) => views.push(v)} />);
+    });
+    expect(views.at(-1)).toEqual(fitDiagram(SPECS, { width: 800, height: 300 }));
+    await act(async () => { resize({ width: 300, height: 300 }); });
+    expect(views.at(-1)).toEqual(fitDiagram(SPECS, { width: 300, height: 300 }));
+  });
+
+  it('keeps a view the user has moved when the box it fills resizes', async () => {
+    const resize = stubMeasurement({ width: 800, height: 300 });
+    const views: View[] = [];
+    let container!: HTMLElement;
+    await act(async () => {
+      ({ container } = render(<DiagramView specs={SPECS} onViewChange={(v) => views.push(v)} />));
+    });
+    await act(async () => {
+      container.querySelector('canvas')!.dispatchEvent(new WheelEvent('wheel', { deltaX: 40, deltaY: 30, bubbles: true, cancelable: true }));
+    });
+    const panned = views.at(-1);
+    await act(async () => { resize({ width: 300, height: 300 }); });
+    expect(views.at(-1)).toEqual(panned);
   });
 });
 
