@@ -18,12 +18,14 @@ import type {
   SnapDep,
 } from '@weasel-js/core';
 import {
+  aabbOfPoints,
   add,
   dot,
   intersectRayAabb,
   intersectRayPlane,
   len,
   normalize,
+  pointOnRay,
   quatIdentity,
   scale as scaleBy,
   sub,
@@ -139,27 +141,6 @@ function onPlane(
   if (!ray) return null;
   const t = intersectRayPlane(ray, plane.normal, plane.offset);
   return t === null ? null : pointOnRay(ray, t);
-}
-
-/** The world box containing `points`. */
-function aabbOfPoints(points: readonly Vec3[]): Aabb {
-  const min = { x: Infinity, y: Infinity, z: Infinity };
-  const max = { x: -Infinity, y: -Infinity, z: -Infinity };
-  for (const p of points) {
-    for (const axis of ['x', 'y', 'z'] as const) {
-      if (p[axis] < min[axis]) min[axis] = p[axis];
-      if (p[axis] > max[axis]) max[axis] = p[axis];
-    }
-  }
-  return { min, max };
-}
-
-function pointOnRay(ray: Ray, t: number): Vec3 {
-  return {
-    x: ray.origin.x + ray.direction.x * t,
-    y: ray.origin.y + ray.direction.y * t,
-    z: ray.origin.z + ray.direction.z * t,
-  };
 }
 
 function overlaps(a: ScreenBox, b: ScreenBox): boolean {
