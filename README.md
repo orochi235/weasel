@@ -193,7 +193,7 @@ Every package is published under `@weasel-js` and released together at one versi
 | Package | | What it is |
 |---|---|---|
 | `core` | <img src="docs/badges/react.svg" width="20" height="20" alt="Needs React" title="Needs React"><img src="docs/badges/dom.svg" width="20" height="20" alt="Needs a browser: document, window or navigator" title="Needs a browser: document, window or navigator"><img src="docs/badges/webgl2.svg" width="20" height="20" alt="Draws with WebGL2" title="Draws with WebGL2"> | the scene graph, `<SceneCanvas>`, actions, and tools |
-| `geom` | <img src="docs/badges/standalone.svg" width="20" height="20" alt="Depends on no other weasel package" title="Depends on no other weasel package"> | pure 2D geometry — affine, box, curve, polyline; polygon booleans under `./booleans` |
+| `geom` | <img src="docs/badges/standalone.svg" width="20" height="20" alt="Depends on no other weasel package" title="Depends on no other weasel package"> | pure geometry — 2D affine, box, curve, polyline; polygon booleans under `./booleans`; 3D vectors, quaternions, matrices and rays under `./3d` |
 | `gestures` | <img src="docs/badges/dom.svg" width="20" height="20" alt="Needs a browser: document, window or navigator" title="Needs a browser: document, window or navigator"> | the gesture taxonomy, route grammars and matchers |
 | `history` |  | undo/redo with scoped sub-histories |
 | `routing` | <img src="docs/badges/react.svg" width="20" height="20" alt="Needs React" title="Needs React"><img src="docs/badges/dom.svg" width="20" height="20" alt="Needs a browser: document, window or navigator" title="Needs a browser: document, window or navigator"> | binding-to-action routing: the gesture dispatcher, the action registry, tool and contribution declaration |

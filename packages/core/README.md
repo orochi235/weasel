@@ -222,7 +222,7 @@ Every package is published under `@weasel-js` and released together at one versi
 | Package | What it is |
 |---|---|
 | `core` | the scene graph, `<SceneCanvas>`, actions, tools, and the WebGL2 renderer |
-| `geom` | pure 2D geometry — affine, box, curve, polyline; polygon booleans under `./booleans` |
+| `geom` | pure geometry — 2D affine, box, curve, polyline; polygon booleans under `./booleans`; 3D vectors, quaternions, matrices and rays under `./3d` |
 | `gestures` | the gesture taxonomy, route grammars and matchers; no React, no DOM |
 | `history` | undo/redo with scoped sub-histories; no React, no DOM |
 | `react` | generic React hooks the other packages share: `useLatest`, `useStableByContent` |

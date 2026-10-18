@@ -1,8 +1,9 @@
 # canvas-kit / weasel TODO
 
 Backlog for the canvas-kit framework (published as `@weasel-js/core`). The
-kit aims to be a generic 2D scene-graph foundation. Items here are evaluated
-for cross-app reuse, not consumer-app value.
+kit aims to be a generic scene-graph foundation: 2D in core, 3D in
+`@weasel-js/kernel3d` beside it. Items here are evaluated for cross-app reuse,
+not consumer-app value.
 
 For history of completed work, see `git log` and the dated specs under
 `docs/superpowers/specs/`. Plans are deleted when their work merges.

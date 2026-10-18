@@ -1,6 +1,14 @@
 # weasel canvas-kit
 
-Generic 2D scene-graph canvas library. Published as `@weasel-js/core`.
+Generic scene-graph engine, published as `@weasel-js/core` and its sibling packages. Core renders
+2D; `@weasel-js/kernel3d` hosts 3D scenes on the same scene graph and dispatcher.
+
+**weasel is not 2D-only.** kernel3d puts a `Pose3` in core's `Scene`, drives core's dispatcher with
+screen points, and has each dep build its ray from its own camera
+(`docs/superpowers/specs/2026-08-22-3d-kernel-design.md`). So a pipeline designed in core —
+a dep, an action, a ranking rule — gets designed so a 3D host can use it too, and a type that bakes
+in `{x, y}` does so as a stated choice. Before calling anything "2D" in a spec, a TODO entry or a
+recommendation, check `packages/kernel3d` and `@weasel-js/geom/3d`.
 
 ## Scope: weasel is an engine
 
