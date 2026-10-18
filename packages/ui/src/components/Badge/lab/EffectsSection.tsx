@@ -1,5 +1,7 @@
-import { useState, type DragEvent } from 'react';
+import { useMemo, type PointerEvent } from 'react';
 import { CloseButton } from '../../CloseButton';
+import { DragGrip } from '../../DragGrip';
+import { useReorderDragList } from '../../../useReorderDragList';
 import { EFFECTS, type BadgeEffect } from '../effects';
 import { EFFECT_KEYS, EFFECT_LAB_CONTROLS } from './controls';
 import { ParamControl } from './ParamControl';
@@ -12,16 +14,13 @@ type Update = (update: (effects: LabEffect[]) => LabEffect[]) => void;
 /** Where an effect acts: on the outline itself, or as decoration in one of the paint zones. */
 const zoneOf = (type: BadgeEffect): string => (EFFECTS[type].offsetAt ? 'offset' : (EFFECTS[type].zone ?? 'foreground'));
 
-function EffectCard({ effect, index, dragging, dropAbove, dropBelow, onDragStart, onDragEnd, onDragOver, onDrop, onEffects }: {
+function EffectCard({ effect, index, dragging, dropAbove, dropBelow, onGripDown, onEffects }: {
   effect: LabEffect;
   index: number;
   dragging: boolean;
   dropAbove: boolean;
   dropBelow: boolean;
-  onDragStart: () => void;
-  onDragEnd: () => void;
-  onDragOver: (e: DragEvent<HTMLDivElement>) => void;
-  onDrop: (e: DragEvent<HTMLDivElement>) => void;
+  onGripDown: (e: PointerEvent) => void;
   onEffects: Update;
 }) {
   return (
@@ -30,20 +29,9 @@ function EffectCard({ effect, index, dragging, dropAbove, dropBelow, onDragStart
       data-dragging={dragging || undefined}
       data-drop-above={dropAbove || undefined}
       data-drop-below={dropBelow || undefined}
-      onDragOver={onDragOver}
-      onDrop={onDrop}
     >
-      <div
-        className={s.grip}
-        draggable
-        onDragStart={(e) => {
-          onDragStart();
-          e.dataTransfer.effectAllowed = 'move';
-        }}
-        onDragEnd={onDragEnd}
-        title="Drag to reorder"
-      >
-        ⋮⋮
+      <div className={s.grip} onPointerDown={onGripDown} title="Drag to reorder">
+        <DragGrip />
       </div>
       <div className={s.cardBody}>
         <div className={s.cardHead}>
@@ -77,12 +65,13 @@ export function EffectsSection({ effects, onAdd, onEffects }: {
   onAdd: (type: BadgeEffect) => void;
   onEffects: Update;
 }) {
-  const [dragId, setDragId] = useState<number | null>(null);
-  const [dropGap, setDropGap] = useState<number | null>(null);
-  const endDrag = () => {
-    setDragId(null);
-    setDropGap(null);
-  };
+  const items = useMemo(() => effects.map((e) => ({ id: String(e.id), label: e.type })), [effects]);
+  const reorder = useReorderDragList({
+    items,
+    selectedIds: [],
+    onReorder: (ids, gap) => onEffects((list) => moveEffectToGap(list, Number(ids[0]), gap)),
+  });
+  const { draggedIds, targetIndex } = reorder.state;
   return (
     <section className={s.effects}>
       <div className={s.effectsHead}>
@@ -103,30 +92,20 @@ export function EffectsSection({ effects, onAdd, onEffects }: {
         </div>
       </div>
       {effects.length === 0 && <p className={s.empty}>No effects. Add one from the dropdown.</p>}
-      {effects.map((effect, i) => (
-        <EffectCard
-          key={effect.id}
-          effect={effect}
-          index={i}
-          dragging={dragId === effect.id}
-          dropAbove={dropGap === i}
-          dropBelow={dropGap === i + 1}
-          onDragStart={() => setDragId(effect.id)}
-          onDragEnd={endDrag}
-          onDragOver={(e) => {
-            if (dragId == null || dragId === effect.id) return;
-            e.preventDefault();
-            const rect = e.currentTarget.getBoundingClientRect();
-            setDropGap(e.clientY - rect.top < rect.height / 2 ? i : i + 1);
-          }}
-          onDrop={(e) => {
-            e.preventDefault();
-            if (dragId != null && dropGap != null) onEffects((list) => moveEffectToGap(list, dragId, dropGap));
-            endDrag();
-          }}
-          onEffects={onEffects}
-        />
-      ))}
+      <div className={s.cards} {...reorder.containerProps}>
+        {effects.map((effect, i) => (
+          <EffectCard
+            key={effect.id}
+            effect={effect}
+            index={i}
+            dragging={draggedIds?.includes(String(effect.id)) ?? false}
+            dropAbove={targetIndex === i}
+            dropBelow={targetIndex === effects.length && i === effects.length - 1}
+            onGripDown={reorder.rowProps(String(effect.id), i).onPointerDown}
+            onEffects={onEffects}
+          />
+        ))}
+      </div>
     </section>
   );
 }

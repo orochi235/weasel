@@ -1,5 +1,6 @@
 import { useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 import { Badge } from '../Badge';
+import { InlineRange } from '../../InlineRange';
 import type { BadgeStatus } from '../types';
 import { Field } from './ParamControl';
 import type { LabSnapshot } from './snapshot';
@@ -77,7 +78,7 @@ export function Preview({ lab, onZoom }: { lab: Shown; onZoom: (zoom: number) =>
         </div>
       </div>
       <Field label="zoom" columns={s.zoom}>
-        <input type="range" className={controls.fill} min={1} max={6} step={0.1} value={zoom} onChange={(e) => onZoom(Number(e.target.value))} />
+        <InlineRange className={controls.fill} min={1} max={6} step={0.1} value={zoom} onChange={(e) => onZoom(Number(e.target.value))} />
         <span className={controls.label}>{zoom.toFixed(1)}×</span>
       </Field>
     </>

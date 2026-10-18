@@ -22,7 +22,7 @@
   text-transform: uppercase;
   letter-spacing: 0.08em;
   margin-top: 6px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid var(--wzl-border);
   padding-top: 6px;
 }
 
@@ -30,7 +30,7 @@
   width: 100%;
   height: 22px;
   padding: 0;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid var(--wzl-border-strong);
   border-radius: var(--wzl-radius-sm);
   cursor: pointer;
   background: transparent;

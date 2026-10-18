@@ -33,6 +33,8 @@ export type { QueryMatch } from '@weasel-js/registry';
 export type { BoundGesture, BindingSource } from '@weasel-js/routing';
 export type { ActionParams, ActionTuning, TunedBinding } from '@weasel-js/routing';
 export { tuneAction } from '@weasel-js/routing';
+export { roleReader, keysHeld } from '@weasel-js/routing';
+export type { ModifierRole, ModifierRoles, RoleKeys, RoleRebinds } from '@weasel-js/routing';
 export type { ActionParamSchema, ActionTunings } from '../interactions/actions/actionParamSchema';
 export { evaluateActive, evaluateEnabled, buildDepsFromRequires } from '@weasel-js/routing';
 export type { ActionEnabledResult } from '@weasel-js/routing';

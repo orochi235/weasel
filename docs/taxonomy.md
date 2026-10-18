@@ -367,6 +367,16 @@ the `path-` prefix because gathering matches one tag exactly: a bare `brush` or
 `command` would gather any other feature's actions that chose the same word.
 `docs/path-operations.md` lists each family.
 
+A **modifier role** is a modifier an ongoing action reads while it runs, named
+for what it does rather than the key: `handle.holdAngle`, `mirror.break`,
+`selection.add`. The action declares each with its default keys
+(`Action.modifierRoles`); a tuning's `roles` or a binding's `opts.roles` moves
+one to other keys; and the dispatcher resolves them into `InvocationCtx.roles`
+on the press, every move, and the release, which the action reads through
+`roleReader`. A binding's `mods` decide whether the gesture starts, matched once
+at the press; a role can change mid-gesture. See
+`packages/routing/src/interactions/actions/modifierRoles.ts`.
+
 An action may declare an optional `cursor` — the hover hint shown while the
 pointer rests where a drag would route to that action. The hover-cursor pump
 predicts the route via `Dispatcher.resolveOnly` (the same match walk a real

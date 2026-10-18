@@ -39,10 +39,10 @@ function OctantCell({ params, label }: { params: BadgeQuatrefoilBaseParams; labe
   return (
     <div className={s.cell}>
       <svg viewBox="-5 -80 90 85" width={100} height={100} className={s.plot}>
-        <line x1="0" y1="0" x2="75" y2="0" stroke="rgba(255,255,255,0.15)" strokeWidth="0.5" strokeDasharray="2 2" />
-        <line x1="0" y1="0" x2={(AXIS * Math.cos(OCTANT)).toFixed(2)} y2={(-AXIS * Math.sin(OCTANT)).toFixed(2)} stroke="rgba(255,255,255,0.15)" strokeWidth="0.5" strokeDasharray="2 2" />
-        <polyline points={points.join(' ')} fill="rgba(127,176,105,0.18)" stroke="#7fb069" strokeWidth="1.2" vectorEffect="non-scaling-stroke" />
-        <circle cx="0" cy="0" r="1.2" fill="rgba(255,255,255,0.3)" />
+        <line x1="0" y1="0" x2="75" y2="0" className={s.axis} strokeWidth="0.5" strokeDasharray="2 2" />
+        <line x1="0" y1="0" x2={(AXIS * Math.cos(OCTANT)).toFixed(2)} y2={(-AXIS * Math.sin(OCTANT)).toFixed(2)} className={s.axis} strokeWidth="0.5" strokeDasharray="2 2" />
+        <polyline points={points.join(' ')} className={s.curve} strokeWidth="1.2" vectorEffect="non-scaling-stroke" />
+        <circle cx="0" cy="0" r="1.2" className={s.origin} />
       </svg>
       <code className={s.cellLabel}>{label}</code>
     </div>

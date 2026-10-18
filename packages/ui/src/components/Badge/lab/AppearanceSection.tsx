@@ -1,5 +1,6 @@
 import type { BadgeStatus, BadgeVariant } from '../types';
 import { Field, LabToggle, RangeRow } from './ParamControl';
+import { InlineRange } from '../../InlineRange';
 import type { LabSnapshot } from './snapshot';
 import controls from './controls.stories.module.css';
 import s from './ComposeLab.stories.module.css';
@@ -39,8 +40,7 @@ export function AppearanceSection({ value, onChange }: { value: Appearance; onCh
       </Field>
       <Field label="crawl" columns={s.crawl}>
         <input type="checkbox" checked={value.crawlOn} onChange={(e) => onChange({ crawlOn: e.target.checked })} />
-        <input
-          type="range"
+        <InlineRange
           className={controls.fill}
           min={-2}
           max={2}

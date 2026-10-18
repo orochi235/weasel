@@ -5,6 +5,7 @@
 import type { Action } from '../actions/action';
 import type { ActionDeps, InvocationCtx, OngoingHandle } from '../actions/invoker';
 import { resolveParams } from '../actions/invoker';
+import { platformRoleKeys, roleKeysOf } from '../actions/modifierRoles';
 import type { GestureFactsStore } from './gestureFacts';
 import { gestureIdFor, isMultiTouchGestureId } from './gestureIds';
 import { isEmptyOngoingHandle, type InFlightGestures } from './inFlightGestures';
@@ -20,6 +21,8 @@ export interface GestureRun {
   /** The view the input being handled landed in, so a pump of an in-flight
    *  gesture reports the view it is pinned to. */
   viewId(): string | null | undefined;
+  /** Whether `'mod'` is Cmd, for the input being handled. */
+  isMac(): boolean;
 }
 
 type Reason = 'commit' | 'cancel';
@@ -159,7 +162,8 @@ export function invokeAction(
       return 'misbound';
     }
     const gestureId = gestureIdFor(event);
-    run.facts.begin(gestureId, event);
+    const roleKeys = roleKeysOf(action.modifierRoles, match.binding.opts?.roles);
+    run.facts.begin(gestureId, event, roleKeys && platformRoleKeys(roleKeys, run.isMac()));
     const handle = action.invoker.start(ctxFor(run, event, deps, gestureId), match.binding.opts);
     // Empty handle = "matched at the binding level but decided at runtime
     // not to handle this gesture" (missing dep, wrong affordance, wrong

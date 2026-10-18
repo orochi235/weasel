@@ -2,7 +2,7 @@
  * The locks on a control-handle drag — its angle, its length, or both — and
  * the guide that shows which one is holding.
  */
-import type { ModifierState, OngoingOverlay } from '@weasel-js/routing';
+import { roleReader, type ModifierRoles, type ModifierState, type OngoingOverlay } from '@weasel-js/routing';
 import { handleAlongItsAngle, handleAtItsLength } from '@weasel-js/geom';
 import type { HandleLocks } from './params';
 
@@ -25,12 +25,24 @@ const CIRCLE_SEGMENTS = 64;
 /** How far past the handle the angle guide reaches, as a share of its length. */
 const LINE_OVERSHOOT = 1.25;
 
-/** The locks in force: those `held` names, plus Shift for the angle and Mod
- *  (Cmd or Ctrl) for the length. */
-export function locksInForce(held: HandleLocks, modifiers: ModifierState): HandleLocks {
+/** The modifier roles a handle drag reads: Shift holds its angle, Cmd or
+ *  Ctrl its length. */
+export const HANDLE_LOCK_ROLES = {
+  'handle.holdAngle': { label: 'Hold the handle angle', keys: ['shift'] },
+  'handle.holdLength': { label: 'Hold the handle length', keys: ['meta', 'ctrl'] },
+} as const satisfies ModifierRoles;
+
+const lockHeld = roleReader(HANDLE_LOCK_ROLES);
+
+/** The locks in force: those `held` names, plus those the event's
+ *  {@link HANDLE_LOCK_ROLES} hold. */
+export function locksInForce(
+  held: HandleLocks,
+  ctx: { roles?: Readonly<Record<string, boolean>>; modifiers: ModifierState },
+): HandleLocks {
   return {
-    angle: held.angle || modifiers.shift,
-    length: held.length || modifiers.meta || modifiers.ctrl,
+    angle: held.angle || lockHeld(ctx, 'handle.holdAngle'),
+    length: held.length || lockHeld(ctx, 'handle.holdLength'),
   };
 }
 

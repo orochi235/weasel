@@ -1,5 +1,6 @@
 import type { ReactElement, ReactNode } from 'react';
 import { ToggleBar } from '../../ToggleBar/ToggleBar';
+import { InlineRange } from '../../InlineRange';
 import type { ShapeControl } from '../shapeControls';
 import s from './controls.stories.module.css';
 
@@ -45,7 +46,7 @@ export function RangeRow({ label, value, min, max, step, onChange, narrow, reado
 }) {
   return (
     <Field label={label} columns={narrow ? s.narrow3 : s.wide3}>
-      <input type="range" className={s.fill} min={min} max={max} step={step} value={value} onChange={(e) => onChange(Number(e.target.value))} />
+      <InlineRange className={s.fill} min={min} max={max} step={step} value={value} onChange={(e) => onChange(Number(e.target.value))} />
       <span className={s.label}>{readout ?? value}</span>
     </Field>
   );
@@ -61,7 +62,7 @@ function ControlInput({ control, value, onChange, dense }: {
     case 'range':
       return (
         <>
-          <input type="range" className={s.fill} min={control.min} max={control.max} step={control.step} value={value as number} onChange={(e) => onChange(Number(e.target.value))} />
+          <InlineRange className={s.fill} min={control.min} max={control.max} step={control.step} value={value as number} onChange={(e) => onChange(Number(e.target.value))} />
           <span className={s.label}>{value}</span>
         </>
       );

@@ -13,6 +13,7 @@ import type { Point } from '@weasel-js/geom';
 import type { CursorSpec } from '@weasel-js/cursor';
 import type { DepSchema } from '../../index';
 import type { OngoingOverlay } from './overlay';
+import type { RoleRebinds } from './modifierRoles';
 
 export type { ModifierState } from '../../vocabulary';
 
@@ -161,6 +162,13 @@ export interface InvocationCtx {
    * params via `BindingOpts.params` on `start` (the `opts` arg).
    */
   params?: Record<string, unknown>;
+  /**
+   * Which of the action's `modifierRoles` are held for this event, by role
+   * id. The dispatcher fills it on every event of a gesture whose action
+   * declares roles; absent otherwise. Read it through `roleReader`, which
+   * falls back to the roles' default keys where it is absent.
+   */
+  roles?: Readonly<Record<string, boolean>>;
 }
 
 /** Per-invocation options the dispatcher reads from a `GestureBinding`'s
@@ -196,6 +204,11 @@ export interface BindingOpts {
    * binding; this tells the route-conflict check the order is the design.
    */
   yields?: boolean;
+  /**
+   * Keys for some of the action's `modifierRoles` on this binding, by role
+   * id, over the action's defaults and any tuning's.
+   */
+  roles?: RoleRebinds;
 }
 
 /** Resolve `BindingOpts.params` to a concrete record (calling the thunk if

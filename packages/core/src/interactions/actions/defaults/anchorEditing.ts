@@ -25,7 +25,7 @@
  */
 
 import type { Action } from '@weasel-js/routing';
-import { ActionDisabledReason } from '@weasel-js/routing';
+import { ActionDisabledReason, roleReader, type ModifierRoles } from '@weasel-js/routing';
 import type { ActionDeps } from '@weasel-js/routing';
 import type { ImmediateInvoker, InvocationCtx, OngoingHandle } from '@weasel-js/routing';
 import type { EditAnchorsDep, PathSymmetryDep } from '../depSchema';
@@ -321,6 +321,13 @@ function nearestAnchorIndex(
   return best;
 }
 
+/** Shift on the press adds the marqueed anchors to the selection. */
+export const MARQUEE_ANCHORS_ROLES = {
+  'selection.add': { label: 'Add to the anchor selection', keys: ['shift'] },
+} as const satisfies ModifierRoles;
+
+const addHeld = roleReader(MARQUEE_ANCHORS_ROLES);
+
 /**
  * Rubber-band select anchors by dragging on empty canvas while a path is
  * in edit mode.
@@ -335,6 +342,7 @@ export const marqueeAnchorsAction: Action & { requires: string[] } = inPlane({
   tags: pathOperationTags('drag'),
   defaultBinding: { kind: 'drag', target: 'empty' },
   eligible: { capability: 'edits-anchors' },
+  modifierRoles: MARQUEE_ANCHORS_ROLES,
   requires: ['editAnchors'],
   invoker: {
     timing: 'ongoing',
@@ -346,7 +354,7 @@ export const marqueeAnchorsAction: Action & { requires: string[] } = inPlane({
       const worldPath = worldPathOf(dep);
       if (!worldPath) return {};
 
-      const additive = ctx.modifiers.shift;
+      const additive = addHeld(ctx, 'selection.add');
       const base = new Set(dep.selectedAnchors);
       const start = { x: ctx.world.x, y: ctx.world.y };
 

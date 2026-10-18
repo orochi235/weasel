@@ -46,7 +46,9 @@ Priority tags:
   preference; a move and the drawing tools reach path targets and measurement ends through the
   `snap` dep (`toolOptions.snapTargets`), but the move's grid is a `gridSnapStrategy` behavior;
   path snapping just landed with its own `snapPoint` ranking (`packages/core/src/features/paths/pathSnap/`); and
-  the tolerances are fixed constants (`DEFAULT_GUIDE_TOLERANCE_PX`). The arc settles one snap
+  each pipeline reads its own reach: guides and spacing hints the `targets.guideSnapPx` kit
+  setting, the pen `targets.penAnchorSnapPx`, and path snap its own `radius` option, else
+  `DEFAULT_PATH_SNAP_RADIUS`, with no kit setting behind it. The arc settles one snap
   pipeline every gesture uses — which targets compete, how ties are ranked, how a modifier
   suspends them mid-gesture — and one readout layer for gaps, distances, and guide labels. The
   spacing hints preset is source material for it: an Alt-hover distance readout drawn on its own
@@ -59,24 +61,6 @@ Priority tags:
   Ruled 2026-10-11: the directory and the taxonomy's term take a new word, and the prop keeps
   `features`; the new word is not chosen yet. That leaves choosing it, then renaming the one path,
   its imports, and the section of the taxonomy.
-
-- **(P2) Path edit's in-gesture modifiers are hard-coded inside the actions.** A consumer can see
-  and remap a binding's `mods`, but not a modifier an action reads off `ctx.modifiers` once it is
-  running, and path edit reads most of its own that way. `editAnchors`
-  (`interactions/actions/edit-anchors/action.ts`) reads Shift at the press to toggle an anchor in
-  the selection, and Alt on every handle move to break the smooth mirror; `locksInForce` in
-  `edit-anchors/handleDrag.ts` reads Shift as the angle lock and Meta or Ctrl as the length lock.
-  `marqueeAnchors` (`defaults/anchorEditing.ts`) reads Shift at the press to add to the anchor
-  selection. The pen (`tools/builtin/pen/usePenTool.ts`) reads Alt to break a handle and Shift to
-  constrain it, at the press, on each move, and at the release. None of these shows in a binding
-  list, a keymap editor, or the command palette, and a host that wants Alt to lock the length
-  instead has to fork the action. `selectAnchor` is the model: its Shift-click is a second
-  binding whose params say `additive: true`. A declared form needs each ongoing action to name its
-  in-gesture modifiers as data — a role (`mirror.break`, `handle.holdAngle`, `handle.holdLength`,
-  `selection.add`) and its default modifier — that bindings or `tune` can rebind, with the
-  dispatcher resolving them into the ctx on every move rather than each action testing raw keys.
-  Modifiers that change mid-gesture are the part no binding models today, since a binding's `mods`
-  are matched once, at the press.
 
 - **(P3) Nothing reads a mode's `entry.trigger`.** The `'double-click-target'` the definitions
   in `packages/modes/src/presets/default.ts` declare is unread. A path with anchors is put in
@@ -149,16 +133,12 @@ Priority tags:
 - **(P3) `BASELINE.md`'s text layout numbers include grouping.**
   `tests/perf/bench/text-layout.bench.ts` times layout alone now, so they need re-recording.
 
-- **(P3) What moving the Badge lab out of its stories file left.** The lab is
-  `packages/ui/src/components/Badge/lab/` now.
-  - It hand-rolls around kit components: `InlineRange` fits its range inputs, and
-    `useReorderDragList` with `DragGrip` fits the effect-card reorder, which uses HTML5 drag and a
-    text grip. Each swap changes how the lab looks or drags.
-  - Its colors are literals (`rgba(255,255,255,…)`, `#7fb069`) in the stylesheets, not `--wzl-*`
-    tokens.
-  - In the workshop at a 1500px window, the Compose lab's "Type & padding" column and effects
-    panel run past the right edge of the stage. Not compared against the lab before its text
-    moved onto the type scale.
+- **(P3) The Badge lab's Compose view overflows at 1500px.** In the workshop at a 1500px window,
+  the Compose lab's (`packages/ui/src/components/Badge/lab/`) "Type & padding" column and effects
+  panel run past the right edge of the stage. Not compared against the lab before its text moved
+  onto the type scale. Its range inputs (`InlineRange`), effect-card reorder (`useReorderDragList`
+  with `DragGrip`), and `--wzl-*` colors are unchecked in a browser since they replaced the
+  hand-rolled ones.
 
 ### Cursor package follow-ups
 

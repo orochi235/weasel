@@ -41,7 +41,7 @@
 }
 
 .plot {
-  background: rgba(255, 255, 255, 0.04);
+  background: color-mix(in srgb, var(--wzl-fg) 4%, transparent);
   border-radius: var(--wzl-radius-sm);
 }
 
@@ -49,3 +49,12 @@
   font-size: var(--wzl-font-size-2xs);
   opacity: 0.7;
 }
+
+.axis { stroke: color-mix(in srgb, var(--wzl-fg) 15%, transparent); }
+
+.curve {
+  fill: color-mix(in srgb, var(--wzl-success) 18%, transparent);
+  stroke: var(--wzl-success);
+}
+
+.origin { fill: color-mix(in srgb, var(--wzl-fg) 30%, transparent); }

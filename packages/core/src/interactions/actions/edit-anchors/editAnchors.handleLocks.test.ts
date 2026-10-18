@@ -43,7 +43,8 @@ function start(params?: EditAnchorsParams, handleLocks?: HandleLocks) {
   const invoker = editAnchorsAction.invoker;
   if (invoker?.timing !== 'ongoing') throw new Error('expected ongoing');
   const handle: OngoingHandle = invoker.start(ctx, params ? { params } : undefined);
-  const move = (world: { x: number; y: number }, modifiers = NO_MODS) => handle.onMove!({ ...ctx, world, modifiers });
+  const move = (world: { x: number; y: number }, modifiers = NO_MODS, roles?: Record<string, boolean>) =>
+    handle.onMove!({ ...ctx, world, modifiers, ...(roles ? { roles } : {}) });
   const out = () => {
     handle.onEnd!(ctx, 'commit');
     return committed.path ? pathToAnchors(committed.path).anchors[0]![0]!.outHandle! : { x: 10, y: 0 };
@@ -107,6 +108,25 @@ describe('editAnchors handle locks', () => {
     const drag = start({ handleLock: 'angle' }, { angle: false, length: true });
     drag.move({ x: 0, y: 50 });
     const h = drag.out();
+    expect(h.x).toBeCloseTo(0, 4);
+    expect(h.y).toBeCloseTo(10, 4);
+  });
+
+  it('declares its locks as modifier roles a tuning can rebind', () => {
+    expect(Object.keys(editAnchorsAction.modifierRoles ?? {})).toEqual(
+      expect.arrayContaining(['handle.holdAngle', 'handle.holdLength', 'mirror.break', 'selection.add']),
+    );
+  });
+
+  it('reads the roles the dispatcher resolved over the raw modifiers', () => {
+    // Length moved to Alt: Cmd no longer holds it, Alt does.
+    const roles = (length: boolean) => ({ 'handle.holdAngle': false, 'handle.holdLength': length, 'mirror.break': false, 'selection.add': false });
+    const free = start();
+    free.move({ x: 0, y: 50 }, { ...NO_MODS, meta: true }, roles(false));
+    expect(free.out()).toEqual({ x: 0, y: 50 });
+    const held = start();
+    held.move({ x: 0, y: 50 }, { ...NO_MODS, alt: true }, roles(true));
+    const h = held.out();
     expect(h.x).toBeCloseTo(0, 4);
     expect(h.y).toBeCloseTo(10, 4);
   });
