@@ -31,4 +31,18 @@ describe('tabsFor', () => {
       { path: 'demos/D.css', language: 'css' },
     ]);
   });
+
+  it('leaves out a file that marks itself site chrome', () => {
+    write('demos/Stage.tsx', '/** @site-chrome */\nexport const Stage = () => null;');
+    write('demos/plain.ts', '// mentions @site-chrome mid-sentence, which is no marker\nexport const p = 1;');
+    write('demos/E.tsx', [
+      "import { Stage } from './Stage';",
+      "import { p } from './plain';",
+      'export default () => <Stage />;',
+    ].join('\n'));
+    expect(tabsFor(root, 'demos/E.tsx')).toEqual([
+      { path: 'demos/E.tsx', language: 'tsx' },
+      { path: 'demos/plain.ts', language: 'ts' },
+    ]);
+  });
 });

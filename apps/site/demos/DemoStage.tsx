@@ -1,3 +1,4 @@
+/** @site-chrome */
 import { useContext, useLayoutEffect, useRef, type ReactNode } from 'react';
 import { DemoFrameContext } from '../DemoFrame';
 
