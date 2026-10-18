@@ -136,11 +136,8 @@ export type { SvgIngestOptions, SvgUnpacker, ClipboardIngestCtx, IngestionDep };
  * inscription for unknown kinds.
  *
  * `bounds` is still passed alongside as a useful AABB pose hint — factories
- * may use it as the node's pose even when richer geometry is available.
- *
- * Any of them may carry a `minSize` (`{ width, height }`): the size the
- * insert was held to, which the kit's own factories keep as `data.minSize`
- * so a resize holds the node to it too.
+ * may use it as the node's pose even when richer geometry is available. Any may carry a `minSize`
+ * (`{ width, height }`), which the kit's factories keep as `data.minSize` so a resize holds to it.
  */
 export type InsertExtras =
   | { kind: 'rect' }
@@ -268,9 +265,7 @@ declare module '@weasel-js/routing' {
      *  Sourced by `<SceneCanvas>` from `toolOptions.pathSnap` and
      *  `toolOptions.snapPoint`. Absent means no snapping. */
     snap?: SnapDep;
-    /** The outcome store the snap readout layer draws, for an action that
-     *  shows a mark of its own, such as an Alt-hover distance. Sourced by
-     *  `<SceneCanvas>`. */
+    /** The store the snap readout layer draws, for an action's own marks. Sourced by `<SceneCanvas>`. */
     snapReadout?: import('../../features/snap/readoutDep').SnapReadoutDep;
     /**
      * The canvas's debug sink.

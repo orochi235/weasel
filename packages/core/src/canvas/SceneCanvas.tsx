@@ -218,7 +218,8 @@ export const SceneCanvas = /* @__PURE__ */ forwardRef(SceneCanvasWrapper) as <
   props: SceneCanvasProps<TData, TLayer, TPose> & { ref?: React.Ref<SceneCanvasApi> },
 ) => ReturnType<typeof SceneCanvasInner>;
 
-export { DEFAULT_HANDLE_SIZE, mergeLayersWithDefaults, BUILTIN_TOOL_IDS } from './SceneCanvas/props';
+export { DEFAULT_HANDLE_SIZE, BUILTIN_TOOL_IDS } from './SceneCanvas/props';
+export { mergeLayersWithDefaults } from './SceneCanvas/mergeLayers';
 export type {
   SceneCanvasProps, SceneCanvasHit, SceneCanvasLayers, SceneCanvasLongPress, BuiltinToolId,
 } from './SceneCanvas/props';
