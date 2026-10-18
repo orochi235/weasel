@@ -3,7 +3,7 @@
 **Date:** 2026-05-04
 **Status:** Spec — ready for plan
 **TODO entry it resolves:** "Animation as a primitive concept" under Tier 1 in `docs/TODO.md`.
-**Driving consumers:** eric (raised-bed reflow tweens, plant entrance/exit), weasel-den (drag momentum on cards), generally any consumer that wants programmatic pose changes to slide instead of teleport.
+**Driving consumers:** eric (raised-bed reflow tweens, plant entrance/exit), generally any consumer that wants programmatic pose changes to slide instead of teleport.
 
 ## Problem
 
