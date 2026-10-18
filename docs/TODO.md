@@ -38,24 +38,6 @@ Priority tags:
   - a composition unit above single ids (families or sets a consumer opts into whole, with
     exclusions) that presets, `defaultTools`, and the palette all read.
 
-- **(P1) Guides and snapping, designed as one arc.** Spacing hints (equal-gap markers while
-  moving, Alt-hover distance readouts between the selection and the shape under the pointer) go in
-  as part of a pass over every guide and snap at once, not alone. The pieces today don't share a
-  pipeline: `@weasel-js/guides` has ruler guides, alignment guides, and equal-spacing snaps
-  (`packages/guides/src/guides/alignment/spacing.ts`), and only spacing hints reach draw, as
-  `createSpacingHintsPreset` (`packages/guides/src/spacingHints/`) behind the Spacing hints
-  preference; a move and the drawing tools reach path targets and measurement ends through the
-  `snap` dep (`toolOptions.snapTargets`), but the move's grid is a `gridSnapStrategy` behavior;
-  path snapping just landed with its own `snapPoint` ranking (`packages/core/src/features/paths/pathSnap/`); and
-  each pipeline reads its own reach: guides and spacing hints the `targets.guideSnapPx` kit
-  setting, the pen `targets.penAnchorSnapPx`, and path snap its own `radius` option, else
-  `DEFAULT_PATH_SNAP_RADIUS`, with no kit setting behind it. The arc settles one snap
-  pipeline every gesture uses — which targets compete, how ties are ranked, how a modifier
-  suspends them mid-gesture — and one readout layer for gaps, distances, and guide labels. The
-  spacing hints preset is source material for it: an Alt-hover distance readout drawn on its own
-  overlay, and a move snapping to equal sibling spacing with a marks layer of its own, neither
-  sharing a pipeline with the rest.
-
 - **(P2) `features` names two things.** The `<SceneCanvas features>` prop composes behavior presets
   (`canvas/SceneCanvas/features.ts`); `packages/core/src/features/<name>/` is a source directory
   bundling one domain's primitives, and `docs/taxonomy.md` calls each of those a "feature" too.
@@ -320,12 +302,13 @@ Priority tags:
   keys: Shift+W in draw; how near an edge a press must land to grab it; Alt moving one edge alone
   and Alt-click clearing a width point; and whether a press between anchors should insert one
   (`packages/path-tools/src/girth/`).
-- **(P2) Tune path snapping hands-on, with the maintainer driving.** First-draft behavior and
-  keys: an 8px radius with every kind on, `nearest` included; that a path target beats
-  `snapTargets` and `snapPoint`, so in range it wins over measurement ends and the grid, a move's
-  grid behavior included; that a move and an anchor drag snap to targets only, never `snapPoint`; no key or modifier to turn it off mid-gesture;
-  the marker's glyphs, its fixed orange, and where its label sits; and that draw does not turn it
-  on yet (`packages/core/src/features/paths/pathSnap/`, `packages/geom/src/snap/`).
+- **(P2) Tune snapping hands-on, with the maintainer driving.** First-draft behavior: one
+  `targets.snapPx` reach of 8; every canvas snapping point gestures to other nodes' anchors through
+  a default `'path-snap'` source; every path kind on, `nearest` included, once a consumer registers
+  `pathSnapSource()`; the readout's glyphs, its fixed orange, and where a label sits; Ctrl to
+  suspend; and that draw turns on the grid, measurement ends and anchors but not the other path kinds
+  ([`docs/snapping.md`](./snapping.md), `packages/core/src/features/snap/`,
+  `packages/core/src/features/paths/pathSnap/`).
 - **(P2) The browser-reserved chord list misses the devtools keys of Windows and Firefox.**
   `BROWSER_RESERVED_CHORDS` (`packages/routing/src/interactions/browserReservedKeys.ts`) lists
   Chrome's Mac devtools chords (Mod+Alt+I/J/C) but not their Windows and Linux form, Ctrl+Shift+I/J/C,
@@ -548,11 +531,11 @@ Priority tags:
 
 - **(P3) Per-subobject scale: nothing in the kit reads a container's unit scope yet.** A container
   declares one (`ContainerNode.units`), and `sceneUnitScopes(scene, id, root)` answers the chain
-  `resolveScoped` and `formatScoped` take. What is left is the readers. `gridSnapStrategy`,
+  `resolveScoped` and `formatScoped` take. What is left is the readers. `gridSnapSource`,
   `createGridLayer`, `createCellHighlightLayer`, and `useGridCellHover` in `packages/guides`
-  resolve their spacing against one `unitSystem` option, and a snap strategy is handed a gesture
-  context with an adapter but no scene, so the adapter needs a scope read before a grid inside a
-  millimeter sub-assembly can snap in millimeters. A property field's unit is built from one unit
+  resolve their spacing against one `unitSystem` option; a snap source is handed the scene and the
+  subject's ids, so the grid source needs a scope read of them before a grid inside a millimeter
+  sub-assembly can snap in millimeters. A property field's unit is built from one unit
   system (`prefUnit` in `packages/prefs/src/unit.ts`), whichever node it is showing. And a scope's
   `scale` only converts values: `RIGID_POSE_COMPOSITION` does not scale a container's frame by it,
   so whether a scoped container's children are also stored in its units is undecided.
@@ -640,14 +623,14 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   (it needs nothing else from weasel, so it qualifies, and needs a first publish) or
   `@weasel-js/menu` widened and renamed; the first arc moves the list behavior out of `menu` either way.
 
-- **(P3) Should grid and guide snaps line up the stroke?** Decision for the maintainer. The guides
-  package's move snaps (`snapToGrid`, `snapToGuides` in `packages/guides/src/behaviors/move`) put
-  the dragged pose's origin on a grid line or guide, so a rect with a centered stroke 10 wide
-  lands with its stroke's outer edge 5 short of the line. Snapping the drawn box instead would put
-  the stroke's edge on it, which is what the selection chrome, resize, and `alignMoveBehavior` now
-  measure — and every stroked shape would land half a stroke from where it lands today. The insert
-  snaps are a different case and stay as they are: they place the point the pointer defines, before
-  the node has a stroke to measure.
+- **(P3) Should grid and guide snaps line up the stroke?** Decision for the maintainer.
+  `gridSnapSource` and `guideSnapSource` (`packages/guides/src/sources/`) snap the subject's
+  `origin` probe, its pose origin, so a rect with a centered stroke 10 wide lands with its stroke's
+  outer edge 5 short of the line. Snapping the drawn box instead would put the stroke's edge on it,
+  which is what the selection chrome, resize, and `alignmentSnapSource` measure, and every stroked
+  shape would land half a stroke from where it lands today. Either answer is now a one-line change
+  to the two sources' `roles` (`'origin'` to `'box'`). Insert and the pen are a different case and
+  stay as they are: they snap the pointer, before the node has a stroke to measure.
 
 - **(P3) Nobody has looked at a theme's prefs schema in a form.** `themePrefsSchema`
   (`@weasel-js/theme/prefs`) is drawn in `PrefsForm` at `apps/theme-editor`'s `#/prefs` page

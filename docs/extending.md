@@ -329,7 +329,8 @@ that names them all — that one wants the `isAnchor` predicate.
 
 A behavior plugs into an action's behavior chain — via `BindingOpts.behaviors`
 on the binding that reaches it, or via the options `<SceneCanvas>` forwards
-(`selectTool.move.behaviors`, `selectTool.snap`, …):
+(`selectTool.move.behaviors`, `selectTool.resize.behaviors`, …). Snapping is
+not a behavior; a custom snap target is a snap source ([snapping.md](./snapping.md)):
 
 ```ts
 interface ActionBehavior<TPose, TProposed, TMoveResult, TEnd extends BehaviorEnd = BehaviorEnd> {
@@ -402,8 +403,6 @@ adds itself:
 
 | Behavior | From | What it does | Turned on by |
 |---|---|---|---|
-| `snap(strategy)` | `@weasel-js/core` | Shifts the whole selection so its first node lands where the strategy says. | `selectTool.snap`, or in `behaviors` |
-| `snapToGrid`, `snapToGuides`, `alignMoveBehavior` | `@weasel-js/guides/move` for the first two, `@weasel-js/guides` for `alignMoveBehavior` | Snap to a grid, to ruler guides, or to other nodes' edges and centers. | in `behaviors` |
 | `snapToContainer(...)` | `@weasel-js/core/move` | After the pointer dwells over a container, snaps each dragged node to the slot `findTarget` gives it, and reparents on release. | in `behaviors` |
 | `snapBackOrDelete(...)` | `@weasel-js/core/move` | Released near where it started, the selection returns home; released far away, it returns or is deleted. | in `behaviors` |
 | `momentum(...)` | `@weasel-js/core` | Keeps a flicked node coasting after release, and records the whole flick as one undo step. | in `behaviors` |
@@ -471,20 +470,18 @@ The kit ships:
 - `ROTATED_POSE_DESCRIPTOR` — rect poses carrying a `rotation`.
 - `pathPoseDescriptor` — implementation for `Path`.
 
-For grid snapping on a non-rect pose, also pass an `OriginProjection`:
+A grid or a ruler guide snaps a pose's origin, read through an
+`OriginProjection`. The default reads rects and `Path`s; a pose that is neither
+passes its own:
 
 ```tsx
-import { pathOriginProjection } from '@weasel-js/core';
-import { gridSnapStrategy } from '@weasel-js/guides';
+import { gridSnapSource } from '@weasel-js/guides';
 
 <SceneCanvas
-  selectTool={{ snap: gridSnapStrategy(20, { origin: pathOriginProjection }) }}
+  snap={{ sources: [gridSnapSource({ spacing: 20 })], originProjection: myOriginProjection }}
   …
 />;
 ```
-
-`<SceneCanvas>` folds `selectTool.snap` into the `move` action's behavior
-chain.
 
 Move translates through the same descriptor. It reads the `poseDescriptor` dep
 and applies `translate` when the descriptor defines one, otherwise an origin

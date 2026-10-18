@@ -60,7 +60,7 @@ flowchart TB
 
   subgraph ST["Strategies"]
     direction TB
-    Sn["Snap strategy"]
+    Sn["Snap source"]
     La["Layout strategy"]
   end
 
@@ -81,7 +81,7 @@ flowchart TB
   To -. defines .-> Af
   L -. fills .-> Sl
   A -. consults .-> Se
-  Sn -. refines pose via .-> B
+  Sn -. answers the snap session of .-> A
   La -. arranges children in .-> Ad
   V -. projects coords for .-> L
   CS -. derived from .-> Se
@@ -320,9 +320,13 @@ drag) can power different actions (insert a rect, marquee-select, area-erase); t
 same action (`delete`) can be invoked by different gestures (a keystroke, a button
 click, a swipe). See [Interaction](#interaction) for the composition.
 
+Snapping is not a gesture: an action that snaps begins a session on the `snap`
+dep at press and asks it each frame where its point lands. The model — loci,
+probes, ranking, sources, the modifier roles — is in [snapping.md](./snapping.md).
+
 Source layout: `packages/core/src/interactions/gestures/` holds the input primitives — per-primitive
 subdirectories `dragGesture/`, `dragRect/`, `dragRadial/`, plus the shared `shared/`
-snap helpers and `types.ts` carrying the cross-system base types (`ModifierState`,
+helpers (origin projections, screen tolerance) and `types.ts` carrying the cross-system base types (`ModifierState`,
 `GestureContext`, `ActionBehavior`, etc.). Drag-based actions (`move/`, `resize/`,
 `rotate/`, `clone/`, `lasso-select/`, `insert/`) live alongside the one-shot actions
 under `packages/core/src/interactions/actions/`.
@@ -503,19 +507,17 @@ Distinct from [component-level behaviors](#mixin--lifecycle-behavior-deferred)
 which do not exist yet. See `packages/core/src/interactions/gestures/types.ts` for the
 `ActionBehavior` interface.
 
-### Snap strategy
+### Snap source
 
-`SnapStrategy<TPose>` — a pluggable point-snap policy with one method:
-`snap(pose, ctx): TPose | null`. Returns the snapped pose or `null` to skip.
-Passed through the action layer (e.g. the `resizePolicy` dep's `pointSnap`).
-World-space point snapping for insertion
-is the `snap` dep — see `SnapDep` in `interactions/actions/depSchema.ts`. Core
-owns the contract and `OriginProjection`, which adapts non-rect poses (e.g.
-`Path`) so a strategy can read and write the correct origin — see
-`packages/core/src/interactions/gestures/shared/originProjection.ts`. The
-strategies themselves are in `@weasel-js/guides`: `gridSnapStrategy(spacing)`
-snaps the pose origin to the nearest grid multiple, `guideSnapStrategy` to the
-nearest guide line.
+`SnapSource` — one kind of snap target: a grid, ruler guides, sibling edges,
+path anchors, angle steps. A gesture's snap session asks every source each
+frame for the loci its probes may land on, and one resolver ranks them all,
+so no source wins by running first. Sources go in `<SceneCanvas snap={{ sources }}>`,
+a preset's `snapSources`, or `useSnapSource`; core ships `pathSnapSource`,
+`measureEndSource` and `rotationSnapSource`, `@weasel-js/guides` the grid,
+guide, alignment and spacing sources, kernel3d the 3D ones.
+`OriginProjection` (`packages/core/src/interactions/gestures/shared/originProjection.ts`)
+says where a non-rect pose's `origin` probe is. See [snapping.md](./snapping.md).
 
 ### Layout strategy
 
@@ -733,7 +735,7 @@ the kit's rect-driven machinery. Required methods: `getBounds(pose) → Bounds`
 scale), `fromBounds(bounds, template) → TPose`. Optional: `translate`, `lerp`, `getRotation`. Used by
 `resizeAction`, area-select, snap, and animation helpers. Built-ins:
 `RECT_POSE_DESCRIPTOR` (identity for rect poses), `ROTATED_POSE_DESCRIPTOR`,
-`pathPoseDescriptor`. Distinct from [OriginProjection](#snap-strategy) which handles
+`pathPoseDescriptor`. Distinct from [OriginProjection](#snap-source) which handles
 snap-point extraction for non-rect poses. See `packages/core/src/core/geometry/poseDescriptor.ts`.
 
 ### Scene

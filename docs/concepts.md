@@ -567,14 +567,13 @@ runs after either, once the document holds the result. `ctx.scratch` is per-gest
 makes a move, resize or rotate commit without a history entry unless
 `transient` is set explicitly. See [extending.md](./extending.md) for writing one.
 
-Built-in behaviors: `snap(strategy)`, `snapToContainer(...)`,
-`snapBackOrDelete(...)` for move; `clampMinSize` for resize (Shift's aspect
-lock is the snap session's `snap.constrain` role). A rotate snaps through the snap session too: quarter
-turns and other nodes' angles from `rotationSnapSource`, which every `<SceneCanvas>` registers, and
-15 degree steps while `snap.constrain` (Shift) is held. A clone drag takes the move behaviors that only reshape the
-translation (`snap(strategy)`), as `CloneBehavior`. Grid and guide snapping —
-`snapToGrid`, `snapToGuides`, `gridSnapStrategy`, the alignment behaviors —
-are in `@weasel-js/guides`. Marquee area-select is unconditional — it is
+Built-in behaviors: `snapToContainer(...)` and `snapBackOrDelete(...)` for
+move; `clampMinSize` for resize. A clone drag takes the move behaviors that
+only reshape the translation, as `CloneBehavior`. Snapping is not a behavior:
+every snapping action asks the `snap` dep's session, which ranks every snap
+source together, before its behaviors run — see [snapping.md](./snapping.md).
+The grid, guide, alignment and spacing sources are in `@weasel-js/guides`.
+Marquee area-select is unconditional — it is
 `areaSelectAction`'s built-in behavior, not an opt-in one.
 
 ## Action

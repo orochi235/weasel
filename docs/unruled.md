@@ -72,6 +72,53 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
 - 2026-10-18: Create Outlines moved from Mod+Shift+O to Mod+Enter (Affinity's Convert to Curves)
   and Average Anchors from Mod+Alt+J to Mod+Alt+Shift+J, off chords Chrome takes first.
 
+## Snapping
+
+The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these calls in it.
+
+- 2026-10-18: Every `<SceneCanvas>` snaps point gestures (pen and spiro clicks, pen handles, anchor
+  drags, line and box insert, click-place, measure ends, the symmetry center) to other nodes'
+  anchors, through a default `'path-snap'` source; move, resize and rotate do not get it.
+  `snap.omit: ['path-snap']` turns it off.
+- 2026-10-18: A rotate snaps to quarter turns and to other nodes' angles without Shift; Shift adds
+  the 15° steps. Near the pivot its reach is capped at 30°. `rotate: { behaviors: [] }` no longer
+  turns rotation snapping off; `snap.omit: ['rotation']` does.
+- 2026-10-18: Shift on a move locks it to the horizontal, vertical or 45° line through the press,
+  and Shift on an anchor drag does the same (both new).
+- 2026-10-18: Shift on a line insert, a measurement or a pen handle puts the end at the pointer's
+  nearest point on the stepped line through the start, rather than keeping the drag's length, and
+  that line meets snap targets.
+- 2026-10-18: Ctrl suspends snapping on every snapping gesture, a pen drag and an anchor drag
+  included; a handle drag keeps Ctrl as its length lock.
+- 2026-10-18: One reach, `targets.snapPx`, default 8, replaces `targets.guideSnapPx` (6) and
+  `targets.penAnchorSnapPx` (8): guides and alignment now reach 2px further.
+- 2026-10-18: A grid is a fallback: alignment or any other target in reach wins its axis, where
+  alignment used to add its delta on top of the grid's. A point target beats a line.
+- 2026-10-18: An anchor drag meets every point-gesture source, a grid included, and a pen anchor
+  joins an open end within `targets.penCloseHitPx` before any snap.
+- 2026-10-18: A multi-root move offers each root's origin to the grid, and the nearest snaps; it
+  used to be the first node's alone.
+- 2026-10-18: Alignment and equal spacing measure siblings by their drawn box, stroke included, as
+  the dragged subject already was.
+- 2026-10-18: A measurement end drag keeps its offset from the press, and no longer snaps to its own
+  measurement's ends.
+- 2026-10-18: A move's behaviors run on the snapped delta and their translate stands, so a
+  container's slot preview wins over a snap target in reach.
+- 2026-10-18: Snap ties break by source order, then by the order a source yields its targets. A
+  point target on the gesture's own `origin` is never offered.
+- 2026-10-18: The snap session factory is test-only (`createSnapSession2dForTests` in
+  `@weasel-js/core/test-seams`); a host without `<SceneCanvas>` builds its own session from
+  `gatherSnapCandidates` and `resolvedSnapMarks`.
+- 2026-10-18: The debug overlay's `snap` feature draws every candidate the resolver weighed each
+  frame, the ones the result meets filled.
+- 2026-10-18: `matchAlignment` and `MOVE_ANCHORS` are removed with the alignment behaviors;
+  `matchSpacing` and `measureGaps` stay, built from the same offers as `spacingSnapSource`.
+- 2026-10-18: `<SceneCanvas snap={{ originProjection }}>` is new, the one place a pose that is
+  neither a rect nor a `Path` says where its origin probe is (it was `gridSnapStrategy`'s `origin`).
+- 2026-10-18: kernel3d's `translate` puts its plane at `up · position`, and its insert builds the
+  footprint from the two drag ends cast onto the ground.
+- 2026-10-18: The site demo `point-snap` is renamed `resize-snap`; links to the old id break.
+
 ## Scene, move, and history
 
 - 2026-10-11: A node with `derivePose` and a `dependsOn` list hands a drag to its dependencies,
@@ -348,6 +395,9 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
 - 2026-10-13 (pass 6): The text edit owns `text-edit` mode: it is entered only when an edit opens,
   the text tool and a new insert included. draw no longer strips `lineHeight` from the style it
   exports.
+
+- 2026-10-18: "Snap to grid" also snaps resize corners, inserts and pen clicks, as its description
+  already said.
 
 ## Build
 
