@@ -91,21 +91,8 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
   const visible = (path: string): boolean =>
     isLeafVisible(resolved, path, config as Record<string, unknown>, showHidden, over);
 
-  /** Whether the node at `path` draws anything: a visible leaf, or a visible group with such a node beneath it. */
-  const drawsAny = (path: string): boolean => {
-    if (!visible(path)) return false;
-    const found = schemaNodeAtPath(resolved.group, path);
-    if (!found || isPrefLeaf(found)) return found !== undefined;
-    return Object.keys(found.children).some((key) => drawsAny(`${path}.${key}`));
-  };
-
-  /** A group's paths that no section inside it claims, in schema order. */
-  const loosePaths = (group: PrefGroup, at: string): string[] => {
-    const sectioned = new Set(resolved.sections.filter((s) => s.at === at).flatMap((s) => s.paths));
-    return Object.keys(group.children)
-      .map((key) => (at === '' ? key : `${at}.${key}`))
-      .filter((p) => !sectioned.has(p));
-  };
+  const drawsAny = (path: string): boolean => drawsAnyAt(resolved, visible, path);
+  const loosePaths = (group: PrefGroup, at: string): string[] => loosePathsIn(resolved, group, at);
 
   /** The control a heading carries in its title row, lifted out of the rows
    *  beneath it — see `headingLeaf`. */
@@ -211,16 +198,7 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
         // two-column grid leaves it laying its own rows out inside a cell,
         // which overlaps them.
         span
-        actions={
-          lifted.control && reset ? (
-            <>
-              {lifted.control}
-              {reset}
-            </>
-          ) : (
-            (lifted.control ?? reset)
-          )
-        }
+        actions={headingActions(lifted.control, reset)}
         {...fold(path, undefined, rows.grid)}
       >
         {body(found, path, rows, lifted.path)}
@@ -340,6 +318,37 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
   };
 
   return { body, lift, loosePaths };
+}
+
+/** Whether the node at `path` draws anything: a visible leaf, or a visible group with such a node beneath it. */
+function drawsAnyAt(
+  resolved: ResolvedConfig,
+  visible: (path: string) => boolean,
+  path: string,
+): boolean {
+  if (!visible(path)) return false;
+  const found = schemaNodeAtPath(resolved.group, path);
+  if (!found || isPrefLeaf(found)) return found !== undefined;
+  return Object.keys(found.children).some((key) => drawsAnyAt(resolved, visible, `${path}.${key}`));
+}
+
+/** A group's paths that no section inside it claims, in schema order. */
+function loosePathsIn(resolved: ResolvedConfig, group: PrefGroup, at: string): string[] {
+  const sectioned = new Set(resolved.sections.filter((s) => s.at === at).flatMap((s) => s.paths));
+  return Object.keys(group.children)
+    .map((key) => (at === '' ? key : `${at}.${key}`))
+    .filter((p) => !sectioned.has(p));
+}
+
+/** What a group's heading carries: its lifted control, its reset button, or both. */
+function headingActions(control: ReactNode, reset: ReactNode): ReactNode {
+  if (!control || !reset) return control ?? reset;
+  return (
+    <>
+      {control}
+      {reset}
+    </>
+  );
 }
 
 /** Whether the lab or the instrument draws the control of the leaf at `path` itself: by path, in a dialog, or by kind. */

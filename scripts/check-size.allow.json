@@ -159,14 +159,11 @@
   "packages/labkit/src/controls/ControlMatrix.tsx": {
     "longestFunction": 191
   },
-  "packages/labkit/src/controls/ControlRow.tsx": {
-    "longestFunction": 123
-  },
   "packages/labkit/src/controls/MatrixCell.tsx": {
     "longestFunction": 129
   },
   "packages/labkit/src/controls/panelRows.tsx": {
-    "longestFunction": 256
+    "longestFunction": 251
   },
   "packages/labkit/src/lab/Lab.tsx": {
     "longestFunction": 197
@@ -292,7 +289,7 @@
     "longestFunction": 204
   },
   "packages/ui/src/components/NumberField/UnitField.tsx": {
-    "longestFunction": 169
+    "longestFunction": 159
   },
   "packages/ui/src/components/PaintInput/PaintInput.tsx": {
     "longestFunction": 138

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { type RefObject, useEffect, useRef, useState } from 'react';
 import { decimal, parseAs, parseNumber, qty, type Display, type UnitTable } from '@weasel-js/quantity';
 import { clampToBounds, spinKey } from '../spin';
 import f from '../field.module.css';
@@ -150,19 +150,7 @@ export function UnitField({
     latestSpent.current = spent;
   });
 
-  // The wheel steps only a focused field, so scrolling past one changes nothing.
-  // Not passive, so it can keep the page from scrolling under it.
-  useEffect(() => {
-    const el = input.current;
-    if (!el) return;
-    const onWheel = (e: WheelEvent) => {
-      if (document.activeElement !== el || e.deltaY === 0) return;
-      e.preventDefault();
-      latestSpin.current(e.deltaY < 0 ? 'ArrowUp' : 'ArrowDown');
-    };
-    el.addEventListener('wheel', onWheel, { passive: false });
-    return () => el.removeEventListener('wheel', onWheel);
-  }, []);
+  useWheelSteps(input, latestSpin);
 
   const repeat = useStepRepeat(latestSpin, latestSpent);
   const stepper = (key: 'ArrowUp' | 'ArrowDown', label: string, glyph: string, atBound: boolean) => (
@@ -217,14 +205,9 @@ export function UnitField({
           }}
           onBlur={() => {
             const typedText = canceled.current ? null : draft;
-            if (typedText !== null && typedText.trim() === '' && known && onClear) {
-              typing.current = null;
-              setDraft(null);
-              onClear();
-              return;
-            }
             const by = typedText === null ? null : offsetIn(typedText, read);
-            if (by !== null && Number.isFinite(by) && onOffset) onOffset(by);
+            if (typedText?.trim() === '' && known && onClear) onClear();
+            else if (by !== null && Number.isFinite(by) && onOffset) onOffset(by);
             else commit(typedText === null ? Number.NaN : by !== null ? value + by : read(typedText));
             typing.current = null;
             setDraft(null);
@@ -249,6 +232,25 @@ export function UnitField({
       </div>
     </div>
   );
+}
+
+/** The wheel steps only a focused field, so scrolling past one changes nothing.
+ *  Not passive, so it can keep the page from scrolling under it. */
+function useWheelSteps(
+  input: RefObject<HTMLInputElement | null>,
+  spin: RefObject<(key: string) => boolean>,
+): void {
+  useEffect(() => {
+    const el = input.current;
+    if (!el) return;
+    const onWheel = (e: WheelEvent) => {
+      if (document.activeElement !== el || e.deltaY === 0) return;
+      e.preventDefault();
+      spin.current(e.deltaY < 0 ? 'ArrowUp' : 'ArrowDown');
+    };
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
+  }, [input, spin]);
 }
 
 /** What `typed` offsets by when it reads as `+=` or `-=` and a number: NaN

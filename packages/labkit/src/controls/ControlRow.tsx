@@ -37,7 +37,7 @@ import { aliasTargetsOf, conditionedLeaf } from '../config/visible';
 import type { ControlPack } from './controlPack';
 import { useFieldChoices } from './fieldChoices';
 import { extra, labField, leafValueAt } from './fields';
-import { DraftDialogRow } from './DraftDialogRow';
+import { DraftDialogRow, type DraftDialogRowProps } from './DraftDialogRow';
 import { inDialog, summarizeLeaf, summarizeValue } from './inDialog';
 import { DebouncedTextRow, UnwiredRow } from './rows';
 
@@ -174,6 +174,35 @@ function CompoundControl({
   );
 }
 
+type CompoundControlProps = Parameters<typeof CompoundControl>[0];
+
+/** A compound leaf's row: a dialog whose control edits a draft of the value. */
+function CompoundRow({
+  dialog,
+  control,
+  value,
+  setValue,
+}: {
+  dialog: Omit<DraftDialogRowProps, 'value' | 'setValue' | 'children'>;
+  control: Omit<CompoundControlProps, 'value' | 'onChange'>;
+  value: unknown;
+  setValue: (value: unknown) => void;
+}) {
+  return (
+    <DraftDialogRow {...dialog} value={value} setValue={setValue}>
+      {(draft, setDraft) => (
+        <CompoundControl
+          {...control}
+          // A condition inside the leaf reads the value being edited, not the one stored.
+          config={withValueAtPath(control.config, control.path, draft)}
+          value={draft}
+          onChange={setDraft}
+        />
+      )}
+    </DraftDialogRow>
+  );
+}
+
 /** What draws the row at `path` in place of the built-in. Most specific wins, and within a tier the lab's entry
  *  beats the instrument's: controls[path] -> node .render/.dialog -> controls[kind]. */
 function customRow(
@@ -307,35 +336,15 @@ function LeafRow<TC extends Record<string, unknown>>({
 
   // Too much for a row, so the row opens it in a dialog.
   if (prefIsCompound(leaf)) {
+    const summary = summarizeLeaf(leaf, value);
+    const dialog = { label, summary, readout: autoReadout, layout, description, disabled, error };
     return (
-      <DraftDialogRow
-        label={label}
-        summary={summarizeLeaf(leaf, value)}
-        readout={autoReadout}
-        layout={layout}
-        description={description}
-        disabled={disabled}
-        error={error}
-        {...autoProps}
+      <CompoundRow
+        dialog={{ ...dialog, ...autoProps }}
+        control={{ path, leaf, resolved, config, label, renderers, over, given: inside }}
         value={value}
         setValue={write}
-      >
-        {(draft, setDraft) => (
-          <CompoundControl
-            path={path}
-            leaf={leaf}
-            resolved={resolved}
-            // A condition inside the leaf reads the value being edited, not the one stored.
-            config={withValueAtPath(config, path, draft)}
-            label={label}
-            value={draft}
-            onChange={setDraft}
-            renderers={renderers}
-            over={over}
-            given={inside}
-          />
-        )}
-      </DraftDialogRow>
+      />
     );
   }
 

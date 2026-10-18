@@ -1,6 +1,6 @@
 import { numericWeight, type Paint } from '@weasel-js/core';
 import { endless as withInfinity } from '@weasel-js/quantity';
-import { isBuiltinPref, prefDisplayBounds, resolvePrefUnit, type PrefField, type PrefLeaf, type PrefValueBase } from '@weasel-js/prefs';
+import { isBuiltinPref, prefDisplayBounds, resolvePrefUnit, type PrefField, type PrefLeaf, type PrefNumber, type PrefValueBase } from '@weasel-js/prefs';
 import { endlessAllows } from '../../endless';
 import { stepDisplay } from '../Properties/NumberControls';
 import { resolveIcon } from '../../icons/resolveIcon';
@@ -60,11 +60,17 @@ export function prefFieldProps(
   surface?: ParamsSurface,
   settles?: Readonly<Record<LiveControl, boolean>>,
 ): PropertyControlProps | null {
-  const made = enabledFieldProps(leaf, state);
+  const made = clearable(leaf, state, enabledFieldProps(leaf, state));
   if (made === null) return null;
   const field = surface === undefined ? made : withCommitPolicy(withSurfaceControl(made, surface), surface, settles);
   const shown = (leaf as PrefValueBase<string, unknown>).readout === true ? { ...field, readOnly: true } : field;
   return state.disabled ? { ...shown, disabled: true } : shown;
+}
+
+/** `field` emptying to `undefined` where `leaf` is a clearable number. */
+function clearable(leaf: PrefLeaf, state: PrefFieldState, field: PropertyControlProps | null): PropertyControlProps | null {
+  if (field?.kind !== 'number' || (leaf as PrefNumber).clearable !== true) return field;
+  return { ...field, onClear: () => state.setValue(undefined) };
 }
 
 /** A `field` leaf as a select among the fields the surface draws. */
@@ -149,7 +155,6 @@ function enabledFieldProps(leaf: PrefLeaf, state: PrefFieldState): PropertyContr
           leaf.infinity === undefined ? leaf.display : withInfinity(leaf.display ?? stepDisplay(bounds.step), leaf.infinity),
         endless,
         onChange: store,
-        ...(leaf.clearable ? { onClear: () => setValue(undefined) } : {}),
       };
     }
     case 'string':
