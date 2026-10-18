@@ -43,15 +43,15 @@ Priority tags:
   pipeline: `@weasel-js/guides` has ruler guides, alignment guides, and equal-spacing snaps
   (`packages/guides/src/guides/alignment/spacing.ts`), and only spacing hints reach draw, as
   `createSpacingHintsPreset` (`packages/guides/src/spacingHints/`) behind the Spacing hints
-  preference; the select
-  tool's move snaps only through `gridSnapStrategy`, so it ignores measurement ends; path snapping
-  just landed with its own `snapPoint` ranking (`packages/core/src/features/paths/pathSnap/`); and
+  preference; a move and the drawing tools reach path targets and measurement ends through the
+  `snap` dep (`toolOptions.snapTargets`), but the move's grid is a `gridSnapStrategy` behavior;
+  path snapping just landed with its own `snapPoint` ranking (`packages/core/src/features/paths/pathSnap/`); and
   the tolerances are fixed constants (`DEFAULT_GUIDE_TOLERANCE_PX`). The arc settles one snap
   pipeline every gesture uses — which targets compete, how ties are ranked, how a modifier
   suspends them mid-gesture — and one readout layer for gaps, distances, and guide labels. The
   spacing hints preset is source material for it: an Alt-hover distance readout drawn on its own
   overlay, and a move snapping to equal sibling spacing with a marks layer of its own, neither
-  sharing a pipeline with the rest. The P3 "Moving a shape does not snap to measurement ends" folds into it.
+  sharing a pipeline with the rest.
 
 - **(P2) `features` names two things.** The `<SceneCanvas features>` prop composes behavior presets
   (`canvas/SceneCanvas/features.ts`); `packages/core/src/features/<name>/` is a source directory
@@ -210,9 +210,6 @@ Priority tags:
   time.** `LayerList` has no rename, and the scene has no per-node visibility or lock, so a
   measurement row offers select and remove only; the annotation layer's own row can be hidden,
   and shows its lock without toggling it. A measurement's `data.label` is what a rename would write.
-- **(P3) Moving a shape does not snap to measurement ends.** `nearestMeasureEnd` reaches the
-  insert tools through the `snap` dep; the select tool's move snaps through its own `snap`
-  strategy (`gridSnapStrategy`), which knows nothing of measurements.
 - **(P3) `renderSceneToPixels` draws annotation layers.** The SVG export leaves them out through
   `isAnnotationNode`; a headless raster draws whatever the scene holds. Undecided: whether a raster
   is an export, and so skips them, or a view of the canvas, and so keeps them.
@@ -354,8 +351,8 @@ Priority tags:
   (`packages/path-tools/src/girth/`).
 - **(P2) Tune path snapping hands-on, with the maintainer driving.** First-draft behavior and
   keys: an 8px radius with every kind on, `nearest` included; that a path target beats
-  `snapPoint`, so in range it wins over the grid and measurement ends; that a move and an anchor
-  drag snap to path targets only, never the grid; no key or modifier to turn it off mid-gesture;
+  `snapTargets` and `snapPoint`, so in range it wins over measurement ends and the grid, a move's
+  grid behavior included; that a move and an anchor drag snap to targets only, never `snapPoint`; no key or modifier to turn it off mid-gesture;
   the marker's glyphs, its fixed orange, and where its label sits; and that draw does not turn it
   on yet (`packages/core/src/features/paths/pathSnap/`, `packages/geom/src/snap/`).
 - **(P3) Trim segment and Extend to next path change editable polygon paths only.** Any node's

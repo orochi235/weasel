@@ -19,7 +19,7 @@ function dragAnchor2To(to: { x: number; y: number }): PolygonPath | null {
   snapper.configure({ kinds: { nearest: false } });
   const snap: SnapDep = {
     point: (p) => p,
-    toPaths: (p, at) => snapper.snap(p, at, { x: 1, y: 1 }),
+    toTargets: (p, at) => snapper.snap(p, at, { x: 1, y: 1 }),
   };
   let committed: PolygonPath | null = null;
   const dep = makeEditAnchorsDep({
