@@ -851,11 +851,14 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   `PrefsForm` left".
 
 - **(P3) What the split rows in `PrefsForm` left.** The marks a split leaf draws in a group's
-  heading and in a bar cell are tested in jsdom and were never seen. `list`, `map`, `union`,
-  hidden, and alias rows open to their members through the same path as the kinds that have a
-  test, and have none of their own. A row that can be split is a group and no `<label>`, so an
-  app renderer's control on such a leaf has to name itself. Nothing animates a selector's weights
-  yet: `store.get(path, { weights })` is there for an animator target to drive.
+  heading and in a bar cell are tested in jsdom and were never seen. A row that can be split is a
+  group and no `<label>`, so an app renderer's control on such a leaf has to name itself: the
+  toggle that opens the row is a button on the label line, and a `<label>` would hand its name and
+  every click on the label's text to that button. Undecided, and a look to settle in a browser:
+  move the toggle out of the label line so the row can stay a `<label>`, or keep it there and
+  leave naming to the renderer (`ctx.pref.name`), as a `group` renderer already does. Nothing
+  animates a selector's weights yet: `store.get(path, { weights })` is there for an animator
+  target to drive.
 
 - **(P3) A removable badge's remove control can wrap onto a line by itself.** On a wrapped `pill` or
   `plain` `Badge`, when the line cannot hold the last word and the control together, the control
