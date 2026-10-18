@@ -498,16 +498,6 @@ Priority tags:
   `camera.mjs`). The straight arrows drawn before the 45-degree rule in CLAUDE.md ("Drawing
   icons") still use spreads of 36 to 42.
 
-- **(P3) Text: an emoji is a bitmap baked at one size.** A color glyph is rasterized at the canvas
-  tier's `BAKE_SIZE` (48px) and mipmapped, so it is sharp at or below that on screen and blurs
-  above it: a 96px heading, or body text zoomed past 4x. A distance field has no such limit and
-  an emoji has no field, so it needs a second bake at the size it is drawn at, the way a vector
-  image re-rasterizes in power-of-two steps (`maybeReraster` in
-  `packages/renderer/src/images/imageCache.ts`). The larger bakes want pages of their own: the
-  color pages empty together with the field pages when either set fills (`reclaim` in
-  `packages/font/src/dynamic/bakeQueue.ts`), and one 384px emoji takes the room of sixty at 48.
-  Whether the result is sharp can only be read in a browser.
-
 ---
 
 ## Scene, adapters & layout

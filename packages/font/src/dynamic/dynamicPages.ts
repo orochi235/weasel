@@ -1,7 +1,8 @@
 /**
  * The dynamic glyph atlas's pages: their CPU-side bytes, and bringing each
- * renderer's texture of one up to date. Two sets: distance fields, one byte a
- * texel, and color glyphs, four.
+ * renderer's texture of one up to date. Three sets: distance fields, one byte a
+ * texel; color glyphs, four; and color glyphs baked again larger, four, on
+ * pages that fill and empty on their own.
  */
 
 import type { GlyphTextureSink } from '../textureSink';
@@ -107,6 +108,13 @@ const colors = new PageSet({
   patch: (cache, id, x, y, w, h, data) => cache.subImageRGBA(id, x, y, w, h, data),
 });
 
+const sharpColors = new PageSet({
+  channels: 4,
+  idPrefix: 'weasel-dyn-color-sharp-page-',
+  upload: (cache, id, data) => cache.uploadRGBA(id, PAGE_SIZE, PAGE_SIZE, data),
+  patch: (cache, id, x, y, w, h, data) => cache.subImageRGBA(id, x, y, w, h, data),
+});
+
 /** Copy a `w`×`h` block of field bytes into field page `pageIndex` at `(x, y)`. */
 export function blitToPage(
   pageIndex: number, x: number, y: number, w: number, h: number, bytes: Uint8Array,
@@ -121,10 +129,23 @@ export function blitToColorPage(
   colors.blit(pageIndex, x, y, w, h, rgba);
 }
 
-/** Zero every page of both sets. */
+/** Copy a `w`×`h` block of premultiplied RGBA texels into sharp color page `pageIndex` at `(x, y)`. */
+export function blitToSharpColorPage(
+  pageIndex: number, x: number, y: number, w: number, h: number, rgba: Uint8ClampedArray,
+): void {
+  sharpColors.blit(pageIndex, x, y, w, h, rgba);
+}
+
+/** Zero every page of every set. */
 export function clearPages(): void {
   fields.clear();
   colors.clear();
+  sharpColors.clear();
+}
+
+/** Zero the sharp color pages alone. */
+export function clearSharpPages(): void {
+  sharpColors.clear();
 }
 
 /** Texture-cache key for a dynamic field page (parallel to `textureCacheKey`). */
@@ -135,6 +156,11 @@ export function dynamicPageTextureId(page: number): string {
 /** Texture-cache key for a page of color glyphs. */
 export function colorPageTextureId(page: number): string {
   return colors.textureId(page);
+}
+
+/** Texture-cache key for a page of color glyphs baked larger. */
+export function sharpColorPageTextureId(page: number): string {
+  return sharpColors.textureId(page);
 }
 
 /** Bring `cache`'s copy of field page `pageIndex` up to date: full R8 upload
@@ -149,6 +175,11 @@ export function syncColorPageTexture(cache: GlyphTextureSink, pageIndex: number)
   return colors.sync(cache, pageIndex);
 }
 
+/** The same for a page of color glyphs baked larger. */
+export function syncSharpColorPageTexture(cache: GlyphTextureSink, pageIndex: number): boolean {
+  return sharpColors.sync(cache, pageIndex);
+}
+
 /** @internal test seam — inspect CPU-side field pages. */
 export function _getPagesForTests(): readonly DynamicPage[] {
   return fields.pages;
@@ -159,8 +190,14 @@ export function _getColorPagesForTests(): readonly DynamicPage[] {
   return colors.pages;
 }
 
+/** @internal test seam — inspect CPU-side sharp color pages. */
+export function _getSharpColorPagesForTests(): readonly DynamicPage[] {
+  return sharpColors.pages;
+}
+
 /** @internal test seam — forget every page. */
 export function _resetPagesForTests(): void {
   fields.pages = [];
   colors.pages = [];
+  sharpColors.pages = [];
 }

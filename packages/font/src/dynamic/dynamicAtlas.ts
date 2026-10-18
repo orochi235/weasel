@@ -15,7 +15,8 @@
  *
  * An emoji is the one glyph kept as the canvas drew it: `requestCluster`
  * rasterizes a whole grapheme cluster in its own colors onto a second set of
- * pages, RGBA, that fill and empty with the field pages.
+ * pages, RGBA, that fill and empty with the field pages, and bakes it again
+ * larger for drawing past its size (`sharpColor.ts`).
  */
 
 import type { FontStyle } from '../fontStyle';
@@ -28,11 +29,14 @@ import { PAGE_SIZE, MAX_PAGES, _resetPagesForTests } from './dynamicPages';
 import { dropBakes, onPagesEmptied, requestBake, _resetBakeQueueForTests } from './bakeQueue';
 import { familyKey, watchFontLoads } from './fontLoads';
 import { createCanvasRasterizer, BAKE_SIZE, type GlyphRasterizer } from './glyphRasterizer';
+import { addSharpSource, sharpBakesOf } from './sharpColor';
 
 export { PAGE_SIZE, MAX_PAGES };
 export {
-  syncDynamicPageTexture, dynamicPageTextureId, syncColorPageTexture, colorPageTextureId, _getPagesForTests,
+  syncDynamicPageTexture, dynamicPageTextureId, syncColorPageTexture, colorPageTextureId,
+  syncSharpColorPageTexture, sharpColorPageTextureId, _getPagesForTests,
 } from './dynamicPages';
+export { sharperColorGlyph, MAX_SHARP_LEVEL, type SharperColorGlyph } from './sharpColor';
 export { SDF_RADIUS, SDF_CUTOFF, DEFAULT_BAKE_BUDGET, resetBakeBudget } from './bakeQueue';
 
 /** A face whose glyphs are rasterized on demand into a shared atlas page, rather than shipped as a prebuilt one. */
@@ -220,7 +224,10 @@ export function getDynamicFace(
       const raster = r.rasterizeColor?.(family, weight, style, text) ?? null;
       const char: BmFontChar | null = raster && { ...record(text.codePointAt(0)!, raster), color: true };
       clusters.set(text, char);
-      if (char && raster) requestBake(char, raster);
+      if (char && raster) {
+        requestBake(char, raster);
+        addSharpSource(char, font.common.base, (size) => r.rasterizeColor?.(family, weight, style, text, size) ?? null);
+      }
       return char;
     },
   };
@@ -260,7 +267,11 @@ function refreshFamilies(families: readonly string[] | null): void {
   for (const face of faces.values()) {
     if (keys && !face.family.split(',').some((name) => keys.has(familyKey(name)))) continue;
     for (const char of face.font.chars) dropped.add(char);
-    for (const char of face.clusters.values()) if (char) dropped.add(char);
+    for (const char of face.clusters.values()) {
+      if (!char) continue;
+      dropped.add(char);
+      for (const sharp of sharpBakesOf(char)) dropped.add(sharp);
+    }
     measureFace(face);
     measured++;
   }

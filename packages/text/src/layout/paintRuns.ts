@@ -9,7 +9,7 @@
  * from them.
  */
 import {
-  faceMetricsOf, glyphOutline, resolveFontVariant, type FaceMetrics, type FontStyle,
+  faceMetricsOf, glyphOutline, resolveFontVariant, type BmFontChar, type FaceMetrics, type FontStyle,
 } from '@weasel-js/font';
 import {
   fillHasInk, paintKey, strokeHasInk, strokeKey, type Fill, type Stroke,
@@ -24,6 +24,9 @@ export interface LaidOutQuad {
   u0: number; v0: number; u1: number; v1: number;
   /** The glyph's baseline. The synthetic-italic skew leans vertices about it. */
   baselineY: number;
+  /** On a `'color'` group's quads, the glyph's record, which a renderer drawing
+   *  it larger than its bake asks for a sharper one (`sharperColorGlyph`). */
+  colorGlyph?: BmFontChar;
 }
 
 /**
@@ -233,7 +236,9 @@ export function paintRuns(
         continue;
       }
       const quad = glyphQuad(g);
-      if (quad) groupFor(groups, g, run, g.glyph?.color ? 'color' : g.resolved.source).quads.push(quad);
+      if (!quad) continue;
+      if (g.glyph?.color) groupFor(groups, g, run, 'color').quads.push({ ...quad, colorGlyph: g.glyph });
+      else groupFor(groups, g, run, g.resolved.source).quads.push(quad);
     }
     for (const rule of lineDecorations(line.glyphs, runs, faceOf, rulePaint)) {
       const { run, ...rect } = rule;
