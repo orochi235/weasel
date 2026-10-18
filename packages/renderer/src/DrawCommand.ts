@@ -91,6 +91,34 @@ export interface GroupDrawCommand {
    * that has one: a context created with `alpha: false` reads as opaque.
    */
   composite?: CompositeOp | BlendFactors;
+  /**
+   * Keep this group's pixels in a texture of its own, named by this id, and
+   * composite that texture as one quad on later frames instead of drawing the
+   * children again. They are drawn again when `children` is a different
+   * array, or when anything else they were drawn under moves: the enclosing
+   * transform, alpha, color matrix or clips, the frame's view matrix, the
+   * drawing size, or a font, texture, paint kind or program the renderer serves.
+   * So `children` must not be mutated once drawn, the rule a layer's cached
+   * commands already follow.
+   *
+   * The composite matches drawing the group to within 8-bit rounding, except
+   * at a pixel where an edge of the group crosses an edge drawn beneath it: the
+   * surface is resolved from its samples before it meets the canvas, so the
+   * two edges' coverage no longer pairs up, and such a pixel can land a few
+   * levels off.
+   *
+   * Worth it for a group of a few hundred commands or more that holds still
+   * across frames; below that, drawing it is cheaper than the composite. A
+   * surface is the size of the drawing buffer and is freed at the end of any
+   * frame that does not draw its id. The renderer's `retainBudget` caps what
+   * they hold together.
+   *
+   * Ignored, and the children drawn straight through, on a group that owns a
+   * surface anyway (`effects`, `isolate`, `composite`), inside another such
+   * surface, or over a tree holding a `composite` other than `source-over`,
+   * which reads pixels a retained surface does not have.
+   */
+  retain?: string;
   children: DrawCommand[];
 }
 

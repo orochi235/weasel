@@ -8,7 +8,7 @@ import { ancestorMask } from './stencil';
 import { flushBatch } from './flushBatch';
 
 /** `enterClip` for a group command, refusing one past the stencil's budget. */
-export function enterGroupClip(ctx: DrawContext, clip: Path): void {
+export function enterGroupClip(ctx: DrawContext, clip: Path, transform: GlMat3 = ctx.state.transform): void {
   const pending = ctx.clipStack.reduce((n, e) => n + (e.depth === 0 ? 1 : 0), 0);
   if (ctx.clipDepth + pending + 1 > 7) {
     throw new Error(
@@ -17,7 +17,7 @@ export function enterGroupClip(ctx: DrawContext, clip: Path): void {
       'poses outside the scene graph.',
     );
   }
-  enterClip(ctx, clip);
+  enterClip(ctx, clip, transform);
 }
 
 /**
@@ -26,15 +26,14 @@ export function enterGroupClip(ctx: DrawContext, clip: Path): void {
  * content inside it joins the run outside it. It takes a bit only if something
  * that draws for itself turns up inside it — see `flushForOwnDraw`.
  */
-function enterClip(ctx: DrawContext, path: Path): void {
-  const transform = ctx.state.transform;
+function enterClip(ctx: DrawContext, path: Path, transform: GlMat3): void {
   const rect = axisAlignedClipRect(path, transform);
   if (rect === null) {
     // Bits nest in stack order, so any rect clip still without one takes it
     // first.
     materializeClips(ctx);
     const depth = ctx.clipDepth + 1;
-    pushClip(ctx, path, depth);
+    pushClip(ctx, path, depth, transform);
     ctx.clipDepth = depth;
     ctx.clipStack.push({ path, transform, rect: null, depth });
   } else {

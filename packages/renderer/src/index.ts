@@ -10,7 +10,8 @@
 
 export {
   WeaselRenderer, type WeaselRendererOptions, type RenderTarget,
-  type RenderOptions, type RenderSpan, type RenderSpanStats, type RenderStats,
+  type RenderOptions, type RenderSpan, type RenderSpanStats, type RenderStats, type RetainedStats,
+  DEFAULT_RETAIN_BUDGET,
 } from './WeaselRenderer';
 export { releaseImageSource, type ImageMinification } from './cache/GLImageCache';
 export type {

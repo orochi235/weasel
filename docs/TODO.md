@@ -1505,84 +1505,28 @@ only story runner in the repo.
   co-tenant" and "this rung is expensive whenever GL is resident, and the batch only changes the
   timing" are not yet separated. That is one run and it could retire the entry.
 
-- **(P3) Per-layer GPU dispatch skipping.** `RenderLayer.deps`
-  (`packages/core/src/core/layers/render.ts`) skips rebuilding a layer's command tree, not
-  submitting it: every layer still goes through `WeaselRenderer.render` every frame. Skipping that
-  means drawing each cached layer into its own texture once and compositing one quad per layer,
-  which the renderer has no concept of today.
+- **(P3) Retained layer surfaces: what the first arc left.** An unchanged layer of 250 commands or
+  more is now drawn once into its own texture and composited (`GroupDrawCommand.retain`,
+  `packages/renderer/src/retain/`; the policy is `packages/core/src/core/layers/retain.ts`). Memory
+  is bounded by a cap, `WeaselRendererOptions.retainBudget`, not by content: every surface is the
+  size of the drawing buffer, 16 MB at 1280x800 and dpr 2, plus one shared multisampled scratch
+  buffer of 8 bytes a sample (131 MB there at 4x). Left:
 
-  Measured: **compositing a cached layer is cheaper than resubmitting it once the layer holds more
-  than about 130–250 commands**, at every layer count from 4 to 64. Below that, resubmitting wins,
-  by up to 7 ms at 64 layers of 10 commands. At 64 layers of 1,000 commands, submission costs 58 ms
-  a frame and the composite 5.4. With a single layer the composite costs nothing measurable.
-
-  `tests/perf/layer-dispatch.spec.ts` times `N` unchanged layers of `M` commands (half solid rects,
-  a quarter text labels, 15% images, 10% linear gradients) through `drawLayers` with a warm command
-  cache, against a frame holding only one live rect. The composite stands in for cached layers with
-  one canvas-sized image per layer, which batches 7 to a draw. Canvas 1280x800 at dpr 2. ms a frame
-  over that control, two passes (`pass 1 / pass 2`), each the median of 3 runs:
-
-  | Layers | Cmds a layer | Submit | Composite | Draws, submit / composite |
-  |---:|---:|---:|---:|---:|
-  |  1 |    10 |  0.07 /  0.03 |  0.02 /  0.03 |     1 /  1 |
-  |  1 |    30 |  0.18 /  0.11 |  0.08 /  0.02 |     1 /  1 |
-  |  1 |   100 |  0.28 /  0.23 |  0.12 /  0.10 |     3 /  1 |
-  |  1 |   300 |  0.60 /  0.30 |  0.05 /  0.00 |     7 /  1 |
-  |  1 | 1,000 |  1.19 /  0.85 | -0.02 /  0.04 |    21 /  1 |
-  |  4 |    10 |  0.05 /  0.02 |  0.79 /  0.71 |     1 /  1 |
-  |  4 |    30 |  0.09 /  0.09 |  0.94 /  0.80 |     1 /  1 |
-  |  4 |   100 |  0.39 /  0.25 |  0.53 /  0.70 |     8 /  1 |
-  |  4 |   300 |  1.15 /  0.90 |  0.63 /  0.53 |    24 /  1 |
-  |  4 | 1,000 |  4.17 /  3.96 |  0.57 /  0.77 |    80 /  1 |
-  | 16 |    10 |  0.14 /  0.19 |  3.63 /  3.58 |     1 /  3 |
-  | 16 |    30 |  0.32 /  0.40 |  3.85 /  3.61 |     1 /  3 |
-  | 16 |   100 |  1.48 /  1.51 |  3.66 /  3.71 |    31 /  3 |
-  | 16 |   300 |  4.44 /  4.56 |  3.62 /  3.00 |    96 /  3 |
-  | 16 | 1,000 | 14.42 / 15.00 |  1.74 /  1.69 |   319 /  3 |
-  | 64 |    10 |  0.41 /  0.47 |  7.54 /  6.81 |     2 / 10 |
-  | 64 |    30 |  1.04 /  1.10 |  7.24 /  7.85 |     3 / 10 |
-  | 64 |   100 |  4.70 /  5.69 |  6.77 /  7.63 |   122 / 10 |
-  | 64 |   300 | 17.14 / 17.54 |  5.67 /  5.78 |   383 / 10 |
-  | 64 | 1,000 | 57.57 / 58.67 |  5.35 /  5.39 | 1,274 / 10 |
-
-  Interpolating linearly between the 100 and 300 rungs, the crossing falls at 143 / 210 commands
-  for 4 layers, 245 / 217 for 16, and 131 / 128 for 64. Submission runs about 0.75–1.2 us a command
-  from 300 commands a layer up; the renderer's own `render()` time is about a third of that, and
-  the rest is the GPU process and the GPU. A composited layer costs 0.08–0.25 ms, almost none of it
-  in `render()` (0.04–0.09 ms for the whole composite frame).
-
-  **With one layer changing every frame, the crossing moves to about 300 commands a layer, and past
-  1,000 for a single layer.** The changed layer draws into an offscreen buffer as a group with one
-  copy effect, then composites with the rest (`compositeDirty`), against submitting every layer
-  with that one's `deps` changing (`submitDirty`). The copy is a full-buffer pass a real layer
-  texture would not need, so the composite side is an upper bound. ms a frame over the control,
-  `pass 1 / pass 2`:
-
-  | Layers | Cmds a layer | Submit, one dirty | Composite, one dirty |
-  |---:|---:|---:|---:|
-  |  1 |   100 |  0.17 /  0.20 |  0.63 /  0.63 |
-  |  1 |   300 |  0.43 /  0.45 |  0.88 /  0.87 |
-  |  1 | 1,000 |  1.42 /  1.17 |  1.79 /  1.54 |
-  |  4 |   300 |  1.64 /  1.50 |  2.31 /  2.33 |
-  |  4 | 1,000 |  5.13 /  6.91 |  3.06 /  3.27 |
-  | 16 |   100 |  2.69 /  2.58 |  6.64 /  7.14 |
-  | 16 |   300 |  6.32 /  6.12 |  5.74 /  5.85 |
-  | 16 | 1,000 | 14.53 / 14.74 |  2.63 /  2.70 |
-  | 64 |   100 |  5.86 /  5.17 |  8.64 /  7.89 |
-  | 64 |   300 | 16.94 / 17.06 |  6.75 /  6.72 |
-  | 64 | 1,000 | 58.96 / 57.77 |  7.09 /  7.02 |
-
-  A dirty layer adds 0.4–3.5 ms to the composite frame, most at 16 layers; submitting barely
-  notices it, since rebuilding one layer's command tree is cheap next to submitting it.
-
-  Still left out: the texture memory, 16 MB a layer at this canvas size (1 GB at 64 layers), which
-  counts against building it; and quads bounded to a layer's content rather than the whole canvas,
-  which would cost less fill and memory than measured here.
-
-  Unexplained: the composite frame is identical down a layer count, yet it falls from 3.6 to 1.7 ms
-  at 16 layers and 7.5 to 5.4 at 64 as the submit frames interleaved beside it get heavier. One
-  reading, not checked: heavy neighbors hold the GPU at a higher clock. And one composited layer
-  measures near zero while four measure 0.5–0.9 ms.
+  - **Content-bounded surfaces.** Size each surface to its layer's device bounds, clamped to the
+    viewport, and composite a quad over just that. Less memory and fill than a canvas-sized quad;
+    needs a bounds pass over every command kind and an offset projection inside the surface.
+  - **Retaining through camera motion.** A world layer stops retaining while the view moves, and its
+    surface is freed after a frame without it, so a pan resubmits every layer and reallocates on the
+    first still frame. An oversized, bounded surface could be translated instead of redrawn.
+  - **Layers with `effects`, and layers inside a `LayerGroup` that owns a surface,** are never
+    retained: the renderer declines a retained group inside another render target.
+  - **No `Canvas` prop** sets the threshold or the budget, or turns retaining off for a whole canvas;
+    today that is `RenderLayer.retain: false` per layer, or the renderer's own options.
+  - **No timing of the real path yet.** The 250 threshold comes from `tests/perf/layer-dispatch.spec.ts`,
+    which stood in for a retained layer with one canvas-sized image (composite cheaper than submitting
+    from about 130–250 commands a layer, at 4 to 64 layers; 58 ms submit against 5.4 composite at 64
+    layers of 1,000). Its composite side should be rerun through `retain` itself, which adds the
+    resolve blit, and the threshold set from that.
 
   Measured on teitou (Apple M5 Max, ANGLE Metal, headless Chromium 153), 2026-10-07; one GPU and
   backend only. Result files: `tests/perf/recorded/layer-dispatch-2026-10-07/` and

@@ -8,7 +8,8 @@ import type { GradientRampAtlas } from '../cache/GradientRampAtlas';
 import type { ShaderProgram } from '../shaders/ShaderProgram';
 import { DrawBatch } from '../drawBatch';
 import type { ClipRect } from '../batchClip';
-import type { EffectTarget, EffectTargets } from '../effects/EffectTargets';
+import type { EffectTargets } from '../effects/EffectTargets';
+import type { RetainedSurfaces } from '../retain/RetainedSurfaces';
 import type { PaintScratch } from '../paintScratch';
 import type { StagedBatchState } from './batchRun';
 
@@ -84,7 +85,11 @@ export interface DrawContext {
   /** Where this renderer is currently drawing. `null` is the default
    *  framebuffer. Tracked here rather than read back with `getParameter`
    *  because a group's effects nest, and each has to restore its parent's. */
-  renderTarget?: EffectTarget | null;
+  renderTarget?: { readonly fbo: WebGLFramebuffer } | null;
+  /** Where groups carrying `retain` keep their pixels between frames. Absent
+   *  without a renderer behind the context, and then they draw straight
+   *  through. */
+  retained?: RetainedSurfaces;
   /** Device-pixel size of the drawing buffer, which is what an offscreen
    *  target is sized to. */
   deviceWidth?: number;

@@ -223,7 +223,7 @@
     "lines": 439
   },
   "packages/renderer/src/WeaselRenderer.ts": {
-    "lines": 688
+    "lines": 636
   },
   "packages/renderer/src/drawBatch.ts": {
     "lines": 608
