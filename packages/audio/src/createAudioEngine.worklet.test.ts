@@ -156,6 +156,77 @@ describe("synthVoices: 'worklet'", () => {
     expect(onDrop).toHaveBeenCalledWith('stopped');
   });
 
+  // The audio clock passed the voice's time, so the processor is playing it,
+  // but no scheduler pass has run since: a main-thread stall.
+  async function startedInAStall(over: AudioEngineOptions = {}) {
+    const h = await harness(over);
+    const onDone = vi.fn();
+    const onDrop = vi.fn();
+    const voice = h.engine.playNote({ pitch: 440, when: 150, onDone, onDrop });
+    h.ctx._advance(400);
+    return { ...h, voice, onDone, onDrop };
+  }
+
+  it('releases, not cuts, a voice the processor started inside a stall', async () => {
+    const { voice, posted, node, flush, onDone, onDrop, engine } = await startedInAStall();
+    voice.release();
+    await flush();
+    expect(posted('release')).toEqual([{ kind: 'release', id: 1 }]);
+    expect(posted('stop')).toEqual([]);
+    expect(voice.isPlaying()).toBe(true);
+    expect(engine.activeVoices()).toBe(1);
+    node()._ended(1);
+    await flush();
+    expect(onDone).toHaveBeenCalledOnce();
+    expect(onDrop).not.toHaveBeenCalled();
+    expect(engine.activeVoices()).toBe(0);
+  });
+
+  it('fades, not cuts, a voice the processor started inside a stall', async () => {
+    const { ctx, voice, posted, flush, onDrop, run } = await startedInAStall();
+    voice.stop(50);
+    await flush();
+    expect(posted('stop')).toEqual([{ kind: 'stop', id: 1, at: ctx.currentTime + 0.05 }]);
+    expect(posted('level').at(-1)).toMatchObject({ value: 0, end: ctx.currentTime + 0.05 });
+    // The pass that finally runs does not start it a second time.
+    await run(25);
+    expect(posted('note')).toHaveLength(1);
+    expect(onDrop).not.toHaveBeenCalled();
+  });
+
+  it('reports a hard stop of a voice started inside a stall as done, not dropped', async () => {
+    const { voice, node, flush, onDone, onDrop } = await startedInAStall();
+    voice.stop();
+    node()._ended(1);
+    await flush();
+    expect(onDrop).not.toHaveBeenCalled();
+    expect(onDone).toHaveBeenCalledOnce();
+  });
+
+  it('reports a stopKey of a voice started inside a stall as done, not dropped', async () => {
+    const h = await harness();
+    const onDone = vi.fn();
+    const onDrop = vi.fn();
+    h.engine.playNote({ pitch: 440, when: 150, cancelKey: 'k', onDone, onDrop });
+    h.ctx._advance(400);
+    h.engine.stopKey('k');
+    h.node()._ended(1);
+    await h.flush();
+    expect(onDrop).not.toHaveBeenCalled();
+    expect(onDone).toHaveBeenCalledOnce();
+  });
+
+  it('still cancels a voice released before its time', async () => {
+    const { engine, ctx, posted, flush } = await harness();
+    const onDrop = vi.fn();
+    const voice = engine.playNote({ pitch: 440, when: 500, onDrop });
+    ctx._advance(200);
+    voice.release();
+    await flush();
+    expect(posted('stop')).toEqual([{ kind: 'stop', id: 1, at: 0 }]);
+    expect(onDrop).toHaveBeenCalledWith('stopped');
+  });
+
   it('ends a voice the processor finished before the scheduler reached it', async () => {
     const { engine, run, node, flush } = await harness();
     const onDone = vi.fn();
