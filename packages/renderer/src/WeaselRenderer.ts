@@ -243,10 +243,8 @@ export class WeaselRenderer {
     if (this.disposed) return;
     const src = getProgramSource(handle.id);
     if (!src) {
-      throw new Error(
-        `WeaselRenderer.registerProgram: program "${handle.id}" not found in source registry. ` +
-        `Call the module-level registerProgram() first.`,
-      );
+      throw new Error(`WeaselRenderer.registerProgram: program "${handle.id}" not found in source registry. `
+        + 'Call the module-level registerProgram() first.');
     }
     this.installProgram(handle.id, src, compileCustomProgram(this.gl, src));
   }
@@ -333,28 +331,29 @@ export class WeaselRenderer {
     const oy = this.target?.origin.y ?? 0;
     const x = Math.round(ox * this.dpr);
     const y = Math.round(oy * this.dpr);
-    return {
-      x,
-      y,
-      width: Math.round((ox + this.widthCss) * this.dpr) - x,
-      height: Math.round((oy + this.heightCss) * this.dpr) - y,
-    };
+    const width = Math.round((ox + this.widthCss) * this.dpr) - x;
+    return { x, y, width, height: Math.round((oy + this.heightCss) * this.dpr) - y };
   }
 
   /** Viewport and scissor for this frame. Re-applied inside `render()` because
    *  a co-tenant on the same context moves both between our frames. */
   private applyTarget(): void {
     const gl = this.gl;
-    const { x, y, width, height } = this.deviceRect();
+    const { x, y, width, height } = this.glRect();
+    gl.viewport(x, y, width, height);
     if (!this.target) {
       gl.disable(gl.SCISSOR_TEST);
-      gl.viewport(0, 0, width, height);
       return;
     }
-    const glY = gl.drawingBufferHeight - y - height;
-    gl.viewport(x, glY, width, height);
-    gl.scissor(x, glY, width, height);
+    gl.scissor(x, y, width, height);
     gl.enable(gl.SCISSOR_TEST);
+  }
+
+  /** This renderer's rect as GL addresses it, from the buffer's bottom left. */
+  private glRect(): { x: number; y: number; width: number; height: number } {
+    const { x, y, width, height } = this.deviceRect();
+    if (!this.target) return { x: 0, y: 0, width, height };
+    return { x, y: this.gl.drawingBufferHeight - y - height, width, height };
   }
 
   /** Confine this renderer to a rect of its drawing buffer, or pass null to
@@ -433,13 +432,9 @@ export class WeaselRenderer {
     this.meshCache.dispose();
     this.paintResources.release();
     for (const lazy of this.lazyPrograms()) lazy.release();
-    for (const prog of [this.batchFill, ...this.glyphPaintPrograms.values()]) {
-      gl.deleteProgram(prog.handle);
-    }
+    for (const prog of [this.batchFill, ...this.glyphPaintPrograms.values()]) gl.deleteProgram(prog.handle);
     this.glyphPaintPrograms.clear();
-    for (const prog of this.programRegistry.values()) {
-      gl.deleteProgram(prog.handle);
-    }
+    for (const prog of this.programRegistry.values()) gl.deleteProgram(prog.handle);
     this.programRegistry.clear();
     this.programSources.clear();
     this.textureCache.free();
@@ -534,6 +529,10 @@ export class WeaselRenderer {
       deviceWidth: device.width,
       deviceHeight: device.height,
       restoreTargetRect: () => this.applyTarget(),
+      viewportWithin: (rect) => {
+        const own = this.glRect();
+        gl.viewport(own.x + rect.x, own.y + own.height - rect.y - rect.height, rect.width, rect.height);
+      },
       paintResources: this.paintResources,
       stats: counters,
     };

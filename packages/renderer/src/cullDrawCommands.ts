@@ -1,6 +1,8 @@
 import { type Path, mat3, type GlMat3 } from '@weasel-js/geom';
 import { resolveScreenLength, type Stroke } from '@weasel-js/paint';
-import { SPRITE_STRIDE, type DrawCommand } from './DrawCommand';
+import {
+  SPRITE_STRIDE, type DrawCommand, type ImageDrawCommand, type PathDrawCommand, type SpritesDrawCommand,
+} from './DrawCommand';
 import { resolveStrokeWidth } from '@weasel-js/stroke';
 import { markerReach, widestStrokeWidth } from '@weasel-js/stroke';
 import { isOwnComposite } from './effects/compositeOp';
@@ -15,7 +17,7 @@ export interface CullRect {
 
 /** Screen pixels added to every bound: antialiasing, and the 1/8 px a `{ px }`
  *  stroke's width may drift through quantization. */
-const SLACK_PX = 1;
+export const CULL_SLACK_PX = 1;
 
 /** Matches the tessellator's default. */
 const DEFAULT_MITER_LIMIT = 4;
@@ -45,7 +47,9 @@ export function cullDrawCommands(
   return cullList(cmds, transform, slackBox(rect));
 }
 
-interface Box { minX: number; minY: number; maxX: number; maxY: number }
+/** An axis-aligned box in screen space, CSS pixels. */
+export interface ScreenBox { minX: number; minY: number; maxX: number; maxY: number }
+type Box = ScreenBox;
 
 function cullList(cmds: DrawCommand[], m: GlMat3, box: Box): DrawCommand[] {
   let out: DrawCommand[] | null = null;
@@ -73,17 +77,33 @@ function cullOne(cmd: DrawCommand, m: GlMat3, box: Box): DrawCommand | null {
       return children.length === 0 ? null : { ...cmd, children };
     }
     case 'path':
-      return pathMisses(cmd.path, cmd.stroke, m, box) ? null : cmd;
     case 'image':
-      return quadMisses(cmd.x, cmd.y, cmd.x + cmd.w, cmd.y + cmd.h, m, box) ? null : cmd;
     case 'sprites':
-      return spritesMiss(cmd.sprites, m, box) ? null : cmd;
+      return boxMisses(paintedBox(cmd, m), box) ? null : cmd;
     default:
       return cmd;
   }
 }
 
-function pathMisses(path: Path, stroke: Stroke | undefined, m: GlMat3, box: Box): boolean {
+/**
+ * A screen-space box enclosing every pixel a path, image or sprites command
+ * can paint under `m`, slack left out: the bound `cullDrawCommands` tests.
+ * `null` where there is nothing to bound by, which a caller must read as
+ * anywhere.
+ */
+export function paintedBox(
+  cmd: PathDrawCommand | ImageDrawCommand | SpritesDrawCommand, m: GlMat3,
+): ScreenBox | null {
+  switch (cmd.kind) {
+    case 'path': return pathBox(cmd.path, cmd.stroke, m);
+    case 'image': return screenBox(cmd.x, cmd.y, cmd.x + cmd.w, cmd.y + cmd.h, m);
+    case 'sprites': return spritesBox(cmd.sprites, m);
+  }
+}
+
+/** The screen-space box of `path` under `m`, grown by how far `stroke` can
+ *  reach past it. */
+export function pathBox(path: Path, stroke: Stroke | undefined, m: GlMat3): ScreenBox | null {
   let minX: number, minY: number, maxX: number, maxY: number;
   if (path.kind === 'rect') {
     minX = Math.min(path.x, path.x + path.width);
@@ -92,7 +112,7 @@ function pathMisses(path: Path, stroke: Stroke | undefined, m: GlMat3, box: Box)
     maxY = Math.max(path.y, path.y + path.height);
   } else if (path.kind === 'polygon') {
     const c = path.coords;
-    if (c.length < 2) return false;
+    if (c.length < 2) return null;
     minX = maxX = c[0];
     minY = maxY = c[1];
     for (let i = 2; i + 1 < c.length; i += 2) {
@@ -101,10 +121,10 @@ function pathMisses(path: Path, stroke: Stroke | undefined, m: GlMat3, box: Box)
       if (y < minY) minY = y; else if (y > maxY) maxY = y;
     }
   } else {
-    return false;
+    return null;
   }
   const reach = stroke ? strokeReach(stroke, m) : 0;
-  return quadMisses(minX - reach, minY - reach, maxX + reach, maxY + reach, m, box);
+  return screenBox(minX - reach, minY - reach, maxX + reach, maxY + reach, m);
 }
 
 /** How far outside the geometry a stroke can paint, in the path's own units.
@@ -133,7 +153,7 @@ export function strokeReachAt(stroke: Stroke, scale: number, least = scale): num
   return Math.max(Math.abs(width) * spike, heads.world, resolveScreenLength({ px: heads.px }, at));
 }
 
-function spritesMiss(sprites: Float32Array, m: GlMat3, box: Box): boolean {
+function spritesBox(sprites: Float32Array, m: GlMat3): ScreenBox | null {
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
   for (let i = 0; i + SPRITE_STRIDE <= sprites.length; i += SPRITE_STRIDE) {
     const x0 = sprites[i], y0 = sprites[i + 1];
@@ -141,8 +161,8 @@ function spritesMiss(sprites: Float32Array, m: GlMat3, box: Box): boolean {
     minX = Math.min(minX, x0, x1); maxX = Math.max(maxX, x0, x1);
     minY = Math.min(minY, y0, y1); maxY = Math.max(maxY, y0, y1);
   }
-  if (minX === Infinity) return false;
-  return quadMisses(minX, minY, maxX, maxY, m, box);
+  if (minX === Infinity) return null;
+  return screenBox(minX, minY, maxX, maxY, m);
 }
 
 /**
@@ -159,29 +179,32 @@ export function boundsMissRect(
   const x1 = Math.max(bounds.x, bounds.x + bounds.width);
   const y0 = Math.min(bounds.y, bounds.y + bounds.height);
   const y1 = Math.max(bounds.y, bounds.y + bounds.height);
-  return quadMisses(x0, y0, x1, y1, transform, slackBox(rect));
+  return boxMisses(screenBox(x0, y0, x1, y1, transform), slackBox(rect));
 }
 
 function slackBox(rect: CullRect): Box {
   return {
-    minX: rect.x - SLACK_PX,
-    minY: rect.y - SLACK_PX,
-    maxX: rect.x + rect.width + SLACK_PX,
-    maxY: rect.y + rect.height + SLACK_PX,
+    minX: rect.x - CULL_SLACK_PX,
+    minY: rect.y - CULL_SLACK_PX,
+    maxX: rect.x + rect.width + CULL_SLACK_PX,
+    maxY: rect.y + rect.height + CULL_SLACK_PX,
   };
 }
 
-/** True when the local rect, taken through `m`, lies wholly outside `box`.
- *  Any NaN makes every comparison false, so the command is kept. */
-function quadMisses(x0: number, y0: number, x1: number, y1: number, m: GlMat3, box: Box): boolean {
+/** The AABB of the local rect's corners taken through `m`. */
+export function screenBox(x0: number, y0: number, x1: number, y1: number, m: GlMat3): ScreenBox {
   const [ax, ay] = mat3.apply(m, x0, y0);
   const [bx, by] = mat3.apply(m, x1, y0);
   const [cx, cy] = mat3.apply(m, x1, y1);
   const [dx, dy] = mat3.apply(m, x0, y1);
-  return (
-    Math.max(ax, bx, cx, dx) < box.minX ||
-    Math.min(ax, bx, cx, dx) > box.maxX ||
-    Math.max(ay, by, cy, dy) < box.minY ||
-    Math.min(ay, by, cy, dy) > box.maxY
-  );
+  return {
+    minX: Math.min(ax, bx, cx, dx), minY: Math.min(ay, by, cy, dy),
+    maxX: Math.max(ax, bx, cx, dx), maxY: Math.max(ay, by, cy, dy),
+  };
+}
+
+/** True when `b` lies wholly outside `box`. Any NaN makes every comparison
+ *  false, so the command is kept; so does a `null` bound. */
+function boxMisses(b: ScreenBox | null, box: Box): boolean {
+  return b !== null && (b.maxX < box.minX || b.minX > box.maxX || b.maxY < box.minY || b.minY > box.maxY);
 }

@@ -84,8 +84,10 @@ export interface DrawContext {
   effectTargets?: EffectTargets;
   /** Where this renderer is currently drawing. `null` is the default
    *  framebuffer. Tracked here rather than read back with `getParameter`
-   *  because a group's effects nest, and each has to restore its parent's. */
-  renderTarget?: { readonly fbo: WebGLFramebuffer } | null;
+   *  because a group's effects nest, and each has to restore its parent's.
+   *  `restore` puts back the viewport and scissor of a target that does not
+   *  draw to the whole of `fbo` from its corner. */
+  renderTarget?: { readonly fbo: WebGLFramebuffer; restore?(): void } | null;
   /** Where groups carrying `retain` keep their pixels between frames. Absent
    *  without a renderer behind the context, and then they draw straight
    *  through. */
@@ -99,6 +101,9 @@ export interface DrawContext {
    *  owns that rect — see `WeaselRenderer.applyTarget` — and a second copy of
    *  its y-flip here would be a second thing to keep in step. */
   restoreTargetRect?(): void;
+  /** Set the viewport to `rect` of the renderer's own rect, in device pixels
+   *  from its top left. `restoreTargetRect` undoes it. */
+  viewportWithin?(rect: { x: number; y: number; width: number; height: number }): void;
   /** Where a registered paint kind renders for atlas glyphs to sample. Absent
    *  without a renderer behind the context, and then such glyphs draw
    *  nothing. */
