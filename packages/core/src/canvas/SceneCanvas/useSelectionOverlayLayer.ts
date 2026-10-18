@@ -20,6 +20,8 @@ export function useSelectionOverlayLayer<TPose>(
   /** The nodes a slot's `poseById` answers for, so their chrome sits on the
    *  stroke. Omitted when the canvas measures pose boxes alone. */
   scene?: DrawnBoundsScene,
+  /** Whether the handles include the edge midpoints, unless the slot says. */
+  edgeHandles?: boolean,
 ): {
   layer: RenderLayer<unknown> | null;
   rotationBadge: ReturnType<typeof rotationBadgeOf>;
@@ -48,6 +50,7 @@ export function useSelectionOverlayLayer<TPose>(
     };
     return createSelectionOverlayLayer<TPose>({
       ...cfg,
+      ...(cfg.edgeHandles === undefined && edgeHandles !== undefined ? { edgeHandles } : {}),
       getSuppressedIds,
       // A caller's pose lookup still needs a geometry to project with; without
       // one the layer reads bounds off the chrome state and calls neither.
@@ -59,6 +62,6 @@ export function useSelectionOverlayLayer<TPose>(
           }
         : {}),
     });
-  }, [slot, getOwnSuppressedIds, poseDescriptor, scene]);
+  }, [slot, getOwnSuppressedIds, poseDescriptor, scene, edgeHandles]);
   return { layer, rotationBadge };
 }

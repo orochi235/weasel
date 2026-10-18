@@ -99,7 +99,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     alphaFor: props.alphaFor, colorOverrides: props.animator?.colorOverrides, boundsOf, planeOfNode,
     poseTransition: props.poseTransition, previewIds: previewIdsExtra, dispatcher, pathSnapper, pathEditState,
     slops: debug !== undefined && debug !== false && debug.slops === true,
-    boundsIncludeStroke: props.geometry?.boundsIncludeStroke ?? true,
+    boundsIncludeStroke: props.geometry?.boundsIncludeStroke ?? true, edgeHandles: selectToolOpts?.resize?.edgeHandles,
   });
   const redrawOn = useSceneRedrawSources({ props, scene, heldModifiers, departures: layered.departures });
 
@@ -122,8 +122,8 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     ref, elementRef: internalCanvasRef, apiRef: canvasApiRef, onElement: chrome.trackHoverOn,
     ingest, viewAnimation, camera, addView, viewAt,
   });
-  const viewInputs = useSurfaceViewInputs({
-    picking, descriptor: descriptor as PoseDescriptor<unknown>, chromeCaps: chrome.chromeCaps, selection, rotationBadge: layered.rotationBadge,
+  const viewInputs = useSurfaceViewInputs({ picking, selection, edgeHandles: selectToolOpts?.resize?.edgeHandles,
+    descriptor: descriptor as PoseDescriptor<unknown>, chromeCaps: chrome.chromeCaps, rotationBadge: layered.rotationBadge,
   });
 
   return (

@@ -53,6 +53,9 @@ export interface SurfaceViewInputs
   /** The rotate badge the surface's selection overlay paints, which every
    *  view drawing that overlay has to make grabbable where it is drawn. */
   rotationBadge?: { distancePx: number; sizePx: number } | null;
+  /** `selectTool.resize.edgeHandles`: whether the resize handles every view
+   *  grabs include the edge midpoints. Default true. */
+  edgeHandles?: boolean;
 }
 
 const ViewInputsContext = createContext<SurfaceViewInputs | null>(null);

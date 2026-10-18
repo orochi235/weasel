@@ -12,7 +12,7 @@
 import type { DrawCommand } from '@weasel-js/renderer';
 import type { RenderLayer } from 'core/layers/render';
 import type { Affordance } from 'affordances/types';
-import { pointRegionScreenQuad, transformOf } from 'affordances/hitAffordanceRegions';
+import { pointRegionLive, pointRegionScreenQuad, transformOf } from 'affordances/hitAffordanceRegions';
 import { PATH_L, PATH_M, PATH_Z } from '@weasel-js/geom';
 import { chromeStateFrom, isVisibleFrom } from './drawEnvelope';
 
@@ -45,9 +45,9 @@ export function createSlopsDebugLayer(
         if (isVisible && !isVisible(a.id)) continue;
         for (const region of a.regions(chrome)) {
           if (region.shape.kind !== 'point') continue;
-          const q = pointRegionScreenQuad(
-            region.shape, transformOf(chrome, region.targetId), view, toScreen,
-          );
+          const xf = transformOf(chrome, region.targetId);
+          if (!pointRegionLive(region.shape, xf, view)) continue;
+          const q = pointRegionScreenQuad(region.shape, xf, view, toScreen);
           out.push({
             kind: 'path',
             path: {

@@ -10,9 +10,15 @@ export {
   hitCornerHandle,
   fixedCornerOf,
   cornerPoint,
+  handlePoint,
+  isCornerHandle,
   CORNER_ANCHORS,
+  RESIZE_HANDLE_ANCHORS,
+  EDGE_HANDLE_MIN_RADII,
   type CornerHandle,
   type CornerAnchor,
+  type HandleEdge,
+  type ResizeHandleAnchor,
 } from './cornerHandles';
 export * from './behaviors';
 

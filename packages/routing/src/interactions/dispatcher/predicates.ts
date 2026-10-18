@@ -40,7 +40,7 @@ function kindOf(target: unknown): string | undefined {
   return typeof k === 'string' ? k : undefined;
 }
 
-/** Any corner resize handle — top-left/top-right/bottom-left/bottom-right. */
+/** Any resize handle: a corner (`handle:top-left`, …) or an edge (`handle:top`, …). */
 export const isResizeHandle = hitPredicate((target) => {
   const k = kindOf(target);
   return k !== undefined && k.startsWith('handle:');

@@ -116,6 +116,7 @@ export function SceneCanvasInput(p: SceneCanvasInputProps) {
     viewRef: viewState.viewRef, dispatcher: p.dispatcher,
     getIsVisibleForCanvas: chrome.getIsVisible, getRuleCtx: chrome.getRuleCtx,
     targetScale, handleHitRadius: selectTool?.handleHitRadius,
+    edgeHandles: selectTool?.resize?.edgeHandles,
     rotationBadge: overlay.rotationBadge, chromeAffordancesRef: overlay.chromeAffordancesRef,
     onDoubleClick, onClick, longPress: props.longPress,
   });

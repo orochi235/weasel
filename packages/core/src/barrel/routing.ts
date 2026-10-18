@@ -139,8 +139,12 @@ export {
   type UseResizePolicyOptions,
 } from '../canvas/deps/resizePolicy';
 export { usePoseDescriptorDepSource } from '../canvas/deps/poseDescriptor';
-export { CORNER_ANCHORS, cornerPoint } from '../interactions/actions/resize/cornerHandles';
-export type { CornerAnchor, CornerEdge } from '../interactions/actions/resize/cornerHandles';
+export {
+  CORNER_ANCHORS, RESIZE_HANDLE_ANCHORS, EDGE_HANDLE_MIN_RADII, cornerPoint, handlePoint, isCornerHandle,
+} from '../interactions/actions/resize/cornerHandles';
+export type {
+  CornerAnchor, CornerEdge, HandleEdge, ResizeHandleAnchor,
+} from '../interactions/actions/resize/cornerHandles';
 export { useSliceDep, useSliceDepSource, type OpsApplier } from '../canvas/deps/slice';
 export { useBooleansAdapterSource } from '../canvas/deps/booleans';
 export {

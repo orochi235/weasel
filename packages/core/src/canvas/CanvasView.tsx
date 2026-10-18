@@ -225,7 +225,7 @@ export function CanvasView(props: CanvasViewProps): null {
       getChromeState: () => helpersRef.current.getChromeState(),
       getView: camera,
       targetScale,
-      rotationBadge,
+      rotationBadge, edgeHandles: inputs?.edgeHandles,
       getAnchorState,
       getIsVisible: () => helpersRef.current.getIsVisible(),
     });
@@ -238,7 +238,7 @@ export function CanvasView(props: CanvasViewProps): null {
       );
       return extra ? layerAffordance(extra.layerId, extra.hit) : inner(world);
     };
-  }, [getAnchorState, rectNow, registry, targetScale, camera, drawnLayers, rotationBadge, helpersRef]);
+  }, [getAnchorState, rectNow, registry, targetScale, camera, drawnLayers, rotationBadge, inputs?.edgeHandles, helpersRef]);
 
   const classifyTarget = useMemo(() => buildClassifyTarget(
     () => live.current.selection.get(),

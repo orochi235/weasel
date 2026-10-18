@@ -57,6 +57,8 @@ export function useSceneCanvasLayers<TData, TLayer extends string, TPose>(args: 
   slops: boolean;
   /** `geometry.boundsIncludeStroke`: whether chrome sits on the stroke. */
   boundsIncludeStroke: boolean;
+  /** `selectTool.resize.edgeHandles`, which a slot's own `edgeHandles` overrides. */
+  edgeHandles?: boolean;
 }): {
   layers: CanvasLayers;
   /** Where the selection overlay paints its rotate badge, or null. */
@@ -109,6 +111,7 @@ export function useSceneCanvasLayers<TData, TLayer extends string, TPose>(args: 
     pathEditState.getEditingIds,
     poseDescriptor,
     args.boundsIncludeStroke ? (scene as unknown as DrawnBoundsScene) : undefined,
+    args.edgeHandles,
   );
 
   const layers = useMemo<CanvasLayers>(() => ({
