@@ -1,33 +1,38 @@
 import {
   asNodeId,
   hasEditablePath,
+  modeTriggers,
   type Contribution,
   type PathEditHost,
-  type SceneCanvasHit,
   type SelectionApi,
   useLatest,
 } from '@weasel-js/core';
-import { useCallback, useMemo } from 'react';
+import { useMemo } from 'react';
 import type { DrawScene } from '../drawDocument';
-import { dispatchDoubleClickEntry } from './doubleClickEntry';
+import { enterModeOn } from './enterModeOn';
 import type { ModeMachine } from './machine';
 import { modalityShortcuts } from './shortcuts';
 import { useModeId } from './useModeId';
 
 /** What `<SceneCanvas>` takes to enter and leave the machine's modes. */
 export interface CanvasModes {
-  /** Each mode's declared shortcuts, for `ambient`. */
-  keys: Contribution;
+  /** Each mode's declared shortcuts and double-click entry, for `ambient`. */
+  ambient: readonly Contribution[];
   /** The path being anchor-edited is the path-edit mode's target, read from the machine. */
   pathEdit: PathEditHost;
-  onDoubleClick: (hit: SceneCanvasHit | null) => void;
 }
 
+/**
+ * `isPointerInteractive` is the canvas's own: a node it rejects takes no double-click entry. A
+ * path with anchors is left to the canvas's `enterPathEdit`, which opens it; one without still
+ * takes path-edit, as Enter does.
+ */
 export function useCanvasModes(
   machine: ModeMachine,
   scene: DrawScene,
   selection: SelectionApi,
   pathEdit: PathEditHost,
+  isPointerInteractive: (id: string) => boolean = () => true,
 ): CanvasModes {
   const entry = useLatest({
     pathToEdit: (): string | null => {
@@ -42,16 +47,15 @@ export function useCanvasModes(
     selection: () => entry.current.selection(),
   }), [machine, entry]);
 
-  const hasAnchors = useCallback(
-    (id: string) => hasEditablePath(scene.get(asNodeId(id))),
-    [scene],
-  );
+  const interactive = useLatest(isPointerInteractive);
+  const triggers = useMemo(() => modeTriggers(machine.registry, {
+    canEnter: (id, target) => interactive.current(target)
+      && !(id === 'path-edit' && hasEditablePath(scene.get(asNodeId(target)))),
+    enter: (id, target) => enterModeOn(machine, id, target),
+  }), [machine, scene, interactive]);
 
-  const onDoubleClick = useCallback((hit: SceneCanvasHit | null) => {
-    dispatchDoubleClickEntry(hit, machine, hasAnchors);
-  }, [machine, hasAnchors]);
-
-  return { keys, pathEdit, onDoubleClick };
+  const ambient = useMemo(() => [keys, triggers], [keys, triggers]);
+  return { ambient, pathEdit };
 }
 
 /** What the breadcrumb calls the node the current mode is on: its label, its text, or its id. */

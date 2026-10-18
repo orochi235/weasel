@@ -10,8 +10,8 @@ import { colorContribution, useColorContext } from './tools/colorContext';
 export interface EditorAmbientArgs {
   scene: DrawScene;
   selection: SelectionApi;
-  /** The mode shortcuts, from `useCanvasModes`. */
-  modeKeys: Contribution;
+  /** The mode shortcuts and double-click entry, from `useCanvasModes`. */
+  modes: readonly Contribution[];
   grid: Pick<AppCommands, 'gridVisible' | 'toggleGrid' | 'snapToGrid' | 'toggleSnap'>;
   pathDirection: Pick<AppCommands, 'pathDirection' | 'togglePathDirection'>;
   /** Live symmetry, from `useSymmetry`: its canvas entry and its toggle. */
@@ -28,7 +28,7 @@ export interface EditorAmbientArgs {
 /** Everything draw binds on the canvas whatever tool is active: the HUD, the mode keys, the
  *  color keys, the app's own commands, the input recorder, and live symmetry. */
 export function useEditorAmbient(args: EditorAmbientArgs): readonly SurfaceContribution[] {
-  const { scene, selection, modeKeys, view, setView } = args;
+  const { scene, selection, modes, view, setView } = args;
   const hudTool = useHudContribution();
 
   const colorsRef = useLatest(useColorContext());
@@ -50,7 +50,7 @@ export function useEditorAmbient(args: EditorAmbientArgs): readonly SurfaceContr
   const symmetry = args.symmetry.contribution;
 
   return useMemo(
-    () => [hudTool, modeKeys, colorKeys, appKeys, recordingKeys, symmetry],
-    [hudTool, modeKeys, colorKeys, appKeys, recordingKeys, symmetry],
+    () => [hudTool, ...modes, colorKeys, appKeys, recordingKeys, symmetry],
+    [hudTool, modes, colorKeys, appKeys, recordingKeys, symmetry],
   );
 }

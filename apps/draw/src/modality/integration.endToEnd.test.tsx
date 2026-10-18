@@ -66,7 +66,6 @@ function MachineHarness({
   const selection = useSelection({ mode: 'multi', scene });
   const [pathEdit] = useState(() => modePathEdit(machine, (id) => hasEditablePath(scene.get(asNodeId(id)))));
   const modes = useCanvasModes(machine, scene, selection, pathEdit);
-  const [ambient] = useState(() => [modes.keys]);
 
   // Subscribe to registry changes — same pattern as App's useModeId helper.
   useEffect(() => {
@@ -83,8 +82,7 @@ function MachineHarness({
         onCancel={() => machine.cancelMode()}
       />
       <SceneCanvas features={['draw']} scene={scene} selection={selection} layers={{}} width={64} height={64}
-        ambient={ambient}
-        onDoubleClick={modes.onDoubleClick}
+        ambient={modes.ambient}
         modes={machine.registry}
         pathEdit={modes.pathEdit} />
     </>
