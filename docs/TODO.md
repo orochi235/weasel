@@ -828,13 +828,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   covered. A `{ px }` stroke under a skewing or stretching `transform` is outset by its width at
   the mean scale, which only approximates the screen-exact ribbon.
 
-- **(P2) Kit settings that do not reach their readers yet.** `history.coalesceMs` is read once,
-  when `PrefSchemaEditor` mounts, because `createHistory` (`@weasel-js/history`) fixes its window
-  at creation; a later change waits for a remount. Not yet settings at all: `guides`'
-  `DEFAULT_GUIDE_TOLERANCE_PX`, the pen and slice tools' close and snap radii (written as a bare
-  `8`), and `thresholdDrag`, a plain function with no store in reach. `view.animationMs` ignores
-  `prefers-reduced-motion`. See `docs/conventions.md` ("Kit settings").
-
 - **(P3) `PrefsRail`'s scroll-to-section browser test fails now and then.** "leaves a nested page
   off the page that holds it and scrolls to a section that follows it"
   (`packages/ui/src/components/Prefs/PrefsRail.marks.browser.test.tsx:91`) failed once on a fleet

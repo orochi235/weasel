@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type PointerEvent, type ReactNode } from 'react';
 import { startThresholdDrag, type ThresholdDragHandle } from '@weasel-js/core';
 import type { PrefGroup, PrefSection } from '@weasel-js/prefs';
+import { useKitSetting } from '@weasel-js/react';
 import type { IconRef } from '@weasel-js/icons';
 import { Icon } from '../../icons';
 import { icon } from '../../icons.gen';
@@ -93,6 +94,7 @@ export function Palette({ sections = false, ghost = true, disabled = false, page
   const [drag, setDrag] = useState<PaletteDrag | null>(null);
   const root = useRef<HTMLDivElement | null>(null);
   const session = useRef<ThresholdDragHandle | null>(null);
+  const dragPx = useKitSetting('gestures.dragPx');
   useEffect(() => () => { session.current?.cancel(); }, []);
   const move = (next: PaletteDrag | null) => {
     setDrag(next);
@@ -106,6 +108,7 @@ export function Palette({ sections = false, ghost = true, disabled = false, page
     session.current = startThresholdDrag(e, {
       // The palette, not the button: the tree redraws around a drag and the session must outlast that.
       origin: root.current,
+      threshold: dragPx,
       onActivate: (ev) => move(at(ev)),
       onMove: (ev) => move(at(ev)),
       onCommit: (ev) => {

@@ -3,6 +3,7 @@ import type { Op } from 'core/ops/types';
 import type { MoveAdapter, SnapTarget } from 'core/adapters/types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { View } from 'core/viewport/view';
+import type { KitSettingsStore } from '@weasel-js/react';
 
 import type { ModifierState } from '@weasel-js/routing';
 import type { GestureFrames } from './frames';
@@ -43,6 +44,12 @@ export interface GestureContext<TPose, TNode extends { id: string } = { id: stri
    * through this before comparing them with a pose.
    */
   plane?: PlaneMap | null;
+  /**
+   * The kit settings of the canvas the gesture runs on (its `kitSettings` dep),
+   * for a behavior or snap strategy to read a reach or threshold the moment it
+   * uses one. Absent or null where nothing published a store.
+   */
+  kitSettings?: KitSettingsStore | null;
   /**
    * Frame math over the scene the gesture edits; see {@link GestureFrames}.
    * Set by move, resize, rotate, and clone. Absent where no node is behind

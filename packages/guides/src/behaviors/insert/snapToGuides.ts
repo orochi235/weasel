@@ -6,7 +6,7 @@ import {
   screenTolerance,
 } from '@weasel-js/core';
 import type { Guide } from '../../guides/types';
-import { DEFAULT_GUIDE_TOLERANCE_PX } from '../../strategies/guides';
+import { guideTolerance } from '../../strategies/guides';
 import { nearestGuideDelta } from '../../strategies/onPlane';
 
 type ModKey = keyof ModifierState;
@@ -15,7 +15,8 @@ type ModKey = keyof ModifierState;
 export interface SnapToGuidesInsertArgs {
   /** Stable getter into the live guide list (typically from `useGuides`). */
   getGuides: () => readonly Guide[];
-  /** Snap tolerance in screen px, read through the gesture's view. */
+  /** Snap tolerance in screen px, read through the gesture's view. Default the
+   *  `targets.guideSnapPx` kit setting, else `DEFAULT_GUIDE_TOLERANCE_PX`. */
   tolerance?: number;
   /** Modifier key that bypasses snapping while held. */
   bypassKey?: ModKey;
@@ -41,7 +42,6 @@ function snapPoint(
 export function snapToGuides<TPose>(
   args: SnapToGuidesInsertArgs,
 ): InsertBehavior<TPose> {
-  const tolerance = args.tolerance ?? DEFAULT_GUIDE_TOLERANCE_PX;
   const bypassKey = args.bypassKey;
 
   return {
@@ -52,14 +52,14 @@ export function snapToGuides<TPose>(
       const id = ctx.draggedIds[0];
       const o = ctx.origin.get(id) as unknown as InsertPoint | undefined;
       if (!o) return;
-      const snapped = snapPoint(o, guides, screenTolerance(tolerance, ctx), ctx.plane);
+      const snapped = snapPoint(o, guides, screenTolerance(guideTolerance(args.tolerance, ctx), ctx), ctx.plane);
       if (snapped) ctx.origin.set(id, snapped as unknown as TPose);
     },
     onMove(ctx, { current }) {
       if (bypassKey && ctx.modifiers[bypassKey]) return;
       const guides = args.getGuides();
       if (guides.length === 0) return;
-      const snapped = snapPoint(current, guides, screenTolerance(tolerance, ctx), ctx.plane);
+      const snapped = snapPoint(current, guides, screenTolerance(guideTolerance(args.tolerance, ctx), ctx), ctx.plane);
       if (!snapped) return;
       return { current: snapped };
     },

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { createKitSettingsStore } from '@weasel-js/react';
 import { snapToGuides } from './snapToGuides';
 import type { Guide } from '../../guides/types';
 import type {
@@ -34,6 +35,14 @@ function proposed(pose: P, anchor: ResizeAnchor): ResizeProposed<P> {
 }
 
 describe('resize/snapToGuides', () => {
+  it('reads its tolerance from targets.guideSnapPx on the gesture', () => {
+    const guides: Guide[] = [{ id: 'g', axis: 'x', offset: 100 }];
+    const b = snapToGuides<P>({ getGuides: () => guides });
+    const c = { ...ctx({ x: 0, y: 0, width: 50, height: 50 }), kitSettings: createKitSettingsStore({ targets: { guideSnapPx: 20 } }) };
+    const r = b.onMove!(c, proposed({ x: 0, y: 0, width: 115, height: 50 }, { x: 'min', y: 'free' }));
+    expect(r).toEqual({ pose: { x: 0, y: 0, width: 100, height: 50 } });
+  });
+
   it('snaps east edge to a vertical guide (anchor=min)', () => {
     const guides: Guide[] = [{ id: 'g', axis: 'x', offset: 100 }];
     const b = snapToGuides<P>({ getGuides: () => guides, tolerance: 5 });
