@@ -94,16 +94,13 @@ describe('<SceneCanvas snap>', () => {
       .toEqual({ x: expect.closeTo(40, 9), y: expect.closeTo(40, 9) });
   });
 
-  it('keeps one source per id: the last one listed', () => {
-    const asked: string[] = [];
-    const preset: FeaturePreset = { id: 'snaps', snapSources: [pointAt('shared', { x: 0, y: 0 }, asked)] };
-    const hook = { ...pointAt('shared', { x: 0, y: 0 }, asked), collect: (q: Parameters<SnapSource['collect']>[0]) => {
-      asked.push('hook');
-      return pointAt('shared', { x: 0, y: 0 }, []).collect(q);
-    } };
-    const snap = mount(<Contribute source={hook} />, { features: [preset] });
-    snap.begin({ gesture: 'point', press: { x: 0, y: 0 } }).at({ x: 1, y: 1 }, FREE);
-    expect(asked).toEqual(['hook']);
+  it('throws when two sources share an id', () => {
+    const preset: FeaturePreset = { id: 'snaps', snapSources: [pointAt('shared', { x: 0, y: 0 }, [])] };
+    const begin = (snap: SnapDep) => () => snap.begin({ gesture: 'point', press: { x: 0, y: 0 } });
+    expect(begin(mount(null, { snap: { sources: [pointAt('shared', { x: 0, y: 0 }, [])] }, features: [preset] })))
+      .toThrow(/share the id 'shared'/);
+    expect(begin(mount(<Contribute source={pointAt('shared', { x: 0, y: 0 }, [])} />, { features: [preset] })))
+      .toThrow(/share the id 'shared'/);
   });
 
   describe('default sources', () => {

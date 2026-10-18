@@ -106,7 +106,8 @@ Every `<SceneCanvas>` asks two sources of its own: `rotationSnapSource()` (id `'
 `pathSnapSource({ only: ['anchor'] })` for point gestures (id `'path-snap'`). A source you register
 with the same id replaces one; `snap={{ omit: ['rotation'] }}` drops one.
 
-Sources reach a canvas three ways, asked in this order, one per id (the last listed):
+Sources reach a canvas three ways, asked in this order. Two of them sharing an id throw when a
+gesture begins, since one would silently replace the other:
 
 - `<SceneCanvas snap={{ sources }}>`;
 - a feature preset's `snapSources` — `createSpacingHintsPreset` is alignment and spacing sources;
@@ -217,8 +218,8 @@ the last frame, filled where the result met it.
 
 The resolver is written over n-vectors, so a 3D host uses the same sources, ranking and marks with
 `Vec3` points. kernel3d's `createSnap(world, { sources, reachPx, kitSettings, store })` is its
-`snap` dep, reading its reach from `targets.snapPx` in `kitSettings` and asking one source per id
-as a canvas does:
+`snap` dep, reading its reach from `targets.snapPx` in `kitSettings`. Two sources sharing an id
+throw, as on a canvas:
 
 - A move's `H` is the plane through the subject perpendicular to `up`, the plane `translate`
   already moves on; an insert snaps the pointer on the ground plane.

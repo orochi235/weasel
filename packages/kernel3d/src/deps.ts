@@ -15,7 +15,7 @@ import type {
   SnapOutcomeStore,
   SnapSource,
 } from '@weasel-js/core';
-import { DEFAULT_SNAP_PX, createSnapOutcomeStore, distinctSnapSources } from '@weasel-js/core';
+import { DEFAULT_SNAP_PX, createSnapOutcomeStore, assertSnapSourceIds } from '@weasel-js/core';
 import type { KitSettingsStore } from '@weasel-js/react';
 import {
   aabbOfPoints,
@@ -141,9 +141,8 @@ export function createAreaSelect<TData, TLayer extends string>(
 
 /** Options for `createSnap`. */
 export interface Snap3dOptions {
-  /** What a gesture snaps to, in order: earlier wins a full tie, and a later
-   *  source with an id replaces an earlier one. Default none, which leaves
-   *  only the gesture's own constraint. */
+  /** What a gesture snaps to, in order: earlier wins a full tie. Two sharing
+   *  an id throw. Default none, which leaves only the gesture's own constraint. */
   sources?: readonly SnapSource<Vec3>[];
   /** The reach of a source that sets none, in screen px. Overrides the kit
    *  setting `targets.snapPx`. */
@@ -166,7 +165,8 @@ export function createSnap<TData, TLayer extends string>(
   world: World3d<TData, TLayer>, opts: Snap3dOptions = {},
 ): SnapDep {
   const store = opts.store ?? createSnapOutcomeStore<Vec3>();
-  const sources = distinctSnapSources(opts.sources ?? []);
+  const sources = opts.sources ?? [];
+  assertSnapSourceIds(sources);
   return {
     begin: (req) => createSession3d({
       req, world, sources, store,

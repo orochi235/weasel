@@ -15,7 +15,7 @@ import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import type { OriginProjection } from 'interactions/gestures/shared/originProjection';
 import type { SnapOutcomeStore } from 'features/snap/outcomeStore';
 import type { SnapSourceRegistry } from 'features/snap/registry';
-import { distinctSnapSources, snapSourcesFor } from 'features/snap/gather';
+import { assertSnapSourceIds, snapSourcesFor } from 'features/snap/gather';
 import { sceneSession2d } from 'features/snap/sceneSession2d';
 import { DEFAULT_SNAP_PX } from 'features/snap/session2d';
 import type { SnapReadoutDep } from 'features/snap/readoutDep';
@@ -56,11 +56,12 @@ const DEFAULT_SNAP_SOURCES: readonly SnapSource[] = [
   { ...pathSnapSource({ only: ['anchor'] }), gestures: ['point'] },
 ];
 
-/** `listed`, one source per id, then each default whose id is neither
- *  listed nor in `omit`. */
+/** `listed`, which must not repeat an id, then each default whose id is
+ *  neither listed nor in `omit`. */
 function withDefaults(listed: readonly SnapSource[], omit: readonly string[] = []): SnapSource[] {
+  assertSnapSourceIds(listed);
   const taken = new Set([...listed.map((s) => s.id), ...omit]);
-  return [...distinctSnapSources(listed), ...DEFAULT_SNAP_SOURCES.filter((s) => !taken.has(s.id))];
+  return [...listed, ...DEFAULT_SNAP_SOURCES.filter((s) => !taken.has(s.id))];
 }
 
 export function useSnapDepSource(

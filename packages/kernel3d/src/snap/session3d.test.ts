@@ -156,15 +156,12 @@ describe('createSnap: a 3D move', () => {
     expect(held({ kitSettings: wide, reachPx: 8 })).toBe(false);
   });
 
-  it('keeps one source per id: a later one replaces an earlier one', () => {
-    const { world, ids } = worldOf([pose3({ x: 0, y: 0.5, z: 0 })]);
-    const move = moveOf(world, ids[0]!);
+  it('throws when two sources share an id', () => {
+    const { world } = worldOf([pose3({ x: 0, y: 0.5, z: 0 })]);
     const near: Vec3 = { x: 0.1, y: 0.5, z: 0 };
     const far: Vec3 = { x: 0.6, y: 0.5, z: 0 };
-    const out = createSnap(world, { sources: [centerTo(near, 'probe', Infinity), centerTo(far, 'probe', Infinity)] })
-      .begin({ gesture: 'move', ids: [ids[0]!], press: move.press }).at(move.press, FREE);
-    expect(out.held).toBe(true);
-    expect(move.landed(out.point).position.x).toBeCloseTo(0.6, 6);
+    expect(() => createSnap(world, { sources: [centerTo(near, 'probe', Infinity), centerTo(far, 'probe', Infinity)] }))
+      .toThrow(/share the id 'probe'/);
   });
 
   it('holds a Shift move to the ground axes, and Ctrl suspends the targets', () => {
