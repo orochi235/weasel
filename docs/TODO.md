@@ -960,11 +960,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   draws a 2px outline, so nothing measured is known to be off. Since then `minimal` takes its font
   size from `size`, where both sizes drew at the `sm` font; nobody has looked at its `md`.
 
-- **(P3) A field's condition inside an object entry is written in code.** `PrefSchemaEditor`
-  edits an entry's own `enableIf` and nothing inside an object entry: the structure tree shows a
-  list or a map as one row (`slotOf` in `schemaTree.ts`), so a field of its item has no row to
-  select and its `{ from: 'item' }` condition no editor.
-
 - **(P3) A lab's config schema takes no `over`.** A lab resolves its instrument's config schema
   with none (`useConfigSchema`), so that schema cannot alias into another schema or hold a
   condition on its setting. Every surface reads `over`'s values from the config it is handed, and
@@ -978,30 +973,21 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   dotted path, where the form's pane reads a nested tree, so the two do not share a body yet.
   Nobody has looked at `ActionBar` in a browser since it became a `Bar` of `action` leaves.
 
-- **(P3) A fragment has no box for a preview drag to land on.** Its element is
-  `display: contents`, so `measure` in `Prefs/dropTarget.ts` reads an empty rect for it and a drag
-  in `PrefSchemaEditor`'s preview lands only beside the rows inside it; the structure tree takes
-  both. Its box can be the union of its rows' rects, but two things then need a browser to
-  settle: a point on its first row means both "before that row" and "before the fragment", which
-  wants an edge zone to tell apart, and an empty fragment still has no rect at all.
+- **(P3) An empty fragment takes no drop in the live preview.** It draws nothing
+  (`display: contents` with no rows), so `Prefs/dropTarget.ts` has no rect to measure it by, and
+  only the structure tree drops into it. Needs a call on the look: drawing it a slot while a drag
+  is on would give the preview somewhere to land, and would also move the rows around it.
 
 - **(P3) `PrefSchemaEditor` sees only a `ResolvedConfig`'s `group`.** A schema built with
   `f.section` keeps its sections, `showIf` rules, `.render` overrides, and `.dialog` rows beside
   the `PrefGroup` tree, not in it, so the editor shows a sectioned schema as one flat list and its
   export drops all four. A schema is sectioned rather than nested where `f.group` would move its
-  config paths.
-
-- **(P3) `PrefSchemaEditor` has nowhere to keep an action catalog.** `AssetEditor` keeps one in
-  a workspace's `actions` asset, where its Actions list is sorted, grouped, and edited. The
-  one-schema editor builds its list from the host's actions on every draw, so its rows show their
-  attributes read-only and nothing sorts them. Giving it a catalog means a second asset in the
-  workspace `asWorkspace` makes, and `oneAssetCodec` and `sameSchema` read only the first: a
-  draft would drop the catalog and its steps.
-
-- **(P3) A step back over the action catalog does not restore the rows picked in it.**
-  `useAssetView.recorded` keeps each shown asset's selection with a step; the catalog's lives in
-  `useActionCatalog` and is not among them, so after an undo the Actions list keeps whichever of
-  its picked rows still exist.
+  config paths. `ResolvedConfig` is labkit's and `@weasel-js/ui` cannot import labkit, so this
+  needs decisions before it is built: how a labkit section shows in the structure tree (a
+  `PrefSection` cannot sit in a `PrefGroup` root outside an `object` leaf, so either a new node
+  kind or a group marked to keep its config paths); what the export writes for a schema whose
+  source is `f.section(…)` calls rather than a literal; and whether labkit wraps `AssetEditor`
+  and converts both ways, or `@weasel-js/ui` gains the vocabulary itself.
 
 - **(P3) `SelectionPanel` draws a `heading` leaf as a row.** `PrefsForm` and labkit's
   `ControlPanel` draw a leaf marked `heading` in the heading of the group holding it
