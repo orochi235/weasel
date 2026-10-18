@@ -8,8 +8,8 @@
  */
 import { existsSync, globSync, readFileSync, statSync } from 'node:fs';
 import { builtinModules } from 'node:module';
-import { dirname, join, resolve } from 'node:path';
-import { SOURCE, importSpecifiers, isBare, packageOf } from './lib/imports.mjs';
+import { dirname, join, matchesGlob, relative, resolve } from 'node:path';
+import { SOURCE, globImports, importSpecifiers, isBare, packageOf, unreadableImports } from './lib/imports.mjs';
 import { workspaceEntries } from './lib/packageEntries.mjs';
 import { type ViteAlias, weaselAliases } from './vite-aliases.ts';
 
@@ -40,6 +40,22 @@ function aliased(specifier: string, aliases: ViteAlias[]): string | undefined {
   return undefined;
 }
 
+/**
+ * The files an `import.meta.glob` in `file` loads, its patterns read the way vite reads them: relative to the
+ * file, from the root when they start with `/`, through an alias otherwise. A `!` pattern excludes.
+ */
+function globbed(file: string, patterns: string[], repoRoot: string, aliases: ViteAlias[]): string[] {
+  const absolute = (pattern: string) =>
+    pattern.startsWith('/') ? join(repoRoot, pattern)
+    : pattern.startsWith('.') ? join(dirname(file), pattern)
+    : aliased(pattern, aliases) ?? pattern;
+  const include = patterns.filter((pattern) => !pattern.startsWith('!')).map(absolute);
+  const exclude = patterns.filter((pattern) => pattern.startsWith('!')).map((pattern) => absolute(pattern.slice(1)));
+  return globSync(include, { exclude: (name) => SKIPPED_DIR.test(name) }).filter(
+    (path) => !exclude.some((pattern) => matchesGlob(path, pattern)),
+  );
+}
+
 export interface BrowserDepsOptions {
   /** Globs of the test files, relative to the root: the project's `include`. */
   entries: string[];
@@ -49,7 +65,8 @@ export interface BrowserDepsOptions {
 
 /**
  * Every bare specifier reachable from the entries and setup files, sorted. A workspace package is
- * followed into its source and never listed; vitest's own modules are left to vitest.
+ * followed into its source and never listed; vitest's own modules are left to vitest. Throws on an
+ * `import()` or `import.meta.glob` it cannot read, which could reach a dependency it would not list.
  */
 export function browserDeps(repoRoot: string, { entries, setupFiles = [] }: BrowserDepsOptions): string[] {
   const aliases = weaselAliases(repoRoot);
@@ -77,7 +94,18 @@ export function browserDeps(repoRoot: string, { entries, setupFiles = [] }: Brow
 
   for (let file = queue.pop(); file; file = queue.pop()) {
     seen.add(file);
-    for (const specifier of importSpecifiers(readFileSync(file, 'utf8'))) {
+    const text = readFileSync(file, 'utf8');
+    const unreadable = unreadableImports(text);
+    if (unreadable.length > 0) {
+      throw new Error(
+        `browserDeps: ${relative(repoRoot, file)} imports what a scan cannot read, so a browser test could meet a ` +
+          `dependency vite has not pre-bundled. Write the specifier or the glob as a literal:\n  ${unreadable.join('\n  ')}`,
+      );
+    }
+    for (const { patterns, modules } of globImports(text)) {
+      if (modules) for (const path of globbed(file, patterns, repoRoot, aliases)) visit(path);
+    }
+    for (const specifier of importSpecifiers(text)) {
       // A query (`?raw`, `?url`) hands the module to a vite plugin as text or an address.
       if (specifier.includes('?')) continue;
       const target = aliased(specifier, aliases);
