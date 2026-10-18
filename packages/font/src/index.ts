@@ -103,4 +103,6 @@ export {
   GLYPH_MODE_MSDF,
   GLYPH_MODE_R8,
   glyphFieldScale,
+  SYNTH_BOLD_AMOUNT,
+  syntheticBoldGrowth,
 } from './textSdf';

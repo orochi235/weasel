@@ -254,21 +254,6 @@ describe('textToPath failures', () => {
     }
   });
 
-  it('reports synthetic bold as unsupported rather than drawing the regular weight', async () => {
-    await registerAtlas('bold-me');
-    registerFontOutlines('bold-me', {}, ttf());
-    await loadFontOutlines('bold-me');
-    const src = { text: 'H', style: { fontFamily: 'bold-me', fontSize: 40, fontWeight: 700 } };
-    try {
-      textToPath(src, POSE);
-      expect.unreachable('synthetic bold must not extract');
-    } catch (err) {
-      expect(err).toBeInstanceOf(TextOutlinesError);
-      expect((err as TextOutlinesError).reason).toBe('synthetic-bold');
-      expect((err as TextOutlinesError).weight).toBe(700);
-    }
-  });
-
   it('reports a face whose bytes have not loaded, and succeeds once they have', async () => {
     registerFontOutlines('late', {}, ttf());
     const src = { text: 'H', style: { fontFamily: 'late', fontSize: 40 } };

@@ -123,25 +123,33 @@ export interface PaintedRuns {
  * glyph, so a face the resolver reports as atlas or canvas can still serve it.
  */
 export function glyphOutlineD(g: PlacedGlyph, run: ResolvedRun, minSize: number | undefined): string | null {
-  if (g.glyph?.color) return null;
-  const { family, weight, style } = g.resolved.resolved;
   // An outline-only run has no atlas behind it. Every gate below trades one
   // rendering for another; here there is no other, so gating would paint
   // nothing at all.
-  if (g.resolved.source === 'outline') return glyphOutline(family, weight, style, g.cp);
-  // A slot the layout left empty has no width to draw in: an outline there
-  // would land on top of its neighbor.
-  if (g.glyph === null) return null;
-  if (minSize === undefined) return null;
-  // A stroked run ignores the size gate: the SDF tiers have no geometry to
-  // stroke, so leaving it below the threshold drops the outline asked for.
-  // Gated on the run's size, so a small-caps word is not split across tiers.
-  if (run.fontSize < minSize && !strokeHasInk(run.stroke)) return null;
-  // Synthetic bold is an SDF threshold shift, and a path has no threshold.
-  // Painting the regular weight instead would make text get *lighter* as
-  // you zoom past the threshold. Synthetic italic is a shear, exact on
-  // geometry, and the renderer applies it.
-  if (g.resolved.synthetic.bold) return null;
+  if (g.resolved.source !== 'outline') {
+    if (minSize === undefined) return null;
+    // A stroked run ignores the size gate: the SDF tiers have no geometry to
+    // stroke, so leaving it below the threshold drops the outline asked for.
+    // Gated on the run's size, so a small-caps word is not split across tiers.
+    if (run.fontSize < minSize && !strokeHasInk(run.stroke)) return null;
+    // Synthetic bold is an SDF threshold shift, and the renderer's outline
+    // tier draws the face as it is: past the threshold the text would get
+    // *lighter*. Synthetic italic is a shear, exact on geometry, and the
+    // renderer applies it.
+    if (g.resolved.synthetic.bold) return null;
+  }
+  return faceOutlineD(g);
+}
+
+/**
+ * Em-space outline of `g` in the face it resolved to, whichever tier draws it,
+ * or `null` when it has none: a color glyph, or a slot the layout left empty,
+ * which has no width to draw in and would land on top of its neighbor.
+ */
+export function faceOutlineD(g: PlacedGlyph): string | null {
+  if (g.glyph?.color) return null;
+  const { family, weight, style } = g.resolved.resolved;
+  if (g.resolved.source !== 'outline' && g.glyph === null) return null;
   return glyphOutline(family, weight, style, g.cp);
 }
 
