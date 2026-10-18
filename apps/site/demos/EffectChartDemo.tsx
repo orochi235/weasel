@@ -4,10 +4,12 @@ import {
   BRANCH_SYMBOLS, EffectChart, compact, lanes, nodeGraph, rack,
   type BranchChoice, type EffectLook, type EffectPipeline, type EffectRun, type EffectStageRun,
 } from '@weasel-js/diagram/effect';
+import { DemoStage } from './DemoStage';
 
 const image = (id: string, label?: string) => ({ id, type: 'image', ...(label ? { label } : {}) });
 
 const GROUND = { color: '#0e151b' } as const;
+const W = 820, H = 420;
 
 /** A source blurred only at high quality, then composited under sunbeams
  *  through a mask, with an oscillator driving the blur radius. */
@@ -42,16 +44,16 @@ function Demo<TOptions>({ look }: { look?: EffectLook<TOptions> }) {
   return (
     <div className="ckd-stack">
       <div className="ckd-row">picked: {picked ?? 'none'}</div>
-      <EffectChart
-        pipeline={PIPELINE}
-        {...(look ? { look } : {})}
-        background={GROUND}
-        width={820}
-        height={420}
-        selected={picked}
-        onSelect={setPicked}
-        className="ckd-canvas"
-      />
+      <DemoStage width={W} height={H}>
+        <EffectChart
+          pipeline={PIPELINE}
+          {...(look ? { look } : {})}
+          background={GROUND}
+          selected={picked}
+          onSelect={setPicked}
+          className="ckd-canvas"
+        />
+      </DemoStage>
     </div>
   );
 }
@@ -94,15 +96,15 @@ export function EffectChartRunDemo() {
     return () => loop.cancel();
   }, [loop]);
   return (
-    <EffectChart
-      pipeline={PIPELINE}
-      run={runAt(frame)}
-      options={SHOW_VALUES}
-      background={GROUND}
-      width={820}
-      height={420}
-      className="ckd-canvas"
-    />
+    <DemoStage width={W} height={H}>
+      <EffectChart
+        pipeline={PIPELINE}
+        run={runAt(frame)}
+        options={SHOW_VALUES}
+        background={GROUND}
+        className="ckd-canvas"
+      />
+    </DemoStage>
   );
 }
 
@@ -142,15 +144,15 @@ export function EffectChartPreviewDemo() {
   }, [loop]);
   const run = useMemo(() => withPreviews(runAt(frame), scratch, frame), [frame, scratch]);
   return (
-    <EffectChart
-      pipeline={PIPELINE}
-      run={run}
-      options={SHOW_PREVIEWS}
-      background={GROUND}
-      width={820}
-      height={420}
-      className="ckd-canvas"
-    />
+    <DemoStage width={W} height={H}>
+      <EffectChart
+        pipeline={PIPELINE}
+        run={run}
+        options={SHOW_PREVIEWS}
+        background={GROUND}
+        className="ckd-canvas"
+      />
+    </DemoStage>
   );
 }
 
@@ -207,15 +209,15 @@ export function EffectChartBranchDemo() {
           {CHOICES.map((c) => <option key={c} value={c}>{c}</option>)}
         </select>
       </label>
-      <EffectChart
-        pipeline={BRANCHES}
-        look={nodeGraph}
-        options={options}
-        background={GROUND}
-        width={820}
-        height={420}
-        className="ckd-canvas"
-      />
+      <DemoStage width={W} height={H}>
+        <EffectChart
+          pipeline={BRANCHES}
+          look={nodeGraph}
+          options={options}
+          background={GROUND}
+          className="ckd-canvas"
+        />
+      </DemoStage>
     </div>
   );
 }
