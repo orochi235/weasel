@@ -15,7 +15,7 @@ function closure(entry: string) {
     seen.add(file);
     for (const m of readFileSync(file, 'utf8').matchAll(/(?:import|export)[^'"]*?from\s*['"]([^'"]+)['"]/g)) {
       const spec = m[1]!;
-      if (spec.startsWith('.')) visit(resolve(dirname(file), spec.replace(/\.js$/, '')) + '.ts');
+      if (spec.startsWith('.')) visit(resolve(dirname(file), spec.replace(/\.[jt]s$/, '')) + '.ts');
       else bare.add(spec);
     }
   };
