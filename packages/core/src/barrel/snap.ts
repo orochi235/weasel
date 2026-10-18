@@ -8,6 +8,9 @@ export type {
 } from '../features/snap/types';
 export { SNAP_ANGLE_STEP, SNAP_ROLES, snapMods } from '../features/snap/roles';
 export { createSnapOutcomeStore, type SnapOutcomeStore } from '../features/snap/outcomeStore';
+export {
+  gatherSnapCandidates, resolvedSnapMarks, type GatherSnapOptions, type SnapCandidateMark,
+} from '../features/snap/gather';
 export { pointSnap, type PointSnap } from '../features/snap/pointSnap';
 export { stepAngles } from '../features/snap/stepAngles';
 export { useSnapSource } from '../features/snap/registry';

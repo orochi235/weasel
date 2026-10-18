@@ -21,9 +21,14 @@ export {
 export {
   screenBoxOf, createNodeAtPoint, createAreaSelect, createSnap, createInsert,
   createPoseDescriptor,
-  type Footprint, type NodeBounds, type Node3d, type Scene3d, type Viewport3d,
+  type Footprint, type NodeBounds, type Node3d, type Scene3d, type Snap3dOptions, type Viewport3d,
   type ViewportSource, type World3d,
 } from './deps';
+export { projectPoint } from './project';
+export {
+  alignPlaneSource, boxSnapSource, groundGridSource, type GroundGridSourceOptions,
+} from './snap/sources';
+export { projectSnapMarks, type ScreenLine, type ScreenPoint } from './snap/marks';
 export { collectOverlayBoxes } from './overlays';
 export {
   orbitAction, panAction, dollyAction, pinchDollyAction, homeAction, useOrbitTool,

@@ -1,4 +1,4 @@
-import { closestOnFlat, resolveSnap, type Flat, type SnapCandidate } from '@weasel-js/geom/nd';
+import { closestOnFlat, resolveSnap, type SnapCandidate } from '@weasel-js/geom/nd';
 import type { View } from '@weasel-js/geom';
 import type { Scene } from 'core/scene/types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
@@ -6,22 +6,19 @@ import type { PlaneMap } from 'core/viewport/parallax';
 import type { SnapBegin, SnapOutcome, SnapSession } from 'interactions/actions/snapDep';
 import { angleAt } from './angle2d';
 import { inputFlat } from './inputSubspace';
-import { distinct, markFromPlane } from './marks';
+import { gatherSnapCandidates, resolvedSnapMarks, type SnapCandidateMark } from './gather';
+import { markFromPlane } from './marks';
 import { createSnapOutcomeStore, type SnapOutcomeStore } from './outcomeStore';
 import { resizedBox, resizeEdges, resizeSubject, type ResizeSubject } from './resizeBox';
 import { screenOf } from './screen';
-import type { SnapCollect, SnapGesture, SnapMark, SnapProbeAt, SnapSource, SourceCandidate } from './types';
+import type { SnapCollect, SnapGesture, SnapMark, SnapProbeAt, SnapSource } from './types';
 
 type Point = { x: number; y: number };
 
 /** The canvas's reach when neither a source nor the kit settings name one. */
 export const DEFAULT_SNAP_PX = 8;
 
-type SourceMark = NonNullable<SourceCandidate['mark']>;
-
 const DEFAULT_GESTURES: readonly SnapGesture[] = ['point', 'move', 'resize'];
-/** How near `origin` a point target counts as on it, relative to its magnitude. */
-const ORIGIN_EPS = 1e-9;
 
 /** What a 2D session runs on, captured at press. */
 export interface Session2dInputs {
@@ -73,7 +70,7 @@ export function createSession2d(inputs: Session2dInputs): SnapSession {
         toScreen: screenOf(view, plane),
       });
       const delta = { x: res.delta[0], y: res.delta[1] };
-      const marks = distinct(res.satisfied.flatMap((c) => marksOf(c.mark, delta)));
+      const marks = resolvedSnapMarks(res.satisfied, delta);
       store.set(plane ? marks.map((m) => markFromPlane(m, plane)) : marks);
       return outcome(req.press, res.delta, res.members.length > 0, marks);
     },
@@ -85,66 +82,29 @@ export function createSession2d(inputs: Session2dInputs): SnapSession {
   };
 }
 
-function marksOf(mark: SourceMark | undefined, delta: Point): readonly SnapMark[] {
-  if (!mark) return [];
-  const m = typeof mark === 'function' ? mark(delta) : mark;
-  return 'kind' in m ? [m] : m;
-}
-
 function outcome(press: Point, delta: readonly number[], held: boolean, marks: readonly SnapMark[]): SnapOutcome {
   return { point: { x: press.x + delta[0], y: press.y + delta[1] }, held, marks };
 }
 
 function collectAll(
   inputs: Session2dInputs, sources: readonly SnapSource[], delta0: Point, view: View | null, plane: PlaneMap | null,
-): SnapCandidate<SourceMark>[] {
+): SnapCandidate<SnapCandidateMark<Point>>[] {
   const { req } = inputs;
   const camera = view ? Math.min(Math.abs(view.scale.x), Math.abs(view.scale.y)) : 1;
   // A plane unit is `plane.scale` camera units the other way round.
   const scale = plane ? camera / Math.max(Math.abs(plane.scale.x), Math.abs(plane.scale.y)) : camera;
-  const out: SnapCandidate<SourceMark>[] = [];
-  // Runs across sources and their yields: an earlier source, then an earlier
-  // yield, wins a tie.
-  let order = 0;
-  sources.forEach((source) => {
-    const offered = inputs.probes
-      .filter((q) => source.roles.includes(q.role))
-      .map((q) => ({ ...q, at: { x: q.at.x + delta0.x, y: q.at.y + delta0.y } }));
-    if (offered.length === 0) return;
-    const ids = new Set(offered.map((q) => q.id));
-    const found = source.collect({
-      gesture: req.gesture, probes: offered, delta0, exclude: inputs.exclude ?? req.ids ?? [],
-      ...(plane ? { plane } : {}),
-      ...subjectAt(inputs, delta0),
-      ...(inputs.drawnBox ? { drawnBox: inputs.drawnBox } : {}),
-      ...(req.origin ? { origin: req.origin } : {}),
-      ...(req.also ? { also: req.also } : {}),
-      reachWorld: (px) => px / scale,
-      reachPx: source.reachPx ?? inputs.reachPx,
-      ...(inputs.scene ? { scene: inputs.scene } : {}),
-    });
-    for (const c of found) {
-      if (!ids.has(c.probe) || atOrigin(c.locus, req.origin)) continue;
-      out.push({
-        probe: c.probe, locus: toFlat(c.locus),
-        ...(c.locus.span ? { span: c.locus.span } : {}),
-        source: source.id, order: order++, tier: source.tier ?? 'target',
-        reachPx: source.reachPx ?? inputs.reachPx,
-        ...(c.required ? { required: true } : {}),
-        ...(c.mark ? { mark: c.mark } : {}),
-      });
-    }
-  });
-  return out;
-}
-
-/** Whether `locus` is a point on `origin`: where the geometry being drawn
- *  starts is no target for its other end, or a handle would stick to its
- *  own anchor. */
-function atOrigin(locus: { at: Point; dirs: readonly Point[] }, origin: Point | undefined): boolean {
-  if (origin === undefined || locus.dirs.length > 0) return false;
-  const eps = ORIGIN_EPS * Math.max(1, Math.abs(origin.x), Math.abs(origin.y));
-  return Math.abs(locus.at.x - origin.x) <= eps && Math.abs(locus.at.y - origin.y) <= eps;
+  const probes = inputs.probes.map((q) => ({ ...q, at: { x: q.at.x + delta0.x, y: q.at.y + delta0.y } }));
+  return gatherSnapCandidates(sources, probes, (source, offered) => ({
+    gesture: req.gesture, probes: offered, delta0, exclude: inputs.exclude ?? req.ids ?? [],
+    ...(plane ? { plane } : {}),
+    ...subjectAt(inputs, delta0),
+    ...(inputs.drawnBox ? { drawnBox: inputs.drawnBox } : {}),
+    ...(req.origin ? { origin: req.origin } : {}),
+    ...(req.also ? { also: req.also } : {}),
+    reachWorld: (px) => px / scale,
+    reachPx: source.reachPx ?? inputs.reachPx,
+    ...(inputs.scene ? { scene: inputs.scene } : {}),
+  }), { toVec: (p) => [p.x, p.y], reachPx: inputs.reachPx, ...(req.origin ? { origin: req.origin } : {}) });
 }
 
 /** The subject's box where `delta0` puts it, and the sides that moved. */
@@ -166,8 +126,4 @@ export function inputSession(req: SnapBegin): SnapSession {
     reachPx: 0,
     store: createSnapOutcomeStore(),
   });
-}
-
-function toFlat(locus: { at: Point; dirs: readonly Point[] }): Flat {
-  return { at: [locus.at.x, locus.at.y], dirs: locus.dirs.map((d) => [d.x, d.y]) };
 }

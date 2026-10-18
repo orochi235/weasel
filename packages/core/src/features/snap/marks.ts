@@ -4,7 +4,7 @@ import type { SnapMark } from './types';
 type Point = { x: number; y: number };
 
 /** `marks` with repeats dropped, so a target several probes meet is drawn once. */
-export function distinct(marks: readonly SnapMark[]): SnapMark[] {
+export function distinct<P>(marks: readonly SnapMark<P>[]): SnapMark<P>[] {
   const seen = new Set<string>();
   return marks.filter((m) => {
     const key = JSON.stringify(m);

@@ -13,10 +13,11 @@ import type {
   NodeAtPointDep,
   NodeId,
   PoseDescriptor,
-  Scene,
-  SceneNode,
   SnapDep,
+  SnapOutcomeStore,
+  SnapSource,
 } from '@weasel-js/core';
+import { DEFAULT_SNAP_PX, createSnapOutcomeStore } from '@weasel-js/core';
 import {
   aabbOfPoints,
   add,
@@ -30,93 +31,18 @@ import {
   scale as scaleBy,
   sub,
   type Aabb,
-  type Ray,
   type Vec3,
 } from '@weasel-js/geom/3d';
-import { cameraEye, cameraViewProjection, type Camera3d } from './camera';
+import { cameraEye, type Camera3d } from './camera';
 import { aabbOfPose, type Pose3 } from './pose3';
-import {
-  projectAabbToScreen,
-  rayThroughScreenPoint,
-  type ScreenBox,
-} from './screen';
+import { rayAt, rectOf, viewProjectionOf, type Viewport3d, type ViewportSource } from './project';
+import { projectAabbToScreen, type ScreenBox } from './screen';
+import { createSession3d } from './snap/session3d';
 
-/** The camera and the pane it draws into; `width`/`height` are the pane's
- *  size in the same units as the pointer points. */
-export interface Viewport3d {
-  camera: Camera3d;
-  width: number;
-  height: number;
-  /**
-   * Where the pane sits in client coordinates. A 3D host works in one space
-   * from the event to the ray — it passes the dispatcher an identity
-   * `clientToWorld` — so the deps subtract this rather than the dispatcher.
-   */
-  originX?: number;
-  originY?: number;
-}
+import { DEFAULT_UP, boundsOfNode, type Node3d, type World3d } from './world';
 
-/** Read on every dep call, so a dep always sees the current camera and pane. */
-export type ViewportSource = () => Viewport3d;
-
-/** A 3D scene is core's scene with a `Pose3`. Nothing wraps it. */
-export type Scene3d<TData, TLayer extends string> = Scene<TData, TLayer, Pose3>;
-/** A node of a `Scene3d`. */
-export type Node3d<TData, TLayer extends string> = SceneNode<TData, TLayer, Pose3>;
-
-/**
- * The world box a node occupies, rather than a local box to transform: a
- * sphere's box is the same under every rotation, and no transform of a local
- * box reproduces that — rotate a cube and it widens.
- *
- * Omitted, a node is a unit cube carried by its pose.
- */
-export type NodeBounds<TData, TLayer extends string> = (
-  node: Node3d<TData, TLayer>,
-) => Aabb;
-
-/** What every 3D dep is built from: the scene, the viewport, and optionally
- *  each node's world box. */
-export interface World3d<TData, TLayer extends string> {
-  scene: Scene3d<TData, TLayer>;
-  viewport: ViewportSource;
-  bounds?: NodeBounds<TData, TLayer>;
-  /** The axis gestures resolve against. Default `+y`. */
-  up?: Vec3;
-}
-
-const DEFAULT_UP: Vec3 = { x: 0, y: 1, z: 0 };
-
-function boundsOfNode<TData, TLayer extends string>(
-  world: World3d<TData, TLayer>,
-  node: Node3d<TData, TLayer>,
-): Aabb {
-  return world.bounds ? world.bounds(node) : aabbOfPose(node.pose);
-}
-
-/** The pane, in the coordinate space the host's points arrive in. The origin
- *  defaults to the client origin — a host that fills the window passes none. */
-function rectOf(viewport: Viewport3d): ScreenBox {
-  return {
-    x: viewport.originX ?? 0,
-    y: viewport.originY ?? 0,
-    width: viewport.width,
-    height: viewport.height,
-  };
-}
-
-function viewProjectionOf(viewport: Viewport3d) {
-  return cameraViewProjection(viewport.camera, viewport.width / Math.max(1, viewport.height));
-}
-
-function rayAt(viewport: Viewport3d, point: { x: number; y: number }): Ray | null {
-  return rayThroughScreenPoint(
-    point,
-    rectOf(viewport),
-    viewProjectionOf(viewport),
-    cameraEye(viewport.camera),
-  );
-}
+export type { Viewport3d, ViewportSource } from './project';
+export type { NodeBounds, Node3d, Scene3d, World3d } from './world';
 
 /**
  * The plane through `p` that faces the camera.
@@ -214,9 +140,34 @@ export function createAreaSelect<TData, TLayer extends string>(
   };
 }
 
-/** No grid in 3D yet; the identity keeps `insertAction` happy without lying. */
-export function createSnap(): SnapDep {
-  return { point: (p) => p };
+/** Options for `createSnap`. */
+export interface Snap3dOptions {
+  /** What a gesture snaps to, in order: earlier wins a full tie. Default none,
+   *  which leaves only the gesture's own constraint. */
+  sources?: readonly SnapSource<Vec3>[];
+  /** The reach of a source that sets none, in screen px. Default 8. */
+  reachPx?: number;
+  /** Where the marks of the snap in flight are written, for a host to draw
+   *  with `projectSnapMarks`. */
+  store?: SnapOutcomeStore<Vec3>;
+}
+
+/**
+ * The `snap` dep over a 3D world. A move snaps its subject's world box on the
+ * plane it already moves on; an insert snaps the pointer on the ground. Both
+ * answer in screen points, which `translate` and `createInsert` cast back
+ * onto the same plane, landing exactly where the snap put them.
+ */
+export function createSnap<TData, TLayer extends string>(
+  world: World3d<TData, TLayer>, opts: Snap3dOptions = {},
+): SnapDep {
+  const store = opts.store ?? createSnapOutcomeStore<Vec3>();
+  const sources = opts.sources ?? [];
+  const reachPx = opts.reachPx ?? DEFAULT_SNAP_PX;
+  return {
+    point: (p) => p,
+    begin: (req) => createSession3d({ req, world, sources, reachPx, store }),
+  };
 }
 
 /** The ground-plane rectangle a drag swept out, in world units. */
@@ -435,7 +386,7 @@ export function createPoseDescriptor<TData, TLayer extends string>(
         if (!box) return pose;
         const from = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
         const to = { x: from.x + dx, y: from.y + dy };
-        const offset = pose.position[upAxis];
+        const offset = dot(up, pose.position);
 
         const ray = rayAt(vp, to);
         if (!ray) return pose;
