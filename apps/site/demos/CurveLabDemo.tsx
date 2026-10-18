@@ -8,6 +8,7 @@ import {
 } from '@weasel-js/geom/curves';
 import { CURVE_PRESETS } from './curveLab/presets';
 import { RepresentationPanel, type OverlayFlags } from './curveLab/RepresentationPanel';
+import { DemoStageGroup } from './DemoStage';
 
 const PANEL_W = 360;
 const PANEL_H = 360;
@@ -81,19 +82,21 @@ export function CurveLabDemo() {
         </label>
         <span className="curve-lab-preset-desc">{preset.description}</span>
       </div>
-      <div className="curve-lab-grid">
-        {REPS.map((rep) => (
-          <RepresentationPanel
-            key={rep.kind}
-            rep={rep}
-            anchors={anchors}
-            onAnchorsChange={setAnchors}
-            overlays={overlays}
-            width={PANEL_W}
-            height={PANEL_H}
-          />
-        ))}
-      </div>
+      <DemoStageGroup>
+        <div className="curve-lab-grid">
+          {REPS.map((rep) => (
+            <RepresentationPanel
+              key={rep.kind}
+              rep={rep}
+              anchors={anchors}
+              onAnchorsChange={setAnchors}
+              overlays={overlays}
+              width={PANEL_W}
+              height={PANEL_H}
+            />
+          ))}
+        </div>
+      </DemoStageGroup>
     </div>
   );
 }

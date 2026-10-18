@@ -6,13 +6,19 @@ import {
 type Axis = 'x' | 'y' | 'both';
 type Delta = { dw: number; dh: number };
 
-interface FrameApi {
-  frame: RefObject<HTMLDivElement | null>;
+/**
+ * What one drag resizes: a lone stage, or every stage of a `DemoStageGroup`.
+ * The delta is written as `--demo-stage-dw` / `--demo-stage-dh` on `el`,
+ * where the stages it covers, and anything else inside it, read it.
+ */
+export interface ResizeScope {
+  el: RefObject<HTMLElement | null>;
   delta: RefObject<Delta>;
   apply: (next: Delta | null) => void;
 }
 
-const DemoFrameContext = createContext<FrameApi | null>(null);
+const InFrameContext = createContext(false);
+const GroupContext = createContext<ResizeScope | null>(null);
 
 /** The smallest a stage is dragged down to, per axis, in CSS pixels. */
 const MIN_STAGE = 120;
@@ -23,48 +29,71 @@ const ARROWS: Record<string, [number, number]> = {
 };
 
 /**
- * The box a demo is mounted in. It holds the one resize delta every
- * `DemoStage` inside reads, so dragging any stage's handles grows or shrinks
- * them all by the distance dragged, and a double-click puts them back at
- * their natural size.
+ * The box a demo is mounted in. A `DemoStage` inside it gets resize handles;
+ * one outside it, such as a visual baseline's, gets none.
  */
 export function DemoFrame({ children }: { children: ReactNode }) {
-  const frame = useRef<HTMLDivElement>(null);
-  const delta = useRef<Delta>({ dw: 0, dh: 0 });
+  return (
+    <InFrameContext.Provider value>
+      <div className="ckd-demo-frame">{children}</div>
+    </InFrameContext.Provider>
+  );
+}
 
+export function useResizeScope(el: RefObject<HTMLElement | null>): ResizeScope {
+  const delta = useRef<Delta>({ dw: 0, dh: 0 });
   const apply = useCallback((next: Delta | null) => {
-    const el = frame.current;
-    if (!el) return;
+    const node = el.current;
+    if (!node) return;
     delta.current = next ?? { dw: 0, dh: 0 };
     if (next === null) {
-      el.style.removeProperty('--demo-stage-dw');
-      el.style.removeProperty('--demo-stage-dh');
+      node.style.removeProperty('--demo-stage-dw');
+      node.style.removeProperty('--demo-stage-dh');
       return;
     }
-    el.style.setProperty('--demo-stage-dw', `${next.dw}px`);
-    el.style.setProperty('--demo-stage-dh', `${next.dh}px`);
-  }, []);
-  const api = useMemo(() => ({ frame, delta, apply }), [apply]);
+    node.style.setProperty('--demo-stage-dw', `${next.dw}px`);
+    node.style.setProperty('--demo-stage-dh', `${next.dh}px`);
+  }, [el]);
+  return useMemo(() => ({ el, delta, apply }), [el, apply]);
+}
 
+/** The scope a stage resizes in: its group's, or its own when it has none. */
+export function useStageScope(own: RefObject<HTMLElement | null>): ResizeScope {
+  const solo = useResizeScope(own);
+  return useContext(GroupContext) ?? solo;
+}
+
+/**
+ * Stages inside resize as one: a drag on any of them moves them all by the
+ * same distance, and a double-click on any puts them all back. For panels a
+ * reader compares side by side. Lays out as if it were not there.
+ */
+export function DemoStageGroup({ children }: { children: ReactNode }) {
+  const el = useRef<HTMLDivElement>(null);
+  const scope = useResizeScope(el);
   return (
-    <DemoFrameContext.Provider value={api}>
-      <div ref={frame} className="ckd-demo-frame">{children}</div>
-    </DemoFrameContext.Provider>
+    <GroupContext.Provider value={scope}>
+      <div ref={el} className="ckd-stage-group">{children}</div>
+    </GroupContext.Provider>
   );
 }
 
 /** A stage's right-edge, bottom-edge and corner handles, or nothing outside a `DemoFrame`. */
-export function StageHandles() {
-  const api = useContext(DemoFrameContext);
-  if (!api) return null;
-  return (['x', 'y', 'both'] as const).map((axis) => <ResizeHandle key={axis} axis={axis} {...api} />);
+export function StageHandles({ scope }: { scope: ResizeScope }) {
+  if (!useContext(InFrameContext)) return null;
+  return (['x', 'y', 'both'] as const).map((axis) => <ResizeHandle key={axis} axis={axis} {...scope} />);
 }
 
-/** How far the stages may shrink from `start`: until the smallest reaches `MIN_STAGE` on each axis.
- *  Unbounded on an axis no stage has a laid-out size to measure on. */
-function floorOf(frame: HTMLElement | null, start: Delta): Delta {
+function membersOf(el: HTMLElement | null): Element[] {
+  if (!el) return [];
+  return el.classList.contains('ckd-stage') ? [el] : [...el.querySelectorAll('.ckd-stage')];
+}
+
+/** How far the scope's stages may shrink from `start`: until the smallest reaches `MIN_STAGE` on
+ *  each axis. Unbounded on an axis no stage has a laid-out size to measure on. */
+function floorOf(el: HTMLElement | null, start: Delta): Delta {
   const floor = { dw: -Infinity, dh: -Infinity };
-  for (const stage of frame?.querySelectorAll('.ckd-stage') ?? []) {
+  for (const stage of membersOf(el)) {
     const rect = stage.getBoundingClientRect();
     if (rect.width > 0) floor.dw = Math.max(floor.dw, start.dw - (rect.width - MIN_STAGE));
     if (rect.height > 0) floor.dh = Math.max(floor.dh, start.dh - (rect.height - MIN_STAGE));
@@ -72,7 +101,7 @@ function floorOf(frame: HTMLElement | null, start: Delta): Delta {
   return floor;
 }
 
-function ResizeHandle({ axis, frame, delta, apply }: FrameApi & { axis: Axis }) {
+function ResizeHandle({ axis, el, delta, apply }: ResizeScope & { axis: Axis }) {
   const drag = useRef<{ x: number; y: number; start: Delta; floor: Delta } | null>(null);
   const moveTo = (start: Delta, floor: Delta, dx: number, dy: number) => apply({
     dw: axis === 'y' ? start.dw : Math.max(floor.dw, start.dw + dx),
@@ -85,7 +114,7 @@ function ResizeHandle({ axis, frame, delta, apply }: FrameApi & { axis: Axis }) 
     e.stopPropagation();
     e.currentTarget.setPointerCapture?.(e.pointerId);
     const start = { ...delta.current };
-    drag.current = { x: e.clientX, y: e.clientY, start, floor: floorOf(frame.current, start) };
+    drag.current = { x: e.clientX, y: e.clientY, start, floor: floorOf(el.current, start) };
   };
   const onPointerMove = (e: PointerEvent<HTMLDivElement>) => {
     const d = drag.current;
@@ -98,7 +127,7 @@ function ResizeHandle({ axis, frame, delta, apply }: FrameApi & { axis: Axis }) 
     e.preventDefault();
     e.stopPropagation();
     const start = { ...delta.current };
-    moveTo(start, floorOf(frame.current, start), step[0], step[1]);
+    moveTo(start, floorOf(el.current, start), step[0], step[1]);
   };
 
   // The corner is the one keyboard stop; the edges are wider pointer targets for the same thing.

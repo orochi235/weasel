@@ -10,7 +10,7 @@ import {
   type SvgKitPose,
 } from '@weasel-js/svg';
 import s from './SvgDemo.module.css';
-import { DemoStage } from './DemoStage';
+import { DemoStage, DemoStageGroup } from './DemoStage';
 
 const W = 420, H = 320;
 const VIEW = { x: 0, y: 0, width: W, height: H };
@@ -147,47 +147,49 @@ function SvgRoundTrip() {
   const importWarnings = 'parsed' in imported ? imported.parsed.warnings : [imported.error];
 
   return (
-    <div className={s.demo}>
-      <div className={s.top}>
-        <div className={s.source}>
-          <div className={s.presets}>
-            {PRESETS.map((p) => (
-              <button
-                key={p.name}
-                type="button"
-                className="ckd-btn"
-                aria-pressed={source === p.svg}
-                onClick={() => setSource(p.svg)}
-              >
-                {p.name}
-              </button>
-            ))}
+    <DemoStageGroup>
+      <div className={s.demo}>
+        <div className={s.top}>
+          <div className={s.source}>
+            <div className={s.presets}>
+              {PRESETS.map((p) => (
+                <button
+                  key={p.name}
+                  type="button"
+                  className="ckd-btn"
+                  aria-pressed={source === p.svg}
+                  onClick={() => setSource(p.svg)}
+                >
+                  {p.name}
+                </button>
+              ))}
+            </div>
+            <textarea
+              className={s.code}
+              spellCheck={false}
+              aria-label="SVG source"
+              value={source}
+              onChange={(e) => setSource(e.target.value)}
+            />
+            <Warnings label="parseSvg" items={importWarnings} />
           </div>
-          <textarea
-            className={s.code}
-            spellCheck={false}
-            aria-label="SVG source"
-            value={source}
-            onChange={(e) => setSource(e.target.value)}
-          />
-          <Warnings label="parseSvg" items={importWarnings} />
+          <DemoStage width={W} height={H} className={s.stage}>
+            <SceneCanvas
+              features={['pick', 'move', 'transform']}
+              className="ckd-canvas"
+              backgroundFill={{ color: '#ffffff' }}
+              scene={scene}
+              selection={selection}
+            />
+          </DemoStage>
         </div>
-        <DemoStage width={W} height={H} className={s.stage}>
-          <SceneCanvas
-            features={['pick', 'move', 'transform']}
-            className="ckd-canvas"
-            backgroundFill={{ color: '#ffffff' }}
-            scene={scene}
-            selection={selection}
-          />
-        </DemoStage>
+        <div className={s.output}>
+          <div className={s.heading}>serializeSvg</div>
+          <pre className={s.code}>{exported.text}</pre>
+          <Warnings label="serializeSvg" items={exported.warnings} />
+        </div>
       </div>
-      <div className={s.output}>
-        <div className={s.heading}>serializeSvg</div>
-        <pre className={s.code}>{exported.text}</pre>
-        <Warnings label="serializeSvg" items={exported.warnings} />
-      </div>
-    </div>
+    </DemoStageGroup>
   );
 }
 

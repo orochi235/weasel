@@ -21,7 +21,7 @@ import {
 import type { BooleansAdapter, NodeId, Op, PolygonPath } from '@weasel-js/core';
 import { ActionBar } from '@weasel-js/ui';
 import type { DrawCommand } from '@weasel-js/core/renderer';
-import { DemoStage } from './DemoStage';
+import { DemoStage, DemoStageGroup } from './DemoStage';
 
 const W = 240;
 const H = 200;
@@ -241,49 +241,51 @@ export function BooleanOpsDemo() {
   );
 
   return (
-    <div className="ckd-boolops-grid">
-      {/* The scope sits above InteractivePanel, not inside it: its
-          useBooleansAdapter / useStandardActions hooks publish into the dep
-          registry before its SceneCanvas mounts, so the registry has to be in
-          scope by the time they fire. Isolated because this canvas's non-empty
-          initial selection would otherwise fight the static panels' empty
-          ones. */}
-      <WeaselProvider isolate>
-        <InteractivePanel />
-      </WeaselProvider>
+    <DemoStageGroup>
+      <div className="ckd-boolops-grid">
+        {/* The scope sits above InteractivePanel, not inside it: its
+            useBooleansAdapter / useStandardActions hooks publish into the dep
+            registry before its SceneCanvas mounts, so the registry has to be in
+            scope by the time they fire. Isolated because this canvas's non-empty
+            initial selection would otherwise fight the static panels' empty
+            ones. */}
+        <WeaselProvider isolate>
+          <InteractivePanel />
+        </WeaselProvider>
 
-      <div className="ckd-boolops-panel">
-        <h3 className="ckd-boolops-label">Inputs</h3>
-        <Panel id="inputs" paths={[
-          { id: 'rect', path: RECT_INPUT, color: RECT_COLOR },
-          { id: 'circle', path: CIRCLE_INPUT, color: CIRCLE_COLOR },
-        ]} />
-      </div>
+        <div className="ckd-boolops-panel">
+          <h3 className="ckd-boolops-label">Inputs</h3>
+          <Panel id="inputs" paths={[
+            { id: 'rect', path: RECT_INPUT, color: RECT_COLOR },
+            { id: 'circle', path: CIRCLE_INPUT, color: CIRCLE_COLOR },
+          ]} />
+        </div>
 
-      <div className="ckd-boolops-panel">
-        <h3 className="ckd-boolops-label">Union</h3>
-        <Panel id="union" paths={[{ id: 'u', path: unionResult, color: RESULT_COLOR }]} />
-      </div>
+        <div className="ckd-boolops-panel">
+          <h3 className="ckd-boolops-label">Union</h3>
+          <Panel id="union" paths={[{ id: 'u', path: unionResult, color: RESULT_COLOR }]} />
+        </div>
 
-      <div className="ckd-boolops-panel">
-        <h3 className="ckd-boolops-label">Intersect</h3>
-        <Panel id="intersect" paths={[{ id: 'i', path: intersectResult, color: RESULT_COLOR }]} />
-      </div>
+        <div className="ckd-boolops-panel">
+          <h3 className="ckd-boolops-label">Intersect</h3>
+          <Panel id="intersect" paths={[{ id: 'i', path: intersectResult, color: RESULT_COLOR }]} />
+        </div>
 
-      <div className="ckd-boolops-panel">
-        <h3 className="ckd-boolops-label">Subtract</h3>
-        <Panel id="subtract" paths={[{ id: 's', path: subtractResult, color: RESULT_COLOR }]} />
-      </div>
+        <div className="ckd-boolops-panel">
+          <h3 className="ckd-boolops-label">Subtract</h3>
+          <Panel id="subtract" paths={[{ id: 's', path: subtractResult, color: RESULT_COLOR }]} />
+        </div>
 
-      <div className="ckd-boolops-panel">
-        <h3 className="ckd-boolops-label">Exclude</h3>
-        <Panel id="exclude" paths={[{ id: 'x', path: excludeResult, color: RESULT_COLOR }]} />
-      </div>
+        <div className="ckd-boolops-panel">
+          <h3 className="ckd-boolops-label">Exclude</h3>
+          <Panel id="exclude" paths={[{ id: 'x', path: excludeResult, color: RESULT_COLOR }]} />
+        </div>
 
-      <div className="ckd-boolops-panel">
-        <h3 className="ckd-boolops-label">Divide</h3>
-        <Panel id="divide" paths={dividePaths} />
+        <div className="ckd-boolops-panel">
+          <h3 className="ckd-boolops-label">Divide</h3>
+          <Panel id="divide" paths={dividePaths} />
+        </div>
       </div>
-    </div>
+    </DemoStageGroup>
   );
 }

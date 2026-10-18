@@ -2,7 +2,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--wzl-space-6);
-  /* Widens with the demo's resize handle, so the source pane keeps its width. */
+  /* Widens with the stage's resize delta, read off the DemoStageGroup around it, so the source pane keeps its width. */
   width: calc(860px + var(--demo-stage-dw, 0px));
 }
 

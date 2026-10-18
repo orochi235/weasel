@@ -263,8 +263,9 @@ a:hover { text-decoration: underline; }
   align-items: flex-start;
 }
 
-/* Holds the resize delta its stages inherit; lays out as if it were not there. */
-.ckd-demo-frame { display: contents; }
+/* Lay out as if they were not there. A group holds the resize delta its stages inherit. */
+.ckd-demo-frame,
+.ckd-stage-group { display: contents; }
 
 /* A demo's canvas box: its natural size plus however far its handles were
  * dragged, never below 120px unless it started smaller. */
@@ -722,7 +723,7 @@ a:hover { text-decoration: underline; }
 }
 .curve-lab-grid {
   display: grid;
-  grid-template-columns: 360px 360px;
+  grid-template-columns: repeat(2, calc(360px + var(--demo-stage-dw, 0px)));
   grid-auto-rows: min-content;
   gap: var(--wzl-space-4);
 }

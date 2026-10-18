@@ -1,13 +1,13 @@
 import './canvas-kit-demo.css';
 import { afterEach, expect, test } from 'vitest';
-import { act } from 'react';
+import { act, type ReactNode } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { DemoFrame } from './DemoFrame';
 import { PanZoomDemo } from './demos/PanZoomDemo';
-import { DemoStage } from './demos/DemoStage';
+import { DemoStage, DemoStageGroup } from './demos/DemoStage';
 
 // A stage holds a filling canvas at the demo's natural size, which is what the
-// visual baselines capture, and a drag on the frame's corner grows the canvas.
+// visual baselines capture, and a drag on the stage's corner grows the canvas.
 
 let root: Root | null = null;
 let host: HTMLDivElement | null = null;
@@ -105,4 +105,53 @@ test('the corner handle sits on the stage, not on a wider row beside it, and gro
   await settle();
   const grown = stage.getBoundingClientRect();
   expect([grown.width, grown.height]).toEqual([460, 320]);
+});
+
+async function mount(node: ReactNode): Promise<HTMLElement> {
+  host = document.createElement('div');
+  host.className = 'ckd-canvas-wrap';
+  document.body.append(host);
+  await act(async () => {
+    root = createRoot(host!);
+    root.render(<DemoFrame>{node}</DemoFrame>);
+  });
+  await settle();
+  return host;
+}
+
+async function dragCorner(stage: Element, dx: number, dy: number): Promise<void> {
+  const corner = stage.querySelector('.ckd-demo-resize[data-axis="both"]')!;
+  const { left, top } = corner.getBoundingClientRect();
+  await act(async () => {
+    fire(corner, 'pointerdown', left + 5, top + 5);
+    fire(corner, 'pointermove', left + 5 + dx, top + 5 + dy);
+    fire(corner, 'pointerup', left + 5 + dx, top + 5 + dy);
+  });
+  await settle();
+}
+
+const sizes = (el: HTMLElement) => [...el.querySelectorAll('.ckd-stage')]
+  .map((s) => [s.getBoundingClientRect().width, s.getBoundingClientRect().height]);
+
+test('a drag on one stage resizes that stage alone', async () => {
+  const el = await mount(<>
+    <DemoStage width={400} height={300}><canvas /></DemoStage>
+    <DemoStage width={200} height={150}><canvas /></DemoStage>
+  </>);
+  await dragCorner(el.querySelectorAll('.ckd-stage')[1], 40, 30);
+  expect(sizes(el)).toEqual([[400, 300], [240, 180]]);
+});
+
+test('a drag on any stage of a group resizes every stage in it, down to 120px for the smallest', async () => {
+  const el = await mount(<>
+    <DemoStage width={300} height={300}><canvas /></DemoStage>
+    <DemoStageGroup>
+      <DemoStage width={400} height={300}><canvas /></DemoStage>
+      <DemoStage width={200} height={150}><canvas /></DemoStage>
+    </DemoStageGroup>
+  </>);
+  await dragCorner(el.querySelectorAll('.ckd-stage')[1], 40, 30);
+  expect(sizes(el)).toEqual([[300, 300], [440, 330], [240, 180]]);
+  await dragCorner(el.querySelectorAll('.ckd-stage')[2], -400, 0);
+  expect(sizes(el)).toEqual([[300, 300], [320, 330], [120, 180]]);
 });
