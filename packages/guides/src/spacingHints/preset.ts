@@ -16,7 +16,8 @@ export interface SpacingHintsOptions {
   /** Snap a move to its siblings' edges and centers too, and draw the line it
    *  meets. Default false. */
   align?: boolean;
-  /** Snap distance in screen px. Default 6. */
+  /** Snap distance in screen px. Default the `targets.guideSnapPx` kit
+   *  setting, else `DEFAULT_GUIDE_TOLERANCE_PX`. */
   tolerance?: number;
   /** The Alt-hover distance readout, configured, or `false` for none. Default
    *  on, with the preset's `color`. */
