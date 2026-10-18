@@ -10,6 +10,7 @@ import {
 } from '@weasel-js/diagram';
 import { elkPlanner } from '@weasel-js/diagram-elk';
 import { FONT, moved, PORTS, routed } from './diagram/shared';
+import { DemoStage } from './DemoStage';
 
 const BOX = { width: 72, height: 32 };
 const LIVE = { layout: { nodeGap: 24, rankGap: 32 } };
@@ -67,20 +68,20 @@ export function DiagramElkDemo() {
           </button>
         ))}
       </div>
-      <DiagramView
-        ref={view}
-        specs={specs}
-        width={640}
-        height={400}
-        className="ckd-canvas"
-        ports="show"
-        portOptions={PORTS}
-        live={LIVE}
-        onMove={(moves, routes) => {
-          setNodes((ns) => moved(ns, moves));
-          setEdges((es) => routed(es, routes));
-        }}
-      />
+      <DemoStage width={640} height={400}>
+        <DiagramView
+          ref={view}
+          specs={specs}
+          className="ckd-canvas"
+          ports="show"
+          portOptions={PORTS}
+          live={LIVE}
+          onMove={(moves, routes) => {
+            setNodes((ns) => moved(ns, moves));
+            setEdges((es) => routed(es, routes));
+          }}
+        />
+      </DemoStage>
     </div>
   );
 }
