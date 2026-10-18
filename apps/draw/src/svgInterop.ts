@@ -6,7 +6,8 @@
  *
  * `tool` and `params` ride on `meta.wd.attrs` under the local names `tool`, `params-sides`,
  * `params-points`, `params-ratio`, `params-rotation`; a path's corner shapes under `corners`
- * and `corner-anchors` (`svgCorners.ts`).
+ * and `corner-anchors` (`svgCorners.ts`); a leaf's scene id under `leaf-id`, and a live path
+ * effect on its group (`svgEffects.ts`).
  */
 
 import type { Fill, TextStyle } from '@weasel-js/core';
@@ -32,6 +33,7 @@ import { downloadBlob, pickFile } from './fileIO';
 import { isPaperSize, type PaperSizeKey } from './paperSizes';
 import type { ImageObj, Obj, PathObj, PathParams, PathToolKind, TextObj } from './svgObj';
 import { cornerAttrs, pathWithCorners } from './svgCorners';
+import { decodeEffectAttrs, encodeEffectAttrs, type EffectAttrs, type EffectObj } from './svgEffects';
 
 /**
  * The `wd:` XML namespace, carrying WeaselDraw-specific metadata on top of standard SVG.
@@ -112,10 +114,10 @@ export function parsedToDoc(parsed: ParseResult): ParsedDocPatch {
   return out;
 }
 
-/** The `wd:` attribute bag for an Obj: always `tool`, plus `params-sides` / `params-points` /
+/** The `wd:` attribute bag for an Obj: always `tool` and `leaf-id`, plus `params-sides` / `params-points` /
  *  `params-ratio` / `params-rotation` for polygon/star PathObjs with `params` set. */
 function encodeWdAttrs(o: Obj): Record<string, string> {
-  const attrs: Record<string, string> = { tool: o.tool };
+  const attrs: Record<string, string> = { tool: o.tool, 'leaf-id': o.id };
   if (o.tool !== 'text' && o.tool !== 'image' && o.params) {
     if ('sides' in o.params) attrs['params-sides'] = String(o.params.sides);
     if ('points' in o.params) attrs['params-points'] = String(o.params.points);
@@ -208,12 +210,16 @@ export interface RectBounds { x: number; y: number; width: number; height: numbe
  * A `container` is an SVG `<g>`; its `pose` is the union-AABB of its leaf descendants. A clipped
  * `<g>` carries its clip in `data` and the clip's box as `pose`.
  *
- * `id` comes from `wd:group-id` for containers, or the leaf `Obj.id`; the caller maps it to the
- * minted `NodeId`.
+ * An `effect` is the group a live path effect exported as: it opens as that effect where the file
+ * holds its sources too, and as a container of the drafts under it otherwise.
+ *
+ * `id` comes from `wd:group-id` for containers and `wd:leaf-id` for leaves and effects, where
+ * the file carries one; the caller maps it to the minted `NodeId`.
  */
 export type SceneDraft =
   | { kind: 'leaf'; id: string; parentId: string | null; obj: Obj }
-  | { kind: 'container'; id: string; parentId: string | null; pose: RectBounds; data: SvgKitLeafData };
+  | { kind: 'container'; id: string; parentId: string | null; pose: RectBounds; data: SvgKitLeafData }
+  | ({ kind: 'effect'; id: string; parentId: string | null; pose: RectBounds; data: SvgKitLeafData } & EffectAttrs);
 
 /**
  * Lift the kit's lowering of one leaf into an `Obj`, adding what the `wd:`
@@ -270,14 +276,24 @@ export function svgNodesToSceneDrafts(
   nextId: () => string,
 ): SceneDraft[] {
   const nodes = ('nodes' in input ? input.nodes : input).filter((n) => !isBackgroundNode(n));
-  const drafts = svgNodesToKitDrafts(
-    'nodes' in input ? { ...input, nodes } : nodes,
-    (n) => (n.kind === 'group' ? n.meta?.wd?.attrs?.['group-id'] : undefined) ?? nextId(),
-    { leaf: kitLeafToObj },
-  );
-  return drafts.map((d): SceneDraft => (d.kind === 'container'
-    ? { kind: 'container', id: d.id, parentId: d.parentId, pose: d.pose, data: d.data }
-    : { kind: 'leaf', id: d.id, parentId: d.parentId, obj: d.data }));
+  const effects = new Map<string, EffectAttrs>();
+  const used = new Set<string>();
+  const idOf = (n: SvgNode): string => {
+    const attrs = n.meta?.wd?.attrs;
+    const carried = n.kind === 'group' ? attrs?.['group-id'] ?? attrs?.['leaf-id'] : attrs?.['leaf-id'];
+    const id = carried !== undefined && !used.has(carried) ? carried : nextId();
+    used.add(id);
+    const effect = n.kind === 'group' ? decodeEffectAttrs(attrs) : null;
+    if (effect !== null) effects.set(id, effect);
+    return id;
+  };
+  const drafts = svgNodesToKitDrafts('nodes' in input ? { ...input, nodes } : nodes, idOf, { leaf: kitLeafToObj });
+  return drafts.map((d): SceneDraft => {
+    if (d.kind === 'leaf') return { kind: 'leaf', id: d.id, parentId: d.parentId, obj: d.data };
+    const group = { id: d.id, parentId: d.parentId, pose: d.pose, data: d.data };
+    const effect = effects.get(d.id);
+    return effect === undefined ? { kind: 'container', ...group } : { kind: 'effect', ...group, ...effect };
+  });
 }
 
 /**
@@ -286,9 +302,9 @@ export function svgNodesToSceneDrafts(
  * layer, which is skipped along with everything under it.
  */
 export interface SceneSource extends SvgKitTree<string> {
-  /** The leaf as one object, or as several — a live path effect, which
-   *  exports as a group of the paths it shows. */
-  objOf(id: string): Obj | readonly Obj[] | undefined;
+  /** The leaf as one object, or as a live path effect, which exports as a
+   *  group of the paths it shows. */
+  objOf(id: string): Obj | EffectObj | undefined;
   isPainted?(id: string): boolean;
 }
 
@@ -308,8 +324,8 @@ export function sceneToSvgNodes(source: SceneSource, roots?: readonly string[]):
     leaf: (id) => {
       const obj = source.objOf(id);
       if (obj === undefined) return null;
-      if (!Array.isArray(obj)) return objToSvgNode(obj as Obj);
-      return { kind: 'group', children: obj.map(objToSvgNode) };
+      if (!('effect' in obj)) return objToSvgNode(obj);
+      return { kind: 'group', children: obj.parts.map(objToSvgNode), meta: { wd: { attrs: encodeEffectAttrs(obj) } } };
     },
     group: (id, g) => ({ ...g, meta: { wd: { attrs: { 'group-id': id } } } }),
   });

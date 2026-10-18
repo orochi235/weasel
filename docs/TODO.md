@@ -377,12 +377,10 @@ Priority tags:
   Mod+Shift+O (Chrome's bookmark manager) and `averageAnchors` on Mod+Alt+J (Chrome's console),
   so neither fires there. `browserReservedBindings.test.ts` pins the pair, so a new collision
   fails it; moving these two is a choice of new keys.
-- **(P3) A path effect reopens from draw's SVG as plain paths.** Export writes an effect as a
-  group of the paths it shows (`apps/draw/src/svgExport.ts`), so the file looks right, but the
-  blend, bend or repeat is no longer live once reopened. Carrying it needs its sources named by
-  id, and an imported leaf takes a fresh id (`svgNodesToSceneDrafts` keeps ids for groups only,
-  through `wd:group-id`); with a leaf id carried the same way, the effect's `data.pathEffect`
-  and `dependsOn` can ride as `wd:` attributes on its group.
+- **(P3) A path effect that paints nothing is lost through draw's SVG.** A live effect rides on
+  its exported group as `wd:effect` and `wd:depends-on` (`apps/draw/src/svgEffects.ts`), but a
+  blend of no steps, or a repeat with no copies, exports an empty `<g>`, and
+  `svgNodesToKitDrafts` drops empty groups before `svgNodesToSceneDrafts` sees it.
 - **(P3) Roughen, zigzag and pucker/bloat exist only on the `pel-effects-push` branch.** That
   branch stored effects as a `data.effects` list on the path itself, a design main did not take
   (`f082c838e` adopted its push brush as Smudge and left the rest). Its math is in
