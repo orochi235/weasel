@@ -16,6 +16,7 @@ export function makeRegistry(actions: Action[]): ActionsRegistry {
     paramsOf: (_id: string, given?: Record<string, unknown>) => ({ ...given }),
     list: () => Array.from(map.values()),
     trigger: vi.fn().mockReturnValue(false),
+    preview: vi.fn(() => () => {}),
     subscribe: vi.fn().mockReturnValue(() => {}),
     begin: vi.fn().mockReturnValue(null),
     setDispatcher: vi.fn(),

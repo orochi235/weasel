@@ -270,6 +270,9 @@ declare module '@weasel-js/routing' {
      * Actions report what they did here, and the overlay draws it.
      */
     debug?: DebugSink;
+    /** Where an action's `preview` draws what it would make, over the canvas.
+     *  Sourced by `<SceneCanvas>`. */
+    previewPaths?: import('../../canvas/deps/previewPaths').PreviewPathsDep;
     /** Viewport point of a world point on this canvas, or null before it mounts.
      *  Sourced by `<SceneCanvas>`. */
     worldToClient?: (x: number, y: number) => { x: number; y: number } | null;

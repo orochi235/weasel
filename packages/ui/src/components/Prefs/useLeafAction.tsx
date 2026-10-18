@@ -23,6 +23,8 @@ export interface LeafAction {
   active: boolean | undefined;
   /** The key the leaf names, where nothing registered answers to it. */
   missing: string | undefined;
+  /** Show what pressing would do; absent for an action with no `preview`. */
+  preview?: () => () => void;
 }
 
 const NO_ITEMS: readonly ActionItem[] = Object.freeze([]);
@@ -69,6 +71,9 @@ export function useLeafAction(leaf: PrefAction, path: string, disabled = false):
       reason: item && !shown.enabled && shown.reason !== undefined ? (DEFAULT_REASON_LABELS[shown.reason] ?? shown.reason) : undefined,
       active: shown.active,
       missing: item ? undefined : key,
+      ...(item?.action.preview && registry
+        ? { preview: () => registry.preview(item.action.id, item.params) }
+        : {}),
     };
   }
   return {

@@ -23,6 +23,7 @@ export {
   RIGID_POSE_COMPOSITION,
 } from 'core/scene/composePose';
 export type { PoseAdapter, PoseComposition, PoseClosure } from 'core/scene/composePose';
+export { scenePoseAdapter } from 'core/scene/scenePoseAdapter';
 export { nestedHitTester } from 'core/scene/nestedHit';
 export { unionOfChildrenVia } from 'core/scene/unionOfChildren';
 export type {

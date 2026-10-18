@@ -61,6 +61,11 @@ export interface ActionsRegistry {
    *  `{ x: params.worldX, y: params.worldY }` when both are numbers, and with
    *  no point otherwise. */
   trigger(id: string, params?: Record<string, unknown>): boolean;
+  /** Show what firing `id` with `params` would do, by its `Action.preview`,
+   *  and return what takes it down; calling that twice is harmless. Shows
+   *  nothing for an unknown id, one with no preview, and one whose `enabled`
+   *  refuses, asked as `trigger` asks it. */
+  preview(id: string, params?: Record<string, unknown>): () => void;
   /**
    * Subscribe to registry mutations. The callback fires after any
    * `register`/`unregister` that changes the version. Returns an

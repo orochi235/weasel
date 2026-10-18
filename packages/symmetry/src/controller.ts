@@ -4,6 +4,7 @@ import {
   editSymmetries, isSymmetryGroup, poseAtCenter, readGroup, specOfData, symmetryGroupOf,
   symmetryGroupSpec,
 } from './group';
+import { keepContentsPut } from './frames';
 import { handleDragAction, SYMMETRY_HANDLE_ACTION_ID } from './handleDrag';
 import { SYMMETRY_HANDLE_KIND, symmetryGuideLayer, type SymmetryGuideStyle } from './guide';
 import type { SymmetrySpec } from './kinds';
@@ -74,7 +75,8 @@ export function createSymmetry(scene: AnyScene, opts: CreateSymmetryOptions = {}
     const node = scene.get(id);
     if (!node || !isSymmetryGroup(scene, id)) return;
     if (change.spec) scene.update(id, { data: { ...(node.data as object), symmetry: { ...specOfData(node.data), ...change.spec } } });
-    if (change.center) scene.setPose(id, { ...(node.pose as object), ...poseAtCenter(change.center) });
+    const center = change.center;
+    if (center) keepContentsPut(scene, id, () => scene.setPose(id, { ...(node.pose as object), ...poseAtCenter(center) }));
   };
 
   const ctrl: SymmetryController = {

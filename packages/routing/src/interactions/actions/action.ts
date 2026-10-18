@@ -144,6 +144,15 @@ export interface ActionDispatch extends BindingSource {
    */
   active?: (deps?: ActionDeps) => boolean;
   /**
+   * Show what running the action now would do, and change nothing: the
+   * result an operation would make, drawn over the canvas. A toolbar asks
+   * while its button is hovered or focused, through
+   * `ActionsRegistry.preview`, and calls what this returns when that ends.
+   * Asked only while `enabled` says yes, with the deps and params `run`
+   * would get. Omitted = the action has nothing to show.
+   */
+  preview?: (deps: ActionDeps, params?: Record<string, unknown>) => (() => void) | void;
+  /**
    * Declarative eligibility rule, evaluated against the current
    * `RuleCtx` by the dispatcher before invoking `start()`. Omitted =
    * always eligible.

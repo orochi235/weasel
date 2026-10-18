@@ -392,7 +392,7 @@ Priority tags:
 - **(P3) Create Outlines refuses synthetic-bold text.** `textToPath` answers `reason: 'synthetic-bold'`: emboldening it is a union with the glyphs' own outline stroke, but the width has to match what the renderer's distance-field shift (`SYNTH_BOLD_AMOUNT`, `packages/renderer/src/draw/text.ts`) draws. Read from `glyphCoverage` and `glyphFieldScale` (`packages/font/src/textSdf.ts`) and not measured against pixels: the shift moves the edge out by `SYNTH_BOLD_AMOUNT` of the field's span, which is `distanceRange` texels in a baked atlas and `SDF_RADIUS` in a runtime canvas page, and a texel is `1 / info.size` em, so the outline grows by `SYNTH_BOLD_AMOUNT × span / info.size` em on each side and differs by which tier serves the glyph. What is left: `textToPath` (`packages/text`) has no stroke outliner to call, since `strokeToPath` is in `@weasel-js/stroke`, which text does not depend on; the union flattens every curve of the glyph; and the result has to be compared with the field in a browser.
 - **(P3) Non-destructive boolean groups.** Figma-style "boolean group" container node that recomputes geometry from children at render time. Requires a new layer/scene-node type plus renderer support.
 - **(P3) True curve booleans.** The booleans flatten beziers before clipping (`packages/geom/src/booleans/adapter.ts`), so the result is straight-line. Skia/PathKit-style curve-preserving booleans are substantially harder.
-- **(P3) Live preview of a Boolean operation.** Seeing the result before committing: on hovering a Pathfinder button, or holding an op key over a path. `previewBooleanOp` answers the pieces an operation would make, each with its source and paint, and mints and commits nothing. `createPathOverlay` draws paths that are not nodes over the scene, as the shape builder shows its faces with. What is left is asking for them: no Pathfinder action has a gesture or a key to hold, and an action has no way to say what it would do while its button is hovered.
+- **(P3) Preview a Boolean operation by holding its key over a path.** Hovering or focusing a Pathfinder button shows the pieces it would make (`Action.preview`, drawn on the `previewPaths` dep). No Pathfinder action has a key or gesture to hold, so nothing asks for a preview from the canvas, and the pieces show as outlines rather than in the paint each would take.
 
 ---
 - **(P3) draw's SVG files do not carry layers.** A saved file keeps paper size, title, groups, and
@@ -517,11 +517,6 @@ Priority tags:
 - **(P3) Wallpaper tilings.** A new kind is a row in `SYMMETRY_KINDS`
   (`packages/symmetry/src/kinds.ts`), but a lattice has no last copy: `copiesFromPose` sees only
   the container's pose, so it would need an extent to tile within, which the spec would carry.
-- **(P3) Bake copies only path leaves.** `bakeSymmetry` reports text and image leaves in
-  `skipped` and leaves them uncopied. It also copies a paint laid out in the shape's own box, a
-  gradient say, without carrying it through the copy's mirror or turn.
-- **(P3) Symmetry in a scene that composes frames.** A group's center is its pose, so dragging the
-  center in such a scene moves its children too, and bake writes absolute poses.
 - **(P3) The angle knob sits on the shapes it turns.** It is fixed 64px out along the axis, where
   the lab's petal is, and can cover a path-edit handle there.
 
