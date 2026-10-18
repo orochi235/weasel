@@ -99,6 +99,12 @@ describe('a story drawing one stateful instance passes its args to it', { timeou
     expect(document.querySelector('.form-here')).not.toBeNull();
   });
 
+  it.each(['CompoundKinds', 'Mixed'])('PrefKinds %s', async (name) => {
+    const mod = (await import('./Prefs/PrefKinds.stories')) as unknown as Record<string, Story>;
+    draw(mod[name], { className: 'form-here' });
+    expect(document.querySelector('.form-here')).not.toBeNull();
+  });
+
   it('CurveField DomeContour', async () => {
     const { DomeContour } = await import('./Properties/CurveField.stories');
     draw(DomeContour as Story, { height: 77 });

@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
 import { ScaleIndicator } from '../primitives/ScaleIndicator';
-import { CanvasStack } from './CanvasStack';
+import { CanvasStack, type CanvasStackProps } from './CanvasStack';
 import type { CanvasLayerDescriptor } from './useLayerScheduler';
 
 const meta: Meta<typeof CanvasStack> = {
@@ -29,11 +29,11 @@ function makeColoredLayer(id: string, color: string, x: number, y: number): Canv
   };
 }
 
-function Harness({ layers }: { layers: CanvasLayerDescriptor[] }) {
+function Harness({ layers, ...args }: Partial<CanvasStackProps> & { layers: CanvasLayerDescriptor[] }) {
   const [view, setView] = useState({ zoom: 1, pan: { x: 50, y: 50 } });
   return (
     <div style={{ width: '100vw', height: '100vh' }}>
-      <CanvasStack layers={layers} view={view} onViewChange={setView}>
+      <CanvasStack {...args} layers={layers} view={view} onViewChange={setView}>
         <div style={{ position: 'absolute', top: 8, right: 8 }}>
           <ScaleIndicator />
         </div>
@@ -43,12 +43,13 @@ function Harness({ layers }: { layers: CanvasLayerDescriptor[] }) {
 }
 
 export const Default: Story = {
-  render: () => <Harness layers={[makeColoredLayer('a', '#3a86ff', 0, 0)]} />,
+  render: (args) => <Harness {...args} layers={[makeColoredLayer('a', '#3a86ff', 0, 0)]} />,
 };
 
 export const MultiLayer: Story = {
-  render: () => (
+  render: (args) => (
     <Harness
+      {...args}
       layers={[
         makeColoredLayer('a', '#3a86ff', 0, 0),
         makeColoredLayer('b', '#ff006e', 60, 60),
@@ -59,5 +60,5 @@ export const MultiLayer: Story = {
 };
 
 export const WithScaleIndicator: Story = {
-  render: () => <Harness layers={[makeColoredLayer('a', '#06d6a0', 0, 0)]} />,
+  render: (args) => <Harness {...args} layers={[makeColoredLayer('a', '#06d6a0', 0, 0)]} />,
 };
