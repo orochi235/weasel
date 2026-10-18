@@ -363,11 +363,6 @@ Priority tags:
   they reshape comes from `scenePathNodes` (`pathCommands/scenePaths.ts`), which reads
   `resolveEditablePathOf`, which answers a polygon or a rect `data.path` only: a node whose
   geometry is its rect pose alone, with no `data.path`, cannot itself be trimmed or extended.
-- **(P3) Extend to next path and Lengthen number subpaths two ways.** `openPathEnds` counts the
-  subpaths `parseSubpaths` finds, while `lengthenOpenEnd` hands the same `OpenPathEnd.sub` to
-  `lengthenPathEnd` through `editAnchorSetTracked`, which counts the anchor set's subpaths. The two
-  agree unless a path holds an empty subpath (a bare `M`); then the end extended is not the one
-  picked (`packages/geom/src/paths/extendPath.ts`). Number them one way.
 - **(P3) Shape builder slows past a handful of selected paths.** `pathFacePieces`
   (`packages/geom/src/booleans/ops.ts`) cuts one region per subset of the paths, so the faces
   `useShapeBuilderTool` works on cost 2^N clipping runs: fine for the few shapes it is usually
