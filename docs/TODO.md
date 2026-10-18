@@ -355,11 +355,6 @@ Priority tags:
   grid behavior included; that a move and an anchor drag snap to targets only, never `snapPoint`; no key or modifier to turn it off mid-gesture;
   the marker's glyphs, its fixed orange, and where its label sits; and that draw does not turn it
   on yet (`packages/core/src/features/paths/pathSnap/`, `packages/geom/src/snap/`).
-- **(P3) Trim segment and Extend to next path change editable polygon paths only.** Any node's
-  drawn outline cuts or stops them (`nodeOutline`, `features/paths/strokeOutline.ts`), but what
-  they reshape comes from `scenePathNodes` (`pathCommands/scenePaths.ts`), which reads
-  `resolveEditablePathOf`, which answers a polygon or a rect `data.path` only: a node whose
-  geometry is its rect pose alone, with no `data.path`, cannot itself be trimmed or extended.
 - **(P3) Shape builder slows past a handful of selected paths.** `pathFacePieces`
   (`packages/geom/src/booleans/ops.ts`) cuts one region per subset of the paths, so the faces
   `useShapeBuilderTool` works on cost 2^N clipping runs: fine for the few shapes it is usually

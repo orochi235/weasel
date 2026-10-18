@@ -133,3 +133,28 @@ describe('a path drawn from a form', () => {
     expect(liveAnchorMarkers('a', node, [], [])).toBeNull();
   });
 });
+
+describe('a leaf drawn as its rect pose alone', () => {
+  const node = { kind: 'leaf', pose: { x: 100, y: 50, width: 20, height: 10 }, data: { tag: 1 } };
+
+  it('reads as the rectangle it draws, changing nothing', () => {
+    expect(classifyPathStorage(node)?.kind).toBe('data');
+    expect(coords(resolveEditablePathOf(node))).toEqual([100, 50, 120, 50, 120, 60, 100, 60]);
+    expect(coords(liveEditablePath('a', node, [], null))).toEqual([100, 50, 120, 50, 120, 60, 100, 60]);
+    expect(node.data).toEqual({ tag: 1 });
+  });
+
+  it('gains a data.path on its first edit, keeping the rest of its data', () => {
+    const world = resolveEditablePathOf(node)!;
+    const moved = new Float32Array(world.coords);
+    moved[0] = 90;
+    const stored = storeEditablePath(node, { ...world, coords: moved })!;
+    expect((stored.data as { tag: number }).tag).toBe(1);
+    expect(coords(resolveEditablePathOf({ ...node, ...stored }))).toEqual([90, 50, 120, 50, 120, 60, 100, 60]);
+  });
+
+  it('is not a container, nor a leaf another painter draws', () => {
+    expect(classifyPathStorage({ ...node, kind: 'container' })).toBeNull();
+    expect(classifyPathStorage({ ...node, data: { text: 'hi' } })).toBeNull();
+  });
+});
