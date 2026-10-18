@@ -9,6 +9,7 @@ import type { EntryAt } from '../Prefs/entry';
 import type { PrefFieldChoice } from '../Prefs/schema';
 import { renderCells, type LeafCell, type RenderedCell } from './cells';
 import { MIXED, absentValue, aggregateValue, nodeValueAt, panelLeafKey, type AnyNode, type PanelLeaf, type PanelRow } from './model';
+import { leafAcross } from './nodeBounds';
 import type { PropertyRenderContext, PropertyRenderer } from './renderContext';
 import { renderBuiltin } from './renderLeaf';
 
@@ -42,7 +43,7 @@ function leafContext(panelLeaf: PanelLeaf, scope: PanelCellScope): PropertyRende
   const mixed = aggregated === MIXED;
   return {
     path,
-    pref: leaf,
+    pref: leafAcross(leaf, nodes),
     value: mixed ? undefined : aggregated,
     mixed,
     unset: !mixed && aggregated === undefined,

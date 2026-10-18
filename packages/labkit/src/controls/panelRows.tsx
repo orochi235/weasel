@@ -42,6 +42,34 @@ export interface FoldProps {
   onCollapsedChange: ((next: boolean) => void) | undefined;
 }
 
+/** What a lifted heading control reads and writes through. */
+type LiftScope<TC extends Record<string, unknown>> = Pick<PanelRowsSource<TC>, 'resolved' | 'renderers' | 'shown' | 'setConfig'> & {
+  visible: (path: string) => boolean;
+  enabled: (path: string) => boolean;
+};
+
+/** The control a heading carries in its title row, lifted out of the rows
+ *  beneath it — see `headingLeaf`. */
+function liftedControl<TC extends Record<string, unknown>>(heading: ReactNode, paths: readonly string[], scope: LiftScope<TC>) {
+  const { resolved, renderers, shown, setConfig, visible, enabled } = scope;
+  const found = headingLeaf(resolved, heading, paths, renderers);
+  if (!found) return { path: undefined, control: undefined };
+  const { path, leaf } = found;
+  return {
+    path,
+    control: visible(path) ? (
+      <BareControl
+        leaf={leaf}
+        value={valueAtPath(shown, path) ?? extra<unknown>(leaf, 'default')}
+        write={(value) => setConfig(path, value)}
+        name={typeof heading === 'string' ? heading : undefined}
+        disabled={!enabled(path)}
+        read={(p) => valueAtPath(shown, p)}
+      />
+    ) : undefined,
+  };
+}
+
 /** What a panel's rows are drawn from. */
 export interface PanelRowsSource<TC extends Record<string, unknown>> {
   resolved: ResolvedConfig;
@@ -95,25 +123,8 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
       .filter((p) => !sectioned.has(p));
   };
 
-  /** The control a heading carries in its title row, lifted out of the rows
-   *  beneath it — see `headingLeaf`. */
-  const lift = (heading: ReactNode, paths: readonly string[]) => {
-    const found = headingLeaf(resolved, heading, paths, renderers);
-    if (!found) return { path: undefined, control: undefined };
-    const { path, leaf } = found;
-    return {
-      path,
-      control: visible(path) ? (
-        <BareControl
-          leaf={leaf}
-          value={valueAtPath(shown, path) ?? extra<unknown>(leaf, 'default')}
-          write={(value) => setConfig(path, value)}
-          name={typeof heading === 'string' ? heading : undefined}
-          disabled={!enabled(path)}
-        />
-      ) : undefined,
-    };
-  };
+  const lift = (heading: ReactNode, paths: readonly string[]) =>
+    liftedControl(heading, paths, { resolved, renderers, shown, setConfig, visible, enabled });
 
   /** One node, which is either a group to recurse into or a row to draw. */
   const node = (path: string, rows: Rows): ReactNode => {
@@ -149,6 +160,7 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
           visible={visible}
           enabled={enabled}
           value={(p, leaf) => valueAtPath(shown, p) ?? extra<unknown>(leaf, 'default')}
+          read={(p) => valueAtPath(shown, p)}
           write={setConfig}
           custom={(p, leaf) => drawsOwn(resolved, renderers, p, leaf)}
           row={(p) => (

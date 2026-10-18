@@ -1,4 +1,4 @@
-import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
+import type { PrefBoundReader, PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 import { BarLayout, groupBarNodes, renderBarLeaf } from '@weasel-js/ui';
 import type { ReactNode } from 'react';
 import { useFieldChoices } from './fieldChoices';
@@ -14,6 +14,8 @@ export interface ControlBarProps {
   enabled: (path: string) => boolean;
   /** The value the leaf at a path shows. */
   value: (path: string, leaf: PrefLeaf) => unknown;
+  /** Reads the panel's values, which a number's `minAt` and `maxAt` bound it by. */
+  read: PrefBoundReader;
   write: (path: string, value: unknown) => void;
   /** Whether the lab draws the leaf's control itself, which then keeps its row form. */
   custom: (path: string, leaf: PrefLeaf) => boolean;
@@ -29,7 +31,7 @@ export interface ControlBarProps {
  * dividers, and a nested page, tab, or panel opens from a button.
  */
 export function ControlBar(props: ControlBarProps) {
-  const { group, path, visible, enabled, value, write, custom, row, open } = props;
+  const { group, path, visible, enabled, value, read, write, custom, row, open } = props;
   return (
     <BarLayout
       framed
@@ -51,6 +53,7 @@ export function ControlBar(props: ControlBarProps) {
                 leaf={leaf}
                 value={value(at, leaf)}
                 write={(v) => write(at, v)}
+                read={read}
                 disabled={!enabled(at)}
                 row={() => row(at)}
               />
@@ -67,6 +70,7 @@ function Cell({
   leaf,
   value,
   write,
+  read,
   disabled,
   row,
 }: {
@@ -74,9 +78,10 @@ function Cell({
   leaf: PrefLeaf;
   value: unknown;
   write: (value: unknown) => void;
+  read: PrefBoundReader;
   disabled: boolean;
   row: () => ReactNode;
 }) {
-  const field = labField(leaf, value, write, useFieldChoices(), disabled);
+  const field = labField(leaf, value, write, useFieldChoices(), disabled, read);
   return <>{renderBarLeaf({ leaf, path, name: leaf.name, field, disabled, row })}</>;
 }

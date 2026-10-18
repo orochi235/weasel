@@ -102,6 +102,7 @@ export function PairedRow<TC extends Record<string, unknown>>({
             value={valueAtPath(shown, path) ?? extra<unknown>(leaf, 'default')}
             write={(value) => setConfig(path, value)}
             disabled={disabled}
+            read={(p) => valueAtPath(shown, p)}
           />
         </span>
       ))}

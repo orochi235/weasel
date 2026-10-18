@@ -1,5 +1,5 @@
 import { getAlpha01, toHex8, withAlpha01 } from '@weasel-js/core';
-import type { PrefLeaf } from '@weasel-js/prefs';
+import { prefNumberAt, type PrefBoundReader, type PrefLeaf, type PrefNumber } from '@weasel-js/prefs';
 import {
   type PrefFieldChoice,
   PropertyControl,
@@ -30,16 +30,19 @@ export function extra<T>(leaf: PrefLeaf, key: string): T | undefined {
  * knows nothing of. `null` for a kind with no one field: a paint, which a
  * hex swatch would flatten to a solid and the panel declines, and an object,
  * which a flat row would write one field of and the panel opens in a dialog.
+ * `read` reads the panel's values, which a number's `minAt` and `maxAt` bound it by.
  */
 export function labField(
-  leaf: PrefLeaf,
+  given: PrefLeaf,
   value: unknown,
   write: (value: unknown) => void,
   fields: readonly PrefFieldChoice[],
   disabled = false,
+  read?: PrefBoundReader,
 ): PropertyControlProps | null {
   // `prefFieldProps` answers for the kinds ui draws that are no built-in of the schema's, the font pickers.
-  if (leaf.kind === 'paint' || leaf.kind === 'object') return null;
+  if (given.kind === 'paint' || given.kind === 'object') return null;
+  const leaf = given.kind === 'number' && read ? prefNumberAt(given as PrefNumber, read) : given;
   const field = prefFieldProps(leaf, { value, setValue: write, fields, disabled }, 'lab');
   if (field === null) return null;
   switch (field.kind) {
@@ -67,6 +70,7 @@ export function BareControl({
   write,
   name = leaf.name,
   disabled,
+  read,
 }: {
   leaf: PrefLeaf;
   value: unknown;
@@ -74,9 +78,11 @@ export function BareControl({
   name?: string;
   /** The control takes no input: an `enableIf` on the way to it does not hold. */
   disabled?: boolean;
+  /** Reads the panel's values, which a number's `minAt` and `maxAt` bound it by. */
+  read?: PrefBoundReader;
 }) {
   const text = useDebouncedText(typeof value === 'string' ? value : '', write, useTextWaitMs(leaf));
-  const field = labField(leaf, value, write, useFieldChoices(), disabled);
+  const field = labField(leaf, value, write, useFieldChoices(), disabled, read);
   if (field === null) return null;
   switch (field.kind) {
     case 'string':
